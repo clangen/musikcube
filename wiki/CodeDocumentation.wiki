@@ -1,0 +1,7 @@
+#Summary of all code documentation.
+
+= Code Documentation =
+
+[http://onnerby.se/~daniel/mC2/trunk/docs/core/html/ musik::core doxygen documentation]
+
+[http://onnerby.se/~daniel/mC2/trunk/docs/win32cpp/html/ win32cpp doxygen documentation]
