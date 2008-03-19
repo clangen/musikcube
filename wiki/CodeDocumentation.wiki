@@ -1,5 +1,5 @@
 #Summary of all code documentation.
 
-* [http://onnerby.se/~daniel/mC2/trunk/docs/core/html/ musik::core doxygen documentation] is the core functionallity of the application.
+  * [http://onnerby.se/~daniel/mC2/trunk/docs/core/html/ musik::core doxygen documentation] is the core functionallity of the application.
 
-[http://onnerby.se/~daniel/mC2/trunk/docs/win32cpp/html/ win32cpp doxygen documentation]. win32cpp is the GUI layer (like MFC and wxWidgets) used in musikCube
+  * [http://onnerby.se/~daniel/mC2/trunk/docs/win32cpp/html/ win32cpp doxygen documentation]. win32cpp is the GUI layer (like MFC and wxWidgets) used in musikCube
