@@ -1,3 +1,4 @@
+#summary The new BSD License
 License Agreement:
 
 The following are Copyright © 2007, musikCube team.
