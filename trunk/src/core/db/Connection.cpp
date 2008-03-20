@@ -167,7 +167,14 @@ sqlite3_stmt *Connection::GetCachedStatement(const char* sql){
 
     StatementCache::iterator stmt   = this->cachedStatements.find(sql);
     if(stmt==this->cachedStatements.end()){
-        DB_ASSERT(sqlite3_prepare_v2(this->connection,sql,-1,&newStmt,NULL));
+
+        int err = sqlite3_prepare_v2(this->connection,sql,-1,&newStmt,NULL);
+	    #ifdef _DEBUG
+	        if(err!=0){
+	    	    const char *errorMsg	= sqlite3_errmsg(this->connection);
+	    	    _ASSERT(false);
+	        }
+	    #endif
         return newStmt;
     }
 
