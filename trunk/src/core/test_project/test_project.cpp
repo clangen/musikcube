@@ -43,7 +43,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	Library::LocalDB library;
 
 	library.Startup();
-
+/*
     Query::ListSelection query;
 
 	Metalist genres("genre",query);
@@ -72,7 +72,7 @@ int _tmain(int argc, _TCHAR* argv[])
         std::wcout << tracklist[i]->GetValue("title") << std::endl;
     }
 
-
+*/
 /*	{
 		query.SelectMetadata("genre",6);
 		boost::progress_timer timer;
@@ -93,15 +93,15 @@ int _tmain(int argc, _TCHAR* argv[])
 		library.AddQuery(query,Query::Wait|Query::AutoCallback);
 	}*/
 
-/*
-    library.indexer.AddPath(_T("D:/mp3/"));
+
+    library.indexer.AddPath(_T("X:/musik/"));
     Sleep(2000);
     while(!library.GetInfo().empty()){
         std::wcout << library.GetInfo() << _T("\r");
         Sleep(100);
     }
-*/
-	system("PAUSE");
+
+    system("PAUSE");
 
 	return 0;
 }
