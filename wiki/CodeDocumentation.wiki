@@ -1,4 +1,4 @@
-#Summary of all code documentation.
+#summary Summary of all code documentation.
 
 First of all, start by reading the [CodingGuidelines Coding Guidelines].
 
