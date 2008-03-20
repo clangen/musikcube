@@ -3,11 +3,16 @@
 
 #include "stdafx.h"
 
+#include <stdio.h>
+#include <cstdlib>
+#include <iostream>
+#include <stdlib.h>
+
 #include <core/Library/LocalDB.h>
 #include <core/Query/ListSelection.h>
 #include <core/tracklist/Standard.h>
 
-#include <boost/progress.hpp>
+//#include <boost/progress.hpp>
 #include <boost/format.hpp>
 
 
@@ -52,7 +57,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 
 	{
-		boost::progress_timer timer;
+//		boost::progress_timer timer;
         library.AddQuery(query,Query::Wait|Query::AutoCallback);
 	}
 

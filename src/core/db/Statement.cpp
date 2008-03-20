@@ -43,7 +43,13 @@
 using namespace musik::core::db;
 
 Statement::Statement(const char* sql,Connection &connection) : connection(&connection),stmt(NULL){
-    DB_ASSERT( sqlite3_prepare_v2(this->connection->connection,sql,-1,&this->stmt,NULL));
+    int err	= sqlite3_prepare_v2(this->connection->connection,sql,-1,&this->stmt,NULL);
+	#ifdef _DEBUG
+	    if(err!=0){
+	    	const char *errorMsg	= sqlite3_errmsg(this->connection->connection);
+	    	_ASSERT(false);
+	    }
+	#endif
 }
 
 Statement::Statement(Connection &connection) : connection(&connection),stmt(NULL) {
