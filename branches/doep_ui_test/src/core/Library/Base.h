@@ -259,4 +259,7 @@ namespace musik{ namespace core{
 
         };
     }
+
+    typedef boost::shared_ptr<musik::core::Library::Base> LibraryPtr;
+
 } }

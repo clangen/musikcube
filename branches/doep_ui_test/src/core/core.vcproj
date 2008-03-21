@@ -275,6 +275,14 @@
 					RelativePath=".\Indexer.h"
 					>
 				</File>
+				<File
+					RelativePath=".\LibraryFactory.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\LibraryFactory.h"
+					>
+				</File>
 				<Filter
 					Name="queries"
 					>
