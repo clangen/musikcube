@@ -432,24 +432,62 @@ ByteVector &ByteVector::replace(const ByteVector &pattern, const ByteVector &wit
   const int patternSize = pattern.size();
   const int withSize = with.size();
 
-  int offset = find(pattern);
+  if(withSize<=patternSize){
+	  int cpyOffset(0);
+	  int cpySize(0);
+	  int srcOffset(0);
 
-  while(offset >= 0) {
+	  while( srcOffset < size()-patternSize ){
+		  if( memcmp(pattern.data(),data()+srcOffset,patternSize)==0 ){
+			  // Match, lets move the memory
 
-    const int originalSize = size();
+			  // Move 
+			  if(cpySize){
+				  memmove(data()+cpyOffset,data()+srcOffset-cpySize,cpySize);
+				  cpyOffset	+= cpySize;
+				  cpySize=0;
+			  }
 
-    if(withSize > patternSize)
-      resize(originalSize + withSize - patternSize);
+			  // Copy the replacement
+			  memcpy(data()+cpyOffset,with.data(),withSize);
+			  cpyOffset	+= withSize;
 
-    if(patternSize != withSize)
-      ::memcpy(data() + offset + withSize, mid(offset + patternSize).data(), originalSize - offset - patternSize);
+			  // Jump ahead the patternSize
+			  srcOffset+=patternSize;
+			
+		  }else{
+			  // No match, step ahead
+			  ++cpySize;
+			  ++srcOffset;
+		  }
+	  }
 
-    if(withSize < patternSize)
-      resize(originalSize + withSize - patternSize);
+		memmove(data()+cpyOffset,data()+srcOffset-cpySize,cpySize+patternSize);
+		cpyOffset	+= cpySize+patternSize;
 
-    ::memcpy(data() + offset, with.data(), withSize);
+		resize(cpyOffset);
 
-    offset = find(pattern, offset + withSize);
+  }else{
+
+	  int offset = find(pattern);
+
+	  while(offset >= 0) {
+
+		const int originalSize = size();
+
+		if(withSize > patternSize)
+		  resize(originalSize + withSize - patternSize);
+
+		if(patternSize != withSize)
+		  ::memcpy(data() + offset + withSize, mid(offset + patternSize).data(), originalSize - offset - patternSize);
+
+		if(withSize < patternSize)
+		  resize(originalSize + withSize - patternSize);
+
+		::memcpy(data() + offset, with.data(), withSize);
+
+		offset = find(pattern, offset + withSize);
+	  }
   }
 
   return *this;
