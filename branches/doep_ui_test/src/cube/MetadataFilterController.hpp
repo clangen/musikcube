@@ -41,6 +41,8 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <win32cpp/ListView.hpp>
+#include <core/MetadataValue.h>
+#include <core/Query/ListSelection.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -49,21 +51,27 @@ using namespace win32cpp;
 namespace musik { namespace cube {
 
 //////////////////////////////////////////////////////////////////////////////
+// Forward declare
+class BrowseController;
+//////////////////////////////////////////////////////////////////////////////
 
 class MetadataFilterController : public EventHandler
 {
 private:    typedef ListView::ColumnRef ColumnRef;
 private:    typedef ListView::ModelRef ModelRef;
 
-public:     /*ctor*/    MetadataFilterController(ListView& listView, const uistring& metdataKey);
+public:     /*ctor*/    MetadataFilterController(ListView& listView, const uistring& metdataKey,BrowseController *browseController);
 
 protected:  void        OnViewCreated();
 protected:  void        OnResized(Size size);
-
+protected:  void        OnSelectionChanged();
+protected:  void        OnMetadata(musik::core::MetadataValueVector* metadata,bool clear);
+protected:  BrowseController *parent;
 protected:  uistring metadataKey;
 protected:  ListView& listView;
 protected:  ModelRef model;
 protected:  ColumnRef mainColumn;
+protected:  musik::core::MetadataValueVector metadata;
 };
 
 //////////////////////////////////////////////////////////////////////////////

@@ -91,20 +91,6 @@ utfstring Library::LocalDB::GetInfo(){
 //////////////////////////////////////////
 bool Library::LocalDB::Startup(){
 
-    // Set the database file path
-    utfstring database(this->GetDBPath());
-
-    // First, create/init the database
-    this->db.Open(database.c_str(),0,4096);
-    this->CreateDatabase();
-
-    // finaly close the database, since this will be started in the library thread later.
-    this->db.Close();
-
-    // Startup the indexer
-    this->indexer.database    = database;
-    this->indexer.Startup(this->GetLibraryDirectory());
-
     // Start the library thread
     this->threads.create_thread(boost::bind(&Library::LocalDB::ThreadLoop,this));
 
@@ -239,9 +225,14 @@ void Library::LocalDB::CreateDatabase(){
 //////////////////////////////////////////
 void Library::LocalDB::ThreadLoop(){
 
-
     utfstring database(this->GetDBPath());
     this->db.Open(database.c_str(),0,4096);
+
+    this->CreateDatabase();
+
+    // Startup the indexer
+    this->indexer.database    = database;
+    this->indexer.Startup(this->GetLibraryDirectory());
 
     while(!this->Exit()){
         Query::Ptr query(this->GetNextQuery());

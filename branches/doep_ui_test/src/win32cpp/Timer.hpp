@@ -2,9 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
-//
-// Sources and Binaries of: mC2, win32cpp
+// The following are Copyright © 2007, Daniel Önnerby
 //
 // All rights reserved.
 //
@@ -38,23 +36,35 @@
 
 #pragma once
 
-//////////////////////////////////////////////////////////////////////////////
+#include <boost/shared_ptr.hpp>
+#include <sigslot/sigslot.h>
+#include <win32cpp/Window.hpp>
 
-#include <pch.hpp>
 
-#include <cube/MetadataFilterModel.hpp>
+namespace win32cpp {
+    class Timer : public sigslot::has_slots<>{
+        public:
+            Timer(unsigned int timeout);
+            ~Timer(void);
 
-using namespace musik::cube;
+            void ConnectToWindow(win32cpp::Window *window);
 
-//////////////////////////////////////////////////////////////////////////////
+            bool Start();
+            bool Stop();
 
-/*ctor*/    MetadataFilterModel::MetadataFilterModel(MetadataFilterController *controller) : controller(controller)
-{
-    this->SetRowCount(0);
+            typedef sigslot::signal0<> TimeoutEvent;
+            TimeoutEvent OnTimout;
+
+        private:
+            unsigned int timerId;
+            unsigned int timeout;
+            HWND wnd;
+
+            void OnTimerMsg(unsigned int timeoutId);
+    };
+
+    typedef boost::shared_ptr<win32cpp::Timer> TimerPtr;
+
 }
 
-uistring    MetadataFilterModel::CellValueToString(int rowIndex, ListView::ColumnRef column)
-{
-    typedef boost::basic_format<uichar> format;
-    return (format(_T("%1% %2%")) % column->Name() % (rowIndex + 1)).str();
-}
+

@@ -41,9 +41,11 @@ using namespace musik::core;
 
 LibraryFactory LibraryFactory::sInstance;
 
-LibraryFactory::LibraryFactory(void) : currentPosition(-1){
+LibraryFactory::LibraryFactory(void) : currentPosition(0){
     // The first library should always be a localDB
-    this->libraries.push_back(LibraryPtr(new musik::core::Library::LocalDB()));
+    LibraryPtr localLibrary(new musik::core::Library::LocalDB());
+    localLibrary->Startup();
+    this->libraries.push_back(localLibrary);
 }
 
 LibraryFactory::~LibraryFactory(void){

@@ -61,8 +61,8 @@ void        BrowseView::OnCreated()
     mainVSplitter = new Splitter(
         SplitVertical, this->filterListFrame, this->tracklistView);
 
-    this->AddMetadataFilter(_T("Artist"));
-    this->AddMetadataFilter(_T("Album"));
+    this->AddMetadataFilter(_T("artist"));
+    this->AddMetadataFilter(_T("album"));
 
     this->AddChild(mainVSplitter);
     mainVSplitter->SetAnchor(AnchorTop);

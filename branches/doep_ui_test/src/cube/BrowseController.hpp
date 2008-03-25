@@ -71,6 +71,7 @@ protected:  void        Requery();
 protected:  BrowseView& view;
 protected:  FilterControllerList filterControllers;
 protected:  TracklistController* tracklistController;
+public:  musik::core::Query::ListSelection selectionQuery;
 };
 
 //////////////////////////////////////////////////////////////////////////////

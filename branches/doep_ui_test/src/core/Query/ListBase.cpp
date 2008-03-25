@@ -37,6 +37,7 @@
 #include "pch.hpp"
 #include <core/Query/ListBase.h>
 #include <core/Library/Base.h>
+#include <core/Common.h>
 
 using namespace musik::core;
 
@@ -108,6 +109,10 @@ bool Query::ListBase::RunCallbacks(Library::Base *oLibrary){
 
 Query::ListBase::MetadataSignal& Query::ListBase::OnMetadataEvent(const char* metatag){
     return this->metadataEvent[metatag];
+}
+
+Query::ListBase::MetadataSignal& Query::ListBase::OnMetadataEvent(const wchar_t* metatag){
+    return this->metadataEvent[ConvertUTF8(std::wstring(metatag))];
 }
 
 Query::ListBase::TrackSignal& Query::ListBase::OnTrackEvent(){

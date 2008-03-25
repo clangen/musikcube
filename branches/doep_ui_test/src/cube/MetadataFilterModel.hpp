@@ -48,12 +48,14 @@ using namespace win32cpp;
 
 namespace musik { namespace cube {
 
+class MetadataFilterController;
 //////////////////////////////////////////////////////////////////////////////
 
 class MetadataFilterModel: public ListView::Model
 {
-public:     /*ctor*/            MetadataFilterModel();
+public:     /*ctor*/            MetadataFilterModel(MetadataFilterController *controller);
 public:     virtual uistring    CellValueToString(int rowIndex, ListView::ColumnRef column);
+protected:  MetadataFilterController *controller;
 };
 
 //////////////////////////////////////////////////////////////////////////////

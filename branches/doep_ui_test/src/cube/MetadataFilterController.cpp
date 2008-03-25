@@ -39,6 +39,7 @@
 #include <pch.hpp>
 #include <cube/MetadataFilterController.hpp>
 #include <cube/MetadataFilterModel.hpp>
+#include <cube/BrowseController.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -48,14 +49,22 @@ using namespace musik::cube;
 // MetadataFilterController
 //////////////////////////////////////////////////////////////////////////////
 
-/*ctor*/    MetadataFilterController::MetadataFilterController(ListView& listView, const uistring& metadataKey)
+/*ctor*/    MetadataFilterController::MetadataFilterController(ListView& listView, const uistring& metadataKey,BrowseController *browseController)
 : listView(listView)
-, model(new MetadataFilterModel())
 , metadataKey(metadataKey)
+, parent(browseController)
 {
+    this->model.reset(new MetadataFilterModel(this));
     this->listView.Handle()
         ? this->OnViewCreated()
         : this->listView.Created.connect(this, &MetadataFilterController::OnViewCreated);
+
+    this->parent->selectionQuery.OnMetadataEvent(this->metadataKey.c_str()).connect(this,&MetadataFilterController::OnMetadata);
+    this->listView.SelectionChanged.connect(this,&MetadataFilterController::OnSelectionChanged);
+}
+
+void        MetadataFilterController::OnSelectionChanged(){
+//    this->parent->selectionQuery.
 }
 
 void        MetadataFilterController::OnViewCreated()
@@ -83,4 +92,14 @@ void        MetadataFilterController::OnViewCreated()
 void        MetadataFilterController:: OnResized(Size size)
 {
     this->listView.SetColumnWidth(this->mainColumn, this->listView.ClientSize().width);
+}
+
+void        MetadataFilterController::OnMetadata(musik::core::MetadataValueVector* metadata,bool clear){
+    if(clear){
+        this->metadata  = *metadata;
+    }else{
+        this->metadata.insert(this->metadata.end(),metadata->begin(),metadata->end());
+    }
+    
+
 }

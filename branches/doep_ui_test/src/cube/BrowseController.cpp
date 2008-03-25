@@ -38,6 +38,7 @@
 
 #include <pch.hpp>
 #include <cube/BrowseController.hpp>
+#include <core/LibraryFactory.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -75,8 +76,12 @@ void        BrowseController::OnViewCreated()
     {
         uistring metadataKey = filterKeyMap[*it];
         this->filterControllers.push_back(
-            FilterControllerRef(new FilterController(**it, metadataKey)));
+            FilterControllerRef(new FilterController(**it, metadataKey,this)));
 
         ++it;
     }
+
+    // Startup by sending an empty query
+//    this->selectionQuery.ClearMetadata();
+    musik::core::LibraryFactory::GetCurrentLibrary()->AddQuery(this->selectionQuery);
 }
