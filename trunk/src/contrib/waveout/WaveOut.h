@@ -2,10 +2,12 @@
 
 #include "pch.h"
 
-#include "CriticalSection.h"
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/condition.hpp>
+#include <boost/thread/thread.hpp> 
 
-#include "core/audio/IAudioCallback.h"
-#include "core/audio/IAudioOutput.h"
+#include <core/audio/IAudioCallback.h>
+#include <core/audio/IAudioOutput.h>
 
 using namespace musik::core::audio;
 
@@ -45,7 +47,6 @@ private: bool GetVisData(float* ToHere, unsigned long ulNumSamples) const;
 //TODO: decide how to set this when integrating with mC2
 public: int GetOutputDevice() { return WAVE_MAPPER; }; 
 
-private: static unsigned long __stdcall		ThreadStub(void * in);
 private: unsigned long						ThreadProc(void);
 
 private: WAVEFORMATPCMEX    m_waveFormatPCMEx;
@@ -62,7 +63,7 @@ private: unsigned long      m_BlockSize;
 private: unsigned long      m_Interval;
 private: unsigned long      m_NumBuffers;
 
-private: unsigned long      m_ActiveBuffer;  // Looks like a circular buffer
+private: unsigned long      m_ActiveBuffer;
 private: unsigned long      m_QueuedBuffers;
 private: unsigned long      m_LastPlayedBuffer;
 
@@ -74,11 +75,9 @@ private: unsigned long      m_dwLastTickCount;
 
 private: IAudioCallback*    m_pCallback;
 
-private: CriticalSection    m_AudioLock;
-private: HANDLE             m_hEvent;
-
-private: HANDLE             m_hThread;
-private: unsigned long      m_dwThreadID;
+private: boost::mutex       audioMutex;
+public:  boost::condition   audioCondition; // TODO: review access level
+private: boost::thread*     audioThread;
 private: bool               m_bThreadRun;
 
 private: static const int   bufferSizeMs = 300;
