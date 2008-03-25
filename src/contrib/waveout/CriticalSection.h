@@ -1,6 +1,6 @@
 #pragma once
 
-class CriticalSection
+class CriticalSectionX
 {
 protected:
 	HANDLE	mutex;
@@ -27,7 +27,7 @@ public:
 	}
 };
 
-class AutoLock
+class AutoLockX
 {
 private:
 	CriticalSection *	CS;

@@ -1,13 +1,14 @@
 #include "WaveOut.h"
 
+#include <boost/bind.hpp>
+
 WaveOut::WaveOut(void) :
 	m_waveHandle(NULL),
 	m_pCallback(NULL),
-	m_hThread(NULL),
-	m_hEvent(NULL),
+    audioThread(NULL),
 	m_dwSamplesOut(0),
 	m_LastPlayedBuffer(-1),
-	m_NumBuffers(4)
+	m_NumBuffers(4) //TODO: config
 {
 	ZeroMemory(&m_waveFormatPCMEx, sizeof(m_waveFormatPCMEx));
 
@@ -44,7 +45,7 @@ void CALLBACK WaveOut::WaveCallback(HWAVEOUT hWave, UINT uMsg, DWORD_PTR dwUser,
 
 		QueryPerformanceCounter(&to->m_liLastPerformanceCount);
 
- 		SetEvent(to->m_hEvent);
+        to->audioCondition.notify_one();
    }
 }
 
@@ -53,7 +54,7 @@ bool WaveOut::Open(void)
 	int r;
 	int currentDevice = this->GetOutputDevice();
 
-	AutoLock lock(&m_AudioLock);
+    boost::mutex::scoped_lock lock(this->audioMutex);
 
 	if(m_waveHandle==NULL)
 	{
@@ -92,7 +93,7 @@ bool WaveOut::Close(void)
 {
 	int r;
 
-	AutoLock lock(&m_AudioLock);
+    boost::mutex::scoped_lock lock(this->audioMutex);
 
 	if(m_waveHandle)
 	{
@@ -130,59 +131,39 @@ again:
 //
 //
 
-
-unsigned long WaveOut::ThreadStub(void * in)
-{
-	WaveOut * pAO = (WaveOut *)in;
-	return(pAO->ThreadProc());
-}
-
 unsigned long WaveOut::ThreadProc(void)
 {
-	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
+    bool hasPlayed = false;
 
-	while(m_bThreadRun)
+	while(m_bThreadRun && !hasPlayed)
 	{
 		while(m_Playing && this->m_pCallback)
 		{
-            AutoLock lock(&m_AudioLock);
-			
-            while(this->m_Buffers && ((m_Buffers[m_ActiveBuffer].dwFlags & WHDR_INQUEUE) && m_Playing ))
+			boost::mutex::scoped_lock lock(this->audioMutex);
+
+			while(this->m_Buffers && ((m_Buffers[m_ActiveBuffer].dwFlags & WHDR_INQUEUE) && m_Playing ))
 			{
-                if(WaitForSingleObject(m_hEvent, m_Interval) == WAIT_OBJECT_0)
-				{
-					ResetEvent(m_hEvent);
-				}
+                this->audioCondition.wait(lock);
 			}
 
 			if(m_Playing)
 			{
-                if(m_pCallback->GetBuffer((float*)m_Buffers[m_ActiveBuffer].lpData, m_BlockSize))
+				if(m_pCallback->GetBuffer((float*)m_Buffers[m_ActiveBuffer].lpData, m_BlockSize))
 				{
 					m_Buffers[m_ActiveBuffer].dwUser = m_ActiveBuffer;
-					waveOutWrite(m_waveHandle, &m_Buffers[m_ActiveBuffer], sizeof(WAVEHDR));
-					m_ActiveBuffer++;
+                    waveOutWrite(m_waveHandle, &m_Buffers[m_ActiveBuffer], sizeof(WAVEHDR));
+                    m_ActiveBuffer++;
 					m_ActiveBuffer &= (m_NumBuffers-1);
-
-					if(WaitForSingleObject(m_hEvent, m_Interval) == WAIT_OBJECT_0)
-					{
-						ResetEvent(m_hEvent);
-					}
 				}
 				else
 				{
 					m_Playing = false;
+                    hasPlayed = true;
+                    this->audioCondition.wait(lock);
 				}
 			}
 		}
-
-		if(WaitForSingleObject(m_hEvent, m_Interval) == WAIT_OBJECT_0)
-		{
-			ResetEvent(m_hEvent);
-		}
-
-	}
-
+    }
 	return(0);
 }
 
@@ -199,19 +180,11 @@ bool WaveOut::Initialize(void)
 	m_ActiveBuffer	= 0;
 	m_QueuedBuffers	= 0;
 
-	m_hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-	if(!m_hEvent)
-		return(false);
+    m_bThreadRun = true;
 
-	m_bThreadRun = true;
-	m_hThread = CreateThread(	NULL,
-								16384,
-								ThreadStub,
-								this,
-								0,
-								&m_dwThreadID);
+    this->audioThread = new boost::thread(boost::bind(&WaveOut::ThreadProc, this));
 
-	if(!m_hThread)
+	if(!this->audioThread)
 		return false;
 
 	return(true);
@@ -220,27 +193,17 @@ bool WaveOut::Initialize(void)
 bool WaveOut::Shutdown(void)
 {
 	Close();
+     
+    boost::mutex::scoped_lock lock(this->audioMutex);
 
-	AutoLock lock(&m_AudioLock);
-
-	if(m_hThread)
+	if(this->audioThread)
 	{
 		m_bThreadRun = false;
 
-		SetEvent(m_hEvent);
-
-		if(WaitForSingleObject(m_hThread, 10000) == WAIT_TIMEOUT)
-			TerminateThread(m_hThread, 0);
-
-		CloseHandle(m_hThread);
-		m_hThread = NULL;
-	}
-
-	if(m_hEvent)
-	{
-		CloseHandle(m_hEvent);
-		m_hEvent = NULL;
-	}
+        this->audioCondition.notify_one();
+        this->audioThread->join();
+        delete this->audioThread;
+    }
 
 	return(true);
 }
@@ -323,7 +286,7 @@ bool WaveOut::SetFormat(unsigned long SampleRate, unsigned long Channels)
 //
 bool WaveOut::Start(void)
 {
-	AutoLock lock(&m_AudioLock);
+    boost::mutex::scoped_lock lock(this->audioMutex);
 
 	if(!Open())
 		return(false);
@@ -338,14 +301,15 @@ bool WaveOut::Start(void)
 	}
 
 	m_Playing = true;
-	SetEvent(m_hEvent);
+	
+    this->audioCondition.notify_one();
 
 	return true;
 }
 
 bool WaveOut::Stop(void)
 {
-    AutoLock lock(&m_AudioLock);
+    boost::mutex::scoped_lock lock(this->audioMutex);
 
 	m_QueuedBuffers = 0;
 	m_Playing = false;
