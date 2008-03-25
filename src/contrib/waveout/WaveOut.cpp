@@ -145,11 +145,11 @@ unsigned long WaveOut::ThreadProc(void)
 	{
 		while(m_Playing && this->m_pCallback)
 		{
-			AutoLock lock(&m_AudioLock);
-
-			while(	(m_Buffers[m_ActiveBuffer].dwFlags & WHDR_INQUEUE) && m_Playing )
+            AutoLock lock(&m_AudioLock);
+			
+            while(this->m_Buffers && ((m_Buffers[m_ActiveBuffer].dwFlags & WHDR_INQUEUE) && m_Playing ))
 			{
-				if(WaitForSingleObject(m_hEvent, m_Interval) == WAIT_OBJECT_0)
+                if(WaitForSingleObject(m_hEvent, m_Interval) == WAIT_OBJECT_0)
 				{
 					ResetEvent(m_hEvent);
 				}
@@ -157,7 +157,7 @@ unsigned long WaveOut::ThreadProc(void)
 
 			if(m_Playing)
 			{
-				if(m_pCallback->GetBuffer((float*)m_Buffers[m_ActiveBuffer].lpData, m_BlockSize))
+                if(m_pCallback->GetBuffer((float*)m_Buffers[m_ActiveBuffer].lpData, m_BlockSize))
 				{
 					m_Buffers[m_ActiveBuffer].dwUser = m_ActiveBuffer;
 					waveOutWrite(m_waveHandle, &m_Buffers[m_ActiveBuffer], sizeof(WAVEHDR));

@@ -30,8 +30,8 @@ AudioStream::AudioStream(IAudioSource* source, IAudioOutput* output, Transport* 
 
 AudioStream::~AudioStream()
 {
-	this->audioSource->Destroy();
     this->output->Destroy();
+	this->audioSource->Destroy();
 }
 
 bool			AudioStream::SetVolumeScale(float scale)
@@ -42,7 +42,7 @@ bool			AudioStream::SetVolumeScale(float scale)
 
 bool			AudioStream::GetBuffer(float * pAudioBuffer, unsigned long NumSamples)
 {
-	AutoLock t(&this->lock);
+    boost::mutex::scoped_lock lock(this->mutex);
 
     if (this->isFinished)
     {
@@ -233,7 +233,7 @@ unsigned long	AudioStream::GetPosition() const
 
 bool			AudioStream::SetPosition(unsigned long MS)
 {
-	AutoLock t(&this->lock);
+    boost::mutex::scoped_lock lock(this->mutex);
 
     if(this->fadeState != FadeStateNone)
 	{
