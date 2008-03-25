@@ -267,8 +267,8 @@ bool WaveOut::SetFormat(unsigned long SampleRate, unsigned long Channels)
 
 		unsigned long samplesperms = ((unsigned long)((float)m_waveFormatPCMEx.Format.nSamplesPerSec / 1000.0f)) * m_waveFormatPCMEx.Format.nChannels;
 
-        m_Interval			= (WaveOut::bufferSizeMs / m_NumBuffers) / 2;
-		m_BlockSize			= (WaveOut::bufferSizeMs / m_NumBuffers) * samplesperms;	// this should be a 300MS buffer size!
+        m_Interval			= (this->GetBufferSizeMs() / m_NumBuffers) / 2;
+		m_BlockSize			= (this->GetBufferSizeMs() / m_NumBuffers) * samplesperms;	// this should be a 300MS buffer size!
 		while(m_BlockSize & m_waveFormatPCMEx.Format.nBlockAlign)
 			m_BlockSize++;
 
@@ -349,61 +349,5 @@ bool WaveOut::Reset(void)
 		QueryPerformanceCounter(&m_liLastPerformanceCount);
 		return(true);
 	}
-	return false;
-}
-
-unsigned long WaveOut::GetMSOut() const
-{
-    __int64 SamplesOut = GetSamplesOut();
-
-    return( (unsigned long)((float)SamplesOut / ((float)m_waveFormatPCMEx.Format.nSamplesPerSec / 1000.0f)) );
-}
-
-__int64 WaveOut::GetSamplesOut() const
-{
-	double t;
-
-	if(m_waveHandle == NULL)
-	{
-		t = 0;
-	}
-	else
-	{
-		LARGE_INTEGER ThisCount;
-		QueryPerformanceCounter(&ThisCount);
-
-		double val = (double)(ThisCount.QuadPart - m_liLastPerformanceCount.QuadPart);
-		t =  (val / (double)(m_liCountsPerSecond.QuadPart / 1000.0));
-	}
-
-	unsigned long samplesperms = (unsigned long)((float)m_waveFormatPCMEx.Format.nSamplesPerSec / 1000.0f);
-	unsigned long samplesdif = (unsigned long)(t * samplesperms);
-
-	return(m_dwSamplesOut + samplesdif);
-}
-
-bool WaveOut::GetVisData(float * ToHere, unsigned long ulNumSamples) const
-{
-	if(m_waveHandle && (m_LastPlayedBuffer != -1))
-	{
-		unsigned long offset = (GetSamplesOut() & ((m_BlockSize/m_waveFormatPCMEx.Format.nChannels)-1))*m_waveFormatPCMEx.Format.nChannels;
-		float * pBuffer		= (float *)m_Buffers[(m_LastPlayedBuffer+1) & (m_NumBuffers-1)].lpData;
-
-		if( (offset + ulNumSamples) > m_BlockSize )
-		{
-			unsigned long SamplesThisBlock = (m_BlockSize - offset);
-			unsigned long SamplesNextBlock = ulNumSamples - SamplesThisBlock;
-			float * pNextBuffer = (float *)m_Buffers[(m_LastPlayedBuffer+2) & (m_NumBuffers-1)].lpData;
-
-			CopyFloat(ToHere,						&pBuffer[offset],	SamplesThisBlock);
-			CopyFloat(&ToHere[SamplesThisBlock],	pNextBuffer,		SamplesNextBlock);
-		}
-		else
-		{
-			CopyFloat(ToHere, &pBuffer[offset], ulNumSamples);
-		}
-		return true;
-	}
-
 	return false;
 }
