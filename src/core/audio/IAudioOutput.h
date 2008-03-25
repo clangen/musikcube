@@ -53,18 +53,11 @@ public: virtual bool    Start(void) = 0;
 public: virtual bool    Stop(void)  = 0;
 public: virtual bool    Reset(void) = 0;
 
-public: virtual unsigned long   GetSampleRate() const   = 0;
-public: virtual unsigned long   GetChannels()   const   = 0;
-public: virtual unsigned long   GetBlockSize()  const   = 0;
-
-private: virtual unsigned long   GetInterval()   const   = 0;
-private: virtual unsigned long   GetMaxRewind()  const   = 0;
-private: virtual unsigned long   GetMSOut()      const   = 0;
-private: virtual __int64         GetSamplesOut() const   = 0;
-
-public: virtual bool GetVisData(float * ToHere, unsigned long ulNumSamples) const = 0;
-
-public: virtual int GetOutputDevice() = 0;
+public: virtual unsigned long   GetSampleRate()     const = 0;
+public: virtual unsigned long   GetChannels()       const = 0;
+public: virtual unsigned long   GetBlockSize()      const = 0;
+public: virtual unsigned long   GetOutputDevice()   const = 0;
+public: virtual unsigned long   GetBufferSizeMs()   const = 0;
 };
 
 class IAudioOutputSupplier

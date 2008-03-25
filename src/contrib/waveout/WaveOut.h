@@ -35,19 +35,11 @@ public: bool Reset(void);
 public: unsigned long GetSampleRate()   const   { return m_waveFormatPCMEx.Format.nSamplesPerSec; }
 public: unsigned long GetChannels()     const   { return m_waveFormatPCMEx.Format.nChannels; }
 public: unsigned long GetBlockSize()    const   { return m_BlockSize; }
-
-private: unsigned long GetInterval()    const   { return m_Interval; }
-private: unsigned long GetMaxRewind()   const   { return m_NumBuffers; }
-
-private: unsigned long GetMSOut() const;
-private: __int64 GetSamplesOut()  const;
-
-private: bool GetVisData(float* ToHere, unsigned long ulNumSamples) const;
-
 //TODO: decide how to set this when integrating with mC2
-public: int GetOutputDevice() { return WAVE_MAPPER; }; 
+public: unsigned long GetOutputDevice() const   { return WAVE_MAPPER; }; 
+public: unsigned long GetBufferSizeMs() const   { return 300;         };
 
-private: unsigned long						ThreadProc(void);
+private: unsigned long ThreadProc(void);
 
 private: WAVEFORMATPCMEX    m_waveFormatPCMEx;
 private: HWAVEOUT           m_waveHandle;
@@ -58,7 +50,7 @@ private: unsigned long      m_dwBufferSize;
 
 private: bool               m_Playing;
 
-private: unsigned long      m_BufferLengthMS;
+//private: unsigned long      m_BufferLengthMS;
 private: unsigned long      m_BlockSize;
 private: unsigned long      m_Interval;
 private: unsigned long      m_NumBuffers;
@@ -79,8 +71,6 @@ private: boost::mutex       audioMutex;
 public:  boost::condition   audioCondition; // TODO: review access level
 private: boost::thread*     audioThread;
 private: bool               m_bThreadRun;
-
-private: static const int   bufferSizeMs = 300;
 };
 
 class WaveOutSupplier : public IAudioOutputSupplier

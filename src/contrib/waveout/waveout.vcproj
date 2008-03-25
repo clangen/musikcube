@@ -172,10 +172,6 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\CriticalSection.h"
-				>
-			</File>
-			<File
 				RelativePath=".\pch.cpp"
 				>
 			</File>
