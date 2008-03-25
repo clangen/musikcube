@@ -1,8 +1,10 @@
 #pragma once
 
+#include <boost/thread/thread.hpp>
+#include <boost/thread/mutex.hpp>
+
 #include <core/audio/IAudioCallBack.h>
 #include <core/audio/AudioPacketizer.h>
-#include <core/audio/CriticalSection.h>
 
 namespace musik { namespace core { namespace audio {
 
@@ -49,7 +51,7 @@ private:    bool            isLast; // This can probably be removed once we have
 
 private:    unsigned long   channels;
 
-private:    CriticalSection lock;
+private:    boost::mutex    mutex;
 
 /////////////////////////////////////////
 // Pending stuff

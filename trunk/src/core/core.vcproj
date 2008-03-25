@@ -490,10 +490,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\audio\CriticalSection.h"
-					>
-				</File>
-				<File
 					RelativePath=".\audio\IAudioCallback.h"
 					>
 				</File>
