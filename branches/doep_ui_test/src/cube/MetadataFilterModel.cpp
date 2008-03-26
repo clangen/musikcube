@@ -69,6 +69,7 @@ uistring    MetadataFilterModel::CellValueToString(int rowIndex, ListView::Colum
 
 void        MetadataFilterModel::OnMetadata(musik::core::MetadataValueVector* metadata,bool clear){
     if(clear){
+		this->SetRowCount(0);
         this->metadata  = *metadata;
     }else{
         this->metadata.insert(this->metadata.end(),metadata->begin(),metadata->end());

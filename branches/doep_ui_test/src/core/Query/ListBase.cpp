@@ -77,7 +77,7 @@ bool Query::ListBase::RunCallbacks(Library::Base *oLibrary){
             std::string metatag(metatagResult->first);
 
             // If the metatag  has results, call the signals
-            if( !metatagResult->second.empty() ){
+//            if( !metatagResult->second.empty() ){
 
                 // check if the signal should send the clear flag
                 bool clearMetatag(false);
@@ -88,7 +88,7 @@ bool Query::ListBase::RunCallbacks(Library::Base *oLibrary){
 
                 // Call the signal
                 this->metadataEvent[metatag](&metatagResult->second,clearMetatag);
-            }
+//            }
         }
     }
 
