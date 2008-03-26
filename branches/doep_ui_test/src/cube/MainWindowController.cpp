@@ -55,7 +55,7 @@ using namespace musik::cube;
 , sourcesController(NULL)
 , transportController(NULL)
 , menuController(mainWindow)
-, LibraryCallbackTimer(100)
+, LibraryCallbackTimer(20)
 {
     musik::core::PluginFactory::Instance();
 
