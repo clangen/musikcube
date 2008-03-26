@@ -44,12 +44,12 @@ using namespace musik::core::db;
 
 Statement::Statement(const char* sql,Connection &connection) : connection(&connection),stmt(NULL){
     int err	= sqlite3_prepare_v2(this->connection->connection,sql,-1,&this->stmt,NULL);
-	#ifdef _DEBUG
+/*	#ifdef _DEBUG
 	    if(err!=0){
 	    	const char *errorMsg	= sqlite3_errmsg(this->connection->connection);
 	    	_ASSERT(false);
 	    }
-	#endif
+	#endif*/
 }
 
 Statement::Statement(Connection &connection) : connection(&connection),stmt(NULL) {
@@ -61,11 +61,23 @@ Statement::~Statement(){
 }
 
 void Statement::Finalize(){
-    DB_ASSERT(sqlite3_finalize(this->stmt));
+    int err=sqlite3_finalize(this->stmt);
+/*	#ifdef _DEBUG
+	    if(err!=0){
+	    	const char *errorMsg	= sqlite3_errmsg(this->connection->connection);
+	    	_ASSERT(false);
+	    }
+	#endif*/
 }
 
 void Statement::Reset(){
-    DB_ASSERT(sqlite3_reset(this->stmt));
+    int err	= sqlite3_reset(this->stmt);
+/*	#ifdef _DEBUG
+	    if(err!=0){
+	    	const char *errorMsg	= sqlite3_errmsg(this->connection->connection);
+	    	_ASSERT(false);
+	    }
+	#endif*/
 }
 
 void Statement::UnBindAll(){

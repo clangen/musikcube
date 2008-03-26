@@ -41,8 +41,6 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <win32cpp/ListView.hpp>
-#include <core/MetadataValue.h>
-#include <core/Query/ListSelection.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -65,13 +63,15 @@ public:     /*ctor*/    MetadataFilterController(ListView& listView, const uistr
 protected:  void        OnViewCreated();
 protected:  void        OnResized(Size size);
 protected:  void        OnSelectionChanged();
-protected:  void        OnMetadata(musik::core::MetadataValueVector* metadata,bool clear);
-protected:  BrowseController *parent;
-protected:  uistring metadataKey;
+protected:  
+			friend class MetadataFilterModel;
+			BrowseController *parent;
+			uistring metadataKey;
+			std::string metadataKeyA;
+
 protected:  ListView& listView;
 protected:  ModelRef model;
 protected:  ColumnRef mainColumn;
-protected:  musik::core::MetadataValueVector metadata;
 };
 
 //////////////////////////////////////////////////////////////////////////////

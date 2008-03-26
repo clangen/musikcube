@@ -81,7 +81,7 @@ bool Query::ListBase::RunCallbacks(Library::Base *oLibrary){
 
                 // check if the signal should send the clear flag
                 bool clearMetatag(false);
-                if(this->clearedMetadataResults.find(metatag)!=this->clearedMetadataResults.end()){
+                if(this->clearedMetadataResults.find(metatag)==this->clearedMetadataResults.end()){
                     clearMetatag    = true;
                     this->clearedMetadataResults.insert(metatag);    // Set this to cleared
                 }

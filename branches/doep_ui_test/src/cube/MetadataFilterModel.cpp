@@ -43,6 +43,8 @@
 #include <pch.hpp>
 
 #include <cube/MetadataFilterModel.hpp>
+#include <cube/MetadataFilterController.hpp>
+#include <cube/BrowseController.hpp>
 
 using namespace musik::cube;
 
@@ -50,11 +52,26 @@ using namespace musik::cube;
 
 /*ctor*/    MetadataFilterModel::MetadataFilterModel(MetadataFilterController *controller) : controller(controller)
 {
+	this->controller->parent->selectionQuery.OnMetadataEvent(this->controller->metadataKey.c_str()).connect(this,&MetadataFilterModel::OnMetadata);
+
     this->SetRowCount(0);
 }
 
 uistring    MetadataFilterModel::CellValueToString(int rowIndex, ListView::ColumnRef column)
 {
     typedef boost::basic_format<uichar> format;
-    return (format(_T("%1% %2%")) % column->Name() % (rowIndex + 1)).str();
+	if(rowIndex<this->metadata.size()){
+		return this->metadata[rowIndex]->value;
+	}else{
+		return uistring();
+	}
+}
+
+void        MetadataFilterModel::OnMetadata(musik::core::MetadataValueVector* metadata,bool clear){
+    if(clear){
+        this->metadata  = *metadata;
+    }else{
+        this->metadata.insert(this->metadata.end(),metadata->begin(),metadata->end());
+    }
+	this->SetRowCount(this->metadata.size());
 }

@@ -39,7 +39,8 @@
 #include <sqlite/sqlite3.h>
 
 #ifdef _DEBUG
-    #define DB_ASSERT(x)        _ASSERT(x==0)
+//    #define DB_ASSERT(x)        _ASSERT(x==0)
+    #define DB_ASSERT(x)        x
 #else
     #define DB_ASSERT(x)        x
 #endif

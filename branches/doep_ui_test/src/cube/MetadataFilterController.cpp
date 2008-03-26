@@ -40,6 +40,7 @@
 #include <cube/MetadataFilterController.hpp>
 #include <cube/MetadataFilterModel.hpp>
 #include <cube/BrowseController.hpp>
+#include <core/Common.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -54,17 +55,27 @@ using namespace musik::cube;
 , metadataKey(metadataKey)
 , parent(browseController)
 {
+	this->metadataKeyA	= musik::core::ConvertUTF8(this->metadataKey);
     this->model.reset(new MetadataFilterModel(this));
     this->listView.Handle()
         ? this->OnViewCreated()
         : this->listView.Created.connect(this, &MetadataFilterController::OnViewCreated);
 
-    this->parent->selectionQuery.OnMetadataEvent(this->metadataKey.c_str()).connect(this,&MetadataFilterController::OnMetadata);
     this->listView.SelectionChanged.connect(this,&MetadataFilterController::OnSelectionChanged);
 }
 
 void        MetadataFilterController::OnSelectionChanged(){
-//    this->parent->selectionQuery.
+	win32cpp::ListView::RowIndexList selectedRows(this->listView.SelectedRows());
+	
+	musik::core::MetadataValueVector &metadata = ((MetadataFilterModel*)this->model.get())->metadata;
+
+	this->parent->selectionQuery.ClearMetadata(this->metadataKeyA.c_str());
+
+	for(win32cpp::ListView::RowIndexList::iterator row=selectedRows.begin();row!=selectedRows.end();++row){
+		this->parent->selectionQuery.SelectMetadata(this->metadataKeyA.c_str(),metadata[*row]->id);
+	}
+
+	this->parent->SendQuery();
 }
 
 void        MetadataFilterController::OnViewCreated()
@@ -92,14 +103,4 @@ void        MetadataFilterController::OnViewCreated()
 void        MetadataFilterController:: OnResized(Size size)
 {
     this->listView.SetColumnWidth(this->mainColumn, this->listView.ClientSize().width);
-}
-
-void        MetadataFilterController::OnMetadata(musik::core::MetadataValueVector* metadata,bool clear){
-    if(clear){
-        this->metadata  = *metadata;
-    }else{
-        this->metadata.insert(this->metadata.end(),metadata->begin(),metadata->end());
-    }
-    
-
 }

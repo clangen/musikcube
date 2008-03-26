@@ -82,6 +82,11 @@ void        BrowseController::OnViewCreated()
     }
 
     // Startup by sending an empty query
-//    this->selectionQuery.ClearMetadata();
-    musik::core::LibraryFactory::GetCurrentLibrary()->AddQuery(this->selectionQuery);
+	this->SendQuery();
+
 }
+
+void BrowseController::SendQuery(){
+	musik::core::LibraryFactory::GetCurrentLibrary()->AddQuery(this->selectionQuery,musik::core::Query::CancelSimilar);
+}
+
