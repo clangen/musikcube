@@ -40,6 +40,8 @@
 
 #include <win32cpp/ListView.hpp>
 #include <list>
+#include <core/Track.h>
+#include <core/Query/ListBase.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -49,7 +51,7 @@ namespace musik { namespace cube {
 
 //////////////////////////////////////////////////////////////////////////////
 
-class TracklistModel: public ListView::Model
+class TracklistModel: public ListView::Model, public EventHandler
 {
         // typedefs
 public:     typedef ListView::Model base;
@@ -58,12 +60,14 @@ public:     typedef ListView::CellRendererRef CellRendererRef;
 public:     typedef ListView::ColumnRef ColumnRef;
 
         // public API
-public:     /*ctor*/        TracklistModel();
+public:     /*ctor*/        TracklistModel(musik::core::Query::ListBase *connectedQuery);
 
         // ListView::Model implementation
 public:     virtual uistring CellValueToString(int rowIndex, ColumnRef column);
 
         // instance data
+protected:  void OnTracks(musik::core::TrackVector *newTracks,bool clear);
+public:     musik::core::TrackVector tracks;
 };
 
 //////////////////////////////////////////////////////////////////////////////

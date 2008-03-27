@@ -48,13 +48,28 @@ using namespace musik::cube;
 
 //////////////////////////////////////////////////////////////////////////////
 
-/*ctor*/        TracklistModel::TracklistModel()
+/*ctor*/        TracklistModel::TracklistModel(musik::core::Query::ListBase *connectedQuery)
 {
-    this->SetRowCount(5000);
+    this->SetRowCount(0);
+    if(connectedQuery){
+        connectedQuery->OnTrackEvent().connect(this,&TracklistModel::OnTracks);
+    }
 }
 
 uistring            TracklistModel::CellValueToString(int rowIndex, ColumnRef column)
 {
     typedef boost::basic_format<uichar> format;
-    return (format(_T("%1% %2%")) % column->Name() % (rowIndex + 1)).str();
+//    return (format(_T("%1% %2%")) % column->Name() % (rowIndex + 1)).str();
+    return (format(_T("%1% %2%")) % column->Name() % this->tracks[rowIndex]->id).str();
 }
+
+void TracklistModel::OnTracks(musik::core::TrackVector *newTracks,bool clear){
+    if(clear){
+		this->SetRowCount(0);
+        this->tracks.swap(*newTracks);
+    }else{
+        this->tracks.insert(this->tracks.end(),newTracks->begin(),newTracks->end());
+    }
+	this->SetRowCount(this->tracks.size());
+}
+

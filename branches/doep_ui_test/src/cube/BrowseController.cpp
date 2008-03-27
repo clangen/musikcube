@@ -62,7 +62,7 @@ using namespace musik::cube;
 
 void        BrowseController::OnViewCreated()
 {
-    this->tracklistController = new TracklistController(*this->view.tracklistView);
+    this->tracklistController = new TracklistController(*this->view.tracklistView,&this->selectionQuery);
 
     // create all the metadata filter controllers
     typedef BrowseView::FilterViewList FilterViewList;

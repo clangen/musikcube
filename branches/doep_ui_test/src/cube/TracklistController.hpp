@@ -43,6 +43,7 @@
 #include <boost/format.hpp>
 
 #include <cube/TracklistView.hpp>
+#include <core/Query/ListBase.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -60,7 +61,7 @@ private:    typedef ListView::ColumnRef ColumnRef;
 private:    typedef std::vector<ColumnRef> ColumnList;
 private:    typedef ListView::ModelRef ModelRef;
 
-public:     /*ctor*/    TracklistController(TracklistView& listView);
+public:     /*ctor*/    TracklistController(TracklistView& listView,musik::core::Query::ListBase *connectedQuery=NULL);
 
 protected:  void        OnViewCreated();
 protected:  void        OnResized(Size size);

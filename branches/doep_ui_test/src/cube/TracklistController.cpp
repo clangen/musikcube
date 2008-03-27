@@ -46,9 +46,9 @@ using namespace musik::cube;
 
 //////////////////////////////////////////////////////////////////////////////
 
-/*ctor*/    TracklistController::TracklistController(TracklistView& view)
+/*ctor*/    TracklistController::TracklistController(TracklistView& view,musik::core::Query::ListBase *connectedQuery)
 : view(view)
-, model(new TracklistModel())
+, model(new TracklistModel(connectedQuery))
 {
     this->view.Handle()
         ? this->OnViewCreated()
@@ -60,11 +60,11 @@ void        TracklistController::OnViewCreated()
     typedef ListView::Column Column;
 
     ListView* listView = this->view.listView;
-    listView->AddColumn(Column::Create(_T("Track"), 50));
-    listView->AddColumn(Column::Create(_T("Title"), 200));
-    listView->AddColumn(Column::Create(_T("Artist"), 100));
-    listView->AddColumn(Column::Create(_T("Album"), 100));
-    listView->AddColumn(Column::Create(_T("Genre"), 75));
+    listView->AddColumn(Column::Create(_T("track"), 50));
+    listView->AddColumn(Column::Create(_T("title"), 200));
+    listView->AddColumn(Column::Create(_T("visual_artist"), 100));
+    listView->AddColumn(Column::Create(_T("album"), 100));
+    listView->AddColumn(Column::Create(_T("visual_genre"), 75));
 
     int itemHeight = listView->RowHeight();
     listView->SetRowHeight(max(itemHeight, 17));
