@@ -39,6 +39,8 @@
 
 #include <vector>
 
+#include <boost/thread/mutex.hpp>
+
 #include "Transport.h"
 #include "DummyAudioEventHandler.h"
 
@@ -74,6 +76,8 @@ private: void   Quit();
 private: bool                       shouldQuit;
 private: Transport                  transport;
 private: DummyAudioEventHandler     audioEventHandler;
+
+private: boost::mutex   mutex;
 
 private: void ShutDown();
 public: static DWORD WINAPI ThreadRun(LPVOID param);
