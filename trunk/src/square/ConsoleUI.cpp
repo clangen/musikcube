@@ -69,6 +69,8 @@ ConsoleUI::~ConsoleUI()
 
 void ConsoleUI::Print(std::tstring s)
 {
+    boost::mutex::scoped_lock   lock(mutex);
+
 	tcout << "\n*******************************\n\n";
     std::tcout << s;
     tcout << "\n*******************************\n" << endl;
@@ -89,6 +91,8 @@ void ConsoleUI::Run()
 
 void ConsoleUI::PrintCommands()
 {
+    boost::mutex::scoped_lock   lock(mutex);
+
     tcout << "Commands:\n";
     tcout << "\tp [file]: play file (enter full path)\n";
     tcout << "\ts [n]: stop playing n-th file\n";
