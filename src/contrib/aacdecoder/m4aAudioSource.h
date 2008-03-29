@@ -34,4 +34,9 @@ public:
 	bool    SetState(unsigned long State);
 	bool    GetFormat(unsigned long * SampleRate, unsigned long * Channels);
 	bool    GetBuffer(float ** ppBuffer, unsigned long * NumSamples);
+
+    const utfchar* GetSource() const { return sourcePath.c_str(); };
+
+private:
+    utfstring sourcePath;  
 };

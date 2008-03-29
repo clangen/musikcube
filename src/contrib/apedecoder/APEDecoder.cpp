@@ -18,6 +18,9 @@ bool APEDecoder::Open(const utfchar* source)
 	{
 		return false;
 	}
+
+    this->sourcePath = source;
+
 	return true;
 }
 

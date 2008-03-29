@@ -62,8 +62,6 @@ Transport::~Transport()
         delete this->openStreams[i];
     }
     this->openStreams.clear();
-
-	this->openStreamSources.clear();
 }
 
 void Transport::Start(const utfstring path)
@@ -81,7 +79,6 @@ void Transport::Start(const utfstring path)
         if (audioStream->Start())
         {
             this->openStreams.push_back(audioStream);
-		    this->openStreamSources.push_back(path.c_str());
 
             success = true;
         }
@@ -115,8 +112,6 @@ void Transport::Stop(size_t idx)
 
         this->openStreams.erase(this->openStreams.begin() + idx);
 
-	    this->openStreamSources.erase(this->openStreamSources.begin() + idx);
-    
         this->PlaybackStoppedOk();
     }
     else
@@ -155,12 +150,12 @@ AudioStreamOverview Transport::StreamsOverview() const
 {
 	AudioStreamOverview	overview;
 
-	for(std::vector<utfstring>::const_iterator it = this->openStreamSources.begin()
-	   ;it != this->openStreamSources.end()
+	for(std::vector<AudioStream*>::const_iterator it = this->openStreams.begin()
+	   ;it != this->openStreams.end()
 	   ;it++
 	   )
     {
-		overview.push_back(*it);
+		overview.push_back((*it)->ToString());
     }    
 
 	return overview;
@@ -214,7 +209,7 @@ void Transport::RemoveFinishedStreams()
             stream->Stop();
             delete stream;
             this->openStreams.erase(this->openStreams.begin() + i);
-            this->openStreamSources.erase(this->openStreamSources.begin() + i);
+            --i;
         }
     }
 }

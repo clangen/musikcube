@@ -25,6 +25,8 @@ bool OGGDecoder::Open(const utfchar* source)
 	vorbis_info *	vi = ov_info(&m_vf, -1);
 	m_Buffer = (float*)malloc(4096 * 4 * vi->channels);
 
+    this->sourcePath = source;
+
 	return(true);
 }
 

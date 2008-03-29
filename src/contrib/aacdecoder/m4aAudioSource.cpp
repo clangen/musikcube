@@ -124,6 +124,8 @@ bool M4ADecoder::Open(const utfchar* source)
     m_numSamples = mp4ff_num_samples(m_mp4file, m_mp4track);
 	m_sampleId = 0;
 
+    this->sourcePath = source;
+
 	return true;
 }
 

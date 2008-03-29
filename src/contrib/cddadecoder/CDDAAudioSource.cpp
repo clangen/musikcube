@@ -82,6 +82,8 @@ bool		CDDAAudioSource::Open(const utfchar* source)
 
 	m_llLength = (m_nStopSector-m_nStartSector)*RAW_SECTOR_SIZE;
 
+    this->sourcePath = source;
+
 	return true;
 }
 

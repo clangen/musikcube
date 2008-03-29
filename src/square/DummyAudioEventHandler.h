@@ -37,8 +37,7 @@
 
 #include <vector>
 
-#include "sigslot/sigslot.h"
-#include "tstl.h"
+#include <sigslot/sigslot.h>
 
 namespace musik { namespace square {
 

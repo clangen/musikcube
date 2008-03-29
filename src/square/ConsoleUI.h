@@ -41,7 +41,8 @@
 
 #include <boost/thread/mutex.hpp>
 
-#include "Transport.h"
+#include <core/audio/Transport.h>
+
 #include "DummyAudioEventHandler.h"
 
 using namespace musik::core::audio;
