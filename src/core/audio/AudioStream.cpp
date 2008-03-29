@@ -51,8 +51,6 @@ bool			AudioStream::GetBuffer(float * pAudioBuffer, unsigned long NumSamples)
 
 	if(this->packetizer.IsFinished())
 	{
-		// OLD: set date played in playlist entry + notify view of play progress
-
 		if(!this->mixNotify)
 		{
             transport->MixpointReached();
@@ -112,25 +110,12 @@ bool			AudioStream::GetBuffer(float * pAudioBuffer, unsigned long NumSamples)
 
 		unsigned long pos = this->GetPosition();
 		unsigned long len = this->GetLength();
-		unsigned long cft = GetCrossfadeTime() * 1000;
-
-		// OLD: set date played in playlist entry + notify view of play progress
+		unsigned long cft = this->GetCrossfadeTime() * 1000;
 
 		if(!this->mixNotify)
 		{
-			if(len > cft)
+            if (len <= cft || pos >= (len - cft))
 			{
-				if(pos >= (len - cft))
-				{
-					//crossfade all bar last song covered(it gets called but wont do reset at this point)
-					this->isLast = !GetActivePlaylistCheckNext();
-					transport->MixpointReached();
-					this->mixNotify = true;
-				}
-			}
-			else
-			{
-				//len is shorter then crossfade, start crossfade already
 				this->isLast = !GetActivePlaylistCheckNext();
 				transport->MixpointReached();
 				this->mixNotify = true;
@@ -138,19 +123,19 @@ bool			AudioStream::GetBuffer(float * pAudioBuffer, unsigned long NumSamples)
 		}
 		else
 		{
-			//CheckNext() will fail as its called when the last song has started already
-			//due to crossfade, if we simply call now without check of last song, last
-			//song will finish seconds in.
-
 			//if at end of last song in playlist but crossfade was the call n seconds ago
 			//used for repeatnone where this is the end of line. 
-			if(pos >= len && cft != 0 && this->isLast)
+			if(pos >= len && this->isLast)
 			{
 				transport->PlaybackStoppedOk();
+
+                this->playState = PlayStateStopped;
 			}
 		}
+
 		return true;
 	}
+
 	return false;
 }
 /*
