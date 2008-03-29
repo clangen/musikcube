@@ -5,7 +5,11 @@
 #include <core/audio/IAudioOutput.h>
 #include <core/audio/Transport.h>
 
+#include "tstl.h"
+
 using namespace musik::core::audio;
+
+unsigned long AudioStream::streamsCreated = 0;
 
 AudioStream::AudioStream(IAudioSource* source, IAudioOutput* output, Transport* owner) 
 : audioSource(source)
@@ -26,6 +30,8 @@ AudioStream::AudioStream(IAudioSource* source, IAudioOutput* output, Transport* 
 	this->output->SetFormat(srate, this->channels);
 
 	this->packetizer.SetPacketSize(this->output->GetBlockSize());
+
+    this->streamId = ++AudioStream::streamsCreated;
 }
 
 AudioStream::~AudioStream()
@@ -241,9 +247,11 @@ bool			AudioStream::SetPosition(unsigned long MS)
 	return false;
 }
 
-/*
-bool			AudioStream::GetVisData(float * ToHere, unsigned long ulNumSamples)
+utfstring AudioStream::ToString() const
 {
-	return this->output->GetVisData(ToHere, ulNumSamples);
+    std::tstringstream ss;
+
+    ss << this->streamId << " " << this->audioSource->GetSource();
+
+    return ss.str();
 }
-*/

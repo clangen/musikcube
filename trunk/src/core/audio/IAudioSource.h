@@ -15,6 +15,8 @@ public:	virtual bool    SetState(unsigned long State) = 0;
 public:	virtual bool    GetFormat(unsigned long * SampleRate, unsigned long * Channels) = 0;
 public:	virtual bool    GetBuffer(float ** ppBuffer, unsigned long * NumSamples) = 0; // return false to signal that we are done decoding.
 public: virtual bool    Open(const utfchar* source) = 0;
+
+public: virtual const utfchar* GetSource() const = 0;
 };
 
 class IAudioSourceSupplier

@@ -29,4 +29,9 @@ public:
 	bool		SetPosition(unsigned long * MS);
 	bool		SetState(unsigned long State);
 	bool		GetBuffer(float ** ppBuffer, unsigned long * NumSamples);
+
+    const utfchar* GetSource() const { return sourcePath.c_str(); };
+
+private:
+    utfstring sourcePath;
 };

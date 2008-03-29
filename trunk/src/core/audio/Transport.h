@@ -64,9 +64,6 @@ public:     void            ChangeVolume(float volume);
 public:     size_t				NumOfStreams()		const;
 public:		AudioStreamOverview	StreamsOverview()	const;
 
-//public:     void            RegisterSourceSupplier(const IAudioSourceSupplier* supplier);
-//public:     void            RegisterOutputSupplier(const IAudioOutputSupplier* output);
-
 private:    AudioStream*    CreateStream(const utfstring sourceString);
 private:    void            RemoveFinishedStreams();
 
@@ -76,9 +73,6 @@ private:    typedef std::vector<boost::shared_ptr<IAudioOutputSupplier> > Output
 private:    OutputSupplierList  registeredOutputSuppliers;
 
 private:    std::vector<AudioStream*> openStreams;
-private:	std::vector<utfstring> openStreamSources; 
-			// Streams in both vectors should be on the same index.  This will suffice.  For now.
-			// TODO: come up with a better data structure for streams & sources
 
 private:    float currVolume;
 

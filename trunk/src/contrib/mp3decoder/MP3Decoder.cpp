@@ -155,6 +155,8 @@ bool MP3Decoder::Open(const utfchar* sourcePath)
 		return false;
 	}
 
+    this->sourcePath = sourcePath;
+
 	return GetStreamData();
 }
 

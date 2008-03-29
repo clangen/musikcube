@@ -37,12 +37,11 @@
 
 #include <iostream>
 
-#include "boost/algorithm/string.hpp"
+#include <boost/algorithm/string.hpp>
 
-#include "core/PluginFactory.h"
-#include "core/IPlugin.h" 
-
-#include "AudioStream.h"
+#include <core/audio/AudioStream.h>
+#include <core/PluginFactory.h>
+#include <core/IPlugin.h>
 
 using namespace std;
 using namespace musik::square;
@@ -165,11 +164,7 @@ void ConsoleUI::PlayFile(Args args)
     unsigned int delay = 0;
     if (args.size() > 2)
     {        
-        if (convertString<unsigned int>(delay, args[2]))
-        {
-            delay *= 1000;
-        }
-        else
+        if (!convertString<unsigned int>(delay, args[2]))
         {
             delay = 0;
         }

@@ -34,8 +34,8 @@ public:
 	bool WriteData(float * Data, unsigned long Samples);
 	bool Finished(void);
 
-	bool	IsBufferAvailable(void);
-	bool	GetBuffer(float * ToHere);
+	bool IsBufferAvailable(void);
+	bool GetBuffer(float * ToHere);
 
 	bool Advance(unsigned long Packets = 1);
 	bool Rewind(unsigned long Packets);

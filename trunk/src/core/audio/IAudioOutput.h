@@ -41,10 +41,10 @@ class IAudioOutput
 {
 public: virtual void Destroy() = 0;
 
-private:  virtual bool    Open(void)          = 0;
-private:  virtual bool    Close(void)         = 0;
-private:  virtual bool    Initialize(void)    = 0;
-private:  virtual bool    Shutdown(void)      = 0;
+private:  virtual bool  Open(void)          = 0;
+private:  virtual bool  Close(void)         = 0;
+private:  virtual bool  Initialize(void)    = 0;
+private:  virtual bool  Shutdown(void)      = 0;
 
 public: virtual void    SetCallback(IAudioCallback * pCallback)                     = 0;
 public: virtual bool    SetFormat(unsigned long SampleRate, unsigned long Channels) = 0;

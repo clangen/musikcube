@@ -53,6 +53,12 @@ private:    unsigned long   channels;
 
 private:    boost::mutex    mutex;
 
+private: static unsigned long streamsCreated;
+private: unsigned long streamId;
+
+public: unsigned long GetStreamId() const { return this->streamId; };
+public: utfstring ToString() const;
+
 /////////////////////////////////////////
 // Pending stuff
 
