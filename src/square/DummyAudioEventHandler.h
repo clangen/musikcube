@@ -51,7 +51,7 @@ public:	DummyAudioEventHandler(ConsoleUI* c);
 public:	~DummyAudioEventHandler();
 
 private: ConsoleUI* cui; // TODO: should probably be interface
-private: void   PrintEvent(std::tstring s);
+private: void PrintEvent(utfstring s);
 
 // Slots
 public: void    OnPlaybackStartedOk()       {   this->PrintEvent(_T("Playback started OK")); };

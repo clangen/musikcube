@@ -39,9 +39,8 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include <core/audio/AudioStream.h>
-#include <core/PluginFactory.h>
 #include <core/IPlugin.h>
+#include <core/PluginFactory.h>
 
 using namespace std;
 using namespace musik::square;
@@ -66,24 +65,24 @@ ConsoleUI::~ConsoleUI()
 {
 }
 
-void ConsoleUI::Print(std::tstring s)
+void ConsoleUI::Print(utfstring s)
 {
     boost::mutex::scoped_lock   lock(mutex);
 
-	tcout << "\n*******************************\n\n";
-    std::tcout << s;
-    tcout << "\n*******************************\n" << endl;
+	utfcout << "\n*******************************\n\n";
+    utfcout << s;
+    utfcout << "\n*******************************\n" << endl;
 }
 
 void ConsoleUI::Run()
 {
-    tstring command; 
+    utfstring command; 
 
     while (!this->shouldQuit)
     {
         this->PrintCommands();
-        cout << "Enter command: ";
-        std::getline(tcin, command); // Need getline to handle spaces!
+        utfcout << UTF("Enter command: ");
+        std::getline(utfcin, command); // Need getline to handle spaces!
         this->ProcessCommand(command);
     }
 }
@@ -92,17 +91,17 @@ void ConsoleUI::PrintCommands()
 {
     boost::mutex::scoped_lock   lock(mutex);
 
-    tcout << "Commands:\n";
-    tcout << "\tp [file]: play file (enter full path)\n";
-    tcout << "\ts [n]: stop playing n-th file\n";
-    tcout << "\tl: list currently playing\n";
-    tcout << "\tlp: list loaded plugins\n";
-    tcout << "\tv <p>: set volume to p%\n";
-    tcout << "\tq: quit";
-    tcout << endl;
+    utfcout << "Commands:\n";
+    utfcout << "\tp [file]: play file (enter full path)\n";
+    utfcout << "\ts [n]: stop playing n-th file\n";
+    utfcout << "\tl: list currently playing\n";
+    utfcout << "\tlp: list loaded plugins\n";
+    utfcout << "\tv <p>: set volume to p%\n";
+    utfcout << "\tq: quit";
+    utfcout << endl;
 }
 
-void ConsoleUI::ProcessCommand(std::tstring commandString)
+void ConsoleUI::ProcessCommand(utfstring commandString)
 {
     using namespace boost::algorithm;
 
@@ -110,7 +109,7 @@ void ConsoleUI::ProcessCommand(std::tstring commandString)
         
     split(args, commandString, is_any_of(" "));
 
-    tstring command = args.size() > 0 ? args[0] : _T("");
+    utfstring command = args.size() > 0 ? args[0] : _T("");
     args.erase(args.begin());
 
     if (command == _T("p"))
@@ -139,13 +138,13 @@ void ConsoleUI::ProcessCommand(std::tstring commandString)
     }
     else
     {
-        tcout << "Unknown command\n";
+        utfcout << "Unknown command\n";
     }
 }
 
 void ConsoleUI::PlayFile(Args args)
 {
-    std::tstring filename;
+    utfstring filename;
     if (args.size() > 0) 
     {
         filename = args[0];
@@ -209,11 +208,11 @@ void ConsoleUI::ListPlaying()
 
 	for (it = overview.begin(); it != overview.end(); ++it)
 	{
-		tcout << *it << '\n';
+		utfcout << *it << '\n';
 	}
     
-	tcout << "------------------\n";
-	tcout << transport.NumOfStreams() << " playing" << endl;
+	utfcout << "------------------\n";
+	utfcout << transport.NumOfStreams() << " playing" << endl;
 }
 
 void ConsoleUI::ListPlugins()
@@ -230,7 +229,7 @@ void ConsoleUI::ListPlugins()
     PluginList::iterator it = plugins.begin();
     for ( ; it != plugins.end(); it++)
     {
-        tcout << (*it)->Name() << '\t' << (*it)->Version() << '\t' << (*it)->Author() << '\n';
+        utfcout << (*it)->Name() << '\t' << (*it)->Version() << '\t' << (*it)->Author() << '\n';
     }
 }
 

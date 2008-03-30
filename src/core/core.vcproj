@@ -509,10 +509,6 @@
 					RelativePath=".\audio\Transport.h"
 					>
 				</File>
-				<File
-					RelativePath=".\audio\tstl.h"
-					>
-				</File>
 			</Filter>
 		</Filter>
 	</Files>

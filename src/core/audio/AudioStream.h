@@ -3,8 +3,8 @@
 #include <boost/thread/thread.hpp>
 #include <boost/thread/mutex.hpp>
 
-#include <core/audio/IAudioCallBack.h>
 #include <core/audio/AudioPacketizer.h>
+#include <core/audio/IAudioCallBack.h>
 
 namespace musik { namespace core { namespace audio {
 
@@ -70,16 +70,6 @@ private:    bool            SetPosition(unsigned long MS);
 // TODO: decide what to do with this when integrating into mC2 
 int GetCrossfadeTime() {return 0;}; // TuniacApp.Preferences
 bool GetActivePlaylistCheckNext() { return false; }; //TuniacApp.PLaylistManager
-
-////////////////////////////:
-// Old - this isn't used anywhere.  Maybe we'll need it again.
-//private:
-//	unsigned long	GetState(void);
-//	unsigned long	GetFadeState(void);
-//	bool			IsFinished(void);
-//	bool			FadeIn(unsigned long ulMS);
-//	bool			FadeOut(unsigned long ulMS);
-//	bool			GetVisData(float * ToHere, unsigned long ulNumSamples);
 };
 
 }}} // NS

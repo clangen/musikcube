@@ -33,14 +33,14 @@
 
 #pragma once
 
-#include <vector>
 #include <map>
 #include <string>
+#include <vector>
+
+#include <boost/shared_ptr.hpp>
+#include <sigslot/sigslot.h>
 
 #include <core/config.h>
-
-#include "boost/shared_ptr.hpp"
-#include "sigslot/sigslot.h"
 
 namespace musik { namespace core { namespace audio {
 

@@ -33,9 +33,9 @@
 
 #pragma once
 
-#include <core/audio/IAudioCallback.h>
-
 namespace musik { namespace core { namespace audio {
+
+class IAudioCallback;
 
 class IAudioOutput
 {

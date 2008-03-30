@@ -100,6 +100,17 @@ typedef unsigned int DBTIME;
         }
     }
 
+    //////////////////////////////////////////
+	///\brief
+	///utfstringstream is the stringstream for utfchar & utfstring
+	//////////////////////////////////////////
+    namespace std
+    {
+        typedef wstringstream   utfstringstream;
+        typedef wostringstream  utfostringstream;
+        typedef wistringstream  utfistringstream;
+    }
+
 #else
     #undef UTF_WIDECHAR
 
@@ -126,11 +137,24 @@ typedef unsigned int DBTIME;
             typedef directory_iterator utfdirectory_iterator;
         }
     }
+
+
+    //////////////////////////////////////////
+	///\brief
+	///utfstringstream is the stringstream for utfchar & utfstring
+	//////////////////////////////////////////
+    namespace std
+    {
+        typedef stringstream   utfstringstream;
+        typedef ostringstream  utfostringstream;
+        typedef istringstream  utfistringstream;
+    }
+
 #endif
 
 typedef std::basic_string<utfchar> utfstring;
 
-////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 
 #define CopyFloat(dst, src, num) CopyMemory(dst, src, (num) * sizeof(float))
 
