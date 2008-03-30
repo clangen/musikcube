@@ -51,7 +51,7 @@ class AudioStream;
 
 namespace musik { namespace square {
 
-typedef std::vector<std::tstring> Args;
+typedef std::vector<utfstring> Args;
 
 class ConsoleUI
 {
@@ -60,8 +60,8 @@ public: ~ConsoleUI();
 
 public:  void        Run();
 private: void        PrintCommands();
-private: void        ProcessCommand(std::tstring commandString);
-public:  void        Print(std::tstring s);
+private: void        ProcessCommand(utfstring commandString);
+public:  void        Print(utfstring s);
 
 // Commands
 private: void   PlayFile(Args args);
@@ -90,9 +90,9 @@ public: static DWORD WINAPI ThreadRun(LPVOID param);
 #include <sstream>
 
 template <class T>
-bool convertString(T& t, const std::tstring& s)
+bool convertString(T& t, const utfstring& s)
 {
-    std::tistringstream iss(s);
+    std::utfistringstream iss(s);
     
     return !(iss >> t).fail();
 }

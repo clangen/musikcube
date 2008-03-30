@@ -48,7 +48,7 @@ DummyAudioEventHandler::~DummyAudioEventHandler()
 {
 }
 
-void DummyAudioEventHandler::PrintEvent(std::tstring s)
+void DummyAudioEventHandler::PrintEvent(utfstring s)
 {
     this->cui->Print(_T("EVENT: " + s + _T("\n"))); 
 }

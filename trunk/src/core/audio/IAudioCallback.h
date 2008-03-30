@@ -6,7 +6,7 @@ class IAudioCallback
 {
 protected: virtual ~IAudioCallback() {};
 
-public: virtual bool    GetBuffer(float * pAudioBuffer, unsigned long NumSamples)   = 0;
+public: virtual bool GetBuffer(float * pAudioBuffer, unsigned long NumSamples)   = 0;
 };
 
 }}} // NS

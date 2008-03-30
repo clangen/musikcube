@@ -33,12 +33,13 @@
 
 #include "pch.hpp"
 
-#include <core/audio/Transport.h>
-#include <core/audio/IAudioSource.h>
-#include <core/audio/IAudioOutput.h>
-#include <core/audio/AudioStream.h>
+#include "Transport.h"
 
 #include <core/PluginFactory.h>
+
+#include <core/audio/AudioStream.h>
+#include <core/audio/IAudioOutput.h>
+#include <core/audio/IAudioSource.h>
 
 using namespace musik::core::audio;
 

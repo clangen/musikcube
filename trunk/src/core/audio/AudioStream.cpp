@@ -1,11 +1,9 @@
 #include "pch.hpp"
 
 #include <core/audio/AudioStream.h>
-#include <core/audio/IAudioSource.h>
 #include <core/audio/IAudioOutput.h>
+#include <core/audio/IAudioSource.h>
 #include <core/audio/Transport.h>
-
-#include "tstl.h"
 
 using namespace musik::core::audio;
 
@@ -144,42 +142,7 @@ bool			AudioStream::GetBuffer(float * pAudioBuffer, unsigned long NumSamples)
 
 	return false;
 }
-/*
-unsigned long	AudioStream::GetState(void)
-{
-	return this->playState;
-}
 
-unsigned long	AudioStream::GetFadeState(void)
-{
-	return this->fadeState;
-}
-
-bool			AudioStream::IsFinished(void)
-{
-	return this->isFinished;
-}
-
-bool			AudioStream::FadeIn(unsigned long ulMS)
-{
-	AutoLock t(&this->lock);
-
-    this->fadeState = FadeStateIn;
-	this->volumeChange =  1.0f / ((float)ulMS * (float)this->output->GetSampleRate());
-	this->volume = 0.0f;
-	return true;
-}
-
-bool			AudioStream::FadeOut(unsigned long ulMS)
-{
-	AutoLock t(&this->lock);
-
-    this->fadeState = FadeStateOut;
-	this->volumeChange =  -(1.0f / ((float)ulMS * (float)this->output->GetSampleRate()));
-	this->volume  = 1.0f;
-	return true;
-}
-*/
 bool AudioStream::Start()
 {
 	if (this->output->Start())
@@ -249,7 +212,7 @@ bool			AudioStream::SetPosition(unsigned long MS)
 
 utfstring AudioStream::ToString() const
 {
-    std::tstringstream ss;
+    std::utfstringstream ss;
 
     ss << this->streamId << " " << this->audioSource->GetSource();
 

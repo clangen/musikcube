@@ -33,25 +33,12 @@
 
 #include "stdafx.h"
 
-#include "core/PluginFactory.h"
-
 #include "ConsoleUI.h"
 
 using namespace musik::square;
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-    /*
-    HANDLE  handle;
-    DWORD   threadId;
-
-    handle = CreateThread(NULL, 0, &ConsoleUI::ThreadRun, new ConsoleUI(), NULL, &threadId);
-
-    WaitForSingleObject(handle, INFINITE);
-
-    CloseHandle(handle);
-    */
-    
     ConsoleUI* instance = new ConsoleUI();
     instance->Run();
     delete instance;
