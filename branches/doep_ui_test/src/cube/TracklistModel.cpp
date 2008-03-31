@@ -51,8 +51,12 @@ using namespace musik::cube;
 /*ctor*/        TracklistModel::TracklistModel(musik::core::Query::ListBase *connectedQuery)
 {
     this->SetRowCount(0);
+
+    this->tracklist.OnTracks.connect(this,&TracklistModel::OnTracks);
+    this->tracklist.OnTrackMeta.connect(this,&TracklistModel::OnTrackMeta);
+
     if(connectedQuery){
-        connectedQuery->OnTrackEvent().connect(this,&TracklistModel::OnTracks);
+        this->tracklist.ConnectToQuery(*connectedQuery);
     }
 }
 
@@ -60,16 +64,24 @@ uistring            TracklistModel::CellValueToString(int rowIndex, ColumnRef co
 {
     typedef boost::basic_format<uichar> format;
 //    return (format(_T("%1% %2%")) % column->Name() % (rowIndex + 1)).str();
-    return (format(_T("%1% %2%")) % column->Name() % this->tracks[rowIndex]->id).str();
+    musik::core::TrackPtr track = this->tracklist[rowIndex];
+    if(!track){
+        return _T("error");
+    }else{
+        return (format(_T("%1% %2%")) % column->Name() % track->id).str();
+    }
 }
 
-void TracklistModel::OnTracks(musik::core::TrackVector *newTracks,bool clear){
-    if(clear){
-        this->SetRowCount(0);
-        this->tracks.swap(*newTracks);
-    }else{
-        this->tracks.insert(this->tracks.end(),newTracks->begin(),newTracks->end());
+void TracklistModel::OnTrackMeta(std::vector<int> &trackPositions){
+    for(std::vector<int>::iterator row=trackPositions.begin();row!=trackPositions.end();++row){
+        this->InvalidateData(*row);
     }
-    this->SetRowCount(this->tracks.size());
 }
+void TracklistModel::OnTracks(bool cleared){
+    if(cleared){
+        this->SetRowCount(0);
+    }
+    this->SetRowCount(this->tracklist.Size());
+}
+
 

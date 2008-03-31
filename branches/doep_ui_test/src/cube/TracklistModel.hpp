@@ -40,8 +40,7 @@
 
 #include <win32cpp/ListView.hpp>
 #include <list>
-#include <core/Track.h>
-#include <core/Query/ListBase.h>
+#include <core/tracklist/Standard.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -66,8 +65,9 @@ public:     /*ctor*/        TracklistModel(musik::core::Query::ListBase *connect
 public:     virtual uistring CellValueToString(int rowIndex, ColumnRef column);
 
         // instance data
-protected:  void OnTracks(musik::core::TrackVector *newTracks,bool clear);
-public:     musik::core::TrackVector tracks;
+protected:  void OnTrackMeta(std::vector<int> &trackPositions);
+protected:  void OnTracks(bool cleared);
+public:     musik::core::tracklist::Standard tracklist;
 };
 
 //////////////////////////////////////////////////////////////////////////////

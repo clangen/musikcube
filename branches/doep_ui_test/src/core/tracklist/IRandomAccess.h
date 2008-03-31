@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Daniel Önnerby
+// The following are Copyright © 2008, mC2 team
 //
 // All rights reserved.
 //
@@ -36,14 +36,14 @@
 
 #pragma once
 
-#include "Base.h"
-#include "../Track.h"
+#include "core/tracklist/IBase.h"
 
 namespace musik{ namespace core{
     namespace tracklist {
-        class IRandomAccess : public Base{
+        class IRandomAccess : public IBase{
             public:
-//                virtual ~IRandomAccess(void);
+                ~IRandomAccess(void){};
+
                 virtual musik::core::TrackPtr operator [](int position) = 0;
                 virtual int Size() = 0;
                 virtual void SetCurrentPosition(int position) = 0;

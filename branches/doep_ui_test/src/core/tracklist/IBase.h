@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Daniel Önnerby
+// The following are Copyright © 2008, mC2 team
 //
 // All rights reserved.
 //
@@ -34,21 +34,31 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.hpp"
-#include <core/tracklist/Base.h>
+#pragma once
 
-using namespace musik::core::tracklist;
+//////////////////////////////////////////////////////////////////////////////
 
-Base::Base(void) : library(NULL) {
-}
+#include <core/config.h>
+#include <core/Track.h>
 
-Base::~Base(void){
-}
+//////////////////////////////////////////////////////////////////////////////
 
-void Base::Init(musik::core::Library::Base *library){
-    this->library    = library;
-}
+#include <boost/utility.hpp>
 
+//////////////////////////////////////////////////////////////////////////////
 
+namespace musik{ namespace core{
+    namespace tracklist {
 
+        class IBase : boost::noncopyable{
+            public:
+                virtual ~IBase(void){};
+
+                virtual musik::core::TrackPtr CurrentTrack()=0;
+                virtual musik::core::TrackPtr NextTrack()=0;
+                virtual musik::core::TrackPtr PreviousTrack()=0;
+
+        };
+    }
+} } // musik::core
 
