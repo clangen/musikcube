@@ -89,6 +89,8 @@ namespace musik{ namespace core{
 
             protected:
 
+                musik::core::TrackPtr at(int position);
+
                 std::set<std::string> requestedMetaKeys;
 
                 void LoadTrack(int position);
@@ -122,18 +124,13 @@ namespace musik{ namespace core{
                 struct tagTrack{};
                 struct tagPrio{};
 
-                typedef boost::multi_index::multi_index_container<
-                        CacheTrack,
-                        boost::multi_index::indexed_by<
-                            /*boost::multi_index::sequenced<tagPrio>,*/
-                            boost::multi_index::ordered_unique<
-                                boost::multi_index::tag<tagPosition>,BOOST_MULTI_INDEX_MEMBER(CacheTrack,int,position)
-                            >,
-                            boost::multi_index::ordered_non_unique<
-                                boost::multi_index::tag<tagTrack>,BOOST_MULTI_INDEX_MEMBER(CacheTrack,musik::core::TrackPtr,track)
-                            >
-                        >
-                    > TrackCache;
+                typedef boost::multi_index::ordered_unique<boost::multi_index::tag<tagPosition>,BOOST_MULTI_INDEX_MEMBER(CacheTrack,int,position)> MultiIndexPosition;
+                typedef boost::multi_index::ordered_non_unique<boost::multi_index::tag<tagTrack>,BOOST_MULTI_INDEX_MEMBER(CacheTrack,musik::core::TrackPtr,track)> MultiIndexTrack;
+                typedef boost::multi_index::indexed_by<MultiIndexPosition,MultiIndexTrack> MultiIndexBy;
+
+                typedef boost::multi_index::multi_index_container<CacheTrack,MultiIndexBy> TrackCache;
+                
+                /*boost::multi_index::sequenced<tagPrio>,*/ 
 
                 TrackCache trackCache;
 

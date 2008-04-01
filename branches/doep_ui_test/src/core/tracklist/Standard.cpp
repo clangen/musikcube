@@ -69,6 +69,19 @@ musik::core::TrackPtr Standard::PreviousTrack(){
 musik::core::TrackPtr Standard::operator [](int position){
 
     if(position>=0 && position<this->tracks.size())
+        this->LoadTrack(position);
+        return this->tracks[position];
+
+    if(position==-1)
+        this->LoadTrack(0);
+        return this->tracks.front();
+
+    return musik::core::TrackPtr();
+}
+
+musik::core::TrackPtr Standard::at(int position){
+
+    if(position>=0 && position<this->tracks.size())
         return this->tracks[position];
 
     if(position==-1)
@@ -119,6 +132,7 @@ void Standard::ConnectToLibrary(musik::core::LibraryPtr setLibrary){
 
 void Standard::OnTracksFromQuery(musik::core::TrackVector *newTracks,bool clear){
     if(clear){
+        this->trackCache.clear();
         this->SetCurrentPosition(-1);   // undefined
         this->tracks   = *newTracks;
         this->OnTracks(true);
@@ -138,7 +152,7 @@ void Standard::LoadTrack(int position){
         for(int i(position);i<position+this->hintedRows;++i){
             if(!this->InCache(i)){
                 // Not in cache, load the track and add to Cache
-                musik::core::TrackPtr track = (*this)[position];
+                musik::core::TrackPtr track = this->at(i);
                 if(track){
                     this->trackCache.insert(CacheTrack(track,i));
                     ++trackCount;
@@ -149,6 +163,7 @@ void Standard::LoadTrack(int position){
 
         if(trackCount){
             this->library->AddQuery(this->trackQuery,musik::core::Query::Prioritize);
+            this->trackQuery.Clear();
         }
 
     }

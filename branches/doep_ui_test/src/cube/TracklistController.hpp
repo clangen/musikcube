@@ -42,6 +42,7 @@
 
 #include <boost/format.hpp>
 
+#include <core/config.h>
 #include <cube/TracklistView.hpp>
 #include <core/Query/ListBase.h>
 
@@ -65,10 +66,12 @@ public:     /*ctor*/    TracklistController(TracklistView& listView,musik::core:
 
 protected:  void        OnViewCreated();
 protected:  void        OnResized(Size size);
+protected:  void        AddColumn(const utfchar *name,const char *metakey,int size);
 
 protected:  ModelRef model;
 protected:  TracklistView& view;
 protected:  ColumnList columns;
+
 };
 
 //////////////////////////////////////////////////////////////////////////////

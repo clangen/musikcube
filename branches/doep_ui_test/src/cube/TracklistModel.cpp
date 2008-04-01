@@ -42,7 +42,9 @@
 
 #include <pch.hpp>
 
+#include <core/LibraryFactory.h>
 #include <cube/TracklistModel.hpp>
+#include <cube/TracklistColumn.hpp>
 
 using namespace musik::cube;
 
@@ -54,6 +56,7 @@ using namespace musik::cube;
 
     this->tracklist.OnTracks.connect(this,&TracklistModel::OnTracks);
     this->tracklist.OnTrackMeta.connect(this,&TracklistModel::OnTrackMeta);
+    this->tracklist.ConnectToLibrary(musik::core::LibraryFactory::GetCurrentLibrary());
 
     if(connectedQuery){
         this->tracklist.ConnectToQuery(*connectedQuery);
@@ -62,13 +65,21 @@ using namespace musik::cube;
 
 uistring            TracklistModel::CellValueToString(int rowIndex, ColumnRef column)
 {
+
+    TracklistColumn *tracklistColumn = (TracklistColumn*)column.get();
+
+
     typedef boost::basic_format<uichar> format;
 //    return (format(_T("%1% %2%")) % column->Name() % (rowIndex + 1)).str();
     musik::core::TrackPtr track = this->tracklist[rowIndex];
     if(!track){
-        return _T("error");
+        return _T("");
     }else{
-        return (format(_T("%1% %2%")) % column->Name() % track->id).str();
+        const utfchar *value = track->GetValue(tracklistColumn->metaKey.c_str());
+        if(value)
+            return value;
+
+        return _T("");
     }
 }
 
