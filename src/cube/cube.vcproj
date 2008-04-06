@@ -310,6 +310,14 @@
 				Name="TracklistView"
 				>
 				<File
+					RelativePath=".\TracklistColumn.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\TracklistColumn.hpp"
+					>
+				</File>
+				<File
 					RelativePath=".\TracklistController.cpp"
 					>
 				</File>

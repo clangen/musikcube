@@ -41,6 +41,8 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <win32cpp/ListView.hpp>
+#include <core/MetadataValue.h>
+#include <core/Query/ListSelection.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -48,12 +50,17 @@ using namespace win32cpp;
 
 namespace musik { namespace cube {
 
+class MetadataFilterController;
 //////////////////////////////////////////////////////////////////////////////
 
-class MetadataFilterModel: public ListView::Model
+class MetadataFilterModel: public ListView::Model, public EventHandler
 {
-public:     /*ctor*/            MetadataFilterModel();
+public:     /*ctor*/            MetadataFilterModel(MetadataFilterController *controller);
 public:     virtual uistring    CellValueToString(int rowIndex, ListView::ColumnRef column);
+protected:  void        OnMetadata(musik::core::MetadataValueVector* metadata,bool clear);
+
+protected:  MetadataFilterController *controller;
+public:  musik::core::MetadataValueVector metadata;
 };
 
 //////////////////////////////////////////////////////////////////////////////

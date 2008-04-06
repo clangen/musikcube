@@ -39,6 +39,7 @@
 #include <pch.hpp>
 #include <cube/TracklistController.hpp>
 #include <cube/TracklistModel.hpp>
+#include <cube/TracklistColumn.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -46,9 +47,9 @@ using namespace musik::cube;
 
 //////////////////////////////////////////////////////////////////////////////
 
-/*ctor*/    TracklistController::TracklistController(TracklistView& view)
+/*ctor*/    TracklistController::TracklistController(TracklistView& view,musik::core::Query::ListBase *connectedQuery)
 : view(view)
-, model(new TracklistModel())
+, model(new TracklistModel(connectedQuery))
 {
     this->view.Handle()
         ? this->OnViewCreated()
@@ -60,11 +61,12 @@ void        TracklistController::OnViewCreated()
     typedef ListView::Column Column;
 
     ListView* listView = this->view.listView;
-    listView->AddColumn(Column::Create(_T("Track"), 50));
-    listView->AddColumn(Column::Create(_T("Title"), 200));
-    listView->AddColumn(Column::Create(_T("Artist"), 100));
-    listView->AddColumn(Column::Create(_T("Album"), 100));
-    listView->AddColumn(Column::Create(_T("Genre"), 75));
+    this->AddColumn(_T("Track"),"track", 50);
+    this->AddColumn(_T("Title"),"title", 200);
+    this->AddColumn(_T("Artist"),"visual_artist", 100);
+    this->AddColumn(_T("Album"),"album", 100);
+    this->AddColumn(_T("Genre"),"visual_genre", 75);
+    this->AddColumn(_T("BPM"),"bpm", 75);
 
     int itemHeight = listView->RowHeight();
     listView->SetRowHeight(max(itemHeight, 17));
@@ -76,3 +78,10 @@ void        TracklistController::OnViewCreated()
 void        TracklistController::OnResized(Size size)
 {
 }
+
+void        TracklistController::AddColumn(const utfchar *name,const char *metakey,int size){
+    this->view.listView->AddColumn(ListView::ColumnRef(new TracklistColumn(metakey,name, size)));
+
+    ((TracklistModel*)this->model.get())->tracklist.AddRequestedMetakey(metakey);
+}
+

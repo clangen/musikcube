@@ -42,6 +42,8 @@
 #include <cube/TracklistView.hpp>
 #include <cube/SourcesView.hpp>
 
+#include <core/Library/LocalDB.h>
+
 //////////////////////////////////////////////////////////////////////////////
 
 using namespace musik::cube;
@@ -53,9 +55,21 @@ using namespace musik::cube;
 , sourcesController(NULL)
 , transportController(NULL)
 , menuController(mainWindow)
+, LibraryCallbackTimer(20)
 {
+    musik::core::PluginFactory::Instance();
+
     this->mainWindow.Created.connect(
         this, &MainWindowController::OnMainWindowCreated);
+
+    // Connect the local library to the 
+    this->LibraryCallbackTimer.ConnectToWindow(&mainWindow);
+    this->LibraryCallbackTimer.OnTimout.connect(this,&MainWindowController::QueryQueueLoop);
+    musik::core::LibraryFactory::GetCurrentLibrary()->OnQueryQueueStart.connect(this,&MainWindowController::QueryQueueStart);
+    musik::core::LibraryFactory::GetCurrentLibrary()->OnQueryQueueEnd.connect(this,&MainWindowController::QueryQueueEnd);
+
+    musik::core::LibraryPtr lib = musik::core::LibraryFactory::GetCurrentLibrary();
+    ((musik::core::Library::LocalDB*)lib.get())->indexer.AddPath(_T("X:/musik/"));
 }
 
 MainWindowController::~MainWindowController()
@@ -101,4 +115,17 @@ void        MainWindowController::OnResize(Size size)
 {
     RedrawLock redrawLock(this->clientView);
     this->clientView->Resize(this->mainWindow.ClientSize());
+}
+
+void MainWindowController::QueryQueueStart(){
+    this->LibraryCallbackTimer.ConnectToWindow(&this->mainWindow);
+    this->LibraryCallbackTimer.Start();
+}
+
+void MainWindowController::QueryQueueEnd(){
+    this->LibraryCallbackTimer.Stop();
+}
+
+void MainWindowController::QueryQueueLoop(){
+    musik::core::LibraryFactory::GetCurrentLibrary()->RunCallbacks();
 }

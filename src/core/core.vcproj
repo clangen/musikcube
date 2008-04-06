@@ -210,41 +210,11 @@
 				Name="tracklist"
 				>
 				<File
-					RelativePath=".\tracklist\Base.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)\$(InputName)2.obj"
-							XMLDocumentationFileName="$(IntDir)\$(InputName)2.xdc"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)\$(InputName)2.obj"
-							XMLDocumentationFileName="$(IntDir)\$(InputName)2.xdc"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath=".\tracklist\Base.h"
+					RelativePath=".\tracklist\IBase.h"
 					>
 				</File>
 				<File
 					RelativePath=".\tracklist\IRandomAccess.h"
-					>
-				</File>
-				<File
-					RelativePath=".\PlayListBase.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\PlayListBase.h"
 					>
 				</File>
 				<File
@@ -273,6 +243,14 @@
 				</File>
 				<File
 					RelativePath=".\Indexer.h"
+					>
+				</File>
+				<File
+					RelativePath=".\LibraryFactory.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\LibraryFactory.h"
 					>
 				</File>
 				<Filter
