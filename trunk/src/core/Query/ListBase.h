@@ -81,6 +81,7 @@ namespace musik{ namespace core{
                 TrackSignal trackEvent;
             public:
                 MetadataSignal& OnMetadataEvent(const char* metatag);
+                MetadataSignal& OnMetadataEvent(const wchar_t* metatag);
                 TrackSignal& OnTrackEvent();
 
         };

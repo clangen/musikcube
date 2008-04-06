@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Daniel Önnerby
+// The following are Copyright © 2008, mC2 team
 //
 // All rights reserved.
 //
@@ -35,149 +35,188 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
-#include <core/tracklist/Standard.h>
+#include "core/tracklist/Standard.h"
+
 
 using namespace musik::core::tracklist;
 
+Standard::Standard(void) : currentPosition(0),hintedRows(10){
+    this->trackQuery.OnTracksEvent.connect(this,&Standard::OnTracksMetaFromQuery);
 
-Standard::Standard(void) : currentPosition(0),visibleStartPosition(0),visibleCount(10){
-    this->tracksQuery.OnTracksEvent.connect(this,&Standard::OnTracksMeta);
-
-    std::set<std::string> defaultFields;
-    defaultFields.insert("track");
-    defaultFields.insert("title");
-    defaultFields.insert("visual_genre");
-    defaultFields.insert("visual_artist");
-    defaultFields.insert("album");
-    defaultFields.insert("duration");
-    defaultFields.insert("year");
-    
-    this->SetTrackMetaKeys(defaultFields);
 }
+
 
 Standard::~Standard(void){
 }
 
-void Standard::OnTracksMeta(musik::core::TrackVector *tracks){
-    std::vector<int> visiblePositions;
-    //Hmm.. tricky. I'm not sure if this is the best way. do not know where to cache the position
-    // Lets loop through the visible tracks.
-    for(int position=this->visibleStartPosition;position<(this->visibleStartPosition+this->visibleCount) && position<this->tracks.size();++position){
-        bool found(false);
-        for(musik::core::TrackVector::iterator track=tracks->begin();track!=tracks->end() && !found;++track){
-            if(this->tracks[position]->id==(*track)->id){
-                found   = true;
-                visiblePositions.push_back(position);
-            }
-        }
-    }
+musik::core::TrackPtr Standard::CurrentTrack(){
+    return (*this)[this->currentPosition];
+}
 
-    if(!visiblePositions.empty()){
-        this->OnVisibleTracksMetadataEvent(visiblePositions);
-    }
 
+musik::core::TrackPtr Standard::NextTrack(){
+    this->SetCurrentPosition(this->currentPosition+1);
+    return this->CurrentTrack();
+}
+
+
+musik::core::TrackPtr Standard::PreviousTrack(){
+    this->SetCurrentPosition(this->currentPosition-1);
+    return this->CurrentTrack();
 }
 
 
 musik::core::TrackPtr Standard::operator [](int position){
-    boost::mutex::scoped_lock lock(this->mainMutex);
 
-    if(0<=position && position<this->tracks.size()){
+    if(position>=0 && position<this->tracks.size())
+        this->LoadTrack(position);
         return this->tracks[position];
-    }
+
+    if(position==-1)
+        this->LoadTrack(0);
+        return this->tracks.front();
 
     return musik::core::TrackPtr();
 }
 
+musik::core::TrackPtr Standard::at(int position){
+
+    if(position>=0 && position<this->tracks.size())
+        return this->tracks[position];
+
+    if(position==-1)
+        return this->tracks.front();
+
+    return musik::core::TrackPtr();
+}
+
+
 int Standard::Size(){
-    boost::mutex::scoped_lock lock(this->mainMutex);
     return this->tracks.size();
 }
 
-musik::core::TrackPtr Standard::CurrentTrack(){
-    boost::mutex::scoped_lock lock(this->mainMutex);
-    if(0<=this->currentPosition && this->currentPosition<this->tracks.size()){
-        return this->tracks[this->currentPosition];
+
+void Standard::SetCurrentPosition(int position){
+    if(position<-1){
+        this->currentPosition   = -1;
+    }else{
+        if(position>=this->tracks.size()){
+            this->currentPosition   = this->tracks.size()-1;
+        }else{
+            this->currentPosition   = position;
+        }
     }
-
-    return musik::core::TrackPtr();
 }
 
-musik::core::TrackPtr Standard::NextTrack(){
-    this->SetCurrentPosition(this->CurrentPosition()+1);
-    return this->CurrentTrack();
-}
-
-musik::core::TrackPtr Standard::PreviousTrack(){
-    this->SetCurrentPosition(this->CurrentPosition()-1);
-    return this->CurrentTrack();
-}
 
 int Standard::CurrentPosition(){
-    boost::mutex::scoped_lock lock(this->mainMutex);
+    if(this->currentPosition<0)
+        return -1;
+
+    if(this->currentPosition>=this->tracks.size())
+        return this->tracks.size()-1;
+
     return this->currentPosition;
 }
 
-void Standard::SetCurrentPosition(int position){
-    boost::mutex::scoped_lock lock(this->mainMutex);
-    this->currentPosition    = position;
+void Standard::ConnectToQuery(musik::core::Query::ListBase &listQuery){
+    listQuery.OnTrackEvent().connect(this,&Standard::OnTracksFromQuery);
 }
 
 
-void Standard::ConnectToQuery(musik::core::Query::ListBase &query){
-    query.OnTrackEvent().connect(this,&Standard::OnTracks);
+void Standard::ConnectToLibrary(musik::core::LibraryPtr setLibrary){
+    this->library   = setLibrary;
 }
 
-void Standard::OnTracks(musik::core::TrackVector *tracks,bool clear){
-    boost::mutex::scoped_lock lock(this->mainMutex);
+
+
+void Standard::OnTracksFromQuery(musik::core::TrackVector *newTracks,bool clear){
     if(clear){
-        this->ClearTrackCache();
-        this->tracks.clear();
+        this->trackCache.clear();
+        this->SetCurrentPosition(-1);   // undefined
+        this->tracks   = *newTracks;
+        this->OnTracks(true);
+    }else{
+        this->tracks.insert(this->tracks.end(),newTracks->begin(),newTracks->end());
+        this->OnTracks(false);
     }
-    this->tracks.insert(this->tracks.end(),tracks->begin(),tracks->end());
-
-    this->LoadVisible();
 }
 
-void Standard::SetTrackMetaKeys(std::set<std::string> metaKeys){
-    this->tracksQuery.RequestMetakeys(metaKeys);
+void Standard::LoadTrack(int position){
+
+    if(!this->InCache(position)){
+        // Not in cache
+        // Lets load the hinted number of tracks forward
+        int trackCount(0);
+        
+        for(int i(position);i<position+this->hintedRows;++i){
+            if(!this->InCache(i)){
+                // Not in cache, load the track and add to Cache
+                musik::core::TrackPtr track = this->at(i);
+                if(track){
+                    this->trackCache.insert(CacheTrack(track,i));
+                    ++trackCount;
+                    this->trackQuery.RequestTrack(track);
+                }
+            }
+        }
+
+        if(trackCount){
+            this->library->AddQuery(this->trackQuery,musik::core::Query::Prioritize);
+            this->trackQuery.Clear();
+        }
+
+    }
+
 }
 
-void Standard::SetVisibleTracks(int startPosition,int count){
-    this->visibleStartPosition  = startPosition;
-    this->visibleCount          = count;
-
-    this->LoadVisible();
+void Standard::HintNumberOfRows(int rows){
+    this->hintedRows    = rows;
 }
 
+bool Standard::InCache(int position){
+    CacheIndexPosition& indexPosition = boost::multi_index::get<tagPosition>(this->trackCache);
 
-void Standard::SetTrackCache(int maxTracksCached){
-    this->maxTracksCache    = maxTracksCached;
+    if( indexPosition.find(position) == indexPosition.end() )
+        return false;
+
+    return true;
 }
 
-void Standard::ClearTrackCache(){
-    for(std::list<musik::core::TrackPtr>::iterator track=this->tracksCache.begin(); track!=this->tracksCache.end();){
-        if( track->use_count()>2 ){
-            ++track;
-        }else{
-            (*track)->ClearMeta();
-            track   = this->tracksCache.erase(track);
+bool Standard::InCache(musik::core::TrackPtr track){
+    CacheIndexTrack& indexTrack = boost::multi_index::get<tagTrack>(this->trackCache);
+
+    if( indexTrack.find(track) == indexTrack.end() )
+        return false;
+
+    return true;
+}
+
+void Standard::OnTracksMetaFromQuery(musik::core::TrackVector *metaTracks){
+    std::vector<int> updateTrackPositions;
+    CacheIndexTrack& indexTrack = boost::multi_index::get<tagTrack>(this->trackCache);
+
+    for(musik::core::TrackVector::iterator track=metaTracks->begin();track!=metaTracks->end();++track){
+        CacheIndexTrack::iterator cacheTrackIterator = indexTrack.find(*track);
+        if(cacheTrackIterator!=indexTrack.end()){
+            updateTrackPositions.push_back(cacheTrackIterator->position);
         }
     }
+
+    this->OnTrackMeta(updateTrackPositions);
 }
 
-void Standard::LoadVisible(){
-    bool tracksAdded(false);
-    for(int position=this->visibleStartPosition;position<(this->visibleStartPosition+this->visibleCount) && position<this->tracks.size();++position){
-        TrackPtr track(this->tracks[position]);
-        if(!track->HasMeta()){
-            tracksAdded=true;
-            this->tracksQuery.RequestTrack(track);
-            this->tracksCache.push_back(track);
-        }
-    }
-    if(tracksAdded){
-        this->library->AddQuery(this->tracksQuery);
-    }
+
+void Standard::AddRequestedMetakey(const char* metakey){
+    this->requestedMetaKeys.insert(metakey);
+    this->trackQuery.RequestMetakeys(this->requestedMetaKeys);
 }
+
+
+void Standard::RemoveRequestedMetakey(const char* metakey){
+    this->requestedMetaKeys.erase(metakey);
+    this->trackQuery.RequestMetakeys(this->requestedMetaKeys);
+}
+
+
 

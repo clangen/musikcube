@@ -39,9 +39,6 @@
 #include <pch.hpp>
 #include <cube/MainWindowController.hpp>
 
-#include <core/PluginFactory.h>
-#include <core/Library/LocalDB.h>
-
 //////////////////////////////////////////////////////////////////////////////
 
 using namespace musik::cube;
@@ -50,9 +47,6 @@ using namespace musik::cube;
 
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE prevInstance, LPTSTR commandLine, int showCommand)
 {
-    musik::core::Library::LocalDB library;
-    library.indexer.AddPath(_T("d:/music/"));
-    library.Startup();
 
     // Initialize the main application (mC2.exe)
     Application::Initialize(instance, prevInstance, commandLine, showCommand);

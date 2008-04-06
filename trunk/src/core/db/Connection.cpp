@@ -169,12 +169,12 @@ sqlite3_stmt *Connection::GetCachedStatement(const char* sql){
     if(stmt==this->cachedStatements.end()){
 
         int err = sqlite3_prepare_v2(this->connection,sql,-1,&newStmt,NULL);
-	    #ifdef _DEBUG
-	        if(err!=0){
-	    	    const char *errorMsg	= sqlite3_errmsg(this->connection);
-	    	    _ASSERT(false);
-	        }
-	    #endif
+/*        #ifdef _DEBUG
+            if(err!=0){
+                const char *errorMsg    = sqlite3_errmsg(this->connection);
+                _ASSERT(false);
+            }
+        #endif*/
         return newStmt;
     }
 

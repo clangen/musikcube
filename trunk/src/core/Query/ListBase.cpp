@@ -37,6 +37,7 @@
 #include "pch.hpp"
 #include <core/Query/ListBase.h>
 #include <core/Library/Base.h>
+#include <core/Common.h>
 
 using namespace musik::core;
 
@@ -76,18 +77,18 @@ bool Query::ListBase::RunCallbacks(Library::Base *oLibrary){
             std::string metatag(metatagResult->first);
 
             // If the metatag  has results, call the signals
-            if( !metatagResult->second.empty() ){
+//            if( !metatagResult->second.empty() ){
 
                 // check if the signal should send the clear flag
                 bool clearMetatag(false);
-                if(this->clearedMetadataResults.find(metatag)!=this->clearedMetadataResults.end()){
+                if(this->clearedMetadataResults.find(metatag)==this->clearedMetadataResults.end()){
                     clearMetatag    = true;
                     this->clearedMetadataResults.insert(metatag);    // Set this to cleared
                 }
 
                 // Call the signal
                 this->metadataEvent[metatag](&metatagResult->second,clearMetatag);
-            }
+//            }
         }
     }
 
@@ -108,6 +109,10 @@ bool Query::ListBase::RunCallbacks(Library::Base *oLibrary){
 
 Query::ListBase::MetadataSignal& Query::ListBase::OnMetadataEvent(const char* metatag){
     return this->metadataEvent[metatag];
+}
+
+Query::ListBase::MetadataSignal& Query::ListBase::OnMetadataEvent(const wchar_t* metatag){
+    return this->metadataEvent[ConvertUTF8(std::wstring(metatag))];
 }
 
 Query::ListBase::TrackSignal& Query::ListBase::OnTrackEvent(){

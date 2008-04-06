@@ -367,6 +367,10 @@ void        Window::PostWindowProcBase(UINT message, WPARAM wParam, LPARAM lPara
     case WM_DESTROY:
         this->OnDestroyedBase();
         break;
+    case WM_TIMER:
+        this->TimerTimeout((unsigned int)wParam);
+        break;
+
     }
 
     this->PostWindowProc(message, wParam, lParam);

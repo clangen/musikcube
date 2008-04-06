@@ -78,6 +78,7 @@ enum MouseEventFlags
 /*! */ typedef sigslot::signal0<> ThemeChangedEvent;
 /*! */ typedef sigslot::signal0<> FocusEvent;
 /*! */ typedef sigslot::signal2<Window* /*old*/, Window* /*new*/> ParentChangedEvent;
+/*! */ typedef sigslot::signal1<unsigned int> TimerEvent;
 
 ///\brief
 ///Window is the abstract base class for all controls.
@@ -145,6 +146,8 @@ public:     FocusEvent                  GainedFocus;
 public:     FocusEvent                  LostFocus;
             ///\brief Emitted when the Window's parent has changed.
 public:     ParentChangedEvent          ParentChanged;
+            ///\brief Emitted when a timer gets a timeout.
+public:     TimerEvent                  TimerTimeout;
 
 public:     /*ctor*/            Window();
 public:     /*dtor*/ virtual    ~Window();

@@ -59,7 +59,7 @@ PluginFactory::~PluginFactory(void){
     // Unload dlls
     for(std::vector<void*>::iterator oDLL=this->loadedDLLs.begin();oDLL!=this->loadedDLLs.end();){
         #ifdef WIN32
-            FreeLibrary( (HMODULE)(*oDLL) );
+//            FreeLibrary( (HMODULE)(*oDLL) );
         #endif
         oDLL    = this->loadedDLLs.erase(oDLL);
     }

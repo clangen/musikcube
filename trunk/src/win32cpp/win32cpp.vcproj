@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="win32cpp"
 	ProjectGUID="{E618F29F-BF28-441A-B039-9E10A631D881}"
 	RootNamespace="win32cpp"
@@ -377,6 +377,14 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 		</Filter>
+		<File
+			RelativePath=".\Timer.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\Timer.hpp"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

@@ -43,10 +43,13 @@
 #include <win32cpp/TopLevelWindow.hpp>
 #include <win32cpp/Button.hpp>
 #include <win32cpp/Types.hpp>    // uichar, uistring
+#include <win32cpp/Timer.hpp>
 
 #include <cube/MainMenuController.hpp>
 #include <cube/SourcesController.hpp>
 #include <cube/TransportController.hpp>
+
+#include <core/LibraryFactory.h>
 
 #include <vector>
 
@@ -71,6 +74,12 @@ protected:  Splitter* clientView;
 protected:  SourcesController* sourcesController;
 protected:  TransportController* transportController;
 protected:  MainMenuController menuController;
+protected:  Timer LibraryCallbackTimer;
+
+protected:  void QueryQueueStart();
+protected:  void QueryQueueEnd();
+protected:  void QueryQueueLoop();
+
 };
 
 //////////////////////////////////////////////////////////////////////////////
