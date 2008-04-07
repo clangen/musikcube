@@ -223,7 +223,9 @@ bool TagReaderTaglib::GetID3v2Tag(musik::core::Track *track){
                     bool isNumber(true);
                     for(TagLib::String::ConstIterator charIt=genreString.begin();isNumber && charIt!=genreString.end();++charIt){
                         isNumber = *charIt >= '0' && *charIt <= '9';
-                        ++numberLength;
+                        if(isNumber){
+                            ++numberLength;
+                        }
                     }
 
                     if(!isNumber && numberLength>0){
