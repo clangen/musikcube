@@ -60,6 +60,7 @@ public:     void            Start(const utfstring path);
 public:     void            Stop(size_t idx);
 
 public:     void            ChangeVolume(float volume);
+public:     float           Volume() const { return currVolume; };
 
 public:     size_t				NumOfStreams()		const;
 public:		AudioStreamOverview	StreamsOverview()	const;

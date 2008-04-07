@@ -63,6 +63,7 @@ protected:  musik::core::audio::Transport   transport;
 
 protected:  void    OnPlayPressed();
 protected:  void    OnStopPressed();
+protected:  void    OnVolumeSliderChange();
 };
 
 //////////////////////////////////////////////////////////////////////////////
