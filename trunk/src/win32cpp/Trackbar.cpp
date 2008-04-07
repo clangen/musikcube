@@ -53,6 +53,7 @@ using namespace win32cpp;
 , trackHeight(2)
 , thumbHeight(16)
 , tickFrequency(0)
+, position(0)
 {
 }
 
@@ -96,6 +97,14 @@ LRESULT     Trackbar::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
                     {
                         NMCUSTOMDRAW* customDraw = reinterpret_cast<NMCUSTOMDRAW*>(notifyHeader);
                         return this->OnCustomDraw(*customDraw);
+                    }
+                }
+                break;
+            case NM_RELEASEDCAPTURE:
+                {
+                    if (notifyHeader->hwndFrom == this->Handle())
+                    {
+                        this->OnRepositioned();
                     }
                 }
                 break;
@@ -202,6 +211,12 @@ void        Trackbar::SetTickFrequency(short tickFrequency)
     this->SendMessage(TBM_SETTICFREQ, (WPARAM) this->tickFrequency, NULL);
 }
 
+void        Trackbar::OnRepositioned()
+{
+    this->position = this->SendMessage(TBM_GETPOS, 0, 0);
+    this->Repositioned();
+}
+
 void        Trackbar::SetThumbHeight(short thumbHeight)
 {
     this->thumbHeight = thumbHeight;
@@ -212,4 +227,10 @@ void        Trackbar::SetTrackHeight(short trackHeight)
 {
     this->trackHeight = trackHeight;
     this->Redraw();
+}
+
+void        Trackbar::SetPosition(short position)
+{
+    this->position = position;
+    this->SendMessage(TBM_SETPOS, (WPARAM) true, (LPARAM) this->position);
 }
