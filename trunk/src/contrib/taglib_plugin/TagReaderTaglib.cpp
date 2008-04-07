@@ -84,7 +84,7 @@ bool TagReaderTaglib::CanReadTag(const utfchar *extension){
         if(	ext==UTF("mp3") ||
             ext==UTF("ogg") ||
             ext==UTF("flac") ||
-            ext==UTF("ape") ||
+            //ext==UTF("ape") ||
             ext==UTF("mpc")
                 ) {
 		    return true;
