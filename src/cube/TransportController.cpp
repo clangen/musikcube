@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright © 2007, musikCube team
 //
 // Sources and Binaries of: mC2, win32cpp
 //
@@ -57,8 +57,23 @@ using namespace musik::cube;
 
 void        TransportController::OnViewCreated()
 {
+    this->transportView.playButton->Pressed.connect(
+        this, &TransportController::OnPlayPressed);
+
+    this->transportView.stopButton->Pressed.connect(
+        this, &TransportController::OnStopPressed);
 }
 
 void        TransportController::OnViewResized(Size size)
 {
+}
+
+void        TransportController::OnPlayPressed()
+{
+    transport.Start(_T("d:\\musik\\test.mp3"));
+}
+
+void        TransportController::OnStopPressed()
+{
+    transport.Stop(0);
 }

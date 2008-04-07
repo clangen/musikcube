@@ -53,6 +53,7 @@ namespace musik { namespace cube {
 class TransportView: public Frame
 {
 private:    typedef Frame base;
+public:     friend class TransportController;
 
 public:     /*ctor*/        TransportView();
 

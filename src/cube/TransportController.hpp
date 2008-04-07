@@ -40,6 +40,7 @@
 
 //////////////////////////////////////////////////////////////////////////////
 
+#include <core/audio/Transport.h>
 #include <cube/TransportView.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
@@ -57,7 +58,11 @@ public:     /*ctor*/    TransportController(TransportView& transportView);
 protected:  void        OnViewCreated();
 protected:  void        OnViewResized(Size size);
 
-protected:  TransportView&     transportView;
+protected:  TransportView&                  transportView;
+protected:  musik::core::audio::Transport   transport;
+
+protected:  void    OnPlayPressed();
+protected:  void    OnStopPressed();
 };
 
 //////////////////////////////////////////////////////////////////////////////
