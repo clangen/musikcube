@@ -84,7 +84,7 @@ bool TagReaderTaglib::CanReadTag(const utfchar *extension){
         if(	ext==UTF("mp3") ||
             ext==UTF("ogg") ||
             ext==UTF("flac") ||
-            //ext==UTF("ape") ||
+            ext==UTF("ape") ||
             ext==UTF("mpc")
                 ) {
 		    return true;
@@ -129,32 +129,34 @@ bool TagReaderTaglib::GetOGGTag(musik::core::Track *track){
 
 bool TagReaderTaglib::GetGenericTag(musik::core::Track *track){
     TagLib::FileRef oFile(track->GetValue("path"));
-    TagLib::Tag *tag	= oFile.tag();
-	TagLib::AudioProperties *oAudioProperties	= oFile.audioProperties();
-	if(tag){
-        // TITLE
-        if(!tag->title().isEmpty()){
-			this->SetTagValue("title",tag->title(),track);
-		}else{
-			this->SetTagValue("title",track->GetValue("filename"),track);
-		}
+    if(!oFile.isNull()){
+        TagLib::Tag *tag	= oFile.tag();
+	    TagLib::AudioProperties *oAudioProperties	= oFile.audioProperties();
+	    if(tag){
+            // TITLE
+            if(!tag->title().isEmpty()){
+			    this->SetTagValue("title",tag->title(),track);
+		    }else{
+			    this->SetTagValue("title",track->GetValue("filename"),track);
+		    }
 
-        // ALBUM
-		this->SetTagValue("album",tag->album(),track);
-        // ARTISTS
-		this->SetSlashSeparatedValues("artist",tag->album(),track);
-        // GENRES
-        this->SetTagValue("genre",tag->genre(),track);
-        // COMMENT
-        this->SetTagValue("comment",tag->comment(),track);
-        // TRACK
-        this->SetTagValue("track",tag->track(),track);
-        // TRACK
-        this->SetTagValue("year",tag->year(),track);
+            // ALBUM
+		    this->SetTagValue("album",tag->album(),track);
+            // ARTISTS
+		    this->SetSlashSeparatedValues("artist",tag->album(),track);
+            // GENRES
+            this->SetTagValue("genre",tag->genre(),track);
+            // COMMENT
+            this->SetTagValue("comment",tag->comment(),track);
+            // TRACK
+            this->SetTagValue("track",tag->track(),track);
+            // TRACK
+            this->SetTagValue("year",tag->year(),track);
 
-        this->SetAudioProperties(oAudioProperties,track);
+            this->SetAudioProperties(oAudioProperties,track);
 
-        return true;
+            return true;
+        }
     }
 
     return false;
