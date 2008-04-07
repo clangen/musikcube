@@ -71,29 +71,29 @@ void        TransportView::OnCreated()
         this->stopButton->Resize(50, 28);
         this->nextButton->Resize(50, 28);
 
-            // now playingbox
-            FontRef boldFont(new win32cpp::Font());
-            boldFont->SetBold(true);
-            //
-            BoxLayout* nowPlayingBox = new BoxLayout(BoxHorizontal);
-            Frame* nowPlayingFrame = topRowBox->AddChild(
-                new Frame(nowPlayingBox, FramePadding(6, 0, 0, 0)));
-            //
-            nowPlayingBox->AddChild(new Label(_T("Now playing ")));
-            this->titleLabel = nowPlayingBox->AddChild(new Label(_T("Song Title")));
-            nowPlayingBox->AddChild(new Label(_T("  by  ")));
-            this->artistLabel = nowPlayingBox->AddChild(new Label(_T("Artist Name")));
-            //
-            this->titleLabel->SetFont(boldFont);
-            this->artistLabel->SetFont(boldFont);
-            nowPlayingBox->SetSpacing(0);
-            nowPlayingBox->ResizeToMinimumSize();
-            //
-            topRowBox->SetChildFill(nowPlayingFrame);
-            topRowBox->SetFlexibleChild(nowPlayingFrame);
+        // now playingbox
+        FontRef boldFont(new win32cpp::Font());
+        boldFont->SetBold(true);
+        //
+        BoxLayout* nowPlayingBox = new BoxLayout(BoxHorizontal);
+        Frame* nowPlayingFrame = topRowBox->AddChild(
+            new Frame(nowPlayingBox, FramePadding(6, 0, 0, 0)));
+        //
+        nowPlayingBox->AddChild(new Label(_T("Now playing ")));
+        this->titleLabel = nowPlayingBox->AddChild(new Label(_T("Song Title")));
+        nowPlayingBox->AddChild(new Label(_T("  by  ")));
+        this->artistLabel = nowPlayingBox->AddChild(new Label(_T("Artist Name")));
+        //
+        this->titleLabel->SetFont(boldFont);
+        this->artistLabel->SetFont(boldFont);
+        nowPlayingBox->SetSpacing(0);
+        nowPlayingBox->ResizeToMinimumSize();
+        //
+        topRowBox->SetChildFill(nowPlayingFrame);
+        topRowBox->SetFlexibleChild(nowPlayingFrame);
 
-        this->playbackSlider = topRowBox->AddChild(new Trackbar());
-        this->playbackSlider->Resize(100, 28);
+        this->volumeSlider = topRowBox->AddChild(new Trackbar());
+        this->volumeSlider->Resize(100, 28);
 
         // bottom row ----------
         BoxLayout* playbackBox = new BoxLayout();

@@ -62,6 +62,10 @@ void        TransportController::OnViewCreated()
 
     this->transportView.stopButton->Pressed.connect(
         this, &TransportController::OnStopPressed);
+
+    this->transportView.volumeSlider->Repositioned.connect(
+        this, &TransportController::OnVolumeSliderChange);
+    this->transportView.volumeSlider->SetPosition(transport.Volume()*100);
 }
 
 void        TransportController::OnViewResized(Size size)
@@ -76,4 +80,9 @@ void        TransportController::OnPlayPressed()
 void        TransportController::OnStopPressed()
 {
     transport.Stop(0);
+}
+
+void        TransportController::OnVolumeSliderChange()
+{
+    transport.ChangeVolume(transportView.volumeSlider->Position()/100.0f);
 }
