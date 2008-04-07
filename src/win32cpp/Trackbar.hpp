@@ -54,10 +54,19 @@ enum TrackbarOrientation
     /*! */ HorizontalTrack = TBS_HORZ
 };
 
+///\brief 
+///Event used when position on trackbar is changed
+///\see
+///Trackbar
+typedef sigslot::signal0<> TrackbarRepositionedEvent;
+
 ///\brief Trackbar allows the user to select a value from a range.
 class Trackbar: public Window
 {
 private:    typedef Window base;
+
+            ///\brief This event is emitted when the position of the slider is changed
+public:     TrackbarRepositionedEvent   Repositioned;
 
 public:     /*ctor*/            Trackbar(
                                     short minValue = 0, short maxValue = 100,
@@ -72,16 +81,19 @@ public:     void                SetTrackHeight(short trackHeight);
 public:     short               TrackHeight() { return this->trackHeight; }
 public:     void                SetThumbHeight(short thumbHeight);
 public:     short               ThumbHeight() { return this->thumbHeight; }
+public:     void                SetPosition(short position);
+public:     short               Position() const { return this->position; }
 
         // private api
 protected:  virtual HWND        Create(Window* parent);
 protected:  virtual void        OnEraseBackground(HDC hdc);
 protected:  virtual void        OnPaint();
 protected:  virtual void        OnCreated();
+protected:  virtual void        OnRepositioned();
 protected:  virtual LRESULT     OnCustomDraw(NMCUSTOMDRAW& customDraw);
 protected:  virtual LRESULT     WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
 
-protected:  short               minValue, maxValue, tickFrequency;
+protected:  short               minValue, maxValue, tickFrequency, position;
 protected:  short               trackHeight, thumbHeight;
 protected:  TrackbarOrientation   orientation;
 };
