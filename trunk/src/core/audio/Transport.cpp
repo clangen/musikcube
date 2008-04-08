@@ -88,6 +88,12 @@ void Transport::Start(const utfstring path)
     if (success)
     {
         this->PlaybackStartedOk();
+
+        // Stop currently playing song if any
+        if (this->openStreams.size() > 1)
+        {
+            this->Stop(0);
+        }
     }
     else
     {
