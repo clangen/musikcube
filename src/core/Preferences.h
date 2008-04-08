@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Daniel Önnerby
+// The following are Copyright © 2008, mC2 team
 //
 // All rights reserved.
 //
@@ -36,37 +36,62 @@
 
 #pragma once
 
-#include <string>
+#include <boost/shared_ptr.hpp>
+#include <vector>
+
 #include <core/config.h>
+#include <core/db/Connection.h>
+
+//////////////////////////////////////////////////////////////////////////////
 
 namespace musik{ namespace core{
 
-    /*****************************
-    Path to where the executable is located.
-    *****************************/
-    utfstring GetApplicationDirectory();
+//////////////////////////////////////////////////////////////////////////////
 
-    /*****************************
-    Path to where the executable is located.
-    *****************************/
-    utfstring GetDataDirectory();
+class Preferences{
+    public:
+        Preferences(const char* nameSpace);
+        ~Preferences(void);
 
-    /*****************************
-    Get the full path of the sFile
-    *****************************/
-    utfstring GetPath(const utfstring &sFile);
+        bool GetBool(const char* key,bool defaultValue);
+        int GetInt(const char* key,int defaultValue);
+        const char* GetString(const char* key,const char* defaultValue);
+        const wchar_t* GetString(const char* key,const wchar_t* defaultValue);
 
-    /*****************************
-    Path to where plugins are located.
-    *****************************/
-    utfstring GetPluginDirectory();
+        void SetBool(const char* key,bool value);
+        void SetInt(const char* key,int value);
+        void SetString(const char* key,const char* value);
+        void SetString(const char* key,const wchar_t* value);
+        void SetString(const char* key,const std::string &value);
+        void SetString(const char* key,const std::wstring &value);
 
-    std::string ConvertUTF8(std::wstring &sString);
-    std::wstring ConvertUTF16(std::string &sString);
-    std::wstring ConvertUTF16(const char *string);
+    private:
+        int nameSpaceId;
 
-    UINT64 Checksum(char *data,unsigned int bytes);
+        void SaveSetting(const char* key,std::string &value);
 
-} }
+        std::string nameSpace;
+        typedef std::map<std::string,std::string> SettingsMap;
+        SettingsMap cachedSettings;
+        void GetSettings();
 
+        class IO{
+            public:
+                IO(void);
+                ~IO(void);
 
+                db::Connection db;
+
+                typedef boost::shared_ptr<IO> Ptr;
+                static IO::Ptr Instance();
+            private:
+                static IO::Ptr sInstancePtr;
+        };
+
+        IO::Ptr IOPtr;
+
+};
+
+//////////////////////////////////////////////////////////////////////////////
+} } // musik::core
+//////////////////////////////////////////////////////////////////////////////

@@ -190,6 +190,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\Preferences.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Preferences.h"
+					>
+				</File>
+				<File
 					RelativePath=".\ThreadHelper.cpp"
 					>
 				</File>
