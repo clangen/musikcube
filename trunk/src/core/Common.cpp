@@ -77,6 +77,31 @@ utfstring musik::core::GetApplicationDirectory(){
     return sDirectory;
 }
 
+utfstring musik::core::GetDataDirectory(){
+    utfstring directory;
+
+    #ifdef WIN32
+        DWORD iBufferSize    = GetEnvironmentVariable(UTF("APPDATA"), 0, 0);
+
+        LPTSTR sBuffer    = new TCHAR[iBufferSize+2];
+        GetEnvironmentVariable(UTF("APPDATA"), sBuffer, iBufferSize);
+        directory.assign(sBuffer);
+
+        delete [] sBuffer;
+    #endif
+
+    directory.append(UTF("/mC2/"));
+
+    // Create folder if it does not exist
+    boost::filesystem::utfpath oFolder(directory);
+    if(!boost::filesystem::exists(oFolder)){
+        boost::filesystem::create_directories(oFolder);
+    }
+
+    return directory;
+}
+
+
 //////////////////////////////////////////
 ///\brief
 ///Find out the full path to a file.

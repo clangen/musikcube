@@ -38,6 +38,7 @@
 
 #include <core/Library/Base.h>
 #include <core/Query/Base.h>
+#include <core/Common.h>
 
 #include <boost/filesystem.hpp>
 
@@ -68,32 +69,20 @@ Library::Base::~Base(void){
 ///If the directory does not exist, this method will create it.
 //////////////////////////////////////////
 utfstring Library::Base::GetLibraryDirectory(){
-    utfstring sDirectory;
-
-    #ifdef WIN32
-        DWORD iBufferSize    = GetEnvironmentVariable(UTF("APPDATA"), 0, 0);
-
-        LPTSTR sBuffer    = new TCHAR[iBufferSize+2];
-        GetEnvironmentVariable(UTF("APPDATA"), sBuffer, iBufferSize);
-        sDirectory.assign(sBuffer);
-
-        delete [] sBuffer;
-    #endif
-
-    sDirectory.append(UTF("/mC2/"));
+    utfstring directory( musik::core::GetDataDirectory() );
 
     if(!this->identifier.empty()){
-        sDirectory.append(this->identifier+UTF("/"));
+        directory.append(this->identifier+UTF("/"));
     }
 
-    boost::filesystem::wpath oFolder(sDirectory);
+    boost::filesystem::utfpath oFolder(directory);
     if(!boost::filesystem::exists(oFolder)){
         boost::filesystem::create_directories(oFolder);
     }
 
-    sDirectory    = oFolder.string();
+    directory   = oFolder.string();
 
-    return sDirectory;
+    return directory;
 }
 
 //////////////////////////////////////////
