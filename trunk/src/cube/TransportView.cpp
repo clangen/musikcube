@@ -60,59 +60,59 @@ void        TransportView::OnCreated()
 
     BoxLayout* bottomRowBox = this->mainBox->AddChild(new BoxLayout(BoxHorizontal));
 
-        // top row box ----------
-        this->prevButton = topRowBox->AddChild(new Button(_T("prev")));
-        this->playButton = topRowBox->AddChild(new Button(_T("play")));
-        this->stopButton = topRowBox->AddChild(new Button(_T("stop")));
-        this->nextButton = topRowBox->AddChild(new Button(_T("next")));
-        //
-        this->prevButton->Resize(50, 28);
-        this->playButton->Resize(50, 28);
-        this->stopButton->Resize(50, 28);
-        this->nextButton->Resize(50, 28);
+    // top row box ----------
+    this->prevButton = topRowBox->AddChild(new Button(_T("prev")));
+    this->playButton = topRowBox->AddChild(new Button(_T("play")));
+    this->stopButton = topRowBox->AddChild(new Button(_T("stop")));
+    this->nextButton = topRowBox->AddChild(new Button(_T("next")));
+    //
+    this->prevButton->Resize(50, 28);
+    this->playButton->Resize(50, 28);
+    this->stopButton->Resize(50, 28);
+    this->nextButton->Resize(50, 28);
 
-        // now playingbox
-        FontRef boldFont(new win32cpp::Font());
-        boldFont->SetBold(true);
-        //
-        BoxLayout* nowPlayingBox = new BoxLayout(BoxHorizontal);
-        Frame* nowPlayingFrame = topRowBox->AddChild(
-            new Frame(nowPlayingBox, FramePadding(6, 0, 0, 0)));
-        //
-        nowPlayingBox->AddChild(new Label(_T("Now playing ")));
-        this->titleLabel = nowPlayingBox->AddChild(new Label(_T("Song Title")));
-        nowPlayingBox->AddChild(new Label(_T("  by  ")));
-        this->artistLabel = nowPlayingBox->AddChild(new Label(_T("Artist Name")));
-        //
-        this->titleLabel->SetFont(boldFont);
-        this->artistLabel->SetFont(boldFont);
-        nowPlayingBox->SetSpacing(0);
-        nowPlayingBox->ResizeToMinimumSize();
-        //
-        topRowBox->SetChildFill(nowPlayingFrame);
-        topRowBox->SetFlexibleChild(nowPlayingFrame);
+    // now playingbox
+    FontRef boldFont(new win32cpp::Font());
+    boldFont->SetBold(true);
+    //
+    BoxLayout* nowPlayingBox = new BoxLayout(BoxHorizontal);
+    Frame* nowPlayingFrame = topRowBox->AddChild(
+        new Frame(nowPlayingBox, FramePadding(6, 0, 0, 0)));
+    //
+    nowPlayingBox->AddChild(new Label(_T("Now playing ")));
+    this->titleLabel = nowPlayingBox->AddChild(new Label(_T("Song Title")));
+    nowPlayingBox->AddChild(new Label(_T("  by  ")));
+    this->artistLabel = nowPlayingBox->AddChild(new Label(_T("Artist Name")));
+    //
+    this->titleLabel->SetFont(boldFont);
+    this->artistLabel->SetFont(boldFont);
+    nowPlayingBox->SetSpacing(0);
+    nowPlayingBox->ResizeToMinimumSize();
+    //
+    topRowBox->SetChildFill(nowPlayingFrame);
+    topRowBox->SetFlexibleChild(nowPlayingFrame);
 
-        this->volumeSlider = topRowBox->AddChild(new Trackbar());
-        this->volumeSlider->Resize(100, 28);
+    this->volumeSlider = topRowBox->AddChild(new Trackbar());
+    this->volumeSlider->Resize(100, 28);
 
-        // bottom row ----------
-        BoxLayout* playbackBox = new BoxLayout();
-        Frame* playbackFrame = bottomRowBox->AddChild(
-            new Frame(playbackBox, FramePadding(6, 6, 0, 0)));
-        //
-        this->timeElapsedLabel = playbackBox->AddChild(new Label(_T("0:00")));
-        this->playbackSlider = playbackBox->AddChild(new Trackbar(0, 100));
-        this->timeDurationLabel = playbackBox->AddChild(new Label(_T("0:00")));
-        //
-        this->playbackSlider->Resize(100, 20);
-        playbackBox->SetFlexibleChild(this->playbackSlider);
-        playbackBox->ResizeToMinimumSize();
+    // bottom row ----------
+    BoxLayout* playbackBox = new BoxLayout();
+    Frame* playbackFrame = bottomRowBox->AddChild(
+        new Frame(playbackBox, FramePadding(6, 6, 0, 0)));
+    //
+    this->timeElapsedLabel = playbackBox->AddChild(new Label(_T("0:00")));
+    this->playbackSlider = playbackBox->AddChild(new Trackbar(0, 100));
+    this->timeDurationLabel = playbackBox->AddChild(new Label(_T("0:00")));
+    //
+    this->playbackSlider->Resize(100, 20);
+    playbackBox->SetFlexibleChild(this->playbackSlider);
+    playbackBox->ResizeToMinimumSize();
 
-        // size top and bottom rows to minimum size ---------
-        topRowBox->ResizeToMinimumSize();
-        bottomRowBox->ResizeToMinimumSize();
-        bottomRowBox->SetFlexibleChild(playbackFrame);
-        bottomRowBox->SetChildFill(playbackFrame);
+    // size top and bottom rows to minimum size ---------
+    topRowBox->ResizeToMinimumSize();
+    bottomRowBox->ResizeToMinimumSize();
+    bottomRowBox->SetFlexibleChild(playbackFrame);
+    bottomRowBox->SetChildFill(playbackFrame);
 
     // fill top and bottom rows ----------
     this->mainBox->ResizeToMinimumSize();

@@ -65,7 +65,7 @@ void        TransportController::OnViewCreated()
 
     this->transportView.volumeSlider->Repositioned.connect(
         this, &TransportController::OnVolumeSliderChange);
-    this->transportView.volumeSlider->SetPosition(transport.Volume()*100);
+    this->transportView.volumeSlider->SetPosition(transport.Volume());
 }
 
 void        TransportController::OnViewResized(Size size)
