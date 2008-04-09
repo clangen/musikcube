@@ -237,15 +237,15 @@ void ConsoleUI::SetVolume(Args args)
 {
     if (args.size() > 0)
     {
-        float newVolume = 0;
-        if (convertString<float>(newVolume, args[0]))
+        short newVolume = 0;
+        if (convertString<short>(newVolume, args[0]))
         {
             this->SetVolume(newVolume);
         }
     }
 }
 
-void ConsoleUI::SetVolume(float volume)
+void ConsoleUI::SetVolume(short volume)
 {
     transport.ChangeVolume(volume);
 }

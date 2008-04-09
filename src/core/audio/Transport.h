@@ -59,8 +59,8 @@ public:     ~Transport();
 public:     void            Start(const utfstring path);
 public:     void            Stop(size_t idx);
 
-public:     void            ChangeVolume(float volume);
-public:     float           Volume() const { return currVolume; };
+public:     void            ChangeVolume(short volume);
+public:     short           Volume() const { return currVolume; };
 
 public:     size_t				NumOfStreams()		const;
 public:		AudioStreamOverview	StreamsOverview()	const;
@@ -75,7 +75,7 @@ private:    OutputSupplierList  registeredOutputSuppliers;
 
 private:    std::vector<AudioStream*> openStreams;
 
-private:    float currVolume;
+private:    short currVolume;
 
 // Signals
 public:     sigslot::signal0<>  PlaybackStartedOk;

@@ -70,7 +70,7 @@ private: void   Stop(size_t idx = 0);
 private: void   ListPlaying();
 private: void   ListPlugins();
 private: void   SetVolume(Args args);
-private: void   SetVolume(float volume);
+private: void   SetVolume(short volume);
 private: void   Quit();
 
 // Members

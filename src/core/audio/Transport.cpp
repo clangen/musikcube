@@ -44,7 +44,7 @@
 using namespace musik::core::audio;
 
 Transport::Transport() :
-    currVolume(1)
+    currVolume(100) //TODO: preference or previous value
 {
     this->registeredSourceSuppliers = PluginFactory::Instance().QueryInterface<
         IAudioSourceSupplier,
@@ -75,7 +75,7 @@ void Transport::Start(const utfstring path)
 
     if (audioStream != NULL)
     {
-        audioStream->SetVolumeScale(this->currVolume);
+        audioStream->SetVolumeScale(this->currVolume/100.0f);
 
         if (audioStream->Start())
         {
@@ -127,9 +127,9 @@ void Transport::Stop(size_t idx)
     }
 }
 
-void Transport::ChangeVolume(float volume)
+void Transport::ChangeVolume(short volume)
 {
-    if (volume < 0 || volume > 1)
+    if (volume < 0 || volume > 100)
     {
         this->VolumeChangedFail();
         return;
@@ -140,7 +140,7 @@ void Transport::ChangeVolume(float volume)
     for(it = this->openStreams.begin(); it != this->openStreams.end(); it++)
     {
         AudioStream* stream = *(it);
-        stream->SetVolumeScale(volume);
+        stream->SetVolumeScale(volume/100.0f);
     }    
 
     this->currVolume = volume;
