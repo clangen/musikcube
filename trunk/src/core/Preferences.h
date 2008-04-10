@@ -55,40 +55,61 @@ class Preferences{
 
         bool GetBool(const char* key,bool defaultValue);
         int GetInt(const char* key,int defaultValue);
-        const char* GetString(const char* key,const char* defaultValue);
-        const wchar_t* GetString(const char* key,const wchar_t* defaultValue);
-
-        void SetBool(const char* key,bool value);
-        void SetInt(const char* key,int value);
-        void SetString(const char* key,const char* value);
-        void SetString(const char* key,const wchar_t* value);
-        void SetString(const char* key,const std::string &value);
-        void SetString(const char* key,const std::wstring &value);
-
-    private:
-        int nameSpaceId;
-
-        void SaveSetting(const char* key,std::string &value);
+        utfstring GetString(const char* key,const utfchar* defaultValue);
 
         std::string nameSpace;
-        typedef std::map<std::string,std::string> SettingsMap;
-        SettingsMap cachedSettings;
-        void GetSettings();
+
+        class Setting{
+
+            public:
+                Setting();
+                Setting(bool value);
+                Setting(int value);
+                Setting(utfstring value);
+                Setting(db::Statement &stmt);
+
+                enum Type:int{
+                    Bool=1,
+                    Int=2,
+                    Text=3
+                };
+
+                int type;
+                int valueInt;
+                bool valueBool;
+                utfstring valueText;
+
+                bool Value(bool defaultValue);
+                int Value(int defaultValue);
+                utfstring Value(utfstring defaultValue);
+        };
+    private:
+
 
         class IO{
             public:
                 IO(void);
                 ~IO(void);
 
-                db::Connection db;
-
+                typedef std::map<std::string,Setting> SettingMap;
+                typedef boost::shared_ptr<SettingMap> SettingMapPtr;
+                typedef std::map<std::string,SettingMapPtr> NamespaceMap;
                 typedef boost::shared_ptr<IO> Ptr;
+
+                SettingMapPtr GetNamespace(const char* nameSpace);
+
+                void SaveSetting(const char* nameSpace,const char *key,Setting &setting);
+
                 static IO::Ptr Instance();
             private:
-                static IO::Ptr sInstancePtr;
+                db::Connection db;
+                NamespaceMap namespaces;
+
         };
 
+
         IO::Ptr IOPtr;
+        IO::SettingMapPtr settings;
 
 };
 

@@ -50,105 +50,47 @@ using namespace musik::core;
 
 Preferences::Preferences(const char* nameSpace) : 
     nameSpace(nameSpace),
-    nameSpaceId(0),
     IOPtr(IO::Instance())
 {
-    this->GetSettings();   
+    this->settings  = this->IOPtr->GetNamespace(nameSpace);   
 }
 
 Preferences::~Preferences(void){
 }
 
-void Preferences::SaveSetting(const char* key,std::string &value){
-    db::CachedStatement saveStmt("INSERT INTO settings (namespace_id,the_key,the_value) VALUES (?,?,?)",this->IOPtr->db);
-    saveStmt.BindInt(0,this->nameSpaceId);
-    saveStmt.BindText(1,key);
-    saveStmt.BindText(2,value.c_str());
-    saveStmt.Step();
-
-    this->cachedSettings[key]   = value;
-}
 
 bool Preferences::GetBool(const char* key,bool defaultValue){
-    SettingsMap::iterator setting = this->cachedSettings.find(key);
-    if(setting!=this->cachedSettings.end()){
-        try{
-            return boost::lexical_cast<bool>(setting->second);
-        }
-        catch(...){
-            return defaultValue;
-        }
+    IO::SettingMap::iterator setting = this->settings->find(key);
+    if(setting!=this->settings->end()){
+        return setting->second.Value(defaultValue);
     }
-    std::string value(defaultValue?"1":"0");
-    this->SaveSetting(key,value);
+    this->IOPtr->SaveSetting(this->nameSpace.c_str(),key,Setting(defaultValue));
     return defaultValue;
 }
-/*
+
 int Preferences::GetInt(const char* key,int defaultValue){
-}
-
-const char* Preferences::GetString(const char* key,const char* defaultValue){
-}
-
-const wchar_t* Preferences::GetString(const char* key,const wchar_t* defaultValue){
-}
-
-void Preferences::SetBool(const char* key,bool value){
-}
-
-void Preferences::SetInt(const char* key,int value){
-}
-
-void Preferences::SetString(const char* key,const char* value){
-}
-
-void Preferences::SetString(const char* key,const wchar_t* value){
-}
-
-void Preferences::SetString(const char* key,const std::string &value){
-}
-
-void Preferences::SetString(const char* key,const std::wstring &value){
-}
-*/
-
-
-void Preferences::GetSettings(){
-
-    {
-        db::CachedStatement getStmt("SELECT id FROM namespaces WHERE name=?",this->IOPtr->db);
-        getStmt.BindText(0,this->nameSpace.c_str());
-
-        if(getStmt.Step()==db::Row){
-            this->nameSpaceId = getStmt.ColumnInt(0);
-        }else{
-            db::Statement insertNamespace("INSERT INTO namespaces (name) VALUES (?)",this->IOPtr->db);
-            insertNamespace.Step();
-            this->nameSpaceId = this->IOPtr->db.LastInsertedId();
-        }
+    IO::SettingMap::iterator setting = this->settings->find(key);
+    if(setting!=this->settings->end()){
+        return setting->second.Value(defaultValue);
     }
-    
-    // Get the settings
-    db::CachedStatement getSettings("SELECT the_key,the_value FROM settings WHERE namespace_id=?",this->IOPtr->db);
-    getSettings.BindInt(0,this->nameSpaceId);
-
-    while(getSettings.Step()==db::Row){
-        this->cachedSettings[getSettings.ColumnText(0)] = getSettings.ColumnText(1);
-    }
-
+    this->IOPtr->SaveSetting(this->nameSpace.c_str(),key,Setting(defaultValue));
+    return defaultValue;
 }
 
-
+utfstring Preferences::GetString(const char* key,const utfchar* defaultValue){
+    IO::SettingMap::iterator setting = this->settings->find(key);
+    if(setting!=this->settings->end()){
+        return setting->second.Value(utfstring(defaultValue));
+    }
+    this->IOPtr->SaveSetting(this->nameSpace.c_str(),key,Setting(utfstring(defaultValue)));
+    return defaultValue;
+}
 
 //////////////////////////////////////////////////////////////////////////////
 
-Preferences::IO::Ptr Preferences::IO::sInstancePtr;
-
 Preferences::IO::Ptr Preferences::IO::Instance(){
-    if(!Preferences::IO::sInstancePtr){
-        Preferences::IO::sInstancePtr.reset(new Preferences::IO());
-    }
-    return Preferences::IO::sInstancePtr;
+    static IO::Ptr sInstance(new Preferences::IO());
+    return sInstance;
 }
 
 Preferences::IO::IO(void){
@@ -163,6 +105,7 @@ Preferences::IO::IO(void){
     this->db.Execute("CREATE TABLE IF NOT EXISTS settings ("
         "id INTEGER PRIMARY KEY AUTOINCREMENT,"
         "namespace_id INTEGER DEFAULT 0,"
+        "type INTEGER DEFAULT 0,"
         "the_key TEXT,"
         "the_value TEXT)");
 
@@ -171,7 +114,155 @@ Preferences::IO::IO(void){
 
 }
 
+void Preferences::IO::SaveSetting(const char* nameSpace,const char *key,Setting &setting){
+    int nameSpaceId(0);
+    db::CachedStatement getStmt("SELECT id FROM namespaces WHERE name=?",this->db);
+    getStmt.BindText(0,nameSpace);
+
+    if(getStmt.Step()==db::Row){
+        nameSpaceId = getStmt.ColumnInt(0);
+        db::Statement insertSetting("INSERT OR REPLACE INTO settings (namespace_id,type,the_key,the_value) VALUES (?,?,?,?)",this->db);
+        insertSetting.BindInt(0,nameSpaceId);
+        insertSetting.BindInt(1,setting.type);
+        insertSetting.BindText(2,key);
+        switch(setting.type){
+            case (Setting::Bool):
+                insertSetting.BindInt(3,setting.valueBool?1:0);
+                break;
+            case (Setting::Int):
+                insertSetting.BindInt(3,setting.valueInt);
+                break;
+            case (Setting::Text):
+                insertSetting.BindTextUTF(3,setting.valueText);
+                break;
+        }
+        insertSetting.Step();
+
+        (*this->namespaces[nameSpace])[key] = setting;
+    }
+}
+
 Preferences::IO::~IO(void){
     this->db.Close();
+}
+
+Preferences::Setting::Setting() : type(0){
+}
+
+Preferences::Setting::Setting(bool value) : type(1),valueBool(value){
+}
+
+Preferences::Setting::Setting(int value) : type(2),valueInt(value){
+}
+
+Preferences::Setting::Setting(utfstring value) : type(3),valueText(value){
+}
+
+
+Preferences::Setting::Setting(db::Statement &stmt) : 
+    type(stmt.ColumnInt(0)) {
+    switch(type){
+        case Setting::Int:
+            this->valueInt  = stmt.ColumnInt(2);
+            break;
+        case Setting::Bool:
+            this->valueBool = (stmt.ColumnInt(2)>0);
+            break;
+        default:
+            this->valueText.assign(stmt.ColumnTextUTF(2));
+    }
+}
+
+bool Preferences::Setting::Value(bool defaultValue){
+    switch(this->type){
+        case Setting::Bool:
+            return this->valueBool;
+            break;
+        case Setting::Int:
+            return this->valueInt>0;
+            break;
+        case Setting::Text:
+            return !this->valueText.empty();
+            break;
+    }
+    return defaultValue;
+}
+
+int Preferences::Setting::Value(int defaultValue){
+    switch(this->type){
+        case Setting::Bool:
+            return this->valueBool?1:0;
+            break;
+        case Setting::Int:
+            return this->valueInt;
+            break;
+        case Setting::Text:
+            try{
+                return boost::lexical_cast<int>(this->valueText);
+            }
+            catch(...){
+            }
+            break;
+    }
+    return defaultValue;
+}
+
+utfstring Preferences::Setting::Value(utfstring defaultValue){
+    switch(this->type){
+        case Setting::Bool:
+            return this->valueBool?UTF("1"):UTF("0");
+            break;
+        case Setting::Int:
+            try{
+                return boost::lexical_cast<utfstring>(this->valueInt);
+            }
+            catch(...){
+            }
+            break;
+        case Setting::Text:
+            return this->valueText;
+            break;
+    }
+    return defaultValue;
+}
+
+
+
+Preferences::IO::SettingMapPtr Preferences::IO::GetNamespace(const char* nameSpace){
+
+    // First check if it's in the NamespaceMap
+    NamespaceMap::iterator ns = this->namespaces.find(nameSpace);
+    if(ns!=this->namespaces.end()){
+        // Found namespace, return settings
+        return ns->second;
+    }
+
+    // Not in cache, lets load it from db.
+    int nameSpaceId(0);
+    db::CachedStatement getStmt("SELECT id FROM namespaces WHERE name=?",this->db);
+    getStmt.BindText(0,nameSpace);
+
+    SettingMapPtr newSettings( new SettingMap() );
+    this->namespaces[nameSpace] = newSettings;
+
+    if(getStmt.Step()==db::Row){
+        // Namespace exists, load the settings
+        nameSpaceId = getStmt.ColumnInt(0);
+
+        db::Statement selectSettings("SELECT type,the_key,the_value FROM settings WHERE namespace_id=?",this->db);
+        selectSettings.BindInt(0,nameSpaceId);
+        while( selectSettings.Step()==db::Row ){
+            (*newSettings)[selectSettings.ColumnText(1)]  = Setting(selectSettings);
+        }
+
+        return newSettings;
+    }else{
+        // First time namespace is accessed, create it.
+        db::Statement insertNamespace("INSERT INTO namespaces (name) VALUES (?)",this->db);
+        insertNamespace.BindText(0,nameSpace);
+        insertNamespace.Step();
+        nameSpaceId = this->db.LastInsertedId();
+        return newSettings;
+    }
 }
 
