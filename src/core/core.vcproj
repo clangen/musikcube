@@ -174,6 +174,14 @@
 				RelativePath=".\pch.hpp"
 				>
 			</File>
+			<File
+				RelativePath=".\PlaybackQueue.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\PlaybackQueue.h"
+				>
+			</File>
 			<Filter
 				Name="support"
 				>

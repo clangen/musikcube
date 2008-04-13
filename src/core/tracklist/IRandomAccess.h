@@ -37,6 +37,7 @@
 #pragma once
 
 #include "core/tracklist/IBase.h"
+#include <boost/shared_ptr.hpp>
 
 namespace musik{ namespace core{
     namespace tracklist {
@@ -49,6 +50,9 @@ namespace musik{ namespace core{
                 virtual void SetCurrentPosition(int position) = 0;
                 virtual int CurrentPosition() = 0;
         };
+
+        typedef boost::shared_ptr<IRandomAccess> IRandomAccessPtr;
+
     }
 } }
 
