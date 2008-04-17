@@ -54,6 +54,8 @@ class PlaybackQueue : public sigslot::has_slots<>{
         audio::Transport transport;
         tracklist::IRandomAccessPtr nowPlaying;
 
+        bool playing;
+
     public:
         ~PlaybackQueue(void);
         static PlaybackQueue& Instance(){ return sInstance; };

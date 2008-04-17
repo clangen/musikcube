@@ -46,18 +46,20 @@ PlaybackQueue PlaybackQueue::sInstance;
 
 PlaybackQueue::PlaybackQueue(void) :
     nowPlaying( new musik::core::tracklist::Standard() ),
-    signalDisabled(false)
+    signalDisabled(false),
+    playing(false)
 {
-    this->transport.PlaybackStoppedOk.connect(this,&PlaybackQueue::OnPlaybackEndOrFail);
+    this->transport.MixpointReached.connect(this,&PlaybackQueue::OnPlaybackEndOrFail);
 //    this->transport.PlaybackStoppedFail.connect(this,&PlaybackQueue::OnPlaybackEndOrFail);
 }
 
 PlaybackQueue::~PlaybackQueue(void)
 {
-    this->Stop();
+    this->transport.Stop(0);
 }
 
 void PlaybackQueue::OnPlaybackEndOrFail(){
+    this->playing   = false;
     if(!this->signalDisabled){
         this->Next();
     }
@@ -76,6 +78,8 @@ void PlaybackQueue::Play(){
         utfstring path(track->GetValue("path"));
 
         this->Stop();
+
+        this->playing   = true;
         this->transport.Start(path);
     }
 
@@ -99,7 +103,9 @@ void PlaybackQueue::Previous(){
 
 void PlaybackQueue::Stop(){
     this->signalDisabled    = true;
-    this->transport.Stop(0);
+    if( this->playing ){
+        this->transport.Stop(0);
+    }
     this->signalDisabled    = false;
 }
 
