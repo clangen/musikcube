@@ -68,8 +68,6 @@ using namespace musik::cube;
     musik::core::LibraryFactory::GetCurrentLibrary()->OnQueryQueueStart.connect(this,&MainWindowController::QueryQueueStart);
     musik::core::LibraryFactory::GetCurrentLibrary()->OnQueryQueueEnd.connect(this,&MainWindowController::QueryQueueEnd);
 
-    musik::core::LibraryPtr lib = musik::core::LibraryFactory::GetCurrentLibrary();
-    ((musik::core::Library::LocalDB*)lib.get())->indexer.AddPath(_T("X:/musik/"));
 }
 
 MainWindowController::~MainWindowController()

@@ -96,7 +96,7 @@ namespace musik{ namespace core{
                 void AppendTracks(musik::core::tracklist::IRandomAccess &tracklist);
             protected:
 
-                musik::core::TrackPtr at(int position);
+                musik::core::TrackPtr Track(int position);
 
                 std::set<std::string> requestedMetaKeys;
 

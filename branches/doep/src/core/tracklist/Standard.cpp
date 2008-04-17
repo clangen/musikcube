@@ -50,7 +50,7 @@ Standard::~Standard(void){
 }
 
 musik::core::TrackPtr Standard::CurrentTrack(){
-    return (*this)[this->currentPosition];
+    return this->Track(this->currentPosition);
 }
 
 
@@ -79,7 +79,7 @@ musik::core::TrackPtr Standard::operator [](int position){
     return musik::core::TrackPtr();
 }
 
-musik::core::TrackPtr Standard::at(int position){
+musik::core::TrackPtr Standard::Track(int position){
 
     if(position>=0 && position<this->tracks.size())
         return this->tracks[position];
@@ -156,7 +156,7 @@ void Standard::LoadTrack(int position){
         for(int i(position);i<position+this->hintedRows;++i){
             if(!this->InCache(i)){
                 // Not in cache, load the track and add to Cache
-                musik::core::TrackPtr track = this->at(i);
+                musik::core::TrackPtr track = this->Track(i);
                 if(track){
                     this->trackCache.insert(CacheTrack(track,i));
                     ++trackCount;
@@ -225,8 +225,9 @@ void Standard::RemoveRequestedMetakey(const char* metakey){
 void Standard::CopyTracks(musik::core::tracklist::IRandomAccess &tracklist){
     this->SetLibrary(tracklist.Library());
     this->tracks.clear();
+    this->tracks.reserve(tracklist.Size());
     for(int i(0);i<tracklist.Size();++i){
-        this->tracks.push_back(tracklist[i]);
+        this->tracks.push_back(tracklist.Track(i)->Copy());
     }
     this->SetCurrentPosition(tracklist.CurrentPosition());
 }
@@ -236,8 +237,11 @@ void Standard::AppendTracks(musik::core::tracklist::IRandomAccess &tracklist){
         this->SetLibrary(tracklist.Library());
     }
 
+    this->tracks.reserve(this->tracks.size()+tracklist.Size());
+
     for(int i(0);i<tracklist.Size();++i){
-        this->tracks.push_back(tracklist[i]);
+        this->tracks.push_back(tracklist.Track(i)->Copy());
     }
 }
+
 

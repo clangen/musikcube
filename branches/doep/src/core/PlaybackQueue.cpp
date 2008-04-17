@@ -45,12 +45,22 @@ PlaybackQueue PlaybackQueue::sInstance;
 
 
 PlaybackQueue::PlaybackQueue(void) :
-    nowPlaying( new musik::core::tracklist::Standard() )
+    nowPlaying( new musik::core::tracklist::Standard() ),
+    signalDisabled(false)
 {
+    this->transport.PlaybackStoppedOk.connect(this,&PlaybackQueue::OnPlaybackEndOrFail);
+//    this->transport.PlaybackStoppedFail.connect(this,&PlaybackQueue::OnPlaybackEndOrFail);
 }
 
 PlaybackQueue::~PlaybackQueue(void)
 {
+    this->Stop();
+}
+
+void PlaybackQueue::OnPlaybackEndOrFail(){
+    if(!this->signalDisabled){
+        this->Next();
+    }
 }
 
 tracklist::IRandomAccessPtr PlaybackQueue::NowPlayingTracklist(){
@@ -64,15 +74,33 @@ void PlaybackQueue::Play(){
     if(track){
         // If current track exists
         utfstring path(track->GetValue("path"));
-        boost::algorithm::replace_all(path,UTF("/"),UTF("\\"));
 
+        this->Stop();
         this->transport.Start(path);
     }
 
 }
 
+void PlaybackQueue::Next(){
+    musik::core::TrackPtr track( this->nowPlaying->NextTrack() );
+    if(track){
+        this->SetCurrentTrack(track->Copy());
+        this->Play();
+    }
+}
+
+void PlaybackQueue::Previous(){
+    musik::core::TrackPtr track( this->nowPlaying->PreviousTrack() );
+    if(track){
+        this->SetCurrentTrack(track->Copy());
+        this->Play();
+    }
+}
+
 void PlaybackQueue::Stop(){
+    this->signalDisabled    = true;
     this->transport.Stop(0);
+    this->signalDisabled    = false;
 }
 
 
@@ -107,4 +135,5 @@ void PlaybackQueue::Play(tracklist::IRandomAccess &tracklist){
     this->nowPlaying->CopyTracks(tracklist);
     this->Play();
 }
+
 
