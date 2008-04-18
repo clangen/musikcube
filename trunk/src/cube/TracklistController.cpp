@@ -73,15 +73,22 @@ void        TracklistController::OnViewCreated()
     //
     listView->EnableStripedBackground(true);
     listView->SetModel(this->model);
+    listView->RowDoubleClick.connect(this,&TracklistController::OnRowDoubleClick);
 }
 
 void        TracklistController::OnResized(Size size)
 {
 }
 
+void        TracklistController::OnRowDoubleClick(int row)
+{
+    ((TracklistModel*)this->model.get())->OnRowDoubleClick(row);
+}
+
+
 void        TracklistController::AddColumn(const utfchar *name,const char *metakey,int size){
     this->view.listView->AddColumn(ListView::ColumnRef(new TracklistColumn(metakey,name, size)));
 
-    ((TracklistModel*)this->model.get())->tracklist.AddRequestedMetakey(metakey);
+    ((TracklistModel*)this->model.get())->tracklist->AddRequestedMetakey(metakey);
 }
 

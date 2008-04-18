@@ -67,7 +67,8 @@ public:     virtual uistring CellValueToString(int rowIndex, ColumnRef column);
         // instance data
 protected:  void OnTrackMeta(std::vector<int> &trackPositions);
 protected:  void OnTracks(bool cleared);
-public:     musik::core::tracklist::Standard tracklist;
+public:     musik::core::tracklist::Standard::Ptr tracklist;
+public:     void OnRowDoubleClick(int row);
 };
 
 //////////////////////////////////////////////////////////////////////////////

@@ -143,7 +143,7 @@ bool TagReaderTaglib::GetGenericTag(musik::core::Track *track){
             // ALBUM
 		    this->SetTagValue("album",tag->album(),track);
             // ARTISTS
-		    this->SetSlashSeparatedValues("artist",tag->album(),track);
+            this->SetSlashSeparatedValues("artist",tag->artist(),track);
             // GENRES
             this->SetTagValue("genre",tag->genre(),track);
             // COMMENT
@@ -421,4 +421,5 @@ void TagReaderTaglib::SetAudioProperties(TagLib::AudioProperties *audioPropertie
         }
 	}
 }
+
 

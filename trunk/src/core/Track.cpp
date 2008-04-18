@@ -531,3 +531,7 @@ void Track::SetThumbnail(const char *data,unsigned int size){
         this->meta->SetThumbnail(data,size);
     }
 }
+
+TrackPtr Track::Copy(){
+    return TrackPtr(new Track(this->id));
+}

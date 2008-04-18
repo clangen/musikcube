@@ -40,7 +40,7 @@
 
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/audio/Transport.h>
+#include <core/PlaybackQueue.h>
 #include <cube/TransportView.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
@@ -63,6 +63,8 @@ protected:  musik::core::audio::Transport   transport;
 
 protected:  void    OnPlayPressed();
 protected:  void    OnStopPressed();
+protected:  void    OnNextPressed();
+protected:  void    OnPreviousPressed();
 protected:  void    OnVolumeSliderChange();
 };
 

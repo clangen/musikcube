@@ -63,9 +63,15 @@ void        TransportController::OnViewCreated()
     this->transportView.stopButton->Pressed.connect(
         this, &TransportController::OnStopPressed);
 
-    this->transportView.volumeSlider->Repositioned.connect(
+    this->transportView.nextButton->Pressed.connect(
+        this, &TransportController::OnNextPressed);
+
+    this->transportView.prevButton->Pressed.connect(
+        this, &TransportController::OnPreviousPressed);
+
+/*    this->transportView.volumeSlider->Repositioned.connect(
         this, &TransportController::OnVolumeSliderChange);
-    this->transportView.volumeSlider->SetPosition(transport.Volume());
+    this->transportView.volumeSlider->SetPosition(transport.Volume());*/
 }
 
 void        TransportController::OnViewResized(Size size)
@@ -74,15 +80,25 @@ void        TransportController::OnViewResized(Size size)
 
 void        TransportController::OnPlayPressed()
 {
-    transport.Start(_T("d:\\musik\\test.mp3"));
+    musik::core::PlaybackQueue::Instance().Play();
 }
 
 void        TransportController::OnStopPressed()
 {
-    transport.Stop(0);
+    musik::core::PlaybackQueue::Instance().Stop();
+}
+
+void        TransportController::OnNextPressed()
+{
+    musik::core::PlaybackQueue::Instance().Next();
+}
+
+void        TransportController::OnPreviousPressed()
+{
+    musik::core::PlaybackQueue::Instance().Previous();
 }
 
 void        TransportController::OnVolumeSliderChange()
 {
-    transport.ChangeVolume(transportView.volumeSlider->Position()/100.0f);
+//    transport.ChangeVolume(transportView.volumeSlider->Position()/100.0f);
 }

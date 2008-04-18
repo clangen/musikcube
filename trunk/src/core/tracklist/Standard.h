@@ -44,6 +44,7 @@
 #include <core/Library/Base.h>
 
 #include <sigslot/sigslot.h>
+#include <boost/shared_ptr.hpp>
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/ordered_index.hpp>
@@ -59,6 +60,9 @@ namespace musik{ namespace core{
         class Standard : public IRandomAccess, public sigslot::has_slots<> {
 
             public:
+                
+                typedef boost::shared_ptr<Standard> Ptr;
+
                 Standard(void);
                 ~Standard(void);
 
@@ -72,7 +76,8 @@ namespace musik{ namespace core{
                 int CurrentPosition();
 
                 void ConnectToQuery(musik::core::Query::ListBase &listQuery);
-                void ConnectToLibrary(musik::core::LibraryPtr setLibrary);
+                void SetLibrary(musik::core::LibraryPtr setLibrary);
+                musik::core::LibraryPtr Library();
 
 
                 typedef sigslot::signal1<bool> TracksEvent;
@@ -87,9 +92,11 @@ namespace musik{ namespace core{
                 void AddRequestedMetakey(const char* metakey);
                 void RemoveRequestedMetakey(const char* metakey);
 
+                void CopyTracks(musik::core::tracklist::IRandomAccess &tracklist);
+                void AppendTracks(musik::core::tracklist::IRandomAccess &tracklist);
             protected:
 
-                musik::core::TrackPtr at(int position);
+                musik::core::TrackPtr Track(int position);
 
                 std::set<std::string> requestedMetaKeys;
 

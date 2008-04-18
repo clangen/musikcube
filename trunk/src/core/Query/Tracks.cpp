@@ -141,6 +141,11 @@ bool Tracks::ParseQuery(Library::Base *oLibrary,db::Connection &db){
 
     std::string sql=this->sSQL+this->sSQLTables+this->sSQLWhere;
 
+    if(sql.empty()){
+        // ERROR.. SOMETHING IS WRONG HERE
+        return true;
+    }
+
     db::CachedStatement trackData(sql.c_str(),db);
 
     bool bCancel(false);

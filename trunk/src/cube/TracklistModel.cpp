@@ -43,6 +43,8 @@
 #include <pch.hpp>
 
 #include <core/LibraryFactory.h>
+#include <core/PlaybackQueue.h>
+
 #include <cube/TracklistModel.hpp>
 #include <cube/TracklistColumn.hpp>
 
@@ -50,16 +52,17 @@ using namespace musik::cube;
 
 //////////////////////////////////////////////////////////////////////////////
 
-/*ctor*/        TracklistModel::TracklistModel(musik::core::Query::ListBase *connectedQuery)
+/*ctor*/        TracklistModel::TracklistModel(musik::core::Query::ListBase *connectedQuery) :
+    tracklist(new musik::core::tracklist::Standard())
 {
     this->SetRowCount(0);
 
-    this->tracklist.OnTracks.connect(this,&TracklistModel::OnTracks);
-    this->tracklist.OnTrackMeta.connect(this,&TracklistModel::OnTrackMeta);
-    this->tracklist.ConnectToLibrary(musik::core::LibraryFactory::GetCurrentLibrary());
+    this->tracklist->OnTracks.connect(this,&TracklistModel::OnTracks);
+    this->tracklist->OnTrackMeta.connect(this,&TracklistModel::OnTrackMeta);
+    this->tracklist->SetLibrary(musik::core::LibraryFactory::GetCurrentLibrary());
 
     if(connectedQuery){
-        this->tracklist.ConnectToQuery(*connectedQuery);
+        this->tracklist->ConnectToQuery(*connectedQuery);
     }
 }
 
@@ -71,7 +74,7 @@ uistring            TracklistModel::CellValueToString(int rowIndex, ColumnRef co
 
     typedef boost::basic_format<uichar> format;
 //    return (format(_T("%1% %2%")) % column->Name() % (rowIndex + 1)).str();
-    musik::core::TrackPtr track = this->tracklist[rowIndex];
+    musik::core::TrackPtr track = (*this->tracklist)[rowIndex];
     if(!track){
         return _T("");
     }else{
@@ -92,7 +95,11 @@ void TracklistModel::OnTracks(bool cleared){
     if(cleared){
         this->SetRowCount(0);
     }
-    this->SetRowCount(this->tracklist.Size());
+    this->SetRowCount(this->tracklist->Size());
 }
 
 
+void TracklistModel::OnRowDoubleClick(int row){
+    this->tracklist->SetCurrentPosition(row);
+    musik::core::PlaybackQueue::Instance().Play(*this->tracklist);
+}
