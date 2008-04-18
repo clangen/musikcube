@@ -449,6 +449,22 @@ void        ListView::OnMouseMoved(MouseEventFlags flags, const Point& location)
     this->SetHotCell(rowIndex, column);
 }
 
+void        ListView::OnMouseButtonDoubleClicked(MouseEventFlags flags, const Point& location)
+{
+    int rowIndex(0);
+    ColumnRef column = ColumnRef();
+    //
+    if ( ! this->CellAtPoint(location, rowIndex, column))
+    {
+        rowIndex = -1;
+        column = ColumnRef();
+    }else{
+        this->RowDoubleClick(rowIndex);
+    }
+    //
+
+}
+
 void        ListView::OnMouseExit()
 {
     this->SetHotCell(-1, ColumnRef());

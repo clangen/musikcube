@@ -66,6 +66,7 @@ public:     /*ctor*/    TracklistController(TracklistView& listView,musik::core:
 
 protected:  void        OnViewCreated();
 protected:  void        OnResized(Size size);
+protected:  void        OnRowDoubleClick(int row);
 protected:  void        AddColumn(const utfchar *name,const char *metakey,int size);
 
 protected:  ModelRef model;

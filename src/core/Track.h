@@ -50,6 +50,22 @@
 namespace musik{ namespace core{
 
     // Forward declare
+    class Track;
+
+    /*!
+     * \brief
+     * shared pointer to a track.
+     *
+     * The TrackPtr is used almost everywhere since the Tracks can be
+     * shared between different threads.
+     *
+     * \remarks
+     * For the Tracks to be thread-safe, you need to pass the ThreadHelper object when required.
+     *
+     * \see
+     * Track|TrackVector
+     */
+    typedef boost::shared_ptr<Track> TrackPtr;
 
     /*!
      * \brief
@@ -82,6 +98,8 @@ namespace musik{ namespace core{
             DBINT id;
 
             void ClearMeta();
+            TrackPtr Copy();
+
         private:
 //            const TrackMeta::Value& GetValue(const TrackMeta::Key &key) const;
 
@@ -109,20 +127,6 @@ namespace musik{ namespace core{
             DBINT _GetArtist(db::Connection &dbConnection,utfstring artist,bool addRelation,bool aggregated=false);
     };
 
-    /*!
-     * \brief
-     * shared pointer to a track.
-     *
-     * The TrackPtr is used almost everywhere since the Tracks can be
-     * shared between different threads.
-     *
-     * \remarks
-     * For the Tracks to be thread-safe, you need to pass the ThreadHelper object when required.
-     *
-     * \see
-     * Track|TrackVector
-     */
-    typedef boost::shared_ptr<Track> TrackPtr;
 
     /*!
      * \brief

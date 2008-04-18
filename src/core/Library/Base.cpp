@@ -245,21 +245,25 @@ bool Library::Base::AddQuery( const Query::Base &query,unsigned int options ){
             boost::mutex::scoped_lock lock(this->libraryMutex);
 
             // wait for the query to be finished or canceled
-            while( !(queryCopy->status&Query::Base::Status::Ended) ){
+            while( !(queryCopy->status&Query::Base::Status::Ended) && !(queryCopy->status&Query::Base::Status::Canceled) ){
                 this->waitCondition.wait(lock);
             }
 
             if( options & Query::Options::AutoCallback ){    // Should the callbacks be involved?
-                if( !(queryCopy->status&Query::Base::Status::Canceled) ){    // If not canceled
-                    queryCopy->RunCallbacks(this);            // Run the callbacks.
-                    queryCopy->status    |= Query::Base::Status::Finished;    // Set to finished for removal.
-                }
+                queryCopy->status    |= Query::Base::Status::Finished;    // Set to finished for removal.
             }
         }
 
         /////////////////////////////////////////////////////////////////////////////
         // Finaly, remove old, finished queries
         this->ClearFinishedQueries();
+
+        if( options & Query::Options::AutoCallback ){    // Should the callbacks be involved?
+            if( !(queryCopy->status&Query::Base::Status::Canceled) ){    // If not canceled
+                queryCopy->RunCallbacks(this);            // Run the callbacks.
+            }
+        }
+
 
     }
 

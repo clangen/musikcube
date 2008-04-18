@@ -31,7 +31,11 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 #include "pch.hpp"
-#include "PlaybackQueue.h"
+#include "core/PlaybackQueue.h"
+#include "core/LibraryFactory.h"
+
+#include <boost/algorithm/string.hpp>
+
 
 using namespace musik::core;
 
@@ -41,12 +45,24 @@ PlaybackQueue PlaybackQueue::sInstance;
 
 
 PlaybackQueue::PlaybackQueue(void) :
-    nowPlaying( new musik::core::tracklist::Standard() )
+    nowPlaying( new musik::core::tracklist::Standard() ),
+    signalDisabled(false),
+    playing(false)
 {
+    this->transport.MixpointReached.connect(this,&PlaybackQueue::OnPlaybackEndOrFail);
+//    this->transport.PlaybackStoppedFail.connect(this,&PlaybackQueue::OnPlaybackEndOrFail);
 }
 
 PlaybackQueue::~PlaybackQueue(void)
 {
+    this->transport.Stop(0);
+}
+
+void PlaybackQueue::OnPlaybackEndOrFail(){
+    this->playing   = false;
+    if(!this->signalDisabled){
+        this->Next();
+    }
 }
 
 tracklist::IRandomAccessPtr PlaybackQueue::NowPlayingTracklist(){
@@ -59,15 +75,46 @@ void PlaybackQueue::Play(){
 
     if(track){
         // If current track exists
-        this->transport.Start(track->GetValue("path"));
+        utfstring path(track->GetValue("path"));
+
+        this->Stop();
+
+        this->playing   = true;
+        this->transport.Start(path);
     }
 
 }
 
+void PlaybackQueue::Next(){
+    musik::core::TrackPtr track( this->nowPlaying->NextTrack() );
+    if(track){
+        this->SetCurrentTrack(track->Copy());
+        this->Play();
+    }
+}
+
+void PlaybackQueue::Previous(){
+    musik::core::TrackPtr track( this->nowPlaying->PreviousTrack() );
+    if(track){
+        this->SetCurrentTrack(track->Copy());
+        this->Play();
+    }
+}
+
+void PlaybackQueue::Stop(){
+    this->signalDisabled    = true;
+    if( this->playing ){
+        this->transport.Stop(0);
+    }
+    this->signalDisabled    = false;
+}
+
+
 TrackPtr PlaybackQueue::CurrentTrack(){
     if(!this->currentTrack){
         // If the current track is empty, get a track from the nowPlaying tracklist
-        this->SetCurrentTrack( this->nowPlaying->CurrentTrack() );
+        this->SetCurrentTrack( this->nowPlaying->CurrentTrack()->Copy() );
+
     }
     return this->currentTrack;
 }
@@ -76,8 +123,23 @@ void PlaybackQueue::SetCurrentTrack(TrackPtr track){
     if(this->currentTrack!=track){
         this->currentTrack  = track;
 
+        // Get all metadata to the track
+        if(this->currentTrack){
+            this->metadataQuery.Clear();
+            this->metadataQuery.RequestAllMetakeys();
+            this->metadataQuery.RequestTrack(this->currentTrack);
+            this->nowPlaying->Library()->AddQuery(this->metadataQuery,musik::core::Query::Wait|musik::core::Query::AutoCallback|musik::core::Query::UnCanceable|musik::core::Query::Prioritize);
+        }
+
         // Call the signal if track updates
         this->CurrentTrackChanged(track);
     }
 }
+
+void PlaybackQueue::Play(tracklist::IRandomAccess &tracklist){
+    this->currentTrack.reset();
+    this->nowPlaying->CopyTracks(tracklist);
+    this->Play();
+}
+
 

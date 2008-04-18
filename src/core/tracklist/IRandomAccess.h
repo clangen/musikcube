@@ -37,6 +37,7 @@
 #pragma once
 
 #include "core/tracklist/IBase.h"
+#include <core/Library/Base.h>
 #include <boost/shared_ptr.hpp>
 
 namespace musik{ namespace core{
@@ -49,10 +50,18 @@ namespace musik{ namespace core{
                 virtual int Size() = 0;
                 virtual void SetCurrentPosition(int position) = 0;
                 virtual int CurrentPosition() = 0;
+                virtual void SetLibrary(musik::core::LibraryPtr setLibrary) = 0;
+                virtual musik::core::LibraryPtr Library() = 0;
+
+                virtual void CopyTracks(musik::core::tracklist::IRandomAccess &tracklist) = 0;
+                virtual void AppendTracks(musik::core::tracklist::IRandomAccess &tracklist) = 0;
+
+                virtual musik::core::TrackPtr Track(int position)=0;
         };
 
         typedef boost::shared_ptr<IRandomAccess> IRandomAccessPtr;
 
     }
 } }
+
 

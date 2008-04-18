@@ -46,13 +46,15 @@ namespace musik { namespace core {
 
 //////////////////////////////////////////////////////////////////////////////
 
-class PlaybackQueue{
+class PlaybackQueue : public sigslot::has_slots<>{
     private:
         PlaybackQueue(void);
         static PlaybackQueue sInstance;
 
         audio::Transport transport;
         tracklist::IRandomAccessPtr nowPlaying;
+
+        bool playing;
 
     public:
         ~PlaybackQueue(void);
@@ -66,7 +68,7 @@ class PlaybackQueue{
         // Playback Control
         void Play();
         void Next();
-        void Previos();
+        void Previous();
         void Stop();
 
         musik::core::TrackPtr CurrentTrack();
@@ -77,6 +79,11 @@ class PlaybackQueue{
     private:
         TrackPtr currentTrack;
         void SetCurrentTrack(TrackPtr track);
+        musik::core::Query::Tracks metadataQuery;
+
+        void OnPlaybackEndOrFail();
+
+        bool signalDisabled;
 
 };
 

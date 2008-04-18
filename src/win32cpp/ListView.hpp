@@ -123,11 +123,14 @@ public:     typedef boost::shared_ptr<Model> ModelRef;
 
             
 public:     /*! */ typedef sigslot::signal1<int /*row*/> HotRowChangedEvent;
+public:     /*! */ typedef sigslot::signal1<int /*row*/> RowDoubleClickEvent;
 public:     /*! */ typedef sigslot::signal2<int /*row*/, ColumnRef> HotCellChangedEvent;
 public:     /*! */ typedef sigslot::signal0<> SelectionChangedEvent;
 
             ///\brief Emitted when the the mouse cursor has entered a new row
 public:     HotRowChangedEvent      HotRowChanged;
+            ///\brief Emitted when the the mousebutton doubleclicks on a row
+public:     RowDoubleClickEvent     RowDoubleClick;
             ///\brief Emitted when the the mouse cursor has entered a new cell
 public:     HotCellChangedEvent     HotCellChanged;
             ///\brief Emitted when the selection has changed
@@ -184,6 +187,7 @@ protected:  virtual void        OnRowCountChanged();
 protected:  virtual void        OnDataChanged(int rowIndex);
 protected:  virtual void        OnMeasureItem(MEASUREITEMSTRUCT* measureItemStruct);
 protected:  virtual void        OnMouseMoved(MouseEventFlags flags, const Point& location);
+protected:  virtual void        OnMouseButtonDoubleClicked(MouseEventFlags flags, const Point& location);
 protected:  virtual void        OnMouseExit();
 
 private:    typedef Window base;
