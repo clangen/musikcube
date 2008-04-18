@@ -59,7 +59,7 @@ public:     typedef ListView::CellRendererRef CellRendererRef;
 public:     typedef ListView::ColumnRef ColumnRef;
 
         // public API
-public:     /*ctor*/        TracklistModel(musik::core::Query::ListBase *connectedQuery);
+public:     /*ctor*/        TracklistModel(musik::core::Query::ListBase *connectedQuery,musik::core::tracklist::Standard::Ptr setTracklist);
 
         // ListView::Model implementation
 public:     virtual uistring CellValueToString(int rowIndex, ColumnRef column);

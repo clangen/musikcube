@@ -65,7 +65,7 @@ void PlaybackQueue::OnPlaybackEndOrFail(){
     }
 }
 
-tracklist::IRandomAccessPtr PlaybackQueue::NowPlayingTracklist(){
+tracklist::Standard::Ptr PlaybackQueue::NowPlayingTracklist(){
     return this->nowPlaying;
 }
 

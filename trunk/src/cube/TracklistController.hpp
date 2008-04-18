@@ -45,6 +45,7 @@
 #include <core/config.h>
 #include <cube/TracklistView.hpp>
 #include <core/Query/ListBase.h>
+#include <core/tracklist/Standard.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -62,7 +63,7 @@ private:    typedef ListView::ColumnRef ColumnRef;
 private:    typedef std::vector<ColumnRef> ColumnList;
 private:    typedef ListView::ModelRef ModelRef;
 
-public:     /*ctor*/    TracklistController(TracklistView& listView,musik::core::Query::ListBase *connectedQuery=NULL);
+public:     /*ctor*/    TracklistController(TracklistView& listView,musik::core::Query::ListBase *connectedQuery=NULL,musik::core::tracklist::Standard::Ptr tracklist=musik::core::tracklist::Standard::Ptr() );
 
 protected:  void        OnViewCreated();
 protected:  void        OnResized(Size size);

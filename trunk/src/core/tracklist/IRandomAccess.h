@@ -57,6 +57,7 @@ namespace musik{ namespace core{
                 virtual void AppendTracks(musik::core::tracklist::IRandomAccess &tracklist) = 0;
 
                 virtual musik::core::TrackPtr Track(int position)=0;
+
         };
 
         typedef boost::shared_ptr<IRandomAccess> IRandomAccessPtr;

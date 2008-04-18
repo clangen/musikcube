@@ -43,6 +43,8 @@
 #include <pch.hpp>
 #include <cube/SourcesModel.hpp>
 
+#include <core/PlaybackQueue.h>
+
 using namespace musik::cube;
 
 //////////////////////////////////////////////////////////////////////////////
@@ -110,7 +112,7 @@ private:    BrowseController controller;
 class NowPlayingItem: public SourcesItem
 {
 private:    /*ctor*/ NowPlayingItem()
-            : controller(view)
+                : controller(view,NULL,musik::core::PlaybackQueue::Instance().NowPlayingTracklist())
             {
             }
 
