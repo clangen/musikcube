@@ -52,9 +52,14 @@ using namespace musik::cube;
 
 //////////////////////////////////////////////////////////////////////////////
 
-/*ctor*/        TracklistModel::TracklistModel(musik::core::Query::ListBase *connectedQuery) :
-    tracklist(new musik::core::tracklist::Standard())
+/*ctor*/        TracklistModel::TracklistModel(musik::core::Query::ListBase *connectedQuery,musik::core::tracklist::Standard::Ptr setTracklist)
 {
+    if(setTracklist){
+        this->tracklist = setTracklist;
+    }else{
+        this->tracklist.reset( new musik::core::tracklist::Standard() );
+    }
+
     this->SetRowCount(0);
 
     this->tracklist->OnTracks.connect(this,&TracklistModel::OnTracks);

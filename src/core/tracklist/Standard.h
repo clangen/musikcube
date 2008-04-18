@@ -79,14 +79,6 @@ namespace musik{ namespace core{
                 void SetLibrary(musik::core::LibraryPtr setLibrary);
                 musik::core::LibraryPtr Library();
 
-
-                typedef sigslot::signal1<bool> TracksEvent;
-                TracksEvent OnTracks;
-
-                typedef sigslot::signal1<std::vector<int>&> TrackMetaEvent;
-                TrackMetaEvent OnTrackMeta;
-
-
                 void HintNumberOfRows(int rows);
 
                 void AddRequestedMetakey(const char* metakey);
@@ -94,6 +86,12 @@ namespace musik{ namespace core{
 
                 void CopyTracks(musik::core::tracklist::IRandomAccess &tracklist);
                 void AppendTracks(musik::core::tracklist::IRandomAccess &tracklist);
+
+                typedef sigslot::signal1<bool> TracksEvent;
+                TracksEvent OnTracks;
+                typedef sigslot::signal1<std::vector<int>&> TrackMetaEvent;
+                TrackMetaEvent OnTrackMeta;
+
             protected:
 
                 musik::core::TrackPtr Track(int position);

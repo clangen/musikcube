@@ -47,9 +47,9 @@ using namespace musik::cube;
 
 //////////////////////////////////////////////////////////////////////////////
 
-/*ctor*/    TracklistController::TracklistController(TracklistView& view,musik::core::Query::ListBase *connectedQuery)
+/*ctor*/    TracklistController::TracklistController(TracklistView& view,musik::core::Query::ListBase *connectedQuery,musik::core::tracklist::Standard::Ptr tracklist)
 : view(view)
-, model(new TracklistModel(connectedQuery))
+, model(new TracklistModel(connectedQuery,tracklist))
 {
     this->view.Handle()
         ? this->OnViewCreated()

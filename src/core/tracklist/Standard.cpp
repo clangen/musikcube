@@ -223,13 +223,17 @@ void Standard::RemoveRequestedMetakey(const char* metakey){
 }
 
 void Standard::CopyTracks(musik::core::tracklist::IRandomAccess &tracklist){
-    this->SetLibrary(tracklist.Library());
-    this->tracks.clear();
-    this->tracks.reserve(tracklist.Size());
-    for(int i(0);i<tracklist.Size();++i){
-        this->tracks.push_back(tracklist.Track(i)->Copy());
+    if(this!=&tracklist){   // Do not copy to itself
+        this->SetLibrary(tracklist.Library());
+        this->tracks.clear();
+        this->tracks.reserve(tracklist.Size());
+        for(int i(0);i<tracklist.Size();++i){
+            this->tracks.push_back(tracklist.Track(i)->Copy());
+        }
+        this->SetCurrentPosition(tracklist.CurrentPosition());
+
+        this->OnTracks(true);
     }
-    this->SetCurrentPosition(tracklist.CurrentPosition());
 }
 
 void Standard::AppendTracks(musik::core::tracklist::IRandomAccess &tracklist){
@@ -242,6 +246,8 @@ void Standard::AppendTracks(musik::core::tracklist::IRandomAccess &tracklist){
     for(int i(0);i<tracklist.Size();++i){
         this->tracks.push_back(tracklist.Track(i)->Copy());
     }
+
+    this->OnTracks(false);
 }
 
 
