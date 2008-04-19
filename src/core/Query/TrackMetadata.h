@@ -36,9 +36,10 @@
 
 #pragma once
 
+//////////////////////////////////////////////////////////////////////////////
+
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
-#include <sqlite/sqlite3.h>
 
 #include <core/Query/Base.h>
 #include <core/config.h>
@@ -46,47 +47,54 @@
 
 #include <map>
 #include <set>
+//////////////////////////////////////////////////////////////////////////////
 
-namespace musik{ namespace core{
-    namespace Query{
-        class Base;
-        class Tracks : public Query::Base {
-            public:
-                Tracks(void);
-                ~Tracks(void);
+namespace musik{ namespace core{ namespace Query{
 
-                bool RunCallbacks(Library::Base *oLibrary);
+//////////////////////////////////////////////////////////////////////////////
+// Forward declaration
+class Base;
+//////////////////////////////////////////////////////////////////////////////
 
-                void Clear();
-                void RequestTrack(TrackPtr track);
-                void RequestMetakeys(const std::set<std::string> &fields);
-                void RequestAllMetakeys();
+class TrackMetadata : public Query::Base {
+    public:
+        TrackMetadata(void);
+        ~TrackMetadata(void);
 
-                typedef sigslot::signal1<TrackVector*> TracksEvent;
-                TracksEvent OnTracksEvent;
+        bool RunCallbacks(Library::Base *oLibrary);
 
-            private:
-                std::set<std::string> requestedFields;
-                std::vector<std::string> fieldOrder;
-                std::set<std::string> metaFields;
-                std::set<std::string> categoryFields;
-                std::string sSQL;
-                std::string sSQLTables;
-                std::string sSQLWhere;
-                bool requestAllFields;
+        void Clear();
+        void RequestTrack(TrackPtr track);
+        void RequestMetakeys(const std::set<std::string> &fields);
+        void RequestAllMetakeys();
 
-                TrackVector aRequestTracks;
-                TrackVector aResultTracks;
+        typedef sigslot::signal1<TrackVector*> TrackMetadataEvent;
+        TrackMetadataEvent OnTracksEvent;
 
-                void CreateSQL();
-                void GetFixedTrackMetakeys(std::string &fieldName,std::set<std::string> &fields);
-            protected:
-                friend class Library::Base;
-                friend class Library::LocalDB;
-                bool ParseQuery(Library::Base *oLibrary,db::Connection &db);
-                Ptr copy() const;
-                void PreAddQuery(Library::Base *library);
-        };
-    }
-} }
+    private:
+        std::set<std::string> requestedFields;
+        std::vector<std::string> fieldOrder;
+        std::set<std::string> metaFields;
+        std::set<std::string> categoryFields;
+        std::string sSQL;
+        std::string sSQLTables;
+        std::string sSQLWhere;
+        bool requestAllFields;
+
+        TrackVector aRequestTracks;
+        TrackVector aResultTracks;
+
+        void CreateSQL();
+        void GetFixedTrackMetakeys(std::string &fieldName,std::set<std::string> &fields);
+    protected:
+        friend class Library::Base;
+        friend class Library::LocalDB;
+        bool ParseQuery(Library::Base *oLibrary,db::Connection &db);
+        Ptr copy() const;
+        void PreAddQuery(Library::Base *library);
+};
+
+//////////////////////////////////////////////////////////////////////////////
+} } }   // musik::core::Query
+//////////////////////////////////////////////////////////////////////////////
 

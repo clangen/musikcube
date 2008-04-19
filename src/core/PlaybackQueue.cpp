@@ -44,6 +44,12 @@ using namespace musik::core;
 PlaybackQueue PlaybackQueue::sInstance;
 
 
+//////////////////////////////////////////
+///\brief
+///Constructor
+///
+///Will connect the appropiate signals in the transport
+//////////////////////////////////////////
 PlaybackQueue::PlaybackQueue(void) :
     nowPlaying( new musik::core::tracklist::Standard() ),
     signalDisabled(false),
@@ -53,11 +59,19 @@ PlaybackQueue::PlaybackQueue(void) :
 //    this->transport.PlaybackStoppedFail.connect(this,&PlaybackQueue::OnPlaybackEndOrFail);
 }
 
+//////////////////////////////////////////
+///\brief
+///Destructor
+//////////////////////////////////////////
 PlaybackQueue::~PlaybackQueue(void)
 {
     this->transport.Stop(0);
 }
 
+//////////////////////////////////////////
+///\brief
+///Private method for the transporters signals
+//////////////////////////////////////////
 void PlaybackQueue::OnPlaybackEndOrFail(){
     this->playing   = false;
     if(!this->signalDisabled){
@@ -65,10 +79,18 @@ void PlaybackQueue::OnPlaybackEndOrFail(){
     }
 }
 
+//////////////////////////////////////////
+///\brief
+///Return a shared_ptr to the now playing tracklist
+//////////////////////////////////////////
 tracklist::Standard::Ptr PlaybackQueue::NowPlayingTracklist(){
     return this->nowPlaying;
 }
 
+//////////////////////////////////////////
+///\brief
+///Start playing the current track.
+//////////////////////////////////////////
 void PlaybackQueue::Play(){
 
     TrackPtr track(this->CurrentTrack());
@@ -85,6 +107,10 @@ void PlaybackQueue::Play(){
 
 }
 
+//////////////////////////////////////////
+///\brief
+///Start playing the next track.
+//////////////////////////////////////////
 void PlaybackQueue::Next(){
     musik::core::TrackPtr track( this->nowPlaying->NextTrack() );
     if(track){
@@ -93,6 +119,10 @@ void PlaybackQueue::Next(){
     }
 }
 
+//////////////////////////////////////////
+///\brief
+///Start playing the previous track.
+//////////////////////////////////////////
 void PlaybackQueue::Previous(){
     musik::core::TrackPtr track( this->nowPlaying->PreviousTrack() );
     if(track){
@@ -101,6 +131,10 @@ void PlaybackQueue::Previous(){
     }
 }
 
+//////////////////////////////////////////
+///\brief
+///Stop playing
+//////////////////////////////////////////
 void PlaybackQueue::Stop(){
     this->signalDisabled    = true;
     if( this->playing ){
@@ -110,6 +144,10 @@ void PlaybackQueue::Stop(){
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Return the current running track
+//////////////////////////////////////////
 TrackPtr PlaybackQueue::CurrentTrack(){
     if(!this->currentTrack){
         // If the current track is empty, get a track from the nowPlaying tracklist
@@ -119,6 +157,13 @@ TrackPtr PlaybackQueue::CurrentTrack(){
     return this->currentTrack;
 }
 
+//////////////////////////////////////////
+///\brief
+///Set the current track
+///
+///Setting the current track will also query 
+///for all the tracks metadata
+//////////////////////////////////////////
 void PlaybackQueue::SetCurrentTrack(TrackPtr track){
     if(this->currentTrack!=track){
         this->currentTrack  = track;
@@ -136,6 +181,13 @@ void PlaybackQueue::SetCurrentTrack(TrackPtr track){
     }
 }
 
+//////////////////////////////////////////
+///\brief
+///Copy the tracklist to the now playing and start playing it
+///
+///\param tracklist
+///Tracklist that should be copied to now playing
+//////////////////////////////////////////
 void PlaybackQueue::Play(tracklist::IRandomAccess &tracklist){
     this->currentTrack.reset();
     this->nowPlaying->CopyTracks(tracklist);

@@ -315,11 +315,11 @@
 						>
 					</File>
 					<File
-						RelativePath=".\Query\Tracks.cpp"
+						RelativePath=".\Query\TrackMetadata.cpp"
 						>
 					</File>
 					<File
-						RelativePath=".\Query\Tracks.h"
+						RelativePath=".\Query\TrackMetadata.h"
 						>
 					</File>
 				</Filter>
