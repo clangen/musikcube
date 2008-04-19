@@ -213,14 +213,6 @@
 					RelativePath=".\ThreadHelper.h"
 					>
 				</File>
-				<File
-					RelativePath=".\Version.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Version.h"
-					>
-				</File>
 			</Filter>
 			<Filter
 				Name="tracklist"
@@ -245,14 +237,6 @@
 			<Filter
 				Name="database"
 				>
-				<File
-					RelativePath=".\DBConnection.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\DBConnection.h"
-					>
-				</File>
 				<File
 					RelativePath=".\Indexer.cpp"
 					>
@@ -383,34 +367,6 @@
 						>
 					</File>
 				</Filter>
-			</Filter>
-			<Filter
-				Name="network"
-				>
-				<File
-					RelativePath=".\HTTPRequestParser.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\HTTPRequestParser.h"
-					>
-				</File>
-				<File
-					RelativePath=".\HTTPResponder.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\HTTPResponder.h"
-					>
-				</File>
-				<File
-					RelativePath=".\HTTPServer.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\HTTPServer.h"
-					>
-				</File>
 			</Filter>
 			<Filter
 				Name="metadata"
