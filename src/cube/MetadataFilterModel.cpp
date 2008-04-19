@@ -42,6 +42,8 @@
 
 #include <pch.hpp>
 
+#include <win32cpp/Utility.hpp>
+
 #include <cube/MetadataFilterModel.hpp>
 #include <cube/MetadataFilterController.hpp>
 #include <cube/BrowseController.hpp>
@@ -61,7 +63,7 @@ uistring    MetadataFilterModel::CellValueToString(int rowIndex, ListView::Colum
 {
     typedef boost::basic_format<uichar> format;
     if(rowIndex<this->metadata.size()){
-        return this->metadata[rowIndex]->value;
+        return win32cpp::Escape(this->metadata[rowIndex]->value);
     }else{
         return uistring();
     }

@@ -42,6 +42,8 @@
 
 #include <pch.hpp>
 
+#include <win32cpp/Utility.hpp>
+
 #include <core/LibraryFactory.h>
 #include <core/PlaybackQueue.h>
 
@@ -85,7 +87,7 @@ uistring            TracklistModel::CellValueToString(int rowIndex, ColumnRef co
     }else{
         const utfchar *value = track->GetValue(tracklistColumn->metaKey.c_str());
         if(value)
-            return value;
+            return win32cpp::Escape(value);
 
         return _T("");
     }
