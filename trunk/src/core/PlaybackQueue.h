@@ -37,33 +37,59 @@
 
 #include <core/audio/Transport.h>
 #include <core/tracklist/Standard.h>
-#include <core/Query/Tracks.h>
+#include <core/Query/TrackMetadata.h>
 #include <sigslot/sigslot.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
 namespace musik { namespace core { 
 
-//////////////////////////////////////////////////////////////////////////////
 
+
+//////////////////////////////////////////
+///\brief
+///PlaybackQueue is a singleton that controlls transporter playback and "now playing" tracklist.
+///
+///\see
+///musik::core::audio::Transport|musik::core::tracklist::Standard
+//////////////////////////////////////////
 class PlaybackQueue : public sigslot::has_slots<>{
     private:
         PlaybackQueue(void);
-        static PlaybackQueue sInstance;
 
-        audio::Transport transport;
+        //////////////////////////////////////////
+		///\brief
+		///The one and only instance of the PlaybackQueue
+		//////////////////////////////////////////
+		static PlaybackQueue sInstance;
+
+        //////////////////////////////////////////
+		///\brief
+        ///The only instance of the audio::Transport
+		//////////////////////////////////////////
+		audio::Transport transport;
+
+        //////////////////////////////////////////
+		///\brief
+        ///The "now playing" tracklist
+		//////////////////////////////////////////
         tracklist::Standard::Ptr nowPlaying;
 
         bool playing;
 
     public:
         ~PlaybackQueue(void);
-        static PlaybackQueue& Instance(){ return sInstance; };
+
+        //////////////////////////////////////////
+		///\brief
+		///Access to the PlaybackQueue singleton
+		//////////////////////////////////////////
+		static PlaybackQueue& Instance(){ return sInstance; };
 
         // Now Playing control
         tracklist::Standard::Ptr NowPlayingTracklist();
         void Play(tracklist::IRandomAccess &tracklist);
-        void Append(tracklist::IRandomAccess &tracklist);
+		void Append(tracklist::IRandomAccess &tracklist);
 
         // Playback Control
         void Play();
@@ -79,7 +105,7 @@ class PlaybackQueue : public sigslot::has_slots<>{
     private:
         TrackPtr currentTrack;
         void SetCurrentTrack(TrackPtr track);
-        musik::core::Query::Tracks metadataQuery;
+        musik::core::Query::TrackMetadata metadataQuery;
 
         void OnPlaybackEndOrFail();
 

@@ -40,7 +40,7 @@
 
 #include <core/tracklist/IRandomAccess.h>
 #include <core/Query/ListBase.h>
-#include <core/Query/Tracks.h>
+#include <core/Query/TrackMetadata.h>
 #include <core/Library/Base.h>
 
 #include <sigslot/sigslot.h>
@@ -106,7 +106,7 @@ namespace musik{ namespace core{
 
                 musik::core::TrackVector tracks;
 
-                musik::core::Query::Tracks trackQuery;
+                musik::core::Query::TrackMetadata trackQuery;
 
                 void OnTracksFromQuery(musik::core::TrackVector *newTracks,bool clear);
                 void OnTracksMetaFromQuery(musik::core::TrackVector *metaTracks);

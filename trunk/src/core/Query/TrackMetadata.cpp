@@ -36,28 +36,28 @@
 
 #include "pch.hpp"
 
-#include <core/Query/Tracks.h>
+#include <core/Query/TrackMetadata.h>
 #include <core/Library/Base.h>
 
 using namespace musik::core;
 using namespace musik::core::Query;
 
-Tracks::Tracks(void) : requestAllFields(false){
+TrackMetadata::TrackMetadata(void) : requestAllFields(false){
 
 }
 
-Tracks::~Tracks(void){
+TrackMetadata::~TrackMetadata(void){
 }
 
-void Tracks::RequestTrack(TrackPtr track){
+void TrackMetadata::RequestTrack(TrackPtr track){
     this->aRequestTracks.push_back(track);
 }
 
-void Tracks::Clear(){
+void TrackMetadata::Clear(){
     this->aRequestTracks.clear();
 }
 
-void Tracks::CreateSQL(){
+void TrackMetadata::CreateSQL(){
     std::set<std::string> fields(this->requestedFields);
     std::set<std::string>::iterator field;
 
@@ -121,7 +121,7 @@ void Tracks::CreateSQL(){
 
 }
 
-void Tracks::GetFixedTrackMetakeys(std::string &fieldName,std::set<std::string> &fields){
+void TrackMetadata::GetFixedTrackMetakeys(std::string &fieldName,std::set<std::string> &fields){
     std::set<std::string>::iterator field;
     if( (field=fields.find(fieldName))!=fields.end() ){
         this->sSQL    += ",t."+fieldName;
@@ -131,7 +131,7 @@ void Tracks::GetFixedTrackMetakeys(std::string &fieldName,std::set<std::string> 
 }
 
 
-bool Tracks::ParseQuery(Library::Base *oLibrary,db::Connection &db){
+bool TrackMetadata::ParseQuery(Library::Base *oLibrary,db::Connection &db){
 
     db::CachedStatement genres("SELECT g.name FROM genres g,track_genres tg WHERE tg.genre_id=g.id AND tg.track_id=? ORDER BY tg.id",db);
     db::CachedStatement artists("SELECT ar.name FROM artists ar,track_artists ta WHERE ta.artist_id=ar.id AND ta.track_id=? ORDER BY ta.id",db);
@@ -236,7 +236,7 @@ bool Tracks::ParseQuery(Library::Base *oLibrary,db::Connection &db){
     return true;
 }
 
-bool Tracks::RunCallbacks(Library::Base *oLibrary){
+bool TrackMetadata::RunCallbacks(Library::Base *oLibrary){
 
     TrackVector aResultCopy;
     bool bReturn(false);
@@ -260,13 +260,13 @@ bool Tracks::RunCallbacks(Library::Base *oLibrary){
     return bReturn;
 }
 
-void Tracks::RequestMetakeys(const std::set<std::string> &fields){
+void TrackMetadata::RequestMetakeys(const std::set<std::string> &fields){
     this->requestAllFields      = false;
     this->requestedFields       = fields;
     this->CreateSQL();
 }
 
-void Tracks::RequestAllMetakeys(){
+void TrackMetadata::RequestAllMetakeys(){
     this->requestAllFields    = true;
 
     this->requestedFields.insert("track");
@@ -287,11 +287,11 @@ void Tracks::RequestAllMetakeys(){
 
 }
 
-Query::Ptr Tracks::copy() const{
-    return Query::Ptr(new Query::Tracks(*this));
+Query::Ptr TrackMetadata::copy() const{
+    return Query::Ptr(new Query::TrackMetadata(*this));
 }
 
-void Tracks::PreAddQuery(Library::Base *library){
+void TrackMetadata::PreAddQuery(Library::Base *library){
     for(TrackVector::iterator track=this->aRequestTracks.begin();track!=this->aRequestTracks.end();++track){
         (*track)->InitMeta(library);
     }
