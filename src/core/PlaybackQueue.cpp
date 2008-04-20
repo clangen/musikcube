@@ -194,4 +194,11 @@ void PlaybackQueue::Play(tracklist::IRandomAccess &tracklist){
     this->Play();
 }
 
+short PlaybackQueue::Volume() const{
+    return this->transport.Volume();
+}
+
+void PlaybackQueue::SetVolume(short volume){
+    this->transport.ChangeVolume(volume);
+}
 

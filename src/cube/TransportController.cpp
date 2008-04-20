@@ -69,9 +69,9 @@ void        TransportController::OnViewCreated()
     this->transportView.prevButton->Pressed.connect(
         this, &TransportController::OnPreviousPressed);
 
-/*    this->transportView.volumeSlider->Repositioned.connect(
+    this->transportView.volumeSlider->Repositioned.connect(
         this, &TransportController::OnVolumeSliderChange);
-    this->transportView.volumeSlider->SetPosition(transport.Volume());*/
+    this->transportView.volumeSlider->SetPosition(musik::core::PlaybackQueue::Instance().Volume());
 }
 
 void        TransportController::OnViewResized(Size size)
@@ -100,5 +100,5 @@ void        TransportController::OnPreviousPressed()
 
 void        TransportController::OnVolumeSliderChange()
 {
-//    transport.ChangeVolume(transportView.volumeSlider->Position()/100.0f);
+    musik::core::PlaybackQueue::Instance().SetVolume(transportView.volumeSlider->Position());
 }

@@ -97,6 +97,9 @@ class PlaybackQueue : public sigslot::has_slots<>{
         void Previous();
         void Stop();
 
+        short Volume() const;
+        void SetVolume(short volume);
+
         musik::core::TrackPtr CurrentTrack();
 
         // Public signals
