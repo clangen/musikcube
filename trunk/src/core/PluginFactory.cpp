@@ -66,6 +66,7 @@ PluginFactory::~PluginFactory(void){
 }
 
 void PluginFactory::LoadPlugins(){
+    boost::mutex::scoped_lock lock(this->mutex);
     utfstring sPluginDir(GetPluginDirectory());
 
     // Open plugin directory
