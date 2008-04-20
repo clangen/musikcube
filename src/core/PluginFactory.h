@@ -41,6 +41,7 @@
 #include <vector>
 #include <string>
 #include <boost/shared_ptr.hpp>
+#include <boost/thread/mutex.hpp>
 
 namespace musik{ namespace core{
 
@@ -70,6 +71,8 @@ namespace musik{ namespace core{
 
             static PluginFactory sInstance;
 
+            boost::mutex mutex;
+
         public:
 
             template <typename T>
@@ -86,6 +89,8 @@ namespace musik{ namespace core{
             };
 
             template <class T, class D> std::vector<boost::shared_ptr<T>> QueryInterface(const char* functionName){
+                boost::mutex::scoped_lock lock(this->mutex);
+
                 typedef T* (__stdcall* PluginInterfaceCall)();
 
                 std::vector<boost::shared_ptr<T>> plugins;
