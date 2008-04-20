@@ -56,7 +56,7 @@ using namespace musik::cube;
 {
     this->controller->parent->selectionQuery.OnMetadataEvent(this->controller->metadataKey.c_str()).connect(this,&MetadataFilterModel::OnMetadata);
 
-    this->SetRowCount(0);
+    this->SetRowCount(1);
 }
 
 uistring    MetadataFilterModel::CellValueToString(int rowIndex, ListView::ColumnRef column)
@@ -81,6 +81,6 @@ void        MetadataFilterModel::OnMetadata(musik::core::MetadataValueVector* me
     }else{
         this->metadata.insert(this->metadata.end(),metadata->begin(),metadata->end());
     }
-    this->SetRowCount(this->metadata.size());
+    this->SetRowCount(this->metadata.size()+1);
     this->InvalidateData(0);    // Invalidate the "All" count
 }
