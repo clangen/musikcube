@@ -71,8 +71,18 @@ void        MetadataFilterController::OnSelectionChanged(){
 
     this->parent->selectionQuery.ClearMetadata(this->metadataKeyA.c_str());
 
-    for(win32cpp::ListView::RowIndexList::iterator row=selectedRows.begin();row!=selectedRows.end();++row){
-        this->parent->selectionQuery.SelectMetadata(this->metadataKeyA.c_str(),metadata[*row]->id);
+    bool firstRowSelected(false);
+    for(win32cpp::ListView::RowIndexList::iterator row=selectedRows.begin();row!=selectedRows.end() && !firstRowSelected;++row){
+        if((*row)==0){
+            firstRowSelected    = true;
+        }else{
+            this->parent->selectionQuery.SelectMetadata(this->metadataKeyA.c_str(),metadata[(*row)-1]->id);
+        }
+    }
+
+    // Check if first row is selected, then clear the list
+    if(firstRowSelected){
+        this->parent->selectionQuery.ClearMetadata(this->metadataKeyA.c_str());
     }
 
     this->parent->SendQuery();

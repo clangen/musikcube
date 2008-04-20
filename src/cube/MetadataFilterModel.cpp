@@ -62,8 +62,13 @@ using namespace musik::cube;
 uistring    MetadataFilterModel::CellValueToString(int rowIndex, ListView::ColumnRef column)
 {
     typedef boost::basic_format<uichar> format;
+
+    if(rowIndex==0){
+        return (format(_T("All (%1% %2%)")) % this->metadata.size() % this->controller->metadataKey).str();
+    }
+
     if(rowIndex<this->metadata.size()){
-        return win32cpp::Escape(this->metadata[rowIndex]->value);
+        return win32cpp::Escape(this->metadata[rowIndex-1]->value);
     }else{
         return uistring();
     }
@@ -77,4 +82,5 @@ void        MetadataFilterModel::OnMetadata(musik::core::MetadataValueVector* me
         this->metadata.insert(this->metadata.end(),metadata->begin(),metadata->end());
     }
     this->SetRowCount(this->metadata.size());
+    this->InvalidateData(0);    // Invalidate the "All" count
 }
