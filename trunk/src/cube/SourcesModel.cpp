@@ -136,6 +136,37 @@ private:    TracklistController controller;
 };
 
 //////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+#include <cube/SettingsView.hpp>
+#include <cube/SettingsController.hpp>
+
+class SettingsItem: public SourcesItem
+{
+private:    /*ctor*/ SettingsItem()
+                : controller(view)
+            {
+            }
+
+public:     /*dtor*/ ~SettingsItem()
+            {
+            }
+
+public:     static SourcesItemRef Create()
+            {
+                return SourcesItemRef(new SettingsItem());
+            }
+
+public:     virtual uistring Caption() { return _T("Settings"); }
+public:     virtual Window*  View()
+            {
+                return &this->view;
+            }
+
+private:    SettingsView view;
+private:    SettingsController controller;
+};
+
+//////////////////////////////////////////////////////////////////////////////
 
 typedef SourcesListModel::Category Category;
 typedef SourcesListModel::CategoryRef CategoryRef;
@@ -149,7 +180,7 @@ void            SourcesModel::Load()
     CategoryRef viewCategory(new Category(_T("View")));
     viewCategory->Add(BrowseItem::Create());
     viewCategory->Add(NowPlayingItem::Create());
-    viewCategory->Add(DummyItem::Create(_T("Settings")));
+    viewCategory->Add(SettingsItem::Create());
     this->AddCategory(viewCategory);
 
     CategoryRef playlistCategory(new Category(_T("Playlists")));

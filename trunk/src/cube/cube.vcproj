@@ -386,6 +386,26 @@
 					>
 				</File>
 			</Filter>
+			<Filter
+				Name="SettingsView"
+				>
+				<File
+					RelativePath=".\SettingsController.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\SettingsController.hpp"
+					>
+				</File>
+				<File
+					RelativePath=".\SettingsView.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\SettingsView.hpp"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<File
 			RelativePath=".\main.cpp"
