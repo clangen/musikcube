@@ -197,8 +197,13 @@ bool TagReaderTaglib::GetID3v2Tag(musik::core::Track *track){
 			this->SetTagValue("year",aAllTags["TDRC"].front()->toString().substr(0,4),track);
 
 
-		// TODO: Handle the "totaltracks" part of the TRCK
-		this->SetTagValues("track",aAllTags["TRCK"],track);
+        // Split TRCK to track and totaltracks
+        std::vector<utfstring> splitTrack;
+        boost::algorithm::split(splitTrack,aAllTags["TRCK"].front()->toString().toWString(),boost::algorithm::is_any_of(_T("/")));
+        this->SetTagValue("track",splitTrack[0].c_str(),track);
+        if(splitTrack.size()>1){
+            this->SetTagValue("totaltracks",splitTrack[1].c_str(),track);
+        }
 
 		this->SetTagValues("bpm",aAllTags["TBPM"],track);
 		this->SetSlashSeparatedValues("composer",aAllTags["TCOM"],track);
