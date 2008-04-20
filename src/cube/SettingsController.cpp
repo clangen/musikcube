@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright © 2007, mC2 Team
 //
 // Sources and Binaries of: mC2, win32cpp
 //
@@ -36,37 +36,30 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include <pch.hpp>
+#include <cube/SettingsController.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/PlaybackQueue.h>
-#include <cube/TransportView.hpp>
+using namespace musik::cube;
 
 //////////////////////////////////////////////////////////////////////////////
 
-using namespace win32cpp;
-
-namespace musik { namespace cube {
-
-//////////////////////////////////////////////////////////////////////////////
-
-class TransportController : public EventHandler
+/*ctor*/    SettingsController::SettingsController(SettingsView& settingsView)
+: settingsView(settingsView)
 {
-public:     /*ctor*/    TransportController(TransportView& transportView);
+    this->settingsView.Created.connect(
+        this, &SettingsController::OnViewCreated);
+    
+    this->settingsView.Resized.connect(
+        this, &SettingsController::OnViewResized);
+}
 
-protected:  void        OnViewCreated();
-protected:  void        OnViewResized(Size size);
+void        SettingsController::OnViewCreated()
+{
 
-protected:  TransportView&                  transportView;
+}
 
-protected:  void    OnPlayPressed();
-protected:  void    OnStopPressed();
-protected:  void    OnNextPressed();
-protected:  void    OnPreviousPressed();
-protected:  void    OnVolumeSliderChange();
-};
-
-//////////////////////////////////////////////////////////////////////////////
-
-} }     // musik::cube
+void        SettingsController::OnViewResized(Size size)
+{
+}

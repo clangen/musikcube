@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright © 2007, mC2 Team
 //
 // Sources and Binaries of: mC2, win32cpp
 //
@@ -40,8 +40,7 @@
 
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/PlaybackQueue.h>
-#include <cube/TransportView.hpp>
+#include <cube/SettingsView.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -51,20 +50,15 @@ namespace musik { namespace cube {
 
 //////////////////////////////////////////////////////////////////////////////
 
-class TransportController : public EventHandler
+class SettingsController : public EventHandler
 {
-public:     /*ctor*/    TransportController(TransportView& transportView);
+public:     /*ctor*/    SettingsController(SettingsView& settingsView);
 
 protected:  void        OnViewCreated();
 protected:  void        OnViewResized(Size size);
 
-protected:  TransportView&                  transportView;
+protected:  SettingsView&                  settingsView;
 
-protected:  void    OnPlayPressed();
-protected:  void    OnStopPressed();
-protected:  void    OnNextPressed();
-protected:  void    OnPreviousPressed();
-protected:  void    OnVolumeSliderChange();
 };
 
 //////////////////////////////////////////////////////////////////////////////
