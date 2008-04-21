@@ -67,7 +67,7 @@ uistring    MetadataFilterModel::CellValueToString(int rowIndex, ListView::Colum
         return (format(_T("All (%1% %2%)")) % this->metadata.size() % this->controller->metadataKey).str();
     }
 
-    if(rowIndex<this->metadata.size()){
+    if(rowIndex<=this->metadata.size()){
         return win32cpp::Escape(this->metadata[rowIndex-1]->value);
     }else{
         return uistring();

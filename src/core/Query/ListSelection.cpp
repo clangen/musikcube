@@ -540,6 +540,11 @@ void Query::ListSelection::QueryForMetadata(const char *metakey,const char *sql,
         tempMetadataValues.reserve(10);
         int row(0);
 
+        {
+            boost::mutex::scoped_lock lock(oLibrary->oResultMutex);
+            this->metadataResults[metakey];
+        }
+
         while(metaValueStmt.Step()==db::ReturnCode::Row){
             tempMetadataValues.push_back(
                     MetadataValuePtr(
