@@ -101,7 +101,7 @@ void Standard::SetCurrentPosition(int position){
         this->currentPosition   = -1;
     }else{
         if(position >= (int)this->tracks.size()){
-            this->currentPosition   = this->tracks.size()-1;
+            this->currentPosition   = this->tracks.size();
         }else{
             this->currentPosition   = position;
         }
