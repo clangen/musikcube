@@ -31,4 +31,6 @@
 
 = Issue tracking =
  * Always set Status as "Started" on issues you are currently working on.
+ * Devs can have multiple issues assigned to them in the "Accepted" state as some kind of personal todo list.
  * Bigger issues should probably be branched. Discuss this on the IRC channel with the other developers.
+ * New feature ideas should be added as "New" and not assigned to anyone.  We should discuss acceptance and priorities of new features with the devs (on IRC?).
