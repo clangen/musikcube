@@ -1,0 +1,45 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mC2", "src\cube\cube.vcproj", "{1CA67D31-E7D4-4377-93F2-FD15BF95D21F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{E618F29F-BF28-441A-B039-9E10A631D881} = {E618F29F-BF28-441A-B039-9E10A631D881}
+		{B2165720-B4B2-4F4B-9634-8C390C3CB4DB} = {B2165720-B4B2-4F4B-9634-8C390C3CB4DB}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "win32cpp", "src\win32cpp\win32cpp.vcproj", "{E618F29F-BF28-441A-B039-9E10A631D881}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "core", "src\core\core.vcproj", "{B2165720-B4B2-4F4B-9634-8C390C3CB4DB}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B2165720-B4B2-4F4B-8888-8C390C3CB4DB} = {B2165720-B4B2-4F4B-8888-8C390C3CB4DB}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "3rdparty", "src\3rdparty\3rdparty.vcproj", "{B2165720-B4B2-4F4B-8888-8C390C3CB4DB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1CA67D31-E7D4-4377-93F2-FD15BF95D21F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{1CA67D31-E7D4-4377-93F2-FD15BF95D21F}.Debug|Win32.Build.0 = Debug|Win32
+		{1CA67D31-E7D4-4377-93F2-FD15BF95D21F}.Release|Win32.ActiveCfg = Release|Win32
+		{1CA67D31-E7D4-4377-93F2-FD15BF95D21F}.Release|Win32.Build.0 = Release|Win32
+		{E618F29F-BF28-441A-B039-9E10A631D881}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E618F29F-BF28-441A-B039-9E10A631D881}.Debug|Win32.Build.0 = Debug|Win32
+		{E618F29F-BF28-441A-B039-9E10A631D881}.Release|Win32.ActiveCfg = Release|Win32
+		{E618F29F-BF28-441A-B039-9E10A631D881}.Release|Win32.Build.0 = Release|Win32
+		{B2165720-B4B2-4F4B-9634-8C390C3CB4DB}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B2165720-B4B2-4F4B-9634-8C390C3CB4DB}.Debug|Win32.Build.0 = Debug|Win32
+		{B2165720-B4B2-4F4B-9634-8C390C3CB4DB}.Release|Win32.ActiveCfg = Release|Win32
+		{B2165720-B4B2-4F4B-9634-8C390C3CB4DB}.Release|Win32.Build.0 = Release|Win32
+		{B2165720-B4B2-4F4B-8888-8C390C3CB4DB}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B2165720-B4B2-4F4B-8888-8C390C3CB4DB}.Debug|Win32.Build.0 = Debug|Win32
+		{B2165720-B4B2-4F4B-8888-8C390C3CB4DB}.Release|Win32.ActiveCfg = Release|Win32
+		{B2165720-B4B2-4F4B-8888-8C390C3CB4DB}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
