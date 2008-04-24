@@ -82,6 +82,8 @@ private: boost::mutex   mutex;
 
 private: void ShutDown();
 public: static DWORD WINAPI ThreadRun(LPVOID param);
+
+public: void StartNew();
 };
 
 }} // NS

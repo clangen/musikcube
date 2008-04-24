@@ -266,3 +266,9 @@ void ConsoleUI::ShutDown()
     delete instance;
     return 0;
 }
+
+void ConsoleUI::StartNew()
+{
+    Args a;
+    this->PlayFile(a);
+}

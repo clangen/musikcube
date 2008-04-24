@@ -52,3 +52,9 @@ void DummyAudioEventHandler::PrintEvent(utfstring s)
 {
     this->cui->Print(_T("EVENT: " + s + _T("\n"))); 
 }
+
+void DummyAudioEventHandler::OnMixpointReached()
+{
+     this->PrintEvent(_T("Mix point reached"));
+     //this->cui->StartNew(); // Endless test loop
+}

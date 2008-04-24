@@ -63,7 +63,7 @@ public: void    OnVolumeChangedOk()         {   this->PrintEvent(_T("Volume chan
 public: void    OnVolumeChangedFail()       {   this->PrintEvent(_T("Volume changed FAIL")); };
 public: void    OnStreamOpenOk()            {   this->PrintEvent(_T("Stream open OK")); };
 public: void    OnStreamOpenFail()          {   this->PrintEvent(_T("Stream open FAIL")); };
-public: void    OnMixpointReached()         {   this->PrintEvent(_T("Mix point reached")); };
+public: void    OnMixpointReached()         ;
 public: void    OnSetPositionOk()           {   this->PrintEvent(_T("Set position OK")); };
 public: void    OnSetPositionFail()         {   this->PrintEvent(_T("Set position FAIL")); };
 };
