@@ -1,0 +1,12 @@
+#summary Getting started with the development.
+
+= Getting started with the development =
+
+If you're going to test current trunk of mC2 you currently need to manually add the synchronize path.
+ * Build mC2 and the plugins.
+ * Start mC2.exe and then close it again so that the database is created.
+ * Locate the database in C:\Documents and Settings\%username%\Application Data\mC2\local
+ * Open the local_musik.db using sqlite.exe (download from http://www.sqlite.org)
+ * In the sqlite prompt write  {{{INSERT INTO paths (path) VALUES ('C:/MyMusikPath/');}}} and press enter.
+ * Close sqlite.exe and restart mC2.exe
+ * mC2 will now start indexing the files in the added path. You can click on the genre/artist/album views "All" to refresh.
