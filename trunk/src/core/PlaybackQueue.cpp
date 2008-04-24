@@ -104,7 +104,6 @@ void PlaybackQueue::Play(){
         this->playing   = true;
         this->transport.Start(path);
     }
-
 }
 
 //////////////////////////////////////////
@@ -149,6 +148,11 @@ void PlaybackQueue::Stop(){
 ///Return the current running track
 //////////////////////////////////////////
 TrackPtr PlaybackQueue::CurrentTrack(){
+    if (this->nowPlaying->Size() <= 0)
+    {
+        return TrackPtr();
+    }
+
     if(!this->currentTrack){
         // If the current track is empty, get a track from the nowPlaying tracklist
         this->SetCurrentTrack( this->nowPlaying->CurrentTrack()->Copy() );
