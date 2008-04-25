@@ -38,6 +38,7 @@
 
 #include <pch.hpp>
 #include <cube/TransportController.hpp>
+#include <win32cpp/ApplicationThread.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -72,6 +73,8 @@ void        TransportController::OnViewCreated()
     this->transportView.volumeSlider->Repositioned.connect(
         this, &TransportController::OnVolumeSliderChange);
     this->transportView.volumeSlider->SetPosition(musik::core::PlaybackQueue::Instance().Volume());
+
+    musik::core::PlaybackQueue::Instance().CurrentTrackChanged.connect(this,&TransportController::OnTrackChange);
 }
 
 void        TransportController::OnViewResized(Size size)
@@ -102,3 +105,15 @@ void        TransportController::OnVolumeSliderChange()
 {
     musik::core::PlaybackQueue::Instance().SetVolume(transportView.volumeSlider->Position());
 }
+
+void TransportController::OnTrackChange(musik::core::TrackPtr track){
+    win32cpp::ApplicationThread::Call0(this,&TransportController::OnTrackChangeAppThread);
+}
+
+void TransportController::OnTrackChangeAppThread(){
+/*    musik::core::TrackPtr track =  musik::core::PlaybackQueue::Instance().CurrentTrack();
+
+    this->transportView.titleLabel.     // HMM.. Can't find how to set the labels
+*/
+}
+

@@ -378,6 +378,14 @@
 			>
 		</Filter>
 		<File
+			RelativePath=".\ApplicationThread.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\ApplicationThread.hpp"
+			>
+		</File>
+		<File
 			RelativePath=".\Timer.cpp"
 			>
 		</File>
