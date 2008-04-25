@@ -39,6 +39,7 @@
 #pragma once
 
 #include <win32cpp/Types.hpp>
+#include <win32cpp/Window.hpp>
 #include <win32cpp/TopLevelWindow.hpp>
 
 #include <boost/shared_ptr.hpp>
@@ -46,6 +47,9 @@
 //////////////////////////////////////////////////////////////////////////////
 
 namespace win32cpp {
+//////////////////////////////////////////////////////////////////////////////
+// forward declaration
+class ApplicationThread;
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -69,6 +73,7 @@ public:     class ApplicationAlreadyInitializedException: public Exception { };
 public:     class ApplicationAlreadyRunningException: public Exception { };
 
 private:    /*ctor*/            Application();
+private:    /*dtor*/            ~Application();
 
 public:     static void         Initialize(HINSTANCE instance, HINSTANCE previousInstance, LPTSTR commandLine, int showCommand);
 public:     void                Run(TopLevelWindow& mainWindow);
@@ -93,6 +98,23 @@ private:    int showCommand;
 private:    TopLevelWindow* mainWindow;
     // class data
 private:    static Application sMainApplication;
+
+//////////////////////////////////////////////////////////////////////////////
+private:
+    friend class ApplicationThread;
+
+private:     ApplicationThread *thread;
+
+class HelperWindow : public win32cpp::Window{
+    public: HelperWindow();
+    public:  virtual HWND        Create(Window* parent);
+    public:  virtual LRESULT     WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+    public:  virtual void        OnCreated();
+};
+
+private:     HelperWindow *helperWindow;
+
+
 };
 
 //////////////////////////////////////////////////////////////////////////////

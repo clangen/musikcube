@@ -2,9 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
-//
-// Sources and Binaries of: mC2, win32cpp
+// The following are Copyright © 2007, Daniel Önnerby
 //
 // All rights reserved.
 //
@@ -35,40 +33,40 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
+#include "pch.hpp"
 
-#pragma once
-
-//////////////////////////////////////////////////////////////////////////////
-
-#include <core/PlaybackQueue.h>
-#include <cube/TransportView.hpp>
+#include "ApplicationThread.hpp"
 
 //////////////////////////////////////////////////////////////////////////////
 
 using namespace win32cpp;
 
-namespace musik { namespace cube {
-
 //////////////////////////////////////////////////////////////////////////////
 
-class TransportController : public EventHandler
-{
-public:     /*ctor*/    TransportController(TransportView& transportView);
+ApplicationThread::ApplicationThread(void){
+}
 
-protected:  void        OnViewCreated();
-protected:  void        OnViewResized(Size size);
+ApplicationThread::~ApplicationThread(void){
+}
 
-protected:  TransportView&                  transportView;
+void ApplicationThread::AddCall(CallClassBase *callClass){
+    this->calls.push_back(CallClassPtr(callClass));
+    this->NotifyMainThread();
+}
 
-protected:  void    OnPlayPressed();
-protected:  void    OnStopPressed();
-protected:  void    OnNextPressed();
-protected:  void    OnPreviousPressed();
-protected:  void    OnVolumeSliderChange();
-protected:  void    OnTrackChange(musik::core::TrackPtr track);
-protected:  void    OnTrackChangeAppThread();
-};
+void ApplicationThread::MainThreadCallback(){
+    boost::mutex::scoped_lock lock(this->mutex);
+    while(!this->calls.empty()){
+        CallClassPtr currentCall    = this->calls.front();
+        currentCall->Call();
+        this->calls.pop_front();
+    }
+}
 
-//////////////////////////////////////////////////////////////////////////////
+void ApplicationThread::NotifyMainThread(){
+    if(Application::Instance().helperWindow){
+        ::PostMessage(Application::Instance().helperWindow->Handle(),WM_USER+1,NULL,NULL);
+    }
+}
 
-} }     // musik::cube
+
