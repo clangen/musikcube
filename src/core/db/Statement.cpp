@@ -57,11 +57,10 @@ Statement::Statement(Connection &connection) : connection(&connection),stmt(NULL
 
 
 Statement::~Statement(){
-    this->Finalize();
+    int err=sqlite3_finalize(this->stmt);
 }
 
 void Statement::Finalize(){
-    int err=sqlite3_finalize(this->stmt);
 /*    #ifdef _DEBUG
         if(err!=0){
             const char *errorMsg    = sqlite3_errmsg(this->connection->connection);

@@ -48,10 +48,10 @@ CachedStatement::CachedStatement(const char* sql,Connection &connection) : State
     this->stmt  = this->connection->GetCachedStatement(sql);
 }
 
-
-void CachedStatement::Finalize(){
+CachedStatement::~CachedStatement(){
     sqlite3_reset(this->stmt);
     sqlite3_clear_bindings(this->stmt);
     this->connection->ReturnCachedStatement(this->sqlStatement.c_str(),this->stmt);
+    this->stmt=NULL;
 }
 

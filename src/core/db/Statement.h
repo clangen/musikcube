@@ -51,7 +51,7 @@ namespace musik{ namespace core{ namespace db{
     class Statement : boost::noncopyable{
         public: 
             Statement(const char* sql,Connection &connection);
-            ~Statement();
+            virtual ~Statement();
             void Reset();
             int Step();
 

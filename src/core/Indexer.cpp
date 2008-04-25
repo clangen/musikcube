@@ -407,7 +407,7 @@ void Indexer::ThreadLoop(){
     while(!this->Exit()){
 
         // Database should only be open when synchronizing
-        this->dbConnection.Open(this->database.c_str(),0,1024);
+        this->dbConnection.Open(this->database.c_str(),0,4096);
 
         this->RestartSync(false);
         this->Synchronize();
@@ -701,7 +701,8 @@ void Indexer::SyncOptimize(){
         genre, artist, album, track number, path, filename
         ************************************/
 
-        db::Statement stmt("SELECT t.id FROM tracks t LEFT OUTER JOIN genres g ON t.visual_genre_id=g.id LEFT OUTER JOIN albums al ON t.album_id=al.id LEFT OUTER JOIN artists ar ON t.visual_artist_id=ar.id LEFT OUTER JOIN folders f ON t.folder_id=f.id ORDER BY g.sort_order,ar.sort_order,al.sort_order,t.track,f.fullpath,t.filename",this->dbConnection);
+        db::Statement stmt("SELECT t.id FROM tracks t LEFT OUTER JOIN genres g ON g.id=t.visual_genre_id LEFT OUTER JOIN artists ar ON ar.id=t.visual_artist_id LEFT OUTER JOIN albums al ON al.id=t.album_id LEFT OUTER JOIN folders f ON f.id=t.folder_id ORDER BY g.sort_order,ar.sort_order,al.sort_order,t.track,f.fullpath,t.filename",this->dbConnection);
+
         db::Statement stmtUpdate("UPDATE tracks SET sort_order1=? WHERE id=?",this->dbConnection);
         iCount    = 0;
         while(stmt.Step()==db::ReturnCode::Row){
