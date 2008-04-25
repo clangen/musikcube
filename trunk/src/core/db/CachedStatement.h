@@ -46,10 +46,9 @@ namespace musik{ namespace core{ namespace db{
     class CachedStatement : public Statement{
         public: 
             CachedStatement(const char* sql,Connection &connection);
+            ~CachedStatement();
         private:
             std::string sqlStatement;
-        protected:
-            void Finalize();
     };
 
 
