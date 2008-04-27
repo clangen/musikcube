@@ -46,11 +46,22 @@ using namespace win32cpp;
 ApplicationThread::ApplicationThread(void)
 : helperWindow(NULL)
 {
+    this->applicationThreadId   = GetCurrentThreadId();
 }
 
 ApplicationThread::~ApplicationThread(void){
     delete this->helperWindow;
 }
+
+bool ApplicationThread::InMainThread(){
+    ApplicationThread *thread=Application::Instance().thread;
+    if(thread){
+        DWORD theThread = GetCurrentThreadId();
+        return thread->applicationThreadId==theThread;
+    }
+    return false;
+}
+
 
 void ApplicationThread::AddCall(CallClassBase *callClass){
     this->calls.push_back(CallClassPtr(callClass));
