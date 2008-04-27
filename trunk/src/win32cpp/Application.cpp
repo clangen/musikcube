@@ -57,13 +57,11 @@ Application Application::sMainApplication;
 , showCommand(NULL)
 , mainWindow(NULL)
 , thread(new win32cpp::ApplicationThread())
-, helperWindow(NULL)
 {
 }
 
 /*dtor*/        Application::~Application()
 {
-    delete this->thread;
 }
 
 ///\brief
@@ -125,15 +123,12 @@ void            Application::Run(TopLevelWindow& mainWindow)
 
     this->mainWindow = &mainWindow;
 
-    // Create helper window
-    this->helperWindow  = new Application::HelperWindow();
-
     if ( ! mainWindow)  // shortcut for IsInitialized()
     {
         mainWindow.Initialize();
     }
 
-    this->helperWindow->Initialize(&mainWindow);
+    this->thread->Initialize();
 
     //
     mainWindow.Destroyed.connect(this, &Application::OnMainWindowDestroyed);
@@ -147,7 +142,9 @@ void            Application::Run(TopLevelWindow& mainWindow)
         ::DispatchMessage(&msg);
     }
 
-    delete this->helperWindow;
+    delete this->thread;
+    this->thread = NULL;
+
 
     this->mainWindow = NULL;
 }
@@ -214,56 +211,3 @@ Application::operator HINSTANCE() const
     return this->instance;
 }
 
-///\brief
-///Constructor for HelperWindow
-Application::HelperWindow::HelperWindow(){
-}
-
-///\brief
-///Create HelperWindow
-HWND        Application::HelperWindow::Create(Window* parent){
-    HINSTANCE hInstance = Application::Instance();
-
-    // create the window
-    DWORD style = WS_CHILD;
-    //
-    HWND hwnd = CreateWindowEx(
-        NULL,                   // ExStyle
-        _T("Message"),          // Class name
-        _T("HelperWindow"),     // Window name
-        style,                  // Style
-        0,                      // X
-        0,                      // Y
-        0,                      // Width
-        0,                      // Height
-        parent->Handle(),       // Parent
-        NULL,                   // Menu
-        hInstance,              // Instance
-        NULL);                  // lParam
-
-    return hwnd;
-}
-
-///\brief
-///HelperWindow message handler.
-LRESULT     Application::HelperWindow::WindowProc(UINT message, WPARAM wParam, LPARAM lParam){
-    switch (message)
-    {
-    case WM_USER+1:
-        // This is a ApplicationTread message
-        ApplicationThread *thread    = Application::Instance().thread;
-        if(thread){
-            thread->MainThreadCallback();
-        }
-        return 0;   // 0 = processed
-    }
-
-    return this->DefaultWindowProc(message, wParam, lParam);
-}
-
-void        Application::HelperWindow::OnCreated(){
-    ApplicationThread *thread    = Application::Instance().thread;
-    if(thread){
-        thread->MainThreadCallback();
-    }
-}

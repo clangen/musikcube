@@ -107,10 +107,10 @@ void        TransportController::OnVolumeSliderChange()
 }
 
 void TransportController::OnTrackChange(musik::core::TrackPtr track){
-    win32cpp::ApplicationThread::Call0(this,&TransportController::OnTrackChangeAppThread);
+    win32cpp::ApplicationThread::Call1(this,&TransportController::OnTrackChangeAppThread,track);
 }
 
-void TransportController::OnTrackChangeAppThread(){
+void TransportController::OnTrackChangeAppThread(musik::core::TrackPtr track){
 /*    musik::core::TrackPtr track =  musik::core::PlaybackQueue::Instance().CurrentTrack();
 
     this->transportView.titleLabel.     // HMM.. Can't find how to set the labels

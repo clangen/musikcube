@@ -43,10 +43,13 @@ using namespace win32cpp;
 
 //////////////////////////////////////////////////////////////////////////////
 
-ApplicationThread::ApplicationThread(void){
+ApplicationThread::ApplicationThread(void)
+: helperWindow(NULL)
+{
 }
 
 ApplicationThread::~ApplicationThread(void){
+    delete this->helperWindow;
 }
 
 void ApplicationThread::AddCall(CallClassBase *callClass){
@@ -64,9 +67,69 @@ void ApplicationThread::MainThreadCallback(){
 }
 
 void ApplicationThread::NotifyMainThread(){
-    if(Application::Instance().helperWindow){
-        ::PostMessage(Application::Instance().helperWindow->Handle(),WM_USER+1,NULL,NULL);
+    if(this->helperWindow){
+        ::PostMessage(this->helperWindow->Handle(),WM_USER+1,NULL,NULL);
     }
 }
 
+void ApplicationThread::Initialize(){
+    // Create helper window
+    this->helperWindow  = new ApplicationThread::HelperWindow();
 
+    this->helperWindow->Initialize();
+}
+
+
+///\brief
+///Constructor for HelperWindow
+ApplicationThread::HelperWindow::HelperWindow(){
+}
+
+///\brief
+///Create HelperWindow
+HWND ApplicationThread::HelperWindow::Create(Window* parent){
+    HINSTANCE hInstance = Application::Instance();
+
+    // create the window
+    DWORD style = WS_CHILD;
+    //
+    HWND hwnd = CreateWindowEx(
+        NULL,                   // ExStyle
+        _T("Message"),          // Class name
+        _T("ThreadHelperWindow"),     // Window name
+        style,                  // Style
+        0,                      // X
+        0,                      // Y
+        0,                      // Width
+        0,                      // Height
+        HWND_MESSAGE,           // Parent
+        NULL,                   // Menu
+        hInstance,              // Instance
+        NULL);                  // lParam
+
+    return hwnd;
+}
+
+///\brief
+///HelperWindow message handler.
+LRESULT ApplicationThread::HelperWindow::WindowProc(UINT message, WPARAM wParam, LPARAM lParam){
+    switch (message)
+    {
+    case WM_USER+1:
+        // This is a ApplicationTread message
+        ApplicationThread *thread    = Application::Instance().thread;
+        if(thread){
+            thread->MainThreadCallback();
+        }
+        return 0;   // 0 = processed
+    }
+
+    return this->DefaultWindowProc(message, wParam, lParam);
+}
+
+void ApplicationThread::HelperWindow::OnCreated(){
+    ApplicationThread *thread    = Application::Instance().thread;
+    if(thread){
+        thread->MainThreadCallback();
+    }
+}
