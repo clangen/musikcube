@@ -107,13 +107,12 @@ void        TransportController::OnVolumeSliderChange()
 }
 
 void TransportController::OnTrackChange(musik::core::TrackPtr track){
-    win32cpp::ApplicationThread::Call1(this,&TransportController::OnTrackChangeAppThread,track);
-}
+    if(!win32cpp::ApplicationThread::InMainThread()){
+        win32cpp::ApplicationThread::Call1(this,&TransportController::OnTrackChange,track);
+        return;
+    }
 
-void TransportController::OnTrackChangeAppThread(musik::core::TrackPtr track){
-/*    musik::core::TrackPtr track =  musik::core::PlaybackQueue::Instance().CurrentTrack();
+//    this->transportView.titleLabel.     // HMM.. Can't find how to set the labels
 
-    this->transportView.titleLabel.     // HMM.. Can't find how to set the labels
-*/
 }
 

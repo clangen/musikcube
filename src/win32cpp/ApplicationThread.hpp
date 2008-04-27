@@ -56,12 +56,15 @@ class ApplicationThread{
         ApplicationThread(void);
         void MainThreadCallback();
         void NotifyMainThread();
+        void Initialize();
+
+        DWORD applicationThreadId;
 
         boost::mutex mutex;
 
     public:    
         ~ApplicationThread(void);
-        void Initialize();
+        static bool InMainThread();
 
     //////////////////////////////////////////////////////////////////////////////
     private:  
@@ -120,7 +123,7 @@ class ApplicationThread{
             public:
                 sigslot::signal1<Arg1Type> signal;
                 Arg1Type arg1mem;
-                CallClass1(DestinationType* destinationObject,void (DestinationType::*memberMethod)(Arg1Type),Arg1Type arg1) : arg1mem(arg1){
+                CallClass1(DestinationType* destinationObject,void (DestinationType::*memberMethod)(Arg1Type),Arg1Type &arg1) : arg1mem(arg1){
                     this->signal.connect(destinationObject,memberMethod);
                 };
 
@@ -131,7 +134,7 @@ class ApplicationThread{
 
     public:     
         template<class DestinationType,class Arg1Type> 
-        static void Call1(DestinationType* destinationObject,void (DestinationType::*memberMethod)(Arg1Type),Arg1Type arg1){
+        static void Call1(DestinationType* destinationObject,void (DestinationType::*memberMethod)(Arg1Type),Arg1Type &arg1){
             win32cpp::Application::Instance().thread->AddCall(new CallClass1<DestinationType,Arg1Type>(destinationObject,memberMethod,arg1));    
         };
 
