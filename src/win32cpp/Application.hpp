@@ -100,20 +100,8 @@ private:    TopLevelWindow* mainWindow;
 private:    static Application sMainApplication;
 
 //////////////////////////////////////////////////////////////////////////////
-private:
-    friend class ApplicationThread;
 
-private:     ApplicationThread *thread;
-
-class HelperWindow : public win32cpp::Window{
-    public: HelperWindow();
-    public:  virtual HWND        Create(Window* parent);
-    public:  virtual LRESULT     WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
-    public:  virtual void        OnCreated();
-};
-
-private:     HelperWindow *helperWindow;
-
+public:     ApplicationThread *thread;
 
 };
 

@@ -66,7 +66,7 @@ protected:  void    OnNextPressed();
 protected:  void    OnPreviousPressed();
 protected:  void    OnVolumeSliderChange();
 protected:  void    OnTrackChange(musik::core::TrackPtr track);
-protected:  void    OnTrackChangeAppThread();
+protected:  void    OnTrackChangeAppThread(musik::core::TrackPtr track);
 };
 
 //////////////////////////////////////////////////////////////////////////////
