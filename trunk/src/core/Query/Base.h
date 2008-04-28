@@ -155,7 +155,7 @@ namespace musik{ namespace core{
                 ///\returns
                 ///Should return true if query is totaly finished. false otherwise.
                 //////////////////////////////////////////
-                virtual bool RunCallbacks(Library::Base *oLibrary)=0;
+                virtual bool RunCallbacks(Library::Base *oLibrary){return true;};
 
                 //////////////////////////////////////////
                 ///\brief
