@@ -299,6 +299,22 @@
 						>
 					</File>
 					<File
+						RelativePath=".\Query\PlaylistLoad.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Query\PlaylistLoad.h"
+						>
+					</File>
+					<File
+						RelativePath=".\Query\PlaylistSave.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Query\PlaylistSave.h"
+						>
+					</File>
+					<File
 						RelativePath=".\Query\TrackMetadata.cpp"
 						>
 					</File>

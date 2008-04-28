@@ -193,6 +193,18 @@ void Library::LocalDB::CreateDatabase(){
             "checksum INTEGER DEFAULT 0"
             ")");
 
+    // Create the playlists-table
+    this->db.Execute("CREATE TABLE IF NOT EXISTS playlists ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "name TEXT default ''"
+            ")");
+    // Create the playlists-table
+    this->db.Execute("CREATE TABLE IF NOT EXISTS playlist_tracks ("
+            "track_id INTEGER DEFAULT 0,"
+            "playlist_id INTEGER DEFAULT 0,"
+            "sort_order INTEGER DEFAULT 0"
+            ")");
+
 
     // INDEXES
     this->db.Execute("CREATE UNIQUE INDEX IF NOT EXISTS folders_index ON folders (name,parent_id,path_id)");
@@ -212,6 +224,8 @@ void Library::LocalDB::CreateDatabase(){
     this->db.Execute("CREATE INDEX IF NOT EXISTS trackmeta_index2 ON track_meta (meta_value_id,track_id)");
     this->db.Execute("CREATE INDEX IF NOT EXISTS metakey_index1 ON meta_keys (name)");
     this->db.Execute("CREATE INDEX IF NOT EXISTS metavalues_index1 ON meta_values (meta_key_id)");
+
+    this->db.Execute("CREATE INDEX IF NOT EXISTS playlist_index ON playlist_tracks (playlist_id,sort_order)");
 
     this->db.Execute("ANALYZE");
 }
