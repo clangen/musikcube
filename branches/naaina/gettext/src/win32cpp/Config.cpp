@@ -83,19 +83,10 @@ BOOL Config::SectionExists(const uistring& section)
         bufferLen, 
         this->iniFileName.c_str());
 
-    if (retLen)
-    {
-        ret = TRUE;
-    } 
-    else 
-    {
-        ret = FALSE;
-    }
-
     // cleanup
     DISPOSE(buffer);
 
-    return ret;
+    return (retLen > 0);
 }
 
 uistring Config::Value(const uistring &key)
