@@ -43,16 +43,31 @@ using namespace win32cpp;
 
 //////////////////////////////////////////////////////////////////////////////
 
+//////////////////////////////////////////
+///\brief
+///Constructor
+//////////////////////////////////////////
 ApplicationThread::ApplicationThread(void)
 : helperWindow(NULL)
 {
     this->applicationThreadId   = GetCurrentThreadId();
 }
 
+//////////////////////////////////////////
+///\brief
+///Destructor
+///
+///\remarks
+///Will also delete the HelperWindow
+//////////////////////////////////////////
 ApplicationThread::~ApplicationThread(void){
     delete this->helperWindow;
 }
 
+//////////////////////////////////////////
+///\brief
+///Ask if the current caller is executed in the main thread
+//////////////////////////////////////////
 bool ApplicationThread::InMainThread(){
     ApplicationThread *thread=Application::Instance().thread;
     if(thread){
@@ -63,11 +78,19 @@ bool ApplicationThread::InMainThread(){
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Adds a call to the calls queue of calls.
+//////////////////////////////////////////
 void ApplicationThread::AddCall(CallClassBase *callClass){
     this->calls.push_back(CallClassPtr(callClass));
     this->NotifyMainThread();
 }
 
+//////////////////////////////////////////
+///\brief
+///Method called by the HelperWindow to execute the calls
+//////////////////////////////////////////
 void ApplicationThread::MainThreadCallback(){
     boost::mutex::scoped_lock lock(this->mutex);
     while(!this->calls.empty()){
@@ -77,12 +100,20 @@ void ApplicationThread::MainThreadCallback(){
     }
 }
 
+//////////////////////////////////////////
+///\brief
+///Sends a message to the HelperWindow to notify that there are new calls
+//////////////////////////////////////////
 void ApplicationThread::NotifyMainThread(){
     if(this->helperWindow){
         ::PostMessage(this->helperWindow->Handle(),WM_USER+1,NULL,NULL);
     }
 }
 
+//////////////////////////////////////////
+///\brief
+///Initialize the HelperWindow
+//////////////////////////////////////////
 void ApplicationThread::Initialize(){
     // Create helper window
     this->helperWindow  = new ApplicationThread::HelperWindow();
@@ -91,13 +122,20 @@ void ApplicationThread::Initialize(){
 }
 
 
+//////////////////////////////////////////
 ///\brief
 ///Constructor for HelperWindow
+//////////////////////////////////////////
 ApplicationThread::HelperWindow::HelperWindow(){
 }
 
+//////////////////////////////////////////
 ///\brief
 ///Create HelperWindow
+///
+/// The parent window is not needed since message windows
+/// does not require this.
+//////////////////////////////////////////
 HWND ApplicationThread::HelperWindow::Create(Window* parent){
     HINSTANCE hInstance = Application::Instance();
 
@@ -121,8 +159,10 @@ HWND ApplicationThread::HelperWindow::Create(Window* parent){
     return hwnd;
 }
 
+//////////////////////////////////////////
 ///\brief
 ///HelperWindow message handler.
+//////////////////////////////////////////
 LRESULT ApplicationThread::HelperWindow::WindowProc(UINT message, WPARAM wParam, LPARAM lParam){
     switch (message)
     {
@@ -138,6 +178,14 @@ LRESULT ApplicationThread::HelperWindow::WindowProc(UINT message, WPARAM wParam,
     return this->DefaultWindowProc(message, wParam, lParam);
 }
 
+//////////////////////////////////////////
+///\brief
+///This method is called when message window has been created
+///
+///If calls has been added to the calls queue
+///before this, they have not been called.
+///This method will make a call to the MainThreadCallback
+//////////////////////////////////////////
 void ApplicationThread::HelperWindow::OnCreated(){
     ApplicationThread *thread    = Application::Instance().thread;
     if(thread){
