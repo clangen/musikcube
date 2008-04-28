@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright © 2008, André Wösten
 //
 // Sources and Binaries of: mC2, win32cpp
 //
@@ -38,38 +38,37 @@
 
 #pragma once
 
-//////////////////////////////////////////////////////////////////////////////
-
-#include <win32cpp/Win32Config.hpp>          // Must be first!
-
-#include <win32cpp/Application.hpp>
-#include <win32cpp/BoxLayout.hpp>
-#include <win32cpp/Button.hpp>
-#include <win32cpp/Color.hpp>
-#include <win32cpp/Config.hpp>
-#include <win32cpp/Container.hpp>
-#include <win32cpp/DeviceContext.hpp>
-#include <win32cpp/Font.hpp>
-#include <win32cpp/Frame.hpp>
-#include <win32cpp/Label.hpp>
-#include <win32cpp/ListView.hpp>
-#include <win32cpp/Locale.hpp>
-#include <win32cpp/MemoryDC.hpp>
-#include <win32cpp/Menu.hpp>
-#include <win32cpp/Panel.hpp>
-#include <win32cpp/RedrawLock.hpp>
-#include <win32cpp/Trackbar.hpp>
-#include <win32cpp/Splitter.hpp>
-#include <win32cpp/TopLevelWindow.hpp>
-#include <win32cpp/Types.hpp>
-#include <win32cpp/Utility.hpp>
-#include <win32cpp/Window.hpp>
+#include <varargs.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
-///\brief
-///namespace root
 namespace win32cpp {
-}
 
 //////////////////////////////////////////////////////////////////////////////
+// Locale
+//////////////////////////////////////////////////////////////////////////////
+
+typedef std::vector<uistring> LocaleList;
+typedef std::map<uistring, uistring> LocaleTranslationMap;
+
+class Locale {
+private:    
+    Config          config;
+    uistring        localeDirectory;
+    
+    LocaleTranslationMap
+                    translationMap;
+public:
+    bool            LoadConfig(const uistring& localeName);
+    void            SetLocaleDirectory(const uistring& dirName);
+    LocaleList      EnumLocales(void);
+    uistring        Translate(const uistring& original);
+
+    /*ctor*/        Locale();
+    /*ctor*/        Locale(const uistring& dirName, const uistring& locale);
+    /*dtor*/        ~Locale();
+};
+
+//////////////////////////////////////////////////////////////////////////////
+
+}

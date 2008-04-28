@@ -341,11 +341,27 @@
 					Name="to document"
 					>
 					<File
+						RelativePath=".\Config.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Config.hpp"
+						>
+					</File>
+					<File
 						RelativePath=".\DeviceContext.cpp"
 						>
 					</File>
 					<File
 						RelativePath=".\DeviceContext.hpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Locale.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Locale.hpp"
 						>
 					</File>
 					<File

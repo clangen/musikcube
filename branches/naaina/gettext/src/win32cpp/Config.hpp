@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright © 2008, André Wösten
 //
 // Sources and Binaries of: mC2, win32cpp
 //
@@ -40,36 +40,31 @@
 
 //////////////////////////////////////////////////////////////////////////////
 
-#include <win32cpp/Win32Config.hpp>          // Must be first!
-
-#include <win32cpp/Application.hpp>
-#include <win32cpp/BoxLayout.hpp>
-#include <win32cpp/Button.hpp>
-#include <win32cpp/Color.hpp>
-#include <win32cpp/Config.hpp>
-#include <win32cpp/Container.hpp>
-#include <win32cpp/DeviceContext.hpp>
-#include <win32cpp/Font.hpp>
-#include <win32cpp/Frame.hpp>
-#include <win32cpp/Label.hpp>
-#include <win32cpp/ListView.hpp>
-#include <win32cpp/Locale.hpp>
-#include <win32cpp/MemoryDC.hpp>
-#include <win32cpp/Menu.hpp>
-#include <win32cpp/Panel.hpp>
-#include <win32cpp/RedrawLock.hpp>
-#include <win32cpp/Trackbar.hpp>
-#include <win32cpp/Splitter.hpp>
-#include <win32cpp/TopLevelWindow.hpp>
-#include <win32cpp/Types.hpp>
-#include <win32cpp/Utility.hpp>
-#include <win32cpp/Window.hpp>
-
-//////////////////////////////////////////////////////////////////////////////
-
-///\brief
-///namespace root
 namespace win32cpp {
-}
 
 //////////////////////////////////////////////////////////////////////////////
+// Config
+//////////////////////////////////////////////////////////////////////////////
+
+typedef std::vector<uistring> ConfigSectionList;
+
+class Config {
+private:    
+    uistring    currentSection;
+    uistring    iniFileName;
+public:
+    /*ctor*/    Config();
+    /*ctor*/    Config(const uistring& fileName);
+    /*dtor*/    ~Config();
+    void        SetSection(const uistring& newSection);
+    void        SetFileName(const uistring& fileName);
+    uistring    Value(const uistring& key);
+    BOOL        SetValue(const uistring& key, const uistring& value);
+    BOOL        SectionExists(const uistring& section);
+
+    ConfigSectionList   Sections();
+};
+
+//////////////////////////////////////////////////////////////////////////////
+
+}
