@@ -47,7 +47,7 @@
 
 using namespace musik::core;
 
-Indexer::Indexer(void) : oThread(NULL),iTimeout(300),iProgress(0),iStatus(0){
+Indexer::Indexer(void) : oThread(NULL),iTimeout(3600),iProgress(0),iStatus(0){
 }
 
 Indexer::~Indexer(void){

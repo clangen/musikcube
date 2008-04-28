@@ -49,6 +49,24 @@ namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
 
+//////////////////////////////////////////
+///\brief
+///ApplicationThread is a class handling intercommunication to main thread.
+///
+///To make a call to the main thread you do like this:
+///\code
+///win32cpp::ApplicationThread::Call1(this /*pointer to object*/,&MyClass::MyMethod,argument1);
+///\endcode
+///
+///The calls are using the sigslot library and are threadsafe. If the object
+///is deleted before mainthread have the time to call it, the call will not be made.
+///
+///\remarks
+///ApplicationThread has only one instance in the Application class (singleton)
+///
+///\see
+///Application
+//////////////////////////////////////////
 class ApplicationThread{
     private:  
         friend class Application;
@@ -58,8 +76,12 @@ class ApplicationThread{
         void NotifyMainThread();
         void Initialize();
 
-        DWORD applicationThreadId;
+		///\brief
+		///The applications thread id
+		DWORD applicationThreadId;
 
+		///\brief
+		///mutex for protecting the calls 
         boost::mutex mutex;
 
     public:    
@@ -68,7 +90,10 @@ class ApplicationThread{
 
     //////////////////////////////////////////////////////////////////////////////
     private:  
-        class CallClassBase{
+
+		///\brief
+		///A virtual base class for all CallClasses
+		class CallClassBase{
             public: 
                 virtual ~CallClassBase(void){};
                 virtual void Call()=0;
@@ -78,14 +103,18 @@ class ApplicationThread{
         typedef boost::shared_ptr<CallClassBase> CallClassPtr;
         typedef std::list<CallClassPtr> CallVector;
 
-        CallVector calls;
+		///\brief
+		///A list of all the calls to be made
+		CallVector calls;
 
         void AddCall(CallClassBase *callClass);
 
     //////////////////////////////////////////////////////////////////////////////
 
     private:
-        class HelperWindow : public win32cpp::Window{
+		///\brief
+        ///The HelperWindow is a message only Window (invisible) to help sending messages to main thread.
+		class HelperWindow : public win32cpp::Window{
             public: 
                 HelperWindow();
                 virtual HWND        Create(Window* parent);
@@ -93,7 +122,9 @@ class ApplicationThread{
                 virtual void        OnCreated();
         };
 
-        HelperWindow *helperWindow;
+		///\brief
+		///instance of the HelperWindow. Created when the Initialize is called.
+		HelperWindow *helperWindow;
 
     //////////////////////////////////////////////////////////////////////////////
     private:
@@ -136,6 +167,29 @@ class ApplicationThread{
         template<class DestinationType,class Arg1Type> 
         static void Call1(DestinationType* destinationObject,void (DestinationType::*memberMethod)(Arg1Type),Arg1Type &arg1){
             win32cpp::Application::Instance().thread->AddCall(new CallClass1<DestinationType,Arg1Type>(destinationObject,memberMethod,arg1));    
+        };
+
+    //////////////////////////////////////////////////////////////////////////////
+    private:
+        template<class DestinationType,class Arg1Type,class Arg2Type> 
+        class CallClass2 : public CallClassBase{
+            public:
+                sigslot::signal2<Arg1Type,Arg2Type> signal;
+                Arg1Type arg1mem;
+                Arg2Type arg2mem;
+                CallClass2(DestinationType* destinationObject,void (DestinationType::*memberMethod)(Arg1Type,Arg2Type),Arg1Type &arg1,Arg2Type &arg2) : arg1mem(arg1),arg2mem(arg2){
+                    this->signal.connect(destinationObject,memberMethod);
+                };
+
+                void Call(){
+                    this->signal(this->arg1mem,this->arg2mem);
+                };
+        };
+
+    public:     
+        template<class DestinationType,class Arg1Type,class Arg2Type> 
+        static void Call2(DestinationType* destinationObject,void (DestinationType::*memberMethod)(Arg1Type,Arg2Type),Arg1Type &arg1,Arg2Type &arg2){
+            win32cpp::Application::Instance().thread->AddCall(new CallClass2<DestinationType,Arg1Type,Arg2Type>(destinationObject,memberMethod,arg1,arg2));    
         };
 
     //////////////////////////////////////////////////////////////////////////////
