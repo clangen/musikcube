@@ -52,22 +52,41 @@ typedef std::vector<uistring> LocaleList;
 typedef std::map<uistring, uistring> LocaleTranslationMap;
 
 class Locale {
-private:    
+private:
     Config          config;
     uistring        localeDirectory;
     
     LocaleTranslationMap
                     translationMap;
+
 public:
     bool            LoadConfig(const uistring& localeName);
     void            SetLocaleDirectory(const uistring& dirName);
     LocaleList      EnumLocales(void);
     uistring        Translate(const uistring& original);
 
+    static Locale*  Instance()
+    {
+        // singleton implementation (scott meyers variant)
+        // due to the static initialization the compiler is creating code
+        // with an atexit()-registration of a function which is responsible
+        // for a guaranteed destruction of the singleton object when
+        // the program exists (resource leaks can be avoided by this method)
+        static Locale singletonInstance;
+
+        // we return the pointer so we can pass the Locale instance
+        // around without the need to forbid instance-based 
+        // (copy-)construction
+        return &singletonInstance;
+    }
+
     /*ctor*/        Locale();
     /*ctor*/        Locale(const uistring& dirName, const uistring& locale);
     /*dtor*/        ~Locale();
 };
+
+#define _(ORIGINALTEXT) (win32cpp::Locale::Instance()->Translate(ORIGINALTEXT))
+
 
 //////////////////////////////////////////////////////////////////////////////
 

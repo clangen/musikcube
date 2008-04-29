@@ -40,12 +40,6 @@
 
 #include <win32cpp/Types.hpp>
 
-#define DISPOSE(VAR)    \
-    if(VAR) {           \
-        free(VAR);      \
-        (VAR) = NULL;   \
-    }
-
 //////////////////////////////////////////////////////////////////////////////
 
 namespace win32cpp {

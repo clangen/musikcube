@@ -71,20 +71,15 @@ void Config::SetFileName(const uistring& fileName)
 
 BOOL Config::SectionExists(const uistring& section)
 {
-    BOOL ret;		
     DWORD bufferLen = 255, retLen;
-    // todo: scoped_ptr
-    LPTSTR buffer = (LPTSTR)malloc(bufferLen * sizeof(TCHAR));
+    boost::scoped_ptr<TCHAR> buffer(new TCHAR[bufferLen]);
 
     // get section keys
     retLen = ::GetPrivateProfileSection(
         section.c_str(),
-        buffer,
+        buffer.get(),
         bufferLen, 
         this->iniFileName.c_str());
-
-    // cleanup
-    DISPOSE(buffer);
 
     return (retLen > 0);
 }
@@ -93,15 +88,14 @@ uistring Config::Value(const uistring &key)
 {
     uistring value;		
     DWORD bufferLen = 255, retLen;
-    // todo: scoped_ptr
-    LPTSTR buffer = (LPTSTR)malloc(bufferLen * sizeof(TCHAR));
+    boost::scoped_ptr<TCHAR> buffer(new TCHAR[bufferLen]);
 
     // get value
     retLen = ::GetPrivateProfileString(
         this->currentSection.c_str(), 
         key.c_str(), 
         NULL, 
-        buffer, 
+        buffer.get(), 
         bufferLen, 
         this->iniFileName.c_str());
 
@@ -109,24 +103,21 @@ uistring Config::Value(const uistring &key)
     while(retLen == bufferLen-1)
     {
         bufferLen += bufferLen;
-        buffer = (LPTSTR)realloc(buffer, bufferLen * sizeof(TCHAR));
+        buffer.reset(new TCHAR[bufferLen]);
 
         retLen = ::GetPrivateProfileString(
             this->currentSection.c_str(), 
             key.c_str(), 
             NULL, 
-            buffer, 
+            buffer.get(), 
             bufferLen, 
             this->iniFileName.c_str());
     }
 
     if (retLen)
     {
-        value = uistring(buffer);
+        value = uistring(buffer.get());
     }
-
-    // cleanup
-    DISPOSE(buffer);
 
     return value;
 }
@@ -155,12 +146,11 @@ ConfigSectionList Config::Sections()
 {
     ConfigSectionList list;
     DWORD bufferLen = 255, retLen;
-    // todo: scoped_ptr
-    LPTSTR buffer = (LPTSTR)malloc(bufferLen * sizeof(TCHAR));
+    boost::scoped_ptr<TCHAR> buffer(new TCHAR[bufferLen]);
 
     // get string with section names
     retLen = ::GetPrivateProfileSectionNames(
-        buffer,
+        buffer.get(),
         bufferLen, 
         this->iniFileName.c_str());
 
@@ -168,46 +158,40 @@ ConfigSectionList Config::Sections()
     while(retLen == bufferLen-1)
     {
         bufferLen += bufferLen;
-        buffer = (LPTSTR)realloc(buffer, bufferLen * sizeof(TCHAR));
+        buffer.reset(new TCHAR[bufferLen]);
 
         retLen = ::GetPrivateProfileSectionNames(
-            buffer,
+            buffer.get(),
             bufferLen, 
             this->iniFileName.c_str());
     }
 
     if (retLen)
     {
-        LPTSTR buffer2 = (LPTSTR)malloc(retLen * sizeof(TCHAR));
-
+        boost::scoped_ptr<TCHAR> buffer2(new TCHAR[retLen]);
+        
         // split up string with section names   
         for(int lastIndex = 0, i = 0; i < retLen; i++) 
         {
-            if(buffer[i] == 0) {
+            if(buffer.get()[i] == 0) {
                 // copy section name to separate buffer
                 ::_tcsncpy_s(
-                    buffer2,
+                    buffer2.get(),
                     i + 1,
-                    &buffer[lastIndex],
+                    &buffer.get()[lastIndex],
                     _TRUNCATE);
 
                 // push section name into list
-                list.push_back(buffer2);
+                list.push_back(buffer2.get());
 
                 // save last index to get next element
                 lastIndex = i + 1;
 
                 // the end of the list is terminated with \0\0
-                if(buffer[i+1] == 0) break;
+                if(buffer.get()[i+1] == 0) break;
             }
         }
-
-        // cleanup
-        DISPOSE(buffer2);
     }
-
-    // cleanup
-    DISPOSE(buffer);
 
     return list;
 }
