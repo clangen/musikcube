@@ -112,10 +112,9 @@ void PlaybackQueue::Play(){
 //////////////////////////////////////////
 void PlaybackQueue::Next(){
     musik::core::TrackPtr track( this->nowPlaying->NextTrack() );
-    if(track){
-        this->SetCurrentTrack(track->Copy());
-        this->Play();
-    }
+
+    this->SetCurrentTrack(track);
+    this->Play();
 }
 
 //////////////////////////////////////////
@@ -124,10 +123,10 @@ void PlaybackQueue::Next(){
 //////////////////////////////////////////
 void PlaybackQueue::Previous(){
     musik::core::TrackPtr track( this->nowPlaying->PreviousTrack() );
-    if(track){
-        this->SetCurrentTrack(track->Copy());
-        this->Play();
-    }
+
+	this->SetCurrentTrack(track);
+	this->Play();
+
 }
 
 //////////////////////////////////////////
@@ -155,8 +154,7 @@ TrackPtr PlaybackQueue::CurrentTrack(){
 
     if(!this->currentTrack){
         // If the current track is empty, get a track from the nowPlaying tracklist
-        this->SetCurrentTrack( this->nowPlaying->CurrentTrack()->Copy() );
-
+        this->SetCurrentTrack( this->nowPlaying->CurrentTrack() );
     }
     return this->currentTrack;
 }
@@ -169,20 +167,24 @@ TrackPtr PlaybackQueue::CurrentTrack(){
 ///for all the tracks metadata
 //////////////////////////////////////////
 void PlaybackQueue::SetCurrentTrack(TrackPtr track){
-    if(this->currentTrack!=track){
-        this->currentTrack  = track;
 
-        // Get all metadata to the track
-        if(this->currentTrack){
-            this->metadataQuery.Clear();
-            this->metadataQuery.RequestAllMetakeys();
-            this->metadataQuery.RequestTrack(this->currentTrack);
-            this->nowPlaying->Library()->AddQuery(this->metadataQuery,musik::core::Query::Wait|musik::core::Query::AutoCallback|musik::core::Query::UnCanceable|musik::core::Query::Prioritize);
-        }
+	if(track){
+		this->currentTrack  = track->Copy();
+	}else{
+		this->currentTrack	= musik::core::TrackPtr();
+	}
 
-        // Call the signal if track updates
-        this->CurrentTrackChanged(track);
+    // Get all metadata to the track
+    if(this->currentTrack){
+        this->metadataQuery.Clear();
+        this->metadataQuery.RequestAllMetakeys();
+        this->metadataQuery.RequestTrack(this->currentTrack);
+        this->nowPlaying->Library()->AddQuery(this->metadataQuery,musik::core::Query::Wait|musik::core::Query::AutoCallback|musik::core::Query::UnCanceable|musik::core::Query::Prioritize);
     }
+
+    // Call the signal if track updates
+    this->CurrentTrackChanged(this->currentTrack);
+
 }
 
 //////////////////////////////////////////
