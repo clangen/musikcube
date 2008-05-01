@@ -42,6 +42,8 @@
 #include <core/Plugin/IMetaDataReader.h>
 #include <core/db/Connection.h>
 
+#include <sigslot/sigslot.h>
+
 #include <boost/thread/thread.hpp>
 #include <boost/thread/condition.hpp>
 #include <boost/thread/mutex.hpp>
@@ -63,13 +65,15 @@ namespace musik{ namespace core{
 
             int iTimeout;
 
-//            double getProgress();
             utfstring GetStatus();
-            int GetStatusCode();
             void RestartSync(bool bNewRestart=true);
             bool Restarted();
 
             utfstring database;
+
+            sigslot::signal0<> SynchronizeStart;
+            sigslot::signal0<> SynchronizeEnd;
+            sigslot::signal0<> PathsUpdated;
 
         private:
             
@@ -94,8 +98,6 @@ namespace musik{ namespace core{
             void SyncCleanup();
             void SyncAddRemovePaths();
             void SyncOptimize();
-
-            static int LongRunningQueryInterrupt(void *indexer);
 
             class _AddRemovePath{
                 public:

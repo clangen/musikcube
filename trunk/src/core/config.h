@@ -66,6 +66,7 @@ typedef unsigned int DBTIME;
 
 #include <string>
 #include <boost/filesystem.hpp>
+#include <boost/format.hpp>
 
 #if defined(WIN32)
 
@@ -98,6 +99,8 @@ typedef unsigned int DBTIME;
             typedef wpath utfpath;
             typedef wdirectory_iterator utfdirectory_iterator;
         }
+
+        typedef wformat utfformat;
     }
 
     //////////////////////////////////////////
@@ -136,6 +139,8 @@ typedef unsigned int DBTIME;
             typedef path utfpath;
             typedef directory_iterator utfdirectory_iterator;
         }
+
+        typedef format utfformat;
     }
 
 

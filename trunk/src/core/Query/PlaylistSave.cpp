@@ -55,8 +55,10 @@ Query::PlaylistSave::PlaylistSave(void){
 Query::PlaylistSave::~PlaylistSave(void){
 }
 
-void Query::PlaylistSave::SavePlaylist(int playlistId,musik::core::tracklist::IRandomAccess &tracklist){
+void Query::PlaylistSave::SavePlaylist(int playlistId,utfstring playlistName,musik::core::tracklist::IRandomAccess &tracklist){
     this->playlistId    = playlistId;
+    this->playlistName  = playlistName;
+
     for(int i(0);i<tracklist.Size();++i){
         musik::core::TrackPtr track=tracklist.Track(i);
         if(track){
@@ -68,6 +70,19 @@ void Query::PlaylistSave::SavePlaylist(int playlistId,musik::core::tracklist::IR
 bool Query::PlaylistSave::ParseQuery(Library::Base *oLibrary,db::Connection &db){
 
     db::ScopedTransaction transaction(db);
+
+    {
+        db::Statement updatePlaylist("INSERT OR REPLACE INT playlists (id,name) VALUES (?,?)",db);
+        if(this->playlistId==0){
+            updatePlaylist.BindInt(0,this->playlistId);
+        }
+        updatePlaylist.BindTextUTF(1,this->playlistName);
+        if( updatePlaylist.Step()==db::Done ){
+            if(this->playlistId==0){
+                this->playlistId    = db.LastInsertedId();
+            }
+        }
+    }
 
     {
         db::Statement deleteTracks("DELETE FROM playlist_tracks WHERE playlist_id=?",db);
@@ -96,5 +111,14 @@ bool Query::PlaylistSave::ParseQuery(Library::Base *oLibrary,db::Connection &db)
 //////////////////////////////////////////
 Query::Ptr Query::PlaylistSave::copy() const{
     return Query::Ptr(new Query::PlaylistSave(*this));
+}
+
+bool Query::PlaylistSave::RunCallbacks(Library::Base *oLibrary){
+    boost::mutex::scoped_lock lock(oLibrary->oResultMutex);
+    if( (this->status & Status::Ended)!=0){
+        this->PlaylistSaved(this->playlistId);
+        return true;
+    }
+    return false;
 }
 
