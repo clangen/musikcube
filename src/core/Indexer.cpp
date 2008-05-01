@@ -58,24 +58,20 @@ Indexer::~Indexer(void){
         this->oThread    = NULL;
     }
 }
-int Indexer::GetStatusCode(){
-    boost::mutex::scoped_lock oLock(this->oProgressMutex);
-    return this->iStatus;
-}
+
 
 utfstring Indexer::GetStatus(){
     boost::mutex::scoped_lock oLock(this->oProgressMutex);
     utfstring sStatus;
     switch(this->iStatus){
         case 1:
-            sStatus    = boost::str( boost::wformat(UTF("Counting files: %1%"))%this->iNOFFiles );
-//            sStatus.Format(UTF("Counting files: %d"),this->iNOFFiles);
+            sStatus    = boost::str( boost::utfformat(UTF("Counting files: %1%"))%this->iNOFFiles );
             break;
         case 2:
-            sStatus    = boost::str( boost::wformat(UTF("Indexing: %1%"))%(this->iProgress*100));
+            sStatus    = boost::str( boost::utfformat(UTF("Indexing: %1%"))%(this->iProgress*100));
             break;
         case 3:
-            sStatus    = boost::str( boost::wformat(UTF("Cleaning up: %1%"))%(this->iProgress*100));
+            sStatus    = boost::str( boost::utfformat(UTF("Cleaning up: %1%"))%(this->iProgress*100));
             break;
     }
     return sStatus;
@@ -406,13 +402,15 @@ void Indexer::ThreadLoop(){
 
     while(!this->Exit()){
 
+        this->SynchronizeStart();
+
         // Database should only be open when synchronizing
         this->dbConnection.Open(this->database.c_str(),0,4096);
-
         this->RestartSync(false);
         this->Synchronize();
-
         this->dbConnection.Close();
+
+        this->SynchronizeEnd();
 
 
         boost::xtime oWaitTime;
@@ -614,7 +612,11 @@ void Indexer::SyncCleanup(){
 std::vector<utfstring> Indexer::GetPaths(){
     std::vector<utfstring> aPaths;
 
-    db::Statement stmt("SELECT path FROM paths ORDER BY id",this->dbConnection);
+    db::Connection tempDB;
+
+    tempDB.Open(this->database.c_str());
+
+    db::Statement stmt("SELECT path FROM paths ORDER BY id",tempDB);
 
     while(stmt.Step()==db::ReturnCode::Row){
         aPaths.push_back(stmt.ColumnTextUTF(0));
@@ -759,17 +761,8 @@ void Indexer::SyncAddRemovePaths(){
     // Small cleanup
     this->dbConnection.Execute("DELETE FROM folders WHERE path_id NOT IN (SELECT id FROM paths)");
 
-}
+    this->PathsUpdated();
 
-int Indexer::LongRunningQueryInterrupt(void *indexer){
-
-    Indexer *thisIndexer    = (Indexer*)indexer;
-
-    if(thisIndexer->Exit()){
-        return 1;
-    }else{
-        return 0;
-    }
 }
 
 

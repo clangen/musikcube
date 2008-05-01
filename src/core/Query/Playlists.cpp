@@ -34,61 +34,45 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "pch.hpp"
+#include <core/Query/Playlists.h>
+#include <core/Library/Base.h>
 
-#include <boost/shared_ptr.hpp>
-#include <boost/function.hpp>
-
-#include <vector>
-#include <sigslot/sigslot.h>
-
-#include <core/config.h>
-#include <core/Query/Base.h>
-#include <core/tracklist/IRandomAccess.h>
-
-//////////////////////////////////////////////////////////////
-// Forward declarations
-//////////////////////////////////////////////////////////////
-namespace musik{ namespace core{
-    namespace Library{
-        class Base;
-    }
-} }
+using namespace musik::core;
 
 
-namespace musik{ namespace core{
-    namespace Query{
+//////////////////////////////////////////
+///\brief
+///Constructor
+//////////////////////////////////////////
+Query::Playlists::Playlists(void){
+}
 
-        class PlaylistSave : public Query::Base{
-            public:
-                PlaylistSave(void);
-                ~PlaylistSave(void);
+//////////////////////////////////////////
+///\brief
+///Destructor
+//////////////////////////////////////////
+Query::Playlists::~Playlists(void){
+}
 
-                void SavePlaylist(int playlistId,utfstring playlistName,musik::core::tracklist::IRandomAccess &tracklist);
 
-                sigslot::signal1<int> PlaylistSaved;
+bool Query::Playlists::ParseQuery(Library::Base *oLibrary,db::Connection &db){
 
-            protected:
+    return true;
+}
 
-                bool RunCallbacks(Library::Base *oLibrary);
+//////////////////////////////////////////
+///\brief
+///Copy a query
+///
+///\returns
+///A shared_ptr to the Query::Base
+//////////////////////////////////////////
+Query::Ptr Query::Playlists::copy() const{
+    return Query::Ptr(new Query::Playlists(*this));
+}
 
-                int playlistId;
-                utfstring playlistName;
-
-                std::vector<int> tracks;
-
-                friend class Library::Base;
-                friend class Library::LocalDB;
-
-                virtual bool ParseQuery(Library::Base *oLibrary,db::Connection &db);
-
-                Ptr copy() const;
-
-            private:
-
-        };
-
-    }
-} }
-
+bool Query::Playlists::RunCallbacks(Library::Base *oLibrary){
+    return true;
+}
 

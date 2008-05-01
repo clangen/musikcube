@@ -307,6 +307,14 @@
 						>
 					</File>
 					<File
+						RelativePath=".\Query\Playlists.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Query\Playlists.h"
+						>
+					</File>
+					<File
 						RelativePath=".\Query\PlaylistSave.cpp"
 						>
 					</File>

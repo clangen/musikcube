@@ -59,23 +59,14 @@ namespace musik{ namespace core{
 namespace musik{ namespace core{
     namespace Query{
 
-        class PlaylistSave : public Query::Base{
+        class Playlists : public Query::Base{
             public:
-                PlaylistSave(void);
-                ~PlaylistSave(void);
-
-                void SavePlaylist(int playlistId,utfstring playlistName,musik::core::tracklist::IRandomAccess &tracklist);
-
-                sigslot::signal1<int> PlaylistSaved;
+                Playlists(void);
+                ~Playlists(void);
 
             protected:
 
                 bool RunCallbacks(Library::Base *oLibrary);
-
-                int playlistId;
-                utfstring playlistName;
-
-                std::vector<int> tracks;
 
                 friend class Library::Base;
                 friend class Library::LocalDB;
