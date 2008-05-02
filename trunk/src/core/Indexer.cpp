@@ -697,6 +697,26 @@ void Indexer::SyncOptimize(){
 
     {
         db::ScopedTransaction transaction(this->dbConnection);
+        // Fix sort order on meta_values
+        db::Statement stmt("SELECT id,lower(content) AS content FROM meta_values ORDER BY content",this->dbConnection);
+        db::Statement stmtUpdate("UPDATE meta_values SET sort_order=? WHERE id=?",this->dbConnection);
+        iCount    = 0;
+        while(stmt.Step()==db::ReturnCode::Row){
+
+            stmtUpdate.BindInt(0,iCount);
+            stmtUpdate.BindInt(1,stmt.ColumnInt(0));
+            stmtUpdate.Step();
+            stmtUpdate.Reset();
+            ++iCount;
+
+        }
+    }
+
+    boost::thread::yield();
+
+
+    {
+        db::ScopedTransaction transaction(this->dbConnection);
         // Fix sort order on tracks
         /************************************
         The sort order of a track is by default in the following order
