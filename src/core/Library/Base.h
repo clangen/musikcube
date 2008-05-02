@@ -124,6 +124,10 @@ namespace musik{ namespace core{
 
                 bool Exit(void);
 
+                static bool IsStaticMetaKey(std::string &metakey);
+                static bool IsSpecialMTOMetaKey(std::string &metakey);
+                static bool IsSpecialMTMMetaKey(std::string &metakey);
+
             protected:
                 // Methods:
                 void Exit(bool exit);

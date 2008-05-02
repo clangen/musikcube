@@ -323,6 +323,14 @@
 						>
 					</File>
 					<File
+						RelativePath=".\Query\SortTracks.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Query\SortTracks.h"
+						>
+					</File>
+					<File
 						RelativePath=".\Query\TrackMetadata.cpp"
 						>
 					</File>

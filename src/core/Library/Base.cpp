@@ -417,3 +417,46 @@ void Library::Base::Exit(bool exit){
     }
     this->waitCondition.notify_all();
 }
+
+
+bool Library::Base::IsStaticMetaKey(std::string &metakey){
+    static std::set<std::string> staticMetaKeys;
+
+    if(staticMetaKeys.empty()){
+        staticMetaKeys.insert("track");
+        staticMetaKeys.insert("bpm");
+        staticMetaKeys.insert("duration");
+        staticMetaKeys.insert("filesize");
+        staticMetaKeys.insert("year");
+        staticMetaKeys.insert("title");
+        staticMetaKeys.insert("filename");
+        staticMetaKeys.insert("filetime");
+    }
+
+    return staticMetaKeys.find(metakey)!=staticMetaKeys.end();
+
+}
+
+bool Library::Base::IsSpecialMTOMetaKey(std::string &metakey){
+    static std::set<std::string> specialMTOMetaKeys;
+
+    if(specialMTOMetaKeys.empty()){
+        specialMTOMetaKeys.insert("album");
+        specialMTOMetaKeys.insert("visual_genre");
+        specialMTOMetaKeys.insert("visual_artist");
+        specialMTOMetaKeys.insert("folder");
+    }
+    return specialMTOMetaKeys.find(metakey)!=specialMTOMetaKeys.end();
+}
+
+bool Library::Base::IsSpecialMTMMetaKey(std::string &metakey){
+    static std::set<std::string> specialMTMMetaKeys;
+
+    if(specialMTMMetaKeys.empty()){
+        specialMTMMetaKeys.insert("artist");
+        specialMTMMetaKeys.insert("genre");
+    }
+    return specialMTMMetaKeys.find(metakey)!=specialMTMMetaKeys.end();
+}
+
+
