@@ -104,8 +104,11 @@ bool TagReaderTaglib::ReadTag(musik::core::Track *track){
         boost::algorithm::to_lower(ext);    // Convert to lower case
     
         if(ext==UTF("mp3"))
-            if(this->GetID3v2Tag(track))
+            if(this->GetID3v2Tag(track)){
+                // Get the generic tag as well, just in case there is only a id3v1 tag.
+                this->GetGenericTag(track);
                 return true;
+            }
 
         if(ext==UTF("ogg"))
             if(this->GetOGGTag(track))
@@ -149,9 +152,13 @@ bool TagReaderTaglib::GetGenericTag(musik::core::Track *track){
             // COMMENT
             this->SetTagValue("comment",tag->comment(),track);
             // TRACK
-            this->SetTagValue("track",tag->track(),track);
+            if(tag->track()){
+                this->SetTagValue("track",tag->track(),track);
+            }
             // TRACK
-            this->SetTagValue("year",tag->year(),track);
+            if(tag->year()){
+                this->SetTagValue("year",tag->year(),track);
+            }
 
             this->SetAudioProperties(oAudioProperties,track);
 
@@ -184,8 +191,6 @@ bool TagReaderTaglib::GetID3v2Tag(musik::core::Track *track){
 
 		if(!oTagv2->title().isEmpty()){
 			this->SetTagValue("title",oTagv2->title(),track);
-		}else{
-			this->SetTagValue("title",track->GetValue("filename"),track);
 		}
 		this->SetTagValue("album",oTagv2->album(),track);
 
