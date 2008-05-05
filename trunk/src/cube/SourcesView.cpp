@@ -48,7 +48,7 @@ using namespace musik::cube;
 
 /*ctor*/    SourcesView::SourcesView()
 : lastHotRowIndex(-1)
-, listView(new ListView())
+, listView(NULL)
 , defaultView(new Label(_T("No item selected. You shouldn't see this!")))
 {
     this->listView = new ListView();
