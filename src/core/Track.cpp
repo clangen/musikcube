@@ -322,14 +322,20 @@ bool Track::Save(db::Connection &dbConnection,utfstring libraryDirectory,DBINT f
     DBINT albumId(0);
     {
         db::CachedStatement stmt("SELECT id FROM albums WHERE name=?",dbConnection);
-        stmt.BindTextUTF(0,this->GetValue("album"));
+        const utfchar *album=this->GetValue("album");
+        if(album==NULL){
+            album=UTF("");
+        }
+
+        stmt.BindTextUTF(0,album);
 
         if(stmt.Step()==db::ReturnCode::Row){
             albumId    = stmt.ColumnInt(0);
         }else{
             // INSERT a new album
             db::Statement insertAlbum("INSERT INTO albums (name) VALUES (?)",dbConnection);
-            insertAlbum.BindTextUTF(0,this->GetValue("album"));
+            insertAlbum.BindTextUTF(0,album);
+
             if(insertAlbum.Step()==db::ReturnCode::Done){
                 albumId    = dbConnection.LastInsertedId();
             }

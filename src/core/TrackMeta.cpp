@@ -121,15 +121,17 @@ TrackMeta::TagMapIteratorPair TrackMeta::GetValues(const char* metakey) const{
 }
 
 void TrackMeta::SetValue(const TrackMeta::Key &key,const TrackMeta::Value &value){
-    if(this->library){
-        // Threadsafe
-        boost::mutex::scoped_lock lock(library->libraryMutex);
-        this->tags.insert( TrackMeta::TagMapPair(key,value) );
-        return;
-    }
+    if(!value.empty()){
+        if(this->library){
+            // Threadsafe
+            boost::mutex::scoped_lock lock(library->libraryMutex);
+            this->tags.insert( TrackMeta::TagMapPair(key,value) );
+            return;
+        }
 
-    // Non threadsafe
-    this->tags.insert( TrackMeta::TagMapPair(key,value) );
+        // Non threadsafe
+        this->tags.insert( TrackMeta::TagMapPair(key,value) );
+    }
 }
 
 const TrackMeta::Value& TrackMeta::_GetValue(const TrackMeta::Key &key) const{
