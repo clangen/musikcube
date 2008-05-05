@@ -51,72 +51,62 @@ using namespace musik::cube;
 
 void        TransportView::OnCreated()
 {
-    // main box ----------
-    this->mainBox = new BoxLayout(BoxVertical);
+    // main layout
+    LinearLayout* mainLayout = new LinearLayout(LinearRowLayout);
+    LinearLayout* topRowLayout = new LinearLayout(LinearColumnLayout);
+    LinearLayout* bottomRowLayout = new LinearLayout(LinearColumnLayout);
 
-    BoxLayout* topRowBox = new BoxLayout(BoxHorizontal);
-    Frame* topRowFrame = this->mainBox->AddChild(
-        new Frame(topRowBox, FramePadding(4, 0, 2, 0)));
+    // top row layout
+    topRowLayout->SetDefaultChildFill(false);
+    topRowLayout->SetDefaultChildAlignment(ChildAlignMiddle);
 
-    BoxLayout* bottomRowBox = this->mainBox->AddChild(new BoxLayout(BoxHorizontal));
-
-    // top row box ----------
-    this->prevButton = topRowBox->AddChild(new Button(_T("prev")));
-    this->playButton = topRowBox->AddChild(new Button(_T("play")));
-    this->stopButton = topRowBox->AddChild(new Button(_T("stop")));
-    this->nextButton = topRowBox->AddChild(new Button(_T("next")));
+    this->prevButton = topRowLayout->AddChild(new Button(_T("prev")));
+    this->playButton = topRowLayout->AddChild(new Button(_T("play")));
+    this->stopButton = topRowLayout->AddChild(new Button(_T("stop")));
+    this->nextButton = topRowLayout->AddChild(new Button(_T("next")));
     //
     this->prevButton->Resize(50, 28);
     this->playButton->Resize(50, 28);
     this->stopButton->Resize(50, 28);
     this->nextButton->Resize(50, 28);
 
-    // now playingbox
-    FontRef boldFont(new win32cpp::Font());
-    boldFont->SetBold(true);
-    //
-    BoxLayout* nowPlayingBox = new BoxLayout(BoxHorizontal);
-    Frame* nowPlayingFrame = topRowBox->AddChild(
-        new Frame(nowPlayingBox, FramePadding(6, 0, 0, 0)));
-    //
-    nowPlayingBox->AddChild(new Label(_T("Now playing ")));
-    this->titleLabel = nowPlayingBox->AddChild(new Label(_T("Song Title")));
-    nowPlayingBox->AddChild(new Label(_T("  by  ")));
-    this->artistLabel = nowPlayingBox->AddChild(new Label(_T("Artist Name")));
-    //
-    this->titleLabel->SetFont(boldFont);
-    this->artistLabel->SetFont(boldFont);
-    nowPlayingBox->SetSpacing(0);
-    nowPlayingBox->ResizeToMinimumSize();
-    //
-    topRowBox->SetChildFill(nowPlayingFrame);
-    topRowBox->SetFlexibleChild(nowPlayingFrame);
+        // now playing layout
+        FontRef boldFont(Font::Create());
+        boldFont->SetBold(true);
+        //
+        LinearLayout* nowPlayingLayout = new LinearLayout(LinearColumnLayout);
+        //
+        nowPlayingLayout->AddChild(new Label(_T("Now playing ")));
+        this->titleLabel = nowPlayingLayout->AddChild(new Label(_T("Song Title")));
+        nowPlayingLayout->AddChild(new Label(_T(" by ")));
+        this->artistLabel = nowPlayingLayout->AddChild(new Label(_T("Artist Name")));
+        //
+        this->titleLabel->SetFont(boldFont);
+        this->artistLabel->SetFont(boldFont);
+        nowPlayingLayout->SetSpacing(0);
+        //
+        Frame* nowPlayingFrame = topRowLayout->AddChild(
+            new Frame(nowPlayingLayout, FramePadding(6, 0, 0, 0)));
+        topRowLayout->SetChildFill(nowPlayingFrame, false);
+        topRowLayout->SetChildAlignment(nowPlayingFrame, ChildAlignCenter);
+        topRowLayout->SetFlexibleChild(nowPlayingFrame);
 
-    this->volumeSlider = topRowBox->AddChild(new Trackbar());
-    this->volumeSlider->Resize(100, 28);
+        this->volumeSlider = topRowLayout->AddChild(new Trackbar());
+        this->volumeSlider->Resize(100, 28);
 
-    // bottom row ----------
-    BoxLayout* playbackBox = new BoxLayout();
-    Frame* playbackFrame = bottomRowBox->AddChild(
-        new Frame(playbackBox, FramePadding(6, 6, 0, 0)));
-    //
-    this->timeElapsedLabel = playbackBox->AddChild(new Label(_T("0:00")));
-    this->playbackSlider = playbackBox->AddChild(new Trackbar(0, 100));
-    this->timeDurationLabel = playbackBox->AddChild(new Label(_T("0:00")));
+    // bottom row layout
+    this->timeElapsedLabel = bottomRowLayout->AddChild(new Label(_T("0:00")));
+    this->playbackSlider = bottomRowLayout->AddChild(new Trackbar(0, 100));
+    this->timeDurationLabel = bottomRowLayout->AddChild(new Label(_T("0:00")));
     //
     this->playbackSlider->Resize(100, 20);
-    playbackBox->SetFlexibleChild(this->playbackSlider);
-    playbackBox->ResizeToMinimumSize();
 
-    // size top and bottom rows to minimum size ---------
-    topRowBox->ResizeToMinimumSize();
-    bottomRowBox->ResizeToMinimumSize();
-    bottomRowBox->SetFlexibleChild(playbackFrame);
-    bottomRowBox->SetChildFill(playbackFrame);
+    bottomRowLayout->SetFlexibleChild(playbackSlider);
+    bottomRowLayout->SetDefaultChildFill(false);
+    bottomRowLayout->SetDefaultChildAlignment(ChildAlignMiddle);
 
-    // fill top and bottom rows ----------
-    this->mainBox->ResizeToMinimumSize();
-    this->mainBox->SetDefaultChildFill();
-    //
-    this->AddChild(this->mainBox);
+    // put it all together!
+    mainLayout->AddChild(new Frame(topRowLayout, FramePadding(4, 0, 2, 0)));
+    mainLayout->AddChild(new Frame(bottomRowLayout, FramePadding(6, 6, 0, 0)));
+    this->AddChild(mainLayout);
 }

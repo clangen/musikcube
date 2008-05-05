@@ -46,20 +46,18 @@ using namespace musik::cube;
 //////////////////////////////////////////////////////////////////////////////
 
 /*ctor*/    TracklistView::TracklistView()
-: listView(NULL)
+: base(LinearRowLayout)
+, listView(NULL)
 , infoView(NULL)
 {
 }
 
 void        TracklistView::OnCreated()
 {
-    BoxLayout* mainBox = new BoxLayout(BoxVertical);
-    mainBox->SetAutoResizeToMinimumSize();
+    this->infoView = this->AddChild(new TracklistInfoView());
+    this->listView = this->AddChild(new ListView());
 
-    this->infoView = mainBox->AddChild(new TracklistInfoView());
-    this->listView = mainBox->AddChild(new ListView());
-    mainBox->SetChildFill(listView, true);
-    mainBox->SetFlexibleChild(listView);
-
-    this->AddChild(mainBox);
+    this->SetChildAlignment(this->infoView, ChildAlignCenter);
+    this->SetChildFill(this->infoView, false);
+    this->SetFlexibleChild(listView);
 }

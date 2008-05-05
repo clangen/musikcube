@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -54,7 +54,7 @@ typedef boost::shared_ptr<Menu> MenuRef;
 class MenuItem;
 typedef boost::shared_ptr<MenuItem> MenuItemRef;
 
-typedef sigslot::signal0<> MenuItemActivatedEvent;
+typedef sigslot::signal1<MenuItemRef> MenuItemActivatedEvent;
 typedef sigslot::signal2<MenuItemRef /*new*/, unsigned /*index*/> MenuItemAddedEvent;
 typedef sigslot::signal1<MenuItemRef> MenuItemRemovedEvent;
 
@@ -70,29 +70,37 @@ class IndexOutOfRangeException: public Exception { };
 // unimplemented
 class MenuItem: public boost::noncopyable
 {
-public:     MenuItemActivatedEvent  Activated;
+    friend class Menu;  // uses Changed and FillMenuItemInfo:
 
-public:     static MenuItemRef Create(const uistring& caption, MenuRef subMenu = MenuRef());
-protected:  /*ctor*/    MenuItem(const uistring& caption, MenuRef subMenu = MenuRef());
+protected: // constructors
+    /*ctor*/    MenuItem(const uistring& caption, MenuRef subMenu = MenuRef());
 
-public:     friend class Menu;  // uses the following:
-protected:  sigslot::signal1<MenuItemRef> Changed;
-protected:  virtual void    FillMenuItemInfo(MENUITEMINFO& target);
+public: // events
+    MenuItemActivatedEvent  Activated;
 
-public:     void            SetCaption(const uistring& caption);
-public:     uistring        Caption() const;
-public:     void            SetSubMenu(MenuRef subMenu);
-public:     MenuRef         SubMenu() const;
+protected: // events
+    sigslot::signal1<MenuItemRef> Changed;
 
-protected:  virtual void    OnChanged();
+public: // methods
+    static MenuItemRef Create(const uistring& caption, MenuRef subMenu = MenuRef());
 
-protected:  UINT        static NextID();
+    void            SetCaption(const uistring& caption);
+    uistring        Caption() const;
+    void            SetSubMenu(MenuRef subMenu);
+    MenuRef         SubMenu() const;
 
-        // instance data
-private:    MenuRef subMenu;
-private:    uistring caption;
-protected:  UINT id;
-protected:  boost::weak_ptr<MenuItem> weakThis;
+protected: // methods
+    virtual void    FillMenuItemInfo(MENUITEMINFO& target);
+    virtual void    OnChanged();
+    UINT static     NextID();
+
+protected: // instance data
+    UINT id;
+    boost::weak_ptr<MenuItem> weakThis;
+
+private: // instance data
+    MenuRef subMenu;
+    uistring caption;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -101,10 +109,17 @@ protected:  boost::weak_ptr<MenuItem> weakThis;
 
 class SeparatorMenuItem: public MenuItem
 {
-private:    typedef MenuItem base;
-public:     static MenuItemRef Create();
-private:    /*ctor*/ SeparatorMenuItem();
-protected:  virtual void FillMenuItemInfo(MENUITEMINFO& target);
+private: //types
+    typedef MenuItem base;
+
+private: // constructors
+    /*ctor*/ SeparatorMenuItem();
+
+public: // methods
+    static MenuItemRef Create();
+
+protected: // methods
+    virtual void FillMenuItemInfo(MENUITEMINFO& target);
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -114,28 +129,35 @@ protected:  virtual void FillMenuItemInfo(MENUITEMINFO& target);
 // implemented, untested
 class MenuItemCollection: public boost::noncopyable
 {
-public:     MenuItemAddedEvent      ItemAdded;
-public:     MenuItemRemovedEvent    ItemRemoved;
-public:     friend class Menu;
+    friend class Menu;
 
-private:    /*ctor*/        MenuItemCollection(Menu& owner);    
+public: // events
+    MenuItemAddedEvent      ItemAdded;
+    MenuItemRemovedEvent    ItemRemoved;
 
-public:     MenuItemRef     Append(MenuItemRef newMenuItem);
-public:     MenuItemRef     InsertAfter(MenuItemRef newMenuItem, MenuItemRef after);
-public:     MenuItemRef     InsertBefore(MenuItemRef newMenuItem, MenuItemRef before);
-public:     void            Remove(MenuItemRef toRemove);
-public:     unsigned        Count();
-public:     MenuItemRef     ItemAt(unsigned index);
-public:     MenuItemRef     operator[](unsigned index);
+private: // types
+    typedef std::vector<MenuItemRef> MenuItemList;
 
-protected:  virtual void    OnItemAdded(MenuItemRef newMenuItem, unsigned index);
-protected:  virtual void    OnItemRemoved(MenuItemRef oldMenuItem);
-protected:  MenuItemRef     InsertWithOffset(MenuItemRef newMenuItem, MenuItemRef insertPoint, unsigned offset);
+private: // constructors
+    /*ctor*/        MenuItemCollection(Menu& owner);    
 
-private:    typedef std::vector<MenuItemRef> MenuItemList;
+public: // methods
+    MenuItemRef     Append(MenuItemRef newMenuItem);
+    MenuItemRef     InsertAfter(MenuItemRef newMenuItem, MenuItemRef after);
+    MenuItemRef     InsertBefore(MenuItemRef newMenuItem, MenuItemRef before);
+    void            Remove(MenuItemRef toRemove);
+    unsigned        Count();
+    MenuItemRef     ItemAt(unsigned index);
+    MenuItemRef     operator[](unsigned index);
 
-private:    MenuItemList    menuItemList;
-private:    Menu&           owner;
+protected: // methods
+    virtual void    OnItemAdded(MenuItemRef newMenuItem, unsigned index);
+    virtual void    OnItemRemoved(MenuItemRef oldMenuItem);
+    MenuItemRef     InsertWithOffset(MenuItemRef newMenuItem, MenuItemRef insertPoint, unsigned offset);
+
+private: // instance data
+    MenuItemList    menuItemList;
+    Menu&           owner;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -145,24 +167,29 @@ private:    Menu&           owner;
 // Only menu related class that holds any WIN32 handle or state.
 class Menu: public boost::noncopyable, public EventHandler
 {
-public:     /*ctor*/    Menu();
-public:     /*dtor*/    ~Menu();
+    friend class Window;
 
-public:     MenuItemCollection&     Items() { return (*this->items); }
-public:     HMENU   Handle() { return this->menuHandle; }
+private: // types
+    typedef std::map<UINT, MenuItemRef> IDToMenuItemMap;
 
-public:     friend class Window;
-protected:  static void ItemActivated(UINT menuID);   // used by Window
+public: // constructors, destructors
+    /*ctor*/    Menu();
+    /*dtor*/    ~Menu();
 
-protected:  void    OnItemAdded(MenuItemRef newMenuItem, unsigned index);
-protected:  void    OnItemRemoved(MenuItemRef oldMenuItem);
-protected:  void    OnItemChanged(MenuItemRef menuItem);
+public: // methods
+    MenuItemCollection& Items() { return (*this->items); }
+    HMENU   Handle() { return this->menuHandle; }
 
-private:    typedef std::map<UINT, MenuItemRef> IDToMenuItemMap;
+protected: // methods
+    static void     ItemActivated(UINT menuID);   // used by Window
+    void            OnItemAdded(MenuItemRef newMenuItem, unsigned index);
+    void            OnItemRemoved(MenuItemRef oldMenuItem);
+    void            OnItemChanged(MenuItemRef menuItem);
 
-private:    boost::scoped_ptr<MenuItemCollection> items;
-private:    HMENU menuHandle;
-private:    static IDToMenuItemMap sIDToMenuItemRef;
+private: // instance data
+    boost::scoped_ptr<MenuItemCollection> items;
+    HMENU menuHandle;
+    static IDToMenuItemMap sIDToMenuItemRef;
 };
 
 //////////////////////////////////////////////////////////////////////////////

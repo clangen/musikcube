@@ -40,7 +40,6 @@
 #include <sigslot/sigslot.h>
 #include <win32cpp/Window.hpp>
 
-
 namespace win32cpp {
     class Timer : public sigslot::has_slots<>{
         public:

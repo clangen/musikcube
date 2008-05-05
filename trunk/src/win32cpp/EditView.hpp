@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -40,24 +40,58 @@
 
 //////////////////////////////////////////////////////////////////////////////
 
-using namespace win32cpp;
+#include <win32cpp/Window.hpp>
 
-namespace musik { namespace cube {
+namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
 
-class TracklistInfoView: public LinearLayout
+class EditView; // forward decl
+
+///\brief
+///The type of event used when a the edit control is changed
+///\see
+///Button.
+typedef sigslot::signal1<EditView*> EditViewChangedEvent;
+
+///\brief
+///A standard edit control.
+
+class EditView: public Window
 {
-private:    typedef LinearLayout base;
+private:    // typedefs
+    typedef Window base;
 
-public:     /*ctor*/        TracklistInfoView();
+public:     // events
+    EditViewChangedEvent    Changed;
 
-protected:  virtual void    OnCreated();
-public: virtual void Layout();
+public:     // constructors, methods
+    /*ctor*/        EditView(int width, int height);
+    /*ctor*/        EditView(const uistring& caption = _T(""));
+    /*dtor*/        ~EditView();
 
-private:    Label *trackCountLabel, *durationLabel, *sizeLabel;
+    void    SetReadOnly(bool setting);
+    void    ShowCaret();
+    void    SetTooltip(uistring text);
+    void    LimitText(int chars);
+    void    SetSelection(int first, int second);
+    void    SelectAll();
+
+    void    Undo();
+
+protected:  // methods
+     virtual HWND       Create(Window* parent);
+     virtual LRESULT    PreWindowProc(UINT message, WPARAM wParam, LPARAM lParam, bool &discardMessage);
+     virtual LRESULT    WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+     virtual void       OnChanged();
+
+protected:  // instance data
+    uistring caption;
+    int width;
+    int height;
+    uistring editText;
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-} }     // musik::cube
+}   // win32cpp

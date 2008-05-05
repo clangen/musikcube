@@ -50,11 +50,11 @@ namespace musik { namespace cube {
 
 //////////////////////////////////////////////////////////////////////////////
 
-class TracklistView: public Frame
+class TracklistView: public LinearLayout
 {
 public:     friend class TracklistController;
 
-private:    typedef Frame base;
+private:    typedef LinearLayout base;
 
 public:     /*ctor*/        TracklistView();
 

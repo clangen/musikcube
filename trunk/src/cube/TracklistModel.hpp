@@ -59,7 +59,11 @@ public:     typedef ListView::CellRendererRef CellRendererRef;
 public:     typedef ListView::ColumnRef ColumnRef;
 
         // public API
-public:     /*ctor*/        TracklistModel(musik::core::Query::ListBase *connectedQuery,musik::core::tracklist::Standard::Ptr setTracklist);
+public:     /*ctor*/ TracklistModel(
+                musik::core::Query::ListBase *connectedQuery,
+                musik::core::tracklist::Standard::Ptr setTracklist);
+
+public:     void OnRowActivated(int row);
 
         // ListView::Model implementation
 public:     virtual uistring CellValueToString(int rowIndex, ColumnRef column);
@@ -67,8 +71,8 @@ public:     virtual uistring CellValueToString(int rowIndex, ColumnRef column);
         // instance data
 protected:  void OnTrackMeta(std::vector<int> &trackPositions);
 protected:  void OnTracks(bool cleared);
-public:     musik::core::tracklist::Standard::Ptr tracklist;
-public:     void OnRowDoubleClick(int row);
+public:     musik::core::tracklist::Standard::Ptr tracklist;    // FIXME: no public fields!
+
 };
 
 //////////////////////////////////////////////////////////////////////////////

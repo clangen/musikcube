@@ -55,12 +55,12 @@ class MainMenuController: public EventHandler
 {
 public:     /*ctor*/    MainMenuController(TopLevelWindow& mainWindow);
 
-protected:  void        OnMainWindowCreated();
+protected:  void        OnMainWindowCreated(Window* window);
 protected:  MenuRef     CreateMenu();
 protected:  void        ConnectMenuHandlers();
             //
-protected:  void        OnFileExit();
-protected:  void        OnHelpAbout();
+protected:  void        OnFileExit(MenuItemRef menuItem);
+protected:  void        OnHelpAbout(MenuItemRef menuItem);
 
 private:    TopLevelWindow& mainWindow;
 private:    MenuRef mainMenu, fileMenu, helpMenu;

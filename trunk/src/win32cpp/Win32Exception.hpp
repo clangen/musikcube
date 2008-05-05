@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -50,39 +50,45 @@ namespace win32cpp {
 ///\brief An Exception that represents an Win32 error.
 class Win32Exception : public Exception
 {
-            //\brief Default constructor. Calls ::GetLastError()
-public:     /*ctor*/            Win32Exception()
-            {
-                this->errorCode = ::GetLastError();
-            }
+public: // ctors
+    //\brief Default constructor. Calls ::GetLastError()
+    /*ctor*/    Win32Exception()
+    {
+        this->errorCode = ::GetLastError();
+    }
 
-            //\brief Constructor.
-public:     /*ctor*/            Win32Exception(DWORD errorCode)
-            {
-                this->errorCode = errorCode;
-            }
+    //\brief Constructor.
+    /*ctor*/    Win32Exception(DWORD errorCode)
+    {
+        this->errorCode = errorCode;
+    }
 
-            //\brief Uses FormatMessage() to return a human readable exception string.
-public:     virtual const char* Message()
-            {
-                static char resultPtr[4096];
-                resultPtr[0] = 0;
-                //
-                ::FormatMessageA(
-                    FORMAT_MESSAGE_FROM_SYSTEM,
-                    Application::Instance(),
-                    this->errorCode,
-                    NULL,
-                    resultPtr,
-                    4096,
-                    NULL);
-                //
-                return resultPtr;
-            }
+public: // methods
+    //\brief Uses FormatMessage() to return a human readable exception string.
+    virtual const char* Message()
+    {
+        static char resultPtr[4096];
+        resultPtr[0] = 0;
+        //
+        ::FormatMessageA(
+            FORMAT_MESSAGE_FROM_SYSTEM,
+            Application::Instance(),
+            this->errorCode,
+            NULL,
+            resultPtr,
+            4096,
+            NULL);
+        //
+        return resultPtr;
+    }
 
+    DWORD ErrorCode()
+    {
+        return this->errorCode;
+    }
 
-public:     DWORD               ErrorCode() { return this->errorCode; }
-private:    DWORD               errorCode;
+private: // instance data
+    DWORD errorCode;
 };
 
 //////////////////////////////////////////////////////////////////////////////

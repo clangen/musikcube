@@ -58,7 +58,7 @@ private: /*ctor*/ DummyItem(const uistring& caption)
             view.Created.connect(this, &DummyItem::OnViewCreated);
         }
 
-public: void OnViewCreated()
+public: void OnViewCreated(Window* window)
         {
             //this->view.SetBackgroundColor(Color(255, 255, 255));
         }

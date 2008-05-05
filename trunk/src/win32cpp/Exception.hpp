@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -50,13 +50,16 @@ namespace win32cpp {
 ///The base class for all exceptions thrown by win32cpp.
 class Exception
 {
-public:     /*ctor*/            Exception();
-public:     /*ctor*/            Exception(const char* message);
-public:     /*dtor*/ virtual    ~Exception();
+public: // constructors
+    /*ctor*/            Exception();
+    /*ctor*/            Exception(const char* message);
+    /*dtor*/ virtual    ~Exception();
 
-public:     virtual const char* Message();
+public: // methods
+    virtual const char* Message();
 
-private:    std::string         message;
+private: // instance data
+    std::string         message;
 };
 
 //////////////////////////////////////////////////////////////////////////////

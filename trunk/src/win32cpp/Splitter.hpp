@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -49,8 +49,8 @@ namespace win32cpp {
 /*! */
 enum SplitDirection
 {
-    /*! */ SplitVertical,
-    /*! */ SplitHorizontal
+    /*! */ SplitRow,
+    /*! */ SplitColumn
 };
 
 /*! */
@@ -76,7 +76,7 @@ const int DisableConstraint = -1;
 ///\code
 ///Button* button1 = new Button(_T("button1"));
 ///Button* button2 = new Button(_T("button2"));
-///Splitter* splitter = new Splitter(SplitHorizontal, button1, button2);
+///Splitter* splitter = new Splitter(SplitColumn, button1, button2);
 ///Application::Instance().MainWindow()->AddChild(splitter);
 ///splitter->Resize(400, 300);
 ///\endcode
@@ -87,52 +87,56 @@ const int DisableConstraint = -1;
 ///specifying a win32cpp::AnchorDirection.
 class Splitter: public Panel
 {
-private:    typedef Panel base;
+private: // types
+    typedef Panel base;
 
-public:     /*ctor*/            Splitter(SplitDirection direction, Window* child1 = NULL, Window* child2 = NULL);
+public: // constructors
+    /*ctor*/            Splitter(SplitDirection direction, Window* child1 = NULL, Window* child2 = NULL);
 
-        // public api
-public:     bool                IsSizable();
-public:     void                SetSizable(bool sizable);
-public:     Window*             SetChild1(Window* window);
-public:     const Window*       Child1();
-public:     Window*             SetChild2(Window* window);
-public:     const Window*       Child2();
-public:     AnchorDirection     Anchor();
-public:     void                SetAnchor(AnchorDirection newAnchor);
-public:     void                AnchorConstraints(int& minSize, int& maxSize);
-public:     void                SetAnchorConstraints(int minSize = DisableConstraint, int maxSize = DisableConstraint);
-public:     void                SetAnchorSize(int anchorSize);
-public:     void                SetGripperSize(int pixels);
+public: // methods
+    bool                IsSizable();
+    void                SetSizable(bool sizable);
+    Window*             SetChild1(Window* window);
+    const Window*       Child1();
+    Window*             SetChild2(Window* window);
+    const Window*       Child2();
+    AnchorDirection     Anchor();
+    void                SetAnchor(AnchorDirection newAnchor);
+    void                AnchorConstraints(int& minSize, int& maxSize);
+    void                SetAnchorConstraints(int minSize = DisableConstraint, int maxSize = DisableConstraint);
+    void                SetAnchorSize(int anchorSize);
+    void                SetGripperSize(int pixels);
 
-        // private api
-protected:  void                SetSizeCursor();
-protected:  Rect                SplitterRect();
-protected:  int                 AnchorSizeFromMouse(int splitPosition, const Size& newSize);
-protected:  void                BeginMouseCapture();
-protected:  void                EndMouseCapture();
-        // overrides
-protected:  virtual bool        AddChildWindow(Window* window);
-protected:  virtual LRESULT     WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
-protected:  virtual void        Layout(int child1Size = -1);
-protected:  virtual void        OnResized(const Size& newSize);
-protected:  virtual void        OnMouseMoved(MouseEventFlags flags, const Point& location);
-protected:  virtual void        OnMouseButtonDown(MouseEventFlags flags, const Point& location);
-protected:  virtual void        OnMouseButtonUp(MouseEventFlags flags, const Point& location);
-protected:  virtual void        OnMouseExit();
-protected:  virtual void        OnMouseEnter();
-protected:  virtual void        OnCreated();
+protected: // methods
+    void    SetSizeCursor();
+    Rect    SplitterRect();
+    int     AnchorSizeFromMouse(int splitPosition, const Size& newSize);
+    void    BeginMouseCapture();
+    void    EndMouseCapture();
 
-        // instance data
-private:    Window *child1, *child2;
-private:    Frame *child1Frame, *child2Frame;
-private:    int gripperSize, anchorSize;
-private:    int minAnchorSize, maxAnchorSize;
-private:    bool isDragging, isSizable;
-private:    SplitDirection direction;
-private:    AnchorDirection anchor;
-        // class data
-private:    static HCURSOR sHSizeCursor, sVSizeCursor, sArrowCursor;
+    // overrides
+    virtual bool        AddChildWindow(Window* window);
+    virtual LRESULT     WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+    virtual void        Layout(int child1Size = -1);
+    virtual void        OnResized(const Size& newSize);
+    virtual void        OnMouseMoved(MouseEventFlags flags, const Point& location);
+    virtual void        OnMouseButtonDown(MouseEventFlags flags, const Point& location);
+    virtual void        OnMouseButtonUp(MouseEventFlags flags, const Point& location);
+    virtual void        OnMouseExit();
+    virtual void        OnMouseEnter();
+    virtual void        OnCreated();
+
+private: // instance data
+    Window *child1, *child2;
+    Frame *child1Frame, *child2Frame;
+    int gripperSize, anchorSize;
+    int minAnchorSize, maxAnchorSize;
+    bool isDragging, isSizable;
+    SplitDirection direction;
+    AnchorDirection anchor;
+
+private: // class data
+    static HCURSOR sHSizeCursor, sVSizeCursor, sArrowCursor;
 };
 
 //////////////////////////////////////////////////////////////////////////////

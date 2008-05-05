@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -102,12 +102,14 @@ HWND        ListView::Create(Window* parent)
 
     if (hwnd)
     {
-        DWORD styleEx = LVS_EX_FULLROWSELECT | LVS_EX_HEADERDRAGDROP;
+        DWORD styleEx = LVS_EX_FULLROWSELECT | LVS_EX_HEADERDRAGDROP | LVS_EX_DOUBLEBUFFER;
 
         ListView_SetExtendedListViewStyle(hwnd, styleEx);
         ListView_SetItemCountEx(hwnd, this->model->RowCount(), LVSICF_NOSCROLL);
 
         this->headerHandle = ListView_GetHeader(hwnd);
+
+        this->SetBackgroundColor(Color::SystemColor(COLOR_WINDOW));
     }
 
     return hwnd;
@@ -117,6 +119,17 @@ LRESULT     ListView::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
+    case WM_DRAWITEM:
+        {
+            if ( ! lParam)
+            {
+                break;
+            }
+
+            this->DrawRow((DRAWITEMSTRUCT*) lParam);
+        }
+        break;
+
     case WM_NOTIFY:
         {
             if ( ! lParam)
@@ -127,17 +140,6 @@ LRESULT     ListView::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
             NMHDR* notifyHeader = reinterpret_cast<NMHDR*>(lParam);
             switch (notifyHeader->code)
             {
-            case NM_CUSTOMDRAW:
-                {
-                    // The header ctrl also emits NM_CUSTOMDRAW messages
-                    if (notifyHeader->hwndFrom == this->Handle())
-                    {
-                        NMLVCUSTOMDRAW* lvCustomDraw = reinterpret_cast<NMLVCUSTOMDRAW*>(notifyHeader);
-                        return this->OnCustomDraw(*lvCustomDraw);
-                    }
-                }
-                break;
-
             case HDN_BEGINTRACK:
                 {
                     return ( ! this->columnsResizable);
@@ -165,6 +167,20 @@ LRESULT     ListView::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
                     }
                 }
                 break;
+
+            case LVN_ITEMACTIVATE:
+                {
+                    NMITEMACTIVATE* itemActivate = reinterpret_cast<NMITEMACTIVATE*>(lParam);
+
+                    if (itemActivate->iItem > -1)
+                    {
+                        this->OnRowActivated(itemActivate->iItem);
+                    }
+                }
+                return 0;
+
+            case LVN_MARQUEEBEGIN:
+                return 0;
             }
         }
         break;
@@ -186,7 +202,7 @@ LRESULT     ListView::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 void        ListView::OnSelectionChanged()
 {
     this->selectedRowsDirty = true;
-    this->SelectionChanged();
+    this->SelectionChanged(this);
 }
 
 void        ListView::IndexSelectedRows()
@@ -268,155 +284,92 @@ Rect        ListView::RowRect(int rowIndex) const
     return result;
 }
 
-LRESULT     ListView::OnCustomDraw(NMLVCUSTOMDRAW& customDraw)
+void        ListView::DrawRow(DRAWITEMSTRUCT* itemInfo)
 {
-    static const DWORD SUBITEM_PREPAINT = (CDDS_ITEMPREPAINT | CDDS_SUBITEM);
-
-    switch (customDraw.nmcd.dwDrawStage)
+    // figure out if the row is selected or not.
+    LVITEM item;
+    SecureZeroMemory(&item, sizeof(LVITEM));
+    item.mask = LVIF_STATE;
+    item.stateMask = LVIS_SELECTED;
+    item.iItem = itemInfo->itemID;
+    //
+    if ( ! ListView_GetItem(this->Handle(), &item))
     {
-    case CDDS_PREPAINT:
+        throw Win32Exception();
+    }
+    //
+    bool selected = ((item.state & LVIS_SELECTED) != 0);
+
+    // initialize RenderParams
+    RenderParams renderParams = { 0 };
+    renderParams.rowIndex = (int) itemInfo->itemID;
+    renderParams.hdc = itemInfo->hDC;
+    renderParams.rect = itemInfo->rcItem;
+    renderParams.foreColor = ::GetSysColor(COLOR_WINDOWTEXT);
+    renderParams.backColor = ::GetSysColor(COLOR_WINDOW);
+    //
+    if (selected)
+    {
+        renderParams.foreColor = ::GetSysColor(COLOR_HIGHLIGHTTEXT);
+        renderParams.backColor = ::GetSysColor(COLOR_HIGHLIGHT);
+    }
+    else if ((this->stripedBackground) && (renderParams.rowIndex % 2 == 0))
+    {
+        renderParams.foreColor = Color::Darken(renderParams.foreColor, 15);
+        renderParams.backColor = Color::Darken(renderParams.backColor, 15);
+    }
+
+
+    // Render the row (usually just the background)
+    //%renderParams.rect = this->RowRect(renderParams.rowIndex);
+    RowRendererRef rowRenderer = this->model->RowRenderer(renderParams.rowIndex);
+    if (rowRenderer)
+    {
+        rowRenderer->Render(*this, renderParams);
+    }
+
+    // Iterate over all of the cells in this row and draw them
+    for (size_t cellIndex = 0; cellIndex < this->columnToIndexMap.size(); cellIndex++)
+    {
+        renderParams.column = this->ColumnIndexToColumnRef((int) cellIndex);
+        renderParams.rect = this->CellRect(renderParams.rowIndex, (int) cellIndex);
+
+        // Allow the model to specify a custom cell renderer
+        CellRendererRef cellRenderer = 
+            this->model->CellRenderer(renderParams.rowIndex, renderParams.column);
+
+        if ( ! cellRenderer)
         {
-            return CDRF_NOTIFYITEMDRAW;
-        }
+            // If the model didn't specify a custom cell renderer then try to
+            // render it as text.
+            uistring cellText =
+                this->model->CellValueToString(renderParams.rowIndex, renderParams.column);
 
-    case CDDS_ITEMPREERASE:
-        {
-            return CDRF_SKIPDEFAULT;
-        }
-
-    case CDDS_ITEMPREPAINT: // we drow the row and all of the cells here!
-        {
-            int rowIndex = (int) customDraw.nmcd.dwItemSpec;
-
-            LVITEM item;
-            ::SecureZeroMemory(&item, sizeof(item));
-            item.iItem = (int) rowIndex;
-            item.mask = LVIF_STATE;
-            item.stateMask = LVIS_SELECTED;
-
-            if ( ! ListView_GetItem(this->Handle(), &item))
+            if (cellText.size())
             {
-                throw Win32Exception();
-            }
-
-            COLORREF colorBk = ::GetSysColor(COLOR_WINDOW);
-            COLORREF color = ::GetSysColor(COLOR_WINDOWTEXT);
-            if (item.state & LVIS_SELECTED)
-            {
-                colorBk = ::GetSysColor(COLOR_HIGHLIGHT);
-                color = ::GetSysColor(COLOR_HIGHLIGHTTEXT);
-            }
-            else if ((this->stripedBackground) && (rowIndex % 2 == 0))
-            {
-                colorBk = Color::Darken(colorBk, 15);
-            }
-            //
-            customDraw.clrTextBk = colorBk;
-            customDraw.clrText = color;
-
-            // Render the row (usually just the background)
-            customDraw.nmcd.rc = this->RowRect(rowIndex);
-            RowRendererRef rowRenderer = this->model->RowRenderer(rowIndex);
-            if (rowRenderer)
-            {
-                rowRenderer->Render(*this, customDraw);
-            }
-
-            // Iterate over all of the cells in this row and draw them
-            for (size_t cellIndex = 0; cellIndex < this->columnToIndexMap.size(); cellIndex++)
-            {
-                ColumnRef column = this->ColumnIndexToColumnRef((int) cellIndex);
-                customDraw.nmcd.rc = this->CellRect(rowIndex, (int) cellIndex);
-
-                // Allow the model to specify a custom cell renderer
-                CellRendererRef cellRenderer = this->model->CellRenderer(rowIndex, column);
-                if ( ! cellRenderer)
-                {
-                    // If the model didn't specify a custom cell renderer then try to
-                    // render it as text.
-                    uistring cellText =
-                        this->model->CellValueToString(rowIndex, column);
-
-                    if (cellText.size())
-                    {
-                        typedef TextCellRenderer<uistring> TextRenderer;
-                        //
-                        cellRenderer = CellRendererRef(
-                            new TextRenderer(cellText, column->Alignment()));
-                    }
-                }
+                typedef TextCellRenderer<uistring> TextRenderer;
                 //
-                if (cellRenderer)
-                {
-                    cellRenderer->Render(*this, customDraw);
-                }
+                cellRenderer = CellRendererRef(
+                    new TextRenderer(cellText, renderParams.column->Alignment()));
             }
-
-            return CDRF_SKIPDEFAULT;
         }
-
-    case SUBITEM_PREPAINT:
+        //
+        if (cellRenderer)
         {
-            return CDRF_SKIPDEFAULT;
-        }
-
-    default:
-        {
-            return CDRF_DODEFAULT;
+            cellRenderer->Render(*this, renderParams);
         }
     }
 }
 
 void        ListView::OnPaint()
 {
-    // make sure we have something to paint
-    if ( ! ::GetUpdateRect(this->Handle(), NULL, FALSE))
-    {
-        return;
-    }
-
-    // annoyingly necessary to avoid redraw artifacts when resizing columns
-    // and during marquee selection. BeginPaint() is supposed to do this
-    // automatically for us but it doesn't! The "bug" also seems to be
-    // specific to the ListView. Other controls should just allow the default
-    // implementation of OnEraseBackground() do this.
-    ::InvalidateRect(this->Handle(), NULL, FALSE);
-
-    PAINTSTRUCT ps;
-    ::BeginPaint(this->Handle(), &ps);
-    //
-    Rect paintRect = ps.rcPaint;
-    if (paintRect.Width() && paintRect.Height())
-    {
-        // use the client rect instead of the paint rect to avoid redraw
-        // artifacts when dragging other windows on top of the listview.
-        Rect clientRect = this->ClientRect();
-        MemoryDC memDC(ps.hdc, clientRect);
-
-        RECT clipRect;
-        ::GetClipBox(memDC, &clipRect);
-        //
-        COLORREF bgColor = this->backgroundColor
-            ? *this->backgroundColor 
-            : ::GetSysColor(COLOR_WINDOW);
-        //
-        HBRUSH bkBrush = CreateSolidBrush(bgColor);
-        ::FillRect(memDC, &clipRect, bkBrush);
-        DeleteObject(bkBrush);
-
-        // WM_PAINT for a ListView is special. If WPARAM is an HDC it will
-        // paint directly to it. Other controls should use WM_PRINT.
-        this->DefaultWindowProc(WM_PAINT, (WPARAM) (HDC) memDC, 0);
-    }
-    //
-    ::EndPaint(this->Handle(), &ps);
+    base::DefaultWindowProc(WM_PAINT, NULL, NULL);
 }
 
 void        ListView::OnEraseBackground(HDC hdc)
 {
-    // don't do anything. the base class calls InvalidateRect(), but
-    // doesn't work properly with double buffering. call InvalidateRect()
-    // at the beginning of OnPaint() instead to avoid redraw problems
+    ListView_SetBkColor(this->Handle(), this->BackgroundColor());
+    base::DefaultWindowProc(WM_ERASEBKGND, (WPARAM) hdc, NULL);
 }
 
 void        ListView::OnRowCountChanged()
@@ -449,20 +402,9 @@ void        ListView::OnMouseMoved(MouseEventFlags flags, const Point& location)
     this->SetHotCell(rowIndex, column);
 }
 
-void        ListView::OnMouseButtonDoubleClicked(MouseEventFlags flags, const Point& location)
+void        ListView::OnRowActivated(int rowIndex)
 {
-    int rowIndex(0);
-    ColumnRef column = ColumnRef();
-    //
-    if ( ! this->CellAtPoint(location, rowIndex, column))
-    {
-        rowIndex = -1;
-        column = ColumnRef();
-    }else{
-        this->RowDoubleClick(rowIndex);
-    }
-    //
-
+    this->RowActivated(this, rowIndex);
 }
 
 void        ListView::OnMouseExit()
@@ -1000,12 +942,12 @@ void        ListView::SetHotCell(int rowIndex, ColumnRef column)
 
     if (rowChanged)
     {
-        this->HotRowChanged(this->hotRowIndex);
+        this->HotRowChanged(this, this->hotRowIndex);
     }
 
     if (rowChanged || columnChanged)
     {
-        this->HotCellChanged(this->hotRowIndex, this->hotColumn);
+        this->HotCellChanged(this, this->hotRowIndex, this->hotColumn);
     }
 }
 
@@ -1039,9 +981,9 @@ ListView::ColumnRef ListView::ColumnIndexToColumnRef(int index) const
 // RowRenderer
 //////////////////////////////////////////////////////////////////////////////
 
-void        ListView::RowRenderer::Render(const ListView& listView, NMLVCUSTOMDRAW& customDraw)
+void        ListView::RowRenderer::Render(const ListView& listView, RenderParams& renderParams)
 {
-    HBRUSH bgBrush = ::CreateSolidBrush(customDraw.clrTextBk);
-    ::FillRect(customDraw.nmcd.hdc, &customDraw.nmcd.rc, bgBrush);
+    HBRUSH bgBrush = ::CreateSolidBrush(renderParams.backColor);
+    ::FillRect(renderParams.hdc, & (RECT) renderParams.rect, bgBrush);
     ::DeleteObject(bgBrush);
 }

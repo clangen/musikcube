@@ -62,7 +62,7 @@ private:    class ListController;
 
 public:     /*ctor*/    SourcesController(SourcesView& sourcesView);
 
-private:    void        OnViewCreated();
+private:    void        OnViewCreated(Window* window);
 private:    void        OnActiveItemChanged(ItemRef newItem);
 private:    void        OnModelCategoryAdded(CategoryRef category);
 private:    void        OnModelCategoryRemoved(CategoryRef category);
@@ -83,8 +83,8 @@ private:    typedef boost::shared_ptr<SourcesListModel> ListModelRef;
 public:     /*ctor*/        ListController(ListView& listView);
 public:     ListModelRef    Model() { return this->sourcesListModel; }
 
-private:    void            OnListCreated();
-private:    void            OnListSelectionChanged();
+private:    void            OnListCreated(Window* window);
+private:    void            OnListSelectionChanged(ListView* listView);
 
 private:    ListView& listView;
 private:    ListModelRef sourcesListModel;

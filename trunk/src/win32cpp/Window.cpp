@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -50,7 +50,8 @@ using namespace win32cpp;
 
 Window::WindowList          Window::sAllChildWindows;
 Window::HandleToWindowMap   Window::sHandleToWindowMap;
-FontRef                     Window::sDefaultFont(new win32cpp::Font());
+FontRef                     Window::sDefaultFont(Font::Create());
+Window::FocusDirection      Window::sFocusDirection = Window::FocusForward;
 
 //////////////////////////////////////////////////////////////////////////////
 // Window::Window
@@ -62,6 +63,7 @@ FontRef                     Window::sDefaultFont(new win32cpp::Font());
 , font(Window::sDefaultFont)
 , usesDefaultFont(true)
 , backgroundBrush(NULL)
+, tabStop(true)
 {
 }
 
@@ -151,7 +153,12 @@ bool        Window::Destroy()
 
 bool        Window::WindowHasParent(Window* window)
 {
-    return (Window::sAllChildWindows.find(window) != Window::sAllChildWindows.end());
+    WindowList& allChildren = Window::sAllChildWindows;
+
+    WindowList::iterator it = 
+        std::find(allChildren.begin(), allChildren.end(), window);
+
+    return (it != allChildren.end());
 }
 
 Window*     Window::WindowUnderCursor(HWND* targetHwnd)
@@ -343,6 +350,7 @@ void        Window::PostWindowProcBase(UINT message, WPARAM wParam, LPARAM lPara
             }            
         }
         break;
+
     case WM_LBUTTONDOWN:
     case WM_RBUTTONDOWN:
     case WM_MBUTTONDOWN:
@@ -364,20 +372,99 @@ void        Window::PostWindowProcBase(UINT message, WPARAM wParam, LPARAM lPara
             DISPATCH_MOUSE_EVENT(OnMouseButtonDoubleClickedBase)
         }
         break;
+
+    case WM_KEYDOWN:
+        {
+            if(this->OnKeyDownBase((VirtualKeyCode) wParam, (KeyEventFlags) lParam))
+            {
+                return;
+            }
+
+            if (wParam == VK_TAB)
+            {
+                bool focusPrev = ((::GetKeyState(VK_SHIFT) & 0x8000) != 0);
+                Window::sFocusDirection = focusPrev ? FocusBackward : FocusForward;
+
+                focusPrev
+                    ? this->OnRequestFocusPrev() 
+                    : this->OnRequestFocusNext();
+
+                return;
+            }
+        }
+        break;
+
+    case WM_KEYUP:
+        {
+            if(this->OnKeyUpBase((VirtualKeyCode) wParam, (KeyEventFlags) lParam))
+            {
+                return;
+            }
+        }
+        break;
+
+    case WM_CHAR:
+        {
+            if(this->OnCharBase((VirtualKeyCode) wParam, (KeyEventFlags) lParam))
+            {
+                return;
+            }
+        }
+        break;
+
     case WM_DESTROY:
         this->OnDestroyedBase();
         break;
+
     case WM_TIMER:
         this->TimerTimeout((unsigned int)wParam);
         break;
 
+    case WM_SETFOCUS:
+        this->OnGainedFocusBase();
+        break;
+
+    case WM_KILLFOCUS:
+        this->OnLostFocusBase();
+        break;
     }
 
     this->PostWindowProc(message, wParam, lParam);
 }
 
+LRESULT     Window::PreWindowProcBase(UINT message, WPARAM wParam, LPARAM lParam, bool& discardMessage)
+{
+    return this->PreWindowProc(message, wParam, lParam, discardMessage);
+}
+
+
 LRESULT     Window::PreWindowProc(UINT message, WPARAM wParam, LPARAM lParam, bool& discardMessage)
 {
+    switch(message)
+    {
+    // sometimes messages, such as WM_COMMAND, are automatically sent to
+    // parent controls. handling these messages here allows derived classes 
+    // to recieve their messages so they can raise events.
+    case WM_COMMAND:
+        {
+            // control message
+            Window* sender = Window::sHandleToWindowMap[(HWND) lParam];
+            if (sender)
+            {
+                sender->WindowProc(message, wParam, lParam);
+                return 0;
+            }
+
+            // menu message
+            if (HIWORD(wParam) == 0)
+            {
+                Menu::ItemActivated(LOWORD(wParam));
+                return 0;
+            }
+        }
+        break;
+    }
+
     return 0;
 }
 
@@ -401,26 +488,19 @@ LRESULT CALLBACK Window::StaticWindowProc(HWND hwnd, UINT message, WPARAM wParam
     //
     if (it != Window::sHandleToWindowMap.end())
     {
-        // sometimes messages, such as WM_COMMAND, are automatically sent to
-        // parent controls. handling these messages here allows derived classes 
-        // to recieve their messages so they can raise events.
         switch (message)
         {
-        case WM_COMMAND:
+        // forward message to sender, instead of parent
+        case WM_DRAWITEM:
             {
-                // control message
-                Window* sender = Window::sHandleToWindowMap[(HWND) lParam];
-                if (sender)
+                if (lParam)
                 {
-                    sender->WindowProc(message, wParam, lParam);
-                    return 0;
-                }
-
-                // menu message
-                if (HIWORD(wParam) == 0)
-                {
-                    Menu::ItemActivated(LOWORD(wParam));
-                    return 0;
+                    DRAWITEMSTRUCT* drawItem = (DRAWITEMSTRUCT*) lParam;
+                    Window* sender = Window::sHandleToWindowMap[drawItem->hwndItem];
+                    if (sender)
+                    {
+                        sender->WindowProc(message, wParam, lParam);
+                    }
                 }
             }
             break;
@@ -434,18 +514,19 @@ LRESULT CALLBACK Window::StaticWindowProc(HWND hwnd, UINT message, WPARAM wParam
                     Window* sender = Window::sHandleToWindowMap[notifyHeader->hwndFrom];
                     if (sender)
                     {
-                        return sender->WindowProc(message, wParam, lParam);
+                        sender->WindowProc(message, wParam, lParam);
                     }
 
-                    sender = Window::sHandleToWindowMap[hwnd];
+                    sender = Window::sHandleToWindowMap[it->second->Handle()];
                     if (sender)
                     {
-                        return sender->WindowProc(message, wParam, lParam);
+                        sender->WindowProc(message, wParam, lParam);
                     }
                 }
             }
             break;
 
+        // TODO: move to PreWindowProc?
         case WM_CTLCOLORBTN:
         case WM_CTLCOLOREDIT:
         case WM_CTLCOLORDLG:
@@ -468,6 +549,7 @@ LRESULT CALLBACK Window::StaticWindowProc(HWND hwnd, UINT message, WPARAM wParam
             }
             break;
 
+        // TODO: move to PreWindowProc?
         // forward message to sender, instead of parent
         case WM_MEASUREITEM:
             {
@@ -500,18 +582,6 @@ LRESULT CALLBACK Window::StaticWindowProc(HWND hwnd, UINT message, WPARAM wParam
             }
             return 0;
 
-        case WM_SETFOCUS:
-            {
-                it->second->OnGainedFocusBase();
-            }
-            return 0;
-
-        case WM_KILLFOCUS:
-            {
-                it->second->OnLostFocusBase();
-            }
-            return 0;
-
         case WM_THEMECHANGED:
             {
                 it->second->OnThemeChangedBase();
@@ -520,7 +590,7 @@ LRESULT CALLBACK Window::StaticWindowProc(HWND hwnd, UINT message, WPARAM wParam
         }
 
         bool discardMessage = false;
-        LRESULT preResult = it->second->PreWindowProc(message, wParam, lParam, discardMessage);
+        LRESULT preResult = it->second->PreWindowProcBase(message, wParam, lParam, discardMessage);
 
         if (discardMessage)
         {
@@ -646,6 +716,10 @@ bool        Window::Resize(const Size& size)
     RECT windowRect;
     if (::GetWindowRect(this->windowHandle, &windowRect))
     {
+        Size saneSize = Size(
+            max(size.width, 0),
+            max(size.height, 0));
+
         POINT topLeft;
         topLeft.x = windowRect.left;
         topLeft.y = windowRect.top;
@@ -656,13 +730,13 @@ bool        Window::Resize(const Size& size)
             this->windowHandle,
             topLeft.x,
             topLeft.y,
-            size.width,
-            size.height,
+            saneSize.width,
+            saneSize.height,
             TRUE);
 
         if (result)
         {
-            this->OnResizedBase(size);
+            this->OnResizedBase(saneSize);
         }
 
         return (result == TRUE);
@@ -1074,6 +1148,35 @@ Color       Window::BackgroundColor() const
         : Color::SystemColor(COLOR_BTNFACE);
 }
 
+///\brief
+///Focuses the Window.
+bool        Window::SetFocus()
+{
+    bool success = false;
+    if (this->windowHandle)
+    {
+        success = (::SetFocus(this->windowHandle) != NULL);
+    }
+
+    return success;
+}
+
+///\brief
+///Returns true if this control should be focused via the Tab key
+bool        Window::TabStop()
+{
+    return this->tabStop;
+}
+
+///\brief
+///Sets whether or not this control can be focused via Tab key
+///\param enabled
+///If true this control can be focused via the Tab key
+void        Window::SetTabStop(bool enabled)
+{
+    this->tabStop = enabled;
+}
+
 bool        Window::IsWindowManaged(Window* window)
 {
     Window::HandleToWindowMap& hwndToWindow = Window::sHandleToWindowMap;
@@ -1156,25 +1259,25 @@ void        Window::SuppressSignal(SignalBase& signal)
 void        Window::OnDestroyedBase()
 {
     this->OnDestroyed();
-    EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->Destroyed);
+    EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->Destroyed, this);
 }
 
 void        Window::OnCreatedBase()
 {
     this->OnCreated();
-    EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->Created);
+    EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->Created, this);
 }
 
 void        Window::OnMovedBase(const Point& location)
 {
     this->OnMoved(location);
-    EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->Moved, location);
+    EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->Moved, this, location);
 }
 
 void        Window::OnResizedBase(const Size& newSize)
 {
     this->OnResized(newSize);
-    EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->Resized, newSize);
+    EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->Resized, this, newSize);
 }
 
 void        Window::OnMouseMovedBase(MouseEventFlags flags, const Point& location)
@@ -1192,25 +1295,25 @@ void        Window::OnMouseMovedBase(MouseEventFlags flags, const Point& locatio
     sLastWindowUnderMouse = this;
 
     this->OnMouseMoved(flags, location);
-    EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->MouseMoved, flags, location);
+    EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->MouseMoved, this, flags, location);
 }
 
 void        Window::OnMouseButtonDownBase(MouseEventFlags flags, const Point& location)
 {
     this->OnMouseButtonDown(flags, location);
-    EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->MouseButtonDown, flags, location);
+    EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->MouseButtonDown, this, flags, location);
 }
 
 void        Window::OnMouseButtonUpBase(MouseEventFlags flags, const Point& location)
 {
     this->OnMouseButtonUp(flags, location);
-    EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->MouseButtonUp, flags, location);
+    EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->MouseButtonUp, this, flags, location);
 }
 
 void        Window::OnMouseButtonDoubleClickedBase(MouseEventFlags flags, const Point& location)
 {
     this->OnMouseButtonDoubleClicked(flags, location);
-    EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->MouseButtonDoubleClicked, flags, location);
+    EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->MouseButtonDoubleClicked, this, flags, location);
 }
 
 void        Window::OnMouseEnterBase()
@@ -1221,7 +1324,7 @@ void        Window::OnMouseEnterBase()
 #endif
 
     this->OnMouseEnter();
-    EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->MouseEnter);
+    EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->MouseEnter, this);
 
     if (::GetCapture() != this->Handle())
     {
@@ -1244,25 +1347,25 @@ void        Window::OnMouseExitBase()
     sLastWindowUnderMouse = NULL;
 
     this->OnMouseExit();
-    EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->MouseExit);
+    EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->MouseExit, this);
 }
 
 void        Window::OnGainedFocusBase()
 {
     this->OnGainedFocus();
-    EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->GainedFocus);
+    EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->GainedFocus, this);
 }
 
 void        Window::OnLostFocusBase()
 {
     this->OnLostFocus();
-    EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->LostFocus);
+    EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->LostFocus, this);
 }
 
 void        Window::OnThemeChangedBase()
 {
     this->OnThemeChanged();
-    EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->ThemeChanged);
+    EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->ThemeChanged, this);
 }
 
 void        Window::OnParentChangedBase(Window* oldParent, Window* newParent)
@@ -1271,13 +1374,34 @@ void        Window::OnParentChangedBase(Window* oldParent, Window* newParent)
     EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->ParentChanged, oldParent, newParent);
 }
 
+bool        Window::OnKeyDownBase(VirtualKeyCode keyCode, KeyEventFlags flags)
+{
+    bool result = this->OnKeyDown(keyCode, flags);
+    EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->KeyDown, this, keyCode, flags);
+    return result;
+}
+
+bool        Window::OnKeyUpBase(VirtualKeyCode keyCode, KeyEventFlags flags)
+{
+    bool result = this->OnKeyUp(keyCode, flags);
+    EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->KeyUp, this, keyCode, flags);
+    return result;
+}
+
+bool        Window::OnCharBase(VirtualKeyCode keyCode, KeyEventFlags flags)
+{
+    bool result = this->OnChar(keyCode, flags);
+    EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->Char, this, keyCode, flags);
+    return result;
+}
+
 void        Window::OnThemeChanged()
 {
     // If we're the first window to notice the theme change then update
     // the default font.
     if (this->font == Window::sDefaultFont)
     {
-        Window::sDefaultFont.reset(new win32cpp::Font());
+        Window::sDefaultFont = Font::Create();
     }
 
     if (this->usesDefaultFont)
@@ -1307,6 +1431,16 @@ void        Window::OnPaint()
 void        Window::OnEraseBackground(HDC hdc)
 {
     ::InvalidateRect(this->Handle(), NULL, FALSE);
+}
+
+void        Window::OnRequestFocusNext()
+{
+    this->RequestFocusNext(this);
+}
+
+void        Window::OnRequestFocusPrev()
+{
+    this->RequestFocusPrev(this);
 }
 
 void        Window::PaintToHDC(HDC hdc, const Rect& rect)

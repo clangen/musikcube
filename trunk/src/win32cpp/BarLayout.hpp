@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -40,24 +40,49 @@
 
 //////////////////////////////////////////////////////////////////////////////
 
-using namespace win32cpp;
+#include <win32cpp/Panel.hpp>
+#include <win32cpp/ILayout.hpp>
 
-namespace musik { namespace cube {
+namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
 
-class TracklistInfoView: public LinearLayout
+///\brief Specifies the orientation of a LinearLayout
+enum BarLayoutOrientation
 {
-private:    typedef LinearLayout base;
-
-public:     /*ctor*/        TracklistInfoView();
-
-protected:  virtual void    OnCreated();
-public: virtual void Layout();
-
-private:    Label *trackCountLabel, *durationLabel, *sizeLabel;
+    BarRowLayout,    /*!< */
+    BarColumnLayout   /*!< */
 };
 
-//////////////////////////////////////////////////////////////////////////////
+///\brief TODO: document me
+class BarLayout: public Panel, public ILayout
+{
+public: // constructors
+    /*ctor*/    BarLayout(BarLayoutOrientation orientation = BarRowLayout);
 
-} }     // musik::cube
+public: // methods
+    void    SetSpacing(int spacing);
+    int     Spacing() const;
+    void    SetSizeConstraints(int width = LayoutFillParent, int height = LayoutFillParent);
+
+public: // ILayout
+    virtual void Layout();
+
+protected: // methods
+    void            OnChildAdded(Window* newChild);
+    void            OnChildRemoved(Window* oldChild);
+    void            OnChildResized(Window* window, Size newSize);
+    void            ThrowIfNotChild(Window* child);
+    bool            ShouldFillChild(Window* child);
+    virtual void    OnResized(const Size& newSize);
+
+private: // instance data
+    BarLayoutOrientation orientation;
+    int spacing;
+    bool childIsResizing;
+    Size constraints;
+};
+
+/////////////////////////////////////////////////////////////////////////////
+
+}   // win32cpp

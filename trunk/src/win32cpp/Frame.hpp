@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -118,30 +118,33 @@ struct FramePadding
 ///
 ///\see
 ///Container, Panel
-class Frame: public Panel, public EventHandler
+class Frame: public Panel
 {
-private:    typedef Panel base;
+private: //types
+    typedef Panel base;
 
-public:     /*ctor*/            Frame(Window* child = NULL, int padding = 0);
-public:     /*ctor*/            Frame(Window* child, const FramePadding& padding);
+public: // constructors
+    /*ctor*/    Frame(Window* child = NULL, int padding = 0);
+    /*ctor*/    Frame(Window* child, const FramePadding& padding);
 
-public:     void                SetPadding(const FramePadding& padding);
-public:     void                SetPadding(int padding);
+public: // methods
+    void    SetPadding(const FramePadding& padding);
+    void    SetPadding(int padding);
 
-    // protected api
-protected:  void                ResizeFromChild();
-protected:  void                OnChildResized(Size newSize);
-            // virtual api
-protected:  virtual bool        AddChildWindow(Window* window);
-protected:  virtual void        OnChildAdded(Window* newChild);
-protected:  virtual void        OnCreated();
-protected:  virtual void        OnResized(const Size& newSize);
-protected:  virtual LRESULT     WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+protected: // methods
+    void    ResizeFromChild();
+    void    OnChildResized(Window* window, Size newSize);
 
-        // instance data
-private:    FramePadding padding;
-private:    Window* child;
-private:    bool isResizingHACK;
+    virtual bool    AddChildWindow(Window* window);
+    virtual void    OnChildAdded(Window* newChild);
+    virtual void    OnCreated();
+    virtual void    OnResized(const Size& newSize);
+    virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+
+private: // instance data
+    FramePadding padding;
+    Window* child;
+    bool isResizingHACK;
 };
 
 //////////////////////////////////////////////////////////////////////////////

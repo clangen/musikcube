@@ -47,16 +47,19 @@ using namespace musik::cube;
 
 //////////////////////////////////////////////////////////////////////////////
 
-/*ctor*/    TracklistController::TracklistController(TracklistView& view,musik::core::Query::ListBase *connectedQuery,musik::core::tracklist::Standard::Ptr tracklist)
+/*ctor*/    TracklistController::TracklistController(
+    TracklistView& view,
+    musik::core::Query::ListBase *connectedQuery,
+    musik::core::tracklist::Standard::Ptr tracklist)
 : view(view)
-, model(new TracklistModel(connectedQuery,tracklist))
+, model(new TracklistModel(connectedQuery, tracklist))
 {
     this->view.Handle()
-        ? this->OnViewCreated()
+        ? this->OnViewCreated(&view)
         : this->view.Created.connect(this, &TracklistController::OnViewCreated);
 }
 
-void        TracklistController::OnViewCreated()
+void        TracklistController::OnViewCreated(Window* window)
 {
     typedef ListView::Column Column;
 
@@ -73,16 +76,12 @@ void        TracklistController::OnViewCreated()
     //
     listView->EnableStripedBackground(true);
     listView->SetModel(this->model);
-    listView->RowDoubleClick.connect(this,&TracklistController::OnRowDoubleClick);
+    listView->RowActivated.connect(this, &TracklistController::OnRowActivated);
 }
 
-void        TracklistController::OnResized(Size size)
+void        TracklistController::OnRowActivated(ListView* listView, int row)
 {
-}
-
-void        TracklistController::OnRowDoubleClick(int row)
-{
-    ((TracklistModel*)this->model.get())->OnRowDoubleClick(row);
+    ((TracklistModel*)this->model.get())->OnRowActivated(row);
 }
 
 

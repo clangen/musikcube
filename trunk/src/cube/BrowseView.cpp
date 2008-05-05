@@ -51,15 +51,13 @@ using namespace musik::cube;
 
 void        BrowseView::OnCreated()
 {
-    this->filterViewHBox = new BoxLayout();
-    this->filterViewHBox->SetDefaultChildFill(true);
-    this->filterViewHBox->Resized.connect(this, &BrowseView::OnFilterHBoxResized);
-
-    this->filterListFrame = new Frame(filterViewHBox);
+    this->filterViewLayout = new BarLayout(BarColumnLayout);
     this->tracklistView = new TracklistView();
 
     mainVSplitter = new Splitter(
-        SplitVertical, this->filterListFrame, this->tracklistView);
+        SplitRow,
+        this->filterViewLayout,
+        this->tracklistView);
 
     this->AddMetadataFilter(_T("genre"));
     this->AddMetadataFilter(_T("artist"));
@@ -70,34 +68,11 @@ void        BrowseView::OnCreated()
     mainVSplitter->SetAnchorSize(100);
 }
 
-void        BrowseView::OnFilterHBoxResized(Size newSize)
-{
-    RedrawLock redrawLock(this->filterViewHBox);
-
-    int viewCount = (int) filterViews.size();
-
-    if (viewCount)
-    {
-        int viewSpacing = this->filterViewHBox->Spacing();
-
-        int availableWidth = (newSize.width - (viewSpacing * (viewCount - 1)));
-        int controlWidth = (availableWidth / viewCount);
-        int lastControlWidth = (controlWidth + (availableWidth - (controlWidth * viewCount)));
-
-        for (int i = 0; i < (viewCount - 1); i++)
-        {
-            this->filterViews[i]->Resize(controlWidth, newSize.height);
-        }
-
-        this->filterViews[viewCount - 1]->Resize(lastControlWidth, newSize.height);
-    }
-}
-
 void        BrowseView::AddMetadataFilter(const uistring& metadataKey)
 {
     ListView* listView = new ListView();
     this->filterViews.push_back(listView);
     this->filterKeyMap[listView] = metadataKey;
 
-    this->filterViewHBox->AddChild(listView);
+    this->filterViewLayout->AddChild(listView);
 }

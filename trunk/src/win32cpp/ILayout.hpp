@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -40,24 +40,30 @@
 
 //////////////////////////////////////////////////////////////////////////////
 
-using namespace win32cpp;
-
-namespace musik { namespace cube {
+namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
 
-class TracklistInfoView: public LinearLayout
+///\brief Hints a layout to use its parent's size.
+static const int LayoutFillParent = -1;
+
+///\brief Specifies the alignment of a Layout's child
+enum ChildAlignment
 {
-private:    typedef LinearLayout base;
-
-public:     /*ctor*/        TracklistInfoView();
-
-protected:  virtual void    OnCreated();
-public: virtual void Layout();
-
-private:    Label *trackCountLabel, *durationLabel, *sizeLabel;
+    ChildAlignLeft = 0,     /*!< */
+    ChildAlignRight = 1,    /*!< */
+    ChildAlignCenter = 2,   /*!< */
+    ChildAlignTop = 0,      /*!< */
+    ChildAlignBottom = 1,   /*!< */
+    ChildAlignMiddle = 2,   /*!< */
 };
 
-//////////////////////////////////////////////////////////////////////////////
+class ILayout
+{
+public: // methods
+    virtual void Layout() = 0;
+};
 
-} }     // musik::cube
+/////////////////////////////////////////////////////////////////////////////
+
+}   // win32cpp

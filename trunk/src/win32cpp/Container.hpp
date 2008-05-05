@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -66,30 +66,51 @@ namespace win32cpp {
 ///from Container for more information.
 /*abstract*/ class Container: public Window
 {
-public:     class TooManyChildWindowsException { };
-public:     class WindowAlreadyHasParentException: public Exception { };
-public:     class WindowHasNoParentException: public Exception { };
-public:     class InvalidChildWindowException: public Exception { };
+public: // types
+    class TooManyChildWindowsException { };
+    class WindowAlreadyHasParentException: public Exception { };
+    class WindowHasNoParentException: public Exception { };
+    class InvalidChildWindowException: public Exception { };
 
-private:    typedef Window base;
+private: //types
+    typedef Window base;
 
-public:     /*ctor*/            Container();
-public:     /*dtor*/ virtual    ~Container();
+public: // constructors, methods
+    /*ctor*/            Container();
+    /*dtor*/ virtual    ~Container();
 
-public:     template <typename WindowType>
-            WindowType*         AddChild(WindowType* window);
+    template <typename WindowType>
+    WindowType*     AddChild(WindowType* window);
 
-public:     template <typename WindowType>
-            WindowType*         RemoveChild(WindowType* window);
+    template <typename WindowType>
+    WindowType*     RemoveChild(WindowType* window);
 
-protected:  virtual HWND        Create(Window* parent) = 0;
-protected:  virtual bool        AddChildWindow(Window* window);
-protected:  virtual bool        RemoveChildWindow(Window* window);
-protected:  virtual void        OnChildAdded(Window* newChild) { /*for derived use*/ }
-protected:  virtual void        OnChildRemoved(Window* oldChild) { /*for derived use*/ }
-private:    void                DestroyChildren();
+protected: // methods
+    virtual HWND    Create(Window* parent) = 0;
+    virtual bool    AddChildWindow(Window* window);
+    virtual bool    RemoveChildWindow(Window* window);
+    virtual void    OnChildAdded(Window* newChild) { /*for derived use*/ }
+    virtual void    OnChildRemoved(Window* oldChild) { /*for derived use*/ }
 
-protected:  WindowList          childWindows;
+    virtual void    OnRequestFocusNext();
+    virtual void    OnRequestFocusPrev();
+    virtual void    OnChildWindowRequestFocusNext(Window* child);
+    virtual void    OnChildWindowRequestFocusPrev(Window* child);
+    virtual void    OnGainedFocus();
+    virtual bool    FocusLastChild();
+    virtual bool    FocusFirstChild();
+    virtual bool    FocusPrevChild();
+    virtual bool    FocusNextChild();
+
+private: // methods
+    void            DestroyChildren();
+
+    WindowList::iterator FindChild(const Window* child);
+    WindowList::reverse_iterator ReverseFindChild(const Window* child);
+
+protected: // instance data
+    WindowList childWindows;
+    Window* focusedWindow;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -146,7 +167,7 @@ WindowType*     Container::AddChild(WindowType* window)
     }
 
     // keep track of all windows that have parents
-    Window::sAllChildWindows.insert(window);
+    Window::sAllChildWindows.push_back(window);
 
     // set us as the window's new parent
     Window::SetParent(window, this);
@@ -205,8 +226,11 @@ WindowType*     Container::RemoveChild(WindowType* window)
         return window;
     }
 
-    // keep track of all windows that have parents
-    Window::sAllChildWindows.erase(window);
+    // window is no longer a child window, remove it from the mapping.
+    WindowList& allChildren = Window::sAllChildWindows;
+    //
+    allChildren.erase(
+        std::find(allChildren.begin(), allChildren.end(), window));
 
     // set the MainWindow as the new parent, but do not add it as
     // a child. we do this so the child control doesn't get into

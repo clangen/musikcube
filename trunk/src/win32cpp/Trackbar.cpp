@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -69,7 +69,7 @@ HWND        Trackbar::Create(Window* parent)
         0,                          // X
         0,                          // Y
         120,                        // Width
-        36,                         // Height
+        24,                         // Height
         parent->Handle(),           // Parent
         NULL,                       // Menu
         Application::Instance(),    // Instance
@@ -116,11 +116,18 @@ LRESULT     Trackbar::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
     return base::WindowProc(message, wParam, lParam);
 }
 
-void        Trackbar::OnCreated()
+void        Trackbar::SetRange(short minValue, short maxValue)
 {
+    this->minValue = minValue;
+    this->maxValue = maxValue;
+
     LONG range = MAKELONG(this->minValue, this->maxValue);
     ::SendMessage(this->Handle(), TBM_SETRANGE, FALSE, range);
+}
 
+void        Trackbar::OnCreated()
+{
+    this->SetRange(this->minValue, this->maxValue);
     this->SetThumbHeight(this->thumbHeight);
 }
 
@@ -213,8 +220,8 @@ void        Trackbar::SetTickFrequency(short tickFrequency)
 
 void        Trackbar::OnRepositioned()
 {
-    this->position = this->SendMessage(TBM_GETPOS, 0, 0);
-    this->Repositioned();
+    this->position = (short) this->SendMessage(TBM_GETPOS, 0, 0);
+    this->Repositioned(this);
 }
 
 void        Trackbar::SetThumbHeight(short thumbHeight)

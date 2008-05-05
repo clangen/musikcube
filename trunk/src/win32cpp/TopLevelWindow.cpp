@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -85,7 +85,7 @@ HWND        TopLevelWindow::Create(Window* parent)
     }
 
     // create the window
-    DWORD style = WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
+    DWORD style = WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_GROUP;
     DWORD styleEx = NULL;
     //
     HWND hwnd = ::CreateWindowEx(
@@ -156,4 +156,40 @@ LRESULT     TopLevelWindow::WindowProc(UINT message, WPARAM wParam, LPARAM lPara
     }
 
     return base::WindowProc(message, wParam, lParam);
+}
+
+void        TopLevelWindow::OnRequestFocusNext()
+{
+    bool focusChildSuccess = false;
+
+    // if we're on the last focused item, loop back around to the first.
+    if ((this->focusedWindow != NULL)
+    &&  (this->focusedWindow == this->childWindows.back()))
+    {
+        focusChildSuccess = this->FocusFirstChild();
+    }
+
+    // we weren't able to focus the next child, so notify the parent.
+    if ( ! focusChildSuccess)
+    {
+        base::OnRequestFocusNext();
+    }
+}
+
+void        TopLevelWindow::OnRequestFocusPrev()
+{
+    bool focusChildSuccess = false;
+
+    // if we're on the first focused item, jump to the last.
+    if ((this->focusedWindow != NULL)
+    &&  (this->focusedWindow == this->childWindows.front()))
+    {
+        focusChildSuccess = this->FocusLastChild();
+    }
+
+    // we weren't able to focus the next child, so notify the parent.
+    if ( ! focusChildSuccess)
+    {
+        base::OnRequestFocusPrev();
+    }
 }

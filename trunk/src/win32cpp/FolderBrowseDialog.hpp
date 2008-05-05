@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -40,24 +40,15 @@
 
 //////////////////////////////////////////////////////////////////////////////
 
-using namespace win32cpp;
-
-namespace musik { namespace cube {
+namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
 
-class TracklistInfoView: public LinearLayout
+class FolderBrowseDialog
 {
-private:    typedef LinearLayout base;
 
-public:     /*ctor*/        TracklistInfoView();
-
-protected:  virtual void    OnCreated();
-public: virtual void Layout();
-
-private:    Label *trackCountLabel, *durationLabel, *sizeLabel;
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-} }     // musik::cube
+}   // win32cpp

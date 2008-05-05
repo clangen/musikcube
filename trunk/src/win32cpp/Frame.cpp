@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -139,7 +139,7 @@ void        Frame::OnResized(const Size& newSize)
     }
 }
 
-void        Frame::OnChildResized(Size newSize)
+void        Frame::OnChildResized(Window* window, Size newSize)
 {
     // If we were resized then we had to change our child's size. Doing 
     // so will cause a Resize event to fire, resulting in and endless
@@ -153,6 +153,7 @@ void        Frame::OnChildResized(Size newSize)
 void        Frame::ResizeFromChild()
 {
     Size size = this->child->WindowSize();
+ 
     size.width += (this->padding.left + this->padding.right);
     size.height += (this->padding.top + this->padding.bottom);
     //

@@ -55,17 +55,17 @@ class TransportController : public EventHandler
 {
 public:     /*ctor*/    TransportController(TransportView& transportView);
 
-protected:  void        OnViewCreated();
-protected:  void        OnViewResized(Size size);
+protected:  void        OnViewCreated(Window* window);
+protected:  void        OnViewResized(Window* window, Size size);
 
-protected:  TransportView&                  transportView;
-
-protected:  void    OnPlayPressed();
-protected:  void    OnStopPressed();
-protected:  void    OnNextPressed();
-protected:  void    OnPreviousPressed();
-protected:  void    OnVolumeSliderChange();
+protected:  void    OnPlayPressed(Button* button);
+protected:  void    OnStopPressed(Button* button);
+protected:  void    OnNextPressed(Button* button);
+protected:  void    OnPreviousPressed(Button* button);
+protected:  void    OnVolumeSliderChange(Trackbar* trackbar);
 protected:  void    OnTrackChange(musik::core::TrackPtr track);
+
+protected:  TransportView& transportView;
 };
 
 //////////////////////////////////////////////////////////////////////////////

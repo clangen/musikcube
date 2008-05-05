@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -57,18 +57,26 @@ namespace win32cpp {
 ///Window, Container.
 class TopLevelWindow: public Container
 {
-private:    typedef Container base;
+private: // types
+    typedef Container base;
 
-public:     /*ctor*/    TopLevelWindow(const uichar* windowTitle);
+public: // ctor, dtor
+    /*ctor*/    TopLevelWindow(const uichar* windowTitle);
 
-public:     void        SetMinimumSize(const Size& minSize);
-public:     Size        MinimumSize() const;
+public: // methods
+    void    SetMinimumSize(const Size& minSize);
+    Size    MinimumSize() const;
 
-protected:  virtual HWND        Create(Window* parent);
-protected:  virtual LRESULT     WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+protected: // methods
+    virtual HWND        Create(Window* parent);
+    virtual LRESULT     WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
 
-private:    uistring className, windowTitle;
-private:    Size minSize;
+    virtual void        OnRequestFocusNext();
+    virtual void        OnRequestFocusPrev();
+
+private: // instance data
+    uistring className, windowTitle;
+    Size minSize;
 };
 
 //////////////////////////////////////////////////////////////////////////////

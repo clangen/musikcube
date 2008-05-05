@@ -204,7 +204,7 @@ void                SourcesListModel::SelectedRowChanged(int newIndex)
 // SourcesListModel::CategoryCellRenderer
 //////////////////////////////////////////////////////////////////////////////
 
-FontRef SourcesListModel::CategoryCellRenderer::sFont = FontRef(new Font(_T(""), -1, true));
+FontRef SourcesListModel::CategoryCellRenderer::sFont = Font::Create(_T(""), -1, true);
 
 /*ctor*/    SourcesListModel::CategoryCellRenderer::CategoryCellRenderer(const uistring& textValue)
 : base(textValue)
@@ -216,23 +216,23 @@ void        SourcesListModel::CategoryCellRenderer::SetFonts(FontRef font)
     CategoryCellRenderer::sFont = font;
 }
 
-void        SourcesListModel::CategoryCellRenderer::Render(const ListView& listView, NMLVCUSTOMDRAW& customDraw)
+void        SourcesListModel::CategoryCellRenderer::Render(const ListView& listView, ListView::RenderParams& renderParams)
 {
-    customDraw.clrTextBk = Color::Darken(Color::SystemColor(COLOR_BTNFACE), 15);
-    customDraw.clrText = Color::SystemColor(COLOR_BTNTEXT);
+    renderParams.backColor = Color::Darken(Color::SystemColor(COLOR_BTNFACE), 15);
+    renderParams.foreColor = Color::SystemColor(COLOR_BTNTEXT);
 
-    HBRUSH backBrush = ::CreateSolidBrush(customDraw.clrTextBk);
-    ::FillRect(customDraw.nmcd.hdc, &customDraw.nmcd.rc, backBrush);
+    HBRUSH backBrush = ::CreateSolidBrush(renderParams.backColor);
+    ::FillRect(renderParams.hdc, &(RECT) renderParams.rect, backBrush);
     ::DeleteObject(backBrush);
 
-    ::SetTextColor(customDraw.nmcd.hdc, customDraw.clrText);
-    ::SetBkMode(customDraw.nmcd.hdc, TRANSPARENT);
+    ::SetTextColor(renderParams.hdc, renderParams.foreColor);
+    ::SetBkMode(renderParams.hdc, TRANSPARENT);
 
-    RECT drawRect = customDraw.nmcd.rc;
+    RECT drawRect = renderParams.rect;
     drawRect.left += 6;
 
     SourcesListModel::CategoryCellRenderer::sFont->DrawToHDC(
-        customDraw.nmcd.hdc, drawRect, this->textValue);
+        renderParams.hdc, drawRect, this->textValue);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -245,71 +245,54 @@ void        SourcesListModel::CategoryCellRenderer::Render(const ListView& listV
 {
 }
 
-void        SourcesListModel::ItemCellRenderer::Render(const ListView& listView, NMLVCUSTOMDRAW& customDraw)
+void        SourcesListModel::ItemCellRenderer::Render(const ListView& listView, ListView::RenderParams& renderParams)
 {
     static const int gutterWidth = 6;
 
     bool isSelected = false;
-    bool isHot = (listView.HotRow() == customDraw.nmcd.dwItemSpec);
+    bool isHot = (listView.HotRow() == renderParams.rowIndex);
     Color gutterColor = Color::SystemColor(COLOR_BTNFACE);
     FontRef font = Font::Create();
 
     // selected
-    if (customDraw.nmcd.dwItemSpec == owner.activeItemIndex)
+    if (renderParams.rowIndex == owner.activeItemIndex)
     {
         isSelected = true;
-#if 0
-        customDraw.clrTextBk = Color::SystemColor(COLOR_WINDOW);
-        customDraw.clrText = Color::SystemColor(COLOR_WINDOWTEXT);
-#endif
-        customDraw.clrText = Color::SystemColor(COLOR_HIGHLIGHTTEXT);
-        customDraw.clrTextBk = Color::SystemColor(COLOR_HIGHLIGHT);
+
+        renderParams.foreColor = Color::SystemColor(COLOR_HIGHLIGHTTEXT);
+        renderParams.backColor = Color::SystemColor(COLOR_HIGHLIGHT);
         gutterColor = Color::SystemColor(COLOR_ACTIVECAPTION);
 
         font->SetBold();
     }
     else
     {
-        customDraw.clrTextBk = Color::Lighten(Color::SystemColor(COLOR_BTNFACE), 15);
-        customDraw.clrText = Color::SystemColor(COLOR_BTNTEXT);
+        renderParams.backColor = Color::Lighten(Color::SystemColor(COLOR_BTNFACE), 15);
+        renderParams.foreColor = Color::SystemColor(COLOR_BTNTEXT);
     }
 
     // fill the background
     if (isHot)
     {
-        customDraw.clrTextBk = Color::Lighten(customDraw.clrTextBk, 15);
+        renderParams.backColor = Color::Lighten(renderParams.backColor, 15);
     }
     //
-    HBRUSH backBrush = ::CreateSolidBrush(customDraw.clrTextBk);
-    ::FillRect(customDraw.nmcd.hdc, &customDraw.nmcd.rc, backBrush);
+    HBRUSH backBrush = ::CreateSolidBrush(renderParams.backColor);
+    ::FillRect(renderParams.hdc, &(RECT) renderParams.rect, backBrush);
     ::DeleteObject(backBrush);
 
     // fill the gutter
-    RECT gutterRect = customDraw.nmcd.rc;
+    RECT gutterRect = renderParams.rect;
     gutterRect.right = gutterRect.left + gutterWidth;
     backBrush = ::CreateSolidBrush(gutterColor);
-    ::FillRect(customDraw.nmcd.hdc, &gutterRect, backBrush);
+    ::FillRect(renderParams.hdc, &gutterRect, backBrush);
     ::DeleteObject(backBrush);
 
-    // draw a rectangle around the item if it is selected
-#if 0
-    if (isSelected || isHot)
-    {
-        backBrush = ::CreateSolidBrush(
-            Color::Darken(Color::SystemColor(COLOR_BTNFACE), 30));
-
-        gutterRect.left += gutterWidth; // reuse gutterRect!
-        gutterRect.right = customDraw.nmcd.rc.right;
-        ::FrameRect(customDraw.nmcd.hdc, &gutterRect, backBrush);
-        ::DeleteObject(backBrush);
-    }
-#endif
-
     // draw the caption
-    ::SetTextColor(customDraw.nmcd.hdc, customDraw.clrText);
-    ::SetBkMode(customDraw.nmcd.hdc, TRANSPARENT);
+    ::SetTextColor(renderParams.hdc, renderParams.foreColor);
+    ::SetBkMode(renderParams.hdc, TRANSPARENT);
     //
-    customDraw.nmcd.rc.left += gutterWidth + 4;
+    renderParams.rect.location.x += gutterWidth + 4;
     //
-    font->DrawToHDC(customDraw.nmcd.hdc, customDraw.nmcd.rc, this->textValue);
+    font->DrawToHDC(renderParams.hdc, renderParams.rect, this->textValue);
 }

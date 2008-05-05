@@ -54,8 +54,8 @@ class SettingsController : public EventHandler
 {
 public:     /*ctor*/    SettingsController(SettingsView& settingsView);
 
-protected:  void        OnViewCreated();
-protected:  void        OnViewResized(Size size);
+protected:  void        OnViewCreated(Window* window);
+protected:  void        OnViewResized(Window* window, Size size);
 
 protected:  SettingsView&                  settingsView;
 

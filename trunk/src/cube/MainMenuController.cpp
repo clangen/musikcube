@@ -52,7 +52,7 @@ using namespace musik::cube;
         this, &MainMenuController::OnMainWindowCreated);
 }
 
-void        MainMenuController::OnMainWindowCreated()
+void        MainMenuController::OnMainWindowCreated(Window* window)
 {
     this->mainWindow.SetMenu(this->CreateMenu());
 }
@@ -63,12 +63,12 @@ void        MainMenuController::ConnectMenuHandlers()
     this->helpAbout->Activated.connect(this, &MainMenuController::OnHelpAbout);
 }
 
-void        MainMenuController::OnFileExit()
+void        MainMenuController::OnFileExit(MenuItemRef menuItem)
 {
     Application::Instance().Terminate();
 }
 
-void        MainMenuController::OnHelpAbout()
+void        MainMenuController::OnHelpAbout(MenuItemRef menuItem)
 {
     // randomize the contribuitors' names
     std::vector<uistring> names;

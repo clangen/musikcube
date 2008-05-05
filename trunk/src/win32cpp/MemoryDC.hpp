@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -80,16 +80,19 @@ namespace win32cpp {
 ///RedrawLock
 class MemoryDC
 {
-public:     /*ctor*/    MemoryDC(HDC hdc, const RECT& rect);
-public:     /*dtor*/    ~MemoryDC();
+public: // constructors, destructor
+    /*ctor*/    MemoryDC(HDC hdc, const RECT& rect);
+    /*dtor*/    ~MemoryDC();
 
-public:     operator    HDC();
+public: // operators
+    operator    HDC();
 
-private:    HBITMAP     memoryBitmap;
-private:    HDC         memoryDC, screenDC;
-private:    HANDLE      oldObject;
-private:    RECT        clientRect;
-private:    bool        rectIsValid;
+private: // instance data
+    HBITMAP memoryBitmap;
+    HDC memoryDC, screenDC;
+    HANDLE oldObject;
+    RECT clientRect;
+    bool rectIsValid;
 };
 
 //////////////////////////////////////////////////////////////////////////////

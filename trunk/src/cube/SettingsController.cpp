@@ -55,11 +55,11 @@ using namespace musik::cube;
         this, &SettingsController::OnViewResized);
 }
 
-void        SettingsController::OnViewCreated()
+void        SettingsController::OnViewCreated(Window* window)
 {
 
 }
 
-void        SettingsController::OnViewResized(Size size)
+void        SettingsController::OnViewResized(Window* window, Size size)
 {
 }

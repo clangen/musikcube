@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -50,20 +50,26 @@ namespace win32cpp {
 ///A simple Window that draws only a caption.
 class Label: public Window
 {
-private:    typedef Window base;
+private: // types
+    typedef Window base;
 
-public:     /*ctor*/            Label(const uichar* caption = _T(""));
-public:     void                ResizeFromCaption();
-public:     void                EnableAutoResizeFromCaption(bool enable = true);
-public:     bool                AutoResizeFromCaptionEnabled() const;
+public: // constructors
+    /*ctor*/            Label(const uichar* caption = _T(""));
 
-protected:  virtual HWND        Create(Window* parent);
-protected:  virtual LRESULT     WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
-protected:  virtual void        OnFontChanged();
-protected:  virtual void        OnCaptionChanged();
+public: // methods
+    void    ResizeFromCaption();
+    void    EnableAutoResizeFromCaption(bool enable = true);
+    bool    AutoResizeFromCaptionEnabled() const;
 
-protected:  uistring caption;
-protected:  bool autoResize;
+protected: // methods
+    virtual HWND        Create(Window* parent);
+    virtual LRESULT     WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+    virtual void        OnFontChanged();
+    virtual void        OnCaptionChanged();
+
+protected: // instance data
+    uistring caption;
+    bool autoResize;
 };
 
 //////////////////////////////////////////////////////////////////////////////

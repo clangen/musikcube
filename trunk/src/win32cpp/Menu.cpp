@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -129,7 +129,7 @@ void        Menu::ItemActivated(UINT menuItemID)
     IDToMenuItemMap::iterator it = Menu::sIDToMenuItemRef.find(menuItemID);
     if (it != Menu::sIDToMenuItemRef.end())
     {
-        it->second->Activated();
+        it->second->Activated(it->second);
     }
 }
 

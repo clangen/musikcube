@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -47,11 +47,11 @@
 //////////////////////////////////////////////////////////////////////////////
 
 namespace win32cpp {
-//////////////////////////////////////////////////////////////////////////////
-// forward declaration
-class ApplicationThread;
 
 //////////////////////////////////////////////////////////////////////////////
+
+// forward declaration
+class ApplicationThread;
 
 ///\brief
 ///Application is a singleton that provides basic information about the
@@ -66,43 +66,46 @@ class ApplicationThread;
 ///TopLevelWindow
 class Application : public EventHandler
 {
-            ///\brief Thrown if Application::Initialize() is called more than once
-public:     class ApplicationAlreadyInitializedException: public Exception { };
-            ///\brief Thrown if Application::Run() is called while the application
-            ///is already running.
-public:     class ApplicationAlreadyRunningException: public Exception { };
+public: // types
+    ///\brief Thrown if Application::Initialize() is called more than once
+    class ApplicationAlreadyInitializedException: public Exception { };
 
-private:    /*ctor*/            Application();
-private:    /*dtor*/            ~Application();
+    ///\brief Thrown if Application::Run() is called while the application
+    ///is already running.
+    class ApplicationAlreadyRunningException: public Exception { };
 
-public:     static void         Initialize(HINSTANCE instance, HINSTANCE previousInstance, LPTSTR commandLine, int showCommand);
-public:     void                Run(TopLevelWindow& mainWindow);
+public: // constructors
+    /*ctor*/            Application();
 
-public:     static Application& Instance();
+public: // methods
+    static void         Initialize(HINSTANCE instance, HINSTANCE previousInstance, LPTSTR commandLine, int showCommand);
+    static Application& Instance();
 
-public:     TopLevelWindow*     MainWindow();
-public:     HINSTANCE           PreviousInstance() const;
-public:     const uistring&     CommandLine() const;
-public:     int                 ShowCommand() const;
-public:     void                Terminate() const;
+    void                Run(TopLevelWindow& mainWindow);
+    TopLevelWindow*     MainWindow();
+    HINSTANCE           PreviousInstance() const;
+    const uistring&     CommandLine() const;
+    int                 ShowCommand() const;
+    void                Terminate() const;
 
-public:     operator HINSTANCE() const;
+public: // operator overloads
+    operator HINSTANCE() const;
 
-private:    void                OnMainWindowDestroyed();
+private: // methods
+    void                OnMainWindowDestroyed(Window* window);
 
-    // instance data
-private:    HINSTANCE instance;
-private:    HINSTANCE previousInstance;
-private:    uistring commandLine;
-private:    int showCommand;
-private:    TopLevelWindow* mainWindow;
-    // class data
-private:    static Application sMainApplication;
+private: // instance data
+    HINSTANCE instance;
+    HINSTANCE previousInstance;
+    uistring commandLine;
+    int showCommand;
+    TopLevelWindow* mainWindow;
 
-//////////////////////////////////////////////////////////////////////////////
+public: // instance data
+    ApplicationThread *thread;
 
-public:     ApplicationThread *thread;
-
+private: // class data
+    static Application sMainApplication;
 };
 
 //////////////////////////////////////////////////////////////////////////////

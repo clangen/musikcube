@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -56,11 +56,7 @@ Application Application::sMainApplication;
 , commandLine(_T(""))
 , showCommand(NULL)
 , mainWindow(NULL)
-, thread(new win32cpp::ApplicationThread())
-{
-}
-
-/*dtor*/        Application::~Application()
+, thread(new ApplicationThread())
 {
 }
 
@@ -138,6 +134,7 @@ void            Application::Run(TopLevelWindow& mainWindow)
     MSG msg;
     while (::GetMessage(&msg, NULL, 0, 0) > 0)
     {
+        //(::IsDialogMessage(msg.hwnd, &msg) == 0);
         ::TranslateMessage(&msg);
         ::DispatchMessage(&msg);
     }
@@ -145,11 +142,10 @@ void            Application::Run(TopLevelWindow& mainWindow)
     delete this->thread;
     this->thread = NULL;
 
-
     this->mainWindow = NULL;
 }
 
-void            Application::OnMainWindowDestroyed()
+void            Application::OnMainWindowDestroyed(Window* window)
 {
     ::PostQuitMessage(0);
 }
@@ -210,4 +206,3 @@ Application::operator HINSTANCE() const
 {
     return this->instance;
 }
-

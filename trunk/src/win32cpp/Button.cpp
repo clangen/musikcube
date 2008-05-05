@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -61,7 +61,7 @@ HWND        Button::Create(Window* parent)
     HINSTANCE hInstance = Application::Instance();
 
     // create the window
-    DWORD style = WS_CHILD | WS_VISIBLE;
+    DWORD style = WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON | BS_NOTIFY | BS_TEXT;
     //
     HWND hwnd = CreateWindowEx(
         NULL,                   // ExStyle
@@ -70,8 +70,8 @@ HWND        Button::Create(Window* parent)
         style,                  // Style
         0,                      // X
         0,                      // Y
-        120,                    // Width
-        36,                     // Height
+        64,                     // Width
+        32,                     // Height
         parent->Handle(),       // Parent
         NULL,                   // Menu
         hInstance,              // Instance
@@ -85,8 +85,12 @@ LRESULT     Button::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
     switch (message)
     {
     case WM_COMMAND:
-        this->OnPressed();
-        return 0;   // 0 = processed
+        switch (HIWORD(wParam))
+        {
+        case BN_CLICKED:
+            this->OnPressed();
+            return 0;
+        }
     }
 
     return this->DefaultWindowProc(message, wParam, lParam);
@@ -94,5 +98,17 @@ LRESULT     Button::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 
 void        Button::OnPressed()
 {
-    this->Pressed();
+    this->Pressed(this);
+}
+
+void        Button::PaintToHDC(HDC hdc, const Rect& rect)
+{
+    this->WindowProc(WM_PAINT, (WPARAM) (HDC) hdc, PRF_CLIENT);
+
+    if (::GetFocus() == this->Handle())
+    {
+        RECT focusRect = rect;
+        ::InflateRect(&focusRect, -4, -4);
+        ::DrawFocusRect(hdc, &focusRect);
+    }
 }
