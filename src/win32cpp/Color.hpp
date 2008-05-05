@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -60,20 +60,24 @@ namespace win32cpp {
 ///\endcode
 struct Color
 {
-public:     /*ctor*/    Color(byte red = 255, byte green = 255, byte blue = 255, byte alpha = 0);
-public:     /*ctor*/    Color(COLORREF color);
+public: // constructors
+    /*ctor*/    Color(byte red = 255, byte green = 255, byte blue = 255, byte alpha = 0);
+    /*ctor*/    Color(COLORREF color);
 
-public:     byte red;
-public:     byte green;
-public:     byte blue;
-public:     byte alpha;
+public: // fields
+    byte red;
+    byte green;
+    byte blue;
+    byte alpha;
 
-public:     virtual operator COLORREF();
+public: // methods
+    static byte ClampByte(int value);
+    static Color SystemColor(DWORD systemColorID);
+    static Color Lighten(const Color& color, byte amount);
+    static Color Darken(const Color& color, byte amount);
 
-public:     static byte ClampByte(int value);
-public:     static Color SystemColor(DWORD systemColorID);
-public:     static Color Lighten(const Color& color, byte amount);
-public:     static Color Darken(const Color& color, byte amount);
+public: // operators
+    virtual operator COLORREF();
 };
 
 //////////////////////////////////////////////////////////////////////////////

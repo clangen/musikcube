@@ -106,7 +106,7 @@ void TracklistModel::OnTracks(bool cleared){
 }
 
 
-void TracklistModel::OnRowDoubleClick(int row){
+void TracklistModel::OnRowActivated(int row){
     this->tracklist->SetCurrentPosition(row);
     musik::core::PlaybackQueue::Instance().Play(*this->tracklist);
 }

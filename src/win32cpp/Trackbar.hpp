@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -47,6 +47,8 @@ namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
 
+class Trackbar; // forward declr
+
 /*! */
 enum TrackbarOrientation
 {
@@ -58,44 +60,49 @@ enum TrackbarOrientation
 ///Event used when position on trackbar is changed
 ///\see
 ///Trackbar
-typedef sigslot::signal0<> TrackbarRepositionedEvent;
+typedef sigslot::signal1<Trackbar*> TrackbarRepositionedEvent;
 
 ///\brief Trackbar allows the user to select a value from a range.
 class Trackbar: public Window
 {
-private:    typedef Window base;
+private: // typedefs
+    typedef Window base;
 
-            ///\brief This event is emitted when the position of the slider is changed
-public:     TrackbarRepositionedEvent   Repositioned;
+public: // events
+    ///\brief This event is emitted when the position of the slider is changed
+    TrackbarRepositionedEvent   Repositioned;
 
+public: // constructors
 public:     /*ctor*/            Trackbar(
                                     short minValue = 0, short maxValue = 100,
                                     TrackbarOrientation orientation = HorizontalTrack);
 
-public:     void                SetRange(short minValue, short maxValue);
-public:     int                 MinValue() const { return this->minValue; }
-public:     int                 MaxValue() const { return this->maxValue; }
-public:     void                SetTickFrequency(short tickFrequency = 0);
-public:     short               TickFrequency() const { return this->tickFrequency; }
-public:     void                SetTrackHeight(short trackHeight);
-public:     short               TrackHeight() { return this->trackHeight; }
-public:     void                SetThumbHeight(short thumbHeight);
-public:     short               ThumbHeight() { return this->thumbHeight; }
-public:     void                SetPosition(short position);
-public:     short               Position() const { return this->position; }
+public: // methods
+    void    SetRange(short minValue, short maxValue);
+    int     MinValue() const { return this->minValue; }
+    int     MaxValue() const { return this->maxValue; }
+    void    SetTickFrequency(short tickFrequency = 0);
+    short   TickFrequency() const { return this->tickFrequency; }
+    void    SetTrackHeight(short trackHeight);
+    short   TrackHeight() { return this->trackHeight; }
+    void    SetThumbHeight(short thumbHeight);
+    short   ThumbHeight() { return this->thumbHeight; }
+    void    SetPosition(short position);
+    short   Position() const { return this->position; }
 
-        // private api
-protected:  virtual HWND        Create(Window* parent);
-protected:  virtual void        OnEraseBackground(HDC hdc);
-protected:  virtual void        OnPaint();
-protected:  virtual void        OnCreated();
-protected:  virtual void        OnRepositioned();
-protected:  virtual LRESULT     OnCustomDraw(NMCUSTOMDRAW& customDraw);
-protected:  virtual LRESULT     WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+protected: // methods
+    virtual HWND        Create(Window* parent);
+    virtual void        OnEraseBackground(HDC hdc);
+    virtual void        OnPaint();
+    virtual void        OnCreated();
+    virtual void        OnRepositioned();
+    virtual LRESULT     OnCustomDraw(NMCUSTOMDRAW& customDraw);
+    virtual LRESULT     WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
 
-protected:  short               minValue, maxValue, tickFrequency, position;
-protected:  short               trackHeight, thumbHeight;
-protected:  TrackbarOrientation   orientation;
+protected: // instance data
+    short minValue, maxValue, tickFrequency, position;
+    short trackHeight, thumbHeight;
+    TrackbarOrientation   orientation;
 };
 
 //////////////////////////////////////////////////////////////////////////////

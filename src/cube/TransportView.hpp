@@ -59,7 +59,6 @@ public:     /*ctor*/        TransportView();
 
 protected:  virtual void    OnCreated();
 
-protected:  BoxLayout* mainBox;
 protected:  Button *prevButton, *playButton, *stopButton, *nextButton;
 protected:  Button *crossfadeButton, *equalizerButton, *repeatButton, *randomButton;
 protected:  Trackbar *playbackSlider, *volumeSlider;

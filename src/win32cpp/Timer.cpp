@@ -16,8 +16,8 @@ Timer::~Timer(void){
 }
 
 void Timer::ConnectToWindow(win32cpp::Window *window){
-    this->wnd   = window->Handle();
-    window->TimerTimeout.connect(this,&Timer::OnTimerMsg);
+    this->wnd = window->Handle();
+    window->TimerTimeout.connect(this, &Timer::OnTimerMsg);
 }
 
 bool Timer::Start(){

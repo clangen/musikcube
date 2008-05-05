@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -71,14 +71,19 @@ namespace win32cpp {
 ///The Window will not be redrawn until all locks have been destructed.
 struct RedrawLock
 {
-public:     /*ctor*/    RedrawLock(Window* window);
-public:     /*dtor*/    ~RedrawLock();
+private: // types
+    typedef std::map<HWND, unsigned> LockList;
+    typedef LockList::iterator Iterator;
 
-private:    typedef std::map<HWND, unsigned> LockList;
-private:    typedef LockList::iterator Iterator;
+public: // constructors, destructors
+    /*ctor*/    RedrawLock(Window* window);
+    /*dtor*/    ~RedrawLock();
 
-private:    HWND hwnd;
-private:    static LockList sLockList;
+private: // instance data
+    HWND hwnd;
+
+private: // class data
+    static LockList sLockList;
 };
 
 //////////////////////////////////////////////////////////////////////////////

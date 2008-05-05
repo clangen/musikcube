@@ -53,14 +53,14 @@ using namespace musik::cube;
 , listController(new ListController(*view.listView))
 {
     this->view.Handle()
-        ? this->OnViewCreated()
+        ? this->OnViewCreated(&view)
         : this->view.Created.connect(this, &SourcesController::OnViewCreated);
 
     this->listController->Model()->ActiveItemChanged.connect(
         this, &SourcesController::OnActiveItemChanged);
 }
 
-void        SourcesController::OnViewCreated()
+void        SourcesController::OnViewCreated(Window* window)
 {
     this->model.CategoryAdded.connect(this, &SourcesController::OnModelCategoryAdded);
     this->model.CategoryRemoved.connect(this, &SourcesController::OnModelCategoryRemoved);
@@ -106,18 +106,18 @@ void        SourcesController::OnActiveItemChanged(ItemRef item)
 , sourcesListModel(new SourcesListModel())
 {
     this->listView.Handle()
-        ? this->OnListCreated()
+        ? this->OnListCreated(&listView)
         : this->listView.Created.connect(this, &SC::ListController::OnListCreated);
 
     this->listView.SelectionChanged.connect(this, &SC::ListController::OnListSelectionChanged);
 }
 
-void        SC::ListController::OnListCreated()
+void        SC::ListController::OnListCreated(Window* window)
 {
     this->listView.SetModel(this->sourcesListModel);
 }
 
-void        SC::ListController::OnListSelectionChanged()
+void        SC::ListController::OnListSelectionChanged(ListView* listView)
 {
     this->sourcesListModel->SelectedRowChanged(this->listView.SelectedRow());
 }

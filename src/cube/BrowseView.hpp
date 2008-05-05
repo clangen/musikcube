@@ -59,16 +59,14 @@ private:    typedef Frame base;
 public:     /*ctor*/        BrowseView();
 
 protected:  virtual void    OnCreated();
-protected:  virtual void    OnFilterHBoxResized(Size newSize);
 protected:  void            AddMetadataFilter(const uistring& metadataKey);
 
 protected:  typedef std::vector<ListView*> FilterViewList;
 protected:  typedef std::map<ListView*, uistring> FilterToMetadataKeyMap;
 
+protected:  BarLayout* filterViewLayout;
 protected:  TracklistView* tracklistView;
-protected:  Frame* filterListFrame;
 protected:  FilterViewList filterViews;
-protected:  BoxLayout* filterViewHBox;
 protected:  FilterToMetadataKeyMap filterKeyMap;
 protected:  Splitter* mainVSplitter;
 };

@@ -66,8 +66,8 @@ class MainWindowController : public EventHandler
 public:     /*ctor*/    MainWindowController(TopLevelWindow& mainWindow);
 public:     /*dtor*/    ~MainWindowController();
 
-protected:  void        OnMainWindowCreated();
-protected:  void        OnResize(Size size);
+protected:  void        OnMainWindowCreated(Window* window);
+protected:  void        OnResize(Window* window, Size size);
 
 protected:  TopLevelWindow& mainWindow;
 protected:  Splitter* clientView;

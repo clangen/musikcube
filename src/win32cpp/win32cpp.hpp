@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -43,14 +43,16 @@
 #include <win32cpp/Win32Config.hpp>          // Must be first!
 
 #include <win32cpp/Application.hpp>
-#include <win32cpp/BoxLayout.hpp>
+#include <win32cpp/BarLayout.hpp>
 #include <win32cpp/Button.hpp>
 #include <win32cpp/Color.hpp>
 #include <win32cpp/Container.hpp>
 #include <win32cpp/DeviceContext.hpp>
+#include <win32cpp/EditView.hpp>
 #include <win32cpp/Font.hpp>
 #include <win32cpp/Frame.hpp>
 #include <win32cpp/Label.hpp>
+#include <win32cpp/LinearLayout.hpp>
 #include <win32cpp/ListView.hpp>
 #include <win32cpp/MemoryDC.hpp>
 #include <win32cpp/Menu.hpp>

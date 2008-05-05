@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -54,7 +54,7 @@ HCURSOR Splitter::sArrowCursor = ::LoadCursor(0, MAKEINTRESOURCE(IDC_ARROW));
 ///Constructor.
 ///
 ///\param direction
-///The split direction, SplitHorizontal or SplitVertical
+///The split direction, SplitColumn or SplitRow
 ///
 ///\param child1
 ///The left (horizontal) or top (vertical) child.
@@ -72,7 +72,7 @@ HCURSOR Splitter::sArrowCursor = ::LoadCursor(0, MAKEINTRESOURCE(IDC_ARROW));
 , direction(direction)
 , isDragging(false)
 , isSizable(true)
-, anchor(direction == SplitHorizontal ? AnchorLeft : AnchorTop)
+, anchor(direction == SplitColumn ? AnchorLeft : AnchorTop)
 , minAnchorSize(-1)
 , maxAnchorSize(-1)
 {
@@ -105,7 +105,7 @@ void        Splitter::SetSizeCursor()
         return;
     }
 
-    ::SetCursor(this->direction == SplitHorizontal
+    ::SetCursor(this->direction == SplitColumn
         ? Splitter::sHSizeCursor
         : Splitter::sVSizeCursor);
 }
@@ -121,7 +121,7 @@ bool        Splitter::AddChildWindow(Window* window)
 }
 
 ///\brief
-///Set the left (if SplitHorizontal) or top (if SplitVertical) child.
+///Set the left (if SplitColumn) or top (if SplitRow) child.
 ///
 ///The Splitter will assume ownership of the specified Window and
 ///will delete it when destroyed.
@@ -158,7 +158,7 @@ const Window*   Splitter::Child1()
 
 
 ///\brief
-///Set the right (SplitHorizontal) or bottom (SplitVertical) child.
+///Set the right (SplitColumn) or bottom (SplitRow) child.
 ///
 ///The Splitter will assume ownership of the specified Window and
 ///will delete it when destroyed.
@@ -197,7 +197,7 @@ void    Splitter::Layout(int child1Size)
 {
     Rect clientRect = this->ClientRect();
     //
-    int clientSize = (this->direction == SplitVertical 
+    int clientSize = (this->direction == SplitRow 
         ? clientRect.size.height
         : clientRect.size.width);
 
@@ -225,7 +225,7 @@ void    Splitter::Layout(int child1Size)
     int control1Size = child1IsAnchor ? anchorSize : nonAnchorSize;
     int control2Size = child1IsAnchor ? nonAnchorSize : anchorSize;
 
-    if (this->direction == SplitHorizontal)
+    if (this->direction == SplitColumn)
     {
         child1Frame->Resize(control1Size, clientRect.size.height);
         child2Frame->Resize(control2Size, clientRect.size.height);
@@ -261,8 +261,8 @@ void        Splitter::SetAnchor(AnchorDirection newAnchor)
 
 ///\brief Sets the new AnchorDirection of the splitter.
 ///
-///The size will be the width if SplitHorizontal, the height if 
-///SplitVertical.
+///The size will be the width if SplitColumn, the height if 
+///SplitRow.
 ///
 ///\param anchorSize the new size of the anchor control, in pixels.
 //
@@ -298,9 +298,9 @@ void    Splitter::OnMouseMoved(MouseEventFlags flags, const Point& location)
     if (this->isDragging)
     {
         Rect clientRect = this->ClientRect();
-        int position = this->direction == SplitHorizontal ? location.x : location.y;
+        int position = this->direction == SplitColumn ? location.x : location.y;
         //
-        if (this->direction == SplitHorizontal)
+        if (this->direction == SplitColumn)
         {
             int minX = clientRect.location.x;
             int maxX = clientRect.location.x + clientRect.size.width;
@@ -361,7 +361,7 @@ Rect    Splitter::SplitterRect()
     Rect splitterRect;
 
     bool child1IsAnchor = (this->anchor == AnchorLeft || this->anchor == AnchorTop);
-    bool isHoriz = (this->direction == SplitHorizontal);
+    bool isHoriz = (this->direction == SplitColumn);
 
     int clientSize = isHoriz
         ? this->WindowSize().height

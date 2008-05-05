@@ -68,10 +68,12 @@ namespace win32cpp {
 ///Application
 //////////////////////////////////////////
 class ApplicationThread{
+public:
+    ApplicationThread(void);
+
     private:  
         friend class Application;
 
-        ApplicationThread(void);
         void MainThreadCallback();
         void NotifyMainThread();
         void Initialize();

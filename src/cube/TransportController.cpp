@@ -56,7 +56,7 @@ using namespace musik::cube;
         this, &TransportController::OnViewResized);
 }
 
-void        TransportController::OnViewCreated()
+void        TransportController::OnViewCreated(Window* window)
 {
     this->transportView.playButton->Pressed.connect(
         this, &TransportController::OnPlayPressed);
@@ -72,36 +72,38 @@ void        TransportController::OnViewCreated()
 
     this->transportView.volumeSlider->Repositioned.connect(
         this, &TransportController::OnVolumeSliderChange);
-    this->transportView.volumeSlider->SetPosition(musik::core::PlaybackQueue::Instance().Volume());
+
+    this->transportView.volumeSlider->SetPosition(
+        musik::core::PlaybackQueue::Instance().Volume());
 
     musik::core::PlaybackQueue::Instance().CurrentTrackChanged.connect(this,&TransportController::OnTrackChange);
 }
 
-void        TransportController::OnViewResized(Size size)
+void        TransportController::OnViewResized(Window* window, Size size)
 {
 }
 
-void        TransportController::OnPlayPressed()
+void        TransportController::OnPlayPressed(Button* button)
 {
     musik::core::PlaybackQueue::Instance().Play();
 }
 
-void        TransportController::OnStopPressed()
+void        TransportController::OnStopPressed(Button* button)
 {
     musik::core::PlaybackQueue::Instance().Stop();
 }
 
-void        TransportController::OnNextPressed()
+void        TransportController::OnNextPressed(Button* button)
 {
     musik::core::PlaybackQueue::Instance().Next();
 }
 
-void        TransportController::OnPreviousPressed()
+void        TransportController::OnPreviousPressed(Button* button)
 {
     musik::core::PlaybackQueue::Instance().Previous();
 }
 
-void        TransportController::OnVolumeSliderChange()
+void        TransportController::OnVolumeSliderChange(Trackbar* trackbar)
 {
     musik::core::PlaybackQueue::Instance().SetVolume(transportView.volumeSlider->Position());
 }

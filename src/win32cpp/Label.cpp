@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -50,7 +50,7 @@ using namespace win32cpp;
 /*ctor*/    Label::Label(const uichar* caption)
 : base()
 , caption(caption)
-, autoResize(false)
+, autoResize(true)
 {
 }
 
@@ -77,6 +77,7 @@ HWND        Label::Create(Window* parent)
 
     if (hwnd)
     {
+        this->tabStop = false;
         this->windowHandle = hwnd;
         this->ResizeFromCaption();
     }

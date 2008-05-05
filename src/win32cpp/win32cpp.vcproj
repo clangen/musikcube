@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="8.00"
 	Name="win32cpp"
 	ProjectGUID="{E618F29F-BF28-441A-B039-9E10A631D881}"
 	RootNamespace="win32cpp"
@@ -186,188 +186,256 @@
 					>
 				</File>
 				<File
-					RelativePath=".\BoxLayout.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\BoxLayout.hpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Button.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Button.hpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Color.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Color.hpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Container.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Container.hpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Exception.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Exception.hpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Font.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Font.hpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Frame.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Frame.hpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Label.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Label.hpp"
-					>
-				</File>
-				<File
-					RelativePath=".\ListView.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\ListView.hpp"
-					>
-				</File>
-				<File
-					RelativePath=".\MemoryDC.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\MemoryDC.hpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Panel.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Panel.hpp"
-					>
-				</File>
-				<File
-					RelativePath=".\RedrawLock.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\RedrawLock.hpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Splitter.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Splitter.hpp"
-					>
-				</File>
-				<File
-					RelativePath=".\TopLevelWindow.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\TopLevelWindow.hpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Types.hpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Utility.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Utility.hpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Win32Config.hpp"
-					>
-				</File>
-				<File
 					RelativePath=".\win32cpp.hpp"
 					>
 				</File>
-				<File
-					RelativePath=".\Win32Exception.hpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Window.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Window.hpp"
-					>
-				</File>
-				<File
-					RelativePath=".\WindowGeometry.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\WindowGeometry.hpp"
-					>
-				</File>
 				<Filter
-					Name="to document"
+					Name="drawing"
 					>
 					<File
-						RelativePath=".\DeviceContext.cpp"
+						RelativePath=".\Color.cpp"
 						>
 					</File>
 					<File
-						RelativePath=".\DeviceContext.hpp"
+						RelativePath=".\Color.hpp"
 						>
 					</File>
 					<File
-						RelativePath=".\Menu.cpp"
+						RelativePath=".\Font.cpp"
 						>
 					</File>
 					<File
-						RelativePath=".\Menu.hpp"
+						RelativePath=".\Font.hpp"
 						>
 					</File>
 					<File
-						RelativePath=".\Trackbar.cpp"
+						RelativePath=".\MemoryDC.cpp"
 						>
 					</File>
 					<File
-						RelativePath=".\Trackbar.hpp"
+						RelativePath=".\MemoryDC.hpp"
+						>
+					</File>
+					<File
+						RelativePath=".\RedrawLock.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\RedrawLock.hpp"
 						>
 					</File>
 				</Filter>
 				<Filter
-					Name="to implement"
+					Name="config"
 					>
+					<File
+						RelativePath=".\Types.hpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Win32Config.hpp"
+						>
+					</File>
+				</Filter>
+				<Filter
+					Name="utility"
+					>
+					<File
+						RelativePath=".\ApplicationThread.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\ApplicationThread.hpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Exception.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Exception.hpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Utility.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Utility.hpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Win32Exception.hpp"
+						>
+					</File>
+					<File
+						RelativePath=".\WindowGeometry.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\WindowGeometry.hpp"
+						>
+					</File>
+					<Filter
+						Name="to document"
+						>
+						<File
+							RelativePath=".\DeviceContext.cpp"
+							>
+						</File>
+						<File
+							RelativePath=".\DeviceContext.hpp"
+							>
+						</File>
+						<File
+							RelativePath=".\Timer.cpp"
+							>
+						</File>
+						<File
+							RelativePath=".\Timer.hpp"
+							>
+						</File>
+					</Filter>
+				</Filter>
+				<Filter
+					Name="views"
+					>
+					<File
+						RelativePath=".\Button.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Button.hpp"
+						>
+					</File>
+					<File
+						RelativePath=".\EditView.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\EditView.hpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Label.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Label.hpp"
+						>
+					</File>
+					<File
+						RelativePath=".\ListView.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\ListView.hpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Window.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Window.hpp"
+						>
+					</File>
+					<Filter
+						Name="containers"
+						>
+						<File
+							RelativePath=".\BarLayout.cpp"
+							>
+						</File>
+						<File
+							RelativePath=".\BarLayout.hpp"
+							>
+						</File>
+						<File
+							RelativePath=".\Container.cpp"
+							>
+						</File>
+						<File
+							RelativePath=".\Container.hpp"
+							>
+						</File>
+						<File
+							RelativePath=".\Frame.cpp"
+							>
+						</File>
+						<File
+							RelativePath=".\Frame.hpp"
+							>
+						</File>
+						<File
+							RelativePath=".\ILayout.hpp"
+							>
+						</File>
+						<File
+							RelativePath=".\LinearLayout.cpp"
+							>
+						</File>
+						<File
+							RelativePath=".\LinearLayout.hpp"
+							>
+						</File>
+						<File
+							RelativePath=".\Panel.cpp"
+							>
+						</File>
+						<File
+							RelativePath=".\Panel.hpp"
+							>
+						</File>
+						<File
+							RelativePath=".\Splitter.cpp"
+							>
+						</File>
+						<File
+							RelativePath=".\Splitter.hpp"
+							>
+						</File>
+						<File
+							RelativePath=".\TopLevelWindow.cpp"
+							>
+						</File>
+						<File
+							RelativePath=".\TopLevelWindow.hpp"
+							>
+						</File>
+					</Filter>
+					<Filter
+						Name="to document"
+						>
+						<File
+							RelativePath=".\Menu.cpp"
+							>
+						</File>
+						<File
+							RelativePath=".\Menu.hpp"
+							>
+						</File>
+						<File
+							RelativePath=".\Trackbar.cpp"
+							>
+						</File>
+						<File
+							RelativePath=".\Trackbar.hpp"
+							>
+						</File>
+					</Filter>
+					<Filter
+						Name="common dialogs"
+						>
+						<File
+							RelativePath=".\FolderBrowseDialog.cpp"
+							>
+						</File>
+						<File
+							RelativePath=".\FolderBrowseDialog.hpp"
+							>
+						</File>
+					</Filter>
 				</Filter>
 			</Filter>
 		</Filter>
@@ -377,22 +445,6 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 		</Filter>
-		<File
-			RelativePath=".\ApplicationThread.cpp"
-			>
-		</File>
-		<File
-			RelativePath=".\ApplicationThread.hpp"
-			>
-		</File>
-		<File
-			RelativePath=".\Timer.cpp"
-			>
-		</File>
-		<File
-			RelativePath=".\Timer.hpp"
-			>
-		</File>
 	</Files>
 	<Globals>
 	</Globals>

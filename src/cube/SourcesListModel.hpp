@@ -111,7 +111,7 @@ public:     typedef ListView::TextCellRenderer<uistring> base;
 
 public:     /*ctor*/ CategoryCellRenderer(const uistring& textValue);
 public:     static void SetFonts(FontRef font);
-protected:  virtual void Render(const ListView& listView, NMLVCUSTOMDRAW& customDraw);
+protected:  virtual void Render(const ListView& listView, ListView::RenderParams& customDraw);
 
 protected:  static FontRef sFont;
 };
@@ -126,7 +126,7 @@ class SourcesListModel::ItemCellRenderer:
 public:     typedef ListView::TextCellRenderer<uistring> base;
 
 public:     /*ctor*/ ItemCellRenderer(SourcesListModel& owner, const uistring& textValue);
-protected:  virtual void Render(const ListView& listView, NMLVCUSTOMDRAW& customDraw);
+protected:  virtual void Render(const ListView& listView, ListView::RenderParams& customDraw);
 
 private:    SourcesListModel& owner;
 };
@@ -137,7 +137,7 @@ private:    SourcesListModel& owner;
 
 class SourcesListModel::ItemRowRenderer: public ListView::RowRenderer
 {
-protected:  virtual void Render(const ListView& listView, NMLVCUSTOMDRAW& customDraw)
+protected:  virtual void Render(const ListView& listView, ListView::RenderParams& customDraw)
             {
                 // do nothing! let cell renderers do all the drawing!
             }

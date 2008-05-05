@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -46,29 +46,37 @@ namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
 
+class Button;   // forward decl
+
 ///\brief
 ///The type of event used when a Button is pressed..
 ///\see
 ///Button.
-typedef sigslot::signal0<> ButtonPressedEvent;
+typedef sigslot::signal1<Button*> ButtonPressedEvent;
 
 ///\brief
 ///A standard push-button. The Button::Pressed event is emitted when
 ///the user activates the button.
 class Button: public Window
 {
-private:    typedef Window base;
+private: // types
+    typedef Window base;
 
-            ///\brief This event is emitted when the user presses the Button
-public:     ButtonPressedEvent  Pressed;
+public: // events
+    ///\brief This event is emitted when the user presses the Button
+    ButtonPressedEvent  Pressed;
 
-public:     /*ctor*/            Button(const uichar* caption = _T(""));
+public: // constructors
+    /*ctor*/            Button(const uichar* caption = _T(""));
 
-protected:  virtual HWND        Create(Window* parent);
-protected:  virtual LRESULT     WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
-protected:  virtual void        OnPressed();
+protected: // methods
+    virtual HWND        Create(Window* parent);
+    virtual LRESULT     WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+    virtual void        OnPressed();
+    virtual void        PaintToHDC(HDC hdc, const Rect& rect);
 
-protected:  uistring caption;
+protected: // instance data
+    uistring caption;
 };
 
 //////////////////////////////////////////////////////////////////////////////

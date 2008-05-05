@@ -60,9 +60,9 @@ private:    typedef ListView::ModelRef ModelRef;
 
 public:     /*ctor*/    MetadataFilterController(ListView& listView, const uistring& metdataKey,BrowseController *browseController);
 
-protected:  void        OnViewCreated();
-protected:  void        OnResized(Size size);
-protected:  void        OnSelectionChanged();
+protected:  void        OnViewCreated(Window* window);
+protected:  void        OnResized(Window* window, Size size);
+protected:  void        OnSelectionChanged(ListView* listView);
 protected:
             friend class        MetadataFilterModel;
             BrowseController    *parent;

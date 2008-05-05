@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -80,63 +80,69 @@ enum TextAlignment
 ///FontRef
 struct Font
 {
-public:     class       InvalidFontWeightException: public Exception { };
+public: // types
+    class InvalidFontWeightException: public Exception { };
 
-public:     /*ctor*/    Font();
+private: // constructors
+    /*ctor*/    Font();
 
-public:     static FontRef  Create()
-            {
-                return FontRef(new Font());
-            }
+    /*ctor*/    Font(const uistring& face, unsigned pointSize = -1, 
+                bool bold = false, bool italic = false, bool underline = false);
 
-public:     /*ctor*/    Font(const uistring& face, unsigned pointSize = -1, 
-                        bool bold = false, bool italic = false, bool underline = false);
+    /*ctor*/    Font(const LOGFONT& logFont, HDC hdc = NULL);
 
-public:     static FontRef Create(const uistring& face, unsigned pointSize = -1, 
-                        bool bold = false, bool italic = false, bool underline = false)
-            {
-                return FontRef(new Font(face, pointSize, bold, italic, underline));
-            }
 
-public:     /*ctor*/    Font(const LOGFONT& logFont, HDC hdc = NULL);
+public: // creation methods
+    static FontRef Create() 
+    {
+        return FontRef(new Font());
+    }
 
-public:     static FontRef Create(const LOGFONT& logFont, HDC hdc = NULL)
-            {
-                return FontRef(new Font(logFont, hdc));
-            }
+    static FontRef Create(const uistring& face, int pointSize = -1, 
+    bool bold = false, bool italic = false, bool underline = false)
+    {
+        return FontRef(new Font(face, pointSize, bold, italic, underline));
+    }
 
-public:     /*dtor*/    ~Font();
 
-        // public api
-public:     void        DrawToHDC(HDC hdc, const Rect& rect, const uistring& caption, TextAlignment = TextAlignLeft);
-public:     uistring    FaceName() const;
-public:     void        SetFaceName(const uistring& faceName);
-public:     unsigned    PointSize() const;
-public:     void        SetPointSize(unsigned pointSize);
-public:     bool        Bold() const;
-public:     void        SetBold(bool bold = true);
-public:     int         Weight() const;
-public:     void        SetWeight(int weight);
-public:     bool        Italic() const;
-public:     void        SetItalic(bool italic = true);
-public:     bool        Underline() const;
-public:     void        SetUnderline(bool underline = true);
-public:     HFONT       GetHFONT();
-        // public static
-public:     static HFONT  CreateHFONT(const Font& font, HDC hdc);
+    static FontRef Create(const LOGFONT& logFont, HDC hdc = NULL)
+    {
+        return FontRef(new Font(logFont, hdc));
+    }
 
-        // protected api
-protected:  void        Invalidate() { this->invalid = true; }
-protected:  bool        InitializeFont(HDC hdc);
-protected:  bool        InitializeFont(const LOGFONT& font, HDC hdc);
+public: // destructor
+    /*dtor*/    ~Font();
 
-        // instance data
-private:    uistring    faceName;
-private:    unsigned    pointSize;
-private:    bool        italic, underline;
-private:    int         weight;
-private:    bool        invalid;
-private:    HFONT       font;
+public: // methods
+    void        DrawToHDC(HDC hdc, const Rect& rect, const uistring& caption, TextAlignment = TextAlignLeft);
+    uistring    FaceName() const;
+    void        SetFaceName(const uistring& faceName);
+    unsigned    PointSize() const;
+    void        SetPointSize(unsigned pointSize);
+    bool        Bold() const;
+    void        SetBold(bool bold = true);
+    int         Weight() const;
+    void        SetWeight(int weight);
+    bool        Italic() const;
+    void        SetItalic(bool italic = true);
+    bool        Underline() const;
+    void        SetUnderline(bool underline = true);
+    HFONT       GetHFONT();
+
+    static HFONT  CreateHFONT(const Font& font, HDC hdc);
+
+protected: // methods
+    void    Invalidate() { this->invalid = true; }
+    bool    InitializeFont(HDC hdc);
+    bool    InitializeFont(const LOGFONT& font, HDC hdc);
+
+private: // instance data
+    uistring faceName;
+    unsigned pointSize;
+    bool italic, underline;
+    int weight;
+    bool invalid;
+    HFONT font;
 };
 
 //////////////////////////////////////////////////////////////////////////////

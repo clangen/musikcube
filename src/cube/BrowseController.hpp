@@ -65,7 +65,7 @@ private:    typedef MetadataFilterController FilterController;
 private:    typedef boost::shared_ptr<FilterController> FilterControllerRef;
 private:    typedef std::vector<FilterControllerRef> FilterControllerList;
 
-protected:  void        OnViewCreated();
+protected:  void        OnViewCreated(Window* window);
 protected:  void        Requery();
 
 protected:  BrowseView& view;

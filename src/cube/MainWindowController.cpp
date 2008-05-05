@@ -76,7 +76,7 @@ MainWindowController::~MainWindowController()
     delete this->transportController;
 }
 
-void        MainWindowController::OnMainWindowCreated()
+void        MainWindowController::OnMainWindowCreated(Window* window)
 {
     static const int TransportViewHeight = 54;
 
@@ -97,7 +97,7 @@ void        MainWindowController::OnMainWindowCreated()
 
     // the main splitter
     Splitter* transportSplitter = this->mainWindow.AddChild(
-        new Splitter(SplitVertical, sourcesView, transportView));
+        new Splitter(SplitRow, sourcesView, transportView));
 
     // set initial sizes
     transportSplitter->Resize(clientSize);
@@ -109,7 +109,7 @@ void        MainWindowController::OnMainWindowCreated()
     this->mainWindow.Resized.connect(this, &MainWindowController::OnResize);
 }
 
-void        MainWindowController::OnResize(Size size)
+void        MainWindowController::OnResize(Window* window, Size size)
 {
     RedrawLock redrawLock(this->clientView);
     this->clientView->Resize(this->mainWindow.ClientSize());

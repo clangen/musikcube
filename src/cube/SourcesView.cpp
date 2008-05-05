@@ -66,12 +66,12 @@ void        SourcesView::OnCreated()
 {
     // add main splitter as the top level window's main window
     this->splitter = this->AddChild(
-        new Splitter(SplitHorizontal, this->listView, this->defaultView));
+        new Splitter(SplitColumn, this->listView, this->defaultView));
 
     this->splitter->SetAnchorSize(125);
  }
 
-void        SourcesView::OnListViewCreated()
+void        SourcesView::OnListViewCreated(Window* window)
 {
     typedef ListView::Column Column;
 
@@ -109,12 +109,12 @@ void        SourcesView::SetView(Window* view)
     }
 }
 
-void        SourcesView::OnListViewResized(Size size)
+void        SourcesView::OnListViewResized(Window* window, Size size)
 {
     this->listView->SetColumnWidth(this->mainColumn, this->listView->ClientSize().width);
 }
 
-void        SourcesView::OnListViewThemeChanged()
+void        SourcesView::OnListViewThemeChanged(Window* window)
 {
     this->UpdateListViewBkgndColor();
 }
@@ -124,7 +124,7 @@ void        SourcesView::UpdateListViewBkgndColor()
     this->listView->SetBackgroundColor(Color::SystemColor(COLOR_BTNFACE));
 }
 
-void        SourcesView::OnListViewHotRowChanged(int rowIndex)
+void        SourcesView::OnListViewHotRowChanged(ListView* listView, int rowIndex)
 {
     // Redraw the newly hot, and previously hot row to get the fancy
     // mouse hover effect. we need to redraw (and remember) the

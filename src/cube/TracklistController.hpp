@@ -63,12 +63,15 @@ private:    typedef ListView::ColumnRef ColumnRef;
 private:    typedef std::vector<ColumnRef> ColumnList;
 private:    typedef ListView::ModelRef ModelRef;
 
-public:     /*ctor*/    TracklistController(TracklistView& listView,musik::core::Query::ListBase *connectedQuery=NULL,musik::core::tracklist::Standard::Ptr tracklist=musik::core::tracklist::Standard::Ptr() );
+public:     /*ctor*/    TracklistController(
+                            TracklistView& listView,
+                            musik::core::Query::ListBase *connectedQuery = NULL,
+                            musik::core::tracklist::Standard::Ptr tracklist = musik::core::tracklist::Standard::Ptr());
 
-protected:  void        OnViewCreated();
+protected:  void        OnViewCreated(Window* window);
 protected:  void        OnResized(Size size);
-protected:  void        OnRowDoubleClick(int row);
-protected:  void        AddColumn(const utfchar *name,const char *metakey,int size);
+protected:  void        OnRowActivated(ListView* listView, int row);
+protected:  void        AddColumn(const utfchar *name, const char *metakey, int size);
 
 protected:  ModelRef model;
 protected:  TracklistView& view;

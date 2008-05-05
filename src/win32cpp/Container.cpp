@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -47,6 +47,7 @@ using namespace win32cpp;
 
 /*ctor*/    Container::Container()
 : base()
+, focusedWindow(NULL)
 {
 }
 
@@ -60,12 +61,14 @@ void        Container::DestroyChildren()
     try
     {
         // destroy all of our managed child windows
+        WindowList& allChildren = Window::sAllChildWindows;
         WindowList::iterator end = this->childWindows.end();
         WindowList::iterator it = this->childWindows.begin();
         //
         while (it != end)
         {
-            Window::sAllChildWindows.erase(*it);
+            allChildren.erase(
+                std::find(allChildren.begin(), allChildren.end(), *it));
 
             try
             {
@@ -102,21 +105,167 @@ bool        Container::AddChildWindow(Window* window)
         window->Initialize(this);
     }
 
-    this->childWindows.insert(window);
+    this->childWindows.push_back(window);
+
+    window->RequestFocusNext.connect(
+        this, &Container::OnChildWindowRequestFocusNext);
+
+    window->RequestFocusPrev.connect(
+        this, &Container::OnChildWindowRequestFocusPrev);
 
     return true;
 }
 
 bool        Container::RemoveChildWindow(Window* window)
 {
-    WindowList::iterator it = this->childWindows.find(window);
+    WindowList::iterator it = this->FindChild(window);
     //
     if (it == this->childWindows.end())
     {
         return false;
     }
 
+    window->RequestFocusNext.disconnect(this);
+    window->RequestFocusPrev.disconnect(this);
+
     this->childWindows.erase(it);
 
+    if (this->focusedWindow == window)
+    {
+        this->focusedWindow = NULL;
+    }
+
     return true;
+}
+
+Window::WindowList::iterator Container::FindChild(const Window* child)
+{
+    return std::find(
+        this->childWindows.begin(), this->childWindows.end(), child);
+}
+
+Window::WindowList::reverse_iterator Container::ReverseFindChild(const Window* child)
+{
+    return std::find(
+        this->childWindows.rbegin(), this->childWindows.rend(), child);
+}
+
+template <typename List, typename Iterator>
+Window*     FocusNextValidChild(List& collection, Iterator it, Iterator end)
+{
+    if (collection.size())
+    {
+        while ((it != end) && ( ! (*it)->TabStop()))
+        {
+            it++;
+        }
+
+        if (it != end)
+        {
+            (*it)->SetFocus();
+            return (*it);
+        }
+    }
+
+    return NULL;
+}
+
+bool        Container::FocusFirstChild()
+{
+    this->focusedWindow = FocusNextValidChild(
+        this->childWindows,
+        this->childWindows.begin(),
+        this->childWindows.end());
+    
+    return (this->focusedWindow != NULL);
+}
+
+bool        Container::FocusLastChild()
+{
+    this->focusedWindow = FocusNextValidChild(
+        this->childWindows,
+        this->childWindows.rbegin(),
+        this->childWindows.rend());
+
+    return (this->focusedWindow != NULL);
+}
+
+bool        Container::FocusNextChild()
+{
+    WindowList::iterator it = this->FindChild(this->focusedWindow);
+    it++;
+
+    this->focusedWindow = FocusNextValidChild(
+        this->childWindows,
+        it,
+        this->childWindows.end());
+
+    return (this->focusedWindow != NULL);
+}
+
+bool        Container::FocusPrevChild()
+{
+    WindowList::reverse_iterator it = this->ReverseFindChild(this->focusedWindow);
+    it++;
+
+    this->focusedWindow = FocusNextValidChild(
+        this->childWindows,
+        it,
+        this->childWindows.rend());
+
+    return (this->focusedWindow != NULL);
+}
+
+void        Container::OnGainedFocus()
+{
+    bool success;
+
+    Window::sFocusDirection == Window::FocusForward
+        ? success = this->FocusFirstChild()
+        : success = this->FocusLastChild();
+
+    if ( ! success)
+    {
+        Window::sFocusDirection == Window::FocusForward
+            ? this->OnRequestFocusNext()
+            : this->OnRequestFocusPrev();
+    }
+}
+
+void        Container::OnChildWindowRequestFocusNext(Window* window)
+{
+    this->focusedWindow = window;
+    this->OnRequestFocusNext();
+}
+
+void        Container::OnChildWindowRequestFocusPrev(Window* window)
+{
+    this->focusedWindow = window;
+    this->OnRequestFocusPrev();
+}
+
+void        Container::OnRequestFocusNext()
+{
+    bool focusChildSuccess = (this->focusedWindow == NULL)
+        ? this->FocusFirstChild()
+        : this->FocusNextChild();
+
+    // we weren't able to focus the next child, so notify the parent.
+    if (focusChildSuccess == NULL)
+    {
+        base::OnRequestFocusNext();
+    }
+}
+
+void        Container::OnRequestFocusPrev()
+{
+    bool focusChildSuccess = (this->focusedWindow == NULL)
+        ? this->FocusLastChild()
+        : this->FocusPrevChild();
+
+    // we weren't able to focus the previous child, so notify the parent.
+    if ( ! focusChildSuccess)
+    {
+        base::OnRequestFocusPrev();
+    }
 }

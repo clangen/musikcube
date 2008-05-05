@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -48,13 +48,15 @@ namespace win32cpp {
 
 class DeviceContext
 {
-public:     /*ctor*/    DeviceContext(HWND hwnd);
-public:     /*dtor*/    ~DeviceContext();
+public: // constructors, methods
+    /*ctor*/    DeviceContext(HWND hwnd);
+    /*dtor*/    ~DeviceContext();
 
-public:     operator HDC() { return this->hdc; }
+    operator HDC() { return this->hdc; }
 
-private:    HDC hdc;
-private:    HWND hwnd;
+private: // instance data
+    HDC hdc;
+    HWND hwnd;
 };
 
 //////////////////////////////////////////////////////////////////////////////

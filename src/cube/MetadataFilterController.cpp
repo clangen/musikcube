@@ -50,7 +50,10 @@ using namespace musik::cube;
 // MetadataFilterController
 //////////////////////////////////////////////////////////////////////////////
 
-/*ctor*/    MetadataFilterController::MetadataFilterController(ListView& listView, const uistring& metadataKey,BrowseController *browseController)
+/*ctor*/    MetadataFilterController::MetadataFilterController(
+    ListView& listView,
+    const uistring& metadataKey,
+    BrowseController *browseController)
 : listView(listView)
 , metadataKey(metadataKey)
 , parent(browseController)
@@ -58,13 +61,14 @@ using namespace musik::cube;
     this->metadataKeyA    = musik::core::ConvertUTF8(this->metadataKey);
     this->model.reset(new MetadataFilterModel(this));
     this->listView.Handle()
-        ? this->OnViewCreated()
+        ? this->OnViewCreated(&listView)
         : this->listView.Created.connect(this, &MetadataFilterController::OnViewCreated);
 
-    this->listView.SelectionChanged.connect(this,&MetadataFilterController::OnSelectionChanged);
+    this->listView.SelectionChanged.connect(this, &MetadataFilterController::OnSelectionChanged);
 }
 
-void        MetadataFilterController::OnSelectionChanged(){
+void        MetadataFilterController::OnSelectionChanged(ListView* listView)
+{
     win32cpp::ListView::RowIndexList selectedRows(this->listView.SelectedRows());
 
     musik::core::MetadataValueVector &metadata = ((MetadataFilterModel*)this->model.get())->metadata;
@@ -88,7 +92,7 @@ void        MetadataFilterController::OnSelectionChanged(){
     this->parent->SendQuery();
 }
 
-void        MetadataFilterController::OnViewCreated()
+void        MetadataFilterController::OnViewCreated(Window* window)
 {
     this->listView.SetScrollBarVisibility(HorizontalScrollBar, false);
 
@@ -110,7 +114,7 @@ void        MetadataFilterController::OnViewCreated()
         this, &MetadataFilterController::OnResized);
 }
 
-void        MetadataFilterController:: OnResized(Size size)
+void        MetadataFilterController:: OnResized(Window* window, Size size)
 {
     this->listView.SetColumnWidth(this->mainColumn, this->listView.ClientSize().width);
 }

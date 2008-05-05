@@ -46,25 +46,26 @@ using namespace musik::cube;
 //////////////////////////////////////////////////////////////////////////////
 
 /*ctor*/    TracklistInfoView::TracklistInfoView()
+: base(LinearColumnLayout)
 {
 }
 
 void        TracklistInfoView::OnCreated()
 {
-    BoxLayout* mainBox = new BoxLayout(BoxHorizontal);
-    mainBox->SetAutoResizeToMinimumSize();
+    this->AddChild(new Label(_T("Tracks: ")));
+    this->trackCountLabel = this->AddChild(new Label(_T("0")));
+    this->AddChild(new Label(_T("    Duration: ")));
+    this->durationLabel = this->AddChild(new Label(_T("0:00")));
+    this->AddChild(new Label(_T("    Size: ")));
+    this->sizeLabel = this->AddChild(new Label(_T("0 MB")));
 
-    mainBox->AddChild(new Label(_T("Tracks: ")));
-    this->trackCountLabel = mainBox->AddChild(new Label(_T("0")));
-    mainBox->AddChild(new Label(_T("    Duration: ")));
-    this->durationLabel = mainBox->AddChild(new Label(_T("0:00")));
-    mainBox->AddChild(new Label(_T("    Size: ")));
-    this->sizeLabel = mainBox->AddChild(new Label(_T("0 MB")));
-
-    FontRef boldFont(new win32cpp::Font(_T(""), -1, true));
+    FontRef boldFont(Font::Create(_T(""), -1, true));
     this->trackCountLabel->SetFont(boldFont);
     this->durationLabel->SetFont(boldFont);
     this->sizeLabel->SetFont(boldFont);
+}
 
-    this->AddChild(mainBox);
+void        TracklistInfoView::Layout()
+{
+    base::Layout();
 }

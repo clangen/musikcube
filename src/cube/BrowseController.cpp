@@ -51,7 +51,7 @@ using namespace musik::cube;
 , tracklistController(NULL)
 {
     view.Handle()
-        ? this->OnViewCreated()
+        ? this->OnViewCreated(&view)
         : this->view.Created.connect(this, &BrowseController::OnViewCreated);
 }
 
@@ -60,7 +60,7 @@ using namespace musik::cube;
     delete this->tracklistController;
 }
 
-void        BrowseController::OnViewCreated()
+void        BrowseController::OnViewCreated(Window* window)
 {
     this->tracklistController = new TracklistController(*this->view.tracklistView,&this->selectionQuery);
 

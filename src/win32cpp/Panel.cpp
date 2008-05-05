@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -57,7 +57,7 @@ HWND        Panel::Create(Window* parent)
     HINSTANCE hInstance = Application::Instance();
 
     // create the window
-    DWORD style = WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
+    DWORD style = WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_GROUP;
     //
     HWND hwnd = CreateWindowEx(
         NULL,                   // ExStyle

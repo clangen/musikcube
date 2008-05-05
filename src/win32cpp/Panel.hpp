@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, Casey Langen
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -58,13 +58,15 @@ namespace win32cpp {
 ///BoxLayout, Splitter
 class Panel: public Container
 {
-private:    typedef Container base;
+public: // types
+    typedef Container base;
 
-public:     /*ctor*/            Panel();
+public: // constructors
+    /*ctor*/    Panel();
 
-            // virtual api
-protected:  virtual HWND        Create(Window* parent);
-protected:  virtual void        OnEraseBackground(HDC hdc);
+protected: // methods
+    virtual HWND        Create(Window* parent);
+    virtual void        OnEraseBackground(HDC hdc);
 };
 
 //////////////////////////////////////////////////////////////////////////////
