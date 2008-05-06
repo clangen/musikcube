@@ -452,7 +452,7 @@ bool Query::ListSelection::ParseQuery(Library::Base *oLibrary,db::Connection &db
 
         // For optimization, lets just add to results every 100 track
         TrackVector tempTrackResults;
-        trackResults.reserve(101);
+        tempTrackResults.reserve(101);
         int row(0);
 
         while(tracks.Step()==db::ReturnCode::Row){
