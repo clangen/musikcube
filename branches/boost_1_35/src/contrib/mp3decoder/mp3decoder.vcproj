@@ -61,7 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="shlwapi.lib libboost_filesystem-vc80-mt-sgd-1_34_1.lib"
+				AdditionalDependencies="shlwapi.lib"
 				AdditionalLibraryDirectories="../../3rdparty/lib"
 				GenerateDebugInformation="true"
 			/>

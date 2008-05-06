@@ -61,7 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ogg_static.lib vorbis_static.lib vorbisfile_static.lib libboost_filesystem-vc80-mt-sgd-1_34_1.lib"
+				AdditionalDependencies="ogg_static.lib vorbis_static.lib vorbisfile_static.lib"
 				AdditionalLibraryDirectories="./lib;../../3rdparty/lib"
 				GenerateDebugInformation="true"
 			/>

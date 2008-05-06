@@ -63,7 +63,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libboost_date_time-vc80-mt-sgd-1_34_1.lib libboost_signals-vc80-mt-sgd-1_34_1.lib libboost_thread-vc80-mt-sgd-1_34_1.lib libboost_filesystem-vc80-mt-sgd-1_34_1.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="../3rdparty/lib"
 				IgnoreDefaultLibraryNames=""
@@ -142,7 +141,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libboost_date_time-vc80-mt-s-1_34_1.lib libboost_signals-vc80-mt-s-1_34_1.lib libboost_thread-vc80-mt-s-1_34_1.lib libboost_filesystem-vc80-mt-s-1_34_1.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../3rdparty/lib"
 				IgnoreDefaultLibraryNames=""
