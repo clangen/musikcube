@@ -55,9 +55,13 @@ using namespace musik::cube;
 void        TracklistView::OnCreated()
 {
     this->infoView = this->AddChild(new TracklistInfoView());
-    this->listView = this->AddChild(new ListView());
+    //this->listView = this->AddChild(new ListView());
+
+    // BUG: Workaround of a bug in win32cpp. Create the listView in a Frame instead
+    this->listView = new ListView();
+    Frame* listViewFrame = this->AddChild(new Frame(this->listView));
 
     this->SetChildAlignment(this->infoView, ChildAlignCenter);
     this->SetChildFill(this->infoView, false);
-    this->SetFlexibleChild(listView);
+    this->SetFlexibleChild(listViewFrame);
 }
