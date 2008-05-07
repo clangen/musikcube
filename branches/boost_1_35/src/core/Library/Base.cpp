@@ -160,11 +160,11 @@ bool Library::Base::AddQuery( const Query::Base &query,unsigned int options ){
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    bool bCancelCurrentQuery(false);
     {
         // Lock the mutex for accessing the query queues
         boost::mutex::scoped_lock lock(this->libraryMutex);
 
-        bool bCancelCurrentQuery(false);
 
         /////////////////////////////////////////////////////////////////////////////
         // Clear unparsed queue that match CANCEL options
@@ -225,12 +225,13 @@ bool Library::Base::AddQuery( const Query::Base &query,unsigned int options ){
             this->incomingQueries.push_back(queryCopy);
         }
 
-        /////////////////////////////////////////////////////////////////////////////
-        // Cancel currently running query
-        if(bCancelCurrentQuery){
-            this->CancelCurrentQuery();
-        }
 
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Cancel currently running query
+    if(bCancelCurrentQuery){
+        this->CancelCurrentQuery();
     }
 
     /////////////////////////////////////////////////////////////////////////////
