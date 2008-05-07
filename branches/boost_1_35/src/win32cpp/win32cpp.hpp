@@ -49,6 +49,7 @@
 #include <win32cpp/Container.hpp>
 #include <win32cpp/DeviceContext.hpp>
 #include <win32cpp/EditView.hpp>
+#include <win32cpp/FolderBrowseDialog.hpp>
 #include <win32cpp/Font.hpp>
 #include <win32cpp/Frame.hpp>
 #include <win32cpp/Label.hpp>
@@ -60,6 +61,7 @@
 #include <win32cpp/RedrawLock.hpp>
 #include <win32cpp/Trackbar.hpp>
 #include <win32cpp/Splitter.hpp>
+#include <win32cpp/TabView.hpp>
 #include <win32cpp/TopLevelWindow.hpp>
 #include <win32cpp/Types.hpp>
 #include <win32cpp/Utility.hpp>

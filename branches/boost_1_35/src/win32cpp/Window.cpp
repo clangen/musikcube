@@ -510,17 +510,18 @@ LRESULT CALLBACK Window::StaticWindowProc(HWND hwnd, UINT message, WPARAM wParam
             {
                 if (lParam)
                 {
-                    LPNMHDR notifyHeader = reinterpret_cast<LPNMHDR>(lParam);
+                    NMHDR* notifyHeader = reinterpret_cast<NMHDR*>(lParam);
+
                     Window* sender = Window::sHandleToWindowMap[notifyHeader->hwndFrom];
                     if (sender)
                     {
-                        sender->WindowProc(message, wParam, lParam);
+                        return sender->WindowProc(message, wParam, lParam);
                     }
 
-                    sender = Window::sHandleToWindowMap[it->second->Handle()];
+                    sender = Window::sHandleToWindowMap[hwnd];
                     if (sender)
                     {
-                        sender->WindowProc(message, wParam, lParam);
+                        return sender->WindowProc(message, wParam, lParam);
                     }
                 }
             }

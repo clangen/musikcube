@@ -85,7 +85,7 @@ HWND        TopLevelWindow::Create(Window* parent)
     }
 
     // create the window
-    DWORD style = WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_GROUP;
+    DWORD style = WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
     DWORD styleEx = NULL;
     //
     HWND hwnd = ::CreateWindowEx(

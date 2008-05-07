@@ -46,7 +46,22 @@ namespace win32cpp {
 
 class FolderBrowseDialog
 {
+public: // types
+    enum Result
+    {
+        ResultOK = 0,
+        ResultCanceled
+    };
 
+public: // ctor
+    FolderBrowseDialog();
+
+public: // methods
+    Result Show(Window* owner = NULL, const uichar* initialPath = NULL);
+    uistring Directory();
+
+private: // instance data
+    uistring directory;
 };
 
 //////////////////////////////////////////////////////////////////////////////

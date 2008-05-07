@@ -38,6 +38,9 @@
 
 #include <pch.hpp>
 #include <cube/SettingsController.hpp>
+#include <core/LibraryFactory.h>
+
+#include <win32cpp/FolderBrowseDialog.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -47,6 +50,7 @@ using namespace musik::cube;
 
 /*ctor*/    SettingsController::SettingsController(SettingsView& settingsView)
 : settingsView(settingsView)
+, libraryStatusTimer(300)
 {
     this->settingsView.Created.connect(
         this, &SettingsController::OnViewCreated);
@@ -58,8 +62,25 @@ using namespace musik::cube;
 void        SettingsController::OnViewCreated(Window* window)
 {
 
+    this->settingsView.addPathButton->Pressed.connect(this,&SettingsController::OnAddPath);
+
+    this->libraryStatusTimer.ConnectToWindow(&this->settingsView);
+    this->libraryStatusTimer.OnTimout.connect(this,&SettingsController::OnLibraryStatus);
+    this->libraryStatusTimer.Start();
 }
 
 void        SettingsController::OnViewResized(Window* window, Size size)
 {
+}
+
+void SettingsController::OnAddPath(Button* button){
+    win32cpp::FolderBrowseDialog addPath;
+
+    if(addPath.Show()==win32cpp::FolderBrowseDialog::ResultOK){
+        
+    }
+}
+
+void SettingsController::OnLibraryStatus(){
+    this->settingsView.libraryStatus->SetCaption( musik::core::LibraryFactory::GetCurrentLibrary()->GetInfo() );
 }

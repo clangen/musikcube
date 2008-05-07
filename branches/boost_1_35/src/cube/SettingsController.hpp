@@ -41,6 +41,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <cube/SettingsView.hpp>
+#include <win32cpp/Timer.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -54,10 +55,18 @@ class SettingsController : public EventHandler
 {
 public:     /*ctor*/    SettingsController(SettingsView& settingsView);
 
-protected:  void        OnViewCreated(Window* window);
-protected:  void        OnViewResized(Window* window, Size size);
+protected:  
+            void        OnViewCreated(Window* window);
+            void        OnViewResized(Window* window, Size size);
 
-protected:  SettingsView&                  settingsView;
+            SettingsView&                  settingsView;
+
+            void OnAddPath(Button* button);
+            void OnLibraryStatus();
+
+            win32cpp::Timer libraryStatusTimer;
+
+
 
 };
 

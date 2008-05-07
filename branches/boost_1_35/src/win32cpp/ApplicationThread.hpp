@@ -67,136 +67,174 @@ namespace win32cpp {
 ///\see
 ///Application
 //////////////////////////////////////////
-class ApplicationThread{
-public:
-    ApplicationThread(void);
+class ApplicationThread
+{
+    friend class Application;
 
-    private:  
-        friend class Application;
+private: // types
+    class CallClassBase;
+    class HelperWindow;
+    typedef boost::shared_ptr<CallClassBase> CallClassPtr;
+    typedef std::list<CallClassPtr> CallVector;
 
-        void MainThreadCallback();
-        void NotifyMainThread();
-        void Initialize();
+public: // ctor, dtor
+    ApplicationThread();
+    ~ApplicationThread();
 
-		///\brief
-		///The applications thread id
-		DWORD applicationThreadId;
+public: // methods
+    static bool InMainThread();
 
-		///\brief
-		///mutex for protecting the calls 
-        boost::mutex mutex;
+private: // methods
+    void MainThreadCallback();
+    void NotifyMainThread();
+    void Initialize();
+    void AddCall(CallClassBase *callClass);
 
-    public:    
-        ~ApplicationThread(void);
-        static bool InMainThread();
 
-    //////////////////////////////////////////////////////////////////////////////
-    private:  
+private: // instance data
+	///\brief
+	///The applications thread id
+	DWORD applicationThreadId;
 
-		///\brief
-		///A virtual base class for all CallClasses
-		class CallClassBase{
-            public: 
-                virtual ~CallClassBase(void){};
-                virtual void Call()=0;
-        };
-    //////////////////////////////////////////////////////////////////////////////
-    private:    
-        typedef boost::shared_ptr<CallClassBase> CallClassPtr;
-        typedef std::list<CallClassPtr> CallVector;
+	///\brief
+	///mutex for protecting the calls 
+    boost::mutex mutex;
 
-		///\brief
-		///A list of all the calls to be made
-		CallVector calls;
+    ///\brief
+    ///A list of all the calls to be made
+    CallVector calls;
 
-        void AddCall(CallClassBase *callClass);
+    ///\brief
+    ///instance of the HelperWindow. Created when the Initialize is called.
+    HelperWindow *helperWindow;
 
-    //////////////////////////////////////////////////////////////////////////////
+private: // "Call" classes
 
-    private:
-		///\brief
-        ///The HelperWindow is a message only Window (invisible) to help sending messages to main thread.
-		class HelperWindow : public win32cpp::Window{
-            public: 
-                HelperWindow();
-                virtual HWND        Create(Window* parent);
-                virtual LRESULT     WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
-                virtual void        OnCreated();
-        };
+	///\brief
+    ///The HelperWindow is a message only Window (invisible) to help sending messages to main thread.
+	class HelperWindow : public win32cpp::Window
+    {
+    public: 
+        HelperWindow();
+        virtual HWND        Create(Window* parent);
+        virtual LRESULT     WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+        virtual void        OnCreated();
+    };
 
-		///\brief
-		///instance of the HelperWindow. Created when the Initialize is called.
-		HelperWindow *helperWindow;
+    ///\brief
+    ///A virtual base class for all CallClasses
+    class CallClassBase
+    {
+    public: 
+        virtual ~CallClassBase() { };
+        virtual void Call() = 0;
+    };
 
-    //////////////////////////////////////////////////////////////////////////////
-    private:
-        template<class DestinationType> 
-        class CallClass0 : public CallClassBase{
-            public:
-                sigslot::signal0<> signal;
-                CallClass0(DestinationType* destinationObject,void (DestinationType::*memberMethod)()){
-                    this->signal.connect(destinationObject,memberMethod);
-                };
-
-                void Call(){
-                    this->signal();
-                };
-        };
-
-    public:     
-        template<class DestinationType> 
-        static void Call0(DestinationType* destinationObject,void (DestinationType::*memberMethod)()){
-            win32cpp::Application::Instance().thread->AddCall(new CallClass0<DestinationType>(destinationObject,memberMethod));    
+    template<class DestinationType> 
+    class CallClass0 : public CallClassBase
+    {
+    public:
+        sigslot::signal0<> signal;
+        CallClass0(
+            DestinationType* destinationObject,
+            void (DestinationType::*memberMethod)())
+        {
+            this->signal.connect(destinationObject, memberMethod);
         };
 
-    //////////////////////////////////////////////////////////////////////////////
-    private:
-        template<class DestinationType,class Arg1Type> 
-        class CallClass1 : public CallClassBase{
-            public:
-                sigslot::signal1<Arg1Type> signal;
-                Arg1Type arg1mem;
-                CallClass1(DestinationType* destinationObject,void (DestinationType::*memberMethod)(Arg1Type),Arg1Type &arg1) : arg1mem(arg1){
-                    this->signal.connect(destinationObject,memberMethod);
-                };
+        void Call()
+        {
+            this->signal();
+        };
+    };
 
-                void Call(){
-                    this->signal(this->arg1mem);
-                };
+    template<class DestinationType, class Arg1Type> 
+    class CallClass1 : public CallClassBase
+    {
+    public:
+        sigslot::signal1<Arg1Type> signal;
+        Arg1Type arg1mem;
+
+        CallClass1(
+            DestinationType* destinationObject,
+            void (DestinationType::*memberMethod)(Arg1Type),
+            Arg1Type &arg1) 
+        : arg1mem(arg1)
+        {
+            this->signal.connect(destinationObject,memberMethod);
         };
 
-    public:     
-        template<class DestinationType,class Arg1Type> 
-        static void Call1(DestinationType* destinationObject,void (DestinationType::*memberMethod)(Arg1Type),Arg1Type &arg1){
-            win32cpp::Application::Instance().thread->AddCall(new CallClass1<DestinationType,Arg1Type>(destinationObject,memberMethod,arg1));    
+        void Call()
+        {
+            this->signal(this->arg1mem);
+        };
+    };
+
+    template<class DestinationType, class Arg1Type, class Arg2Type> 
+    class CallClass2 : public CallClassBase
+    {
+    public:
+        sigslot::signal2<Arg1Type, Arg2Type> signal;
+        Arg1Type arg1mem;
+        Arg2Type arg2mem;
+
+        CallClass2(
+            DestinationType* destinationObject, 
+            void (DestinationType::*memberMethod)(Arg1Type, Arg2Type), 
+            Arg1Type &arg1, 
+            Arg2Type &arg2)
+        : arg1mem(arg1)
+        , arg2mem(arg2)
+        {
+            this->signal.connect(destinationObject,memberMethod);
         };
 
-    //////////////////////////////////////////////////////////////////////////////
-    private:
-        template<class DestinationType,class Arg1Type,class Arg2Type> 
-        class CallClass2 : public CallClassBase{
-            public:
-                sigslot::signal2<Arg1Type,Arg2Type> signal;
-                Arg1Type arg1mem;
-                Arg2Type arg2mem;
-                CallClass2(DestinationType* destinationObject,void (DestinationType::*memberMethod)(Arg1Type,Arg2Type),Arg1Type &arg1,Arg2Type &arg2) : arg1mem(arg1),arg2mem(arg2){
-                    this->signal.connect(destinationObject,memberMethod);
-                };
-
-                void Call(){
-                    this->signal(this->arg1mem,this->arg2mem);
-                };
+        void Call()
+        {
+            this->signal(this->arg1mem,this->arg2mem);
         };
+    };
 
-    public:     
-        template<class DestinationType,class Arg1Type,class Arg2Type> 
-        static void Call2(DestinationType* destinationObject,void (DestinationType::*memberMethod)(Arg1Type,Arg2Type),Arg1Type &arg1,Arg2Type &arg2){
-            win32cpp::Application::Instance().thread->AddCall(new CallClass2<DestinationType,Arg1Type,Arg2Type>(destinationObject,memberMethod,arg1,arg2));    
-        };
+public: // "Call" invocation
+    template<class DestinationType> 
+    static void Call0(
+        DestinationType* destinationObject, 
+        void (DestinationType::*memberMethod)())
+    {
+        win32cpp::Application::Instance().Thread()->AddCall(
+            new CallClass0<DestinationType>(
+            destinationObject,
+            memberMethod));    
+    };
 
-    //////////////////////////////////////////////////////////////////////////////
+    template<class DestinationType,class Arg1Type> 
+    static void Call1(
+        DestinationType* destinationObject,
+        void (DestinationType::*memberMethod)(Arg1Type), 
+        Arg1Type &arg1)
+    {
+        win32cpp::Application::Instance().Thread()->AddCall(
+            new CallClass1<DestinationType, Arg1Type>(
+            destinationObject,
+            memberMethod,
+            arg1));    
+    };
+
+    template<class DestinationType, class Arg1Type, class Arg2Type> 
+    static void Call2(
+        DestinationType* destinationObject,
+        void (DestinationType::*memberMethod)(Arg1Type, Arg2Type),
+        Arg1Type &arg1,
+        Arg2Type &arg2)
+    {
+        win32cpp::Application::Instance().Thread()->AddCall(
+            new CallClass2<DestinationType, Arg1Type, Arg2Type>(
+            destinationObject,
+            memberMethod,
+            arg1,
+            arg2));    
+    };
 };
-
 
 //////////////////////////////////////////////////////////////////////////////
 }   // win32cpp

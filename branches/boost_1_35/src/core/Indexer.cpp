@@ -68,10 +68,10 @@ utfstring Indexer::GetStatus(){
             sStatus    = boost::str( boost::utfformat(UTF("Counting files: %1%"))%this->iNOFFiles );
             break;
         case 2:
-            sStatus    = boost::str( boost::utfformat(UTF("Indexing: %1%"))%(this->iProgress*100));
+            sStatus    = boost::str( boost::utfformat(UTF("Indexing: %.3d"))%(this->iProgress*100)) + UTF("%");
             break;
         case 3:
-            sStatus    = boost::str( boost::utfformat(UTF("Cleaning up: %1%"))%(this->iProgress*100));
+            sStatus    = boost::str( boost::utfformat(UTF("Cleaning up: %.3d"))%(this->iProgress*100)) + UTF("%");
             break;
     }
     return sStatus;

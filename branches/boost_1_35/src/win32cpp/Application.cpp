@@ -56,7 +56,7 @@ Application Application::sMainApplication;
 , commandLine(_T(""))
 , showCommand(NULL)
 , mainWindow(NULL)
-, thread(new ApplicationThread())
+, appThread(NULL)
 {
 }
 
@@ -124,7 +124,8 @@ void            Application::Run(TopLevelWindow& mainWindow)
         mainWindow.Initialize();
     }
 
-    this->thread->Initialize();
+    this->appThread = new ApplicationThread();
+    this->appThread->Initialize();
 
     //
     mainWindow.Destroyed.connect(this, &Application::OnMainWindowDestroyed);
@@ -134,13 +135,12 @@ void            Application::Run(TopLevelWindow& mainWindow)
     MSG msg;
     while (::GetMessage(&msg, NULL, 0, 0) > 0)
     {
-        //(::IsDialogMessage(msg.hwnd, &msg) == 0);
         ::TranslateMessage(&msg);
         ::DispatchMessage(&msg);
     }
 
-    delete this->thread;
-    this->thread = NULL;
+    delete this->appThread;
+    this->appThread = NULL;
 
     this->mainWindow = NULL;
 }
@@ -205,4 +205,11 @@ void                Application::Terminate() const
 Application::operator HINSTANCE() const
 {
     return this->instance;
+}
+
+///\brief
+///Returns the ApplicationThread associated with this application instance.
+ApplicationThread* Application::Thread() 
+{
+    return this->appThread;
 }
