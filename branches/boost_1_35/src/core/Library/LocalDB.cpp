@@ -302,7 +302,6 @@ void Library::LocalDB::ThreadLoop(){
 ///current running SQL Query
 //////////////////////////////////////////
 void Library::LocalDB::CancelCurrentQuery( ){
-    boost::mutex::scoped_lock lock(this->libraryMutex);
     this->bCurrentQueryCanceled    = true;
     sqlite3_interrupt(this->db.connection);
 }
