@@ -177,7 +177,7 @@ void        TopLevelWindow::OnRequestFocusNext()
 }
 
 void        TopLevelWindow::OnRequestFocusPrev()
-{
+{   
     bool focusChildSuccess = false;
 
     // if we're on the first focused item, jump to the last.

@@ -417,7 +417,7 @@ void        Window::PostWindowProcBase(UINT message, WPARAM wParam, LPARAM lPara
         break;
 
     case WM_TIMER:
-        this->TimerTimeout((unsigned int)wParam);
+        this->TimerTimeout((unsigned int) wParam);
         break;
 
     case WM_SETFOCUS:
@@ -1153,7 +1153,7 @@ Color       Window::BackgroundColor() const
 bool        Window::SetFocus()
 {
     bool success = false;
-    if (this->windowHandle)
+    if ((this->windowHandle) && (this->Visible()))
     {
         success = (::SetFocus(this->windowHandle) != NULL);
     }

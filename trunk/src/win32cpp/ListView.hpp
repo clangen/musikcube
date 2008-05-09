@@ -172,6 +172,7 @@ public: // methods
 
 protected: // methods
     virtual HWND        Create(Window* parent);
+    virtual LRESULT     PreWindowProc(UINT message, WPARAM wParam, LPARAM lParam, bool& discardMessage);
     virtual LRESULT     WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
     virtual void        DrawRow(DRAWITEMSTRUCT* drawInfo);
     ColumnRef           ColumnIndexToColumnRef(int index) const;

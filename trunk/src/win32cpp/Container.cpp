@@ -160,9 +160,8 @@ Window*     FocusNextValidChild(List& collection, Iterator it, Iterator end)
             it++;
         }
 
-        if (it != end)
+        if ((it != end) && ((*it)->SetFocus()))
         {
-            (*it)->SetFocus();
             return (*it);
         }
     }

@@ -239,8 +239,6 @@ WindowType*     Container::RemoveChild(WindowType* window)
     // it is the user's responsibility to clean it up.
     Window::SetParent(window, Application::Instance().MainWindow());
 
-    Window::UnManageWindow(window);
-
     this->OnChildRemoved(window);
 
     return window;
