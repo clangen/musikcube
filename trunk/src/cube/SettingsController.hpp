@@ -41,6 +41,9 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <cube/SettingsView.hpp>
+#include <cube/settings/SyncPathController.hpp>
+#include <win32cpp/Timer.hpp>
+#include <boost/shared_ptr.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -54,10 +57,22 @@ class SettingsController : public EventHandler
 {
 public:     /*ctor*/    SettingsController(SettingsView& settingsView);
 
-protected:  void        OnViewCreated(Window* window);
-protected:  void        OnViewResized(Window* window, Size size);
+private:  
+            void        OnViewCreated(Window* window);
+            void        OnViewResized(Window* window, Size size);
 
-protected:  SettingsView&                  settingsView;
+            SettingsView&                  settingsView;
+
+            void OnAddPath(Button* button);
+            void OnRemovePath(Button* button);
+            void OnLibraryStatus();
+
+            win32cpp::Timer libraryStatusTimer;
+
+            typedef boost::shared_ptr<settings::SyncPathController> SyncPathControllerRef;
+
+            SyncPathControllerRef syncPathController;
+
 
 };
 

@@ -1,4 +1,4 @@
-/* Copyright 2003-2005 Joaquín M López Muñoz.
+/* Copyright 2003-2007 Joaquín M López Muñoz.
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
@@ -29,13 +29,13 @@ namespace detail{
  * to the base from member trick.
  */
 
-template<typename NodeType,typename Final>
+template<typename NodeTypePtr,typename Final>
 struct header_holder:private noncopyable
 {
   header_holder():member(final().allocate_node()){}
-  ~header_holder(){final().deallocate_node(member);}
+  ~header_holder(){final().deallocate_node(&*member);}
 
-  NodeType* member;
+  NodeTypePtr member;
 
 private:
   Final& final(){return *static_cast<Final*>(this);}

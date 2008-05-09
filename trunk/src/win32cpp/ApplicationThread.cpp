@@ -41,16 +41,16 @@
 
 using namespace win32cpp;
 
-//////////////////////////////////////////////////////////////////////////////
+#define CALL_WAITING (WM_USER + 1)
 
 //////////////////////////////////////////
 ///\brief
 ///Constructor
 //////////////////////////////////////////
-ApplicationThread::ApplicationThread(void)
+ApplicationThread::ApplicationThread()
 : helperWindow(NULL)
 {
-    this->applicationThreadId   = GetCurrentThreadId();
+    this->applicationThreadId = GetCurrentThreadId();
 }
 
 //////////////////////////////////////////
@@ -60,7 +60,8 @@ ApplicationThread::ApplicationThread(void)
 ///\remarks
 ///Will also delete the HelperWindow
 //////////////////////////////////////////
-ApplicationThread::~ApplicationThread(void){
+ApplicationThread::~ApplicationThread()
+{
     delete this->helperWindow;
 }
 
@@ -68,21 +69,25 @@ ApplicationThread::~ApplicationThread(void){
 ///\brief
 ///Ask if the current caller is executed in the main thread
 //////////////////////////////////////////
-bool ApplicationThread::InMainThread(){
-    ApplicationThread *thread=Application::Instance().thread;
-    if(thread){
+bool ApplicationThread::InMainThread()
+{
+    ApplicationThread *thread = Application::Instance().Thread();
+
+    if(thread)
+    {
         DWORD theThread = GetCurrentThreadId();
-        return thread->applicationThreadId==theThread;
+        return (thread->applicationThreadId == theThread);
     }
+
     return false;
 }
-
 
 //////////////////////////////////////////
 ///\brief
 ///Adds a call to the calls queue of calls.
 //////////////////////////////////////////
-void ApplicationThread::AddCall(CallClassBase *callClass){
+void ApplicationThread::AddCall(CallClassBase *callClass)
+{
     this->calls.push_back(CallClassPtr(callClass));
     this->NotifyMainThread();
 }
@@ -91,11 +96,15 @@ void ApplicationThread::AddCall(CallClassBase *callClass){
 ///\brief
 ///Method called by the HelperWindow to execute the calls
 //////////////////////////////////////////
-void ApplicationThread::MainThreadCallback(){
+void ApplicationThread::MainThreadCallback()
+{
     boost::mutex::scoped_lock lock(this->mutex);
-    while(!this->calls.empty()){
-        CallClassPtr currentCall    = this->calls.front();
+
+    while( ! this->calls.empty())
+    {
+        CallClassPtr currentCall = this->calls.front();
         currentCall->Call();
+
         this->calls.pop_front();
     }
 }
@@ -104,9 +113,11 @@ void ApplicationThread::MainThreadCallback(){
 ///\brief
 ///Sends a message to the HelperWindow to notify that there are new calls
 //////////////////////////////////////////
-void ApplicationThread::NotifyMainThread(){
-    if(this->helperWindow){
-        ::PostMessage(this->helperWindow->Handle(),WM_USER+1,NULL,NULL);
+void ApplicationThread::NotifyMainThread()
+{
+    if(this->helperWindow)
+    {
+        ::PostMessage(this->helperWindow->Handle(), CALL_WAITING, NULL, NULL);
     }
 }
 
@@ -114,10 +125,10 @@ void ApplicationThread::NotifyMainThread(){
 ///\brief
 ///Initialize the HelperWindow
 //////////////////////////////////////////
-void ApplicationThread::Initialize(){
+void ApplicationThread::Initialize()
+{
     // Create helper window
-    this->helperWindow  = new ApplicationThread::HelperWindow();
-
+    this->helperWindow = new ApplicationThread::HelperWindow();
     this->helperWindow->Initialize();
 }
 
@@ -126,7 +137,8 @@ void ApplicationThread::Initialize(){
 ///\brief
 ///Constructor for HelperWindow
 //////////////////////////////////////////
-ApplicationThread::HelperWindow::HelperWindow(){
+ApplicationThread::HelperWindow::HelperWindow()
+{
 }
 
 //////////////////////////////////////////
@@ -143,18 +155,18 @@ HWND ApplicationThread::HelperWindow::Create(Window* parent){
     DWORD style = WS_CHILD;
     //
     HWND hwnd = CreateWindowEx(
-        NULL,                   // ExStyle
-        _T("Message"),          // Class name
-        _T("ThreadHelperWindow"),     // Window name
-        style,                  // Style
-        0,                      // X
-        0,                      // Y
-        0,                      // Width
-        0,                      // Height
-        HWND_MESSAGE,           // Parent
-        NULL,                   // Menu
-        hInstance,              // Instance
-        NULL);                  // lParam
+        NULL,                       // ExStyle
+        _T("Message"),              // Class name
+        _T("ThreadHelperWindow"),   // Window name
+        style,                      // Style
+        0,                          // X
+        0,                          // Y
+        0,                          // Width
+        0,                          // Height
+        HWND_MESSAGE,               // Parent
+        NULL,                       // Menu
+        hInstance,                  // Instance
+        NULL);                      // lParam
 
     return hwnd;
 }
@@ -163,13 +175,15 @@ HWND ApplicationThread::HelperWindow::Create(Window* parent){
 ///\brief
 ///HelperWindow message handler.
 //////////////////////////////////////////
-LRESULT ApplicationThread::HelperWindow::WindowProc(UINT message, WPARAM wParam, LPARAM lParam){
+LRESULT ApplicationThread::HelperWindow::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
+{
     switch (message)
     {
-    case WM_USER+1:
+    case CALL_WAITING:
         // This is a ApplicationTread message
-        ApplicationThread *thread    = Application::Instance().thread;
-        if(thread){
+        ApplicationThread *thread = Application::Instance().Thread();
+        if(thread)
+        {
             thread->MainThreadCallback();
         }
         return 0;   // 0 = processed
@@ -186,9 +200,12 @@ LRESULT ApplicationThread::HelperWindow::WindowProc(UINT message, WPARAM wParam,
 ///before this, they have not been called.
 ///This method will make a call to the MainThreadCallback
 //////////////////////////////////////////
-void ApplicationThread::HelperWindow::OnCreated(){
-    ApplicationThread *thread    = Application::Instance().thread;
-    if(thread){
+void ApplicationThread::HelperWindow::OnCreated()
+{
+    ApplicationThread *thread = Application::Instance().Thread();
+
+    if(thread)
+    {
         thread->MainThreadCallback();
     }
 }

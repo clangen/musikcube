@@ -1,11 +1,12 @@
 //  Boost string_algo library find.hpp header file  ---------------------------//
 
-//  Copyright Pavol Droba 2002-2003. Use, modification and
-//  distribution is subject to the Boost Software License, Version
-//  1.0. (See accompanying file LICENSE_1_0.txt or copy at
-//  http://www.boost.org/LICENSE_1_0.txt)
+//  Copyright Pavol Droba 2002-2003.
+//
+// Distributed under the Boost Software License, Version 1.0.
+//    (See accompanying file LICENSE_1_0.txt or copy at
+//          http://www.boost.org/LICENSE_1_0.txt)
 
-//  See http://www.boost.org for updates, documentation, and revision history.
+//  See http://www.boost.org/ for updates, documentation, and revision history.
 
 #ifndef BOOST_STRING_FIND_HPP
 #define BOOST_STRING_FIND_HPP
@@ -16,8 +17,7 @@
 #include <boost/range/begin.hpp>
 #include <boost/range/end.hpp>
 #include <boost/range/iterator.hpp>
-#include <boost/range/const_iterator.hpp>
-#include <boost/range/result_iterator.hpp>
+#include <boost/range/as_literal.hpp>
 
 #include <boost/algorithm/string/finder.hpp>
 #include <boost/algorithm/string/compare.hpp>
@@ -48,19 +48,21 @@ namespace boost {
         */
         template<typename RangeT, typename FinderT>
         inline iterator_range< 
-            BOOST_STRING_TYPENAME range_result_iterator<RangeT>::type>
+            BOOST_STRING_TYPENAME range_iterator<RangeT>::type>
         find( 
             RangeT& Input, 
-            FinderT Finder)
+            const FinderT& Finder)
         {
-            return Finder(begin(Input),end(Input));
+            iterator_range<BOOST_STRING_TYPENAME range_iterator<RangeT>::type> lit_input(as_literal(Input));
+
+            return Finder(begin(lit_input),end(lit_input));
         }
 
 //  find_first  -----------------------------------------------//
 
         //! Find first algorithm
         /*!
-            Search for the first occurence of the substring in the input. 
+            Search for the first occurrence of the substring in the input. 
             
             \param Input A string which will be searched.
             \param Search A substring to be searched for.
@@ -74,13 +76,12 @@ namespace boost {
         */
         template<typename Range1T, typename Range2T>
         inline iterator_range< 
-            BOOST_STRING_TYPENAME range_result_iterator<Range1T>::type>
+            BOOST_STRING_TYPENAME range_iterator<Range1T>::type>
         find_first( 
             Range1T& Input, 
             const Range2T& Search)
         {
-            return first_finder(Search)(
-                begin(Input),end(Input));
+            return find(Input, first_finder(Search));
         }
 
         //! Find first algorithm ( case insensitive )
@@ -101,21 +102,20 @@ namespace boost {
         */
         template<typename Range1T, typename Range2T>
         inline iterator_range< 
-            BOOST_STRING_TYPENAME range_result_iterator<Range1T>::type>
+            BOOST_STRING_TYPENAME range_iterator<Range1T>::type>
         ifind_first( 
             Range1T& Input, 
             const Range2T& Search,
             const std::locale& Loc=std::locale())
         {
-            return first_finder(Search,is_iequal(Loc))(
-                begin(Input),end(Input));
+            return find(Input, first_finder(Search,is_iequal(Loc)));
         }
 
 //  find_last  -----------------------------------------------//
 
         //! Find last algorithm
         /*!
-            Search for the last occurence of the substring in the input. 
+            Search for the last occurrence of the substring in the input. 
             
             \param Input A string which will be searched.
             \param Search A substring to be searched for.
@@ -129,13 +129,12 @@ namespace boost {
         */
         template<typename Range1T, typename Range2T>
         inline iterator_range< 
-            BOOST_STRING_TYPENAME range_result_iterator<Range1T>::type>
+            BOOST_STRING_TYPENAME range_iterator<Range1T>::type>
         find_last( 
             Range1T& Input, 
             const Range2T& Search)
         {
-            return last_finder(Search)(
-                begin(Input),end(Input));
+            return find(Input, last_finder(Search));
         }
 
         //! Find last algorithm ( case insensitive )
@@ -156,21 +155,20 @@ namespace boost {
         */
         template<typename Range1T, typename Range2T>
         inline iterator_range< 
-            BOOST_STRING_TYPENAME range_result_iterator<Range1T>::type>
+            BOOST_STRING_TYPENAME range_iterator<Range1T>::type>
         ifind_last( 
             Range1T& Input, 
             const Range2T& Search,
             const std::locale& Loc=std::locale())
         {
-            return last_finder(Search, is_iequal(Loc))(
-                begin(Input),end(Input));
+            return find(Input, last_finder(Search, is_iequal(Loc)));
         }
 
 //  find_nth ----------------------------------------------------------------------//
 
         //! Find n-th algorithm 
         /*!
-            Search for the n-th (zero-indexed) occurence of the substring in the 
+            Search for the n-th (zero-indexed) occurrence of the substring in the 
             input.         
             
             \param Input A string which will be searched.
@@ -185,14 +183,13 @@ namespace boost {
         */
         template<typename Range1T, typename Range2T>
         inline iterator_range< 
-            BOOST_STRING_TYPENAME range_result_iterator<Range1T>::type>
+            BOOST_STRING_TYPENAME range_iterator<Range1T>::type>
         find_nth( 
             Range1T& Input, 
             const Range2T& Search,
             int Nth)
         {
-            return nth_finder(Search,Nth)(
-                begin(Input),end(Input));
+            return find(Input, nth_finder(Search,Nth));
         }
 
         //! Find n-th algorithm ( case insensitive ).
@@ -216,15 +213,14 @@ namespace boost {
         */
         template<typename Range1T, typename Range2T>
         inline iterator_range< 
-            BOOST_STRING_TYPENAME range_result_iterator<Range1T>::type>
+            BOOST_STRING_TYPENAME range_iterator<Range1T>::type>
         ifind_nth( 
             Range1T& Input, 
             const Range2T& Search,
             int Nth,
             const std::locale& Loc=std::locale())
         {
-            return nth_finder(Search,Nth,is_iequal(Loc))(
-                begin(Input),end(Input));
+            return find(Input, nth_finder(Search,Nth,is_iequal(Loc)));
         }
 
 //  find_head ----------------------------------------------------------------------//
@@ -249,13 +245,12 @@ namespace boost {
         */
         template<typename RangeT>
         inline iterator_range< 
-            BOOST_STRING_TYPENAME range_result_iterator<RangeT>::type>
+            BOOST_STRING_TYPENAME range_iterator<RangeT>::type>
         find_head( 
             RangeT& Input, 
             int N)
         {
-            return head_finder(N)(
-                begin(Input),end(Input));      
+            return find(Input, head_finder(N));
         }
 
 //  find_tail ----------------------------------------------------------------------//
@@ -281,13 +276,12 @@ namespace boost {
         */
         template<typename RangeT>
         inline iterator_range< 
-            BOOST_STRING_TYPENAME range_result_iterator<RangeT>::type>
+            BOOST_STRING_TYPENAME range_iterator<RangeT>::type>
         find_tail( 
             RangeT& Input, 
             int N)
         {
-            return tail_finder(N)(
-                begin(Input),end(Input));      
+            return find(Input, tail_finder(N));
         }
 
 //  find_token --------------------------------------------------------------------//
@@ -311,14 +305,13 @@ namespace boost {
         */
         template<typename RangeT, typename PredicateT>
         inline iterator_range< 
-            BOOST_STRING_TYPENAME range_result_iterator<RangeT>::type>
+            BOOST_STRING_TYPENAME range_iterator<RangeT>::type>
         find_token( 
             RangeT& Input,
             PredicateT Pred,
             token_compress_mode_type eCompress=token_compress_off)
         {
-            return token_finder(Pred, eCompress)(
-                begin(Input),end(Input));       
+            return find(Input, token_finder(Pred, eCompress));
         }
 
     } // namespace algorithm

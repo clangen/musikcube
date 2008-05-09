@@ -157,7 +157,7 @@ namespace boost {
         // check range (may be private because it is static)
         static void rangecheck (size_type i) {
             if (i >= size()) {
-                throw std::range_error("array<>: index out of range");
+                throw std::out_of_range("array<>: index out of range");
             }
         }
 
@@ -271,7 +271,7 @@ namespace boost {
 
         // check range (may be private because it is static)
         static reference failed_rangecheck () {
-                std::range_error e("attempt to access element of an empty array");
+                std::out_of_range e("attempt to access element of an empty array");
                 boost::throw_exception(e);
                 //
                 // We need to return something here to keep

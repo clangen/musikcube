@@ -38,9 +38,8 @@
 
 #include <core/config.h>
 #include <core/ThreadHelper.h>
-#include <core/PluginFactory.h>
-#include <core/Plugin/IMetaDataReader.h>
 #include <core/db/Connection.h>
+#include <core/Plugin/IMetaDataReader.h>
 
 #include <sigslot/sigslot.h>
 

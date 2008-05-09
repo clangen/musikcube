@@ -29,7 +29,6 @@
 #include <boost/type_traits/is_pointer.hpp>
 #include <boost/serialization/level.hpp>
 #include <boost/serialization/tracking_enum.hpp>
-//#include <boost/serialization/traits.hpp>
 
 namespace boost {
 namespace serialization {
@@ -65,7 +64,7 @@ struct tracking_level {
             // is never
             mpl::int_<track_never>,
             // otherwise its selective
-            mpl::int_<track_selectivly>
+            mpl::int_<track_selectively>
     >  > >::type type;
     BOOST_STATIC_CONSTANT(int, value = tracking_level::type::value);
 };

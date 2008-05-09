@@ -11,118 +11,62 @@
 #ifndef BOOST_RANGE_ITERATOR_HPP
 #define BOOST_RANGE_ITERATOR_HPP
 
-#if defined(_MSC_VER) && (_MSC_VER >= 1200)
+#if defined(_MSC_VER) && (_MSC_VER >= 1020)
 # pragma once
 #endif
 
 #include <boost/range/config.hpp>
-
-#ifdef BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION
-#include <boost/range/detail/iterator.hpp>
-#else
-
-#include <boost/iterator/iterator_traits.hpp>
-#include <cstddef>
-#include <utility>
+#include <boost/range/mutable_iterator.hpp>
+#include <boost/range/const_iterator.hpp>
+#include <boost/type_traits/is_const.hpp>
+#include <boost/type_traits/remove_const.hpp>
+#include <boost/mpl/eval_if.hpp>
 
 namespace boost
 {
-    //////////////////////////////////////////////////////////////////////////
-    // default
-    //////////////////////////////////////////////////////////////////////////
+
+#if BOOST_WORKAROUND(BOOST_MSVC, == 1310)  
+
+    namespace range_detail_vc7_1  
+    {  
+       template< typename C, typename Sig = void(C) >  
+       struct range_iterator  
+       {  
+           typedef BOOST_RANGE_DEDUCED_TYPENAME   
+               mpl::eval_if_c< is_const<C>::value,   
+                               range_const_iterator< typename remove_const<C>::type >,  
+                               range_mutable_iterator<C> >::type type;  
+       };  
     
+       template< typename C, typename T >  
+       struct range_iterator< C, void(T[]) >  
+       {  
+           typedef T* type;  
+       };       
+    }  
+    
+#endif  
+
     template< typename C >
     struct range_iterator
     {
-        typedef BOOST_DEDUCED_TYPENAME C::iterator type;
+#if BOOST_WORKAROUND(BOOST_MSVC, == 1310)
+  
+        typedef BOOST_RANGE_DEDUCED_TYPENAME  
+               range_detail_vc7_1::range_iterator<C>::type type;  
+           
+#else  
+
+        typedef BOOST_RANGE_DEDUCED_TYPENAME 
+            mpl::eval_if_c< is_const<C>::value, 
+                            range_const_iterator< typename remove_const<C>::type >,
+                            range_mutable_iterator<C> >::type type;
+        
+#endif         
     };
     
-    //////////////////////////////////////////////////////////////////////////
-    // pair
-    //////////////////////////////////////////////////////////////////////////
-
-    template< typename Iterator >
-    struct range_iterator< std::pair<Iterator,Iterator> >
-    {
-        typedef Iterator type;
-    };
-    
-    template< typename Iterator >
-    struct range_iterator< const std::pair<Iterator,Iterator> >
-    {
-        typedef Iterator type;
-    };
-
-    //////////////////////////////////////////////////////////////////////////
-    // array
-    //////////////////////////////////////////////////////////////////////////
-
-    template< typename T, std::size_t sz >
-    struct range_iterator< T[sz] >
-    {
-        typedef T* type;
-    };
-
-    template< typename T, std::size_t sz >
-    struct range_iterator< const T[sz] >
-    {
-        typedef const T* type;
-    };
-
-    //////////////////////////////////////////////////////////////////////////
-    // string
-    //////////////////////////////////////////////////////////////////////////
-
-    template<>
-    struct range_iterator< char* >
-    {
-        typedef char* type;
-    };
-
-    template<>
-    struct range_iterator< wchar_t* >
-    {
-        typedef wchar_t* type;
-    };
-
-    template<>
-    struct range_iterator< const char* >
-    {
-        typedef const char* type;
-    };
-
-    template<>
-    struct range_iterator< const wchar_t* >
-    {
-        typedef const wchar_t* type;
-    };
-
-    template<>
-    struct range_iterator< char* const >
-    {
-        typedef char* type;
-    };
-
-    template<>
-    struct range_iterator< wchar_t* const >
-    {
-        typedef wchar_t* type;
-    };
-
-    template<>
-    struct range_iterator< const char* const >
-    {
-        typedef const char* type;
-    };
-
-    template<>
-    struct range_iterator< const wchar_t* const >
-    {
-        typedef const wchar_t* type;
-    };
-
 } // namespace boost
 
-#endif // BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION
+//#endif // BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION
 
 #endif

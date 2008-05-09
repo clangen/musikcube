@@ -2,7 +2,7 @@
 // win_iocp_socket_service.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2007 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2008 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -57,7 +57,7 @@ public:
   typedef typename Protocol::endpoint endpoint_type;
 
   // Base class for all operations.
-  typedef win_iocp_operation operation;
+  typedef win_iocp_io_service::operation operation;
 
   struct noop_deleter { void operator()(void*) {} };
   typedef boost::shared_ptr<void> shared_cancel_token_type;
@@ -156,11 +156,13 @@ public:
     // The protocol associated with the socket.
     protocol_type protocol_;
 
+#if defined(BOOST_ASIO_ENABLE_CANCELIO)
     // The ID of the thread from which it is safe to cancel asynchronous
     // operations. 0 means no asynchronous operations have been started yet.
     // ~0 means asynchronous operations have been started from more than one
     // thread, and cancellation is not supported for the socket.
     DWORD safe_cancellation_thread_id_;
+#endif // defined(BOOST_ASIO_ENABLE_CANCELIO)
 
     // Pointers to adjacent socket implementations in linked list.
     implementation_type* next_;
@@ -204,7 +206,9 @@ public:
     impl.socket_ = invalid_socket;
     impl.flags_ = 0;
     impl.cancel_token_.reset();
+#if defined(BOOST_ASIO_ENABLE_CANCELIO)
     impl.safe_cancellation_thread_id_ = 0;
+#endif // defined(BOOST_ASIO_ENABLE_CANCELIO)
 
     // Insert implementation into linked list of all implementations.
     boost::asio::detail::mutex::scoped_lock lock(mutex_);
@@ -306,7 +310,9 @@ public:
       impl.socket_ = invalid_socket;
       impl.flags_ = 0;
       impl.cancel_token_.reset();
+#if defined(BOOST_ASIO_ENABLE_CANCELIO)
       impl.safe_cancellation_thread_id_ = 0;
+#endif // defined(BOOST_ASIO_ENABLE_CANCELIO)
     }
 
     ec = boost::system::error_code();
@@ -338,14 +344,25 @@ public:
       if (!cancel_io_ex(sock_as_handle, 0))
       {
         DWORD last_error = ::GetLastError();
-        ec = boost::system::error_code(last_error,
-            boost::asio::error::get_system_category());
+        if (last_error == ERROR_NOT_FOUND)
+        {
+          // ERROR_NOT_FOUND means that there were no operations to be
+          // cancelled. We swallow this error to match the behaviour on other
+          // platforms.
+          ec = boost::system::error_code();
+        }
+        else
+        {
+          ec = boost::system::error_code(last_error,
+              boost::asio::error::get_system_category());
+        }
       }
       else
       {
         ec = boost::system::error_code();
       }
     }
+#if defined(BOOST_ASIO_ENABLE_CANCELIO)
     else if (impl.safe_cancellation_thread_id_ == 0)
     {
       // No operations have been started, so there's nothing to cancel.
@@ -374,6 +391,13 @@ public:
       // so cancellation is not safe.
       ec = boost::asio::error::operation_not_supported;
     }
+#else // defined(BOOST_ASIO_ENABLE_CANCELIO)
+    else
+    {
+      // Cancellation is not supported as CancelIo may not be used.
+      ec = boost::asio::error::operation_not_supported;
+    }
+#endif // defined(BOOST_ASIO_ENABLE_CANCELIO)
 
     return ec;
   }
@@ -681,13 +705,13 @@ public:
     : public operation
   {
   public:
-    send_operation(boost::asio::io_service& io_service,
+    send_operation(win_iocp_io_service& io_service,
         weak_cancel_token_type cancel_token,
         const ConstBufferSequence& buffers, Handler handler)
-      : operation(
+      : operation(io_service,
           &send_operation<ConstBufferSequence, Handler>::do_completion_impl,
           &send_operation<ConstBufferSequence, Handler>::destroy_impl),
-        work_(io_service),
+        work_(io_service.get_io_service()),
         cancel_token_(cancel_token),
         buffers_(buffers),
         handler_(handler)
@@ -741,7 +765,7 @@ public:
       ptr.reset();
 
       // Call the handler.
-      asio_handler_invoke_helpers::invoke(
+      boost_asio_handler_invoke_helpers::invoke(
           detail::bind_handler(handler, ec, bytes_transferred), &handler);
     }
 
@@ -773,18 +797,20 @@ public:
       return;
     }
 
+#if defined(BOOST_ASIO_ENABLE_CANCELIO)
     // Update the ID of the thread from which cancellation is safe.
     if (impl.safe_cancellation_thread_id_ == 0)
       impl.safe_cancellation_thread_id_ = ::GetCurrentThreadId();
     else if (impl.safe_cancellation_thread_id_ != ::GetCurrentThreadId())
       impl.safe_cancellation_thread_id_ = ~DWORD(0);
+#endif // defined(BOOST_ASIO_ENABLE_CANCELIO)
 
     // Allocate and construct an operation to wrap the handler.
     typedef send_operation<ConstBufferSequence, Handler> value_type;
     typedef handler_alloc_traits<Handler, value_type> alloc_traits;
     raw_handler_ptr<alloc_traits> raw_ptr(handler);
-    handler_ptr<alloc_traits> ptr(raw_ptr,
-        this->get_io_service(), impl.cancel_token_, buffers, handler);
+    handler_ptr<alloc_traits> ptr(raw_ptr, iocp_service_,
+        impl.cancel_token_, buffers, handler);
 
     // Copy buffers into WSABUF array.
     ::WSABUF bufs[max_buffers];
@@ -861,7 +887,7 @@ public:
     // Send the data.
     DWORD bytes_transferred = 0;
     int result = ::WSASendTo(impl.socket_, bufs, i, &bytes_transferred,
-        flags, destination.data(), destination.size(), 0, 0);
+        flags, destination.data(), static_cast<int>(destination.size()), 0, 0);
     if (result != 0)
     {
       DWORD last_error = ::WSAGetLastError();
@@ -881,12 +907,12 @@ public:
     : public operation
   {
   public:
-    send_to_operation(boost::asio::io_service& io_service,
+    send_to_operation(win_iocp_io_service& io_service,
         const ConstBufferSequence& buffers, Handler handler)
-      : operation(
+      : operation(io_service,
           &send_to_operation<ConstBufferSequence, Handler>::do_completion_impl,
           &send_to_operation<ConstBufferSequence, Handler>::destroy_impl),
-        work_(io_service),
+        work_(io_service.get_io_service()),
         buffers_(buffers),
         handler_(handler)
     {
@@ -932,7 +958,7 @@ public:
       ptr.reset();
 
       // Call the handler.
-      asio_handler_invoke_helpers::invoke(
+      boost_asio_handler_invoke_helpers::invoke(
           detail::bind_handler(handler, ec, bytes_transferred), &handler);
     }
 
@@ -964,18 +990,19 @@ public:
       return;
     }
 
+#if defined(BOOST_ASIO_ENABLE_CANCELIO)
     // Update the ID of the thread from which cancellation is safe.
     if (impl.safe_cancellation_thread_id_ == 0)
       impl.safe_cancellation_thread_id_ = ::GetCurrentThreadId();
     else if (impl.safe_cancellation_thread_id_ != ::GetCurrentThreadId())
       impl.safe_cancellation_thread_id_ = ~DWORD(0);
+#endif // defined(BOOST_ASIO_ENABLE_CANCELIO)
 
     // Allocate and construct an operation to wrap the handler.
     typedef send_to_operation<ConstBufferSequence, Handler> value_type;
     typedef handler_alloc_traits<Handler, value_type> alloc_traits;
     raw_handler_ptr<alloc_traits> raw_ptr(handler);
-    handler_ptr<alloc_traits> ptr(raw_ptr,
-        this->get_io_service(), buffers, handler);
+    handler_ptr<alloc_traits> ptr(raw_ptr, iocp_service_, buffers, handler);
 
     // Copy buffers into WSABUF array.
     ::WSABUF bufs[max_buffers];
@@ -992,8 +1019,8 @@ public:
 
     // Send the data.
     DWORD bytes_transferred = 0;
-    int result = ::WSASendTo(impl.socket_, bufs, i, &bytes_transferred,
-        flags, destination.data(), destination.size(), ptr.get(), 0);
+    int result = ::WSASendTo(impl.socket_, bufs, i, &bytes_transferred, flags,
+        destination.data(), static_cast<int>(destination.size()), ptr.get(), 0);
     DWORD last_error = ::WSAGetLastError();
 
     // Check if the operation completed immediately.
@@ -1075,15 +1102,15 @@ public:
     : public operation
   {
   public:
-    receive_operation(boost::asio::io_service& io_service,
+    receive_operation(win_iocp_io_service& io_service,
         weak_cancel_token_type cancel_token,
         const MutableBufferSequence& buffers, Handler handler)
-      : operation(
+      : operation(io_service,
           &receive_operation<
             MutableBufferSequence, Handler>::do_completion_impl,
           &receive_operation<
             MutableBufferSequence, Handler>::destroy_impl),
-        work_(io_service),
+        work_(io_service.get_io_service()),
         cancel_token_(cancel_token),
         buffers_(buffers),
         handler_(handler)
@@ -1143,7 +1170,7 @@ public:
       ptr.reset();
 
       // Call the handler.
-      asio_handler_invoke_helpers::invoke(
+      boost_asio_handler_invoke_helpers::invoke(
           detail::bind_handler(handler, ec, bytes_transferred), &handler);
     }
 
@@ -1176,18 +1203,20 @@ public:
       return;
     }
 
+#if defined(BOOST_ASIO_ENABLE_CANCELIO)
     // Update the ID of the thread from which cancellation is safe.
     if (impl.safe_cancellation_thread_id_ == 0)
       impl.safe_cancellation_thread_id_ = ::GetCurrentThreadId();
     else if (impl.safe_cancellation_thread_id_ != ::GetCurrentThreadId())
       impl.safe_cancellation_thread_id_ = ~DWORD(0);
+#endif // defined(BOOST_ASIO_ENABLE_CANCELIO)
 
     // Allocate and construct an operation to wrap the handler.
     typedef receive_operation<MutableBufferSequence, Handler> value_type;
     typedef handler_alloc_traits<Handler, value_type> alloc_traits;
     raw_handler_ptr<alloc_traits> raw_ptr(handler);
-    handler_ptr<alloc_traits> ptr(raw_ptr,
-        this->get_io_service(), impl.cancel_token_, buffers, handler);
+    handler_ptr<alloc_traits> ptr(raw_ptr, iocp_service_,
+        impl.cancel_token_, buffers, handler);
 
     // Copy buffers into WSABUF array.
     ::WSABUF bufs[max_buffers];
@@ -1291,17 +1320,17 @@ public:
     : public operation
   {
   public:
-    receive_from_operation(boost::asio::io_service& io_service,
+    receive_from_operation(win_iocp_io_service& io_service,
         endpoint_type& endpoint, const MutableBufferSequence& buffers,
         Handler handler)
-      : operation(
+      : operation(io_service,
           &receive_from_operation<
             MutableBufferSequence, Handler>::do_completion_impl,
           &receive_from_operation<
             MutableBufferSequence, Handler>::destroy_impl),
         endpoint_(endpoint),
         endpoint_size_(static_cast<int>(endpoint.capacity())),
-        work_(io_service),
+        work_(io_service.get_io_service()),
         buffers_(buffers),
         handler_(handler)
     {
@@ -1361,7 +1390,7 @@ public:
       ptr.reset();
 
       // Call the handler.
-      asio_handler_invoke_helpers::invoke(
+      boost_asio_handler_invoke_helpers::invoke(
           detail::bind_handler(handler, ec, bytes_transferred), &handler);
     }
 
@@ -1396,18 +1425,20 @@ public:
       return;
     }
 
+#if defined(BOOST_ASIO_ENABLE_CANCELIO)
     // Update the ID of the thread from which cancellation is safe.
     if (impl.safe_cancellation_thread_id_ == 0)
       impl.safe_cancellation_thread_id_ = ::GetCurrentThreadId();
     else if (impl.safe_cancellation_thread_id_ != ::GetCurrentThreadId())
       impl.safe_cancellation_thread_id_ = ~DWORD(0);
+#endif // defined(BOOST_ASIO_ENABLE_CANCELIO)
 
     // Allocate and construct an operation to wrap the handler.
     typedef receive_from_operation<MutableBufferSequence, Handler> value_type;
     typedef handler_alloc_traits<Handler, value_type> alloc_traits;
     raw_handler_ptr<alloc_traits> raw_ptr(handler);
-    handler_ptr<alloc_traits> ptr(raw_ptr,
-        this->get_io_service(), sender_endp, buffers, handler);
+    handler_ptr<alloc_traits> ptr(raw_ptr, iocp_service_,
+        sender_endp, buffers, handler);
 
     // Copy buffers into WSABUF array.
     ::WSABUF bufs[max_buffers];
@@ -1509,7 +1540,7 @@ public:
         socket_type socket, socket_type new_socket, Socket& peer,
         const protocol_type& protocol, endpoint_type* peer_endpoint,
         bool enable_connection_aborted, Handler handler)
-      : operation(
+      : operation(io_service,
           &accept_operation<Socket, Handler>::do_completion_impl,
           &accept_operation<Socket, Handler>::destroy_impl),
         io_service_(io_service),
@@ -1673,7 +1704,7 @@ public:
       // Call the handler.
       boost::system::error_code ec(last_error,
           boost::asio::error::get_system_category());
-      asio_handler_invoke_helpers::invoke(
+      boost_asio_handler_invoke_helpers::invoke(
           detail::bind_handler(handler, ec), &handler);
     }
 
@@ -1720,11 +1751,13 @@ public:
       return;
     }
 
+#if defined(BOOST_ASIO_ENABLE_CANCELIO)
     // Update the ID of the thread from which cancellation is safe.
     if (impl.safe_cancellation_thread_id_ == 0)
       impl.safe_cancellation_thread_id_ = ::GetCurrentThreadId();
     else if (impl.safe_cancellation_thread_id_ != ::GetCurrentThreadId())
       impl.safe_cancellation_thread_id_ = ~DWORD(0);
+#endif // defined(BOOST_ASIO_ENABLE_CANCELIO)
 
     // Create a new socket for the connection.
     boost::system::error_code ec;
@@ -1894,11 +1927,13 @@ public:
       return;
     }
 
+#if defined(BOOST_ASIO_ENABLE_CANCELIO)
     // Update the ID of the thread from which cancellation is safe.
     if (impl.safe_cancellation_thread_id_ == 0)
       impl.safe_cancellation_thread_id_ = ::GetCurrentThreadId();
     else if (impl.safe_cancellation_thread_id_ != ::GetCurrentThreadId())
       impl.safe_cancellation_thread_id_ = ~DWORD(0);
+#endif // defined(BOOST_ASIO_ENABLE_CANCELIO)
 
     // Check if the reactor was already obtained from the io_service.
     reactor_type* reactor = static_cast<reactor_type*>(
@@ -1998,7 +2033,9 @@ private:
       impl.socket_ = invalid_socket;
       impl.flags_ = 0;
       impl.cancel_token_.reset();
+#if defined(BOOST_ASIO_ENABLE_CANCELIO)
       impl.safe_cancellation_thread_id_ = 0;
+#endif // defined(BOOST_ASIO_ENABLE_CANCELIO)
     }
   }
 

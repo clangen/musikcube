@@ -133,7 +133,7 @@ namespace boost { namespace spirit {
             {
 #ifdef BOOST_SPIRIT_THREADSAFE
                 static boost::once_flag been_here = BOOST_ONCE_INIT;
-                boost::call_once(mutex_init, been_here);
+                boost::call_once(been_here, mutex_init);
                 boost::mutex &mutex = mutex_instance();
                 boost::mutex::scoped_lock lock(mutex);
 #endif

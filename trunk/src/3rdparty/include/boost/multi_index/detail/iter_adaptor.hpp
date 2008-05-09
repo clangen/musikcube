@@ -1,4 +1,4 @@
-/* Copyright 2003-2005 Joaquín M López Muñoz.
+/* Copyright 2003-2007 Joaquín M López Muñoz.
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
@@ -28,6 +28,12 @@ namespace detail{
  * original as compile times for the latter are significantly higher.
  * The interface is not replicated exactly, only to the extent necessary
  * for internal consumption.
+ */
+
+/* NB. The purpose of the (non-inclass) global operators ==, < and - defined
+ * above is to partially alleviate a problem of MSVC++ 6.0 by * which
+ * friend-injected operators on T are not visible if T is instantiated only
+ * in template code where T is a dependent type.
  */
 
 class iter_adaptor_access
@@ -107,6 +113,15 @@ private:
   const Derived& final()const{return *static_cast<const Derived*>(this);}
 };
 
+template<class Derived,class Base>
+bool operator==(
+  const forward_iter_adaptor_base<Derived,Base>& x,
+  const forward_iter_adaptor_base<Derived,Base>& y)
+{
+  return iter_adaptor_access::equal(
+    static_cast<const Derived&>(x),static_cast<const Derived&>(y));
+}
+
 template<>
 struct iter_adaptor_selector<std::forward_iterator_tag>
 {
@@ -155,6 +170,15 @@ private:
   Derived& final(){return *static_cast<Derived*>(this);}
   const Derived& final()const{return *static_cast<const Derived*>(this);}
 };
+
+template<class Derived,class Base>
+bool operator==(
+  const bidirectional_iter_adaptor_base<Derived,Base>& x,
+  const bidirectional_iter_adaptor_base<Derived,Base>& y)
+{
+  return iter_adaptor_access::equal(
+    static_cast<const Derived&>(x),static_cast<const Derived&>(y));
+}
 
 template<>
 struct iter_adaptor_selector<std::bidirectional_iterator_tag>
@@ -227,6 +251,34 @@ private:
   Derived& final(){return *static_cast<Derived*>(this);}
   const Derived& final()const{return *static_cast<const Derived*>(this);}
 };
+
+template<class Derived,class Base>
+bool operator==(
+  const random_access_iter_adaptor_base<Derived,Base>& x,
+  const random_access_iter_adaptor_base<Derived,Base>& y)
+{
+  return iter_adaptor_access::equal(
+    static_cast<const Derived&>(x),static_cast<const Derived&>(y));
+}
+
+template<class Derived,class Base>
+bool operator<(
+  const random_access_iter_adaptor_base<Derived,Base>& x,
+  const random_access_iter_adaptor_base<Derived,Base>& y)
+{
+  return iter_adaptor_access::distance_to(
+    static_cast<const Derived&>(x),static_cast<const Derived&>(y))>0;
+}
+
+template<class Derived,class Base>
+typename random_access_iter_adaptor_base<Derived,Base>::difference_type
+operator-(
+  const random_access_iter_adaptor_base<Derived,Base>& x,
+  const random_access_iter_adaptor_base<Derived,Base>& y)
+{
+  return iter_adaptor_access::distance_to(
+    static_cast<const Derived&>(y),static_cast<const Derived&>(x));
+}
 
 template<>
 struct iter_adaptor_selector<std::random_access_iterator_tag>

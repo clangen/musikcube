@@ -10,9 +10,9 @@
 //
 // See http://www.boost.org/libs/mpl for documentation.
 
-// $Source: /cvsroot/boost/boost/boost/mpl/list/aux_/iterator.hpp,v $
-// $Date: 2004/10/01 16:29:37 $
-// $Revision: 1.6 $
+// $Source$
+// $Date: 2004-10-01 12:32:41 -0400 (Fri, 01 Oct 2004) $
+// $Revision: 25513 $
 
 #include <boost/mpl/iterator_tags.hpp>
 #include <boost/mpl/next_prior.hpp>

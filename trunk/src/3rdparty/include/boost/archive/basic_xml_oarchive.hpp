@@ -9,7 +9,7 @@
 /////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 // basic_xml_oarchive.hpp
 
-// (C) Copyright 2002 Robert Ramey - http://www.rrsd.com . 
+// (C) Copyright 2002 Robert Ramey - http://www.rrsd.com .
 // Use, modification and distribution is subject to the Boost Software
 // License, Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
@@ -24,15 +24,18 @@
 #include <boost/serialization/tracking.hpp>
 #include <boost/serialization/string.hpp>
 
+#include <boost/mpl/assert.hpp>
+
 #include <boost/archive/detail/abi_prefix.hpp> // must be the last header
 
-namespace boost { 
+
+namespace boost {
 namespace archive {
-        
+
 //////////////////////////////////////////////////////////////////////
 // class basic_xml_oarchive - write serialized objects to a xml output stream
 template<class Archive>
-class basic_xml_oarchive : 
+class basic_xml_oarchive :
     public detail::common_oarchive<Archive>
 {
 protected:
@@ -42,8 +45,10 @@ public:
     // for some inexplicable reason insertion of "class" generates compile erro
     // on msvc 7.1
     friend detail::interface_oarchive<Archive>;
+    friend class save_access;
 #else
     friend class detail::interface_oarchive<Archive>;
+    friend class save_access;
 #endif
     // special stuff for xml output
     unsigned int depth;
@@ -55,13 +60,13 @@ public:
     init();
     BOOST_ARCHIVE_OR_WARCHIVE_DECL(void)
     write_attribute(
-        const char *attribute_name, 
+        const char *attribute_name,
         int t,
         const char *conjunction = "=\""
     );
     BOOST_ARCHIVE_OR_WARCHIVE_DECL(void)
     write_attribute(
-        const char *attribute_name, 
+        const char *attribute_name,
         const char *key
     );
     // helpers used below
@@ -80,7 +85,8 @@ public:
         // If your program fails to compile here, its most likely due to
         // not specifying an nvp wrapper around the variable to
         // be serialized.
-        BOOST_STATIC_ASSERT(0 == sizeof(T));
+        BOOST_MPL_ASSERT((serialization::is_wrapper<T>));
+        this->detail_common_oarchive::save_override(t, 0);
     }
 
    // special treatment for name-value pairs.
@@ -90,7 +96,7 @@ public:
         #ifndef BOOST_NO_FUNCTION_TEMPLATE_ORDERING
         const
         #endif
-        ::boost::serialization::nvp<T> & t, 
+        ::boost::serialization::nvp<T> & t,
         int
     ){
         save_start(t.name());
@@ -117,9 +123,9 @@ public:
     BOOST_ARCHIVE_OR_WARCHIVE_DECL(void)
     save_override(const tracking_type & t, int);
 
-    BOOST_ARCHIVE_OR_WARCHIVE_DECL(BOOST_PP_EMPTY()) 
+    BOOST_ARCHIVE_OR_WARCHIVE_DECL(BOOST_PP_EMPTY())
     basic_xml_oarchive(unsigned int flags);
-    BOOST_ARCHIVE_OR_WARCHIVE_DECL(BOOST_PP_EMPTY()) 
+    BOOST_ARCHIVE_OR_WARCHIVE_DECL(BOOST_PP_EMPTY())
     ~basic_xml_oarchive();
 };
 

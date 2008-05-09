@@ -50,7 +50,9 @@
 #include <map>
 #include <set>
 
-#include <sqlite/sqlite3.h>
+#include <core/db/Connection.h>
+#include <core/db/Statement.h>
+#include <core/db/CachedStatement.h>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/thread/thread.hpp>

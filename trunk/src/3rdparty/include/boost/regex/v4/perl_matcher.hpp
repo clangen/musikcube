@@ -14,8 +14,20 @@
 
 #include <boost/regex/v4/iterator_category.hpp>
 
+#ifdef BOOST_MSVC
+#pragma warning(push)
+#pragma warning(disable: 4103)
+#endif
 #ifdef BOOST_HAS_ABI_HEADERS
 #  include BOOST_ABI_PREFIX
+#endif
+#ifdef BOOST_MSVC
+#pragma warning(pop)
+#endif
+
+#ifdef BOOST_MSVC
+#  pragma warning(push)
+#  pragma warning(disable: 4800)
 #endif
 
 namespace boost{
@@ -49,7 +61,7 @@ inline bool can_start(unsigned short c, const unsigned char* map, unsigned char 
 {
    return ((c >= (1 << CHAR_BIT)) ? true : map[c] & mask);
 }
-#if !defined(__hpux) // can't use WCHAR_MIN in pp-directive
+#if !defined(__hpux) // WCHAR_MIN not usable in pp-directives.
 #if defined(WCHAR_MIN) && (WCHAR_MIN == 0) && !defined(BOOST_NO_INTRINSIC_WCHAR_T)
 inline bool can_start(wchar_t c, const unsigned char* map, unsigned char mask)
 {
@@ -506,11 +518,22 @@ private:
 
 } // namespace re_detail
 
+#ifdef BOOST_MSVC
+#pragma warning(push)
+#pragma warning(disable: 4103)
+#endif
 #ifdef BOOST_HAS_ABI_HEADERS
 #  include BOOST_ABI_SUFFIX
 #endif
+#ifdef BOOST_MSVC
+#pragma warning(pop)
+#endif
 
 } // namespace boost
+
+#ifdef BOOST_MSVC
+#  pragma warning(pop)
+#endif
 
 //
 // include the implementation of perl_matcher:

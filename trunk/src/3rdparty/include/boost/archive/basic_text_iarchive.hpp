@@ -61,7 +61,7 @@ public:
     {
         this->detail_common_iarchive::load_override(t, 0);
     }
-
+#if 0
     // Borland compilers has a problem with strong type.  Try to fix this here
     #if BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x582))
     void load_override(version_type & t, int){ 
@@ -70,7 +70,7 @@ public:
         t.t = version_type(x);
     }
     #endif
-
+#endif
     // text file don't include the optional information 
     void load_override(class_id_optional_type & /*t*/, int){}
 

@@ -51,7 +51,7 @@ namespace detail {
         else { 
             std::streamsize n=static_cast<std::streamsize>(w-size-!!prefix_space);
             std::streamsize n_after = 0, n_before = 0; 
-            res.reserve(w); // allocate once for the 2 inserts
+            res.reserve(static_cast<size_type>(w)); // allocate once for the 2 inserts
             if(center) 
                 n_after = n/2, n_before = n - n_after; 
             else 
@@ -60,12 +60,12 @@ namespace detail {
                 else
                     n_before = n;
             // now make the res string :
-            if(n_before) res.append(n_before, fill_char);
+            if(n_before) res.append(static_cast<size_type>(n_before), fill_char);
             if(prefix_space) 
               res.append(1, prefix_space);
             if (size)  
               res.append(beg, size);
-            if(n_after) res.append(n_after, fill_char);
+            if(n_after) res.append(static_cast<size_type>(n_after), fill_char);
         }
     } // -mk_str(..) 
 
@@ -125,6 +125,13 @@ namespace detail {
               typename basic_format<Ch, Tr, Alloc>::internal_streambuf_t & buf,
               io::detail::locale_t *loc_p = NULL)
     {
+#ifdef BOOST_MSVC
+       // If std::min<unsigned> or std::max<unsigned> are already instantiated
+       // at this point then we get a blizzard of warning messages when we call
+       // those templates with std::size_t as arguments.  Weird and very annoyning...
+#pragma warning(push)
+#pragma warning(disable:4267)
+#endif
         // does the actual conversion of x, with given params, into a string
         // using the supplied stringbuf.
 
@@ -211,9 +218,9 @@ namespace detail {
                 }
                 else { // hum..  we need to pad (multi_output, or spacepad present)
                     //find where we should pad
-                    size_type sz = (std::min)(res_size+prefix_space, tmp_size);
+                    size_type sz = (std::min)(res_size + (prefix_space ? 1 : 0), tmp_size);
                     size_type i = prefix_space;
-                    for(; i<sz && tmp_beg[i] == res[i-prefix_space]; ++i) {}
+                    for(; i<sz && tmp_beg[i] == res[i - (prefix_space ? 1 : 0)]; ++i) {}
                     if(i>=tmp_size) i=prefix_space;
                     res.assign(tmp_beg, i);
                                         std::streamsize d = w - static_cast<std::streamsize>(tmp_size);
@@ -227,6 +234,9 @@ namespace detail {
             }
         }
         buf.clear_buffer();
+#ifdef BOOST_MSVC
+#pragma warning(pop)
+#endif
     } // end- put(..)
 
 

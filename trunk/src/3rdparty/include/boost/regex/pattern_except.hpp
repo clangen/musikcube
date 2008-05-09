@@ -29,15 +29,22 @@
 
 namespace boost{
 
+#ifdef BOOST_MSVC
+#pragma warning(push)
+#pragma warning(disable: 4103)
+#endif
 #ifdef BOOST_HAS_ABI_HEADERS
 #  include BOOST_ABI_PREFIX
+#endif
+#ifdef BOOST_MSVC
+#pragma warning(pop)
 #endif
 
 #ifdef BOOST_MSVC
 #pragma warning(push)
 #pragma warning(disable : 4275)
 #endif
-   class BOOST_REGEX_DECL regex_error : public std::runtime_error
+class BOOST_REGEX_DECL regex_error : public std::runtime_error
 {
 public:
    explicit regex_error(const std::string& s, regex_constants::error_type err = regex_constants::error_unknown, std::ptrdiff_t pos = 0);
@@ -70,9 +77,19 @@ void raise_error(const traits& t, regex_constants::error_type code)
 
 }
 
+#ifdef BOOST_MSVC
+#pragma warning(pop)
+#endif
 
+#ifdef BOOST_MSVC
+#pragma warning(push)
+#pragma warning(disable: 4103)
+#endif
 #ifdef BOOST_HAS_ABI_HEADERS
 #  include BOOST_ABI_SUFFIX
+#endif
+#ifdef BOOST_MSVC
+#pragma warning(pop)
 #endif
 
 } // namespace boost

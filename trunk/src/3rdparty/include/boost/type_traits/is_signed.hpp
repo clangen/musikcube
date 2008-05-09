@@ -11,6 +11,7 @@
 #define BOOST_TT_IS_SIGNED_HPP_INCLUDED
 
 #include <boost/type_traits/is_integral.hpp>
+#include <boost/type_traits/remove_cv.hpp>
 #include <boost/type_traits/is_enum.hpp>
 #include <boost/type_traits/detail/ice_or.hpp>
 
@@ -26,7 +27,8 @@ namespace detail{
 template <class T>
 struct is_signed_helper
 {
-   BOOST_STATIC_CONSTANT(bool, value = (static_cast<T>(-1) < 0));
+   typedef typename remove_cv<T>::type no_cv_t;
+   BOOST_STATIC_CONSTANT(bool, value = (static_cast<no_cv_t>(-1) < 0));
 };
 
 template <bool integral_type>

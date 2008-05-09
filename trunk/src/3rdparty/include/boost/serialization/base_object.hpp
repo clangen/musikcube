@@ -37,114 +37,45 @@
 namespace boost {
 namespace serialization {
 
-namespace detail {
-    // metrowerks CodeWarrior
-    #if BOOST_WORKAROUND(__MWERKS__, BOOST_TESTED_AT(0x3206)) 
-        // only register void casts if the types are polymorphic
-        template<class Base, class Derived>
-        struct base_register{
-            struct nothing {
-                static const void_cast_detail::void_caster & invoke(){
-                    return static_cast<const void_cast_detail::void_caster &>(
-                        * static_cast<const void_cast_detail::void_caster *>(NULL)
-                    );
-                }
-            };
+namespace detail
+{
+// only register void casts if the types are polymorphic
+  template<class Base, class Derived>
+  struct base_register
+  {
+      static void const* execute(mpl::false_) { return 0; }
 
-            // hold a reference to the void_cast_register and void_caster in the hope of 
-            // ensuring code instantiation for some compilers with over-zealous link time 
-            // optimiser. The compiler that demanded this was CW
-            struct reg{
-                typedef const void_cast_detail::void_caster & (* t_vcr)(
-                    const Derived *,
-                    const Base *
-                );
-                t_vcr m_vcr;
-                static const void_cast_detail::void_caster & invoke(){
-                    return  void_cast_register<const Derived, const Base>(
-                        static_cast<const Derived *>(NULL),
-                        static_cast<const Base *>(NULL)
-                    );
-                }
-                reg() :
-                    m_vcr(static_cast<t_vcr>(void_cast_register))
-                {
-                }
-            } m_reg;
+      static void const* execute(mpl::true_)
+      {
+          return &void_cast_register((Derived const*)0, (Base const*)0);
+      }
+            
+      static void const* invoke()
+      {
+          typedef mpl::bool_<
+              type_info_implementation<Base>::type::is_polymorphic::value
+          > is_polymorphic;
+          
+          return execute(is_polymorphic());
+      }
+  };
 
-            static const void_cast_detail::void_caster & invoke(){
-                typedef BOOST_DEDUCED_TYPENAME mpl::eval_if<
-                    BOOST_DEDUCED_TYPENAME type_info_implementation<Base>::type::is_polymorphic,
-                    mpl::identity<reg>,
-                    mpl::identity<nothing>
-                >::type typex;
-                return typex::invoke();
-            }
-
-            const void_cast_detail::void_caster & m_vc;
-            Derived & m_d;
-
-            base_register(Derived & d) :
-                m_vc(invoke()),
-                m_d(d)
-            {}
-            Base & get_base() const {
-                return m_d;
-            }
-        };
-    #else
-        // only register void casts if the types are polymorphic
-        template<class Base, class Derived>
-        struct base_register{
-            struct nothing {
-                static void invoke(){}
-            };
-            struct reg{
-                static void invoke(){
-                    void_cast_register<const Derived, const Base>(
-                        static_cast<const Derived *>(NULL),
-                        static_cast<const Base *>(NULL)
-                    );
-                }
-            };
-            static void invoke(){
-                typedef BOOST_DEDUCED_TYPENAME mpl::eval_if<
-                    BOOST_DEDUCED_TYPENAME type_info_implementation<Base>::type::is_polymorphic,
-                    mpl::identity<reg>,
-                    mpl::identity<nothing>
-                >::type typex;
-                typex::invoke();
-            }
-        };
-    #endif
-    // get the base type for a given derived type
-    // preserving the const-ness
-    template<class B, class D>
-    struct base_cast
-    {
-        typedef BOOST_DEDUCED_TYPENAME
-            mpl::if_<
-                is_const<D>,
-                const B,
-                B
-        >::type type;
-        BOOST_STATIC_ASSERT(is_const<type>::value == is_const<D>::value);
-    };
+  // get the base type for a given derived type
+  // preserving the const-ness
+  template<class B, class D>
+  struct base_cast
+  {
+      typedef BOOST_DEDUCED_TYPENAME
+      mpl::if_<
+          is_const<D>,
+          const B,
+          B
+      >::type type;
+      BOOST_STATIC_ASSERT(is_const<type>::value == is_const<D>::value);
+  };
 } // namespace detail
 
-// metrowerks CodeWarrior
-#if BOOST_WORKAROUND(__MWERKS__, BOOST_TESTED_AT(0x3206)) 
-template<class Base, class Derived>
-BOOST_DEDUCED_TYPENAME detail::base_cast<Base, Derived>::type & 
-base_object(Derived &d)
-{
-    BOOST_STATIC_ASSERT(( is_base_and_derived<Base,Derived>::value));
-    BOOST_STATIC_ASSERT(! is_pointer<Derived>::value);
-    typedef BOOST_DEDUCED_TYPENAME detail::base_cast<Base, Derived>::type type;
-    return detail::base_register<type, Derived>(d).get_base();
-}
-// BORLAND
-#elif BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x560))
+#if BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x560))
 template<class Base, class Derived>
 const Base & 
 base_object(const Derived & d)

@@ -19,8 +19,15 @@
 #ifndef BOOST_REGEX_V4_BASIC_REGEX_PARSER_HPP
 #define BOOST_REGEX_V4_BASIC_REGEX_PARSER_HPP
 
+#ifdef BOOST_MSVC
+#pragma warning(push)
+#pragma warning(disable: 4103)
+#endif
 #ifdef BOOST_HAS_ABI_HEADERS
 #  include BOOST_ABI_PREFIX
+#endif
+#ifdef BOOST_MSVC
+#pragma warning(pop)
 #endif
 
 namespace boost{
@@ -28,7 +35,7 @@ namespace re_detail{
 
 #ifdef BOOST_MSVC
 #pragma warning(push)
-#pragma warning(disable:4244)
+#pragma warning(disable:4244 4800)
 #endif
 
 template <class charT, class traits>
@@ -777,6 +784,7 @@ bool basic_regex_parser<charT, traits>::parse_repeat(std::size_t low, std::size_
       case syntax_element_restart_continue:
       case syntax_element_jump:
       case syntax_element_startmark:
+      case syntax_element_backstep:
          // can't legally repeat any of the above:
          fail(regex_constants::error_badrepeat, m_position - m_base);
          return false;
@@ -1862,6 +1870,7 @@ bool basic_regex_parser<charT, traits>::parse_perl_extension()
    if(markid == -4)
    {
       re_syntax_base* b = this->getaddress(expected_alt_point);
+      // Make sure we have exactly one alternative following this state:
       if(b->type != syntax_element_alt)
       {
          re_alt* alt = static_cast<re_alt*>(this->insert_state(expected_alt_point, syntax_element_alt, sizeof(re_alt)));
@@ -1870,6 +1879,15 @@ bool basic_regex_parser<charT, traits>::parse_perl_extension()
       else if(this->getaddress(static_cast<re_alt*>(b)->alt.i, b)->type == syntax_element_alt)
       {
          fail(regex_constants::error_bad_pattern, m_position - m_base);
+         return false;
+      }
+      // check for invalid repetition of next state:
+      b = this->getaddress(expected_alt_point);
+      b = this->getaddress(static_cast<re_alt*>(b)->next.i, b);
+      if((b->type != syntax_element_assert_backref)
+         && (b->type != syntax_element_startmark))
+      {
+         fail(regex_constants::error_badrepeat, m_position - m_base);
          return false;
       }
    }
@@ -2082,8 +2100,15 @@ bool basic_regex_parser<charT, traits>::unwind_alts(std::ptrdiff_t last_paren_st
 } // namespace re_detail
 } // namespace boost
 
+#ifdef BOOST_MSVC
+#pragma warning(push)
+#pragma warning(disable: 4103)
+#endif
 #ifdef BOOST_HAS_ABI_HEADERS
 #  include BOOST_ABI_SUFFIX
+#endif
+#ifdef BOOST_MSVC
+#pragma warning(pop)
 #endif
 
 #endif

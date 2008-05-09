@@ -20,19 +20,22 @@
 #include <cstddef>
 
 #include <boost/config.hpp>
+#include <boost/archive/detail/auto_link_archive.hpp>
 
 namespace std{
     #if defined(__LIBCOMO__)
         using ::mbstate_t;
     #elif defined(__QNXNTO__)
-        using std::mbstate_t;
+        //using std::mbstate_t;
     #elif defined(BOOST_DINKUMWARE_STDLIB) && BOOST_DINKUMWARE_STDLIB == 1
         using ::mbstate_t;
     #elif defined(__SGI_STL_PORT)
     #elif defined(BOOST_NO_STDC_NAMESPACE)
         using ::codecvt;
         using ::mbstate_t;
-    #endif
+    #elif defined(BOOST_RWSTD_VER)
+        using ::mbstate_t;
+   #endif
 } // namespace std
 
 namespace boost {
@@ -56,7 +59,7 @@ public:
 template<>
 class codecvt_null<wchar_t> : public std::codecvt<wchar_t, char, std::mbstate_t>
 {
-    virtual std::codecvt_base::result
+    virtual BOOST_ARCHIVE_DECL(std::codecvt_base::result)
     do_out(
         std::mbstate_t & state,
         const wchar_t * first1,
@@ -66,7 +69,7 @@ class codecvt_null<wchar_t> : public std::codecvt<wchar_t, char, std::mbstate_t>
         char * last2,
         char * & next2
     ) const;
-    virtual std::codecvt_base::result
+    virtual BOOST_ARCHIVE_DECL(std::codecvt_base::result)
     do_in(
         std::mbstate_t & state,
         const char * first1,

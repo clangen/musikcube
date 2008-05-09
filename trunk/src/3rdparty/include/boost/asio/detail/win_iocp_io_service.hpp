@@ -2,7 +2,7 @@
 // win_iocp_io_service.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2007 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2008 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -34,7 +34,6 @@
 #include <boost/asio/detail/service_base.hpp>
 #include <boost/asio/detail/socket_types.hpp>
 #include <boost/asio/detail/timer_queue.hpp>
-#include <boost/asio/detail/win_iocp_operation.hpp>
 #include <boost/asio/detail/mutex.hpp>
 
 namespace boost {
@@ -45,14 +44,64 @@ class win_iocp_io_service
   : public boost::asio::detail::service_base<win_iocp_io_service>
 {
 public:
-  // Base class for all operations.
-  typedef win_iocp_operation operation;
+  // Base class for all operations. A function pointer is used instead of
+  // virtual functions to avoid the associated overhead.
+  //
+  // This class inherits from OVERLAPPED so that we can downcast to get back to
+  // the operation pointer from the LPOVERLAPPED out parameter of
+  // GetQueuedCompletionStatus.
+  class operation
+    : public OVERLAPPED
+  {
+  public:
+    typedef void (*invoke_func_type)(operation*, DWORD, size_t);
+    typedef void (*destroy_func_type)(operation*);
+
+    operation(win_iocp_io_service& iocp_service,
+        invoke_func_type invoke_func, destroy_func_type destroy_func)
+      : outstanding_operations_(&iocp_service.outstanding_operations_),
+        invoke_func_(invoke_func),
+        destroy_func_(destroy_func)
+    {
+      Internal = 0;
+      InternalHigh = 0;
+      Offset = 0;
+      OffsetHigh = 0;
+      hEvent = 0;
+
+      ::InterlockedIncrement(outstanding_operations_);
+    }
+
+    void do_completion(DWORD last_error, size_t bytes_transferred)
+    {
+      invoke_func_(this, last_error, bytes_transferred);
+    }
+
+    void destroy()
+    {
+      destroy_func_(this);
+    }
+
+  protected:
+    // Prevent deletion through this type.
+    ~operation()
+    {
+      ::InterlockedDecrement(outstanding_operations_);
+    }
+
+  private:
+    long* outstanding_operations_;
+    invoke_func_type invoke_func_;
+    destroy_func_type destroy_func_;
+  };
+
 
   // Constructor.
   win_iocp_io_service(boost::asio::io_service& io_service)
     : boost::asio::detail::service_base<win_iocp_io_service>(io_service),
       iocp_(),
       outstanding_work_(0),
+      outstanding_operations_(0),
       stopped_(0),
       shutdown_(0),
       timer_thread_(0),
@@ -80,7 +129,7 @@ public:
   {
     ::InterlockedExchange(&shutdown_, 1);
 
-    for (;;)
+    while (::InterlockedExchangeAdd(&outstanding_operations_, 0) > 0)
     {
       DWORD bytes_transferred = 0;
 #if (WINVER < 0x0500)
@@ -89,12 +138,8 @@ public:
       DWORD_PTR completion_key = 0;
 #endif
       LPOVERLAPPED overlapped = 0;
-      ::SetLastError(0);
-      BOOL ok = ::GetQueuedCompletionStatus(iocp_.handle,
-          &bytes_transferred, &completion_key, &overlapped, 0);
-      DWORD last_error = ::GetLastError();
-      if (!ok && overlapped == 0 && last_error == WAIT_TIMEOUT)
-        break;
+      ::GetQueuedCompletionStatus(iocp_.handle, &bytes_transferred,
+          &completion_key, &overlapped, INFINITE);
       if (overlapped)
         static_cast<operation*>(overlapped)->destroy();
     }
@@ -215,7 +260,7 @@ public:
   void dispatch(Handler handler)
   {
     if (call_stack<win_iocp_io_service>::contains(this))
-      asio_handler_invoke_helpers::invoke(handler, &handler);
+      boost_asio_handler_invoke_helpers::invoke(handler, &handler);
     else
       post(handler);
   }
@@ -250,7 +295,7 @@ public:
   }
 
   // Request invocation of the given OVERLAPPED-derived operation.
-  void post_completion(win_iocp_operation* op, DWORD op_last_error,
+  void post_completion(operation* op, DWORD op_last_error,
       DWORD bytes_transferred)
   {
     // Enqueue the operation on the I/O completion port.
@@ -372,13 +417,28 @@ private:
       // Dispatch any pending timers.
       if (dispatching_timers)
       {
-        boost::asio::detail::mutex::scoped_lock lock(timer_mutex_);
-        timer_queues_copy_ = timer_queues_;
-        for (std::size_t i = 0; i < timer_queues_.size(); ++i)
+        try
         {
-          timer_queues_[i]->dispatch_timers();
-          timer_queues_[i]->dispatch_cancellations();
-          timer_queues_[i]->cleanup_timers();
+          boost::asio::detail::mutex::scoped_lock lock(timer_mutex_);
+          timer_queues_copy_ = timer_queues_;
+          for (std::size_t i = 0; i < timer_queues_copy_.size(); ++i)
+          {
+            timer_queues_copy_[i]->dispatch_timers();
+            timer_queues_copy_[i]->dispatch_cancellations();
+            timer_queues_copy_[i]->cleanup_timers();
+          }
+        }
+        catch (...)
+        {
+          // Transfer responsibility for dispatching timers to another thread.
+          if (::InterlockedCompareExchange(&timer_thread_,
+                0, this_thread_id) == this_thread_id)
+          {
+            ::PostQueuedCompletionStatus(iocp_.handle,
+                0, transfer_timer_dispatching, 0);
+          }
+
+          throw;
         }
       }
 
@@ -533,7 +593,7 @@ private:
   {
     handler_operation(win_iocp_io_service& io_service,
         Handler handler)
-      : operation(&handler_operation<Handler>::do_completion_impl,
+      : operation(io_service, &handler_operation<Handler>::do_completion_impl,
           &handler_operation<Handler>::destroy_impl),
         io_service_(io_service),
         handler_(handler)
@@ -567,7 +627,7 @@ private:
       ptr.reset();
 
       // Make the upcall.
-      asio_handler_invoke_helpers::invoke(handler, &handler);
+      boost_asio_handler_invoke_helpers::invoke(handler, &handler);
     }
 
     static void destroy_impl(operation* op)
@@ -594,6 +654,10 @@ private:
   // The count of unfinished work.
   long outstanding_work_;
 
+  // The count of unfinished operations.
+  long outstanding_operations_;
+  friend class operation;
+
   // Flag to indicate whether the event loop has been stopped.
   long stopped_;
 
@@ -603,7 +667,7 @@ private:
   enum
   {
     // Maximum GetQueuedCompletionStatus timeout, in milliseconds.
-    max_timeout = 1000,
+    max_timeout = 500,
 
     // Completion key value to indicate that responsibility for dispatching
     // timers is being cooperatively transferred from one thread to another.

@@ -19,8 +19,15 @@
 #ifndef BOOST_REGEX_V4_SUB_MATCH_HPP
 #define BOOST_REGEX_V4_SUB_MATCH_HPP
 
+#ifdef BOOST_MSVC
+#pragma warning(push)
+#pragma warning(disable: 4103)
+#endif
 #ifdef BOOST_HAS_ABI_HEADERS
 #  include BOOST_ABI_PREFIX
+#endif
+#ifdef BOOST_MSVC
+#pragma warning(pop)
 #endif
 
 namespace boost{
@@ -487,8 +494,15 @@ sub_match<BidiIterator>::operator unsigned int()const
 
 } // namespace boost
 
+#ifdef BOOST_MSVC
+#pragma warning(push)
+#pragma warning(disable: 4103)
+#endif
 #ifdef BOOST_HAS_ABI_HEADERS
 #  include BOOST_ABI_SUFFIX
+#endif
+#ifdef BOOST_MSVC
+#pragma warning(pop)
 #endif
 
 #endif

@@ -15,29 +15,19 @@
 # pragma once
 #endif
 
-#include <boost/range/config.hpp>
 #include <boost/range/iterator.hpp>
-#include <boost/range/const_iterator.hpp>
-#include <boost/type_traits/is_const.hpp>
-#include <boost/mpl/if.hpp>
 
 namespace boost
 {
-    //////////////////////////////////////////////////////////////////////////
-    // default
-    //////////////////////////////////////////////////////////////////////////
+    //
+    // This interface is deprecated, use range_iterator<T>
+    //
     
     template< typename C >
-    struct range_result_iterator
-    {
-        typedef BOOST_RANGE_DEDUCED_TYPENAME 
-            mpl::if_< BOOST_DEDUCED_TYPENAME is_const<C>::type, 
-                      BOOST_DEDUCED_TYPENAME range_const_iterator<C>::type,
-                      BOOST_DEDUCED_TYPENAME range_iterator<C>::type >::type type;
-    };
+    struct range_result_iterator : range_iterator<C>
+    { };
     
 } // namespace boost
 
-//#endif // BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION
 
 #endif

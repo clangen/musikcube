@@ -1,4 +1,4 @@
-/* Copyright 2003-2005 Joaquín M López Muñoz.
+/* Copyright 2003-2007 Joaquín M López Muñoz.
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
@@ -46,7 +46,7 @@ template<typename Value,typename IndexSpecifierList,typename Allocator>
 class index_base
 {
 protected:
-  typedef index_node_base<Value>              node_type;
+  typedef index_node_base<Value,Allocator>    node_type;
   typedef typename multi_index_node_type<
     Value,IndexSpecifierList,Allocator>::type final_node_type;
   typedef multi_index_container<
@@ -117,6 +117,8 @@ protected:
 
   bool modify_(node_type*){return true;}
 
+  bool modify_rollback_(node_type*){return true;}
+
 #if !defined(BOOST_MULTI_INDEX_DISABLE_SERIALIZATION)
   /* serialization */
 
@@ -162,8 +164,12 @@ protected:
     {return final().replace_(k,x);}
 
   template<typename Modifier>
-  bool final_modify_(Modifier mod,final_node_type* x)
+  bool final_modify_(Modifier& mod,final_node_type* x)
     {return final().modify_(mod,x);}
+
+  template<typename Modifier,typename Rollback>
+  bool final_modify_(Modifier& mod,Rollback& back,final_node_type* x)
+    {return final().modify_(mod,back,x);}
 
 #if defined(BOOST_MULTI_INDEX_ENABLE_INVARIANT_CHECKING)
   void final_check_invariant_()const{final().check_invariant_();}

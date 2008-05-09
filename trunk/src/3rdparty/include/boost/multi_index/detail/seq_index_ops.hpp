@@ -1,4 +1,4 @@
-/* Copyright 2003-2006 Joaquín M López Muñoz.
+/* Copyright 2003-2007 Joaquín M López Muñoz.
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
@@ -77,23 +77,28 @@ void sequenced_index_merge(SequencedIndex& x,SequencedIndex& y,Compare comp)
 
 template<typename Node,typename Compare>
 void sequenced_index_collate(
-  sequenced_index_node_impl* x,sequenced_index_node_impl* y,Compare comp
+  BOOST_DEDUCED_TYPENAME Node::impl_type* x,
+  BOOST_DEDUCED_TYPENAME Node::impl_type* y,
+  Compare comp
   BOOST_APPEND_EXPLICIT_TEMPLATE_TYPE(Node))
 {
-  sequenced_index_node_impl* first0=x->next();
-  sequenced_index_node_impl* last0=x;
-  sequenced_index_node_impl* first1=y->next();
-  sequenced_index_node_impl* last1=y;
+  typedef typename Node::impl_type    impl_type;
+  typedef typename Node::impl_pointer impl_pointer;
+
+  impl_pointer first0=x->next();
+  impl_pointer last0=x;
+  impl_pointer first1=y->next();
+  impl_pointer last1=y;
   while(first0!=last0&&first1!=last1){
     if(comp(
         Node::from_impl(first1)->value(),Node::from_impl(first0)->value())){
-      sequenced_index_node_impl* tmp=first1->next();
-      sequenced_index_node_impl::relink(first0,first1);
+      impl_pointer tmp=first1->next();
+      impl_type::relink(first0,first1);
       first1=tmp;
     }
     else first0=first0->next();
   }
-  sequenced_index_node_impl::relink(last0,first1,last1);
+  impl_type::relink(last0,first1,last1);
 }
 
 /* Some versions of CGG require a bogus typename in counter_spc
@@ -122,54 +127,64 @@ void sequenced_index_sort(Node* header,Compare comp)
   if(header->next()==header->impl()||
      header->next()->next()==header->impl())return;
 
-  aligned_storage<
-    sizeof(sequenced_index_node_impl),
-    alignment_of<
-    sequenced_index_node_impl>::value
-  >::type                                   carry_spc;
-  sequenced_index_node_impl&                carry=
-    *static_cast<sequenced_index_node_impl*>(static_cast<void*>(&carry_spc));
-  aligned_storage<
+  typedef typename Node::impl_type      impl_type;
+  typedef typename Node::impl_pointer   impl_pointer;
+
+  typedef typename aligned_storage<
+    sizeof(impl_type),
+    alignment_of<impl_type>::value
+  >::type                               carry_spc_type;
+  carry_spc_type                        carry_spc;
+  impl_type&                            carry=
+    *static_cast<impl_type*>(static_cast<void*>(&carry_spc));
+  typedef typename aligned_storage<
     sizeof(
-      sequenced_index_node_impl
+      impl_type
         [sequenced_index_sort_max_fill]),
     alignment_of<
-      sequenced_index_node_impl
+      impl_type
         [sequenced_index_sort_max_fill]
     >::value
-  >::type                                   counter_spc;
-  sequenced_index_node_impl*                counter=
-    static_cast<sequenced_index_node_impl*>(static_cast<void*>(&counter_spc));
-  std::size_t                               fill=0;
+  >::type                               counter_spc_type;
+  counter_spc_type                      counter_spc;
+  impl_type*                            counter=
+    static_cast<impl_type*>(static_cast<void*>(&counter_spc));
+  std::size_t                           fill=0;
 
-  carry.prior()=carry.next()=&carry;
-  counter[0].prior()=counter[0].next()=&counter[0];
+  carry.prior()=carry.next()=static_cast<impl_pointer>(&carry);
+  counter[0].prior()=counter[0].next()=static_cast<impl_pointer>(&counter[0]);
 
   BOOST_TRY{
     while(header->next()!=header->impl()){
-      sequenced_index_node_impl::relink(carry.next(),header->next());
+      impl_type::relink(carry.next(),header->next());
       std::size_t i=0;
-      while(i<fill&&counter[i].next()!=&counter[i]){
+      while(i<fill&&counter[i].next()!=static_cast<impl_pointer>(&counter[i])){
         sequenced_index_collate<Node>(&carry,&counter[i++],comp);
       }
-      sequenced_index_node_impl::swap(&carry,&counter[i]);
+      impl_type::swap(
+        static_cast<impl_pointer>(&carry),
+        static_cast<impl_pointer>(&counter[i]));
       if(i==fill){
         ++fill;
-        counter[fill].prior()=counter[fill].next()=&counter[fill];
+        counter[fill].prior()=counter[fill].next()=
+          static_cast<impl_pointer>(&counter[fill]);
       }
     }
 
     for(std::size_t i=1;i<fill;++i){
       sequenced_index_collate<Node>(&counter[i],&counter[i-1],comp);
     }
-    sequenced_index_node_impl::swap(header->impl(),&counter[fill-1]);
+    impl_type::swap(
+      header->impl(),static_cast<impl_pointer>(&counter[fill-1]));
   }
   BOOST_CATCH(...)
   {
-    sequenced_index_node_impl::relink(header->impl(),carry.next(),&carry);
+    impl_type::relink(
+      header->impl(),carry.next(),static_cast<impl_pointer>(&carry));
     for(std::size_t i=0;i<=fill;++i){
-      sequenced_index_node_impl::relink(
-        header->impl(),counter[i].next(),&counter[i]);
+      impl_type::relink(
+        header->impl(),counter[i].next(),
+        static_cast<impl_pointer>(&counter[i]));
     }
     BOOST_RETHROW;
   }

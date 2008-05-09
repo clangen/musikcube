@@ -10,9 +10,9 @@
 //
 // See http://www.boost.org/libs/mpl for documentation.
 
-// $Source: /cvsroot/boost/boost/boost/mpl/aux_/lambda_spec.hpp,v $
-// $Date: 2007/01/29 07:28:45 $
-// $Revision: 1.8.14.1 $
+// $Source$
+// $Date: 2007-01-29 02:28:45 -0500 (Mon, 29 Jan 2007) $
+// $Revision: 36830 $
 
 #include <boost/mpl/void.hpp>
 #include <boost/mpl/lambda_fwd.hpp>

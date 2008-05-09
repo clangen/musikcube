@@ -64,60 +64,10 @@ namespace boost
             };
         };
         
-        template<>
-        struct range_iterator_<char_array_>
-        { 
-            template< typename T >
-            struct pts
-            {
-                 typedef BOOST_RANGE_DEDUCED_TYPENAME 
-                    remove_extent<T>::type* type;
-            };
-        };
-
-        template<>
-        struct range_iterator_<char_ptr_>
-        {
-            template< typename S >
-            struct pts
-            {
-                typedef char* type; 
-            };         
-        };
-        
-        template<>
-        struct range_iterator_<const_char_ptr_>
-        {
-            template< typename S >
-            struct pts
-            {
-                typedef const char* type;
-            };         
-        };
-
-        template<>
-        struct range_iterator_<wchar_t_ptr_>
-        {
-            template< typename S >
-            struct pts
-            {
-                typedef wchar_t* type; 
-            };         
-        };
-
-        template<>
-        struct range_iterator_<const_wchar_t_ptr_>
-        {
-             template< typename S >
-             struct pts
-             {
-                 typedef const wchar_t* type; 
-             };         
-         };
     } 
 
     template< typename C >
-    class range_iterator
+    class range_mutable_iterator
     {
         typedef BOOST_RANGE_DEDUCED_TYPENAME range_detail::range<C>::type c_type;
     public:

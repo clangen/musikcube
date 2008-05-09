@@ -32,6 +32,10 @@ inline void current_function_helper()
 
 # define BOOST_CURRENT_FUNCTION __PRETTY_FUNCTION__
 
+#elif defined(__DMC__) && (__DMC__ >= 0x810)
+
+# define BOOST_CURRENT_FUNCTION __PRETTY_FUNCTION__
+
 #elif defined(__FUNCSIG__)
 
 # define BOOST_CURRENT_FUNCTION __FUNCSIG__

@@ -1,4 +1,4 @@
-/* Copyright 2003-2005 Joaquín M López Muñoz.
+/* Copyright 2003-2007 Joaquín M López Muñoz.
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
@@ -179,7 +179,7 @@ protected:
   }
 
 private:
-  entry* entries()const{return spc.data();}
+  entry* entries()const{return &*spc.data();}
 
   auto_space<entry,Allocator> spc;
   std::size_t                 size_;

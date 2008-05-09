@@ -1,4 +1,4 @@
-/* Copyright 2003-2005 Joaquín M López Muñoz.
+/* Copyright 2003-2007 Joaquín M López Muñoz.
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
@@ -24,19 +24,19 @@ namespace detail{
  * with references to references, dealing with function pointers, etc.
  */
 
-template<typename Modifier,typename Value,typename KeyFromValue>
+template<typename Fun,typename Value,typename KeyFromValue>
 struct modify_key_adaptor
 {
 
-  modify_key_adaptor(Modifier mod_,KeyFromValue kfv_):mod(mod_),kfv(kfv_){}
+  modify_key_adaptor(Fun f_,KeyFromValue kfv_):f(f_),kfv(kfv_){}
 
   void operator()(Value& x)
   {
-    mod(kfv(x));
+    f(kfv(x));
   }
 
 private:
-  Modifier     mod;
+  Fun          f;
   KeyFromValue kfv;
 };
 

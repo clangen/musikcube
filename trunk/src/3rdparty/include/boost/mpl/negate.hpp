@@ -10,9 +10,9 @@
 //
 // See http://www.boost.org/libs/mpl for documentation.
 
-// $Source: /cvsroot/boost/boost/boost/mpl/negate.hpp,v $
-// $Date: 2004/09/07 09:06:08 $
-// $Revision: 1.4 $
+// $Source$
+// $Date: 2004-09-07 05:06:10 -0400 (Tue, 07 Sep 2004) $
+// $Revision: 24948 $
 
 #include <boost/mpl/integral_c.hpp>
 #include <boost/mpl/aux_/msvc_eti_base.hpp>

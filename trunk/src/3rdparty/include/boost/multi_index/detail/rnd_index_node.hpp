@@ -1,4 +1,4 @@
-/* Copyright 2003-2006 Joaquín M López Muñoz.
+/* Copyright 2003-2007 Joaquín M López Muñoz.
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
@@ -15,7 +15,9 @@
 
 #include <boost/config.hpp> /* keep it first to prevent nasty warns in MSVC */
 #include <algorithm>
+#include <boost/detail/allocator_utilities.hpp>
 #include <boost/math/common_factor_rt.hpp>
+#include <boost/multi_index/detail/prevent_eti.hpp>
 #include <cstddef>
 #include <functional>
 
@@ -25,42 +27,58 @@ namespace multi_index{
 
 namespace detail{
 
+template<typename Allocator>
 struct random_access_index_node_impl
 {
-  random_access_index_node_impl**& up(){return up_;}
-  random_access_index_node_impl**  up()const{return up_;}
+  typedef typename prevent_eti<
+    Allocator,
+    typename boost::detail::allocator::rebind_to<
+      Allocator,random_access_index_node_impl
+    >::type
+  >::type::pointer                                pointer;
+  typedef typename prevent_eti<
+    Allocator,
+    typename boost::detail::allocator::rebind_to<
+      Allocator,random_access_index_node_impl
+    >::type
+  >::type::const_pointer                          const_pointer;
+  typedef typename prevent_eti<
+    Allocator,
+    typename boost::detail::allocator::rebind_to<
+      Allocator,pointer
+    >::type
+  >::type::pointer                                ptr_pointer;
+
+  ptr_pointer& up(){return up_;}
+  ptr_pointer  up()const{return up_;}
 
   /* interoperability with rnd_node_iterator */
 
-  static void increment(random_access_index_node_impl*& x)
+  static void increment(pointer& x)
   {
     x=*(x->up()+1);
   }
 
-  static void decrement(random_access_index_node_impl*& x)
+  static void decrement(pointer& x)
   {
     x=*(x->up()-1);
   }
 
-  static void advance(
-    random_access_index_node_impl*& x,std::ptrdiff_t n)
+  static void advance(pointer& x,std::ptrdiff_t n)
   {
     x=*(x->up()+n);
   }
 
-  static std::ptrdiff_t distance(
-    random_access_index_node_impl* x,random_access_index_node_impl* y)
+  static std::ptrdiff_t distance(pointer x,pointer y)
   {
     return y->up()-x->up();
   }
 
   /* algorithmic stuff */
 
-  static void relocate(
-    random_access_index_node_impl** pos,
-    random_access_index_node_impl** x)
+  static void relocate(ptr_pointer pos,ptr_pointer x)
   {
-    random_access_index_node_impl* n=*x;
+    pointer n=*x;
     if(x<pos){
       extract(x,pos);
       *(pos-1)=n;
@@ -77,12 +95,9 @@ struct random_access_index_node_impl
     }
   };
 
-  static void relocate(
-    random_access_index_node_impl** pos,
-    random_access_index_node_impl** first,
-    random_access_index_node_impl** last)
+  static void relocate(ptr_pointer pos,ptr_pointer first,ptr_pointer last)
   {
-    random_access_index_node_impl** begin,**middle,**end;
+    ptr_pointer begin,middle,end;
     if(pos<first){
       begin=pos;
       middle=first;
@@ -100,38 +115,36 @@ struct random_access_index_node_impl
     std::ptrdiff_t p=math::gcd(n,m);
 
     for(std::ptrdiff_t i=0;i<p;++i){
-      random_access_index_node_impl* tmp=begin[i];
+      pointer tmp=begin[i];
       for(std::ptrdiff_t j=i,k;;){
         if(j<n_m)k=j+m;
         else     k=j-n_m;
         if(k==i){
-          begin[j]=tmp;
-          begin[j]->up()=&begin[j];
+          *(begin+j)=tmp;
+          (*(begin+j))->up()=begin+j;
           break;
         }
         else{
-          begin[j]=begin[k];
-          begin[j]->up()=&begin[j];
+          *(begin+j)=*(begin+k);
+          (*(begin+j))->up()=begin+j;
         }
 
         if(k<n_m)j=k+m;
         else     j=k-n_m;
         if(j==i){
-          begin[k]=tmp;
-          begin[k]->up()=&begin[k];
+          *(begin+k)=tmp;
+          (*(begin+k))->up()=begin+k;
           break;
         }
         else{
-          begin[k]=begin[j];
-          begin[k]->up()=&begin[k];
+          *(begin+k)=*(begin+j);
+          (*(begin+k))->up()=begin+k;
         }
       }
     }
   };
 
-  static void extract(
-    random_access_index_node_impl** x,
-    random_access_index_node_impl** pend)
+  static void extract(ptr_pointer x,ptr_pointer pend)
   {
     --pend;
     while(x!=pend){
@@ -142,9 +155,7 @@ struct random_access_index_node_impl
   }
 
   static void transfer(
-    random_access_index_node_impl** pbegin0,
-    random_access_index_node_impl** pend0,
-    random_access_index_node_impl** pbegin1)
+    ptr_pointer pbegin0,ptr_pointer pend0,ptr_pointer pbegin1)
   {
     while(pbegin0!=pend0){
       *pbegin1=*pbegin0++;
@@ -153,9 +164,7 @@ struct random_access_index_node_impl
     }
   }
 
-  static void reverse(
-    random_access_index_node_impl** pbegin,
-    random_access_index_node_impl** pend)
+  static void reverse(ptr_pointer pbegin,ptr_pointer pend)
   {
     std::ptrdiff_t d=(pend-pbegin)/2;
     for(std::ptrdiff_t i=0;i<d;++i){
@@ -167,68 +176,100 @@ struct random_access_index_node_impl
   }
 
 private:
-  random_access_index_node_impl** up_;
+  ptr_pointer up_;
 };
 
 template<typename Super>
-struct random_access_index_node_trampoline:random_access_index_node_impl{};
+struct random_access_index_node_trampoline:
+  prevent_eti<
+    Super,
+    random_access_index_node_impl<
+      typename boost::detail::allocator::rebind_to<
+        typename Super::allocator_type,
+        void
+      >::type
+    >
+  >::type
+{
+  typedef typename prevent_eti<
+    Super,
+    random_access_index_node_impl<
+      typename boost::detail::allocator::rebind_to<
+        typename Super::allocator_type,
+        void
+      >::type
+    >
+  >::type impl_type;
+};
 
 template<typename Super>
 struct random_access_index_node:
   Super,random_access_index_node_trampoline<Super>
 {
-  random_access_index_node_impl**& up(){return impl_type::up();}
-  random_access_index_node_impl**  up()const{return impl_type::up();}
+private:
+  typedef random_access_index_node_trampoline<Super> trampoline;
 
-  random_access_index_node_impl*       impl()
-    {return static_cast<impl_type*>(this);}
-  const random_access_index_node_impl* impl()const
-    {return static_cast<const impl_type*>(this);}
+public:
+  typedef typename trampoline::impl_type     impl_type;
+  typedef typename trampoline::pointer       impl_pointer;
+  typedef typename trampoline::const_pointer const_impl_pointer;
+  typedef typename trampoline::ptr_pointer   impl_ptr_pointer;
 
-  static random_access_index_node* from_impl(random_access_index_node_impl *x)
+  impl_ptr_pointer& up(){return trampoline::up();}
+  impl_ptr_pointer  up()const{return trampoline::up();}
+
+  impl_pointer impl()
   {
-    return static_cast<random_access_index_node*>(
-      static_cast<impl_type*>(x));
+    return static_cast<impl_pointer>(
+      static_cast<impl_type*>(static_cast<trampoline*>(this)));
   }
 
-  static const random_access_index_node* from_impl(
-    const random_access_index_node_impl* x)
+  const_impl_pointer impl()const
+  {
+    return static_cast<const_impl_pointer>(
+      static_cast<const impl_type*>(static_cast<const trampoline*>(this)));
+  }
+
+  static random_access_index_node* from_impl(impl_pointer x)
+  {
+    return static_cast<random_access_index_node*>(
+      static_cast<trampoline*>(&*x));
+  }
+
+  static const random_access_index_node* from_impl(const_impl_pointer x)
   {
     return static_cast<const random_access_index_node*>(
-      static_cast<const impl_type*>(x));
+      static_cast<const trampoline*>(&*x));
   }
 
   /* interoperability with rnd_node_iterator */
 
   static void increment(random_access_index_node*& x)
   {
-    random_access_index_node_impl* xi=x->impl();
-    impl_type::increment(xi);
+    impl_pointer xi=x->impl();
+    trampoline::increment(xi);
     x=from_impl(xi);
   }
 
   static void decrement(random_access_index_node*& x)
   {
-    random_access_index_node_impl* xi=x->impl();
-    impl_type::decrement(xi);
+    impl_pointer xi=x->impl();
+    trampoline::decrement(xi);
     x=from_impl(xi);
   }
 
   static void advance(random_access_index_node*& x,std::ptrdiff_t n)
   {
-    random_access_index_node_impl* xi=x->impl();
-    impl_type::advance(xi,n);
+    impl_pointer xi=x->impl();
+    trampoline::advance(xi,n);
     x=from_impl(xi);
   }
 
   static std::ptrdiff_t distance(
     random_access_index_node* x,random_access_index_node* y)
   {
-    return impl_type::distance(x->impl(),y->impl());
+    return trampoline::distance(x->impl(),y->impl());
   }
-
-private:
-  typedef random_access_index_node_trampoline<Super> impl_type;
 };
 
 } /* namespace multi_index::detail */

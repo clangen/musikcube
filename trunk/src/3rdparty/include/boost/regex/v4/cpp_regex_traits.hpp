@@ -41,9 +41,17 @@
 
 #include <istream>
 #include <ios>
+#include <climits>
 
+#ifdef BOOST_MSVC
+#pragma warning(push)
+#pragma warning(disable: 4103)
+#endif
 #ifdef BOOST_HAS_ABI_HEADERS
 #  include BOOST_ABI_PREFIX
+#endif
+#ifdef BOOST_MSVC
+#pragma warning(pop)
 #endif
 
 #ifdef BOOST_MSVC
@@ -120,7 +128,7 @@ parser_buf<charT, traits>::seekoff(off_type off, ::std::ios_base::seekdir way, :
       break;
    case ::std::ios_base::cur:
    {
-      std::ptrdiff_t newpos = pos + off;
+      std::ptrdiff_t newpos = static_cast<std::ptrdiff_t>(pos + off);
       if((newpos < 0) || (newpos > size))
          return pos_type(off_type(-1));
       else
@@ -1032,10 +1040,18 @@ static_mutex& cpp_regex_traits<charT>::get_mutex_inst()
 #pragma warning(pop)
 #endif
 
+#ifdef BOOST_MSVC
+#pragma warning(push)
+#pragma warning(disable: 4103)
+#endif
 #ifdef BOOST_HAS_ABI_HEADERS
 #  include BOOST_ABI_SUFFIX
 #endif
-
+#ifdef BOOST_MSVC
+#pragma warning(pop)
 #endif
 
 #endif
+
+#endif
+

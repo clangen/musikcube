@@ -2,7 +2,7 @@
 // buffer.hpp
 // ~~~~~~~~~~
 //
-// Copyright (c) 2003-2007 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2008 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -393,7 +393,12 @@ public:
 
   ~buffer_debug_check()
   {
+#if BOOST_WORKAROUND(BOOST_MSVC, >= 1400)
+    // MSVC's string iterator checking may crash in a std::string::iterator
+    // object's destructor when the iterator points to an already-destroyed
+    // std::string object, unless the iterator is cleared first.
     iter_ = Iterator();
+#endif // BOOST_WORKAROUND(BOOST_MSVC, >= 1400)
   }
 
   void operator()()

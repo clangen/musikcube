@@ -63,7 +63,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libboost_filesystem-vc80-mt-sgd-1_34_1.lib gdiplus.lib comctl32.lib"
+				AdditionalDependencies="gdiplus.lib comctl32.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="../3rdparty/lib"
 				IgnoreDefaultLibraryNames=""
@@ -146,7 +146,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libboost_filesystem-vc80-mt-s-1_34_1.lib gdiplus.lib comctl32.lib"
+				AdditionalDependencies="gdiplus.lib comctl32.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../3rdparty/lib"
 				GenerateDebugInformation="true"
@@ -405,6 +405,26 @@
 					RelativePath=".\SettingsView.hpp"
 					>
 				</File>
+				<Filter
+					Name="settings"
+					>
+					<File
+						RelativePath=".\Settings\SyncPathController.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Settings\SyncPathController.hpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Settings\SyncPathModel.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Settings\SyncPathModel.hpp"
+						>
+					</File>
+				</Filter>
 			</Filter>
 		</Filter>
 		<File

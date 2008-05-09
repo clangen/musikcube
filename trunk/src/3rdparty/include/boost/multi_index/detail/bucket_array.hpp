@@ -1,4 +1,4 @@
-/* Copyright 2003-2005 Joaquín M López Muñoz.
+/* Copyright 2003-2007 Joaquín M López Muñoz.
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <boost/multi_index/detail/auto_space.hpp>
 #include <boost/multi_index/detail/hash_index_node.hpp>
+#include <boost/multi_index/detail/prevent_eti.hpp>
 #include <boost/noncopyable.hpp>
 #include <cstddef>
 #include <limits.h>
@@ -84,8 +85,20 @@ protected:
 template<typename Allocator>
 class bucket_array:public bucket_array_base
 {
+  typedef typename prevent_eti<
+    Allocator,
+    hashed_index_node_impl<
+      typename boost::detail::allocator::rebind_to<
+        Allocator,
+        void
+      >::type
+    >
+  >::type                                           node_impl_type;
+
 public:
-  bucket_array(const Allocator& al,hashed_index_node_impl* end_,std::size_t size):
+  typedef typename node_impl_type::pointer          pointer;
+
+  bucket_array(const Allocator& al,pointer end_,std::size_t size):
     size_(bucket_array_base::next_prime(size)),
     spc(al,size_+1)
   {
@@ -104,21 +117,21 @@ public:
     return hash%size_;
   }
 
-  hashed_index_node_impl* begin()const{return &buckets()[0];}
-  hashed_index_node_impl* end()const{return &buckets()[size_];}
-  hashed_index_node_impl* at(std::size_t n)const{return &buckets()[n];}
+  pointer begin()const{return buckets();}
+  pointer end()const{return buckets()+size_;}
+  pointer at(std::size_t n)const{return buckets()+n;}
 
   std::size_t first_nonempty(std::size_t n)const
   {
     for(;;++n){
-      hashed_index_node_impl* x=at(n);
+      pointer x=at(n);
       if(x->next()!=x)return n;
     }
   }
 
   void clear()
   {
-    for(hashed_index_node_impl* x=begin(),*y=end();x!=y;++x)x->next()=x;
+    for(pointer x=begin(),y=end();x!=y;++x)x->next()=x;
   }
 
   void swap(bucket_array& x)
@@ -128,10 +141,10 @@ public:
   }
 
 private:
-  std::size_t                                  size_;
-  auto_space<hashed_index_node_impl,Allocator> spc;
+  std::size_t                          size_;
+  auto_space<node_impl_type,Allocator> spc;
 
-  hashed_index_node_impl* buckets()const
+  pointer buckets()const
   {
     return spc.data();
   }

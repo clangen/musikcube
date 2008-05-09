@@ -2,7 +2,7 @@
 // bind_handler.hpp
 // ~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2007 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2008 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -69,7 +69,7 @@ template <typename Function, typename Handler, typename Arg1>
 inline void asio_handler_invoke(const Function& function,
     binder1<Handler, Arg1>* this_handler)
 {
-  asio_handler_invoke_helpers::invoke(
+  boost_asio_handler_invoke_helpers::invoke(
       function, &this_handler->handler_);
 }
 
@@ -127,7 +127,7 @@ template <typename Function, typename Handler, typename Arg1, typename Arg2>
 inline void asio_handler_invoke(const Function& function,
     binder2<Handler, Arg1, Arg2>* this_handler)
 {
-  asio_handler_invoke_helpers::invoke(
+  boost_asio_handler_invoke_helpers::invoke(
       function, &this_handler->handler_);
 }
 
@@ -189,7 +189,7 @@ template <typename Function, typename Handler, typename Arg1, typename Arg2,
 inline void asio_handler_invoke(const Function& function,
     binder3<Handler, Arg1, Arg2, Arg3>* this_handler)
 {
-  asio_handler_invoke_helpers::invoke(
+  boost_asio_handler_invoke_helpers::invoke(
       function, &this_handler->handler_);
 }
 
@@ -256,7 +256,7 @@ template <typename Function, typename Handler, typename Arg1, typename Arg2,
 inline void asio_handler_invoke(const Function& function,
     binder4<Handler, Arg1, Arg2, Arg3, Arg4>* this_handler)
 {
-  asio_handler_invoke_helpers::invoke(
+  boost_asio_handler_invoke_helpers::invoke(
       function, &this_handler->handler_);
 }
 
@@ -328,7 +328,7 @@ template <typename Function, typename Handler, typename Arg1, typename Arg2,
 inline void asio_handler_invoke(const Function& function,
     binder5<Handler, Arg1, Arg2, Arg3, Arg4, Arg5>* this_handler)
 {
-  asio_handler_invoke_helpers::invoke(
+  boost_asio_handler_invoke_helpers::invoke(
       function, &this_handler->handler_);
 }
 

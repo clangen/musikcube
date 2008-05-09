@@ -28,6 +28,7 @@
 #include <boost/static_assert.hpp>
 
 #include <boost/mpl/int.hpp>
+#include <boost/mpl/bool.hpp>
 #include <boost/serialization/level_enum.hpp>
 #include <boost/serialization/tracking_enum.hpp>
 
@@ -45,7 +46,8 @@ template<
     int Level, 
     int Tracking,
     unsigned int Version = 0,
-    class ETII = extended_type_info_impl< T >
+    class ETII = extended_type_info_impl< T >,
+    class Wrapper = mpl::false_
 >
 struct traits : public basic_traits {
     BOOST_STATIC_ASSERT(Version == 0 || Level >= object_class_info);
@@ -54,6 +56,7 @@ struct traits : public basic_traits {
     typedef BOOST_DEDUCED_TYPENAME mpl::int_<Tracking> tracking;
     typedef BOOST_DEDUCED_TYPENAME mpl::int_<Version> version;
     typedef ETII type_info_implementation;
+    typedef Wrapper is_wrapper;
 };
 
 } // namespace serialization

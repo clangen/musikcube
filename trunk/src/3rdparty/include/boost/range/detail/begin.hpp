@@ -13,7 +13,7 @@
 
 #include <boost/config.hpp> // BOOST_MSVC
 #include <boost/detail/workaround.hpp>
-#include <boost/range/result_iterator.hpp>
+#include <boost/range/iterator.hpp>
 #include <boost/range/detail/common.hpp>
 #if BOOST_WORKAROUND(BOOST_MSVC, < 1310)
 # include <boost/range/value_type.hpp>
@@ -35,7 +35,7 @@ namespace boost
         struct range_begin<std_container_>
         {
             template< typename C >
-            static BOOST_RANGE_DEDUCED_TYPENAME range_result_iterator<C>::type fun( C& c )
+            static BOOST_RANGE_DEDUCED_TYPENAME range_iterator<C>::type fun( C& c )
             {
                 return c.begin();
             };
@@ -49,7 +49,7 @@ namespace boost
         struct range_begin<std_pair_>
         {
             template< typename P >
-            static BOOST_RANGE_DEDUCED_TYPENAME range_result_iterator<P>::type fun( const P& p )
+            static BOOST_RANGE_DEDUCED_TYPENAME range_iterator<P>::type fun( const P& p )
             {
                 return p.first;
             }
@@ -77,51 +77,10 @@ namespace boost
         #endif
         };
 
-        //////////////////////////////////////////////////////////////////////
-        // string
-        //////////////////////////////////////////////////////////////////////
-     
-        template<>
-        struct range_begin<char_ptr_>
-        {
-            static char* fun( char* s )
-            {
-                return s;
-            }
-        };
-
-        template<>
-        struct range_begin<const_char_ptr_>
-        {
-            static const char* fun( const char* s )
-            {
-                return s;
-            }
-        };
-        
-        template<>
-        struct range_begin<wchar_t_ptr_>
-        {
-            
-            static wchar_t* fun( wchar_t* s )
-            {
-                return s;
-            }
-        };
-
-        template<>
-        struct range_begin<const_wchar_t_ptr_>
-        {
-            static const wchar_t* fun( const wchar_t* s )
-            {
-                return s;
-            }
-        };
-
     } // namespace 'range_detail'
     
     template< typename C >
-    inline BOOST_RANGE_DEDUCED_TYPENAME range_result_iterator<C>::type 
+    inline BOOST_RANGE_DEDUCED_TYPENAME range_iterator<C>::type 
     begin( C& c )
     {
         return range_detail::range_begin< BOOST_RANGE_DEDUCED_TYPENAME range_detail::range<C>::type >::fun( c );

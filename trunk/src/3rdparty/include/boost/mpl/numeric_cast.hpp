@@ -10,9 +10,9 @@
 //
 // See http://www.boost.org/libs/mpl for documentation.
 
-// $Source: /cvsroot/boost/boost/boost/mpl/numeric_cast.hpp,v $
-// $Date: 2005/06/26 17:14:04 $
-// $Revision: 1.9 $
+// $Source$
+// $Date: 2005-06-26 13:18:33 -0400 (Sun, 26 Jun 2005) $
+// $Revision: 29796 $
 
 #include <boost/mpl/aux_/config/msvc.hpp>
 #include <boost/mpl/aux_/config/workaround.hpp>

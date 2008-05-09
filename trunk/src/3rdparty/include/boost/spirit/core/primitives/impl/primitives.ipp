@@ -27,6 +27,7 @@
 #endif
 
 #if defined(BOOST_MSVC)
+#  pragma warning (push)
 #  pragma warning(disable:4800)
 #endif
 
@@ -34,7 +35,7 @@ namespace boost { namespace spirit {
 
     template <typename DrivedT> struct char_parser;
 
-    namespace impl 
+    namespace impl
     {
         template <typename IteratorT>
         inline IteratorT
@@ -58,7 +59,7 @@ namespace boost { namespace spirit {
             typedef typename ScannerT::iterator_t iterator_t;
             iterator_t saved = scan.first;
             std::size_t slen = str_last - str_first;
-    
+
             while (str_first != str_last)
             {
                 if (scan.at_end() || (*str_first != *scan))
@@ -66,7 +67,7 @@ namespace boost { namespace spirit {
                 ++str_first;
                 ++scan;
             }
-    
+
             return scan.create_match(slen, nil_t(), saved, scan.first);
         }
 
@@ -92,17 +93,17 @@ namespace boost { namespace spirit {
         {
             typedef int int_type;
             typedef char char_type;
-    
-            static char_type 
+
+            static char_type
             to_char_type(int_type c)
-            { 
-                return static_cast<char_type>(c); 
+            {
+                return static_cast<char_type>(c);
             }
-    
-            static int 
+
+            static int
             to_int_type(char c)
-            { 
-                return static_cast<unsigned char>(c); 
+            {
+                return static_cast<unsigned char>(c);
             }
         };
 
@@ -111,17 +112,17 @@ namespace boost { namespace spirit {
         {
             typedef int int_type;
             typedef unsigned char char_type;
-    
-            static char_type 
+
+            static char_type
             to_char_type(int_type c)
-            { 
-                return static_cast<char_type>(c); 
+            {
+                return static_cast<char_type>(c);
             }
-    
-            static int 
+
+            static int
             to_int_type(unsigned char c)
-            { 
-                return c; 
+            {
+                return c;
             }
         };
 
@@ -133,17 +134,17 @@ namespace boost { namespace spirit {
         {
             typedef wint_t int_type;
             typedef wchar_t char_type;
-            
-            static char_type 
+
+            static char_type
             to_char_type(int_type c)
-            { 
-                return static_cast<char_type>(c); 
+            {
+                return static_cast<char_type>(c);
             }
-    
-            static wint_t 
+
+            static wint_t
             to_int_type(wchar_t c)
-            { 
-                return c; 
+            {
+                return c;
             }
         };
 
@@ -174,7 +175,7 @@ namespace boost { namespace spirit {
         //
         //  in a namespace suitable for Argument Dependent lookup or in
         //  namespace std (disallowed by the standard).
-        
+
         template <typename CharT>
         struct char_type_char_traits_helper
         {
@@ -249,217 +250,221 @@ namespace boost { namespace spirit {
         ///////////////////////////////////////////////////////////////////////
 
         template <typename CharT>
-        inline bool 
+        inline bool
         isalnum_(CharT c)
-        { 
-            using namespace std; 
-            return isalnum(to_int_type(c)) ? true : false; 
+        {
+            using namespace std;
+            return isalnum(to_int_type(c)) ? true : false;
         }
-    
+
         template <typename CharT>
-        inline bool 
+        inline bool
         isalpha_(CharT c)
-        { 
-            using namespace std; 
-            return isalpha(to_int_type(c)) ? true : false; 
+        {
+            using namespace std;
+            return isalpha(to_int_type(c)) ? true : false;
         }
-    
+
         template <typename CharT>
-        inline bool 
+        inline bool
         iscntrl_(CharT c)
-        { 
-            using namespace std; 
-            return iscntrl(to_int_type(c)) ? true : false; 
+        {
+            using namespace std;
+            return iscntrl(to_int_type(c)) ? true : false;
         }
-    
+
         template <typename CharT>
-        inline bool 
+        inline bool
         isdigit_(CharT c)
-        { 
-            using namespace std; 
-            return isdigit(to_int_type(c)) ? true : false; 
+        {
+            using namespace std;
+            return isdigit(to_int_type(c)) ? true : false;
         }
-    
+
         template <typename CharT>
-        inline bool 
+        inline bool
         isgraph_(CharT c)
-        { 
-            using namespace std; 
-            return isgraph(to_int_type(c)) ? true : false; 
+        {
+            using namespace std;
+            return isgraph(to_int_type(c)) ? true : false;
         }
-    
+
         template <typename CharT>
-        inline bool 
+        inline bool
         islower_(CharT c)
-        { 
-            using namespace std; 
-            return islower(to_int_type(c)) ? true : false; 
+        {
+            using namespace std;
+            return islower(to_int_type(c)) ? true : false;
         }
-    
+
         template <typename CharT>
-        inline bool 
+        inline bool
         isprint_(CharT c)
-        { 
-            using namespace std; 
-            return isprint(to_int_type(c)) ? true : false; 
+        {
+            using namespace std;
+            return isprint(to_int_type(c)) ? true : false;
         }
-    
+
         template <typename CharT>
-        inline bool 
+        inline bool
         ispunct_(CharT c)
-        { 
-            using namespace std; 
-            return ispunct(to_int_type(c)) ? true : false; 
+        {
+            using namespace std;
+            return ispunct(to_int_type(c)) ? true : false;
         }
-    
+
         template <typename CharT>
-        inline bool 
+        inline bool
         isspace_(CharT c)
-        { 
-            using namespace std; 
-            return isspace(to_int_type(c)) ? true : false; 
+        {
+            using namespace std;
+            return isspace(to_int_type(c)) ? true : false;
         }
-    
+
         template <typename CharT>
-        inline bool 
+        inline bool
         isupper_(CharT c)
-        { 
-            using namespace std; 
-            return isupper(to_int_type(c)) ? true : false;  
+        {
+            using namespace std;
+            return isupper(to_int_type(c)) ? true : false;
         }
-    
+
         template <typename CharT>
-        inline bool 
+        inline bool
         isxdigit_(CharT c)
-        { 
-            using namespace std; 
-            return isxdigit(to_int_type(c)) ? true : false;  
+        {
+            using namespace std;
+            return isxdigit(to_int_type(c)) ? true : false;
         }
-    
+
         template <typename CharT>
-        inline bool 
+        inline bool
         isblank_(CharT c)
-        { 
-            return (c == ' ' || c == '\t'); 
+        {
+            return (c == ' ' || c == '\t');
         }
-        
+
         template <typename CharT>
-        inline CharT 
+        inline CharT
         tolower_(CharT c)
-        { 
-            using namespace std; 
-            return to_char_type<CharT>(tolower(to_int_type(c))); 
+        {
+            using namespace std;
+            return to_char_type<CharT>(tolower(to_int_type(c)));
         }
-    
+
         template <typename CharT>
-        inline CharT 
+        inline CharT
         toupper_(CharT c)
-        { 
-            using namespace std; 
-            return to_char_type<CharT>(toupper(to_int_type(c))); 
+        {
+            using namespace std;
+            return to_char_type<CharT>(toupper(to_int_type(c)));
         }
 
 #if !defined(BOOST_NO_CWCTYPE)
 
-        inline bool 
+        inline bool
         isalnum_(wchar_t c)
-        { 
-            using namespace std; 
-            return iswalnum(to_int_type(c)) ? true : false;  
+        {
+            using namespace std;
+            return iswalnum(to_int_type(c)) ? true : false;
         }
-    
-        inline bool 
+
+        inline bool
         isalpha_(wchar_t c)
-        { 
-            using namespace std; 
-            return iswalpha(to_int_type(c)) ? true : false;  
+        {
+            using namespace std;
+            return iswalpha(to_int_type(c)) ? true : false;
         }
-    
-        inline bool 
+
+        inline bool
         iscntrl_(wchar_t c)
-        { 
-            using namespace std; 
-            return iswcntrl(to_int_type(c)) ? true : false;  
+        {
+            using namespace std;
+            return iswcntrl(to_int_type(c)) ? true : false;
         }
-    
-        inline bool 
+
+        inline bool
         isdigit_(wchar_t c)
-        { 
-            using namespace std; 
-            return iswdigit(to_int_type(c)) ? true : false;  
+        {
+            using namespace std;
+            return iswdigit(to_int_type(c)) ? true : false;
         }
-    
-        inline bool 
+
+        inline bool
         isgraph_(wchar_t c)
-        { 
-            using namespace std; 
-            return iswgraph(to_int_type(c)) ? true : false;  
+        {
+            using namespace std;
+            return iswgraph(to_int_type(c)) ? true : false;
         }
-    
-        inline bool 
+
+        inline bool
         islower_(wchar_t c)
-        { 
-            using namespace std; 
-            return iswlower(to_int_type(c)) ? true : false;  
+        {
+            using namespace std;
+            return iswlower(to_int_type(c)) ? true : false;
         }
-    
-        inline bool 
+
+        inline bool
         isprint_(wchar_t c)
-        { 
-            using namespace std; 
-            return iswprint(to_int_type(c)) ? true : false;  
+        {
+            using namespace std;
+            return iswprint(to_int_type(c)) ? true : false;
         }
-    
-        inline bool 
+
+        inline bool
         ispunct_(wchar_t c)
-        { 
-            using namespace std; 
-            return iswpunct(to_int_type(c)) ? true : false;  
+        {
+            using namespace std;
+            return iswpunct(to_int_type(c)) ? true : false;
         }
-    
-        inline bool 
+
+        inline bool
         isspace_(wchar_t c)
-        { 
-            using namespace std; 
-            return iswspace(to_int_type(c)) ? true : false;  
+        {
+            using namespace std;
+            return iswspace(to_int_type(c)) ? true : false;
         }
-    
-        inline bool 
+
+        inline bool
         isupper_(wchar_t c)
-        { 
-            using namespace std; 
-            return iswupper(to_int_type(c)) ? true : false;  
+        {
+            using namespace std;
+            return iswupper(to_int_type(c)) ? true : false;
         }
-    
-        inline bool 
+
+        inline bool
         isxdigit_(wchar_t c)
-        { 
-            using namespace std; 
-            return iswxdigit(to_int_type(c)) ? true : false;  
+        {
+            using namespace std;
+            return iswxdigit(to_int_type(c)) ? true : false;
         }
-    
-        inline bool 
+
+        inline bool
         isblank_(wchar_t c)
-        { 
-            return (c == L' ' || c == L'\t'); 
-        } 
-    
-        inline wchar_t 
-        tolower_(wchar_t c)
-        { 
-            using namespace std; 
-            return to_char_type<wchar_t>(towlower(to_int_type(c))); 
+        {
+            return (c == L' ' || c == L'\t');
         }
-    
-        inline wchar_t 
+
+        inline wchar_t
+        tolower_(wchar_t c)
+        {
+            using namespace std;
+            return to_char_type<wchar_t>(towlower(to_int_type(c)));
+        }
+
+        inline wchar_t
         toupper_(wchar_t c)
-        { 
-            using namespace std; 
-            return to_char_type<wchar_t>(towupper(to_int_type(c))); 
+        {
+            using namespace std;
+            return to_char_type<wchar_t>(towupper(to_int_type(c)));
         }
 
 #endif // !defined(BOOST_NO_CWCTYPE)
 
 }}} // namespace boost::spirit::impl
+
+#ifdef BOOST_MSVC
+#pragma warning (pop)
+#endif
 
 #endif

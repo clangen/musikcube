@@ -62,7 +62,7 @@ class BOOST_ARCHIVE_OR_WARCHIVE_DECL(BOOST_PP_EMPTY()) basic_oarchive
     virtual void vsave(const class_name_type & t) = 0;
     virtual void vsave(const tracking_type t) = 0;
 protected:
-    basic_oarchive(unsigned int flags);
+    basic_oarchive(unsigned int flags = 0);
     // account for bogus gcc warning
     #if defined(__GNUC__)
     virtual
@@ -70,16 +70,8 @@ protected:
     ~basic_oarchive();
 public:
     // note: NOT part of the public interface
-    void register_basic_serializer(const basic_oserializer & bos);
-    void
-    lookup_basic_helper(
-        const boost::serialization::extended_type_info * const eti,
-        shared_ptr<void> & sph
-    );
-    void 
-    insert_basic_helper(
-        const boost::serialization::extended_type_info * const eti,
-        shared_ptr<void> & sph
+    void register_basic_serializer(
+        const basic_oserializer & bos
     );
     void save_object(
         const void *x, 

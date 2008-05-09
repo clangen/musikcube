@@ -35,13 +35,21 @@
 #include <boost/regex/pending/object_cache.hpp>
 #endif
 
+#ifdef BOOST_MSVC
+#pragma warning(push)
+#pragma warning(disable: 4103)
+#endif
 #ifdef BOOST_HAS_ABI_HEADERS
 #  include BOOST_ABI_PREFIX
+#endif
+#ifdef BOOST_MSVC
+#pragma warning(pop)
 #endif
 
 #ifdef BOOST_MSVC
 #pragma warning(push)
 #pragma warning(disable:4786)
+#pragma warning(disable:4800)
 #endif
 
 namespace boost{ 
@@ -709,8 +717,15 @@ static_mutex& w32_regex_traits<charT>::get_mutex_inst()
 #pragma warning(pop)
 #endif
 
+#ifdef BOOST_MSVC
+#pragma warning(push)
+#pragma warning(disable: 4103)
+#endif
 #ifdef BOOST_HAS_ABI_HEADERS
 #  include BOOST_ABI_SUFFIX
+#endif
+#ifdef BOOST_MSVC
+#pragma warning(pop)
 #endif
 
 #endif

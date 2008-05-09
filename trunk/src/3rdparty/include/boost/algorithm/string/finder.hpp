@@ -1,11 +1,12 @@
 //  Boost string_algo library finder.hpp header file  ---------------------------//
 
-//  Copyright Pavol Droba 2002-2006. Use, modification and
-//  distribution is subject to the Boost Software License, Version
-//  1.0. (See accompanying file LICENSE_1_0.txt or copy at
-//  http://www.boost.org/LICENSE_1_0.txt)
+//  Copyright Pavol Droba 2002-2006.
+//
+// Distributed under the Boost Software License, Version 1.0.
+//    (See accompanying file LICENSE_1_0.txt or copy at
+//          http://www.boost.org/LICENSE_1_0.txt)
 
-//  See http://www.boost.org for updates, documentation, and revision history.
+//  See http://www.boost.org/ for updates, documentation, and revision history.
 
 #ifndef BOOST_STRING_FINDER_HPP
 #define BOOST_STRING_FINDER_HPP
@@ -45,35 +46,35 @@ namespace boost {
             \param Comp An element comparison predicate
             \return An instance of the \c first_finder object
         */
-        template<typename ContainerT>
+        template<typename RangeT>
         inline detail::first_finderF<
-            BOOST_STRING_TYPENAME range_const_iterator<ContainerT>::type,
+            BOOST_STRING_TYPENAME range_const_iterator<RangeT>::type,
             is_equal>
-        first_finder( const ContainerT& Search )
+        first_finder( const RangeT& Search )
         {
             return 
                 detail::first_finderF<
                     BOOST_STRING_TYPENAME 
-                        range_const_iterator<ContainerT>::type,
-                    is_equal>( Search, is_equal() ) ;
+                        range_const_iterator<RangeT>::type,
+                    is_equal>( as_literal(Search), is_equal() ) ;
         }
 
         //! "First" finder
         /*!
             \overload
         */
-        template<typename ContainerT,typename PredicateT>
+        template<typename RangeT,typename PredicateT>
         inline detail::first_finderF<
-            BOOST_STRING_TYPENAME range_const_iterator<ContainerT>::type,
+            BOOST_STRING_TYPENAME range_const_iterator<RangeT>::type,
             PredicateT>
         first_finder( 
-            const ContainerT& Search, PredicateT Comp )
+            const RangeT& Search, PredicateT Comp )
         {
             return 
                 detail::first_finderF<
                     BOOST_STRING_TYPENAME 
-                        range_const_iterator<ContainerT>::type,
-                    PredicateT>( Search, Comp );
+                        range_const_iterator<RangeT>::type,
+                    PredicateT>( as_literal(Search), Comp );
         }
 
         //! "Last" finder
@@ -86,33 +87,33 @@ namespace boost {
             \param Comp An element comparison predicate
             \return An instance of the \c last_finder object
         */
-        template<typename ContainerT>
+        template<typename RangeT>
         inline detail::last_finderF<
-            BOOST_STRING_TYPENAME range_const_iterator<ContainerT>::type,
+            BOOST_STRING_TYPENAME range_const_iterator<RangeT>::type,
             is_equal>
-        last_finder( const ContainerT& Search )
+        last_finder( const RangeT& Search )
         {
             return 
                 detail::last_finderF<
                     BOOST_STRING_TYPENAME 
-                        range_const_iterator<ContainerT>::type,
-                    is_equal>( Search, is_equal() );
+                        range_const_iterator<RangeT>::type,
+                    is_equal>( as_literal(Search), is_equal() );
         }
         //! "Last" finder
         /*!
             \overload
         */
-        template<typename ContainerT, typename PredicateT>
+        template<typename RangeT, typename PredicateT>
         inline detail::last_finderF<
-            BOOST_STRING_TYPENAME range_const_iterator<ContainerT>::type,
+            BOOST_STRING_TYPENAME range_const_iterator<RangeT>::type,
             PredicateT>
-        last_finder( const ContainerT& Search, PredicateT Comp )
+        last_finder( const RangeT& Search, PredicateT Comp )
         {
             return 
                 detail::last_finderF<
                     BOOST_STRING_TYPENAME 
-                        range_const_iterator<ContainerT>::type,
-                    PredicateT>( Search, Comp ) ;
+                        range_const_iterator<RangeT>::type,
+                    PredicateT>( as_literal(Search), Comp ) ;
         }
 
         //! "Nth" finder
@@ -126,38 +127,38 @@ namespace boost {
             \param Comp An element comparison predicate
             \return An instance of the \c nth_finder object
         */
-        template<typename ContainerT>
+        template<typename RangeT>
         inline detail::nth_finderF<
-            BOOST_STRING_TYPENAME range_const_iterator<ContainerT>::type,
+            BOOST_STRING_TYPENAME range_const_iterator<RangeT>::type,
             is_equal>
         nth_finder( 
-            const ContainerT& Search, 
+            const RangeT& Search, 
             int Nth)
         {
             return 
                 detail::nth_finderF<
                     BOOST_STRING_TYPENAME 
-                        range_const_iterator<ContainerT>::type,
-                    is_equal>( Search, Nth, is_equal() ) ;
+                        range_const_iterator<RangeT>::type,
+                    is_equal>( as_literal(Search), Nth, is_equal() ) ;
         }
         //! "Nth" finder
         /*!
             \overload
         */
-        template<typename ContainerT, typename PredicateT>
+        template<typename RangeT, typename PredicateT>
         inline detail::nth_finderF<
-            BOOST_STRING_TYPENAME range_const_iterator<ContainerT>::type,
+            BOOST_STRING_TYPENAME range_const_iterator<RangeT>::type,
             PredicateT>
         nth_finder( 
-            const ContainerT& Search, 
+            const RangeT& Search, 
             int Nth, 
             PredicateT Comp )
         {
             return 
                 detail::nth_finderF<
                     BOOST_STRING_TYPENAME 
-                        range_const_iterator<ContainerT>::type,
-                    PredicateT>( Search, Nth, Comp );
+                        range_const_iterator<RangeT>::type,
+                    PredicateT>( as_literal(Search), Nth, Comp );
         }
 
         //! "Head" finder

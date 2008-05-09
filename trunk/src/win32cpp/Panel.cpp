@@ -57,7 +57,7 @@ HWND        Panel::Create(Window* parent)
     HINSTANCE hInstance = Application::Instance();
 
     // create the window
-    DWORD style = WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_GROUP;
+    DWORD style = WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
     //
     HWND hwnd = CreateWindowEx(
         NULL,                   // ExStyle

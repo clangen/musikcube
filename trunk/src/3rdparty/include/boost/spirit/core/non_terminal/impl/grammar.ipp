@@ -20,6 +20,7 @@
 #endif
 
 #ifdef BOOST_SPIRIT_THREADSAFE
+#include <boost/spirit/core/non_terminal/impl/static.hpp>
 #include <boost/thread/tss.hpp>
 #include <boost/thread/mutex.hpp>
 #endif
@@ -207,6 +208,17 @@ struct grammar_definition
 
 #endif /* defined(BOOST_SPIRIT_SINGLE_GRAMMAR_INSTANCE) */
 
+#ifdef BOOST_SPIRIT_THREADSAFE
+    class get_definition_static_data_tag
+    {
+        template<typename DerivedT, typename ContextT, typename ScannerT>
+        friend typename DerivedT::template definition<ScannerT> &
+            get_definition(grammar<DerivedT, ContextT> const*  self);
+
+        get_definition_static_data_tag() {}
+    };
+#endif
+
     template<typename DerivedT, typename ContextT, typename ScannerT>
     inline typename DerivedT::template definition<ScannerT> &
     get_definition(grammar<DerivedT, ContextT> const*  self)
@@ -222,16 +234,19 @@ struct grammar_definition
         typedef typename helper_t::helper_weak_ptr_t             ptr_t;
 
 # ifdef BOOST_SPIRIT_THREADSAFE
-        static boost::thread_specific_ptr<ptr_t> tld_helper;
+        boost::thread_specific_ptr<ptr_t> & tld_helper
+            = static_<boost::thread_specific_ptr<ptr_t>,
+                get_definition_static_data_tag>(get_definition_static_data_tag());
+
         if (!tld_helper.get())
             tld_helper.reset(new ptr_t);
         ptr_t &helper = *tld_helper;
 # else
         static ptr_t helper;
 # endif
-        if (!boost::make_shared(helper).get())
+        if (helper.expired())
             new helper_t(helper);
-        return boost::make_shared(helper)->define(self);
+        return helper.lock()->define(self);
 #endif
     }
 

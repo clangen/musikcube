@@ -90,14 +90,30 @@ typedef long atomic_count;
 }
 
 #elif defined(BOOST_AC_USE_PTHREADS)
+
 #  include <boost/detail/atomic_count_pthreads.hpp>
+
+#elif defined( __GNUC__ ) && ( defined( __i386__ ) || defined( __x86_64__ ) )
+
+# include <boost/detail/atomic_count_gcc_x86.hpp>
+
 #elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
+
 #  include <boost/detail/atomic_count_win32.hpp>
+
+#elif defined( __GNUC__ ) && ( __GNUC__ * 100 + __GNUC_MINOR__ >= 401 )
+
+#  include <boost/detail/atomic_count_sync.hpp>
+
 #elif defined(__GLIBCPP__) || defined(__GLIBCXX__)
+
 #  include <boost/detail/atomic_count_gcc.hpp>
+
 #elif defined(BOOST_HAS_PTHREADS)
+
 #  define BOOST_AC_USE_PTHREADS
 #  include <boost/detail/atomic_count_pthreads.hpp>
+
 #else
 
 // Use #define BOOST_DISABLE_THREADS to avoid the error

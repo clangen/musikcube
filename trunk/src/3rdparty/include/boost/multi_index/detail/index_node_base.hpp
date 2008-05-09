@@ -1,4 +1,4 @@
-/* Copyright 2003-2006 Joaquín M López Muñoz.
+/* Copyright 2003-2007 Joaquín M López Muñoz.
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
@@ -42,11 +42,12 @@ struct pod_value_holder
   >::type                      space;
 };
 
-template<typename Value>
+template<typename Value,typename Allocator>
 struct index_node_base:private pod_value_holder<Value>
 {
   typedef index_node_base base_type; /* used for serialization purposes */
   typedef Value           value_type;
+  typedef Allocator       allocator_type;
 
   value_type& value()
   {
@@ -88,7 +89,9 @@ Node* node_from_value(
   const Value* p
   BOOST_APPEND_EXPLICIT_TEMPLATE_TYPE(Node))
 {
-  return static_cast<Node*>(index_node_base<Value>::from_value(p));
+  typedef typename Node::allocator_type allocator_type;
+  return static_cast<Node*>(
+    index_node_base<Value,allocator_type>::from_value(p));
 }
 
 } /* namespace multi_index::detail */
@@ -109,9 +112,9 @@ namespace multi_index{
 namespace detail{
 #endif
 
-template<class Archive,typename Value>
+template<class Archive,typename Value,typename Allocator>
 inline void load_construct_data(
-  Archive&,boost::multi_index::detail::index_node_base<Value>*,
+  Archive&,boost::multi_index::detail::index_node_base<Value,Allocator>*,
   const unsigned int)
 {
   throw_exception(

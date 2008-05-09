@@ -1,4 +1,4 @@
-/* Copyright 2003-2006 Joaquín M López Muñoz.
+/* Copyright 2003-2007 Joaquín M López Muñoz.
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
@@ -13,7 +13,10 @@
 #pragma once
 #endif
 
+#include <boost/config.hpp> /* keep it first to prevent nasty warns in MSVC */
 #include <algorithm>
+#include <boost/detail/allocator_utilities.hpp>
+#include <boost/multi_index/detail/prevent_eti.hpp>
 
 namespace boost{
 
@@ -23,36 +26,48 @@ namespace detail{
 
 /* doubly-linked node for use by sequenced_index */
 
+template<typename Allocator>
 struct sequenced_index_node_impl
 {
-  sequenced_index_node_impl*& prior(){return prior_;}
-  sequenced_index_node_impl*  prior()const{return prior_;}
-  sequenced_index_node_impl*& next(){return next_;}
-  sequenced_index_node_impl*  next()const{return next_;}
+  typedef typename prevent_eti<
+    Allocator,
+    typename boost::detail::allocator::rebind_to<
+      Allocator,sequenced_index_node_impl
+    >::type
+  >::type::pointer                                pointer;
+  typedef typename prevent_eti<
+    Allocator,
+    typename boost::detail::allocator::rebind_to<
+      Allocator,sequenced_index_node_impl
+    >::type
+  >::type::const_pointer                          const_pointer;
+
+  pointer& prior(){return prior_;}
+  pointer  prior()const{return prior_;}
+  pointer& next(){return next_;}
+  pointer  next()const{return next_;}
 
   /* interoperability with bidir_node_iterator */
 
-  static void increment(sequenced_index_node_impl*& x){x=x->next();}
-  static void decrement(sequenced_index_node_impl*& x){x=x->prior();}
+  static void increment(pointer& x){x=x->next();}
+  static void decrement(pointer& x){x=x->prior();}
 
   /* algorithmic stuff */
 
-  static void link(
-    sequenced_index_node_impl* x,sequenced_index_node_impl* header)
+  static void link(pointer x,pointer header)
   {
     x->prior()=header->prior();
     x->next()=header;
     x->prior()->next()=x->next()->prior()=x;
   };
 
-  static void unlink(sequenced_index_node_impl* x)
+  static void unlink(pointer x)
   {
     x->prior()->next()=x->next();
     x->next()->prior()=x->prior();
   }
 
-  static void relink(
-    sequenced_index_node_impl* position,sequenced_index_node_impl* x)
+  static void relink(pointer position,pointer x)
   {
     unlink(x);
     x->prior()=position->prior();
@@ -60,14 +75,12 @@ struct sequenced_index_node_impl
     x->prior()->next()=x->next()->prior()=x;
   }
 
-  static void relink(
-    sequenced_index_node_impl* position,
-    sequenced_index_node_impl* x,sequenced_index_node_impl* y)
+  static void relink(pointer position,pointer x,pointer y)
   {
     /* position is assumed not to be in [x,y) */
 
     if(x!=y){
-      sequenced_index_node_impl* z=y->prior();
+      pointer z=y->prior();
       x->prior()->next()=y;
       y->prior()=x->prior();
       x->prior()=position->prior();
@@ -77,17 +90,17 @@ struct sequenced_index_node_impl
     }
   }
 
-  static void reverse(sequenced_index_node_impl* header)
+  static void reverse(pointer header)
   {
-    sequenced_index_node_impl* x=header;
+    pointer x=header;
     do{
-      sequenced_index_node_impl* y=x->next();
+      pointer y=x->next();
       std::swap(x->prior(),x->next());
       x=y;
     }while(x!=header);
   }
 
-  static void swap(sequenced_index_node_impl* x,sequenced_index_node_impl* y)
+  static void swap(pointer x,pointer y)
   {
     /* This swap function does not exchange the header nodes,
      * but rather their pointers. This is *not* used for implementing
@@ -117,53 +130,88 @@ struct sequenced_index_node_impl
   }
 
 private:
-  sequenced_index_node_impl* prior_;
-  sequenced_index_node_impl* next_;
+  pointer prior_;
+  pointer next_;
 };
 
 template<typename Super>
-struct sequenced_index_node_trampoline:sequenced_index_node_impl{};
+struct sequenced_index_node_trampoline:
+  prevent_eti<
+    Super,
+    sequenced_index_node_impl<
+      typename boost::detail::allocator::rebind_to<
+        typename Super::allocator_type,
+        void
+      >::type
+    >
+  >::type
+{
+  typedef typename prevent_eti<
+    Super,
+    sequenced_index_node_impl<
+      typename boost::detail::allocator::rebind_to<
+        typename Super::allocator_type,
+        void
+      >::type
+    >
+  >::type impl_type;
+};
 
 template<typename Super>
 struct sequenced_index_node:Super,sequenced_index_node_trampoline<Super>
 {
-  sequenced_index_node_impl*& prior(){return impl_type::prior();}
-  sequenced_index_node_impl*  prior()const{return impl_type::prior();}
-  sequenced_index_node_impl*& next(){return impl_type::next();}
-  sequenced_index_node_impl*  next()const{return impl_type::next();}
+private:
+  typedef sequenced_index_node_trampoline<Super> trampoline;
 
-  sequenced_index_node_impl*       impl()
-    {return static_cast<impl_type*>(this);}
-  const sequenced_index_node_impl* impl()const
-    {return static_cast<const impl_type*>(this);}
+public:
+  typedef typename trampoline::impl_type         impl_type;
+  typedef typename trampoline::pointer           impl_pointer;
+  typedef typename trampoline::const_pointer     const_impl_pointer;
 
-  static sequenced_index_node* from_impl(sequenced_index_node_impl *x)
-    {return static_cast<sequenced_index_node*>(static_cast<impl_type*>(x));}
-  static const sequenced_index_node* from_impl(
-    const sequenced_index_node_impl* x)
+  impl_pointer& prior(){return trampoline::prior();}
+  impl_pointer  prior()const{return trampoline::prior();}
+  impl_pointer& next(){return trampoline::next();}
+  impl_pointer  next()const{return trampoline::next();}
+
+  impl_pointer impl()
+  {
+    return static_cast<impl_pointer>(
+      static_cast<impl_type*>(static_cast<trampoline*>(this)));
+  }
+
+  const_impl_pointer impl()const
+  {
+    return static_cast<const_impl_pointer>(
+      static_cast<const impl_type*>(static_cast<const trampoline*>(this)));
+  }
+
+  static sequenced_index_node* from_impl(impl_pointer x)
+  {
+    return static_cast<sequenced_index_node*>(
+      static_cast<trampoline*>(&*x));
+  }
+
+  static const sequenced_index_node* from_impl(const_impl_pointer x)
   {
     return static_cast<const sequenced_index_node*>(
-      static_cast<const impl_type*>(x));
+      static_cast<const trampoline*>(&*x));
   }
 
   /* interoperability with bidir_node_iterator */
 
   static void increment(sequenced_index_node*& x)
   {
-    sequenced_index_node_impl* xi=x->impl();
-    impl_type::increment(xi);
+    impl_pointer xi=x->impl();
+    trampoline::increment(xi);
     x=from_impl(xi);
   }
 
   static void decrement(sequenced_index_node*& x)
   {
-    sequenced_index_node_impl* xi=x->impl();
-    impl_type::decrement(xi);
+    impl_pointer xi=x->impl();
+    trampoline::decrement(xi);
     x=from_impl(xi);
   }
-
-private:
-  typedef sequenced_index_node_trampoline<Super> impl_type;
 };
 
 } /* namespace multi_index::detail */

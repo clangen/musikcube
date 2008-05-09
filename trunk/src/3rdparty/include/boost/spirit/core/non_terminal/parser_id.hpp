@@ -47,7 +47,7 @@ namespace boost { namespace spirit {
     inline std::ostream&
     operator<<(std::ostream& out, parser_id const& rid)
     {
-        out << rid.to_long();
+        out << (unsigned int)rid.to_long();
         return out;
     }
     #endif

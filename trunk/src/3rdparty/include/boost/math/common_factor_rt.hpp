@@ -15,6 +15,7 @@
 
 #include <boost/config.hpp>  // for BOOST_NESTED_TEMPLATE, etc.
 #include <boost/limits.hpp>  // for std::numeric_limits
+#include <boost/detail/workaround.hpp>
 
 
 namespace boost
@@ -112,6 +113,69 @@ namespace detail
         IntegerType const  result = gcd_euclidean( a, b );
 
         return ( result < zero ) ? -result : result;
+    }
+
+    // Greatest common divisor for unsigned binary integers
+    template < typename BuiltInUnsigned >
+    BuiltInUnsigned
+    gcd_binary
+    (
+        BuiltInUnsigned  u,
+        BuiltInUnsigned  v
+    )
+    {
+        if ( u && v )
+        {
+            // Shift out common factors of 2
+            unsigned  shifts = 0;
+
+            while ( !(u & 1u) && !(v & 1u) )
+            {
+                ++shifts;
+                u >>= 1;
+                v >>= 1;
+            }
+
+            // Start with the still-even one, if any
+            BuiltInUnsigned  r[] = { u, v };
+            unsigned         which = static_cast<bool>( u & 1u );
+
+            // Whittle down the values via their differences
+            do
+            {
+#if BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x582))
+                while ( !(r[ which ] & 1u) )
+                {
+                    r[ which ] = (r[which] >> 1);
+                }
+#else
+                // Remove factors of two from the even one
+                while ( !(r[ which ] & 1u) )
+                {
+                    r[ which ] >>= 1;
+                }
+#endif
+
+                // Replace the larger of the two with their difference
+                if ( r[!which] > r[which] )
+                {
+                    which ^= 1u;
+                }
+
+                r[ which ] -= r[ !which ];
+            }
+            while ( r[which] );
+
+            // Shift-in the common factor of 2 to the residues' GCD
+            return r[ !which ] << shifts;
+        }
+        else
+        {
+            // At least one input is zero, return the other
+            // (adding since zero is the additive identity)
+            // or zero if both are zero.
+            return u + v;
+        }
     }
 
     // Least common multiple for rings (including unsigned integers)
@@ -227,6 +291,46 @@ namespace detail
         }
     };
 #endif
+
+    // Specialize for the built-in integers
+#define BOOST_PRIVATE_GCD_UF( Ut )                  \
+    template < >  struct gcd_optimal_evaluator<Ut>  \
+    {  Ut  operator ()( Ut a, Ut b ) const  { return gcd_binary( a, b ); }  }
+
+    BOOST_PRIVATE_GCD_UF( unsigned char );
+    BOOST_PRIVATE_GCD_UF( unsigned short );
+    BOOST_PRIVATE_GCD_UF( unsigned );
+    BOOST_PRIVATE_GCD_UF( unsigned long );
+
+#ifdef BOOST_HAS_LONG_LONG
+    BOOST_PRIVATE_GCD_UF( unsigned long long );
+#elif defined(BOOST_HAS_MS_INT64)
+    BOOST_PRIVATE_GCD_UF( unsigned __int64 );
+#endif
+
+#undef BOOST_PRIVATE_GCD_UF
+
+#define BOOST_PRIVATE_GCD_SF( St, Ut )                            \
+    template < >  struct gcd_optimal_evaluator<St>                \
+    {  St  operator ()( St a, St b ) const  { Ut const  a_abs =   \
+    static_cast<Ut>( a < 0 ? -a : +a ), b_abs = static_cast<Ut>(  \
+    b < 0 ? -b : +b ); return static_cast<St>(                    \
+    gcd_optimal_evaluator<Ut>()(a_abs, b_abs) ); }  }
+
+    BOOST_PRIVATE_GCD_SF( signed char, unsigned char );
+    BOOST_PRIVATE_GCD_SF( short, unsigned short );
+    BOOST_PRIVATE_GCD_SF( int, unsigned );
+    BOOST_PRIVATE_GCD_SF( long, unsigned long );
+
+    BOOST_PRIVATE_GCD_SF( char, unsigned char ); // should work even if unsigned
+
+#ifdef BOOST_HAS_LONG_LONG
+    BOOST_PRIVATE_GCD_SF( long long, unsigned long long );
+#elif defined(BOOST_HAS_MS_INT64)
+    BOOST_PRIVATE_GCD_SF( __int64, unsigned __int64 );
+#endif
+
+#undef BOOST_PRIVATE_GCD_SF
 
 #ifndef BOOST_NO_LIMITS_COMPILE_TIME_CONSTANTS
 #ifndef BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION

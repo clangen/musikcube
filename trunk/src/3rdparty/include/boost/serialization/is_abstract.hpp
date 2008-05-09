@@ -23,16 +23,13 @@
 namespace boost {
 namespace serialization {
     template<class T>
-    struct is_abstract {
-        // default to false if not supported
-        #ifdef BOOST_NO_IS_ABSTRACT
-            typedef BOOST_DEDUCED_TYPENAME mpl::bool_<false> type;
-            BOOST_STATIC_CONSTANT(bool, value = false); 
-        #else
-            typedef BOOST_DEDUCED_TYPENAME boost::is_abstract<T>::type type;
-            BOOST_STATIC_CONSTANT(bool, value = type::value); 
-        #endif
-    };
+    struct is_abstract
+#ifdef BOOST_NO_IS_ABSTRACT
+      : mpl::false_
+#else
+      : boost::is_abstract<T>
+#endif 
+    {};
 } // namespace serialization
 } // namespace boost
 
@@ -41,12 +38,8 @@ namespace serialization {
 namespace boost {                                     \
 namespace serialization {                             \
 template<>                                            \
-struct is_abstract< T > {                             \
-    typedef mpl::bool_<true> type;                    \
-    BOOST_STATIC_CONSTANT(bool, value = true);        \
-};                                                    \
-}                                                     \
-}                                                     \
+struct is_abstract< T > : mpl::true_ {};              \
+}}                                                    \
 /**/
 
 #endif //BOOST_SERIALIZATION_IS_ABSTRACT_CLASS_HPP

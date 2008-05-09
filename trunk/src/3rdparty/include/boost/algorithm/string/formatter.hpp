@@ -1,11 +1,12 @@
 //  Boost string_algo library formatter.hpp header file  ---------------------------//
 
-//  Copyright Pavol Droba 2002-2003. Use, modification and
-//  distribution is subject to the Boost Software License, Version
-//  1.0. (See accompanying file LICENSE_1_0.txt or copy at
-//  http://www.boost.org/LICENSE_1_0.txt)
+//  Copyright Pavol Droba 2002-2003.
+//
+// Distributed under the Boost Software License, Version 1.0.
+//    (See accompanying file LICENSE_1_0.txt or copy at
+//          http://www.boost.org/LICENSE_1_0.txt)
 
-//  See http://www.boost.org for updates, documentation, and revision history.
+//  See http://www.boost.org/ for updates, documentation, and revision history.
 
 #ifndef BOOST_STRING_FORMATTER_HPP
 #define BOOST_STRING_FORMATTER_HPP
@@ -13,6 +14,7 @@
 #include <boost/detail/iterator.hpp>
 #include <boost/range/value_type.hpp>
 #include <boost/range/iterator_range.hpp>
+#include <boost/range/as_literal.hpp>
 
 #include <boost/algorithm/string/detail/formatter.hpp>
 
@@ -41,10 +43,14 @@ namespace boost {
             \return An instance of the \c const_formatter object.
         */
         template<typename RangeT>
-        inline detail::const_formatF<RangeT>
+        inline detail::const_formatF<
+            iterator_range<
+                BOOST_STRING_TYPENAME range_const_iterator<RangeT>::type> >
         const_formatter(const RangeT& Format)
         {
-            return detail::const_formatF<RangeT>(Format);
+            return detail::const_formatF<
+                iterator_range<
+                    BOOST_STRING_TYPENAME range_const_iterator<RangeT>::type> >(as_literal(Format));
         }
 
         //! Identity formatter
@@ -55,10 +61,14 @@ namespace boost {
             \return An instance of the \c identity_formatter object.
         */
         template<typename RangeT>
-        inline detail::identity_formatF<RangeT>
+        inline detail::identity_formatF<
+            iterator_range<
+                BOOST_STRING_TYPENAME range_const_iterator<RangeT>::type> >
         identity_formatter()
         {
-            return detail::identity_formatF<RangeT>();
+            return detail::identity_formatF<
+                iterator_range<
+                    BOOST_STRING_TYPENAME range_const_iterator<RangeT>::type> >();
         }
 
         //! Empty formatter

@@ -70,6 +70,15 @@
 #include "boost/type_traits/type_with_alignment.hpp"
 #include "boost/type_traits/function_traits.hpp"
 #include "boost/type_traits/aligned_storage.hpp"
+#include "boost/type_traits/floating_point_promotion.hpp"
+#if !(defined(__sgi) && defined(__EDG_VERSION__) && (__EDG_VERSION__ == 238))
+#include "boost/type_traits/integral_promotion.hpp"
+#include "boost/type_traits/promote.hpp"
+#endif
+#include <boost/type_traits/make_unsigned.hpp>
+#include <boost/type_traits/make_signed.hpp>
+#include <boost/type_traits/decay.hpp>
+#include <boost/type_traits/is_complex.hpp>
 
 #include "boost/type_traits/ice.hpp"
 

@@ -1,4 +1,4 @@
-/* Copyright 2003-2005 Joaquín M López Muñoz.
+/* Copyright 2003-2007 Joaquín M López Muñoz.
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
@@ -15,7 +15,9 @@
 
 #include <boost/config.hpp> /* keep it first to prevent nasty warns in MSVC */
 #include <algorithm>
+#include <boost/detail/allocator_utilities.hpp>
 #include <boost/multi_index/detail/auto_space.hpp>
+#include <boost/multi_index/detail/prevent_eti.hpp>
 #include <boost/multi_index/detail/rnd_index_node.hpp>
 #include <boost/noncopyable.hpp>
 #include <cstddef>
@@ -31,8 +33,24 @@ namespace detail{
 template<typename Allocator>
 class random_access_index_ptr_array:private noncopyable
 {
+  typedef typename prevent_eti<
+    Allocator,
+    random_access_index_node_impl<
+      typename boost::detail::allocator::rebind_to<
+        Allocator,
+        void
+      >::type
+    >
+  >::type                                           node_impl_type;
+
 public:
-  typedef random_access_index_node_impl* value_type;
+  typedef typename node_impl_type::pointer          value_type;
+  typedef typename prevent_eti<
+    Allocator,
+    typename boost::detail::allocator::rebind_to<
+      Allocator,value_type
+    >::type
+  >::type::pointer                                  pointer;
 
   random_access_index_ptr_array(
     const Allocator& al,value_type end_,std::size_t size):
@@ -58,15 +76,15 @@ public:
   {
     if(c>capacity_){
       auto_space<value_type,Allocator> spc1(spc.get_allocator(),c+1);
-      random_access_index_node_impl::transfer(begin(),end()+1,spc1.data());
+      node_impl_type::transfer(begin(),end()+1,spc1.data());
       spc.swap(spc1);
       capacity_=c;
     }
   }
 
-  value_type* begin()const{return &ptrs()[0];}
-  value_type* end()const{return &ptrs()[size_];}
-  value_type* at(std::size_t n)const{return &ptrs()[n];}
+  pointer begin()const{return ptrs();}
+  pointer end()const{return ptrs()+size_;}
+  pointer at(std::size_t n)const{return ptrs()+n;}
 
   void push_back(value_type x)
   {
@@ -79,7 +97,7 @@ public:
 
   void erase(value_type x)
   {
-    random_access_index_node_impl::extract(x->up(),end()+1);
+    node_impl_type::extract(x->up(),end()+1);
     --size_;
   }
 
@@ -102,7 +120,7 @@ private:
   std::size_t                      capacity_;
   auto_space<value_type,Allocator> spc;
 
-  value_type* ptrs()const
+  pointer ptrs()const
   {
     return spc.data();
   }

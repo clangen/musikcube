@@ -61,7 +61,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libboost_filesystem-vc80-mt-sgd-1_34_1.lib"
 				AdditionalLibraryDirectories="../../3rdparty/lib"
 				GenerateDebugInformation="true"
 			/>
@@ -134,7 +133,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libboost_filesystem-vc80-mt-s-1_34_1.lib"
 				AdditionalLibraryDirectories="../../3rdparty/lib"
 			/>
 			<Tool

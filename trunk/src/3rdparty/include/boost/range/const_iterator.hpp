@@ -21,6 +21,7 @@
 #include <boost/range/detail/const_iterator.hpp>
 #else
 
+#include <boost/type_traits/remove_const.hpp>
 #include <cstddef>
 #include <utility>
 
@@ -46,12 +47,6 @@ namespace boost
         typedef Iterator type;
     };
     
-    template< typename Iterator >
-    struct range_const_iterator< const std::pair<Iterator,Iterator> >
-    {
-        typedef Iterator type;
-    };
-
     //////////////////////////////////////////////////////////////////////////
     // array
     //////////////////////////////////////////////////////////////////////////
@@ -60,64 +55,6 @@ namespace boost
     struct range_const_iterator< T[sz] >
     {
         typedef const T* type;
-    };
-
-    template< typename T, std::size_t sz >
-    struct range_const_iterator< const T[sz] >
-    {
-        typedef const T* type;
-    };
-
-    //////////////////////////////////////////////////////////////////////////
-    // string
-    //////////////////////////////////////////////////////////////////////////
-
-    template<>
-    struct range_const_iterator< char* >
-    {
-        typedef const char* type;
-    };
-
-    template<>
-    struct range_const_iterator< wchar_t* >
-    {
-        typedef const wchar_t* type;
-    };
-
-    template<>
-    struct range_const_iterator< const char* >
-    {
-        typedef const char* type;
-    };
-
-    template<>
-    struct range_const_iterator< const wchar_t* >
-    {
-        typedef const wchar_t* type;
-    };
-
-    template<>
-    struct range_const_iterator< char* const >
-    {
-        typedef const char* type;
-    };
-
-    template<>
-    struct range_const_iterator< wchar_t* const >
-    {
-        typedef const wchar_t* type;
-    };
-
-    template<>
-    struct range_const_iterator< const char* const >
-    {
-        typedef const char* type;
-    };
-
-    template<>
-    struct range_const_iterator< const wchar_t* const >
-    {
-        typedef const wchar_t* type;
     };
 
 } // namespace boost
