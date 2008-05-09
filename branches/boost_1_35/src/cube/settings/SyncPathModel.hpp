@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, mC2 Team
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: mC2
 //
 // All rights reserved.
 //
@@ -40,42 +40,35 @@
 
 //////////////////////////////////////////////////////////////////////////////
 
-#include <cube/SettingsView.hpp>
 #include <cube/settings/SyncPathController.hpp>
-#include <win32cpp/Timer.hpp>
-#include <boost/shared_ptr.hpp>
+#include <win32cpp/ListView.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
 using namespace win32cpp;
 
-namespace musik { namespace cube {
+namespace musik { namespace cube { namespace settings {
 
 //////////////////////////////////////////////////////////////////////////////
 
-class SettingsController : public EventHandler
-{
-public:     /*ctor*/    SettingsController(SettingsView& settingsView);
+class SyncPathModel : public ListView::Model, public EventHandler{
+    public:
+        SyncPathModel(SyncPathController *controller);
+        virtual uistring CellValueToString(int rowIndex, ListView::ColumnRef column);
+        void UpdateSyncPaths();
+    private:
 
-private:  
-            void        OnViewCreated(Window* window);
-            void        OnViewResized(Window* window, Size size);
+        void OnPathsUpdated();
 
-            SettingsView&                  settingsView;
+        SyncPathController *controller;
 
-            void OnAddPath(Button* button);
-            void OnRemovePath(Button* button);
-            void OnLibraryStatus();
+        friend class SyncPathController;
 
-            win32cpp::Timer libraryStatusTimer;
-
-            typedef boost::shared_ptr<settings::SyncPathController> SyncPathControllerRef;
-
-            SyncPathControllerRef syncPathController;
-
-
+        typedef std::vector<uistring> PathVector;
+        PathVector paths;
 };
 
+
 //////////////////////////////////////////////////////////////////////////////
 
-} }     // musik::cube
+} } }     // musik::cube::settings

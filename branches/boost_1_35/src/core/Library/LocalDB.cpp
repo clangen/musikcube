@@ -303,8 +303,11 @@ void Library::LocalDB::ThreadLoop(){
 //////////////////////////////////////////
 void Library::LocalDB::CancelCurrentQuery( ){
     this->bCurrentQueryCanceled    = true;
-    sqlite3_interrupt(this->db.connection);
+    this->db.Interrupt();
 }
 
+musik::core::Indexer *Library::LocalDB::Indexer(){
+    return &this->indexer;
+}
 
 

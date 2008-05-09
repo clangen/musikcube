@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, mC2 Team
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: mC2
 //
 // All rights reserved.
 //
@@ -40,42 +40,36 @@
 
 //////////////////////////////////////////////////////////////////////////////
 
-#include <cube/SettingsView.hpp>
-#include <cube/settings/SyncPathController.hpp>
-#include <win32cpp/Timer.hpp>
-#include <boost/shared_ptr.hpp>
+#include <win32cpp/ListView.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
+// Forward
+namespace musik { namespace cube {
+    class SettingsController;
+} }
+
 
 using namespace win32cpp;
 
-namespace musik { namespace cube {
+namespace musik { namespace cube { namespace settings {
 
 //////////////////////////////////////////////////////////////////////////////
 
-class SettingsController : public EventHandler
-{
-public:     /*ctor*/    SettingsController(SettingsView& settingsView);
+class SyncPathController : public EventHandler{
+    public:
+        SyncPathController(ListView &listView,musik::cube::SettingsController *settingsController);
+        void                                RemoveSelectedPaths();
+    private:
+        void                                OnViewCreated(Window* window);
+        void                                OnResized(Window* window, Size size);
 
-private:  
-            void        OnViewCreated(Window* window);
-            void        OnViewResized(Window* window, Size size);
-
-            SettingsView&                  settingsView;
-
-            void OnAddPath(Button* button);
-            void OnRemovePath(Button* button);
-            void OnLibraryStatus();
-
-            win32cpp::Timer libraryStatusTimer;
-
-            typedef boost::shared_ptr<settings::SyncPathController> SyncPathControllerRef;
-
-            SyncPathControllerRef syncPathController;
-
-
+        ListView&                           listView;
+        musik::cube::SettingsController*    settingsController;
+        ListView::ModelRef                  model;
+        ListView::ColumnRef                 mainColumn;
 };
 
+
 //////////////////////////////////////////////////////////////////////////////
 
-} }     // musik::cube
+} } }     // musik::cube::settings

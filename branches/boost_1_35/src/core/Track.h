@@ -44,13 +44,15 @@
 
 #include <core/config.h>
 #include <core/TrackMeta.h>
-#include <core/Library/Base.h>
 #include <core/db/Connection.h>
 
 namespace musik{ namespace core{
 
     // Forward declare
     class Track;
+    namespace Library{
+        class Base;
+    }
 
     /*!
      * \brief

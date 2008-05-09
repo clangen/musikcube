@@ -59,9 +59,10 @@ HWND        TabView::Create(Window* parent)
 
     // create the window
     DWORD style = WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
+    DWORD styleEx = NULL;
     //
     HWND hwnd = CreateWindowEx(
-        NULL,                   // ExStyle
+        styleEx,                // ExStyle
         WC_TABCONTROL,          // Class name
         _T(""),                 // Window name
         style,                  // Style
@@ -80,21 +81,25 @@ HWND        TabView::Create(Window* parent)
 void        TabView::OnPaint()
 {
     PAINTSTRUCT paintStruct;
+    RECT clientRect = this->ClientRect();   // using paintStruct.rcPaint gives redraw artifacts!
     HDC hdc = ::BeginPaint(this->Handle(), &paintStruct);
     //
     {
-        MemoryDC memDC(hdc, paintStruct.rcPaint);
-        //
-        ::SetBkColor(memDC, this->BackgroundColor());
+        MemoryDC memDC(hdc, clientRect);
 
         HBRUSH backBrush = ::CreateSolidBrush(this->BackgroundColor());
-        ::FillRect(memDC, &paintStruct.rcPaint, backBrush);
+        ::FillRect(memDC, &(RECT) clientRect, backBrush);
         DeleteObject(backBrush);
 
-        this->PaintToHDC(memDC, paintStruct.rcPaint);
+        this->DefaultWindowProc(WM_PAINT, (WPARAM) (HDC) memDC, NULL);
     }
     //
     ::EndPaint(this->Handle(), &paintStruct);
+}
+
+void        TabView::OnEraseBackground(HDC hdc)
+{
+    // do nothing!
 }
 
 LRESULT     TabView::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
@@ -108,9 +113,10 @@ LRESULT     TabView::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
             {
             case TCN_SELCHANGE:
                 this->OnTabSelected();
+                return 0;
             }
         }
-        return 0;
+        return 0;   // stack overflow if we don't return that we handled this!
     }
 
     return this->DefaultWindowProc(message, wParam, lParam);

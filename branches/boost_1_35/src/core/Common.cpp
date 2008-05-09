@@ -36,7 +36,6 @@
 
 #include "pch.hpp"
 #include <core/Common.h>
-#include <sqlite/sqlite3.h>
 #include <utf8/utf8.h>
 
 //////////////////////////////////////////

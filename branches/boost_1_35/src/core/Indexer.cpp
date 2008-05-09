@@ -39,6 +39,7 @@
 #include <core/Track.h>
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>
+#include <core/PluginFactory.h>
 
 #include <boost/filesystem.hpp>
 #include <boost/thread/xtime.hpp>

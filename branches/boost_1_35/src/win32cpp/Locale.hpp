@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, mC2 Team
+// The following are Copyright © 2008, André Wösten
 //
 // Sources and Binaries of: mC2, win32cpp
 //
@@ -38,44 +38,56 @@
 
 #pragma once
 
-//////////////////////////////////////////////////////////////////////////////
-
-#include <cube/SettingsView.hpp>
-#include <cube/settings/SyncPathController.hpp>
-#include <win32cpp/Timer.hpp>
-#include <boost/shared_ptr.hpp>
+#include <varargs.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
-using namespace win32cpp;
-
-namespace musik { namespace cube {
+namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
+// Locale
+//////////////////////////////////////////////////////////////////////////////
 
-class SettingsController : public EventHandler
-{
-public:     /*ctor*/    SettingsController(SettingsView& settingsView);
+typedef std::vector<uistring> LocaleList;
+typedef std::map<uistring, uistring> LocaleTranslationMap;
 
-private:  
-            void        OnViewCreated(Window* window);
-            void        OnViewResized(Window* window, Size size);
+class Locale {
+private:
+    Config          config;
+    uistring        localeDirectory;
+    
+    LocaleTranslationMap
+                    translationMap;
 
-            SettingsView&                  settingsView;
+public:
+    bool            LoadConfig(const uistring& localeName);
+    void            SetLocaleDirectory(const uistring& dirName);
+    LocaleList      EnumLocales(void);
+    uistring        Translate(const uistring& original);
 
-            void OnAddPath(Button* button);
-            void OnRemovePath(Button* button);
-            void OnLibraryStatus();
+    static Locale*  Instance()
+    {
+        // singleton implementation (scott meyers variant)
+        // due to the static initialization the compiler is creating code
+        // with an atexit()-registration of a function which is responsible
+        // for a guaranteed destruction of the singleton object when
+        // the program exists (resource leaks can be avoided by this method)
+        static Locale singletonInstance;
 
-            win32cpp::Timer libraryStatusTimer;
+        // we return the pointer so we can pass the Locale instance
+        // around without the need to forbid instance-based 
+        // (copy-)construction
+        return &singletonInstance;
+    }
 
-            typedef boost::shared_ptr<settings::SyncPathController> SyncPathControllerRef;
-
-            SyncPathControllerRef syncPathController;
-
-
+    /*ctor*/        Locale();
+    /*ctor*/        Locale(const uistring& dirName, const uistring& locale);
+    /*dtor*/        ~Locale();
 };
 
+#define _(ORIGINALTEXT) (win32cpp::Locale::Instance()->Translate(ORIGINALTEXT))
+
+
 //////////////////////////////////////////////////////////////////////////////
 
-} }     // musik::cube
+}

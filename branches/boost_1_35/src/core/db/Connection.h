@@ -44,9 +44,6 @@
 #include <map>
 #include <boost/utility.hpp>
 
-namespace musik{ namespace core{ namespace Library{
-    class LocalDB;
-} } }
 
 namespace musik{ namespace core{ namespace db{
 
@@ -61,6 +58,9 @@ namespace musik{ namespace core{ namespace db{
             int Execute(const char* sql);
             int Execute(const wchar_t* sql);
             int LastInsertedId();
+
+            void Interrupt();
+
         private:
 
             void Initialize(unsigned int cache);
@@ -77,7 +77,6 @@ namespace musik{ namespace core{ namespace db{
 
             int transactionCounter;            
 
-            friend class musik::core::Library::LocalDB;
             sqlite3 *connection;
 
     };

@@ -195,5 +195,6 @@ void Connection::ReturnCachedStatement(const char* sql,sqlite3_stmt *stmt){
     }
 }
 
-
-
+void Connection::Interrupt(){
+    sqlite3_interrupt(this->connection);
+}

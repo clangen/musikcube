@@ -69,10 +69,10 @@ void        SettingsView::OnCreated()
     // Path list
 
     this->pathList          = pathLayout->AddChild(new ListView());
-    win32cpp::ListView::ColumnRef pathColumn = ListView::Column::Create(_T("Path"),1000);
+/*    win32cpp::ListView::ColumnRef pathColumn = ListView::Column::Create(_T("Path"),1000);
     this->pathList->AddColumn(pathColumn);
     this->pathList->SetScrollBarVisibility(win32cpp::ScrollBar::HorizontalScrollBar,false);
-
+*/
     pathLayout->SetSizeConstraints(LayoutFillParent,120);
     pathLayout->SetFlexibleChild(this->pathList);
     pathLayout->SetDefaultChildFill(true);

@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, mC2 Team
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: mC2
 //
 // All rights reserved.
 //
@@ -36,46 +36,67 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
-//////////////////////////////////////////////////////////////////////////////
-
-#include <cube/SettingsView.hpp>
+#include <pch.hpp>
 #include <cube/settings/SyncPathController.hpp>
-#include <win32cpp/Timer.hpp>
-#include <boost/shared_ptr.hpp>
+#include <cube/settings/SyncPathModel.hpp>
+#include <cube/SettingsController.hpp>
+#include <core/Indexer.h>
+#include <core/LibraryFactory.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
-using namespace win32cpp;
-
-namespace musik { namespace cube {
+using namespace musik::cube::settings;
 
 //////////////////////////////////////////////////////////////////////////////
 
-class SettingsController : public EventHandler
+SyncPathController::SyncPathController(ListView &listView,musik::cube::SettingsController *settingsController)
+: listView(listView)
+, settingsController(settingsController)
 {
-public:     /*ctor*/    SettingsController(SettingsView& settingsView);
-
-private:  
-            void        OnViewCreated(Window* window);
-            void        OnViewResized(Window* window, Size size);
-
-            SettingsView&                  settingsView;
-
-            void OnAddPath(Button* button);
-            void OnRemovePath(Button* button);
-            void OnLibraryStatus();
-
-            win32cpp::Timer libraryStatusTimer;
-
-            typedef boost::shared_ptr<settings::SyncPathController> SyncPathControllerRef;
-
-            SyncPathControllerRef syncPathController;
+    this->model.reset(new SyncPathModel(this));
+    this->listView.Handle()
+        ? this->OnViewCreated(&listView)
+        : this->listView.Created.connect(this, &SyncPathController::OnViewCreated);
+}
 
 
-};
+void SyncPathController::OnViewCreated(Window* window){
+    this->listView.SetScrollBarVisibility(HorizontalScrollBar, false);
 
-//////////////////////////////////////////////////////////////////////////////
+    typedef ListView::Column Column;
 
-} }     // musik::cube
+    Size clientSize = this->listView.ClientSize();
+
+    this->mainColumn = Column::Create(_T("Path"), clientSize.width);
+    this->listView.AddColumn(this->mainColumn);
+
+    this->listView.EnableColumnResizing(false);
+    this->listView.SetModel(this->model);
+    //
+    int itemHeight = this->listView.RowHeight();
+    this->listView.SetRowHeight(max(itemHeight, 17));
+
+    this->listView.Resized.connect(
+        this, &SyncPathController::OnResized);
+
+}
+
+void SyncPathController::OnResized(Window* window, Size size)
+{
+    this->listView.SetColumnWidth(this->mainColumn, this->listView.ClientSize().width);
+}
+
+void SyncPathController::RemoveSelectedPaths(){
+
+    SyncPathModel* model    = (SyncPathModel*)this->model.get();
+    musik::core::Indexer *indexer   = musik::core::LibraryFactory::GetCurrentLibrary()->Indexer();
+    if(indexer && model){
+
+        win32cpp::ListView::RowIndexList selectedRows(this->listView.SelectedRows());
+        for(win32cpp::ListView::RowIndexList::iterator row=selectedRows.begin();row!=selectedRows.end();++row){
+            indexer->RemovePath(model->paths[*row]);
+        }
+
+    }
+    
+}

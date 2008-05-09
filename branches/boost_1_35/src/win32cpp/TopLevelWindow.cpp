@@ -193,3 +193,27 @@ void        TopLevelWindow::OnRequestFocusPrev()
         base::OnRequestFocusPrev();
     }
 }
+
+void        TopLevelWindow::OnEraseBackground(HDC hdc)
+{
+    // do nothing.
+}
+
+void        TopLevelWindow::OnPaint()
+{
+    PAINTSTRUCT paintStruct;
+    RECT clientRect = this->ClientRect();
+    HDC hdc = ::BeginPaint(this->Handle(), &paintStruct);
+    //
+    {
+        MemoryDC memDC(hdc, clientRect);
+
+        HBRUSH backBrush = ::CreateSolidBrush(this->BackgroundColor());
+        ::FillRect(memDC, &clientRect, backBrush);
+        DeleteObject(backBrush);
+
+        this->DefaultWindowProc(WM_PAINT, (WPARAM) (HDC) memDC, NULL);
+    }
+    //
+    ::EndPaint(this->Handle(), &paintStruct);
+}

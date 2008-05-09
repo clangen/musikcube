@@ -39,6 +39,7 @@
 #include <pch.hpp>
 #include <cube/SettingsController.hpp>
 #include <core/LibraryFactory.h>
+#include <core/Indexer.h>
 
 #include <win32cpp/FolderBrowseDialog.hpp>
 
@@ -63,10 +64,13 @@ void        SettingsController::OnViewCreated(Window* window)
 {
 
     this->settingsView.addPathButton->Pressed.connect(this,&SettingsController::OnAddPath);
+    this->settingsView.removePathButton->Pressed.connect(this,&SettingsController::OnRemovePath);
 
     this->libraryStatusTimer.ConnectToWindow(&this->settingsView);
     this->libraryStatusTimer.OnTimout.connect(this,&SettingsController::OnLibraryStatus);
     this->libraryStatusTimer.Start();
+
+    this->syncPathController.reset(new musik::cube::settings::SyncPathController(*this->settingsView.pathList,this));
 }
 
 void        SettingsController::OnViewResized(Window* window, Size size)
@@ -76,11 +80,20 @@ void        SettingsController::OnViewResized(Window* window, Size size)
 void SettingsController::OnAddPath(Button* button){
     win32cpp::FolderBrowseDialog addPath;
 
-    if(addPath.Show()==win32cpp::FolderBrowseDialog::ResultOK){
-        
+    if(addPath.Show(win32cpp::Application::Instance().MainWindow())==win32cpp::FolderBrowseDialog::ResultOK){
+        musik::core::Indexer *indexer = musik::core::LibraryFactory::GetCurrentLibrary()->Indexer();
+        if(indexer){
+            indexer->AddPath(addPath.Directory());
+        }
     }
+}
+
+void SettingsController::OnRemovePath(Button* button){
+    this->syncPathController->RemoveSelectedPaths();
 }
 
 void SettingsController::OnLibraryStatus(){
     this->settingsView.libraryStatus->SetCaption( musik::core::LibraryFactory::GetCurrentLibrary()->GetInfo() );
 }
+
+

@@ -445,6 +445,26 @@
 						</File>
 					</Filter>
 				</Filter>
+				<Filter
+					Name="localization"
+					>
+					<File
+						RelativePath=".\Config.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Config.hpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Locale.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Locale.hpp"
+						>
+					</File>
+				</Filter>
 			</Filter>
 		</Filter>
 		<Filter

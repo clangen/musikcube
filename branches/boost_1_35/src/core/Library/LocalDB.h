@@ -48,8 +48,8 @@ namespace musik{ namespace core{
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>
 #include <core/db/ScopedTransaction.h>
-#include <core/Indexer.h>
 #include <core/Library/Base.h>
+#include <core/Indexer.h>
 
 namespace musik{ namespace core{
     namespace Library{
@@ -70,17 +70,8 @@ namespace musik{ namespace core{
                 ~LocalDB(void);
 
                 bool Startup();
-
                 utfstring GetInfo();
-
-            public:
-                // Variables:
-
-                //////////////////////////////////////////
-                ///\brief
-                ///Indexer that indexes all your tracks.
-                //////////////////////////////////////////
-                Indexer indexer;
+                musik::core::Indexer *Indexer();
 
             protected:
                 void CancelCurrentQuery( );
@@ -94,6 +85,12 @@ namespace musik{ namespace core{
             private:
                 // Variables:
                 db::Connection db;
+
+                //////////////////////////////////////////
+                ///\brief
+                ///Indexer that indexes all your tracks.
+                //////////////////////////////////////////
+                musik::core::Indexer indexer;
 
         };
     }

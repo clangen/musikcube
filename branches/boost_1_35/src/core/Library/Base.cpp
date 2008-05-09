@@ -460,4 +460,7 @@ bool Library::Base::IsSpecialMTMMetaKey(std::string &metakey){
     return specialMTMMetaKeys.find(metakey)!=specialMTMMetaKeys.end();
 }
 
+musik::core::Indexer *Library::Base::Indexer(){
+    return NULL;
+}
 

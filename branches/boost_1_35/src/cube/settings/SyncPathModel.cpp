@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, mC2 Team
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: mC2
 //
 // All rights reserved.
 //
@@ -36,46 +36,56 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include <pch.hpp>
+#include <win32cpp/ApplicationThread.hpp>
+#include <cube/settings/SyncPathModel.hpp>
+#include <core/Indexer.h>
+#include <core/LibraryFactory.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
-#include <cube/SettingsView.hpp>
-#include <cube/settings/SyncPathController.hpp>
-#include <win32cpp/Timer.hpp>
-#include <boost/shared_ptr.hpp>
+using namespace musik::cube::settings;
 
 //////////////////////////////////////////////////////////////////////////////
 
-using namespace win32cpp;
-
-namespace musik { namespace cube {
-
-//////////////////////////////////////////////////////////////////////////////
-
-class SettingsController : public EventHandler
+SyncPathModel::SyncPathModel(SyncPathController *controller)
+: controller(controller)
 {
-public:     /*ctor*/    SettingsController(SettingsView& settingsView);
+    musik::core::Indexer *indexer   = musik::core::LibraryFactory::GetCurrentLibrary()->Indexer();
+    if(indexer){
+        indexer->PathsUpdated.connect(this,&SyncPathModel::OnPathsUpdated);
+    }
+    this->UpdateSyncPaths();
 
-private:  
-            void        OnViewCreated(Window* window);
-            void        OnViewResized(Window* window, Size size);
-
-            SettingsView&                  settingsView;
-
-            void OnAddPath(Button* button);
-            void OnRemovePath(Button* button);
-            void OnLibraryStatus();
-
-            win32cpp::Timer libraryStatusTimer;
-
-            typedef boost::shared_ptr<settings::SyncPathController> SyncPathControllerRef;
-
-            SyncPathControllerRef syncPathController;
+}
 
 
-};
+uistring SyncPathModel::CellValueToString(int rowIndex, ListView::ColumnRef column){
+    if(rowIndex<this->paths.size() && rowIndex>=0){
+        return this->paths[rowIndex];
+    }
 
-//////////////////////////////////////////////////////////////////////////////
+    return uistring();
+}
 
-} }     // musik::cube
+void SyncPathModel::UpdateSyncPaths(){
+    musik::core::Indexer *indexer   = musik::core::LibraryFactory::GetCurrentLibrary()->Indexer();
+    if(indexer){
+        this->paths    = indexer->GetPaths();
+    }
+
+    this->SetRowCount(0);
+    this->SetRowCount(this->paths.size());
+
+}
+
+void SyncPathModel::OnPathsUpdated(){
+    if(!win32cpp::ApplicationThread::InMainThread()){
+        win32cpp::ApplicationThread::Call0(this,&SyncPathModel::OnPathsUpdated);
+        return;
+    }
+
+    this->UpdateSyncPaths();
+
+}
+

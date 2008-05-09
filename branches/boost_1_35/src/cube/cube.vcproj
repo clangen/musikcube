@@ -405,6 +405,26 @@
 					RelativePath=".\SettingsView.hpp"
 					>
 				</File>
+				<Filter
+					Name="settings"
+					>
+					<File
+						RelativePath=".\Settings\SyncPathController.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Settings\SyncPathController.hpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Settings\SyncPathModel.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Settings\SyncPathModel.hpp"
+						>
+					</File>
+				</Filter>
 			</Filter>
 		</Filter>
 		<File

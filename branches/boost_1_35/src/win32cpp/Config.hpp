@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, mC2 Team
+// The following are Copyright © 2008, André Wösten
 //
 // Sources and Binaries of: mC2, win32cpp
 //
@@ -40,42 +40,31 @@
 
 //////////////////////////////////////////////////////////////////////////////
 
-#include <cube/SettingsView.hpp>
-#include <cube/settings/SyncPathController.hpp>
-#include <win32cpp/Timer.hpp>
-#include <boost/shared_ptr.hpp>
+namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
-
-using namespace win32cpp;
-
-namespace musik { namespace cube {
-
+// Config
 //////////////////////////////////////////////////////////////////////////////
 
-class SettingsController : public EventHandler
-{
-public:     /*ctor*/    SettingsController(SettingsView& settingsView);
+typedef std::vector<uistring> ConfigSectionList;
 
-private:  
-            void        OnViewCreated(Window* window);
-            void        OnViewResized(Window* window, Size size);
+class Config {
+private:    
+    uistring    currentSection;
+    uistring    iniFileName;
+public:
+    /*ctor*/    Config();
+    /*ctor*/    Config(const uistring& fileName);
+    /*dtor*/    ~Config();
+    void        SetSection(const uistring& newSection);
+    void        SetFileName(const uistring& fileName);
+    uistring    Value(const uistring& key);
+    BOOL        SetValue(const uistring& key, const uistring& value);
+    BOOL        SectionExists(const uistring& section);
 
-            SettingsView&                  settingsView;
-
-            void OnAddPath(Button* button);
-            void OnRemovePath(Button* button);
-            void OnLibraryStatus();
-
-            win32cpp::Timer libraryStatusTimer;
-
-            typedef boost::shared_ptr<settings::SyncPathController> SyncPathControllerRef;
-
-            SyncPathControllerRef syncPathController;
-
-
+    ConfigSectionList   Sections();
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-} }     // musik::cube
+}

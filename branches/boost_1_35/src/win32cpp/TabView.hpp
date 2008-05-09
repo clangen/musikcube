@@ -79,6 +79,7 @@ public: // methods
 protected: // methods
     virtual HWND    Create(Window* parent);
     virtual void    OnPaint();
+    virtual void    OnEraseBackground(HDC hdc);
     virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
     virtual void    OnTabSelected();
     virtual void    Layout();

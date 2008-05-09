@@ -78,7 +78,7 @@ HWND        ListView::Create(Window* parent)
     parent = (parent ? parent : Application::Instance().MainWindow());
 
     DWORD style = WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS
-                | LVS_REPORT | LVS_OWNERDATA;
+                | LVS_REPORT | LVS_OWNERDATA | LVS_OWNERDRAWFIXED;
 
     if ( ! this->multipleSelection)
     {

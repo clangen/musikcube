@@ -46,6 +46,8 @@
 #include <boost/utility.hpp>
 
 namespace musik{ namespace core{
+    class Indexer;
+
     namespace Query{
         class Base;
         typedef boost::shared_ptr<musik::core::Query::Base> Ptr;
@@ -54,17 +56,10 @@ namespace musik{ namespace core{
 
 #include <sigslot/sigslot.h>
 #include <string>
-#include "../ThreadHelper.h"
-#include "../PluginFactory.h"
-/*
-#define Query::Options::AutoCallback    1
-#define Query::Options::Wait            2
-#define Query::Options::Prioritize    4
-#define Query::Options::CancelQueue    8
-#define Query::Options::CancelSimilar    16
-#define Query::Options::UnCanceable    32
-*/
+
 namespace musik{ namespace core{
+
+
     namespace Library{
         //////////////////////////////////////////
         ///\brief
@@ -121,6 +116,7 @@ namespace musik{ namespace core{
                 bool QueryCanceled();
 
 
+                virtual musik::core::Indexer *Indexer();
 
                 bool Exit(void);
 
