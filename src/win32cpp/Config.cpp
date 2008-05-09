@@ -171,7 +171,7 @@ ConfigSectionList Config::Sections()
         boost::scoped_ptr<TCHAR> buffer2(new TCHAR[retLen]);
         
         // split up string with section names   
-        for(int lastIndex = 0, i = 0; i < retLen; i++) 
+        for(DWORD lastIndex = 0, i = 0; i < retLen; i++) 
         {
             if(buffer.get()[i] == 0) {
                 // copy section name to separate buffer

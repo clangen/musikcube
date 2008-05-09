@@ -115,6 +115,34 @@ HWND        ListView::Create(Window* parent)
     return hwnd;
 }
 
+LRESULT     ListView::PreWindowProc(UINT message, WPARAM wParam, LPARAM lParam, bool& discardMessage)
+{
+    // Hack to make marquee selection work with the LVS_OWNERDRAWFIXED style. Disable
+    // the style when the mouse button is down, re-enable it when the button is released.
+    switch (message)
+    {
+    case WM_LBUTTONDOWN:
+    case WM_MBUTTONDOWN:
+    case WM_RBUTTONDOWN:
+        {
+            DWORD style = ::GetWindowLong(this->Handle(), GWL_STYLE);
+            ::SetWindowLong(this->Handle(), GWL_STYLE, style & ~LVS_OWNERDRAWFIXED);
+        }
+        break;
+
+    case WM_LBUTTONUP:
+    case WM_MBUTTONUP:
+    case WM_RBUTTONUP:
+        {
+            DWORD style = ::GetWindowLong(this->Handle(), GWL_STYLE);
+            ::SetWindowLong(this->Handle(), GWL_STYLE, style | LVS_OWNERDRAWFIXED);
+        }
+        break;
+    }
+
+    return 0;
+}
+
 LRESULT     ListView::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
