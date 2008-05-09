@@ -30,7 +30,7 @@ enum tracking_type
     track_never = 0,
     // track objects of this type if the object is serialized through a 
     // pointer.
-    track_selectivly = 1,
+    track_selectively = 1,
     // always track this type
     track_always = 2
 };

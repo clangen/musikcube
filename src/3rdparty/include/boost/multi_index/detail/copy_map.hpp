@@ -1,4 +1,4 @@
-/* Copyright 2003-2005 Joaquín M López Muñoz.
+/* Copyright 2003-2007 Joaquín M López Muñoz.
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <boost/detail/no_exceptions_support.hpp>
 #include <boost/multi_index/detail/auto_space.hpp>
+#include <boost/multi_index/detail/prevent_eti.hpp>
 #include <boost/noncopyable.hpp>
 #include <cstddef>
 #include <functional>
@@ -69,31 +70,31 @@ public:
   {
     if(!released){
       for(std::size_t i=0;i<n;++i){
-        boost::detail::allocator::destroy(&spc.data()[i].second->value());
-        deallocate(spc.data()[i].second);
+        boost::detail::allocator::destroy(&(spc.data()+i)->second->value());
+        deallocate((spc.data()+i)->second);
       }
     }
   }
 
-  const_iterator begin()const{return spc.data();}
-  const_iterator end()const{return spc.data()+n;}
+  const_iterator begin()const{return &*spc.data();}
+  const_iterator end()const{return &*(spc.data()+n);}
 
   void clone(Node* node)
   {
-    spc.data()[n].first=node;
-    spc.data()[n].second=al_.allocate(1);
+    (spc.data()+n)->first=node;
+    (spc.data()+n)->second=&*al_.allocate(1);
     BOOST_TRY{
       boost::detail::allocator::construct(
-        &spc.data()[n].second->value(),node->value());
+        &(spc.data()+n)->second->value(),node->value());
     }
     BOOST_CATCH(...){
-      deallocate(spc.data()[n].second);
+      deallocate((spc.data()+n)->second);
       BOOST_RETHROW;
     }
     BOOST_CATCH_END
     ++n;
 
-    if(n==size_)std::sort(spc.data(),spc.data()+size_);
+    if(n==size_)std::sort(&*spc.data(),&*spc.data()+size_);
   }
 
   Node* find(Node* node)const
@@ -109,18 +110,24 @@ public:
   }
 
 private:
-  typename boost::detail::allocator::rebind_to<
-    Allocator,Node>::type                       al_;
-  std::size_t                                   size_;
-  auto_space<copy_map_entry<Node>,Allocator>    spc;
-  std::size_t                                   n;
-  Node*                                         header_org_;
-  Node*                                         header_cpy_;
-  bool                                          released;
+  typedef typename prevent_eti<
+    Allocator,
+    typename boost::detail::allocator::rebind_to<
+      Allocator,Node>::type
+  >::type                                         allocator_type;
+  typedef typename allocator_type::pointer        allocator_pointer;
+
+  allocator_type                                  al_;
+  std::size_t                                     size_;
+  auto_space<copy_map_entry<Node>,Allocator>      spc;
+  std::size_t                                     n;
+  Node*                                           header_org_;
+  Node*                                           header_cpy_;
+  bool                                            released;
 
   void deallocate(Node* node)
   {
-    al_.deallocate(node,1);
+    al_.deallocate(static_cast<allocator_pointer>(node),1);
   }
 };
 

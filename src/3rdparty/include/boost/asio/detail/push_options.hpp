@@ -2,7 +2,7 @@
 // push_options.hpp
 // ~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2007 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2008 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -90,6 +90,12 @@
 # pragma warning (disable:4244)
 # pragma warning (disable:4355)
 # pragma warning (disable:4675)
+# if defined(_M_IX86) && defined(_Wp64)
+// The /Wp64 option is broken. If you want to check 64 bit portability, use a
+// 64 bit compiler!
+#  pragma warning (disable:4311)
+#  pragma warning (disable:4312)
+# endif // defined(_M_IX86) && defined(_Wp64)
 # pragma pack (push, 8)
 // Note that if the /Og optimisation flag is enabled with MSVC6, the compiler
 // has a tendency to incorrectly optimise away some calls to member template

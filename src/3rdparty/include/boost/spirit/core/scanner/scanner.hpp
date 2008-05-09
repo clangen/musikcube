@@ -239,6 +239,10 @@ namespace boost { namespace spirit
         scanner(scanner const& other, IteratorT& first_)
         : PoliciesT(other), first(first_), last(other.last) {}
 
+        template <typename PoliciesT1>
+        scanner(scanner<IteratorT, PoliciesT1> const& other)
+        : PoliciesT(other), first(other.first), last(other.last) {}
+
         bool
         at_end() const
         {

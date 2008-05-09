@@ -79,7 +79,7 @@ basic_binary_iprimitive<Archive, Elem, Tr>::load(wchar_t * ws)
 {
     std::size_t l;
     this->This()->load(l);
-    load_binary(ws, l);
+    load_binary(ws, l * sizeof(wchar_t) / sizeof(char));
     ws[l / sizeof(wchar_t)] = L'\0';
 }
 

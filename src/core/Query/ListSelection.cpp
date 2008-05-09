@@ -471,8 +471,6 @@ bool Query::ListSelection::ParseQuery(Library::Base *oLibrary,db::Connection &db
 
     }
 
-    db.Execute("DROP TABLE IF EXISTS temp_tracks_list");
-
     return success;
 }
 

@@ -1,4 +1,4 @@
-/* Copyright 2003-2005 Joaquín M López Muñoz.
+/* Copyright 2003-2007 Joaquín M López Muñoz.
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
@@ -30,13 +30,21 @@ namespace detail{
 namespace allocator{
 
 /* partial_std_allocator_wrapper inherits the functionality of a std
- * allocator while providing a templatized ctor.
+ * allocator while providing a templatized ctor and other bits missing
+ * in some stdlib implementation or another.
  */
 
 template<typename Type>
 class partial_std_allocator_wrapper:public std::allocator<Type>
 {
 public:
+  /* Oddly enough, STLport does not define std::allocator<void>::value_type
+   * when configured to work without partial template specialization.
+   * No harm in supplying the definition here unconditionally.
+   */
+
+  typedef Type value_type;
+
   partial_std_allocator_wrapper(){};
 
   template<typename Other>

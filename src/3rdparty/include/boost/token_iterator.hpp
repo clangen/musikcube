@@ -84,7 +84,7 @@ namespace boost
             token_iterator<TokenizerFunc, OtherIter,Type> const& t
             , typename enable_if_convertible<OtherIter, Iterator>::type* = 0)
             : f_(t.tokenizer_function()),begin_(t.base())
-            ,end_(t.end()),valid_(t.at_end()),tok_(t.current_token()) {}
+            ,end_(t.end()),valid_(!t.at_end()),tok_(t.current_token()) {}
 
       Iterator base()const{return begin_;}
 
@@ -94,7 +94,7 @@ namespace boost
 
       Type current_token()const{return tok_;}
 
-      bool at_end()const{return valid_;}
+      bool at_end()const{return !valid_;}
 
 
 

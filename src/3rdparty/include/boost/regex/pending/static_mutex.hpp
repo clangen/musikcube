@@ -127,8 +127,15 @@ inline bool scoped_static_mutex_lock::locked()const
 // down to the initialisation proceedure.  In fact the initialisation routine
 // may need to be called more than once - but only once per instance.
 //
-#include <boost/thread/once.hpp>
-#include <boost/thread/recursive_mutex.hpp>
+// Since this preprocessor path is almost never taken, we hide these header
+// dependencies so that build tools don't find them.
+//
+#define B1 <boost/thread/once.hpp>
+#define B2 <boost/thread/recursive_mutex.hpp>
+#include B1
+#include B2
+#undef B1
+#undef B2
 
 namespace boost{
 

@@ -23,7 +23,7 @@ inline T implicit_cast (typename mpl::identity<T>::type x) {
 //template <typename T>
 //void implicit_cast (...);
 
-
 } // namespace boost
+
 
 #endif // IMPLICIT_CAST_DWA200356_HPP

@@ -1,4 +1,4 @@
-/* Copyright 2003-2006 Joaquín M López Muñoz.
+/* Copyright 2003-2007 Joaquín M López Muñoz.
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
@@ -47,18 +47,6 @@ public:
     return node->value();
   }
 
-  friend bool operator==(
-    const rnd_node_iterator& x,const rnd_node_iterator& y)
-  {
-    return x.node==y.node;
-  }
-
-  friend bool operator<(
-    const rnd_node_iterator& x,const rnd_node_iterator& y)
-  {
-    return Node::distance(x.node,y.node)>0;
-  }
-
   rnd_node_iterator& operator++()
   {
     Node::increment(node);
@@ -83,12 +71,6 @@ public:
     return *this;
   }
 
-  friend std::ptrdiff_t operator-(
-    const rnd_node_iterator& x,const rnd_node_iterator& y)
-  {
-    return Node::distance(y.node,x.node);
-  }
-  
 #if !defined(BOOST_MULTI_INDEX_DISABLE_SERIALIZATION)
   /* Serialization. As for why the following is public,
    * see explanation in safe_mode_iterator notes in safe_mode.hpp.
@@ -123,6 +105,30 @@ public:
 private:
   Node* node;
 };
+
+template<typename Node,typename Derived>
+bool operator==(
+  const rnd_node_iterator<Node,Derived>& x,
+  const rnd_node_iterator<Node,Derived>& y)
+{
+  return x.get_node()==y.get_node();
+}
+
+template<typename Node,typename Derived>
+bool operator<(
+  const rnd_node_iterator<Node,Derived>& x,
+  const rnd_node_iterator<Node,Derived>& y)
+{
+  return Node::distance(x.get_node(),y.get_node())>0;
+}
+
+template<typename Node,typename Derived>
+std::ptrdiff_t operator-(
+  const rnd_node_iterator<Node,Derived>& x,
+  const rnd_node_iterator<Node,Derived>& y)
+{
+  return Node::distance(y.get_node(),x.get_node());
+}
 
 } /* namespace multi_index::detail */
 

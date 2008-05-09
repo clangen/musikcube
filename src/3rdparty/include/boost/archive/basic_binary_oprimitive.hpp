@@ -46,6 +46,9 @@ namespace std{
 #include <boost/archive/basic_streambuf_locale_saver.hpp>
 #include <boost/archive/archive_exception.hpp>
 #include <boost/archive/detail/auto_link_archive.hpp>
+#include <boost/serialization/is_bitwise_serializable.hpp>
+#include <boost/mpl/placeholders.hpp>
+#include <boost/serialization/array.hpp>
 #include <boost/archive/detail/abi_prefix.hpp> // must be the last header
 
 namespace boost {
@@ -101,6 +104,7 @@ public:
 
     BOOST_ARCHIVE_OR_WARCHIVE_DECL(void)
     init();
+    
     BOOST_ARCHIVE_OR_WARCHIVE_DECL(BOOST_PP_EMPTY()) 
     basic_binary_oprimitive(
         std::basic_streambuf<Elem, Tr> & sb, 
@@ -109,6 +113,24 @@ public:
     BOOST_ARCHIVE_OR_WARCHIVE_DECL(BOOST_PP_EMPTY()) 
     ~basic_binary_oprimitive();
 public:
+
+    // we provide an optimized save for all fundamental types
+    // typedef serialization::is_bitwise_serializable<mpl::_1> 
+    //  use_array_optimization;
+    // workaround without using mpl lambdas
+    struct use_array_optimization {
+      template <class T>
+      struct apply : public serialization::is_bitwise_serializable<T> {};
+    };
+    
+
+    // the optimized save_array dispatches to save_binary 
+    template <class ValueType>
+    void save_array(serialization::array<ValueType> const& a, unsigned int)
+    {
+      save_binary(a.address(),a.count()*sizeof(ValueType));
+    }
+
     void save_binary(const void *address, std::size_t count);
 };
 

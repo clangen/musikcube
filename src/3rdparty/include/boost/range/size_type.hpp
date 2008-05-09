@@ -16,158 +16,60 @@
 #endif
 
 #include <boost/range/config.hpp>
-/*
-#include <boost/range/difference_type.hpp>
-
-namespace boost
-{
-        namespace range_detail
-        {
-                template< class T >
-                struct add_unsigned;
-
-                template<>
-                struct add_unsigned<short>
-                {
-                        typedef unsigned short type;
-                };
-
-                template<>
-                struct add_unsigned<int>
-                {
-                        typedef unsigned int type;
-                };
-
-                template<>
-                struct add_unsigned<long>
-                {
-                        typedef unsigned long type;
-                };
-
-#ifdef BOOST_HAS_LONG_LONG
-
-                template<>
-                struct add_unsigned<long long>
-                {
-                        typedef unsigned long long type;
-                };
-#endif
-
-        }
-
-        template< class T >
-        struct range_size
-        {
-                typedef BOOST_DEDUCED_TYPENAME range_detail::add_unsigned<
-                                        BOOST_DEDUCED_TYPENAME range_difference<T>::type >::type
-                        type;
-        };
-}
-*/
 
 #ifdef BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION
 #include <boost/range/detail/size_type.hpp>
 #else
 
+#include <boost/type_traits/remove_const.hpp>
 #include <cstddef>
 #include <utility>
 
 namespace boost
 {
-    //////////////////////////////////////////////////////////////////////////
-    // default
-    //////////////////////////////////////////////////////////////////////////
-
-    template< typename C >
-    struct range_size
+    namespace detail
     {
-        typedef BOOST_DEDUCED_TYPENAME C::size_type type;
-    };
 
-    //////////////////////////////////////////////////////////////////////////
-    // pair
-    //////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////
+        // default
+        //////////////////////////////////////////////////////////////////////////
+    
+        template< typename C >
+        struct range_size
+        {
+            typedef BOOST_DEDUCED_TYPENAME C::size_type type;
+        };
+    
+        //////////////////////////////////////////////////////////////////////////
+        // pair
+        //////////////////////////////////////////////////////////////////////////
+    
+        template< typename Iterator >
+        struct range_size< std::pair<Iterator,Iterator> >
+        {
+            typedef std::size_t type;
+        };
+    
+        //////////////////////////////////////////////////////////////////////////
+        // array
+        //////////////////////////////////////////////////////////////////////////
+    
+        template< typename T, std::size_t sz >
+        struct range_size< T[sz] >
+        {
+            typedef std::size_t type;
+        };
+    }
 
-    template< typename Iterator >
-    struct range_size< std::pair<Iterator,Iterator> >
-    {
-        typedef std::size_t type;
-    };
+    template< class T >
+    struct range_size : 
+        detail::range_size<T>
+    { };
 
-    template< typename Iterator >
-    struct range_size< const std::pair<Iterator,Iterator> >
-    {
-        typedef std::size_t type;
-    };
-
-    //////////////////////////////////////////////////////////////////////////
-    // array
-    //////////////////////////////////////////////////////////////////////////
-
-    template< typename T, std::size_t sz >
-    struct range_size< T[sz] >
-    {
-        typedef std::size_t type;
-    };
-
-    template< typename T, std::size_t sz >
-    struct range_size< const T[sz] >
-    {
-        typedef std::size_t type;
-    };
-
-    //////////////////////////////////////////////////////////////////////////
-    // string
-    //////////////////////////////////////////////////////////////////////////
-
-    template<>
-    struct range_size< char* >
-    {
-        typedef std::size_t type;
-    };
-
-    template<>
-    struct range_size< wchar_t* >
-    {
-        typedef std::size_t type;
-    };
-
-    template<>
-    struct range_size< const char* >
-    {
-        typedef std::size_t type;
-    };
-
-    template<>
-    struct range_size< const wchar_t* >
-    {
-        typedef std::size_t type;
-    };
-
-    template<>
-    struct range_size< char* const >
-    {
-        typedef std::size_t type;
-    };
-
-    template<>
-    struct range_size< wchar_t* const >
-    {
-        typedef std::size_t type;
-    };
-
-    template<>
-    struct range_size< const char* const >
-    {
-        typedef std::size_t type;
-    };
-
-    template<>
-    struct range_size< const wchar_t* const >
-    {
-        typedef std::size_t type;
-    };
-
+    template< class T >
+    struct range_size<const T > : range_size<T>
+    { };
+    
 } // namespace boost
 
 #endif // BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION

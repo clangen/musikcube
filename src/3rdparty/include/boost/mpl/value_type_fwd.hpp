@@ -11,9 +11,9 @@
 //
 // See http://www.boost.org/libs/mpl for documentation.
 
-// $Source: /cvsroot/boost/boost/boost/mpl/value_type_fwd.hpp,v $
-// $Date: 2004/09/02 15:40:42 $
-// $Revision: 1.2 $
+// $Source$
+// $Date: 2008-03-22 17:45:55 -0400 (Sat, 22 Mar 2008) $
+// $Revision: 43798 $
 
 namespace boost { namespace mpl {
 

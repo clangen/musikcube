@@ -1,4 +1,4 @@
-/* Copyright 2003-2005 Joaquín M López Muñoz.
+/* Copyright 2003-2007 Joaquín M López Muñoz.
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
@@ -34,10 +34,11 @@ Node* random_access_index_remove(
   BOOST_APPEND_EXPLICIT_TEMPLATE_TYPE(Node))
 {
   typedef typename Node::value_type value_type;
+  typedef typename Node::impl_ptr_pointer impl_ptr_pointer;
 
-  random_access_index_node_impl** first=ptrs.begin(),
-                               ** res=first,
-                               ** last=ptrs.end();
+  impl_ptr_pointer first=ptrs.begin(),
+                   res=first,
+                   last=ptrs.end();
   for(;first!=last;++first){
     if(!pred(
         const_cast<const value_type&>(Node::from_impl(*first)->value()))){
@@ -57,11 +58,12 @@ Node* random_access_index_unique(
   random_access_index_ptr_array<Allocator>& ptrs,BinaryPredicate binary_pred
   BOOST_APPEND_EXPLICIT_TEMPLATE_TYPE(Node))
 {
-  typedef typename Node::value_type value_type;
+  typedef typename Node::value_type       value_type;
+  typedef typename Node::impl_ptr_pointer impl_ptr_pointer;
 
-  random_access_index_node_impl** first=ptrs.begin(),
-                               ** res=first,
-                               ** last=ptrs.end();
+  impl_ptr_pointer first=ptrs.begin(),
+                   res=first,
+                   last=ptrs.end();
   if(first!=last){
     for(;++first!=last;){
       if(!binary_pred(
@@ -84,17 +86,19 @@ template<typename Node,typename Allocator,typename Compare>
 void random_access_index_inplace_merge(
   const Allocator& al,
   random_access_index_ptr_array<Allocator>& ptrs,
-  random_access_index_node_impl** first1,Compare comp
+  BOOST_DEDUCED_TYPENAME Node::impl_ptr_pointer first1,Compare comp
   BOOST_APPEND_EXPLICIT_TEMPLATE_TYPE(Node))
 {
-  typedef typename Node::value_type value_type;
+  typedef typename Node::value_type       value_type;
+  typedef typename Node::impl_pointer     impl_pointer;
+  typedef typename Node::impl_ptr_pointer impl_ptr_pointer;
 
-  auto_space<random_access_index_node_impl*,Allocator> spc(al,ptrs.size());
+  auto_space<impl_pointer,Allocator> spc(al,ptrs.size());
 
-  random_access_index_node_impl** first0=ptrs.begin(),
-                               ** last0=first1,
-                               ** last1=ptrs.end(),
-                               ** out=spc.data();
+  impl_ptr_pointer first0=ptrs.begin(),
+                   last0=first1,
+                   last1=ptrs.end(),
+                   out=spc.data();
   while(first0!=last0&&first1!=last1){
     if(comp(
         const_cast<const value_type&>(Node::from_impl(*first1)->value()),
@@ -105,8 +109,8 @@ void random_access_index_inplace_merge(
       *out++=*first0++;
     }
   }
-  std::copy(first0,last0,out);
-  std::copy(first1,last1,out);
+  std::copy(&*first0,&*last0,&*out);
+  std::copy(&*first1,&*last1,&*out);
 
   first1=ptrs.begin();
   out=spc.data();
@@ -124,13 +128,13 @@ void random_access_index_inplace_merge(
 template<typename Node,typename Compare>
 struct random_access_index_sort_compare:
   std::binary_function<
-    const typename Node::value_type*,const typename Node::value_type*,bool>
+    typename Node::impl_pointer,
+    typename Node::impl_pointer,bool>
 {
   random_access_index_sort_compare(Compare comp_=Compare()):comp(comp_){}
 
   bool operator()(
-    random_access_index_node_impl* x,
-    random_access_index_node_impl* y)const
+    typename Node::impl_pointer x,typename Node::impl_pointer y)const
   {
     typedef typename Node::value_type value_type;
 
@@ -171,18 +175,20 @@ void random_access_index_sort(
    */
 
   typedef typename Node::value_type         value_type;
+  typedef typename Node::impl_pointer       impl_pointer;
+  typedef typename Node::impl_ptr_pointer   impl_ptr_pointer;
   typedef random_access_index_sort_compare<
     Node,Compare>                           ptr_compare;
   
-  random_access_index_node_impl**   first=ptrs.begin();
-  random_access_index_node_impl**   last=ptrs.end();
+  impl_ptr_pointer   first=ptrs.begin();
+  impl_ptr_pointer   last=ptrs.end();
   auto_space<
-    random_access_index_node_impl*,
-    Allocator>                      spc(al,ptrs.size());
-  random_access_index_node_impl**   buf=spc.data();
+    impl_pointer,
+    Allocator>       spc(al,ptrs.size());
+  impl_ptr_pointer   buf=spc.data();
 
-  std::copy(first,last,buf);
-  std::stable_sort(buf,buf+ptrs.size(),ptr_compare(comp));
+  std::copy(&*first,&*last,&*buf);
+  std::stable_sort(&*buf,&*buf+ptrs.size(),ptr_compare(comp));
 
   while(first!=last){
     *first=*buf++;

@@ -191,6 +191,7 @@ protected: // methods
     virtual void        OnMeasureItem(MEASUREITEMSTRUCT* measureItemStruct);
     virtual void        OnMouseMoved(MouseEventFlags flags, const Point& location);
     virtual void        OnRowActivated(int rowIndex);
+    virtual LRESULT     OnCustomDraw(NMLVCUSTOMDRAW* customDraw);
     void                OnMouseExit();
 
 protected: // instance data

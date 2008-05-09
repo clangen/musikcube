@@ -2,7 +2,7 @@
 // strand_service.hpp
 // ~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2007 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2008 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -336,7 +336,7 @@ public:
       call_stack<strand_impl>::context ctx(impl.get());
 
       // Make the upcall.
-      asio_handler_invoke_helpers::invoke(handler, &handler);
+      boost_asio_handler_invoke_helpers::invoke(handler, &handler);
     }
 
     static void do_destroy(handler_base* base)
@@ -413,7 +413,7 @@ public:
   {
     if (call_stack<strand_impl>::contains(impl.get()))
     {
-      asio_handler_invoke_helpers::invoke(handler, &handler);
+      boost_asio_handler_invoke_helpers::invoke(handler, &handler);
     }
     else
     {
@@ -428,10 +428,9 @@ public:
       if (impl->current_handler_ == 0)
       {
         // This handler now has the lock, so can be dispatched immediately.
-        impl->current_handler_ = ptr.get();
+        impl->current_handler_ = ptr.release();
         lock.unlock();
         this->get_io_service().dispatch(invoke_current_handler(*this, impl));
-        ptr.release();
       }
       else
       {
@@ -468,10 +467,9 @@ public:
     if (impl->current_handler_ == 0)
     {
       // This handler now has the lock, so can be dispatched immediately.
-      impl->current_handler_ = ptr.get();
+      impl->current_handler_ = ptr.release();
       lock.unlock();
       this->get_io_service().post(invoke_current_handler(*this, impl));
-      ptr.release();
     }
     else
     {

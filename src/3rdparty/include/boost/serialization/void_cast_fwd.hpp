@@ -17,23 +17,14 @@
 
 //  See http://www.boost.org for updates, documentation, and revision history.
 
-#include <boost/serialization/force_include.hpp>
-#include <boost/detail/workaround.hpp>
-
 namespace boost {
 namespace serialization {
 namespace void_cast_detail{
 class void_caster;
 } // namespace void_cast_detail
-
 template<class Derived, class Base>
 BOOST_DLLEXPORT 
-// DMC doesn't allow export and inline, so supress the inline
-#if BOOST_WORKAROUND(__DMC__, BOOST_TESTED_AT(0x849)) 
-#else
-inline 
-#endif
-const void_cast_detail::void_caster & void_cast_register(
+inline const void_cast_detail::void_caster & void_cast_register(
     const Derived * dnull = NULL, 
     const Base * bnull = NULL
 ) BOOST_USED;

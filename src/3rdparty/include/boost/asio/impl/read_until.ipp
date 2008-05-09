@@ -2,7 +2,7 @@
 // read_until.ipp
 // ~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2007 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2008 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -358,7 +358,7 @@ namespace detail
       read_until_delim_handler<AsyncReadStream,
         Allocator, ReadHandler>* this_handler)
   {
-    asio_handler_invoke_helpers::invoke(
+    boost_asio_handler_invoke_helpers::invoke(
         function, &this_handler->handler_);
   }
 } // namespace detail
@@ -515,7 +515,7 @@ namespace detail
       read_until_delim_string_handler<AsyncReadStream,
         Allocator, ReadHandler>* this_handler)
   {
-    asio_handler_invoke_helpers::invoke(
+    boost_asio_handler_invoke_helpers::invoke(
         function, &this_handler->handler_);
   }
 } // namespace detail
@@ -689,7 +689,7 @@ namespace detail
       read_until_expr_handler<AsyncReadStream,
         Allocator, ReadHandler>* this_handler)
   {
-    asio_handler_invoke_helpers::invoke(
+    boost_asio_handler_invoke_helpers::invoke(
         function, &this_handler->handler_);
   }
 } // namespace detail

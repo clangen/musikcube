@@ -32,7 +32,7 @@ namespace serialization {
 namespace archive {
 namespace detail {
 
-class BOOST_ARCHIVE_DECL(BOOST_PP_EMPTY()) basic_pointer_oserializer;
+class BOOST_ARCHIVE_OR_WARCHIVE_DECL(BOOST_PP_EMPTY()) basic_pointer_oserializer;
 
 template<class Archive>
 class interface_oarchive 
@@ -51,29 +51,14 @@ public:
     }
 
     template<class T>
-    const basic_pointer_oserializer * register_type(const T * = NULL){
+    const basic_pointer_oserializer * 
+    register_type(const T * = NULL){
         const basic_pointer_oserializer & bpos =
-            instantiate_pointer_oserializer(
-                static_cast<Archive *>(NULL),
-                static_cast<T *>(NULL)
-            );
+            pointer_oserializer<Archive, T>::get_instance();
         this->This()->register_basic_serializer(bpos.get_basic_serializer());
         return & bpos;
     }
 
-    void lookup_helper(
-        const boost::serialization::extended_type_info * const eti,
-        boost::shared_ptr<void> & sph
-    ){
-        this->This()->lookup_basic_helper(eti, sph);
-    }
-
-    void insert_helper(
-        const boost::serialization::extended_type_info * const eti,
-        shared_ptr<void> & sph
-    ){
-        this->This()->insert_basic_helper(eti, sph);
-    }
     template<class T>
     Archive & operator<<(T & t){
         this->This()->save_override(t, 0);

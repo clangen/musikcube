@@ -1,4 +1,4 @@
-/* Copyright 2003-2005 Joaquín M López Muñoz.
+/* Copyright 2003-2007 Joaquín M López Muñoz.
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
@@ -91,7 +91,7 @@ public:
   }
 
 private:
-  Node** entries()const{return spc.data();}
+  Node** entries()const{return &*spc.data();}
 
   /* We try to delay sorting as much as possible just in case it
    * is not necessary, hence this version of load_node.

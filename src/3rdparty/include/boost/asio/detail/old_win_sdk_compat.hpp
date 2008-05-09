@@ -2,7 +2,7 @@
 // old_win_sdk_compat.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2007 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2008 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -31,6 +31,10 @@
 #if defined(BOOST_ASIO_HAS_OLD_WIN_SDK)
 
 // Emulation of types that are missing from old Platform SDKs.
+//
+// N.B. this emulation is also used if building for a Windows 2000 target with
+// a recent (i.e. Vista or later) SDK, as the SDK does not provide IPv6 support
+// in that case.
 
 namespace boost {
 namespace asio {
@@ -55,8 +59,18 @@ struct sockaddr_storage_emulation
 
 struct in6_addr_emulation
 {
-  u_char s6_addr[16];
+  union
+  {
+    u_char Byte[16];
+    u_short Word[8];
+  } u;
 };
+
+#if !defined(s6_addr)
+# define _S6_un u
+# define _S6_u8 Byte
+# define s6_addr _S6_un._S6_u8
+#endif // !defined(s6_addr)
 
 struct sockaddr_in6_emulation
 {

@@ -28,10 +28,11 @@ class shared_ptr;
 namespace serialization {
     class extended_type_info;
 } // namespace serialization
+
 namespace archive {
 namespace detail {
 
-class BOOST_ARCHIVE_DECL(BOOST_PP_EMPTY()) basic_pointer_iserializer;
+class BOOST_ARCHIVE_OR_WARCHIVE_DECL(BOOST_PP_EMPTY()) basic_pointer_iserializer;
 
 template<class Archive>
 class interface_iarchive 
@@ -50,27 +51,12 @@ public:
     }
 
     template<class T>
-    const basic_pointer_iserializer * register_type(T * = NULL){
+    const basic_pointer_iserializer * 
+    register_type(T * = NULL){
         const basic_pointer_iserializer & bpis =
-            instantiate_pointer_iserializer(
-                static_cast<Archive *>(NULL),
-                static_cast<T *>(NULL)
-            );
+            pointer_iserializer<Archive, T>::get_instance();
         this->This()->register_basic_serializer(bpis.get_basic_serializer());
         return & bpis;
-    }
-    void lookup_helper(
-        const boost::serialization::extended_type_info * const eti,
-        boost::shared_ptr<void> & sph
-    ){
-        this->This()->lookup_basic_helper(eti, sph);
-    }
-
-    void insert_helper(
-        const boost::serialization::extended_type_info * const eti,
-        shared_ptr<void> & sph
-    ){
-        this->This()->insert_basic_helper(eti, sph);
     }
     template<class T>
     Archive & operator>>(T & t){

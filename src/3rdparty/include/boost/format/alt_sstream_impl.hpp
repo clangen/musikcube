@@ -107,7 +107,7 @@ namespace boost {
                     return pos_type(off_type(-1));
                 if(eback() <= off+gptr() && off+gptr() <= putend_ ) {
                     // set gptr
-                    streambuf_t::gbump(off);
+                    streambuf_t::gbump(static_cast<int>(off));
                     if(which & ::std::ios_base::out && pptr() != NULL)
                         // update pptr to match gptr
                         streambuf_t::pbump(static_cast<int>(gptr()-pptr()));
@@ -125,7 +125,7 @@ namespace boost {
                     return pos_type(off_type(-1));                    
                 if(pbase() <= off+pptr() && off+pptr() <= putend_)
                     // set pptr
-                    streambuf_t::pbump(off); 
+                    streambuf_t::pbump(static_cast<int>(off)); 
                 else
                     off = off_type(-1);
             }
@@ -221,6 +221,10 @@ namespace boost {
         typename basic_altstringbuf<Ch, Tr, Alloc>::int_type 
         basic_altstringbuf<Ch, Tr, Alloc>:: 
         overflow (int_type meta) {
+#ifdef BOOST_MSVC
+#pragma warning(push)
+#pragma warning(disable:4996)
+#endif
             if(compat_traits_type::eq_int_type(compat_traits_type::eof(), meta))
                 return compat_traits_type::not_eof(meta); // nothing to do
             else if(pptr() != NULL && pptr() < epptr()) {
@@ -276,6 +280,9 @@ namespace boost {
                 streambuf_t::sputc(compat_traits_type::to_char_type(meta));
                 return meta;
             }
+#ifdef BOOST_MSVC
+#pragma warning(pop)
+#endif
         }
         // -end overflow(..)
 

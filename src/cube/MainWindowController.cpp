@@ -43,6 +43,7 @@
 #include <cube/SourcesView.hpp>
 
 #include <core/Library/LocalDB.h>
+#include <core/Pluginfactory.h>
 
 //////////////////////////////////////////////////////////////////////////////
 

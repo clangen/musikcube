@@ -65,16 +65,8 @@ protected:
 public:
     // note: NOT part of the public API.
     void next_object_pointer(void *t);
-    void register_basic_serializer(const basic_iserializer & bis);
-    void
-    lookup_basic_helper(
-        const boost::serialization::extended_type_info * const eti,
-        shared_ptr<void> & sph
-    );
-    void 
-    insert_basic_helper(
-        const boost::serialization::extended_type_info * const eti,
-        shared_ptr<void> & sph
+    void register_basic_serializer(
+        const basic_iserializer & bis
     );
     void load_object(
         void *t, 

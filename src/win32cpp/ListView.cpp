@@ -119,17 +119,6 @@ LRESULT     ListView::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
-    case WM_DRAWITEM:
-        {
-            if ( ! lParam)
-            {
-                break;
-            }
-
-            this->DrawRow((DRAWITEMSTRUCT*) lParam);
-        }
-        break;
-
     case WM_NOTIFY:
         {
             if ( ! lParam)
@@ -140,6 +129,17 @@ LRESULT     ListView::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
             NMHDR* notifyHeader = reinterpret_cast<NMHDR*>(lParam);
             switch (notifyHeader->code)
             {
+            case NM_CUSTOMDRAW:
+                {
+                    // The header ctrl also emits NM_CUSTOMDRAW messages
+                    if (notifyHeader->hwndFrom == this->Handle())
+                    {
+                        NMLVCUSTOMDRAW* lvCustomDraw = reinterpret_cast<NMLVCUSTOMDRAW*>(notifyHeader);
+                        return this->OnCustomDraw(lvCustomDraw);
+                    }
+                }
+                break;
+
             case HDN_BEGINTRACK:
                 {
                     return ( ! this->columnsResizable);
@@ -197,6 +197,47 @@ LRESULT     ListView::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
     }
 
     return base::WindowProc(message, wParam, lParam);
+}
+
+LRESULT     ListView::OnCustomDraw(NMLVCUSTOMDRAW* customDraw)
+{
+    static const DWORD SUBITEM_PREPAINT = (CDDS_ITEMPREPAINT | CDDS_SUBITEM);
+
+    switch (customDraw->nmcd.dwDrawStage)
+    {
+    case CDDS_PREPAINT:
+        {
+            return CDRF_NOTIFYITEMDRAW;
+        }
+
+    case CDDS_ITEMPREERASE:
+        {
+            return CDRF_SKIPDEFAULT;
+        }
+
+    case CDDS_ITEMPREPAINT: // we drow the row and all of the cells here!
+        {
+            DRAWITEMSTRUCT drawItemStruct;
+            ::SecureZeroMemory(&drawItemStruct, sizeof(drawItemStruct));
+            drawItemStruct.itemID = (UINT) customDraw->nmcd.dwItemSpec;
+            drawItemStruct.hDC = customDraw->nmcd.hdc;
+            drawItemStruct.rcItem = this->RowRect(drawItemStruct.itemID);
+
+            this->DrawRow(&drawItemStruct);
+
+            return CDRF_SKIPDEFAULT;
+        }
+
+    case SUBITEM_PREPAINT:
+        {
+            return CDRF_SKIPDEFAULT;
+        }
+
+    default:
+        {
+            return CDRF_DODEFAULT;
+        }
+    }
 }
 
 void        ListView::OnSelectionChanged()
@@ -275,12 +316,7 @@ Rect        ListView::CellRect(int rowIndex, int columnIndex) const
 Rect        ListView::RowRect(int rowIndex) const
 {
     RECT result;
-
     ListView_GetItemRect(this->Handle(), rowIndex, &result, LVIR_BOUNDS);
-
-    // Extend the item rect to the end width of the view
-    result.right = result.left + this->ClientRect().Width();
-
     return result;
 }
 
@@ -319,9 +355,7 @@ void        ListView::DrawRow(DRAWITEMSTRUCT* itemInfo)
         renderParams.backColor = Color::Darken(renderParams.backColor, 15);
     }
 
-
     // Render the row (usually just the background)
-    //%renderParams.rect = this->RowRect(renderParams.rowIndex);
     RowRendererRef rowRenderer = this->model->RowRenderer(renderParams.rowIndex);
     if (rowRenderer)
     {

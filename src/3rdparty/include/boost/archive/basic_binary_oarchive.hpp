@@ -27,8 +27,10 @@
 #include <boost/pfto.hpp>
 
 #include <boost/detail/workaround.hpp>
-#include <boost/archive/detail/common_oarchive.hpp>
+#include <boost/archive/array/oarchive.hpp>
 #include <boost/serialization/string.hpp>
+#include <boost/serialization/collection_size_type.hpp>
+#include <boost/archive/array/oarchive.hpp>
 
 namespace boost {
 namespace archive {
@@ -41,12 +43,9 @@ namespace archive {
 // by a program built with the same tools for the same machne.  This class
 // does have the virtue of buiding the smalles archive in the minimum amount
 // of time.  So under some circumstances it may be he right choice.
-
-/////////////////////////////////////////////////////////////////////////
-// class basic_text_iarchive - read serialized objects from a input text stream
 template<class Archive>
 class basic_binary_oarchive : 
-    public detail::common_oarchive<Archive>
+    public array::oarchive<Archive>
 {
 protected:
 #if BOOST_WORKAROUND(BOOST_MSVC, <= 1300)
@@ -59,10 +58,14 @@ public:
     friend class detail::interface_oarchive<Archive>;
 #endif
     // any datatype not specifed below will be handled by base class
-    typedef detail::common_oarchive<Archive> detail_common_oarchive;
+    typedef array::oarchive<Archive> array_oarchive;
+    template<class T>
+    void save_override(const T & t, BOOST_PFTO int){
+        this->array_oarchive::save_override(t, 0);
+    }
     template<class T>
     void save_override(T & t, BOOST_PFTO int){
-        this->detail_common_oarchive::save_override(t, 0);
+        this->save_override(const_cast<const T &>(t), 0);
     }
     // binary files don't include the optional information 
     void save_override(const class_id_optional_type & /* t */, int){}
@@ -70,22 +73,22 @@ public:
     void save_override(const version_type & t, int){
         // upto 255 versions
         // note:t.t resolves borland ambguity
-        unsigned  char x = t.t;
+        const unsigned char x = t.t;
         * this->This() << x;
     }
     void save_override(const class_id_type & t, int){
         // upto 32K classes
-        int_least16_t x = t.t;
+        const int_least16_t x = t.t;
         * this->This() << x;
     }
     void save_override(const class_id_reference_type & t, int){
         // upto 32K classes
-        int_least16_t x = t.t;
+        const int_least16_t x = t.t;
         * this->This() << x;
     }
     void save_override(const object_id_type & t, int){
         // upto 2G objects
-        uint_least32_t x = t.t;
+        const uint_least32_t x = t.t;
         * this->This() << x;
     }
     void save_override(const object_reference_type & t, int){
@@ -94,7 +97,7 @@ public:
         * this->This() << x;
     }
     void save_override(const tracking_type & t, int){
-        char x = t.t;
+        const char x = t.t;
         * this->This() << x;
     }
 
@@ -104,11 +107,17 @@ public:
         * this->This() << s;
     }
 
+    void save_override(const serialization::collection_size_type & t, int){
+    // for backward compatibility, 64 bit integer or variable length integer would be preferred
+        unsigned int x = t.t;
+        * this->This() << x;
+   }
+
     BOOST_ARCHIVE_OR_WARCHIVE_DECL(void)
     init();
 
     basic_binary_oarchive(unsigned int flags) :
-        detail::common_oarchive<Archive>(flags)
+        array_oarchive(flags)
     {}
 };
 

@@ -19,8 +19,15 @@
 #ifndef BOOST_REGEX_TRAITS_DEFAULTS_HPP_INCLUDED
 #define BOOST_REGEX_TRAITS_DEFAULTS_HPP_INCLUDED
 
+#ifdef BOOST_MSVC
+#pragma warning(push)
+#pragma warning(disable: 4103)
+#endif
 #ifdef BOOST_HAS_ABI_HEADERS
 #  include BOOST_ABI_PREFIX
+#endif
+#ifdef BOOST_MSVC
+#pragma warning(pop)
 #endif
 
 #ifndef BOOST_REGEX_SYNTAX_TYPE_HPP
@@ -77,7 +84,7 @@ inline bool is_combining<unsigned char>(unsigned char)
 {
    return false;
 }
-#ifndef __hpux // can't use WCHAR_MIN/MAX in pp-directives.
+#ifndef __hpux // can't use WCHAR_MAX/MIN in pp-directives
 #ifdef _MSC_VER 
 template<>
 inline bool is_combining<wchar_t>(wchar_t c)
@@ -310,8 +317,15 @@ int global_toi(const charT*& p1, const charT* p2, int radix, const traits& t)
 } // re_detail
 } // boost
 
+#ifdef BOOST_MSVC
+#pragma warning(push)
+#pragma warning(disable: 4103)
+#endif
 #ifdef BOOST_HAS_ABI_HEADERS
 #  include BOOST_ABI_SUFFIX
+#endif
+#ifdef BOOST_MSVC
+#pragma warning(pop)
 #endif
 
 #endif

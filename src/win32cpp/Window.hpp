@@ -276,6 +276,7 @@ protected: // methods
     virtual void    OnPaint();
     virtual void    OnRequestFocusPrev();
     virtual void    OnRequestFocusNext();
+    virtual HBRUSH  OnControlColor(HDC hdc);
 
     // window proc related
     virtual LRESULT             PreWindowProcBase(UINT message, WPARAM wParam, LPARAM lParam, bool& discardMessage);

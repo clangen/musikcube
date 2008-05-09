@@ -2,7 +2,7 @@
 // socket_types.hpp
 // ~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2007 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2008 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -92,7 +92,11 @@
 # include <sys/ioctl.h>
 # include <sys/poll.h>
 # include <sys/types.h>
-# include <sys/select.h>
+# if defined(__hpux) && !defined(__HP_aCC)
+#  include <sys/time.h>
+# else
+#  include <sys/select.h>
+# endif
 # include <sys/socket.h>
 # include <sys/uio.h>
 # include <netinet/in.h>
@@ -157,7 +161,16 @@ const int max_addr_v4_str_len = INET_ADDRSTRLEN;
 const int max_addr_v6_str_len = INET6_ADDRSTRLEN + 1 + IF_NAMESIZE;
 typedef sockaddr socket_addr_type;
 typedef in_addr in4_addr_type;
+# if defined(__hpux)
+// HP-UX doesn't provide ip_mreq when _XOPEN_SOURCE_EXTENDED is defined.
+struct in4_mreq_type
+{
+  struct in_addr imr_multiaddr;
+  struct in_addr imr_interface;
+};
+# else
 typedef ip_mreq in4_mreq_type;
+# endif
 typedef sockaddr_in sockaddr_in4_type;
 typedef in6_addr in6_addr_type;
 typedef ipv6_mreq in6_mreq_type;

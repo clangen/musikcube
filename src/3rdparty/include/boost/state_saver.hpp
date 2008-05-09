@@ -14,7 +14,7 @@
 // License, Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 
-//  See http://www.boost.org for updates, documentation, and revision history.
+//  See http://www.boost.org/libs/serialization for updates, documentation, and revision history.
 
 // Inspired by Daryle Walker's iostate_saver concept.  This saves the original
 // value of a variable when a state_saver is constructed and restores

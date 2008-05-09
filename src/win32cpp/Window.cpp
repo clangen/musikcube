@@ -510,17 +510,18 @@ LRESULT CALLBACK Window::StaticWindowProc(HWND hwnd, UINT message, WPARAM wParam
             {
                 if (lParam)
                 {
-                    LPNMHDR notifyHeader = reinterpret_cast<LPNMHDR>(lParam);
+                    NMHDR* notifyHeader = reinterpret_cast<NMHDR*>(lParam);
+
                     Window* sender = Window::sHandleToWindowMap[notifyHeader->hwndFrom];
                     if (sender)
                     {
-                        sender->WindowProc(message, wParam, lParam);
+                        return sender->WindowProc(message, wParam, lParam);
                     }
 
-                    sender = Window::sHandleToWindowMap[it->second->Handle()];
+                    sender = Window::sHandleToWindowMap[hwnd];
                     if (sender)
                     {
-                        sender->WindowProc(message, wParam, lParam);
+                        return sender->WindowProc(message, wParam, lParam);
                     }
                 }
             }
@@ -536,15 +537,13 @@ LRESULT CALLBACK Window::StaticWindowProc(HWND hwnd, UINT message, WPARAM wParam
             {
                 Window* sender = Window::sHandleToWindowMap[(HWND) lParam];
 
-                if (sender && sender->backgroundColor)
+                if (sender)
                 {
-                    Color bgColor = sender->BackgroundColor();
-                    if ( ! sender->backgroundBrush)
+                    HBRUSH result = sender->OnControlColor((HDC) wParam);
+                    if (result)
                     {
-                        sender->backgroundBrush = ::CreateSolidBrush(bgColor);
+                        return reinterpret_cast<LRESULT>(result);
                     }
-
-                    return reinterpret_cast<LRESULT>(sender->backgroundBrush);
                 }
             }
             break;
@@ -575,6 +574,7 @@ LRESULT CALLBACK Window::StaticWindowProc(HWND hwnd, UINT message, WPARAM wParam
                 it->second->OnEraseBackground((HDC) wParam);
             }
             return 1;
+
 
         case WM_PAINT:
             {
@@ -1415,6 +1415,7 @@ void        Window::OnThemeChanged()
 
 void        Window::OnPaint()
 {
+    /*
     PAINTSTRUCT paintStruct;
     HDC hdc = ::BeginPaint(this->Handle(), &paintStruct);
     //
@@ -1426,11 +1427,16 @@ void        Window::OnPaint()
     }
     //
     ::EndPaint(this->Handle(), &paintStruct);
+    */
+    this->DefaultWindowProc(WM_PAINT, NULL, NULL);
 }
 
 void        Window::OnEraseBackground(HDC hdc)
 {
+    /*
     ::InvalidateRect(this->Handle(), NULL, FALSE);
+    */
+    this->DefaultWindowProc(WM_ERASEBKGND, (WPARAM) hdc, NULL);
 }
 
 void        Window::OnRequestFocusNext()
@@ -1441,6 +1447,23 @@ void        Window::OnRequestFocusNext()
 void        Window::OnRequestFocusPrev()
 {
     this->RequestFocusPrev(this);
+}
+
+
+HBRUSH      Window::OnControlColor(HDC hdc)
+{
+    if (this->backgroundColor)
+    {
+        Color bgColor = this->BackgroundColor();
+        if ( ! this->backgroundBrush)
+        {
+            this->backgroundBrush = ::CreateSolidBrush(bgColor);
+        }
+
+        return this->backgroundBrush;
+    }
+
+    return NULL;
 }
 
 void        Window::PaintToHDC(HDC hdc, const Rect& rect)

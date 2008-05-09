@@ -39,8 +39,8 @@
 #include <core/Track.h>
 #include <core/Common.h>
 #include <core/db/Statement.h>
+#include <core/Library/Base.h>
 
-#include <sqlite/sqlite3.h>
 #include <boost/lexical_cast.hpp>
 
 using namespace musik::core;

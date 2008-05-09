@@ -55,6 +55,8 @@ struct group1
     group1(T1 a1)
       : a1_(a1)
       {}
+private:
+   group1& operator=(const group1&);
 };
 
 template <class Ch, class Tr, class T1>
@@ -78,6 +80,8 @@ struct group2
     group2(T1 a1,T2 a2)
       : a1_(a1),a2_(a2)
       {}
+private:
+   group2& operator=(const group2&);
 };
 
 template <class Ch, class Tr, class T1,class T2>
@@ -99,6 +103,8 @@ struct group3
     group3(T1 a1,T2 a2,T3 a3)
       : a1_(a1),a2_(a2),a3_(a3)
       {}
+private:
+   group3& operator=(const group3&);
 };
 
 template <class Ch, class Tr, class T1,class T2,class T3>
@@ -121,6 +127,8 @@ struct group4
     group4(T1 a1,T2 a2,T3 a3,T4 a4)
       : a1_(a1),a2_(a2),a3_(a3),a4_(a4)
       {}
+private:
+   group4& operator=(const group4&);
 };
 
 template <class Ch, class Tr, class T1,class T2,class T3,class T4>

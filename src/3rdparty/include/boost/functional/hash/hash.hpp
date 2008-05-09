@@ -1,7 +1,7 @@
 
-//  Copyright Daniel James 2005-2007. Use, modification, and distribution are
-//  subject to the Boost Software License, Version 1.0. (See accompanying
-//  file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+// Copyright 2005-2007 Daniel James.
+// Distributed under the Boost Software License, Version 1.0. (See accompanying
+// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
 //  Based on Peter Dimov's proposal
 //  http://www.open-std.org/JTC1/SC22/WG21/docs/papers/2005/n1756.pdf
@@ -28,29 +28,24 @@
 #include <boost/type_traits/is_const.hpp>
 #endif
 
-#if defined(BOOST_MSVC)
-#   pragma warning(push)
-#   pragma warning(disable:4267)
-#endif
-
 namespace boost
 {
-#if BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x551))
-    // Borland complains about an ambiguous function overload
-    // when compiling boost::hash<bool>.
     std::size_t hash_value(bool);
-#endif
-    
+    std::size_t hash_value(char);
+    std::size_t hash_value(unsigned char);
+    std::size_t hash_value(signed char);
+    std::size_t hash_value(short);
+    std::size_t hash_value(unsigned short);
     std::size_t hash_value(int);
     std::size_t hash_value(unsigned int);
     std::size_t hash_value(long);
     std::size_t hash_value(unsigned long);
 
-#if defined(BOOST_HAS_LONG_LONG) && defined(_M_X64) && defined(_WIN64)
-    // On 64-bit windows std::size_t is a typedef for unsigned long long, which
-    // isn't due to be supported until Boost 1.35. So add support here.
-    // (Technically, Boost.Hash isn't actually documented as supporting
-    // std::size_t. But it would be pretty silly not to).
+#if !defined(BOOST_NO_INTRINSIC_WCHAR_T)
+    std::size_t hash_value(wchar_t);
+#endif
+    
+#if defined(BOOST_HAS_LONG_LONG)
     std::size_t hash_value(long long);
     std::size_t hash_value(unsigned long long);
 #endif
@@ -93,14 +88,84 @@ namespace boost
     template <class K, class T, class C, class A>
     std::size_t hash_value(std::multimap<K, T, C, A> const& v);
 
+    template <class T>
+    std::size_t hash_value(std::complex<T> const&);
+
     // Implementation
 
-#if BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x551))
+    namespace hash_detail
+    {
+        template <class T>
+        inline std::size_t hash_value_signed(T val)
+        {
+             const int size_t_bits = std::numeric_limits<std::size_t>::digits;
+             // ceiling(std::numeric_limits<T>::digits / size_t_bits) - 1
+             const int length = (std::numeric_limits<T>::digits - 1)
+                 / size_t_bits;
+
+             std::size_t seed = 0;
+             T positive = val < 0 ? -1 - val : val;
+
+             // Hopefully, this loop can be unrolled.
+             for(unsigned int i = length * size_t_bits; i > 0; i -= size_t_bits)
+             {
+                 seed ^= (std::size_t) (positive >> i) + (seed<<6) + (seed>>2);
+             }
+             seed ^= (std::size_t) val + (seed<<6) + (seed>>2);
+
+             return seed;
+        }
+
+        template <class T>
+        inline std::size_t hash_value_unsigned(T val)
+        {
+             const int size_t_bits = std::numeric_limits<std::size_t>::digits;
+             // ceiling(std::numeric_limits<T>::digits / size_t_bits) - 1
+             const int length = (std::numeric_limits<T>::digits - 1)
+                 / size_t_bits;
+
+             std::size_t seed = 0;
+
+             // Hopefully, this loop can be unrolled.
+             for(unsigned int i = length * size_t_bits; i > 0; i -= size_t_bits)
+             {
+                 seed ^= (std::size_t) (val >> i) + (seed<<6) + (seed>>2);
+             }
+             seed ^= (std::size_t) val + (seed<<6) + (seed>>2);
+
+             return seed;
+        }
+    }
+
     inline std::size_t hash_value(bool v)
     {
         return static_cast<std::size_t>(v);
     }
-#endif
+
+    inline std::size_t hash_value(char v)
+    {
+        return static_cast<std::size_t>(v);
+    }
+
+    inline std::size_t hash_value(unsigned char v)
+    {
+        return static_cast<std::size_t>(v);
+    }
+
+    inline std::size_t hash_value(signed char v)
+    {
+        return static_cast<std::size_t>(v);
+    }
+
+    inline std::size_t hash_value(short v)
+    {
+        return static_cast<std::size_t>(v);
+    }
+
+    inline std::size_t hash_value(unsigned short v)
+    {
+        return static_cast<std::size_t>(v);
+    }
 
     inline std::size_t hash_value(int v)
     {
@@ -122,15 +187,22 @@ namespace boost
         return static_cast<std::size_t>(v);
     }
 
-#if defined(BOOST_HAS_LONG_LONG) && defined(_M_X64) && defined(_WIN64)
+#if !defined(BOOST_NO_INTRINSIC_WCHAR_T)
+    inline std::size_t hash_value(wchar_t v)
+    {
+        return static_cast<std::size_t>(v);
+    }
+#endif
+
+#if defined(BOOST_HAS_LONG_LONG)
     inline std::size_t hash_value(long long v)
     {
-        return v;
+        return hash_detail::hash_value_signed(v);
     }
 
     inline std::size_t hash_value(unsigned long long v)
     {
-        return v;
+        return hash_detail::hash_value_unsigned(v);
     }
 #endif
 
@@ -143,6 +215,7 @@ namespace boost
     {
         std::size_t x = static_cast<std::size_t>(
            reinterpret_cast<std::ptrdiff_t>(v));
+
         return x + (x >> 3);
     }
 
@@ -292,6 +365,15 @@ namespace boost
         return hash_range(v.begin(), v.end());
     }
 
+    template <class T>
+    std::size_t hash_value(std::complex<T> const& v)
+    {
+        boost::hash<T> hasher;
+        std::size_t seed = hasher(v.imag());
+        seed ^= hasher(v.real()) + (seed<<6) + (seed>>2);
+        return seed;
+    }
+
     //
     // boost::hash
     //
@@ -387,10 +469,17 @@ namespace boost
     struct hash<T*>
         : public std::unary_function<T*, std::size_t>
     {
-        std::size_t operator()(T* v) const \
-        { \
-            return boost::hash_value(v); \
-        } \
+        std::size_t operator()(T* v) const
+        {
+#if !BOOST_WORKAROUND(__SUNPRO_CC, <= 0x590)
+            return boost::hash_value(v);
+#else
+            std::size_t x = static_cast<std::size_t>(
+                reinterpret_cast<std::ptrdiff_t>(v));
+
+            return x + (x >> 3);
+#endif
+        }
     };
 #else
     namespace hash_detail
@@ -407,7 +496,14 @@ namespace boost
             {
                 std::size_t operator()(T val) const
                 {
+#if !BOOST_WORKAROUND(__SUNPRO_CC, <= 590)
                     return boost::hash_value(val);
+#else
+                    std::size_t x = static_cast<std::size_t>(
+                        reinterpret_cast<std::ptrdiff_t>(val));
+
+                    return x + (x >> 3);
+#endif
                 }
             };
         };
@@ -422,7 +518,6 @@ namespace boost
 }
 
 #endif // BOOST_FUNCTIONAL_HASH_HASH_HPP
-
 ////////////////////////////////////////////////////////////////////////////////
 
 #if !defined(BOOST_HASH_NO_EXTENSIONS) \
@@ -593,10 +688,6 @@ namespace boost
     }
 #endif  // BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION
 }
-
-#if defined(BOOST_MSVC)
-#   pragma warning(pop)
-#endif
 
 #endif
 

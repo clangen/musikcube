@@ -34,6 +34,7 @@ struct has_trivial_ctor_impl
 } // namespace detail
 
 BOOST_TT_AUX_BOOL_TRAIT_DEF1(has_trivial_constructor,T,::boost::detail::has_trivial_ctor_impl<T>::value)
+BOOST_TT_AUX_BOOL_TRAIT_DEF1(has_trivial_default_constructor,T,::boost::detail::has_trivial_ctor_impl<T>::value)
 
 } // namespace boost
 

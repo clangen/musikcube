@@ -89,10 +89,8 @@ public:
     void save(const bool t){
         // trap usage of invalid uninitialized boolean which would
         // otherwise crash on load.
-#ifndef NDEBUG
         int i = t;
         assert(0 == i || 1 == i);
-#endif
         if(os.fail())
             boost::throw_exception(archive_exception(archive_exception::stream_error));
         os << t;

@@ -119,6 +119,8 @@ namespace detail {
             os.imbue(loc_.get());
         else if(loc_default)
             os.imbue(*loc_default);
+#else
+        (void) loc_default; // keep compiler quiet if we don't support locales
 #endif        
     }
 

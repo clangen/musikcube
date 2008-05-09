@@ -42,7 +42,7 @@
 #   endif
 #elif ! defined(_WIN32) && ! defined(_WIN64)
 #   if defined(__MWERKS__)
-#       // define BOOST_USED __attribute__ ((used))
+#       define BOOST_DLLEXPORT __declspec(dllexport)
 #   elif defined(__GNUC__) && (__GNUC__ >= 3)
 #       define BOOST_USED __attribute__ ((used))
 #   elif defined(__INTEL_COMPILER) && (BOOST_INTEL_CXX_VERSION >= 800)

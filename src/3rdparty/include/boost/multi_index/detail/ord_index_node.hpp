@@ -42,12 +42,15 @@
 
 #include <boost/config.hpp> /* keep it first to prevent nasty warns in MSVC */
 #include <cstddef>
+#include <boost/detail/allocator_utilities.hpp>
+#include <boost/multi_index/detail/prevent_eti.hpp>
 
 #if !defined(BOOST_MULTI_INDEX_DISABLE_COMPRESSED_ORDERED_INDEX_NODES)
 #include <boost/mpl/and.hpp>
 #include <boost/mpl/if.hpp>
 #include <boost/multi_index/detail/uintptr_type.hpp>
 #include <boost/type_traits/alignment_of.hpp>
+#include <boost/type_traits/is_same.hpp>
 #endif
 
 namespace boost{
@@ -61,27 +64,43 @@ namespace detail{
 enum ordered_index_color{red=false,black=true};
 enum ordered_index_side{to_left=false,to_right=true};
 
+template<typename Allocator>
 struct ordered_index_node_impl; /* fwd decl. */
 
+template<typename Allocator>
 struct ordered_index_node_std_base
 {
-  typedef ordered_index_color&      color_ref;
-  typedef ordered_index_node_impl*& parent_ref;
+  typedef typename prevent_eti<
+    Allocator,
+    typename boost::detail::allocator::rebind_to<
+      Allocator,
+      ordered_index_node_impl<Allocator>
+    >::type
+  >::type::pointer                                pointer;
+  typedef typename prevent_eti<
+    Allocator,
+    typename boost::detail::allocator::rebind_to<
+      Allocator,
+      ordered_index_node_impl<Allocator>
+    >::type
+  >::type::const_pointer                          const_pointer;
+  typedef ordered_index_color&                    color_ref;
+  typedef pointer&                                parent_ref;
 
-  ordered_index_color&      color(){return color_;}
-  ordered_index_color       color()const{return color_;}
-  ordered_index_node_impl*& parent(){return parent_;}
-  ordered_index_node_impl*  parent()const{return parent_;}
-  ordered_index_node_impl*& left(){return left_;}
-  ordered_index_node_impl*  left()const{return left_;}
-  ordered_index_node_impl*& right(){return right_;}
-  ordered_index_node_impl*  right()const{return right_;}
+  ordered_index_color& color(){return color_;}
+  ordered_index_color  color()const{return color_;}
+  pointer&             parent(){return parent_;}
+  pointer              parent()const{return parent_;}
+  pointer&             left(){return left_;}
+  pointer              left()const{return left_;}
+  pointer&             right(){return right_;}
+  pointer              right()const{return right_;}
 
 private:
-  ordered_index_color      color_; 
-  ordered_index_node_impl* parent_;
-  ordered_index_node_impl* left_;
-  ordered_index_node_impl* right_;
+  ordered_index_color color_; 
+  pointer             parent_;
+  pointer             left_;
+  pointer             right_;
 };
 
 #if !defined(BOOST_MULTI_INDEX_DISABLE_COMPRESSED_ORDERED_INDEX_NODES)
@@ -102,8 +121,12 @@ private:
 #pragma warning(disable:4312 4311)
 #endif
 
+template<typename Allocator>
 struct ordered_index_node_compressed_base
 {
+  typedef ordered_index_node_impl<Allocator>*       pointer;
+  typedef const ordered_index_node_impl<Allocator>* const_pointer;
+
   struct color_ref
   {
     color_ref(uintptr_type* r_):r(r_){}
@@ -133,12 +156,12 @@ struct ordered_index_node_compressed_base
   {
     parent_ref(uintptr_type* r_):r(r_){}
     
-    operator ordered_index_node_impl*()const
+    operator pointer()const
     {
-      return (ordered_index_node_impl*)(void*)(*r&~uintptr_type(1));
+      return (pointer)(void*)(*r&~uintptr_type(1));
     }
     
-    parent_ref& operator=(ordered_index_node_impl* p)
+    parent_ref& operator=(pointer p)
     {
       *r=((uintptr_type)(void*)p)|(*r&uintptr_type(1));
       return *this;
@@ -146,69 +169,92 @@ struct ordered_index_node_compressed_base
     
     parent_ref& operator=(const parent_ref& x)
     {
-      return operator=(x.operator ordered_index_node_impl*());
+      return operator=(x.operator pointer());
     }
 
-    ordered_index_node_impl* operator->()const
+    pointer operator->()const
     {
-      return operator ordered_index_node_impl*();
+      return operator pointer();
     }
 
   private:
     uintptr_type* r;
   };
   
-  color_ref                 color(){return color_ref(&parentcolor_);}
-  ordered_index_color       color()const
+  color_ref           color(){return color_ref(&parentcolor_);}
+  ordered_index_color color()const
   {
     return ordered_index_color(parentcolor_&std::size_t(1ul));
   }
 
-  parent_ref                parent(){return parent_ref(&parentcolor_);}
-  ordered_index_node_impl*  parent()const
+  parent_ref parent(){return parent_ref(&parentcolor_);}
+  pointer    parent()const
   {
-    return (ordered_index_node_impl*)(void*)(parentcolor_&~uintptr_type(1));
+    return (pointer)(void*)(parentcolor_&~uintptr_type(1));
   }
 
-  ordered_index_node_impl*& left(){return left_;}
-  ordered_index_node_impl*  left()const{return left_;}
-  ordered_index_node_impl*& right(){return right_;}
-  ordered_index_node_impl*  right()const{return right_;}
+  pointer& left(){return left_;}
+  pointer  left()const{return left_;}
+  pointer& right(){return right_;}
+  pointer  right()const{return right_;}
 
 private:
-  uintptr_type             parentcolor_;
-  ordered_index_node_impl* left_;
-  ordered_index_node_impl* right_;
+  uintptr_type parentcolor_;
+  pointer      left_;
+  pointer      right_;
 };
 #if defined(BOOST_MSVC)
 #pragma warning(pop)
 #endif
 #endif
 
-struct ordered_index_node_impl:
+template<typename Allocator>
+struct ordered_index_node_impl_base:
 
 #if !defined(BOOST_MULTI_INDEX_DISABLE_COMPRESSED_ORDERED_INDEX_NODES)
   mpl::if_c<
     !(has_uintptr_type::value)||
-    (alignment_of<ordered_index_node_compressed_base>::value%2),
-    ordered_index_node_std_base,
-    ordered_index_node_compressed_base
+    (alignment_of<ordered_index_node_compressed_base<Allocator> >::value%2)||
+    !(is_same<
+      typename prevent_eti<
+        Allocator,
+        typename boost::detail::allocator::rebind_to<
+          Allocator,
+          ordered_index_node_impl<Allocator>
+        >::type
+      >::type::pointer,
+      ordered_index_node_impl<Allocator>*>::value),
+    ordered_index_node_std_base<Allocator>,
+    ordered_index_node_compressed_base<Allocator>
   >::type
 #else
-  ordered_index_node_std_base
+  ordered_index_node_std_base<Allocator>
 #endif
 
+{};
+
+template<typename Allocator>
+struct ordered_index_node_impl:ordered_index_node_impl_base<Allocator>
 {
+private:
+  typedef ordered_index_node_impl_base<Allocator> super;
+
+public:
+  typedef typename super::color_ref               color_ref;
+  typedef typename super::parent_ref              parent_ref;
+  typedef typename super::pointer                 pointer;
+  typedef typename super::const_pointer           const_pointer;
+
   /* interoperability with bidir_node_iterator */
 
-  static void increment(ordered_index_node_impl*& x)
+  static void increment(pointer& x)
   {
-    if(x->right()){
+    if(x->right()!=pointer(0)){
       x=x->right();
-      while(x->left())x=x->left();
+      while(x->left()!=pointer(0))x=x->left();
     }
     else{
-      ordered_index_node_impl* y=x->parent();
+      pointer y=x->parent();
       while(x==y->right()){
         x=y;
         y=y->parent();
@@ -217,17 +263,17 @@ struct ordered_index_node_impl:
     }
   }
 
-  static void decrement(ordered_index_node_impl*& x)
+  static void decrement(pointer& x)
   {
     if(x->color()==red&&x->parent()->parent()==x){
       x=x->right();
     }
-    else if(x->left()){
-      ordered_index_node_impl* y=x->left();
-      while(y->right())y=y->right();
+    else if(x->left()!=pointer(0)){
+      pointer y=x->left();
+      while(y->right()!=pointer(0))y=y->right();
       x=y;
     }else{
-      ordered_index_node_impl* y=x->parent();
+      pointer y=x->parent();
       while(x==y->left()){
         x=y;
         y=y->parent();
@@ -238,12 +284,11 @@ struct ordered_index_node_impl:
 
   /* algorithmic stuff */
 
-  static void rotate_left(
-    ordered_index_node_impl* x,parent_ref root)
+  static void rotate_left(pointer x,parent_ref root)
   {
-    ordered_index_node_impl* y=x->right();
+    pointer y=x->right();
     x->right()=y->left();
-    if(y->left())y->left()->parent()=x;
+    if(y->left()!=pointer(0))y->left()->parent()=x;
     y->parent()=x->parent();
     
     if(x==root)                    root=y;
@@ -253,24 +298,23 @@ struct ordered_index_node_impl:
     x->parent()=y;
   }
 
-  static ordered_index_node_impl* minimum(ordered_index_node_impl* x)
+  static pointer minimum(pointer x)
   {
-    while(x->left())x=x->left();
+    while(x->left()!=pointer(0))x=x->left();
     return x;
   }
 
-  static ordered_index_node_impl* maximum(ordered_index_node_impl* x)
+  static pointer maximum(pointer x)
   {
-    while(x->right())x=x->right();
+    while(x->right()!=pointer(0))x=x->right();
     return x;
   }
 
-  static void rotate_right(
-    ordered_index_node_impl* x,parent_ref root)
+  static void rotate_right(pointer x,parent_ref root)
   {
-    ordered_index_node_impl* y=x->left();
+    pointer y=x->left();
     x->left()=y->right();
-    if(y->right())y->right()->parent()=x;
+    if(y->right()!=pointer(0))y->right()->parent()=x;
     y->parent()=x->parent();
 
     if(x==root)                     root=y;
@@ -280,14 +324,13 @@ struct ordered_index_node_impl:
     x->parent()=y;
   }
 
-  static void rebalance(
-    ordered_index_node_impl* x,parent_ref root)
+  static void rebalance(pointer x,parent_ref root)
   {
     x->color()=red;
     while(x!=root&&x->parent()->color()==red){
       if(x->parent()==x->parent()->parent()->left()){
-        ordered_index_node_impl* y=x->parent()->parent()->right();
-        if(y&&y->color()==red){
+        pointer y=x->parent()->parent()->right();
+        if(y!=pointer(0)&&y->color()==red){
           x->parent()->color()=black;
           y->color()=black;
           x->parent()->parent()->color()=red;
@@ -304,8 +347,8 @@ struct ordered_index_node_impl:
         }
       }
       else{
-        ordered_index_node_impl* y=x->parent()->parent()->left();
-        if(y&&y->color()==red){
+        pointer y=x->parent()->parent()->left();
+        if(y!=pointer(0)&&y->color()==red){
           x->parent()->color()=black;
           y->color()=black;
           x->parent()->parent()->color()=red;
@@ -326,9 +369,7 @@ struct ordered_index_node_impl:
   }
 
   static void link(
-    ordered_index_node_impl* x,
-    ordered_index_side side,ordered_index_node_impl* position,
-    ordered_index_node_impl* header)
+    pointer x,ordered_index_side side,pointer position,pointer header)
   {
     if(side==to_left){
       position->left()=x;  /* also makes leftmost=x when parent==header */
@@ -347,28 +388,27 @@ struct ordered_index_node_impl:
       }
     }
     x->parent()=position;
-    x->left()=0;
-    x->right()=0;
+    x->left()=pointer(0);
+    x->right()=pointer(0);
     ordered_index_node_impl::rebalance(x,header->parent());
   }
 
-  static ordered_index_node_impl* rebalance_for_erase(
-    ordered_index_node_impl* z,parent_ref root,
-    ordered_index_node_impl*& leftmost,ordered_index_node_impl*& rightmost)
+  static pointer rebalance_for_erase(
+    pointer z,parent_ref root,pointer& leftmost,pointer& rightmost)
   {
-    ordered_index_node_impl* y=z;
-    ordered_index_node_impl* x=0;
-    ordered_index_node_impl* x_parent=0;
-    if(y->left()==0){        /* z has at most one non-null child. y==z. */
-      x=y->right();          /* x might be null */
+    pointer y=z;
+    pointer x=pointer(0);
+    pointer x_parent=pointer(0);
+    if(y->left()==pointer(0)){    /* z has at most one non-null child. y==z. */
+      x=y->right();               /* x might be null */
     }
     else{
-      if(y->right()==0)  {     /* z has exactly one non-null child. y==z. */
-        x=y->left();           /* x is not null */
+      if(y->right()==pointer(0)){ /* z has exactly one non-null child. y==z. */
+        x=y->left();              /* x is not null */
       }
-      else{                    /* z has two non-null children.  Set y to */
-        y=y->right();          /*   z's successor.  x might be null.     */
-        while(y->left())y=y->left();
+      else{                       /* z has two non-null children.  Set y to */
+        y=y->right();             /* z's successor. x might be null.        */
+        while(y->left()!=pointer(0))y=y->left();
         x=y->right();
       }
     }
@@ -377,7 +417,7 @@ struct ordered_index_node_impl:
       y->left()=z->left();
       if(y!=z->right()){
         x_parent=y->parent();
-        if(x) x->parent()=y->parent();
+        if(x!=pointer(0))x->parent()=y->parent();
         y->parent()->left()=x; /* y must be a child of left */
         y->right()=z->right();
         z->right()->parent()=y;
@@ -397,7 +437,7 @@ struct ordered_index_node_impl:
     }
     else{                     /* y==z */
       x_parent=y->parent();
-      if(x)x->parent()=y->parent();   
+      if(x!=pointer(0))x->parent()=y->parent();   
       if(root==z){
         root=x;
       }
@@ -406,15 +446,15 @@ struct ordered_index_node_impl:
         else                      z->parent()->right()=x;
       }
       if(leftmost==z){
-        if(z->right()==0){      /* z->left() must be null also */
+        if(z->right()==pointer(0)){ /* z->left() must be null also */
           leftmost=z->parent();
         }
         else{              
-          leftmost=minimum(x);  /* makes leftmost==header if z==root */
+          leftmost=minimum(x);      /* makes leftmost==header if z==root */
         }
       }
       if(rightmost==z){
-        if(z->left()==0){       /* z->right() must be null also */
+        if(z->left()==pointer(0)){  /* z->right() must be null also */
           rightmost=z->parent();
         }
         else{                   /* x==z->left() */
@@ -423,75 +463,73 @@ struct ordered_index_node_impl:
       }
     }
     if(y->color()!=red){
-      while(x!=root&&(x==0 || x->color()==black)){
+      while(x!=root&&(x==pointer(0)|| x->color()==black)){
         if(x==x_parent->left()){
-          ordered_index_node_impl* w=x_parent->right();
+          pointer w=x_parent->right();
           if(w->color()==red){
             w->color()=black;
             x_parent->color()=red;
             rotate_left(x_parent,root);
             w=x_parent->right();
           }
-          if((w->left()==0||w->left()->color()==black) &&
-             (w->right()==0||w->right()->color()==black)){
+          if((w->left()==pointer(0)||w->left()->color()==black) &&
+             (w->right()==pointer(0)||w->right()->color()==black)){
             w->color()=red;
             x=x_parent;
             x_parent=x_parent->parent();
           } 
           else{
-            if(w->right()==0 
+            if(w->right()==pointer(0 )
                 || w->right()->color()==black){
-              if(w->left()) w->left()->color()=black;
+              if(w->left()!=pointer(0)) w->left()->color()=black;
               w->color()=red;
               rotate_right(w,root);
               w=x_parent->right();
             }
             w->color()=x_parent->color();
             x_parent->color()=black;
-            if(w->right())w->right()->color()=black;
+            if(w->right()!=pointer(0))w->right()->color()=black;
             rotate_left(x_parent,root);
             break;
           }
         } 
         else{                   /* same as above,with right <-> left */
-          ordered_index_node_impl* w=x_parent->left();
+          pointer w=x_parent->left();
           if(w->color()==red){
             w->color()=black;
             x_parent->color()=red;
             rotate_right(x_parent,root);
             w=x_parent->left();
           }
-          if((w->right()==0||w->right()->color()==black) &&
-             (w->left()==0||w->left()->color()==black)){
+          if((w->right()==pointer(0)||w->right()->color()==black) &&
+             (w->left()==pointer(0)||w->left()->color()==black)){
             w->color()=red;
             x=x_parent;
             x_parent=x_parent->parent();
           }
           else{
-            if(w->left()==0||w->left()->color()==black){
-              if(w->right())w->right()->color()=black;
+            if(w->left()==pointer(0)||w->left()->color()==black){
+              if(w->right()!=pointer(0))w->right()->color()=black;
               w->color()=red;
               rotate_left(w,root);
               w=x_parent->left();
             }
             w->color()=x_parent->color();
             x_parent->color()=black;
-            if(w->left())w->left()->color()=black;
+            if(w->left()!=pointer(0))w->left()->color()=black;
             rotate_right(x_parent,root);
             break;
           }
         }
       }
-      if(x)x->color()=black;
+      if(x!=pointer(0))x->color()=black;
     }
     return y;
   }
 
-  static void restore(
-    ordered_index_node_impl* x,ordered_index_node_impl* position,
-    ordered_index_node_impl* header)
+  static void restore(pointer x,pointer position,pointer header)
   {
-    if(position->left()==0||position->left()==header){
+    if(position->left()==pointer(0)||position->left()==header){
       link(x,to_left,position,header);
     }
     else{
@@ -503,10 +541,9 @@ struct ordered_index_node_impl:
 #if defined(BOOST_MULTI_INDEX_ENABLE_INVARIANT_CHECKING)
   /* invariant stuff */
 
-  static std::size_t black_count(
-    ordered_index_node_impl* node,ordered_index_node_impl* root)
+  static std::size_t black_count(pointer node,pointer root)
   {
-    if(!node)return 0;
+    if(node==pointer(0))return 0;
     std::size_t sum=0;
     for(;;){
       if(node->color()==black)++sum;
@@ -519,54 +556,87 @@ struct ordered_index_node_impl:
 };
 
 template<typename Super>
-struct ordered_index_node_trampoline:ordered_index_node_impl{};
+struct ordered_index_node_trampoline:
+  prevent_eti<
+    Super,
+    ordered_index_node_impl<
+      typename boost::detail::allocator::rebind_to<
+        typename Super::allocator_type,
+        void
+      >::type
+    >
+  >::type
+{
+  typedef typename prevent_eti<
+    Super,
+    ordered_index_node_impl<
+      typename boost::detail::allocator::rebind_to<
+        typename Super::allocator_type,
+        void
+      >::type
+    >
+  >::type impl_type;
+};
 
 template<typename Super>
 struct ordered_index_node:Super,ordered_index_node_trampoline<Super>
 {
 private:
-  typedef ordered_index_node_trampoline<Super> impl_type;
-  typedef typename impl_type::color_ref        color_ref;
-  typedef typename impl_type::parent_ref       parent_ref;
+  typedef ordered_index_node_trampoline<Super> trampoline;
 
 public:
-  color_ref                 color(){return impl_type::color();}
-  ordered_index_color       color()const{return impl_type::color();}
-  parent_ref                parent(){return impl_type::parent();}
-  ordered_index_node_impl*  parent()const{return impl_type::parent();}
-  ordered_index_node_impl*& left(){return impl_type::left();}
-  ordered_index_node_impl*  left()const{return impl_type::left();}
-  ordered_index_node_impl*& right(){return impl_type::right();}
-  ordered_index_node_impl*  right()const{return impl_type::right();}
+  typedef typename trampoline::impl_type     impl_type;
+  typedef typename trampoline::color_ref     impl_color_ref;
+  typedef typename trampoline::parent_ref    impl_parent_ref;
+  typedef typename trampoline::pointer       impl_pointer;
+  typedef typename trampoline::const_pointer const_impl_pointer;
 
-  ordered_index_node_impl* impl(){return static_cast<impl_type*>(this);}
-  const ordered_index_node_impl* impl()const
-    {return static_cast<const impl_type*>(this);}
+  impl_color_ref      color(){return trampoline::color();}
+  ordered_index_color color()const{return trampoline::color();}
+  impl_parent_ref     parent(){return trampoline::parent();}
+  impl_pointer        parent()const{return trampoline::parent();}
+  impl_pointer&       left(){return trampoline::left();}
+  impl_pointer        left()const{return trampoline::left();}
+  impl_pointer&       right(){return trampoline::right();}
+  impl_pointer        right()const{return trampoline::right();}
 
-  static ordered_index_node* from_impl(ordered_index_node_impl *x)
+  impl_pointer impl()
   {
-    return static_cast<ordered_index_node*>(static_cast<impl_type*>(x));
+    return static_cast<impl_pointer>(
+      static_cast<impl_type*>(static_cast<trampoline*>(this)));
   }
-  
-  static const ordered_index_node* from_impl(const ordered_index_node_impl* x)
+
+  const_impl_pointer impl()const
+  {
+    return static_cast<const_impl_pointer>(
+      static_cast<const impl_type*>(static_cast<const trampoline*>(this)));
+  }
+
+  static ordered_index_node* from_impl(impl_pointer x)
+  {
+    return static_cast<ordered_index_node*>(
+      static_cast<trampoline*>(&*x));
+  }
+
+  static const ordered_index_node* from_impl(const_impl_pointer x)
   {
     return static_cast<const ordered_index_node*>(
-      static_cast<const impl_type*>(x));
+      static_cast<const trampoline*>(&*x));
   }
 
   /* interoperability with bidir_node_iterator */
 
   static void increment(ordered_index_node*& x)
   {
-    ordered_index_node_impl* xi=x->impl();
-    impl_type::increment(xi);
+    impl_pointer xi=x->impl();
+    trampoline::increment(xi);
     x=from_impl(xi);
   }
 
   static void decrement(ordered_index_node*& x)
   {
-    ordered_index_node_impl* xi=x->impl();
-    impl_type::decrement(xi);
+    impl_pointer xi=x->impl();
+    trampoline::decrement(xi);
     x=from_impl(xi);
   }
 };

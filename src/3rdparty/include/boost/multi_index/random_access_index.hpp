@@ -19,6 +19,8 @@
 #include <boost/detail/no_exceptions_support.hpp>
 #include <boost/detail/workaround.hpp>
 #include <boost/iterator/reverse_iterator.hpp>
+#include <boost/mpl/bool.hpp>
+#include <boost/mpl/not.hpp>
 #include <boost/mpl/push_front.hpp>
 #include <boost/multi_index/detail/access_specifier.hpp>
 #include <boost/multi_index/detail/index_node_base.hpp>
@@ -32,6 +34,7 @@
 #include <boost/multi_index/random_access_index_fwd.hpp>
 #include <boost/throw_exception.hpp> 
 #include <boost/tuple/tuple.hpp>
+#include <boost/type_traits/is_integral.hpp>
 #include <cstddef>
 #include <functional>
 #include <stdexcept> 
@@ -93,6 +96,12 @@ class random_access_index:
 protected:
   typedef random_access_index_node<
     typename super::node_type>                     node_type;
+
+private:
+  typedef typename node_type::impl_type            node_impl_type;
+  typedef random_access_index_ptr_array<
+    typename super::final_allocator_type>          ptr_array;
+  typedef typename ptr_array::pointer              node_impl_ptr_pointer;
 
 public:
   /* types */
@@ -183,9 +192,7 @@ public:
   template <class InputIterator>
   void assign(InputIterator first,InputIterator last)
   {
-    BOOST_MULTI_INDEX_RND_INDEX_CHECK_INVARIANT;
-    clear();
-    for(;first!=last;++first)push_back(*first);
+    assign_iter(first,last,mpl::not_<is_integral<InputIterator> >());
   }
 
   void assign(size_type n,value_param_type value)
@@ -212,6 +219,20 @@ public:
   const_reverse_iterator rbegin()const{return make_reverse_iterator(end());}
   reverse_iterator       rend(){return make_reverse_iterator(begin());}
   const_reverse_iterator rend()const{return make_reverse_iterator(begin());}
+  const_iterator         cbegin()const{return begin();}
+  const_iterator         cend()const{return end();}
+  const_reverse_iterator crbegin()const{return rbegin();}
+  const_reverse_iterator crend()const{return rend();}
+
+  iterator iterator_to(const value_type& x)
+  {
+    return make_iterator(node_from_value<node_type>(&x));
+  }
+
+  const_iterator iterator_to(const value_type& x)const
+  {
+    return make_iterator(node_from_value<node_type>(&x));
+  }
 
   /* capacity */
 
@@ -290,19 +311,7 @@ public:
   template<typename InputIterator>
   void insert(iterator position,InputIterator first,InputIterator last)
   {
-    BOOST_MULTI_INDEX_RND_INDEX_CHECK_INVARIANT;
-    size_type s=0;
-    BOOST_TRY{
-      for(;first!=last;++first){
-        if(push_back(*first).second)++s;
-      }
-    }
-    BOOST_CATCH(...){
-      relocate(position,end()-s,end());
-      BOOST_RETHROW;
-    }
-    BOOST_CATCH_END
-    relocate(position,end()-s,end());
+    insert_iter(position,first,last,mpl::not_<is_integral<InputIterator> >());
   }
 
   iterator erase(iterator position)
@@ -358,6 +367,27 @@ public:
 
     return this->final_modify_(
       mod,static_cast<final_node_type*>(position.get_node()));
+  }
+
+  template<typename Modifier,typename Rollback>
+  bool modify(iterator position,Modifier mod,Rollback back)
+  {
+    BOOST_MULTI_INDEX_CHECK_VALID_ITERATOR(position);
+    BOOST_MULTI_INDEX_CHECK_DEREFERENCEABLE_ITERATOR(position);
+    BOOST_MULTI_INDEX_CHECK_IS_OWNER(position,*this);
+    BOOST_MULTI_INDEX_RND_INDEX_CHECK_INVARIANT;
+
+#if defined(BOOST_MULTI_INDEX_ENABLE_SAFE_MODE)
+    /* MSVC++ 6.0 optimizer on safe mode code chokes if this
+     * this is not added. Left it for all compilers as it does no
+     * harm.
+     */
+
+    position.detach();
+#endif
+
+    return this->final_modify_(
+      mod,back,static_cast<final_node_type*>(position.get_node()));
   }
 
   void swap(random_access_index<SuperMeta,TagList>& x)
@@ -540,7 +570,7 @@ public:
   void reverse()
   {
     BOOST_MULTI_INDEX_RND_INDEX_CHECK_INVARIANT;
-    random_access_index_node_impl::reverse(ptrs.begin(),ptrs.end());
+    node_impl_type::reverse(ptrs.begin(),ptrs.end());
   }
 
   /* rearrange operations */
@@ -575,10 +605,10 @@ public:
   void rearrange(InputIterator first)
   {
     BOOST_MULTI_INDEX_RND_INDEX_CHECK_INVARIANT;
-    for(random_access_index_node_impl** p0=ptrs.begin(),** p0_end=ptrs.end();
+    for(node_impl_ptr_pointer p0=ptrs.begin(),p0_end=ptrs.end();
         p0!=p0_end;++first,++p0){
-      const value_type&               v1=*first;
-      random_access_index_node_impl** p1=node_from_value<node_type>(&v1)->up();
+      const value_type& v1=*first;
+      node_impl_ptr_pointer p1=node_from_value<node_type>(&v1)->up();
 
       std::swap(*p0,*p1);
       (*p0)->up()=p0;
@@ -625,9 +655,9 @@ BOOST_MULTI_INDEX_PROTECTED_IF_MEMBER_TEMPLATE_FRIENDS:
   void copy_(
     const random_access_index<SuperMeta,TagList>& x,const copy_map_type& map)
   {
-    for(random_access_index_node_impl** begin_org=x.ptrs.begin(),
-                                     ** begin_cpy=ptrs.begin(),
-                                     ** end_org=x.ptrs.end();
+    for(node_impl_ptr_pointer begin_org=x.ptrs.begin(),
+                              begin_cpy=ptrs.begin(),
+                              end_org=x.ptrs.end();
         begin_org!=end_org;++begin_org,++begin_cpy){
       *begin_cpy=
          static_cast<node_type*>(
@@ -668,8 +698,7 @@ BOOST_MULTI_INDEX_PROTECTED_IF_MEMBER_TEMPLATE_FRIENDS:
 
   void delete_all_nodes_()
   {
-    for(random_access_index_node_impl** x=ptrs.begin(),**x_end=ptrs.end();
-        x!=x_end;++x){
+    for(node_impl_ptr_pointer x=ptrs.begin(),x_end=ptrs.end();x!=x_end;++x){
       this->final_delete_node_(
         static_cast<final_node_type*>(node_type::from_impl(*x)));
     }
@@ -725,6 +754,11 @@ BOOST_MULTI_INDEX_PROTECTED_IF_MEMBER_TEMPLATE_FRIENDS:
       BOOST_RETHROW;
     }
     BOOST_CATCH_END
+  }
+
+  bool modify_rollback_(node_type* x)
+  {
+    return super::modify_rollback_(x);
   }
 
 #if !defined(BOOST_MULTI_INDEX_DISABLE_SERIALIZATION)
@@ -785,12 +819,12 @@ private:
 
   static void relocate(node_type* position,node_type* x)
   {
-    random_access_index_node_impl::relocate(position->up(),x->up());
+    node_impl_type::relocate(position->up(),x->up());
   }
 
   static void relocate(node_type* position,node_type* first,node_type* last)
   {
-    random_access_index_node_impl::relocate(
+    node_impl_type::relocate(
       position->up(),first->up(),last->up());
   }
 
@@ -802,7 +836,61 @@ private:
   }
 #endif
 
-  random_access_index_ptr_array<typename super::final_allocator_type> ptrs;
+  template <class InputIterator>
+  void assign_iter(InputIterator first,InputIterator last,mpl::true_)
+  {
+    BOOST_MULTI_INDEX_RND_INDEX_CHECK_INVARIANT;
+    clear();
+    for(;first!=last;++first)push_back(*first);
+  }
+
+  void assign_iter(size_type n,value_param_type value,mpl::false_)
+  {
+    BOOST_MULTI_INDEX_RND_INDEX_CHECK_INVARIANT;
+    clear();
+    for(size_type i=0;i<n;++i)push_back(value);
+  }
+
+  template<typename InputIterator>
+  void insert_iter(
+    iterator position,InputIterator first,InputIterator last,mpl::true_)
+  {
+    BOOST_MULTI_INDEX_RND_INDEX_CHECK_INVARIANT;
+    size_type s=0;
+    BOOST_TRY{
+      for(;first!=last;++first){
+        if(push_back(*first).second)++s;
+      }
+    }
+    BOOST_CATCH(...){
+      relocate(position,end()-s,end());
+      BOOST_RETHROW;
+    }
+    BOOST_CATCH_END
+    relocate(position,end()-s,end());
+  }
+
+  void insert_iter(
+    iterator position,size_type n,value_param_type x,mpl::false_)
+  {
+    BOOST_MULTI_INDEX_CHECK_VALID_ITERATOR(position);
+    BOOST_MULTI_INDEX_CHECK_IS_OWNER(position,*this);
+    BOOST_MULTI_INDEX_RND_INDEX_CHECK_INVARIANT;
+    size_type  s=0;
+    BOOST_TRY{
+      while(n--){
+        if(push_back(x).second)++s;
+      }
+    }
+    BOOST_CATCH(...){
+      relocate(position,end()-s,end());
+      BOOST_RETHROW;
+    }
+    BOOST_CATCH_END
+    relocate(position,end()-s,end());
+  }
+ 
+  ptr_array ptrs;
 
 #if defined(BOOST_MULTI_INDEX_ENABLE_INVARIANT_CHECKING)&&\
     BOOST_WORKAROUND(__MWERKS__,<=0x3003)

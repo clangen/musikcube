@@ -1,4 +1,4 @@
-/* Copyright 2003-2006 Joaquín M López Muñoz.
+/* Copyright 2003-2007 Joaquín M López Muñoz.
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
@@ -50,12 +50,6 @@ public:
     return node->value();
   }
 
-  friend bool operator==(
-    const hashed_index_iterator& x,const hashed_index_iterator& y)
-  {
-    return x.node==y.node;
-  }
-
   hashed_index_iterator& operator++()
   {
     Node::increment(node,buckets->begin(),buckets->end());
@@ -99,6 +93,14 @@ private:
   Node*        node;
   BucketArray* buckets;
 };
+
+template<typename Node,typename BucketArray,typename Derived>
+bool operator==(
+  const hashed_index_iterator<Node,BucketArray,Derived>& x,
+  const hashed_index_iterator<Node,BucketArray,Derived>& y)
+{
+  return x.get_node()==y.get_node();
+}
 
 } /* namespace multi_index::detail */
 

@@ -38,7 +38,6 @@
 
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
-#include <sqlite/sqlite3.h>
 #include <set>
 #include <map>
 #include <vector>

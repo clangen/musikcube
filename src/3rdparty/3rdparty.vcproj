@@ -150,30 +150,6 @@
 			<Filter
 				Name="boost"
 				>
-				<Filter
-					Name="libs"
-					>
-					<Filter
-						Name="system"
-						>
-						<Filter
-							Name="src"
-							>
-							<File
-								RelativePath=".\src\boost\libs\system\src\error_code.cpp"
-								>
-							</File>
-						</Filter>
-					</Filter>
-				</Filter>
-				<Filter
-					Name="sigslot"
-					>
-					<File
-						RelativePath=".\include\sigslot\sigslot.h"
-						>
-					</File>
-				</Filter>
 			</Filter>
 			<Filter
 				Name="sqlite"
@@ -196,6 +172,14 @@
 				</File>
 				<File
 					RelativePath=".\include\sqlite\sqlite3ext.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="sigslot"
+				>
+				<File
+					RelativePath=".\include\sigslot\sigslot.h"
 					>
 				</File>
 			</Filter>

@@ -129,7 +129,7 @@ namespace boost { namespace spirit {
                         range_compare<CharT>()
                     );
 
-                if (iter != run.end() && iter->includes(r) ||
+                if ((iter != run.end() && iter->includes(r)) ||
                     ((iter != run.begin()) && (iter - 1)->includes(r)))
                     return;
 
@@ -166,6 +166,7 @@ namespace boost { namespace spirit {
 
                 if ((iter != run.begin()) &&
                         (left_iter = (iter - 1))->includes(r.first))
+                {
                     if (left_iter->last > r.last)
                     {
                         CharT save_last = left_iter->last;
@@ -177,7 +178,8 @@ namespace boost { namespace spirit {
                     {
                         left_iter->last = r.first-1;
                     }
-
+                }
+                
                 iterator i = iter;
                 while (i != run.end() && r.includes(*i))
                     i++;

@@ -1,4 +1,4 @@
-/* Copyright 2003-2006 Joaquín M López Muñoz.
+/* Copyright 2003-2007 Joaquín M López Muñoz.
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
@@ -49,12 +49,6 @@ public:
     return node->value();
   }
 
-  friend bool operator==(
-    const bidir_node_iterator& x,const bidir_node_iterator& y)
-  {
-    return x.node==y.node;
-  }
-
   bidir_node_iterator& operator++()
   {
     Node::increment(node);
@@ -101,6 +95,14 @@ public:
 private:
   Node* node;
 };
+
+template<typename Node,typename Derived>
+bool operator==(
+  const bidir_node_iterator<Node,Derived>& x,
+  const bidir_node_iterator<Node,Derived>& y)
+{
+  return x.get_node()==y.get_node();
+}
 
 } /* namespace multi_index::detail */
 

@@ -20,6 +20,7 @@
 #include <streambuf>  // for std::basic_streambuf
 #include <string>     // for std::char_traits
 
+
 namespace boost
 {
 namespace io
@@ -49,6 +50,8 @@ public:
 private:
     state_type &       s_save_;
     aspect_type const  a_save_;
+
+    ios_flags_saver& operator=(const ios_flags_saver&);
 };
 
 class ios_precision_saver
@@ -72,6 +75,8 @@ public:
 private:
     state_type &       s_save_;
     aspect_type const  a_save_;
+
+    ios_precision_saver& operator=(const ios_precision_saver&);
 };
 
 class ios_width_saver
@@ -95,6 +100,7 @@ public:
 private:
     state_type &       s_save_;
     aspect_type const  a_save_;
+    ios_width_saver& operator=(const ios_width_saver&);
 };
 
 
@@ -276,6 +282,8 @@ private:
     state_type &       s_save_;
     aspect_type const  a_save_;
     index_type const   i_save_;
+
+    ios_iword_saver& operator=(const ios_iword_saver&);
 };
 
 class ios_pword_saver
@@ -301,6 +309,8 @@ private:
     state_type &       s_save_;
     aspect_type const  a_save_;
     index_type const   i_save_;
+
+    ios_pword_saver operator=(const ios_pword_saver&);
 };
 
 
@@ -331,6 +341,8 @@ private:
     state_type::fmtflags const  a1_save_;
     ::std::streamsize const     a2_save_;
     ::std::streamsize const     a3_save_;
+
+    ios_base_all_saver& operator=(const ios_base_all_saver&);
 };
 
 template < typename Ch, class Tr >
@@ -407,6 +419,8 @@ private:
     index_type const  i_save_;
     long const        a1_save_;
     void * const      a2_save_;
+
+    ios_all_word_saver& operator=(const ios_all_word_saver&);
 };
 
 

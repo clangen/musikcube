@@ -25,6 +25,7 @@
 #include <boost/multi_index/detail/auto_space.hpp>
 #include <boost/multi_index/detail/bucket_array.hpp>
 #include <boost/multi_index/detail/hash_index_iterator.hpp>
+#include <boost/multi_index/detail/index_node_base.hpp>
 #include <boost/multi_index/detail/modify_key_adaptor.hpp>
 #include <boost/multi_index/detail/safe_ctr_proxy.hpp>
 #include <boost/multi_index/detail/safe_mode.hpp>
@@ -100,6 +101,10 @@ class hashed_index:
 protected:
   typedef hashed_index_node<
     typename super::node_type>                       node_type;
+
+private:
+  typedef typename node_type::impl_type              node_impl_type;
+  typedef typename node_impl_type::pointer           node_impl_pointer;
   typedef bucket_array<
     typename super::final_allocator_type>            bucket_array_type;
 
@@ -172,8 +177,7 @@ private:
 #if BOOST_WORKAROUND(BOOST_MSVC,<1300)
   typedef safe_ctr_proxy_impl<
     hashed_index_iterator<
-      node_type,
-      bucket_array_type>,
+      node_type,bucket_array_type>,
     hashed_index>                             safe_super;
 #else
   typedef safe_mode::safe_container<
@@ -227,6 +231,19 @@ public:
   iterator       end(){return make_iterator(header());}
   const_iterator end()const{return make_iterator(header());}
 
+  const_iterator cbegin()const{return begin();}
+  const_iterator cend()const{return end();}
+
+  iterator iterator_to(const value_type& x)
+  {
+    return make_iterator(node_from_value<node_type>(&x));
+  }
+
+  const_iterator iterator_to(const value_type& x)const
+  {
+    return make_iterator(node_from_value<node_type>(&x));
+  }
+
   /* modifiers */
 
   std::pair<iterator,bool> insert(value_param_type x)
@@ -268,15 +285,15 @@ public:
   {
     BOOST_MULTI_INDEX_HASHED_INDEX_CHECK_INVARIANT;
 
-    size_type               s=0;
-    std::size_t             buc=buckets.position(hash(k));
-    hashed_index_node_impl* x=buckets.at(buc);
-    hashed_index_node_impl* y=x->next();
+    size_type         s=0;
+    std::size_t       buc=buckets.position(hash(k));
+    node_impl_pointer x=buckets.at(buc);
+    node_impl_pointer y=x->next();
     while(y!=x){
       if(eq(k,key(node_type::from_impl(y)->value()))){
         bool b;
         do{
-          hashed_index_node_impl* z=y->next();
+          node_impl_pointer z=y->next();
           b=z!=x&&eq(
             key(node_type::from_impl(y)->value()),
             key(node_type::from_impl(z)->value()));
@@ -337,6 +354,27 @@ public:
       mod,static_cast<final_node_type*>(position.get_node()));
   }
 
+  template<typename Modifier,typename Rollback>
+  bool modify(iterator position,Modifier mod,Rollback back)
+  {
+    BOOST_MULTI_INDEX_CHECK_VALID_ITERATOR(position);
+    BOOST_MULTI_INDEX_CHECK_DEREFERENCEABLE_ITERATOR(position);
+    BOOST_MULTI_INDEX_CHECK_IS_OWNER(position,*this);
+    BOOST_MULTI_INDEX_HASHED_INDEX_CHECK_INVARIANT;
+
+#if defined(BOOST_MULTI_INDEX_ENABLE_SAFE_MODE)
+    /* MSVC++ 6.0 optimizer on safe mode code chokes if this
+     * this is not added. Left it for all compilers as it does no
+     * harm.
+     */
+
+    position.detach();
+#endif
+
+    return this->final_modify_(
+      mod,back,static_cast<final_node_type*>(position.get_node()));
+  }
+
   template<typename Modifier>
   bool modify_key(iterator position,Modifier mod)
   {
@@ -346,6 +384,19 @@ public:
     BOOST_MULTI_INDEX_HASHED_INDEX_CHECK_INVARIANT;
     return modify(
       position,modify_key_adaptor<Modifier,value_type,KeyFromValue>(mod,key));
+  }
+
+  template<typename Modifier,typename Rollback>
+  bool modify_key(iterator position,Modifier mod,Rollback back)
+  {
+    BOOST_MULTI_INDEX_CHECK_VALID_ITERATOR(position);
+    BOOST_MULTI_INDEX_CHECK_DEREFERENCEABLE_ITERATOR(position);
+    BOOST_MULTI_INDEX_CHECK_IS_OWNER(position,*this);
+    BOOST_MULTI_INDEX_HASHED_INDEX_CHECK_INVARIANT;
+    return modify(
+      position,
+      modify_key_adaptor<Modifier,value_type,KeyFromValue>(mod,key),
+      modify_key_adaptor<Modifier,value_type,KeyFromValue>(back,key));
   }
 
   void clear()
@@ -385,9 +436,9 @@ public:
     const CompatibleKey& k,
     const CompatibleHash& hash,const CompatiblePred& eq)const
   {
-    std::size_t             buc=buckets.position(hash(k));
-    hashed_index_node_impl* x=buckets.at(buc);
-    hashed_index_node_impl* y=x->next();
+    std::size_t       buc=buckets.position(hash(k));
+    node_impl_pointer x=buckets.at(buc);
+    node_impl_pointer y=x->next();
     while(y!=x){
       if(eq(k,key(node_type::from_impl(y)->value()))){
         return make_iterator(node_type::from_impl(y));
@@ -410,10 +461,10 @@ public:
     const CompatibleKey& k,
     const CompatibleHash& hash,const CompatiblePred& eq)const
   {
-    size_type               res=0;
-    std::size_t             buc=buckets.position(hash(k));
-    hashed_index_node_impl* x=buckets.at(buc);
-    hashed_index_node_impl* y=x->next();
+    size_type         res=0;
+    std::size_t       buc=buckets.position(hash(k));
+    node_impl_pointer x=buckets.at(buc);
+    node_impl_pointer y=x->next();
     while(y!=x){
       if(eq(k,key(node_type::from_impl(y)->value()))){
         do{
@@ -440,12 +491,12 @@ public:
     const CompatibleKey& k,
     const CompatibleHash& hash,const CompatiblePred& eq)const
   {
-    std::size_t             buc=buckets.position(hash(k));
-    hashed_index_node_impl* x=buckets.at(buc);
-    hashed_index_node_impl* y=x->next();
+    std::size_t       buc=buckets.position(hash(k));
+    node_impl_pointer x=buckets.at(buc);
+    node_impl_pointer y=x->next();
     while(y!=x){
       if(eq(k,key(node_type::from_impl(y)->value()))){
-        hashed_index_node_impl* y0=y;
+        node_impl_pointer y0=y;
         do{
           y=y->next();
         }while(y!=x&&eq(k,key(node_type::from_impl(y)->value())));
@@ -471,9 +522,9 @@ public:
 
   size_type bucket_size(size_type n)const
   {
-    size_type               res=0;
-    hashed_index_node_impl* x=buckets.at(n);
-    hashed_index_node_impl* y=x->next();
+    size_type         res=0;
+    node_impl_pointer x=buckets.at(n);
+    node_impl_pointer y=x->next();
     while(y!=x){
       ++res;
       y=y->next();
@@ -493,8 +544,8 @@ public:
 
   const_local_iterator begin(size_type n)const
   {
-    hashed_index_node_impl* x=buckets.at(n);
-    hashed_index_node_impl* y=x->next();
+    node_impl_pointer x=buckets.at(n);
+    node_impl_pointer y=x->next();
     if(y==x)return end();
     return make_iterator(node_type::from_impl(y));
   }
@@ -506,12 +557,25 @@ public:
 
   const_local_iterator end(size_type n)const
   {
-    hashed_index_node_impl* x=buckets.at(n);
+    node_impl_pointer x=buckets.at(n);
     if(x==x->next())return end();
     do{
       ++x;
     }while(x==x->next());
     return make_iterator(node_type::from_impl(x->next()));
+  }
+
+  const_local_iterator cbegin(size_type n)const{return begin(n);}
+  const_local_iterator cend(size_type n)const{return end(n);}
+
+  local_iterator local_iterator_to(const value_type& x)
+  {
+    return make_iterator(node_from_value<node_type>(&x));
+  }
+
+  const_local_iterator local_iterator_to(const value_type& x)const
+  {
+    return make_iterator(node_from_value<node_type>(&x));
   }
 
   /* hash policy */
@@ -602,13 +666,13 @@ BOOST_MULTI_INDEX_PROTECTED_IF_MEMBER_TEMPLATE_FRIENDS:
     const hashed_index<KeyFromValue,Hash,Pred,SuperMeta,TagList,Category>& x,
     const copy_map_type& map)
   {
-    for(hashed_index_node_impl* begin_org=x.buckets.begin(),
-                              * begin_cpy=buckets.begin(),
-                              * end_org=x.buckets.end();
+    for(node_impl_pointer begin_org=x.buckets.begin(),
+                          begin_cpy=buckets.begin(),
+                          end_org=x.buckets.end();
         begin_org!=end_org;++begin_org,++begin_cpy){
 
-      hashed_index_node_impl* next_org=begin_org->next();
-      hashed_index_node_impl* cpy=begin_cpy;
+      node_impl_pointer next_org=begin_org->next();
+      node_impl_pointer cpy=begin_cpy;
       while(next_org!=begin_org){
         cpy->next()=
           static_cast<node_type*>(
@@ -628,8 +692,8 @@ BOOST_MULTI_INDEX_PROTECTED_IF_MEMBER_TEMPLATE_FRIENDS:
   {
     reserve(size()+1);
 
-    std::size_t             buc=find_bucket(v);
-    hashed_index_node_impl* pos=buckets.at(buc);
+    std::size_t       buc=find_bucket(v);
+    node_impl_pointer pos=buckets.at(buc);
     if(!link_point(v,pos,Category()))return node_type::from_impl(pos);
 
     node_type* res=static_cast<node_type*>(super::insert_(v,x));
@@ -644,8 +708,8 @@ BOOST_MULTI_INDEX_PROTECTED_IF_MEMBER_TEMPLATE_FRIENDS:
   {
     reserve(size()+1);
 
-    std::size_t             buc=find_bucket(v);
-    hashed_index_node_impl* pos=buckets.at(buc);
+    std::size_t       buc=find_bucket(v);
+    node_impl_pointer pos=buckets.at(buc);
     if(!link_point(v,pos,Category()))return node_type::from_impl(pos);
 
     node_type* res=static_cast<node_type*>(super::insert_(v,position,x));
@@ -669,11 +733,11 @@ BOOST_MULTI_INDEX_PROTECTED_IF_MEMBER_TEMPLATE_FRIENDS:
 
   void delete_all_nodes_()
   {
-    for(hashed_index_node_impl* x=buckets.begin(),*x_end=buckets.end();
+    for(node_impl_pointer x=buckets.begin(),x_end=buckets.end();
         x!=x_end;++x){
-      hashed_index_node_impl* y=x->next();
+      node_impl_pointer y=x->next();
       while(y!=x){
-        hashed_index_node_impl* z=y->next();
+        node_impl_pointer z=y->next();
         this->final_delete_node_(
           static_cast<final_node_type*>(node_type::from_impl(y)));
         y=z;
@@ -716,12 +780,12 @@ BOOST_MULTI_INDEX_PROTECTED_IF_MEMBER_TEMPLATE_FRIENDS:
       return super::replace_(v,x);
     }
 
-    hashed_index_node_impl* y=prev(x);
+    node_impl_pointer y=prev(x);
     unlink_next(y);
 
     BOOST_TRY{
-      std::size_t             buc=find_bucket(v);
-      hashed_index_node_impl* pos=buckets.at(buc);
+      std::size_t       buc=find_bucket(v);
+      node_impl_pointer pos=buckets.at(buc);
       if(link_point(v,pos,Category())&&super::replace_(v,x)){
         link(x,pos);
         if(first_bucket>buc){
@@ -746,8 +810,8 @@ BOOST_MULTI_INDEX_PROTECTED_IF_MEMBER_TEMPLATE_FRIENDS:
   {
     unlink(x);
 
-    std::size_t             buc;
-    hashed_index_node_impl* pos;
+    std::size_t       buc;
+    node_impl_pointer pos;
     BOOST_TRY
     {
       buc=find_bucket(x->value());
@@ -801,6 +865,34 @@ BOOST_MULTI_INDEX_PROTECTED_IF_MEMBER_TEMPLATE_FRIENDS:
       detach_iterators(x);
 #endif
 
+      BOOST_RETHROW;
+    }
+    BOOST_CATCH_END
+  }
+
+  bool modify_rollback_(node_type* x)
+  {
+    node_impl_pointer y=prev(x);
+    unlink_next(y);
+
+    BOOST_TRY{
+      std::size_t             buc=find_bucket(x->value());
+      node_impl_pointer pos=buckets.at(buc);
+      if(link_point(x->value(),pos,Category())&&super::modify_rollback_(x)){
+        link(x,pos);
+        if(first_bucket>buc){
+          first_bucket=buc;
+        }
+        else if(first_bucket<buc){
+          first_bucket=buckets.first_nonempty(first_bucket);
+        }
+        return true;
+      }
+      link(x,y);
+      return false;
+    }
+    BOOST_CATCH(...){
+      link(x,y);
       BOOST_RETHROW;
     }
     BOOST_CATCH_END
@@ -872,9 +964,9 @@ private:
   }
 
   bool link_point(
-    value_param_type v,hashed_index_node_impl*& pos,hashed_unique_tag)
+    value_param_type v,node_impl_pointer& pos,hashed_unique_tag)
   {
-    hashed_index_node_impl* x=pos->next();
+    node_impl_pointer x=pos->next();
     while(x!=pos){
       if(eq(key(v),key(node_type::from_impl(x)->value()))){
         pos=x;
@@ -886,10 +978,10 @@ private:
   }
 
   bool link_point(
-    value_param_type v,hashed_index_node_impl*& pos,hashed_non_unique_tag)
+    value_param_type v,node_impl_pointer& pos,hashed_non_unique_tag)
   {
-    hashed_index_node_impl* prev=pos;
-    hashed_index_node_impl* x=pos->next();
+    node_impl_pointer prev=pos;
+    node_impl_pointer x=pos->next();
     while(x!=pos){
       if(eq(key(v),key(node_type::from_impl(x)->value()))){
         pos=prev;
@@ -901,29 +993,29 @@ private:
     return true;
   }
   
-  void link(node_type* x,hashed_index_node_impl* pos)
+  void link(node_type* x,node_impl_pointer pos)
   {
-    hashed_index_node_impl::link(x->impl(),pos);
+    node_impl_type::link(x->impl(),pos);
   };
 
-  void link(hashed_index_node_impl* x,hashed_index_node_impl* pos)
+  void link(node_impl_pointer x,node_impl_pointer pos)
   {
-    hashed_index_node_impl::link(x,pos);
+    node_impl_type::link(x,pos);
   };
 
   void unlink(node_type* x)
   {
-    hashed_index_node_impl::unlink(x->impl());
+    node_impl_type::unlink(x->impl());
   };
 
-  static hashed_index_node_impl* prev(node_type* x)
+  static node_impl_pointer prev(node_type* x)
   {
-    return hashed_index_node_impl::prev(x->impl());
+    return node_impl_type::prev(x->impl());
   }
 
-  static void unlink_next(hashed_index_node_impl* x)
+  static void unlink_next(node_impl_pointer x)
   {
-    hashed_index_node_impl::unlink_next(x);
+    node_impl_type::unlink_next(x);
   }
 
   void calculate_max_load()
@@ -949,10 +1041,10 @@ private:
     auto_space<std::size_t,allocator_type> hashes(get_allocator(),size());
 
     std::size_t i=0;
-    hashed_index_node_impl* x=buckets.begin();
-    hashed_index_node_impl* x_end=buckets.end();
+    node_impl_pointer x=buckets.begin();
+    node_impl_pointer x_end=buckets.end();
     for(;x!=x_end;++x){
-      hashed_index_node_impl* y=x->next();
+      node_impl_pointer y=x->next();
       while(y!=x){
         hashes.data()[i++]=hash(key(node_type::from_impl(y)->value()));
         y=y->next();
@@ -962,11 +1054,11 @@ private:
     i=0;
     x=buckets.begin();
     for(;x!=x_end;++x){
-      hashed_index_node_impl* y=x->next();
+      node_impl_pointer y=x->next();
       while(y!=x){
-        hashed_index_node_impl* z=y->next();
-        std::size_t             buc1=buckets1.position(hashes.data()[i++]);
-        hashed_index_node_impl* x1=buckets1.at(buc1);
+        node_impl_pointer z=y->next();
+        std::size_t       buc1=buckets1.position(hashes.data()[i++]);
+        node_impl_pointer x1=buckets1.at(buc1);
         link(y,x1);
         y=z;
       }
@@ -1014,7 +1106,7 @@ void swap(
 
 } /* namespace multi_index::detail */
 
-/* sequenced index specifiers */
+/* hashed index specifiers */
 
 template<typename Arg1,typename Arg2,typename Arg3,typename Arg4>
 struct hashed_unique

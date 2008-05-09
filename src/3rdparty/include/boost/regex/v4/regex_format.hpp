@@ -24,8 +24,15 @@
 
 namespace boost{
 
+#ifdef BOOST_MSVC
+#pragma warning(push)
+#pragma warning(disable: 4103)
+#endif
 #ifdef BOOST_HAS_ABI_HEADERS
 #  include BOOST_ABI_PREFIX
+#endif
+#ifdef BOOST_MSVC
+#pragma warning(pop)
 #endif
 
 //
@@ -75,7 +82,7 @@ class basic_regex_formatter
 public:
    typedef typename traits::char_type char_type;
    basic_regex_formatter(OutputIterator o, const Results& r, const traits& t)
-      : m_traits(t), m_results(r), m_out(o), m_state(output_copy), m_have_conditional(false) {}
+      : m_traits(t), m_results(r), m_out(o), m_state(output_copy), m_restore_state(output_copy), m_have_conditional(false) {}
    OutputIterator format(const char_type* p1, const char_type* p2, match_flag_type f);
    OutputIterator format(const char_type* p1, match_flag_type f)
    {
@@ -108,6 +115,7 @@ private:
    const char_type* m_end;       // format string end
    match_flag_type m_flags;      // format flags to use
    output_state    m_state;      // what to do with the next character
+   output_state    m_restore_state;  // what state to restore to.
    bool            m_have_conditional; // we are parsing a conditional
 private:
    basic_regex_formatter(const basic_regex_formatter&);
@@ -362,6 +370,7 @@ void basic_regex_formatter<OutputIterator, Results, traits>::format_escape()
          {
          case 'l':
             ++m_position;
+            m_restore_state = m_state;
             m_state = output_next_lower;
             breakout = true;
             break;
@@ -372,6 +381,7 @@ void basic_regex_formatter<OutputIterator, Results, traits>::format_escape()
             break;
          case 'u':
             ++m_position;
+            m_restore_state = m_state;
             m_state = output_next_upper;
             breakout = true;
             break;
@@ -495,11 +505,11 @@ void basic_regex_formatter<OutputIterator, Results, traits>::put(char_type c)
       return;
    case output_next_lower:
       c = m_traits.tolower(c);
-      this->m_state = output_copy;
+      this->m_state = m_restore_state;
       break;
    case output_next_upper:
       c = m_traits.toupper(c);
-      this->m_state = output_copy;
+      this->m_state = m_restore_state;
       break;
    case output_lower:
       c = m_traits.tolower(c);
@@ -622,8 +632,15 @@ std::basic_string<charT> regex_format(const match_results<Iterator>& m,
    return result;
 }
 
+#ifdef BOOST_MSVC
+#pragma warning(push)
+#pragma warning(disable: 4103)
+#endif
 #ifdef BOOST_HAS_ABI_HEADERS
 #  include BOOST_ABI_SUFFIX
+#endif
+#ifdef BOOST_MSVC
+#pragma warning(pop)
 #endif
 
 } // namespace boost

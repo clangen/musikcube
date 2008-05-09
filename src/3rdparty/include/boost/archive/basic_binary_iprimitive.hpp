@@ -48,6 +48,9 @@ namespace std{
 #include <boost/archive/basic_streambuf_locale_saver.hpp>
 #include <boost/archive/archive_exception.hpp>
 #include <boost/archive/detail/auto_link_archive.hpp>
+#include <boost/mpl/placeholders.hpp>
+#include <boost/serialization/is_bitwise_serializable.hpp>
+#include <boost/serialization/array.hpp>
 #include <boost/archive/detail/abi_prefix.hpp> // must be the last header
 
 namespace boost { 
@@ -86,6 +89,7 @@ public:
         load_binary(& t, sizeof(t));
         int i = t;
         assert(0 == i || 1 == i);
+        (void)i; // warning suppression for release builds.
     }
     BOOST_ARCHIVE_OR_WARCHIVE_DECL(void)
     load(std::string &s);
@@ -108,6 +112,21 @@ public:
     BOOST_ARCHIVE_OR_WARCHIVE_DECL(BOOST_PP_EMPTY()) 
     ~basic_binary_iprimitive();
 public:
+    // we provide an optimized load for all fundamental types
+    //typedef serialization::is_bitwise_serializable<mpl::_1> 
+    //  use_array_optimization;
+    struct use_array_optimization {
+      template <class T>
+      struct apply : public serialization::is_bitwise_serializable<T> {};
+    };
+
+    // the optimized load_array dispatches to load_binary 
+    template <class ValueType>
+    void load_array(serialization::array<ValueType>& a, unsigned int)
+    {
+      load_binary(a.address(),a.count()*sizeof(ValueType));
+    }
+
     void
     load_binary(void *address, std::size_t count);
 };
@@ -146,7 +165,7 @@ basic_binary_iprimitive<Archive, Elem, Tr>::load_binary(
         static_cast<Elem *>(address), 
         s
     );
-    if(count != static_cast<std::size_t>(s))
+    if(scount != static_cast<std::streamsize>(s))
         boost::throw_exception(
             archive_exception(archive_exception::stream_error)
         );
@@ -157,7 +176,7 @@ basic_binary_iprimitive<Archive, Elem, Tr>::load_binary(
 //            boost::throw_exception(archive_exception(archive_exception::stream_error));
         Elem t;
         scount = m_sb.sgetn(& t, 1);
-        if(count != 1)
+        if(scount != 1)
             boost::throw_exception(
                 archive_exception(archive_exception::stream_error)
             );

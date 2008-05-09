@@ -114,12 +114,13 @@ public:
     ~text_woarchive(){}
 };
 
+typedef text_woarchive naked_text_woarchive;
+
 } // namespace archive
 } // namespace boost
 
-// required by smart_cast for compilers not implementing 
-// partial template specialization
-BOOST_BROKEN_COMPILER_TYPE_TRAITS_SPECIALIZATION(boost::archive::text_woarchive)
+// required by export
+BOOST_SERIALIZATION_REGISTER_ARCHIVE(boost::archive::text_woarchive)
 
 #include <boost/archive/detail/abi_suffix.hpp> // pops abi_suffix.hpp pragmas
 

@@ -1,11 +1,12 @@
 //  Boost string_algo library classification.hpp header file  ---------------------------//
 
-//  Copyright Pavol Droba 2002-2003. Use, modification and
-//  distribution is subject to the Boost Software License, Version
-//  1.0. (See accompanying file LICENSE_1_0.txt or copy at
-//  http://www.boost.org/LICENSE_1_0.txt)
+//  Copyright Pavol Droba 2002-2003.
+//
+// Distributed under the Boost Software License, Version 1.0.
+//    (See accompanying file LICENSE_1_0.txt or copy at
+//          http://www.boost.org/LICENSE_1_0.txt)
 
-//  See http://www.boost.org for updates, documentation, and revision history.
+//  See http://www.boost.org/ for updates, documentation, and revision history.
 
 #ifndef BOOST_STRING_CLASSIFICATION_HPP
 #define BOOST_STRING_CLASSIFICATION_HPP
@@ -13,8 +14,10 @@
 #include <algorithm>
 #include <locale>
 #include <boost/range/value_type.hpp>
+#include <boost/range/as_literal.hpp>
 #include <boost/algorithm/string/detail/classification.hpp>
 #include <boost/algorithm/string/predicate_facade.hpp>
+
 
 /*! \file
     Classification predicates are included in the library to give 
@@ -200,7 +203,7 @@ namespace boost {
         is_any_of( const RangeT& Set )
         {
             return detail::is_any_ofF<
-                BOOST_STRING_TYPENAME range_value<RangeT>::type>(Set); 
+                BOOST_STRING_TYPENAME range_value<RangeT>::type>(as_literal(Set)); 
         }
 
         //! is_from_range predicate

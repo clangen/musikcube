@@ -25,21 +25,21 @@ namespace boost {
 // ---  basic_format implementation -----------------------------------------//
 
     template< class Ch, class Tr, class Alloc>
-    basic_format<Ch, Tr, Alloc>:: basic_format(const Ch* str)
+    basic_format<Ch, Tr, Alloc>:: basic_format(const Ch* s)
         : style_(0), cur_arg_(0), num_args_(0), dumped_(false),
           exceptions_(io::all_error_bits)
     {
-        if( str)
-            parse( str );
+        if( s)
+            parse( s );
     }
 
 #if !defined(BOOST_NO_STD_LOCALE)
     template< class Ch, class Tr, class Alloc>
-    basic_format<Ch, Tr, Alloc>:: basic_format(const Ch* str, const std::locale & loc)
+    basic_format<Ch, Tr, Alloc>:: basic_format(const Ch* s, const std::locale & loc)
         : style_(0), cur_arg_(0), num_args_(0), dumped_(false),
           loc_(loc), exceptions_(io::all_error_bits)
     {
-        if(str) parse( str );
+        if(s) parse( s );
     }
 
     template< class Ch, class Tr, class Alloc>
@@ -123,6 +123,7 @@ namespace boost {
             for(std::size_t i=0; i < nbitems; ++i)
                 items_[i].reset(fill); //  strings are resized, instead of reallocated
         }
+        prefix_.resize(0);
     }
 
     template< class Ch, class Tr, class Alloc>
@@ -202,6 +203,13 @@ namespace boost {
     template< class Ch, class Tr, class Alloc>
     typename std::basic_string<Ch, Tr, Alloc>::size_type  basic_format<Ch,Tr, Alloc>:: 
     size () const {
+#ifdef BOOST_MSVC
+       // If std::min<unsigned> or std::max<unsigned> are already instantiated
+       // at this point then we get a blizzard of warning messages when we call
+       // those templates with std::size_t as arguments.  Weird and very annoyning...
+#pragma warning(push)
+#pragma warning(disable:4267)
+#endif
         BOOST_USING_STD_MAX();
         size_type sz = prefix_.size();
         unsigned long i;
@@ -214,6 +222,9 @@ namespace boost {
             sz += item.appendix_.size();
         }
         return sz;
+#ifdef BOOST_MSVC
+#pragma warning(pop)
+#endif
     }
 
 namespace io {
@@ -261,7 +272,7 @@ namespace detail {
         // this is a permanent change, clear or reset won't cancel that.
         if(itemN<1 || itemN > static_cast<signed int>(self.items_.size() )) {
             if( self.exceptions() & io::out_of_range_bit ) 
-                boost::throw_exception(io::out_of_range(itemN, 1, self.items_.size() ));
+                boost::throw_exception(io::out_of_range(itemN, 1, static_cast<int>(self.items_.size()) ));
             else return self;
         }
         self.items_[itemN-1].fmtstate_. template apply_manip<T> ( manipulator );

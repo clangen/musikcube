@@ -37,8 +37,7 @@
 #error "macro already defined!"
 #endif
 
-//#if BOOST_WORKAROUND( BOOST_MSVC, < 1300 ) || __MWERKS__ <= 0x3003
-#if _MSC_VER <= 1300 && !defined( __COMO__ ) && !defined( __GNUC__ ) && __MWERKS__ <= 0x3003
+#if BOOST_WORKAROUND( BOOST_MSVC, < 1300 ) || BOOST_WORKAROUND( __MWERKS__, <= 0x3003 )
 #define BOOST_RANGE_NO_ARRAY_SUPPORT 1
 #endif
 

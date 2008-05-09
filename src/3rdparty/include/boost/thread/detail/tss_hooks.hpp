@@ -67,7 +67,7 @@
         //Called automatically by Boost.Threads when
             //a method for doing so has been discovered.
         //Must not be omitted; may be called multiple times.
-
+    
     extern "C" void tss_cleanup_implemented(void);
         //Dummy function used both to detect whether tss cleanup
             //cleanup has been implemented and to force

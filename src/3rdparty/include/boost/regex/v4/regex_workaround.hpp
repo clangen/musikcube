@@ -26,6 +26,7 @@
 #include <cstddef>
 #include <cassert>
 #include <cstdio>
+#include <climits>
 #include <string>
 #include <stdexcept>
 #include <iterator>
@@ -65,11 +66,6 @@ using std::distance;
 #ifdef BOOST_REGEX_NO_BOOL
 #  define BOOST_REGEX_MAKE_BOOL(x) static_cast<bool>((x) ? true : false)
 #else
-#  ifdef BOOST_MSVC
-      // warning suppression with VC6:
-#     pragma warning(disable: 4800)
-#     pragma warning(disable: 4786)
-#  endif
 #  define BOOST_REGEX_MAKE_BOOL(x) static_cast<bool>(x)
 #endif
 
@@ -128,7 +124,7 @@ inline void pointer_construct(T* p, const T& t)
 
 #ifdef __cplusplus
 namespace boost{ namespace re_detail{
-#if BOOST_WORKAROUND(BOOST_MSVC,>=1400) && defined(_CPPLIB_VER) && !(defined(__SGI_STL_PORT) || defined(_STLPORT_VERSION))
+#if BOOST_WORKAROUND(BOOST_MSVC,>=1400) && defined(_CPPLIB_VER) && defined(BOOST_DINKUMWARE_STDLIB) && !(defined(__SGI_STL_PORT) || defined(_STLPORT_VERSION))
    //
    // MSVC 8 will either emit warnings or else refuse to compile
    // code that makes perfectly legitimate use of std::copy, when
@@ -154,13 +150,16 @@ namespace boost{ namespace re_detail{
       return stdext::unchecked_equal(first, last, with);
    }
 
+#else 
+   using std::copy; 
+   using std::equal; 
+#endif 
+#if BOOST_WORKAROUND(BOOST_MSVC,>=1400) && defined(__STDC_WANT_SECURE_LIB__) && __STDC_WANT_SECURE_LIB__ 
+
    // use safe versions of strcpy etc:
    using ::strcpy_s;
    using ::strcat_s;
 #else
-   using std::copy;
-   using std::equal;
-
    inline std::size_t strcpy_s(
       char *strDestination,
       std::size_t sizeInBytes,
@@ -196,7 +195,8 @@ namespace boost{ namespace re_detail{
    }
 
 }} // namespaces
-#endif
+
+#endif // __cplusplus
 
 #endif // include guard
 

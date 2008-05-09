@@ -73,6 +73,8 @@ protected: // methods
 
     virtual void        OnRequestFocusNext();
     virtual void        OnRequestFocusPrev();
+    virtual void        OnEraseBackground(HDC hdc);
+    virtual void        OnPaint();
 
 private: // instance data
     uistring className, windowTitle;

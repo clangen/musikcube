@@ -20,8 +20,20 @@
 #ifndef BOOST_REGEX_V4_BASIC_REGEX_CREATOR_HPP
 #define BOOST_REGEX_V4_BASIC_REGEX_CREATOR_HPP
 
+#ifdef BOOST_MSVC
+#pragma warning(push)
+#pragma warning(disable: 4103)
+#endif
 #ifdef BOOST_HAS_ABI_HEADERS
 #  include BOOST_ABI_PREFIX
+#endif
+#ifdef BOOST_MSVC
+#pragma warning(pop)
+#endif
+
+#ifdef BOOST_MSVC
+#  pragma warning(push)
+#  pragma warning(disable: 4800)
 #endif
 
 namespace boost{
@@ -1289,8 +1301,19 @@ void basic_regex_creator<charT, traits>::probe_leading_repeat(re_syntax_base* st
 
 } // namespace boost
 
+#ifdef BOOST_MSVC
+#  pragma warning(pop)
+#endif
+
+#ifdef BOOST_MSVC
+#pragma warning(push)
+#pragma warning(disable: 4103)
+#endif
 #ifdef BOOST_HAS_ABI_HEADERS
 #  include BOOST_ABI_SUFFIX
+#endif
+#ifdef BOOST_MSVC
+#pragma warning(pop)
 #endif
 
 #endif

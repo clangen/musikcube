@@ -398,7 +398,7 @@ struct reference_to_pointer_impl
     
     typedef mpl::bool_<value> type;
 };
-   
+    
 template <class T>
 struct is_reference_to_pointer
   : mpl::eval_if<is_reference<T>, reference_to_pointer_impl<T>, mpl::false_>::type

@@ -117,14 +117,4 @@ BOOST_CLASS_IMPLEMENTATION(boost::archive::object_id_type, primitive_type)
 BOOST_CLASS_IMPLEMENTATION(boost::archive::object_reference_type, primitive_type)
 BOOST_CLASS_IMPLEMENTATION(boost::archive::tracking_type, primitive_type)
 
-/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
-// Make sure that the export.hpp header isn't included before any archive header
-// Doing so would inhibit construction of correct mpl list of known archive
-// types which in turn would inhibit instantiation of all combinations of
-// serialization/archive types.
-
-#ifdef BOOST_SERIALIZATION_EXPORT_HPP
-#error "export.hpp must not be included before any archive header"
-#endif
-
 #endif //BOOST_ARCHIVE_BASIC_ARCHIVE_HPP

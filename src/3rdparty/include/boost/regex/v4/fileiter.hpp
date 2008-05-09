@@ -46,10 +46,16 @@
 
 #if defined(BOOST_REGEX_FI_WIN32_DIR)
 
+#include <cstddef>
+
 namespace boost{
    namespace re_detail{
 
+#ifndef BOOST_NO_ANSI_APIS
 typedef WIN32_FIND_DATAA _fi_find_data;
+#else
+typedef WIN32_FIND_DATAW _fi_find_data;
+#endif
 typedef HANDLE _fi_find_handle;
 
    } // namespace re_detail

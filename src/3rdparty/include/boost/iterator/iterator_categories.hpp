@@ -150,7 +150,7 @@ struct iterator_category_to_traversal
   : mpl::eval_if< // if already convertible to a traversal tag, we're done.
         is_convertible<Cat,incrementable_traversal_tag>
       , mpl::identity<Cat>
-      , detail::old_category_to_traversal<Cat>
+      , boost::detail::old_category_to_traversal<Cat>
     >
 {};
 

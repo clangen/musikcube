@@ -78,36 +78,39 @@ public:
     // start new objects on a new line
     void save_override(const object_id_type & t, int){
         this->This()->newline();
-        // and and invoke prmitive to underlying value
+        // note extra .t to funciton with Borland 5.51 compiler
+        // and invoke prmitive to underlying value
         this->This()->save(t.t);
     }
 
     void save_override(const object_reference_type & t, int){
         this->This()->newline();
-        // and and invoke prmitive to underlying value
+        // note extra .t to funciton with Borland 5.51 compiler
+        // and invoke prmitive to underlying value
         this->This()->save(t.t);
+    }
+
+    // note the following four overrides are necessary for some borland
+    // compilers(5.51) which don't handle BOOST_STRONG_TYPE properly.
+    void save_override(const version_type & t, int){
+        // note:t.t resolves borland ambguity
+        const unsigned int x = t.t;
+        * this->This() << x;
+    }
+    void save_override(const class_id_type & t, int){
+        // note:t.t resolves borland ambguity
+        const int x = t.t;
+        * this->This() << x;
+    }
+    void save_override(const class_id_reference_type & t, int){
+        // note:t.t resolves borland ambguity
+        const int x = t.t;
+        * this->This() << x;
     }
 
     // text file don't include the optional information 
     void save_override(const class_id_optional_type & /* t */, int){}
 
-    // note the following four overrides are necessary for some borland
-    // compilers which don't handle BOOST_STRONG_TYPE properly.
-    void save_override(const version_type & t, int){
-        // note:t.t resolves borland ambguity
-        unsigned int x = t.t;
-        * this->This() << x;
-    }
-    void save_override(const class_id_type & t, int){
-        // note:t.t resolves borland ambguity
-        int x = t.t;
-        * this->This() << x;
-    }
-    void save_override(const class_id_reference_type & t, int){
-        // note:t.t resolves borland ambguity
-        int x = t.t;
-        * this->This() << x;
-    }
     void save_override(const class_name_type & t, int){
         const std::string s(t);
         * this->This() << s;

@@ -12,6 +12,7 @@
 
 #include <boost/type_traits/is_integral.hpp>
 #include <boost/type_traits/is_enum.hpp>
+#include <boost/type_traits/remove_cv.hpp>
 #include <boost/type_traits/detail/ice_or.hpp>
 
 // should be the last #include
@@ -26,7 +27,8 @@ namespace detail{
 template <class T>
 struct is_ununsigned_helper
 {
-   BOOST_STATIC_CONSTANT(bool, value = (static_cast<T>(-1) > 0));
+   typedef typename remove_cv<T>::type no_cv_t;
+   BOOST_STATIC_CONSTANT(bool, value = (static_cast<no_cv_t>(-1) > 0));
 };
 
 template <bool integral_type>

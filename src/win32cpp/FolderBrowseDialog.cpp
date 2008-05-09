@@ -39,9 +39,81 @@
 #include <pch.hpp>
 #include <win32cpp/FolderBrowseDialog.hpp>
 
+#include <shlobj.h>
+
 //////////////////////////////////////////////////////////////////////////////
 
 using namespace win32cpp;
 
+typedef FolderBrowseDialog::Result Result;
+
 //////////////////////////////////////////////////////////////////////////////
 
+static int CALLBACK FolderBrowseSetInitialDirectory(HWND hWnd, UINT uMsg, LPARAM lParam, LPARAM lpData)
+{
+    if ((uMsg == BFFM_INITIALIZED) && (lpData))
+    {
+        ::SendMessage(hWnd, BFFM_SETSELECTION, TRUE, lpData);
+    }
+
+    return 0;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
+/*ctor*/    FolderBrowseDialog::FolderBrowseDialog()
+{
+}
+
+Result      FolderBrowseDialog::Show(Window* owner, const uichar* initialPath)
+{
+    TCHAR path[_MAX_PATH];
+
+    BROWSEINFO browseInfo;
+    ::SecureZeroMemory(&browseInfo, sizeof(browseInfo));
+    //
+    browseInfo.lpszTitle = _T("Select a directory to continue.");
+    browseInfo.hwndOwner = owner ? owner->Handle() : NULL;
+    browseInfo.ulFlags |= BIF_NEWDIALOGSTYLE;
+    browseInfo.pidlRoot = NULL;
+
+    if (initialPath != NULL)
+    {
+        browseInfo.lpfn = FolderBrowseSetInitialDirectory;
+        browseInfo.lParam = (LPARAM)(LPTSTR)initialPath;
+    }
+
+    LPITEMIDLIST pidl = SHBrowseForFolder(&browseInfo);
+
+    if (pidl != NULL)
+    {
+        SHGetPathFromIDList(pidl, path);
+
+        IMalloc* imalloc = NULL;
+        //
+        if (SUCCEEDED(SHGetMalloc(&imalloc)))
+        {
+            imalloc->Free(pidl);
+            imalloc->Release();
+        }
+
+        this->directory = path;
+
+        if (this->directory.size() > 0)
+        {
+            if (this->directory[directory.size() - 1] != '\\')
+            {
+                this->directory += '\\';
+            }
+        }
+
+        return ResultOK;
+    }
+
+    return ResultCanceled;
+}
+
+uistring    FolderBrowseDialog::Directory()
+{
+    return this->directory;
+}

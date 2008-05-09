@@ -42,7 +42,6 @@
 
 #include <boost/shared_ptr.hpp>
 #include <boost/thread/mutex.hpp>
-#include <sqlite/sqlite3.h>
 
 namespace musik{ namespace core{
     namespace Library{

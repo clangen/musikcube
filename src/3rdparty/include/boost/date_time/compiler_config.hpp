@@ -3,9 +3,9 @@
 
 /* Copyright (c) 2002-2004 CrystalClear Software, Inc.
  * Subject to the Boost Software License, Version 1.0. (See accompanying
- * file LICENSE-1.0 or http://www.boost.org/LICENSE-1.0)
+ * file LICENSE_1_0.txt or http://www.boost.org/LICENSE_1_0.txt)
  * Author: Jeff Garland, Bart Garst
- * $Date: 2006/02/26 20:10:18 $
+ * $Date: 2008-02-27 15:00:24 -0500 (Wed, 27 Feb 2008) $
  */
 
  #include "boost/detail/workaround.hpp"
@@ -140,7 +140,7 @@ namespace std {
 #if defined(BOOST_HAS_THREADS) 
 #  if defined(_MSC_VER) || defined(__MWERKS__) || defined(__MINGW32__) ||  defined(__BORLANDC__)
      //no reentrant posix functions (eg: localtime_r)
-#  else
+#  elif (!defined(__hpux) || (defined(__hpux) && defined(_REENTRANT)))
 #   define BOOST_DATE_TIME_HAS_REENTRANT_STD_FUNCTIONS
 #  endif
 #endif

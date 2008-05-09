@@ -87,6 +87,7 @@ public: // methods
     const uistring&     CommandLine() const;
     int                 ShowCommand() const;
     void                Terminate() const;
+    ApplicationThread*  Thread();
 
 public: // operator overloads
     operator HINSTANCE() const;
@@ -100,9 +101,7 @@ private: // instance data
     uistring commandLine;
     int showCommand;
     TopLevelWindow* mainWindow;
-
-public: // instance data
-    ApplicationThread *thread;
+    ApplicationThread* appThread;
 
 private: // class data
     static Application sMainApplication;

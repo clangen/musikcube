@@ -157,6 +157,9 @@ namespace boost { namespace spirit {
             return ptr.get();
         }
 
+        rule(abstract_parser_t* ptr)
+        : ptr(ptr) {}
+
         rule(abstract_parser_t const* ptr)
         : ptr(ptr) {}
 

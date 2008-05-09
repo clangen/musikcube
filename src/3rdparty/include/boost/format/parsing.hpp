@@ -16,6 +16,7 @@
 
 
 #include <boost/format/format_class.hpp>
+#include <boost/format/exceptions.hpp>
 #include <boost/throw_exception.hpp>
 #include <boost/assert.hpp>
 
@@ -130,6 +131,12 @@ namespace detail {
         bool in_brackets=false;
         Iter start0 = start;
         std::size_t fstring_size = last-start0+offset;
+
+        if(start>= last) { // empty directive : this is a trailing %
+                maybe_throw_exception(exceptions, start-start0 + offset, fstring_size);
+                return false;
+        }          
+          
         if(*start== const_or_not(fac).widen( '|')) {
             in_brackets=true;
             if( ++start >= last ) {
@@ -360,7 +367,10 @@ namespace detail {
             if( i1+1 >= buf.size() ) {
                 if(exceptions & bad_format_string_bit)
                     boost::throw_exception(bad_format_string(i1, buf.size() )); // must not end in ".. %"
-                else break; // stop there, ignore last '%'
+                else {
+                  ++num_items;
+                  break;
+                }
             }
             if(buf[i1+1] == buf[i1] ) {// escaped "%%"
                 i1+=2; continue; 
@@ -429,8 +439,10 @@ namespace detail {
             }
             BOOST_ASSERT(  static_cast<unsigned int>(cur_item) < items_.size() || cur_item==0);
 
-            if(i1!=i0)
+            if(i1!=i0) {
                 io::detail::append_string(piece, buf, i0, i1);
+                i0=i1;
+            }
             ++i1;
             it = buf.begin()+i1;
             bool parse_ok = io::detail::parse_printf_directive(
