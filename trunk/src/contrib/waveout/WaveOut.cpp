@@ -194,7 +194,7 @@ bool WaveOut::Shutdown(void)
 {
 	Close();
      
-    boost::mutex::scoped_lock lock(this->audioMutex);
+//    boost::mutex::scoped_lock lock(this->audioMutex);
 
 	if(this->audioThread)
 	{
@@ -286,10 +286,10 @@ bool WaveOut::SetFormat(unsigned long SampleRate, unsigned long Channels)
 //
 bool WaveOut::Start(void)
 {
-    boost::mutex::scoped_lock lock(this->audioMutex);
-
 	if(!Open())
 		return(false);
+ 
+    boost::mutex::scoped_lock lock(this->audioMutex);
 
 	while(m_QueuedBuffers) // Handles pause/play?
 	{
