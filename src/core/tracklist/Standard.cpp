@@ -224,6 +224,7 @@ void Standard::RemoveRequestedMetakey(const char* metakey){
 
 void Standard::CopyTracks(musik::core::tracklist::IRandomAccess &tracklist){
     if(this!=&tracklist){   // Do not copy to itself
+        this->trackCache.clear();
         this->SetLibrary(tracklist.Library());
         this->tracks.clear();
         this->tracks.reserve(tracklist.Size());
