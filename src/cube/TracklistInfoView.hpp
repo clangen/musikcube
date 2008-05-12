@@ -38,16 +38,20 @@
 
 #pragma once
 
+
 //////////////////////////////////////////////////////////////////////////////
 
 using namespace win32cpp;
 
 namespace musik { namespace cube {
 
+// Forward
+class TracklistController;
 //////////////////////////////////////////////////////////////////////////////
 
 class TracklistInfoView: public LinearLayout
 {
+friend class TracklistController;
 private:    typedef LinearLayout base;
 
 public:     /*ctor*/        TracklistInfoView();

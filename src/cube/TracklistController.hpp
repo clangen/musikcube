@@ -76,6 +76,7 @@ protected:  void        AddColumn(const utfchar *name, const char *metakey, int 
 protected:  ModelRef model;
 protected:  TracklistView& view;
 protected:  ColumnList columns;
+private:    void OnTracklistInfo(UINT64 tracks,UINT64 duration,UINT64 filesize);
 
 };
 

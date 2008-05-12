@@ -57,6 +57,11 @@ using namespace musik::cube;
     this->view.Handle()
         ? this->OnViewCreated(&view)
         : this->view.Created.connect(this, &TracklistController::OnViewCreated);
+
+    if(connectedQuery){
+        connectedQuery->OnTrackInfoEvent().connect(this,&TracklistController::OnTracklistInfo);
+    }
+
 }
 
 void        TracklistController::OnViewCreated(Window* window)
@@ -91,3 +96,26 @@ void        TracklistController::AddColumn(const utfchar *name,const char *metak
     ((TracklistModel*)this->model.get())->tracklist->AddRequestedMetakey(metakey);
 }
 
+void TracklistController::OnTracklistInfo(UINT64 tracks,UINT64 duration,UINT64 filesize){
+    if(this->view.infoView){
+        typedef boost::basic_format<uichar> format;
+
+        this->view.infoView->trackCountLabel->SetCaption( (format(_T("%1%"))%tracks).str() );
+
+        UINT64 days(duration/86400);
+        duration    = duration%86400;
+        UINT64 hours(duration/3600);
+        duration    = duration%3600;
+        UINT64 minutes(duration/60);
+        duration    = duration%60;
+        this->view.infoView->durationLabel->SetCaption( (format(_T("%d days, %02d:%02d:%02d"))%days%hours%minutes%duration).str() );
+
+        if(filesize<1048576){
+            this->view.infoView->sizeLabel->SetCaption( (format(_T("%.2f KB"))%((double)filesize/(double)1024)).str() );
+        }else if(filesize<1073741824){
+            this->view.infoView->sizeLabel->SetCaption( (format(_T("%.2f MB"))%((double)filesize/(double)1048576)).str() );
+        }else{
+            this->view.infoView->sizeLabel->SetCaption( (format(_T("%.2f GB"))%((double)filesize/(double)1073741824)).str() );
+        }
+    }
+}
