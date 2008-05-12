@@ -271,7 +271,7 @@ bool Query::ListSelection::ParseQuery(Library::Base *oLibrary,db::Connection &db
 
     ////////////////////////////////////////////////
     // Second. Select track
-    std::string sqlSelectTrack("SELECT t.id AS id");
+    std::string sqlSelectTrack("SELECT t.id AS id,t.duration AS sum_duration,t.filesize AS sum_filesize");
     std::string sqlSelectTrackFrom(" FROM tracks t ");
     std::string sqlSelectTrackWhere;
     std::string sqlSelectTrackOrder("ORDER BY t.sort_order1");
@@ -441,11 +441,13 @@ bool Query::ListSelection::ParseQuery(Library::Base *oLibrary,db::Connection &db
         }
     }
 
+    ////////////////////////////////////////////////
+    // Select tracks
     if(this->trackEvent.has_connections() && !oLibrary->QueryCanceled()){
 
-        std::string sql("SELECT t.id FROM tracks t ORDER BY t.sort_order1");
+        std::string sql("SELECT t.id,t.duration,t.filesize FROM tracks t ORDER BY t.sort_order1");
         if(!metakeysSelectedCopy.empty()){
-            sql    = "SELECT t.id FROM temp_tracks_list t";
+            sql    = "SELECT t.id,t.sum_duration,t.sum_filesize FROM temp_tracks_list t";
         }
         db::CachedStatement tracks(sql.c_str(),db);
 
@@ -454,12 +456,23 @@ bool Query::ListSelection::ParseQuery(Library::Base *oLibrary,db::Connection &db
         TrackVector tempTrackResults;
         tempTrackResults.reserve(101);
         int row(0);
+        UINT64 duration(0);
+        UINT64 filesize(0);
 
         while(tracks.Step()==db::ReturnCode::Row){
             tempTrackResults.push_back(TrackPtr(new Track(tracks.ColumnInt(0))));
+            duration += tracks.ColumnInt64(1);
+            filesize += tracks.ColumnInt64(2);
             if( (++row)%100==0 ){
                 boost::mutex::scoped_lock lock(oLibrary->oResultMutex);
                 this->trackResults.insert(this->trackResults.end(),tempTrackResults.begin(),tempTrackResults.end());
+
+                this->trackInfoTracks   += tempTrackResults.size();
+                this->trackInfoDuration += duration;
+                this->trackInfoSize     += filesize;
+                filesize                = 0;
+                duration                = 0;
+
                 tempTrackResults.clear();
                 trackResults.reserve(101);
             }
@@ -467,6 +480,11 @@ bool Query::ListSelection::ParseQuery(Library::Base *oLibrary,db::Connection &db
         if(!tempTrackResults.empty()){
             boost::mutex::scoped_lock lock(oLibrary->oResultMutex);
             this->trackResults.insert(this->trackResults.end(),tempTrackResults.begin(),tempTrackResults.end());
+
+            this->trackInfoTracks   += tempTrackResults.size();
+            this->trackInfoDuration += duration;
+            this->trackInfoSize     += filesize;
+
         }
 
     }

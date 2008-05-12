@@ -67,6 +67,7 @@ namespace musik{ namespace core{
                 typedef sigslot::signal2<MetadataValueVector*,bool> MetadataSignal;
                 typedef std::map<std::string,MetadataSignal> MetadataSignals;
                 typedef sigslot::signal2<TrackVector*,bool> TrackSignal;
+                typedef sigslot::signal3<UINT64,UINT64,UINT64> TrackInfoSignal;
 
             protected:
                 bool RunCallbacks(Library::Base *oLibrary);
@@ -79,11 +80,17 @@ namespace musik{ namespace core{
 
                 MetadataSignals metadataEvent;
                 TrackSignal trackEvent;
+                TrackInfoSignal trackInfoEvent;
+
+                UINT64 trackInfoTracks;
+                UINT64 trackInfoDuration;
+                UINT64 trackInfoSize;
+
             public:
                 MetadataSignal& OnMetadataEvent(const char* metatag);
                 MetadataSignal& OnMetadataEvent(const wchar_t* metatag);
                 TrackSignal& OnTrackEvent();
-
+                TrackInfoSignal& OnTrackInfoEvent();
         };
     }
 } }

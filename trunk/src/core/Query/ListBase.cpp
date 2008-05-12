@@ -42,7 +42,12 @@
 using namespace musik::core;
 
 
-Query::ListBase::ListBase(void) : clearedTrackResults(false){
+Query::ListBase::ListBase(void) 
+:clearedTrackResults(false)
+,trackInfoTracks(0)
+,trackInfoDuration(0)
+,trackInfoSize(0)
+{
 }
 
 Query::ListBase::~ListBase(void){
@@ -104,6 +109,12 @@ bool Query::ListBase::RunCallbacks(Library::Base *oLibrary){
 
     }
 
+    if(bReturn){
+        boost::mutex::scoped_lock lock(oLibrary->oResultMutex);
+        // Check for trackinfo update
+        this->trackInfoEvent(trackInfoTracks,trackInfoDuration,trackInfoSize);
+    }
+
     return bReturn;
 }
 
@@ -119,4 +130,7 @@ Query::ListBase::TrackSignal& Query::ListBase::OnTrackEvent(){
     return this->trackEvent;
 }
 
+Query::ListBase::TrackInfoSignal& Query::ListBase::OnTrackInfoEvent(){
+    return this->trackInfoEvent;
+}
 
