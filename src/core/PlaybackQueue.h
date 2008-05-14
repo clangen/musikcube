@@ -86,6 +86,12 @@ class PlaybackQueue : public sigslot::has_slots<>{
 		//////////////////////////////////////////
 		static PlaybackQueue& Instance(){ return sInstance; };
 
+        //////////////////////////////////////////
+		///\brief
+		///Get a hold of the Transport
+		//////////////////////////////////////////
+        musik::core::audio::Transport&  Transport() { return this->transport; };
+
         // Now Playing control
         tracklist::Standard::Ptr NowPlayingTracklist();
         void Play(tracklist::IRandomAccess &tracklist);
@@ -96,10 +102,6 @@ class PlaybackQueue : public sigslot::has_slots<>{
         void Next();
         void Previous();
         void Stop();
-
-        short Volume() const;
-        void SetVolume(short volume);
-        void JumpToPosition(short relativePosition);
 
         musik::core::TrackPtr CurrentTrack();
 

@@ -199,16 +199,3 @@ void PlaybackQueue::Play(tracklist::IRandomAccess &tracklist){
     this->nowPlaying->CopyTracks(tracklist);
     this->Play();
 }
-
-short PlaybackQueue::Volume() const{
-    return this->transport.Volume();
-}
-
-void PlaybackQueue::SetVolume(short volume){
-    this->transport.ChangeVolume(volume);
-}
-
-void PlaybackQueue::JumpToPosition(short relativePosition)
-{
-    this->transport.JumpToPosition(relativePosition);
-}

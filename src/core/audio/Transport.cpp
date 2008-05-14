@@ -121,16 +121,26 @@ void Transport::Stop(size_t idx)
     }
 }
 
-void Transport::JumpToPosition(short relativePosition)
+void Transport::JumpToPosition(unsigned long position)
 {
     AudioStream* stream = this->openStreams[0];
 
-    unsigned long posMS = stream->GetLength() * relativePosition / 100;
-    
-    stream->SetPosition(posMS);
+    stream->SetPosition(position);
 }
 
-void Transport::ChangeVolume(short volume)
+unsigned long Transport::FirstTrackPosition() const
+{
+    if (this->openStreams.size() > 0)   return this->openStreams[0]->GetPosition();
+    else                                return 0;
+}
+
+unsigned long Transport::FirstTrackLength() const
+{
+    if (this->openStreams.size() > 0)   return this->openStreams[0]->GetLength();
+    else                                return 0;
+}
+
+void Transport::SetVolume(short volume)
 {
     if (volume < 0 || volume > 100)
     {

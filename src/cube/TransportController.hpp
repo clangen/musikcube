@@ -42,6 +42,7 @@
 
 #include <core/PlaybackQueue.h>
 #include <cube/TransportView.hpp>
+#include <win32cpp/Timer.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -65,8 +66,16 @@ protected:  void    OnPreviousPressed(Button* button);
 protected:  void    OnVolumeSliderChange(Trackbar* trackbar);
 protected:  void    OnTrackChange(musik::core::TrackPtr track);
 protected:  void    OnPlaybackSliderChange(Trackbar* trackBar);
+protected:  void    OnPlaybackSliderTimerTimedOut();
+protected:  void    OnPlaybackSliderMouseDown(Window* windows, MouseEventFlags flags, Point point);
+protected:  void    OnPlaybackSliderMouseUp(Window* windows, MouseEventFlags flags, Point point);
 
 protected:  TransportView& transportView;
+
+protected:  Timer   playbackSliderTimer;
+protected:  bool    playbackSliderMouseDown;
+
+protected:  win32cpp::uistring FormatTime(unsigned long ms);
 };
 
 //////////////////////////////////////////////////////////////////////////////
