@@ -55,23 +55,29 @@ class BrowseController;
 
 class MetadataFilterController : public EventHandler
 {
-private:    typedef ListView::ColumnRef ColumnRef;
-private:    typedef ListView::ModelRef ModelRef;
+private:    
+    typedef ListView::ColumnRef ColumnRef;
+    typedef ListView::ModelRef ModelRef;
 
-public:     /*ctor*/    MetadataFilterController(ListView& listView, const uistring& metdataKey,BrowseController *browseController);
+public:     
+    /*ctor*/    MetadataFilterController(ListView& listView, const uistring& metdataKey,BrowseController *browseController);
 
-protected:  void        OnViewCreated(Window* window);
-protected:  void        OnResized(Window* window, Size size);
-protected:  void        OnSelectionChanged(ListView* listView);
-protected:
-            friend class        MetadataFilterModel;
-            BrowseController    *parent;
-            uistring            metadataKey;
-            std::string         metadataKeyA;
+protected:  
+    void        OnViewCreated(Window* window);
+    void        OnResized(Window* window, Size size);
+    void        OnSelectionChanged(ListView* listView);
+    void        OnChar(Window* window,VirtualKeyCode keyCode, KeyEventFlags keyFlags);
 
-protected:  ListView&           listView;
-protected:  ModelRef            model;
-protected:  ColumnRef           mainColumn;
+    uistring    currentFilter;
+
+    friend class        MetadataFilterModel;
+    BrowseController    *parent;
+    uistring            metadataKey;
+    std::string         metadataKeyA;
+
+    ListView&           listView;
+    ModelRef            model;
+    ColumnRef           mainColumn;
 };
 
 //////////////////////////////////////////////////////////////////////////////

@@ -232,13 +232,6 @@ WindowType*     Container::RemoveChild(WindowType* window)
     allChildren.erase(
         std::find(allChildren.begin(), allChildren.end(), window));
 
-    // set the MainWindow as the new parent, but do not add it as
-    // a child. we do this so the child control doesn't get into
-    // a bad state, but does not get automatically destroyed by the
-    // main window. the once a child has been removed from a Container
-    // it is the user's responsibility to clean it up.
-    Window::SetParent(window, Application::Instance().MainWindow());
-
     this->OnChildRemoved(window);
 
     return window;

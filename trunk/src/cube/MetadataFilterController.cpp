@@ -112,9 +112,18 @@ void        MetadataFilterController::OnViewCreated(Window* window)
 
     this->listView.Resized.connect(
         this, &MetadataFilterController::OnResized);
+
+    this->listView.Char.connect(this,&MetadataFilterController::OnChar);
 }
 
-void        MetadataFilterController:: OnResized(Window* window, Size size)
+void MetadataFilterController::OnResized(Window* window, Size size)
 {
     this->listView.SetColumnWidth(this->mainColumn, this->listView.ClientSize().width);
+}
+
+void MetadataFilterController::OnChar(Window* window,VirtualKeyCode keyCode, KeyEventFlags keyFlags){
+    if(keyCode){
+        win32cpp::RedrawLock drawLock(window);
+        ((MetadataFilterModel*)this->model.get())->OnChar((wchar_t)keyCode);
+    }
 }

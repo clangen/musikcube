@@ -38,7 +38,9 @@
 
 #include "core/tracklist/IBase.h"
 #include <core/Library/Base.h>
+
 #include <boost/shared_ptr.hpp>
+#include <sigslot/sigslot.h>
 
 namespace musik{ namespace core{
     namespace tracklist {
@@ -46,23 +48,40 @@ namespace musik{ namespace core{
             public:
                 ~IRandomAccess(void){};
 
-                virtual musik::core::TrackPtr operator [](int position) = 0;
-                virtual int Size() = 0;
                 virtual void SetCurrentPosition(int position) = 0;
                 virtual int CurrentPosition() = 0;
+
+                virtual int Size() = 0;
+
+                virtual musik::core::TrackPtr operator [](int position) = 0;
+                virtual musik::core::TrackPtr TrackWithMetadata(int position)=0;
+
                 virtual void SetLibrary(musik::core::LibraryPtr setLibrary) = 0;
                 virtual musik::core::LibraryPtr Library() = 0;
 
-                virtual void CopyTracks(musik::core::tracklist::IRandomAccess &tracklist) = 0;
-                virtual void AppendTracks(musik::core::tracklist::IRandomAccess &tracklist) = 0;
+                virtual bool CopyTracks(musik::core::tracklist::IRandomAccess &tracklist) = 0;
+                virtual bool AppendTracks(musik::core::tracklist::IRandomAccess &tracklist) = 0;
 
-                virtual musik::core::TrackPtr Track(int position)=0;
+                virtual void AddRequestedMetakey(const char* metakey) = 0;
+                virtual void RemoveRequestedMetakey(const char* metakey) = 0;
 
+                virtual UINT64 Duration() = 0;
+                virtual UINT64 Filesize() = 0;
+                /////////////////////////////////////////////////////////////////////////
+                typedef sigslot::signal3<UINT64,UINT64,UINT64> TracklistInfoEvent;
+                TracklistInfoEvent TracklistInfoUpdated;
+
+                typedef sigslot::signal1<bool> TracksEvent;
+                TracksEvent TracksUpdated;
+
+                typedef sigslot::signal1<std::vector<int>&> TrackMetaEvent;
+                TrackMetaEvent TrackMetaUpdated;
         };
 
         typedef boost::shared_ptr<IRandomAccess> IRandomAccessPtr;
 
     }
 } }
+
 
 

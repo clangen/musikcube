@@ -333,6 +333,14 @@
 						>
 					</File>
 					<File
+						RelativePath=".\ProgressBar.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\ProgressBar.hpp"
+						>
+					</File>
+					<File
 						RelativePath=".\Window.cpp"
 						>
 					</File>

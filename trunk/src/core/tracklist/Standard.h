@@ -43,14 +43,12 @@
 #include <core/Query/TrackMetadata.h>
 #include <core/Library/Base.h>
 
+#include <set>
 #include <sigslot/sigslot.h>
 #include <boost/shared_ptr.hpp>
-#include <boost/multi_index_container.hpp>
-#include <boost/multi_index/member.hpp>
-#include <boost/multi_index/ordered_index.hpp>
-#include <boost/multi_index/sequenced_index.hpp>
+#include <boost/bimap.hpp>
 
-#include <set>
+
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -70,80 +68,56 @@ namespace musik{ namespace core{
                 musik::core::TrackPtr NextTrack();
                 musik::core::TrackPtr PreviousTrack();
 
-                musik::core::TrackPtr operator [](int position);
-                int Size();
-                void SetCurrentPosition(int position);
-                int CurrentPosition();
 
+                virtual void SetCurrentPosition(int position);
+                virtual int CurrentPosition();
+
+                virtual int Size();
+
+                virtual musik::core::TrackPtr operator [](int position);
+                virtual musik::core::TrackPtr TrackWithMetadata(int position);
+
+                virtual void SetLibrary(musik::core::LibraryPtr setLibrary);
+                virtual musik::core::LibraryPtr Library();
+
+                virtual bool CopyTracks(musik::core::tracklist::IRandomAccess &tracklist);
+                virtual bool AppendTracks(musik::core::tracklist::IRandomAccess &tracklist);
+
+                virtual void AddRequestedMetakey(const char* metakey);
+                virtual void RemoveRequestedMetakey(const char* metakey);
+
+                virtual UINT64 Duration();
+                virtual UINT64 Filesize();
+                /////////////////////////////////////////////////////////////////////
                 void ConnectToQuery(musik::core::Query::ListBase &listQuery);
-                void SetLibrary(musik::core::LibraryPtr setLibrary);
-                musik::core::LibraryPtr Library();
 
                 void HintNumberOfRows(int rows);
 
-                void AddRequestedMetakey(const char* metakey);
-                void RemoveRequestedMetakey(const char* metakey);
+            private:
 
-                void CopyTracks(musik::core::tracklist::IRandomAccess &tracklist);
-                void AppendTracks(musik::core::tracklist::IRandomAccess &tracklist);
-
-                typedef sigslot::signal1<bool> TracksEvent;
-                TracksEvent OnTracks;
-                typedef sigslot::signal1<std::vector<int>&> TrackMetaEvent;
-                TrackMetaEvent OnTrackMeta;
-
-            protected:
-
-                musik::core::TrackPtr Track(int position);
+                void LoadTrack(int position);
+                bool QueryForTrack(int position);
+                void OnTracksFromQuery(musik::core::TrackVector *newTracks,bool clear);
+                void OnTracksMetaFromQuery(musik::core::TrackVector *metaTracks);
+                void OnTracksInfoFromQuery(UINT64 tracks,UINT64 duration,UINT64 filesize);
 
                 std::set<std::string> requestedMetaKeys;
 
-                void LoadTrack(int position);
-
                 int currentPosition;
-
-                musik::core::LibraryPtr library;
-
-                musik::core::TrackVector tracks;
-
-                musik::core::Query::TrackMetadata trackQuery;
-
-                void OnTracksFromQuery(musik::core::TrackVector *newTracks,bool clear);
-                void OnTracksMetaFromQuery(musik::core::TrackVector *metaTracks);
-
                 int hintedRows;
 
+                musik::core::LibraryPtr library;
+                musik::core::TrackVector tracks;
+                musik::core::Query::TrackMetadata trackQuery;
 
-                struct CacheTrack{
-                    CacheTrack(musik::core::TrackPtr track,int position) :
-                        track(track),
-                        position(position) 
-                    {
-                    };
-
-                    int position;
-                    musik::core::TrackPtr track;
-                };
-
-                struct tagPosition{};
-                struct tagTrack{};
-                struct tagPrio{};
-
-                typedef boost::multi_index::ordered_unique<boost::multi_index::tag<tagPosition>,BOOST_MULTI_INDEX_MEMBER(CacheTrack,int,position)> MultiIndexPosition;
-                typedef boost::multi_index::ordered_non_unique<boost::multi_index::tag<tagTrack>,BOOST_MULTI_INDEX_MEMBER(CacheTrack,musik::core::TrackPtr,track)> MultiIndexTrack;
-                typedef boost::multi_index::indexed_by<MultiIndexPosition,MultiIndexTrack> MultiIndexBy;
-
-                typedef boost::multi_index::multi_index_container<CacheTrack,MultiIndexBy> TrackCache;
-                
-                /*boost::multi_index::sequenced<tagPrio>,*/ 
-
+                typedef boost::bimap<int,musik::core::TrackPtr> TrackCache;
                 TrackCache trackCache;
 
-                typedef boost::multi_index::index<TrackCache,tagTrack>::type CacheIndexTrack;
-                typedef boost::multi_index::index<TrackCache,tagPosition>::type CacheIndexPosition;
+                int infoDuration;
+                int infoFilesize;
 
-                bool InCache(int position);
-                bool InCache(musik::core::TrackPtr track);
+//                bool InCache(int position);
+//                bool InCache(musik::core::TrackPtr track);
         };
     }
 } } // musik::core

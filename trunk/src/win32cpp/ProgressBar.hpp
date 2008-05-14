@@ -2,7 +2,9 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Daniel Önnerby
+// The following are Copyright © 2007, Casey Langen
+//
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -34,37 +36,47 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-// Precompiled headers
 #pragma once
 
-#pragma warning (disable : 4996 4018 4482)
+//////////////////////////////////////////////////////////////////////////////
 
+#include <win32cpp/Window.hpp>
 
+namespace win32cpp {
 
-#include "config.h"
+//////////////////////////////////////////////////////////////////////////////
 
-#include <boost/asio.hpp>
+class ProgressBar; // forward decl
 
-#include <stdio.h>
-#include <cstdlib>
-#include <iostream>
-#include <stdlib.h>
+///\brief
+///A progress bar.
+class ProgressBar: public Window
+{
+private: // types
+    typedef Window base;
 
-#include <vector>
-#include <map>
-#include <set>
+public:     // constructors, methods
+    /*ctor*/        ProgressBar(int width, int height);
+    /*dtor*/        ~ProgressBar();
 
-#include <core/db/Connection.h>
-#include <core/db/Statement.h>
-#include <core/db/CachedStatement.h>
+    void SetMarqueeStyle();
+    void SetSmoothStyle();
+    void SetVerticalStyle();
+    void StartMarquee(bool set, unsigned int delay);
+    DWORD SetRange(unsigned int min, unsigned int max);
+    void SetPos(int pos);
+    void SetStepIncrement(int inc);
+    void Step();
 
-#include <boost/shared_ptr.hpp>
-#include <boost/thread/thread.hpp>
-#include <boost/bind.hpp>
-#include <boost/noncopyable.hpp>
+protected:  // methods
+     virtual HWND       Create(Window* parent);
+     virtual LRESULT    WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
 
-#include <string>
-#include <sigslot/sigslot.h>
+protected:  // instance data
+    uistring caption;
+    int width;
+    int height;
+    DWORD styleEx;
+};
 
-#include "vld/vld.h"
-
+} //win32cpp

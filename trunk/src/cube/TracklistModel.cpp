@@ -64,8 +64,8 @@ using namespace musik::cube;
 
     this->SetRowCount(0);
 
-    this->tracklist->OnTracks.connect(this,&TracklistModel::OnTracks);
-    this->tracklist->OnTrackMeta.connect(this,&TracklistModel::OnTrackMeta);
+    this->tracklist->TracksUpdated.connect(this,&TracklistModel::OnTracks);
+    this->tracklist->TrackMetaUpdated.connect(this,&TracklistModel::OnTrackMeta);
     this->tracklist->SetLibrary(musik::core::LibraryFactory::GetCurrentLibrary());
 
     if(connectedQuery){
@@ -81,7 +81,7 @@ uistring            TracklistModel::CellValueToString(int rowIndex, ColumnRef co
 
     typedef boost::basic_format<uichar> format;
 //    return (format(_T("%1% %2%")) % column->Name() % (rowIndex + 1)).str();
-    musik::core::TrackPtr track = (*this->tracklist)[rowIndex];
+    musik::core::TrackPtr track = this->tracklist->TrackWithMetadata(rowIndex);
     if(!track){
         return _T("");
     }else{
