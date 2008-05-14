@@ -99,6 +99,7 @@ class PlaybackQueue : public sigslot::has_slots<>{
 
         short Volume() const;
         void SetVolume(short volume);
+        void JumpToPosition(short relativePosition);
 
         musik::core::TrackPtr CurrentTrack();
 

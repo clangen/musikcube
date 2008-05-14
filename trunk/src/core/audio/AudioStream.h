@@ -59,13 +59,13 @@ private: unsigned long streamId;
 public: unsigned long GetStreamId() const { return this->streamId; };
 public: utfstring ToString() const;
 
+public:    unsigned long   GetLength()                     const;
+public:    unsigned long   GetPosition()                   const;
+public:    bool            SetPosition(unsigned long MS);
+
 /////////////////////////////////////////
 // Pending stuff
 
-// Change modifiers as required.  Sticking to private untill really used outside of the class.
-private:    unsigned long   GetLength()                     const;
-private:    unsigned long   GetPosition()                   const;
-private:    bool            SetPosition(unsigned long MS);
 
 // TODO: decide what to do with this when integrating into mC2 
 int GetCrossfadeTime() {return 0;}; // TuniacApp.Preferences
