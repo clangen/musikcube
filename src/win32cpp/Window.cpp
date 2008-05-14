@@ -674,7 +674,7 @@ bool        Window::MoveTo(const Point& location)
             location.y,
             windowRect.right - windowRect.left,
             windowRect.bottom - windowRect.top,
-            TRUE);
+            this->Visible());
 
         if (result)
         {
@@ -732,7 +732,7 @@ bool        Window::Resize(const Size& size)
             topLeft.y,
             saneSize.width,
             saneSize.height,
-            TRUE);
+            this->Visible());
 
         if (result)
         {
@@ -791,10 +791,19 @@ bool        Window::SetCaption(const uistring& caption)
         return true;
     }
 
-    if ((this->windowHandle) && (::SetWindowText(this->windowHandle, caption.c_str())))
+    if (this->windowHandle)
     {
-        this->OnCaptionChanged();
-        return true;
+        BOOL success = (BOOL) ::SendMessage(
+            this->windowHandle,
+            WM_SETTEXT,
+            0,
+            (LPARAM) caption.c_str());
+
+        if (success)
+        {
+            this->OnCaptionChanged();
+            return true;
+        }
     }
 
     return false;
@@ -1087,6 +1096,7 @@ void        Window::SetVisible(bool visible)
     if (this->Handle())
     {
         ::ShowWindow(this->Handle(), visible ? SW_SHOW : SW_HIDE);
+        this->OnVisibilityChangedBase(visible);
     }
 }
 
@@ -1393,6 +1403,13 @@ bool        Window::OnCharBase(VirtualKeyCode keyCode, KeyEventFlags flags)
     bool result = this->OnChar(keyCode, flags);
     EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->Char, this, keyCode, flags);
     return result;
+}
+
+
+void        Window::OnVisibilityChangedBase(bool visible)
+{
+    this->OnVisibilityChanged(visible);
+    EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->VisibilityChanged, this, visible);
 }
 
 void        Window::OnThemeChanged()

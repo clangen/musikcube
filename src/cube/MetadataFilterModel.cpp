@@ -48,6 +48,8 @@
 #include <cube/MetadataFilterController.hpp>
 #include <cube/BrowseController.hpp>
 
+#include <boost/algorithm/string.hpp>
+
 using namespace musik::cube;
 
 //////////////////////////////////////////////////////////////////////////////
@@ -67,8 +69,8 @@ uistring    MetadataFilterModel::CellValueToString(int rowIndex, ListView::Colum
         return (format(_T("All (%1% %2%)")) % this->metadata.size() % this->controller->metadataKey).str();
     }
 
-    if(rowIndex<=this->metadata.size()){
-        return win32cpp::Escape(this->metadata[rowIndex-1]->value);
+    if(rowIndex<=this->metadataFiltered.size()){
+        return win32cpp::Escape(this->metadataFiltered[rowIndex-1]->value);
     }else{
         return uistring();
     }
@@ -77,10 +79,29 @@ uistring    MetadataFilterModel::CellValueToString(int rowIndex, ListView::Colum
 void        MetadataFilterModel::OnMetadata(musik::core::MetadataValueVector* metadata,bool clear){
     if(clear){
         this->SetRowCount(0);
-        this->metadata  = *metadata;
+        this->metadata          = *metadata;
+        this->metadataFiltered  = *metadata;
+        this->filter.clear();
     }else{
         this->metadata.insert(this->metadata.end(),metadata->begin(),metadata->end());
+        this->metadataFiltered.insert(this->metadataFiltered.end(),metadata->begin(),metadata->end());
     }
-    this->SetRowCount(this->metadata.size()+1);
+    this->SetRowCount(this->metadataFiltered.size()+1);
     this->InvalidateData(0);    // Invalidate the "All" count
+}
+
+void MetadataFilterModel::OnChar(wchar_t key){
+/*    if(key){
+        this->filter    += key;
+
+        // Lets filter
+        this->metadataFiltered.clear();
+        for(musik::core::MetadataValueVector::iterator meta=this->metadata.begin();meta!=this->metadata.end();++meta){
+            if(boost::ifind_first( (*meta)->value, this->filter) ){
+                this->metadataFiltered.push_back(*meta);
+            }
+        }
+    }
+    this->SetRowCount(0);
+    this->SetRowCount(this->metadataFiltered.size()+1);*/
 }

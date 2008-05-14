@@ -41,6 +41,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <win32cpp/Container.hpp>
+#include <win32cpp/ILayout.hpp>
 
 namespace win32cpp {
 
@@ -85,7 +86,7 @@ const int DisableConstraint = -1;
 ///children stationary or "anchored," while allowing the other to be resized
 ///to fill the new space. The anchor can be set via Splitter::SetAnchor by
 ///specifying a win32cpp::AnchorDirection.
-class Splitter: public Panel
+class Splitter: public Panel, public ILayout
 {
 private: // types
     typedef Panel base;
@@ -109,7 +110,6 @@ public: // methods
 
 protected: // methods
     void    SetSizeCursor();
-    Rect    SplitterRect();
     int     AnchorSizeFromMouse(int splitPosition, const Size& newSize);
     void    BeginMouseCapture();
     void    EndMouseCapture();
@@ -117,7 +117,8 @@ protected: // methods
     // overrides
     virtual bool        AddChildWindow(Window* window);
     virtual LRESULT     WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
-    virtual void        Layout(int child1Size = -1);
+    virtual void        Layout();
+    virtual void        LayoutFromMouse();
     virtual void        OnResized(const Size& newSize);
     virtual void        OnMouseMoved(MouseEventFlags flags, const Point& location);
     virtual void        OnMouseButtonDown(MouseEventFlags flags, const Point& location);
@@ -131,9 +132,11 @@ private: // instance data
     Frame *child1Frame, *child2Frame;
     int gripperSize, anchorSize;
     int minAnchorSize, maxAnchorSize;
+    int sizeFromMouse;
     bool isDragging, isSizable;
     SplitDirection direction;
     AnchorDirection anchor;
+    Rect splitRect;
 
 private: // class data
     static HCURSOR sHSizeCursor, sVSizeCursor, sArrowCursor;

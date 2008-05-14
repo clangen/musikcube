@@ -40,9 +40,13 @@
 
 using namespace musik::core::tracklist;
 
-Standard::Standard(void) : currentPosition(0),hintedRows(10){
+Standard::Standard(void) 
+:currentPosition(0)
+,hintedRows(10)
+,infoDuration(0)
+,infoFilesize(0)
+{
     this->trackQuery.OnTracksEvent.connect(this,&Standard::OnTracksMetaFromQuery);
-
 }
 
 
@@ -50,7 +54,7 @@ Standard::~Standard(void){
 }
 
 musik::core::TrackPtr Standard::CurrentTrack(){
-    return this->Track(this->currentPosition);
+    return (*this)[this->currentPosition];
 }
 
 
@@ -66,25 +70,17 @@ musik::core::TrackPtr Standard::PreviousTrack(){
 }
 
 
+musik::core::TrackPtr Standard::TrackWithMetadata(int position){
+    this->LoadTrack(position);
+    return (*this)[position];
+}
+
 musik::core::TrackPtr Standard::operator [](int position){
 
     if(position>=0 && position<this->tracks.size())
-        this->LoadTrack(position);
         return this->tracks[position];
 
-    if(position==-1)
-        this->LoadTrack(0);
-        return this->tracks.front();
-
-    return musik::core::TrackPtr();
-}
-
-musik::core::TrackPtr Standard::Track(int position){
-
-    if(position>=0 && position<this->tracks.size())
-        return this->tracks[position];
-
-    if(position==-1)
+    if(position==-1 && this->tracks.size()>0)
         return this->tracks.front();
 
     return musik::core::TrackPtr();
@@ -121,6 +117,7 @@ int Standard::CurrentPosition(){
 
 void Standard::ConnectToQuery(musik::core::Query::ListBase &listQuery){
     listQuery.OnTrackEvent().connect(this,&Standard::OnTracksFromQuery);
+    listQuery.OnTrackInfoEvent().connect(this,&Standard::OnTracksInfoFromQuery);
 }
 
 
@@ -139,75 +136,64 @@ void Standard::OnTracksFromQuery(musik::core::TrackVector *newTracks,bool clear)
         this->trackCache.clear();
         this->SetCurrentPosition(-1);   // undefined
         this->tracks   = *newTracks;
-        this->OnTracks(true);
+        this->TracksUpdated(true);
     }else{
         this->tracks.insert(this->tracks.end(),newTracks->begin(),newTracks->end());
-        this->OnTracks(false);
+        this->TracksUpdated(false);
     }
 }
 
 void Standard::LoadTrack(int position){
+    
+    int trackCount(0);
 
-    if(!this->InCache(position)){
-        // Not in cache
-        // Lets load the hinted number of tracks forward
-        int trackCount(0);
-        
-        for(int i(position);i<position+this->hintedRows;++i){
-            if(!this->InCache(i)){
-                // Not in cache, load the track and add to Cache
-                musik::core::TrackPtr track = this->Track(i);
-                if(track){
-                    this->trackCache.insert(CacheTrack(track,i));
-                    ++trackCount;
-                    this->trackQuery.RequestTrack(track);
-                }
-            }
+    for(int i(position);i<position+this->hintedRows;++i){
+        if(this->QueryForTrack(i)){
+            ++trackCount;
         }
-
-        if(trackCount && this->library){
-            this->library->AddQuery(this->trackQuery,musik::core::Query::Prioritize);
-            this->trackQuery.Clear();
-        }
-
     }
 
+    if(trackCount && this->library){
+        this->library->AddQuery(this->trackQuery,musik::core::Query::Prioritize);
+        this->trackQuery.Clear();
+    }
+
+}
+
+bool Standard::QueryForTrack(int position){
+    
+    TrackCache::left_map::iterator trackIterator = this->trackCache.left.find(position);
+    if(trackIterator==this->trackCache.left.end()){
+        // Not in cache, lets find the track
+        musik::core::TrackPtr track = (*this)[position];
+        if(track){
+            // Track is also a valid track, lets add it to the cache
+            this->trackCache.insert( TrackCache::value_type(position,track) );
+
+            // finally, lets add it to the query
+            this->trackQuery.RequestTrack(track);
+            return true;
+        }
+    }
+    return false;
 }
 
 void Standard::HintNumberOfRows(int rows){
     this->hintedRows    = rows;
 }
 
-bool Standard::InCache(int position){
-    CacheIndexPosition& indexPosition = boost::multi_index::get<tagPosition>(this->trackCache);
-
-    if( indexPosition.find(position) == indexPosition.end() )
-        return false;
-
-    return true;
-}
-
-bool Standard::InCache(musik::core::TrackPtr track){
-    CacheIndexTrack& indexTrack = boost::multi_index::get<tagTrack>(this->trackCache);
-
-    if( indexTrack.find(track) == indexTrack.end() )
-        return false;
-
-    return true;
-}
 
 void Standard::OnTracksMetaFromQuery(musik::core::TrackVector *metaTracks){
     std::vector<int> updateTrackPositions;
-    CacheIndexTrack& indexTrack = boost::multi_index::get<tagTrack>(this->trackCache);
 
     for(musik::core::TrackVector::iterator track=metaTracks->begin();track!=metaTracks->end();++track){
-        CacheIndexTrack::iterator cacheTrackIterator = indexTrack.find(*track);
-        if(cacheTrackIterator!=indexTrack.end()){
-            updateTrackPositions.push_back(cacheTrackIterator->position);
+        TrackCache::right_map::iterator trackPosition = this->trackCache.right.find(*track);
+        if(trackPosition!=this->trackCache.right.end()){
+            updateTrackPositions.push_back(trackPosition->second);
         }
     }
 
-    this->OnTrackMeta(updateTrackPositions);
+    this->TrackMetaUpdated(updateTrackPositions);
 }
 
 
@@ -222,22 +208,26 @@ void Standard::RemoveRequestedMetakey(const char* metakey){
     this->trackQuery.RequestMetakeys(this->requestedMetaKeys);
 }
 
-void Standard::CopyTracks(musik::core::tracklist::IRandomAccess &tracklist){
+bool Standard::CopyTracks(musik::core::tracklist::IRandomAccess &tracklist){
     if(this!=&tracklist){   // Do not copy to itself
         this->trackCache.clear();
         this->SetLibrary(tracklist.Library());
         this->tracks.clear();
         this->tracks.reserve(tracklist.Size());
         for(int i(0);i<tracklist.Size();++i){
-            this->tracks.push_back(tracklist.Track(i)->Copy());
+            this->tracks.push_back(tracklist[i]->Copy());
         }
         this->SetCurrentPosition(tracklist.CurrentPosition());
 
-        this->OnTracks(true);
+        this->TracksUpdated(true);
+        this->infoDuration  = tracklist.Duration();
+        this->infoFilesize  = tracklist.Filesize();
+        this->TracklistInfoUpdated(this->tracks.size(),this->infoDuration,this->infoFilesize);
     }
+    return true;
 }
 
-void Standard::AppendTracks(musik::core::tracklist::IRandomAccess &tracklist){
+bool Standard::AppendTracks(musik::core::tracklist::IRandomAccess &tracklist){
     if(!this->library){
         this->SetLibrary(tracklist.Library());
     }
@@ -245,10 +235,23 @@ void Standard::AppendTracks(musik::core::tracklist::IRandomAccess &tracklist){
     this->tracks.reserve(this->tracks.size()+tracklist.Size());
 
     for(int i(0);i<tracklist.Size();++i){
-        this->tracks.push_back(tracklist.Track(i)->Copy());
+        this->tracks.push_back(tracklist[i]->Copy());
     }
 
-    this->OnTracks(false);
+    this->TracksUpdated(false);
+    return true;
 }
 
+void Standard::OnTracksInfoFromQuery(UINT64 tracks,UINT64 duration,UINT64 filesize){
+    this->infoDuration  = duration;
+    this->infoFilesize  = filesize;
+    this->TracklistInfoUpdated(tracks,duration,filesize);
+}
+
+UINT64 Standard::Duration(){
+    return this->infoDuration;
+}
+UINT64 Standard::Filesize(){
+    return this->infoFilesize;
+}
 

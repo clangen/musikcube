@@ -55,12 +55,22 @@ class MetadataFilterController;
 
 class MetadataFilterModel: public ListView::Model, public EventHandler
 {
-public:     /*ctor*/            MetadataFilterModel(MetadataFilterController *controller);
-public:     virtual uistring    CellValueToString(int rowIndex, ListView::ColumnRef column);
-protected:  void        OnMetadata(musik::core::MetadataValueVector* metadata,bool clear);
+public:     
+    /*ctor*/ MetadataFilterModel(MetadataFilterController *controller);
+    virtual uistring    CellValueToString(int rowIndex, ListView::ColumnRef column);
 
-protected:  MetadataFilterController *controller;
-public:  musik::core::MetadataValueVector metadata;
+protected:  
+    void OnMetadata(musik::core::MetadataValueVector* metadata,bool clear);
+    MetadataFilterController *controller;
+
+public:  
+    musik::core::MetadataValueVector metadata;
+    musik::core::MetadataValueVector metadataFiltered;
+
+    void OnChar(wchar_t key);
+
+    uistring filter;
+
 };
 
 //////////////////////////////////////////////////////////////////////////////

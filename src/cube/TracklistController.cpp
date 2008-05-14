@@ -58,8 +58,11 @@ using namespace musik::cube;
         ? this->OnViewCreated(&view)
         : this->view.Created.connect(this, &TracklistController::OnViewCreated);
 
-    if(connectedQuery){
-        connectedQuery->OnTrackInfoEvent().connect(this,&TracklistController::OnTracklistInfo);
+
+    // Connect the tracklists TracklistInfoUpdated
+    TracklistModel* model   = (TracklistModel*)this->model.get();
+    if(model){
+        model->tracklist->TracklistInfoUpdated.connect(this,&TracklistController::OnTracklistInfo);
     }
 
 }

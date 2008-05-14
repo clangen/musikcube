@@ -75,6 +75,7 @@ HCURSOR Splitter::sArrowCursor = ::LoadCursor(0, MAKEINTRESOURCE(IDC_ARROW));
 , anchor(direction == SplitColumn ? AnchorLeft : AnchorTop)
 , minAnchorSize(-1)
 , maxAnchorSize(-1)
+, sizeFromMouse(-1)
 {
 }
 
@@ -193,37 +194,63 @@ const Window*   Splitter::Child2()
     return this->child2;
 }
 
-void    Splitter::Layout(int child1Size)
+void    Splitter::LayoutFromMouse()
 {
+    Rect clientRect = this->ClientRect();
+    int clientSize = (this->direction == SplitRow 
+        ? clientRect.size.height
+        : clientRect.size.width);
+
+    bool child1IsAnchor = (this->anchor == AnchorLeft || this->anchor == AnchorTop);
+
+    int control1Size = this->sizeFromMouse;
+    int control2Size = clientSize - control1Size - this->gripperSize;
+    control2Size = max(control2Size, 0);
+
+    this->anchorSize = (child1IsAnchor ? control1Size : control2Size);
+
+    // done! set this back for the next call to Layout()
+    this->sizeFromMouse = -1;
+
+    this->Layout();
+}
+
+void    Splitter::Layout()
+{
+    if (this->sizeFromMouse != -1)
+    {
+        this->LayoutFromMouse();
+        return;
+    }
+
     Rect clientRect = this->ClientRect();
     //
     int clientSize = (this->direction == SplitRow 
         ? clientRect.size.height
         : clientRect.size.width);
 
-    int anchorSize = (child1Size == -1 ? this->anchorSize : child1Size);
+    int splitterPos = this->anchorSize;
     //
-    if (anchorSize <= -1)
+    if (splitterPos <= -1)
     {
-        anchorSize = (clientSize / 2);
+        splitterPos = (clientSize / 2);
     }
     else
     {
         // don't allow the split to go beyond the window boundries
-        anchorSize = min(anchorSize, clientSize - this->gripperSize);
+        splitterPos = min(splitterPos, clientSize - this->gripperSize);
     }
  
     // size the windows in their split direction
     bool child1IsAnchor = (this->anchor == AnchorLeft || this->anchor == AnchorTop);
-    child1IsAnchor |= (child1Size != -1);
 
-    if (this->minAnchorSize >= 0) anchorSize = max(this->minAnchorSize, anchorSize);
-    if (this->maxAnchorSize >= 0) anchorSize = min(this->maxAnchorSize, anchorSize);
+    if (this->minAnchorSize >= 0) splitterPos = max(this->minAnchorSize, splitterPos);
+    if (this->maxAnchorSize >= 0) splitterPos = min(this->maxAnchorSize, splitterPos);
 
-    int nonAnchorSize = clientSize - (anchorSize + this->gripperSize);
+    int nonAnchorSize = clientSize - (splitterPos + this->gripperSize);
     //
-    int control1Size = child1IsAnchor ? anchorSize : nonAnchorSize;
-    int control2Size = child1IsAnchor ? nonAnchorSize : anchorSize;
+    int control1Size = child1IsAnchor ? splitterPos : nonAnchorSize;
+    int control2Size = child1IsAnchor ? nonAnchorSize : splitterPos;
 
     if (this->direction == SplitColumn)
     {
@@ -238,9 +265,18 @@ void    Splitter::Layout(int child1Size)
         child2Frame->MoveTo(clientRect.location.x, control1Size + this->gripperSize);
     }
 
-    if (child1Size != -1)
+    // remember our splitter rect
+    if (this->direction == SplitColumn)
     {
-        this->anchorSize = anchorSize;
+        this->splitRect = Rect(
+            Point(control1Size, 0),
+            Size(this->gripperSize, clientRect.size.height));
+    }
+    else
+    {
+        this->splitRect = Rect(
+            Point(0, control1Size),
+            Size(clientRect.size.width, this->gripperSize));
     }
 }
 
@@ -321,9 +357,10 @@ void    Splitter::OnMouseMoved(MouseEventFlags flags, const Point& location)
         // do this because we may be redrawing complex child controls (including other
         // splitters) unnecessarily.
         RedrawLock redrawLock(Application::Instance().MainWindow());
-        this->Layout(position);
+        this->sizeFromMouse = position;
+        this->Layout();
     }
-    else if ( ! ::PointInRect(this->CursorPosition(), this->SplitterRect()))
+    else if ( ! ::PointInRect(this->CursorPosition(), this->splitRect))
     {
         this->EndMouseCapture();
     }
@@ -343,7 +380,10 @@ void    Splitter::OnMouseButtonDown(MouseEventFlags flags, const Point& location
         return;
     }
 
-    this->isDragging = true;
+    if (::PointInRect(this->CursorPosition(), this->splitRect))
+    {
+        this->isDragging = true;
+    }
 }
 
 void    Splitter::OnMouseExit()
@@ -354,38 +394,6 @@ void    Splitter::OnMouseExit()
 void    Splitter::OnMouseEnter()
 {
     this->BeginMouseCapture();
-}
-
-Rect    Splitter::SplitterRect()
-{
-    Rect splitterRect;
-
-    bool child1IsAnchor = (this->anchor == AnchorLeft || this->anchor == AnchorTop);
-    bool isHoriz = (this->direction == SplitColumn);
-
-    int clientSize = isHoriz
-        ? this->WindowSize().height
-        : this->WindowSize().width;
-
-    splitterRect.size = Size(
-        isHoriz ? this->gripperSize : clientSize, 
-        isHoriz ? clientSize : this->gripperSize);
-
-    int nonAnchorSize = clientSize - (this->anchorSize + this->gripperSize);
-    int location = child1IsAnchor ? this->anchorSize : nonAnchorSize;
-
-    if (location == -1)
-    {
-        location = (isHoriz
-        ? this->WindowSize().width
-        : this->WindowSize().height) / 2;
-    }
-
-    splitterRect.location = Point(
-        isHoriz ? location : 0,
-        isHoriz ? 0 : location);
-
-    return splitterRect;
 }
 
 void    Splitter::OnMouseButtonUp(MouseEventFlags flags, const Point& location)

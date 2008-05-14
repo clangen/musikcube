@@ -187,7 +187,7 @@ void Query::SortTracks::AddTracks(std::vector<int> &tracks){
 void Query::SortTracks::AddTracks(musik::core::tracklist::IRandomAccess &tracks){
     this->tracksToSort.reserve(this->tracksToSort.size()+tracks.Size());
     for(int i(0);i<tracks.Size();++i){
-        this->tracksToSort.push_back(tracks.Track(i)->id);
+        this->tracksToSort.push_back(tracks[i]->id);
     }
 
 }
@@ -195,4 +195,5 @@ void Query::SortTracks::AddTracks(musik::core::tracklist::IRandomAccess &tracks)
 void Query::SortTracks::SortByMetaKeys(std::list<std::string> metaKeys){
     this->sortMetaKeys  = metaKeys;
 }
+
 

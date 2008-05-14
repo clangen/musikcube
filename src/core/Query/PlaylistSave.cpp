@@ -60,7 +60,7 @@ void Query::PlaylistSave::SavePlaylist(int playlistId,utfstring playlistName,mus
     this->playlistName  = playlistName;
 
     for(int i(0);i<tracklist.Size();++i){
-        musik::core::TrackPtr track=tracklist.Track(i);
+        musik::core::TrackPtr track=tracklist[i];
         if(track){
             this->tracks.push_back(track->id);
         }
@@ -121,4 +121,5 @@ bool Query::PlaylistSave::RunCallbacks(Library::Base *oLibrary){
     }
     return false;
 }
+
 

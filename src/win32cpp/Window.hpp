@@ -83,6 +83,7 @@ enum MouseEventFlags
 /*! */ typedef sigslot::signal2<Window* /*old*/, Window* /*new*/> ParentChangedEvent;
 /*! */ typedef sigslot::signal1<unsigned int> TimerEvent;
 /*! */ typedef sigslot::signal3<Window*, VirtualKeyCode, KeyEventFlags> KeyEvent;
+/*! */ typedef sigslot::signal2<Window*, bool> VisibilityChangedEvent;
 
 ///\brief
 ///Window is the abstract base class for all controls.
@@ -173,6 +174,8 @@ public:     // events
     ///\brief Emitted when a control has requested to focus the previous control. This
     ///generally shouldn't be handled explicitly unless absolutely necessary.
     FocusEvent                  RequestFocusPrev;
+    ///\brief Emitted when a Window's visibility has changed
+    VisibilityChangedEvent      VisibilityChanged;
 
 public: // ctor, dtor
     /*ctor*/            Window();
@@ -250,6 +253,7 @@ protected: // methods
     bool    OnKeyDownBase(VirtualKeyCode keyCode, KeyEventFlags flags);
     bool    OnKeyUpBase(VirtualKeyCode keyCode, KeyEventFlags flags);
     bool    OnCharBase(VirtualKeyCode keyCode, KeyEventFlags flags);
+    void    OnVisibilityChangedBase(bool visible);
 
     // win32 event wrappers (virtual methods, for derived class use)
     virtual void    OnDestroyed() { }
@@ -277,6 +281,7 @@ protected: // methods
     virtual void    OnRequestFocusPrev();
     virtual void    OnRequestFocusNext();
     virtual HBRUSH  OnControlColor(HDC hdc);
+    virtual void    OnVisibilityChanged(bool visible) { }
 
     // window proc related
     virtual LRESULT             PreWindowProcBase(UINT message, WPARAM wParam, LPARAM lParam, bool& discardMessage);
