@@ -77,6 +77,9 @@ void        TransportController::OnViewCreated(Window* window)
         musik::core::PlaybackQueue::Instance().Volume());
 
     musik::core::PlaybackQueue::Instance().CurrentTrackChanged.connect(this,&TransportController::OnTrackChange);
+
+    this->transportView.playbackSlider->Repositioned.connect(
+        this, &TransportController::OnPlaybackSliderChange);
 }
 
 void        TransportController::OnViewResized(Window* window, Size size)
@@ -132,3 +135,7 @@ void TransportController::OnTrackChange(musik::core::TrackPtr track){
 
 }
 
+void TransportController::OnPlaybackSliderChange(Trackbar *trackBar)
+{
+    musik::core::PlaybackQueue::Instance().JumpToPosition(trackBar->Position());
+}

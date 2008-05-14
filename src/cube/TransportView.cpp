@@ -70,29 +70,29 @@ void        TransportView::OnCreated()
     this->stopButton->Resize(50, 28);
     this->nextButton->Resize(50, 28);
 
-        // now playing layout
-        FontRef boldFont(Font::Create());
-        boldFont->SetBold(true);
-        //
-        LinearLayout* nowPlayingLayout = new LinearLayout(LinearColumnLayout);
-        //
-        nowPlayingLayout->AddChild(new Label(_T("Now playing ")));
-        this->titleLabel = nowPlayingLayout->AddChild(new Label(_T("Song Title")));
-        nowPlayingLayout->AddChild(new Label(_T(" by ")));
-        this->artistLabel = nowPlayingLayout->AddChild(new Label(_T("Artist Name")));
-        //
-        this->titleLabel->SetFont(boldFont);
-        this->artistLabel->SetFont(boldFont);
-        nowPlayingLayout->SetSpacing(0);
-        //
-        Frame* nowPlayingFrame = topRowLayout->AddChild(
-            new Frame(nowPlayingLayout, FramePadding(6, 0, 0, 0)));
-        topRowLayout->SetChildFill(nowPlayingFrame, false);
-        topRowLayout->SetChildAlignment(nowPlayingFrame, ChildAlignCenter);
-        topRowLayout->SetFlexibleChild(nowPlayingFrame);
+    // now playing layout
+    FontRef boldFont(Font::Create());
+    boldFont->SetBold(true);
+    //
+    LinearLayout* nowPlayingLayout = new LinearLayout(LinearColumnLayout);
+    //
+    nowPlayingLayout->AddChild(new Label(_T("Now playing ")));
+    this->titleLabel = nowPlayingLayout->AddChild(new Label(_T("Song Title")));
+    nowPlayingLayout->AddChild(new Label(_T(" by ")));
+    this->artistLabel = nowPlayingLayout->AddChild(new Label(_T("Artist Name")));
+    //
+    this->titleLabel->SetFont(boldFont);
+    this->artistLabel->SetFont(boldFont);
+    nowPlayingLayout->SetSpacing(0);
+    //
+    Frame* nowPlayingFrame = topRowLayout->AddChild(
+        new Frame(nowPlayingLayout, FramePadding(6, 0, 0, 0)));
+    topRowLayout->SetChildFill(nowPlayingFrame, false);
+    topRowLayout->SetChildAlignment(nowPlayingFrame, ChildAlignCenter);
+    topRowLayout->SetFlexibleChild(nowPlayingFrame);
 
-        this->volumeSlider = topRowLayout->AddChild(new Trackbar());
-        this->volumeSlider->Resize(100, 28);
+    this->volumeSlider = topRowLayout->AddChild(new Trackbar());
+    this->volumeSlider->Resize(100, 28);
 
     // bottom row layout
     this->timeElapsedLabel = bottomRowLayout->AddChild(new Label(_T("0:00")));

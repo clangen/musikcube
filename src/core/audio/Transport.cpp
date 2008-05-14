@@ -121,6 +121,15 @@ void Transport::Stop(size_t idx)
     }
 }
 
+void Transport::JumpToPosition(short relativePosition)
+{
+    AudioStream* stream = this->openStreams[0];
+
+    unsigned long posMS = stream->GetLength() * relativePosition / 100;
+    
+    stream->SetPosition(posMS);
+}
+
 void Transport::ChangeVolume(short volume)
 {
     if (volume < 0 || volume > 100)

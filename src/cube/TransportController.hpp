@@ -64,6 +64,7 @@ protected:  void    OnNextPressed(Button* button);
 protected:  void    OnPreviousPressed(Button* button);
 protected:  void    OnVolumeSliderChange(Trackbar* trackbar);
 protected:  void    OnTrackChange(musik::core::TrackPtr track);
+protected:  void    OnPlaybackSliderChange(Trackbar* trackBar);
 
 protected:  TransportView& transportView;
 };

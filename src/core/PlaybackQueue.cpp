@@ -208,3 +208,7 @@ void PlaybackQueue::SetVolume(short volume){
     this->transport.ChangeVolume(volume);
 }
 
+void PlaybackQueue::JumpToPosition(short relativePosition)
+{
+    this->transport.JumpToPosition(relativePosition);
+}

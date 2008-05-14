@@ -59,6 +59,8 @@ public:     ~Transport();
 public:     void            Start(const utfstring path);
 public:     void            Stop(size_t idx);
 
+public:     void            JumpToPosition(short relativePosition);
+
 public:     void            ChangeVolume(short volume);
 public:     short           Volume() const { return currVolume; };
 
