@@ -59,9 +59,11 @@ public:     ~Transport();
 public:     void            Start(const utfstring path);
 public:     void            Stop(size_t idx);
 
-public:     void            JumpToPosition(short relativePosition);
+public:     void            JumpToPosition(unsigned long position);
+public:     unsigned long   FirstTrackPosition() const;
+public:     unsigned long   FirstTrackLength() const;
 
-public:     void            ChangeVolume(short volume);
+public:     void            SetVolume(short volume);
 public:     short           Volume() const { return currVolume; };
 
 public:     size_t				NumOfStreams()		const;

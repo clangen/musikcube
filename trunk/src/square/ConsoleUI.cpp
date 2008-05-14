@@ -247,7 +247,7 @@ void ConsoleUI::SetVolume(Args args)
 
 void ConsoleUI::SetVolume(short volume)
 {
-    transport.ChangeVolume(volume);
+    transport.SetVolume(volume);
 }
 
 void ConsoleUI::Quit()

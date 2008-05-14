@@ -37,6 +37,9 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <pch.hpp>
+
+#include <boost/format.hpp>
+
 #include <cube/TransportController.hpp>
 #include <win32cpp/ApplicationThread.hpp>
 
@@ -48,6 +51,8 @@ using namespace musik::cube;
 
 /*ctor*/    TransportController::TransportController(TransportView& transportView)
 : transportView(transportView)
+, playbackSliderTimer(500)
+, playbackSliderMouseDown(false)
 {
     this->transportView.Created.connect(
         this, &TransportController::OnViewCreated);
@@ -74,12 +79,22 @@ void        TransportController::OnViewCreated(Window* window)
         this, &TransportController::OnVolumeSliderChange);
 
     this->transportView.volumeSlider->SetPosition(
-        musik::core::PlaybackQueue::Instance().Volume());
+        musik::core::PlaybackQueue::Instance().Transport().Volume());
 
     musik::core::PlaybackQueue::Instance().CurrentTrackChanged.connect(this,&TransportController::OnTrackChange);
 
     this->transportView.playbackSlider->Repositioned.connect(
         this, &TransportController::OnPlaybackSliderChange);
+
+    this->transportView.playbackSlider->MouseButtonDown.connect(
+        this, &TransportController::OnPlaybackSliderMouseDown);
+
+    this->transportView.playbackSlider->MouseButtonUp.connect(
+        this, &TransportController::OnPlaybackSliderMouseUp);
+
+    this->playbackSliderTimer.ConnectToWindow(this->transportView.playbackSlider);
+
+    this->playbackSliderTimer.OnTimout.connect(this, &TransportController::OnPlaybackSliderTimerTimedOut);
 }
 
 void        TransportController::OnViewResized(Window* window, Size size)
@@ -94,6 +109,8 @@ void        TransportController::OnPlayPressed(Button* button)
 void        TransportController::OnStopPressed(Button* button)
 {
     musik::core::PlaybackQueue::Instance().Stop();
+    this->transportView.playbackSlider->SetPosition(0);
+    this->playbackSliderTimer.Stop();
 }
 
 void        TransportController::OnNextPressed(Button* button)
@@ -108,7 +125,7 @@ void        TransportController::OnPreviousPressed(Button* button)
 
 void        TransportController::OnVolumeSliderChange(Trackbar* trackbar)
 {
-    musik::core::PlaybackQueue::Instance().SetVolume(transportView.volumeSlider->Position());
+    musik::core::PlaybackQueue::Instance().Transport().SetVolume(transportView.volumeSlider->Position());
 }
 
 void TransportController::OnTrackChange(musik::core::TrackPtr track){
@@ -133,9 +150,54 @@ void TransportController::OnTrackChange(musik::core::TrackPtr track){
     this->transportView.titleLabel->SetCaption(title);
     this->transportView.artistLabel->SetCaption(artist);
 
+    this->transportView.timeDurationLabel->SetCaption(this->FormatTime(musik::core::PlaybackQueue::Instance().Transport().FirstTrackLength()));
+
+    this->transportView.playbackSlider->SetPosition(0);
+    this->playbackSliderTimer.Start();
 }
 
 void TransportController::OnPlaybackSliderChange(Trackbar *trackBar)
 {
-    musik::core::PlaybackQueue::Instance().JumpToPosition(trackBar->Position());
+    unsigned long lengthMs = musik::core::PlaybackQueue::Instance().Transport().FirstTrackLength();
+    unsigned long newPosMs = lengthMs * trackBar->Position() / trackBar->Range();
+
+    //this->playbackSliderTimer.Stop();
+    musik::core::PlaybackQueue::Instance().Transport().JumpToPosition(newPosMs);
+    //this->playbackSliderTimer.Start();
+}
+
+void TransportController::OnPlaybackSliderTimerTimedOut()
+{
+    unsigned long currPosMs = musik::core::PlaybackQueue::Instance().Transport().FirstTrackPosition();
+    unsigned long lengthMs = musik::core::PlaybackQueue::Instance().Transport().FirstTrackLength();
+    unsigned long sliderRange = this->transportView.playbackSlider->Range();
+
+    this->transportView.timeElapsedLabel->SetCaption(this->FormatTime(currPosMs));
+
+    if (!this->playbackSliderMouseDown)
+    {
+        this->transportView.playbackSlider->SetPosition(sliderRange * currPosMs / lengthMs);
+    }
+}
+
+void TransportController::OnPlaybackSliderMouseDown(Window* windows, MouseEventFlags flags, Point point)
+{
+    this->playbackSliderMouseDown = true;
+}
+
+void TransportController::OnPlaybackSliderMouseUp(Window* windows, MouseEventFlags flags, Point point)
+{
+    this->playbackSliderMouseDown = false;
+}
+
+win32cpp::uistring  TransportController::FormatTime(unsigned long ms)
+{
+    unsigned long seconds = ms / 1000 % 60;
+    unsigned long minutes = ms / 1000 / 60;
+    
+    boost::basic_format<uichar> format(_T("%1%:%2$02d"));
+    format % minutes;
+    format % seconds;
+    
+    return format.str();
 }

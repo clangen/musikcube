@@ -79,6 +79,7 @@ public:     /*ctor*/            Trackbar(
 
 public: // methods
     void    SetRange(short minValue, short maxValue);
+    int     Range() const { return this->maxValue - this->minValue; }
     int     MinValue() const { return this->minValue; }
     int     MaxValue() const { return this->maxValue; }
     void    SetTickFrequency(short tickFrequency = 0);
