@@ -38,7 +38,10 @@
 
 #pragma once
 
-//extern "C" void tss_cleanup_implemented(void){}
+#ifndef _DEBUG
+    // To be able to UPX the released executable
+    extern "C" void tss_cleanup_implemented(void){}
+#endif
 
 //////////////////////////////////////////////////////////////////////////////
 // dependencies
