@@ -724,7 +724,7 @@ void Indexer::SyncOptimize(){
         genre, artist, album, track number, path, filename
         ************************************/
 
-        db::Statement stmt("SELECT t.id FROM tracks t LEFT OUTER JOIN genres g ON g.id=t.visual_genre_id LEFT OUTER JOIN artists ar ON ar.id=t.visual_artist_id LEFT OUTER JOIN albums al ON al.id=t.album_id LEFT OUTER JOIN folders f ON f.id=t.folder_id ORDER BY g.sort_order,ar.sort_order,al.sort_order,t.track,f.fullpath,t.filename",this->dbConnection);
+        db::Statement stmt("SELECT t.id FROM tracks t LEFT OUTER JOIN artists ar ON ar.id=t.visual_artist_id LEFT OUTER JOIN albums al ON al.id=t.album_id LEFT OUTER JOIN folders f ON f.id=t.folder_id ORDER BY ar.sort_order,al.sort_order,t.track,f.fullpath,t.filename",this->dbConnection);
 
         db::Statement stmtUpdate("UPDATE tracks SET sort_order1=? WHERE id=?",this->dbConnection);
         iCount    = 0;
