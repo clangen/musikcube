@@ -48,6 +48,11 @@ bool			AudioStream::GetBuffer(float * pAudioBuffer, unsigned long NumSamples)
 {
     boost::mutex::scoped_lock lock(this->mutex);
 
+    while (this->playState == PlayStatePaused)
+    {
+        this->pauseCondition.wait(lock);
+    }
+
     if (this->isFinished)
     {
         return false;
@@ -57,7 +62,7 @@ bool			AudioStream::GetBuffer(float * pAudioBuffer, unsigned long NumSamples)
 	{
 		if(!this->mixNotify)
 		{
-            transport->MixpointReached();
+            transport->EventMixpointReached();
 			this->mixNotify = true;
 		}
 		this->isFinished = true;
@@ -121,7 +126,7 @@ bool			AudioStream::GetBuffer(float * pAudioBuffer, unsigned long NumSamples)
             if (len <= cft || pos >= (len - cft))
 			{
 				this->isLast = !GetActivePlaylistCheckNext();
-				transport->MixpointReached();
+				transport->EventMixpointReached();
 				this->mixNotify = true;
 			}
 		}
@@ -131,7 +136,7 @@ bool			AudioStream::GetBuffer(float * pAudioBuffer, unsigned long NumSamples)
 			//used for repeatnone where this is the end of line. 
 			if(pos >= len && this->isLast)
 			{
-				transport->PlaybackStoppedOk();
+				transport->EventPlaybackStoppedOk();
 
                 this->playState = PlayStateStopped;
 			}
@@ -161,12 +166,35 @@ bool AudioStream::Stop()
     if ((this->output != 0) || this->output->Stop())
     {
         this->playState = PlayStateStopped;
+
+        this->pauseCondition.notify_one();
+
         return true;
     }
     else
     {
         return false;
     }
+}
+
+bool AudioStream::Pause()
+{
+    boost::mutex::scoped_lock   lock(this->mutex);
+
+    this->playState = PlayStatePaused;
+
+    return true;
+}
+
+bool AudioStream::Resume()
+{
+    boost::mutex::scoped_lock   lock(this->mutex);
+
+    this->playState = PlayStatePlaying;
+
+    this->pauseCondition.notify_one();
+
+    return true;
 }
 
 unsigned long	AudioStream::GetLength() const

@@ -54,23 +54,33 @@ namespace musik { namespace cube {
 
 class TransportController : public EventHandler
 {
-public:     /*ctor*/    TransportController(TransportView& transportView);
+public:     
+    /*ctor*/    TransportController(TransportView& transportView);
 
-protected:  void        OnViewCreated(Window* window);
-protected:  void        OnViewResized(Window* window, Size size);
+protected:
+    void        OnViewCreated(Window* window);
+    void        OnViewResized(Window* window, Size size);
 
-protected:  void    OnPlayPressed(Button* button);
-protected:  void    OnStopPressed(Button* button);
-protected:  void    OnNextPressed(Button* button);
-protected:  void    OnPreviousPressed(Button* button);
-protected:  void    OnVolumeSliderChange(Trackbar* trackbar);
-protected:  void    OnTrackChange(musik::core::TrackPtr track);
-protected:  void    OnPlaybackSliderChange(Trackbar* trackBar);
+    void    OnPlayPressed(Button* button);
+    void    OnStopPressed(Button* button);
+    void    OnNextPressed(Button* button);
+    void    OnPreviousPressed(Button* button);
+    void    OnVolumeSliderChange(Trackbar* trackbar);
+    void    OnTrackChange(musik::core::TrackPtr track);
+    void    OnPlaybackSliderChange(Trackbar* trackBar);
 protected:  void    OnPlaybackSliderTimerTimedOut();
 protected:  void    OnPlaybackSliderMouseDown(Window* windows, MouseEventFlags flags, Point point);
 protected:  void    OnPlaybackSliderMouseUp(Window* windows, MouseEventFlags flags, Point point);
 
-protected:  TransportView& transportView;
+    void    OnPlaybackStarted();
+    void    OnPlaybackStopped();
+    void    OnPlaybackPaused();
+    void    OnPlaybackResumed(); 
+
+    TransportView& transportView;
+
+    bool    paused;
+    bool    playing;
 
 protected:  Timer   playbackSliderTimer;
 protected:  bool    playbackSliderMouseDown;
