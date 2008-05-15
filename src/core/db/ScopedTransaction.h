@@ -43,9 +43,25 @@
 
 namespace musik{ namespace core{ namespace db{
 
+    // Forward declare
     class Connection;
 
-    class ScopedTransaction : boost::noncopyable{
+    //////////////////////////////////////////
+	///\brief
+	///ScopedTransaction is used to make transactions easier
+	///
+    ///Usage like this:
+    ///\code
+    ///{
+    ///     musik::code::db::ScopedTransaction transactionScope(db)
+    ///     //everything in this scope is included in the transation
+    ///}
+    ///\endcode
+	///
+	///\remarks
+	///Nested transations are partially supported. First scope is the one deciding when transaction is commited.
+	//////////////////////////////////////////
+	class ScopedTransaction : boost::noncopyable{
         public: 
             ScopedTransaction(Connection &connection);
             ~ScopedTransaction();

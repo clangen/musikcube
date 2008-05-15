@@ -47,7 +47,12 @@
 
 
 namespace musik{ namespace core{ namespace db{
-    enum ReturnCode : int{
+
+    //////////////////////////////////////////
+	///\brief
+	///The ReturnCode is used by several method to return the status of a execution
+	//////////////////////////////////////////
+	enum ReturnCode : int{
         OK      = SQLITE_OK,
         Row     = SQLITE_ROW,
         Done    = SQLITE_DONE,
