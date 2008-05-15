@@ -51,58 +51,90 @@ class IAudioOutputSupplier;
 typedef std::vector<utfstring> AudioStreamOverview;
 typedef std::vector<utfstring>::const_iterator AudioStreamOverviewIterator;
 
+///\brief
+///Transport is the API to the audio engine.  It keeps track of the active audio streams,
+///input and output.
+///
+///It takes care of finding the right decoder for a given file or URL.
+///
+///It can handle multiple streams to deal with crossfading.  The active stream is always the first stream.
 class Transport
 {
-public:     Transport();
-public:     ~Transport();
+public:     
+    Transport();
+    ~Transport();
 
-public:     void            Start(const utfstring path);
-public:     void            Stop(size_t idx);
-public:     bool            Pause();
-public:     bool            Resume();
+    ///\brief Start a new audiostream based on a file path or URL.
+    void            Start(const utfstring path);
+    ///\brief Stop the active stream.  All resources used are released.
+    void            Stop();
+    ///\brief Pause the active stream.  All resources stay in use.
+    bool            Pause();
+    ///\brief Resume the active stream
+    bool            Resume();
 
-public:     void            JumpToPosition(unsigned long position);
-public:     unsigned long   FirstTrackPosition() const;
-public:     unsigned long   FirstTrackLength() const;
+    ///\brief Jump to a given position in the active stream.
+    ///\param position New position in milliseconds
+    void            SetTrackPosition(unsigned long position);
+    ///\brief Get current position in active stream
+    ///\return Current position in milliseconds
+    unsigned long   TrackPosition() const;
+    ///\brief Get length of active stream.
+    ///\return Length in in milliseconds.  Can be 0.
+    unsigned long   TrackLength()   const;
 
-public:     void            SetVolume(short volume);
-public:     short           Volume() const { return currVolume; };
+    ///\brief Set the volume for the active stream
+    ///\param volume New volume level in percent (0-100)
+    void            SetVolume(short volume);
+    ///\brief Get the current volume level
+    ///\return Current volume as a percentage (0-100)
+    short           Volume() const { return currVolume; };
 
-public:     size_t				NumOfStreams()		const;
-public:		AudioStreamOverview	StreamsOverview()	const;
+    ///\brief Get the number of open streams
+    size_t          NumOfStreams()  const;
+    ///\brief Get a list with descriptions of the open streams
+    AudioStreamOverview	StreamsOverview()	const;
 
-private:    AudioStream*    CreateStream(const utfstring sourceString);
-private:    void            RemoveFinishedStreams();
+private: 
+    typedef std::vector<boost::shared_ptr<IAudioSourceSupplier> > SourceSupplierList;
+    SourceSupplierList  registeredSourceSuppliers;
+    typedef std::vector<boost::shared_ptr<IAudioOutputSupplier> > OutputSupplierList;
+    OutputSupplierList  registeredOutputSuppliers;
 
-private:    typedef std::vector<boost::shared_ptr<IAudioSourceSupplier> > SourceSupplierList;
-private:    SourceSupplierList  registeredSourceSuppliers;
-private:    typedef std::vector<boost::shared_ptr<IAudioOutputSupplier> > OutputSupplierList;
-private:    OutputSupplierList  registeredOutputSuppliers;
+    std::vector<AudioStream*> openStreams;
 
-private:    std::vector<AudioStream*> openStreams;
+    AudioStream*    CreateStream(const utfstring sourceString);
+    void            RemoveFinishedStreams();
 
-private:    short currVolume;
+    short currVolume;
 
 // Signals
-public:     sigslot::signal0<>  EventPlaybackPausedOk;
-public:     sigslot::signal0<>  EventPlaybackPausedFail;
-public:     sigslot::signal0<>  EventPlaybackResumedOk;
-public:     sigslot::signal0<>  EventPlaybackResumedFail;
+public:  
+    ///\brief Emitted when Start() completed successfully
+    sigslot::signal0<>  EventPlaybackStartedOk;
+    ///\brief Emitted when Start() failed
+    sigslot::signal0<>  EventPlaybackStartedFail;
+    ///\brief Emitted when Stop() completed successfully
+    sigslot::signal0<>  EventPlaybackStoppedOk;
+    ///\brief Emitted when Stop() failed
+    sigslot::signal0<>  EventPlaybackStoppedFail;
 
-public:     sigslot::signal0<>  EventPlaybackStartedOk;
-public:     sigslot::signal0<>  EventPlaybackStartedFail;
-public:     sigslot::signal0<>  EventPlaybackStoppedOk;
-public:     sigslot::signal0<>  EventPlaybackStoppedFail;
-public:     sigslot::signal0<>  EventVolumeChangedOk;
-public:     sigslot::signal0<>  EventVolumeChangedFail;
-public:     sigslot::signal0<>  EventMixpointReached;  // TODO: For crossfading.  Consider renaming.
-/* Possible other signals
-public:     sigslot::signal0<>  PlaybackInterrupted;
-public:     sigslot::signal0<>  StreamOpenOk;
-public:     sigslot::signal0<>  StreamOpenFail;
-public:     sigslot::signal0<>  SetPositionOk;
-public:     sigslot::signal0<>  SetPositionFail;
-*/
+    ///\brief Emitted when Pause() completed successfully
+    sigslot::signal0<>  EventPlaybackPausedOk;
+    ///\brief Emitted when Pause() failed
+    sigslot::signal0<>  EventPlaybackPausedFail;
+    ///\brief Emitted when Resume() completed successfully
+    sigslot::signal0<>  EventPlaybackResumedOk;
+    ///\brief Emitted when Resume() failed
+    sigslot::signal0<>  EventPlaybackResumedFail;
+
+    ///\brief Emitted when SetVolume() completed successfully
+    sigslot::signal0<>  EventVolumeChangedOk;
+    ///\brief Emitted when SetVolume() failed
+    sigslot::signal0<>  EventVolumeChangedFail;
+
+    ///\brief Emitted when crossfading can start.  The PlaybackQueue should offer the next track.  
+    sigslot::signal0<>  EventMixpointReached;
 };
 
 }}} // NS

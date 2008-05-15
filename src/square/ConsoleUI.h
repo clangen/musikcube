@@ -66,7 +66,7 @@ public:  void        Print(utfstring s);
 // Commands
 private: void   PlayFile(Args args);
 private: void   Stop(Args args);
-private: void   Stop(size_t idx = 0);
+private: void   Stop();
 private: void   ListPlaying();
 private: void   ListPlugins();
 private: void   SetVolume(Args args);

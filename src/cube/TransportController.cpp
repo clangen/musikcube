@@ -163,16 +163,16 @@ void TransportController::OnTrackChange(musik::core::TrackPtr track){
 
 void TransportController::OnPlaybackSliderChange(Trackbar *trackBar)
 {
-    unsigned long lengthMs = musik::core::PlaybackQueue::Instance().Transport().FirstTrackLength();
+    unsigned long lengthMs = musik::core::PlaybackQueue::Instance().Transport().TrackLength();
     unsigned long newPosMs = lengthMs * trackBar->Position() / trackBar->Range();
 
-    musik::core::PlaybackQueue::Instance().Transport().JumpToPosition(newPosMs);
+    musik::core::PlaybackQueue::Instance().Transport().SetTrackPosition(newPosMs);
 }
 
 void TransportController::OnPlaybackSliderTimerTimedOut()
 {
-    unsigned long currPosMs = musik::core::PlaybackQueue::Instance().Transport().FirstTrackPosition();
-    unsigned long lengthMs = musik::core::PlaybackQueue::Instance().Transport().FirstTrackLength();
+    unsigned long currPosMs = musik::core::PlaybackQueue::Instance().Transport().TrackPosition();
+    unsigned long lengthMs = musik::core::PlaybackQueue::Instance().Transport().TrackLength();
     unsigned long sliderRange = this->transportView.playbackSlider->Range();
 
     this->transportView.timeElapsedLabel->SetCaption(this->FormatTime(currPosMs));
@@ -204,7 +204,7 @@ void TransportController::OnPlaybackStarted()
     this->playing = true;
     this->transportView.playButton->SetCaption(_T("Pause"));
 
-    this->transportView.timeDurationLabel->SetCaption(this->FormatTime(musik::core::PlaybackQueue::Instance().Transport().FirstTrackLength()));
+    this->transportView.timeDurationLabel->SetCaption(this->FormatTime(musik::core::PlaybackQueue::Instance().Transport().TrackLength()));
 
     this->transportView.playbackSlider->SetPosition(0);
     this->playbackSliderTimer.Start();
