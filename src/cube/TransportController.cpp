@@ -53,6 +53,8 @@ using namespace musik::cube;
 : transportView(transportView)
 , playbackSliderTimer(500)
 , playbackSliderMouseDown(false)
+, paused(false)
+, playing(false)
 {
     this->transportView.Created.connect(
         this, &TransportController::OnViewCreated);
@@ -92,6 +94,12 @@ void        TransportController::OnViewCreated(Window* window)
     this->transportView.playbackSlider->MouseButtonUp.connect(
         this, &TransportController::OnPlaybackSliderMouseUp);
 
+    musik::core::PlaybackQueue::Instance().Transport().EventPlaybackStartedOk.connect(this, &TransportController::OnPlaybackStarted);
+    musik::core::PlaybackQueue::Instance().Transport().EventPlaybackStoppedOk.connect(this, &TransportController::OnPlaybackStopped);
+
+    musik::core::PlaybackQueue::Instance().Transport().EventPlaybackPausedOk.connect(this, &TransportController::OnPlaybackPaused);
+    musik::core::PlaybackQueue::Instance().Transport().EventPlaybackResumedOk.connect(this, &TransportController::OnPlaybackResumed);
+
     this->playbackSliderTimer.ConnectToWindow(this->transportView.playbackSlider);
 
     this->playbackSliderTimer.OnTimout.connect(this, &TransportController::OnPlaybackSliderTimerTimedOut);
@@ -103,7 +111,9 @@ void        TransportController::OnViewResized(Window* window, Size size)
 
 void        TransportController::OnPlayPressed(Button* button)
 {
-    musik::core::PlaybackQueue::Instance().Play();
+    if (!this->playing)     musik::core::PlaybackQueue::Instance().Play();
+    else if (this->paused)  musik::core::PlaybackQueue::Instance().Resume();
+    else                    musik::core::PlaybackQueue::Instance().Pause();
 }
 
 void        TransportController::OnStopPressed(Button* button)
@@ -149,11 +159,6 @@ void TransportController::OnTrackChange(musik::core::TrackPtr track){
 
     this->transportView.titleLabel->SetCaption(title);
     this->transportView.artistLabel->SetCaption(artist);
-
-    this->transportView.timeDurationLabel->SetCaption(this->FormatTime(musik::core::PlaybackQueue::Instance().Transport().FirstTrackLength()));
-
-    this->transportView.playbackSlider->SetPosition(0);
-    this->playbackSliderTimer.Start();
 }
 
 void TransportController::OnPlaybackSliderChange(Trackbar *trackBar)
@@ -161,9 +166,7 @@ void TransportController::OnPlaybackSliderChange(Trackbar *trackBar)
     unsigned long lengthMs = musik::core::PlaybackQueue::Instance().Transport().FirstTrackLength();
     unsigned long newPosMs = lengthMs * trackBar->Position() / trackBar->Range();
 
-    //this->playbackSliderTimer.Stop();
     musik::core::PlaybackQueue::Instance().Transport().JumpToPosition(newPosMs);
-    //this->playbackSliderTimer.Start();
 }
 
 void TransportController::OnPlaybackSliderTimerTimedOut()
@@ -174,7 +177,7 @@ void TransportController::OnPlaybackSliderTimerTimedOut()
 
     this->transportView.timeElapsedLabel->SetCaption(this->FormatTime(currPosMs));
 
-    if (!this->playbackSliderMouseDown)
+    if (!this->playbackSliderMouseDown && lengthMs != 0)
     {
         this->transportView.playbackSlider->SetPosition(sliderRange * currPosMs / lengthMs);
     }
@@ -188,6 +191,66 @@ void TransportController::OnPlaybackSliderMouseDown(Window* windows, MouseEventF
 void TransportController::OnPlaybackSliderMouseUp(Window* windows, MouseEventFlags flags, Point point)
 {
     this->playbackSliderMouseDown = false;
+}
+
+void TransportController::OnPlaybackStarted()
+{
+    if(!win32cpp::ApplicationThread::InMainThread())
+    {
+        win32cpp::ApplicationThread::Call0(this, &TransportController::OnPlaybackStarted);
+        return;
+    }
+
+    this->playing = true;
+    this->transportView.playButton->SetCaption(_T("Pause"));
+
+    this->transportView.timeDurationLabel->SetCaption(this->FormatTime(musik::core::PlaybackQueue::Instance().Transport().FirstTrackLength()));
+
+    this->transportView.playbackSlider->SetPosition(0);
+    this->playbackSliderTimer.Start();
+}
+
+void TransportController::OnPlaybackStopped()
+{
+    if(!win32cpp::ApplicationThread::InMainThread())
+    {
+        win32cpp::ApplicationThread::Call0(this, &TransportController::OnPlaybackStopped);
+        return;
+    }
+
+    this->playing = false;
+    this->paused = false;
+    this->transportView.playButton->SetCaption(_T("Play"));
+
+    this->transportView.playbackSlider->SetPosition(0);
+    this->playbackSliderTimer.Stop();  
+    
+    this->transportView.timeElapsedLabel->SetCaption(_T("0:00"));
+    this->transportView.timeDurationLabel->SetCaption(_T("0:00"));
+}
+
+void TransportController::OnPlaybackPaused()
+{
+    if(!win32cpp::ApplicationThread::InMainThread())
+    {
+        win32cpp::ApplicationThread::Call0(this, &TransportController::OnPlaybackPaused);
+        return;
+    }
+
+    this->paused = true;
+    this->transportView.playButton->SetCaption(_T("Resume"));
+}
+
+void TransportController::OnPlaybackResumed()
+{
+    if(!win32cpp::ApplicationThread::InMainThread())
+    {
+        win32cpp::ApplicationThread::Call0(this, &TransportController::OnPlaybackResumed);
+        return;
+    }
+
+    this->paused = false;
+    this->transportView.playButton->SetCaption(_T("Pause"));
 }
 
 win32cpp::uistring  TransportController::FormatTime(unsigned long ms)

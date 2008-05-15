@@ -76,6 +76,7 @@ class PlaybackQueue : public sigslot::has_slots<>{
         tracklist::Standard::Ptr nowPlaying;
 
         bool playing;
+        bool paused;
 
     public:
         ~PlaybackQueue(void);
@@ -102,6 +103,8 @@ class PlaybackQueue : public sigslot::has_slots<>{
         void Next();
         void Previous();
         void Stop();
+        void Pause();
+        void Resume();
 
         musik::core::TrackPtr CurrentTrack();
 

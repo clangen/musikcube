@@ -1,7 +1,8 @@
 #pragma once
 
-#include <boost/thread/thread.hpp>
+#include <boost/thread/condition.hpp>
 #include <boost/thread/mutex.hpp>
+#include <boost/thread/thread.hpp>
 
 #include <core/audio/AudioPacketizer.h>
 #include <core/audio/IAudioCallBack.h>
@@ -15,7 +16,7 @@ class Transport;
 class AudioStream : public IAudioCallback
 {
 // Cleaned up
-public: enum PlayState          { PlayStateUnknown = -1, PlayStateStopped, PlayStatePlaying };
+public: enum PlayState          { PlayStateUnknown = -1, PlayStateStopped, PlayStatePlaying, PlayStatePaused };
 public: enum FadeState          { FadeStateNone, FadeStateIn, FadeStateOut };
 public: enum AudioStreamEvent   { EventPlaybackStarted, EventPlaybackFinished, EventMixPointReached }; 
 
@@ -26,6 +27,9 @@ public:                     ~AudioStream();
 
 public:     bool            Start();
 public:     bool            Stop();
+public:     bool            Pause();
+public:     bool            Resume();
+
 public:     bool            SetVolumeScale(float scale);
 
 public:     bool            GetBuffer(float * pAudioBuffer, unsigned long NumSamples); // IAudioCallback
@@ -51,7 +55,8 @@ private:    bool            isLast; // This can probably be removed once we have
 
 private:    unsigned long   channels;
 
-private:    boost::mutex    mutex;
+private:    boost::mutex        mutex;
+private:    boost::condition    pauseCondition;
 
 private: static unsigned long streamsCreated;
 private: unsigned long streamId;

@@ -87,11 +87,11 @@ void Transport::Start(const utfstring path)
 
     if (success)
     {
-        this->PlaybackStartedOk();
+        this->EventPlaybackStartedOk();
     }
     else
     {
-        this->PlaybackStartedFail();
+        this->EventPlaybackStartedFail();
     }
 }
 
@@ -101,7 +101,7 @@ void Transport::Stop(size_t idx)
 
     if (this->openStreams.empty() || (idx < 0 || idx > this->openStreams.size()-1))
     {
-        this->PlaybackStoppedFail();
+        this->EventPlaybackStoppedFail();
         return;
     }
 
@@ -113,12 +113,57 @@ void Transport::Stop(size_t idx)
 
         this->openStreams.erase(this->openStreams.begin() + idx);
 
-        this->PlaybackStoppedOk();
+        this->EventPlaybackStoppedOk();
     }
     else
     {
-        this->PlaybackStoppedFail();
+        this->EventPlaybackStoppedFail();
     }
+}
+
+bool Transport::Pause()
+{
+    if (this->openStreams.empty())
+    {
+        this->EventPlaybackPausedFail();
+        return false;
+    }
+
+    std::vector<AudioStream*>::iterator it;
+    bool ret = true;
+
+    for(it = this->openStreams.begin(); it != this->openStreams.end(); it++)
+    {
+        AudioStream* stream = *(it);
+        ret &= stream->Pause();
+    }
+    
+    if (ret)    this->EventPlaybackPausedOk();
+    else        this->EventPlaybackPausedFail();
+
+    return ret;
+}
+
+bool Transport::Resume()
+{
+    if (this->openStreams.empty())
+    {
+        this->EventPlaybackResumedFail();
+        return false;
+    }
+
+    std::vector<AudioStream*>::iterator it;
+    bool ret = true;
+
+    for(it = this->openStreams.begin(); it != this->openStreams.end(); it++)
+    {
+        AudioStream* stream = *(it);
+        ret &= stream->Resume();
+    }
+
+    if (ret)    this->EventPlaybackResumedOk();
+    else        this->EventPlaybackResumedFail();
+    return ret;
 }
 
 void Transport::JumpToPosition(unsigned long position)
@@ -144,7 +189,7 @@ void Transport::SetVolume(short volume)
 {
     if (volume < 0 || volume > 100)
     {
-        this->VolumeChangedFail();
+        this->EventVolumeChangedFail();
         return;
     }
 
@@ -158,7 +203,7 @@ void Transport::SetVolume(short volume)
 
     this->currVolume = volume;
 
-    this->VolumeChangedOk();
+    this->EventVolumeChangedOk();
 }
 
 size_t Transport::NumOfStreams() const

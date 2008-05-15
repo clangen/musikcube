@@ -96,7 +96,7 @@ void        TransportView::OnCreated()
 
     // bottom row layout
     this->timeElapsedLabel = bottomRowLayout->AddChild(new Label(_T("0:00")));
-    this->playbackSlider = bottomRowLayout->AddChild(new Trackbar(0, 1000));
+    this->playbackSlider = bottomRowLayout->AddChild(new Trackbar(0, 10000));
     this->timeDurationLabel = bottomRowLayout->AddChild(new Label(_T("0:00")));
     //
     this->playbackSlider->Resize(100, 20);

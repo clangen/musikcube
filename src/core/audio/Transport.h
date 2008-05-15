@@ -58,6 +58,8 @@ public:     ~Transport();
 
 public:     void            Start(const utfstring path);
 public:     void            Stop(size_t idx);
+public:     bool            Pause();
+public:     bool            Resume();
 
 public:     void            JumpToPosition(unsigned long position);
 public:     unsigned long   FirstTrackPosition() const;
@@ -82,13 +84,18 @@ private:    std::vector<AudioStream*> openStreams;
 private:    short currVolume;
 
 // Signals
-public:     sigslot::signal0<>  PlaybackStartedOk;
-public:     sigslot::signal0<>  PlaybackStartedFail;
-public:     sigslot::signal0<>  PlaybackStoppedOk;
-public:     sigslot::signal0<>  PlaybackStoppedFail;
-public:     sigslot::signal0<>  VolumeChangedOk;
-public:     sigslot::signal0<>  VolumeChangedFail;
-public:     sigslot::signal0<>  MixpointReached;  // TODO: For crossfading.  Consider renaming.
+public:     sigslot::signal0<>  EventPlaybackPausedOk;
+public:     sigslot::signal0<>  EventPlaybackPausedFail;
+public:     sigslot::signal0<>  EventPlaybackResumedOk;
+public:     sigslot::signal0<>  EventPlaybackResumedFail;
+
+public:     sigslot::signal0<>  EventPlaybackStartedOk;
+public:     sigslot::signal0<>  EventPlaybackStartedFail;
+public:     sigslot::signal0<>  EventPlaybackStoppedOk;
+public:     sigslot::signal0<>  EventPlaybackStoppedFail;
+public:     sigslot::signal0<>  EventVolumeChangedOk;
+public:     sigslot::signal0<>  EventVolumeChangedFail;
+public:     sigslot::signal0<>  EventMixpointReached;  // TODO: For crossfading.  Consider renaming.
 /* Possible other signals
 public:     sigslot::signal0<>  PlaybackInterrupted;
 public:     sigslot::signal0<>  StreamOpenOk;
