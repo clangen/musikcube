@@ -43,11 +43,30 @@
 
 using namespace musik::core::db;
 
+//////////////////////////////////////////
+///\brief
+///Constructor
+///
+///\param sql
+///SQL
+///
+///\param connection
+///Connection to execute the statement on
+//////////////////////////////////////////
 CachedStatement::CachedStatement(const char* sql,Connection &connection) : Statement(connection){
     this->sqlStatement.assign(sql);
     this->stmt  = this->connection->GetCachedStatement(sql);
 }
 
+//////////////////////////////////////////
+///\brief
+///Destructor
+///
+///Will return the cached statement to the Connection
+///
+///\see
+///musik::core::db::Connection::ReturnCachedStatement
+//////////////////////////////////////////
 CachedStatement::~CachedStatement(){
     sqlite3_reset(this->stmt);
     sqlite3_clear_bindings(this->stmt);

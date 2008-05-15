@@ -40,10 +40,27 @@
 #include "core/db/Statement.h"
 
 namespace musik{ namespace core{ namespace db{
-
+    
+    // Forward declare
     class Statement;
 
-    class CachedStatement : public Statement{
+    //////////////////////////////////////////
+	///\brief
+	///Same as Statement, but keeps the statement in a cache when destructed
+	///
+	///Be careful using this class only on "static" SQL statement
+    ///This means that you should not use this on statements looking like
+    ///this: CacheStatement("SELECT * FROM mytable WHERE id="+id,db);
+	///since the cache will grow for each id in this example
+    ///
+    ///Instead, do like this:
+    ///CacheStatement("SELECT * FROM mytable WHERE id=?",db);
+    ///And use the BindInt to set the id
+	///
+	///\see
+    ///musik::core::db::Statement
+	//////////////////////////////////////////
+	class CachedStatement : public Statement{
         public: 
             CachedStatement(const char* sql,Connection &connection);
             ~CachedStatement();

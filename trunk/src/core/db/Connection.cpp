@@ -40,15 +40,41 @@
 
 using namespace musik::core::db;
 
+//////////////////////////////////////////
+///\brief
+///Constructor
+//////////////////////////////////////////
 Connection::Connection() : connection(NULL),transactionCounter(0) {
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Destructor
+///
+///Will automatically close the connection if it's not closed before
+//////////////////////////////////////////
 Connection::~Connection(){
     this->Close();
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Open a connection to the database
+///
+///\param database
+///Connection string. In SQLite this is the filename
+///
+///\param options
+///Bit options. Unused at the moment
+///
+///\param cache
+///Cachesize in KB
+///
+///\returns
+///Error code returned by SQLite
+//////////////////////////////////////////
 int Connection::Open(const utfchar *database,unsigned int options,unsigned int cache){
     int error;
     #ifdef UTF_WIDECHAR
@@ -63,6 +89,22 @@ int Connection::Open(const utfchar *database,unsigned int options,unsigned int c
     return error;
 }
 
+//////////////////////////////////////////
+///\brief
+///Open a connection to the database
+///
+///\param database
+///Connection string. In SQLite this is the filename
+///
+///\param options
+///Bit options. Unused at the moment
+///
+///\param cache
+///Cachesize in KB
+///
+///\returns
+///Error code returned by SQLite
+//////////////////////////////////////////
 int Connection::Open(const utfstring &database,unsigned int options,unsigned int cache){
     int error;
     #ifdef UTF_WIDECHAR
@@ -79,6 +121,13 @@ int Connection::Open(const utfstring &database,unsigned int options,unsigned int
 
 
 
+//////////////////////////////////////////
+///\brief
+///Close connection to the database
+///
+///\returns
+///Errorcode ( musik::core::db::ReturnCode )
+//////////////////////////////////////////
 int Connection::Close(){
 
     // Clear the cache
@@ -96,6 +145,19 @@ int Connection::Close(){
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Execute a SQL string
+///
+///\param sql
+///SQL to execute
+///
+///\returns
+///Errorcode musik::core::db::ReturnCode
+///
+///\see
+///musik::core::db::ReturnCode
+//////////////////////////////////////////
 int Connection::Execute(const char* sql){
     sqlite3_stmt *stmt  = NULL;
     if(sqlite3_prepare_v2(this->connection,sql,-1,&stmt,NULL)!=SQLITE_OK){
@@ -116,6 +178,19 @@ int Connection::Execute(const char* sql){
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Execute a SQL string
+///
+///\param sql
+///SQL to execute
+///
+///\returns
+///Errorcode musik::core::db::ReturnCode
+///
+///\see
+///musik::core::db::ReturnCode
+//////////////////////////////////////////
 int Connection::Execute(const wchar_t* sql){
     sqlite3_stmt *stmt  = NULL;
     if(sqlite3_prepare16_v2(this->connection,sql,-1,&stmt,NULL)!=SQLITE_OK){
@@ -136,32 +211,69 @@ int Connection::Execute(const wchar_t* sql){
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Get the last inserted row ID
+///
+///\returns
+///Last inserted row ID
+///
+///\see
+///http://www.sqlite.org/c3ref/last_insert_rowid.html
+//////////////////////////////////////////
 int Connection::LastInsertedId(){
     return sqlite3_last_insert_rowid(this->connection);
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Initializes the database.
+///
+///\param cache
+///Size of the cache to use in kilobytes
+///
+///This will set all the initial PRAGMAS
+//////////////////////////////////////////
 void Connection::Initialize(unsigned int cache){
     sqlite3_busy_timeout(this->connection,10000);
 
-    sqlite3_exec(this->connection,"PRAGMA synchronous=OFF",NULL,NULL,NULL);        // Maybe FULL if multiuser document
-    sqlite3_exec(this->connection,"PRAGMA page_size=1024",NULL,NULL,NULL);            // According to windows standard page size
-    sqlite3_exec(this->connection,"PRAGMA auto_vacuum=0",NULL,NULL,NULL);            // No autovaccum.
+    sqlite3_exec(this->connection,"PRAGMA synchronous=OFF",NULL,NULL,NULL);         // Not a critical DB. Sync set to OFF
+    sqlite3_exec(this->connection,"PRAGMA page_size=4096",NULL,NULL,NULL);          // According to windows standard page size
+    sqlite3_exec(this->connection,"PRAGMA auto_vacuum=0",NULL,NULL,NULL);           // No autovaccum.
 
     if(cache==0){
-        cache=4096;
+        cache=1024; // Default cache set to 4Mb
+    }else{
+        // Divide by 4 to since the page_size is 4096
+        // Total cache is the same as page_size*cache_size
+        cache   = cache/4;
     }
+
     std::string cacheSize("PRAGMA cache_size=" + boost::lexical_cast<std::string>(cache));
     sqlite3_exec(this->connection,cacheSize.c_str(),NULL,NULL,NULL);                // size * 1.5kb = 6Mb cache
 
-    sqlite3_exec(this->connection,"PRAGMA case_sensitive_like=0",NULL,NULL,NULL);    // More speed if case insensitive
-    sqlite3_exec(this->connection,"PRAGMA count_changes=0",NULL,NULL,NULL);        // If set it counts changes on SQL UPDATE. More speed when not.
-    sqlite3_exec(this->connection,"PRAGMA legacy_file_format=OFF",NULL,NULL,NULL);    // Set compatible with ALL sqlite 3.x versions
-    sqlite3_exec(this->connection,"PRAGMA temp_store=MEMORY",NULL,NULL,NULL);        // MEMORY, not file. More speed.
+    sqlite3_exec(this->connection,"PRAGMA case_sensitive_like=0",NULL,NULL,NULL);   // More speed if case insensitive
+    sqlite3_exec(this->connection,"PRAGMA count_changes=0",NULL,NULL,NULL);         // If set it counts changes on SQL UPDATE. More speed when not.
+    sqlite3_exec(this->connection,"PRAGMA legacy_file_format=OFF",NULL,NULL,NULL);  // No reason to be backwards compatible :)
+    sqlite3_exec(this->connection,"PRAGMA temp_store=MEMORY",NULL,NULL,NULL);       // MEMORY, not file. More speed.
 
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Internal method used by the CachedStatement to locate if a statement already exists
+///
+///\param sql
+///SQL to check for
+///
+///\returns
+///The cached or newly created statement
+///
+///\see
+///musik::core::db::CachedStatment
+//////////////////////////////////////////
 sqlite3_stmt *Connection::GetCachedStatement(const char* sql){
     sqlite3_stmt *newStmt(NULL);
 
@@ -184,6 +296,19 @@ sqlite3_stmt *Connection::GetCachedStatement(const char* sql){
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Used by CachedStatement when destructed to return it's statement.
+///
+///\param sql
+///SQL string
+///
+///\param stmt
+///Statement to return
+///
+///\see
+///musik::core::db::CachedStatment
+//////////////////////////////////////////
 void Connection::ReturnCachedStatement(const char* sql,sqlite3_stmt *stmt){
     StatementCache::iterator cacheStmt   = this->cachedStatements.find(sql);
     if(cacheStmt==this->cachedStatements.end()){
@@ -195,6 +320,10 @@ void Connection::ReturnCachedStatement(const char* sql,sqlite3_stmt *stmt){
     }
 }
 
+//////////////////////////////////////////
+///\brief
+///Interrupts the current running statement(s)
+//////////////////////////////////////////
 void Connection::Interrupt(){
     sqlite3_interrupt(this->connection);
 }

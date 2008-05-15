@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.305 2008/04/16 00:28:14 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.312 2008/05/12 12:39:56 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -93,8 +93,8 @@ extern "C" {
 **          with the value  (X*1000000 + Y*1000 + Z) where X, Y, and
 **          Z are the major version, minor version, and release number.
 */
-#define SQLITE_VERSION         "3.5.8"
-#define SQLITE_VERSION_NUMBER  3005008
+#define SQLITE_VERSION         "3.5.9"
+#define SQLITE_VERSION_NUMBER  3005009
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers {F10020}
@@ -155,7 +155,7 @@ int sqlite3_threadsafe(void);
 
 /*
 ** CAPI3REF: Database Connection Handle {F12000}
-** KEYWORDS: {database connection}
+** KEYWORDS: {database connection} {database connections}
 **
 ** Each open SQLite database is represented by pointer to an instance of the
 ** opaque structure named "sqlite3".  It is useful to think of an sqlite3
@@ -1984,7 +1984,7 @@ void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 ** The third options is behavior that is always used for [sqlite3_open()]
 ** and [sqlite3_open16()].
 **
-** If the 4th parameter to [sqlite3_open_v2()] is not one of the
+** If the 3rd parameter to [sqlite3_open_v2()] is not one of the
 ** combinations shown above then the behavior is undefined.
 **
 ** If the filename is ":memory:", then an private
@@ -2203,11 +2203,6 @@ typedef struct sqlite3_stmt sqlite3_stmt;
 **          positive changes the
 **          limit on the size of construct C in [database connection] D
 **          to the lessor of V and the hard upper bound on the size
-**          of C that is set at compile-time.
-**
-** {F12764} A successful call to [sqlite3_limit(D,C,V)] where V is zero
-**          changes the limit on the size of construct C in
-**          [database connection] D to be the hard upper bound on the size
 **          of C that is set at compile-time.
 **
 ** {F12766} A successful call to [sqlite3_limit(D,C,V)] where V is negative
@@ -2684,11 +2679,12 @@ int sqlite3_bind_parameter_count(sqlite3_stmt*);
 **
 ** This routine returns a pointer to the name of the n-th
 ** SQL parameter in a [prepared statement].
-** SQL parameters of the form ":AAA" or "@AAA" or "$AAA" have a name
-** which is the string ":AAA" or "@AAA" or "$VVV". 
-** In other words, the initial ":" or "$" or "@"
+** SQL parameters of the form "?NNN" or ":AAA" or "@AAA" or "$AAA"
+** have a name which is the string "?NNN" or ":AAA" or "@AAA" or "$AAA"
+** respectively.
+** In other words, the initial ":" or "$" or "@" or "?"
 ** is included as part of the name.
-** Parameters of the form "?" or "?NNN" have no name.
+** Parameters of the form "?" without a following integer have no name.
 **
 ** The first host parameter has an index of 1, not 0.
 **
@@ -2708,8 +2704,7 @@ int sqlite3_bind_parameter_count(sqlite3_stmt*);
 **          a UTF-8 rendering of the name of the SQL parameter in
 **          [prepared statement] S having index N, or
 **          NULL if there is no SQL parameter with index N or if the
-**          parameter with index N is an anonymous parameter "?" or
-**          a numbered parameter "?NNN".
+**          parameter with index N is an anonymous parameter "?".
 */
 const char *sqlite3_bind_parameter_name(sqlite3_stmt*, int);
 
@@ -3006,7 +3001,7 @@ const void *sqlite3_column_decltype16(sqlite3_stmt*,int);
 ** new "v2" interface is recommended for new applications but the legacy
 ** interface will continue to be supported.
 **
-** In the lagacy interface, the return value will be either [SQLITE_BUSY], 
+** In the legacy interface, the return value will be either [SQLITE_BUSY], 
 ** [SQLITE_DONE], [SQLITE_ROW], [SQLITE_ERROR], or [SQLITE_MISUSE].
 ** With the "v2" interface, any of the other [SQLITE_OK | result code]
 ** or [SQLITE_IOERR_READ | extended result code] might be returned as
@@ -4051,7 +4046,7 @@ typedef void (*sqlite3_destructor_type)(void*);
 **
 ** {F16436} The [sqlite3_result_text(C,V,N,D)] interface changes the
 **          return value of function C to be the UTF8 string
-**          V up the first zero if N is negative
+**          V up to the first zero if N is negative
 **          or the first N bytes of V if N is non-negative.
 **
 ** {F16439} The [sqlite3_result_text16(C,V,N,D)] interface changes the
@@ -5276,10 +5271,11 @@ int sqlite3_blob_bytes(sqlite3_blob *);
 **          the [sqlite3_blob_read(P,Z,N,X)] interface returns an
 **          appropriate [error code] or [extended error code].
 **
-** {F17868} If an error occurs during evaluation of [sqlite3_blob_read(D,...)]
+** {F17868} If an error occurs during evaluation of [sqlite3_blob_read(P,...)]
 **          then subsequent calls to [sqlite3_errcode(D)],
 **          [sqlite3_errmsg(D)], and [sqlite3_errmsg16(D)] will return
-**          information approprate for that error.
+**          information approprate for that error, where D is the
+**          database handle that was used to open blob handle P.
 */
 int sqlite3_blob_read(sqlite3_blob *, void *Z, int N, int iOffset);
 

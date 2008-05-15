@@ -42,6 +42,16 @@
 
 using namespace musik::core::db;
 
+//////////////////////////////////////////
+///\brief
+///Constructor
+///
+///\param sql
+///SQL to be precomiled
+///
+///\param connection
+///database Connection
+//////////////////////////////////////////
 Statement::Statement(const char* sql,Connection &connection) : connection(&connection),stmt(NULL){
     int err    = sqlite3_prepare_v2(this->connection->connection,sql,-1,&this->stmt,NULL);
 /*    #ifdef _DEBUG
@@ -52,23 +62,27 @@ Statement::Statement(const char* sql,Connection &connection) : connection(&conne
     #endif*/
 }
 
+//////////////////////////////////////////
+///\brief
+///Constructor used by the CachedStatement
+//////////////////////////////////////////
 Statement::Statement(Connection &connection) : connection(&connection),stmt(NULL) {
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Destructor that will finalize the statement
+//////////////////////////////////////////
 Statement::~Statement(){
     int err=sqlite3_finalize(this->stmt);
 }
 
-void Statement::Finalize(){
-/*    #ifdef _DEBUG
-        if(err!=0){
-            const char *errorMsg    = sqlite3_errmsg(this->connection->connection);
-            _ASSERT(false);
-        }
-    #endif*/
-}
 
+//////////////////////////////////////////
+///\brief
+///Reset a statment to be able to re-execute it later
+//////////////////////////////////////////
 void Statement::Reset(){
     int err    = sqlite3_reset(this->stmt);
 /*    #ifdef _DEBUG
@@ -79,43 +93,124 @@ void Statement::Reset(){
     #endif*/
 }
 
+//////////////////////////////////////////
+///\brief
+///Unbinds all previously binded parameters 
+//////////////////////////////////////////
 void Statement::UnBindAll(){
     DB_ASSERT(sqlite3_clear_bindings(this->stmt));
 }
 
+//////////////////////////////////////////
+///\brief
+///Execute/Step through the statment
+///
+///\returns
+///musik::core::db::ReturnCode
+//////////////////////////////////////////
 int Statement::Step(){
     return sqlite3_step(this->stmt);
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Bind a integer to a statment parameter
+///
+///\param position
+///Position of the parameter (0 is the first)
+///
+///\param bindInt
+///Integer to bind
+//////////////////////////////////////////
 void Statement::BindInt(int position,int bindInt){
     DB_ASSERT(sqlite3_bind_int(this->stmt,position+1,bindInt));
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Bind a 64bit integer to a statment parameter
+///
+///\param position
+///Position of the parameter (0 is the first)
+///
+///\param bindInt
+///Integer to bind
+//////////////////////////////////////////
 void Statement::BindInt64(int position,UINT64 bindInt){
     DB_ASSERT(sqlite3_bind_int64(this->stmt,position+1,bindInt));
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Bind a text to a statment parameter
+///
+///\param position
+///Position of the parameter (0 is the first)
+///
+///\param bindText
+///Text to bind
+//////////////////////////////////////////
 void Statement::BindText(int position,const char* bindText){
     DB_ASSERT(sqlite3_bind_text(this->stmt,position+1,bindText,-1,SQLITE_STATIC));
 }
 
+//////////////////////////////////////////
+///\brief
+///Bind a text to a statment parameter
+///
+///\param position
+///Position of the parameter (0 is the first)
+///
+///\param bindText
+///Text to bind
+//////////////////////////////////////////
 void Statement::BindText(int position,const std::string &bindText){
     DB_ASSERT(sqlite3_bind_text(this->stmt,position+1,bindText.c_str(),-1,SQLITE_STATIC));
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Bind a text to a statment parameter
+///
+///\param position
+///Position of the parameter (0 is the first)
+///
+///\param bindText
+///Text to bind
+//////////////////////////////////////////
 void Statement::BindTextW(int position,const wchar_t* bindText){
     DB_ASSERT(sqlite3_bind_text16(this->stmt,position+1,bindText,-1,SQLITE_STATIC));
 }
 
+//////////////////////////////////////////
+///\brief
+///Bind a text to a statment parameter
+///
+///\param position
+///Position of the parameter (0 is the first)
+///
+///\param bindText
+///Text to bind
+//////////////////////////////////////////
 void Statement::BindTextW(int position,const std::wstring &bindText){
     DB_ASSERT(sqlite3_bind_text16(this->stmt,position+1,bindText.c_str(),-1,SQLITE_STATIC));
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Bind a text to a statment parameter
+///
+///\param position
+///Position of the parameter (0 is the first)
+///
+///\param bindText
+///Text to bind
+//////////////////////////////////////////
 void Statement::BindTextUTF(int position,const utfchar* bindText){
     #ifdef UTF_WIDECHAR
         DB_ASSERT(sqlite3_bind_text16(this->stmt,position+1,bindText,-1,SQLITE_STATIC));
@@ -124,6 +219,16 @@ void Statement::BindTextUTF(int position,const utfchar* bindText){
     #endif
 }
 
+//////////////////////////////////////////
+///\brief
+///Bind a text to a statment parameter
+///
+///\param position
+///Position of the parameter (0 is the first)
+///
+///\param bindText
+///Text to bind
+//////////////////////////////////////////
 void Statement::BindTextUTF(int position,const utfstring &bindText){
     #ifdef UTF_WIDECHAR
         DB_ASSERT(sqlite3_bind_text16(this->stmt,position+1,bindText.c_str(),-1,SQLITE_STATIC));
@@ -136,26 +241,76 @@ void Statement::BindTextUTF(int position,const utfstring &bindText){
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Get the results of a column if Step() return a musik::core::db::Row
+///
+///\param column
+///Column to get (0 is the first)
+///
+///\returns
+///Column data
+//////////////////////////////////////////
 int Statement::ColumnInt(int column){
     return sqlite3_column_int(this->stmt,column);
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Get the results of a column if Step() return a musik::core::db::Row
+///
+///\param column
+///Column to get (0 is the first)
+///
+///\returns
+///Column data
+//////////////////////////////////////////
 UINT64 Statement::ColumnInt64(int column){
     return sqlite3_column_int64(this->stmt,column);
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Get the results of a column if Step() return a musik::core::db::Row
+///
+///\param column
+///Column to get (0 is the first)
+///
+///\returns
+///Column data
+//////////////////////////////////////////
 const char* Statement::ColumnText(int column){
     return (char*)sqlite3_column_text(this->stmt,column);
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Get the results of a column if Step() return a musik::core::db::Row
+///
+///\param column
+///Column to get (0 is the first)
+///
+///\returns
+///Column data
+//////////////////////////////////////////
 const wchar_t* Statement::ColumnTextW(int column){
     return (wchar_t*)sqlite3_column_text16(this->stmt,column);
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Get the results of a column if Step() return a musik::core::db::Row
+///
+///\param column
+///Column to get (0 is the first)
+///
+///\returns
+///Column data
+//////////////////////////////////////////
 const utfchar* Statement::ColumnTextUTF(int column){
     #ifdef UTF_WIDECHAR
         return (utfchar*)sqlite3_column_text16(this->stmt,column);

@@ -48,7 +48,11 @@ namespace musik{ namespace core{ namespace db{
     class CachedStatement;
 
 
-    class Statement : boost::noncopyable{
+    //////////////////////////////////////////
+	///\brief
+	///Class for precompiling SQL statements
+	//////////////////////////////////////////
+	class Statement : boost::noncopyable{
         public: 
             Statement(const char* sql,Connection &connection);
             virtual ~Statement();
@@ -76,9 +80,6 @@ namespace musik{ namespace core{ namespace db{
 
             sqlite3_stmt *stmt;
             Connection *connection;
-
-        protected:
-            virtual void Finalize();
 
         private:
             friend class CachedStatement;

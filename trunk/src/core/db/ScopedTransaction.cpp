@@ -41,27 +41,50 @@
 using namespace musik::core::db;
 
 
+//////////////////////////////////////////
+///\brief
+///Constructor
+///
+///\param connection
+///Connection to run transaction on
+//////////////////////////////////////////
 ScopedTransaction::ScopedTransaction(Connection &connection) : canceled(false){
     this->connection    = &connection;
     this->Begin();
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Destructor will end the transaction if it's the last nested transaction
+//////////////////////////////////////////
 ScopedTransaction::~ScopedTransaction(){
     this->End();
 }
 
 
+//////////////////////////////////////////
+///\brief
+///If canceled, this all statements in the transaction scope will be canceled
+//////////////////////////////////////////
 void ScopedTransaction::Cancel(){
     this->canceled  = true;
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Sometimes it's a good option to be able to commit a transaction and restart it all over.
+//////////////////////////////////////////
 void ScopedTransaction::CommitAndRestart(){
     this->End();
     this->Begin();
 }
 
+//////////////////////////////////////////
+///\brief
+///Runs the acctual BEGIN TRANSACTION on the database
+//////////////////////////////////////////
 void ScopedTransaction::Begin(){
     if(this->connection->transactionCounter==0){
         this->connection->Execute("BEGIN TRANSACTION");
@@ -69,6 +92,10 @@ void ScopedTransaction::Begin(){
     ++this->connection->transactionCounter;
 }
 
+//////////////////////////////////////////
+///\brief
+///Runs the COMMIT or ROLLBACK on the database
+//////////////////////////////////////////
 void ScopedTransaction::End(){
     --this->connection->transactionCounter;
     if(this->connection->transactionCounter==0){
