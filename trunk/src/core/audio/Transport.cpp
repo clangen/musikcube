@@ -95,23 +95,23 @@ void Transport::Start(const utfstring path)
     }
 }
 
-void Transport::Stop(size_t idx)
+void Transport::Stop()
 {
     this->RemoveFinishedStreams();
 
-    if (this->openStreams.empty() || (idx < 0 || idx > this->openStreams.size()-1))
+    if (this->openStreams.empty())
     {
         this->EventPlaybackStoppedFail();
         return;
     }
 
-    AudioStream* stream = this->openStreams[idx];
+    AudioStream* stream = this->openStreams[0];
     
     if (stream->Stop())
     {
         delete stream;
 
-        this->openStreams.erase(this->openStreams.begin() + idx);
+        this->openStreams.erase(this->openStreams.begin());
 
         this->EventPlaybackStoppedOk();
     }
@@ -166,22 +166,22 @@ bool Transport::Resume()
     return ret;
 }
 
-void Transport::JumpToPosition(unsigned long position)
+void Transport::SetTrackPosition(unsigned long position)
 {
     AudioStream* stream = this->openStreams[0];
 
-    stream->SetPosition(position);
+    stream->SetPositionMs(position);
 }
 
-unsigned long Transport::FirstTrackPosition() const
+unsigned long Transport::TrackPosition() const
 {
-    if (this->openStreams.size() > 0)   return this->openStreams[0]->GetPosition();
+    if (this->openStreams.size() > 0)   return this->openStreams[0]->PositionMs();
     else                                return 0;
 }
 
-unsigned long Transport::FirstTrackLength() const
+unsigned long Transport::TrackLength() const
 {
-    if (this->openStreams.size() > 0)   return this->openStreams[0]->GetLength();
+    if (this->openStreams.size() > 0)   return this->openStreams[0]->LengthMs();
     else                                return 0;
 }
 

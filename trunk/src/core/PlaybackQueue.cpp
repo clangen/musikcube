@@ -65,7 +65,7 @@ PlaybackQueue::PlaybackQueue(void) :
 //////////////////////////////////////////
 PlaybackQueue::~PlaybackQueue(void)
 {
-    this->transport.Stop(0);
+    this->transport.Stop();
 }
 
 //////////////////////////////////////////
@@ -166,7 +166,7 @@ void PlaybackQueue::Previous(){
 void PlaybackQueue::Stop(){
     this->signalDisabled    = true;
     if( this->playing ){
-        this->transport.Stop(0);
+        this->transport.Stop();
     }
     this->signalDisabled    = false;
 }

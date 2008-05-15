@@ -117,8 +117,8 @@ bool			AudioStream::GetBuffer(float * pAudioBuffer, unsigned long NumSamples)
 		this->packetizer.Advance();
 		this->samplesOut +=  NumSamples;
 
-		unsigned long pos = this->GetPosition();
-		unsigned long len = this->GetLength();
+		unsigned long pos = this->PositionMs();
+		unsigned long len = this->LengthMs();
 		unsigned long cft = this->GetCrossfadeTime() * 1000;
 
 		if(!this->mixNotify)
@@ -197,23 +197,23 @@ bool AudioStream::Resume()
     return true;
 }
 
-unsigned long	AudioStream::GetLength() const
+unsigned long	AudioStream::LengthMs() const
 {
-	unsigned long Length;
+	unsigned long length;
 
-	if(this->audioSource->GetLength(&Length))
-		return Length;
+	if(this->audioSource->GetLength(&length))
+		return length;
 
     return AudioStream::UnknownLength;
 }
 
-unsigned long	AudioStream::GetPosition() const
+unsigned long	AudioStream::PositionMs() const
 {
-	unsigned long MSOutput = ((float)this->samplesOut / (((float)this->output->GetSampleRate()/1000.0f) * (float)this->output->GetChannels()));
-	return MSOutput;
+	unsigned long msOutput = ((float)this->samplesOut / (((float)this->output->GetSampleRate()/1000.0f) * (float)this->output->GetChannels()));
+	return msOutput;
 }
 
-bool			AudioStream::SetPosition(unsigned long MS)
+bool    AudioStream::SetPositionMs(unsigned long ms)
 {
     boost::mutex::scoped_lock lock(this->mutex);
 
@@ -223,7 +223,7 @@ bool			AudioStream::SetPosition(unsigned long MS)
         this->fadeState = FadeStateNone;
 	}
 
-	unsigned long Pos = MS;
+	unsigned long Pos = ms;
 
 	if(this->audioSource->SetPosition(&Pos))
 	{

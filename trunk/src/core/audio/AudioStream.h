@@ -15,58 +15,58 @@ class Transport;
 
 class AudioStream : public IAudioCallback
 {
-// Cleaned up
-public: enum PlayState          { PlayStateUnknown = -1, PlayStateStopped, PlayStatePlaying, PlayStatePaused };
-public: enum FadeState          { FadeStateNone, FadeStateIn, FadeStateOut };
-public: enum AudioStreamEvent   { EventPlaybackStarted, EventPlaybackFinished, EventMixPointReached }; 
+public: 
+    enum PlayState          { PlayStateUnknown = -1, PlayStateStopped, PlayStatePlaying, PlayStatePaused };
+    enum FadeState          { FadeStateNone, FadeStateIn, FadeStateOut };
+    enum AudioStreamEvent   { EventPlaybackStarted, EventPlaybackFinished, EventMixPointReached }; 
 
-public: static const unsigned long UnknownLength = ULONG_MAX;
+    static const unsigned long UnknownLength = ULONG_MAX;
 
-public:                     AudioStream(IAudioSource* source, IAudioOutput* output, Transport *owner);
-public:                     ~AudioStream();
+    AudioStream(IAudioSource* source, IAudioOutput* output, Transport *owner);
+    ~AudioStream();
 
-public:     bool            Start();
-public:     bool            Stop();
-public:     bool            Pause();
-public:     bool            Resume();
+    bool            Start();
+    bool            Stop();
+    bool            Pause();
+    bool            Resume();
 
-public:     bool            SetVolumeScale(float scale);
+    bool            SetVolumeScale(float scale);
 
-public:     bool            GetBuffer(float * pAudioBuffer, unsigned long NumSamples); // IAudioCallback
+    bool            GetBuffer(float * pAudioBuffer, unsigned long NumSamples); // IAudioCallback
 
-private:    Transport*      transport; // Need this to trigger some signals
-private:    IAudioSource*   audioSource;
-private: 	IAudioOutput*   output;
-private:    AudioPacketizer packetizer;
+    unsigned long   LengthMs()      const;
+    unsigned long   PositionMs()    const;
+    bool            SetPositionMs(unsigned long ms);
+    bool            isFinished;
 
-private:    PlayState       playState;
-private:    FadeState       fadeState;
+    unsigned long GetStreamId() const { return this->streamId; };
+    utfstring ToString() const;
 
-private:    unsigned long   samplesOut;
+private:    
+    Transport*      transport; // Need this to trigger some signals
+    IAudioSource*   audioSource;
+    IAudioOutput*   output;
+    AudioPacketizer packetizer;
 
-private:    float           volumeScale;    //0.0 - 1.0 affects total volume output!
-private:    float           volume;
-private:    float           volumeChange;
+    PlayState       playState;
+    FadeState       fadeState;
 
-public:     bool            isFinished;
+    unsigned long   samplesOut;
 
-private:    bool            mixNotify;
-private:    bool            isLast; // This can probably be removed once we have playlists
+    float           volumeScale;    //0.0 - 1.0 affects total volume output!
+    float           volume;
+    float           volumeChange;
 
-private:    unsigned long   channels;
+    bool            mixNotify;
+    bool            isLast; // This can probably be removed once we have playlists
 
-private:    boost::mutex        mutex;
-private:    boost::condition    pauseCondition;
+    unsigned long   channels;
 
-private: static unsigned long streamsCreated;
-private: unsigned long streamId;
+    boost::mutex        mutex;
+    boost::condition    pauseCondition;
 
-public: unsigned long GetStreamId() const { return this->streamId; };
-public: utfstring ToString() const;
-
-public:    unsigned long   GetLength()                     const;
-public:    unsigned long   GetPosition()                   const;
-public:    bool            SetPosition(unsigned long MS);
+    static unsigned long streamsCreated;
+    unsigned long streamId;
 
 /////////////////////////////////////////
 // Pending stuff

@@ -93,7 +93,7 @@ void ConsoleUI::PrintCommands()
 
     utfcout << "Commands:\n";
     utfcout << "\tp [file]: play file (enter full path)\n";
-    utfcout << "\ts [n]: stop playing n-th file\n";
+    utfcout << "\ts: stop playing\n";
     utfcout << "\tl: list currently playing\n";
     utfcout << "\tlp: list loaded plugins\n";
     utfcout << "\tv <p>: set volume to p%\n";
@@ -181,24 +181,12 @@ void ConsoleUI::PlayFile(Args args)
 
 void ConsoleUI::Stop(Args args)
 {
-    size_t  idx;
-
-    if (args.size() == 0)
-    {
-        this->Stop(0);
-    }
-    else 
-    {
-        if (convertString<size_t>(idx, args[0]))
-        {
-           this->Stop(idx);
-        }
-    }
+    this->Stop();
 }
 
-void ConsoleUI::Stop(size_t idx)
+void ConsoleUI::Stop()
 {
-    transport.Stop(idx);
+    transport.Stop();
 }
 
 void ConsoleUI::ListPlaying()
