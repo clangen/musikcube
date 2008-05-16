@@ -57,6 +57,7 @@ using namespace musik::cube;
 : listView(listView)
 , metadataKey(metadataKey)
 , parent(browseController)
+, selectionDisabled(false)
 {
     this->metadataKeyA    = musik::core::ConvertUTF8(this->metadataKey);
     this->model.reset(new MetadataFilterModel(this));
@@ -69,27 +70,31 @@ using namespace musik::cube;
 
 void        MetadataFilterController::OnSelectionChanged(ListView* listView)
 {
-    win32cpp::ListView::RowIndexList selectedRows(this->listView.SelectedRows());
+    if(!this->selectionDisabled){
+        win32cpp::ListView::RowIndexList selectedRows(this->listView.SelectedRows());
 
-    musik::core::MetadataValueVector &metadata = ((MetadataFilterModel*)this->model.get())->metadata;
+        musik::core::MetadataValueVector &metadata = ((MetadataFilterModel*)this->model.get())->metadataFiltered;
 
-    this->parent->selectionQuery.ClearMetadata(this->metadataKeyA.c_str());
-
-    bool firstRowSelected(false);
-    for(win32cpp::ListView::RowIndexList::iterator row=selectedRows.begin();row!=selectedRows.end() && !firstRowSelected;++row){
-        if((*row)==0){
-            firstRowSelected    = true;
-        }else{
-            this->parent->selectionQuery.SelectMetadata(this->metadataKeyA.c_str(),metadata[(*row)-1]->id);
-        }
-    }
-
-    // Check if first row is selected, then clear the list
-    if(firstRowSelected){
         this->parent->selectionQuery.ClearMetadata(this->metadataKeyA.c_str());
-    }
 
-    this->parent->SendQuery();
+        bool firstRowSelected(false);
+        for(win32cpp::ListView::RowIndexList::iterator row=selectedRows.begin();row!=selectedRows.end() && !firstRowSelected;++row){
+            if((*row)==0){
+                firstRowSelected    = true;
+            }else{
+                if((*row)<=metadata.size()){
+                    this->parent->selectionQuery.SelectMetadata(this->metadataKeyA.c_str(),metadata[(*row)-1]->id);
+                }
+            }
+        }
+
+        // Check if first row is selected, then clear the list
+        if(firstRowSelected){
+            this->parent->selectionQuery.ClearMetadata(this->metadataKeyA.c_str());
+        }
+
+        this->parent->SendQuery();
+    }
 }
 
 void        MetadataFilterController::OnViewCreated(Window* window)
@@ -124,6 +129,18 @@ void MetadataFilterController::OnResized(Window* window, Size size)
 void MetadataFilterController::OnChar(Window* window,VirtualKeyCode keyCode, KeyEventFlags keyFlags){
     if(keyCode){
         win32cpp::RedrawLock drawLock(window);
+        this->selectionDisabled=true;
         ((MetadataFilterModel*)this->model.get())->OnChar((wchar_t)keyCode);
+        this->selectionDisabled=false;
+        this->OnSelectionChanged(&this->listView);
     }
 }
+
+void MetadataFilterController::SelectAllFiltered(int rows){
+    std::vector<int> selectRows;
+    for(int i(1);i<rows;++i){
+        selectRows.push_back(i);
+    }
+    this->listView.SelectRows(selectRows);
+}
+

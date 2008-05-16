@@ -102,7 +102,7 @@ void        TransportController::OnViewCreated(Window* window)
 
     this->playbackSliderTimer.ConnectToWindow(this->transportView.playbackSlider);
 
-    this->playbackSliderTimer.OnTimout.connect(this, &TransportController::OnPlaybackSliderTimerTimedOut);
+    this->playbackSliderTimer.OnTimeout.connect(this, &TransportController::OnPlaybackSliderTimerTimedOut);
 }
 
 void        TransportController::OnViewResized(Window* window, Size size)

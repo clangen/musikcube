@@ -169,6 +169,10 @@ public: // methods
     ColumnRef       HotColumn() const;
     RowIndexList    SelectedRows();
     int             SelectedRow();
+    void            SelectRows(const std::vector<int>& indices);
+    void            SelectRow(int index);
+    void            DeselectRows(const std::vector<int>& indices);
+    void            DeselectRow(int index);
 
 protected: // methods
     virtual HWND        Create(Window* parent);

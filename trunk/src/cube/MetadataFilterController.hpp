@@ -61,12 +61,14 @@ private:
 
 public:     
     /*ctor*/    MetadataFilterController(ListView& listView, const uistring& metdataKey,BrowseController *browseController);
+    void        SelectAllFiltered(int rows);
 
 protected:  
     void        OnViewCreated(Window* window);
     void        OnResized(Window* window, Size size);
     void        OnSelectionChanged(ListView* listView);
     void        OnChar(Window* window,VirtualKeyCode keyCode, KeyEventFlags keyFlags);
+
 
     uistring    currentFilter;
 
@@ -78,6 +80,8 @@ protected:
     ListView&           listView;
     ModelRef            model;
     ColumnRef           mainColumn;
+
+    bool                selectionDisabled;
 };
 
 //////////////////////////////////////////////////////////////////////////////

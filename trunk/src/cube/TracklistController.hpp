@@ -69,7 +69,7 @@ public:     /*ctor*/    TracklistController(
                             musik::core::tracklist::Standard::Ptr tracklist = musik::core::tracklist::Standard::Ptr());
 
 protected:  void        OnViewCreated(Window* window);
-protected:  void        OnResized(Size size);
+protected:  void        OnResized(Window* window,Size size);
 protected:  void        OnRowActivated(ListView* listView, int row);
 protected:  void        AddColumn(const utfchar *name, const char *metakey, int size);
 

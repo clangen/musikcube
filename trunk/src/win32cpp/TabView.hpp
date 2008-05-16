@@ -130,4 +130,4 @@ WindowType* TabView::AddTab(const uistring& tabTitle, WindowType* window)
 
 //////////////////////////////////////////////////////////////////////////////
 
-}   // musik::cube::win32cpp
+}   // win32cpp

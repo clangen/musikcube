@@ -77,6 +77,7 @@ void        TracklistController::OnViewCreated(Window* window)
     this->AddColumn(_T("Artist"),"visual_artist", 100);
     this->AddColumn(_T("Album"),"album", 100);
     this->AddColumn(_T("Genre"),"visual_genre", 75);
+    this->AddColumn(_T("Duration"),"duration", 50);
     this->AddColumn(_T("BPM"),"bpm", 75);
 
     int itemHeight = listView->RowHeight();
@@ -85,6 +86,7 @@ void        TracklistController::OnViewCreated(Window* window)
     listView->EnableStripedBackground(true);
     listView->SetModel(this->model);
     listView->RowActivated.connect(this, &TracklistController::OnRowActivated);
+    listView->Resized.connect( this, &TracklistController::OnResized);
 }
 
 void        TracklistController::OnRowActivated(ListView* listView, int row)
@@ -121,4 +123,13 @@ void TracklistController::OnTracklistInfo(UINT64 tracks,UINT64 duration,UINT64 f
             this->view.infoView->sizeLabel->SetCaption( (format(_T("%.2f GB"))%((double)filesize/(double)1073741824)).str() );
         }
     }
+}
+
+void TracklistController::OnResized(Window* window, Size size){
+    int rows    = size.height/this->view.listView->RowHeight();
+    TracklistModel* model   = (TracklistModel*)this->model.get();
+    if(model && rows>10 && rows<100){
+        model->tracklist->HintNumberOfRows(rows);
+    }
+
 }

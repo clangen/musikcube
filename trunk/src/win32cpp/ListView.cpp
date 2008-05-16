@@ -987,6 +987,34 @@ int         ListView::SelectedRow()
     return this->selectedRowIndex;
 }
 
+void        ListView::SelectRows(const std::vector<int>& indices)
+{
+    std::vector<int>::const_iterator it = indices.begin();
+    for ( ; it != indices.end(); it++)
+    {
+        ListView_SetItemState(this->Handle(), *it, LVIS_FOCUSED | LVIS_SELECTED, LVIS_SELECTED);
+    }
+}
+
+void        ListView::SelectRow(int index)
+{
+    ListView_SetItemState(this->Handle(), index, LVIS_FOCUSED | LVIS_SELECTED, LVIS_SELECTED);
+}
+
+void        ListView::DeselectRows(const std::vector<int>& indices)
+{
+    std::vector<int>::const_iterator it = indices.begin();
+    for ( ; it != indices.end(); it++)
+    {
+        ListView_SetItemState(this->Handle(), *it, 0, LVIS_SELECTED);
+    }
+}
+
+void        ListView::DeselectRow(int index)
+{
+    ListView_SetItemState(this->Handle(), index, 0, LVIS_SELECTED);
+}
+
 void        ListView::SetHotCell(int rowIndex, ColumnRef column)
 {
     bool rowChanged = false, columnChanged = false;
