@@ -99,21 +99,6 @@ HWND        ProgressBar::Create(Window* parent)
 
 LRESULT     ProgressBar::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
-    switch (message)
-    {
-    case WM_COMMAND:
-        {
-            WORD notifyHeader = HIWORD(wParam);
-            switch (notifyHeader)
-            {
-            /*case EN_CHANGE:
-                this->OnChanged();
-                return 0; // 0 = processed*/
-            }
-        }
-        break;
-    }
-
     return this->DefaultWindowProc(message, wParam, lParam);
 }
 
@@ -162,10 +147,9 @@ void        ProgressBar::StartMarquee(bool set, unsigned int delay)
 ///The minimum value (unsigned)
 ///\param max
 ///The maximum value (unsigned)
-DWORD       ProgressBar::SetRange(unsigned int min, unsigned int max)
+void        ProgressBar::SetRange(unsigned int min, unsigned int max)
 {
-    DWORD prevrange = this->SendMessage(PBM_SETRANGE, 0, MAKELPARAM(min,max));
-    return prevrange;
+    this->SendMessage(PBM_SETRANGE, 0, MAKELPARAM(min,max));
 }
 
 ///\brief

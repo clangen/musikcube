@@ -65,7 +65,7 @@ using namespace musik::cube;
 
     // Connect the local library to the 
     this->LibraryCallbackTimer.ConnectToWindow(&mainWindow);
-    this->LibraryCallbackTimer.OnTimout.connect(this,&MainWindowController::QueryQueueLoop);
+    this->LibraryCallbackTimer.OnTimeout.connect(this,&MainWindowController::QueryQueueLoop);
     musik::core::LibraryFactory::GetCurrentLibrary()->OnQueryQueueStart.connect(this,&MainWindowController::QueryQueueStart);
     musik::core::LibraryFactory::GetCurrentLibrary()->OnQueryQueueEnd.connect(this,&MainWindowController::QueryQueueEnd);
 

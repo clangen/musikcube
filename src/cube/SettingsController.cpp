@@ -67,7 +67,7 @@ void        SettingsController::OnViewCreated(Window* window)
     this->settingsView.removePathButton->Pressed.connect(this,&SettingsController::OnRemovePath);
 
     this->libraryStatusTimer.ConnectToWindow(&this->settingsView);
-    this->libraryStatusTimer.OnTimout.connect(this,&SettingsController::OnLibraryStatus);
+    this->libraryStatusTimer.OnTimeout.connect(this,&SettingsController::OnLibraryStatus);
     this->libraryStatusTimer.Start();
 
     this->syncPathController.reset(new musik::cube::settings::SyncPathController(*this->settingsView.pathList,this));

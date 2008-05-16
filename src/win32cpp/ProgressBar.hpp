@@ -63,7 +63,7 @@ public:     // constructors, methods
     void SetSmoothStyle();
     void SetVerticalStyle();
     void StartMarquee(bool set, unsigned int delay);
-    DWORD SetRange(unsigned int min, unsigned int max);
+    void SetRange(unsigned int min, unsigned int max);
     void SetPos(int pos);
     void SetStepIncrement(int inc);
     void Step();

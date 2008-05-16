@@ -69,10 +69,16 @@ utfstring Indexer::GetStatus(){
             sStatus    = boost::str( boost::utfformat(UTF("Counting files: %1%"))%this->iNOFFiles );
             break;
         case 2:
-            sStatus    = boost::str( boost::utfformat(UTF("Indexing: %.3d"))%(this->iProgress*100)) + UTF("%");
+            sStatus    = boost::str( boost::utfformat(UTF("Indexing: %.2f"))%(this->iProgress*100)) + UTF("%");
             break;
         case 3:
-            sStatus    = boost::str( boost::utfformat(UTF("Cleaning up: %.3d"))%(this->iProgress*100)) + UTF("%");
+            sStatus    = boost::str( boost::utfformat(UTF("Removing old files: %.2f"))%(this->iProgress*100)) + UTF("%");
+            break;
+        case 4:
+            sStatus    = UTF("Cleaning up.");
+            break;
+        case 5:
+            sStatus    = UTF("Optimizing.");
             break;
     }
     return sStatus;
@@ -192,6 +198,7 @@ void Indexer::Synchronize(){
     {
         boost::mutex::scoped_lock oLock(this->oProgressMutex);
         this->iStatus    = 1;
+        this->iProgress  = 0.0;
     }
 
     for(int i(0);i<aPaths.size();++i){
@@ -203,6 +210,7 @@ void Indexer::Synchronize(){
     {
         boost::mutex::scoped_lock oLock(this->oProgressMutex);
         this->iStatus    = 2;
+        this->iProgress  = 0.0;
     }
 
     for(int i(0);i<aPaths.size();++i){
@@ -214,7 +222,7 @@ void Indexer::Synchronize(){
 
     {
         boost::mutex::scoped_lock oLock(this->oProgressMutex);
-        this->iProgress    = 1.0;
+        this->iProgress    = 0.0;
         this->iStatus    = 3;
     }
 
@@ -222,9 +230,24 @@ void Indexer::Synchronize(){
     if(!this->Restarted() && !this->Exit()){
         this->SyncDelete(aPathIds);
     }
+
+    {
+        // Cleanup status
+        boost::mutex::scoped_lock oLock(this->oProgressMutex);
+        this->iProgress    = 0.0;
+        this->iStatus    = 4;
+    }
     if(!this->Restarted() && !this->Exit()){
         this->SyncCleanup();
     }
+
+    {
+        // Optimize status
+        boost::mutex::scoped_lock oLock(this->oProgressMutex);
+        this->iProgress    = 0.0;
+        this->iStatus    = 5;
+    }
+
     if(!this->Restarted() && !this->Exit()){
         this->SyncOptimize();
     }
@@ -484,6 +507,7 @@ void Indexer::SyncDelete(std::vector<DBINT> aPaths){
 
             while( stmt.Step()==db::ReturnCode::Row && !this->Exit() && !this->Restarted() ){
                 // Check to see if file still exists
+
                 bool bRemove(true);
                 utfstring sFolder   = stmt.ColumnTextUTF(1);
 

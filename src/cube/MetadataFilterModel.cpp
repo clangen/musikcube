@@ -91,8 +91,12 @@ void        MetadataFilterModel::OnMetadata(musik::core::MetadataValueVector* me
 }
 
 void MetadataFilterModel::OnChar(wchar_t key){
-/*    if(key){
-        this->filter    += key;
+    if(key){
+        if(key==8){
+            this->filter.resize(this->filter.size()-1);
+        }else{
+            this->filter    += key;
+        }
 
         // Lets filter
         this->metadataFiltered.clear();
@@ -103,5 +107,8 @@ void MetadataFilterModel::OnChar(wchar_t key){
         }
     }
     this->SetRowCount(0);
-    this->SetRowCount(this->metadataFiltered.size()+1);*/
+    this->SetRowCount(this->metadataFiltered.size()+1);
+
+    this->controller->SelectAllFiltered(this->metadataFiltered.size()+1);
+
 }

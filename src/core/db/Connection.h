@@ -43,6 +43,7 @@
 
 #include <map>
 #include <boost/utility.hpp>
+#include <boost/thread/mutex.hpp>
 
 
 namespace musik{ namespace core{ namespace db{
@@ -84,6 +85,8 @@ namespace musik{ namespace core{ namespace db{
             int transactionCounter;            
 
             sqlite3 *connection;
+
+            boost::mutex mutex;
 
     };
 

@@ -40,30 +40,41 @@
 #include <sigslot/sigslot.h>
 #include <win32cpp/Window.hpp>
 
+//////////////////////////////////////////////////////////////////////////////
+
 namespace win32cpp {
-    class Timer : public sigslot::has_slots<>{
-        public:
-            Timer(unsigned int timeout);
-            ~Timer(void);
 
-            void ConnectToWindow(win32cpp::Window *window);
+//////////////////////////////////////////////////////////////////////////////
 
-            bool Start();
-            bool Stop();
+class Timer : public EventHandler
+{
+public: // types
+    typedef sigslot::signal0<> TimeoutEvent;
 
-            typedef sigslot::signal0<> TimeoutEvent;
-            TimeoutEvent OnTimout;
+public: // events
+    TimeoutEvent OnTimeout;
 
-        private:
-            unsigned int timerId;
-            unsigned int timeout;
-            HWND wnd;
+public: // ctor, dtor
+    Timer(unsigned timeout);
+    ~Timer();
 
-            void OnTimerMsg(unsigned int timeoutId);
-    };
+public: // methods
+    void ConnectToWindow(Window *window);
+    bool Start();
+    bool Stop();
 
-    typedef boost::shared_ptr<win32cpp::Timer> TimerPtr;
+private: // methods
+    void OnTimerTimeout(unsigned int timeoutId);
 
-}
+private: // instance data
+    unsigned timerId;
+    unsigned timeout;
+    HWND wnd;
+};
 
+//////////////////////////////////////////////////////////////////////////////
+
+}   // namespace
+
+//////////////////////////////////////////////////////////////////////////////
 

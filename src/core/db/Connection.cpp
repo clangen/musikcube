@@ -160,9 +160,14 @@ int Connection::Close(){
 //////////////////////////////////////////
 int Connection::Execute(const char* sql){
     sqlite3_stmt *stmt  = NULL;
-    if(sqlite3_prepare_v2(this->connection,sql,-1,&stmt,NULL)!=SQLITE_OK){
-        sqlite3_finalize(stmt);
-        return ReturnCode::Error;
+
+    // Prepaire seems to give errors when interrupted
+    {
+        boost::mutex::scoped_lock lock(this->mutex);
+        if(sqlite3_prepare_v2(this->connection,sql,-1,&stmt,NULL)!=SQLITE_OK){
+            sqlite3_finalize(stmt);
+            return ReturnCode::Error;
+        }
     }
 
     // Execute the statement
@@ -193,9 +198,12 @@ int Connection::Execute(const char* sql){
 //////////////////////////////////////////
 int Connection::Execute(const wchar_t* sql){
     sqlite3_stmt *stmt  = NULL;
-    if(sqlite3_prepare16_v2(this->connection,sql,-1,&stmt,NULL)!=SQLITE_OK){
-        sqlite3_finalize(stmt);
-        return ReturnCode::Error;
+    {
+        boost::mutex::scoped_lock lock(this->mutex);
+        if(sqlite3_prepare16_v2(this->connection,sql,-1,&stmt,NULL)!=SQLITE_OK){
+            sqlite3_finalize(stmt);
+            return ReturnCode::Error;
+        }
     }
 
     // Execute the statement
@@ -280,6 +288,8 @@ sqlite3_stmt *Connection::GetCachedStatement(const char* sql){
     StatementCache::iterator stmt   = this->cachedStatements.find(sql);
     if(stmt==this->cachedStatements.end()){
 
+        boost::mutex::scoped_lock lock(this->mutex);
+
         int err = sqlite3_prepare_v2(this->connection,sql,-1,&newStmt,NULL);
 /*        #ifdef _DEBUG
             if(err!=0){
@@ -325,5 +335,6 @@ void Connection::ReturnCachedStatement(const char* sql,sqlite3_stmt *stmt){
 ///Interrupts the current running statement(s)
 //////////////////////////////////////////
 void Connection::Interrupt(){
+    boost::mutex::scoped_lock lock(this->mutex);
     sqlite3_interrupt(this->connection);
 }

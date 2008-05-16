@@ -83,4 +83,4 @@ typedef sigslot::has_slots<> EventHandler;
 
 //////////////////////////////////////////////////////////////////////////////
 
-} // namespace musik::cube::win32cpp
+} // namespace win32cpp
