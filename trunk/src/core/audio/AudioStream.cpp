@@ -5,11 +5,12 @@
 #include <core/audio/IAudioSource.h>
 #include <core/audio/Transport.h>
 
+using namespace musik::core;
 using namespace musik::core::audio;
 
 unsigned long AudioStream::streamsCreated = 0;
 
-AudioStream::AudioStream(IAudioSource* source, IAudioOutput* output, Transport* owner) 
+AudioStream::AudioStream(IAudioSource* source, IAudioOutput* output, Transport* owner, TrackPtr track) 
 : audioSource(source)
 , transport(owner)
 , playState(PlayStateUnknown)
@@ -19,6 +20,7 @@ AudioStream::AudioStream(IAudioSource* source, IAudioOutput* output, Transport* 
 , isFinished(false)
 , isLast(false)
 , samplesOut(0)
+, track(track)
 {
     this->output = output;
 	this->output->SetCallback(this);
@@ -136,7 +138,7 @@ bool			AudioStream::GetBuffer(float * pAudioBuffer, unsigned long NumSamples)
 			//used for repeatnone where this is the end of line. 
 			if(pos >= len && this->isLast)
 			{
-				transport->EventPlaybackStoppedOk();
+				transport->EventPlaybackStoppedOk(this->track);
 
                 this->playState = PlayStateStopped;
 			}
@@ -219,7 +221,7 @@ bool    AudioStream::SetPositionMs(unsigned long ms)
 
     if(this->fadeState != FadeStateNone)
 	{
-		this->volume		= 1.0;
+		this->volume    = 1.0;
         this->fadeState = FadeStateNone;
 	}
 
@@ -242,7 +244,7 @@ utfstring AudioStream::ToString() const
 {
     std::utfstringstream ss;
 
-    ss << this->streamId << " " << this->audioSource->GetSource();
+    ss << this->streamId << " " << this->track->GetValue("path");
 
     return ss.str();
 }

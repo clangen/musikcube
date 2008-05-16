@@ -60,10 +60,10 @@ void        TransportView::OnCreated()
     topRowLayout->SetDefaultChildFill(false);
     topRowLayout->SetDefaultChildAlignment(ChildAlignMiddle);
 
-    this->prevButton = topRowLayout->AddChild(new Button(_T("prev")));
-    this->playButton = topRowLayout->AddChild(new Button(_T("play")));
-    this->stopButton = topRowLayout->AddChild(new Button(_T("stop")));
-    this->nextButton = topRowLayout->AddChild(new Button(_T("next")));
+    this->prevButton = topRowLayout->AddChild(new Button(_T("Prev")));
+    this->playButton = topRowLayout->AddChild(new Button(_T("Play")));
+    this->stopButton = topRowLayout->AddChild(new Button(_T("Stop")));
+    this->nextButton = topRowLayout->AddChild(new Button(_T("Next")));
     //
     this->prevButton->Resize(50, 28);
     this->playButton->Resize(50, 28);

@@ -58,8 +58,8 @@ public:
     /*ctor*/    TransportController(TransportView& transportView);
 
 protected:
-    void        OnViewCreated(Window* window);
-    void        OnViewResized(Window* window, Size size);
+    void    OnViewCreated(Window* window);
+    void    OnViewResized(Window* window, Size size);
 
     void    OnPlayPressed(Button* button);
     void    OnStopPressed(Button* button);
@@ -68,12 +68,12 @@ protected:
     void    OnVolumeSliderChange(Trackbar* trackbar);
     void    OnTrackChange(musik::core::TrackPtr track);
     void    OnPlaybackSliderChange(Trackbar* trackBar);
-protected:  void    OnPlaybackSliderTimerTimedOut();
-protected:  void    OnPlaybackSliderMouseDown(Window* windows, MouseEventFlags flags, Point point);
-protected:  void    OnPlaybackSliderMouseUp(Window* windows, MouseEventFlags flags, Point point);
+    void    OnPlaybackSliderTimerTimedOut();
+    void    OnPlaybackSliderMouseDown(Window* windows, MouseEventFlags flags, Point point);
+    void    OnPlaybackSliderMouseUp(Window* windows, MouseEventFlags flags, Point point);
 
-    void    OnPlaybackStarted();
-    void    OnPlaybackStopped();
+    void    OnPlaybackStarted(musik::core::TrackPtr track);
+    void    OnPlaybackStopped(musik::core::TrackPtr track);
     void    OnPlaybackPaused();
     void    OnPlaybackResumed(); 
 
@@ -82,10 +82,11 @@ protected:  void    OnPlaybackSliderMouseUp(Window* windows, MouseEventFlags fla
     bool    paused;
     bool    playing;
 
-protected:  Timer   playbackSliderTimer;
-protected:  bool    playbackSliderMouseDown;
+    Timer   playbackSliderTimer;
+    bool    playbackSliderMouseDown;
 
-protected:  win32cpp::uistring FormatTime(unsigned long ms);
+    musik::core::TrackPtr   displayedTrack;
+    win32cpp::uistring FormatTime(unsigned long ms);
 };
 
 //////////////////////////////////////////////////////////////////////////////
