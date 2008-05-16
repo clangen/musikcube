@@ -62,8 +62,6 @@ namespace musik{ namespace core{
             bool Startup(utfstring setLibraryPath);
             void ThreadLoop();
 
-            int iTimeout;
-
             utfstring GetStatus();
             void RestartSync(bool bNewRestart=true);
             bool Restarted();
