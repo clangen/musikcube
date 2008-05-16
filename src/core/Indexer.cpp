@@ -40,6 +40,7 @@
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>
 #include <core/PluginFactory.h>
+#include <core/Preferences.h>
 
 #include <boost/filesystem.hpp>
 #include <boost/thread/xtime.hpp>
@@ -48,7 +49,12 @@
 
 using namespace musik::core;
 
-Indexer::Indexer(void) : oThread(NULL),iTimeout(3600),iProgress(0),iStatus(0){
+Indexer::Indexer(void) 
+:oThread(NULL)
+,iProgress(0)
+,iStatus(0)
+,bRestart(false)
+{
 }
 
 Indexer::~Indexer(void){
@@ -423,26 +429,46 @@ void Indexer::SyncDirectory(utfstring &sFolder,DBINT iParentFolderId,DBINT iPath
 //////////////////////////////////////////
 void Indexer::ThreadLoop(){
 
+    bool firstTime(true);
 
     while(!this->Exit()){
 
-        this->SynchronizeStart();
+        // Get preferences
+        Preferences prefs("Indexer");
 
-        // Database should only be open when synchronizing
-        this->dbConnection.Open(this->database.c_str(),0,4096);
-        this->RestartSync(false);
-        this->Synchronize();
-        this->dbConnection.Close();
+        if(!firstTime || (firstTime && prefs.GetBool("SyncOnStartup",true))){
 
-        this->SynchronizeEnd();
+            this->SynchronizeStart();
 
+            int dbCache = prefs.GetInt("DatabaseCache",4096);
 
-        boost::xtime oWaitTime;
-        boost::xtime_get(&oWaitTime, boost::TIME_UTC);
-        oWaitTime.sec += this->iTimeout;
+            // Database should only be open when synchronizing
+            this->dbConnection.Open(this->database.c_str(),0,dbCache);
+            this->RestartSync(false);
+            this->Synchronize();
+            this->dbConnection.Close();
 
-        if(!this->Restarted()){
-            this->NotificationTimedWait(oWaitTime);
+            this->SynchronizeEnd();
+        }
+        firstTime   = false;
+
+        
+        int syncTimeout = prefs.GetInt("SyncTimeout",3600);
+
+        if(syncTimeout){
+            // Sync every "syncTimeout" second
+            boost::xtime oWaitTime;
+            boost::xtime_get(&oWaitTime, boost::TIME_UTC);
+            oWaitTime.sec += syncTimeout;
+
+            if(!this->Restarted()){
+                this->NotificationTimedWait(oWaitTime);
+            }
+        }else{
+            // No continous syncing
+            if(!this->Restarted()){
+                this->NotificationWait();
+            }
         }
 
     }

@@ -37,6 +37,7 @@
 #include "pch.hpp"
 #include <core/Library/LocalDB.h>
 #include <core/Query/Base.h>
+#include <core/Preferences.h>
 
 #include <boost/bind.hpp>
 
@@ -239,8 +240,10 @@ void Library::LocalDB::CreateDatabase(){
 //////////////////////////////////////////
 void Library::LocalDB::ThreadLoop(){
 
+    Preferences prefs("Library");
+
     utfstring database(this->GetDBPath());
-    this->db.Open(database.c_str(),0,4096);
+    this->db.Open(database.c_str(),0,prefs.GetInt("DatabaseCache",4096));
 
     this->CreateDatabase();
 
