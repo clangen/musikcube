@@ -49,11 +49,11 @@ ConsoleUI::ConsoleUI()
 : shouldQuit(false)
 , audioEventHandler(this)
 {
-    this->transport.EventPlaybackStartedOk.connect(&audioEventHandler, &DummyAudioEventHandler::OnPlaybackStartedOk);
-    this->transport.EventPlaybackStartedFail.connect(&audioEventHandler, &DummyAudioEventHandler::OnPlaybackStartedFail);
+//    this->transport.EventPlaybackStartedOk.connect(&audioEventHandler, &DummyAudioEventHandler::OnPlaybackStartedOk);
+//    this->transport.EventPlaybackStartedFail.connect(&audioEventHandler, &DummyAudioEventHandler::OnPlaybackStartedFail);
 
-    this->transport.EventPlaybackStoppedOk.connect(&audioEventHandler, &DummyAudioEventHandler::OnPlaybackStoppedOk);
-    this->transport.EventPlaybackStoppedFail.connect(&audioEventHandler, &DummyAudioEventHandler::OnPlaybackStoppedFail);
+//    this->transport.EventPlaybackStoppedOk.connect(&audioEventHandler, &DummyAudioEventHandler::OnPlaybackStoppedOk);
+//    this->transport.EventPlaybackStoppedFail.connect(&audioEventHandler, &DummyAudioEventHandler::OnPlaybackStoppedFail);
 
     this->transport.EventVolumeChangedOk.connect(&audioEventHandler, &DummyAudioEventHandler::OnVolumeChangedOk);
     this->transport.EventVolumeChangedFail.connect(&audioEventHandler, &DummyAudioEventHandler::OnVolumeChangedFail);
@@ -171,7 +171,7 @@ void ConsoleUI::PlayFile(Args args)
 
     for (int i = 0; i < repeat; ++i)
     {
-        transport.Start(filename.c_str());
+//        transport.Start(filename.c_str()); //TODO: fix to use TrackPtr
         if (delay)
         {
             Sleep(delay);

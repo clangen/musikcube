@@ -4,6 +4,7 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
 
+#include <core/Track.h>
 #include <core/audio/AudioPacketizer.h>
 #include <core/audio/IAudioCallBack.h>
 
@@ -22,7 +23,7 @@ public:
 
     static const unsigned long UnknownLength = ULONG_MAX;
 
-    AudioStream(IAudioSource* source, IAudioOutput* output, Transport *owner);
+    AudioStream(IAudioSource* source, IAudioOutput* output, Transport *owner, musik::core::TrackPtr track);
     ~AudioStream();
 
     bool            Start();
@@ -39,6 +40,8 @@ public:
     bool            SetPositionMs(unsigned long ms);
     bool            isFinished;
 
+    musik::core::TrackPtr   Track() const { return this->track; };
+
     unsigned long GetStreamId() const { return this->streamId; };
     utfstring ToString() const;
 
@@ -47,6 +50,8 @@ private:
     IAudioSource*   audioSource;
     IAudioOutput*   output;
     AudioPacketizer packetizer;
+
+    musik::core::TrackPtr   track;
 
     PlayState       playState;
     FadeState       fadeState;

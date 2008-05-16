@@ -98,13 +98,10 @@ void PlaybackQueue::Play(){
     TrackPtr track(this->CurrentTrack());
 
     if(track){
-        // If current track exists
-        utfstring path(track->GetValue("path"));
-
         this->Stop();
 
         this->playing   = true;
-        this->transport.Start(path);
+        this->transport.Start(track); 
 
         this->paused    = false;
     }

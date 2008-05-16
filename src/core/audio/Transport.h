@@ -41,6 +41,7 @@
 #include <sigslot/sigslot.h>
 
 #include <core/config.h>
+#include <core/Track.h>
 
 namespace musik { namespace core { namespace audio {
 
@@ -64,14 +65,15 @@ public:
     Transport();
     ~Transport();
 
-    ///\brief Start a new audiostream based on a file path or URL.
-    void            Start(const utfstring path);
+    ///\brief Start a new audiostream based on a Track.
+    ///\param trackPtr Pointer to the track
+    void    Start(TrackPtr  trackPtr);
     ///\brief Stop the active stream.  All resources used are released.
-    void            Stop();
+    void    Stop();
     ///\brief Pause the active stream.  All resources stay in use.
-    bool            Pause();
+    bool    Pause();
     ///\brief Resume the active stream
-    bool            Resume();
+    bool    Resume();
 
     ///\brief Jump to a given position in the active stream.
     ///\param position New position in milliseconds
@@ -102,8 +104,9 @@ private:
     OutputSupplierList  registeredOutputSuppliers;
 
     std::vector<AudioStream*> openStreams;
+    AudioStream*    activeStream;
 
-    AudioStream*    CreateStream(const utfstring sourceString);
+    AudioStream*    CreateStream(TrackPtr  trackPtr);
     void            RemoveFinishedStreams();
 
     short currVolume;
@@ -111,13 +114,13 @@ private:
 // Signals
 public:  
     ///\brief Emitted when Start() completed successfully
-    sigslot::signal0<>  EventPlaybackStartedOk;
+    sigslot::signal1<TrackPtr>  EventPlaybackStartedOk;
     ///\brief Emitted when Start() failed
-    sigslot::signal0<>  EventPlaybackStartedFail;
+    sigslot::signal1<TrackPtr>  EventPlaybackStartedFail;
     ///\brief Emitted when Stop() completed successfully
-    sigslot::signal0<>  EventPlaybackStoppedOk;
+    sigslot::signal1<TrackPtr>  EventPlaybackStoppedOk;
     ///\brief Emitted when Stop() failed
-    sigslot::signal0<>  EventPlaybackStoppedFail;
+    sigslot::signal1<TrackPtr>  EventPlaybackStoppedFail;
 
     ///\brief Emitted when Pause() completed successfully
     sigslot::signal0<>  EventPlaybackPausedOk;

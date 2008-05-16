@@ -193,11 +193,11 @@ void TransportController::OnPlaybackSliderMouseUp(Window* windows, MouseEventFla
     this->playbackSliderMouseDown = false;
 }
 
-void TransportController::OnPlaybackStarted()
+void TransportController::OnPlaybackStarted(musik::core::TrackPtr track)
 {
     if(!win32cpp::ApplicationThread::InMainThread())
     {
-        win32cpp::ApplicationThread::Call0(this, &TransportController::OnPlaybackStarted);
+        win32cpp::ApplicationThread::Call1(this, &TransportController::OnPlaybackStarted, track);
         return;
     }
 
@@ -205,16 +205,20 @@ void TransportController::OnPlaybackStarted()
     this->transportView.playButton->SetCaption(_T("Pause"));
 
     this->transportView.timeDurationLabel->SetCaption(this->FormatTime(musik::core::PlaybackQueue::Instance().Transport().TrackLength()));
-
+   // this->transportView.timeDurationLabel->SetCaption(track->GetValue("duration"));
+    
     this->transportView.playbackSlider->SetPosition(0);
+    
     this->playbackSliderTimer.Start();
+
+    this->displayedTrack = track;
 }
 
-void TransportController::OnPlaybackStopped()
+void TransportController::OnPlaybackStopped(musik::core::TrackPtr track)
 {
     if(!win32cpp::ApplicationThread::InMainThread())
     {
-        win32cpp::ApplicationThread::Call0(this, &TransportController::OnPlaybackStopped);
+        win32cpp::ApplicationThread::Call1(this, &TransportController::OnPlaybackStopped, track);
         return;
     }
 
@@ -222,11 +226,14 @@ void TransportController::OnPlaybackStopped()
     this->paused = false;
     this->transportView.playButton->SetCaption(_T("Play"));
 
-    this->transportView.playbackSlider->SetPosition(0);
-    this->playbackSliderTimer.Stop();  
-    
-    this->transportView.timeElapsedLabel->SetCaption(_T("0:00"));
-    this->transportView.timeDurationLabel->SetCaption(_T("0:00"));
+    if (this->displayedTrack->id == track->id) // For out of order signals
+    {
+        this->transportView.playbackSlider->SetPosition(0);
+        this->playbackSliderTimer.Stop();  
+        
+        this->transportView.timeElapsedLabel->SetCaption(_T("0:00"));
+        this->transportView.timeDurationLabel->SetCaption(_T("0:00"));
+    }
 }
 
 void TransportController::OnPlaybackPaused()

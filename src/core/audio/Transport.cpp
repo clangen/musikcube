@@ -41,10 +41,13 @@
 #include <core/audio/IAudioOutput.h>
 #include <core/audio/IAudioSource.h>
 
+
+using namespace musik::core;
 using namespace musik::core::audio;
 
-Transport::Transport() :
-    currVolume(100) //TODO: preference or previous value
+Transport::Transport() 
+: currVolume(100) //TODO: preference or previous value
+, activeStream(NULL)
 {
     this->registeredSourceSuppliers = PluginFactory::Instance().QueryInterface<
         IAudioSourceSupplier,
@@ -63,15 +66,17 @@ Transport::~Transport()
         delete this->openStreams[i];
     }
     this->openStreams.clear();
+
+    this->activeStream = NULL;
 }
 
-void Transport::Start(const utfstring path)
+void Transport::Start(TrackPtr trackPtr)
 {
     this->RemoveFinishedStreams();
 
     bool success = false;
 
-    AudioStream * audioStream = this->CreateStream(path.c_str());
+    AudioStream * audioStream = this->CreateStream(trackPtr);
 
     if (audioStream != NULL)
     {
@@ -87,21 +92,24 @@ void Transport::Start(const utfstring path)
 
     if (success)
     {
-        this->EventPlaybackStartedOk();
+        this->activeStream = audioStream;
+        this->EventPlaybackStartedOk(trackPtr);
     }
     else
     {
-        this->EventPlaybackStartedFail();
+        this->EventPlaybackStartedFail(trackPtr);
     }
 }
 
 void Transport::Stop()
 {
+    //TODO: review
+
     this->RemoveFinishedStreams();
 
     if (this->openStreams.empty())
     {
-        this->EventPlaybackStoppedFail();
+//        this->EventPlaybackStoppedFail(); //TODO: still necessary ?
         return;
     }
 
@@ -109,15 +117,18 @@ void Transport::Stop()
     
     if (stream->Stop())
     {
+        if (stream == this->activeStream)
+            this->activeStream = NULL;
+
+        this->EventPlaybackStoppedOk(stream->Track());        
+        
         delete stream;
 
         this->openStreams.erase(this->openStreams.begin());
-
-        this->EventPlaybackStoppedOk();
     }
     else
     {
-        this->EventPlaybackStoppedFail();
+        this->EventPlaybackStoppedFail(stream->Track());
     }
 }
 
@@ -175,14 +186,14 @@ void Transport::SetTrackPosition(unsigned long position)
 
 unsigned long Transport::TrackPosition() const
 {
-    if (this->openStreams.size() > 0)   return this->openStreams[0]->PositionMs();
-    else                                return 0;
+    if (this->activeStream)     return this->activeStream->PositionMs(); 
+    else                        return 0;
 }
 
 unsigned long Transport::TrackLength() const
 {
-    if (this->openStreams.size() > 0)   return this->openStreams[0]->LengthMs();
-    else                                return 0;
+    if (this->activeStream)   return this->openStreams[0]->LengthMs();
+    else                      return 0;
 }
 
 void Transport::SetVolume(short volume)
@@ -226,7 +237,7 @@ AudioStreamOverview Transport::StreamsOverview() const
 	return overview;
 }
 
-AudioStream* Transport::CreateStream(const utfstring sourcePath)
+AudioStream* Transport::CreateStream(TrackPtr  trackPtr)
 {
     boost::shared_ptr<IAudioSourceSupplier> supplier;
     IAudioSource* audioSource;
@@ -238,14 +249,16 @@ AudioStream* Transport::CreateStream(const utfstring sourcePath)
     }
 
     IAudioOutput* audioOutput =
-        this->registeredOutputSuppliers[0]->CreateAudioOutput();  //TODO: deal with multiple outputs simultaneously
+        this->registeredOutputSuppliers[0]->CreateAudioOutput();  
+
+    const utfchar* filePath = trackPtr->GetValue("path");
 
     SourceSupplierList::const_iterator it;
     for(it = this->registeredSourceSuppliers.begin(); it != this->registeredSourceSuppliers.end(); it++)
     {
         supplier = *it;
 
-        if (supplier->CanHandle(sourcePath.c_str()))
+        if (supplier->CanHandle(filePath))
         {
             break;
         }
@@ -255,9 +268,9 @@ AudioStream* Transport::CreateStream(const utfstring sourcePath)
     {
         audioSource = supplier->CreateAudioSource();
 	
-        if (audioSource != NULL && audioSource->Open(sourcePath.c_str()))
+        if (audioSource != NULL && audioSource->Open(filePath))
 	    {
-		    audioStream = new AudioStream(audioSource, audioOutput, this);
+		    audioStream = new AudioStream(audioSource, audioOutput, this, trackPtr);
         }
     }
 
