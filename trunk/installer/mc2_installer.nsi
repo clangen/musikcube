@@ -20,12 +20,13 @@ Name "${PROJECT_NAME} ${SUB_NAME}"
 
 ShowInstDetails show	;show/hide
 
-;!include "LanguageStrings.nsh"
+!include "LanguageStrings.nsh"
 !insertmacro MUI_LANGUAGE "English"
 
 InstallDir "$PROGRAMFILES\${INSTALL_DIR}"
 InstallDirRegKey HKCU "Software\${INSTALL_DIR}" ""
 
+!insertmacro MUI_PAGE_LICENSE "..\LICENSE.txt"
 !insertmacro MUI_PAGE_DIRECTORY
 ;!insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_INSTFILES
@@ -41,6 +42,7 @@ Section "mC2installation" main
 
 	SetOutPath "$INSTDIR"
 	File /r "..\bin\release\mC2.exe"
+	File /r "..\LICENSE.txt"
 
 	SetOutPath "$INSTDIR\plugins"
 	File /r "..\bin\release\plugins\*.dll"
