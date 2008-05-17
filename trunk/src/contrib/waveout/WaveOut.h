@@ -37,7 +37,7 @@ public: unsigned long GetChannels()     const   { return m_waveFormatPCMEx.Forma
 public: unsigned long GetBlockSize()    const   { return m_BlockSize; }
 //TODO: decide how to set this when integrating with mC2
 public: unsigned long GetOutputDevice() const   { return WAVE_MAPPER; }; 
-public: unsigned long GetBufferSizeMs() const   { return 300;         };
+public: unsigned long GetBufferSizeMs() const   { return 1500;         };
 
 private: unsigned long ThreadProc(void);
 
