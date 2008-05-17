@@ -75,6 +75,8 @@ void        MainMenuController::OnHelpAbout(MenuItemRef menuItem)
     names.push_back(_T("  - avatar\n"));
     names.push_back(_T("  - bjorn\n"));
     names.push_back(_T("  - doep\n"));
+    names.push_back(_T("  - naaina\n"));
+    names.push_back(_T("  - Jooles\n"));
 
     std::random_shuffle(names.begin(), names.end());
 
@@ -85,7 +87,8 @@ void        MainMenuController::OnHelpAbout(MenuItemRef menuItem)
     }
 
     uistring message =
-        _T("mC2 and win32cpp are copyright (c) Casey Langen 2007-2008\n\n")
+        _T("mC2 are copyright (c) mC2 Team 2007-2008\n")
+        _T("win32cpp are copyright (c) Casey Langen 2007-2008\n\n")
         _T("Credits:\n")
         _T("%1%\n")
         _T("mC2 wouldn't be possible without these file projects:\n")
@@ -93,7 +96,7 @@ void        MainMenuController::OnHelpAbout(MenuItemRef menuItem)
         _T("  - boost (http://www.boost.org)\n")
         _T("  - sqlite3 (http://www.sqlite.org)\n")
         _T("  - taglib (http://developer.kde.org/~wheeler/taglib)\n\n")
-        _T("Version 0.0.0");
+        _T("Version 2 developer milestone 1");
 
     message = (boost::wformat(message.c_str()) % randomNames).str();
 
