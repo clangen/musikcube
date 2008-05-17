@@ -205,7 +205,6 @@ void TransportController::OnPlaybackStarted(musik::core::TrackPtr track)
     this->transportView.playButton->SetCaption(_T("Pause"));
 
     this->transportView.timeDurationLabel->SetCaption(this->FormatTime(musik::core::PlaybackQueue::Instance().Transport().TrackLength()));
-   // this->transportView.timeDurationLabel->SetCaption(track->GetValue("duration"));
     
     this->transportView.playbackSlider->SetPosition(0);
     
@@ -222,12 +221,13 @@ void TransportController::OnPlaybackStopped(musik::core::TrackPtr track)
         return;
     }
 
-    this->playing = false;
-    this->paused = false;
-    this->transportView.playButton->SetCaption(_T("Play"));
-
     if (this->displayedTrack->id == track->id) // For out of order signals
     {
+        this->playing = false;
+        this->paused = false;
+
+        this->transportView.playButton->SetCaption(_T("Play"));
+
         this->transportView.playbackSlider->SetPosition(0);
         this->playbackSliderTimer.Stop();  
         

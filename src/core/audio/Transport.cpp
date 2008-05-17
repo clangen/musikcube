@@ -192,7 +192,7 @@ unsigned long Transport::TrackPosition() const
 
 unsigned long Transport::TrackLength() const
 {
-    if (this->activeStream)   return this->openStreams[0]->LengthMs();
+    if (this->activeStream)   return this->activeStream->LengthMs();
     else                      return 0;
 }
 
