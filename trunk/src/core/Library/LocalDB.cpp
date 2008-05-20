@@ -57,6 +57,8 @@ Library::LocalDB::LocalDB(void){
 }
 
 Library::LocalDB::~LocalDB(void){
+    this->Exit(true);
+    this->threads.join_all();
 }
 
 //////////////////////////////////////////
