@@ -3,7 +3,7 @@
 
 = Tracks MetaKeys =
 
-|| *KetaKey* || *Description* || *id3v2 frame* ||
+|| *MetaKey* || *Description* || *id3v2 frame* ||
 || album || Album || TALB ||
 || artist || Artists || TPE1, TPE2 ||
 || bpm || Beats Per Minutes || TBPM ||
