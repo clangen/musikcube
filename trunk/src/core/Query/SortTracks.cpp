@@ -61,10 +61,12 @@ bool Query::SortTracks::ParseQuery(Library::Base *oLibrary,db::Connection &db){
     std::vector<int> sortFieldsMetakeyId;
 
     // Create smart SQL statment
-    std::string selectSQL("SELECT tt.track_id FROM ");
-    std::string selectSQLTables("temp_track_sort tt,tracks t");
-    std::string selectSQLWhere(" WHERE tt.track_id=t.id ");
-    std::string selectSQLGroup(" GROUP BY tt.id ");
+    std::string selectSQL("SELECT temp_track_sort.track_id ");
+    std::string selectSQLTables("temp_track_sort LEFT OUTER JOIN tracks ON tracks.id=temp_track_sort.track_id ");
+//    std::string selectSQLWhere(" WHERE 1=1 ");
+    std::string selectSQLWhere(" ");
+//    std::string selectSQLGroup(" GROUP BY tt.id ");
+    std::string selectSQLGroup(" ");
     std::string selectSQLSort;
 
     std::string insertFields;
@@ -78,24 +80,31 @@ bool Query::SortTracks::ParseQuery(Library::Base *oLibrary,db::Connection &db){
 
         // Check if it's a fixed field
         if(musik::core::Library::Base::IsStaticMetaKey(metakey)){
-            selectSQLSort += (selectSQLSort.empty()?" ORDER BY t.":",t.") + metakey;
+            selectSQL     += ",tracks."+metakey;
+            selectSQLSort += (selectSQLSort.empty()?" ORDER BY tracks.":",tracks.") + metakey;
 
         // Check if it's a special MTO field
         }else if(musik::core::Library::Base::IsSpecialMTOMetaKey(metakey) || musik::core::Library::Base::IsSpecialMTMMetaKey(metakey)){
             if(metakey=="album"){
-                selectSQLTables += ",albums al";
-                selectSQLWhere  += "al.id=t.album_id";
-                selectSQLSort += (selectSQLSort.empty()?" ORDER BY al.sort_order":",al.sort_order");
+                selectSQLTables += " LEFT OUTER JOIN albums ON albums.id=tracks.album_id ";
+//                selectSQLTables += " albums al ";
+//                selectSQLWhere  += "al.id=t.album_id";
+                selectSQL     += ",albums.sort_order";
+                selectSQLSort += (selectSQLSort.empty()?" ORDER BY albums.sort_order":",albums.sort_order");
             }
             if(metakey=="visual_genre" || metakey=="genre"){
-                selectSQLTables += ",genres g";
-                selectSQLWhere  += "g.id=t.visual_genre_id";
-                selectSQLSort += (selectSQLSort.empty()?" ORDER BY g.sort_order":",g.sort_order");
+                selectSQLTables += " LEFT OUTER JOIN genres ON genres.id=tracks.visual_genre_id ";
+//                selectSQLTables += ",genres g";
+//                selectSQLWhere  += "g.id=t.visual_genre_id";
+                selectSQL     += ",genres.sort_order";
+                selectSQLSort += (selectSQLSort.empty()?" ORDER BY genres.sort_order":",genres.sort_order");
             }
             if(metakey=="visual_artist" || metakey=="artist"){
-                selectSQLTables += ",artists ar";
-                selectSQLWhere  += "ar.id=t.visual_artist_id";
-                selectSQLSort += (selectSQLSort.empty()?" ORDER BY ar.sort_order":",ar.sort_order");
+                selectSQLTables += " LEFT OUTER JOIN artists ON artists.id=tracks.visual_artist_id";
+//                selectSQLTables += ",artists ar";
+//                selectSQLWhere  += "ar.id=t.visual_artist_id";
+                selectSQL     += ",artists.sort_order";
+                selectSQLSort += (selectSQLSort.empty()?" ORDER BY artists.sort_order":",artists.sort_order");
             }
         } else {
             // Sort by metakeys table
@@ -105,7 +114,7 @@ bool Query::SortTracks::ParseQuery(Library::Base *oLibrary,db::Connection &db){
 
                 std::string sortField = boost::str( boost::format("ef%1%")%(sortFieldsMetakeyId.size()-1) );
 
-                selectSQLSort += (selectSQLSort.empty()?" ORDER BY tt.":",tt.")+sortField;
+                selectSQLSort += (selectSQLSort.empty()?" ORDER BY temp_track_sort.":",temp_track_sort.")+sortField;
                 createTableStatement += ","+sortField+" INTEGER";
                 insertFields    += ","+sortField;
                 insertValues    += ",?";
@@ -120,7 +129,7 @@ bool Query::SortTracks::ParseQuery(Library::Base *oLibrary,db::Connection &db){
 
 
     // First lets start by inserting all tracks in a temporary table
-    db.Execute("DROP TABLE IS EXISTS temp_track_sort");
+    db.Execute("DROP TABLE IF EXISTS temp_track_sort");
 
     createTableStatement+=")";
     db.Execute(createTableStatement.c_str());
@@ -152,7 +161,7 @@ bool Query::SortTracks::ParseQuery(Library::Base *oLibrary,db::Connection &db){
     }
 
 
-    std::string sql=selectSQL+selectSQLTables+selectSQLWhere+selectSQLGroup+selectSQLSort;
+    std::string sql=selectSQL+" FROM "+selectSQLTables+selectSQLWhere+selectSQLGroup+selectSQLSort;
     db::Statement selectTracks(sql.c_str(),db);
 
     while(selectTracks.Step()==db::Row){
@@ -196,4 +205,7 @@ void Query::SortTracks::SortByMetaKeys(std::list<std::string> metaKeys){
     this->sortMetaKeys  = metaKeys;
 }
 
+void Query::SortTracks::ClearTracks(){
+    this->tracksToSort.clear();
+}
 

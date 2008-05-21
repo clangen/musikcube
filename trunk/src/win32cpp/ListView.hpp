@@ -114,6 +114,7 @@ public: // types
     /*! */ typedef sigslot::signal2<ListView* /*sender*/, int /*row*/> RowActivatedEvent;
     /*! */ typedef sigslot::signal3<ListView* /*sender*/, int /*row*/, ColumnRef> HotCellChangedEvent;
     /*! */ typedef sigslot::signal1<ListView* /*sender*/> SelectionChangedEvent;
+    /*! */ typedef sigslot::signal2<ListView*, ColumnRef> ColumnClickedEvent;
 
     struct RenderParams
     {
@@ -139,6 +140,8 @@ public: // events
     HotCellChangedEvent     HotCellChanged;
     ///\brief Emitted when the selection has changed
     SelectionChangedEvent   SelectionChanged;
+    ///\brief Emitted when a Column is clicked
+    ColumnClickedEvent		ColumnClicked;
 
 public: // constructors
     /*ctor*/        ListView();

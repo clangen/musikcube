@@ -63,6 +63,8 @@ public:     /*ctor*/ TracklistModel(
                 musik::core::Query::ListBase *connectedQuery,
                 musik::core::tracklist::Standard::Ptr setTracklist);
 
+public:     void ConnectToQuery(musik::core::Query::ListBase *connectedQuery);
+
 public:     void OnRowActivated(int row);
 
         // ListView::Model implementation

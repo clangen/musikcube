@@ -178,6 +178,13 @@ LRESULT     ListView::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
                     return 0;
                 }
 
+            case HDN_ITEMCLICK:
+                {
+                    NMHEADER* clickHeader = reinterpret_cast<NMHEADER*>(notifyHeader);
+                    this->ColumnClicked(this, this->ColumnIndexToColumnRef(clickHeader->iItem));
+                }
+                break;
+
             case LVN_ITEMCHANGED:       // single item has changed
             case LVN_ODSTATECHANGED:    // range of items has changed
                 {
