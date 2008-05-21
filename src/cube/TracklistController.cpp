@@ -40,6 +40,7 @@
 #include <cube/TracklistController.hpp>
 #include <cube/TracklistModel.hpp>
 #include <cube/TracklistColumn.hpp>
+#include <core/LibraryFactory.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -87,6 +88,12 @@ void        TracklistController::OnViewCreated(Window* window)
     listView->SetModel(this->model);
     listView->RowActivated.connect(this, &TracklistController::OnRowActivated);
     listView->Resized.connect( this, &TracklistController::OnResized);
+    listView->ColumnClicked.connect( this, &TracklistController::OnColumnSort );
+
+    TracklistModel* model   = (TracklistModel*)this->model.get();
+    if(model){
+        model->ConnectToQuery(&this->sortQuery);
+    }
 }
 
 void        TracklistController::OnRowActivated(ListView* listView, int row)
@@ -132,4 +139,22 @@ void TracklistController::OnResized(Window* window, Size size){
         model->tracklist->HintNumberOfRows(rows);
     }
 
+}
+
+void TracklistController::OnColumnSort(ListView *listView,ColumnRef column){
+    TracklistColumn *tracklistColumn = (TracklistColumn*)column.get();
+    TracklistModel* model   = (TracklistModel*)this->model.get();
+    if(tracklistColumn && model){
+        // what to sort by
+        std::list<std::string> sortList;
+        sortList.push_back(tracklistColumn->metaKey);
+        this->sortQuery.SortByMetaKeys(sortList);
+
+        // Add the tracks to sort
+        this->sortQuery.AddTracks(*(model->tracklist));
+
+        musik::core::LibraryFactory::GetCurrentLibrary()->AddQuery(this->sortQuery,musik::core::Query::CancelSimilar);
+
+        this->sortQuery.ClearTracks();
+    }
 }

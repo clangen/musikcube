@@ -68,9 +68,7 @@ using namespace musik::cube;
     this->tracklist->TrackMetaUpdated.connect(this,&TracklistModel::OnTrackMeta);
     this->tracklist->SetLibrary(musik::core::LibraryFactory::GetCurrentLibrary());
 
-    if(connectedQuery){
-        this->tracklist->ConnectToQuery(*connectedQuery);
-    }
+    this->ConnectToQuery(connectedQuery);
 }
 
 uistring            TracklistModel::CellValueToString(int rowIndex, ColumnRef column)
@@ -109,4 +107,10 @@ void TracklistModel::OnTracks(bool cleared){
 void TracklistModel::OnRowActivated(int row){
     this->tracklist->SetCurrentPosition(row);
     musik::core::PlaybackQueue::Instance().Play(*this->tracklist);
+}
+
+void TracklistModel::ConnectToQuery(musik::core::Query::ListBase *connectedQuery){
+    if(connectedQuery){
+        this->tracklist->ConnectToQuery(*connectedQuery);
+    }
 }

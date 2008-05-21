@@ -43,9 +43,11 @@
 #include <boost/format.hpp>
 
 #include <core/config.h>
-#include <cube/TracklistView.hpp>
 #include <core/Query/ListBase.h>
 #include <core/tracklist/Standard.h>
+#include <core/Query/SortTracks.h>
+
+#include <cube/TracklistView.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -59,24 +61,29 @@ namespace musik { namespace cube {
 
 class TracklistController : public EventHandler
 {
-private:    typedef ListView::ColumnRef ColumnRef;
-private:    typedef std::vector<ColumnRef> ColumnList;
-private:    typedef ListView::ModelRef ModelRef;
+private:    
+    typedef ListView::ColumnRef ColumnRef;
+    typedef std::vector<ColumnRef> ColumnList;
+    typedef ListView::ModelRef ModelRef;
 
-public:     /*ctor*/    TracklistController(
-                            TracklistView& listView,
-                            musik::core::Query::ListBase *connectedQuery = NULL,
-                            musik::core::tracklist::Standard::Ptr tracklist = musik::core::tracklist::Standard::Ptr());
+public:     
+    /*ctor*/    TracklistController(
+                    TracklistView& listView,
+                    musik::core::Query::ListBase *connectedQuery = NULL,
+                    musik::core::tracklist::Standard::Ptr tracklist = musik::core::tracklist::Standard::Ptr());
 
-protected:  void        OnViewCreated(Window* window);
-protected:  void        OnResized(Window* window,Size size);
-protected:  void        OnRowActivated(ListView* listView, int row);
-protected:  void        AddColumn(const utfchar *name, const char *metakey, int size);
+private:  
+    void        OnViewCreated(Window* window);
+    void        OnResized(Window* window,Size size);
+    void        OnRowActivated(ListView* listView, int row);
+    void        AddColumn(const utfchar *name, const char *metakey, int size);
+    void        OnTracklistInfo(UINT64 tracks,UINT64 duration,UINT64 filesize);
+    void        OnColumnSort(ListView *listView,ColumnRef column);
 
-protected:  ModelRef model;
-protected:  TracklistView& view;
-protected:  ColumnList columns;
-private:    void OnTracklistInfo(UINT64 tracks,UINT64 duration,UINT64 filesize);
+    ModelRef model;
+    TracklistView& view;
+    ColumnList columns;
+    musik::core::Query::SortTracks sortQuery;
 
 };
 

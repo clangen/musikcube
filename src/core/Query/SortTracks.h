@@ -68,6 +68,8 @@ namespace musik{ namespace core{
                 void AddTracks(std::vector<int> &tracks);
                 void AddTracks(musik::core::tracklist::IRandomAccess &tracks);
 
+                void ClearTracks();
+
                 void SortByMetaKeys(std::list<std::string> metaKeys);
 
             protected:
