@@ -1,0 +1,28 @@
+#summary A list of metakeys used by the library
+#labels Phase-Design,Phase-Implementation
+
+= Tracks MetaKeys =
+
+|| *KetaKey* || *Description* || *id3v2 frame* ||
+|| album || Album || TALB ||
+|| artist || Artists || TPE1, TPE2 ||
+|| bpm || Beats Per Minutes || TBPM ||
+|| comment || Comments || TCOMM with empty description ||
+|| composer || Composer || TCOM ||
+|| conductor || Conductor || TPE3 ||
+|| copyright || Copyright || TCOP ||
+|| disc || Part. Ie CD number ||TPOS ||
+|| encoder || Encoder || TENC ||
+|| genre || Genre || TCON ||
+|| interpreted || Interpreted, remixed, or otherwise modified by || TPE4 ||
+|| language || Language ||TLAN ||
+|| mood || Mood || TMOO or TCOMM with MusicMatch_Mood description ||
+|| org.artist || Original Artist || TOPE ||
+|| org.writer || Original Lyricist/Text writer || TOLY ||
+|| publisher || Publisher || TPUB ||
+|| textrating || Rating of track || TCOMM with MusicMatch_Preference description ||
+|| title || Track title || TIT2 ||
+|| totaltracks || Total number of tracks || TRCK ||
+|| track || Track number || TRCK ||
+|| writer || Lyricist/Text writer || TEXT ||
+|| year || Year || TYER or TDRC ||
