@@ -36,7 +36,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <pch.hpp>
+#include "pch.hpp"
 #include <cube/settings/SyncPathController.hpp>
 #include <cube/settings/SyncPathModel.hpp>
 #include <cube/SettingsController.hpp>

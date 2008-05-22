@@ -36,7 +36,7 @@
 
 #pragma once
 
-#include "core/config.h"
+#include <core/config.h>
 #include <map>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
@@ -90,5 +90,5 @@ namespace musik{ namespace core{ namespace db{
 
 } } }
 
-#include "core/db/CachedStatement.h"
+#include <core/db/CachedStatement.h>
 

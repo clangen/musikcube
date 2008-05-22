@@ -31,8 +31,8 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 #include "pch.hpp"
-#include "core/PlaybackQueue.h"
-#include "core/LibraryFactory.h"
+#include <core/PlaybackQueue.h>
+#include <core/LibraryFactory.h>
 
 #include <boost/algorithm/string.hpp>
 

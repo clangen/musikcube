@@ -36,7 +36,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <pch.hpp>
+#include "pch.hpp"
 #include <cube/MainWindowController.hpp>
 #include <cube/TransportView.hpp>
 #include <cube/TracklistView.hpp>

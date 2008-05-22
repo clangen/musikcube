@@ -35,7 +35,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <pch.hpp>
+#include "pch.hpp"
 #include <cube/SourcesListModel.hpp>
 #include <cube/SourcesController.hpp>
 

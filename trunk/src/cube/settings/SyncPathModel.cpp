@@ -36,7 +36,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <pch.hpp>
+#include "pch.hpp"
 #include <win32cpp/ApplicationThread.hpp>
 #include <cube/settings/SyncPathModel.hpp>
 #include <core/Indexer.h>

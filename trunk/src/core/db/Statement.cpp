@@ -37,8 +37,8 @@
 #pragma once
 
 #include "pch.hpp"
-#include "core/db/Statement.h"
-#include "core/db/Connection.h"
+#include <core/db/Statement.h>
+#include <core/db/Connection.h>
 
 using namespace musik::core::db;
 

@@ -102,8 +102,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
-				InlineFunctionExpansion="2"
-				FavorSizeOrSpeed="1"
+				InlineFunctionExpansion="0"
+				FavorSizeOrSpeed="0"
 				AdditionalIncludeDirectories="./include/;./include/sqlite/"
 				PreprocessorDefinitions="WIN32;_CRT_SECURE_NO_DEPRECATE;SQLITE_THREADSAFE"
 				RuntimeLibrary="0"

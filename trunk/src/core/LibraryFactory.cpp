@@ -34,8 +34,8 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 #include "pch.hpp"
-#include "LibraryFactory.h"
-#include "Library/LocalDB.h"
+#include <core/LibraryFactory.h>
+#include <Library/LocalDB.h>
 
 using namespace musik::core;
 
