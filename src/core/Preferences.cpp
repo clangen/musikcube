@@ -35,7 +35,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
-#include "Preferences.h"
+#include <core/Preferences.h>
 
 #include <core/Common.h>
 #include <core/db/CachedStatement.h>

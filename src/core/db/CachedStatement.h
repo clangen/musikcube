@@ -36,8 +36,8 @@
 
 #pragma once
 
-#include "core/config.h"
-#include "core/db/Statement.h"
+#include <core/config.h>
+#include <core/db/Statement.h>
 
 namespace musik{ namespace core{ namespace db{
     

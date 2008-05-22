@@ -40,7 +40,7 @@
 
 //////////////////////////////////////////////////////////////////////////////
 
-#include <pch.hpp>
+#include "pch.hpp"
 #include <cube/SourcesListModel.hpp>
 
 using namespace musik::cube;

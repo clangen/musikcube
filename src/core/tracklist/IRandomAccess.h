@@ -36,7 +36,7 @@
 
 #pragma once
 
-#include "core/tracklist/IBase.h"
+#include <core/tracklist/IBase.h>
 #include <core/Library/Base.h>
 
 #include <boost/shared_ptr.hpp>

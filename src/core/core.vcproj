@@ -104,8 +104,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
-				InlineFunctionExpansion="2"
-				FavorSizeOrSpeed="1"
+				InlineFunctionExpansion="0"
+				FavorSizeOrSpeed="0"
 				AdditionalIncludeDirectories="./;../;../3rdparty/include/"
 				PreprocessorDefinitions="BOOST_ALL_NO_LIB;WIN32;_CRT_SECURE_NO_DEPRECATE"
 				RuntimeLibrary="0"

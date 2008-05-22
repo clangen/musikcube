@@ -36,7 +36,7 @@
 
 #pragma once
 
-#include "core/config.h"
+#include <core/config.h>
 #include <map>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>

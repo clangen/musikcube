@@ -36,7 +36,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <pch.hpp>
+#include "pch.hpp"
 #include <cube/SettingsController.hpp>
 #include <core/LibraryFactory.h>
 #include <core/Indexer.h>

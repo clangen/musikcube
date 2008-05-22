@@ -35,7 +35,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
-#include "core/db/Connection.h"
+#include <core/db/Connection.h>
 #include <boost/lexical_cast.hpp>
 
 using namespace musik::core::db;

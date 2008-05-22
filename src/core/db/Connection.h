@@ -36,10 +36,10 @@
 
 #pragma once
 
-#include "core/config.h"
-#include "core/db/dbconfig.h"
-#include "core/db/Statement.h"
-#include "core/db/ScopedTransaction.h"
+#include <core/config.h>
+#include <core/db/dbconfig.h>
+#include <core/db/Statement.h>
+#include <core/db/ScopedTransaction.h>
 
 #include <map>
 #include <boost/utility.hpp>
