@@ -32,6 +32,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "oggdecoder", "src\contrib\o
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugins", "Plugins", "{092264AD-38B7-401D-8E67-B56756A141E4}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "square", "src\square\player.vcproj", "{C7102EB1-7311-4B36-A7FF-89DD7F077FF9}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B2165720-B4B2-4F4B-9634-8C390C3CB4DB} = {B2165720-B4B2-4F4B-9634-8C390C3CB4DB}
+	EndProjectSection
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "waveout", "src\contrib\waveout\waveout.vcproj", "{4F10C17A-8AF7-4FAC-A4E2-087AE6E8F9D8}"
 EndProject
 Global
@@ -80,6 +85,10 @@ Global
 		{292974B0-C8B7-41EF-B603-554A2B25CB90}.Debug|Win32.Build.0 = Debug|Win32
 		{292974B0-C8B7-41EF-B603-554A2B25CB90}.Release|Win32.ActiveCfg = Release|Win32
 		{292974B0-C8B7-41EF-B603-554A2B25CB90}.Release|Win32.Build.0 = Release|Win32
+		{C7102EB1-7311-4B36-A7FF-89DD7F077FF9}.Debug|Win32.ActiveCfg = Debug|Win32
+		{C7102EB1-7311-4B36-A7FF-89DD7F077FF9}.Debug|Win32.Build.0 = Debug|Win32
+		{C7102EB1-7311-4B36-A7FF-89DD7F077FF9}.Release|Win32.ActiveCfg = Release|Win32
+		{C7102EB1-7311-4B36-A7FF-89DD7F077FF9}.Release|Win32.Build.0 = Release|Win32
 		{4F10C17A-8AF7-4FAC-A4E2-087AE6E8F9D8}.Debug|Win32.ActiveCfg = Debug|Win32
 		{4F10C17A-8AF7-4FAC-A4E2-087AE6E8F9D8}.Debug|Win32.Build.0 = Debug|Win32
 		{4F10C17A-8AF7-4FAC-A4E2-087AE6E8F9D8}.Release|Win32.ActiveCfg = Release|Win32
