@@ -223,6 +223,7 @@ bool TagReaderTaglib::GetID3v2Tag(musik::core::Track *track){
 		this->SetSlashSeparatedValues("org.artist",aAllTags["TOPE"],track);
 		this->SetTagValues("language",aAllTags["TLAN"],track);
 		this->SetTagValues("disc",aAllTags["TPOS"],track);
+		this->SetTagValues("lyrics",aAllTags["USLT"],track);
 
 		//////////////////////////////////////////////////////////////////////////////
 		// GENRES
