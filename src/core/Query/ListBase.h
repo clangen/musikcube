@@ -72,6 +72,8 @@ namespace musik{ namespace core{
             protected:
                 bool RunCallbacks(Library::Base *oLibrary);
 
+                bool ParseTracksSQL(std::string sql,Library::Base *oLibrary,db::Connection &db);
+
                 MetadataResults metadataResults;
                 TrackVector trackResults;
 
