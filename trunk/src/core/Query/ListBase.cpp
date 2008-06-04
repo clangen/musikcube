@@ -134,3 +134,36 @@ Query::ListBase::TrackInfoSignal& Query::ListBase::OnTrackInfoEvent(){
     return this->trackInfoEvent;
 }
 
+bool Query::ListBase::ParseTracksSQL(std::string sql,Library::Base *oLibrary,db::Connection &db){
+    if(this->trackEvent.has_connections() && !oLibrary->QueryCanceled()){
+        db::Statement selectTracks(sql.c_str(),db);
+
+        TrackVector tempTrackResults;
+        tempTrackResults.reserve(101);
+        int row(0);
+        while(selectTracks.Step()==db::ReturnCode::Row){
+            tempTrackResults.push_back(TrackPtr(new Track(selectTracks.ColumnInt(0))));
+            this->trackInfoDuration += selectTracks.ColumnInt64(1);
+            this->trackInfoSize     += selectTracks.ColumnInt64(2);
+            this->trackInfoTracks++;
+
+            if( (++row)%100==0 ){
+                boost::mutex::scoped_lock lock(oLibrary->oResultMutex);
+                this->trackResults.insert(this->trackResults.end(),tempTrackResults.begin(),tempTrackResults.end());
+
+                tempTrackResults.clear();
+                trackResults.reserve(101);
+            }
+        }
+        if(!tempTrackResults.empty()){
+            boost::mutex::scoped_lock lock(oLibrary->oResultMutex);
+            this->trackResults.insert(this->trackResults.end(),tempTrackResults.begin(),tempTrackResults.end());
+        }
+
+        return true;
+    }else{
+        return false;
+    }
+
+}
+

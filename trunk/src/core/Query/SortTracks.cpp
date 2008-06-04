@@ -61,7 +61,7 @@ bool Query::SortTracks::ParseQuery(Library::Base *oLibrary,db::Connection &db){
     std::vector<int> sortFieldsMetakeyId;
 
     // Create smart SQL statment
-    std::string selectSQL("SELECT temp_track_sort.track_id ");
+    std::string selectSQL("SELECT temp_track_sort.track_id,tracks.duration,tracks.filesize ");
     std::string selectSQLTables("temp_track_sort LEFT OUTER JOIN tracks ON tracks.id=temp_track_sort.track_id ");
 //    std::string selectSQLWhere(" WHERE 1=1 ");
     std::string selectSQLWhere(" ");
@@ -80,7 +80,7 @@ bool Query::SortTracks::ParseQuery(Library::Base *oLibrary,db::Connection &db){
 
         // Check if it's a fixed field
         if(musik::core::Library::Base::IsStaticMetaKey(metakey)){
-            selectSQL     += ",tracks."+metakey;
+//            selectSQL     += ",tracks."+metakey;
             selectSQLSort += (selectSQLSort.empty()?" ORDER BY tracks.":",tracks.") + metakey;
 
         // Check if it's a special MTO field
@@ -89,21 +89,21 @@ bool Query::SortTracks::ParseQuery(Library::Base *oLibrary,db::Connection &db){
                 selectSQLTables += " LEFT OUTER JOIN albums ON albums.id=tracks.album_id ";
 //                selectSQLTables += " albums al ";
 //                selectSQLWhere  += "al.id=t.album_id";
-                selectSQL     += ",albums.sort_order";
+//                selectSQL     += ",albums.sort_order";
                 selectSQLSort += (selectSQLSort.empty()?" ORDER BY albums.sort_order":",albums.sort_order");
             }
             if(metakey=="visual_genre" || metakey=="genre"){
                 selectSQLTables += " LEFT OUTER JOIN genres ON genres.id=tracks.visual_genre_id ";
 //                selectSQLTables += ",genres g";
 //                selectSQLWhere  += "g.id=t.visual_genre_id";
-                selectSQL     += ",genres.sort_order";
+//                selectSQL     += ",genres.sort_order";
                 selectSQLSort += (selectSQLSort.empty()?" ORDER BY genres.sort_order":",genres.sort_order");
             }
             if(metakey=="visual_artist" || metakey=="artist"){
                 selectSQLTables += " LEFT OUTER JOIN artists ON artists.id=tracks.visual_artist_id";
 //                selectSQLTables += ",artists ar";
 //                selectSQLWhere  += "ar.id=t.visual_artist_id";
-                selectSQL     += ",artists.sort_order";
+//                selectSQL     += ",artists.sort_order";
                 selectSQLSort += (selectSQLSort.empty()?" ORDER BY artists.sort_order":",artists.sort_order");
             }
         } else {
@@ -160,15 +160,12 @@ bool Query::SortTracks::ParseQuery(Library::Base *oLibrary,db::Connection &db){
         }
     }
 
+    // Finaly keep sort order of inserted order.
+    selectSQLSort   += ",temp_track_sort.id";
 
     std::string sql=selectSQL+" FROM "+selectSQLTables+selectSQLWhere+selectSQLGroup+selectSQLSort;
-    db::Statement selectTracks(sql.c_str(),db);
 
-    while(selectTracks.Step()==db::Row){
-        boost::mutex::scoped_lock lock(oLibrary->oResultMutex);
-        this->trackResults.push_back(TrackPtr(new Track(selectTracks.ColumnInt(0))));
-    }
-    return true;
+    return this->ParseTracksSQL(sql,oLibrary,db);
 }
 
 //////////////////////////////////////////
