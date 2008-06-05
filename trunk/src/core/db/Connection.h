@@ -50,12 +50,12 @@ namespace musik{ namespace core{ namespace db{
 
 
     //////////////////////////////////////////
-	///\brief
-	///Database Wrapper
-	///
-	///A Connection to the database
-	//////////////////////////////////////////
-	class Connection : boost::noncopyable{
+    ///\brief
+    ///Database Wrapper
+    ///
+    ///A Connection to the database
+    //////////////////////////////////////////
+    class Connection : boost::noncopyable{
         public: 
             Connection();
             ~Connection();

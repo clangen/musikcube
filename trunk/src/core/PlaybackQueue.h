@@ -58,21 +58,21 @@ class PlaybackQueue : public sigslot::has_slots<>{
         PlaybackQueue(void);
 
         //////////////////////////////////////////
-		///\brief
-		///The one and only instance of the PlaybackQueue
-		//////////////////////////////////////////
-		static PlaybackQueue sInstance;
+        ///\brief
+        ///The one and only instance of the PlaybackQueue
+        //////////////////////////////////////////
+        static PlaybackQueue sInstance;
 
         //////////////////////////////////////////
-		///\brief
+        ///\brief
         ///The only instance of the audio::Transport
-		//////////////////////////////////////////
-		audio::Transport transport;
+        //////////////////////////////////////////
+        audio::Transport transport;
 
         //////////////////////////////////////////
-		///\brief
+        ///\brief
         ///The "now playing" tracklist
-		//////////////////////////////////////////
+        //////////////////////////////////////////
         tracklist::Standard::Ptr nowPlaying;
 
         bool playing;
@@ -82,21 +82,21 @@ class PlaybackQueue : public sigslot::has_slots<>{
         ~PlaybackQueue(void);
 
         //////////////////////////////////////////
-		///\brief
-		///Access to the PlaybackQueue singleton
-		//////////////////////////////////////////
-		static PlaybackQueue& Instance(){ return sInstance; };
+        ///\brief
+        ///Access to the PlaybackQueue singleton
+        //////////////////////////////////////////
+        static PlaybackQueue& Instance(){ return sInstance; };
 
         //////////////////////////////////////////
-		///\brief
-		///Get a hold of the Transport
-		//////////////////////////////////////////
+        ///\brief
+        ///Get a hold of the Transport
+        //////////////////////////////////////////
         musik::core::audio::Transport&  Transport() { return this->transport; };
 
         // Now Playing control
         tracklist::Standard::Ptr NowPlayingTracklist();
         void Play(tracklist::IRandomAccess &tracklist);
-		void Append(tracklist::IRandomAccess &tracklist);
+        void Append(tracklist::IRandomAccess &tracklist);
 
         // Playback Control
         void Play();

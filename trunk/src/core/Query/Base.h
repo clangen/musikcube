@@ -101,12 +101,12 @@ namespace musik{ namespace core{
                 ///musik::core::State
                 //////////////////////////////////////////
                 enum Status:int{
-			        Started       = 1,
-			        Ended         = 2,
-			        Canceled      = 4,
-			        OutputStarted = 8,
-			        OutputEnded   = 16,
-			        Finished      = 32
+                    Started       = 1,
+                    Ended         = 2,
+                    Canceled      = 4,
+                    OutputStarted = 8,
+                    OutputEnded   = 16,
+                    Finished      = 32
                 };
 
                 unsigned int status;
