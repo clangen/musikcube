@@ -83,30 +83,30 @@ uistring            TracklistModel::CellValueToString(int rowIndex, ColumnRef co
     if(!track){
         return _T("");
     }else{
-		const utfchar *value = track->GetValue(tracklistColumn->metaKey.c_str());
+        const utfchar *value = track->GetValue(tracklistColumn->metaKey.c_str());
         if(value)
-		{
-			if (tracklistColumn->metaKey == "duration")
-			{
-				UINT64 duration = boost::lexical_cast<int>(value);
-				UINT64 days(duration/86400);
-				duration    = duration%86400;
-				UINT64 hours(duration/3600);
-				duration    = duration%3600;
-				UINT64 minutes(duration/60);
-				duration    = duration%60;
-				utfstring result;
-				if (minutes < 10)
-					result += _T("0");
-				result += boost::lexical_cast<utfstring>(minutes) + _T(":");
-				if (duration < 10)
-					result += _T("0");
-				result += boost::lexical_cast<utfstring>(duration);
-				return win32cpp::Escape(result);
-			}
-			return win32cpp::Escape(value);
+        {
+            if (tracklistColumn->metaKey == "duration")
+            {
+                UINT64 duration = boost::lexical_cast<int>(value);
+                UINT64 days(duration/86400);
+                duration    = duration%86400;
+                UINT64 hours(duration/3600);
+                duration    = duration%3600;
+                UINT64 minutes(duration/60);
+                duration    = duration%60;
+                utfstring result;
+                if (minutes < 10)
+                    result += _T("0");
+                result += boost::lexical_cast<utfstring>(minutes) + _T(":");
+                if (duration < 10)
+                    result += _T("0");
+                result += boost::lexical_cast<utfstring>(duration);
+                return win32cpp::Escape(result);
+            }
+            return win32cpp::Escape(value);
 
-		}
+        }
 
         return _T("");
     }

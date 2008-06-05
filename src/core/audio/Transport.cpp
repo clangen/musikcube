@@ -179,15 +179,15 @@ bool Transport::Resume()
 
 void Transport::SetTrackPosition(unsigned long position)
 {
-	try
-	{
+    try
+    {
     AudioStream* stream = this->openStreams.at(0);
 
     stream->SetPositionMs(position);
-	}
-	catch(...)
-	{
-	}
+    }
+    catch(...)
+    {
+    }
 }
 
 unsigned long Transport::TrackPosition() const
@@ -230,17 +230,17 @@ size_t Transport::NumOfStreams() const
 
 AudioStreamOverview Transport::StreamsOverview() const
 {
-	AudioStreamOverview	overview;
+    AudioStreamOverview    overview;
 
-	for(std::vector<AudioStream*>::const_iterator it = this->openStreams.begin()
-	   ;it != this->openStreams.end()
-	   ;it++
-	   )
+    for(std::vector<AudioStream*>::const_iterator it = this->openStreams.begin()
+       ;it != this->openStreams.end()
+       ;it++
+       )
     {
-		overview.push_back((*it)->ToString());
+        overview.push_back((*it)->ToString());
     }    
 
-	return overview;
+    return overview;
 }
 
 AudioStream* Transport::CreateStream(TrackPtr  trackPtr)
@@ -273,10 +273,10 @@ AudioStream* Transport::CreateStream(TrackPtr  trackPtr)
     if (it != this->registeredSourceSuppliers.end() && supplier)
     {
         audioSource = supplier->CreateAudioSource();
-	
+    
         if (audioSource != NULL && audioSource->Open(filePath))
-	    {
-		    audioStream = new AudioStream(audioSource, audioOutput, this, trackPtr);
+        {
+            audioStream = new AudioStream(audioSource, audioOutput, this, trackPtr);
         }
     }
 

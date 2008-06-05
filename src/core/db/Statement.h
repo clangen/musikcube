@@ -49,10 +49,10 @@ namespace musik{ namespace core{ namespace db{
 
 
     //////////////////////////////////////////
-	///\brief
-	///Class for precompiling SQL statements
-	//////////////////////////////////////////
-	class Statement : boost::noncopyable{
+    ///\brief
+    ///Class for precompiling SQL statements
+    //////////////////////////////////////////
+    class Statement : boost::noncopyable{
         public: 
             Statement(const char* sql,Connection &connection);
             virtual ~Statement();

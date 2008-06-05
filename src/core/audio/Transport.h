@@ -95,7 +95,7 @@ public:
     ///\brief Get the number of open streams
     size_t          NumOfStreams()  const;
     ///\brief Get a list with descriptions of the open streams
-    AudioStreamOverview	StreamsOverview()	const;
+    AudioStreamOverview    StreamsOverview()    const;
 
 private: 
     typedef std::vector<boost::shared_ptr<IAudioSourceSupplier> > SourceSupplierList;

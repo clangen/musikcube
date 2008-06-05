@@ -88,10 +88,10 @@ typedef unsigned int DBTIME;
     #define UTF(x)  _T(x)
 
     //////////////////////////////////////////
-	///\brief
-	///utfchar is either a char or a utfchar depending on system.
-	//////////////////////////////////////////
-	typedef wchar_t utfchar;
+    ///\brief
+    ///utfchar is either a char or a utfchar depending on system.
+    //////////////////////////////////////////
+    typedef wchar_t utfchar;
 
     // Boost specific
     namespace boost{
@@ -104,9 +104,9 @@ typedef unsigned int DBTIME;
     }
 
     //////////////////////////////////////////
-	///\brief
-	///utfstringstream is the stringstream for utfchar & utfstring
-	//////////////////////////////////////////
+    ///\brief
+    ///utfstringstream is the stringstream for utfchar & utfstring
+    //////////////////////////////////////////
     namespace std
     {
         typedef wstringstream   utfstringstream;
@@ -118,9 +118,9 @@ typedef unsigned int DBTIME;
     #undef UTF_WIDECHAR
 
     //////////////////////////////////////////
-	///\brief
-	///utfchar is either a char or a utfchar depending on system.
-	//////////////////////////////////////////
+    ///\brief
+    ///utfchar is either a char or a utfchar depending on system.
+    //////////////////////////////////////////
     typedef char utfchar;
 
     //////////////////////////////////////////
@@ -145,9 +145,9 @@ typedef unsigned int DBTIME;
 
 
     //////////////////////////////////////////
-	///\brief
-	///utfstringstream is the stringstream for utfchar & utfstring
-	//////////////////////////////////////////
+    ///\brief
+    ///utfstringstream is the stringstream for utfchar & utfstring
+    //////////////////////////////////////////
     namespace std
     {
         typedef stringstream   utfstringstream;

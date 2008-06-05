@@ -151,8 +151,8 @@ void PlaybackQueue::Next(){
 void PlaybackQueue::Previous(){
     musik::core::TrackPtr track( this->nowPlaying->PreviousTrack() );
 
-	this->SetCurrentTrack(track);
-	this->Play();
+    this->SetCurrentTrack(track);
+    this->Play();
 
 }
 
@@ -195,11 +195,11 @@ TrackPtr PlaybackQueue::CurrentTrack(){
 //////////////////////////////////////////
 void PlaybackQueue::SetCurrentTrack(TrackPtr track){
 
-	if(track){
-		this->currentTrack  = track->Copy();
-	}else{
-		this->currentTrack	= musik::core::TrackPtr();
-	}
+    if(track){
+        this->currentTrack  = track->Copy();
+    }else{
+        this->currentTrack    = musik::core::TrackPtr();
+    }
 
     // Get all metadata to the track
     if(this->currentTrack){

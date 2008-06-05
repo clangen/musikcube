@@ -147,15 +147,15 @@ void TransportController::OnTrackChange(musik::core::TrackPtr track){
     win32cpp::uistring title(_T("-"));
     win32cpp::uistring artist(_T("-"));
 
-	if(track){
+    if(track){
 
-		if(track->GetValue("title"))
-			title.assign( track->GetValue("title") );
+        if(track->GetValue("title"))
+            title.assign( track->GetValue("title") );
 
-		if(track->GetValue("visual_artist"))
-			artist.assign( track->GetValue("visual_artist") );
+        if(track->GetValue("visual_artist"))
+            artist.assign( track->GetValue("visual_artist") );
 
-	}
+    }
 
     this->transportView.titleLabel->SetCaption(title);
     this->transportView.artistLabel->SetCaption(artist);
