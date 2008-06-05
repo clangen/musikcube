@@ -17,6 +17,7 @@ class TracklistColumn : public win32cpp::ListView::Column{
         ~TracklistColumn(void);
 
         std::string metaKey;
+        int metaKeyType;
 };
 
 //////////////////////////////////////////////////////////////////////////////

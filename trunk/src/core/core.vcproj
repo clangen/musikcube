@@ -412,6 +412,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\MetaKey.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\MetaKey.h"
+					>
+				</File>
+				<File
 					RelativePath=".\Track.cpp"
 					>
 				</File>
