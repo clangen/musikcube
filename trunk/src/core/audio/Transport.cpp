@@ -179,9 +179,15 @@ bool Transport::Resume()
 
 void Transport::SetTrackPosition(unsigned long position)
 {
-    AudioStream* stream = this->openStreams[0];
+	try
+	{
+    AudioStream* stream = this->openStreams.at(0);
 
     stream->SetPositionMs(position);
+	}
+	catch(...)
+	{
+	}
 }
 
 unsigned long Transport::TrackPosition() const
