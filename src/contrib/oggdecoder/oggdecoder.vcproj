@@ -61,6 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalOptions="/NODEFAULTLIB:LIBCMT&#x0D;&#x0A;"
 				AdditionalDependencies="ogg_static.lib vorbis_static.lib vorbisfile_static.lib"
 				AdditionalLibraryDirectories="./lib;../../3rdparty/lib"
 				GenerateDebugInformation="true"

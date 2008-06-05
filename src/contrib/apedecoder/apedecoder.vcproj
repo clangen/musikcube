@@ -61,6 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalOptions="/NODEFAULTLIB:LIBCMT"
 				AdditionalDependencies="MACLib.lib"
 				AdditionalLibraryDirectories="ape;../../3rdparty/lib"
 				IgnoreAllDefaultLibraries="false"
