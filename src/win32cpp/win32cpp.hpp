@@ -43,19 +43,17 @@
 #include <win32cpp/Win32Config.hpp>          // Must be first!
 
 #include <win32cpp/Application.hpp>
-#include <win32cpp/ApplicationThread.hpp>
 #include <win32cpp/BarLayout.hpp>
 #include <win32cpp/Button.hpp>
 #include <win32cpp/Color.hpp>
 #include <win32cpp/Config.hpp>
 #include <win32cpp/Container.hpp>
+#include <win32cpp/DateTime.hpp>
 #include <win32cpp/DeviceContext.hpp>
 #include <win32cpp/EditView.hpp>
-#include <win32cpp/Exception.hpp>
 #include <win32cpp/FolderBrowseDialog.hpp>
 #include <win32cpp/Font.hpp>
 #include <win32cpp/Frame.hpp>
-#include <win32cpp/ILayout.hpp>
 #include <win32cpp/Label.hpp>
 #include <win32cpp/LinearLayout.hpp>
 #include <win32cpp/ListView.hpp>
@@ -63,17 +61,14 @@
 #include <win32cpp/MemoryDC.hpp>
 #include <win32cpp/Menu.hpp>
 #include <win32cpp/Panel.hpp>
-#include <win32cpp/ProgressBar.hpp>
 #include <win32cpp/RedrawLock.hpp>
-#include <win32cpp/Splitter.hpp>
 #include <win32cpp/Trackbar.hpp>
+#include <win32cpp/Splitter.hpp>
 #include <win32cpp/TabView.hpp>
-#include <win32cpp/Timer.hpp>
 #include <win32cpp/TopLevelWindow.hpp>
 #include <win32cpp/Types.hpp>
 #include <win32cpp/Utility.hpp>
 #include <win32cpp/Window.hpp>
-#include <win32cpp/WindowGeometry.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 

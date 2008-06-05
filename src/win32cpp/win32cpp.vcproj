@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="win32cpp"
 	ProjectGUID="{E618F29F-BF28-441A-B039-9E10A631D881}"
 	RootNamespace="win32cpp"
@@ -462,6 +462,14 @@
 					</File>
 					<File
 						RelativePath=".\Config.hpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DateTime.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DateTime.hpp"
 						>
 					</File>
 					<File

@@ -38,8 +38,6 @@
 
 #pragma once
 
-#include <varargs.h>
-
 //////////////////////////////////////////////////////////////////////////////
 
 namespace win32cpp {
@@ -48,13 +46,17 @@ namespace win32cpp {
 // Locale
 //////////////////////////////////////////////////////////////////////////////
 
-typedef std::vector<uistring> LocaleList;
+typedef std::map<uistring, uistring> LocaleList;
 typedef std::map<uistring, uistring> LocaleTranslationMap;
 
 class Locale {
 private:
     Config          config;
     uistring        localeDirectory;
+    uistring        localeName;
+    WORD            localeID;
+    uistring        dateFormat;
+    uistring        timeFormat;
     
     LocaleTranslationMap
                     translationMap;
@@ -64,6 +66,12 @@ public:
     void            SetLocaleDirectory(const uistring& dirName);
     LocaleList      EnumLocales(void);
     uistring        Translate(const uistring& original);
+    uistring        LocaleName(void) const { return this->localeName; }
+    WORD            LangID(void) const { return this->localeID; }
+    uistring        DateFormat(void) const { return this->dateFormat; }
+    uistring        TimeFormat(void) const { return this->timeFormat; }
+    BOOL            SystemSupport(void) const;
+
 
     static Locale*  Instance()
     {
