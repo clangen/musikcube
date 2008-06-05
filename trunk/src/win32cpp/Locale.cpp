@@ -50,11 +50,15 @@ using namespace win32cpp;
 
 Locale::Locale()
 {
-    ;
+    // set default language identifier 
+    // 0x0409 = English (United States) / en-US / Codepage 1252
+    this->localeID = 0x0409;
 }
 
 Locale::Locale(const uistring& dirName, const uistring& locale)
 {
+    Locale();
+
     this->SetLocaleDirectory(dirName);
     if(!this->LoadConfig(locale)) 
     {
@@ -80,30 +84,54 @@ uistring Locale::Translate(const uistring& original)
 
 bool Locale::LoadConfig(const uistring& localeName)
 {
-    uistring path = this->localeDirectory + L"\\" + localeName + L".ini";
+    uistring path = this->localeDirectory + _T("\\" + localeName + L".ini");
 
     if(!fs::exists(path)) 
     {
         return false;
     }
 
-    config.SetFileName(path);
+    this->config.SetFileName(path);
 
+    // read locale configuration
+    this->config.SetSection(_T("config"));
+
+    // read name (for combo box displaying the languages)
+    this->localeName = this->config.Value(_T("name"));
+    if(this->localeName.empty()) 
+    {
+        return false;
+    }
+
+    // read locale identifier, necessary for e.g. DateTime
+    // (http://msdn.microsoft.com/en-us/library/ms776260(VS.85).aspx)
+    // example: 0x0407 for german
+    uistring temp = this->config.Value(_T("locale_identifier"));
+    int id = HexToInt(temp.c_str());
+    if(id != 0) 
+    {
+        this->localeID = static_cast<WORD>(id);    
+    }
+
+    // read format strings for date/time formatting
+    this->dateFormat = this->config.Value(_T("locale_date"));
+    this->timeFormat = this->config.Value(_T("locale_time"));
+       
     // generate translation map
     for(int i = 1; ; i++) 
     {
         // convert int to tchar
         TCHAR section[8];
-        _stprintf_s(section, L"%d", i);
+        _stprintf_s(section, _T("%d"), i);
 
-        if(config.SectionExists(uistring(section))) 
+        if(this->config.SectionExists(uistring(section))) 
         {
-            config.SetSection(section);
+            this->config.SetSection(section);
 
             // put translation into map
             uistring 
-                original    = config.Value(L"original"),
-                translated  = config.Value(L"translated");
+                original    = config.Value(_T("original")),
+                translated  = config.Value(_T("translated"));
 
             this->translationMap[original] = translated;
         }
@@ -134,4 +162,46 @@ void Locale::SetLocaleDirectory(const uistring &dirName)
     }
 
     this->localeDirectory = uistring(localeDir);
+}
+
+LocaleList Locale::EnumLocales(void)
+{
+    uistring path = this->localeDirectory;
+
+    // check if path is valid
+    if(!fs::exists(path) && fs::is_directory(path)) 
+    {
+        throw new Exception("Could not enumerate. Directory with locales is invalid.");
+    }
+    
+    // iterate through locale directory and collect available locales
+    LocaleList localeList;
+    
+    // convert directory to boost path
+    fs::path localePath(ShrinkString(path), fs::native); 
+
+    // now iterate...
+    fs::directory_iterator iEnd;
+    for(fs::directory_iterator iDir(localePath); iDir != iEnd; ++iDir)
+    {
+        // lame conversion =(
+        std::string dirEntryA = iDir->path().leaf();
+        uistring dirEntryW = WidenString(dirEntryA.c_str());
+
+        // read name of config
+        Config entryConfig(path + _T("\\") + dirEntryW);
+        if(entryConfig.SectionExists(_T("config"))) 
+        {
+            entryConfig.SetSection(_T("config"));
+            localeList[dirEntryW.c_str()] = entryConfig.Value(_T("name"));
+        }
+    }
+
+    return localeList;
+}
+
+
+BOOL Locale::SystemSupport() const
+{
+    return ::IsValidLocale(this->localeID, LCID_INSTALLED);
 }

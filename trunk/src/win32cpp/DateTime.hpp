@@ -2,9 +2,9 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright © 2008, André Wösten
 //
-// Sources and Binaries of: win32cpp
+// Sources and Binaries of: mC2, win32cpp
 //
 // All rights reserved.
 //
@@ -38,19 +38,57 @@
 
 #pragma once
 
-#include <win32cpp/Types.hpp>
+#include <win32cpp/Locale.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
 namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
+// DateTime
+//////////////////////////////////////////////////////////////////////////////
 
-uistring Escape(uistring string);
-int HexToInt(const uichar* value);
-uistring WidenString(const char* str);
-std::string ShrinkString(const uistring& str);
+class DateTime {
+private:
+    SYSTEMTIME      curDateTime;
+    Locale*         locale;
+public:
+    int             Year()              const { return this->curDateTime.wYear; }
+    int             Month()             const { return this->curDateTime.wMonth; }
+    int             DayOfWeek()         const { return this->curDateTime.wDayOfWeek; }
+    int             Day()               const { return this->curDateTime.wDay; }
+    int             Hour()              const { return this->curDateTime.wHour; }
+    int             Minute()            const { return this->curDateTime.wMinute; }
+    int             Second()            const { return this->curDateTime.wSecond; }
+    int             Millisecond()       const { return this->curDateTime.wMilliseconds; }
+
+    uistring        MonthString();
+    uistring        DayOfWeekString();
+    
+    uistring        Date();
+    uistring        Time();
+    ULONG           Timestamp()         const;
+
+    uistring        FormatDate(const uistring& format, DWORD flags);
+    uistring        FormatTime(const uistring& format, DWORD flags);
+
+    const PSYSTEMTIME
+                    Win32Systemtime();
+
+    void            Set(int year, int month, int dow, int day, int hour, int minute, int second, int millisecond);
+    void            SetSystemtime(void);
+    void            SetLocaltime(void);
+
+    void            FromSystemtime(const SYSTEMTIME& dateTime);
+    bool            FromSQLDateTime(const uistring& sqlDate);
+
+    /* ctor */      DateTime();
+    /* ctor */      DateTime(Locale* useLocale);
+    /* ctor */      DateTime(Locale* useLocale, const SYSTEMTIME& dateTime);
+    /* dtor */      ~DateTime();
+};
+
 
 //////////////////////////////////////////////////////////////////////////////
 
-} // win32cpp
+}

@@ -45,6 +45,8 @@
 #include <core/Library/LocalDB.h>
 #include <core/Pluginfactory.h>
 
+#include <cube/resources/resource.h>
+
 //////////////////////////////////////////////////////////////////////////////
 
 using namespace musik::cube;
@@ -79,6 +81,17 @@ MainWindowController::~MainWindowController()
 
 void        MainWindowController::OnMainWindowCreated(Window* window)
 {
+    
+    // Start by setting the icon
+    HICON icon = LoadIcon(Application::Instance(), MAKEINTRESOURCE( IDI_MAINFRAME ) );
+    if ( icon ){
+        
+        SendMessage( window->Handle(), WM_SETICON, WPARAM( ICON_SMALL ), LPARAM( icon ) );
+        SendMessage( window->Handle(), WM_SETICON, WPARAM( ICON_BIG ), LPARAM( icon ) );
+    }
+
+
+
     static const int TransportViewHeight = 54;
 
     this->mainWindow.MoveTo(200, 200);

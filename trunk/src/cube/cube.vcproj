@@ -451,7 +451,15 @@
 			RelativePath=".\pch.hpp"
 			>
 		</File>
+		<File
+			RelativePath=".\resources\resource.rc"
+			>
+		</File>
 	</Files>
 	<Globals>
+		<Global
+			Name="RESOURCE_FILE"
+			Value=".\resources\resource.rc"
+		/>
 	</Globals>
 </VisualStudioProject>
