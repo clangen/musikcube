@@ -17,6 +17,7 @@
 || genre || Genre || TCON ||
 || interpreted || Interpreted, remixed, or otherwise modified by || TPE4 ||
 || language || Language ||TLAN ||
+|| lyrics || Lyrics || USLT ||
 || mood || Mood || TMOO or TCOMM with MusicMatch_Mood description ||
 || org.artist || Original Artist || TOPE ||
 || org.writer || Original Lyricist/Text writer || TOLY ||
