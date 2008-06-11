@@ -40,8 +40,10 @@
 
 //////////////////////////////////////////////////////////////////////////////
 
-#include <win32cpp/Container.hpp>
+#include <win32cpp/Win32Config.hpp>          // Must be first!
+#include <win32cpp/Panel.hpp>
 #include <win32cpp/ILayout.hpp>
+#include <win32cpp/Frame.hpp>
 
 namespace win32cpp {
 

@@ -2,9 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
-//
-// Sources and Binaries of: win32cpp
+// The following are Copyright © 2007, mC2 Team
 //
 // All rights reserved.
 //
@@ -36,64 +34,34 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "pch.hpp"
 
-#include <win32cpp/Win32Config.hpp>
-#include <win32cpp/Exception.hpp>
-#include <win32cpp/Application.hpp>
+#include <core/config.h>
+#include <core/Indexer.h>
+#include <core/Common.h>
+#include <core/Preferences.h>
+#include <core/Library/Base.h>
 
-//////////////////////////////////////////////////////////////////////////////
+using namespace musik::core;
 
-namespace win32cpp {
+int main(int argc, utfchar* argv[]){
 
-//////////////////////////////////////////////////////////////////////////////
+    Preferences prefs("Server");
 
-///\brief An Exception that represents an Win32 error.
-class Win32Exception : public Exception
-{
-public: // ctors
-    //\brief Default constructor. Calls ::GetLastError()
-    /*ctor*/    Win32Exception()
+    utfstring directory( musik::core::GetDataDirectory()+UTF("server/") );
+    utfstring database(directory+UTF("musik.db"));
+
     {
-        this->errorCode = ::GetLastError();
+        db::Connection db;
+        db.Open(database.c_str(),0,prefs.GetInt("DatabaseCache",4096));
+        Library::Base::CreateDatabase(db);
     }
 
-    //\brief Constructor.
-    /*ctor*/    Win32Exception(DWORD errorCode)
-    {
-        this->errorCode = errorCode;
-    }
+    Indexer indexer;
+    indexer.database    = database;
+    indexer.Startup(directory);
 
-public: // methods
-    //\brief Uses FormatMessage() to return a human readable exception string.
-    virtual const char* Message()
-    {
-        static char resultPtr[4096];
-        resultPtr[0] = 0;
-        //
-        ::FormatMessageA(
-            FORMAT_MESSAGE_FROM_SYSTEM,
-            Application::Instance(),
-            this->errorCode,
-            NULL,
-            resultPtr,
-            4096,
-            NULL);
-        //
-        return resultPtr;
-    }
+    system("PAUSE");
 
-    DWORD ErrorCode()
-    {
-        return this->errorCode;
-    }
-
-private: // instance data
-    DWORD errorCode;
-};
-
-//////////////////////////////////////////////////////////////////////////////
-
-} // namespace win32cpp
-
-//////////////////////////////////////////////////////////////////////////////
+    return 0;
+}

@@ -48,7 +48,8 @@
     #include <TCHAR.h>
 
     #ifndef MUSIKCOREIMPORT
-        #define DLLEXPORT __declspec( dllexport )
+        //#define DLLEXPORT __declspec( dllexport )
+        #define DLLEXPORT 
     #else
         #define DLLEXPORT __declspec( dllimport )
     #endif

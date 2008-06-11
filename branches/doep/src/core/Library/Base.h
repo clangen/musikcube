@@ -37,6 +37,7 @@
 #pragma once
 
 #include <core/config.h>
+#include <core/db/Connection.h>
 
 #include <boost/thread/thread.hpp>
 #include <boost/thread/condition.hpp>
@@ -123,6 +124,9 @@ namespace musik{ namespace core{
                 static bool IsStaticMetaKey(std::string &metakey);
                 static bool IsSpecialMTOMetaKey(std::string &metakey);
                 static bool IsSpecialMTMMetaKey(std::string &metakey);
+
+
+                static void CreateDatabase(db::Connection &db);
 
             protected:
                 // Methods:

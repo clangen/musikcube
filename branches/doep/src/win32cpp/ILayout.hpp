@@ -38,6 +38,8 @@
 
 #pragma once
 
+#include <win32cpp/Win32Config.hpp>          // Must be first!
+
 //////////////////////////////////////////////////////////////////////////////
 
 namespace win32cpp {

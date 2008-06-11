@@ -2,9 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
-//
-// Sources and Binaries of: win32cpp
+// The following are Copyright © 2007, mC2 Team
 //
 // All rights reserved.
 //
@@ -37,63 +35,3 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #pragma once
-
-#include <win32cpp/Win32Config.hpp>
-#include <win32cpp/Exception.hpp>
-#include <win32cpp/Application.hpp>
-
-//////////////////////////////////////////////////////////////////////////////
-
-namespace win32cpp {
-
-//////////////////////////////////////////////////////////////////////////////
-
-///\brief An Exception that represents an Win32 error.
-class Win32Exception : public Exception
-{
-public: // ctors
-    //\brief Default constructor. Calls ::GetLastError()
-    /*ctor*/    Win32Exception()
-    {
-        this->errorCode = ::GetLastError();
-    }
-
-    //\brief Constructor.
-    /*ctor*/    Win32Exception(DWORD errorCode)
-    {
-        this->errorCode = errorCode;
-    }
-
-public: // methods
-    //\brief Uses FormatMessage() to return a human readable exception string.
-    virtual const char* Message()
-    {
-        static char resultPtr[4096];
-        resultPtr[0] = 0;
-        //
-        ::FormatMessageA(
-            FORMAT_MESSAGE_FROM_SYSTEM,
-            Application::Instance(),
-            this->errorCode,
-            NULL,
-            resultPtr,
-            4096,
-            NULL);
-        //
-        return resultPtr;
-    }
-
-    DWORD ErrorCode()
-    {
-        return this->errorCode;
-    }
-
-private: // instance data
-    DWORD errorCode;
-};
-
-//////////////////////////////////////////////////////////////////////////////
-
-} // namespace win32cpp
-
-//////////////////////////////////////////////////////////////////////////////

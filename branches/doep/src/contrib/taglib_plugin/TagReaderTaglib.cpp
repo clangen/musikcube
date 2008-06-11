@@ -95,7 +95,7 @@ bool TagReaderTaglib::CanReadTag(const utfchar *extension){
 
 }
 
-bool TagReaderTaglib::ReadTag(musik::core::Track *track){
+bool TagReaderTaglib::ReadTag(musik::core::ITrack *track){
 
 
     const utfchar *extension    = track->GetValue("extension");
@@ -122,7 +122,7 @@ bool TagReaderTaglib::ReadTag(musik::core::Track *track){
     return false;
 }
 
-bool TagReaderTaglib::GetOGGTag(musik::core::Track *track){
+bool TagReaderTaglib::GetOGGTag(musik::core::ITrack *track){
 /*
     TagLib::Ogg::File file(track->GetValue("path"));
 */
@@ -130,7 +130,7 @@ bool TagReaderTaglib::GetOGGTag(musik::core::Track *track){
 }
 
 
-bool TagReaderTaglib::GetGenericTag(musik::core::Track *track){
+bool TagReaderTaglib::GetGenericTag(musik::core::ITrack *track){
     TagLib::FileRef oFile(track->GetValue("path"));
     if(!oFile.isNull()){
         TagLib::Tag *tag	= oFile.tag();
@@ -171,7 +171,7 @@ bool TagReaderTaglib::GetGenericTag(musik::core::Track *track){
 }
 
 
-bool TagReaderTaglib::GetID3v2Tag(musik::core::Track *track){
+bool TagReaderTaglib::GetID3v2Tag(musik::core::ITrack *track){
     #ifdef UTF_WIDECHAR
         TagLib::ID3v2::FrameFactory::instance()->setDefaultTextEncoding(TagLib::String::UTF16);
     #else
@@ -336,24 +336,24 @@ bool TagReaderTaglib::GetID3v2Tag(musik::core::Track *track){
 	return false;
 }
 
-void TagReaderTaglib::SetTagValue(const char* key,const TagLib::String tagString,musik::core::Track *track){
+void TagReaderTaglib::SetTagValue(const char* key,const TagLib::String tagString,musik::core::ITrack *track){
 	using namespace musik::core;
 	std::wstring value(tagString.begin(),tagString.end());
     track->SetValue(key,value.c_str());
 }
 
-void TagReaderTaglib::SetTagValue(const char* key,const wchar_t* string,musik::core::Track *track){
+void TagReaderTaglib::SetTagValue(const char* key,const wchar_t* string,musik::core::ITrack *track){
 	using namespace musik::core;
 	track->SetValue(key,string);
 }
 
-void TagReaderTaglib::SetTagValue(const char* key,const int tagInt,musik::core::Track *track){
+void TagReaderTaglib::SetTagValue(const char* key,const int tagInt,musik::core::ITrack *track){
     std::wstring temp = boost::str(boost::wformat(_T("%1%"))%tagInt);
     track->SetValue(key,temp.c_str());
 }
 
 
-void TagReaderTaglib::SetTagValues(const char* key,const TagLib::ID3v2::FrameList &frame,musik::core::Track *track){
+void TagReaderTaglib::SetTagValues(const char* key,const TagLib::ID3v2::FrameList &frame,musik::core::ITrack *track){
 	using namespace musik::core;
 	if(!frame.isEmpty()){
 		for(TagLib::ID3v2::FrameList::ConstIterator value=frame.begin();value!=frame.end();++value){
@@ -367,7 +367,7 @@ void TagReaderTaglib::SetTagValues(const char* key,const TagLib::ID3v2::FrameLis
 }
 
 /*
-bool TagReaderTaglib::getStandardTags(musik::core::Track &track,TagLib::Tag *oTag,TagLib::AudioProperties *oAudioProperties){
+bool TagReaderTaglib::getStandardTags(musik::core::ITrack &track,TagLib::Tag *oTag,TagLib::AudioProperties *oAudioProperties){
 	oMedia->setArtist(oTag->artist().toCString(false));
 	oMedia->setAlbum(oTag->album().toCString(false));
 	oMedia->setGenre(oTag->genre().toCString(false));
@@ -383,7 +383,7 @@ bool TagReaderTaglib::getStandardTags(musik::core::Track &track,TagLib::Tag *oTa
 	return true;
 }
 */
-void TagReaderTaglib::SetSlashSeparatedValues(const char* key,TagLib::String &tagString,musik::core::Track *track){
+void TagReaderTaglib::SetSlashSeparatedValues(const char* key,TagLib::String &tagString,musik::core::ITrack *track){
 	if( !tagString.isEmpty() ){
 		std::wstring value(tagString.begin(),tagString.end());
 		std::vector<std::wstring> splitValues;
@@ -396,7 +396,7 @@ void TagReaderTaglib::SetSlashSeparatedValues(const char* key,TagLib::String &ta
 	}
 }
 
-void TagReaderTaglib::SetSlashSeparatedValues(const char* key,const TagLib::ID3v2::FrameList &frame,musik::core::Track *track){
+void TagReaderTaglib::SetSlashSeparatedValues(const char* key,const TagLib::ID3v2::FrameList &frame,musik::core::ITrack *track){
 	using namespace musik::core;
 	if(!frame.isEmpty()){
 		for(TagLib::ID3v2::FrameList::ConstIterator frameValue=frame.begin();frameValue!=frame.end();++frameValue){
@@ -416,7 +416,7 @@ void TagReaderTaglib::SetSlashSeparatedValues(const char* key,const TagLib::ID3v
 	}
 }
 
-void TagReaderTaglib::SetAudioProperties(TagLib::AudioProperties *audioProperties,musik::core::Track *track){
+void TagReaderTaglib::SetAudioProperties(TagLib::AudioProperties *audioProperties,musik::core::ITrack *track){
 	if(audioProperties){
 		std::wstring duration	= boost::str(boost::wformat(_T("%1%"))%audioProperties->length());
 		this->SetTagValue("duration",duration,track);

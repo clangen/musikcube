@@ -38,6 +38,7 @@
 
 #include <pch.hpp>
 #include <win32cpp/Menu.hpp>
+#include <win32cpp/Win32Exception.hpp>
 
 #include <boost/scoped_array.hpp>
 

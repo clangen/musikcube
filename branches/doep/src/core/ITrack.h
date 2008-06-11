@@ -36,61 +36,18 @@
 
 #pragma once
 
-namespace musik{ namespace core{
-    namespace Query{
-        class Base;
-    }
-} }
-
-#include <string>
-
 #include <core/config.h>
-#include <core/db/Connection.h>
-#include <core/db/Statement.h>
-#include <core/db/ScopedTransaction.h>
-#include <core/Library/Base.h>
-#include <core/Indexer.h>
 
+//////////////////////////////////////////////////////////////////////////////
 namespace musik{ namespace core{
-    namespace Library{
-        //////////////////////////////////////////
-        ///\brief
-        ///Library used for your local music.
-        ///
-        ///This library is used for music located
-        ///on you local computer.
-        ///
-        ///\see
-        ///Indexer
-        //////////////////////////////////////////
-        class LocalDB : public Library::Base{
-            public:
-                // Methods:
-                LocalDB(void);
-                ~LocalDB(void);
+//////////////////////////////////////////////////////////////////////////////
 
-                bool Startup();
-                utfstring GetInfo();
-                musik::core::Indexer *Indexer();
+class ITrack {
+    public:
+        virtual const utfchar* GetValue(const char* metakey) const = 0;
+        virtual void SetValue(const char* metakey,const utfchar* value) = 0;
+        virtual void SetThumbnail(const char *data,unsigned int size) = 0;
+};
 
-            protected:
-                void CancelCurrentQuery( );
-
-            private:
-                // Methods:
-
-                void ThreadLoop();
-
-            private:
-                // Variables:
-                db::Connection db;
-
-                //////////////////////////////////////////
-                ///\brief
-                ///Indexer that indexes all your tracks.
-                //////////////////////////////////////////
-                musik::core::Indexer indexer;
-
-        };
-    }
-} }
+//////////////////////////////////////////////////////////////////////////////
+} } // musik::core
