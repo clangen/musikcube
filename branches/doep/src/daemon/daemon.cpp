@@ -37,29 +37,15 @@
 #include "pch.hpp"
 
 #include <core/config.h>
-#include <core/Indexer.h>
-#include <core/Common.h>
-#include <core/Preferences.h>
-#include <core/Library/Base.h>
+#include <core/Server.h>
 
 using namespace musik::core;
 
 int main(int argc, utfchar* argv[]){
 
-    Preferences prefs("Server");
+    Server server;
 
-    utfstring directory( musik::core::GetDataDirectory()+UTF("server/") );
-    utfstring database(directory+UTF("musik.db"));
-
-    {
-        db::Connection db;
-        db.Open(database.c_str(),0,prefs.GetInt("DatabaseCache",4096));
-        Library::Base::CreateDatabase(db);
-    }
-
-    Indexer indexer;
-    indexer.database    = database;
-    indexer.Startup(directory);
+    server.Startup();
 
     system("PAUSE");
 

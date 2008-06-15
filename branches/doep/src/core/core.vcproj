@@ -508,6 +508,18 @@
 					>
 				</File>
 			</Filter>
+			<Filter
+				Name="server"
+				>
+				<File
+					RelativePath=".\Server.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Server.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 	</Files>
 	<Globals>
