@@ -33,55 +33,29 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
-#pragma once
-
-#include <core/config.h>
+#include "pch.hpp"
 #include <core/server/Connection.h>
 
-#include <core/Indexer.h>
+using namespace musik::core::server;
 
-#include <boost/asio.hpp>
-#include <boost/thread/thread.hpp>
-#include <boost/thread/mutex.hpp>
 
-//////////////////////////////////////////////////////////////////////////////
+Connection::Connection(boost::asio::io_service &ioService)
+ :socket(ioService)
+{
+}
 
-namespace musik{ namespace core{
+Connection::~Connection(void){
+}
 
-//////////////////////////////////////////////////////////////////////////////
+boost::asio::ip::tcp::socket &Connection::Socket(){
+    return this->socket;
+}
 
-class Server{
-    public:
-        // Methods
-        Server(unsigned int port);
-        ~Server(void);
-        bool Startup();
+void Connection::Startup(){
 
-    public:
-        Indexer indexer;    
+    std::cout << "Connection::Startup" << std::endl;
 
-    private:
-        // Methods
-        void Exit();
-        bool Exited();
-        void ThreadLoop();
-        void AcceptConnection(const boost::system::error_code& error);
-        void SetNextConnection();
+    this->socket.close();
 
-    private:
-        // Variables
-        bool exitThread;
-        boost::mutex serverMutex;
-        boost::thread_group threads;
-        boost::asio::io_service ioService;
-        boost::asio::ip::tcp::acceptor acceptor;
-
-        musik::core::server::ConnectionVector connections;
-        musik::core::server::ConnectionPtr nextConnection;
-
-};
-
-//////////////////////////////////////////////////////////////////////////////
-} }
-
+}
 

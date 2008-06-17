@@ -47,9 +47,11 @@
 using namespace musik::core;
 
 
-Server::Server(void)
+Server::Server(unsigned int port)
  :exitThread(false)
+ ,acceptor(ioService,boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port))
 {
+    this->acceptor.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
 }
 
 Server::~Server(void){
@@ -97,18 +99,12 @@ void Server::ThreadLoop(){
     while(!this->Exited()){
 
         // tcp/ip port
-        int port( prefs.GetInt("ipPort",10543) );
+//        int port( prefs.GetInt("ipPort",10543) );
 
         boost::system::error_code error;
 
-        // Start the acceptor to listen for incoming connections
-        boost::asio::ip::tcp::acceptor acceptor(this->ioService,boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port));
-
-        // temporary test
-        boost::asio::ip::tcp::socket socket(this->ioService);
-
-        // Link the acceptor to the AcceptConnection method
-        acceptor.async_accept(socket,boost::bind(&Server::AcceptConnection,this));
+        // Connect the next socket connection
+        this->SetNextConnection();
 
         // loop, waiting for incomming connections
         this->ioService.run(error);
@@ -116,6 +112,18 @@ void Server::ThreadLoop(){
     }
 }
 
-void Server::AcceptConnection(){
+void Server::SetNextConnection(){
+    this->nextConnection.reset( new musik::core::server::Connection(this->ioService) );
+    this->acceptor.async_accept(this->nextConnection->Socket(),boost::bind(&Server::AcceptConnection,this,boost::asio::placeholders::error));
+}
+
+void Server::AcceptConnection(const boost::system::error_code& error){
+    if(!error){
+        // Start the connection
+        this->nextConnection->Startup();
+
+        this->connections.push_back(this->nextConnection);
+        this->SetNextConnection();
+    }
 }
 

@@ -36,52 +36,36 @@
 #pragma once
 
 #include <core/config.h>
-#include <core/server/Connection.h>
-
-#include <core/Indexer.h>
-
 #include <boost/asio.hpp>
-#include <boost/thread/thread.hpp>
-#include <boost/thread/mutex.hpp>
+#include <boost/shared_ptr.hpp>
+#include <vector>
 
 //////////////////////////////////////////////////////////////////////////////
 
-namespace musik{ namespace core{
+namespace musik{ namespace core{ namespace server{
 
 //////////////////////////////////////////////////////////////////////////////
+// Forward declare
+class Connection;
+typedef boost::shared_ptr<Connection> ConnectionPtr;
+typedef std::vector<ConnectionPtr> ConnectionVector;
+//////////////////////////////////////////////////////////////////////////////
 
-class Server{
+
+class Connection{
     public:
-        // Methods
-        Server(unsigned int port);
-        ~Server(void);
-        bool Startup();
+        Connection(boost::asio::io_service &ioService);
+        ~Connection(void);
 
-    public:
-        Indexer indexer;    
+        void Startup();
 
+        boost::asio::ip::tcp::socket &Socket();
     private:
-        // Methods
-        void Exit();
-        bool Exited();
-        void ThreadLoop();
-        void AcceptConnection(const boost::system::error_code& error);
-        void SetNextConnection();
-
-    private:
-        // Variables
-        bool exitThread;
-        boost::mutex serverMutex;
-        boost::thread_group threads;
-        boost::asio::io_service ioService;
-        boost::asio::ip::tcp::acceptor acceptor;
-
-        musik::core::server::ConnectionVector connections;
-        musik::core::server::ConnectionPtr nextConnection;
+        boost::asio::ip::tcp::socket socket;
 
 };
 
-//////////////////////////////////////////////////////////////////////////////
-} }
 
+//////////////////////////////////////////////////////////////////////////////
+} } }
 
