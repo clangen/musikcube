@@ -546,6 +546,18 @@
 					>
 				</File>
 			</Filter>
+			<Filter
+				Name="xml"
+				>
+				<File
+					RelativePath=".\xml\StreamParser.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\xml\StreamParser.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 	</Files>
 	<Globals>
