@@ -35,6 +35,8 @@
 //////////////////////////////////////////////////////////////////////////////
 #include "pch.hpp"
 #include <core/server/Connection.h>
+#include <core/Preferences.h>
+#include <core/Query/Base.h>
 
 using namespace musik::core::server;
 
@@ -42,20 +44,109 @@ using namespace musik::core::server;
 Connection::Connection(boost::asio::io_service &ioService)
  :socket(ioService)
 {
+    this->identifier    = UTF("server");
 }
 
 Connection::~Connection(void){
+    this->threads.join_all();
+    this->socket.close();
 }
 
 boost::asio::ip::tcp::socket &Connection::Socket(){
     return this->socket;
 }
 
-void Connection::Startup(){
+//////////////////////////////////////////
+///\brief
+///Start the Connections threads
+///
+///3 different threads will be started:
+///1. Reading from the socket and parsing the XML, adding queries to the queue.
+///2. One thread for executing the Queries
+///3. And one thread for sending the results
+//////////////////////////////////////////
+bool Connection::Startup(){
 
     std::cout << "Connection::Startup" << std::endl;
 
-    this->socket.close();
+    this->threads.create_thread(boost::bind(&Connection::ReadThread,this));
+    this->threads.create_thread(boost::bind(&Connection::ParseThread,this));
+    this->threads.create_thread(boost::bind(&Connection::WriteThread,this));
+    
+    return true;
+}
 
+void Connection::ReadThread(){
+}
+
+void Connection::ParseThread(){
+
+    Preferences prefs("Server");
+
+    utfstring database(this->GetDBPath());
+    this->db.Open(database.c_str(),0,prefs.GetInt("DatabaseCache",4096));
+
+    while(!this->Exit()){
+        Query::Ptr query(this->GetNextQuery());
+
+        if(query){    // No empty query
+
+            ////////////////////////////////////////////////////////////
+            // Add to the finished queries
+            {
+                boost::mutex::scoped_lock lock(this->libraryMutex);
+                this->bCurrentQueryCanceled    = false;
+                this->runningQuery    = query;
+                this->outgoingQueries.push_back(query);
+
+                // Set query as started
+                query->status |= Query::Base::Status::Started;
+            }
+
+            ////////////////////////////////////////////////////////////
+            // Lets parse the query
+            query->ParseQuery(this,this->db);
+            {
+                boost::mutex::scoped_lock lock(this->libraryMutex);
+                this->runningQuery.reset();
+                // And set it as finished
+                query->status |= Query::Base::Status::Ended;
+            }
+
+            ////////////////////////////////////////////////////////////
+            // Notify that the Query is finished.
+            this->waitCondition.notify_all();
+
+        }else{
+
+            ////////////////////////////////////////////////////////////
+            // Tricky part, waiting for queries to be added.
+            // Not sure I'm doing this the right way.
+            // Could this part lead to a deadlock???
+            boost::mutex::scoped_lock lock(this->libraryMutex);
+            if(!this->exit && this->incomingQueries.size()==0 ){
+                this->waitCondition.wait(lock);
+            }
+        }
+    }
+}
+
+void Connection::WriteThread(){
+}
+
+//////////////////////////////////////////
+///\brief
+///Cancel the current running query
+///
+///This method will also send a sqlite3_interrupt to cancel the
+///current running SQL Query
+//////////////////////////////////////////
+void Connection::CancelCurrentQuery( ){
+    this->bCurrentQueryCanceled    = true;
+    this->db.Interrupt();
+}
+
+utfstring Connection::GetInfo(){
+    return UTF("");
 }
 

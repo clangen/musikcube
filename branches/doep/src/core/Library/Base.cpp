@@ -94,7 +94,7 @@ utfstring Library::Base::GetLibraryDirectory(){
 //////////////////////////////////////////
 utfstring Library::Base::GetDBPath(){
     utfstring sPath    = this->GetLibraryDirectory();
-    sPath.append(UTF("local_musik.db"));
+    sPath.append(UTF("musik.db"));
     return sPath;
 }
 

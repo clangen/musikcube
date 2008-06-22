@@ -36,8 +36,13 @@
 #pragma once
 
 #include <core/config.h>
+#include <core/Library/Base.h>
+#include <core/db/Connection.h>
 #include <boost/asio.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/thread/thread.hpp>
+#include <boost/thread/condition.hpp>
+#include <boost/thread/mutex.hpp>
 #include <vector>
 
 //////////////////////////////////////////////////////////////////////////////
@@ -52,16 +57,31 @@ typedef std::vector<ConnectionPtr> ConnectionVector;
 //////////////////////////////////////////////////////////////////////////////
 
 
-class Connection{
+class Connection : public musik::core::Library::Base{
     public:
         Connection(boost::asio::io_service &ioService);
         ~Connection(void);
+        utfstring GetInfo();
 
-        void Startup();
+        bool Startup();
 
         boost::asio::ip::tcp::socket &Socket();
     private:
+        // Methods:
+        void ReadThread();
+        void ParseThread();
+        void WriteThread();
+
+    protected:
+        void CancelCurrentQuery( );
+
+    private:
         boost::asio::ip::tcp::socket socket;
+        boost::thread_group threads;
+
+        musik::core::db::Connection db;
+
+
 
 };
 

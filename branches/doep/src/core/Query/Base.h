@@ -48,6 +48,9 @@ namespace musik{ namespace core{
         class Base;
         class LocalDB;
     }
+    namespace server{
+        class Connection;
+    }
 } }
 
 
@@ -79,16 +82,9 @@ namespace musik{ namespace core{
             protected:
                 friend class Library::Base;
                 friend class Library::LocalDB;
+                friend class server::Connection;
 
                 // Variables:
-
-                //////////////////////////////////////////
-                ///\brief
-                ///The query id is a unique number for each query.
-                ///
-                ///Used for comparing queries and find similar queries.
-                //////////////////////////////////////////
-                unsigned int iQueryId;
 
                 //////////////////////////////////////////
                 ///\brief
@@ -113,6 +109,14 @@ namespace musik{ namespace core{
 
                 //////////////////////////////////////////
                 ///\brief
+                ///The query id is a unique number for each query.
+                ///
+                ///Used for comparing queries and find similar queries.
+                //////////////////////////////////////////
+                unsigned int iQueryId;
+
+                //////////////////////////////////////////
+                ///\brief
                 ///Query options
                 ///
                 ///options is only set inside the AddQuery and should not be altered later.
@@ -126,6 +130,7 @@ namespace musik{ namespace core{
             protected:
                 friend class Library::Base;
                 friend class Library::LocalDB;
+                friend class server::Connection;
 
                 // Methods:
 
