@@ -550,11 +550,27 @@
 				Name="xml"
 				>
 				<File
-					RelativePath=".\xml\StreamParser.cpp"
+					RelativePath=".\xml\Node.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\xml\StreamParser.h"
+					RelativePath=".\xml\Node.h"
+					>
+				</File>
+				<File
+					RelativePath=".\xml\Parser.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\xml\Parser.h"
+					>
+				</File>
+				<File
+					RelativePath=".\xml\ParserNode.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\xml\ParserNode.h"
 					>
 				</File>
 			</Filter>

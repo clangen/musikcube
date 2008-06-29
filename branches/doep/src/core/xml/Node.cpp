@@ -33,55 +33,29 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
-#pragma once
+#include "pch.hpp"
+#include "Node.h"
+#include <core/xml/Parser.h>
 
-#include <core/config.h>
-#include <expat/expat.h>
-#include <sigslot/sigslot.h>
-#include <string>
-#include <vector>
+using namespace musik::core::xml;
+    
+Node::Node(){
 
-//////////////////////////////////////////////////////////////////////////////
+}
 
-namespace musik{ namespace core{ namespace xml{
+Node::~Node(void){
+}
 
-//////////////////////////////////////////////////////////////////////////////
+std::list<std::string> Node::NodeLevel(){
+    std::list<std::string> nodeLevels;
+    nodeLevels.push_front(this->name);
 
-class StreamParser{
-    public:
-        StreamParser(void);
-        ~StreamParser(void);
+    Ptr currentNode   = this->parent;
+    while(currentNode){
+        nodeLevels.push_front(currentNode->name);
+        currentNode = currentNode->parent;
+    }
+    return nodeLevels;
+}
 
-        bool Parse(std::string &xml);
-
-        typedef std::map<std::string,std::string> AttributeMap;
-        
-        sigslot::signal2<const char*,AttributeMap&> RootNodeStart;
-        sigslot::signal1<const char*> RootNodeEnd;
-
-        sigslot::signal2<const char*,AttributeMap&> NodeStart;
-        sigslot::signal1<const char*> NodeContent;
-        sigslot::signal1<const char*> NodeEnd;
-
-
-    private:
-        XML_Parser parser;
-
-        int level;
-        std::vector<std::string> tagLevels;
-        
-        
-
-        static void OnElementStart(void *thisobject,const char *name, const char **atts);
-        void OnElementStartReal(const char *name, const char **atts);
-        static void OnElementEnd(void *thisobject,const char *name);
-        void OnElementEndReal(const char *name);
-        static void OnContent(void *thisobject,const char *content,int length);
-        void OnContentReal(const char *content,int length);
-
-
-};
-
-//////////////////////////////////////////////////////////////////////////////
-} } }
 
