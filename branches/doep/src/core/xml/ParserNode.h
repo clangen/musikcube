@@ -51,6 +51,8 @@ class Parser;
 class ParserNode : boost::noncopyable{
     public:
 
+        ParserNode(Parser &parser);
+        ParserNode(Parser &parser,std::string expectedNode);
         ParserNode(ParserNode &parent);
         ParserNode(ParserNode &parent,std::string expectedNode);
         ~ParserNode();
@@ -61,14 +63,16 @@ class ParserNode : boost::noncopyable{
         operator bool();
 
     private:
-        friend class Parser;
 
-        std::list<std::string> NodeParents();
+        void WaitForNode(std::set<std::string> &nodeNames);
+
+        std::string NodeParentsPath();
+        int NodeLevel();
 
         Node::Ptr node;
         Node::Ptr parentNode;
         Parser *parser;
-        bool success;
+        int status;
 
 };
 

@@ -48,26 +48,29 @@ namespace musik{ namespace core{ namespace xml{
 //////////////////////////////////////////////////////////////////////////////
 // Forward declare
 class Parser;
+class ParserNode;
 //////////////////////////////////////////////////////////////////////////////
 
 class Node{
     public:
+        ~Node(void);
+    private:
+        friend class Parser;
+        friend class ParserNode;
+
 
         typedef boost::shared_ptr<Node> Ptr;
 
         Node();
-        ~Node(void);
 
         typedef std::map<std::string,std::string> AttributeMap;
 
         AttributeMap attributes;
         std::string name;
 
-    protected:
-        friend class Parser;
-        friend class ParserNode;
 
-        std::list<std::string> NodeLevel();
+        std::string NodeLevelPath();
+        int NodeLevel();
         bool ended;
         Parser *parser;
         Ptr parent;

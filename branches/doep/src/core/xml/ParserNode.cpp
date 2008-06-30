@@ -39,20 +39,44 @@
 
 using namespace musik::core::xml;
     
-ParserNode::ParserNode(ParserNode &parent){
+ParserNode::ParserNode(ParserNode &parent)
+ : status(0)
+{
     this->parentNode    = parent.node;
     this->parser        = parent.parser;
-    this->success       = this->parser->WaitForNode(this);
+
+    std::set<std::string> nodeNames;
+    this->WaitForNode(nodeNames);
+}
+ParserNode::ParserNode(Parser &parser)
+ : status(0)
+{
+    this->parser        = &parser;
+
+    std::set<std::string> nodeNames;
+    this->WaitForNode(nodeNames);
 }
 
-ParserNode::ParserNode(ParserNode &parent,std::string expectedNode){
+ParserNode::ParserNode(ParserNode &parent,std::string expectedNode)
+ : status(0)
+{
     this->parentNode    = parent.node;
     this->parser        = parent.parser;
-    this->success       = this->parser->WaitForNode(this,expectedNode);
+
+    std::set<std::string> nodeNames;
+    this->WaitForNode(nodeNames);
+}
+ParserNode::ParserNode(Parser &parser,std::string expectedNode)
+ : status(0)
+{
+    this->parser        = &parser;
+
+    std::set<std::string> nodeNames;
+    this->WaitForNode(nodeNames);
 }
 
 ParserNode::~ParserNode(){
-    if(this->success && !this->node->ended){    
+    if(!this->node->ended){    
         // Wait for node to be ended
 
     }
@@ -67,13 +91,66 @@ Node::AttributeMap& ParserNode::Attributes(){
 }
 
 ParserNode::operator bool(){
-    return this->success;
+    return this->status==1;
 }
 
-std::list<std::string> ParserNode::NodeParents(){
-    std::list<std::string> nodeParents;
+int ParserNode::NodeLevel(){
+    int level(0);
     if(this->parentNode){
-        return this->parentNode->NodeLevel();
+
+    }
+    return level;
+
+}
+
+std::string ParserNode::NodeParentsPath(){
+    std::string nodeParents;
+    if(this->parentNode){
+        return this->parentNode->NodeLevelPath();
     }
     return nodeParents;
 }
+
+void ParserNode::WaitForNode(std::set<std::string> &nodeNames){
+    // Wait for the node
+    std::string nodeParentPath(this->NodeParentsPath());
+
+    while(this->status==0){
+        // Parse until next stop
+        this->parser->ContinueParsing();
+
+        // First of all, check if the nodeParentPath is a substring of the parsers current node level
+        if( this->parser->CurrentNodeLevelPath().compare(0,nodeParentPath.size(),nodeParentPath)!=0 ){
+            // Node has not turned up, fail
+            this->status=-1;
+        }else{
+            // Check if this is the expected EventType
+            if(this->parser->currentEventType==Parser::EventTypes::NodeStart){
+                
+                // Is the "level" the right one?
+                // This is a check so that the parser isn't a level down from the expected
+                if(this->parser->level-1==this->NodeLevel()){
+
+                    // Is this an expected node name
+                    if(nodeNames.empty()){
+                        // Success
+                        this->node      = this->parser->LastNode();
+                        this->status    = 1;
+                    }else{
+                        Node::Ptr lastNode  = this->parser->LastNode();
+                        if(lastNode){
+                            if(nodeNames.find(lastNode->name)!=nodeNames.end()){
+                                // Success
+                                this->node      = lastNode;
+                                this->status    = 1;
+                            }
+                        }
+                    }
+
+                }
+
+            }
+        }
+    }
+}
+

@@ -68,30 +68,12 @@ class Parser{
         int level;
         std::vector<Node::Ptr> currentNodeLevels;
 
-
-        // Wait variables
-        enum AWaitingTypes:int{
-            NodeStart=1,
-            NodeEnd=2,
-            Content=3
-        } awaitingType;
-
-        std::list<std::string> awaitingNodeLevels;
-        std::set<std::string> awaitingNodes;
-        ParserNode *setNode;
-        bool setNodeSuccess;
-
-        bool continueParsing;
-
-        std::list<std::string> NodeLevel();
-
 		// Socket stuff
         boost::asio::ip::tcp::socket *socket;       
+        boost::array<char, 4096> readBuffer;
+        size_t readBufferLength;
 
     private:
-		void ContinueParsing();
-
-        bool CheckExpected(int typeOfEvent);
 
         static void OnElementStart(void *thisobject,const char *name, const char **atts);
         void OnElementStartReal(const char *name, const char **atts);
@@ -100,16 +82,25 @@ class Parser{
 /*        static void OnContent(void *thisobject,const char *content,int length);
         void OnContentReal(const char *content,int length);
 */
+
+    private:
+        void ReadFromSocket();
+
     private:
         friend class ParserNode;
 
-        bool WaitForNode(ParserNode *setNode);
-        bool WaitForNode(ParserNode *setNode,std::string &expectedNode);
+        enum EventTypes:int{
+            NodeStart=1,
+            NodeEnd=2,
+            Content=3
+        };
 
-        void ReadFromSocket();
+        Node::Ptr LastNode();
+		void ContinueParsing();
+        std::string CurrentNodeLevelPath(bool getParent=false);
 
-        boost::array<char, 4096> readBuffer;
-        size_t readBufferLength;
+        int currentEventType;
+
 
 };
 

@@ -46,16 +46,26 @@ Node::Node(){
 Node::~Node(void){
 }
 
-std::list<std::string> Node::NodeLevel(){
-    std::list<std::string> nodeLevels;
-    nodeLevels.push_front(this->name);
+std::string Node::NodeLevelPath(){
+    std::string nodeLevels(this->name);
 
     Ptr currentNode   = this->parent;
     while(currentNode){
-        nodeLevels.push_front(currentNode->name);
+        nodeLevels  = currentNode->name + "/" + nodeLevels;
         currentNode = currentNode->parent;
     }
     return nodeLevels;
+}
+
+int Node::NodeLevel(){
+    int level(0);
+    Ptr currentNode   = this->parent;
+    while(currentNode){
+        level++;
+        currentNode = currentNode->parent;
+    }
+    return level;
+
 }
 
 

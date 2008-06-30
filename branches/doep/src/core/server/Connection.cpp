@@ -38,6 +38,9 @@
 #include <core/Preferences.h>
 #include <core/Query/Base.h>
 
+#include <core/xml/Parser.h>
+#include <core/xml/ParserNode.h>
+
 using namespace musik::core::server;
 
 
@@ -48,6 +51,7 @@ Connection::Connection(boost::asio::io_service &ioService)
 }
 
 Connection::~Connection(void){
+    this->Exit(true);
     this->threads.join_all();
     this->socket.close();
 }
@@ -77,6 +81,15 @@ bool Connection::Startup(){
 }
 
 void Connection::ReadThread(){
+
+    musik::core::xml::Parser xmlParser(&this->socket);
+
+    // Test waiting for a Node
+    musik::core::xml::ParserNode query(xmlParser);
+/*    while(musik::core::xml::ParserNode query(xmlParser)){
+        std::cout << "NODE " << query.Name() << std::endl;
+    }
+*/
 }
 
 void Connection::ParseThread(){
