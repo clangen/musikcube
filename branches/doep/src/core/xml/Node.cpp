@@ -39,7 +39,9 @@
 
 using namespace musik::core::xml;
     
-Node::Node(){
+Node::Node()
+:ended(false)
+{
 
 }
 
@@ -58,7 +60,7 @@ std::string Node::NodeLevelPath(){
 }
 
 int Node::NodeLevel(){
-    int level(0);
+    int level(1);
     Ptr currentNode   = this->parent;
     while(currentNode){
         level++;

@@ -52,8 +52,8 @@ Connection::Connection(boost::asio::io_service &ioService)
 
 Connection::~Connection(void){
     this->Exit(true);
-    this->threads.join_all();
     this->socket.close();
+    this->threads.join_all();
 }
 
 boost::asio::ip::tcp::socket &Connection::Socket(){
@@ -84,12 +84,22 @@ void Connection::ReadThread(){
 
     musik::core::xml::Parser xmlParser(&this->socket);
 
-    // Test waiting for a Node
-    musik::core::xml::ParserNode query(xmlParser);
-/*    while(musik::core::xml::ParserNode query(xmlParser)){
-        std::cout << "NODE " << query.Name() << std::endl;
+    try{
+
+        // Test waiting for a Node
+        if( musik::core::xml::ParserNode root = xmlParser.ChildNode("musik") ){
+            std::cout << "Client initialized " << root.Name() << std::endl;
+            while( musik::core::xml::ParserNode query = root.ChildNode("query") ){
+                std::cout << "Got a query " << query.Name() << std::endl;
+            }
+        }
+        
+        std::cout << "Connection ended " << std::endl;
     }
-*/
+    catch(...){
+        std::cout << "Connection dropped" << std::endl;
+    }
+
 }
 
 void Connection::ParseThread(){

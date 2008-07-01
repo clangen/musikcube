@@ -45,6 +45,7 @@
 #include <boost/array.hpp>
 
 #include <core/xml/Node.h>
+#include <core/xml/ParserNode.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -54,7 +55,7 @@ namespace musik{ namespace core{ namespace xml{
 class ParserNode;
 //////////////////////////////////////////////////////////////////////////////
 
-class Parser{
+class Parser : public ParserNode{
     public:
         Parser(boost::asio::ip::tcp::socket *socket);
         ~Parser();
@@ -67,6 +68,7 @@ class Parser{
 		// XML specific info
         int level;
         std::vector<Node::Ptr> currentNodeLevels;
+
 
 		// Socket stuff
         boost::asio::ip::tcp::socket *socket;       
@@ -89,6 +91,9 @@ class Parser{
     private:
         friend class ParserNode;
 
+        bool exit;
+        void Exit();
+
         enum EventTypes:int{
             NodeStart=1,
             NodeEnd=2,
@@ -100,6 +105,8 @@ class Parser{
         std::string CurrentNodeLevelPath(bool getParent=false);
 
         int currentEventType;
+
+        bool xmlFound;
 
 
 };

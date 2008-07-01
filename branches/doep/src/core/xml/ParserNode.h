@@ -48,23 +48,46 @@ namespace musik{ namespace core{ namespace xml{
 class Parser;
 
 
-class ParserNode : boost::noncopyable{
+class ParserNode {
+/*    private:
+        struct NodeDataContainer{
+
+            ParserNode &node;
+            std::set<std::string> expectedNames;
+
+            NodeDataContainer(ParserNode &node,std::set<std::string> &expectedNames)
+                : node(node)
+                ,expectedNames(expectedNames)
+            {
+            };
+        };
+*/
     public:
 
-        ParserNode(Parser &parser);
-        ParserNode(Parser &parser,std::string expectedNode);
-        ParserNode(ParserNode &parent);
-        ParserNode(ParserNode &parent,std::string expectedNode);
+        ParserNode();
+
+
+        ParserNode& operator=(ParserNode const &copyNode);
+
+        ParserNode ChildNode() const;
+        ParserNode ChildNode(std::string expectedNode) const;
+
+
         ~ParserNode();
 
         std::string& Name();
         Node::AttributeMap& Attributes();
 
         operator bool();
+//        bool operator==(bool check);
 
-    private:
+    protected:
+        friend class Parser;
 
-        void WaitForNode(std::set<std::string> &nodeNames);
+        ParserNode(const ParserNode *parent);
+        ParserNode(const ParserNode *parent,std::string &expectedNode);
+
+        void WaitForNode(const std::set<std::string> &nodeNames);
 
         std::string NodeParentsPath();
         int NodeLevel();

@@ -42,6 +42,17 @@ using namespace musik::core::xml;
 
 //////////////////////////////////////////////////////////////////////////////
 
+//////////////////////////////////////////
+///\brief
+///Constructor
+///
+///\param socket
+///pointer to boost::asio socket to be used by the Parser
+///
+///The Parser will continously parse XML and 
+///read from the socket when there is no buffer
+///left in the parser.
+//////////////////////////////////////////
 Parser::Parser(boost::asio::ip::tcp::socket *socket)
  :level(0)
  ,xmlParser(NULL)
@@ -49,7 +60,11 @@ Parser::Parser(boost::asio::ip::tcp::socket *socket)
  ,xmlParserStatus(XML_Status::XML_STATUS_OK)
  ,readBufferLength(0)
  ,currentEventType(0)
+ ,exit(false)
 {
+    // Set node stuff
+    this->parser        = this;
+
     this->xmlParser    = XML_ParserCreate(NULL);
     XML_SetUserData(this->xmlParser,this);
     XML_SetElementHandler(this->xmlParser,&Parser::OnElementStart,&Parser::OnElementEnd);
@@ -57,16 +72,19 @@ Parser::Parser(boost::asio::ip::tcp::socket *socket)
 
 }
 
+//////////////////////////////////////////////////////////////////////////////
+
 Parser::~Parser(void){
     XML_ParserFree(this->xmlParser);
 }
 
+//////////////////////////////////////////////////////////////////////////////
 
 void Parser::OnElementStart(void *thisobject,const char *name, const char **atts){
     ((Parser*)thisobject)->OnElementStartReal(name,atts);
 }
 void Parser::OnElementStartReal(const char *name, const char **atts){
-
+    this->xmlFound  = true;
     this->level++;
     // First, lets create the new Node and add to the nodeLevels
     Node::Ptr node(new Node());
@@ -84,14 +102,21 @@ void Parser::OnElementStartReal(const char *name, const char **atts){
     XML_StopParser(this->xmlParser,true);
 }
 
+//////////////////////////////////////////////////////////////////////////////
+
 void Parser::OnElementEnd(void *thisobject,const char *name){
     ((Parser*)thisobject)->OnElementEndReal(name);
 }
 
 void Parser::OnElementEndReal(const char *name){
+    this->xmlFound  = true;
     this->level--;
     if(this->currentNodeLevels.size()>0){
         if(this->currentNodeLevels.back()->name == name){
+
+            this->currentNodeLevels.back()->ended   = true;
+            this->currentNodeLevels.pop_back();
+
             this->currentEventType  = EventTypes::NodeEnd;
             XML_StopParser(this->xmlParser,true);
         }else{
@@ -104,6 +129,8 @@ void Parser::OnElementEndReal(const char *name){
     }
 }
 
+//////////////////////////////////////////////////////////////////////////////
+
 /*
 void Parser::OnContent(void *thisobject,const char *content,int length){
     ((Parser*)thisobject)->OnContentReal(content,length);
@@ -112,6 +139,7 @@ void Parser::OnContent(void *thisobject,const char *content,int length){
 void Parser::OnContentReal(const char *content,int length){
 }*/
 
+//////////////////////////////////////////////////////////////////////////////
 
 void Parser::ReadFromSocket(){
     boost::system::error_code error;
@@ -119,25 +147,40 @@ void Parser::ReadFromSocket(){
 
     if(error){
         // Connection closed or some other error occured
-        throw;
+        this->Exit();
     }
 
 }
 
+//////////////////////////////////////////////////////////////////////////////
+
 void Parser::ContinueParsing(){
-	switch(this->xmlParserStatus){
-		case XML_Status::XML_STATUS_SUSPENDED:
-			this->xmlParserStatus	= XML_ResumeParser(this->xmlParser);
-			break;
-		case XML_Status::XML_STATUS_OK:
-			this->ReadFromSocket();
-			this->xmlParserStatus	= XML_Parse(this->xmlParser,this->readBuffer.c_array(),this->readBufferLength,0);
-			break;
-        case XML_Status::XML_STATUS_ERROR:
-            throw;
-            break;
-	}
+    this->xmlFound  = false;
+    while(!this->xmlFound && !this->exit){
+        switch(this->xmlParserStatus){
+	        case XML_Status::XML_STATUS_SUSPENDED:
+		        this->xmlParserStatus	= XML_ResumeParser(this->xmlParser);
+		        break;
+	        case XML_Status::XML_STATUS_OK:
+		        this->ReadFromSocket();
+		        this->xmlParserStatus	= XML_Parse(this->xmlParser,this->readBuffer.c_array(),this->readBufferLength,0);
+		        break;
+            case XML_Status::XML_STATUS_ERROR:
+                this->Exit();
+                break;
+        }
+    }
 }
+
+void Parser::Exit(){
+    this->exit  = true;
+    for(std::vector<Node::Ptr>::iterator node=this->currentNodeLevels.begin();node!=this->currentNodeLevels.end();++node){
+        (*node)->ended  = true;
+    }
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
 
 std::string Parser::CurrentNodeLevelPath(bool getParent){
     std::string nodeLevels;
@@ -156,6 +199,8 @@ std::string Parser::CurrentNodeLevelPath(bool getParent){
     }
     return nodeLevels;
 }
+
+//////////////////////////////////////////////////////////////////////////////
 
 Node::Ptr Parser::LastNode(){
     if(this->currentNodeLevels.empty()){

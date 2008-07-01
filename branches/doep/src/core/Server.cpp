@@ -93,7 +93,7 @@ void Server::ThreadLoop(){
 
     // Start the indexer
     this->indexer.database    = database;
-    this->indexer.Startup(directory);
+//    this->indexer.Startup(directory);
 
 
     while(!this->Exited()){
