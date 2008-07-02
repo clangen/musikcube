@@ -49,37 +49,23 @@ class Parser;
 
 
 class ParserNode {
-/*    private:
-        struct NodeDataContainer{
-
-            ParserNode &node;
-            std::set<std::string> expectedNames;
-
-            NodeDataContainer(ParserNode &node,std::set<std::string> &expectedNames)
-                : node(node)
-                ,expectedNames(expectedNames)
-            {
-            };
-        };
-*/
     public:
 
         ParserNode();
-
+        ~ParserNode();
 
         ParserNode& operator=(ParserNode const &copyNode);
 
         ParserNode ChildNode() const;
         ParserNode ChildNode(std::string expectedNode) const;
 
-
-        ~ParserNode();
-
         std::string& Name();
+        std::string& Content();
         Node::AttributeMap& Attributes();
 
+        void WaitForContent();
+
         operator bool();
-//        bool operator==(bool check);
 
     protected:
         friend class Parser;

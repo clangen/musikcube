@@ -64,6 +64,7 @@ ParserNode::ParserNode(const ParserNode *parent)
     std::set<std::string> nodeNames;
     this->WaitForNode(nodeNames);
 }
+
 ParserNode::ParserNode(const ParserNode *parent,std::string &expectedNode)
  : status(0)
 {
@@ -76,15 +77,32 @@ ParserNode::ParserNode(const ParserNode *parent,std::string &expectedNode)
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Get the first childnode of the current node
+//////////////////////////////////////////
 ParserNode ParserNode::ChildNode() const{
     return ParserNode(this);
 }
 
+//////////////////////////////////////////
+///\brief
+///Get the first childnode of the current node with
+///the expectedNodes name.
+//////////////////////////////////////////
 ParserNode ParserNode::ChildNode(std::string expectedNode) const{
     return ParserNode(this,expectedNode);
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Destructor
+///
+///The destructor will halt until the nodes
+///endtag has been retrieved, assuming that
+///this is a valid node in the first place
+//////////////////////////////////////////
 ParserNode::~ParserNode(){
     if(this->node && this->status==1){
         while(!this->node->ended){    
@@ -94,10 +112,47 @@ ParserNode::~ParserNode(){
     }
 }
 
+//////////////////////////////////////////
+///\brief
+///Get the name of the node
+//////////////////////////////////////////
 std::string& ParserNode::Name(){
     return this->node->name;
 }
 
+//////////////////////////////////////////
+///\brief
+///Get the text content of the node
+//////////////////////////////////////////
+std::string& ParserNode::Content(){
+    return this->node->content;
+}
+
+//////////////////////////////////////////
+///\brief
+///Wait for all content to be retrieved
+///
+///What realy happens is that the method will wait until
+///the nodes end tag has been set to assure that all content
+///has been retrieved.
+//////////////////////////////////////////
+void ParserNode::WaitForContent(){
+    if(this->node && this->status==1){
+        while(!this->node->ended){    
+            // Wait for node to be ended
+            this->parser->ContinueParsing();
+        }
+    }
+}
+
+//////////////////////////////////////////
+///\brief
+///Get a reference to the nodes Attributes
+///
+///The AttributeMap is a std::map that can be used
+///like:
+///std::string nodeType = node.Attibutes()["type"];
+//////////////////////////////////////////
 Node::AttributeMap& ParserNode::Attributes(){
     return this->node->attributes;
 }

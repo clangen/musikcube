@@ -81,9 +81,9 @@ class Parser : public ParserNode{
         void OnElementStartReal(const char *name, const char **atts);
         static void OnElementEnd(void *thisobject,const char *name);
         void OnElementEndReal(const char *name);
-/*        static void OnContent(void *thisobject,const char *content,int length);
+        static void OnContent(void *thisobject,const char *content,int length);
         void OnContentReal(const char *content,int length);
-*/
+
 
     private:
         void ReadFromSocket();

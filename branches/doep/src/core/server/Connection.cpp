@@ -100,6 +100,8 @@ void Connection::ReadThread(){
         std::cout << "Connection dropped" << std::endl;
     }
 
+    this->Exit(true);
+
 }
 
 void Connection::ParseThread(){

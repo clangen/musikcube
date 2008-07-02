@@ -121,23 +121,27 @@ void Parser::OnElementEndReal(const char *name){
             XML_StopParser(this->xmlParser,true);
         }else{
             // Wrong endtag expected, mallformated input
-            throw;
+            this->Exit();
+            XML_StopParser(this->xmlParser,true);
         }
     }else{
         // below root level, mallformated input
-        throw;
+        this->Exit();
+        XML_StopParser(this->xmlParser,true);
     }
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
-/*
 void Parser::OnContent(void *thisobject,const char *content,int length){
     ((Parser*)thisobject)->OnContentReal(content,length);
 }
 
 void Parser::OnContentReal(const char *content,int length){
-}*/
+    if(this->currentNodeLevels.size()>0){
+        this->currentNodeLevels.back()->content.append(content,length);
+    }
+}
 
 //////////////////////////////////////////////////////////////////////////////
 

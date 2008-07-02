@@ -67,6 +67,7 @@ class Node{
 
         AttributeMap attributes;
         std::string name;
+        std::string content;
 
 
         std::string NodeLevelPath();
