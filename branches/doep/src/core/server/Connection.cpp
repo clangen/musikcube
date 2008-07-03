@@ -36,7 +36,7 @@
 #include "pch.hpp"
 #include <core/server/Connection.h>
 #include <core/Preferences.h>
-#include <core/Query/Base.h>
+#include <core/Query/Factory.h>
 
 #include <core/xml/Parser.h>
 #include <core/xml/ParserNode.h>
@@ -88,15 +88,35 @@ void Connection::ReadThread(){
 
         // Test waiting for a Node
         if( musik::core::xml::ParserNode root = xmlParser.ChildNode("musik") ){
-            std::cout << "Client initialized " << root.Name() << std::endl;
-            while( musik::core::xml::ParserNode query = root.ChildNode("query") ){
-                std::cout << "Got a query " << query.Name() << std::endl;
+            // musik node initialized
+
+            musik::core::Query::QueryMap queryMap;
+            musik::core::Query::Factory::GetQueries(queryMap);
+
+            // Loop waiting for queries
+            while( musik::core::xml::ParserNode queryNode = root.ChildNode("query") ){
+                // Got a query
+                std::string queryType(queryNode.Attributes()["type"]);
+                
+                musik::core::Query::QueryMap::iterator queryIt = queryMap.find(queryType);
+                if(queryIt!=queryMap.end()){
+                    // Query type exists, lets create a copy
+                    musik::core::Query::Ptr query( queryIt->second->copy() );
+
+                    if(query->RecieveQuery(queryNode)){
+
+                        // TODO: check for AddQuery options in tag
+                        this->AddQuery( *query );
+
+                    }
+
+                }
             }
         }
         
-        std::cout << "Connection ended " << std::endl;
     }
     catch(...){
+        // Connection dropped
         std::cout << "Connection dropped" << std::endl;
     }
 

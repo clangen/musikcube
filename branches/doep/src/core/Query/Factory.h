@@ -33,26 +33,34 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
+#pragma once
 
-#include "pch.hpp"
-
+#include <core/config.h>
 #include <core/Query/Base.h>
-#include <core/Library/Base.h>
 
-using namespace musik::core;
+#include <map>
 
-Query::Base::Base(void) : status(0){
-    // This will guarantee that the query id is uniq for each query, but copies will not.
-    // This is usefull when canceling similar queries
-    static unsigned int iUniqueQueryId(0);
-    iUniqueQueryId++;
-    iQueryId    = iUniqueQueryId;
-}
+//////////////////////////////////////////////////////////////////////////////
 
-Query::Base::~Base(void){
-}
+namespace musik{ namespace core{ namespace Query{
 
-bool Query::RecieveQuery(musik::core::xml::ParserNode &queryNode){
-    return false;
-}
+//////////////////////////////////////////////////////////////////////////////
+
+typedef std::map<std::string,musik::core::Query::Ptr> QueryMap;
+
+class Factory{
+
+    private:
+        Factory(void);
+        ~Factory(void);
+
+    public:
+            
+        static void GetQueries(QueryMap &queryMap);
+
+};
+
+//////////////////////////////////////////////////////////////////////////////
+} } } 
+//////////////////////////////////////////////////////////////////////////////
 

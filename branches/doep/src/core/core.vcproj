@@ -287,6 +287,14 @@
 						>
 					</File>
 					<File
+						RelativePath=".\Query\Factory.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Query\Factory.h"
+						>
+					</File>
+					<File
 						RelativePath=".\Query\ListBase.cpp"
 						>
 					</File>

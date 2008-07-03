@@ -39,6 +39,7 @@
 #include <core/config.h>
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>
+#include <core/xml/Parser.h>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/thread/mutex.hpp>
@@ -190,6 +191,8 @@ namespace musik{ namespace core{
                 ///Library::Base::AddQuery
                 //////////////////////////////////////////
                 virtual void PreAddQuery(Library::Base *library){};
+
+                virtual bool RecieveQuery(musik::core::xml::ParserNode &queryNode);
         };
 
 

@@ -33,26 +33,24 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
-
 #include "pch.hpp"
+#include <core/Query/Factory.h>
 
-#include <core/Query/Base.h>
-#include <core/Library/Base.h>
+#include <core/Query/ListSelection.h>
+#include <core/Query/SortTracks.h>
+#include <core/Query/TrackMetadata.h>
 
-using namespace musik::core;
+//////////////////////////////////////////////////////////////////////////////
+using namespace musik::core::Query;
 
-Query::Base::Base(void) : status(0){
-    // This will guarantee that the query id is uniq for each query, but copies will not.
-    // This is usefull when canceling similar queries
-    static unsigned int iUniqueQueryId(0);
-    iUniqueQueryId++;
-    iQueryId    = iUniqueQueryId;
+Factory::Factory(void){
 }
 
-Query::Base::~Base(void){
+Factory::~Factory(void){
 }
 
-bool Query::RecieveQuery(musik::core::xml::ParserNode &queryNode){
-    return false;
+void Factory::GetQueries(QueryMap &queryMap){
+    queryMap["ListSelection"]       = Ptr(new ListSelection());
+    queryMap["SortTracks"]          = Ptr(new SortTracks());
+    queryMap["TrackMetadata"]       = Ptr(new TrackMetadata());
 }
-
