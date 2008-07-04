@@ -75,7 +75,7 @@ namespace musik{ namespace core{
         ///\brief
         ///Interface class for all queries.
         //////////////////////////////////////////
-        class Base{
+        class Base : public sigslot::has_slots<> {
             public:
                 Base(void);
                 virtual ~Base(void);

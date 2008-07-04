@@ -81,13 +81,18 @@ namespace musik{ namespace core{
             protected:
                 friend class Library::Base;
                 friend class Library::LocalDB;
+                friend class server::Connection;
 
                 virtual bool ParseQuery(Library::Base *oLibrary,db::Connection &db);
 
                 Ptr copy() const;
 
+                virtual bool RecieveQuery(musik::core::xml::ParserNode &queryNode);
+
             private:
                 typedef std::map<std::string,std::set<DBINT>> SelectedMetadata;
+
+                void DummySlot(MetadataValueVector*,bool);
 
                 //////////////////////////////////////////
                 ///\brief

@@ -40,7 +40,7 @@
 
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
-#include <algorithm>
+#include <boost/algorithm/string.hpp>
 
 using namespace musik::core;
 
@@ -546,6 +546,47 @@ void Query::ListSelection::QueryForMetadata(const char *metakey,const char *sql,
     }
 }
 
+bool Query::ListSelection::RecieveQuery(musik::core::xml::ParserNode &queryNode){
+
+    // Get metakey nodes
+    // Expected tag is likle this:
+    // <selection key="genre">2,5,3</selection>
+    while( musik::core::xml::ParserNode selectionNode = queryNode.ChildNode("selection") ){
+
+        // Wait for all content
+        selectionNode.WaitForContent();
+
+        // Split comaseparated list
+        typedef std::vector<std::string> StringVector;
+        StringVector values;
+        boost::algorithm::split(values,selectionNode.Content(),boost::algorithm::is_any_of(","));
+
+        for(StringVector::iterator value=values.begin();value!=values.end();++value){
+            this->SelectMetadata(selectionNode.Attributes()["key"].c_str(),boost::lexical_cast<DBINT>(*value));
+        }
+
+    }
+
+    // Secondly, lets look for what to query for
+    while( musik::core::xml::ParserNode listenersNode = queryNode.ChildNode("listeners") ){
+        // Split comaseparated list
+        typedef std::vector<std::string> StringVector;
+        StringVector keys;
+        boost::algorithm::split(keys,listenersNode.Content(),boost::algorithm::is_any_of(","));
+
+        for(StringVector::iterator key=keys.begin();key!=keys.end();++key){
+            if(!key->empty()){
+                // connect dummy to the signals
+                this->OnMetadataEvent(key->c_str()).connect(this,&Query::ListSelection::DummySlot);
+            }
+        }
+    }
+
+    return true;
+}
+
+void Query::ListSelection::DummySlot(MetadataValueVector*,bool){
+}
 
 
 
