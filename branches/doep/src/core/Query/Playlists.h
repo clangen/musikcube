@@ -66,12 +66,12 @@ namespace musik{ namespace core{
 
             protected:
 
-                bool RunCallbacks(Library::Base *oLibrary);
+                bool RunCallbacks(Library::Base *library);
 
                 friend class Library::Base;
                 friend class Library::LocalDB;
 
-                virtual bool ParseQuery(Library::Base *oLibrary,db::Connection &db);
+                virtual bool ParseQuery(Library::Base *library,db::Connection &db);
 
                 Ptr copy() const;
 

@@ -34,69 +34,71 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 #include "pch.hpp"
-#include "Node.h"
-#include <core/xml/Parser.h>
+#include <core/xml/WriterNode.h>
+#include <core/xml/Writer.h>
 
 using namespace musik::core::xml;
-    
-Node::Node()
- :status(0)
+
+WriterNode::WriterNode(WriterNode &parentNode,std::string name)
+:writer(parentNode.writer)
+,node(new Node(parentNode.node))
 {
+    this->parentNode    = parentNode.node;
+    this->node->name    = name;
+
+    if(parentNode.node){
+        parentNode.node->childNodes.push_back(this->node);
+        // if a childnode has been added to a node, it should be set to started
+        parentNode.node->status |= Node::Status::Started;
+    }
+
+    this->writer->Send();
 
 }
 
-Node::Node(Ptr parent)
- :status(0)
- ,parent(parent)
+WriterNode::WriterNode()
+:writer(NULL)
+,node(new Node())
 {
 }
 
 
-Node::~Node(void){
-    if(this->parent){
-        // Erase in parents childnodes
-        for(ChildNodes::iterator node=this->parent->childNodes.begin();node!=this->parent->childNodes.end();){
-            if( node->px==this ){
-                node    = this->parent->childNodes.erase(node);
-            }else{
-                ++node;
-            }
-        }
-    }
+//////////////////////////////////////////
+///\brief
+///Destructor
+///
+//////////////////////////////////////////
+WriterNode::~WriterNode(){
+    this->node->status  |= Node::Status::Started | Node::Status::Ended;
+    this->writer->Send();
 }
 
-std::string Node::NodeLevelPath(){
-    std::string nodeLevels(this->name);
-
-    Ptr currentNode   = this->parent;
-    while(currentNode){
-        nodeLevels  = currentNode->name + "/" + nodeLevels;
-        currentNode = currentNode->parent;
-    }
-    return nodeLevels;
+//////////////////////////////////////////
+///\brief
+///Get the name of the node
+//////////////////////////////////////////
+std::string& WriterNode::Name(){
+    return this->node->name;
 }
 
-int Node::NodeLevel(){
-    int level(1);
-    Ptr currentNode   = this->parent;
-    while(currentNode){
-        level++;
-        currentNode = currentNode->parent;
-    }
-    return level;
-
+//////////////////////////////////////////
+///\brief
+///Get the text content of the node
+//////////////////////////////////////////
+std::string& WriterNode::Content(){
+    return this->node->content;
 }
 
-void Node::RemoveFromParent(){
-    if(this->parent){
-        for(Node::ChildNodes::iterator node=this->parent->childNodes.begin();node!=this->parent->childNodes.end();){
-            if( this == node->px ){
-                node = this->parent->childNodes.erase(node);
-            }else{
-                ++node;
-            }
-        }
-    }
-}
 
+//////////////////////////////////////////
+///\brief
+///Get a reference to the nodes Attributes
+///
+///The AttributeMap is a std::map that can be used
+///like:
+///node.Attibutes()["type"] = "tjobba";
+//////////////////////////////////////////
+Node::AttributeMap& WriterNode::Attributes(){
+    return this->node->attributes;
+}
 

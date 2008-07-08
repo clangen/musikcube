@@ -49,6 +49,8 @@ namespace musik{ namespace core{ namespace xml{
 // Forward declare
 class Parser;
 class ParserNode;
+class Writer;
+class WriterNode;
 //////////////////////////////////////////////////////////////////////////////
 
 class Node{
@@ -57,11 +59,14 @@ class Node{
     private:
         friend class Parser;
         friend class ParserNode;
+        friend class Writer;
+        friend class WriterNode;
 
 
         typedef boost::shared_ptr<Node> Ptr;
 
         Node();
+        Node(Ptr parent);
 
         typedef std::map<std::string,std::string> AttributeMap;
 
@@ -72,9 +77,21 @@ class Node{
 
         std::string NodeLevelPath();
         int NodeLevel();
-        bool ended;
-        Parser *parser;
+
+        enum Status:int{
+            Started     = 1,
+            Ended       = 2,
+            StartSend   = 4,
+            EndSend     = 8,
+        };
+
+        unsigned int status;
         Ptr parent;
+
+        typedef std::list<Ptr> ChildNodes;
+        ChildNodes childNodes;
+
+        void RemoveFromParent();
 };
 
 //////////////////////////////////////////////////////////////////////////////

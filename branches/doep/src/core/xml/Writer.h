@@ -33,70 +33,49 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
-#include "pch.hpp"
-#include "Node.h"
-#include <core/xml/Parser.h>
+#pragma once
 
-using namespace musik::core::xml;
-    
-Node::Node()
- :status(0)
-{
+#include <core/config.h>
+#include <string>
+#include <boost/asio.hpp>
+//#include <boost/array.hpp>
 
-}
+#include <core/xml/Node.h>
+#include <core/xml/WriterNode.h>
 
-Node::Node(Ptr parent)
- :status(0)
- ,parent(parent)
-{
-}
+//////////////////////////////////////////////////////////////////////////////
 
+namespace musik{ namespace core{ namespace xml{
 
-Node::~Node(void){
-    if(this->parent){
-        // Erase in parents childnodes
-        for(ChildNodes::iterator node=this->parent->childNodes.begin();node!=this->parent->childNodes.end();){
-            if( node->px==this ){
-                node    = this->parent->childNodes.erase(node);
-            }else{
-                ++node;
-            }
-        }
-    }
-}
+//////////////////////////////////////////////////////////////////////////////
 
-std::string Node::NodeLevelPath(){
-    std::string nodeLevels(this->name);
+class Writer : public WriterNode{
+    public:
+        Writer(boost::asio::ip::tcp::socket *socket);
+        ~Writer();
 
-    Ptr currentNode   = this->parent;
-    while(currentNode){
-        nodeLevels  = currentNode->name + "/" + nodeLevels;
-        currentNode = currentNode->parent;
-    }
-    return nodeLevels;
-}
+    private:
 
-int Node::NodeLevel(){
-    int level(1);
-    Ptr currentNode   = this->parent;
-    while(currentNode){
-        level++;
-        currentNode = currentNode->parent;
-    }
-    return level;
+		// Socket stuff
+        boost::asio::ip::tcp::socket *socket;       
+//        boost::array<char, 4096> readBuffer;
+//        size_t readBufferLength;
 
-}
+    private:
+        friend class WriterNode;
 
-void Node::RemoveFromParent(){
-    if(this->parent){
-        for(Node::ChildNodes::iterator node=this->parent->childNodes.begin();node!=this->parent->childNodes.end();){
-            if( this == node->px ){
-                node = this->parent->childNodes.erase(node);
-            }else{
-                ++node;
-            }
-        }
-    }
-}
+        std::vector<Node::Ptr> currentNodeLevels;
+        Node::Ptr currentWritingNode;
 
+        void Send();
+
+        bool exit;
+        void Exit();
+
+        std::string sendBuffer;
+
+};
+
+//////////////////////////////////////////////////////////////////////////////
+} } }
 

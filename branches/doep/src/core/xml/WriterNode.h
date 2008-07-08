@@ -33,70 +33,41 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
-#include "pch.hpp"
-#include "Node.h"
-#include <core/xml/Parser.h>
+#pragma once
+
+#include <core/config.h>
+#include <core/xml/Node.h>
+#include <boost/utility.hpp>
 
 using namespace musik::core::xml;
-    
-Node::Node()
- :status(0)
-{
+//////////////////////////////////////////////////////////////////////////////
 
-}
+namespace musik{ namespace core{ namespace xml{
 
-Node::Node(Ptr parent)
- :status(0)
- ,parent(parent)
-{
-}
+// Forward
+class Writer;
 
 
-Node::~Node(void){
-    if(this->parent){
-        // Erase in parents childnodes
-        for(ChildNodes::iterator node=this->parent->childNodes.begin();node!=this->parent->childNodes.end();){
-            if( node->px==this ){
-                node    = this->parent->childNodes.erase(node);
-            }else{
-                ++node;
-            }
-        }
-    }
-}
+class WriterNode {
+    public:
 
-std::string Node::NodeLevelPath(){
-    std::string nodeLevels(this->name);
+        WriterNode(WriterNode &parentNode,std::string name);
+        ~WriterNode();
 
-    Ptr currentNode   = this->parent;
-    while(currentNode){
-        nodeLevels  = currentNode->name + "/" + nodeLevels;
-        currentNode = currentNode->parent;
-    }
-    return nodeLevels;
-}
+        std::string& Name();
+        std::string& Content();
+        Node::AttributeMap& Attributes();
 
-int Node::NodeLevel(){
-    int level(1);
-    Ptr currentNode   = this->parent;
-    while(currentNode){
-        level++;
-        currentNode = currentNode->parent;
-    }
-    return level;
+    protected:
+        friend class Writer;
 
-}
+        WriterNode();
 
-void Node::RemoveFromParent(){
-    if(this->parent){
-        for(Node::ChildNodes::iterator node=this->parent->childNodes.begin();node!=this->parent->childNodes.end();){
-            if( this == node->px ){
-                node = this->parent->childNodes.erase(node);
-            }else{
-                ++node;
-            }
-        }
-    }
-}
+        Node::Ptr node;
+        Node::Ptr parentNode;
+        Writer *writer;
 
+};
 
+//////////////////////////////////////////////////////////////////////////////
+} } }

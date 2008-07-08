@@ -59,13 +59,13 @@ void Query::PlaylistLoad::LoadPlaylist(int playlistId){
     this->playlistId    = playlistId;
 }
 
-bool Query::PlaylistLoad::ParseQuery(Library::Base *oLibrary,db::Connection &db){
+bool Query::PlaylistLoad::ParseQuery(Library::Base *library,db::Connection &db){
 
     db::Statement selectTracks("SELECT track_id FROM playlist_tracks WHERE playlist_id=? ORDER BY sort_order",db);
     selectTracks.BindInt(0,this->playlistId);
 
     while(selectTracks.Step()==db::Row){
-        boost::mutex::scoped_lock lock(oLibrary->oResultMutex);
+        boost::mutex::scoped_lock lock(library->oResultMutex);
         this->trackResults.push_back(TrackPtr(new Track(selectTracks.ColumnInt(0))));
     }
     return true;

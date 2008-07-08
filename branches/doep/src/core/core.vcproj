@@ -581,6 +581,22 @@
 					RelativePath=".\xml\ParserNode.h"
 					>
 				</File>
+				<File
+					RelativePath=".\xml\Writer.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\xml\Writer.h"
+					>
+				</File>
+				<File
+					RelativePath=".\xml\WriterNode.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\xml\WriterNode.h"
+					>
+				</File>
 			</Filter>
 		</Filter>
 	</Files>

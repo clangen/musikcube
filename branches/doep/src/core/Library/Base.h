@@ -188,6 +188,7 @@ namespace musik{ namespace core{
 
 
             protected:
+                typedef std::list<Query::Ptr> QueryList;
                 // Variables:
 
                 //////////////////////////////////////////
@@ -203,14 +204,14 @@ namespace musik{ namespace core{
                 ///\brief
                 ///queue (std::list) for incoming queries.
                 //////////////////////////////////////////
-                std::list<Query::Ptr> incomingQueries;
+                QueryList incomingQueries;
 
                 //////////////////////////////////////////
                 ///\brief
                 ///queue (std::list) for finished queries that havn't
                 ///been run through the callbacks yet.
                 //////////////////////////////////////////
-                std::list<Query::Ptr> outgoingQueries;
+                QueryList outgoingQueries;
 
                 //////////////////////////////////////////
                 ///\brief

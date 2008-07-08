@@ -95,6 +95,10 @@ void Parser::OnElementStartReal(const char *name, const char **atts){
         node->attributes[atts[i]] = atts[i + 1];
     }
 
+    // Set the parent node
+    if(!this->currentNodeLevels.empty()){
+        node->parent    = this->currentNodeLevels.back();
+    }
     this->currentNodeLevels.push_back(node);
 
 
@@ -114,7 +118,7 @@ void Parser::OnElementEndReal(const char *name){
     if(this->currentNodeLevels.size()>0){
         if(this->currentNodeLevels.back()->name == name){
 
-            this->currentNodeLevels.back()->ended   = true;
+            this->currentNodeLevels.back()->status   = Node::Status::Ended;
             this->currentNodeLevels.pop_back();
 
             this->currentEventType  = EventTypes::NodeEnd;
@@ -179,7 +183,7 @@ void Parser::ContinueParsing(){
 void Parser::Exit(){
     this->exit  = true;
     for(std::vector<Node::Ptr>::iterator node=this->currentNodeLevels.begin();node!=this->currentNodeLevels.end();++node){
-        (*node)->ended  = true;
+        (*node)->status  = Node::Status::Ended;
     }
 }
 

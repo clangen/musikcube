@@ -70,9 +70,9 @@ namespace musik{ namespace core{
                 typedef sigslot::signal3<UINT64,UINT64,UINT64> TrackInfoSignal;
 
             protected:
-                bool RunCallbacks(Library::Base *oLibrary);
+                bool RunCallbacks(Library::Base *library);
 
-                bool ParseTracksSQL(std::string sql,Library::Base *oLibrary,db::Connection &db);
+                bool ParseTracksSQL(std::string sql,Library::Base *library,db::Connection &db);
 
                 MetadataResults metadataResults;
                 TrackVector trackResults;

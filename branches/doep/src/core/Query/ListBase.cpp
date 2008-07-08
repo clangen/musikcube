@@ -54,7 +54,7 @@ Query::ListBase::~ListBase(void){
 }
 
 
-bool Query::ListBase::RunCallbacks(Library::Base *oLibrary){
+bool Query::ListBase::RunCallbacks(Library::Base *library){
 
     bool bReturn(false);
 
@@ -62,7 +62,7 @@ bool Query::ListBase::RunCallbacks(Library::Base *oLibrary){
     TrackVector trackResultsCopy;
 
     {    // Scope for swapping the results safely
-        boost::mutex::scoped_lock lock(oLibrary->oResultMutex);
+        boost::mutex::scoped_lock lock(library->oResultMutex);
 
         metadataResultsCopy.swap(this->metadataResults);
         trackResultsCopy.swap(this->trackResults);
@@ -110,7 +110,7 @@ bool Query::ListBase::RunCallbacks(Library::Base *oLibrary){
     }
 
     if(bReturn){
-        boost::mutex::scoped_lock lock(oLibrary->oResultMutex);
+        boost::mutex::scoped_lock lock(library->oResultMutex);
         // Check for trackinfo update
         this->trackInfoEvent(trackInfoTracks,trackInfoDuration,trackInfoSize);
     }
@@ -134,8 +134,8 @@ Query::ListBase::TrackInfoSignal& Query::ListBase::OnTrackInfoEvent(){
     return this->trackInfoEvent;
 }
 
-bool Query::ListBase::ParseTracksSQL(std::string sql,Library::Base *oLibrary,db::Connection &db){
-    if(this->trackEvent.has_connections() && !oLibrary->QueryCanceled()){
+bool Query::ListBase::ParseTracksSQL(std::string sql,Library::Base *library,db::Connection &db){
+    if(this->trackEvent.has_connections() && !library->QueryCanceled()){
         db::Statement selectTracks(sql.c_str(),db);
 
         TrackVector tempTrackResults;
@@ -148,7 +148,7 @@ bool Query::ListBase::ParseTracksSQL(std::string sql,Library::Base *oLibrary,db:
             this->trackInfoTracks++;
 
             if( (++row)%100==0 ){
-                boost::mutex::scoped_lock lock(oLibrary->oResultMutex);
+                boost::mutex::scoped_lock lock(library->oResultMutex);
                 this->trackResults.insert(this->trackResults.end(),tempTrackResults.begin(),tempTrackResults.end());
 
                 tempTrackResults.clear();
@@ -156,7 +156,7 @@ bool Query::ListBase::ParseTracksSQL(std::string sql,Library::Base *oLibrary,db:
             }
         }
         if(!tempTrackResults.empty()){
-            boost::mutex::scoped_lock lock(oLibrary->oResultMutex);
+            boost::mutex::scoped_lock lock(library->oResultMutex);
             this->trackResults.insert(this->trackResults.end(),tempTrackResults.begin(),tempTrackResults.end());
         }
 

@@ -61,7 +61,7 @@ class TrackMetadata : public Query::Base {
         TrackMetadata(void);
         ~TrackMetadata(void);
 
-        bool RunCallbacks(Library::Base *oLibrary);
+        bool RunCallbacks(Library::Base *library);
 
         void Clear();
         void RequestTrack(TrackPtr track);
@@ -89,7 +89,7 @@ class TrackMetadata : public Query::Base {
     protected:
         friend class Library::Base;
         friend class Library::LocalDB;
-        bool ParseQuery(Library::Base *oLibrary,db::Connection &db);
+        bool ParseQuery(Library::Base *library,db::Connection &db);
         Ptr copy() const;
         void PreAddQuery(Library::Base *library);
 };

@@ -105,7 +105,7 @@ ParserNode ParserNode::ChildNode(std::string expectedNode) const{
 //////////////////////////////////////////
 ParserNode::~ParserNode(){
     if(this->node && this->status==1){
-        while(!this->node->ended){    
+        while(this->node->status!=Node::Status::Ended){    
             // Wait for node to be ended
             this->parser->ContinueParsing();
         }
@@ -138,7 +138,7 @@ std::string& ParserNode::Content(){
 //////////////////////////////////////////
 void ParserNode::WaitForContent(){
     if(this->node && this->status==1){
-        while(!this->node->ended){    
+        while(this->node->status!=Node::Status::Ended){    
             // Wait for node to be ended
             this->parser->ContinueParsing();
         }

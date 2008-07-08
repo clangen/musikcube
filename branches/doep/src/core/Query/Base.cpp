@@ -52,7 +52,60 @@ Query::Base::Base(void) : status(0){
 Query::Base::~Base(void){
 }
 
-bool Query::RecieveQuery(musik::core::xml::ParserNode &queryNode){
+//////////////////////////////////////////
+///\brief
+///Recieve the query from XML
+///
+///\param queryNode
+///Reference to query XML node
+///
+///\returns
+///true when successfully recieved
+//////////////////////////////////////////
+bool Query::Base::RecieveQuery(musik::core::xml::ParserNode &queryNode){
     return false;
 }
+
+//////////////////////////////////////////
+///\brief
+///Serialize query to XML
+///
+///\param queryNode
+///Reference to query XML node
+///
+///\returns
+///true when successfully send
+//////////////////////////////////////////
+bool Query::Base::SendQuery(musik::core::xml::WriterNode &queryNode){
+    return false;
+}
+
+//////////////////////////////////////////
+///\brief
+///Recieve results from XML
+///
+///\param queryNode
+///Reference to query XML node
+///
+///\returns
+///true when successfully recieved
+//////////////////////////////////////////
+bool Query::Base::RecieveResults(musik::core::xml::ParserNode &queryNode){
+    return false;
+}
+
+//////////////////////////////////////////
+///\brief
+///Serialize results to XML
+///
+///\param queryNode
+///Reference to query XML node
+///
+///\returns
+///true when successfully send
+//////////////////////////////////////////
+bool Query::Base::SendResults(musik::core::xml::WriterNode &queryNode){
+    return false;
+}
+
 

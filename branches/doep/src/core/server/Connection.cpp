@@ -40,6 +40,8 @@
 
 #include <core/xml/Parser.h>
 #include <core/xml/ParserNode.h>
+#include <core/xml/Writer.h>
+#include <core/xml/WriterNode.h>
 
 using namespace musik::core::server;
 
@@ -177,6 +179,51 @@ void Connection::ParseThread(){
 }
 
 void Connection::WriteThread(){
+    musik::core::xml::Writer xmlWriter(&this->socket);
+
+    try{
+        // Lets start with a <musik> node
+        musik::core::xml::WriterNode musikNode(xmlWriter,"musik");
+
+        while(!this->Exit()){
+
+            Query::Ptr sendQuery;
+            // Wait for outgoingQueries
+            {
+                boost::mutex::scoped_lock lock(this->libraryMutex);
+                if(this->outgoingQueries.empty()){
+                    this->waitCondition.wait(lock);
+                }
+
+                if(!this->outgoingQueries.empty()){
+                    sendQuery   = this->outgoingQueries.front();
+                }
+            }
+
+            // now there should be sendQuery
+            if(sendQuery){
+                // Send the query
+                sendQuery->SendResults(musikNode);
+
+                // Remove the query from the queue
+                {
+                    boost::mutex::scoped_lock lock(this->libraryMutex);
+                    // We can not be sure that the query is the front query
+                    //so lets loop through the outgoing queries and remove the match
+                    for(QueryList::iterator query=this->outgoingQueries.begin();query!=this->outgoingQueries.end();){
+                        if( sendQuery== *query ){
+                            query   = this->outgoingQueries.erase(query);
+                        }else{
+                            ++query;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    catch(...){
+    }
+    this->Exit(true);
 }
 
 //////////////////////////////////////////
