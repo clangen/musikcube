@@ -203,7 +203,12 @@ void Connection::WriteThread(){
             // now there should be sendQuery
             if(sendQuery){
                 // Send the query
-                sendQuery->SendResults(musikNode);
+                {
+                    musik::core::xml::WriterNode queryNode(musikNode,"queryresults");
+                    queryNode.Attributes()["type"]  = sendQuery->Name();
+
+                    sendQuery->SendResults(queryNode,this);
+                }
 
                 // Remove the query from the queue
                 {

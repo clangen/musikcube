@@ -144,7 +144,10 @@ void Writer::Send(){
     }
 
     // Time to send the buffer
-    boost::asio::write(*(this->socket),boost::asio::buffer(this->sendBuffer));
+    if(!this->sendBuffer.empty()){
+        boost::asio::write(*(this->socket),boost::asio::buffer(this->sendBuffer));
+        this->sendBuffer.clear();
+    }
 
 }
 

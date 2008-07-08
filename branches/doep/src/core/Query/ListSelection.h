@@ -83,12 +83,12 @@ namespace musik{ namespace core{
                 friend class Library::LocalDB;
                 friend class server::Connection;
 
+                virtual std::string Name();
                 virtual bool ParseQuery(Library::Base *library,db::Connection &db);
 
                 Ptr copy() const;
 
                 virtual bool RecieveQuery(musik::core::xml::ParserNode &queryNode);
-                virtual bool SendResults(musik::core::xml::WriterNode &queryNode);
 
             private:
                 typedef std::map<std::string,std::set<DBINT>> SelectedMetadata;

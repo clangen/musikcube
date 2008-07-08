@@ -104,8 +104,10 @@ bool Query::Base::RecieveResults(musik::core::xml::ParserNode &queryNode){
 ///\returns
 ///true when successfully send
 //////////////////////////////////////////
-bool Query::Base::SendResults(musik::core::xml::WriterNode &queryNode){
+bool Query::Base::SendResults(musik::core::xml::WriterNode &queryNode,Library::Base *library){
     return false;
 }
 
-
+std::string Query::Base::Name(){
+    return "Unknown";
+}

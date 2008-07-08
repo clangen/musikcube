@@ -167,3 +167,86 @@ bool Query::ListBase::ParseTracksSQL(std::string sql,Library::Base *library,db::
 
 }
 
+bool Query::ListBase::SendResults(musik::core::xml::WriterNode &queryNode,Library::Base *library){
+
+    bool continueSending(true);
+    while(continueSending){
+
+        MetadataResults metadataResultsCopy;
+        TrackVector trackResultsCopy;
+
+        {    // Scope for swapping the results safely
+            boost::mutex::scoped_lock lock(library->oResultMutex);
+
+            metadataResultsCopy.swap(this->metadataResults);
+            trackResultsCopy.swap(this->trackResults);
+
+            if( (this->status & Status::Ended)!=0){
+                // If the query is finished, stop sending
+                continueSending = false;
+            }
+        }
+
+        // Check for metadata results
+        if(!metadataResultsCopy.empty()){
+
+            // Loop metadata tags for results
+            for( MetadataResults::iterator metatagResult=metadataResultsCopy.begin();metatagResult!=metadataResultsCopy.end();++metatagResult){
+
+                std::string metatag(metatagResult->first);
+
+                // If the metatag  has results, send results
+
+                // check if the signal should send the clear flag
+                bool clearMetatag(false);
+                if(this->clearedMetadataResults.find(metatag)==this->clearedMetadataResults.end()){
+                    clearMetatag    = true;
+                    this->clearedMetadataResults.insert(metatag);    // Set this to cleared
+                }
+
+                // Send results
+                musik::core::xml::WriterNode results(queryNode,"metadata");
+
+                results.Attributes()["key"] = metatagResult->first;
+                if(clearMetatag){
+                    results.Attributes()["clear"] = "true";
+                }
+
+                for(musik::core::MetadataValueVector::iterator metaValue=metatagResult->second.begin();metaValue!=metatagResult->second.end();++metaValue){
+                    musik::core::xml::WriterNode metaValueNode(results,"md");
+                    metaValueNode.Attributes()["id"]    = boost::lexical_cast<std::string>( (*metaValue)->id );
+
+                    metaValueNode.Content() = musik::core::ConvertUTF8( (*metaValue)->value );
+
+                }
+
+                this->metadataEvent[metatag](&metatagResult->second,clearMetatag);
+            }
+        }
+
+        // Check for Tracks
+        if( !trackResultsCopy.empty() ){
+
+            // Call the slots
+            this->trackEvent(&trackResultsCopy,!this->clearedTrackResults);
+
+            if(!this->clearedTrackResults){
+                this->clearedTrackResults    = true;
+            }
+
+        }
+
+        if(!continueSending){
+            boost::mutex::scoped_lock lock(library->oResultMutex);
+            // Check for trackinfo update
+            this->trackInfoEvent(trackInfoTracks,trackInfoDuration,trackInfoSize);
+        }else{
+            if( metadataResultsCopy.empty() && trackResultsCopy.empty() ){
+                // Yield for more results
+                boost::thread::yield();
+            }
+        }
+    }
+
+    return true;
+}

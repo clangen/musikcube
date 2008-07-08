@@ -616,9 +616,8 @@ bool Query::ListSelection::RecieveQuery(musik::core::xml::ParserNode &queryNode)
 void Query::ListSelection::DummySlot(MetadataValueVector*,bool){
 }
 
-bool Query::ListSelection::SendResults(musik::core::xml::WriterNode &queryNode){
-    
-    return true;
+std::string Query::ListSelection::Name(){
+    return "ListSelection";
 }
 
 

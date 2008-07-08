@@ -137,6 +137,7 @@ class Base : public sigslot::has_slots<> {
         friend class server::Connection;
 
         // Methods:
+        virtual std::string Name();
 
         //////////////////////////////////////////
         ///\brief
@@ -199,7 +200,7 @@ class Base : public sigslot::has_slots<> {
         virtual bool RecieveQuery(musik::core::xml::ParserNode &queryNode);
         virtual bool SendQuery(musik::core::xml::WriterNode &queryNode);
         virtual bool RecieveResults(musik::core::xml::ParserNode &queryNode);
-        virtual bool SendResults(musik::core::xml::WriterNode &queryNode);
+        virtual bool SendResults(musik::core::xml::WriterNode &queryNode,Library::Base *library);
 };
 
 
