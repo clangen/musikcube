@@ -51,10 +51,13 @@ Server::Server(unsigned int port)
  :exitThread(false)
  ,acceptor(ioService,boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port))
 {
-    this->acceptor.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
+//    this->acceptor.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
 }
 
 Server::~Server(void){
+    this->connections.clear();
+    this->nextConnection.reset();
+
     this->Exit();
     this->threads.join_all();
 }
@@ -119,11 +122,23 @@ void Server::SetNextConnection(){
 
 void Server::AcceptConnection(const boost::system::error_code& error){
     if(!error){
+        this->CleanupConnections();
+
         // Start the connection
         this->nextConnection->Startup();
 
         this->connections.push_back(this->nextConnection);
         this->SetNextConnection();
+    }
+}
+
+void Server::CleanupConnections(){
+    for(server::ConnectionVector::iterator connection=this->connections.begin();connection!=this->connections.end();){
+        if( (*connection)->Exited() ){
+            connection  = this->connections.erase(connection);
+        }else{
+            ++connection;
+        }
     }
 }
 

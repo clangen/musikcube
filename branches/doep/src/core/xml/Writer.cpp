@@ -80,8 +80,10 @@ void Writer::Send(){
         this->currentWritingNode = this->node;
     }
 
+    std::string sendBuffer;
+
     bool keepSending(true);
-    while(keepSending){
+    while(keepSending && this->currentWritingNode){
 
         keepSending=false;
 
@@ -89,28 +91,36 @@ void Writer::Send(){
         //      * start is not send before
         //      * the node is started, and has childnodes
         //      * if it's ended
-        if( !(this->currentWritingNode->status|Node::Status::StartSend) &&
+        Node::Ptr node(this->currentWritingNode);
+        int status(node->status);
+        bool noChildren(node->childNodes.empty());
+
+        if( !(status&Node::Status::StartSend) &&
             (
-                (this->currentWritingNode->status|Node::Status::Started && !this->currentWritingNode->childNodes.empty())
+                (status&Node::Status::Started && !noChildren)
                 ||
-                (this->currentWritingNode->status|Node::Status::Ended)
+                (status&Node::Status::Ended)
             )
            ){
-            // OK, lets send the start tag
-            this->sendBuffer.append("<"+this->currentWritingNode->name);
 
-            // append the attributes
-            for(Node::AttributeMap::iterator attribute=this->currentWritingNode->attributes.begin();attribute!=this->currentWritingNode->attributes.end();++attribute){
-               this->sendBuffer.append(" "+attribute->first+"=\""+attribute->second+"\"");
+            if(node!=this->node){
+
+                // OK, lets send the start tag
+                sendBuffer.append("<"+node->name);
+
+                // append the attributes
+                for(Node::AttributeMap::iterator attribute=node->attributes.begin();attribute!=node->attributes.end();++attribute){
+                   sendBuffer.append(" "+attribute->first+"=\""+attribute->second+"\"");
+                }
+                sendBuffer.append(">");
             }
-            this->sendBuffer.append(">");
 
             // Set the node to StartSend
-            this->currentWritingNode->status |= Node::Status::StartSend;
+            node->status |= Node::Status::StartSend;
 
             // Lets see if the node has any children to continue with
-            if(!keepSending && !this->currentWritingNode->childNodes.empty()){
-                this->currentWritingNode = this->currentWritingNode->childNodes.front();
+            if(!keepSending && !noChildren){
+                this->currentWritingNode = node->childNodes.front();
                 keepSending = true;
             }
         }
@@ -121,32 +131,40 @@ void Writer::Send(){
         //      * StartTag has been send
         //      * Ended is set
         //      * There are no childnodes left
-        if(!keepSending &&
-            this->currentWritingNode->status|Node::Status::StartSend &&
-            this->currentWritingNode->status|Node::Status::Ended &&
-            this->currentWritingNode->childNodes.empty()
-            ){
+        if(this->currentWritingNode){
+            node        = this->currentWritingNode;
+            status      = node->status;
+            noChildren  = node->childNodes.empty();
 
-            // Send the content and end tag
-            this->sendBuffer.append(this->currentWritingNode->content);
-            this->sendBuffer.append("</"+this->currentWritingNode->name+">");
+            if(!keepSending &&
+                status&Node::Status::StartSend &&
+                status&Node::Status::Ended &&
+                noChildren
+                ){
 
-            // Set to send
-            this->currentWritingNode->status    |= Node::Status::EndSend;
+                if(node!=this->node){   // Do not send root node
+                    // Send the content and end tag
+                    sendBuffer.append(node->content);
+                    sendBuffer.append("</"+node->name+">");
+                }
 
-            // Remove from parent node
-            this->currentWritingNode->RemoveFromParent();
+                // Set to send
+                node->status    |= Node::Status::EndSend;
 
-            // And lets step down the currentWritingNode to parent
-            this->currentWritingNode    = this->currentWritingNode->parent;
-            keepSending = true;
+                // Remove from parent node
+                node->RemoveFromParent();
+
+                // And lets step down the currentWritingNode to parent
+                this->currentWritingNode    = node->parent;
+                keepSending = true;
+            }
         }
     }
 
     // Time to send the buffer
-    if(!this->sendBuffer.empty()){
-        boost::asio::write(*(this->socket),boost::asio::buffer(this->sendBuffer));
-        this->sendBuffer.clear();
+    if(!sendBuffer.empty()){
+        boost::asio::write(*(this->socket),boost::asio::buffer(sendBuffer));
+        sendBuffer.clear();
     }
 
 }

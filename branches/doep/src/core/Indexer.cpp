@@ -59,7 +59,7 @@ Indexer::Indexer(void)
 
 Indexer::~Indexer(void){
     if(this->oThread){
-        this->Exit(true);
+        this->Exit();
         this->oThread->join();
         delete this->oThread;
         this->oThread    = NULL;
@@ -233,7 +233,7 @@ void Indexer::Synchronize(){
     }
 
     // Cleaning up
-    if(!this->Restarted() && !this->Exit()){
+    if(!this->Restarted() && !this->Exited()){
         this->SyncDelete(aPathIds);
     }
 
@@ -243,7 +243,7 @@ void Indexer::Synchronize(){
         this->iProgress    = 0.0;
         this->iStatus    = 4;
     }
-    if(!this->Restarted() && !this->Exit()){
+    if(!this->Restarted() && !this->Exited()){
         this->SyncCleanup();
     }
 
@@ -254,7 +254,7 @@ void Indexer::Synchronize(){
         this->iStatus    = 5;
     }
 
-    if(!this->Restarted() && !this->Exit()){
+    if(!this->Restarted() && !this->Exited()){
         this->SyncOptimize();
     }
 
@@ -275,7 +275,7 @@ void Indexer::Synchronize(){
 ///Folder to count files in.
 //////////////////////////////////////////
 void Indexer::CountFiles(utfstring &sFolder){
-    if(!this->Exit() && !this->Restarted()){
+    if(!this->Exited() && !this->Restarted()){
         boost::filesystem::utfpath oPath(sFolder);
         try{
             boost::filesystem::utfdirectory_iterator oEndFile;
@@ -314,7 +314,7 @@ void Indexer::CountFiles(utfstring &sFolder){
 //////////////////////////////////////////
 void Indexer::SyncDirectory(utfstring &sFolder,DBINT iParentFolderId,DBINT iPathId){
 
-    if(this->Exit() || this->Restarted()){
+    if(this->Exited() || this->Restarted()){
         return;
     }
 
@@ -363,7 +363,7 @@ void Indexer::SyncDirectory(utfstring &sFolder,DBINT iParentFolderId,DBINT iPath
 
     try{        // boost::filesystem may throw
         boost::filesystem::utfdirectory_iterator oEndFile;
-        for(boost::filesystem::utfdirectory_iterator oFile(oPath);oFile!=oEndFile && !this->Exit() && !this->Restarted();++oFile){
+        for(boost::filesystem::utfdirectory_iterator oFile(oPath);oFile!=oEndFile && !this->Exited() && !this->Restarted();++oFile){
 
             if(is_directory(oFile->status())){
 
@@ -431,7 +431,7 @@ void Indexer::ThreadLoop(){
 
     bool firstTime(true);
 
-    while(!this->Exit()){
+    while(!this->Exited()){
 
         // Get preferences
         Preferences prefs("Indexer");
@@ -531,7 +531,7 @@ void Indexer::SyncDelete(std::vector<DBINT> aPaths){
 
             stmt.BindInt(0,aPaths[i]);
 
-            while( stmt.Step()==db::ReturnCode::Row && !this->Exit() && !this->Restarted() ){
+            while( stmt.Step()==db::ReturnCode::Row && !this->Exited() && !this->Restarted() ){
                 // Check to see if file still exists
 
                 bool bRemove(true);
@@ -580,7 +580,7 @@ void Indexer::SyncDelete(std::vector<DBINT> aPaths){
     for(int i(0);i<aPaths.size();++i){
         stmt.BindInt(0,aPaths[i]);
 
-        while( stmt.Step()==db::ReturnCode::Row  && !this->Exit() && !this->Restarted() ){
+        while( stmt.Step()==db::ReturnCode::Row  && !this->Exited() && !this->Restarted() ){
             // Check to see if file still exists
             {
                 boost::mutex::scoped_lock oLock(this->oProgressMutex);

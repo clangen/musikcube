@@ -67,14 +67,16 @@ class Server{
         void ThreadLoop();
         void AcceptConnection(const boost::system::error_code& error);
         void SetNextConnection();
+        void CleanupConnections();
 
     private:
         // Variables
+        boost::asio::io_service ioService;
+        boost::asio::ip::tcp::acceptor acceptor;
+
         bool exitThread;
         boost::mutex serverMutex;
         boost::thread_group threads;
-        boost::asio::io_service ioService;
-        boost::asio::ip::tcp::acceptor acceptor;
 
         musik::core::server::ConnectionVector connections;
         musik::core::server::ConnectionPtr nextConnection;

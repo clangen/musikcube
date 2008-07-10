@@ -74,6 +74,7 @@ class Connection : public musik::core::Library::Base{
 
     protected:
         void CancelCurrentQuery( );
+        virtual void Exit();
 
     private:
         boost::asio::ip::tcp::socket socket;

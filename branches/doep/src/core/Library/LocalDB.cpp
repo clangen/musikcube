@@ -57,7 +57,7 @@ Library::LocalDB::LocalDB(void){
 }
 
 Library::LocalDB::~LocalDB(void){
-    this->Exit(true);
+    this->Exit();
     this->threads.join_all();
 }
 
@@ -105,7 +105,7 @@ bool Library::LocalDB::Startup(){
 ///\brief
 ///Main loop the library thread is running in.
 ///
-///The loop will run until Exit(true) has been called.
+///The loop will run until Exit() has been called.
 //////////////////////////////////////////
 void Library::LocalDB::ThreadLoop(){
 
@@ -120,7 +120,7 @@ void Library::LocalDB::ThreadLoop(){
     this->indexer.database    = database;
     this->indexer.Startup(this->GetLibraryDirectory());
 
-    while(!this->Exit()){
+    while(!this->Exited()){
         Query::Ptr query(this->GetNextQuery());
 
         if(query){    // No empty query

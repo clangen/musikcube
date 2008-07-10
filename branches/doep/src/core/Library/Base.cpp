@@ -48,7 +48,7 @@ Library::Base::Base(void) : identifier(UTF("local")), queueCallbackStarted(false
 }
 
 Library::Base::~Base(void){
-    this->Exit(true);
+    this->Exit();
     this->threads.join_all();
 }
 
@@ -406,15 +406,15 @@ void Library::Base::CancelCurrentQuery(){
 }
 
 
-bool Library::Base::Exit(void){
+bool Library::Base::Exited(){
     boost::mutex::scoped_lock lock(this->libraryMutex);
     return this->exit;
 }
 
-void Library::Base::Exit(bool exit){
+void Library::Base::Exit(){
     {
         boost::mutex::scoped_lock lock(this->libraryMutex);
-        this->exit    = exit;
+        this->exit    = true;
     }
     this->waitCondition.notify_all();
 }

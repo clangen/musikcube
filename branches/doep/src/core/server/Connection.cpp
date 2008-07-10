@@ -53,8 +53,7 @@ Connection::Connection(boost::asio::io_service &ioService)
 }
 
 Connection::~Connection(void){
-    this->Exit(true);
-    this->socket.close();
+    this->Exit();
     this->threads.join_all();
 }
 
@@ -75,8 +74,8 @@ bool Connection::Startup(){
 
     std::cout << "Connection::Startup" << std::endl;
 
-    this->threads.create_thread(boost::bind(&Connection::ReadThread,this));
-    this->threads.create_thread(boost::bind(&Connection::ParseThread,this));
+    //this->threads.create_thread(boost::bind(&Connection::ReadThread,this));
+    //this->threads.create_thread(boost::bind(&Connection::ParseThread,this));
     this->threads.create_thread(boost::bind(&Connection::WriteThread,this));
     
     return true;
@@ -122,7 +121,7 @@ void Connection::ReadThread(){
         std::cout << "Connection dropped" << std::endl;
     }
 
-    this->Exit(true);
+    this->Exit();
 
 }
 
@@ -133,7 +132,7 @@ void Connection::ParseThread(){
     utfstring database(this->GetDBPath());
     this->db.Open(database.c_str(),0,prefs.GetInt("DatabaseCache",4096));
 
-    while(!this->Exit()){
+    while(!this->Exited()){
         Query::Ptr query(this->GetNextQuery());
 
         if(query){    // No empty query
@@ -176,16 +175,25 @@ void Connection::ParseThread(){
             }
         }
     }
+
+    this->db.Close();
+
 }
 
 void Connection::WriteThread(){
     musik::core::xml::Writer xmlWriter(&this->socket);
 
+    {
+        musik::core::xml::WriterNode musikNode(xmlWriter,"musik");
+        musik::core::xml::WriterNode testNode(musikNode,"test");
+    }
+
+/*
     try{
         // Lets start with a <musik> node
         musik::core::xml::WriterNode musikNode(xmlWriter,"musik");
 
-        while(!this->Exit()){
+        while(!this->Exited()){
 
             Query::Ptr sendQuery;
             // Wait for outgoingQueries
@@ -227,8 +235,8 @@ void Connection::WriteThread(){
         }
     }
     catch(...){
-    }
-    this->Exit(true);
+    }*/
+    this->Exit();
 }
 
 //////////////////////////////////////////
@@ -247,3 +255,15 @@ utfstring Connection::GetInfo(){
     return UTF("");
 }
 
+void Connection::Exit(){
+    {
+        boost::mutex::scoped_lock lock(this->libraryMutex);
+        if(!this->exit){
+            if(this->socket.is_open()){
+                this->socket.close();
+            }
+        }
+        this->exit    = true;
+    }
+    this->waitCondition.notify_all();
+}

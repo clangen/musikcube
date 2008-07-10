@@ -119,7 +119,7 @@ namespace musik{ namespace core{
 
                 virtual musik::core::Indexer *Indexer();
 
-                bool Exit(void);
+                bool Exited();
 
                 static bool IsStaticMetaKey(std::string &metakey);
                 static bool IsSpecialMTOMetaKey(std::string &metakey);
@@ -130,7 +130,7 @@ namespace musik{ namespace core{
 
             protected:
                 // Methods:
-                void Exit(bool exit);
+                virtual void Exit();
 
                 Query::Ptr GetNextQuery();
 
