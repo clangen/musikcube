@@ -74,8 +74,8 @@ bool Connection::Startup(){
 
     std::cout << "Connection::Startup" << std::endl;
 
-    //this->threads.create_thread(boost::bind(&Connection::ReadThread,this));
-    //this->threads.create_thread(boost::bind(&Connection::ParseThread,this));
+    this->threads.create_thread(boost::bind(&Connection::ReadThread,this));
+    this->threads.create_thread(boost::bind(&Connection::ParseThread,this));
     this->threads.create_thread(boost::bind(&Connection::WriteThread,this));
     
     return true;
@@ -181,14 +181,9 @@ void Connection::ParseThread(){
 }
 
 void Connection::WriteThread(){
+
     musik::core::xml::Writer xmlWriter(&this->socket);
 
-    {
-        musik::core::xml::WriterNode musikNode(xmlWriter,"musik");
-        musik::core::xml::WriterNode testNode(musikNode,"test");
-    }
-
-/*
     try{
         // Lets start with a <musik> node
         musik::core::xml::WriterNode musikNode(xmlWriter,"musik");
@@ -235,7 +230,7 @@ void Connection::WriteThread(){
         }
     }
     catch(...){
-    }*/
+    }
     this->Exit();
 }
 

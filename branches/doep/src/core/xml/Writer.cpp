@@ -87,6 +87,11 @@ void Writer::Send(){
 
         keepSending=false;
 
+        // If the node has already been send, and has childnodes, set currentWritingNode to the first childnode
+        if(this->currentWritingNode->status&Node::Status::StartSend && !this->currentWritingNode->childNodes.empty() ){
+            this->currentWritingNode    = this->currentWritingNode->childNodes.front();
+        }
+
         // 1. Send start tag if:
         //      * start is not send before
         //      * the node is started, and has childnodes

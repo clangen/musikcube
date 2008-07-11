@@ -68,8 +68,7 @@ Parser::Parser(boost::asio::ip::tcp::socket *socket)
     this->xmlParser    = XML_ParserCreate(NULL);
     XML_SetUserData(this->xmlParser,this);
     XML_SetElementHandler(this->xmlParser,&Parser::OnElementStart,&Parser::OnElementEnd);
-//    XML_SetCharacterDataHandler(this->xmlParser,&Parser::OnContent);
-
+    XML_SetCharacterDataHandler(this->xmlParser,&Parser::OnContent);
 }
 
 //////////////////////////////////////////////////////////////////////////////

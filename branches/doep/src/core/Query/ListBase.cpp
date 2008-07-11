@@ -205,22 +205,24 @@ bool Query::ListBase::SendResults(musik::core::xml::WriterNode &queryNode,Librar
                 }
 
                 // Send results
-                musik::core::xml::WriterNode results(queryNode,"metadata");
+                {
+                    musik::core::xml::WriterNode results(queryNode,"metadata");
 
-                results.Attributes()["key"] = metatagResult->first;
-                if(clearMetatag){
-                    results.Attributes()["clear"] = "true";
+                    results.Attributes()["key"] = metatagResult->first;
+                    if(clearMetatag){
+                        results.Attributes()["clear"] = "true";
+                    }
+
+                    for(musik::core::MetadataValueVector::iterator metaValue=metatagResult->second.begin();metaValue!=metatagResult->second.end();++metaValue){
+                        musik::core::xml::WriterNode metaValueNode(results,"md");
+                        metaValueNode.Attributes()["id"]    = boost::lexical_cast<std::string>( (*metaValue)->id );
+
+                        metaValueNode.Content() = musik::core::ConvertUTF8( (*metaValue)->value );
+
+                    }
+
+                    this->metadataEvent[metatag](&metatagResult->second,clearMetatag);
                 }
-
-                for(musik::core::MetadataValueVector::iterator metaValue=metatagResult->second.begin();metaValue!=metatagResult->second.end();++metaValue){
-                    musik::core::xml::WriterNode metaValueNode(results,"md");
-                    metaValueNode.Attributes()["id"]    = boost::lexical_cast<std::string>( (*metaValue)->id );
-
-                    metaValueNode.Content() = musik::core::ConvertUTF8( (*metaValue)->value );
-
-                }
-
-                this->metadataEvent[metatag](&metatagResult->second,clearMetatag);
             }
         }
 

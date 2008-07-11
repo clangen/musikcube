@@ -51,7 +51,7 @@ Server::Server(unsigned int port)
  :exitThread(false)
  ,acceptor(ioService,boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port))
 {
-//    this->acceptor.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
+    this->acceptor.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
 }
 
 Server::~Server(void){
