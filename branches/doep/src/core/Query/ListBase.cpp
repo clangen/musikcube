@@ -229,11 +229,24 @@ bool Query::ListBase::SendResults(musik::core::xml::WriterNode &queryNode,Librar
         // Check for Tracks
         if( !trackResultsCopy.empty() ){
 
-            // Call the slots
-            this->trackEvent(&trackResultsCopy,!this->clearedTrackResults);
+            musik::core::xml::WriterNode tracklist(queryNode,"tracklist");
 
             if(!this->clearedTrackResults){
+                tracklist.Attributes()["clear"]    = "true";
                 this->clearedTrackResults    = true;
+            }
+
+            for(musik::core::TrackVector::iterator track=trackResultsCopy.begin();track!=trackResultsCopy.end();){
+                musik::core::xml::WriterNode tracks(tracklist,"tracks");
+                int trackCount(0);
+                while(trackCount<100 && track!=trackResultsCopy.end()){
+                    if(trackCount!=0){
+                        tracks.Content()    += ",";             
+                    }
+                    tracks.Content()    += boost::lexical_cast<std::string>( (*track)->id );   
+                    ++track;
+                    ++trackCount;
+                }
             }
 
         }
@@ -241,7 +254,10 @@ bool Query::ListBase::SendResults(musik::core::xml::WriterNode &queryNode,Librar
         if(!continueSending){
             boost::mutex::scoped_lock lock(library->oResultMutex);
             // Check for trackinfo update
-            this->trackInfoEvent(trackInfoTracks,trackInfoDuration,trackInfoSize);
+            musik::core::xml::WriterNode trackInfoNode(queryNode,"trackinfo");
+            trackInfoNode.Content() =  boost::lexical_cast<std::string>( trackInfoTracks );
+            trackInfoNode.Content() += ","+boost::lexical_cast<std::string>( trackInfoDuration );
+            trackInfoNode.Content() += ","+boost::lexical_cast<std::string>( trackInfoSize );
         }else{
             if( metadataResultsCopy.empty() && trackResultsCopy.empty() ){
                 // Yield for more results
@@ -252,3 +268,15 @@ bool Query::ListBase::SendResults(musik::core::xml::WriterNode &queryNode,Librar
 
     return true;
 }
+
+void Query::ListBase::DummySlot(MetadataValueVector*,bool){
+}
+
+void Query::ListBase::DummySlotTracks(TrackVector*,bool){
+}
+
+void Query::ListBase::DummySlotTrackInfo(UINT64,UINT64,UINT64){
+}
+
+
+

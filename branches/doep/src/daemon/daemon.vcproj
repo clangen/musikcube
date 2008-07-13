@@ -94,6 +94,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="copy &quot;$(SolutionDir)\src\3rdparty\vld\*.*&quot; &quot;$(TargetDir)&quot;"
 			/>
 		</Configuration>
 		<Configuration

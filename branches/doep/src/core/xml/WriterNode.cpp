@@ -69,8 +69,12 @@ WriterNode::WriterNode()
 ///
 //////////////////////////////////////////
 WriterNode::~WriterNode(){
-    this->node->status  |= Node::Status::Started | Node::Status::Ended;
-    this->writer->Send();
+    if(this->node){
+        this->node->status  |= Node::Status::Started | Node::Status::Ended;
+        if(this!=this->writer){
+            this->writer->Send();
+        }
+    }
 }
 
 //////////////////////////////////////////

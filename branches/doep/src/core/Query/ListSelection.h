@@ -93,7 +93,6 @@ namespace musik{ namespace core{
             private:
                 typedef std::map<std::string,std::set<DBINT>> SelectedMetadata;
 
-                void DummySlot(MetadataValueVector*,bool);
 
                 //////////////////////////////////////////
                 ///\brief

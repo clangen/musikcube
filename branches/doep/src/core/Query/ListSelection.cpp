@@ -604,21 +604,20 @@ bool Query::ListSelection::RecieveQuery(musik::core::xml::ParserNode &queryNode)
             for(StringVector::iterator key=keys.begin();key!=keys.end();++key){
                 if(!key->empty()){
                     // connect dummy to the signals
-                    this->OnMetadataEvent(key->c_str()).connect(this,&Query::ListSelection::DummySlot);
+                    this->OnMetadataEvent(key->c_str()).connect( (Query::ListBase*)this,&Query::ListBase::DummySlot);
                 }
             }
-
+        }else if(node.Name()=="listtracks"){
+            this->OnTrackEvent().connect( (Query::ListBase*)this,&Query::ListBase::DummySlotTracks);
+        }else if(node.Name()=="listtrackinfo"){
+            this->OnTrackInfoEvent().connect( (Query::ListBase*)this,&Query::ListBase::DummySlotTrackInfo);
         }
     }
     return true;
 }
 
-void Query::ListSelection::DummySlot(MetadataValueVector*,bool){
-}
-
 std::string Query::ListSelection::Name(){
     return "ListSelection";
 }
-
 
 

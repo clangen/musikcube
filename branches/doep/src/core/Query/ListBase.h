@@ -99,6 +99,10 @@ namespace musik{ namespace core{
                 MetadataSignal& OnMetadataEvent(const wchar_t* metatag);
                 TrackSignal& OnTrackEvent();
                 TrackInfoSignal& OnTrackInfoEvent();
+            public:
+                void DummySlot(MetadataValueVector*,bool);
+                void DummySlotTracks(TrackVector*,bool);
+                void DummySlotTrackInfo(UINT64,UINT64,UINT64);
         };
     }
 } }
