@@ -54,6 +54,7 @@ using namespace musik::core::db;
 ///database Connection
 //////////////////////////////////////////
 Statement::Statement(const char* sql,Connection &connection) : connection(&connection),stmt(NULL){
+    boost::mutex::scoped_lock lock(connection.mutex);
     int err    = sqlite3_prepare_v2(this->connection->connection,sql,-1,&this->stmt,NULL);
 }
 
