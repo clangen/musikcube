@@ -39,6 +39,7 @@
 #include "pch.hpp"
 #include <core/db/Statement.h>
 #include <core/db/Connection.h>
+#include <sqlite/sqlite3.h>
 
 using namespace musik::core::db;
 
@@ -53,14 +54,7 @@ using namespace musik::core::db;
 ///database Connection
 //////////////////////////////////////////
 Statement::Statement(const char* sql,Connection &connection) : connection(&connection),stmt(NULL){
-    boost::mutex::scoped_lock lock(connection.mutex);
     int err    = sqlite3_prepare_v2(this->connection->connection,sql,-1,&this->stmt,NULL);
-/*    #ifdef _DEBUG
-        if(err!=0){
-            const char *errorMsg    = sqlite3_errmsg(this->connection->connection);
-            _ASSERT(false);
-        }
-    #endif*/
 }
 
 //////////////////////////////////////////
@@ -86,12 +80,6 @@ Statement::~Statement(){
 //////////////////////////////////////////
 void Statement::Reset(){
     int err    = sqlite3_reset(this->stmt);
-/*    #ifdef _DEBUG
-        if(err!=0){
-            const char *errorMsg    = sqlite3_errmsg(this->connection->connection);
-            _ASSERT(false);
-        }
-    #endif*/
 }
 
 //////////////////////////////////////////

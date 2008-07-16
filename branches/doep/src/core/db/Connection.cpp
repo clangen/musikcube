@@ -37,6 +37,7 @@
 #include "pch.hpp"
 #include <core/db/Connection.h>
 #include <boost/lexical_cast.hpp>
+#include <sqlite/sqlite3.h>
 
 using namespace musik::core::db;
 
@@ -45,6 +46,7 @@ using namespace musik::core::db;
 ///Constructor
 //////////////////////////////////////////
 Connection::Connection() : connection(NULL),transactionCounter(0) {
+    this->Maintenance(true);
 }
 
 
@@ -56,6 +58,7 @@ Connection::Connection() : connection(NULL),transactionCounter(0) {
 //////////////////////////////////////////
 Connection::~Connection(){
     this->Close();
+    this->Maintenance(false);
 }
 
 
@@ -76,6 +79,8 @@ Connection::~Connection(){
 ///Error code returned by SQLite
 //////////////////////////////////////////
 int Connection::Open(const utfchar *database,unsigned int options,unsigned int cache){
+    sqlite3_enable_shared_cache(1);
+
     int error;
     #ifdef UTF_WIDECHAR
         error   = sqlite3_open16(database,&this->connection);
@@ -106,6 +111,8 @@ int Connection::Open(const utfchar *database,unsigned int options,unsigned int c
 ///Error code returned by SQLite
 //////////////////////////////////////////
 int Connection::Open(const utfstring &database,unsigned int options,unsigned int cache){
+    sqlite3_enable_shared_cache(1);
+
     int error;
     #ifdef UTF_WIDECHAR
         error   = sqlite3_open16(database.c_str(),&this->connection);
@@ -291,12 +298,6 @@ sqlite3_stmt *Connection::GetCachedStatement(const char* sql){
         boost::mutex::scoped_lock lock(this->mutex);
 
         int err = sqlite3_prepare_v2(this->connection,sql,-1,&newStmt,NULL);
-/*        #ifdef _DEBUG
-            if(err!=0){
-                const char *errorMsg    = sqlite3_errmsg(this->connection);
-                _ASSERT(false);
-            }
-        #endif*/
         return newStmt;
     }
 
@@ -337,4 +338,21 @@ void Connection::ReturnCachedStatement(const char* sql,sqlite3_stmt *stmt){
 void Connection::Interrupt(){
     boost::mutex::scoped_lock lock(this->mutex);
     sqlite3_interrupt(this->connection);
+}
+
+void Connection::Maintenance(bool init){
+
+    static int counter(0);
+
+    if(init){
+        if(counter==0){
+            sqlite3_initialize();
+        }
+        ++counter;
+    }else{
+        --counter;
+        if(counter==0){
+            sqlite3_shutdown();
+        }
+    }
 }
