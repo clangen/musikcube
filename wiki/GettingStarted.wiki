@@ -1,7 +1,14 @@
 #summary Getting started with the development.
 
 = Getting started with the development =
+To work on mc2, you will need a copy of Visual Studio. We mainly use Visual C++ 2005. Unfortunately the 2005 Express Edition does not support native windows application development out of the box. It might work together with the Platform SDK, but you are on your own there. If you do not have Visual Studio 200X Standard or better, you can download the free Visual C++ 2008 Express Edition from [http://www.microsoft.com microsoft.com].
 
+To access the source code repository, I recommend using [http://rapidsvn.tigris.org/ RapidSVN]. With Visual C++ 2005 you should be able to compile right after the initial checkout. With other versions of Visual C++, you will have to download the boost libraries. You can find an installer for precompiled binaries at http://www.boostpro.com/products/free. 
+
+The installer should be mostly self explanatory. Note that it requires an internet connection during setup. The default variants you need are the Multithread variants. Each variant is about 150 MB, so you can take a coffee break during download and installation. After the installation is complete, load the mc2 solution file into Visual Studio. You  have to add the boost directory to your include paths to be able to build mc2.
+
+
+**deprecated:
 If you're going to test current trunk of mC2 you currently need to manually add the synchronize path.
  * Build mC2 and the plugins.
  * Start mC2.exe and then close it again so that the database is created.
