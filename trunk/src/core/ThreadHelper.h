@@ -47,10 +47,10 @@ namespace musik{ namespace core{
             ThreadHelper(void);
             ~ThreadHelper(void);
 
-            virtual void Exit(bool bNewExit);
+            virtual void Exit();
             boost::mutex exitMutex;
         protected:
-            bool Exit(void);
+            bool Exited();
 
             void NotificationWait();
             void NotificationTimedWait(const boost::xtime &oTime);

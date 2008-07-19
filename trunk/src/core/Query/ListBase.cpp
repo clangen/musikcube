@@ -54,7 +54,7 @@ Query::ListBase::~ListBase(void){
 }
 
 
-bool Query::ListBase::RunCallbacks(Library::Base *oLibrary){
+bool Query::ListBase::RunCallbacks(Library::Base *library){
 
     bool bReturn(false);
 
@@ -62,7 +62,7 @@ bool Query::ListBase::RunCallbacks(Library::Base *oLibrary){
     TrackVector trackResultsCopy;
 
     {    // Scope for swapping the results safely
-        boost::mutex::scoped_lock lock(oLibrary->oResultMutex);
+        boost::mutex::scoped_lock lock(library->oResultMutex);
 
         metadataResultsCopy.swap(this->metadataResults);
         trackResultsCopy.swap(this->trackResults);
@@ -110,7 +110,7 @@ bool Query::ListBase::RunCallbacks(Library::Base *oLibrary){
     }
 
     if(bReturn){
-        boost::mutex::scoped_lock lock(oLibrary->oResultMutex);
+        boost::mutex::scoped_lock lock(library->oResultMutex);
         // Check for trackinfo update
         this->trackInfoEvent(trackInfoTracks,trackInfoDuration,trackInfoSize);
     }
@@ -134,8 +134,8 @@ Query::ListBase::TrackInfoSignal& Query::ListBase::OnTrackInfoEvent(){
     return this->trackInfoEvent;
 }
 
-bool Query::ListBase::ParseTracksSQL(std::string sql,Library::Base *oLibrary,db::Connection &db){
-    if(this->trackEvent.has_connections() && !oLibrary->QueryCanceled()){
+bool Query::ListBase::ParseTracksSQL(std::string sql,Library::Base *library,db::Connection &db){
+    if(this->trackEvent.has_connections() && !library->QueryCanceled()){
         db::Statement selectTracks(sql.c_str(),db);
 
         TrackVector tempTrackResults;
@@ -148,7 +148,7 @@ bool Query::ListBase::ParseTracksSQL(std::string sql,Library::Base *oLibrary,db:
             this->trackInfoTracks++;
 
             if( (++row)%100==0 ){
-                boost::mutex::scoped_lock lock(oLibrary->oResultMutex);
+                boost::mutex::scoped_lock lock(library->oResultMutex);
                 this->trackResults.insert(this->trackResults.end(),tempTrackResults.begin(),tempTrackResults.end());
 
                 tempTrackResults.clear();
@@ -156,7 +156,7 @@ bool Query::ListBase::ParseTracksSQL(std::string sql,Library::Base *oLibrary,db:
             }
         }
         if(!tempTrackResults.empty()){
-            boost::mutex::scoped_lock lock(oLibrary->oResultMutex);
+            boost::mutex::scoped_lock lock(library->oResultMutex);
             this->trackResults.insert(this->trackResults.end(),tempTrackResults.begin(),tempTrackResults.end());
         }
 
@@ -166,4 +166,117 @@ bool Query::ListBase::ParseTracksSQL(std::string sql,Library::Base *oLibrary,db:
     }
 
 }
+
+bool Query::ListBase::SendResults(musik::core::xml::WriterNode &queryNode,Library::Base *library){
+
+    bool continueSending(true);
+    while(continueSending){
+
+        MetadataResults metadataResultsCopy;
+        TrackVector trackResultsCopy;
+
+        {    // Scope for swapping the results safely
+            boost::mutex::scoped_lock lock(library->oResultMutex);
+
+            metadataResultsCopy.swap(this->metadataResults);
+            trackResultsCopy.swap(this->trackResults);
+
+            if( (this->status & Status::Ended)!=0){
+                // If the query is finished, stop sending
+                continueSending = false;
+            }
+        }
+
+        // Check for metadata results
+        if(!metadataResultsCopy.empty()){
+
+            // Loop metadata tags for results
+            for( MetadataResults::iterator metatagResult=metadataResultsCopy.begin();metatagResult!=metadataResultsCopy.end();++metatagResult){
+
+                std::string metatag(metatagResult->first);
+
+                // If the metatag  has results, send results
+
+                // check if the signal should send the clear flag
+                bool clearMetatag(false);
+                if(this->clearedMetadataResults.find(metatag)==this->clearedMetadataResults.end()){
+                    clearMetatag    = true;
+                    this->clearedMetadataResults.insert(metatag);    // Set this to cleared
+                }
+
+                // Send results
+                {
+                    musik::core::xml::WriterNode results(queryNode,"metadata");
+
+                    results.Attributes()["key"] = metatagResult->first;
+                    if(clearMetatag){
+                        results.Attributes()["clear"] = "true";
+                    }
+
+                    for(musik::core::MetadataValueVector::iterator metaValue=metatagResult->second.begin();metaValue!=metatagResult->second.end();++metaValue){
+                        musik::core::xml::WriterNode metaValueNode(results,"md");
+                        metaValueNode.Attributes()["id"]    = boost::lexical_cast<std::string>( (*metaValue)->id );
+
+                        metaValueNode.Content() = musik::core::ConvertUTF8( (*metaValue)->value );
+
+                    }
+
+                    this->metadataEvent[metatag](&metatagResult->second,clearMetatag);
+                }
+            }
+        }
+
+        // Check for Tracks
+        if( !trackResultsCopy.empty() ){
+
+            musik::core::xml::WriterNode tracklist(queryNode,"tracklist");
+
+            if(!this->clearedTrackResults){
+                tracklist.Attributes()["clear"]    = "true";
+                this->clearedTrackResults    = true;
+            }
+
+            for(musik::core::TrackVector::iterator track=trackResultsCopy.begin();track!=trackResultsCopy.end();){
+                musik::core::xml::WriterNode tracks(tracklist,"tracks");
+                int trackCount(0);
+                while(trackCount<100 && track!=trackResultsCopy.end()){
+                    if(trackCount!=0){
+                        tracks.Content()    += ",";             
+                    }
+                    tracks.Content()    += boost::lexical_cast<std::string>( (*track)->id );   
+                    ++track;
+                    ++trackCount;
+                }
+            }
+
+        }
+
+        if(!continueSending){
+            boost::mutex::scoped_lock lock(library->oResultMutex);
+            // Check for trackinfo update
+            musik::core::xml::WriterNode trackInfoNode(queryNode,"trackinfo");
+            trackInfoNode.Content() =  boost::lexical_cast<std::string>( trackInfoTracks );
+            trackInfoNode.Content() += ","+boost::lexical_cast<std::string>( trackInfoDuration );
+            trackInfoNode.Content() += ","+boost::lexical_cast<std::string>( trackInfoSize );
+        }else{
+            if( metadataResultsCopy.empty() && trackResultsCopy.empty() ){
+                // Yield for more results
+                boost::thread::yield();
+            }
+        }
+    }
+
+    return true;
+}
+
+void Query::ListBase::DummySlot(MetadataValueVector*,bool){
+}
+
+void Query::ListBase::DummySlotTracks(TrackVector*,bool){
+}
+
+void Query::ListBase::DummySlotTrackInfo(UINT64,UINT64,UINT64){
+}
+
+
 

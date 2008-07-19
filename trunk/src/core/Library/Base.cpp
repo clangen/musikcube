@@ -48,7 +48,7 @@ Library::Base::Base(void) : identifier(UTF("local")), queueCallbackStarted(false
 }
 
 Library::Base::~Base(void){
-    this->Exit(true);
+    this->Exit();
     this->threads.join_all();
 }
 
@@ -94,7 +94,7 @@ utfstring Library::Base::GetLibraryDirectory(){
 //////////////////////////////////////////
 utfstring Library::Base::GetDBPath(){
     utfstring sPath    = this->GetLibraryDirectory();
-    sPath.append(UTF("local_musik.db"));
+    sPath.append(UTF("musik.db"));
     return sPath;
 }
 
@@ -406,15 +406,15 @@ void Library::Base::CancelCurrentQuery(){
 }
 
 
-bool Library::Base::Exit(void){
+bool Library::Base::Exited(){
     boost::mutex::scoped_lock lock(this->libraryMutex);
     return this->exit;
 }
 
-void Library::Base::Exit(bool exit){
+void Library::Base::Exit(){
     {
         boost::mutex::scoped_lock lock(this->libraryMutex);
-        this->exit    = exit;
+        this->exit    = true;
     }
     this->waitCondition.notify_all();
 }
@@ -464,3 +464,135 @@ musik::core::Indexer *Library::Base::Indexer(){
     return NULL;
 }
 
+
+//////////////////////////////////////////
+///\brief
+///Create all tables, indexes, etc in the database.
+///
+///This will assume that the database has been initialized.
+//////////////////////////////////////////
+void Library::Base::CreateDatabase(db::Connection &db){
+    // Create the tracks-table
+    db.Execute("CREATE TABLE IF NOT EXISTS tracks ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "track INTEGER DEFAULT 0,"
+            "bpm REAL DEFAULT 0,"
+            "duration INTEGER DEFAULT 0,"
+            "filesize INTEGER DEFAULT 0,"
+            "year INTEGER DEFAULT 0,"
+            "visual_genre_id INTEGER DEFAULT 0,"
+            "visual_artist_id INTEGER DEFAULT 0,"
+            "album_id INTEGER DEFAULT 0,"
+            "folder_id INTEGER DEFAULT 0,"
+            "title TEXT default '',"
+            "filename TEXT default '',"
+            "filetime INTEGER DEFAULT 0,"
+            "thumbnail_id INTEGER DEFAULT 0,"
+            "sort_order1 INTEGER)");
+
+    // Create the genres-table
+    db.Execute("CREATE TABLE IF NOT EXISTS genres ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "name TEXT default '',"
+            "aggregated INTEGER DEFAULT 0,"
+            "sort_order INTEGER DEFAULT 0)");
+
+    db.Execute("CREATE TABLE IF NOT EXISTS track_genres ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "track_id INTEGER DEFAULT 0,"
+            "genre_id INTEGER DEFAULT 0)");
+
+    // Create the artists-table
+    db.Execute("CREATE TABLE IF NOT EXISTS artists ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "name TEXT default '',"
+            "aggregated INTEGER DEFAULT 0,"
+            "sort_order INTEGER DEFAULT 0)");
+
+    db.Execute("CREATE TABLE IF NOT EXISTS track_artists ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "track_id INTEGER DEFAULT 0,"
+            "artist_id INTEGER DEFAULT 0)");
+
+    // Create the meta-tables
+    db.Execute("CREATE TABLE IF NOT EXISTS meta_keys ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "name TEXT)");
+
+    db.Execute("CREATE TABLE IF NOT EXISTS meta_values ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "meta_key_id INTEGER DEFAULT 0,"
+            "sort_order INTEGER DEFAULT 0,"
+            "content TEXT)");
+
+    db.Execute("CREATE TABLE IF NOT EXISTS track_meta ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "track_id INTEGER DEFAULT 0,"
+            "meta_value_id INTEGER DEFAULT 0)");
+
+    // Create the albums-table
+    db.Execute("CREATE TABLE IF NOT EXISTS albums ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "name TEXT default '',"
+            "thumbnail_id INTEGER default 0,"
+            "sort_order INTEGER DEFAULT 0)");
+
+    // Create the paths-table
+    db.Execute("CREATE TABLE IF NOT EXISTS paths ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "path TEXT default ''"
+            ")");
+
+    // Create the folders-table
+    db.Execute("CREATE TABLE IF NOT EXISTS folders ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "name TEXT default '',"
+            "fullpath TEXT default '',"
+            "parent_id INTEGER DEFAULT 0,"
+            "path_id INTEGER DEFAULT 0"
+            ")");
+
+    // Create the folders-table
+    db.Execute("CREATE TABLE IF NOT EXISTS thumbnails ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "filename TEXT default '',"
+            "filesize INTEGER DEFAULT 0,"
+            "checksum INTEGER DEFAULT 0"
+            ")");
+
+    // Create the playlists-table
+    db.Execute("CREATE TABLE IF NOT EXISTS playlists ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "name TEXT default ''"
+            ")");
+    // Create the playlists-table
+    db.Execute("CREATE TABLE IF NOT EXISTS playlist_tracks ("
+            "track_id INTEGER DEFAULT 0,"
+            "playlist_id INTEGER DEFAULT 0,"
+            "sort_order INTEGER DEFAULT 0"
+            ")");
+
+
+    // INDEXES
+    db.Execute("CREATE UNIQUE INDEX IF NOT EXISTS folders_index ON folders (name,parent_id,path_id)");
+    db.Execute("CREATE UNIQUE INDEX IF NOT EXISTS paths_index ON paths (path)");
+    db.Execute("CREATE INDEX IF NOT EXISTS genre_index ON genres (sort_order)");
+    db.Execute("CREATE INDEX IF NOT EXISTS artist_index ON artists (sort_order)");
+    db.Execute("CREATE INDEX IF NOT EXISTS album_index ON albums (sort_order)");
+    db.Execute("CREATE INDEX IF NOT EXISTS track_index1 ON tracks (album_id,sort_order1)");
+    db.Execute("CREATE INDEX IF NOT EXISTS track_index7 ON tracks (folder_id)");
+    db.Execute("CREATE INDEX IF NOT EXISTS thumbnail_index ON thumbnails (filesize)");
+
+    db.Execute("CREATE INDEX IF NOT EXISTS trackgenre_index1 ON track_genres (track_id,genre_id)");
+    db.Execute("CREATE INDEX IF NOT EXISTS trackgenre_index2 ON track_genres (genre_id,track_id)");
+    db.Execute("CREATE INDEX IF NOT EXISTS trackartist_index1 ON track_artists (track_id,artist_id)");
+    db.Execute("CREATE INDEX IF NOT EXISTS trackartist_index2 ON track_artists (artist_id,track_id)");
+    db.Execute("CREATE INDEX IF NOT EXISTS trackmeta_index1 ON track_meta (track_id,meta_value_id)");
+    db.Execute("CREATE INDEX IF NOT EXISTS trackmeta_index2 ON track_meta (meta_value_id,track_id)");
+    db.Execute("CREATE INDEX IF NOT EXISTS metakey_index1 ON meta_keys (name)");
+    db.Execute("CREATE INDEX IF NOT EXISTS metavalues_index1 ON meta_values (meta_key_id)");
+
+    db.Execute("CREATE INDEX IF NOT EXISTS playlist_index ON playlist_tracks (playlist_id,sort_order)");
+
+    db.Execute("ANALYZE");
+}

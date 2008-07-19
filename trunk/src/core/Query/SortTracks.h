@@ -81,7 +81,7 @@ namespace musik{ namespace core{
                 friend class Library::Base;
                 friend class Library::LocalDB;
 
-                virtual bool ParseQuery(Library::Base *oLibrary,db::Connection &db);
+                virtual bool ParseQuery(Library::Base *library,db::Connection &db);
 
                 Ptr copy() const;
 

@@ -38,7 +38,14 @@
 
 #pragma once
 
-#include <boost/utility.hpp>    // noncopyable
+#include <sigslot/sigslot.h>
+
+#include <win32cpp/Win32Config.hpp>          // Must be first!
+#include <win32cpp/Types.hpp>
+#include <win32cpp/Exception.hpp>
+
+#include <map>
+#include <vector>
 
 //////////////////////////////////////////////////////////////////////////////
 

@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Daniel Önnerby
+// The following are Copyright Â© 2008, Daniel Ã–nnerby
 //
 // All rights reserved.
 //
@@ -48,7 +48,8 @@
     #include <TCHAR.h>
 
     #ifndef MUSIKCOREIMPORT
-        #define DLLEXPORT __declspec( dllexport )
+        //#define DLLEXPORT __declspec( dllexport )
+        #define DLLEXPORT
     #else
         #define DLLEXPORT __declspec( dllimport )
     #endif
@@ -96,7 +97,7 @@ typedef unsigned int DBTIME;
     // Boost specific
     namespace boost{
         namespace filesystem{
-            typedef wpath utfpath;
+            typedef boost::filesystem::wpath utfpath;
             typedef wdirectory_iterator utfdirectory_iterator;
         }
 

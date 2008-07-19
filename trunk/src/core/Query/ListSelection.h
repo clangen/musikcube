@@ -81,13 +81,18 @@ namespace musik{ namespace core{
             protected:
                 friend class Library::Base;
                 friend class Library::LocalDB;
+                friend class server::Connection;
 
-                virtual bool ParseQuery(Library::Base *oLibrary,db::Connection &db);
+                virtual std::string Name();
+                virtual bool ParseQuery(Library::Base *library,db::Connection &db);
 
                 Ptr copy() const;
 
+                virtual bool RecieveQuery(musik::core::xml::ParserNode &queryNode);
+
             private:
                 typedef std::map<std::string,std::set<DBINT>> SelectedMetadata;
+
 
                 //////////////////////////////////////////
                 ///\brief
@@ -109,8 +114,8 @@ namespace musik{ namespace core{
 
 
                 inline void SQLPrependWhereOrAnd(std::string &sql);
-                void SQLSelectQuery(const char *metakey,const char *sqlStart,const char *sqlEnd,std::set<std::string> &metakeysSelected,std::string &sqlSelectTrackWhere,Library::Base *oLibrary);
-                void QueryForMetadata(const char *metakey,const char *sql,std::set<std::string> &metakeysQueried,Library::Base *oLibrary,db::Connection &db);
+                void SQLSelectQuery(const char *metakey,const char *sqlStart,const char *sqlEnd,std::set<std::string> &metakeysSelected,std::string &sqlSelectTrackWhere,Library::Base *library);
+                void QueryForMetadata(const char *metakey,const char *sql,std::set<std::string> &metakeysQueried,Library::Base *library,db::Connection &db);
 
         };
 

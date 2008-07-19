@@ -36,11 +36,10 @@
 
 #pragma once
 
-#include <sqlite/sqlite3.h>
 
 #ifdef _DEBUG
-//    #define DB_ASSERT(x)        _ASSERT(x==0)
-    #define DB_ASSERT(x)        x
+    #define DB_ASSERT(x)        _ASSERT(x==0)
+//    #define DB_ASSERT(x)        x
 #else
     #define DB_ASSERT(x)        x
 #endif
@@ -53,10 +52,10 @@ namespace musik{ namespace core{ namespace db{
     ///The ReturnCode is used by several method to return the status of a execution
     //////////////////////////////////////////
     enum ReturnCode : int{
-        OK      = SQLITE_OK,
-        Row     = SQLITE_ROW,
-        Done    = SQLITE_DONE,
-        Error   = SQLITE_ERROR
+        OK      = 0,
+        Row     = 100,
+        Done    = 101,
+        Error   = 1
     };
 
 } } }

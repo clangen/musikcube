@@ -38,6 +38,10 @@
 
 #pragma once
 
+#include <win32cpp/Win32Config.hpp>          // Must be first!
+#include <win32cpp/Types.hpp>          // Must be first!
+#include <vector>
+
 //////////////////////////////////////////////////////////////////////////////
 
 namespace win32cpp {

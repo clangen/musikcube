@@ -38,6 +38,7 @@
 
 #include <pch.hpp>
 #include <win32cpp/Container.hpp>
+#include <win32cpp/Application.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 

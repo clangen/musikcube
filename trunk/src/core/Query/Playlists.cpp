@@ -56,7 +56,7 @@ Query::Playlists::~Playlists(void){
 }
 
 
-bool Query::Playlists::ParseQuery(Library::Base *oLibrary,db::Connection &db){
+bool Query::Playlists::ParseQuery(Library::Base *library,db::Connection &db){
 
     return true;
 }
@@ -72,7 +72,7 @@ Query::Ptr Query::Playlists::copy() const{
     return Query::Ptr(new Query::Playlists(*this));
 }
 
-bool Query::Playlists::RunCallbacks(Library::Base *oLibrary){
+bool Query::Playlists::RunCallbacks(Library::Base *library){
     return true;
 }
 

@@ -70,9 +70,13 @@ namespace musik{ namespace core{
                 typedef sigslot::signal3<UINT64,UINT64,UINT64> TrackInfoSignal;
 
             protected:
-                bool RunCallbacks(Library::Base *oLibrary);
+                friend class Library::Base;
+                friend class Library::LocalDB;
+                friend class server::Connection;
 
-                bool ParseTracksSQL(std::string sql,Library::Base *oLibrary,db::Connection &db);
+                bool RunCallbacks(Library::Base *library);
+
+                bool ParseTracksSQL(std::string sql,Library::Base *library,db::Connection &db);
 
                 MetadataResults metadataResults;
                 TrackVector trackResults;
@@ -88,11 +92,17 @@ namespace musik{ namespace core{
                 UINT64 trackInfoDuration;
                 UINT64 trackInfoSize;
 
+                virtual bool SendResults(musik::core::xml::WriterNode &queryNode,Library::Base *library);
+
             public:
                 MetadataSignal& OnMetadataEvent(const char* metatag);
                 MetadataSignal& OnMetadataEvent(const wchar_t* metatag);
                 TrackSignal& OnTrackEvent();
                 TrackInfoSignal& OnTrackInfoEvent();
+            public:
+                void DummySlot(MetadataValueVector*,bool);
+                void DummySlotTracks(TrackVector*,bool);
+                void DummySlotTrackInfo(UINT64,UINT64,UINT64);
         };
     }
 } }

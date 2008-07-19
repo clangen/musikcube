@@ -2,8 +2,8 @@ Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual Studio 2005
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mC2", "src\cube\cube.vcproj", "{1CA67D31-E7D4-4377-93F2-FD15BF95D21F}"
 	ProjectSection(ProjectDependencies) = postProject
-		{E618F29F-BF28-441A-B039-9E10A631D881} = {E618F29F-BF28-441A-B039-9E10A631D881}
 		{B2165720-B4B2-4F4B-9634-8C390C3CB4DB} = {B2165720-B4B2-4F4B-9634-8C390C3CB4DB}
+		{E618F29F-BF28-441A-B039-9E10A631D881} = {E618F29F-BF28-441A-B039-9E10A631D881}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "win32cpp", "src\win32cpp\win32cpp.vcproj", "{E618F29F-BF28-441A-B039-9E10A631D881}"
@@ -14,9 +14,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "core", "src\core\core.vcpro
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "taglib_plugin", "src\contrib\taglib_plugin\taglib_plugin.vcproj", "{7CD00EC4-D090-48BE-9388-FA4857AC332C}"
-	ProjectSection(ProjectDependencies) = postProject
-		{1CA67D31-E7D4-4377-93F2-FD15BF95D21F} = {1CA67D31-E7D4-4377-93F2-FD15BF95D21F}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "3rdparty", "src\3rdparty\3rdparty.vcproj", "{B2165720-B4B2-4F4B-8888-8C390C3CB4DB}"
 EndProject
@@ -38,6 +35,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "square", "src\square\player
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "waveout", "src\contrib\waveout\waveout.vcproj", "{4F10C17A-8AF7-4FAC-A4E2-087AE6E8F9D8}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "daemon", "src\daemon\daemon.vcproj", "{6513DC84-3758-4A2F-B568-7AAF29DD7DA9}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B2165720-B4B2-4F4B-9634-8C390C3CB4DB} = {B2165720-B4B2-4F4B-9634-8C390C3CB4DB}
+		{B2165720-B4B2-4F4B-8888-8C390C3CB4DB} = {B2165720-B4B2-4F4B-8888-8C390C3CB4DB}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -93,6 +96,10 @@ Global
 		{4F10C17A-8AF7-4FAC-A4E2-087AE6E8F9D8}.Debug|Win32.Build.0 = Debug|Win32
 		{4F10C17A-8AF7-4FAC-A4E2-087AE6E8F9D8}.Release|Win32.ActiveCfg = Release|Win32
 		{4F10C17A-8AF7-4FAC-A4E2-087AE6E8F9D8}.Release|Win32.Build.0 = Release|Win32
+		{6513DC84-3758-4A2F-B568-7AAF29DD7DA9}.Debug|Win32.ActiveCfg = Debug|Win32
+		{6513DC84-3758-4A2F-B568-7AAF29DD7DA9}.Debug|Win32.Build.0 = Debug|Win32
+		{6513DC84-3758-4A2F-B568-7AAF29DD7DA9}.Release|Win32.ActiveCfg = Release|Win32
+		{6513DC84-3758-4A2F-B568-7AAF29DD7DA9}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

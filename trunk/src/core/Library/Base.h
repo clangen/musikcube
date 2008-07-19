@@ -37,6 +37,7 @@
 #pragma once
 
 #include <core/config.h>
+#include <core/db/Connection.h>
 
 #include <boost/thread/thread.hpp>
 #include <boost/thread/condition.hpp>
@@ -118,15 +119,18 @@ namespace musik{ namespace core{
 
                 virtual musik::core::Indexer *Indexer();
 
-                bool Exit(void);
+                bool Exited();
 
                 static bool IsStaticMetaKey(std::string &metakey);
                 static bool IsSpecialMTOMetaKey(std::string &metakey);
                 static bool IsSpecialMTMMetaKey(std::string &metakey);
 
+
+                static void CreateDatabase(db::Connection &db);
+
             protected:
                 // Methods:
-                void Exit(bool exit);
+                virtual void Exit();
 
                 Query::Ptr GetNextQuery();
 
@@ -184,6 +188,7 @@ namespace musik{ namespace core{
 
 
             protected:
+                typedef std::list<Query::Ptr> QueryList;
                 // Variables:
 
                 //////////////////////////////////////////
@@ -199,14 +204,14 @@ namespace musik{ namespace core{
                 ///\brief
                 ///queue (std::list) for incoming queries.
                 //////////////////////////////////////////
-                std::list<Query::Ptr> incomingQueries;
+                QueryList incomingQueries;
 
                 //////////////////////////////////////////
                 ///\brief
                 ///queue (std::list) for finished queries that havn't
                 ///been run through the callbacks yet.
                 //////////////////////////////////////////
-                std::list<Query::Ptr> outgoingQueries;
+                QueryList outgoingQueries;
 
                 //////////////////////////////////////////
                 ///\brief
