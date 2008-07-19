@@ -5,7 +5,7 @@ To work on mc2, you will need a copy of Visual Studio. We mainly use Visual C++ 
 
 To access the source code repository, I recommend using [http://rapidsvn.tigris.org/ RapidSVN]. With Visual C++ 2005 you should be able to compile right after the initial checkout. With other versions of Visual C++, you will have to download the boost libraries. You can find an installer for precompiled binaries at http://www.boostpro.com/products/free. 
 
-The installer should be mostly self explanatory. Note that it requires an internet connection during setup. The default variants you need are the Multithread variants. Each variant is about 150 MB, so you can take a coffee break during download and installation. After the installation is complete, load the mc2 solution file into Visual Studio. You  have to add the boost directory to your include paths to be able to build mc2.
+The installer should be mostly self explanatory. Note that it requires an internet connection during setup. The default variants you need are the Multithread variants (normal and debug, static runtime). Each variant is about 150 MB, so you can take a coffee break during download and installation. After the installation is complete, load the mc2 solution file into Visual Studio. You  have to add the boost directory to your include paths to be able to build mc2.
 
 
 **deprecated:
