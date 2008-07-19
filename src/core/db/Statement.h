@@ -40,7 +40,12 @@
 #include <map>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
-#include <sqlite/sqlite3.h>
+
+//////////////////////////////////////////
+// Forward declare
+struct sqlite3_stmt;
+//////////////////////////////////////////
+
 
 namespace musik{ namespace core{ namespace db{
 

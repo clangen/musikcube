@@ -67,7 +67,7 @@ void Query::PlaylistSave::SavePlaylist(int playlistId,utfstring playlistName,mus
     }
 }
 
-bool Query::PlaylistSave::ParseQuery(Library::Base *oLibrary,db::Connection &db){
+bool Query::PlaylistSave::ParseQuery(Library::Base *library,db::Connection &db){
 
     db::ScopedTransaction transaction(db);
 
@@ -113,8 +113,8 @@ Query::Ptr Query::PlaylistSave::copy() const{
     return Query::Ptr(new Query::PlaylistSave(*this));
 }
 
-bool Query::PlaylistSave::RunCallbacks(Library::Base *oLibrary){
-    boost::mutex::scoped_lock lock(oLibrary->oResultMutex);
+bool Query::PlaylistSave::RunCallbacks(Library::Base *library){
+    boost::mutex::scoped_lock lock(library->oResultMutex);
     if( (this->status & Status::Ended)!=0){
         this->PlaylistSaved(this->playlistId);
         return true;

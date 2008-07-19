@@ -40,7 +40,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="./;../;../3rdparty/include/"
-				PreprocessorDefinitions="BOOST_ALL_NO_LIB;WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE"
+				PreprocessorDefinitions="BOOST_ALL_NO_LIB;WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE;XML_STATIC"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -107,7 +107,7 @@
 				InlineFunctionExpansion="0"
 				FavorSizeOrSpeed="0"
 				AdditionalIncludeDirectories="./;../;../3rdparty/include/"
-				PreprocessorDefinitions="BOOST_ALL_NO_LIB;WIN32;_CRT_SECURE_NO_DEPRECATE"
+				PreprocessorDefinitions="BOOST_ALL_NO_LIB;WIN32;_CRT_SECURE_NO_DEPRECATE;XML_STATIC"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="pch.hpp"
@@ -150,6 +150,10 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath=".\ITrack.h"
+				>
+			</File>
 			<File
 				RelativePath=".\pch.cpp"
 				>
@@ -280,6 +284,14 @@
 					</File>
 					<File
 						RelativePath=".\Query\Base.h"
+						>
+					</File>
+					<File
+						RelativePath=".\Query\Factory.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Query\Factory.h"
 						>
 					</File>
 					<File
@@ -501,6 +513,88 @@
 				</File>
 				<File
 					RelativePath=".\audio\Transport.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="server"
+				>
+				<File
+					RelativePath=".\server\Connection.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath=".\server\Connection.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Server.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Server.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="xml"
+				>
+				<File
+					RelativePath=".\xml\Node.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\xml\Node.h"
+					>
+				</File>
+				<File
+					RelativePath=".\xml\Parser.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\xml\Parser.h"
+					>
+				</File>
+				<File
+					RelativePath=".\xml\ParserNode.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\xml\ParserNode.h"
+					>
+				</File>
+				<File
+					RelativePath=".\xml\Writer.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\xml\Writer.h"
+					>
+				</File>
+				<File
+					RelativePath=".\xml\WriterNode.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\xml\WriterNode.h"
 					>
 				</File>
 			</Filter>

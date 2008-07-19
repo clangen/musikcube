@@ -41,6 +41,7 @@
 #include <set>
 #include <map>
 
+#include <win32cpp/Win32Config.hpp>          // Must be first!
 #include <win32cpp/Font.hpp>
 #include <win32cpp/Color.hpp>
 #include <win32cpp/Menu.hpp>

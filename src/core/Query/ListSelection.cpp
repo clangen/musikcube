@@ -40,7 +40,7 @@
 
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
-#include <algorithm>
+#include <boost/algorithm/string.hpp>
 
 using namespace musik::core;
 
@@ -197,7 +197,7 @@ void Query::ListSelection::ClearMetadata(const char* metatag){
 ///\brief
 ///Parse the list query
 ///
-///\param oLibrary
+///\param library
 ///pointer to library that parses the query. Needed for mutexes.
 ///
 ///\param db
@@ -246,7 +246,7 @@ void Query::ListSelection::ClearMetadata(const char* metatag){
 ///            SELECT id,content FROM meta_values WHERE meta_key_id IN (SELECT id FROM meta_keys WHERE name=?) AND id IN (SELECT meta_value_id FROM track_meta WHERE track_id IN ($tracklist$)) ORDER BY sort_order
 ///
 //////////////////////////////////////////
-bool Query::ListSelection::ParseQuery(Library::Base *oLibrary,db::Connection &db){
+bool Query::ListSelection::ParseQuery(Library::Base *library,db::Connection &db){
 
     bool success(true);
 
@@ -295,33 +295,33 @@ bool Query::ListSelection::ParseQuery(Library::Base *oLibrary,db::Connection &db
     if(!metakeysSelected.empty()){
         ////////////////////////////////////////////////
         // Selected genre
-        this->SQLSelectQuery("genre","t.id IN (SELECT track_id FROM track_genres WHERE genre_id IN (",")) ",metakeysSelected,sqlSelectTrackWhere,oLibrary);
+        this->SQLSelectQuery("genre","t.id IN (SELECT track_id FROM track_genres WHERE genre_id IN (",")) ",metakeysSelected,sqlSelectTrackWhere,library);
 
         ////////////////////////////////////////////////
         // Selected artists
-        this->SQLSelectQuery("artist","t.id IN (SELECT track_id FROM track_artists WHERE artist_id IN (",")) ",metakeysSelected,sqlSelectTrackWhere,oLibrary);
+        this->SQLSelectQuery("artist","t.id IN (SELECT track_id FROM track_artists WHERE artist_id IN (",")) ",metakeysSelected,sqlSelectTrackWhere,library);
 
         ////////////////////////////////////////////////
         // Selected albums
-        this->SQLSelectQuery("album","t.album_id IN (",") ",metakeysSelected,sqlSelectTrackWhere,oLibrary);
+        this->SQLSelectQuery("album","t.album_id IN (",") ",metakeysSelected,sqlSelectTrackWhere,library);
 
         ////////////////////////////////////////////////
         // Selected year
-        this->SQLSelectQuery("year","t.year IN (",") ",metakeysSelected,sqlSelectTrackWhere,oLibrary);
+        this->SQLSelectQuery("year","t.year IN (",") ",metakeysSelected,sqlSelectTrackWhere,library);
 
         ////////////////////////////////////////////////
         // Selected duration
-        this->SQLSelectQuery("duration","t.duration IN (",") ",metakeysSelected,sqlSelectTrackWhere,oLibrary);
+        this->SQLSelectQuery("duration","t.duration IN (",") ",metakeysSelected,sqlSelectTrackWhere,library);
 
         ////////////////////////////////////////////////
         // Selected track
-        this->SQLSelectQuery("track","t.track IN (",") ",metakeysSelected,sqlSelectTrackWhere,oLibrary);
+        this->SQLSelectQuery("track","t.track IN (",") ",metakeysSelected,sqlSelectTrackWhere,library);
 
         ////////////////////////////////////////////////
         // Selected metadata
         std::set<std::string> tempMetakeysSelected(metakeysSelected);
         for(std::set<std::string>::iterator metakey=tempMetakeysSelected.begin();metakey!=tempMetakeysSelected.end();++metakey){
-            this->SQLSelectQuery(metakey->c_str(),"t.id IN (SELECT track_id FROM track_meta WHERE meta_value_id IN (",")) ",metakeysSelected,sqlSelectTrackWhere,oLibrary);
+            this->SQLSelectQuery(metakey->c_str(),"t.id IN (SELECT track_id FROM track_meta WHERE meta_value_id IN (",")) ",metakeysSelected,sqlSelectTrackWhere,library);
         }
 
     }
@@ -367,17 +367,17 @@ bool Query::ListSelection::ParseQuery(Library::Base *oLibrary,db::Connection &db
 
     // Genre
     if(metakeysSelectedCopy.empty()){
-        this->QueryForMetadata("genre","SELECT g.id,g.name FROM genres g WHERE g.aggregated=0 ORDER BY g.sort_order",metakeysQueried,oLibrary,db);
+        this->QueryForMetadata("genre","SELECT g.id,g.name FROM genres g WHERE g.aggregated=0 ORDER BY g.sort_order",metakeysQueried,library,db);
     }else{
-        this->QueryForMetadata("genre","SELECT g.id,g.name FROM genres g WHERE g.aggregated=0 AND g.id IN (SELECT genre_id FROM track_genres WHERE track_id IN (SELECT id FROM temp_tracks_list)) ORDER BY g.sort_order",metakeysQueried,oLibrary,db);
+        this->QueryForMetadata("genre","SELECT g.id,g.name FROM genres g WHERE g.aggregated=0 AND g.id IN (SELECT genre_id FROM track_genres WHERE track_id IN (SELECT id FROM temp_tracks_list)) ORDER BY g.sort_order",metakeysQueried,library,db);
     }
 
 
     // Artists
     if(metakeysSelectedCopy.empty()){
-        this->QueryForMetadata("artist","SELECT a.id,a.name FROM artists a WHERE a.aggregated=0 ORDER BY a.sort_order",metakeysQueried,oLibrary,db);
+        this->QueryForMetadata("artist","SELECT a.id,a.name FROM artists a WHERE a.aggregated=0 ORDER BY a.sort_order",metakeysQueried,library,db);
     }else{
-        this->QueryForMetadata("artist","SELECT a.id,a.name FROM artists a WHERE a.aggregated=0 AND a.id IN (SELECT artist_id FROM track_artists WHERE track_id IN (SELECT id FROM temp_tracks_list)) ORDER BY a.sort_order",metakeysQueried,oLibrary,db);
+        this->QueryForMetadata("artist","SELECT a.id,a.name FROM artists a WHERE a.aggregated=0 AND a.id IN (SELECT artist_id FROM track_artists WHERE track_id IN (SELECT id FROM temp_tracks_list)) ORDER BY a.sort_order",metakeysQueried,library,db);
     }
 
     ////////////////////////////////////////////////
@@ -385,30 +385,30 @@ bool Query::ListSelection::ParseQuery(Library::Base *oLibrary,db::Connection &db
 
     // Album
     if(metakeysSelectedCopy.empty()){
-        this->QueryForMetadata("album","SELECT a.id,a.name FROM albums a ORDER BY a.sort_order",metakeysQueried,oLibrary,db);
+        this->QueryForMetadata("album","SELECT a.id,a.name FROM albums a ORDER BY a.sort_order",metakeysQueried,library,db);
     }else{
-        this->QueryForMetadata("album","SELECT a.id,a.name FROM albums a WHERE a.id IN (SELECT album_id FROM temp_tracks_list) ORDER BY a.sort_order",metakeysQueried,oLibrary,db);
+        this->QueryForMetadata("album","SELECT a.id,a.name FROM albums a WHERE a.id IN (SELECT album_id FROM temp_tracks_list) ORDER BY a.sort_order",metakeysQueried,library,db);
     }
 
     // Track
     if(metakeysSelectedCopy.empty()){
-        this->QueryForMetadata("track","SELECT track,track FROM (SELECT DISTINCT(track) AS track FROM tracks ORDER BY track)",metakeysQueried,oLibrary,db);
+        this->QueryForMetadata("track","SELECT track,track FROM (SELECT DISTINCT(track) AS track FROM tracks ORDER BY track)",metakeysQueried,library,db);
     }else{
-        this->QueryForMetadata("track","SELECT track,track FROM (SELECT DISTINCT(track) AS track FROM temp_tracks_list ORDER BY track)",metakeysQueried,oLibrary,db);
+        this->QueryForMetadata("track","SELECT track,track FROM (SELECT DISTINCT(track) AS track FROM temp_tracks_list ORDER BY track)",metakeysQueried,library,db);
     }
 
     // Year
     if(metakeysSelectedCopy.empty()){
-        this->QueryForMetadata("year","SELECT year,year FROM (SELECT DISTINCT(year) AS year FROM tracks ORDER BY year)",metakeysQueried,oLibrary,db);
+        this->QueryForMetadata("year","SELECT year,year FROM (SELECT DISTINCT(year) AS year FROM tracks ORDER BY year)",metakeysQueried,library,db);
     }else{
-        this->QueryForMetadata("year","SELECT year,year FROM (SELECT DISTINCT(year) AS year FROM temp_tracks_list ORDER BY year)",metakeysQueried,oLibrary,db);
+        this->QueryForMetadata("year","SELECT year,year FROM (SELECT DISTINCT(year) AS year FROM temp_tracks_list ORDER BY year)",metakeysQueried,library,db);
     }
 
     // Duration
     if(metakeysSelectedCopy.empty()){
-        this->QueryForMetadata("duration","SELECT duration,duration FROM (SELECT DISTINCT(duration) AS duration FROM tracks ORDER BY duration)",metakeysQueried,oLibrary,db);
+        this->QueryForMetadata("duration","SELECT duration,duration FROM (SELECT DISTINCT(duration) AS duration FROM tracks ORDER BY duration)",metakeysQueried,library,db);
     }else{
-        this->QueryForMetadata("duration","SELECT duration,duration FROM (SELECT DISTINCT(duration) AS duration FROM temp_tracks_list ORDER BY duration)",metakeysQueried,oLibrary,db);
+        this->QueryForMetadata("duration","SELECT duration,duration FROM (SELECT DISTINCT(duration) AS duration FROM temp_tracks_list ORDER BY duration)",metakeysQueried,library,db);
     }
 
 
@@ -434,7 +434,7 @@ bool Query::ListSelection::ParseQuery(Library::Base *oLibrary,db::Connection &db
                 }else{
                     sql.append(" AND mv.id IN (SELECT meta_value_id FROM track_meta WHERE track_id IN (SELECT id FROM temp_tracks_list))");
                 }
-                this->QueryForMetadata(metakey->c_str(),sql.c_str(),metakeysQueried,oLibrary,db);
+                this->QueryForMetadata(metakey->c_str(),sql.c_str(),metakeysQueried,library,db);
 
             }
             metakeyId.Reset();
@@ -448,7 +448,7 @@ bool Query::ListSelection::ParseQuery(Library::Base *oLibrary,db::Connection &db
         sql    = "SELECT t.id,t.sum_duration,t.sum_filesize FROM temp_tracks_list t";
     }
 
-    return (success && this->ParseTracksSQL(sql,oLibrary,db));
+    return (success && this->ParseTracksSQL(sql,library,db));
 }
 
 //////////////////////////////////////////
@@ -474,9 +474,9 @@ void Query::ListSelection::SQLPrependWhereOrAnd(std::string &sql){
 ///\brief
 ///Helper method to construct SQL query for selected metakeys
 //////////////////////////////////////////
-void Query::ListSelection::SQLSelectQuery(const char *metakey,const char *sqlStart,const char *sqlEnd,std::set<std::string> &metakeysSelected,std::string &sqlSelectTrackWhere,Library::Base *oLibrary){
+void Query::ListSelection::SQLSelectQuery(const char *metakey,const char *sqlStart,const char *sqlEnd,std::set<std::string> &metakeysSelected,std::string &sqlSelectTrackWhere,Library::Base *library){
 
-    if(!oLibrary->QueryCanceled()){
+    if(!library->QueryCanceled()){
         SelectedMetadata::iterator selected    = this->selectedMetadata.find(metakey);
         if(selected!=this->selectedMetadata.end()){
 
@@ -503,8 +503,8 @@ void Query::ListSelection::SQLSelectQuery(const char *metakey,const char *sqlSta
 ///\brief
 ///Method called by ParseQuery for every queried metakey
 //////////////////////////////////////////
-void Query::ListSelection::QueryForMetadata(const char *metakey,const char *sql,std::set<std::string> &metakeysQueried,Library::Base *oLibrary,db::Connection &db){
-    if(oLibrary->QueryCanceled())
+void Query::ListSelection::QueryForMetadata(const char *metakey,const char *sql,std::set<std::string> &metakeysQueried,Library::Base *library,db::Connection &db){
+    if(library->QueryCanceled())
         return;
 
     if(metakeysQueried.find(metakey)!=metakeysQueried.end()){
@@ -516,7 +516,7 @@ void Query::ListSelection::QueryForMetadata(const char *metakey,const char *sql,
         int row(0);
 
         {
-            boost::mutex::scoped_lock lock(oLibrary->oResultMutex);
+            boost::mutex::scoped_lock lock(library->oResultMutex);
             this->metadataResults[metakey];
         }
 
@@ -531,14 +531,14 @@ void Query::ListSelection::QueryForMetadata(const char *metakey,const char *sql,
                     );
 
             if( (++row)%10==0 ){
-                boost::mutex::scoped_lock lock(oLibrary->oResultMutex);
+                boost::mutex::scoped_lock lock(library->oResultMutex);
                 this->metadataResults[metakey].insert(this->metadataResults[metakey].end(),tempMetadataValues.begin(),tempMetadataValues.end());
                 tempMetadataValues.clear();
                 tempMetadataValues.reserve(10);
             }
         }
         if(!tempMetadataValues.empty()){
-            boost::mutex::scoped_lock lock(oLibrary->oResultMutex);
+            boost::mutex::scoped_lock lock(library->oResultMutex);
             this->metadataResults[metakey].insert(this->metadataResults[metakey].end(),tempMetadataValues.begin(),tempMetadataValues.end());
         }
 
@@ -546,6 +546,78 @@ void Query::ListSelection::QueryForMetadata(const char *metakey,const char *sql,
     }
 }
 
+//////////////////////////////////////////
+///\brief
+///Recieve the query from XML
+///
+///\param queryNode
+///Reference to query XML node
+///
+///The excpeted input format is like this:
+///\code
+///<query type="ListSelection">
+///   <selections>
+///      <selection key="genre">1,3,5,7</selection>
+///      <selection key="artist">6,7,8</selection>
+///   </selections>
+///   <listeners>genre,artist,album</listeners>
+///</query>
+///\endcode
+///
+///\returns
+///true when successfully recieved
+//////////////////////////////////////////
+bool Query::ListSelection::RecieveQuery(musik::core::xml::ParserNode &queryNode){
 
+    while( musik::core::xml::ParserNode node = queryNode.ChildNode() ){
+        if(node.Name()=="selections"){
+
+            // Get metakey nodes
+            // Expected tag is likle this:
+            // <selection key="genre">2,5,3</selection>
+            while( musik::core::xml::ParserNode selectionNode = node.ChildNode("selection") ){
+
+                // Wait for all content
+                selectionNode.WaitForContent();
+
+                // Split comaseparated list
+                typedef std::vector<std::string> StringVector;
+                StringVector values;
+                boost::algorithm::split(values,selectionNode.Content(),boost::algorithm::is_any_of(","));
+
+                for(StringVector::iterator value=values.begin();value!=values.end();++value){
+                    this->SelectMetadata(selectionNode.Attributes()["key"].c_str(),boost::lexical_cast<DBINT>(*value));
+                }
+
+            }
+        }else if(node.Name()=="listeners"){
+
+            // Wait for all content
+            node.WaitForContent();
+
+            // Secondly, lets look for what to query for
+            // Split comaseparated list
+            typedef std::vector<std::string> StringVector;
+            StringVector keys;
+            boost::algorithm::split(keys,node.Content(),boost::algorithm::is_any_of(","));
+
+            for(StringVector::iterator key=keys.begin();key!=keys.end();++key){
+                if(!key->empty()){
+                    // connect dummy to the signals
+                    this->OnMetadataEvent(key->c_str()).connect( (Query::ListBase*)this,&Query::ListBase::DummySlot);
+                }
+            }
+        }else if(node.Name()=="listtracks"){
+            this->OnTrackEvent().connect( (Query::ListBase*)this,&Query::ListBase::DummySlotTracks);
+        }else if(node.Name()=="listtrackinfo"){
+            this->OnTrackInfoEvent().connect( (Query::ListBase*)this,&Query::ListBase::DummySlotTrackInfo);
+        }
+    }
+    return true;
+}
+
+std::string Query::ListSelection::Name(){
+    return "ListSelection";
+}
 
 

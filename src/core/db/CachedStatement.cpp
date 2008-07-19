@@ -40,6 +40,7 @@
 #include <core/db/CachedStatement.h>
 #include <core/db/Statement.h>
 #include <core/db/Connection.h>
+#include <sqlite/sqlite3.h>
 
 using namespace musik::core::db;
 

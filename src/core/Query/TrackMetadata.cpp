@@ -131,7 +131,7 @@ void TrackMetadata::GetFixedTrackMetakeys(std::string &fieldName,std::set<std::s
 }
 
 
-bool TrackMetadata::ParseQuery(Library::Base *oLibrary,db::Connection &db){
+bool TrackMetadata::ParseQuery(Library::Base *library,db::Connection &db){
 
     db::CachedStatement genres("SELECT g.name FROM genres g,track_genres tg WHERE tg.genre_id=g.id AND tg.track_id=? ORDER BY tg.id",db);
     db::CachedStatement artists("SELECT ar.name FROM artists ar,track_artists ta WHERE ta.artist_id=ar.id AND ta.track_id=? ORDER BY ta.id",db);
@@ -213,7 +213,7 @@ bool TrackMetadata::ParseQuery(Library::Base *oLibrary,db::Connection &db){
 
 
             {
-                boost::mutex::scoped_lock oLock(oLibrary->oResultMutex);
+                boost::mutex::scoped_lock oLock(library->oResultMutex);
                 this->aResultTracks.push_back(track);
             }
         }
@@ -221,7 +221,7 @@ bool TrackMetadata::ParseQuery(Library::Base *oLibrary,db::Connection &db){
         trackData.Reset();
 
         {
-            boost::mutex::scoped_lock oLock(oLibrary->oResultMutex);
+            boost::mutex::scoped_lock oLock(library->oResultMutex);
             bCancel    =     ((this->status & Status::Canceled)!=0);
         }
 
@@ -229,21 +229,21 @@ bool TrackMetadata::ParseQuery(Library::Base *oLibrary,db::Connection &db){
 
 
     {
-        boost::mutex::scoped_lock oLock(oLibrary->oResultMutex);
+        boost::mutex::scoped_lock oLock(library->oResultMutex);
         this->status |= Status::Ended;
     }
 
     return true;
 }
 
-bool TrackMetadata::RunCallbacks(Library::Base *oLibrary){
+bool TrackMetadata::RunCallbacks(Library::Base *library){
 
     TrackVector aResultCopy;
     bool bReturn(false);
 
     // First swap the results so that Query can continue to parse
     {
-        boost::mutex::scoped_lock oLock(oLibrary->oResultMutex);
+        boost::mutex::scoped_lock oLock(library->oResultMutex);
         aResultCopy.swap(this->aResultTracks);
 
         if( (this->status & Status::Ended)!=0){

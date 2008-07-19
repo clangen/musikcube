@@ -57,7 +57,7 @@ Library::LocalDB::LocalDB(void){
 }
 
 Library::LocalDB::~LocalDB(void){
-    this->Exit(true);
+    this->Exit();
     this->threads.join_all();
 }
 
@@ -103,142 +103,9 @@ bool Library::LocalDB::Startup(){
 
 //////////////////////////////////////////
 ///\brief
-///Create all tables, indexes, etc in the database.
-///
-///This will assume that the database has been initialized.
-//////////////////////////////////////////
-void Library::LocalDB::CreateDatabase(){
-    // Create the tracks-table
-    this->db.Execute("CREATE TABLE IF NOT EXISTS tracks ("
-            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-            "track INTEGER DEFAULT 0,"
-            "bpm REAL DEFAULT 0,"
-            "duration INTEGER DEFAULT 0,"
-            "filesize INTEGER DEFAULT 0,"
-            "year INTEGER DEFAULT 0,"
-            "visual_genre_id INTEGER DEFAULT 0,"
-            "visual_artist_id INTEGER DEFAULT 0,"
-            "album_id INTEGER DEFAULT 0,"
-            "folder_id INTEGER DEFAULT 0,"
-            "title TEXT default '',"
-            "filename TEXT default '',"
-            "filetime INTEGER DEFAULT 0,"
-            "thumbnail_id INTEGER DEFAULT 0,"
-            "sort_order1 INTEGER)");
-
-    // Create the genres-table
-    this->db.Execute("CREATE TABLE IF NOT EXISTS genres ("
-            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-            "name TEXT default '',"
-            "aggregated INTEGER DEFAULT 0,"
-            "sort_order INTEGER DEFAULT 0)");
-
-    this->db.Execute("CREATE TABLE IF NOT EXISTS track_genres ("
-            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-            "track_id INTEGER DEFAULT 0,"
-            "genre_id INTEGER DEFAULT 0)");
-
-    // Create the artists-table
-    this->db.Execute("CREATE TABLE IF NOT EXISTS artists ("
-            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-            "name TEXT default '',"
-            "aggregated INTEGER DEFAULT 0,"
-            "sort_order INTEGER DEFAULT 0)");
-
-    this->db.Execute("CREATE TABLE IF NOT EXISTS track_artists ("
-            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-            "track_id INTEGER DEFAULT 0,"
-            "artist_id INTEGER DEFAULT 0)");
-
-    // Create the meta-tables
-    this->db.Execute("CREATE TABLE IF NOT EXISTS meta_keys ("
-            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-            "name TEXT)");
-
-    this->db.Execute("CREATE TABLE IF NOT EXISTS meta_values ("
-            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-            "meta_key_id INTEGER DEFAULT 0,"
-            "sort_order INTEGER DEFAULT 0,"
-            "content TEXT)");
-
-    this->db.Execute("CREATE TABLE IF NOT EXISTS track_meta ("
-            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-            "track_id INTEGER DEFAULT 0,"
-            "meta_value_id INTEGER DEFAULT 0)");
-
-    // Create the albums-table
-    this->db.Execute("CREATE TABLE IF NOT EXISTS albums ("
-            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-            "name TEXT default '',"
-            "thumbnail_id INTEGER default 0,"
-            "sort_order INTEGER DEFAULT 0)");
-
-    // Create the paths-table
-    this->db.Execute("CREATE TABLE IF NOT EXISTS paths ("
-            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-            "path TEXT default ''"
-            ")");
-
-    // Create the folders-table
-    this->db.Execute("CREATE TABLE IF NOT EXISTS folders ("
-            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-            "name TEXT default '',"
-            "fullpath TEXT default '',"
-            "parent_id INTEGER DEFAULT 0,"
-            "path_id INTEGER DEFAULT 0"
-            ")");
-
-    // Create the folders-table
-    this->db.Execute("CREATE TABLE IF NOT EXISTS thumbnails ("
-            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-            "filename TEXT default '',"
-            "filesize INTEGER DEFAULT 0,"
-            "checksum INTEGER DEFAULT 0"
-            ")");
-
-    // Create the playlists-table
-    this->db.Execute("CREATE TABLE IF NOT EXISTS playlists ("
-            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-            "name TEXT default ''"
-            ")");
-    // Create the playlists-table
-    this->db.Execute("CREATE TABLE IF NOT EXISTS playlist_tracks ("
-            "track_id INTEGER DEFAULT 0,"
-            "playlist_id INTEGER DEFAULT 0,"
-            "sort_order INTEGER DEFAULT 0"
-            ")");
-
-
-    // INDEXES
-    this->db.Execute("CREATE UNIQUE INDEX IF NOT EXISTS folders_index ON folders (name,parent_id,path_id)");
-    this->db.Execute("CREATE UNIQUE INDEX IF NOT EXISTS paths_index ON paths (path)");
-    this->db.Execute("CREATE INDEX IF NOT EXISTS genre_index ON genres (sort_order)");
-    this->db.Execute("CREATE INDEX IF NOT EXISTS artist_index ON artists (sort_order)");
-    this->db.Execute("CREATE INDEX IF NOT EXISTS album_index ON albums (sort_order)");
-    this->db.Execute("CREATE INDEX IF NOT EXISTS track_index1 ON tracks (album_id,sort_order1)");
-    this->db.Execute("CREATE INDEX IF NOT EXISTS track_index7 ON tracks (folder_id)");
-    this->db.Execute("CREATE INDEX IF NOT EXISTS thumbnail_index ON thumbnails (filesize)");
-
-    this->db.Execute("CREATE INDEX IF NOT EXISTS trackgenre_index1 ON track_genres (track_id,genre_id)");
-    this->db.Execute("CREATE INDEX IF NOT EXISTS trackgenre_index2 ON track_genres (genre_id,track_id)");
-    this->db.Execute("CREATE INDEX IF NOT EXISTS trackartist_index1 ON track_artists (track_id,artist_id)");
-    this->db.Execute("CREATE INDEX IF NOT EXISTS trackartist_index2 ON track_artists (artist_id,track_id)");
-    this->db.Execute("CREATE INDEX IF NOT EXISTS trackmeta_index1 ON track_meta (track_id,meta_value_id)");
-    this->db.Execute("CREATE INDEX IF NOT EXISTS trackmeta_index2 ON track_meta (meta_value_id,track_id)");
-    this->db.Execute("CREATE INDEX IF NOT EXISTS metakey_index1 ON meta_keys (name)");
-    this->db.Execute("CREATE INDEX IF NOT EXISTS metavalues_index1 ON meta_values (meta_key_id)");
-
-    this->db.Execute("CREATE INDEX IF NOT EXISTS playlist_index ON playlist_tracks (playlist_id,sort_order)");
-
-    this->db.Execute("ANALYZE");
-}
-
-
-//////////////////////////////////////////
-///\brief
 ///Main loop the library thread is running in.
 ///
-///The loop will run until Exit(true) has been called.
+///The loop will run until Exit() has been called.
 //////////////////////////////////////////
 void Library::LocalDB::ThreadLoop(){
 
@@ -247,13 +114,13 @@ void Library::LocalDB::ThreadLoop(){
     utfstring database(this->GetDBPath());
     this->db.Open(database.c_str(),0,prefs.GetInt("DatabaseCache",4096));
 
-    this->CreateDatabase();
+    Library::Base::CreateDatabase(this->db);
 
     // Startup the indexer
     this->indexer.database    = database;
     this->indexer.Startup(this->GetLibraryDirectory());
 
-    while(!this->Exit()){
+    while(!this->Exited()){
         Query::Ptr query(this->GetNextQuery());
 
         if(query){    // No empty query

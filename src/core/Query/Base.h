@@ -39,155 +39,171 @@
 #include <core/config.h>
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>
+#include <core/xml/ParserNode.h>
+#include <core/xml/WriterNode.h>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/thread/mutex.hpp>
+#include <string>
 
+//////////////////////////////////////////////////////////////////////////////
+// forward declare
 namespace musik{ namespace core{
     namespace Library{
         class Base;
         class LocalDB;
     }
+    namespace server{
+        class Connection;
+    }
 } }
+//////////////////////////////////////////////////////////////////////////////
 
+namespace musik{ namespace core{ namespace Query{
 
-#include <string>
+//////////////////////////////////////////////////////////////////////////////
+class Base;
+typedef boost::shared_ptr<Query::Base> Ptr;
 
-namespace musik{ namespace core{
-    namespace Query{
-        class Base;
-        typedef boost::shared_ptr<Query::Base> Ptr;
+enum Options:unsigned int{
+    AutoCallback    = 1,
+    Wait            = 2,
+    Prioritize      = 4,
+    CancelQueue     = 8,
+    CancelSimilar   = 16,
+    UnCanceable     = 32
+};
 
-        enum Options:unsigned int{
-            AutoCallback    = 1,
-            Wait            = 2,
-            Prioritize      = 4,
-            CancelQueue     = 8,
-            CancelSimilar   = 16,
-            UnCanceable     = 32
-        };
+//////////////////////////////////////////
+///\brief
+///Interface class for all queries.
+//////////////////////////////////////////
+class Base : public sigslot::has_slots<> {
+    public:
+        Base(void);
+        virtual ~Base(void);
+
+    protected:
+        friend class Library::Base;
+        friend class Library::LocalDB;
+        friend class server::Connection;
+
+        // Variables:
 
         //////////////////////////////////////////
         ///\brief
-        ///Interface class for all queries.
+        ///Current state of the query
+        ///
+        ///\remarks
+        ///iState is protected by the Library::Base::oResultMutex
+        ///
+        ///\see
+        ///musik::core::State
         //////////////////////////////////////////
-        class Base{
-            public:
-                Base(void);
-                virtual ~Base(void);
-
-            protected:
-                friend class Library::Base;
-                friend class Library::LocalDB;
-
-                // Variables:
-
-                //////////////////////////////////////////
-                ///\brief
-                ///The query id is a unique number for each query.
-                ///
-                ///Used for comparing queries and find similar queries.
-                //////////////////////////////////////////
-                unsigned int iQueryId;
-
-                //////////////////////////////////////////
-                ///\brief
-                ///Current state of the query
-                ///
-                ///\remarks
-                ///iState is protected by the Library::Base::oResultMutex
-                ///
-                ///\see
-                ///musik::core::State
-                //////////////////////////////////////////
-                enum Status:int{
-                    Started       = 1,
-                    Ended         = 2,
-                    Canceled      = 4,
-                    OutputStarted = 8,
-                    OutputEnded   = 16,
-                    Finished      = 32
-                };
-
-                unsigned int status;
-
-                //////////////////////////////////////////
-                ///\brief
-                ///Query options
-                ///
-                ///options is only set inside the AddQuery and should not be altered later.
-                ///It is therefore considered threadsafe.
-                ///
-                ///\see
-                ///musik::core::Library::Base::AddQuery
-                //////////////////////////////////////////
-                unsigned int options;
-
-            protected:
-                friend class Library::Base;
-                friend class Library::LocalDB;
-
-                // Methods:
-
-                //////////////////////////////////////////
-                ///\brief
-                ///Copy method that is required to be implemented.
-                ///
-                ///\returns
-                ///Shared pointer to Query::Base object.
-                ///
-                ///This method is required by all queries since they are
-                ///copied every time a Library::Base::AddQuery is called.
-                ///
-                ///\see
-                ///Library::Base::AddQuery
-                //////////////////////////////////////////
-                virtual Ptr copy() const=0;
-
-                //////////////////////////////////////////
-                ///\brief
-                ///Method for calling all the querys signals
-                ///
-                ///\param oLibrary
-                ///Pointer to the library running the query
-                ///
-                ///\returns
-                ///Should return true if query is totaly finished. false otherwise.
-                //////////////////////////////////////////
-                virtual bool RunCallbacks(Library::Base *oLibrary){return true;};
-
-                //////////////////////////////////////////
-                ///\brief
-                ///Method that do the acctual work.
-                ///
-                ///\param oLibrary
-                ///Pointer to executing library
-                ///
-                ///\param oDB
-                ///Pointer to DBConnection
-                ///
-                ///\returns
-                ///true when successfully executed.
-                ///
-                ///The ParseQuery should consider that all sqlite
-                ///calls could be interrupted by the sqlite3_interrupt call.
-                //////////////////////////////////////////
-                virtual bool ParseQuery(Library::Base *oLibrary,db::Connection &db)=0;
-
-                //////////////////////////////////////////
-                ///\brief
-                ///PreAddQuery is called from the Library::Base::AddQuery when the copied query is added to the library.
-                ///
-                ///\param library
-                ///Pointer to library
-                ///
-                ///\see
-                ///Library::Base::AddQuery
-                //////////////////////////////////////////
-                virtual void PreAddQuery(Library::Base *library){};
+        enum Status:int{
+            Started       = 1,
+            Ended         = 2,
+            Canceled      = 4,
+            OutputStarted = 8,
+            OutputEnded   = 16,
+            Finished      = 32
         };
 
+        unsigned int status;
+
+        //////////////////////////////////////////
+        ///\brief
+        ///The query id is a unique number for each query.
+        ///
+        ///Used for comparing queries and find similar queries.
+        //////////////////////////////////////////
+        unsigned int iQueryId;
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Query options
+        ///
+        ///options is only set inside the AddQuery and should not be altered later.
+        ///It is therefore considered threadsafe.
+        ///
+        ///\see
+        ///musik::core::Library::Base::AddQuery
+        //////////////////////////////////////////
+        unsigned int options;
+
+    protected:
+        friend class Library::Base;
+        friend class Library::LocalDB;
+        friend class server::Connection;
+
+        // Methods:
+        virtual std::string Name();
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Copy method that is required to be implemented.
+        ///
+        ///\returns
+        ///Shared pointer to Query::Base object.
+        ///
+        ///This method is required by all queries since they are
+        ///copied every time a Library::Base::AddQuery is called.
+        ///
+        ///\see
+        ///Library::Base::AddQuery
+        //////////////////////////////////////////
+        virtual Ptr copy() const=0;
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Method for calling all the querys signals
+        ///
+        ///\param library
+        ///Pointer to the library running the query
+        ///
+        ///\returns
+        ///Should return true if query is totaly finished. false otherwise.
+        //////////////////////////////////////////
+        virtual bool RunCallbacks(Library::Base *library){return true;};
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Method that do the acctual work.
+        ///
+        ///\param library
+        ///Pointer to executing library
+        ///
+        ///\param oDB
+        ///Pointer to DBConnection
+        ///
+        ///\returns
+        ///true when successfully executed.
+        ///
+        ///The ParseQuery should consider that all sqlite
+        ///calls could be interrupted by the sqlite3_interrupt call.
+        //////////////////////////////////////////
+        virtual bool ParseQuery(Library::Base *library,db::Connection &db)=0;
+
+        //////////////////////////////////////////
+        ///\brief
+        ///PreAddQuery is called from the Library::Base::AddQuery when the copied query is added to the library.
+        ///
+        ///\param library
+        ///Pointer to library
+        ///
+        ///\see
+        ///Library::Base::AddQuery
+        //////////////////////////////////////////
+        virtual void PreAddQuery(Library::Base *library){};
 
 
-    }
-} }
+        virtual bool RecieveQuery(musik::core::xml::ParserNode &queryNode);
+        virtual bool SendQuery(musik::core::xml::WriterNode &queryNode);
+        virtual bool RecieveResults(musik::core::xml::ParserNode &queryNode);
+        virtual bool SendResults(musik::core::xml::WriterNode &queryNode,Library::Base *library);
+};
+
+
+//////////////////////////////////////////////////////////////////////////////
+} } }   // musik::core::Query
+//////////////////////////////////////////////////////////////////////////////

@@ -40,6 +40,8 @@
 #include <list>
 #include <boost/shared_ptr.hpp>
 #include <boost/thread/mutex.hpp>
+
+#include <win32cpp/Win32Config.hpp>          // Must be first!
 #include <win32cpp/Application.hpp>
 #include <win32cpp/Window.hpp>
 

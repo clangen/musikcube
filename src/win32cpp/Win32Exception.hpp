@@ -40,6 +40,7 @@
 
 #include <win32cpp/Win32Config.hpp>
 #include <win32cpp/Exception.hpp>
+#include <win32cpp/Application.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 

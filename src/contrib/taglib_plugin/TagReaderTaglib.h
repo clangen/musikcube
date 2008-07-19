@@ -56,23 +56,23 @@ class TagReaderTaglib : public musik::core::Plugin::IMetaDataReader {
 	public:
 		TagReaderTaglib(void);
 		virtual ~TagReaderTaglib(void);
-		bool ReadTag(musik::core::Track *track);
+		bool ReadTag(musik::core::ITrack *track);
 		virtual bool CanReadTag(const utfchar *extension);
         virtual void Destroy();
 	private:
-//		bool getStandardTags(musik::core::Track &track,TagLib::Tag *oTag,TagLib::AudioProperties *oAudioProperties);
+//		bool getStandardTags(musik::core::ITrack &track,TagLib::Tag *oTag,TagLib::AudioProperties *oAudioProperties);
 
-		void SetTagValue(const char* key,const wchar_t* string,musik::core::Track *track);
-		void SetTagValue(const char* key,const TagLib::String tagString,musik::core::Track *track);
-		void SetTagValue(const char* key,const int tagInt,musik::core::Track *track);
-		void SetTagValues(const char* key,const TagLib::ID3v2::FrameList &frame,musik::core::Track *track);
-        void SetAudioProperties(TagLib::AudioProperties *audioProperties,musik::core::Track *track);
+		void SetTagValue(const char* key,const wchar_t* string,musik::core::ITrack *track);
+		void SetTagValue(const char* key,const TagLib::String tagString,musik::core::ITrack *track);
+		void SetTagValue(const char* key,const int tagInt,musik::core::ITrack *track);
+		void SetTagValues(const char* key,const TagLib::ID3v2::FrameList &frame,musik::core::ITrack *track);
+        void SetAudioProperties(TagLib::AudioProperties *audioProperties,musik::core::ITrack *track);
 
-		void SetSlashSeparatedValues(const char* key,const TagLib::ID3v2::FrameList &frame,musik::core::Track *track);
-        void SetSlashSeparatedValues(const char* key,TagLib::String &tagString,musik::core::Track *track);
+		void SetSlashSeparatedValues(const char* key,const TagLib::ID3v2::FrameList &frame,musik::core::ITrack *track);
+        void SetSlashSeparatedValues(const char* key,TagLib::String &tagString,musik::core::ITrack *track);
 
-        bool GetID3v2Tag(musik::core::Track *track);
-        bool GetGenericTag(musik::core::Track *track);
-        bool GetOGGTag(musik::core::Track *track);
+        bool GetID3v2Tag(musik::core::ITrack *track);
+        bool GetGenericTag(musik::core::ITrack *track);
+        bool GetOGGTag(musik::core::ITrack *track);
 };
 

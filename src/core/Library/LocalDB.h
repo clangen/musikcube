@@ -81,7 +81,6 @@ namespace musik{ namespace core{
 
                 void ThreadLoop();
 
-                void CreateDatabase();
             private:
                 // Variables:
                 db::Connection db;

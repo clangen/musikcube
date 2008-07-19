@@ -46,14 +46,14 @@ ThreadHelper::ThreadHelper(void):bExit(false){
 ThreadHelper::~ThreadHelper(void){
 }
 
-bool ThreadHelper::Exit(void){
+bool ThreadHelper::Exited(){
     boost::mutex::scoped_lock oLock(this->exitMutex);
     return this->bExit;
 }
 
-void ThreadHelper::Exit(bool bNewExit){
+void ThreadHelper::Exit(){
     boost::mutex::scoped_lock oLock(this->exitMutex);
-    this->bExit    = bNewExit;
+    this->bExit    = true;
     this->notify.notify_all();
 }
 

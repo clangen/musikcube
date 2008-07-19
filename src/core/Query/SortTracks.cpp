@@ -56,7 +56,7 @@ Query::SortTracks::~SortTracks(void){
 }
 
 
-bool Query::SortTracks::ParseQuery(Library::Base *oLibrary,db::Connection &db){
+bool Query::SortTracks::ParseQuery(Library::Base *library,db::Connection &db){
 
     std::vector<int> sortFieldsMetakeyId;
 
@@ -165,7 +165,7 @@ bool Query::SortTracks::ParseQuery(Library::Base *oLibrary,db::Connection &db){
 
     std::string sql=selectSQL+" FROM "+selectSQLTables+selectSQLWhere+selectSQLGroup+selectSQLSort;
 
-    return this->ParseTracksSQL(sql,oLibrary,db);
+    return this->ParseTracksSQL(sql,library,db);
 }
 
 //////////////////////////////////////////

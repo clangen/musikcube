@@ -45,6 +45,7 @@
 #include <core/config.h>
 #include <core/TrackMeta.h>
 #include <core/db/Connection.h>
+#include <core/ITrack.h>
 
 namespace musik{ namespace core{
 
@@ -76,7 +77,7 @@ namespace musik{ namespace core{
      * \see
      * TrackPtr|TrackVector
      */
-    class Track : boost::noncopyable{
+    class Track : public ITrack {
         public:
             Track(void);
             Track(DBINT newId);
@@ -87,10 +88,11 @@ namespace musik{ namespace core{
 
             //void SetValue(const TrackMeta::Key &key,TrackMeta::Value &value);
 
-            DLLEXPORT TrackMeta::TagMapIteratorPair GetValues(const char* metakey) const;
-            DLLEXPORT const utfchar* GetValue(const char* metakey) const;
-            DLLEXPORT void SetValue(const char* metakey,const utfchar* value);
-            DLLEXPORT void SetThumbnail(const char *data,unsigned int size);
+            TrackMeta::TagMapIteratorPair GetValues(const char* metakey) const;
+
+            const utfchar* GetValue(const char* metakey) const;
+            void SetValue(const char* metakey,const utfchar* value);
+            void SetThumbnail(const char *data,unsigned int size);
 
 
             void InitMeta(Library::Base *library);

@@ -45,9 +45,14 @@
 #include <boost/utility.hpp>
 #include <boost/thread/mutex.hpp>
 
+//////////////////////////////////////////
+// Forward declare
+struct sqlite3;
+struct sqlite3_stmt;
+//////////////////////////////////////////
+
 
 namespace musik{ namespace core{ namespace db{
-
 
     //////////////////////////////////////////
     ///\brief
@@ -87,6 +92,8 @@ namespace musik{ namespace core{ namespace db{
             sqlite3 *connection;
 
             boost::mutex mutex;
+
+            void Maintenance(bool init);
 
     };
 

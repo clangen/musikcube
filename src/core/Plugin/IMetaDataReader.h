@@ -37,12 +37,12 @@
 #pragma once
 
 #include <core/config.h>
-#include <core/Track.h>
+#include <core/ITrack.h>
 
 namespace musik{ namespace core{ namespace Plugin{
     class IMetaDataReader{
         public:
-            virtual bool ReadTag(musik::core::Track *track)=0;
+            virtual bool ReadTag(musik::core::ITrack *track)=0;
             virtual bool CanReadTag(const utfchar *extension)=0;
             virtual void Destroy()=0;
     };
