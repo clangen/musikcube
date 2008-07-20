@@ -79,7 +79,7 @@ Connection::~Connection(){
 ///Error code returned by SQLite
 //////////////////////////////////////////
 int Connection::Open(const utfchar *database,unsigned int options,unsigned int cache){
-    sqlite3_enable_shared_cache(1);
+//    sqlite3_enable_shared_cache(1);
 
     int error;
     #ifdef UTF_WIDECHAR
@@ -179,7 +179,7 @@ int Connection::Execute(const char* sql){
 
     // Execute the statement
     int error   = sqlite3_step(stmt);
-    if(error==SQLITE_OK || error==SQLITE_DONE){
+    if(error!=SQLITE_OK && error!=SQLITE_DONE){
         sqlite3_finalize(stmt);
         return ReturnCode::Error;
     }
@@ -207,7 +207,8 @@ int Connection::Execute(const wchar_t* sql){
     sqlite3_stmt *stmt  = NULL;
     {
         boost::mutex::scoped_lock lock(this->mutex);
-        if(sqlite3_prepare16_v2(this->connection,sql,-1,&stmt,NULL)!=SQLITE_OK){
+        int err = sqlite3_prepare16_v2(this->connection,sql,-1,&stmt,NULL);
+        if(err!=SQLITE_OK){
             sqlite3_finalize(stmt);
             return ReturnCode::Error;
         }
@@ -215,7 +216,7 @@ int Connection::Execute(const wchar_t* sql){
 
     // Execute the statement
     int error   = sqlite3_step(stmt);
-    if(error==SQLITE_OK || error==SQLITE_DONE){
+    if(error!=SQLITE_OK && error!=SQLITE_DONE){
         sqlite3_finalize(stmt);
         return ReturnCode::Error;
     }
@@ -257,16 +258,15 @@ void Connection::Initialize(unsigned int cache){
     sqlite3_exec(this->connection,"PRAGMA page_size=4096",NULL,NULL,NULL);          // According to windows standard page size
     sqlite3_exec(this->connection,"PRAGMA auto_vacuum=0",NULL,NULL,NULL);           // No autovaccum.
 
-    if(cache==0){
-        cache=1024; // Default cache set to 4Mb
-    }else{
+    if(cache!=0){
         // Divide by 4 to since the page_size is 4096
         // Total cache is the same as page_size*cache_size
         cache   = cache/4;
+
+        std::string cacheSize("PRAGMA cache_size=" + boost::lexical_cast<std::string>(cache));
+        sqlite3_exec(this->connection,cacheSize.c_str(),NULL,NULL,NULL);                // size * 1.5kb = 6Mb cache
     }
 
-    std::string cacheSize("PRAGMA cache_size=" + boost::lexical_cast<std::string>(cache));
-    sqlite3_exec(this->connection,cacheSize.c_str(),NULL,NULL,NULL);                // size * 1.5kb = 6Mb cache
 
     sqlite3_exec(this->connection,"PRAGMA case_sensitive_like=0",NULL,NULL,NULL);   // More speed if case insensitive
     sqlite3_exec(this->connection,"PRAGMA count_changes=0",NULL,NULL,NULL);         // If set it counts changes on SQL UPDATE. More speed when not.
@@ -298,6 +298,9 @@ sqlite3_stmt *Connection::GetCachedStatement(const char* sql){
         boost::mutex::scoped_lock lock(this->mutex);
 
         int err = sqlite3_prepare_v2(this->connection,sql,-1,&newStmt,NULL);
+        if(err!=SQLITE_OK){
+            return NULL;
+        }
         return newStmt;
     }
 

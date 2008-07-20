@@ -90,7 +90,7 @@ namespace musik{ namespace core{
             void CountFiles(utfstring &sFolder);
 
             void Synchronize();
-            void SyncDirectory(utfstring &sFolder,DBINT iParentFolderId,DBINT iPathId);
+            void SyncDirectory(utfstring &sFolder,DBINT iParentFolderId,DBINT iPathId,utfstring &syncPath);
             void SyncDelete(std::vector<DBINT> aPaths);
             void SyncCleanup();
             void SyncAddRemovePaths();

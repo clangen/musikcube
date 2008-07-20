@@ -71,7 +71,7 @@
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				EntryPointSymbol="wWinMainCRTStartup"
-				ImportLibrary="../../bin/$(ConfigurationName)/mC2.lib"
+				ImportLibrary=""
 				TargetMachine="1"
 			/>
 			<Tool
@@ -151,12 +151,12 @@
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../3rdparty/lib"
 				ModuleDefinitionFile=""
-				GenerateDebugInformation="true"
+				GenerateDebugInformation="false"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				EntryPointSymbol="wWinMainCRTStartup"
-				ImportLibrary="../../bin/$(ConfigurationName)/mC2.lib"
+				ImportLibrary=""
 				TargetMachine="1"
 			/>
 			<Tool

@@ -77,9 +77,9 @@ void TrackMetadata::CreateSQL(){
     this->GetFixedTrackMetakeys(std::string("filename"),fields);
 
     if( (field=fields.find("path"))!=fields.end() ){
-        this->sSQL          += ",f.fullpath||'/'||t.filename";
-        this->sSQLTables    += ",folders f";
-        this->sSQLWhere     += " AND t.folder_id=f.id";
+        this->sSQL          += ",p.path||f.relative_path||'/'||t.filename";
+        this->sSQLTables    += ",folders f,paths p";
+        this->sSQLWhere     += " AND t.folder_id=f.id AND f.path_id=p.id";
         this->fieldOrder.push_back(*field);
         fields.erase(field);
     }
