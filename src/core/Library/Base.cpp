@@ -547,7 +547,7 @@ void Library::Base::CreateDatabase(db::Connection &db){
     db.Execute("CREATE TABLE IF NOT EXISTS folders ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "name TEXT default '',"
-            "fullpath TEXT default '',"
+            "relative_path TEXT default '',"
             "parent_id INTEGER DEFAULT 0,"
             "path_id INTEGER DEFAULT 0"
             ")");

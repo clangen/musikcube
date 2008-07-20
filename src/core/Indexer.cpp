@@ -223,7 +223,7 @@ void Indexer::Synchronize(){
         utfstring sPath    = aPaths[i];
         DBINT iPathId    = aPathIds[i];
 
-        this->SyncDirectory(sPath,0,iPathId);
+        this->SyncDirectory(sPath,0,iPathId,sPath);
     }
 
     {
@@ -312,7 +312,7 @@ void Indexer::CountFiles(utfstring &sFolder){
 ///
 ///Read all tracks in a folder. All folders in that folder is recursively called.
 //////////////////////////////////////////
-void Indexer::SyncDirectory(utfstring &sFolder,DBINT iParentFolderId,DBINT iPathId){
+void Indexer::SyncDirectory(utfstring &sFolder,DBINT iParentFolderId,DBINT iPathId,utfstring &syncPath){
 
     if(this->Exited() || this->Restarted()){
         return;
@@ -341,11 +341,14 @@ void Indexer::SyncDirectory(utfstring &sFolder,DBINT iParentFolderId,DBINT iPath
     // If it do not exists, create it
     if(iFolderId==0){
 
-        db::CachedStatement stmt("INSERT INTO folders (name,path_id,parent_id,fullpath) VALUES(?,?,?,?)",this->dbConnection);
+        // Only save the relative path
+        utfstring relativePath( sFolder.substr(syncPath.size()) );
+
+        db::CachedStatement stmt("INSERT INTO folders (name,path_id,parent_id,relative_path) VALUES(?,?,?,?)",this->dbConnection);
         stmt.BindTextUTF(0,sFolderLeaf);
         stmt.BindInt(1,iPathId);
         stmt.BindInt(2,iParentFolderId);
-        stmt.BindTextUTF(3,sFolder);
+        stmt.BindTextUTF(3,relativePath);
 
         if(stmt.Step()==db::ReturnCode::Done){
             iFolderId    = this->dbConnection.LastInsertedId();
@@ -372,7 +375,7 @@ void Indexer::SyncDirectory(utfstring &sFolder,DBINT iParentFolderId,DBINT iPath
                 oDirectory.assign(oFile->path().string());
 
                 // If this is a directory, recurse down
-                this->SyncDirectory(oDirectory,iFolderId,iPathId);
+                this->SyncDirectory(oDirectory,iFolderId,iPathId,syncPath);
 
             }else{
 
@@ -440,10 +443,8 @@ void Indexer::ThreadLoop(){
 
             this->SynchronizeStart();
 
-            int dbCache = prefs.GetInt("DatabaseCache",4096);
-
             // Database should only be open when synchronizing
-            this->dbConnection.Open(this->database.c_str(),0,dbCache);
+            this->dbConnection.Open(this->database.c_str(),0);
             this->RestartSync(false);
             this->Synchronize();
             this->dbConnection.Close();
@@ -524,7 +525,7 @@ void Indexer::SyncDelete(std::vector<DBINT> aPaths){
 
     {
         // Remove non existing folders
-        db::Statement stmt("SELECT id,fullpath FROM folders WHERE path_id=?",this->dbConnection);
+        db::Statement stmt("SELECT f.id,p.path||f.relative_path FROM folders f,paths p WHERE f.path_id=p.id AND p.id=?",this->dbConnection);
         db::Statement stmtRemove("DELETE FROM folders WHERE id=?",this->dbConnection);
 
         for(int i(0);i<aPaths.size();++i){
@@ -574,7 +575,7 @@ void Indexer::SyncDelete(std::vector<DBINT> aPaths){
     }
 
 
-    db::Statement stmt("SELECT t.id,f.fullpath||'/'||t.filename FROM tracks t,folders f WHERE t.folder_id=f.id AND f.path_id=?",this->dbConnection);
+    db::Statement stmt("SELECT t.id,p.path||f.relative_path||'/'||t.filename FROM tracks t,folders f,paths p WHERE t.folder_id=f.id AND f.path_id=p.id AND p.id=?",this->dbConnection);
     db::Statement stmtRemove("DELETE FROM tracks WHERE id=?",this->dbConnection);
 
     for(int i(0);i<aPaths.size();++i){
@@ -774,7 +775,7 @@ void Indexer::SyncOptimize(){
         genre, artist, album, track number, path, filename
         ************************************/
 
-        db::Statement stmt("SELECT t.id FROM tracks t LEFT OUTER JOIN artists ar ON ar.id=t.visual_artist_id LEFT OUTER JOIN albums al ON al.id=t.album_id LEFT OUTER JOIN folders f ON f.id=t.folder_id ORDER BY ar.sort_order,al.sort_order,t.track,f.fullpath,t.filename",this->dbConnection);
+        db::Statement stmt("SELECT t.id FROM tracks t LEFT OUTER JOIN artists ar ON ar.id=t.visual_artist_id LEFT OUTER JOIN albums al ON al.id=t.album_id LEFT OUTER JOIN folders f ON f.id=t.folder_id ORDER BY ar.sort_order,al.sort_order,t.track,f.relative_path,t.filename",this->dbConnection);
 
         db::Statement stmtUpdate("UPDATE tracks SET sort_order1=? WHERE id=?",this->dbConnection);
         iCount    = 0;
