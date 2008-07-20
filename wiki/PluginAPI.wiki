@@ -1,104 +1,53 @@
 #summary How to create plugins for musikCube
-Plugins must be built into a DLL and must implement the IPlugin class.
- * GetName
- * Description ?
- * Version ?
- * Author ?
- * ...
-
-In addition a plugin can export one or more of the following functions to tell mC2 what it does.  
- * CallGetTagReader: if the plugin can read metadata from audio files.  Link to tag reading API?
- * CallAudioSourceSupplier: if the plugin can decode audio files.  Links to audio engine API
- * ...
-
-Plugins should be put in the plugin subdir of the application.  mC2 will load any valid plugins.
-
-Questions
- * Should we add methods like CanReadTags() or CanSupplyAudioSource() to IPlugin?
- * How to check if IPlugin is properly implemented?
- * Should we add a method SupportedFormats() to the API or should each plugin deal with it internally?  Right now the audio engine requires implementation of CanHandle(fileName) in each plugin.  Should something like this be required for all kinds of plugins?
- * How to configure plugins and store the settings?
- * Should plugins be allowed to use/load other plugins?  How?
-
-When defining the API we should ensure plugins can do a lot of things.  Some (wild) ideas:
- * Output to disk (WAV writer)
- * Last.fm support
- * Visualization
- * Tag editing
- * Scoring/recommendations of songs
- * Streaming audio
- * Equalizer/sound effects
- * Web frontend
-
-
-----
-How about:
-{{{
-namespace musik{ 
-	class PluginTypes{
-		const unsigned int Generic		= 0;
-		const unsigned int TagReader	= 1;
-		const unsigned int Visualizer	= 2;
-		const unsigned int AudioEncoder	= 3;
-		...
-		// Userdefined types above 1000
-	};
-		
-	class IPluginInterface{
-		virtual void Startup()=0;
-		virtual ~IPluginInterface()=0;
-	};
-	
-	class IPlugin{
-	
-		// Get plugin name.
-		virtual std::wstring GetName()=0;
-		
-		// Asks for a specific interface. Should return NULL if interface does not exists.
-		// The initOrder can be set to indicate what order the Startup-method is called for every 
-		// plugin of the same type. But the Startup is not called until someone asks for the plugin
-		// like when: musik::core::Plugins::GetPlugins(unsigned int pluginType); is called.
-		IPluginInterface* GetInterface(unsigned int pluginType,int &initOrder)=0;
-		
-	};
-}
-}}}
-So, lets take a tagreader as an example. The code in the plugin should look something like:
-{{{
-// The musik::core::plugin::TagReader extends musik::IPluginInterface
-// The TaglibPlugin should extend the musik::core::plugin::TagReader
-TaglibPlugin tagreader;
-
-class MyPlugin: musik::IPlugin{
-	std::wstring GetName(){
-		return std::wstring(_T("taglib 1.4 plugin"));
-	};
-
-	IPluginInterface* GetInterface(unsigned int pluginType,int &initOrder){
-		if(pluginType==musik::PluginTypes::TagReader){
-			initOrder	= 20;
-			return &tagreader;
-		}
-		
-		return NULL;
-	};
-
-} myplugin;
-
-__declspec(dllexport) musik::IPlugin* GetPlugin(){
-	return &myplugin;
-}
-
-}}}
-Not really sure about this myself.. seems unnecessary with both IPlugin and IPluginInterface. This might be to messy.
-
-----
-
-Just some quick questions:
- * How will users define their own plugin types if the values are defined in the mC source?
- * How many different types of plugins can there be?  Not in a technical sense, but really, how many categories of plugins can you come up with?  Are they really that different?  What if something is a mix of several types?
- * The more I think about it, the less I like the idea of plugin types.  How about defining a set of APIs and let plugins use whatever the want in any combination the want?
- * In the above example, what happens if 2 plugin authors use the same initOrder?
- * What happens if we release a new version with an extended plugin API (e.g. more types).  Would this break any existing plugins until they are recompiled?
+mC2 is a heavy user of C++ and plugins can be a bit tricky in C++ since the only thing you can export in a application is C functions. Instead mC2 relies on the fact that VTABLES are compiled in an identical manner between different compilers (not true in all cases). So every class that needs to passed between the application and a plugin must be a pure virtual class and -to be on the safe side- we require that memory allocated in a plugin must also be deallocated in the same plugin.
  
-Ideally the plugin API should be designed in a way that we can freely add features (not modify!) but not break 3rd party plugins with every release.  I think what's in the source right now, the way tagreader is loaded, comes very close to that.
+==Exporting basic plugin information==
+Plugins must be built into a DLL and must implement the IPlugin class.
+The IPlugin class is only a way for musikCube to get a hold of basic information about the plugin itself and does not implement any of the features the plugin contains.
+Like this:
+{{{
+class MyPlugin : public musik::core::IPlugin {
+    void Destroy() { delete this; };
+
+    const wchar_t* Name(){
+        return _T("My own plugin");
+    };
+
+    const wchar_t* Version(){
+        return _T("0.1");
+    };
+
+    const wchar_t* Author(){
+        return _T("My name");
+    };
+
+};
+}}}
+The plugin will also need to export a function for the mC2 to be able to get a hold of the interface:
+{{{
+__declspec(dllexport) musik::core::IPlugin* GetPlugin(){
+    return new MyPlugin();
+}
+}}}
+----
+==Exporting plugin interfaces==
+There are several different types of plugins, but they all share a common way of implementation. Basically, every plugintype has a interface class (pure virtual classes with prefix "I") that the plugin extends. The plugin is also required to export a function that will return a new instance of the extended interface.
+
+Looking at the MetaDataReader (plugins that reads tags from audiofiles) as an example.
+The MetaDataReader plugins has an interface in src/core/Plugin/IMetaDataReader.h looking like this:
+{{{
+class IMetaDataReader{
+    public:
+        virtual bool ReadTag(musik::core::ITrack *track)=0;
+        virtual bool CanReadTag(const utfchar *extension)=0;
+        virtual void Destroy()=0;
+};
+}}}
+
+A MetaDataReader plugin will have to extend this interface, implement each required method (in this case the ReadTag, CanReadTag and Destroy) and finally export a method that will return a new instance of a MetaDataReader.
+In the MetaDataReader case, the exported method will need to be called "GetMetaDataReader", looking like this:
+{{{
+__declspec(dllexport) musik::core::Plugin::IMetaDataReader* GetMetaDataReader(){
+    return new MyClassExtendingIMetaDataReader();
+}
+}}}
