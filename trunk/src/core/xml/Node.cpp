@@ -56,7 +56,7 @@ Node::~Node(void){
     if(this->parent){
         // Erase in parents childnodes
         for(ChildNodes::iterator node=this->parent->childNodes.begin();node!=this->parent->childNodes.end();){
-            if( node->px==this ){
+            if( node->get()==this ){
                 node    = this->parent->childNodes.erase(node);
             }else{
                 ++node;
@@ -90,7 +90,7 @@ int Node::NodeLevel(){
 void Node::RemoveFromParent(){
     if(this->parent){
         for(Node::ChildNodes::iterator node=this->parent->childNodes.begin();node!=this->parent->childNodes.end();){
-            if( this == node->px ){
+            if( node->get()==this ){
                 node = this->parent->childNodes.erase(node);
             }else{
                 ++node;
