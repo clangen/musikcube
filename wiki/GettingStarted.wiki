@@ -7,6 +7,8 @@ To access the source code repository, I recommend using [http://rapidsvn.tigris.
 
 The installer should be mostly self explanatory. Note that it requires an internet connection during setup. The default variants you need are the Multithread variants (normal and debug, static runtime). Each variant is about 150 MB, so you can take a coffee break during download and installation. After the installation is complete, load the mc2 solution file into Visual Studio. You  have to add the boost directory to your include paths to be able to build mc2.
 
+The solution you probably want to work on is mc2+plugins.sln.
+
 
 **deprecated:
 If you're going to test current trunk of mC2 you currently need to manually add the synchronize path.
