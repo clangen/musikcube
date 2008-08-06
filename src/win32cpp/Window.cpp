@@ -38,6 +38,7 @@
 
 #include <pch.hpp>
 #include <win32cpp/Window.hpp>
+#include <win32cpp/Color.hpp>
 #include <win32cpp/Font.hpp>
 #include <win32cpp/Win32Exception.hpp>
 
@@ -104,7 +105,7 @@ void        Window::Initialize(Window* parent)
     this->SetFont(this->font);
     this->SetMenu(this->menu);
 
-    Window::ManageWindow(this);
+    Window::SubclassWindowProc(this);
 
     this->OnCreatedBase();
 }
@@ -348,7 +349,7 @@ void        Window::PostWindowProcBase(UINT message, WPARAM wParam, LPARAM lPara
             if (windowToNotify)
             {
                 windowToNotify->OnMouseMovedBase((MouseEventFlags) wParam, mousePos);
-            }            
+            }
         }
         break;
 
@@ -1188,14 +1189,14 @@ void        Window::SetTabStop(bool enabled)
     this->tabStop = enabled;
 }
 
-bool        Window::IsWindowManaged(Window* window)
+bool        Window::IsWindowSubclassed(Window* window)
 {
     Window::HandleToWindowMap& hwndToWindow = Window::sHandleToWindowMap;
 
     return (hwndToWindow.find(window->Handle()) != hwndToWindow.end());
 }
 
-Window*      Window::ManagedWindowFromHWND(HWND hwnd)
+Window*      Window::SubclassedWindowFromHWND(HWND hwnd)
 {
     Window::HandleToWindowMap& hwndToWindow = Window::sHandleToWindowMap;
 
@@ -1211,7 +1212,7 @@ Window*      Window::ManagedWindowFromHWND(HWND hwnd)
 #pragma warning(push)
 #pragma warning(disable: 4244)
 #pragma warning(disable: 4312)
-void         Window::ManageWindow(Window* window)
+void         Window::SubclassWindowProc(Window* window)
 {
     WindowProcFunc currentWindowProc = reinterpret_cast<WindowProcFunc>(
         ::GetWindowLongPtr(window->Handle(), GWLP_WNDPROC));
@@ -1233,7 +1234,7 @@ void         Window::ManageWindow(Window* window)
 #pragma warning(push)
 #pragma warning(disable: 4244)
 #pragma warning(disable: 4312)
-void        Window::UnManageWindow(Window* window)
+void        Window::UnSubclassWindowProc(Window* window)
 {
     WindowProcFunc currentWindowProc = reinterpret_cast<WindowProcFunc>(
         ::GetWindowLongPtr(window->Handle(), GWLP_WNDPROC));

@@ -38,8 +38,8 @@
 
 #pragma once
 
-#include <win32cpp/Win32Config.hpp>          // Must be first!
-#include <win32cpp/Types.hpp>          // Must be first!
+#include <win32cpp/Win32Config.hpp>
+#include <win32cpp/Types.hpp>
 #include <vector>
 
 //////////////////////////////////////////////////////////////////////////////

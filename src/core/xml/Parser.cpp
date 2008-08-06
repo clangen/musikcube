@@ -36,7 +36,7 @@
 #include "pch.hpp"
 #include <core/xml/Parser.h>
 #include <core/xml/ParserNode.h>
-
+#include <expat/expat.h>
 
 using namespace musik::core::xml;
 

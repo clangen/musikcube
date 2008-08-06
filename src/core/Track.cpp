@@ -37,7 +37,10 @@
 #include "pch.hpp"
 
 #include <core/Track.h>
+#include <core/config_filesystem.h>
+
 #include <core/Common.h>
+#include <core/db/Connection.h>
 #include <core/db/Statement.h>
 #include <core/Library/Base.h>
 

@@ -39,11 +39,15 @@
 #pragma once
 
 //////////////////////////////////////////////////////////////////////////////
+// Forward declare
+namespace win32cpp {
+    class Frame;
+}
+//////////////////////////////////////////////////////////////////////////////
 
-#include <win32cpp/Win32Config.hpp>          // Must be first!
+#include <win32cpp/Win32Config.hpp>
 #include <win32cpp/Panel.hpp>
 #include <win32cpp/ILayout.hpp>
-#include <win32cpp/Frame.hpp>
 
 namespace win32cpp {
 

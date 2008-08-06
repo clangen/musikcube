@@ -1,5 +1,6 @@
 #include "pch.hpp"
 
+#include <core/config.h>
 #include <core/audio/AudioPacketizer.h>
 
 using namespace musik::core::audio;

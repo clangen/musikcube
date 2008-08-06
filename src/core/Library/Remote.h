@@ -2,9 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
-//
-// Sources and Binaries of: win32cpp
+// The following are Copyright © 2008, Daniel Önnerby
 //
 // All rights reserved.
 //
@@ -38,46 +36,54 @@
 
 #pragma once
 
-//////////////////////////////////////////////////////////////////////////////
+namespace musik{ namespace core{
+    namespace Query{
+        class Base;
+    }
+} }
 
-#include <win32cpp/Win32Config.hpp>
-#include <win32cpp/Window.hpp>
+#include <string>
 
-namespace win32cpp {
+#include <core/config.h>
+#include <core/Library/Base.h>
 
-//////////////////////////////////////////////////////////////////////////////
+#include <boost/asio.hpp>
 
-class ProgressBar; // forward decl
+//////////////////////////////////////////
 
+namespace musik{ namespace core{ namespace Library{
+
+//////////////////////////////////////////
 ///\brief
-///A progress bar.
-class ProgressBar: public Window
-{
-private: // types
-    typedef Window base;
+///Library used for your remote music.
+//////////////////////////////////////////
+class Remote : public Library::Base{
+    public:
+        // Methods:
+        Remote(void);
+        ~Remote(void);
 
-public:     // constructors, methods
-    /*ctor*/        ProgressBar(int width, int height);
-    /*dtor*/        ~ProgressBar();
+        bool Startup();
+        utfstring GetInfo();
 
-    void SetMarqueeStyle();
-    void SetSmoothStyle();
-    void SetVerticalStyle();
-    void StartMarquee(bool set, unsigned int delay);
-    void SetRange(unsigned int min, unsigned int max);
-    void SetPos(int pos);
-    void SetStepIncrement(int inc);
-    void Step();
+    protected:
+        void CancelCurrentQuery( );
 
-protected:  // methods
-     virtual HWND       Create(Window* parent);
-     virtual LRESULT    WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+    private:
+        // Methods:
+        void ReadThread();
+        void WriteThread();
 
-protected:  // instance data
-    uistring caption;
-    int width;
-    int height;
-    DWORD styleEx;
+    private:
+        // Variables:
+        boost::asio::io_service ioService;
+        boost::asio::ip::tcp::socket socket;
+
+        std::string address;
+        std::string port;
+
 };
+//////////////////////////////////////////
+} } }
+//////////////////////////////////////////
 
-} //win32cpp

@@ -37,10 +37,12 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <pch.hpp>
-#include <win32cpp/Types.hpp>
+#include <win32cpp/Win32Config.hpp>
 #include <win32cpp/TopLevelWindow.hpp>
+#include <win32cpp/Types.hpp>
 #include <win32cpp/MemoryDC.hpp>
 #include <win32cpp/Application.hpp>
+#include <win32cpp/Color.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 

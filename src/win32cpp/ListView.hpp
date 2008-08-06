@@ -40,11 +40,10 @@
 
 //////////////////////////////////////////////////////////////////////////////
 
-#include <win32cpp/Win32Config.hpp>          // Must be first!
+#include <win32cpp/Win32Config.hpp>
 #include <win32cpp/Window.hpp>
 #include <win32cpp/Win32Exception.hpp>
 #include <win32cpp/Color.hpp>
-#include <win32cpp/Font.hpp>
 
 #include <boost/format.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -83,7 +82,7 @@ const int DefaultRowHeight = -1;
 ///This makes displaying large amounts of data extremely efficient.
 ///
 ///ListView also supports custom drawing via CellRenderer and RowRenderer
-///objects. The model can optionally supply custom renderers to drastically
+///objects. The model can optionally supply custom renderers to easily
 ///change the appearance of the view.
 ///
 ///\see
@@ -142,7 +141,7 @@ public: // events
     ///\brief Emitted when the selection has changed
     SelectionChangedEvent   SelectionChanged;
     ///\brief Emitted when a Column is clicked
-    ColumnClickedEvent		ColumnClicked;
+    ColumnClickedEvent      ColumnClicked;
 
 public: // constructors
     /*ctor*/        ListView();
@@ -177,6 +176,7 @@ public: // methods
     void            SelectRow(int index);
     void            DeselectRows(const std::vector<int>& indices);
     void            DeselectRow(int index);
+    void            SetContextMenu(MenuRef contextMenu);
 
 protected: // methods
     virtual HWND        Create(Window* parent);
@@ -216,6 +216,7 @@ protected: // instance data
     RowIndexList selectedRows;
     int selectedRowIndex;
     bool selectedRowsDirty;
+    MenuRef contextMenu;
 
 protected: // class data
     static ModelRef sNullModel;

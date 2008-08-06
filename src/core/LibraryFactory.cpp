@@ -35,7 +35,7 @@
 //////////////////////////////////////////////////////////////////////////////
 #include "pch.hpp"
 #include <core/LibraryFactory.h>
-#include <Library/LocalDB.h>
+#include <core/Library/LocalDB.h>
 
 using namespace musik::core;
 
@@ -51,9 +51,6 @@ LibraryFactory::LibraryFactory(void) : currentPosition(0){
 LibraryFactory::~LibraryFactory(void){
 }
 
-/*LibraryFactory& LibraryFactory::Instance(){
-    return sInstance;
-}*/
 
 LibraryPtr LibraryFactory::GetCurrentLibrary(){
     return Instance().GetLibrary(sInstance.currentPosition);

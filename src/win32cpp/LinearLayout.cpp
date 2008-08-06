@@ -39,7 +39,6 @@
 #include <pch.hpp>
 #include <win32cpp/LinearLayout.hpp>
 #include <win32cpp/RedrawLock.hpp>
-
 #include <algorithm>
 
 //////////////////////////////////////////////////////////////////////////////

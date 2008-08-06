@@ -38,10 +38,13 @@
 
 #include "pch.hpp"
 #include <cube/SettingsController.hpp>
+#include <cube/SettingsView.hpp>
 #include <core/LibraryFactory.h>
 #include <core/Indexer.h>
 
 #include <win32cpp/FolderBrowseDialog.hpp>
+#include <win32cpp/Button.hpp>
+#include <win32cpp/Label.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 

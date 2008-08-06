@@ -39,15 +39,18 @@
 #pragma once
 
 //////////////////////////////////////////////////////////////////////////////
+// Forward declare
+namespace musik { namespace cube {
+    class TracklistView;
+} }
+//////////////////////////////////////////////////////////////////////////////
 
-#include <boost/format.hpp>
-
+#include <win32cpp/Types.hpp>
+#include <win32cpp/ListView.hpp>
 #include <core/config.h>
 #include <core/Query/ListBase.h>
 #include <core/tracklist/Standard.h>
 #include <core/Query/SortTracks.h>
-
-#include <cube/TracklistView.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 

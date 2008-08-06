@@ -39,6 +39,7 @@
 #include <pch.hpp>
 #include <win32cpp/Trackbar.hpp>
 #include <win32cpp/Application.hpp>
+#include <win32cpp/Color.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 

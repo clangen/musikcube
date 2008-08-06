@@ -37,11 +37,15 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
-
-#include <boost/format.hpp>
-
 #include <cube/TransportController.hpp>
+
+#include <cube/TransportView.hpp>
+#include <core/PlaybackQueue.h>
 #include <win32cpp/ApplicationThread.hpp>
+#include <win32cpp/Trackbar.hpp>
+#include <win32cpp/Button.hpp>
+#include <win32cpp/Label.hpp>
+#include <boost/format.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 

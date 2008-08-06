@@ -35,17 +35,19 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
+
 #include <core/Indexer.h>
+
+#include <core/config_filesystem.h>
+#include <core/config_format.h>
 #include <core/Track.h>
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>
 #include <core/PluginFactory.h>
 #include <core/Preferences.h>
 
-#include <boost/filesystem.hpp>
 #include <boost/thread/xtime.hpp>
 #include <boost/bind.hpp>
-#include <boost/format.hpp>
 
 using namespace musik::core;
 

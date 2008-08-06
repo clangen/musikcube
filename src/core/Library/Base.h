@@ -36,16 +36,20 @@
 
 #pragma once
 
+#define INCLUDE_BOOSTFS
 #include <core/config.h>
 #include <core/db/Connection.h>
 
 #include <boost/thread/thread.hpp>
 #include <boost/thread/condition.hpp>
 #include <boost/thread/mutex.hpp>
-#include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
+#include <sigslot/sigslot.h>
+#include <string>
 
+//////////////////////////////////////////////////////////////////////////////
+// Forward declare
 namespace musik{ namespace core{
     class Indexer;
 
@@ -54,217 +58,206 @@ namespace musik{ namespace core{
         typedef boost::shared_ptr<musik::core::Query::Base> Ptr;
     }
 } }
+//////////////////////////////////////////////////////////////////////////////
 
-#include <sigslot/sigslot.h>
-#include <string>
+namespace musik{ namespace core{ namespace Library{
 
-namespace musik{ namespace core{
+//////////////////////////////////////////////////////////////////////////////
 
+//////////////////////////////////////////
+///\brief
+///This is the base class that all Libraries should extend.
+///
+///The Library::Base is the main interface for all libraries
+///and contains the main functionallity for parsing the query queue
+///and is responsible for calling callbacks in the right order.
+///
+///\remarks
+///Library::Base is only the interface and can not be used directly.
+///Library::Base extends the ThreadHelper and is therefore a noncopyable object.
+///
+///\see
+///musik::core::Library::LocalDB
+//////////////////////////////////////////
+class Base : boost::noncopyable{
+    public:
+        Base(void);
+        virtual ~Base(void);
 
-    namespace Library{
         //////////////////////////////////////////
         ///\brief
-        ///This is the base class that all Libraries should extend.
+        ///Start up the Library thread(s)
         ///
-        ///The Library::Base is the main interface for all libraries
-        ///and contains the main functionallity for parsing the query queue
-        ///and is responsible for calling callbacks in the right order.
+        ///\returns
+        ///True if successfully started.
+        ///
+        ///The Startup method will start all the librarys threads.
+        //////////////////////////////////////////
+        virtual bool Startup()=0;
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Get state of the library
+        ///
+        ///\returns
+        ///Status of the library. May be empty.
+        ///
+        ///Get the current status of the Library.
+        ///Will for instance report current status of the indexer in the LocalDB.
         ///
         ///\remarks
-        ///Library::Base is only the interface and can not be used directly.
-        ///Library::Base extends the ThreadHelper and is therefore a noncopyable object.
+        ///Empty string means that the library thread is holding.
+        //////////////////////////////////////////
+        virtual utfstring GetInfo()=0;
+        
+        virtual bool AddQuery( const Query::Base &query,unsigned int options=0 );
+
+        virtual bool RunCallbacks();
+
+        utfstring GetLibraryDirectory();
+
+        bool QueryCanceled();
+
+
+        virtual musik::core::Indexer *Indexer();
+
+        bool Exited();
+
+        static bool IsStaticMetaKey(std::string &metakey);
+        static bool IsSpecialMTOMetaKey(std::string &metakey);
+        static bool IsSpecialMTMMetaKey(std::string &metakey);
+
+
+        static void CreateDatabase(db::Connection &db);
+
+    protected:
+        // Methods:
+        virtual void Exit();
+
+        Query::Ptr GetNextQuery();
+
+        virtual void CancelCurrentQuery( );
+
+        utfstring GetDBPath();
+
+    private:
+        // Methods:
+
+        bool ClearFinishedQueries();
+
+    public:
+        // Variables:
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Signal called when query queue goes from empty to not empty.
+        ///
+        ///The OnQueryQueueStart signal will be called when the query queue is
+        ///filled with queries. This signal is usefull when you are calling the
+        ///RunCallbacks method from a windows timer function. Just connect a slot
+        ///to this signal and start the timer when it's called. The timer can then
+        ///be removed on the OnQueryQueueEnd signal is called.
         ///
         ///\see
-        ///musik::core::Library::LocalDB
+        ///OnQueryQueueEnd
         //////////////////////////////////////////
-        class Base : boost::noncopyable{
-            public:
-                Base(void);
-                virtual ~Base(void);
+        sigslot::signal0<> OnQueryQueueStart;
 
-                //////////////////////////////////////////
-                ///\brief
-                ///Start up the Library thread(s)
-                ///
-                ///\returns
-                ///True if successfully started.
-                ///
-                ///The Startup method will start all the librarys threads.
-                //////////////////////////////////////////
-                virtual bool Startup()=0;
+        //////////////////////////////////////////
+        ///\brief
+        ///Signal called when query queue goes from not empty to empty.
+        ///
+        ///The OnQueryQueueEnd signal will be called when the query queue is
+        ///empty again and all callbacks has been called.
+        ///This signal is usefull when you are calling the
+        ///RunCallbacks method from a windows timer function. Just connect a slot
+        ///to the OnQueryQueueStart signal and start the timer when it's called.
+        ///The timer can then be removed on the OnQueryQueueEnd signal is called.
+        ///
+        ///\see
+        ///OnQueryQueueStart
+        //////////////////////////////////////////
+        sigslot::signal0<> OnQueryQueueEnd;
 
-                //////////////////////////////////////////
-                ///\brief
-                ///Get state of the library
-                ///
-                ///\returns
-                ///Status of the library. May be empty.
-                ///
-                ///Get the current status of the Library.
-                ///Will for instance report current status of the indexer in the LocalDB.
-                ///
-                ///\remarks
-                ///Empty string means that the library thread is holding.
-                //////////////////////////////////////////
-                virtual utfstring GetInfo()=0;
-                
-                virtual bool AddQuery( const Query::Base &query,unsigned int options=0 );
-
-                virtual bool RunCallbacks();
-
-                utfstring GetLibraryDirectory();
-
-                bool QueryCanceled();
+        //////////////////////////////////////////
+        ///\brief
+        ///This mutex is used by the queries for protecting the outgoing results.
+        ///
+        ///\remarks
+        ///This mutex needs to be public
+        //////////////////////////////////////////
+        boost::mutex oResultMutex;
 
 
-                virtual musik::core::Indexer *Indexer();
+    protected:
+        typedef std::list<Query::Ptr> QueryList;
+        // Variables:
 
-                bool Exited();
+        //////////////////////////////////////////
+        ///\brief
+        ///Is the current query canceled?
+        ///
+        ///\see
+        ///CancelCurrentQuery|QueryCanceled
+        //////////////////////////////////////////
+        bool bCurrentQueryCanceled;
 
-                static bool IsStaticMetaKey(std::string &metakey);
-                static bool IsSpecialMTOMetaKey(std::string &metakey);
-                static bool IsSpecialMTMMetaKey(std::string &metakey);
+        //////////////////////////////////////////
+        ///\brief
+        ///queue (std::list) for incoming queries.
+        //////////////////////////////////////////
+        QueryList incomingQueries;
 
+        //////////////////////////////////////////
+        ///\brief
+        ///queue (std::list) for finished queries that havn't
+        ///been run through the callbacks yet.
+        //////////////////////////////////////////
+        QueryList outgoingQueries;
 
-                static void CreateDatabase(db::Connection &db);
+        //////////////////////////////////////////
+        ///\brief
+        ///Current running query
+        //////////////////////////////////////////
+        Query::Ptr runningQuery;
 
-            protected:
-                // Methods:
-                virtual void Exit();
+        //////////////////////////////////////////
+        ///\brief
+        ///Identifier of the library.
+        ///This is used for directory name where the library is located.
+        ///
+        ///\see
+        ///GetLibraryDirectory
+        //////////////////////////////////////////
+        utfstring identifier;
 
-                Query::Ptr GetNextQuery();
+        //////////////////////////////////////////
+        ///\brief
+        ///A thread_group of all the librarys running threads.
+        ///
+        ///\see
+        ///ThreadHelper
+        //////////////////////////////////////////
+        boost::thread_group threads;
 
-                virtual void CancelCurrentQuery( );
+        //////////////////////////////////////////
+        ///\brief
+        ///Internal state of the library
+        //////////////////////////////////////////
+        bool queueCallbackStarted;
 
-                utfstring GetDBPath();
-
-            private:
-                // Methods:
-
-                bool ClearFinishedQueries();
-
-            public:
-                // Variables:
-
-                //////////////////////////////////////////
-                ///\brief
-                ///Signal called when query queue goes from empty to not empty.
-                ///
-                ///The OnQueryQueueStart signal will be called when the query queue is
-                ///filled with queries. This signal is usefull when you are calling the
-                ///RunCallbacks method from a windows timer function. Just connect a slot
-                ///to this signal and start the timer when it's called. The timer can then
-                ///be removed on the OnQueryQueueEnd signal is called.
-                ///
-                ///\see
-                ///OnQueryQueueEnd
-                //////////////////////////////////////////
-                sigslot::signal0<> OnQueryQueueStart;
-
-                //////////////////////////////////////////
-                ///\brief
-                ///Signal called when query queue goes from not empty to empty.
-                ///
-                ///The OnQueryQueueEnd signal will be called when the query queue is
-                ///empty again and all callbacks has been called.
-                ///This signal is usefull when you are calling the
-                ///RunCallbacks method from a windows timer function. Just connect a slot
-                ///to the OnQueryQueueStart signal and start the timer when it's called.
-                ///The timer can then be removed on the OnQueryQueueEnd signal is called.
-                ///
-                ///\see
-                ///OnQueryQueueStart
-                //////////////////////////////////////////
-                sigslot::signal0<> OnQueryQueueEnd;
-
-                //////////////////////////////////////////
-                ///\brief
-                ///This mutex is used by the queries for protecting the outgoing results.
-                ///
-                ///\remarks
-                ///This mutex needs to be public
-                //////////////////////////////////////////
-                boost::mutex oResultMutex;
+        bool exit;
+        boost::condition waitCondition;
+    public:
+        boost::mutex libraryMutex;
 
 
-            protected:
-                typedef std::list<Query::Ptr> QueryList;
-                // Variables:
+};
 
-                //////////////////////////////////////////
-                ///\brief
-                ///Is the current query canceled?
-                ///
-                ///\see
-                ///CancelCurrentQuery|QueryCanceled
-                //////////////////////////////////////////
-                bool bCurrentQueryCanceled;
+//////////////////////////////////////////////////////////////////////////////
+} } } // musik::core::Library
+//////////////////////////////////////////////////////////////////////////////
 
-                //////////////////////////////////////////
-                ///\brief
-                ///queue (std::list) for incoming queries.
-                //////////////////////////////////////////
-                QueryList incomingQueries;
-
-                //////////////////////////////////////////
-                ///\brief
-                ///queue (std::list) for finished queries that havn't
-                ///been run through the callbacks yet.
-                //////////////////////////////////////////
-                QueryList outgoingQueries;
-
-                //////////////////////////////////////////
-                ///\brief
-                ///Current running query
-                //////////////////////////////////////////
-                Query::Ptr runningQuery;
-
-                //////////////////////////////////////////
-                ///\brief
-                ///This mutex protects incomingQueries, outgoingQueries, runningQuery and iState
-                //////////////////////////////////////////
-//                boost::mutex queryQueueMutex;
-
-                //////////////////////////////////////////
-                ///\brief
-                ///Condition for notifying when a query is finished.
-                //////////////////////////////////////////
-//                boost::condition queryNotify;
-
-                //////////////////////////////////////////
-                ///\brief
-                ///Identifier of the library.
-                ///This is used for directory name where the library is located.
-                ///
-                ///\see
-                ///GetLibraryDirectory
-                //////////////////////////////////////////
-                utfstring identifier;
-
-                //////////////////////////////////////////
-                ///\brief
-                ///A thread_group of all the librarys running threads.
-                ///
-                ///\see
-                ///ThreadHelper
-                //////////////////////////////////////////
-                boost::thread_group threads;
-
-                //////////////////////////////////////////
-                ///\brief
-                ///Internal state of the library
-                //////////////////////////////////////////
-                bool queueCallbackStarted;
-
-                bool exit;
-                boost::condition waitCondition;
-            public:
-                boost::mutex libraryMutex;
-
-
-        };
-    }
-
+namespace musik{ namespace core{ 
     typedef boost::shared_ptr<musik::core::Library::Base> LibraryPtr;
-
 } }

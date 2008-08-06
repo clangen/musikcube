@@ -34,8 +34,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#if ! defined(__MUSIK_CORE_CONFIG_H__)
-#define __MUSIK_CORE_CONFIG_H__
+#pragma once
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -66,8 +65,7 @@ typedef unsigned int DBTIME;
 ////////////////////////////////
 
 #include <string>
-#include <boost/filesystem.hpp>
-#include <boost/format.hpp>
+
 
 #if defined(WIN32)
 
@@ -93,16 +91,6 @@ typedef unsigned int DBTIME;
     ///utfchar is either a char or a utfchar depending on system.
     //////////////////////////////////////////
     typedef wchar_t utfchar;
-
-    // Boost specific
-    namespace boost{
-        namespace filesystem{
-            typedef boost::filesystem::wpath utfpath;
-            typedef wdirectory_iterator utfdirectory_iterator;
-        }
-
-        typedef wformat utfformat;
-    }
 
     //////////////////////////////////////////
     ///\brief
@@ -134,17 +122,6 @@ typedef unsigned int DBTIME;
     //////////////////////////////////////////
     #define UTF(x)  x
 
-    // Boost specific
-    namespace boost{
-        namespace filesystem{
-            typedef path utfpath;
-            typedef directory_iterator utfdirectory_iterator;
-        }
-
-        typedef format utfformat;
-    }
-
-
     //////////////////////////////////////////
     ///\brief
     ///utfstringstream is the stringstream for utfchar & utfstring
@@ -165,5 +142,3 @@ typedef std::basic_string<utfchar> utfstring;
 #define CopyFloat(dst, src, num) CopyMemory(dst, src, (num) * sizeof(float))
 
 //////////////////////////////////////////////////////////////////////////////
-
-#endif

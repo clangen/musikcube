@@ -168,6 +168,24 @@ LRESULT     ListView::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
                 }
                 break;
 
+            case NM_RCLICK:
+                {
+                    POINT mousePos = { 0 };
+                    ::GetCursorPos(&mousePos);
+                    if (this->contextMenu)
+                    {
+                        ::TrackPopupMenu(
+                            this->contextMenu->Handle(),
+                            NULL,
+                            mousePos.x,
+                            mousePos.y,
+                            NULL,
+                            this->Handle(),
+                            NULL);
+                    }
+                }
+                break;
+
             case HDN_BEGINTRACK:
                 {
                     return ( ! this->columnsResizable);
@@ -992,6 +1010,14 @@ int         ListView::SelectedRow()
 
     this->IndexSelectedRows();
     return this->selectedRowIndex;
+}
+
+///\brief
+///Sets the context menu for the ListView. The context menu is displayed
+///whenever the user right clicks inside the ListView.
+void        ListView::SetContextMenu(MenuRef contextMenu)
+{
+    this->contextMenu = contextMenu;
 }
 
 void        ListView::SelectRows(const std::vector<int>& indices)

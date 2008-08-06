@@ -40,7 +40,7 @@
 #include <win32cpp/Locale.hpp>
 #include <win32cpp/Win32Exception.hpp>
 #include <win32cpp/Utility.hpp>
-#include "boost/filesystem/operations.hpp"
+#include <boost/filesystem/operations.hpp>
 
 #include <iostream>
 

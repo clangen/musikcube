@@ -38,6 +38,8 @@
 
 #include "pch.hpp"
 #include <cube/MainWindowController.hpp>
+#include <win32cpp/Application.hpp>
+#include <win32cpp/TopLevelWindow.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 

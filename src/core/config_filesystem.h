@@ -2,9 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
-//
-// Sources and Binaries of: win32cpp
+// The following are Copyright © 2008, Daniel Önnerby
 //
 // All rights reserved.
 //
@@ -38,46 +36,21 @@
 
 #pragma once
 
-//////////////////////////////////////////////////////////////////////////////
+#include <core/config.h>
+#include <boost/filesystem.hpp>
 
-#include <win32cpp/Win32Config.hpp>
-#include <win32cpp/Window.hpp>
-
-namespace win32cpp {
-
-//////////////////////////////////////////////////////////////////////////////
-
-class ProgressBar; // forward decl
-
-///\brief
-///A progress bar.
-class ProgressBar: public Window
-{
-private: // types
-    typedef Window base;
-
-public:     // constructors, methods
-    /*ctor*/        ProgressBar(int width, int height);
-    /*dtor*/        ~ProgressBar();
-
-    void SetMarqueeStyle();
-    void SetSmoothStyle();
-    void SetVerticalStyle();
-    void StartMarquee(bool set, unsigned int delay);
-    void SetRange(unsigned int min, unsigned int max);
-    void SetPos(int pos);
-    void SetStepIncrement(int inc);
-    void Step();
-
-protected:  // methods
-     virtual HWND       Create(Window* parent);
-     virtual LRESULT    WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
-
-protected:  // instance data
-    uistring caption;
-    int width;
-    int height;
-    DWORD styleEx;
-};
-
-} //win32cpp
+#ifdef UTF_WIDECHAR
+    namespace boost{
+        namespace filesystem{
+            typedef boost::filesystem::wpath utfpath;
+            typedef wdirectory_iterator utfdirectory_iterator;
+        }
+    }
+#else
+    namespace boost{
+        namespace filesystem{
+            typedef path utfpath;
+            typedef directory_iterator utfdirectory_iterator;
+        }
+    }
+#endif

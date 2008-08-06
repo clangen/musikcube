@@ -39,30 +39,39 @@
 
 #pragma warning (disable : 4996 4018 4482)
 
-
-
 #include <core/config.h>
+
+#include <sigslot/sigslot.h>
+#include <boost/shared_ptr.hpp>
+
+#include <core/db/Connection.h>
+#include <core/db/Statement.h>
+#include <core/db/CachedStatement.h>
+
+#include <core/Query/Base.h>
+
+#include <core/Track.h>
+#include <core/TrackMeta.h>
+
+#include <core/xml/Node.h>
+#include <core/xml/WriterNode.h>
+#include <core/xml/ParserNode.h>
+#include <core/Library/Base.h>
+
+/*
+
 
 #include <stdio.h>
 #include <cstdlib>
 #include <iostream>
 #include <stdlib.h>
 
-#include <vector>
-#include <map>
-#include <set>
 
-#include <core/db/Connection.h>
-#include <core/db/Statement.h>
-#include <core/db/CachedStatement.h>
 
-#include <boost/shared_ptr.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/bind.hpp>
 #include <boost/noncopyable.hpp>
 
-#include <string>
-#include <sigslot/sigslot.h>
-
+*/
 #include <vld/vld.h>
 

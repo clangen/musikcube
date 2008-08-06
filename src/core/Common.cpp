@@ -36,6 +36,7 @@
 
 #include "pch.hpp"
 #include <core/Common.h>
+#include <core/config_filesystem.h>
 #include <utf8/utf8.h>
 
 //////////////////////////////////////////

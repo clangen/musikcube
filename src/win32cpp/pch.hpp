@@ -41,12 +41,25 @@
 //////////////////////////////////////////////////////////////////////////////
 // dependencies
 //////////////////////////////////////////////////////////////////////////////
-
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
+
+#include <win32cpp/Win32Config.hpp>
+#include <win32cpp/Application.hpp>
+#include <win32cpp/TopLevelWindow.hpp>
+#include <win32cpp/Container.hpp>
+#include <win32cpp/Menu.hpp>
+#include <win32cpp/Window.hpp>
+#include <win32cpp/Font.hpp>
+#include <win32cpp/Exception.hpp>
+#include <win32cpp/Types.hpp>
+#include <win32cpp/WindowGeometry.hpp>
+
+
+/*
 #include <boost/weak_ptr.hpp>
 #include <boost/format.hpp>
-
+*/
 //////////////////////////////////////////////////////////////////////////////
 
 #include <win32cpp.hpp>

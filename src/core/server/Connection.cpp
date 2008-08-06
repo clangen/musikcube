@@ -43,6 +43,8 @@
 #include <core/xml/Writer.h>
 #include <core/xml/WriterNode.h>
 
+#include <boost/bind.hpp>
+
 using namespace musik::core::server;
 
 

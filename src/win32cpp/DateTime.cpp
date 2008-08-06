@@ -38,8 +38,8 @@
 
 #include <pch.hpp>
 #include <win32cpp/DateTime.hpp>
-#include <win32cpp/Utility.hpp>
 #include <win32cpp/Win32Exception.hpp>
+#include <win32cpp/Utility.hpp>
 #include <boost/regex.hpp>
 #include <sstream>
 

@@ -41,6 +41,8 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
+#include <cube/TracklistModel.hpp>
+#include <cube/TracklistColumn.hpp>
 
 #include <win32cpp/Utility.hpp>
 
@@ -48,8 +50,6 @@
 #include <core/PlaybackQueue.h>
 #include <core/MetaKey.h>
 
-#include <cube/TracklistModel.hpp>
-#include <cube/TracklistColumn.hpp>
 
 
 using namespace musik::cube;

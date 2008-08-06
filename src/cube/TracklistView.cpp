@@ -38,6 +38,9 @@
 
 #include "pch.hpp"
 #include <cube/TracklistView.hpp>
+#include <cube/TracklistInfoView.hpp>
+#include <win32cpp/Frame.hpp>
+#include <win32cpp/ListView.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 

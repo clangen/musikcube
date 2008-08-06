@@ -39,33 +39,39 @@
 #include <core/Library/Base.h>
 #include <sigslot/sigslot.h>
 
+//////////////////////////////////////////////////////////////////////////////
+
 namespace musik{ namespace core{
 
-    class LibraryFactory{
-        private:
-            static LibraryFactory sInstance;
-        public:
+//////////////////////////////////////////////////////////////////////////////
 
-            typedef sigslot::signal1<LibraryPtr> LibraryChangeEvent;
+class LibraryFactory{
+    private:
+        static LibraryFactory sInstance;
+    public:
 
-            static LibraryFactory& Instance(){ return sInstance; };
-            static LibraryPtr GetCurrentLibrary();
-            static LibraryChangeEvent& OnLibraryChange();
+        typedef sigslot::signal1<LibraryPtr> LibraryChangeEvent;
 
-        private:
+        static LibraryFactory& Instance(){ return sInstance; };
+        static LibraryPtr GetCurrentLibrary();
+        static LibraryChangeEvent& OnLibraryChange();
 
-            sigslot::signal1<LibraryPtr> OnLibraryChangeSignal;
-            LibraryPtr GetLibrary(int position);
+    private:
 
-            std::vector<LibraryPtr> libraries;
-            int currentPosition;
+        sigslot::signal1<LibraryPtr> OnLibraryChangeSignal;
+        LibraryPtr GetLibrary(int position);
 
-            LibraryFactory(void);
-            ~LibraryFactory(void);
+        std::vector<LibraryPtr> libraries;
+        int currentPosition;
 
-            
+        LibraryFactory(void);
+        ~LibraryFactory(void);
 
-    };
+        
 
-} }
+};
+
+//////////////////////////////////////////////////////////////////////////////
+} } // musik::core
+//////////////////////////////////////////////////////////////////////////////
 

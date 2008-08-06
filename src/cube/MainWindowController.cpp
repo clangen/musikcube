@@ -39,14 +39,21 @@
 #include "pch.hpp"
 #include <cube/MainWindowController.hpp>
 #include <cube/TransportView.hpp>
-#include <cube/TracklistView.hpp>
 #include <cube/SourcesView.hpp>
+#include <cube/SourcesController.hpp>
+#include <cube/TransportController.hpp>
 
-#include <core/Library/LocalDB.h>
+#include <core/LibraryFactory.h>
 #include <core/Pluginfactory.h>
 
 #include <cube/resources/resource.h>
 
+#include <win32cpp/Types.hpp>    // uichar, uistring
+#include <win32cpp/TopLevelWindow.hpp>
+#include <win32cpp/Splitter.hpp>
+#include <win32cpp/TabView.hpp>
+#include <win32cpp/RedrawLock.hpp>
+ 
 //////////////////////////////////////////////////////////////////////////////
 
 using namespace musik::cube;

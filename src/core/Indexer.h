@@ -37,6 +37,7 @@
 #pragma once
 
 #include <core/config.h>
+
 #include <core/ThreadHelper.h>
 #include <core/db/Connection.h>
 #include <core/Plugin/IMetaDataReader.h>
@@ -49,66 +50,74 @@
 
 #include <deque>
 
+//////////////////////////////////////////////////////////////////////////////
+
 namespace musik{ namespace core{
-    class Indexer : public ThreadHelper,private boost::noncopyable {
-        public:
-            Indexer(void);
-            ~Indexer(void);
 
-            void AddPath(utfstring sPath);
-            void RemovePath(utfstring sPath);
-            std::vector<utfstring> GetPaths();
+//////////////////////////////////////////////////////////////////////////////
 
-            bool Startup(utfstring setLibraryPath);
-            void ThreadLoop();
+class Indexer : public ThreadHelper,private boost::noncopyable {
+    public:
+        Indexer(void);
+        ~Indexer(void);
 
-            utfstring GetStatus();
-            void RestartSync(bool bNewRestart=true);
-            bool Restarted();
+        void AddPath(utfstring sPath);
+        void RemovePath(utfstring sPath);
+        std::vector<utfstring> GetPaths();
 
-            utfstring database;
+        bool Startup(utfstring setLibraryPath);
+        void ThreadLoop();
 
-            sigslot::signal0<> SynchronizeStart;
-            sigslot::signal0<> SynchronizeEnd;
-            sigslot::signal0<> PathsUpdated;
+        utfstring GetStatus();
+        void RestartSync(bool bNewRestart=true);
+        bool Restarted();
 
-        private:
-            
-            db::Connection dbConnection;
+        utfstring database;
 
-            utfstring libraryPath;
-            int iStatus;
-            bool bRestart;
+        sigslot::signal0<> SynchronizeStart;
+        sigslot::signal0<> SynchronizeEnd;
+        sigslot::signal0<> PathsUpdated;
 
-            boost::thread *oThread;
-            boost::mutex oProgressMutex;
+    private:
+        
+        db::Connection dbConnection;
 
-            double iProgress;
-            int iNOFFiles;
-            int iFilesIndexed;
+        utfstring libraryPath;
+        int iStatus;
+        bool bRestart;
 
-            void CountFiles(utfstring &sFolder);
+        boost::thread *oThread;
+        boost::mutex oProgressMutex;
 
-            void Synchronize();
-            void SyncDirectory(utfstring &sFolder,DBINT iParentFolderId,DBINT iPathId,utfstring &syncPath);
-            void SyncDelete(std::vector<DBINT> aPaths);
-            void SyncCleanup();
-            void SyncAddRemovePaths();
-            void SyncOptimize();
+        double iProgress;
+        int iNOFFiles;
+        int iFilesIndexed;
 
-            class _AddRemovePath{
-                public:
-                    bool add;
-                    utfstring path;
-            };
+        void CountFiles(utfstring &sFolder);
 
-            typedef std::vector<boost::shared_ptr<Plugin::IMetaDataReader>> MetadataReaderList;
+        void Synchronize();
+        void SyncDirectory(utfstring &sFolder,DBINT iParentFolderId,DBINT iPathId,utfstring &syncPath);
+        void SyncDelete(std::vector<DBINT> aPaths);
+        void SyncCleanup();
+        void SyncAddRemovePaths();
+        void SyncOptimize();
 
-            std::deque<_AddRemovePath> addRemoveQueue;
+        class _AddRemovePath{
+            public:
+                bool add;
+                utfstring path;
+        };
 
-            MetadataReaderList metadataReaders;
+        typedef std::vector<boost::shared_ptr<Plugin::IMetaDataReader>> MetadataReaderList;
 
-    };
-} }
+        std::deque<_AddRemovePath> addRemoveQueue;
+
+        MetadataReaderList metadataReaders;
+
+};
+
+//////////////////////////////////////////////////////////////////////////////
+} } // musik::core
+//////////////////////////////////////////////////////////////////////////////
 
 

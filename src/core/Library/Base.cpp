@@ -37,10 +37,12 @@
 #include "pch.hpp"
 
 #include <core/Library/Base.h>
+
+#include <core/config_filesystem.h>
 #include <core/Query/Base.h>
 #include <core/Common.h>
 
-#include <boost/filesystem.hpp>
+//#include <boost/function.hpp>
 
 using namespace musik::core;
 

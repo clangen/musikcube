@@ -38,6 +38,11 @@
 
 #include "pch.hpp"
 #include <cube/BrowseView.hpp>
+#include <cube/TracklistView.hpp>
+
+#include <win32cpp/ListView.hpp>
+#include <win32cpp/Splitter.hpp>
+#include <win32cpp/BarLayout.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 

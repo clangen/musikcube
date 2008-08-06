@@ -38,6 +38,8 @@
 
 #include "pch.hpp"
 #include <cube/BrowseController.hpp>
+#include <cube/BrowseView.hpp>
+#include <cube/TracklistController.hpp>
 #include <core/LibraryFactory.h>
 
 //////////////////////////////////////////////////////////////////////////////

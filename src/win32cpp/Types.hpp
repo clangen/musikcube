@@ -39,15 +39,12 @@
 #pragma once
 
 //////////////////////////////////////////////////////////////////////////////
-#include <win32cpp/Win32Config.hpp>          // Must be first!
 
-#include <boost/utility.hpp>    // noncopyable
-#include <boost/weak_ptr.hpp>
-#include <string>
-#include <sigslot/sigslot.h>
-
+#include <win32cpp/Win32Config.hpp>
 #include <win32cpp/WindowGeometry.hpp>
 
+#include <string>
+#include <sigslot/sigslot.h>
 
 //////////////////////////////////////////////////////////////////////////////
 

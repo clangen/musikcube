@@ -41,13 +41,11 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
-
-#include <win32cpp/Utility.hpp>
-
 #include <cube/MetadataFilterModel.hpp>
+
 #include <cube/MetadataFilterController.hpp>
 #include <cube/BrowseController.hpp>
-
+#include <win32cpp/Utility.hpp>
 #include <boost/algorithm/string.hpp>
 
 using namespace musik::cube;

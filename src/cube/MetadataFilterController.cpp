@@ -41,6 +41,7 @@
 #include <cube/MetadataFilterModel.hpp>
 #include <cube/BrowseController.hpp>
 #include <core/Common.h>
+#include <win32cpp/RedrawLock.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
