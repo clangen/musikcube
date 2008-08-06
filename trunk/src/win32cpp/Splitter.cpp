@@ -38,8 +38,10 @@
 
 #include <pch.hpp>
 #include <win32cpp/Splitter.hpp>
+#include <win32cpp/Frame.hpp>
 #include <win32cpp/RedrawLock.hpp>
 #include <win32cpp/Application.hpp>
+
 
 //////////////////////////////////////////////////////////////////////////////
 

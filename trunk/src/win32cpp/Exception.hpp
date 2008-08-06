@@ -38,7 +38,6 @@
 
 #pragma once
 
-#include <win32cpp/Win32Config.hpp>          // Must be first!
 #include <string>
 
 //////////////////////////////////////////////////////////////////////////////

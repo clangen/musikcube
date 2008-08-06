@@ -39,15 +39,22 @@
 #pragma once
 
 //////////////////////////////////////////////////////////////////////////////
+// Forward declare
+namespace win32cpp{
+    class Splitter;
+    class TabView;
+    class Window;
+    class TopLevelWindow;
+}
+namespace musik { namespace cube {
+    class SourcesController;
+    class TransportController;
+} }
+//////////////////////////////////////////////////////////////////////////////
 
-#include <win32cpp/TopLevelWindow.hpp>
-#include <win32cpp/Button.hpp>
-#include <win32cpp/Types.hpp>    // uichar, uistring
 #include <win32cpp/Timer.hpp>
 
 #include <cube/MainMenuController.hpp>
-#include <cube/SourcesController.hpp>
-#include <cube/TransportController.hpp>
 
 #include <core/LibraryFactory.h>
 
@@ -73,6 +80,8 @@ protected:  TopLevelWindow& mainWindow;
 protected:  Splitter* clientView;
 protected:  SourcesController* sourcesController;
 protected:  TransportController* transportController;
+protected:  TabView* tabView;
+
 protected:  MainMenuController menuController;
 protected:  Timer LibraryCallbackTimer;
 

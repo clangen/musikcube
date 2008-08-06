@@ -39,8 +39,16 @@
 #pragma once
 
 //////////////////////////////////////////////////////////////////////////////
+// Forward declare
+namespace musik { namespace cube {
+    class SettingsView;
+} }
+namespace win32cpp{
+    class Window;
+    class Button;
+}
+//////////////////////////////////////////////////////////////////////////////
 
-#include <cube/SettingsView.hpp>
 #include <cube/settings/SyncPathController.hpp>
 #include <win32cpp/Timer.hpp>
 #include <boost/shared_ptr.hpp>

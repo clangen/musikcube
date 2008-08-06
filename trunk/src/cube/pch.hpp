@@ -48,14 +48,33 @@
 //////////////////////////////////////////////////////////////////////////////
 #pragma warning (disable : 4996 4018 4482)
 
+#include <core/config.h>
+#include <core/LibraryFactory.h>
+#include <core/ITrack.h>
+#include <core/Track.h>
+#include <core/TrackMeta.h>
+#include <core/db/dbconfig.h>
+#include <core/db/CachedStatement.h>
+#include <core/db/Connection.h>
+#include <core/db/ScopedTransaction.h>
+#include <core/db/Statement.h>
+#include <core/Library/Base.h>
+
 #include <boost/shared_ptr.hpp>
-#include <boost/scoped_ptr.hpp>
-#include <boost/weak_ptr.hpp>
-#include <boost/format.hpp>
+#include <sigslot/sigslot.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
-#include <win32cpp/win32cpp.hpp>
+#include <win32cpp/Win32Config.hpp>
+#include <win32cpp/Types.hpp>
+#include <win32cpp/WindowGeometry.hpp>
+#include <win32cpp/Exception.hpp>
+#include <win32cpp/Container.hpp>
+#include <win32cpp/Font.hpp>
+#include <win32cpp/Menu.hpp>
+#include <win32cpp/Window.hpp>
+#include <win32cpp/Application.hpp>
+#include <win32cpp/TopLevelWindow.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 

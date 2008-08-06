@@ -38,6 +38,7 @@
 #include <core/config.h>
 #include <core/xml/Node.h>
 #include <boost/utility.hpp>
+#include <set>
 
 using namespace musik::core::xml;
 //////////////////////////////////////////////////////////////////////////////

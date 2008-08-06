@@ -38,9 +38,13 @@
 
 #include "pch.hpp"
 #include <cube/TracklistController.hpp>
+#include <cube/TracklistView.hpp>
 #include <cube/TracklistModel.hpp>
 #include <cube/TracklistColumn.hpp>
+#include <cube/TracklistInfoView.hpp>
 #include <core/LibraryFactory.h>
+#include <win32cpp/Label.hpp>
+#include <boost/format.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 

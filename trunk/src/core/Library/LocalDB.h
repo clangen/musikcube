@@ -36,13 +36,14 @@
 
 #pragma once
 
+//////////////////////////////////////////////////////////////////////////////
+// Forward declare
 namespace musik{ namespace core{
     namespace Query{
         class Base;
     }
 } }
-
-#include <string>
+//////////////////////////////////////////////////////////////////////////////
 
 #include <core/config.h>
 #include <core/db/Connection.h>
@@ -51,46 +52,52 @@ namespace musik{ namespace core{
 #include <core/Library/Base.h>
 #include <core/Indexer.h>
 
-namespace musik{ namespace core{
-    namespace Library{
+//////////////////////////////////////////////////////////////////////////////
+
+namespace musik{ namespace core{ namespace Library{
+
+//////////////////////////////////////////////////////////////////////////////
+    
+//////////////////////////////////////////
+///\brief
+///Library used for your local music.
+///
+///This library is used for music located
+///on you local computer.
+///
+///\see
+///Indexer
+//////////////////////////////////////////
+class LocalDB : public Library::Base{
+    public:
+        // Methods:
+        LocalDB(void);
+        ~LocalDB(void);
+
+        bool Startup();
+        utfstring GetInfo();
+        musik::core::Indexer *Indexer();
+
+    protected:
+        void CancelCurrentQuery( );
+
+    private:
+        // Methods:
+
+        void ThreadLoop();
+
+    private:
+        // Variables:
+        db::Connection db;
+
         //////////////////////////////////////////
         ///\brief
-        ///Library used for your local music.
-        ///
-        ///This library is used for music located
-        ///on you local computer.
-        ///
-        ///\see
-        ///Indexer
+        ///Indexer that indexes all your tracks.
         //////////////////////////////////////////
-        class LocalDB : public Library::Base{
-            public:
-                // Methods:
-                LocalDB(void);
-                ~LocalDB(void);
+        musik::core::Indexer indexer;
 
-                bool Startup();
-                utfstring GetInfo();
-                musik::core::Indexer *Indexer();
+};
 
-            protected:
-                void CancelCurrentQuery( );
-
-            private:
-                // Methods:
-
-                void ThreadLoop();
-
-            private:
-                // Variables:
-                db::Connection db;
-
-                //////////////////////////////////////////
-                ///\brief
-                ///Indexer that indexes all your tracks.
-                //////////////////////////////////////////
-                musik::core::Indexer indexer;
-
-        };
-    }
-} }
+//////////////////////////////////////////////////////////////////////////////
+} } }   // musik::core::Library
+//////////////////////////////////////////////////////////////////////////////

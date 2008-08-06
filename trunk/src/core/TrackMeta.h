@@ -36,50 +36,61 @@
 
 #pragma once
 
-#include <map>
-#include <boost/utility.hpp>
-#include <core/Library/Base.h>
-
+//////////////////////////////////////////////////////////////////////////////
+// Forwar declare
 namespace musik{ namespace core{
     class Track;
+    namespace Library{
+        class Base;
+    }
 } }
+//////////////////////////////////////////////////////////////////////////////
+
+#include <core/config.h>
+#include <map>
+#include <boost/utility.hpp>
+
+
+//////////////////////////////////////////////////////////////////////////////
 
 namespace musik{ namespace core{
-    class TrackMeta : boost::noncopyable{
-        public:
-            TrackMeta(Library::Base *library);
-            ~TrackMeta(void);
+
+//////////////////////////////////////////////////////////////////////////////
+
+class TrackMeta : boost::noncopyable{
+    public:
+        TrackMeta(Library::Base *library);
+        ~TrackMeta(void);
 
 
-            typedef std::string Key;
-            typedef utfstring Value;
-            typedef std::multimap<Key,Value> TagMap;
-            typedef TagMap::iterator TagMapIterator;
-            typedef TagMap::const_iterator TagMapConstIterator;
-            typedef std::pair<TagMapConstIterator,TagMapConstIterator> TagMapIteratorPair;
-            typedef std::pair<Key,Value> TagMapPair;
+        typedef std::string Key;
+        typedef utfstring Value;
+        typedef std::multimap<Key,Value> TagMap;
+        typedef TagMap::iterator TagMapIterator;
+        typedef TagMap::const_iterator TagMapConstIterator;
+        typedef std::pair<TagMapConstIterator,TagMapConstIterator> TagMapIteratorPair;
+        typedef std::pair<Key,Value> TagMapPair;
 
-//            static const utfstring emptyString;
+    private:
+        friend class Track;
 
+        const utfstring& GetValue(const Key &key) const;
+        TrackMeta::TagMapIteratorPair GetValues(const char* metakey) const;
+        void SetValue(const Key &key,const Value &value);
+        const utfchar* GetValue(const char* metakey) const;
 
+        Library::Base *library;
+        TrackMeta::TagMap tags;
 
-        private:
-            friend class Track;
+        char *thumbnailData;
+        unsigned int thumbnailSize;
+        void SetThumbnail(const char *data,unsigned int size);
 
-            const utfstring& GetValue(const Key &key) const;
-            TrackMeta::TagMapIteratorPair GetValues(const char* metakey) const;
-            void SetValue(const Key &key,const Value &value);
-            const utfchar* GetValue(const char* metakey) const;
+    private:
+        const Value& _GetValue(const Key &key) const;
 
-            Library::Base *library;
-            TrackMeta::TagMap tags;
+};
 
-            char *thumbnailData;
-            unsigned int thumbnailSize;
-            void SetThumbnail(const char *data,unsigned int size);
-
-        private:
-            const Value& _GetValue(const Key &key) const;
-
-    };
-} }
+//////////////////////////////////////////////////////////////////////////////
+} } // musik::core
+//////////////////////////////////////////////////////////////////////////////

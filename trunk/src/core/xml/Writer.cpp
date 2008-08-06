@@ -73,6 +73,10 @@ void Writer::Exit(){
     this->exit  = true;
 }
 
+bool Writer::Exited(){
+    return this->exit;
+}
+
 //////////////////////////////////////////////////////////////////////////////
 void Writer::Send(){
 

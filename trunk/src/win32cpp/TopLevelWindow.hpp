@@ -40,9 +40,7 @@
 
 //////////////////////////////////////////////////////////////////////////////
 
-#include <win32cpp/Win32Config.hpp>          // Must be first!
 #include <win32cpp/Container.hpp>
-#include <win32cpp/Menu.hpp>
 
 namespace win32cpp {
 

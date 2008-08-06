@@ -53,6 +53,7 @@ class Writer : public WriterNode{
     public:
         Writer(boost::asio::ip::tcp::socket *socket);
         ~Writer();
+        bool Exited();
 
     private:
 

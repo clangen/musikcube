@@ -42,7 +42,7 @@
 
 #include <win32cpp/ListView.hpp>
 #include <core/MetadataValue.h>
-#include <core/Query/ListSelection.h>
+//#include <core/Query/ListSelection.h>
 
 //////////////////////////////////////////////////////////////////////////////
 

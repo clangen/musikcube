@@ -39,7 +39,6 @@
 #include <pch.hpp>
 #include <win32cpp/BarLayout.hpp>
 #include <win32cpp/RedrawLock.hpp>
-
 #include <algorithm>
 
 //////////////////////////////////////////////////////////////////////////////

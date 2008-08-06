@@ -38,16 +38,30 @@
 
 #pragma once
 
-#include <set>
-#include <map>
+//////////////////////////////////////////////////////////////////////////////
+// Forward declare
+namespace win32cpp {
+    struct Color;
+}
+//////////////////////////////////////////////////////////////////////////////
 
-#include <win32cpp/Win32Config.hpp>          // Must be first!
-#include <win32cpp/Font.hpp>
-#include <win32cpp/Color.hpp>
-#include <win32cpp/Menu.hpp>
+
+#include <win32cpp/Win32Config.hpp>
 #include <win32cpp/Types.hpp>
 #include <win32cpp/Exception.hpp>
+#include <win32cpp/Font.hpp>
+#include <win32cpp/Menu.hpp>
 
+#include <vector>
+#include <map>
+#include <set>
+#include <boost/scoped_ptr.hpp>
+
+/*
+
+#include <win32cpp/Font.hpp>
+#include <win32cpp/Color.hpp>
+*/
 //////////////////////////////////////////////////////////////////////////////
 
 namespace win32cpp {
@@ -224,11 +238,11 @@ protected: // methods
     // pure virtuals
     virtual HWND        Create(Window* parent = NULL) = 0;
 
-    // management, mouse capture
-    static void         ManageWindow(Window* window);
-    static void         UnManageWindow(Window* window);
-    static bool         IsWindowManaged(Window* window);
-    static Window*      ManagedWindowFromHWND(HWND hwnd);
+    // subclassing, mouse capture
+    static void         SubclassWindowProc(Window* window);
+    static void         UnSubclassWindowProc(Window* window);
+    static bool         IsWindowSubclassed(Window* window);
+    static Window*      SubclassedWindowFromHWND(HWND hwnd);
     static Window*      WindowUnderCursor(HWND* targetHwnd = NULL);
     static void         BeginCapture(Window* window);
     static void         EndCapture(Window* window);

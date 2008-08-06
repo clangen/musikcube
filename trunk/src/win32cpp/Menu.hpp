@@ -38,14 +38,16 @@
 
 #pragma once
 
-#include <sigslot/sigslot.h>
-
-#include <win32cpp/Win32Config.hpp>          // Must be first!
-#include <win32cpp/Types.hpp>
+#include <win32cpp/Win32Config.hpp>
 #include <win32cpp/Exception.hpp>
+#include <win32cpp/Types.hpp>
 
-#include <map>
 #include <vector>
+#include <map>
+#include <boost/utility.hpp>    // noncopyable
+#include <boost/weak_ptr.hpp>
+#include <boost/scoped_ptr.hpp>
+#include <sigslot/sigslot.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -146,7 +148,7 @@ private: // types
     typedef std::vector<MenuItemRef> MenuItemList;
 
 private: // constructors
-    /*ctor*/        MenuItemCollection(Menu& owner);    
+    /*ctor*/        MenuItemCollection(Menu& owner);
 
 public: // methods
     MenuItemRef     Append(MenuItemRef newMenuItem);
@@ -180,14 +182,21 @@ private: // types
     typedef std::map<UINT, MenuItemRef> IDToMenuItemMap;
 
 public: // constructors, destructors
-    /*ctor*/    Menu();
     /*dtor*/    ~Menu();
 
+private: // constructors
+    /*ctor*/    Menu();
+
 public: // methods
+    static MenuRef Create();
+    static MenuRef CreatePopup();
+
     MenuItemCollection& Items() { return (*this->items); }
     HMENU   Handle() { return this->menuHandle; }
 
 protected: // methods
+    void            Initialize(HMENU menu);
+
     static void     ItemActivated(UINT menuID);   // used by Window
     void            OnItemAdded(MenuItemRef newMenuItem, unsigned index);
     void            OnItemRemoved(MenuItemRef oldMenuItem);

@@ -37,6 +37,7 @@
 #include "pch.hpp"
 #include <core/Query/SortTracks.h>
 #include <core/Library/Base.h>
+#include <core/config_format.h>
 
 using namespace musik::core;
 

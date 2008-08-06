@@ -38,8 +38,9 @@
 
 #include <pch.hpp>
 #include <win32cpp/TabView.hpp>
-#include <win32cpp/Application.hpp>
 #include <win32cpp/MemoryDC.hpp>
+#include <win32cpp/Application.hpp>
+#include <win32cpp/Color.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 

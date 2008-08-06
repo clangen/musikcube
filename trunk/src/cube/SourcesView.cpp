@@ -39,7 +39,10 @@
 #include "pch.hpp"
 #include <cube/SourcesView.hpp>
 #include <cube/BrowseView.hpp>
-
+#include <win32cpp/Splitter.hpp>
+#include <win32cpp/Label.hpp>
+#include <win32cpp/RedrawLock.hpp>
+ 
 //////////////////////////////////////////////////////////////////////////////
 
 using namespace musik::cube;

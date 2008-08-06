@@ -38,7 +38,7 @@
 
 #include <pch.hpp>
 #include <win32cpp/Font.hpp>
-
+#include <boost/scoped_ptr.hpp>
 //////////////////////////////////////////////////////////////////////////////
 
 using namespace win32cpp;

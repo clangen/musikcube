@@ -42,8 +42,11 @@
 
 #include "pch.hpp"
 #include <cube/SourcesModel.hpp>
+#include <cube/TracklistView.hpp>
+#include <cube/TracklistController.hpp>
 
 #include <core/PlaybackQueue.h>
+#include <win32cpp/Label.hpp>
 
 using namespace musik::cube;
 

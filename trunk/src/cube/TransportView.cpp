@@ -38,6 +38,11 @@
 
 #include "pch.hpp"
 #include <cube/TransportView.hpp>
+#include <win32cpp/LinearLayout.hpp>
+#include <win32cpp/Label.hpp>
+#include <win32cpp/Button.hpp>
+#include <win32cpp/Trackbar.hpp>
+
 
 //////////////////////////////////////////////////////////////////////////////
 

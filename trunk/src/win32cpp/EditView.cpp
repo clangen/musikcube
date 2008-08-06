@@ -37,7 +37,6 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <pch.hpp>
-#include <win32cpp/Win32Config.hpp>
 #include <win32cpp/EditView.hpp>
 #include <win32cpp/Application.hpp>
 

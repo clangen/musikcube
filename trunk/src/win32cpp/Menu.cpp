@@ -40,8 +40,6 @@
 #include <win32cpp/Menu.hpp>
 #include <win32cpp/Win32Exception.hpp>
 
-#include <boost/scoped_array.hpp>
-
 //////////////////////////////////////////////////////////////////////////////
 
 using namespace win32cpp;
@@ -55,8 +53,33 @@ Menu::IDToMenuItemMap Menu::sIDToMenuItemRef;
 /*ctor*/    Menu::Menu()
 : menuHandle(NULL)
 {
+}
+
+/*dtor*/    Menu::~Menu()
+{
+    ::DestroyMenu(this->menuHandle);
+}
+
+MenuRef     Menu::Create()
+{
+    MenuRef menu(new Menu());
+    menu->Initialize(::CreateMenu());
+
+    return menu;
+}
+
+MenuRef     Menu::CreatePopup()
+{
+    MenuRef menu(new Menu());
+    menu->Initialize(::CreatePopupMenu());
+
+    return menu;
+}
+
+void        Menu::Initialize(HMENU menuHandle)
+{
     this->items.reset(new MenuItemCollection(*this));
-    this->menuHandle = ::CreateMenu();
+    this->menuHandle = menuHandle;
 
     if ( ! this->menuHandle)
     {
@@ -65,11 +88,6 @@ Menu::IDToMenuItemMap Menu::sIDToMenuItemRef;
 
     this->items->ItemAdded.connect(this, &Menu::OnItemAdded);
     this->items->ItemRemoved.connect(this, &Menu::OnItemRemoved);
-}
-
-/*dtor*/    Menu::~Menu()
-{
-    ::DestroyMenu(this->menuHandle);
 }
 
 void        Menu::OnItemAdded(MenuItemRef newMenuItem, unsigned index)

@@ -38,10 +38,20 @@
 
 #pragma once
 
-#include <win32cpp/ListView.hpp>
-#include <cube/TracklistView.hpp>
-
+//////////////////////////////////////////////////////////////////////////////
+// Forward declare
+namespace win32cpp{
+    class ListView;
+    class Splitter;
+    class BarLayout;
+}
+namespace musik{ namespace cube{
+    class TracklistView;
+} }
+//////////////////////////////////////////////////////////////////////////////
+#include <win32cpp/Frame.hpp>
 #include <vector>
+#include <map>
 
 //////////////////////////////////////////////////////////////////////////////
 

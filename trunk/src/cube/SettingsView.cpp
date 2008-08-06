@@ -38,6 +38,11 @@
 
 #include "pch.hpp"
 #include <cube/SettingsView.hpp>
+#include <win32cpp/LinearLayout.hpp>
+#include <win32cpp/Button.hpp>
+#include <win32cpp/ListView.hpp>
+#include <win32cpp/Label.hpp>
+
 
 //////////////////////////////////////////////////////////////////////////////
 

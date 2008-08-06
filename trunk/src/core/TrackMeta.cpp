@@ -38,6 +38,7 @@
 
 #include <core/TrackMeta.h>
 #include <core/ThreadHelper.h>
+#include <core/Library/Base.h>
 
 using namespace musik::core;
 

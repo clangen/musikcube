@@ -39,6 +39,8 @@
 #include <pch.hpp>
 #include <win32cpp/Utility.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/scoped_array.hpp>
+#include <boost/scoped_ptr.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -51,36 +53,36 @@ uistring win32cpp::Escape(uistring string){
     return string;
 }
 
-uistring win32cpp::WidenString(const char* str)
+uistring win32cpp::WidenString(const char* sourceBuffer)
 {
-    uistring tstr;
-    int len = (int)strlen(str) + 1;
+    int length = (int) strlen(sourceBuffer) + 1;
+    size_t convertedChars = 0;
+    boost::scoped_array<uichar> targetBuffer(new uichar[length]);
 
-    uichar* t = new uichar[len];
-    if (t == NULL) throw std::bad_alloc();
+    mbstowcs_s(
+        &convertedChars,
+        targetBuffer.get(),
+        length,
+        sourceBuffer,
+        length);
 
-    mbstowcs(t, str, len);
-    tstr = t;
-    
-    delete[] t;
-
-    return tstr;
+    return uistring(targetBuffer.get());
 }
 
-std::string win32cpp::ShrinkString(const uistring& str)
+std::string win32cpp::ShrinkString(const uistring& sourceString)
 {
-    std::string cstr;
-    int len = (int)str.length() + 1;
+    int length = (int) sourceString.length() + 1;
+    boost::scoped_ptr<char> targetBuffer(new char[length]);
+    size_t convertedChars = 0;
 
-    char* t = new char[len];
-    if (t == NULL) throw std::bad_alloc();
+    wcstombs_s(
+        &convertedChars,
+        targetBuffer.get(),
+        length,
+        sourceString.c_str(),
+        length);
 
-    wcstombs(t, str.c_str(), len);
-    cstr = t;
-
-    delete[] t;
-
-    return cstr;
+    return std::string(targetBuffer.get());
 }
 
 int win32cpp::HexToInt(const uichar* value)
@@ -90,6 +92,7 @@ int win32cpp::HexToInt(const uichar* value)
         TCHAR chr;
         int value;
     };
+
     const int HexMapL = 16;
     CHexMap HexMap[HexMapL] =
     {
@@ -102,7 +105,10 @@ int win32cpp::HexToInt(const uichar* value)
         {'C', 12}, {'D', 13},
         {'E', 14}, {'F', 15}
     };
-    TCHAR *mstr = _tcsupr(_tcsdup(value));
+
+    size_t length = _tcslen(value) + 1;
+    TCHAR *mstr = _tcsdup(value);
+    _tcsupr_s(mstr, length);
     TCHAR *s = mstr;
     int result = 0;
     if (*s == '0' && *(s + 1) == 'X') s += 2;

@@ -40,10 +40,10 @@
 
 //////////////////////////////////////////////////////////////////////////////
 
-#include <win32cpp/Win32Config.hpp>          // Must be first!
+//#include <win32cpp/Win32Config.hpp>          // Must be first!
 
-#include <win32cpp/Application.hpp>
-#include <win32cpp/BarLayout.hpp>
+//#include <win32cpp/Application.hpp>
+/*#include <win32cpp/BarLayout.hpp>
 #include <win32cpp/Button.hpp>
 #include <win32cpp/Color.hpp>
 #include <win32cpp/Config.hpp>
@@ -61,15 +61,16 @@
 #include <win32cpp/MemoryDC.hpp>
 #include <win32cpp/Menu.hpp>
 #include <win32cpp/Panel.hpp>
-#include <win32cpp/RedrawLock.hpp>
 #include <win32cpp/Trackbar.hpp>
 #include <win32cpp/Splitter.hpp>
 #include <win32cpp/TabView.hpp>
-#include <win32cpp/TopLevelWindow.hpp>
+#include <win32cpp/TopLevelWindow.hpp>*/
+/*
+#include <win32cpp/RedrawLock.hpp>
 #include <win32cpp/Types.hpp>
 #include <win32cpp/Utility.hpp>
 #include <win32cpp/Window.hpp>
-
+*/
 //////////////////////////////////////////////////////////////////////////////
 
 ///\brief

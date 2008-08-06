@@ -36,27 +36,30 @@
 
 #pragma once
 
-#include <core/config.h>
-#include <core/db/Connection.h>
-#include <core/db/Statement.h>
-#include <core/xml/ParserNode.h>
-#include <core/xml/WriterNode.h>
-
-#include <boost/shared_ptr.hpp>
-#include <boost/thread/mutex.hpp>
-#include <string>
-
 //////////////////////////////////////////////////////////////////////////////
 // forward declare
 namespace musik{ namespace core{
+    namespace db{
+        class Connection;
+    }
     namespace Library{
         class Base;
         class LocalDB;
+        class Remote;
     }
     namespace server{
         class Connection;
     }
 } }
+//////////////////////////////////////////////////////////////////////////////
+
+#include <core/config.h>
+#include <sigslot/sigslot.h>
+#include <boost/shared_ptr.hpp>
+
+#include <core/xml/ParserNode.h>
+#include <core/xml/WriterNode.h>
+
 //////////////////////////////////////////////////////////////////////////////
 
 namespace musik{ namespace core{ namespace Query{
@@ -85,6 +88,7 @@ class Base : public sigslot::has_slots<> {
 
     protected:
         friend class Library::Base;
+        friend class Library::Remote;
         friend class Library::LocalDB;
         friend class server::Connection;
 

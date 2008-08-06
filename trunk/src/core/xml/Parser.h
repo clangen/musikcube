@@ -36,23 +36,29 @@
 #pragma once
 
 #include <core/config.h>
-#include <expat/expat.h>
 #include <sigslot/sigslot.h>
-#include <string>
+
 #include <vector>
 #include <set>
-#include <boost/asio.hpp>
 #include <boost/array.hpp>
+#include <boost/asio.hpp>
 
 #include <core/xml/Node.h>
 #include <core/xml/ParserNode.h>
 
 //////////////////////////////////////////////////////////////////////////////
+// Forward
+typedef struct XML_ParserStruct *XML_Parser;
+
+
+namespace musik{ namespace core{ namespace xml{
+    // Forward
+    class ParserNode;
+} } }
+//////////////////////////////////////////////////////////////////////////////
 
 namespace musik{ namespace core{ namespace xml{
 
-// Forward
-class ParserNode;
 //////////////////////////////////////////////////////////////////////////////
 
 class Parser : public ParserNode{

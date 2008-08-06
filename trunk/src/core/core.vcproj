@@ -151,10 +151,6 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\ITrack.h"
-				>
-			</File>
-			<File
 				RelativePath=".\pch.cpp"
 				>
 				<FileConfiguration
@@ -199,6 +195,14 @@
 				</File>
 				<File
 					RelativePath=".\config.h"
+					>
+				</File>
+				<File
+					RelativePath=".\config_filesystem.h"
+					>
+				</File>
+				<File
+					RelativePath=".\config_format.h"
 					>
 				</File>
 				<File
@@ -370,6 +374,14 @@
 						RelativePath=".\Library\LocalDB.h"
 						>
 					</File>
+					<File
+						RelativePath=".\Library\Remote.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Library\Remote.h"
+						>
+					</File>
 				</Filter>
 				<Filter
 					Name="db"
@@ -415,6 +427,10 @@
 			<Filter
 				Name="metadata"
 				>
+				<File
+					RelativePath=".\ITrack.h"
+					>
+				</File>
 				<File
 					RelativePath=".\MetadataValue.cpp"
 					>

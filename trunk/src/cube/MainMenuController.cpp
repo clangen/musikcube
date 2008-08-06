@@ -38,6 +38,9 @@
 
 #include "pch.hpp"
 #include <cube/MainMenuController.hpp>
+#include <win32cpp/Application.hpp>
+#include <win32cpp/TopLevelWindow.hpp>
+#include <boost/format.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -110,7 +113,7 @@ void        MainMenuController::OnHelpAbout(MenuItemRef menuItem)
 MenuRef     MainMenuController::CreateMenu()
 {
     // main menu
-    this->mainMenu.reset(new Menu());
+    this->mainMenu  = Menu::Create();
     MenuItemCollection& mainItems = this->mainMenu->Items();
     //
     this->file = mainItems.Append(MenuItem::Create(_T("&File")));
@@ -120,14 +123,14 @@ MenuRef     MainMenuController::CreateMenu()
     this->help = mainItems.Append(MenuItem::Create(_T("&Help")));
 
         // file menu
-        this->fileMenu.reset(new Menu());
+        this->fileMenu  = Menu::Create();
         MenuItemCollection& fileItems = this->fileMenu->Items();
         //
         this->file->SetSubMenu(this->fileMenu);
         this->fileExit = fileItems.Append(MenuItem::Create(_T("E&xit")));
 
         // help menu
-        this->helpMenu.reset(new Menu());
+        this->helpMenu  = Menu::Create();
         MenuItemCollection& helpItems = this->helpMenu->Items();
         //
         this->help->SetSubMenu(this->helpMenu);
