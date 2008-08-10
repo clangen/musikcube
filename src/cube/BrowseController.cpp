@@ -41,6 +41,7 @@
 #include <cube/BrowseView.hpp>
 #include <cube/TracklistController.hpp>
 #include <core/LibraryFactory.h>
+#include <core/tracklist/Standard.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -48,9 +49,10 @@ using namespace musik::cube;
 
 //////////////////////////////////////////////////////////////////////////////
 
-/*ctor*/    BrowseController::BrowseController(BrowseView& view)
+/*ctor*/    BrowseController::BrowseController(BrowseView& view,musik::core::LibraryPtr library)
 : view(view)
 , tracklistController(NULL)
+, library(library)
 {
     view.Handle()
         ? this->OnViewCreated(&view)
@@ -64,7 +66,12 @@ using namespace musik::cube;
 
 void        BrowseController::OnViewCreated(Window* window)
 {
-    this->tracklistController = new TracklistController(*this->view.tracklistView,&this->selectionQuery);
+
+	// Create a tracklist, connected to current library
+	musik::core::tracklist::Ptr browseTrackList(new musik::core::tracklist::Standard());
+	browseTrackList->SetLibrary(this->library);
+
+    this->tracklistController = new TracklistController(*this->view.tracklistView,&this->selectionQuery,browseTrackList);
 
     // create all the metadata filter controllers
     typedef BrowseView::FilterViewList FilterViewList;
@@ -89,6 +96,6 @@ void        BrowseController::OnViewCreated(Window* window)
 }
 
 void BrowseController::SendQuery(){
-    musik::core::LibraryFactory::GetCurrentLibrary()->AddQuery(this->selectionQuery,musik::core::Query::CancelSimilar);
+	this->library->AddQuery(this->selectionQuery,musik::core::Query::CancelSimilar);
 }
 

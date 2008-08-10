@@ -53,7 +53,9 @@ using namespace musik::core;
 ///\see
 ///Startup
 //////////////////////////////////////////
-Library::LocalDB::LocalDB(void){
+Library::LocalDB::LocalDB(utfstring identifier)
+ :Base(identifier)
+{
 }
 
 Library::LocalDB::~LocalDB(void){

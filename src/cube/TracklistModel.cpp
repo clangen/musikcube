@@ -49,6 +49,7 @@
 #include <core/LibraryFactory.h>
 #include <core/PlaybackQueue.h>
 #include <core/MetaKey.h>
+#include <core/tracklist/Standard.h>
 
 
 
@@ -56,19 +57,16 @@ using namespace musik::cube;
 
 //////////////////////////////////////////////////////////////////////////////
 
-/*ctor*/        TracklistModel::TracklistModel(musik::core::Query::ListBase *connectedQuery,musik::core::tracklist::Standard::Ptr setTracklist)
+/*ctor*/        TracklistModel::TracklistModel(musik::core::Query::ListBase *connectedQuery,musik::core::tracklist::Ptr setTracklist)
 {
-    if(setTracklist){
-        this->tracklist = setTracklist;
-    }else{
-        this->tracklist.reset( new musik::core::tracklist::Standard() );
-    }
+
+	this->tracklist = setTracklist;
 
     this->SetRowCount(0);
 
     this->tracklist->TracksUpdated.connect(this,&TracklistModel::OnTracks);
     this->tracklist->TrackMetaUpdated.connect(this,&TracklistModel::OnTrackMeta);
-    this->tracklist->SetLibrary(musik::core::LibraryFactory::GetCurrentLibrary());
+//    this->tracklist->SetLibrary(musik::core::LibraryFactory::GetCurrentLibrary());
 
     this->ConnectToQuery(connectedQuery);
 }
@@ -125,7 +123,7 @@ void TracklistModel::OnTracks(bool cleared){
 
 void TracklistModel::OnRowActivated(int row){
     this->tracklist->SetCurrentPosition(row);
-    musik::core::PlaybackQueue::Instance().Play(*this->tracklist);
+    musik::core::PlaybackQueue::Instance().Play(this->tracklist);
 }
 
 void TracklistModel::ConnectToQuery(musik::core::Query::ListBase *connectedQuery){

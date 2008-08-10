@@ -36,35 +36,87 @@
 #include "pch.hpp"
 #include <core/LibraryFactory.h>
 #include <core/Library/LocalDB.h>
+#include <core/Library/Remote.h>
+#include <core/db/Connection.h>
+#include <core/Common.h>
 
 using namespace musik::core;
 
 LibraryFactory LibraryFactory::sInstance;
 
-LibraryFactory::LibraryFactory(void) : currentPosition(0){
-    // The first library should always be a localDB
-    LibraryPtr localLibrary(new musik::core::Library::LocalDB());
-    localLibrary->Startup();
-    this->libraries.push_back(localLibrary);
+LibraryFactory::LibraryFactory(void){
+	// Connect to the settings.db
+	utfstring dataDir   = GetDataDirectory();
+    utfstring dbFile    = GetDataDirectory() + UTF("settings.db");
+	musik::core::db::Connection db;
+    db.Open(dbFile.c_str(),0,128);
+
+	// Start by initializing the db
+    db.Execute("CREATE TABLE IF NOT EXISTS libraries ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "name TEXT,"
+            "type INTEGER DEFAULT 0)");
+    db.Execute("CREATE UNIQUE INDEX IF NOT EXISTS library_index ON libraries (name)");
+
+	// Get the libraries
+	db::Statement stmtGetLibs("SELECT name,type FROM libraries ORDER BY id",db);
+
+	while(stmtGetLibs.Step()==db::Row){
+		this->AddLibrary( stmtGetLibs.ColumnTextUTF(0),stmtGetLibs.ColumnInt(1) );
+	}
+
+	// If there are no libraries, add a LocalDB
+	if(this->libraries.empty()){
+		this->CreateLibrary(UTF("Local Library"),Types::LocalDB);
+	}
+
 }
 
 LibraryFactory::~LibraryFactory(void){
 }
 
+void LibraryFactory::AddLibrary(utfstring name,int type){
+	LibraryPtr lib;
+	switch(type){
+		case Types::Remote:
+			lib.reset(new Library::Remote(name));
+			break;
+		default:
+			lib.reset(new Library::LocalDB(name));
+	}
 
-LibraryPtr LibraryFactory::GetCurrentLibrary(){
-    return Instance().GetLibrary(sInstance.currentPosition);
+	if(lib){
+		this->libraries.push_back(lib);
+
+		// Start the library
+		lib->Startup();
+	}
 }
 
-LibraryFactory::LibraryChangeEvent& LibraryFactory::OnLibraryChange(){
-    return Instance().OnLibraryChangeSignal;
+void LibraryFactory::RemoveLibrary(utfstring name){
 }
 
-LibraryPtr LibraryFactory::GetLibrary(int position){
-    if(position>=0 && position<this->libraries.size()){
-        return this->libraries[position];
-    }
-    return LibraryPtr();
+bool LibraryFactory::CreateLibrary(utfstring name,int type){
+	// Connect to the settings.db
+	utfstring dataDir   = GetDataDirectory();
+    utfstring dbFile    = GetDataDirectory() + UTF("settings.db");
+	musik::core::db::Connection db;
+    db.Open(dbFile.c_str(),0,128);
+
+	db::Statement stmtInsert("INSERT OR FAIL INTO libraries (name,type) VALUES (?,?)",db);
+	stmtInsert.BindTextUTF(0,name);
+	stmtInsert.BindInt(1,type);
+	if(stmtInsert.Step()==db::Done){
+		this->AddLibrary(name,type);
+		return true;
+	}
+	return false;
 }
 
+void LibraryFactory::DeleteLibrary(utfstring name){
+}
+
+LibraryFactory::LibraryVector& LibraryFactory::Libraries(){
+	return LibraryFactory::sInstance.libraries;
+}
 

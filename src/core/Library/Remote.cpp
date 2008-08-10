@@ -57,8 +57,9 @@ using namespace musik::core;
 ///\see
 ///Startup
 //////////////////////////////////////////
-Library::Remote::Remote(void)
-:socket(ioService)
+Library::Remote::Remote(utfstring identifier)
+ :Base(identifier)
+ ,socket(ioService)
 {
 }
 

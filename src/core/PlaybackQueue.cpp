@@ -50,11 +50,10 @@ PlaybackQueue PlaybackQueue::sInstance;
 ///
 ///Will connect the appropiate signals in the transport
 //////////////////////////////////////////
-PlaybackQueue::PlaybackQueue(void) :
-    nowPlaying( new musik::core::tracklist::Standard() ),
-    signalDisabled(false),
-    playing(false),
-    paused(false)
+PlaybackQueue::PlaybackQueue(void) 
+ :signalDisabled(false)
+ ,playing(false)
+ ,paused(false)
 {
     this->transport.EventMixpointReached.connect(this,&PlaybackQueue::OnPlaybackEndOrFail);
 }
@@ -85,7 +84,7 @@ void PlaybackQueue::OnPlaybackEndOrFail(){
 ///\brief
 ///Return a shared_ptr to the now playing tracklist
 //////////////////////////////////////////
-tracklist::Standard::Ptr PlaybackQueue::NowPlayingTracklist(){
+tracklist::Ptr PlaybackQueue::NowPlayingTracklist(){
     return this->nowPlaying;
 }
 
@@ -138,10 +137,12 @@ void PlaybackQueue::Resume()
 ///Start playing the next track.
 //////////////////////////////////////////
 void PlaybackQueue::Next(){
-    musik::core::TrackPtr track( this->nowPlaying->NextTrack() );
+	if(this->nowPlaying){
+		musik::core::TrackPtr track( this->nowPlaying->NextTrack() );
 
-    this->SetCurrentTrack(track);
-    this->Play();
+		this->SetCurrentTrack(track);
+		this->Play();
+	}
 }
 
 //////////////////////////////////////////
@@ -149,11 +150,12 @@ void PlaybackQueue::Next(){
 ///Start playing the previous track.
 //////////////////////////////////////////
 void PlaybackQueue::Previous(){
-    musik::core::TrackPtr track( this->nowPlaying->PreviousTrack() );
+	if(this->nowPlaying){
+		musik::core::TrackPtr track( this->nowPlaying->PreviousTrack() );
 
-    this->SetCurrentTrack(track);
-    this->Play();
-
+		this->SetCurrentTrack(track);
+		this->Play();
+	}
 }
 
 //////////////////////////////////////////
@@ -174,16 +176,19 @@ void PlaybackQueue::Stop(){
 ///Return the current running track
 //////////////////////////////////////////
 TrackPtr PlaybackQueue::CurrentTrack(){
-    if (this->nowPlaying->Size() <= 0)
-    {
-        return TrackPtr();
-    }
+	if(this->nowPlaying){
+		if (this->nowPlaying->Size() <= 0)
+		{
+			return TrackPtr();
+		}
 
-    if(!this->currentTrack){
-        // If the current track is empty, get a track from the nowPlaying tracklist
-        this->SetCurrentTrack( this->nowPlaying->CurrentTrack() );
-    }
-    return this->currentTrack;
+		if(!this->currentTrack){
+			// If the current track is empty, get a track from the nowPlaying tracklist
+			this->SetCurrentTrack( this->nowPlaying->CurrentTrack() );
+		}
+		return this->currentTrack;
+	}
+	return TrackPtr();
 }
 
 //////////////////////////////////////////
@@ -221,8 +226,12 @@ void PlaybackQueue::SetCurrentTrack(TrackPtr track){
 ///\param tracklist
 ///Tracklist that should be copied to now playing
 //////////////////////////////////////////
-void PlaybackQueue::Play(tracklist::IRandomAccess &tracklist){
-    this->currentTrack.reset();
+void PlaybackQueue::Play(tracklist::Ptr tracklist){
+
+	// Set the "now playing" to libraries own playlist
+	this->nowPlaying	= tracklist->Library()->NowPlaying();
+
+	this->currentTrack.reset();
     this->nowPlaying->CopyTracks(tracklist);
     this->Play();
 }

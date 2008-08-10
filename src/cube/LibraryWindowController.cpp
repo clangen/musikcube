@@ -36,61 +36,81 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
-//////////////////////////////////////////////////////////////////////////////
-// Forward declare
-namespace win32cpp{
-    class Splitter;
-    class TabView;
-    class Window;
-    class TopLevelWindow;
-}
-namespace musik { namespace cube {
-    class SourcesController;
-    class TransportController;
-    class LibraryWindowController;
-} }
-//////////////////////////////////////////////////////////////////////////////
-
-#include <win32cpp/Timer.hpp>
-
-#include <cube/MainMenuController.hpp>
+#include "pch.hpp"
+#include <cube/LibraryWindowController.hpp>
+#include <cube/LibraryWindowView.hpp>
+#include <cube/SourcesView.hpp>
 
 #include <core/LibraryFactory.h>
+#include <core/Pluginfactory.h>
 
-#include <vector>
+#include <win32cpp/Types.hpp>    // uichar, uistring
+#include <win32cpp/TopLevelWindow.hpp>
+#include <win32cpp/Splitter.hpp>
+#include <win32cpp/TabView.hpp>
+#include <win32cpp/RedrawLock.hpp>
+ 
+//////////////////////////////////////////////////////////////////////////////
+
+using namespace musik::cube;
 
 //////////////////////////////////////////////////////////////////////////////
 
-using namespace win32cpp;
-
-namespace musik { namespace cube {
-
-//////////////////////////////////////////////////////////////////////////////
-
-class MainWindowController : public EventHandler
+/*ctor*/    LibraryWindowController::LibraryWindowController(LibraryWindowView& view)
+: view(view)
 {
-public:     /*ctor*/    MainWindowController(TopLevelWindow& mainWindow);
-public:     /*dtor*/    ~MainWindowController();
+    musik::core::PluginFactory::Instance();
 
-protected:  void        OnMainWindowCreated(Window* window);
-protected:  void        OnResize(Window* window, Size size);
+    this->view.Handle()
+        ? this->OnViewCreated(&view)
+        : this->view.Created.connect(this, &LibraryWindowController::OnViewCreated);
 
-protected:  TopLevelWindow& mainWindow;
-protected:  Splitter* clientView;
-protected:  LibraryWindowController* libraryController;
-protected:  TransportController* transportController;
+}
 
-protected:  MainMenuController menuController;
-/*protected:  Timer LibraryCallbackTimer;
+LibraryWindowController::~LibraryWindowController()
+{
+}
 
-protected:  void QueryQueueStart();
-protected:  void QueryQueueEnd();
-protected:  void QueryQueueLoop();
+void        LibraryWindowController::OnViewCreated(Window* window)
+{
+
+	using namespace musik::core;
+	// Get libraries from LibraryFactory
+	LibraryFactory::LibraryVector& libraries	= LibraryFactory::Libraries();
+
+	// Loop through the libraries
+	for(LibraryFactory::LibraryVector::iterator library=libraries.begin();library!=libraries.end();++library){
+
+		SourcesView* sourcesView = new SourcesView();
+		this->libraries.push_back(SourcesControllerPtr(new SourcesController(*sourcesView,*library)));
+		this->view.AddTab( (*library)->Identifier() ,sourcesView);
+
+	}
+
+
+	// create sources view/controller
+/*
+
 */
-};
 
-//////////////////////////////////////////////////////////////////////////////
+}
 
-} }     // musik::cube
+void        LibraryWindowController::OnResize(Window* window, Size size)
+{
+    RedrawLock redrawLock(&this->view);
+//    this->clientView->Resize(this->mainWindow.ClientSize());
+}
+/*
+void LibraryWindowController::QueryQueueStart(){
+    this->LibraryCallbackTimer.ConnectToWindow(&this->mainWindow);
+    this->LibraryCallbackTimer.Start();
+}
+
+void LibraryWindowController::QueryQueueEnd(){
+    this->LibraryCallbackTimer.Stop();
+}
+
+void LibraryWindowController::QueryQueueLoop(){
+    musik::core::LibraryFactory::GetCurrentLibrary()->RunCallbacks();
+}
+*/

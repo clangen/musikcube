@@ -89,7 +89,7 @@ void SyncPathController::OnResized(Window* window, Size size)
 void SyncPathController::RemoveSelectedPaths(){
 
     SyncPathModel* model    = (SyncPathModel*)this->model.get();
-    musik::core::Indexer *indexer   = musik::core::LibraryFactory::GetCurrentLibrary()->Indexer();
+	musik::core::Indexer *indexer   = this->settingsController->library->Indexer();
     if(indexer && model){
 
         win32cpp::ListView::RowIndexList selectedRows(this->listView.SelectedRows());

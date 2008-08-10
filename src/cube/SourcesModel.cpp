@@ -85,8 +85,8 @@ private: Label view;
 
 class BrowseItem: public SourcesItem
 {
-private:    /*ctor*/ BrowseItem()
-            : controller(view)
+private:    /*ctor*/ BrowseItem(musik::core::LibraryPtr library)
+            : controller(view,library)
             {
 
             }
@@ -95,9 +95,9 @@ public:     /*dtor*/ ~BrowseItem()
             {
             }
 
-public:     static SourcesItemRef Create()
+public:     static SourcesItemRef Create(musik::core::LibraryPtr library)
             {
-                return SourcesItemRef(new BrowseItem());
+                return SourcesItemRef(new BrowseItem(library));
             }
 
 public:     virtual uistring Caption() { return _T("Browse"); }
@@ -114,8 +114,10 @@ private:    BrowseController controller;
 
 class NowPlayingItem: public SourcesItem
 {
-private:    /*ctor*/ NowPlayingItem()
-                : controller(view,NULL,musik::core::PlaybackQueue::Instance().NowPlayingTracklist())
+private:    
+
+			/*ctor*/ NowPlayingItem(musik::core::LibraryPtr library)
+				: controller(view,NULL,library->NowPlaying())
             {
             }
 
@@ -123,9 +125,9 @@ public:     /*dtor*/ ~NowPlayingItem()
             {
             }
 
-public:     static SourcesItemRef Create()
+public:     static SourcesItemRef Create(musik::core::LibraryPtr library)
             {
-                return SourcesItemRef(new NowPlayingItem());
+                return SourcesItemRef(new NowPlayingItem(library));
             }
 
 public:     virtual uistring Caption() { return _T("Now Playing"); }
@@ -145,8 +147,8 @@ private:    TracklistController controller;
 
 class SettingsItem: public SourcesItem
 {
-private:    /*ctor*/ SettingsItem()
-                : controller(view)
+private:    /*ctor*/ SettingsItem(musik::core::LibraryPtr library)
+                : controller(view,library)
             {
             }
 
@@ -154,9 +156,9 @@ public:     /*dtor*/ ~SettingsItem()
             {
             }
 
-public:     static SourcesItemRef Create()
+public:     static SourcesItemRef Create(musik::core::LibraryPtr library)
             {
-                return SourcesItemRef(new SettingsItem());
+                return SourcesItemRef(new SettingsItem(library));
             }
 
 public:     virtual uistring Caption() { return _T("Settings"); }
@@ -174,16 +176,17 @@ private:    SettingsController controller;
 typedef SourcesListModel::Category Category;
 typedef SourcesListModel::CategoryRef CategoryRef;
 
-/*ctor*/        SourcesModel::SourcesModel()
+/*ctor*/        SourcesModel::SourcesModel(musik::core::LibraryPtr library)
+: library(library)
 {
 }
 
 void            SourcesModel::Load()
 {
     CategoryRef viewCategory(new Category(_T("View")));
-    viewCategory->Add(BrowseItem::Create());
-    viewCategory->Add(NowPlayingItem::Create());
-    viewCategory->Add(SettingsItem::Create());
+    viewCategory->Add(BrowseItem::Create(this->library));
+    viewCategory->Add(NowPlayingItem::Create(this->library));
+    viewCategory->Add(SettingsItem::Create(this->library));
     this->AddCategory(viewCategory);
 
     CategoryRef playlistCategory(new Category(_T("Playlists")));

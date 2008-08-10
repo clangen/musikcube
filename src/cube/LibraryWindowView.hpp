@@ -40,71 +40,46 @@
 
 //////////////////////////////////////////////////////////////////////////////
 // Forward declare
-namespace musik { namespace cube {
-    class SourcesView;
-} }
+namespace win32cpp{
+    class Splitter;
+}
+namespace musik{ namespace cube{
+    class LibraryWindowController;
+}}
 //////////////////////////////////////////////////////////////////////////////
 
-#include <cube/SourcesModel.hpp>
-#include <core/Library/Base.h>
-#include <win32cpp/Timer.hpp>
+#include <win32cpp/TabView.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
-
-namespace musik { namespace cube {
 
 using namespace win32cpp;
 
-//////////////////////////////////////////////////////////////////////////////
-// SourcesController
+namespace musik { namespace cube {
+
 //////////////////////////////////////////////////////////////////////////////
 
-class SourcesController: public EventHandler
+class LibraryWindowView: public TabView
 {
-private:    
-	typedef ListView::ColumnRef ColumnRef;
-	typedef SourcesModel::CategoryRef CategoryRef;
-	typedef SourcesModel::ItemRef ItemRef;
+public:     friend class LibraryWindowController;
 
-	class ListController;
+public:     /*ctor*/        LibraryWindowView();
+public:     /*dtor*/        ~LibraryWindowView();
 
-public:     
-	/*ctor*/    SourcesController(SourcesView& sourcesView,musik::core::LibraryPtr library);
-	musik::core::LibraryPtr library;
+            /*
+protected:  void            SetView(Window* newView);   // used by SourcesController
 
-private:    
-	void        OnViewCreated(Window* window);
-	void        OnActiveItemChanged(ItemRef newItem);
-	void        OnModelCategoryAdded(CategoryRef category);
-	void        OnModelCategoryRemoved(CategoryRef category);
+protected:  void            OnListViewCreated(Window* window);
+protected:  void            OnListViewResized(Window* window, Size size);
+protected:  void            OnListViewThemeChanged(Window* window);
+protected:  void            OnListViewHotRowChanged(ListView* listView, int rowIndex);
+protected:  void            UpdateListViewBkgndColor();
+protected:  virtual void    OnCreated();
 
-protected:  
-	SourcesView& view;
-	SourcesModel model;
-	boost::scoped_ptr<ListController> listController;
-
-	Timer LibraryCallbackTimer;
-	void QueryQueueStart();
-	void QueryQueueEnd();
-	void QueryQueueLoop();
-};
-
-//////////////////////////////////////////////////////////////////////////////
-// SourcesController::ListController
-//////////////////////////////////////////////////////////////////////////////
-
-class SourcesController::ListController: public EventHandler
-{
-private:    typedef boost::shared_ptr<SourcesListModel> ListModelRef;
-
-public:     /*ctor*/        ListController(ListView& listView);
-public:     ListModelRef    Model() { return this->sourcesListModel; }
-
-private:    void            OnListCreated(Window* window);
-private:    void            OnListSelectionChanged(ListView* listView);
-
-private:    ListView& listView;
-private:    ListModelRef sourcesListModel;
+protected:  ListView* listView;
+protected:  ListView::ColumnRef mainColumn;
+protected:  int lastHotRowIndex;
+protected:  Window* defaultView;
+protected:  Splitter* splitter;*/
 };
 
 //////////////////////////////////////////////////////////////////////////////

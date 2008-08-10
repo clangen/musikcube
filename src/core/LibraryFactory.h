@@ -50,24 +50,28 @@ class LibraryFactory{
         static LibraryFactory sInstance;
     public:
 
-        typedef sigslot::signal1<LibraryPtr> LibraryChangeEvent;
+		enum Types:int{
+			LocalDB=1,
+			Remote=2
+		};
+
+		typedef std::vector<LibraryPtr> LibraryVector;
 
         static LibraryFactory& Instance(){ return sInstance; };
-        static LibraryPtr GetCurrentLibrary();
-        static LibraryChangeEvent& OnLibraryChange();
+		static LibraryVector& Libraries();
+
+		bool CreateLibrary(utfstring name,int type);
+		void DeleteLibrary(utfstring name);
 
     private:
 
-        sigslot::signal1<LibraryPtr> OnLibraryChangeSignal;
-        LibraryPtr GetLibrary(int position);
-
-        std::vector<LibraryPtr> libraries;
-        int currentPosition;
+        LibraryVector libraries;
 
         LibraryFactory(void);
         ~LibraryFactory(void);
 
-        
+		void AddLibrary(utfstring name,int type);
+		void RemoveLibrary(utfstring name);
 
 };
 

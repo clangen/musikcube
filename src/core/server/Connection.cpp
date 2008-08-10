@@ -50,8 +50,8 @@ using namespace musik::core::server;
 
 Connection::Connection(boost::asio::io_service &ioService)
  :socket(ioService)
+ ,Base(UTF("Server"))
 {
-    this->identifier    = UTF("server");
 }
 
 Connection::~Connection(void){

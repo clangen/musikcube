@@ -36,18 +36,7 @@
 
 #pragma once
 
-#define INCLUDE_BOOSTFS
-#include <core/config.h>
-#include <core/db/Connection.h>
-
-#include <boost/thread/thread.hpp>
-#include <boost/thread/condition.hpp>
-#include <boost/thread/mutex.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/utility.hpp>
-#include <sigslot/sigslot.h>
-#include <string>
-
 //////////////////////////////////////////////////////////////////////////////
 // Forward declare
 namespace musik{ namespace core{
@@ -57,7 +46,24 @@ namespace musik{ namespace core{
         class Base;
         typedef boost::shared_ptr<musik::core::Query::Base> Ptr;
     }
+    namespace Library{
+        class Base;
+    }
+	typedef boost::shared_ptr<Library::Base> LibraryPtr;
 } }
+//////////////////////////////////////////////////////////////////////////////
+
+#include <core/config.h>
+#include <core/db/Connection.h>
+#include <core/tracklist/IRandomAccess.h>
+
+#include <boost/thread/thread.hpp>
+#include <boost/thread/condition.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/utility.hpp>
+#include <sigslot/sigslot.h>
+#include <string>
+
 //////////////////////////////////////////////////////////////////////////////
 
 namespace musik{ namespace core{ namespace Library{
@@ -81,7 +87,7 @@ namespace musik{ namespace core{ namespace Library{
 //////////////////////////////////////////
 class Base : boost::noncopyable{
     public:
-        Base(void);
+        Base(utfstring identifier);
         virtual ~Base(void);
 
         //////////////////////////////////////////
@@ -123,10 +129,14 @@ class Base : boost::noncopyable{
 
         bool Exited();
 
+		const utfstring& Identifier();
+
+		musik::core::tracklist::Ptr NowPlaying();
+
+
         static bool IsStaticMetaKey(std::string &metakey);
         static bool IsSpecialMTOMetaKey(std::string &metakey);
         static bool IsSpecialMTMMetaKey(std::string &metakey);
-
 
         static void CreateDatabase(db::Connection &db);
 
@@ -248,6 +258,9 @@ class Base : boost::noncopyable{
 
         bool exit;
         boost::condition waitCondition;
+
+		musik::core::tracklist::Ptr nowPlaying;
+
     public:
         boost::mutex libraryMutex;
 

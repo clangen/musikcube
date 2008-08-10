@@ -46,6 +46,9 @@
 // Forward
 namespace musik { namespace cube {
     class SettingsController;
+	namespace settings{
+		class SyncPathModel;
+	}
 } }
 
 
@@ -64,9 +67,12 @@ class SyncPathController : public EventHandler{
         void                                OnResized(Window* window, Size size);
 
         ListView&                           listView;
-        musik::cube::SettingsController*    settingsController;
         ListView::ModelRef                  model;
         ListView::ColumnRef                 mainColumn;
+
+		friend class settings::SyncPathModel;
+		
+        musik::cube::SettingsController*    settingsController;
 };
 
 

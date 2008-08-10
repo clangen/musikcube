@@ -39,6 +39,7 @@
 #include "pch.hpp"
 #include <win32cpp/ApplicationThread.hpp>
 #include <cube/settings/SyncPathModel.hpp>
+#include <cube/SettingsController.hpp>
 #include <core/Indexer.h>
 #include <core/LibraryFactory.h>
 
@@ -51,7 +52,7 @@ using namespace musik::cube::settings;
 SyncPathModel::SyncPathModel(SyncPathController *controller)
 : controller(controller)
 {
-    musik::core::Indexer *indexer   = musik::core::LibraryFactory::GetCurrentLibrary()->Indexer();
+    musik::core::Indexer *indexer   = this->controller->settingsController->library->Indexer();
     if(indexer){
         indexer->PathsUpdated.connect(this,&SyncPathModel::OnPathsUpdated);
     }
@@ -69,7 +70,7 @@ uistring SyncPathModel::CellValueToString(int rowIndex, ListView::ColumnRef colu
 }
 
 void SyncPathModel::UpdateSyncPaths(){
-    musik::core::Indexer *indexer   = musik::core::LibraryFactory::GetCurrentLibrary()->Indexer();
+    musik::core::Indexer *indexer   = this->controller->settingsController->library->Indexer();
     if(indexer){
         this->paths    = indexer->GetPaths();
     }
