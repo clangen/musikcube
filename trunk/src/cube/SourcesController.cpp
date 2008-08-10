@@ -48,10 +48,12 @@ using namespace musik::cube;
 // SourcesController
 //////////////////////////////////////////////////////////////////////////////
 
-/*ctor*/    SourcesController::SourcesController(SourcesView& view)
+/*ctor*/    SourcesController::SourcesController(SourcesView& view,musik::core::LibraryPtr library)
 : view(view)
-, model(SourcesModel())
+, model(SourcesModel(library))
 , listController(new ListController(*view.listView))
+, library(library)
+, LibraryCallbackTimer(20)
 {
     this->view.Handle()
         ? this->OnViewCreated(&view)
@@ -59,6 +61,13 @@ using namespace musik::cube;
 
     this->listController->Model()->ActiveItemChanged.connect(
         this, &SourcesController::OnActiveItemChanged);
+
+	// Connect timer to librarys callbacks
+	this->LibraryCallbackTimer.ConnectToWindow(&view);
+    this->LibraryCallbackTimer.OnTimeout.connect(this,&SourcesController::QueryQueueLoop);
+    library->OnQueryQueueStart.connect(this,&SourcesController::QueryQueueStart);
+    library->OnQueryQueueEnd.connect(this,&SourcesController::QueryQueueEnd);
+
 }
 
 void        SourcesController::OnViewCreated(Window* window)
@@ -94,6 +103,19 @@ void        SourcesController::OnActiveItemChanged(ItemRef item)
     {
         this->view.SetView(this->view.defaultView);
     }
+}
+
+void SourcesController::QueryQueueStart(){
+	this->LibraryCallbackTimer.ConnectToWindow(&this->view);
+    this->LibraryCallbackTimer.Start();
+}
+
+void SourcesController::QueryQueueEnd(){
+    this->LibraryCallbackTimer.Stop();
+}
+
+void SourcesController::QueryQueueLoop(){
+	this->library->RunCallbacks();
 }
 
 //////////////////////////////////////////////////////////////////////////////

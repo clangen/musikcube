@@ -59,7 +59,7 @@ namespace musik{ namespace core{
 
             public:
                 
-                typedef boost::shared_ptr<Standard> Ptr;
+//                typedef boost::shared_ptr<Standard> Ptr;
 
                 Standard(void);
                 ~Standard(void);
@@ -80,18 +80,20 @@ namespace musik{ namespace core{
                 virtual void SetLibrary(musik::core::LibraryPtr setLibrary);
                 virtual musik::core::LibraryPtr Library();
 
-                virtual bool CopyTracks(musik::core::tracklist::IRandomAccess &tracklist);
-                virtual bool AppendTracks(musik::core::tracklist::IRandomAccess &tracklist);
+                virtual bool CopyTracks(musik::core::tracklist::Ptr tracklist);
+                virtual bool AppendTracks(musik::core::tracklist::Ptr tracklist);
 
                 virtual void AddRequestedMetakey(const char* metakey);
                 virtual void RemoveRequestedMetakey(const char* metakey);
 
                 virtual UINT64 Duration();
                 virtual UINT64 Filesize();
-                /////////////////////////////////////////////////////////////////////
-                void ConnectToQuery(musik::core::Query::ListBase &listQuery);
 
-                void HintNumberOfRows(int rows);
+                virtual void HintNumberOfRows(int rows);
+
+                virtual void ConnectToQuery(musik::core::Query::ListBase &listQuery);
+                /////////////////////////////////////////////////////////////////////
+
 
             private:
 

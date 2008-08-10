@@ -36,6 +36,19 @@
 
 #pragma once
 
+//////////////////////////////////////////////////////////////////////////////
+// Forward declare
+namespace musik{ namespace core{ 
+	namespace Query{
+		class ListBase;
+	}
+	namespace tracklist{
+        class IRandomAccess;
+		typedef boost::shared_ptr<IRandomAccess> Ptr;
+	} 
+} }
+//////////////////////////////////////////////////////////////////////////////
+
 #include <core/tracklist/IBase.h>
 #include <core/Library/Base.h>
 
@@ -59,14 +72,18 @@ namespace musik{ namespace core{
                 virtual void SetLibrary(musik::core::LibraryPtr setLibrary) = 0;
                 virtual musik::core::LibraryPtr Library() = 0;
 
-                virtual bool CopyTracks(musik::core::tracklist::IRandomAccess &tracklist) = 0;
-                virtual bool AppendTracks(musik::core::tracklist::IRandomAccess &tracklist) = 0;
+                virtual bool CopyTracks(musik::core::tracklist::Ptr tracklist) = 0;
+                virtual bool AppendTracks(musik::core::tracklist::Ptr tracklist) = 0;
 
                 virtual void AddRequestedMetakey(const char* metakey) = 0;
                 virtual void RemoveRequestedMetakey(const char* metakey) = 0;
 
                 virtual UINT64 Duration() = 0;
                 virtual UINT64 Filesize() = 0;
+
+				virtual void HintNumberOfRows(int rows) = 0;
+                virtual void ConnectToQuery(musik::core::Query::ListBase &listQuery)=0;
+
                 /////////////////////////////////////////////////////////////////////////
                 typedef sigslot::signal3<UINT64,UINT64,UINT64> TracklistInfoEvent;
                 TracklistInfoEvent TracklistInfoUpdated;
@@ -78,7 +95,7 @@ namespace musik{ namespace core{
                 TrackMetaEvent TrackMetaUpdated;
         };
 
-        typedef boost::shared_ptr<IRandomAccess> IRandomAccessPtr;
+        typedef boost::shared_ptr<IRandomAccess> Ptr;
 
     }
 } }

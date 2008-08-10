@@ -55,7 +55,7 @@ using namespace musik::cube;
 /*ctor*/    TracklistController::TracklistController(
     TracklistView& view,
     musik::core::Query::ListBase *connectedQuery,
-    musik::core::tracklist::Standard::Ptr tracklist)
+    musik::core::tracklist::Ptr tracklist)
 : view(view)
 , model(new TracklistModel(connectedQuery, tracklist))
 {
@@ -157,7 +157,10 @@ void TracklistController::OnColumnSort(ListView *listView,ColumnRef column){
         // Add the tracks to sort
         this->sortQuery.AddTracks(*(model->tracklist));
 
-        musik::core::LibraryFactory::GetCurrentLibrary()->AddQuery(this->sortQuery,musik::core::Query::CancelSimilar);
+		musik::core::LibraryPtr library( model->tracklist->Library());
+		if(library){
+	        library->AddQuery(this->sortQuery,musik::core::Query::CancelSimilar);
+		}
 
         this->sortQuery.ClearTracks();
     }

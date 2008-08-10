@@ -40,71 +40,50 @@
 
 //////////////////////////////////////////////////////////////////////////////
 // Forward declare
+namespace win32cpp{
+    class Splitter;
+    class TabView;
+    class Window;
+    class TopLevelWindow;
+}
 namespace musik { namespace cube {
-    class SourcesView;
+    class LibraryWindowView;
 } }
 //////////////////////////////////////////////////////////////////////////////
 
-#include <cube/SourcesModel.hpp>
-#include <core/Library/Base.h>
+#include <cube/SourcesController.hpp>
 #include <win32cpp/Timer.hpp>
+#include <win32cpp/Types.hpp>
+
+#include <boost/shared_ptr.hpp>
+#include <vector>
 
 //////////////////////////////////////////////////////////////////////////////
-
-namespace musik { namespace cube {
 
 using namespace win32cpp;
 
-//////////////////////////////////////////////////////////////////////////////
-// SourcesController
+namespace musik { namespace cube {
+
 //////////////////////////////////////////////////////////////////////////////
 
-class SourcesController: public EventHandler
+class LibraryWindowController : public EventHandler
 {
-private:    
-	typedef ListView::ColumnRef ColumnRef;
-	typedef SourcesModel::CategoryRef CategoryRef;
-	typedef SourcesModel::ItemRef ItemRef;
-
-	class ListController;
-
-public:     
-	/*ctor*/    SourcesController(SourcesView& sourcesView,musik::core::LibraryPtr library);
-	musik::core::LibraryPtr library;
-
-private:    
-	void        OnViewCreated(Window* window);
-	void        OnActiveItemChanged(ItemRef newItem);
-	void        OnModelCategoryAdded(CategoryRef category);
-	void        OnModelCategoryRemoved(CategoryRef category);
+public:     /*ctor*/    LibraryWindowController(LibraryWindowView& view);
+public:     /*dtor*/    ~LibraryWindowController();
 
 protected:  
-	SourcesView& view;
-	SourcesModel model;
-	boost::scoped_ptr<ListController> listController;
+			void        OnViewCreated(Window* window);
+			void        OnResize(Window* window, Size size);
 
-	Timer LibraryCallbackTimer;
-	void QueryQueueStart();
-	void QueryQueueEnd();
-	void QueryQueueLoop();
-};
+			LibraryWindowView& view;
+//			SourcesController* sourcesController;
 
-//////////////////////////////////////////////////////////////////////////////
-// SourcesController::ListController
-//////////////////////////////////////////////////////////////////////////////
+			typedef boost::shared_ptr<SourcesController> SourcesControllerPtr;
+			typedef std::vector<SourcesControllerPtr> LibraryWindowVector;
 
-class SourcesController::ListController: public EventHandler
-{
-private:    typedef boost::shared_ptr<SourcesListModel> ListModelRef;
+			LibraryWindowVector libraries;
 
-public:     /*ctor*/        ListController(ListView& listView);
-public:     ListModelRef    Model() { return this->sourcesListModel; }
 
-private:    void            OnListCreated(Window* window);
-private:    void            OnListSelectionChanged(ListView* listView);
-
-private:    ListView& listView;
-private:    ListModelRef sourcesListModel;
 };
 
 //////////////////////////////////////////////////////////////////////////////

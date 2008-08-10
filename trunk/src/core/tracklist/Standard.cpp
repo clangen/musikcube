@@ -208,38 +208,41 @@ void Standard::RemoveRequestedMetakey(const char* metakey){
     this->trackQuery.RequestMetakeys(this->requestedMetaKeys);
 }
 
-bool Standard::CopyTracks(musik::core::tracklist::IRandomAccess &tracklist){
-    if(this!=&tracklist){   // Do not copy to itself
+bool Standard::CopyTracks(musik::core::tracklist::Ptr tracklist){
+	if(tracklist.get()!=this){   // Do not copy to itself
         this->trackCache.clear();
-        this->SetLibrary(tracklist.Library());
+        this->SetLibrary(tracklist->Library());
         this->tracks.clear();
-        this->tracks.reserve(tracklist.Size());
-        for(int i(0);i<tracklist.Size();++i){
-            this->tracks.push_back(tracklist[i]->Copy());
+        this->tracks.reserve(tracklist->Size());
+        for(int i(0);i<tracklist->Size();++i){
+            this->tracks.push_back( (*tracklist)[i]->Copy());
         }
-        this->SetCurrentPosition(tracklist.CurrentPosition());
+        this->SetCurrentPosition(tracklist->CurrentPosition());
 
         this->TracksUpdated(true);
-        this->infoDuration  = tracklist.Duration();
-        this->infoFilesize  = tracklist.Filesize();
+        this->infoDuration  = tracklist->Duration();
+        this->infoFilesize  = tracklist->Filesize();
         this->TracklistInfoUpdated(this->tracks.size(),this->infoDuration,this->infoFilesize);
     }
     return true;
 }
 
-bool Standard::AppendTracks(musik::core::tracklist::IRandomAccess &tracklist){
-    if(!this->library){
-        this->SetLibrary(tracklist.Library());
-    }
+bool Standard::AppendTracks(musik::core::tracklist::Ptr tracklist){
+	if(this->library==tracklist->Library()){	// Only append to same library
+		if(!this->library){	// If library is not set, set it.
+			this->SetLibrary(tracklist->Library());
+		}
 
-    this->tracks.reserve(this->tracks.size()+tracklist.Size());
+		this->tracks.reserve(this->tracks.size()+tracklist->Size());
 
-    for(int i(0);i<tracklist.Size();++i){
-        this->tracks.push_back(tracklist[i]->Copy());
-    }
+		for(int i(0);i<tracklist->Size();++i){
+			this->tracks.push_back( (*tracklist)[i]->Copy());
+		}
 
-    this->TracksUpdated(false);
-    return true;
+		this->TracksUpdated(false);
+	    return true;
+	}
+    return false;
 }
 
 void Standard::OnTracksInfoFromQuery(UINT64 tracks,UINT64 duration,UINT64 filesize){

@@ -39,6 +39,7 @@
 #pragma once
 
 #include <cube/SourcesListModel.hpp>
+#include <core/Library/Base.h>
 
 #include <vector>
 
@@ -60,7 +61,8 @@ private:    class InvalidCategoryException: public Exception { };
 public:     sigslot::signal1<CategoryRef>   CategoryAdded;
 public:     sigslot::signal1<CategoryRef>   CategoryRemoved;
 
-public:     /*ctor*/    SourcesModel();
+public:     /*ctor*/    SourcesModel(musik::core::LibraryPtr library);
+			musik::core::LibraryPtr library;
 
 public:     void        Load();
 

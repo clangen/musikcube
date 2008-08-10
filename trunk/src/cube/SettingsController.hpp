@@ -52,6 +52,7 @@ namespace win32cpp{
 #include <cube/settings/SyncPathController.hpp>
 #include <win32cpp/Timer.hpp>
 #include <boost/shared_ptr.hpp>
+#include <core/Library/Base.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -63,7 +64,7 @@ namespace musik { namespace cube {
 
 class SettingsController : public EventHandler
 {
-public:     /*ctor*/    SettingsController(SettingsView& settingsView);
+public:     /*ctor*/    SettingsController(SettingsView& settingsView,musik::core::LibraryPtr library);
 
 private:  
             void        OnViewCreated(Window* window);
@@ -80,8 +81,8 @@ private:
             typedef boost::shared_ptr<settings::SyncPathController> SyncPathControllerRef;
 
             SyncPathControllerRef syncPathController;
-
-
+public:
+			musik::core::LibraryPtr library;
 };
 
 //////////////////////////////////////////////////////////////////////////////

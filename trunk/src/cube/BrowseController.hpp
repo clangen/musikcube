@@ -48,6 +48,7 @@ namespace musik { namespace cube {
 
 #include <cube/MetadataFilterController.hpp>
 #include <core/Query/ListSelection.h>
+#include <core/Library/Base.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -61,7 +62,7 @@ namespace musik { namespace cube {
 
 class BrowseController : public EventHandler
 {
-public:     /*ctor*/    BrowseController(BrowseView& view);
+public:     /*ctor*/    BrowseController(BrowseView& view,musik::core::LibraryPtr library);
 public:     /*dtor*/    ~BrowseController();
 
 private:    typedef MetadataFilterController FilterController;
@@ -76,6 +77,7 @@ protected:  FilterControllerList filterControllers;
 protected:  TracklistController* tracklistController;
 public:     musik::core::Query::ListSelection selectionQuery;
 public:     void SendQuery();
+public:		musik::core::LibraryPtr library;
 };
 
 //////////////////////////////////////////////////////////////////////////////

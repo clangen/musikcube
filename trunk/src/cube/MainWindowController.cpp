@@ -39,8 +39,8 @@
 #include "pch.hpp"
 #include <cube/MainWindowController.hpp>
 #include <cube/TransportView.hpp>
-#include <cube/SourcesView.hpp>
-#include <cube/SourcesController.hpp>
+#include <cube/LibraryWindowController.hpp>
+#include <cube/LibraryWindowView.hpp>
 #include <cube/TransportController.hpp>
 
 #include <core/LibraryFactory.h>
@@ -62,10 +62,9 @@ using namespace musik::cube;
 
 /*ctor*/    MainWindowController::MainWindowController(TopLevelWindow& mainWindow)
 : mainWindow(mainWindow)
-, sourcesController(NULL)
 , transportController(NULL)
 , menuController(mainWindow)
-, LibraryCallbackTimer(20)
+, libraryController(NULL)
 {
     musik::core::PluginFactory::Instance();
 
@@ -73,16 +72,17 @@ using namespace musik::cube;
         this, &MainWindowController::OnMainWindowCreated);
 
     // Connect the local library to the 
-    this->LibraryCallbackTimer.ConnectToWindow(&mainWindow);
+/*    
+	this->LibraryCallbackTimer.ConnectToWindow(&mainWindow);
     this->LibraryCallbackTimer.OnTimeout.connect(this,&MainWindowController::QueryQueueLoop);
     musik::core::LibraryFactory::GetCurrentLibrary()->OnQueryQueueStart.connect(this,&MainWindowController::QueryQueueStart);
     musik::core::LibraryFactory::GetCurrentLibrary()->OnQueryQueueEnd.connect(this,&MainWindowController::QueryQueueEnd);
-
+*/
 }
 
 MainWindowController::~MainWindowController()
 {
-    delete this->sourcesController;
+    delete this->libraryController;
     delete this->transportController;
 }
 
@@ -112,13 +112,14 @@ void        MainWindowController::OnMainWindowCreated(Window* window)
     transportView->SetPadding(FramePadding(2, 4, 0, 0));
     this->transportController = new TransportController(*transportView);
 
-    // create sources view/controller
-    SourcesView* sourcesView = new SourcesView();
-    this->sourcesController = new SourcesController(*sourcesView);
+    // create library view/controller
+    LibraryWindowView* libraryView = new LibraryWindowView();
+    this->libraryController = new LibraryWindowController(*libraryView);
+
 
     // the main splitter
     Splitter* transportSplitter = this->mainWindow.AddChild(
-        new Splitter(SplitRow, sourcesView, transportView));
+        new Splitter(SplitRow, libraryView, transportView));
 
     // set initial sizes
     transportSplitter->Resize(clientSize);
@@ -136,15 +137,3 @@ void        MainWindowController::OnResize(Window* window, Size size)
     this->clientView->Resize(this->mainWindow.ClientSize());
 }
 
-void MainWindowController::QueryQueueStart(){
-    this->LibraryCallbackTimer.ConnectToWindow(&this->mainWindow);
-    this->LibraryCallbackTimer.Start();
-}
-
-void MainWindowController::QueryQueueEnd(){
-    this->LibraryCallbackTimer.Stop();
-}
-
-void MainWindowController::QueryQueueLoop(){
-    musik::core::LibraryFactory::GetCurrentLibrary()->RunCallbacks();
-}

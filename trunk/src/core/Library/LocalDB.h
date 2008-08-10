@@ -71,7 +71,7 @@ namespace musik{ namespace core{ namespace Library{
 class LocalDB : public Library::Base{
     public:
         // Methods:
-        LocalDB(void);
+        LocalDB(utfstring identifier);
         ~LocalDB(void);
 
         bool Startup();

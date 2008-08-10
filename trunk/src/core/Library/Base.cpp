@@ -37,6 +37,7 @@
 #include "pch.hpp"
 
 #include <core/Library/Base.h>
+#include <core/tracklist/Standard.h>
 
 #include <core/config_filesystem.h>
 #include <core/Query/Base.h>
@@ -46,12 +47,26 @@
 
 using namespace musik::core;
 
-Library::Base::Base(void) : identifier(UTF("local")), queueCallbackStarted(false), bCurrentQueryCanceled(false), exit(false){
+Library::Base::Base(utfstring identifier) 
+ :identifier(identifier)
+ ,queueCallbackStarted(false)
+ ,bCurrentQueryCanceled(false)
+ ,exit(false)
+ ,nowPlaying(new musik::core::tracklist::Standard())
+{
+}
+
+musik::core::tracklist::Ptr Library::Base::NowPlaying(){
+	return this->nowPlaying;
 }
 
 Library::Base::~Base(void){
     this->Exit();
     this->threads.join_all();
+}
+
+const utfstring& Library::Base::Identifier(){
+	return this->identifier;
 }
 
 //////////////////////////////////////////

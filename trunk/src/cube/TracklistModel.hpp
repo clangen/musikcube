@@ -46,7 +46,7 @@ namespace musik{ namespace core{ namespace Query{
 //////////////////////////////////////////////////////////////////////////////
 
 #include <win32cpp/ListView.hpp>
-#include <core/tracklist/Standard.h>
+#include <core/tracklist/IRandomAccess.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -67,7 +67,7 @@ public:     typedef ListView::ColumnRef ColumnRef;
         // public API
 public:     /*ctor*/ TracklistModel(
                 musik::core::Query::ListBase *connectedQuery,
-                musik::core::tracklist::Standard::Ptr setTracklist);
+                musik::core::tracklist::Ptr setTracklist);
 
 public:     void ConnectToQuery(musik::core::Query::ListBase *connectedQuery);
 
@@ -79,7 +79,7 @@ public:     virtual uistring CellValueToString(int rowIndex, ColumnRef column);
         // instance data
 protected:  void OnTrackMeta(std::vector<int> &trackPositions);
 protected:  void OnTracks(bool cleared);
-public:     musik::core::tracklist::Standard::Ptr tracklist;    // FIXME: no public fields!
+public:     musik::core::tracklist::Ptr tracklist;    // FIXME: no public fields!
 
 };
 

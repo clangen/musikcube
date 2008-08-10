@@ -60,7 +60,7 @@ namespace musik{ namespace core{ namespace Library{
 class Remote : public Library::Base{
     public:
         // Methods:
-        Remote(void);
+        Remote(utfstring identifier);
         ~Remote(void);
 
         bool Startup();

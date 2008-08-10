@@ -52,9 +52,10 @@ using namespace musik::cube;
 
 //////////////////////////////////////////////////////////////////////////////
 
-/*ctor*/    SettingsController::SettingsController(SettingsView& settingsView)
+/*ctor*/    SettingsController::SettingsController(SettingsView& settingsView,musik::core::LibraryPtr library)
 : settingsView(settingsView)
 , libraryStatusTimer(300)
+, library(library)
 {
     this->settingsView.Created.connect(
         this, &SettingsController::OnViewCreated);
@@ -84,7 +85,7 @@ void SettingsController::OnAddPath(Button* button){
     win32cpp::FolderBrowseDialog addPath;
 
     if(addPath.Show(win32cpp::Application::Instance().MainWindow())==win32cpp::FolderBrowseDialog::ResultOK){
-        musik::core::Indexer *indexer = musik::core::LibraryFactory::GetCurrentLibrary()->Indexer();
+		musik::core::Indexer *indexer = this->library->Indexer();
         if(indexer){
             indexer->AddPath(addPath.Directory());
         }
@@ -96,7 +97,7 @@ void SettingsController::OnRemovePath(Button* button){
 }
 
 void SettingsController::OnLibraryStatus(){
-    this->settingsView.libraryStatus->SetCaption( musik::core::LibraryFactory::GetCurrentLibrary()->GetInfo() );
+	this->settingsView.libraryStatus->SetCaption( this->library->GetInfo() );
 }
 
 

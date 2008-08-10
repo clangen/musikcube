@@ -49,7 +49,7 @@ namespace musik { namespace cube {
 #include <win32cpp/ListView.hpp>
 #include <core/config.h>
 #include <core/Query/ListBase.h>
-#include <core/tracklist/Standard.h>
+#include <core/tracklist/IRandomAccess.h>
 #include <core/Query/SortTracks.h>
 
 //////////////////////////////////////////////////////////////////////////////
@@ -72,8 +72,8 @@ private:
 public:     
     /*ctor*/    TracklistController(
                     TracklistView& listView,
-                    musik::core::Query::ListBase *connectedQuery = NULL,
-                    musik::core::tracklist::Standard::Ptr tracklist = musik::core::tracklist::Standard::Ptr());
+                    musik::core::Query::ListBase *connectedQuery,
+                    musik::core::tracklist::Ptr tracklist);
 
 private:  
     void        OnViewCreated(Window* window);
