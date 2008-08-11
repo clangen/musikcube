@@ -41,6 +41,7 @@
 #include <core/db/CachedStatement.h>
 
 #include <boost/lexical_cast.hpp>
+#include <boost/thread/mutex.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -48,10 +49,10 @@ using namespace musik::core;
 
 //////////////////////////////////////////////////////////////////////////////
 
-Preferences::Preferences(const char* nameSpace) : 
-    nameSpace(nameSpace),
-    IOPtr(IO::Instance())
+Preferences::Preferences(const char* nameSpace) 
+ :nameSpace(nameSpace)
 {
+    this->IOPtr = IO::Instance();
     this->settings  = this->IOPtr->GetNamespace(nameSpace);   
 }
 
@@ -89,6 +90,9 @@ utfstring Preferences::GetString(const char* key,const utfchar* defaultValue){
 //////////////////////////////////////////////////////////////////////////////
 
 Preferences::IO::Ptr Preferences::IO::Instance(){
+    static boost::mutex instanceMutex;
+    boost::mutex::scoped_lock oLock(instanceMutex);
+
     static IO::Ptr sInstance(new Preferences::IO());
     return sInstance;
 }
