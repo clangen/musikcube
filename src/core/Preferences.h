@@ -104,6 +104,7 @@ class Preferences{
             private:
                 db::Connection db;
                 NamespaceMap namespaces;
+                
 
         };
 
