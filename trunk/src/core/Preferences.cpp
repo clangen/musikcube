@@ -61,6 +61,8 @@ Preferences::~Preferences(void){
 
 
 bool Preferences::GetBool(const char* key,bool defaultValue){
+    boost::mutex::scoped_lock lock(IO::Instance()->mutex);
+
     IO::SettingMap::iterator setting = this->settings->find(key);
     if(setting!=this->settings->end()){
         return setting->second.Value(defaultValue);
@@ -70,6 +72,7 @@ bool Preferences::GetBool(const char* key,bool defaultValue){
 }
 
 int Preferences::GetInt(const char* key,int defaultValue){
+    boost::mutex::scoped_lock lock(IO::Instance()->mutex);
     IO::SettingMap::iterator setting = this->settings->find(key);
     if(setting!=this->settings->end()){
         return setting->second.Value(defaultValue);
@@ -79,6 +82,7 @@ int Preferences::GetInt(const char* key,int defaultValue){
 }
 
 utfstring Preferences::GetString(const char* key,const utfchar* defaultValue){
+    boost::mutex::scoped_lock lock(IO::Instance()->mutex);
     IO::SettingMap::iterator setting = this->settings->find(key);
     if(setting!=this->settings->end()){
         return setting->second.Value(utfstring(defaultValue));
@@ -98,6 +102,7 @@ Preferences::IO::Ptr Preferences::IO::Instance(){
 }
 
 Preferences::IO::IO(void){
+    boost::mutex::scoped_lock lock(this->mutex);
     utfstring dataDir   = GetDataDirectory();
     utfstring dbFile    = GetDataDirectory() + UTF("settings.db");
     this->db.Open(dbFile.c_str(),0,128);
@@ -234,6 +239,7 @@ utfstring Preferences::Setting::Value(utfstring defaultValue){
 
 Preferences::IO::SettingMapPtr Preferences::IO::GetNamespace(const char* nameSpace){
 
+    boost::mutex::scoped_lock lock(this->mutex);
     // First check if it's in the NamespaceMap
     NamespaceMap::iterator ns = this->namespaces.find(nameSpace);
     if(ns!=this->namespaces.end()){

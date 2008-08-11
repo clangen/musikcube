@@ -41,6 +41,7 @@
 
 #include <core/config.h>
 #include <core/db/Connection.h>
+#include <boost/thread/mutex.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -101,6 +102,9 @@ class Preferences{
                 void SaveSetting(const char* nameSpace,const char *key,Setting &setting);
 
                 static IO::Ptr Instance();
+
+                boost::mutex mutex;
+
             private:
                 db::Connection db;
                 NamespaceMap namespaces;
