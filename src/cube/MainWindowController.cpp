@@ -43,8 +43,7 @@
 #include <cube/LibraryWindowView.hpp>
 #include <cube/TransportController.hpp>
 
-#include <core/LibraryFactory.h>
-#include <core/Pluginfactory.h>
+#include <core/Preferences.h>
 
 #include <cube/resources/resource.h>
 
@@ -66,18 +65,10 @@ using namespace musik::cube;
 , menuController(mainWindow)
 , libraryController(NULL)
 {
-    musik::core::PluginFactory::Instance();
 
     this->mainWindow.Created.connect(
         this, &MainWindowController::OnMainWindowCreated);
 
-    // Connect the local library to the 
-/*    
-	this->LibraryCallbackTimer.ConnectToWindow(&mainWindow);
-    this->LibraryCallbackTimer.OnTimeout.connect(this,&MainWindowController::QueryQueueLoop);
-    musik::core::LibraryFactory::GetCurrentLibrary()->OnQueryQueueStart.connect(this,&MainWindowController::QueryQueueStart);
-    musik::core::LibraryFactory::GetCurrentLibrary()->OnQueryQueueEnd.connect(this,&MainWindowController::QueryQueueEnd);
-*/
 }
 
 MainWindowController::~MainWindowController()
@@ -101,9 +92,12 @@ void        MainWindowController::OnMainWindowCreated(Window* window)
 
     static const int TransportViewHeight = 54;
 
-    this->mainWindow.MoveTo(200, 200);
-    this->mainWindow.Resize(700, 480);
-    this->mainWindow.SetMinimumSize(Size(320, 240));
+    {
+        musik::core::Preferences windowPrefs("MainWindow");
+        this->mainWindow.MoveTo(windowPrefs.GetInt("x",200), windowPrefs.GetInt("y",200));
+        this->mainWindow.Resize(windowPrefs.GetInt("width",700), windowPrefs.GetInt("height",480));
+        this->mainWindow.SetMinimumSize(Size(320, 240));
+    }
 
     Size clientSize = this->mainWindow.ClientSize();
 
@@ -129,11 +123,22 @@ void        MainWindowController::OnMainWindowCreated(Window* window)
 
     this->clientView = transportSplitter;
     this->mainWindow.Resized.connect(this, &MainWindowController::OnResize);
+    this->mainWindow.Destroyed.connect(this, &MainWindowController::OnDestroyed);
 }
 
-void        MainWindowController::OnResize(Window* window, Size size)
+void MainWindowController::OnResize(Window* window, Size size)
 {
     RedrawLock redrawLock(this->clientView);
     this->clientView->Resize(this->mainWindow.ClientSize());
 }
 
+void MainWindowController::OnDestroyed(Window* window)
+{
+    Point location( window->Location() );
+    Size size( window->WindowSize() );
+    musik::core::Preferences windowPrefs("MainWindow");
+    windowPrefs.SetInt("x",location.x);
+    windowPrefs.SetInt("y",location.y);
+    windowPrefs.SetInt("width",size.width);
+    windowPrefs.SetInt("height",size.height);
+}

@@ -91,6 +91,23 @@ utfstring Preferences::GetString(const char* key,const utfchar* defaultValue){
     return defaultValue;
 }
 
+void Preferences::SetBool(const char* key,bool value){
+    boost::mutex::scoped_lock lock(IO::Instance()->mutex);
+    this->IOPtr->SaveSetting(this->nameSpace.c_str(),key,Setting(value));
+}
+
+void Preferences::SetInt(const char* key,int value){
+    boost::mutex::scoped_lock lock(IO::Instance()->mutex);
+    this->IOPtr->SaveSetting(this->nameSpace.c_str(),key,Setting(value));
+}
+
+void Preferences::SetString(const char* key,const utfchar* value){
+    boost::mutex::scoped_lock lock(IO::Instance()->mutex);
+    this->IOPtr->SaveSetting(this->nameSpace.c_str(),key,Setting(utfstring(value)));
+}
+
+
+
 //////////////////////////////////////////////////////////////////////////////
 
 Preferences::IO::Ptr Preferences::IO::Instance(){
