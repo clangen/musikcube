@@ -111,7 +111,7 @@ int Connection::Open(const utfchar *database,unsigned int options,unsigned int c
 ///Error code returned by SQLite
 //////////////////////////////////////////
 int Connection::Open(const utfstring &database,unsigned int options,unsigned int cache){
-    sqlite3_enable_shared_cache(1);
+//    sqlite3_enable_shared_cache(1);
 
     int error;
     #ifdef UTF_WIDECHAR

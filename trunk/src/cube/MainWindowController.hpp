@@ -76,6 +76,7 @@ public:     /*dtor*/    ~MainWindowController();
 
 protected:  void        OnMainWindowCreated(Window* window);
 protected:  void        OnResize(Window* window, Size size);
+protected:  void        OnDestroyed(Window* window);
 
 protected:  TopLevelWindow& mainWindow;
 protected:  Splitter* clientView;

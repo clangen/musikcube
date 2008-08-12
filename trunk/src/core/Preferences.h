@@ -58,8 +58,13 @@ class Preferences{
         int GetInt(const char* key,int defaultValue);
         utfstring GetString(const char* key,const utfchar* defaultValue);
 
+        void SetBool(const char* key,bool value);
+        void SetInt(const char* key,int value);
+        void SetString(const char* key,const utfchar* value);
+
         std::string nameSpace;
 
+    private:
         class Setting{
 
             public:
