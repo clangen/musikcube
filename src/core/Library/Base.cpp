@@ -52,12 +52,21 @@ Library::Base::Base(utfstring identifier)
  ,queueCallbackStarted(false)
  ,bCurrentQueryCanceled(false)
  ,exit(false)
- ,nowPlaying(new musik::core::tracklist::Standard())
 {
 }
 
 musik::core::tracklist::Ptr Library::Base::NowPlaying(){
-	return this->nowPlaying;
+	if(tracklist::Ptr tracklist	= this->nowPlaying.lock()){
+		return tracklist;
+	}
+
+	tracklist::Ptr tracklist(new musik::core::tracklist::Standard());
+	this->nowPlaying	= tracklist;
+
+	if(LibraryPtr thisPtr = this->self.lock()){
+		tracklist->SetLibrary(thisPtr);
+	}
+	return tracklist;
 }
 
 Library::Base::~Base(void){

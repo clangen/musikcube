@@ -65,6 +65,7 @@ PlaybackQueue::PlaybackQueue(void)
 PlaybackQueue::~PlaybackQueue(void)
 {
     this->transport.Stop();
+	this->nowPlaying.reset();
 }
 
 //////////////////////////////////////////

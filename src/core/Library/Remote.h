@@ -58,9 +58,11 @@ namespace musik{ namespace core{ namespace Library{
 ///Library used for your remote music.
 //////////////////////////////////////////
 class Remote : public Library::Base{
+	private:
+        Remote(utfstring identifier);
     public:
         // Methods:
-        Remote(utfstring identifier);
+		static LibraryPtr Create(utfstring identifier);
         ~Remote(void);
 
         bool Startup();

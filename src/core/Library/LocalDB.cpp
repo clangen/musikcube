@@ -58,6 +58,12 @@ Library::LocalDB::LocalDB(utfstring identifier)
 {
 }
 
+LibraryPtr Library::LocalDB::Create(utfstring identifier){
+	LibraryPtr lib(new Library::LocalDB(identifier));
+	lib->self	= lib;
+	return lib;
+}
+
 Library::LocalDB::~LocalDB(void){
     this->Exit();
     this->threads.join_all();
