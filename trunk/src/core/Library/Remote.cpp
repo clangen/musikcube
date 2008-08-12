@@ -63,6 +63,12 @@ Library::Remote::Remote(utfstring identifier)
 {
 }
 
+LibraryPtr Library::Remote::Create(utfstring identifier){
+	LibraryPtr lib(new Library::Remote(identifier));
+	lib->self	= lib;
+	return lib;
+}
+
 Library::Remote::~Remote(void){
     this->Exit();
     this->threads.join_all();

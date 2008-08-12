@@ -37,6 +37,7 @@
 #pragma once
 
 #include <boost/shared_ptr.hpp>
+#include <boost/weak_ptr.hpp>
 //////////////////////////////////////////////////////////////////////////////
 // Forward declare
 namespace musik{ namespace core{
@@ -50,6 +51,7 @@ namespace musik{ namespace core{
         class Base;
     }
 	typedef boost::shared_ptr<Library::Base> LibraryPtr;
+	typedef boost::weak_ptr<Library::Base> LibraryWeakPtr;
 } }
 //////////////////////////////////////////////////////////////////////////////
 
@@ -86,8 +88,9 @@ namespace musik{ namespace core{ namespace Library{
 ///musik::core::Library::LocalDB
 //////////////////////////////////////////
 class Base : boost::noncopyable{
-    public:
+    protected:
         Base(utfstring identifier);
+	public:
         virtual ~Base(void);
 
         //////////////////////////////////////////
@@ -259,10 +262,11 @@ class Base : boost::noncopyable{
         bool exit;
         boost::condition waitCondition;
 
-		musik::core::tracklist::Ptr nowPlaying;
+		musik::core::tracklist::WeakPtr nowPlaying;
 
     public:
         boost::mutex libraryMutex;
+		LibraryWeakPtr self;
 
 
 };
@@ -273,4 +277,5 @@ class Base : boost::noncopyable{
 
 namespace musik{ namespace core{ 
     typedef boost::shared_ptr<musik::core::Library::Base> LibraryPtr;
+	typedef boost::weak_ptr<Library::Base> LibraryWeakPtr;
 } }

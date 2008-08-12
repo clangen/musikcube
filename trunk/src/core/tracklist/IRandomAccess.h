@@ -53,6 +53,7 @@ namespace musik{ namespace core{
 #include <core/Library/Base.h>
 
 #include <boost/shared_ptr.hpp>
+#include <boost/weak_ptr.hpp>
 #include <sigslot/sigslot.h>
 
 namespace musik{ namespace core{
@@ -96,6 +97,7 @@ namespace musik{ namespace core{
         };
 
         typedef boost::shared_ptr<IRandomAccess> Ptr;
+		typedef boost::weak_ptr<IRandomAccess> WeakPtr;
 
     }
 } }

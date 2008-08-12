@@ -87,12 +87,6 @@ void        LibraryWindowController::OnViewCreated(Window* window)
 
 	}
 
-
-	// create sources view/controller
-/*
-
-*/
-
 }
 
 void        LibraryWindowController::OnResize(Window* window, Size size)
@@ -100,17 +94,3 @@ void        LibraryWindowController::OnResize(Window* window, Size size)
     RedrawLock redrawLock(&this->view);
 //    this->clientView->Resize(this->mainWindow.ClientSize());
 }
-/*
-void LibraryWindowController::QueryQueueStart(){
-    this->LibraryCallbackTimer.ConnectToWindow(&this->mainWindow);
-    this->LibraryCallbackTimer.Start();
-}
-
-void LibraryWindowController::QueryQueueEnd(){
-    this->LibraryCallbackTimer.Stop();
-}
-
-void LibraryWindowController::QueryQueueLoop(){
-    musik::core::LibraryFactory::GetCurrentLibrary()->RunCallbacks();
-}
-*/

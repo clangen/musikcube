@@ -69,9 +69,11 @@ namespace musik{ namespace core{ namespace Library{
 ///Indexer
 //////////////////////////////////////////
 class LocalDB : public Library::Base{
+	private:
+        LocalDB(utfstring identifier);
     public:
         // Methods:
-        LocalDB(utfstring identifier);
+		static LibraryPtr Create(utfstring identifier);
         ~LocalDB(void);
 
         bool Startup();
@@ -95,6 +97,7 @@ class LocalDB : public Library::Base{
         ///Indexer that indexes all your tracks.
         //////////////////////////////////////////
         musik::core::Indexer indexer;
+
 
 };
 

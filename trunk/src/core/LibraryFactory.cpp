@@ -79,10 +79,10 @@ void LibraryFactory::AddLibrary(utfstring name,int type){
 	LibraryPtr lib;
 	switch(type){
 		case Types::Remote:
-			lib.reset(new Library::Remote(name));
+			lib	= Library::Remote::Create(name);
 			break;
 		default:
-			lib.reset(new Library::LocalDB(name));
+			lib	= Library::LocalDB::Create(name);
 	}
 
 	if(lib){
