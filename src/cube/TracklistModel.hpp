@@ -79,6 +79,9 @@ public:     virtual uistring CellValueToString(int rowIndex, ColumnRef column);
         // instance data
 protected:  void OnTrackMeta(std::vector<int> &trackPositions);
 protected:  void OnTracks(bool cleared);
+protected:  void OnPositionChanged(int activeRow,int oldActiveRow);
+protected:  int currentPosition;
+
 public:     musik::core::tracklist::Ptr tracklist;    // FIXME: no public fields!
 
 };

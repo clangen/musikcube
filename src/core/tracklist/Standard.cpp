@@ -93,6 +93,7 @@ int Standard::Size(){
 
 
 void Standard::SetCurrentPosition(int position){
+    int lastPosition(this->currentPosition);
     if(position<-1){
         this->currentPosition   = -1;
     }else{
@@ -101,6 +102,9 @@ void Standard::SetCurrentPosition(int position){
         }else{
             this->currentPosition   = position;
         }
+    }
+    if(this->currentPosition!=lastPosition){
+        this->PositionChanged(this->currentPosition,lastPosition);
     }
 }
 

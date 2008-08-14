@@ -94,6 +94,9 @@ namespace musik{ namespace core{
 
                 typedef sigslot::signal1<std::vector<int>&> TrackMetaEvent;
                 TrackMetaEvent TrackMetaUpdated;
+
+                typedef sigslot::signal2<int,int> PositionChangedEvent;
+                PositionChangedEvent PositionChanged;
         };
 
         typedef boost::shared_ptr<IRandomAccess> Ptr;

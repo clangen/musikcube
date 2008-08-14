@@ -45,12 +45,12 @@
 #include <cube/TracklistColumn.hpp>
 
 #include <win32cpp/Utility.hpp>
+#include <win32cpp/ApplicationThread.hpp>
 
 #include <core/LibraryFactory.h>
 #include <core/PlaybackQueue.h>
 #include <core/MetaKey.h>
-#include <core/tracklist/Standard.h>
-
+#include <core/tracklist/IRandomAccess.h>
 
 
 using namespace musik::cube;
@@ -58,6 +58,7 @@ using namespace musik::cube;
 //////////////////////////////////////////////////////////////////////////////
 
 /*ctor*/        TracklistModel::TracklistModel(musik::core::Query::ListBase *connectedQuery,musik::core::tracklist::Ptr setTracklist)
+: currentPosition(-1)
 {
 
 	this->tracklist = setTracklist;
@@ -66,7 +67,7 @@ using namespace musik::cube;
 
     this->tracklist->TracksUpdated.connect(this,&TracklistModel::OnTracks);
     this->tracklist->TrackMetaUpdated.connect(this,&TracklistModel::OnTrackMeta);
-//    this->tracklist->SetLibrary(musik::core::LibraryFactory::GetCurrentLibrary());
+    this->tracklist->PositionChanged.connect(this,&TracklistModel::OnPositionChanged);
 
     this->ConnectToQuery(connectedQuery);
 }
@@ -101,6 +102,9 @@ uistring            TracklistModel::CellValueToString(int rowIndex, ColumnRef co
                     return win32cpp::Escape(result);
                     break;
             }
+            if(rowIndex==this->currentPosition){
+    			return win32cpp::Escape(value)+_T("***");
+            }
 			return win32cpp::Escape(value);
 		}
     }
@@ -130,4 +134,19 @@ void TracklistModel::ConnectToQuery(musik::core::Query::ListBase *connectedQuery
     if(connectedQuery){
         this->tracklist->ConnectToQuery(*connectedQuery);
     }
+}
+
+void TracklistModel::OnPositionChanged(int activeRow,int oldActiveRow){
+    if(!win32cpp::ApplicationThread::InMainThread()){
+        win32cpp::ApplicationThread::Call2(this,&TracklistModel::OnPositionChanged,activeRow,oldActiveRow);
+        return;
+    }
+
+    if(activeRow!=-1){
+        this->InvalidateData(activeRow);
+    }
+    if(oldActiveRow!=-1){
+        this->InvalidateData(oldActiveRow);
+    }
+    this->currentPosition   = activeRow;
 }
