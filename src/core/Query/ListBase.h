@@ -93,6 +93,7 @@ namespace musik{ namespace core{
                 UINT64 trackInfoSize;
 
                 virtual bool SendResults(musik::core::xml::WriterNode &queryNode,Library::Base *library);
+                virtual bool RecieveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library);
 
             public:
                 MetadataSignal& OnMetadataEvent(const char* metatag);

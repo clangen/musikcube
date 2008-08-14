@@ -105,11 +105,12 @@ void Connection::ReadThread(){
                 if(queryIt!=queryMap.end()){
                     // Query type exists, lets create a copy
                     musik::core::Query::Ptr query( queryIt->second->copy() );
+                    query->queryId  = boost::lexical_cast<unsigned int>(queryNode.Attributes()["id"]);
 
                     if(query->RecieveQuery(queryNode)){
 
                         // TODO: check for AddQuery options in tag
-                        this->AddQuery( *query );
+                        this->AddQuery( *query,boost::lexical_cast<unsigned int>(queryNode.Attributes()["options"]) );
 
                     }
 
@@ -211,6 +212,7 @@ void Connection::WriteThread(){
                 {
                     musik::core::xml::WriterNode queryNode(musikNode,"queryresults");
                     queryNode.Attributes()["type"]  = sendQuery->Name();
+                    queryNode.Attributes()["id"]    = boost::lexical_cast<std::string>(sendQuery->queryId);
 
                     sendQuery->SendResults(queryNode,this);
                 }

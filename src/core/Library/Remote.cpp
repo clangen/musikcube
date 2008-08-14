@@ -112,49 +112,79 @@ bool Library::Remote::Startup(){
 //////////////////////////////////////////
 void Library::Remote::ReadThread(){
 
+    this->address   = "localhost";
+    this->port      = "10543";
+
     boost::asio::ip::tcp::resolver resolver(this->ioService);
     boost::asio::ip::tcp::resolver::query resolverQuery(this->address,this->port);
 
-    boost::asio::ip::tcp::resolver::iterator endpointIterator = resolver.resolve(resolverQuery);
-    boost::asio::ip::tcp::resolver::iterator end;
+    try{
+        boost::asio::ip::tcp::resolver::iterator endpointIterator = resolver.resolve(resolverQuery);
+        boost::asio::ip::tcp::resolver::iterator end;
 
-    boost::system::error_code error = boost::asio::error::host_not_found;
-    while (error && endpointIterator!=end){
-        this->socket.close();
-        this->socket.connect(*endpointIterator++, error);
+        boost::system::error_code error = boost::asio::error::host_not_found;
+        while (error && endpointIterator!=end){
+            this->socket.close();
+            this->socket.connect(*endpointIterator++, error);
+        }
+        if (error){
+            this->Exit();
+            return;
+        }
     }
-    if (error){
+    catch(boost::system::system_error &error){
+        this->Exit();
+        return;
+    }
+    catch(...){
         this->Exit();
         return;
     }
 
     // Successfully connected to server
     // Start the WriteThread
-    this->threads.create_thread(boost::bind(&Library::Remote::WriteThread,this));
+    try{
+        this->threads.create_thread(boost::bind(&Library::Remote::WriteThread,this));
+    }
+    catch(...){
+        this->Exit();
+        return;
+    }
 
-    // Lets start recieving queries
-    xml::Parser parser(&this->socket);
-    if( xml::ParserNode rootNode=parser.ChildNode("musik")){
-        while(xml::ParserNode node=rootNode.ChildNode()){
-            if(node.Name()=="queryresults"){
+    try{
+        // Lets start recieving queries
+        xml::Parser parser(&this->socket);
+        if( xml::ParserNode rootNode=parser.ChildNode("musik")){
+            while(xml::ParserNode node=rootNode.ChildNode()){
+                if(node.Name()=="queryresults"){
 
-                unsigned int queryId    = boost::lexical_cast<unsigned int>(node.Attributes()["id"]);
-                Query::Ptr currentQuery;
-                // This is a query node
-                // Find the query in the outgoingQueries list
-                {
-                    boost::mutex::scoped_lock lock(this->libraryMutex);
-                    // Reverse loop since it's most likely the query is in the end
-                    for(QueryList::reverse_iterator query=this->outgoingQueries.rbegin();query!=this->outgoingQueries.rend();++query){
-                        if( (*query)->iQueryId==queryId ){
-                            currentQuery    = *query;
+                    unsigned int queryId    = boost::lexical_cast<unsigned int>(node.Attributes()["id"]);
+                    Query::Ptr currentQuery;
+                    // This is a query node
+                    // Find the query in the outgoingQueries list
+                    {
+                        boost::mutex::scoped_lock lock(this->libraryMutex);
+                        // Reverse loop since it's most likely the query is in the end
+                        for(QueryList::reverse_iterator query=this->outgoingQueries.rbegin();query!=this->outgoingQueries.rend();++query){
+                            if( (*query)->queryId==queryId ){
+                                currentQuery    = *query;
+                            }
+                        }
+                    }
+                    if(currentQuery){
+                        if(currentQuery->RecieveResults(node,this)){
+                            currentQuery->status |= Query::Base::Status::Ended;
+                        }else{
+                            currentQuery->status |= Query::Base::Status::Canceled;
                         }
                     }
                 }
             }
         }
     }
+    catch(...){
 
+    }
     this->Exit();
 }
 
@@ -191,7 +221,11 @@ void Library::Remote::WriteThread(){
             // Lets send the query
             xml::WriterNode queryNode(rootNode,"query");
             queryNode.Attributes()["type"]  = query->Name();
-            queryNode.Attributes()["id"]    = boost::lexical_cast<std::string>(query->iQueryId);
+            queryNode.Attributes()["id"]    = boost::lexical_cast<std::string>(query->queryId);
+
+            if(query->options){
+                queryNode.Attributes()["options"]  = boost::lexical_cast<std::string>(query->options);
+            }
 
             query->SendQuery(queryNode);
 

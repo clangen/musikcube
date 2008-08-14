@@ -36,6 +36,16 @@
 
 #pragma once
 
+//////////////////////////////////////////////////////////////
+// Forward declarations
+//////////////////////////////////////////////////////////////
+namespace musik{ namespace core{
+    namespace Library{
+        class Base;
+    }
+} }
+//////////////////////////////////////////////////////////////
+
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
 #include <set>
@@ -47,79 +57,73 @@
 #include <core/Query/ListBase.h>
 
 //////////////////////////////////////////////////////////////
-// Forward declarations
-//////////////////////////////////////////////////////////////
-namespace musik{ namespace core{
-    namespace Library{
-        class Base;
-    }
-} }
 
+namespace musik{ namespace core{ namespace Query{
 
-namespace musik{ namespace core{
-    namespace Query{
+//////////////////////////////////////////
+///\brief
+///ListSelection is the query used when listing tracks and metalists from a metalist (genres, artists, etc) selection.
+///
+///Write detailed description for ListSelection here.
+///
+///\see
+///Query::ListBase
+//////////////////////////////////////////
+class ListSelection : public Query::ListBase{
+    public:
+        ListSelection(void);
+        ~ListSelection(void);
+
+        void SelectMetadata(const char* metakey,DBINT metadataId);
+        void RemoveMetadata(const char* metakey,DBINT metadataId);
+        void ClearMetadata(const char* metakey=NULL);
+
+        void SelectionOrderSensitive(bool sensitive);
+    protected:
+        friend class Library::Base;
+        friend class Library::LocalDB;
+        friend class server::Connection;
+
+        virtual std::string Name();
+        virtual bool ParseQuery(Library::Base *library,db::Connection &db);
+
+        Ptr copy() const;
+
+        virtual bool RecieveQuery(musik::core::xml::ParserNode &queryNode);
+        virtual bool SendQuery(musik::core::xml::WriterNode &queryNode);
+
+    private:
+        typedef std::set<DBINT> SelectedMetadataIDs;
+        typedef std::map<std::string,SelectedMetadataIDs> SelectedMetadata;
+
 
         //////////////////////////////////////////
         ///\brief
-        ///ListSelection is the query used when listing tracks and metalists from a metalist (genres, artists, etc) selection.
-        ///
-        ///Write detailed description for ListSelection here.
-        ///
-        ///\see
-        ///Query::ListBase
+        ///A map of selected metakeys
         //////////////////////////////////////////
-        class ListSelection : public Query::ListBase{
-            public:
-                ListSelection(void);
-                ~ListSelection(void);
+        SelectedMetadata selectedMetadata;
 
-                void SelectMetadata(const char* metakey,DBINT metadataId);
-                void RemoveMetadata(const char* metakey,DBINT metadataId);
-                void ClearMetadata(const char* metakey=NULL);
+        //////////////////////////////////////////
+        ///\brief
+        ///Setting if selection is sensitive to order of selection
+        //////////////////////////////////////////
+        bool selectionOrderSensitive;
 
-                void SelectionOrderSensitive(bool sensitive);
-            protected:
-                friend class Library::Base;
-                friend class Library::LocalDB;
-                friend class server::Connection;
-
-                virtual std::string Name();
-                virtual bool ParseQuery(Library::Base *library,db::Connection &db);
-
-                Ptr copy() const;
-
-                virtual bool RecieveQuery(musik::core::xml::ParserNode &queryNode);
-
-            private:
-                typedef std::map<std::string,std::set<DBINT>> SelectedMetadata;
+        //////////////////////////////////////////
+        ///\brief
+        ///A list of the metakeys selection order
+        //////////////////////////////////////////
+        std::vector<std::string> metakeySelectionOrder;
 
 
-                //////////////////////////////////////////
-                ///\brief
-                ///A map of selected metakeys
-                //////////////////////////////////////////
-                SelectedMetadata selectedMetadata;
+        inline void SQLPrependWhereOrAnd(std::string &sql);
+        void SQLSelectQuery(const char *metakey,const char *sqlStart,const char *sqlEnd,std::set<std::string> &metakeysSelected,std::string &sqlSelectTrackWhere,Library::Base *library);
+        void QueryForMetadata(const char *metakey,const char *sql,std::set<std::string> &metakeysQueried,Library::Base *library,db::Connection &db);
 
-                //////////////////////////////////////////
-                ///\brief
-                ///Setting if selection is sensitive to order of selection
-                //////////////////////////////////////////
-                bool selectionOrderSensitive;
+};
 
-                //////////////////////////////////////////
-                ///\brief
-                ///A list of the metakeys selection order
-                //////////////////////////////////////////
-                std::vector<std::string> metakeySelectionOrder;
-
-
-                inline void SQLPrependWhereOrAnd(std::string &sql);
-                void SQLSelectQuery(const char *metakey,const char *sqlStart,const char *sqlEnd,std::set<std::string> &metakeysSelected,std::string &sqlSelectTrackWhere,Library::Base *library);
-                void QueryForMetadata(const char *metakey,const char *sql,std::set<std::string> &metakeysQueried,Library::Base *library,db::Connection &db);
-
-        };
-
-    }
-} }
+//////////////////////////////////////////////////////////////
+} } }
+//////////////////////////////////////////////////////////////
 
 

@@ -620,4 +620,43 @@ std::string Query::ListSelection::Name(){
     return "ListSelection";
 }
 
+bool Query::ListSelection::SendQuery(musik::core::xml::WriterNode &queryNode){
+///   <selections>
+///      <selection key="genre">1,3,5,7</selection>
+///      <selection key="artist">6,7,8</selection>
+///   </selections>
+///   <listeners>genre,artist,album</listeners>
+    xml::WriterNode selectionsNode(queryNode,"selections");
+
+    // Start with the selection nodes
+    for(SelectedMetadata::iterator selection=this->selectedMetadata.begin();selection!=this->selectedMetadata.end();++selection){
+        xml::WriterNode selectionNode(selectionsNode,"selection");
+        selectionNode.Attributes()["key"]   = selection->first;
+
+        std::string selectionIDs;
+
+        for(SelectedMetadataIDs::iterator id=selection->second.begin();id!=selection->second.end();++id){
+            if(!selectionIDs.empty()){
+                selectionIDs.append(",");
+            }
+            selectionIDs.append(boost::lexical_cast<std::string>(*id));
+        }
+
+        selectionNode.Content() = selectionIDs;
+
+    }
+
+    // Then the listeners
+    xml::WriterNode listenersNode(queryNode,"listeners");
+    for(MetadataSignals::iterator listener=this->metadataEvent.begin();listener!=this->metadataEvent.end();++listener){
+        if( listener->second.has_connections() ){
+            if(!listenersNode.Content().empty()){
+                listenersNode.Content().append(",");
+            }
+            listenersNode.Content().append(listener->first);
+        }
+    }
+    return true;
+    
+}
 

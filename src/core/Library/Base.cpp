@@ -200,7 +200,7 @@ bool Library::Base::AddQuery( const Query::Base &query,unsigned int options ){
                 if( options & Query::Options::CancelQueue ){
                     oCheckQuery    = this->incomingQueries.erase(oCheckQuery);
                 }else if( options & Query::Options::CancelSimilar ){
-                    if( (*oCheckQuery)->iQueryId == queryCopy->iQueryId ){
+                    if( (*oCheckQuery)->queryId == queryCopy->queryId ){
                         oCheckQuery    = this->incomingQueries.erase(oCheckQuery);
                     }else{
                         ++oCheckQuery;
@@ -222,7 +222,7 @@ bool Library::Base::AddQuery( const Query::Base &query,unsigned int options ){
                 if( options & Query::Options::CancelQueue ){
                     (*oCheckQuery)->status    |= Query::Base::Status::Canceled;
                 }else if( options & Query::Options::CancelSimilar ){
-                    if( (*oCheckQuery)->iQueryId == queryCopy->iQueryId ){
+                    if( (*oCheckQuery)->queryId == queryCopy->queryId ){
                         (*oCheckQuery)->status    |= Query::Base::Status::Canceled;
                     }
                 }
@@ -236,7 +236,7 @@ bool Library::Base::AddQuery( const Query::Base &query,unsigned int options ){
                 if( options & Query::Options::CancelQueue ){
                     bCancelCurrentQuery    = true;
                 }else if( options & Query::Options::CancelSimilar ){
-                    if( this->runningQuery->iQueryId == queryCopy->iQueryId ){
+                    if( this->runningQuery->queryId == queryCopy->queryId ){
                         bCancelCurrentQuery    = true;
                     }
                 }

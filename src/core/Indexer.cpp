@@ -502,7 +502,12 @@ bool Indexer::Startup(utfstring setLibraryPath){
     }
 
     // start the thread
-    this->oThread        = new boost::thread(boost::bind(&Indexer::ThreadLoop,this));
+    try{
+        this->oThread        = new boost::thread(boost::bind(&Indexer::ThreadLoop,this));
+    }
+    catch(...){
+        return false;
+    }
     return true;
 }
 

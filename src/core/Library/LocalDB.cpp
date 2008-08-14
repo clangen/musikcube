@@ -103,7 +103,12 @@ utfstring Library::LocalDB::GetInfo(){
 bool Library::LocalDB::Startup(){
 
     // Start the library thread
-    this->threads.create_thread(boost::bind(&Library::LocalDB::ThreadLoop,this));
+    try{
+        this->threads.create_thread(boost::bind(&Library::LocalDB::ThreadLoop,this));
+    }
+    catch(...){
+        return false;
+    }
 
     return true;
 }

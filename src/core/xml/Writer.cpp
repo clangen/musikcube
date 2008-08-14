@@ -171,10 +171,15 @@ void Writer::Send(){
         }
     }
 
-    // Time to send the buffer
-    if(!sendBuffer.empty()){
-        boost::asio::write(*(this->socket),boost::asio::buffer(sendBuffer));
-        sendBuffer.clear();
+    try{
+        // Time to send the buffer
+        if(!sendBuffer.empty()){
+            boost::asio::write(*(this->socket),boost::asio::buffer(sendBuffer));
+            sendBuffer.clear();
+        }
+    }
+    catch(...){
+        this->Exit();
     }
 
 }
