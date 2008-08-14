@@ -121,7 +121,7 @@ class Base : public sigslot::has_slots<> {
         ///
         ///Used for comparing queries and find similar queries.
         //////////////////////////////////////////
-        unsigned int iQueryId;
+        unsigned int queryId;
 
         //////////////////////////////////////////
         ///\brief
@@ -203,7 +203,7 @@ class Base : public sigslot::has_slots<> {
 
         virtual bool RecieveQuery(musik::core::xml::ParserNode &queryNode);
         virtual bool SendQuery(musik::core::xml::WriterNode &queryNode);
-        virtual bool RecieveResults(musik::core::xml::ParserNode &queryNode);
+        virtual bool RecieveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library);
         virtual bool SendResults(musik::core::xml::WriterNode &queryNode,Library::Base *library);
 };
 

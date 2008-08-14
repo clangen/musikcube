@@ -269,6 +269,52 @@ bool Query::ListBase::SendResults(musik::core::xml::WriterNode &queryNode,Librar
     return true;
 }
 
+bool Query::ListBase::RecieveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library){
+    while( musik::core::xml::ParserNode node = queryNode.ChildNode() ){
+        if( node.Name()=="metadata"){
+
+            std::string metakey(node.Attributes()["key"]);
+
+            MetadataValueVector tempMetadataValues;
+            tempMetadataValues.reserve(10);
+            int row(0);
+
+            {
+                boost::mutex::scoped_lock lock(library->oResultMutex);
+                this->metadataResults[metakey];
+            }
+
+            while( musik::core::xml::ParserNode metaDataNode = node.ChildNode("md") ){
+                metaDataNode.WaitForContent();
+
+                tempMetadataValues.push_back(
+                        MetadataValuePtr(
+                            new MetadataValue(
+                                boost::lexical_cast<unsigned int>( metaDataNode.Attributes()["id"] ),
+                                ConvertUTF16(metaDataNode.Content()).c_str()
+                                )
+                            )
+                        );
+
+                if( (++row)%10==0 ){
+                    boost::mutex::scoped_lock lock(library->oResultMutex);
+                    this->metadataResults[metakey].insert(this->metadataResults[metakey].end(),tempMetadataValues.begin(),tempMetadataValues.end());
+                    tempMetadataValues.clear();
+                    tempMetadataValues.reserve(10);
+                }
+            }
+            if(!tempMetadataValues.empty()){
+                boost::mutex::scoped_lock lock(library->oResultMutex);
+                this->metadataResults[metakey].insert(this->metadataResults[metakey].end(),tempMetadataValues.begin(),tempMetadataValues.end());
+            }
+
+
+        }
+    }
+
+    return true;
+}
+
 void Query::ListBase::DummySlot(MetadataValueVector*,bool){
 }
 

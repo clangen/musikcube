@@ -41,12 +41,15 @@
 
 using namespace musik::core;
 
-Query::Base::Base(void) : status(0){
+Query::Base::Base(void) 
+:status(0)
+,options(0)
+{
     // This will guarantee that the query id is uniq for each query, but copies will not.
     // This is usefull when canceling similar queries
-    static unsigned int iUniqueQueryId(0);
-    iUniqueQueryId++;
-    iQueryId    = iUniqueQueryId;
+    static unsigned int uniqueQueryId(0);
+    uniqueQueryId++;
+    this->queryId    = uniqueQueryId;
 }
 
 Query::Base::~Base(void){
@@ -90,7 +93,7 @@ bool Query::Base::SendQuery(musik::core::xml::WriterNode &queryNode){
 ///\returns
 ///true when successfully recieved
 //////////////////////////////////////////
-bool Query::Base::RecieveResults(musik::core::xml::ParserNode &queryNode){
+bool Query::Base::RecieveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library){
     return false;
 }
 
