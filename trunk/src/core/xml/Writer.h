@@ -75,6 +75,8 @@ class Writer : public WriterNode{
 
         std::string sendBuffer;
 
+		static std::string EncodeSpecialCharacters(std::string xmlContent);
+
 };
 
 //////////////////////////////////////////////////////////////////////////////
