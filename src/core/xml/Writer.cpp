@@ -36,7 +36,7 @@
 #include "pch.hpp"
 #include <core/xml/Writer.h>
 #include <core/xml/WriterNode.h>
-
+#include <boost/algorithm/string/replace.hpp>
 
 using namespace musik::core::xml;
 
@@ -154,7 +154,7 @@ void Writer::Send(){
 
                 if(node!=this->node){   // Do not send root node
                     // Send the content and end tag
-                    sendBuffer.append(node->content);
+					sendBuffer.append(Writer::EncodeSpecialCharacters(node->content));
                     sendBuffer.append("</"+node->name+">");
                 }
 
@@ -184,4 +184,12 @@ void Writer::Send(){
 
 }
 
+std::string Writer::EncodeSpecialCharacters(std::string xmlContent){
+	boost::algorithm::replace_all(xmlContent,"<","&lt;");
+	boost::algorithm::replace_all(xmlContent,">","&gt;");
+	boost::algorithm::replace_all(xmlContent,"&","&amp;");
+	boost::algorithm::replace_all(xmlContent,"\"","&quot;");
+	boost::algorithm::replace_all(xmlContent,"'","&apos;");
+	return xmlContent;
+}
 
