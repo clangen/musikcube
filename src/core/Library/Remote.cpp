@@ -175,7 +175,7 @@ void Library::Remote::ReadThread(){
                         if(currentQuery->RecieveResults(node,this)){
                             currentQuery->status |= Query::Base::Status::Ended;
                         }else{
-                            currentQuery->status |= Query::Base::Status::Canceled;
+                            currentQuery->status |= Query::Base::Status::Canceled | Query::Base::Status::Ended;
                         }
                     }
                 }
@@ -227,7 +227,11 @@ void Library::Remote::WriteThread(){
                 queryNode.Attributes()["options"]  = boost::lexical_cast<std::string>(query->options);
             }
 
-            query->SendQuery(queryNode);
+			if(!query->SendQuery(queryNode)){
+				// Query can not be send, lets cancel it
+                boost::mutex::scoped_lock lock(this->libraryMutex);
+				query->status |= Query::Base::Status::Canceled | Query::Base::Status::Ended;
+			}
 
             // Check if writer has quit
             if(writer.Exited()){

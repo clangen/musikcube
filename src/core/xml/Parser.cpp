@@ -117,7 +117,7 @@ void Parser::OnElementEndReal(const char *name){
     if(this->currentNodeLevels.size()>0){
         if(this->currentNodeLevels.back()->name == name){
 
-            this->currentNodeLevels.back()->status   = Node::Status::Ended;
+            this->currentNodeLevels.back()->status   |= Node::Status::Ended;
             this->currentNodeLevels.pop_back();
 
             this->currentEventType  = EventTypes::NodeEnd;

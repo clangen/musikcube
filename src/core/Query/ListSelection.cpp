@@ -571,11 +571,12 @@ bool Query::ListSelection::RecieveQuery(musik::core::xml::ParserNode &queryNode)
 
     while( musik::core::xml::ParserNode node = queryNode.ChildNode() ){
         if(node.Name()=="selections"){
-
+			std::cout << "<selections>";
             // Get metakey nodes
             // Expected tag is likle this:
             // <selection key="genre">2,5,3</selection>
             while( musik::core::xml::ParserNode selectionNode = node.ChildNode("selection") ){
+				std::cout << "<selection key=\"" << selectionNode.Attributes()["key"] << "\">";
 
                 // Wait for all content
                 selectionNode.WaitForContent();
@@ -587,9 +588,13 @@ bool Query::ListSelection::RecieveQuery(musik::core::xml::ParserNode &queryNode)
 
                 for(StringVector::iterator value=values.begin();value!=values.end();++value){
                     this->SelectMetadata(selectionNode.Attributes()["key"].c_str(),boost::lexical_cast<DBINT>(*value));
+					std::cout << "," << *value;
                 }
+				std::cout << "</selection>" << std::endl;
 
             }
+			std::cout << "</selections>" << std::endl;
+
         }else if(node.Name()=="listeners"){
 
             // Wait for all content
@@ -656,6 +661,16 @@ bool Query::ListSelection::SendQuery(musik::core::xml::WriterNode &queryNode){
             listenersNode.Content().append(listener->first);
         }
     }
+	// Then the track listener
+	if( this->trackEvent.has_connections() ){
+	    xml::WriterNode listTracksNode(queryNode,"listtracks");
+		listTracksNode.Content().append("true");
+	}
+	// Then the track listener
+	if( this->trackInfoEvent.has_connections() ){
+	    xml::WriterNode listTrackInfoNode(queryNode,"listtrackinfo");
+		listTrackInfoNode.Content().append("true");
+	}
     return true;
     
 }

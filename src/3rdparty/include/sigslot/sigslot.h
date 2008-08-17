@@ -2220,6 +2220,14 @@ namespace sigslot {
 			pclass->signal_connect(this);
 		}
 
+		bool has_connections(){
+			lock_block<mt_policy> lock(this);
+			if(this->m_connected_slots.size()==0){
+				return false;
+			}
+			return true;
+		}
+
 		void emit(arg1_type a1, arg2_type a2, arg3_type a3)
 		{
 			lock_block<mt_policy> lock(this);

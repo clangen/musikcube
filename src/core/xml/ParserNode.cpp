@@ -138,7 +138,7 @@ std::string& ParserNode::Content(){
 //////////////////////////////////////////
 void ParserNode::WaitForContent(){
     if(this->node && this->status==1){
-        while(this->node->status!=Node::Status::Ended){    
+        while( !(this->node->status & Node::Status::Ended) ){    
             // Wait for node to be ended
             this->parser->ContinueParsing();
         }
