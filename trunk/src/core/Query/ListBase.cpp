@@ -38,6 +38,7 @@
 #include <core/Query/ListBase.h>
 #include <core/Library/Base.h>
 #include <core/Common.h>
+#include <boost/algorithm/string.hpp>
 
 using namespace musik::core;
 
@@ -251,26 +252,31 @@ bool Query::ListBase::SendResults(musik::core::xml::WriterNode &queryNode,Librar
 
         }
 
-        if(!continueSending){
-            boost::mutex::scoped_lock lock(library->oResultMutex);
-            // Check for trackinfo update
-            musik::core::xml::WriterNode trackInfoNode(queryNode,"trackinfo");
-            trackInfoNode.Content() =  boost::lexical_cast<std::string>( trackInfoTracks );
-            trackInfoNode.Content() += ","+boost::lexical_cast<std::string>( trackInfoDuration );
-            trackInfoNode.Content() += ","+boost::lexical_cast<std::string>( trackInfoSize );
-        }else{
+        if(continueSending){
             if( metadataResultsCopy.empty() && trackResultsCopy.empty() ){
                 // Yield for more results
                 boost::thread::yield();
             }
         }
     }
+	
+	{
+        boost::mutex::scoped_lock lock(library->oResultMutex);
+        // Check for trackinfo update
+        musik::core::xml::WriterNode trackInfoNode(queryNode,"trackinfo");
+        trackInfoNode.Content() =  boost::lexical_cast<std::string>( this->trackInfoTracks );
+        trackInfoNode.Content() += ","+boost::lexical_cast<std::string>( this->trackInfoDuration );
+        trackInfoNode.Content() += ","+boost::lexical_cast<std::string>( this->trackInfoSize );
+	}
+
 
     return true;
 }
 
 bool Query::ListBase::RecieveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library){
     while( musik::core::xml::ParserNode node = queryNode.ChildNode() ){
+
+		// Recieve metadata
         if( node.Name()=="metadata"){
 
             std::string metakey(node.Attributes()["key"]);
@@ -310,6 +316,59 @@ bool Query::ListBase::RecieveResults(musik::core::xml::ParserNode &queryNode,Lib
 
 
         }
+
+		typedef std::vector<std::string> StringVector;
+
+		// Recieve tracks
+        if( node.Name()=="tracklist"){
+            while( musik::core::xml::ParserNode tracksNode = node.ChildNode("tracks") ){
+				tracksNode.WaitForContent();
+
+				StringVector values;
+				boost::algorithm::split(values,tracksNode.Content(),boost::algorithm::is_any_of(","));
+
+				try{	// lexical_cast can throw
+			        TrackVector tempTrackResults;
+			        tempTrackResults.reserve(101);
+
+	                for(StringVector::iterator value=values.begin();value!=values.end();++value){
+						int trackId(boost::lexical_cast<DBINT>(*value));
+			            tempTrackResults.push_back(TrackPtr(new Track(trackId)));
+					}
+
+					{
+		                boost::mutex::scoped_lock lock(library->oResultMutex);
+		                this->trackResults.insert(this->trackResults.end(),tempTrackResults.begin(),tempTrackResults.end());
+					}
+
+				}
+				catch(...){
+					return false;
+				}
+			}
+		}
+
+
+		// Recieve trackinfo
+        if( node.Name()=="trackinfo"){
+			node.WaitForContent();
+
+			StringVector values;
+			boost::algorithm::split(values,node.Content(),boost::algorithm::is_any_of(","));
+
+			if(values.size()>=3){
+				try{
+					boost::mutex::scoped_lock lock(library->oResultMutex);
+					this->trackInfoTracks	= boost::lexical_cast<UINT64>( values[0] );
+					this->trackInfoDuration	= boost::lexical_cast<UINT64>( values[1] );
+					this->trackInfoSize		= boost::lexical_cast<UINT64>( values[2] );
+				}
+				catch(...){
+					return false;
+				}
+			}
+		}
+		
     }
 
     return true;
