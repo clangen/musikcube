@@ -62,7 +62,7 @@ struct is_function_impl
 template <typename T>
 struct is_function_impl
 {
-#if BOOST_WORKAROUND(BOOST_MSVC, >= 1400)
+#if BOOST_WORKAROUND(_MSC_FULL_VER, >= 140050000)
 #pragma warning(push)
 #pragma warning(disable:6334)
 #endif
@@ -71,7 +71,7 @@ struct is_function_impl
         bool, value = sizeof(::boost::type_traits::is_function_ptr_tester(t))
         == sizeof(::boost::type_traits::yes_type)
         );
-#if BOOST_WORKAROUND(BOOST_MSVC, >= 1400)
+#if BOOST_WORKAROUND(_MSC_FULL_VER, >= 140050000)
 #pragma warning(pop)
 #endif
 };

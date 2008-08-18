@@ -25,12 +25,15 @@
 
 #include <boost/mpl/eval_if.hpp>
 #include <boost/mpl/int.hpp>
+#include <boost/mpl/bool.hpp>
+#include <boost/mpl/identity.hpp>
+
 #include <boost/type_traits/is_base_and_derived.hpp>
 #include <boost/type_traits/is_pointer.hpp>
 #include <boost/type_traits/is_const.hpp>
+#include <boost/type_traits/is_polymorphic.hpp>
 
 #include <boost/static_assert.hpp>
-#include <boost/serialization/type_info_implementation.hpp>
 #include <boost/serialization/force_include.hpp>
 #include <boost/serialization/void_cast_fwd.hpp>
 
@@ -39,40 +42,44 @@ namespace serialization {
 
 namespace detail
 {
-// only register void casts if the types are polymorphic
-  template<class Base, class Derived>
-  struct base_register
-  {
-      static void const* execute(mpl::false_) { return 0; }
+    // get the base type for a given derived type
+    // preserving the const-ness
+    template<class B, class D>
+    struct base_cast
+    {
+        typedef BOOST_DEDUCED_TYPENAME
+        mpl::if_<
+            is_const<D>,
+            const B,
+            B
+        >::type type;
+        BOOST_STATIC_ASSERT(is_const<type>::value == is_const<D>::value);
+    };
 
-      static void const* execute(mpl::true_)
-      {
-          return &void_cast_register((Derived const*)0, (Base const*)0);
-      }
-            
-      static void const* invoke()
-      {
-          typedef mpl::bool_<
-              type_info_implementation<Base>::type::is_polymorphic::value
-          > is_polymorphic;
-          
-          return execute(is_polymorphic());
-      }
-  };
+    // only register void casts if the types are polymorphic
+    template<class Base, class Derived>
+    struct base_register
+    {
+        struct polymorphic {
+            static void const * invoke(){
+                return &void_cast_register((Derived const*)0, (Base const*)0);
+            }
+        };
+        struct non_polymorphic {
+            static void const * invoke(){
+                return 0;
+            }
+        };
+        static void const * invoke(){
+            typedef BOOST_DEDUCED_TYPENAME mpl::eval_if<
+                is_polymorphic<Base>,
+                mpl::identity<polymorphic>,
+                mpl::identity<non_polymorphic>
+            >::type type;
+            return type::invoke();
+        }
+    };
 
-  // get the base type for a given derived type
-  // preserving the const-ness
-  template<class B, class D>
-  struct base_cast
-  {
-      typedef BOOST_DEDUCED_TYPENAME
-      mpl::if_<
-          is_const<D>,
-          const B,
-          B
-      >::type type;
-      BOOST_STATIC_ASSERT(is_const<type>::value == is_const<D>::value);
-  };
 } // namespace detail
 
 #if BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x560))

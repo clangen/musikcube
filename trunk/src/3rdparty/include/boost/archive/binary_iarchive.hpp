@@ -88,5 +88,6 @@ public:
 
 // required by export
 BOOST_SERIALIZATION_REGISTER_ARCHIVE(boost::archive::binary_iarchive)
+BOOST_SERIALIZATION_USE_ARRAY_OPTIMIZATION(boost::archive::binary_iarchive)
 
 #endif // BOOST_ARCHIVE_BINARY_IARCHIVE_HPP

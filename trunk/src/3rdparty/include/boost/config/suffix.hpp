@@ -121,6 +121,15 @@
 #  endif
 
 //
+// Without partial specialization, partial 
+// specialization with default args won't work either:
+//
+#  if defined(BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION) \
+      && !defined(BOOST_NO_PARTIAL_SPECIALIZATION_IMPLICIT_DEFAULT_ARGS)
+#     define BOOST_NO_PARTIAL_SPECIALIZATION_IMPLICIT_DEFAULT_ARGS
+#  endif
+
+//
 // Without member template support, we can't have template constructors
 // in the standard library either:
 //
@@ -232,6 +241,8 @@
 #ifndef BOOST_HAS_THREADS
 #  undef BOOST_HAS_PTHREADS
 #  undef BOOST_HAS_PTHREAD_MUTEXATTR_SETTYPE
+#  undef BOOST_HAS_PTHREAD_YIELD
+#  undef BOOST_HAS_PTHREAD_DELAY_NP
 #  undef BOOST_HAS_WINTHREADS
 #  undef BOOST_HAS_BETHREADS
 #  undef BOOST_HAS_MPTASKS

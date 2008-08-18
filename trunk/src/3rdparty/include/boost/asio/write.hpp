@@ -30,6 +30,8 @@ namespace asio {
 
 /**
  * @defgroup write boost::asio::write
+ *
+ * @brief Write a certain amount of data to a stream before returning.
  */
 /*@{*/
 
@@ -167,7 +169,7 @@ template <typename SyncWriteStream, typename ConstBufferSequence,
 std::size_t write(SyncWriteStream& s, const ConstBufferSequence& buffers,
     CompletionCondition completion_condition, boost::system::error_code& ec);
 
-/// Write a certain amount of data to a stream before returning.
+/// Write all of the supplied data to a stream before returning.
 /**
  * This function is used to write a certain number of bytes of data to a stream.
  * The call will block until one of the following conditions is true:
@@ -280,10 +282,13 @@ std::size_t write(SyncWriteStream& s, basic_streambuf<Allocator>& b,
 /*@}*/
 /**
  * @defgroup async_write boost::asio::async_write
+ *
+ * @brief Start an asynchronous operation to write a certain amount of data to a
+ * stream.
  */
 /*@{*/
 
-/// Start an asynchronous operation to write of all of the supplied data to a
+/// Start an asynchronous operation to write all of the supplied data to a
 /// stream.
 /**
  * This function is used to asynchronously write a certain number of bytes of
@@ -406,7 +411,7 @@ template <typename AsyncWriteStream, typename ConstBufferSequence,
 void async_write(AsyncWriteStream& s, const ConstBufferSequence& buffers,
     CompletionCondition completion_condition, WriteHandler handler);
 
-/// Start an asynchronous operation to write a certain amount of data to a
+/// Start an asynchronous operation to write all of the supplied data to a
 /// stream.
 /**
  * This function is used to asynchronously write a certain number of bytes of

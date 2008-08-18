@@ -23,17 +23,16 @@
 #include <boost/config.hpp>
 
 #include <list>
+#include <cstddef> // NULL
 
-#include <boost/serialization/detail/shared_ptr_132.hpp>
-
-#include <boost/serialization/is_abstract.hpp>
+#include <boost/serialization/assume_abstract.hpp>
 #include <boost/serialization/split_free.hpp>
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/tracking.hpp>
 #include <boost/serialization/void_cast.hpp>
 
 // mark base class as an (uncreatable) base class
-BOOST_IS_ABSTRACT(boost_132::detail::sp_counted_base)
+#include <boost/serialization/detail/shared_ptr_132.hpp>
 
 /////////////////////////////////////////////////////////////
 // Maintain a couple of lists of loaded shared pointers of the old previous
@@ -77,8 +76,9 @@ inline void serialize(
 template<class Archive, class P, class D>
 inline void save_construct_data(
     Archive & ar,
-    const boost_132::detail::sp_counted_base_impl<P, D> *t, 
-    const unsigned int /* file_version */
+    const 
+    boost_132::detail::sp_counted_base_impl<P, D> *t, 
+    const BOOST_PFTO unsigned int /* file_version */
 ){
     // variables used for construction
     ar << boost::serialization::make_nvp("ptr", t->ptr);

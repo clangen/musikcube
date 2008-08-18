@@ -293,7 +293,9 @@ void cpp_regex_traits_char_layer<charT>::init()
    //
    if((int)cat >= 0)
    {
+#ifndef BOOST_NO_EXCEPTIONS
       try{
+#endif
          for(regex_constants::syntax_type i = 1; i < regex_constants::syntax_max; ++i)
          {
             string_type mss = this->m_pmessages->get(cat, 0, i, get_default_message(i));
@@ -303,12 +305,14 @@ void cpp_regex_traits_char_layer<charT>::init()
             }
          }
          this->m_pmessages->close(cat);
+#ifndef BOOST_NO_EXCEPTIONS
       }
       catch(...)
       {
          this->m_pmessages->close(cat);
          throw;
       }
+#endif
    }
    else
    {
@@ -1054,4 +1058,5 @@ static_mutex& cpp_regex_traits<charT>::get_mutex_inst()
 #endif
 
 #endif
+
 

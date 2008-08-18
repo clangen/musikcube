@@ -102,10 +102,14 @@ namespace boost
 
     inline bool status_known( file_status f ) { return f.type() != status_unknown; }
     inline bool exists( file_status f )       { return f.type() != status_unknown && f.type() != file_not_found; }
-    inline bool is_regular( file_status f )   { return f.type() == regular_file; }
+    inline bool is_regular_file(file_status f){ return f.type() == regular_file; }
     inline bool is_directory( file_status f ) { return f.type() == directory_file; }
     inline bool is_symlink( file_status f )   { return f.type() == symlink_file; }
-    inline bool is_other( file_status f )     { return exists(f) && !is_regular(f) && !is_directory(f) && !is_symlink(f); }
+    inline bool is_other( file_status f )     { return exists(f) && !is_regular_file(f) && !is_directory(f) && !is_symlink(f); }
+
+# ifndef BOOST_FILESYSTEM_NO_DEPRECATED
+    inline bool is_regular( file_status f )   { return f.type() == regular_file; }
+# endif
 
     struct space_info
     {
@@ -117,6 +121,10 @@ namespace boost
 
     namespace detail
     {
+      // singular object used only as a tag; thus initialization and
+      // thread-safety are not issues
+      BOOST_FILESYSTEM_DECL extern system::error_code throws;  
+
       typedef std::pair< system::error_code, bool >
         query_pair;
 
@@ -275,7 +283,7 @@ namespace boost
 # ifndef BOOST_FILESYSTEM_NO_DEPRECATED
     inline bool symbolic_link_exists( const path & ph )
       { return is_symlink( symlink_status(ph) ); }
-#endif
+# endif
 
     BOOST_FS_FUNC(bool) exists( const Path & ph )
     { 
@@ -297,6 +305,17 @@ namespace boost
       return is_directory( result );
     }
 
+    BOOST_FS_FUNC(bool) is_regular_file( const Path & ph )
+    { 
+      system::error_code ec;
+      file_status result( detail::status_api( ph.external_file_string(), ec ) );
+      if ( ec )
+        boost::throw_exception( basic_filesystem_error<Path>(
+          "boost::filesystem::is_regular_file", ph, ec ) );
+      return is_regular_file( result );
+    }
+
+# ifndef BOOST_FILESYSTEM_NO_DEPRECATED
     BOOST_FS_FUNC(bool) is_regular( const Path & ph )
     { 
       system::error_code ec;
@@ -306,6 +325,7 @@ namespace boost
           "boost::filesystem::is_regular", ph, ec ) );
       return is_regular( result );
     }
+# endif
 
     BOOST_FS_FUNC(bool) is_other( const Path & ph )
     { 
@@ -454,21 +474,13 @@ namespace boost
       return ec;
     }
 
-    BOOST_FS_FUNC(bool) remove( const Path & ph )
+    BOOST_FS_FUNC(void) remove( const Path & ph, system::error_code & ec = detail::throws )
     {
-      if ( exists( ph )
-        || is_symlink( ph ) ) // handle dangling symbolic links
-        // note that the POSIX behavior for symbolic links is what we want;
-        // the link rather than what it points to is deleted. Windows behavior
-        // doesn't matter; is_symlink() is always false on Windows.
-      {
-        system::error_code ec( detail::remove_api( ph.external_file_string() ) );
-        if ( ec )
-          boost::throw_exception( basic_filesystem_error<Path>(
-            "boost::filesystem::remove", ph, ec ) );
-        return true;
-      }
-      return false;
+      system::error_code error( detail::remove_api(ph.external_file_string()) );
+      if ( error && &ec == &detail::throws )
+        boost::throw_exception( basic_filesystem_error<Path>(
+          "boost::filesystem::remove", ph, error ) );
+      ec = error;
     }
 
     BOOST_FS_FUNC(unsigned long) remove_all( const Path & ph )
@@ -618,10 +630,17 @@ namespace boost
     inline bool is_directory( const wpath & ph )
       { return is_directory<wpath>( ph ); }
  
+    inline bool is_regular_file( const path & ph )
+      { return is_regular_file<path>( ph ); }
+    inline bool is_regular_file( const wpath & ph )
+      { return is_regular_file<wpath>( ph ); }
+
+# ifndef BOOST_FILESYSTEM_NO_DEPRECATED
     inline bool is_regular( const path & ph )
       { return is_regular<path>( ph ); }
     inline bool is_regular( const wpath & ph )
       { return is_regular<wpath>( ph ); }
+# endif
 
     inline bool is_other( const path & ph )
       { return is_other<path>( ph ); }
@@ -693,10 +712,8 @@ namespace boost
       const wpath & from_ph, system::error_code & ec )
       { return create_symlink<wpath>( to_ph, from_ph, ec ); }
 
-    inline bool remove( const path & ph )
-      { return remove<path>( ph ); }
-    inline bool remove( const wpath & ph )
-      { return remove<wpath>( ph ); }
+    inline void remove( const path & ph )  { remove<path>( ph ); }
+    inline void remove( const wpath & ph ) { remove<wpath>( ph ); }
 
     inline unsigned long remove_all( const path & ph )
       { return remove_all<path>( ph ); }
@@ -965,7 +982,7 @@ namespace boost
         {
           boost::throw_exception( basic_filesystem_error<Path>(  
             "boost::filesystem::basic_directory_iterator increment",
-            m_imp->m_directory_entry.path().branch_path(), ec ) );
+            m_imp->m_directory_entry.path().parent_path(), ec ) );
         }
         if ( m_imp->m_handle == 0 ) { m_imp.reset(); return; } // eof, make end
         if ( !(name[0] == dot<Path>::value // !(dot or dot-dot)
@@ -973,7 +990,7 @@ namespace boost
             || (name[1] == dot<Path>::value
               && name.size() == 2))) )
         {
-          m_imp->m_directory_entry.replace_leaf(
+          m_imp->m_directory_entry.replace_filename(
             Path::traits_type::to_internal( name ), fs, symlink_fs );
           return;
         }
@@ -1001,10 +1018,10 @@ namespace boost
         file_status st, file_status symlink_st )
         { m_path = p; m_status = st; m_symlink_status = symlink_st; }
 
-      void replace_leaf( const string_type & s,
+      void replace_filename( const string_type & s,
         file_status st, file_status symlink_st )
      {
-       m_path.remove_leaf();
+       m_path.remove_filename();
        m_path /= s;
        m_status = st;
        m_symlink_status = symlink_st;
@@ -1021,9 +1038,9 @@ namespace boost
 
 #   ifndef BOOST_FILESYSTEM_NO_DEPRECATED
       // deprecated functions preserve common use cases in legacy code
-      typename Path::string_type leaf() const
+      typename Path::string_type filename() const
       {
-        return path().leaf();
+        return path().filename();
       }
       typename Path::string_type string() const
       {

@@ -15,7 +15,6 @@
 #include <algorithm>
 #include <functional>
 #include <locale>
-#include <set>
 
 #include <boost/range/begin.hpp>
 #include <boost/range/end.hpp>
@@ -29,6 +28,10 @@ namespace boost {
 
 //  classification functors -----------------------------------------------//
 
+#if BOOST_WORKAROUND(BOOST_MSVC, >= 1400)
+#pragma warning(push)
+#pragma warning(disable:4512) //assignment operator could not be generated
+#endif
             // is_classified functor
             struct is_classifiedF :
                 public predicate_facade<is_classifiedF>
@@ -60,6 +63,10 @@ namespace boost {
                 const std::locale m_Locale;
             };
 
+#if BOOST_WORKAROUND(BOOST_MSVC, >= 1400)
+#pragma warning(pop)
+#endif
+
             // is_any_of functor
             /*
                 returns true if the value is from the specified set
@@ -68,25 +75,132 @@ namespace boost {
             struct is_any_ofF :
                 public predicate_facade<is_any_ofF<CharT> >
             {
+            private:
+                // set cannot operate on const value-type
+                typedef typename remove_const<CharT>::type set_value_type;
+                // Size of the static storage (size of pointer*2)
+                static const ::std::size_t FIXED_STORAGE_SIZE = sizeof(set_value_type*)*2;
+
+            public:     
                 // Boost.Lambda support
                 template <class Args> struct sig { typedef bool type; };
 
                 // Constructor
                 template<typename RangeT>
-                is_any_ofF( const RangeT& Range ) :
-                    m_Set( begin(Range), end(Range) ) {}
+                is_any_ofF( const RangeT& Range ) : m_Size(0)
+                {
+                    // Prepare storage
+                    m_Storage.m_dynSet=0;
+
+                    std::size_t Size=::boost::distance(Range);
+                    m_Size=Size;
+                    set_value_type* Storage=0;
+
+                    if(m_Size<=FIXED_STORAGE_SIZE)
+                    {
+                        // Use fixed storage
+                        Storage=&m_Storage.m_fixSet[0];
+                    }
+                    else
+                    {
+                        // Use dynamic storage
+                        m_Storage.m_dynSet=new set_value_type[m_Size];
+                        Storage=m_Storage.m_dynSet;
+                    }
+
+                    // Use fixed storage
+                    ::std::copy(::boost::begin(Range), ::boost::end(Range), Storage);
+                    ::std::sort(Storage, Storage+m_Size);
+                }
+
+                // Copy constructor
+                is_any_ofF(const is_any_ofF& Other) : m_Size(Other.m_Size)
+                {
+                    // Prepare storage
+                    m_Storage.m_dynSet=0;               
+                    const set_value_type* SrcStorage=0;
+                    set_value_type* DestStorage=0;
+
+                    if(m_Size<=FIXED_STORAGE_SIZE)
+                    {
+                        // Use fixed storage
+                        DestStorage=&m_Storage.m_fixSet[0];
+                        SrcStorage=&Other.m_Storage.m_fixSet[0];
+                    }
+                    else
+                    {
+                        // Use dynamic storage
+                        m_Storage.m_dynSet=new set_value_type[m_Size];
+                        DestStorage=m_Storage.m_dynSet;
+                        SrcStorage=Other.m_Storage.m_dynSet;
+                    }
+
+                    // Use fixed storage
+                    ::memcpy(DestStorage, SrcStorage, sizeof(set_value_type)*m_Size);
+                }
+
+                // Destructor
+                ~is_any_ofF()
+                {
+                    if(m_Size>FIXED_STORAGE_SIZE && m_Storage.m_dynSet!=0)
+                    {
+                        delete m_Storage.m_dynSet;
+                    }
+                }
+
+                // Assignment
+                is_any_ofF& operator=(const is_any_ofF& Other)
+                {
+                    // Prepare storage
+                    m_Storage.m_dynSet=0;
+                    m_Size=Other.m_Size;
+                    const set_value_type* SrcStorage=0;
+                    set_value_type* DestStorage=0;
+
+                    if(m_Size<=FIXED_STORAGE_SIZE)
+                    {
+                        // Use fixed storage
+                        DestStorage=&m_Storage.m_fixSet[0];
+                        SrcStorage=&Other.m_Storage.m_fixSet[0];
+                    }
+                    else
+                    {
+                        // Use dynamic storage
+                        m_Storage.m_dynSet=new set_value_type[m_Size];
+                        DestStorage=m_Storage.m_dynSet;
+                        SrcStorage=Other.m_Storage.m_dynSet;
+                    }
+
+                    // Use fixed storage
+                    ::memcpy(DestStorage, SrcStorage, sizeof(set_value_type)*m_Size);
+
+                    return *this;
+                }
 
                 // Operation
                 template<typename Char2T>
                 bool operator()( Char2T Ch ) const
                 {
-                    return m_Set.find(Ch)!=m_Set.end();
+                    const set_value_type* Storage=
+                        (m_Size<=FIXED_STORAGE_SIZE)
+                        ? &m_Storage.m_fixSet[0]
+                        : m_Storage.m_dynSet;
+
+                    return ::std::binary_search(Storage, Storage+m_Size, Ch);
                 }
 
             private:
-                // set cannot operate on const value-type
-                typedef typename remove_const<CharT>::type set_value_type;
-                std::set<set_value_type> m_Set;
+                // storage
+                // The actual used storage is selected on the type
+                union
+                {
+                    set_value_type* m_dynSet;
+                    set_value_type m_fixSet[FIXED_STORAGE_SIZE];
+                } 
+                m_Storage;
+        
+                // storage size
+                ::std::size_t m_Size;
             };
 
             // is_from_range functor

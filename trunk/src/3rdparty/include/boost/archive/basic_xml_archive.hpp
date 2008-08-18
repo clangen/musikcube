@@ -24,41 +24,6 @@
 namespace boost { 
 namespace archive {
 
-//////////////////////////////////////////////////////////////////////
-// exceptions thrown by xml archives
-//
-class xml_archive_exception : 
-    public virtual archive_exception
-{
-public:
-    typedef enum {
-        xml_archive_parsing_error,    // see save_register
-        xml_archive_tag_mismatch,
-        xml_archive_tag_name_error
-    } exception_code;
-    xml_archive_exception(exception_code c)
-    {}
-    virtual const char *what( ) const throw( )
-    {
-        const char *msg;
-        switch(code){
-        case xml_archive_parsing_error:
-            msg = "unrecognized XML syntax";
-            break;
-        case xml_archive_tag_mismatch:
-            msg = "XML start/end tag mismatch";
-            break;
-        case xml_archive_tag_name_error:
-            msg = "Invalid XML tag name";
-            break;
-        default:
-            msg = archive_exception::what();
-            break;
-        }
-        return msg;
-    }
-};
-
 // constant strings used in xml i/o
 
 extern 

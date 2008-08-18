@@ -1,6 +1,6 @@
 // Boost Lambda Library - is_instance_of.hpp ---------------------
 
-// Copyright (C) 2001 Jaakko Järvi (jaakko.jarvi@cs.utu.fi)
+// Copyright (C) 2001 Jaakko Jarvi (jaakko.jarvi@cs.utu.fi)
 //
 // Distributed under the Boost Software License, Version 1.0. (See
 // accompanying file LICENSE_1_0.txt or copy at

@@ -71,32 +71,39 @@ template class BOOST_REGEX_DECL ::boost::re_detail::perl_matcher<BOOST_REGEX_CHA
 #     ifdef __GNUC__
 #        define template __extension__ extern template
 #     else
+#        if BOOST_MSVC > 1310
+#           define BOOST_REGEX_TEMPLATE_DECL
+#        endif
 #        define template extern template
 #     endif
 #  endif
+
+#ifndef BOOST_REGEX_TEMPLATE_DECL
+#  define BOOST_REGEX_TEMPLATE_DECL BOOST_REGEX_DECL
+#endif
 
 #  ifdef BOOST_MSVC
 #     pragma warning(push)
 #     pragma warning(disable : 4251 4231 4660)
 #  endif
 
-template class BOOST_REGEX_DECL basic_regex< BOOST_REGEX_CHAR_T BOOST_REGEX_TRAITS_T >;
+template class BOOST_REGEX_TEMPLATE_DECL basic_regex< BOOST_REGEX_CHAR_T BOOST_REGEX_TRAITS_T >;
 
 #if !BOOST_WORKAROUND(BOOST_MSVC, < 1300)
-template class BOOST_REGEX_DECL match_results< const BOOST_REGEX_CHAR_T* >;
+template class BOOST_REGEX_TEMPLATE_DECL match_results< const BOOST_REGEX_CHAR_T* >;
 #endif
 #ifndef BOOST_NO_STD_ALLOCATOR
-template class BOOST_REGEX_DECL ::boost::re_detail::perl_matcher<BOOST_REGEX_CHAR_T const *, match_results< const BOOST_REGEX_CHAR_T* >::allocator_type BOOST_REGEX_TRAITS_T >;
+template class BOOST_REGEX_TEMPLATE_DECL ::boost::re_detail::perl_matcher<BOOST_REGEX_CHAR_T const *, match_results< const BOOST_REGEX_CHAR_T* >::allocator_type BOOST_REGEX_TRAITS_T >;
 #endif
 #if !(defined(BOOST_DINKUMWARE_STDLIB) && (BOOST_DINKUMWARE_STDLIB <= 1))\
    && !(defined(BOOST_INTEL_CXX_VERSION) && (BOOST_INTEL_CXX_VERSION <= 800))\
    && !(defined(__SGI_STL_PORT) || defined(_STLPORT_VERSION))\
    && !defined(BOOST_REGEX_ICU_INSTANCES)
 #if !BOOST_WORKAROUND(BOOST_MSVC, < 1300)
-template class BOOST_REGEX_DECL match_results< std::basic_string<BOOST_REGEX_CHAR_T>::const_iterator >;
+template class BOOST_REGEX_TEMPLATE_DECL match_results< std::basic_string<BOOST_REGEX_CHAR_T>::const_iterator >;
 #endif
 #ifndef BOOST_NO_STD_ALLOCATOR
-template class BOOST_REGEX_DECL ::boost::re_detail::perl_matcher< std::basic_string<BOOST_REGEX_CHAR_T>::const_iterator, match_results< std::basic_string<BOOST_REGEX_CHAR_T>::const_iterator >::allocator_type, boost::regex_traits<BOOST_REGEX_CHAR_T > >;
+template class BOOST_REGEX_TEMPLATE_DECL ::boost::re_detail::perl_matcher< std::basic_string<BOOST_REGEX_CHAR_T>::const_iterator, match_results< std::basic_string<BOOST_REGEX_CHAR_T>::const_iterator >::allocator_type, boost::regex_traits<BOOST_REGEX_CHAR_T > >;
 #endif
 #endif
 
@@ -108,6 +115,8 @@ template class BOOST_REGEX_DECL ::boost::re_detail::perl_matcher< std::basic_str
 #  ifdef template
 #     undef template
 #  endif
+
+#undef BOOST_REGEX_TEMPLATE_DECL
 
 #elif (defined(__GNUC__) && (__GNUC__ >= 3))
 

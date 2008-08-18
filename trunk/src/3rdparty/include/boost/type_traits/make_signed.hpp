@@ -72,7 +72,7 @@ struct make_signed_imp
                      is_same<t_no_cv, unsigned long>,
                      long,
 #if defined(BOOST_HAS_LONG_LONG)
-                     long long
+                     boost::long_long_type
 #elif defined(BOOST_HAS_MS_INT64)
                      __int64
 #else
@@ -96,7 +96,7 @@ struct make_signed_imp
                      sizeof(t_no_cv) == sizeof(unsigned long),
                      long,
 #if defined(BOOST_HAS_LONG_LONG)
-                     long long
+                     boost::long_long_type
 #elif defined(BOOST_HAS_MS_INT64)
                      __int64
 #else

@@ -61,7 +61,7 @@ namespace boost {                                  \
 namespace serialization {                          \
 template<>                                         \
 struct type_info_implementation< T > {             \
-    typedef ETI type;                              \
+    typedef const ETI type;                        \
 };                                                 \
 }                                                  \
 }                                                  \

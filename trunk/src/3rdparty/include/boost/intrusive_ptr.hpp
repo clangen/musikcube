@@ -22,9 +22,17 @@
 
 #include <boost/assert.hpp>
 #include <boost/detail/workaround.hpp>
+#include <boost/detail/sp_convertible.hpp>
 
-#include <functional>           // for std::less
+#include <boost/config/no_tr1/functional.hpp>           // for std::less
+
+#if !defined(BOOST_NO_IOSTREAM)
+#if !defined(BOOST_NO_IOSFWD)
 #include <iosfwd>               // for std::basic_ostream
+#else
+#include <ostream>
+#endif
+#endif
 
 
 namespace boost
@@ -66,9 +74,19 @@ public:
 
 #if !defined(BOOST_NO_MEMBER_TEMPLATES) || defined(BOOST_MSVC6_MEMBER_TEMPLATES)
 
-    template<class U> intrusive_ptr(intrusive_ptr<U> const & rhs): p_(rhs.get())
+    template<class U>
+#if !defined( BOOST_SP_NO_SP_CONVERTIBLE )
+
+    intrusive_ptr( intrusive_ptr<U> const & rhs, typename detail::sp_enable_if_convertible<U,T>::type = detail::sp_empty() )
+
+#else
+
+    intrusive_ptr( intrusive_ptr<U> const & rhs )
+
+#endif
+    : p_( rhs.get() )
     {
-        if(p_ != 0) intrusive_ptr_add_ref(p_);
+        if( p_ != 0 ) intrusive_ptr_add_ref( p_ );
     }
 
 #endif
@@ -103,6 +121,11 @@ public:
     {
         this_type(rhs).swap(*this);
         return *this;
+    }
+
+    void reset()
+    {
+        this_type().swap( *this );
     }
 
     void reset( T * rhs )
@@ -246,7 +269,9 @@ template<class T, class U> intrusive_ptr<T> dynamic_pointer_cast(intrusive_ptr<U
 
 // operator<<
 
-#if defined(__GNUC__) &&  (__GNUC__ < 3)
+#if !defined(BOOST_NO_IOSTREAM)
+
+#if defined(BOOST_NO_TEMPLATED_IOSTREAMS) || ( defined(__GNUC__) &&  (__GNUC__ < 3) )
 
 template<class Y> std::ostream & operator<< (std::ostream & os, intrusive_ptr<Y> const & p)
 {
@@ -274,6 +299,8 @@ template<class E, class T, class Y> std::basic_ostream<E, T> & operator<< (std::
 #endif // _STLP_NO_IOSTREAMS
 
 #endif // __GNUC__ < 3
+
+#endif // !defined(BOOST_NO_IOSTREAM)
 
 } // namespace boost
 

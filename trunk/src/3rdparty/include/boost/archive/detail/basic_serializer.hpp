@@ -17,6 +17,7 @@
 //  See http://www.boost.org for updates, documentation, and revision history.
 
 #include <cassert>
+#include <cstddef> // NULL
 
 #include <boost/noncopyable.hpp>
 #include <boost/config.hpp>
@@ -34,14 +35,25 @@ protected:
         const boost::serialization::extended_type_info & eti
     ) : 
         m_eti(eti)
-    {}
+    {
+        assert(NULL != & eti);
+    }
 public:
     const boost::serialization::extended_type_info & get_eti() const {
         return m_eti;
     }
-    bool operator<(const basic_serializer & rhs) const {
-        return & m_eti < & rhs.get_eti();
-    }
+};
+
+inline bool 
+operator<(const basic_serializer & lhs, const basic_serializer & rhs)  {
+  return & lhs.get_eti() < & rhs.get_eti();
+}
+
+class basic_serializer_arg : public basic_serializer {
+public:
+    basic_serializer_arg(const serialization::extended_type_info & eti) :
+        basic_serializer(eti)
+    {}
 };
 
 } // namespace detail

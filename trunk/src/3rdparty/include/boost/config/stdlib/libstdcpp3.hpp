@@ -68,6 +68,11 @@
 #  define BOOST_HAS_SLIST
 #  define BOOST_HAS_HASH
 #  define BOOST_SLIST_HEADER <ext/slist>
-#  define BOOST_HASH_SET_HEADER <ext/hash_set>
-#  define BOOST_HASH_MAP_HEADER <ext/hash_map>
+# if !defined(__GNUC__) || __GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ < 3)
+#   define BOOST_HASH_SET_HEADER <ext/hash_set>
+#   define BOOST_HASH_MAP_HEADER <ext/hash_map>
+# else
+#   define BOOST_HASH_SET_HEADER <backward/hash_set>
+#   define BOOST_HASH_MAP_HEADER <backward/hash_map>
+# endif
 #endif

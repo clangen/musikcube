@@ -24,13 +24,23 @@ namespace boost
     public:
       system_error( error_code ec )
           : std::runtime_error(""), m_error_code(ec) {}
+
       system_error( error_code ec, const std::string & what_arg )
           : std::runtime_error(what_arg), m_error_code(ec) {}
+
+      system_error( error_code ec, const char* what_arg )
+          : std::runtime_error(what_arg), m_error_code(ec) {}
+
+      system_error( int ev, const error_category & ecat )
+          : std::runtime_error(""), m_error_code(ev,ecat) {}
+
       system_error( int ev, const error_category & ecat,
         const std::string & what_arg )
           : std::runtime_error(what_arg), m_error_code(ev,ecat) {}
-      system_error( int ev, const error_category & ecat )
-          : std::runtime_error(""), m_error_code(ev,ecat) {}
+
+      system_error( int ev, const error_category & ecat,
+        const char * what_arg )
+          : std::runtime_error(what_arg), m_error_code(ev,ecat) {}
 
       virtual ~system_error() throw() {}
 

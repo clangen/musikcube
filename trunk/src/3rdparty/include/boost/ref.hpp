@@ -15,7 +15,7 @@
 //
 //  ref.hpp - ref/cref, useful helper functions
 //
-//  Copyright (C) 1999, 2000 Jaakko Järvi (jaakko.jarvi@cs.utu.fi)
+//  Copyright (C) 1999, 2000 Jaakko Jarvi (jaakko.jarvi@cs.utu.fi)
 //  Copyright (C) 2001, 2002 Peter Dimov
 //  Copyright (C) 2002 David Abrahams
 //

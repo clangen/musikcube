@@ -8,6 +8,7 @@
 
 //  See http://www.boost.org for updates, documentation, and revision history.
 
+#include <cstddef> // NULL
 #include <boost/pfto.hpp>
 
 #include <boost/archive/basic_text_oprimitive.hpp>
@@ -75,6 +76,7 @@ basic_text_oprimitive<OStream>::basic_text_oprimitive(
     OStream & os_,
     bool no_codecvt
 ) : 
+#ifndef BOOST_NO_STD_LOCALE
     os(os_),
     flags_saver(os_),
     precision_saver(os_),
@@ -92,6 +94,12 @@ basic_text_oprimitive<OStream>::basic_text_oprimitive(
     }
     os << std::noboolalpha;
 }
+#else
+    os(os_),
+    flags_saver(os_),
+    precision_saver(os_)
+{}
+#endif
 
 template<class OStream>
 BOOST_ARCHIVE_OR_WARCHIVE_DECL(BOOST_PP_EMPTY())

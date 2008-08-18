@@ -1,5 +1,5 @@
-#ifndef BOOST_ARCHIVE_BASIC_ARCHIVE_POINTER_OSERIALIZER_HPP
-#define BOOST_ARCHIVE_BASIC_ARCHIVE_POINTER_OSERIALIZER_HPP
+#ifndef BOOST_ARCHIVE_BASIC_POINTER_OSERIALIZER_HPP
+#define BOOST_ARCHIVE_BASIC_POINTER_OSERIALIZER_HPP
 
 // MS compatible compilers support #pragma once
 #if defined(_MSC_VER) && (_MSC_VER >= 1020)
@@ -40,12 +40,12 @@ protected:
     explicit basic_pointer_oserializer(
         const boost::serialization::extended_type_info & type_
     );
+public:
     // account for bogus gcc warning
     #if defined(__GNUC__)
     virtual
     #endif
     ~basic_pointer_oserializer();
-public:
     virtual const basic_oserializer & get_basic_serializer() const = 0;
     virtual void save_object_ptr(
         basic_oarchive & ar,
@@ -59,4 +59,4 @@ public:
 
 #include <boost/archive/detail/abi_suffix.hpp> // pops abi_suffix.hpp pragmas
 
-#endif // BOOST_ARCHIVE_BASIC_ARCHIVE_POINTER_OSERIALIZER_HPP
+#endif // BOOST_ARCHIVE_BASIC_POINTER_OSERIALIZER_HPP

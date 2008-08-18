@@ -26,9 +26,9 @@
 
 #include <iomanip>
 #include <locale>
-#include <cstddef> // size_t
 #include <cmath> // isnan
 #include <cassert>
+#include <cstddef> // size_t
 
 #include <boost/config.hpp>
 #include <boost/detail/workaround.hpp>
@@ -71,10 +71,13 @@ public:
     OStream &os;
     io::ios_flags_saver flags_saver;
     io::ios_precision_saver precision_saver;
+
+    #ifndef BOOST_NO_STD_LOCALE
     boost::scoped_ptr<std::locale> archive_locale;
     io::basic_ios_locale_saver<
         BOOST_DEDUCED_TYPENAME OStream::char_type, BOOST_DEDUCED_TYPENAME OStream::traits_type
     > locale_saver;
+    #endif
 
     // default saving of primitives.
     template<class T>
@@ -89,8 +92,7 @@ public:
     void save(const bool t){
         // trap usage of invalid uninitialized boolean which would
         // otherwise crash on load.
-        int i = t;
-        assert(0 == i || 1 == i);
+        assert(0 == static_cast<int>(t) || 1 == static_cast<int>(t));
         if(os.fail())
             boost::throw_exception(archive_exception(archive_exception::stream_error));
         os << t;

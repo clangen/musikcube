@@ -303,7 +303,7 @@ namespace detail
     BOOST_PRIVATE_GCD_UF( unsigned long );
 
 #ifdef BOOST_HAS_LONG_LONG
-    BOOST_PRIVATE_GCD_UF( unsigned long long );
+    BOOST_PRIVATE_GCD_UF( boost::ulong_long_type );
 #elif defined(BOOST_HAS_MS_INT64)
     BOOST_PRIVATE_GCD_UF( unsigned __int64 );
 #endif
@@ -325,7 +325,7 @@ namespace detail
     BOOST_PRIVATE_GCD_SF( char, unsigned char ); // should work even if unsigned
 
 #ifdef BOOST_HAS_LONG_LONG
-    BOOST_PRIVATE_GCD_SF( long long, unsigned long long );
+    BOOST_PRIVATE_GCD_SF( boost::long_long_type, boost::ulong_long_type );
 #elif defined(BOOST_HAS_MS_INT64)
     BOOST_PRIVATE_GCD_SF( __int64, unsigned __int64 );
 #endif

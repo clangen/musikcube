@@ -27,6 +27,7 @@
 #include <boost/mpl/integral_c_tag.hpp>
 
 #include <boost/cstdint.hpp>
+#include <climits> // ULONG_MAX
 #include <boost/serialization/level.hpp>
 
 #define BOOST_SERIALIZATION_COLLECTION_TRAITS_HELPER(T, C)          \
@@ -50,10 +51,17 @@ struct implementation_level< C < T > > {                            \
 // i.e. that its not a synonym for (unsigned) long
 // if there is no 64 bit int or if its the same as a long
 // we shouldn't define separate functions for int64 data types.
-#if defined(BOOST_NO_INT64_T) \
-    || (ULONG_MAX != 0xffffffff && ULONG_MAX == 18446744073709551615u) // 2**64 - 1
-#   define BOOST_NO_INTRINSIC_INT64_T
-#endif
+#if defined(BOOST_NO_INT64_T)  
+     #define BOOST_NO_INTRINSIC_INT64_T  
+#else   
+    #if defined(ULONG_MAX)  
+        #if(ULONG_MAX != 0xffffffff && ULONG_MAX == 18446744073709551615u) // 2**64 - 1  
+            #define BOOST_NO_INTRINSIC_INT64_T  
+        #endif  
+    #else   
+        #define BOOST_NO_INTRINSIC_INT64_T  
+    #endif  
+#endif  
 
 #if !defined(BOOST_NO_INTRINSIC_INT64_T)
     #define BOOST_SERIALIZATION_COLLECTION_TRAITS_HELPER_INT64(C)    \

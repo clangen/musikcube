@@ -27,6 +27,7 @@
 #include <boost/asio/detail/pop_options.hpp>
 
 #include <boost/asio/error.hpp>
+#include <boost/asio/detail/handler_alloc_helpers.hpp>
 #include <boost/asio/detail/hash_map.hpp>
 #include <boost/asio/detail/noncopyable.hpp>
 #include <boost/asio/detail/timer_queue_base.hpp>
@@ -51,7 +52,7 @@ public:
     : timers_(),
       heap_(),
       cancelled_timers_(0),
-      cleanup_timers_(0)
+      complete_timers_(0)
   {
   }
 
@@ -102,6 +103,8 @@ public:
   // Get the time for the timer that is earliest in the queue.
   virtual boost::posix_time::time_duration wait_duration() const
   {
+    if (heap_.empty())
+      return boost::posix_time::pos_infin;
     return Time_Traits::to_posix_duration(
         Time_Traits::subtract(heap_[0]->time_, Time_Traits::now()));
   }
@@ -114,10 +117,10 @@ public:
     {
       timer_base* t = heap_[0];
       remove_timer(t);
+      t->result_ = boost::system::error_code();
       t->prev_ = 0;
-      t->next_ = cleanup_timers_;
-      cleanup_timers_ = t;
-      t->invoke(boost::system::error_code());
+      t->next_ = complete_timers_;
+      complete_timers_ = t;
     }
   }
 
@@ -153,17 +156,23 @@ public:
     while (cancelled_timers_)
     {
       timer_base* this_timer = cancelled_timers_;
+      this_timer->result_ = boost::asio::error::operation_aborted;
       cancelled_timers_ = this_timer->next_;
-      this_timer->next_ = cleanup_timers_;
-      cleanup_timers_ = this_timer;
-      this_timer->invoke(boost::asio::error::operation_aborted);
+      this_timer->next_ = complete_timers_;
+      complete_timers_ = this_timer;
     }
   }
 
-  // Destroy timers that are waiting to be cleaned up.
-  virtual void cleanup_timers()
+  // Complete any timers that are waiting to be completed.
+  virtual void complete_timers()
   {
-    destroy_timer_list(cleanup_timers_);
+    while (complete_timers_)
+    {
+      timer_base* this_timer = complete_timers_;
+      complete_timers_ = this_timer->next_;
+      this_timer->next_ = 0;
+      this_timer->complete();
+    }
   }
 
   // Destroy all timers.
@@ -181,7 +190,7 @@ public:
     heap_.clear();
     timers_.clear();
     destroy_timer_list(cancelled_timers_);
-    destroy_timer_list(cleanup_timers_);
+    destroy_timer_list(complete_timers_);
   }
 
 private:
@@ -190,27 +199,27 @@ private:
   class timer_base
   {
   public:
-    // Perform the timer operation and then destroy.
-    void invoke(const boost::system::error_code& result)
+    // Delete the timer and post the handler.
+    void complete()
     {
-      invoke_func_(this, result);
+      complete_func_(this, result_);
     }
 
-    // Destroy the timer operation.
+    // Delete the timer.
     void destroy()
     {
       destroy_func_(this);
     }
 
   protected:
-    typedef void (*invoke_func_type)(timer_base*,
+    typedef void (*complete_func_type)(timer_base*,
         const boost::system::error_code&);
     typedef void (*destroy_func_type)(timer_base*);
 
     // Constructor.
-    timer_base(invoke_func_type invoke_func, destroy_func_type destroy_func,
+    timer_base(complete_func_type complete_func, destroy_func_type destroy_func,
         const time_type& time, void* token)
-      : invoke_func_(invoke_func),
+      : complete_func_(complete_func),
         destroy_func_(destroy_func),
         time_(time),
         token_(token),
@@ -229,13 +238,16 @@ private:
   private:
     friend class timer_queue<Time_Traits>;
 
-    // The function to be called to dispatch the handler.
-    invoke_func_type invoke_func_;
+    // The function to be called to delete the timer and post the handler.
+    complete_func_type complete_func_;
 
-    // The function to be called to destroy the handler.
+    // The function to be called to delete the timer.
     destroy_func_type destroy_func_;
 
-    // The time when the operation should fire.
+    // The result of the timer operation.
+    boost::system::error_code result_;
+
+    // The time when the timer should fire.
     time_type time_;
 
     // The token associated with the timer.
@@ -259,23 +271,52 @@ private:
   public:
     // Constructor.
     timer(const time_type& time, Handler handler, void* token)
-      : timer_base(&timer<Handler>::invoke_handler,
+      : timer_base(&timer<Handler>::complete_handler,
           &timer<Handler>::destroy_handler, time, token),
         handler_(handler)
     {
     }
 
-    // Invoke the handler and then destroy it.
-    static void invoke_handler(timer_base* base,
+    // Delete the timer and post the handler.
+    static void complete_handler(timer_base* base,
         const boost::system::error_code& result)
     {
-      static_cast<timer<Handler>*>(base)->handler_(result);
+      // Take ownership of the timer object.
+      typedef timer<Handler> this_type;
+      this_type* this_timer(static_cast<this_type*>(base));
+      typedef handler_alloc_traits<Handler, this_type> alloc_traits;
+      handler_ptr<alloc_traits> ptr(this_timer->handler_, this_timer);
+
+      // Make a copy of the error_code and the handler so that the memory can
+      // be deallocated before the upcall is made.
+      boost::system::error_code ec(result);
+      Handler handler(this_timer->handler_);
+
+      // Free the memory associated with the handler.
+      ptr.reset();
+
+      // Make the upcall.
+      handler(ec);
     }
 
-    // Destroy the handler.
+    // Delete the timer.
     static void destroy_handler(timer_base* base)
     {
-      delete static_cast<timer<Handler>*>(base);
+      // Take ownership of the timer object.
+      typedef timer<Handler> this_type;
+      this_type* this_timer(static_cast<this_type*>(base));
+      typedef handler_alloc_traits<Handler, this_type> alloc_traits;
+      handler_ptr<alloc_traits> ptr(this_timer->handler_, this_timer);
+
+      // A sub-object of the handler may be the true owner of the memory
+      // associated with the handler. Consequently, a local copy of the handler
+      // is required to ensure that any owning sub-object remains valid until
+      // after we have deallocated the memory here.
+      Handler handler(this_timer->handler_);
+      (void)handler;
+
+      // Free the memory associated with the handler.
+      ptr.reset();
     }
 
   private:
@@ -384,8 +425,8 @@ private:
   // The list of timers to be cancelled.
   timer_base* cancelled_timers_;
 
-  // The list of timers to be destroyed.
-  timer_base* cleanup_timers_;
+  // The list of timers waiting to be completed.
+  timer_base* complete_timers_;
 };
 
 } // namespace detail

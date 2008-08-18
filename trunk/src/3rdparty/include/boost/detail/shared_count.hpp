@@ -28,8 +28,11 @@
 #include <boost/detail/bad_weak_ptr.hpp>
 #include <boost/detail/sp_counted_base.hpp>
 #include <boost/detail/sp_counted_impl.hpp>
-
-#include <memory>           // std::auto_ptr
+// In order to avoid circular dependencies with Boost.TR1
+// we make sure that our include of <memory> doesn't try to
+// pull in the TR1 headers: that's why we use this header 
+// rather than including <memory> directly:
+#include <boost/config/no_tr1/memory.hpp>  // std::auto_ptr
 #include <functional>       // std::less
 #include <new>              // std::bad_alloc
 
@@ -45,6 +48,8 @@ int const shared_count_id = 0x2C35F101;
 int const   weak_count_id = 0x298C38A4;
 
 #endif
+
+struct sp_nothrow_tag {};
 
 class weak_count;
 
@@ -99,11 +104,18 @@ public:
 #endif
     }
 
-    template<class P, class D> shared_count(P p, D d): pi_(0)
+#if defined( BOOST_MSVC ) && BOOST_WORKAROUND( BOOST_MSVC, <= 1200 )
+    template<class Y, class D> shared_count( Y * p, D d ): pi_(0)
+#else
+    template<class P, class D> shared_count( P p, D d ): pi_(0)
+#endif
 #if defined(BOOST_SP_ENABLE_DEBUG_HOOKS)
         , id_(shared_count_id)
 #endif
     {
+#if defined( BOOST_MSVC ) && BOOST_WORKAROUND( BOOST_MSVC, <= 1200 )
+        typedef Y* P;
+#endif
 #ifndef BOOST_NO_EXCEPTIONS
 
         try
@@ -216,6 +228,7 @@ public:
     }
 
     explicit shared_count(weak_count const & r); // throws bad_weak_ptr when r.use_count() == 0
+    shared_count( weak_count const & r, sp_nothrow_tag ); // constructs an empty *this when r.use_count() == 0
 
     shared_count & operator= (shared_count const & r) // nothrow
     {
@@ -246,6 +259,11 @@ public:
     bool unique() const // nothrow
     {
         return use_count() == 1;
+    }
+
+    bool empty() const // nothrow
+    {
+        return pi_ == 0;
     }
 
     friend inline bool operator==(shared_count const & a, shared_count const & b)
@@ -313,9 +331,13 @@ public:
     weak_count & operator= (shared_count const & r) // nothrow
     {
         sp_counted_base * tmp = r.pi_;
-        if(tmp != 0) tmp->weak_add_ref();
-        if(pi_ != 0) pi_->weak_release();
-        pi_ = tmp;
+
+        if( tmp != pi_ )
+        {
+            if(tmp != 0) tmp->weak_add_ref();
+            if(pi_ != 0) pi_->weak_release();
+            pi_ = tmp;
+        }
 
         return *this;
     }
@@ -323,9 +345,13 @@ public:
     weak_count & operator= (weak_count const & r) // nothrow
     {
         sp_counted_base * tmp = r.pi_;
-        if(tmp != 0) tmp->weak_add_ref();
-        if(pi_ != 0) pi_->weak_release();
-        pi_ = tmp;
+
+        if( tmp != pi_ )
+        {
+            if(tmp != 0) tmp->weak_add_ref();
+            if(pi_ != 0) pi_->weak_release();
+            pi_ = tmp;
+        }
 
         return *this;
     }
@@ -361,6 +387,17 @@ inline shared_count::shared_count( weak_count const & r ): pi_( r.pi_ )
     if( pi_ == 0 || !pi_->add_ref_lock() )
     {
         boost::throw_exception( boost::bad_weak_ptr() );
+    }
+}
+
+inline shared_count::shared_count( weak_count const & r, sp_nothrow_tag ): pi_( r.pi_ )
+#if defined(BOOST_SP_ENABLE_DEBUG_HOOKS)
+        , id_(shared_count_id)
+#endif
+{
+    if( pi_ != 0 && !pi_->add_ref_lock() )
+    {
+        pi_ = 0;
     }
 }
 

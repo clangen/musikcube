@@ -535,7 +535,7 @@ bool perl_matcher<BidiIterator, Allocator, traits>::match_within_word()
    if(position == last)
       return false;
    // both prev and this character must be m_word_mask:
-   if(traits_inst.isctype(*position, m_word_mask))
+   bool prev = traits_inst.isctype(*position, m_word_mask);
    {
       bool b;
       if((position == backstop) && ((m_match_flags & match_prev_avail) == 0)) 
@@ -546,7 +546,7 @@ bool perl_matcher<BidiIterator, Allocator, traits>::match_within_word()
          b = traits_inst.isctype(*position, m_word_mask);
          ++position;
       }
-      if(b)
+      if(b == prev)
       {
          pstate = pstate->next.p;
          return true;

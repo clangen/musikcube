@@ -1,5 +1,5 @@
-#ifndef BOOST_ARCHIVE_BASIC_ARCHIVE_POINTER_ISERIALIZER_HPP
-#define BOOST_ARCHIVE_BASIC_ARCHIVE_POINTER_ISERIALIZER_HPP
+#ifndef BOOST_ARCHIVE_BASIC_POINTER_ISERIALIZER_HPP
+#define BOOST_ARCHIVE_BASIC_POINTER_ISERIALIZER_HPP
 
 // MS compatible compilers support #pragma once
 #if defined(_MSC_VER) && (_MSC_VER >= 1020)
@@ -61,4 +61,4 @@ public:
 
 #include <boost/archive/detail/abi_suffix.hpp> // pops abi_suffix.hpp pragmas
 
-#endif // BOOST_ARCHIVE_BASIC_ARCHIVE_POINTER_ISERIALIZER_HPP
+#endif // BOOST_ARCHIVE_BASIC_POINTER_ISERIALIZER_HPP

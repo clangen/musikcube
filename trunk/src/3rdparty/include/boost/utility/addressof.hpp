@@ -1,6 +1,7 @@
 // Copyright (C) 2002 Brad King (brad.king@kitware.com) 
 //                    Douglas Gregor (gregod@cs.rpi.edu)
-//                    Peter Dimov
+//
+// Copyright (C) 2002, 2008 Peter Dimov
 //
 // Distributed under the Boost Software License, Version 1.0. (See
 // accompanying file LICENSE_1_0.txt or copy at
@@ -14,27 +15,31 @@
 # include <boost/config.hpp>
 # include <boost/detail/workaround.hpp>
 
-namespace boost {
-
-// Do not make addressof() inline. Breaks MSVC 7. (Peter Dimov)
-
-// VC7 strips const from nested classes unless we add indirection here
-# if BOOST_WORKAROUND(BOOST_MSVC, == 1300)
-
-template<class T> struct _addp
+namespace boost
 {
-    typedef T * type;
+
+namespace detail
+{
+
+template<class T> struct addressof_impl
+{
+    static inline T * f( T & v, long )
+    {
+        return reinterpret_cast<T*>(
+            &const_cast<char&>(reinterpret_cast<const volatile char &>(v)));
+    }
+
+    static inline T * f( T * v, int )
+    {
+        return v;
+    }
 };
-    
-template <typename T> typename _addp<T>::type
 
-# else
-template <typename T> T*
-# endif
-addressof(T& v)
+} // namespace detail
+
+template<class T> T * addressof( T & v )
 {
-  return reinterpret_cast<T*>(
-       &const_cast<char&>(reinterpret_cast<const volatile char &>(v)));
+    return boost::detail::addressof_impl<T>::f( v, 0 );
 }
 
 // Borland doesn't like casting an array reference to a char reference
@@ -53,6 +58,6 @@ const T (*addressof(const T (&t)[N]))[N]
 }
 # endif
 
-}
+} // namespace boost
 
 #endif // BOOST_UTILITY_ADDRESSOF_HPP

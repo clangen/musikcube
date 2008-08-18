@@ -23,6 +23,7 @@
 //  See http://www.boost.org for updates, documentation, and revision history.
 
 #include <cassert>
+#include <cstddef> // NULL
 
 #include <boost/config.hpp>
 #include <boost/detail/workaround.hpp>
@@ -32,23 +33,23 @@
 #include <boost/static_warning.hpp>
 
 #include <boost/type_traits/is_pointer.hpp>
-#include <boost/type_traits/is_fundamental.hpp>
 #include <boost/type_traits/is_enum.hpp>
-#include <boost/type_traits/is_volatile.hpp>
+//#include <boost/type_traits/is_volatile.hpp>
 #include <boost/type_traits/is_const.hpp>
-#include <boost/type_traits/is_same.hpp>
-#include <boost/type_traits/remove_all_extents.hpp>
-#include <boost/serialization/is_abstract.hpp>
+//#include <boost/type_traits/is_same.hpp>
+#include <boost/type_traits/is_polymorphic.hpp>
+#include <boost/type_traits/remove_extent.hpp>
+#include <boost/serialization/assume_abstract.hpp>
 
 #include <boost/mpl/eval_if.hpp>
 #include <boost/mpl/and.hpp>
-#include <boost/mpl/less.hpp>
+//#include <boost/mpl/less.hpp>
 #include <boost/mpl/greater_equal.hpp>
 #include <boost/mpl/equal_to.hpp>
 #include <boost/mpl/int.hpp>
 #include <boost/mpl/identity.hpp>
-#include <boost/mpl/list.hpp>
-#include <boost/mpl/empty.hpp>
+//#include <boost/mpl/list.hpp>
+//#include <boost/mpl/empty.hpp>
 #include <boost/mpl/not.hpp>
 
  #ifndef BOOST_SERIALIZATION_DEFAULT_TYPE_INFO   
@@ -58,9 +59,7 @@
 #include <boost/archive/detail/basic_oarchive.hpp>
 #include <boost/archive/detail/basic_oserializer.hpp>
 #include <boost/archive/detail/archive_pointer_oserializer.hpp>
-#include <boost/archive/detail/dynamically_initialized.hpp>
 
-#include <boost/serialization/force_include.hpp>
 #include <boost/serialization/serialization.hpp>
 #include <boost/serialization/version.hpp>
 #include <boost/serialization/level.hpp>
@@ -70,6 +69,7 @@
 #include <boost/serialization/void_cast.hpp>
 #include <boost/serialization/array.hpp>
 #include <boost/serialization/collection_size_type.hpp>
+#include <boost/serialization/singleton.hpp>
 
 #include <boost/archive/archive_exception.hpp>
 
@@ -104,39 +104,31 @@ class oserializer : public basic_oserializer
 private:
     // private constructor to inhibit any existence other than the 
     // static one
+public:
     explicit BOOST_DLLEXPORT oserializer() :
         basic_oserializer(
-            * boost::serialization::type_info_implementation<T>::type::get_instance()
+            boost::serialization::type_info_implementation<T>::type
+                ::get_const_instance()
         )
     {}
-public:
     virtual BOOST_DLLEXPORT void save_object_data(
         basic_oarchive & ar,    
         const void *x
-    ) const BOOST_USED ;
+    ) const BOOST_USED;
     virtual bool class_info() const {
         return boost::serialization::implementation_level<T>::value 
             >= boost::serialization::object_class_info;
     }
     virtual bool tracking(const unsigned int /* flags */) const {
-//        if(0 != (flags &  no_tracking))
-//            return false;
         return boost::serialization::tracking_level<T>::value == boost::serialization::track_always
-            || boost::serialization::tracking_level<T>::value == boost::serialization::track_selectively
-            && serialized_as_pointer();
+            || (boost::serialization::tracking_level<T>::value == boost::serialization::track_selectively
+                && serialized_as_pointer());
     }
     virtual unsigned int version() const {
         return ::boost::serialization::version<T>::value;
     }
     virtual bool is_polymorphic() const {
-        typedef BOOST_DEDUCED_TYPENAME boost::serialization::type_info_implementation<
-            T
-        >::type::is_polymorphic::type typex;
-        return typex::value;
-    }
-    static oserializer & get_instance(){
-        static oserializer instance;
-        return instance;
+        return boost::is_polymorphic<T>::value;
     }
     virtual ~oserializer(){}
 };
@@ -148,6 +140,7 @@ BOOST_DLLEXPORT void oserializer<Archive, T>::save_object_data(
 ) const {
     // make sure call is routed through the highest interface that might
     // be specialized by the user.
+    BOOST_STATIC_ASSERT(boost::is_const<T>::value == false);
     boost::serialization::serialize_adl(
         boost::smart_cast_reference<Archive &>(ar),
         * static_cast<T *>(const_cast<void *>(x)),
@@ -158,32 +151,24 @@ BOOST_DLLEXPORT void oserializer<Archive, T>::save_object_data(
 template<class Archive, class T>
 class pointer_oserializer
   : public archive_pointer_oserializer<Archive>
-  , public dynamically_initialized<pointer_oserializer<Archive,T> >
 {
+    const basic_oserializer & get_basic_serializer() const;
 private:
-    virtual const basic_oserializer & get_basic_serializer() const {
-        return oserializer<Archive, T>::get_instance();
-    }
     virtual BOOST_DLLEXPORT void save_object_ptr(
         basic_oarchive & ar,
         const void * x
-    ) const BOOST_USED ;
-#if defined(__GNUC__) || ( defined(BOOST_MSVC) && (_MSC_VER <= 1300) )
+    ) const BOOST_USED;
 public:
-#endif
-    // private constructor to inhibit any existence other than the 
-    // static one.  Note GCC doesn't permit constructor to be private
     explicit BOOST_DLLEXPORT pointer_oserializer() BOOST_USED;
-    friend struct dynamically_initialized<pointer_oserializer<Archive,T> >;
-public:
-    #if !defined(__BORLANDC__)
-    // at least one compiler (CW) seems to require that serialize_adl
-    // be explicitly instantiated. Still under investigation. 
-    void (* const m)(Archive &, T &, const unsigned);
-    boost::serialization::extended_type_info * (* e)();
-    #endif
-    BOOST_DLLEXPORT static const pointer_oserializer & get_instance() BOOST_USED;
 };
+
+template<class Archive, class T>
+const basic_oserializer & 
+pointer_oserializer<Archive, T>::get_basic_serializer() const {
+    return boost::serialization::singleton<
+        oserializer<Archive, T>
+    >::get_const_instance();
+}
 
 template<class Archive, class T>
 BOOST_DLLEXPORT void pointer_oserializer<Archive, T>::save_object_ptr(
@@ -205,30 +190,16 @@ BOOST_DLLEXPORT void pointer_oserializer<Archive, T>::save_object_ptr(
 }
 
 template<class Archive, class T>
-#if !defined(__BORLANDC__)
 BOOST_DLLEXPORT pointer_oserializer<Archive, T>::pointer_oserializer() :
     archive_pointer_oserializer<Archive>(
-        * boost::serialization::type_info_implementation<T>::type::get_instance()
-    ),
-    m(boost::serialization::serialize_adl<Archive, T>),
-    e(boost::serialization::type_info_implementation<T>::type::get_instance)
-#else
-BOOST_DLLEXPORT pointer_oserializer<Archive, T>::pointer_oserializer() :
-    archive_pointer_oserializer<Archive>(
-        * boost::serialization::type_info_implementation<T>::type::get_instance()
+        boost::serialization::type_info_implementation<T>::type
+            ::get_const_instance()
     )
-#endif
 {
     // make sure appropriate member function is instantiated
-    oserializer<Archive, T> & bos = oserializer<Archive, T>::get_instance();
-    bos.set_bpos(this);
-}
-
-template<class Archive, class T>
-BOOST_DLLEXPORT const pointer_oserializer<Archive, T> &
-pointer_oserializer<Archive, T>::get_instance() {
-    // note: comeau complains without full qualification
-    return dynamically_initialized<pointer_oserializer<Archive,T> >::instance;
+    boost::serialization::singleton<
+        oserializer<Archive, T> 
+    >::get_mutable_instance().set_bpos(this);
 }
 
 template<class Archive, class T>
@@ -256,7 +227,12 @@ struct save_non_pointer_type {
     // serialization level and class version
     struct save_standard {
         static void invoke(Archive &ar, const T & t){
-            ar.save_object(& t, oserializer<Archive, T>::get_instance());
+            ar.save_object(
+                & t, 
+                boost::serialization::singleton<
+                    oserializer<Archive, T>
+                >::get_const_instance()
+            );
         }
     };
 
@@ -300,7 +276,7 @@ struct save_non_pointer_type {
         // else
             // do a fast save only tracking is turned off
             mpl::identity<save_conditional>
-    > > >::type typex; 
+        > > >::type typex; 
 
     static void invoke(Archive & ar, const T & t){
         // check that we're not trying to serialize something that
@@ -325,10 +301,8 @@ struct save_pointer_type {
     {
         static const basic_pointer_oserializer * register_type(Archive & /* ar */){
             // it has? to be polymorphic
-            BOOST_STATIC_ASSERT(
-                boost::serialization::type_info_implementation<T>::type::is_polymorphic::value
-            );
-            return static_cast<const basic_pointer_oserializer *>(NULL);
+            BOOST_STATIC_ASSERT(boost::is_polymorphic<T>::value);
+            return NULL;
         }
     };
 
@@ -348,7 +322,7 @@ struct save_pointer_type {
         // virtual serialize functions used for plug-ins
         typedef 
             BOOST_DEDUCED_TYPENAME mpl::eval_if<
-                serialization::is_abstract<T>,
+                boost::serialization::is_abstract<T>,
                 mpl::identity<abstract<T> >,
                 mpl::identity<non_abstract<T> >       
             >::type typex;
@@ -360,11 +334,14 @@ struct save_pointer_type {
     {
         static void save(
             Archive &ar, 
-            const T & t, 
-            const basic_pointer_oserializer * bpos_ptr
+            T & t
         ){
+            const basic_pointer_oserializer & bpos = 
+                boost::serialization::singleton<
+                    pointer_oserializer<Archive, T>
+                >::get_const_instance();
             // save the requested pointer type
-            ar.save_pointer(& t, bpos_ptr);
+            ar.save_pointer(& t, & bpos);
         }
     };
 
@@ -373,18 +350,24 @@ struct save_pointer_type {
     {
         static void save(
             Archive &ar, 
-            const T & t, 
-            const basic_pointer_oserializer * bpos_ptr
+            T & t
         ){
-            const boost::serialization::extended_type_info * this_type
-                = boost::serialization::type_info_implementation<T>::type::get_instance();
+            BOOST_DEDUCED_TYPENAME 
+            boost::serialization::type_info_implementation<T>::type const
+            & i = boost::serialization::type_info_implementation<T>::type
+                    ::get_const_instance();
+
+            boost::serialization::extended_type_info const * const this_type = & i;
+
             // retrieve the true type of the object pointed to
             // if this assertion fails its an error in this library
             assert(NULL != this_type);
-            const boost::serialization::extended_type_info * true_type 
-                = boost::serialization::type_info_implementation<T>::type::get_derived_extended_type_info(t);
+
+            const boost::serialization::extended_type_info * true_type =
+                i.get_derived_extended_type_info(t);
+
             // note:if this exception is thrown, be sure that derived pointer
-            // is either regsitered or exported.
+            // is either registered or exported.
             if(NULL == true_type){
                 boost::throw_exception(
                     archive_exception(archive_exception::unregistered_class)
@@ -394,44 +377,54 @@ struct save_pointer_type {
             // if its not a pointer to a more derived type
             const void *vp = static_cast<const void *>(&t);
             if(*this_type == *true_type){
-                ar.save_pointer(vp, bpos_ptr);
+                const basic_pointer_oserializer * bpos = register_type(ar, t);
+                ar.save_pointer(vp, bpos);
                 return;
             }
             // convert pointer to more derived type. if this is thrown
             // it means that the base/derived relationship hasn't be registered
-            vp = serialization::void_downcast(*true_type, *this_type, &t);
+            vp = serialization::void_downcast(
+                *true_type, 
+                *this_type, 
+                static_cast<const void *>(&t)
+            );
             if(NULL == vp){
                 boost::throw_exception(
                     archive_exception(archive_exception::unregistered_cast)
                 );
             }
 
-            // sice true_type is valid, and this only gets made if the 
+            // since true_type is valid, and this only gets made if the 
             // pointer oserializer object has been created, this should never
             // fail
-            bpos_ptr = archive_pointer_oserializer<Archive>::find(* true_type);
-            assert(NULL != bpos_ptr);
-            if(NULL == bpos_ptr)
+            const basic_pointer_oserializer * bpos 
+                = archive_pointer_oserializer<Archive>::find(* true_type);
+            assert(NULL != bpos);
+            if(NULL == bpos)
                 boost::throw_exception(
                     archive_exception(archive_exception::unregistered_class)
                 );
-            ar.save_pointer(vp, bpos_ptr);
+            ar.save_pointer(vp, bpos);
         }
     };
 
+    // out of line selector works around borland quirk
+    template<class T>
+    struct conditional {
+        typedef BOOST_DEDUCED_TYPENAME mpl::eval_if<
+            is_polymorphic<T>,
+            mpl::identity<polymorphic<T> >,
+            mpl::identity<non_polymorphic<T> >
+        >::type type;
+    };
+
+    // used to convert TPtr in to a pointer to a T
     template<class T>
     static void save(
         Archive & ar, 
-        const T &t,
-        const basic_pointer_oserializer * bpos_ptr
+        const T & t
     ){
-        typedef BOOST_DEDUCED_TYPENAME mpl::eval_if<
-            BOOST_DEDUCED_TYPENAME boost::serialization::
-                type_info_implementation<T>::type::is_polymorphic,
-            mpl::identity<polymorphic<T> >,
-            mpl::identity<non_polymorphic<T> >
-        >::type typey;
-        typey::save(ar, const_cast<T &>(t), bpos_ptr);
+        conditional<T>::type::save(ar, const_cast<T &>(t));
     }
 
     template<class T>
@@ -452,14 +445,14 @@ struct save_pointer_type {
         #else
             // otherwise remove the const
         #endif
-        const basic_pointer_oserializer * bpos_ptr =  register_type(ar, * t);
+        register_type(ar, * t);
         if(NULL == t){
             basic_oarchive & boa = boost::smart_cast_reference<basic_oarchive &>(ar);
             boa.save_null_pointer();
             save_access::end_preamble(ar);
             return;
         }
-        save(ar, * t, bpos_ptr);
+        save(ar, * t);
     };
 };
 
@@ -477,7 +470,7 @@ template<class Archive, class T>
 struct save_array_type
 {
     static void invoke(Archive &ar, const T &t){
-        typedef typename remove_all_extents<T>::type value_type;
+        typedef BOOST_DEDUCED_TYPENAME boost::remove_extent<T>::type value_type;
         
         save_access::end_preamble(ar);
         // consider alignment
@@ -489,27 +482,6 @@ struct save_array_type
         ar << serialization::make_array(static_cast<value_type const*>(&t[0]),count);
     }
 };
-
-
-#if 0
-// note bogus arguments to workaround msvc 6 silent runtime failure
-// declaration to satisfy gcc
-template<class Archive, class T>
-BOOST_DLLEXPORT const basic_pointer_oserializer &
-instantiate_pointer_oserializer(
-    Archive * /* ar = NULL */,
-    T * /* t = NULL */
-) BOOST_USED ;
-// definition
-template<class Archive, class T>
-BOOST_DLLEXPORT const basic_pointer_oserializer &
-instantiate_pointer_oserializer(
-    Archive * /* ar = NULL */,
-    T * /* t = NULL */
-){
-    return pointer_oserializer<Archive, T>::instance;
-}
-#endif
 
 } // detail
 
@@ -561,7 +533,7 @@ inline void save(Archive & ar, T &t){
     // serialization library and should be double checked.  See documentation on
     // object tracking.  Also, see the "rationale" section of the documenation
     // for motivation for this checking.
-    BOOST_STATIC_ASSERT(check_tracking<T>::value);
+    BOOST_STATIC_WARNING(check_tracking<T>::value);
         save(ar, const_cast<const T &>(t));
 }
 #endif

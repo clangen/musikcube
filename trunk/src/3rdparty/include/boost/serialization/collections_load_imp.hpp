@@ -23,15 +23,20 @@
 // helper function templates for serialization of collections
 
 #include <cassert>
-#include <boost/config.hpp>
+#include <cstddef> // size_t
+#include <boost/config.hpp> // msvc 6.0 needs this for warning suppression
+#if defined(BOOST_NO_STDC_NAMESPACE)
+namespace std{ 
+    using ::size_t; 
+} // namespace std
+#endif
 #include <boost/detail/workaround.hpp>
-
-#include <boost/aligned_storage.hpp>
 
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/detail/stack_constructor.hpp>
 #include <boost/serialization/collection_size_type.hpp>
+
 
 namespace boost{
 namespace serialization {
@@ -59,9 +64,9 @@ struct archive_input_seq
     }
 };
 
-// map and set input
+// map input
 template<class Archive, class Container>
-struct archive_input_unique
+struct archive_input_map
 {
     inline void operator()(
         Archive &ar, 
@@ -69,7 +74,59 @@ struct archive_input_unique
         const unsigned int v
     ){
         typedef BOOST_DEDUCED_TYPENAME Container::value_type type;
-        detail::stack_construct<Archive, type>t(ar, v);
+        detail::stack_construct<Archive, type> t(ar, v);
+        // borland fails silently w/o full namespace
+        ar >> boost::serialization::make_nvp("item", t.reference());
+        std::pair<BOOST_DEDUCED_TYPENAME Container::const_iterator, bool> result = 
+            s.insert(t.reference());
+        // note: the following presumes that the map::value_type was NOT tracked
+        // in the archive.  This is the usual case, but here there is no way
+        // to determine that.  
+        if(result.second){
+            ar.reset_object_address(
+                & (result.first->second),
+                & t.reference().second
+            );
+        }
+    }
+};
+
+// multimap input
+template<class Archive, class Container>
+struct archive_input_multimap
+{
+    inline void operator()(
+        Archive &ar, 
+        Container &s, 
+        const unsigned int v
+    ){
+        typedef BOOST_DEDUCED_TYPENAME Container::value_type type;
+        detail::stack_construct<Archive, type> t(ar, v);
+        // borland fails silently w/o full namespace
+        ar >> boost::serialization::make_nvp("item", t.reference());
+        BOOST_DEDUCED_TYPENAME Container::const_iterator result 
+            = s.insert(t.reference());
+        // note: the following presumes that the map::value_type was NOT tracked
+        // in the archive.  This is the usual case, but here there is no way
+        // to determine that.  
+        ar.reset_object_address(
+            & result->second,
+            & t.reference()
+        );
+    }
+};
+
+// set input
+template<class Archive, class Container>
+struct archive_input_set
+{
+    inline void operator()(
+        Archive &ar, 
+        Container &s, 
+        const unsigned int v
+    ){
+        typedef BOOST_DEDUCED_TYPENAME Container::value_type type;
+        detail::stack_construct<Archive, type> t(ar, v);
         // borland fails silently w/o full namespace
         ar >> boost::serialization::make_nvp("item", t.reference());
         std::pair<BOOST_DEDUCED_TYPENAME Container::const_iterator, bool> result = 
@@ -79,9 +136,9 @@ struct archive_input_unique
     }
 };
 
-// multiset and multimap input
+// multiset input
 template<class Archive, class Container>
-struct archive_input_multi
+struct archive_input_multiset
 {
     inline void operator()(
         Archive &ar, 

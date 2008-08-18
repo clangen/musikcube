@@ -68,6 +68,7 @@ Accepts UTF-32 code points and forwards them on as UTF-16 code points.
 #include <stdexcept>
 #ifndef BOOST_NO_STD_LOCALE
 #include <sstream>
+#include <ios>
 #endif
 #include <limits.h> // CHAR_BIT
 

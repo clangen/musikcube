@@ -8,13 +8,19 @@
 #ifndef BOOST_TT_IS_POLYMORPHIC_HPP
 #define BOOST_TT_IS_POLYMORPHIC_HPP
 
+#include <boost/type_traits/intrinsics.hpp>
+#ifndef BOOST_IS_POLYMORPHIC
 #include <boost/type_traits/is_class.hpp>
 #include <boost/type_traits/remove_cv.hpp>
+#endif
 // should be the last #include
 #include <boost/type_traits/detail/bool_trait_def.hpp>
 #include <boost/detail/workaround.hpp>
 
 namespace boost{
+
+#ifndef BOOST_IS_POLYMORPHIC
+
 namespace detail{
 
 template <class T>
@@ -94,6 +100,12 @@ struct is_polymorphic_imp
 } // namespace detail
 
 BOOST_TT_AUX_BOOL_TRAIT_DEF1(is_polymorphic,T,::boost::detail::is_polymorphic_imp<T>::value)
+
+#else // BOOST_IS_POLYMORPHIC
+
+BOOST_TT_AUX_BOOL_TRAIT_DEF1(is_polymorphic,T,BOOST_IS_POLYMORPHIC(T))
+
+#endif
 
 } // namespace boost
 

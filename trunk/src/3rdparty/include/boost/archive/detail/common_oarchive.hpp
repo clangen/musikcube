@@ -63,8 +63,8 @@ protected:
     void save_override(T & t, BOOST_PFTO int){
         archive::save(* this->This(), t);
     }
-    void save_start(const char *name){}
-    void save_end(const char *name){}
+    void save_start(const char * /*name*/){}
+    void save_end(const char * /*name*/){}
     common_oarchive(unsigned int flags = 0) : 
         basic_oarchive(flags),
         interface_oarchive<Archive>()

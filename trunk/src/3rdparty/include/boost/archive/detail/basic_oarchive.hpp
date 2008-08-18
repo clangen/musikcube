@@ -17,7 +17,8 @@
 //  See http://www.boost.org for updates, documentation, and revision history.
 
 #include <boost/config.hpp>
-#include <boost/detail/workaround.hpp>
+#include <cstddef> // NULL
+#include <boost/type_traits/broken_compiler_spec.hpp>
 
 // can't use this - much as I'd like to as borland doesn't support it
 // #include <boost/scoped_ptr.hpp>
@@ -28,9 +29,6 @@
 #include <boost/archive/detail/abi_prefix.hpp> // must be the last header
 
 namespace boost {
-template<class T>
-class shared_ptr;
-
 namespace serialization {
     class extended_type_info;
 } // namespace serialization
@@ -96,7 +94,7 @@ public:
 
 // required by smart_cast for compilers not implementing 
 // partial template specialization
-BOOST_BROKEN_COMPILER_TYPE_TRAITS_SPECIALIZATION(
+BOOST_TT_BROKEN_COMPILER_SPEC(
     boost::archive::detail::basic_oarchive
 )
 

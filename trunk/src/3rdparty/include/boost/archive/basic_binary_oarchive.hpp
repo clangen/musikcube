@@ -27,10 +27,9 @@
 #include <boost/pfto.hpp>
 
 #include <boost/detail/workaround.hpp>
-#include <boost/archive/array/oarchive.hpp>
+#include <boost/archive/detail/common_oarchive.hpp>
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/collection_size_type.hpp>
-#include <boost/archive/array/oarchive.hpp>
 
 namespace boost {
 namespace archive {
@@ -45,7 +44,7 @@ namespace archive {
 // of time.  So under some circumstances it may be he right choice.
 template<class Archive>
 class basic_binary_oarchive : 
-    public array::oarchive<Archive>
+    public archive::detail::common_oarchive<Archive>
 {
 protected:
 #if BOOST_WORKAROUND(BOOST_MSVC, <= 1300)
@@ -58,15 +57,12 @@ public:
     friend class detail::interface_oarchive<Archive>;
 #endif
     // any datatype not specifed below will be handled by base class
-    typedef array::oarchive<Archive> array_oarchive;
+    typedef detail::common_oarchive<Archive> detail_common_oarchive;
     template<class T>
-    void save_override(const T & t, BOOST_PFTO int){
-        this->array_oarchive::save_override(t, 0);
+    void save_override(const T & t, BOOST_PFTO int version){
+      this->detail_common_oarchive::save_override(t, static_cast<int>(version));
     }
-    template<class T>
-    void save_override(T & t, BOOST_PFTO int){
-        this->save_override(const_cast<const T &>(t), 0);
-    }
+
     // binary files don't include the optional information 
     void save_override(const class_id_optional_type & /* t */, int){}
 
@@ -117,7 +113,7 @@ public:
     init();
 
     basic_binary_oarchive(unsigned int flags) :
-        array_oarchive(flags)
+        detail::common_oarchive<Archive>(flags)
     {}
 };
 

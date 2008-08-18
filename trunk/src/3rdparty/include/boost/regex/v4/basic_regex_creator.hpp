@@ -1270,6 +1270,19 @@ void basic_regex_creator<charT, traits>::probe_leading_repeat(re_syntax_base* st
             state = state->next.p;
             continue;
          }
+         if((static_cast<re_brace*>(state)->index == -1)
+            || (static_cast<re_brace*>(state)->index == -2))
+         {
+            // skip past the zero width assertion:
+            state = static_cast<const re_jump*>(state->next.p)->alt.p->next.p;
+            continue;
+         }
+         if(static_cast<re_brace*>(state)->index == -3)
+         {
+            // Have to skip the leading jump state:
+            state = state->next.p->next.p;
+            continue;
+         }
          return;
       case syntax_element_endmark:
       case syntax_element_start_line:

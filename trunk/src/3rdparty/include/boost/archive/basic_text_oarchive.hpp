@@ -38,7 +38,7 @@ namespace boost {
 namespace archive {
 
 /////////////////////////////////////////////////////////////////////////
-// class basic_text_iarchive - read serialized objects from a input text stream
+// class basic_text_oarchive 
 template<class Archive>
 class basic_text_oarchive : 
     public detail::common_oarchive<Archive>

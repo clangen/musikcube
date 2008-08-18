@@ -26,6 +26,7 @@
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/socket_base.hpp>
 #include <boost/asio/detail/bind_handler.hpp>
+#include <boost/asio/detail/handler_base_from_member.hpp>
 #include <boost/asio/detail/noncopyable.hpp>
 #include <boost/asio/detail/service_base.hpp>
 #include <boost/asio/detail/socket_holder.hpp>
@@ -84,6 +85,9 @@ public:
 
     // The protocol associated with the socket.
     protocol_type protocol_;
+
+    // Per-descriptor data used by the reactor.
+    typename Reactor::per_descriptor_data reactor_data_;
   };
 
   // The maximum number of buffers to support in a single operation.
@@ -114,7 +118,7 @@ public:
   {
     if (impl.socket_ != invalid_socket)
     {
-      reactor_.close_descriptor(impl.socket_);
+      reactor_.close_descriptor(impl.socket_, impl.reactor_data_);
 
       if (impl.flags_ & implementation_type::internal_non_blocking)
       {
@@ -156,7 +160,7 @@ public:
     if (sock.get() == invalid_socket)
       return ec;
 
-    if (int err = reactor_.register_descriptor(sock.get()))
+    if (int err = reactor_.register_descriptor(sock.get(), impl.reactor_data_))
     {
       ec = boost::system::error_code(err,
           boost::asio::error::get_system_category());
@@ -181,7 +185,8 @@ public:
       return ec;
     }
 
-    if (int err = reactor_.register_descriptor(native_socket))
+    if (int err = reactor_.register_descriptor(
+          native_socket, impl.reactor_data_))
     {
       ec = boost::system::error_code(err,
           boost::asio::error::get_system_category());
@@ -207,7 +212,7 @@ public:
   {
     if (is_open(impl))
     {
-      reactor_.close_descriptor(impl.socket_);
+      reactor_.close_descriptor(impl.socket_, impl.reactor_data_);
 
       if (impl.flags_ & implementation_type::internal_non_blocking)
       {
@@ -243,7 +248,7 @@ public:
       return ec;
     }
 
-    reactor_.cancel_ops(impl.socket_);
+    reactor_.cancel_ops(impl.socket_, impl.reactor_data_);
     ec = boost::system::error_code();
     return ec;
   }
@@ -559,28 +564,46 @@ public:
     }
   }
 
+  // Wait until data can be sent without blocking.
+  size_t send(implementation_type& impl, const null_buffers&,
+      socket_base::message_flags, boost::system::error_code& ec)
+  {
+    if (!is_open(impl))
+    {
+      ec = boost::asio::error::bad_descriptor;
+      return 0;
+    }
+
+    // Wait for socket to become ready.
+    socket_ops::poll_write(impl.socket_, ec);
+
+    return 0;
+  }
+
   template <typename ConstBufferSequence, typename Handler>
-  class send_handler
+  class send_operation :
+    public handler_base_from_member<Handler>
   {
   public:
-    send_handler(socket_type socket, boost::asio::io_service& io_service,
+    send_operation(socket_type socket, boost::asio::io_service& io_service,
         const ConstBufferSequence& buffers, socket_base::message_flags flags,
         Handler handler)
-      : socket_(socket),
+      : handler_base_from_member<Handler>(handler),
+        socket_(socket),
         io_service_(io_service),
         work_(io_service),
         buffers_(buffers),
-        flags_(flags),
-        handler_(handler)
+        flags_(flags)
     {
     }
 
-    bool operator()(const boost::system::error_code& result)
+    bool perform(boost::system::error_code& ec,
+        std::size_t& bytes_transferred)
     {
       // Check whether the operation was successful.
-      if (result)
+      if (ec)
       {
-        io_service_.post(bind_handler(handler_, result, 0));
+        bytes_transferred = 0;
         return true;
       }
 
@@ -598,7 +621,6 @@ public:
       }
 
       // Send the data.
-      boost::system::error_code ec;
       int bytes = socket_ops::send(socket_, bufs, i, flags_, ec);
 
       // Check if we need to run the operation again.
@@ -606,8 +628,14 @@ public:
           || ec == boost::asio::error::try_again)
         return false;
 
-      io_service_.post(bind_handler(handler_, ec, bytes < 0 ? 0 : bytes));
+      bytes_transferred = (bytes < 0 ? 0 : bytes);
       return true;
+    }
+
+    void complete(const boost::system::error_code& ec,
+        std::size_t bytes_transferred)
+    {
+      io_service_.post(bind_handler(this->handler_, ec, bytes_transferred));
     }
 
   private:
@@ -616,7 +644,6 @@ public:
     boost::asio::io_service::work work_;
     ConstBufferSequence buffers_;
     socket_base::message_flags flags_;
-    Handler handler_;
   };
 
   // Start an asynchronous send. The data being sent must be valid for the
@@ -667,9 +694,56 @@ public:
         impl.flags_ |= implementation_type::internal_non_blocking;
       }
 
-      reactor_.start_write_op(impl.socket_,
-          send_handler<ConstBufferSequence, Handler>(
+      reactor_.start_write_op(impl.socket_, impl.reactor_data_,
+          send_operation<ConstBufferSequence, Handler>(
             impl.socket_, this->get_io_service(), buffers, flags, handler));
+    }
+  }
+
+  template <typename Handler>
+  class null_buffers_operation :
+    public handler_base_from_member<Handler>
+  {
+  public:
+    null_buffers_operation(boost::asio::io_service& io_service, Handler handler)
+      : handler_base_from_member<Handler>(handler),
+        work_(io_service)
+    {
+    }
+
+    bool perform(boost::system::error_code&,
+        std::size_t& bytes_transferred)
+    {
+      bytes_transferred = 0;
+      return true;
+    }
+
+    void complete(const boost::system::error_code& ec,
+        std::size_t bytes_transferred)
+    {
+      work_.get_io_service().post(bind_handler(
+            this->handler_, ec, bytes_transferred));
+    }
+
+  private:
+    boost::asio::io_service::work work_;
+  };
+
+  // Start an asynchronous wait until data can be sent without blocking.
+  template <typename Handler>
+  void async_send(implementation_type& impl, const null_buffers&,
+      socket_base::message_flags, Handler handler)
+  {
+    if (!is_open(impl))
+    {
+      this->get_io_service().post(bind_handler(handler,
+            boost::asio::error::bad_descriptor, 0));
+    }
+    else
+    {
+      reactor_.start_write_op(impl.socket_, impl.reactor_data_,
+          null_buffers_operation<Handler>(this->get_io_service(), handler),
+          false);
     }
   }
 
@@ -734,29 +808,48 @@ public:
     }
   }
 
+  // Wait until data can be sent without blocking.
+  size_t send_to(implementation_type& impl, const null_buffers&,
+      socket_base::message_flags, const endpoint_type&,
+      boost::system::error_code& ec)
+  {
+    if (!is_open(impl))
+    {
+      ec = boost::asio::error::bad_descriptor;
+      return 0;
+    }
+
+    // Wait for socket to become ready.
+    socket_ops::poll_write(impl.socket_, ec);
+
+    return 0;
+  }
+
   template <typename ConstBufferSequence, typename Handler>
-  class send_to_handler
+  class send_to_operation :
+    public handler_base_from_member<Handler>
   {
   public:
-    send_to_handler(socket_type socket, boost::asio::io_service& io_service,
+    send_to_operation(socket_type socket, boost::asio::io_service& io_service,
         const ConstBufferSequence& buffers, const endpoint_type& endpoint,
         socket_base::message_flags flags, Handler handler)
-      : socket_(socket),
+      : handler_base_from_member<Handler>(handler),
+        socket_(socket),
         io_service_(io_service),
         work_(io_service),
         buffers_(buffers),
         destination_(endpoint),
-        flags_(flags),
-        handler_(handler)
+        flags_(flags)
     {
     }
 
-    bool operator()(const boost::system::error_code& result)
+    bool perform(boost::system::error_code& ec,
+        std::size_t& bytes_transferred)
     {
       // Check whether the operation was successful.
-      if (result)
+      if (ec)
       {
-        io_service_.post(bind_handler(handler_, result, 0));
+        bytes_transferred = 0;
         return true;
       }
 
@@ -774,7 +867,6 @@ public:
       }
 
       // Send the data.
-      boost::system::error_code ec;
       int bytes = socket_ops::sendto(socket_, bufs, i, flags_,
           destination_.data(), destination_.size(), ec);
 
@@ -783,8 +875,14 @@ public:
           || ec == boost::asio::error::try_again)
         return false;
 
-      io_service_.post(bind_handler(handler_, ec, bytes < 0 ? 0 : bytes));
+      bytes_transferred = (bytes < 0 ? 0 : bytes);
       return true;
+    }
+
+    void complete(const boost::system::error_code& ec,
+        std::size_t bytes_transferred)
+    {
+      io_service_.post(bind_handler(this->handler_, ec, bytes_transferred));
     }
 
   private:
@@ -794,7 +892,6 @@ public:
     ConstBufferSequence buffers_;
     endpoint_type destination_;
     socket_base::message_flags flags_;
-    Handler handler_;
   };
 
   // Start an asynchronous send. The data being sent must be valid for the
@@ -825,10 +922,28 @@ public:
         impl.flags_ |= implementation_type::internal_non_blocking;
       }
 
-      reactor_.start_write_op(impl.socket_,
-          send_to_handler<ConstBufferSequence, Handler>(
+      reactor_.start_write_op(impl.socket_, impl.reactor_data_,
+          send_to_operation<ConstBufferSequence, Handler>(
             impl.socket_, this->get_io_service(), buffers,
             destination, flags, handler));
+    }
+  }
+
+  // Start an asynchronous wait until data can be sent without blocking.
+  template <typename Handler>
+  void async_send_to(implementation_type& impl, const null_buffers&,
+      socket_base::message_flags, const endpoint_type&, Handler handler)
+  {
+    if (!is_open(impl))
+    {
+      this->get_io_service().post(bind_handler(handler,
+            boost::asio::error::bad_descriptor, 0));
+    }
+    else
+    {
+      reactor_.start_write_op(impl.socket_, impl.reactor_data_,
+          null_buffers_operation<Handler>(this->get_io_service(), handler),
+          false);
     }
   }
 
@@ -889,7 +1004,7 @@ public:
         return bytes_recvd;
 
       // Check for EOF.
-      if (bytes_recvd == 0)
+      if (bytes_recvd == 0 && impl.protocol_.type() == SOCK_STREAM)
       {
         ec = boost::asio::error::eof;
         return 0;
@@ -907,28 +1022,48 @@ public:
     }
   }
 
+  // Wait until data can be received without blocking.
+  size_t receive(implementation_type& impl, const null_buffers&,
+      socket_base::message_flags, boost::system::error_code& ec)
+  {
+    if (!is_open(impl))
+    {
+      ec = boost::asio::error::bad_descriptor;
+      return 0;
+    }
+
+    // Wait for socket to become ready.
+    socket_ops::poll_read(impl.socket_, ec);
+
+    return 0;
+  }
+
   template <typename MutableBufferSequence, typename Handler>
-  class receive_handler
+  class receive_operation :
+    public handler_base_from_member<Handler>
   {
   public:
-    receive_handler(socket_type socket, boost::asio::io_service& io_service,
-        const MutableBufferSequence& buffers, socket_base::message_flags flags,
-        Handler handler)
-      : socket_(socket),
+    receive_operation(socket_type socket, int protocol_type,
+        boost::asio::io_service& io_service,
+        const MutableBufferSequence& buffers,
+        socket_base::message_flags flags, Handler handler)
+      : handler_base_from_member<Handler>(handler),
+        socket_(socket),
+        protocol_type_(protocol_type),
         io_service_(io_service),
         work_(io_service),
         buffers_(buffers),
-        flags_(flags),
-        handler_(handler)
+        flags_(flags)
     {
     }
 
-    bool operator()(const boost::system::error_code& result)
+    bool perform(boost::system::error_code& ec,
+        std::size_t& bytes_transferred)
     {
       // Check whether the operation was successful.
-      if (result)
+      if (ec)
       {
-        io_service_.post(bind_handler(handler_, result, 0));
+        bytes_transferred = 0;
         return true;
       }
 
@@ -946,9 +1081,8 @@ public:
       }
 
       // Receive some data.
-      boost::system::error_code ec;
       int bytes = socket_ops::recv(socket_, bufs, i, flags_, ec);
-      if (bytes == 0)
+      if (bytes == 0 && protocol_type_ == SOCK_STREAM)
         ec = boost::asio::error::eof;
 
       // Check if we need to run the operation again.
@@ -956,17 +1090,23 @@ public:
           || ec == boost::asio::error::try_again)
         return false;
 
-      io_service_.post(bind_handler(handler_, ec, bytes < 0 ? 0 : bytes));
+      bytes_transferred = (bytes < 0 ? 0 : bytes);
       return true;
+    }
+
+    void complete(const boost::system::error_code& ec,
+        std::size_t bytes_transferred)
+    {
+      io_service_.post(bind_handler(this->handler_, ec, bytes_transferred));
     }
 
   private:
     socket_type socket_;
+    int protocol_type_;
     boost::asio::io_service& io_service_;
     boost::asio::io_service::work work_;
     MutableBufferSequence buffers_;
     socket_base::message_flags flags_;
-    Handler handler_;
   };
 
   // Start an asynchronous receive. The buffer for the data being received
@@ -1020,16 +1160,41 @@ public:
 
       if (flags & socket_base::message_out_of_band)
       {
-        reactor_.start_except_op(impl.socket_,
-            receive_handler<MutableBufferSequence, Handler>(
-              impl.socket_, this->get_io_service(), buffers, flags, handler));
+        reactor_.start_except_op(impl.socket_, impl.reactor_data_,
+            receive_operation<MutableBufferSequence, Handler>(
+              impl.socket_, impl.protocol_.type(),
+              this->get_io_service(), buffers, flags, handler));
       }
       else
       {
-        reactor_.start_read_op(impl.socket_,
-            receive_handler<MutableBufferSequence, Handler>(
-              impl.socket_, this->get_io_service(), buffers, flags, handler));
+        reactor_.start_read_op(impl.socket_, impl.reactor_data_,
+            receive_operation<MutableBufferSequence, Handler>(
+              impl.socket_, impl.protocol_.type(),
+              this->get_io_service(), buffers, flags, handler));
       }
+    }
+  }
+
+  // Wait until data can be received without blocking.
+  template <typename Handler>
+  void async_receive(implementation_type& impl, const null_buffers&,
+      socket_base::message_flags flags, Handler handler)
+  {
+    if (!is_open(impl))
+    {
+      this->get_io_service().post(bind_handler(handler,
+            boost::asio::error::bad_descriptor, 0));
+    }
+    else if (flags & socket_base::message_out_of_band)
+    {
+      reactor_.start_except_op(impl.socket_, impl.reactor_data_,
+          null_buffers_operation<Handler>(this->get_io_service(), handler));
+    }
+    else
+    {
+      reactor_.start_read_op(impl.socket_, impl.reactor_data_,
+          null_buffers_operation<Handler>(this->get_io_service(), handler),
+          false);
     }
   }
 
@@ -1088,7 +1253,7 @@ public:
       }
 
       // Check for EOF.
-      if (bytes_recvd == 0)
+      if (bytes_recvd == 0 && impl.protocol_.type() == SOCK_STREAM)
       {
         ec = boost::asio::error::eof;
         return 0;
@@ -1106,30 +1271,53 @@ public:
     }
   }
 
+  // Wait until data can be received without blocking.
+  size_t receive_from(implementation_type& impl, const null_buffers&,
+      endpoint_type& sender_endpoint, socket_base::message_flags,
+      boost::system::error_code& ec)
+  {
+    if (!is_open(impl))
+    {
+      ec = boost::asio::error::bad_descriptor;
+      return 0;
+    }
+
+    // Wait for socket to become ready.
+    socket_ops::poll_read(impl.socket_, ec);
+
+    // Reset endpoint since it can be given no sensible value at this time.
+    sender_endpoint = endpoint_type();
+
+    return 0;
+  }
+
   template <typename MutableBufferSequence, typename Handler>
-  class receive_from_handler
+  class receive_from_operation :
+    public handler_base_from_member<Handler>
   {
   public:
-    receive_from_handler(socket_type socket,
+    receive_from_operation(socket_type socket, int protocol_type,
         boost::asio::io_service& io_service,
         const MutableBufferSequence& buffers, endpoint_type& endpoint,
         socket_base::message_flags flags, Handler handler)
-      : socket_(socket),
+      : handler_base_from_member<Handler>(handler),
+        socket_(socket),
+        protocol_type_(protocol_type),
         io_service_(io_service),
         work_(io_service),
         buffers_(buffers),
         sender_endpoint_(endpoint),
-        flags_(flags),
-        handler_(handler)
+        flags_(flags)
     {
     }
 
-    bool operator()(const boost::system::error_code& result)
+    bool perform(boost::system::error_code& ec,
+        std::size_t& bytes_transferred)
     {
       // Check whether the operation was successful.
-      if (result)
+      if (ec)
       {
-        io_service_.post(bind_handler(handler_, result, 0));
+        bytes_transferred = 0;
         return true;
       }
 
@@ -1148,10 +1336,9 @@ public:
 
       // Receive some data.
       std::size_t addr_len = sender_endpoint_.capacity();
-      boost::system::error_code ec;
       int bytes = socket_ops::recvfrom(socket_, bufs, i, flags_,
           sender_endpoint_.data(), &addr_len, ec);
-      if (bytes == 0)
+      if (bytes == 0 && protocol_type_ == SOCK_STREAM)
         ec = boost::asio::error::eof;
 
       // Check if we need to run the operation again.
@@ -1160,18 +1347,24 @@ public:
         return false;
 
       sender_endpoint_.resize(addr_len);
-      io_service_.post(bind_handler(handler_, ec, bytes < 0 ? 0 : bytes));
+      bytes_transferred = (bytes < 0 ? 0 : bytes);
       return true;
+    }
+
+    void complete(const boost::system::error_code& ec,
+        std::size_t bytes_transferred)
+    {
+      io_service_.post(bind_handler(this->handler_, ec, bytes_transferred));
     }
 
   private:
     socket_type socket_;
+    int protocol_type_;
     boost::asio::io_service& io_service_;
     boost::asio::io_service::work work_;
     MutableBufferSequence buffers_;
     endpoint_type& sender_endpoint_;
     socket_base::message_flags flags_;
-    Handler handler_;
   };
 
   // Start an asynchronous receive. The buffer for the data being received and
@@ -1202,10 +1395,40 @@ public:
         impl.flags_ |= implementation_type::internal_non_blocking;
       }
 
-      reactor_.start_read_op(impl.socket_,
-          receive_from_handler<MutableBufferSequence, Handler>(
-            impl.socket_, this->get_io_service(), buffers,
-            sender_endpoint, flags, handler));
+      reactor_.start_read_op(impl.socket_, impl.reactor_data_,
+          receive_from_operation<MutableBufferSequence, Handler>(
+            impl.socket_, impl.protocol_.type(), this->get_io_service(),
+            buffers, sender_endpoint, flags, handler));
+    }
+  }
+
+  // Wait until data can be received without blocking.
+  template <typename Handler>
+  void async_receive_from(implementation_type& impl,
+      const null_buffers&, endpoint_type& sender_endpoint,
+      socket_base::message_flags flags, Handler handler)
+  {
+    if (!is_open(impl))
+    {
+      this->get_io_service().post(bind_handler(handler,
+            boost::asio::error::bad_descriptor, 0));
+    }
+    else
+    {
+      // Reset endpoint since it can be given no sensible value at this time.
+      sender_endpoint = endpoint_type();
+
+      if (flags & socket_base::message_out_of_band)
+      {
+        reactor_.start_except_op(impl.socket_, impl.reactor_data_,
+            null_buffers_operation<Handler>(this->get_io_service(), handler));
+      }
+      else
+      {
+        reactor_.start_read_op(impl.socket_, impl.reactor_data_,
+            null_buffers_operation<Handler>(this->get_io_service(), handler),
+            false);
+      }
     }
   }
 
@@ -1300,35 +1523,32 @@ public:
   }
 
   template <typename Socket, typename Handler>
-  class accept_handler
+  class accept_operation :
+    public handler_base_from_member<Handler>
   {
   public:
-    accept_handler(socket_type socket, boost::asio::io_service& io_service,
+    accept_operation(socket_type socket, boost::asio::io_service& io_service,
         Socket& peer, const protocol_type& protocol,
         endpoint_type* peer_endpoint, bool enable_connection_aborted,
         Handler handler)
-      : socket_(socket),
+      : handler_base_from_member<Handler>(handler),
+        socket_(socket),
         io_service_(io_service),
         work_(io_service),
         peer_(peer),
         protocol_(protocol),
         peer_endpoint_(peer_endpoint),
-        enable_connection_aborted_(enable_connection_aborted),
-        handler_(handler)
+        enable_connection_aborted_(enable_connection_aborted)
     {
     }
 
-    bool operator()(const boost::system::error_code& result)
+    bool perform(boost::system::error_code& ec, std::size_t&)
     {
       // Check whether the operation was successful.
-      if (result)
-      {
-        io_service_.post(bind_handler(handler_, result));
+      if (ec)
         return true;
-      }
 
       // Accept the waiting connection.
-      boost::system::error_code ec;
       socket_holder new_socket;
       std::size_t addr_len = 0;
       if (peer_endpoint_)
@@ -1364,8 +1584,12 @@ public:
           new_socket.release();
       }
 
-      io_service_.post(bind_handler(handler_, ec));
       return true;
+    }
+
+    void complete(const boost::system::error_code& ec, std::size_t)
+    {
+      io_service_.post(bind_handler(this->handler_, ec));
     }
 
   private:
@@ -1376,7 +1600,6 @@ public:
     protocol_type protocol_;
     endpoint_type* peer_endpoint_;
     bool enable_connection_aborted_;
-    Handler handler_;
   };
 
   // Start an asynchronous accept. The peer and peer_endpoint objects
@@ -1410,8 +1633,8 @@ public:
         impl.flags_ |= implementation_type::internal_non_blocking;
       }
 
-      reactor_.start_read_op(impl.socket_,
-          accept_handler<Socket, Handler>(
+      reactor_.start_read_op(impl.socket_, impl.reactor_data_,
+          accept_operation<Socket, Handler>(
             impl.socket_, this->get_io_service(),
             peer, impl.protocol_, peer_endpoint,
             (impl.flags_ & implementation_type::enable_connection_aborted) != 0,
@@ -1445,70 +1668,52 @@ public:
   }
 
   template <typename Handler>
-  class connect_handler
+  class connect_operation :
+    public handler_base_from_member<Handler>
   {
   public:
-    connect_handler(socket_type socket, boost::shared_ptr<bool> completed,
-        boost::asio::io_service& io_service, Reactor& reactor, Handler handler)
-      : socket_(socket),
-        completed_(completed),
+    connect_operation(socket_type socket,
+        boost::asio::io_service& io_service, Handler handler)
+      : handler_base_from_member<Handler>(handler),
+        socket_(socket),
         io_service_(io_service),
-        work_(io_service),
-        reactor_(reactor),
-        handler_(handler)
+        work_(io_service)
     {
     }
 
-    bool operator()(const boost::system::error_code& result)
+    bool perform(boost::system::error_code& ec, std::size_t&)
     {
-      // Check whether a handler has already been called for the connection.
-      // If it has, then we don't want to do anything in this handler.
-      if (*completed_)
-        return true;
-
-      // Cancel the other reactor operation for the connection.
-      *completed_ = true;
-      reactor_.enqueue_cancel_ops_unlocked(socket_);
-
       // Check whether the operation was successful.
-      if (result)
-      {
-        io_service_.post(bind_handler(handler_, result));
+      if (ec)
         return true;
-      }
 
       // Get the error code from the connect operation.
       int connect_error = 0;
       size_t connect_error_len = sizeof(connect_error);
-      boost::system::error_code ec;
       if (socket_ops::getsockopt(socket_, SOL_SOCKET, SO_ERROR,
             &connect_error, &connect_error_len, ec) == socket_error_retval)
-      {
-        io_service_.post(bind_handler(handler_, ec));
         return true;
-      }
 
-      // If connection failed then post the handler with the error code.
+      // The connection failed so the handler will be posted with an error code.
       if (connect_error)
       {
         ec = boost::system::error_code(connect_error,
             boost::asio::error::get_system_category());
-        io_service_.post(bind_handler(handler_, ec));
         return true;
       }
 
-      // Post the result of the successful connection operation.
-      io_service_.post(bind_handler(handler_, ec));
       return true;
+    }
+
+    void complete(const boost::system::error_code& ec, std::size_t)
+    {
+      io_service_.post(bind_handler(this->handler_, ec));
     }
 
   private:
     socket_type socket_;
-    boost::shared_ptr<bool> completed_;
     boost::asio::io_service& io_service_;
     boost::asio::io_service::work work_;
-    Reactor& reactor_;
-    Handler handler_;
   };
 
   // Start an asynchronous connect.
@@ -1552,10 +1757,9 @@ public:
     {
       // The connection is happening in the background, and we need to wait
       // until the socket becomes writeable.
-      boost::shared_ptr<bool> completed(new bool(false));
-      reactor_.start_write_and_except_ops(impl.socket_,
-          connect_handler<Handler>(impl.socket_, completed,
-            this->get_io_service(), reactor_, handler));
+      reactor_.start_connect_op(impl.socket_, impl.reactor_data_,
+          connect_operation<Handler>(impl.socket_,
+            this->get_io_service(), handler));
     }
     else
     {

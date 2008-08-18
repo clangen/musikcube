@@ -1,11 +1,16 @@
 //  boost/filesystem/path.hpp  -----------------------------------------------//
 
 //  Copyright Beman Dawes 2002-2005
+//  Copyright Vladimir Prus 2002
 
 //  Distributed under the Boost Software License, Version 1.0. (See accompanying
 //  file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
 //  See library home page at http://www.boost.org/libs/filesystem
+
+//  basic_path's stem(), extension(), and replace_extension() are based on
+//  basename(), extension(), and change_extension() from the original
+//  filesystem/convenience.hpp header by Vladimir Prus.
 
 //----------------------------------------------------------------------------// 
 
@@ -197,7 +202,12 @@ namespace boost
 #       endif
       }
 
-      basic_path & remove_leaf();
+      basic_path & remove_filename();
+      basic_path & replace_extension( const string_type & new_extension = "" );
+
+# ifndef BOOST_FILESYSTEM_NO_DEPRECATED
+      basic_path & remove_leaf() { return remove_filename(); }
+# endif
 
       // observers
       const string_type & string() const         { return m_path; }
@@ -211,8 +221,15 @@ namespace boost
       string_type  root_name() const;
       string_type  root_directory() const;
       basic_path   relative_path() const;
-      string_type  leaf() const;
-      basic_path   branch_path() const;
+      basic_path   parent_path() const;
+      string_type  filename() const;
+      string_type  stem() const;
+      string_type  extension() const;
+
+# ifndef BOOST_FILESYSTEM_NO_DEPRECATED
+      string_type  leaf() const { return filename(); }
+      basic_path   branch_path() const { return parent_path(); }
+# endif
 
       bool empty() const               { return m_path.empty(); } // name consistent with std containers
       bool is_complete() const;
@@ -220,8 +237,8 @@ namespace boost
       bool has_root_name() const;
       bool has_root_directory() const;
       bool has_relative_path() const   { return !relative_path().empty(); }
-      bool has_leaf() const            { return !m_path.empty(); }
-      bool has_branch_path() const     { return !branch_path().empty(); }
+      bool has_filename() const            { return !m_path.empty(); }
+      bool has_parent_path() const     { return !parent_path().empty(); }
 
       // iterators
       class iterator : public boost::iterator_facade<
@@ -624,14 +641,14 @@ namespace boost
 
       typedef Path path_type;
 
-      basic_filesystem_error( const std::string & what,
+      basic_filesystem_error( const std::string & what_arg,
         system::error_code ec );
 
-      basic_filesystem_error( const std::string & what,
-        const path_type & path1, system::error_code ec );
+      basic_filesystem_error( const std::string & what_arg,
+        const path_type & path1_arg, system::error_code ec );
 
-      basic_filesystem_error( const std::string & what, const path_type & path1,
-        const path_type & path2, system::error_code ec );
+      basic_filesystem_error( const std::string & what_arg, const path_type & path1_arg,
+        const path_type & path2_arg, system::error_code ec );
 
       ~basic_filesystem_error() throw() {}
 
@@ -698,13 +715,13 @@ namespace boost
           ;
       }
 
-      // leaf_pos helper  ----------------------------------------------------//
+      // filename_pos helper  ----------------------------------------------------//
 
       template<class String, class Traits>
-      typename String::size_type leaf_pos(
+      typename String::size_type filename_pos(
         const String & str, // precondition: portable generic path grammar
         typename String::size_type end_pos ) // end_pos is past-the-end position
-      // return 0 if str itself is leaf (or empty)
+      // return 0 if str itself is filename (or empty)
       {
         typedef typename
           boost::BOOST_FILESYSTEM_NAMESPACE::basic_path<String, Traits> path_type;
@@ -728,9 +745,9 @@ namespace boost
           pos = str.find_last_of( colon<path_type>::value, end_pos-2 );
 #       endif
 
-        return ( pos == String::npos // path itself must be a leaf (or empty)
+        return ( pos == String::npos // path itself must be a filename (or empty)
           || (pos == 1 && str[0] == slash<path_type>::value) ) // or net
-            ? 0 // so leaf is entire string
+            ? 0 // so filename is entire string
             : pos + 1; // or starts after delimiter
       }
 
@@ -876,10 +893,10 @@ namespace boost
     // decomposition functions  ----------------------------------------------//
 
     template<class String, class Traits>
-    String basic_path<String, Traits>::leaf() const
+    String basic_path<String, Traits>::filename() const
     {
       typename String::size_type end_pos(
-        detail::leaf_pos<String, Traits>( m_path, m_path.size() ) );
+        detail::filename_pos<String, Traits>( m_path, m_path.size() ) );
       return (m_path.size()
                 && end_pos
                 && m_path[end_pos] == slash<path_type>::value
@@ -889,12 +906,31 @@ namespace boost
     }
 
     template<class String, class Traits>
-    basic_path<String, Traits> basic_path<String, Traits>::branch_path() const
+    String basic_path<String, Traits>::stem() const
+    {
+      string_type name = filename();
+      typename string_type::size_type n = name.rfind('.');
+      return name.substr(0, n);
+    }
+
+    template<class String, class Traits>
+    String basic_path<String, Traits>::extension() const
+    {
+      string_type name = filename();
+      typename string_type::size_type n = name.rfind('.');
+      if (n != string_type::npos)
+        return name.substr(n);
+      else
+        return string_type();
+    }
+
+    template<class String, class Traits>
+    basic_path<String, Traits> basic_path<String, Traits>::parent_path() const
     {
       typename String::size_type end_pos(
-        detail::leaf_pos<String, Traits>( m_path, m_path.size() ) );
+        detail::filename_pos<String, Traits>( m_path, m_path.size() ) );
 
-      bool leaf_was_separator( m_path.size()
+      bool filename_was_separator( m_path.size()
         && m_path[end_pos] == slash<path_type>::value );
 
       // skip separators unless root directory
@@ -907,7 +943,7 @@ namespace boost
         ;
         --end_pos ) {}
 
-     return (end_pos == 1 && root_dir_pos == 0 && leaf_was_separator)
+     return (end_pos == 1 && root_dir_pos == 0 && filename_was_separator)
        ? path_type()
        : path_type( m_path.substr( 0, end_pos ) );
     }
@@ -1137,7 +1173,7 @@ namespace boost
           && (*itr)[0] == dot<path_type>::value
           && (*itr)[1] == dot<path_type>::value ) // dot dot
         {
-          string_type lf( temp.leaf() );  
+          string_type lf( temp.filename() );  
           if ( lf.size() > 0  
             && (lf.size() != 1
               || (lf[0] != dot<path_type>::value
@@ -1152,7 +1188,7 @@ namespace boost
                )
             )
           {
-            temp.remove_leaf();
+            temp.remove_filename();
             // if not root directory, must also remove "/" if any
             if ( temp.m_path.size() > 0
               && temp.m_path[temp.m_path.size()-1]
@@ -1183,15 +1219,33 @@ namespace boost
 
 # endif
 
-    // remove_leaf  ----------------------------------------------------------//
+    // modifiers  ------------------------------------------------------------//
 
     template<class String, class Traits>
-    basic_path<String, Traits> & basic_path<String, Traits>::remove_leaf()
+    basic_path<String, Traits> & basic_path<String, Traits>::remove_filename()
     {
       m_path.erase(
-        detail::leaf_pos<String, Traits>( m_path, m_path.size() ) );
+        detail::filename_pos<String, Traits>( m_path, m_path.size() ) );
       return *this;
     }
+
+    template<class String, class Traits>
+    basic_path<String, Traits> &
+    basic_path<String, Traits>::replace_extension( const string_type & new_ext )
+    {
+      // erase existing extension if any
+      string_type old_ext = extension();
+      if ( !old_ext.empty() )
+        m_path.erase( m_path.size() - old_ext.size() );
+
+      if ( !new_ext.empty() && new_ext[0] != dot<path_type>::value )
+        m_path += dot<path_type>::value;
+
+      m_path += new_ext;
+
+      return *this;
+    }
+
 
     // path conversion functions  --------------------------------------------//
 
@@ -1375,7 +1429,7 @@ namespace boost
           ;
           --end_pos ) {}
 
-        itr.m_pos = detail::leaf_pos<string_type, traits_type>
+        itr.m_pos = detail::filename_pos<string_type, traits_type>
             ( itr.m_path_ptr->m_path, end_pos );
         itr.m_name = itr.m_path_ptr->m_path.substr( itr.m_pos, end_pos - itr.m_pos );
       }
@@ -1385,8 +1439,8 @@ namespace boost
 
     template<class Path>
     basic_filesystem_error<Path>::basic_filesystem_error(
-      const std::string & what, system::error_code ec )
-      : system::system_error(ec, what)
+      const std::string & what_arg, system::error_code ec )
+      : system::system_error(ec, what_arg)
     {
       try
       {
@@ -1397,29 +1451,29 @@ namespace boost
 
     template<class Path>
     basic_filesystem_error<Path>::basic_filesystem_error(
-      const std::string & what, const path_type & path1,
+      const std::string & what_arg, const path_type & path1_arg,
       system::error_code ec )
-      : system::system_error(ec, what)
+      : system::system_error(ec, what_arg)
     {
       try
       {
         m_imp_ptr.reset( new m_imp );
-        m_imp_ptr->m_path1 = path1;
+        m_imp_ptr->m_path1 = path1_arg;
       }
       catch (...) { m_imp_ptr.reset(); }
     }
 
     template<class Path>
     basic_filesystem_error<Path>::basic_filesystem_error(
-      const std::string & what, const path_type & path1,
-      const path_type & path2, system::error_code ec )
-      : system::system_error(ec, what)
+      const std::string & what_arg, const path_type & path1_arg,
+      const path_type & path2_arg, system::error_code ec )
+      : system::system_error(ec, what_arg)
     {
       try
       {
         m_imp_ptr.reset( new m_imp );
-        m_imp_ptr->m_path1 = path1;
-        m_imp_ptr->m_path2 = path2;
+        m_imp_ptr->m_path1 = path1_arg;
+        m_imp_ptr->m_path2 = path2_arg;
       }
       catch (...) { m_imp_ptr.reset(); }
     }

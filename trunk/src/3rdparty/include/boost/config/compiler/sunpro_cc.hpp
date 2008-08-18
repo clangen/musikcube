@@ -40,7 +40,7 @@
        // initialized in-class.
        //    >> Assertion:   (../links/dbg_cstabs.cc, line 611)
        //         while processing ../test.cpp at line 0.
-       // (Jens Maurer according to Gottfried Ganﬂauge 04 Mar 2002)
+       // (Jens Maurer according to Gottfried Ganssauge 04 Mar 2002)
 #      define BOOST_NO_INCLASS_MEMBER_INITIALIZATION
 
        // SunPro 5.3 has better support for partial specialization,
@@ -73,6 +73,7 @@
 // Issues that effect all known versions:
 //
 #define BOOST_NO_TWO_PHASE_NAME_LOOKUP
+#define BOOST_NO_ADL_BARRIER
 
 
 #define BOOST_COMPILER "Sun compiler version " BOOST_STRINGIZE(__SUNPRO_CC)

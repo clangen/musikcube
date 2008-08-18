@@ -86,8 +86,8 @@ enum archive_flags {
     no_header = 1,  // suppress archive header info
     no_codecvt = 2,  // suppress alteration of codecvt facet
     no_xml_tag_checking = 4,   // suppress checking of xml tags
-    no_tracking = 8           // suppress ALL tracking
-//    no_object_creation = 16    // don't create any new objects
+    no_tracking = 8,           // suppress ALL tracking
+    flags_last = 8
 };
 
 #define NULL_POINTER_TAG class_id_type(-1)

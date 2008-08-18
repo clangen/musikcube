@@ -68,10 +68,14 @@ public:
     IStream &is;
     io::ios_flags_saver flags_saver;
     io::ios_precision_saver precision_saver;
+
+    #ifndef BOOST_NO_STD_LOCALE
     boost::scoped_ptr<std::locale> archive_locale;
     io::basic_ios_locale_saver<
         BOOST_DEDUCED_TYPENAME IStream::char_type, BOOST_DEDUCED_TYPENAME IStream::traits_type
     > locale_saver;
+    #endif
+
     template<class T>
     void load(T & t)
     {

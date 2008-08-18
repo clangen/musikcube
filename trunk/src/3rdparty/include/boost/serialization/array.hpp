@@ -7,14 +7,39 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 
 #include <boost/serialization/nvp.hpp>
-#include <boost/serialization/split_free.hpp>
+#include <boost/serialization/split_member.hpp>
 #include <boost/serialization/wrapper.hpp>
-#include <boost/serialization/collection_size_type.hpp>
-#include <boost/archive/archive_exception.hpp>
-#include <boost/throw_exception.hpp>
+#include <boost/mpl/always.hpp>
+#include <boost/mpl/apply.hpp>
+#include <boost/mpl/bool.hpp>
+#include <boost/type_traits/remove_const.hpp>
+#include <boost/array.hpp>
 #include <iostream>
 
+#include <cstddef> // std::size_t
+#include <cstddef>
+#include <boost/config.hpp> // msvc 6.0 needs this for warning suppression
+#if defined(BOOST_NO_STDC_NAMESPACE)
+namespace std{ 
+    using ::size_t; 
+} // namespace std
+#endif
+
 namespace boost { namespace serialization {
+
+// traits to specify whether to use  an optimized array serialization
+
+#ifdef __BORLANDC__
+// workaround for Borland compiler
+template <class Archive>
+struct use_array_optimization {
+  template <class T> struct apply : boost::mpl::false_ {};
+};
+
+#else
+template <class Archive>
+struct use_array_optimization : boost::mpl::always<boost::mpl::false_> {};
+#endif
 
 template<class T>
 class array
@@ -30,13 +55,45 @@ public:
     
     // default implementation
     template<class Archive>
-    void serialize(Archive &ar, const unsigned int) const
+    void serialize_optimized(Archive &ar, const unsigned int, mpl::false_ ) const
     {
       // default implemention does the loop
       std::size_t c = count();
       value_type * t = address();
       while(0 < c--)
             ar & make_nvp("item", *t++);
+    }
+
+    // optimized implementation
+    template<class Archive>
+    void serialize_optimized(Archive &ar, const unsigned int version, mpl::true_ )
+    {
+      boost::serialization::split_member(ar, *this, version);
+    }
+
+    // default implementation
+    template<class Archive>
+    void save(Archive &ar, const unsigned int version) const
+    {
+      ar.save_array(*this,version);
+    }
+
+    // default implementation
+    template<class Archive>
+    void load(Archive &ar, const unsigned int version)
+    {
+      ar.load_array(*this,version);
+    }
+    
+    // default implementation
+    template<class Archive>
+    void serialize(Archive &ar, const unsigned int version)
+    {
+      typedef BOOST_DEDUCED_TYPENAME 
+          boost::serialization::use_array_optimization<Archive>::template apply<
+                    BOOST_DEDUCED_TYPENAME remove_const<T>::type 
+                >::type use_optimized;
+      serialize_optimized(ar,version,use_optimized());
     }
     
     value_type* address() const
@@ -64,44 +121,30 @@ array<T> make_array( T* t, std::size_t s){
     return array<T>(t, s);
 }
 
-/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
-// T[N]
 
-/*
+template <class Archive, class T, std::size_t N>
 
-template<class Archive, class U, std::size_t N>
-void save( Archive & ar, U const (& t)[N], const unsigned int file_version )
+void serialize(Archive& ar, boost::array<T,N>& a, const unsigned int version)
 {
-  const serialization::collection_size_type count(N);
-  ar << BOOST_SERIALIZATION_NVP(count);
-  if (N)
-    ar << serialization::make_array(&t[0],N);
+  ar & make_nvp("elems",a.elems);
 }
 
-template<class Archive, class U, std::size_t N>
-void load( Archive & ar, U (& t)[N], const unsigned int file_version )
-{
-  serialization::collection_size_type count;
-  ar >> BOOST_SERIALIZATION_NVP(count);
-  if(count > N)
-      boost::throw_exception(archive::archive_exception(
-        boost::archive::archive_exception::array_size_too_short
-      ));
-  if (N)
-    ar >> serialization::make_array(&t[0],count);
-}
-
-
-// split non-intrusive serialization function member into separate
-// non intrusive save/load member functions
-template<class Archive, class U, std::size_t N>
-inline void serialize( Archive & ar, U (& t)[N], const unsigned int file_version)
-{
-    boost::serialization::split_free(ar, t, file_version);
-}
-*/
 
 
 } } // end namespace boost::serialization
+
+#ifdef __BORLANDC__
+// ignore optimizations for Borland
+#define BOOST_SERIALIZATION_USE_ARRAY_OPTIMIZATION(Archive)      
+#else
+#define BOOST_SERIALIZATION_USE_ARRAY_OPTIMIZATION(Archive)           \
+namespace boost { namespace serialization {                           \
+template <> struct use_array_optimization<Archive> {                  \
+  template <class ValueType>                                          \
+  struct apply : boost::mpl::apply1<Archive::use_array_optimization   \
+      , BOOST_DEDUCED_TYPENAME boost::remove_const<ValueType>::type   \
+    >::type {};                                                       \
+}; }}
+#endif // __BORLANDC__
 
 #endif //BOOST_SERIALIZATION_ARRAY_HPP

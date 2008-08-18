@@ -55,7 +55,7 @@ namespace boost {
         {
             iterator_range<BOOST_STRING_TYPENAME range_iterator<RangeT>::type> lit_input(as_literal(Input));
 
-            return Finder(begin(lit_input),end(lit_input));
+            return Finder(::boost::begin(lit_input),::boost::end(lit_input));
         }
 
 //  find_first  -----------------------------------------------//
