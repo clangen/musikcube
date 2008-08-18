@@ -176,6 +176,22 @@ inline int connect(socket_type s, const socket_addr_type* addr,
   return result;
 }
 
+inline int socketpair(int af, int type, int protocol,
+    socket_type sv[2], boost::system::error_code& ec)
+{
+#if defined(BOOST_WINDOWS) || defined(__CYGWIN__)
+  (void)(af);
+  (void)(type);
+  (void)(protocol);
+  (void)(sv);
+  ec = boost::asio::error::operation_not_supported;
+  return -1;
+#else
+  clear_error(ec);
+  return error_wrapper(::socketpair(af, type, protocol, sv), ec);
+#endif
+}
+
 inline int listen(socket_type s, int backlog, boost::system::error_code& ec)
 {
   clear_error(ec);

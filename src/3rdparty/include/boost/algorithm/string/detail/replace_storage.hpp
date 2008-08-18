@@ -46,7 +46,7 @@ namespace boost {
                 StorageT& Storage,
                 const WhatT& What )
             {
-                Storage.insert( Storage.end(), begin(What), end(What) );
+                Storage.insert( Storage.end(), ::boost::begin(What), ::boost::end(What) );
             }
 
 

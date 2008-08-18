@@ -2,7 +2,7 @@
 #ifndef BOOST_MPL_AUX_PUSH_BACK_IMPL_HPP_INCLUDED
 #define BOOST_MPL_AUX_PUSH_BACK_IMPL_HPP_INCLUDED
 
-// Copyright Aleksey Gurtovoy 2000-2004
+// Copyright Aleksey Gurtovoy 2000-2008
 //
 // Distributed under the Boost Software License, Version 1.0. 
 // (See accompanying file LICENSE_1_0.txt or copy at 
@@ -11,23 +11,39 @@
 // See http://www.boost.org/libs/mpl for documentation.
 
 // $Source$
-// $Date: 2004-09-02 11:41:37 -0400 (Thu, 02 Sep 2004) $
-// $Revision: 24874 $
+// $Date: 2008-07-21 04:00:06 -0400 (Mon, 21 Jul 2008) $
+// $Revision: 47650 $
 
 #include <boost/mpl/push_back_fwd.hpp>
+#include <boost/mpl/assert.hpp>
 #include <boost/mpl/aux_/has_type.hpp>
 #include <boost/mpl/aux_/traits_lambda_spec.hpp>
 #include <boost/mpl/aux_/config/forwarding.hpp>
 #include <boost/mpl/aux_/config/static_constant.hpp>
 
+#include <boost/type_traits/is_same.hpp>
+
 namespace boost { namespace mpl {
+
+template< typename Tag >
+struct has_push_back_impl;
 
 // agurt 05/feb/04: no default implementation; the stub definition is needed 
 // to enable the default 'has_push_back' implementation below
 template< typename Tag >
 struct push_back_impl
 {
-    template< typename Sequence, typename T > struct apply {};
+    template< typename Sequence, typename T > struct apply
+    {
+        // should be instantiated only in the context of 'has_push_back_impl';
+        // if you've got an assert here, you are requesting a 'push_back' 
+        // specialization that doesn't exist.
+        BOOST_MPL_ASSERT_MSG(
+              ( boost::is_same< T, has_push_back_impl<T> >::value )
+            , REQUESTED_PUSH_BACK_SPECIALIZATION_FOR_SEQUENCE_DOES_NOT_EXIST
+            , ( Sequence )
+            );
+    };
 };
 
 template< typename Tag >
@@ -35,13 +51,13 @@ struct has_push_back_impl
 {
     template< typename Seq > struct apply
 #if !defined(BOOST_MPL_CFG_NO_NESTED_FORWARDING)
-        : aux::has_type< push_back<Seq,int> >
+        : aux::has_type< push_back< Seq, has_push_back_impl<Tag> > >
     {
 #else
     {
-        typedef aux::has_type< push_back<Seq,int> > type;
+        typedef aux::has_type< push_back< Seq, has_push_back_impl<Tag> > > type;
         BOOST_STATIC_CONSTANT(bool, value = 
-              (aux::has_type< push_back<Seq,int> >::value)
+              (aux::has_type< push_back< Seq, has_push_back_impl<Tag> > >::value)
             );
 #endif
     };

@@ -47,11 +47,11 @@ namespace boost
     template< class T >
     struct is_error_condition_enum { static const bool value = false; };
 
-    //  portable error_conditions  -------------------------------------------//
+    //  generic error_conditions  --------------------------------------------//
 
-    namespace posix_error
+    namespace errc
     {
-      enum posix_errno
+      enum errc_t
       {
         success = 0,
         address_family_not_supported = EAFNOSUPPORT,
@@ -134,13 +134,14 @@ namespace boost
         wrong_protocol_type = EPROTOTYPE
       };
 
-    } // namespace posix_error
+    } // namespace errc
 
 # ifndef BOOST_SYSTEM_NO_DEPRECATED
-    namespace posix = posix_error;
+    namespace posix = errc;
+    namespace posix_error = errc;
 # endif
 
-    template<> struct is_error_condition_enum<posix_error::posix_errno>
+    template<> struct is_error_condition_enum<errc::errc_t>
       { static const bool value = true; };
 
 
@@ -199,15 +200,16 @@ namespace boost
     //  predefined error categories  -----------------------------------------//
 
     BOOST_SYSTEM_DECL const error_category &  get_system_category();
-    BOOST_SYSTEM_DECL const error_category &  get_posix_category();
+    BOOST_SYSTEM_DECL const error_category &  get_generic_category();
 
     static const error_category &  system_category = get_system_category();
-    static const error_category &  posix_category = get_posix_category();
+    static const error_category &  generic_category = get_generic_category();
     
 # ifndef BOOST_SYSTEM_NO_DEPRECATED
     //  deprecated synonyms
-    static const error_category &  errno_ecat  = get_posix_category();
-    static const error_category &  native_ecat = get_system_category();
+    static const error_category &  posix_category = get_generic_category();
+    static const error_category &  errno_ecat     = get_generic_category();
+    static const error_category &  native_ecat    = get_system_category();
 # endif
 
     //  class error_condition  -----------------------------------------------//
@@ -219,7 +221,7 @@ namespace boost
     public:
 
       // constructors:
-      error_condition() : m_val(0), m_cat(&get_posix_category()) {}
+      error_condition() : m_val(0), m_cat(&get_generic_category()) {}
       error_condition( int val, const error_category & cat ) : m_val(val), m_cat(&cat) {}
 
       template <class ConditionEnum>
@@ -248,7 +250,7 @@ namespace boost
       void clear()
       {
         m_val = 0;
-        m_cat = &get_posix_category();
+        m_cat = &get_generic_category();
       }
 
       // observers:
@@ -436,17 +438,17 @@ namespace boost
         + reinterpret_cast<std::size_t>(&ec.category());
     }
 
-    //  make_* functions for posix_error::posix_errno  -----------------------------//
+    //  make_* functions for errc::errc_t  -----------------------------//
 
-    namespace posix_error
+    namespace errc
     {
       //  explicit conversion:
-      inline error_code make_error_code( posix_errno e )
-        { return error_code( e, get_posix_category() ); }
+      inline error_code make_error_code( errc_t e )
+        { return error_code( e, get_generic_category() ); }
 
       //  implicit conversion:
-      inline error_condition make_error_condition( posix_errno e )
-        { return error_condition( e, get_posix_category() ); }
+      inline error_condition make_error_condition( errc_t e )
+        { return error_condition( e, get_generic_category() ); }
     }
 
     //  error_category default implementation  -------------------------------//

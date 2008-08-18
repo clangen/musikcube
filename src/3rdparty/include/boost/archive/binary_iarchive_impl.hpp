@@ -42,7 +42,7 @@ protected:
     // make this protected so it can be called from a derived archive
     template<class T>
     void load_override(T & t, BOOST_PFTO int){
-        basic_binary_iarchive<Archive>::load_override(t, 0);
+        this->basic_binary_iarchive<Archive>::load_override(t, 0L);
     }
     void init(unsigned int flags){
         if(0 != (flags & no_header))

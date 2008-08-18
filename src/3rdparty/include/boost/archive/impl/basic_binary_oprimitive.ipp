@@ -9,6 +9,7 @@
 //  See http://www.boost.org for updates, documentation, and revision history.
 
 #include <ostream>
+#include <cstddef> // NULL
 #include <cstring>
 
 #include <boost/config.hpp>
@@ -103,6 +104,7 @@ basic_binary_oprimitive<Archive, Elem, Tr>::basic_binary_oprimitive(
     std::basic_streambuf<Elem, Tr> & sb, 
     bool no_codecvt
 ) : 
+#ifndef BOOST_NO_STD_LOCALE
     m_sb(sb),
     archive_locale(NULL),
     locale_saver(m_sb)
@@ -117,6 +119,10 @@ basic_binary_oprimitive<Archive, Elem, Tr>::basic_binary_oprimitive(
         m_sb.pubimbue(* archive_locale);
     }
 }
+#else
+    m_sb(sb)
+{}
+#endif
 
 // some libraries including stl and libcomo fail if the
 // buffer isn't flushed before the code_cvt facet is changed.

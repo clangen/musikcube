@@ -16,7 +16,7 @@
 
 //  See http://www.boost.org for updates, documentation, and revision history.
 
-#include <cstdlib> // NULL
+#include <cstddef> // NULL
 #include <boost/config.hpp>
 
 #include <boost/archive/detail/auto_link_archive.hpp>
@@ -41,7 +41,7 @@ class BOOST_ARCHIVE_DECL(BOOST_PP_EMPTY()) basic_oserializer :
     public basic_serializer
 {
 private:
-    basic_pointer_oserializer *bpos;
+    basic_pointer_oserializer *m_bpos;
 protected:
     explicit basic_oserializer(
         const boost::serialization::extended_type_info & type_
@@ -53,13 +53,13 @@ protected:
     ~basic_oserializer();
 public:
     bool serialized_as_pointer() const {
-        return bpos != NULL;
+        return m_bpos != NULL;
     }
-    void set_bpos(basic_pointer_oserializer *bpos_){
-        bpos = bpos_;
+    void set_bpos(basic_pointer_oserializer *bpos){
+        m_bpos = bpos;
     }
     const basic_pointer_oserializer * get_bpos() const {
-        return bpos;
+        return m_bpos;
     }
     virtual void save_object_data(
         basic_oarchive & ar, const void * x

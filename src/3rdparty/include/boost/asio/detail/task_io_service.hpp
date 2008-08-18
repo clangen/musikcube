@@ -15,6 +15,10 @@
 # pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
+#if defined(BOOST_ASIO_ENABLE_TWO_LOCK_QUEUE)
+#include <boost/asio/detail/task_io_service_2lock.hpp>
+#else // defined(BOOST_ASIO_ENABLE_TWO_LOCK_QUEUE)
+
 #include <boost/asio/detail/push_options.hpp>
 
 #include <boost/asio/io_service.hpp>
@@ -417,5 +421,7 @@ private:
 
 #include <boost/system/error_code.hpp>
 #include <boost/asio/detail/pop_options.hpp>
+
+#endif // defined(BOOST_ASIO_ENABLE_TWO_LOCK_QUEUE)
 
 #endif // BOOST_ASIO_DETAIL_TASK_IO_SERVICE_HPP

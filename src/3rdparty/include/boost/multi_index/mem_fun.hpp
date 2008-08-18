@@ -1,4 +1,4 @@
-/* Copyright 2003-2006 Joaquín M López Muñoz.
+/* Copyright 2003-2008 Joaquin M Lopez Munoz.
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
@@ -39,16 +39,6 @@ namespace multi_index{
  * arbitrary combinations of these (vg. T** or auto_ptr<T*>.)
  */
 
-/* NB. Some overloads of operator() have an extra dummy parameter int=0.
- * This disambiguator serves several purposes:
- *  - Without it, MSVC++ 6.0 incorrectly regards some overloads as
- *    specializations of a previous member function template.
- *  - MSVC++ 6.0/7.0 seem to incorrectly treat some different memfuns
- *    as if they have the same signature.
- *  - If remove_const is broken due to lack of PTS, int=0 avoids the
- *    declaration of memfuns with identical signature.
- */
-
 template<class Class,typename Type,Type (Class::*PtrToMemberFunction)()const>
 struct const_mem_fun
 {
@@ -78,7 +68,7 @@ struct const_mem_fun
     return operator()(x.get());
   }
 
-  Type operator()(const reference_wrapper<Class>& x,int=0)const
+  Type operator()(const reference_wrapper<Class>& x)const
   { 
     return operator()(x.get());
   }
@@ -115,9 +105,9 @@ struct mem_fun
 };
 
 /* MSVC++ 6.0 has problems with const member functions as non-type template
- * parameters, somehow it takes them as non-const. mem_fun_explicit workarounds
- * this defficiency by accepting an extra type parameter that specifies the
- * signature of he member function. The workaround was found at:
+ * parameters, somehow it takes them as non-const. const_mem_fun_explicit
+ * workarounds this deficiency by accepting an extra type parameter that
+ * specifies the signature of the member function. The workaround was found at:
  *   Daniel, C.:"Re: weird typedef problem in VC",
  *   news:microsoft.public.vc.language, 21st nov 2002, 
  *   http://groups.google.com/groups?
@@ -155,7 +145,7 @@ struct const_mem_fun_explicit
     return operator()(x.get());
   }
 
-  Type operator()(const reference_wrapper<Class>& x,int=0)const
+  Type operator()(const reference_wrapper<Class>& x)const
   { 
     return operator()(x.get());
   }
@@ -194,7 +184,7 @@ struct mem_fun_explicit
 };
 
 /* BOOST_MULTI_INDEX_CONST_MEM_FUN and BOOST_MULTI_INDEX_MEM_FUN resolve to
- * mem_fun_explicit for MSVC++ 6.0 and to [const_]mem_fun otherwise.
+ * [const_]mem_fun_explicit for MSVC++ 6.0 and to [const_]mem_fun otherwise.
  */
 
 #if defined(BOOST_MSVC)&&(BOOST_MSVC<1300)

@@ -17,6 +17,7 @@
 //  See http://www.boost.org for updates, documentation, and revision history.
 
 #include <cstddef> // std::size_t
+#include <climits> // ULONG_MAX 
 #include <boost/config.hpp>
 
 #if defined(BOOST_NO_STDC_NAMESPACE)
@@ -38,9 +39,16 @@ namespace std{
 // i.e. that its not a synonym for (unsigned) long
 // if there is no 64 bit int or if its the same as a long
 // we shouldn't define separate functions for int64 data types.
-#if defined(BOOST_NO_INT64_T) \
-    || (ULONG_MAX != 0xffffffff && ULONG_MAX == 18446744073709551615u) // 2**64 - 1
-#   define BOOST_NO_INTRINSIC_INT64_T
+#if defined(BOOST_NO_INT64_T)
+    #define BOOST_NO_INTRINSIC_INT64_T
+#else 
+    #if defined(ULONG_MAX)
+        #if(ULONG_MAX != 0xffffffff && ULONG_MAX == 18446744073709551615u) // 2**64 - 1
+            #define BOOST_NO_INTRINSIC_INT64_T
+        #endif
+    #else 
+        #define BOOST_NO_INTRINSIC_INT64_T
+    #endif
 #endif
 
 namespace boost {
@@ -123,7 +131,7 @@ public:
         load_end(t.name());
     }
 protected:
-    virtual ~polymorphic_iarchive_impl(){}
+    virtual ~polymorphic_iarchive_impl(){};
 public:
     // utility function implemented by all legal archives
     virtual void set_library_version(unsigned int archive_library_version) = 0;
@@ -166,7 +174,10 @@ namespace archive {
 class polymorphic_iarchive : 
     public polymorphic_iarchive_impl,
     public detail::shared_ptr_helper
-{};
+{
+public:
+    virtual ~polymorphic_iarchive(){};
+};
 
 } // namespace archive
 } // namespace boost

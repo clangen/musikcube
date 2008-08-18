@@ -34,7 +34,7 @@ namespace std{
 
 #include <boost/serialization/string.hpp>
 #include <boost/archive/add_facet.hpp>
-#include <boost/archive/archive_exception.hpp>
+#include <boost/archive/xml_archive_exception.hpp>
 #include <boost/archive/detail/utf8_codecvt_facet.hpp>
 
 #include <boost/archive/iterators/mb_from_wchar.hpp>
@@ -136,7 +136,9 @@ BOOST_WARCHIVE_DECL(void)
 xml_wiarchive_impl<Archive>::load_override(class_name_type & t, int){
     const std::wstring & ws = gimpl->rv.class_name;
     if(ws.size() > BOOST_SERIALIZATION_MAX_KEY_SIZE - 1)
-        boost::throw_exception(archive_exception::invalid_class_name);
+        boost::throw_exception(
+            archive_exception(archive_exception::invalid_class_name)
+        );
     copy_to_ptr(t, ws);
 }
 
@@ -164,7 +166,7 @@ xml_wiarchive_impl<Archive>::xml_wiarchive_impl(
         archive_locale.reset(
             add_facet(
                 std::locale::classic(),
-                new detail::utf8_codecvt_facet
+                new boost::archive::detail::utf8_codecvt_facet
             )
         );
         is.imbue(* archive_locale);

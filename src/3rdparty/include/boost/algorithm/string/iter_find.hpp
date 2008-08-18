@@ -88,14 +88,14 @@ namespace boost {
                     range_value<SequenceSequenceT>::type,
                 input_iterator_type> copy_range_type;
             
-            input_iterator_type InputEnd=end(lit_input);
+            input_iterator_type InputEnd=::boost::end(lit_input);
 
             typedef transform_iterator<copy_range_type, find_iterator_type>
                 transform_iter_type;
     
             transform_iter_type itBegin=
                 make_transform_iterator( 
-                    find_iterator_type( begin(lit_input), InputEnd, Finder ),
+                    find_iterator_type( ::boost::begin(lit_input), InputEnd, Finder ),
                     copy_range_type());
             
             transform_iter_type itEnd=
@@ -157,14 +157,14 @@ namespace boost {
                     range_value<SequenceSequenceT>::type,
                 input_iterator_type> copy_range_type;
             
-            input_iterator_type InputEnd=end(lit_input);
+            input_iterator_type InputEnd=::boost::end(lit_input);
 
             typedef transform_iterator<copy_range_type, find_iterator_type>
                 transform_iter_type;
     
             transform_iter_type itBegin=
                 make_transform_iterator( 
-                    find_iterator_type( begin(lit_input), InputEnd, Finder ),
+                    find_iterator_type( ::boost::begin(lit_input), InputEnd, Finder ),
                     copy_range_type() );
 
             transform_iter_type itEnd=

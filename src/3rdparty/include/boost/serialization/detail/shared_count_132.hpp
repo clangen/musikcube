@@ -38,16 +38,19 @@
 #include <typeinfo>         // std::type_info in get_deleter
 #include <cstddef>          // std::size_t
 
+#include <boost/config.hpp> // msvc 6.0 needs this for warning suppression
+#if defined(BOOST_NO_STDC_NAMESPACE)
+namespace std{ 
+    using ::size_t; 
+} // namespace std
+#endif
+
 #ifdef __BORLANDC__
 # pragma warn -8026     // Functions with excep. spec. are not expanded inline
 # pragma warn -8027     // Functions containing try are not expanded inline
 #endif
 
 namespace boost_132 {
-
-#if !BOOST_WORKAROUND( __BORLANDC__, BOOST_TESTED_AT( 0x564) ) 
-using namespace boost;
-#endif
 
 // Debug hooks
 
@@ -87,19 +90,12 @@ public:
 #endif
 
 namespace detail{
-#if !BOOST_WORKAROUND( __BORLANDC__, BOOST_TESTED_AT( 0x564) ) 
-using namespace boost::detail;
-#endif
 
 class sp_counted_base
 {
 //private:
 
-#if BOOST_WORKAROUND( __BORLANDC__, BOOST_TESTED_AT( 0x564) )
     typedef boost::detail::lightweight_mutex mutex_type;
-#else
-    typedef detail::lightweight_mutex mutex_type;
-#endif
 
 public:
 
@@ -372,7 +368,11 @@ public:
     // auto_ptr<Y> is special cased to provide the strong guarantee
 
     template<class Y>
-    explicit shared_count(std::auto_ptr<Y> & r): pi_(new sp_counted_base_impl< Y *, checked_deleter<Y> >(r.get(), checked_deleter<Y>()))
+    explicit shared_count(std::auto_ptr<Y> & r): pi_(
+        new sp_counted_base_impl<
+            Y *, 
+            boost::checked_deleter<Y>
+        >(r.get(), boost::checked_deleter<Y>()))
 #if defined(BOOST_SP_ENABLE_DEBUG_HOOKS)
         , id_(shared_count_id)
 #endif
@@ -558,6 +558,8 @@ inline shared_count::shared_count(weak_count const & r): pi_(r.pi_)
 } // namespace detail
 
 } // namespace boost
+
+BOOST_SERIALIZATION_ASSUME_ABSTRACT(boost_132::detail::sp_counted_base)
 
 #ifdef __BORLANDC__
 # pragma warn .8027     // Functions containing try are not expanded inline

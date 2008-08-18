@@ -50,20 +50,22 @@ namespace boost
          }
 
          // First create branch, by calling ourself recursively
-         create_directories(ph.branch_path());
+         create_directories(ph.parent_path());
          // Now that parent's path exists, create the directory
          create_directory(ph);
          return true;
      }
 
+# ifndef BOOST_FILESYSTEM_NO_DEPRECATED
+
     BOOST_FS_FUNC_STRING extension(const Path& ph)
     {
       typedef BOOST_FS_TYPENAME Path::string_type string_type;
-      string_type leaf = ph.leaf();
+      string_type filename = ph.filename();
 
-      BOOST_FS_TYPENAME string_type::size_type n = leaf.rfind('.');
+      BOOST_FS_TYPENAME string_type::size_type n = filename.rfind('.');
       if (n != string_type::npos)
-        return leaf.substr(n);
+        return filename.substr(n);
       else
         return string_type();
     }
@@ -71,14 +73,17 @@ namespace boost
     BOOST_FS_FUNC_STRING basename(const Path& ph)
     {
       typedef BOOST_FS_TYPENAME Path::string_type string_type;
-      string_type leaf = ph.leaf();
-      BOOST_FS_TYPENAME string_type::size_type n = leaf.rfind('.');
-      return leaf.substr(0, n);
+      string_type filename = ph.filename();
+      BOOST_FS_TYPENAME string_type::size_type n = filename.rfind('.');
+      return filename.substr(0, n);
     }
+
 
     BOOST_FS_FUNC(Path) change_extension( const Path & ph,
       const BOOST_FS_TYPENAME Path::string_type & new_extension )
-      { return ph.branch_path() / (basename(ph) + new_extension); }
+      { return ph.parent_path() / (basename(ph) + new_extension); }
+
+# endif
 
 # ifndef BOOST_FILESYSTEM_NARROW_ONLY
 

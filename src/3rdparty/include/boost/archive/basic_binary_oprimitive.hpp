@@ -26,9 +26,9 @@
 #include <iosfwd>
 #include <cassert>
 #include <locale>
-#include <cstddef> // size_t
 #include <streambuf> // basic_streambuf
 #include <string>
+#include <cstddef> // size_t
 
 #include <boost/config.hpp>
 #if defined(BOOST_NO_STDC_NAMESPACE)
@@ -71,9 +71,10 @@ public:
     Archive * This(){
         return static_cast<Archive *>(this);
     }
+    #ifndef BOOST_NO_STD_LOCALE
     boost::scoped_ptr<std::locale> archive_locale;
     basic_streambuf_locale_saver<Elem, Tr> locale_saver;
-
+    #endif
     // default saving of primitives.
     template<class T>
     void save(const T & t)
@@ -87,8 +88,7 @@ public:
     // trap usage of invalid uninitialized boolean which would
     // otherwise crash on load.
     void save(const bool t){
-        int i = t;
-        assert(0 == i || 1 == i);
+        assert(0 == static_cast<int>(t) || 1 == static_cast<int>(t));
         save_binary(& t, sizeof(t));
     }
     BOOST_ARCHIVE_OR_WARCHIVE_DECL(void)
@@ -120,13 +120,13 @@ public:
     // workaround without using mpl lambdas
     struct use_array_optimization {
       template <class T>
-      struct apply : public serialization::is_bitwise_serializable<T> {};
+      struct apply : public boost::serialization::is_bitwise_serializable<T> {};
     };
     
 
     // the optimized save_array dispatches to save_binary 
     template <class ValueType>
-    void save_array(serialization::array<ValueType> const& a, unsigned int)
+    void save_array(boost::serialization::array<ValueType> const& a, unsigned int)
     {
       save_binary(a.address(),a.count()*sizeof(ValueType));
     }

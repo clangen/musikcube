@@ -16,10 +16,6 @@
 
 //  See http://www.boost.org for updates, documentation, and revision history.
 
-// implementation of class export functionality.  This is an alternative to
-// "forward declaration" method to provoke instantiation of derived classes
-// that are to be serialized through pointers.
-
 #include <boost/config.hpp>
 
 // the following help macro is to guarentee that certain coded

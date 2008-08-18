@@ -1,4 +1,4 @@
-/* Copyright 2003-2007 Joaquín M López Muñoz.
+/* Copyright 2003-2008 Joaquin M Lopez Munoz.
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
@@ -31,10 +31,10 @@ namespace detail{
  * iterators (ordered and sequenced indices.)
  */
 
-template<typename Node,typename Derived=mpl::na>
+template<typename Node>
 class bidir_node_iterator:
   public bidirectional_iterator_helper<
-    bidir_node_iterator<Node,Derived>,
+    bidir_node_iterator<Node>,
     typename Node::value_type,
     std::ptrdiff_t,
     const typename Node::value_type*,
@@ -96,10 +96,10 @@ private:
   Node* node;
 };
 
-template<typename Node,typename Derived>
+template<typename Node>
 bool operator==(
-  const bidir_node_iterator<Node,Derived>& x,
-  const bidir_node_iterator<Node,Derived>& y)
+  const bidir_node_iterator<Node>& x,
+  const bidir_node_iterator<Node>& y)
 {
   return x.get_node()==y.get_node();
 }

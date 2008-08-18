@@ -16,6 +16,7 @@
 
 //  See http://www.boost.org for updates, documentation, and revision history.
 #include <string>
+#include <cstddef> // NULL
 #include <boost/cstdint.hpp>
 #include <boost/mpl/bool.hpp>
 
@@ -23,12 +24,9 @@
 #include <boost/archive/detail/oserializer.hpp>
 #include <boost/archive/detail/abi_prefix.hpp> // must be the last header
 
-namespace boost { 
-template<class T>
-class shared_ptr;
-namespace serialization {
-    class extended_type_info;
-} // namespace serialization
+#include <boost/serialization/singleton.hpp>
+
+namespace boost {
 namespace archive {
 namespace detail {
 
@@ -54,7 +52,9 @@ public:
     const basic_pointer_oserializer * 
     register_type(const T * = NULL){
         const basic_pointer_oserializer & bpos =
-            pointer_oserializer<Archive, T>::get_instance();
+            boost::serialization::singleton<
+                pointer_oserializer<Archive, T>
+            >::get_const_instance();
         this->This()->register_basic_serializer(bpos.get_basic_serializer());
         return & bpos;
     }

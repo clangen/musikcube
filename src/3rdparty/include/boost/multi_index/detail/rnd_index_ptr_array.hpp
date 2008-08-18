@@ -1,4 +1,4 @@
-/* Copyright 2003-2007 Joaquín M López Muñoz.
+/* Copyright 2003-2008 Joaquin M Lopez Munoz.
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
@@ -38,7 +38,7 @@ class random_access_index_ptr_array:private noncopyable
     random_access_index_node_impl<
       typename boost::detail::allocator::rebind_to<
         Allocator,
-        void
+        char
       >::type
     >
   >::type                                           node_impl_type;

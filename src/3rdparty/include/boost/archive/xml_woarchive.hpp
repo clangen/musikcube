@@ -39,11 +39,13 @@ namespace std{
 namespace boost {
 namespace archive {
 
+#if 0
 BOOST_WARCHIVE_DECL(std::wostream &)
 operator<<(std::wostream &os, const char *t);
 
 BOOST_WARCHIVE_DECL(std::wostream &)
 operator<<(std::wostream &os, const char t);
+#endif
 
 template<class Archive>
 class xml_woarchive_impl : 

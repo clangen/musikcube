@@ -17,6 +17,7 @@
 //  See http://www.boost.org for updates, documentation, and revision history.
 
 #include <cassert>
+#include <cstddef> // NULL
 
 #include <boost/config.hpp> // for BOOST_DEDUCED_TYPENAME
 #include <boost/iterator/iterator_adaptor.hpp>

@@ -18,6 +18,8 @@
 #include <boost/thread/win32/thread_primitives.hpp>
 #include <boost/thread/win32/interlocked_read.hpp>
 
+#include <boost/config/abi_prefix.hpp>
+
 #ifdef BOOST_NO_STDC_NAMESPACE
 namespace std
 {
@@ -128,5 +130,7 @@ namespace boost
         }
     }
 }
+
+#include <boost/config/abi_suffix.hpp>
 
 #endif

@@ -10,14 +10,7 @@
 #  pragma warning (disable : 4675) // suppress ADL warning
 #endif
 
-#include <cstddef> // size_t
 #include <boost/config.hpp>
-#if defined(BOOST_NO_STDC_NAMESPACE)
-namespace std{ 
-    using ::size_t; 
-} // namespace std
-#endif
-
 #include <boost/strong_typedef.hpp>
 #include <boost/pfto.hpp>
 #include <boost/throw_exception.hpp>

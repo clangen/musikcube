@@ -118,7 +118,7 @@ public:
     typedef T element_type;
     typedef T value_type;
     typedef T * pointer;
-    typedef typename detail::shared_ptr_traits<T>::reference reference;
+    typedef BOOST_DEDUCED_TYPENAME detail::shared_ptr_traits<T>::reference reference;
 
     shared_ptr(): px(0), pn() // never throws in 1.30+
     {

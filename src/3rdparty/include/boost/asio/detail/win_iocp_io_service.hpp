@@ -150,9 +150,20 @@ public:
   }
 
   // Register a handle with the IO completion port.
-  void register_handle(HANDLE handle)
+  boost::system::error_code register_handle(
+      HANDLE handle, boost::system::error_code& ec)
   {
-    ::CreateIoCompletionPort(handle, iocp_.handle, 0, 0);
+    if (::CreateIoCompletionPort(handle, iocp_.handle, 0, 0) == 0)
+    {
+      DWORD last_error = ::GetLastError();
+      ec = boost::system::error_code(last_error,
+          boost::asio::error::get_system_category());
+    }
+    else
+    {
+      ec = boost::system::error_code();
+    }
+    return ec;
   }
 
   // Run the event loop until stopped or no more work.
@@ -425,7 +436,7 @@ private:
           {
             timer_queues_copy_[i]->dispatch_timers();
             timer_queues_copy_[i]->dispatch_cancellations();
-            timer_queues_copy_[i]->cleanup_timers();
+            timer_queues_copy_[i]->complete_timers();
           }
         }
         catch (...)
@@ -505,16 +516,18 @@ private:
       }
       else
       {
+        // Relinquish responsibility for dispatching timers. If the io_service
+        // is not being stopped then the thread will get an opportunity to
+        // reacquire timer responsibility on the next loop iteration.
+        if (dispatching_timers)
+        {
+          ::InterlockedCompareExchange(&timer_thread_, 0, this_thread_id);
+        }
+
         // The stopped_ flag is always checked to ensure that any leftover
         // interrupts from a previous run invocation are ignored.
         if (::InterlockedExchangeAdd(&stopped_, 0) != 0)
         {
-          // Relinquish responsibility for dispatching timers.
-          if (dispatching_timers)
-          {
-            ::InterlockedCompareExchange(&timer_thread_, 0, this_thread_id);
-          }
-
           // Wake up next thread that is blocked on GetQueuedCompletionStatus.
           if (!::PostQueuedCompletionStatus(iocp_.handle, 0, 0, 0))
           {
@@ -637,6 +650,16 @@ private:
       op_type* handler_op(static_cast<op_type*>(op));
       typedef handler_alloc_traits<Handler, op_type> alloc_traits;
       handler_ptr<alloc_traits> ptr(handler_op->handler_, handler_op);
+
+      // A sub-object of the handler may be the true owner of the memory
+      // associated with the handler. Consequently, a local copy of the handler
+      // is required to ensure that any owning sub-object remains valid until
+      // after we have deallocated the memory here.
+      Handler handler(handler_op->handler_);
+      (void)handler;
+
+      // Free the memory associated with the handler.
+      ptr.reset();
     }
 
     win_iocp_io_service& io_service_;

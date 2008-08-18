@@ -146,6 +146,12 @@ template<> struct assert_intrinsic_wchar_t<unsigned short> {};
 #if BOOST_INTEL_CXX_VERSION < 500
 #  error "Compiler not supported or configured - please reconfigure"
 #endif
+
+// Intel on MacOS requires
+#if defined(__APPLE__) && defined(__INTEL_COMPILER)
+#  define BOOST_NO_TWO_PHASE_NAME_LOOKUP
+#endif
+
 //
 // last known and checked version:
 #if (BOOST_INTEL_CXX_VERSION > 1010)

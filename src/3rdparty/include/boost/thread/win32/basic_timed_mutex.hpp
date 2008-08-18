@@ -3,7 +3,7 @@
 
 //  basic_timed_mutex_win32.hpp
 //
-//  (C) Copyright 2006 Anthony Williams 
+//  (C) Copyright 2006-8 Anthony Williams 
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -13,7 +13,10 @@
 #include "thread_primitives.hpp"
 #include "interlocked_read.hpp"
 #include <boost/thread/thread_time.hpp>
+#include <boost/thread/xtime.hpp>
 #include <boost/detail/interlocked.hpp>
+
+#include <boost/config/abi_prefix.hpp>
 
 namespace boost
 {
@@ -21,7 +24,10 @@ namespace boost
     {
         struct basic_timed_mutex
         {
-            BOOST_STATIC_CONSTANT(long,lock_flag_value=0x80000000);
+            BOOST_STATIC_CONSTANT(unsigned char,lock_flag_bit=31);
+            BOOST_STATIC_CONSTANT(unsigned char,event_set_flag_bit=30);
+            BOOST_STATIC_CONSTANT(long,lock_flag_value=1<<lock_flag_bit);
+            BOOST_STATIC_CONSTANT(long,event_set_flag_value=1<<event_set_flag_bit);
             long active_count;
             void* event;
 
@@ -50,18 +56,7 @@ namespace boost
           
             bool try_lock()
             {
-                long old_count=active_count&~lock_flag_value;
-                do
-                {
-                    long const current_count=BOOST_INTERLOCKED_COMPARE_EXCHANGE(&active_count,(old_count+1)|lock_flag_value,old_count);
-                    if(current_count==old_count)
-                    {
-                        return true;
-                    }
-                    old_count=current_count;
-                }
-                while(!(old_count&lock_flag_value));
-                return false;
+                return !win32::interlocked_bit_test_and_set(&active_count,lock_flag_bit);
             }
             
             void lock()
@@ -70,47 +65,46 @@ namespace boost
             }
             bool timed_lock(::boost::system_time const& wait_until)
             {
-                long old_count=active_count;
-#ifdef BOOST_MSVC
-#pragma warning(push)
-#pragma warning(disable:4127)
-#endif
-                while(true)
-#ifdef BOOST_MSVC
-#pragma warning(pop)
-#endif
+                if(!win32::interlocked_bit_test_and_set(&active_count,lock_flag_bit))
                 {
-                    long const current_count=BOOST_INTERLOCKED_COMPARE_EXCHANGE(&active_count,(old_count+1)|lock_flag_value,old_count);
-                    if(current_count==old_count)
+                    return true;
+                }
+                long old_count=active_count;
+                for(;;)
+                {
+                    long const new_count=(old_count&lock_flag_value)?(old_count+1):(old_count|lock_flag_value);
+                    long const current=BOOST_INTERLOCKED_COMPARE_EXCHANGE(&active_count,new_count,old_count);
+                    if(current==old_count)
                     {
                         break;
                     }
-                    old_count=current_count;
+                    old_count=current;
                 }
 
                 if(old_count&lock_flag_value)
                 {
                     bool lock_acquired=false;
                     void* const sem=get_event();
-                    ++old_count; // we're waiting, too
+
                     do
                     {
-                        old_count-=(lock_flag_value+1); // there will be one less active thread on this mutex when it gets unlocked
                         if(win32::WaitForSingleObject(sem,::boost::detail::get_milliseconds_until(wait_until))!=0)
                         {
                             BOOST_INTERLOCKED_DECREMENT(&active_count);
                             return false;
                         }
-                        do
+                        old_count&=~lock_flag_value;
+                        old_count|=event_set_flag_value;
+                        for(;;)
                         {
-                            long const current_count=BOOST_INTERLOCKED_COMPARE_EXCHANGE(&active_count,old_count|lock_flag_value,old_count);
-                            if(current_count==old_count)
+                            long const new_count=((old_count&lock_flag_value)?old_count:((old_count-1)|lock_flag_value))&~event_set_flag_value;
+                            long const current=BOOST_INTERLOCKED_COMPARE_EXCHANGE(&active_count,new_count,old_count);
+                            if(current==old_count)
                             {
                                 break;
                             }
-                            old_count=current_count;
+                            old_count=current;
                         }
-                        while(!(old_count&lock_flag_value));
                         lock_acquired=!(old_count&lock_flag_value);
                     }
                     while(!lock_acquired);
@@ -124,6 +118,11 @@ namespace boost
                 return timed_lock(get_system_time()+timeout);
             }
 
+            bool timed_lock(boost::xtime const& timeout)
+            {
+                return timed_lock(system_time(timeout));
+            }
+
             long get_active_count()
             {
                 return ::boost::detail::interlocked_read_acquire(&active_count);
@@ -131,12 +130,14 @@ namespace boost
 
             void unlock()
             {
-                long const offset=lock_flag_value+1;
-                long old_count=BOOST_INTERLOCKED_EXCHANGE_ADD(&active_count,(~offset)+1);
-                
-                if(old_count>offset)
+                long const offset=lock_flag_value;
+                long const old_count=BOOST_INTERLOCKED_EXCHANGE_ADD(&active_count,lock_flag_value);
+                if(!(old_count&event_set_flag_value) && (old_count>offset))
                 {
-                    win32::SetEvent(get_event());
+                    if(!win32::interlocked_bit_test_and_set(&active_count,event_set_flag_bit))
+                    {
+                        win32::SetEvent(get_event());
+                    }
                 }
             }
 
@@ -181,5 +182,7 @@ namespace boost
 }
 
 #define BOOST_BASIC_TIMED_MUTEX_INITIALIZER {0}
+
+#include <boost/config/abi_suffix.hpp>
 
 #endif

@@ -1,6 +1,6 @@
 // Boost Lambda Library -- member_ptr.hpp ---------------------
 
-// Copyright (C) 1999, 2000 Jaakko Järvi (jaakko.jarvi@cs.utu.fi)
+// Copyright (C) 1999, 2000 Jaakko Jarvi (jaakko.jarvi@cs.utu.fi)
 // Copyright (C) 2000 Gary Powell (gary.powell@sierra.com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See

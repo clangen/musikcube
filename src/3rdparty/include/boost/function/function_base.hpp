@@ -1,8 +1,9 @@
 // Boost.Function library
 
-//  Copyright Douglas Gregor 2001-2006. Use, modification and
-//  distribution is subject to the Boost Software License, Version
-//  1.0. (See accompanying file LICENSE_1_0.txt or copy at
+//  Copyright Douglas Gregor 2001-2006
+//  Copyright Emil Dotchevski 2007
+//  Use, modification and distribution is subject to the Boost Software License, Version 1.0.
+//  (See accompanying file LICENSE_1_0.txt or copy at
 //  http://www.boost.org/LICENSE_1_0.txt)
 
 // For more information, see http://www.boost.org
@@ -73,7 +74,7 @@ namespace boost { namespace python { namespace objects {
 
 #if defined (BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION)                    \
  || defined(BOOST_BCB_PARTIAL_SPECIALIZATION_BUG)                         \
- || !(defined(BOOST_STRICT_CONFIG) || !defined(__SUNPRO_CC) || __SUNPRO_CC > 0x540)
+ || !(BOOST_STRICT_CONFIG || !defined(__SUNPRO_CC) || __SUNPRO_CC > 0x540)
 #  define BOOST_FUNCTION_NO_FUNCTION_TYPE_SYNTAX
 #endif
 
@@ -94,21 +95,12 @@ namespace boost { namespace python { namespace objects {
 #if !defined(BOOST_FUNCTION_NO_FUNCTION_TYPE_SYNTAX)
 namespace boost {
 
-#if defined(__sgi) && defined(_COMPILER_VERSION) && _COMPILER_VERSION <= 730 && !defined(BOOST_STRICT_CONFIG)
-// The library shipping with MIPSpro 7.3.1.3m has a broken allocator<void>
-class function_base;
-
-template<typename Signature,
-         typename Allocator = std::allocator<function_base> >
+template<typename Signature>
 class function;
-#else
-template<typename Signature, typename Allocator = std::allocator<void> >
-class function;
-#endif
 
-template<typename Signature, typename Allocator>
-inline void swap(function<Signature, Allocator>& f1,
-                 function<Signature, Allocator>& f2)
+template<typename Signature>
+inline void swap(function<Signature>& f1,
+                 function<Signature>& f2)
 {
   f1.swap(f2);
 }
@@ -212,8 +204,8 @@ namespace boost {
       struct reference_manager
       {
         static inline void
-        manage(const function_buffer& in_buffer, function_buffer& out_buffer, 
-               functor_manager_operation_type op)
+        get(const function_buffer& in_buffer, function_buffer& out_buffer, 
+            functor_manager_operation_type op)
         {
           switch (op) {
           case clone_functor_tag: 
@@ -259,20 +251,29 @@ namespace boost {
                       % alignment_of<F>::value == 0))));
       };
 
+      template <typename F,typename A>
+      struct functor_wrapper: public F, public A
+      {
+        functor_wrapper( F f, A a ):
+          F(f),
+          A(a)
+        {
+        }
+      };
+
       /**
        * The functor_manager class contains a static function "manage" which
        * can clone or destroy the given function/function object pointer.
        */
-      template<typename Functor, typename Allocator>
-      struct functor_manager
+      template<typename Functor>
+      struct functor_manager_common
       {
-      private:
         typedef Functor functor_type;
 
-        // For function pointers, the manager is trivial
+        // Function pointers
         static inline void
-        manager(const function_buffer& in_buffer, function_buffer& out_buffer, 
-                functor_manager_operation_type op, function_ptr_tag)
+        manage_ptr(const function_buffer& in_buffer, function_buffer& out_buffer, 
+                functor_manager_operation_type op)
         {
           if (op == clone_functor_tag)
             out_buffer.func_ptr = in_buffer.func_ptr;
@@ -290,8 +291,8 @@ namespace boost {
 
         // Function objects that fit in the small-object buffer.
         static inline void
-        manager(const function_buffer& in_buffer, function_buffer& out_buffer, 
-                functor_manager_operation_type op, mpl::true_)
+        manage_small(const function_buffer& in_buffer, function_buffer& out_buffer, 
+                functor_manager_operation_type op)
         {
           if (op == clone_functor_tag) {
             const functor_type* in_functor = 
@@ -309,57 +310,48 @@ namespace boost {
               out_buffer.obj_ptr = 0;
           }
         }
+      };
+
+      template<typename Functor>
+      struct functor_manager
+      {
+      private:
+        typedef Functor functor_type;
+
+        // Function pointers
+        static inline void
+        manager(const function_buffer& in_buffer, function_buffer& out_buffer, 
+                functor_manager_operation_type op, function_ptr_tag)
+        {
+          functor_manager_common<Functor>::manage_ptr(in_buffer,out_buffer,op);
+        }
+
+        // Function objects that fit in the small-object buffer.
+        static inline void
+        manager(const function_buffer& in_buffer, function_buffer& out_buffer, 
+                functor_manager_operation_type op, mpl::true_)
+        {
+          functor_manager_common<Functor>::manage_small(in_buffer,out_buffer,op);
+        }
         
         // Function objects that require heap allocation
         static inline void
         manager(const function_buffer& in_buffer, function_buffer& out_buffer, 
                 functor_manager_operation_type op, mpl::false_)
         {
-#ifndef BOOST_NO_STD_ALLOCATOR
-          typedef typename Allocator::template rebind<functor_type>::other
-            allocator_type;
-          typedef typename allocator_type::pointer pointer_type;
-#else
-          typedef functor_type* pointer_type;
-#endif // BOOST_NO_STD_ALLOCATOR
-
-#  ifndef BOOST_NO_STD_ALLOCATOR
-          allocator_type allocator;
-#  endif // BOOST_NO_STD_ALLOCATOR
-
           if (op == clone_functor_tag) {
+            // Clone the functor
             // GCC 2.95.3 gets the CV qualifiers wrong here, so we
             // can't do the static_cast that we should do.
             const functor_type* f =
               (const functor_type*)(in_buffer.obj_ptr);
-
-            // Clone the functor
-#  ifndef BOOST_NO_STD_ALLOCATOR
-            pointer_type copy = allocator.allocate(1);
-            allocator.construct(copy, *f);
-
-            // Get back to the original pointer type
-            functor_type* new_f = static_cast<functor_type*>(copy);
-#  else
             functor_type* new_f = new functor_type(*f);
-#  endif // BOOST_NO_STD_ALLOCATOR
             out_buffer.obj_ptr = new_f;
           } else if (op == destroy_functor_tag) {
             /* Cast from the void pointer to the functor pointer type */
             functor_type* f =
               static_cast<functor_type*>(out_buffer.obj_ptr);
-
-#  ifndef BOOST_NO_STD_ALLOCATOR
-            /* Cast from the functor pointer type to the allocator's pointer
-               type */
-            pointer_type victim = static_cast<pointer_type>(f);
-
-            // Destroy and deallocate the functor
-            allocator.destroy(victim);
-            allocator.deallocate(victim, 1);
-#  else
             delete f;
-#  endif // BOOST_NO_STD_ALLOCATOR
             out_buffer.obj_ptr = 0;
           } else /* op == check_functor_type_tag */ {
             const BOOST_FUNCTION_STD_NS::type_info& check_type = 
@@ -382,13 +374,98 @@ namespace boost {
                   mpl::bool_<(function_allows_small_object_optimization<functor_type>::value)>());
         }
 
-        // For member pointers, we treat them as function objects with
-        // the small-object optimization always enabled.
+      public:
+        /* Dispatch to an appropriate manager based on whether we have a
+           function pointer or a function object pointer. */
+        static inline void
+        manage(const function_buffer& in_buffer, function_buffer& out_buffer, 
+               functor_manager_operation_type op)
+        {
+          typedef typename get_function_tag<functor_type>::type tag_type;
+          switch (op) {
+          case get_functor_type_tag:
+            out_buffer.const_obj_ptr = &typeid(functor_type);
+            return;
+
+          default:
+            manager(in_buffer, out_buffer, op, tag_type());
+            return;
+          }
+        }
+      };
+
+      template<typename Functor, typename Allocator>
+      struct functor_manager_a
+      {
+      private:
+        typedef Functor functor_type;
+
+        // Function pointers
         static inline void
         manager(const function_buffer& in_buffer, function_buffer& out_buffer, 
-                functor_manager_operation_type op, member_ptr_tag)
+                functor_manager_operation_type op, function_ptr_tag)
         {
-          manager(in_buffer, out_buffer, op, mpl::true_());
+          functor_manager_common<Functor>::manage_ptr(in_buffer,out_buffer,op);
+        }
+
+        // Function objects that fit in the small-object buffer.
+        static inline void
+        manager(const function_buffer& in_buffer, function_buffer& out_buffer, 
+                functor_manager_operation_type op, mpl::true_)
+        {
+          functor_manager_common<Functor>::manage_small(in_buffer,out_buffer,op);
+        }
+        
+        // Function objects that require heap allocation
+        static inline void
+        manager(const function_buffer& in_buffer, function_buffer& out_buffer, 
+                functor_manager_operation_type op, mpl::false_)
+        {
+          typedef functor_wrapper<Functor,Allocator> functor_wrapper_type;
+          typedef typename Allocator::template rebind<functor_wrapper_type>::other
+            wrapper_allocator_type;
+          typedef typename wrapper_allocator_type::pointer wrapper_allocator_pointer_type;
+
+          if (op == clone_functor_tag) {
+            // Clone the functor
+            // GCC 2.95.3 gets the CV qualifiers wrong here, so we
+            // can't do the static_cast that we should do.
+            const functor_wrapper_type* f =
+              (const functor_wrapper_type*)(in_buffer.obj_ptr);
+            wrapper_allocator_type wrapper_allocator(static_cast<Allocator const &>(*f));
+            wrapper_allocator_pointer_type copy = wrapper_allocator.allocate(1);
+            wrapper_allocator.construct(copy, *f);
+
+            // Get back to the original pointer type
+            functor_wrapper_type* new_f = static_cast<functor_wrapper_type*>(copy);
+            out_buffer.obj_ptr = new_f;
+          } else if (op == destroy_functor_tag) {
+            /* Cast from the void pointer to the functor_wrapper_type */
+            functor_wrapper_type* victim =
+              static_cast<functor_wrapper_type*>(in_buffer.obj_ptr);
+            wrapper_allocator_type wrapper_allocator(static_cast<Allocator const &>(*victim));
+            wrapper_allocator.destroy(victim);
+            wrapper_allocator.deallocate(victim,1);
+            out_buffer.obj_ptr = 0;
+          } else /* op == check_functor_type_tag */ {
+            const BOOST_FUNCTION_STD_NS::type_info& check_type = 
+              *static_cast<const BOOST_FUNCTION_STD_NS::type_info*>(out_buffer.const_obj_ptr);
+            if (BOOST_FUNCTION_COMPARE_TYPE_ID(check_type, typeid(Functor)))
+              out_buffer.obj_ptr = in_buffer.obj_ptr;
+            else
+              out_buffer.obj_ptr = 0;
+          }
+        }
+
+        // For function objects, we determine whether the function
+        // object can use the small-object optimization buffer or
+        // whether we need to allocate it on the heap.
+        static inline void
+        manager(const function_buffer& in_buffer, function_buffer& out_buffer, 
+                functor_manager_operation_type op, function_obj_tag)
+        {
+          manager(in_buffer, out_buffer, op,
+                  mpl::bool_<(function_allows_small_object_optimization<functor_type>::value)>());
         }
 
       public:
@@ -479,6 +556,7 @@ namespace boost {
        */
       struct vtable_base
       {
+        vtable_base() : manager(0) { }
         void (*manager)(const function_buffer& in_buffer, 
                         function_buffer& out_buffer, 
                         functor_manager_operation_type op);
@@ -580,7 +658,7 @@ public:
 #endif
 
 public: // should be protected, but GCC 2.95.3 will fail to allow access
-  const detail::function::vtable_base* vtable;
+  detail::function::vtable_base* vtable;
   mutable detail::function::function_buffer functor;
 };
 
@@ -754,9 +832,5 @@ namespace detail {
 
 #undef BOOST_FUNCTION_ENABLE_IF_NOT_INTEGRAL
 #undef BOOST_FUNCTION_COMPARE_TYPE_ID
-
-#if defined(BOOST_MSVC)
-#   pragma warning( pop )
-#endif       
 
 #endif // BOOST_FUNCTION_BASE_HEADER

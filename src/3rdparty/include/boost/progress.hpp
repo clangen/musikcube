@@ -51,7 +51,7 @@ class progress_timer : public timer, private noncopyable
       std::istream::fmtflags old_flags = m_os.setf( std::istream::fixed,
                                                    std::istream::floatfield );
       std::streamsize old_prec = m_os.precision( 2 );
-      m_os << elapsed() << " s\n" // "s" is System International d'Unités std
+      m_os << elapsed() << " s\n" // "s" is System International d'Unites std
                         << std::endl;
       m_os.flags( old_flags );
       m_os.precision( old_prec );

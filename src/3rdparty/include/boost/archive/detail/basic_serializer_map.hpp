@@ -34,32 +34,22 @@ namespace detail  {
 
 class BOOST_ARCHIVE_DECL(BOOST_PP_EMPTY()) basic_serializer;
 
+bool operator<(const basic_serializer & lhs, const basic_serializer & rhs);
+
 struct BOOST_ARCHIVE_DECL(BOOST_PP_EMPTY()) type_info_pointer_compare
 {
     bool operator()(
         const basic_serializer * lhs, const basic_serializer * rhs
-    ) const ;
+    ) const {
+        return *lhs < *rhs;
+    }
 };
 
-class BOOST_ARCHIVE_DECL(BOOST_PP_EMPTY()) basic_serializer_map : public
-    boost::noncopyable
-{
-    typedef std::set<const basic_serializer *, type_info_pointer_compare> map_type;
-    map_type m_map;
-    bool & m_deleted;
-public:
-    bool insert(const basic_serializer * bs);
-    const basic_serializer * tfind(
-        const boost::serialization::extended_type_info & type_
-    ) const;
-    void erase(basic_serializer * bs);
-    basic_serializer_map(bool & deleted);
-    ~basic_serializer_map();
-private:
-    // cw 8.3 requires this
-    basic_serializer_map& operator=(basic_serializer_map const&);
-};
-
+typedef BOOST_ARCHIVE_DECL(BOOST_PP_EMPTY()) std::set<
+    const basic_serializer *, 
+    type_info_pointer_compare
+> basic_serializer_map;
+ 
 } // namespace detail
 } // namespace archive
 } // namespace boost

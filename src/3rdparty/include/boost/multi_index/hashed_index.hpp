@@ -1,4 +1,4 @@
-/* Copyright 2003-2007 Joaquín M López Muñoz.
+/* Copyright 2003-2008 Joaquin M Lopez Munoz.
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
@@ -808,39 +808,30 @@ BOOST_MULTI_INDEX_PROTECTED_IF_MEMBER_TEMPLATE_FRIENDS:
 
   bool modify_(node_type* x)
   {
-    unlink(x);
-
-    std::size_t       buc;
-    node_impl_pointer pos;
-    BOOST_TRY
-    {
+    std::size_t buc;
+    bool        b; 
+    BOOST_TRY{
       buc=find_bucket(x->value());
-      pos=buckets.at(buc);
-      if(!link_point(x->value(),pos,Category())){
-        first_bucket=buckets.first_nonempty(first_bucket);
-        super::erase_(x);
-
-#if defined(BOOST_MULTI_INDEX_ENABLE_SAFE_MODE)
-        detach_iterators(x);
-#endif
-        return false;
-      }
-
+      b=in_place(x->impl(),key(x->value()),buc,Category());
     }
     BOOST_CATCH(...){
-      first_bucket=buckets.first_nonempty(first_bucket);
-      super::erase_(x);
-
-#if defined(BOOST_MULTI_INDEX_ENABLE_SAFE_MODE)
-      detach_iterators(x);
-#endif
-
+      erase_(x);
       BOOST_RETHROW;
     }
     BOOST_CATCH_END
+    if(!b){
+      unlink(x);
+      BOOST_TRY{
+        node_impl_pointer pos=buckets.at(buc);
+        if(!link_point(x->value(),pos,Category())){
+          first_bucket=buckets.first_nonempty(first_bucket);
+          super::erase_(x);
 
-    BOOST_TRY{
-      if(super::modify_(x)){
+#if defined(BOOST_MULTI_INDEX_ENABLE_SAFE_MODE)
+          detach_iterators(x);
+#endif
+          return false;
+        }
         link(x,pos);
         if(first_bucket>buc){
           first_bucket=buc;
@@ -848,17 +839,33 @@ BOOST_MULTI_INDEX_PROTECTED_IF_MEMBER_TEMPLATE_FRIENDS:
         else if(first_bucket<buc){
           first_bucket=buckets.first_nonempty(first_bucket);
         }
-        return true;
       }
-
-      first_bucket=buckets.first_nonempty(first_bucket);
+      BOOST_CATCH(...){
+        first_bucket=buckets.first_nonempty(first_bucket);
+        super::erase_(x);
 
 #if defined(BOOST_MULTI_INDEX_ENABLE_SAFE_MODE)
       detach_iterators(x);
 #endif
-      return false;
+
+        BOOST_RETHROW;
+      }
+      BOOST_CATCH_END
+    }
+
+    BOOST_TRY{
+      if(!super::modify_(x)){
+        unlink(x);
+        first_bucket=buckets.first_nonempty(first_bucket);
+#if defined(BOOST_MULTI_INDEX_ENABLE_SAFE_MODE)
+        detach_iterators(x);
+#endif
+        return false;
+      }
+      else return true;
     }
     BOOST_CATCH(...){
+      unlink(x);
       first_bucket=buckets.first_nonempty(first_bucket);
 
 #if defined(BOOST_MULTI_INDEX_ENABLE_SAFE_MODE)
@@ -872,11 +879,15 @@ BOOST_MULTI_INDEX_PROTECTED_IF_MEMBER_TEMPLATE_FRIENDS:
 
   bool modify_rollback_(node_type* x)
   {
+    std::size_t buc=find_bucket(x->value());
+    if(in_place(x->impl(),key(x->value()),buc,Category())){
+      return super::modify_rollback_(x);
+    }
+
     node_impl_pointer y=prev(x);
     unlink_next(y);
 
     BOOST_TRY{
-      std::size_t             buc=find_bucket(x->value());
       node_impl_pointer pos=buckets.at(buc);
       if(link_point(x->value(),pos,Category())&&super::modify_rollback_(x)){
         link(x,pos);
@@ -993,17 +1004,17 @@ private:
     return true;
   }
   
-  void link(node_type* x,node_impl_pointer pos)
+  static void link(node_type* x,node_impl_pointer pos)
   {
     node_impl_type::link(x->impl(),pos);
   };
 
-  void link(node_impl_pointer x,node_impl_pointer pos)
+  static void link(node_impl_pointer x,node_impl_pointer pos)
   {
     node_impl_type::link(x,pos);
   };
 
-  void unlink(node_type* x)
+  static void unlink(node_type* x)
   {
     node_impl_type::unlink(x->impl());
   };
@@ -1011,6 +1022,11 @@ private:
   static node_impl_pointer prev(node_type* x)
   {
     return node_impl_type::prev(x->impl());
+  }
+
+  static node_impl_pointer prev_from(node_type* x,node_impl_pointer y)
+  {
+    return node_impl_type::prev_from(x->impl(),y);
   }
 
   static void unlink_next(node_impl_pointer x)
@@ -1068,6 +1084,68 @@ private:
     calculate_max_load();
     first_bucket=buckets.first_nonempty(0);
   }
+
+  bool in_place(
+    node_impl_pointer x,key_param_type k,std::size_t buc,
+    hashed_unique_tag)const
+  {
+    std::less_equal<node_impl_pointer> leq;
+    node_impl_pointer                  bbegin=buckets.begin();
+    node_impl_pointer                  bend=buckets.end();
+    node_impl_pointer                  pbuc=x->next();
+
+    while(!leq(bbegin,pbuc)||!leq(pbuc,bend))pbuc=pbuc->next();
+    if(buc!=static_cast<std::size_t>(pbuc-bbegin))return false;
+
+    node_impl_pointer y=x;
+    while(y->next()!=x){
+      y=y->next();
+      if(y==pbuc)continue;
+      if(eq(k,key(node_type::from_impl(y)->value())))return false;
+    }
+    return true;
+  }
+
+  bool in_place(
+    node_impl_pointer x,key_param_type k,std::size_t buc,
+    hashed_non_unique_tag)const
+  {
+    std::less_equal<node_impl_pointer> leq;
+    node_impl_pointer                  bbegin=buckets.begin();
+    node_impl_pointer                  bend=buckets.end();
+    node_impl_pointer                  pbuc=x->next();
+
+    while(!leq(bbegin,pbuc)||!leq(pbuc,bend))pbuc=pbuc->next();
+    if(buc!=static_cast<std::size_t>(pbuc-bbegin))return false;
+
+    node_impl_pointer y=x->next();
+    if(y!=pbuc){
+      if(eq(k,key(node_type::from_impl(y)->value()))){
+        /* adjacent to equivalent element -> in place */
+        return true;
+      }
+      else{
+        y=y->next();
+        while(y!=pbuc){
+          if(eq(k,key(node_type::from_impl(y)->value())))return false;
+          y=y->next();
+        }
+      }
+    }
+    while(y->next()!=x){
+      y=y->next();
+      if(eq(k,key(node_type::from_impl(y)->value()))){
+        while(y->next()!=x){
+          y=y->next();
+          if(!eq(k,key(node_type::from_impl(y)->value())))return false;
+        }
+        /* after a group of equivalent elements --> in place */
+        return true;
+      }
+    }
+    return true;
+  }
+
 
 #if defined(BOOST_MULTI_INDEX_ENABLE_SAFE_MODE)
   void detach_iterators(node_type* x)

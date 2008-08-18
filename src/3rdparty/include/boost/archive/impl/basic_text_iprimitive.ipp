@@ -9,6 +9,7 @@
 //  See http://www.boost.org for updates, documentation, and revision history.
 
 #include <cstddef> // size_t
+#include <cstddef> // NULL
 
 #include <boost/config.hpp>
 #if defined(BOOST_NO_STDC_NAMESPACE)
@@ -94,7 +95,8 @@ BOOST_ARCHIVE_OR_WARCHIVE_DECL(BOOST_PP_EMPTY())
 basic_text_iprimitive<IStream>::basic_text_iprimitive(
     IStream  &is_,
     bool no_codecvt
-) : 
+) :
+#ifndef BOOST_NO_STD_LOCALE
     is(is_),
     flags_saver(is_),
     precision_saver(is_),
@@ -112,6 +114,12 @@ basic_text_iprimitive<IStream>::basic_text_iprimitive(
     }
     is >> std::noboolalpha;
 }
+#else
+    is(is_),
+    flags_saver(is_),
+    precision_saver(is_)
+{}
+#endif
 
 template<class IStream>
 BOOST_ARCHIVE_OR_WARCHIVE_DECL(BOOST_PP_EMPTY())

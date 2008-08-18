@@ -106,6 +106,9 @@ enum basic_errors
   /// Message too long.
   message_size = BOOST_ASIO_SOCKET_ERROR(EMSGSIZE),
 
+  /// The name was too long.
+  name_too_long = BOOST_ASIO_SOCKET_ERROR(ENAMETOOLONG),
+
   /// Network is down.
   network_down = BOOST_ASIO_SOCKET_ERROR(ENETDOWN),
 

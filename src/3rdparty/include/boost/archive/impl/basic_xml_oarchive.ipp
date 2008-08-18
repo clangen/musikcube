@@ -9,6 +9,7 @@
 //  See http://www.boost.org for updates, documentation, and revision history.
 
 #include <algorithm>
+#include <cstddef> // NULL
 #include <cstring>
 #if defined(BOOST_NO_STDC_NAMESPACE) && ! defined(__LIBCOMO__)
 namespace std{
@@ -18,6 +19,7 @@ namespace std{
 
 #include <boost/archive/basic_xml_archive.hpp>
 #include <boost/archive/basic_xml_oarchive.hpp>
+#include <boost/archive/xml_archive_exception.hpp>
 #include <boost/detail/no_exceptions_support.hpp>
 
 namespace boost {
@@ -78,7 +80,7 @@ basic_xml_oarchive<Archive>::write_attribute(
     this->This()->put(' ');
     this->This()->put(attribute_name);
     this->This()->put("=\"");
-    this->This()->put(key);
+    this->This()->save(key);
     this->This()->put('"');
 }
 
@@ -174,7 +176,9 @@ template<class Archive>
 BOOST_ARCHIVE_OR_WARCHIVE_DECL(void)
 basic_xml_oarchive<Archive>::save_override(const object_id_type & t, int)
 {
-    write_attribute(OBJECT_ID(), t, "=\"_");
+    // borland doesn't do conversion of STRONG_TYPEDEFs very well
+    const unsigned int i = t;
+    write_attribute(OBJECT_ID(), i, "=\"_");
 }
 template<class Archive>
 BOOST_ARCHIVE_OR_WARCHIVE_DECL(void)
@@ -182,13 +186,15 @@ basic_xml_oarchive<Archive>::save_override(
     const object_reference_type & t,
     int
 ){
-    write_attribute(OBJECT_REFERENCE(), t, "=\"_");
+    const unsigned int i = t;
+    write_attribute(OBJECT_REFERENCE(), i, "=\"_");
 }
 template<class Archive>
 BOOST_ARCHIVE_OR_WARCHIVE_DECL(void)
 basic_xml_oarchive<Archive>::save_override(const version_type & t, int)
 {
-    write_attribute(VERSION(), t);
+    const unsigned int i = t;
+    write_attribute(VERSION(), i);
 }
 
 template<class Archive>
@@ -258,7 +264,7 @@ BOOST_ARCHIVE_OR_WARCHIVE_DECL(BOOST_PP_EMPTY())
 basic_xml_oarchive<Archive>::~basic_xml_oarchive(){
     if(0 == (this->get_flags() & no_header)){
         BOOST_TRY{
-                this->This()->put("</boost_serialization>");
+                this->This()->put("</boost_serialization>\n");
         }
         BOOST_CATCH(...){}
         BOOST_CATCH_END

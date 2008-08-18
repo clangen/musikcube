@@ -61,13 +61,31 @@ public:
 //
 
     template<class Y>
-    weak_ptr(weak_ptr<Y> const & r): pn(r.pn) // never throws
+#if !defined( BOOST_SP_NO_SP_CONVERTIBLE )
+
+    weak_ptr( weak_ptr<Y> const & r, typename detail::sp_enable_if_convertible<Y,T>::type = detail::sp_empty() )
+
+#else
+
+    weak_ptr( weak_ptr<Y> const & r )
+
+#endif
+    : pn(r.pn) // never throws
     {
         px = r.lock().get();
     }
 
     template<class Y>
-    weak_ptr(shared_ptr<Y> const & r): px(r.px), pn(r.pn) // never throws
+#if !defined( BOOST_SP_NO_SP_CONVERTIBLE )
+
+    weak_ptr( shared_ptr<Y> const & r, typename detail::sp_enable_if_convertible<Y,T>::type = detail::sp_empty() )
+
+#else
+
+    weak_ptr( shared_ptr<Y> const & r )
+
+#endif
+    : px( r.px ), pn( r.pn ) // never throws
     {
     }
 
@@ -93,31 +111,7 @@ public:
 
     shared_ptr<T> lock() const // never throws
     {
-#if defined(BOOST_HAS_THREADS)
-
-        // optimization: avoid throw overhead
-        if(expired())
-        {
-            return shared_ptr<element_type>();
-        }
-
-        try
-        {
-            return shared_ptr<element_type>(*this);
-        }
-        catch(bad_weak_ptr const &)
-        {
-            // Q: how can we get here?
-            // A: another thread may have invalidated r after the use_count test above.
-            return shared_ptr<element_type>();
-        }
-
-#else
-
-        // optimization: avoid try/catch overhead when single threaded
-        return expired()? shared_ptr<element_type>(): shared_ptr<element_type>(*this);
-
-#endif
+        return shared_ptr<element_type>( *this, boost::detail::sp_nothrow_tag() );
     }
 
     long use_count() const // never throws

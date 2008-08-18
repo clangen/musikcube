@@ -68,17 +68,17 @@ namespace boost {
                 if ( !M )
                 {
                     // Match not found - return original sequence
-                    std::copy( begin(Input), end(Input), Output );
+                    std::copy( ::boost::begin(Input), ::boost::end(Input), Output );
                     return Output;
                 }
 
                 // Copy the beginning of the sequence
-                std::copy( begin(Input), begin(M), Output );
+                std::copy( ::boost::begin(Input), ::boost::begin(M), Output );
                 // Format find result
                 // Copy formated result
-                std::copy( begin(M.format_result()), end(M.format_result()), Output );
+                std::copy( ::boost::begin(M.format_result()), ::boost::end(M.format_result()), Output );
                 // Copy the rest of the sequence
-                std::copy( M.end(), end(Input), Output );
+                std::copy( M.end(), ::boost::end(Input), Output );
 
                 return Output;
             }
@@ -129,11 +129,11 @@ namespace boost {
 
                 InputT Output;
                 // Copy the beginning of the sequence
-                insert( Output, end(Output), begin(Input), M.begin() );
+                insert( Output, ::boost::end(Output), ::boost::begin(Input), M.begin() );
                 // Copy formated result
-                insert( Output, end(Output), M.format_result() );
+                insert( Output, ::boost::end(Output), M.format_result() );
                 // Copy the rest of the sequence
-                insert( Output, end(Output), M.end(), end(Input) );
+                insert( Output, ::boost::end(Output), M.end(), ::boost::end(Input) );
 
                 return Output;
             }

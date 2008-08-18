@@ -9,6 +9,8 @@
 #ifndef BOOST_TT_IS_BASE_AND_DERIVED_HPP_INCLUDED
 #define BOOST_TT_IS_BASE_AND_DERIVED_HPP_INCLUDED
 
+#include <boost/type_traits/intrinsics.hpp>
+#ifndef BOOST_IS_BASE_OF
 #include <boost/type_traits/is_class.hpp>
 #include <boost/type_traits/is_same.hpp>
 #include <boost/type_traits/is_convertible.hpp>
@@ -16,6 +18,7 @@
 #include <boost/type_traits/remove_cv.hpp>
 #include <boost/config.hpp>
 #include <boost/static_assert.hpp>
+#endif
 
 // should be the last #include
 #include <boost/type_traits/detail/bool_trait_def.hpp>
@@ -24,6 +27,7 @@ namespace boost {
 
 namespace detail {
 
+#ifndef BOOST_IS_BASE_OF
 #if !BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x581)) \
  && !BOOST_WORKAROUND(__SUNPRO_CC , <= 0x540) \
  && !BOOST_WORKAROUND(__EDG_VERSION__, <= 243) \
@@ -129,7 +133,7 @@ struct bd_helper
 template<typename B, typename D>
 struct is_base_and_derived_impl2
 {
-#if BOOST_WORKAROUND(BOOST_MSVC, >= 1400)
+#if BOOST_WORKAROUND(_MSC_FULL_VER, >= 140050000)
 #pragma warning(push)
 #pragma warning(disable:6334)
 #endif
@@ -152,7 +156,7 @@ struct is_base_and_derived_impl2
 
     BOOST_STATIC_CONSTANT(bool, value =
         sizeof(bd_helper<B,D>::check_sig(Host(), 0)) == sizeof(type_traits::yes_type));
-#if BOOST_WORKAROUND(BOOST_MSVC, >= 1400)
+#if BOOST_WORKAROUND(_MSC_FULL_VER, >= 140050000)
 #pragma warning(pop)
 #endif
 };
@@ -214,7 +218,13 @@ struct is_base_and_derived_impl
 
     BOOST_STATIC_CONSTANT(bool, value = bound_type::value);
 };
-
+#else
+template <typename B, typename D>
+struct is_base_and_derived_impl
+{
+    BOOST_STATIC_CONSTANT(bool, value = BOOST_IS_BASE_OF(B,D));
+};
+#endif
 } // namespace detail
 
 BOOST_TT_AUX_BOOL_TRAIT_DEF2(

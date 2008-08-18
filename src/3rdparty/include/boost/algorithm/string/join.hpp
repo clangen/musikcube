@@ -1,11 +1,12 @@
 //  Boost string_algo library join.hpp header file  ---------------------------//
 
-//  Copyright Pavol Droba 2002-2006. Use, modification and
-//  distribution is subject to the Boost Software License, Version
-//  1.0. (See accompanying file LICENSE_1_0.txt or copy at
-//  http://www.boost.org/LICENSE_1_0.txt)
+//  Copyright Pavol Droba 2002-2006.
+//
+// Distributed under the Boost Software License, Version 1.0.
+//    (See accompanying file LICENSE_1_0.txt or copy at
+//          http://www.boost.org/LICENSE_1_0.txt)
 
-//  See http://www.boost.org for updates, documentation, and revision history.
+//  See http://www.boost.org/ for updates, documentation, and revision history.
 
 #ifndef BOOST_STRING_JOIN_HPP
 #define BOOST_STRING_JOIN_HPP
@@ -13,7 +14,7 @@
 #include <boost/algorithm/string/config.hpp>
 #include <boost/algorithm/string/detail/sequence.hpp>
 #include <boost/range/value_type.hpp>
-
+#include <boost/range/as_literal.hpp>
 
 /*! \file
     Defines join algorithm. 
@@ -44,15 +45,15 @@ namespace boost {
         inline typename range_value<SequenceSequenceT>::type 
         join(
             const SequenceSequenceT& Input,
-            Range1T& Separator)
+            const Range1T& Separator)
         {
             // Define working types
             typedef typename range_value<SequenceSequenceT>::type ResultT;
             typedef typename range_const_iterator<SequenceSequenceT>::type InputIteratorT;
 
             // Parse input
-            InputIteratorT itBegin=begin(Input);
-            InputIteratorT itEnd=end(Input);
+            InputIteratorT itBegin=::boost::begin(Input);
+            InputIteratorT itEnd=::boost::end(Input);
 
             // Construct container to hold the result
             ResultT Result;
@@ -60,16 +61,16 @@ namespace boost {
             // Append first element
             if(itBegin!=itEnd)
             {
-                detail::insert(Result, end(Result), *itBegin);
+                detail::insert(Result, ::boost::end(Result), *itBegin);
                 ++itBegin;
             }
 
             for(;itBegin!=itEnd; ++itBegin)
             {
                 // Add separator
-                detail::insert(Result, end(Result), Separator);
+                detail::insert(Result, ::boost::end(Result), as_literal(Separator));
                 // Add element
-                detail::insert(Result, end(Result), *itBegin);
+                detail::insert(Result, ::boost::end(Result), *itBegin);
             }
 
             return Result;
@@ -94,7 +95,7 @@ namespace boost {
         inline typename range_value<SequenceSequenceT>::type 
         join_if(
             const SequenceSequenceT& Input,
-            Range1T& Separator,
+            const Range1T& Separator,
             PredicateT Pred)
         {
             // Define working types
@@ -102,8 +103,8 @@ namespace boost {
             typedef typename range_const_iterator<SequenceSequenceT>::type InputIteratorT;
 
             // Parse input
-            InputIteratorT itBegin=begin(Input);
-            InputIteratorT itEnd=end(Input);
+            InputIteratorT itBegin=::boost::begin(Input);
+            InputIteratorT itEnd=::boost::end(Input);
 
             // Construct container to hold the result
             ResultT Result;
@@ -113,7 +114,7 @@ namespace boost {
             // Add this element
             if(itBegin!=itEnd)
             {
-                detail::insert(Result, end(Result), *itBegin);
+                detail::insert(Result, ::boost::end(Result), *itBegin);
                 ++itBegin;
             }
 
@@ -122,9 +123,9 @@ namespace boost {
                 if(Pred(*itBegin))
                 {
                     // Add separator
-                    detail::insert(Result, end(Result), Separator);
+                    detail::insert(Result, ::boost::end(Result), as_literal(Separator));
                     // Add element
-                    detail::insert(Result, end(Result), *itBegin);
+                    detail::insert(Result, ::boost::end(Result), *itBegin);
                 }
             }
 

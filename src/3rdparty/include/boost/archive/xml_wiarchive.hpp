@@ -88,7 +88,7 @@ protected:
 };
 
 // do not derive from the classes below.  If you want to extend this functionality
-// via inhertance, derived from text_iarchive_impl instead.  This will
+// via inhertance, derived from xml_wiarchive_impl instead.  This will
 // preserve correct static polymorphism.
 
 // same as xml_wiarchive below - without the shared_ptr_helper

@@ -202,8 +202,8 @@ namespace boost {
             BOOST_STRING_TYPENAME range_value<RangeT>::type> 
         is_any_of( const RangeT& Set )
         {
-            return detail::is_any_ofF<
-                BOOST_STRING_TYPENAME range_value<RangeT>::type>(as_literal(Set)); 
+            iterator_range<BOOST_STRING_TYPENAME range_const_iterator<RangeT>::type> lit_set(as_literal(Set));
+            return detail::is_any_ofF<BOOST_STRING_TYPENAME range_value<RangeT>::type>(lit_set); 
         }
 
         //! is_from_range predicate

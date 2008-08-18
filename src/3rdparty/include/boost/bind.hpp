@@ -248,6 +248,9 @@ public:
     }
 };
 
+struct logical_and;
+struct logical_or;
+
 template< class A1, class A2 > class list2: private storage2< A1, A2 >
 {
 private:
@@ -292,6 +295,26 @@ public:
     template<class F, class A> void operator()(type<void>, F const & f, A & a, int) const
     {
         unwrapper<F const>::unwrap(f, 0)(a[base_type::a1_], a[base_type::a2_]);
+    }
+
+    template<class A> bool operator()( type<bool>, logical_and & /*f*/, A & a, int )
+    {
+        return a[ base_type::a1_ ] && a[ base_type::a2_ ];
+    }
+
+    template<class A> bool operator()( type<bool>, logical_and const & /*f*/, A & a, int ) const
+    {
+        return a[ base_type::a1_ ] && a[ base_type::a2_ ];
+    }
+
+    template<class A> bool operator()( type<bool>, logical_or & /*f*/, A & a, int )
+    {
+        return a[ base_type::a1_ ] || a[ base_type::a2_ ];
+    }
+
+    template<class A> bool operator()( type<bool>, logical_or const & /*f*/, A & a, int ) const
+    {
+        return a[ base_type::a1_ ] || a[ base_type::a2_ ];
     }
 
     template<class V> void accept(V & v) const
@@ -1158,6 +1181,9 @@ BOOST_BIND_OPERATOR( <=, less_equal )
 BOOST_BIND_OPERATOR( >, greater )
 BOOST_BIND_OPERATOR( >=, greater_equal )
 
+BOOST_BIND_OPERATOR( &&, logical_and )
+BOOST_BIND_OPERATOR( ||, logical_or )
+
 #undef BOOST_BIND_OPERATOR
 
 #if defined(__GNUC__) && BOOST_WORKAROUND(__GNUC__, < 3)
@@ -1542,6 +1568,7 @@ template<class F, class A1, class A2, class A3, class A4, class A5, class A6, cl
 #define BOOST_BIND_MF_CC
 
 #include <boost/bind/bind_mf_cc.hpp>
+#include <boost/bind/bind_mf2_cc.hpp>
 
 #undef BOOST_BIND_MF_NAME
 #undef BOOST_BIND_MF_CC
@@ -1552,6 +1579,7 @@ template<class F, class A1, class A2, class A3, class A4, class A5, class A6, cl
 #define BOOST_BIND_MF_CC __cdecl
 
 #include <boost/bind/bind_mf_cc.hpp>
+#include <boost/bind/bind_mf2_cc.hpp>
 
 #undef BOOST_BIND_MF_NAME
 #undef BOOST_BIND_MF_CC
@@ -1564,6 +1592,7 @@ template<class F, class A1, class A2, class A3, class A4, class A5, class A6, cl
 #define BOOST_BIND_MF_CC __stdcall
 
 #include <boost/bind/bind_mf_cc.hpp>
+#include <boost/bind/bind_mf2_cc.hpp>
 
 #undef BOOST_BIND_MF_NAME
 #undef BOOST_BIND_MF_CC
@@ -1576,6 +1605,7 @@ template<class F, class A1, class A2, class A3, class A4, class A5, class A6, cl
 #define BOOST_BIND_MF_CC __fastcall
 
 #include <boost/bind/bind_mf_cc.hpp>
+#include <boost/bind/bind_mf2_cc.hpp>
 
 #undef BOOST_BIND_MF_NAME
 #undef BOOST_BIND_MF_CC

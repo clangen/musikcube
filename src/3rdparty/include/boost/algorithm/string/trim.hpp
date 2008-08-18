@@ -67,10 +67,10 @@ namespace boost {
 
             std::copy( 
                 ::boost::algorithm::detail::trim_begin( 
-                    begin(lit_range), 
-                    end(lit_range), 
+                    ::boost::begin(lit_range), 
+                    ::boost::end(lit_range), 
                     IsSpace ),
-                end(lit_range),
+                ::boost::end(lit_range),
                 Output);
 
             return Output;
@@ -85,10 +85,10 @@ namespace boost {
         {
             return SequenceT( 
                 ::boost::algorithm::detail::trim_begin( 
-                    begin(Input), 
-                    end(Input), 
+                    ::boost::begin(Input), 
+                    ::boost::end(Input), 
                     IsSpace ),
-                end(Input));
+                ::boost::end(Input));
         }
 
         //! Left trim - parametric
@@ -124,10 +124,10 @@ namespace boost {
         inline void trim_left_if(SequenceT& Input, PredicateT IsSpace)
         {
             Input.erase( 
-                begin(Input),
+                ::boost::begin(Input),
                 ::boost::algorithm::detail::trim_begin( 
-                    begin(Input), 
-                    end(Input), 
+                    ::boost::begin(Input), 
+                    ::boost::end(Input), 
                     IsSpace));
         }
 
@@ -174,10 +174,10 @@ namespace boost {
             iterator_range<BOOST_STRING_TYPENAME range_const_iterator<RangeT>::type> lit_range(as_literal(Input));
          
             std::copy( 
-                begin(lit_range),
+                ::boost::begin(lit_range),
                 ::boost::algorithm::detail::trim_end( 
-                    begin(lit_range), 
-                    end(lit_range), 
+                    ::boost::begin(lit_range), 
+                    ::boost::end(lit_range), 
                     IsSpace ),
                 Output );
 
@@ -192,10 +192,10 @@ namespace boost {
         inline SequenceT trim_right_copy_if(const SequenceT& Input, PredicateT IsSpace)
         {
             return SequenceT( 
-                begin(Input),
+                ::boost::begin(Input),
                 ::boost::algorithm::detail::trim_end( 
-                    begin(Input), 
-                    end(Input), 
+                    ::boost::begin(Input), 
+                    ::boost::end(Input), 
                     IsSpace)
                 );
         }
@@ -235,10 +235,10 @@ namespace boost {
         {
             Input.erase(
                 ::boost::algorithm::detail::trim_end( 
-                    begin(Input), 
-                    end(Input), 
+                    ::boost::begin(Input), 
+                    ::boost::end(Input), 
                     IsSpace ),
-                end(Input)
+                ::boost::end(Input)
                 );
         }
 
@@ -288,13 +288,13 @@ namespace boost {
             BOOST_STRING_TYPENAME 
                 range_const_iterator<RangeT>::type TrimEnd=
                 ::boost::algorithm::detail::trim_end( 
-                    begin(lit_range), 
-                    end(lit_range), 
+                    ::boost::begin(lit_range), 
+                    ::boost::end(lit_range), 
                     IsSpace);
 
             std::copy( 
                 detail::trim_begin( 
-                    begin(lit_range), TrimEnd, IsSpace),
+                    ::boost::begin(lit_range), TrimEnd, IsSpace),
                 TrimEnd,
                 Output
                 );
@@ -312,13 +312,13 @@ namespace boost {
             BOOST_STRING_TYPENAME 
                 range_const_iterator<SequenceT>::type TrimEnd=
                     ::boost::algorithm::detail::trim_end( 
-                        begin(Input), 
-                        end(Input), 
+                        ::boost::begin(Input), 
+                        ::boost::end(Input), 
                         IsSpace);
 
             return SequenceT( 
                 detail::trim_begin( 
-                    begin(Input), 
+                    ::boost::begin(Input), 
                     TrimEnd, 
                     IsSpace),
                 TrimEnd

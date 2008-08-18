@@ -1193,6 +1193,9 @@ bool perl_matcher<BidiIterator, Allocator, traits>::unwind_char_repeat(bool r)
          pstate = rep->next.p;
       }while((count < rep->max) && (position != last) && !can_start(*position, rep->_map, mask_skip));
    }   
+   // remember where we got to if this is a leading repeat:
+   if((rep->leading) && (count < rep->max))
+      restart = position;
    if(position == last)
    {
       // can't repeat any more, remove the pushed state: 
@@ -1259,6 +1262,9 @@ bool perl_matcher<BidiIterator, Allocator, traits>::unwind_short_set_repeat(bool
          pstate = rep->next.p;
       }while((count < rep->max) && (position != last) && !can_start(*position, rep->_map, mask_skip));
    }   
+   // remember where we got to if this is a leading repeat:
+   if((rep->leading) && (count < rep->max))
+      restart = position;
    if(position == last)
    {
       // can't repeat any more, remove the pushed state: 
@@ -1326,6 +1332,9 @@ bool perl_matcher<BidiIterator, Allocator, traits>::unwind_long_set_repeat(bool 
          pstate = rep->next.p;
       }while((count < rep->max) && (position != last) && !can_start(*position, rep->_map, mask_skip));
    }   
+   // remember where we got to if this is a leading repeat:
+   if((rep->leading) && (count < rep->max))
+      restart = position;
    if(position == last)
    {
       // can't repeat any more, remove the pushed state:

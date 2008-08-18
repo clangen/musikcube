@@ -98,8 +98,10 @@
 //
 // We always have SGI style hash_set, hash_map, and slist:
 //
+#ifndef _STLP_NO_EXTENSIONS
 #define BOOST_HAS_HASH
 #define BOOST_HAS_SLIST
+#endif
 
 //
 // STLport does a good job of importing names into namespace std::,

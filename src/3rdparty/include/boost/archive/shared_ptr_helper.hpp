@@ -7,7 +7,7 @@
 #endif
 
 /////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
-// shared_ptr.hpp: serialization for boost shared pointer
+// shared_ptr_helper.hpp: serialization for boost shared pointer
 
 // (C) Copyright 2004 Robert Ramey and Martin Ecker
 // Use, modification and distribution is subject to the Boost Software
@@ -18,9 +18,11 @@
 
 #include <map>
 #include <list>
+#include <cstddef> // NULL
 
 #include <boost/config.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/serialization/type_info_implementation.hpp>
 #include <boost/serialization/shared_ptr_132.hpp>
 #include <boost/throw_exception.hpp>
 
@@ -52,7 +54,7 @@ struct null_deleter {
 // a common class for holding various types of shared pointers
 
 class shared_ptr_helper {
-    typedef std::map<void*, shared_ptr<void> > collection_type;
+    typedef std::map<const void *, shared_ptr<void> > collection_type;
     typedef collection_type::const_iterator iterator_type;
     // list of shared_pointers create accessable by raw pointer. This
     // is used to "match up" shared pointers loaded at different
@@ -84,10 +86,10 @@ public:
 
     // return a void pointer to the most derived type
     template<class T>
-    void * object_identifier(T * t) const {
+    const void * object_identifier(T * t) const {
         const boost::serialization::extended_type_info * true_type 
             = boost::serialization::type_info_implementation<T>::type
-                ::get_derived_extended_type_info(*t);
+                ::get_const_instance().get_derived_extended_type_info(*t);
         // note:if this exception is thrown, be sure that derived pointer
         // is either registered or exported.
         if(NULL == true_type)
@@ -97,10 +99,16 @@ public:
                 )
             );
         const boost::serialization::extended_type_info * this_type
-            = boost::serialization::type_info_implementation<T>::type::get_instance();
-        void * vp = void_downcast(*true_type, *this_type, t);
+            = & boost::serialization::type_info_implementation<T>::type
+                    ::get_const_instance();
+        const void * vp = void_downcast(
+            *true_type, 
+            *this_type, 
+            static_cast<const void *>(t)
+        );
         return vp;
     }
+public:
     template<class T>
     void reset(shared_ptr<T> & s, T * r){
         if(NULL == r){
@@ -109,7 +117,7 @@ public:
         }
         // get pointer to the most derived object.  This is effectively
         // the object identifer
-        void * od = object_identifier(r);
+        const void * od = object_identifier(r);
 
         if(NULL == m_pointers)
             m_pointers = new collection_type;

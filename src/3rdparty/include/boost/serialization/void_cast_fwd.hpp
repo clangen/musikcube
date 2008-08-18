@@ -17,6 +17,9 @@
 
 //  See http://www.boost.org for updates, documentation, and revision history.
 
+#include <cstddef> // NULL
+#include <boost/serialization/force_include.hpp>
+
 namespace boost {
 namespace serialization {
 namespace void_cast_detail{

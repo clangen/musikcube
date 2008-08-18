@@ -25,14 +25,13 @@
 //  See <http://www.boost.org/libs/io/> for the library's home page.
 
 #ifndef BOOST_NO_STD_LOCALE
+
 #include <locale>     // for std::locale
-#endif
 #include <streambuf>  // for std::basic_streambuf
 
 namespace boost{
 namespace archive{
 
-#ifndef BOOST_NO_STD_LOCALE
 template < typename Ch, class Tr >
 class basic_streambuf_locale_saver
 {

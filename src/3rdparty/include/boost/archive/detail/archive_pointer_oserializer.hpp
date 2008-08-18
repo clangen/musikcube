@@ -51,8 +51,7 @@ public:
     // type_info.  returns NULL, if there is no such instance. This
     // would indicate that the no object of the specified type was saved
     // any where in the code.
-    static 
-    BOOST_ARCHIVE_OR_WARCHIVE_DECL(const basic_pointer_oserializer *)
+    static BOOST_ARCHIVE_OR_WARCHIVE_DECL(const basic_pointer_oserializer *)
     find(
         const boost::serialization::extended_type_info & eti
     );
