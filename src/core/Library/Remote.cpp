@@ -35,6 +35,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
+#include <core/Common.h>
 #include <core/Library/Remote.h>
 #include <core/Query/Base.h>
 #include <core/Preferences.h>
@@ -112,8 +113,12 @@ bool Library::Remote::Startup(){
 //////////////////////////////////////////
 void Library::Remote::ReadThread(){
 
-    this->address   = "localhost";
-    this->port      = "10543";
+    {
+        Preferences prefs("Connection",this->Identifier().c_str());
+
+        this->address   = ConvertUTF8(prefs.GetString("address",UTF("localhost")));
+        this->port      = ConvertUTF8(prefs.GetString("port",UTF("10543")));
+    }
 
     boost::asio::ip::tcp::resolver resolver(this->ioService);
     boost::asio::ip::tcp::resolver::query resolverQuery(this->address,this->port);

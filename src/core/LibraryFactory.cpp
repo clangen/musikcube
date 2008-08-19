@@ -39,6 +39,7 @@
 #include <core/Library/Remote.h>
 #include <core/db/Connection.h>
 #include <core/Common.h>
+#include <core/Preferences.h>
 
 using namespace musik::core;
 
@@ -51,12 +52,7 @@ LibraryFactory::LibraryFactory(void){
 	musik::core::db::Connection db;
     db.Open(dbFile.c_str(),0,128);
 
-	// Start by initializing the db
-    db.Execute("CREATE TABLE IF NOT EXISTS libraries ("
-            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-            "name TEXT,"
-            "type INTEGER DEFAULT 0)");
-    db.Execute("CREATE UNIQUE INDEX IF NOT EXISTS library_index ON libraries (name)");
+    Preferences::CreateDB(db);
 
 	// Get the libraries
 	db::Statement stmtGetLibs("SELECT name,type FROM libraries ORDER BY id",db);

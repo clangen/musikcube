@@ -49,11 +49,12 @@ using namespace musik::core;
 
 //////////////////////////////////////////////////////////////////////////////
 
-Preferences::Preferences(const char* nameSpace) 
+Preferences::Preferences(const char* nameSpace,const utfchar* library) 
  :nameSpace(nameSpace)
+ ,libraryId(0)
 {
     this->IOPtr = IO::Instance();
-    this->settings  = this->IOPtr->GetNamespace(nameSpace);   
+    this->settings  = this->IOPtr->GetNamespace(nameSpace,library,this->libraryId);   
 }
 
 Preferences::~Preferences(void){
@@ -67,7 +68,7 @@ bool Preferences::GetBool(const char* key,bool defaultValue){
     if(setting!=this->settings->end()){
         return setting->second.Value(defaultValue);
     }
-    this->IOPtr->SaveSetting(this->nameSpace.c_str(),key,Setting(defaultValue));
+    this->IOPtr->SaveSetting(this->nameSpace.c_str(),this->libraryId,key,Setting(defaultValue));
     return defaultValue;
 }
 
@@ -77,7 +78,7 @@ int Preferences::GetInt(const char* key,int defaultValue){
     if(setting!=this->settings->end()){
         return setting->second.Value(defaultValue);
     }
-    this->IOPtr->SaveSetting(this->nameSpace.c_str(),key,Setting(defaultValue));
+    this->IOPtr->SaveSetting(this->nameSpace.c_str(),this->libraryId,key,Setting(defaultValue));
     return defaultValue;
 }
 
@@ -87,23 +88,23 @@ utfstring Preferences::GetString(const char* key,const utfchar* defaultValue){
     if(setting!=this->settings->end()){
         return setting->second.Value(utfstring(defaultValue));
     }
-    this->IOPtr->SaveSetting(this->nameSpace.c_str(),key,Setting(utfstring(defaultValue)));
+    this->IOPtr->SaveSetting(this->nameSpace.c_str(),this->libraryId,key,Setting(utfstring(defaultValue)));
     return defaultValue;
 }
 
 void Preferences::SetBool(const char* key,bool value){
     boost::mutex::scoped_lock lock(IO::Instance()->mutex);
-    this->IOPtr->SaveSetting(this->nameSpace.c_str(),key,Setting(value));
+    this->IOPtr->SaveSetting(this->nameSpace.c_str(),this->libraryId,key,Setting(value));
 }
 
 void Preferences::SetInt(const char* key,int value){
     boost::mutex::scoped_lock lock(IO::Instance()->mutex);
-    this->IOPtr->SaveSetting(this->nameSpace.c_str(),key,Setting(value));
+    this->IOPtr->SaveSetting(this->nameSpace.c_str(),this->libraryId,key,Setting(value));
 }
 
 void Preferences::SetString(const char* key,const utfchar* value){
     boost::mutex::scoped_lock lock(IO::Instance()->mutex);
-    this->IOPtr->SaveSetting(this->nameSpace.c_str(),key,Setting(utfstring(value)));
+    this->IOPtr->SaveSetting(this->nameSpace.c_str(),this->libraryId,key,Setting(utfstring(value)));
 }
 
 
@@ -123,27 +124,16 @@ Preferences::IO::IO(void){
     utfstring dataDir   = GetDataDirectory();
     utfstring dbFile    = GetDataDirectory() + UTF("settings.db");
     this->db.Open(dbFile.c_str(),0,128);
-
-    this->db.Execute("CREATE TABLE IF NOT EXISTS namespaces ("
-        "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-        "name TEXT)");
-
-    this->db.Execute("CREATE TABLE IF NOT EXISTS settings ("
-        "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-        "namespace_id INTEGER DEFAULT 0,"
-        "type INTEGER DEFAULT 0,"
-        "the_key TEXT,"
-        "the_value TEXT)");
-
-    this->db.Execute("CREATE UNIQUE INDEX IF NOT EXISTS namespace_index ON namespaces (name)");
-    this->db.Execute("CREATE UNIQUE INDEX IF NOT EXISTS setting_index ON settings (namespace_id,the_key)");
+    
+    Preferences::CreateDB(this->db);
 
 }
 
-void Preferences::IO::SaveSetting(const char* nameSpace,const char *key,Setting &setting){
+void Preferences::IO::SaveSetting(const char* nameSpace,int libraryId,const char *key,Setting &setting){
     int nameSpaceId(0);
-    db::CachedStatement getStmt("SELECT id FROM namespaces WHERE name=?",this->db);
+    db::CachedStatement getStmt("SELECT id FROM namespaces WHERE name=? AND library_id=?",this->db);
     getStmt.BindText(0,nameSpace);
+    getStmt.BindInt(1,libraryId);
 
     if(getStmt.Step()==db::Row){
         nameSpaceId = getStmt.ColumnInt(0);
@@ -164,7 +154,7 @@ void Preferences::IO::SaveSetting(const char* nameSpace,const char *key,Setting 
         }
         insertSetting.Step();
 
-        (*this->namespaces[nameSpace])[key] = setting;
+        (*this->libraryNamespaces[libraryId][nameSpace])[key] = setting;
     }
 }
 
@@ -254,23 +244,32 @@ utfstring Preferences::Setting::Value(utfstring defaultValue){
 
 
 
-Preferences::IO::SettingMapPtr Preferences::IO::GetNamespace(const char* nameSpace){
+Preferences::IO::SettingMapPtr Preferences::IO::GetNamespace(const char* nameSpace,const utfchar* library,int &libraryId){
 
     boost::mutex::scoped_lock lock(this->mutex);
     // First check if it's in the NamespaceMap
-    NamespaceMap::iterator ns = this->namespaces.find(nameSpace);
-    if(ns!=this->namespaces.end()){
+    NamespaceMap::iterator ns = this->libraryNamespaces[libraryId].find(nameSpace);
+    if(ns!=this->libraryNamespaces[libraryId].end()){
         // Found namespace, return settings
         return ns->second;
     }
 
+    if(library!=NULL){
+        db::Statement getLibStmt("SELECT id FROM libraries WHERE name=?",this->db);
+        getLibStmt.BindTextUTF(0,library);
+        if(getLibStmt.Step()==db::Row){
+            libraryId   = getLibStmt.ColumnInt(0);
+        }
+    }
+
     // Not in cache, lets load it from db.
     int nameSpaceId(0);
-    db::CachedStatement getStmt("SELECT id FROM namespaces WHERE name=?",this->db);
+    db::Statement getStmt("SELECT id FROM namespaces WHERE name=? AND library_id=?",this->db);
     getStmt.BindText(0,nameSpace);
+    getStmt.BindInt(1,libraryId);
 
     SettingMapPtr newSettings( new SettingMap() );
-    this->namespaces[nameSpace] = newSettings;
+    this->libraryNamespaces[libraryId][nameSpace] = newSettings;
 
     if(getStmt.Step()==db::Row){
         // Namespace exists, load the settings
@@ -285,11 +284,39 @@ Preferences::IO::SettingMapPtr Preferences::IO::GetNamespace(const char* nameSpa
         return newSettings;
     }else{
         // First time namespace is accessed, create it.
-        db::Statement insertNamespace("INSERT INTO namespaces (name) VALUES (?)",this->db);
+        db::Statement insertNamespace("INSERT INTO namespaces (name,library_id) VALUES (?,?)",this->db);
         insertNamespace.BindText(0,nameSpace);
+        insertNamespace.BindInt(1,libraryId);
         insertNamespace.Step();
         nameSpaceId = this->db.LastInsertedId();
         return newSettings;
     }
+}
+
+void Preferences::CreateDB(db::Connection &db){
+    db.Execute("CREATE TABLE IF NOT EXISTS namespaces ("
+        "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+        "name TEXT)");
+
+    // Add a library_id relation
+    db.Execute("ALTER TABLE namespaces ADD COLUMN library_id INTEGER DEFAULT 0");
+
+    db.Execute("CREATE TABLE IF NOT EXISTS settings ("
+        "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+        "namespace_id INTEGER DEFAULT 0,"
+        "type INTEGER DEFAULT 0,"
+        "the_key TEXT,"
+        "the_value TEXT)");
+
+    db.Execute("CREATE UNIQUE INDEX IF NOT EXISTS namespace_index ON namespaces (name,library_id)");
+    db.Execute("CREATE UNIQUE INDEX IF NOT EXISTS setting_index ON settings (namespace_id,the_key)");
+
+	// Start by initializing the db
+    db.Execute("CREATE TABLE IF NOT EXISTS libraries ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "name TEXT,"
+            "type INTEGER DEFAULT 0)");
+    db.Execute("CREATE UNIQUE INDEX IF NOT EXISTS library_index ON libraries (name)");
+
 }
 
