@@ -51,7 +51,7 @@ namespace musik{ namespace core{
 
 class Preferences{
     public:
-        Preferences(const char* nameSpace);
+        Preferences(const char* nameSpace,const utfchar* library=NULL);
         ~Preferences(void);
 
         bool GetBool(const char* key,bool defaultValue);
@@ -63,8 +63,12 @@ class Preferences{
         void SetString(const char* key,const utfchar* value);
 
         std::string nameSpace;
+        int libraryId;
+
+        static void CreateDB(db::Connection &db);
 
     private:
+
         class Setting{
 
             public:
@@ -100,11 +104,12 @@ class Preferences{
                 typedef std::map<std::string,Setting> SettingMap;
                 typedef boost::shared_ptr<SettingMap> SettingMapPtr;
                 typedef std::map<std::string,SettingMapPtr> NamespaceMap;
+                typedef std::map<int,NamespaceMap> LibNamespaceMap;
                 typedef boost::shared_ptr<IO> Ptr;
 
-                SettingMapPtr GetNamespace(const char* nameSpace);
+                SettingMapPtr GetNamespace(const char* nameSpace,const utfchar* library,int &libraryId);
 
-                void SaveSetting(const char* nameSpace,const char *key,Setting &setting);
+                void SaveSetting(const char* nameSpace,int libraryId,const char *key,Setting &setting);
 
                 static IO::Ptr Instance();
 
@@ -112,7 +117,7 @@ class Preferences{
 
             private:
                 db::Connection db;
-                NamespaceMap namespaces;
+                LibNamespaceMap libraryNamespaces;
                 
 
         };
