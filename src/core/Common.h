@@ -61,8 +61,8 @@ namespace musik{ namespace core{
     *****************************/
     utfstring GetPluginDirectory();
 
-    std::string ConvertUTF8(std::wstring &sString);
-    std::wstring ConvertUTF16(std::string &sString);
+    std::string ConvertUTF8(const std::wstring &sString);
+    std::wstring ConvertUTF16(const std::string &sString);
     std::wstring ConvertUTF16(const char *string);
 
     UINT64 Checksum(char *data,unsigned int bytes);

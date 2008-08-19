@@ -154,8 +154,8 @@ bool Track::CompareDBAndFileInfo(const boost::filesystem::utfpath &file,db::Conn
         this->SetValue("extension",file.leaf().substr(lastDot+1).c_str());
     }
 
-    DBINT fileSize  = boost::filesystem::file_size(file);
-    DBTIME fileTime = boost::filesystem::last_write_time(file);
+    DBINT fileSize  = (DBINT)boost::filesystem::file_size(file);
+    DBTIME fileTime = (DBTIME)boost::filesystem::last_write_time(file);
 
     this->SetValue("filesize",boost::lexical_cast<utfstring>(fileSize).c_str());
     this->SetValue("filetime",boost::lexical_cast<utfstring>(fileTime).c_str());

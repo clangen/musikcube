@@ -49,10 +49,6 @@
 //////////////////////////////////////////////////////////////
 // Forward declarations
 //////////////////////////////////////////////////////////////
-/*namespace musik{ namespace core{
-    class Track;
-} }
-*/
 
 
 namespace musik{ namespace core{
@@ -77,6 +73,9 @@ namespace musik{ namespace core{
                 bool RunCallbacks(Library::Base *library);
 
                 bool ParseTracksSQL(std::string sql,Library::Base *library,db::Connection &db);
+
+                bool RecieveQueryStandardNodes(musik::core::xml::ParserNode &node);
+                bool SendQueryStandardNodes(musik::core::xml::WriterNode &queryNode);
 
                 MetadataResults metadataResults;
                 TrackVector trackResults;

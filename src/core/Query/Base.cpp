@@ -38,18 +38,22 @@
 
 #include <core/Query/Base.h>
 #include <core/Library/Base.h>
+#include <core/xml/ParserNode.h>
+#include <core/xml/WriterNode.h>
 
 using namespace musik::core;
 
 Query::Base::Base(void) 
 :status(0)
 ,options(0)
+,uniqueId(0)
 {
     // This will guarantee that the query id is uniq for each query, but copies will not.
     // This is usefull when canceling similar queries
     static unsigned int uniqueQueryId(0);
     uniqueQueryId++;
-    this->queryId    = uniqueQueryId;
+    this->queryId   = uniqueQueryId;
+
 }
 
 Query::Base::~Base(void){
@@ -114,3 +118,10 @@ bool Query::Base::SendResults(musik::core::xml::WriterNode &queryNode,Library::B
 std::string Query::Base::Name(){
     return "Unknown";
 }
+
+void Query::Base::PostCopy(){
+    static unsigned int uniqueQueryId(0);
+    uniqueQueryId++;
+    this->uniqueId  = uniqueQueryId;
+}
+

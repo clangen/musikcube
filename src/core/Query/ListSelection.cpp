@@ -37,6 +37,8 @@
 #include "pch.hpp"
 #include <core/Query/ListSelection.h>
 #include <core/Library/Base.h>
+#include <core/xml/ParserNode.h>
+#include <core/xml/WriterNode.h>
 
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
@@ -459,7 +461,9 @@ bool Query::ListSelection::ParseQuery(Library::Base *library,db::Connection &db)
 ///A shared_ptr to the Query::Base
 //////////////////////////////////////////
 Query::Ptr Query::ListSelection::copy() const{
-    return Query::Ptr(new Query::ListSelection(*this));
+    Query::Ptr queryCopy(new Query::ListSelection(*this));
+    queryCopy->PostCopy();
+    return queryCopy;
 }
 
 void Query::ListSelection::SQLPrependWhereOrAnd(std::string &sql){
@@ -571,12 +575,10 @@ bool Query::ListSelection::RecieveQuery(musik::core::xml::ParserNode &queryNode)
 
     while( musik::core::xml::ParserNode node = queryNode.ChildNode() ){
         if(node.Name()=="selections"){
-			std::cout << "<selections>";
             // Get metakey nodes
             // Expected tag is likle this:
             // <selection key="genre">2,5,3</selection>
             while( musik::core::xml::ParserNode selectionNode = node.ChildNode("selection") ){
-				std::cout << "<selection key=\"" << selectionNode.Attributes()["key"] << "\">";
 
                 // Wait for all content
                 selectionNode.WaitForContent();
@@ -588,34 +590,12 @@ bool Query::ListSelection::RecieveQuery(musik::core::xml::ParserNode &queryNode)
 
                 for(StringVector::iterator value=values.begin();value!=values.end();++value){
                     this->SelectMetadata(selectionNode.Attributes()["key"].c_str(),boost::lexical_cast<DBINT>(*value));
-					std::cout << "," << *value;
                 }
-				std::cout << "</selection>" << std::endl;
 
             }
-			std::cout << "</selections>" << std::endl;
 
-        }else if(node.Name()=="listeners"){
-
-            // Wait for all content
-            node.WaitForContent();
-
-            // Secondly, lets look for what to query for
-            // Split comaseparated list
-            typedef std::vector<std::string> StringVector;
-            StringVector keys;
-            boost::algorithm::split(keys,node.Content(),boost::algorithm::is_any_of(","));
-
-            for(StringVector::iterator key=keys.begin();key!=keys.end();++key){
-                if(!key->empty()){
-                    // connect dummy to the signals
-                    this->OnMetadataEvent(key->c_str()).connect( (Query::ListBase*)this,&Query::ListBase::DummySlot);
-                }
-            }
-        }else if(node.Name()=="listtracks"){
-            this->OnTrackEvent().connect( (Query::ListBase*)this,&Query::ListBase::DummySlotTracks);
-        }else if(node.Name()=="listtrackinfo"){
-            this->OnTrackInfoEvent().connect( (Query::ListBase*)this,&Query::ListBase::DummySlotTrackInfo);
+        }else{
+            this->RecieveQueryStandardNodes(node);
         }
     }
     return true;
@@ -625,12 +605,11 @@ std::string Query::ListSelection::Name(){
     return "ListSelection";
 }
 
-bool Query::ListSelection::SendQuery(musik::core::xml::WriterNode &queryNode){
 ///   <selections>
 ///      <selection key="genre">1,3,5,7</selection>
 ///      <selection key="artist">6,7,8</selection>
 ///   </selections>
-///   <listeners>genre,artist,album</listeners>
+bool Query::ListSelection::SendQuery(musik::core::xml::WriterNode &queryNode){
     xml::WriterNode selectionsNode(queryNode,"selections");
 
     // Start with the selection nodes
@@ -651,26 +630,8 @@ bool Query::ListSelection::SendQuery(musik::core::xml::WriterNode &queryNode){
 
     }
 
-    // Then the listeners
-    xml::WriterNode listenersNode(queryNode,"listeners");
-    for(MetadataSignals::iterator listener=this->metadataEvent.begin();listener!=this->metadataEvent.end();++listener){
-        if( listener->second.has_connections() ){
-            if(!listenersNode.Content().empty()){
-                listenersNode.Content().append(",");
-            }
-            listenersNode.Content().append(listener->first);
-        }
-    }
-	// Then the track listener
-	if( this->trackEvent.has_connections() ){
-	    xml::WriterNode listTracksNode(queryNode,"listtracks");
-		listTracksNode.Content().append("true");
-	}
-	// Then the track listener
-	if( this->trackInfoEvent.has_connections() ){
-	    xml::WriterNode listTrackInfoNode(queryNode,"listtrackinfo");
-		listTrackInfoNode.Content().append("true");
-	}
+    this->SendQueryStandardNodes(queryNode);
+
     return true;
     
 }

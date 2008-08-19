@@ -38,6 +38,9 @@
 #include <core/Query/SortTracks.h>
 #include <core/Library/Base.h>
 #include <core/config_format.h>
+#include <boost/algorithm/string.hpp>
+#include <core/xml/ParserNode.h>
+#include <core/xml/WriterNode.h>
 
 using namespace musik::core;
 
@@ -177,7 +180,9 @@ bool Query::SortTracks::ParseQuery(Library::Base *library,db::Connection &db){
 ///A shared_ptr to the Query::Base
 //////////////////////////////////////////
 Query::Ptr Query::SortTracks::copy() const{
-    return Query::Ptr(new Query::SortTracks(*this));
+    Query::Ptr queryCopy(new Query::SortTracks(*this));
+    queryCopy->PostCopy();
+    return queryCopy;
 }
 
 void Query::SortTracks::AddTrack(int trackId){
@@ -205,5 +210,70 @@ void Query::SortTracks::SortByMetaKeys(std::list<std::string> metaKeys){
 
 void Query::SortTracks::ClearTracks(){
     this->tracksToSort.clear();
+}
+
+//////////////////////////////////////////
+///\brief
+///Recieve the query from XML
+///
+///\param queryNode
+///Reference to query XML node
+///
+///The excpeted input format is like this:
+///\code
+///<query type="SortTracks">
+///   <tracks>1,3,5,7</tracks>
+///</query>
+///\endcode
+///
+///\returns
+///true when successfully recieved
+//////////////////////////////////////////
+bool Query::SortTracks::RecieveQuery(musik::core::xml::ParserNode &queryNode){
+
+    while( musik::core::xml::ParserNode node = queryNode.ChildNode() ){
+        if(node.Name()=="tracks"){
+            node.WaitForContent();
+
+            typedef std::vector<std::string> StringVector;
+            StringVector values;
+
+            try{    // lexical_cast can throw
+                boost::algorithm::split(values,node.Content(),boost::algorithm::is_any_of(","));
+                for(StringVector::iterator value=values.begin();value!=values.end();++value){
+                    this->tracksToSort.push_back( boost::lexical_cast<DBINT>(*value) );
+                }
+            }
+            catch(...){
+                return false;
+            }
+
+        }else{
+            this->RecieveQueryStandardNodes(node);
+        }
+    }
+    return true;
+}
+
+std::string Query::SortTracks::Name(){
+    return "SortTracks";
+}
+
+bool Query::SortTracks::SendQuery(musik::core::xml::WriterNode &queryNode){
+    {
+        xml::WriterNode tracksNode(queryNode,"tracks");
+
+        for(IntVector::iterator trackId=this->tracksToSort.begin();trackId!=this->tracksToSort.end();++trackId){
+            if(!tracksNode.Content().empty()){
+                tracksNode.Content().append(",");
+            }
+            tracksNode.Content().append(boost::lexical_cast<std::string>(*trackId));
+        }
+    }
+
+    this->SendQueryStandardNodes(queryNode);
+
+    return true;
+    
 }
 

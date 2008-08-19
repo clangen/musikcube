@@ -38,6 +38,8 @@
 #include <core/xml/ParserNode.h>
 #include <expat/expat.h>
 
+#include <fstream>
+
 using namespace musik::core::xml;
 
 //////////////////////////////////////////////////////////////////////////////
@@ -156,6 +158,11 @@ void Parser::ReadFromSocket(){
         // Connection closed or some other error occured
         this->Exit();
     }
+
+    // Log
+//    std::ofstream logFile("mc2_Parser.log",std::ios::app);
+//    logFile.write(this->readBuffer.c_array(),this->readBufferLength);
+//    logFile << std::endl;
 
 }
 

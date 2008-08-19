@@ -125,9 +125,12 @@ void Library::Remote::ReadThread(){
         boost::system::error_code error = boost::asio::error::host_not_found;
         while (error && endpointIterator!=end){
             this->socket.close();
-            this->socket.connect(*endpointIterator++, error);
+            this->socket.connect(*endpointIterator, error);
+            if(error){
+                endpointIterator++;
+            }
         }
-        if (error){
+        if (error || endpointIterator==end){
             this->Exit();
             return;
         }
@@ -159,6 +162,7 @@ void Library::Remote::ReadThread(){
                 if(node.Name()=="queryresults"){
 
                     unsigned int queryId    = boost::lexical_cast<unsigned int>(node.Attributes()["id"]);
+                    unsigned int uniqueId   = boost::lexical_cast<unsigned int>(node.Attributes()["uid"]);
                     Query::Ptr currentQuery;
                     // This is a query node
                     // Find the query in the outgoingQueries list
@@ -166,15 +170,17 @@ void Library::Remote::ReadThread(){
                         boost::mutex::scoped_lock lock(this->libraryMutex);
                         // Reverse loop since it's most likely the query is in the end
                         for(QueryList::reverse_iterator query=this->outgoingQueries.rbegin();query!=this->outgoingQueries.rend();++query){
-                            if( (*query)->queryId==queryId ){
+                            if( (*query)->uniqueId==uniqueId ){
                                 currentQuery    = *query;
                             }
                         }
                     }
                     if(currentQuery){
                         if(currentQuery->RecieveResults(node,this)){
+                            boost::mutex::scoped_lock lock(this->libraryMutex);
                             currentQuery->status |= Query::Base::Status::Ended;
                         }else{
+                            boost::mutex::scoped_lock lock(this->libraryMutex);
                             currentQuery->status |= Query::Base::Status::Canceled | Query::Base::Status::Ended;
                         }
                     }
@@ -214,7 +220,7 @@ void Library::Remote::WriteThread(){
                 this->outgoingQueries.push_back(query);
 
                 // Set query as started
-//                query->status |= Query::Base::Status::Started;
+                query->status |= Query::Base::Status::Started;
             }
 
             ////////////////////////////////////////////////////////////
@@ -222,6 +228,7 @@ void Library::Remote::WriteThread(){
             xml::WriterNode queryNode(rootNode,"query");
             queryNode.Attributes()["type"]  = query->Name();
             queryNode.Attributes()["id"]    = boost::lexical_cast<std::string>(query->queryId);
+            queryNode.Attributes()["uid"]   = boost::lexical_cast<std::string>(query->uniqueId);
 
             if(query->options){
                 queryNode.Attributes()["options"]  = boost::lexical_cast<std::string>(query->options);
@@ -232,6 +239,10 @@ void Library::Remote::WriteThread(){
                 boost::mutex::scoped_lock lock(this->libraryMutex);
 				query->status |= Query::Base::Status::Canceled | Query::Base::Status::Ended;
 			}
+
+            ////////////////////////////////////////////////////////////
+            // Notify that the Query is finished.
+            this->waitCondition.notify_all();
 
             // Check if writer has quit
             if(writer.Exited()){
@@ -265,3 +276,15 @@ void Library::Remote::CancelCurrentQuery( ){
 }
 
 
+void Library::Remote::Exit(){
+    {
+        boost::mutex::scoped_lock lock(this->libraryMutex);
+        if(!this->exit){
+            if(this->socket.is_open()){
+                this->socket.close();
+            }
+        }
+        this->exit    = true;
+    }
+    this->waitCondition.notify_all();
+}

@@ -38,6 +38,8 @@
 #include <core/Query/ListBase.h>
 #include <core/Library/Base.h>
 #include <core/Common.h>
+#include <core/xml/ParserNode.h>
+#include <core/xml/WriterNode.h>
 #include <boost/algorithm/string.hpp>
 
 using namespace musik::core;
@@ -384,4 +386,54 @@ void Query::ListBase::DummySlotTrackInfo(UINT64,UINT64,UINT64){
 }
 
 
+bool Query::ListBase::RecieveQueryStandardNodes(musik::core::xml::ParserNode &node){
+    if(node.Name()=="listeners"){
 
+        // Wait for all content
+        node.WaitForContent();
+
+        // Secondly, lets look for what to query for
+        // Split comaseparated list
+        typedef std::vector<std::string> StringVector;
+        StringVector keys;
+        boost::algorithm::split(keys,node.Content(),boost::algorithm::is_any_of(","));
+
+        for(StringVector::iterator key=keys.begin();key!=keys.end();++key){
+            if(!key->empty()){
+                // connect dummy to the signals
+                this->OnMetadataEvent(key->c_str()).connect( (Query::ListBase*)this,&Query::ListBase::DummySlot);
+            }
+        }
+    }else if(node.Name()=="listtracks"){
+        this->OnTrackEvent().connect( (Query::ListBase*)this,&Query::ListBase::DummySlotTracks);
+    }else if(node.Name()=="listtrackinfo"){
+        this->OnTrackInfoEvent().connect( (Query::ListBase*)this,&Query::ListBase::DummySlotTrackInfo);
+    }
+
+    return true;
+}
+
+///   <listeners>genre,artist,album</listeners>
+bool Query::ListBase::SendQueryStandardNodes(musik::core::xml::WriterNode &queryNode){
+    // Then the listeners
+    xml::WriterNode listenersNode(queryNode,"listeners");
+    for(MetadataSignals::iterator listener=this->metadataEvent.begin();listener!=this->metadataEvent.end();++listener){
+        if( listener->second.has_connections() ){
+            if(!listenersNode.Content().empty()){
+                listenersNode.Content().append(",");
+            }
+            listenersNode.Content().append(listener->first);
+        }
+    }
+	// Then the track listener
+	if( this->trackEvent.has_connections() ){
+	    xml::WriterNode listTracksNode(queryNode,"listtracks");
+		listTracksNode.Content().append("true");
+	}
+	// Then the track listener
+	if( this->trackInfoEvent.has_connections() ){
+	    xml::WriterNode listTrackInfoNode(queryNode,"listtrackinfo");
+		listTrackInfoNode.Content().append("true");
+	}
+    return true;
+}

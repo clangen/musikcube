@@ -37,6 +37,7 @@
 #include <core/xml/Writer.h>
 #include <core/xml/WriterNode.h>
 #include <boost/algorithm/string/replace.hpp>
+#include <fstream>
 
 using namespace musik::core::xml;
 
@@ -175,8 +176,15 @@ void Writer::Send(){
         // Time to send the buffer
         if(!sendBuffer.empty()){
             boost::asio::write(*(this->socket),boost::asio::buffer(sendBuffer));
+// Log
+//std::ofstream logFile("mc2_Writer.log",std::ios::app);
+//logFile << sendBuffer << std::endl;
+
             sendBuffer.clear();
         }
+    }
+    catch(boost::system::error_code &error){
+        this->Exit();
     }
     catch(...){
         this->Exit();
