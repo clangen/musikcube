@@ -70,6 +70,7 @@ class Remote : public Library::Base{
 
     protected:
         void CancelCurrentQuery( );
+        virtual void Exit();
 
     private:
         // Methods:

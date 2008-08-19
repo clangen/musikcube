@@ -50,6 +50,10 @@ namespace musik{ namespace core{
     namespace server{
         class Connection;
     }
+    namespace xml{
+        class ParserNode;
+        class WriterNode;
+    }
 } }
 //////////////////////////////////////////////////////////////////////////////
 
@@ -57,8 +61,6 @@ namespace musik{ namespace core{
 #include <sigslot/sigslot.h>
 #include <boost/shared_ptr.hpp>
 
-#include <core/xml/ParserNode.h>
-#include <core/xml/WriterNode.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -74,7 +76,8 @@ enum Options:unsigned int{
     Prioritize      = 4,
     CancelQueue     = 8,
     CancelSimilar   = 16,
-    UnCanceable     = 32
+    UnCanceable     = 32,
+    CopyUniqueId    = 64
 };
 
 //////////////////////////////////////////
@@ -122,6 +125,7 @@ class Base : public sigslot::has_slots<> {
         ///Used for comparing queries and find similar queries.
         //////////////////////////////////////////
         unsigned int queryId;
+        unsigned int uniqueId;
 
         //////////////////////////////////////////
         ///\brief
@@ -205,6 +209,9 @@ class Base : public sigslot::has_slots<> {
         virtual bool SendQuery(musik::core::xml::WriterNode &queryNode);
         virtual bool RecieveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library);
         virtual bool SendResults(musik::core::xml::WriterNode &queryNode,Library::Base *library);
+
+    public:
+        void PostCopy();
 };
 
 

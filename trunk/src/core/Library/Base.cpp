@@ -144,6 +144,7 @@ utfstring Library::Base::GetDBPath(){
 ///    - Query::Options::CancelQueue : Cancel all other queries that are to be executed by the Library.
 ///    - Query::Options::CancelSimilar : Cancel all similar queries. A similar query is a query that originates from the same Query::Base that is passed to the AddQuery.
 ///    - Query::Options::UnCanceable : Under no circumstances is this Query allowed to be canceled.
+///    - Query::Options::UnCanceable : Under no circumstances is this Query allowed to be canceled.
 ///
 ///The query will be copied by the library and executed in the library thread.
 ///
@@ -158,6 +159,11 @@ bool Library::Base::AddQuery( const Query::Base &query,unsigned int options ){
 
     // Start by making a copy
     Query::Ptr queryCopy( query.copy() );
+
+    // 
+    if(options&Query::CopyUniqueId){
+        queryCopy->uniqueId = query.uniqueId;
+    }
 
     queryCopy->PreAddQuery(this);
 

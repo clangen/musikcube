@@ -148,20 +148,22 @@ void Standard::OnTracksFromQuery(musik::core::TrackVector *newTracks,bool clear)
 }
 
 void Standard::LoadTrack(int position){
-    
-    int trackCount(0);
 
-    for(int i(position);i<position+this->hintedRows;++i){
-        if(this->QueryForTrack(i)){
-            ++trackCount;
+    if(this->QueryForTrack(position)){
+
+        int trackCount(1);
+
+        for(int i(position+1);i<position+this->hintedRows;++i){
+            if(this->QueryForTrack(i)){
+                ++trackCount;
+            }
+        }
+
+        if(trackCount && this->library){
+            this->library->AddQuery(this->trackQuery,musik::core::Query::Prioritize);
+            this->trackQuery.Clear();
         }
     }
-
-    if(trackCount && this->library){
-        this->library->AddQuery(this->trackQuery,musik::core::Query::Prioritize);
-        this->trackQuery.Clear();
-    }
-
 }
 
 bool Standard::QueryForTrack(int position){

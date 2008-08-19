@@ -46,14 +46,7 @@
 #include <core/Query/ListBase.h>
 #include <core/tracklist/IRandomAccess.h>
 
-//////////////////////////////////////////////////////////////
-// Forward declarations
-//////////////////////////////////////////////////////////////
-namespace musik{ namespace core{
-    namespace Library{
-        class Base;
-    }
-} }
+
 
 
 namespace musik{ namespace core{
@@ -74,16 +67,21 @@ namespace musik{ namespace core{
 
             protected:
 
-                std::vector<int> tracksToSort;
+                typedef std::vector<int> IntVector;
+                IntVector tracksToSort;
                 std::list<std::string> sortMetaKeys;
 
 
                 friend class Library::Base;
                 friend class Library::LocalDB;
 
-                virtual bool ParseQuery(Library::Base *library,db::Connection &db);
 
                 Ptr copy() const;
+
+                virtual std::string Name();
+                virtual bool ParseQuery(Library::Base *library,db::Connection &db);
+                virtual bool RecieveQuery(musik::core::xml::ParserNode &queryNode);
+                virtual bool SendQuery(musik::core::xml::WriterNode &queryNode);
 
             private:
 

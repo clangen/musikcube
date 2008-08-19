@@ -72,10 +72,11 @@ class TrackMetadata : public Query::Base {
         TrackMetadataEvent OnTracksEvent;
 
     private:
-        std::set<std::string> requestedFields;
+        typedef std::set<std::string> StringSet;
+        StringSet requestedFields;
         std::vector<std::string> fieldOrder;
-        std::set<std::string> metaFields;
-        std::set<std::string> categoryFields;
+        StringSet metaFields;
+        StringSet categoryFields;
         std::string sSQL;
         std::string sSQLTables;
         std::string sSQLWhere;
@@ -89,9 +90,17 @@ class TrackMetadata : public Query::Base {
     protected:
         friend class Library::Base;
         friend class Library::LocalDB;
-        bool ParseQuery(Library::Base *library,db::Connection &db);
         Ptr copy() const;
         void PreAddQuery(Library::Base *library);
+
+        virtual bool ParseQuery(Library::Base *library,db::Connection &db);
+
+        virtual std::string Name();
+        virtual bool RecieveQuery(musik::core::xml::ParserNode &queryNode);
+        virtual bool SendQuery(musik::core::xml::WriterNode &queryNode);
+        virtual bool SendResults(musik::core::xml::WriterNode &queryNode,Library::Base *library);
+        virtual bool RecieveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library);
+
 };
 
 //////////////////////////////////////////////////////////////////////////////

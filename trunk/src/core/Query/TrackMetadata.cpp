@@ -36,8 +36,10 @@
 
 #include "pch.hpp"
 
+#include <core/Common.h>
 #include <core/Query/TrackMetadata.h>
 #include <core/Library/Base.h>
+#include <boost/algorithm/string.hpp>
 
 using namespace musik::core;
 using namespace musik::core::Query;
@@ -243,7 +245,7 @@ bool TrackMetadata::RunCallbacks(Library::Base *library){
 
     // First swap the results so that Query can continue to parse
     {
-        boost::mutex::scoped_lock oLock(library->oResultMutex);
+        boost::mutex::scoped_lock lock(library->oResultMutex);
         aResultCopy.swap(this->aResultTracks);
 
         if( (this->status & Status::Ended)!=0){
@@ -288,13 +290,181 @@ void TrackMetadata::RequestAllMetakeys(){
 }
 
 Query::Ptr TrackMetadata::copy() const{
-    return Query::Ptr(new Query::TrackMetadata(*this));
+    Query::Ptr queryCopy(new Query::TrackMetadata(*this));
+    queryCopy->PostCopy();
+    return queryCopy;
 }
 
 void TrackMetadata::PreAddQuery(Library::Base *library){
     for(TrackVector::iterator track=this->aRequestTracks.begin();track!=this->aRequestTracks.end();++track){
         (*track)->InitMeta(library);
     }
+}
+
+std::string TrackMetadata::Name(){
+    return "TrackMetadata";
+}
+
+
+bool TrackMetadata::RecieveQuery(musik::core::xml::ParserNode &queryNode){
+
+    while(musik::core::xml::ParserNode metakeysNode = queryNode.ChildNode()){
+        if(metakeysNode.Name()=="metakeys"){
+            if(metakeysNode.Attributes()["all"]=="true"){
+                this->RequestAllMetakeys();
+            }else{
+                metakeysNode.WaitForContent();
+
+                StringSet values;
+
+                try{    // lexical_cast can throw
+                    boost::algorithm::split(values,metakeysNode.Content(),boost::algorithm::is_any_of(","));
+                    this->RequestMetakeys(values);
+                }
+                catch(...){
+                    return false;
+                }
+            }
+        }else if(metakeysNode.Name()=="tracks"){
+            metakeysNode.WaitForContent();
+
+            typedef std::vector<std::string> StringVector;
+            StringVector values;
+            try{    // lexical_cast can throw
+                boost::algorithm::split(values,metakeysNode.Content(),boost::algorithm::is_any_of(","));
+                for(StringVector::iterator value=values.begin();value!=values.end();++value){
+                    this->RequestTrack(TrackPtr(new Track( boost::lexical_cast<DBINT>(*value) )));
+                }
+            }
+            catch(...){
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+
+bool TrackMetadata::SendQuery(musik::core::xml::WriterNode &queryNode){
+    {
+        musik::core::xml::WriterNode metakeysNode(queryNode,"metakeys");
+        if(this->requestAllFields){
+            metakeysNode.Attributes()["all"]  = "true";
+        }else{
+            for(StringSet::iterator metakey=this->requestedFields.begin();metakey!=this->requestedFields.end();++metakey){
+                if(!metakeysNode.Content().empty()){
+                    metakeysNode.Content().append(",");
+                }
+                metakeysNode.Content().append(*metakey);
+            }
+        }
+    }
+
+    {
+        musik::core::xml::WriterNode tracksNode(queryNode,"tracks");
+
+        for(TrackVector::iterator track=this->aRequestTracks.begin();track!=this->aRequestTracks.end();++track){
+            if(!tracksNode.Content().empty()){
+                tracksNode.Content().append(",");
+            }
+            tracksNode.Content().append( boost::lexical_cast<std::string>( (*track)->id ) );
+        }
+    }
+
+
+    return true;
+}
+
+
+bool TrackMetadata::SendResults(musik::core::xml::WriterNode &queryNode,Library::Base *library){
+
+    bool continueSending(true);
+
+    while(continueSending){
+        TrackVector resultCopy;
+        {
+            boost::mutex::scoped_lock lock(library->oResultMutex);
+            resultCopy.swap(this->aResultTracks);
+
+            if( (this->status & Status::Ended)!=0){
+                continueSending    = false;
+            }
+        }
+
+        // Send the results
+        if( !resultCopy.empty() ){
+            try{
+                for(TrackVector::iterator track=resultCopy.begin();track!=resultCopy.end();++track){
+                    musik::core::xml::WriterNode trackNode(queryNode,"t");
+                    trackNode.Attributes()["id"]    = boost::lexical_cast<std::string>( (*track)->id );
+
+                    TrackMeta::TagMapIteratorPair metaDatas( (*track)->GetAllValues() );
+                    for(TrackMeta::TagMapConstIterator metaData=metaDatas.first;metaData!=metaDatas.second;++metaData){
+                        musik::core::xml::WriterNode metaDataNode(trackNode,"md");
+                        metaDataNode.Attributes()["k"]  = metaData->first;
+                        metaDataNode.Content().append( ConvertUTF8(metaData->second) );
+                    }
+
+                }
+            }
+            catch(...){
+                return false;
+            }
+        }
+
+        // Wait for more results
+        if( continueSending && resultCopy.empty()){
+            boost::thread::yield();
+        }
+
+    }
+
+    return true;
+}
+
+
+bool TrackMetadata::RecieveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library){
+
+    while(musik::core::xml::ParserNode trackNode=queryNode.ChildNode("t") ){
+        try{
+            DBINT trackId( boost::lexical_cast<DBINT>(trackNode.Attributes()["id"]) );
+
+            // Find the track in the aRequestTracks
+            TrackVector::iterator track=this->aRequestTracks.begin();
+            bool trackFound(false);
+            while(track!=this->aRequestTracks.end() && !trackFound){
+                if( (*track)->id==trackId ){
+                    // TrackPtr found
+                    trackFound  = true;
+                }else{
+                    ++track;
+                }
+            }
+            if(track!=this->aRequestTracks.end() && trackFound){
+                TrackPtr currentTrack(*track);
+
+                // Remove the track from the aRequestTracks
+                this->aRequestTracks.erase(track);                
+
+                // Get the metadata
+                while(musik::core::xml::ParserNode metadataNode=trackNode.ChildNode("md") ){
+                    metadataNode.WaitForContent();
+                    currentTrack->SetValue( metadataNode.Attributes()["k"].c_str(),ConvertUTF16(metadataNode.Content()).c_str());
+                }
+
+                {
+                    boost::mutex::scoped_lock oLock(library->oResultMutex);
+                    this->aResultTracks.push_back(currentTrack);
+                }
+            }
+        }
+        catch(...){
+            return false;
+        }
+    }    
+
+    return true;
 }
 
 

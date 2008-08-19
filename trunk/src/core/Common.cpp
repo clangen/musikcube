@@ -141,7 +141,7 @@ utfstring musik::core::GetPath(const utfstring &sFile){
 ///\returns
 ///Converted string
 //////////////////////////////////////////
-std::string musik::core::ConvertUTF8(std::wstring &sString){
+std::string musik::core::ConvertUTF8(const std::wstring &sString){
     std::string sUTF8;
     utf8::utf16to8(sString.begin(),sString.end(),std::back_inserter(sUTF8));
     return sUTF8;
@@ -157,7 +157,7 @@ std::string musik::core::ConvertUTF8(std::wstring &sString){
 ///\returns
 ///Converted string
 //////////////////////////////////////////
-std::wstring musik::core::ConvertUTF16(std::string &sString){
+std::wstring musik::core::ConvertUTF16(const std::string &sString){
     std::wstring sUTF16;
     utf8::utf8to16(sString.begin(),sString.end(),std::back_inserter(sUTF16));
     return sUTF16;
