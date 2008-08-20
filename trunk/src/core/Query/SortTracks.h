@@ -69,7 +69,9 @@ namespace musik{ namespace core{
 
                 typedef std::vector<int> IntVector;
                 IntVector tracksToSort;
-                std::list<std::string> sortMetaKeys;
+
+                typedef std::list<std::string> StringList;
+                StringList sortMetaKeys;
 
 
                 friend class Library::Base;
