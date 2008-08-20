@@ -232,7 +232,17 @@ void Query::SortTracks::ClearTracks(){
 bool Query::SortTracks::RecieveQuery(musik::core::xml::ParserNode &queryNode){
 
     while( musik::core::xml::ParserNode node = queryNode.ChildNode() ){
-        if(node.Name()=="tracks"){
+        if(node.Name()=="sortby"){
+            node.WaitForContent();
+            try{
+                // Split list directly into the sortMetaKeys
+                boost::algorithm::split(this->sortMetaKeys,node.Content(),boost::algorithm::is_any_of(","));
+            }
+            catch(...){
+                return false;
+            }
+
+        } else if(node.Name()=="tracks"){
             node.WaitForContent();
 
             typedef std::vector<std::string> StringVector;
@@ -260,6 +270,16 @@ std::string Query::SortTracks::Name(){
 }
 
 bool Query::SortTracks::SendQuery(musik::core::xml::WriterNode &queryNode){
+    {
+        xml::WriterNode sortbyNode(queryNode,"sortby");
+
+        for(StringList::iterator metaKey=this->sortMetaKeys.begin();metaKey!=this->sortMetaKeys.end();++metaKey){
+            if(!sortbyNode.Content().empty()){
+                sortbyNode.Content().append(",");
+            }
+            sortbyNode.Content().append(*metaKey);
+        }
+    }
     {
         xml::WriterNode tracksNode(queryNode,"tracks");
 
