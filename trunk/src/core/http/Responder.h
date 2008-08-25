@@ -37,28 +37,65 @@
 #pragma once
 
 #include <core/config.h>
+#include <core/db/Connection.h>
 
-#include <string>
-#include <vector>
+#include <boost/asio.hpp>
+#include <boost/thread/thread.hpp>
+#include <boost/thread/condition.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/noncopyable.hpp>
 
-namespace musik{ namespace core{
-    namespace HTTP{
-        class RequestParser{
-            public:
-                RequestParser(void);
-                RequestParser(const std::string &sRequest);
-                void parse(const std::string &sRequest);
-                ~RequestParser(void);
 
-                std::string sFullRequest;
-                std::string sPath;
-                std::vector<std::string> aSplitPath;
-            private:
-                void splitPath();
-                void clear();
+//////////////////////////////////////////////////////////////////////////////
+// Forward declare
+namespace musik{ namespace core{ namespace http{
+    class Responder;
+    class Server;
+    class RequestParser;
+    typedef boost::shared_ptr<Responder> ResponderPtr;
+} } }
+//////////////////////////////////////////////////////////////////////////////
 
-        };
-    }
-} }
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+namespace musik{ namespace core{ namespace http{
+
+//////////////////////////////////////////////////////////////////////////////
+
+class Responder : private boost::noncopyable{
+    public:
+        Responder(Server &server,boost::asio::io_service &ioService,utfstring dbFilename);
+        ~Responder();
+
+        bool Startup();
+
+    private:
+        friend class Server;
+
+        void Exit();
+        bool Exited();
+        void ThreadLoop();
+        bool ReadRequest(std::string &request);
+        void CloseSocket();
+        bool GetFileName(utfstring &fileName,int &fileSize,const RequestParser &request);
+
+
+        bool exited;
+        musik::core::db::Connection db;
+
+        boost::asio::ip::tcp::socket socket;
+        boost::condition waitCondition;
+        boost::thread *thread;
+
+        Server &server;
+
+};
+
+//////////////////////////////////////////////////////////////////////////////
+} } }
+//////////////////////////////////////////////////////////////////////////////
 
 

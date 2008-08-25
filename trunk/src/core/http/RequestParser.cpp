@@ -36,73 +36,74 @@
 
 #include "pch.hpp"
 
-#include <core/HTTPRequestParser.h>
+#include <core/http/RequestParser.h>
 
 #include <iostream>
 #include <stdlib.h>
 
-using namespace musik::core;
+using namespace musik::core::http;
 
-HTTP::RequestParser::RequestParser(void){
-}
-
-HTTP::RequestParser::RequestParser(const std::string &sRequest){
-    this->parse(sRequest);
+RequestParser::RequestParser()
+{
 }
 
 
-HTTP::RequestParser::~RequestParser(void){
+RequestParser::~RequestParser()
+{
 }
 
-void HTTP::RequestParser::parse(const std::string &sRequest){
-    this->clear();
+void RequestParser::Parse(const std::string &request){
+    this->Clear();
 
     // Find GET
-    int iGetStartIndex    = sRequest.find("GET ");
-    if(iGetStartIndex!=utfstring::npos){
-        iGetStartIndex+=4;
+    int getStartIndex    = request.find("GET ");
+    if(getStartIndex != std::string::npos){
+        getStartIndex+=4;
         // Find next whitespace
-        int iGetEndIndex    = sRequest.find_first_of(" \r\n",iGetStartIndex);
-        if(iGetEndIndex!=utfstring::npos){
+        int getEndIndex    = request.find_first_of(" \r\n",getStartIndex);
+        if(getEndIndex!=std::string::npos){
             // a request is found
-            this->sFullRequest.assign(sRequest,iGetStartIndex,iGetEndIndex-iGetStartIndex);
+            this->fullRequest.assign(request,getStartIndex,getEndIndex-getStartIndex);
 
             // Find querystring
-            int iQuestionMark    = this->sFullRequest.find("?");
-            if(iQuestionMark!=utfstring::npos){
-                this->sPath.assign(this->sFullRequest.substr(iQuestionMark));
+            int questionMark( this->fullRequest.find("?") );
+
+            if(questionMark!=std::string::npos){
+                this->path.assign(this->fullRequest.substr(questionMark));
             }else{
-                this->sPath.assign(this->sFullRequest);
+                this->path.assign(this->fullRequest);
             }
-            this->splitPath();
+            this->SplitPath();
         }
     }
 }
-inline void HTTP::RequestParser::splitPath(){
-    int iStartSearch(0);
 
-    while(iStartSearch!=std::string::npos){
-        int iFirstSlash    = this->sPath.find("/",iStartSearch);
-        if(iFirstSlash==std::string::npos){
-            if(this->sPath.size()-iStartSearch!=0){
-                std::string sMatchPath;
-                sMatchPath.assign(this->sPath,iStartSearch,this->sPath.size()-iStartSearch);
-                this->aSplitPath.push_back(sMatchPath);
+void RequestParser::SplitPath(){
+    int startSearch(0);
+
+    while(startSearch!=std::string::npos){
+        int firstSlash( this->path.find("/",startSearch) );
+
+        if(firstSlash==std::string::npos){
+            if(this->path.size()-startSearch!=0){
+                std::string matchPath;
+                matchPath.assign(this->path,startSearch,this->path.size()-startSearch);
+                this->splitPath.push_back(matchPath);
             }
-            iStartSearch=std::string::npos;
+            startSearch = std::string::npos;
         }else{
-            if(iFirstSlash-iStartSearch!=0){
-                std::string sMatchPath;
-                sMatchPath.assign(this->sPath,iStartSearch,iFirstSlash-iStartSearch);
-                this->aSplitPath.push_back(sMatchPath);
+            if(firstSlash-startSearch!=0){
+                std::string matchPath;
+                matchPath.assign(this->path,startSearch,firstSlash-startSearch);
+                this->splitPath.push_back(matchPath);
             }
-            iStartSearch    = iFirstSlash+1;
+            startSearch    = firstSlash+1;
         }
     }
 }
 
-void HTTP::RequestParser::clear(){
-    this->sPath.clear();
-    this->sFullRequest.clear();
-    this->aSplitPath.clear();
+void RequestParser::Clear(){
+    this->path.clear();
+    this->fullRequest.clear();
+    this->splitPath.clear();
 }
