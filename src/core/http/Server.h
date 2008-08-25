@@ -37,58 +37,66 @@
 #pragma once
 
 #include <core/config.h>
+#include <core/http/Responder.h>
 
 #include <boost/asio.hpp>
-#include <boost/thread/thread.hpp>
-#include <boost/thread/condition.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/shared_ptr.hpp>
 #include <boost/noncopyable.hpp>
-#include <sqlite/sqlite3.h>
+#include <boost/thread/thread.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/date_time/posix_time/posix_time_types.hpp>
 
-namespace musik{ namespace core{
-    namespace HTTP{
-        class Responder;
-        class Server;
-        class RequestParser;
+#include <set>
+#include <queue>
 
-        typedef boost::shared_ptr<HTTP::Responder> ResponderPtr;
-    }
-} }
+//////////////////////////////////////////////////////////////////////////////
 
-//#include "HTTPSocketListener.h"
-//#include "HTTPRequestParser.h"
-#include "DBConnection.h"
-#include "ThreadHelper.h"
+namespace musik{ namespace core{ namespace http {
 
-namespace musik{ namespace core{
-    namespace HTTP{
-        class Responder : public DBConnection ,public ThreadHelper,private boost::noncopyable{
-            public:
-                Responder(void);
-                Responder(HTTP::Server *oParent,boost::asio::io_service &oIOService);
-                ~Responder(void);
+//////////////////////////////////////////////////////////////////////////////
+class Server : private boost::noncopyable{
+    public:
+        Server(int port,utfstring dbFilename);
+        ~Server();
 
-                void ExitResponder();
+        bool Startup();
 
-                bool Startup();
-                void ThreadLoop();
+        int port;
 
-                boost::asio::ip::tcp::socket oSocket;
-                boost::condition oWaitCondition;
-            private:
-                boost::thread *oThread;
-                boost::try_mutex oWaitMutex;
+    private:
+        void ThreadLoop();
 
-                bool readRequest(std::string &sRequest);
-                void closeSocket();
+        bool exited;
+        void Exit();
+        bool Exited();
 
-                HTTP::Server *oParent;
+        typedef std::set<ResponderPtr> ResponderSet;
+        typedef std::queue<ResponderPtr> ResponderQueue;
+        ResponderSet busyResponders;
+        ResponderQueue freeResponders;
+        ResponderPtr waitingResponder;
 
-                bool getFileName(utfstring &sFileName,int &iFileSize,const HTTP::RequestParser &oRequest,sqlite3 *oDB);
-        };
+        ResponderPtr GetResponder();
 
-    }
-} }
+        void initAccept();
+        void handleAccept();
+        void initTimeout();
+        void handleTimeout();
 
+        boost::mutex mutex;
+
+        boost::asio::io_service ioService;
+        boost::asio::ip::tcp::acceptor acceptor;
+        boost::asio::deadline_timer timer;
+
+        boost::thread *thread;
+        utfstring dbFilename;
+    private:
+        friend class Responder;
+        void FreeResponder(Responder *responder);
+
+};
+
+//////////////////////////////////////////////////////////////////////////////
+} } } // musik::core::http
+//////////////////////////////////////////////////////////////////////////////
 

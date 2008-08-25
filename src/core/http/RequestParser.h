@@ -35,60 +35,35 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #pragma once
-#include "boost/asio.hpp"
-#include "StdString.h"
+
+#include <core/config.h>
+
+#include <string>
 #include <vector>
-#include "boost/thread/thread.hpp"
 
-namespace doe{
-    namespace HTTP{
-        class SocketListener;
-    }
-}
+//////////////////////////////////////////////////////////////////////////////
 
-#define HTTP_MIN_CLIENTS    5
+namespace musik{ namespace core{ namespace http{
 
-#include "typedefs.h"
-#include "HTTPResponder.h"
-#include "ThreadHelper.h"
+//////////////////////////////////////////////////////////////////////////////
+
+class RequestParser{
+    public:
+        RequestParser();
+        void Parse(const std::string &request);
+        ~RequestParser();
+
+        std::string fullRequest;
+        std::string path;
+        std::vector<std::string> splitPath;
+    private:
+        void SplitPath();
+        void Clear();
+
+};
+
+//////////////////////////////////////////////////////////////////////////////
+} } }   // musik::core:http
+//////////////////////////////////////////////////////////////////////////////
 
 
-namespace doe{
-    namespace HTTP{
-        class SocketListener : public doe::ThreadHelper{
-            public:
-                SocketListener(void);
-                ~SocketListener(void);
-                bool initialize();
-                void runThread();
-                void operator ()();
-                CStdString sDB;
-
-//                void exit(bool bNewExit);
-
-            private:
-//                sockaddr_in oListenSocket;
-                int iPort;
-//                SOCKET iSocket;
-//                int iMaxSocket;
-//                fd_set aNewSockets;
-
-                boost::asio::io_service oIOService;
-                boost::asio::ip::tcp::acceptor *oListenAcceptor;
-
-                std::vector<doe::HTTP::Responder*> aResponders;
-                boost::thread_group aThreads;
-
-                SocketListener( const doe::HTTP::SocketListener& ){};
-                const SocketListener& operator=( const doe::HTTP::SocketListener& ){};
-
-            protected:
-//                boost::mutex oExitMutex;
-//                boost::mutex oNotificationMutex;
-//                boost::condition oNotify;
-//                bool exit();
-//                bool bExit;
-
-        };
-    }
-}

@@ -614,6 +614,52 @@
 					>
 				</File>
 			</Filter>
+			<Filter
+				Name="http"
+				>
+				<File
+					RelativePath=".\http\RequestParser.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\http\RequestParser.h"
+					>
+				</File>
+				<File
+					RelativePath=".\http\Responder.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\http\Responder.h"
+					>
+				</File>
+				<File
+					RelativePath=".\http\Server.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath=".\http\Server.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 	</Files>
 	<Globals>
