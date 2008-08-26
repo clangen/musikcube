@@ -83,6 +83,9 @@ namespace musik{ namespace core{
                 virtual bool CopyTracks(musik::core::tracklist::Ptr tracklist);
                 virtual bool AppendTracks(musik::core::tracklist::Ptr tracklist);
 
+                virtual void AppendTrack(musik::core::TrackPtr track);
+                virtual void Clear();
+
                 virtual void AddRequestedMetakey(const char* metakey);
                 virtual void RemoveRequestedMetakey(const char* metakey);
 

@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright © 2007, mC2 Team
 //
 // Sources and Binaries of: mC2, win32cpp
 //
@@ -39,42 +39,37 @@
 #pragma once
 
 //////////////////////////////////////////////////////////////////////////////
+// Forward declare
+namespace musik { namespace cube { namespace dialog{
+    class AddLibraryView;
+} } }
+namespace win32cpp{
+    class Window;
+}
+//////////////////////////////////////////////////////////////////////////////
 
-#include <cube/SourcesItem.hpp>
-#include <win32cpp/Exception.hpp>
-#include <vector>
+//#include <cube/dialog/AddLibraryController.hpp>
+#include <win32cpp/Types.hpp>
 #include <boost/shared_ptr.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
-using namespace win32cpp;
-
-namespace musik { namespace cube {
+namespace musik { namespace cube { namespace dialog{
 
 //////////////////////////////////////////////////////////////////////////////
 
-typedef boost::shared_ptr<SourcesItem> SourcesItemRef;
-class InvalidSourcesItemException: public Exception { };
+class AddLibraryController : public win32cpp::EventHandler{
 
-class SourcesCategory
-{
-public:     sigslot::signal1<int> CountChanged;
+    public:     
+        AddLibraryController(AddLibraryView& addLibraryView);
 
-public:     /*ctor*/        SourcesCategory(const uistring& caption);
+    private:  
+        void        OnViewCreated(win32cpp::Window* window);
+        void        OnViewResized(win32cpp::Window* window, win32cpp::Size size);
 
-public:     uistring        Caption() const;
-public:     int             Count() const;
-public:     SourcesItemRef  ItemAt(int index) const;
-public:     SourcesItemRef  Add(SourcesItemRef item);
-public:     SourcesItemRef  Remove(SourcesItemRef item);
-
-private:    typedef std::vector<SourcesItemRef> SourcesItemList;
-private:    uistring caption;
-private:    SourcesItemList items;
+        AddLibraryView& addLibraryView;
 };
 
-typedef boost::shared_ptr<SourcesCategory> SourcesCategoryRef;
-
 //////////////////////////////////////////////////////////////////////////////
 
-} } // namespace musik::cube
+} } }    // musik::cube::dialog

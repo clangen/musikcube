@@ -193,11 +193,10 @@ public: // methods
 
     MenuItemCollection& Items() { return (*this->items); }
     HMENU   Handle() { return this->menuHandle; }
+    static void     ItemActivated(UINT menuID);   // used by Window
 
 protected: // methods
     void            Initialize(HMENU menu);
-
-    static void     ItemActivated(UINT menuID);   // used by Window
     void            OnItemAdded(MenuItemRef newMenuItem, unsigned index);
     void            OnItemRemoved(MenuItemRef oldMenuItem);
     void            OnItemChanged(MenuItemRef menuItem);

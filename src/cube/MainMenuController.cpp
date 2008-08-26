@@ -38,6 +38,8 @@
 
 #include "pch.hpp"
 #include <cube/MainMenuController.hpp>
+//#include <cube/dialog/AddLibraryController.hpp>
+//#include <cube/dialog/AddLibraryView.hpp>
 #include <win32cpp/Application.hpp>
 #include <win32cpp/TopLevelWindow.hpp>
 #include <boost/format.hpp>
@@ -50,9 +52,14 @@ using namespace musik::cube;
 
 /*ctor*/    MainMenuController::MainMenuController(TopLevelWindow& mainWindow)
 : mainWindow(mainWindow)
+//,addLibraryController(NULL)
 {
     this->mainWindow.Created.connect(
         this, &MainMenuController::OnMainWindowCreated);
+}
+
+MainMenuController::~MainMenuController(){
+//    delete this->addLibraryController;
 }
 
 void        MainMenuController::OnMainWindowCreated(Window* window)
@@ -64,11 +71,18 @@ void        MainMenuController::ConnectMenuHandlers()
 {
     this->fileExit->Activated.connect(this, &MainMenuController::OnFileExit);
     this->helpAbout->Activated.connect(this, &MainMenuController::OnHelpAbout);
+    this->fileAddLibrary->Activated.connect(this,&MainMenuController::OnAddLibrary);
 }
 
 void        MainMenuController::OnFileExit(MenuItemRef menuItem)
 {
     Application::Instance().Terminate();
+}
+
+void        MainMenuController::OnAddLibrary(MenuItemRef menuItem)
+{
+/*    dialog::AddLibraryView* addLibraryView  = new dialog::AddLibraryView();
+    this->addLibraryController  = new dialog::AddLibraryController(*addLibraryView);*/
 }
 
 void        MainMenuController::OnHelpAbout(MenuItemRef menuItem)
@@ -127,7 +141,9 @@ MenuRef     MainMenuController::CreateMenu()
         MenuItemCollection& fileItems = this->fileMenu->Items();
         //
         this->file->SetSubMenu(this->fileMenu);
-        this->fileExit = fileItems.Append(MenuItem::Create(_T("E&xit")));
+
+        this->fileAddLibrary    = fileItems.Append(MenuItem::Create(_T("&Add Library")));
+        this->fileExit          = fileItems.Append(MenuItem::Create(_T("E&xit")));
 
         // help menu
         this->helpMenu  = Menu::Create();

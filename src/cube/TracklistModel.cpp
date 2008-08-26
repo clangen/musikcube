@@ -51,6 +51,7 @@
 #include <core/PlaybackQueue.h>
 #include <core/MetaKey.h>
 #include <core/tracklist/IRandomAccess.h>
+#include <core/tracklist/Standard.h>
 
 
 using namespace musik::cube;
@@ -128,6 +129,34 @@ void TracklistModel::OnTracks(bool cleared){
 void TracklistModel::OnRowActivated(int row){
     this->tracklist->SetCurrentPosition(row);
     musik::core::PlaybackQueue::Instance().Play(this->tracklist);
+}
+
+void TracklistModel::OnPlayNow(win32cpp::ListView::RowIndexList& selectedRows){
+    // Create a temporary tracklist to put into the "now playing" tracklist
+    musik::core::tracklist::Ptr selectedTracklist(new musik::core::tracklist::Standard());
+    selectedTracklist->SetLibrary(this->tracklist->Library());
+
+    for(win32cpp::ListView::RowIndexList::iterator row=selectedRows.begin();row!=selectedRows.end();++row){
+        musik::core::TrackPtr track( (*this->tracklist)[*row] );
+        if(track){
+            selectedTracklist->AppendTrack(track);
+        }
+    }
+    musik::core::PlaybackQueue::Instance().Play(selectedTracklist);
+}
+
+void TracklistModel::OnEnqueue(win32cpp::ListView::RowIndexList& selectedRows){
+    // Create a temporary tracklist to put into the "now playing" tracklist
+    musik::core::tracklist::Ptr selectedTracklist(new musik::core::tracklist::Standard());
+    selectedTracklist->SetLibrary(this->tracklist->Library());
+
+    for(win32cpp::ListView::RowIndexList::iterator row=selectedRows.begin();row!=selectedRows.end();++row){
+        musik::core::TrackPtr track( (*this->tracklist)[*row] );
+        if(track){
+            selectedTracklist->AppendTrack(track);
+        }
+    }
+    musik::core::PlaybackQueue::Instance().Append(selectedTracklist);
 }
 
 void TracklistModel::ConnectToQuery(musik::core::Query::ListBase *connectedQuery){

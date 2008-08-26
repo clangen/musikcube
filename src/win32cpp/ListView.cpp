@@ -174,14 +174,19 @@ LRESULT     ListView::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
                     ::GetCursorPos(&mousePos);
                     if (this->contextMenu)
                     {
-                        ::TrackPopupMenu(
+                        UINT result = (UINT) ::TrackPopupMenu(
                             this->contextMenu->Handle(),
-                            NULL,
+                            TPM_RETURNCMD,
                             mousePos.x,
                             mousePos.y,
                             NULL,
                             this->Handle(),
                             NULL);
+
+                        if (result != NULL)
+                        {
+                            Menu::ItemActivated(LOWORD(result));
+                        }
                     }
                 }
                 break;

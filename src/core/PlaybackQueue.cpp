@@ -236,3 +236,9 @@ void PlaybackQueue::Play(tracklist::Ptr tracklist){
     this->nowPlaying->CopyTracks(tracklist);
     this->Play();
 }
+
+void PlaybackQueue::Append(tracklist::Ptr tracklist){
+	// Set the "now playing" to libraries own playlist
+	this->nowPlaying	= tracklist->Library()->NowPlaying();
+    this->nowPlaying->AppendTracks(tracklist);
+}

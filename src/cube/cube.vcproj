@@ -448,6 +448,30 @@
 				</Filter>
 			</Filter>
 		</Filter>
+		<Filter
+			Name="Dialogs"
+			>
+			<Filter
+				Name="AddLibrary"
+				>
+				<File
+					RelativePath=".\dialog\AddLibraryController.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\dialog\AddLibraryController.hpp"
+					>
+				</File>
+				<File
+					RelativePath=".\dialog\AddLibraryView.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\dialog\AddLibraryView.hpp"
+					>
+				</File>
+			</Filter>
+		</Filter>
 		<File
 			RelativePath=".\main.cpp"
 			>
