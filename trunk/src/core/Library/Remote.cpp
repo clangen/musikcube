@@ -188,6 +188,9 @@ void Library::Remote::ReadThread(){
                             boost::mutex::scoped_lock lock(this->libraryMutex);
                             currentQuery->status |= Query::Base::Status::Canceled | Query::Base::Status::Ended;
                         }
+
+                        this->waitCondition.notify_all();
+
                     }
                 }
             }
@@ -292,4 +295,14 @@ void Library::Remote::Exit(){
         this->exit    = true;
     }
     this->waitCondition.notify_all();
+}
+
+utfstring Library::Remote::BasePath(){
+    utfstring path(UTF("http://"));
+    boost::asio::ip::tcp::endpoint endPoint = this->socket.remote_endpoint();
+    boost::asio::ip::address address        = endPoint.address();
+
+    path    += musik::core::ConvertUTF16(address.to_string());
+    path    += UTF(":") + musik::core::ConvertUTF16(this->port) + UTF("/");
+    return path;
 }

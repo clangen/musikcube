@@ -47,9 +47,10 @@
 using namespace musik::core;
 
 
-Server::Server(unsigned int port)
+Server::Server(unsigned int port,unsigned int httpPort)
  :exitThread(false)
  ,acceptor(ioService,boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port))
+ ,httpServer(httpPort)
 {
     this->acceptor.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
 }
@@ -77,6 +78,7 @@ bool Server::Exited(){
 bool Server::Startup(){
     // Start the server thread
     this->threads.create_thread(boost::bind(&Server::ThreadLoop,this));
+
     return true;
 }
 
@@ -87,6 +89,8 @@ void Server::ThreadLoop(){
     // Get directory and database paths
     utfstring directory( musik::core::GetDataDirectory()+UTF("server/") );
     utfstring database(directory+UTF("musik.db"));
+
+    this->httpServer.Startup(database);
 
     {
         // Create database

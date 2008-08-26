@@ -396,6 +396,9 @@ bool TrackMetadata::SendResults(musik::core::xml::WriterNode &queryNode,Library:
         if( !resultCopy.empty() ){
             try{
                 for(TrackVector::iterator track=resultCopy.begin();track!=resultCopy.end();++track){
+                    // Erase the path.. is translated in the RecieveResults
+                    (*track)->ClearValue("path");
+
                     musik::core::xml::WriterNode trackNode(queryNode,"t");
                     trackNode.Attributes()["id"]    = boost::lexical_cast<std::string>( (*track)->id );
 
@@ -426,6 +429,9 @@ bool TrackMetadata::SendResults(musik::core::xml::WriterNode &queryNode,Library:
 
 bool TrackMetadata::RecieveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library){
 
+    bool requestPath( this->requestedFields.find("path")!=this->requestedFields.end() );
+    utfstring pathPrefix(library->BasePath()+UTF("track/?track_id="));
+
     while(musik::core::xml::ParserNode trackNode=queryNode.ChildNode("t") ){
         try{
             DBINT trackId( boost::lexical_cast<DBINT>(trackNode.Attributes()["id"]) );
@@ -453,6 +459,13 @@ bool TrackMetadata::RecieveResults(musik::core::xml::ParserNode &queryNode,Libra
                     currentTrack->SetValue( metadataNode.Attributes()["k"].c_str(),ConvertUTF16(metadataNode.Content()).c_str());
                 }
 
+                // Special case for the "path" when connecting to a webserver
+                if(requestPath){
+                    utfstring path(pathPrefix);
+                    path    += boost::lexical_cast<utfstring>(currentTrack->id);
+                    currentTrack->SetValue("path",path.c_str());
+                }
+
                 {
                     boost::mutex::scoped_lock oLock(library->oResultMutex);
                     this->aResultTracks.push_back(currentTrack);
@@ -460,7 +473,7 @@ bool TrackMetadata::RecieveResults(musik::core::xml::ParserNode &queryNode,Libra
             }
         }
         catch(...){
-            return false;
+//            return false;
         }
     }    
 

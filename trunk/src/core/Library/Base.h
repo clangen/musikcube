@@ -130,6 +130,8 @@ class Base : boost::noncopyable{
 
         virtual musik::core::Indexer *Indexer();
 
+        virtual utfstring BasePath();
+
         bool Exited();
 
 		const utfstring& Identifier();

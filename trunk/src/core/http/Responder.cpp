@@ -56,6 +56,7 @@ Responder::Responder(Server &server,boost::asio::io_service &ioService,utfstring
  :socket(ioService)
  ,thread(NULL)
  ,server(server)
+ ,exited(false)
 {
     this->db.Open(dbFilename,0,256);
 }
@@ -133,47 +134,6 @@ void Responder::ThreadLoop(){
                     boost::asio::write(this->socket,boost::asio::buffer(send.c_str(),send.size()));
                 }
                     
-                /*
-                utfstring fileName;
-                int fileSize(0);
-
-                if(this->GetFileName(fileName,fileSize,requester)){
-                    char buffer[1024];
-                    int buffersize(0);
-
-
-                    FILE *file    = _wfopen(fileName.c_str(),UTF("rb"));
-
-                    // Send header
-                    std::string header( boost::str( boost::format("HTTP/1.1 200 OK\r\nContent-Type: audio/mpeg\r\nContent-Length: %1%\r\n\r\n")%fileSize ));
-
-                    //send(this->iSocket,sHeader.c_str(),sHeader.size(),0);
-                    try{
-                        boost::asio::write(this->socket,boost::asio::buffer(header.c_str(),header.size()));
-                    }
-                    catch(...){
-                    }
-
-                    while(!feof(file) && file && !this->Exited()){
-                        buffersize=0;
-                        while(buffersize<1024 && !feof(file)){
-                            buffersize += fread(buffer,sizeof(char),1024-buffersize,file);
-                        }
-                            // send buffer
-    //                    send(this->iSocket,buffer,iBuffersize,0);
-                        boost::asio::write(this->socket,boost::asio::buffer(buffer,buffersize));
-
-                    }
-                    fclose(file);
-                }else{
-                    std::string send("HTTP/1.1 404 OK\r\nContent-Type: text/html\r\n\r\n<html><body bgcolor=\"#ff0000\">testar: ");
-                    send    += musik::core::ConvertUTF8(fileName);
-                    send    += "<br><pre>";
-                    send    += request;
-                    send    += "</pre></body></html>";
-
-                    boost::asio::write(this->socket,boost::asio::buffer(send.c_str(),send.size()));
-                }*/
             }
         }
 

@@ -56,10 +56,10 @@ namespace musik{ namespace core{ namespace http {
 //////////////////////////////////////////////////////////////////////////////
 class Server : private boost::noncopyable{
     public:
-        Server(int port,utfstring dbFilename);
+        Server(int port);
         ~Server();
 
-        bool Startup();
+        bool Startup(utfstring dbFilename);
 
         int port;
 
@@ -69,12 +69,6 @@ class Server : private boost::noncopyable{
         bool exited;
         void Exit();
         bool Exited();
-
-        typedef std::set<ResponderPtr> ResponderSet;
-        typedef std::queue<ResponderPtr> ResponderQueue;
-        ResponderSet busyResponders;
-        ResponderQueue freeResponders;
-        ResponderPtr waitingResponder;
 
         ResponderPtr GetResponder();
 
@@ -99,6 +93,12 @@ class Server : private boost::noncopyable{
         typedef std::map<std::string,boost::shared_ptr<IRequestPlugin>> PluginPathMap;
 
         PluginPathMap requestPlugins;
+
+        typedef std::set<ResponderPtr> ResponderSet;
+        typedef std::queue<ResponderPtr> ResponderQueue;
+        ResponderSet busyResponders;
+        ResponderQueue freeResponders;
+        ResponderPtr waitingResponder;
 };
 
 //////////////////////////////////////////////////////////////////////////////

@@ -67,6 +67,7 @@ class Remote : public Library::Base{
 
         bool Startup();
         utfstring GetInfo();
+        virtual utfstring BasePath();
 
     protected:
         void CancelCurrentQuery( );

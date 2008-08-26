@@ -113,6 +113,7 @@ class Track : public ITrack {
         const utfchar* GetValue(const char* metakey) const;
         void SetValue(const char* metakey,const utfchar* value);
         void SetThumbnail(const char *data,unsigned int size);
+        void ClearValue(const char* metakey);
 
 
         void InitMeta(Library::Base *library);

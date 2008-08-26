@@ -135,6 +135,11 @@ void TrackMeta::SetValue(const TrackMeta::Key &key,const TrackMeta::Value &value
     }
 }
 
+void TrackMeta::ClearValue(const TrackMeta::Key &key){
+    this->tags.erase(key);
+}
+
+
 const TrackMeta::Value& TrackMeta::_GetValue(const TrackMeta::Key &key) const{
 
     TrackMeta::TagMap::const_iterator oKeyValue = this->tags.find(key);

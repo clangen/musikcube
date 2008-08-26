@@ -43,7 +43,7 @@ using namespace musik::core;
 
 int main(int argc, utfchar* argv[]){
 
-    Server server(10543);
+    Server server(10543,10544);
 
     server.Startup();
 
