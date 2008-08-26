@@ -34,70 +34,55 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
-#include <core/config.h>
-#include <core/http/IResponder.h>
-#include <core/db/Connection.h>
-
-#include <boost/asio.hpp>
-#include <boost/thread/thread.hpp>
-#include <boost/thread/condition.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/noncopyable.hpp>
+#include "pch.hpp"
+#include <core/http/TrackSender.h>
+#include <core/Common.h>
 
 
-//////////////////////////////////////////////////////////////////////////////
-// Forward declare
-namespace musik{ namespace core{ namespace http{
-    class Responder;
-    class Server;
-    class RequestParser;
-    typedef boost::shared_ptr<Responder> ResponderPtr;
-} } }
-//////////////////////////////////////////////////////////////////////////////
+using namespace musik::core::http;
+
+TrackSender::TrackSender()
+ :watchPath("track") 
+{
+}
 
 
+const char* TrackSender::WatchPath(){
+    return this->watchPath.c_str();
+}
 
-//////////////////////////////////////////////////////////////////////////////
+void TrackSender::Execute(musik::core::http::IResponder* responder,const musik::core::http::IRequestParser* request,const musik::core::ITrack* track){
+    #define BUFFER_SIZE 4096
+    char buffer[BUFFER_SIZE];
+    int buffersize(0);
 
-namespace musik{ namespace core{ namespace http{
+    // TODO: Should rewrite this in a multiplatform manner
+    if(track && responder){
+        FILE *file    = _wfopen(track->GetValue("path"),UTF("rb"));
 
-//////////////////////////////////////////////////////////////////////////////
+        if(file){
+            // Send header
+            std::string header( "HTTP/1.1 200 OK\r\nContent-Type: audio/mpeg\r\nContent-Length: " );
+            header.append( musik::core::ConvertUTF8(track->GetValue("filesize")) );
+            header.append("\r\n\r\n");
 
-class Responder : public IResponder{
-    public:
-        Responder(Server &server,boost::asio::io_service &ioService,utfstring dbFilename);
-        ~Responder();
+            responder->SendContent(header.c_str(),header.size());
 
-        bool Startup();
+            while(!feof(file) && file && !responder->Exited()){
+                buffersize=0;
+                while(buffersize<BUFFER_SIZE && !feof(file)){
+                    buffersize += fread(buffer,sizeof(char),BUFFER_SIZE-buffersize,file);
+                }
 
-        virtual void SendContent(const char* buffer,const int bufferSize);
-        virtual bool Exited();
-    private:
-        friend class Server;
+                // send buffer
+                responder->SendContent(buffer,buffersize);
 
-        void Exit();
-        void ThreadLoop();
-        bool ReadRequest(std::string &request);
-        void CloseSocket();
-//        bool GetFileName(utfstring &fileName,int &fileSize,const RequestParser &request);
+            }
+            fclose(file);
+        }
+    }
+}
 
-
-        bool exited;
-        musik::core::db::Connection db;
-
-        boost::asio::ip::tcp::socket socket;
-        boost::condition waitCondition;
-        boost::thread *thread;
-
-        Server &server;
-
-};
-
-//////////////////////////////////////////////////////////////////////////////
-} } }
-//////////////////////////////////////////////////////////////////////////////
-
-
+void TrackSender::Destroy(){
+    delete this;
+}

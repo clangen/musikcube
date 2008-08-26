@@ -37,71 +37,22 @@
 #pragma once
 
 #include <core/config.h>
-#include <core/http/Responder.h>
-#include <core/http/IRequestPlugin.h>
-
-#include <boost/asio.hpp>
-#include <boost/noncopyable.hpp>
-#include <boost/thread/thread.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
-
-#include <set>
-#include <queue>
 
 //////////////////////////////////////////////////////////////////////////////
 
-namespace musik{ namespace core{ namespace http {
+namespace musik{ namespace core{ namespace http{
 
 //////////////////////////////////////////////////////////////////////////////
-class Server : private boost::noncopyable{
+
+class IRequestParser{
     public:
-        Server(int port,utfstring dbFilename);
-        ~Server();
-
-        bool Startup();
-
-        int port;
-
-    private:
-        void ThreadLoop();
-
-        bool exited;
-        void Exit();
-        bool Exited();
-
-        typedef std::set<ResponderPtr> ResponderSet;
-        typedef std::queue<ResponderPtr> ResponderQueue;
-        ResponderSet busyResponders;
-        ResponderQueue freeResponders;
-        ResponderPtr waitingResponder;
-
-        ResponderPtr GetResponder();
-
-        void initAccept();
-        void handleAccept();
-        void initTimeout();
-        void handleTimeout();
-
-        boost::mutex mutex;
-
-        boost::asio::io_service ioService;
-        boost::asio::ip::tcp::acceptor acceptor;
-        boost::asio::deadline_timer timer;
-
-        boost::thread *thread;
-        utfstring dbFilename;
-    private:
-        friend class Responder;
-        void FreeResponder(Responder *responder);
-
-//        
-        typedef std::map<std::string,boost::shared_ptr<IRequestPlugin>> PluginPathMap;
-
-        PluginPathMap requestPlugins;
+        virtual const char* Attribute(const char* key)=0;
+        virtual const char* Path()=0;
+        virtual const char* SubPath(int position)=0;
 };
 
 //////////////////////////////////////////////////////////////////////////////
-} } } // musik::core::http
+} } }   // musik::core:http
 //////////////////////////////////////////////////////////////////////////////
+
 

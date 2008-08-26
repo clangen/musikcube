@@ -38,10 +38,15 @@
 
 #include <core/http/Server.h>
 #include <core/http/Responder.h>
+#include <core/http/Responder.h>
+#include <core/PluginFactory.h>
+#include <core/http/TrackSender.h>
 
 #include <boost/bind.hpp>
 
+
 using namespace musik::core::http;
+
 
 Server::Server(int port,utfstring dbFilename)
  :acceptor(ioService,boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port))
@@ -51,6 +56,24 @@ Server::Server(int port,utfstring dbFilename)
  ,port(port)
  ,dbFilename(dbFilename)
 {
+    // Check for plugins
+    typedef IRequestPlugin PluginType;
+    typedef boost::shared_ptr<PluginType> PluginPtr;
+    typedef PluginFactory::DestroyDeleter<PluginType> Deleter;
+    typedef std::vector<PluginPtr> PluginVector;
+    //
+    PluginVector plugins = PluginFactory::Instance().QueryInterface<PluginType, Deleter>("GetHTTPRequestPlugin");
+
+    for(PluginVector::iterator plugin=plugins.begin();plugin!=plugins.end();++plugin){
+        if((*plugin)->WatchPath()){
+            this->requestPlugins[(*plugin)->WatchPath()]   = *plugin;
+        }else{
+            this->requestPlugins[""]   = *plugin;
+        }
+    }
+
+    // Lets always add the TrackSender
+    this->requestPlugins["track"]   = PluginPtr(new TrackSender());
 
 }
 

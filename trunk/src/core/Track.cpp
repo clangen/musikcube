@@ -544,3 +544,21 @@ void Track::SetThumbnail(const char *data,unsigned int size){
 TrackPtr Track::Copy(){
     return TrackPtr(new Track(this->id));
 }
+
+bool Track::GetFileData(DBINT id,db::Connection &db){
+    this->InitMeta(NULL);
+
+    this->id    = id;
+
+    db::CachedStatement stmt("SELECT t.filename,t.filesize,t.filetime,p.path||f.relative_path||'/'||t.filename FROM tracks t,folders f,paths p WHERE t.folder_id=f.id AND f.path_id=p.id AND t.id=?",db);
+    stmt.BindInt(0,id);
+
+    if(stmt.Step()==db::Row){
+        this->SetValue("filename"   ,stmt.ColumnTextUTF(0));
+        this->SetValue("filesize"   ,stmt.ColumnTextUTF(1));
+        this->SetValue("filetime"   ,stmt.ColumnTextUTF(2));
+        this->SetValue("path"       ,stmt.ColumnTextUTF(3));
+        return true;
+    }
+    return false;
+}
