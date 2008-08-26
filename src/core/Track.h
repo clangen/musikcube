@@ -56,6 +56,9 @@ namespace musik{ namespace core{
     namespace db{
         class Connection;
     }
+    namespace http{
+        class Responder;
+    }
 } }
 //////////////////////////////////////////////////////////////////////////////
 
@@ -144,6 +147,10 @@ class Track : public ITrack {
         bool Save(db::Connection &dbConnection,utfstring libraryDirectory,DBINT folderId);
         DBINT _GetGenre(db::Connection &dbConnection,utfstring genre,bool addRelation,bool aggregated=false);
         DBINT _GetArtist(db::Connection &dbConnection,utfstring artist,bool addRelation,bool aggregated=false);
+
+    private:
+        friend class http::Responder;
+        bool GetFileData(DBINT id,db::Connection &db);
 };
 
 

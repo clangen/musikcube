@@ -37,9 +37,7 @@
 #include "pch.hpp"
 
 #include <core/http/RequestParser.h>
-
-#include <iostream>
-#include <stdlib.h>
+#include <boost/algorithm/string.hpp>
 
 using namespace musik::core::http;
 
@@ -69,7 +67,8 @@ void RequestParser::Parse(const std::string &request){
             int questionMark( this->fullRequest.find("?") );
 
             if(questionMark!=std::string::npos){
-                this->path.assign(this->fullRequest.substr(questionMark));
+                this->path.assign(this->fullRequest.substr(0,questionMark));
+                this->ParseAttributes( this->fullRequest.substr(questionMark+1) );
             }else{
                 this->path.assign(this->fullRequest);
             }
@@ -79,31 +78,58 @@ void RequestParser::Parse(const std::string &request){
 }
 
 void RequestParser::SplitPath(){
-    int startSearch(0);
+    if(!this->path.empty()){
+        boost::algorithm::split(this->splitPath,this->path,boost::algorithm::is_any_of("/"));
+    }
+}
 
-    while(startSearch!=std::string::npos){
-        int firstSlash( this->path.find("/",startSearch) );
 
-        if(firstSlash==std::string::npos){
-            if(this->path.size()-startSearch!=0){
-                std::string matchPath;
-                matchPath.assign(this->path,startSearch,this->path.size()-startSearch);
-                this->splitPath.push_back(matchPath);
-            }
-            startSearch = std::string::npos;
-        }else{
-            if(firstSlash-startSearch!=0){
-                std::string matchPath;
-                matchPath.assign(this->path,startSearch,firstSlash-startSearch);
-                this->splitPath.push_back(matchPath);
-            }
-            startSearch    = firstSlash+1;
+void RequestParser::ParseAttributes(std::string attributeString){
+    StringVector attributes;
+    boost::algorithm::split(attributes,attributeString,boost::algorithm::is_any_of("&"));
+
+    for(StringVector::iterator attribute=attributes.begin();attribute!=attributes.end();++attribute){
+        std::string::size_type eqSign( attribute->find("=") );
+        if(eqSign!=std::string::npos){
+            this->attributes[ attribute->substr(0,eqSign) ] = attribute->substr(eqSign+1);
         }
     }
 }
+
 
 void RequestParser::Clear(){
     this->path.clear();
     this->fullRequest.clear();
     this->splitPath.clear();
+}
+
+const RequestParser::StringVector& RequestParser::SplitPaths() const{
+    return this->splitPath;
+}
+
+const char* RequestParser::Path(){
+    return this->path.c_str();
+}
+
+const RequestParser::AttributeMap& RequestParser::Attributes() const{
+    return this->attributes;
+}
+
+const char* RequestParser::Attribute(const char* key){
+    if(key){
+        AttributeMap::iterator attrib  = this->attributes.find(key);
+        if(attrib!=this->attributes.end()){
+            return attrib->second.c_str();
+        }
+    }
+    return NULL;
+}
+
+const char* RequestParser::SubPath(int position){
+
+    if(position<this->splitPath.size()){
+        return this->splitPath[position].c_str();
+    }
+
+    return NULL;
 }

@@ -47,6 +47,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
+#include <boost/lexical_cast.hpp>
 
 using namespace musik::core::http;
 
@@ -93,8 +94,46 @@ void Responder::ThreadLoop(){
 
             // First, read request
             if(this->ReadRequest(request)){
-                // Second, Find out what is requested.
+                // Find out what is requested.
                 requester.Parse(request);
+
+                // Check if there is a related Track
+                musik::core::TrackPtr track;
+                const char* trackId = requester.Attribute("track_id");
+                if(trackId){
+                    try{
+                        track.reset(new musik::core::Track());
+                        if(!track->GetFileData( boost::lexical_cast<DBINT>(trackId),this->db)){
+                            track.reset();
+                        }
+                    }
+                    catch(...){
+                        // lexical cast fail
+                        track.reset();
+                    }
+                }
+
+                // Lets see what plugin can handle the request
+                std::string rootPath;
+                if(requester.SubPath(0)){
+                    rootPath    = requester.SubPath(0);
+                }
+                Server::PluginPathMap::iterator plugin    = this->server.requestPlugins.find(rootPath);
+                if(plugin!=this->server.requestPlugins.end()){
+
+                    // Execute the plugin
+                    plugin->second->Execute(this,&requester,track.get());
+
+                }else{
+                    // Send 404 error
+                    std::string send("HTTP/1.1 404 OK\r\nContent-Type: text/html\r\n\r\n<html><body bgcolor=\"#ff0000\">ERROR: ");
+                    send    += "<pre>";
+                    send    += request;
+                    send    += "</pre></body></html>";
+                    boost::asio::write(this->socket,boost::asio::buffer(send.c_str(),send.size()));
+                }
+                    
+                /*
                 utfstring fileName;
                 int fileSize(0);
 
@@ -134,7 +173,7 @@ void Responder::ThreadLoop(){
                     send    += "</pre></body></html>";
 
                     boost::asio::write(this->socket,boost::asio::buffer(send.c_str(),send.size()));
-                }
+                }*/
             }
         }
 
@@ -147,10 +186,13 @@ void Responder::ThreadLoop(){
     }
 }
 
-
+void Responder::SendContent(const char* buffer,const int bufferSize){
+    boost::asio::write(this->socket,boost::asio::buffer(buffer,bufferSize));
+}
+/*
 bool Responder::GetFileName(utfstring &fileName,int &fileSize,const RequestParser &request){
-    if(request.splitPath.size()>0){
-        std::string sRequestId  = request.splitPath.front();
+    if(request.SplitPaths().size()>0){
+        std::string sRequestId  = request.SplitPaths().front();
         int requestId           = atoi(sRequestId.c_str());
 
         musik::core::db::CachedStatement stmt("SELECT t.id,(p.path||f.relative_path||'/'||t.filename) AS file,t.filesize FROM tracks t,folders f,paths p WHERE t.id=? AND t.folder_id=f.id AND f.path_id=p.id",this->db);
@@ -166,7 +208,7 @@ bool Responder::GetFileName(utfstring &fileName,int &fileSize,const RequestParse
         }
     }
     return false;
-}
+}*/
 
 bool Responder::ReadRequest(std::string &request){
     char buffer[512];
@@ -194,13 +236,6 @@ bool Responder::ReadRequest(std::string &request){
 
 void Responder::CloseSocket(){
     // Close socket
-/*    int iError    = shutdown(this->iSocket,SHUT_RDWR);
-    ASSERT(iError==0);
-    iError    = closesocket(this->iSocket);
-    ASSERT(iError==0);
-
-    this->iSocket    = -1;
-*/
     this->socket.close();
 }
 

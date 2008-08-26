@@ -37,71 +37,21 @@
 #pragma once
 
 #include <core/config.h>
-#include <core/http/Responder.h>
-#include <core/http/IRequestPlugin.h>
-
-#include <boost/asio.hpp>
-#include <boost/noncopyable.hpp>
-#include <boost/thread/thread.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
-
-#include <set>
-#include <queue>
 
 //////////////////////////////////////////////////////////////////////////////
 
-namespace musik{ namespace core{ namespace http {
+namespace musik{ namespace core{ namespace http{
 
 //////////////////////////////////////////////////////////////////////////////
-class Server : private boost::noncopyable{
+
+class IResponder{
     public:
-        Server(int port,utfstring dbFilename);
-        ~Server();
-
-        bool Startup();
-
-        int port;
-
-    private:
-        void ThreadLoop();
-
-        bool exited;
-        void Exit();
-        bool Exited();
-
-        typedef std::set<ResponderPtr> ResponderSet;
-        typedef std::queue<ResponderPtr> ResponderQueue;
-        ResponderSet busyResponders;
-        ResponderQueue freeResponders;
-        ResponderPtr waitingResponder;
-
-        ResponderPtr GetResponder();
-
-        void initAccept();
-        void handleAccept();
-        void initTimeout();
-        void handleTimeout();
-
-        boost::mutex mutex;
-
-        boost::asio::io_service ioService;
-        boost::asio::ip::tcp::acceptor acceptor;
-        boost::asio::deadline_timer timer;
-
-        boost::thread *thread;
-        utfstring dbFilename;
-    private:
-        friend class Responder;
-        void FreeResponder(Responder *responder);
-
-//        
-        typedef std::map<std::string,boost::shared_ptr<IRequestPlugin>> PluginPathMap;
-
-        PluginPathMap requestPlugins;
+        virtual void SendContent(const char* buffer,const int bufferSize)=0;
+        virtual bool Exited()=0;
 };
 
 //////////////////////////////////////////////////////////////////////////////
-} } } // musik::core::http
+} } }
 //////////////////////////////////////////////////////////////////////////////
+
 

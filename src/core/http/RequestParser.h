@@ -37,9 +37,11 @@
 #pragma once
 
 #include <core/config.h>
+#include <core/http/IRequestParser.h>
 
 #include <string>
 #include <vector>
+#include <map>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -47,19 +49,31 @@ namespace musik{ namespace core{ namespace http{
 
 //////////////////////////////////////////////////////////////////////////////
 
-class RequestParser{
+class RequestParser : public IRequestParser{
     public:
         RequestParser();
         void Parse(const std::string &request);
         ~RequestParser();
 
-        std::string fullRequest;
-        std::string path;
-        std::vector<std::string> splitPath;
+        virtual const char* Attribute(const char* key);
+        virtual const char* Path();
+        virtual const char* SubPath(int position);
+
+        typedef std::vector<std::string> StringVector;
+        typedef std::map<std::string,std::string> AttributeMap;
+
+        const StringVector& SplitPaths() const;
+        const AttributeMap& Attributes() const;
+
     private:
         void SplitPath();
+        void ParseAttributes(std::string attributeString);
         void Clear();
 
+        std::string fullRequest;
+        std::string path;
+        StringVector splitPath;
+        AttributeMap attributes;
 };
 
 //////////////////////////////////////////////////////////////////////////////

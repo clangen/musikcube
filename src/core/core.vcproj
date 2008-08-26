@@ -618,6 +618,18 @@
 				Name="http"
 				>
 				<File
+					RelativePath=".\http\IRequestParser.h"
+					>
+				</File>
+				<File
+					RelativePath=".\http\IRequestPlugin.h"
+					>
+				</File>
+				<File
+					RelativePath=".\http\IResponder.h"
+					>
+				</File>
+				<File
 					RelativePath=".\http\RequestParser.cpp"
 					>
 				</File>
@@ -657,6 +669,14 @@
 				</File>
 				<File
 					RelativePath=".\http\Server.h"
+					>
+				</File>
+				<File
+					RelativePath=".\http\TrackSender.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\http\TrackSender.h"
 					>
 				</File>
 			</Filter>

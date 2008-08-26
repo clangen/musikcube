@@ -37,71 +37,25 @@
 #pragma once
 
 #include <core/config.h>
-#include <core/http/Responder.h>
-#include <core/http/IRequestPlugin.h>
-
-#include <boost/asio.hpp>
-#include <boost/noncopyable.hpp>
-#include <boost/thread/thread.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
-
-#include <set>
-#include <queue>
+#include <core/http/IResponder.h>
+#include <core/http/IRequestParser.h>
+#include <core/ITrack.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
-namespace musik{ namespace core{ namespace http {
+namespace musik{ namespace core{ namespace http{
 
 //////////////////////////////////////////////////////////////////////////////
-class Server : private boost::noncopyable{
+
+class IRequestPlugin{
     public:
-        Server(int port,utfstring dbFilename);
-        ~Server();
-
-        bool Startup();
-
-        int port;
-
-    private:
-        void ThreadLoop();
-
-        bool exited;
-        void Exit();
-        bool Exited();
-
-        typedef std::set<ResponderPtr> ResponderSet;
-        typedef std::queue<ResponderPtr> ResponderQueue;
-        ResponderSet busyResponders;
-        ResponderQueue freeResponders;
-        ResponderPtr waitingResponder;
-
-        ResponderPtr GetResponder();
-
-        void initAccept();
-        void handleAccept();
-        void initTimeout();
-        void handleTimeout();
-
-        boost::mutex mutex;
-
-        boost::asio::io_service ioService;
-        boost::asio::ip::tcp::acceptor acceptor;
-        boost::asio::deadline_timer timer;
-
-        boost::thread *thread;
-        utfstring dbFilename;
-    private:
-        friend class Responder;
-        void FreeResponder(Responder *responder);
-
-//        
-        typedef std::map<std::string,boost::shared_ptr<IRequestPlugin>> PluginPathMap;
-
-        PluginPathMap requestPlugins;
+        virtual void Destroy()=0;
+        virtual const char* WatchPath()=0;
+        virtual void Execute(musik::core::http::IResponder* responder,const musik::core::http::IRequestParser* request,const musik::core::ITrack* track)=0;
 };
 
 //////////////////////////////////////////////////////////////////////////////
-} } } // musik::core::http
+} } }
 //////////////////////////////////////////////////////////////////////////////
+
 
