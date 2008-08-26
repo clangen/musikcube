@@ -48,13 +48,12 @@
 using namespace musik::core::http;
 
 
-Server::Server(int port,utfstring dbFilename)
+Server::Server(int port)
  :acceptor(ioService,boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port))
  ,thread(NULL)
  ,timer(ioService)
  ,exited(false)
  ,port(port)
- ,dbFilename(dbFilename)
 {
     // Check for plugins
     typedef IRequestPlugin PluginType;
@@ -85,7 +84,9 @@ Server::~Server(){
     }
 }
 
-bool Server::Startup(){
+bool Server::Startup(utfstring dbFilename){
+
+    this->dbFilename    = dbFilename;
 
     // start the thread
     this->thread    = new boost::thread(boost::bind(&Server::ThreadLoop,this));
@@ -165,10 +166,14 @@ ResponderPtr Server::GetResponder(){
 void Server::FreeResponder(Responder *responder){
     boost::mutex::scoped_lock lock(this->mutex);
 
-    ResponderSet::iterator foundResponder   = this->busyResponders.find(ResponderPtr(responder));
-    if(foundResponder!=this->busyResponders.end()){
-        this->freeResponders.push(*foundResponder);
-        this->busyResponders.erase(foundResponder);
+    ResponderSet::iterator tempResponder=this->busyResponders.begin();
+    while(tempResponder!=this->busyResponders.end()){
+        if(tempResponder->get()==responder){
+            this->freeResponders.push(*tempResponder);
+            tempResponder   = this->busyResponders.erase(tempResponder);
+        }else{
+            ++tempResponder;
+        }
     }
 }
 

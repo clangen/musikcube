@@ -125,6 +125,12 @@ void Track::SetValue(const char* metakey,const utfchar* value){
     }
 }
 
+void Track::ClearValue(const char* metakey){
+    if(this->meta){
+        this->meta->ClearValue(metakey);
+    }
+}
+
 
 void Track::ClearMeta(){
     if(this->meta){

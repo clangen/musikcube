@@ -81,6 +81,14 @@ void RequestParser::SplitPath(){
     if(!this->path.empty()){
         boost::algorithm::split(this->splitPath,this->path,boost::algorithm::is_any_of("/"));
     }
+    // Remove empty paths
+    for(StringVector::iterator path=this->splitPath.begin();path!=this->splitPath.end();){
+        if(path->empty()){
+            path    = this->splitPath.erase(path);
+        }else{
+            ++path;
+        }
+    }
 }
 
 

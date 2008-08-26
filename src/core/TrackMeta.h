@@ -77,6 +77,7 @@ class TrackMeta : boost::noncopyable{
         const utfstring& GetValue(const Key &key) const;
         TrackMeta::TagMapIteratorPair GetValues(const char* metakey) const;
         void SetValue(const Key &key,const Value &value);
+        void ClearValue(const Key &key);
         const utfchar* GetValue(const char* metakey) const;
 
         Library::Base *library;

@@ -39,6 +39,7 @@
 #include <core/server/Connection.h>
 
 #include <core/Indexer.h>
+#include <core/http/Server.h>
 
 #include <boost/asio.hpp>
 #include <boost/thread/thread.hpp>
@@ -53,12 +54,13 @@ namespace musik{ namespace core{
 class Server{
     public:
         // Methods
-        Server(unsigned int port);
+        Server(unsigned int port,unsigned int httpPort);
         ~Server(void);
         bool Startup();
 
     public:
         Indexer indexer;    
+        http::Server httpServer;
 
     private:
         // Methods

@@ -628,3 +628,7 @@ void Library::Base::CreateDatabase(db::Connection &db){
 
     db.Execute("ANALYZE");
 }
+
+utfstring Library::Base::BasePath(){
+    return UTF("");
+}
