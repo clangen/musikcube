@@ -46,6 +46,7 @@ namespace musik { namespace cube {
 //////////////////////////////////////////////////////////////////////////////
 
 #include <win32cpp/Types.hpp>
+#include <win32cpp/Menu.hpp>
 #include <win32cpp/ListView.hpp>
 #include <core/config.h>
 #include <core/Query/ListBase.h>
@@ -82,10 +83,13 @@ private:
     void        AddColumn(const utfchar *name, const char *metakey, int size);
     void        OnTracklistInfo(UINT64 tracks,UINT64 duration,UINT64 filesize);
     void        OnColumnSort(ListView *listView,ColumnRef column);
+    void        OnPlayNow(win32cpp::MenuItemRef menu);
+    void        OnEnqueue(win32cpp::MenuItemRef menu);
 
     ModelRef model;
     TracklistView& view;
     ColumnList columns;
+    win32cpp::MenuRef contextMenu;
     musik::core::Query::SortTracks sortQuery;
 
 };

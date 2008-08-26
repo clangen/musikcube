@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright © 2007, mC2 Team
 //
 // Sources and Binaries of: mC2, win32cpp
 //
@@ -35,46 +35,36 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
-
 #pragma once
 
 //////////////////////////////////////////////////////////////////////////////
+// Forward declare
+namespace win32cpp{
+    class Window;
+}
+//////////////////////////////////////////////////////////////////////////////
 
-#include <cube/SourcesItem.hpp>
-#include <win32cpp/Exception.hpp>
-#include <vector>
-#include <boost/shared_ptr.hpp>
+#include <win32cpp/Frame.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
-using namespace win32cpp;
-
-namespace musik { namespace cube {
+namespace musik { namespace cube { namespace dialog {
 
 //////////////////////////////////////////////////////////////////////////////
+// forward 
+class AddLibraryController;
+//////////////////////////////////////////////////////////////////////////////
 
-typedef boost::shared_ptr<SourcesItem> SourcesItemRef;
-class InvalidSourcesItemException: public Exception { };
+class AddLibraryView: public win32cpp::Frame{
+    public:     
+        AddLibraryView();
 
-class SourcesCategory
-{
-public:     sigslot::signal1<int> CountChanged;
+    protected:  
+        virtual void OnCreated();
 
-public:     /*ctor*/        SourcesCategory(const uistring& caption);
-
-public:     uistring        Caption() const;
-public:     int             Count() const;
-public:     SourcesItemRef  ItemAt(int index) const;
-public:     SourcesItemRef  Add(SourcesItemRef item);
-public:     SourcesItemRef  Remove(SourcesItemRef item);
-
-private:    typedef std::vector<SourcesItemRef> SourcesItemList;
-private:    uistring caption;
-private:    SourcesItemList items;
 };
 
-typedef boost::shared_ptr<SourcesCategory> SourcesCategoryRef;
-
 //////////////////////////////////////////////////////////////////////////////
 
-} } // namespace musik::cube
+} } }     // musik::cube::dialog
+

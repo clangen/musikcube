@@ -59,30 +59,36 @@ namespace musik { namespace cube {
 class TracklistModel: public ListView::Model, public EventHandler
 {
         // typedefs
-public:     typedef ListView::Model base;
-public:     typedef ListView::RowRendererRef RowRendererRef;
-public:     typedef ListView::CellRendererRef CellRendererRef;
-public:     typedef ListView::ColumnRef ColumnRef;
+public:     
+    typedef ListView::Model base;
+    typedef ListView::RowRendererRef RowRendererRef;
+    typedef ListView::CellRendererRef CellRendererRef;
+    typedef ListView::ColumnRef ColumnRef;
 
         // public API
-public:     /*ctor*/ TracklistModel(
-                musik::core::Query::ListBase *connectedQuery,
-                musik::core::tracklist::Ptr setTracklist);
+    TracklistModel(
+        musik::core::Query::ListBase *connectedQuery,
+        musik::core::tracklist::Ptr setTracklist);
 
-public:     void ConnectToQuery(musik::core::Query::ListBase *connectedQuery);
+    void ConnectToQuery(musik::core::Query::ListBase *connectedQuery);
+    void OnRowActivated(int row);
 
-public:     void OnRowActivated(int row);
+    void OnPlayNow(win32cpp::ListView::RowIndexList& selectedRows);
+    void OnEnqueue(win32cpp::ListView::RowIndexList& selectedRows);
 
-        // ListView::Model implementation
-public:     virtual uistring CellValueToString(int rowIndex, ColumnRef column);
+    // ListView::Model implementation
+    virtual uistring CellValueToString(int rowIndex, ColumnRef column);
 
-        // instance data
-protected:  void OnTrackMeta(std::vector<int> &trackPositions);
-protected:  void OnTracks(bool cleared);
-protected:  void OnPositionChanged(int activeRow,int oldActiveRow);
-protected:  int currentPosition;
+    // instance data
+protected:  
+    void OnTrackMeta(std::vector<int> &trackPositions);
+    void OnTracks(bool cleared);
+    void OnPositionChanged(int activeRow,int oldActiveRow);
 
-public:     musik::core::tracklist::Ptr tracklist;    // FIXME: no public fields!
+    int currentPosition;
+
+public:     
+    musik::core::tracklist::Ptr tracklist;    // FIXME: no public fields!
 
 };
 

@@ -98,6 +98,21 @@ void        TracklistController::OnViewCreated(Window* window)
     if(model){
         model->ConnectToQuery(&this->sortQuery);
     }
+
+
+    // Add the context menu
+    this->contextMenu   = win32cpp::Menu::CreatePopup();
+    // Play now menu
+    win32cpp::MenuItemRef playNowMenu   = this->contextMenu->Items().Append(win32cpp::MenuItem::Create(_T("Play now")));
+    playNowMenu->Activated.connect(this,&TracklistController::OnPlayNow);
+    // Enqueue menu
+    win32cpp::MenuItemRef enqueueMenu   = this->contextMenu->Items().Append(win32cpp::MenuItem::Create(_T("Enqueue")));
+    enqueueMenu->Activated.connect(this,&TracklistController::OnEnqueue);
+
+    //
+    listView->SetContextMenu(contextMenu);
+
+
 }
 
 void        TracklistController::OnRowActivated(ListView* listView, int row)
@@ -164,4 +179,22 @@ void TracklistController::OnColumnSort(ListView *listView,ColumnRef column){
 
         this->sortQuery.ClearTracks();
     }
+}
+
+void TracklistController::OnPlayNow(win32cpp::MenuItemRef menu){
+    ListView::RowIndexList selectedRows(this->view.listView->SelectedRows());
+
+    TracklistModel* model   = (TracklistModel*)this->model.get();
+    if(model){
+        model->OnPlayNow(selectedRows);
+    }    
+}
+
+void TracklistController::OnEnqueue(win32cpp::MenuItemRef menu){
+    ListView::RowIndexList selectedRows(this->view.listView->SelectedRows());
+
+    TracklistModel* model   = (TracklistModel*)this->model.get();
+    if(model){
+        model->OnEnqueue(selectedRows);
+    }    
 }

@@ -264,3 +264,11 @@ UINT64 Standard::Filesize(){
     return this->infoFilesize;
 }
 
+void Standard::AppendTrack(musik::core::TrackPtr track){
+    this->tracks.push_back(track);
+}
+
+void Standard::Clear(){
+    this->tracks.clear();
+    this->trackCache.clear();
+}

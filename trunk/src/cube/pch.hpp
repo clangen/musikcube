@@ -66,7 +66,6 @@
 #include <sigslot/sigslot.h>
 
 //////////////////////////////////////////////////////////////////////////////
-
 #include <win32cpp/Win32Config.hpp>
 #include <win32cpp/Types.hpp>
 #include <win32cpp/WindowGeometry.hpp>
@@ -77,6 +76,5 @@
 #include <win32cpp/Window.hpp>
 #include <win32cpp/Application.hpp>
 #include <win32cpp/TopLevelWindow.hpp>
-
 
 //////////////////////////////////////////////////////////////////////////////

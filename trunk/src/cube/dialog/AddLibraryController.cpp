@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright © 2007, mC2 Team
 //
 // Sources and Binaries of: mC2, win32cpp
 //
@@ -36,45 +36,36 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "pch.hpp"
+#include <cube/dialog/AddLibraryController.hpp>
+#include <cube/dialog/AddLibraryView.hpp>
+
+#include <win32cpp/Window.hpp>
+#include <win32cpp/Label.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
-#include <cube/SourcesItem.hpp>
-#include <win32cpp/Exception.hpp>
-#include <vector>
-#include <boost/shared_ptr.hpp>
-
-//////////////////////////////////////////////////////////////////////////////
-
+using namespace musik::cube::dialog;
 using namespace win32cpp;
 
-namespace musik { namespace cube {
-
 //////////////////////////////////////////////////////////////////////////////
 
-typedef boost::shared_ptr<SourcesItem> SourcesItemRef;
-class InvalidSourcesItemException: public Exception { };
-
-class SourcesCategory
+AddLibraryController::AddLibraryController(AddLibraryView& addLibraryView)
+ :addLibraryView(addLibraryView)
 {
-public:     sigslot::signal1<int> CountChanged;
+    this->addLibraryView.Created.connect(
+        this, &AddLibraryController::OnViewCreated);
+    
+    this->addLibraryView.Resized.connect(
+        this, &AddLibraryController::OnViewResized);
+}
 
-public:     /*ctor*/        SourcesCategory(const uistring& caption);
+void AddLibraryController::OnViewCreated(Window* window)
+{
 
-public:     uistring        Caption() const;
-public:     int             Count() const;
-public:     SourcesItemRef  ItemAt(int index) const;
-public:     SourcesItemRef  Add(SourcesItemRef item);
-public:     SourcesItemRef  Remove(SourcesItemRef item);
+}
 
-private:    typedef std::vector<SourcesItemRef> SourcesItemList;
-private:    uistring caption;
-private:    SourcesItemList items;
-};
+void AddLibraryController::OnViewResized(Window* window, Size size)
+{
+}
 
-typedef boost::shared_ptr<SourcesCategory> SourcesCategoryRef;
-
-//////////////////////////////////////////////////////////////////////////////
-
-} } // namespace musik::cube

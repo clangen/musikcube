@@ -44,7 +44,8 @@ namespace musik{ namespace core{
 	}
 	namespace tracklist{
         class IRandomAccess;
-		typedef boost::shared_ptr<IRandomAccess> Ptr;
+        typedef boost::shared_ptr<IRandomAccess> Ptr;
+		typedef boost::weak_ptr<IRandomAccess> WeakPtr;
 	} 
 } }
 //////////////////////////////////////////////////////////////////////////////
@@ -76,6 +77,10 @@ namespace musik{ namespace core{
                 virtual bool CopyTracks(musik::core::tracklist::Ptr tracklist) = 0;
                 virtual bool AppendTracks(musik::core::tracklist::Ptr tracklist) = 0;
 
+                virtual void AppendTrack(musik::core::TrackPtr track) = 0;
+                virtual void Clear() = 0;
+
+
                 virtual void AddRequestedMetakey(const char* metakey) = 0;
                 virtual void RemoveRequestedMetakey(const char* metakey) = 0;
 
@@ -99,8 +104,6 @@ namespace musik{ namespace core{
                 PositionChangedEvent PositionChanged;
         };
 
-        typedef boost::shared_ptr<IRandomAccess> Ptr;
-		typedef boost::weak_ptr<IRandomAccess> WeakPtr;
 
     }
 } }

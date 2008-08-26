@@ -556,7 +556,7 @@ void Indexer::SyncDelete(std::vector<DBINT> aPaths){
 
                 if(bRemove){
                     // Remove the folder
-                    stmtRemove.BindInt(1,stmt.ColumnInt(0));
+                    stmtRemove.BindInt(0,stmt.ColumnInt(0));
                     stmtRemove.Step();
                     stmtRemove.Reset();
                 }
