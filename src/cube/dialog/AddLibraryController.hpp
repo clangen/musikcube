@@ -40,11 +40,9 @@
 
 //////////////////////////////////////////////////////////////////////////////
 // Forward declare
-namespace musik { namespace cube { namespace dialog{
-    class AddLibraryView;
-} } }
 namespace win32cpp{
     class Window;
+    class Button;
 }
 //////////////////////////////////////////////////////////////////////////////
 
@@ -56,18 +54,25 @@ namespace win32cpp{
 
 namespace musik { namespace cube { namespace dialog{
 
+class AddLibraryView;   // forward
 //////////////////////////////////////////////////////////////////////////////
 
 class AddLibraryController : public win32cpp::EventHandler{
 
     public:     
-        AddLibraryController(AddLibraryView& addLibraryView);
+        AddLibraryController(win32cpp::TopLevelWindow &mainWindow,int type);
+        ~AddLibraryController();
 
     private:  
         void        OnViewCreated(win32cpp::Window* window);
-        void        OnViewResized(win32cpp::Window* window, win32cpp::Size size);
+        void        OnCancel(win32cpp::Button* button);
+        void        OnOK(win32cpp::Button* button);
 
-        AddLibraryView& addLibraryView;
+        AddLibraryView* view;
+
+        win32cpp::TopLevelWindow &mainWindow;
+
+        int libraryType;
 };
 
 //////////////////////////////////////////////////////////////////////////////

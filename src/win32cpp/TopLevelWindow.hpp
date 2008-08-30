@@ -58,13 +58,19 @@ class TopLevelWindow: public Container
 {
 private: // types
     typedef Container base;
+    class WindowAlreadyClosedException : public Exception { };
 
 public: // ctor, dtor
     /*ctor*/    TopLevelWindow(const uichar* windowTitle);
+    /*dtor*/    virtual ~TopLevelWindow();
 
 public: // methods
     void    SetMinimumSize(const Size& minSize);
     Size    MinimumSize() const;
+    void    ShowModal(TopLevelWindow* parent);
+    void    Close();
+
+    static TopLevelWindow* FindFromAncestor(Window* window);
 
 protected: // methods
     virtual HWND        Create(Window* parent);
@@ -74,10 +80,15 @@ protected: // methods
     virtual void        OnRequestFocusPrev();
     virtual void        OnEraseBackground(HDC hdc);
     virtual void        OnPaint();
+    virtual void        OnGainedFocus();
+
+    static bool RegisterWindowClass();
 
 private: // instance data
-    uistring className, windowTitle;
+    uistring windowTitle;
+    bool closed;
     Size minSize;
+    TopLevelWindow* modalChild;
 };
 
 //////////////////////////////////////////////////////////////////////////////

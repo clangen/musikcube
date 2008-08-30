@@ -2,9 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, mC2 Team
-//
-// Sources and Binaries of: mC2, win32cpp
+// The following are Copyright © 2007, Daniel Önnerby
 //
 // All rights reserved.
 //
@@ -35,38 +33,35 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
-#pragma once
+
+#include "pch.hpp"
+#include <win32cpp/Application.hpp>
+#include <win32cpp/TopLevelWindow.hpp>
+#include <core/config.h>
+#include <core/Server.h>
 
 //////////////////////////////////////////////////////////////////////////////
-// Forward declare
-namespace win32cpp{
-    class Button;
-    class EditView;
+
+//using namespace musik::server;
+using namespace win32cpp;
+
+//////////////////////////////////////////////////////////////////////////////
+
+int WINAPI wWinMain(HINSTANCE instance, HINSTANCE prevInstance, LPTSTR commandLine, int showCommand)
+{
+
+    musik::core::ServerPtr server(new musik::core::Server(10543,10544));
+    server->Startup();
+
+    // Initialize the main application (mC2.exe)
+    Application::Initialize(instance, prevInstance, commandLine, showCommand);
+
+    // Create the main window and its controller
+    TopLevelWindow mainWindow(_T("musikServer"));
+//    MainWindowController mainController(mainWindow);
+
+    // Initialize and show the main window, and run the event loop.
+    Application::Instance().Run(mainWindow);
+
+    return 0;
 }
-//////////////////////////////////////////////////////////////////////////////
-
-#include <win32cpp/Frame.hpp>
-
-//////////////////////////////////////////////////////////////////////////////
-
-namespace musik { namespace cube { namespace dialog {
-
-//////////////////////////////////////////////////////////////////////////////
-// forward 
-class AddLibraryController;
-//////////////////////////////////////////////////////////////////////////////
-
-class AddLibraryView: public win32cpp::Frame{
-    public:     
-        AddLibraryView();
-
-        virtual void OnCreated();
-        win32cpp::Button *okButton, *cancelButton;
-        win32cpp::EditView *name;
-
-};
-
-//////////////////////////////////////////////////////////////////////////////
-
-} } }     // musik::cube::dialog
-

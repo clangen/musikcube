@@ -71,7 +71,7 @@ LibraryFactory::LibraryFactory(void){
 LibraryFactory::~LibraryFactory(void){
 }
 
-void LibraryFactory::AddLibrary(utfstring name,int type){
+bool LibraryFactory::AddLibrary(utfstring name,int type,bool sendEvent){
 	LibraryPtr lib;
 	switch(type){
 		case Types::Remote:
@@ -84,9 +84,14 @@ void LibraryFactory::AddLibrary(utfstring name,int type){
 	if(lib){
 		this->libraries.push_back(lib);
 
+        if(sendEvent){
+            this->LibrariesUpdated();
+        }
+
 		// Start the library
-		lib->Startup();
+		return lib->Startup();
 	}
+    return false;
 }
 
 void LibraryFactory::RemoveLibrary(utfstring name){
@@ -103,8 +108,7 @@ bool LibraryFactory::CreateLibrary(utfstring name,int type){
 	stmtInsert.BindTextUTF(0,name);
 	stmtInsert.BindInt(1,type);
 	if(stmtInsert.Step()==db::Done){
-		this->AddLibrary(name,type);
-		return true;
+		return this->AddLibrary(name,type,true);
 	}
 	return false;
 }

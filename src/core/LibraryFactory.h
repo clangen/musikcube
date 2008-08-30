@@ -63,6 +63,9 @@ class LibraryFactory{
 		bool CreateLibrary(utfstring name,int type);
 		void DeleteLibrary(utfstring name);
 
+        typedef sigslot::signal0<> LibrariesUpdatedEvent;
+        LibrariesUpdatedEvent LibrariesUpdated;
+
     private:
 
         LibraryVector libraries;
@@ -70,7 +73,7 @@ class LibraryFactory{
         LibraryFactory(void);
         ~LibraryFactory(void);
 
-		void AddLibrary(utfstring name,int type);
+		bool AddLibrary(utfstring name,int type,bool sendEvent=false);
 		void RemoveLibrary(utfstring name);
 
 };

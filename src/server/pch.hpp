@@ -2,9 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, mC2 Team
-//
-// Sources and Binaries of: mC2, win32cpp
+// The following are Copyright © 2007, Daniel Önnerby
 //
 // All rights reserved.
 //
@@ -35,38 +33,33 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
+
 #pragma once
 
-//////////////////////////////////////////////////////////////////////////////
-// Forward declare
-namespace win32cpp{
-    class Button;
-    class EditView;
-}
-//////////////////////////////////////////////////////////////////////////////
-
-#include <win32cpp/Frame.hpp>
+#ifndef _DEBUG
+    // To be able to UPX the released executable
+    extern "C" void tss_cleanup_implemented(void){}
+#endif
 
 //////////////////////////////////////////////////////////////////////////////
+// dependencies
+//////////////////////////////////////////////////////////////////////////////
+#pragma warning (disable : 4996 4018 4482)
 
-namespace musik { namespace cube { namespace dialog {
+#include "vld/vld.h"
+
+#include <core/config.h>
 
 //////////////////////////////////////////////////////////////////////////////
-// forward 
-class AddLibraryController;
+#include <win32cpp/Win32Config.hpp>
+/*#include <win32cpp/Types.hpp>
+#include <win32cpp/WindowGeometry.hpp>
+#include <win32cpp/Exception.hpp>
+#include <win32cpp/Container.hpp>
+#include <win32cpp/Font.hpp>
+#include <win32cpp/Menu.hpp>
+#include <win32cpp/Window.hpp>
+#include <win32cpp/Application.hpp>
+#include <win32cpp/TopLevelWindow.hpp>
+*/
 //////////////////////////////////////////////////////////////////////////////
-
-class AddLibraryView: public win32cpp::Frame{
-    public:     
-        AddLibraryView();
-
-        virtual void OnCreated();
-        win32cpp::Button *okButton, *cancelButton;
-        win32cpp::EditView *name;
-
-};
-
-//////////////////////////////////////////////////////////////////////////////
-
-} } }     // musik::cube::dialog
-

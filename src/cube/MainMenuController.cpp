@@ -37,9 +37,9 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
+#include <core/LibraryFactory.h>
 #include <cube/MainMenuController.hpp>
-//#include <cube/dialog/AddLibraryController.hpp>
-//#include <cube/dialog/AddLibraryView.hpp>
+#include <cube/dialog/AddLibraryController.hpp>
 #include <win32cpp/Application.hpp>
 #include <win32cpp/TopLevelWindow.hpp>
 #include <boost/format.hpp>
@@ -52,14 +52,12 @@ using namespace musik::cube;
 
 /*ctor*/    MainMenuController::MainMenuController(TopLevelWindow& mainWindow)
 : mainWindow(mainWindow)
-//,addLibraryController(NULL)
 {
     this->mainWindow.Created.connect(
         this, &MainMenuController::OnMainWindowCreated);
 }
 
 MainMenuController::~MainMenuController(){
-//    delete this->addLibraryController;
 }
 
 void        MainMenuController::OnMainWindowCreated(Window* window)
@@ -71,7 +69,8 @@ void        MainMenuController::ConnectMenuHandlers()
 {
     this->fileExit->Activated.connect(this, &MainMenuController::OnFileExit);
     this->helpAbout->Activated.connect(this, &MainMenuController::OnHelpAbout);
-    this->fileAddLibrary->Activated.connect(this,&MainMenuController::OnAddLibrary);
+    this->fileAddLibraryLocal->Activated.connect(this,&MainMenuController::OnAddLibraryLocal);
+    this->fileAddLibraryRemote->Activated.connect(this,&MainMenuController::OnAddLibraryRemote);
 }
 
 void        MainMenuController::OnFileExit(MenuItemRef menuItem)
@@ -79,10 +78,25 @@ void        MainMenuController::OnFileExit(MenuItemRef menuItem)
     Application::Instance().Terminate();
 }
 
-void        MainMenuController::OnAddLibrary(MenuItemRef menuItem)
+void        MainMenuController::OnAddLibraryLocal(MenuItemRef menuItem)
 {
-/*    dialog::AddLibraryView* addLibraryView  = new dialog::AddLibraryView();
-    this->addLibraryController  = new dialog::AddLibraryController(*addLibraryView);*/
+    win32cpp::TopLevelWindow popupDialog(_T("Add local library"));
+    popupDialog.SetMinimumSize(Size(300, 150));
+
+    dialog::AddLibraryController addLibrary(popupDialog,musik::core::LibraryFactory::LocalDB);
+
+    popupDialog.ShowModal(&this->mainWindow);
+
+}
+void        MainMenuController::OnAddLibraryRemote(MenuItemRef menuItem)
+{
+    win32cpp::TopLevelWindow popupDialog(_T("Add remote library"));
+    popupDialog.SetMinimumSize(Size(300, 150));
+
+    dialog::AddLibraryController addLibrary(popupDialog,musik::core::LibraryFactory::Remote);
+
+    popupDialog.ShowModal(&this->mainWindow);
+
 }
 
 void        MainMenuController::OnHelpAbout(MenuItemRef menuItem)
@@ -142,8 +156,14 @@ MenuRef     MainMenuController::CreateMenu()
         //
         this->file->SetSubMenu(this->fileMenu);
 
-        this->fileAddLibrary    = fileItems.Append(MenuItem::Create(_T("&Add Library")));
-        this->fileExit          = fileItems.Append(MenuItem::Create(_T("E&xit")));
+        MenuRef addLibrarySubmenu   = Menu::Create();
+        this->fileAddLibraryLocal   = addLibrarySubmenu->Items().Append(MenuItem::Create(_T("&Local library")));
+        this->fileAddLibraryRemote  = addLibrarySubmenu->Items().Append(MenuItem::Create(_T("&Remote library")));
+
+        MenuItemRef addLibraryMenu  = fileItems.Append(MenuItem::Create(_T("&Add Library")));
+        addLibraryMenu->SetSubMenu(addLibrarySubmenu);
+
+        this->fileExit              = fileItems.Append(MenuItem::Create(_T("E&xit")));
 
         // help menu
         this->helpMenu  = Menu::Create();
