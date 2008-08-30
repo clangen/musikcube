@@ -74,22 +74,41 @@ LibraryWindowController::~LibraryWindowController()
 void        LibraryWindowController::OnViewCreated(Window* window)
 {
 
-	using namespace musik::core;
+    using namespace musik::core;
 	// Get libraries from LibraryFactory
-	LibraryFactory::LibraryVector& libraries	= LibraryFactory::Libraries();
-
-	// Loop through the libraries
-	for(LibraryFactory::LibraryVector::iterator library=libraries.begin();library!=libraries.end();++library){
-
-		SourcesView* sourcesView = new SourcesView();
-		this->libraries.push_back(SourcesControllerPtr(new SourcesController(*sourcesView,*library)));
-		this->view.AddTab( (*library)->Identifier() ,sourcesView);
-
-	}
+    this->UpdateLibraryTabs();
+    LibraryFactory::Instance().LibrariesUpdated.connect(this,&LibraryWindowController::UpdateLibraryTabs);
 
 }
 
-void        LibraryWindowController::OnResize(Window* window, Size size)
+void LibraryWindowController::UpdateLibraryTabs(){
+    using namespace musik::core;
+
+    LibraryFactory::LibraryVector& libraries	= LibraryFactory::Libraries();
+
+    // Loop through the libraries
+    for(LibraryFactory::LibraryVector::iterator library=libraries.begin();library!=libraries.end();++library){
+
+        const utfstring libraryId( (*library)->Identifier() );
+
+        // check if library already exist
+        bool found(false);
+        for(LibraryWindowVector::iterator libraryWindow=this->libraries.begin();libraryWindow!=this->libraries.end() && !found;++libraryWindow){
+            if( (*libraryWindow)->library->Identifier()==libraryId ){
+                found   = true;
+            }
+        }
+
+        if(!found){
+            SourcesView* sourcesView = new SourcesView();
+            this->libraries.push_back(SourcesControllerPtr(new SourcesController(*sourcesView,*library)));
+            this->view.AddTab( (*library)->Identifier() ,sourcesView);
+        }
+
+    }
+}
+
+void LibraryWindowController::OnResize(Window* window, Size size)
 {
     RedrawLock redrawLock(&this->view);
 //    this->clientView->Resize(this->mainWindow.ClientSize());

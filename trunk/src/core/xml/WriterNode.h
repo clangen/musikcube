@@ -39,7 +39,6 @@
 #include <core/xml/Node.h>
 #include <boost/utility.hpp>
 
-using namespace musik::core::xml;
 //////////////////////////////////////////////////////////////////////////////
 
 namespace musik{ namespace core{ namespace xml{

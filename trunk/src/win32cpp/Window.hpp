@@ -311,6 +311,7 @@ protected: // methods
     virtual void    PaintToHDC(HDC hdc, const Rect& rect);
     void            SuppressSignal(SignalBase& signal);
     static bool     WindowHasParent(Window* window);
+    static bool     WindowIsValid(Window* window);
 
 protected: // instance data
     WindowProcFunc defaultWindowProc;

@@ -50,40 +50,59 @@ using namespace win32cpp;
 
 //////////////////////////////////////////////////////////////////////////////
 
+#define CLASS_NAME _T("win32cpp TopLevelWindow")
+
 ///\brief Constructor.
 ///
 ///\param windowTitle
 ///The title that will be displayed in the title bar..
 /*ctor*/    TopLevelWindow::TopLevelWindow(const uichar* windowTitle)
 : base()
-, className(uistring(windowTitle) + _T(" TopLevelWindow"))
 , windowTitle(windowTitle)
 , minSize(0, 0)
+, closed(false)
+, modalChild(NULL)
 {
+}
+
+/*dtor*/    TopLevelWindow::~TopLevelWindow()
+{
+}
+
+bool        TopLevelWindow::RegisterWindowClass()
+{
+    static bool registered  = false;
+
+    if ( ! registered)
+    {
+        WNDCLASSEX wc = { 0 };
+
+        // register the window class
+        wc.cbSize        = sizeof(WNDCLASSEX);
+        wc.style         = 0;
+        wc.lpfnWndProc   = Window::StaticWindowProc;
+        wc.cbClsExtra    = 0;
+        wc.cbWndExtra    = 0;
+        wc.hInstance     = Application::Instance();
+        wc.hIcon         = LoadIcon(NULL, IDI_APPLICATION);
+        wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
+        wc.hbrBackground = (HBRUSH) (COLOR_WINDOW+1);
+        wc.lpszMenuName  = NULL;
+        wc.lpszClassName = CLASS_NAME;
+        wc.hIconSm       = LoadIcon(NULL, IDI_APPLICATION);
+
+        registered = (::RegisterClassEx(&wc) != 0);
+    }
+
+    return registered;
 }
 
 HWND        TopLevelWindow::Create(Window* parent)
 {
-    // parent is ignored here! top level windows don't have parents!
-
     HINSTANCE hInstance = Application::Instance();
-    WNDCLASSEX wc;
+    HWND parentHWND = (parent ? parent->Handle() : NULL);
 
-    // register the window class
-    wc.cbSize        = sizeof(WNDCLASSEX);
-    wc.style         = 0;
-    wc.lpfnWndProc   = Window::StaticWindowProc;
-    wc.cbClsExtra    = 0;
-    wc.cbWndExtra    = 0;
-    wc.hInstance     = hInstance;
-    wc.hIcon         = LoadIcon(NULL, IDI_APPLICATION);
-    wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
-    wc.hbrBackground = (HBRUSH) (COLOR_WINDOW+1);
-    wc.lpszMenuName  = NULL;
-    wc.lpszClassName = this->className.c_str();
-    wc.hIconSm       = LoadIcon(NULL, IDI_APPLICATION);
-
-    if( ! ::RegisterClassEx(&wc))
+    if ( ! TopLevelWindow::RegisterWindowClass())
     {
         return NULL;
     }
@@ -94,14 +113,14 @@ HWND        TopLevelWindow::Create(Window* parent)
     //
     HWND hwnd = ::CreateWindowEx(
         styleEx,                    // ExStyle
-        this->className.c_str(),    // Class name
+        CLASS_NAME,                 // Class name
         this->windowTitle.c_str(),  // Window name
         style,                      // Style
         CW_USEDEFAULT,              // X
         CW_USEDEFAULT,              // Y
         240,                        // Width
         120,                        // Height
-        NULL,                       // Parent
+        parentHWND,                 // Parent
         NULL,                       // Menu
         hInstance,                  // Instance
         NULL);                      // lParam
@@ -128,6 +147,12 @@ Size        TopLevelWindow::MinimumSize() const
     return this->minSize;
 }
 
+///\brief Closes the TopLevelWindow
+void        TopLevelWindow::Close()
+{
+    this->SendMessage(WM_CLOSE, NULL, NULL);
+}
+
 LRESULT     TopLevelWindow::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
@@ -138,6 +163,12 @@ LRESULT     TopLevelWindow::WindowProc(UINT message, WPARAM wParam, LPARAM lPara
             this->OnResizedBase(size);
         }
         return 0;
+
+    case WM_CLOSE:
+        {
+            this->closed = true;
+        }
+        break;
 
     case WM_PRINTCLIENT:
         {
@@ -220,4 +251,91 @@ void        TopLevelWindow::OnPaint()
     }
     //
     ::EndPaint(this->Handle(), &paintStruct);
+}
+
+void        TopLevelWindow::ShowModal(TopLevelWindow* parent)
+{
+    if (this->closed)
+    {
+        throw WindowAlreadyClosedException();
+    }
+
+    if ( ! this->Handle())
+    {
+        this->Initialize(parent);
+    }
+
+    if (parent)
+    {
+        parent->modalChild = this;
+        parent->Enable(false);
+    }
+
+    try
+    {
+        // center the child dialog over the parent
+        if (parent)
+        {
+            Point location(0, 0);
+            RECT parentRect;
+            ::GetWindowRect(parent->windowHandle, &parentRect);
+
+            Size thisSize = this->WindowSize();
+            location.x = (parentRect.left + parentRect.right) / 2 - thisSize.width / 2;
+            location.y = (parentRect.top + parentRect.bottom) / 2 - thisSize.height / 2;
+
+            this->MoveTo(location);
+        }
+
+        // removes the dialog from the titlebar
+        ::SetWindowLong(this->Handle(), GWL_STYLE, WS_CAPTION | WS_SYSMENU | WS_THICKFRAME);
+        this->Show(SW_SHOW);
+
+        bool shouldQuit = false;
+        MSG msg;
+        while (( ! shouldQuit) && (::GetMessage(&msg, NULL, 0, 0) > 0))
+        {
+            if (msg.message == WM_QUIT)
+            {
+                shouldQuit = true;
+                ::PostQuitMessage(0);
+                break;
+            }
+
+            ::TranslateMessage(&msg);
+            ::DispatchMessage(&msg);
+
+            shouldQuit |= this->closed;
+        }
+    }
+    catch (Exception e)
+    {
+        // TODO: log me
+    }
+
+    if (parent) 
+    {
+        parent->modalChild = NULL;
+        parent->Enable(true);
+        parent->SetFocus();
+    }
+}
+
+void                TopLevelWindow::OnGainedFocus()
+{
+    if (this->modalChild)
+    {
+        this->modalChild->SetFocus();
+    }
+}
+
+TopLevelWindow*     TopLevelWindow::FindFromAncestor(Window* window)
+{
+    Window* topLevelWindow = window->Parent(), *scratch = NULL;
+    while ((topLevelWindow) && (scratch = topLevelWindow->Parent()))
+    {
+        topLevelWindow = scratch;
+    }
+
+    return dynamic_cast<TopLevelWindow*>(topLevelWindow);
 }

@@ -55,6 +55,8 @@ Window::HandleToWindowMap   Window::sHandleToWindowMap;
 FontRef                     Window::sDefaultFont(Font::Create());
 Window::FocusDirection      Window::sFocusDirection = Window::FocusForward;
 
+static Window* sLastWindowUnderMouse = NULL;
+
 //////////////////////////////////////////////////////////////////////////////
 // Window::Window
 //////////////////////////////////////////////////////////////////////////////
@@ -135,6 +137,7 @@ bool        Window::Show(int showCommand)
 ///Container
 bool        Window::Destroy()
 {
+    bool returnVal = false;
     HWND windowHandle = this->Handle();
     //
     if (windowHandle)
@@ -147,10 +150,16 @@ bool        Window::Destroy()
             this->windowHandle = NULL;
         }
 
-        return (result == TRUE);
+        returnVal = (result == TRUE);
     }
 
-    return false;
+    // annoying hack for mouse events.
+    if (sLastWindowUnderMouse == this)
+    {
+        sLastWindowUnderMouse = NULL;
+    }
+
+    return returnVal;
 }
 
 bool        Window::WindowHasParent(Window* window)
@@ -210,8 +219,6 @@ Window*     Window::WindowUnderCursor(HWND* targetHwnd)
 // HACK 1/2: necessary to generate reliable OnMouseEnter/Leave() events.
 //////////////////////////////////////////////////////////////////////////////
 
-static Window* sLastWindowUnderMouse = NULL;
-//
 void        Window::BeginCapture(Window* window)
 {
     if ((window) && (window->Handle() != ::GetCapture()))
@@ -239,10 +246,18 @@ void        Window::EndCapture(Window* window)
     }
 }
 
+bool        Window::WindowIsValid(Window* window)
+{
+    WindowList& allChildren = Window::sAllChildWindows;
+    return (std::find(allChildren.begin(), allChildren.end(), window) != allChildren.end());
+}
+
 #define DISPATCH_MOUSE_EVENT(eventName)                                             \
     {                                                                               \
         Point mousePos = Point(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));         \
         Window* windowToNotify = Window::Capture();                                 \
+        bool lastUnderValid = Window::WindowIsValid(sLastWindowUnderMouse);         \
+        if ( ! lastUnderValid) sLastWindowUnderMouse = NULL;                        \
         if ( ! windowToNotify) windowToNotify = sLastWindowUnderMouse;              \
         if ( ! windowToNotify) windowToNotify = Window::WindowUnderCursor();        \
         if (windowToNotify)                                                         \

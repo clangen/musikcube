@@ -44,6 +44,7 @@
 #include <boost/asio.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/mutex.hpp>
+#include <boost/shared_ptr.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -84,6 +85,8 @@ class Server{
         musik::core::server::ConnectionPtr nextConnection;
 
 };
+
+typedef boost::shared_ptr<Server> ServerPtr;
 
 //////////////////////////////////////////////////////////////////////////////
 } }

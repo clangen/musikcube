@@ -41,7 +41,8 @@
 #include <cube/dialog/AddLibraryView.hpp>
 
 #include <win32cpp/Window.hpp>
-#include <win32cpp/Label.hpp>
+#include <win32cpp/Button.hpp>
+#include <win32cpp/EditView.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -50,22 +51,38 @@ using namespace win32cpp;
 
 //////////////////////////////////////////////////////////////////////////////
 
-AddLibraryController::AddLibraryController(AddLibraryView& addLibraryView)
- :addLibraryView(addLibraryView)
+AddLibraryController::AddLibraryController(win32cpp::TopLevelWindow &mainWindow,int type)
+:mainWindow(mainWindow)
+,view(NULL)
+,libraryType(type)
 {
-    this->addLibraryView.Created.connect(
-        this, &AddLibraryController::OnViewCreated);
+    this->view  = new AddLibraryView();
+    this->mainWindow.AddChild(this->view);
     
-    this->addLibraryView.Resized.connect(
-        this, &AddLibraryController::OnViewResized);
+    this->view->Handle()
+        ? this->OnViewCreated(this->view)
+        : this->view->Created.connect(this, &AddLibraryController::OnViewCreated);
+    
+}
+
+AddLibraryController::~AddLibraryController(){
 }
 
 void AddLibraryController::OnViewCreated(Window* window)
 {
-
+    this->view->cancelButton->Pressed.connect(this,&AddLibraryController::OnCancel);
+    this->view->okButton->Pressed.connect(this,&AddLibraryController::OnOK);
 }
 
-void AddLibraryController::OnViewResized(Window* window, Size size)
-{
+void AddLibraryController::OnCancel(win32cpp::Button* button){
+    this->mainWindow.Close();
 }
 
+void AddLibraryController::OnOK(win32cpp::Button* button){
+    if(musik::core::LibraryFactory::Instance().CreateLibrary(this->view->name->Caption(),this->libraryType)){
+        this->mainWindow.Close();
+    }else{
+        // Show some error that it didn't work
+        this->mainWindow.Close();
+    }
+}

@@ -40,9 +40,6 @@
 
 //////////////////////////////////////////////////////////////////////////////
 // Forward declare
-/*namespace musik { namespace cube { namespace dialog {
-    class AddLibraryController;
-} } }*/
 namespace win32cpp {
     class Window;
     class TopLevelWindow;
@@ -73,15 +70,15 @@ class MainMenuController: public EventHandler
         //
         void        OnFileExit(MenuItemRef menuItem);
         void        OnHelpAbout(MenuItemRef menuItem);
-        void        OnAddLibrary(MenuItemRef menuItem);
+        void        OnAddLibraryLocal(MenuItemRef menuItem);
+        void        OnAddLibraryRemote(MenuItemRef menuItem);
 
 
     private:    
         TopLevelWindow& mainWindow;
         MenuRef mainMenu, fileMenu, helpMenu;
         MenuItemRef file, view, audio, tags, help;
-        MenuItemRef fileExit, helpAbout, fileAddLibrary;
-//        dialog::AddLibraryController *addLibraryController;
+        MenuItemRef fileExit, helpAbout, fileAddLibraryRemote, fileAddLibraryLocal;
 };
 
 //////////////////////////////////////////////////////////////////////////////

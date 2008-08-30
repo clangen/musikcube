@@ -108,7 +108,6 @@ void        TracklistController::OnViewCreated(Window* window)
     // Enqueue menu
     win32cpp::MenuItemRef enqueueMenu   = this->contextMenu->Items().Append(win32cpp::MenuItem::Create(_T("Enqueue")));
     enqueueMenu->Activated.connect(this,&TracklistController::OnEnqueue);
-
     //
     listView->SetContextMenu(contextMenu);
 

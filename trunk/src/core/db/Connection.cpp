@@ -345,6 +345,10 @@ void Connection::Interrupt(){
 
 void Connection::Maintenance(bool init){
 
+    // Need to be locked throuout all Connections
+    static boost::mutex tempMutex;
+    boost::mutex::scoped_lock lock(tempMutex);
+
     static int counter(0);
 
     if(init){

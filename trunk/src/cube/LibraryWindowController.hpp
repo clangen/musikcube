@@ -51,6 +51,7 @@ namespace musik { namespace cube {
 } }
 //////////////////////////////////////////////////////////////////////////////
 
+#include <core/Library/Base.h>
 #include <cube/SourcesController.hpp>
 #include <win32cpp/Timer.hpp>
 #include <win32cpp/Types.hpp>
@@ -72,8 +73,10 @@ public:     /*ctor*/    LibraryWindowController(LibraryWindowView& view);
 public:     /*dtor*/    ~LibraryWindowController();
 
 protected:  
-			void        OnViewCreated(Window* window);
-			void        OnResize(Window* window, Size size);
+			void OnViewCreated(Window* window);
+			void OnResize(Window* window, Size size);
+
+            void UpdateLibraryTabs();
 
 			LibraryWindowView& view;
 //			SourcesController* sourcesController;

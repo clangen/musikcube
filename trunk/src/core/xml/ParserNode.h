@@ -40,7 +40,6 @@
 #include <boost/utility.hpp>
 #include <set>
 
-using namespace musik::core::xml;
 //////////////////////////////////////////////////////////////////////////////
 
 namespace musik{ namespace core{ namespace xml{
