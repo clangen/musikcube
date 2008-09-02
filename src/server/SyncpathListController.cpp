@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, mC2 Team
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: mC2
 //
 // All rights reserved.
 //
@@ -35,40 +35,69 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
-#pragma once
+
+#include "pch.hpp"
+#include <server/SyncpathListController.hpp>
+#include <server/SyncpathListModel.hpp>
+#include <server/SyncpathController.hpp>
+
+#include <core/Indexer.h>
 
 //////////////////////////////////////////////////////////////////////////////
-// Forward declare
-namespace win32cpp{
-    class Button;
-    class EditView;
+
+using namespace musik::server;
+using namespace win32cpp;
+
+//////////////////////////////////////////////////////////////////////////////
+
+SyncpathListController::SyncpathListController(win32cpp::ListView &listView,musik::server::SyncpathController *syncpathController)
+: listView(listView)
+, syncpathController(syncpathController)
+{
+    this->model.reset(new SyncpathListModel(this));
+    this->listView.Handle()
+        ? this->OnViewCreated(&listView)
+        : this->listView.Created.connect(this, &SyncpathListController::OnViewCreated);
 }
-//////////////////////////////////////////////////////////////////////////////
 
-#include <win32cpp/Frame.hpp>
 
-//////////////////////////////////////////////////////////////////////////////
+void SyncpathListController::OnViewCreated(Window* window){
+    this->listView.SetScrollBarVisibility(HorizontalScrollBar, false);
 
-namespace musik { namespace cube { namespace dialog {
+    typedef ListView::Column Column;
 
-//////////////////////////////////////////////////////////////////////////////
-// forward 
-class AddLibraryController;
-//////////////////////////////////////////////////////////////////////////////
+    Size clientSize = this->listView.ClientSize();
 
-class AddLibraryView: public win32cpp::Frame{
-    public:     
-        AddLibraryView(int type);
+    this->mainColumn = Column::Create(_T("Path"), clientSize.width);
+    this->listView.AddColumn(this->mainColumn);
 
-        virtual void OnCreated();
-        win32cpp::Button *okButton, *cancelButton;
-        win32cpp::EditView *name, *remoteHost, *remotePort;
-    private:
-        int type;
+    this->listView.EnableColumnResizing(false);
+    this->listView.SetModel(this->model);
+    //
+    int itemHeight = this->listView.RowHeight();
+    this->listView.SetRowHeight(max(itemHeight, 17));
 
-};
+    this->listView.Resized.connect(
+        this, &SyncpathListController::OnResized);
 
-//////////////////////////////////////////////////////////////////////////////
+}
 
-} } }     // musik::cube::dialog
+void SyncpathListController::OnResized(Window* window, Size size)
+{
+    this->listView.SetColumnWidth(this->mainColumn, this->listView.ClientSize().width);
+}
 
+void SyncpathListController::RemoveSelectedPaths(){
+
+    SyncpathListModel* model    = (SyncpathListModel*)this->model.get();
+	musik::core::Indexer *indexer   = this->syncpathController->indexer;
+    if(indexer && model){
+
+        win32cpp::ListView::RowIndexList selectedRows(this->listView.SelectedRows());
+        for(win32cpp::ListView::RowIndexList::iterator row=selectedRows.begin();row!=selectedRows.end();++row){
+            indexer->RemovePath(model->paths[*row]);
+        }
+
+    }
+    
+}

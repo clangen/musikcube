@@ -35,40 +35,56 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
-#pragma once
+
+#include "pch.hpp"
+#include <server/SyncpathView.hpp>
+
+#include <win32cpp/LinearLayout.hpp>
+#include <win32cpp/Button.hpp>
+#include <win32cpp/ListView.hpp>
+#include <win32cpp/Label.hpp>
+
 
 //////////////////////////////////////////////////////////////////////////////
-// Forward declare
-namespace win32cpp{
-    class Button;
-    class EditView;
+
+using namespace musik::server;
+
+//////////////////////////////////////////////////////////////////////////////
+
+SyncpathView::SyncpathView()
+{
 }
-//////////////////////////////////////////////////////////////////////////////
 
-#include <win32cpp/Frame.hpp>
+void SyncpathView::OnCreated()
+{
 
-//////////////////////////////////////////////////////////////////////////////
+    LinearLayout* pathLayout = new LinearLayout(LinearColumnLayout);
+    LinearLayout* pathButtonsLayout = new LinearLayout(LinearRowLayout);
+    
 
-namespace musik { namespace cube { namespace dialog {
+    // Path ListView
+    this->pathList          = pathLayout->AddChild(new ListView());
 
-//////////////////////////////////////////////////////////////////////////////
-// forward 
-class AddLibraryController;
-//////////////////////////////////////////////////////////////////////////////
+    pathLayout->SetDefaultChildFill(true);
+//    pathLayout->SetSizeConstraints(LayoutFillParent,120);
+    pathLayout->SetFlexibleChild(this->pathList);
 
-class AddLibraryView: public win32cpp::Frame{
-    public:     
-        AddLibraryView(int type);
 
-        virtual void OnCreated();
-        win32cpp::Button *okButton, *cancelButton;
-        win32cpp::EditView *name, *remoteHost, *remotePort;
-    private:
-        int type;
+    // pathButtons layout
+    this->addPathButton     = pathButtonsLayout->AddChild(new Button(_T("Add path")));
+    this->removePathButton  = pathButtonsLayout->AddChild(new Button(_T("Remove path")));
 
-};
+    this->addPathButton->Resize(90, 24);
+    this->removePathButton->Resize(90, 24);
 
-//////////////////////////////////////////////////////////////////////////////
+    pathButtonsLayout->SetDefaultChildFill(false);
+    pathButtonsLayout->SetDefaultChildAlignment(ChildAlignMiddle);
+    pathButtonsLayout->SetSizeConstraints(90,LayoutFillParent);
 
-} } }     // musik::cube::dialog
+    pathLayout->AddChild(pathButtonsLayout);
 
+
+    // Add to the layout
+    this->AddChild(new Frame(pathLayout,FramePadding(20)));
+
+}

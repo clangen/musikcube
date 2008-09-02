@@ -140,10 +140,6 @@ void Library::Remote::ReadThread(){
             return;
         }
     }
-    catch(boost::system::system_error &error){
-        this->Exit();
-        return;
-    }
     catch(...){
         this->Exit();
         return;

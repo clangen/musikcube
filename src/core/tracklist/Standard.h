@@ -118,8 +118,8 @@ namespace musik{ namespace core{
                 typedef boost::bimap<int,musik::core::TrackPtr> TrackCache;
                 TrackCache trackCache;
 
-                int infoDuration;
-                int infoFilesize;
+                UINT64 infoDuration;
+                UINT64 infoFilesize;
 
 //                bool InCache(int position);
 //                bool InCache(musik::core::TrackPtr track);

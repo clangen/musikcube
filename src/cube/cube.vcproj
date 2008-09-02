@@ -42,6 +42,7 @@
 				Optimization="0"
 				AdditionalIncludeDirectories="./;../;../3rdparty/include/"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_SCL_SECURE_NO_WARNINGS;XML_STATIC"
+				GeneratePreprocessedFile="0"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"

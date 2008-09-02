@@ -4,6 +4,8 @@
 //
 // The following are Copyright © 2007, mC2 Team
 //
+// Sources and Binaries of: mC2
+//
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without 
@@ -34,20 +36,37 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.hpp"
+#pragma once
 
-#include <core/config.h>
-#include <core/Server.h>
+//////////////////////////////////////////////////////////////////////////////
 
-using namespace musik::core;
+#include <server/SyncpathListController.hpp>
+#include <win32cpp/ListView.hpp>
 
-int main(int argc, utfchar* argv[]){
+//////////////////////////////////////////////////////////////////////////////
 
-    Server server(10543,10544);
+namespace musik { namespace server {
 
-    server.Startup();
+//////////////////////////////////////////////////////////////////////////////
 
-    system("PAUSE");
+class SyncpathListModel : public win32cpp::ListView::Model, public win32cpp::EventHandler{
+    public:
+        SyncpathListModel(SyncpathListController *controller);
+        virtual win32cpp::uistring CellValueToString(int rowIndex, win32cpp::ListView::ColumnRef column);
+        void UpdateSyncPaths();
+    private:
 
-    return 0;
-}
+        void OnPathsUpdated();
+
+        SyncpathListController *controller;
+
+        friend class SyncpathListController;
+
+        typedef std::vector<win32cpp::uistring> PathVector;
+        PathVector paths;
+};
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+} }     // musik::server

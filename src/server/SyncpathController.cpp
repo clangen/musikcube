@@ -35,40 +35,64 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
-#pragma once
+
+#include "pch.hpp"
+#include <server/SyncpathController.hpp>
+#include <server/SyncpathView.hpp>
+#include <server/SyncpathListController.hpp>
+#include <core/Indexer.h>
+
+#include <win32cpp/FolderBrowseDialog.hpp>
+#include <win32cpp/Button.hpp>
+#include <win32cpp/Label.hpp>
+#include <win32cpp/Window.hpp>
+#include <win32cpp/Application.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
-// Forward declare
-namespace win32cpp{
-    class Button;
-    class EditView;
+
+using namespace win32cpp;
+using namespace musik::server;
+
+//////////////////////////////////////////////////////////////////////////////
+
+SyncpathController::SyncpathController(SyncpathView& syncpathView,musik::core::Indexer *indexer)
+: syncpathView(syncpathView)
+, indexer(indexer)
+{
+    this->syncpathView.Handle()
+        ? this->OnViewCreated(&this->syncpathView)
+        : this->syncpathView.Created.connect(this, &SyncpathController::OnViewCreated);
+    
+    this->syncpathView.Resized.connect(
+        this, &SyncpathController::OnViewResized);
 }
-//////////////////////////////////////////////////////////////////////////////
 
-#include <win32cpp/Frame.hpp>
+void SyncpathController::OnViewCreated(Window* window)
+{
 
-//////////////////////////////////////////////////////////////////////////////
+    this->syncpathView.addPathButton->Pressed.connect(this,&SyncpathController::OnAddPath);
+    this->syncpathView.removePathButton->Pressed.connect(this,&SyncpathController::OnRemovePath);
 
-namespace musik { namespace cube { namespace dialog {
+    this->syncpathListController.reset(new musik::server::SyncpathListController(*this->syncpathView.pathList,this));
 
-//////////////////////////////////////////////////////////////////////////////
-// forward 
-class AddLibraryController;
-//////////////////////////////////////////////////////////////////////////////
+}
 
-class AddLibraryView: public win32cpp::Frame{
-    public:     
-        AddLibraryView(int type);
+void        SyncpathController::OnViewResized(Window* window, Size size)
+{
+}
 
-        virtual void OnCreated();
-        win32cpp::Button *okButton, *cancelButton;
-        win32cpp::EditView *name, *remoteHost, *remotePort;
-    private:
-        int type;
+void SyncpathController::OnAddPath(Button* button){
+    win32cpp::FolderBrowseDialog addPath;
 
-};
+    if(addPath.Show(win32cpp::Application::Instance().MainWindow())==win32cpp::FolderBrowseDialog::ResultOK){
+        if(this->indexer){
+            this->indexer->AddPath(addPath.Directory());
+        }
+    }
+}
 
-//////////////////////////////////////////////////////////////////////////////
+void SyncpathController::OnRemovePath(Button* button){
+    this->syncpathListController->RemoveSelectedPaths();
+}
 
-} } }     // musik::cube::dialog
 

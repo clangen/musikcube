@@ -41,6 +41,8 @@
 
 using namespace musik::core::db;
 
+boost::mutex Connection::globalMutex;
+
 //////////////////////////////////////////
 ///\brief
 ///Constructor
@@ -226,6 +228,11 @@ int Connection::Execute(const wchar_t* sql){
     return ReturnCode::OK;
 }
 
+void Connection::Analyze(){
+    boost::mutex::scoped_lock lock(Connection::globalMutex);
+    this->Execute("ANALYZE");
+}
+
 
 //////////////////////////////////////////
 ///\brief
@@ -238,7 +245,7 @@ int Connection::Execute(const wchar_t* sql){
 ///http://www.sqlite.org/c3ref/last_insert_rowid.html
 //////////////////////////////////////////
 int Connection::LastInsertedId(){
-    return sqlite3_last_insert_rowid(this->connection);
+    return (int)sqlite3_last_insert_rowid(this->connection);
 }
 
 
@@ -346,8 +353,7 @@ void Connection::Interrupt(){
 void Connection::Maintenance(bool init){
 
     // Need to be locked throuout all Connections
-    static boost::mutex tempMutex;
-    boost::mutex::scoped_lock lock(tempMutex);
+    boost::mutex::scoped_lock lock(Connection::globalMutex);
 
     static int counter(0);
 

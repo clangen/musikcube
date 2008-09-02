@@ -4,6 +4,8 @@
 //
 // The following are Copyright © 2007, mC2 Team
 //
+// Sources and Binaries of: mC2
+//
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without 
@@ -35,3 +37,42 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #pragma once
+
+//////////////////////////////////////////////////////////////////////////////
+
+#include <win32cpp/ListView.hpp>
+
+//////////////////////////////////////////////////////////////////////////////
+// Forward
+namespace musik { namespace server {
+    class SyncpathController;
+    class SyncpathListModel;
+} }
+
+
+
+namespace musik { namespace server {
+
+//////////////////////////////////////////////////////////////////////////////
+
+class SyncpathListController : public win32cpp::EventHandler{
+    public:
+        SyncpathListController(win32cpp::ListView &listView,musik::server::SyncpathController *syncpathController);
+        void                                RemoveSelectedPaths();
+    private:
+        void                                OnViewCreated(win32cpp::Window* window);
+        void                                OnResized(win32cpp::Window* window, win32cpp::Size size);
+
+        win32cpp::ListView&                 listView;
+        win32cpp::ListView::ModelRef        model;
+        win32cpp::ListView::ColumnRef       mainColumn;
+
+		friend class SyncpathListModel;
+		
+        musik::server::SyncpathController*    syncpathController;
+};
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+} }     // musik::cube::settings

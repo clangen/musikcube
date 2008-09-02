@@ -71,7 +71,7 @@ LibraryFactory::LibraryFactory(void){
 LibraryFactory::~LibraryFactory(void){
 }
 
-bool LibraryFactory::AddLibrary(utfstring name,int type,bool sendEvent){
+LibraryPtr LibraryFactory::AddLibrary(utfstring name,int type,bool sendEvent,bool startup){
 	LibraryPtr lib;
 	switch(type){
 		case Types::Remote:
@@ -89,15 +89,20 @@ bool LibraryFactory::AddLibrary(utfstring name,int type,bool sendEvent){
         }
 
 		// Start the library
-		return lib->Startup();
+        if(startup){
+            lib->Startup();
+        }
+
+        return lib;
+
 	}
-    return false;
+    return lib;
 }
 
 void LibraryFactory::RemoveLibrary(utfstring name){
 }
 
-bool LibraryFactory::CreateLibrary(utfstring name,int type){
+LibraryPtr LibraryFactory::CreateLibrary(utfstring name,int type,bool startup){
 	// Connect to the settings.db
 	utfstring dataDir   = GetDataDirectory();
     utfstring dbFile    = GetDataDirectory() + UTF("settings.db");
@@ -108,9 +113,9 @@ bool LibraryFactory::CreateLibrary(utfstring name,int type){
 	stmtInsert.BindTextUTF(0,name);
 	stmtInsert.BindInt(1,type);
 	if(stmtInsert.Step()==db::Done){
-		return this->AddLibrary(name,type,true);
+		return this->AddLibrary(name,type,true,startup);
 	}
-	return false;
+	return LibraryPtr();
 }
 
 void LibraryFactory::DeleteLibrary(utfstring name){

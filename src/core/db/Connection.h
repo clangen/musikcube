@@ -72,6 +72,7 @@ namespace musik{ namespace core{ namespace db{
             int LastInsertedId();
 
             void Interrupt();
+            void Analyze();
 
         private:
 
@@ -92,6 +93,7 @@ namespace musik{ namespace core{ namespace db{
             sqlite3 *connection;
 
             boost::mutex mutex;
+            static boost::mutex globalMutex;
 
             void Maintenance(bool init);
 

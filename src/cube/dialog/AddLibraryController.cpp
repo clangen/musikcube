@@ -37,6 +37,8 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
+#include <core/LibraryFactory.h>
+#include <core/Preferences.h>
 #include <cube/dialog/AddLibraryController.hpp>
 #include <cube/dialog/AddLibraryView.hpp>
 
@@ -56,7 +58,7 @@ AddLibraryController::AddLibraryController(win32cpp::TopLevelWindow &mainWindow,
 ,view(NULL)
 ,libraryType(type)
 {
-    this->view  = new AddLibraryView();
+    this->view  = new AddLibraryView(type);
     this->mainWindow.AddChild(this->view);
     
     this->view->Handle()
@@ -79,10 +81,18 @@ void AddLibraryController::OnCancel(win32cpp::Button* button){
 }
 
 void AddLibraryController::OnOK(win32cpp::Button* button){
-    if(musik::core::LibraryFactory::Instance().CreateLibrary(this->view->name->Caption(),this->libraryType)){
+    if(musik::core::LibraryPtr library=musik::core::LibraryFactory::Instance().CreateLibrary(this->view->name->Caption(),this->libraryType,false)){
+        if(this->libraryType==musik::core::LibraryFactory::Remote){
+            musik::core::Preferences prefs("Connection",this->view->name->Caption().c_str() );
+            prefs.SetString("address",this->view->remoteHost->Caption().c_str());
+            prefs.SetString("port",this->view->remotePort->Caption().c_str());
+        }
+
+        library->Startup();
+
         this->mainWindow.Close();
     }else{
-        // Show some error that it didn't work
+        // TODO: Show some error that it didn't work
         this->mainWindow.Close();
     }
 }

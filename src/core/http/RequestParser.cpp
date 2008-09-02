@@ -54,17 +54,17 @@ void RequestParser::Parse(const std::string &request){
     this->Clear();
 
     // Find GET
-    int getStartIndex    = request.find("GET ");
+    std::string::size_type getStartIndex    = request.find("GET ");
     if(getStartIndex != std::string::npos){
         getStartIndex+=4;
         // Find next whitespace
-        int getEndIndex    = request.find_first_of(" \r\n",getStartIndex);
+        std::string::size_type getEndIndex    = request.find_first_of(" \r\n",getStartIndex);
         if(getEndIndex!=std::string::npos){
             // a request is found
             this->fullRequest.assign(request,getStartIndex,getEndIndex-getStartIndex);
 
             // Find querystring
-            int questionMark( this->fullRequest.find("?") );
+            std::string::size_type questionMark( this->fullRequest.find("?") );
 
             if(questionMark!=std::string::npos){
                 this->path.assign(this->fullRequest.substr(0,questionMark));

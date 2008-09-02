@@ -2,9 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, mC2 Team
-//
-// Sources and Binaries of: mC2, win32cpp
+// The following are Copyright © 2007, mC2 team
 //
 // All rights reserved.
 //
@@ -35,40 +33,56 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
+
 #pragma once
 
 //////////////////////////////////////////////////////////////////////////////
 // Forward declare
 namespace win32cpp{
-    class Button;
-    class EditView;
+    class TopLevelWindow;
+    class Label;
+    class Frame;
 }
+namespace musik { namespace server {
+    class SyncpathController;
+} }
 //////////////////////////////////////////////////////////////////////////////
 
-#include <win32cpp/Frame.hpp>
+#include <win32cpp/Timer.hpp>
+
+#include <core/Server.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
-namespace musik { namespace cube { namespace dialog {
+using namespace win32cpp;
+
+namespace musik { namespace server {
 
 //////////////////////////////////////////////////////////////////////////////
-// forward 
-class AddLibraryController;
-//////////////////////////////////////////////////////////////////////////////
 
-class AddLibraryView: public win32cpp::Frame{
-    public:     
-        AddLibraryView(int type);
+class MainWindowController : public EventHandler
+{
+    public:
+        MainWindowController(TopLevelWindow& mainWindow,musik::core::ServerPtr server);
+        ~MainWindowController();
 
-        virtual void OnCreated();
-        win32cpp::Button *okButton, *cancelButton;
-        win32cpp::EditView *name, *remoteHost, *remotePort;
-    private:
-        int type;
+    protected:  
+        void OnMainWindowCreated(Window* window);
+        void OnResize(Window* window, Size size);
+        void OnDestroyed(Window* window);
+        void UpdateStatus();
+
+    protected:  
+        TopLevelWindow& mainWindow;
+        musik::core::ServerPtr server;
+        win32cpp::Label *statusLabel;
+        win32cpp::Frame *mainFrame;
+        SyncpathController *syncpathController;
+
+        win32cpp::Timer timer;
 
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-} } }     // musik::cube::dialog
-
+} }     // musik::server

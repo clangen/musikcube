@@ -38,9 +38,11 @@
 
 #include "pch.hpp"
 #include <cube/dialog/AddLibraryView.hpp>
+#include <core/LibraryFactory.h>
 #include <win32cpp/Label.hpp>
 #include <win32cpp/Button.hpp>
 #include <win32cpp/LinearLayout.hpp>
+#include <win32cpp/BarLayout.hpp>
 #include <win32cpp/EditView.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
@@ -50,8 +52,9 @@ using namespace win32cpp;
 
 //////////////////////////////////////////////////////////////////////////////
 
-AddLibraryView::AddLibraryView()
+AddLibraryView::AddLibraryView(int type)
 : Frame(NULL,FramePadding(6))
+, type(type)
 {
 }
 
@@ -72,28 +75,45 @@ void AddLibraryView::OnCreated()
 
     Label* title    = firstColumnLayout->AddChild(new Label(_T("Add Library")));
     title->SetFont(boldFont);
+    topRowLayout->AddChild(firstColumnLayout);
+
 
     // Second rows column layout
     LinearLayout* secondColumnLayout = new LinearLayout(LinearColumnLayout);
+    secondColumnLayout->SetDefaultChildAlignment(win32cpp::ChildAlignTop);
 
     win32cpp::Label* nameLabel      = secondColumnLayout->AddChild(new Label(_T("Library name:") ));
     this->name                      = secondColumnLayout->AddChild(new EditView(160,20 ));
+    topRowLayout->AddChild(secondColumnLayout);
+
+
+    // Third rows column layout
+    if(this->type==musik::core::LibraryFactory::Remote){
+        LinearLayout* remoteHostColumnLayout = new LinearLayout(LinearColumnLayout);
+//        remoteHostColumnLayout->SetDefaultChildAlignment(win32cpp::ChildAlignTop);
+        remoteHostColumnLayout->AddChild(new Label(_T("Remote host:") ));
+        this->remoteHost = remoteHostColumnLayout->AddChild(new EditView(160,20 ));
+        topRowLayout->AddChild(remoteHostColumnLayout);
+
+        LinearLayout* remotePortColumnLayout = new LinearLayout(LinearColumnLayout);
+//        remotePortColumnLayout->SetDefaultChildAlignment(win32cpp::ChildAlignTop);
+        remotePortColumnLayout->AddChild(new Label(_T("Remote port:") ));
+        this->remotePort = remotePortColumnLayout->AddChild(new EditView(100,20 ));
+        this->remotePort->SetCaption(uistring(_T("10543")));
+        topRowLayout->AddChild(remotePortColumnLayout);
+    }
 
     // Last rows column layout
     LinearLayout* bottomButtonLayout = new LinearLayout(LinearColumnLayout);
     bottomButtonLayout->SetDefaultChildFill(false);
-
     this->cancelButton  = bottomButtonLayout->AddChild(new Button(_T("Cancel")));
     this->okButton      = bottomButtonLayout->AddChild(new Button(_T("OK")));
     this->cancelButton->Resize(60,20);
     this->okButton->Resize(60,20);
-
-
-
-    topRowLayout->AddChild(firstColumnLayout);
-    topRowLayout->AddChild(secondColumnLayout);
     topRowLayout->AddChild(bottomButtonLayout);
     topRowLayout->SetChildAlignment(bottomButtonLayout,ChildAlignRight);
+
+
 
     this->AddChild(topRowLayout);
 

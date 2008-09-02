@@ -73,7 +73,7 @@ class Responder : public IResponder{
 
         bool Startup();
 
-        virtual void SendContent(const char* buffer,const int bufferSize);
+        virtual void SendContent(const char* buffer,const std::size_t bufferSize);
         virtual bool Exited();
     private:
         friend class Server;

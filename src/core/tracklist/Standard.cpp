@@ -88,7 +88,7 @@ musik::core::TrackPtr Standard::operator [](int position){
 
 
 int Standard::Size(){
-    return this->tracks.size();
+    return (int)this->tracks.size();
 }
 
 
@@ -98,7 +98,7 @@ void Standard::SetCurrentPosition(int position){
         this->currentPosition   = -1;
     }else{
         if(position >= (int)this->tracks.size()){
-            this->currentPosition   = this->tracks.size();
+            this->currentPosition   = (int)this->tracks.size();
         }else{
             this->currentPosition   = position;
         }
@@ -114,7 +114,7 @@ int Standard::CurrentPosition(){
         return -1;
 
     if(this->currentPosition >= (int)this->tracks.size())
-        return this->tracks.size()-1;
+        return (int)this->tracks.size()-1;
 
     return this->currentPosition;
 }
