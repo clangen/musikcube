@@ -155,7 +155,7 @@ bool Track::CompareDBAndFileInfo(const boost::filesystem::utfpath &file,db::Conn
     this->SetValue("path",file.string().c_str());
     this->SetValue("filename",file.leaf().c_str());
 
-    int lastDot = file.leaf().find_last_of(UTF("."));
+    utfstring::size_type lastDot = file.leaf().find_last_of(UTF("."));
     if(lastDot!=utfstring::npos){
         this->SetValue("extension",file.leaf().substr(lastDot+1).c_str());
     }

@@ -192,16 +192,57 @@
 	<References>
 	</References>
 	<Files>
+		<Filter
+			Name="src"
+			>
+			<File
+				RelativePath=".\MainWindowController.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\MainWindowController.hpp"
+				>
+			</File>
+			<Filter
+				Name="Syncpath settings"
+				>
+				<File
+					RelativePath=".\SyncpathController.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\SyncpathController.hpp"
+					>
+				</File>
+				<File
+					RelativePath=".\SyncpathListController.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\SyncpathListController.hpp"
+					>
+				</File>
+				<File
+					RelativePath=".\SyncpathListModel.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\SyncpathListModel.hpp"
+					>
+				</File>
+				<File
+					RelativePath=".\SyncpathView.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\SyncpathView.hpp"
+					>
+				</File>
+			</Filter>
+		</Filter>
 		<File
 			RelativePath=".\main.cpp"
 			>
-			<FileConfiguration
-				Name="Debug|Win32"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-				/>
-			</FileConfiguration>
 		</File>
 		<File
 			RelativePath=".\pch.cpp"

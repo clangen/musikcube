@@ -37,6 +37,7 @@
 #pragma once
 
 #include <core/config.h>
+#include <stddef.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -46,7 +47,7 @@ namespace musik{ namespace core{ namespace http{
 
 class IResponder{
     public:
-        virtual void SendContent(const char* buffer,const int bufferSize)=0;
+        virtual void SendContent(const char* buffer,const std::size_t bufferSize)=0;
         virtual bool Exited()=0;
 };
 

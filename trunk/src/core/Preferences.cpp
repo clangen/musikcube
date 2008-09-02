@@ -247,12 +247,6 @@ utfstring Preferences::Setting::Value(utfstring defaultValue){
 Preferences::IO::SettingMapPtr Preferences::IO::GetNamespace(const char* nameSpace,const utfchar* library,int &libraryId){
 
     boost::mutex::scoped_lock lock(this->mutex);
-    // First check if it's in the NamespaceMap
-    NamespaceMap::iterator ns = this->libraryNamespaces[libraryId].find(nameSpace);
-    if(ns!=this->libraryNamespaces[libraryId].end()){
-        // Found namespace, return settings
-        return ns->second;
-    }
 
     if(library!=NULL){
         db::Statement getLibStmt("SELECT id FROM libraries WHERE name=?",this->db);
@@ -261,6 +255,14 @@ Preferences::IO::SettingMapPtr Preferences::IO::GetNamespace(const char* nameSpa
             libraryId   = getLibStmt.ColumnInt(0);
         }
     }
+
+    // First check if it's in the NamespaceMap
+    NamespaceMap::iterator ns = this->libraryNamespaces[libraryId].find(nameSpace);
+    if(ns!=this->libraryNamespaces[libraryId].end()){
+        // Found namespace, return settings
+        return ns->second;
+    }
+
 
     // Not in cache, lets load it from db.
     int nameSpaceId(0);

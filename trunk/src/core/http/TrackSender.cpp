@@ -54,7 +54,7 @@ const char* TrackSender::WatchPath(){
 void TrackSender::Execute(musik::core::http::IResponder* responder,const musik::core::http::IRequestParser* request,const musik::core::ITrack* track){
     #define BUFFER_SIZE 4096
     char buffer[BUFFER_SIZE];
-    int buffersize(0);
+    std::size_t buffersize(0);
 
     // TODO: Should rewrite this in a multiplatform manner
     if(track && responder){

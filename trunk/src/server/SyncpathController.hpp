@@ -35,40 +35,53 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
+
 #pragma once
 
 //////////////////////////////////////////////////////////////////////////////
 // Forward declare
+namespace musik { namespace server {
+    class SyncpathView;
+    class SyncpathModel;
+    class SyncpathListController;
+} }
+namespace musik { namespace core {
+    class Indexer;
+} }
 namespace win32cpp{
+    class Window;
     class Button;
-    class EditView;
 }
 //////////////////////////////////////////////////////////////////////////////
 
-#include <win32cpp/Frame.hpp>
+#include <win32cpp/Types.hpp>
+#include <win32cpp/WindowGeometry.hpp>
+#include <boost/shared_ptr.hpp>
+
+namespace musik { namespace server{
 
 //////////////////////////////////////////////////////////////////////////////
 
-namespace musik { namespace cube { namespace dialog {
-
-//////////////////////////////////////////////////////////////////////////////
-// forward 
-class AddLibraryController;
-//////////////////////////////////////////////////////////////////////////////
-
-class AddLibraryView: public win32cpp::Frame{
+class SyncpathController : public win32cpp::EventHandler
+{
     public:     
-        AddLibraryView(int type);
+        SyncpathController(SyncpathView& syncpathView,musik::core::Indexer *indexer);
 
-        virtual void OnCreated();
-        win32cpp::Button *okButton, *cancelButton;
-        win32cpp::EditView *name, *remoteHost, *remotePort;
-    private:
-        int type;
+    private:  
+        void        OnViewCreated(win32cpp::Window* window);
+        void        OnViewResized(win32cpp::Window* window, win32cpp::Size size);
 
+        SyncpathView& syncpathView;
+
+        void OnAddPath(win32cpp::Button* button);
+        void OnRemovePath(win32cpp::Button* button);
+
+        typedef boost::shared_ptr<SyncpathListController> SyncpathListControllerRef;
+        SyncpathListControllerRef syncpathListController;
+    public:
+        musik::core::Indexer *indexer;
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-} } }     // musik::cube::dialog
-
+} }     // musik::server

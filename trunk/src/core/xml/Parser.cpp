@@ -177,7 +177,7 @@ void Parser::ContinueParsing(){
 		        break;
 	        case XML_Status::XML_STATUS_OK:
 		        this->ReadFromSocket();
-		        this->xmlParserStatus	= XML_Parse(this->xmlParser,this->readBuffer.c_array(),this->readBufferLength,0);
+		        this->xmlParserStatus	= XML_Parse(this->xmlParser,this->readBuffer.c_array(),(int)this->readBufferLength,0);
 		        break;
             case XML_Status::XML_STATUS_ERROR:
                 this->Exit();

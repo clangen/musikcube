@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, mC2 Team
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: mC2
 //
 // All rights reserved.
 //
@@ -35,40 +35,58 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
-#pragma once
+
+#include "pch.hpp"
+#include <server/SyncpathListModel.hpp>
+#include <server/SyncpathController.hpp>
+#include <win32cpp/ApplicationThread.hpp>
+#include <core/Indexer.h>
 
 //////////////////////////////////////////////////////////////////////////////
-// Forward declare
-namespace win32cpp{
-    class Button;
-    class EditView;
+
+using namespace musik::server;
+using namespace win32cpp;
+
+//////////////////////////////////////////////////////////////////////////////
+
+SyncpathListModel::SyncpathListModel(SyncpathListController *controller)
+: controller(controller)
+{
+    musik::core::Indexer *indexer   = this->controller->syncpathController->indexer;
+    if(indexer){
+        indexer->PathsUpdated.connect(this,&SyncpathListModel::OnPathsUpdated);
+    }
+    this->UpdateSyncPaths();
+
 }
-//////////////////////////////////////////////////////////////////////////////
 
-#include <win32cpp/Frame.hpp>
 
-//////////////////////////////////////////////////////////////////////////////
+uistring SyncpathListModel::CellValueToString(int rowIndex, ListView::ColumnRef column){
+    if(rowIndex<this->paths.size() && rowIndex>=0){
+        return this->paths[rowIndex];
+    }
 
-namespace musik { namespace cube { namespace dialog {
+    return uistring();
+}
 
-//////////////////////////////////////////////////////////////////////////////
-// forward 
-class AddLibraryController;
-//////////////////////////////////////////////////////////////////////////////
+void SyncpathListModel::UpdateSyncPaths(){
+    musik::core::Indexer *indexer   = this->controller->syncpathController->indexer;
+    if(indexer){
+        this->paths    = indexer->GetPaths();
+    }
 
-class AddLibraryView: public win32cpp::Frame{
-    public:     
-        AddLibraryView(int type);
+    this->SetRowCount(0);
+    this->SetRowCount((int)this->paths.size());
 
-        virtual void OnCreated();
-        win32cpp::Button *okButton, *cancelButton;
-        win32cpp::EditView *name, *remoteHost, *remotePort;
-    private:
-        int type;
+}
 
-};
+void SyncpathListModel::OnPathsUpdated(){
+    if(!win32cpp::ApplicationThread::InMainThread()){
+        win32cpp::ApplicationThread::Call0(this,&SyncpathListModel::OnPathsUpdated);
+        return;
+    }
 
-//////////////////////////////////////////////////////////////////////////////
+    this->UpdateSyncPaths();
 
-} } }     // musik::cube::dialog
+}
 

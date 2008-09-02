@@ -626,7 +626,7 @@ void Library::Base::CreateDatabase(db::Connection &db){
 
     db.Execute("CREATE INDEX IF NOT EXISTS playlist_index ON playlist_tracks (playlist_id,sort_order)");
 
-    db.Execute("ANALYZE");
+    db.Analyze();
 }
 
 utfstring Library::Base::BasePath(){

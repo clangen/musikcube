@@ -84,7 +84,7 @@ void        MetadataFilterModel::OnMetadata(musik::core::MetadataValueVector* me
         this->metadata.insert(this->metadata.end(),metadata->begin(),metadata->end());
         this->metadataFiltered.insert(this->metadataFiltered.end(),metadata->begin(),metadata->end());
     }
-    this->SetRowCount(this->metadataFiltered.size()+1);
+    this->SetRowCount((int)this->metadataFiltered.size()+1);
     this->InvalidateData(0);    // Invalidate the "All" count
 }
 
@@ -105,8 +105,8 @@ void MetadataFilterModel::OnChar(wchar_t key){
         }
     }
     this->SetRowCount(0);
-    this->SetRowCount(this->metadataFiltered.size()+1);
+    this->SetRowCount((int)this->metadataFiltered.size()+1);
 
-    this->controller->SelectAllFiltered(this->metadataFiltered.size()+1);
+    this->controller->SelectAllFiltered((int)this->metadataFiltered.size()+1);
 
 }

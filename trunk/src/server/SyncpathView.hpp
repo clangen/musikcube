@@ -41,7 +41,8 @@
 // Forward declare
 namespace win32cpp{
     class Button;
-    class EditView;
+    class ListView;
+    class Label;
 }
 //////////////////////////////////////////////////////////////////////////////
 
@@ -49,26 +50,30 @@ namespace win32cpp{
 
 //////////////////////////////////////////////////////////////////////////////
 
-namespace musik { namespace cube { namespace dialog {
+using namespace win32cpp;
+
+namespace musik { namespace server {
 
 //////////////////////////////////////////////////////////////////////////////
 // forward 
-class AddLibraryController;
+class SyncpathController;
 //////////////////////////////////////////////////////////////////////////////
 
-class AddLibraryView: public win32cpp::Frame{
+class SyncpathView: public Frame
+{
+
     public:     
-        AddLibraryView(int type);
+        SyncpathView();
+    
+    protected:  
+        virtual void    OnCreated();
 
-        virtual void OnCreated();
-        win32cpp::Button *okButton, *cancelButton;
-        win32cpp::EditView *name, *remoteHost, *remotePort;
-    private:
-        int type;
-
+        friend class SyncpathController;
+        Button *addPathButton,*removePathButton;
+        ListView *pathList;
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-} } }     // musik::cube::dialog
+} }     // musik::server
 

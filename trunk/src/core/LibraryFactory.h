@@ -60,7 +60,7 @@ class LibraryFactory{
         static LibraryFactory& Instance(){ return sInstance; };
 		static LibraryVector& Libraries();
 
-		bool CreateLibrary(utfstring name,int type);
+		LibraryPtr CreateLibrary(utfstring name,int type,bool startup=true);
 		void DeleteLibrary(utfstring name);
 
         typedef sigslot::signal0<> LibrariesUpdatedEvent;
@@ -73,7 +73,7 @@ class LibraryFactory{
         LibraryFactory(void);
         ~LibraryFactory(void);
 
-		bool AddLibrary(utfstring name,int type,bool sendEvent=false);
+		LibraryPtr AddLibrary(utfstring name,int type,bool sendEvent=false,bool startup=true);
 		void RemoveLibrary(utfstring name);
 
 };

@@ -183,9 +183,6 @@ void Writer::Send(){
             sendBuffer.clear();
         }
     }
-    catch(boost::system::error_code &error){
-        this->Exit();
-    }
     catch(...){
         this->Exit();
     }

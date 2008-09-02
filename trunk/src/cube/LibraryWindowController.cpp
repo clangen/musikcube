@@ -84,6 +84,8 @@ void        LibraryWindowController::OnViewCreated(Window* window)
 void LibraryWindowController::UpdateLibraryTabs(){
     using namespace musik::core;
 
+    RedrawLock redrawLock(&this->view);
+
     LibraryFactory::LibraryVector& libraries	= LibraryFactory::Libraries();
 
     // Loop through the libraries
