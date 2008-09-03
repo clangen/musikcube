@@ -139,8 +139,6 @@ void            Application::Run(TopLevelWindow& mainWindow)
     MSG msg;
     while (::GetMessage(&msg, NULL, 0, 0) > 0)
     {
-        Application::Instance().SysTrayManager()->WindowProc(msg.message, msg.wParam, msg.lParam);
-
         ::TranslateMessage(&msg);
         ::DispatchMessage(&msg);
     }

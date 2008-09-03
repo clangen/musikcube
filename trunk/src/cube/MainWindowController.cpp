@@ -109,6 +109,8 @@ void        MainWindowController::OnMainWindowCreated(Window* window)
     Application::Instance().SysTrayManager()->SetTooltip(uidTrayIcon, _T("And another test..."));
     Application::Instance().SysTrayManager()->SetPopupMenu(uidTrayIcon, myMenu);
     Application::Instance().SysTrayManager()->ShowBalloon(uidTrayIcon, _T("musikCube 2"), _T("Welcome to musikCube!"), 2);
+    Application::Instance().SysTrayManager()->EnableMinimizeToTray(uidTrayIcon);
+        
 
     static const int TransportViewHeight = 54;
 

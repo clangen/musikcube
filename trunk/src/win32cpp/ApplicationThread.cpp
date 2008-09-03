@@ -41,8 +41,6 @@
 
 using namespace win32cpp;
 
-#define CALL_WAITING (WM_USER + 1000)
-
 //////////////////////////////////////////
 ///\brief
 ///Constructor
@@ -117,7 +115,7 @@ void ApplicationThread::NotifyMainThread()
 {
     if(this->helperWindow)
     {
-        ::PostMessage(this->helperWindow->Handle(), CALL_WAITING, NULL, NULL);
+        ::PostMessage(this->helperWindow->Handle(), WM_W32CPP_APPLICATIONTHREAD_CALL_WAITING, NULL, NULL);
     }
 }
 
@@ -179,7 +177,7 @@ LRESULT ApplicationThread::HelperWindow::WindowProc(UINT message, WPARAM wParam,
 {
     switch (message)
     {
-    case CALL_WAITING:
+    case WM_W32CPP_APPLICATIONTHREAD_CALL_WAITING:
         // This is a ApplicationTread message
         ApplicationThread *thread = Application::Instance().Thread();
         if(thread)

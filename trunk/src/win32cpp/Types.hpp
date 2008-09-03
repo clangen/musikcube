@@ -84,4 +84,13 @@ typedef sigslot::has_slots<> EventHandler;
 
 //////////////////////////////////////////////////////////////////////////////
 
+///\brief
+///User-defined application-wide messages
+#define WM_W32CPP                                 (WM_USER + 1000)
+#define WM_W32CPP_SYSTRAY                         (WM_W32CPP  + 1)
+#define WM_W32CPP_APPLICATIONTHREAD_CALL_WAITING  (WM_W32CPP  + 2)
+
+//////////////////////////////////////////////////////////////////////////////
+
+
 } // namespace win32cpp
