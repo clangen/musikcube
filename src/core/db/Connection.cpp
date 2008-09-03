@@ -230,7 +230,7 @@ int Connection::Execute(const wchar_t* sql){
 
 void Connection::Analyze(){
     boost::mutex::scoped_lock lock(Connection::globalMutex);
-    this->Execute("ANALYZE");
+//    this->Execute("ANALYZE");
 }
 
 

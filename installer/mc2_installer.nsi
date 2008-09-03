@@ -9,8 +9,8 @@ SetCompressor /SOLID lzma
 !define MUI_BGCOLOR "FFFFFF"
 
 !define PROJECT_NAME "musikCube 2"
-!define SUB_NAME "developers milestone 1"
-!define INSTALLER_NAME "mC2_dev_m1"
+!define SUB_NAME "developers milestone 2"
+!define INSTALLER_NAME "mC2dm2"
 !define INSTALL_DIR "musikCube 2"
 
 ;----------------------------------------------------------------
@@ -42,6 +42,7 @@ Section "mC2installation" main
 
 	SetOutPath "$INSTDIR"
 	File /r "..\bin\release\mC2.exe"
+	File /r "..\bin\release\musikServer.exe"
 	File /r "..\LICENSE.txt"
 
 	SetOutPath "$INSTDIR\plugins"
@@ -52,6 +53,7 @@ Section "mC2installation" main
 
 	CreateDirectory "$SMPROGRAMS\${PROJECT_NAME} ${SUB_NAME}"
 	CreateShortCut "$SMPROGRAMS\${PROJECT_NAME} ${SUB_NAME}\${PROJECT_NAME}.lnk" "$INSTDIR\mC2.exe"
+	CreateShortCut "$SMPROGRAMS\${PROJECT_NAME} ${SUB_NAME}\musikServer.lnk" "$INSTDIR\musikServer.exe"
 
 SectionEnd
 
