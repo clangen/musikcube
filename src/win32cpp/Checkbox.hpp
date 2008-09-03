@@ -2,9 +2,9 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, mC2 Team
+// The following are Copyright © 2008, Casey Langen, André Wösten
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: win32cpp
 //
 // All rights reserved.
 //
@@ -35,45 +35,60 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
+
 #pragma once
 
 //////////////////////////////////////////////////////////////////////////////
-// Forward declare
-namespace win32cpp{
-    class Button;
-    class ListView;
-    class Label;
-}
-//////////////////////////////////////////////////////////////////////////////
 
-#include <win32cpp/Frame.hpp>
-#include <win32cpp/Checkbox.hpp>
+#include <win32cpp/Win32Config.hpp>
+#include <win32cpp/Window.hpp>
+
+namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
 
-using namespace win32cpp;
+class Checkbox;
 
-namespace musik { namespace cube {
+///\brief
+///The type of event used when the Checkbox is pressed..
+///\see
+///Button.
+typedef sigslot::signal2<Checkbox*, int> CheckboxPressedEvent;
 
-//////////////////////////////////////////////////////////////////////////////
-// forward 
-class SettingsController;
-//////////////////////////////////////////////////////////////////////////////
-
-class SettingsView: public Frame
+///\brief
+///A standard Checkbox.
+class Checkbox : public Window
 {
+private: // types
+    typedef Window base;
 
-public:     /*ctor*/        SettingsView();
-protected:  
-    virtual void    OnPressTestCheckbox(Checkbox* checkbox , int state);
-    virtual void    OnCreated();
-    friend class SettingsController;
-    Button *addPathButton,*removePathButton;
-    ListView *pathList;
-    Label *libraryStatus;
+public: // events
+    ///\brief This event is emitted when the user presses the Checkbox
+    CheckboxPressedEvent  Pressed;
+
+public: // constructors
+    /*ctor*/            Checkbox(const uichar* caption = _T(""), int style = BS_AUTOCHECKBOX);
+
+protected: // methods
+    virtual HWND        Create(Window* parent);
+    virtual LRESULT     WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+    virtual void        OnPressed(int state);
+    virtual void        PaintToHDC(HDC hdc, const Rect& rect);
+
+public:
+    virtual bool        IsChecked(void) const;
+    virtual bool        IsUnchecked(void) const;
+    virtual bool        IsIndeterminate(void) const;
+    virtual void        Check(void);
+    virtual void        Uncheck(void);
+    virtual void        SetIndeterminate(void);
+
+protected: // instance data
+    int state;
+    int style;
+    uistring caption;
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-} }     // musik::cube
-
+}   // win32cpp

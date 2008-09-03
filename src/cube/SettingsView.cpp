@@ -40,6 +40,7 @@
 #include <cube/SettingsView.hpp>
 #include <win32cpp/LinearLayout.hpp>
 #include <win32cpp/Button.hpp>
+#include <win32cpp/Checkbox.hpp>
 #include <win32cpp/ListView.hpp>
 #include <win32cpp/Label.hpp>
 
@@ -52,6 +53,18 @@ using namespace musik::cube;
 
 /*ctor*/    SettingsView::SettingsView()
 {
+}
+
+
+void        SettingsView::OnPressTestCheckbox(Checkbox* checkbox , int state)
+{
+    if(state == BST_CHECKED) {
+        ::MessageBox(NULL, _T("checked"), _T("checked"), MB_OK);
+    } else if(state == BST_UNCHECKED) {
+        ::MessageBox(NULL, _T("unchecked"), _T("unchecked"), MB_OK);
+    } else if(state == BST_INDETERMINATE) {
+        ::MessageBox(NULL, _T("indeterminate"), _T("indeterminate"), MB_OK);
+    }
 }
 
 void        SettingsView::OnCreated()
@@ -98,10 +111,21 @@ void        SettingsView::OnCreated()
 
     pathLayout->AddChild(pathButtonsLayout);
 
-
     // Add to the layout
     mainLayout->AddChild(new Frame(libraryStatusLayout,FramePadding(20,20,20,0)));
     mainLayout->AddChild(new Frame(pathLayout,FramePadding(20,20,0,20)));
+
+    // test checkbox
+    Checkbox* c = new Checkbox(_T("Test 1"));
+    mainLayout->AddChild(c);
+    c->Check();
+    c->Pressed.connect(this, &SettingsView::OnPressTestCheckbox);
+    
+    Checkbox* c2 = new Checkbox(_T("Test 2"), BS_AUTO3STATE);
+    mainLayout->AddChild(c2);
+    c2->SetIndeterminate();
+    c2->Pressed.connect(this, &SettingsView::OnPressTestCheckbox);
+
 
     this->AddChild(mainLayout);
 

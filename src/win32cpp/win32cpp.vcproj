@@ -317,6 +317,14 @@
 						>
 					</File>
 					<File
+						RelativePath=".\Checkbox.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Checkbox.hpp"
+						>
+					</File>
+					<File
 						RelativePath=".\EditView.cpp"
 						>
 					</File>
