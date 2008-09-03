@@ -44,7 +44,7 @@
 
 #include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>
-
+#include <atlbase.h>
 
 using namespace musik::core;
 
@@ -99,6 +99,7 @@ utfstring Library::Remote::GetInfo(){
 //////////////////////////////////////////
 bool Library::Remote::Startup(){
 
+    ATLTRACE2("Library::Remote::Startup\n");
     // Lets start the ReadThread first, it will startup the connection and
     // then start the WriteThread
     this->threads.create_thread(boost::bind(&Library::Remote::ReadThread,this));
@@ -113,6 +114,7 @@ bool Library::Remote::Startup(){
 //////////////////////////////////////////
 void Library::Remote::ReadThread(){
 
+ATLTRACE2("Library::Remote::ReadThread\n");
     {
         Preferences prefs("Connection",this->Identifier().c_str());
 
@@ -124,27 +126,42 @@ void Library::Remote::ReadThread(){
     boost::asio::ip::tcp::resolver::query resolverQuery(this->address,this->port);
 
     try{
-        boost::asio::ip::tcp::resolver::iterator endpointIterator = resolver.resolve(resolverQuery);
+        ATLTRACE2("Library::Remote::ReadThread 1\n");
+        boost::system::error_code resolverError;
+        boost::asio::ip::tcp::resolver::iterator endpointIterator = resolver.resolve(resolverQuery,resolverError);
         boost::asio::ip::tcp::resolver::iterator end;
+        ATLTRACE2("Library::Remote::ReadThread 1.1\n");
+
+        if(resolverError){
+            ATLTRACE2("Library::Remote::ReadThread ERROR 1.1\n");
+            this->Exit();
+            return;
+        }
 
         boost::system::error_code error = boost::asio::error::host_not_found;
         while (error && endpointIterator!=end){
+            ATLTRACE2("Library::Remote::ReadThread 1.2\n");
             this->socket.close();
+            ATLTRACE2("Library::Remote::ReadThread 1.3\n");
             this->socket.connect(*endpointIterator, error);
+            ATLTRACE2("Library::Remote::ReadThread 1.4\n");
             if(error){
                 endpointIterator++;
             }
         }
         if (error || endpointIterator==end){
+            ATLTRACE2("Library::Remote::ReadThread 1.5\n");
             this->Exit();
             return;
         }
+        ATLTRACE2("Library::Remote::ReadThread 1.6\n");
     }
     catch(...){
         this->Exit();
         return;
     }
 
+    ATLTRACE2("Library::Remote::ReadThread 2\n");
     // Successfully connected to server
     // Start the WriteThread
     try{
@@ -155,11 +172,15 @@ void Library::Remote::ReadThread(){
         return;
     }
 
+    ATLTRACE2("Library::Remote::ReadThread 3\n");
+
     try{
         // Lets start recieving queries
         xml::Parser parser(&this->socket);
+        ATLTRACE2("Library::Remote::ReadThread 4\n");
         if( xml::ParserNode rootNode=parser.ChildNode("musik")){
             while(xml::ParserNode node=rootNode.ChildNode()){
+                ATLTRACE2("Library::Remote::ReadThread 5\n");
                 if(node.Name()=="queryresults"){
 
                     unsigned int queryId    = boost::lexical_cast<unsigned int>(node.Attributes()["id"]);
@@ -204,6 +225,7 @@ void Library::Remote::ReadThread(){
 ///Thread for writing to the socket
 //////////////////////////////////////////
 void Library::Remote::WriteThread(){
+    ATLTRACE2("Library::Remote::WriteThread\n");
 
     xml::Writer writer(&this->socket);
 

@@ -87,12 +87,11 @@ void        MainWindowController::OnMainWindowCreated(Window* window)
 {
     
     // Start by setting the icon
-    HICON icon = LoadIcon(Application::Instance(), MAKEINTRESOURCE( IDI_MAINFRAME ) );
-    if ( icon ){
-        
-        SendMessage( window->Handle(), WM_SETICON, WPARAM( ICON_SMALL ), LPARAM( icon ) );
-        SendMessage( window->Handle(), WM_SETICON, WPARAM( ICON_BIG ), LPARAM( icon ) );
-    }
+    HICON icon16 = (HICON)LoadImage(Application::Instance(), MAKEINTRESOURCE(IDI_MAINFRAME), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+    HICON icon32 = (HICON)LoadImage(Application::Instance(), MAKEINTRESOURCE(IDI_MAINFRAME), IMAGE_ICON, 32, 32, LR_DEFAULTCOLOR);
+    SendMessage( window->Handle(), WM_SETICON, WPARAM( ICON_SMALL ), LPARAM( icon16 ) );
+    SendMessage( window->Handle(), WM_SETICON, WPARAM( ICON_BIG ), LPARAM( icon32 ) );
+
 
     // Init Tray Icon
     MenuRef myMenu = Menu::CreatePopup();
@@ -105,8 +104,8 @@ void        MainWindowController::OnMainWindowCreated(Window* window)
     // Bind Exit to handler
     trayExit->Activated.connect(this, &MainWindowController::OnFileExit);
 
-    UINT uidTrayIcon = Application::Instance().SysTrayManager()->AddIcon(Application::Instance().MainWindow(), icon);
-    Application::Instance().SysTrayManager()->SetTooltip(uidTrayIcon, _T("And another test..."));
+    UINT uidTrayIcon = Application::Instance().SysTrayManager()->AddIcon(Application::Instance().MainWindow(), icon16);
+    Application::Instance().SysTrayManager()->SetTooltip(uidTrayIcon, _T("musikCube"));
     Application::Instance().SysTrayManager()->SetPopupMenu(uidTrayIcon, myMenu);
     Application::Instance().SysTrayManager()->ShowBalloon(uidTrayIcon, _T("musikCube 2"), _T("Welcome to musikCube!"), 2);
     Application::Instance().SysTrayManager()->EnableMinimizeToTray(uidTrayIcon);
