@@ -51,10 +51,12 @@
 #include <win32cpp/LinearLayout.hpp>
 #include <win32cpp/Label.hpp>
 #include <win32cpp/Frame.hpp>
- 
+#include <win32cpp/SysTray.hpp> 
+
 //////////////////////////////////////////////////////////////////////////////
 
 using namespace musik::server;
+using namespace win32cpp;
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -86,6 +88,22 @@ void        MainWindowController::OnMainWindowCreated(Window* window)
         SendMessage( window->Handle(), WM_SETICON, WPARAM( ICON_SMALL ), LPARAM( icon ) );
         SendMessage( window->Handle(), WM_SETICON, WPARAM( ICON_BIG ), LPARAM( icon ) );
     }
+
+
+    // Init Tray Icon
+    MenuRef myMenu = Menu::CreatePopup();
+
+    // Create Tray Menu
+    MenuItemRef trayExit = myMenu->Items().Append(MenuItem::Create(_T("E&xit")));
+
+    // Bind Exit to handler
+    trayExit->Activated.connect(this, &MainWindowController::OnFileExit);
+
+    UINT uidTrayIcon = Application::Instance().SysTrayManager()->AddIcon(Application::Instance().MainWindow(), icon);
+    Application::Instance().SysTrayManager()->SetTooltip(uidTrayIcon, _T("musikServer"));
+    Application::Instance().SysTrayManager()->SetPopupMenu(uidTrayIcon, myMenu);
+    Application::Instance().SysTrayManager()->EnableMinimizeToTray(uidTrayIcon);
+
 
 
     {
@@ -122,7 +140,12 @@ void        MainWindowController::OnMainWindowCreated(Window* window)
     // Syncpath tab
     SyncpathView *synpathView   = tabs->AddTab(uistring(_T("Sync paths")), new SyncpathView());
     this->syncpathController    = new SyncpathController(*synpathView,&this->server->indexer);
-    
+
+    // Users tab
+    Frame *usersView   = tabs->AddTab(uistring(_T("Users")), new Frame());
+
+    // Settings tab
+    Frame *settingsView   = tabs->AddTab(uistring(_T("Settings")), new Frame());
 
 
     this->mainFrame->AddChild(mainRowLayout);
@@ -136,6 +159,11 @@ void        MainWindowController::OnMainWindowCreated(Window* window)
     this->timer.OnTimeout.connect(this,&MainWindowController::UpdateStatus);
     this->timer.ConnectToWindow(&this->mainWindow);
     this->timer.Start();
+
+
+
+    this->mainWindow.Show(SW_MINIMIZE);
+    this->mainWindow.Show(SW_HIDE);
 }
 
 void MainWindowController::OnResize(Window* window, Size size)
@@ -159,4 +187,9 @@ void MainWindowController::UpdateStatus(){
     if(this->statusLabel && this->server){
         this->statusLabel->SetCaption( this->server->indexer.GetStatus() );
     }
+}
+
+void MainWindowController::OnFileExit(MenuItemRef menuItem)
+{
+    Application::Instance().Terminate();
 }

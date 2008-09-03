@@ -71,6 +71,7 @@ class MainWindowController : public EventHandler
         void OnResize(Window* window, Size size);
         void OnDestroyed(Window* window);
         void UpdateStatus();
+        void OnFileExit(MenuItemRef menuItem);
 
     protected:  
         TopLevelWindow& mainWindow;
