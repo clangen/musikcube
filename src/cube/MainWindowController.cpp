@@ -105,10 +105,10 @@ void        MainWindowController::OnMainWindowCreated(Window* window)
     // Bind Exit to handler
     trayExit->Activated.connect(this, &MainWindowController::OnFileExit);
 
-    UINT uidTrayIcon = this->mainWindow.SysTrayManager()->AddIcon(window, icon);
-    this->mainWindow.SysTrayManager()->SetTooltip(uidTrayIcon, _T("And another test..."));
-    this->mainWindow.SysTrayManager()->SetPopupMenu(uidTrayIcon, myMenu);
-    this->mainWindow.SysTrayManager()->ShowBalloon(uidTrayIcon, _T("musikCube 2"), _T("Welcome to musikCube!"), 2);
+    UINT uidTrayIcon = Application::Instance().SysTrayManager()->AddIcon(Application::Instance().MainWindow(), icon);
+    Application::Instance().SysTrayManager()->SetTooltip(uidTrayIcon, _T("And another test..."));
+    Application::Instance().SysTrayManager()->SetPopupMenu(uidTrayIcon, myMenu);
+    Application::Instance().SysTrayManager()->ShowBalloon(uidTrayIcon, _T("musikCube 2"), _T("Welcome to musikCube!"), 2);
 
     static const int TransportViewHeight = 54;
 

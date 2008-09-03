@@ -73,7 +73,7 @@ public: // types
     ///is already running.
     class ApplicationAlreadyRunningException: public Exception { };
 
-public: // constructors
+public:
     /*ctor*/            Application();
 
 public: // methods
@@ -86,6 +86,7 @@ public: // methods
     const uistring&     CommandLine() const;
     int                 ShowCommand() const;
     void                Terminate() const;
+    SysTray*            SysTrayManager() const;
     ApplicationThread*  Thread();
 
 public: // operator overloads
@@ -101,6 +102,7 @@ private: // instance data
     int showCommand;
     TopLevelWindow* mainWindow;
     ApplicationThread* appThread;
+    SysTray* sysTray;
 
 private: // class data
     static Application sMainApplication;
