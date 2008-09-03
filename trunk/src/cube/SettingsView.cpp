@@ -41,6 +41,7 @@
 #include <win32cpp/LinearLayout.hpp>
 #include <win32cpp/Button.hpp>
 #include <win32cpp/Checkbox.hpp>
+#include <win32cpp/RadioButton.hpp>
 #include <win32cpp/ListView.hpp>
 #include <win32cpp/Label.hpp>
 
@@ -126,6 +127,32 @@ void        SettingsView::OnCreated()
     c2->SetIndeterminate();
     c2->Pressed.connect(this, &SettingsView::OnPressTestCheckbox);
 
+    // test radio buttons
+    RadioButton* r11 = new RadioButton(_T("Group 1: Button A"));
+    mainLayout->AddChild(r11);
+    
+    RadioButton* r12 = new RadioButton(_T("Group 1: Button B"), r11);
+    mainLayout->AddChild(r12);
+    
+    RadioButton* r13 = new RadioButton(_T("Group 1: Button C"), r12);
+    mainLayout->AddChild(r13);
+    
+    RadioButton* r21 = new RadioButton(_T("Group 2: Button A"));
+    mainLayout->AddChild(r21);
+    
+    RadioButton* r22 = new RadioButton(_T("Group 2: Button B"), r21);
+    mainLayout->AddChild(r22);
+    
+    RadioButton* r23 = new RadioButton(_T("Group 2: Button C"), r22);
+    mainLayout->AddChild(r23);
+
+    r11->Check(); r12->Check(); r13->Check();
+    r21->Check(); r22->Check();
+
+    RadioButton* checked = r11->GetCheckedInGroup();
+    if(checked) ::MessageBox(NULL, checked->Caption().c_str(), _T("test"), MB_OK);
+    checked = r22->GetCheckedInGroup();
+    if(checked) ::MessageBox(NULL, checked->Caption().c_str(), _T("test"), MB_OK);
 
     this->AddChild(mainLayout);
 
