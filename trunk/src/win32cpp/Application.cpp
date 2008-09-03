@@ -57,6 +57,7 @@ Application Application::sMainApplication;
 , showCommand(NULL)
 , mainWindow(NULL)
 , appThread(NULL)
+, sysTray(NULL)
 {
 }
 
@@ -127,6 +128,9 @@ void            Application::Run(TopLevelWindow& mainWindow)
     this->appThread = new ApplicationThread();
     this->appThread->Initialize();
 
+    
+    this->sysTray = new SysTray;
+
     //
     mainWindow.Destroyed.connect(this, &Application::OnMainWindowDestroyed);
     //
@@ -135,9 +139,14 @@ void            Application::Run(TopLevelWindow& mainWindow)
     MSG msg;
     while (::GetMessage(&msg, NULL, 0, 0) > 0)
     {
+        Application::Instance().SysTrayManager()->WindowProc(msg.message, msg.wParam, msg.lParam);
+
         ::TranslateMessage(&msg);
         ::DispatchMessage(&msg);
     }
+
+    delete this->sysTray;
+    this->sysTray = NULL;
 
     delete this->appThread;
     this->appThread = NULL;
@@ -212,4 +221,10 @@ Application::operator HINSTANCE() const
 ApplicationThread* Application::Thread() 
 {
     return this->appThread;
+}
+
+///\brief Returns the systray manager
+SysTray* Application::SysTrayManager() const
+{
+    return this->sysTray;
 }

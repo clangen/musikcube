@@ -71,8 +71,6 @@ public: // methods
     void    ShowModal(TopLevelWindow* parent);
     void    Close();
 
-    SysTray* SysTrayManager();
-
     static TopLevelWindow* FindFromAncestor(Window* window);
 
 protected: // methods
@@ -88,7 +86,6 @@ protected: // methods
     static bool RegisterWindowClass();
 
 private: // instance data
-    SysTray* sysTray;
     uistring windowTitle;
     bool closed;
     Size minSize;
