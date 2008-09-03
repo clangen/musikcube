@@ -43,9 +43,17 @@
 
 using namespace win32cpp;
 
+///\brief Contains the list of notify icons
 IconList SysTray::iconList;
+
+///\brief Contains a list of menus for each icon
 MenuList SysTray::menuList;
+
+///\brief Contains a list of options for each icon
 OptionsList SysTray::optionsList;
+
+///\brief Each notify icon has its own UID. This counter increments
+///when an icon is created.
 int SysTray::uidCounter = 100;
 
 SysTray::SysTray()
@@ -61,15 +69,54 @@ SysTray::~SysTray()
     }
 }
 
+
+///\brief
+///Deletes an icon from the tray and all internal structures
+///
+///\param uid
+///The Icon ID
+///
+///\return bool
 bool SysTray::DeleteIcon(UINT uid)
 {
     if(SysTray::iconList.find(uid) != SysTray::iconList.end()) {
-        return (::Shell_NotifyIcon(NIM_DELETE, &SysTray::iconList[uid]) != 0);
+        if(::Shell_NotifyIcon(NIM_DELETE, &SysTray::iconList[uid]) != 0) {
+            SysTray::iconList.erase(uid);
+            SysTray::menuList.erase(uid);
+            SysTray::optionsList.erase(uid);
+
+            return true;
+        }
     }
 
     return false;
 }
 
+
+///\brief
+///Shows a balloon tip over the tray icon
+///
+///\note
+///Windows XP is required for this feature!
+///
+///\param uid
+///The Icon ID
+///
+///\param title
+///Balloon title
+///
+///\param text
+///Balloon inner text
+///
+///\param timeout
+///Time to show the balloon in seconds. There are special restrictions defined
+///by the Windows-API. Look here: 
+///http://msdn.microsoft.com/en-us/library/bb773352(VS.85).aspx
+///
+///\param text
+///Icon to show. Select from NIIF_NONE, NIIF_INFO, NIIF_WARNING, NIIF_ERROR
+///
+///\return bool
 bool SysTray::ShowBalloon(UINT uid, const uistring& title, const uistring& text, UINT timeout, UINT icon)
 {
     if(SysTray::iconList.find(uid) != SysTray::iconList.end()) {
@@ -86,6 +133,17 @@ bool SysTray::ShowBalloon(UINT uid, const uistring& title, const uistring& text,
     return false;
 }
 
+
+///\brief
+///Sets a new icon for the specified tray icon.
+///
+///\param uid
+///The Icon ID
+///
+///\param icon
+///New Icon
+///
+///\return bool
 bool SysTray::SetIcon(UINT uid, HICON icon)
 {
     if(SysTray::iconList.find(uid) != SysTray::iconList.end()) {
@@ -96,6 +154,17 @@ bool SysTray::SetIcon(UINT uid, HICON icon)
     return false;
 }
 
+
+///\brief
+///Sets the tooltip for the specified tray icon.
+///
+///\param uid
+///The Icon ID
+///
+///\param tooltip
+///Tooltip to show
+///
+///\return bool
 bool SysTray::SetTooltip(UINT uid, const uistring& tooltip)
 {
     if(SysTray::iconList.find(uid) != SysTray::iconList.end()) {
@@ -107,6 +176,18 @@ bool SysTray::SetTooltip(UINT uid, const uistring& tooltip)
     return false;
 }
 
+
+
+///\brief
+///Sets the popup menu for the specified tray icon.
+///
+///\param uid
+///The Icon ID
+///
+///\param menu
+///Reference to the menu which should be displayed
+///
+///\return bool
 bool SysTray::SetPopupMenu(UINT uid, MenuRef menu)
 {
     if(menu) {
@@ -117,6 +198,22 @@ bool SysTray::SetPopupMenu(UINT uid, MenuRef menu)
     return false;
 }
 
+
+///\brief
+///Window procedure for all SysTray handling. Here WM_RBUTTONDOWN (for popup menu),
+///WM_LBUTTONDOWN (for restoring the window after it has been minimized to tray) &
+///WM_SIZE for the Minimize to tray feature are handled.
+///
+///\param window
+///Affected window handle
+///
+///\param message
+///Message-ID
+///
+///\param wParam
+///\param lParam
+///\return LRESULT
+///In this case always 0
 LRESULT SysTray::WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam)
 {
     if(SysTray::menuList.find(message - WM_W32CPP_SYSTRAY) != SysTray::menuList.end()) {
@@ -177,11 +274,32 @@ LRESULT SysTray::WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
     return 0;
 }
 
+
+///\brief
+///Activates minimize to tray for the icon specified by uid.
+///
+///\param uid
+///The Icon ID
 void SysTray::EnableMinimizeToTray(UINT uid)
 {
     SysTray::optionsList[uid] |= SysTray::MINIMIZE_TO_TRAY;
 }
 
+
+///\brief
+///Creates and add a notify icon
+///
+///\param window
+///The window to associate the icon with
+///
+///\param icon
+///The Icon to show as HICON
+///
+///\param tooltip
+///The tooltip to show. Leave it empty to show no tooltip
+///
+///\return int
+///Returns the new Icon ID or -1 on failure
 int SysTray::AddIcon(Window* window, HICON icon, const uistring& tooltip)
 {
     UINT uid = SysTray::uidCounter++;

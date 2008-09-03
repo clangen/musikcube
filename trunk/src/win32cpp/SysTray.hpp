@@ -53,23 +53,61 @@ typedef std::map<UINT, NOTIFYICONDATA> IconList;
 typedef std::map<UINT, MenuRef> MenuList;
 typedef std::map<UINT, UINT> OptionsList;
 
+///\brief
+///The SysTray class is used for managing icons in the Taskbar. It must be
+///seen as pure manager for the icons in the SysTray bar. Thus there are no
+///special classes for TrayIcons.
+///
+///Since SysTray communicates using the handle of its associated window, it is
+///necessary, that icons are associated to a window handle.
+///
+///That's why the SysTray component should NOT be used directly, but from the
+///Application Singleton. Use Application::Instance().SysTrayManager() to
+///get the SysTray object!
+///
+///Internally each icon has three lists associated:
+///
+/// - IconList iconList - with NOTIFYICONDATA structures
+/// - MenuList menuList - with references to win32cpp's MenuRef 
+/// - OptionsList optionsList - option bits are set here
+///
+///Each notify icon is represted by its unique ID, which is assigned by 
+///AddIcon(). Using this ID you can access all other methods.
+///
+///Code example:
+///\Example
+///\code
+///
+/// // Create Menu
+/// MenuRef myMenu = Menu::CreatePopup();
+/// myMenu->Items().Append(MenuItem::Create(_T("Test 1")));
+/// myMenu->Items().Append(MenuItem::Create(_T("Test 2")));
+/// MenuItemRef trayExit = myMenu->Items().Append(MenuItem::Create(_T("E&xit")));
+///
+/// // Bind Exit to a handler
+/// trayExit->Activated.connect(this, &MainWindowController::OnFileExit);
+///
+/// // Init tray icon
+/// UINT uidTrayIcon = Application::Instance().SysTrayManager()->AddIcon(Application::Instance().MainWindow(), icon16);
+/// Application::Instance().SysTrayManager()->SetTooltip(uidTrayIcon, _T("Test");
+/// Application::Instance().SysTrayManager()->SetPopupMenu(uidTrayIcon, myMenu);
+/// Application::Instance().SysTrayManager()->ShowBalloon(uidTrayIcon, _T("Test"), _T("Welcome to this application!"), 2);
+/// Application::Instance().SysTrayManager()->EnableMinimizeToTray(uidTrayIcon);
+///\endcode
+///\see
+///Application
+///TopLevelWindow
+///MenuRef
 class SysTray {
-private:
+private: // types
+    ///\brief List with per-icon options - need to be power of 2! 
     enum Options {
         MINIMIZE_TO_TRAY = 1
     };
 
-    // Contains the list of notify icons
     static IconList iconList;
-
-    // Contains a list of menus for each icon
     static MenuList menuList;
-
-    // Contains a list of options for each icon
     static OptionsList optionsList;
-
-    // Each notify icon has its own UID. This counter increments
-    // when an icon is created.
     static int uidCounter;
     
 public:
