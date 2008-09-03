@@ -357,6 +357,14 @@
 						>
 					</File>
 					<File
+						RelativePath=".\RadioButton.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\RadioButton.hpp"
+						>
+					</File>
+					<File
 						RelativePath=".\Window.cpp"
 						>
 					</File>

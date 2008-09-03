@@ -47,45 +47,48 @@ namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
 
-class Checkbox;
+class RadioButton;
 
 ///\brief
-///The type of event used when the Checkbox is pressed..
+///The type of event used when the Checkbox is pressed.
 ///\see
-///CheckBox.
-typedef sigslot::signal2<Checkbox*, int> CheckboxPressedEvent;
+///RadioButton.
+typedef sigslot::signal1<RadioButton*> RadioButtonPressedEvent;
 
 ///\brief
-///A standard Checkbox.
-class Checkbox : public Window
+///A standard RadioButton.
+///They are organised as linked list to enforce the grouping behaviour
+class RadioButton : public Window
 {
 private: // types
     typedef Window base;
 
 public: // events
-    ///\brief This event is emitted when the user presses the Checkbox
-    CheckboxPressedEvent  Pressed;
+    ///\brief This event is emitted when the user presses the RadioButton
+    RadioButtonPressedEvent  Pressed;
 
 public: // constructors
-    /*ctor*/            Checkbox(const uichar* caption = _T(""), int style = BS_AUTOCHECKBOX);
+    /*ctor*/            RadioButton(const uichar* caption = _T(""), RadioButton* attach = NULL);
+    /*dtor*/            ~RadioButton();
 
 protected: // methods
     virtual HWND        Create(Window* parent);
     virtual LRESULT     WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
-    virtual void        OnPressed(int state);
+    virtual void        OnPressed();
     virtual void        PaintToHDC(HDC hdc, const Rect& rect);
 
 public:
-    virtual bool        IsChecked(void) const;
-    virtual bool        IsUnchecked(void) const;
-    virtual bool        IsIndeterminate(void) const;
-    virtual void        Check(void);
-    virtual void        Uncheck(void);
-    virtual void        SetIndeterminate(void);
+    void                Check(void);
+    bool                IsChecked(void);
+    
+    RadioButton*        GetCheckedInGroup(void);
+
+    // for testing
+    uistring            Caption(void) const { return caption; }
 
 protected: // instance data
-    int state;
-    int style;
+    RadioButton* prev; // previous item, NULL if group begin
+    RadioButton* next; // next item, NULL if group ends
     uistring caption;
 };
 
