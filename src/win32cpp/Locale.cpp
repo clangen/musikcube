@@ -180,22 +180,20 @@ LocaleList Locale::EnumLocales(void)
     LocaleList localeList;
     
     // convert directory to boost path
-    fs::path localePath(ShrinkString(path), fs::native); 
+    fs::wpath localePath(path, fs::native); 
 
     // now iterate...
-    fs::directory_iterator iEnd;
-    for(fs::directory_iterator iDir(localePath); iDir != iEnd; ++iDir)
+    fs::wdirectory_iterator iEnd;
+    for(fs::wdirectory_iterator iDir(localePath); iDir != iEnd; ++iDir)
     {
-        // lame conversion =(
-        std::string dirEntryA = iDir->path().leaf();
-        uistring dirEntryW = WidenString(dirEntryA.c_str());
-
+        uistring dirEntry = iDir->path().leaf();
+       
         // read name of config
-        Config entryConfig(path + _T("\\") + dirEntryW);
+        Config entryConfig(path + _T("\\") + dirEntry);
         if(entryConfig.SectionExists(_T("config"))) 
         {
             entryConfig.SetSection(_T("config"));
-            localeList[dirEntryW.c_str()] = entryConfig.Value(_T("name"));
+            localeList[dirEntry] = entryConfig.Value(_T("name"));
         }
     }
 

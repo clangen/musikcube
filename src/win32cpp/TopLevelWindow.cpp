@@ -63,10 +63,12 @@ using namespace win32cpp;
 , closed(false)
 , modalChild(NULL)
 {
+    this->sysTray = new SysTray;
 }
 
 /*dtor*/    TopLevelWindow::~TopLevelWindow()
 {
+    delete this->sysTray;
 }
 
 bool        TopLevelWindow::RegisterWindowClass()
@@ -147,6 +149,12 @@ Size        TopLevelWindow::MinimumSize() const
     return this->minSize;
 }
 
+///\brief Returns the systray manager
+SysTray* TopLevelWindow::SysTrayManager() 
+{
+    return this->sysTray;
+}
+
 ///\brief Closes the TopLevelWindow
 void        TopLevelWindow::Close()
 {
@@ -190,6 +198,8 @@ LRESULT     TopLevelWindow::WindowProc(UINT message, WPARAM wParam, LPARAM lPara
         return 0;
     }
 
+    this->SysTrayManager()->WindowProc(message, wParam, lParam);
+    
     return base::WindowProc(message, wParam, lParam);
 }
 
