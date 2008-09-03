@@ -51,27 +51,36 @@ namespace win32cpp {
 
 typedef std::map<UINT, NOTIFYICONDATA> IconList;
 typedef std::map<UINT, MenuRef> MenuList;
+typedef std::map<UINT, UINT> OptionsList;
 
 class SysTray {
 private:
+    enum Options {
+        MINIMIZE_TO_TRAY = 1
+    };
+
     // Contains the list of notify icons
     static IconList iconList;
 
     // Contains a list of menus for each icon
     static MenuList menuList;
 
+    // Contains a list of options for each icon
+    static OptionsList optionsList;
+
     // Each notify icon has its own UID. This counter increments
     // when an icon is created.
     static int uidCounter;
     
 public:
-    LRESULT     WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+    LRESULT     WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam);
     bool        DeleteIcon(UINT uid);
     int         AddIcon(Window* window, HICON icon, const uistring& tooltip = _T(""));
     bool        SetIcon(UINT uid, HICON icon);
     bool        SetTooltip(UINT uid, const uistring& tooltip);
     bool        SetPopupMenu(UINT uid, MenuRef menu);
     bool        ShowBalloon(UINT uid, const uistring& title, const uistring& text, UINT timeout, UINT icon = NIIF_INFO);
+    void        EnableMinimizeToTray(UINT uid);
 
     /* ctor */  SysTray();
     /* dtor */  ~SysTray();

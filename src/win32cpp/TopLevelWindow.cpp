@@ -155,6 +155,10 @@ void        TopLevelWindow::Close()
 
 LRESULT     TopLevelWindow::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
+    if(this == Application::Instance().MainWindow()) {
+        Application::Instance().SysTrayManager()->WindowProc(this->Handle(), message, wParam, lParam);
+    }
+
     switch (message)
     {
     case WM_SIZE:
@@ -188,10 +192,6 @@ LRESULT     TopLevelWindow::WindowProc(UINT message, WPARAM wParam, LPARAM lPara
             minMaxInfo->ptMinTrackSize.y = this->minSize.height;
         }
         return 0;
-    }
-    
-    if(this == Application::Instance().MainWindow()) {
-        Application::Instance().SysTrayManager()->WindowProc(message, wParam, lParam);
     }
 
     return base::WindowProc(message, wParam, lParam);

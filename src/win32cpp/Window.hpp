@@ -231,6 +231,8 @@ public: // methods
     bool            TabStop();
     void            SetTabStop(bool enabled);
 
+    static Window*      SubclassedWindowFromHWND(HWND hwnd);
+
 public: // operators
     operator bool() { return (this->windowHandle != NULL); }
 
@@ -242,7 +244,6 @@ protected: // methods
     static void         SubclassWindowProc(Window* window);
     static void         UnSubclassWindowProc(Window* window);
     static bool         IsWindowSubclassed(Window* window);
-    static Window*      SubclassedWindowFromHWND(HWND hwnd);
     static Window*      WindowUnderCursor(HWND* targetHwnd = NULL);
     static void         BeginCapture(Window* window);
     static void         EndCapture(Window* window);

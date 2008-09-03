@@ -40,12 +40,12 @@
 #include <win32cpp/SysTray.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
-#define WM_MC2_SYSTRAY (WM_USER + 100)
 
 using namespace win32cpp;
 
 IconList SysTray::iconList;
 MenuList SysTray::menuList;
+OptionsList SysTray::optionsList;
 int SysTray::uidCounter = 100;
 
 SysTray::SysTray()
@@ -117,13 +117,14 @@ bool SysTray::SetPopupMenu(UINT uid, MenuRef menu)
     return false;
 }
 
-LRESULT SysTray::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT SysTray::WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    if(SysTray::menuList.find(message - WM_MC2_SYSTRAY) != SysTray::menuList.end()) {
+    if(SysTray::menuList.find(message - WM_W32CPP_SYSTRAY) != SysTray::menuList.end()) {
+        UINT uid = message - WM_W32CPP_SYSTRAY;
+        
         switch(LOWORD(lParam)) {
         case WM_RBUTTONDOWN:
             {
-                UINT uid = message - WM_MC2_SYSTRAY;
                 if(SysTray::menuList.find(uid) != SysTray::menuList.end()) {
                     POINT mousePos = { 0 };
                     ::GetCursorPos(&mousePos);
@@ -139,10 +140,46 @@ LRESULT SysTray::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
                 }
             }
             return 0;
+        case WM_LBUTTONDOWN:
+            {
+                 if(SysTray::optionsList[uid] & SysTray::MINIMIZE_TO_TRAY) {
+                    // get window object
+                    Window* wnd = Window::SubclassedWindowFromHWND(SysTray::iconList[uid].hWnd);
+
+                    // restore window
+                    wnd->Show(SW_SHOW);
+                    wnd->Show(SW_RESTORE);
+
+                 }
+            }
+            return 0;
+        }
+    }
+
+    // handle minimize to tray
+    if(message == WM_SIZE && wParam == SIZE_MINIMIZED) {
+        // iterate through list with icon options and look, if the assigned icon/window pair wants that
+        for(IconList::iterator i = SysTray::iconList.begin(); i != SysTray::iconList.end(); ++i) {  
+            // look if there is a corresponding window
+            if(i->second.hWnd == window) {
+                if(SysTray::optionsList[i->second.uID] & SysTray::MINIMIZE_TO_TRAY) {
+                    // get window object
+                    Window* wnd = Window::SubclassedWindowFromHWND(window);
+
+                    // and finally minimize it to tray
+                    wnd->Show(SW_SHOWMINIMIZED);
+                    wnd->Show(SW_HIDE);
+                }
+            }
         }
     }
 
     return 0;
+}
+
+void SysTray::EnableMinimizeToTray(UINT uid)
+{
+    SysTray::optionsList[uid] |= SysTray::MINIMIZE_TO_TRAY;
 }
 
 int SysTray::AddIcon(Window* window, HICON icon, const uistring& tooltip)
@@ -162,7 +199,7 @@ int SysTray::AddIcon(Window* window, HICON icon, const uistring& tooltip)
     }
     nid.hIcon   = icon;
 
-    nid.uCallbackMessage = WM_MC2_SYSTRAY + uid;
+    nid.uCallbackMessage = WM_W32CPP_SYSTRAY + uid;
 
     // create icon
     if(!::Shell_NotifyIcon(NIM_ADD, &nid)) {
@@ -176,6 +213,9 @@ int SysTray::AddIcon(Window* window, HICON icon, const uistring& tooltip)
     
     // add to icon list
     SysTray::iconList[uid] = nid;
+
+    // add to options list
+    SysTray::optionsList[uid] = 0;
 
     return uid;
 }
