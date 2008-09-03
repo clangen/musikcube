@@ -41,6 +41,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <win32cpp/Container.hpp>
+#include <win32cpp/SysTray.hpp>
 
 namespace win32cpp {
 
@@ -70,6 +71,8 @@ public: // methods
     void    ShowModal(TopLevelWindow* parent);
     void    Close();
 
+    SysTray* SysTrayManager();
+
     static TopLevelWindow* FindFromAncestor(Window* window);
 
 protected: // methods
@@ -85,6 +88,7 @@ protected: // methods
     static bool RegisterWindowClass();
 
 private: // instance data
+    SysTray* sysTray;
     uistring windowTitle;
     bool closed;
     Size minSize;

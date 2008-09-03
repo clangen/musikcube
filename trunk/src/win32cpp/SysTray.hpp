@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright © 2008, André Wösten
 //
 // Sources and Binaries of: win32cpp
 //
@@ -38,35 +38,45 @@
 
 #pragma once
 
-//////////////////////////////////////////////////////////////////////////////
-// dependencies
-//////////////////////////////////////////////////////////////////////////////
-#include <boost/shared_ptr.hpp>
-#include <boost/scoped_ptr.hpp>
-
-#include <win32cpp/Win32Config.hpp>
-#include <win32cpp/Application.hpp>
-#include <win32cpp/SysTray.hpp>
-#include <win32cpp/TopLevelWindow.hpp>
-#include <win32cpp/Container.hpp>
+#include <map>
 #include <win32cpp/Menu.hpp>
-#include <win32cpp/Window.hpp>
-#include <win32cpp/Font.hpp>
-#include <win32cpp/Exception.hpp>
-#include <win32cpp/Types.hpp>
-#include <win32cpp/WindowGeometry.hpp>
-
-
-/*
-#include <boost/weak_ptr.hpp>
-#include <boost/format.hpp>
-*/
-//////////////////////////////////////////////////////////////////////////////
-
-#include <win32cpp.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
-#include "vld/vld.h"
+namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
+// SysTray
+//////////////////////////////////////////////////////////////////////////////
+
+typedef std::map<UINT, NOTIFYICONDATA> IconList;
+typedef std::map<UINT, MenuRef> MenuList;
+
+class SysTray {
+private:
+    // Contains the list of notify icons
+    static IconList iconList;
+
+    // Contains a list of menus for each icon
+    static MenuList menuList;
+
+    // Each notify icon has its own UID. This counter increments
+    // when an icon is created.
+    static int uidCounter;
+    
+public:
+    LRESULT     WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+    bool        DeleteIcon(UINT uid);
+    int         AddIcon(Window* window, HICON icon, const uistring& tooltip = _T(""));
+    bool        SetIcon(UINT uid, HICON icon);
+    bool        SetTooltip(UINT uid, const uistring& tooltip);
+    bool        SetPopupMenu(UINT uid, MenuRef menu);
+    bool        ShowBalloon(UINT uid, const uistring& title, const uistring& text, UINT timeout, UINT icon = NIIF_INFO);
+
+    /* ctor */  SysTray();
+    /* dtor */  ~SysTray();
+};
+
+//////////////////////////////////////////////////////////////////////////////
+
+}

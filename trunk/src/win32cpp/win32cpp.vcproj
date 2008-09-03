@@ -186,6 +186,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\SysTray.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\SysTray.hpp"
+					>
+				</File>
+				<File
 					RelativePath=".\win32cpp.hpp"
 					>
 				</File>

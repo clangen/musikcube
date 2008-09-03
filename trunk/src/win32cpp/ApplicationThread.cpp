@@ -41,7 +41,7 @@
 
 using namespace win32cpp;
 
-#define CALL_WAITING (WM_USER + 1)
+#define CALL_WAITING (WM_USER + 1000)
 
 //////////////////////////////////////////
 ///\brief

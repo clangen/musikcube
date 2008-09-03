@@ -52,7 +52,8 @@
 #include <win32cpp/Splitter.hpp>
 #include <win32cpp/TabView.hpp>
 #include <win32cpp/RedrawLock.hpp>
- 
+#include <win32cpp/SysTray.hpp> 
+
 //////////////////////////////////////////////////////////////////////////////
 
 using namespace musik::cube;
@@ -77,6 +78,11 @@ MainWindowController::~MainWindowController()
     delete this->transportController;
 }
 
+void        MainWindowController::OnFileExit(MenuItemRef menuItem)
+{
+    Application::Instance().Terminate();
+}
+
 void        MainWindowController::OnMainWindowCreated(Window* window)
 {
     
@@ -88,7 +94,21 @@ void        MainWindowController::OnMainWindowCreated(Window* window)
         SendMessage( window->Handle(), WM_SETICON, WPARAM( ICON_BIG ), LPARAM( icon ) );
     }
 
+    // Init Tray Icon
+    MenuRef myMenu = Menu::CreatePopup();
 
+    // Create Tray Menu
+    myMenu->Items().Append(MenuItem::Create(_T("Test 1")));
+    myMenu->Items().Append(MenuItem::Create(_T("Test 2")));
+    MenuItemRef trayExit = myMenu->Items().Append(MenuItem::Create(_T("E&xit")));
+
+    // Bind Exit to handler
+    trayExit->Activated.connect(this, &MainWindowController::OnFileExit);
+
+    UINT uidTrayIcon = this->mainWindow.SysTrayManager()->AddIcon(window, icon);
+    this->mainWindow.SysTrayManager()->SetTooltip(uidTrayIcon, _T("And another test..."));
+    this->mainWindow.SysTrayManager()->SetPopupMenu(uidTrayIcon, myMenu);
+    this->mainWindow.SysTrayManager()->ShowBalloon(uidTrayIcon, _T("musikCube 2"), _T("Welcome to musikCube!"), 2);
 
     static const int TransportViewHeight = 54;
 
