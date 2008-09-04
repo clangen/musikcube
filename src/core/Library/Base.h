@@ -82,7 +82,7 @@ namespace musik{ namespace core{ namespace Library{
 ///
 ///\remarks
 ///Library::Base is only the interface and can not be used directly.
-///Library::Base extends the ThreadHelper and is therefore a noncopyable object.
+///Library::Base is a noncopyable object.
 ///
 ///\see
 ///musik::core::Library::LocalDB

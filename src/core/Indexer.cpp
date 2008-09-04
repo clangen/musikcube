@@ -59,6 +59,12 @@ Indexer::Indexer(void)
 {
 }
 
+//////////////////////////////////////////
+///\brief
+///Destructor
+///
+///Exits and joins threads
+//////////////////////////////////////////
 Indexer::~Indexer(void){
     if(this->oThread){
         this->Exit();
@@ -69,6 +75,10 @@ Indexer::~Indexer(void){
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Get the current status (text)
+//////////////////////////////////////////
 utfstring Indexer::GetStatus(){
     boost::mutex::scoped_lock oLock(this->oProgressMutex);
     utfstring sStatus;
@@ -93,6 +103,13 @@ utfstring Indexer::GetStatus(){
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Restart the sync
+///
+///\param bNewRestart
+///Should if be restarted or not
+//////////////////////////////////////////
 void Indexer::RestartSync(bool bNewRestart){
     boost::mutex::scoped_lock oLock(this->exitMutex);
     this->bRestart    = bNewRestart;
@@ -101,6 +118,10 @@ void Indexer::RestartSync(bool bNewRestart){
     }
 }
 
+//////////////////////////////////////////
+///\brief
+///Should the sync be restarted?
+//////////////////////////////////////////
 bool Indexer::Restarted(){
     boost::mutex::scoped_lock oLock(this->exitMutex);
     return this->bRestart;
@@ -668,6 +689,10 @@ void Indexer::SyncCleanup(){
 
 }
 
+//////////////////////////////////////////
+///\brief
+///Get a vector with all sync paths
+//////////////////////////////////////////
 std::vector<utfstring> Indexer::GetPaths(){
     std::vector<utfstring> aPaths;
 
@@ -804,6 +829,10 @@ void Indexer::SyncOptimize(){
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Method for adding/removing paths in the database
+//////////////////////////////////////////
 void Indexer::SyncAddRemovePaths(){
 
     boost::mutex::scoped_lock lock(this->exitMutex);

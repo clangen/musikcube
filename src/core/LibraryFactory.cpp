@@ -45,6 +45,10 @@ using namespace musik::core;
 
 LibraryFactory LibraryFactory::sInstance;
 
+//////////////////////////////////////////
+///\brief
+///Constructor
+//////////////////////////////////////////
 LibraryFactory::LibraryFactory(void){
 	// Connect to the settings.db
 	utfstring dataDir   = GetDataDirectory();
@@ -68,9 +72,32 @@ LibraryFactory::LibraryFactory(void){
 
 }
 
+//////////////////////////////////////////
+///\brief
+///Destructor
+//////////////////////////////////////////
 LibraryFactory::~LibraryFactory(void){
 }
 
+//////////////////////////////////////////
+///\brief
+///Add a new library to the LibraryFactory
+///
+///\param name
+///Identifier of library. Need to be a unique name.
+///
+///\param type
+///Type of library. See LibraryFactory::Types
+///
+///\param sendEvent
+///Send the LibrariesUpdated when library has been added?
+///
+///\param startup
+///Start the library when added
+///
+///\returns
+///LibraryPtr of the added library. (NULL pointer on failure)
+//////////////////////////////////////////
 LibraryPtr LibraryFactory::AddLibrary(utfstring name,int type,bool sendEvent,bool startup){
 	LibraryPtr lib;
 	switch(type){
@@ -102,6 +129,22 @@ LibraryPtr LibraryFactory::AddLibrary(utfstring name,int type,bool sendEvent,boo
 void LibraryFactory::RemoveLibrary(utfstring name){
 }
 
+//////////////////////////////////////////
+///\brief
+///Create a new Library
+///
+///\param name
+///Identifier of library. Need to be a unique name.
+///
+///\param type
+///Type of library. See LibraryFactory::Types
+///
+///\param startup
+///Start the library when added
+///
+///\returns
+///LibraryPtr of the added library. (NULL pointer on failure)
+//////////////////////////////////////////
 LibraryPtr LibraryFactory::CreateLibrary(utfstring name,int type,bool startup){
 	// Connect to the settings.db
 	utfstring dataDir   = GetDataDirectory();
@@ -121,6 +164,10 @@ LibraryPtr LibraryFactory::CreateLibrary(utfstring name,int type,bool startup){
 void LibraryFactory::DeleteLibrary(utfstring name){
 }
 
+//////////////////////////////////////////
+///\brief
+///Get the vector with all current libraries
+//////////////////////////////////////////
 LibraryFactory::LibraryVector& LibraryFactory::Libraries(){
 	return LibraryFactory::sInstance.libraries;
 }

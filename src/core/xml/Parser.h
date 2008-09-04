@@ -61,6 +61,32 @@ namespace musik{ namespace core{ namespace xml{
 
 //////////////////////////////////////////////////////////////////////////////
 
+//////////////////////////////////////////
+///\brief
+///Parser class to parse xml continously from a socket stream
+///
+///The Parser and the ParserNode contiously parse from the
+///socket provided in the constructor like this
+///\code
+///xml::Parser parser(&socket);
+///
+///\/\/To wait for a specific xml node to arrive
+///if(xml::ParserNode rootNode = parser.ChildNode("musik") ){
+///    \/\/Make a loop, waiting for any xml node to arrive that's inside the rootNode
+///    while( xml::ParserNode node = rootNode.ChildNode() ){
+///        // The Nodes can be used to access the tags attributes and content
+///        std::cout << "Tag: " << node.Name() << std::endl;
+///        std::cout << "Attribute[type]: " << node.Attributes()["type"] << std::endl;
+///        \/\/ Although, if you are to use the content of the node, you need to make sure that the content is read
+///        node.WaitForContent();
+///        std::cout << "Content: " << node.Content() << std::endl;
+///    }
+///}
+///\endcode
+///
+///\see
+///musik::core::xml::ParserNode
+//////////////////////////////////////////
 class Parser : public ParserNode{
     public:
         Parser(boost::asio::ip::tcp::socket *socket);

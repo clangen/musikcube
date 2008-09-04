@@ -58,12 +58,20 @@ Library::LocalDB::LocalDB(utfstring identifier)
 {
 }
 
+//////////////////////////////////////////
+///\brief
+///Create a LocalDB library
+//////////////////////////////////////////
 LibraryPtr Library::LocalDB::Create(utfstring identifier){
 	LibraryPtr lib(new Library::LocalDB(identifier));
 	lib->self	= lib;
 	return lib;
 }
 
+//////////////////////////////////////////
+///\brief
+///Destructor that exits and joins all threads
+//////////////////////////////////////////
 Library::LocalDB::~LocalDB(void){
     this->Exit();
     this->threads.join_all();
@@ -191,6 +199,10 @@ void Library::LocalDB::CancelCurrentQuery( ){
     this->db.Interrupt();
 }
 
+//////////////////////////////////////////
+///\brief
+///Get a pointer to the librarys Indexer (NULL if none)
+//////////////////////////////////////////
 musik::core::Indexer *Library::LocalDB::Indexer(){
     return &this->indexer;
 }
