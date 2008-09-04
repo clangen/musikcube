@@ -39,13 +39,40 @@
 
 using namespace musik::core::xml;
 
+//////////////////////////////////////////
+///\brief
+///Contructor
+//////////////////////////////////////////
 ParserNode::ParserNode()
-:status(0)
-,parser(NULL)
+ :status(0)
+ ,parser(NULL)
 {
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Copy a ParserNode
+///
+///\param copyNode
+///node to be copied
+///
+///\returns
+///A reference to *this
+///
+///The copy method is used when you are writing code like this:
+///\code
+///while( xml::ParserNode node=parentNode.ChildNode() ){
+///}
+///\endcode
+///In this case, a "node" is created and then copied from the node 
+///returned from the parentNode.ChildNode method. This method need to 
+///return a reference to itself since the while loop is looking for
+///the "operator bool" to see if the loop should continue.
+///
+///\see
+///operator bool
+//////////////////////////////////////////
 ParserNode& ParserNode::operator=(ParserNode const &copyNode){
     this->node          = copyNode.node;
     this->parentNode    = copyNode.parentNode;
@@ -55,6 +82,19 @@ ParserNode& ParserNode::operator=(ParserNode const &copyNode){
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Contructor
+///
+///\param parent
+///A pointer to the nodes parent node
+///
+///This contrutor will hold until the node is read from the socket
+///or until an error occurs (like the node should go out of scope)
+///
+///\see
+///ParserNode::ChildNode
+//////////////////////////////////////////
 ParserNode::ParserNode(const ParserNode *parent)
  : status(0)
 {
@@ -65,6 +105,22 @@ ParserNode::ParserNode(const ParserNode *parent)
     this->WaitForNode(nodeNames);
 }
 
+//////////////////////////////////////////
+///\brief
+///Contructor
+///
+///\param parent
+///A pointer to the nodes parent node
+///
+///\param expectedNode
+///A node name to wait for
+///
+///This contrutor will hold until the expectedNode is read from the socket
+///or until an error occurs (like the node should go out of scope)
+///
+///\see
+///ParserNode::ChildNode
+//////////////////////////////////////////
 ParserNode::ParserNode(const ParserNode *parent,std::string &expectedNode)
  : status(0)
 {
@@ -132,7 +188,7 @@ std::string& ParserNode::Content(){
 ///\brief
 ///Wait for all content to be retrieved
 ///
-///What realy happens is that the method will wait until
+///What really happens is that the method will wait until
 ///the nodes end tag has been set to assure that all content
 ///has been retrieved.
 //////////////////////////////////////////
@@ -157,6 +213,13 @@ Node::AttributeMap& ParserNode::Attributes(){
     return this->node->attributes;
 }
 
+//////////////////////////////////////////
+///\brief
+///Overload of the bool operator
+///
+///\returns
+///Is this node successfully started
+//////////////////////////////////////////
 ParserNode::operator bool(){
     return this->status==1;
 }

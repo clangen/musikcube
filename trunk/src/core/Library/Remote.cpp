@@ -44,7 +44,6 @@
 
 #include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>
-#include <atlbase.h>
 
 using namespace musik::core;
 
@@ -64,12 +63,20 @@ Library::Remote::Remote(utfstring identifier)
 {
 }
 
+//////////////////////////////////////////
+///\brief
+///Create a Remote library
+//////////////////////////////////////////
 LibraryPtr Library::Remote::Create(utfstring identifier){
 	LibraryPtr lib(new Library::Remote(identifier));
 	lib->self	= lib;
 	return lib;
 }
 
+//////////////////////////////////////////
+///\brief
+///Destructor that exits and joins all threads
+//////////////////////////////////////////
 Library::Remote::~Remote(void){
     this->Exit();
     this->threads.join_all();
@@ -99,7 +106,6 @@ utfstring Library::Remote::GetInfo(){
 //////////////////////////////////////////
 bool Library::Remote::Startup(){
 
-    ATLTRACE2("Library::Remote::Startup\n");
     // Lets start the ReadThread first, it will startup the connection and
     // then start the WriteThread
     this->threads.create_thread(boost::bind(&Library::Remote::ReadThread,this));
@@ -114,7 +120,6 @@ bool Library::Remote::Startup(){
 //////////////////////////////////////////
 void Library::Remote::ReadThread(){
 
-ATLTRACE2("Library::Remote::ReadThread\n");
     {
         Preferences prefs("Connection",this->Identifier().c_str());
 
@@ -126,42 +131,33 @@ ATLTRACE2("Library::Remote::ReadThread\n");
     boost::asio::ip::tcp::resolver::query resolverQuery(this->address,this->port);
 
     try{
-        ATLTRACE2("Library::Remote::ReadThread 1\n");
         boost::system::error_code resolverError;
         boost::asio::ip::tcp::resolver::iterator endpointIterator = resolver.resolve(resolverQuery,resolverError);
         boost::asio::ip::tcp::resolver::iterator end;
-        ATLTRACE2("Library::Remote::ReadThread 1.1\n");
 
         if(resolverError){
-            ATLTRACE2("Library::Remote::ReadThread ERROR 1.1\n");
             this->Exit();
             return;
         }
 
         boost::system::error_code error = boost::asio::error::host_not_found;
         while (error && endpointIterator!=end){
-            ATLTRACE2("Library::Remote::ReadThread 1.2\n");
             this->socket.close();
-            ATLTRACE2("Library::Remote::ReadThread 1.3\n");
             this->socket.connect(*endpointIterator, error);
-            ATLTRACE2("Library::Remote::ReadThread 1.4\n");
             if(error){
                 endpointIterator++;
             }
         }
         if (error || endpointIterator==end){
-            ATLTRACE2("Library::Remote::ReadThread 1.5\n");
             this->Exit();
             return;
         }
-        ATLTRACE2("Library::Remote::ReadThread 1.6\n");
     }
     catch(...){
         this->Exit();
         return;
     }
 
-    ATLTRACE2("Library::Remote::ReadThread 2\n");
     // Successfully connected to server
     // Start the WriteThread
     try{
@@ -172,15 +168,12 @@ ATLTRACE2("Library::Remote::ReadThread\n");
         return;
     }
 
-    ATLTRACE2("Library::Remote::ReadThread 3\n");
 
     try{
         // Lets start recieving queries
         xml::Parser parser(&this->socket);
-        ATLTRACE2("Library::Remote::ReadThread 4\n");
         if( xml::ParserNode rootNode=parser.ChildNode("musik")){
             while(xml::ParserNode node=rootNode.ChildNode()){
-                ATLTRACE2("Library::Remote::ReadThread 5\n");
                 if(node.Name()=="queryresults"){
 
                     unsigned int queryId    = boost::lexical_cast<unsigned int>(node.Attributes()["id"]);
@@ -225,7 +218,6 @@ ATLTRACE2("Library::Remote::ReadThread\n");
 ///Thread for writing to the socket
 //////////////////////////////////////////
 void Library::Remote::WriteThread(){
-    ATLTRACE2("Library::Remote::WriteThread\n");
 
     xml::Writer writer(&this->socket);
 
@@ -302,6 +294,12 @@ void Library::Remote::CancelCurrentQuery( ){
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Exit the library
+///
+///Will set the library to Exited, close sockets and notify all sleeping threads
+//////////////////////////////////////////
 void Library::Remote::Exit(){
     {
         boost::mutex::scoped_lock lock(this->libraryMutex);
@@ -315,6 +313,13 @@ void Library::Remote::Exit(){
     this->waitCondition.notify_all();
 }
 
+//////////////////////////////////////////
+///\brief
+///Get the base path to where the tracks are located
+///
+///This method is mostly used by the Library::Remote to
+///get the HTTP-address to the tracks
+//////////////////////////////////////////
 utfstring Library::Remote::BasePath(){
     utfstring path(UTF("http://"));
     boost::asio::ip::tcp::endpoint endPoint = this->socket.remote_endpoint();

@@ -47,6 +47,10 @@
 
 using namespace musik::core;
 
+//////////////////////////////////////////
+///\brief
+///Constructor
+//////////////////////////////////////////
 Library::Base::Base(utfstring identifier) 
  :identifier(identifier)
  ,queueCallbackStarted(false)
@@ -55,6 +59,13 @@ Library::Base::Base(utfstring identifier)
 {
 }
 
+//////////////////////////////////////////
+///\brief
+///Get the librarys "now playing" tracklist
+///
+///\returns
+///a tracklist::Ptr
+//////////////////////////////////////////
 musik::core::tracklist::Ptr Library::Base::NowPlaying(){
 	if(tracklist::Ptr tracklist	= this->nowPlaying.lock()){
 		return tracklist;
@@ -69,11 +80,24 @@ musik::core::tracklist::Ptr Library::Base::NowPlaying(){
 	return tracklist;
 }
 
+//////////////////////////////////////////
+///\brief
+///Destructor
+///
+///The destructor will exit all threads created by the library
+//////////////////////////////////////////
 Library::Base::~Base(void){
     this->Exit();
     this->threads.join_all();
 }
 
+//////////////////////////////////////////
+///\brief
+///Get the librarys identifier. The identifier is unique for the library
+///
+///\returns
+///A string with the identifier
+//////////////////////////////////////////
 const utfstring& Library::Base::Identifier(){
 	return this->identifier;
 }
@@ -438,11 +462,21 @@ void Library::Base::CancelCurrentQuery(){
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Has the library exited?
+//////////////////////////////////////////
 bool Library::Base::Exited(){
     boost::mutex::scoped_lock lock(this->libraryMutex);
     return this->exit;
 }
 
+//////////////////////////////////////////
+///\brief
+///Exit the library
+///
+///Will set the library to Exited and notify all sleeping threads
+//////////////////////////////////////////
 void Library::Base::Exit(){
     {
         boost::mutex::scoped_lock lock(this->libraryMutex);
@@ -452,6 +486,10 @@ void Library::Base::Exit(){
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Helper method to determin what metakeys are "static"
+//////////////////////////////////////////
 bool Library::Base::IsStaticMetaKey(std::string &metakey){
     static std::set<std::string> staticMetaKeys;
 
@@ -470,6 +508,10 @@ bool Library::Base::IsStaticMetaKey(std::string &metakey){
 
 }
 
+//////////////////////////////////////////
+///\brief
+///Helper method to determin what metakeys that have a special many to one relation
+//////////////////////////////////////////
 bool Library::Base::IsSpecialMTOMetaKey(std::string &metakey){
     static std::set<std::string> specialMTOMetaKeys;
 
@@ -482,6 +524,10 @@ bool Library::Base::IsSpecialMTOMetaKey(std::string &metakey){
     return specialMTOMetaKeys.find(metakey)!=specialMTOMetaKeys.end();
 }
 
+//////////////////////////////////////////
+///\brief
+///Helper method to determin what metakeys that have a special many to meny relation
+//////////////////////////////////////////
 bool Library::Base::IsSpecialMTMMetaKey(std::string &metakey){
     static std::set<std::string> specialMTMMetaKeys;
 
@@ -492,6 +538,10 @@ bool Library::Base::IsSpecialMTMMetaKey(std::string &metakey){
     return specialMTMMetaKeys.find(metakey)!=specialMTMMetaKeys.end();
 }
 
+//////////////////////////////////////////
+///\brief
+///Get a pointer to the librarys Indexer (NULL if none)
+//////////////////////////////////////////
 musik::core::Indexer *Library::Base::Indexer(){
     return NULL;
 }
@@ -629,6 +679,13 @@ void Library::Base::CreateDatabase(db::Connection &db){
     db.Analyze();
 }
 
+//////////////////////////////////////////
+///\brief
+///Get the base path to where the tracks are located
+///
+///This method is mostly used by the Library::Remote to
+///get the HTTP-address to the tracks
+//////////////////////////////////////////
 utfstring Library::Base::BasePath(){
     return UTF("");
 }

@@ -45,11 +45,23 @@ namespace musik{ namespace core{
 
 //////////////////////////////////////////////////////////////////////////////
 
+//////////////////////////////////////////
+///\brief
+///Factory for Libraries
+///
+///LibraryFactory contains all Libraries (LocalDB and Remote)
+///When the LibraryFactory is first initialized it will load all
+///libraries from the settings.db database.
+//////////////////////////////////////////
 class LibraryFactory{
     private:
         static LibraryFactory sInstance;
     public:
 
+		//////////////////////////////////////////
+		///\brief
+		///enum for the different library types
+		//////////////////////////////////////////
 		enum Types:int{
 			LocalDB=1,
 			Remote=2
@@ -57,14 +69,24 @@ class LibraryFactory{
 
 		typedef std::vector<LibraryPtr> LibraryVector;
 
+        //////////////////////////////////////////
+        ///\brief
+        ///Get the LibraryFactory singleton
+        //////////////////////////////////////////
         static LibraryFactory& Instance(){ return sInstance; };
+
 		static LibraryVector& Libraries();
 
 		LibraryPtr CreateLibrary(utfstring name,int type,bool startup=true);
 		void DeleteLibrary(utfstring name);
 
         typedef sigslot::signal0<> LibrariesUpdatedEvent;
-        LibrariesUpdatedEvent LibrariesUpdated;
+
+        //////////////////////////////////////////
+		///\brief
+		///signal alerting that a library has been added/removed
+		//////////////////////////////////////////
+		LibrariesUpdatedEvent LibrariesUpdated;
 
     private:
 

@@ -48,6 +48,15 @@ namespace musik{ namespace core{ namespace xml{
 class Parser;
 
 
+//////////////////////////////////////////
+///\brief
+///ParserNode represent a xml-node in a DOM tree.
+///
+///For example look at musik::core::xml::Parser
+///
+///\see
+///musik::core::xml::Parser
+//////////////////////////////////////////
 class ParserNode {
     public:
 
