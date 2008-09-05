@@ -152,7 +152,7 @@ bool TrackMetadata::ParseQuery(Library::Base *library,db::Connection &db){
 
     bool bCancel(false);
 
-    while(!this->aRequestTracks.empty() && !bCancel){
+    while(!this->aRequestTracks.empty() && !library->QueryCanceled(this)){
         TrackPtr track(this->aRequestTracks.back());
         this->aRequestTracks.pop_back();
 
@@ -215,23 +215,18 @@ bool TrackMetadata::ParseQuery(Library::Base *library,db::Connection &db){
 
 
             {
-                boost::mutex::scoped_lock oLock(library->oResultMutex);
+                boost::mutex::scoped_lock oLock(library->resultMutex);
                 this->aResultTracks.push_back(track);
             }
         }
 
         trackData.Reset();
 
-        {
-            boost::mutex::scoped_lock oLock(library->oResultMutex);
-            bCancel    =     ((this->status & Status::Canceled)!=0);
-        }
-
     }
 
 
     {
-        boost::mutex::scoped_lock oLock(library->oResultMutex);
+        boost::mutex::scoped_lock lock(library->libraryMutex);
         this->status |= Status::Ended;
     }
 
@@ -245,9 +240,11 @@ bool TrackMetadata::RunCallbacks(Library::Base *library){
 
     // First swap the results so that Query can continue to parse
     {
-        boost::mutex::scoped_lock lock(library->oResultMutex);
+        boost::mutex::scoped_lock lock(library->resultMutex);
         aResultCopy.swap(this->aResultTracks);
-
+    }
+    {
+        boost::mutex::scoped_lock lock(library->libraryMutex);
         if( (this->status & Status::Ended)!=0){
             bReturn    = true;
         }
@@ -384,9 +381,11 @@ bool TrackMetadata::SendResults(musik::core::xml::WriterNode &queryNode,Library:
     while(continueSending){
         TrackVector resultCopy;
         {
-            boost::mutex::scoped_lock lock(library->oResultMutex);
+            boost::mutex::scoped_lock lock(library->resultMutex);
             resultCopy.swap(this->aResultTracks);
-
+        }
+        {
+            boost::mutex::scoped_lock lock(library->libraryMutex);
             if( (this->status & Status::Ended)!=0){
                 continueSending    = false;
             }
@@ -467,7 +466,7 @@ bool TrackMetadata::RecieveResults(musik::core::xml::ParserNode &queryNode,Libra
                 }
 
                 {
-                    boost::mutex::scoped_lock oLock(library->oResultMutex);
+                    boost::mutex::scoped_lock oLock(library->resultMutex);
                     this->aResultTracks.push_back(currentTrack);
                 }
             }

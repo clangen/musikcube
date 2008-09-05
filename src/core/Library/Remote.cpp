@@ -233,7 +233,6 @@ void Library::Remote::WriteThread(){
             // Add to the finished queries
             {
                 boost::mutex::scoped_lock lock(this->libraryMutex);
-                this->bCurrentQueryCanceled    = false;
                 this->runningQuery    = query;
                 this->outgoingQueries.push_back(query);
 
@@ -280,17 +279,6 @@ void Library::Remote::WriteThread(){
         }
     }
 
-}
-
-//////////////////////////////////////////
-///\brief
-///Cancel the current running query
-///
-///This method will also send a sqlite3_interrupt to cancel the
-///current running SQL Query
-//////////////////////////////////////////
-void Library::Remote::CancelCurrentQuery( ){
-    this->bCurrentQueryCanceled    = true;
 }
 
 

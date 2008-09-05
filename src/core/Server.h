@@ -52,6 +52,17 @@ namespace musik{ namespace core{
 
 //////////////////////////////////////////////////////////////////////////////
 
+//////////////////////////////////////////
+///\brief
+///musik::core::Server is the main class for the musikServer
+///
+///the Server contains everything from an Indexer,
+///a musik::core::server::Connection (Library::Base derivate) for each connected user
+///and a HTTP server for streaming tracks.
+///
+///\see
+///Indexer | http::Server | server::Connection
+//////////////////////////////////////////
 class Server{
     public:
         // Methods
