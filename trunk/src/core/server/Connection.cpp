@@ -152,7 +152,6 @@ void Connection::ParseThread(){
             // Add to the finished queries
             {
                 boost::mutex::scoped_lock lock(this->libraryMutex);
-                this->bCurrentQueryCanceled    = false;
                 this->runningQuery    = query;
                 this->outgoingQueries.push_back(query);
 
@@ -255,7 +254,6 @@ void Connection::WriteThread(){
 ///current running SQL Query
 //////////////////////////////////////////
 void Connection::CancelCurrentQuery( ){
-    this->bCurrentQueryCanceled    = true;
     this->db.Interrupt();
 }
 

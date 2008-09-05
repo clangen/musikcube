@@ -70,7 +70,6 @@ class Remote : public Library::Base{
         virtual utfstring BasePath();
 
     protected:
-        void CancelCurrentQuery( );
         virtual void Exit();
 
     private:

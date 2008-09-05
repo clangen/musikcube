@@ -65,11 +65,15 @@ bool Query::ListBase::RunCallbacks(Library::Base *library){
     TrackVector trackResultsCopy;
 
     {    // Scope for swapping the results safely
-        boost::mutex::scoped_lock lock(library->oResultMutex);
+        boost::mutex::scoped_lock lock(library->resultMutex);
 
         metadataResultsCopy.swap(this->metadataResults);
         trackResultsCopy.swap(this->trackResults);
 
+    }
+
+    {
+        boost::mutex::scoped_lock lock(library->libraryMutex);
         if( (this->status & Status::Ended)!=0){
             // If the query is finished, this function should return true to report that it is finished.
             bReturn    = true;
@@ -113,7 +117,7 @@ bool Query::ListBase::RunCallbacks(Library::Base *library){
     }
 
     if(bReturn){
-        boost::mutex::scoped_lock lock(library->oResultMutex);
+        boost::mutex::scoped_lock lock(library->resultMutex);
         // Check for trackinfo update
         this->trackInfoEvent(trackInfoTracks,trackInfoDuration,trackInfoSize);
     }
@@ -138,7 +142,7 @@ Query::ListBase::TrackInfoSignal& Query::ListBase::OnTrackInfoEvent(){
 }
 
 bool Query::ListBase::ParseTracksSQL(std::string sql,Library::Base *library,db::Connection &db){
-    if(this->trackEvent.has_connections() && !library->QueryCanceled()){
+    if(this->trackEvent.has_connections() && !library->QueryCanceled(this)){
         db::Statement selectTracks(sql.c_str(),db);
 
         TrackVector tempTrackResults;
@@ -151,7 +155,7 @@ bool Query::ListBase::ParseTracksSQL(std::string sql,Library::Base *library,db::
             this->trackInfoTracks++;
 
             if( (++row)%100==0 ){
-                boost::mutex::scoped_lock lock(library->oResultMutex);
+                boost::mutex::scoped_lock lock(library->resultMutex);
                 this->trackResults.insert(this->trackResults.end(),tempTrackResults.begin(),tempTrackResults.end());
 
                 tempTrackResults.clear();
@@ -159,7 +163,7 @@ bool Query::ListBase::ParseTracksSQL(std::string sql,Library::Base *library,db::
             }
         }
         if(!tempTrackResults.empty()){
-            boost::mutex::scoped_lock lock(library->oResultMutex);
+            boost::mutex::scoped_lock lock(library->resultMutex);
             this->trackResults.insert(this->trackResults.end(),tempTrackResults.begin(),tempTrackResults.end());
         }
 
@@ -173,16 +177,19 @@ bool Query::ListBase::ParseTracksSQL(std::string sql,Library::Base *library,db::
 bool Query::ListBase::SendResults(musik::core::xml::WriterNode &queryNode,Library::Base *library){
 
     bool continueSending(true);
-    while(continueSending){
+    while(continueSending && !library->QueryCanceled(this)){
 
         MetadataResults metadataResultsCopy;
         TrackVector trackResultsCopy;
 
         {    // Scope for swapping the results safely
-            boost::mutex::scoped_lock lock(library->oResultMutex);
+            boost::mutex::scoped_lock lock(library->resultMutex);
 
             metadataResultsCopy.swap(this->metadataResults);
             trackResultsCopy.swap(this->trackResults);
+        }
+        {
+            boost::mutex::scoped_lock lock(library->libraryMutex);
 
             if( (this->status & Status::Ended)!=0){
                 // If the query is finished, stop sending
@@ -194,7 +201,7 @@ bool Query::ListBase::SendResults(musik::core::xml::WriterNode &queryNode,Librar
         if(!metadataResultsCopy.empty()){
 
             // Loop metadata tags for results
-            for( MetadataResults::iterator metatagResult=metadataResultsCopy.begin();metatagResult!=metadataResultsCopy.end();++metatagResult){
+            for( MetadataResults::iterator metatagResult=metadataResultsCopy.begin();metatagResult!=metadataResultsCopy.end() && !library->QueryCanceled(this);++metatagResult){
 
                 std::string metatag(metatagResult->first);
 
@@ -230,7 +237,7 @@ bool Query::ListBase::SendResults(musik::core::xml::WriterNode &queryNode,Librar
         }
 
         // Check for Tracks
-        if( !trackResultsCopy.empty() ){
+        if( !trackResultsCopy.empty() && !library->QueryCanceled(this) ){
 
             musik::core::xml::WriterNode tracklist(queryNode,"tracklist");
 
@@ -262,8 +269,8 @@ bool Query::ListBase::SendResults(musik::core::xml::WriterNode &queryNode,Librar
         }
     }
 	
-	{
-        boost::mutex::scoped_lock lock(library->oResultMutex);
+	if(!library->QueryCanceled(this)){
+        boost::mutex::scoped_lock lock(library->resultMutex);
         // Check for trackinfo update
         musik::core::xml::WriterNode trackInfoNode(queryNode,"trackinfo");
         trackInfoNode.Content() =  boost::lexical_cast<std::string>( this->trackInfoTracks );
@@ -288,7 +295,7 @@ bool Query::ListBase::RecieveResults(musik::core::xml::ParserNode &queryNode,Lib
             int row(0);
 
             {
-                boost::mutex::scoped_lock lock(library->oResultMutex);
+                boost::mutex::scoped_lock lock(library->resultMutex);
                 this->metadataResults[metakey];
             }
 
@@ -305,14 +312,14 @@ bool Query::ListBase::RecieveResults(musik::core::xml::ParserNode &queryNode,Lib
                         );
 
                 if( (++row)%10==0 ){
-                    boost::mutex::scoped_lock lock(library->oResultMutex);
+                    boost::mutex::scoped_lock lock(library->resultMutex);
                     this->metadataResults[metakey].insert(this->metadataResults[metakey].end(),tempMetadataValues.begin(),tempMetadataValues.end());
                     tempMetadataValues.clear();
                     tempMetadataValues.reserve(10);
                 }
             }
             if(!tempMetadataValues.empty()){
-                boost::mutex::scoped_lock lock(library->oResultMutex);
+                boost::mutex::scoped_lock lock(library->resultMutex);
                 this->metadataResults[metakey].insert(this->metadataResults[metakey].end(),tempMetadataValues.begin(),tempMetadataValues.end());
             }
 
@@ -339,7 +346,7 @@ bool Query::ListBase::RecieveResults(musik::core::xml::ParserNode &queryNode,Lib
 					}
 
 					{
-		                boost::mutex::scoped_lock lock(library->oResultMutex);
+		                boost::mutex::scoped_lock lock(library->resultMutex);
 		                this->trackResults.insert(this->trackResults.end(),tempTrackResults.begin(),tempTrackResults.end());
 					}
 
@@ -360,7 +367,7 @@ bool Query::ListBase::RecieveResults(musik::core::xml::ParserNode &queryNode,Lib
 
 			if(values.size()>=3){
 				try{
-					boost::mutex::scoped_lock lock(library->oResultMutex);
+					boost::mutex::scoped_lock lock(library->resultMutex);
 					this->trackInfoTracks	= boost::lexical_cast<UINT64>( values[0] );
 					this->trackInfoDuration	= boost::lexical_cast<UINT64>( values[1] );
 					this->trackInfoSize		= boost::lexical_cast<UINT64>( values[2] );

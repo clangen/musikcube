@@ -114,7 +114,7 @@ Query::Ptr Query::PlaylistSave::copy() const{
 }
 
 bool Query::PlaylistSave::RunCallbacks(Library::Base *library){
-    boost::mutex::scoped_lock lock(library->oResultMutex);
+    boost::mutex::scoped_lock lock(library->libraryMutex);
     if( (this->status & Status::Ended)!=0){
         this->PlaylistSaved(this->playlistId);
         return true;

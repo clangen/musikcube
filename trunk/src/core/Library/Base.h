@@ -125,8 +125,7 @@ class Base : boost::noncopyable{
 
         utfstring GetLibraryDirectory();
 
-        bool QueryCanceled();
-
+        bool QueryCanceled(Query::Base *query);
 
         virtual musik::core::Indexer *Indexer();
 
@@ -201,7 +200,7 @@ class Base : boost::noncopyable{
         ///\remarks
         ///This mutex needs to be public
         //////////////////////////////////////////
-        boost::mutex oResultMutex;
+        boost::mutex resultMutex;
 
 
     protected:
@@ -215,7 +214,7 @@ class Base : boost::noncopyable{
         ///\see
         ///CancelCurrentQuery|QueryCanceled
         //////////////////////////////////////////
-        bool bCurrentQueryCanceled;
+//        bool bCurrentQueryCanceled;
 
         //////////////////////////////////////////
         ///\brief

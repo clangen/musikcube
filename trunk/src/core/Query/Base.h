@@ -97,16 +97,6 @@ class Base : public sigslot::has_slots<> {
 
         // Variables:
 
-        //////////////////////////////////////////
-        ///\brief
-        ///Current state of the query
-        ///
-        ///\remarks
-        ///iState is protected by the Library::Base::oResultMutex
-        ///
-        ///\see
-        ///musik::core::State
-        //////////////////////////////////////////
         enum Status:int{
             Started       = 1,
             Ended         = 2,
@@ -116,6 +106,13 @@ class Base : public sigslot::has_slots<> {
             Finished      = 32
         };
 
+        //////////////////////////////////////////
+        ///\brief
+        ///Current status of the query
+        ///
+        ///\remarks
+        ///status is protected by the Library::Base::libraryMutex
+        //////////////////////////////////////////
         unsigned int status;
 
         //////////////////////////////////////////

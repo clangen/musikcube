@@ -150,7 +150,6 @@ void Library::LocalDB::ThreadLoop(){
             // Add to the finished queries
             {
                 boost::mutex::scoped_lock lock(this->libraryMutex);
-                this->bCurrentQueryCanceled    = false;
                 this->runningQuery    = query;
                 this->outgoingQueries.push_back(query);
 
@@ -160,7 +159,10 @@ void Library::LocalDB::ThreadLoop(){
 
             ////////////////////////////////////////////////////////////
             // Lets parse the query
-            query->ParseQuery(this,this->db);
+            if(!this->QueryCanceled(query.get())){
+                query->ParseQuery(this,this->db);
+            }
+
             {
                 boost::mutex::scoped_lock lock(this->libraryMutex);
                 this->runningQuery.reset();
@@ -195,7 +197,6 @@ void Library::LocalDB::ThreadLoop(){
 ///current running SQL Query
 //////////////////////////////////////////
 void Library::LocalDB::CancelCurrentQuery( ){
-    this->bCurrentQueryCanceled    = true;
     this->db.Interrupt();
 }
 

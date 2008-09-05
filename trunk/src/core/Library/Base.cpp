@@ -54,7 +54,6 @@ using namespace musik::core;
 Library::Base::Base(utfstring identifier) 
  :identifier(identifier)
  ,queueCallbackStarted(false)
- ,bCurrentQueryCanceled(false)
  ,exit(false)
 {
 }
@@ -217,10 +216,10 @@ bool Library::Base::AddQuery( const Query::Base &query,unsigned int options ){
 
     /////////////////////////////////////////////////////////////////////////////
     {
-        // Lock the mutex for accessing the query queues
+        // Lock the mutex for accessing the query queues and query status
         boost::mutex::scoped_lock lock(this->libraryMutex);
 
-        bool bCancelCurrentQuery(false);
+        bool cancelCurrentQuery(false);
 
         /////////////////////////////////////////////////////////////////////////////
         // Clear unparsed queue that match CANCEL options
@@ -264,10 +263,10 @@ bool Library::Base::AddQuery( const Query::Base &query,unsigned int options ){
         if(this->runningQuery){
             if( !(this->runningQuery->options & Query::Options::UnCanceable) ){
                 if( options & Query::Options::CancelQueue ){
-                    bCancelCurrentQuery    = true;
+                    cancelCurrentQuery    = true;
                 }else if( options & Query::Options::CancelSimilar ){
                     if( this->runningQuery->queryId == queryCopy->queryId ){
-                        bCancelCurrentQuery    = true;
+                        cancelCurrentQuery    = true;
                     }
                 }
             }
@@ -283,7 +282,7 @@ bool Library::Base::AddQuery( const Query::Base &query,unsigned int options ){
 
         /////////////////////////////////////////////////////////////////////////////
         // Cancel currently running query
-        if(bCancelCurrentQuery){
+        if(cancelCurrentQuery){
             this->CancelCurrentQuery();
         }
 
@@ -316,7 +315,7 @@ bool Library::Base::AddQuery( const Query::Base &query,unsigned int options ){
         this->ClearFinishedQueries();
 
         if( options & Query::Options::AutoCallback ){    // Should the callbacks be involved?
-            if( !(queryCopy->status&Query::Base::Status::Canceled) ){    // If not canceled
+            if( !this->QueryCanceled(queryCopy.get()) ){    // If not canceled
                 queryCopy->RunCallbacks(this);            // Run the callbacks.
             }
         }
@@ -336,9 +335,9 @@ Query::Ptr Library::Base::GetNextQuery(){
     boost::mutex::scoped_lock lock(this->libraryMutex);
 
     if(this->incomingQueries.size()!=0){
-        Query::Ptr oQuery    = this->incomingQueries.front();    // Cast back to query
+        Query::Ptr query    = this->incomingQueries.front();    // Cast back to query
         this->incomingQueries.pop_front();
-        return oQuery;
+        return query;
     }
 
     // Or return an empty query
@@ -438,11 +437,9 @@ bool Library::Base::RunCallbacks(){
 ///\see
 ///CancelCurrentQuery
 //////////////////////////////////////////
-bool Library::Base::QueryCanceled(){
+bool Library::Base::QueryCanceled(Query::Base *query){
     boost::mutex::scoped_lock lock(this->libraryMutex);
-    bool bReturn    = this->bCurrentQueryCanceled;
-    this->bCurrentQueryCanceled    = false;
-    return bReturn;
+    return query->status&Query::Base::Status::Canceled;
 }
 
 //////////////////////////////////////////
@@ -458,7 +455,7 @@ bool Library::Base::QueryCanceled(){
 ///QueryCanceled
 //////////////////////////////////////////
 void Library::Base::CancelCurrentQuery(){
-    this->bCurrentQueryCanceled    = true;
+//    this->bCurrentQueryCanceled    = true;
 }
 
 
@@ -645,7 +642,8 @@ void Library::Base::CreateDatabase(db::Connection &db){
     // Create the playlists-table
     db.Execute("CREATE TABLE IF NOT EXISTS playlists ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-            "name TEXT default ''"
+            "name TEXT default '',"
+            "user_id INTEGER default 0"
             ")");
     // Create the playlists-table
     db.Execute("CREATE TABLE IF NOT EXISTS playlist_tracks ("
@@ -654,8 +652,15 @@ void Library::Base::CreateDatabase(db::Connection &db){
             "sort_order INTEGER DEFAULT 0"
             ")");
 
+    // Create the users-table
+    db.Execute("CREATE TABLE IF NOT EXISTS users ("
+        "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+        "name TEXT,"
+        "login TEXT,"
+        "password TEXT)");
 
     // INDEXES
+    db.Execute("CREATE UNIQUE INDEX IF NOT EXISTS users_index ON users (login)");
     db.Execute("CREATE UNIQUE INDEX IF NOT EXISTS folders_index ON folders (name,parent_id,path_id)");
     db.Execute("CREATE UNIQUE INDEX IF NOT EXISTS paths_index ON paths (path)");
     db.Execute("CREATE INDEX IF NOT EXISTS genre_index ON genres (sort_order)");

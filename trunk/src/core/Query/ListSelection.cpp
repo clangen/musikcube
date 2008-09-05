@@ -480,7 +480,7 @@ void Query::ListSelection::SQLPrependWhereOrAnd(std::string &sql){
 //////////////////////////////////////////
 void Query::ListSelection::SQLSelectQuery(const char *metakey,const char *sqlStart,const char *sqlEnd,std::set<std::string> &metakeysSelected,std::string &sqlSelectTrackWhere,Library::Base *library){
 
-    if(!library->QueryCanceled()){
+    if(!library->QueryCanceled(this)){
         SelectedMetadata::iterator selected    = this->selectedMetadata.find(metakey);
         if(selected!=this->selectedMetadata.end()){
 
@@ -508,7 +508,7 @@ void Query::ListSelection::SQLSelectQuery(const char *metakey,const char *sqlSta
 ///Method called by ParseQuery for every queried metakey
 //////////////////////////////////////////
 void Query::ListSelection::QueryForMetadata(const char *metakey,const char *sql,std::set<std::string> &metakeysQueried,Library::Base *library,db::Connection &db){
-    if(library->QueryCanceled())
+    if(library->QueryCanceled(this))
         return;
 
     if(metakeysQueried.find(metakey)!=metakeysQueried.end()){
@@ -520,7 +520,7 @@ void Query::ListSelection::QueryForMetadata(const char *metakey,const char *sql,
         int row(0);
 
         {
-            boost::mutex::scoped_lock lock(library->oResultMutex);
+            boost::mutex::scoped_lock lock(library->resultMutex);
             this->metadataResults[metakey];
         }
 
@@ -535,14 +535,14 @@ void Query::ListSelection::QueryForMetadata(const char *metakey,const char *sql,
                     );
 
             if( (++row)%10==0 ){
-                boost::mutex::scoped_lock lock(library->oResultMutex);
+                boost::mutex::scoped_lock lock(library->resultMutex);
                 this->metadataResults[metakey].insert(this->metadataResults[metakey].end(),tempMetadataValues.begin(),tempMetadataValues.end());
                 tempMetadataValues.clear();
                 tempMetadataValues.reserve(10);
             }
         }
         if(!tempMetadataValues.empty()){
-            boost::mutex::scoped_lock lock(library->oResultMutex);
+            boost::mutex::scoped_lock lock(library->resultMutex);
             this->metadataResults[metakey].insert(this->metadataResults[metakey].end(),tempMetadataValues.begin(),tempMetadataValues.end());
         }
 
