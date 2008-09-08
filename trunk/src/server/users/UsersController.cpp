@@ -2,7 +2,9 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, mC2 team
+// The following are Copyright © 2007, mC2 Team
+//
+// Sources and Binaries of: mC2, win32cpp
 //
 // All rights reserved.
 //
@@ -34,60 +36,61 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "pch.hpp"
+#include <server/users/UsersController.hpp>
+#include <server/users/UsersView.hpp>
+#include <server/users/UsersListController.hpp>
+#include <server/users/EditUserController.hpp>
 
-//////////////////////////////////////////////////////////////////////////////
-// Forward declare
-namespace win32cpp{
-    class TopLevelWindow;
-    class Label;
-    class Frame;
-}
-namespace musik { namespace server {
-    class SyncpathController;
-    namespace users {
-        class UsersController;
-    }
-} }
-//////////////////////////////////////////////////////////////////////////////
-
-#include <win32cpp/Timer.hpp>
-
-#include <core/Server.h>
+#include <win32cpp/Button.hpp>
+#include <win32cpp/Label.hpp>
+#include <win32cpp/Window.hpp>
+#include <win32cpp/Application.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
 using namespace win32cpp;
-
-namespace musik { namespace server {
+using namespace musik::server::users;
 
 //////////////////////////////////////////////////////////////////////////////
 
-class MainWindowController : public EventHandler
+UsersController::UsersController(UsersView& usersView,musik::core::Server *server)
+ :usersView(usersView)
+ ,server(server)
 {
-    public:
-        MainWindowController(TopLevelWindow& mainWindow,musik::core::ServerPtr server);
-        ~MainWindowController();
+    this->usersView.Handle()
+        ? this->OnViewCreated(&this->usersView)
+        : this->usersView.Created.connect(this, &UsersController::OnViewCreated);
+    
+    this->usersView.Resized.connect(
+        this, &UsersController::OnViewResized);
+}
 
-    protected:  
-        void OnMainWindowCreated(Window* window);
-        void OnResize(Window* window, Size size);
-        void OnDestroyed(Window* window);
-        void UpdateStatus();
-        void OnFileExit(MenuItemRef menuItem);
+void UsersController::OnViewCreated(Window* window)
+{
 
-    protected:  
-        TopLevelWindow& mainWindow;
-        musik::core::ServerPtr server;
-        win32cpp::Label *statusLabel;
-        win32cpp::Frame *mainFrame;
-        SyncpathController *syncpathController;
-        users::UsersController *usersController;
+    this->usersView.addUserButton->Pressed.connect(this,&UsersController::OnAddUser);
+    this->usersView.removeUserButton->Pressed.connect(this,&UsersController::OnRemoveUser);
 
-        win32cpp::Timer timer;
+    this->usersListController.reset(new UsersListController(*this->usersView.usersList,this));
 
-};
+}
 
-//////////////////////////////////////////////////////////////////////////////
+void        UsersController::OnViewResized(Window* window, Size size)
+{
+}
 
-} }     // musik::server
+void UsersController::OnAddUser(Button* button){
+    win32cpp::TopLevelWindow popupDialog(_T("Add user"));
+    popupDialog.SetMinimumSize(Size(300, 200));
+
+    EditUserController addUser(popupDialog,this->server);
+
+    popupDialog.ShowModal(win32cpp::TopLevelWindow::FindFromAncestor(&this->usersView));
+}
+
+void UsersController::OnRemoveUser(Button* button){
+    this->usersListController->RemoveSelectedUsers();
+}
+
+

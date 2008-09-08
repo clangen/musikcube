@@ -2,7 +2,9 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, mC2 team
+// The following are Copyright © 2007, mC2 Team
+//
+// Sources and Binaries of: mC2, win32cpp
 //
 // All rights reserved.
 //
@@ -34,60 +36,55 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "pch.hpp"
+#include <server/users/UsersView.hpp>
 
-//////////////////////////////////////////////////////////////////////////////
-// Forward declare
-namespace win32cpp{
-    class TopLevelWindow;
-    class Label;
-    class Frame;
-}
-namespace musik { namespace server {
-    class SyncpathController;
-    namespace users {
-        class UsersController;
-    }
-} }
-//////////////////////////////////////////////////////////////////////////////
+#include <win32cpp/LinearLayout.hpp>
+#include <win32cpp/Button.hpp>
+#include <win32cpp/ListView.hpp>
+#include <win32cpp/Label.hpp>
 
-#include <win32cpp/Timer.hpp>
-
-#include <core/Server.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
-using namespace win32cpp;
-
-namespace musik { namespace server {
+using namespace musik::server::users;
 
 //////////////////////////////////////////////////////////////////////////////
 
-class MainWindowController : public EventHandler
+UsersView::UsersView()
 {
-    public:
-        MainWindowController(TopLevelWindow& mainWindow,musik::core::ServerPtr server);
-        ~MainWindowController();
+}
 
-    protected:  
-        void OnMainWindowCreated(Window* window);
-        void OnResize(Window* window, Size size);
-        void OnDestroyed(Window* window);
-        void UpdateStatus();
-        void OnFileExit(MenuItemRef menuItem);
+void UsersView::OnCreated()
+{
 
-    protected:  
-        TopLevelWindow& mainWindow;
-        musik::core::ServerPtr server;
-        win32cpp::Label *statusLabel;
-        win32cpp::Frame *mainFrame;
-        SyncpathController *syncpathController;
-        users::UsersController *usersController;
+    LinearLayout* pathLayout = new LinearLayout(LinearColumnLayout);
+    LinearLayout* pathButtonsLayout = new LinearLayout(LinearRowLayout);
+    
 
-        win32cpp::Timer timer;
+    // Path ListView
+    this->usersList          = pathLayout->AddChild(new ListView());
 
-};
+    pathLayout->SetDefaultChildFill(true);
+//    pathLayout->SetSizeConstraints(LayoutFillParent,120);
+    pathLayout->SetFlexibleChild(this->usersList);
 
-//////////////////////////////////////////////////////////////////////////////
 
-} }     // musik::server
+    // pathButtons layout
+    this->addUserButton     = pathButtonsLayout->AddChild(new Button(_T("Add user")));
+    this->removeUserButton  = pathButtonsLayout->AddChild(new Button(_T("Remove user")));
+
+    this->addUserButton->Resize(90, 24);
+    this->removeUserButton->Resize(90, 24);
+
+    pathButtonsLayout->SetDefaultChildFill(false);
+    pathButtonsLayout->SetDefaultChildAlignment(ChildAlignMiddle);
+    pathButtonsLayout->SetSizeConstraints(90,LayoutFillParent);
+
+    pathLayout->AddChild(pathButtonsLayout);
+
+
+    // Add to the layout
+    this->AddChild(new Frame(pathLayout,FramePadding(20)));
+
+}

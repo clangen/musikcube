@@ -33,56 +33,37 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
+#include "pch.hpp"
+#include <core/server/User.h>
+//////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+using namespace musik::core::server;
 
-#include <string>
-#include <core/config.h>
+//////////////////////////////////////////////////////////////////////////////
 
-namespace musik{ namespace core{
+User::User(int id,const utfchar *username,const utfchar *password,const utfchar *name)
+ :id(id)
+ ,username(username)
+ ,password(password)
+ ,name(name)
+{
+}
 
-    /*****************************
-    Path to where the executable is located.
-    *****************************/
-    utfstring GetApplicationDirectory();
+User::~User(void)
+{
+}
 
-    /*****************************
-    Path to where the executable is located.
-    *****************************/
-    utfstring GetDataDirectory();
+utfstring& User::Username(){
+    return this->username;
+}
 
-    /*****************************
-    Get the full path of the sFile
-    *****************************/
-    utfstring GetPath(const utfstring &sFile);
+utfstring& User::Password(){
+    return this->password;
+}
 
-    /*****************************
-    Path to where plugins are located.
-    *****************************/
-    utfstring GetPluginDirectory();
+utfstring& User::Name(){
+    return this->name;
+}
 
-    std::string ConvertUTF8(const std::wstring &sString);
-    std::wstring ConvertUTF16(const std::string &sString);
-    std::wstring ConvertUTF16(const char *string);
 
-    UINT64 Checksum(char *data,unsigned int bytes);
-
-} }
-
-// UTF Conversion MACROS
-#ifdef UTF_WIDECHAR
-
-#define UTF_TO_UTF8(s)  musik::core::ConvertUTF8(s)
-#define UTF_TO_UTF16(s) s
-#define UTF8_TO_UTF(s)  musik::core::ConvertUTF16(s)
-#define UTF16_TO_UTF(s) s
-
-#else
-
-#define UTF_TO_UTF8(s)  s
-#define UTF_TO_UTF16(s) musik::core::ConvertUTF16(s)
-#define UTF8_TO_UTF(s)  s
-#define UTF16_TO_UTF(s) musik::core::ConvertUTF8(s)
-
-#endif
 

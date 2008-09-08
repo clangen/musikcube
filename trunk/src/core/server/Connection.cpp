@@ -35,22 +35,30 @@
 //////////////////////////////////////////////////////////////////////////////
 #include "pch.hpp"
 #include <core/server/Connection.h>
+#include <core/Common.h>
 #include <core/Preferences.h>
 #include <core/Query/Factory.h>
+#include <core/server/User.h>
+#include <core/server/UserSession.h>
 
 #include <core/xml/Parser.h>
 #include <core/xml/ParserNode.h>
 #include <core/xml/Writer.h>
 #include <core/xml/WriterNode.h>
 
+#include <core/Server.h>
+#include <core/Crypt.h>
+
 #include <boost/bind.hpp>
 
 using namespace musik::core::server;
 
 
-Connection::Connection(boost::asio::io_service &ioService)
+Connection::Connection(boost::asio::io_service &ioService,musik::core::Server *server)
  :socket(ioService)
  ,Base(UTF("Server"))
+ ,server(server)
+ ,salt(musik::core::Crypt::GenerateSalt())
 {
 }
 
@@ -92,6 +100,37 @@ void Connection::ReadThread(){
         // Test waiting for a Node
         if( musik::core::xml::ParserNode root = xmlParser.ChildNode("musik") ){
             // musik node initialized
+
+            // Wait for authentication
+            if( musik::core::xml::ParserNode userNode = root.ChildNode("authentication") ){
+                userNode.WaitForContent();
+
+                // Get the user
+                UserPtr user = this->server->GetUser(musik::core::ConvertUTF16(userNode.Attributes()["username"]));
+                if(user){
+                    // Create a new usersession
+                    UserSessionPtr userSession( new UserSession(user,this->salt) );
+
+                    // Check if encrypted password is the same
+                    if( musik::core::Crypt::Encrypt(UTF_TO_UTF8(user->Password()),this->salt)==userNode.Content() ){
+                        boost::mutex::scoped_lock lock(this->libraryMutex);
+                        this->userSession   = userSession;
+                        this->server->AddUserSession(userSession);
+
+                    }
+                }
+            }
+            
+            {
+                // Notify writing thread that the authentication have been read (or failed)
+                boost::mutex::scoped_lock lock(this->libraryMutex);
+                this->authCondition.notify_all();
+            }
+
+            if(!this->userSession){
+                // if there is no authentication node, then it has failed to authenticate
+                this->Exit();
+            }
 
             musik::core::Query::QueryMap queryMap;
             musik::core::Query::Factory::GetQueries(queryMap);
@@ -197,6 +236,29 @@ void Connection::WriteThread(){
     try{
         // Lets start with a <musik> node
         musik::core::xml::WriterNode musikNode(xmlWriter,"musik");
+
+        // Start by initializing the user
+        // Send a random salt for password encryption
+        {
+            musik::core::xml::WriterNode initNode(musikNode,"authentication");
+            initNode.Content()  = this->salt;
+        }
+
+        // Wait for maximum 30 seconds for authentication
+        {
+            boost::mutex::scoped_lock lock(this->libraryMutex);
+            boost::xtime waitTime;
+            boost::xtime_get(&waitTime, boost::TIME_UTC);
+            waitTime.sec += 30;
+
+            if(!this->userSession){
+                this->authCondition.timed_wait(lock,waitTime);
+            }
+        }
+        if(!this->userSession){
+            // No user after 30 second, exit.
+            this->Exit();
+        }
 
         while(!this->Exited()){
 

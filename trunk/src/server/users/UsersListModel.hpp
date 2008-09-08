@@ -2,7 +2,9 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, mC2 team
+// The following are Copyright © 2007, mC2 Team
+//
+// Sources and Binaries of: mC2
 //
 // All rights reserved.
 //
@@ -37,57 +39,35 @@
 #pragma once
 
 //////////////////////////////////////////////////////////////////////////////
-// Forward declare
-namespace win32cpp{
-    class TopLevelWindow;
-    class Label;
-    class Frame;
-}
-namespace musik { namespace server {
-    class SyncpathController;
-    namespace users {
-        class UsersController;
-    }
-} }
-//////////////////////////////////////////////////////////////////////////////
 
-#include <win32cpp/Timer.hpp>
-
-#include <core/Server.h>
+#include <core/server/User.h>
+#include <server/users/UsersListController.hpp>
+#include <win32cpp/ListView.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
-using namespace win32cpp;
-
-namespace musik { namespace server {
+namespace musik { namespace server { namespace users {
 
 //////////////////////////////////////////////////////////////////////////////
 
-class MainWindowController : public EventHandler
-{
+class UsersListModel : public win32cpp::ListView::Model, public win32cpp::EventHandler{
     public:
-        MainWindowController(TopLevelWindow& mainWindow,musik::core::ServerPtr server);
-        ~MainWindowController();
+        UsersListModel(UsersListController *controller);
+        virtual win32cpp::uistring CellValueToString(int rowIndex, win32cpp::ListView::ColumnRef column);
 
-    protected:  
-        void OnMainWindowCreated(Window* window);
-        void OnResize(Window* window, Size size);
-        void OnDestroyed(Window* window);
-        void UpdateStatus();
-        void OnFileExit(MenuItemRef menuItem);
+        void UpdateUsersList();
+    private:
 
-    protected:  
-        TopLevelWindow& mainWindow;
-        musik::core::ServerPtr server;
-        win32cpp::Label *statusLabel;
-        win32cpp::Frame *mainFrame;
-        SyncpathController *syncpathController;
-        users::UsersController *usersController;
+        void OnUsersUpdated();
 
-        win32cpp::Timer timer;
+        UsersListController *controller;
 
+        friend class UsersListController;
+
+        musik::core::server::UserVector users;
 };
 
+
 //////////////////////////////////////////////////////////////////////////////
 
-} }     // musik::server
+} } }     // musik::server

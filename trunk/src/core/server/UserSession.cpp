@@ -33,56 +33,26 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
+#include "pch.hpp"
+#include <core/server/UserSession.h>
 
-#pragma once
+//////////////////////////////////////////////////////////////////////////////
 
-#include <string>
-#include <core/config.h>
+using namespace musik::core::server;
 
-namespace musik{ namespace core{
+//////////////////////////////////////////////////////////////////////////////
 
-    /*****************************
-    Path to where the executable is located.
-    *****************************/
-    utfstring GetApplicationDirectory();
+UserSession::UserSession(UserPtr& user,std::string uniqueId)
+ :user(user)
+ ,uniqueId(uniqueId)
+{
+}
 
-    /*****************************
-    Path to where the executable is located.
-    *****************************/
-    utfstring GetDataDirectory();
+UserSession::~UserSession(void)
+{
+}
 
-    /*****************************
-    Get the full path of the sFile
-    *****************************/
-    utfstring GetPath(const utfstring &sFile);
-
-    /*****************************
-    Path to where plugins are located.
-    *****************************/
-    utfstring GetPluginDirectory();
-
-    std::string ConvertUTF8(const std::wstring &sString);
-    std::wstring ConvertUTF16(const std::string &sString);
-    std::wstring ConvertUTF16(const char *string);
-
-    UINT64 Checksum(char *data,unsigned int bytes);
-
-} }
-
-// UTF Conversion MACROS
-#ifdef UTF_WIDECHAR
-
-#define UTF_TO_UTF8(s)  musik::core::ConvertUTF8(s)
-#define UTF_TO_UTF16(s) s
-#define UTF8_TO_UTF(s)  musik::core::ConvertUTF16(s)
-#define UTF16_TO_UTF(s) s
-
-#else
-
-#define UTF_TO_UTF8(s)  s
-#define UTF_TO_UTF16(s) musik::core::ConvertUTF16(s)
-#define UTF8_TO_UTF(s)  s
-#define UTF16_TO_UTF(s) musik::core::ConvertUTF8(s)
-
-#endif
+std::string UserSession::UniqueId(){
+    return this->uniqueId;
+}
 

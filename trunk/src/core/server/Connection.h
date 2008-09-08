@@ -35,9 +35,18 @@
 //////////////////////////////////////////////////////////////////////////////
 #pragma once
 
+//////////////////////////////////////////////////////////////////////////////
+// Forward declare
+namespace musik{ namespace core{
+    class Server;
+} }
+//////////////////////////////////////////////////////////////////////////////
+
+
 #include <core/config.h>
 #include <core/Library/Base.h>
 #include <core/db/Connection.h>
+#include <core/server/UserSession.h>
 #include <boost/asio.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/thread/thread.hpp>
@@ -59,7 +68,7 @@ typedef std::vector<ConnectionPtr> ConnectionVector;
 
 class Connection : public musik::core::Library::Base{
     public:
-        Connection(boost::asio::io_service &ioService);
+        Connection(boost::asio::io_service &ioService,musik::core::Server *server);
         ~Connection(void);
         utfstring GetInfo();
 
@@ -82,8 +91,11 @@ class Connection : public musik::core::Library::Base{
 
         musik::core::db::Connection db;
 
+        UserSessionPtr userSession;
+        std::string salt;
+        boost::condition authCondition;
 
-
+        musik::core::Server *server;
 };
 
 

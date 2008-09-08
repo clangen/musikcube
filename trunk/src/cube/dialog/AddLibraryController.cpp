@@ -39,6 +39,8 @@
 #include "pch.hpp"
 #include <core/LibraryFactory.h>
 #include <core/Preferences.h>
+#include <core/Crypt.h>
+#include <core/Common.h>
 #include <cube/dialog/AddLibraryController.hpp>
 #include <cube/dialog/AddLibraryView.hpp>
 
@@ -86,6 +88,8 @@ void AddLibraryController::OnOK(win32cpp::Button* button){
             musik::core::Preferences prefs("Connection",this->view->name->Caption().c_str() );
             prefs.SetString("address",this->view->remoteHost->Caption().c_str());
             prefs.SetString("port",this->view->remotePort->Caption().c_str());
+            prefs.SetString("username",this->view->username->Caption().c_str());
+            prefs.SetString("password",UTF8_TO_UTF(musik::core::Crypt::Encrypt(UTF_TO_UTF8(this->view->remotePort->Caption().c_str()),musik::core::Crypt::StaticSalt())).c_str());
         }
 
         library->Startup();

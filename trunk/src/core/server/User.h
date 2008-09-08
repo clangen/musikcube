@@ -33,56 +33,45 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
-
 #pragma once
 
-#include <string>
 #include <core/config.h>
 
-namespace musik{ namespace core{
+#include <map>
+#include <vector>
+#include <set>
+#include <boost/shared_ptr.hpp>
 
-    /*****************************
-    Path to where the executable is located.
-    *****************************/
-    utfstring GetApplicationDirectory();
+//////////////////////////////////////////////////////////////////////////////
 
-    /*****************************
-    Path to where the executable is located.
-    *****************************/
-    utfstring GetDataDirectory();
+namespace musik{ namespace core{ namespace server{
 
-    /*****************************
-    Get the full path of the sFile
-    *****************************/
-    utfstring GetPath(const utfstring &sFile);
+//////////////////////////////////////////////////////////////////////////////
 
-    /*****************************
-    Path to where plugins are located.
-    *****************************/
-    utfstring GetPluginDirectory();
+class User
+{
+    public:
+        User(int id,const utfchar *username,const utfchar *password,const utfchar *name);
+        ~User(void);
 
-    std::string ConvertUTF8(const std::wstring &sString);
-    std::wstring ConvertUTF16(const std::string &sString);
-    std::wstring ConvertUTF16(const char *string);
+        utfstring& Username();
+        utfstring& Password();
+        utfstring& Name();
 
-    UINT64 Checksum(char *data,unsigned int bytes);
+    protected:
+        int id;
+        utfstring username;
+        utfstring password;
+        utfstring name;
 
-} }
+};
 
-// UTF Conversion MACROS
-#ifdef UTF_WIDECHAR
+typedef boost::shared_ptr<User> UserPtr;
+typedef std::map<utfstring,UserPtr> UserMap;
+typedef std::vector<UserPtr> UserVector;
+typedef std::set<UserPtr> UserSet;
 
-#define UTF_TO_UTF8(s)  musik::core::ConvertUTF8(s)
-#define UTF_TO_UTF16(s) s
-#define UTF8_TO_UTF(s)  musik::core::ConvertUTF16(s)
-#define UTF16_TO_UTF(s) s
-
-#else
-
-#define UTF_TO_UTF8(s)  s
-#define UTF_TO_UTF16(s) musik::core::ConvertUTF16(s)
-#define UTF8_TO_UTF(s)  s
-#define UTF16_TO_UTF(s) musik::core::ConvertUTF8(s)
-
-#endif
+//////////////////////////////////////////////////////////////////////////////
+} } }
+//////////////////////////////////////////////////////////////////////////////
 

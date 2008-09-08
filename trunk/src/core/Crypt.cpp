@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Daniel Önnerby
+// The following are Copyright © 2008, mC2 team
 //
 // All rights reserved.
 //
@@ -33,56 +33,62 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
+#include "pch.hpp"
+#include <core/Crypt.h>
+#include <core/config_format.h>
 
-#pragma once
+#include <md5/md5.h>
+#include <boost/random.hpp>
 
-#include <string>
-#include <core/config.h>
+//////////////////////////////////////////////////////////////////////////////
 
-namespace musik{ namespace core{
+using namespace musik::core;
 
-    /*****************************
-    Path to where the executable is located.
-    *****************************/
-    utfstring GetApplicationDirectory();
+//////////////////////////////////////////////////////////////////////////////
 
-    /*****************************
-    Path to where the executable is located.
-    *****************************/
-    utfstring GetDataDirectory();
+std::string Crypt::GenerateSalt(){
+    const std::string characters("ABCDEFGHKLMNOPQRSTWXYZabcdefghjkmnpqrstwxyz123456789");
 
-    /*****************************
-    Get the full path of the sFile
-    *****************************/
-    utfstring GetPath(const utfstring &sFile);
+    typedef boost::mt19937 RandomGenerator;
+    RandomGenerator randomGenerator;
 
-    /*****************************
-    Path to where plugins are located.
-    *****************************/
-    utfstring GetPluginDirectory();
 
-    std::string ConvertUTF8(const std::wstring &sString);
-    std::wstring ConvertUTF16(const std::string &sString);
-    std::wstring ConvertUTF16(const char *string);
+    boost::uniform_int<> randDistribution(0,(int)characters.size()-1);
+    boost::variate_generator<RandomGenerator&, boost::uniform_int<> > rand(randomGenerator, randDistribution);
 
-    UINT64 Checksum(char *data,unsigned int bytes);
+    std::string salt;
+    for(int i(0);i<64;++i){
+        salt    += characters.at(rand());
+    }
+    return salt;
+}
 
-} }
+std::string Crypt::StaticSalt(){
+    return "mC2, don't be square";
+}
 
-// UTF Conversion MACROS
-#ifdef UTF_WIDECHAR
+std::string Crypt::Encrypt(std::string cryptContent,std::string salt){
+    md5_state_t md5State;
+    md5_init(&md5State);
 
-#define UTF_TO_UTF8(s)  musik::core::ConvertUTF8(s)
-#define UTF_TO_UTF16(s) s
-#define UTF8_TO_UTF(s)  musik::core::ConvertUTF16(s)
-#define UTF16_TO_UTF(s) s
+    std::string encryptString   = cryptContent+salt;
 
-#else
+    md5_append(&md5State,(const md5_byte_t *)encryptString.c_str(),(int)encryptString.size());
 
-#define UTF_TO_UTF8(s)  s
-#define UTF_TO_UTF16(s) musik::core::ConvertUTF16(s)
-#define UTF8_TO_UTF(s)  s
-#define UTF16_TO_UTF(s) musik::core::ConvertUTF8(s)
+    // Encrypted result
+    md5_byte_t result[16];
 
-#endif
+    // Get the results
+    md5_finish(&md5State, result);
 
+    // Add result to encryptedString
+    std::string encryptedHexString;
+    boost::format formatHex("%1$02x");
+    for(int i=0;i<16;++i){
+        int hex     = result[i];
+        formatHex%hex;
+        encryptedHexString += formatHex.str();
+        formatHex.clear();
+    }
+    return encryptedHexString;
+}

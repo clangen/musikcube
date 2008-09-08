@@ -37,14 +37,20 @@
 
 #include <core/config.h>
 #include <core/server/Connection.h>
+#include <core/db/Connection.h>
 
 #include <core/Indexer.h>
 #include <core/http/Server.h>
+#include <core/server/User.h>
+#include <core/server/UserSession.h>
 
 #include <boost/asio.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/shared_ptr.hpp>
+
+#include <vector>
+#include <sigslot/sigslot.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -70,6 +76,19 @@ class Server{
         ~Server(void);
         bool Startup();
 
+        bool CreateUser(const utfstring username,const utfstring plainTextPassword,const utfstring name);
+        bool DeleteUser(const utfstring username);
+
+        server::UserVector AllUsers();
+        server::UserSessionVector ConnectedUserSessions();
+
+
+    public:
+        // Events
+        typedef sigslot::signal0<> UserUpdatedEvent;
+        UserUpdatedEvent UsersUpdated;
+        UserUpdatedEvent UserSessionsUpdated;
+
     public:
         Indexer indexer;    
         http::Server httpServer;
@@ -83,6 +102,14 @@ class Server{
         void SetNextConnection();
         void CleanupConnections();
 
+        utfstring ServerIdentifier();
+
+        friend class server::Connection;
+        server::UserPtr GetUser(const utfstring username);
+
+        bool RemoveUserSession(server::UserSessionPtr userSession);
+        bool AddUserSession(server::UserSessionPtr userSession);
+
     private:
         // Variables
         boost::asio::io_service ioService;
@@ -95,6 +122,9 @@ class Server{
         musik::core::server::ConnectionVector connections;
         musik::core::server::ConnectionPtr nextConnection;
 
+        server::UserSessionMap connectedUsers;
+
+        db::Connection db;
 };
 
 typedef boost::shared_ptr<Server> ServerPtr;

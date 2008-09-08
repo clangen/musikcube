@@ -239,6 +239,62 @@
 					>
 				</File>
 			</Filter>
+			<Filter
+				Name="User settings"
+				>
+				<File
+					RelativePath=".\users\UsersController.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\users\UsersController.hpp"
+					>
+				</File>
+				<File
+					RelativePath=".\users\UsersListController.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\users\UsersListController.hpp"
+					>
+				</File>
+				<File
+					RelativePath=".\users\UsersListModel.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\users\UsersListModel.hpp"
+					>
+				</File>
+				<File
+					RelativePath=".\users\UsersView.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\users\UsersView.hpp"
+					>
+				</File>
+				<Filter
+					Name="dialog"
+					>
+					<File
+						RelativePath=".\users\EditUserController.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\users\EditUserController.hpp"
+						>
+					</File>
+					<File
+						RelativePath=".\users\EditUserView.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\users\EditUserView.hpp"
+						>
+					</File>
+				</Filter>
+			</Filter>
 		</Filter>
 		<File
 			RelativePath=".\main.cpp"
