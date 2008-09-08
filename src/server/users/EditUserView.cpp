@@ -37,8 +37,9 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
-#include <cube/dialog/AddLibraryView.hpp>
-#include <core/LibraryFactory.h>
+
+#include <server/users/EditUserView.hpp>
+
 #include <win32cpp/Label.hpp>
 #include <win32cpp/Button.hpp>
 #include <win32cpp/LinearLayout.hpp>
@@ -47,18 +48,17 @@
 
 //////////////////////////////////////////////////////////////////////////////
 
-using namespace musik::cube::dialog;
+using namespace musik::server::users;
 using namespace win32cpp;
 
 //////////////////////////////////////////////////////////////////////////////
 
-AddLibraryView::AddLibraryView(int type)
+EditUserView::EditUserView()
 : Frame(NULL,FramePadding(6))
-, type(type)
 {
 }
 
-void AddLibraryView::OnCreated()
+void EditUserView::OnCreated()
 {
     FontRef boldFont(Font::Create());
     boldFont->SetBold(true);
@@ -68,57 +68,40 @@ void AddLibraryView::OnCreated()
     topRowLayout->SetDefaultChildFill(false);
     topRowLayout->SetDefaultChildAlignment(win32cpp::ChildAlignMiddle);
 
-    Label *label;
-    Size labelSize(80,0);
-
     // First rows column layout
     LinearLayout* firstColumnLayout = new LinearLayout(LinearColumnLayout);
     firstColumnLayout->SetDefaultChildFill(false);
     firstColumnLayout->SetDefaultChildAlignment(win32cpp::ChildAlignCenter);
 
-    label = firstColumnLayout->AddChild(new Label(_T("Add Library")));
-    label->SetFont(boldFont);
+    Label* title    = firstColumnLayout->AddChild(new Label(_T("Add user")));
+    title->SetFont(boldFont);
     topRowLayout->AddChild(firstColumnLayout);
 
 
-    // Second rows column layout
-    LinearLayout* secondColumnLayout = new LinearLayout(LinearColumnLayout);
-    secondColumnLayout->SetDefaultChildAlignment(win32cpp::ChildAlignTop);
+    LinearLayout* row;
+    Label* label;
 
-    label           = secondColumnLayout->AddChild(new Label(_T("Library name:") ));
-    label->Resize(labelSize);
-    this->name      = secondColumnLayout->AddChild(new EditView(160,20 ));
-    topRowLayout->AddChild(secondColumnLayout);
+    // Username
+    row = new LinearLayout(LinearColumnLayout);
+    label   = row->AddChild(new Label(_T("Username:") ));
+    label->Resize(Size(80,0));
+    this->username  = row->AddChild(new EditView(160,20 ));
+    topRowLayout->AddChild(row);
 
+    // Password
+    row = new LinearLayout(LinearColumnLayout);
+    label   = row->AddChild(new Label(_T("Password:") ));
+    label->Resize(Size(80,0));
+    this->password  = row->AddChild(new EditView(160,20 ));
+    topRowLayout->AddChild(row);
 
-    // Third rows column layout
-    if(this->type==musik::core::LibraryFactory::Remote){
-        LinearLayout* row;
-        row = new LinearLayout(LinearColumnLayout);
-        label   = row->AddChild(new Label(_T("Remote host:") ));
-        label->Resize(labelSize);
-        this->remoteHost = row->AddChild(new EditView(160,20 ));
-        topRowLayout->AddChild(row);
+    // Nickname
+    row = new LinearLayout(LinearColumnLayout);
+    label   = row->AddChild(new Label(_T("Nickname:") ));
+    label->Resize(Size(80,0));
+    this->nickname = row->AddChild(new EditView(160,20 ));
+    topRowLayout->AddChild(row);
 
-        row = new LinearLayout(LinearColumnLayout);
-        label   = row->AddChild(new Label(_T("Remote port:") ));
-        label->Resize(labelSize);
-        this->remotePort = row->AddChild(new EditView(100,20 ));
-        this->remotePort->SetCaption(uistring(_T("10543")));
-        topRowLayout->AddChild(row);
-
-        row = new LinearLayout(LinearColumnLayout);
-        label   = row->AddChild(new Label(_T("Username:") ));
-        label->Resize(labelSize);
-        this->username = row->AddChild(new EditView(160,20 ));
-        topRowLayout->AddChild(row);
-
-        row = new LinearLayout(LinearColumnLayout);
-        label   = row->AddChild(new Label(_T("Password:") ));
-        label->Resize(labelSize);
-        this->password = row->AddChild(new EditView(160,20 ));
-        topRowLayout->AddChild(row);
-    }
 
     // Last rows column layout
     LinearLayout* bottomButtonLayout = new LinearLayout(LinearColumnLayout);
@@ -129,7 +112,6 @@ void AddLibraryView::OnCreated()
     this->okButton->Resize(60,20);
     topRowLayout->AddChild(bottomButtonLayout);
     topRowLayout->SetChildAlignment(bottomButtonLayout,ChildAlignRight);
-
 
 
     this->AddChild(topRowLayout);

@@ -2,7 +2,9 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, mC2 team
+// The following are Copyright © 2007, mC2 Team
+//
+// Sources and Binaries of: mC2, win32cpp
 //
 // All rights reserved.
 //
@@ -39,55 +41,41 @@
 //////////////////////////////////////////////////////////////////////////////
 // Forward declare
 namespace win32cpp{
-    class TopLevelWindow;
-    class Label;
-    class Frame;
+    class Window;
+    class Button;
 }
-namespace musik { namespace server {
-    class SyncpathController;
-    namespace users {
-        class UsersController;
-    }
-} }
 //////////////////////////////////////////////////////////////////////////////
-
-#include <win32cpp/Timer.hpp>
 
 #include <core/Server.h>
+#include <win32cpp/Types.hpp>
+#include <win32cpp/TopLevelWindow.hpp>
+#include <boost/shared_ptr.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
-using namespace win32cpp;
+namespace musik { namespace server { namespace users{
 
-namespace musik { namespace server {
-
+class EditUserView;   // forward
 //////////////////////////////////////////////////////////////////////////////
 
-class MainWindowController : public EventHandler
-{
-    public:
-        MainWindowController(TopLevelWindow& mainWindow,musik::core::ServerPtr server);
-        ~MainWindowController();
+class EditUserController : public win32cpp::EventHandler{
 
-    protected:  
-        void OnMainWindowCreated(Window* window);
-        void OnResize(Window* window, Size size);
-        void OnDestroyed(Window* window);
-        void UpdateStatus();
-        void OnFileExit(MenuItemRef menuItem);
+    public:     
+        EditUserController(win32cpp::TopLevelWindow &mainWindow,musik::core::Server *server);
+        ~EditUserController();
 
-    protected:  
-        TopLevelWindow& mainWindow;
-        musik::core::ServerPtr server;
-        win32cpp::Label *statusLabel;
-        win32cpp::Frame *mainFrame;
-        SyncpathController *syncpathController;
-        users::UsersController *usersController;
+    private:  
+        void        OnViewCreated(win32cpp::Window* window);
+        void        OnCancel(win32cpp::Button* button);
+        void        OnOK(win32cpp::Button* button);
 
-        win32cpp::Timer timer;
+        EditUserView* view;
 
+        win32cpp::TopLevelWindow &mainWindow;
+
+        musik::core::Server *server;
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-} }     // musik::server
+} } }    // musik::cube::dialog

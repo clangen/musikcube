@@ -41,6 +41,7 @@
 #include <core/Preferences.h>
 #include <core/xml/Parser.h>
 #include <core/xml/Writer.h>
+#include <core/Crypt.h>
 
 #include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>
@@ -120,11 +121,15 @@ bool Library::Remote::Startup(){
 //////////////////////////////////////////
 void Library::Remote::ReadThread(){
 
+    std::string username,password;
+
     {
         Preferences prefs("Connection",this->Identifier().c_str());
 
-        this->address   = ConvertUTF8(prefs.GetString("address",UTF("localhost")));
-        this->port      = ConvertUTF8(prefs.GetString("port",UTF("10543")));
+        this->address   = UTF_TO_UTF8(prefs.GetString("address",UTF("localhost")));
+        this->port      = UTF_TO_UTF8(prefs.GetString("port",UTF("10543")));
+        this->username  = UTF_TO_UTF8(prefs.GetString("username",UTF("")));
+        this->password  = UTF_TO_UTF8(prefs.GetString("password",UTF("")));
     }
 
     boost::asio::ip::tcp::resolver resolver(this->ioService);
@@ -158,21 +163,27 @@ void Library::Remote::ReadThread(){
         return;
     }
 
-    // Successfully connected to server
-    // Start the WriteThread
-    try{
-        this->threads.create_thread(boost::bind(&Library::Remote::WriteThread,this));
-    }
-    catch(...){
-        this->Exit();
-        return;
-    }
 
 
     try{
         // Lets start recieving queries
         xml::Parser parser(&this->socket);
         if( xml::ParserNode rootNode=parser.ChildNode("musik")){
+
+            // Start by waiting for the authentication node
+            if( xml::ParserNode authNode=rootNode.ChildNode("authentication")){
+                authNode.WaitForContent();
+                this->sessionId = authNode.Content();
+            }else{
+                this->Exit();
+                return;
+            }
+
+            // Successfully connected to server
+            // Start the WriteThread
+            this->threads.create_thread(boost::bind(&Library::Remote::WriteThread,this));
+
+
             while(xml::ParserNode node=rootNode.ChildNode()){
                 if(node.Name()=="queryresults"){
 
@@ -223,6 +234,14 @@ void Library::Remote::WriteThread(){
 
     // Start by writing the musik-tag
     xml::WriterNode rootNode(writer,"musik");
+
+    //Start by writing the authentication
+    {
+        xml::WriterNode authNode(rootNode,"authentication");
+        authNode.Attributes()["username"]   = this->username;
+        authNode.Content()  = musik::core::Crypt::Encrypt(this->password,this->sessionId);
+    }
+
     
     while(!this->Exited()){
         Query::Ptr query(this->GetNextQuery());
@@ -313,7 +332,7 @@ utfstring Library::Remote::BasePath(){
     boost::asio::ip::tcp::endpoint endPoint = this->socket.remote_endpoint();
     boost::asio::ip::address address        = endPoint.address();
 
-    path    += musik::core::ConvertUTF16(address.to_string());
-    path    += UTF(":") + musik::core::ConvertUTF16(this->port) + UTF("/");
+    path    += UTF8_TO_UTF(address.to_string());
+    path    += UTF(":") + UTF8_TO_UTF(this->port) + UTF("/");
     return path;
 }

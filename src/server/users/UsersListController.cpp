@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2007, mC2 Team
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: mC2
 //
 // All rights reserved.
 //
@@ -35,40 +35,67 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
-#pragma once
+
+#include "pch.hpp"
+#include <server/users/UsersListController.hpp>
+#include <server/users/UsersListModel.hpp>
+#include <server/users/UsersController.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
-// Forward declare
-namespace win32cpp{
-    class Button;
-    class EditView;
+
+using namespace musik::server::users;
+using namespace win32cpp;
+
+//////////////////////////////////////////////////////////////////////////////
+
+UsersListController::UsersListController(win32cpp::ListView &listView,UsersController *usersController)
+: listView(listView)
+, usersController(usersController)
+{
+    this->model.reset(new UsersListModel(this));
+    this->listView.Handle()
+        ? this->OnViewCreated(&listView)
+        : this->listView.Created.connect(this, &UsersListController::OnViewCreated);
 }
-//////////////////////////////////////////////////////////////////////////////
 
-#include <win32cpp/Frame.hpp>
 
-//////////////////////////////////////////////////////////////////////////////
+void UsersListController::OnViewCreated(Window* window){
+    this->listView.SetScrollBarVisibility(HorizontalScrollBar, false);
 
-namespace musik { namespace cube { namespace dialog {
+    typedef ListView::Column Column;
 
-//////////////////////////////////////////////////////////////////////////////
-// forward 
-class AddLibraryController;
-//////////////////////////////////////////////////////////////////////////////
+    Size clientSize = this->listView.ClientSize();
 
-class AddLibraryView: public win32cpp::Frame{
-    public:     
-        AddLibraryView(int type);
+    this->mainColumn = Column::Create(_T("Username"), clientSize.width);
+    this->listView.AddColumn(this->mainColumn);
 
-        virtual void OnCreated();
-        win32cpp::Button *okButton, *cancelButton;
-        win32cpp::EditView *name, *remoteHost, *remotePort,*username,*password;
-    private:
-        int type;
+    this->listView.EnableColumnResizing(false);
+    this->listView.SetModel(this->model);
+    //
+    int itemHeight = this->listView.RowHeight();
+    this->listView.SetRowHeight(max(itemHeight, 17));
 
-};
+    this->listView.Resized.connect(
+        this, &UsersListController::OnResized);
 
-//////////////////////////////////////////////////////////////////////////////
+}
 
-} } }     // musik::cube::dialog
+void UsersListController::OnResized(Window* window, Size size)
+{
+    this->listView.SetColumnWidth(this->mainColumn, this->listView.ClientSize().width);
+}
 
+void UsersListController::RemoveSelectedUsers(){
+
+    UsersListModel* model    = (UsersListModel*)this->model.get();
+	musik::core::Server *server = this->usersController->server;
+    if(server && model){
+
+        win32cpp::ListView::RowIndexList selectedRows(this->listView.SelectedRows());
+        for(win32cpp::ListView::RowIndexList::iterator row=selectedRows.begin();row!=selectedRows.end();++row){
+            server->DeleteUser(model->users[*row]->Username());
+        }
+
+    }
+    
+}

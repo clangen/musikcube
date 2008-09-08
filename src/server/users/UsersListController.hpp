@@ -2,7 +2,9 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, mC2 team
+// The following are Copyright © 2007, mC2 Team
+//
+// Sources and Binaries of: mC2
 //
 // All rights reserved.
 //
@@ -37,57 +39,40 @@
 #pragma once
 
 //////////////////////////////////////////////////////////////////////////////
-// Forward declare
-namespace win32cpp{
-    class TopLevelWindow;
-    class Label;
-    class Frame;
-}
-namespace musik { namespace server {
-    class SyncpathController;
-    namespace users {
-        class UsersController;
-    }
-} }
+
+#include <win32cpp/ListView.hpp>
+
 //////////////////////////////////////////////////////////////////////////////
+// Forward
+namespace musik { namespace server { namespace users {
+    class UsersController;
+    class UsersListModel;
+} } }
 
-#include <win32cpp/Timer.hpp>
 
-#include <core/Server.h>
+
+namespace musik { namespace server { namespace users {
 
 //////////////////////////////////////////////////////////////////////////////
 
-using namespace win32cpp;
-
-namespace musik { namespace server {
-
-//////////////////////////////////////////////////////////////////////////////
-
-class MainWindowController : public EventHandler
-{
+class UsersListController : public win32cpp::EventHandler{
     public:
-        MainWindowController(TopLevelWindow& mainWindow,musik::core::ServerPtr server);
-        ~MainWindowController();
+        UsersListController(win32cpp::ListView &listView,UsersController *usersController);
+        void                                RemoveSelectedUsers();
+    private:
+        void                                OnViewCreated(win32cpp::Window* window);
+        void                                OnResized(win32cpp::Window* window, win32cpp::Size size);
 
-    protected:  
-        void OnMainWindowCreated(Window* window);
-        void OnResize(Window* window, Size size);
-        void OnDestroyed(Window* window);
-        void UpdateStatus();
-        void OnFileExit(MenuItemRef menuItem);
+        win32cpp::ListView&                 listView;
+        win32cpp::ListView::ModelRef        model;
+        win32cpp::ListView::ColumnRef       mainColumn;
 
-    protected:  
-        TopLevelWindow& mainWindow;
-        musik::core::ServerPtr server;
-        win32cpp::Label *statusLabel;
-        win32cpp::Frame *mainFrame;
-        SyncpathController *syncpathController;
-        users::UsersController *usersController;
-
-        win32cpp::Timer timer;
-
+		friend class UsersListModel;
+		
+        UsersController*    usersController;
 };
 
+
 //////////////////////////////////////////////////////////////////////////////
 
-} }     // musik::server
+} } }    // musik::cube::settings

@@ -2,7 +2,9 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, mC2 team
+// The following are Copyright © 2007, mC2 Team
+//
+// Sources and Binaries of: mC2, win32cpp
 //
 // All rights reserved.
 //
@@ -33,61 +35,39 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
-
 #pragma once
 
 //////////////////////////////////////////////////////////////////////////////
 // Forward declare
 namespace win32cpp{
-    class TopLevelWindow;
-    class Label;
-    class Frame;
+    class Button;
+    class EditView;
 }
-namespace musik { namespace server {
-    class SyncpathController;
-    namespace users {
-        class UsersController;
-    }
-} }
 //////////////////////////////////////////////////////////////////////////////
 
-#include <win32cpp/Timer.hpp>
-
-#include <core/Server.h>
+#include <win32cpp/Frame.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
-using namespace win32cpp;
-
-namespace musik { namespace server {
+namespace musik { namespace server { namespace users {
 
 //////////////////////////////////////////////////////////////////////////////
+// forward 
+class EditUserController;
+//////////////////////////////////////////////////////////////////////////////
 
-class MainWindowController : public EventHandler
-{
-    public:
-        MainWindowController(TopLevelWindow& mainWindow,musik::core::ServerPtr server);
-        ~MainWindowController();
+class EditUserView: public win32cpp::Frame{
+    public:     
+        EditUserView();
 
-    protected:  
-        void OnMainWindowCreated(Window* window);
-        void OnResize(Window* window, Size size);
-        void OnDestroyed(Window* window);
-        void UpdateStatus();
-        void OnFileExit(MenuItemRef menuItem);
-
-    protected:  
-        TopLevelWindow& mainWindow;
-        musik::core::ServerPtr server;
-        win32cpp::Label *statusLabel;
-        win32cpp::Frame *mainFrame;
-        SyncpathController *syncpathController;
-        users::UsersController *usersController;
-
-        win32cpp::Timer timer;
+        virtual void OnCreated();
+        win32cpp::Button *okButton, *cancelButton;
+        win32cpp::EditView *username, *nickname, *password;
+    private:
 
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-} }     // musik::server
+} } }     // musik::cube::dialog
+

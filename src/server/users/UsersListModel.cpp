@@ -2,7 +2,9 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, mC2 team
+// The following are Copyright © 2007, mC2 Team
+//
+// Sources and Binaries of: mC2
 //
 // All rights reserved.
 //
@@ -34,60 +36,57 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
-//////////////////////////////////////////////////////////////////////////////
-// Forward declare
-namespace win32cpp{
-    class TopLevelWindow;
-    class Label;
-    class Frame;
-}
-namespace musik { namespace server {
-    class SyncpathController;
-    namespace users {
-        class UsersController;
-    }
-} }
-//////////////////////////////////////////////////////////////////////////////
-
-#include <win32cpp/Timer.hpp>
-
+#include "pch.hpp"
+#include <server/users/UsersListModel.hpp>
+#include <server/users/UsersController.hpp>
+#include <win32cpp/ApplicationThread.hpp>
 #include <core/Server.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
+using namespace musik::server::users;
 using namespace win32cpp;
 
-namespace musik { namespace server {
-
 //////////////////////////////////////////////////////////////////////////////
 
-class MainWindowController : public EventHandler
+UsersListModel::UsersListModel(UsersListController *controller)
+: controller(controller)
 {
-    public:
-        MainWindowController(TopLevelWindow& mainWindow,musik::core::ServerPtr server);
-        ~MainWindowController();
+    musik::core::Server *server = this->controller->usersController->server;
+    if(server){
+        server->UsersUpdated.connect(this,&UsersListModel::OnUsersUpdated);
+    }
+    this->UpdateUsersList();
 
-    protected:  
-        void OnMainWindowCreated(Window* window);
-        void OnResize(Window* window, Size size);
-        void OnDestroyed(Window* window);
-        void UpdateStatus();
-        void OnFileExit(MenuItemRef menuItem);
+}
 
-    protected:  
-        TopLevelWindow& mainWindow;
-        musik::core::ServerPtr server;
-        win32cpp::Label *statusLabel;
-        win32cpp::Frame *mainFrame;
-        SyncpathController *syncpathController;
-        users::UsersController *usersController;
 
-        win32cpp::Timer timer;
+uistring UsersListModel::CellValueToString(int rowIndex, ListView::ColumnRef column){
+    if(rowIndex<this->users.size() && rowIndex>=0){
+        return this->users[rowIndex]->Username();
+    }
 
-};
+    return uistring();
+}
 
-//////////////////////////////////////////////////////////////////////////////
+void UsersListModel::UpdateUsersList(){
+    musik::core::Server *server = this->controller->usersController->server;
+    if(server){
+        this->users = server->AllUsers();
+    }
 
-} }     // musik::server
+    this->SetRowCount(0);
+    this->SetRowCount((int)this->users.size());
+
+}
+
+void UsersListModel::OnUsersUpdated(){
+    if(!win32cpp::ApplicationThread::InMainThread()){
+        win32cpp::ApplicationThread::Call0(this,&UsersListModel::OnUsersUpdated);
+        return;
+    }
+
+    this->UpdateUsersList();
+
+}
+

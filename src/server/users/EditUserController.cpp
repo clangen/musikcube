@@ -2,7 +2,9 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, mC2 team
+// The following are Copyright © 2007, mC2 Team
+//
+// Sources and Binaries of: mC2, win32cpp
 //
 // All rights reserved.
 //
@@ -34,60 +36,59 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "pch.hpp"
+#include <server/users/EditUserController.hpp>
+#include <server/users/EditUserView.hpp>
+#include <core/Crypt.h>
+#include <core/Common.h>
 
-//////////////////////////////////////////////////////////////////////////////
-// Forward declare
-namespace win32cpp{
-    class TopLevelWindow;
-    class Label;
-    class Frame;
-}
-namespace musik { namespace server {
-    class SyncpathController;
-    namespace users {
-        class UsersController;
-    }
-} }
-//////////////////////////////////////////////////////////////////////////////
-
-#include <win32cpp/Timer.hpp>
-
-#include <core/Server.h>
+#include <win32cpp/Window.hpp>
+#include <win32cpp/Button.hpp>
+#include <win32cpp/EditView.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
+using namespace musik::server::users;
 using namespace win32cpp;
 
-namespace musik { namespace server {
-
 //////////////////////////////////////////////////////////////////////////////
 
-class MainWindowController : public EventHandler
+EditUserController::EditUserController(win32cpp::TopLevelWindow &mainWindow,musik::core::Server *server)
+:mainWindow(mainWindow)
+,view(NULL)
+,server(server)
 {
-    public:
-        MainWindowController(TopLevelWindow& mainWindow,musik::core::ServerPtr server);
-        ~MainWindowController();
+    this->view  = new EditUserView();
+    this->mainWindow.AddChild(this->view);
+    
+    this->view->Handle()
+        ? this->OnViewCreated(this->view)
+        : this->view->Created.connect(this, &EditUserController::OnViewCreated);
+    
+}
 
-    protected:  
-        void OnMainWindowCreated(Window* window);
-        void OnResize(Window* window, Size size);
-        void OnDestroyed(Window* window);
-        void UpdateStatus();
-        void OnFileExit(MenuItemRef menuItem);
+EditUserController::~EditUserController(){
+}
 
-    protected:  
-        TopLevelWindow& mainWindow;
-        musik::core::ServerPtr server;
-        win32cpp::Label *statusLabel;
-        win32cpp::Frame *mainFrame;
-        SyncpathController *syncpathController;
-        users::UsersController *usersController;
+void EditUserController::OnViewCreated(Window* window)
+{
+    this->view->cancelButton->Pressed.connect(this,&EditUserController::OnCancel);
+    this->view->okButton->Pressed.connect(this,&EditUserController::OnOK);
+}
 
-        win32cpp::Timer timer;
+void EditUserController::OnCancel(win32cpp::Button* button){
+    this->mainWindow.Close();
+}
 
-};
+void EditUserController::OnOK(win32cpp::Button* button){
 
-//////////////////////////////////////////////////////////////////////////////
+    // TODO: Save user
+    this->server->CreateUser( 
+            this->view->username->Caption(),
+            UTF8_TO_UTF(musik::core::Crypt::Encrypt( musik::core::ConvertUTF8(this->view->password->Caption()),musik::core::Crypt::StaticSalt())),
+            this->view->nickname->Caption()
+            );
 
-} }     // musik::server
+
+    this->mainWindow.Close();
+}

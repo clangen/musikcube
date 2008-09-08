@@ -33,56 +33,41 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
-
 #pragma once
 
-#include <string>
 #include <core/config.h>
+#include <core/server/User.h>
 
-namespace musik{ namespace core{
+#include <map>
+#include <vector>
+#include <boost/shared_ptr.hpp>
 
-    /*****************************
-    Path to where the executable is located.
-    *****************************/
-    utfstring GetApplicationDirectory();
+//////////////////////////////////////////////////////////////////////////////
 
-    /*****************************
-    Path to where the executable is located.
-    *****************************/
-    utfstring GetDataDirectory();
+namespace musik{ namespace core{ namespace server{
 
-    /*****************************
-    Get the full path of the sFile
-    *****************************/
-    utfstring GetPath(const utfstring &sFile);
+//////////////////////////////////////////////////////////////////////////////
 
-    /*****************************
-    Path to where plugins are located.
-    *****************************/
-    utfstring GetPluginDirectory();
+class UserSession
+{
+    public:
+        UserSession(UserPtr& user,std::string uniqueId);
+        ~UserSession(void);
 
-    std::string ConvertUTF8(const std::wstring &sString);
-    std::wstring ConvertUTF16(const std::string &sString);
-    std::wstring ConvertUTF16(const char *string);
+        std::string UniqueId();
 
-    UINT64 Checksum(char *data,unsigned int bytes);
+    protected:
+        UserPtr user;
 
-} }
+        std::string uniqueId;
 
-// UTF Conversion MACROS
-#ifdef UTF_WIDECHAR
 
-#define UTF_TO_UTF8(s)  musik::core::ConvertUTF8(s)
-#define UTF_TO_UTF16(s) s
-#define UTF8_TO_UTF(s)  musik::core::ConvertUTF16(s)
-#define UTF16_TO_UTF(s) s
+};
 
-#else
-
-#define UTF_TO_UTF8(s)  s
-#define UTF_TO_UTF16(s) musik::core::ConvertUTF16(s)
-#define UTF8_TO_UTF(s)  s
-#define UTF16_TO_UTF(s) musik::core::ConvertUTF8(s)
-
-#endif
+typedef boost::shared_ptr<UserSession> UserSessionPtr;
+typedef std::map<std::string,UserSessionPtr> UserSessionMap;
+typedef std::vector<UserSessionPtr> UserSessionVector;
+//////////////////////////////////////////////////////////////////////////////
+} } }
+//////////////////////////////////////////////////////////////////////////////
 

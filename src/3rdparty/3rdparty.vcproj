@@ -39,7 +39,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="./include/;./include/sqlite/;./include/expat"
+				AdditionalIncludeDirectories="./include/;./include/sqlite/;./include/expat;./include/md5"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE;SQLITE_THREADSAFE;COMPILED_FROM_DSP;XML_STATIC"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -105,7 +105,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="0"
 				FavorSizeOrSpeed="0"
-				AdditionalIncludeDirectories="./include/;./include/sqlite/;./include/expat"
+				AdditionalIncludeDirectories="./include/;./include/sqlite/;./include/expat;./include/md5"
 				PreprocessorDefinitions="WIN32;_CRT_SECURE_NO_DEPRECATE;SQLITE_THREADSAFE;COMPILED_FROM_DSP;XML_STATIC"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
@@ -257,6 +257,18 @@
 				</File>
 				<File
 					RelativePath=".\src\expat\xmltok_ns.c"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="md5"
+				>
+				<File
+					RelativePath=".\src\md5\md5.c"
+					>
+				</File>
+				<File
+					RelativePath=".\include\md5\md5.h"
 					>
 				</File>
 			</Filter>

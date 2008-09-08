@@ -40,6 +40,8 @@
 #include <server/resources/resource.h>
 #include <server/SyncpathController.hpp>
 #include <server/SyncpathView.hpp>
+#include <server/users/UsersController.hpp>
+#include <server/users/UsersView.hpp>
 
 #include <core/Preferences.h>
 
@@ -67,6 +69,7 @@ using namespace win32cpp;
  ,timer(200)
  ,statusLabel(NULL)
  ,syncpathController(NULL)
+ ,usersController(NULL)
 {
 
     this->mainWindow.Created.connect(
@@ -77,6 +80,7 @@ using namespace win32cpp;
 MainWindowController::~MainWindowController()
 {
     delete this->syncpathController;
+    delete this->usersController;
 }
 
 void        MainWindowController::OnMainWindowCreated(Window* window)
@@ -141,7 +145,8 @@ void        MainWindowController::OnMainWindowCreated(Window* window)
     this->syncpathController    = new SyncpathController(*synpathView,&this->server->indexer);
 
     // Users tab
-    Frame *usersView   = tabs->AddTab(uistring(_T("Users")), new Frame());
+    users::UsersView *usersView = tabs->AddTab(uistring(_T("Users")), new users::UsersView());
+    this->usersController       = new users::UsersController(*usersView,this->server.get());
 
     // Settings tab
     Frame *settingsView   = tabs->AddTab(uistring(_T("Settings")), new Frame());

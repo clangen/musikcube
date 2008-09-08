@@ -2,7 +2,9 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, mC2 team
+// The following are Copyright © 2007, mC2 Team
+//
+// Sources and Binaries of: mC2, win32cpp
 //
 // All rights reserved.
 //
@@ -38,56 +40,46 @@
 
 //////////////////////////////////////////////////////////////////////////////
 // Forward declare
+namespace musik { namespace server { namespace users {
+    class UsersView;
+    class UsersModel;
+    class UsersListController;
+} } }
 namespace win32cpp{
-    class TopLevelWindow;
-    class Label;
-    class Frame;
+    class Window;
+    class Button;
 }
-namespace musik { namespace server {
-    class SyncpathController;
-    namespace users {
-        class UsersController;
-    }
-} }
 //////////////////////////////////////////////////////////////////////////////
-
-#include <win32cpp/Timer.hpp>
 
 #include <core/Server.h>
+#include <win32cpp/Types.hpp>
+#include <win32cpp/WindowGeometry.hpp>
+#include <boost/shared_ptr.hpp>
+
+namespace musik { namespace server{ namespace users {
 
 //////////////////////////////////////////////////////////////////////////////
 
-using namespace win32cpp;
-
-namespace musik { namespace server {
-
-//////////////////////////////////////////////////////////////////////////////
-
-class MainWindowController : public EventHandler
+class UsersController : public win32cpp::EventHandler
 {
+    public:     
+        UsersController(UsersView& usersView,musik::core::Server *server);
+
+    private:  
+        void        OnViewCreated(win32cpp::Window* window);
+        void        OnViewResized(win32cpp::Window* window, win32cpp::Size size);
+
+        UsersView& usersView;
+
+        void OnAddUser(win32cpp::Button* button);
+        void OnRemoveUser(win32cpp::Button* button);
+
+        typedef boost::shared_ptr<UsersListController> UsersListControllerRef;
+        UsersListControllerRef usersListController;
     public:
-        MainWindowController(TopLevelWindow& mainWindow,musik::core::ServerPtr server);
-        ~MainWindowController();
-
-    protected:  
-        void OnMainWindowCreated(Window* window);
-        void OnResize(Window* window, Size size);
-        void OnDestroyed(Window* window);
-        void UpdateStatus();
-        void OnFileExit(MenuItemRef menuItem);
-
-    protected:  
-        TopLevelWindow& mainWindow;
-        musik::core::ServerPtr server;
-        win32cpp::Label *statusLabel;
-        win32cpp::Frame *mainFrame;
-        SyncpathController *syncpathController;
-        users::UsersController *usersController;
-
-        win32cpp::Timer timer;
-
+        musik::core::Server *server;
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-} }     // musik::server
+} } }    // musik::server

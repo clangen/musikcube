@@ -39,7 +39,7 @@
 #include <core/Preferences.h>
 #include <core/Common.h>
 #include <core/Library/Base.h>
-#include <core/db/Connection.h>
+#include <core/Crypt.h>
 
 #include <boost/bind.hpp>
 
@@ -82,22 +82,37 @@ bool Server::Startup(){
     return true;
 }
 
+utfstring Server::ServerIdentifier(){
+    return UTF("server");
+}
+
+
 void Server::ThreadLoop(){
     // Get server preferences
     musik::core::Preferences prefs("Server");
 
     // Get directory and database paths
-    utfstring directory( musik::core::GetDataDirectory()+UTF("server/") );
+    utfstring directory( musik::core::GetDataDirectory()+this->ServerIdentifier()+UTF("/") );
     utfstring database(directory+UTF("musik.db"));
 
-    this->httpServer.Startup(database);
+    // Create database
+    this->db.Open(database.c_str(),0,prefs.GetInt("DatabaseCache",4096));
+    Library::Base::CreateDatabase(this->db);
 
-    {
-        // Create database
-        db::Connection db;
-        db.Open(database.c_str(),0,prefs.GetInt("DatabaseCache",4096));
-        Library::Base::CreateDatabase(db);
+/*    {
+        db::Statement stmt("SELECT id,name,login,password FROM users",db);
+        while(stmt.Step()==db::Row){
+            boost::mutex::scoped_lock lock(this->serverMutex);
+            this->allUsers[stmt.ColumnTextUTF(2)] = server::UserPtr(new server::User(
+                    stmt.ColumnInt(0),
+                    stmt.ColumnTextUTF(2),
+                    stmt.ColumnTextUTF(3),
+                    stmt.ColumnTextUTF(1)
+                    ));
+        }
     }
+*/
+    this->httpServer.Startup(database);
 
     // Start the indexer
     this->indexer.database    = database;
@@ -121,7 +136,7 @@ void Server::ThreadLoop(){
 }
 
 void Server::SetNextConnection(){
-    this->nextConnection.reset( new musik::core::server::Connection(this->ioService) );
+    this->nextConnection.reset( new musik::core::server::Connection(this->ioService,this) );
     this->acceptor.async_accept(this->nextConnection->Socket(),boost::bind(&Server::AcceptConnection,this,boost::asio::placeholders::error));
 }
 
@@ -146,4 +161,92 @@ void Server::CleanupConnections(){
         }
     }
 }
+
+bool Server::CreateUser(const utfstring username,const utfstring plainTextPassword,const utfstring name){
+
+    utfstring password( 
+        UTF8_TO_UTF( 
+            musik::core::Crypt::Encrypt(
+                UTF_TO_UTF8(plainTextPassword),musik::core::Crypt::StaticSalt())));
+
+    db::Statement stmt("INSERT INTO users (login,password,name) VALUES (?,?,?)",this->db);
+    stmt.BindTextUTF(0,username.c_str());
+    stmt.BindTextUTF(1,password.c_str());
+    stmt.BindTextUTF(2,name.c_str());
+
+    bool returnBool(stmt.Step()==db::Done);
+
+    this->UsersUpdated();
+    return returnBool;
+}
+
+bool Server::DeleteUser(const utfstring username){
+    db::Statement stmt("DELETE FROM users WHERE login=?",this->db);
+    stmt.BindTextUTF(0,username.c_str());
+
+    bool returnBool(stmt.Step()==db::Done);
+
+    this->UsersUpdated();
+    return returnBool;
+}
+
+server::UserVector Server::AllUsers(){
+    server::UserVector users;
+    db::Statement stmt("SELECT id,name,login,password FROM users ORDER BY login",this->db);
+    while(stmt.Step()==db::Row){
+        users.push_back(server::UserPtr(new server::User(
+            stmt.ColumnInt(0),
+            stmt.ColumnTextUTF(2),
+            stmt.ColumnTextUTF(3),
+            stmt.ColumnTextUTF(1)
+            )));
+    }
+    return users;
+}
+
+server::UserSessionVector Server::ConnectedUserSessions(){
+    boost::mutex::scoped_lock lock(this->serverMutex);
+    server::UserSessionVector userSessionVector;
+
+    for(server::UserSessionMap::iterator userSession=this->connectedUsers.begin();userSession!=this->connectedUsers.end();++userSession){
+        userSessionVector.push_back(userSession->second);
+    }
+
+    return userSessionVector;
+}
+
+bool Server::AddUserSession(server::UserSessionPtr userSession){
+    {
+        boost::mutex::scoped_lock lock(this->serverMutex);
+        this->connectedUsers[userSession->UniqueId()] = userSession;
+    }
+    this->UserSessionsUpdated();
+
+    return true;
+}
+
+bool Server::RemoveUserSession(server::UserSessionPtr userSession){
+    {
+        boost::mutex::scoped_lock lock(this->serverMutex);
+        this->connectedUsers.erase(userSession->UniqueId());
+    }
+    this->UserSessionsUpdated();
+    return true;
+}
+
+server::UserPtr Server::GetUser(const utfstring username){
+    server::UserPtr user;
+    db::Statement stmt("SELECT id,name,login,password FROM users WHERE login=?",this->db);
+    stmt.BindTextUTF(0,username);
+    if(stmt.Step()==db::Row){
+        user.reset( new server::User(
+            stmt.ColumnInt(0),
+            stmt.ColumnTextUTF(2),
+            stmt.ColumnTextUTF(3),
+            stmt.ColumnTextUTF(1)
+            ));
+    }
+    return user;
+}
+
 
