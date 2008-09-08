@@ -200,6 +200,7 @@ public: // methods
     void            Initialize(Window* parent = NULL);
     bool            Show(int showCommand);
     bool            MoveTo(int x, int y);
+    bool            MoveRelativeTo(int x, int y);
     bool            MoveTo(const Point& location);
     bool            Resize(int width, int height);
     bool            Resize(const Size& size);

@@ -81,10 +81,11 @@ bool SysTray::DeleteIcon(UINT uid)
 {
     if(SysTray::iconList.find(uid) != SysTray::iconList.end()) {
         if(::Shell_NotifyIcon(NIM_DELETE, &SysTray::iconList[uid]) != 0) {
-/*            SysTray::iconList.erase(uid);
-            SysTray::menuList.erase(uid);
-            SysTray::optionsList.erase(uid);
-*/
+            // todo: map/set not incrementable: why? 
+            //SysTray::iconList.erase(uid);
+            //SysTray::menuList.erase(uid);
+            //SysTray::optionsList.erase(uid);
+
             return true;
         }
     }
