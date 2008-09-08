@@ -91,7 +91,7 @@ void        MainMenuController::OnAddLibraryLocal(MenuItemRef menuItem)
 void        MainMenuController::OnAddLibraryRemote(MenuItemRef menuItem)
 {
     win32cpp::TopLevelWindow popupDialog(_T("Add remote library"));
-    popupDialog.SetMinimumSize(Size(300, 150));
+    popupDialog.SetMinimumSize(Size(300, 220));
 
     dialog::AddLibraryController addLibrary(popupDialog,musik::core::LibraryFactory::Remote);
 

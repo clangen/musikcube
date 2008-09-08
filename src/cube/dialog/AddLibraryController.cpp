@@ -89,7 +89,13 @@ void AddLibraryController::OnOK(win32cpp::Button* button){
             prefs.SetString("address",this->view->remoteHost->Caption().c_str());
             prefs.SetString("port",this->view->remotePort->Caption().c_str());
             prefs.SetString("username",this->view->username->Caption().c_str());
-            prefs.SetString("password",UTF8_TO_UTF(musik::core::Crypt::Encrypt(UTF_TO_UTF8(this->view->remotePort->Caption().c_str()),musik::core::Crypt::StaticSalt())).c_str());
+
+            utfstring password( 
+                UTF8_TO_UTF( 
+                musik::core::Crypt::Encrypt(
+                UTF_TO_UTF8(this->view->password->Caption()),musik::core::Crypt::StaticSalt())));
+
+            prefs.SetString("password",password.c_str());
         }
 
         library->Startup();
