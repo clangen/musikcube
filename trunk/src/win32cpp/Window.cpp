@@ -704,6 +704,45 @@ bool        Window::MoveTo(const Point& location)
     return false;
 }
 
+
+///\brief
+///Moves the Window relative to its current coordinates
+///
+///\param x
+///relative movement in pixels 
+///
+///\param y
+///relative movement in pixels 
+///
+///\returns
+///true if succesful, false otherwise.
+bool        Window::MoveRelativeTo(int x, int y)
+{
+    RECT windowRect;
+    if (::GetWindowRect(this->windowHandle, &windowRect))
+    {
+        OffsetRect(&windowRect, x, y);
+
+        POINT point;
+        point.x = windowRect.left;
+        point.y = windowRect.top;
+
+        ScreenToClient(this->Parent()->windowHandle, &point);
+                
+        BOOL result =::MoveWindow(
+            this->windowHandle,
+            point.x,
+            point.y,
+            windowRect.right - windowRect.left,
+            windowRect.bottom - windowRect.top,
+            this->Visible());
+
+        return (result == TRUE);
+    }
+
+    return false;
+}
+
 ///\brief
 ///Resizes the window to the specified size.
 ///

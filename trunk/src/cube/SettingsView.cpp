@@ -42,6 +42,7 @@
 #include <win32cpp/Button.hpp>
 #include <win32cpp/Checkbox.hpp>
 #include <win32cpp/RadioButton.hpp>
+#include <win32cpp/GroupBox.hpp>
 #include <win32cpp/ListView.hpp>
 #include <win32cpp/Label.hpp>
 
@@ -150,9 +151,24 @@ void        SettingsView::OnCreated()
     r21->Check(); r22->Check();
 
     RadioButton* checked = r11->GetCheckedInGroup();
-    if(checked) ::MessageBox(NULL, checked->Caption().c_str(), _T("test"), MB_OK);
+    //if(checked) ::MessageBox(NULL, checked->Caption().c_str(), _T("test"), MB_OK);
     checked = r22->GetCheckedInGroup();
-    if(checked) ::MessageBox(NULL, checked->Caption().c_str(), _T("test"), MB_OK);
+    //if(checked) ::MessageBox(NULL, checked->Caption().c_str(), _T("test"), MB_OK);
+
+    // test groupbox
+    GroupBox* g = new GroupBox(_T("test group box"));
+    Checkbox* gc = new Checkbox(_T("Test Checkbox"));
+    Checkbox* gc2 = new Checkbox(_T("Test Checkbox2"));
+    Checkbox* gc3 = new Checkbox(_T("Test Checkbox2"));
+
+    g->AddChild(gc);
+    g->AddChild(gc2);
+    g->AddChild(gc3);
+
+    gc2->MoveRelativeTo(0, 20);
+    gc3->MoveRelativeTo(0, 40);
+    
+    mainLayout->AddChild(g);
 
     this->AddChild(mainLayout);
 

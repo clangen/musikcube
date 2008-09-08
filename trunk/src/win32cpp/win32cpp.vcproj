@@ -400,6 +400,14 @@
 							>
 						</File>
 						<File
+							RelativePath=".\GroupBox.cpp"
+							>
+						</File>
+						<File
+							RelativePath=".\GroupBox.hpp"
+							>
+						</File>
+						<File
 							RelativePath=".\ILayout.hpp"
 							>
 						</File>
