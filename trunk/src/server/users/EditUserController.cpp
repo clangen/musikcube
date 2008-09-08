@@ -85,7 +85,7 @@ void EditUserController::OnOK(win32cpp::Button* button){
     // TODO: Save user
     this->server->CreateUser( 
             this->view->username->Caption(),
-            UTF8_TO_UTF(musik::core::Crypt::Encrypt( musik::core::ConvertUTF8(this->view->password->Caption()),musik::core::Crypt::StaticSalt())),
+            this->view->password->Caption(),
             this->view->nickname->Caption()
             );
 
