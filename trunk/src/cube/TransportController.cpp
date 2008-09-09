@@ -249,7 +249,7 @@ void TransportController::OnPlaybackPaused()
     }
 
     this->paused = true;
-    this->transportView.playButton->SetCaption(_T("Resume"));
+    this->transportView.playButton->SetCaption(_(_T("Resume")));
 }
 
 void TransportController::OnPlaybackResumed()
@@ -261,7 +261,7 @@ void TransportController::OnPlaybackResumed()
     }
 
     this->paused = false;
-    this->transportView.playButton->SetCaption(_T("Pause"));
+    this->transportView.playButton->SetCaption(_(_T("Pause")));
 }
 
 win32cpp::uistring  TransportController::FormatTime(unsigned long ms)

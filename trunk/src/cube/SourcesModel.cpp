@@ -99,7 +99,7 @@ public:     static SourcesItemRef Create(musik::core::LibraryPtr library)
                 return SourcesItemRef(new BrowseItem(library));
             }
 
-public:     virtual uistring Caption() { return _T("Browse"); }
+public:     virtual uistring Caption() { return _(_T("Browse")); }
 public:     virtual Window*  View()
             {
                 return &this->view;
@@ -129,7 +129,7 @@ public:     static SourcesItemRef Create(musik::core::LibraryPtr library)
                 return SourcesItemRef(new NowPlayingItem(library));
             }
 
-public:     virtual uistring Caption() { return _T("Now Playing"); }
+public:     virtual uistring Caption() { return _(_T("Now Playing")); }
 public:     virtual Window*  View()
             {
                 return &this->view;
@@ -160,7 +160,7 @@ public:     static SourcesItemRef Create(musik::core::LibraryPtr library)
                 return SourcesItemRef(new SettingsItem(library));
             }
 
-public:     virtual uistring Caption() { return _T("Settings"); }
+public:     virtual uistring Caption() { return _(_T("Settings")); }
 public:     virtual Window*  View()
             {
                 return &this->view;
@@ -182,17 +182,17 @@ typedef SourcesListModel::CategoryRef CategoryRef;
 
 void            SourcesModel::Load()
 {
-    CategoryRef viewCategory(new Category(_T("View")));
+    CategoryRef viewCategory(new Category(_(_T("View"))));
     viewCategory->Add(BrowseItem::Create(this->library));
     viewCategory->Add(NowPlayingItem::Create(this->library));
     viewCategory->Add(SettingsItem::Create(this->library));
     this->AddCategory(viewCategory);
 
-    CategoryRef playlistCategory(new Category(_T("Playlists")));
-    playlistCategory->Add(DummyItem::Create(_T("Playlist 1")));
-    playlistCategory->Add(DummyItem::Create(_T("Playlist 2")));
-    playlistCategory->Add(DummyItem::Create(_T("Dynamic Playlist 3")));
-    playlistCategory->Add(DummyItem::Create(_T("Dynamic Playlist 4")));
+    CategoryRef playlistCategory(new Category(_(_T("Playlists"))));
+    playlistCategory->Add(DummyItem::Create(_(_T("Playlist 1"))));
+    playlistCategory->Add(DummyItem::Create(_(_T("Playlist 2"))));
+    playlistCategory->Add(DummyItem::Create(_(_T("Dynamic Playlist 3"))));
+    playlistCategory->Add(DummyItem::Create(_(_T("Dynamic Playlist 4"))));
     this->AddCategory(playlistCategory);
 }
 

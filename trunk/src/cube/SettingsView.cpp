@@ -82,7 +82,7 @@ void        SettingsView::OnCreated()
     FontRef boldFont(Font::Create());
     boldFont->SetBold(true);
 
-    win32cpp::Label *status = libraryStatusLayout->AddChild(new Label(_T("Library status: ")));
+    win32cpp::Label *status = libraryStatusLayout->AddChild(new Label(_(_T("Library status"))));
     status->SetFont(boldFont);
     this->libraryStatus     = libraryStatusLayout->AddChild(new Label());
 
@@ -101,8 +101,8 @@ void        SettingsView::OnCreated()
 
     // pathButtons layout
 
-    this->addPathButton     = pathButtonsLayout->AddChild(new Button(_T("Add path")));
-    this->removePathButton  = pathButtonsLayout->AddChild(new Button(_T("Remove path")));
+    this->addPathButton     = pathButtonsLayout->AddChild(new Button(_(_T("Add path"))));
+    this->removePathButton  = pathButtonsLayout->AddChild(new Button(_(_T("Remove path"))));
 
     this->addPathButton->Resize(90, 24);
     this->removePathButton->Resize(90, 24);

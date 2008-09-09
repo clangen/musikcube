@@ -80,7 +80,7 @@ void        SourcesView::OnListViewCreated(Window* window)
 
     Size clientSize = this->listView->ClientSize();
  
-    this->mainColumn = Column::Create(_T("Sources"), clientSize.width, TextAlignCenter);
+    this->mainColumn = Column::Create(_(_T("Sources")), clientSize.width, TextAlignCenter);
     this->listView->AddColumn(this->mainColumn);
 
     this->listView->Resized.connect(this, &SourcesView::OnListViewResized);

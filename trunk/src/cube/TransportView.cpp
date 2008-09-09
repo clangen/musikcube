@@ -65,10 +65,10 @@ void        TransportView::OnCreated()
     topRowLayout->SetDefaultChildFill(false);
     topRowLayout->SetDefaultChildAlignment(ChildAlignMiddle);
 
-    this->prevButton = topRowLayout->AddChild(new Button(_T("Prev")));
-    this->playButton = topRowLayout->AddChild(new Button(_T("Play")));
-    this->stopButton = topRowLayout->AddChild(new Button(_T("Stop")));
-    this->nextButton = topRowLayout->AddChild(new Button(_T("Next")));
+    this->prevButton = topRowLayout->AddChild(new Button(_(_T("Prev"))));
+    this->playButton = topRowLayout->AddChild(new Button(_(_T("Play"))));
+    this->stopButton = topRowLayout->AddChild(new Button(_(_T("Stop"))));
+    this->nextButton = topRowLayout->AddChild(new Button(_(_T("Next"))));
     //
     this->prevButton->Resize(50, 28);
     this->playButton->Resize(50, 28);
@@ -81,10 +81,14 @@ void        TransportView::OnCreated()
     //
     LinearLayout* nowPlayingLayout = new LinearLayout(LinearColumnLayout);
     //
-    nowPlayingLayout->AddChild(new Label(_T("Now playing ")));
-    this->titleLabel = nowPlayingLayout->AddChild(new Label(_T("Song Title")));
-    nowPlayingLayout->AddChild(new Label(_T(" by ")));
-    this->artistLabel = nowPlayingLayout->AddChild(new Label(_T("Artist Name")));
+    uistring nowPlayingCaption = _(_T("Now playing"));
+    nowPlayingCaption += _T(" ");
+    nowPlayingLayout->AddChild(new Label(nowPlayingCaption.c_str()));
+    this->titleLabel = nowPlayingLayout->AddChild(new Label(_(_T("Song Title"))));
+    uistring byCaption = _(_T("by"));
+    byCaption = _T(" ") + byCaption + _T(" ");
+    nowPlayingLayout->AddChild(new Label(byCaption.c_str()));
+    this->artistLabel = nowPlayingLayout->AddChild(new Label(_(_T("Artist Name"))));
     //
     this->titleLabel->SetFont(boldFont);
     this->artistLabel->SetFont(boldFont);

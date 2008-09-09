@@ -50,11 +50,28 @@ using namespace musik::cube;
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE prevInstance, LPTSTR commandLine, int showCommand)
 {
 
+    // Initialize locale
+    try {
+        Locale::Instance()->SetLocaleDirectory(_T("locales"));
+    }
+    catch(win32cpp::Win32Exception& e) {
+        MessageBox(NULL, WidenString(e.Message()).c_str(), _T("Error while initializing locale"), MB_ICONERROR | MB_OK);
+        return -1;
+    }
+    catch(Exception& e) {
+        MessageBox(NULL, WidenString(e.Message()).c_str(), _T("Error while initializing locale"), MB_ICONERROR | MB_OK);
+        return -2;
+    }
+    if(!Locale::Instance()->LoadConfig(_T("english"))) {
+        MessageBox(NULL, _T("Cannot load config!"), _T("Error while initializing locale"), MB_ICONERROR | MB_OK);
+        return -3;
+    }
+
     // Initialize the main application (mC2.exe)
     Application::Initialize(instance, prevInstance, commandLine, showCommand);
 
     // Create the main window and its controller
-    TopLevelWindow mainWindow(_T("mC2"));
+    TopLevelWindow mainWindow(_T("musikCube 2"));
     MainWindowController mainController(mainWindow);
 
     // Initialize and show the main window, and run the event loop.

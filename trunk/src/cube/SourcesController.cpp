@@ -82,7 +82,7 @@ void        SourcesController::OnModelCategoryAdded(CategoryRef category)
     this->listController->Model()->AddCategory(category);
 
     // TEMP HACK
-    if (category->Caption() == _T("View"))
+    if (category->Caption() == _(_T("View")))
     {
         this->listController->Model()->SelectedRowChanged(1);
     }

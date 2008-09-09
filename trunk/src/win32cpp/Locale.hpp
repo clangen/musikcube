@@ -97,7 +97,7 @@ public:
     /*dtor*/        ~Locale();
 };
 
-#define _(ORIGINALTEXT) (win32cpp::Locale::Instance()->Translate(ORIGINALTEXT))
+#define _(ORIGINALTEXT) (win32cpp::Locale::Instance()->Translate(ORIGINALTEXT).c_str())
 
 
 //////////////////////////////////////////////////////////////////////////////
