@@ -46,7 +46,7 @@
 namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
-// SysTray
+// TrayIconManager
 //////////////////////////////////////////////////////////////////////////////
 
 typedef std::map<UINT, NOTIFYICONDATA> IconList;
@@ -54,16 +54,16 @@ typedef std::map<UINT, MenuRef> MenuList;
 typedef std::map<UINT, UINT> OptionsList;
 
 ///\brief
-///The SysTray class is used for managing icons in the Taskbar. It must be
-///seen as pure manager for the icons in the SysTray bar. Thus there are no
+///The TrayIconManager class is used for managing icons in the Taskbar. It must be
+///seen as pure manager for the icons in the TrayIconManager bar. Thus there are no
 ///special classes for TrayIcons.
 ///
-///Since SysTray communicates using the handle of its associated window, it is
+///Since TrayIconManager communicates using the handle of its associated window, it is
 ///necessary, that icons are associated to a window handle.
 ///
-///That's why the SysTray component should NOT be used directly, but from the
+///That's why the TrayIconManager component should NOT be used directly, but from the
 ///Application Singleton. Use Application::Instance().SysTrayManager() to
-///get the SysTray object!
+///get the TrayIconManager object!
 ///
 ///Internally each icon has three lists associated:
 ///
@@ -98,7 +98,7 @@ typedef std::map<UINT, UINT> OptionsList;
 ///Application
 ///TopLevelWindow
 ///MenuRef
-class SysTray {
+class TrayIconManager {
 private: // types
     ///\brief List with per-icon options - need to be power of 2! 
     enum Options {
@@ -120,8 +120,8 @@ public:
     bool        ShowBalloon(UINT uid, const uistring& title, const uistring& text, UINT timeout, UINT icon = NIIF_INFO);
     void        EnableMinimizeToTray(UINT uid);
 
-    /* ctor */  SysTray();
-    /* dtor */  ~SysTray();
+    /* ctor */  TrayIconManager();
+    /* dtor */  ~TrayIconManager();
 };
 
 //////////////////////////////////////////////////////////////////////////////

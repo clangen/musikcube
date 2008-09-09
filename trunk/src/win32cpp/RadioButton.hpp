@@ -50,7 +50,7 @@ namespace win32cpp {
 class RadioButton;
 
 ///\brief
-///The type of event used when the Checkbox is pressed.
+///The type of event used when the RadioButton is pressed.
 ///\see
 ///RadioButton.
 typedef sigslot::signal1<RadioButton*> RadioButtonPressedEvent;

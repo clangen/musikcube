@@ -57,7 +57,7 @@ Application Application::sMainApplication;
 , showCommand(NULL)
 , mainWindow(NULL)
 , appThread(NULL)
-, sysTray(NULL)
+, trayIconManager(NULL)
 {
 }
 
@@ -128,8 +128,7 @@ void            Application::Run(TopLevelWindow& mainWindow)
     this->appThread = new ApplicationThread();
     this->appThread->Initialize();
 
-    
-    this->sysTray = new SysTray;
+    this->trayIconManager = new TrayIconManager;
 
     //
     mainWindow.Destroyed.connect(this, &Application::OnMainWindowDestroyed);
@@ -143,8 +142,8 @@ void            Application::Run(TopLevelWindow& mainWindow)
         ::DispatchMessage(&msg);
     }
 
-    delete this->sysTray;
-    this->sysTray = NULL;
+    delete this->trayIconManager;
+    this->trayIconManager = NULL;
 
     delete this->appThread;
     this->appThread = NULL;
@@ -221,8 +220,8 @@ ApplicationThread* Application::Thread()
     return this->appThread;
 }
 
-///\brief Returns the systray manager
-SysTray* Application::SysTrayManager() const
+///\brief Returns the TrayIconManager
+TrayIconManager* Application::SysTrayManager() const
 {
-    return this->sysTray;
+    return this->trayIconManager;
 }

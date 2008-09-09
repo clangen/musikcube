@@ -90,13 +90,10 @@ bool DateTime::FromSQLDateTime(const uistring& sqlDate)
 {
     // match YYYY-MM-DD HH:MM:SS
     // HH:MM:SS is optional
-    boost::cmatch matches;
-    boost::regex e("(\\d{4})-(\\d{2})-(\\d{2})(?: (\\d{2}):(\\d{2}):(\\d{2}))?");
+    boost::wcmatch matches;
+    boost::wregex e(_T("(\\d{4})-(\\d{2})-(\\d{2})(?: (\\d{2}):(\\d{2}):(\\d{2}))?"));
 
-    std::string str = ShrinkString(sqlDate);
-    const char* cstr = str.c_str();
-
-    if(boost::regex_match(cstr, matches, e))
+    if(boost::regex_match(sqlDate.c_str(), matches, e))
     {
         for(unsigned int i = 1; i <= 6; i++)
         {

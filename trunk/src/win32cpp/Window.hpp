@@ -57,11 +57,6 @@ namespace win32cpp {
 #include <set>
 #include <boost/scoped_ptr.hpp>
 
-/*
-
-#include <win32cpp/Font.hpp>
-#include <win32cpp/Color.hpp>
-*/
 //////////////////////////////////////////////////////////////////////////////
 
 namespace win32cpp {

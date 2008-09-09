@@ -37,38 +37,37 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <pch.hpp>
-#include <win32cpp/SysTray.hpp>
+#include <win32cpp/TrayIconManager.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
 using namespace win32cpp;
 
 ///\brief Contains the list of notify icons
-IconList SysTray::iconList;
+IconList TrayIconManager::iconList;
 
 ///\brief Contains a list of menus for each icon
-MenuList SysTray::menuList;
+MenuList TrayIconManager::menuList;
 
 ///\brief Contains a list of options for each icon
-OptionsList SysTray::optionsList;
+OptionsList TrayIconManager::optionsList;
 
 ///\brief Each notify icon has its own UID. This counter increments
 ///when an icon is created.
-int SysTray::uidCounter = 100;
+int TrayIconManager::uidCounter = 100;
 
-SysTray::SysTray()
+TrayIconManager::TrayIconManager()
 {
     ::InitCommonControls();
 }
 
-SysTray::~SysTray()
+TrayIconManager::~TrayIconManager()
 {
     // iterate through list and delete icons
-    for(IconList::iterator i = SysTray::iconList.begin(); i != SysTray::iconList.end(); ++i) {
-        ::Shell_NotifyIcon(NIM_DELETE, &i->second)
+    for(IconList::iterator i = TrayIconManager::iconList.begin(); i != TrayIconManager::iconList.end(); ++i) {  
+        ::Shell_NotifyIcon(NIM_DELETE, &i->second);
     }
 }
-
 
 ///\brief
 ///Deletes an icon from the tray and all internal structures
@@ -77,13 +76,13 @@ SysTray::~SysTray()
 ///The Icon ID
 ///
 ///\return bool
-bool SysTray::DeleteIcon(UINT uid)
+bool TrayIconManager::DeleteIcon(UINT uid)
 {
-    if(SysTray::iconList.find(uid) != SysTray::iconList.end()) {
-        if(::Shell_NotifyIcon(NIM_DELETE, &SysTray::iconList[uid]) != 0) {
-            SysTray::iconList.erase(uid);
-            SysTray::menuList.erase(uid);
-            SysTray::optionsList.erase(uid);
+    if(TrayIconManager::iconList.find(uid) != TrayIconManager::iconList.end()) {
+        if(::Shell_NotifyIcon(NIM_DELETE, &TrayIconManager::iconList[uid]) != 0) {
+            TrayIconManager::iconList.erase(uid);
+            TrayIconManager::menuList.erase(uid);
+            TrayIconManager::optionsList.erase(uid);
 
             return true;
         }
@@ -117,17 +116,17 @@ bool SysTray::DeleteIcon(UINT uid)
 ///Icon to show. Select from NIIF_NONE, NIIF_INFO, NIIF_WARNING, NIIF_ERROR
 ///
 ///\return bool
-bool SysTray::ShowBalloon(UINT uid, const uistring& title, const uistring& text, UINT timeout, UINT icon)
+bool TrayIconManager::ShowBalloon(UINT uid, const uistring& title, const uistring& text, UINT timeout, UINT icon)
 {
-    if(SysTray::iconList.find(uid) != SysTray::iconList.end()) {
-        SysTray::iconList[uid].uFlags |= NIF_INFO;
-        SysTray::iconList[uid].uTimeout = timeout * 1000;
-        SysTray::iconList[uid].dwInfoFlags = icon;
+    if(TrayIconManager::iconList.find(uid) != TrayIconManager::iconList.end()) {
+        TrayIconManager::iconList[uid].uFlags |= NIF_INFO;
+        TrayIconManager::iconList[uid].uTimeout = timeout * 1000;
+        TrayIconManager::iconList[uid].dwInfoFlags = icon;
        
-        ::wcsncpy_s(SysTray::iconList[uid].szInfoTitle, 64, title.c_str(), 64);
-        ::wcsncpy_s(SysTray::iconList[uid].szInfo, 256, text.c_str(), 256);
+        ::wcsncpy_s(TrayIconManager::iconList[uid].szInfoTitle, 64, title.c_str(), 64);
+        ::wcsncpy_s(TrayIconManager::iconList[uid].szInfo, 256, text.c_str(), 256);
         
-        return (::Shell_NotifyIcon(NIM_MODIFY, &SysTray::iconList[uid]) != 0);
+        return (::Shell_NotifyIcon(NIM_MODIFY, &TrayIconManager::iconList[uid]) != 0);
     }
 
     return false;
@@ -144,11 +143,11 @@ bool SysTray::ShowBalloon(UINT uid, const uistring& title, const uistring& text,
 ///New Icon
 ///
 ///\return bool
-bool SysTray::SetIcon(UINT uid, HICON icon)
+bool TrayIconManager::SetIcon(UINT uid, HICON icon)
 {
-    if(SysTray::iconList.find(uid) != SysTray::iconList.end()) {
-        SysTray::iconList[uid].hIcon = icon;
-        return (::Shell_NotifyIcon(NIM_MODIFY, &SysTray::iconList[uid]) != 0);
+    if(TrayIconManager::iconList.find(uid) != TrayIconManager::iconList.end()) {
+        TrayIconManager::iconList[uid].hIcon = icon;
+        return (::Shell_NotifyIcon(NIM_MODIFY, &TrayIconManager::iconList[uid]) != 0);
     }
 
     return false;
@@ -165,12 +164,12 @@ bool SysTray::SetIcon(UINT uid, HICON icon)
 ///Tooltip to show
 ///
 ///\return bool
-bool SysTray::SetTooltip(UINT uid, const uistring& tooltip)
+bool TrayIconManager::SetTooltip(UINT uid, const uistring& tooltip)
 {
-    if(SysTray::iconList.find(uid) != SysTray::iconList.end()) {
-        SysTray::iconList[uid].uFlags |= NIF_TIP;
-        ::wcsncpy_s(SysTray::iconList[uid].szTip, 128, tooltip.c_str(), 128);
-        return (::Shell_NotifyIcon(NIM_MODIFY, &SysTray::iconList[uid]) != 0);
+    if(TrayIconManager::iconList.find(uid) != TrayIconManager::iconList.end()) {
+        TrayIconManager::iconList[uid].uFlags |= NIF_TIP;
+        ::wcsncpy_s(TrayIconManager::iconList[uid].szTip, 128, tooltip.c_str(), 128);
+        return (::Shell_NotifyIcon(NIM_MODIFY, &TrayIconManager::iconList[uid]) != 0);
     }
 
     return false;
@@ -188,10 +187,10 @@ bool SysTray::SetTooltip(UINT uid, const uistring& tooltip)
 ///Reference to the menu which should be displayed
 ///
 ///\return bool
-bool SysTray::SetPopupMenu(UINT uid, MenuRef menu)
+bool TrayIconManager::SetPopupMenu(UINT uid, MenuRef menu)
 {
     if(menu) {
-        SysTray::menuList[uid] = menu;
+        TrayIconManager::menuList[uid] = menu;
         return true;
     } 
 
@@ -200,7 +199,7 @@ bool SysTray::SetPopupMenu(UINT uid, MenuRef menu)
 
 
 ///\brief
-///Window procedure for all SysTray handling. Here WM_RBUTTONDOWN (for popup menu),
+///Window procedure for all TrayIconManager handling. Here WM_RBUTTONDOWN (for popup menu),
 ///WM_LBUTTONDOWN (for restoring the window after it has been minimized to tray) &
 ///WM_SIZE for the Minimize to tray feature are handled.
 ///
@@ -214,34 +213,34 @@ bool SysTray::SetPopupMenu(UINT uid, MenuRef menu)
 ///\param lParam
 ///\return LRESULT
 ///In this case always 0
-LRESULT SysTray::WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT TrayIconManager::WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    if(SysTray::menuList.find(message - WM_W32CPP_SYSTRAY) != SysTray::menuList.end()) {
+    if(TrayIconManager::menuList.find(message - WM_W32CPP_SYSTRAY) != TrayIconManager::menuList.end()) {
         UINT uid = message - WM_W32CPP_SYSTRAY;
         
         switch(LOWORD(lParam)) {
         case WM_RBUTTONDOWN:
             {
-                if(SysTray::menuList.find(uid) != SysTray::menuList.end()) {
+                if(TrayIconManager::menuList.find(uid) != TrayIconManager::menuList.end()) {
                     POINT mousePos = { 0 };
                     ::GetCursorPos(&mousePos);
 
                     TrackPopupMenu(
-                        SysTray::menuList[uid]->Handle(),
+                        TrayIconManager::menuList[uid]->Handle(),
                         TPM_LEFTBUTTON,
                         mousePos.x,
                         mousePos.y,
                         NULL,
-                        SysTray::iconList[uid].hWnd,
+                        TrayIconManager::iconList[uid].hWnd,
                         NULL);
                 }
             }
             return 0;
         case WM_LBUTTONDOWN:
             {
-                 if(SysTray::optionsList[uid] & SysTray::MINIMIZE_TO_TRAY) {
+                 if(TrayIconManager::optionsList[uid] & TrayIconManager::MINIMIZE_TO_TRAY) {
                     // get window object
-                    Window* wnd = Window::SubclassedWindowFromHWND(SysTray::iconList[uid].hWnd);
+                    Window* wnd = Window::SubclassedWindowFromHWND(TrayIconManager::iconList[uid].hWnd);
 
                     // restore window
                     wnd->Show(SW_SHOW);
@@ -256,10 +255,10 @@ LRESULT SysTray::WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
     // handle minimize to tray
     if(message == WM_SIZE && wParam == SIZE_MINIMIZED) {
         // iterate through list with icon options and look, if the assigned icon/window pair wants that
-        for(IconList::iterator i = SysTray::iconList.begin(); i != SysTray::iconList.end(); ++i) {  
+        for(IconList::iterator i = TrayIconManager::iconList.begin(); i != TrayIconManager::iconList.end(); ++i) {  
             // look if there is a corresponding window
             if(i->second.hWnd == window) {
-                if(SysTray::optionsList[i->second.uID] & SysTray::MINIMIZE_TO_TRAY) {
+                if(TrayIconManager::optionsList[i->second.uID] & TrayIconManager::MINIMIZE_TO_TRAY) {
                     // get window object
                     Window* wnd = Window::SubclassedWindowFromHWND(window);
 
@@ -280,9 +279,9 @@ LRESULT SysTray::WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
 ///
 ///\param uid
 ///The Icon ID
-void SysTray::EnableMinimizeToTray(UINT uid)
+void TrayIconManager::EnableMinimizeToTray(UINT uid)
 {
-    SysTray::optionsList[uid] |= SysTray::MINIMIZE_TO_TRAY;
+    TrayIconManager::optionsList[uid] |= TrayIconManager::MINIMIZE_TO_TRAY;
 }
 
 
@@ -300,9 +299,9 @@ void SysTray::EnableMinimizeToTray(UINT uid)
 ///
 ///\return int
 ///Returns the new Icon ID or -1 on failure
-int SysTray::AddIcon(Window* window, HICON icon, const uistring& tooltip)
+int TrayIconManager::AddIcon(Window* window, HICON icon, const uistring& tooltip)
 {
-    UINT uid = SysTray::uidCounter++;
+    UINT uid = TrayIconManager::uidCounter++;
     NOTIFYICONDATA nid;
 
     // setup notifyicondata structure
@@ -330,10 +329,10 @@ int SysTray::AddIcon(Window* window, HICON icon, const uistring& tooltip)
     }
     
     // add to icon list
-    SysTray::iconList[uid] = nid;
+    TrayIconManager::iconList[uid] = nid;
 
     // add to options list
-    SysTray::optionsList[uid] = 0;
+    TrayIconManager::optionsList[uid] = 0;
 
     return uid;
 }

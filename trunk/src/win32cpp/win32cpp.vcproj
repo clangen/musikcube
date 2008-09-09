@@ -186,11 +186,11 @@
 					>
 				</File>
 				<File
-					RelativePath=".\SysTray.cpp"
+					RelativePath=".\TrayIconManager.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\SysTray.hpp"
+					RelativePath=".\TrayIconManager.hpp"
 					>
 				</File>
 				<File
@@ -317,11 +317,11 @@
 						>
 					</File>
 					<File
-						RelativePath=".\Checkbox.cpp"
+						RelativePath=".\CheckBox.cpp"
 						>
 					</File>
 					<File
-						RelativePath=".\Checkbox.hpp"
+						RelativePath=".\CheckBox.hpp"
 						>
 					</File>
 					<File
