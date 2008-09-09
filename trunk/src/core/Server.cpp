@@ -95,23 +95,17 @@ void Server::ThreadLoop(){
     utfstring directory( musik::core::GetDataDirectory()+this->ServerIdentifier()+UTF("/") );
     utfstring database(directory+UTF("musik.db"));
 
+    // Create directory if not existing
+    boost::filesystem::utfpath folder(directory);
+    if(!boost::filesystem::exists(folder)){
+        boost::filesystem::create_directories(folder);
+    }
+
     // Create database
     this->db.Open(database.c_str(),0,prefs.GetInt("DatabaseCache",4096));
     Library::Base::CreateDatabase(this->db);
 
-/*    {
-        db::Statement stmt("SELECT id,name,login,password FROM users",db);
-        while(stmt.Step()==db::Row){
-            boost::mutex::scoped_lock lock(this->serverMutex);
-            this->allUsers[stmt.ColumnTextUTF(2)] = server::UserPtr(new server::User(
-                    stmt.ColumnInt(0),
-                    stmt.ColumnTextUTF(2),
-                    stmt.ColumnTextUTF(3),
-                    stmt.ColumnTextUTF(1)
-                    ));
-        }
-    }
-*/
+
     this->httpServer.Startup(database);
 
     // Start the indexer
