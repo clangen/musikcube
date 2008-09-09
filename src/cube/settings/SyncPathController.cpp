@@ -67,7 +67,7 @@ void SyncPathController::OnViewCreated(Window* window){
 
     Size clientSize = this->listView.ClientSize();
 
-    this->mainColumn = Column::Create(_T("Path"), clientSize.width);
+    this->mainColumn = Column::Create(_(_T("Path")), clientSize.width);
     this->listView.AddColumn(this->mainColumn);
 
     this->listView.EnableColumnResizing(false);

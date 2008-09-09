@@ -80,7 +80,7 @@ void        MainMenuController::OnFileExit(MenuItemRef menuItem)
 
 void        MainMenuController::OnAddLibraryLocal(MenuItemRef menuItem)
 {
-    win32cpp::TopLevelWindow popupDialog(_T("Add local library"));
+    win32cpp::TopLevelWindow popupDialog(_(_T("Add local library")));
     popupDialog.SetMinimumSize(Size(300, 150));
 
     dialog::AddLibraryController addLibrary(popupDialog,musik::core::LibraryFactory::LocalDB);
@@ -90,7 +90,7 @@ void        MainMenuController::OnAddLibraryLocal(MenuItemRef menuItem)
 }
 void        MainMenuController::OnAddLibraryRemote(MenuItemRef menuItem)
 {
-    win32cpp::TopLevelWindow popupDialog(_T("Add remote library"));
+    win32cpp::TopLevelWindow popupDialog(_(_T("Add remote library")));
     popupDialog.SetMinimumSize(Size(300, 220));
 
     dialog::AddLibraryController addLibrary(popupDialog,musik::core::LibraryFactory::Remote);
@@ -144,11 +144,11 @@ MenuRef     MainMenuController::CreateMenu()
     this->mainMenu  = Menu::Create();
     MenuItemCollection& mainItems = this->mainMenu->Items();
     //
-    this->file = mainItems.Append(MenuItem::Create(_T("&File")));
-    this->view = mainItems.Append(MenuItem::Create(_T("&View")));
-    this->audio = mainItems.Append(MenuItem::Create(_T("&Audio")));
-    this->tags = mainItems.Append(MenuItem::Create(_T("&Tags")));
-    this->help = mainItems.Append(MenuItem::Create(_T("&Help")));
+    this->file = mainItems.Append(MenuItem::Create(_(_T("&File"))));
+    this->view = mainItems.Append(MenuItem::Create(_(_T("&View"))));
+    this->audio = mainItems.Append(MenuItem::Create(_(_T("&Audio"))));
+    this->tags = mainItems.Append(MenuItem::Create(_(_T("&Tags"))));
+    this->help = mainItems.Append(MenuItem::Create(_(_T("&Help"))));
 
         // file menu
         this->fileMenu  = Menu::Create();
@@ -157,20 +157,20 @@ MenuRef     MainMenuController::CreateMenu()
         this->file->SetSubMenu(this->fileMenu);
 
         MenuRef addLibrarySubmenu   = Menu::Create();
-        this->fileAddLibraryLocal   = addLibrarySubmenu->Items().Append(MenuItem::Create(_T("&Local library")));
-        this->fileAddLibraryRemote  = addLibrarySubmenu->Items().Append(MenuItem::Create(_T("&Remote library")));
+        this->fileAddLibraryLocal   = addLibrarySubmenu->Items().Append(MenuItem::Create(_(_T("&Local library"))));
+        this->fileAddLibraryRemote  = addLibrarySubmenu->Items().Append(MenuItem::Create(_(_T("&Remote library"))));
 
-        MenuItemRef addLibraryMenu  = fileItems.Append(MenuItem::Create(_T("&Add Library")));
+        MenuItemRef addLibraryMenu  = fileItems.Append(MenuItem::Create(_(_T("&Add Library"))));
         addLibraryMenu->SetSubMenu(addLibrarySubmenu);
 
-        this->fileExit              = fileItems.Append(MenuItem::Create(_T("E&xit")));
+        this->fileExit              = fileItems.Append(MenuItem::Create(_(_T("E&xit"))));
 
         // help menu
         this->helpMenu  = Menu::Create();
         MenuItemCollection& helpItems = this->helpMenu->Items();
         //
         this->help->SetSubMenu(this->helpMenu);
-        this->helpAbout = helpItems.Append(MenuItem::Create(_T("&About")));
+        this->helpAbout = helpItems.Append(MenuItem::Create(_(_T("&About"))));
 
     this->ConnectMenuHandlers();
 

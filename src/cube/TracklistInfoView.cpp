@@ -53,11 +53,20 @@ using namespace musik::cube;
 
 void        TracklistInfoView::OnCreated()
 {
-    this->AddChild(new Label(_T("Tracks: ")));
+    uistring 
+        tracksCaption = _(_T("Tracks")),
+        durationCaption = _(_T("Duration")),
+        sizeCaption = _(_T("Size"));
+
+    tracksCaption += _T(": ");
+    durationCaption = _T("    ") + durationCaption + _T(": ");
+    sizeCaption = _T("    ") + sizeCaption + _T(": ");
+
+    this->AddChild(new Label(tracksCaption.c_str()));
     this->trackCountLabel = this->AddChild(new Label(_T("0")));
-    this->AddChild(new Label(_T("    Duration: ")));
+    this->AddChild(new Label(durationCaption.c_str()));
     this->durationLabel = this->AddChild(new Label(_T("0:00")));
-    this->AddChild(new Label(_T("    Size: ")));
+    this->AddChild(new Label(sizeCaption.c_str()));
     this->sizeLabel = this->AddChild(new Label(_T("0 MB")));
 
     FontRef boldFont(Font::Create(_T(""), -1, true));

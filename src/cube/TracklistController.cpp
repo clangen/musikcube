@@ -77,13 +77,13 @@ void        TracklistController::OnViewCreated(Window* window)
     typedef ListView::Column Column;
 
     ListView* listView = this->view.listView;
-    this->AddColumn(_T("Track"),"track", 50);
-    this->AddColumn(_T("Title"),"title", 200);
-    this->AddColumn(_T("Artist"),"visual_artist", 100);
-    this->AddColumn(_T("Album"),"album", 100);
-    this->AddColumn(_T("Genre"),"visual_genre", 75);
-    this->AddColumn(_T("Duration"),"duration", 50);
-    this->AddColumn(_T("BPM"),"bpm", 75);
+    this->AddColumn(_(_T("Track")),"track", 50);
+    this->AddColumn(_(_T("Title")),"title", 200);
+    this->AddColumn(_(_T("Artist")),"visual_artist", 100);
+    this->AddColumn(_(_T("Album")),"album", 100);
+    this->AddColumn(_(_T("Genre")),"visual_genre", 75);
+    this->AddColumn(_(_T("Duration")),"duration", 50);
+    this->AddColumn(_(_T("BPM")),"bpm", 75);
 
     int itemHeight = listView->RowHeight();
     listView->SetRowHeight(max(itemHeight, 17));

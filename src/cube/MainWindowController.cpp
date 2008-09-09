@@ -97,9 +97,7 @@ void        MainWindowController::OnMainWindowCreated(Window* window)
     MenuRef myMenu = Menu::CreatePopup();
 
     // Create Tray Menu
-    myMenu->Items().Append(MenuItem::Create(_T("Test 1")));
-    myMenu->Items().Append(MenuItem::Create(_T("Test 2")));
-    MenuItemRef trayExit = myMenu->Items().Append(MenuItem::Create(_T("E&xit")));
+    MenuItemRef trayExit = myMenu->Items().Append(MenuItem::Create(_(_T("E&xit"))));
 
     // Bind Exit to handler
     trayExit->Activated.connect(this, &MainWindowController::OnFileExit);
@@ -107,7 +105,7 @@ void        MainWindowController::OnMainWindowCreated(Window* window)
     UINT uidTrayIcon = Application::Instance().SysTrayManager()->AddIcon(Application::Instance().MainWindow(), icon16);
     Application::Instance().SysTrayManager()->SetTooltip(uidTrayIcon, _T("musikCube"));
     Application::Instance().SysTrayManager()->SetPopupMenu(uidTrayIcon, myMenu);
-    Application::Instance().SysTrayManager()->ShowBalloon(uidTrayIcon, _T("musikCube 2"), _T("Welcome to musikCube!"), 2);
+    Application::Instance().SysTrayManager()->ShowBalloon(uidTrayIcon, _T("musikCube 2"), _(_T("Welcome to musikCube!")), 2);
     Application::Instance().SysTrayManager()->EnableMinimizeToTray(uidTrayIcon);
         
 

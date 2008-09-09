@@ -64,9 +64,9 @@ void        BrowseView::OnCreated()
         this->filterViewLayout,
         this->tracklistView);
 
-    this->AddMetadataFilter(_T("genre"));
-    this->AddMetadataFilter(_T("artist"));
-    this->AddMetadataFilter(_T("album"));
+    this->AddMetadataFilter(_(_T("Genre")));
+    this->AddMetadataFilter(_(_T("Artist")));
+    this->AddMetadataFilter(_(_T("Album")));
 
     this->AddChild(mainVSplitter);
     mainVSplitter->SetAnchor(AnchorTop);
