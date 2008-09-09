@@ -65,7 +65,7 @@ SysTray::~SysTray()
 {
     // iterate through list and delete icons
     for(IconList::iterator i = SysTray::iconList.begin(); i != SysTray::iconList.end(); ++i) {
-        ::Shell_NotifyIcon(NIM_DELETE, i->second)
+        ::Shell_NotifyIcon(NIM_DELETE, &i->second)
     }
 }
 
