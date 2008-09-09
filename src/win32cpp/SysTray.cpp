@@ -64,8 +64,8 @@ SysTray::SysTray()
 SysTray::~SysTray()
 {
     // iterate through list and delete icons
-    for(IconList::iterator i = SysTray::iconList.begin(); i != SysTray::iconList.end(); ++i) {  
-        this->DeleteIcon(i->second.uID);
+    for(IconList::iterator i = SysTray::iconList.begin(); i != SysTray::iconList.end(); ++i) {
+        ::Shell_NotifyIcon(NIM_DELETE, i->second)
     }
 }
 
@@ -81,10 +81,9 @@ bool SysTray::DeleteIcon(UINT uid)
 {
     if(SysTray::iconList.find(uid) != SysTray::iconList.end()) {
         if(::Shell_NotifyIcon(NIM_DELETE, &SysTray::iconList[uid]) != 0) {
-            // todo: map/set not incrementable: why? 
-            //SysTray::iconList.erase(uid);
-            //SysTray::menuList.erase(uid);
-            //SysTray::optionsList.erase(uid);
+            SysTray::iconList.erase(uid);
+            SysTray::menuList.erase(uid);
+            SysTray::optionsList.erase(uid);
 
             return true;
         }
