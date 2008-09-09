@@ -47,27 +47,27 @@ namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
 
-class Checkbox;
+class CheckBox;
 
 ///\brief
-///The type of event used when the Checkbox is pressed..
+///The type of event used when the CheckBox is pressed..
 ///\see
 ///CheckBox.
-typedef sigslot::signal2<Checkbox*, int> CheckboxPressedEvent;
+typedef sigslot::signal2<CheckBox*, int> CheckboxPressedEvent;
 
 ///\brief
-///A standard Checkbox.
-class Checkbox : public Window
+///A standard CheckBox.
+class CheckBox : public Window
 {
 private: // types
     typedef Window base;
 
 public: // events
-    ///\brief This event is emitted when the user presses the Checkbox
+    ///\brief This event is emitted when the user presses the CheckBox
     CheckboxPressedEvent  Pressed;
 
 public: // constructors
-    /*ctor*/            Checkbox(const uichar* caption = _T(""), int style = BS_AUTOCHECKBOX);
+    /*ctor*/            CheckBox(const uichar* caption = _T(""), int style = BS_AUTOCHECKBOX);
 
 protected: // methods
     virtual HWND        Create(Window* parent);

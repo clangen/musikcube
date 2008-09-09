@@ -37,7 +37,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <pch.hpp>
-#include <win32cpp/Checkbox.hpp>
+#include <win32cpp/CheckBox.hpp>
 #include <win32cpp/Application.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
@@ -51,14 +51,14 @@ using namespace win32cpp;
 ///
 ///\param caption
 ///The caption that beside the checkbox
-/*ctor*/    Checkbox::Checkbox(const uichar* caption, int style)
+/*ctor*/    CheckBox::CheckBox(const uichar* caption, int style)
 : base()
 , caption(caption)
 , style(style)
 {
 }
 
-HWND        Checkbox::Create(Window* parent)
+HWND        CheckBox::Create(Window* parent)
 {
     HINSTANCE hInstance = Application::Instance();
 
@@ -82,7 +82,7 @@ HWND        Checkbox::Create(Window* parent)
     return hwnd;
 }
 
-LRESULT     Checkbox::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT     CheckBox::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
@@ -100,12 +100,12 @@ LRESULT     Checkbox::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
     return this->DefaultWindowProc(message, wParam, lParam);
 }
 
-void        Checkbox::OnPressed(int state)
+void        CheckBox::OnPressed(int state)
 {
     this->Pressed(this, state);
 }
 
-void        Checkbox::PaintToHDC(HDC hdc, const Rect& rect)
+void        CheckBox::PaintToHDC(HDC hdc, const Rect& rect)
 {
     this->WindowProc(WM_PAINT, (WPARAM) (HDC) hdc, PRF_CLIENT);
 
@@ -117,34 +117,34 @@ void        Checkbox::PaintToHDC(HDC hdc, const Rect& rect)
     }
 }
 
-bool        Checkbox::IsChecked(void) const
+bool        CheckBox::IsChecked(void) const
 {
     return (this->state == BST_CHECKED);
 }
 
-bool        Checkbox::IsUnchecked(void) const
+bool        CheckBox::IsUnchecked(void) const
 {
     return (this->state == BST_UNCHECKED);
 }
 
-bool        Checkbox::IsIndeterminate(void) const
+bool        CheckBox::IsIndeterminate(void) const
 {
     return (this->state == BST_INDETERMINATE);
 }
 
-void        Checkbox::Check(void)
+void        CheckBox::Check(void)
 {
     SendMessage(BM_SETCHECK, BST_CHECKED, 0);
     this->state = BST_CHECKED;
 }
 
-void        Checkbox::Uncheck(void)
+void        CheckBox::Uncheck(void)
 {
     SendMessage(BM_SETCHECK, BST_UNCHECKED, 0);
     this->state = BST_UNCHECKED;
 }
 
-void        Checkbox::SetIndeterminate(void)
+void        CheckBox::SetIndeterminate(void)
 {
     SendMessage(BM_SETCHECK, BST_INDETERMINATE, 0);
     this->state = BST_INDETERMINATE;

@@ -86,7 +86,7 @@ public: // methods
     const uistring&     CommandLine() const;
     int                 ShowCommand() const;
     void                Terminate() const;
-    SysTray*            SysTrayManager() const;
+    TrayIconManager*            SysTrayManager() const;
     ApplicationThread*  Thread();
 
 public: // operator overloads
@@ -102,7 +102,7 @@ private: // instance data
     int showCommand;
     TopLevelWindow* mainWindow;
     ApplicationThread* appThread;
-    SysTray* sysTray;
+    TrayIconManager* trayIconManager;
 
 private: // class data
     static Application sMainApplication;
