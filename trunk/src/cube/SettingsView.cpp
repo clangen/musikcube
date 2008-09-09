@@ -40,7 +40,7 @@
 #include <cube/SettingsView.hpp>
 #include <win32cpp/LinearLayout.hpp>
 #include <win32cpp/Button.hpp>
-#include <win32cpp/Checkbox.hpp>
+#include <win32cpp/CheckBox.hpp>
 #include <win32cpp/RadioButton.hpp>
 #include <win32cpp/GroupBox.hpp>
 #include <win32cpp/ListView.hpp>
@@ -58,7 +58,7 @@ using namespace musik::cube;
 }
 
 
-void        SettingsView::OnPressTestCheckbox(Checkbox* checkbox , int state)
+void        SettingsView::OnPressTestCheckbox(CheckBox* CheckBox , int state)
 {
     if(state == BST_CHECKED) {
         ::MessageBox(NULL, _T("checked"), _T("checked"), MB_OK);
@@ -117,13 +117,13 @@ void        SettingsView::OnCreated()
     mainLayout->AddChild(new Frame(libraryStatusLayout,FramePadding(20,20,20,0)));
     mainLayout->AddChild(new Frame(pathLayout,FramePadding(20,20,0,20)));
 
-    // test checkbox
-    Checkbox* c = new Checkbox(_T("Test 1"));
+    // test CheckBox
+    CheckBox* c = new CheckBox(_T("Test 1"));
     mainLayout->AddChild(c);
     c->Check();
     c->Pressed.connect(this, &SettingsView::OnPressTestCheckbox);
     
-    Checkbox* c2 = new Checkbox(_T("Test 2"), BS_AUTO3STATE);
+    CheckBox* c2 = new CheckBox(_T("Test 2"), BS_AUTO3STATE);
     mainLayout->AddChild(c2);
     c2->SetIndeterminate();
     c2->Pressed.connect(this, &SettingsView::OnPressTestCheckbox);
@@ -157,9 +157,9 @@ void        SettingsView::OnCreated()
 
     // test groupbox
     GroupBox* g = new GroupBox(_T("test group box"));
-    Checkbox* gc = new Checkbox(_T("Test Checkbox"));
-    Checkbox* gc2 = new Checkbox(_T("Test Checkbox2"));
-    Checkbox* gc3 = new Checkbox(_T("Test Checkbox2"));
+    CheckBox* gc = new CheckBox(_T("Test CheckBox"));
+    CheckBox* gc2 = new CheckBox(_T("Test CheckBox2"));
+    CheckBox* gc3 = new CheckBox(_T("Test CheckBox2"));
 
     g->AddChild(gc);
     g->AddChild(gc2);

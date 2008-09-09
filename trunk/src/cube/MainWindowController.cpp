@@ -52,7 +52,7 @@
 #include <win32cpp/Splitter.hpp>
 #include <win32cpp/TabView.hpp>
 #include <win32cpp/RedrawLock.hpp>
-#include <win32cpp/SysTray.hpp> 
+#include <win32cpp/TrayIconManager.hpp> 
 
 //////////////////////////////////////////////////////////////////////////////
 

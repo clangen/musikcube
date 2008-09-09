@@ -47,7 +47,7 @@ namespace win32cpp{
 //////////////////////////////////////////////////////////////////////////////
 
 #include <win32cpp/Frame.hpp>
-#include <win32cpp/Checkbox.hpp>
+#include <win32cpp/CheckBox.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -65,7 +65,7 @@ class SettingsView: public Frame
 
 public:     /*ctor*/        SettingsView();
 protected:  
-    virtual void    OnPressTestCheckbox(Checkbox* checkbox , int state);
+    virtual void    OnPressTestCheckbox(CheckBox* checkbox , int state);
     virtual void    OnCreated();
     friend class SettingsController;
     Button *addPathButton,*removePathButton;

@@ -53,7 +53,7 @@
 #include <win32cpp/LinearLayout.hpp>
 #include <win32cpp/Label.hpp>
 #include <win32cpp/Frame.hpp>
-#include <win32cpp/SysTray.hpp> 
+#include <win32cpp/TrayIconManager.hpp> 
 
 //////////////////////////////////////////////////////////////////////////////
 
