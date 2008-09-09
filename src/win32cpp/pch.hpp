@@ -45,8 +45,8 @@
 #include <boost/scoped_ptr.hpp>
 
 #include <win32cpp/Win32Config.hpp>
-#include <win32cpp/Application.hpp>
 #include <win32cpp/TrayIconManager.hpp>
+#include <win32cpp/Application.hpp>
 #include <win32cpp/TopLevelWindow.hpp>
 #include <win32cpp/Container.hpp>
 #include <win32cpp/Menu.hpp>

@@ -41,7 +41,7 @@
 #include <win32cpp/Win32Config.hpp>
 #include <win32cpp/Types.hpp>
 #include <win32cpp/TopLevelWindow.hpp>
-
+#include <win32cpp/TrayIconManager.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -86,7 +86,7 @@ public: // methods
     const uistring&     CommandLine() const;
     int                 ShowCommand() const;
     void                Terminate() const;
-    TrayIconManager*            SysTrayManager() const;
+    TrayIconManager*    SysTrayManager() const;
     ApplicationThread*  Thread();
 
 public: // operator overloads
