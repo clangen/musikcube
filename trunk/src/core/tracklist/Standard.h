@@ -52,77 +52,73 @@
 
 //////////////////////////////////////////////////////////////////////////////
 
-namespace musik{ namespace core{
-    namespace tracklist {
+namespace musik{ namespace core{ namespace tracklist {
 
-        class Standard : public IRandomAccess, public sigslot::has_slots<> {
+//////////////////////////////////////////////////////////////////////////////
+class Standard : public IRandomAccess, public sigslot::has_slots<> {
 
-            public:
-                
-//                typedef boost::shared_ptr<Standard> Ptr;
+    public:
+        Standard(void);
+        ~Standard(void);
 
-                Standard(void);
-                ~Standard(void);
-
-                musik::core::TrackPtr CurrentTrack();
-                musik::core::TrackPtr NextTrack();
-                musik::core::TrackPtr PreviousTrack();
+        musik::core::TrackPtr CurrentTrack();
+        musik::core::TrackPtr NextTrack();
+        musik::core::TrackPtr PreviousTrack();
 
 
-                virtual void SetCurrentPosition(int position);
-                virtual int CurrentPosition();
+        virtual void SetCurrentPosition(int position);
+        virtual int CurrentPosition();
 
-                virtual int Size();
+        virtual int Size();
 
-                virtual musik::core::TrackPtr operator [](int position);
-                virtual musik::core::TrackPtr TrackWithMetadata(int position);
+        virtual musik::core::TrackPtr operator [](int position);
+        virtual musik::core::TrackPtr TrackWithMetadata(int position);
 
-                virtual void SetLibrary(musik::core::LibraryPtr setLibrary);
-                virtual musik::core::LibraryPtr Library();
+        virtual void SetLibrary(musik::core::LibraryPtr setLibrary);
+        virtual musik::core::LibraryPtr Library();
 
-                virtual bool CopyTracks(musik::core::tracklist::Ptr tracklist);
-                virtual bool AppendTracks(musik::core::tracklist::Ptr tracklist);
+        virtual bool CopyTracks(musik::core::tracklist::Ptr tracklist);
+        virtual bool AppendTracks(musik::core::tracklist::Ptr tracklist);
 
-                virtual void AppendTrack(musik::core::TrackPtr track);
-                virtual void Clear();
+        virtual void AppendTrack(musik::core::TrackPtr track);
+        virtual void Clear();
 
-                virtual void AddRequestedMetakey(const char* metakey);
-                virtual void RemoveRequestedMetakey(const char* metakey);
+        virtual void AddRequestedMetakey(const char* metakey);
+        virtual void RemoveRequestedMetakey(const char* metakey);
 
-                virtual UINT64 Duration();
-                virtual UINT64 Filesize();
+        virtual UINT64 Duration();
+        virtual UINT64 Filesize();
 
-                virtual void HintNumberOfRows(int rows);
+        virtual void HintNumberOfRows(int rows);
 
-                virtual void ConnectToQuery(musik::core::Query::ListBase &listQuery);
-                /////////////////////////////////////////////////////////////////////
+        virtual void ConnectToQuery(musik::core::Query::ListBase &listQuery);
+        /////////////////////////////////////////////////////////////////////
 
 
-            private:
+    private:
 
-                void LoadTrack(int position);
-                bool QueryForTrack(int position);
-                void OnTracksFromQuery(musik::core::TrackVector *newTracks,bool clear);
-                void OnTracksMetaFromQuery(musik::core::TrackVector *metaTracks);
-                void OnTracksInfoFromQuery(UINT64 tracks,UINT64 duration,UINT64 filesize);
+        void LoadTrack(int position);
+        bool QueryForTrack(int position);
+        void OnTracksFromQuery(musik::core::TrackVector *newTracks,bool clear);
+        void OnTracksMetaFromQuery(musik::core::TrackVector *metaTracks);
+        void OnTracksInfoFromQuery(UINT64 tracks,UINT64 duration,UINT64 filesize);
 
-                std::set<std::string> requestedMetaKeys;
+        std::set<std::string> requestedMetaKeys;
 
-                int currentPosition;
-                int hintedRows;
+        int currentPosition;
+        int hintedRows;
 
-                musik::core::LibraryPtr library;
-                musik::core::TrackVector tracks;
-                musik::core::Query::TrackMetadata trackQuery;
+        musik::core::LibraryPtr library;
+        musik::core::TrackVector tracks;
+        musik::core::Query::TrackMetadata trackQuery;
 
-                typedef boost::bimap<int,musik::core::TrackPtr> TrackCache;
-                TrackCache trackCache;
+        typedef boost::bimap<int,musik::core::TrackPtr> TrackCache;
+        TrackCache trackCache;
 
-                UINT64 infoDuration;
-                UINT64 infoFilesize;
+        UINT64 infoDuration;
+        UINT64 infoFilesize;
+};
 
-//                bool InCache(int position);
-//                bool InCache(musik::core::TrackPtr track);
-        };
-    }
-} } // musik::core
+//////////////////////////////////////////////////////////////////////////////
+} } } // musik::core::tracklist
+//////////////////////////////////////////////////////////////////////////////

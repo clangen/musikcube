@@ -109,7 +109,9 @@ void Connection::ReadThread(){
                 UserPtr user = this->server->GetUser(musik::core::ConvertUTF16(userNode.Attributes()["username"]));
                 if(user){
                     // Create a new usersession
-                    UserSessionPtr userSession( new UserSession(user,this->salt) );
+                    
+                    boost::asio::ip::tcp::endpoint endpoint = this->socket.remote_endpoint();
+                    UserSessionPtr userSession( new UserSession(user,this->salt,endpoint.address().to_string()) );
 
                     // Check if encrypted password is the same
                     if( musik::core::Crypt::Encrypt(UTF_TO_UTF8(user->Password()),this->salt)==userNode.Content() ){
@@ -330,6 +332,7 @@ void Connection::Exit(){
             if(this->socket.is_open()){
                 this->socket.close();
             }
+		    this->server->RemoveUserSession(this->userSession);
         }
         this->exit    = true;
     }

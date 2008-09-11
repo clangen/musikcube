@@ -73,19 +73,13 @@ class MainWindowController : public EventHandler
         void OnMainWindowCreated(Window* window);
         void OnResize(Window* window, Size size);
         void OnDestroyed(Window* window);
-        void UpdateStatus();
-        void OnFileExit(MenuItemRef menuItem);
 
     protected:  
         TopLevelWindow& mainWindow;
         musik::core::ServerPtr server;
-        win32cpp::Label *statusLabel;
         win32cpp::Frame *mainFrame;
         SyncpathController *syncpathController;
         users::UsersController *usersController;
-
-        win32cpp::Timer timer;
-
 };
 
 //////////////////////////////////////////////////////////////////////////////

@@ -2,9 +2,9 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright © 2007, mC2 Team
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: mC2
 //
 // All rights reserved.
 //
@@ -36,45 +36,57 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "pch.hpp"
+#include <server/ConnectedUsersListController.hpp>
+#include <server/ConnectedUsersListModel.hpp>
+#include <server/ConnectedUsersController.hpp>
 
-#include <cube/SourcesListModel.hpp>
-#include <core/Library/Base.h>
-
-#include <vector>
+#include <core/Indexer.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
+using namespace musik::server;
 using namespace win32cpp;
 
-namespace musik { namespace cube {
-
 //////////////////////////////////////////////////////////////////////////////
 
-class SourcesModel
+ConnectedUsersListController::ConnectedUsersListController(win32cpp::ListView &listView,musik::server::ConnectedUsersController *connectedUsersController)
+: listView(listView)
+, connectedUsersController(connectedUsersController)
 {
-public:     typedef SourcesItemRef ItemRef;
-public:     typedef SourcesCategoryRef CategoryRef;
-private:    typedef std::vector<CategoryRef> CategoryList;
-private:    class InvalidCategoryException: public Exception { };
+    this->model.reset(new ConnectedUsersListModel(this));
+    this->listView.Handle()
+        ? this->OnViewCreated(&listView)
+        : this->listView.Created.connect(this, &ConnectedUsersListController::OnViewCreated);
+}
 
-public:     sigslot::signal1<CategoryRef>   CategoryAdded;
-public:     sigslot::signal1<CategoryRef>   CategoryRemoved;
 
-public:     /*ctor*/    SourcesModel(musik::core::LibraryPtr library);
-			musik::core::LibraryPtr library;
+void ConnectedUsersListController::OnViewCreated(Window* window){
+    this->listView.SetScrollBarVisibility(HorizontalScrollBar, false);
 
-public:     void        Load();
+    typedef ListView::Column Column;
 
-protected:  void        AddCategory(CategoryRef category);
-protected:  void        RemoveCategory(CategoryRef category);
-protected:  void        OnActiveItemChanged(ItemRef);
+    Size clientSize = this->listView.ClientSize();
 
-private:    ItemRef activeItem;
-private:    CategoryList categories;
-private:    CategoryRef playlistCategory;
-};
+    this->nameColumn = Column::Create(_T("User"), clientSize.width/2);
+    this->listView.AddColumn(this->nameColumn);
+    this->ipColumn = Column::Create(_T("IP"), clientSize.width/2);
+    this->listView.AddColumn(this->ipColumn);
 
-//////////////////////////////////////////////////////////////////////////////
+    this->listView.EnableColumnResizing(false);
+    this->listView.SetModel(this->model);
+    //
+    int itemHeight = this->listView.RowHeight();
+    this->listView.SetRowHeight(max(itemHeight, 17));
 
-} }     // musik::cube
+    this->listView.Resized.connect(
+        this, &ConnectedUsersListController::OnResized);
+
+}
+
+void ConnectedUsersListController::OnResized(Window* window, Size size)
+{
+    this->listView.SetColumnWidth(this->nameColumn, this->listView.ClientSize().width/2);
+    this->listView.SetColumnWidth(this->ipColumn, this->listView.ClientSize().width/2);
+}
+

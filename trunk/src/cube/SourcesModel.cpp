@@ -188,12 +188,13 @@ void            SourcesModel::Load()
     viewCategory->Add(SettingsItem::Create(this->library));
     this->AddCategory(viewCategory);
 
-    CategoryRef playlistCategory(new Category(_(_T("Playlists"))));
-    playlistCategory->Add(DummyItem::Create(_(_T("Playlist 1"))));
+    this->playlistCategory.reset(new Category(_(_T("Playlists"))));
+/*    playlistCategory->Add(DummyItem::Create(_(_T("Playlist 1"))));
     playlistCategory->Add(DummyItem::Create(_(_T("Playlist 2"))));
     playlistCategory->Add(DummyItem::Create(_(_T("Dynamic Playlist 3"))));
-    playlistCategory->Add(DummyItem::Create(_(_T("Dynamic Playlist 4"))));
-    this->AddCategory(playlistCategory);
+    playlistCategory->Add(DummyItem::Create(_(_T("Dynamic Playlist 4"))));*/
+    this->AddCategory(this->playlistCategory);
+
 }
 
 #define FIND_CATEGORY(list, category) std::find(list.begin(), list.end(), category)

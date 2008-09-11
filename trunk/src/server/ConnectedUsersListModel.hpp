@@ -2,9 +2,9 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright © 2007, mC2 Team
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: mC2
 //
 // All rights reserved.
 //
@@ -38,43 +38,35 @@
 
 #pragma once
 
-#include <cube/SourcesListModel.hpp>
-#include <core/Library/Base.h>
+//////////////////////////////////////////////////////////////////////////////
 
-#include <vector>
+#include <server/ConnectedUsersListController.hpp>
+#include <win32cpp/ListView.hpp>
+#include <core/server/UserSession.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
-using namespace win32cpp;
-
-namespace musik { namespace cube {
+namespace musik { namespace server {
 
 //////////////////////////////////////////////////////////////////////////////
 
-class SourcesModel
-{
-public:     typedef SourcesItemRef ItemRef;
-public:     typedef SourcesCategoryRef CategoryRef;
-private:    typedef std::vector<CategoryRef> CategoryList;
-private:    class InvalidCategoryException: public Exception { };
+class ConnectedUsersListModel : public win32cpp::ListView::Model, public win32cpp::EventHandler{
+    public:
+        ConnectedUsersListModel(ConnectedUsersListController *controller);
+        virtual win32cpp::uistring CellValueToString(int rowIndex, win32cpp::ListView::ColumnRef column);
+        void UpdateUsers();
+    private:
 
-public:     sigslot::signal1<CategoryRef>   CategoryAdded;
-public:     sigslot::signal1<CategoryRef>   CategoryRemoved;
+        void OnUsersUpdated();
 
-public:     /*ctor*/    SourcesModel(musik::core::LibraryPtr library);
-			musik::core::LibraryPtr library;
+        ConnectedUsersListController *controller;
 
-public:     void        Load();
+        friend class ConnectedUsersListController;
 
-protected:  void        AddCategory(CategoryRef category);
-protected:  void        RemoveCategory(CategoryRef category);
-protected:  void        OnActiveItemChanged(ItemRef);
-
-private:    ItemRef activeItem;
-private:    CategoryList categories;
-private:    CategoryRef playlistCategory;
+        musik::core::server::UserSessionVector users;
 };
 
+
 //////////////////////////////////////////////////////////////////////////////
 
-} }     // musik::cube
+} }     // musik::server

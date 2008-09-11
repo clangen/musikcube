@@ -36,16 +36,6 @@
 
 #pragma once
 
-#include <boost/shared_ptr.hpp>
-#include <boost/function.hpp>
-
-#include <vector>
-#include <sigslot/sigslot.h>
-
-#include <core/config.h>
-#include <core/Query/Base.h>
-#include <core/tracklist/IRandomAccess.h>
-
 //////////////////////////////////////////////////////////////
 // Forward declarations
 //////////////////////////////////////////////////////////////
@@ -55,31 +45,46 @@ namespace musik{ namespace core{
     }
 } }
 
+//////////////////////////////////////////////////////////////
 
-namespace musik{ namespace core{
-    namespace Query{
+#include <core/config.h>
+#include <core/Query/Base.h>
+#include <core/tracklist/IRandomAccess.h>
 
-        class Playlists : public Query::Base{
-            public:
-                Playlists(void);
-                ~Playlists(void);
+#include <boost/shared_ptr.hpp>
+#include <boost/function.hpp>
+#include <vector>
+#include <sigslot/sigslot.h>
 
-            protected:
+//////////////////////////////////////////////////////////////
 
-                bool RunCallbacks(Library::Base *library);
+namespace musik{ namespace core{ namespace Query{
 
-                friend class Library::Base;
-                friend class Library::LocalDB;
+//////////////////////////////////////////////////////////////
 
-                virtual bool ParseQuery(Library::Base *library,db::Connection &db);
+class Playlists : public Query::Base{
+    public:
+        Playlists(void);
+        ~Playlists(void);
 
-                Ptr copy() const;
+        typedef std::vector<musik::core::tracklist::Ptr> TracklistVector;
+        typedef sigslot::signal1<TracklistVector> PlaylistListEvent;
 
-            private:
+        PlaylistListEvent PlaylistList;
 
-        };
+    protected:
 
-    }
-} }
+        bool RunCallbacks(Library::Base *library);
+        virtual bool ParseQuery(Library::Base *library,db::Connection &db);
+
+        Ptr copy() const;
+
+    private:
+        TracklistVector tracklistVector;
+};
+
+//////////////////////////////////////////////////////////////
+} } }
+//////////////////////////////////////////////////////////////
 
 

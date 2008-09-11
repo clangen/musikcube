@@ -37,6 +37,7 @@
 #include "pch.hpp"
 #include <core/Query/Playlists.h>
 #include <core/Library/Base.h>
+#include <core/tracklist/Playlist.h>
 
 using namespace musik::core;
 
@@ -58,6 +59,18 @@ Query::Playlists::~Playlists(void){
 
 bool Query::Playlists::ParseQuery(Library::Base *library,db::Connection &db){
 
+    db::Statement stmt("SELECT id,name FROM playlists WHERE user_id=?",db);
+
+    while(stmt.Step()==db::Row){
+        tracklist::Ptr playlist( new tracklist::Playlist(
+                stmt.ColumnInt(0),
+                stmt.ColumnTextUTF(1),
+                library->GetSelfPtr()
+            ) );
+
+        this->tracklistVector.push_back(playlist); 
+    }
+
     return true;
 }
 
@@ -73,6 +86,19 @@ Query::Ptr Query::Playlists::copy() const{
 }
 
 bool Query::Playlists::RunCallbacks(Library::Base *library){
-    return true;
+    bool bReturn(false);
+    {
+        boost::mutex::scoped_lock lock(library->libraryMutex);
+        if( (this->status & Status::Ended)!=0){
+            // If the query is finished, this function should return true to report that it is finished.
+            bReturn    = true;
+        }
+    }
+
+    if(bReturn){
+        this->PlaylistList(this->tracklistVector);
+    }
+
+    return bReturn;
 }
 

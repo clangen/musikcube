@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Daniel Önnerby
+// The following are Copyright © 2008, mC2 team
 //
 // All rights reserved.
 //
@@ -33,31 +33,36 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
+
 #include "pch.hpp"
-#include <core/server/UserSession.h>
+#include <core/tracklist/Playlist.h>
+
+#include <core/Query/PlaylistLoad.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
-using namespace musik::core::server;
+using namespace musik::core::tracklist;
 
 //////////////////////////////////////////////////////////////////////////////
 
-UserSession::UserSession(UserPtr& user,std::string uniqueId,std::string ip)
- :user(user)
- ,uniqueId(uniqueId)
- ,ip(ip)
+Playlist::Playlist(int id,utfstring name,musik::core::LibraryPtr library) 
+:Standard()
+,id(0)
 {
+    this->SetLibrary(library);
+
+    // Start by creating a query that loads the tracks
 }
 
-UserSession::~UserSession(void)
-{
+
+Playlist::~Playlist(void){
 }
 
-std::string UserSession::UniqueId(){
-    return this->uniqueId;
+utfstring Playlist::Name(){
+    return this->name;
 }
 
-std::string UserSession::IP(){
-    return this->ip;
+int Playlist::Id(){
+    return this->id;
 }
 

@@ -241,6 +241,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\tracklist\Playlist.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\tracklist\Playlist.h"
+					>
+				</File>
+				<File
 					RelativePath=".\tracklist\Standard.cpp"
 					>
 				</File>

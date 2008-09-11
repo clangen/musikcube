@@ -295,6 +295,34 @@
 					</File>
 				</Filter>
 			</Filter>
+			<Filter
+				Name="Connected users"
+				>
+				<File
+					RelativePath=".\ConnectedUsersController.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\ConnectedUsersController.hpp"
+					>
+				</File>
+				<File
+					RelativePath=".\ConnectedUsersListController.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\ConnectedUsersListController.hpp"
+					>
+				</File>
+				<File
+					RelativePath=".\ConnectedUsersListModel.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\ConnectedUsersListModel.hpp"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<File
 			RelativePath=".\main.cpp"
