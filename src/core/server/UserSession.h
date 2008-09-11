@@ -51,15 +51,17 @@ namespace musik{ namespace core{ namespace server{
 class UserSession
 {
     public:
-        UserSession(UserPtr& user,std::string uniqueId);
+        UserSession(UserPtr& user,std::string uniqueId,std::string ip);
         ~UserSession(void);
 
         std::string UniqueId();
+        std::string IP();
 
-    protected:
         UserPtr user;
+    protected:
 
         std::string uniqueId;
+        std::string ip;
 
 
 };

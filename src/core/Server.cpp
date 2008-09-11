@@ -220,11 +220,13 @@ bool Server::AddUserSession(server::UserSessionPtr userSession){
 }
 
 bool Server::RemoveUserSession(server::UserSessionPtr userSession){
-    {
-        boost::mutex::scoped_lock lock(this->serverMutex);
-        this->connectedUsers.erase(userSession->UniqueId());
+    if(userSession){
+        {
+            boost::mutex::scoped_lock lock(this->serverMutex);
+            this->connectedUsers.erase(userSession->UniqueId());
+        }
+        this->UserSessionsUpdated();
     }
-    this->UserSessionsUpdated();
     return true;
 }
 

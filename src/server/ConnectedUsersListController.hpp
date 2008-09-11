@@ -2,9 +2,9 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright © 2007, mC2 Team
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: mC2
 //
 // All rights reserved.
 //
@@ -38,43 +38,41 @@
 
 #pragma once
 
-#include <cube/SourcesListModel.hpp>
-#include <core/Library/Base.h>
+//////////////////////////////////////////////////////////////////////////////
 
-#include <vector>
+#include <win32cpp/ListView.hpp>
+
+//////////////////////////////////////////////////////////////////////////////
+// Forward
+namespace musik { namespace server {
+    class ConnectedUsersController;
+    class ConnectedUsersListModel;
+} }
+
+
+
+namespace musik { namespace server {
 
 //////////////////////////////////////////////////////////////////////////////
 
-using namespace win32cpp;
+class ConnectedUsersListController : public win32cpp::EventHandler{
+    public:
+        ConnectedUsersListController(win32cpp::ListView &listView,musik::server::ConnectedUsersController *connectedUsersController);
+    private:
+        void                                OnViewCreated(win32cpp::Window* window);
+        void                                OnResized(win32cpp::Window* window, win32cpp::Size size);
 
-namespace musik { namespace cube {
+        win32cpp::ListView&                 listView;
+        win32cpp::ListView::ModelRef        model;
 
-//////////////////////////////////////////////////////////////////////////////
-
-class SourcesModel
-{
-public:     typedef SourcesItemRef ItemRef;
-public:     typedef SourcesCategoryRef CategoryRef;
-private:    typedef std::vector<CategoryRef> CategoryList;
-private:    class InvalidCategoryException: public Exception { };
-
-public:     sigslot::signal1<CategoryRef>   CategoryAdded;
-public:     sigslot::signal1<CategoryRef>   CategoryRemoved;
-
-public:     /*ctor*/    SourcesModel(musik::core::LibraryPtr library);
-			musik::core::LibraryPtr library;
-
-public:     void        Load();
-
-protected:  void        AddCategory(CategoryRef category);
-protected:  void        RemoveCategory(CategoryRef category);
-protected:  void        OnActiveItemChanged(ItemRef);
-
-private:    ItemRef activeItem;
-private:    CategoryList categories;
-private:    CategoryRef playlistCategory;
+        friend class ConnectedUsersListModel;
+        win32cpp::ListView::ColumnRef       nameColumn;
+        win32cpp::ListView::ColumnRef       ipColumn;
+		
+        musik::server::ConnectedUsersController*    connectedUsersController;
 };
 
+
 //////////////////////////////////////////////////////////////////////////////
 
-} }     // musik::cube
+} }     // musik::cube::settings

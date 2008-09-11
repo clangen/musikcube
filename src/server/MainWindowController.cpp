@@ -66,15 +66,12 @@ using namespace win32cpp;
  :mainWindow(mainWindow)
  ,server(server)
  ,mainFrame(NULL)
- ,timer(200)
- ,statusLabel(NULL)
  ,syncpathController(NULL)
  ,usersController(NULL)
 {
-
-    this->mainWindow.Created.connect(
-        this, &MainWindowController::OnMainWindowCreated);
-
+    this->mainWindow.Handle()
+        ? this->OnMainWindowCreated(&this->mainWindow)
+        : this->mainWindow.Created.connect(this, &MainWindowController::OnMainWindowCreated);
 }
 
 MainWindowController::~MainWindowController()
@@ -85,33 +82,11 @@ MainWindowController::~MainWindowController()
 
 void        MainWindowController::OnMainWindowCreated(Window* window)
 {
-    
-    // Start by setting the icon
-    HICON icon16 = (HICON)LoadImage(Application::Instance(), MAKEINTRESOURCE(IDI_MAINFRAME), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-    HICON icon32 = (HICON)LoadImage(Application::Instance(), MAKEINTRESOURCE(IDI_MAINFRAME), IMAGE_ICON, 32, 32, LR_DEFAULTCOLOR);
-    SendMessage( window->Handle(), WM_SETICON, WPARAM( ICON_SMALL ), LPARAM( icon16 ) );
-    SendMessage( window->Handle(), WM_SETICON, WPARAM( ICON_BIG ), LPARAM( icon32 ) );
-
-
-    // Init Tray Icon
-    MenuRef myMenu = Menu::CreatePopup();
-
-    // Create Tray Menu
-    MenuItemRef trayExit = myMenu->Items().Append(MenuItem::Create(_T("E&xit")));
-
-    // Bind Exit to handler
-    trayExit->Activated.connect(this, &MainWindowController::OnFileExit);
-
-    UINT uidTrayIcon = Application::Instance().SysTrayManager()->AddIcon(Application::Instance().MainWindow(), icon16);
-    Application::Instance().SysTrayManager()->SetTooltip(uidTrayIcon, _T("musikServer"));
-    Application::Instance().SysTrayManager()->SetPopupMenu(uidTrayIcon, myMenu);
-    Application::Instance().SysTrayManager()->EnableMinimizeToTray(uidTrayIcon);
-
-
+    RedrawLock redrawLock(window);
 
     {
         // Set window size and position
-        musik::core::Preferences windowPrefs("ServerWindow");
+        musik::core::Preferences windowPrefs("ServerSettingsWindow");
         this->mainWindow.MoveTo(windowPrefs.GetInt("x",200), windowPrefs.GetInt("y",200));
         this->mainWindow.Resize(windowPrefs.GetInt("width",500), windowPrefs.GetInt("height",400));
         this->mainWindow.SetMinimumSize(Size(320, 240));
@@ -123,22 +98,10 @@ void        MainWindowController::OnMainWindowCreated(Window* window)
 
 
     // Create the layout
-    this->mainFrame              = new win32cpp::Frame(NULL,win32cpp::FramePadding(10));
-    win32cpp::LinearLayout *mainRowLayout   = new win32cpp::LinearLayout(win32cpp::LinearRowLayout);
-    mainRowLayout->SetSpacing(10);
-    mainRowLayout->SetDefaultChildFill(false);
-
-    // First a "Status" of the server
-    win32cpp::LinearLayout *statusColumnLayout   = mainRowLayout->AddChild( new win32cpp::LinearLayout(win32cpp::LinearColumnLayout) );
-    win32cpp::Label *statusHeader = new win32cpp::Label(_T("Server status "));
-    statusHeader->SetFont(boldFont);
-    statusColumnLayout->AddChild( statusHeader );
-    this->statusLabel   = statusColumnLayout->AddChild( new win32cpp::Label(_T("")));
+    this->mainFrame              = new win32cpp::Frame(NULL,win32cpp::FramePadding(4));
 
     // Second a TabView for the settings
-    win32cpp::TabView *tabs         = mainRowLayout->AddChild( new win32cpp::TabView() );
-    mainRowLayout->SetChildFill(tabs,true);
-    mainRowLayout->SetFlexibleChild(tabs);
+    win32cpp::TabView *tabs         = this->mainFrame->AddChild( new win32cpp::TabView() );
 
     // Syncpath tab
     SyncpathView *synpathView   = tabs->AddTab(uistring(_T("Sync paths")), new SyncpathView());
@@ -151,28 +114,18 @@ void        MainWindowController::OnMainWindowCreated(Window* window)
     // Settings tab
     Frame *settingsView   = tabs->AddTab(uistring(_T("Settings")), new Frame());
 
-
-    this->mainFrame->AddChild(mainRowLayout);
     this->mainWindow.AddChild(mainFrame);
 
     // Connect size and position signals
     this->mainWindow.Resized.connect(this, &MainWindowController::OnResize);
     this->mainWindow.Destroyed.connect(this, &MainWindowController::OnDestroyed);
 
-    // Start the status timer
-    this->timer.OnTimeout.connect(this,&MainWindowController::UpdateStatus);
-    this->timer.ConnectToWindow(&this->mainWindow);
-    this->timer.Start();
 
-
-
-    this->mainWindow.Show(SW_MINIMIZE);
-    this->mainWindow.Show(SW_HIDE);
 }
 
 void MainWindowController::OnResize(Window* window, Size size)
 {
-    RedrawLock redrawLock(this->mainFrame);
+    RedrawLock redrawLock(window);
     this->mainFrame->Resize(this->mainWindow.ClientSize());
 }
 
@@ -180,20 +133,10 @@ void MainWindowController::OnDestroyed(Window* window)
 {
     Point location( window->Location() );
     Size size( window->WindowSize() );
-    musik::core::Preferences windowPrefs("ServerWindow");
+    musik::core::Preferences windowPrefs("ServerSettingsWindow");
     windowPrefs.SetInt("x",location.x);
     windowPrefs.SetInt("y",location.y);
     windowPrefs.SetInt("width",size.width);
     windowPrefs.SetInt("height",size.height);
 }
 
-void MainWindowController::UpdateStatus(){
-    if(this->statusLabel && this->server){
-        this->statusLabel->SetCaption( this->server->indexer.GetStatus() );
-    }
-}
-
-void MainWindowController::OnFileExit(MenuItemRef menuItem)
-{
-    Application::Instance().Terminate();
-}

@@ -71,6 +71,7 @@ void        MainMenuController::ConnectMenuHandlers()
     this->helpAbout->Activated.connect(this, &MainMenuController::OnHelpAbout);
     this->fileAddLibraryLocal->Activated.connect(this,&MainMenuController::OnAddLibraryLocal);
     this->fileAddLibraryRemote->Activated.connect(this,&MainMenuController::OnAddLibraryRemote);
+    this->fileNewPlaylist->Activated.connect(this,&MainMenuController::OnNewPlaylist);
 }
 
 void        MainMenuController::OnFileExit(MenuItemRef menuItem)
@@ -138,6 +139,10 @@ void        MainMenuController::OnHelpAbout(MenuItemRef menuItem)
         MB_ICONINFORMATION | MB_OK);
 }
 
+void MainMenuController::OnNewPlaylist(MenuItemRef menuItem){
+}
+
+
 MenuRef     MainMenuController::CreateMenu()
 {
     // main menu
@@ -156,12 +161,13 @@ MenuRef     MainMenuController::CreateMenu()
         //
         this->file->SetSubMenu(this->fileMenu);
 
+        MenuItemRef addLibraryMenu  = fileItems.Append(MenuItem::Create(_(_T("&New Library"))));
         MenuRef addLibrarySubmenu   = Menu::Create();
         this->fileAddLibraryLocal   = addLibrarySubmenu->Items().Append(MenuItem::Create(_(_T("&Local library"))));
         this->fileAddLibraryRemote  = addLibrarySubmenu->Items().Append(MenuItem::Create(_(_T("&Remote library"))));
-
-        MenuItemRef addLibraryMenu  = fileItems.Append(MenuItem::Create(_(_T("&Add Library"))));
         addLibraryMenu->SetSubMenu(addLibrarySubmenu);
+
+        this->fileNewPlaylist       = fileItems.Append(MenuItem::Create(_(_T("&New Playlist"))));
 
         this->fileExit              = fileItems.Append(MenuItem::Create(_(_T("E&xit"))));
 

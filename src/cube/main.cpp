@@ -40,6 +40,7 @@
 #include <cube/MainWindowController.hpp>
 #include <win32cpp/Application.hpp>
 #include <win32cpp/TopLevelWindow.hpp>
+#include <core/Common.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -52,19 +53,11 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE prevInstance, LPTSTR commandLi
 
     // Initialize locale
     try {
-        Locale::Instance()->SetLocaleDirectory(_T("locales"));
+		uistring appDirectory( musik::core::GetApplicationDirectory() );
+        Locale::Instance()->SetLocaleDirectory(appDirectory);
+	    Locale::Instance()->LoadConfig(_T("english"));
     }
-    catch(win32cpp::Win32Exception& e) {
-        MessageBox(NULL, WidenString(e.Message()).c_str(), _T("Error while initializing locale"), MB_ICONERROR | MB_OK);
-        return -1;
-    }
-    catch(Exception& e) {
-        MessageBox(NULL, WidenString(e.Message()).c_str(), _T("Error while initializing locale"), MB_ICONERROR | MB_OK);
-        return -2;
-    }
-    if(!Locale::Instance()->LoadConfig(_T("english"))) {
-        MessageBox(NULL, _T("Cannot load config!"), _T("Error while initializing locale"), MB_ICONERROR | MB_OK);
-        return -3;
+    catch(...) {
     }
 
     // Initialize the main application (mC2.exe)

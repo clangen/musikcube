@@ -77,6 +77,7 @@ public: // methods
     
     template <typename WindowType>
     WindowType* RemoveTab(WindowType* window);
+    Window* ActiveWindow();
 
 protected: // methods
     virtual HWND    Create(Window* parent);

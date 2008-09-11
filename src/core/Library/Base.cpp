@@ -55,6 +55,7 @@ Library::Base::Base(utfstring identifier)
  :identifier(identifier)
  ,queueCallbackStarted(false)
  ,exit(false)
+ ,userId(1)
 {
 }
 
@@ -694,3 +695,11 @@ void Library::Base::CreateDatabase(db::Connection &db){
 utfstring Library::Base::BasePath(){
     return UTF("");
 }
+
+LibraryPtr Library::Base::GetSelfPtr(){
+    if(LibraryPtr thisPtr = this->self.lock()){
+        return thisPtr;
+    }
+    return LibraryPtr();
+}
+

@@ -2,9 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
-//
-// Sources and Binaries of: mC2, win32cpp
+// The following are Copyright © 2007, mC2 team
 //
 // All rights reserved.
 //
@@ -38,43 +36,59 @@
 
 #pragma once
 
-#include <cube/SourcesListModel.hpp>
-#include <core/Library/Base.h>
+//////////////////////////////////////////////////////////////////////////////
+// Forward declare
+namespace win32cpp{
+    class TopLevelWindow;
+    class Label;
+    class Frame;
+}
+namespace musik { namespace server {
+    class MainWindowController;
+    class ConnectedUsersListController;
+} }
+//////////////////////////////////////////////////////////////////////////////
 
-#include <vector>
+#include <core/Server.h>
+#include <win32cpp/Timer.hpp>
+#include <boost/shared_ptr.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
 using namespace win32cpp;
 
-namespace musik { namespace cube {
+namespace musik { namespace server {
 
 //////////////////////////////////////////////////////////////////////////////
 
-class SourcesModel
+class ConnectedUsersController : public EventHandler
 {
-public:     typedef SourcesItemRef ItemRef;
-public:     typedef SourcesCategoryRef CategoryRef;
-private:    typedef std::vector<CategoryRef> CategoryList;
-private:    class InvalidCategoryException: public Exception { };
+    public:
+        ConnectedUsersController(TopLevelWindow& mainWindow,musik::core::ServerPtr server);
+        ~ConnectedUsersController();
 
-public:     sigslot::signal1<CategoryRef>   CategoryAdded;
-public:     sigslot::signal1<CategoryRef>   CategoryRemoved;
+        musik::core::ServerPtr server;
+    protected:  
+        void OnMainWindowCreated(Window* window);
+        void OnResize(Window* window, Size size);
+        void OnDestroyed(Window* window);
+        void OnFileExit(MenuItemRef menuItem);
+        void OnSettings(MenuItemRef menuItem);
 
-public:     /*ctor*/    SourcesModel(musik::core::LibraryPtr library);
-			musik::core::LibraryPtr library;
+        void UpdateStatus();
+        void UpdateUserlist();
 
-public:     void        Load();
+    protected:  
+        TopLevelWindow& mainWindow;
+        win32cpp::Label *statusLabel;
+        win32cpp::Frame *mainFrame;
 
-protected:  void        AddCategory(CategoryRef category);
-protected:  void        RemoveCategory(CategoryRef category);
-protected:  void        OnActiveItemChanged(ItemRef);
+        win32cpp::Timer timer;
 
-private:    ItemRef activeItem;
-private:    CategoryList categories;
-private:    CategoryRef playlistCategory;
+        ConnectedUsersListController *listViewController;
+
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-} }     // musik::cube
+} }     // musik::server

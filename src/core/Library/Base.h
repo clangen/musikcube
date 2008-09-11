@@ -269,6 +269,9 @@ class Base : boost::noncopyable{
         boost::mutex libraryMutex;
 		LibraryWeakPtr self;
 
+        LibraryPtr GetSelfPtr();
+
+        int userId;
 
 };
 

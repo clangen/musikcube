@@ -39,6 +39,7 @@
 #include <win32cpp/TopLevelWindow.hpp>
 #include <core/config.h>
 #include <core/Server.h>
+#include <server/ConnectedUsersController.hpp>
 #include <server/MainWindowController.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
@@ -59,7 +60,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE prevInstance, LPTSTR commandLi
 
     // Create the main window and its controller
     TopLevelWindow mainWindow(_T("musikServer"));
-    MainWindowController mainController(mainWindow,server);
+    ConnectedUsersController mainController(mainWindow,server);
 
     // Initialize and show the main window, and run the event loop.
     Application::Instance().Run(mainWindow);

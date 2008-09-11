@@ -211,3 +211,8 @@ Window*     TabView::WindowForTabIndex(int tabIndex)
 
     return NULL;
 }
+
+Window* TabView::ActiveWindow()
+{ 
+    return this->WindowForTabIndex(TabCtrl_GetCurSel(this->Handle())); 
+}

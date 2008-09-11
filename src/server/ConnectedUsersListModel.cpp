@@ -2,9 +2,9 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright © 2007, mC2 Team
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: mC2
 //
 // All rights reserved.
 //
@@ -36,45 +36,61 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
-#include <cube/SourcesListModel.hpp>
-#include <core/Library/Base.h>
-
-#include <vector>
+#include "pch.hpp"
+#include <server/ConnectedUsersListModel.hpp>
+#include <server/ConnectedUsersController.hpp>
+#include <win32cpp/ApplicationThread.hpp>
+#include <core/Server.h>
+#include <core/Common.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
+using namespace musik::server;
 using namespace win32cpp;
 
-namespace musik { namespace cube {
-
 //////////////////////////////////////////////////////////////////////////////
 
-class SourcesModel
+ConnectedUsersListModel::ConnectedUsersListModel(ConnectedUsersListController *controller)
+: controller(controller)
 {
-public:     typedef SourcesItemRef ItemRef;
-public:     typedef SourcesCategoryRef CategoryRef;
-private:    typedef std::vector<CategoryRef> CategoryList;
-private:    class InvalidCategoryException: public Exception { };
+    musik::core::ServerPtr server   = this->controller->connectedUsersController->server;
+    if(server){
+        server->UserSessionsUpdated.connect(this,&ConnectedUsersListModel::OnUsersUpdated);
+    }
+    this->UpdateUsers();
 
-public:     sigslot::signal1<CategoryRef>   CategoryAdded;
-public:     sigslot::signal1<CategoryRef>   CategoryRemoved;
+}
 
-public:     /*ctor*/    SourcesModel(musik::core::LibraryPtr library);
-			musik::core::LibraryPtr library;
 
-public:     void        Load();
+uistring ConnectedUsersListModel::CellValueToString(int rowIndex, ListView::ColumnRef column){
+    if(rowIndex<this->users.size() && rowIndex>=0){
+        if(column==this->controller->ipColumn){
+            return musik::core::ConvertUTF16(this->users[rowIndex]->IP());
+        }
+        return this->users[rowIndex]->user->Name();
+    }
 
-protected:  void        AddCategory(CategoryRef category);
-protected:  void        RemoveCategory(CategoryRef category);
-protected:  void        OnActiveItemChanged(ItemRef);
+    return uistring();
+}
 
-private:    ItemRef activeItem;
-private:    CategoryList categories;
-private:    CategoryRef playlistCategory;
-};
+void ConnectedUsersListModel::UpdateUsers(){
+    musik::core::ServerPtr server   = this->controller->connectedUsersController->server;
+    if(server){
+        this->users = server->ConnectedUserSessions();
+    }
 
-//////////////////////////////////////////////////////////////////////////////
+    this->SetRowCount(0);
+    this->SetRowCount((int)this->users.size());
 
-} }     // musik::cube
+}
+
+void ConnectedUsersListModel::OnUsersUpdated(){
+    if(!win32cpp::ApplicationThread::InMainThread()){
+        win32cpp::ApplicationThread::Call0(this,&ConnectedUsersListModel::OnUsersUpdated);
+        return;
+    }
+
+    this->UpdateUsers();
+
+}
+
