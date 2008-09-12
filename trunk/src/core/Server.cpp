@@ -56,10 +56,15 @@ Server::Server(unsigned int port,unsigned int httpPort)
 }
 
 Server::~Server(void){
-    this->connections.clear();
-    this->nextConnection.reset();
-
     this->Exit();
+
+    {
+        boost::mutex::scoped_lock lock(this->serverMutex);
+        this->connectedUsers.clear();
+        this->connections.clear();
+    }
+
+    this->nextConnection.reset();
 
     this->threads.join_all();
 }
@@ -136,17 +141,22 @@ void Server::SetNextConnection(){
 
 void Server::AcceptConnection(const boost::system::error_code& error){
     if(!error){
-        this->CleanupConnections();
-
         // Start the connection
         this->nextConnection->Startup();
 
-        this->connections.push_back(this->nextConnection);
-        this->SetNextConnection();
+        {
+            boost::mutex::scoped_lock lock(this->serverMutex);
+
+            this->connections.push_back(this->nextConnection);
+            this->SetNextConnection();
+        }
+
+        this->CleanupConnections();
     }
 }
 
 void Server::CleanupConnections(){
+    boost::mutex::scoped_lock lock(this->serverMutex);
     for(server::ConnectionVector::iterator connection=this->connections.begin();connection!=this->connections.end();){
         if( (*connection)->Exited() ){
             connection  = this->connections.erase(connection);
