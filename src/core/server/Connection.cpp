@@ -268,7 +268,7 @@ void Connection::WriteThread(){
             // Wait for outgoingQueries
             {
                 boost::mutex::scoped_lock lock(this->libraryMutex);
-                if(this->outgoingQueries.empty()){
+                if(this->outgoingQueries.empty() && !this->exit){
                     this->waitCondition.wait(lock);
                 }
 
@@ -337,4 +337,5 @@ void Connection::Exit(){
         this->exit    = true;
     }
     this->waitCondition.notify_all();
+    this->authCondition.notify_all();
 }

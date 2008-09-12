@@ -76,7 +76,7 @@ void SyncPathModel::UpdateSyncPaths(){
     }
 
     this->SetRowCount(0);
-    this->SetRowCount(this->paths.size());
+    this->SetRowCount((int)this->paths.size());
 
 }
 

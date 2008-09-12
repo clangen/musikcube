@@ -51,7 +51,8 @@ std::string Crypt::GenerateSalt(){
 
     typedef boost::mt19937 RandomGenerator;
     RandomGenerator randomGenerator;
-
+    
+    randomGenerator.seed(static_cast<unsigned int>(std::time(0)));
 
     boost::uniform_int<> randDistribution(0,(int)characters.size()-1);
     boost::variate_generator<RandomGenerator&, boost::uniform_int<> > rand(randomGenerator, randDistribution);
