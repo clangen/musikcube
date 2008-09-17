@@ -73,10 +73,11 @@ public:
 	musik::core::LibraryPtr library;
 
 private:    
-	void        OnViewCreated(Window* window);
-	void        OnActiveItemChanged(ItemRef newItem);
-	void        OnModelCategoryAdded(CategoryRef category);
-	void        OnModelCategoryRemoved(CategoryRef category);
+	void OnViewCreated(Window* window);
+	void OnActiveItemChanged(ItemRef newItem);
+	void OnModelCategoryAdded(CategoryRef category);
+	void OnModelCategoryRemoved(CategoryRef category);
+	void OnNewPlaylist(void* data);
 
 protected:  
 	SourcesView& view;
@@ -87,6 +88,9 @@ protected:
 	void QueryQueueStart();
 	void QueryQueueEnd();
 	void QueryQueueLoop();
+
+	void UpdatePlaylists();
+	void OnPlaylists(std::vector<musik::core::tracklist::Ptr> trackLists);
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -104,7 +108,9 @@ private:    void            OnListCreated(Window* window);
 private:    void            OnListSelectionChanged(ListView* listView);
 
 private:    ListView& listView;
-private:    ListModelRef sourcesListModel;
+private:    
+	friend class SourcesController;
+	ListModelRef sourcesListModel;
 };
 
 //////////////////////////////////////////////////////////////////////////////

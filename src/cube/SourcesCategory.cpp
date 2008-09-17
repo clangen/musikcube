@@ -75,7 +75,16 @@ SourcesItemRef  SourcesCategory::Add(SourcesItemRef item)
     return item;
 }
 
-SourcesItemRef  SourcesCategory::Remove(SourcesItemRef item)
+void SourcesCategory::Remove(SourcesItemRef item)
 {
-    throw NotImplementedException();
+	for(SourcesItemList::iterator it=this->items.begin();it!=this->items.end();){
+		if(item==*it){
+			it	= this->items.erase(it);
+		}else{
+			++it;
+		}
+	}
+    this->CountChanged((int) this->items.size());
+
+    //throw NotImplementedException();
 }

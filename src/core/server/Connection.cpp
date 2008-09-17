@@ -272,7 +272,7 @@ void Connection::WriteThread(){
                     this->waitCondition.wait(lock);
                 }
 
-                if(!this->outgoingQueries.empty()){
+                if(!this->outgoingQueries.empty() && !this->exit){
                     sendQuery   = this->outgoingQueries.front();
                 }
             }
@@ -329,12 +329,12 @@ void Connection::Exit(){
     {
         boost::mutex::scoped_lock lock(this->libraryMutex);
         if(!this->exit){
+	        this->exit    = true;
             if(this->socket.is_open()){
                 this->socket.close();
             }
 		    this->server->RemoveUserSession(this->userSession);
         }
-        this->exit    = true;
     }
     this->waitCondition.notify_all();
     this->authCondition.notify_all();

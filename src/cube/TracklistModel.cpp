@@ -43,6 +43,7 @@
 #include "pch.hpp"
 #include <cube/TracklistModel.hpp>
 #include <cube/TracklistColumn.hpp>
+#include <cube/TracklistController.hpp>
 
 #include <win32cpp/Utility.hpp>
 #include <win32cpp/ApplicationThread.hpp>
@@ -58,8 +59,9 @@ using namespace musik::cube;
 
 //////////////////////////////////////////////////////////////////////////////
 
-/*ctor*/        TracklistModel::TracklistModel(musik::core::Query::ListBase *connectedQuery,musik::core::tracklist::Ptr setTracklist)
+/*ctor*/        TracklistModel::TracklistModel(musik::core::Query::ListBase *connectedQuery,musik::core::tracklist::Ptr setTracklist,unsigned int options)
 : currentPosition(-1)
+, options(options)
 {
 
 	this->tracklist = setTracklist;
@@ -103,7 +105,7 @@ uistring            TracklistModel::CellValueToString(int rowIndex, ColumnRef co
                     return win32cpp::Escape(result);
                     break;
             }
-            if(rowIndex==this->currentPosition){
+			if(rowIndex==this->currentPosition && this->options&TracklistController::HighlightActive){
     			return win32cpp::Escape(value)+_T("***");
             }
 			return win32cpp::Escape(value);

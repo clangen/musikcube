@@ -48,11 +48,13 @@ namespace win32cpp{
 }
 namespace musik { namespace cube {
     class LibraryWindowView;
+	class SourcesView;
+	class SourcesController;
 } }
 //////////////////////////////////////////////////////////////////////////////
 
 #include <core/Library/Base.h>
-#include <cube/SourcesController.hpp>
+#include <core/MessageQueue.h>
 #include <win32cpp/Timer.hpp>
 #include <win32cpp/Types.hpp>
 
@@ -69,23 +71,27 @@ namespace musik { namespace cube {
 
 class LibraryWindowController : public EventHandler
 {
-public:     /*ctor*/    LibraryWindowController(LibraryWindowView& view);
-public:     /*dtor*/    ~LibraryWindowController();
+	public:
+		LibraryWindowController(LibraryWindowView& view);
+		~LibraryWindowController();
 
-protected:  
-			void OnViewCreated(Window* window);
-			void OnResize(Window* window, Size size);
+	protected:  
+		void OnViewCreated(Window* window);
+		void OnResize(Window* window, Size size);
 
-            void UpdateLibraryTabs();
+        void UpdateLibraryTabs();
 
-			LibraryWindowView& view;
-//			SourcesController* sourcesController;
+		void OnLibraryMessage(const char* identifier,void* data);
 
-			typedef boost::shared_ptr<SourcesController> SourcesControllerPtr;
-			typedef std::vector<SourcesControllerPtr> LibraryWindowVector;
+		LibraryWindowView& view;
 
-			LibraryWindowVector libraries;
+		typedef boost::shared_ptr<SourcesController> SourcesControllerPtr;
+		typedef std::map<SourcesView*,SourcesControllerPtr> SourcesMap;
 
+		SourcesMap libraries;
+	public:
+
+		SourcesController* CurrentSourceController();
 
 };
 

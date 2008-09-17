@@ -180,6 +180,9 @@ utfstring Library::Base::GetDBPath(){
 //////////////////////////////////////////
 bool Library::Base::AddQuery( const Query::Base &query,unsigned int options ){
 
+	if(this->Exited()){
+		return false;
+	}
 
     // Start by making a copy
     Query::Ptr queryCopy( query.copy() );

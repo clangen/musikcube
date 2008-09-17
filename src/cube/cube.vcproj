@@ -102,7 +102,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="copy &quot;$(SolutionDir)\src\3rdparty\vld\*.*&quot; &quot;$(TargetDir)&quot;&#x0D;&#x0A;xcopy /y /s &quot;$(SolutionDir)\data&quot; &quot;$(TargetDir)&quot;"
+				CommandLine="copy &quot;$(SolutionDir)\src\3rdparty\vld\*.*&quot; &quot;$(TargetDir)&quot;&#x0D;&#x0A;xcopy /y /s &quot;$(SolutionDir)\data&quot; &quot;$(TargetDir)&quot;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -470,6 +470,26 @@
 				</File>
 				<File
 					RelativePath=".\dialog\AddLibraryView.hpp"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="NewPlaylist"
+				>
+				<File
+					RelativePath=".\dialog\NewPlaylistController.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\dialog\NewPlaylistController.hpp"
+					>
+				</File>
+				<File
+					RelativePath=".\dialog\NewPlaylistView.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\dialog\NewPlaylistView.hpp"
 					>
 				</File>
 			</Filter>

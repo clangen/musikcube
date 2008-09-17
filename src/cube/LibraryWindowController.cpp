@@ -40,6 +40,7 @@
 #include <cube/LibraryWindowController.hpp>
 #include <cube/LibraryWindowView.hpp>
 #include <cube/SourcesView.hpp>
+#include <cube/SourcesController.hpp>
 
 #include <core/LibraryFactory.h>
 #include <core/Pluginfactory.h>
@@ -79,6 +80,8 @@ void        LibraryWindowController::OnViewCreated(Window* window)
     this->UpdateLibraryTabs();
     LibraryFactory::Instance().LibrariesUpdated.connect(this,&LibraryWindowController::UpdateLibraryTabs);
 
+	// Connect to the MessageQueue
+	musik::core::MessageQueue::EventController().connect(this,&LibraryWindowController::OnLibraryMessage);
 }
 
 void LibraryWindowController::UpdateLibraryTabs(){
@@ -95,15 +98,15 @@ void LibraryWindowController::UpdateLibraryTabs(){
 
         // check if library already exist
         bool found(false);
-        for(LibraryWindowVector::iterator libraryWindow=this->libraries.begin();libraryWindow!=this->libraries.end() && !found;++libraryWindow){
-            if( (*libraryWindow)->library->Identifier()==libraryId ){
+        for(SourcesMap::iterator libraryWindow=this->libraries.begin();libraryWindow!=this->libraries.end() && !found;++libraryWindow){
+            if( libraryWindow->second->library->Identifier()==libraryId ){
                 found   = true;
             }
         }
 
         if(!found){
             SourcesView* sourcesView = new SourcesView();
-            this->libraries.push_back(SourcesControllerPtr(new SourcesController(*sourcesView,*library)));
+            this->libraries[sourcesView]	= SourcesControllerPtr(new SourcesController(*sourcesView,*library));
             this->view.AddTab( (*library)->Identifier() ,sourcesView);
         }
 
@@ -115,3 +118,23 @@ void LibraryWindowController::OnResize(Window* window, Size size)
     RedrawLock redrawLock(&this->view);
 //    this->clientView->Resize(this->mainWindow.ClientSize());
 }
+
+SourcesController* LibraryWindowController::CurrentSourceController(){
+	SourcesView *sourcesView	= (SourcesView*)this->view.ActiveWindow();
+
+	SourcesMap::iterator foundLibrary	= this->libraries.find(sourcesView);
+	if(foundLibrary!=this->libraries.end()){
+		return foundLibrary->second.get();
+	}
+	return NULL;
+}
+
+void LibraryWindowController::OnLibraryMessage(const char* identifier,void* data){
+	if(!data){
+		SourcesController* sourcesController	= this->CurrentSourceController();
+		if(sourcesController){
+			musik::core::MessageQueue::SendMessage(identifier,sourcesController->library.get());
+		}
+	}
+}
+

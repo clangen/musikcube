@@ -65,6 +65,11 @@ namespace musik { namespace cube {
 
 class TracklistController : public EventHandler
 {
+public:
+	enum Options:unsigned int{
+		HighlightActive=1,
+		Deletable=2
+	};
 private:    
     typedef ListView::ColumnRef ColumnRef;
     typedef std::vector<ColumnRef> ColumnList;
@@ -74,7 +79,10 @@ public:
     /*ctor*/    TracklistController(
                     TracklistView& listView,
                     musik::core::Query::ListBase *connectedQuery,
-                    musik::core::tracklist::Ptr tracklist);
+                    musik::core::tracklist::Ptr tracklist,
+					unsigned int options=0);
+
+	musik::core::tracklist::Ptr Tracklist();
 
 private:  
     void        OnViewCreated(Window* window);
@@ -91,6 +99,7 @@ private:
     ColumnList columns;
     win32cpp::MenuRef contextMenu;
     musik::core::Query::SortTracks sortQuery;
+	unsigned int options;
 
 };
 

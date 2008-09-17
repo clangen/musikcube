@@ -81,6 +81,7 @@ public:     /*ctor*/        SourcesListModel();
 public:     CategoryRef     AddCategory(CategoryRef category);
 public:     CategoryRef     RemoveCategory(CategoryRef category);
 public:     void            SelectedRowChanged(int newIndex);
+public:		void			Update();
 
         // private API
 private:    int             VisibleItemCount();

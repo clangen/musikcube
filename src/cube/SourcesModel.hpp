@@ -40,8 +40,10 @@
 
 #include <cube/SourcesListModel.hpp>
 #include <core/Library/Base.h>
+#include <core/Track.h>
 
 #include <vector>
+#include <map>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -49,30 +51,50 @@ using namespace win32cpp;
 
 namespace musik { namespace cube {
 
+// Forward
+class SourcesController;
+
 //////////////////////////////////////////////////////////////////////////////
 
 class SourcesModel
 {
-public:     typedef SourcesItemRef ItemRef;
-public:     typedef SourcesCategoryRef CategoryRef;
-private:    typedef std::vector<CategoryRef> CategoryList;
-private:    class InvalidCategoryException: public Exception { };
+	public:     
+		typedef SourcesItemRef ItemRef;
+		typedef SourcesCategoryRef CategoryRef;
+	private:
+		typedef std::vector<CategoryRef> CategoryList;
+		
+		class InvalidCategoryException: public Exception { };
 
-public:     sigslot::signal1<CategoryRef>   CategoryAdded;
-public:     sigslot::signal1<CategoryRef>   CategoryRemoved;
+		sigslot::signal1<CategoryRef>   CategoryAdded;
+		sigslot::signal1<CategoryRef>   CategoryRemoved;
 
-public:     /*ctor*/    SourcesModel(musik::core::LibraryPtr library);
-			musik::core::LibraryPtr library;
+	public:     
+		/*ctor*/    SourcesModel(musik::core::LibraryPtr library);
+		musik::core::LibraryPtr library;
 
-public:     void        Load();
+	public:     
+		void Load();
 
-protected:  void        AddCategory(CategoryRef category);
-protected:  void        RemoveCategory(CategoryRef category);
-protected:  void        OnActiveItemChanged(ItemRef);
+	protected:  
+		void AddCategory(CategoryRef category);
+		void RemoveCategory(CategoryRef category);
+		void OnActiveItemChanged(ItemRef);
 
-private:    ItemRef activeItem;
-private:    CategoryList categories;
-private:    CategoryRef playlistCategory;
+		typedef std::vector<musik::core::tracklist::Ptr> PlaylistVector;
+
+		typedef std::map<musik::core::tracklist::Ptr,SourcesItemRef> PlaylistItemMap;
+		PlaylistItemMap playlistItemsMap;
+
+	private:    
+		ItemRef activeItem;
+		CategoryList categories;
+		CategoryRef playlistCategory;
+
+	protected:
+		friend class SourcesController;
+		void OnPlaylists(PlaylistVector &playlists);
+
 };
 
 //////////////////////////////////////////////////////////////////////////////

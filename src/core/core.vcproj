@@ -213,6 +213,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\MessageQueue.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\MessageQueue.h"
+					>
+				</File>
+				<File
 					RelativePath=".\Preferences.cpp"
 					>
 				</File>

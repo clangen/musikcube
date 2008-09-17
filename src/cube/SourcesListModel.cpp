@@ -172,6 +172,12 @@ CategoryRef        SourcesListModel::RemoveCategory(CategoryRef category)
     throw InvalidSourcesCategoryException();
 }
 
+void SourcesListModel::Update(){
+    this->IndexCategories();
+    this->SetRowCount(this->VisibleItemCount());
+}
+
+
 void                SourcesListModel::IndexCategories()
 {
     this->categoryIndexMap.clear();

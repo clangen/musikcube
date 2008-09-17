@@ -66,7 +66,7 @@ public:     uistring        Caption() const;
 public:     int             Count() const;
 public:     SourcesItemRef  ItemAt(int index) const;
 public:     SourcesItemRef  Add(SourcesItemRef item);
-public:     SourcesItemRef  Remove(SourcesItemRef item);
+public:     void			Remove(SourcesItemRef item);
 
 private:    typedef std::vector<SourcesItemRef> SourcesItemList;
 private:    uistring caption;

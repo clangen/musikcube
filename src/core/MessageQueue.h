@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, mC2 team
+// The following are Copyright © 2008, Daniel Önnerby
 //
 // All rights reserved.
 //
@@ -34,36 +34,48 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.hpp"
-#include <core/tracklist/Playlist.h>
+#pragma once
 
-#include <core/Query/PlaylistLoad.h>
-
-//////////////////////////////////////////////////////////////////////////////
-
-using namespace musik::core::tracklist;
+#include <sigslot/sigslot.h>
+#include <map>
+#include <string>
 
 //////////////////////////////////////////////////////////////////////////////
 
-Playlist::Playlist(int id,utfstring name,musik::core::LibraryPtr library) 
-:Standard()
-,id(0)
-,name(name)
-{
-    this->SetLibrary(library);
+namespace musik { namespace core {
 
-    // Start by creating a query that loads the tracks
-}
+//////////////////////////////////////////////////////////////////////////////
+
+struct MessageQueueData{
+	MessageQueueData();
+	virtual ~MessageQueueData();
+};
+
+class MessageQueue {
+    
+    public:
+        typedef sigslot::signal2<const char*,void*> ControllerEventSignal;
+        typedef sigslot::signal1<void*> EventSignal;
+
+        static ControllerEventSignal& EventController();
+        static EventSignal& MessageEvent(const char* identifier);
+        static void SendMessage(const char* identifier,void* data=NULL);
 
 
-Playlist::~Playlist(void){
-}
+    private:
+        ~MessageQueue();
+        MessageQueue();
 
-utfstring Playlist::Name(){
-    return this->name;
-}
+        //static MessageQueue& Instance();
+    private:
+        // The one and only instance
+        static MessageQueue sInstance;
 
-int Playlist::Id(){
-    return this->id;
-}
+        typedef std::map<std::string,EventSignal> EventSignalMap;
+        EventSignalMap eventMap;
+        ControllerEventSignal controllerEvent;
+};
 
+//////////////////////////////////////////////////////////////////////////////
+} } // musik::core
+//////////////////////////////////////////////////////////////////////////////
