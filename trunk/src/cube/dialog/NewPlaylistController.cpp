@@ -2,9 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
-//
-// Sources and Binaries of: mC2, win32cpp
+// The following are Copyright © 2007, mC2 Team
 //
 // All rights reserved.
 //
@@ -36,63 +34,56 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "pch.hpp"
+
+#include <cube/dialog/NewPlaylistController.hpp>
+#include <core/Library/Base.h>
+#include <core/Query/PlaylistSave.h>
+#include <core/MessageQueue.h>
+
+#include <win32cpp/Window.hpp>
+#include <win32cpp/Button.hpp>
+#include <win32cpp/EditView.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
-// Forward declare
-namespace musik{ namespace core{ namespace Query{
-    class ListBase;
-} } }
-//////////////////////////////////////////////////////////////////////////////
 
-#include <win32cpp/ListView.hpp>
-#include <core/tracklist/IRandomAccess.h>
-
-//////////////////////////////////////////////////////////////////////////////
-
+using namespace musik::cube::dialog;
 using namespace win32cpp;
 
-namespace musik { namespace cube {
-
 //////////////////////////////////////////////////////////////////////////////
 
-class TracklistModel: public ListView::Model, public EventHandler
+NewPlaylistController::NewPlaylistController(win32cpp::TopLevelWindow &mainWindow,musik::core::LibraryPtr library)
+:mainWindow(mainWindow)
+,library(library)
 {
-        // typedefs
-public:     
-    typedef ListView::Model base;
-    typedef ListView::RowRendererRef RowRendererRef;
-    typedef ListView::CellRendererRef CellRendererRef;
-    typedef ListView::ColumnRef ColumnRef;
+    this->view  = new NewPlaylistView();
+    this->mainWindow.AddChild(this->view);
+    
+    this->view->Handle()
+        ? this->OnViewCreated(this->view)
+        : this->view->Created.connect(this, &NewPlaylistController::OnViewCreated);
+    
+}
 
-        // public API
-    TracklistModel(
-        musik::core::Query::ListBase *connectedQuery,
-        musik::core::tracklist::Ptr setTracklist,
-		unsigned int options);
+NewPlaylistController::~NewPlaylistController(){
+}
 
-    void ConnectToQuery(musik::core::Query::ListBase *connectedQuery);
-    void OnRowActivated(int row);
+void NewPlaylistController::OnViewCreated(Window* window)
+{
+    this->view->cancelButton->Pressed.connect(this,&NewPlaylistController::OnCancel);
+    this->view->okButton->Pressed.connect(this,&NewPlaylistController::OnOK);
+}
 
-    void OnPlayNow(win32cpp::ListView::RowIndexList& selectedRows);
-    void OnEnqueue(win32cpp::ListView::RowIndexList& selectedRows);
+void NewPlaylistController::OnCancel(win32cpp::Button* button){
+    this->mainWindow.Close();
+}
 
-    // ListView::Model implementation
-    virtual uistring CellValueToString(int rowIndex, ColumnRef column);
+void NewPlaylistController::OnOK(win32cpp::Button* button){
 
-    // instance data
-protected:  
-    void OnTrackMeta(std::vector<int> &trackPositions);
-    void OnTracks(bool cleared);
-    void OnPositionChanged(int activeRow,int oldActiveRow);
+	musik::core::Query::PlaylistSave savePlaylistQuery;
+	savePlaylistQuery.SavePlaylist( this->view->name->Caption() );
 
-    int currentPosition;
-	unsigned int options;
-public:     
-    musik::core::tracklist::Ptr tracklist;    // FIXME: no public fields!
+	this->library->AddQuery(savePlaylistQuery,musik::core::Query::UnCanceable);
 
-};
-
-//////////////////////////////////////////////////////////////////////////////
-
-} }     // musik::cube
+	this->mainWindow.Close();
+}

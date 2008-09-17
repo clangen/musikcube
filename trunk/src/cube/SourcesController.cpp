@@ -39,6 +39,10 @@
 #include <cube/SourcesController.hpp>
 #include <cube/SourcesListModel.hpp>
 #include <cube/SourcesView.hpp>
+#include <cube/dialog/NewPlaylistController.hpp>
+
+#include <core/MessageQueue.h>
+#include <core/Query/Playlists.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -68,6 +72,8 @@ using namespace musik::cube;
     library->OnQueryQueueStart.connect(this,&SourcesController::QueryQueueStart);
     library->OnQueryQueueEnd.connect(this,&SourcesController::QueryQueueEnd);
 
+	musik::core::MessageQueue::MessageEvent("NewPlaylist").connect(this,&SourcesController::OnNewPlaylist);
+
 }
 
 void        SourcesController::OnViewCreated(Window* window)
@@ -75,6 +81,9 @@ void        SourcesController::OnViewCreated(Window* window)
     this->model.CategoryAdded.connect(this, &SourcesController::OnModelCategoryAdded);
     this->model.CategoryRemoved.connect(this, &SourcesController::OnModelCategoryRemoved);
     this->model.Load();
+
+	this->UpdatePlaylists();
+
 }
 
 void        SourcesController::OnModelCategoryAdded(CategoryRef category)
@@ -116,6 +125,32 @@ void SourcesController::QueryQueueEnd(){
 
 void SourcesController::QueryQueueLoop(){
 	this->library->RunCallbacks();
+}
+
+void SourcesController::OnNewPlaylist(void* data){
+	if(data==this->library.get()){
+		win32cpp::TopLevelWindow popupDialog(_(_T("New Playlist")));
+		popupDialog.SetMinimumSize(Size(300, 150));
+
+		dialog::NewPlaylistController newPlaylist(popupDialog,this->library);
+
+		popupDialog.ShowModal(TopLevelWindow::FindFromAncestor(&this->view));
+
+		this->UpdatePlaylists();
+	}
+}
+
+void SourcesController::UpdatePlaylists(){
+	musik::core::Query::Playlists playlistQuery;
+	playlistQuery.PlaylistList.connect(this,&SourcesController::OnPlaylists);
+	this->library->AddQuery(playlistQuery);
+}
+
+void SourcesController::OnPlaylists(std::vector<musik::core::tracklist::Ptr> trackLists){
+	this->model.OnPlaylists(trackLists);
+
+	this->listController->sourcesListModel->Update();
+//	this->view.Redraw();
 }
 
 //////////////////////////////////////////////////////////////////////////////

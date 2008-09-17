@@ -174,7 +174,7 @@ void Writer::Send(){
 
     try{
         // Time to send the buffer
-        if(!sendBuffer.empty()){
+		if(!sendBuffer.empty() && this->socket->is_open()){
             boost::asio::write(*(this->socket),boost::asio::buffer(sendBuffer));
 // Log
 //std::ofstream logFile("mc2_Writer.log",std::ios::app);

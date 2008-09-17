@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, mC2 team
+// The following are Copyright © 2008, Daniel Önnerby
 //
 // All rights reserved.
 //
@@ -35,35 +35,59 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
-#include <core/tracklist/Playlist.h>
 
-#include <core/Query/PlaylistLoad.h>
-
-//////////////////////////////////////////////////////////////////////////////
-
-using namespace musik::core::tracklist;
+#include <core/MessageQueue.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
-Playlist::Playlist(int id,utfstring name,musik::core::LibraryPtr library) 
-:Standard()
-,id(0)
-,name(name)
+using namespace musik::core;
+
+//////////////////////////////////////////////////////////////////////////////
+
+MessageQueue MessageQueue::sInstance;
+
+/*MessageQueue& MessageQueue::Instance(){
+	return MessageQueue::sInstance;
+}*/
+
+MessageQueue::MessageQueue(void)
 {
-    this->SetLibrary(library);
-
-    // Start by creating a query that loads the tracks
 }
 
-
-Playlist::~Playlist(void){
+MessageQueue::~MessageQueue(void)
+{
 }
 
-utfstring Playlist::Name(){
-    return this->name;
+MessageQueue::ControllerEventSignal& MessageQueue::EventController(){
+	return MessageQueue::sInstance.controllerEvent;
 }
 
-int Playlist::Id(){
-    return this->id;
+MessageQueue::EventSignal& MessageQueue::MessageEvent(const char* identifier){
+	return MessageQueue::sInstance.eventMap[identifier];
 }
+
+void MessageQueue::SendMessage(const char* identifier,void* data){
+	{
+		EventSignalMap::iterator eventSignal	= MessageQueue::sInstance.eventMap.find(identifier);
+		if(eventSignal!=MessageQueue::sInstance.eventMap.end()){
+			// First call the controllers
+			MessageQueue::sInstance.controllerEvent(identifier,data);
+		}
+	}
+	{
+		// Just in case the controller would change the eventMap, lets find the eventSignal again.
+		EventSignalMap::iterator eventSignal	= MessageQueue::sInstance.eventMap.find(identifier);
+		if(eventSignal!=MessageQueue::sInstance.eventMap.end()){
+			// Call the evenSignals
+			eventSignal->second(data);
+		}
+	}
+}
+
+MessageQueueData::MessageQueueData(){
+}
+
+MessageQueueData::~MessageQueueData(){
+}
+
 

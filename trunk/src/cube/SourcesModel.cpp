@@ -45,6 +45,8 @@
 #include <cube/TracklistView.hpp>
 #include <cube/TracklistController.hpp>
 
+#include <core/tracklist/Playlist.h>
+
 #include <win32cpp/Label.hpp>
 
 using namespace musik::cube;
@@ -116,7 +118,7 @@ class NowPlayingItem: public SourcesItem
 private:    
 
 			/*ctor*/ NowPlayingItem(musik::core::LibraryPtr library)
-				: controller(view,NULL,library->NowPlaying())
+				: controller(view,NULL,library->NowPlaying(),TracklistController::HighlightActive|TracklistController::Deletable)
             {
             }
 
@@ -130,6 +132,39 @@ public:     static SourcesItemRef Create(musik::core::LibraryPtr library)
             }
 
 public:     virtual uistring Caption() { return _(_T("Now Playing")); }
+public:     virtual Window*  View()
+            {
+                return &this->view;
+            }
+
+private:    TracklistView view;
+private:    TracklistController controller;
+};
+
+//////////////////////////////////////////////////////////////////////////////
+
+class PlaylistItem: public SourcesItem
+{
+private:    
+
+			/*ctor*/ PlaylistItem(musik::core::tracklist::Ptr playlist)
+				: controller(view,NULL,playlist,TracklistController::HighlightActive|TracklistController::Deletable)
+            {
+            }
+
+public:     /*dtor*/ ~PlaylistItem()
+            {
+            }
+
+public:     static SourcesItemRef Create(musik::core::tracklist::Ptr playlist)
+            {
+                return SourcesItemRef(new PlaylistItem(playlist));
+            }
+
+public:     virtual uistring Caption() { 
+				musik::core::tracklist::Playlist* playlist = (musik::core::tracklist::Playlist*)(this->controller.Tracklist().get());
+				return playlist->Name(); 
+			}
 public:     virtual Window*  View()
             {
                 return &this->view;
@@ -180,7 +215,7 @@ typedef SourcesListModel::CategoryRef CategoryRef;
 {
 }
 
-void            SourcesModel::Load()
+void SourcesModel::Load()
 {
     CategoryRef viewCategory(new Category(_(_T("View"))));
     viewCategory->Add(BrowseItem::Create(this->library));
@@ -221,3 +256,26 @@ void            SourcesModel::RemoveCategory(CategoryRef category)
     this->categories.erase(it);
     this->CategoryRemoved(category);
 }
+
+void SourcesModel::OnPlaylists(SourcesModel::PlaylistVector &playlists){
+	// Start by removing the old ones
+	for(PlaylistItemMap::iterator it=this->playlistItemsMap.begin();it!=this->playlistItemsMap.end();++it){
+		// Remove the item from the category
+		this->playlistCategory->Remove(it->second);
+	}
+
+	// Clear the map
+	this->playlistItemsMap.clear();
+
+	// Start creating the new playlists
+	for(SourcesModel::PlaylistVector::iterator playlist=playlists.begin();playlist!=playlists.end();++playlist){
+		// Create the sourcesItem
+		SourcesItemRef sourceItem	= PlaylistItem::Create(*playlist);
+	    playlistCategory->Add(sourceItem);
+
+		this->playlistItemsMap[*playlist]	= sourceItem;
+
+	}
+
+}
+

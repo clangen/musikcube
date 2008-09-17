@@ -61,6 +61,8 @@ bool Query::Playlists::ParseQuery(Library::Base *library,db::Connection &db){
 
     db::Statement stmt("SELECT id,name FROM playlists WHERE user_id=?",db);
 
+	stmt.BindInt(0,library->userId);
+
     while(stmt.Step()==db::Row){
         tracklist::Ptr playlist( new tracklist::Playlist(
                 stmt.ColumnInt(0),

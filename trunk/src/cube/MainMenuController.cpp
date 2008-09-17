@@ -38,11 +38,13 @@
 
 #include "pch.hpp"
 #include <core/LibraryFactory.h>
+#include <core/MessageQueue.h>
 #include <cube/MainMenuController.hpp>
 #include <cube/dialog/AddLibraryController.hpp>
 #include <win32cpp/Application.hpp>
 #include <win32cpp/TopLevelWindow.hpp>
 #include <boost/format.hpp>
+
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -140,6 +142,7 @@ void        MainMenuController::OnHelpAbout(MenuItemRef menuItem)
 }
 
 void MainMenuController::OnNewPlaylist(MenuItemRef menuItem){
+	musik::core::MessageQueue::SendMessage("NewPlaylist");
 }
 
 

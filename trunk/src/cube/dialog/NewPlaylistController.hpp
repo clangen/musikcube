@@ -2,9 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
-//
-// Sources and Binaries of: mC2, win32cpp
+// The following are Copyright © 2007, mC2 Team
 //
 // All rights reserved.
 //
@@ -40,59 +38,42 @@
 
 //////////////////////////////////////////////////////////////////////////////
 // Forward declare
-namespace musik{ namespace core{ namespace Query{
-    class ListBase;
-} } }
+namespace win32cpp{
+    class Window;
+    class Button;
+}
 //////////////////////////////////////////////////////////////////////////////
 
-#include <win32cpp/ListView.hpp>
-#include <core/tracklist/IRandomAccess.h>
+#include <win32cpp/Types.hpp>
+#include <win32cpp/TopLevelWindow.hpp>
+
+#include <cube/dialog/NewPlaylistView.hpp>
+#include <core/Library/Base.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
-using namespace win32cpp;
-
-namespace musik { namespace cube {
+namespace musik { namespace cube { namespace dialog{
 
 //////////////////////////////////////////////////////////////////////////////
 
-class TracklistModel: public ListView::Model, public EventHandler
-{
-        // typedefs
-public:     
-    typedef ListView::Model base;
-    typedef ListView::RowRendererRef RowRendererRef;
-    typedef ListView::CellRendererRef CellRendererRef;
-    typedef ListView::ColumnRef ColumnRef;
+class NewPlaylistController : public win32cpp::EventHandler{
 
-        // public API
-    TracklistModel(
-        musik::core::Query::ListBase *connectedQuery,
-        musik::core::tracklist::Ptr setTracklist,
-		unsigned int options);
+    public:     
+		NewPlaylistController(win32cpp::TopLevelWindow &mainWindow,musik::core::LibraryPtr library);
+        ~NewPlaylistController();
 
-    void ConnectToQuery(musik::core::Query::ListBase *connectedQuery);
-    void OnRowActivated(int row);
+    private:  
+        void OnViewCreated(win32cpp::Window* window);
+        void OnCancel(win32cpp::Button* button);
+        void OnOK(win32cpp::Button* button);
 
-    void OnPlayNow(win32cpp::ListView::RowIndexList& selectedRows);
-    void OnEnqueue(win32cpp::ListView::RowIndexList& selectedRows);
+        win32cpp::TopLevelWindow &mainWindow;
 
-    // ListView::Model implementation
-    virtual uistring CellValueToString(int rowIndex, ColumnRef column);
+		NewPlaylistView *view;
 
-    // instance data
-protected:  
-    void OnTrackMeta(std::vector<int> &trackPositions);
-    void OnTracks(bool cleared);
-    void OnPositionChanged(int activeRow,int oldActiveRow);
-
-    int currentPosition;
-	unsigned int options;
-public:     
-    musik::core::tracklist::Ptr tracklist;    // FIXME: no public fields!
-
+		musik::core::LibraryPtr library;
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-} }     // musik::cube
+} } }    // musik::cube::dialog

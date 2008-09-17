@@ -55,16 +55,17 @@ Query::PlaylistSave::PlaylistSave(void){
 Query::PlaylistSave::~PlaylistSave(void){
 }
 
-void Query::PlaylistSave::SavePlaylist(int playlistId,utfstring playlistName,musik::core::tracklist::IRandomAccess &tracklist){
+void Query::PlaylistSave::SavePlaylist(const utfstring playlistName,int playlistId,musik::core::tracklist::IRandomAccess *tracklist){
     this->playlistId    = playlistId;
     this->playlistName  = playlistName;
 
-    for(int i(0);i<tracklist.Size();++i){
-        musik::core::TrackPtr track=tracklist[i];
-        if(track){
-            this->tracks.push_back(track->id);
-        }
-    }
+	this->tracks.clear();
+
+	if(tracklist){
+		for(int i(0);i<tracklist->Size();++i){
+			this->tracks.push_back((*tracklist)[i]->id);
+		}
+	}
 }
 
 bool Query::PlaylistSave::ParseQuery(Library::Base *library,db::Connection &db){
@@ -72,11 +73,13 @@ bool Query::PlaylistSave::ParseQuery(Library::Base *library,db::Connection &db){
     db::ScopedTransaction transaction(db);
 
     {
-        db::Statement updatePlaylist("INSERT OR REPLACE INT playlists (id,name) VALUES (?,?)",db);
-        if(this->playlistId==0){
+        db::Statement updatePlaylist("INSERT OR REPLACE INTO playlists (id,name,user_id) VALUES (?,?,?)",db);
+        if(this->playlistId!=0){
             updatePlaylist.BindInt(0,this->playlistId);
         }
         updatePlaylist.BindTextUTF(1,this->playlistName);
+		updatePlaylist.BindInt(2,library->userId);
+
         if( updatePlaylist.Step()==db::Done ){
             if(this->playlistId==0){
                 this->playlistId    = db.LastInsertedId();
@@ -114,12 +117,18 @@ Query::Ptr Query::PlaylistSave::copy() const{
 }
 
 bool Query::PlaylistSave::RunCallbacks(Library::Base *library){
-    boost::mutex::scoped_lock lock(library->libraryMutex);
-    if( (this->status & Status::Ended)!=0){
+	bool callCallbacks(false);
+	{
+		boost::mutex::scoped_lock lock(library->libraryMutex);
+		if( (this->status & Status::Ended)!=0){
+			callCallbacks	= true;
+		}
+	}
+
+	if(callCallbacks){
         this->PlaylistSaved(this->playlistId);
-        return true;
-    }
-    return false;
+	}
+    return callCallbacks;
 }
 
 
