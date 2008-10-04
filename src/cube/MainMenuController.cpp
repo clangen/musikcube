@@ -41,6 +41,7 @@
 #include <core/MessageQueue.h>
 #include <cube/MainMenuController.hpp>
 #include <cube/dialog/AddLibraryController.hpp>
+#include <cube/dialog/HelpAboutController.hpp>
 #include <win32cpp/Application.hpp>
 #include <win32cpp/TopLevelWindow.hpp>
 #include <boost/format.hpp>
@@ -104,6 +105,15 @@ void        MainMenuController::OnAddLibraryRemote(MenuItemRef menuItem)
 
 void        MainMenuController::OnHelpAbout(MenuItemRef menuItem)
 {
+    win32cpp::TopLevelWindow aboutDialog(_(_T("About mC2")));
+    aboutDialog.SetMinimumSize(Size(400,300));
+
+    dialog::HelpAboutController helpAbout(aboutDialog);
+
+    aboutDialog.ShowModal(&this->mainWindow);
+
+    return;
+
     // randomize the contribuitors' names
     std::vector<uistring> names;
     names.push_back(_T("  - avatar\n"));
