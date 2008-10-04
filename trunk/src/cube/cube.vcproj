@@ -493,6 +493,26 @@
 					>
 				</File>
 			</Filter>
+			<Filter
+				Name="HelpAbout"
+				>
+				<File
+					RelativePath=".\dialog\HelpAboutController.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\dialog\HelpAboutController.hpp"
+					>
+				</File>
+				<File
+					RelativePath=".\dialog\HelpAboutView.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\dialog\HelpAboutView.hpp"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<File
 			RelativePath=".\main.cpp"
