@@ -65,9 +65,8 @@ bool WaveOut::Open(void)
 		}
 
 		m_Buffers = (WAVEHDR *)VirtualAlloc(NULL, m_NumBuffers * sizeof(WAVEHDR), MEM_COMMIT, PAGE_READWRITE);
-//        m_dwBufferSize = m_BlockSize * m_NumBuffers;
-        
-        unsigned int bytesPerSample = m_waveFormatPCMEx.Format.nChannels*m_waveFormatPCMEx.Format.wBitsPerSample/16;
+
+        unsigned int bytesPerSample = m_waveFormatPCMEx.Format.wBitsPerSample/8;
 
         m_dwBufferSize = m_BlockSize*bytesPerSample;
 
@@ -76,9 +75,8 @@ bool WaveOut::Open(void)
 
 		for(unsigned long x=0; x<m_NumBuffers; x++)
 		{
-//            m_Buffers[x].dwBufferLength		= m_BlockSize * m_NumBuffers;
-            m_Buffers[x].dwBufferLength		= m_BlockSize*bytesPerSample;
-			m_Buffers[x].lpData				= (LPSTR)&m_pfAudioBuffer[x * m_BlockSize];
+            m_Buffers[x].dwBufferLength		= m_dwBufferSize;
+            m_Buffers[x].lpData				= (LPSTR)&(this->m_pfAudioBuffer[x*m_BlockSize]);
  			m_Buffers[x].dwUser				= x;
 			m_Buffers[x].dwBytesRecorded	= 0;
 			m_Buffers[x].dwFlags			= 0;
@@ -105,20 +103,17 @@ bool WaveOut::Close(void)
 	{
 		m_Playing = false;
 
-again:
-		if(waveOutReset(m_waveHandle) == MMSYSERR_NOERROR)
-		{
-			for(unsigned long x=0; x<m_NumBuffers; x++)
-			{
-				if(m_Buffers[x].dwFlags & WHDR_PREPARED)
-					waveOutUnprepareHeader(m_waveHandle, &m_Buffers[x], sizeof(WAVEHDR));
-			}
-		}
+        do{
+		    if(waveOutReset(m_waveHandle) == MMSYSERR_NOERROR)
+		    {
+			    for(unsigned long x=0; x<m_NumBuffers; x++)
+			    {
+				    if(m_Buffers[x].dwFlags & WHDR_PREPARED)
+					    waveOutUnprepareHeader(m_waveHandle, &m_Buffers[x], sizeof(WAVEHDR));
+			    }
+		    }
+        } while((r = waveOutClose(m_waveHandle)) != MMSYSERR_NOERROR);
 
-		while((r = waveOutClose(m_waveHandle)) != MMSYSERR_NOERROR)
-		{
-			goto again;
-		}
 
 		m_waveHandle = NULL;
 
