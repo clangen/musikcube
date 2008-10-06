@@ -8,7 +8,7 @@ WaveOut::WaveOut(void) :
     audioThread(NULL),
 	m_dwSamplesOut(0),
 	m_LastPlayedBuffer(-1),
-	m_NumBuffers(4) //TODO: config
+	m_NumBuffers(8) //TODO: config
 {
 	ZeroMemory(&m_waveFormatPCMEx, sizeof(m_waveFormatPCMEx));
 
@@ -65,14 +65,19 @@ bool WaveOut::Open(void)
 		}
 
 		m_Buffers = (WAVEHDR *)VirtualAlloc(NULL, m_NumBuffers * sizeof(WAVEHDR), MEM_COMMIT, PAGE_READWRITE);
-		m_dwBufferSize = m_BlockSize * m_NumBuffers;
+//        m_dwBufferSize = m_BlockSize * m_NumBuffers;
+        
+        unsigned int bytesPerSample = m_waveFormatPCMEx.Format.nChannels*m_waveFormatPCMEx.Format.wBitsPerSample/16;
+
+        m_dwBufferSize = m_BlockSize*bytesPerSample;
 
 		m_pfAudioBuffer = (float *)VirtualAlloc(NULL, m_dwBufferSize * m_NumBuffers, MEM_COMMIT, PAGE_READWRITE);		// allocate audio memory
 		VirtualLock(m_pfAudioBuffer, m_dwBufferSize * m_NumBuffers);													// lock the audio memory into physical memory
 
 		for(unsigned long x=0; x<m_NumBuffers; x++)
 		{
-			m_Buffers[x].dwBufferLength		= m_BlockSize * m_NumBuffers;
+//            m_Buffers[x].dwBufferLength		= m_BlockSize * m_NumBuffers;
+            m_Buffers[x].dwBufferLength		= m_BlockSize*bytesPerSample;
 			m_Buffers[x].lpData				= (LPSTR)&m_pfAudioBuffer[x * m_BlockSize];
  			m_Buffers[x].dwUser				= x;
 			m_Buffers[x].dwBytesRecorded	= 0;
@@ -80,6 +85,7 @@ bool WaveOut::Open(void)
 			m_Buffers[x].dwLoops			= 0;
 
 			waveOutPrepareHeader(m_waveHandle, &m_Buffers[x], sizeof(WAVEHDR));
+            m_Buffers[x].dwFlags			|= WHDR_DONE;
 		}
 
 		QueryPerformanceCounter(&m_liLastPerformanceCount);
@@ -141,7 +147,7 @@ unsigned long WaveOut::ThreadProc(void)
 		{
 			boost::mutex::scoped_lock lock(this->audioMutex);
 
-			while(this->m_Buffers && ((m_Buffers[m_ActiveBuffer].dwFlags & WHDR_INQUEUE) && m_Playing ))
+            while(this->m_Buffers && m_Playing && ((m_Buffers[m_ActiveBuffer].dwFlags&WHDR_DONE)==0) )
 			{
                 this->audioCondition.wait(lock);
 			}
