@@ -91,15 +91,15 @@ void HelpAboutView::DrawingThread(HWND hwnd, BITMAPINFO* bmi)
 
     // Calc sin table for plasma effect
     for(int i=0; i<1024; i++) {
-        sintable[i] = 128 + 127.0 * (sin((double)i * 3.1415 / 512.0));
+        sintable[i] = 128 + (unsigned char)(127.0 * (sin((double)i * 3.1415 / 512.0)));
     }
 
     // Calc color table for plasma effect
     for(int i=0; i<256; i++) {
         int
-            r = 20 + 19.0 * sin((double)i * 3.1415 /  40.0),
-            g = 40 + 39.0 * sin((double)i * 3.1415 /  40.0),
-            b = 120 + 79.0 *  cos((double)i * 3.1415 / 120.0);
+            r =  20 + (int)(19.0 * sin((double)i * 3.1415 /  40.0)),
+            g =  40 + (int)(39.0 * sin((double)i * 3.1415 /  40.0)),
+            b = 120 + (int)(79.0 * cos((double)i * 3.1415 / 120.0));
 
         plasmapal[i] = anim_color(r, g, b);
     }
@@ -189,21 +189,21 @@ void HelpAboutView::DrawingThread(HWND hwnd, BITMAPINFO* bmi)
     // Start drawing loop
     while(anim_running) {
         // Calc current time
-        float time = (float)(::GetTickCount() - time_start) / 1000.0f;
+        double time = (double)(::GetTickCount() - time_start) / 1000.0;
 
         // Plasma
         {
             // Plasma is done by addition over 4 parametric, circular plasma waves
             int sx[4], sy[4], wx[4], wy[4];
 
-            sx[0] =  600 * sin(time * 2.0  + 2.0);
-            sy[0] =  600 * cos(time * 1.9  - 1.3);
-            sx[1] =  140 * sin(-time * 1.8 + 2.4);
-            sy[1] =  140 * cos(-time * 1.7 + 1.2);
-            sx[2] =  560 * sin(time * 1.6  - 0.4);
-            sy[2] =  460 * cos(time * 1.5  + 2.5);
-            sx[3] =  340 * sin(-time * 1.4 - 1.7);
-            sy[3] =  340 * cos(-time * 1.3 + 1.8);
+            sx[0] =  (int)(600.0 * sin(time * 2.0  + 2.0));
+            sy[0] =  (int)(600.0 * cos(time * 1.9  - 1.3));
+            sx[1] =  (int)(140.0 * sin(-time * 1.8 + 2.4));
+            sy[1] =  (int)(140.0 * cos(-time * 1.7 + 1.2));
+            sx[2] =  (int)(560.0 * sin(time * 1.6  - 0.4));
+            sy[2] =  (int)(460.0 * cos(time * 1.5  + 2.5));
+            sx[3] =  (int)(340.0 * sin(-time * 1.4 - 1.7));
+            sy[3] =  (int)(340.0 * cos(-time * 1.3 + 1.8));
 
             for(int i=0; i<4; i++) {
                 plasmawave[i] += sx[i];
@@ -238,7 +238,7 @@ void HelpAboutView::DrawingThread(HWND hwnd, BITMAPINFO* bmi)
             }
 
             // Display logo
-            float alpha = 0.7 + 0.3 * sin(0.3 * time * 3.1415);
+            double alpha = 0.7 + 0.3 * sin(0.3 * time * 3.1415);
             int lx = 127, ly = 40;
             for(int y=0; y<logo_height; y++) {
                 // blackit is true in order to create the black noisy stripes
@@ -264,10 +264,10 @@ void HelpAboutView::DrawingThread(HWND hwnd, BITMAPINFO* bmi)
 
                     double ac = alpha * ((double)a / 255.0f);
 
-                    unsigned int 
-                        r = (extract_r(c) * ac) + (extract_r(s) * (1.0 - ac)),
-                        g = (extract_g(c) * ac) + (extract_g(s) * (1.0 - ac)),
-                        b = (extract_b(c) * ac) + (extract_b(s) * (1.0 - ac));
+                    unsigned int
+                        r = (unsigned int)((extract_r(c) * ac) + (extract_r(s) * (1.0 - ac))),
+                        g = (unsigned int)((extract_g(c) * ac) + (extract_g(s) * (1.0 - ac))),
+                        b = (unsigned int)((extract_b(c) * ac) + (extract_b(s) * (1.0 - ac)));
 
                     *cp = anim_color(r, g, b);
                 }
@@ -286,10 +286,10 @@ void HelpAboutView::DrawingThread(HWND hwnd, BITMAPINFO* bmi)
             ::SetTextColor(hdc, 0xDDDDAA);
             ::SelectObject(hdc, font);
 
-            static float tdlast = 0.0f;
+            static double tdlast = 0.0f;
 
-            float td = time - tdlast;
-            if(td > 2.5f) { 
+            double td = time - tdlast;
+            if(td > 2.5) { 
 
                 if(textidx+1 == sizeof(texts) / sizeof(uistring)) {
                     textidx = 0;
@@ -303,22 +303,27 @@ void HelpAboutView::DrawingThread(HWND hwnd, BITMAPINFO* bmi)
             ::DrawText(
                 hdc, 
                 texts[textidx].c_str(), 
-                texts[textidx].size() + 1, 
+                (int)texts[textidx].size() + 1, 
                 &textrect,
                 DT_CENTER
             );
         }
 
         // Some idle time to give other threads the chance to process
-        Sleep(1);
+        Sleep(5);
     }
 
-    // Shutdown GDI+
-    delete gp_logo; delete logo;
-    Gdiplus::GdiplusShutdown(gp_tok);
+    // Delete GDI Objects
+    DeleteObject(font);
 
     // Delete resources
+    delete gp_logo; gp_logo = NULL;
+    delete logo; logo = NULL;
+    delete logo_alpha; logo_alpha = NULL;
     delete[] screen; screen = NULL;
+    
+    // Shutdown GDI+
+    Gdiplus::GdiplusShutdown(gp_tok);
 }
 
 void HelpAboutView::StartDrawingThread()
