@@ -14,7 +14,7 @@ SetCompressor /SOLID lzma
 !define INSTALL_DIR "musikCube 2"
 
 ;----------------------------------------------------------------
-OutFile ".\${INSTALLER_NAME} Setup.exe"
+OutFile ".\${INSTALLER_NAME}.exe"
 
 Name "${PROJECT_NAME} ${SUB_NAME}"
 
@@ -44,6 +44,7 @@ Section "mC2installation" main
 	File /r "..\bin\release\mC2.exe"
 	File /r "..\bin\release\musikServer.exe"
 	File /r "..\LICENSE.txt"
+	File /r "..\bin\release\resources"
 
 	SetOutPath "$INSTDIR\plugins"
 	File /r "..\bin\release\plugins\*.dll"
