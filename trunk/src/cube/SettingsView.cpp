@@ -45,7 +45,7 @@
 #include <win32cpp/GroupBox.hpp>
 #include <win32cpp/ListView.hpp>
 #include <win32cpp/Label.hpp>
-
+#include <win32cpp/ComboBox.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -169,6 +169,9 @@ void        SettingsView::OnCreated()
     gc3->MoveRelativeTo(0, 40);
     
     mainLayout->AddChild(g);
+
+    // test combobox
+    mainLayout->AddChild(new ComboBox());
 
     this->AddChild(mainLayout);
 
