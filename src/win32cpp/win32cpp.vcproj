@@ -325,6 +325,14 @@
 						>
 					</File>
 					<File
+						RelativePath=".\ComboBox.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\ComboBox.hpp"
+						>
+					</File>
+					<File
 						RelativePath=".\EditView.cpp"
 						>
 					</File>
