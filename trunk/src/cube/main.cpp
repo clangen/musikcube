@@ -54,7 +54,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE prevInstance, LPTSTR commandLi
     // Initialize locale
     try {
 		uistring appDirectory( musik::core::GetApplicationDirectory() );
-        Locale::Instance()->SetLocaleDirectory(appDirectory);
+        Locale::Instance()->SetLocaleDirectory(appDirectory + _T("\\locales"));
 	    Locale::Instance()->LoadConfig(_T("english"));
     }
     catch(...) {
