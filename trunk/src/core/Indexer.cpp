@@ -551,6 +551,8 @@ void Indexer::SyncDelete(std::vector<DBINT> aPaths){
     // Remove unwanted folder-paths
     this->dbConnection.Execute("DELETE FROM folders WHERE path_id NOT IN (SELECT id FROM paths)");
 
+    db::Statement stmtSyncPath("SELECT p.path FROM paths p WHERE p.id=?",this->dbConnection);
+
     {
         // Remove non existing folders
         db::Statement stmt("SELECT f.id,p.path||f.relative_path FROM folders f,paths p WHERE f.path_id=p.id AND p.id=?",this->dbConnection);
@@ -559,6 +561,12 @@ void Indexer::SyncDelete(std::vector<DBINT> aPaths){
         for(int i(0);i<aPaths.size();++i){
 
             stmt.BindInt(0,aPaths[i]);
+
+            // Get the syncpath
+            stmtSyncPath.BindInt(0,aPaths[i]);
+            stmtSyncPath.Step();
+            utfstring syncPathString( stmtSyncPath.ColumnTextUTF(0) );
+            stmtSyncPath.Reset();
 
             while( stmt.Step()==db::ReturnCode::Row && !this->Exited() && !this->Restarted() ){
                 // Check to see if file still exists
@@ -570,9 +578,16 @@ void Indexer::SyncDelete(std::vector<DBINT> aPaths){
                     boost::filesystem::utfpath oFolder(sFolder);
                     if(boost::filesystem::exists(oFolder)){
                         bRemove    = false;
+                    }else{
+                        // Also do a check so that the syncpath is still up, or else do not remove
+                        boost::filesystem::utfpath syncPath(syncPathString);
+                        if(!boost::filesystem::exists(syncPath)){
+                            bRemove    = false;
+                        }
                     }
                 }
                 catch(...){
+                    bRemove    = false;
                 }
 
                 if(bRemove){
@@ -609,6 +624,12 @@ void Indexer::SyncDelete(std::vector<DBINT> aPaths){
     for(int i(0);i<aPaths.size();++i){
         stmt.BindInt(0,aPaths[i]);
 
+        // Get the syncpath
+        stmtSyncPath.BindInt(0,aPaths[i]);
+        stmtSyncPath.Step();
+        utfstring syncPathString( stmtSyncPath.ColumnTextUTF(0) );
+        stmtSyncPath.Reset();
+
         while( stmt.Step()==db::ReturnCode::Row  && !this->Exited() && !this->Restarted() ){
             // Check to see if file still exists
             {
@@ -625,9 +646,16 @@ void Indexer::SyncDelete(std::vector<DBINT> aPaths){
                 boost::filesystem::utfpath oFile(sFile);
                 if(boost::filesystem::exists(oFile)){
                     bRemove    = false;
+                }else{
+                    // Also do a check so that the syncpath is still up, or else do not remove
+                    boost::filesystem::utfpath syncPath(syncPathString);
+                    if(!boost::filesystem::exists(syncPath)){
+                        bRemove    = false;
+                    }
                 }
             }
             catch(...){
+                bRemove    = false;
             }
 
             if(bRemove){
