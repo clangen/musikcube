@@ -1,0 +1,45 @@
+Another attempt to postpone new features/improvements to _after_ the 1.0 release.
+
+1. The sample rate matching could be extended to detect the need for flexible resampling like that:
+
+static int freq_fit(mpg123_handle *fr, struct audioformat *nf, int f0, int f2)
+{
+	nf->rate = frame_freq(fr)>>fr->p.down_sample;
+	if(cap_fit(fr,nf,f0,f2)) return 1;
+	nf->rate>>=1;
+	if(cap_fit(fr,nf,f0,f2)) return 1;
+	nf->rate>>=1;
+	if(cap_fit(fr,nf,f0,f2)) return 1;
+	/* Try any rate. */
+	/* Only if decoder choice allows it!
+	{
+		int i;
+		for(i=0; i<MPG123_RATES; ++i)
+		{
+			nf->rate = my_rates[i];
+			if(cap_fit(fr,nf,f0,f2)) return 1;
+		}
+	}
+	return 0;
+}
+
+Now the problem is that we indeed may need to switch decoders on-the-fly for that to work.
+Not every decoder supports flexible rate...
+The library allows decoder switch. Also, sample rate changes usually occur between files, not during one.
+So distortions due to switch of decoder specific buffers shouldn't arise.
+
+Also, mpg123 could pick up new sample rates suggested by the output modules (like a jack server fixed to 96kHz) and adapt to that.
+
+
+2. The hack for floating point output of generic decoder shall be integrated as a decoder option.
+
+This build is hidden behind --with-cpu=generic_float ... it should be backed up with possible output support; adding a new encoding to libmpg123.
+And when I'm at it, I can add double precision, too. Does it make sense? Well, when I want to compare with "24bit-accurate" decoders I should have at least 24 bits in the mantissa.
+The 32bit and 64bit float decoders should be able to work with 3DNow/SSE ...
+Hm, 32bit integer would be another option.
+
+
+3. Get SSE on AMD64 going.
+
+MPlayer has that in mp3lib, which is a stripped-down mpg123 decoder.
+We need that optimization, but in the non-stripped mpg123.

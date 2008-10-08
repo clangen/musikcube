@@ -10,7 +10,7 @@ using namespace musik::core::audio;
 
 unsigned long AudioStream::streamsCreated = 0;
 
-AudioStream::AudioStream(IAudioSource* source, IAudioOutput* output, Transport* owner, TrackPtr track) 
+AudioStream::AudioStream(IAudioSource* source, IAudioOutput* output, Transport* owner, TrackPtr track,musik::core::filestreams::FileStreamPtr fileStream) 
 : audioSource(source)
 , transport(owner)
 , playState(PlayStateUnknown)
@@ -21,6 +21,7 @@ AudioStream::AudioStream(IAudioSource* source, IAudioOutput* output, Transport* 
 , isLast(false)
 , samplesOut(0)
 , track(track)
+, fileStream(fileStream)
 {
     this->output = output;
     this->output->SetCallback(this);

@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Daniel Önnerby
+// The following are Copyright © 2008, Björn Olievier
 //
 // All rights reserved.
 //
@@ -33,69 +33,33 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
-#include "pch.hpp"
-#include <core/filestreams/RegularFileStream.h>
-#include <core/config.h>
 
-//////////////////////////////////////////////////////////////////////////////
-#ifdef UTF_WIDECHAR
-#define UTFFopen    _wfopen
-typedef fpos_t  stdioPositionType;
-#else
-#define UTFFopen    fopen
-typedef int stdioPositionType;
-#endif
-//////////////////////////////////////////////////////////////////////////////
+#include "stdafx.h"
 
+#include "core/IPlugin.h"
 
-using namespace musik::core::filestreams;
+#include "MP3SourceSupplier.h"
 
-//////////////////////////////////////////////////////////////////////////////
-RegularFileStream::RegularFileStream()
- :file(NULL)
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
 {
-
-}
-RegularFileStream::~RegularFileStream(){
-    this->Close();
+    return true;
 }
 
-bool RegularFileStream::Open(const utfchar *filename,unsigned int options){
-    this->file  = UTFFopen(filename,UTF("r"));
-    return this->file!=NULL;
+class MP3DecoderPlugin : public musik::core::IPlugin
+{
+    void Destroy() { delete this; };
+
+	const utfchar* Name()       { return TEXT("MP3 decoder"); };
+	const utfchar* Version()    { return TEXT("1"); };
+	const utfchar* Author()     { return TEXT("Björn Olievier"); };
+};
+
+extern "C" __declspec(dllexport) musik::core::IPlugin* GetPlugin()
+{
+    return new MP3DecoderPlugin();
 }
 
-bool RegularFileStream::Close(){
-    if(this->file){
-        if(fclose(this->file)==0){
-            this->file  = NULL;
-            return true;
-        }
-    }
-    return false;
-}
-
-void RegularFileStream::Destroy(){
-    delete this;
-}
-
-PositionType RegularFileStream::Read(void* buffer,PositionType readBytes){
-    return (PositionType)fread(buffer,1,readBytes,this->file);
-}
-
-bool RegularFileStream::SetPosition(PositionType position){
-    stdioPositionType newPosition  = (stdioPositionType)position;
-    return fsetpos(this->file,&newPosition)==0;
-}
-
-PositionType RegularFileStream::Position(){
-    stdioPositionType currentPosition(0);
-    if(fgetpos(this->file,&currentPosition)==0){
-        return (PositionType)currentPosition;
-    }
-    return -1;
-}
-
-bool RegularFileStream::Eof(){
-    return feof(this->file)!=0;
+extern "C" __declspec(dllexport) IAudioSourceSupplier* CreateAudioSourceSupplier()
+{
+	return new MP3SourceSupplier();
 }

@@ -36,7 +36,7 @@
 #include "pch.hpp"
 #include <core/filestreams/Factory.h>
 #include <core/PluginFactory.h>
-#include <core/filestreams/RegularFileStream.h>
+#include <core/filestreams/LocalFileStream.h>
 
 using namespace musik::core::filestreams;
 
@@ -70,7 +70,7 @@ FileStreamPtr Factory::OpenFile(const utfchar *filename){
     }
 
     // If non of the plugins match, lets create a regular file stream
-    FileStreamPtr regularFile( new RegularFileStream(),StreamDeleter() );
+    FileStreamPtr regularFile( new LocalFileStream(),StreamDeleter() );
     if(regularFile->Open(filename)){
         return regularFile;
     }

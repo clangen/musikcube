@@ -45,10 +45,10 @@
 namespace musik{ namespace core{ namespace filestreams{
 //////////////////////////////////////////////////////////////////////////////
 
-class RegularFileStream : public IFileStream{
+class LocalFileStream : public IFileStream{
     public:
-        RegularFileStream();
-        ~RegularFileStream();
+        LocalFileStream();
+        ~LocalFileStream();
         virtual bool Open(const utfchar *filename,unsigned int options=0);
         virtual bool Close();
         virtual void Destroy();

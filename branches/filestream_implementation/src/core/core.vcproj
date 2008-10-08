@@ -757,11 +757,11 @@
 					>
 				</File>
 				<File
-					RelativePath=".\filestreams\RegularFileStream.cpp"
+					RelativePath=".\filestreams\LocalFileStream.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\filestreams\RegularFileStream.h"
+					RelativePath=".\filestreams\LocalFileStream.h"
 					>
 				</File>
 			</Filter>
