@@ -2,19 +2,20 @@
 
 #include <boost/bind.hpp>
 
-WaveOut::WaveOut(void) :
-	m_waveHandle(NULL),
-	m_pCallback(NULL),
-    audioThread(NULL),
-	m_dwSamplesOut(0),
-	m_LastPlayedBuffer(-1),
-	m_NumBuffers(8) //TODO: config
+WaveOut::WaveOut(void) 
+ :m_waveHandle(NULL)
+ ,m_pCallback(NULL)
+ ,audioThread(NULL)
+ ,m_dwSamplesOut(0)
+ ,m_LastPlayedBuffer(-1)
+ ,m_NumBuffers(8) //TODO: config
+ ,m_BlockSize(0)
+ ,m_pfAudioBuffer(NULL)
 {
 	ZeroMemory(&m_waveFormatPCMEx, sizeof(m_waveFormatPCMEx));
 
 	QueryPerformanceFrequency(&m_liCountsPerSecond);
 
-	m_pfAudioBuffer = NULL;
 }
 
 WaveOut::~WaveOut(void)

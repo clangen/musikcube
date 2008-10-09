@@ -50,87 +50,87 @@ class IAudioSource{
     public:    
 
         //////////////////////////////////////////
-		///\brief
-		///Destroy the object
-		///
-		///The Destroy method is used so that it's guaranteed that the object is 
+        ///\brief
+        ///Destroy the object
+        ///
+        ///The Destroy method is used so that it's guaranteed that the object is 
         ///destroyed inside the right DLL/exe
-		//////////////////////////////////////////
-		virtual void    Destroy() = 0;
+        //////////////////////////////////////////
+        virtual void    Destroy() = 0;
 
         //////////////////////////////////////////
-		///\brief
-		///Get the length of the source in milliseconds
-		///
-		///\param MS
-		///Pointer to millisecond to set 
-		///
-		///\returns
-		///true is set successfully
-		//////////////////////////////////////////
-		virtual bool    GetLength(unsigned long * MS) = 0;
+        ///\brief
+        ///Get the length of the source in milliseconds
+        ///
+        ///\param MS
+        ///Pointer to millisecond to set 
+        ///
+        ///\returns
+        ///true is set successfully
+        //////////////////////////////////////////
+        virtual bool    GetLength(unsigned long * MS) = 0;
 
         //////////////////////////////////////////
-		///\brief
+        ///\brief
         ///Set the position in the source (in milliseconds)
-		///
-		///\param MS
-		///Pointer to the position to set. This will be set to the actual position set on return.
-		///
-		///\returns
-		///true on success
-		//////////////////////////////////////////
-		virtual bool    SetPosition(unsigned long * MS) = 0;
+        ///
+        ///\param MS
+        ///Pointer to the position to set. This will be set to the actual position set on return.
+        ///
+        ///\returns
+        ///true on success
+        //////////////////////////////////////////
+        virtual bool    SetPosition(unsigned long * MS) = 0;
 
         //////////////////////////////////////////
-		///\brief
+        ///\brief
         ///TODO: What does this one do?
-		//////////////////////////////////////////
-		virtual bool    SetState(unsigned long State) = 0;
+        //////////////////////////////////////////
+        virtual bool    SetState(unsigned long State) = 0;
 
         //////////////////////////////////////////
-		///\brief
-		///Get samplerate and number of channels
-		///
-		///\param SampleRate
-		///Samplerate to set
-		///
-		///\param Channels
-		///Channels to set
-		///
-		///\returns
-		///true on success
-		//////////////////////////////////////////
-		virtual bool    GetFormat(unsigned long * SampleRate, unsigned long * Channels) = 0;
+        ///\brief
+        ///Get samplerate and number of channels
+        ///
+        ///\param SampleRate
+        ///Samplerate to set
+        ///
+        ///\param Channels
+        ///Channels to set
+        ///
+        ///\returns
+        ///true on success
+        //////////////////////////////////////////
+        virtual bool    GetFormat(unsigned long * SampleRate, unsigned long * Channels) = 0;
 
         //////////////////////////////////////////
-		///\brief
+        ///\brief
         ///Get next buffer (decoded data)
-		///
-		///\param ppBuffer
-		///Buffer pointer to write to
-		///
-		///\param NumSamples
-		///How many samples to read. Will also be set by this method
-		///
-		///\returns
-		///false is there is nothing left to read
-		///
+        ///
+        ///\param ppBuffer
+        ///Buffer pointer to write to
+        ///
+        ///\param NumSamples
+        ///How many samples to read. Will also be set by this method
+        ///
+        ///\returns
+        ///false is there is nothing left to read
+        ///
         ///The acctual bytes written to the buffer will be NumSamples*channels*sizeof(float)
-		//////////////////////////////////////////
-		virtual bool    GetBuffer(float ** ppBuffer, unsigned long * NumSamples) = 0; // return false to signal that we are done decoding.
+        //////////////////////////////////////////
+        virtual bool    GetBuffer(float ** ppBuffer, unsigned long * NumSamples) = 0; // return false to signal that we are done decoding.
 
         //////////////////////////////////////////
-		///\brief
-		///Open the stream
-		///
-		///\param fileStream
-		///pointer to the filestream object.
-		///
-		///\returns
-		///True if successfully opened
-		//////////////////////////////////////////
-		virtual bool    Open(musik::core::filestreams::IFileStream *fileStream) = 0;
+        ///\brief
+        ///Open the stream
+        ///
+        ///\param fileStream
+        ///pointer to the filestream object.
+        ///
+        ///\returns
+        ///True if successfully opened
+        //////////////////////////////////////////
+        virtual bool    Open(musik::core::filestreams::IFileStream *fileStream) = 0;
 
 };
 

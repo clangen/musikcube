@@ -41,7 +41,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories=".;../..;../../3rdparty/include;./mpg123/src;./mpg123/src/libmpg123"
-				PreprocessorDefinitions="WIN32;_DEBUG;DEBUG;_WINDOWS;REAL_IS_FLOAT;OPT_GENERIC;_LIB;FLOATOUT"
+				PreprocessorDefinitions="WIN32;_DEBUG;DEBUG;_WINDOWS;OPT_GENERIC;_LIB;FLOATOUT;REAL_IS_FLOAT"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -62,7 +62,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="shlwapi.lib"
-				AdditionalLibraryDirectories=".;..;../../3rdparty/include;./mpg123/src;./mpg123/src/libmpg123"
+				AdditionalLibraryDirectories="./lib;../../3rdparty/lib"
 				GenerateDebugInformation="true"
 			/>
 			<Tool
@@ -135,7 +135,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="shlwapi.lib"
-				AdditionalLibraryDirectories="../../3rdparty/lib"
+				AdditionalLibraryDirectories="./lib;../../3rdparty/lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -293,6 +293,14 @@
 			</File>
 			<File
 				RelativePath=".\mpg123\src\libmpg123\icy.h"
+				>
+			</File>
+			<File
+				RelativePath=".\mpg123\src\libmpg123\icy2utf8.c"
+				>
+			</File>
+			<File
+				RelativePath=".\mpg123\src\libmpg123\icy2utf8.h"
 				>
 			</File>
 			<File

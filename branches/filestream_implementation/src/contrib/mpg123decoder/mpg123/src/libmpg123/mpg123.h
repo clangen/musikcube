@@ -24,8 +24,10 @@
 #endif
 #endif
 
+// Some special defines for MSVC
 #define ssize_t long int
-
+#define strcasecmp _stricmp
+#define strncasecmp _strnicmp
 #include <stdlib.h>
 #include <sys/types.h>
 //@INCLUDE_STDLIB_H@
