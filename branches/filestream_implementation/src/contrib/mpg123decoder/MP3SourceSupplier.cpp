@@ -33,21 +33,23 @@
 
 #include "stdafx.h"
 
-#include <boost/algorithm/string.hpp>
+//#include <boost/algorithm/string.hpp>
 //#include "boost/filesystem.hpp"
 
 #include "MP3SourceSupplier.h"
-
 #include "MP3Decoder.h"
 
-#include <string>
+#include "mpg123.h"
+
 
 MP3SourceSupplier::MP3SourceSupplier()
 {
+    mpg123_init();
 }
 
 MP3SourceSupplier::~MP3SourceSupplier()
 {
+    mpg123_exit();
 }
 
 void MP3SourceSupplier::Destroy()
@@ -62,18 +64,6 @@ IAudioSource* MP3SourceSupplier::CreateAudioSource()
 
 bool MP3SourceSupplier::CanHandle(const utfchar* extension) const
 {
-/*    using namespace boost::filesystem;
-    using namespace boost::algorithm;
-
-    wpath sourcepath(source);
-
-    if (!is_regular(sourcepath)) 
-        return false;
-
-    if (to_lower_copy(extension(sourcepath)) != TEXT(".mp3"))
-        return false;
-
-    return true;*/
     utfstring ext(UTF("mp3"));
     return ext==extension;
 }

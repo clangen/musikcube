@@ -33,6 +33,7 @@
 #pragma once
 
 #include <core/audio/IAudioSource.h>
+#include "mpg123.h"
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -52,5 +53,10 @@ class MP3Decoder :	public IAudioSource{
         virtual bool    GetFormat(unsigned long * SampleRate, unsigned long * Channels);
         virtual bool    GetBuffer(float ** ppBuffer, unsigned long * NumSamples);
         virtual bool    Open(musik::core::filestreams::IFileStream *fileStream);
+
+    private:
+        unsigned long cachedLength;
+
+        mpg123_handle *decoder;
 
 };

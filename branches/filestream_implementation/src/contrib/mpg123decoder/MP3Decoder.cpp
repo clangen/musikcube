@@ -34,11 +34,19 @@
 #include "MP3decoder.h"
 
 
-MP3Decoder::MP3Decoder(void){
+MP3Decoder::MP3Decoder(void)
+ :cachedLength(0)
+ ,decoder(NULL)
+{
+    this->decoder   = mpg123_new(NULL,NULL);
 }
 
 
 MP3Decoder::~MP3Decoder(void){
+    if(this->decoder){
+        mpg123_delete(this->decoder);
+        this->decoder   = NULL;
+    }
 }
 
 
@@ -48,26 +56,39 @@ void    MP3Decoder::Destroy(){
 
 
 bool    MP3Decoder::GetLength(unsigned long * MS){
+    if(this->cachedLength){
+        *MS = this->cachedLength;
+        return true;
+    }
+    return false;
 }
 
 
 bool    MP3Decoder::SetPosition(unsigned long * MS){
+    return false;
 }
 
 
 bool    MP3Decoder::SetState(unsigned long State){
+    return false;
 }
 
 
 bool    MP3Decoder::GetFormat(unsigned long * SampleRate, unsigned long * Channels){
+    return false;
 }
 
 
 bool    MP3Decoder::GetBuffer(float ** ppBuffer, unsigned long * NumSamples){
+    return false;
 }
 
 
 bool    MP3Decoder::Open(musik::core::filestreams::IFileStream *fileStream){
+    if(this->decoder && fileStream){
+        return true;
+    }
+    return false;
 }
 
 
