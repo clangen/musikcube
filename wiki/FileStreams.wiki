@@ -5,7 +5,7 @@
 
 = Introduction =
 
-Filestreams can be complicated. When writing mC2 we thought about how to make a filestream as flexible as possible so that we could extend them to read from local files as well as from http streams. The result was a simple and very expendable interface that can be extended to read from anything like http stream, P2P streams or archives (RAR, ZIP).
+Filestreams can be complicated. When writing mC2 we thought about how to make a filestream as flexible as possible so that we could extend them to read from local files as well as from http streams. The result was a simple and very extendible interface that can be extended to read from anything like http stream, P2P streams or archives (RAR, ZIP).
 
 
 = How to create a new filestream type =
