@@ -9,6 +9,7 @@
 #define ME "main"
 #include "mpg123app.h"
 #include "mpg123.h"
+#include "local.h"
 
 #ifdef HAVE_SYS_WAIT_H
 #include <sys/wait.h>
@@ -106,9 +107,10 @@ struct parameter param = {
 	,0.0 /* pitch */
 	,0 /* ignore_mime */
 	,NULL /* proxyurl */
+	,0 /* keep_open */
+	,0 /* force_utf8 */
 };
 
-int utf8env = 0;
 mpg123_handle *mh = NULL;
 off_t framenum;
 off_t frames_left;
@@ -432,6 +434,8 @@ topt opts[] = {
 	{0, "resync-limit", GLO_ARG | GLO_LONG, 0, &param.resync_limit, 0},
 	{0, "pitch", GLO_ARG|GLO_DOUBLE, 0, &param.pitch, 0},
 	{0, "ignore-mime", GLO_INT,  0, &param.ignore_mime, 1 },
+	{0, "keep-open", GLO_INT, 0, &param.keep_open, 1},
+	{0, "utf8", GLO_INT, 0, &param.force_utf8, 1},
 	{0, 0, 0, 0, 0, 0}
 };
 
@@ -675,10 +679,7 @@ int main(int argc, char *argv[])
 #if !defined(WIN32) && !defined(GENERIC)
 	struct timeval start_time;
 #endif
-	{
-		char *lang = getenv("LANG");
-		if(lang && strstr(lang, "UTF-8")) utf8env = 1;
-	}
+
 	{
 		/* Hack the path of the binary... needed for relative module search. */
 		int i;
@@ -738,6 +739,8 @@ int main(int argc, char *argv[])
 				prgName, loptarg);
 			usage(1);
 	}
+	/* Do this _after_ parameter parsing. */
+	check_locale(); /* Check/set locale; store if it uses UTF-8. */
 
 	if(param.list_cpu)
 	{
@@ -847,28 +850,7 @@ int main(int argc, char *argv[])
 	/* Now either check caps myself or query buffer for that. */
 	audio_capabilities(ao, mh);
 
-	if(equalfile != NULL)
-	{ /* tst; ThOr: not TRUE or FALSE: allocated or not... */
-		FILE *fe;
-		int i;
-		fe = fopen(equalfile,"r");
-		if(fe) {
-			char line[256];
-			for(i=0;i<32;i++) {
-				float e1,e0; /* %f -> float! */
-				line[0]=0;
-				fgets(line,255,fe);
-				if(line[0]=='#')
-					continue;
-				sscanf(line,"%f %f",&e0,&e1);
-				mpg123_eq(mh, MPG123_LEFT,  i, e0);
-				mpg123_eq(mh, MPG123_RIGHT, i, e1);
-			}
-			fclose(fe);
-		}
-		else
-			fprintf(stderr,"Can't open equalizer file '%s'\n",equalfile);
-	}
+	load_equalizer(mh);
 
 #ifdef HAVE_SETPRIORITY
 	if(param.aggressive) { /* tst */
@@ -1141,6 +1123,7 @@ static void long_usage(int err)
 	fprintf(o," -@ <f> --list <f>         play songs in playlist <f> (plain list, m3u, pls (shoutcast))\n");
 	fprintf(o," -l <n> --listentry <n>    play nth title in playlist; show whole playlist for n < 0\n");
 	fprintf(o,"        --loop <n>         loop track(s) <n> times, < 0 means infinite loop (not with --random!)\n");
+	fprintf(o,"        --keep-open        (--remote mode only) keep loaded file open after reaching end\n");
 #ifndef WIN32
 	fprintf(o,"        --timeout <n>      Timeout in seconds before declaring a stream dead (if <= 0, wait forever)\n");
 #endif
@@ -1211,6 +1194,7 @@ static void long_usage(int err)
 	fprintf(o,"        --title            set xterm/rxvt title to filename\n");
 	#endif
 	fprintf(o,"        --long-tag         spacy id3 display with every item on a separate line\n");
+	fprintf(o,"        --utf8             Regardless of environment, print metadata in UTF-8.\n");
 	fprintf(o," -R     --remote           generic remote interface\n");
 	fprintf(o,"        --remote-err       force use of stderr for generic remote interface\n");
 #ifdef FIFO

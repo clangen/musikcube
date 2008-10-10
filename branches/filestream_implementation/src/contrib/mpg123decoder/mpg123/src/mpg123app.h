@@ -87,12 +87,12 @@ typedef unsigned char byte;
 
 #include "module.h"
 #include "audio.h"
+#include "local.h"
 
 extern size_t bufferblock;
 
 #define VERBOSE_MAX 3
 
-extern int utf8env; /* if we should print out UTF-8 or ASCII */
 extern char* binpath; /* argv[0], actually... */
 
 struct parameter
@@ -151,6 +151,8 @@ struct parameter
 	double pitch; /* <0 or >0, 0.05 for 5% speedup. */
 	int ignore_mime; /* An mpg123 app flag field in future? */
 	char *proxyurl;
+	int keep_open; /* Whether to keep files open after end reached, for remote control mode, perhaps terminal control, too. */
+	int force_utf8; /* Regardless of environment, always print out verbatim UTF for metadata. */
 };
 
 extern char *equalfile;
@@ -195,4 +197,8 @@ void prev_track(void);
 int  open_track(char *fname);
 void close_track(void);
 void set_intflag(void);
+
+/* equalizer... success is 0, failure -1 */
+int load_equalizer(mpg123_handle *mh);
+
 #endif 

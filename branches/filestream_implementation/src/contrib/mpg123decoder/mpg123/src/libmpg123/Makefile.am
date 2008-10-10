@@ -8,7 +8,7 @@
 #AM_LDFLAGS = 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/libmpg123
 
-EXTRA_DIST = mpg123.h.in
+EXTRA_DIST = mpg123.h.in dnoise.sh dnoise.dat
 
 EXTRA_PROGRAMS = testcpu
 testcpu_dependencies = getcpuflags.$(OBJEXT)
@@ -91,7 +91,6 @@ EXTRA_libmpg123_la_SOURCES = \
 	decode_mmx.S \
 	decode_sse3d.h \
 	decode_sse.S \
-	dnoise.c \
 	equalizer_3dnow.S \
 	tabinit_mmx.S \
 	getcpuflags.S
@@ -103,3 +102,6 @@ EXTRA_libmpg123_la_SOURCES = \
 
 .S.lo:
 	$(LTCCASCOMPILE) $(DEFAULT_INCLUDES) -c -o $@ $<
+
+dnoise.c: dnoise.dat dnoise.sh
+	sh dnoise.sh "$<" > "$@"

@@ -876,7 +876,7 @@ int open_feed(mpg123_handle *fr)
 	return 0;
 }
 
-int open_stream(mpg123_handle *fr, char *bs_filenam, int fd)
+int open_stream(mpg123_handle *fr, const char *bs_filenam, int fd)
 {
 	int filept_opened = 1;
 	int filept; /* descriptor of opened file/stream */

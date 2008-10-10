@@ -306,8 +306,10 @@ static void frame_fixed_reset(mpg123_handle *fr)
 	fr->rva.gain[1] = 0;
 	fr->rva.peak[0] = 0;
 	fr->rva.peak[1] = 0;
+#ifdef FRAME_INDEX
 	fr->index.fill = 0;
 	fr->index.step = 1;
+#endif
 	fr->fsizeold = 0;
 	fr->firstframe = 0;
 	fr->ignoreframe = fr->firstframe-IGNORESHIFT;
@@ -398,6 +400,7 @@ off_t frame_index_find(mpg123_handle *fr, off_t want_frame, off_t* get_frame)
 	/* default is file start if no index position */
 	off_t gopos = 0;
 	*get_frame = 0;
+#ifdef FRAME_INDEX
 	if(fr->index.fill)
 	{
 		/* find in index */
@@ -408,6 +411,15 @@ off_t frame_index_find(mpg123_handle *fr, off_t want_frame, off_t* get_frame)
 		*get_frame = fi*fr->index.step;
 		gopos = fr->index.data[fi];
 	}
+	else
+	{
+#endif
+		/* A bit hackish here... but we need to be fresh when looking for the first header again. */
+		fr->firsthead = 0;
+		fr->oldhead = 0;
+#ifdef FRAME_INDEX
+	}
+#endif
 	debug2("index: 0x%lx for frame %li", (unsigned long)gopos, (long) *get_frame);
 	return gopos;
 }

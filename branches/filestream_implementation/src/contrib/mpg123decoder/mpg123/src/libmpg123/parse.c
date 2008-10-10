@@ -704,6 +704,7 @@ init_resync:
 		memcpy (fr->ssave, fr->bsbuf, fr->ssize);
 	}
 	/* index the position */
+#ifdef FRAME_INDEX
 	if(INDEX_SIZE > 0 && fr->rdat.flags & READER_SEEKABLE) /* any sane compiler should make a no-brainer out of this */
 	{
 		if(fr->num == fr->index.fill*fr->index.step)
@@ -726,6 +727,7 @@ init_resync:
 			}
 		}
 	}
+#endif
 	if(fr->rd->forget != NULL) fr->rd->forget(fr);
 	fr->to_decode = fr->to_ignore = TRUE;
 	if(fr->error_protection) fr->crc = getbits(fr, 16); /* skip crc */

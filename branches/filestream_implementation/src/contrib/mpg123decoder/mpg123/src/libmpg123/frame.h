@@ -10,6 +10,7 @@
 #define MPG123_FRAME_H
 
 #include <stdio.h>
+#include "config.h"
 #include "mpg123.h"
 #include "id3.h"
 #include "icy.h"
@@ -25,12 +26,14 @@ struct al_table
   short d;
 };
 
+#ifdef FRAME_INDEX
 struct frame_index
 {
 	off_t data[INDEX_SIZE];
 	size_t fill;
 	off_t step;
 };
+#endif
 
 /* the output buffer, used to be pcm_sample, pcm_point and audiobufsize */
 struct outbuffer
@@ -222,7 +225,9 @@ struct mpg123_handle_struct
 	unsigned long oldhead;
 	unsigned long firsthead;
 	int abr_rate;
+#ifdef FRAME_INDEX
 	struct frame_index index;
+#endif
 
 	/* output data */
 	struct outbuffer buffer;

@@ -69,5 +69,7 @@ class MP3Decoder :	public IAudioSource{
 
         long sampleSize;
 
+        int lastMpg123Status;
+
 
 };

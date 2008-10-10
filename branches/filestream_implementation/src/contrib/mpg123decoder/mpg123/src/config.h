@@ -229,7 +229,7 @@
 #define STDC_HEADERS
 
 /* Define if modules are enabled */
-#undef USE_MODULES
+#define USE_MODULES
 
 /* Version number of package */
 #undef VERSION

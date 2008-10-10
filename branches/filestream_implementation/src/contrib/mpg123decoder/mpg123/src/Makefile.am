@@ -29,6 +29,7 @@ mpg123_SOURCES = \
 	libmpg123/compat.c \
 	libmpg123/compat.h \
 	control_generic.c \
+	equalizer.c \
 	getlopt.c \
 	getlopt.h \
 	httpget.c \
@@ -42,6 +43,8 @@ mpg123_SOURCES = \
 	mpg123app.h \
 	metaprint.c \
 	metaprint.h \
+	local.h \
+	local.c \
 	playlist.c \
 	playlist.h \
 	sfifo.c \

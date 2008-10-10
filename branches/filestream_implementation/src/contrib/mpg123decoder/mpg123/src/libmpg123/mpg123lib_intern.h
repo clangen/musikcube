@@ -63,7 +63,9 @@
 # define REAL_PLUS_32767       ( 32767 << REAL_RADIX )
 # define REAL_MINUS_32768      ( -32768 << REAL_RADIX )
 
-# define DOUBLE_TO_REAL(x)     ((int)((x) * REAL_FACTOR))
+/* I just changed the (int) to (long) there... seemed right. */
+# define DOUBLE_TO_REAL(x)     ((long)((x) * REAL_FACTOR))
+# define REAL_TO_DOUBLE(x)     ((double)(x) / REAL_FACTOR)
 # define REAL_TO_SHORT(x)      ((x) >> REAL_RADIX)
 # define REAL_MUL(x, y)                (((long long)(x) * (long long)(y)) >> REAL_RADIX)
 #  define REAL_SCANF "%ld"
@@ -77,6 +79,9 @@
 
 #ifndef DOUBLE_TO_REAL
 # define DOUBLE_TO_REAL(x)     (x)
+#endif
+#ifndef REAL_TO_DOUBLE
+# define REAL_TO_DOUBLE(x)     (x)
 #endif
 #ifndef REAL_TO_SHORT
 # define REAL_TO_SHORT(x)      (x)

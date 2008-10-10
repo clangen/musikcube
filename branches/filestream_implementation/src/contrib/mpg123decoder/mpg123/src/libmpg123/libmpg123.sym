@@ -32,6 +32,7 @@ mpg123_seek_frame
 mpg123_timeframe
 mpg123_index
 mpg123_eq
+mpg123_geteq
 mpg123_reset_eq
 mpg123_volume
 mpg123_volume_change

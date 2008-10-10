@@ -10,22 +10,12 @@
 #include <stdio.h>
 #include "config.h"
 #include "getlopt.h"
+#include "compat.h"
 #include "debug.h"
 
 int loptind = 1;	/* index in argv[] */
 int loptchr = 0;	/* index in argv[loptind] */
 char *loptarg;		/* points to argument if present, else to option */
-
-#if defined(ultrix) || defined(ULTRIX)
-char *strdup (char *src)
-{
-	char *dest;
-
-	if (!(dest = (char *) malloc(strlen(src)+1)))
-		return (NULL);
-	return (strcpy(dest, src));
-}
-#endif
 
 topt *findopt (int islong, char *opt, topt *opts)
 {

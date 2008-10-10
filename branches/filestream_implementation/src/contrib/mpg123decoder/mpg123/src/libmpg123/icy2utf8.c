@@ -1,6 +1,9 @@
 /* mpg123 note: This is BSD-licensed code that is no problem for mpg123 usage under LGPL.
    It's Free, understood? ;-) */
 
+/* Another note: This code is basically written by Thorsten Glaser,
+   Thomas Orgis did just some rearrangements and comments. */
+
 /*-
  * Copyright (c) 2008
  *	Thorsten Glaser <tg@mirbsd.org>
@@ -23,8 +26,8 @@
  * Convert from ICY encoding (windows-1252 codepage) to UTF-8
  */
 
-#include <stdlib.h>
-#include <string.h>
+/* Includes string and stdlib headers... */
+#include "compat.h"
 
 /* ThOr: too lazy for this type check; also we use char/short all around anyway.
    Of cource, it would be the proper way to use _these_ kind of types all around. */
@@ -326,6 +329,48 @@ static const uint16_t tblofs[257] = {
 	/* sizeof (cp1252_utf8) */ 406
 };
 
+/* Check if a string qualifies as UTF-8. */
+static int
+is_utf8(const char* src)
+{
+	uint8_t ch;
+	size_t i;
+	const uint8_t* s = (const uint8_t*) src;
+
+	/* We make a loop over every character, until we find a null one.
+	   Remember: The string is supposed to end with a NUL, so ahead checks are safe. */
+	while ((ch = *s++))	{
+		/* Ye olde 7bit ASCII chars 'rr fine for anything */
+		if(ch < 0x80) continue;
+
+		/* Now, we watch out for non-UTF conform sequences. */
+		else if ((ch < 0xC2) || (ch > 0xFD))
+			return 0;
+		/* check for some misformed sequences */
+		if (((ch == 0xC2) && (s[0] < 0xA0)) ||
+		    ((ch == 0xEF) && (s[0] == 0xBF) && (s[1] > 0xBD)))
+			/* XXX add more for outside the BMP */
+			return 0;
+
+		/* Check the continuation bytes. */
+		if      (ch < 0xE0) i = 1;
+		else if (ch < 0xF0) i = 2;
+		else if (ch < 0xF8)	i = 3;
+		else if (ch < 0xFC)	i = 4;
+		else
+			i = 5;
+
+		while (i--)
+			if ((*s++ & 0xC0) != 0x80)
+				return 0;
+	}
+
+	/* If no check failed, the string indeed looks like valid UTF-8. */
+	return 1;
+}
+
+/* The main conversion routine.
+   ICY in CP-1252 (or UTF-8 alreay) to UTF-8 encoded string. */
 char *
 icy2utf8(const char *src)
 {
@@ -333,6 +378,10 @@ icy2utf8(const char *src)
 	size_t srclen, dstlen, i, k;
 	uint8_t ch, *d;
 	char *dst;
+
+	/* Some funny streams from Apple/iTunes give ICY info in UTF-8 already.
+	   So, be prepared and don't try to re-encode such. */
+	if(is_utf8(src)) return (strdup(src));
 
 	srclen = strlen(src) + 1;
 	/* allocate conservatively */
@@ -356,6 +405,7 @@ icy2utf8(const char *src)
 	return (dst);
 }
 
+/* This stuff is for testing only. */
 #ifdef TEST
 static const char intext[] = "\225 Gr\374\337e kosten 0,55 \200\205";
 
@@ -364,15 +414,24 @@ static const char intext[] = "\225 Gr\374\337e kosten 0,55 \200\205";
 int
 main(void)
 {
-	char *t;
+	char *t, *t2;
 
 	if ((t = icy2utf8(intext)) == NULL) {
 		fprintf(stderr, "out of memory\n");
 		return (1);
 	}
 
-	printf("Result is: \343\200\214%s\343\200\215\n", t);
+	/* make sure it won't be converted twice */
+	if ((t2 = icy2utf8(t)) == NULL) {
+		fprintf(stderr, "out of memory\n");
+		return (1);
+	}
+
+	printf("Result is:\t\343\200\214%s\343\200\215\n"
+		"\t\t\343\200\214%s\343\200\215\n", t, t2);
+
 	free(t);
+	free(t2);
 	return (0);
 }
 #endif

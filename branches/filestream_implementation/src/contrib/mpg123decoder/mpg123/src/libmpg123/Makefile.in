@@ -308,7 +308,7 @@ target_vendor = @target_vendor@
 #AM_CFLAGS = @AUDIO_CFLAGS@
 #AM_LDFLAGS = 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/libmpg123
-EXTRA_DIST = mpg123.h.in
+EXTRA_DIST = mpg123.h.in dnoise.sh dnoise.dat
 testcpu_dependencies = getcpuflags.$(OBJEXT)
 testcpu_sources = testcpu.c
 testcpu_LDADD = getcpuflags.$(OBJEXT)
@@ -384,7 +384,6 @@ EXTRA_libmpg123_la_SOURCES = \
 	decode_mmx.S \
 	decode_sse3d.h \
 	decode_sse.S \
-	dnoise.c \
 	equalizer_3dnow.S \
 	tabinit_mmx.S \
 	getcpuflags.S
@@ -475,7 +474,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/decode_i386.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/decode_i486.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/decode_ntom.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dnoise.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/equalizer.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/format.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/frame.Plo@am__quote@
@@ -725,6 +723,9 @@ uninstall-am: uninstall-info-am uninstall-libLTLIBRARIES \
 
 .S.lo:
 	$(LTCCASCOMPILE) $(DEFAULT_INCLUDES) -c -o $@ $<
+
+dnoise.c: dnoise.dat dnoise.sh
+	sh dnoise.sh "$<" > "$@"
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

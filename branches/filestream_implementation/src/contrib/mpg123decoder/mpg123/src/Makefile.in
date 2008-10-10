@@ -52,10 +52,11 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
 am_mpg123_OBJECTS = audio.$(OBJEXT) buffer.$(OBJEXT) common.$(OBJEXT) \
-	compat.$(OBJEXT) control_generic.$(OBJEXT) getlopt.$(OBJEXT) \
-	httpget.$(OBJEXT) resolver.$(OBJEXT) genre.$(OBJEXT) \
-	mpg123.$(OBJEXT) metaprint.$(OBJEXT) playlist.$(OBJEXT) \
-	sfifo.$(OBJEXT) term.$(OBJEXT) wav.$(OBJEXT) xfermem.$(OBJEXT)
+	compat.$(OBJEXT) control_generic.$(OBJEXT) equalizer.$(OBJEXT) \
+	getlopt.$(OBJEXT) httpget.$(OBJEXT) resolver.$(OBJEXT) \
+	genre.$(OBJEXT) mpg123.$(OBJEXT) metaprint.$(OBJEXT) \
+	local.$(OBJEXT) playlist.$(OBJEXT) sfifo.$(OBJEXT) \
+	term.$(OBJEXT) wav.$(OBJEXT) xfermem.$(OBJEXT)
 mpg123_OBJECTS = $(am_mpg123_OBJECTS)
 am__DEPENDENCIES_1 =
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
@@ -316,6 +317,7 @@ mpg123_SOURCES = \
 	libmpg123/compat.c \
 	libmpg123/compat.h \
 	control_generic.c \
+	equalizer.c \
 	getlopt.c \
 	getlopt.h \
 	httpget.c \
@@ -329,6 +331,8 @@ mpg123_SOURCES = \
 	mpg123app.h \
 	metaprint.c \
 	metaprint.h \
+	local.h \
+	local.c \
 	playlist.c \
 	playlist.h \
 	sfifo.c \
@@ -433,9 +437,11 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/common.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/compat.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/control_generic.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/equalizer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/genre.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getlopt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/httpget.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/local.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/metaprint.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mpg123.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/playlist.Po@am__quote@

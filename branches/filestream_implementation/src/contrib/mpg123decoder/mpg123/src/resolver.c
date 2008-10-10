@@ -155,7 +155,6 @@ static int timeout_connect(int sockfd, const struct sockaddr *serv_addr, socklen
 	if(param.timeout > 0)
 	{
 		int err;
-		time_t then;
 		nonblock(sockfd);
 		err = connect(sockfd, serv_addr, addrlen);
 		if(err == 0)

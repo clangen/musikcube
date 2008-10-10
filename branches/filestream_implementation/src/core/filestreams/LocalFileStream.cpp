@@ -61,7 +61,7 @@ LocalFileStream::~LocalFileStream(){
 }
 
 bool LocalFileStream::Open(const utfchar *filename,unsigned int options){
-    this->file  = UTFFopen(filename,UTF("r"));
+    this->file  = UTFFopen(filename,UTF("rb"));
     return this->file!=NULL;
 }
 

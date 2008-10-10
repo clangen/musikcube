@@ -184,7 +184,9 @@ enum mpg123_errors
 	MPG123_RESYNC_FAIL,	/**< Resync failed to find valid MPEG data. */
 	MPG123_NO_8BIT,	/**< No 8bit encoding possible. */
 	MPG123_BAD_ALIGN,	/**< Stack aligmnent error */
-	MPG123_NULL_BUFFER	/**< NULL input buffer with non-zero size... */
+	MPG123_NULL_BUFFER,	/**< NULL input buffer with non-zero size... */
+	MPG123_NO_RELSEEK,	/**< Relative seek not possible (screwed up file offset) */
+	MPG123_NULL_POINTER /**< You gave a null pointer somewhere where you shouldn't have. */
 };
 
 /** Return a string describing that error errcode means. */
@@ -316,7 +318,7 @@ EXPORT int mpg123_getformat(mpg123_handle *mh, long *rate, int *channels, int *e
  *  This does not open HTTP urls; libmpg123 contains no networking code.
  *  If you want to decode internet streams, use mpg123_open_fd() or mpg123_open_feed().
  */
-EXPORT int mpg123_open(mpg123_handle *mh, char *path);
+EXPORT int mpg123_open(mpg123_handle *mh, const char *path);
 
 /** Use an already opened file descriptor as the bitstream input
  *  mpg123_close() will _not_ close the file descriptor.
@@ -384,7 +386,7 @@ EXPORT int mpg123_decode_frame(mpg123_handle *mh, off_t *num, unsigned char **au
  * - SEEK_CUR: change position by offset from now
  * - SEEK_END: set position to offset from end
  *
- * Note that sample-afccurate seek only works when gapless support has been enabled at compile time; seek is frame-accurate otherwise.
+ * Note that sample-accurate seek only works when gapless support has been enabled at compile time; seek is frame-accurate otherwise.
  * Also, seeking is not guaranteed to work for all streams (underlying stream may not support it).
  *
  * @{
@@ -447,8 +449,9 @@ EXPORT int mpg123_position( mpg123_handle *mh, off_t frame_offset,
 
 enum mpg123_channels
 {
-	MPG123_LEFT=0x1,	/**< The Left Channel. */
-	MPG123_RIGHT=0x2	/**< The Right Channel. */
+	 MPG123_LEFT=0x1	/**< The Left Channel. */
+	,MPG123_RIGHT=0x2	/**< The Right Channel. */
+	,MPG123_LR=0x3	/**< Both left and right channel; same as MPG123_LEFT|MPG123_RIGHT */
 };
 
 /** Set the 32 Band Audio Equalizer settings.
@@ -456,6 +459,12 @@ enum mpg123_channels
  *  \param band The equaliser band to change (from 0 to 31)
  *  \param val The (linear) adjustment factor. */
 EXPORT int mpg123_eq(mpg123_handle *mh, enum mpg123_channels channel, int band, double val);
+
+/** Get the 32 Band Audio Equalizer settings.
+ *  \param channel Can be MPG123_LEFT, MPG123_RIGHT or MPG123_LEFT|MPG123_RIGHT for (arithmetic mean of) both.
+ *  \param band The equaliser band to change (from 0 to 31)
+ *  \return The (linear) adjustment factor. */
+EXPORT double mpg123_geteq(mpg123_handle *mh, enum mpg123_channels channel, int band);
 
 /** Reset the 32 Band Audio Equalizer settings to flat */
 EXPORT int mpg123_reset_eq(mpg123_handle *mh);

@@ -33,6 +33,9 @@
 
 #include "MP3decoder.h"
 
+#define MP3_IN_BUFFSIZE     4096
+#define MP3_OUT_BUFFSIZE     32768
+
 
 MP3Decoder::MP3Decoder(void)
  :cachedLength(0)
@@ -40,9 +43,15 @@ MP3Decoder::MP3Decoder(void)
  ,cachedRate(44100)
  ,cachedChannels(2)
  ,fileStream(NULL)
+ ,lastMpg123Status(MPG123_NEED_MORE)
 {
     this->decoder       = mpg123_new(NULL,NULL);
     this->sampleSize    = this->cachedChannels*sizeof(float);
+
+    char **decoders  = mpg123_decoders();
+    char **sdecoders  = mpg123_supported_decoders();
+
+cachedRate=cachedRate;
 }
 
 
@@ -105,53 +114,48 @@ bool    MP3Decoder::GetFormat(unsigned long * SampleRate, unsigned long * Channe
 
 bool    MP3Decoder::GetBuffer(float ** ppBuffer, unsigned long * NumSamples){
 
-    static float buffer[1200];
-    int nofSamplesMax(1200/this->cachedChannels);
-    *ppBuffer   = buffer;
+    int inBufferSize(0);
+    unsigned char inBuffer[MP3_IN_BUFFSIZE];
+    size_t outBufferSize(0);
+    static unsigned char outBuffer[MP3_OUT_BUFFSIZE];
 
-    unsigned char* currentBuffer   = (unsigned char*)(&buffer);
-    unsigned long bytesLeft(nofSamplesMax*this->sampleSize);
-    bool done(false);
+    int nofSamplesMax(MP3_OUT_BUFFSIZE/(sizeof(float)*this->cachedChannels));
 
-    do{
-        size_t bytesWritten(0);
-        int rc  = mpg123_read(this->decoder,currentBuffer,bytesLeft,&bytesWritten);
-        bytesLeft-=(unsigned long)bytesWritten;
-        currentBuffer+=bytesWritten;
+    if(this->lastMpg123Status == MPG123_NEED_MORE){
+        // mpg123 needs more input, lets feed it
+        this->lastMpg123Status  = MPG123_ERR;
 
-        switch(rc){
-            case MPG123_DONE:
-                // Stream is finished
-                done=true;
-                break;
-            case MPG123_NEED_MORE:
-                if(!this->Feed()){
-                    done=true;
-                }
-                break;
-            case MPG123_ERR:
-    			*ppBuffer	= NULL;
-                *NumSamples = 0;
-                return false;
-                break;
+        if(this->fileStream){
+            inBufferSize = this->fileStream->Read(inBuffer,MP3_IN_BUFFSIZE);
+            if(inBufferSize){
+                this->lastMpg123Status  = mpg123_decode(this->decoder,inBuffer,inBufferSize,outBuffer,MP3_OUT_BUFFSIZE,&outBufferSize);
+            }
         }
 
-    }while(bytesLeft>0 && !done);
-
-    *NumSamples = nofSamplesMax-bytesLeft/this->sampleSize;
-
-    if(*NumSamples==0){
-        *ppBuffer	= NULL;
-        if(done){
-            return false;
-        }
+    }else{
+        this->lastMpg123Status  = mpg123_decode(this->decoder,NULL,0,outBuffer,MP3_OUT_BUFFSIZE,&outBufferSize);
     }
-    return true;
+
+    if(this->lastMpg123Status==MPG123_NEW_FORMAT){
+        int encoding(0);
+        mpg123_getformat(this->decoder,&this->cachedRate,&this->cachedChannels,&encoding);
+        this->GuessLength();
+    }
+
+    if(this->lastMpg123Status!=MPG123_ERR){
+        *NumSamples = nofSamplesMax-outBufferSize/this->sampleSize;
+        *ppBuffer   = (float*)outBuffer;
+        return true;
+    }
+
+    *NumSamples=0;
+    *ppBuffer	= NULL;
+    return false;
 }
 
 bool MP3Decoder::Feed(){
     // Feed stuff to mpg123
-    if(this->fileStream){
+/*    if(this->fileStream){
         unsigned char buffer[STREAM_FEED_SIZE];
         musik::core::filestreams::PositionType bytesRead    = this->fileStream->Read(&buffer,STREAM_FEED_SIZE);
         if(bytesRead){
@@ -159,7 +163,7 @@ bool MP3Decoder::Feed(){
                 return true;
             }
         }
-    }
+    }*/
     return false;
 }
 
@@ -170,7 +174,7 @@ bool    MP3Decoder::Open(musik::core::filestreams::IFileStream *fileStream){
         if(mpg123_open_feed(this->decoder)==MPG123_OK){
 
             // Set the format
-            int encoding(0);
+/*            int encoding(0);
             bool continueFeed(true);
 
             // Loop until we have a format
@@ -182,19 +186,13 @@ bool    MP3Decoder::Open(musik::core::filestreams::IFileStream *fileStream){
                     }
                 }
             }
-
+*/
 
 
             // Format should not change
             mpg123_format_none(this->decoder);  
             // Force the encoding to float32
             int e=mpg123_format(this->decoder,this->cachedRate,this->cachedChannels,MPG123_ENC_FLOAT_32);
-            int tjo = mpg123_format_support(this->decoder,44100,MPG123_ENC_FLOAT_32);
-            int tjo2 = mpg123_format_support(this->decoder,44100,MPG123_ENC_FLOAT_32);
-/*            while(this->cachedLength==0){
-                this->Feed();
-                this->GuessLength();
-            }*/
         }
         
         return true;

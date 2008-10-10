@@ -316,22 +316,22 @@ int synth_ntom(real *bandPtr,int channel, mpg123_handle *fr, int final)
         continue;
       }
 
-      sum  = *window++ * *b0++;
-      sum -= *window++ * *b0++;
-      sum += *window++ * *b0++;
-      sum -= *window++ * *b0++;
-      sum += *window++ * *b0++;
-      sum -= *window++ * *b0++;
-      sum += *window++ * *b0++;
-      sum -= *window++ * *b0++;
-      sum += *window++ * *b0++;
-      sum -= *window++ * *b0++;
-      sum += *window++ * *b0++;
-      sum -= *window++ * *b0++;
-      sum += *window++ * *b0++;
-      sum -= *window++ * *b0++;
-      sum += *window++ * *b0++;
-      sum -= *window++ * *b0++;
+      sum  = REAL_MUL(*window++, *b0++);
+      sum -= REAL_MUL(*window++, *b0++);
+      sum += REAL_MUL(*window++, *b0++);
+      sum -= REAL_MUL(*window++, *b0++);
+      sum += REAL_MUL(*window++, *b0++);
+      sum -= REAL_MUL(*window++, *b0++);
+      sum += REAL_MUL(*window++, *b0++);
+      sum -= REAL_MUL(*window++, *b0++);
+      sum += REAL_MUL(*window++, *b0++);
+      sum -= REAL_MUL(*window++, *b0++);
+      sum += REAL_MUL(*window++, *b0++);
+      sum -= REAL_MUL(*window++, *b0++);
+      sum += REAL_MUL(*window++, *b0++);
+      sum -= REAL_MUL(*window++, *b0++);
+      sum += REAL_MUL(*window++, *b0++);
+      sum -= REAL_MUL(*window++, *b0++);
 
       while(ntom >= NTOM_MUL) {
         WRITE_SAMPLE(samples,sum,clip);
@@ -344,14 +344,14 @@ int synth_ntom(real *bandPtr,int channel, mpg123_handle *fr, int final)
     if(ntom >= NTOM_MUL)
     {
       real sum;
-      sum  = window[0x0] * b0[0x0];
-      sum += window[0x2] * b0[0x2];
-      sum += window[0x4] * b0[0x4];
-      sum += window[0x6] * b0[0x6];
-      sum += window[0x8] * b0[0x8];
-      sum += window[0xA] * b0[0xA];
-      sum += window[0xC] * b0[0xC];
-      sum += window[0xE] * b0[0xE];
+      sum  = REAL_MUL(window[0x0], b0[0x0]);
+      sum += REAL_MUL(window[0x2], b0[0x2]);
+      sum += REAL_MUL(window[0x4], b0[0x4]);
+      sum += REAL_MUL(window[0x6], b0[0x6]);
+      sum += REAL_MUL(window[0x8], b0[0x8]);
+      sum += REAL_MUL(window[0xA], b0[0xA]);
+      sum += REAL_MUL(window[0xC], b0[0xC]);
+      sum += REAL_MUL(window[0xE], b0[0xE]);
 
       while(ntom >= NTOM_MUL) {
         WRITE_SAMPLE(samples,sum,clip);
@@ -374,22 +374,22 @@ int synth_ntom(real *bandPtr,int channel, mpg123_handle *fr, int final)
         continue;
       }
 
-      sum = -*(--window) * *b0++;
-      sum -= *(--window) * *b0++;
-      sum -= *(--window) * *b0++;
-      sum -= *(--window) * *b0++;
-      sum -= *(--window) * *b0++;
-      sum -= *(--window) * *b0++;
-      sum -= *(--window) * *b0++;
-      sum -= *(--window) * *b0++;
-      sum -= *(--window) * *b0++;
-      sum -= *(--window) * *b0++;
-      sum -= *(--window) * *b0++;
-      sum -= *(--window) * *b0++;
-      sum -= *(--window) * *b0++;
-      sum -= *(--window) * *b0++;
-      sum -= *(--window) * *b0++;
-      sum -= *(--window) * *b0++;
+      sum = REAL_MUL(-*(--window), *b0++);
+      sum -= REAL_MUL(*(--window), *b0++);
+      sum -= REAL_MUL(*(--window), *b0++);
+      sum -= REAL_MUL(*(--window), *b0++);
+      sum -= REAL_MUL(*(--window), *b0++);
+      sum -= REAL_MUL(*(--window), *b0++);
+      sum -= REAL_MUL(*(--window), *b0++);
+      sum -= REAL_MUL(*(--window), *b0++);
+      sum -= REAL_MUL(*(--window), *b0++);
+      sum -= REAL_MUL(*(--window), *b0++);
+      sum -= REAL_MUL(*(--window), *b0++);
+      sum -= REAL_MUL(*(--window), *b0++);
+      sum -= REAL_MUL(*(--window), *b0++);
+      sum -= REAL_MUL(*(--window), *b0++);
+      sum -= REAL_MUL(*(--window), *b0++);
+      sum -= REAL_MUL(*(--window), *b0++);
 
       while(ntom >= NTOM_MUL) {
         WRITE_SAMPLE(samples,sum,clip);
