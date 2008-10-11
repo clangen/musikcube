@@ -35,7 +35,7 @@
 #include <core/audio/IAudioSource.h>
 #include "mpg123.h"
 
-#define STREAM_FEED_SIZE    2048
+#define STREAM_FEED_SIZE    4096
 
 //////////////////////////////////////////////////////////////////////////////
 using namespace musik::core::audio;
@@ -57,7 +57,7 @@ class MP3Decoder :	public IAudioSource{
 
     private:
         bool Feed();
-        void GuessLength();
+        bool GuessLength();
 
     private:
         musik::core::filestreams::IFileStream *fileStream;

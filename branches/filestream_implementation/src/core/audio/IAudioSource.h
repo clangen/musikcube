@@ -108,10 +108,11 @@ class IAudioSource{
         ///Get next buffer (decoded data)
         ///
         ///\param ppBuffer
-        ///Buffer pointer to write to
+        ///Pointer to returned buffer
         ///
         ///\param NumSamples
-        ///How many samples to read. Will also be set by this method
+        ///Number of samples in the buffer (not entirely correct, it's samples*channels)
+        ///TODO: Rename to better name.
         ///
         ///\returns
         ///false is there is nothing left to read
