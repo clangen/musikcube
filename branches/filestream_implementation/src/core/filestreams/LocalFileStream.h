@@ -56,9 +56,12 @@ class LocalFileStream : public IFileStream{
         virtual bool SetPosition(PositionType position);
         virtual PositionType Position();
         virtual bool Eof();
+        virtual long Filesize();
 
     private:
         FILE *file;
+
+        long filesize;
 
 };
 

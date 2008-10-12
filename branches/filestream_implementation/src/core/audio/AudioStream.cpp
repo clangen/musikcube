@@ -5,6 +5,8 @@
 #include <core/audio/IAudioSource.h>
 #include <core/audio/Transport.h>
 
+#include <boost/lexical_cast.hpp>
+
 using namespace musik::core;
 using namespace musik::core::audio;
 
@@ -206,6 +208,20 @@ unsigned long    AudioStream::LengthMs() const
 
     if(this->audioSource->GetLength(&length))
         return length;
+
+    // If not, lets get the length from the tracks metadata
+    const utfchar* duration = this->track->GetValue("duration");
+    if(duration){
+        try{
+            length  = 1000*boost::lexical_cast<unsigned long>(duration);
+            if(length){
+                return length;
+            }
+        }
+        catch(...){
+            return AudioStream::UnknownLength;
+        }
+    }
 
     return AudioStream::UnknownLength;
 }

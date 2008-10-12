@@ -182,7 +182,11 @@ bool WaveOut::Initialize(void)
 	m_ActiveBuffer	= 0;
 	m_QueuedBuffers	= 0;
 
+	if(!Open())
+		return(false);
+
     m_bThreadRun = true;
+
 
     this->audioThread = new boost::thread(boost::bind(&WaveOut::ThreadProc, this));
 
@@ -288,8 +292,8 @@ bool WaveOut::SetFormat(unsigned long SampleRate, unsigned long Channels)
 //
 bool WaveOut::Start(void)
 {
-	if(!Open())
-		return(false);
+//	if(!Open())
+//		return(false);
  
     boost::mutex::scoped_lock lock(this->audioMutex);
 

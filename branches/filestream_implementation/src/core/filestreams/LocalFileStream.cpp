@@ -36,6 +36,7 @@
 #include "pch.hpp"
 #include <core/filestreams/LocalFileStream.h>
 #include <core/config.h>
+#include <core/config_filesystem.h>
 
 //////////////////////////////////////////////////////////////////////////////
 #ifdef UTF_WIDECHAR
@@ -53,6 +54,7 @@ using namespace musik::core::filestreams;
 //////////////////////////////////////////////////////////////////////////////
 LocalFileStream::LocalFileStream()
  :file(NULL)
+ ,filesize(-1)
 {
 
 }
@@ -61,6 +63,9 @@ LocalFileStream::~LocalFileStream(){
 }
 
 bool LocalFileStream::Open(const utfchar *filename,unsigned int options){
+    boost::filesystem::utfpath file(filename);
+    this->filesize  = (long)boost::filesystem::file_size(file);
+
     this->file  = UTFFopen(filename,UTF("rb"));
     return this->file!=NULL;
 }
@@ -99,3 +104,8 @@ PositionType LocalFileStream::Position(){
 bool LocalFileStream::Eof(){
     return feof(this->file)!=0;
 }
+
+long LocalFileStream::Filesize(){
+    return this->filesize;
+}
+

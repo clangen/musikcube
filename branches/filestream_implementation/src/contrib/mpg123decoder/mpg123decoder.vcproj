@@ -136,6 +136,8 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="shlwapi.lib"
 				AdditionalLibraryDirectories="./lib;../../3rdparty/lib"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
 			/>
 			<Tool
 				Name="VCALinkTool"

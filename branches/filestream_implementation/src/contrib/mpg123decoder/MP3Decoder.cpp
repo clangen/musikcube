@@ -68,7 +68,7 @@ void    MP3Decoder::Destroy(){
 
 
 bool    MP3Decoder::GetLength(unsigned long * MS){
-    if(!this->cachedLength){
+/*    if(!this->cachedLength){
         this->GuessLength();
     }
 
@@ -76,7 +76,7 @@ bool    MP3Decoder::GetLength(unsigned long * MS){
         *MS = (this->cachedLength/this->cachedRate);
         return true;
     }
-
+*/
 //    *MS = 2*60*1000;
 
     return false;
@@ -97,9 +97,10 @@ bool    MP3Decoder::GuessLength(){
 bool    MP3Decoder::SetPosition(unsigned long * MS){
 
     off_t seekToFileOffset(0);
-    off_t seekToSampleOffset( ((*MS)*this->cachedRate)/1000 );
+    off_t seekToSampleOffset( ((double)(*MS) * (double)this->cachedRate)/1000.0f );
 
-    if(mpg123_feedseek(this->decoder,seekToSampleOffset,SEEK_SET,&seekToFileOffset)==MPG123_OK){
+    off_t seekedTo  = mpg123_feedseek(this->decoder,seekToSampleOffset,SEEK_CUR,&seekToFileOffset);
+    if(seekedTo>=0){
         if(this->fileStream->SetPosition(seekToFileOffset)){
             return true;
         }
@@ -186,6 +187,9 @@ bool    MP3Decoder::Open(musik::core::filestreams::IFileStream *fileStream){
         this->fileStream    = fileStream;
 
         if(mpg123_open_feed(this->decoder)==MPG123_OK){
+
+            // Set filelength to decoder for better seeking
+            mpg123_set_filesize(this->decoder,this->fileStream->Filesize());
 
             // Set the format
             int encoding(0);
