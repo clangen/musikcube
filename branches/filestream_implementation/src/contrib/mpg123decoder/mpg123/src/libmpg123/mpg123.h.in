@@ -1,7 +1,7 @@
 /*
 	libmpg123: MPEG Audio Decoder library (version @PACKAGE_VERSION@)
 
-	copyright 1995-2007 by the mpg123 project - free software under the terms of the LGPL 2.1
+	copyright 1995-2008 by the mpg123 project - free software under the terms of the LGPL 2.1
 	see COPYING and AUTHORS files in distribution or http://mpg123.org
 */
 
@@ -24,9 +24,10 @@
 #endif
 #endif
 
+#ifndef MPG123_NO_CONFIGURE /* Enable use of this file without configure. */
 @INCLUDE_STDLIB_H@
 @INCLUDE_SYS_TYPE_H@
-
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -392,6 +393,9 @@ EXPORT off_t mpg123_tell(mpg123_handle *mh);
 
 /** Returns the frame number that the next read will give you data from. */
 EXPORT off_t mpg123_tellframe(mpg123_handle *mh);
+
+/** Returns the current byte offset in the input stream. */
+EXPORT off_t mpg123_tell_stream(mpg123_handle *mh);
 
 /** Seek to a desired sample offset. 
  *  Set whence to SEEK_SET, SEEK_CUR or SEEK_END.

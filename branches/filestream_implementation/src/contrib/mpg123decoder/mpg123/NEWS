@@ -1,3 +1,31 @@
+
+1.6.0
+---
+- small things inside that I forgot to mention
+- some new commands for remote control interface:
+  - SCAN
+  - SAMPLE
+  - EQFILE
+  - SHOWEQ
+- added --keep-open command line flag (for remote control)
+- fixed equalizer file parsing to really handle comment lines as example file suggests
+- more elaborate detection of UTF-8 locale, also --utf8 switch to force it
+- libmpg123 9.0.9:
+  - added mpg123_geteq() and mpg123_tell_stream()
+  - API cleanup (take const char* for mpg123_open())
+  - calm down complainling (C++) compilers by completing the mpg123_channels enum
+  - fixed several possible crashes when user provides NULLs where it isn't appropriate
+  - workaround for frames that fail decoding (bad frame body, missing bit reservoir): fill up with silence
+    That also fixes seeking issues related to bad frames since now the fixed relation between frame and sample offsets is restored.
+  - Finally realized what that the resampling code for integer math (generic_nofpu) was just incomplete!
+    Now it works, using the defined integer multiplication.
+  - Detect UTF-8 in ICY conversion (instead of just assuming CP-1252, provided by Torsten Glaser).
+  - Prevent ugly noise when the bit reservoir is not fully there (p.ex. ignorantly cut mp3 files).
+    Concerned frames are silenced, but reservoir for following frames is kept.
+    Thanks to Patrick Dehne for the investigation and patch!
+- new project files to build/use libmpg123 with MSVC++ 2005 and 2008, provided by Patrick Dehne
+- fixed a regression that made the pause/loop mode in terminal control slowly go backwards
+
 1.5.1
 ---
 

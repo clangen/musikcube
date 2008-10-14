@@ -34,8 +34,9 @@
 
 #include <core/audio/IAudioSource.h>
 #include "mpg123.h"
+#include <boost/thread/mutex.hpp>
 
-#define STREAM_FEED_SIZE    4096
+#define STREAM_FEED_SIZE    1024
 
 //////////////////////////////////////////////////////////////////////////////
 using namespace musik::core::audio;
@@ -49,7 +50,7 @@ class MP3Decoder :	public IAudioSource{
 
         virtual void    Destroy();
         virtual bool    GetLength(unsigned long * MS);
-        virtual bool    SetPosition(unsigned long * MS);
+        virtual bool    SetPosition(unsigned long * MS,unsigned long totalMS);
         virtual bool    SetState(unsigned long State);
         virtual bool    GetFormat(unsigned long * SampleRate, unsigned long * Channels);
         virtual bool    GetBuffer(float ** ppBuffer, unsigned long * NumSamples);
@@ -70,6 +71,8 @@ class MP3Decoder :	public IAudioSource{
         long sampleSize;
 
         int lastMpg123Status;
+
+        boost::mutex mutex;
 
 
 };

@@ -22,6 +22,7 @@ mpg123_close
 mpg123_replace_reader
 mpg123_tell
 mpg123_tellframe
+mpg123_tell_stream
 mpg123_position
 mpg123_read
 mpg123_decode

@@ -244,7 +244,7 @@ bool    AudioStream::SetPositionMs(unsigned long ms)
 
     unsigned long Pos = ms;
 
-    if(this->audioSource->SetPosition(&Pos))
+    if(this->audioSource->SetPosition(&Pos,this->LengthMs()))
     {
         this->samplesOut = Pos * (((float)this->output->GetSampleRate()/1000.0f) * (float)this->output->GetChannels());
 

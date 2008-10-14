@@ -252,6 +252,7 @@ int frame_buffers_reset(mpg123_handle *fr)
 	/* Wondering: could it be actually _wanted_ to retain buffer contents over different files? (special gapless / cut stuff) */
 	fr->bsbuf = fr->bsspace[1];
 	fr->bsbufold = fr->bsbuf;
+	fr->bitreservoir = 0; /* Not entirely sure if this is the right place for that counter. */
 	memset(fr->bsspace, 0, 2*(MAXFRAMESIZE+512));
 	memset(fr->ssave, 0, 34);
 	memset(fr->rawbuffs, 0, fr->rawbuffss);

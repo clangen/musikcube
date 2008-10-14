@@ -10,9 +10,9 @@ AC_PREREQ(2.57)
 
 dnl ############# Initialisation
 
-AC_INIT([mpg123], [1.5.1], [mpg123-devel@lists.sourceforge.net])
-LIBMPG123_VERSION=7:0:7
-AC_SUBST( LIBMPG123_VERSION )
+AC_INIT([mpg123], [20081014000000], [mpg123-devel@lists.sourceforge.net])
+LIBMPG123_VERSION=9:0:9
+AC_SUBST(LIBMPG123_VERSION)
 
 AC_CONFIG_SRCDIR(src/mpg123.c)
 AC_CONFIG_AUX_DIR(build)
@@ -20,7 +20,7 @@ AC_CONFIG_SRCDIR(doc)
 AC_CANONICAL_TARGET
 
 dnl Version 1.7 of automake is recommended
-AM_INIT_AUTOMAKE( 1.7 )
+AM_INIT_AUTOMAKE(1.7)
 AM_CONFIG_HEADER(src/config.h)
 
 
@@ -382,6 +382,10 @@ AC_CHECK_FUNCS( setpriority )
 
 AC_CHECK_FUNCS( strerror )
 
+AC_CHECK_FUNCS( setlocale nl_langinfo )
+
+AC_CHECK_FUNCS( strdup )
+
 AC_CHECK_FUNCS( mkfifo, [ have_mkfifo=yes ], [ have_mkfifo=no ] )
 
 if test $fifo = "auto"; then
@@ -414,6 +418,8 @@ dnl ############## Header and Library Checks
 AC_HEADER_STDC
 dnl Is it too paranoid to specifically check for stdint.h and limits.h?
 AC_CHECK_HEADERS([stdio.h stdlib.h string.h unistd.h sched.h sys/ioctl.h stdint.h limits.h inttypes.h sys/time.h sys/wait.h sys/resource.h signal.h])
+# locale headers
+AC_CHECK_HEADERS([locale.h langinfo.h])
 # Headers for network (http) stuff
 AC_CHECK_HEADERS([netdb.h sys/param.h sys/socket.h netinet/in.h arpa/inet.h])
 if test "x$ac_cv_header_netdb_h" = "xyes"      &&
@@ -716,8 +722,8 @@ do
 	echo $DECODER_LOBJ | grep -q $i.lo || DECODER_LOBJ="$DECODER_LOBJ $i.lo"
 done
 
-AC_SUBST( DECODER_OBJ )
-AC_SUBST( DECODER_LOBJ )
+AC_SUBST(DECODER_OBJ)
+AC_SUBST(DECODER_LOBJ)
 
 
 dnl ############## Output module choice
@@ -1175,11 +1181,11 @@ fi
 AC_DEFINE_UNQUOTED( DEFAULT_OUTPUT_MODULE, "$default_output_modules", [The default audio output module(s) to use] )
 
 
-AC_SUBST( OUTPUT_OBJ )
-AC_SUBST( OUTPUT_MOD )
-AC_SUBST( OUTPUT_CFLAGS )
-AC_SUBST( OUTPUT_LIBS )
-AC_SUBST( OUTPUT_LDFLAGS )
+AC_SUBST(OUTPUT_OBJ)
+AC_SUBST(OUTPUT_MOD)
+AC_SUBST(OUTPUT_CFLAGS)
+AC_SUBST(OUTPUT_LIBS)
+AC_SUBST(OUTPUT_LDFLAGS)
 
 dnl ############## Compiler Optimizations
 
@@ -1233,8 +1239,10 @@ else
 	seektable=$with_seektable
 fi
 
-AC_DEFINE_UNQUOTED(INDEX_SIZE, $seektable, [size of the frame index seek table])
-
+if test "$seektable" -gt 0; then
+	AC_DEFINE(FRAME_INDEX, 1, [ Define if frame index should be used. ])
+	AC_DEFINE_UNQUOTED(INDEX_SIZE, $seektable, [size of the frame index seek table])
+fi
 
 dnl ############## Final Output
 

@@ -13,7 +13,8 @@ The creator: Michael Hipp (email: hippm@informatik.uni-tuebingen.de - please bot
 
 Contributions/ideas Thomas Orgis era (includes backports from mhipp trunk):
 
-Thorsten Glaser <tg@mirbsd.de>: icy2utf8
+Patrick Dehne <patrick@steidle.net>: more MSVC++ porting, patch to handle missing bit reservoirs
+Thorsten Glaser <tg@mirbsd.de>: icy2utf8, suggest utf8 locale stuff
 Dan Smith <dan@algenta.com>: ABI fixes for ensuring stack alignment (esp. for MinGW-built DLL with MSVC)
 Michael Ryzhykh <mclroy@gmail.com>: mpg123.spec.in
 Stefan Lenselink <Stefan@lenselink.org>: initial aRts output

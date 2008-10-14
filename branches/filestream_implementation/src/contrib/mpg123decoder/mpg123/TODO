@@ -43,3 +43,9 @@ Hm, 32bit integer would be another option.
 
 MPlayer has that in mp3lib, which is a stripped-down mpg123 decoder.
 We need that optimization, but in the non-stripped mpg123.
+
+4. Prevent ID3v2 tags from being parsed multiple times after seek.
+
+I need to carry a list of ID3v2 frame addresses that already have been parsed into the data structures.
+Currently, this is a possible memory leak when the seek index is disabled (tag data at file beginning) or id3 data is just somewhere in the stream.
+That being said, in the "normal" case, there is no leak.

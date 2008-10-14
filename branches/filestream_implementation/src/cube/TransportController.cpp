@@ -104,7 +104,7 @@ void        TransportController::OnViewCreated(Window* window)
     musik::core::PlaybackQueue::Instance().Transport().EventPlaybackPausedOk.connect(this, &TransportController::OnPlaybackPaused);
     musik::core::PlaybackQueue::Instance().Transport().EventPlaybackResumedOk.connect(this, &TransportController::OnPlaybackResumed);
 
-    this->playbackSliderTimer.ConnectToWindow(this->transportView.playbackSlider);
+    this->playbackSliderTimer.ConnectToWindow(&this->transportView);
 
     this->playbackSliderTimer.OnTimeout.connect(this, &TransportController::OnPlaybackSliderTimerTimedOut);
 }

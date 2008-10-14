@@ -80,7 +80,7 @@ class IAudioSource{
         ///\returns
         ///true on success
         //////////////////////////////////////////
-        virtual bool    SetPosition(unsigned long * MS) = 0;
+        virtual bool    SetPosition(unsigned long * MS,unsigned long totalMS) = 0;
 
         //////////////////////////////////////////
         ///\brief

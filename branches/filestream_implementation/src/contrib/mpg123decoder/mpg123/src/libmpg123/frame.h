@@ -218,6 +218,7 @@ struct mpg123_handle_struct
 	off_t mean_frames;
 	int fsizeold;
 	int ssize;
+	unsigned int bitreservoir;
 	unsigned char bsspace[2][MAXFRAMESIZE+512]; /* MAXFRAMESIZE */
 	unsigned char *bsbuf;
 	unsigned char *bsbufold;

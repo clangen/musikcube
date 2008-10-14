@@ -32,11 +32,11 @@ int seeking = FALSE;
 struct keydef { const char key; const char key2; const char* desc; };
 struct keydef term_help[] =
 {
-	 { STOP_KEY,  ' ', "interrupt/restart playback (i.e. 'pause')" }
+	 { STOP_KEY,  ' ', "interrupt/restart playback (i.e. '(un)pause')" }
 	,{ NEXT_KEY,    0, "next track" }
 	,{ PREV_KEY,    0, "previous track" }
 	,{ BACK_KEY,    0, "back to beginning of track" }
-	,{ PAUSE_KEY,   0, "pause while looping current sound chunk" }
+	,{ PAUSE_KEY,   0, "loop around current position (like a damaged audio CD;-)" }
 	,{ FORWARD_KEY, 0, "forward" }
 	,{ REWIND_KEY,  0, "rewind" }
 	,{ FAST_FORWARD_KEY, 0, "fast forward" }
@@ -132,18 +132,33 @@ static int print_index(mpg123_handle *mh)
 
 static off_t offset = 0;
 
+/* Go back to the start for the cyclic pausing. */
+void pause_recycle(mpg123_handle *fr)
+{
+	/* Take care not to go backwards in time in steps of 1 frame
+		 That is what the +1 is for. */
+	pause_cycle=(int)(LOOP_CYCLES/mpg123_tpf(fr));
+	offset-=pause_cycle;
+}
+
+/* Done with pausing, no offset anymore. Just continuous playback from now. */
+void pause_uncycle(void)
+{
+	offset += pause_cycle;
+}
+
 off_t term_control(mpg123_handle *fr, audio_output_t *ao)
 {
 	offset = 0;
-
+debug1("control for frame: %li", (long)mpg123_tellframe(fr));
 	if(!term_enable) return 0;
 
 	if(paused)
 	{
-		if(!--pause_cycle)
+		/* pause_cycle counts the remaining frames _after_ this one, thus <0, not ==0 . */
+		if(--pause_cycle < 0)
 		{
-			pause_cycle=(int)(LOOP_CYCLES/mpg123_tpf(fr));
-			offset-=pause_cycle;
+			pause_recycle(fr);
 			if(param.usebuffer)
 			{
 				while(paused && xfermem_get_usedspace(buffermem))
@@ -151,7 +166,8 @@ off_t term_control(mpg123_handle *fr, audio_output_t *ao)
 					buffer_ignore_lowmem();
 					term_handle_input(fr, ao, TRUE);
 				}
-				if(!paused)	offset += pause_cycle;
+				/* Undo the cycling offset if we are done with cycling. */
+				if(!paused)	pause_uncycle();
 			}
 		}
 	}
@@ -245,8 +261,7 @@ static void term_handle_input(mpg123_handle *fr, audio_output_t *ao, int do_dela
 			   This jumps in audio output, but has direct reaction to pausing loop. */
 			if(param.usebuffer) buffer_resync();
 
-		  pause_cycle=(int)(LOOP_CYCLES/mpg123_tpf(fr));
-		  offset -= pause_cycle;
+			pause_recycle(fr);
 	  }
 		if(stopped)
 		{

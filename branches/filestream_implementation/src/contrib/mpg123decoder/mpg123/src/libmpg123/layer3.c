@@ -360,8 +360,37 @@ static int III_get_side_info(mpg123_handle *fr, struct III_sideinfo *si,int ster
 
    const int tabs[2][5] = { { 2,9,5,3,4 } , { 1,8,1,2,9 } };
    const int *tab = tabs[fr->lsf];
-   
+
    si->main_data_begin = getbits(fr, tab[1]);
+
+   if(si->main_data_begin > fr->bitreservoir)
+   {
+     if(NOQUIET) error2("missing %d bytes in bit reservoir for frame %li", (int)(si->main_data_begin - fr->bitreservoir), (long)fr->num);
+
+     /*  overwrite main_data_begin for the really available bit reservoir */
+     backbits(fr, tab[1]);
+     if(fr->lsf == 0)
+     {
+       fr->wordpointer[0] = (unsigned char) (fr->bitreservoir >> 1);
+       fr->wordpointer[1] = (unsigned char) ((fr->bitreservoir & 1) << 7);
+     }
+     else fr->wordpointer[0] = (unsigned char) fr->bitreservoir;
+
+     /* zero "side-info" data for a silence-frame
+        without touching audio data used as bit reservoir for following frame */
+     memset(fr->wordpointer+2, 0, fr->ssize-2);
+
+     /* reread the new bit reservoir offset */
+     si->main_data_begin = getbits(fr, tab[1]);
+   }
+
+   /* Keep track of the available data bytes for the bit reservoir.
+      Think: Substract the 2 crc bytes in parser already? */
+   fr->bitreservoir = fr->bitreservoir + fr->framesize - fr->ssize - (fr->error_protection ? 2 : 0);
+    /* Limit the reservoir to the max for MPEG 1.0 or 2.x . */
+   if(fr->bitreservoir > (fr->lsf == 0 ? 511 : 255))
+   fr->bitreservoir = (fr->lsf == 0 ? 511 : 255);
+
    if (stereo == 1)
      si->private_bits = getbits_fast(fr, tab[2]);
    else 

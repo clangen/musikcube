@@ -33,6 +33,7 @@
 
 #include "MP3decoder.h"
 
+
 #define MP3_IN_BUFFSIZE     4096
 #define MP3_OUT_BUFFSIZE     32768
 
@@ -94,18 +95,30 @@ bool    MP3Decoder::GuessLength(){
 }
 
 
-bool    MP3Decoder::SetPosition(unsigned long * MS){
+bool    MP3Decoder::SetPosition(unsigned long * MS,unsigned long totalMS){
 
-    off_t seekToFileOffset(0);
+    if(totalMS){
+        boost::mutex::scoped_lock lock(this->mutex);
+        unsigned long filePosition  = ((double)this->fileStream->Filesize()*(double)(*MS))/(double)(totalMS);
+        this->fileStream->SetPosition(filePosition);
+        return true;
+    }
+
+/*    off_t seekToFileOffset(0);
     off_t seekToSampleOffset( ((double)(*MS) * (double)this->cachedRate)/1000.0f );
 
-    off_t seekedTo  = mpg123_feedseek(this->decoder,seekToSampleOffset,SEEK_CUR,&seekToFileOffset);
+    off_t *indexOffset(NULL);
+    off_t indexSet(0);
+    size_t indexFill(0);
+    int err=mpg123_index(this->decoder,&indexOffset,&indexSet,&indexFill);
+
+    off_t seekedTo  = mpg123_feedseek(this->decoder,seekToSampleOffset,SEEK_SET,&seekToFileOffset);
     if(seekedTo>=0){
         if(this->fileStream->SetPosition(seekToFileOffset)){
             return true;
         }
     }
-
+*/
     return false;
 }
 
@@ -169,6 +182,7 @@ bool    MP3Decoder::GetBuffer(float ** ppBuffer, unsigned long * NumSamples){
 }
 
 bool MP3Decoder::Feed(){
+    boost::mutex::scoped_lock lock(this->mutex);
     // Feed stuff to mpg123
     if(this->fileStream){
         unsigned char buffer[STREAM_FEED_SIZE];
@@ -189,7 +203,7 @@ bool    MP3Decoder::Open(musik::core::filestreams::IFileStream *fileStream){
         if(mpg123_open_feed(this->decoder)==MPG123_OK){
 
             // Set filelength to decoder for better seeking
-            mpg123_set_filesize(this->decoder,this->fileStream->Filesize());
+            //mpg123_set_filesize(this->decoder,this->fileStream->Filesize());
 
             // Set the format
             int encoding(0);

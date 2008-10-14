@@ -1,5 +1,11 @@
 Changes in libmpg123 libtool interface versions...
 
+9.0.9
+	- added mpg123_tell_stream
+
+8.0.8
+	- added mpg123_get_eq
+
 7.0.7
 	- added mpg123_set_filesize
 

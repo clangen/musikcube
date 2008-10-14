@@ -41,7 +41,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories=".;../..;../../3rdparty/include;./mpg123/src;./mpg123/src/libmpg123"
-				PreprocessorDefinitions="WIN32;_DEBUG;DEBUG;_WINDOWS;OPT_GENERIC;_LIB;FLOATOUT;REAL_IS_FLOAT;FRAME_INDEX"
+				PreprocessorDefinitions="WIN32;_DEBUG;DEBUG;_WINDOWS;OPT_GENERIC;_LIB;FLOATOUT;REAL_IS_FLOAT"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"

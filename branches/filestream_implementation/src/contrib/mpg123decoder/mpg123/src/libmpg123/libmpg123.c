@@ -838,6 +838,14 @@ off_t attribute_align_arg mpg123_tellframe(mpg123_handle *mh)
 	return mh->buffer.fill ? mh->num : mh->num + 1;
 }
 
+off_t attribute_align_arg mpg123_tell_stream(mpg123_handle *mh)
+{
+	ALIGNCHECK(mh);
+	if(mh == NULL) return MPG123_ERR;
+	/* mh->rd is at least a bad_reader, so no worry. */
+	return mh->rd->tell(mh);
+}
+
 static int do_the_seek(mpg123_handle *mh)
 {
 	int b;

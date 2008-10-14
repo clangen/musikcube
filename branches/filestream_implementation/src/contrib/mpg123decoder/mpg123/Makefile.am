@@ -27,21 +27,24 @@ EXTRA_DIST = \
 	test/rms16.c \
 	NEWS.libmpg123 \
 	autogen.sh \
-	ports/MSVC++/libMPG123/libMPG123.vcproj \
-	ports/MSVC++/libMPG123/PLACE_LIBMPG123_SOURCES_HERE \
-	ports/MSVC++/README \
-	ports/MSVC++/SOURCE/CORE_Log.CPP \
-	ports/MSVC++/SOURCE/CORE_FileIn.CPP \
-	ports/MSVC++/SOURCE/SourceFilter_MP3Stream.CPP \
-	ports/MSVC++/SOURCE/CORE_Mutex.CPP \
-	ports/MSVC++/INCLUDE/CORE/CORE_FileIn.H \
-	ports/MSVC++/INCLUDE/CORE/SourceFilter_MP3.H \
-	ports/MSVC++/INCLUDE/IIEP_FileIn.H \
-	ports/MSVC++/INCLUDE/IIEP_Def.H \
+	ports/MSVC++/mpg123.h \
+	ports/MSVC++/config.h \
+	ports/MSVC++/2005/libmpg123/libmpg123.vcproj \
+	ports/MSVC++/2008/libmpg123/libmpg123.vcproj \
+	ports/MSVC++/CMP3Stream/libMPG123/libMPG123.vcproj \
+	ports/MSVC++/CMP3Stream/libMPG123/PLACE_LIBMPG123_SOURCES_HERE \
+	ports/MSVC++/CMP3Stream/README \
+	ports/MSVC++/CMP3Stream/SOURCE/CORE_Log.CPP \
+	ports/MSVC++/CMP3Stream/SOURCE/CORE_FileIn.CPP \
+	ports/MSVC++/CMP3Stream/SOURCE/SourceFilter_MP3Stream.CPP \
+	ports/MSVC++/CMP3Stream/SOURCE/CORE_Mutex.CPP \
+	ports/MSVC++/CMP3Stream/INCLUDE/CORE/CORE_FileIn.H \
+	ports/MSVC++/CMP3Stream/INCLUDE/CORE/SourceFilter_MP3.H \
+	ports/MSVC++/CMP3Stream/INCLUDE/IIEP_FileIn.H \
+	ports/MSVC++/CMP3Stream/INCLUDE/IIEP_Def.H \
 	ports/README \
 	ports/Sony_PSP/config.h \
 	ports/Sony_PSP/README \
 	ports/Sony_PSP/Makefile.psp \
 	ports/Sony_PSP/readers.c.patch \
 	ports/mpg123_.pas
-	ports/mpg123_msvc.h

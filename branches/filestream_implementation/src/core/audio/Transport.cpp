@@ -268,7 +268,7 @@ AudioStream* Transport::CreateStream(TrackPtr  trackPtr)
     // Extract fileextension
     utfstring::size_type lastDot = fileName.find_last_of(UTF("."));
     if(lastDot!=utfstring::npos){
-        fileExtension   = boost::algorithm::to_lower_copy(fileName.substr(lastDot));
+        fileExtension   = boost::algorithm::to_lower_copy(fileName.substr(lastDot+1));
     }
 
 

@@ -324,17 +324,21 @@ EXTRA_DIST = \
 	test/rms16.c \
 	NEWS.libmpg123 \
 	autogen.sh \
-	ports/MSVC++/libMPG123/libMPG123.vcproj \
-	ports/MSVC++/libMPG123/PLACE_LIBMPG123_SOURCES_HERE \
-	ports/MSVC++/README \
-	ports/MSVC++/SOURCE/CORE_Log.CPP \
-	ports/MSVC++/SOURCE/CORE_FileIn.CPP \
-	ports/MSVC++/SOURCE/SourceFilter_MP3Stream.CPP \
-	ports/MSVC++/SOURCE/CORE_Mutex.CPP \
-	ports/MSVC++/INCLUDE/CORE/CORE_FileIn.H \
-	ports/MSVC++/INCLUDE/CORE/SourceFilter_MP3.H \
-	ports/MSVC++/INCLUDE/IIEP_FileIn.H \
-	ports/MSVC++/INCLUDE/IIEP_Def.H \
+	ports/MSVC++/mpg123.h \
+	ports/MSVC++/config.h \
+	ports/MSVC++/2005/libmpg123/libmpg123.vcproj \
+	ports/MSVC++/2008/libmpg123/libmpg123.vcproj \
+	ports/MSVC++/CMP3Stream/libMPG123/libMPG123.vcproj \
+	ports/MSVC++/CMP3Stream/libMPG123/PLACE_LIBMPG123_SOURCES_HERE \
+	ports/MSVC++/CMP3Stream/README \
+	ports/MSVC++/CMP3Stream/SOURCE/CORE_Log.CPP \
+	ports/MSVC++/CMP3Stream/SOURCE/CORE_FileIn.CPP \
+	ports/MSVC++/CMP3Stream/SOURCE/SourceFilter_MP3Stream.CPP \
+	ports/MSVC++/CMP3Stream/SOURCE/CORE_Mutex.CPP \
+	ports/MSVC++/CMP3Stream/INCLUDE/CORE/CORE_FileIn.H \
+	ports/MSVC++/CMP3Stream/INCLUDE/CORE/SourceFilter_MP3.H \
+	ports/MSVC++/CMP3Stream/INCLUDE/IIEP_FileIn.H \
+	ports/MSVC++/CMP3Stream/INCLUDE/IIEP_Def.H \
 	ports/README \
 	ports/Sony_PSP/config.h \
 	ports/Sony_PSP/README \
@@ -588,7 +592,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/. $(distdir)/build $(distdir)/man1 $(distdir)/ports $(distdir)/ports/MSVC++ $(distdir)/ports/MSVC++/INCLUDE $(distdir)/ports/MSVC++/INCLUDE/CORE $(distdir)/ports/MSVC++/SOURCE $(distdir)/ports/MSVC++/libMPG123 $(distdir)/ports/Sony_PSP $(distdir)/src/libmpg123 $(distdir)/test $(distdir)/xmms2-plugin $(distdir)/xmms2-plugin/mpg123
+	$(mkdir_p) $(distdir)/. $(distdir)/build $(distdir)/man1 $(distdir)/ports $(distdir)/ports/MSVC++ $(distdir)/ports/MSVC++/2005/libmpg123 $(distdir)/ports/MSVC++/2008/libmpg123 $(distdir)/ports/MSVC++/CMP3Stream $(distdir)/ports/MSVC++/CMP3Stream/INCLUDE $(distdir)/ports/MSVC++/CMP3Stream/INCLUDE/CORE $(distdir)/ports/MSVC++/CMP3Stream/SOURCE $(distdir)/ports/MSVC++/CMP3Stream/libMPG123 $(distdir)/ports/Sony_PSP $(distdir)/src/libmpg123 $(distdir)/test $(distdir)/xmms2-plugin $(distdir)/xmms2-plugin/mpg123
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -830,7 +834,6 @@ uninstall-man: uninstall-man1
 	uninstall uninstall-am uninstall-info-am uninstall-man \
 	uninstall-man1 uninstall-pkgconfigDATA
 
-	ports/mpg123_msvc.h
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

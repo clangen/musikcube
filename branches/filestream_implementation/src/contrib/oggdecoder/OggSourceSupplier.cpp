@@ -35,9 +35,6 @@
 
 #include <cctype>
 
-#include "boost/algorithm/string.hpp"
-#include "boost/filesystem.hpp"
-
 #include "OggSourceSupplier.h"
 
 #include "OggDecoder.h"
@@ -60,18 +57,11 @@ IAudioSource* OggSourceSupplier::CreateAudioSource()
     return new OGGDecoder();
 }
 
-bool OggSourceSupplier::CanHandle(const utfchar* source) const
+bool OggSourceSupplier::CanHandle(const utfchar* extension) const
 {
-    using namespace boost::filesystem;
-    using namespace boost::algorithm;
+    if( utfstring(UTF("ogg"))==extension){
+        return true;
+    }
 
-    wpath sourcepath(source);
-
-    if (!is_regular(sourcepath)) 
-        return false;
-
-    if (to_lower_copy(extension(sourcepath)) != TEXT(".ogg"))
-        return false;
-
-    return true;
+    return false;
 }

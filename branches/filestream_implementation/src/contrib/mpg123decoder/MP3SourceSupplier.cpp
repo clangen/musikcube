@@ -64,6 +64,6 @@ IAudioSource* MP3SourceSupplier::CreateAudioSource()
 
 bool MP3SourceSupplier::CanHandle(const utfchar* extension) const
 {
-    utfstring ext(UTF(".mp3"));
+    utfstring ext(UTF("mp3"));
     return ext==extension;
 }
