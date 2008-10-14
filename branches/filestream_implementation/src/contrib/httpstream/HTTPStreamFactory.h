@@ -33,52 +33,18 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
-
 #pragma once
 
-#include <core/config.h>
-#include <core/filestreams/IFileStream.h>
+#include <core/filestreams/IFileStreamFactory.h>
 
 //////////////////////////////////////////////////////////////////////////////
-namespace musik{ namespace core{ namespace filestreams{
-//////////////////////////////////////////////////////////////////////////////
+class HTTPStreamFactory : public musik::core::filestreams::IFileStreamFactory{
 
-class IFileStreamFactory{
-    public:
+    virtual bool CanReadFile(const utfchar *filename);
+    virtual musik::core::filestreams::IFileStream* OpenFile(const utfchar *filename,unsigned int options=0);
+    virtual void Destroy();
 
-        //////////////////////////////////////////
-        ///\brief
-        ///Can the factory read the specified filename
-        ///
-        ///\param filename
-        ///Filename to check
-        ///
-        ///\returns
-        ///True if able
-        //////////////////////////////////////////
-        virtual bool CanReadFile(const utfchar *filename)=0;
-
-        //////////////////////////////////////////
-        ///\brief
-        ///Open the file for reading
-        ///
-        ///\param filename
-        ///Filename to open
-        ///
-        ///\returns
-        ///IFileStream object or NULL on fail
-        //////////////////////////////////////////
-        virtual IFileStream* OpenFile(const utfchar *filename,unsigned int options=0)=0;
-
-        //////////////////////////////////////////
-        ///\brief
-        ///Destroy the object (not the file)
-        //////////////////////////////////////////
-        virtual void Destroy()=0;
 };
-
-//////////////////////////////////////////////////////////////////////////////
-} } }
 //////////////////////////////////////////////////////////////////////////////
 
 

@@ -35,6 +35,8 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #pragma once
+#include <core/config.h>
+
 
 namespace musik{ namespace core{
     class IPlugin{

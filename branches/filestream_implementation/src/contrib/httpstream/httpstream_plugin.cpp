@@ -34,51 +34,40 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
 
-#include <core/config.h>
+#include "stdafx.h"
+#include <core/IPlugin.h>
 #include <core/filestreams/IFileStream.h>
+#include "HTTPStreamFactory.h"
 
-//////////////////////////////////////////////////////////////////////////////
-namespace musik{ namespace core{ namespace filestreams{
-//////////////////////////////////////////////////////////////////////////////
 
-class IFileStreamFactory{
-    public:
+#define DLLEXPORT __declspec(dllexport)
 
-        //////////////////////////////////////////
-        ///\brief
-        ///Can the factory read the specified filename
-        ///
-        ///\param filename
-        ///Filename to check
-        ///
-        ///\returns
-        ///True if able
-        //////////////////////////////////////////
-        virtual bool CanReadFile(const utfchar *filename)=0;
 
-        //////////////////////////////////////////
-        ///\brief
-        ///Open the file for reading
-        ///
-        ///\param filename
-        ///Filename to open
-        ///
-        ///\returns
-        ///IFileStream object or NULL on fail
-        //////////////////////////////////////////
-        virtual IFileStream* OpenFile(const utfchar *filename,unsigned int options=0)=0;
+class HTTPStreamPlugin : public musik::core::IPlugin
+{
+    void Destroy() { delete this; };
 
-        //////////////////////////////////////////
-        ///\brief
-        ///Destroy the object (not the file)
-        //////////////////////////////////////////
-        virtual void Destroy()=0;
+	const wchar_t* Name(){
+		return _T("HTTPStream plugin");
+	};
+
+	const wchar_t* Version(){
+		return _T("0.1");
+	};
+
+	const wchar_t* Author(){
+		return _T("Daniel Önnerby");
+	};
+
 };
 
-//////////////////////////////////////////////////////////////////////////////
-} } }
-//////////////////////////////////////////////////////////////////////////////
+extern "C"{
+    DLLEXPORT musik::core::filestreams::IFileStreamFactory* GetFileStreamFactory(){
+		return new HTTPStreamFactory();
+	}
 
-
+	DLLEXPORT musik::core::IPlugin* GetPlugin(){
+		return new HTTPStreamPlugin();
+	}
+}

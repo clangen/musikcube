@@ -41,10 +41,6 @@ using namespace musik::core::audio;
 
 class OGGDecoder :	public IAudioSource
 {
-protected:  float           *m_Buffer;
-protected:  OggVorbis_File  m_vf;
-protected:  FILE            *m_file;
-protected:  unsigned int    m_currentsection;
 
 public: 
     OGGDecoder();
@@ -59,6 +55,16 @@ public:
     virtual bool    GetBuffer(float ** ppBuffer, unsigned long * NumSamples);
     virtual bool    Open(musik::core::filestreams::IFileStream *fileStream);
 
+public:
+    // OGG callbacks
+    static size_t   OggRead(void *buffer, size_t nofParts, size_t partSize, void *datasource);
+    static int      OggSeek(void *datasource, ogg_int64_t offset, int whence);
+    static long     OggTell(void *datasource);
+    static int      OggClose(void *datasource);
+
 private: 
-    bool    Close();
+    
+    OggVorbis_File  oggFile;
+    ov_callbacks    oggCallbacks;
+
 };

@@ -35,7 +35,8 @@
 
 OGGDecoder::OGGDecoder()
 {
-	m_currentsection = 0;
+//	m_currentsection = 0;
+    oggCallbacks.read_func  = 
 }
 
 OGGDecoder::~OGGDecoder()

@@ -33,52 +33,47 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
+#include "HTTPStream.h"
 
-#pragma once
+HTTPStream::HTTPStream()
+{
+}
 
-#include <core/config.h>
-#include <core/filestreams/IFileStream.h>
+HTTPStream::~HTTPStream()
+{
+}
 
-//////////////////////////////////////////////////////////////////////////////
-namespace musik{ namespace core{ namespace filestreams{
-//////////////////////////////////////////////////////////////////////////////
+bool HTTPStream::Open(const utfchar *filename,unsigned int options){
+    return false;
+}
 
-class IFileStreamFactory{
-    public:
+bool HTTPStream::Close(){
+    return false;
+}
 
-        //////////////////////////////////////////
-        ///\brief
-        ///Can the factory read the specified filename
-        ///
-        ///\param filename
-        ///Filename to check
-        ///
-        ///\returns
-        ///True if able
-        //////////////////////////////////////////
-        virtual bool CanReadFile(const utfchar *filename)=0;
+void HTTPStream::Destroy(){
+    delete this;
+}
 
-        //////////////////////////////////////////
-        ///\brief
-        ///Open the file for reading
-        ///
-        ///\param filename
-        ///Filename to open
-        ///
-        ///\returns
-        ///IFileStream object or NULL on fail
-        //////////////////////////////////////////
-        virtual IFileStream* OpenFile(const utfchar *filename,unsigned int options=0)=0;
+PositionType HTTPStream::Read(void* buffer,PositionType readBytes){
+    return 0;
+}
 
-        //////////////////////////////////////////
-        ///\brief
-        ///Destroy the object (not the file)
-        //////////////////////////////////////////
-        virtual void Destroy()=0;
-};
+bool HTTPStream::SetPosition(PositionType position){
+    return false;
+}
 
-//////////////////////////////////////////////////////////////////////////////
-} } }
-//////////////////////////////////////////////////////////////////////////////
+PositionType HTTPStream::Position(){
+    return 0;
+}
+
+bool HTTPStream::Eof(){
+    return true;
+}
+
+long HTTPStream::Filesize(){
+    return 0;
+}
+
 
 

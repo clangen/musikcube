@@ -33,52 +33,30 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
-
 #pragma once
 
-#include <core/config.h>
 #include <core/filestreams/IFileStream.h>
 
-//////////////////////////////////////////////////////////////////////////////
-namespace musik{ namespace core{ namespace filestreams{
+using namespace musik::core::filestreams;
 //////////////////////////////////////////////////////////////////////////////
 
-class IFileStreamFactory{
+class HTTPStream : public IFileStream
+{
     public:
+        HTTPStream();
+        ~HTTPStream();
+    public:
+        virtual bool Open(const utfchar *filename,unsigned int options=0);
+        virtual bool Close();
+        virtual void Destroy();
+        virtual PositionType Read(void* buffer,PositionType readBytes);
+        virtual bool SetPosition(PositionType position);
+        virtual PositionType Position();
+        virtual bool Eof();
+        virtual long Filesize();
 
-        //////////////////////////////////////////
-        ///\brief
-        ///Can the factory read the specified filename
-        ///
-        ///\param filename
-        ///Filename to check
-        ///
-        ///\returns
-        ///True if able
-        //////////////////////////////////////////
-        virtual bool CanReadFile(const utfchar *filename)=0;
-
-        //////////////////////////////////////////
-        ///\brief
-        ///Open the file for reading
-        ///
-        ///\param filename
-        ///Filename to open
-        ///
-        ///\returns
-        ///IFileStream object or NULL on fail
-        //////////////////////////////////////////
-        virtual IFileStream* OpenFile(const utfchar *filename,unsigned int options=0)=0;
-
-        //////////////////////////////////////////
-        ///\brief
-        ///Destroy the object (not the file)
-        //////////////////////////////////////////
-        virtual void Destroy()=0;
 };
 
-//////////////////////////////////////////////////////////////////////////////
-} } }
 //////////////////////////////////////////////////////////////////////////////
 
 
