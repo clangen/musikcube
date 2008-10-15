@@ -36,6 +36,8 @@
 #pragma once
 
 #include <core/filestreams/IFileStream.h>
+#include <boost/shared_ptr.hpp>
+#include "HTTPRequest.h"
 
 using namespace musik::core::filestreams;
 //////////////////////////////////////////////////////////////////////////////
@@ -54,6 +56,10 @@ class HTTPStream : public IFileStream
         virtual PositionType Position();
         virtual bool Eof();
         virtual long Filesize();
+    private:
+        typedef boost::shared_ptr<HTTPRequest> HTTPRequestPtr;
+        HTTPRequestPtr httpRequest;
+        PositionType currentPosition;
 
 };
 

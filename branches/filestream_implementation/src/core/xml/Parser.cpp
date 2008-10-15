@@ -152,6 +152,8 @@ void Parser::OnContentReal(const char *content,int length){
 
 void Parser::ReadFromSocket(){
     boost::system::error_code error;
+
+    // This is a likely place where a thread will wait
     this->readBufferLength  = this->socket->read_some(boost::asio::buffer(this->readBuffer),error);
 
     if(error){

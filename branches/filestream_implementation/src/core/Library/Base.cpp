@@ -306,7 +306,12 @@ bool Library::Base::AddQuery( const Query::Base &query,unsigned int options ){
 
             // wait for the query to be finished or canceled
             while( !(queryCopy->status&Query::Base::Status::Ended) && !(queryCopy->status&Query::Base::Status::Canceled) ){
-                this->waitCondition.wait(lock);
+
+                // To be on the safe side, lets check every second
+                boost::xtime waitingTime;
+                boost::xtime_get(&waitingTime, boost::TIME_UTC);
+                waitingTime.sec += 1;
+                this->waitCondition.timed_wait(lock,waitingTime);
             }
 
             if( options & Query::Options::AutoCallback ){    // Should the callbacks be involved?

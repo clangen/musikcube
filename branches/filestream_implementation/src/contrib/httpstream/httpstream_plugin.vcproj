@@ -45,7 +45,7 @@
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
-				UsePrecompiledHeader="0"
+				UsePrecompiledHeader="2"
 				BrowseInformation="1"
 				WarningLevel="0"
 				Detect64BitPortabilityProblems="true"
@@ -127,7 +127,7 @@
 				AdditionalIncludeDirectories="../../;../../3rdparty/include/"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL"
 				RuntimeLibrary="0"
-				UsePrecompiledHeader="0"
+				UsePrecompiledHeader="2"
 				WarningLevel="0"
 				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="0"
@@ -187,6 +187,14 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\HTTPRequest.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\HTTPRequest.h"
+				>
+			</File>
+			<File
 				RelativePath=".\HTTPStream.cpp"
 				>
 			</File>
@@ -210,7 +218,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="0"
+						UsePrecompiledHeader="1"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -218,7 +226,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="0"
+						UsePrecompiledHeader="1"
 					/>
 				</FileConfiguration>
 			</File>

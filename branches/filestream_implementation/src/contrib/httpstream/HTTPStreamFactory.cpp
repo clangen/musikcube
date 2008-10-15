@@ -33,7 +33,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
+#include "stdafx.h"
 #include "HTTPStreamFactory.h"
+#include "HTTPStream.h"
 
 
 bool HTTPStreamFactory::CanReadFile(const utfchar *filename){
@@ -45,6 +47,12 @@ bool HTTPStreamFactory::CanReadFile(const utfchar *filename){
 }
 
 musik::core::filestreams::IFileStream* HTTPStreamFactory::OpenFile(const utfchar *filename,unsigned int options){
+    HTTPStream *stream  = new HTTPStream();
+    if(stream->Open(filename)){
+        return stream;
+    }
+
+    delete stream;
     return NULL;
 }
 

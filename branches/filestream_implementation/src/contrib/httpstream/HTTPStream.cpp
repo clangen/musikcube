@@ -33,9 +33,14 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
+#include "stdafx.h"
 #include "HTTPStream.h"
 
+#include <utf8/utf8.h>
+#include <boost/lexical_cast.hpp>
+
 HTTPStream::HTTPStream()
+ : currentPosition(0)
 {
 }
 
@@ -44,10 +49,19 @@ HTTPStream::~HTTPStream()
 }
 
 bool HTTPStream::Open(const utfchar *filename,unsigned int options){
-    return false;
+    this->currentPosition=0;
+    if(!this->httpRequest){
+        this->httpRequest.reset(new HTTPRequest());
+    }
+    std::wstring inputFilename(filename);
+    std::string outputFilename;
+    utf8::utf16to8(inputFilename.begin(),inputFilename.end(),std::back_inserter(outputFilename));
+
+    return this->httpRequest->Request(outputFilename.c_str());
 }
 
 bool HTTPStream::Close(){
+    this->httpRequest.reset();
     return false;
 }
 
@@ -56,6 +70,11 @@ void HTTPStream::Destroy(){
 }
 
 PositionType HTTPStream::Read(void* buffer,PositionType readBytes){
+    if(this->httpRequest){
+        PositionType read   = this->httpRequest->GetContent(buffer,readBytes);
+        this->currentPosition   += read;
+        return read;
+    }
     return 0;
 }
 
@@ -64,7 +83,7 @@ bool HTTPStream::SetPosition(PositionType position){
 }
 
 PositionType HTTPStream::Position(){
-    return 0;
+    return this->currentPosition;
 }
 
 bool HTTPStream::Eof(){
@@ -72,6 +91,13 @@ bool HTTPStream::Eof(){
 }
 
 long HTTPStream::Filesize(){
+    try{
+        std::string fileSizeString  = this->httpRequest->attributes["Content-Length"];
+        return boost::lexical_cast<long>(fileSizeString);
+    }
+    catch(...){
+        return 0;
+    }
     return 0;
 }
 

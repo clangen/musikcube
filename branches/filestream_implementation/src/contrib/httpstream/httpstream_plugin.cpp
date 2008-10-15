@@ -34,8 +34,8 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-
 #include "stdafx.h"
+
 #include <core/IPlugin.h>
 #include <core/filestreams/IFileStream.h>
 #include "HTTPStreamFactory.h"

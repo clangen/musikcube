@@ -147,7 +147,12 @@ void Responder::ThreadLoop(){
 }
 
 void Responder::SendContent(const char* buffer,const std::size_t bufferSize){
-    boost::asio::write(this->socket,boost::asio::buffer(buffer,bufferSize));
+    try{
+        boost::asio::write(this->socket,boost::asio::buffer(buffer,bufferSize));
+    }
+    catch(...){
+        this->Exit();
+    }
 }
 /*
 bool Responder::GetFileName(utfstring &fileName,int &fileSize,const RequestParser &request){
