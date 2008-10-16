@@ -1,0 +1,15 @@
+#summary How the client/server version of musikCube works.
+#labels Phase-Design,Phase-Implementation
+
+= Introduction =
+
+musikCube 2 includes a big new feature. There is now a client/server model of the whole application that works exactly as a local library. This page will try to explain how the client/server works.
+
+= Communication =
+
+The client/server is communicating using what we would call a xmlsocket. A xmlsocket is a normal socket connection that send and receives all queries and queryresults using xml.
+All binary data like mp3s, thumbnails etc, are send using a standard http server that is integrated in the musikServer. Currently the ports used by the servers are fixed (but that will change in the future) to 10543 for the xmlsocket and 10544 for the http server.
+
+= Libraries and queries =
+
+When we designed the library and queries that could be send to the library, we kept in mind that we sometime in the future would add the remote functionality. The library is designed in a way that when you add a query, it will add a copy of that query to a queryqueue, and then the library parser thread will execute the query when it has the time. What we did in the remote library was to instead of parsing the query, it will instead send the query through a xmlsocket and wait for reply on the same socket.
