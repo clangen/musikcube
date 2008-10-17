@@ -61,6 +61,10 @@ class HTTPStream : public IFileStream
         HTTPRequestPtr httpRequest;
         PositionType currentPosition;
 
+        long cachedFilesize;
+        utfstring cachedFilename;
+        bool isEof;
+
 };
 
 //////////////////////////////////////////////////////////////////////////////

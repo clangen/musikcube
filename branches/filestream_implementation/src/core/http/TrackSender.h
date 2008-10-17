@@ -51,7 +51,7 @@ class TrackSender : public IRequestPlugin{
 
         virtual void Destroy();
         virtual const char* WatchPath();
-        virtual void Execute(musik::core::http::IResponder* responder,const musik::core::http::IRequestParser* request,const musik::core::ITrack* track);
+        virtual void Execute(musik::core::http::IResponder* responder,musik::core::http::IRequestParser* request,const musik::core::ITrack* track);
 
     private:
         std::string watchPath;

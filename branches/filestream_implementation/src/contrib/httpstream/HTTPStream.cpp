@@ -41,6 +41,8 @@
 
 HTTPStream::HTTPStream()
  : currentPosition(0)
+ , cachedFilesize(0)
+ , isEof(true)
 {
 }
 
@@ -49,7 +51,13 @@ HTTPStream::~HTTPStream()
 }
 
 bool HTTPStream::Open(const utfchar *filename,unsigned int options){
-    this->currentPosition=0;
+    if(this->cachedFilename.empty()){
+        this->cachedFilename    = filename;
+    }
+
+    this->currentPosition   = 0;
+    this->isEof             = false;
+
     if(!this->httpRequest){
         this->httpRequest.reset(new HTTPRequest());
     }
@@ -70,15 +78,33 @@ void HTTPStream::Destroy(){
 }
 
 PositionType HTTPStream::Read(void* buffer,PositionType readBytes){
+    PositionType read(0);
     if(this->httpRequest){
-        PositionType read   = this->httpRequest->GetContent(buffer,readBytes);
+        read   = this->httpRequest->GetContent(buffer,readBytes);
         this->currentPosition   += read;
-        return read;
     }
-    return 0;
+    if(read<=0){
+        this->isEof = true;
+    }
+    return read;
 }
 
 bool HTTPStream::SetPosition(PositionType position){
+    this->httpRequest.reset();
+
+    try{
+        utfstring seekURL   = this->cachedFilename + UTF("&seek=") + boost::lexical_cast<utfstring>(position);
+        PositionType oldPosition    = this->Position();
+        if(this->Open(seekURL.c_str())){
+            this->currentPosition   = position;
+            return true;
+        }
+
+        this->currentPosition   = oldPosition;
+    }
+    catch(...){
+    }
+
     return false;
 }
 
@@ -87,16 +113,20 @@ PositionType HTTPStream::Position(){
 }
 
 bool HTTPStream::Eof(){
-    return true;
+    return this->isEof;
 }
 
 long HTTPStream::Filesize(){
+    if(this->cachedFilesize){
+        return this->cachedFilesize;
+    }
+
     try{
         std::string fileSizeString  = this->httpRequest->attributes["Content-Length"];
-        return boost::lexical_cast<long>(fileSizeString);
+        this->cachedFilesize    = boost::lexical_cast<long>(fileSizeString);
+        return this->cachedFilesize;
     }
     catch(...){
-        return 0;
     }
     return 0;
 }

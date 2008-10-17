@@ -15,6 +15,7 @@ HTTPRequest::HTTPRequest(void)
 
 HTTPRequest::~HTTPRequest(void)
 {
+    this->socket.close();
 }
 
 bool HTTPRequest::Request(const char *url){
