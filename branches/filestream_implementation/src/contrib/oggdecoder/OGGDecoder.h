@@ -49,7 +49,7 @@ public:
 public: 
     virtual void    Destroy();
     virtual bool    GetLength(unsigned long * MS);
-    virtual bool    SetPosition(unsigned long * MS);
+    virtual bool    SetPosition(unsigned long * MS,unsigned long totalMS);
     virtual bool    SetState(unsigned long State);
     virtual bool    GetFormat(unsigned long * SampleRate, unsigned long * Channels);
     virtual bool    GetBuffer(float ** ppBuffer, unsigned long * NumSamples);
@@ -62,8 +62,8 @@ public:
     static long     OggTell(void *datasource);
     static int      OggClose(void *datasource);
 
-private: 
-    
+protected: 
+    musik::core::filestreams::IFileStream *fileStream;
     OggVorbis_File  oggFile;
     ov_callbacks    oggCallbacks;
 
