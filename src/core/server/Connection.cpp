@@ -158,6 +158,14 @@ void Connection::ReadThread(){
                             options = boost::lexical_cast<unsigned int>(queryNode.Attributes()["options"]);
                         }catch(...){}
 
+                        // Remove waiting on server side and autocallback
+                        if(options&musik::core::Query::Wait){
+                            options ^= musik::core::Query::Wait;
+                        }
+                        if(options&musik::core::Query::AutoCallback){
+                            options ^= musik::core::Query::AutoCallback;
+                        }
+
                         // TODO: check for AddQuery options in tag
                         this->AddQuery( *query,options|musik::core::Query::CopyUniqueId );
 

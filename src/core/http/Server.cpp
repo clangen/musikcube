@@ -74,6 +74,10 @@ Server::Server(int port)
     // Lets always add the TrackSender
     this->requestPlugins["track"]   = PluginPtr(new TrackSender());
 
+    // Set some options for the acceptor
+    boost::asio::socket_base::reuse_address option(true);
+    this->acceptor.set_option(option);
+
 }
 
 Server::~Server(){
@@ -112,7 +116,7 @@ void Server::initAccept(){
     this->waitingResponder  = this->GetResponder();
 
     // Accept a connection
-    this->acceptor.async_accept(this->waitingResponder->socket,boost::bind(&Server::handleAccept,this));
+    this->acceptor.async_accept(*this->waitingResponder->socket,boost::bind(&Server::handleAccept,this));
 }
 
 void Server::handleAccept(){
@@ -163,7 +167,7 @@ ResponderPtr Server::GetResponder(){
     }
 }
 
-void Server::FreeResponder(Responder *responder){
+bool Server::FreeResponder(Responder *responder){
     boost::mutex::scoped_lock lock(this->mutex);
 
     ResponderSet::iterator tempResponder=this->busyResponders.begin();
@@ -171,10 +175,12 @@ void Server::FreeResponder(Responder *responder){
         if(tempResponder->get()==responder){
             this->freeResponders.push(*tempResponder);
             tempResponder   = this->busyResponders.erase(tempResponder);
+            return true;
         }else{
             ++tempResponder;
         }
     }
+    return false;
 }
 
 

@@ -172,8 +172,19 @@ LRESULT     ListView::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
                 {
                     POINT mousePos = { 0 };
                     ::GetCursorPos(&mousePos);
+
+                    RECT headerRect = { 0 };
+                    ::GetWindowRect(this->headerHandle, &headerRect);
+
+                    if (PointInRect(mousePos, headerRect))
+                    {
+                        break;
+                    }
+
                     if (this->contextMenu)
                     {
+                        this->PrepareContextMenu(this, this->contextMenu);
+
                         UINT result = (UINT) ::TrackPopupMenu(
                             this->contextMenu->Handle(),
                             TPM_RETURNCMD,

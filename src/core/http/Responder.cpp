@@ -53,21 +53,24 @@ using namespace musik::core::http;
 
 
 Responder::Responder(Server &server,boost::asio::io_service &ioService,utfstring dbFilename) 
- :socket(ioService)
+ :socket(new boost::asio::ip::tcp::socket(ioService))
  ,thread(NULL)
  ,server(server)
  ,exited(false)
 {
     this->db.Open(dbFilename,0,256);
+
 }
 
 Responder::~Responder(void){
+
     if(this->thread){
         this->Exit();
 
         this->thread->join();
         delete this->thread;
     }
+    delete this->socket;
 }
 
 bool Responder::Startup(){
@@ -83,7 +86,7 @@ void Responder::ThreadLoop(){
 
     while(!this->Exited()){
         // Wait for start signal
-        if(!this->socket.is_open()){
+        if(!this->socket->is_open()){
             boost::mutex::scoped_lock lock(this->server.mutex);
             this->waitCondition.wait(lock);
         }
@@ -131,44 +134,34 @@ void Responder::ThreadLoop(){
                     send    += "<pre>";
                     send    += request;
                     send    += "</pre></body></html>";
-                    boost::asio::write(this->socket,boost::asio::buffer(send.c_str(),send.size()));
+                    try{
+                        boost::asio::write(*this->socket,boost::asio::buffer(send.c_str(),send.size()));
+                    }catch(...){}
                 }
-                    
             }
         }
 
         this->CloseSocket();
 
         // Everything is finished, free this responder.
-        if(!this->Exited()){
-            this->server.FreeResponder(this);
+        if(!this->server.Exited()){
+            if(this->server.FreeResponder(this)){
+                boost::try_mutex::scoped_lock lock(this->server.mutex);
+                this->exited    = false;
+            }
         }
     }
 }
 
 void Responder::SendContent(const char* buffer,const std::size_t bufferSize){
-    boost::asio::write(this->socket,boost::asio::buffer(buffer,bufferSize));
-}
-/*
-bool Responder::GetFileName(utfstring &fileName,int &fileSize,const RequestParser &request){
-    if(request.SplitPaths().size()>0){
-        std::string sRequestId  = request.SplitPaths().front();
-        int requestId           = atoi(sRequestId.c_str());
-
-        musik::core::db::CachedStatement stmt("SELECT t.id,(p.path||f.relative_path||'/'||t.filename) AS file,t.filesize FROM tracks t,folders f,paths p WHERE t.id=? AND t.folder_id=f.id AND f.path_id=p.id",this->db);
-
-        stmt.BindInt(0,requestId);
-
-        if(stmt.Step()==musik::core::db::Row){
-
-            fileName.assign( stmt.ColumnTextUTF(1) );
-            fileSize       = stmt.ColumnInt(2);
-
-            return true;
-        }
+    try{
+        boost::asio::write(*this->socket,boost::asio::buffer(buffer,bufferSize));
     }
-    return false;
-}*/
+    catch(...){
+        this->Exit();
+    }
+}
+
 
 bool Responder::ReadRequest(std::string &request){
     char buffer[512];
@@ -178,7 +171,7 @@ bool Responder::ReadRequest(std::string &request){
 
         boost::system::error_code error;
 
-        bytesRead    = this->socket.read_some(boost::asio::buffer(buffer,512),error);
+        bytesRead    = this->socket->read_some(boost::asio::buffer(buffer,512),error);
 
         if(error){
             return false;
@@ -196,15 +189,22 @@ bool Responder::ReadRequest(std::string &request){
 
 void Responder::CloseSocket(){
     // Close socket
-    this->socket.close();
+    this->socket->close();
+    boost::asio::ip::tcp::socket *newSocket = new boost::asio::ip::tcp::socket(this->socket->get_io_service());
+
+    // Remove the old socket
+    delete this->socket;
+    this->socket    = newSocket;
 }
 
 
 void Responder::Exit(){
     boost::try_mutex::scoped_lock lock(this->server.mutex);
     this->exited    = true;
-    
-    this->CloseSocket();
+
+    if(this->socket){
+        this->socket->close();
+    }
 
     this->waitCondition.notify_all();
 

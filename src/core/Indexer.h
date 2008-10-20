@@ -85,6 +85,7 @@ class Indexer : public ThreadHelper,private boost::noncopyable {
         sigslot::signal0<> SynchronizeStart;
         sigslot::signal0<> SynchronizeEnd;
         sigslot::signal0<> PathsUpdated;
+        sigslot::signal0<> TrackRefreshed;
 
     private:
         
@@ -100,6 +101,7 @@ class Indexer : public ThreadHelper,private boost::noncopyable {
         double iProgress;
         int iNOFFiles;
         int iFilesIndexed;
+        int filesSaved;
 
         void CountFiles(utfstring &sFolder);
 

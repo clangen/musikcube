@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, mC2 Team
+// The following are Copyright  2008, mC2 Team
 //
 // Sources and Binaries of: mC2, win32cpp
 //

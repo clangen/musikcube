@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright  2007, Casey Langen
 //
 // Sources and Binaries of: win32cpp
 //
@@ -88,6 +88,7 @@ protected: // methods
     virtual void    Layout();
     virtual void    OnResized(const Size& newSize);
     virtual void    OnChildAdded(Window* child);
+    virtual void    OnGainedFocus();
 
     Window*         WindowForTabIndex(int tabIndex);
     void            SelectFirstChild();

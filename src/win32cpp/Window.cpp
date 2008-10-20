@@ -516,7 +516,7 @@ LRESULT CALLBACK Window::StaticWindowProc(HWND hwnd, UINT message, WPARAM wParam
                     Window* sender = Window::sHandleToWindowMap[drawItem->hwndItem];
                     if (sender)
                     {
-                        sender->WindowProc(message, wParam, lParam);
+                        return sender->DrawItem(*drawItem);
                     }
                 }
             }
@@ -591,7 +591,6 @@ LRESULT CALLBACK Window::StaticWindowProc(HWND hwnd, UINT message, WPARAM wParam
                 it->second->OnEraseBackground((HDC) wParam);
             }
             return 1;
-
 
         case WM_PAINT:
             {
@@ -1418,12 +1417,18 @@ void        Window::OnMouseExitBase()
 
 void        Window::OnGainedFocusBase()
 {
+    this->SendMessage(WM_CHANGEUISTATE, MAKELPARAM(UIS_CLEAR, UISF_HIDEACCEL | UISF_HIDEFOCUS), 0);
+    this->SendMessage(WM_CHANGEUISTATE, MAKELPARAM(UIS_SET, UISF_ACTIVE), 0);
+
     this->OnGainedFocus();
     EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->GainedFocus, this);
 }
 
 void        Window::OnLostFocusBase()
 {
+    this->SendMessage(WM_CHANGEUISTATE, MAKELPARAM(UIS_SET, UISF_HIDEACCEL | UISF_HIDEFOCUS), 0);
+    this->SendMessage(WM_CHANGEUISTATE, MAKELPARAM(UIS_CLEAR, UISF_ACTIVE), 0);
+
     this->OnLostFocus();
     EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->LostFocus, this);
 }

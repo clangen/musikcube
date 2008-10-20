@@ -61,6 +61,7 @@ using namespace musik::core;
 Library::Remote::Remote(utfstring identifier)
  :Base(identifier)
  ,socket(ioService)
+ ,httpPort("10544")
 {
 }
 
@@ -210,10 +211,10 @@ void Library::Remote::ReadThread(){
                             currentQuery->status |= Query::Base::Status::Canceled | Query::Base::Status::Ended;
                         }
 
-                        this->waitCondition.notify_all();
 
                     }
                 }
+                this->waitCondition.notify_all();
             }
         }
     }
@@ -293,7 +294,10 @@ void Library::Remote::WriteThread(){
             // Could this part lead to a deadlock???
             boost::mutex::scoped_lock lock(this->libraryMutex);
             if(!this->exit && this->incomingQueries.size()==0 ){
+
+                // This is a likely place where a thread will wait
                 this->waitCondition.wait(lock);
+
             }
         }
     }
@@ -333,6 +337,6 @@ utfstring Library::Remote::BasePath(){
     boost::asio::ip::address address        = endPoint.address();
 
     path    += UTF8_TO_UTF(address.to_string());
-    path    += UTF(":") + UTF8_TO_UTF(this->port) + UTF("/");
+    path    += UTF(":") + UTF8_TO_UTF(this->httpPort) + UTF("/");
     return path;
 }

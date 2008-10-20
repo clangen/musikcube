@@ -719,6 +719,52 @@
 					>
 				</File>
 			</Filter>
+			<Filter
+				Name="filestreams"
+				>
+				<File
+					RelativePath=".\filestreams\Factory.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath=".\filestreams\Factory.h"
+					>
+				</File>
+				<File
+					RelativePath=".\filestreams\IFileStream.h"
+					>
+				</File>
+				<File
+					RelativePath=".\filestreams\IFileStreamFactory.h"
+					>
+				</File>
+				<File
+					RelativePath=".\filestreams\LocalFileStream.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\filestreams\LocalFileStream.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 	</Files>
 	<Globals>

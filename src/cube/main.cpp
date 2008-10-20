@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright  2007, Casey Langen
 //
 // Sources and Binaries of: mC2, win32cpp
 //

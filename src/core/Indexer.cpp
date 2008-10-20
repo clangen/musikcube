@@ -242,6 +242,8 @@ void Indexer::Synchronize(){
         this->iProgress  = 0.0;
     }
 
+    this->filesSaved    = 0;
+
     for(int i(0);i<aPaths.size();++i){
         utfstring sPath    = aPaths[i];
         DBINT iPathId    = aPathIds[i];
@@ -434,6 +436,10 @@ void Indexer::SyncDirectory(utfstring &sFolder,DBINT iParentFolderId,DBINT iPath
                     if(tagRead){
                         // Save
                         track.Save(this->dbConnection,this->libraryPath,iFolderId);
+                        this->filesSaved++;
+                        if(this->filesSaved%100==0){
+                            this->TrackRefreshed();
+                        }
                     }
 
                 }
@@ -714,6 +720,8 @@ void Indexer::SyncCleanup(){
 
     // Vacuum to remove unwanted space
     this->dbConnection.Execute("VACUUM");
+
+    this->TrackRefreshed();
 
 }
 

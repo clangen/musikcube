@@ -51,7 +51,7 @@ class IRequestPlugin{
     public:
         virtual void Destroy()=0;
         virtual const char* WatchPath()=0;
-        virtual void Execute(musik::core::http::IResponder* responder,const musik::core::http::IRequestParser* request,const musik::core::ITrack* track)=0;
+        virtual void Execute(musik::core::http::IResponder* responder,musik::core::http::IRequestParser* request,const musik::core::ITrack* track)=0;
 };
 
 //////////////////////////////////////////////////////////////////////////////

@@ -1,0 +1,804 @@
+
+1.6.0
+---
+- small things inside that I forgot to mention
+- some new commands for remote control interface:
+  - SCAN
+  - SAMPLE
+  - EQFILE
+  - SHOWEQ
+- added --keep-open command line flag (for remote control)
+- fixed equalizer file parsing to really handle comment lines as example file suggests
+- more elaborate detection of UTF-8 locale, also --utf8 switch to force it
+- libmpg123 9.0.9:
+  - added mpg123_geteq() and mpg123_tell_stream()
+  - API cleanup (take const char* for mpg123_open())
+  - calm down complainling (C++) compilers by completing the mpg123_channels enum
+  - fixed several possible crashes when user provides NULLs where it isn't appropriate
+  - workaround for frames that fail decoding (bad frame body, missing bit reservoir): fill up with silence
+    That also fixes seeking issues related to bad frames since now the fixed relation between frame and sample offsets is restored.
+  - Finally realized what that the resampling code for integer math (generic_nofpu) was just incomplete!
+    Now it works, using the defined integer multiplication.
+  - Detect UTF-8 in ICY conversion (instead of just assuming CP-1252, provided by Torsten Glaser).
+  - Prevent ugly noise when the bit reservoir is not fully there (p.ex. ignorantly cut mp3 files).
+    Concerned frames are silenced, but reservoir for following frames is kept.
+    Thanks to Patrick Dehne for the investigation and patch!
+- new project files to build/use libmpg123 with MSVC++ 2005 and 2008, provided by Patrick Dehne
+- fixed a regression that made the pause/loop mode in terminal control slowly go backwards
+
+1.5.1
+---
+
+- fix wav/au/cdr writing to stdout (bug #2044423)
+- add more sensible --no-resync to replace --resync (bug #2044404)
+- libmpg123 7.0.7
+  - fix thread safety of SSE decoder (bug #2053181)
+  - fix robustness of length handling, added mpg123_set_filesize() (bug #2064322) 
+
+1.5.0
+---
+
+- libmpg123 6.0.6
+  - Floating point decoding back again, (build time choice for now; --with-cpu=generic_float).
+  - More robust string handling; extended string API.
+  - fixed an (so far) unnoticed ID3 bug that may have obscured comment fields
+  - added mpg123_feed() as shortcut; using const input buffer now
+  - resync is enabled again for ICY streams (the trouble in the past was due to a reader bug, not the streams)
+  - decode ICY text data to UTF-8 (thanks, Thorsten)
+  - preserve file flags for timeout mode
+- More elaborate (helpful?) error message for output format problems.
+- Reworked HTTP code... and added IPv6 support!
+- Fix the --proxy parameter (has been accidentally ignored before).
+- Added --ignore-mime to work with web streams with funny playlist MIME types like "audio/megurl".
+- Know MIME audio/mpegurl.
+- --timeout is now also used for the connection itself (not just reading).
+- Now trying to resume ALSA device after suspend.
+- subtle build changes (your CFLAGS rule now)
+
+1.4.3
+---
+
+- Fix mpg123_tell() and mpg123_seek() return values with respect to the samples in decoding buffer (bug 1947373).
+- Fix (bogus) 3DNow detection on IDT C6 (bug 1947982).
+- Fix mono playback of win32 output (bug 1955157).
+- Fix ABI compatibility with compilers that don't align the stack like gcc does (fixing SSE crashes on win32).
+
+1.4.2
+---
+
+- Fix build problems (for Cygwin and Win32, perhaps others, too).
+
+1.4.1
+---
+
+- Fix a serious regression of terminal control mode (forgot to remove a term_restore(), bug 1936548).
+
+1.4.0
+---
+
+- Enable runtime check for available and working output modules.
+  Now mpg123 tries all built modules (or a list specified in mpg123 -o moda,modb,modc) in turn to find a working output.
+  This minimizes the situation of having to specify a device when default output doesn't work for some reason.
+  See bug 1910500.
+- libmpg123 2.2.2
+  - Fixing an endless loop for ICY streams that suddenly end without error (just EOF).
+  - Further fixes around EOF handling in (buffered/ICY) streams.
+- Enable user to interrupt mpg123 when stuck in a loop of failing to open a track (with --loop).
+- This time with correct RPM spec (hopefully... sorry, Michael!).
+
+1.3.1
+---
+- Enable snd_pcm_sw_params_set_xfer_align() for alsa-lib < 1.0.16 (bug 1908603).
+- libmpg123 2.1.2 (no-op change)
+
+1.3.0
+---
+
+This is a _major_ fix release for http streaming!
+Much more usable than earlier mpg123 1.x versions.
+
+- libmpg123 libtool-version 2.0.2
+  - Fix nasty bug in ICY reader that failed to account for partial reads from slower network.
+  - Now non-seekable streams can get peek-ahead for MPEG sync, too, triggered by the MPG123_SEEKBUFFER flag.
+  - Do not try to resync on streams with ICY metadata, that won't work.
+    Consequently, if there's unreliable network, use --loop -1 to make mpg123 reconnect to the server on errors.
+  - Applying a few layer 3 decoder fixes from old mhipp CVS (hail to the creator;-)
+    That includes the fix for bug 1895025.
+  - Fix ID3v2 parser with very invalid claimed ID3v2 frame sizes (could have triggered DOS before).
+  - Oh, and fixed a steady memory leak in ID3 handling. Should mention that;-)
+- Print ICY-NAME and ICY-URL again, as mpg123-0.6x did.
+- Added --smooth option for not flusing buffer between tracks but at program end only.
+- Included some contributed ports/bindings of libmpg123 under ports/ .
+
+1.2.1
+----
+
+- libmpg123 libtool-version 1.2.1 (coincidence!)
+  - Earlier check for free format headers to prevent them from screwing up resync (free format still not supported)
+  - bug 1889051: more flexible resync, not insisting on the format of the first frame (which could have been bogus)
+- Add an output write loop to handle SIGSTOP/CONT operation (bug 1890563).
+- Fixed a bug where playback status for some http streams was not shown.
+
+1.2.0
+----
+
+- libmpg123 libtool-version 1.0.1
+  - See NEWS.libmpg123 for details.
+  - This adds --resync-limit parameter to mpg123.
+- Some build system work, including:
+  - It is now possible to build a mpg123 rpm from the source tarball via rpmbuild -tb .
+  - configure: Accept --with-audio=foo,bar,bla (comma-separated list) in addition to --with-audio="foo bar bla".
+  - autogen.sh included in distribution.
+  - Include the forgotten i486 files in the distribution (now that's embarrasing...).
+    Also a little fix for wrong --list-cpu on i486 build.
+  - Fix build with MinGW32.
+- Fix -v stat output (time display) for MinGW32 build.
+
+1.1.0
+----
+
+- Added arts output.
+- More verbosity on lame/xing/info tags (on demand) instead of compile-time debugging switch.
+- XMMS2 plugin cleanup (submitted to XMMS2 for inclusion)
+- Improved ID3v2 robustness (let bad tags not affect playback of the important part).
+- Terminal control:
+  - Key for going to previous track ([d], because it's left of [f] usually... no config file yet for that).
+  - Key for printing current playlist, [l].
+  - Now possible to switch on verbosity also for mpg123 -q -C
+  - Key for (re)printing ID3 tag info ([t]).
+  - Key for (re)printing MPEG frame header info ([m]).
+- Soften the -q option: Now you are able to increase verbosity after -q again, like mpg123 -q -v (this fixes cplay's progress display).
+
+1.0.1
+----
+
+- Fix module loader to prevent crash in working paths with more than 49 characters length (bug 1859413).
+
+1.0.0
+----
+
+- Fixed Pulseaudio.
+- Cleaned up configure.
+- Pushed remote control version to v3.
+- Updated documentation.
+- Fix VPATH build for generated mpg123.h .
+
+1.0rc3
+----
+
+- Fixed JACK output.
+- Disable buffer when statically building CoreAudio in (MacOSX); with CoreAudio module the buffer works, with static output it doesn't.
+  This is the situation because of fork() discrimination by Apple Inc. .
+- Added verbosity to tell about ID3v2 text encodings (level 4).
+- minor cleanup
+
+1.0rc2
+----
+
+- Fixed some bugs, the ID3v2 interface of libmpg123 is safer now (there were possibly stale pointers in there).
+- Buffer mode got vital improvements (yeah, that is sort of feature creep during release process, but worth it)
+  The improved communication makes it possible to skip tracks in terminal control mode without the hack to immediately restart playback.
+  To be able to do seeking in terminal mode with buffer properly, buffered playback stops on seek keys. You restart playback after you are done with seeking.
+- Support either portaudio v18 or v19 API (v18 works for me, v19 works according to user report).
+- Audio output handling got safer and more clean, a byproduct of implementing the above. I stumbled over some things and had to fix it (yeah, feature creep in parts again, but still: Worth it!;-)
+  Any audio access is now restricted to either that standalone mpg123 process or the buffer process, the output being opened _after_ the fork().
+  There is hope that this fixes buffered output on MacOSX.
+- More feature creep, this time because of something like that was already included in the Debian mpg123:
+  --delay parameter to issue a pause before each track (does not make sense for file writing outputs, though).
+- Even more feature creep: remote control can now give ID3v2 data, also in more raw form via new "tag" command.
+  This sort of qualifies as bugfix, actually, since it's item 1786430 on the tracker;-)
+- Make flexible rate computations more safe (especially on 32bit platforms) by switching to the looping code instead of direct multiplication/division (which blows up with integers). A possible effect was premature track ending with a forced rate.
+- Flexible rate mode works _at_all_ again with fixed output support detection code (comparison of -1 with a size_t ended a loop all too early).
+- check for error in flushing output (this ends mpg123 for a broken pipe, for example)
+
+1.0rc1
+----
+
+- In one word: LOTS!
+- Many small things that happened while migrating to the new setup.
+- The decoder is now a library (libmpg123) which can be installed also for other programs to use.
+  This finally provides a heavily improved replacement for the aged mpglib. We have doxygen API doc, example codes.
+  You can still choose to compile the decoder statically into the mpg123 binary, though.
+- We have a plugin system for audio output! This should be relieving to package maintainers for binary distributions, drastically reducing the number of builds they have to provide.
+  Here, too, you can choose to build one audio output into the binary like before; you can have your old-school one-piece mpg123 or the hip I-am-legion shared-lib-and-plugin flexible mpg123;-)
+  One exception: For now, you have to compile without modules in MinGW32/MSYS.
+- ID3v2 support has been enhanced and, in the case of specific comments (those with a description), fixed.
+  The ID3 parsing is part of libmpg123, offering support for virtually all textual information in ID3v2.2, ID3v2.3 and ID3v2.4 tags (along with the usual 128 bytes of ID3v1 or ID3v1.1 in a block).
+  All tag texts are converted to UTF-8, allowing mpg123 to properly display special chars in an Unicode terminal without fuzz (for non-UTF locales, there is still the ASCII reduction).
+- Gapless decoding (of layer 3 streams) is now considered to be a standard feature and is enabled per default both at build- and runtime.
+- ...
+
+
+0.68
+----
+
+- Fix bug 1807964: distorted playback of MPEG 2.5 files
+
+0.67
+----
+
+Thanks go out to the ROM 106.5FM team (http://www.rom.lu/) for supporting this release with a donation on sf.net and a bottle of finest Gewuerztraminer wine from Luxembourg!
+
+- verified that it builds on SGI IRIX 6.5 for MIPS32 and MIPS64
+- enable flexible rate for stdout decoding, too
+- UTF8 filtering to ASCII finally works thanks to Mika Tiainen, see bug 1745847
+- corrected frame offset; -k was off by one
+	This means now that -k disagrees with mpg123 0.59r on many files because the old version does play a frame of silence when encountering LAME tag instead of dropping it for audio.
+- added --timeout <n>: Possibility to end playback on a stream that doesn't give data for <n> seconds.
+- added --loop <n>: for ... well... looping playback of a track; motivation was persistent internet streaming with unreliable connection (together with --timeout)
+- build fixes
+- use movap instruction in SSE assembly when compiler supports the needed alignment (idea from MPlayer)
+- show decoder options in their priority order in --list-cpu/--test-cpu
+- added Perl script to benchmark each of mpg123's CPU optimisations
+- portability enhancements and cleanups along with testing on SunOS 4.1.2 with gcc-2.7.0
+- workaround for ugly flexible rate for MMX/SSE/3DNowExt code:
+  --with-cpu=mmx also includes i586 code as fallback; similar with the others
+
+0.66
+----
+
+- support for a combined build of x86 optimizations and runtime selection among these
+  The (supposedly) "highest" CPU-supported optimization is chosen by default,
+  --cpu, --list-cpu and --test-cpu parameters are there for you to take control.
+- default build for x86 systems is combined "x86" with generic, i386, i586, MMX, 3DNow, SSE, 3DNowExt;
+  "x86_dither" also includes the dithering i586 decoder
+- no automatic -march compiler flags anymore;
+  the --with-cpu configure option selects specific assembler code but special CFLAGS are up to you
+- extended 3DNow and SSE optmizations from MPlayer's mp3lib
+- x86 assembler optimizations adapted for MacOS X/Intel
+- straight support for Windows using MinGW32, reactivated the native WinMM output
+  Core functionality including assembler optmimizations and WAV writing is there.
+- assembler optimizations also for cygwin
+- set remote-err automatically when putting audio to stdout
+- a bit more general portability in the new build system
+- fix file creation mode for -O
+- experimental decoding to 32bit float (raw and WAV file): ./configure --with-cpu=generic_float
+- generic control interface (-R) can create and read from a named pipe, parameter --fifo <path>
+- audio bugfix: playback of mono file on stereo-only hardware, better error reporting there
+- ALSA output handling underruns
+- MMX, SSE and 3DNowExt fallback to i586 and below or 3Dnow for forced sample rate
+- more terminal control: volume, RVA and verbosity controls
+
+0.65
+----
+
+ - now allow crc bit to vary over stream (fixes files with bad lame tag and some internet streams)
+ - do not try to parse id3v2.2 (as opposed to 2.3 and 2.4)
+ - correct id3v2.3 parsing for not expecting syncsafe integers for framesize, 2.4 introduced that
+ - omit gcc specific compiler flags when gcc is not there
+ - initital attempt to support sgi/irix with configure (please test)
+
+0.64
+----
+
+ - fixing a potential denial of service problem; broken connection to server could trigger an endless loop
+
+0.63
+----
+
+ - build fixes, only relevant to developers and people who had problems building
+
+0.62
+----
+
+ - JUMP command in generic frontend accepts offsets/positions in seconds (JUMP 4s vs. JUMP 4)
+ - initial support for ICY meta data in SHOUTcast streams
+ - a bit of fixing with rva code, added rva and general volume control to generic frontend
+ - accepting more MIME types for http streaming (application/pls and audio/x-mpeg)
+ - ID3v2 info output taking less space per default - more resembling the old ID3v1 view for short tags, full view with always one line per item via extra --long-tag switch
+ - generally less verbosity (i.e. noise on console) per default
+ - ID3v2 now having some kind of support for unicode; trying to print what's latin1-compatible and prevent messing up of terminal with unknown bytes
+ - several bug fixes and small improvements
+
+0.61
+-----
+
+- improved AltiVec code from Taihei Monma
+- an i486 optimization by Petr Salinger
+- improving interactive experience (terminal, frontends)
+  -> prevent/lessen bad effect after seeking while paused
+  -> show targeted position while seeking in terminal mode while paused
+  -> not messing up terminal on unexpected errors
+- decoder robustness - better file sync (weird junk at beginning, some vbr frames)
+- build system improvements:
+  -> fixing configure isses on some platforms
+  -> adding cygwin, kfreebsd
+- extended fix for CVE-2006-1655
+- generic code should compiling again...
+
+0.60 final (The Team!)
+-----
+
+- no functional changes
+
+0.60-beta6 (Thomas Orgis)
+-----
+
+- more use of ID3v2 tags, mpg123 now displays both (merged) info from ID3v2 and ID3v1; trying to support both ID3v2.3 and ID3v2.4, but ignoring encoding (UTF8 should still work if your terminal supports it, straight unicode should work except for parsing genre numbers and multiline strings)
+
+0.60-beta5 (Thomas Orgis)
+-----
+
+- more robust playlist support:
+  -> path/url length not limited to 1023 characters anymore
+  -> reading in of whole playlist at program start (old operation was not really safe with playlist from http)
+  -> fixed bug where reading of playlist form stdin caused segfault (introduced with the pls format support)
+- smaller cleanups, screen output cosmetics
+
+0.60-beta4 (Nicholas Humfrey & Thomas Orgis)
+-----
+
+- proper seeking, also for VBR streams
+- real two-way seeking in remote control mode at all
+- better estimates of remaining frames (on vbr files), exact if Xing header is found
+- Removed libao support (as it is GPL and we aren't - and we don't need it with native Alsa)
+- Added ALSA 0.9/1.0 support by Clemens Ladisch (old alsa is in audio_alsa05.c but will most likely vanish soon)
+- Added PortAudio audio-output support
+- Added SDL audio-output support
+- Fixed NAS audio-output support
+- re-enabled MPEG 2.5, code just seems to work
+- improved stream checking; being more willing in general (favor resync instead of bail out) but directly give up if free format stream is obvious
+- Whee! Initial Relative Volume Adjustment (buzz) support with reading of ReplayGain values in lame/info tag, the RVA2 frames in ID3v2.4, ID3v2 TXXX tags from foobar2000 (please test, someone!) and custom ID3v2.3 comments entitled RVA / RVA_ALBUM / RVA_AUDIOPHILE / RVA_RADIO / RVA_MIX
+- more persistence in trying to get http streams
+
+0.60-beta3 (Thomas Orgis)
+-----
+
+- fixed bug with segfault in http code on stream from live365.com - bug id 1529266
+- made http request HTTP/1.0 compilant again (tested only without proxy) - bug id 1529319
+- now using http content-type header to check for correct types mpg123 can understand
+  -> you can now always use -@ for a single http resource (direct stream or playlist) since a stream will be reopened based on MIME type,
+  though omitting it will save you one http request to the server in the direct stream case...
+- now simple parsing of shoutcast pls playlists (how did you people use shoutcast before?)
+- playlist mode enhanced with selective playback of one entry in list (--listentry parameter)
+
+
+0.60-beta2 (Thomas Orgis)
+-----
+
+- fixed bug in terminal control mode that caused the f key to quit program isntead of advance to next file (introduced by the first attempt to restore "normal" Ctrl+C behaviour in terminal control mode)
+
+0.60-beta1 (Thomas Orgis & Nicholas Humfrey)
+-----
+
+On the way to the first new offical realease since years!
+
+- new license: all LGPL except the old audio_alsa.c
+- merge with Nicholas' sourceforge package
+	- autooled configure/make system
+	- MacOSX, Jack, libao (alsa 0.9/1.x support through that)
+- experimental gapless playback for layer 3
+- merged in MMX and AltiVec optimizations
+- security bug fix of GLSA 200607-01 and catching possible crashes found by fuzzing 
+- fixed many issues here and there
+- polished help messages, updated man page...
+
+UNDERGROUND 0.59r-thor7 (well, I'm going to release a _really_ official mpg123 in future) (Thomas Orgis <thomas@orgis.org>)
+-----
+
+- applied relevant stuff from Debian's 22:
+	- fix for CVE-2006-1655 (buffer overflow in III_i_stereo())
+	- strict aliasing hack in WRITE_SAMPLE of decode_i386.c
+	- fixed http streaming through proxy by actually using the request url...
+	- buffer resync on Ctrl-C (cleaning, reducing pauses with multiple files)
+	- removed unused esdserver variable from mpg123.h
+	- did NOT apply the Debian Makefile/manpage changes (going to rewrite that stuff anyway)
+- made the netbsd-i386 targets visible as netbsd-x86
+
+UNOFFICIAL 0.59r-thor6 (Thomas Orgis <thomas@orgis.org>)
+-----
+
+- split nedbsd targets for realtime priority selection code; since one needs -lpthread with it. standard netbsd target doesn't use realtime code -- I won't recommend running mpg123 as root anyway!
+
+UNOFFICIAL 0.59r-thor5 (Thomas Orgis <thomas@orgis.org>)
+-----
+
+- Separated the the use of char* equalfile as filename from the use as TRUE/FALSE flag by introducing int have_eq_settings. Compilers kept nagging about assigning and integer (TRUE) to char* ... and it feels more right this way.
+
+- Made control_generic aware of real being possibly different than float (seq command used to raise an FPE on OSF1 when this assumption was not the case.
+
+- Fixed the command line arg parsing to work properly on Alpha (32 and 64 bit mixup)
+
+UNOFFICIAL 0.59r-thor4 (Thomas Orgis <thomas@orgis.org>)
+-----
+
+- merged with 0.59r-19 from Debian project (Daniel Kobras <kobras@debian.org>), hopefully fixing all those security vulnerabilities
+	-> my dirty http_open and open_stream variants now replaced by more proper code
+	-> still my (rather workloaded) parsing/processing in control_generic, but now including the idea to watch out for \n, \r\n and \r (or \n\r, for that matter;-)
+
+UNOFFICIAL 0.59r-thor3 (Thomas Orgis <thomas@orgis.org>)
+-----
+
+- hacked additional variants of http_open and open_stream that return errors instead of exit()ing; makes more sense when used by a frontend
+- further cleanup (and return to using continue instead of nested if(){}else{if()else{}}) in command processing, better error messages there
+
+UNOFFICIAL 0.59r-ThOr(remote-err,eq,flushing) (Thomas Orgis <thomas@orgis.org>)
+-----
+-added audio_flush() calls to various places in control_generic.c to make sure there is nothing left in there that hurts later (not sure if this has effects)
+-(re?)enabled (?) code for stream info
+-corrected answer of JUMP (now gives actual reached position, +/- 1 frame since I'll still have to figure out what frame 0 really is...)
+
+UNOFFICIAL 0.59r-realeq-remoteerr: (Thomas Orgis <thomas@orgis.org>)
+-----
+- applied patch from Cool Feet Audio project (nutcase@dtfm.org, see README.cfa) to use real-time equalizer in remote mode
+- applied patch from AMF (amf.sourceforge.net) by Steve Grundell for remote communication not polluting the STDOUT where the audio data is read from (instead using STDERR) ... and faster seeking, maybe
+  The patches go not cleanly together, but rejects are trivial. Thus, a combined patch with both would makes sense.
+- modified (IMHO improved) the control_generic command reading: now always making sure that the full command is read up to a mandatory \n; also reworked the application of the commands afterwards
+- added SEQ command: simple eq with only 3 bands
+- added SILENCE command: I don't want the playback messages when I don't read them (since my frontend is reading the STDOUT it knows what is going on)
+- added SLJ command: SILENCE-LOAD-JUMP... a hack for my hacked mixplayd... maybe one should remove that again.
+
+0.59r: (MH)
+-----
+- applied audio_alib changes from Ralf Hildebrandt <R.Hildebrandt@TU-BS.DE>
+- some 'paetsches' from DK
+- minor optimizations in layer3 (dequantize/huffman) 
+- BSDOS 4.0 with gcc added to Makefile (<sms@moe.2bsd.com>)
+- Solaris-ESD patch from Ryan Prosser <prosser@wam.umd.edu>
+- Added Frontend changes from Bertrand Petit <elrond@phoe.netdev.net>
+- more DK 'paetsches' (final dk7-clubhaus edition), includes extended term 
+  control
+- SGI audio fix for non RAD machines from Erik Mouw <J.A.K.Mouw@its.tudelft.nl>
+- fixed ugly bug in layer3 dequant for bt==2 (may cause high frequency clitchs)
+- AMD-3DNow optimizations in decode and dct64
+- OS/2 reworked from Samuel Audet (see audio_os2.c for more)
+- added freebsd-esd make-entry from Daniel O'Connor (darius@guppy.dons.net.au)
+- added enhanced head_check from D. Skarda <0rfelyus@atrey.karlin.mff.cuni.cz>
+- applied 'xterm-title-patch' from "Wilson, Jeff D" <jeff.wilson@wilcom.com>
+- more esd changes from Robert Bihlmeyer <robbe@orcus.priv.at>
+- applied Hannu Napari's <Hannu.Napari@hut.fi> SGI audio patches
+- minor changes in httpget.c and mpg123.c 
+- added native AIX support from Juergen.Schoew@unix-ag.uni-siegen.de
+- applied playlist patch from <psst@euskalnet.net>
+- more SGI audio patches from Gilles Zunino <Gilles.Zunino@hei.fupl.asso.fr>
+- applied esdserver patch from Matthew Parslow <roy@alpha.alphalink.com.au>
+- added some fixes for control_generic
+
+0.59q: (MH)
+------
+- ESD fixes
+- minor bugfixes (DK patch ;)
+- au and cdr 'support' (it's a hack)
+- Fixed 'VBR' Bug in get_scale_fac1(). Thanx to <ssonique@hotmail.com> for
+  this. (Wasn't really a VBR Bug. The new encoders just triggered it.)
+- Added equalizer patch from <dlux@dlux.sch.bme.hu>
+
+0.59p: (MH)
+------
+- Added mpglib (see mpglib directory)
+- 'make generic' is more generic now
+- Added HPUX/ALib support from Ducroquet Erwan (ducroque@ufr-info-p7.ibp.fr) 
+- Added EsoundD support from <fill it in>
+- Added exp. relatime support (compile with -DSET_RT) 
+- Added linux-sparc patch from <hmm lost email)
+- Added genrepatch from Shane Wegner <shane@CM.NU>
+- Added wav-File patch Samuel Audet <guardia@cam.org>
+- Added SGI-RAD support from "J. Dean Brederson" <jdb@cs.utah.edu>
+- Added sajberplay/FreeBSD patch from Chou Ye-chi <is84002@cis.nctu.edu.tw>
+- Added 486 optimizations from Fabrice Bellard <bellard@email.enst.fr>
+- Added combined output devices on SUN (ie Speaker and headphones together)
+- Added audio_alsa.c (under GPL license) for the ALSA sound system from
+   A. Hermansen <ahermans@vf.telia.no> and J. Kysela <perex@jcu.cz>
+- Added K6-3DNow patches from  KIMURA Takuhiro <kim@hannah.ipc.miyakyo-u.ac.jp>
+- Added MINT patches from Petr Stehlik <stehlik@cas3.zlin.vutbr.cz>
+- Fixed minor bug for linux-i486 and mono 
+
+0.59o: (MH)
+------
+- fixed Bug with stereo streams on mono audio hardware for OSS
+- fixed a bug with mono output and 1:1 (no) rate conversion
+- again changes in the probe code
+- fix in the buffer code for the case, that audio parameters are changing
+- more changes to the flexibel rate converter, should now work when
+  writing to STDOUT.
+- Added Andy's (<andy@snoogie.demon.co.uk>) float2int speed up proposal 
+  (check WRITE_SAMPLE in decode_i386.c) .. Maybe someone wanna take the 
+  idea and put it into the decode_i586.s part?
+- Added TK3Play support from Brian Foutz <foutz@anise.ee.cornell.edu>
+  (compiles but untested)
+- RIFF Header fix (according to Thomas Niederreiter's
+  <tn@tarantel.rz.fh-muenchen.de> patch)
+- m68k patch from Stefan Gybas <cab@studbox.uni-stuttgart.de> applied
+- minor additional PPC changes applied
+- resync and EOF hang fixed
+- resync and bitrate correction relaxed 
+- Slightly change verbose output; added countdown
+
+
+0.59n: (MH)
+------
+- fixed shuffle bug
+- added memory mapped IO for file reading
+- added MPEG 2.5 12kHz and 8kHz table entry
+- started flexibel rate conversion .. 
+- new '-Z' / '--random' option 
+- minor clean-up
+- splitted audio file in audio system dependend smaller parts
+- started system stream support (external program: system.c)
+- unsigned 8 bit (instead of ulaw) is now default for 8bit operation
+- Linux PPC patch from Grant Erickson <eric0139@tc.umn.edu> applied
+- added BSDi patch from Peter Berger <peterb@hoopoe.psc.edu>, who reported
+  a failure when catching signals
+- minor bug fix in the control interface for sajber jukebox
+- fixed the ugly 'Ctrl-Z in buffer mode' bug .. YES ;)
+- added buffer preload when underrun occurs (preload = 1/8 buffer size)
+- minor SUN audio clean up
+
+0.59m: (MH)
+------
+- Bug with RIFF header streams fixed.
+- HTTP auth option patch from Henrik P Johnson <king@one.se>
+- NetBSD patch(s) added from <mycroft@NetBSD.ORG> and <augustss@cs.chalmers.se>
+- Added advanced shuffle support from Steven Tiger Lang <tiger@tyger.org>
+- fixed bug with too large big_value field 
+- fixed (hopefully) the bug with the '-a' option 
+- work-around for some pedantic compilers in fr->synth init
+- some changes for the 'generic' version
+- applied NAS bug-fix patch
+- new (good) MPEG 2.5 tables (from Niklas Beisert)
+- added WIN32 support from Tony Million
+- added some bug fixes from Niklas Beisert
+- fixed another ugly bug in layer3 dequantize (wrote over the border
+  of the 'xr' field)
+- a minor HPUX clean up
+- added BSD patch from Kevin Brintnall <kbrint@visi.com>
+- added Makefile.win32
+- added NAS big endian fix
+
+
+0.59l: (MH)
+------
+- simple equalizer support (to be continued)
+- added NAS patch from Martin Denn <mdenn@unix-ag.uni-kl.de>
+- real mono support
+- added pentium optimized decode_i586 from Stefan Bieschewski <stb@acm.org>
+- fixed a bug in MS dequantize function 
+
+
+0.59k: (OF)
+------
+- fixed "Accept" header in httpget.c
+- fixed buffer overflow (causing core dumps) in httpget.c
+- fixed display of song length
+- fixed -b (buffer) problem on SGI / IRIX -- it definitely works now
+- fixed problem when files with different sample rates where played,
+  it now works with -b (buffer), too
+- fixed order of local variables in decode.c to work around a
+  compiler bug in ultrix
+- fixed Makefile for ultrix
+- reverted to old getbits.s (the new one could cause coredumps)
+- more compact MPEG header display in non-verbose mode
+- small fixes in buffer code and elsewhere
+
+
+0.59j: (MH)
+------
+- added sajber jukebox control interface (it's currently a big hack)
+  (see 'JUKEBOX' file for more)
+- added simple rewind facility .. (only used by sajber interface at the moment)
+
+
+0.59i: (MH)
+-----------
+- added front-end (remote) patch from "Brian J. Swetland" <swetland@uiuc.edu>
+- added OS2 patches from Niclas Lindstrom <nil@wineasy.se>
+- fixed 'rewind bug'
+- added patches from Leo Broukhis <leo@zycad.com>
+- added shuffle patch from Tillmann Steinbrecher <tst@gmx.de>
+- added i386-getbits from M.Stekelenburg <m.stekelenburg@student.utwente.nl>
+- added fallback to 8bit if no 16bit samples support (currently linux only)
+- added (slightly changed) outburst patch
+  from Antti Andreimann <anttix@cyberix.edu.ee>
+- added 'http accept' patch from Hur TaeSung <saturn@arari.snu.ac.kr>
+- fixed buffer mode bug 
+
+
+0.59h: (MH)
+------
+- added '--8bit' option to force 'ULAW 8 BIT' playing
+- pcm buffer type changed to 'unsigned char *' 
+- plays 2:1 and 4:1 with the real frequency (ie 11025/22050 instead
+  of 44100)
+- program (re)sets (changed) frequency for every frame
+- buffer mode is broken
+
+
+0.59g: (MH)
+------
+- added support for MPEG 2.5 (it's a HACK!) .. mpg123 understands and plays
+  2.5 but it does it wrong. (you will hear this!) 
+- Fixed wrong values in BandInfo struct for 32kHz mode
+- Some performance improvements and minor changes and bug-fixes.
+- Tried the new imdct from the maplay1.2+ (version 1.81) package. (but 
+  it was slightly slower on my system, currently disabled)
+
+
+0.59f: (OF)
+------
+- HP-UX audio fix (provided by Damien Clermonte)
+- Buffering (-b option) hopefully fixed.  Please test!
+
+
+0.59e:
+------
+- added Audio MPEG 2.0 support (but near untested) (MH)
+
+
+0.59d: (MH)
+------
+- minor modifications to dct64_i386.c
+- removed duplicated dependency 'dct64.o' in Makefile
+
+
+0.59c: (OF)
+------
+Another complete rework of the buffer system (-b option)
+   (normally uses mmap(), but it can also use SYSV-ShMem because
+   mmap() is broken on linux).
+
+0.59: (MH)
+-----
+extracted dct64() from decode*.c files.
+some changes to dct64() and decode*.c to allow auto-increment/decrement
+removed bit-counter in getbit-functions. Layer3 part2 now counts it itself.
+
+0.58: (OF)
+-----
+Bugfix: not closing the audio device caused a few samples to be lost.
+Bugfix: audio_set_rate() was not called (!?!).
+Additional command line options "--doublespeed" and "--halfspeed"
+   (couldn't find better names).  See the manpage.
+Complete redesign of command line options.  See the manpage.
+Changed the buffer algorithm (-b).  I'm not sure whether it's better
+   or worse now.
+Supports multiple files on the command line.  Pressing Ctrl-C will
+   skip to the next MPEG file, pressing it twice within one second
+   will abort mpg123 completely.  See the "INTERRUPT" section in the
+   manpage.
+Support for http URLs.  See also the -p option in the manpage.
+Support for list files.  See also the -@ option in the manpage.
+
+0.57: (MH)
+-----
+Put the downsampling code together with the full
+  quality decode into one binary. (new options -2to1,-4to1)
+Optimizations in the dct12.
+Removed the 'int' version.
+
+0.56: (OF)
+-----
+Additional command line option "-rs" to try to resync on
+   "broken" MPEG streams (now called "--resync" or "-y").
+Additional command line option "-b" to use audio output buffering.
+   See the manpage for additional information.
+Changed a few variable names and some other minor fixes, so the
+   source compiles more cleanly (without warnings) on most
+   platforms (for example, the FreeBSD port compiles without
+   warnings using "-Wall -ansi -pedantic").
+Makefile changes: moved "solaris" to "solaris-gcc", new target
+   "solaris" (using Sun's SparcWorks cc, faster tha gcc!), new
+   targets "aix" and "generic".
+
+0.55: 
+-----
+removed some obsolete code from layer3.c (MH)
+changed scalefac stoing in layer3 (MH)
+decode_4to1.c added again. Renamed decode_lp.c to decode_2to1.c (MH)
+(both not optimized .. still expterimental)
+Minor cleanups and optimizations in layer3. (MH)
+Removed some (probable) minor bugs. (MH)
+Changed 2**(...) scaling (and omitted a few muls) (MH)
+Changed Makefile (OF)
+Changed dequantize to reorder with a mapping table 
+   (you can disable this by undefining MAP in layer3.c) (MH)
+removed the 'dummy' scale step for mixed mode (MH)
+Changed copy policy (MH)
+Modified dequant-reorder-mapping (MH)
+
+0.54: (MH)
+-----
+Minor changes in the documents .. 
+huffman.c: x->len,y->len removed .. always '15' for the important cases
+audio.c: some additions to the SOLARIS audio code
+
+0.53b: (OF)
+------
+Makefile:
+
+    Renamed SPARC10 to SUNOS (which is more appropriate).
+        Tested with SunOS 4.1.4 on a SPARCstation SLC, 20 MHz
+        (322% CPU, so no realtime decoding).
+    Added SOLARIS.  Tested with Solaris 2.5.1 on an Ultra 1,
+        167 MHz (14% CPU), a SPARCstation 5, 110 MHz (47% CPU),
+        and a SPARCstation 10, 33 MHz (68% CPU).
+    Added FreeBSD.  Tested with 2.1.7 on a Pentium-90 (38% CPU)
+        and 2.2 on a Pentium-166 (20% CPU).
+    Added Digital Unix.  Tested with DU 3.2 on a DEC 3000/500
+        (Alpha AXP 150 MHz, 33% CPU).  Does not support DEC's
+        audio interface ("AudioFile"), decodes to stdout only.
+    Improved "clean" target to remove core files and editor
+        backup files.
+    Added "install" target.
+    Added "dist" target to create a .tar.gz file of the source
+        directory.
+    
+    In the distributed Makefile, all system sections are
+    commented out.  When you type "make" without uncommenting
+    one of the sections, an appropriate error message will
+    be displayed.
+
+audio.c
+
+    Fixed problem when opening /dev/audio on Solaris:
+        I had to remove O_NDELAY, because writing to /dev/audio
+        didn't block until the requested number of samples
+        could be written, but instead it wrote only as much
+        samples as it was able too.  Sounded funny.  Removing
+        O_NDELAY fixed the problem.  I don't think that it
+        hurts SunOS either, so I didn't make another #ifdef.
+
+common.c
+
+    Fixed bug by adding function finish_output():
+        The decoder writes the audio samples into a buffer, and
+        each time the buffer is full, it is written to the
+        audio device (or to stdout).  But when the decoding is
+        done, there are some samples left in the buffer which
+        aren't written yet -- they were just discarded.
+        This additional function fixes the problem by writing
+        the remaining samples from the buffer.  It is called
+        immediately after the main frame loop in mpg123.c.
+
+decode*.c
+
+    Fixed compiler warning on symbol "div":
+        Some compilers issue warnings because the symbol div is
+        already used for something else (see "man div"), so I
+        changed it to "divv".
+
+layer*.c
+
+    Functions do_layer*:
+        Moved the declaration for audio_play_samples into
+        mpg123.h.  Makes the code cleaner.
+
+        I moved the variables pcm_samples and pcm_point to
+        common.c, so they are shared between all modules.  This
+        was necessary because the finish_output() function
+        (see common.c above) needs to access them.
+
+        Renamed loop variables "i" and "j" to "k" in order to
+        fix compiler warnings for duplicate/hidden symbols
+        (similar to "div" in decode*.c, see above).
+
+        Changed the preprocessor symbol AUDIOBUFSIZE into a
+        global variable "audiobufsize".  This makes it possible
+        to change it by a command line option.
+
+layer1.c
+
+    Fixed error in function I_step_one, second parameter:
+        unsigned int scale_index[2][]  -->  ...[2][SBLIMIT]
+        This caused an error with the DU compiler (which is ok,
+        because [2][] is incorrect according to ANSI).  I don't
+        know whether [2][SBLIMIT] actually works correctly (I
+        have no layer-1 streams to test it), but at least it
+        compiles without error, and it appears to be correct
+        (looking at the rest of the source).  Heaven knows why
+        gcc doesn't issue an error, and what it actually makes
+        from it.
+
+mpg123.1
+
+    A simple manual page.  Type "nroff -man mpg123.1 | more"
+    to view it, or install it in /usr/local/man/man1 (this is
+    done automatically by "make install").
+
+mpg123.c
+
+    New boolean variable "quiet":
+        If this variable is set to TRUE (command line option
+        -q), no messages are printed.
+
+***
+

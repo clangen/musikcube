@@ -84,6 +84,7 @@ class Remote : public Library::Base{
 
         std::string address;
         std::string port;
+        std::string httpPort;
         std::string username;
         std::string password;
         std::string sessionId;

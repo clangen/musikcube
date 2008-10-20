@@ -88,7 +88,7 @@ class Responder : public IResponder{
         bool exited;
         musik::core::db::Connection db;
 
-        boost::asio::ip::tcp::socket socket;
+        boost::asio::ip::tcp::socket *socket;
         boost::condition waitCondition;
         boost::thread *thread;
 

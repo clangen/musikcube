@@ -87,7 +87,7 @@ class Server : private boost::noncopyable{
         utfstring dbFilename;
     private:
         friend class Responder;
-        void FreeResponder(Responder *responder);
+        bool FreeResponder(Responder *responder);
 
 //        
         typedef std::map<std::string,boost::shared_ptr<IRequestPlugin>> PluginPathMap;
