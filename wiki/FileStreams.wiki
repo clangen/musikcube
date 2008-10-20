@@ -10,10 +10,10 @@ Filestreams can be complicated. When writing mC2 we thought about how to make a 
 
 = How to create a new filestream type =
 
-The interface is very simple. All you need to do to make a new type of filestream is basically to extend the [http://code.google.com/p/musikcube/source/browse/branches/filestream_implementation/src/core/filestreams/IFileStream.h IFileStream] interface.
+The interface is very simple. All you need to do to make a new type of filestream is basically to extend the [http://code.google.com/p/musikcube/source/browse/trunk/src/core/filestreams/IFileStream.h IFileStream] interface.
 The IFileStream contains the basic file IO operations like Open, Close, Read, SetPosition, etc and needs to implement most of them.
 
-Writing a plugin that extends filestreams also requires you to make a interface that can create the new IFileStream. This is done by extending the [http://code.google.com/p/musikcube/source/browse/branches/filestream_implementation/src/core/filestreams/IFileStreamFactory.h IFileStreamFactory] that only contains 2 methods:
+Writing a plugin that extends filestreams also requires you to make a interface that can create the new IFileStream. This is done by extending the [http://code.google.com/p/musikcube/source/browse/trunk/src/core/filestreams/IFileStreamFactory.h IFileStreamFactory] that only contains 2 methods:
   * `bool CanReadFile(const utfchar *filename)`: Should return if this kind of stream is able to read the specified filename. For instance if you are writing a httpstream plugin, this method should check if the filename is starting with `http://`
   * `IFileStream* OpenFile(const utfchar *filename)`: Create a new filestream from the filename specified.
 
