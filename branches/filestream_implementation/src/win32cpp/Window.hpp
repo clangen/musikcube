@@ -227,7 +227,7 @@ public: // methods
     bool            TabStop();
     void            SetTabStop(bool enabled);
 
-    static Window*      SubclassedWindowFromHWND(HWND hwnd);
+    static Window*  SubclassedWindowFromHWND(HWND hwnd);
 
 public: // operators
     operator bool() { return (this->windowHandle != NULL); }
@@ -294,6 +294,8 @@ protected: // methods
     virtual void    OnRequestFocusNext();
     virtual HBRUSH  OnControlColor(HDC hdc);
     virtual void    OnVisibilityChanged(bool visible) { }
+
+    virtual LRESULT DrawItem(DRAWITEMSTRUCT& item) { return 0; }
 
     // window proc related
     virtual LRESULT             PreWindowProcBase(UINT message, WPARAM wParam, LPARAM lParam, bool& discardMessage);

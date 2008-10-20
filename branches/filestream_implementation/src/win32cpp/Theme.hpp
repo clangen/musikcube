@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Casey Langen, André Wösten
+// The following are Copyright © 2007, Casey Langen
 //
 // Sources and Binaries of: win32cpp
 //
@@ -38,60 +38,52 @@
 
 #pragma once
 
-//////////////////////////////////////////////////////////////////////////////
+#include <boost/shared_ptr.hpp>
+#include <uxtheme.h>
+#include <tmschema.h>
 
-#include <win32cpp/Win32Config.hpp>
-#include <win32cpp/Window.hpp>
+//////////////////////////////////////////////////////////////////////////////
 
 namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
 
-class RadioButton;
+class Theme;
+typedef boost::shared_ptr<Theme> ThemeRef;
 
 ///\brief
-///The type of event used when the CheckBox is pressed.
-///\see
-///RadioButton.
-typedef sigslot::signal1<RadioButton*> RadioButtonPressedEvent;
-
-///\brief
-///A standard RadioButton.
-///They are organised as linked list to enforce the grouping behaviour
-class RadioButton : public Window
+///A class that wraps Theme (UXTHEME.DLL) handling for XP+ systems
+class Theme : public boost::noncopyable
 {
+public: // types
+
 private: // types
-    typedef Window base;
-
-public: // events
-    ///\brief This event is emitted when the user presses the RadioButton
-    RadioButtonPressedEvent  Pressed;
-
-public: // constructors
-    /*ctor*/            RadioButton(const uichar* caption = _T(""), RadioButton* attach = NULL);
-    /*dtor*/            ~RadioButton();
-
-protected: // methods
-    virtual HWND        Create(Window* parent);
-    virtual LRESULT     WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
-    virtual void        OnPressed();
-    virtual void        PaintToHDC(HDC hdc, const Rect& rect);
+    typedef HRESULT (__stdcall *PFNCLOSETHEMEDATA)(HTHEME hTheme);
+    typedef HRESULT (__stdcall *PFNDRAWTHEMEBACKGROUND)(HTHEME hTheme, HDC hdc, int iPartId, int iStateId, const RECT *pRect,  const RECT *pClipRect);
+    typedef HTHEME (__stdcall *PFNOPENTHEMEDATA)(HWND hwnd, LPCWSTR pszClassList);
+    typedef HRESULT (__stdcall *PFNDRAWTHEMETEXT)(HTHEME hTheme, HDC hdc, int iPartId, int iStateId, LPCWSTR pszText, int iCharCount, DWORD dwTextFlags, DWORD dwTextFlags2, const RECT *pRect);
 
 public:
-    void                Check(void);
-    bool                IsChecked(void);
-    
-    RadioButton*        GetCheckedInGroup(void);
+    static ThemeRef Create(HWND handle, const std::wstring& className);
 
-    // for testing
-    uistring            Caption(void) const { return caption; }
+public: // destructor
+    /*dtor*/    ~Theme();
 
-protected: // instance data
-    RadioButton* prev; // previous item, NULL if group begin
-    RadioButton* next; // next item, NULL if group ends
-    uistring caption;
+private: // constructors
+    /*ctor*/    Theme(HWND handle, const std::wstring& className);
+
+public: // methods
+    HRESULT DrawThemeBackground(HDC hdc, int iPartId, int iStateId, const RECT* pRect, const RECT* pClipRect);
+
+private: // instance data
+    HMODULE dll;
+    HTHEME theme;
+    PFNOPENTHEMEDATA OpenThemeDataProc;
+    PFNCLOSETHEMEDATA CloseThemeDataProc;
+    PFNDRAWTHEMEBACKGROUND DrawThemeBackgroundProc;
+    PFNDRAWTHEMETEXT DrawThemeTextProc;
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-}   // win32cpp
+} // namespace win32cpp

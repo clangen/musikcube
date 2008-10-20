@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Casey Langen, André Wösten
+// The following are Copyright © 2007, Casey Langen
 //
 // Sources and Binaries of: win32cpp
 //
@@ -38,60 +38,69 @@
 
 #pragma once
 
-//////////////////////////////////////////////////////////////////////////////
-
-#include <win32cpp/Win32Config.hpp>
-#include <win32cpp/Window.hpp>
-
-namespace win32cpp {
+#include "pch.hpp"
+#include <win32cpp/Theme.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
-class RadioButton;
+using namespace win32cpp;
 
-///\brief
-///The type of event used when the CheckBox is pressed.
-///\see
-///RadioButton.
-typedef sigslot::signal1<RadioButton*> RadioButtonPressedEvent;
+//////////////////////////////////////////////////////////////////////////////
 
-///\brief
-///A standard RadioButton.
-///They are organised as linked list to enforce the grouping behaviour
-class RadioButton : public Window
+ThemeRef        Theme::Create(HWND handle, const std::wstring& className)
 {
-private: // types
-    typedef Window base;
+    ThemeRef theme(new Theme(handle, className));
+    return (theme->dll ? theme : ThemeRef());
+}
 
-public: // events
-    ///\brief This event is emitted when the user presses the RadioButton
-    RadioButtonPressedEvent  Pressed;
+/*ctor*/        Theme::Theme(HWND handle, const std::wstring& className)
+: dll(NULL)
+, theme(NULL)
+{
+    if ( ! handle)
+    {
+        return;
+    }
 
-public: // constructors
-    /*ctor*/            RadioButton(const uichar* caption = _T(""), RadioButton* attach = NULL);
-    /*dtor*/            ~RadioButton();
+    this->dll = ::LoadLibrary(L"UXTHEME.DLL");
+    if (this->dll != NULL)
+    {
+        this->OpenThemeDataProc = (PFNOPENTHEMEDATA)GetProcAddress(this->dll, "OpenThemeData");
+        this->DrawThemeBackgroundProc = (PFNDRAWTHEMEBACKGROUND)GetProcAddress(this->dll, "DrawThemeBackground");
+        this->CloseThemeDataProc = (PFNCLOSETHEMEDATA)GetProcAddress(this->dll, "CloseThemeData");
+        this->DrawThemeTextProc = (PFNDRAWTHEMETEXT)GetProcAddress(this->dll, "DrawThemeText");
 
-protected: // methods
-    virtual HWND        Create(Window* parent);
-    virtual LRESULT     WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
-    virtual void        OnPressed();
-    virtual void        PaintToHDC(HDC hdc, const Rect& rect);
+        if (( ! this->OpenThemeDataProc) || ( ! this->DrawThemeBackgroundProc)
+        || ( ! this->CloseThemeDataProc) || ( ! this->DrawThemeTextProc))
+        {
+            ::FreeLibrary(this->dll);
+            this->dll = NULL;
+        }
+        else
+        {
+            this->theme = this->OpenThemeDataProc(handle, className.c_str());
+        }
+    }
+}
 
-public:
-    void                Check(void);
-    bool                IsChecked(void);
-    
-    RadioButton*        GetCheckedInGroup(void);
+/*dtor*/        Theme::~Theme()
+{
+    if (this->dll)
+    {
+        ::FreeLibrary(this->dll);
+        this->dll = NULL;
+    }
 
-    // for testing
-    uistring            Caption(void) const { return caption; }
+    if ((this->theme) && (this->CloseThemeDataProc))
+    {
+        this->CloseThemeDataProc(this->theme);
+        this->theme = NULL;
+    }
+}
 
-protected: // instance data
-    RadioButton* prev; // previous item, NULL if group begin
-    RadioButton* next; // next item, NULL if group ends
-    uistring caption;
-};
 
-//////////////////////////////////////////////////////////////////////////////
+HRESULT         Theme::DrawThemeBackground(HDC hdc, int iPartId, int iStateId, const RECT* pRect, const RECT* pClipRect)
+{
+    return this->DrawThemeBackgroundProc(this->theme, hdc, iPartId, iStateId, pRect, pClipRect);
+}
 
-}   // win32cpp

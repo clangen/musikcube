@@ -115,6 +115,7 @@ public: // types
     /*! */ typedef sigslot::signal3<ListView* /*sender*/, int /*row*/, ColumnRef> HotCellChangedEvent;
     /*! */ typedef sigslot::signal1<ListView* /*sender*/> SelectionChangedEvent;
     /*! */ typedef sigslot::signal2<ListView*, ColumnRef> ColumnClickedEvent;
+    /*! */ typedef sigslot::signal2<ListView*, MenuRef> PrepareContextMenuEvent;
 
     struct RenderParams
     {
@@ -142,6 +143,9 @@ public: // events
     SelectionChangedEvent   SelectionChanged;
     ///\brief Emitted when a Column is clicked
     ColumnClickedEvent      ColumnClicked;
+    ///\brief Emitted immediately prior to showing the Context menu. listeners
+    ///can use this event ot add/remove/update menu items
+    PrepareContextMenuEvent PrepareContextMenu;
 
 public: // constructors
     /*ctor*/        ListView();

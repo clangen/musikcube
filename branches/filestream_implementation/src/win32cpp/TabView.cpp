@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright  2007, Casey Langen
 //
 // Sources and Binaries of: win32cpp
 //
@@ -212,7 +212,13 @@ Window*     TabView::WindowForTabIndex(int tabIndex)
     return NULL;
 }
 
+void        TabView::OnGainedFocus()
+{
+    // don't do anything! we can be focused.
+}
+
 Window* TabView::ActiveWindow()
 { 
     return this->WindowForTabIndex(TabCtrl_GetCurSel(this->Handle())); 
 }
+

@@ -97,6 +97,8 @@ public: // methods
     uistring        Caption() const;
     void            SetSubMenu(MenuRef subMenu);
     MenuRef         SubMenu() const;
+    bool            Checked() const { return this->checked; }
+    void            SetChecked(bool  checked);
 
 protected: // methods
     virtual void    FillMenuItemInfo(MENUITEMINFO& target);
@@ -110,6 +112,7 @@ protected: // instance data
 private: // instance data
     MenuRef subMenu;
     uistring caption;
+    bool checked;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -157,6 +160,7 @@ public: // methods
     void            Remove(MenuItemRef toRemove);
     unsigned        Count();
     MenuItemRef     ItemAt(unsigned index);
+    MenuItemRef     FindByCaption(const uistring& name, unsigned offset = 0);
     MenuItemRef     operator[](unsigned index);
 
 protected: // methods

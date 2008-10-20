@@ -254,13 +254,17 @@ AudioStream* Transport::CreateStream(TrackPtr  trackPtr)
 
     if (this->registeredOutputSuppliers.size() == 0)
     {
-        return 0;
+        return NULL;
     }
 
     IAudioOutput* audioOutput =
         this->registeredOutputSuppliers[0]->CreateAudioOutput();  
 
     // Get the path, filename and fileextension
+    if( trackPtr->GetValue("path")==NULL ){
+        return NULL;
+    }
+
     utfstring fileName(trackPtr->GetValue("filename"));
     utfstring filePath(trackPtr->GetValue("path"));
     utfstring fileExtension(fileName);

@@ -130,17 +130,71 @@ void            Application::Run(TopLevelWindow& mainWindow)
 
     this->trayIconManager = new TrayIconManager;
 
-    //
     mainWindow.Destroyed.connect(this, &Application::OnMainWindowDestroyed);
     //
     mainWindow.Show(this->ShowCommand());
 
+    // start main message loop
     MSG msg;
     while (::GetMessage(&msg, NULL, 0, 0) > 0)
     {
+        if (msg.message == WM_QUIT)
+        {
+            ::PostQuitMessage(0);
+            break;
+        }
+
+        /*if (::IsDialogMessage(this->windowHandle, &msg))
+        {
+        switch (msg.message)
+        {
+        case WM_PAINT: // 15
+        OutputDebugStringA("WM_PAINT\n");
+        break;
+        case WM_KEYUP: // 257 (0x101)
+        case WM_KEYFIRST: // 256 (0x100)
+        this->OnRequestFocusNext();
+        this->SendMessage(WM_NEXTDLGCTL, (WPARAM) Window::LastFocus(), TRUE);
+        OutputDebugStringA((boost::format("focus: %1%\n") % Window::LastFocus()).str().c_str());
+        OutputDebugStringA("WM_KEYUP\n");
+        break;
+        case WM_MOUSEFIRST: // 500 (0x200)
+        OutputDebugStringA("WM_MOUSEFIRST\n");
+        break;
+        case WM_MOUSELEAVE: // 675 (0x2a3)
+        OutputDebugStringA("WM_MOUSELEAVE\n");
+        break;
+        case WM_NCMOUSEMOVE: // 160 (0xa0)
+        OutputDebugStringA("WM_NCMOUSEMOVE\n");
+        break;
+        case WM_TIMER: // 275 (0x113)
+        OutputDebugStringA("WM_TIMER\n");
+        break;
+        case WM_NCMOUSELEAVE: // 274 (0x2a2)
+        OutputDebugStringA("WM_NCMOUSELEAVE\n");
+        break;
+        case WM_LBUTTONDOWN: // 513 (0x201)
+        OutputDebugStringA("WM_LBUTTONDOWN\n");
+        break;
+        case WM_LBUTTONUP: // 514 (0x202)
+        OutputDebugStringA("WM_LBUTTONUP\n");
+        break;
+        //case WM_KEYFIRST: // 256 (0x100)
+        //    this->OnRequestFocusNext();
+        //    OutputDebugStringA("WM_KEYFIRST\n");
+        //    break;
+        default:
+        OutputDebugStringA((boost::format("%1%\n") % msg.message).str().c_str());
+        break;
+        }
+
+        continue;
+        }*/
+
         ::TranslateMessage(&msg);
         ::DispatchMessage(&msg);
     }
+    // end main message loop
 
     delete this->trayIconManager;
     this->trayIconManager = NULL;
