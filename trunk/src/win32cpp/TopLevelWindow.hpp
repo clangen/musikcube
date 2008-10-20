@@ -41,6 +41,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <win32cpp/Container.hpp>
+#include <win32cpp/TrayIconManager.hpp>
 
 namespace win32cpp {
 
@@ -82,7 +83,7 @@ protected: // methods
     virtual void        OnPaint();
     virtual void        OnGainedFocus();
 
-    static bool RegisterWindowClass();
+    static bool         RegisterWindowClass();
 
 private: // instance data
     uistring windowTitle;

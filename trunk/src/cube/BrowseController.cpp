@@ -42,6 +42,9 @@
 #include <cube/TracklistController.hpp>
 #include <core/LibraryFactory.h>
 #include <core/tracklist/Standard.h>
+#include <core/Indexer.h>
+
+#include <win32cpp/ApplicationThread.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -90,6 +93,11 @@ void        BrowseController::OnViewCreated(Window* window)
         ++it;
     }
 
+    // Connect the OnLibraryUpdate to the indexer
+    if(this->library->Indexer()){
+        this->library->Indexer()->TrackRefreshed.connect(this,&BrowseController::OnLibraryUpdate);
+    }
+
     // Startup by sending an empty query
     this->SendQuery();
 
@@ -99,3 +107,11 @@ void BrowseController::SendQuery(){
 	this->library->AddQuery(this->selectionQuery,musik::core::Query::CancelSimilar);
 }
 
+void BrowseController::OnLibraryUpdate(){
+    if(!win32cpp::ApplicationThread::InMainThread()){
+        win32cpp::ApplicationThread::Call0(this,&BrowseController::OnLibraryUpdate);
+        return;
+    }
+    this->SendQuery();
+
+}

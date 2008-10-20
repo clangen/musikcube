@@ -5,12 +5,14 @@
 #include <core/audio/IAudioSource.h>
 #include <core/audio/Transport.h>
 
+#include <boost/lexical_cast.hpp>
+
 using namespace musik::core;
 using namespace musik::core::audio;
 
 unsigned long AudioStream::streamsCreated = 0;
 
-AudioStream::AudioStream(IAudioSource* source, IAudioOutput* output, Transport* owner, TrackPtr track) 
+AudioStream::AudioStream(IAudioSource* source, IAudioOutput* output, Transport* owner, TrackPtr track,musik::core::filestreams::FileStreamPtr fileStream) 
 : audioSource(source)
 , transport(owner)
 , playState(PlayStateUnknown)
@@ -21,6 +23,7 @@ AudioStream::AudioStream(IAudioSource* source, IAudioOutput* output, Transport* 
 , isLast(false)
 , samplesOut(0)
 , track(track)
+, fileStream(fileStream)
 {
     this->output = output;
     this->output->SetCallback(this);
@@ -206,6 +209,20 @@ unsigned long    AudioStream::LengthMs() const
     if(this->audioSource->GetLength(&length))
         return length;
 
+    // If not, lets get the length from the tracks metadata
+    const utfchar* duration = this->track->GetValue("duration");
+    if(duration){
+        try{
+            length  = 1000*boost::lexical_cast<unsigned long>(duration);
+            if(length){
+                return length;
+            }
+        }
+        catch(...){
+            return AudioStream::UnknownLength;
+        }
+    }
+
     return AudioStream::UnknownLength;
 }
 
@@ -227,7 +244,7 @@ bool    AudioStream::SetPositionMs(unsigned long ms)
 
     unsigned long Pos = ms;
 
-    if(this->audioSource->SetPosition(&Pos))
+    if(this->audioSource->SetPosition(&Pos,this->LengthMs()))
     {
         this->samplesOut = Pos * (((float)this->output->GetSampleRate()/1000.0f) * (float)this->output->GetChannels());
 

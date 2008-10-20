@@ -44,5 +44,5 @@ public: ~OggSourceSupplier();
 
 public: IAudioSource*   CreateAudioSource();
 public: void            Destroy();
-public: bool            CanHandle(const utfchar* source) const;
+public: bool            CanHandle(const utfchar* extension) const;
 };

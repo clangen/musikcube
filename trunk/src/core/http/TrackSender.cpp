@@ -51,7 +51,7 @@ const char* TrackSender::WatchPath(){
     return this->watchPath.c_str();
 }
 
-void TrackSender::Execute(musik::core::http::IResponder* responder,const musik::core::http::IRequestParser* request,const musik::core::ITrack* track){
+void TrackSender::Execute(musik::core::http::IResponder* responder,musik::core::http::IRequestParser* request,const musik::core::ITrack* track){
     #define BUFFER_SIZE 4096
     char buffer[BUFFER_SIZE];
     std::size_t buffersize(0);
@@ -61,6 +61,16 @@ void TrackSender::Execute(musik::core::http::IResponder* responder,const musik::
         FILE *file    = _wfopen(track->GetValue("path"),UTF("rb"));
 
         if(file){
+            const char *seekOffset   = request->Attribute("seek");
+            if(seekOffset){
+                try{
+                    long seekTo = boost::lexical_cast<long>(seekOffset);
+                    fseek(file,seekTo,SEEK_SET);
+                }
+                catch(...){
+                }
+            }
+
             // Send header
             std::string header( "HTTP/1.1 200 OK\r\nContent-Type: audio/mpeg\r\nContent-Length: " );
             header.append( musik::core::ConvertUTF8(track->GetValue("filesize")) );

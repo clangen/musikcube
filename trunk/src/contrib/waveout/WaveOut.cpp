@@ -2,19 +2,20 @@
 
 #include <boost/bind.hpp>
 
-WaveOut::WaveOut(void) :
-	m_waveHandle(NULL),
-	m_pCallback(NULL),
-    audioThread(NULL),
-	m_dwSamplesOut(0),
-	m_LastPlayedBuffer(-1),
-	m_NumBuffers(8) //TODO: config
+WaveOut::WaveOut(void) 
+ :m_waveHandle(NULL)
+ ,m_pCallback(NULL)
+ ,audioThread(NULL)
+ ,m_dwSamplesOut(0)
+ ,m_LastPlayedBuffer(-1)
+ ,m_NumBuffers(8) //TODO: config
+ ,m_BlockSize(0)
+ ,m_pfAudioBuffer(NULL)
 {
 	ZeroMemory(&m_waveFormatPCMEx, sizeof(m_waveFormatPCMEx));
 
 	QueryPerformanceFrequency(&m_liCountsPerSecond);
 
-	m_pfAudioBuffer = NULL;
 }
 
 WaveOut::~WaveOut(void)
@@ -181,7 +182,11 @@ bool WaveOut::Initialize(void)
 	m_ActiveBuffer	= 0;
 	m_QueuedBuffers	= 0;
 
+	if(!Open())
+		return(false);
+
     m_bThreadRun = true;
+
 
     this->audioThread = new boost::thread(boost::bind(&WaveOut::ThreadProc, this));
 
@@ -287,8 +292,8 @@ bool WaveOut::SetFormat(unsigned long SampleRate, unsigned long Channels)
 //
 bool WaveOut::Start(void)
 {
-	if(!Open())
-		return(false);
+//	if(!Open())
+//		return(false);
  
     boost::mutex::scoped_lock lock(this->audioMutex);
 

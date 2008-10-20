@@ -159,6 +159,7 @@ void        Menu::ItemActivated(UINT menuItemID)
 /*ctor*/            MenuItem::MenuItem(const uistring& caption, MenuRef subMenu)
 : caption(caption)
 , subMenu(subMenu)
+, checked(false)
 , id(MenuItem::NextID())
 {
 }
@@ -177,6 +178,15 @@ void                MenuItem::SetCaption(const uistring& caption)
     if (this->caption != caption)
     {
         this->caption = caption;
+        this->OnChanged();
+    }
+}
+
+void                MenuItem::SetChecked(bool checked)
+{
+    if (this->checked != checked)
+    {
+        this->checked = checked;
         this->OnChanged();
     }
 }
@@ -219,7 +229,8 @@ void                MenuItem::FillMenuItemInfo(MENUITEMINFO& target)
     target.cch = (UINT) (this->caption.size() + 1);
     target.dwTypeData = caption;
     target.hSubMenu = (this->subMenu ? this->subMenu->Handle() : NULL);
-    target.fMask = MIIM_STRING | MIIM_ID | MIIM_SUBMENU;
+    target.fMask = MIIM_STRING | MIIM_ID | MIIM_SUBMENU | MIIM_STATE;
+    target.fState = (this->checked ? MFS_CHECKED : MFS_UNCHECKED);
 }
 
 void                MenuItem::OnChanged()
@@ -284,6 +295,26 @@ MenuItemRef MenuItemCollection::Append(MenuItemRef newMenuItem)
     this->OnItemAdded(newMenuItem, index);
 
     return newMenuItem;
+}
+
+
+MenuItemRef        MenuItemCollection::FindByCaption(const uistring& name, unsigned offset /* = 0 */)
+{
+    if (offset > this->menuItemList.size())
+    {
+        throw IndexOutOfRangeException();
+    }
+
+    for (unsigned i = offset; i < this->menuItemList.size(); i++)
+    {
+        MenuItemRef current = this->menuItemList[i];
+        if (current->Caption() == name)
+        {
+            return current;
+        }
+    }
+
+    return MenuItemRef();
 }
 
 MenuItemRef MenuItemCollection::InsertWithOffset(MenuItemRef newMenuItem, MenuItemRef insertPoint, unsigned offset)

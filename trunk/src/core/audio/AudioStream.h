@@ -7,6 +7,7 @@
 #include <core/Track.h>
 #include <core/audio/AudioPacketizer.h>
 #include <core/audio/IAudioCallBack.h>
+#include <core/filestreams/Factory.h>
 
 namespace musik { namespace core { namespace audio {
 
@@ -23,7 +24,7 @@ public:
 
     static const unsigned long UnknownLength = ULONG_MAX;
 
-    AudioStream(IAudioSource* source, IAudioOutput* output, Transport *owner, musik::core::TrackPtr track);
+    AudioStream(IAudioSource* source, IAudioOutput* output, Transport *owner, musik::core::TrackPtr track,musik::core::filestreams::FileStreamPtr fileStream);
     ~AudioStream();
 
     bool            Start();
@@ -52,6 +53,7 @@ private:
     AudioPacketizer packetizer;
 
     musik::core::TrackPtr   track;
+    musik::core::filestreams::FileStreamPtr fileStream;
 
     PlayState       playState;
     FadeState       fadeState;

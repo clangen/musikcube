@@ -109,6 +109,7 @@ void RequestParser::Clear(){
     this->path.clear();
     this->fullRequest.clear();
     this->splitPath.clear();
+    this->attributes.clear();
 }
 
 const RequestParser::StringVector& RequestParser::SplitPaths() const{

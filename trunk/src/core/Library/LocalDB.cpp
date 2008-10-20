@@ -182,7 +182,10 @@ void Library::LocalDB::ThreadLoop(){
             // Could this part lead to a deadlock???
             boost::mutex::scoped_lock lock(this->libraryMutex);
             if(!this->exit && this->incomingQueries.size()==0 ){
+
+                // This is a likely place where a thread will wait
                 this->waitCondition.wait(lock);
+
             }
         }
     }

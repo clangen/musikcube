@@ -40,6 +40,9 @@
 #include <core/audio/AudioStream.h>
 #include <core/audio/IAudioOutput.h>
 #include <core/audio/IAudioSource.h>
+#include <core/filestreams/Factory.h>
+
+#include <boost/algorithm/string.hpp>
 
 
 using namespace musik::core;
@@ -251,20 +254,34 @@ AudioStream* Transport::CreateStream(TrackPtr  trackPtr)
 
     if (this->registeredOutputSuppliers.size() == 0)
     {
-        return 0;
+        return NULL;
     }
 
     IAudioOutput* audioOutput =
         this->registeredOutputSuppliers[0]->CreateAudioOutput();  
 
-    const utfchar* filePath = trackPtr->GetValue("path");
+    // Get the path, filename and fileextension
+    if( trackPtr->GetValue("path")==NULL ){
+        return NULL;
+    }
+
+    utfstring fileName(trackPtr->GetValue("filename"));
+    utfstring filePath(trackPtr->GetValue("path"));
+    utfstring fileExtension(fileName);
+
+    // Extract fileextension
+    utfstring::size_type lastDot = fileName.find_last_of(UTF("."));
+    if(lastDot!=utfstring::npos){
+        fileExtension   = boost::algorithm::to_lower_copy(fileName.substr(lastDot+1));
+    }
+
 
     SourceSupplierList::const_iterator it;
     for(it = this->registeredSourceSuppliers.begin(); it != this->registeredSourceSuppliers.end(); it++)
     {
         supplier = *it;
 
-        if (supplier->CanHandle(filePath))
+        if (supplier->CanHandle(fileExtension.c_str()))
         {
             break;
         }
@@ -274,9 +291,16 @@ AudioStream* Transport::CreateStream(TrackPtr  trackPtr)
     {
         audioSource = supplier->CreateAudioSource();
     
-        if (audioSource != NULL && audioSource->Open(filePath))
-        {
-            audioStream = new AudioStream(audioSource, audioOutput, this, trackPtr);
+        if (audioSource != NULL){
+
+            using namespace musik::core;
+
+            // Lets create a IFileStream
+            filestreams::FileStreamPtr fileStream   = filestreams::Factory::OpenFile(filePath.c_str());
+            
+            if( audioSource->Open(fileStream.get())){
+                audioStream = new AudioStream(audioSource, audioOutput, this, trackPtr,fileStream);
+            }
         }
     }
 

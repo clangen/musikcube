@@ -94,16 +94,17 @@ tracklist::Ptr PlaybackQueue::NowPlayingTracklist(){
 ///Start playing the current track.
 //////////////////////////////////////////
 void PlaybackQueue::Play(){
+    if( !this->nowPlaying->Library()->Exited() ){
+        TrackPtr track(this->CurrentTrack());
 
-    TrackPtr track(this->CurrentTrack());
+        if(track){
+            this->Stop();
 
-    if(track){
-        this->Stop();
+            this->playing   = true;
+            this->transport.Start(track); 
 
-        this->playing   = true;
-        this->transport.Start(track); 
-
-        this->paused    = false;
+            this->paused    = false;
+        }
     }
 }
 
