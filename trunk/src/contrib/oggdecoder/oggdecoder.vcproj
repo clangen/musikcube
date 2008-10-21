@@ -116,6 +116,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories=".;../..;../../3rdparty/include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;OGGDECODER_EXPORTS"
 				RuntimeLibrary="0"
@@ -137,6 +139,8 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="ogg_static.lib vorbis_static.lib vorbisfile_static.lib"
 				AdditionalLibraryDirectories="./lib;../../3rdparty/lib"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
 			/>
 			<Tool
 				Name="VCALinkTool"

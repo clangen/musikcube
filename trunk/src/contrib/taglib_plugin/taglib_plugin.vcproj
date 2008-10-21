@@ -123,6 +123,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				AdditionalIncludeDirectories="../../;../../3rdparty/include/;&quot;taglib-1.5&quot;;&quot;taglib-1.5/taglib&quot;;&quot;taglib-1.5/taglib/ape&quot;;&quot;taglib-1.5/taglib/flac&quot;;&quot;taglib-1.5/taglib/mpc&quot;;&quot;taglib-1.5/taglib/mpeg&quot;;&quot;taglib-1.5/taglib/mpeg/id3v1&quot;;&quot;taglib-1.5/taglib/mpeg/id3v2&quot;;&quot;taglib-1.5/taglib/mpeg/id3v2/frames&quot;;&quot;taglib-1.5/taglib/ogg&quot;;&quot;taglib-1.5/taglib/ogg/flac&quot;;&quot;taglib-1.5/taglib/ogg/speex&quot;;&quot;taglib-1.5/taglib/ogg/vorbis&quot;;&quot;taglib-1.5/taglib/toolkit&quot;;&quot;taglib-1.5/taglib/trueaudio&quot;;&quot;taglib-1.5/taglib/wavpack&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL"

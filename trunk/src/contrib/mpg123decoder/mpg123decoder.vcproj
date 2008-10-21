@@ -115,6 +115,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories=".;../..;../../3rdparty/include;./mpg123/src;./mpg123/src/libmpg123"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;REAL_IS_FLOAT;OPT_GENERIC;_LIB;FLOATOUT"
 				RuntimeLibrary="0"
