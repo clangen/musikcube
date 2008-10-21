@@ -129,6 +129,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="./;../;../3rdparty/include/"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_SCL_SECURE_NO_WARNINGS;XML_STATIC"
 				RuntimeLibrary="0"
