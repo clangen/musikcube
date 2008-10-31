@@ -123,14 +123,14 @@ bool FLACDecoder::Open(musik::core::filestreams::IFileStream *fileStream){
     this->fileStream    = fileStream;
 
 	FLAC__StreamDecoderInitStatus init_status = FLAC__stream_decoder_init_stream(this->decoder,
-        &FlacRead,
-        &FlacSeek,
-        &FlacTell,
-        &FlacFileSize,
-        &FlacEof,
-        &FlacWrite,
-        NULL,
-        NULL,
+        FLACDecoder::FlacRead,
+        FLACDecoder::FlacSeek,
+        FLACDecoder::FlacTell,
+        FLACDecoder::FlacFileSize,
+        FLACDecoder::FlacEof,
+        FLACDecoder::FlacWrite,
+        FLACDecoder::FlacMeta,
+        FLACDecoder::FlacError,
         this);
 
     if(init_status == FLAC__STREAM_DECODER_INIT_STATUS_OK) {
@@ -140,6 +140,10 @@ bool FLACDecoder::Open(musik::core::filestreams::IFileStream *fileStream){
     }
 
     return false;
+}
+
+void FLACDecoder::FlacError(const FLAC__StreamDecoder *decoder, FLAC__StreamDecoderErrorStatus status, void *clientData){
+
 }
 
 void FLACDecoder::FlacMeta(const FLAC__StreamDecoder *decoder, const FLAC__StreamMetadata *metadata, void *clientData){
@@ -157,17 +161,23 @@ void FLACDecoder::FlacMeta(const FLAC__StreamDecoder *decoder, const FLAC__Strea
 FLAC__StreamDecoderWriteStatus FLACDecoder::FlacWrite(const FLAC__StreamDecoder *decoder, const FLAC__Frame *frame,const FLAC__int32 *const buffer[], void *clientData){
 
     FLACDecoder *thisPtr    = (FLACDecoder*)clientData;
+    int nofSamples  = thisPtr->channels*frame->header.blocksize;
 
     // First, lets create a buffer
     // If there is already a buffer, delete it
-    if(thisPtr->outputBuffer && thisPtr->outputBufferSize==0){
+    if(thisPtr->outputBufferSize==0){
         delete thisPtr->outputBuffer;
         thisPtr->outputBuffer   = NULL;
+        thisPtr->outputBufferSize   = 0;
+        thisPtr->outputBuffer       = new float[nofSamples];
+    }
+    if(thisPtr->outputBuffer && thisPtr->outputBufferSize>0){
+        float *oldBuffer    = thisPtr->outputBuffer;
+        thisPtr->outputBuffer       = new float[nofSamples+thisPtr->outputBufferSize];
+        CopyMemory(thisPtr->outputBuffer, oldBuffer, thisPtr->outputBufferSize * sizeof(float));
+        delete oldBuffer;
     }
 
-    int nofSamples  = thisPtr->channels*frame->header.blocksize;
-    thisPtr->outputBuffer       = new float[nofSamples];
-    thisPtr->outputBufferSize   = 0;
 
     // What is the max amplitude
     float maxAmplitude  = pow(2.0f,(thisPtr->bps-1));
@@ -175,9 +185,9 @@ FLAC__StreamDecoderWriteStatus FLACDecoder::FlacWrite(const FLAC__StreamDecoder 
     // Convert the buffer (16bit int) to the outputBuffer (float)
 	for(unsigned int i(0); i<frame->header.blocksize; ++i){
         for(int j(0); j<thisPtr->channels; ++j){
-            thisPtr->outputBuffer[i]    = (((float)buffer[j][i])/maxAmplitude);
+            thisPtr->outputBuffer[thisPtr->outputBufferSize]    = (((float)buffer[j][i])/maxAmplitude);
+            thisPtr->outputBufferSize++;
         }
-        thisPtr->outputBufferSize++;
     }
 
     return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
@@ -201,7 +211,7 @@ bool		FLACDecoder::GetFormat(unsigned long * SampleRate, unsigned long * Channel
 
 bool		FLACDecoder::GetLength(unsigned long * MS){
     if(this->totalSamples && this->sampleRate){
-        *MS = this->totalSamples/this->sampleRate;
+        *MS = (this->totalSamples*1000)/this->sampleRate;
         return true;
     }
 

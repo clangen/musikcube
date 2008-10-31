@@ -71,6 +71,7 @@ public:
 
     static FLAC__StreamDecoderWriteStatus FlacWrite(const FLAC__StreamDecoder *decoder, const FLAC__Frame *frame,const FLAC__int32 *const buffer[], void *clientData);
     static void FlacMeta(const FLAC__StreamDecoder *decoder, const FLAC__StreamMetadata *metadata, void *clientData);
+    static void FlacError(const FLAC__StreamDecoder *decoder, FLAC__StreamDecoderErrorStatus status, void *clientData);
 
 
 protected: 
@@ -79,7 +80,7 @@ protected:
 
     long channels;
     long sampleRate;
-    long totalSamples;
+    UINT64 totalSamples;
     int bps;
 
     float *outputBuffer;
