@@ -69,9 +69,22 @@ public:
     static FLAC__StreamDecoderLengthStatus FlacFileSize(const FLAC__StreamDecoder *decoder, FLAC__uint64 *stream_length, void *clientData);
 
 
+    static FLAC__StreamDecoderWriteStatus FlacWrite(const FLAC__StreamDecoder *decoder, const FLAC__Frame *frame,const FLAC__int32 *const buffer[], void *clientData);
+    static void FlacMeta(const FLAC__StreamDecoder *decoder, const FLAC__StreamMetadata *metadata, void *clientData);
+
+
 protected: 
     musik::core::filestreams::IFileStream *fileStream;
 	FLAC__StreamDecoder *decoder;
+
+    long channels;
+    long sampleRate;
+    long totalSamples;
+    int bps;
+
+    float *outputBuffer;
+    unsigned long outputBufferSize;
+
 //    FLAC__IOCallbacks flacCallbacks;
 
 };

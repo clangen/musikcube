@@ -32,9 +32,16 @@
 //////////////////////////////////////////////////////////////////////////////
 #include "StdAfx.h"
 #include "FLACDecoder.h"
+#include <complex> 
 
 FLACDecoder::FLACDecoder()
  :decoder(NULL)
+ ,outputBufferSize(0)
+ ,outputBuffer(NULL)
+ ,channels(0)
+ ,sampleRate(0)
+ ,bps(0)
+ ,totalSamples(0)
 {
 /*    this->flacCallbacks.read        = &FlacRead;
     this->flacCallbacks.seek        = &FlacSeek;
@@ -50,6 +57,10 @@ FLACDecoder::~FLACDecoder(){
     if(this->decoder){
         FLAC__stream_decoder_delete(this->decoder);
         this->decoder   = NULL;
+    }
+    if(this->outputBuffer){
+        delete this->outputBuffer;
+        this->outputBuffer   = NULL;
     }
 
 }
@@ -117,16 +128,59 @@ bool FLACDecoder::Open(musik::core::filestreams::IFileStream *fileStream){
         &FlacTell,
         &FlacFileSize,
         &FlacEof,
-        NULL,
+        &FlacWrite,
         NULL,
         NULL,
         this);
 
     if(init_status == FLAC__STREAM_DECODER_INIT_STATUS_OK) {
-        
+        // Process until we have metadata
+        FLAC__stream_decoder_process_until_end_of_metadata(this->decoder);
+        return true;    
     }
 
     return false;
+}
+
+void FLACDecoder::FlacMeta(const FLAC__StreamDecoder *decoder, const FLAC__StreamMetadata *metadata, void *clientData){
+    FLACDecoder *thisPtr    = (FLACDecoder*)clientData;
+
+	if(metadata->type == FLAC__METADATA_TYPE_STREAMINFO) {
+        thisPtr->totalSamples   = metadata->data.stream_info.total_samples;
+        thisPtr->sampleRate     = metadata->data.stream_info.sample_rate;
+        thisPtr->channels       = metadata->data.stream_info.channels;
+        thisPtr->bps            = metadata->data.stream_info.bits_per_sample;
+    }
+}
+
+
+FLAC__StreamDecoderWriteStatus FLACDecoder::FlacWrite(const FLAC__StreamDecoder *decoder, const FLAC__Frame *frame,const FLAC__int32 *const buffer[], void *clientData){
+
+    FLACDecoder *thisPtr    = (FLACDecoder*)clientData;
+
+    // First, lets create a buffer
+    // If there is already a buffer, delete it
+    if(thisPtr->outputBuffer && thisPtr->outputBufferSize==0){
+        delete thisPtr->outputBuffer;
+        thisPtr->outputBuffer   = NULL;
+    }
+
+    int nofSamples  = thisPtr->channels*frame->header.blocksize;
+    thisPtr->outputBuffer       = new float[nofSamples];
+    thisPtr->outputBufferSize   = 0;
+
+    // What is the max amplitude
+    float maxAmplitude  = pow(2.0f,(thisPtr->bps-1));
+
+    // Convert the buffer (16bit int) to the outputBuffer (float)
+	for(unsigned int i(0); i<frame->header.blocksize; ++i){
+        for(int j(0); j<thisPtr->channels; ++j){
+            thisPtr->outputBuffer[i]    = (((float)buffer[j][i])/maxAmplitude);
+        }
+        thisPtr->outputBufferSize++;
+    }
+
+    return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
 }
 
 
@@ -135,21 +189,22 @@ void		FLACDecoder::Destroy(void){
 }
 
 bool		FLACDecoder::GetFormat(unsigned long * SampleRate, unsigned long * Channels){
-/*    vorbis_info *info   = ov_info(&this->oggFile,-1);
-    if(info){
-        *SampleRate         = info->rate;
-        *Channels           = info->channels;
+    *SampleRate         = this->sampleRate;
+    *Channels           = this->channels;
+
+    if(*SampleRate && *Channels){
         return true;
-    }*/
+    }
+
     return false;
 }
 
 bool		FLACDecoder::GetLength(unsigned long * MS){
-/*    double time     = ov_time_total(&this->oggFile, 0);
-    if( time!=OV_EINVAL ){
-    	*MS = (unsigned long)(time * 1000.0);
+    if(this->totalSamples && this->sampleRate){
+        *MS = this->totalSamples/this->sampleRate;
         return true;
-    }*/
+    }
+
     return false;
 }
 
@@ -172,5 +227,21 @@ bool        FLACDecoder::SetState(unsigned long State){
 }
 
 bool        FLACDecoder::GetBuffer(float ** ppBuffer, unsigned long * NumSamples){
+    if(this->outputBuffer && this->outputBufferSize>0){
+        *ppBuffer   = this->outputBuffer;
+        *NumSamples = this->outputBufferSize;
+        this->outputBufferSize  = 0;
+        return true;
+    }
+
+    if( FLAC__stream_decoder_process_single(this->decoder) ){
+        if(this->outputBuffer && this->outputBufferSize>0){
+            *ppBuffer   = this->outputBuffer;
+            *NumSamples = this->outputBufferSize;
+            this->outputBufferSize  = 0;
+            return true;
+        }
+    }
+
     return false;
 }
