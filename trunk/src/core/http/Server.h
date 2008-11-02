@@ -87,6 +87,7 @@ class Server : private boost::noncopyable{
         utfstring dbFilename;
     private:
         friend class Responder;
+
         bool FreeResponder(Responder *responder);
 
 //        
@@ -99,6 +100,8 @@ class Server : private boost::noncopyable{
         ResponderSet busyResponders;
         ResponderQueue freeResponders;
         ResponderPtr waitingResponder;
+    public:
+        void *parent;   // Not a very nice hack
 };
 
 //////////////////////////////////////////////////////////////////////////////

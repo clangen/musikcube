@@ -137,6 +137,8 @@ class Base : boost::noncopyable{
 
 		musik::core::tracklist::Ptr NowPlaying();
 
+        virtual const std::string& AuthorizationKey();
+
 
         static bool IsStaticMetaKey(std::string &metakey);
         static bool IsSpecialMTOMetaKey(std::string &metakey);

@@ -340,3 +340,7 @@ utfstring Library::Remote::BasePath(){
     path    += UTF(":") + UTF8_TO_UTF(this->httpPort) + UTF("/");
     return path;
 }
+
+const std::string& Library::Remote::AuthorizationKey(){
+    return this->sessionId;
+}

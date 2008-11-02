@@ -54,6 +54,7 @@ Server::Server(int port)
  ,timer(ioService)
  ,exited(false)
  ,port(port)
+ ,parent(NULL)
 {
     // Check for plugins
     typedef IRequestPlugin PluginType;

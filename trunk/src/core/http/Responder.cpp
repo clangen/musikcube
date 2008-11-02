@@ -40,6 +40,7 @@
 #include <core/http/Server.h>
 #include <core/http/RequestParser.h>
 #include <core/Common.h>
+#include <core/Server.h>
 
 #include <iostream>
 #include <stdlib.h>
@@ -113,6 +114,16 @@ void Responder::ThreadLoop(){
                     }
                     catch(...){
                         // lexical cast fail
+                        track.reset();
+                    }
+                }
+
+                // If there is a track, then the user should be authorized
+                if(track){
+                    // check for auth_key
+                    musik::core::Server *mainServer = (musik::core::Server*)this->server.parent;
+                    if(!mainServer->UserIsAuthorized(requester.Attribute("auth_key"),*this->socket)){
+                        // reset the track if the user isn't authorized
                         track.reset();
                     }
                 }
