@@ -4,6 +4,8 @@ The general layout is to place a listbox with settings categories on the left si
 
  * Library
    * Paths
+ * Remote Libraries
+   * Add/Remove/Modify(?)
  * Client / Server
    * Authorization
    * Port settings
