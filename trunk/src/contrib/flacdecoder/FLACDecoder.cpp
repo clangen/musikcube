@@ -43,13 +43,7 @@ FLACDecoder::FLACDecoder()
  ,bps(0)
  ,totalSamples(0)
 {
-/*    this->flacCallbacks.read        = &FlacRead;
-    this->flacCallbacks.seek        = &FlacSeek;
-    this->flacCallbacks.tell        = &FlacTell;
-    this->flacCallbacks.close       = &FlacClose;
-*/
     this->decoder   = FLAC__stream_decoder_new();
-
 }
 
 
@@ -110,13 +104,6 @@ FLAC__StreamDecoderLengthStatus FLACDecoder::FlacFileSize(const FLAC__StreamDeco
     }
     return FLAC__STREAM_DECODER_LENGTH_STATUS_OK;
 }
-
-/*int      FLACDecoder::FlacClose(void *datasource){
-    if( ((FLACDecoder*)datasource)->fileStream->Close() ){
-        return 0;
-    }
-    return -1;
-}*/
 
 
 bool FLACDecoder::Open(musik::core::filestreams::IFileStream *fileStream){
@@ -219,16 +206,10 @@ bool		FLACDecoder::GetLength(unsigned long * MS){
 }
 
 bool		FLACDecoder::SetPosition(unsigned long * MS,unsigned long totalMS){
-/*	double pos = *MS / 1000.0;
-
-    if(ov_seekable(&this->oggFile)){
-		if(!ov_time_seek(&this->oggFile, pos)){
-			double time = ov_time_tell(&this->oggFile);
-			*MS = (unsigned long)(time * 1000.0);
-			return true;
-		}
-	}
-*/
+    FLAC__uint64 seekToSample   = ( ((FLAC__uint64)this->sampleRate) * ((FLAC__uint64)(*MS)) )/(FLAC__uint64)1000;
+    if(FLAC__stream_decoder_seek_absolute(this->decoder,seekToSample)){
+        return true;
+    }
     return false;
 }
 
