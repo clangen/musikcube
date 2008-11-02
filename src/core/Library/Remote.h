@@ -68,6 +68,7 @@ class Remote : public Library::Base{
         bool Startup();
         utfstring GetInfo();
         virtual utfstring BasePath();
+        virtual const std::string& AuthorizationKey();
 
     protected:
         virtual void Exit();

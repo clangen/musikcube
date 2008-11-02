@@ -711,3 +711,7 @@ LibraryPtr Library::Base::GetSelfPtr(){
     return LibraryPtr();
 }
 
+const std::string& Library::Base::AuthorizationKey(){
+    static std::string emptyAuthString;
+    return emptyAuthString;
+}

@@ -53,6 +53,7 @@ Server::Server(unsigned int port,unsigned int httpPort)
  ,httpServer(httpPort)
 {
     this->acceptor.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
+    this->httpServer.parent = this; // should fix this.
 }
 
 Server::~Server(void){
@@ -255,4 +256,20 @@ server::UserPtr Server::GetUser(const utfstring username){
     return user;
 }
 
+bool Server::UserIsAuthorized(const char *authorizationKey,boost::asio::ip::tcp::socket &socket){
+    if(authorizationKey){
+        boost::mutex::scoped_lock lock(this->serverMutex);
+        server::UserSessionMap::iterator foundUser  = this->connectedUsers.find(authorizationKey);
+        if(foundUser!=this->connectedUsers.end()){
+            // User found, but to be sure, lets check if the address is the same
+            boost::asio::ip::tcp::endpoint endpoint = socket.remote_endpoint();
+            if(foundUser->second->IP()==endpoint.address().to_string()){
+                // Same address = same user
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
 

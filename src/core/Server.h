@@ -82,7 +82,7 @@ class Server{
         server::UserVector AllUsers();
         server::UserSessionVector ConnectedUserSessions();
 
-
+        bool UserIsAuthorized(const char *authorizationKey,boost::asio::ip::tcp::socket &socket);
     public:
         // Events
         typedef sigslot::signal0<> UserUpdatedEvent;
