@@ -61,7 +61,7 @@ private:
 public: 
     ComboBoxTestModel() {
         il = new win32cpp::ImageList(16, 16, win32cpp::ImageList::Color32);
-        il->Add(_T("test.bmp"));
+        il->Add(_T("resources\\test_combobox.bmp"));
 
         list.push_back(_T("Hello"));
         list.push_back(_T("this"));
