@@ -20,15 +20,19 @@ Name "${PROJECT_NAME} ${SUB_NAME}"
 
 ShowInstDetails show	;show/hide
 
+Var RemoveOldDatabases
+
 !include "LanguageStrings.nsh"
 !insertmacro MUI_LANGUAGE "English"
 
 InstallDir "$PROGRAMFILES\${INSTALL_DIR}"
 InstallDirRegKey HKCU "Software\${INSTALL_DIR}" ""
 
+; Installation pages order
 !insertmacro MUI_PAGE_LICENSE "..\LICENSE.txt"
 !insertmacro MUI_PAGE_DIRECTORY
 ;!insertmacro MUI_PAGE_COMPONENTS
+Page custom RemoveOldFilesPage RemoveOldFilesLeave  ;Custom page
 !insertmacro MUI_PAGE_INSTFILES
 
 
@@ -47,9 +51,16 @@ Section "mC2installation" main
 	File /r "..\bin\release\resources"
 
 	SetOutPath "$INSTDIR\plugins"
+	Delete "*.dll"
 	File /r "..\bin\release\plugins\*.dll"
 
 	SetAutoClose false
+
+
+	IntCmpU $RemoveOldDatabases 0 DoNotRemoveDBFiles
+	; Remove the app data
+	RMDir /r $APPDATA\mC2
+	DoNotRemoveDBFiles:
 
 
 	CreateDirectory "$SMPROGRAMS\${PROJECT_NAME} ${SUB_NAME}"
@@ -72,5 +83,15 @@ Section Uninstall
 SectionEnd
 
 Function .onInit
+	!insertmacro MUI_INSTALLOPTIONS_EXTRACT "remove_old_db.ini"
 FunctionEnd
 
+Function RemoveOldFilesPage
+	!insertmacro MUI_HEADER_TEXT "mC2 installation" "Removing old database files"
+	!insertmacro MUI_INSTALLOPTIONS_WRITE "remove_old_db.ini" "Field 2" "Text" "Remove old mC2 databases in $APPDATA\mC2"
+	!insertmacro MUI_INSTALLOPTIONS_DISPLAY "remove_old_db.ini"
+FunctionEnd
+
+Function RemoveOldFilesLeave
+		!insertmacro MUI_INSTALLOPTIONS_READ $RemoveOldDatabases "remove_old_db.ini" "Field 2" "State"
+FunctionEnd
