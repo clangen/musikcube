@@ -59,7 +59,8 @@ private:
     std::vector<uistring> list;
     win32cpp::ImageList* il;
 public: 
-    ComboBoxTestModel() {
+    ComboBoxTestModel() 
+    {
         il = new win32cpp::ImageList(16, 16, win32cpp::ImageList::Color32);
         il->Add(_T("resources\\test_combobox.bmp"));
 
@@ -68,6 +69,11 @@ public:
         list.push_back(_T("is"));
         list.push_back(_T("a"));
         list.push_back(_T("test"));
+    }
+
+    ~ComboBoxTestModel()
+    {
+        delete il;
     }
 
     virtual win32cpp::ImageList* ImageList() 

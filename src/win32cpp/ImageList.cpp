@@ -59,6 +59,18 @@ ImageList::ImageList(int width, int height, ImageList::ColorDepth depth) :
 
 ImageList::~ImageList()
 {
+    for(int i = 0; i < this->Count(); i++) {
+        IMAGEINFO info;
+
+        this->Info(i, &info);
+        
+        DeleteObject(info.hbmImage);
+        if(info.hbmMask) DeleteObject(info.hbmMask);
+
+        this->Remove(i);
+    }
+
+    ::ImageList_Destroy(this->imagelistHandle);
 }
 
 HIMAGELIST ImageList::Handle() const
@@ -73,7 +85,7 @@ int ImageList::Count() const
 
 int ImageList::Add(HBITMAP image)
 {
-    return ::ImageList_Add(this->imagelistHandle, image, image);
+    return ::ImageList_Add(this->imagelistHandle, image, NULL);
 }
 
 int ImageList::Add(const uistring& filename, bool transparence)
