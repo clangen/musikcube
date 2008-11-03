@@ -50,6 +50,9 @@ model(ComboBox::sNullModel)
 {
 }
 
+ComboBox::~ComboBox()
+{
+}
 
 HWND ComboBox::Create(Window* parent)
 {

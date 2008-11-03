@@ -66,6 +66,7 @@ public:
     typedef sigslot::signal1<ComboBox*> SelectionChangedEvent;
 
     ComboBox();
+    ~ComboBox();
 
     void                SetModel(ModelRef model);
     int                 Selected();
