@@ -45,11 +45,61 @@
 #include <win32cpp/GroupBox.hpp>
 #include <win32cpp/ListView.hpp>
 #include <win32cpp/Label.hpp>
+#include <win32cpp/ComboBox.hpp>
+#include <win32cpp/ImageList.hpp>
 
 
 //////////////////////////////////////////////////////////////////////////////
 
 using namespace musik::cube;
+
+class ComboBoxTestModel : public ComboBox::Model
+{
+private:
+    std::vector<uistring> list;
+    win32cpp::ImageList* il;
+public: 
+    ComboBoxTestModel() {
+        il = new win32cpp::ImageList(16, 16, win32cpp::ImageList::Color32);
+        il->Add(_T("test.bmp"));
+
+        list.push_back(_T("Hello"));
+        list.push_back(_T("this"));
+        list.push_back(_T("is"));
+        list.push_back(_T("a"));
+        list.push_back(_T("test"));
+    }
+
+    virtual win32cpp::ImageList* ImageList() 
+    {
+        return il;
+    }
+
+    virtual int ItemCount()
+    {
+        return 5;
+    }
+
+    virtual int ItemToImageListIndex(int index)
+    {
+        return 0;
+    }
+
+    virtual int ItemToIndent(int index)
+    {
+        return 0;
+    }
+
+    virtual uistring ItemToString(int index)
+    {
+        return list[index];
+    }
+    
+    virtual LPARAM ItemToExtendedData(int index)
+    {
+        return 0;
+    }
+};
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -169,6 +219,14 @@ void        SettingsView::OnCreated()
     gc3->MoveRelativeTo(0, 40);
     
     mainLayout->AddChild(g);
+
+    // test combobox
+    ComboBox* cb = new ComboBox;
+    ComboBox::ModelRef cb_testmodel(new ComboBoxTestModel);
+
+    mainLayout->AddChild(cb);    
+    cb->SetModel(cb_testmodel);
+    cb->Select(2);
 
     this->AddChild(mainLayout);
 

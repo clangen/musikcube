@@ -305,6 +305,14 @@
 							>
 						</File>
 						<File
+							RelativePath=".\ImageList.cpp"
+							>
+						</File>
+						<File
+							RelativePath=".\ImageList.hpp"
+							>
+						</File>
+						<File
 							RelativePath=".\Timer.cpp"
 							>
 						</File>
@@ -464,6 +472,14 @@
 					<Filter
 						Name="to document"
 						>
+						<File
+							RelativePath=".\ComboBox.cpp"
+							>
+						</File>
+						<File
+							RelativePath=".\ComboBox.hpp"
+							>
+						</File>
 						<File
 							RelativePath=".\Menu.cpp"
 							>

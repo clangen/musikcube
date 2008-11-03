@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright © 2008, Casey Langen, André Wösten
 //
 // Sources and Binaries of: win32cpp
 //
@@ -43,9 +43,13 @@
 
 using namespace win32cpp;
 
-ComboBox::ComboBox()
+ComboBox::ModelRef ComboBox::sNullModel(new ComboBox::NullModel());
+
+ComboBox::ComboBox() :
+model(ComboBox::sNullModel)
 {
 }
+
 
 HWND ComboBox::Create(Window* parent)
 {
@@ -58,7 +62,12 @@ HWND ComboBox::Create(Window* parent)
     // We need the extended combobox from the common controls
     InitCommonControlsEx(&icex);
 
-    DWORD style = WS_CHILD | WS_VISIBLE | WS_BORDER | CBS_DROPDOWN;
+    /**
+     * TODO: For CBS_DROPDOWN-support (editable entries) pszText of COMBOBOXEXITEM in OnDataChanged
+     *       must be adapted to a send/retrieve behaviour or we must implement a
+     *       callback behaviour with CBEN_GETDISPINFO. (as it is in the ListView)
+     */
+    DWORD style = WS_CHILD | WS_VISIBLE | WS_BORDER | CBS_DROPDOWNLIST;
 
     // Create the ComboBox
     HWND hwnd = CreateWindowEx(
@@ -78,13 +87,96 @@ HWND ComboBox::Create(Window* parent)
     return hwnd;
 }
 
+
 void ComboBox::SetModel(ModelRef model)
 {
-    this->model->ItemCountChanged.disconnect(this);
+    // Unbind event handlers, assign new model and rebind event handler
     this->model->DataChanged.disconnect(this);
-    //
     this->model = model;
-    //
-    this->model->ItemCountChanged.connect(this, &ComboBox::OnItemCountChanged);
     this->model->DataChanged.connect(this, &ComboBox::OnDataChanged);
+
+    // On change of model ask combobox to reload the items from the model
+    this->OnDataChanged();
+}
+
+
+int ComboBox::Selected()
+{
+    return (int)this->SendMessage(
+        CB_GETCURSEL,
+        0,
+        0
+    );
+}
+
+void ComboBox::Select(int index)
+{
+    // If index is -1 the selection is cleared
+    this->SendMessage(
+        CB_SETCURSEL,
+        (WPARAM)index,
+        0
+    );
+}
+
+void ComboBox::OnDataChanged()
+{
+    // Delete old items in combobox
+    int last, item = 0;
+    do {
+        last = (int)this->SendMessage(
+            CBEM_DELETEITEM,
+            (WPARAM)(DWORD)item,
+            0
+        );
+        item++;
+    } while(last != 0 && last != CB_ERR);
+
+    // Set image list (given by model)
+    ImageList* imagelist = this->model->ImageList();
+    if(imagelist) {
+        this->SendMessage(
+            CBEM_SETIMAGELIST,
+            0,
+            (LPARAM)imagelist->Handle()
+        );
+    }
+
+    // Iterate through available items
+    for(int i=0; i<this->model->ItemCount(); i++) {
+        // Get item string
+        uistring val = this->model->ItemToString(i);
+        // Get extended data for item
+        LPARAM data = this->model->ItemToExtendedData(i);
+        // Get indentation for item (1 space = 10 pixels)
+        int indent = this->model->ItemToIndent(i);
+        // Get image for item (only valid if image list is set)
+        int ilindex = this->model->ItemToImageListIndex(i);
+
+        // Initialize combobox item
+        COMBOBOXEXITEM item;
+
+        ::ZeroMemory(&item, sizeof(COMBOBOXEXITEM));
+
+        item.mask = CBEIF_TEXT | CBEIF_LPARAM | CBEIF_INDENT;
+        item.iItem = i;
+        item.pszText = (wchar_t*)val.c_str();
+        item.cchTextMax = (int)val.length();
+        item.lParam = data;
+        item.iIndent = indent;
+
+        if(imagelist) {
+            // If given, add image from image list to item
+            item.mask |= CBEIF_IMAGE | CBEIF_SELECTEDIMAGE;
+            item.iImage = ilindex;
+            item.iSelectedImage = ilindex;
+        }
+
+        // Insert item
+        this->SendMessage(
+            CBEM_INSERTITEM,
+            0,
+            (LPARAM)(PCOMBOBOXEXITEM)&item
+        );
+    }
 }

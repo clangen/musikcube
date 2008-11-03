@@ -44,6 +44,7 @@
 #include <win32cpp/Window.hpp>
 #include <win32cpp/Win32Exception.hpp>
 #include <win32cpp/Color.hpp>
+#include <win32cpp/ImageList.hpp>
 
 #include <boost/format.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -58,26 +59,97 @@ namespace win32cpp {
 
 class ComboBox : public Window
 {
-public: // types
+public: 
     class Model;
 
-    typedef boost::shared_ptr<Model> ModelRef;
-
+    typedef boost::shared_ptr<Model>    ModelRef;
     typedef sigslot::signal1<ComboBox*> SelectionChangedEvent;
 
-private: // types
-    typedef Window base;
-
-public:
     ComboBox();
 
-protected: // methods
-    virtual HWND        Create(Window* parent);
+    void                SetModel(ModelRef model);
+    int                 Selected();
+    void                Select(int index);
 
+protected: 
+    ModelRef            model;
+    static ModelRef     sNullModel;
+
+    virtual HWND        Create(Window* parent);    
+    virtual void        OnDataChanged();
+
+private: 
+    typedef Window base;
+    class NullModel;
 };
+
+//////////////////////////////////////////////////////////////////////////////
+// ComboBox::Model
+//////////////////////////////////////////////////////////////////////////////
 
 class ComboBox::Model 
 {
+private:
+    int itemCount;
+public:
+    typedef sigslot::signal0<> DataChangedEvent;
+    
+    DataChangedEvent DataChanged;
+
+    Model(int itemCount = 0) : 
+      itemCount(itemCount)
+    {
+    }
+
+    virtual int ItemCount() 
+    {
+        return this->itemCount;
+    }
+
+    virtual ImageList*  ImageList() 
+    {
+        return NULL;
+    }
+
+    virtual uistring    ItemToString(int index) = 0;
+    virtual int         ItemToImageListIndex(int index) = 0;
+    virtual int         ItemToIndent(int index) = 0;
+    virtual LPARAM      ItemToExtendedData(int index) = 0;
 };
+
+//////////////////////////////////////////////////////////////////////////////
+// ComboBox::NullModel
+//////////////////////////////////////////////////////////////////////////////
+
+class ComboBox::NullModel : public ComboBox::Model
+{
+public: 
+    virtual int ItemCount()
+    {
+        return 0;
+    }
+
+    virtual uistring ItemToString(int index)
+    {
+        return uistring();
+    }
+    
+    virtual int ItemToImageListIndex(int index)
+    {
+        return -1;
+    }
+    
+    virtual int ItemToIndent(int index)
+    {
+        return 0;
+    }
+
+    virtual LPARAM ItemToExtendedData(int index)
+    {
+        return 0;
+    }
+};
+
+//////////////////////////////////////////////////////////////////////////////
 
 }   // win32cpp
