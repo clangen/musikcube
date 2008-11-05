@@ -62,6 +62,7 @@ using namespace win32cpp;
 , minSize(0, 0)
 , closed(false)
 , modalChild(NULL)
+, parentWindow(NULL)
 {
 }
 
@@ -168,6 +169,26 @@ LRESULT     TopLevelWindow::WindowProc(UINT message, WPARAM wParam, LPARAM lPara
         }
         return 0;
 
+    case WM_DESTROY:
+        {
+            // Destroy handler is used together with ShowModal
+            // According to http://msdn.microsoft.com/en-us/library/ms646291.aspx
+            // we need to do:
+            // "A window must be enabled before it can be activated. For example, 
+            //  if an application is displaying a modeless dialog box and has disabled 
+            //  its main window, the application must enable the main window before 
+            //  destroying the dialog box. Otherwise, another window will receive the 
+            //  keyboard focus and be activated."
+            if(this->parentWindow) {
+                this->parentWindow->Enable(true);   
+                SetForegroundWindow(this->parentWindow->Handle());
+                BringWindowToTop(this->parentWindow->Handle());
+                
+                this->parentWindow = NULL;
+            }
+        }
+        break;
+
     case WM_CLOSE:
         {
             this->closed = true;
@@ -272,7 +293,13 @@ void        TopLevelWindow::ShowModal(TopLevelWindow* parent)
     if (parent)
     {
         parent->modalChild = this;
+        
+        // Disable keyboard/mouse input on the parent window,
+        // this also means it gets deactivated (NOT in foreground)
         parent->Enable(false);
+
+        // Remember the parent window
+        this->parentWindow = parent;
     }
 
     try
@@ -320,8 +347,10 @@ void        TopLevelWindow::ShowModal(TopLevelWindow* parent)
     if (parent) 
     {
         parent->modalChild = NULL;
-        parent->Enable(true);
-        parent->SetFocus();
+    }
+
+    if (this->parentWindow) {
+        this->parentWindow = NULL;
     }
 }
 
