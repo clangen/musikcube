@@ -119,8 +119,8 @@ HWND        TopLevelWindow::Create(Window* parent)
         style,                      // Style
         CW_USEDEFAULT,              // X
         CW_USEDEFAULT,              // Y
-        240,                        // Width
-        120,                        // Height
+        (this->minSize.width) ? this->minSize.width : 240,  // Width
+        (this->minSize.height) ? this->minSize.height: 120, // Height
         parentHWND,                 // Parent
         NULL,                       // Menu
         hInstance,                  // Instance
