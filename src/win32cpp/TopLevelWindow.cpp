@@ -169,9 +169,9 @@ LRESULT     TopLevelWindow::WindowProc(UINT message, WPARAM wParam, LPARAM lPara
         }
         return 0;
 
-    case WM_DESTROY:
+    case WM_CLOSE:
         {
-            // Destroy handler is used together with ShowModal
+            // Close handler is used together with ShowModal
             // According to http://msdn.microsoft.com/en-us/library/ms646291.aspx
             // we need to do:
             // "A window must be enabled before it can be activated. For example, 
@@ -186,11 +186,7 @@ LRESULT     TopLevelWindow::WindowProc(UINT message, WPARAM wParam, LPARAM lPara
                 
                 this->parentWindow = NULL;
             }
-        }
-        break;
 
-    case WM_CLOSE:
-        {
             this->closed = true;
         }
         break;
