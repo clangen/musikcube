@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, mC2 Team
+// The following are Copyright © 2008, Casey Langen, André Wösten
 //
 // Sources and Binaries of: mC2, win32cpp
 //
@@ -36,47 +36,24 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.hpp"
-#include <core/LibraryFactory.h>
-#include <core/Preferences.h>
-#include <core/Crypt.h>
-#include <core/Common.h>
-#include <cube/dialog/HelpAboutController.hpp>
-#include <cube/dialog/HelpAboutView.hpp>
-
-#include <win32cpp/Window.hpp>
-#include <win32cpp/Button.hpp>
+#pragma once
 
 //////////////////////////////////////////////////////////////////////////////
 
-using namespace musik::cube::dialog;
 using namespace win32cpp;
 
+namespace musik { namespace cube { namespace dialog {
+
+//////////////////////////////////////////////////////////////////////////////
+// PreferencesCategory
+//////////////////////////////////////////////////////////////////////////////
+struct PreferencesCategory
+{
+    uistring    title;
+    int         indent;
+    LPARAM      data;
+};
+
 //////////////////////////////////////////////////////////////////////////////
 
-HelpAboutController::HelpAboutController(win32cpp::TopLevelWindow &mainWindow)
-:mainWindow(mainWindow)
-,view(NULL)
-{
-    this->view  = new HelpAboutView;
-    this->mainWindow.AddChild(this->view);
-
-    this->view->Created.connect(this, &HelpAboutController::OnViewCreated);
-
-    // Start drawing thread
-    this->view->StartDrawingThread();
-}
-
-HelpAboutController::~HelpAboutController() 
-{
-}
-
-void HelpAboutController::OnViewCreated(Window* window) 
-{
-    this->view->okButton->Pressed.connect(this, &HelpAboutController::OnOK);
-}
-
-void HelpAboutController::OnOK(win32cpp::Button* button)
-{
-    this->mainWindow.Close();
-}
+} } }    // musik::cube::dialog

@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, mC2 Team
+// The following are Copyright  2008, mC2 Team
 //
 // Sources and Binaries of: mC2, win32cpp
 //
@@ -37,15 +37,12 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
-#include <core/LibraryFactory.h>
-#include <core/Preferences.h>
-#include <core/Crypt.h>
 #include <core/Common.h>
-#include <cube/dialog/HelpAboutController.hpp>
-#include <cube/dialog/HelpAboutView.hpp>
-
-#include <win32cpp/Window.hpp>
+#include <cube/dialog/PreferencesView.hpp>
+#include <cube/dialog/PreferencesCategoriesModel.hpp>
 #include <win32cpp/Button.hpp>
+#include <win32cpp/LinearLayout.hpp>
+
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -54,29 +51,47 @@ using namespace win32cpp;
 
 //////////////////////////////////////////////////////////////////////////////
 
-HelpAboutController::HelpAboutController(win32cpp::TopLevelWindow &mainWindow)
-:mainWindow(mainWindow)
-,view(NULL)
-{
-    this->view  = new HelpAboutView;
-    this->mainWindow.AddChild(this->view);
-
-    this->view->Created.connect(this, &HelpAboutController::OnViewCreated);
-
-    // Start drawing thread
-    this->view->StartDrawingThread();
-}
-
-HelpAboutController::~HelpAboutController() 
+PreferencesView::PreferencesView()
+: Frame(NULL,FramePadding(5))
 {
 }
 
-void HelpAboutController::OnViewCreated(Window* window) 
+void PreferencesView::OnCreated()
 {
-    this->view->okButton->Pressed.connect(this, &HelpAboutController::OnOK);
+    // Main Layout:
+    // - Row 1: ColumnLayout with CategoryList and Dialog
+    // - Row 2: ColumnLayout with Buttons to cancel and apply
+    this->mainLayout = new LinearLayout(LinearRowLayout);
+    this->mainLayout->SetDefaultChildFill(true);
+    this->mainLayout->SetSizeConstraints(LayoutFillParent, LayoutFillParent);
+    {    
+        // Row 1
+        LinearLayout* settingsLayout = new LinearLayout(LinearColumnLayout);
+        {
+            this->categoryList = new ComboBox(ComboBox::DisplayType_Simple);
+
+            settingsLayout->AddChild(this->categoryList);
+            settingsLayout->SetFlexibleChild(this->categoryList);
+            settingsLayout->SetDefaultChildFill(true);
+            settingsLayout->SetSizeConstraints(LayoutFillParent, LayoutFillParent);
+        }
+        this->mainLayout->AddChild(settingsLayout);
+        this->mainLayout->SetFlexibleChild(settingsLayout);
+
+        // Row 2
+        LinearLayout* buttonLayout = new LinearLayout(LinearColumnLayout);
+        buttonLayout->SetDefaultChildFill(true);
+        {
+            this->okButton = buttonLayout->AddChild(new Button(_T("OK")));
+            this->cancelButton = buttonLayout->AddChild(new Button(_T("Cancel")));
+        }
+        this->mainLayout->AddChild(buttonLayout);
+        this->mainLayout->SetChildAlignment(buttonLayout, ChildAlignRight);
+    }
+    this->AddChild(this->mainLayout);
 }
 
-void HelpAboutController::OnOK(win32cpp::Button* button)
+void PreferencesView::OnMainWindowResized(Window* window, win32cpp::Size newSize)
 {
-    this->mainWindow.Close();
+    this->Resize(newSize);
 }

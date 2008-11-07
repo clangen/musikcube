@@ -135,7 +135,9 @@ void        Frame::OnResized(const Size& newSize)
 {
     if (this->child && (! isResizingHACK))
     {
-        this->child->Resize(this->ClientSize());
+        Size size = this->ClientSize();
+
+        this->child->Resize(size);
         this->child->MoveTo(0, 0);
     }
 }
@@ -154,10 +156,10 @@ void        Frame::OnChildResized(Window* window, Size newSize)
 void        Frame::ResizeFromChild()
 {
     Size size = this->child->WindowSize();
- 
-    size.width += (this->padding.left + this->padding.right);
-    size.height += (this->padding.top + this->padding.bottom);
-    //
+
+    size.width  += (this->padding.left + this->padding.right);
+    size.height += (this->padding.top  + this->padding.bottom);
+
     this->isResizingHACK = true;
     this->Resize(size);
     this->isResizingHACK = false;
@@ -208,4 +210,3 @@ LRESULT     Frame::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 
     return base::WindowProc(message, wParam, lParam);
 }
-

@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2008, mC2 Team
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: mC2
 //
 // All rights reserved.
 //
@@ -36,47 +36,39 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.hpp"
-#include <core/LibraryFactory.h>
-#include <core/Preferences.h>
-#include <core/Crypt.h>
-#include <core/Common.h>
-#include <cube/dialog/HelpAboutController.hpp>
-#include <cube/dialog/HelpAboutView.hpp>
+#pragma once
 
-#include <win32cpp/Window.hpp>
-#include <win32cpp/Button.hpp>
+//////////////////////////////////////////////////////////////////////////////
+// Forward declare
+namespace win32cpp{
+    class Window;
+    class Button;
+}
 
 //////////////////////////////////////////////////////////////////////////////
 
-using namespace musik::cube::dialog;
-using namespace win32cpp;
+namespace musik { namespace cube { namespace dialog {
 
 //////////////////////////////////////////////////////////////////////////////
 
-HelpAboutController::HelpAboutController(win32cpp::TopLevelWindow &mainWindow)
-:mainWindow(mainWindow)
-,view(NULL)
+class PreferencesView;   // forward
+//////////////////////////////////////////////////////////////////////////////
+
+class PreferencesController : public win32cpp::EventHandler 
 {
-    this->view  = new HelpAboutView;
-    this->mainWindow.AddChild(this->view);
+public:     
+    PreferencesController(win32cpp::TopLevelWindow &mainWindow);
+    ~PreferencesController();
 
-    this->view->Created.connect(this, &HelpAboutController::OnViewCreated);
+private:  
+    void        OnViewCreated(win32cpp::Window* window);
+    void        OnOK(win32cpp::Button* button);
 
-    // Start drawing thread
-    this->view->StartDrawingThread();
-}
+    PreferencesView* view;
 
-HelpAboutController::~HelpAboutController() 
-{
-}
+    win32cpp::TopLevelWindow &mainWindow; 
+};
 
-void HelpAboutController::OnViewCreated(Window* window) 
-{
-    this->view->okButton->Pressed.connect(this, &HelpAboutController::OnOK);
-}
+//////////////////////////////////////////////////////////////////////////////
 
-void HelpAboutController::OnOK(win32cpp::Button* button)
-{
-    this->mainWindow.Close();
-}
+} } } 

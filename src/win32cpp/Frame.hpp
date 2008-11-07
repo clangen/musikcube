@@ -142,8 +142,10 @@ protected: // methods
     virtual void    OnResized(const Size& newSize);
     virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
 
-private: // instance data
+protected: // instance data
     FramePadding padding;
+
+private: // instance data
     Window* child;
     bool isResizingHACK;
 };

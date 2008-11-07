@@ -42,6 +42,7 @@
 #include <cube/MainMenuController.hpp>
 #include <cube/dialog/AddLibraryController.hpp>
 #include <cube/dialog/HelpAboutController.hpp>
+#include <cube/dialog/PreferencesController.hpp>
 #include <win32cpp/Application.hpp>
 #include <win32cpp/TopLevelWindow.hpp>
 #include <boost/format.hpp>
@@ -71,6 +72,7 @@ void        MainMenuController::OnMainWindowCreated(Window* window)
 void        MainMenuController::ConnectMenuHandlers()
 {
     this->fileExit->Activated.connect(this, &MainMenuController::OnFileExit);
+    this->filePreferences->Activated.connect(this, &MainMenuController::OnFilePreferences);
     this->helpAbout->Activated.connect(this, &MainMenuController::OnHelpAbout);
     this->fileAddLibraryLocal->Activated.connect(this,&MainMenuController::OnAddLibraryLocal);
     this->fileAddLibraryRemote->Activated.connect(this,&MainMenuController::OnAddLibraryRemote);
@@ -80,6 +82,16 @@ void        MainMenuController::ConnectMenuHandlers()
 void        MainMenuController::OnFileExit(MenuItemRef menuItem)
 {
     Application::Instance().Terminate();
+}
+
+void        MainMenuController::OnFilePreferences(MenuItemRef menuItem)
+{
+    win32cpp::TopLevelWindow preferencesDialog(_(_T("mC2 Preferences")));
+    preferencesDialog.SetMinimumSize(Size(700, 500));
+
+    dialog::PreferencesController filePreferences(preferencesDialog);
+
+    preferencesDialog.ShowModal(&this->mainWindow);
 }
 
 void        MainMenuController::OnAddLibraryLocal(MenuItemRef menuItem)
@@ -111,44 +123,6 @@ void        MainMenuController::OnHelpAbout(MenuItemRef menuItem)
     dialog::HelpAboutController helpAbout(aboutDialog);
 
     aboutDialog.ShowModal(&this->mainWindow);
-
-    return;
-
-    // randomize the contribuitors' names
-    std::vector<uistring> names;
-    names.push_back(_T("  - avatar\n"));
-    names.push_back(_T("  - bjorn\n"));
-    names.push_back(_T("  - doep\n"));
-    names.push_back(_T("  - naaina\n"));
-    names.push_back(_T("  - Jooles\n"));
-
-    std::random_shuffle(names.begin(), names.end());
-
-    uistring randomNames;
-    for (std::vector<uistring>::iterator it = names.begin(); it != names.end(); it++)
-    {
-        randomNames += *it;
-    }
-
-    uistring message =
-        _T("mC2 are copyright (c) mC2 Team 2007-2008\n")
-        _T("win32cpp are copyright (c) Casey Langen 2007-2008\n\n")
-        _T("Credits:\n")
-        _T("%1%\n")
-        _T("mC2 wouldn't be possible without these file projects:\n")
-        _T("  - tuniac (http://tuniac.sf.net)\n")
-        _T("  - boost (http://www.boost.org)\n")
-        _T("  - sqlite3 (http://www.sqlite.org)\n")
-        _T("  - taglib (http://developer.kde.org/~wheeler/taglib)\n\n")
-        _T("Version 2 developer milestone 1");
-
-    message = (boost::wformat(message.c_str()) % randomNames).str();
-
-    ::MessageBox(
-        this->mainWindow.Handle(),
-        message.c_str(),
-        _T("mC2 - About"),
-        MB_ICONINFORMATION | MB_OK);
 }
 
 void MainMenuController::OnNewPlaylist(MenuItemRef menuItem){
@@ -168,28 +142,30 @@ MenuRef     MainMenuController::CreateMenu()
     this->tags = mainItems.Append(MenuItem::Create(_(_T("&Tags"))));
     this->help = mainItems.Append(MenuItem::Create(_(_T("&Help"))));
 
-        // file menu
-        this->fileMenu  = Menu::Create();
-        MenuItemCollection& fileItems = this->fileMenu->Items();
-        //
-        this->file->SetSubMenu(this->fileMenu);
+    // file menu
+    this->fileMenu  = Menu::Create();
+    MenuItemCollection& fileItems = this->fileMenu->Items();
+    //
+    this->file->SetSubMenu(this->fileMenu);
 
-        MenuItemRef addLibraryMenu  = fileItems.Append(MenuItem::Create(_(_T("&New Library"))));
-        MenuRef addLibrarySubmenu   = Menu::Create();
-        this->fileAddLibraryLocal   = addLibrarySubmenu->Items().Append(MenuItem::Create(_(_T("&Local library"))));
-        this->fileAddLibraryRemote  = addLibrarySubmenu->Items().Append(MenuItem::Create(_(_T("&Remote library"))));
-        addLibraryMenu->SetSubMenu(addLibrarySubmenu);
+    MenuItemRef addLibraryMenu  = fileItems.Append(MenuItem::Create(_(_T("&New Library"))));
+    MenuRef addLibrarySubmenu   = Menu::Create();
+    this->fileAddLibraryLocal   = addLibrarySubmenu->Items().Append(MenuItem::Create(_(_T("&Local library"))));
+    this->fileAddLibraryRemote  = addLibrarySubmenu->Items().Append(MenuItem::Create(_(_T("&Remote library"))));
+    addLibraryMenu->SetSubMenu(addLibrarySubmenu);
 
-        this->fileNewPlaylist       = fileItems.Append(MenuItem::Create(_(_T("&New Playlist"))));
+    this->fileNewPlaylist       = fileItems.Append(MenuItem::Create(_(_T("&New Playlist"))));
 
-        this->fileExit              = fileItems.Append(MenuItem::Create(_(_T("E&xit"))));
+    this->filePreferences       = fileItems.Append(MenuItem::Create(_(_T("&Preferences"))));
 
-        // help menu
-        this->helpMenu  = Menu::Create();
-        MenuItemCollection& helpItems = this->helpMenu->Items();
-        //
-        this->help->SetSubMenu(this->helpMenu);
-        this->helpAbout = helpItems.Append(MenuItem::Create(_(_T("&About"))));
+    this->fileExit              = fileItems.Append(MenuItem::Create(_(_T("E&xit"))));
+
+    // help menu
+    this->helpMenu  = Menu::Create();
+    MenuItemCollection& helpItems = this->helpMenu->Items();
+    //
+    this->help->SetSubMenu(this->helpMenu);
+    this->helpAbout = helpItems.Append(MenuItem::Create(_(_T("&About"))));
 
     this->ConnectMenuHandlers();
 

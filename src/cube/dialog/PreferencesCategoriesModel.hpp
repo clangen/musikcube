@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, mC2 Team
+// The following are Copyright © 2008, Casey Langen, André Wösten
 //
 // Sources and Binaries of: mC2, win32cpp
 //
@@ -36,47 +36,47 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.hpp"
-#include <core/LibraryFactory.h>
-#include <core/Preferences.h>
-#include <core/Crypt.h>
-#include <core/Common.h>
-#include <cube/dialog/HelpAboutController.hpp>
-#include <cube/dialog/HelpAboutView.hpp>
+#pragma once
 
-#include <win32cpp/Window.hpp>
-#include <win32cpp/Button.hpp>
+#include <win32cpp/ComboBox.hpp>
+#include <cube/dialog/PreferencesCategory.hpp>
+#include <vector>
 
 //////////////////////////////////////////////////////////////////////////////
 
-using namespace musik::cube::dialog;
 using namespace win32cpp;
 
+namespace musik { namespace cube { namespace dialog {
+
+//////////////////////////////////////////////////////////////////////////////
+// PreferencesCategoriesModel
+//////////////////////////////////////////////////////////////////////////////
+class PreferencesCategoriesModel : public ComboBox::Model
+{
+private:
+    typedef std::vector<PreferencesCategory> categoryTreeVector;
+    categoryTreeVector categoryTree;
+public:
+    enum Categories {
+        Libraries                               = 0x1000,
+        ClientServer                            = 0x2000,
+        AudioSettings                           = 0x3000,     
+        AudioSettings_Output,
+        Display                                 = 0x4000,
+        Display_Ordering,
+        Display_TraySettings,
+        Display_TraySettings_ShowTrayIcon,
+        Display_TraySettings_MinimizeToTray
+    };
+
+    PreferencesCategoriesModel();
+
+    virtual int         ItemCount();
+    virtual int         ItemToIndent(int index);
+    virtual uistring    ItemToString(int index);    
+    virtual LPARAM      ItemToExtendedData(int index);
+};
+
 //////////////////////////////////////////////////////////////////////////////
 
-HelpAboutController::HelpAboutController(win32cpp::TopLevelWindow &mainWindow)
-:mainWindow(mainWindow)
-,view(NULL)
-{
-    this->view  = new HelpAboutView;
-    this->mainWindow.AddChild(this->view);
-
-    this->view->Created.connect(this, &HelpAboutController::OnViewCreated);
-
-    // Start drawing thread
-    this->view->StartDrawingThread();
-}
-
-HelpAboutController::~HelpAboutController() 
-{
-}
-
-void HelpAboutController::OnViewCreated(Window* window) 
-{
-    this->view->okButton->Pressed.connect(this, &HelpAboutController::OnOK);
-}
-
-void HelpAboutController::OnOK(win32cpp::Button* button)
-{
-    this->mainWindow.Close();
-}
+} } }    // musik::cube::dialog
