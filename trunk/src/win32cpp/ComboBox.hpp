@@ -57,20 +57,32 @@ namespace win32cpp {
 // ComboBox
 //////////////////////////////////////////////////////////////////////////////
 
-class ComboBox : public Window
+    class ComboBox : public Window
 {
 public: 
+    enum DisplayType {
+        DisplayType_Simple          = CBS_SIMPLE,
+        DisplayType_DropDownList    = CBS_DROPDOWNLIST
+    };
+
+    static const LPCWSTR BoxType_Standard;
+    static const LPCWSTR BoxType_Extended;
+
     class Model;
 
     typedef boost::shared_ptr<Model>    ModelRef;
     typedef sigslot::signal1<ComboBox*> SelectionChangedEvent;
 
-    ComboBox();
+    ComboBox(
+        DisplayType displayType = DisplayType_DropDownList,
+        LPCWSTR boxType = BoxType_Extended
+    );
     ~ComboBox();
 
     void                SetModel(ModelRef model);
     int                 Selected();
     void                Select(int index);
+    bool                Info(PCOMBOBOXINFO pcbi);
 
 protected: 
     ModelRef            model;
@@ -82,6 +94,8 @@ protected:
 private: 
     typedef Window base;
     class NullModel;
+    DisplayType displayType;
+    LPCWSTR boxType;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -112,8 +126,12 @@ public:
         return NULL;
     }
 
+    virtual int ItemToImageListIndex(int index)
+    {
+        return -1;
+    }
+
     virtual uistring    ItemToString(int index) = 0;
-    virtual int         ItemToImageListIndex(int index) = 0;
     virtual int         ItemToIndent(int index) = 0;
     virtual LPARAM      ItemToExtendedData(int index) = 0;
 };

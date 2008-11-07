@@ -35,48 +35,54 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
+#pragma once
 
-#include "pch.hpp"
-#include <core/LibraryFactory.h>
-#include <core/Preferences.h>
-#include <core/Crypt.h>
-#include <core/Common.h>
-#include <cube/dialog/HelpAboutController.hpp>
-#include <cube/dialog/HelpAboutView.hpp>
+//////////////////////////////////////////////////////////////////////////////
+// Forward declare
+namespace win32cpp{
+    class Button;
+    class Frame;
+    class ComboBox;
+}
+//////////////////////////////////////////////////////////////////////////////
 
-#include <win32cpp/Window.hpp>
+#include <win32cpp/Frame.hpp>
 #include <win32cpp/Button.hpp>
+#include <win32cpp/ComboBox.hpp>
+#include <win32cpp/LinearLayout.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
-using namespace musik::cube::dialog;
 using namespace win32cpp;
 
+namespace musik { namespace cube { namespace dialog {
+
+//////////////////////////////////////////////////////////////////////////////
+// forward 
+class PreferencesController;
 //////////////////////////////////////////////////////////////////////////////
 
-HelpAboutController::HelpAboutController(win32cpp::TopLevelWindow &mainWindow)
-:mainWindow(mainWindow)
-,view(NULL)
-{
-    this->view  = new HelpAboutView;
-    this->mainWindow.AddChild(this->view);
+class PreferencesView: public Frame {
+private:    
+    typedef Frame       base;
 
-    this->view->Created.connect(this, &HelpAboutController::OnViewCreated);
+    Button*             okButton;
+    Button*             cancelButton;
+    ComboBox*           categoryList;
+    LinearLayout*       mainLayout;
 
-    // Start drawing thread
-    this->view->StartDrawingThread();
-}
+public:     
+    PreferencesView();
 
-HelpAboutController::~HelpAboutController() 
-{
-}
+    virtual void        OnCreated();   
+    virtual void        OnMainWindowResized(Window* window, Size newSize);
+    
+    ComboBox::ModelRef  categoryModel;
 
-void HelpAboutController::OnViewCreated(Window* window) 
-{
-    this->view->okButton->Pressed.connect(this, &HelpAboutController::OnOK);
-}
+    friend class PreferencesController;
+};
 
-void HelpAboutController::OnOK(win32cpp::Button* button)
-{
-    this->mainWindow.Close();
-}
+//////////////////////////////////////////////////////////////////////////////
+
+} } }
+

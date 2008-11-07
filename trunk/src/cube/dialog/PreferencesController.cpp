@@ -39,10 +39,9 @@
 #include "pch.hpp"
 #include <core/LibraryFactory.h>
 #include <core/Preferences.h>
-#include <core/Crypt.h>
-#include <core/Common.h>
-#include <cube/dialog/HelpAboutController.hpp>
-#include <cube/dialog/HelpAboutView.hpp>
+#include <cube/dialog/PreferencesController.hpp>
+#include <cube/dialog/PreferencesView.hpp>
+#include <cube/dialog/PreferencesCategoriesModel.hpp>
 
 #include <win32cpp/Window.hpp>
 #include <win32cpp/Button.hpp>
@@ -54,29 +53,35 @@ using namespace win32cpp;
 
 //////////////////////////////////////////////////////////////////////////////
 
-HelpAboutController::HelpAboutController(win32cpp::TopLevelWindow &mainWindow)
+PreferencesController::PreferencesController(win32cpp::TopLevelWindow &mainWindow)
 :mainWindow(mainWindow)
 ,view(NULL)
 {
-    this->view  = new HelpAboutView;
+    this->view  = new PreferencesView;
     this->mainWindow.AddChild(this->view);
+    
+    this->mainWindow.Resized.connect(this->view, &PreferencesView::OnMainWindowResized);
 
-    this->view->Created.connect(this, &HelpAboutController::OnViewCreated);
-
-    // Start drawing thread
-    this->view->StartDrawingThread();
+    this->view->Handle()
+        ? this->OnViewCreated(this->view)
+        : this->view->Created.connect(this, &PreferencesController::OnViewCreated);
 }
 
-HelpAboutController::~HelpAboutController() 
+PreferencesController::~PreferencesController() 
 {
 }
 
-void HelpAboutController::OnViewCreated(Window* window) 
+void PreferencesController::OnViewCreated(Window* window) 
 {
-    this->view->okButton->Pressed.connect(this, &HelpAboutController::OnOK);
+    this->view->okButton->Pressed.connect(this, &PreferencesController::OnOK);
+
+    this->view->categoryList->SetModel(ComboBox::ModelRef(new PreferencesCategoriesModel));
+
+    // registering of inner dialog templates
+    //this->view->categoryModel->RegisterView(PreferencesCategoriesModel::Categories::Display, 
 }
 
-void HelpAboutController::OnOK(win32cpp::Button* button)
+void PreferencesController::OnOK(win32cpp::Button* button)
 {
     this->mainWindow.Close();
 }

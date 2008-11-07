@@ -514,6 +514,38 @@
 					>
 				</File>
 			</Filter>
+			<Filter
+				Name="Preferences"
+				>
+				<File
+					RelativePath=".\dialog\PreferencesCategoriesModel.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\dialog\PreferencesCategoriesModel.hpp"
+					>
+				</File>
+				<File
+					RelativePath=".\dialog\PreferencesCategory.hpp"
+					>
+				</File>
+				<File
+					RelativePath=".\dialog\PreferencesController.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\dialog\PreferencesController.hpp"
+					>
+				</File>
+				<File
+					RelativePath=".\dialog\PreferencesView.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\dialog\PreferencesView.hpp"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<File
 			RelativePath=".\main.cpp"

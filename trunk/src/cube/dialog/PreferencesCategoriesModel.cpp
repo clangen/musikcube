@@ -4,7 +4,7 @@
 //
 // The following are Copyright © 2008, mC2 Team
 //
-// Sources and Binaries of: mC2, win32cpp
+// Sources and Binaries of: mC2
 //
 // All rights reserved.
 //
@@ -37,46 +37,65 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
-#include <core/LibraryFactory.h>
-#include <core/Preferences.h>
-#include <core/Crypt.h>
-#include <core/Common.h>
-#include <cube/dialog/HelpAboutController.hpp>
-#include <cube/dialog/HelpAboutView.hpp>
-
-#include <win32cpp/Window.hpp>
-#include <win32cpp/Button.hpp>
+#include <win32cpp/ApplicationThread.hpp>
+#include <cube/dialog/PreferencesCategoriesModel.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
 using namespace musik::cube::dialog;
-using namespace win32cpp;
 
 //////////////////////////////////////////////////////////////////////////////
 
-HelpAboutController::HelpAboutController(win32cpp::TopLevelWindow &mainWindow)
-:mainWindow(mainWindow)
-,view(NULL)
+PreferencesCategoriesModel::PreferencesCategoriesModel()
 {
-    this->view  = new HelpAboutView;
-    this->mainWindow.AddChild(this->view);
+    // Fill category tree with data
+    PreferencesCategory items[] = { 
+    /*  title                                   level  identifier (for inserts etc.) */
+        {_(_T("Libraries")),                    0,     Categories::Libraries},
+        {_(_T("Client/Server")),                0,     Categories::ClientServer},
+        {_(_T("Audio Settings")),               0,     Categories::AudioSettings},
+            {_(_T("Output")),                   1,     Categories::AudioSettings_Output},
+        {_(_T("Display")),                      0,     Categories::Display},
+            {_(_T("Ordering")),                 1,     Categories::Display_Ordering},
+            {_(_T("Tray settings")),            1,     Categories::Display_TraySettings},
+                {_(_T("Show tray icon")),       2,     Categories::Display_TraySettings_ShowTrayIcon},
+                {_(_T("Minimize to tray")),     2,     Categories::Display_TraySettings_MinimizeToTray}
+    };
 
-    this->view->Created.connect(this, &HelpAboutController::OnViewCreated);
+    for(int i = 0; i < sizeof(items) / sizeof(PreferencesCategory); i++) {
+        categoryTree.push_back(items[i]);    
+    }
 
-    // Start drawing thread
-    this->view->StartDrawingThread();
 }
 
-HelpAboutController::~HelpAboutController() 
+int PreferencesCategoriesModel::ItemCount()
 {
+    return (int)categoryTree.size();
 }
 
-void HelpAboutController::OnViewCreated(Window* window) 
+int PreferencesCategoriesModel::ItemToIndent(int index)
 {
-    this->view->okButton->Pressed.connect(this, &HelpAboutController::OnOK);
+    if(index >= 0 && index < categoryTree.size()) {
+        return categoryTree[index].indent;
+    }
+
+    return 0;
 }
 
-void HelpAboutController::OnOK(win32cpp::Button* button)
+uistring PreferencesCategoriesModel::ItemToString(int index)
 {
-    this->mainWindow.Close();
+    if(index >= 0 && index < categoryTree.size()) {
+        return categoryTree[index].title;
+    }
+
+    return uistring();
+}
+
+LPARAM PreferencesCategoriesModel::ItemToExtendedData(int index)
+{
+    if(index >= 0 && index < categoryTree.size()) {
+        return categoryTree[index].data;
+    }
+
+    return 0;
 }
