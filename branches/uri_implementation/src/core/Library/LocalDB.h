@@ -70,10 +70,10 @@ namespace musik{ namespace core{ namespace Library{
 //////////////////////////////////////////
 class LocalDB : public Library::Base{
 	private:
-        LocalDB(utfstring identifier);
+        LocalDB(utfstring name,int id);
     public:
         // Methods:
-		static LibraryPtr Create(utfstring identifier);
+		static LibraryPtr Create(utfstring name,int id);
         ~LocalDB(void);
 
         bool Startup();

@@ -59,10 +59,10 @@ namespace musik{ namespace core{ namespace Library{
 //////////////////////////////////////////
 class Remote : public Library::Base{
 	private:
-        Remote(utfstring identifier);
+        Remote(utfstring name,int id);
     public:
         // Methods:
-		static LibraryPtr Create(utfstring identifier);
+		static LibraryPtr Create(utfstring name,int id);
         ~Remote(void);
 
         bool Startup();

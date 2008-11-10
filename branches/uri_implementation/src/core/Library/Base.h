@@ -89,7 +89,7 @@ namespace musik{ namespace core{ namespace Library{
 //////////////////////////////////////////
 class Base : boost::noncopyable{
     protected:
-        Base(utfstring identifier);
+        Base(utfstring name,int id);
 	public:
         virtual ~Base(void);
 
@@ -134,6 +134,8 @@ class Base : boost::noncopyable{
         bool Exited();
 
 		const utfstring& Identifier();
+		int Id();
+		const utfstring& Name();
 
 		musik::core::tracklist::Ptr NowPlaying();
 
@@ -246,6 +248,13 @@ class Base : boost::noncopyable{
         ///GetLibraryDirectory
         //////////////////////////////////////////
         utfstring identifier;
+        int id;
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Name of the library.
+        //////////////////////////////////////////
+        utfstring name;
 
         //////////////////////////////////////////
         ///\brief

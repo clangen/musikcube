@@ -456,6 +456,22 @@
 					>
 				</File>
 				<File
+					RelativePath=".\LibraryTrack.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\LibraryTrack.h"
+					>
+				</File>
+				<File
+					RelativePath=".\LibraryTrackMeta.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\LibraryTrackMeta.h"
+					>
+				</File>
+				<File
 					RelativePath=".\MetadataValue.cpp"
 					>
 				</File>
@@ -472,19 +488,15 @@
 					>
 				</File>
 				<File
-					RelativePath=".\Track.cpp"
-					>
-				</File>
-				<File
 					RelativePath=".\Track.h"
 					>
 				</File>
 				<File
-					RelativePath=".\TrackMeta.cpp"
+					RelativePath=".\TrackFactory.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\TrackMeta.h"
+					RelativePath=".\TrackFactory.h"
 					>
 				</File>
 			</Filter>

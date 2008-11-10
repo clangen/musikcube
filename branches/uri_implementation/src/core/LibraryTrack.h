@@ -33,32 +33,79 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
+
 #pragma once
 
-#include <core/config.h>
-#include <core/filestreams/IFileStream.h>
-#include <core/filestreams/IFileStreamFactory.h>
-#include <vector>
+#include <core/config_filesystem.h>
+#include <core/Track.h>
+#include <core/LibraryTrackMeta.h>
+#include <core/Library/Base.h>
+
 
 //////////////////////////////////////////////////////////////////////////////
-namespace musik{ namespace core{ namespace filestreams{
+// Forward declare
+namespace musik{ namespace core{
+/*    class Track;
+    namespace Library{
+        class Base;
+    }
+    namespace db{
+        class Connection;
+    }*/
+    namespace http{
+        class Responder;
+    }
+} }
 //////////////////////////////////////////////////////////////////////////////
 
+namespace musik{ namespace core{
 
-class Factory {
-    private:
-        static Factory sInstance;
+//////////////////////////////////////////////////////////////////////////////
 
-        Factory();
+class LibraryTrack : public Track {
+    public:
+        LibraryTrack(void);
+        LibraryTrack(DBINT id,int libraryId);
+        virtual ~LibraryTrack(void);
 
-    private:
-        typedef std::vector<boost::shared_ptr<IFileStreamFactory>> FileStreamFactoryVector;
-        FileStreamFactoryVector fileStreamFactories;
+        virtual const utfchar* GetValue(const char* metakey);
+        virtual void SetValue(const char* metakey,const utfchar* value);
+        virtual void ClearValue(const char* metakey);
+        virtual void SetThumbnail(const char *data,long size);
+        virtual const utfchar* URI();
+        virtual const utfchar* URL();
+
+        virtual MetadataIteratorRange GetValues(const char* metakey);
+        virtual MetadataIteratorRange GetAllValues();
+        virtual TrackPtr Copy();
 
     public:
-        static FileStreamPtr OpenFile(const utfchar *filename);
+        // The variables
+        DBINT id;
+    private:
+        LibraryTrackMeta *meta;
+        int libraryId;
+        
+
+    private:
+
+        // Some special methods for the Indexer
+        friend class Indexer;
+
+        bool CompareDBAndFileInfo(const boost::filesystem::utfpath &file,db::Connection &dbConnection,DBINT currentFolderId);
+        bool Save(db::Connection &dbConnection,utfstring libraryDirectory,DBINT folderId);
+        DBINT _GetGenre(db::Connection &dbConnection,utfstring genre,bool addRelation,bool aggregated=false);
+        DBINT _GetArtist(db::Connection &dbConnection,utfstring artist,bool addRelation,bool aggregated=false);
+
+    private:
+        // Some special methods for the http::Responder
+        friend class http::Responder;
+        bool GetFileData(DBINT id,db::Connection &db);
 };
 
+
 //////////////////////////////////////////////////////////////////////////////
-} } }
+} } // musik::core
 //////////////////////////////////////////////////////////////////////////////
+
+

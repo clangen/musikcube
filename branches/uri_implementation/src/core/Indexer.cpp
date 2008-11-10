@@ -40,7 +40,7 @@
 
 #include <core/config_filesystem.h>
 #include <core/config_format.h>
-#include <core/Track.h>
+#include <core/LibraryTrack.h>
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>
 #include <core/PluginFactory.h>
@@ -411,8 +411,8 @@ void Indexer::SyncDirectory(utfstring &sFolder,DBINT iParentFolderId,DBINT iPath
                 }
                 // This is a file, create a IndexerTrack object
                 //IndexerTrack oTrack(oFile->path());
-                musik::core::Track track;
-                track.InitMeta(NULL);   // Not threadsafe, only used in this thread.
+                musik::core::LibraryTrack track;
+//                track.InitMeta(NULL);   // Not threadsafe, only used in this thread.
 
                 // Get file-info from database
                 if(track.CompareDBAndFileInfo(oFile->path(),this->dbConnection,iFolderId)){

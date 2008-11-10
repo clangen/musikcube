@@ -33,32 +33,14 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
-#pragma once
+#include "pch.hpp"
+#include "TrackFactory.h"
 
-#include <core/config.h>
-#include <core/filestreams/IFileStream.h>
-#include <core/filestreams/IFileStreamFactory.h>
-#include <vector>
+using namespace musik::core;
 
-//////////////////////////////////////////////////////////////////////////////
-namespace musik{ namespace core{ namespace filestreams{
-//////////////////////////////////////////////////////////////////////////////
+TrackPtr TrackFactory::CreateTrack(utfstring uri){
+
+    return TrackPtr();
+}
 
 
-class Factory {
-    private:
-        static Factory sInstance;
-
-        Factory();
-
-    private:
-        typedef std::vector<boost::shared_ptr<IFileStreamFactory>> FileStreamFactoryVector;
-        FileStreamFactoryVector fileStreamFactories;
-
-    public:
-        static FileStreamPtr OpenFile(const utfchar *filename);
-};
-
-//////////////////////////////////////////////////////////////////////////////
-} } }
-//////////////////////////////////////////////////////////////////////////////

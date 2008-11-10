@@ -36,121 +36,124 @@
 
 #include "pch.hpp"
 
-#include <core/Track.h>
-#include <core/config_filesystem.h>
+#include <core/LibraryTrack.h>
+#include <core/LibraryFactory.h>
 
 #include <core/Common.h>
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>
 #include <core/Library/Base.h>
+#include <core/filestreams/Factory.h>
 
 #include <boost/lexical_cast.hpp>
 
+//////////////////////////////////////////////////////////////////////////////
+
 using namespace musik::core;
 
-Track::Track(void) : meta(NULL),id(0){
+//////////////////////////////////////////////////////////////////////////////
+
+LibraryTrack::LibraryTrack(void)
+ :meta(NULL)
+{
 }
 
-Track::Track(DBINT newId) : meta(NULL),id(newId){
+LibraryTrack::LibraryTrack(DBINT id,int libraryId)
+ :meta(NULL)
+ ,id(id)
+ ,libraryId(libraryId)
+{
 }
 
-Track::~Track(void){
-    this->ClearMeta();
-}
 
-//////////////////////////////////////////
-///\brief
-///Get value of a (one) tag
-///
-///\param key
-///String identifier of the required value.
-///
-///\param threadHelper
-///If you pass this ThreadHelper object, the GetValue will be threadsafe.
-///
-///\returns
-///A const reference to a wstring (UTF-16) with the value. Empty string if not found.
-//////////////////////////////////////////
-/*const TrackMeta::Value& Track::GetValue(const TrackMeta::Key &key) const{
-
+LibraryTrack::~LibraryTrack(void){
     if(this->meta){
-        return this->meta->GetValue(key);
+        delete this->meta;
+        this->meta  = NULL;
     }
-    static utfstring emptyString;
-    return emptyString;
-}*/
 
-const utfchar* Track::GetValue(const char* metakey) const{
-    if(this->meta){
-        return this->meta->GetValue(metakey);
+}
+
+const utfchar* LibraryTrack::GetValue(const char* metakey){
+    if(metakey && this->meta){
+        MetadataMap::iterator metavalue = this->meta->metadata.find(metakey);
+        if(metavalue!=this->meta->metadata.end()){
+            return metavalue->second.c_str();
+        }
     }
     return NULL;
 }
 
-
-//////////////////////////////////////////
-///\brief
-///Get all values of one tag identifier.
-///
-///\param metakey
-///String identifier of the required value.
-///
-///\returns
-///A pair of iterators. The first is the start iterator and the second is the end.
-///
-///\see
-///GetValue
-//////////////////////////////////////////
-TrackMeta::TagMapIteratorPair Track::GetValues(const char* metakey) const{
-    if(this->meta){
-        return this->meta->GetValues(metakey);
-    }
-    return TrackMeta::TagMapIteratorPair();
-}
-
-TrackMeta::TagMapIteratorPair Track::GetAllValues() const{
-    return TrackMeta::TagMapIteratorPair(this->meta->tags.begin(),this->meta->tags.end());
-}
-
-
-/*void Track::SetValue(const TrackMeta::Key &key,TrackMeta::Value &value){
-    if(this->meta){
-        this->meta->SetValue(key,value);
-    }
-}
-*/
-void Track::SetValue(const char* metakey,const utfchar* value){
-    if(this->meta){
-        this->meta->SetValue(metakey,value);
-    }
-}
-
-void Track::ClearValue(const char* metakey){
-    if(this->meta){
-        this->meta->ClearValue(metakey);
-    }
-}
-
-
-void Track::ClearMeta(){
-    if(this->meta){
-        delete this->meta;
-        this->meta    = NULL;
-    }
-}
-
-void Track::InitMeta(Library::Base *library){
+void LibraryTrack::SetValue(const char* metakey,const utfchar* value){
     if(!this->meta){
-        this->meta    = new TrackMeta(library);
+        // Create the metadata
+        this->meta  = new LibraryTrackMeta();
+        this->meta->library = LibraryFactory::Instance().GetLibrary(this->libraryId);
+    }
+
+    if(metakey && value){
+        this->meta->metadata.insert(std::pair<std::string,utfstring>(metakey,value));
     }
 }
 
-bool Track::HasMeta(){
-    return this->meta!=NULL;
+void LibraryTrack::ClearValue(const char* metakey){
+    if(this->meta){
+        this->meta->metadata.erase(metakey);
+    }
 }
 
 
-bool Track::CompareDBAndFileInfo(const boost::filesystem::utfpath &file,db::Connection &dbConnection,DBINT currentFolderId){
+
+void LibraryTrack::SetThumbnail(const char *data,long size){
+    if(!this->meta){
+        // Create the metadata
+        this->meta  = new LibraryTrackMeta();
+        this->meta->library = LibraryFactory::Instance().GetLibrary(this->libraryId);
+    }
+
+    if(this->meta->thumbnailData)
+        delete this->meta->thumbnailData;
+
+    this->meta->thumbnailData        = new char[size];
+    this->meta->thumbnailSize        = size;
+
+    memcpy(this->meta->thumbnailData,data,size);
+}
+
+const utfchar* LibraryTrack::URI(){
+    static utfstring uri;
+    if(this->meta){
+        uri     = UTF("mcdb://")+this->meta->library->Identifier()+UTF("/")+boost::lexical_cast<utfstring>(this->id);
+        return uri.c_str();
+    }else{
+        uri     = UTF("mcdb://")+boost::lexical_cast<utfstring>(this->libraryId)+UTF("/")+boost::lexical_cast<utfstring>(this->id);
+        return uri.c_str();
+    }
+    return NULL;
+}
+
+const utfchar* LibraryTrack::URL(){
+    return this->GetValue("path");
+}
+
+Track::MetadataIteratorRange LibraryTrack::GetValues(const char* metakey){
+    if(this->meta){
+        return this->meta->metadata.equal_range(metakey);
+    }
+    return Track::MetadataIteratorRange();
+}
+
+Track::MetadataIteratorRange LibraryTrack::GetAllValues(){
+    if(this->meta){
+        return Track::MetadataIteratorRange(this->meta->metadata.begin(),this->meta->metadata.end());
+    }
+    return Track::MetadataIteratorRange();
+}
+
+
+
+
+bool LibraryTrack::CompareDBAndFileInfo(const boost::filesystem::utfpath &file,db::Connection &dbConnection,DBINT currentFolderId){
  
     this->SetValue("path",file.string().c_str());
     this->SetValue("filename",file.leaf().c_str());
@@ -192,9 +195,9 @@ bool Track::CompareDBAndFileInfo(const boost::filesystem::utfpath &file,db::Conn
 
 
 
-bool Track::Save(db::Connection &dbConnection,utfstring libraryDirectory,DBINT folderId){
+bool LibraryTrack::Save(db::Connection &dbConnection,utfstring libraryDirectory,DBINT folderId){
 
-    TrackMeta::TagMap metadataCopy(this->meta->tags);
+    MetadataMap metadataCopy(this->meta->metadata);
 
     unsigned int count;
 
@@ -265,7 +268,7 @@ bool Track::Save(db::Connection &dbConnection,utfstring libraryDirectory,DBINT f
     count            = 0;
     std::set<utfstring> alreadySetGenres;        // Cache for not saving duplicates
 
-    TrackMeta::TagMapIteratorPair genres    = this->GetValues("genre");
+    MetadataIteratorRange genres    = this->GetValues("genre");
     while(genres.first!=genres.second){
 
         if(alreadySetGenres.find(genres.first->second)==alreadySetGenres.end()){
@@ -299,7 +302,7 @@ bool Track::Save(db::Connection &dbConnection,utfstring libraryDirectory,DBINT f
     count            = 0;
     std::set<utfstring> alreadySetArtists;        // Cache for not saving duplicates
 
-    TrackMeta::TagMapIteratorPair artists = this->GetValues("artist");
+    MetadataIteratorRange artists = this->GetValues("artist");
     while(artists.first!=artists.second){
 
         if(alreadySetArtists.find(artists.first->second)==alreadySetArtists.end()){
@@ -415,7 +418,7 @@ bool Track::Save(db::Connection &dbConnection,utfstring libraryDirectory,DBINT f
         db::CachedStatement insertTrackMeta("INSERT INTO track_meta (track_id,meta_value_id) VALUES (?,?)",dbConnection);
 
         // Loop through the tags
-        for(TrackMeta::TagMap::const_iterator metaData=metadataCopy.begin();metaData!=metadataCopy.end();++metaData){
+        for(MetadataMap::const_iterator metaData=metadataCopy.begin();metaData!=metadataCopy.end();++metaData){
 
             // 1. Find the meta_key
             DBINT metaKeyId(0);
@@ -474,7 +477,7 @@ bool Track::Save(db::Connection &dbConnection,utfstring libraryDirectory,DBINT f
     return true;
 }
 
-DBINT Track::_GetGenre(db::Connection &dbConnection,utfstring genre,bool addRelation,bool aggregated){
+DBINT LibraryTrack::_GetGenre(db::Connection &dbConnection,utfstring genre,bool addRelation,bool aggregated){
     DBINT genreId(0);
     {
         db::CachedStatement stmt("SELECT id FROM genres WHERE name=?",dbConnection);
@@ -508,7 +511,7 @@ DBINT Track::_GetGenre(db::Connection &dbConnection,utfstring genre,bool addRela
     return genreId;
 }
 
-DBINT Track::_GetArtist(db::Connection &dbConnection,utfstring artist,bool addRelation,bool aggregated){
+DBINT LibraryTrack::_GetArtist(db::Connection &dbConnection,utfstring artist,bool addRelation,bool aggregated){
     DBINT artistId(0);
 
     db::CachedStatement stmt("SELECT id FROM artists WHERE name=?",dbConnection);
@@ -541,18 +544,18 @@ DBINT Track::_GetArtist(db::Connection &dbConnection,utfstring artist,bool addRe
     return artistId;
 }
 
-void Track::SetThumbnail(const char *data,unsigned int size){
-    if(this->meta){
-        this->meta->SetThumbnail(data,size);
+
+TrackPtr LibraryTrack::Copy(){
+    return TrackPtr(new LibraryTrack(this->id,this->libraryId));
+}
+
+
+bool LibraryTrack::GetFileData(DBINT id,db::Connection &db){
+    if(!this->meta){
+        // Create the metadata
+        this->meta  = new LibraryTrackMeta();
+        this->meta->library = LibraryFactory::Instance().GetLibrary(this->libraryId);
     }
-}
-
-TrackPtr Track::Copy(){
-    return TrackPtr(new Track(this->id));
-}
-
-bool Track::GetFileData(DBINT id,db::Connection &db){
-    this->InitMeta(NULL);
 
     this->id    = id;
 

@@ -38,6 +38,7 @@
 #include <core/config.h>
 #include <core/Library/Base.h>
 #include <sigslot/sigslot.h>
+#include <map>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -68,6 +69,7 @@ class LibraryFactory{
 		};
 
 		typedef std::vector<LibraryPtr> LibraryVector;
+		typedef std::map<int,LibraryPtr> LibraryMap;
 
         //////////////////////////////////////////
         ///\brief
@@ -80,6 +82,8 @@ class LibraryFactory{
 		LibraryPtr CreateLibrary(utfstring name,int type,bool startup=true);
 		void DeleteLibrary(utfstring name);
 
+        LibraryPtr GetLibrary(int identifier);
+
         typedef sigslot::signal0<> LibrariesUpdatedEvent;
 
         //////////////////////////////////////////
@@ -91,11 +95,12 @@ class LibraryFactory{
     private:
 
         LibraryVector libraries;
+        LibraryMap libraryMap;
 
         LibraryFactory(void);
         ~LibraryFactory(void);
 
-		LibraryPtr AddLibrary(utfstring name,int type,bool sendEvent=false,bool startup=true);
+		LibraryPtr AddLibrary(int id,utfstring name,int type,bool sendEvent=false,bool startup=true);
 		void RemoveLibrary(utfstring name);
 
 };

@@ -51,12 +51,14 @@ using namespace musik::core;
 ///\brief
 ///Constructor
 //////////////////////////////////////////
-Library::Base::Base(utfstring identifier) 
- :identifier(identifier)
+Library::Base::Base(utfstring name,int id) 
+ :name(name)
+ ,id(id)
  ,queueCallbackStarted(false)
  ,exit(false)
  ,userId(1)
 {
+    this->identifier    = boost::lexical_cast<utfstring>(id);
 }
 
 //////////////////////////////////////////
@@ -100,6 +102,18 @@ Library::Base::~Base(void){
 //////////////////////////////////////////
 const utfstring& Library::Base::Identifier(){
 	return this->identifier;
+}
+
+int Library::Base::Id(){
+    return this->id;
+}
+
+//////////////////////////////////////////
+///\brief
+///Name of the library
+//////////////////////////////////////////
+const utfstring& Library::Base::Name(){
+	return this->name;
 }
 
 //////////////////////////////////////////
@@ -715,3 +729,4 @@ const std::string& Library::Base::AuthorizationKey(){
     static std::string emptyAuthString;
     return emptyAuthString;
 }
+

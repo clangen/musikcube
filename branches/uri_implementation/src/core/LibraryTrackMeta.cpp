@@ -33,32 +33,16 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
-#pragma once
 
-#include <core/config.h>
-#include <core/filestreams/IFileStream.h>
-#include <core/filestreams/IFileStreamFactory.h>
-#include <vector>
+#include "pch.hpp"
 
-//////////////////////////////////////////////////////////////////////////////
-namespace musik{ namespace core{ namespace filestreams{
-//////////////////////////////////////////////////////////////////////////////
+#include <core/LibraryTrackMeta.h>
+
+using namespace musik::core;
 
 
-class Factory {
-    private:
-        static Factory sInstance;
+LibraryTrackMeta::~LibraryTrackMeta(){
+    if(this->thumbnailData)
+        delete this->thumbnailData;
+}
 
-        Factory();
-
-    private:
-        typedef std::vector<boost::shared_ptr<IFileStreamFactory>> FileStreamFactoryVector;
-        FileStreamFactoryVector fileStreamFactories;
-
-    public:
-        static FileStreamPtr OpenFile(const utfchar *filename);
-};
-
-//////////////////////////////////////////////////////////////////////////////
-} } }
-//////////////////////////////////////////////////////////////////////////////

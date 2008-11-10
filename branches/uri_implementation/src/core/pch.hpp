@@ -50,15 +50,15 @@
 #include <core/db/Statement.h>
 #include <core/db/CachedStatement.h>
 
-#include <core/Query/Base.h>
+//#include <core/Query/Base.h>
 
-#include <core/Track.h>
-#include <core/TrackMeta.h>
+//#include <core/Track.h>
+//#include <core/TrackMeta.h>
 
 #include <core/xml/Node.h>
 #include <core/xml/WriterNode.h>
 #include <core/xml/ParserNode.h>
-#include <core/Library/Base.h>
+//#include <core/Library/Base.h>
 
 /*
 

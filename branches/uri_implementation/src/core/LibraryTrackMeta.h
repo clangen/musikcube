@@ -37,16 +37,10 @@
 #pragma once
 
 //////////////////////////////////////////////////////////////////////////////
-// Forwar declare
-namespace musik{ namespace core{
-    class Track;
-    namespace Library{
-        class Base;
-    }
-} }
-//////////////////////////////////////////////////////////////////////////////
 
 #include <core/config.h>
+#include <core/library/Base.h>
+#include <core/Track.h>
 #include <map>
 #include <boost/utility.hpp>
 
@@ -57,38 +51,23 @@ namespace musik{ namespace core{
 
 //////////////////////////////////////////////////////////////////////////////
 
-class TrackMeta : boost::noncopyable{
+class LibraryTrackMeta : boost::noncopyable{
     public:
-        TrackMeta(Library::Base *library);
-        ~TrackMeta(void);
+        ~LibraryTrackMeta();
 
-
-        typedef std::string Key;
-        typedef utfstring Value;
-        typedef std::multimap<Key,Value> TagMap;
-        typedef TagMap::iterator TagMapIterator;
-        typedef TagMap::const_iterator TagMapConstIterator;
-        typedef std::pair<TagMapConstIterator,TagMapConstIterator> TagMapIteratorPair;
-        typedef std::pair<Key,Value> TagMapPair;
-
-    private:
-        friend class Track;
+/*        friend class Track;
 
         const utfstring& GetValue(const Key &key) const;
         TrackMeta::TagMapIteratorPair GetValues(const char* metakey) const;
         void SetValue(const Key &key,const Value &value);
         void ClearValue(const Key &key);
         const utfchar* GetValue(const char* metakey) const;
-
-        Library::Base *library;
-        TrackMeta::TagMap tags;
-
+*/
+        Track::MetadataMap metadata;
         char *thumbnailData;
-        unsigned int thumbnailSize;
-        void SetThumbnail(const char *data,unsigned int size);
+        long thumbnailSize;
+        musik::core::LibraryPtr library;
 
-    private:
-        const Value& _GetValue(const Key &key) const;
 
 };
 
