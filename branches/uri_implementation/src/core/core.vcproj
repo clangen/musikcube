@@ -488,6 +488,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\Track.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\Track.h"
 					>
 				</File>

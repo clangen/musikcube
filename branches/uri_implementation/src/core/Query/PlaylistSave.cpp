@@ -64,8 +64,8 @@ void Query::PlaylistSave::SavePlaylist(const utfstring playlistName,int playlist
 
 	if(tracklist){
 		for(int i(0);i<tracklist->Size();++i){
-            LibraryTrack *t = (LibraryTrack*)(*tracklist)[i].get();
-			this->tracks.push_back(t->id);
+//            LibraryTrack *t = (LibraryTrack*)(*tracklist)[i].get();
+			this->tracks.push_back( (*tracklist)[i]->Id() );
 		}
 	}
 }

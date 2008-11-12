@@ -45,13 +45,13 @@ namespace musik{ namespace core{
 
 class ITrack {
     public:
+        virtual ~ITrack() = 0;
         virtual const utfchar* GetValue(const char* metakey) = 0;
         virtual void SetValue(const char* metakey,const utfchar* value) = 0;
         virtual void ClearValue(const char* metakey) = 0;
         virtual void SetThumbnail(const char *data,long size) = 0;
         virtual const utfchar* URI() = 0;
         virtual const utfchar* URL() = 0;
-        virtual ~ITrack() = 0;
 };
 
 //////////////////////////////////////////////////////////////////////////////

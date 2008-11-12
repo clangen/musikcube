@@ -199,7 +199,7 @@ void Query::SortTracks::AddTracks(std::vector<int> &tracks){
 void Query::SortTracks::AddTracks(musik::core::tracklist::IRandomAccess &tracks){
     this->tracksToSort.reserve(this->tracksToSort.size()+tracks.Size());
     for(int i(0);i<tracks.Size();++i){
-        this->tracksToSort.push_back(((LibraryTrack*)tracks[i].get())->id);
+        this->tracksToSort.push_back(tracks[i]->Id());
     }
 
 }

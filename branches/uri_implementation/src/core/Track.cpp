@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, mC2 team
+// The following are Copyright © 2008, Daniel Önnerby
 //
 // All rights reserved.
 //
@@ -34,32 +34,26 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "pch.hpp"
+
+#include <core/Track.h>
+#include <core/Library/Base.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/tracklist/Standard.h>
+using namespace musik::core;
 
 //////////////////////////////////////////////////////////////////////////////
 
-namespace musik{ namespace core{ namespace tracklist {
 
-//////////////////////////////////////////////////////////////////////////////
-class Playlist : public Standard {
+Track::~Track(void){
+}
 
-    public:
-        Playlist(int id,utfstring name,musik::core::LibraryPtr library);
-        ~Playlist(void);
+DBINT Track::Id(){
+    return 0;
+}
 
-        utfstring Name();
-        int Id();
-
-    private:
-        int id;
-        utfstring name;
-
-};
-
-//////////////////////////////////////////////////////////////////////////////
-} } } // musik::core::tracklist
-//////////////////////////////////////////////////////////////////////////////
+LibraryPtr Track::Library(){
+    static LibraryPtr nullLibrary;
+    return nullLibrary;
+}

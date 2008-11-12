@@ -57,7 +57,7 @@ namespace musik{ namespace core{
 
 #include <core/config.h>
 #include <core/db/Connection.h>
-#include <core/tracklist/IRandomAccess.h>
+//#include <core/tracklist/IRandomAccess.h>
 
 #include <boost/thread/thread.hpp>
 #include <boost/thread/condition.hpp>
@@ -137,7 +137,7 @@ class Base : boost::noncopyable{
 		int Id();
 		const utfstring& Name();
 
-		musik::core::tracklist::Ptr NowPlaying();
+//		musik::core::tracklist::Ptr NowPlaying();
 
         virtual const std::string& AuthorizationKey();
 
@@ -274,7 +274,7 @@ class Base : boost::noncopyable{
         bool exit;
         boost::condition waitCondition;
 
-		musik::core::tracklist::WeakPtr nowPlaying;
+//		musik::core::tracklist::WeakPtr nowPlaying;
 
     public:
         boost::mutex libraryMutex;

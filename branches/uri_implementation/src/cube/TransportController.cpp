@@ -227,7 +227,12 @@ void TransportController::OnPlaybackStopped(musik::core::TrackPtr track)
         return;
     }
 
-    if (this->displayedTrack->id == track->id) // For out of order signals
+    utfstring trackURI;
+    const utfchar* uri  = track->URI();
+    if(uri)
+        trackURI    = uri;
+
+    if (trackURI == this->displayedTrack->URI()) // For out of order signals
     {
         this->playing = false;
         this->paused = false;

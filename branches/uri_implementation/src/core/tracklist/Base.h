@@ -36,79 +36,41 @@
 
 #pragma once
 
-#include <core/config_filesystem.h>
+//////////////////////////////////////////////////////////////////////////////
+
+#include <core/config.h>
 #include <core/Track.h>
-#include <core/LibraryTrackMeta.h>
-#include <core/Library/Base.h>
-
-
-//////////////////////////////////////////////////////////////////////////////
-// Forward declare
-namespace musik{ namespace core{
-/*    class Track;
-    namespace Library{
-        class Base;
-    }
-    namespace db{
-        class Connection;
-    }*/
-    namespace http{
-        class Responder;
-    }
-} }
-//////////////////////////////////////////////////////////////////////////////
-
-namespace musik{ namespace core{
 
 //////////////////////////////////////////////////////////////////////////////
 
-class LibraryTrack : public Track {
+#include <boost/utility.hpp>
+
+//////////////////////////////////////////////////////////////////////////////
+namespace musik{ namespace core{ namespace tracklist {
+//////////////////////////////////////////////////////////////////////////////
+
+class Base : boost::noncopyable{
     public:
-        LibraryTrack(void);
-        LibraryTrack(DBINT id,int libraryId);
-        virtual ~LibraryTrack(void);
+        virtual ~Base();
 
-        virtual const utfchar* GetValue(const char* metakey);
-        virtual void SetValue(const char* metakey,const utfchar* value);
-        virtual void ClearValue(const char* metakey);
-        virtual void SetThumbnail(const char *data,long size);
-        virtual const utfchar* URI();
-        virtual const utfchar* URL();
+        virtual musik::core::TrackPtr operator [](long position) = 0;
+        virtual musik::core::TrackPtr TrackWithMetadata(long position)=0;
+        virtual musik::core::TrackPtr CurrentTrack()=0;
+        virtual musik::core::TrackPtr NextTrack()=0;
+        virtual musik::core::TrackPtr PreviousTrack()=0;
 
-        virtual MetadataIteratorRange GetValues(const char* metakey);
-        virtual MetadataIteratorRange GetAllValues();
-        virtual TrackPtr Copy();
+        virtual bool SetPosition(long position)=0;
+        virtual long CurrentPosition()=0;
+        virtual long Size() = 0;
+        virtual void Clear() = 0;
 
-        virtual DBINT Id();
-        virtual musik::core::LibraryPtr Library();
+        virtual bool operator =(musik::core::tracklist::Base &tracklist) = 0;
+        virtual bool operator +=(musik::core::tracklist::Base &tracklist) = 0;
+        virtual bool operator +=(musik::core::TrackPtr track) = 0;
 
-    private:
-        // The variables
-        DBINT id;
-        LibraryTrackMeta *meta;
-        int libraryId;
-
-    private:
-
-        void InitMeta();
-
-        // Some special methods for the Indexer
-        friend class Indexer;
-
-        bool CompareDBAndFileInfo(const boost::filesystem::utfpath &file,db::Connection &dbConnection,DBINT currentFolderId);
-        bool Save(db::Connection &dbConnection,utfstring libraryDirectory,DBINT folderId);
-        DBINT _GetGenre(db::Connection &dbConnection,utfstring genre,bool addRelation,bool aggregated=false);
-        DBINT _GetArtist(db::Connection &dbConnection,utfstring artist,bool addRelation,bool aggregated=false);
-
-    private:
-        // Some special methods for the http::Responder
-        friend class http::Responder;
-        bool GetFileData(DBINT id,db::Connection &db);
 };
 
-
 //////////////////////////////////////////////////////////////////////////////
-} } // musik::core
+} } } // musik::core
 //////////////////////////////////////////////////////////////////////////////
-
 

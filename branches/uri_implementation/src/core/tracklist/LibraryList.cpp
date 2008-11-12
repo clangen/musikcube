@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, mC2 team
+// The following are Copyright © 2008, Daniel Önnerby
 //
 // All rights reserved.
 //
@@ -34,31 +34,52 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "pch.hpp"
+#include <core/tracklist/LibraryList.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/config.h>
-#include <core/Track.h>
+using namespace musik::core::tracklist;
 
 //////////////////////////////////////////////////////////////////////////////
 
-#include <boost/utility.hpp>
+musik::core::TrackPtr LibraryList::operator [](long position){
+}
 
-//////////////////////////////////////////////////////////////////////////////
+musik::core::TrackPtr LibraryList::TrackWithMetadata(long position){
+}
 
-namespace musik{ namespace core{
-    namespace tracklist {
+musik::core::TrackPtr LibraryList::CurrentTrack(){
+}
 
-        class IBase : boost::noncopyable{
-            public:
-                virtual ~IBase(void){};
+musik::core::TrackPtr LibraryList::NextTrack(){
+}
 
-                virtual musik::core::TrackPtr CurrentTrack()=0;
-                virtual musik::core::TrackPtr NextTrack()=0;
-                virtual musik::core::TrackPtr PreviousTrack()=0;
+musik::core::TrackPtr LibraryList::PreviousTrack(){
+}
 
-        };
-    }
-} } // musik::core
+
+bool LibraryList::SetPosition(long position){
+}
+
+long LibraryList::CurrentPosition(){
+}
+
+long LibraryList::Size(){
+}
+
+void LibraryList::Clear(){
+}
+
+
+bool LibraryList::operator =(musik::core::tracklist::Base &tracklist){
+}
+
+bool LibraryList::operator +=(musik::core::tracklist::Base &tracklist){
+}
+
+bool LibraryList::operator +=(musik::core::TrackPtr track){
+}
+
+
 

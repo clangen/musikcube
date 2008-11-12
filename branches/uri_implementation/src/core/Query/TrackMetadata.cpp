@@ -155,10 +155,9 @@ bool TrackMetadata::ParseQuery(Library::Base *library,db::Connection &db){
 
     while(!this->aRequestTracks.empty() && !library->QueryCanceled(this)){
         TrackPtr track(this->aRequestTracks.back());
-        LibraryTrack *libTrack  = (LibraryTrack*)track.get();
         this->aRequestTracks.pop_back();
 
-        trackData.BindInt(0,libTrack->id);
+        trackData.BindInt(0,track->Id());
 
         if(trackData.Step()==db::ReturnCode::Row){
 
@@ -177,7 +176,7 @@ bool TrackMetadata::ParseQuery(Library::Base *library,db::Connection &db){
             // Get the meta-value as well
             if(this->requestAllFields){
                 // Get ALL meta
-                allMetadata.BindInt(0,libTrack->id);
+                allMetadata.BindInt(0,track->Id());
                 while(allMetadata.Step()==db::ReturnCode::Row){
                     track->SetValue(allMetadata.ColumnText(1),allMetadata.ColumnTextUTF(0));
                 }
@@ -186,7 +185,7 @@ bool TrackMetadata::ParseQuery(Library::Base *library,db::Connection &db){
             }else{
                 for(std::set<std::string>::iterator metaKey=this->metaFields.begin();metaKey!=this->metaFields.end();++metaKey){
 
-                    metadata.BindInt(0,libTrack->id);
+                    metadata.BindInt(0,track->Id());
                     metadata.BindText(1,metaKey->c_str());
 
                     while(metadata.Step()==db::ReturnCode::Row){
@@ -199,7 +198,7 @@ bool TrackMetadata::ParseQuery(Library::Base *library,db::Connection &db){
 
             // Find genres
             if( this->categoryFields.find("genre")!=this->categoryFields.end() ){
-                genres.BindInt(0,libTrack->id);
+                genres.BindInt(0,track->Id());
                 while(genres.Step()==db::ReturnCode::Row){
                     track->SetValue("genre",genres.ColumnTextUTF(0));
                 }
@@ -208,7 +207,7 @@ bool TrackMetadata::ParseQuery(Library::Base *library,db::Connection &db){
 
             // Find artists
             if( this->categoryFields.find("artist")!=this->categoryFields.end() ){
-                artists.BindInt(0,libTrack->id);
+                artists.BindInt(0,track->Id());
                 while(artists.Step()==db::ReturnCode::Row){
                     track->SetValue("artist",artists.ColumnTextUTF(0));
                 }
@@ -367,7 +366,7 @@ bool TrackMetadata::SendQuery(musik::core::xml::WriterNode &queryNode){
             if(!tracksNode.Content().empty()){
                 tracksNode.Content().append(",");
             }
-            tracksNode.Content().append( boost::lexical_cast<std::string>( ((LibraryTrack*)(*track).get())->id ) );
+            tracksNode.Content().append( boost::lexical_cast<std::string>( (*track)->Id()) );
         }
     }
 
@@ -401,7 +400,7 @@ bool TrackMetadata::SendResults(musik::core::xml::WriterNode &queryNode,Library:
                     (*track)->ClearValue("path");
 
                     musik::core::xml::WriterNode trackNode(queryNode,"t");
-                    trackNode.Attributes()["id"]    = boost::lexical_cast<std::string>( ((LibraryTrack*)(track->get()))->id );
+                    trackNode.Attributes()["id"]    = boost::lexical_cast<std::string>( (*track)->Id() );
 
                     Track::MetadataIteratorRange metaDatas( (*track)->GetAllValues() );
                     for(Track::MetadataMap::const_iterator metaData=metaDatas.first;metaData!=metaDatas.second;++metaData){
@@ -443,7 +442,7 @@ bool TrackMetadata::RecieveResults(musik::core::xml::ParserNode &queryNode,Libra
             TrackVector::iterator track=this->aRequestTracks.begin();
             bool trackFound(false);
             while(track!=this->aRequestTracks.end() && !trackFound){
-                if( ((LibraryTrack*)(track->get()))->id==trackId ){
+                if( (*track)->Id()==trackId ){
                     // TrackPtr found
                     trackFound  = true;
                 }else{
@@ -465,7 +464,7 @@ bool TrackMetadata::RecieveResults(musik::core::xml::ParserNode &queryNode,Libra
                 // Special case for the "path" when connecting to a webserver
                 if(requestPath){
                     utfstring path(pathPrefix);
-                    path    += boost::lexical_cast<utfstring>( ((LibraryTrack*)currentTrack.get())->id);
+                    path    += boost::lexical_cast<utfstring>( currentTrack->Id() );
                     currentTrack->SetValue("path",path.c_str());
                 }
 

@@ -36,7 +36,21 @@
 
 #pragma once
 
+//////////////////////////////////////////////////////////////////////////////
+// Forward declare
+namespace musik{ namespace core{
+    namespace Library{
+        class Base;
+    }
+	typedef boost::shared_ptr<Library::Base> LibraryPtr;
+    class Track;
+    typedef boost::shared_ptr<Track> TrackPtr;
+    typedef std::vector<TrackPtr> TrackVector;
+} }
+//////////////////////////////////////////////////////////////////////////////
+
 #include <core/ITrack.h>
+
 #include <boost/shared_ptr.hpp>
 #include <vector>
 #include <map>
@@ -44,18 +58,12 @@
 //////////////////////////////////////////////////////////////////////////////
 namespace musik{ namespace core{
 //////////////////////////////////////////////////////////////////////////////
-class Track;
-typedef boost::shared_ptr<Track> TrackPtr;
-typedef std::vector<TrackPtr> TrackVector;
-
 
 class Track : public ITrack {
     public:
-/*        virtual const utfchar* GetValue(const char* metakey) const = 0;
-        virtual void SetValue(const char* metakey,const utfchar* value) = 0;
-        virtual void SetThumbnail(const char *data,unsigned int size) = 0;
-        virtual const utfchar* URI() = 0;
-        virtual ~Track() = 0;*/
+        virtual ~Track();
+        virtual DBINT Id();
+        virtual musik::core::LibraryPtr Library();
 
         typedef std::multimap<std::string,utfstring> MetadataMap;
         typedef std::pair<MetadataMap::iterator,MetadataMap::iterator> MetadataIteratorRange;

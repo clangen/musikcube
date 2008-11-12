@@ -85,11 +85,7 @@ const utfchar* LibraryTrack::GetValue(const char* metakey){
 }
 
 void LibraryTrack::SetValue(const char* metakey,const utfchar* value){
-    if(!this->meta){
-        // Create the metadata
-        this->meta  = new LibraryTrackMeta();
-        this->meta->library = LibraryFactory::Instance().GetLibrary(this->libraryId);
-    }
+    this->InitMeta();
 
     if(metakey && value){
         this->meta->metadata.insert(std::pair<std::string,utfstring>(metakey,value));
@@ -105,11 +101,7 @@ void LibraryTrack::ClearValue(const char* metakey){
 
 
 void LibraryTrack::SetThumbnail(const char *data,long size){
-    if(!this->meta){
-        // Create the metadata
-        this->meta  = new LibraryTrackMeta();
-        this->meta->library = LibraryFactory::Instance().GetLibrary(this->libraryId);
-    }
+    this->InitMeta();
 
     if(this->meta->thumbnailData)
         delete this->meta->thumbnailData;
@@ -150,7 +142,24 @@ Track::MetadataIteratorRange LibraryTrack::GetAllValues(){
     return Track::MetadataIteratorRange();
 }
 
+DBINT LibraryTrack::Id(){
+    return this->id;
+}
 
+musik::core::LibraryPtr LibraryTrack::Library(){
+    if(this->meta){
+        return this->meta->library;
+    }
+    return LibraryFactory::Instance().GetLibrary(this->libraryId);
+}
+
+void LibraryTrack::InitMeta(){
+    if(!this->meta){
+        // Create the metadata
+        this->meta  = new LibraryTrackMeta();
+        this->meta->library = LibraryFactory::Instance().GetLibrary(this->libraryId);
+    }
+}
 
 
 bool LibraryTrack::CompareDBAndFileInfo(const boost::filesystem::utfpath &file,db::Connection &dbConnection,DBINT currentFolderId){
@@ -551,11 +560,7 @@ TrackPtr LibraryTrack::Copy(){
 
 
 bool LibraryTrack::GetFileData(DBINT id,db::Connection &db){
-    if(!this->meta){
-        // Create the metadata
-        this->meta  = new LibraryTrackMeta();
-        this->meta->library = LibraryFactory::Instance().GetLibrary(this->libraryId);
-    }
+    this->InitMeta();
 
     this->id    = id;
 

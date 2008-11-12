@@ -68,7 +68,7 @@ Library::Base::Base(utfstring name,int id)
 ///\returns
 ///a tracklist::Ptr
 //////////////////////////////////////////
-musik::core::tracklist::Ptr Library::Base::NowPlaying(){
+/*musik::core::tracklist::Ptr Library::Base::NowPlaying(){
 	if(tracklist::Ptr tracklist	= this->nowPlaying.lock()){
 		return tracklist;
 	}
@@ -80,7 +80,7 @@ musik::core::tracklist::Ptr Library::Base::NowPlaying(){
 		tracklist->SetLibrary(thisPtr);
 	}
 	return tracklist;
-}
+}*/
 
 //////////////////////////////////////////
 ///\brief

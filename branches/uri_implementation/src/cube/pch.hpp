@@ -52,9 +52,7 @@
 
 #include <core/config.h>
 #include <core/LibraryFactory.h>
-#include <core/ITrack.h>
 #include <core/Track.h>
-#include <core/TrackMeta.h>
 #include <core/db/dbconfig.h>
 #include <core/db/CachedStatement.h>
 #include <core/db/Connection.h>

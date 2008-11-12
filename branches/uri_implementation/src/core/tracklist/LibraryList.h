@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, mC2 team
+// The following are Copyright © 2008, Daniel Önnerby
 //
 // All rights reserved.
 //
@@ -34,36 +34,45 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.hpp"
-#include <core/tracklist/Playlist.h>
-
-#include <core/Query/PlaylistLoad.h>
+#pragma once
 
 //////////////////////////////////////////////////////////////////////////////
 
-using namespace musik::core::tracklist;
+#include <core/tracklist/Base.h>
+#include <core/Query/ListBase.h>
+#include <core/Query/TrackMetadata.h>
+#include <core/Library/Base.h>
+
+#include <set>
+#include <sigslot/sigslot.h>
+
+
 
 //////////////////////////////////////////////////////////////////////////////
+namespace musik{ namespace core{ namespace tracklist {
+//////////////////////////////////////////////////////////////////////////////
 
-Playlist::Playlist(int id,utfstring name,musik::core::LibraryPtr library) 
-:Standard()
-,id(0)
-,name(name)
-{
-    this->SetLibrary(library);
+class LibraryList : public Base, public sigslot::has_slots<> {
+    public:
+        virtual musik::core::TrackPtr operator [](long position);
+        virtual musik::core::TrackPtr TrackWithMetadata(long position);
+        virtual musik::core::TrackPtr CurrentTrack();
+        virtual musik::core::TrackPtr NextTrack();
+        virtual musik::core::TrackPtr PreviousTrack();
 
-    // Start by creating a query that loads the tracks
-}
+        virtual bool SetPosition(long position);
+        virtual long CurrentPosition();
+        virtual long Size();
+        virtual void Clear();
 
+        virtual bool operator =(musik::core::tracklist::Base &tracklist);
+        virtual bool operator +=(musik::core::tracklist::Base &tracklist);
+        virtual bool operator +=(musik::core::TrackPtr track);
+    
+    private:
+        std::vector<DBINT> tracklist;
+};
 
-Playlist::~Playlist(void){
-}
-
-utfstring Playlist::Name(){
-    return this->name;
-}
-
-int Playlist::Id(){
-    return this->id;
-}
-
+//////////////////////////////////////////////////////////////////////////////
+} } } // musik::core::tracklist
+//////////////////////////////////////////////////////////////////////////////

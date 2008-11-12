@@ -254,7 +254,7 @@ bool Query::ListBase::SendResults(musik::core::xml::WriterNode &queryNode,Librar
                     if(trackCount!=0){
                         tracks.Content()    += ",";             
                     }
-                    tracks.Content()    += boost::lexical_cast<std::string>( ((LibraryTrack*)track->get())->id );   
+                    tracks.Content()    += boost::lexical_cast<std::string>( (*track)->Id() );   
                     ++track;
                     ++trackCount;
                 }
