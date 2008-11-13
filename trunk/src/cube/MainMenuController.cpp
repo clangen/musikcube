@@ -72,11 +72,11 @@ void        MainMenuController::OnMainWindowCreated(Window* window)
 void        MainMenuController::ConnectMenuHandlers()
 {
     this->fileExit->Activated.connect(this, &MainMenuController::OnFileExit);
-    this->filePreferences->Activated.connect(this, &MainMenuController::OnFilePreferences);
+//    this->filePreferences->Activated.connect(this, &MainMenuController::OnFilePreferences);
     this->helpAbout->Activated.connect(this, &MainMenuController::OnHelpAbout);
     this->fileAddLibraryLocal->Activated.connect(this,&MainMenuController::OnAddLibraryLocal);
     this->fileAddLibraryRemote->Activated.connect(this,&MainMenuController::OnAddLibraryRemote);
-    this->fileNewPlaylist->Activated.connect(this,&MainMenuController::OnNewPlaylist);
+//    this->fileNewPlaylist->Activated.connect(this,&MainMenuController::OnNewPlaylist);
 }
 
 void        MainMenuController::OnFileExit(MenuItemRef menuItem)
