@@ -131,6 +131,7 @@ void ApplicationThread::Initialize()
     // Create helper window
     this->helperWindow = new ApplicationThread::HelperWindow();
     this->helperWindow->Initialize();
+    this->NotifyMainThread();
 }
 
 

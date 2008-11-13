@@ -59,6 +59,7 @@ Application Application::sMainApplication;
 , appThread(NULL)
 , trayIconManager(NULL)
 {
+    this->appThread = new ApplicationThread();
 }
 
 ///\brief
@@ -125,7 +126,6 @@ void            Application::Run(TopLevelWindow& mainWindow)
         mainWindow.Initialize();
     }
 
-    this->appThread = new ApplicationThread();
     this->appThread->Initialize();
 
     this->trayIconManager = new TrayIconManager;
