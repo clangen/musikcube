@@ -32,7 +32,6 @@ Queries and query results:
   * Since the authorization is made when the socket is initialized, we feel that there is no big reason to deal with the overhead of encrypting the whole query stream. You could compare this to logging in to a website using a login form on a https connection and then viewing the content through a normal http connection. It's actually easier to hack that kind of security than hacking the mC2 xmlsockets since the http protocol makes a new connection for each call.
   * Having unencrypted xmlsockets will allow us to make a flash client in the future.
 
-Streaming (this is not activated yet):
+Streaming:
   * The streaming of the tracks are not encrypted, but is authorized with the same authorizationcode generated when initializing the xmlsocket.
   * The streaming will not work unless the user has an open xmlsocket connection coming from the same host as the http connection.
-
