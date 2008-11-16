@@ -40,6 +40,7 @@
 
 #include <core/config.h>
 #include <core/Track.h>
+#include <core/Library/Base.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -53,20 +54,139 @@ class Base : boost::noncopyable{
     public:
         virtual ~Base();
 
-        virtual musik::core::TrackPtr operator [](long position) = 0;
-        virtual musik::core::TrackPtr TrackWithMetadata(long position)=0;
-        virtual musik::core::TrackPtr CurrentTrack()=0;
-        virtual musik::core::TrackPtr NextTrack()=0;
-        virtual musik::core::TrackPtr PreviousTrack()=0;
+		//////////////////////////////////////////
+		///\brief
+		///Get track from a specified position
+		///
+		///\param position
+		///Position in tracklist to get
+		///
+		///\returns
+        ///shared pointer to track (could be a null pointer)
+		//////////////////////////////////////////
+		virtual musik::core::TrackPtr operator [](long position) = 0;
 
-        virtual bool SetPosition(long position)=0;
-        virtual long CurrentPosition()=0;
-        virtual long Size() = 0;
-        virtual void Clear() = 0;
+        //////////////////////////////////////////
+		///\brief
+		///Get track with metadata from a specified position
+		///
+		///\param position
+		///Position in tracklist to get
+		///
+		///\returns
+        ///shared pointer to track (could be a null pointer)
+		///
+        ///This is similar to the operator[], but will also request the metadata.
+        ///If the track does not currently have any metadata, it will be signaled
+        ///using the TrackMetadataUpdated event when data arrives.
+		///
+		///\see
+		///TrackMetadataUpdated
+		//////////////////////////////////////////
+		virtual musik::core::TrackPtr TrackWithMetadata(long position)=0;
 
-        virtual bool operator =(musik::core::tracklist::Base &tracklist) = 0;
-        virtual bool operator +=(musik::core::tracklist::Base &tracklist) = 0;
-        virtual bool operator +=(musik::core::TrackPtr track) = 0;
+        //////////////////////////////////////////
+		///\brief
+		///Get the current track
+		//////////////////////////////////////////
+		virtual musik::core::TrackPtr CurrentTrack()=0;
+
+        //////////////////////////////////////////
+		///\brief
+		///Get the next track and increase the position.
+		//////////////////////////////////////////
+		virtual musik::core::TrackPtr NextTrack()=0;
+
+        //////////////////////////////////////////
+		///\brief
+		///Get the previous track and decrease the position.
+		//////////////////////////////////////////
+		virtual musik::core::TrackPtr PreviousTrack()=0;
+
+        //////////////////////////////////////////
+		///\brief
+		///Set a new position in the tracklist.
+		///
+		///\param position
+		///Position to set.
+		///
+		///\returns
+		///True if position is a valid one and successfully set.
+		//////////////////////////////////////////
+		virtual bool SetPosition(long position)=0;
+
+        //////////////////////////////////////////
+		///\brief
+		///Get the current position. -1 if undefined.
+		//////////////////////////////////////////
+		virtual long CurrentPosition()=0;
+
+        //////////////////////////////////////////
+		///\brief
+		///Get current size of the tracklist. -1 if unknown.
+		//////////////////////////////////////////
+		virtual long Size() = 0;
+
+        //////////////////////////////////////////
+		///\brief
+		///Clear the tracklist
+		//////////////////////////////////////////
+		virtual void Clear() = 0;
+
+        //////////////////////////////////////////
+		///\brief
+        ///Set (copy) tracklist from another tracklist
+		///
+		///\param tracklist
+		///tracklist to copy from
+		///
+		///\returns
+		///True if successfully copied.
+		//////////////////////////////////////////
+		virtual bool operator =(musik::core::tracklist::Base &tracklist) = 0;
+
+        //////////////////////////////////////////
+		///\brief
+		///Append a tracklist to this tracklist
+		///
+		///\param tracklist
+		///tracklist to append to this one
+		///
+		///\returns
+		///True if successfully appended
+		//////////////////////////////////////////
+		virtual bool operator +=(musik::core::tracklist::Base &tracklist) = 0;
+
+        //////////////////////////////////////////
+		///\brief
+		///Append a track to this tracklist
+		///
+		///\param track
+		///Track to add
+		///
+		///\returns
+		///True if successfully appended
+		//////////////////////////////////////////
+		virtual bool operator +=(musik::core::TrackPtr track) = 0;
+
+
+        //////////////////////////////////////////
+		typedef sigslot::signal1<std::vector<long>&> TrackMetadataEvent;
+        //////////////////////////////////////////
+		///\brief
+		///Event, called when metadata has been recieved.
+		///
+        ///The event reciever will get a std::vector<long>& with
+        ///a vector of positions of tracks that has been updated.
+		//////////////////////////////////////////
+		TrackMetadataEvent TrackMetadataUpdated;
+
+        //////////////////////////////////////////
+		///\brief
+		///Get related library. Null pointer if non.
+		//////////////////////////////////////////
+		virtual musik::core::LibraryPtr Library();
+
 
 };
 

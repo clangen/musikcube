@@ -57,3 +57,7 @@ LibraryPtr Track::Library(){
     static LibraryPtr nullLibrary;
     return nullLibrary;
 }
+
+int Track::LibraryId(){
+    return -1;
+}

@@ -43,43 +43,117 @@ using namespace musik::core::tracklist;
 
 //////////////////////////////////////////////////////////////////////////////
 
+LibraryList::LibraryList(musik::core::LibraryPtr library)
+ :library(library)
+ ,currentPosition(-1)
+{
+
+}
+
+
 musik::core::TrackPtr LibraryList::operator [](long position){
+    return musik::core::TrackPtr();
 }
 
 musik::core::TrackPtr LibraryList::TrackWithMetadata(long position){
+    return musik::core::TrackPtr();
 }
 
 musik::core::TrackPtr LibraryList::CurrentTrack(){
+    if(this->SetPosition(this->currentPosition)){
+//TODO
+    }
+    return musik::core::TrackPtr();
 }
 
 musik::core::TrackPtr LibraryList::NextTrack(){
+    return musik::core::TrackPtr();
 }
 
 musik::core::TrackPtr LibraryList::PreviousTrack(){
+    return musik::core::TrackPtr();
 }
 
 
 bool LibraryList::SetPosition(long position){
+    if(position>=0 && position<this->tracklist.size()){
+        this->currentPosition   = position;
+        return true;
+    }
+
+    this->currentPosition   = -1;
+    return false;
 }
 
 long LibraryList::CurrentPosition(){
+    return this->currentPosition;
 }
 
 long LibraryList::Size(){
+    return this->tracklist.size();
 }
 
 void LibraryList::Clear(){
+    this->tracklist.clear();
+    this->currentPosition   = -1;
 }
 
 
 bool LibraryList::operator =(musik::core::tracklist::Base &tracklist){
+    this->Clear();
+    this->tracklist.reserve(tracklist.Size());
+
+    int libraryId   = this->library->Id();
+    bool success(false);
+    // Loop through the tracks and copy everything
+    for(long i(0);i<tracklist.Size();++i){
+        musik::core::TrackPtr currentTrack  = tracklist[i];
+        if(currentTrack->Id()==libraryId){
+            // Same library, append
+            this->tracklist.push_back(currentTrack->Id());
+            success=true;
+        }
+    }
+
+    return false;
 }
 
+//////////////////////////////////////////
+///\brief
+///Append tracks from another tracklist
+///
+///It will append all tracks that comes from
+///the same library and ignore the rest.
+//////////////////////////////////////////
 bool LibraryList::operator +=(musik::core::tracklist::Base &tracklist){
+
+    this->tracklist.reserve(tracklist.Size()+this->Size());
+
+    int libraryId   = this->library->Id();
+    bool success(false);
+    // Loop through the tracks and copy everything
+    for(long i(0);i<tracklist.Size();++i){
+        musik::core::TrackPtr currentTrack  = tracklist[i];
+        if(currentTrack->Id()==libraryId){
+            // Same library, append
+            this->tracklist.push_back(currentTrack->Id());
+            success=true;
+        }
+    }
+
+    return success;
 }
 
 bool LibraryList::operator +=(musik::core::TrackPtr track){
+    if(this->library->Id()==track->LibraryId()){
+        this->tracklist.push_back(track->Id());
+        return true;
+    }
+    return false;
 }
 
+musik::core::LibraryPtr LibraryList::Library(){
+    return this->library;
+}
 
 

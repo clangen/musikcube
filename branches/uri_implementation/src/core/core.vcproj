@@ -242,27 +242,37 @@
 				Name="tracklist"
 				>
 				<File
-					RelativePath=".\tracklist\IBase.h"
+					RelativePath=".\tracklist\Base.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)2.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)2.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)2.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)2.xdc"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath=".\tracklist\Base.h"
 					>
 				</File>
 				<File
-					RelativePath=".\tracklist\IRandomAccess.h"
+					RelativePath=".\tracklist\LibraryList.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\tracklist\Playlist.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\tracklist\Playlist.h"
-					>
-				</File>
-				<File
-					RelativePath=".\tracklist\Standard.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\tracklist\Standard.h"
+					RelativePath=".\tracklist\LibraryList.h"
 					>
 				</File>
 			</Filter>

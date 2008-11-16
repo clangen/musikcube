@@ -153,6 +153,12 @@ musik::core::LibraryPtr LibraryTrack::Library(){
     return LibraryFactory::Instance().GetLibrary(this->libraryId);
 }
 
+int LibraryTrack::LibraryId(){
+    return this->libraryId;
+}
+
+
+
 void LibraryTrack::InitMeta(){
     if(!this->meta){
         // Create the metadata

@@ -81,6 +81,7 @@ class LibraryTrack : public Track {
 
         virtual DBINT Id();
         virtual musik::core::LibraryPtr Library();
+        virtual int LibraryId();
 
     private:
         // The variables
