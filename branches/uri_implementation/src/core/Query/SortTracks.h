@@ -44,7 +44,7 @@
 
 #include <core/config.h>
 #include <core/Query/ListBase.h>
-#include <core/tracklist/IRandomAccess.h>
+#include <core/tracklist/LibraryList.h>
 
 
 
@@ -59,7 +59,7 @@ namespace musik{ namespace core{
 
                 void AddTrack(int trackId);
                 void AddTracks(std::vector<int> &tracks);
-                void AddTracks(musik::core::tracklist::IRandomAccess &tracks);
+                void AddTracks(musik::core::tracklist::LibraryList &tracks);
 
                 void ClearTracks();
 

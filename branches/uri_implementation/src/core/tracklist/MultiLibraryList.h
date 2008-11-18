@@ -54,9 +54,9 @@
 namespace musik{ namespace core{ namespace tracklist {
 //////////////////////////////////////////////////////////////////////////////
 
-class LibraryList : public Base, public sigslot::has_slots<> {
+class MultiLibraryList : public Base, public sigslot::has_slots<> {
     public:
-        LibraryList(musik::core::LibraryPtr library);
+        MultiLibraryList();
 
         virtual musik::core::TrackPtr operator [](long position);
         virtual musik::core::TrackPtr TrackWithMetadata(long position);
@@ -73,8 +73,6 @@ class LibraryList : public Base, public sigslot::has_slots<> {
         virtual bool operator +=(musik::core::tracklist::Base &tracklist);
         virtual bool operator +=(musik::core::TrackPtr track);
     
-		virtual musik::core::LibraryPtr Library();
-
     private:
         void LoadTrack(long position);
         bool QueryForTrack(long position);
@@ -84,11 +82,8 @@ class LibraryList : public Base, public sigslot::has_slots<> {
         //////////////////////////////////////////
 		///\brief
 		///Internal representation of the tracklist.
-		///
-        ///This is used instead of a std::vector<TrackPtr> because of
-        ///speed and memory issues.
 		//////////////////////////////////////////
-		std::vector<DBINT> tracklist;
+        std::vector<musik::core::TrackPtr> tracklist;
 
     private:
 		//////////////////////////////////////////
@@ -102,11 +97,10 @@ class LibraryList : public Base, public sigslot::has_slots<> {
 
 		//////////////////////////////////////////
 
-        musik::core::LibraryPtr library;
-
         long currentPosition;
 
-        musik::core::Query::TrackMetadata metadataQuery;
+        typedef std::map<int,musik::core::Query::TrackMetadata> MetadataQueryMap;
+        MetadataQueryMap metadataQueries;
 
         long hintedRows;
 

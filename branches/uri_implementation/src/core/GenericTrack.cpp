@@ -34,57 +34,81 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "pch.hpp"
 
-//////////////////////////////////////////////////////////////
-// Forward declarations
-//////////////////////////////////////////////////////////////
-namespace musik{ namespace core{
-    namespace Library{
-        class Base;
+#include <core/GenericTrack.h>
+
+//////////////////////////////////////////////////////////////////////////////
+
+using namespace musik::core;
+
+//////////////////////////////////////////////////////////////////////////////
+
+GenericTrack::GenericTrack(void)
+{
+}
+
+GenericTrack::GenericTrack(const utfchar *uri)
+{
+    if(uri){
+        this->uri   = uri;
     }
-} }
+}
 
-//////////////////////////////////////////////////////////////
+GenericTrack::~GenericTrack(void){
+}
 
-#include <core/config.h>
-#include <core/Query/Base.h>
-#include <core/tracklist/LibraryList.h>
+const utfchar* GenericTrack::GetValue(const char* metakey){
+    if(metakey){
+        MetadataMap::iterator metavalue = this->metadata.find(metakey);
+        if(metavalue!=this->metadata.end()){
+            return metavalue->second.c_str();
+        }
+    }
+    return NULL;
+}
 
-#include <boost/shared_ptr.hpp>
-#include <boost/function.hpp>
-#include <vector>
-#include <sigslot/sigslot.h>
+void GenericTrack::SetValue(const char* metakey,const utfchar* value){
+    if(metakey && value){
+        this->metadata.insert(std::pair<std::string,utfstring>(metakey,value));
+    }
+}
 
-//////////////////////////////////////////////////////////////
+void GenericTrack::ClearValue(const char* metakey){
+    this->metadata.erase(metakey);
+}
 
-namespace musik{ namespace core{ namespace Query{
 
-//////////////////////////////////////////////////////////////
 
-class Playlists : public Query::Base{
-    public:
-        Playlists(void);
-        ~Playlists(void);
+void GenericTrack::SetThumbnail(const char *data,long size){
+}
 
-        typedef std::vector<musik::core::tracklist::Ptr> TracklistVector;
-        typedef sigslot::signal1<TracklistVector> PlaylistListEvent;
+const utfchar* GenericTrack::URI(){
+    if(!this->uri.empty()){
+        return this->uri.c_str();
+    }
+    return NULL;
+}
 
-        PlaylistListEvent PlaylistList;
+const utfchar* GenericTrack::URL(){
+    if(!this->uri.empty()){
+        return this->uri.c_str();
+    }
+    return NULL;
+}
 
-    protected:
+Track::MetadataIteratorRange GenericTrack::GetValues(const char* metakey){
+    return this->metadata.equal_range(metakey);
+}
 
-        bool RunCallbacks(Library::Base *library);
-        virtual bool ParseQuery(Library::Base *library,db::Connection &db);
+Track::MetadataIteratorRange GenericTrack::GetAllValues(){
+    return Track::MetadataIteratorRange(this->metadata.begin(),this->metadata.end());
+}
 
-        Ptr copy() const;
 
-    private:
-        TracklistVector tracklistVector;
-};
 
-//////////////////////////////////////////////////////////////
-} } }
-//////////////////////////////////////////////////////////////
 
+TrackPtr GenericTrack::Copy(){
+    return TrackPtr(new GenericTrack(this->uri.c_str()));
+}
 

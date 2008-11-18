@@ -36,55 +36,59 @@
 
 #pragma once
 
-//////////////////////////////////////////////////////////////
-// Forward declarations
-//////////////////////////////////////////////////////////////
+#include <core/config_filesystem.h>
+#include <core/Track.h>
+#include <core/LibraryTrackMeta.h>
+#include <core/Library/Base.h>
+
+
+//////////////////////////////////////////////////////////////////////////////
+// Forward declare
 namespace musik{ namespace core{
+/*    class Track;
     namespace Library{
         class Base;
     }
+    namespace db{
+        class Connection;
+    }*/
+    namespace http{
+        class Responder;
+    }
 } }
+//////////////////////////////////////////////////////////////////////////////
 
-//////////////////////////////////////////////////////////////
+namespace musik{ namespace core{
 
-#include <core/config.h>
-#include <core/Query/Base.h>
-#include <core/tracklist/LibraryList.h>
+//////////////////////////////////////////////////////////////////////////////
 
-#include <boost/shared_ptr.hpp>
-#include <boost/function.hpp>
-#include <vector>
-#include <sigslot/sigslot.h>
-
-//////////////////////////////////////////////////////////////
-
-namespace musik{ namespace core{ namespace Query{
-
-//////////////////////////////////////////////////////////////
-
-class Playlists : public Query::Base{
+class GenericTrack : public Track {
     public:
-        Playlists(void);
-        ~Playlists(void);
+        GenericTrack(void);
+        GenericTrack(const utfchar *uri);
+        virtual ~GenericTrack(void);
 
-        typedef std::vector<musik::core::tracklist::Ptr> TracklistVector;
-        typedef sigslot::signal1<TracklistVector> PlaylistListEvent;
+        virtual const utfchar* GetValue(const char* metakey);
+        virtual void SetValue(const char* metakey,const utfchar* value);
+        virtual void ClearValue(const char* metakey);
+        virtual void SetThumbnail(const char *data,long size);
+        virtual const utfchar* URI();
+        virtual const utfchar* URL();
 
-        PlaylistListEvent PlaylistList;
-
-    protected:
-
-        bool RunCallbacks(Library::Base *library);
-        virtual bool ParseQuery(Library::Base *library,db::Connection &db);
-
-        Ptr copy() const;
+        virtual MetadataIteratorRange GetValues(const char* metakey);
+        virtual MetadataIteratorRange GetAllValues();
+        virtual TrackPtr Copy();
 
     private:
-        TracklistVector tracklistVector;
+        // The variables
+        utfstring uri;
+        Track::MetadataMap metadata;
+
 };
 
-//////////////////////////////////////////////////////////////
-} } }
-//////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////
+} } // musik::core
+//////////////////////////////////////////////////////////////////////////////
 
 

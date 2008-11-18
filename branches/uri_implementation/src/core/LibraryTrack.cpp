@@ -65,6 +65,14 @@ LibraryTrack::LibraryTrack(DBINT id,int libraryId)
 {
 }
 
+LibraryTrack::LibraryTrack(DBINT id,musik::core::LibraryPtr library)
+ :meta(NULL)
+ ,id(id)
+ ,libraryId(library->Id())
+{
+}
+
+
 
 LibraryTrack::~LibraryTrack(void){
     if(this->meta){

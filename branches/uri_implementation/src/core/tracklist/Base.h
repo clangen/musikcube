@@ -171,6 +171,17 @@ class Base : boost::noncopyable{
 
 
         //////////////////////////////////////////
+		///\brief
+		///Get related library. Null pointer if non.
+		//////////////////////////////////////////
+		virtual musik::core::LibraryPtr Library();
+
+        /////////////////////////////////////////////////////////////////////////////
+        // EVENTS
+        /////////////////////////////////////////////////////////////////////////////
+
+
+        //////////////////////////////////////////
 		typedef sigslot::signal1<std::vector<long>&> TrackMetadataEvent;
         //////////////////////////////////////////
 		///\brief
@@ -181,11 +192,38 @@ class Base : boost::noncopyable{
 		//////////////////////////////////////////
 		TrackMetadataEvent TrackMetadataUpdated;
 
+
+        //////////////////////////////////////////
+        typedef sigslot::signal3<UINT64,UINT64,UINT64> SummaryInfoEvent;
         //////////////////////////////////////////
 		///\brief
-		///Get related library. Null pointer if non.
+		///Event, called when summary has been updated
+		///
+        ///The event reciever will get 3 UINT64 parameters
 		//////////////////////////////////////////
-		virtual musik::core::LibraryPtr Library();
+        SummaryInfoEvent SummaryInfoUpdated;
+
+
+        //////////////////////////////////////////
+        typedef sigslot::signal1<bool> TracklistChangedEvent;
+        //////////////////////////////////////////
+		///\brief
+		///Event, called when tracks inside the tracklist has been added/changed
+		///
+        ///The event reciever will get a bool set to true if the list has been cleared first
+		//////////////////////////////////////////
+        TracklistChangedEvent TracklistChanged;
+
+
+        //////////////////////////////////////////
+        typedef sigslot::signal2<long,long> PositionChangedEvent;
+        //////////////////////////////////////////
+		///\brief
+		///Event, called when position in tracklist has been updated
+		///
+        ///The event reciever will get the nex position, and the old position
+		//////////////////////////////////////////
+        PositionChangedEvent PositionChanged;
 
 
 };

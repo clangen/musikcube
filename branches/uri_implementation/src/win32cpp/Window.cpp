@@ -795,7 +795,7 @@ bool        Window::Resize(const Size& size)
         }
 
         return (result == TRUE);
-    }
+    } 
 
     return false;
 }

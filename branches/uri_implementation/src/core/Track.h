@@ -36,6 +36,9 @@
 
 #pragma once
 
+#include <boost/shared_ptr.hpp>
+#include <vector>
+
 //////////////////////////////////////////////////////////////////////////////
 // Forward declare
 namespace musik{ namespace core{
@@ -51,8 +54,6 @@ namespace musik{ namespace core{
 
 #include <core/ITrack.h>
 
-#include <boost/shared_ptr.hpp>
-#include <vector>
 #include <map>
 
 //////////////////////////////////////////////////////////////////////////////

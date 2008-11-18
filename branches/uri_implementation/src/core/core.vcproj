@@ -275,6 +275,14 @@
 					RelativePath=".\tracklist\LibraryList.h"
 					>
 				</File>
+				<File
+					RelativePath=".\tracklist\MultiLibraryList.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\tracklist\MultiLibraryList.h"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="database"
@@ -346,30 +354,6 @@
 					</File>
 					<File
 						RelativePath=".\Query\ListSelection.h"
-						>
-					</File>
-					<File
-						RelativePath=".\Query\PlaylistLoad.cpp"
-						>
-					</File>
-					<File
-						RelativePath=".\Query\PlaylistLoad.h"
-						>
-					</File>
-					<File
-						RelativePath=".\Query\Playlists.cpp"
-						>
-					</File>
-					<File
-						RelativePath=".\Query\Playlists.h"
-						>
-					</File>
-					<File
-						RelativePath=".\Query\PlaylistSave.cpp"
-						>
-					</File>
-					<File
-						RelativePath=".\Query\PlaylistSave.h"
 						>
 					</File>
 					<File
@@ -462,26 +446,6 @@
 				Name="metadata"
 				>
 				<File
-					RelativePath=".\ITrack.h"
-					>
-				</File>
-				<File
-					RelativePath=".\LibraryTrack.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\LibraryTrack.h"
-					>
-				</File>
-				<File
-					RelativePath=".\LibraryTrackMeta.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\LibraryTrackMeta.h"
-					>
-				</File>
-				<File
 					RelativePath=".\MetadataValue.cpp"
 					>
 				</File>
@@ -495,14 +459,6 @@
 				</File>
 				<File
 					RelativePath=".\MetaKey.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Track.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Track.h"
 					>
 				</File>
 				<File
@@ -789,6 +745,46 @@
 				</File>
 				<File
 					RelativePath=".\filestreams\LocalFileStream.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="tracks"
+				>
+				<File
+					RelativePath=".\GenericTrack.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\GenericTrack.h"
+					>
+				</File>
+				<File
+					RelativePath=".\ITrack.h"
+					>
+				</File>
+				<File
+					RelativePath=".\LibraryTrack.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\LibraryTrack.h"
+					>
+				</File>
+				<File
+					RelativePath=".\LibraryTrackMeta.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\LibraryTrackMeta.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Track.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Track.h"
 					>
 				</File>
 			</Filter>

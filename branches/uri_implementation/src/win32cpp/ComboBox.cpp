@@ -43,10 +43,15 @@
 
 using namespace win32cpp;
 
+const LPCWSTR ComboBox::BoxType_Standard = WC_COMBOBOX;
+const LPCWSTR ComboBox::BoxType_Extended = WC_COMBOBOXEX;
+
 ComboBox::ModelRef ComboBox::sNullModel(new ComboBox::NullModel());
 
-ComboBox::ComboBox() :
-model(ComboBox::sNullModel)
+ComboBox::ComboBox(DisplayType displayType, LPCWSTR boxType) :
+model(ComboBox::sNullModel),
+displayType(displayType),
+boxType(boxType)
 {
 }
 
@@ -70,12 +75,12 @@ HWND ComboBox::Create(Window* parent)
      *       must be adapted to a send/retrieve behaviour or we must implement a
      *       callback behaviour with CBEN_GETDISPINFO. (as it is in the ListView)
      */
-    DWORD style = WS_CHILD | WS_VISIBLE | WS_BORDER | CBS_DROPDOWNLIST;
+    DWORD style = WS_CHILD | WS_VISIBLE | WS_BORDER | displayType;
 
     // Create the ComboBox
     HWND hwnd = CreateWindowEx(
         NULL,                       // ExStyle
-        WC_COMBOBOXEX,              // Class name
+        boxType,                    // Class name
         _T(""),                     // Window name
         style,                      // Style
         0,                          // X
@@ -90,6 +95,10 @@ HWND ComboBox::Create(Window* parent)
     return hwnd;
 }
 
+bool ComboBox::Info(PCOMBOBOXINFO pcbi)
+{
+    return !!(::GetComboBoxInfo(this->windowHandle, pcbi));
+}
 
 void ComboBox::SetModel(ModelRef model)
 {

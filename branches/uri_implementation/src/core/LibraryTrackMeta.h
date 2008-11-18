@@ -39,8 +39,8 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <core/config.h>
-#include <core/library/Base.h>
 #include <core/Track.h>
+#include <core/library/Base.h>
 #include <map>
 #include <boost/utility.hpp>
 

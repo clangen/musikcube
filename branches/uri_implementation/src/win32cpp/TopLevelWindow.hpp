@@ -90,6 +90,7 @@ private: // instance data
     bool closed;
     Size minSize;
     TopLevelWindow* modalChild;
+    Window* parentWindow;
 };
 
 //////////////////////////////////////////////////////////////////////////////

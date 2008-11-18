@@ -66,6 +66,7 @@ class LibraryTrack : public Track {
     public:
         LibraryTrack(void);
         LibraryTrack(DBINT id,int libraryId);
+        LibraryTrack(DBINT id,musik::core::LibraryPtr library);
         virtual ~LibraryTrack(void);
 
         virtual const utfchar* GetValue(const char* metakey);

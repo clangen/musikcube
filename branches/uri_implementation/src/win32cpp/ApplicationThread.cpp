@@ -86,7 +86,10 @@ bool ApplicationThread::InMainThread()
 //////////////////////////////////////////
 void ApplicationThread::AddCall(CallClassBase *callClass)
 {
-    this->calls.push_back(CallClassPtr(callClass));
+    {
+        boost::mutex::scoped_lock lock(this->mutex);
+        this->calls.push_back(CallClassPtr(callClass));
+    }
     this->NotifyMainThread();
 }
 
@@ -128,6 +131,7 @@ void ApplicationThread::Initialize()
     // Create helper window
     this->helperWindow = new ApplicationThread::HelperWindow();
     this->helperWindow->Initialize();
+    this->NotifyMainThread();
 }
 
 

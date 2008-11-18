@@ -62,6 +62,7 @@ using namespace win32cpp;
 , minSize(0, 0)
 , closed(false)
 , modalChild(NULL)
+, parentWindow(NULL)
 {
 }
 
@@ -118,8 +119,8 @@ HWND        TopLevelWindow::Create(Window* parent)
         style,                      // Style
         CW_USEDEFAULT,              // X
         CW_USEDEFAULT,              // Y
-        240,                        // Width
-        120,                        // Height
+        (this->minSize.width) ? this->minSize.width : 240,  // Width
+        (this->minSize.height) ? this->minSize.height: 120, // Height
         parentHWND,                 // Parent
         NULL,                       // Menu
         hInstance,                  // Instance
@@ -170,6 +171,22 @@ LRESULT     TopLevelWindow::WindowProc(UINT message, WPARAM wParam, LPARAM lPara
 
     case WM_CLOSE:
         {
+            // Close handler is used together with ShowModal
+            // According to http://msdn.microsoft.com/en-us/library/ms646291.aspx
+            // we need to do:
+            // "A window must be enabled before it can be activated. For example, 
+            //  if an application is displaying a modeless dialog box and has disabled 
+            //  its main window, the application must enable the main window before 
+            //  destroying the dialog box. Otherwise, another window will receive the 
+            //  keyboard focus and be activated."
+            if(this->parentWindow) {
+                this->parentWindow->Enable(true);   
+                SetForegroundWindow(this->parentWindow->Handle());
+                BringWindowToTop(this->parentWindow->Handle());
+                
+                this->parentWindow = NULL;
+            }
+
             this->closed = true;
         }
         break;
@@ -272,7 +289,13 @@ void        TopLevelWindow::ShowModal(TopLevelWindow* parent)
     if (parent)
     {
         parent->modalChild = this;
+        
+        // Disable keyboard/mouse input on the parent window,
+        // this also means it gets deactivated (NOT in foreground)
         parent->Enable(false);
+
+        // Remember the parent window
+        this->parentWindow = parent;
     }
 
     try
@@ -320,8 +343,10 @@ void        TopLevelWindow::ShowModal(TopLevelWindow* parent)
     if (parent) 
     {
         parent->modalChild = NULL;
-        parent->Enable(true);
-        parent->SetFocus();
+    }
+
+    if (this->parentWindow) {
+        this->parentWindow = NULL;
     }
 }
 

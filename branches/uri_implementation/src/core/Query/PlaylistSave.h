@@ -44,7 +44,7 @@
 
 #include <core/config.h>
 #include <core/Query/Base.h>
-#include <core/tracklist/IRandomAccess.h>
+#include <core/tracklist/LibraryList.h>
 
 //////////////////////////////////////////////////////////////
 // Forward declarations

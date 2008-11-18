@@ -35,8 +35,9 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
-#include <core/tracklist/LibraryList.h>
+#include <core/tracklist/MultiLibraryList.h>
 #include <core/LibraryTrack.h>
+#include <core/LibraryFactory.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -44,9 +45,8 @@ using namespace musik::core::tracklist;
 
 //////////////////////////////////////////////////////////////////////////////
 
-LibraryList::LibraryList(musik::core::LibraryPtr library)
- :library(library)
- ,currentPosition(-1)
+MultiLibraryList::MultiLibraryList()
+ :currentPosition(-1)
  ,hintedRows(10)
 {
 
@@ -63,15 +63,10 @@ LibraryList::LibraryList(musik::core::LibraryPtr library)
 ///\returns
 ///shared pointer to track (could be a null pointer)
 //////////////////////////////////////////
-musik::core::TrackPtr LibraryList::operator [](long position){
+musik::core::TrackPtr MultiLibraryList::operator [](long position){
     // Valid position?
     if(position>=0 && position<this->Size()){
-        // If in cache?
-        PositionCacheMap::iterator trackPosition    = this->positionCache.find(position);
-        if(trackPosition!=this->positionCache.end()){
-            return trackPosition->second;
-        }
-        return musik::core::TrackPtr(new LibraryTrack(this->tracklist[position],this->library));
+        return this->tracklist[position];
     }
     return musik::core::TrackPtr();
 }
@@ -93,7 +88,7 @@ musik::core::TrackPtr LibraryList::operator [](long position){
 ///\see
 ///TrackMetadataUpdated
 //////////////////////////////////////////
-musik::core::TrackPtr LibraryList::TrackWithMetadata(long position){
+musik::core::TrackPtr MultiLibraryList::TrackWithMetadata(long position){
 
     // check the positionCache if the track is in the cache already
     PositionCacheMap::iterator trackPosition    = this->positionCache.find(position);
@@ -111,7 +106,7 @@ musik::core::TrackPtr LibraryList::TrackWithMetadata(long position){
 ///\brief
 ///Get the current track
 //////////////////////////////////////////
-musik::core::TrackPtr LibraryList::CurrentTrack(){
+musik::core::TrackPtr MultiLibraryList::CurrentTrack(){
     if(this->currentPosition==-1 && this->Size()>0){
         this->SetPosition(0);
     }
@@ -123,7 +118,7 @@ musik::core::TrackPtr LibraryList::CurrentTrack(){
 ///\brief
 ///Get the next track and increase the position.
 //////////////////////////////////////////
-musik::core::TrackPtr LibraryList::NextTrack(){
+musik::core::TrackPtr MultiLibraryList::NextTrack(){
     long newPosition    = this->currentPosition+1;
     musik::core::TrackPtr nextTrack = (*this)[newPosition];
     if(nextTrack){
@@ -136,7 +131,7 @@ musik::core::TrackPtr LibraryList::NextTrack(){
 ///\brief
 ///Get the previous track and decrease the position.
 //////////////////////////////////////////
-musik::core::TrackPtr LibraryList::PreviousTrack(){
+musik::core::TrackPtr MultiLibraryList::PreviousTrack(){
     long newPosition    = this->currentPosition-1;
     musik::core::TrackPtr nextTrack = (*this)[newPosition];
     if(nextTrack){
@@ -156,7 +151,7 @@ musik::core::TrackPtr LibraryList::PreviousTrack(){
 ///\returns
 ///True if position is a valid one and successfully set.
 //////////////////////////////////////////
-bool LibraryList::SetPosition(long position){
+bool MultiLibraryList::SetPosition(long position){
     if(position>=0 && position<this->tracklist.size()){
         this->PositionChanged(position,this->currentPosition);
         this->currentPosition   = position;
@@ -170,7 +165,7 @@ bool LibraryList::SetPosition(long position){
 ///\brief
 ///Get the current position. -1 if undefined.
 //////////////////////////////////////////
-long LibraryList::CurrentPosition(){
+long MultiLibraryList::CurrentPosition(){
     return this->currentPosition;
 }
 
@@ -178,7 +173,7 @@ long LibraryList::CurrentPosition(){
 ///\brief
 ///Get current size of the tracklist. -1 if unknown.
 //////////////////////////////////////////
-long LibraryList::Size(){
+long MultiLibraryList::Size(){
     return (long)this->tracklist.size();
 }
 
@@ -186,7 +181,7 @@ long LibraryList::Size(){
 ///\brief
 ///Clear the tracklist
 //////////////////////////////////////////
-void LibraryList::Clear(){
+void MultiLibraryList::Clear(){
     this->tracklist.clear();
     this->TracklistChanged(true);
     this->PositionChanged(-1,this->currentPosition);
@@ -204,40 +199,19 @@ void LibraryList::Clear(){
 ///\returns
 ///True if successfully copied.
 //////////////////////////////////////////
-bool LibraryList::operator =(musik::core::tracklist::Base &tracklist){
+bool MultiLibraryList::operator =(musik::core::tracklist::Base &tracklist){
     this->Clear();
-
-    // optimize if dynamic_cast works
-    LibraryList *fromLibraryList    = dynamic_cast<LibraryList*>(&tracklist);
-    if(fromLibraryList){
-        if(fromLibraryList->library==this->library){
-            this->tracklist         = fromLibraryList->tracklist;
-            this->TracklistChanged(true);
-            this->SetPosition(fromLibraryList->CurrentPosition());
-            return true;
-        }
-        this->TracklistChanged(true);
-        return false;
-    }
-
 
     this->tracklist.reserve(tracklist.Size());
 
-    int libraryId   = this->library->Id();
-    bool success(false);
     // Loop through the tracks and copy everything
     for(long i(0);i<tracklist.Size();++i){
-        musik::core::TrackPtr currentTrack  = tracklist[i];
-        if(currentTrack->Id()==libraryId){
-            // Same library, append
-            this->tracklist.push_back(currentTrack->Id());
-            success=true;
-        }
+        this->tracklist.push_back(tracklist[i]);
     }
     this->TracklistChanged(true);
     this->SetPosition(tracklist.CurrentPosition());
 
-    return success;
+    return true;
 }
 
 //////////////////////////////////////////
@@ -247,27 +221,18 @@ bool LibraryList::operator =(musik::core::tracklist::Base &tracklist){
 ///It will append all tracks that comes from
 ///the same library and ignore the rest.
 //////////////////////////////////////////
-bool LibraryList::operator +=(musik::core::tracklist::Base &tracklist){
+bool MultiLibraryList::operator +=(musik::core::tracklist::Base &tracklist){
 
     this->tracklist.reserve(tracklist.Size()+this->Size());
 
-    int libraryId   = this->library->Id();
-    bool success(false);
     // Loop through the tracks and copy everything
     for(long i(0);i<tracklist.Size();++i){
-        musik::core::TrackPtr currentTrack  = tracklist[i];
-        if(currentTrack->Id()==libraryId){
-            // Same library, append
-            this->tracklist.push_back(currentTrack->Id());
-            success=true;
-        }
+        this->tracklist.push_back(tracklist[i]);
     }
 
-    if(success){
-        this->TracklistChanged(false);
-    }
+    this->TracklistChanged(false);
 
-    return success;
+    return true;
 }
 
 //////////////////////////////////////////
@@ -280,32 +245,16 @@ bool LibraryList::operator +=(musik::core::tracklist::Base &tracklist){
 ///\returns
 ///True if successfully appended
 //////////////////////////////////////////
-bool LibraryList::operator +=(musik::core::TrackPtr track){
-    if(this->library->Id()==track->LibraryId()){
-        this->tracklist.push_back(track->Id());
-
-        this->TracklistChanged(false);
-
-        return true;
-    }
-    return false;
+bool MultiLibraryList::operator +=(musik::core::TrackPtr track){
+    this->tracklist.push_back(track);
+    return true;
 }
-
-//////////////////////////////////////////
-///\brief
-///Get related library. Null pointer if non.
-//////////////////////////////////////////
-musik::core::LibraryPtr LibraryList::Library(){
-    return this->library;
-}
-
-
 
 //////////////////////////////////////////
 ///\brief
 ///Load a tracks metadata (if not already loaded) 
 //////////////////////////////////////////
-void LibraryList::LoadTrack(long position){
+void MultiLibraryList::LoadTrack(long position){
     if(this->QueryForTrack(position)){
         // If the track should load, then preload others as well
 
@@ -319,10 +268,15 @@ void LibraryList::LoadTrack(long position){
         }
 
         // Send the query to the library
-        this->library->AddQuery(this->metadataQuery,musik::core::Query::Prioritize);
+        for(MetadataQueryMap::iterator query=this->metadataQueries.begin();query!=this->metadataQueries.end();++query){
+            musik::core::LibraryPtr library = musik::core::LibraryFactory::Instance().GetLibrary(query->first);
+            if(library){
+                library->AddQuery(query->second,musik::core::Query::Prioritize);
+            }
+        }
 
         // Finally, clear the query for futher metadata
-        this->metadataQuery.Clear();
+        this->metadataQueries.clear();
     }
 }
 
@@ -330,7 +284,7 @@ void LibraryList::LoadTrack(long position){
 ///\brief
 ///Request metadata for track
 //////////////////////////////////////////
-bool LibraryList::QueryForTrack(long position){
+bool MultiLibraryList::QueryForTrack(long position){
     PositionCacheMap::iterator trackIt=this->positionCache.find(position);
     if(trackIt==this->positionCache.end()){
         // Not in cache, lets find the track
@@ -341,7 +295,7 @@ bool LibraryList::QueryForTrack(long position){
             this->trackCache[track]         = position;
 
             // Finally, lets add it to the query
-            this->metadataQuery.RequestTrack(track);
+            this->metadataQueries[track->LibraryId()].RequestTrack(track);
             return true;
         }
     }

@@ -37,7 +37,6 @@
 #pragma once
 
 #include <core/config.h>
-#include <core/filestreams/IFileStream.h>
 
 //////////////////////////////////////////////////////////////////////////////
 namespace musik{ namespace core{
