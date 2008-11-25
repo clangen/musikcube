@@ -64,7 +64,7 @@ namespace musik{ namespace core{
                 PlaylistSave(void);
                 ~PlaylistSave(void);
 
-                void SavePlaylist(const utfstring playlistName,int playlistId=0,musik::core::tracklist::IRandomAccess *tracklist=NULL);
+                void SavePlaylist(const utfstring playlistName,int playlistId=0,musik::core::tracklist::Base *tracklist=NULL);
 
                 sigslot::signal1<int> PlaylistSaved;
 

@@ -47,9 +47,8 @@ using namespace musik::core::tracklist;
 LibraryList::LibraryList(musik::core::LibraryPtr library)
  :library(library)
  ,currentPosition(-1)
- ,hintedRows(10)
 {
-
+    this->hintedRows    = 10;
 }
 
 

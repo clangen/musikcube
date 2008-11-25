@@ -44,7 +44,7 @@ namespace musik{ namespace core{
 
 class ITrack {
     public:
-        virtual ~ITrack() = 0;
+        virtual ~ITrack(){};
         virtual const utfchar* GetValue(const char* metakey) = 0;
         virtual void SetValue(const char* metakey,const utfchar* value) = 0;
         virtual void ClearValue(const char* metakey) = 0;

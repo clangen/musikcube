@@ -33,6 +33,7 @@
 #include "pch.hpp"
 #include <core/PlaybackQueue.h>
 #include <core/LibraryFactory.h>
+#include <core/tracklist/MultiLibraryList.h>
 
 #include <boost/algorithm/string.hpp>
 
@@ -55,6 +56,7 @@ PlaybackQueue::PlaybackQueue(void)
  ,playing(false)
  ,paused(false)
 {
+    this->nowPlaying.reset(new tracklist::MultiLibraryList());
     this->transport.EventMixpointReached.connect(this,&PlaybackQueue::OnPlaybackEndOrFail);
 }
 
@@ -84,7 +86,7 @@ void PlaybackQueue::OnPlaybackEndOrFail(){
 ///\brief
 ///Return a shared_ptr to the now playing tracklist
 //////////////////////////////////////////
-tracklist::Base& PlaybackQueue::NowPlayingTracklist(){
+tracklist::Ptr PlaybackQueue::NowPlayingTracklist(){
     return this->nowPlaying;
 }
 
@@ -138,7 +140,7 @@ void PlaybackQueue::Resume()
 ///Start playing the next track.
 //////////////////////////////////////////
 void PlaybackQueue::Next(){
-	musik::core::TrackPtr track( this->nowPlaying.NextTrack() );
+	musik::core::TrackPtr track( this->nowPlaying->NextTrack() );
 
 	this->SetCurrentTrack(track);
 	this->Play();
@@ -149,7 +151,7 @@ void PlaybackQueue::Next(){
 ///Start playing the previous track.
 //////////////////////////////////////////
 void PlaybackQueue::Previous(){
-	musik::core::TrackPtr track( this->nowPlaying.PreviousTrack() );
+	musik::core::TrackPtr track( this->nowPlaying->PreviousTrack() );
 
 	this->SetCurrentTrack(track);
 	this->Play();
@@ -173,14 +175,14 @@ void PlaybackQueue::Stop(){
 ///Return the current running track
 //////////////////////////////////////////
 TrackPtr PlaybackQueue::CurrentTrack(){
-	if (this->nowPlaying.Size() <= 0)
+	if (this->nowPlaying->Size() <= 0)
 	{
 		return TrackPtr();
 	}
 
 	if(!this->currentTrack){
 		// If the current track is empty, get a track from the nowPlaying tracklist
-		this->SetCurrentTrack( this->nowPlaying.CurrentTrack() );
+		this->SetCurrentTrack( this->nowPlaying->CurrentTrack() );
 	}
 	return this->currentTrack;
 }
@@ -226,7 +228,7 @@ void PlaybackQueue::SetCurrentTrack(TrackPtr track){
 void PlaybackQueue::Play(tracklist::Base &tracklist){
 
 	// Set the "now playing" to libraries own playlist
-	this->nowPlaying	= tracklist;
+	(*this->nowPlaying)	= tracklist;
 
 	this->currentTrack.reset();
     this->Play();
@@ -234,5 +236,5 @@ void PlaybackQueue::Play(tracklist::Base &tracklist){
 
 void PlaybackQueue::Append(tracklist::Base &tracklist){
 	// Set the "now playing" to libraries own playlist
-	this->nowPlaying	+= tracklist;
+	(*this->nowPlaying)	+= tracklist;
 }

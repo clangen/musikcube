@@ -89,8 +89,8 @@ protected:
 	void QueryQueueEnd();
 	void QueryQueueLoop();
 
-	void UpdatePlaylists();
-	void OnPlaylists(std::vector<musik::core::tracklist::Ptr> trackLists);
+//	void UpdatePlaylists();
+//	void OnPlaylists(std::vector<musik::core::tracklist::Ptr> trackLists);
 };
 
 //////////////////////////////////////////////////////////////////////////////

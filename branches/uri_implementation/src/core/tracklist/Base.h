@@ -41,10 +41,13 @@
 #include <core/config.h>
 #include <core/Track.h>
 #include <core/Library/Base.h>
+#include <core/Query/ListBase.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
 #include <boost/utility.hpp>
+#include <boost/shared_ptr.hpp>
+#include <set>
 
 //////////////////////////////////////////////////////////////////////////////
 namespace musik{ namespace core{ namespace tracklist {
@@ -176,6 +179,32 @@ class Base : boost::noncopyable{
 		//////////////////////////////////////////
 		virtual musik::core::LibraryPtr Library();
 
+        //////////////////////////////////////////
+		///\brief
+		///Sort tracks by a metakey
+		//////////////////////////////////////////
+        virtual bool SortTracks(std::string sortingMetakey);
+
+        //////////////////////////////////////////
+		///\brief
+		///Connect the tracklist to recieve tracks from a ListBase query.
+		//////////////////////////////////////////
+        virtual bool ConnectToQuery(musik::core::Query::ListBase &query);
+
+        //////////////////////////////////////////
+		///\brief
+		///Add a metakey to the list of metakeys to
+        ///get when requesting TrackWithMetadata
+		//////////////////////////////////////////
+        virtual bool AddRequestedMetakey(std::string metakey);
+
+
+        //////////////////////////////////////////
+		///\brief
+		///Make a hint on how may rows that are visible
+		//////////////////////////////////////////
+        virtual void HintVisibleRows(long rows);
+
         /////////////////////////////////////////////////////////////////////////////
         // EVENTS
         /////////////////////////////////////////////////////////////////////////////
@@ -225,8 +254,13 @@ class Base : boost::noncopyable{
 		//////////////////////////////////////////
         PositionChangedEvent PositionChanged;
 
+    protected:
+        std::set<std::string> requestedMetakeys;
+        long hintedRows;
 
 };
+
+typedef boost::shared_ptr<Base> Ptr;
 
 //////////////////////////////////////////////////////////////////////////////
 } } } // musik::core

@@ -36,7 +36,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <core/audio/Transport.h>
-#include <core/tracklist/MultiLibraryList.h>
+#include <core/tracklist/Base.h>
 #include <core/Query/TrackMetadata.h>
 #include <sigslot/sigslot.h>
 
@@ -73,7 +73,7 @@ class PlaybackQueue : public sigslot::has_slots<>{
         ///\brief
         ///The "now playing" tracklist
         //////////////////////////////////////////
-        tracklist::MultiLibraryList nowPlaying;
+        tracklist::Ptr nowPlaying;
 
         bool playing;
         bool paused;
@@ -94,7 +94,7 @@ class PlaybackQueue : public sigslot::has_slots<>{
         musik::core::audio::Transport&  Transport() { return this->transport; };
 
         // Now Playing control
-        tracklist::Base& NowPlayingTracklist();
+        tracklist::Ptr NowPlayingTracklist();
         void Play(tracklist::Base &tracklist);
         void Append(tracklist::Base &tracklist);
 

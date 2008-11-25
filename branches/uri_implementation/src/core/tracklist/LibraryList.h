@@ -108,7 +108,6 @@ class LibraryList : public Base, public sigslot::has_slots<> {
 
         musik::core::Query::TrackMetadata metadataQuery;
 
-        long hintedRows;
 
 };
 

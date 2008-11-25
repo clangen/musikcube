@@ -46,3 +46,24 @@ using namespace musik::core::tracklist;
 musik::core::LibraryPtr Base::Library(){
     return musik::core::LibraryPtr();
 }
+
+Base::~Base(){
+}
+
+bool Base::SortTracks(std::string sortingMetakey){
+    return false;
+}
+
+bool Base::ConnectToQuery(musik::core::Query::ListBase &query){
+    return false;
+}
+
+bool Base::AddRequestedMetakey(std::string metakey){
+    this->requestedMetakeys.insert(metakey);
+    return true;
+}
+
+void Base::HintVisibleRows(long rows){
+    this->hintedRows    = rows;
+}
+

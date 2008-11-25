@@ -38,7 +38,7 @@
 
 #include <cube/dialog/NewPlaylistController.hpp>
 #include <core/Library/Base.h>
-#include <core/Query/PlaylistSave.h>
+//#include <core/Query/PlaylistSave.h>
 #include <core/MessageQueue.h>
 
 #include <win32cpp/Window.hpp>
@@ -79,11 +79,11 @@ void NewPlaylistController::OnCancel(win32cpp::Button* button){
 }
 
 void NewPlaylistController::OnOK(win32cpp::Button* button){
-
+/*
 	musik::core::Query::PlaylistSave savePlaylistQuery;
 	savePlaylistQuery.SavePlaylist( this->view->name->Caption() );
 
 	this->library->AddQuery(savePlaylistQuery,musik::core::Query::UnCanceable);
-
+*/
 	this->mainWindow.Close();
 }
