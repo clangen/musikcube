@@ -347,3 +347,32 @@ bool LibraryList::QueryForTrack(long position){
     return false;
 }
 
+bool LibraryList::ConnectToQuery(musik::core::Query::ListBase &query){
+    query.OnTrackEvent().connect(this,&LibraryList::OnTracksFromQuery);
+    query.OnTrackInfoEvent().connect(this,&LibraryList::OnTracksSummaryFromQuery);
+    return true;
+}
+
+
+void LibraryList::OnTracksFromQuery(musik::core::TrackVector *newTracks,bool clear){
+    if(clear){
+        this->positionCache.clear();
+        this->trackCache.clear();
+        this->tracklist.clear();
+
+        this->SetPosition(-1);   // undefined
+    }
+
+    // Copy to tracklist
+    for(musik::core::TrackVector::iterator track=newTracks->begin();track!=newTracks->end();++track){
+        this->tracklist.push_back( (*track)->Id() );
+    }
+
+    this->TracklistChanged(true);
+}
+
+void LibraryList::OnTracksSummaryFromQuery(UINT64 tracks,UINT64 duration,UINT64 filesize){
+    this->SummaryInfoUpdated(tracks,duration,filesize);
+}
+
+

@@ -75,9 +75,15 @@ class LibraryList : public Base, public sigslot::has_slots<> {
     
 		virtual musik::core::LibraryPtr Library();
 
+        virtual bool ConnectToQuery(musik::core::Query::ListBase &query);
+
     private:
         void LoadTrack(long position);
         bool QueryForTrack(long position);
+
+        void OnTracksFromQuery(musik::core::TrackVector *newTracks,bool clear);
+        void OnTracksSummaryFromQuery(UINT64 tracks,UINT64 duration,UINT64 filesize);
+
 
 
     protected:

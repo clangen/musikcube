@@ -53,6 +53,7 @@ namespace musik{ namespace core{
 
 class LibraryTrackMeta : boost::noncopyable{
     public:
+        LibraryTrackMeta();
         ~LibraryTrackMeta();
 
 /*        friend class Track;

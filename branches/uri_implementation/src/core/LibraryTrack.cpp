@@ -55,6 +55,8 @@ using namespace musik::core;
 
 LibraryTrack::LibraryTrack(void)
  :meta(NULL)
+ ,id(0)
+ ,libraryId(0)
 {
 }
 

@@ -40,6 +40,12 @@
 
 using namespace musik::core;
 
+LibraryTrackMeta::LibraryTrackMeta()
+ :thumbnailData(NULL)
+ ,thumbnailSize(0)
+{
+}
+
 
 LibraryTrackMeta::~LibraryTrackMeta(){
     if(this->thumbnailData)
