@@ -87,6 +87,7 @@ class LibraryList : public Base, public sigslot::has_slots<> {
         void OnTracksSummaryFromQuery(UINT64 tracks,UINT64 duration,UINT64 filesize);
         void OnTracksMetaFromQuery(musik::core::TrackVector *metaTracks);
 
+
     protected:
         //////////////////////////////////////////
 		///\brief

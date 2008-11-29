@@ -191,11 +191,16 @@ long LibraryList::Size(){
 //////////////////////////////////////////
 void LibraryList::Clear(){
     this->tracklist.clear();
+    this->ClearMetadata();
     this->TracklistChanged(true);
     this->PositionChanged(-1,this->currentPosition);
     this->currentPosition   = -1;
 }
 
+void LibraryList::ClearMetadata(){
+    this->positionCache.clear();
+    this->trackCache.clear();
+}
 
 //////////////////////////////////////////
 ///\brief
@@ -421,10 +426,6 @@ void LibraryList::OnTracksMetaFromQuery(musik::core::TrackVector *metaTracks){
     this->TrackMetadataUpdated(updateTrackPositions);
 }
 
-void LibraryList::ClearMetadata(){
-    this->positionCache.clear();
-    this->trackCache.clear();
-}
 
 bool LibraryList::AddRequestedMetakey(std::string metakey){
     this->requestedMetakeys.insert(metakey);

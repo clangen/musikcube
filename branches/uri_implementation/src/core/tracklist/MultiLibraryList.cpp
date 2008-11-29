@@ -182,9 +182,15 @@ long MultiLibraryList::Size(){
 //////////////////////////////////////////
 void MultiLibraryList::Clear(){
     this->tracklist.clear();
+    this->ClearMetadata();
     this->TracklistChanged(true);
     this->PositionChanged(-1,this->currentPosition);
     this->currentPosition   = -1;
+}
+
+void MultiLibraryList::ClearMetadata(){
+    this->positionCache.clear();
+    this->trackCache.clear();
 }
 
 

@@ -72,7 +72,9 @@ class MultiLibraryList : public Base, public sigslot::has_slots<> {
         virtual bool operator =(musik::core::tracklist::Base &tracklist);
         virtual bool operator +=(musik::core::tracklist::Base &tracklist);
         virtual bool operator +=(musik::core::TrackPtr track);
-    
+
+        virtual void ClearMetadata();
+
     private:
         void LoadTrack(long position);
         bool QueryForTrack(long position);
@@ -80,6 +82,7 @@ class MultiLibraryList : public Base, public sigslot::has_slots<> {
         void OnTracksFromQuery(musik::core::TrackVector *newTracks,bool clear);
         void OnTracksSummaryFromQuery(UINT64 tracks,UINT64 duration,UINT64 filesize);
         void OnTracksMetaFromQuery(musik::core::TrackVector *metaTracks);
+
 
     protected:
         //////////////////////////////////////////
