@@ -47,8 +47,12 @@ using namespace musik::core::tracklist;
 LibraryList::LibraryList(musik::core::LibraryPtr library)
  :library(library)
  ,currentPosition(-1)
+ ,maxCacheSize(100)
 {
     this->hintedRows    = 10;
+
+    this->metadataQuery.OnTracksEvent.connect(this,&LibraryList::OnTracksMetaFromQuery);
+
 }
 
 
@@ -322,6 +326,34 @@ void LibraryList::LoadTrack(long position){
 
         // Finally, clear the query for futher metadata
         this->metadataQuery.Clear();
+        
+        ////////////////////////////////////////
+        // Lets see if the cache is too big
+        if(this->positionCache.size()>this->maxCacheSize){
+            // Cache too big, what end should be removed
+            PositionCacheMap::iterator front    = this->positionCache.begin();
+            PositionCacheMap::iterator back     = this->positionCache.end();
+            back--;
+
+            if(position-front->first < back->first-position){
+                // closer to beginning, lets erase in the end
+                while(this->positionCache.size()>this->maxCacheSize){
+                    back        = this->positionCache.end();
+                    back--;
+                    this->trackCache.erase(back->second);
+                    this->positionCache.erase(back);
+                }
+            }else{
+                // closer to end, lets erase in the beginning
+                while(this->positionCache.size()>this->maxCacheSize){
+                    front        = this->positionCache.begin();
+                    this->trackCache.erase(front->second);
+                    this->positionCache.erase(front);
+                }
+            }
+
+        }
+
     }
 }
 
@@ -373,6 +405,32 @@ void LibraryList::OnTracksFromQuery(musik::core::TrackVector *newTracks,bool cle
 
 void LibraryList::OnTracksSummaryFromQuery(UINT64 tracks,UINT64 duration,UINT64 filesize){
     this->SummaryInfoUpdated(tracks,duration,filesize);
+}
+
+
+void LibraryList::OnTracksMetaFromQuery(musik::core::TrackVector *metaTracks){
+    std::vector<long> updateTrackPositions;
+
+    for(musik::core::TrackVector::iterator track=metaTracks->begin();track!=metaTracks->end();++track){
+        TrackCacheMap::iterator position    = this->trackCache.find(*track);
+        if(position!=this->trackCache.end()){
+            updateTrackPositions.push_back(position->second);
+        }
+    }
+
+    this->TrackMetadataUpdated(updateTrackPositions);
+}
+
+void LibraryList::ClearMetadata(){
+    this->positionCache.clear();
+    this->trackCache.clear();
+}
+
+bool LibraryList::AddRequestedMetakey(std::string metakey){
+    this->requestedMetakeys.insert(metakey);
+    this->metadataQuery.RequestMetakeys(this->requestedMetakeys);
+
+    return true;
 }
 
 

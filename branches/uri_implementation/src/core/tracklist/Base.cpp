@@ -67,3 +67,6 @@ void Base::HintVisibleRows(long rows){
     this->hintedRows    = rows;
 }
 
+void Base::ClearMetadata(){
+}
+

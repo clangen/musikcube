@@ -172,7 +172,7 @@ int LibraryTrack::LibraryId(){
 void LibraryTrack::InitMeta(){
     if(!this->meta){
         // Create the metadata
-        this->meta  = new LibraryTrackMeta();
+        this->meta  = new MetaData();
         this->meta->library = LibraryFactory::Instance().GetLibrary(this->libraryId);
     }
 }
@@ -592,3 +592,16 @@ bool LibraryTrack::GetFileData(DBINT id,db::Connection &db){
     }
     return false;
 }
+
+LibraryTrack::MetaData::MetaData()
+ :thumbnailData(NULL)
+ ,thumbnailSize(0)
+{
+}
+
+
+LibraryTrack::MetaData::~MetaData(){
+    if(this->thumbnailData)
+        delete this->thumbnailData;
+}
+

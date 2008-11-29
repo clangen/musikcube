@@ -42,7 +42,6 @@
 #include <core/Query/ListBase.h>
 #include <core/Query/TrackMetadata.h>
 #include <core/Library/Base.h>
-//#include <core/Query/TrackMetadata.h>
 
 #include <set>
 #include <map>
@@ -77,14 +76,16 @@ class LibraryList : public Base, public sigslot::has_slots<> {
 
         virtual bool ConnectToQuery(musik::core::Query::ListBase &query);
 
+        virtual void ClearMetadata();
+        virtual bool AddRequestedMetakey(std::string metakey);
+
     private:
         void LoadTrack(long position);
         bool QueryForTrack(long position);
 
         void OnTracksFromQuery(musik::core::TrackVector *newTracks,bool clear);
         void OnTracksSummaryFromQuery(UINT64 tracks,UINT64 duration,UINT64 filesize);
-
-
+        void OnTracksMetaFromQuery(musik::core::TrackVector *metaTracks);
 
     protected:
         //////////////////////////////////////////
@@ -114,6 +115,7 @@ class LibraryList : public Base, public sigslot::has_slots<> {
 
         musik::core::Query::TrackMetadata metadataQuery;
 
+        long maxCacheSize;
 
 };
 

@@ -77,6 +77,9 @@ class MultiLibraryList : public Base, public sigslot::has_slots<> {
         void LoadTrack(long position);
         bool QueryForTrack(long position);
 
+        void OnTracksFromQuery(musik::core::TrackVector *newTracks,bool clear);
+        void OnTracksSummaryFromQuery(UINT64 tracks,UINT64 duration,UINT64 filesize);
+        void OnTracksMetaFromQuery(musik::core::TrackVector *metaTracks);
 
     protected:
         //////////////////////////////////////////
@@ -101,8 +104,6 @@ class MultiLibraryList : public Base, public sigslot::has_slots<> {
 
         typedef std::map<int,musik::core::Query::TrackMetadata> MetadataQueryMap;
         MetadataQueryMap metadataQueries;
-
-        long hintedRows;
 
 };
 

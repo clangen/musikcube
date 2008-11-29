@@ -772,14 +772,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\LibraryTrackMeta.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\LibraryTrackMeta.h"
-					>
-				</File>
-				<File
 					RelativePath=".\Track.cpp"
 					>
 				</File>

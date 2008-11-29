@@ -47,7 +47,6 @@ using namespace musik::core::tracklist;
 
 MultiLibraryList::MultiLibraryList()
  :currentPosition(-1)
- ,hintedRows(10)
 {
 
 }
@@ -206,7 +205,7 @@ bool MultiLibraryList::operator =(musik::core::tracklist::Base &tracklist){
 
     // Loop through the tracks and copy everything
     for(long i(0);i<tracklist.Size();++i){
-        this->tracklist.push_back(tracklist[i]);
+        this->tracklist.push_back(tracklist[i]->Copy());
     }
     this->TracklistChanged(true);
     this->SetPosition(tracklist.CurrentPosition());
@@ -227,7 +226,7 @@ bool MultiLibraryList::operator +=(musik::core::tracklist::Base &tracklist){
 
     // Loop through the tracks and copy everything
     for(long i(0);i<tracklist.Size();++i){
-        this->tracklist.push_back(tracklist[i]);
+        this->tracklist.push_back(tracklist[i]->Copy());
     }
 
     this->TracklistChanged(false);
@@ -246,7 +245,7 @@ bool MultiLibraryList::operator +=(musik::core::tracklist::Base &tracklist){
 ///True if successfully appended
 //////////////////////////////////////////
 bool MultiLibraryList::operator +=(musik::core::TrackPtr track){
-    this->tracklist.push_back(track);
+    this->tracklist.push_back(track->Copy());
     return true;
 }
 
@@ -271,6 +270,13 @@ void MultiLibraryList::LoadTrack(long position){
         for(MetadataQueryMap::iterator query=this->metadataQueries.begin();query!=this->metadataQueries.end();++query){
             musik::core::LibraryPtr library = musik::core::LibraryFactory::Instance().GetLibrary(query->first);
             if(library){
+                // Add the callbacks
+                query->second.OnTracksEvent.connect(this,&MultiLibraryList::OnTracksMetaFromQuery);
+
+                // What keys are requested
+                query->second.RequestMetakeys(this->requestedMetakeys);
+
+                // Execute the query
                 library->AddQuery(query->second,musik::core::Query::Prioritize);
             }
         }
@@ -302,3 +308,15 @@ bool MultiLibraryList::QueryForTrack(long position){
     return false;
 }
 
+void MultiLibraryList::OnTracksMetaFromQuery(musik::core::TrackVector *metaTracks){
+    std::vector<long> updateTrackPositions;
+
+    for(musik::core::TrackVector::iterator track=metaTracks->begin();track!=metaTracks->end();++track){
+        TrackCacheMap::iterator position    = this->trackCache.find(*track);
+        if(position!=this->trackCache.end()){
+            updateTrackPositions.push_back(position->second);
+        }
+    }
+
+    this->TrackMetadataUpdated(updateTrackPositions);
+}

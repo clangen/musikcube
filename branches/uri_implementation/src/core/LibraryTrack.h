@@ -38,7 +38,6 @@
 
 #include <core/config_filesystem.h>
 #include <core/Track.h>
-#include <core/LibraryTrackMeta.h>
 #include <core/Library/Base.h>
 
 
@@ -87,8 +86,20 @@ class LibraryTrack : public Track {
     private:
         // The variables
         DBINT id;
-        LibraryTrackMeta *meta;
         int libraryId;
+    private:
+        class MetaData{
+            public:
+                MetaData();
+                ~MetaData();
+
+                Track::MetadataMap metadata;
+                char *thumbnailData;
+                long thumbnailSize;
+                musik::core::LibraryPtr library;
+        };
+
+        MetaData *meta;
 
     private:
 
