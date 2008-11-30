@@ -34,13 +34,14 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 #include "pch.hpp"
-#include "TrackFactory.h"
+#include <core/TrackFactory.h>
+#include <core/LibraryTrack.h>
+#include <core/GenericTrack.h>
 
 using namespace musik::core;
 
 TrackPtr TrackFactory::CreateTrack(utfstring uri){
-
-    return TrackPtr();
+    return TrackPtr(new GenericTrack(uri.c_str()));
 }
 
 

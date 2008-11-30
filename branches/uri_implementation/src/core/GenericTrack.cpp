@@ -52,6 +52,16 @@ GenericTrack::GenericTrack(const utfchar *uri)
 {
     if(uri){
         this->uri   = uri;
+
+        // Set some default values
+        utfstring tempString(this->uri);
+        utfstring::size_type lastSlash = tempString.find_last_of(UTF("/\\"));
+        if(lastSlash!=utfstring::npos){
+            tempString  = tempString.substr(lastSlash+1);
+            this->SetValue("title",tempString.c_str());
+        }else{
+            this->SetValue("title",this->uri.c_str());
+        }
     }
 }
 
@@ -60,7 +70,8 @@ GenericTrack::~GenericTrack(void){
 
 const utfchar* GenericTrack::GetValue(const char* metakey){
     if(metakey){
-        MetadataMap::iterator metavalue = this->metadata.find(metakey);
+        std::string metaKey(metakey);
+        MetadataMap::iterator metavalue = this->metadata.find(metaKey);
         if(metavalue!=this->metadata.end()){
             return metavalue->second.c_str();
         }

@@ -205,16 +205,18 @@ void MultiLibraryList::ClearMetadata(){
 ///True if successfully copied.
 //////////////////////////////////////////
 bool MultiLibraryList::operator =(musik::core::tracklist::Base &tracklist){
-    this->Clear();
+    if(&tracklist != this){
+        this->Clear();
 
-    this->tracklist.reserve(tracklist.Size());
+        this->tracklist.reserve(tracklist.Size());
 
-    // Loop through the tracks and copy everything
-    for(long i(0);i<tracklist.Size();++i){
-        this->tracklist.push_back(tracklist[i]->Copy());
+        // Loop through the tracks and copy everything
+        for(long i(0);i<tracklist.Size();++i){
+            this->tracklist.push_back(tracklist[i]->Copy());
+        }
+        this->TracklistChanged(true);
+        this->SetPosition(tracklist.CurrentPosition());
     }
-    this->TracklistChanged(true);
-    this->SetPosition(tracklist.CurrentPosition());
 
     return true;
 }

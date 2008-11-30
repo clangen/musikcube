@@ -41,6 +41,10 @@
 #include <win32cpp/Application.hpp>
 #include <win32cpp/TopLevelWindow.hpp>
 #include <core/Common.h>
+#include <core/PlaybackQueue.h>
+#include <core/TrackFactory.h>
+
+#include <boost/program_options.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -50,6 +54,37 @@ using namespace musik::cube;
 
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE prevInstance, LPTSTR commandLine, int showCommand)
 {
+    // Lets parse the input arguments
+/*    boost::program_options::options_description desc("Allowed options");
+    desc.add_options()
+        ("help", "produce help message")
+        ("compression", po::value<int>(), "set compression level");
+*/
+    {
+        std::vector<utfstring> arguments    = boost::program_options::split_winmain(commandLine);
+        if(arguments.size()){
+            musik::core::tracklist::Ptr nowPlaying  = musik::core::PlaybackQueue::Instance().NowPlayingTracklist();
+            if(nowPlaying){
+                bool tracksAdded(false);
+                for(std::vector<utfstring>::iterator uri=arguments.begin();uri!=arguments.end();++uri){
+                    musik::core::TrackPtr newTrack  = musik::core::TrackFactory::CreateTrack(*uri);
+                    if(newTrack){
+                        (*nowPlaying) += newTrack;
+                        tracksAdded = true;
+                    }
+                }
+                if(tracksAdded){
+                    musik::core::PlaybackQueue::Instance().Play();
+                }
+            }
+        }
+    }
+
+/*    boost::program_options::wcommand_line_parser(
+            boost::program_options::split_winmain(commandLine)
+        );
+*/
+
 
     // Initialize locale
     try {
@@ -66,6 +101,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE prevInstance, LPTSTR commandLi
     // Create the main window and its controller
     TopLevelWindow mainWindow(_T("musikCube 2"));
     MainWindowController mainController(mainWindow);
+
 
     // Initialize and show the main window, and run the event loop.
     Application::Instance().Run(mainWindow);

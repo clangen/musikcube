@@ -174,9 +174,11 @@ LibraryFactory::LibraryVector& LibraryFactory::Libraries(){
 }
 
 LibraryPtr LibraryFactory::GetLibrary(int identifier){
-    LibraryMap::iterator lib    = this->libraryMap.find(identifier);
-    if(lib!=this->libraryMap.end()){
-        return lib->second;
+    if(identifier){
+        LibraryMap::iterator lib    = this->libraryMap.find(identifier);
+        if(lib!=this->libraryMap.end()){
+            return lib->second;
+        }
     }
     return LibraryPtr();
 }

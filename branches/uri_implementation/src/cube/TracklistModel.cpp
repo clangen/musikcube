@@ -72,6 +72,11 @@ using namespace musik::cube;
     this->tracklist->PositionChanged.connect(this,&TracklistModel::OnPositionChanged);
 
     this->ConnectToQuery(connectedQuery);
+
+    // In case there are tracks in the list already.
+    if(this->tracklist->Size()){
+        this->OnTracks(true);
+    }
 }
 
 uistring            TracklistModel::CellValueToString(int rowIndex, ColumnRef column)

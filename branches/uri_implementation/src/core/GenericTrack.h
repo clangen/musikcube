@@ -38,7 +38,6 @@
 
 #include <core/config_filesystem.h>
 #include <core/Track.h>
-#include <core/LibraryTrackMeta.h>
 #include <core/Library/Base.h>
 
 

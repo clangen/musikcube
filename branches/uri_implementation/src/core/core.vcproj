@@ -461,14 +461,6 @@
 					RelativePath=".\MetaKey.h"
 					>
 				</File>
-				<File
-					RelativePath=".\TrackFactory.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\TrackFactory.h"
-					>
-				</File>
 			</Filter>
 			<Filter
 				Name="plugins"
@@ -777,6 +769,14 @@
 				</File>
 				<File
 					RelativePath=".\Track.h"
+					>
+				</File>
+				<File
+					RelativePath=".\TrackFactory.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\TrackFactory.h"
 					>
 				</File>
 			</Filter>
