@@ -173,7 +173,9 @@ void LibraryTrack::InitMeta(){
     if(!this->meta){
         // Create the metadata
         this->meta  = new MetaData();
-        this->meta->library = LibraryFactory::Instance().GetLibrary(this->libraryId);
+        if(this->libraryId){
+            this->meta->library = LibraryFactory::Instance().GetLibrary(this->libraryId);
+        }
     }
 }
 

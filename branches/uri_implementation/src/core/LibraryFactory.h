@@ -56,7 +56,7 @@ namespace musik{ namespace core{
 //////////////////////////////////////////
 class LibraryFactory{
     private:
-        static LibraryFactory sInstance;
+//        static LibraryFactory sInstance;
     public:
 
 		//////////////////////////////////////////
@@ -75,7 +75,7 @@ class LibraryFactory{
         ///\brief
         ///Get the LibraryFactory singleton
         //////////////////////////////////////////
-        static LibraryFactory& Instance(){ return sInstance; };
+        static LibraryFactory& Instance();
 
 		static LibraryVector& Libraries();
 
@@ -92,13 +92,13 @@ class LibraryFactory{
 		//////////////////////////////////////////
 		LibrariesUpdatedEvent LibrariesUpdated;
 
+        ~LibraryFactory(void);
     private:
 
         LibraryVector libraries;
         LibraryMap libraryMap;
 
         LibraryFactory(void);
-        ~LibraryFactory(void);
 
 		LibraryPtr AddLibrary(int id,utfstring name,int type,bool sendEvent=false,bool startup=true);
 		void RemoveLibrary(utfstring name);

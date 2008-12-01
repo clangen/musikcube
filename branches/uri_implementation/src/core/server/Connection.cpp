@@ -60,6 +60,7 @@ Connection::Connection(boost::asio::io_service &ioService,musik::core::Server *s
  ,server(server)
  ,salt(musik::core::Crypt::GenerateSalt())
 {
+    this->identifier    = this->Name();
 }
 
 Connection::~Connection(void){

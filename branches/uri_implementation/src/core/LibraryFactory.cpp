@@ -43,7 +43,14 @@
 
 using namespace musik::core;
 
-LibraryFactory LibraryFactory::sInstance;
+//LibraryFactory LibraryFactory::sInstance;
+
+LibraryFactory& LibraryFactory::Instance(){ 
+    typedef boost::shared_ptr<LibraryFactory> InstanceType;
+    static InstanceType sInstance(new LibraryFactory());
+    return *sInstance; 
+};
+
 
 //////////////////////////////////////////
 ///\brief
@@ -170,7 +177,7 @@ void LibraryFactory::DeleteLibrary(utfstring name){
 ///Get the vector with all current libraries
 //////////////////////////////////////////
 LibraryFactory::LibraryVector& LibraryFactory::Libraries(){
-	return LibraryFactory::sInstance.libraries;
+    return LibraryFactory::Instance().libraries;
 }
 
 LibraryPtr LibraryFactory::GetLibrary(int identifier){

@@ -125,7 +125,7 @@ void Library::Remote::ReadThread(){
     std::string username,password;
 
     {
-        Preferences prefs("Connection",this->Identifier().c_str());
+        Preferences prefs("Connection",this->Name().c_str());
 
         this->address   = UTF_TO_UTF8(prefs.GetString("address",UTF("localhost")));
         this->port      = UTF_TO_UTF8(prefs.GetString("port",UTF("10543")));
