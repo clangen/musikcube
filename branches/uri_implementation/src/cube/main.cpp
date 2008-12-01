@@ -55,13 +55,9 @@ using namespace musik::cube;
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE prevInstance, LPTSTR commandLine, int showCommand)
 {
     // Lets parse the input arguments
-/*    boost::program_options::options_description desc("Allowed options");
-    desc.add_options()
-        ("help", "produce help message")
-        ("compression", po::value<int>(), "set compression level");
-*/
     {
         std::vector<utfstring> arguments    = boost::program_options::split_winmain(commandLine);
+        arguments.push_back(utfstring(UTF("M:\\musik\\Electronic\\Depeche Mode\\Ultra\\01_Barrel of a gun.mp3")));
         if(arguments.size()){
             musik::core::tracklist::Ptr nowPlaying  = musik::core::PlaybackQueue::Instance().NowPlayingTracklist();
             if(nowPlaying){

@@ -33,24 +33,57 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
-#include "pch.hpp"
-#include <core/TrackFactory.h>
-#include <core/LibraryTrack.h>
-#include <core/GenericTrack.h>
-#include <boost/regex.hpp>
-#include <boost/lexical_cast.hpp>
 
-using namespace musik::core;
+#pragma once
 
-TrackPtr TrackFactory::CreateTrack(utfstring uri){
-    if(uri.substr(0,7)==UTF("mcdb://")){
-        boost::wregex reg(UTF("mcdb://([0-9]+)/([0-9]+)"));
-        boost::wsmatch matches;
-        if(boost::regex_match(uri,matches,reg)){
-            return TrackPtr(new LibraryTrack(boost::lexical_cast<DBINT>(matches[1].str()),boost::lexical_cast<DBINT>(matches[0].str())));
-        }
-    }
-    return GenericTrack::Create(uri.c_str());
-}
+#include <core/config_filesystem.h>
+#include <core/Track.h>
+#include <boost/scoped_ptr.hpp>
+#include <boost/weak_ptr.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/thread.hpp>
+#include <sigslot/sigslot.h>
+#include <list>
+
+//////////////////////////////////////////////////////////////////////////////
+
+namespace musik{ namespace core{
+
+//////////////////////////////////////////////////////////////////////////////
+
+class NonLibraryTrackHelper{
+    public:
+        static NonLibraryTrackHelper& Instance();
+        static boost::mutex& TrackMutex();
+
+        void ReadTrack(musik::core::TrackPtr track);
+
+        typedef sigslot::signal1<musik::core::TrackPtr> TrackMetadataUpdatedEvent;
+        TrackMetadataUpdatedEvent TrackMetadataUpdated;
+
+    private:
+        static NonLibraryTrackHelper sInstance;
+
+        NonLibraryTrackHelper(void);
+        ~NonLibraryTrackHelper(void);
+
+        void ThreadLoop();
+
+    private:
+        boost::mutex trackMutex;
+        boost::mutex mutex;
+        bool threadIsRunning;
+
+        typedef boost::weak_ptr<musik::core::Track> TrackWeakPtr;
+        std::list<TrackWeakPtr> tracksToRead;
+
+        typedef boost::scoped_ptr<boost::thread> ThreadPtr;
+        ThreadPtr helperThread;
+};
+
+
+//////////////////////////////////////////////////////////////////////////////
+} } // musik::core
+//////////////////////////////////////////////////////////////////////////////
 
 

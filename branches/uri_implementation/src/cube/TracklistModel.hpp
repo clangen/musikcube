@@ -82,7 +82,7 @@ public:
 
     // instance data
 protected:  
-    void OnTrackMeta(std::vector<long> &trackPositions);
+    void OnTrackMeta(std::vector<long> trackPositions);
     void OnTracks(bool cleared);
     void OnPositionChanged(long activeRow,long oldActiveRow);
 

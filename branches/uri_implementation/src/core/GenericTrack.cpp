@@ -37,12 +37,27 @@
 #include "pch.hpp"
 
 #include <core/GenericTrack.h>
+#include <core/NonLibraryTrackHelper.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
 using namespace musik::core;
 
 //////////////////////////////////////////////////////////////////////////////
+
+TrackPtr GenericTrack::Create(const utfchar *uri){
+    GenericTrack *newTrack  = new GenericTrack(uri);
+    TrackPtr track( newTrack );
+    if(newTrack){
+        newTrack->selfPtr   = track;
+    }
+
+    // Add this to the NonLibraryTrackHelper to read the metadata
+    NonLibraryTrackHelper::Instance().ReadTrack(track);
+
+    return track;
+}
+
 
 GenericTrack::GenericTrack(void)
 {
@@ -52,16 +67,6 @@ GenericTrack::GenericTrack(const utfchar *uri)
 {
     if(uri){
         this->uri   = uri;
-
-        // Set some default values
-        utfstring tempString(this->uri);
-        utfstring::size_type lastSlash = tempString.find_last_of(UTF("/\\"));
-        if(lastSlash!=utfstring::npos){
-            tempString  = tempString.substr(lastSlash+1);
-            this->SetValue("title",tempString.c_str());
-        }else{
-            this->SetValue("title",this->uri.c_str());
-        }
     }
 }
 
@@ -71,9 +76,30 @@ GenericTrack::~GenericTrack(void){
 const utfchar* GenericTrack::GetValue(const char* metakey){
     if(metakey){
         std::string metaKey(metakey);
-        MetadataMap::iterator metavalue = this->metadata.find(metaKey);
-        if(metavalue!=this->metadata.end()){
-            return metavalue->second.c_str();
+        {
+            boost::mutex::scoped_lock lock(NonLibraryTrackHelper::TrackMutex());
+            MetadataMap::iterator metavalue = this->metadata.find(metaKey);
+            if(metavalue!=this->metadata.end()){
+                return metavalue->second.c_str();
+            }
+        }
+
+        if(metaKey=="title"){
+            // In case there is no title
+            utfstring::size_type lastSlash = this->uri.find_last_of(UTF("/\\"));
+            if(lastSlash!=utfstring::npos){
+                static utfstring tempString;
+                tempString  = this->uri.substr(lastSlash+1);
+                return tempString.c_str();
+            }else{
+                return this->uri.c_str();
+            }
+        }
+
+        // Lets try prepend "visual_"
+        if(metaKey.substr(0,7)=="visual_"){
+            metaKey = metaKey.substr(7);
+            return this->GetValue(metaKey.c_str());
         }
     }
     return NULL;
@@ -81,11 +107,13 @@ const utfchar* GenericTrack::GetValue(const char* metakey){
 
 void GenericTrack::SetValue(const char* metakey,const utfchar* value){
     if(metakey && value){
+        boost::mutex::scoped_lock lock(NonLibraryTrackHelper::TrackMutex());
         this->metadata.insert(std::pair<std::string,utfstring>(metakey,value));
     }
 }
 
 void GenericTrack::ClearValue(const char* metakey){
+    boost::mutex::scoped_lock lock(NonLibraryTrackHelper::TrackMutex());
     this->metadata.erase(metakey);
 }
 
@@ -109,6 +137,7 @@ const utfchar* GenericTrack::URL(){
 }
 
 Track::MetadataIteratorRange GenericTrack::GetValues(const char* metakey){
+    boost::mutex::scoped_lock lock(NonLibraryTrackHelper::TrackMutex());
     return this->metadata.equal_range(metakey);
 }
 
@@ -120,6 +149,11 @@ Track::MetadataIteratorRange GenericTrack::GetAllValues(){
 
 
 TrackPtr GenericTrack::Copy(){
-    return TrackPtr(new GenericTrack(this->uri.c_str()));
+    // Do not copy generic tracks, try to return a selfPtr instead
+    TrackPtr trackCopy;
+    if(trackCopy = this->selfPtr.lock()){
+        return trackCopy;
+    }
+    return GenericTrack::Create(this->uri.c_str());
 }
 

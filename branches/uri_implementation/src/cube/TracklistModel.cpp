@@ -119,7 +119,12 @@ uistring            TracklistModel::CellValueToString(int rowIndex, ColumnRef co
     return _T("");
 }
 
-void TracklistModel::OnTrackMeta(std::vector<long> &trackPositions){
+void TracklistModel::OnTrackMeta(std::vector<long> trackPositions){
+    if(!win32cpp::ApplicationThread::InMainThread()){
+        std::vector<long> positionCopy(trackPositions);
+        win32cpp::ApplicationThread::Call1(this,&TracklistModel::OnTrackMeta,positionCopy);
+        return;
+    }
     for(std::vector<long>::iterator row=trackPositions.begin();row!=trackPositions.end();++row){
         this->InvalidateData(*row);
     }

@@ -461,6 +461,14 @@
 					RelativePath=".\MetaKey.h"
 					>
 				</File>
+				<File
+					RelativePath=".\NonLibraryTrackHelper.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\NonLibraryTrackHelper.h"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="plugins"

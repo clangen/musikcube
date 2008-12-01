@@ -46,6 +46,7 @@
 #include <core/filestreams/Factory.h>
 
 #include <boost/lexical_cast.hpp>
+#include <boost/thread/mutex.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -86,9 +87,18 @@ LibraryTrack::~LibraryTrack(void){
 
 const utfchar* LibraryTrack::GetValue(const char* metakey){
     if(metakey && this->meta){
-        MetadataMap::iterator metavalue = this->meta->metadata.find(metakey);
-        if(metavalue!=this->meta->metadata.end()){
-            return metavalue->second.c_str();
+        if(this->meta->library){
+            // Threadsafe
+            boost::mutex::scoped_lock lock(this->meta->library->trackMutex);
+            MetadataMap::iterator metavalue = this->meta->metadata.find(metakey);
+            if(metavalue!=this->meta->metadata.end()){
+                return metavalue->second.c_str();
+            }
+        }else{
+            MetadataMap::iterator metavalue = this->meta->metadata.find(metakey);
+            if(metavalue!=this->meta->metadata.end()){
+                return metavalue->second.c_str();
+            }
         }
     }
     return NULL;
@@ -98,13 +108,24 @@ void LibraryTrack::SetValue(const char* metakey,const utfchar* value){
     this->InitMeta();
 
     if(metakey && value){
-        this->meta->metadata.insert(std::pair<std::string,utfstring>(metakey,value));
+        if(this->meta->library){
+            // Threadsafe
+            boost::mutex::scoped_lock lock(this->meta->library->trackMutex);
+            this->meta->metadata.insert(std::pair<std::string,utfstring>(metakey,value));
+        }else{
+            this->meta->metadata.insert(std::pair<std::string,utfstring>(metakey,value));
+        }
     }
 }
 
 void LibraryTrack::ClearValue(const char* metakey){
     if(this->meta){
-        this->meta->metadata.erase(metakey);
+        if(this->meta->library){
+            boost::mutex::scoped_lock lock(this->meta->library->trackMutex);
+            this->meta->metadata.erase(metakey);
+        }else{
+            this->meta->metadata.erase(metakey);
+        }
     }
 }
 
@@ -140,7 +161,12 @@ const utfchar* LibraryTrack::URL(){
 
 Track::MetadataIteratorRange LibraryTrack::GetValues(const char* metakey){
     if(this->meta){
-        return this->meta->metadata.equal_range(metakey);
+        if(this->meta->library){
+            boost::mutex::scoped_lock lock(this->meta->library->trackMutex);
+            return this->meta->metadata.equal_range(metakey);
+        }else{
+            return this->meta->metadata.equal_range(metakey);
+        }
     }
     return Track::MetadataIteratorRange();
 }

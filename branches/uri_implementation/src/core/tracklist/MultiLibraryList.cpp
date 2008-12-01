@@ -38,6 +38,7 @@
 #include <core/tracklist/MultiLibraryList.h>
 #include <core/LibraryTrack.h>
 #include <core/LibraryFactory.h>
+#include <core/NonLibraryTrackHelper.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -47,8 +48,8 @@ using namespace musik::core::tracklist;
 
 MultiLibraryList::MultiLibraryList()
  :currentPosition(-1)
+ ,inited(false)
 {
-
 }
 
 
@@ -205,6 +206,10 @@ void MultiLibraryList::ClearMetadata(){
 ///True if successfully copied.
 //////////////////////////////////////////
 bool MultiLibraryList::operator =(musik::core::tracklist::Base &tracklist){
+    if(!this->inited){
+        musik::core::NonLibraryTrackHelper::Instance().TrackMetadataUpdated.connect(this,&MultiLibraryList::OnTracksMetaFromNonLibrary);
+        this->inited    = true;
+    }
     if(&tracklist != this){
         this->Clear();
 
@@ -229,6 +234,10 @@ bool MultiLibraryList::operator =(musik::core::tracklist::Base &tracklist){
 ///the same library and ignore the rest.
 //////////////////////////////////////////
 bool MultiLibraryList::operator +=(musik::core::tracklist::Base &tracklist){
+    if(!this->inited){
+        musik::core::NonLibraryTrackHelper::Instance().TrackMetadataUpdated.connect(this,&MultiLibraryList::OnTracksMetaFromNonLibrary);
+        this->inited    = true;
+    }
 
     this->tracklist.reserve(tracklist.Size()+this->Size());
 
@@ -253,6 +262,11 @@ bool MultiLibraryList::operator +=(musik::core::tracklist::Base &tracklist){
 ///True if successfully appended
 //////////////////////////////////////////
 bool MultiLibraryList::operator +=(musik::core::TrackPtr track){
+    if(!this->inited){
+        musik::core::NonLibraryTrackHelper::Instance().TrackMetadataUpdated.connect(this,&MultiLibraryList::OnTracksMetaFromNonLibrary);
+        this->inited    = true;
+    }
+
     this->tracklist.push_back(track->Copy());
     return true;
 }
@@ -327,4 +341,17 @@ void MultiLibraryList::OnTracksMetaFromQuery(musik::core::TrackVector *metaTrack
     }
 
     this->TrackMetadataUpdated(updateTrackPositions);
+}
+
+void MultiLibraryList::OnTracksMetaFromNonLibrary(musik::core::TrackPtr track){
+    std::vector<long> updateTrackPositions;
+
+    TrackCacheMap::iterator position    = this->trackCache.find(track);
+    if(position!=this->trackCache.end()){
+        updateTrackPositions.push_back(position->second);
+    }
+
+    if(!updateTrackPositions.empty()){
+        this->TrackMetadataUpdated(updateTrackPositions);
+    }
 }

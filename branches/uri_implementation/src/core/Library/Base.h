@@ -206,6 +206,15 @@ class Base : boost::noncopyable{
         //////////////////////////////////////////
         boost::mutex resultMutex;
 
+        //////////////////////////////////////////
+        ///\brief
+        ///This mutex is used by the LibraryTrack to protect the metadata map.
+        ///
+        ///\remarks
+        ///This mutex needs to be public
+        //////////////////////////////////////////
+        boost::mutex trackMutex;
+
 
     protected:
         typedef std::list<Query::Ptr> QueryList;

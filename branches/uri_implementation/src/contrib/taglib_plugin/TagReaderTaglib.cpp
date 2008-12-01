@@ -131,7 +131,7 @@ bool TagReaderTaglib::GetOGGTag(musik::core::ITrack *track){
 
 
 bool TagReaderTaglib::GetGenericTag(musik::core::ITrack *track){
-    TagLib::FileRef oFile(track->GetValue("path"));
+    TagLib::FileRef oFile(track->URL());
     if(!oFile.isNull()){
         TagLib::Tag *tag	= oFile.tag();
 	    TagLib::AudioProperties *oAudioProperties	= oFile.audioProperties();
@@ -178,7 +178,7 @@ bool TagReaderTaglib::GetID3v2Tag(musik::core::ITrack *track){
     	TagLib::ID3v2::FrameFactory::instance()->setDefaultTextEncoding(TagLib::String::UTF8);
     #endif
 
-    TagLib::MPEG::File oFile(track->GetValue("path"));
+    TagLib::MPEG::File oFile(track->URL());
 	TagLib::ID3v2::Tag *oTagv2	= oFile.ID3v2Tag();
 	if(oTagv2){
 
