@@ -57,7 +57,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE prevInstance, LPTSTR commandLi
     // Lets parse the input arguments
     {
         std::vector<utfstring> arguments    = boost::program_options::split_winmain(commandLine);
-        arguments.push_back(utfstring(UTF("M:\\musik\\Electronic\\Depeche Mode\\Ultra\\01_Barrel of a gun.mp3")));
+
         if(arguments.size()){
             musik::core::tracklist::Ptr nowPlaying  = musik::core::PlaybackQueue::Instance().NowPlayingTracklist();
             if(nowPlaying){
