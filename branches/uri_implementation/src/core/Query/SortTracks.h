@@ -57,8 +57,8 @@ namespace musik{ namespace core{
                 SortTracks(void);
                 ~SortTracks(void);
 
-                void AddTrack(int trackId);
-                void AddTracks(std::vector<int> &tracks);
+                void AddTrack(DBINT trackId);
+                void AddTracks(std::vector<DBINT> &tracks);
                 void AddTracks(musik::core::tracklist::LibraryList &tracks);
 
                 void ClearTracks();
@@ -67,7 +67,7 @@ namespace musik{ namespace core{
 
             protected:
 
-                typedef std::vector<int> IntVector;
+                typedef std::vector<DBINT> IntVector;
                 IntVector tracksToSort;
 
                 typedef std::list<std::string> StringList;

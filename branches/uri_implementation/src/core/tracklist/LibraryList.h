@@ -79,6 +79,8 @@ class LibraryList : public Base, public sigslot::has_slots<> {
         virtual void ClearMetadata();
         virtual bool AddRequestedMetakey(std::string metakey);
 
+        virtual bool SortTracks(std::string sortingMetakey);
+
     private:
         void LoadTrack(long position);
         bool QueryForTrack(long position);

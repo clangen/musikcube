@@ -37,6 +37,7 @@
 #include "pch.hpp"
 #include <core/tracklist/LibraryList.h>
 #include <core/LibraryTrack.h>
+#include <core/Query/SortTracks.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -434,4 +435,17 @@ bool LibraryList::AddRequestedMetakey(std::string metakey){
     return true;
 }
 
+
+bool LibraryList::SortTracks(std::string sortingMetakey){
+    musik::core::Query::SortTracks sortQuery;
+    sortQuery.AddTracks(this->tracklist);
+    sortQuery.OnTrackEvent().connect(this,&LibraryList::OnTracksFromQuery);
+
+    std::list<std::string> sortBy;
+    sortBy.push_back(sortingMetakey);
+
+    sortQuery.SortByMetaKeys(sortBy);
+    this->library->AddQuery(sortQuery);
+    return true;
+}
 
