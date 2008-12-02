@@ -42,6 +42,7 @@
 #include <core/Query/ListBase.h>
 #include <core/Query/TrackMetadata.h>
 #include <core/Library/Base.h>
+#include <core/Query/SortTracks.h>
 //#include <core/Query/TrackMetadata.h>
 
 #include <set>
@@ -74,23 +75,25 @@ class MultiLibraryList : public Base, public sigslot::has_slots<> {
         virtual bool operator +=(musik::core::TrackPtr track);
 
         virtual void ClearMetadata();
+        virtual bool SortTracks(std::string sortingMetakey);
 
     private:
         void LoadTrack(long position);
         bool QueryForTrack(long position);
 
-        void OnTracksFromQuery(musik::core::TrackVector *newTracks,bool clear);
         void OnTracksSummaryFromQuery(UINT64 tracks,UINT64 duration,UINT64 filesize);
         void OnTracksMetaFromQuery(musik::core::TrackVector *metaTracks);
         void OnTracksMetaFromNonLibrary(musik::core::TrackPtr track);
 
+        void OnTracksFromSortQuery(musik::core::TrackVector *newTracks,bool clear);
 
     protected:
         //////////////////////////////////////////
 		///\brief
 		///Internal representation of the tracklist.
 		//////////////////////////////////////////
-        std::vector<musik::core::TrackPtr> tracklist;
+        typedef std::vector<musik::core::TrackPtr> TracklistVector;
+        TracklistVector tracklist;
 
     private:
 		//////////////////////////////////////////
@@ -105,11 +108,23 @@ class MultiLibraryList : public Base, public sigslot::has_slots<> {
 		//////////////////////////////////////////
 
         long currentPosition;
+        bool inited;
 
+        // map with queries, to check for metadata
         typedef std::map<int,musik::core::Query::TrackMetadata> MetadataQueryMap;
         MetadataQueryMap metadataQueries;
 
-        bool inited;
+		//////////////////////////////////////////
+        // Sorting of tracks
+        enum QueryState:int{
+            Default=0,
+            Sorting=1
+        };
+
+        int queryState;
+
+        typedef std::map<int,musik::core::Query::SortTracks> SortTracksQueryMap;
+        int sortQueryCount;
 };
 
 //////////////////////////////////////////////////////////////////////////////

@@ -49,6 +49,7 @@ using namespace musik::core::tracklist;
 MultiLibraryList::MultiLibraryList()
  :currentPosition(-1)
  ,inited(false)
+ ,queryState(MultiLibraryList::Default)
 {
 }
 
@@ -355,3 +356,43 @@ void MultiLibraryList::OnTracksMetaFromNonLibrary(musik::core::TrackPtr track){
         this->TrackMetadataUpdated(updateTrackPositions);
     }
 }
+
+bool MultiLibraryList::SortTracks(std::string sortingMetakey){
+
+    this->queryState    = MultiLibraryList::Sorting;
+
+    // Trick method. We need to sort al genericTracks by ourselfs
+    // and send all the other tracks for sorting to it's own libraries
+    SortTracksQueryMap queries;
+
+    // Start by looping through all the tracks
+    for(TracklistVector::iterator track=this->tracklist.begin();track!=this->tracklist.end();++track){
+        int libraryId   = (*track)->LibraryId();
+        if(libraryId){
+            // A library track, add to query
+            queries[libraryId].AddTrack((*track)->Id());
+        }else{
+            // A generic track
+        }
+    }
+
+    this->sortQueryCount    = 0;
+
+    // So, lets send the tracks to the libraries for sorting
+    for(SortTracksQueryMap::iterator query=queries.begin();query!=queries.end();++query){
+        // First, connect to callbacks for results
+        query->second.OnTrackEvent().connect(this,&MultiLibraryList::OnTracksFromSortQuery);
+        // Then send the query
+        musik::core::LibraryPtr lib = musik::core::LibraryFactory::Instance().GetLibrary(query->first);
+        if(lib){
+            lib->AddQuery(query->second);
+            this->sortQueryCount++;
+        }
+    }
+
+    return true;
+}
+
+void MultiLibraryList::OnTracksFromSortQuery(musik::core::TrackVector *newTracks,bool clear){
+}
+
