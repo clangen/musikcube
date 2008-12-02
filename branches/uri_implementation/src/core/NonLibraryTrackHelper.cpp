@@ -100,9 +100,11 @@ void NonLibraryTrackHelper::ThreadLoop(){
         {
             boost::mutex::scoped_lock lock(this->mutex);
 
-            // is this a valid track
-            track = this->tracksToRead.front().lock();
-            this->tracksToRead.pop_front();
+            if(!this->tracksToRead.empty()){
+                // is this a valid track
+                track = this->tracksToRead.front().lock();
+                this->tracksToRead.pop_front();
+            }
 
             moreTracks  = !this->tracksToRead.empty();
 
