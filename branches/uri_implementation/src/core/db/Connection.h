@@ -88,6 +88,8 @@ namespace musik{ namespace core{ namespace db{
             sqlite3_stmt *GetCachedStatement(const char* sql);
             void ReturnCachedStatement(const char* sql,sqlite3_stmt *stmt);
 
+            int StepStatement(sqlite3_stmt *stmt);
+
             int transactionCounter;            
 
             sqlite3 *connection;

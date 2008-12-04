@@ -365,6 +365,14 @@
 						>
 					</File>
 					<File
+						RelativePath=".\Query\SortTracksWithData.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Query\SortTracksWithData.h"
+						>
+					</File>
+					<File
 						RelativePath=".\Query\TrackMetadata.cpp"
 						>
 					</File>

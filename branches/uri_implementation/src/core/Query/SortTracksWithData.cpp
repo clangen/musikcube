@@ -41,6 +41,7 @@
 #include <boost/algorithm/string.hpp>
 #include <core/xml/ParserNode.h>
 #include <core/xml/WriterNode.h>
+#include <core/LibraryTrack.h>
 
 using namespace musik::core;
 
@@ -139,7 +140,37 @@ bool Query::SortTracksWithData::ParseQuery(Library::Base *library,db::Connection
 
     std::string sql=selectSQL+" FROM "+selectSQLTables+selectSQLWhere+selectSQLGroup+selectSQLSort;
 
-    return this->ParseTracksSQL(sql,library,db);
+//    return this->ParseTracksSQL(sql,library,db);
+    if(!library->QueryCanceled(this)){
+        db::Statement selectTracks(sql.c_str(),db);
+
+        TrackWithSortdataVector tempTrackResults;
+        tempTrackResults.reserve(101);
+        int row(0);
+        while(selectTracks.Step()==db::ReturnCode::Row){
+            TrackWithSortdata newSortData;
+            newSortData.track.reset(new LibraryTrack(selectTracks.ColumnInt(0),library->Id()));
+            newSortData.sortData    = selectTracks.ColumnTextUTF(1);
+
+            tempTrackResults.push_back( newSortData );
+
+            if( (++row)%100==0 ){
+                boost::mutex::scoped_lock lock(library->resultMutex);
+                this->trackResults.insert(this->trackResults.end(),tempTrackResults.begin(),tempTrackResults.end());
+
+                tempTrackResults.clear();
+                trackResults.reserve(101);
+            }
+        }
+        if(!tempTrackResults.empty()){
+            boost::mutex::scoped_lock lock(library->resultMutex);
+            this->trackResults.insert(this->trackResults.end(),tempTrackResults.begin(),tempTrackResults.end());
+        }
+
+        return true;
+    }else{
+        return false;
+    }
 }
 
 //////////////////////////////////////////
@@ -207,8 +238,6 @@ bool Query::SortTracksWithData::RecieveQuery(musik::core::xml::ParserNode &query
                 return false;
             }
 
-        }else{
-            this->RecieveQueryStandardNodes(node);
         }
     }
     return true;
@@ -221,7 +250,7 @@ std::string Query::SortTracksWithData::Name(){
 bool Query::SortTracksWithData::SendQuery(musik::core::xml::WriterNode &queryNode){
     {
         xml::WriterNode sortbyNode(queryNode,"sortby");
-        sortbyNode.Content()    = this->sortByMetaKey
+        sortbyNode.Content()    = this->sortByMetaKey;
     }
     {
         xml::WriterNode tracksNode(queryNode,"tracks");
@@ -233,8 +262,6 @@ bool Query::SortTracksWithData::SendQuery(musik::core::xml::WriterNode &queryNod
             tracksNode.Content().append(boost::lexical_cast<std::string>(*trackId));
         }
     }
-
-    this->SendQueryStandardNodes(queryNode);
 
     return true;
     

@@ -75,6 +75,8 @@ namespace musik{ namespace core{
 
                 typedef sigslot::signal2<TrackWithSortdataVector*,bool> TrackWithdataSignal;
 
+                TrackWithSortdataVector trackResults;
+
             protected:
 
                 typedef std::vector<DBINT> IntVector;
