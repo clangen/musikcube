@@ -50,7 +50,9 @@ using namespace musik::core;
 ///\brief
 ///Constructor
 //////////////////////////////////////////
-Query::SortTracksWithData::SortTracksWithData(void){
+Query::SortTracksWithData::SortTracksWithData(void)
+ :clearedTrackResults(false)
+{
 }
 
 //////////////////////////////////////////
@@ -145,7 +147,7 @@ bool Query::SortTracksWithData::ParseQuery(Library::Base *library,db::Connection
         db::Statement selectTracks(sql.c_str(),db);
 
         TrackWithSortdataVector tempTrackResults;
-        tempTrackResults.reserve(101);
+//        tempTrackResults.reserve(101);
         int row(0);
         while(selectTracks.Step()==db::ReturnCode::Row){
             TrackWithSortdata newSortData;
@@ -154,13 +156,13 @@ bool Query::SortTracksWithData::ParseQuery(Library::Base *library,db::Connection
 
             tempTrackResults.push_back( newSortData );
 
-            if( (++row)%100==0 ){
+/*            if( (++row)%100==0 ){
                 boost::mutex::scoped_lock lock(library->resultMutex);
                 this->trackResults.insert(this->trackResults.end(),tempTrackResults.begin(),tempTrackResults.end());
 
                 tempTrackResults.clear();
                 trackResults.reserve(101);
-            }
+            }*/
         }
         if(!tempTrackResults.empty()){
             boost::mutex::scoped_lock lock(library->resultMutex);
@@ -267,3 +269,37 @@ bool Query::SortTracksWithData::SendQuery(musik::core::xml::WriterNode &queryNod
     
 }
 
+bool Query::SortTracksWithData::RunCallbacks(Library::Base *library){
+
+    bool bReturn(false);
+
+    TrackWithSortdataVector trackResultsCopy;
+
+    {    // Scope for swapping the results safely
+        boost::mutex::scoped_lock lock(library->resultMutex);
+        trackResultsCopy.swap(this->trackResults);
+    }
+
+    {
+        boost::mutex::scoped_lock lock(library->libraryMutex);
+        if( (this->status & Status::Ended)!=0){
+            // If the query is finished, this function should return true to report that it is finished.
+            bReturn    = true;
+        }
+    }
+
+
+    // Check for Tracks
+    if( !trackResultsCopy.empty() ){
+
+        // Call the slots
+        this->TrackResults(&trackResultsCopy,!this->clearedTrackResults);
+
+        if(!this->clearedTrackResults){
+            this->clearedTrackResults    = true;
+        }
+
+    }
+
+    return bReturn;
+}

@@ -375,18 +375,35 @@ Query::Ptr Library::Base::GetNextQuery(){
 ///Returns true if all queues are finished
 //////////////////////////////////////////
 bool Library::Base::ClearFinishedQueries(){
-    // Remove old queries
-    boost::mutex::scoped_lock lock(this->libraryMutex);
+    std::vector<Query::Ptr> canceledQueries;
 
-    for(std::list<Query::Ptr>::iterator oCheckQuery=this->outgoingQueries.begin();oCheckQuery!=this->outgoingQueries.end();){
-        unsigned int status    = (*oCheckQuery)->status;
-        if( (status & (Query::Base::Status::Finished | Query::Base::Status::Canceled)) ){
-            oCheckQuery    = this->outgoingQueries.erase(oCheckQuery);
-        }else{
-            ++oCheckQuery;
+    {
+        // Remove old queries
+        boost::mutex::scoped_lock lock(this->libraryMutex);
+
+        for(std::list<Query::Ptr>::iterator oCheckQuery=this->outgoingQueries.begin();oCheckQuery!=this->outgoingQueries.end();){
+            unsigned int status    = (*oCheckQuery)->status;
+            if( (status & (Query::Base::Status::Finished | Query::Base::Status::Canceled)) ){
+                // If canceled
+                if( status & Query::Base::Status::Canceled ){
+                    canceledQueries.push_back(*oCheckQuery);
+                }
+                oCheckQuery    = this->outgoingQueries.erase(oCheckQuery);
+            }else{
+                ++oCheckQuery;
+            }
         }
     }
-    return (this->incomingQueries.size()==0 && this->outgoingQueries.size()==0);
+
+    // Lets notify queries that they have been canceled
+    for(std::vector<Query::Ptr>::iterator query=canceledQueries.begin();query!=canceledQueries.end();++query){
+        (*query)->QueryFinished(query->get(),this,false);
+    }
+
+    {
+        boost::mutex::scoped_lock lock(this->libraryMutex);
+        return (this->incomingQueries.size()==0 && this->outgoingQueries.size()==0);
+    }
 }
 
 //////////////////////////////////////////
@@ -424,10 +441,15 @@ bool Library::Base::RunCallbacks(){
 
         if(oQuery){
             if(oQuery->RunCallbacks(this)){
-                boost::mutex::scoped_lock lock(this->libraryMutex);
-                // Set to FINISHED if query returns true
-                oQuery->status    |= Query::Base::Status::Finished;
+                {
+                    boost::mutex::scoped_lock lock(this->libraryMutex);
+                    // Set to FINISHED if query returns true
+                    oQuery->status    |= Query::Base::Status::Finished;
+                }
                 bAgain    = true;    // Continue to check results on the rest of the queue if this one is finished.
+
+                // Call the query signal that the query is finished
+                oQuery->QueryFinished(oQuery.get(),this,true);
             }
         }
         this->ClearFinishedQueries();

@@ -42,7 +42,7 @@
 #include <core/Query/ListBase.h>
 #include <core/Query/TrackMetadata.h>
 #include <core/Library/Base.h>
-#include <core/Query/SortTracks.h>
+#include <core/Query/SortTracksWithData.h>
 //#include <core/Query/TrackMetadata.h>
 
 #include <set>
@@ -85,7 +85,8 @@ class MultiLibraryList : public Base, public sigslot::has_slots<> {
         void OnTracksMetaFromQuery(musik::core::TrackVector *metaTracks);
         void OnTracksMetaFromNonLibrary(musik::core::TrackPtr track);
 
-        void OnTracksFromSortQuery(musik::core::TrackVector *newTracks,bool clear);
+        void OnTracksFromSortQuery(musik::core::Query::SortTracksWithData::TrackWithSortdataVector *newTracks,bool clear);
+        void OnSortQueryFinished(musik::core::Query::Base *query,musik::core::Library::Base *library,bool success);
 
     protected:
         //////////////////////////////////////////
@@ -123,8 +124,19 @@ class MultiLibraryList : public Base, public sigslot::has_slots<> {
 
         int queryState;
 
-        typedef std::map<int,musik::core::Query::SortTracks> SortTracksQueryMap;
+        typedef std::map<int,musik::core::Query::SortTracksWithData> SortTracksQueryMap;
+        typedef std::map<int,musik::core::Query::SortTracksWithData::TrackWithSortdataVector> SortTracksResults;
+        SortTracksResults sortResultMap;
         int sortQueryCount;
+
+        // Helper class for sorting
+        struct SortHelper{
+            SortHelper(musik::core::Query::SortTracksWithData::TrackWithSortdataVector &sortData):sortData(sortData){}   
+            musik::core::Query::SortTracksWithData::TrackWithSortdataVector &sortData;
+
+            bool operator<(const SortHelper &sortHelper) const;
+
+        };
 };
 
 //////////////////////////////////////////////////////////////////////////////

@@ -71,9 +71,10 @@ namespace musik{ namespace core{
                     utfstring sortData;
                 };
 
-                typedef std::vector<TrackWithSortdata> TrackWithSortdataVector;
+                typedef std::list<TrackWithSortdata> TrackWithSortdataVector;
 
                 typedef sigslot::signal2<TrackWithSortdataVector*,bool> TrackWithdataSignal;
+                TrackWithdataSignal TrackResults;
 
                 TrackWithSortdataVector trackResults;
 
@@ -83,7 +84,7 @@ namespace musik{ namespace core{
                 IntVector tracksToSort;
 
                 std::string sortByMetaKey;
-
+                bool clearedTrackResults;
 
                 friend class Library::Base;
                 friend class Library::LocalDB;
@@ -95,6 +96,7 @@ namespace musik{ namespace core{
                 virtual bool ParseQuery(Library::Base *library,db::Connection &db);
                 virtual bool RecieveQuery(musik::core::xml::ParserNode &queryNode);
                 virtual bool SendQuery(musik::core::xml::WriterNode &queryNode);
+                bool RunCallbacks(Library::Base *library);
 
             private:
 
