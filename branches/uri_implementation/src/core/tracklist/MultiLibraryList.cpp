@@ -40,6 +40,8 @@
 #include <core/LibraryFactory.h>
 #include <core/NonLibraryTrackHelper.h>
 
+#include <set>
+
 //////////////////////////////////////////////////////////////////////////////
 
 using namespace musik::core::tracklist;
@@ -423,11 +425,13 @@ void MultiLibraryList::OnSortQueryFinished(musik::core::Query::Base *query,musik
         this->sortQueryCount--;
         if(this->sortQueryCount==0){
             // All queries should be finished, lets do the real sorting
-            typedef std::set<SortHelper> SortHelperSet;
+            typedef std::multiset<SortHelper> SortHelperSet;
             SortHelperSet sortSet;
             // Insert all of the tracklists
             for(SortTracksResults::iterator result=this->sortResultMap.begin();result!=this->sortResultMap.end();++result){
-                sortSet.insert(SortHelper(result->second));
+                if(!result->second.empty()){
+                    sortSet.insert(SortHelper(result->second));
+                }
             }
 
             // Clear the tracklist
@@ -460,18 +464,6 @@ void MultiLibraryList::OnSortQueryFinished(musik::core::Query::Base *query,musik
 }
 
 bool MultiLibraryList::SortHelper::operator<(const MultiLibraryList::SortHelper &sortHelper) const{
-    if(!this->sortData.empty() && !sortHelper.sortData.empty()){
-        return this->sortData.front().sortData < sortHelper.sortData.front().sortData;
-    }
-    if(!this->sortData.empty()){
-        return false;
-    }
-    if(!sortHelper.sortData.empty()){
-        return true;
-    }
-    return false;
+    return this->sortData.front().sortData < sortHelper.sortData.front().sortData;
 }
 
-bool MultiLibraryList::SortHelper::operator==(const MultiLibraryList::SortHelper &sortHelper) const{
-    return false;
-}
