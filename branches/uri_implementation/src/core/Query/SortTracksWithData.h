@@ -69,6 +69,7 @@ namespace musik{ namespace core{
                 struct TrackWithSortdata{
                     musik::core::TrackPtr track;
                     utfstring sortData;
+                    bool operator<(const TrackWithSortdata &trackWithSortData) const;
                 };
 
                 typedef std::list<TrackWithSortdata> TrackWithSortdataVector;

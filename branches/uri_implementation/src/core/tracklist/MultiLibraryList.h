@@ -87,6 +87,7 @@ class MultiLibraryList : public Base, public sigslot::has_slots<> {
 
         void OnTracksFromSortQuery(musik::core::Query::SortTracksWithData::TrackWithSortdataVector *newTracks,bool clear);
         void OnSortQueryFinished(musik::core::Query::Base *query,musik::core::Library::Base *library,bool success);
+        void SortTheLists();
 
     protected:
         //////////////////////////////////////////
@@ -128,6 +129,7 @@ class MultiLibraryList : public Base, public sigslot::has_slots<> {
         typedef std::map<int,musik::core::Query::SortTracksWithData::TrackWithSortdataVector> SortTracksResults;
         SortTracksResults sortResultMap;
         int sortQueryCount;
+        musik::core::Query::SortTracksWithData::TrackWithSortdataVector genericTrackSortVector;
 
         // Helper class for sorting
         struct SortHelper{

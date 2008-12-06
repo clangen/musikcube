@@ -153,6 +153,8 @@ bool Query::SortTracksWithData::ParseQuery(Library::Base *library,db::Connection
             TrackWithSortdata newSortData;
             newSortData.track.reset(new LibraryTrack(selectTracks.ColumnInt(0),library->Id()));
             newSortData.sortData    = selectTracks.ColumnTextUTF(1);
+            boost::algorithm::to_lower(newSortData.sortData);
+            
 
             tempTrackResults.push_back( newSortData );
 
@@ -379,5 +381,9 @@ bool Query::SortTracksWithData::RecieveResults(musik::core::xml::ParserNode &que
 		}
     }
     return true;
+}
+
+bool Query::SortTracksWithData::TrackWithSortdata::operator<(const TrackWithSortdata &trackWithSortData) const{
+    return this->sortData < trackWithSortData.sortData;
 }
 

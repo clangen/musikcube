@@ -59,5 +59,5 @@ LibraryPtr Track::Library(){
 }
 
 int Track::LibraryId(){
-    return -1;
+    return 0;
 }

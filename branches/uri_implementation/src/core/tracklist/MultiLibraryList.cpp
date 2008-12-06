@@ -367,6 +367,9 @@ bool MultiLibraryList::SortTracks(std::string sortingMetakey){
     // and send all the other tracks for sorting to it's own libraries
     SortTracksQueryMap queries;
 
+    // Lets clear the generic track sortvector
+    this->genericTrackSortVector.clear();
+
     // Start by looping through all the tracks
     for(TracklistVector::iterator track=this->tracklist.begin();track!=this->tracklist.end();++track){
         int libraryId   = (*track)->LibraryId();
@@ -375,13 +378,26 @@ bool MultiLibraryList::SortTracks(std::string sortingMetakey){
             queries[libraryId].AddTrack((*track)->Id());
         }else{
             // A generic track
+            musik::core::Query::SortTracksWithData::TrackWithSortdata sortData;
+            sortData.track  = *track;
+            const utfchar *metavalue    = (*track)->GetValue(sortingMetakey.c_str());
+            if(metavalue){
+                sortData.sortData   = metavalue;
+                boost::algorithm::to_lower(sortData.sortData);
+            }
+            this->genericTrackSortVector.push_back( sortData );
         }
     }
 
     this->sortQueryCount    = 0;
     this->sortResultMap.clear();
 
-    // First lets count the queries
+    // Check if there are any genericTracks
+    if(!this->genericTrackSortVector.empty()){
+        this->sortQueryCount++;
+    }
+
+    // Lets count the queries
     for(SortTracksQueryMap::iterator query=queries.begin();query!=queries.end();++query){
         musik::core::LibraryPtr lib = musik::core::LibraryFactory::Instance().GetLibrary(query->first);
         if(lib){
@@ -400,6 +416,13 @@ bool MultiLibraryList::SortTracks(std::string sortingMetakey){
         if(lib){
             lib->AddQuery(query->second);
         }
+    }
+
+    // Then sort the generic tracks by hand
+    if(!this->genericTrackSortVector.empty()){
+        this->genericTrackSortVector.sort();
+        this->sortQueryCount--;
+        this->SortTheLists();
     }
 
     return true;
@@ -423,43 +446,55 @@ void MultiLibraryList::OnTracksFromSortQuery(musik::core::Query::SortTracksWithD
 void MultiLibraryList::OnSortQueryFinished(musik::core::Query::Base *query,musik::core::Library::Base *library,bool success){
     if(success){
         this->sortQueryCount--;
-        if(this->sortQueryCount==0){
-            // All queries should be finished, lets do the real sorting
-            typedef std::multiset<SortHelper> SortHelperSet;
-            SortHelperSet sortSet;
-            // Insert all of the tracklists
-            for(SortTracksResults::iterator result=this->sortResultMap.begin();result!=this->sortResultMap.end();++result){
-                if(!result->second.empty()){
-                    sortSet.insert(SortHelper(result->second));
-                }
+        this->SortTheLists();
+    }
+}
+
+void MultiLibraryList::SortTheLists(){
+    if(this->sortQueryCount==0){
+        // All queries should be finished, lets do the real sorting
+        typedef std::multiset<SortHelper> SortHelperSet;
+        SortHelperSet sortSet;
+        // Insert all of the tracklists
+        for(SortTracksResults::iterator result=this->sortResultMap.begin();result!=this->sortResultMap.end();++result){
+            if(!result->second.empty()){
+                sortSet.insert(SortHelper(result->second));
             }
-
-            // Clear the tracklist
-            this->Clear();
-
-            // while there is still tracks left, continue to feed
-            while(!sortSet.empty()){
-                SortHelperSet::iterator front   = sortSet.begin();
-                this->tracklist.push_back(front->sortData.front().track);
-
-                // Remove the track from the tracklist
-                front->sortData.pop_front();
-
-                if(front->sortData.empty()){
-                    // The list is empty, remove it
-                    sortSet.erase(front);
-                }else{
-                    // For indexing in sortSet, remove and the add again
-                    SortHelper newSortHelper(*front);
-                    sortSet.erase(front);
-                    sortSet.insert(newSortHelper);
-                }
-            }
-            this->TracklistChanged(true);
-            this->PositionChanged(-1,this->currentPosition);
-            this->currentPosition   = -1;
-
         }
+
+        // We need to insert the generic list as well
+        if(!this->genericTrackSortVector.empty()){
+            sortSet.insert(SortHelper(this->genericTrackSortVector));
+        }
+
+        // Clear the tracklist
+        this->Clear();
+
+        // while there is still tracks left, continue to feed
+        while(!sortSet.empty()){
+            SortHelperSet::iterator front   = sortSet.begin();
+            this->tracklist.push_back(front->sortData.front().track);
+
+            // Remove the track from the tracklist
+            front->sortData.pop_front();
+
+            if(front->sortData.empty()){
+                // The list is empty, remove it
+                sortSet.erase(front);
+            }else{
+                // For indexing in sortSet, remove and the add again
+                SortHelper newSortHelper(*front);
+                sortSet.erase(front);
+                sortSet.insert(newSortHelper);
+            }
+        }
+        this->TracklistChanged(true);
+        this->PositionChanged(-1,this->currentPosition);
+        this->currentPosition   = -1;
+
+        this->sortResultMap.clear();
+        this->genericTrackSortVector.clear();
+
     }
 }
 
