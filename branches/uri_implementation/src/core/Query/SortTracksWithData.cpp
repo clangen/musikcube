@@ -42,6 +42,7 @@
 #include <core/xml/ParserNode.h>
 #include <core/xml/WriterNode.h>
 #include <core/LibraryTrack.h>
+#include <core/Common.h>
 
 using namespace musik::core;
 
@@ -147,7 +148,6 @@ bool Query::SortTracksWithData::ParseQuery(Library::Base *library,db::Connection
         db::Statement selectTracks(sql.c_str(),db);
 
         TrackWithSortdataVector tempTrackResults;
-//        tempTrackResults.reserve(101);
         int row(0);
         while(selectTracks.Step()==db::ReturnCode::Row){
             TrackWithSortdata newSortData;
@@ -156,13 +156,13 @@ bool Query::SortTracksWithData::ParseQuery(Library::Base *library,db::Connection
 
             tempTrackResults.push_back( newSortData );
 
-/*            if( (++row)%100==0 ){
+            if( (++row)%100==0 ){
                 boost::mutex::scoped_lock lock(library->resultMutex);
                 this->trackResults.insert(this->trackResults.end(),tempTrackResults.begin(),tempTrackResults.end());
 
                 tempTrackResults.clear();
-                trackResults.reserve(101);
-            }*/
+//                trackResults.reserve(101);
+            }
         }
         if(!tempTrackResults.empty()){
             boost::mutex::scoped_lock lock(library->resultMutex);
@@ -303,3 +303,81 @@ bool Query::SortTracksWithData::RunCallbacks(Library::Base *library){
 
     return bReturn;
 }
+
+bool Query::SortTracksWithData::SendResults(musik::core::xml::WriterNode &queryNode,Library::Base *library){
+
+    bool continueSending(true);
+    while(continueSending && !library->QueryCanceled(this)){
+
+        TrackWithSortdataVector trackResultsCopy;
+
+        {    // Scope for swapping the results safely
+            boost::mutex::scoped_lock lock(library->resultMutex);
+
+            trackResultsCopy.swap(this->trackResults);
+        }
+        {
+            boost::mutex::scoped_lock lock(library->libraryMutex);
+
+            if( (this->status & Status::Ended)!=0){
+                // If the query is finished, stop sending
+                continueSending = false;
+            }
+        }
+
+        // Check for Tracks
+        if( !trackResultsCopy.empty() && !library->QueryCanceled(this) ){
+
+            musik::core::xml::WriterNode tracklist(queryNode,"tracklist");
+
+            if(!this->clearedTrackResults){
+                tracklist.Attributes()["clear"]    = "true";
+                this->clearedTrackResults    = true;
+            }
+
+            for(TrackWithSortdataVector::iterator track=trackResultsCopy.begin();track!=trackResultsCopy.end();++track){
+                musik::core::xml::WriterNode trackNode(tracklist,"t");
+                trackNode.Attributes()["id"]    = boost::lexical_cast<std::string>( track->track->Id() );
+                trackNode.Content()     = UTF_TO_UTF8(track->sortData);
+            }
+
+        }
+
+        if(continueSending){
+            if( trackResultsCopy.empty() ){
+                // Yield for more results
+                boost::thread::yield();
+            }
+        }
+    }
+	
+
+    return true;
+}
+
+bool Query::SortTracksWithData::RecieveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library){
+    while( musik::core::xml::ParserNode node = queryNode.ChildNode() ){
+
+		typedef std::vector<std::string> StringVector;
+
+		// Recieve tracks
+        if( node.Name()=="tracklist"){
+            while( musik::core::xml::ParserNode trackNode = node.ChildNode("t") ){
+				trackNode.WaitForContent();
+
+                DBINT trackId(boost::lexical_cast<DBINT>(trackNode.Attributes()["id"]));
+                TrackWithSortdata newSortData;
+                newSortData.track.reset(new LibraryTrack(trackId,library->Id()));
+                newSortData.sortData    = UTF8_TO_UTF(trackNode.Content());
+                
+                {
+                    boost::mutex::scoped_lock lock(library->resultMutex);
+                    this->trackResults.push_back(newSortData);
+                }
+
+			}
+		}
+    }
+    return true;
+}
+

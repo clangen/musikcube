@@ -96,6 +96,8 @@ namespace musik{ namespace core{
                 virtual bool ParseQuery(Library::Base *library,db::Connection &db);
                 virtual bool RecieveQuery(musik::core::xml::ParserNode &queryNode);
                 virtual bool SendQuery(musik::core::xml::WriterNode &queryNode);
+                virtual bool SendResults(musik::core::xml::WriterNode &queryNode,Library::Base *library);
+                virtual bool RecieveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library);
                 bool RunCallbacks(Library::Base *library);
 
             private:

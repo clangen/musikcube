@@ -379,16 +379,24 @@ bool MultiLibraryList::SortTracks(std::string sortingMetakey){
     this->sortQueryCount    = 0;
     this->sortResultMap.clear();
 
+    // First lets count the queries
+    for(SortTracksQueryMap::iterator query=queries.begin();query!=queries.end();++query){
+        musik::core::LibraryPtr lib = musik::core::LibraryFactory::Instance().GetLibrary(query->first);
+        if(lib){
+            this->sortQueryCount++;
+        }
+    }
+
     // So, lets send the tracks to the libraries for sorting
     for(SortTracksQueryMap::iterator query=queries.begin();query!=queries.end();++query){
         // First, connect to callbacks for results
         query->second.TrackResults.connect(this,&MultiLibraryList::OnTracksFromSortQuery);
+        query->second.QueryFinished.connect(this,&MultiLibraryList::OnSortQueryFinished);
         query->second.SortByMetaKey(sortingMetakey);
         // Then send the query
         musik::core::LibraryPtr lib = musik::core::LibraryFactory::Instance().GetLibrary(query->first);
         if(lib){
             lib->AddQuery(query->second);
-            this->sortQueryCount++;
         }
     }
 
@@ -438,11 +446,14 @@ void MultiLibraryList::OnSortQueryFinished(musik::core::Query::Base *query,musik
                     sortSet.erase(front);
                 }else{
                     // For indexing in sortSet, remove and the add again
-                    SortHelper newSortHelper(front->sortData);
+                    SortHelper newSortHelper(*front);
                     sortSet.erase(front);
                     sortSet.insert(newSortHelper);
                 }
             }
+            this->TracklistChanged(true);
+            this->PositionChanged(-1,this->currentPosition);
+            this->currentPosition   = -1;
 
         }
     }
@@ -452,5 +463,15 @@ bool MultiLibraryList::SortHelper::operator<(const MultiLibraryList::SortHelper 
     if(!this->sortData.empty() && !sortHelper.sortData.empty()){
         return this->sortData.front().sortData < sortHelper.sortData.front().sortData;
     }
+    if(!this->sortData.empty()){
+        return false;
+    }
+    if(!sortHelper.sortData.empty()){
+        return true;
+    }
+    return false;
+}
+
+bool MultiLibraryList::SortHelper::operator==(const MultiLibraryList::SortHelper &sortHelper) const{
     return false;
 }

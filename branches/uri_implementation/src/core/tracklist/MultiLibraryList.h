@@ -135,6 +135,7 @@ class MultiLibraryList : public Base, public sigslot::has_slots<> {
             musik::core::Query::SortTracksWithData::TrackWithSortdataVector &sortData;
 
             bool operator<(const SortHelper &sortHelper) const;
+            bool operator==(const SortHelper &sortHelper) const;
 
         };
 };
