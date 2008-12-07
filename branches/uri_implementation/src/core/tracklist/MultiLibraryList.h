@@ -43,7 +43,6 @@
 #include <core/Query/TrackMetadata.h>
 #include <core/Library/Base.h>
 #include <core/Query/SortTracksWithData.h>
-//#include <core/Query/TrackMetadata.h>
 
 #include <set>
 #include <map>
@@ -55,6 +54,10 @@
 namespace musik{ namespace core{ namespace tracklist {
 //////////////////////////////////////////////////////////////////////////////
 
+//////////////////////////////////////////
+///\brief
+///The MultiLibraryList can contain tracks from multiple libraries and GenericTracks
+//////////////////////////////////////////
 class MultiLibraryList : public Base, public sigslot::has_slots<> {
     public:
         MultiLibraryList();

@@ -41,27 +41,14 @@
 #include <core/Library/Base.h>
 #include <boost/weak_ptr.hpp>
 
-
 //////////////////////////////////////////////////////////////////////////////
-// Forward declare
 namespace musik{ namespace core{
-/*    class Track;
-    namespace Library{
-        class Base;
-    }
-    namespace db{
-        class Connection;
-    }*/
-    namespace http{
-        class Responder;
-    }
-} }
 //////////////////////////////////////////////////////////////////////////////
 
-namespace musik{ namespace core{
-
-//////////////////////////////////////////////////////////////////////////////
-
+//////////////////////////////////////////
+///\brief
+///A GenericTrack is not related to any library. It must contain a URI
+//////////////////////////////////////////
 class GenericTrack : public Track {
     public:
         static TrackPtr Create(const utfchar *uri);

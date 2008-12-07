@@ -40,27 +40,22 @@
 #include <core/Track.h>
 #include <core/Library/Base.h>
 
-
 //////////////////////////////////////////////////////////////////////////////
 // Forward declare
-namespace musik{ namespace core{
-/*    class Track;
-    namespace Library{
-        class Base;
-    }
-    namespace db{
-        class Connection;
-    }*/
-    namespace http{
-        class Responder;
-    }
-} }
+namespace musik{ namespace core{ namespace http{
+    class Responder;
+} } }
 //////////////////////////////////////////////////////////////////////////////
 
-namespace musik{ namespace core{
 
 //////////////////////////////////////////////////////////////////////////////
+namespace musik{ namespace core{
+//////////////////////////////////////////////////////////////////////////////
 
+//////////////////////////////////////////
+///\brief
+///A LibraryTrack is a track related to a Library.
+//////////////////////////////////////////
 class LibraryTrack : public Track {
     public:
         LibraryTrack(void);

@@ -515,6 +515,18 @@
 				</File>
 			</Filter>
 		</Filter>
+		<Filter
+			Name="support"
+			>
+			<File
+				RelativePath=".\CommandlineParser.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\CommandlineParser.h"
+				>
+			</File>
+		</Filter>
 		<File
 			RelativePath=".\main.cpp"
 			>

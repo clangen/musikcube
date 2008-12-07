@@ -64,22 +64,16 @@ Query::SortTracksWithData::~SortTracksWithData(void){
 }
 
 
+//////////////////////////////////////////
+///\brief
+///Executes the query, meaning id does all the querying to the database.
+//////////////////////////////////////////
 bool Query::SortTracksWithData::ParseQuery(Library::Base *library,db::Connection &db){
-
-    std::vector<int> sortFieldsMetakeyId;
 
     // Create smart SQL statment
     std::string selectSQL("SELECT temp_track_sort.track_id ");
     std::string selectSQLTables("temp_track_sort JOIN tracks ON tracks.id=temp_track_sort.track_id ");
-//    std::string selectSQLWhere(" WHERE 1=1 ");
-    std::string selectSQLWhere(" ");
-//    std::string selectSQLGroup(" GROUP BY tt.id ");
-    std::string selectSQLGroup(" ");
     std::string selectSQLSort;
-
-    std::string insertFields;
-    std::string insertValues;
-    std::string createTableStatement("CREATE TEMPORARY TABLE temp_track_sort (id INTEGER PRIMARY KEY AUTOINCREMENT,track_id INTEGER NOT NULL default 0)");
 
     db::CachedStatement selectMetaKeyId("SELECT id FROM meta_keys WHERE name=?",db);
 
@@ -88,7 +82,7 @@ bool Query::SortTracksWithData::ParseQuery(Library::Base *library,db::Connection
         selectSQL     += ",tracks."+this->sortByMetaKey;
         selectSQLSort += (selectSQLSort.empty()?" ORDER BY tracks.":",tracks.") + this->sortByMetaKey;
 
-    // Check if it's a special MTO field
+    // Check if it's a special MTO (many to one relation) field
     }else if(musik::core::Library::Base::IsSpecialMTOMetaKey(this->sortByMetaKey) || musik::core::Library::Base::IsSpecialMTMMetaKey(this->sortByMetaKey)){
         if(this->sortByMetaKey=="album"){
             selectSQLTables += " LEFT OUTER JOIN albums ON albums.id=tracks.album_id ";
@@ -109,8 +103,6 @@ bool Query::SortTracksWithData::ParseQuery(Library::Base *library,db::Connection
         // Sort by metakeys table
         selectMetaKeyId.BindText(0,this->sortByMetaKey);
         if(selectMetaKeyId.Step()==db::Row){
-            sortFieldsMetakeyId.push_back(selectMetaKeyId.ColumnInt(0));
-
             selectSQLTables += " LEFT OUTER JOIN (SELECT track_meta.track_id,meta_values.content,meta_values.sort_order FROM track_meta,meta_values WHERE track_meta.meta_value_id=meta_values.id AND meta_values.meta_key_id="+boost::lexical_cast<std::string>(selectMetaKeyId.ColumnInt(0))+") the_meta ON the_meta.track_id=tracks.id ";
             selectSQL     += ",the_meta.content";
             selectSQLSort += (selectSQLSort.empty()?" ORDER BY the_meta.sort_order":",the_meta.sort_order");
@@ -122,12 +114,10 @@ bool Query::SortTracksWithData::ParseQuery(Library::Base *library,db::Connection
 
     // First lets start by inserting all tracks in a temporary table
     db.Execute("DROP TABLE IF EXISTS temp_track_sort");
-
-    db.Execute(createTableStatement.c_str());
+    db.Execute("CREATE TEMPORARY TABLE temp_track_sort (id INTEGER PRIMARY KEY AUTOINCREMENT,track_id INTEGER NOT NULL default 0)");
 
     {
-        insertValues    = "INSERT INTO temp_track_sort (track_id) VALUES (?)";
-        db::Statement insertTracks(insertValues.c_str(),db);
+        db::Statement insertTracks("INSERT INTO temp_track_sort (track_id) VALUES (?)",db);
 
         for(int i(0);i<this->tracksToSort.size();++i){
             DBINT track(this->tracksToSort[i]);
@@ -141,9 +131,12 @@ bool Query::SortTracksWithData::ParseQuery(Library::Base *library,db::Connection
     // Finaly keep sort order of inserted order.
     selectSQLSort   += ",temp_track_sort.id";
 
-    std::string sql=selectSQL+" FROM "+selectSQLTables+selectSQLWhere+selectSQLGroup+selectSQLSort;
 
-//    return this->ParseTracksSQL(sql,library,db);
+    ////////////////////////////////////////////////////////
+    // The main SQL query what this class is all about
+    std::string sql=selectSQL+" FROM "+selectSQLTables+selectSQLSort;
+
+
     if(!library->QueryCanceled(this)){
         db::Statement selectTracks(sql.c_str(),db);
 
@@ -153,24 +146,27 @@ bool Query::SortTracksWithData::ParseQuery(Library::Base *library,db::Connection
             TrackWithSortdata newSortData;
             newSortData.track.reset(new LibraryTrack(selectTracks.ColumnInt(0),library->Id()));
             newSortData.sortData    = selectTracks.ColumnTextUTF(1);
+
+            // Convert the content to lower if futher sorting need to be done
             boost::algorithm::to_lower(newSortData.sortData);
             
-
             tempTrackResults.push_back( newSortData );
 
+            // Each 100 result, lock the mutex and insert the results
             if( (++row)%100==0 ){
                 boost::mutex::scoped_lock lock(library->resultMutex);
                 this->trackResults.insert(this->trackResults.end(),tempTrackResults.begin(),tempTrackResults.end());
-
                 tempTrackResults.clear();
-//                trackResults.reserve(101);
             }
         }
+
+        // If there are any results not inserted, insert now
         if(!tempTrackResults.empty()){
             boost::mutex::scoped_lock lock(library->resultMutex);
             this->trackResults.insert(this->trackResults.end(),tempTrackResults.begin(),tempTrackResults.end());
         }
 
+        // All done succesfully, return true
         return true;
     }else{
         return false;
@@ -190,15 +186,27 @@ Query::Ptr Query::SortTracksWithData::copy() const{
     return queryCopy;
 }
 
+//////////////////////////////////////////
+///\brief
+///Add a track (trackId) in for sorting
+//////////////////////////////////////////
 void Query::SortTracksWithData::AddTrack(DBINT trackId){
     this->tracksToSort.push_back(trackId);
 }
 
 
+//////////////////////////////////////////
+///\brief
+///What metakey to sort by
+//////////////////////////////////////////
 void Query::SortTracksWithData::SortByMetaKey(std::string metaKey){
     this->sortByMetaKey = metaKey;
 }
 
+//////////////////////////////////////////
+///\brief
+///If you are reusing the query, clear what tracks to sort by
+//////////////////////////////////////////
 void Query::SortTracksWithData::ClearTracks(){
     this->tracksToSort.clear();
 }
@@ -247,10 +255,18 @@ bool Query::SortTracksWithData::RecieveQuery(musik::core::xml::ParserNode &query
     return true;
 }
 
+//////////////////////////////////////////
+///\brief
+///The name ("SortTracksWithData") of the query. 
+//////////////////////////////////////////
 std::string Query::SortTracksWithData::Name(){
     return "SortTracksWithData";
 }
 
+//////////////////////////////////////////
+///\brief
+///Send the query to a musikServer
+//////////////////////////////////////////
 bool Query::SortTracksWithData::SendQuery(musik::core::xml::WriterNode &queryNode){
     {
         xml::WriterNode sortbyNode(queryNode,"sortby");
@@ -271,6 +287,10 @@ bool Query::SortTracksWithData::SendQuery(musik::core::xml::WriterNode &queryNod
     
 }
 
+//////////////////////////////////////////
+///\brief
+///Execute the callbacks. In this case the "TrackResults" signal
+//////////////////////////////////////////
 bool Query::SortTracksWithData::RunCallbacks(Library::Base *library){
 
     bool bReturn(false);
@@ -306,6 +326,20 @@ bool Query::SortTracksWithData::RunCallbacks(Library::Base *library){
     return bReturn;
 }
 
+//////////////////////////////////////////
+///\brief
+///Send the results to the client
+///
+///The expected output format is like this:
+///\code
+///   <tracklist>
+///       <t id="1">thesortdata</t>
+///       <t id="2">thesortdata</t>
+///       <t id="5">thesortdata</t>
+///   </tracklist>
+///\endcode
+///
+//////////////////////////////////////////
 bool Query::SortTracksWithData::SendResults(musik::core::xml::WriterNode &queryNode,Library::Base *library){
 
     bool continueSending(true);
@@ -357,6 +391,10 @@ bool Query::SortTracksWithData::SendResults(musik::core::xml::WriterNode &queryN
     return true;
 }
 
+//////////////////////////////////////////
+///\brief
+///Recieve results from the musikServer.
+//////////////////////////////////////////
 bool Query::SortTracksWithData::RecieveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library){
     while( musik::core::xml::ParserNode node = queryNode.ChildNode() ){
 
@@ -383,6 +421,10 @@ bool Query::SortTracksWithData::RecieveResults(musik::core::xml::ParserNode &que
     return true;
 }
 
+//////////////////////////////////////////
+///\brief
+///Operator to be able to sort using the sortData
+//////////////////////////////////////////
 bool Query::SortTracksWithData::TrackWithSortdata::operator<(const TrackWithSortdata &trackWithSortData) const{
     return this->sortData < trackWithSortData.sortData;
 }

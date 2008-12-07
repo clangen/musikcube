@@ -53,6 +53,10 @@
 namespace musik{ namespace core{ namespace tracklist {
 //////////////////////////////////////////////////////////////////////////////
 
+//////////////////////////////////////////
+///\brief
+///A LibraryList can only contain track from one single library
+//////////////////////////////////////////
 class LibraryList : public Base, public sigslot::has_slots<> {
     public:
         LibraryList(musik::core::LibraryPtr library);

@@ -2,9 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright  2007, Casey Langen
-//
-// Sources and Binaries of: mC2, win32cpp
+// The following are Copyright © 2008, Daniel Önnerby
 //
 // All rights reserved.
 //
@@ -35,46 +33,19 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
-
-#include "pch.hpp"
-#include <cube/MainWindowController.hpp>
-#include <win32cpp/Application.hpp>
-#include <win32cpp/TopLevelWindow.hpp>
-#include <core/Common.h>
-#include <cube/CommandlineParser.h>
-
+#pragma once
 
 //////////////////////////////////////////////////////////////////////////////
-
-using namespace musik::cube;
-
+namespace musik{ namespace cube{
 //////////////////////////////////////////////////////////////////////////////
 
-int WINAPI wWinMain(HINSTANCE instance, HINSTANCE prevInstance, LPTSTR commandLine, int showCommand)
+class CommandlineParser
 {
-    // Lets parse the input arguments
-    CommandlineParser::ParseCommands(commandLine);
+    public:
+        static void ParseCommands(utfchar *commandLine);
+};
 
+//////////////////////////////////////////////////////////////////////////////
+} }
+//////////////////////////////////////////////////////////////////////////////
 
-    // Initialize locale
-    try {
-		uistring appDirectory( musik::core::GetApplicationDirectory() );
-        Locale::Instance()->SetLocaleDirectory(appDirectory + _T("\\locales"));
-	    Locale::Instance()->LoadConfig(_T("english"));
-    }
-    catch(...) {
-    }
-
-    // Initialize the main application (mC2.exe)
-    Application::Initialize(instance, prevInstance, commandLine, showCommand);
-
-    // Create the main window and its controller
-    TopLevelWindow mainWindow(_T("musikCube 2"));
-    MainWindowController mainController(mainWindow);
-
-
-    // Initialize and show the main window, and run the event loop.
-    Application::Instance().Run(mainWindow);
-
-    return 0;
-}

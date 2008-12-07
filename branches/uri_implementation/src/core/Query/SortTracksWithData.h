@@ -46,66 +46,74 @@
 #include <list>
 #include <string>
 
+//////////////////////////////////////////////////////////////////////////////
+namespace musik{ namespace core{ namespace Query{
+//////////////////////////////////////////////////////////////////////////////
 
+//////////////////////////////////////////
+///\brief
+///SortTracksWithData is a query used to recieve sorted tracklists along with the data the tracks are sorted by
+///
+///\remarks
+///First concider to use the SortTracks query instead.
+///
+///\see
+///musik::core::Query::SortTracks
+//////////////////////////////////////////
+class SortTracksWithData : public Query::Base{
+    public:
+        SortTracksWithData(void);
+        ~SortTracksWithData(void);
 
+        void AddTrack(DBINT trackId);
+        void ClearTracks();
+        void SortByMetaKey(std::string metaKey);
 
-
-namespace musik{ namespace core{
-    namespace Query{
-
-        class SortTracksWithData : public Query::Base{
-            public:
-                SortTracksWithData(void);
-                ~SortTracksWithData(void);
-
-                void AddTrack(DBINT trackId);
-
-                void ClearTracks();
-
-                void SortByMetaKey(std::string metaKey);
-
-                //////////////////////////////////////////////////////////
-                // Special option to return tracks with sorted colums data
-                struct TrackWithSortdata{
-                    musik::core::TrackPtr track;
-                    utfstring sortData;
-                    bool operator<(const TrackWithSortdata &trackWithSortData) const;
-                };
-
-                typedef std::list<TrackWithSortdata> TrackWithSortdataVector;
-
-                typedef sigslot::signal2<TrackWithSortdataVector*,bool> TrackWithdataSignal;
-                TrackWithdataSignal TrackResults;
-
-                TrackWithSortdataVector trackResults;
-
-            protected:
-
-                typedef std::vector<DBINT> IntVector;
-                IntVector tracksToSort;
-
-                std::string sortByMetaKey;
-                bool clearedTrackResults;
-
-                friend class Library::Base;
-                friend class Library::LocalDB;
-
-
-                Ptr copy() const;
-
-                virtual std::string Name();
-                virtual bool ParseQuery(Library::Base *library,db::Connection &db);
-                virtual bool RecieveQuery(musik::core::xml::ParserNode &queryNode);
-                virtual bool SendQuery(musik::core::xml::WriterNode &queryNode);
-                virtual bool SendResults(musik::core::xml::WriterNode &queryNode,Library::Base *library);
-                virtual bool RecieveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library);
-                bool RunCallbacks(Library::Base *library);
-
-            private:
-
+        //////////////////////////////////////////
+		///\brief
+		///The struct used to return both the track and the sorted data
+		//////////////////////////////////////////
+		struct TrackWithSortdata{
+            musik::core::TrackPtr track;
+            utfstring sortData;
+            bool operator<(const TrackWithSortdata &trackWithSortData) const;
         };
 
-    }
-} }
+        typedef std::list<TrackWithSortdata> TrackWithSortdataVector;
+
+        typedef sigslot::signal2<TrackWithSortdataVector*,bool> TrackWithdataSignal;
+        TrackWithdataSignal TrackResults;
+
+        TrackWithSortdataVector trackResults;
+
+    protected:
+
+        typedef std::vector<DBINT> IntVector;
+        IntVector tracksToSort;
+
+        std::string sortByMetaKey;
+        bool clearedTrackResults;
+
+        friend class Library::Base;
+        friend class Library::LocalDB;
+
+
+        Ptr copy() const;
+
+        virtual std::string Name();
+        virtual bool ParseQuery(Library::Base *library,db::Connection &db);
+        virtual bool RecieveQuery(musik::core::xml::ParserNode &queryNode);
+        virtual bool SendQuery(musik::core::xml::WriterNode &queryNode);
+        virtual bool SendResults(musik::core::xml::WriterNode &queryNode,Library::Base *library);
+        virtual bool RecieveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library);
+        bool RunCallbacks(Library::Base *library);
+
+    private:
+
+};
+
+//////////////////////////////////////////////////////////////////////////////
+} } }
+//////////////////////////////////////////////////////////////////////////////
 
 
