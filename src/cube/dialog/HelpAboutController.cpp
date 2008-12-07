@@ -60,7 +60,7 @@ HelpAboutController::HelpAboutController(win32cpp::TopLevelWindow &mainWindow)
 {
     this->view  = new HelpAboutView;
     this->mainWindow.AddChild(this->view);
-
+    
     this->view->Created.connect(this, &HelpAboutController::OnViewCreated);
 
     // Start drawing thread

@@ -38,6 +38,7 @@
 
 #include <core/Query/ListSelection.h>
 #include <core/Query/SortTracks.h>
+#include <core/Query/SortTracksWithData.h>
 #include <core/Query/TrackMetadata.h>
 
 //////////////////////////////////////////////////////////////////////////////
@@ -53,4 +54,5 @@ void Factory::GetQueries(QueryMap &queryMap){
     queryMap["ListSelection"]       = Ptr(new ListSelection());
     queryMap["SortTracks"]          = Ptr(new SortTracks());
     queryMap["TrackMetadata"]       = Ptr(new TrackMetadata());
+    queryMap["SortTracksWithData"]  = Ptr(new SortTracksWithData());
 }

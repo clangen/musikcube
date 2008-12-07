@@ -144,7 +144,7 @@ bool Query::SortTracks::ParseQuery(Library::Base *library,db::Connection &db){
 
         db::Statement selectMetaValue("SELECT mv.sort_order FROM meta_values mv,track_meta tm WHERE tm.meta_value_id=mv.id AND tm.track_id=? AND mv.meta_key_id=? LIMIT 1",db);
         for(int i(0);i<this->tracksToSort.size();++i){
-            int track(this->tracksToSort[i]);
+            DBINT track(this->tracksToSort[i]);
             insertTracks.BindInt(0,track);
 
             // Lets find the meta values
@@ -185,21 +185,21 @@ Query::Ptr Query::SortTracks::copy() const{
     return queryCopy;
 }
 
-void Query::SortTracks::AddTrack(int trackId){
+void Query::SortTracks::AddTrack(DBINT trackId){
     this->tracksToSort.push_back(trackId);
 }
 
-void Query::SortTracks::AddTracks(std::vector<int> &tracks){
+void Query::SortTracks::AddTracks(std::vector<DBINT> &tracks){
     this->tracksToSort.reserve(this->tracksToSort.size()+tracks.size());
-    for(std::vector<int>::iterator track=tracks.begin();track!=tracks.end();++track){
+    for(std::vector<DBINT>::iterator track=tracks.begin();track!=tracks.end();++track){
         this->tracksToSort.push_back(*track);
     }
 }
 
-void Query::SortTracks::AddTracks(musik::core::tracklist::IRandomAccess &tracks){
+void Query::SortTracks::AddTracks(musik::core::tracklist::LibraryList &tracks){
     this->tracksToSort.reserve(this->tracksToSort.size()+tracks.Size());
     for(int i(0);i<tracks.Size();++i){
-        this->tracksToSort.push_back(tracks[i]->id);
+        this->tracksToSort.push_back(tracks[i]->Id());
     }
 
 }

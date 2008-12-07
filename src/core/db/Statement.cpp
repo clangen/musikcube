@@ -102,7 +102,7 @@ void Statement::UnBindAll(){
 ///musik::core::db::ReturnCode
 //////////////////////////////////////////
 int Statement::Step(){
-    return sqlite3_step(this->stmt);
+    return this->connection->StepStatement(this->stmt);
 }
 
 

@@ -39,6 +39,7 @@
 #include <core/Common.h>
 #include <core/Query/TrackMetadata.h>
 #include <core/Library/Base.h>
+#include <core/LibraryTrack.h>
 #include <boost/algorithm/string.hpp>
 
 using namespace musik::core;
@@ -156,7 +157,7 @@ bool TrackMetadata::ParseQuery(Library::Base *library,db::Connection &db){
         TrackPtr track(this->aRequestTracks.back());
         this->aRequestTracks.pop_back();
 
-        trackData.BindInt(0,track->id);
+        trackData.BindInt(0,track->Id());
 
         if(trackData.Step()==db::ReturnCode::Row){
 
@@ -175,7 +176,7 @@ bool TrackMetadata::ParseQuery(Library::Base *library,db::Connection &db){
             // Get the meta-value as well
             if(this->requestAllFields){
                 // Get ALL meta
-                allMetadata.BindInt(0,track->id);
+                allMetadata.BindInt(0,track->Id());
                 while(allMetadata.Step()==db::ReturnCode::Row){
                     track->SetValue(allMetadata.ColumnText(1),allMetadata.ColumnTextUTF(0));
                 }
@@ -184,7 +185,7 @@ bool TrackMetadata::ParseQuery(Library::Base *library,db::Connection &db){
             }else{
                 for(std::set<std::string>::iterator metaKey=this->metaFields.begin();metaKey!=this->metaFields.end();++metaKey){
 
-                    metadata.BindInt(0,track->id);
+                    metadata.BindInt(0,track->Id());
                     metadata.BindText(1,metaKey->c_str());
 
                     while(metadata.Step()==db::ReturnCode::Row){
@@ -197,7 +198,7 @@ bool TrackMetadata::ParseQuery(Library::Base *library,db::Connection &db){
 
             // Find genres
             if( this->categoryFields.find("genre")!=this->categoryFields.end() ){
-                genres.BindInt(0,track->id);
+                genres.BindInt(0,track->Id());
                 while(genres.Step()==db::ReturnCode::Row){
                     track->SetValue("genre",genres.ColumnTextUTF(0));
                 }
@@ -206,7 +207,7 @@ bool TrackMetadata::ParseQuery(Library::Base *library,db::Connection &db){
 
             // Find artists
             if( this->categoryFields.find("artist")!=this->categoryFields.end() ){
-                artists.BindInt(0,track->id);
+                artists.BindInt(0,track->Id());
                 while(artists.Step()==db::ReturnCode::Row){
                     track->SetValue("artist",artists.ColumnTextUTF(0));
                 }
@@ -293,9 +294,9 @@ Query::Ptr TrackMetadata::copy() const{
 }
 
 void TrackMetadata::PreAddQuery(Library::Base *library){
-    for(TrackVector::iterator track=this->aRequestTracks.begin();track!=this->aRequestTracks.end();++track){
+/*    for(TrackVector::iterator track=this->aRequestTracks.begin();track!=this->aRequestTracks.end();++track){
         (*track)->InitMeta(library);
-    }
+    }*/
 }
 
 std::string TrackMetadata::Name(){
@@ -330,7 +331,7 @@ bool TrackMetadata::RecieveQuery(musik::core::xml::ParserNode &queryNode){
             try{    // lexical_cast can throw
                 boost::algorithm::split(values,metakeysNode.Content(),boost::algorithm::is_any_of(","));
                 for(StringVector::iterator value=values.begin();value!=values.end();++value){
-                    this->RequestTrack(TrackPtr(new Track( boost::lexical_cast<DBINT>(*value) )));
+                    this->RequestTrack(TrackPtr(new LibraryTrack( boost::lexical_cast<DBINT>(*value),0 )));
                 }
             }
             catch(...){
@@ -365,7 +366,7 @@ bool TrackMetadata::SendQuery(musik::core::xml::WriterNode &queryNode){
             if(!tracksNode.Content().empty()){
                 tracksNode.Content().append(",");
             }
-            tracksNode.Content().append( boost::lexical_cast<std::string>( (*track)->id ) );
+            tracksNode.Content().append( boost::lexical_cast<std::string>( (*track)->Id()) );
         }
     }
 
@@ -399,10 +400,10 @@ bool TrackMetadata::SendResults(musik::core::xml::WriterNode &queryNode,Library:
                     (*track)->ClearValue("path");
 
                     musik::core::xml::WriterNode trackNode(queryNode,"t");
-                    trackNode.Attributes()["id"]    = boost::lexical_cast<std::string>( (*track)->id );
+                    trackNode.Attributes()["id"]    = boost::lexical_cast<std::string>( (*track)->Id() );
 
-                    TrackMeta::TagMapIteratorPair metaDatas( (*track)->GetAllValues() );
-                    for(TrackMeta::TagMapConstIterator metaData=metaDatas.first;metaData!=metaDatas.second;++metaData){
+                    Track::MetadataIteratorRange metaDatas( (*track)->GetAllValues() );
+                    for(Track::MetadataMap::const_iterator metaData=metaDatas.first;metaData!=metaDatas.second;++metaData){
                         musik::core::xml::WriterNode metaDataNode(trackNode,"md");
                         metaDataNode.Attributes()["k"]  = metaData->first;
                         metaDataNode.Content().append( ConvertUTF8(metaData->second) );
@@ -441,7 +442,7 @@ bool TrackMetadata::RecieveResults(musik::core::xml::ParserNode &queryNode,Libra
             TrackVector::iterator track=this->aRequestTracks.begin();
             bool trackFound(false);
             while(track!=this->aRequestTracks.end() && !trackFound){
-                if( (*track)->id==trackId ){
+                if( (*track)->Id()==trackId ){
                     // TrackPtr found
                     trackFound  = true;
                 }else{
@@ -463,7 +464,7 @@ bool TrackMetadata::RecieveResults(musik::core::xml::ParserNode &queryNode,Libra
                 // Special case for the "path" when connecting to a webserver
                 if(requestPath){
                     utfstring path(pathPrefix);
-                    path    += boost::lexical_cast<utfstring>(currentTrack->id);
+                    path    += boost::lexical_cast<utfstring>( currentTrack->Id() );
                     currentTrack->SetValue("path",path.c_str());
                 }
 

@@ -46,7 +46,7 @@ namespace musik{ namespace core{ namespace Query{
 //////////////////////////////////////////////////////////////////////////////
 
 #include <win32cpp/ListView.hpp>
-#include <core/tracklist/IRandomAccess.h>
+#include <core/tracklist/Base.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -82,9 +82,9 @@ public:
 
     // instance data
 protected:  
-    void OnTrackMeta(std::vector<int> &trackPositions);
+    void OnTrackMeta(std::vector<long> trackPositions);
     void OnTracks(bool cleared);
-    void OnPositionChanged(int activeRow,int oldActiveRow);
+    void OnPositionChanged(long activeRow,long oldActiveRow);
 
     int currentPosition;
 	unsigned int options;

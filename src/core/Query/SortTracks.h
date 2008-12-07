@@ -44,7 +44,7 @@
 
 #include <core/config.h>
 #include <core/Query/ListBase.h>
-#include <core/tracklist/IRandomAccess.h>
+#include <core/tracklist/LibraryList.h>
 
 
 
@@ -57,9 +57,9 @@ namespace musik{ namespace core{
                 SortTracks(void);
                 ~SortTracks(void);
 
-                void AddTrack(int trackId);
-                void AddTracks(std::vector<int> &tracks);
-                void AddTracks(musik::core::tracklist::IRandomAccess &tracks);
+                void AddTrack(DBINT trackId);
+                void AddTracks(std::vector<DBINT> &tracks);
+                void AddTracks(musik::core::tracklist::LibraryList &tracks);
 
                 void ClearTracks();
 
@@ -67,7 +67,7 @@ namespace musik{ namespace core{
 
             protected:
 
-                typedef std::vector<int> IntVector;
+                typedef std::vector<DBINT> IntVector;
                 IntVector tracksToSort;
 
                 typedef std::list<std::string> StringList;

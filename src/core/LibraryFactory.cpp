@@ -43,7 +43,14 @@
 
 using namespace musik::core;
 
-LibraryFactory LibraryFactory::sInstance;
+//LibraryFactory LibraryFactory::sInstance;
+
+LibraryFactory& LibraryFactory::Instance(){ 
+    typedef boost::shared_ptr<LibraryFactory> InstanceType;
+    static InstanceType sInstance(new LibraryFactory());
+    return *sInstance; 
+};
+
 
 //////////////////////////////////////////
 ///\brief
@@ -59,10 +66,10 @@ LibraryFactory::LibraryFactory(void){
     Preferences::CreateDB(db);
 
 	// Get the libraries
-	db::Statement stmtGetLibs("SELECT name,type FROM libraries ORDER BY id",db);
+	db::Statement stmtGetLibs("SELECT id,name,type FROM libraries ORDER BY id",db);
 
 	while(stmtGetLibs.Step()==db::Row){
-		this->AddLibrary( stmtGetLibs.ColumnTextUTF(0),stmtGetLibs.ColumnInt(1) );
+        this->AddLibrary( stmtGetLibs.ColumnInt(0),stmtGetLibs.ColumnTextUTF(1),stmtGetLibs.ColumnInt(2) );
 	}
 
 	// If there are no libraries, add a LocalDB
@@ -98,18 +105,19 @@ LibraryFactory::~LibraryFactory(void){
 ///\returns
 ///LibraryPtr of the added library. (NULL pointer on failure)
 //////////////////////////////////////////
-LibraryPtr LibraryFactory::AddLibrary(utfstring name,int type,bool sendEvent,bool startup){
+LibraryPtr LibraryFactory::AddLibrary(int id,utfstring name,int type,bool sendEvent,bool startup){
 	LibraryPtr lib;
 	switch(type){
 		case Types::Remote:
-			lib	= Library::Remote::Create(name);
+			lib	= Library::Remote::Create(name,id);
 			break;
 		default:
-			lib	= Library::LocalDB::Create(name);
+			lib	= Library::LocalDB::Create(name,id);
 	}
 
 	if(lib){
 		this->libraries.push_back(lib);
+        this->libraryMap[id]    = lib;
 
         if(sendEvent){
             this->LibrariesUpdated();
@@ -156,7 +164,7 @@ LibraryPtr LibraryFactory::CreateLibrary(utfstring name,int type,bool startup){
 	stmtInsert.BindTextUTF(0,name);
 	stmtInsert.BindInt(1,type);
 	if(stmtInsert.Step()==db::Done){
-		return this->AddLibrary(name,type,true,startup);
+        return this->AddLibrary(db.LastInsertedId(),name,type,true,startup);
 	}
 	return LibraryPtr();
 }
@@ -169,6 +177,16 @@ void LibraryFactory::DeleteLibrary(utfstring name){
 ///Get the vector with all current libraries
 //////////////////////////////////////////
 LibraryFactory::LibraryVector& LibraryFactory::Libraries(){
-	return LibraryFactory::sInstance.libraries;
+    return LibraryFactory::Instance().libraries;
+}
+
+LibraryPtr LibraryFactory::GetLibrary(int identifier){
+    if(identifier){
+        LibraryMap::iterator lib    = this->libraryMap.find(identifier);
+        if(lib!=this->libraryMap.end()){
+            return lib->second;
+        }
+    }
+    return LibraryPtr();
 }
 

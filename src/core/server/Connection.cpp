@@ -56,10 +56,11 @@ using namespace musik::core::server;
 
 Connection::Connection(boost::asio::io_service &ioService,musik::core::Server *server)
  :socket(ioService)
- ,Base(UTF("Server"))
+ ,Base(UTF("Server"),0)
  ,server(server)
  ,salt(musik::core::Crypt::GenerateSalt())
 {
+    this->identifier    = this->Name();
 }
 
 Connection::~Connection(void){

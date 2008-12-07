@@ -41,9 +41,12 @@
 #include <cube/LibraryWindowView.hpp>
 #include <cube/SourcesView.hpp>
 #include <cube/SourcesController.hpp>
+#include <cube/TracklistController.hpp>
+#include <cube/TracklistView.hpp>
 
 #include <core/LibraryFactory.h>
 #include <core/Pluginfactory.h>
+#include <core/PlaybackQueue.h>
 
 #include <win32cpp/Types.hpp>    // uichar, uistring
 #include <win32cpp/TopLevelWindow.hpp>
@@ -59,6 +62,7 @@ using namespace musik::cube;
 
 /*ctor*/    LibraryWindowController::LibraryWindowController(LibraryWindowView& view)
 : view(view)
+, nowPlayingController(NULL)
 {
     musik::core::PluginFactory::Instance();
 
@@ -70,12 +74,20 @@ using namespace musik::cube;
 
 LibraryWindowController::~LibraryWindowController()
 {
+    delete this->nowPlayingController;
 }
 
 void        LibraryWindowController::OnViewCreated(Window* window)
 {
 
     using namespace musik::core;
+
+    // Start by adding the "now playing" tab
+    TracklistView *nowPlayingView   = new TracklistView();
+    this->nowPlayingController = new TracklistController(*nowPlayingView,NULL,musik::core::PlaybackQueue::Instance().NowPlayingTracklist(),TracklistController::Deletable|TracklistController::HighlightActive);
+    this->view.AddTab( uistring(UTF("Now Playing")) ,nowPlayingView);
+
+
 	// Get libraries from LibraryFactory
     this->UpdateLibraryTabs();
     LibraryFactory::Instance().LibrariesUpdated.connect(this,&LibraryWindowController::UpdateLibraryTabs);
@@ -107,7 +119,7 @@ void LibraryWindowController::UpdateLibraryTabs(){
         if(!found){
             SourcesView* sourcesView = new SourcesView();
             this->libraries[sourcesView]	= SourcesControllerPtr(new SourcesController(*sourcesView,*library));
-            this->view.AddTab( (*library)->Identifier() ,sourcesView);
+            this->view.AddTab( (*library)->Name() ,sourcesView);
         }
 
     }

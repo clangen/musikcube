@@ -58,21 +58,23 @@ Factory::Factory(){
 FileStreamPtr Factory::OpenFile(const utfchar *filename){
     typedef musik::core::PluginFactory::DestroyDeleter<IFileStream> StreamDeleter;
 
-    for(FileStreamFactoryVector::iterator factory=sInstance.fileStreamFactories.begin();factory!=sInstance.fileStreamFactories.end();++factory){
-        if( (*factory)->CanReadFile(filename) ){
-            IFileStream* fileStream( (*factory)->OpenFile(filename) );
-            if(fileStream){
-                return FileStreamPtr(fileStream,StreamDeleter());
-            }else{
-                return FileStreamPtr();
+    if(filename){
+        for(FileStreamFactoryVector::iterator factory=sInstance.fileStreamFactories.begin();factory!=sInstance.fileStreamFactories.end();++factory){
+            if( (*factory)->CanReadFile(filename) ){
+                IFileStream* fileStream( (*factory)->OpenFile(filename) );
+                if(fileStream){
+                    return FileStreamPtr(fileStream,StreamDeleter());
+                }else{
+                    return FileStreamPtr();
+                }
             }
         }
-    }
 
-    // If non of the plugins match, lets create a regular file stream
-    FileStreamPtr regularFile( new LocalFileStream(),StreamDeleter() );
-    if(regularFile->Open(filename)){
-        return regularFile;
+        // If non of the plugins match, lets create a regular file stream
+        FileStreamPtr regularFile( new LocalFileStream(),StreamDeleter() );
+        if(regularFile->Open(filename)){
+            return regularFile;
+        }
     }
     return FileStreamPtr();
 }

@@ -37,6 +37,7 @@
 #pragma once
 
 #include <core/config.h>
+#include <boost/shared_ptr.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 namespace musik{ namespace core{ namespace filestreams{
@@ -131,6 +132,8 @@ class IFileStream{
         virtual long Filesize()=0;
 
 };
+
+typedef boost::shared_ptr<IFileStream> FileStreamPtr;
 
 //////////////////////////////////////////////////////////////////////////////
 } } }

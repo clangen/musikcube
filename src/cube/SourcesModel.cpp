@@ -45,7 +45,7 @@
 #include <cube/TracklistView.hpp>
 #include <cube/TracklistController.hpp>
 
-#include <core/tracklist/Playlist.h>
+//#include <core/tracklist/Playlist.h>
 
 #include <win32cpp/Label.hpp>
 
@@ -113,33 +113,7 @@ private:    BrowseController controller;
 
 //////////////////////////////////////////////////////////////////////////////
 
-class NowPlayingItem: public SourcesItem
-{
-private:    
 
-			/*ctor*/ NowPlayingItem(musik::core::LibraryPtr library)
-				: controller(view,NULL,library->NowPlaying(),TracklistController::HighlightActive|TracklistController::Deletable)
-            {
-            }
-
-public:     /*dtor*/ ~NowPlayingItem()
-            {
-            }
-
-public:     static SourcesItemRef Create(musik::core::LibraryPtr library)
-            {
-                return SourcesItemRef(new NowPlayingItem(library));
-            }
-
-public:     virtual uistring Caption() { return _(_T("Now Playing")); }
-public:     virtual Window*  View()
-            {
-                return &this->view;
-            }
-
-private:    TracklistView view;
-private:    TracklistController controller;
-};
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -162,8 +136,9 @@ public:     static SourcesItemRef Create(musik::core::tracklist::Ptr playlist)
             }
 
 public:     virtual uistring Caption() { 
-				musik::core::tracklist::Playlist* playlist = (musik::core::tracklist::Playlist*)(this->controller.Tracklist().get());
-				return playlist->Name(); 
+//				musik::core::tracklist::Playlist* playlist = (musik::core::tracklist::Playlist*)(this->controller.Tracklist().get());
+//				return playlist->Name(); 
+                return uistring();
 			}
 public:     virtual Window*  View()
             {
@@ -219,7 +194,6 @@ void SourcesModel::Load()
 {
     CategoryRef viewCategory(new Category(_(_T("View"))));
     viewCategory->Add(BrowseItem::Create(this->library));
-    viewCategory->Add(NowPlayingItem::Create(this->library));
     viewCategory->Add(SettingsItem::Create(this->library));
     this->AddCategory(viewCategory);
 
@@ -257,7 +231,7 @@ void            SourcesModel::RemoveCategory(CategoryRef category)
     this->CategoryRemoved(category);
 }
 
-void SourcesModel::OnPlaylists(SourcesModel::PlaylistVector &playlists){
+/*void SourcesModel::OnPlaylists(SourcesModel::PlaylistVector &playlists){
 	// Start by removing the old ones
 	for(PlaylistItemMap::iterator it=this->playlistItemsMap.begin();it!=this->playlistItemsMap.end();++it){
 		// Remove the item from the category
@@ -278,4 +252,4 @@ void SourcesModel::OnPlaylists(SourcesModel::PlaylistVector &playlists){
 	}
 
 }
-
+*/

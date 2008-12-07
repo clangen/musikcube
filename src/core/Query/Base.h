@@ -209,6 +209,17 @@ class Base : public sigslot::has_slots<> {
 
     public:
         void PostCopy();
+
+
+        //////////////////////////////////////////
+        typedef sigslot::signal3<Query::Base*,Library::Base*,bool> QueryFinishedEvent;
+        //////////////////////////////////////////
+        ///\brief
+        ///A signal called before the query is totaly removed from the library queue
+        ///The bool will indicate if the query was finished successfully
+        //////////////////////////////////////////
+        QueryFinishedEvent QueryFinished;
+
 };
 
 

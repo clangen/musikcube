@@ -39,10 +39,10 @@
 #include <cube/SourcesController.hpp>
 #include <cube/SourcesListModel.hpp>
 #include <cube/SourcesView.hpp>
-#include <cube/dialog/NewPlaylistController.hpp>
+//#include <cube/dialog/NewPlaylistController.hpp>
 
 #include <core/MessageQueue.h>
-#include <core/Query/Playlists.h>
+//#include <core/Query/Playlists.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -72,7 +72,7 @@ using namespace musik::cube;
     library->OnQueryQueueStart.connect(this,&SourcesController::QueryQueueStart);
     library->OnQueryQueueEnd.connect(this,&SourcesController::QueryQueueEnd);
 
-	musik::core::MessageQueue::MessageEvent("NewPlaylist").connect(this,&SourcesController::OnNewPlaylist);
+//	musik::core::MessageQueue::MessageEvent("NewPlaylist").connect(this,&SourcesController::OnNewPlaylist);
 
 }
 
@@ -82,7 +82,7 @@ void        SourcesController::OnViewCreated(Window* window)
     this->model.CategoryRemoved.connect(this, &SourcesController::OnModelCategoryRemoved);
     this->model.Load();
 
-	this->UpdatePlaylists();
+//	this->UpdatePlaylists();
 
 }
 
@@ -127,7 +127,7 @@ void SourcesController::QueryQueueLoop(){
 	this->library->RunCallbacks();
 }
 
-void SourcesController::OnNewPlaylist(void* data){
+/*void SourcesController::OnNewPlaylist(void* data){
 	if(data==this->library.get()){
 		win32cpp::TopLevelWindow popupDialog(_(_T("New Playlist")));
 		popupDialog.SetMinimumSize(Size(300, 150));
@@ -152,7 +152,7 @@ void SourcesController::OnPlaylists(std::vector<musik::core::tracklist::Ptr> tra
 	this->listController->sourcesListModel->Update();
 //	this->view.Redraw();
 }
-
+*/
 //////////////////////////////////////////////////////////////////////////////
 // SourcesController::ListController
 //////////////////////////////////////////////////////////////////////////////

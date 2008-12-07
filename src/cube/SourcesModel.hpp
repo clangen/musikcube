@@ -81,11 +81,11 @@ class SourcesModel
 		void RemoveCategory(CategoryRef category);
 		void OnActiveItemChanged(ItemRef);
 
-		typedef std::vector<musik::core::tracklist::Ptr> PlaylistVector;
+/*		typedef std::vector<musik::core::tracklist::Ptr> PlaylistVector;
 
 		typedef std::map<musik::core::tracklist::Ptr,SourcesItemRef> PlaylistItemMap;
 		PlaylistItemMap playlistItemsMap;
-
+*/
 	private:    
 		ItemRef activeItem;
 		CategoryList categories;
@@ -93,7 +93,7 @@ class SourcesModel
 
 	protected:
 		friend class SourcesController;
-		void OnPlaylists(PlaylistVector &playlists);
+//		void OnPlaylists(PlaylistVector &playlists);
 
 };
 

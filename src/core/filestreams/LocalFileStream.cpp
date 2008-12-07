@@ -63,11 +63,16 @@ LocalFileStream::~LocalFileStream(){
 }
 
 bool LocalFileStream::Open(const utfchar *filename,unsigned int options){
-    boost::filesystem::utfpath file(filename);
-    this->filesize  = (long)boost::filesystem::file_size(file);
+    try{
+        boost::filesystem::utfpath file(filename);
+        this->filesize  = (long)boost::filesystem::file_size(file);
 
-    this->file  = UTFFopen(filename,UTF("rb"));
-    return this->file!=NULL;
+        this->file  = UTFFopen(filename,UTF("rb"));
+        return this->file!=NULL;
+    }
+    catch(...){
+        return false;
+    }
 }
 
 bool LocalFileStream::Close(){
