@@ -66,7 +66,7 @@ bool Query::PlaylistLoad::ParseQuery(Library::Base *library,db::Connection &db){
 
     while(selectTracks.Step()==db::Row){
         boost::mutex::scoped_lock lock(library->resultMutex);
-        this->trackResults.push_back(TrackPtr(new Track(selectTracks.ColumnInt(0))));
+        this->trackResults.push_back(TrackPtr(new LibraryTrack(selectTracks.ColumnInt(0),library->Id())));
     }
     return true;
 }

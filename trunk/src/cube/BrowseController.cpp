@@ -41,7 +41,7 @@
 #include <cube/BrowseView.hpp>
 #include <cube/TracklistController.hpp>
 #include <core/LibraryFactory.h>
-#include <core/tracklist/Standard.h>
+#include <core/tracklist/LibraryList.h>
 #include <core/Indexer.h>
 
 #include <win32cpp/ApplicationThread.hpp>
@@ -71,8 +71,7 @@ void        BrowseController::OnViewCreated(Window* window)
 {
 
 	// Create a tracklist, connected to current library
-	musik::core::tracklist::Ptr browseTrackList(new musik::core::tracklist::Standard());
-	browseTrackList->SetLibrary(this->library);
+	musik::core::tracklist::Ptr browseTrackList(new musik::core::tracklist::LibraryList(this->library));
 
     this->tracklistController = new TracklistController(*this->view.tracklistView,&this->selectionQuery,browseTrackList);
 

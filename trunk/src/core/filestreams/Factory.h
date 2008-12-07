@@ -38,14 +38,12 @@
 #include <core/config.h>
 #include <core/filestreams/IFileStream.h>
 #include <core/filestreams/IFileStreamFactory.h>
-#include <boost/shared_ptr.hpp>
 #include <vector>
 
 //////////////////////////////////////////////////////////////////////////////
 namespace musik{ namespace core{ namespace filestreams{
 //////////////////////////////////////////////////////////////////////////////
 
-typedef boost::shared_ptr<IFileStream> FileStreamPtr;
 
 class Factory {
     private:

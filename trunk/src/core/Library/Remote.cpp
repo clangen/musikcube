@@ -58,8 +58,8 @@ using namespace musik::core;
 ///\see
 ///Startup
 //////////////////////////////////////////
-Library::Remote::Remote(utfstring identifier)
- :Base(identifier)
+Library::Remote::Remote(utfstring name,int id)
+ :Base(name,id)
  ,socket(ioService)
  ,httpPort("10544")
 {
@@ -69,8 +69,8 @@ Library::Remote::Remote(utfstring identifier)
 ///\brief
 ///Create a Remote library
 //////////////////////////////////////////
-LibraryPtr Library::Remote::Create(utfstring identifier){
-	LibraryPtr lib(new Library::Remote(identifier));
+LibraryPtr Library::Remote::Create(utfstring name,int id){
+	LibraryPtr lib(new Library::Remote(name,id));
 	lib->self	= lib;
 	return lib;
 }
@@ -125,7 +125,7 @@ void Library::Remote::ReadThread(){
     std::string username,password;
 
     {
-        Preferences prefs("Connection",this->Identifier().c_str());
+        Preferences prefs("Connection",this->Name().c_str());
 
         this->address   = UTF_TO_UTF8(prefs.GetString("address",UTF("localhost")));
         this->port      = UTF_TO_UTF8(prefs.GetString("port",UTF("10543")));

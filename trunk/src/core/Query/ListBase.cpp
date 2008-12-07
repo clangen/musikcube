@@ -40,6 +40,7 @@
 #include <core/Common.h>
 #include <core/xml/ParserNode.h>
 #include <core/xml/WriterNode.h>
+#include <core/LibraryTrack.h>
 #include <boost/algorithm/string.hpp>
 
 using namespace musik::core;
@@ -149,7 +150,7 @@ bool Query::ListBase::ParseTracksSQL(std::string sql,Library::Base *library,db::
         tempTrackResults.reserve(101);
         int row(0);
         while(selectTracks.Step()==db::ReturnCode::Row){
-            tempTrackResults.push_back(TrackPtr(new Track(selectTracks.ColumnInt(0))));
+            tempTrackResults.push_back(TrackPtr(new LibraryTrack(selectTracks.ColumnInt(0),library->Id())));
             this->trackInfoDuration += selectTracks.ColumnInt64(1);
             this->trackInfoSize     += selectTracks.ColumnInt64(2);
             this->trackInfoTracks++;
@@ -253,7 +254,7 @@ bool Query::ListBase::SendResults(musik::core::xml::WriterNode &queryNode,Librar
                     if(trackCount!=0){
                         tracks.Content()    += ",";             
                     }
-                    tracks.Content()    += boost::lexical_cast<std::string>( (*track)->id );   
+                    tracks.Content()    += boost::lexical_cast<std::string>( (*track)->Id() );   
                     ++track;
                     ++trackCount;
                 }
@@ -342,7 +343,7 @@ bool Query::ListBase::RecieveResults(musik::core::xml::ParserNode &queryNode,Lib
 
 	                for(StringVector::iterator value=values.begin();value!=values.end();++value){
 						int trackId(boost::lexical_cast<DBINT>(*value));
-			            tempTrackResults.push_back(TrackPtr(new Track(trackId)));
+                        tempTrackResults.push_back(TrackPtr(new LibraryTrack(trackId,library->Id())));
 					}
 
 					{

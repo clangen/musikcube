@@ -107,6 +107,11 @@ void        TransportController::OnViewCreated(Window* window)
     this->playbackSliderTimer.ConnectToWindow(&this->transportView);
 
     this->playbackSliderTimer.OnTimeout.connect(this, &TransportController::OnPlaybackSliderTimerTimedOut);
+
+    // In case playback has already started
+    if(musik::core::PlaybackQueue::Instance().Transport().CurrentTrack()){
+        this->OnPlaybackStarted(musik::core::PlaybackQueue::Instance().Transport().CurrentTrack());
+    }
 }
 
 void        TransportController::OnViewResized(Window* window, Size size)
@@ -227,18 +232,25 @@ void TransportController::OnPlaybackStopped(musik::core::TrackPtr track)
         return;
     }
 
-    if (this->displayedTrack->id == track->id) // For out of order signals
-    {
-        this->playing = false;
-        this->paused = false;
+    utfstring trackURI;
+    const utfchar* uri  = track->URI();
+    if(uri)
+        trackURI    = uri;
 
-        this->transportView.playButton->SetCaption(_T("Play"));
+    if(this->displayedTrack){
+        if (trackURI == this->displayedTrack->URI()) // For out of order signals
+        {
+            this->playing = false;
+            this->paused = false;
 
-        this->transportView.playbackSlider->SetPosition(0);
-        this->playbackSliderTimer.Stop();  
-        
-        this->transportView.timeElapsedLabel->SetCaption(_T("0:00"));
-        this->transportView.timeDurationLabel->SetCaption(_T("0:00"));
+            this->transportView.playButton->SetCaption(_T("Play"));
+
+            this->transportView.playbackSlider->SetPosition(0);
+            this->playbackSliderTimer.Stop();  
+            
+            this->transportView.timeElapsedLabel->SetCaption(_T("0:00"));
+            this->transportView.timeDurationLabel->SetCaption(_T("0:00"));
+        }
     }
 }
 

@@ -36,7 +36,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <core/audio/Transport.h>
-#include <core/tracklist/IRandomAccess.h>
+#include <core/tracklist/Base.h>
 #include <core/Query/TrackMetadata.h>
 #include <sigslot/sigslot.h>
 
@@ -95,8 +95,8 @@ class PlaybackQueue : public sigslot::has_slots<>{
 
         // Now Playing control
         tracklist::Ptr NowPlayingTracklist();
-        void Play(tracklist::Ptr tracklist);
-        void Append(tracklist::Ptr tracklist);
+        void Play(tracklist::Base &tracklist);
+        void Append(tracklist::Base &tracklist);
 
         // Playback Control
         void Play();

@@ -174,7 +174,7 @@ void        SettingsView::OnCreated()
     mainLayout->AddChild(new Frame(pathLayout,FramePadding(20,20,0,20)));
 
     // test CheckBox
-/*    CheckBox* c = new CheckBox(_T("Test 1"));
+    CheckBox* c = new CheckBox(_T("Test 1"));
     mainLayout->AddChild(c);
     c->Check();
     c->Pressed.connect(this, &SettingsView::OnPressTestCheckbox);
@@ -233,7 +233,7 @@ void        SettingsView::OnCreated()
     mainLayout->AddChild(cb);    
     cb->SetModel(cb_testmodel);
     cb->Select(2);
-*/
+
     this->AddChild(mainLayout);
 
 }

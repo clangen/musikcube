@@ -42,11 +42,19 @@
 namespace musik{ namespace core{
 //////////////////////////////////////////////////////////////////////////////
 
+//////////////////////////////////////////
+///\brief
+///The virtual base for all tracks
+//////////////////////////////////////////
 class ITrack {
     public:
-        virtual const utfchar* GetValue(const char* metakey) const = 0;
+        virtual ~ITrack(){};
+        virtual const utfchar* GetValue(const char* metakey) = 0;
         virtual void SetValue(const char* metakey,const utfchar* value) = 0;
-        virtual void SetThumbnail(const char *data,unsigned int size) = 0;
+        virtual void ClearValue(const char* metakey) = 0;
+        virtual void SetThumbnail(const char *data,long size) = 0;
+        virtual const utfchar* URI() = 0;
+        virtual const utfchar* URL() = 0;
 };
 
 //////////////////////////////////////////////////////////////////////////////

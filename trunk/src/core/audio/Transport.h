@@ -97,6 +97,8 @@ public:
     ///\brief Get a list with descriptions of the open streams
     AudioStreamOverview    StreamsOverview()    const;
 
+    TrackPtr CurrentTrack();
+
 private: 
     typedef std::vector<boost::shared_ptr<IAudioSourceSupplier> > SourceSupplierList;
     SourceSupplierList  registeredSourceSuppliers;

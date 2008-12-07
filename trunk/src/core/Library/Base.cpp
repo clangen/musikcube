@@ -37,7 +37,6 @@
 #include "pch.hpp"
 
 #include <core/Library/Base.h>
-#include <core/tracklist/Standard.h>
 
 #include <core/config_filesystem.h>
 #include <core/Query/Base.h>
@@ -51,12 +50,14 @@ using namespace musik::core;
 ///\brief
 ///Constructor
 //////////////////////////////////////////
-Library::Base::Base(utfstring identifier) 
- :identifier(identifier)
+Library::Base::Base(utfstring name,int id) 
+ :name(name)
+ ,id(id)
  ,queueCallbackStarted(false)
  ,exit(false)
  ,userId(1)
 {
+    this->identifier    = boost::lexical_cast<utfstring>(id);
 }
 
 //////////////////////////////////////////
@@ -66,7 +67,7 @@ Library::Base::Base(utfstring identifier)
 ///\returns
 ///a tracklist::Ptr
 //////////////////////////////////////////
-musik::core::tracklist::Ptr Library::Base::NowPlaying(){
+/*musik::core::tracklist::Ptr Library::Base::NowPlaying(){
 	if(tracklist::Ptr tracklist	= this->nowPlaying.lock()){
 		return tracklist;
 	}
@@ -78,7 +79,7 @@ musik::core::tracklist::Ptr Library::Base::NowPlaying(){
 		tracklist->SetLibrary(thisPtr);
 	}
 	return tracklist;
-}
+}*/
 
 //////////////////////////////////////////
 ///\brief
@@ -100,6 +101,18 @@ Library::Base::~Base(void){
 //////////////////////////////////////////
 const utfstring& Library::Base::Identifier(){
 	return this->identifier;
+}
+
+int Library::Base::Id(){
+    return this->id;
+}
+
+//////////////////////////////////////////
+///\brief
+///Name of the library
+//////////////////////////////////////////
+const utfstring& Library::Base::Name(){
+	return this->name;
 }
 
 //////////////////////////////////////////
@@ -362,18 +375,35 @@ Query::Ptr Library::Base::GetNextQuery(){
 ///Returns true if all queues are finished
 //////////////////////////////////////////
 bool Library::Base::ClearFinishedQueries(){
-    // Remove old queries
-    boost::mutex::scoped_lock lock(this->libraryMutex);
+    std::vector<Query::Ptr> canceledQueries;
 
-    for(std::list<Query::Ptr>::iterator oCheckQuery=this->outgoingQueries.begin();oCheckQuery!=this->outgoingQueries.end();){
-        unsigned int status    = (*oCheckQuery)->status;
-        if( (status & (Query::Base::Status::Finished | Query::Base::Status::Canceled)) ){
-            oCheckQuery    = this->outgoingQueries.erase(oCheckQuery);
-        }else{
-            ++oCheckQuery;
+    {
+        // Remove old queries
+        boost::mutex::scoped_lock lock(this->libraryMutex);
+
+        for(std::list<Query::Ptr>::iterator oCheckQuery=this->outgoingQueries.begin();oCheckQuery!=this->outgoingQueries.end();){
+            unsigned int status    = (*oCheckQuery)->status;
+            if( (status & (Query::Base::Status::Finished | Query::Base::Status::Canceled)) ){
+                // If canceled
+                if( status & Query::Base::Status::Canceled ){
+                    canceledQueries.push_back(*oCheckQuery);
+                }
+                oCheckQuery    = this->outgoingQueries.erase(oCheckQuery);
+            }else{
+                ++oCheckQuery;
+            }
         }
     }
-    return (this->incomingQueries.size()==0 && this->outgoingQueries.size()==0);
+
+    // Lets notify queries that they have been canceled
+    for(std::vector<Query::Ptr>::iterator query=canceledQueries.begin();query!=canceledQueries.end();++query){
+        (*query)->QueryFinished(query->get(),this,false);
+    }
+
+    {
+        boost::mutex::scoped_lock lock(this->libraryMutex);
+        return (this->incomingQueries.size()==0 && this->outgoingQueries.size()==0);
+    }
 }
 
 //////////////////////////////////////////
@@ -411,10 +441,15 @@ bool Library::Base::RunCallbacks(){
 
         if(oQuery){
             if(oQuery->RunCallbacks(this)){
-                boost::mutex::scoped_lock lock(this->libraryMutex);
-                // Set to FINISHED if query returns true
-                oQuery->status    |= Query::Base::Status::Finished;
+                {
+                    boost::mutex::scoped_lock lock(this->libraryMutex);
+                    // Set to FINISHED if query returns true
+                    oQuery->status    |= Query::Base::Status::Finished;
+                }
                 bAgain    = true;    // Continue to check results on the rest of the queue if this one is finished.
+
+                // Call the query signal that the query is finished
+                oQuery->QueryFinished(oQuery.get(),this,true);
             }
         }
         this->ClearFinishedQueries();
@@ -715,3 +750,4 @@ const std::string& Library::Base::AuthorizationKey(){
     static std::string emptyAuthString;
     return emptyAuthString;
 }
+

@@ -35,7 +35,7 @@
 //////////////////////////////////////////////////////////////////////////////
 #pragma once
 
-#include <core/config.h>
+#include <core/config_filesystem.h>
 #include <core/server/Connection.h>
 #include <core/db/Connection.h>
 

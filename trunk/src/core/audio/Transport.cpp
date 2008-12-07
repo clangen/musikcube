@@ -261,12 +261,15 @@ AudioStream* Transport::CreateStream(TrackPtr  trackPtr)
         this->registeredOutputSuppliers[0]->CreateAudioOutput();  
 
     // Get the path, filename and fileextension
-    if( trackPtr->GetValue("path")==NULL ){
+    if( trackPtr->URL()==NULL ){
         return NULL;
     }
 
-    utfstring fileName(trackPtr->GetValue("filename"));
-    utfstring filePath(trackPtr->GetValue("path"));
+    utfstring filePath(trackPtr->URL());
+    utfstring fileName(filePath);
+    if(trackPtr->GetValue("filename")){
+        fileName    = trackPtr->GetValue("filename");
+    }
     utfstring fileExtension(fileName);
 
     // Extract fileextension
@@ -320,4 +323,15 @@ void Transport::RemoveFinishedStreams()
             --i;
         }
     }
+}
+
+TrackPtr Transport::CurrentTrack(){
+
+    if(this->activeStream){
+        if(this->activeStream->track){
+            return this->activeStream->track;
+        }
+    }
+
+    return TrackPtr();
 }

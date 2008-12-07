@@ -52,6 +52,7 @@ private:
     IAudioOutput*   output;
     AudioPacketizer packetizer;
 
+    friend class Transport;
     musik::core::TrackPtr   track;
     musik::core::filestreams::FileStreamPtr fileStream;
 

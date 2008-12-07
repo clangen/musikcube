@@ -53,8 +53,8 @@ using namespace musik::core;
 ///\see
 ///Startup
 //////////////////////////////////////////
-Library::LocalDB::LocalDB(utfstring identifier)
- :Base(identifier)
+Library::LocalDB::LocalDB(utfstring name,int id)
+ :Base(name,id)
 {
 }
 
@@ -62,8 +62,8 @@ Library::LocalDB::LocalDB(utfstring identifier)
 ///\brief
 ///Create a LocalDB library
 //////////////////////////////////////////
-LibraryPtr Library::LocalDB::Create(utfstring identifier){
-	LibraryPtr lib(new Library::LocalDB(identifier));
+LibraryPtr Library::LocalDB::Create(utfstring name,int id){
+	LibraryPtr lib(new Library::LocalDB(name,id));
 	lib->self	= lib;
 	return lib;
 }

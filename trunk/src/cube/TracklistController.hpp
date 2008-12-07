@@ -50,8 +50,7 @@ namespace musik { namespace cube {
 #include <win32cpp/ListView.hpp>
 #include <core/config.h>
 #include <core/Query/ListBase.h>
-#include <core/tracklist/IRandomAccess.h>
-#include <core/Query/SortTracks.h>
+#include <core/tracklist/Base.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -98,7 +97,6 @@ private:
     TracklistView& view;
     ColumnList columns;
     win32cpp::MenuRef contextMenu;
-    musik::core::Query::SortTracks sortQuery;
 	unsigned int options;
 
 };

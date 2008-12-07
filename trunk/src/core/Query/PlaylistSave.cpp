@@ -37,6 +37,7 @@
 #include "pch.hpp"
 #include <core/Query/PlaylistSave.h>
 #include <core/Library/Base.h>
+#include <core/LibraryTrack.h>
 
 using namespace musik::core;
 
@@ -63,7 +64,8 @@ void Query::PlaylistSave::SavePlaylist(const utfstring playlistName,int playlist
 
 	if(tracklist){
 		for(int i(0);i<tracklist->Size();++i){
-			this->tracks.push_back((*tracklist)[i]->id);
+//            LibraryTrack *t = (LibraryTrack*)(*tracklist)[i].get();
+			this->tracks.push_back( (*tracklist)[i]->Id() );
 		}
 	}
 }

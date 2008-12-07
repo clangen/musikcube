@@ -38,7 +38,7 @@
 
 #include <core/Query/Base.h>
 #include <core/MetadataValue.h>
-#include <core/Track.h>
+#include <core/LibraryTrack.h>
 
 #include <sigslot/sigslot.h>
 #include <vector>
