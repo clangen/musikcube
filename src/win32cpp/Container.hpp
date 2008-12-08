@@ -77,8 +77,9 @@ private: //types
     typedef Window base;
 
 public: // constructors, methods
-    /*ctor*/            Container();
-    /*dtor*/ virtual    ~Container();
+    /*ctor*/ Container();
+    /*ctor*/ Container(LayoutFlags layoutFlags);
+    /*dtor*/ virtual ~Container();
 
     template <typename WindowType>
     WindowType*     AddChild(WindowType* window);

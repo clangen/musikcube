@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright  2007, Casey Langen
+// The following are Copyright © 2007, Casey Langen
 //
 // Sources and Binaries of: win32cpp
 //
@@ -53,6 +53,7 @@ using namespace win32cpp;
 /*ctor*/    TabView::TabView()
 : base()
 , visibleChild(NULL)
+, padding(4)
 {
 }
 
@@ -68,7 +69,7 @@ HWND        TabView::Create(Window* parent)
         styleEx,                // ExStyle
         WC_TABCONTROL,          // Class name
         _T(""),                 // Window name
-        style,                  // Style
+        style ,                 // Style
         0,                      // X
         0,                      // Y
         120,                    // Width
@@ -77,6 +78,8 @@ HWND        TabView::Create(Window* parent)
         NULL,                   // Menu
         hInstance,              // Instance
         NULL);                  // lParam
+
+    this->tabStop = true;
 
     return hwnd;
 }
@@ -149,6 +152,28 @@ void        TabView::OnResized(const Size& newSize)
     this->Layout();
 }
 
+Size        TabView::ClientSize() const
+{
+    RECT windowRect = this->WindowRect();
+    TabCtrl_AdjustRect(this->Handle(), FALSE, &windowRect);
+
+    return Rect(windowRect).size;
+}
+
+int             TabView::Padding() const
+{
+    return this->padding;
+}
+
+void            TabView::SetPadding(int padding)
+{
+    if (this->padding != padding)
+    {
+        this->padding = padding;
+        this->Layout();
+    }
+}
+
 void        TabView::Layout()
 {
     if ( ! this->visibleChild)
@@ -158,6 +183,10 @@ void        TabView::Layout()
 
     // calculate the display rect
     RECT windowRect = this->WindowRect();
+    windowRect.left += this->padding;
+    windowRect.right -= this->padding;
+    windowRect.top += this->padding;
+    windowRect.bottom -= this->padding;
     TabCtrl_AdjustRect(this->Handle(), FALSE, &windowRect);
     //
     POINT topLeft;
@@ -212,13 +241,7 @@ Window*     TabView::WindowForTabIndex(int tabIndex)
     return NULL;
 }
 
-void        TabView::OnGainedFocus()
-{
-    // don't do anything! we can be focused.
-}
-
 Window* TabView::ActiveWindow()
 { 
     return this->WindowForTabIndex(TabCtrl_GetCurSel(this->Handle())); 
 }
-

@@ -260,7 +260,7 @@ int Connection::LastInsertedId(){
 ///This will set all the initial PRAGMAS
 //////////////////////////////////////////
 void Connection::Initialize(unsigned int cache){
-    sqlite3_enable_shared_cache(1);
+//    sqlite3_enable_shared_cache(1);
     sqlite3_busy_timeout(this->connection,10000);
 
     sqlite3_exec(this->connection,"PRAGMA synchronous=OFF",NULL,NULL,NULL);         // Not a critical DB. Sync set to OFF
@@ -373,7 +373,7 @@ void Connection::Maintenance(bool init){
 }
 
 int Connection::StepStatement(sqlite3_stmt *stmt){
-    int waitCount(100);
+/*    int waitCount(100);
     int error(0);
     do{
         error   = sqlite3_step(stmt);
@@ -382,6 +382,6 @@ int Connection::StepStatement(sqlite3_stmt *stmt){
             waitCount--;
         }
     }while(error==SQLITE_LOCKED && waitCount>0);
-
-    return error;
+*/
+    return sqlite3_step(stmt);
 }

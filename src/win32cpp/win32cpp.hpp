@@ -43,7 +43,6 @@
 #include <win32cpp/Win32Config.hpp>          // Must be first!
 
 #include <win32cpp/Application.hpp>
-#include <win32cpp/BarLayout.hpp>
 #include <win32cpp/Button.hpp>
 #include <win32cpp/Color.hpp>
 #include <win32cpp/Config.hpp>
@@ -54,6 +53,7 @@
 #include <win32cpp/FolderBrowseDialog.hpp>
 #include <win32cpp/Font.hpp>
 #include <win32cpp/Frame.hpp>
+#include <win32cpp/Image.hpp>
 #include <win32cpp/Label.hpp>
 #include <win32cpp/LinearLayout.hpp>
 #include <win32cpp/ListView.hpp>

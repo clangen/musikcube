@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, mC2 team
+// The following are Copyright  2007, mC2 team
 //
 // All rights reserved.
 //
@@ -122,12 +122,13 @@ void ConnectedUsersController::OnMainWindowCreated(Window* window)
 
     // Create the layout
     this->mainFrame              = new win32cpp::Frame(NULL,win32cpp::FramePadding(10));
-    win32cpp::LinearLayout *mainRowLayout   = new win32cpp::LinearLayout(win32cpp::LinearRowLayout);
+    this->mainFrame->SetLayoutFlags(win32cpp::LayoutFillFill);
+    win32cpp::LinearLayout *mainRowLayout   = new win32cpp::LinearLayout(win32cpp::VerticalLayout,win32cpp::LayoutFillFill);
     mainRowLayout->SetSpacing(10);
-    mainRowLayout->SetDefaultChildFill(false);
+
 
     // First a "Status" of the server
-    win32cpp::LinearLayout *statusColumnLayout   = mainRowLayout->AddChild( new win32cpp::LinearLayout(win32cpp::LinearColumnLayout) );
+    win32cpp::LinearLayout *statusColumnLayout   = mainRowLayout->AddChild( new win32cpp::LinearLayout(win32cpp::HorizontalLayout) );
     win32cpp::Label *statusHeader = new win32cpp::Label(_T("Server status "));
     statusHeader->SetFont(boldFont);
     statusColumnLayout->AddChild( statusHeader );
@@ -135,8 +136,7 @@ void ConnectedUsersController::OnMainWindowCreated(Window* window)
 
     // Second a TabView for the settings
     win32cpp::ListView *usersList = mainRowLayout->AddChild( new win32cpp::ListView() );
-    mainRowLayout->SetChildFill(usersList,true);
-    mainRowLayout->SetFlexibleChild(usersList);
+    usersList->SetLayoutFlags(win32cpp::LayoutFillFill);
     this->listViewController    = new musik::server::ConnectedUsersListController(*usersList,this);
 
 

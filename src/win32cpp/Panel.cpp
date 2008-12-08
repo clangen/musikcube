@@ -53,6 +53,15 @@ using namespace win32cpp;
 {
 }
 
+///\brief
+///constructor.
+///\param layoutFlags
+///The size flags to be used when positioning this control within a parent
+/*ctor*/    Panel::Panel(LayoutFlags layoutFlags)
+: base(layoutFlags)
+{
+}
+
 HWND        Panel::Create(Window* parent)
 {
     HINSTANCE hInstance = Application::Instance();
@@ -76,7 +85,6 @@ HWND        Panel::Create(Window* parent)
 
     return hwnd;
 }
-
 
 void        Panel::OnEraseBackground(HDC hdc)
 {

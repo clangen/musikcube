@@ -98,7 +98,15 @@ private: // types
     typedef Panel base;
 
 public: // constructors
-    /*ctor*/            Splitter(SplitDirection direction, Window* child1 = NULL, Window* child2 = NULL);
+    /*ctor*/            Splitter(
+                            SplitDirection direction,
+                            Window* child1 = NULL,
+                            Window* child2 = NULL,
+                            LayoutFlags layoutFlags = LayoutWrapWrap);
+
+    /*ctor*/            Splitter(
+                            SplitDirection direction,
+                            LayoutFlags layoutFlags = LayoutWrapWrap);
 
 public: // methods
     bool                IsSizable();
@@ -132,6 +140,9 @@ protected: // methods
     virtual void        OnMouseExit();
     virtual void        OnMouseEnter();
     virtual void        OnCreated();
+
+private:
+    void                InitializeInstance(SplitDirection direction, Window* child1, Window* child2);
 
 private: // instance data
     Window *child1, *child2;

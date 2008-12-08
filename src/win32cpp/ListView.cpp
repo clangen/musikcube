@@ -53,8 +53,11 @@ ListView::ModelRef ListView::sNullModel(new ListView::NullModel());
 
 ///\brief
 ///Default constructor
-/*ctor*/    ListView::ListView()
-: base()
+///
+///\param layoutFlags
+///The size flags to be used when positioning this control within a parent
+/*ctor*/    ListView::ListView(LayoutFlags layoutFlags)
+: base(layoutFlags)
 , stripedBackground(false)
 , horizScrollBarVisible(true)
 , vertScrollBarVisible(true)
@@ -841,7 +844,7 @@ int         ListView::RowHeight() const
         }
     }
 
-    return this->rowHeight;
+    return (this->rowHeight == -1) ? 17 : this->rowHeight;
 }
 
 ///\brief

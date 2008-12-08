@@ -62,18 +62,33 @@ static Window* sLastWindowUnderMouse = NULL;
 //////////////////////////////////////////////////////////////////////////////
 
 /*ctor*/    Window::Window()
-: windowHandle(NULL)
-, defaultWindowProc(NULL)
-, font(Window::sDefaultFont)
-, usesDefaultFont(true)
-, backgroundBrush(NULL)
-, tabStop(true)
 {
+    this->InitializeInstance();
+}
+
+/*ctor*/    Window::Window(LayoutFlags layoutFlags)
+{
+    this->InitializeInstance();
+    this->SetLayoutFlags(layoutFlags);
 }
 
 /*dtor*/    Window::~Window()
 {
     ::DeleteObject(this->backgroundBrush);
+}
+
+void        Window::InitializeInstance()
+{
+    this->windowHandle = NULL;
+    this->defaultWindowProc = NULL;
+    this->font = Window::sDefaultFont;
+    this->usesDefaultFont = true;
+    this->backgroundBrush = NULL;
+    this->tabStop = true;
+    this->layoutAlignment = LayoutAlignLeft;
+    this->layoutWidth = LayoutWrapContent;
+    this->layoutHeight = LayoutWrapContent;
+    this->layoutWeight = 1.0f;
 }
 
 ///\brief
@@ -795,7 +810,7 @@ bool        Window::Resize(const Size& size)
         }
 
         return (result == TRUE);
-    } 
+    }
 
     return false;
 }
@@ -1473,6 +1488,12 @@ void        Window::OnVisibilityChangedBase(bool visible)
     EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->VisibilityChanged, this, visible);
 }
 
+void        Window::OnLayoutParametersChangedBase()
+{
+    this->OnLayoutParametersChanged();
+    EMIT_SIGNAL_IF_NOT_SUPPRESSED(this->LayoutParametersChanged, this);
+}
+
 void        Window::OnThemeChanged()
 {
     // If we're the first window to notice the theme change then update
@@ -1567,5 +1588,97 @@ void         Window::SetParent(Window* child, Window* newParent)
                 }
             }
         }
+    }
+}
+
+/*!< */ 
+LayoutFlags     Window::LayoutWidth() const
+{
+    return this->layoutWidth;
+}
+
+/*!< */ 
+LayoutFlags     Window::LayoutHeight() const
+{
+    return this->layoutHeight;
+}
+
+/*!< */ 
+LayoutAlignFlag Window::LayoutAlignment() const
+{
+    return this->layoutAlignment;
+}
+
+/*!< */ 
+void            Window::SetLayoutFlags(LayoutFlags width, LayoutFlags height)
+{
+    if (((width != LayoutWrapContent) && (width != LayoutFillParent))
+    || ((height != LayoutWrapContent) && (height != LayoutFillParent)))
+    {
+        throw InvalidLayoutFlagsException();
+    }
+
+    if ((width != this->layoutWidth) || (height != this->layoutHeight))
+    {
+        this->layoutWidth = width;
+        this->layoutHeight = height;
+        this->OnLayoutParametersChangedBase();
+    }
+}
+
+/*!< */ 
+void            Window::SetLayoutFlags(LayoutFlags flags)
+{
+    switch (flags)
+    {
+    case LayoutWrapWrap:
+        this->SetLayoutFlags(LayoutWrapContent, LayoutWrapContent);
+        break;
+
+    case LayoutFillWrap:
+        this->SetLayoutFlags(LayoutFillParent, LayoutWrapContent);
+        break;
+
+    case LayoutWrapFill:
+        this->SetLayoutFlags(LayoutWrapContent, LayoutFillParent);
+        break;
+
+    case LayoutFillFill:
+        this->SetLayoutFlags(LayoutFillParent, LayoutFillParent);
+        break;
+
+    default:
+        throw InvalidLayoutFlagsException();
+    }
+}
+
+/*!< */ 
+void            Window::SetLayoutAlignment(LayoutAlignFlag alignment)
+{
+    if (this->layoutAlignment != alignment)
+    {
+        this->layoutAlignment = alignment;
+        this->OnLayoutParametersChangedBase();
+    }
+}
+
+/*!< */ 
+float           Window::LayoutWeight() const
+{
+    return this->layoutWeight;
+}
+
+/*!< */ 
+void            Window::SetLayoutWeight(float weight)
+{
+    if (weight < 0.0f)
+    {
+        throw InvalidLayoutWeightException();
+    }
+
+    if (this->layoutWeight != weight)
+    {
+        this->layoutWeight = weight;
+        this->OnLayoutParametersChangedBase();
     }
 }

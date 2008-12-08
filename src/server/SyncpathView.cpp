@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, mC2 Team
+// The following are Copyright  2007, mC2 Team
 //
 // Sources and Binaries of: mC2, win32cpp
 //
@@ -58,16 +58,13 @@ SyncpathView::SyncpathView()
 void SyncpathView::OnCreated()
 {
 
-    LinearLayout* pathLayout = new LinearLayout(LinearColumnLayout);
-    LinearLayout* pathButtonsLayout = new LinearLayout(LinearRowLayout);
+    LinearLayout* pathLayout = new LinearLayout(HorizontalLayout,win32cpp::LayoutFillFill);
+    LinearLayout* pathButtonsLayout = new LinearLayout(VerticalLayout);
     
 
     // Path ListView
     this->pathList          = pathLayout->AddChild(new ListView());
-
-    pathLayout->SetDefaultChildFill(true);
-//    pathLayout->SetSizeConstraints(LayoutFillParent,120);
-    pathLayout->SetFlexibleChild(this->pathList);
+    this->pathList->SetLayoutFlags(win32cpp::LayoutFillFill);
 
 
     // pathButtons layout
@@ -77,14 +74,10 @@ void SyncpathView::OnCreated()
     this->addPathButton->Resize(90, 24);
     this->removePathButton->Resize(90, 24);
 
-    pathButtonsLayout->SetDefaultChildFill(false);
-    pathButtonsLayout->SetDefaultChildAlignment(ChildAlignMiddle);
-    pathButtonsLayout->SetSizeConstraints(90,LayoutFillParent);
-
     pathLayout->AddChild(pathButtonsLayout);
 
-
     // Add to the layout
-    this->AddChild(new Frame(pathLayout,FramePadding(20)));
+    win32cpp::Frame *paddingFrame    = this->AddChild(new Frame(pathLayout,FramePadding(20)));
+    paddingFrame->SetLayoutFlags(win32cpp::LayoutFillFill);
 
 }

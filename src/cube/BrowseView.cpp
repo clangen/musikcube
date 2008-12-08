@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright  2007, Casey Langen
 //
 // Sources and Binaries of: mC2, win32cpp
 //
@@ -42,7 +42,7 @@
 
 #include <win32cpp/ListView.hpp>
 #include <win32cpp/Splitter.hpp>
-#include <win32cpp/BarLayout.hpp>
+#include <win32cpp/LinearLayout.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -56,7 +56,7 @@ using namespace musik::cube;
 
 void        BrowseView::OnCreated()
 {
-    this->filterViewLayout = new BarLayout(BarColumnLayout);
+    this->filterViewLayout = new LinearLayout(win32cpp::HorizontalLayout,win32cpp::LayoutFillFill);
     this->tracklistView = new TracklistView();
 
     mainVSplitter = new Splitter(
@@ -76,6 +76,7 @@ void        BrowseView::OnCreated()
 void        BrowseView::AddMetadataFilter(const uistring& metadataKey)
 {
     ListView* listView = new ListView();
+    listView->SetLayoutFlags(win32cpp::LayoutFillFill);
     this->filterViews.push_back(listView);
     this->filterKeyMap[listView] = metadataKey;
 

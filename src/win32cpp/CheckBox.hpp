@@ -67,7 +67,10 @@ public: // events
     CheckboxPressedEvent  Pressed;
 
 public: // constructors
-    /*ctor*/            CheckBox(const uichar* caption = _T(""), int style = BS_AUTOCHECKBOX);
+    /*ctor*/            CheckBox(
+        const uichar* caption = _T(""),
+        LayoutFlags layoutFlags = LayoutWrapWrap,
+        int style = BS_AUTOCHECKBOX);
 
 protected: // methods
     virtual HWND        Create(Window* parent);

@@ -50,7 +50,7 @@ namespace win32cpp {
 class RadioButton;
 
 ///\brief
-///The type of event used when the CheckBox is pressed.
+///The type of event used when the RadioButton is pressed.
 ///\see
 ///RadioButton.
 typedef sigslot::signal1<RadioButton*> RadioButtonPressedEvent;
@@ -68,7 +68,15 @@ public: // events
     RadioButtonPressedEvent  Pressed;
 
 public: // constructors
-    /*ctor*/            RadioButton(const uichar* caption = _T(""), RadioButton* attach = NULL);
+    /*ctor*/            RadioButton(
+        const uichar* caption = _T(""),
+        RadioButton* attach = NULL,
+        LayoutFlags layoutFlags = LayoutWrapWrap);
+
+    /*ctor*/            RadioButton(
+        const uichar* caption,
+        LayoutFlags layoutFlags = LayoutWrapWrap);
+
     /*dtor*/            ~RadioButton();
 
 protected: // methods

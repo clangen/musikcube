@@ -44,20 +44,6 @@ namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
 
-///\brief Hints a layout to use its parent's size.
-static const int LayoutFillParent = -1;
-
-///\brief Specifies the alignment of a Layout's child
-enum ChildAlignment
-{
-    ChildAlignLeft = 0,     /*!< */
-    ChildAlignRight = 1,    /*!< */
-    ChildAlignCenter = 2,   /*!< */
-    ChildAlignTop = 0,      /*!< */
-    ChildAlignBottom = 1,   /*!< */
-    ChildAlignMiddle = 2,   /*!< */
-};
-
 class ILayout
 {
 public: // methods

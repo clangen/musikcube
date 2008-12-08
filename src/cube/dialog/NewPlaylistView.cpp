@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, mC2 Team
+// The following are Copyright  2007, mC2 Team
 //
 // All rights reserved.
 //
@@ -42,7 +42,6 @@
 #include <win32cpp/Label.hpp>
 #include <win32cpp/Button.hpp>
 #include <win32cpp/LinearLayout.hpp>
-#include <win32cpp/BarLayout.hpp>
 #include <win32cpp/EditView.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
@@ -63,17 +62,17 @@ void NewPlaylistView::OnCreated()
     boldFont->SetBold(true);
 
     // Top Row layout
-    LinearLayout* topRowLayout = new LinearLayout(LinearRowLayout);
-    topRowLayout->SetDefaultChildFill(false);
-    topRowLayout->SetDefaultChildAlignment(win32cpp::ChildAlignMiddle);
+    LinearLayout* topRowLayout = new LinearLayout(VerticalLayout);
+//    topRowLayout->SetDefaultChildFill(false);
+//    topRowLayout->SetDefaultChildAlignment(win32cpp::ChildAlignMiddle);
 
     Label *label;
     Size labelSize(80,0);
 
     // First rows column layout
-    LinearLayout* firstColumnLayout = new LinearLayout(LinearColumnLayout);
-    firstColumnLayout->SetDefaultChildFill(false);
-    firstColumnLayout->SetDefaultChildAlignment(win32cpp::ChildAlignCenter);
+    LinearLayout* firstColumnLayout = new LinearLayout(HorizontalLayout);
+//    firstColumnLayout->SetDefaultChildFill(false);
+//    firstColumnLayout->SetDefaultChildAlignment(win32cpp::ChildAlignCenter);
 
     label = firstColumnLayout->AddChild(new Label(_T("New Playlist")));
     label->SetFont(boldFont);
@@ -81,8 +80,8 @@ void NewPlaylistView::OnCreated()
 
 
     // Second rows column layout
-    LinearLayout* secondColumnLayout = new LinearLayout(LinearColumnLayout);
-    secondColumnLayout->SetDefaultChildAlignment(win32cpp::ChildAlignTop);
+    LinearLayout* secondColumnLayout = new LinearLayout(HorizontalLayout);
+//    secondColumnLayout->SetDefaultChildAlignment(win32cpp::ChildAlignTop);
 
     label           = secondColumnLayout->AddChild(new Label(_T("Name:") ));
     label->Resize(labelSize);
@@ -92,14 +91,14 @@ void NewPlaylistView::OnCreated()
 
 
     // Last rows column layout
-    LinearLayout* bottomButtonLayout = new LinearLayout(LinearColumnLayout);
-    bottomButtonLayout->SetDefaultChildFill(false);
+    LinearLayout* bottomButtonLayout = new LinearLayout(HorizontalLayout);
+//    bottomButtonLayout->SetDefaultChildFill(false);
     this->cancelButton  = bottomButtonLayout->AddChild(new Button(_T("Cancel")));
     this->okButton      = bottomButtonLayout->AddChild(new Button(_T("OK")));
     this->cancelButton->Resize(60,20);
     this->okButton->Resize(60,20);
     topRowLayout->AddChild(bottomButtonLayout);
-    topRowLayout->SetChildAlignment(bottomButtonLayout,ChildAlignRight);
+//    topRowLayout->SetChildAlignment(bottomButtonLayout,ChildAlignRight);
 
 
 
