@@ -78,6 +78,7 @@ void TrackMetadata::CreateSQL(){
     this->GetFixedTrackMetakeys(std::string("year"),fields);
     this->GetFixedTrackMetakeys(std::string("title"),fields);
     this->GetFixedTrackMetakeys(std::string("filename"),fields);
+    this->GetFixedTrackMetakeys(std::string("thumbnail_id"),fields);
 
     if( (field=fields.find("path"))!=fields.end() ){
         this->sSQL          += ",p.path||f.relative_path||'/'||t.filename";
@@ -282,6 +283,7 @@ void TrackMetadata::RequestAllMetakeys(){
     this->requestedFields.insert("album");
     this->requestedFields.insert("genre");
     this->requestedFields.insert("artist");
+    this->requestedFields.insert("thumbnail_id");
 
     this->CreateSQL();
 
