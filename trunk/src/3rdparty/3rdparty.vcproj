@@ -39,7 +39,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="./include/;./include/sqlite/;./include/expat;./include/md5"
+				AdditionalIncludeDirectories="./include/;./include/sqlite/;./include/expat;./include/md5;./include/jpeg-6b"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE;SQLITE_THREADSAFE;COMPILED_FROM_DSP;XML_STATIC"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -106,7 +106,7 @@
 				InlineFunctionExpansion="0"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="0"
-				AdditionalIncludeDirectories="./include/;./include/sqlite/;./include/expat;./include/md5"
+				AdditionalIncludeDirectories="./include/;./include/sqlite/;./include/expat;./include/md5;./include/jpeg-6b"
 				PreprocessorDefinitions="WIN32;_CRT_SECURE_NO_DEPRECATE;SQLITE_THREADSAFE;COMPILED_FROM_DSP;XML_STATIC"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
@@ -270,6 +270,198 @@
 				</File>
 				<File
 					RelativePath=".\include\md5\md5.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="jpeg-6b"
+				>
+				<File
+					RelativePath=".\src\jpeg-6b\jcapimin.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jcapistd.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jccoefct.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jccolor.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jcdctmgr.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jchuff.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jcinit.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jcmainct.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jcmarker.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jcmaster.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jcomapi.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jcparam.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jcphuff.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jcprepct.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jcsample.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jctrans.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jdapimin.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jdapistd.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jdatadst.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jdatasrc.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jdcoefct.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jdcolor.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jddctmgr.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jdhuff.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jdinput.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jdmainct.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jdmarker.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jdmaster.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jdmerge.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jdphuff.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jdpostct.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jdsample.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jdtrans.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jerror.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jfdctflt.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jfdctfst.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jfdctint.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jidctflt.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jidctfst.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jidctint.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jidctred.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jmemmgr.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jmemnobs.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jpegtran.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jquant1.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jquant2.c"
+					>
+				</File>
+				<File
+					RelativePath=".\src\jpeg-6b\jutils.c"
 					>
 				</File>
 			</Filter>

@@ -39,7 +39,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="./;../;../3rdparty/include/"
+				AdditionalIncludeDirectories="./;../;../3rdparty/include/;../3rdparty/include/jpeg-6b"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE;XML_STATIC"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -107,7 +107,7 @@
 				InlineFunctionExpansion="0"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="0"
-				AdditionalIncludeDirectories="./;../;../3rdparty/include/"
+				AdditionalIncludeDirectories="./;../;../3rdparty/include/;../3rdparty/include/jpeg-6b"
 				PreprocessorDefinitions="WIN32;_CRT_SECURE_NO_DEPRECATE;XML_STATIC"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="2"
@@ -211,6 +211,14 @@
 				</File>
 				<File
 					RelativePath=".\Crypt.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Image.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Image.h"
 					>
 				</File>
 				<File
