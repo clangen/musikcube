@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright  2007, Casey Langen
 //
 // Sources and Binaries of: mC2, win32cpp
 //
@@ -43,7 +43,7 @@
 namespace win32cpp{
     class ListView;
     class Splitter;
-    class BarLayout;
+    class LinearLayout;
 }
 namespace musik{ namespace cube{
     class TracklistView;
@@ -74,7 +74,7 @@ protected:  void            AddMetadataFilter(const uistring& metadataKey);
 protected:  typedef std::vector<ListView*> FilterViewList;
 protected:  typedef std::map<ListView*, uistring> FilterToMetadataKeyMap;
 
-protected:  BarLayout* filterViewLayout;
+protected:  LinearLayout* filterViewLayout;
 protected:  TracklistView* tracklistView;
 protected:  FilterViewList filterViews;
 protected:  FilterToMetadataKeyMap filterKeyMap;

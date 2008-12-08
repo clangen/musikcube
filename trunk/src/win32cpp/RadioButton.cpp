@@ -51,13 +51,27 @@ using namespace win32cpp;
 ///
 ///\param caption
 ///The caption beside the radio button
-/*ctor*/    RadioButton::RadioButton(const uichar* caption, RadioButton* prev)
-: base()
+/*ctor*/    RadioButton::RadioButton(const uichar* caption, RadioButton* prev, LayoutFlags layoutFlags)
+: base(layoutFlags)
 , caption(caption)
 , prev(prev)
 , next(NULL)
 {
 }
+
+///\brief
+///Constructor.
+///
+///\param caption
+///The caption beside the radio button
+/*ctor*/    RadioButton::RadioButton(const uichar* caption, LayoutFlags layoutFlags)
+: base(layoutFlags)
+, caption(caption)
+, prev(NULL)
+, next(NULL)
+{
+}
+
 
 /*dtor*/    RadioButton::~RadioButton()
 {
@@ -99,7 +113,7 @@ HWND        RadioButton::Create(Window* parent)
         0,                      // X
         0,                      // Y
         64,                     // Width
-        32,                     // Height
+        28,                     // Height
         parent->Handle(),       // Parent
         NULL,                   // Menu
         hInstance,              // Instance

@@ -41,49 +41,62 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <win32cpp/Win32Config.hpp>
-#include <win32cpp/Panel.hpp>
-#include <win32cpp/ILayout.hpp>
+#include <win32cpp/Types.hpp>
+#include <win32cpp/Exception.hpp>
 
-namespace win32cpp {
+#include <boost/mpl/vector.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/gil/extension/dynamic_image/dynamic_image_all.hpp>
+#include <boost/gil/gil_all.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
-///\brief Specifies the orientation of a LinearLayout
-enum BarLayoutOrientation
-{
-    BarRowLayout,    /*!< */
-    BarColumnLayout   /*!< */
-};
+namespace win32cpp {
 
-///\brief TODO: document me
-class BarLayout: public Panel, public ILayout
+class Image;
+
+///
+///\brief A shared pointer to a Font object
+///
+typedef boost::shared_ptr<Image> ImageRef;
+
+///\brief
+///Image provides a light-weight wrapper around an image. It is backed
+///by boost::gil.
+///
+///\see
+///ImageRef
+class Image
 {
-public: // constructors
-    /*ctor*/    BarLayout(BarLayoutOrientation orientation = BarRowLayout);
+public: // types
+    class InvalidFontWeightException: public Exception { };
+
+private: // types
+    typedef boost::mpl::vector<
+        boost::gil::gray8_image_t,
+        boost::gil::gray16_image_t,
+        boost::gil::rgb8_image_t,
+        boost::gil::rgb16_image_t> SupportedFormats;
+
+    typedef boost::gil::any_image<
+        SupportedFormats> ImageType;
+
+private: // constructors
+    /*ctor*/    Image();
+
+public: // creation methods
+    static ImageRef Create(const uistring& filename);
+
+public: // destructor
+    /*dtor*/    ~Image();
 
 public: // methods
-    void    SetSpacing(int spacing);
-    int     Spacing() const;
-    void    SetSizeConstraints(int width = LayoutFillParent, int height = LayoutFillParent);
-
-public: // ILayout
-    virtual void Layout();
-
-protected: // methods
-    void            OnChildAdded(Window* newChild);
-    void            OnChildRemoved(Window* oldChild);
-    void            OnChildResized(Window* window, Size newSize);
-    void            ThrowIfNotChild(Window* child);
-    bool            ShouldFillChild(Window* child);
-    virtual void    OnResized(const Size& newSize);
+    void        DrawToHDC(HDC hdc, const Point& point);
 
 private: // instance data
-    BarLayoutOrientation orientation;
-    int spacing;
-    bool childIsResizing;
-    Size constraints;
+    ImageType image;
 };
 
-/////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 
-}   // win32cpp
+} // win32cpp

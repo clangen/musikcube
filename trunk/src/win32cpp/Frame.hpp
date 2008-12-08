@@ -141,11 +141,12 @@ protected: // methods
     virtual void    OnCreated();
     virtual void    OnResized(const Size& newSize);
     virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+    virtual HWND    Create(Window* parent);
 
-protected: // instance data
-    FramePadding padding;
+    static bool     RegisterWindowClass();
 
 private: // instance data
+    FramePadding padding;
     Window* child;
     bool isResizingHACK;
 };

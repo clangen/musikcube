@@ -345,7 +345,8 @@ void        TopLevelWindow::ShowModal(TopLevelWindow* parent)
         parent->modalChild = NULL;
     }
 
-    if (this->parentWindow) {
+    if (this->parentWindow)
+    {
         this->parentWindow = NULL;
     }
 }

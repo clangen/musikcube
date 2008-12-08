@@ -68,7 +68,8 @@ public:     // events
 
 public:     // constructors, methods
     /*ctor*/        EditView(int width, int height);
-    /*ctor*/        EditView(const uistring& caption = _T(""));
+    /*ctor*/        EditView(LayoutFlags layoutFlags);
+    /*ctor*/        EditView(const uistring& caption = _T(""), LayoutFlags layoutFlags = LayoutWrapWrap);
     /*dtor*/        ~EditView();
 
     void    SetReadOnly(bool setting);
@@ -85,6 +86,9 @@ protected:  // methods
      virtual LRESULT    PreWindowProc(UINT message, WPARAM wParam, LPARAM lParam, bool &discardMessage);
      virtual LRESULT    WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
      virtual void       OnChanged();
+
+private:
+    void InitializeInstance();
 
 protected:  // instance data
     uistring caption;

@@ -99,20 +99,26 @@ void        MainWindowController::OnMainWindowCreated(Window* window)
 
     // Create the layout
     this->mainFrame              = new win32cpp::Frame(NULL,win32cpp::FramePadding(4));
+    this->mainFrame->SetLayoutFlags(win32cpp::LayoutFillFill);
 
     // Second a TabView for the settings
     win32cpp::TabView *tabs         = this->mainFrame->AddChild( new win32cpp::TabView() );
+    tabs->SetPadding(0);
 
     // Syncpath tab
     SyncpathView *synpathView   = tabs->AddTab(uistring(_T("Sync paths")), new SyncpathView());
+    synpathView->SetLayoutFlags(win32cpp::LayoutFillFill);
+
     this->syncpathController    = new SyncpathController(*synpathView,&this->server->indexer);
 
     // Users tab
     users::UsersView *usersView = tabs->AddTab(uistring(_T("Users")), new users::UsersView());
+    usersView->SetLayoutFlags(win32cpp::LayoutFillFill);
     this->usersController       = new users::UsersController(*usersView,this->server.get());
 
     // Settings tab
     Frame *settingsView   = tabs->AddTab(uistring(_T("Settings")), new Frame());
+    settingsView->SetLayoutFlags(win32cpp::LayoutFillFill);
 
     this->mainWindow.AddChild(mainFrame);
 

@@ -51,8 +51,8 @@ using namespace win32cpp;
 ///
 ///\param caption
 ///The caption that will be drawn on the button.
-/*ctor*/    Button::Button(const uichar* caption)
-: base()
+/*ctor*/    Button::Button(const uichar* caption, LayoutFlags layoutFlags)
+: base(layoutFlags)
 , caption(caption)
 {
 }

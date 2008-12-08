@@ -43,7 +43,6 @@
 #include <win32cpp/Label.hpp>
 #include <win32cpp/Button.hpp>
 #include <win32cpp/LinearLayout.hpp>
-#include <win32cpp/BarLayout.hpp>
 #include <win32cpp/EditView.hpp>
 
 // GDI+ for loading the image

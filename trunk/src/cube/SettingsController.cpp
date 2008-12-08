@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, mC2 Team
+// The following are Copyright  2007, mC2 Team
 //
 // Sources and Binaries of: mC2, win32cpp
 //
@@ -66,6 +66,7 @@ using namespace musik::cube;
 
 void        SettingsController::OnViewCreated(Window* window)
 {
+    this->settingsView.SetLayoutFlags(win32cpp::LayoutFillFill);
 
     this->settingsView.addPathButton->Pressed.connect(this,&SettingsController::OnAddPath);
     this->settingsView.removePathButton->Pressed.connect(this,&SettingsController::OnRemovePath);

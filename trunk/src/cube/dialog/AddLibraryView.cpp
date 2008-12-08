@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, mC2 Team
+// The following are Copyright  2007, mC2 Team
 //
 // Sources and Binaries of: mC2, win32cpp
 //
@@ -42,7 +42,6 @@
 #include <win32cpp/Label.hpp>
 #include <win32cpp/Button.hpp>
 #include <win32cpp/LinearLayout.hpp>
-#include <win32cpp/BarLayout.hpp>
 #include <win32cpp/EditView.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
@@ -64,17 +63,17 @@ void AddLibraryView::OnCreated()
     boldFont->SetBold(true);
 
     // Top Row layout
-    LinearLayout* topRowLayout = new LinearLayout(LinearRowLayout);
-    topRowLayout->SetDefaultChildFill(false);
-    topRowLayout->SetDefaultChildAlignment(win32cpp::ChildAlignMiddle);
+    LinearLayout* topRowLayout = new LinearLayout(VerticalLayout);
+//    topRowLayout->SetDefaultChildFill(false);
+//    topRowLayout->SetDefaultChildAlignment(win32cpp::ChildAlignMiddle);
 
     Label *label;
-    Size labelSize(80,0);
+//    Size labelSize(80,0);
 
     // First rows column layout
-    LinearLayout* firstColumnLayout = new LinearLayout(LinearColumnLayout);
-    firstColumnLayout->SetDefaultChildFill(false);
-    firstColumnLayout->SetDefaultChildAlignment(win32cpp::ChildAlignCenter);
+    LinearLayout* firstColumnLayout = new LinearLayout(HorizontalLayout);
+//    firstColumnLayout->SetDefaultChildFill(false);
+//    firstColumnLayout->SetDefaultChildAlignment(win32cpp::ChildAlignCenter);
 
     label = firstColumnLayout->AddChild(new Label(_T("Add Library")));
     label->SetFont(boldFont);
@@ -82,11 +81,11 @@ void AddLibraryView::OnCreated()
 
 
     // Second rows column layout
-    LinearLayout* secondColumnLayout = new LinearLayout(LinearColumnLayout);
-    secondColumnLayout->SetDefaultChildAlignment(win32cpp::ChildAlignTop);
+    LinearLayout* secondColumnLayout = new LinearLayout(HorizontalLayout);
+//    secondColumnLayout->SetDefaultChildAlignment(win32cpp::ChildAlignTop);
 
     label           = secondColumnLayout->AddChild(new Label(_T("Library name:") ));
-    label->Resize(labelSize);
+//    label->Resize(labelSize);
     this->name      = secondColumnLayout->AddChild(new EditView(160,20 ));
     topRowLayout->AddChild(secondColumnLayout);
 
@@ -94,41 +93,41 @@ void AddLibraryView::OnCreated()
     // Third rows column layout
     if(this->type==musik::core::LibraryFactory::Remote){
         LinearLayout* row;
-        row = new LinearLayout(LinearColumnLayout);
+        row = new LinearLayout(HorizontalLayout);
         label   = row->AddChild(new Label(_T("Remote host:") ));
-        label->Resize(labelSize);
+//        label->Resize(labelSize);
         this->remoteHost = row->AddChild(new EditView(160,20 ));
         topRowLayout->AddChild(row);
 
-        row = new LinearLayout(LinearColumnLayout);
+        row = new LinearLayout(HorizontalLayout);
         label   = row->AddChild(new Label(_T("Remote port:") ));
-        label->Resize(labelSize);
+//        label->Resize(labelSize);
         this->remotePort = row->AddChild(new EditView(100,20 ));
         this->remotePort->SetCaption(uistring(_T("10543")));
         topRowLayout->AddChild(row);
 
-        row = new LinearLayout(LinearColumnLayout);
+        row = new LinearLayout(HorizontalLayout);
         label   = row->AddChild(new Label(_T("Username:") ));
-        label->Resize(labelSize);
+//        label->Resize(labelSize);
         this->username = row->AddChild(new EditView(160,20 ));
         topRowLayout->AddChild(row);
 
-        row = new LinearLayout(LinearColumnLayout);
+        row = new LinearLayout(HorizontalLayout);
         label   = row->AddChild(new Label(_T("Password:") ));
-        label->Resize(labelSize);
+//        label->Resize(labelSize);
         this->password = row->AddChild(new EditView(160,20 ));
         topRowLayout->AddChild(row);
     }
 
     // Last rows column layout
-    LinearLayout* bottomButtonLayout = new LinearLayout(LinearColumnLayout);
-    bottomButtonLayout->SetDefaultChildFill(false);
+    LinearLayout* bottomButtonLayout = new LinearLayout(HorizontalLayout);
+//    bottomButtonLayout->SetDefaultChildFill(false);
     this->cancelButton  = bottomButtonLayout->AddChild(new Button(_T("Cancel")));
     this->okButton      = bottomButtonLayout->AddChild(new Button(_T("OK")));
     this->cancelButton->Resize(60,20);
     this->okButton->Resize(60,20);
     topRowLayout->AddChild(bottomButtonLayout);
-    topRowLayout->SetChildAlignment(bottomButtonLayout,ChildAlignRight);
+//    topRowLayout->SetChildAlignment(bottomButtonLayout,ChildAlignRight);
 
 
 

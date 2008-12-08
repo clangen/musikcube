@@ -56,11 +56,6 @@
 #include <win32cpp/Types.hpp>
 #include <win32cpp/WindowGeometry.hpp>
 
-
-/*
-#include <boost/weak_ptr.hpp>
-#include <boost/format.hpp>
-*/
 //////////////////////////////////////////////////////////////////////////////
 
 #include <win32cpp.hpp>

@@ -65,21 +65,7 @@ public:     friend class LibraryWindowController;
 public:     /*ctor*/        LibraryWindowView();
 public:     /*dtor*/        ~LibraryWindowView();
 
-            /*
-protected:  void            SetView(Window* newView);   // used by SourcesController
-
-protected:  void            OnListViewCreated(Window* window);
-protected:  void            OnListViewResized(Window* window, Size size);
-protected:  void            OnListViewThemeChanged(Window* window);
-protected:  void            OnListViewHotRowChanged(ListView* listView, int rowIndex);
-protected:  void            UpdateListViewBkgndColor();
 protected:  virtual void    OnCreated();
-
-protected:  ListView* listView;
-protected:  ListView::ColumnRef mainColumn;
-protected:  int lastHotRowIndex;
-protected:  Window* defaultView;
-protected:  Splitter* splitter;*/
 };
 
 //////////////////////////////////////////////////////////////////////////////

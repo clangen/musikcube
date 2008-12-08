@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright  2007, Casey Langen
+// The following are Copyright © 2007, Casey Langen
 //
 // Sources and Binaries of: win32cpp
 //
@@ -49,12 +49,7 @@ namespace win32cpp {
 //////////////////////////////////////////////////////////////////////////////
 
 ///\brief
-///Panel is the most basic concrete implementation of Container.
-///
-///Panel does not offer any special layout functionality, and has no
-///limitations as to the number of child controls that can be added.
-///Panel is the base class for most more advanced Container
-///implementations, including Splitter and BoxLayout.
+///TabView
 ///
 ///\see
 ///BoxLayout, Splitter
@@ -77,7 +72,12 @@ public: // methods
     
     template <typename WindowType>
     WindowType* RemoveTab(WindowType* window);
-    Window* ActiveWindow();
+
+    Window*         ActiveWindow();
+    virtual Size    ClientSize() const;
+
+    int             Padding() const;
+    void            SetPadding(int padding);
 
 protected: // methods
     virtual HWND    Create(Window* parent);
@@ -88,7 +88,6 @@ protected: // methods
     virtual void    Layout();
     virtual void    OnResized(const Size& newSize);
     virtual void    OnChildAdded(Window* child);
-    virtual void    OnGainedFocus();
 
     Window*         WindowForTabIndex(int tabIndex);
     void            SelectFirstChild();
@@ -96,6 +95,7 @@ protected: // methods
 protected: // instance data
     WindowToTabIndexMap windowToTabMap;
     Window* visibleChild;
+    int padding;
 };
 
 //////////////////////////////////////////////////////////////////////////////

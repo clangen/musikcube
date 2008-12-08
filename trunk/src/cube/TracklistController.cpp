@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright  2007, Casey Langen
 //
 // Sources and Binaries of: mC2, win32cpp
 //
@@ -170,21 +170,7 @@ void TracklistController::OnColumnSort(ListView *listView,ColumnRef column){
     TracklistModel* model   = (TracklistModel*)this->model.get();
     if(tracklistColumn && model){
         // what to sort by
-/*        std::list<std::string> sortList;
-        sortList.push_back(tracklistColumn->metaKey);
-        this->sortQuery.SortByMetaKeys(sortList);
-*/
         model->tracklist->SortTracks(tracklistColumn->metaKey);
-
-        // Add the tracks to sort
-/*        this->sortQuery.AddTracks(*(model->tracklist));
-
-		musik::core::LibraryPtr library( model->tracklist->Library());
-		if(library){
-	        library->AddQuery(this->sortQuery,musik::core::Query::CancelSimilar);
-		}
-
-        this->sortQuery.ClearTracks();*/
     }
 }
 

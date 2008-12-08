@@ -46,6 +46,8 @@ using namespace win32cpp;
 
 //////////////////////////////////////////////////////////////////////////////
 
+#define CLASS_NAME _T("Frame")
+
 ///\brief Constructor
 ///
 ///\remarks 
@@ -135,9 +137,7 @@ void        Frame::OnResized(const Size& newSize)
 {
     if (this->child && (! isResizingHACK))
     {
-        Size size = this->ClientSize();
-
-        this->child->Resize(size);
+        this->child->Resize(this->ClientSize());
         this->child->MoveTo(0, 0);
     }
 }
@@ -156,10 +156,10 @@ void        Frame::OnChildResized(Window* window, Size newSize)
 void        Frame::ResizeFromChild()
 {
     Size size = this->child->WindowSize();
-
-    size.width  += (this->padding.left + this->padding.right);
-    size.height += (this->padding.top  + this->padding.bottom);
-
+ 
+    size.width += (this->padding.left + this->padding.right);
+    size.height += (this->padding.top + this->padding.bottom);
+    //
     this->isResizingHACK = true;
     this->Resize(size);
     this->isResizingHACK = false;
@@ -209,4 +209,52 @@ LRESULT     Frame::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
     }
 
     return base::WindowProc(message, wParam, lParam);
+}
+
+HWND        Frame::Create(Window* parent)
+{
+    HINSTANCE hInstance = Application::Instance();
+
+    if ( ! Frame::RegisterWindowClass())
+    {
+        return NULL;
+    }
+
+    // create the window
+    DWORD style = WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
+    //
+    HWND hwnd = CreateWindowEx(
+        NULL,                   // ExStyle
+        CLASS_NAME,             // Class name
+        _T(""),                 // Window name
+        style,                  // Style
+        0,                      // X
+        0,                      // Y
+        120,                    // Width
+        36,                     // Height
+        parent->Handle(),       // Parent
+        NULL,                   // Menu
+        hInstance,              // Instance
+        NULL);                  // lParam
+
+    return hwnd;
+}
+
+bool        Frame::RegisterWindowClass()
+{
+    static bool registered  = false;
+
+    if ( ! registered)
+    {
+        WNDCLASSEX wc = { 0 };
+
+        // use STATIC window class as our base
+        ::GetClassInfoEx(NULL, _T("STATIC"), &wc);
+        wc.cbSize = sizeof(WNDCLASSEX);
+        wc.lpszClassName = CLASS_NAME;
+
+        registered = (::RegisterClassEx(&wc) != 0);
+    }
+
+    return registered;
 }

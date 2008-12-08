@@ -129,18 +129,19 @@ void        MainWindowController::OnMainWindowCreated(Window* window)
     LibraryWindowView* libraryView = new LibraryWindowView();
     this->libraryController = new LibraryWindowController(*libraryView);
 
+    // Create a Frame that suround everything
+    this->clientView    = this->mainWindow.AddChild(new Frame(0,4));
+    this->clientView->SetLayoutFlags(win32cpp::LayoutFillFill);
 
     // the main splitter
-    Splitter* transportSplitter = this->mainWindow.AddChild(
+    Splitter* transportSplitter = this->clientView->AddChild(
         new Splitter(SplitRow, libraryView, transportView));
 
     // set initial sizes
-    transportSplitter->Resize(clientSize);
     transportSplitter->SetAnchor(AnchorBottom);
     transportSplitter->SetAnchorSize(TransportViewHeight);
     transportSplitter->SetSizable(false);
 
-    this->clientView = transportSplitter;
     this->mainWindow.Resized.connect(this, &MainWindowController::OnResize);
     this->mainWindow.Destroyed.connect(this, &MainWindowController::OnDestroyed);
 }

@@ -52,20 +52,13 @@ using namespace musik::cube;
 
 /*dtor*/    LibraryWindowView::~LibraryWindowView()
 {
-    // make sure not to delete any SourcesItem views, and also
-    // automatically delete the defaultView.
-//    this->SetView(this->defaultView);
+}
+
+void        LibraryWindowView::OnCreated()
+{
+    this->SetPadding(0);
 }
 /*
-void        SourcesView::OnCreated()
-{
-    // add main splitter as the top level window's main window
-    this->splitter = this->AddChild(
-        new Splitter(SplitColumn, this->listView, this->defaultView));
-
-    this->splitter->SetAnchorSize(125);
- }
-
 void        SourcesView::OnListViewCreated(Window* window)
 {
     typedef ListView::Column Column;
