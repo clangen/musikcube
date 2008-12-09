@@ -16,9 +16,9 @@ When we designed the library and queries that could be send to the library, we k
 Looking at the [http://code.google.com/p/musikcube/source/browse/trunk/src/core/Query/Base.h musik::core::Query::Base] you'll see that there are 5 important methods that needs to be implemented for each query to work both locally and remote:
   * ParseQuery : That does the actual parsing against the db.
   * SendQuery : Send the query to a musikServer.
-  * RecieveQuery : Used by the musikServer to recieve the query.
+  * ReceiveQuery : Used by the musikServer to receive the query.
   * SendResults : Send the results from the server to the cube.
-  * RecieveResults : Recieves the results on the client.
+  * ReceiveResults : Receives the results on the client.
 
 = Security =
 
