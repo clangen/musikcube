@@ -74,7 +74,7 @@ namespace musik{ namespace core{
 
                 bool ParseTracksSQL(std::string sql,Library::Base *library,db::Connection &db);
 
-                bool RecieveQueryStandardNodes(musik::core::xml::ParserNode &node);
+                bool ReceiveQueryStandardNodes(musik::core::xml::ParserNode &node);
                 bool SendQueryStandardNodes(musik::core::xml::WriterNode &queryNode);
 
                 MetadataResults metadataResults;
@@ -92,7 +92,7 @@ namespace musik{ namespace core{
                 UINT64 trackInfoSize;
 
                 virtual bool SendResults(musik::core::xml::WriterNode &queryNode,Library::Base *library);
-                virtual bool RecieveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library);
+                virtual bool ReceiveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library);
 
             public:
                 MetadataSignal& OnMetadataEvent(const char* metatag);

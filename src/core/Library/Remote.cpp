@@ -203,7 +203,7 @@ void Library::Remote::ReadThread(){
                         }
                     }
                     if(currentQuery){
-                        if(currentQuery->RecieveResults(node,this)){
+                        if(currentQuery->ReceiveResults(node,this)){
                             boost::mutex::scoped_lock lock(this->libraryMutex);
                             currentQuery->status |= Query::Base::Status::Ended;
                         }else{

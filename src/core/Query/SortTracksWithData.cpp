@@ -213,7 +213,7 @@ void Query::SortTracksWithData::ClearTracks(){
 
 //////////////////////////////////////////
 ///\brief
-///Recieve the query from XML
+///Receive the query from XML
 ///
 ///\param queryNode
 ///Reference to query XML node
@@ -226,9 +226,9 @@ void Query::SortTracksWithData::ClearTracks(){
 ///\endcode
 ///
 ///\returns
-///true when successfully recieved
+///true when successfully received
 //////////////////////////////////////////
-bool Query::SortTracksWithData::RecieveQuery(musik::core::xml::ParserNode &queryNode){
+bool Query::SortTracksWithData::ReceiveQuery(musik::core::xml::ParserNode &queryNode){
 
     while( musik::core::xml::ParserNode node = queryNode.ChildNode() ){
         if(node.Name()=="sortby"){
@@ -393,14 +393,14 @@ bool Query::SortTracksWithData::SendResults(musik::core::xml::WriterNode &queryN
 
 //////////////////////////////////////////
 ///\brief
-///Recieve results from the musikServer.
+///Receive results from the musikServer.
 //////////////////////////////////////////
-bool Query::SortTracksWithData::RecieveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library){
+bool Query::SortTracksWithData::ReceiveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library){
     while( musik::core::xml::ParserNode node = queryNode.ChildNode() ){
 
 		typedef std::vector<std::string> StringVector;
 
-		// Recieve tracks
+		// Receive tracks
         if( node.Name()=="tracklist"){
             while( musik::core::xml::ParserNode trackNode = node.ChildNode("t") ){
 				trackNode.WaitForContent();

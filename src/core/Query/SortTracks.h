@@ -82,7 +82,7 @@ namespace musik{ namespace core{
 
                 virtual std::string Name();
                 virtual bool ParseQuery(Library::Base *library,db::Connection &db);
-                virtual bool RecieveQuery(musik::core::xml::ParserNode &queryNode);
+                virtual bool ReceiveQuery(musik::core::xml::ParserNode &queryNode);
                 virtual bool SendQuery(musik::core::xml::WriterNode &queryNode);
 
             private:

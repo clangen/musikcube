@@ -283,10 +283,10 @@ bool Query::ListBase::SendResults(musik::core::xml::WriterNode &queryNode,Librar
     return true;
 }
 
-bool Query::ListBase::RecieveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library){
+bool Query::ListBase::ReceiveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library){
     while( musik::core::xml::ParserNode node = queryNode.ChildNode() ){
 
-		// Recieve metadata
+		// Receive metadata
         if( node.Name()=="metadata"){
 
             std::string metakey(node.Attributes()["key"]);
@@ -329,7 +329,7 @@ bool Query::ListBase::RecieveResults(musik::core::xml::ParserNode &queryNode,Lib
 
 		typedef std::vector<std::string> StringVector;
 
-		// Recieve tracks
+		// Receive tracks
         if( node.Name()=="tracklist"){
             while( musik::core::xml::ParserNode tracksNode = node.ChildNode("tracks") ){
 				tracksNode.WaitForContent();
@@ -359,7 +359,7 @@ bool Query::ListBase::RecieveResults(musik::core::xml::ParserNode &queryNode,Lib
 		}
 
 
-		// Recieve trackinfo
+		// Receive trackinfo
         if( node.Name()=="trackinfo"){
 			node.WaitForContent();
 
@@ -394,7 +394,7 @@ void Query::ListBase::DummySlotTrackInfo(UINT64,UINT64,UINT64){
 }
 
 
-bool Query::ListBase::RecieveQueryStandardNodes(musik::core::xml::ParserNode &node){
+bool Query::ListBase::ReceiveQueryStandardNodes(musik::core::xml::ParserNode &node){
     if(node.Name()=="listeners"){
 
         // Wait for all content

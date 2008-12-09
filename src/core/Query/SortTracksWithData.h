@@ -52,7 +52,7 @@ namespace musik{ namespace core{ namespace Query{
 
 //////////////////////////////////////////
 ///\brief
-///SortTracksWithData is a query used to recieve sorted tracklists along with the data the tracks are sorted by
+///SortTracksWithData is a query used to receive sorted tracklists along with the data the tracks are sorted by
 ///
 ///\remarks
 ///First concider to use the SortTracks query instead.
@@ -102,10 +102,10 @@ class SortTracksWithData : public Query::Base{
 
         virtual std::string Name();
         virtual bool ParseQuery(Library::Base *library,db::Connection &db);
-        virtual bool RecieveQuery(musik::core::xml::ParserNode &queryNode);
+        virtual bool ReceiveQuery(musik::core::xml::ParserNode &queryNode);
         virtual bool SendQuery(musik::core::xml::WriterNode &queryNode);
         virtual bool SendResults(musik::core::xml::WriterNode &queryNode,Library::Base *library);
-        virtual bool RecieveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library);
+        virtual bool ReceiveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library);
         bool RunCallbacks(Library::Base *library);
 
     private:

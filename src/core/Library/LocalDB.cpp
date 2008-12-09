@@ -105,7 +105,7 @@ utfstring Library::LocalDB::GetInfo(){
 /// musik::core::Library::LocalDB library;
 /// // Start the library (and indexer that is included)
 /// library.Startup();
-/// // The library is now ready to recieve queries
+/// // The library is now ready to receive queries
 ///\endcode
 //////////////////////////////////////////
 bool Library::LocalDB::Startup(){

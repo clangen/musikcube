@@ -96,10 +96,10 @@ class TrackMetadata : public Query::Base {
         virtual bool ParseQuery(Library::Base *library,db::Connection &db);
 
         virtual std::string Name();
-        virtual bool RecieveQuery(musik::core::xml::ParserNode &queryNode);
+        virtual bool ReceiveQuery(musik::core::xml::ParserNode &queryNode);
         virtual bool SendQuery(musik::core::xml::WriterNode &queryNode);
         virtual bool SendResults(musik::core::xml::WriterNode &queryNode,Library::Base *library);
-        virtual bool RecieveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library);
+        virtual bool ReceiveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library);
 
 };
 

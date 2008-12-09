@@ -191,7 +191,7 @@ class Base : boost::noncopyable{
 
         //////////////////////////////////////////
 		///\brief
-		///Connect the tracklist to recieve tracks from a ListBase query.
+		///Connect the tracklist to receive tracks from a ListBase query.
 		//////////////////////////////////////////
         virtual bool ConnectToQuery(musik::core::Query::ListBase &query);
 
@@ -225,9 +225,9 @@ class Base : boost::noncopyable{
 		typedef sigslot::signal1<std::vector<long>> TrackMetadataEvent;
         //////////////////////////////////////////
 		///\brief
-		///Event, called when metadata has been recieved.
+		///Event, called when metadata has been received.
 		///
-        ///The event reciever will get a std::vector<long>& with
+        ///The event receiver will get a std::vector<long>& with
         ///a vector of positions of tracks that has been updated.
 		//////////////////////////////////////////
 		TrackMetadataEvent TrackMetadataUpdated;
@@ -239,7 +239,7 @@ class Base : boost::noncopyable{
 		///\brief
 		///Event, called when summary has been updated
 		///
-        ///The event reciever will get 3 UINT64 parameters
+        ///The event receiver will get 3 UINT64 parameters
 		//////////////////////////////////////////
         SummaryInfoEvent SummaryInfoUpdated;
 
@@ -250,7 +250,7 @@ class Base : boost::noncopyable{
 		///\brief
 		///Event, called when tracks inside the tracklist has been added/changed
 		///
-        ///The event reciever will get a bool set to true if the list has been cleared first
+        ///The event receiver will get a bool set to true if the list has been cleared first
 		//////////////////////////////////////////
         TracklistChangedEvent TracklistChanged;
 
@@ -261,7 +261,7 @@ class Base : boost::noncopyable{
 		///\brief
 		///Event, called when position in tracklist has been updated
 		///
-        ///The event reciever will get the nex position, and the old position
+        ///The event receiver will get the nex position, and the old position
 		//////////////////////////////////////////
         PositionChangedEvent PositionChanged;
 

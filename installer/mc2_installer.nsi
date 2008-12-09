@@ -1,6 +1,8 @@
 SetCompressor /SOLID lzma
 
 !include "MUI.nsh"
+!include "FileFunc.nsh"
+!insertmacro DirState
 
 
 !define TRUE 1
@@ -14,6 +16,8 @@ SetCompressor /SOLID lzma
 !define INSTALL_DIR "musikCube 2"
 
 ;----------------------------------------------------------------
+!define MC2_DB_DIR "$APPDATA\mC2"
+
 OutFile ".\${INSTALLER_NAME}.exe"
 
 Name "${PROJECT_NAME} ${SUB_NAME}"
@@ -31,8 +35,8 @@ InstallDirRegKey HKCU "Software\${INSTALL_DIR}" ""
 ; Installation pages order
 !insertmacro MUI_PAGE_LICENSE "..\LICENSE.txt"
 !insertmacro MUI_PAGE_DIRECTORY
-;!insertmacro MUI_PAGE_COMPONENTS
 Page custom RemoveOldFilesPage RemoveOldFilesLeave  ;Custom page
+;!insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_INSTFILES
 
 
@@ -59,7 +63,7 @@ Section "mC2installation" main
 
 	IntCmpU $RemoveOldDatabases 0 DoNotRemoveDBFiles
 	; Remove the app data
-	RMDir /r $APPDATA\mC2
+	RMDir /r "${MC2_DB_DIR}"
 	DoNotRemoveDBFiles:
 
 
@@ -87,8 +91,11 @@ Function .onInit
 FunctionEnd
 
 Function RemoveOldFilesPage
+        ${DirState} "${MC2_DB_DIR}" $0
+        IntCmp $0 -1 0 +2 +2
+           Abort
 	!insertmacro MUI_HEADER_TEXT "mC2 installation" "Removing old database files"
-	!insertmacro MUI_INSTALLOPTIONS_WRITE "remove_old_db.ini" "Field 2" "Text" "Remove old mC2 databases in $APPDATA\mC2"
+	!insertmacro MUI_INSTALLOPTIONS_WRITE "remove_old_db.ini" "Field 2" "Text" "Remove old mC2 databases in ${MC2_DB_DIR}"
 	!insertmacro MUI_INSTALLOPTIONS_DISPLAY "remove_old_db.ini"
 FunctionEnd
 

@@ -306,7 +306,7 @@ std::string TrackMetadata::Name(){
 }
 
 
-bool TrackMetadata::RecieveQuery(musik::core::xml::ParserNode &queryNode){
+bool TrackMetadata::ReceiveQuery(musik::core::xml::ParserNode &queryNode){
 
     while(musik::core::xml::ParserNode metakeysNode = queryNode.ChildNode()){
         if(metakeysNode.Name()=="metakeys"){
@@ -398,7 +398,7 @@ bool TrackMetadata::SendResults(musik::core::xml::WriterNode &queryNode,Library:
         if( !resultCopy.empty() ){
             try{
                 for(TrackVector::iterator track=resultCopy.begin();track!=resultCopy.end();++track){
-                    // Erase the path.. is translated in the RecieveResults
+                    // Erase the path.. is translated in the ReceiveResults
                     (*track)->ClearValue("path");
 
                     musik::core::xml::WriterNode trackNode(queryNode,"t");
@@ -429,7 +429,7 @@ bool TrackMetadata::SendResults(musik::core::xml::WriterNode &queryNode,Library:
 }
 
 
-bool TrackMetadata::RecieveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library){
+bool TrackMetadata::ReceiveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library){
 
     bool requestPath( this->requestedFields.find("path")!=this->requestedFields.end() );
     utfstring pathPrefix(library->BasePath()+UTF("track/?auth_key="));

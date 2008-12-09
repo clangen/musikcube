@@ -388,7 +388,7 @@ bool LibraryList::QueryForTrack(long position){
 
 //////////////////////////////////////////
 ///\brief
-///Connect to recieve results from any query based on the musik::core::Query::ListBase
+///Connect to receive results from any query based on the musik::core::Query::ListBase
 //////////////////////////////////////////
 bool LibraryList::ConnectToQuery(musik::core::Query::ListBase &query){
     query.OnTrackEvent().connect(this,&LibraryList::OnTracksFromQuery);
@@ -399,7 +399,7 @@ bool LibraryList::ConnectToQuery(musik::core::Query::ListBase &query){
 
 //////////////////////////////////////////
 ///\brief
-///Recieve new tracks from a query
+///Receive new tracks from a query
 ///
 ///\param newTracks
 ///The new tracks
@@ -426,7 +426,7 @@ void LibraryList::OnTracksFromQuery(musik::core::TrackVector *newTracks,bool cle
 
 //////////////////////////////////////////
 ///\brief
-///Called by connected queries to recieve summary from tracklist
+///Called by connected queries to receive summary from tracklist
 //////////////////////////////////////////
 void LibraryList::OnTracksSummaryFromQuery(UINT64 tracks,UINT64 duration,UINT64 filesize){
     this->SummaryInfoUpdated(tracks,duration,filesize);
@@ -435,7 +435,7 @@ void LibraryList::OnTracksSummaryFromQuery(UINT64 tracks,UINT64 duration,UINT64 
 
 //////////////////////////////////////////
 ///\brief
-///Recieves what tracks now have metadata, and pass them forward to the TrackMetadataUpdated signal
+///Receives what tracks now have metadata, and pass them forward to the TrackMetadataUpdated signal
 //////////////////////////////////////////
 void LibraryList::OnTracksMetaFromQuery(musik::core::TrackVector *metaTracks){
     std::vector<long> updateTrackPositions;
