@@ -152,7 +152,7 @@ void Connection::ReadThread(){
                         query->uniqueId = boost::lexical_cast<unsigned int>(queryNode.Attributes()["uid"]);
                     }catch(...){}
 
-                    if(query->RecieveQuery(queryNode)){
+                    if(query->ReceiveQuery(queryNode)){
 
                         unsigned int options(0);
                         try{

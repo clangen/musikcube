@@ -214,7 +214,7 @@ void Query::SortTracks::ClearTracks(){
 
 //////////////////////////////////////////
 ///\brief
-///Recieve the query from XML
+///Receive the query from XML
 ///
 ///\param queryNode
 ///Reference to query XML node
@@ -227,9 +227,9 @@ void Query::SortTracks::ClearTracks(){
 ///\endcode
 ///
 ///\returns
-///true when successfully recieved
+///true when successfully received
 //////////////////////////////////////////
-bool Query::SortTracks::RecieveQuery(musik::core::xml::ParserNode &queryNode){
+bool Query::SortTracks::ReceiveQuery(musik::core::xml::ParserNode &queryNode){
 
     while( musik::core::xml::ParserNode node = queryNode.ChildNode() ){
         if(node.Name()=="sortby"){
@@ -259,7 +259,7 @@ bool Query::SortTracks::RecieveQuery(musik::core::xml::ParserNode &queryNode){
             }
 
         }else{
-            this->RecieveQueryStandardNodes(node);
+            this->ReceiveQueryStandardNodes(node);
         }
     }
     return true;

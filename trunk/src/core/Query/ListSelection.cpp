@@ -552,7 +552,7 @@ void Query::ListSelection::QueryForMetadata(const char *metakey,const char *sql,
 
 //////////////////////////////////////////
 ///\brief
-///Recieve the query from XML
+///Receive the query from XML
 ///
 ///\param queryNode
 ///Reference to query XML node
@@ -569,9 +569,9 @@ void Query::ListSelection::QueryForMetadata(const char *metakey,const char *sql,
 ///\endcode
 ///
 ///\returns
-///true when successfully recieved
+///true when successfully received
 //////////////////////////////////////////
-bool Query::ListSelection::RecieveQuery(musik::core::xml::ParserNode &queryNode){
+bool Query::ListSelection::ReceiveQuery(musik::core::xml::ParserNode &queryNode){
 
     while( musik::core::xml::ParserNode node = queryNode.ChildNode() ){
         if(node.Name()=="selections"){
@@ -595,7 +595,7 @@ bool Query::ListSelection::RecieveQuery(musik::core::xml::ParserNode &queryNode)
             }
 
         }else{
-            this->RecieveQueryStandardNodes(node);
+            this->ReceiveQueryStandardNodes(node);
         }
     }
     return true;

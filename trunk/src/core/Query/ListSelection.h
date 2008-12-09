@@ -85,7 +85,7 @@ class ListSelection : public Query::ListBase{
 
         Ptr copy() const;
 
-        virtual bool RecieveQuery(musik::core::xml::ParserNode &queryNode);
+        virtual bool ReceiveQuery(musik::core::xml::ParserNode &queryNode);
         virtual bool SendQuery(musik::core::xml::WriterNode &queryNode);
 
     private:
