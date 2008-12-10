@@ -51,6 +51,7 @@ namespace win32cpp {
 #include <win32cpp/Exception.hpp>
 #include <win32cpp/Font.hpp>
 #include <win32cpp/Menu.hpp>
+#include <win32cpp/WindowPadding.hpp>
 
 #include <vector>
 #include <map>

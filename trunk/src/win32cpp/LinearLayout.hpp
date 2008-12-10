@@ -115,7 +115,7 @@ private: // instance data
     LayoutOrientation orientation;
     int spacing;
     ChildSizeMap childSizeMap;
-    bool childIsResizing;
+    bool childIsResizing, isResizing;
 };
 
 /////////////////////////////////////////////////////////////////////////////

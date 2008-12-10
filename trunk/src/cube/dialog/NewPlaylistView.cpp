@@ -52,7 +52,7 @@ using namespace win32cpp;
 //////////////////////////////////////////////////////////////////////////////
 
 NewPlaylistView::NewPlaylistView()
-: Frame(NULL,FramePadding(6))
+: Frame(NULL,WindowPadding(6))
 {
 }
 

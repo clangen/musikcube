@@ -97,7 +97,7 @@ void        TransportView::OnCreated()
     nowPlayingLayout->SetSpacing(0);
     //
     Frame* nowPlayingFrame = topRowLayout->AddChild(
-        new Frame(nowPlayingLayout, FramePadding(6, 0, 0, 0)));
+        new Frame(nowPlayingLayout, WindowPadding(6, 0, 0, 0)));
     nowPlayingFrame->SetLayoutFlags(win32cpp::LayoutFillFill);
 
 
@@ -114,9 +114,9 @@ void        TransportView::OnCreated()
 
 
     // put it all together!
-    win32cpp::Frame *topRowFrame    = mainLayout->AddChild(new Frame(topRowLayout, FramePadding(4, 0, 2, 0)));
+    win32cpp::Frame *topRowFrame    = mainLayout->AddChild(new Frame(topRowLayout, WindowPadding(4, 0, 2, 0)));
     topRowFrame->SetLayoutFlags(win32cpp::LayoutFillFill);
-    win32cpp::Frame *bottomRowFrame = mainLayout->AddChild(new Frame(bottomRowLayout, FramePadding(6, 6, 0, 0)));
+    win32cpp::Frame *bottomRowFrame = mainLayout->AddChild(new Frame(bottomRowLayout, WindowPadding(6, 6, 0, 0)));
     bottomRowFrame->SetLayoutFlags(win32cpp::LayoutFillFill);
     this->AddChild(mainLayout);
 }

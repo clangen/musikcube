@@ -35,6 +35,7 @@
 //////////////////////////////////////////////////////////////////////////////
 #include "pch.hpp"
 #include <core/filestreams/Factory.h>
+#include <core/config_filesystem.h>
 #include <core/PluginFactory.h>
 #include <core/filestreams/LocalFileStream.h>
 
@@ -55,13 +56,13 @@ Factory::Factory(){
 }
 
 
-FileStreamPtr Factory::OpenFile(const utfchar *filename){
+FileStreamPtr Factory::OpenFile(const utfchar *uri){
     typedef musik::core::PluginFactory::DestroyDeleter<IFileStream> StreamDeleter;
 
-    if(filename){
+    if(uri){
         for(FileStreamFactoryVector::iterator factory=sInstance.fileStreamFactories.begin();factory!=sInstance.fileStreamFactories.end();++factory){
-            if( (*factory)->CanReadFile(filename) ){
-                IFileStream* fileStream( (*factory)->OpenFile(filename) );
+            if( (*factory)->CanReadFile(uri) ){
+                IFileStream* fileStream( (*factory)->OpenFile(uri) );
                 if(fileStream){
                     return FileStreamPtr(fileStream,StreamDeleter());
                 }else{
@@ -72,9 +73,33 @@ FileStreamPtr Factory::OpenFile(const utfchar *filename){
 
         // If non of the plugins match, lets create a regular file stream
         FileStreamPtr regularFile( new LocalFileStream(),StreamDeleter() );
-        if(regularFile->Open(filename)){
+        if(regularFile->Open(uri)){
             return regularFile;
         }
     }
     return FileStreamPtr();
+}
+
+bool Factory::IsLocalFileStream(const utfchar *uri){
+    typedef musik::core::PluginFactory::DestroyDeleter<IFileStream> StreamDeleter;
+
+    if(uri){
+        for(FileStreamFactoryVector::iterator factory=sInstance.fileStreamFactories.begin();factory!=sInstance.fileStreamFactories.end();++factory){
+            if( (*factory)->CanReadFile(uri) ){
+                return false;
+            }
+        }
+
+        //Check for local file
+        boost::filesystem::utfpath filename(uri);
+        try{
+            if(boost::filesystem::exists(filename)){
+                return true;
+            }
+        }
+        catch(...){
+        }
+    }
+
+    return false;
 }

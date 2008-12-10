@@ -98,7 +98,7 @@ void        MainWindowController::OnMainWindowCreated(Window* window)
 
 
     // Create the layout
-    this->mainFrame              = new win32cpp::Frame(NULL,win32cpp::FramePadding(4));
+    this->mainFrame              = new win32cpp::Frame(NULL,win32cpp::WindowPadding(4));
     this->mainFrame->SetLayoutFlags(win32cpp::LayoutFillFill);
 
     // Second a TabView for the settings

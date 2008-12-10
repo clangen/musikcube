@@ -300,6 +300,10 @@
 						RelativePath=".\WindowGeometry.hpp"
 						>
 					</File>
+					<File
+						RelativePath=".\WindowPadding.hpp"
+						>
+					</File>
 					<Filter
 						Name="to document"
 						>
@@ -386,6 +390,14 @@
 					</File>
 					<File
 						RelativePath=".\RadioButton.hpp"
+						>
+					</File>
+					<File
+						RelativePath=".\VirtualWindow.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\VirtualWindow.hpp"
 						>
 					</File>
 					<File

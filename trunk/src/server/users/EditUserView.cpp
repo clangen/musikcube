@@ -53,7 +53,7 @@ using namespace win32cpp;
 //////////////////////////////////////////////////////////////////////////////
 
 EditUserView::EditUserView()
-: Frame(NULL,FramePadding(6))
+: Frame(NULL,WindowPadding(6))
 {
 }
 

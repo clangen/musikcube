@@ -121,7 +121,7 @@ void ConnectedUsersController::OnMainWindowCreated(Window* window)
 
 
     // Create the layout
-    this->mainFrame              = new win32cpp::Frame(NULL,win32cpp::FramePadding(10));
+    this->mainFrame              = new win32cpp::Frame(NULL,win32cpp::WindowPadding(10));
     this->mainFrame->SetLayoutFlags(win32cpp::LayoutFillFill);
     win32cpp::LinearLayout *mainRowLayout   = new win32cpp::LinearLayout(win32cpp::VerticalLayout,win32cpp::LayoutFillFill);
     mainRowLayout->SetSpacing(10);

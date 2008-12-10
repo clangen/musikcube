@@ -40,59 +40,67 @@
 
 //////////////////////////////////////////////////////////////////////////////
 
-#include <win32cpp/Win32Config.hpp>
-#include <win32cpp/Panel.hpp>
-#include <win32cpp/WindowPadding.hpp>
-
 namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
 
 ///\brief
-///Frame is a Container that adds a padding (border) to a single child Window.
-///
-///If the child is resized, Frame will automatically resize itself
-///to accomidate the child and respect the the specified WindowPadding.
-///If the Frame is resized, it will automatically resize the child window 
-///to fit its new ClientSize.
-///
-///Attempting to add more than 1 child Window to a Frame will result
-///in a TooManyChildWindowsException.
+///WindowPadding is used by Frame to specify the padding around the child control.
 ///
 ///\see
-///Container, Panel
-class Frame: public Panel
+///Frame.
+struct WindowPadding
 {
-private: //types
-    typedef Panel base;
+    ///\brief Constructor.
+    /*ctor*/    WindowPadding(int padding = 0)
+        : left(padding)
+        , right(padding)
+        , top(padding)
+        , bottom(padding)
+    {
+    }
 
-public: // constructors
-    /*ctor*/    Frame(Window* child = NULL, int padding = 0);
-    /*ctor*/    Frame(Window* child, const WindowPadding& padding);
+    ///\brief Constructor.
+    /*ctor*/    WindowPadding(int left, int right, int top, int bottom)
+        : left(left)
+        , right(right)
+        , top(top)
+        , bottom(bottom)
+    {
+    }
 
-public: // methods
-    void    SetPadding(const WindowPadding& padding);
-    void    SetPadding(int padding);
+    ///\brief Copy constructor.
+    /*ctor*/    WindowPadding(const WindowPadding& padding)
+        : left(padding.left)
+        , right(padding.right)
+        , top(padding.top)
+        , bottom(padding.bottom)
+    {
+    }
 
-protected: // methods
-    void    ResizeFromChild();
-    void    OnChildResized(Window* window, Size newSize);
+    ///\brief Equality operator
+    bool operator==(const WindowPadding& padding) const
+    {
+        return ((padding.left == this->left) && (padding.right == this->right)
+            && (padding.top == this->top) && (padding.bottom == this->bottom));
+    }
 
-    virtual bool    AddChildWindow(Window* window);
-    virtual void    OnChildAdded(Window* newChild);
-    virtual void    OnCreated();
-    virtual void    OnResized(const Size& newSize);
-    virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
-    virtual HWND    Create(Window* parent);
+    ///\brief Inequality operator
+    bool operator!=(const WindowPadding& padding) const
+    {
+        return ! (padding == *this);
+    }
 
-    static bool     RegisterWindowClass();
-
-private: // instance data
-    WindowPadding padding;
-    Window* child;
-    bool isResizingHACK;
+    ///\brief Left padding, in pixels
+    int left;
+    ///\brief Right padding, in pixels
+    int right;
+    ///\brief Top padding, in pixels
+    int top;
+    ///\brief Bottom padding, in pixels
+    int bottom;
 };
 
-//////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
 
 }   // win32cpp
