@@ -77,7 +77,7 @@ void SyncpathView::OnCreated()
     pathLayout->AddChild(pathButtonsLayout);
 
     // Add to the layout
-    win32cpp::Frame *paddingFrame    = this->AddChild(new Frame(pathLayout,FramePadding(20)));
+    win32cpp::Frame *paddingFrame    = this->AddChild(new Frame(pathLayout,WindowPadding(20)));
     paddingFrame->SetLayoutFlags(win32cpp::LayoutFillFill);
 
 }

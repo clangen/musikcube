@@ -64,7 +64,7 @@ private: // types
     typedef std::map<Window*, int> WindowToTabIndexMap;
 
 public: // constructors
-    /*ctor*/        TabView();
+    /*ctor*/        TabView(LayoutFlags layoutFlags = LayoutWrapWrap);
 
 public: // methods
     template <typename WindowType>

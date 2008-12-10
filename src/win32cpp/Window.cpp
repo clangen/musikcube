@@ -696,6 +696,11 @@ bool        Window::MoveTo(int x, int y)
 ///true if succesful, false otherwise.
 bool        Window::MoveTo(const Point& location)
 {
+    if (this->Location() == location)
+    {
+        return true;
+    }
+
     RECT windowRect;
     if (::GetWindowRect(this->windowHandle, &windowRect))
     {
@@ -783,6 +788,11 @@ bool        Window::Resize(int width, int height)
 ///true on success, false otherwise.
 bool        Window::Resize(const Size& size)
 {
+    if (this->WindowSize() == size)
+    {
+        return true;
+    }
+
     RECT windowRect;
     if (::GetWindowRect(this->windowHandle, &windowRect))
     {

@@ -42,44 +42,26 @@
 
 #include <win32cpp/Win32Config.hpp>
 #include <win32cpp/Panel.hpp>
-#include <win32cpp/WindowPadding.hpp>
 
 namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
 
-///\brief
-///Frame is a Container that adds a padding (border) to a single child Window.
-///
-///If the child is resized, Frame will automatically resize itself
-///to accomidate the child and respect the the specified WindowPadding.
-///If the Frame is resized, it will automatically resize the child window 
-///to fit its new ClientSize.
-///
-///Attempting to add more than 1 child Window to a Frame will result
-///in a TooManyChildWindowsException.
-///
-///\see
-///Container, Panel
-class Frame: public Panel
+class VirtualWindow: public Panel
 {
 private: //types
     typedef Panel base;
 
 public: // constructors
-    /*ctor*/    Frame(Window* child = NULL, int padding = 0);
-    /*ctor*/    Frame(Window* child, const WindowPadding& padding);
+    /*ctor*/    VirtualWindow(HWND handle, int padding = 0, LayoutFlags flags = LayoutWrapWrap);
 
 public: // methods
     void    SetPadding(const WindowPadding& padding);
     void    SetPadding(int padding);
 
 protected: // methods
-    void    ResizeFromChild();
-    void    OnChildResized(Window* window, Size newSize);
 
     virtual bool    AddChildWindow(Window* window);
-    virtual void    OnChildAdded(Window* newChild);
     virtual void    OnCreated();
     virtual void    OnResized(const Size& newSize);
     virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
@@ -89,8 +71,7 @@ protected: // methods
 
 private: // instance data
     WindowPadding padding;
-    Window* child;
-    bool isResizingHACK;
+    HWND realHWND;
 };
 
 //////////////////////////////////////////////////////////////////////////////

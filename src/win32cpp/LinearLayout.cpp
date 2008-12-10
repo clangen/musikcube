@@ -63,6 +63,7 @@ using namespace win32cpp;
 , orientation(orientation)
 , spacing(4)
 , childIsResizing(false)
+, isResizing(false)
 {
 }
 
@@ -140,7 +141,10 @@ inline void LinearLayout::ThrowIfNotChild(Window* child)
 
 void        LinearLayout::OnResized(const Size& newSize)
 {
-    this->Layout();
+    if ( ! this->isResizing)
+    {
+        this->Layout();
+    }
 }
 
 void        LinearLayout::ResizeWrapContent()
@@ -195,7 +199,9 @@ void        LinearLayout::ResizeWrapContent()
     if ( ! wrapWidth) wrappedWidth = size.width;
     if ( ! wrapHeight) wrappedHeight = size.height;
 
+    this->isResizing = true;
     this->Resize(wrappedWidth, wrappedHeight);
+    this->isResizing = false;
 }
 
 Point       LinearLayout::AlignChildInRect(LayoutAlignFlag alignment, Size childSize, Rect alignmentRect)
@@ -400,8 +406,17 @@ void        LinearLayout::Layout()
             Rect(Point(x, y), alignSize));
 
         this->childIsResizing = true;
-        child->Resize(size);
-        child->MoveTo(location);
+        {
+            if (child->WindowSize() != size)
+            {
+                child->Resize(size);
+            }
+
+            if (child->Location() != location)
+            {
+                child->MoveTo(location);
+            }
+        }
         this->childIsResizing = false;
 
         isVertical

@@ -122,7 +122,7 @@ void        MainWindowController::OnMainWindowCreated(Window* window)
 
     // create transport view/controller
     TransportView* transportView = new TransportView();
-    transportView->SetPadding(FramePadding(2, 4, 0, 0));
+    transportView->SetPadding(WindowPadding(2, 4, 0, 0));
     this->transportController = new TransportController(*transportView);
 
     // create library view/controller

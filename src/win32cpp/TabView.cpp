@@ -50,8 +50,8 @@ using namespace win32cpp;
 
 ///\brief
 ///Default constructor.
-/*ctor*/    TabView::TabView()
-: base()
+/*ctor*/    TabView::TabView(LayoutFlags layoutFlags)
+: base(layoutFlags)
 , visibleChild(NULL)
 , padding(4)
 {

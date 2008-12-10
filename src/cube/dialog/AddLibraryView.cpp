@@ -52,7 +52,7 @@ using namespace win32cpp;
 //////////////////////////////////////////////////////////////////////////////
 
 AddLibraryView::AddLibraryView(int type)
-: Frame(NULL,FramePadding(6))
+: Frame(NULL,WindowPadding(6))
 , type(type)
 {
 }

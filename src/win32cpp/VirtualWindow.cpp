@@ -37,7 +37,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <pch.hpp>
-#include <win32cpp/Frame.hpp>
+#include <win32cpp/VirtualWindow.hpp>
 #include <win32cpp/Color.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
@@ -46,51 +46,22 @@ using namespace win32cpp;
 
 //////////////////////////////////////////////////////////////////////////////
 
-#define CLASS_NAME _T("Frame")
+#define CLASS_NAME _T("VirtualWindow")
 
-///\brief Constructor
-///
-///\remarks 
-///If child is not specified (NULL) it can be added later by using the
-///Container::AddChild method.
-///
-///\param child
-///The Window to be housed within the frame.
-///
-///\param padding
-///The amount of padding, in pixels, for all edges.
-/*ctor*/    Frame::Frame(Window* child, int padding)
+/*ctor*/    VirtualWindow::VirtualWindow(HWND handle, int padding, LayoutFlags flags)
 : base()
 , padding(padding, padding, padding, padding)
-, child(child)
-, isResizingHACK(false)
+, realHWND(handle)
 {
-}
-
-///\brief Constructor
-///
-///\remarks 
-///If child is not specified (NULL) it can be added later by using the
-///Container::AddChild method.
-///
-///\param child
-///The Window to be housed within the frame.
-///
-///\param padding
-///The padding parameters to use.
-/*ctor*/    Frame::Frame(Window* child, const WindowPadding& padding)
-: base()
-, padding(padding)
-, child(child)
-, isResizingHACK(false)
-{
+    this->SetLayoutFlags(flags);
+    this->SetBackgroundColor(Color(255, 0, 255));
 }
 
 ///\brief Set the Child's padding.
 ///
 ///\param padding
 ///The new padding parameters to use.
-void        Frame::SetPadding(const WindowPadding& padding)
+void        VirtualWindow::SetPadding(const WindowPadding& padding)
 {
     this->padding = padding;
     this->OnResized(this->WindowSize());
@@ -100,74 +71,40 @@ void        Frame::SetPadding(const WindowPadding& padding)
 ///
 ///\param padding
 ///The amount of padding, in pixels, for all edges.
-void        Frame::SetPadding(int padding)
+void        VirtualWindow::SetPadding(int padding)
 {
     this->SetPadding(WindowPadding(padding, padding, padding, padding));
 }
 
-void        Frame::OnCreated()
+void        VirtualWindow::OnCreated()
 {
-    if (this->child)
+    if (this->realHWND)
     {
-        this->AddChild(child);
+        ::SetParent(this->realHWND, this->Handle());
     }
 }
 
-bool        Frame::AddChildWindow(Window* window)
+bool        VirtualWindow::AddChildWindow(Window* window)
 {
-    if (this->childWindows.size())
-    {
-        throw TooManyChildWindowsException();
-    }
-
-    return base::AddChildWindow(window);
+    throw TooManyChildWindowsException();
 }
 
-void        Frame::OnChildAdded(Window* newChild)
+void        VirtualWindow::OnResized(const Size& newSize)
 {
-    this->child = newChild;
-
-    this->ResizeFromChild();
-    this->child->Resized.connect(this, &Frame::OnChildResized);
-
-    newChild->MoveTo(0, 0);
-}
-
-void        Frame::OnResized(const Size& newSize)
-{
-    if (this->child && (! isResizingHACK))
+    if (realHWND)
     {
-        this->child->Resize(this->ClientSize());
-        this->child->MoveTo(0, 0);
+        Size clientSize = this->ClientSize();
+
+        ::SetWindowPos(
+            this->realHWND,
+            HWND_TOP,
+            0, 0, 
+            clientSize.width, clientSize.height,
+            NULL);
     }
 }
 
-void        Frame::OnChildResized(Window* window, Size newSize)
-{
-    // If we were resized then we had to change our child's size. Doing 
-    // so will cause a Resize event to fire, resulting in and endless
-    // recursive loop. Don't field this event if WE did the resizing!
-    if ( ! this->isResizingHACK)
-    {
-        this->ResizeFromChild();
-    }
-}
-
-void        Frame::ResizeFromChild()
-{
-    Size size = this->child->WindowSize();
- 
-    size.width += (this->padding.left + this->padding.right);
-    size.height += (this->padding.top + this->padding.bottom);
-    //
-    this->isResizingHACK = true;
-    this->Resize(size);
-    this->isResizingHACK = false;
-
-    this->child->MoveTo(0, 0);
-}
-
-LRESULT     Frame::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT     VirtualWindow::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
@@ -211,11 +148,11 @@ LRESULT     Frame::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
     return base::WindowProc(message, wParam, lParam);
 }
 
-HWND        Frame::Create(Window* parent)
+HWND        VirtualWindow::Create(Window* parent)
 {
     HINSTANCE hInstance = Application::Instance();
 
-    if ( ! Frame::RegisterWindowClass())
+    if ( ! VirtualWindow::RegisterWindowClass())
     {
         return NULL;
     }
@@ -240,7 +177,7 @@ HWND        Frame::Create(Window* parent)
     return hwnd;
 }
 
-bool        Frame::RegisterWindowClass()
+bool        VirtualWindow::RegisterWindowClass()
 {
     static bool registered  = false;
 

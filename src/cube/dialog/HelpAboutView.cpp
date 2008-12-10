@@ -72,7 +72,7 @@ const int anim_h = 300;
 //////////////////////////////////////////////////////////////////////////////
 
 HelpAboutView::HelpAboutView()
-: Frame(NULL, FramePadding(6))
+: Frame(NULL, WindowPadding(6))
 , drawingThread(NULL)
 {
 }

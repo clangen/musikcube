@@ -169,8 +169,8 @@ void        SettingsView::OnCreated()
     pathLayout->AddChild(pathButtonsLayout);
 
     // Add to the layout
-    win32cpp::Frame *statusFrame    = mainLayout->AddChild(new Frame(libraryStatusLayout,FramePadding(20,20,20,0)));
-    win32cpp::Frame *syncpathFrame  = mainLayout->AddChild(new Frame(pathLayout,FramePadding(20,20,0,20)));
+    win32cpp::Frame *statusFrame    = mainLayout->AddChild(new Frame(libraryStatusLayout,WindowPadding(20,20,20,0)));
+    win32cpp::Frame *syncpathFrame  = mainLayout->AddChild(new Frame(pathLayout,WindowPadding(20,20,0,20)));
     syncpathFrame->SetLayoutFlags(win32cpp::LayoutFillFill);
 
     // test CheckBox
