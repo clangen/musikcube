@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, musikCube team
+// The following are Copyright  2007, musikCube team
 //
 // Sources and Binaries of: mC2, win32cpp
 //
@@ -85,7 +85,7 @@ void        TransportController::OnViewCreated(Window* window)
         this, &TransportController::OnVolumeSliderChange);
 
     this->transportView.volumeSlider->SetPosition(
-        musik::core::PlaybackQueue::Instance().Transport().Volume());
+        musik::core::PlaybackQueue::Instance().Transport().Volume()*100);
 
     musik::core::PlaybackQueue::Instance().CurrentTrackChanged.connect(this,&TransportController::OnTrackChange);
 
@@ -98,19 +98,20 @@ void        TransportController::OnViewCreated(Window* window)
     this->transportView.playbackSlider->MouseButtonUp.connect(
         this, &TransportController::OnPlaybackSliderMouseUp);
 
-    musik::core::PlaybackQueue::Instance().Transport().EventPlaybackStartedOk.connect(this, &TransportController::OnPlaybackStarted);
-    musik::core::PlaybackQueue::Instance().Transport().EventPlaybackStoppedOk.connect(this, &TransportController::OnPlaybackStopped);
+    musik::core::PlaybackQueue::Instance().Transport().PlaybackStarted.connect(this, &TransportController::OnPlaybackStarted);
+    musik::core::PlaybackQueue::Instance().Transport().PlaybackEnded.connect(this, &TransportController::OnPlaybackStopped);
 
-    musik::core::PlaybackQueue::Instance().Transport().EventPlaybackPausedOk.connect(this, &TransportController::OnPlaybackPaused);
-    musik::core::PlaybackQueue::Instance().Transport().EventPlaybackResumedOk.connect(this, &TransportController::OnPlaybackResumed);
+    musik::core::PlaybackQueue::Instance().Transport().PlaybackPause.connect(this, &TransportController::OnPlaybackPaused);
+    musik::core::PlaybackQueue::Instance().Transport().PlaybackResume.connect(this, &TransportController::OnPlaybackResumed);
 
     this->playbackSliderTimer.ConnectToWindow(&this->transportView);
 
     this->playbackSliderTimer.OnTimeout.connect(this, &TransportController::OnPlaybackSliderTimerTimedOut);
+    this->playbackSliderTimer.Start();
 
     // In case playback has already started
-    if(musik::core::PlaybackQueue::Instance().Transport().CurrentTrack()){
-        this->OnPlaybackStarted(musik::core::PlaybackQueue::Instance().Transport().CurrentTrack());
+    if(musik::core::PlaybackQueue::Instance().CurrentTrack()){
+        this->OnPlaybackStarted();
     }
 }
 
@@ -129,7 +130,6 @@ void        TransportController::OnStopPressed(Button* button)
 {
     musik::core::PlaybackQueue::Instance().Stop();
     this->transportView.playbackSlider->SetPosition(0);
-    this->playbackSliderTimer.Stop();
 }
 
 void        TransportController::OnNextPressed(Button* button)
@@ -144,7 +144,7 @@ void        TransportController::OnPreviousPressed(Button* button)
 
 void        TransportController::OnVolumeSliderChange(Trackbar* trackbar)
 {
-    musik::core::PlaybackQueue::Instance().Transport().SetVolume(transportView.volumeSlider->Position());
+    musik::core::PlaybackQueue::Instance().Transport().SetVolume( ((double)transportView.volumeSlider->Position())/100.0 );
 }
 
 void TransportController::OnTrackChange(musik::core::TrackPtr track){
@@ -164,6 +164,8 @@ void TransportController::OnTrackChange(musik::core::TrackPtr track){
         if(track->GetValue("visual_artist"))
             artist.assign( track->GetValue("visual_artist") );
 
+    }else{
+        this->transportView.timeDurationLabel->SetCaption(_T("0:00"));
     }
 
     this->transportView.titleLabel->SetCaption(title);
@@ -172,26 +174,56 @@ void TransportController::OnTrackChange(musik::core::TrackPtr track){
 
 void TransportController::OnPlaybackSliderChange(Trackbar *trackBar)
 {
-    unsigned long lengthMs = musik::core::PlaybackQueue::Instance().Transport().TrackLength();
+    if(this->playbackSliderMouseDown){
+        // Get the length from the track
+        double trackLength  = this->CurrentTrackLength();
 
-    double relativePosition = (double)trackBar->Position() / (double)trackBar->Range();
-    unsigned long newPosMs = lengthMs * relativePosition;
-
-    musik::core::PlaybackQueue::Instance().Transport().SetTrackPosition(newPosMs);
+        if (trackLength>0){
+            double relativePosition = (double)trackBar->Position() / (double)trackBar->Range();
+            double newPosition      = trackLength * relativePosition;
+            musik::core::PlaybackQueue::Instance().Transport().SetPosition(newPosition);
+        }
+    }
 }
 
 void TransportController::OnPlaybackSliderTimerTimedOut()
 {
-    unsigned long currPosMs = musik::core::PlaybackQueue::Instance().Transport().TrackPosition();
-    unsigned long lengthMs = musik::core::PlaybackQueue::Instance().Transport().TrackLength();
-    unsigned long sliderRange = this->transportView.playbackSlider->Range();
+    // Get the length from the track
+    double trackLength  = this->CurrentTrackLength();
 
-    this->transportView.timeElapsedLabel->SetCaption(this->FormatTime(currPosMs));
-
-    if (!this->playbackSliderMouseDown && lengthMs != 0)
-    {
-        this->transportView.playbackSlider->SetPosition( (sliderRange * currPosMs) / lengthMs);
+    // Move the slider
+    double position         = musik::core::PlaybackQueue::Instance().Transport().Position();
+    if (!this->playbackSliderMouseDown){
+        if(trackLength>0){
+            this->transportView.playbackSlider->SetPosition( this->transportView.playbackSlider->Range()*(position/trackLength) );
+        }
+        this->transportView.timeElapsedLabel->SetCaption(this->FormatTime(position));
+        return;
     }
+
+    if (!this->playbackSliderMouseDown){
+        this->transportView.playbackSlider->SetPosition(0);
+    }else{
+        // Lets show what position to jump to
+//        double newPosition   = trackLength*(double)this->transportView.playbackSlider->Position()/(double)this->transportView.playbackSlider->Range();
+//        this->transportView.timeElapsedLabel->SetCaption(this->FormatTime(newPosition));
+    }
+
+}
+
+double  TransportController::CurrentTrackLength(){
+    musik::core::TrackPtr track = musik::core::PlaybackQueue::Instance().CurrentTrack();
+    if(track){
+        const utfchar *totalPositionString = track->GetValue("duration");
+        if(totalPositionString){
+            try{
+                double totalPosition    = boost::lexical_cast<double>(totalPositionString);
+                return totalPosition;
+            }catch(...){
+            }
+        }
+    }
+    return 0;
 }
 
 void TransportController::OnPlaybackSliderMouseDown(Window* windows, MouseEventFlags flags, Point point)
@@ -204,34 +236,39 @@ void TransportController::OnPlaybackSliderMouseUp(Window* windows, MouseEventFla
     this->playbackSliderMouseDown = false;
 }
 
-void TransportController::OnPlaybackStarted(musik::core::TrackPtr track)
+void TransportController::OnPlaybackStarted()
 {
     if(!win32cpp::ApplicationThread::InMainThread())
     {
-        win32cpp::ApplicationThread::Call1(this, &TransportController::OnPlaybackStarted, track);
+        win32cpp::ApplicationThread::Call0(this, &TransportController::OnPlaybackStarted);
         return;
     }
+
+    musik::core::TrackPtr currentTrack  = musik::core::PlaybackQueue::Instance().CurrentTrack();
 
     this->playing = true;
     this->transportView.playButton->SetCaption(_T("Pause"));
 
-    this->transportView.timeDurationLabel->SetCaption(this->FormatTime(musik::core::PlaybackQueue::Instance().Transport().TrackLength()));
+    this->transportView.timeDurationLabel->SetCaption(this->FormatTime(this->CurrentTrackLength()));
     
     this->transportView.playbackSlider->SetPosition(0);
     
     this->playbackSliderTimer.Start();
 
-    this->displayedTrack = track;
+    this->displayedTrack = currentTrack;
 }
 
-void TransportController::OnPlaybackStopped(musik::core::TrackPtr track)
+void TransportController::OnPlaybackStopped()
 {
     if(!win32cpp::ApplicationThread::InMainThread())
     {
-        win32cpp::ApplicationThread::Call1(this, &TransportController::OnPlaybackStopped, track);
+        win32cpp::ApplicationThread::Call0(this, &TransportController::OnPlaybackStopped);
         return;
     }
 
+
+    this->displayedTrack.reset();
+/*
     utfstring trackURI;
     const utfchar* uri  = track->URI();
     if(uri)
@@ -239,19 +276,19 @@ void TransportController::OnPlaybackStopped(musik::core::TrackPtr track)
 
     if(this->displayedTrack){
         if (trackURI == this->displayedTrack->URI()) // For out of order signals
-        {
+        {*/
             this->playing = false;
             this->paused = false;
 
             this->transportView.playButton->SetCaption(_T("Play"));
 
             this->transportView.playbackSlider->SetPosition(0);
-            this->playbackSliderTimer.Stop();  
+//            this->playbackSliderTimer.Stop();  
             
             this->transportView.timeElapsedLabel->SetCaption(_T("0:00"));
             this->transportView.timeDurationLabel->SetCaption(_T("0:00"));
-        }
-    }
+//        }
+//    }
 }
 
 void TransportController::OnPlaybackPaused()
@@ -278,14 +315,28 @@ void TransportController::OnPlaybackResumed()
     this->transportView.playButton->SetCaption(_(_T("Pause")));
 }
 
-win32cpp::uistring  TransportController::FormatTime(unsigned long ms)
+win32cpp::uistring  TransportController::FormatTime(double seconds)
 {
-    unsigned long seconds = ms / 1000 % 60;
-    unsigned long minutes = ms / 1000 / 60;
-    
-    boost::basic_format<uichar> format(_T("%1%:%2$02d"));
-    format % minutes;
-    format % seconds;
-    
-    return format.str();
+    if(seconds>=0){
+        unsigned long second    = (unsigned long)seconds % 60;
+        unsigned long minutes   = (unsigned long)seconds / 60;
+        
+        boost::basic_format<uichar> format(_T("%1%:%2$02d"));
+        format % minutes;
+        format % second;
+        
+        return format.str();
+    }
+    return _(_T("Unknown"));
 }
+/*
+win32cpp::uistring TransportController::FormatTime(const utfchar *seconds){
+    if(seconds){
+        try{
+            double sec  = boost::lexical_cast<double>(utfstring(seconds));
+            return this->FormatTime(sec);
+        }catch(...){
+        }
+    }
+    return UTF("0:00");
+}*/

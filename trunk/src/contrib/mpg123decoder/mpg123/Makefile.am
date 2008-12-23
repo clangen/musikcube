@@ -23,12 +23,15 @@ EXTRA_DIST = \
 	xmms2-plugin/mpg123/mpg123.c \
 	xmms2-plugin/mpg123/wscript \
 	makedll.sh \
+	windows-builds.sh \
 	test/forkfaint.c \
 	test/rms16.c \
 	NEWS.libmpg123 \
 	autogen.sh \
+	equalize.dat \
 	ports/MSVC++/mpg123.h \
 	ports/MSVC++/config.h \
+	ports/MSVC++/msvc.c \
 	ports/MSVC++/2005/libmpg123/libmpg123.vcproj \
 	ports/MSVC++/2008/libmpg123/libmpg123.vcproj \
 	ports/MSVC++/CMP3Stream/libMPG123/libMPG123.vcproj \

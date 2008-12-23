@@ -196,6 +196,14 @@
 				RelativePath=".\waveout_plugin.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\WaveOutBuffer.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\WaveOutBuffer.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"

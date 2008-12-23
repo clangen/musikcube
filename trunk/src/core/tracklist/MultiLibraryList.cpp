@@ -124,9 +124,9 @@ musik::core::TrackPtr MultiLibraryList::CurrentTrack(){
 musik::core::TrackPtr MultiLibraryList::NextTrack(){
     long newPosition    = this->currentPosition+1;
     musik::core::TrackPtr nextTrack = (*this)[newPosition];
-    if(nextTrack){
+//    if(nextTrack){
         this->SetPosition(newPosition);
-    }
+//    }
     return nextTrack;
 }
 
@@ -137,9 +137,9 @@ musik::core::TrackPtr MultiLibraryList::NextTrack(){
 musik::core::TrackPtr MultiLibraryList::PreviousTrack(){
     long newPosition    = this->currentPosition-1;
     musik::core::TrackPtr nextTrack = (*this)[newPosition];
-    if(nextTrack){
+//    if(nextTrack){
         this->SetPosition(newPosition);
-    }
+//    }
     return nextTrack;
 }
 
@@ -155,7 +155,7 @@ musik::core::TrackPtr MultiLibraryList::PreviousTrack(){
 ///True if position is a valid one and successfully set.
 //////////////////////////////////////////
 bool MultiLibraryList::SetPosition(long position){
-    if(position>=0 && position<this->tracklist.size()){
+    if(position>=-1 && position<=this->tracklist.size()){
         this->PositionChanged(position,this->currentPosition);
         this->currentPosition   = position;
         return true;

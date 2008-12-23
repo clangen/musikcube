@@ -5,10 +5,10 @@
 	see COPYING and AUTHORS files in distribution or http://mpg123.org
 */
 
-#include "config.h"
-
 #ifndef _MPG123_MODULE_H_
 #define _MPG123_MODULE_H_
+
+/* Pulled in by mpg123app.h! */
 
 #ifdef HAVE_LTDL
 #include <ltdl.h>

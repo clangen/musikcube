@@ -3,8 +3,11 @@
 /* Define if .align takes 3 for alignment of 2^3=8 bytes instead of 8. */
 #undef ASMALIGN_EXP
 
-/* Define if __attribute__((aligned(16))) works */
+/* Define if __attribute__((aligned(16))) shall be used */
 #undef CCALIGN
+
+/* Define if checking of stack alignment is wanted. */
+#undef CHECK_ALIGN
 
 /* Define if debugging is enabled. */
 #undef DEBUG
@@ -32,6 +35,9 @@
 
 /* Define to 1 if you have the <asm/audioio.h> header file. */
 #undef HAVE_ASM_AUDIOIO_H
+
+/* Define to 1 if you have the `atoll' function. */
+#undef HAVE_ATOLL
 
 /* Define to 1 if you have the <audios.h> header file. */
 #undef HAVE_AUDIOS_H
@@ -174,6 +180,9 @@
 /* Define to 1 if you have the <sys/resource.h> header file. */
 #undef HAVE_SYS_RESOURCE_H
 
+/* Define to 1 if you have the <sys/signal.h> header file. */
+#undef HAVE_SYS_SIGNAL_H
+
 /* Define to 1 if you have the <sys/socket.h> header file. */
 #undef HAVE_SYS_SOCKET_H
 
@@ -231,6 +240,18 @@
 /* Define if portaudio v18 API is wanted. */
 #undef PORTAUDIO18
 
+/* The size of `long', as computed by sizeof. */
+#undef SIZEOF_LONG
+
+/* The size of `off_t', as computed by sizeof. */
+#undef SIZEOF_OFF_T
+
+/* The size of `size_t', as computed by sizeof. */
+#undef SIZEOF_SIZE_T
+
+/* The size of `ssize_t', as computed by sizeof. */
+#undef SIZEOF_SSIZE_T
+
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
@@ -240,6 +261,12 @@
 /* Version number of package */
 #undef VERSION
 
+/* Number of bits in a file offset, on hosts where this is settable. */
+#undef _FILE_OFFSET_BITS
+
+/* Define for large files, on AIX-style hosts. */
+#undef _LARGE_FILES
+
 /* Define to empty if `const' does not conform to ANSI C. */
 #undef const
 
@@ -248,9 +275,6 @@
 #ifndef __cplusplus
 #undef inline
 #endif
-
-/* Define if network support is enabled. */
-#undef network
 
 /* Define to `long int' if <sys/types.h> does not define. */
 #undef off_t

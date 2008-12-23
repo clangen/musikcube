@@ -56,7 +56,7 @@ static void bc_forget(struct bufferchain *bc);
 static ssize_t plain_read(mpg123_handle *fr, void *buf, size_t count)
 {
 	ssize_t ret = fr->rdat.read(fr->rdat.filept, buf, count);
-	debug2("read %li bytes of %li", (long)ret, (long)count);
+	if(VERBOSE3) debug2("read %li bytes of %li", (long)ret, (long)count);
 	return ret;
 }
 #ifndef WIN32
@@ -503,14 +503,20 @@ static ssize_t bc_give(struct bufferchain *bc, unsigned char *out, size_t size)
 		ssize_t loff = bc->pos - offset;
 		ssize_t chunk = size - gotcount; /* amount of bytes to get from here... */
 		if(chunk > b->size - loff) chunk = b->size - loff;
-		debug3("copying %liB from %p+%li",(long)chunk, b->data, (long)loff);
+
+#ifdef EXTRA_DEBUG
+		debug3("copying %liB from %p+%li",(long)chunk, b->data, (long)loff); */
+#endif
+
 		memcpy(out+gotcount, b->data+loff, chunk);
 		gotcount += chunk;
 		bc->pos  += chunk;
 		offset += b->size;
 		b = b->next;
 	}
+#ifdef EXTRA_DEBUG
 	debug2("got %li bytes, pos advanced to %li", (long)gotcount, (long)bc->pos);
+#endif
 
 	return gotcount;
 }
@@ -539,8 +545,10 @@ static void bc_forget(struct bufferchain *bc)
 	struct buffy *b = bc->first;
 	/* free all buffers that are def'n'tly outdated */
 	/* we have buffers until filepos... delete all buffers fully below it */
+#ifdef EXTRA_DEBUG
 	if(b) debug2("bc_forget: block %lu pos %lu", (unsigned long)b->size, (unsigned long)bc->pos);
 	else debug("forget with nothing there!");
+#endif
 	while(b != NULL && bc->pos >= b->size)
 	{
 		struct buffy *n = b->next; /* != NULL or this is indeed the end and the last cycle anyway */
@@ -548,7 +556,9 @@ static void bc_forget(struct bufferchain *bc)
 		bc->fileoff += b->size;
 		bc->pos  -= b->size;
 		bc->size -= b->size;
+#ifdef EXTRA_DEBUG
 		debug5("bc_forget: forgot %p with %lu, pos=%li, size=%li, fileoff=%li", (void*)b->data, (long)b->size, (long)bc->pos,  (long)bc->size, (long)bc->fileoff);
+#endif
 		free(b->data);
 		free(b);
 		b = n;
@@ -572,14 +582,15 @@ static int feed_init(mpg123_handle *fr)
 int feed_more(mpg123_handle *fr, const unsigned char *in, long count)
 {
 	int ret = 0;
-	debug("feed_more");
+	if(VERBOSE3) debug("feed_more");
 	if((ret = bc_add(&fr->rdat.buffer, in, count)) != 0)
 	{
 		ret = READER_ERROR;
 		if(NOQUIET) error1("Failed to add buffer, return: %i", ret);
 	}
 	else /* Not talking about filelen... that stays at 0. */
-	debug3("feed_more: %p %luB bufsize=%lu", fr->rdat.buffer.last->data,
+
+	if(VERBOSE3) debug3("feed_more: %p %luB bufsize=%lu", fr->rdat.buffer.last->data,
 		(unsigned long)fr->rdat.buffer.last->size, (unsigned long)fr->rdat.buffer.size);
 	return ret;
 }
@@ -652,7 +663,7 @@ static ssize_t buffered_fullread(mpg123_handle *fr, unsigned char *out, ssize_t 
 				return READER_ERROR;
 			}
 
-			debug1("buffered_fullread: buffering %li bytes from stream (if > 0)", (long)got);
+			if(VERBOSE3) debug1("buffered_fullread: buffering %li bytes from stream (if > 0)", (long)got);
 			if(got > 0 && (ret=bc_add(bc, readbuf, got)) != 0)
 			{
 				if(NOQUIET) error1("unable to add to chain, return: %i", ret);
@@ -670,7 +681,9 @@ static ssize_t buffered_fullread(mpg123_handle *fr, unsigned char *out, ssize_t 
 		count = bc->size - bc->pos; /* We want only what we got. */
 	}
 	gotcount = bc_give(bc, out, count);
-	debug2("wanted %li, got %li", (long)count, (long)gotcount);
+
+	if(VERBOSE3) debug2("wanted %li, got %li", (long)count, (long)gotcount);
+
 	if(gotcount != count){ if(NOQUIET) error("gotcount != count"); return READER_ERROR; }
 	else return gotcount;
 }
@@ -895,9 +908,9 @@ int open_stream(mpg123_handle *fr, const char *bs_filenam, int fd)
 	#endif
 	else if((filept = open(bs_filenam, O_RDONLY|O_BINARY)) < 0) /* a plain old file to open... */
 	{
-		if(NOQUIET) error2("Cannot file %s: %s", bs_filenam, strerror(errno));
+		if(NOQUIET) error2("Cannot open file %s: %s", bs_filenam, strerror(errno));
 		fr->err = MPG123_BAD_FILE;
-		return filept; /* error... */
+		return MPG123_ERR; /* error... */
 	}
 
 	/* now we have something behind filept and can init the reader */

@@ -1,3 +1,5 @@
+#ifndef H_LOCAL
+#define H_LOCAL
 /*
 	local: some stuff for localisation
 
@@ -8,8 +10,12 @@
 	initially written by Thomas Orgis, based on a patch by Thorsten Glaser.
 */
 
+/* Pulled in by mpg123app.h! */
+
 /* This is 1 if check_locale found UTF-8, 0 if not. */
 extern int utf8env;
 
 /* Check/set locale, set the utf8env variable. */
 void check_locale(void);
+
+#endif

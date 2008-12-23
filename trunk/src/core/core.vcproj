@@ -514,35 +514,51 @@
 				Name="audio"
 				>
 				<File
-					RelativePath=".\audio\AudioEvents.h"
+					RelativePath=".\audio\Buffer.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\audio\AudioPacketizer.cpp"
+					RelativePath=".\audio\Buffer.h"
 					>
 				</File>
 				<File
-					RelativePath=".\audio\AudioPacketizer.h"
+					RelativePath=".\audio\IBuffer.h"
 					>
 				</File>
 				<File
-					RelativePath=".\audio\AudioStream.cpp"
+					RelativePath=".\audio\IDecoder.h"
 					>
 				</File>
 				<File
-					RelativePath=".\audio\AudioStream.h"
+					RelativePath=".\audio\IDecoderFactory.h"
 					>
 				</File>
 				<File
-					RelativePath=".\audio\IAudioCallback.h"
+					RelativePath=".\audio\IDSP.h"
 					>
 				</File>
 				<File
-					RelativePath=".\audio\IAudioOutput.h"
+					RelativePath=".\audio\IOutput.h"
 					>
 				</File>
 				<File
-					RelativePath=".\audio\IAudioSource.h"
+					RelativePath=".\audio\IPlayer.h"
+					>
+				</File>
+				<File
+					RelativePath=".\audio\Player.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\audio\Player.h"
+					>
+				</File>
+				<File
+					RelativePath=".\audio\Stream.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\audio\Stream.h"
 					>
 				</File>
 				<File

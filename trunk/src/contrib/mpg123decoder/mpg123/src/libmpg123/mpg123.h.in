@@ -27,7 +27,37 @@
 #ifndef MPG123_NO_CONFIGURE /* Enable use of this file without configure. */
 @INCLUDE_STDLIB_H@
 @INCLUDE_SYS_TYPE_H@
+
+#if @LARGEFILE_SWITCH@ /* If we need trickery for large file support. */
+
+/* Check for compiling programs agains this libmpg123. */
+#if (defined _FILE_OFFSET_BITS) && (_FILE_OFFSET_BITS+0 == @LARGEFILE_BITS@)
+/* ...all is fine, having enabled large file support and also the correct sort of which. */
+#else
+#error "Mismatch in large file setup! Enable/disable large file support appropriately to use libmpg123."
 #endif
+
+/* Redefine names of functions dealing with file and file offsets
+   ...everything handling off_t, for example, which can be 32 or 64 bits. */
+
+#define mpg123_open                 mpg123_open@LARGEFILE_SUFFIX@
+#define mpg123_open_fd           mpg123_open_fd@LARGEFILE_SUFFIX@
+#define mpg123_decode_frame mpg123_decode_frame@LARGEFILE_SUFFIX@
+#define mpg123_tell                 mpg123_tell@LARGEFILE_SUFFIX@
+#define mpg123_tellframe       mpg123_tellframe@LARGEFILE_SUFFIX@
+#define mpg123_tell_stream   mpg123_tell_stream@LARGEFILE_SUFFIX@
+#define mpg123_seek                 mpg123_seek@LARGEFILE_SUFFIX@
+#define mpg123_feedseek         mpg123_feedseek@LARGEFILE_SUFFIX@
+#define mpg123_seek_frame     mpg123_seek_frame@LARGEFILE_SUFFIX@
+#define mpg123_timeframe       mpg123_timeframe@LARGEFILE_SUFFIX@
+#define mpg123_index               mpg123_index@LARGEFILE_SUFFIX@
+#define mpg123_position         mpg123_position@LARGEFILE_SUFFIX@
+#define mpg123_length             mpg123_length@LARGEFILE_SUFFIX@
+#define mpg123_set_filesize mpg123_set_filesize@LARGEFILE_SUFFIX@
+
+#endif /* LARGEFILE_SWITCH */
+
+#endif /* MPG123_NO_CONFIGURE */
 
 #ifdef __cplusplus
 extern "C" {
@@ -75,21 +105,22 @@ EXPORT void mpg123_delete(mpg123_handle *mh);
 /** Enumeration of the parameters types that it is possible to set/get. */
 enum mpg123_parms
 {
-	MPG123_VERBOSE,        /**< set verbosity value for enabling messages to stderr, >= 0 makes sense */
-	MPG123_FLAGS,          /**< set all flags, p.ex val = MPG123_GAPLESS|MPG123_MONO_MIX */
-	MPG123_ADD_FLAGS,      /**< add some flags */
-	MPG123_FORCE_RATE,     /**< when value > 0, force output rate to that value */
-	MPG123_DOWN_SAMPLE,    /**< 0=native rate, 1=half rate, 2=quarter rate */
-	MPG123_RVA,            /**< one of the RVA choices above */
-	MPG123_DOWNSPEED,      /**< play a frame N times */
-	MPG123_UPSPEED,        /**< play every Nth frame */
-	MPG123_START_FRAME,    /**< start with this frame (skip frames before that) */ 
-	MPG123_DECODE_FRAMES,  /**< decode only this number of frames */
-	MPG123_ICY_INTERVAL,   /**< stream contains ICY metadata with this interval */
-	MPG123_OUTSCALE,       /**< the scale for output samples (amplitude) */
-	MPG123_TIMEOUT,        /**< timeout for reading from a stream (not supported on win32) */
-	MPG123_REMOVE_FLAGS,   /**< remove some flags (inverse of MPG123_ADD_FLAGS) */
-	MPG123_RESYNC_LIMIT    /**< Try resync on frame parsing for that many bytes or until end of stream (<0). */
+	MPG123_VERBOSE,        /**< set verbosity value for enabling messages to stderr, >= 0 makes sense (integer) */
+	MPG123_FLAGS,          /**< set all flags, p.ex val = MPG123_GAPLESS|MPG123_MONO_MIX (integer) */
+	MPG123_ADD_FLAGS,      /**< add some flags (integer) */
+	MPG123_FORCE_RATE,     /**< when value > 0, force output rate to that value (integer) */
+	MPG123_DOWN_SAMPLE,    /**< 0=native rate, 1=half rate, 2=quarter rate (integer) */
+	MPG123_RVA,            /**< one of the RVA choices above (integer) */
+	MPG123_DOWNSPEED,      /**< play a frame N times (integer) */
+	MPG123_UPSPEED,        /**< play every Nth frame (integer) */
+	MPG123_START_FRAME,    /**< start with this frame (skip frames before that, integer) */ 
+	MPG123_DECODE_FRAMES,  /**< decode only this number of frames (integer) */
+	MPG123_ICY_INTERVAL,   /**< stream contains ICY metadata with this interval (integer) */
+	MPG123_OUTSCALE,       /**< the scale for output samples (amplitude - integer or float according to mpg123 output format, normally integer) */
+	MPG123_TIMEOUT,        /**< timeout for reading from a stream (not supported on win32, integer) */
+	MPG123_REMOVE_FLAGS,   /**< remove some flags (inverse of MPG123_ADD_FLAGS, integer) */
+	MPG123_RESYNC_LIMIT,   /**< Try resync on frame parsing for that many bytes or until end of stream (<0 ... integer). */
+	MPG123_INDEX_SIZE      /**< Set the frame index size (if supported). Values <0 mean that the index is allowed to grow dynamically in these steps (in positive direction, of course) -- Use this when you really want a full index with every individual frame. */
 };
 
 /** Flag bits for MPG123_FLAGS, use the usual binary or to combine. */
@@ -105,6 +136,7 @@ enum mpg123_param_flags
 	,MPG123_GAPLESS      = 0x40 /**< 01000000 Enable gapless decoding (default on if libmpg123 has support). */
 	,MPG123_NO_RESYNC    = 0x80 /**< 10000000 Disable resync stream after error.                             */
 	,MPG123_SEEKBUFFER   = 0x100 /**< 000100000000 Enable small buffer on non-seekable streams to allow some peek-ahead (for better MPEG sync). */
+	,MPG123_FUZZY        = 0x200 /**< 001000000000 Enable fuzzy seeks (guessing byte offsets or using approximate seek points from Xing TOC) */
 };
 
 /** choices for MPG123_RVA */
@@ -181,7 +213,10 @@ enum mpg123_errors
 	MPG123_BAD_ALIGN,	/**< Stack aligmnent error */
 	MPG123_NULL_BUFFER,	/**< NULL input buffer with non-zero size... */
 	MPG123_NO_RELSEEK,	/**< Relative seek not possible (screwed up file offset) */
-	MPG123_NULL_POINTER /**< You gave a null pointer somewhere where you shouldn't have. */
+	MPG123_NULL_POINTER, /**< You gave a null pointer somewhere where you shouldn't have. */
+	MPG123_BAD_KEY,	/**< Bad key value given. */
+	MPG123_NO_INDEX,	/**< No frame index in this build. */
+	MPG123_INDEX_FAIL	/**< Something with frame index went wrong. */
 };
 
 /** Return a string describing that error errcode means. */
@@ -567,6 +602,21 @@ EXPORT double mpg123_tpf(mpg123_handle *mh);
 
 /** Get and reset the clip count. */
 EXPORT long mpg123_clip(mpg123_handle *mh);
+
+
+/** The key values for state information from mpg123_getstate(). */
+enum mpg123_state
+{
+	 MPG123_ACCURATE = 1 /**< Query if positons are currently accurate (integer value, 0 if false, 1 if true) */
+};
+
+/** Get various current decoder/stream state information.
+ *  \param key the key to identify the information to give.
+ *  \param val the address to return (long) integer values to
+ *  \param fval the address to return floating point values to
+ *  \return MPG123_OK or MPG123_ERR for success
+ */
+EXPORT int mpg123_getstate(mpg123_handle *mh, enum mpg123_state key, long *val, double *fval);
 
 /*@}*/
 

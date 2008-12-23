@@ -13,71 +13,18 @@
 #define MPG123_H
 
 /* everyone needs it */
-#include "config.h"
-#include "httpget.h"
+#include "compat.h"
 /* import DLL symbols on windows */
 #if defined(WIN32) && defined(DYNAMIC_BUILD)
 #define LINK_MPG123_DLL
 #endif
 #include "mpg123.h"
-#include "compat.h"
 #define MPG123_REMOTE
 #define REMOTE_BUFFER_SIZE 2048
 #define MAXOUTBURST 32768
 
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
-
-#include        <stdio.h>
-#include        <string.h>
-#ifdef HAVE_SIGNAL_H
-#include        <signal.h>
-#endif
-#include        <math.h>
-
-#ifndef WIN32
-#include        <sys/signal.h>
-#endif
-/* For select(), I need select.h according to POSIX 2001, else: sys/time.h sys/types.h unistd.h */
-#ifdef HAVE_SYS_SELECT_H
-#include <sys/select.h>
-#endif
-#ifdef HAVE_SYS_TIME_H
-#include <sys/time.h>
-#endif
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-/* want to suport large files in future */
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-
-/* More integer stuff, just take what we can get... */
-#ifdef HAVE_INTTYPES_H
-#include <inttypes.h>
-#endif
-#ifdef HAVE_STDINT_H
-#include <stdint.h>
-#endif
-#ifdef HAVE_LIMITS_H
-#include <limits.h>
-#endif
- 
-#ifndef SIZE_MAX
-#define SIZE_MAX ((size_t)-1)
-#endif
-#ifndef ULONG_MAX
-#define ULONG_MAX ((unsigned long)-1)
-#endif
-
-#ifdef OS2
-#include <float.h>
-#endif
-
-typedef unsigned char byte;
 #include "xfermem.h"
+#include "httpget.h"
 
 #ifdef __GNUC__
 #define INLINE inline
@@ -85,7 +32,6 @@ typedef unsigned char byte;
 #define INLINE
 #endif
 
-#include "module.h"
 #include "audio.h"
 #include "local.h"
 
@@ -153,6 +99,7 @@ struct parameter
 	char *proxyurl;
 	int keep_open; /* Whether to keep files open after end reached, for remote control mode, perhaps terminal control, too. */
 	int force_utf8; /* Regardless of environment, always print out verbatim UTF for metadata. */
+	long index_size; /* size of frame index */
 };
 
 extern char *equalfile;

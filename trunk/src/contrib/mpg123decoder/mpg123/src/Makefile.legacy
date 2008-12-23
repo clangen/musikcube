@@ -18,7 +18,7 @@ PENTIUM_DECODE=decode_i586
 #PENTIUM_OPT=-DOPT_I586_DITHER
 #PENTIUM_DECODE=decode_i586_dither
 
-CPPFLAGS:= -DGAPLESS -Ilibmpg123 -I. $(CPPFLAGS)
+CPPFLAGS:= -DMPG123_NO_CONFIGURE -Ilibmpg123 -I. $(CPPFLAGS)
 
 ###################################################
 ######                                       ######
@@ -764,13 +764,14 @@ mpg123-make:
 	@ $(MAKELINE) BINNAME=mpg123 mpg123
 
 LIBOBJECTS= \
+libmpg123/index.o \
 libmpg123/parse.o libmpg123/frame.o libmpg123/format.o libmpg123/decode_2to1.o \
-libmpg123/decode_4to1.o libmpg123/decode_ntom.o libmpg123/equalizer.o libmpg123/icy.o \
+libmpg123/decode_4to1.o libmpg123/decode_ntom.o libmpg123/equalizer.o libmpg123/icy.o libmpg123/icy2utf8.o \
 libmpg123/id3.o libmpg123/layer1.o libmpg123/layer2.o libmpg123/layer3.o \
 libmpg123/optimize.o libmpg123/readers.o libmpg123/tabinit.o \
 libmpg123/stringbuf.o libmpg123/libmpg123.o libmpg123/compat.o
 
-COREOBJECTS= mpg123.o genre.o playlist.o id3print.o common.o audio.o buffer.o getlopt.o httpget.o wav.o 
+COREOBJECTS= mpg123.o genre.o playlist.o metaprint.o common.o audio.o buffer.o getlopt.o httpget.o wav.o local.o resolver.o equalizer.o
 
 MAINOBJECTS= xfermem.o control_generic.o
 
@@ -793,222 +794,270 @@ mpg123: $(COREOBJECTS) $(MAINOBJECTS) $(LIBOBJECTS) $(OBJECTS) legacy_module.o o
 ###########################################################################
 ###########################################################################
 
+# with -DNO_CONFIGURE, it's fine to use the template
+libmpg123/mpg123.h:
+	echo '#include "mpg123.h.in"' > "$@"
+
 # I'm really too lazy to fix that manually... let gcc do the work:
+# watch out for errors with module.c!
 
 #find -name '*.c' | sort | while read i; do test "$(dirname $i)" != "." && echo -n $(dirname $i)/ | perl -pe 's,^\./,,'; gcc -Ilibmpg123 -I. -MM $i; done
 #find -name '*.S' | sort | while read i; do test "$(dirname $i)" != "." && echo -n $(dirname $i)/ | perl -pe 's,^\./,,'; gcc -Ilibmpg123 -I. -MM $i; done
 
-audio.o: audio.c mpg123app.h config.h libmpg123/debug.h config.h \
-  httpget.h libmpg123/mpg123.h libmpg123/compat.h xfermem.h module.h \
-  audio.h common.h
-buffer.o: buffer.c mpg123app.h config.h libmpg123/debug.h config.h \
-  httpget.h libmpg123/mpg123.h libmpg123/compat.h xfermem.h module.h \
-  audio.h common.h
-common.o: common.c mpg123app.h config.h libmpg123/debug.h config.h \
-  httpget.h libmpg123/mpg123.h libmpg123/compat.h xfermem.h module.h \
-  audio.h common.h
-control_generic.o: control_generic.c mpg123app.h config.h \
-  libmpg123/debug.h config.h httpget.h libmpg123/mpg123.h \
-  libmpg123/compat.h xfermem.h module.h audio.h common.h buffer.h genre.h
+audio.o: audio.c mpg123app.h config.h httpget.h libmpg123/mpg123.h \
+  libmpg123/compat.h config.h xfermem.h module.h audio.h local.h common.h \
+  buffer.h libmpg123/debug.h
+buffer.o: buffer.c mpg123app.h config.h httpget.h libmpg123/mpg123.h \
+  libmpg123/compat.h config.h xfermem.h module.h audio.h local.h common.h \
+  libmpg123/debug.h
+common.o: common.c mpg123app.h config.h httpget.h libmpg123/mpg123.h \
+  libmpg123/compat.h config.h xfermem.h module.h audio.h local.h common.h \
+  libmpg123/debug.h
+control_generic.o: control_generic.c mpg123app.h config.h httpget.h \
+  libmpg123/mpg123.h libmpg123/compat.h config.h xfermem.h module.h \
+  audio.h local.h common.h buffer.h genre.h libmpg123/debug.h
+equalizer.o: equalizer.c mpg123app.h config.h httpget.h \
+  libmpg123/mpg123.h libmpg123/compat.h config.h xfermem.h module.h \
+  audio.h local.h
 genre.o: genre.c
-getlopt.o: getlopt.c config.h libmpg123/debug.h config.h getlopt.h
-httpget.o: httpget.c mpg123app.h config.h libmpg123/debug.h config.h \
-  httpget.h libmpg123/mpg123.h libmpg123/compat.h xfermem.h module.h \
-  audio.h libmpg123/true.h
-id3print.o: id3print.c libmpg123/mpg123.h mpg123app.h config.h \
-  libmpg123/debug.h config.h httpget.h libmpg123/compat.h xfermem.h \
-  module.h audio.h genre.h
-legacy_module.o: legacy_module.c libmpg123/mpg123.h
+getlopt.o: getlopt.c config.h getlopt.h libmpg123/compat.h config.h \
+  libmpg123/debug.h
+httpget.o: httpget.c mpg123app.h config.h httpget.h libmpg123/mpg123.h \
+  libmpg123/compat.h config.h xfermem.h module.h audio.h local.h \
+  resolver.h libmpg123/true.h libmpg123/debug.h
+legacy_module.o: legacy_module.c mpg123app.h config.h httpget.h \
+  libmpg123/mpg123.h libmpg123/compat.h config.h xfermem.h module.h \
+  audio.h local.h libmpg123/debug.h
 libmpg123/compat.o: libmpg123/compat.c config.h libmpg123/compat.h
-libmpg123/dct64_altivec.o: libmpg123/dct64_altivec.c libmpg123/mpg123lib_intern.h \
-  libmpg123/mpg123.h config.h libmpg123/debug.h libmpg123/compat.h \
-  libmpg123/true.h libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h \
-  libmpg123/id3.h libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h
-libmpg123/dct64.o: libmpg123/dct64.c libmpg123/mpg123lib_intern.h \
-  libmpg123/mpg123.h config.h libmpg123/debug.h libmpg123/compat.h \
-  libmpg123/true.h libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h \
-  libmpg123/id3.h libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h
-libmpg123/dct64_i386.o: libmpg123/dct64_i386.c libmpg123/mpg123lib_intern.h \
-  libmpg123/mpg123.h config.h libmpg123/debug.h libmpg123/compat.h \
-  libmpg123/true.h libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h \
-  libmpg123/id3.h libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h
-libmpg123/dct64_i486.o: libmpg123/dct64_i486.c libmpg123/mpg123lib_intern.h \
-  libmpg123/mpg123.h config.h libmpg123/debug.h libmpg123/compat.h \
-  libmpg123/true.h libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h \
-  libmpg123/id3.h libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h
-libmpg123/decode_2to1.o: libmpg123/decode_2to1.c libmpg123/mpg123lib_intern.h \
-  libmpg123/mpg123.h config.h libmpg123/debug.h libmpg123/compat.h \
-  libmpg123/true.h libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h \
-  libmpg123/id3.h libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h
-libmpg123/decode_4to1.o: libmpg123/decode_4to1.c libmpg123/mpg123lib_intern.h \
-  libmpg123/mpg123.h config.h libmpg123/debug.h libmpg123/compat.h \
-  libmpg123/true.h libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h \
-  libmpg123/id3.h libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h
-libmpg123/decode_altivec.o: libmpg123/decode_altivec.c libmpg123/mpg123lib_intern.h \
-  libmpg123/mpg123.h config.h libmpg123/debug.h libmpg123/compat.h \
-  libmpg123/true.h libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h \
-  libmpg123/id3.h libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h
-libmpg123/decode.o: libmpg123/decode.c libmpg123/mpg123lib_intern.h \
-  libmpg123/mpg123.h config.h libmpg123/debug.h libmpg123/compat.h \
-  libmpg123/true.h libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h \
-  libmpg123/id3.h libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h
-libmpg123/decode_i386.o: libmpg123/decode_i386.c libmpg123/mpg123lib_intern.h \
-  libmpg123/mpg123.h config.h libmpg123/debug.h libmpg123/compat.h \
-  libmpg123/true.h libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h \
-  libmpg123/id3.h libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h
-libmpg123/decode_i486.o: libmpg123/decode_i486.c libmpg123/mpg123lib_intern.h \
-  libmpg123/mpg123.h config.h libmpg123/debug.h libmpg123/compat.h \
-  libmpg123/true.h libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h \
-  libmpg123/id3.h libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h
-libmpg123/decode_ntom.o: libmpg123/decode_ntom.c libmpg123/mpg123lib_intern.h \
-  libmpg123/mpg123.h config.h libmpg123/debug.h libmpg123/compat.h \
-  libmpg123/true.h libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h \
-  libmpg123/id3.h libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h
-libmpg123/dnoise.o: libmpg123/dnoise.c
-libmpg123/equalizer.o: libmpg123/equalizer.c libmpg123/mpg123lib_intern.h \
-  libmpg123/mpg123.h config.h libmpg123/debug.h libmpg123/compat.h \
-  libmpg123/true.h libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h \
-  libmpg123/id3.h libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h
-libmpg123/format.o: libmpg123/format.c libmpg123/mpg123lib_intern.h \
-  libmpg123/mpg123.h config.h libmpg123/debug.h libmpg123/compat.h \
-  libmpg123/true.h libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h \
-  libmpg123/id3.h libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h
-libmpg123/frame.o: libmpg123/frame.c libmpg123/mpg123lib_intern.h \
-  libmpg123/mpg123.h config.h libmpg123/debug.h libmpg123/compat.h \
-  libmpg123/true.h libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h \
-  libmpg123/id3.h libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h \
-  libmpg123/getcpuflags.h
-libmpg123/getbits.o: libmpg123/getbits.c mpg123app.h config.h libmpg123/debug.h \
-  config.h httpget.h libmpg123/mpg123.h libmpg123/compat.h xfermem.h \
-  module.h audio.h common.h
-libmpg123/icy.o: libmpg123/icy.c libmpg123/icy.h libmpg123/mpg123.h
-libmpg123/id3.o: libmpg123/id3.c libmpg123/mpg123lib_intern.h libmpg123/mpg123.h \
-  config.h libmpg123/debug.h libmpg123/compat.h libmpg123/true.h \
+libmpg123/dct64_2.o: libmpg123/dct64_2.c libmpg123/mpg123lib_intern.h config.h \
+  libmpg123/mpg123.h libmpg123/compat.h libmpg123/true.h \
   libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h libmpg123/id3.h \
-  libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h
-libmpg123/layer1.o: libmpg123/layer1.c libmpg123/mpg123lib_intern.h \
-  libmpg123/mpg123.h config.h libmpg123/debug.h libmpg123/compat.h \
-  libmpg123/true.h libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h \
-  libmpg123/id3.h libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h \
-  libmpg123/getbits.h
-libmpg123/layer2.o: libmpg123/layer2.c libmpg123/mpg123lib_intern.h \
-  libmpg123/mpg123.h config.h libmpg123/debug.h libmpg123/compat.h \
-  libmpg123/true.h libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h \
-  libmpg123/id3.h libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h \
-  libmpg123/l2tables.h libmpg123/getbits.h
-libmpg123/layer3.o: libmpg123/layer3.c libmpg123/mpg123lib_intern.h \
-  libmpg123/mpg123.h config.h libmpg123/debug.h libmpg123/compat.h \
-  libmpg123/true.h libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h \
-  libmpg123/id3.h libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h \
-  libmpg123/huffman.h libmpg123/getbits.h
-libmpg123/libmpg123.o: libmpg123/libmpg123.c libmpg123/mpg123lib_intern.h \
-  libmpg123/mpg123.h config.h libmpg123/debug.h libmpg123/compat.h \
-  libmpg123/true.h libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h \
-  libmpg123/id3.h libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h \
-  libmpg123/getbits.h
-libmpg123/optimize.o: libmpg123/optimize.c libmpg123/mpg123lib_intern.h \
-  libmpg123/mpg123.h config.h libmpg123/debug.h libmpg123/compat.h \
-  libmpg123/true.h libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h \
-  libmpg123/id3.h libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h
-libmpg123/parse.o: libmpg123/parse.c libmpg123/mpg123lib_intern.h \
-  libmpg123/mpg123.h config.h libmpg123/debug.h libmpg123/compat.h \
-  libmpg123/true.h libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h \
-  libmpg123/id3.h libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h \
-  libmpg123/getbits.h
-libmpg123/readers.o: libmpg123/readers.c libmpg123/mpg123lib_intern.h \
-  libmpg123/mpg123.h config.h libmpg123/debug.h libmpg123/compat.h \
-  libmpg123/true.h libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h \
-  libmpg123/id3.h libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h
-libmpg123/stringbuf.o: libmpg123/stringbuf.c config.h libmpg123/debug.h \
-  libmpg123/mpg123.h libmpg123/compat.h
-libmpg123/system.o: libmpg123/system.c mpg123app.h config.h libmpg123/debug.h \
-  config.h httpget.h libmpg123/mpg123.h libmpg123/compat.h xfermem.h \
-  module.h audio.h
-libmpg123/tabinit.o: libmpg123/tabinit.c libmpg123/mpg123lib_intern.h \
-  libmpg123/mpg123.h config.h libmpg123/debug.h libmpg123/compat.h \
-  libmpg123/true.h libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h \
-  libmpg123/id3.h libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h
+  libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h \
+  libmpg123/index.h
+libmpg123/dct64_altivec.o: libmpg123/dct64_altivec.c libmpg123/mpg123lib_intern.h \
+  config.h libmpg123/mpg123.h libmpg123/compat.h libmpg123/true.h \
+  libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h libmpg123/id3.h \
+  libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h \
+  libmpg123/index.h
+libmpg123/dct64.o: libmpg123/dct64.c libmpg123/mpg123lib_intern.h config.h \
+  libmpg123/mpg123.h libmpg123/compat.h libmpg123/true.h \
+  libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h libmpg123/id3.h \
+  libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h \
+  libmpg123/index.h
+libmpg123/dct64_i386.o: libmpg123/dct64_i386.c libmpg123/mpg123lib_intern.h \
+  config.h libmpg123/mpg123.h libmpg123/compat.h libmpg123/true.h \
+  libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h libmpg123/id3.h \
+  libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h \
+  libmpg123/index.h
+libmpg123/dct64_i486.o: libmpg123/dct64_i486.c libmpg123/mpg123lib_intern.h \
+  config.h libmpg123/mpg123.h libmpg123/compat.h libmpg123/true.h \
+  libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h libmpg123/id3.h \
+  libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h \
+  libmpg123/index.h
+libmpg123/dct64_vector.o: libmpg123/dct64_vector.c libmpg123/mpg123lib_intern.h \
+  config.h libmpg123/mpg123.h libmpg123/compat.h libmpg123/true.h \
+  libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h libmpg123/id3.h \
+  libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h \
+  libmpg123/index.h
+libmpg123/decode_2to1.o: libmpg123/decode_2to1.c libmpg123/mpg123lib_intern.h \
+  config.h libmpg123/mpg123.h libmpg123/compat.h libmpg123/true.h \
+  libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h libmpg123/id3.h \
+  libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h \
+  libmpg123/index.h
+libmpg123/decode_4to1.o: libmpg123/decode_4to1.c libmpg123/mpg123lib_intern.h \
+  config.h libmpg123/mpg123.h libmpg123/compat.h libmpg123/true.h \
+  libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h libmpg123/id3.h \
+  libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h \
+  libmpg123/index.h
+libmpg123/decode_altivec.o: libmpg123/decode_altivec.c libmpg123/mpg123lib_intern.h \
+  config.h libmpg123/mpg123.h libmpg123/compat.h libmpg123/true.h \
+  libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h libmpg123/id3.h \
+  libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h \
+  libmpg123/index.h
+libmpg123/decode.o: libmpg123/decode.c libmpg123/mpg123lib_intern.h config.h \
+  libmpg123/mpg123.h libmpg123/compat.h libmpg123/true.h \
+  libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h libmpg123/id3.h \
+  libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h \
+  libmpg123/index.h
+libmpg123/decode_i386.o: libmpg123/decode_i386.c libmpg123/mpg123lib_intern.h \
+  config.h libmpg123/mpg123.h libmpg123/compat.h libmpg123/true.h \
+  libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h libmpg123/id3.h \
+  libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h \
+  libmpg123/index.h
+libmpg123/decode_i486.o: libmpg123/decode_i486.c libmpg123/mpg123lib_intern.h \
+  config.h libmpg123/mpg123.h libmpg123/compat.h libmpg123/true.h \
+  libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h libmpg123/id3.h \
+  libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h \
+  libmpg123/index.h
+libmpg123/decode_ntom.o: libmpg123/decode_ntom.c libmpg123/mpg123lib_intern.h \
+  config.h libmpg123/mpg123.h libmpg123/compat.h libmpg123/true.h \
+  libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h libmpg123/id3.h \
+  libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h \
+  libmpg123/index.h libmpg123/debug.h
+libmpg123/equalizer.o: libmpg123/equalizer.c libmpg123/mpg123lib_intern.h config.h \
+  libmpg123/mpg123.h libmpg123/compat.h libmpg123/true.h \
+  libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h libmpg123/id3.h \
+  libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h \
+  libmpg123/index.h
+libmpg123/format.o: libmpg123/format.c libmpg123/mpg123lib_intern.h config.h \
+  libmpg123/mpg123.h libmpg123/compat.h libmpg123/true.h \
+  libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h libmpg123/id3.h \
+  libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h \
+  libmpg123/index.h libmpg123/debug.h
+libmpg123/frame.o: libmpg123/frame.c libmpg123/mpg123lib_intern.h config.h \
+  libmpg123/mpg123.h libmpg123/compat.h libmpg123/true.h \
+  libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h libmpg123/id3.h \
+  libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h \
+  libmpg123/index.h libmpg123/getcpuflags.h libmpg123/debug.h
+libmpg123/icy2utf8.o: libmpg123/icy2utf8.c libmpg123/compat.h config.h
+libmpg123/icy.o: libmpg123/icy.c libmpg123/icy.h libmpg123/mpg123.h
+libmpg123/id3.o: libmpg123/id3.c libmpg123/mpg123lib_intern.h config.h \
+  libmpg123/mpg123.h libmpg123/compat.h libmpg123/true.h \
+  libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h libmpg123/id3.h \
+  libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h \
+  libmpg123/index.h libmpg123/debug.h
+libmpg123/index.o: libmpg123/index.c libmpg123/index.h config.h libmpg123/compat.h \
+  libmpg123/debug.h
+libmpg123/layer1.o: libmpg123/layer1.c libmpg123/mpg123lib_intern.h config.h \
+  libmpg123/mpg123.h libmpg123/compat.h libmpg123/true.h \
+  libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h libmpg123/id3.h \
+  libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h \
+  libmpg123/index.h libmpg123/getbits.h
+libmpg123/layer2.o: libmpg123/layer2.c libmpg123/mpg123lib_intern.h config.h \
+  libmpg123/mpg123.h libmpg123/compat.h libmpg123/true.h \
+  libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h libmpg123/id3.h \
+  libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h \
+  libmpg123/index.h libmpg123/l2tables.h libmpg123/getbits.h
+libmpg123/layer3.o: libmpg123/layer3.c libmpg123/mpg123lib_intern.h config.h \
+  libmpg123/mpg123.h libmpg123/compat.h libmpg123/true.h \
+  libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h libmpg123/id3.h \
+  libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h \
+  libmpg123/index.h libmpg123/huffman.h libmpg123/getbits.h \
+  libmpg123/debug.h
+libmpg123/libmpg123.o: libmpg123/libmpg123.c libmpg123/mpg123lib_intern.h config.h \
+  libmpg123/mpg123.h libmpg123/compat.h libmpg123/true.h \
+  libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h libmpg123/id3.h \
+  libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h \
+  libmpg123/index.h libmpg123/icy2utf8.h libmpg123/getbits.h \
+  libmpg123/debug.h
+libmpg123/optimize.o: libmpg123/optimize.c libmpg123/mpg123lib_intern.h config.h \
+  libmpg123/mpg123.h libmpg123/compat.h libmpg123/true.h \
+  libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h libmpg123/id3.h \
+  libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h \
+  libmpg123/index.h
+libmpg123/parse.o: libmpg123/parse.c libmpg123/mpg123lib_intern.h config.h \
+  libmpg123/mpg123.h libmpg123/compat.h libmpg123/true.h \
+  libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h libmpg123/id3.h \
+  libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h \
+  libmpg123/index.h libmpg123/getbits.h libmpg123/debug.h
+libmpg123/readers.o: libmpg123/readers.c libmpg123/mpg123lib_intern.h config.h \
+  libmpg123/mpg123.h libmpg123/compat.h libmpg123/true.h \
+  libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h libmpg123/id3.h \
+  libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h \
+  libmpg123/index.h libmpg123/debug.h
+libmpg123/stringbuf.o: libmpg123/stringbuf.c libmpg123/mpg123lib_intern.h config.h \
+  libmpg123/mpg123.h libmpg123/compat.h libmpg123/true.h \
+  libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h libmpg123/id3.h \
+  libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h \
+  libmpg123/index.h libmpg123/debug.h
+libmpg123/system.o: libmpg123/system.c mpg123app.h config.h httpget.h \
+  libmpg123/mpg123.h libmpg123/compat.h config.h xfermem.h module.h \
+  audio.h local.h libmpg123/debug.h
+libmpg123/tabinit.o: libmpg123/tabinit.c libmpg123/mpg123lib_intern.h config.h \
+  libmpg123/mpg123.h libmpg123/compat.h libmpg123/true.h \
+  libmpg123/decode.h libmpg123/parse.h libmpg123/frame.h libmpg123/id3.h \
+  libmpg123/icy.h libmpg123/reader.h libmpg123/optimize.h \
+  libmpg123/index.h libmpg123/debug.h
 libmpg123/testcpu.o: libmpg123/testcpu.c libmpg123/getcpuflags.h
-module.o: module.c mpg123app.h config.h libmpg123/debug.h config.h \
-  httpget.h libmpg123/mpg123.h libmpg123/compat.h xfermem.h module.h \
-  audio.h
-mpg123.o: mpg123.c mpg123app.h config.h libmpg123/debug.h config.h \
-  httpget.h libmpg123/mpg123.h libmpg123/compat.h xfermem.h module.h \
-  audio.h common.h getlopt.h buffer.h term.h playlist.h id3print.h \
-  libmpg123/getbits.h libmpg123/getcpuflags.h
-mpglib.o: mpglib.c libmpg123/mpg123.h
-output/aix.o: output/aix.c mpg123app.h config.h libmpg123/debug.h config.h \
-  httpget.h libmpg123/mpg123.h libmpg123/compat.h xfermem.h module.h \
-  audio.h
-output/alib.o: output/alib.c mpg123app.h config.h libmpg123/debug.h config.h \
-  httpget.h libmpg123/mpg123.h libmpg123/compat.h xfermem.h module.h \
-  audio.h
-output/alsa05.o: output/alsa05.c mpg123app.h config.h libmpg123/debug.h config.h \
-  httpget.h libmpg123/mpg123.h libmpg123/compat.h xfermem.h module.h \
-  audio.h
-output/alsa.o: output/alsa.c mpg123app.h config.h libmpg123/debug.h config.h \
-  httpget.h libmpg123/mpg123.h libmpg123/compat.h xfermem.h module.h \
-  audio.h audio.h module.h
-output/coreaudio.o: output/coreaudio.c sfifo.h mpg123app.h config.h \
-  libmpg123/debug.h config.h httpget.h libmpg123/mpg123.h \
-  libmpg123/compat.h xfermem.h module.h audio.h
-output/dummy.o: output/dummy.c mpg123app.h config.h libmpg123/debug.h config.h \
-  httpget.h libmpg123/mpg123.h libmpg123/compat.h xfermem.h module.h \
-  audio.h
-output/esd.o: output/esd.c mpg123app.h config.h libmpg123/debug.h config.h \
-  httpget.h libmpg123/mpg123.h libmpg123/compat.h xfermem.h module.h \
-  audio.h
-output/hp.o: output/hp.c mpg123app.h config.h libmpg123/debug.h config.h \
-  httpget.h libmpg123/mpg123.h libmpg123/compat.h xfermem.h module.h \
-  audio.h
-output/jack.o: output/jack.c mpg123app.h config.h libmpg123/debug.h config.h \
-  httpget.h libmpg123/mpg123.h libmpg123/compat.h xfermem.h module.h \
-  audio.h
-output/libao.o: output/libao.c mpg123app.h config.h libmpg123/debug.h config.h \
-  httpget.h libmpg123/mpg123.h libmpg123/compat.h xfermem.h module.h \
-  audio.h
-output/mint.o: output/mint.c mpg123app.h config.h libmpg123/debug.h config.h \
-  httpget.h libmpg123/mpg123.h libmpg123/compat.h xfermem.h module.h \
-  audio.h
-output/nas.o: output/nas.c mpg123app.h config.h libmpg123/debug.h config.h \
-  httpget.h libmpg123/mpg123.h libmpg123/compat.h xfermem.h module.h \
-  audio.h
-output/os2.o: output/os2.c mpg123app.h config.h libmpg123/debug.h config.h \
-  httpget.h libmpg123/mpg123.h libmpg123/compat.h xfermem.h module.h \
-  audio.h
-output/oss.o: output/oss.c mpg123app.h config.h libmpg123/debug.h config.h \
-  httpget.h libmpg123/mpg123.h libmpg123/compat.h xfermem.h module.h \
-  audio.h
+local.o: local.c config.h libmpg123/compat.h config.h mpg123app.h \
+  httpget.h libmpg123/mpg123.h xfermem.h module.h audio.h local.h \
+  libmpg123/debug.h
+metaprint.o: metaprint.c libmpg123/mpg123.h mpg123app.h config.h \
+  httpget.h libmpg123/compat.h config.h xfermem.h module.h audio.h \
+  local.h genre.h libmpg123/debug.h
+mpg123.o: mpg123.c mpg123app.h config.h httpget.h libmpg123/mpg123.h \
+  libmpg123/compat.h config.h xfermem.h module.h audio.h local.h common.h \
+  getlopt.h buffer.h term.h playlist.h metaprint.h libmpg123/getbits.h \
+  libmpg123/getcpuflags.h libmpg123/debug.h
+output/aix.o: output/aix.c mpg123app.h config.h httpget.h libmpg123/mpg123.h \
+  libmpg123/compat.h config.h xfermem.h module.h audio.h local.h \
+  libmpg123/debug.h
+output/alib.o: output/alib.c mpg123app.h config.h httpget.h libmpg123/mpg123.h \
+  libmpg123/compat.h config.h xfermem.h module.h audio.h local.h \
+  libmpg123/debug.h
+output/alsa05.o: output/alsa05.c mpg123app.h config.h httpget.h \
+  libmpg123/mpg123.h libmpg123/compat.h config.h xfermem.h module.h \
+  audio.h local.h libmpg123/debug.h
+output/alsa.o: output/alsa.c mpg123app.h config.h httpget.h libmpg123/mpg123.h \
+  libmpg123/compat.h config.h xfermem.h module.h audio.h local.h audio.h \
+  module.h libmpg123/debug.h
+output/arts.o: output/arts.c mpg123app.h config.h httpget.h libmpg123/mpg123.h \
+  libmpg123/compat.h config.h xfermem.h module.h audio.h local.h \
+  libmpg123/debug.h
+output/coreaudio.o: output/coreaudio.c sfifo.h mpg123app.h config.h httpget.h \
+  libmpg123/mpg123.h libmpg123/compat.h config.h xfermem.h module.h \
+  audio.h local.h libmpg123/debug.h
+output/dummy.o: output/dummy.c mpg123app.h config.h httpget.h libmpg123/mpg123.h \
+  libmpg123/compat.h config.h xfermem.h module.h audio.h local.h \
+  libmpg123/debug.h
+output/esd.o: output/esd.c mpg123app.h config.h httpget.h libmpg123/mpg123.h \
+  libmpg123/compat.h config.h xfermem.h module.h audio.h local.h \
+  libmpg123/debug.h
+output/hp.o: output/hp.c mpg123app.h config.h httpget.h libmpg123/mpg123.h \
+  libmpg123/compat.h config.h xfermem.h module.h audio.h local.h \
+  libmpg123/debug.h
+output/jack.o: output/jack.c mpg123app.h config.h httpget.h libmpg123/mpg123.h \
+  libmpg123/compat.h config.h xfermem.h module.h audio.h local.h \
+  libmpg123/debug.h
+output/libao.o: output/libao.c mpg123app.h config.h httpget.h libmpg123/mpg123.h \
+  libmpg123/compat.h config.h xfermem.h module.h audio.h local.h \
+  libmpg123/debug.h
+output/mint.o: output/mint.c mpg123app.h config.h httpget.h libmpg123/mpg123.h \
+  libmpg123/compat.h config.h xfermem.h module.h audio.h local.h \
+  libmpg123/debug.h
+output/nas.o: output/nas.c mpg123app.h config.h httpget.h libmpg123/mpg123.h \
+  libmpg123/compat.h config.h xfermem.h module.h audio.h local.h \
+  libmpg123/debug.h
+output/os2.o: output/os2.c mpg123app.h config.h httpget.h libmpg123/mpg123.h \
+  libmpg123/compat.h config.h xfermem.h module.h audio.h local.h \
+  libmpg123/debug.h
+output/oss.o: output/oss.c mpg123app.h config.h httpget.h libmpg123/mpg123.h \
+  libmpg123/compat.h config.h xfermem.h module.h audio.h local.h \
+  libmpg123/debug.h
 output/portaudio.o: output/portaudio.c audio.h libmpg123/mpg123.h module.h \
-  config.h sfifo.h mpg123app.h libmpg123/debug.h config.h httpget.h \
-  libmpg123/compat.h xfermem.h audio.h
-output/pulse.o: output/pulse.c config.h mpg123app.h config.h libmpg123/debug.h \
-  config.h httpget.h libmpg123/mpg123.h libmpg123/compat.h xfermem.h \
-  module.h audio.h audio.h module.h libmpg123/debug.h sfifo.h
-output/sdl.o: output/sdl.c audio.h libmpg123/mpg123.h module.h config.h sfifo.h \
-  mpg123app.h libmpg123/debug.h config.h httpget.h libmpg123/compat.h \
-  xfermem.h audio.h
-output/sgi.o: output/sgi.c mpg123app.h config.h libmpg123/debug.h config.h \
-  httpget.h libmpg123/mpg123.h libmpg123/compat.h xfermem.h module.h \
-  audio.h
-output/sun.o: output/sun.c mpg123app.h config.h libmpg123/debug.h config.h \
-  httpget.h libmpg123/mpg123.h libmpg123/compat.h xfermem.h module.h \
-  audio.h
-output/win32.o: output/win32.c mpg123app.h config.h libmpg123/debug.h config.h \
-  httpget.h libmpg123/mpg123.h libmpg123/compat.h xfermem.h module.h \
-  audio.h
-playlist.o: playlist.c mpg123app.h config.h libmpg123/debug.h config.h \
-  httpget.h libmpg123/mpg123.h libmpg123/compat.h xfermem.h module.h \
-  audio.h getlopt.h term.h playlist.h
-sfifo.o: sfifo.c sfifo.h
-term.o: term.c mpg123app.h config.h libmpg123/debug.h config.h httpget.h \
+  config.h sfifo.h mpg123app.h httpget.h libmpg123/compat.h config.h \
+  xfermem.h audio.h local.h libmpg123/debug.h
+output/pulse.o: output/pulse.c config.h mpg123app.h config.h httpget.h \
   libmpg123/mpg123.h libmpg123/compat.h xfermem.h module.h audio.h \
-  buffer.h term.h common.h
-wav.o: wav.c mpg123app.h config.h libmpg123/debug.h config.h httpget.h \
-  libmpg123/mpg123.h libmpg123/compat.h xfermem.h module.h audio.h
-xfermem.o: xfermem.c mpg123app.h config.h libmpg123/debug.h config.h \
-  httpget.h libmpg123/mpg123.h libmpg123/compat.h xfermem.h module.h \
-  audio.h
+  local.h audio.h module.h libmpg123/debug.h sfifo.h
+output/sdl.o: output/sdl.c audio.h libmpg123/mpg123.h module.h config.h sfifo.h \
+  mpg123app.h httpget.h libmpg123/compat.h config.h xfermem.h audio.h \
+  local.h libmpg123/debug.h
+output/sgi.o: output/sgi.c mpg123app.h config.h httpget.h libmpg123/mpg123.h \
+  libmpg123/compat.h config.h xfermem.h module.h audio.h local.h \
+  libmpg123/debug.h
+output/sun.o: output/sun.c mpg123app.h config.h httpget.h libmpg123/mpg123.h \
+  libmpg123/compat.h config.h xfermem.h module.h audio.h local.h \
+  libmpg123/debug.h
+output/win32.o: output/win32.c mpg123app.h config.h httpget.h libmpg123/mpg123.h \
+  libmpg123/compat.h config.h xfermem.h module.h audio.h local.h \
+  libmpg123/debug.h
+playlist.o: playlist.c mpg123app.h config.h httpget.h libmpg123/mpg123.h \
+  libmpg123/compat.h config.h xfermem.h module.h audio.h local.h \
+  getlopt.h term.h playlist.h libmpg123/debug.h
+resolver.o: resolver.c mpg123app.h config.h httpget.h libmpg123/mpg123.h \
+  libmpg123/compat.h config.h xfermem.h module.h audio.h local.h \
+  libmpg123/true.h resolver.h libmpg123/debug.h
+sfifo.o: sfifo.c sfifo.h
+term.o: term.c mpg123app.h config.h httpget.h libmpg123/mpg123.h \
+  libmpg123/compat.h config.h xfermem.h module.h audio.h local.h buffer.h \
+  term.h common.h playlist.h metaprint.h libmpg123/debug.h
+wav.o: wav.c mpg123app.h config.h httpget.h libmpg123/mpg123.h \
+  libmpg123/compat.h config.h xfermem.h module.h audio.h local.h \
+  libmpg123/debug.h
+xfermem.o: xfermem.c mpg123app.h config.h httpget.h libmpg123/mpg123.h \
+  libmpg123/compat.h config.h xfermem.h module.h audio.h local.h \
+  libmpg123/debug.h
 libmpg123/dct36_3dnowext.o: libmpg123/dct36_3dnowext.S libmpg123/mangle.h config.h
 libmpg123/dct36_3dnow.o: libmpg123/dct36_3dnow.S libmpg123/mangle.h config.h
 libmpg123/dct64_3dnowext.o: libmpg123/dct64_3dnowext.S libmpg123/mangle.h config.h
@@ -1028,7 +1077,6 @@ libmpg123/equalizer_3dnow.o: libmpg123/equalizer_3dnow.S libmpg123/mangle.h \
   config.h
 libmpg123/getcpuflags.o: libmpg123/getcpuflags.S libmpg123/mangle.h config.h
 libmpg123/tabinit_mmx.o: libmpg123/tabinit_mmx.S libmpg123/mangle.h config.h
-
 
 
 ###########################################################################

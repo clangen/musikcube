@@ -97,7 +97,7 @@ void generic_sendstat (mpg123_handle *fr)
 	off_t current_frame, frames_left;
 	double current_seconds, seconds_left;
 	if(!mpg123_position(fr, 0, xfermem_get_usedspace(buffermem), &current_frame, &frames_left, &current_seconds, &seconds_left))
-	generic_sendmsg("F %li %li %3.2f %3.2f", current_frame, frames_left, current_seconds, seconds_left);
+	generic_sendmsg("F %"OFF_P" %"OFF_P" %3.2f %3.2f", (off_p)current_frame, (off_p)frames_left, current_seconds, seconds_left);
 }
 
 static void generic_sendv1(mpg123_id3v1 *v1, const char *prefix)
@@ -262,7 +262,7 @@ int control_generic (mpg123_handle *fr)
 #endif
 	/* the command behaviour is different, so is the ID */
 	/* now also with version for command availability */
-	fprintf(outstream, "@R MPG123 (ThOr) v4\n");
+	fprintf(outstream, "@R MPG123 (ThOr) v5\n");
 #ifdef FIFO
 	if(param.fifo)
 	{
@@ -472,6 +472,18 @@ int control_generic (mpg123_handle *fr)
 					continue;
 				}
 
+				if(!strcasecmp(comstr, "STATE"))
+				{
+					long val;
+					generic_sendmsg("STATE {");
+					/* Get some state information bits and display them. */
+					if(mpg123_getstate(fr, MPG123_ACCURATE, &val, NULL) == MPG123_OK)
+					generic_sendmsg("STATE accurate %li", val);
+
+					generic_sendmsg("STATE }");
+					continue;
+				}
+
 				/* QUIT */
 				if (!strcasecmp(comstr, "Q") || !strcasecmp(comstr, "QUIT")){
 					alive = FALSE; continue;
@@ -496,6 +508,7 @@ int control_generic (mpg123_handle *fr)
 					generic_sendmsg("H SAMPLE: print out the sample position and total number of samples");
 					generic_sendmsg("H SEQ <bass> <mid> <treble>: simple eq setting...");
 					generic_sendmsg("H SILENCE: be silent during playback (meaning silence in text form)");
+					generic_sendmsg("H STATE: Print auxilliary state info in several lines (just try it to see what info is there).");
 					generic_sendmsg("H TAG/T: Print all available (ID3) tag info, for ID3v2 that gives output of all collected text fields, using the ID3v2.3/4 4-character names.");
 					generic_sendmsg("H    The output is multiple lines, begin marked by \"@T {\", end by \"@T }\".");
 					generic_sendmsg("H    ID3v1 data is like in the @I info lines (see below), just with \"@T\" in front.");
@@ -585,7 +598,7 @@ int control_generic (mpg123_handle *fr)
 							continue;
 						}
 
-						soff = atol(spos);
+						soff = (off_t) atobigint(spos);
 						if(spos[0] == '-' || spos[0] == '+') whence = SEEK_CUR;
 						if(0 > (soff = mpg123_seek(fr, soff, whence)))
 						{

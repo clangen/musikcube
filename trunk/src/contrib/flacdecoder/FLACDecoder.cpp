@@ -185,7 +185,7 @@ void		FLACDecoder::Destroy(void){
 	delete this;
 }
 
-bool		FLACDecoder::GetFormat(unsigned long * SampleRate, unsigned long * Channels){
+/*bool		FLACDecoder::GetFormat(unsigned long * SampleRate, unsigned long * Channels){
     *SampleRate         = this->sampleRate;
     *Channels           = this->channels;
 
@@ -204,31 +204,44 @@ bool		FLACDecoder::GetLength(unsigned long * MS){
 
     return false;
 }
-
-bool		FLACDecoder::SetPosition(unsigned long * MS,unsigned long totalMS){
-    FLAC__uint64 seekToSample   = ( ((FLAC__uint64)this->sampleRate) * ((FLAC__uint64)(*MS)) )/(FLAC__uint64)1000;
+*/
+double FLACDecoder::SetPosition(double seconds,double totalLength){
+    FLAC__uint64 seekToSample   = (FLAC__uint64)(this->sampleRate * seconds) ;
     if(FLAC__stream_decoder_seek_absolute(this->decoder,seekToSample)){
-        return true;
+        return seconds;
     }
-    return false;
+    return -1;
 }
 
-bool        FLACDecoder::SetState(unsigned long State){
-	return true;
-}
 
-bool        FLACDecoder::GetBuffer(float ** ppBuffer, unsigned long * NumSamples){
+//bool        FLACDecoder::GetBuffer(float ** ppBuffer, unsigned long * NumSamples){
+bool FLACDecoder::GetBuffer(IBuffer *buffer){
+    
+    buffer->SetSampleRate(this->sampleRate);
+    buffer->SetChannels(this->channels);
+
     if(this->outputBuffer && this->outputBufferSize>0){
-        *ppBuffer   = this->outputBuffer;
-        *NumSamples = this->outputBufferSize;
+        buffer->SetSamples(this->outputBufferSize/this->channels);
+
+        // Copy buffer
+        float *buf  = buffer->BufferPointer();
+        for(long i(0);i<this->outputBufferSize;++i){
+            buf[i]  = this->outputBuffer[i];
+        }
+
         this->outputBufferSize  = 0;
         return true;
     }
 
     if( FLAC__stream_decoder_process_single(this->decoder) ){
         if(this->outputBuffer && this->outputBufferSize>0){
-            *ppBuffer   = this->outputBuffer;
-            *NumSamples = this->outputBufferSize;
+            buffer->SetSamples(this->outputBufferSize/this->channels);
+
+            // Copy buffer
+            float *buf  = buffer->BufferPointer();
+            for(long i(0);i<this->outputBufferSize;++i){
+                buf[i]  = this->outputBuffer[i];
+            }
             this->outputBufferSize  = 0;
             return true;
         }

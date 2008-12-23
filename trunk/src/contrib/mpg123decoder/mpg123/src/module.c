@@ -6,9 +6,9 @@
 	initially written by Nicholas J Humfrey
 */
 
+#include "compat.h"
 #include <dirent.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <errno.h>
 #include <ctype.h>
 #include <ltdl.h>

@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////
-// Copyright © 2007, mC2 team
+// Copyright  2007, mC2 team
 //
 // All rights reserved.
 //
@@ -57,7 +57,9 @@ PlaybackQueue::PlaybackQueue(void)
  ,paused(false)
 {
     this->nowPlaying.reset(new tracklist::MultiLibraryList());
-    this->transport.EventMixpointReached.connect(this,&PlaybackQueue::OnPlaybackEndOrFail);
+//    this->transport.EventMixpointReached.connect(this,&PlaybackQueue::OnPlaybackEndOrFail);
+    this->transport.PlaybackEnded.connect(this,&PlaybackQueue::OnPlaybackEndOrFail);
+    this->transport.PlaybackAlmostDone.connect(this,&PlaybackQueue::OnPlaybackPrepare);
 }
 
 //////////////////////////////////////////
@@ -66,6 +68,7 @@ PlaybackQueue::PlaybackQueue(void)
 //////////////////////////////////////////
 PlaybackQueue::~PlaybackQueue(void)
 {
+    this->signalDisabled    = true;
     this->transport.Stop();
 }
 
@@ -81,6 +84,18 @@ void PlaybackQueue::OnPlaybackEndOrFail(){
         this->Next();
     }
 }
+
+void PlaybackQueue::OnPlaybackPrepare(){
+    // Try to get the next track
+    long pos    = this->nowPlaying->CurrentPosition();
+	musik::core::TrackPtr track( (*this->nowPlaying)[pos+1] );
+
+    if(track){
+        this->GetAllTrackMetadata(track);
+        this->transport.PrepareNextTrack(track->URL());
+    }
+}
+
 
 //////////////////////////////////////////
 ///\brief
@@ -98,11 +113,12 @@ void PlaybackQueue::Play(){
 //    if( !this->nowPlaying->Library()->Exited() ){
         TrackPtr track(this->CurrentTrack());
 
+        this->Stop();
+
         if(track){
-            this->Stop();
 
             this->playing   = true;
-            this->transport.Start(track); 
+            this->transport.Start(track->URL()); 
 
             this->paused    = false;
         }
@@ -202,21 +218,41 @@ void PlaybackQueue::SetCurrentTrack(TrackPtr track){
         this->currentTrack    = musik::core::TrackPtr();
     }
 
-    // Get all metadata to the track
-    if(this->currentTrack){
-        this->metadataQuery.Clear();
-        this->metadataQuery.RequestAllMetakeys();
-        this->metadataQuery.RequestTrack(this->currentTrack);
-        LibraryPtr library  = this->currentTrack->Library();
-        if(library){
-            library->AddQuery(this->metadataQuery,musik::core::Query::Wait|musik::core::Query::AutoCallback|musik::core::Query::UnCanceable|musik::core::Query::Prioritize);
+    bool isNextTrack(false);
+
+    if(this->currentTrack && this->nextTrack){
+        utfstring trackURI( this->currentTrack->URI() );
+        utfstring nextTrackURI( this->nextTrack->URI() );
+        if(trackURI==nextTrackURI){
+            this->currentTrack  = this->nextTrack;
+            isNextTrack = true;
         }
+    }
+
+    this->nextTrack.reset();
+
+    if(!isNextTrack){
+        // Get all metadata to the track
+        this->GetAllTrackMetadata(this->currentTrack);
     }
 
     // Call the signal if track updates
     this->CurrentTrackChanged(this->currentTrack);
 
 }
+
+void PlaybackQueue::GetAllTrackMetadata(TrackPtr track){
+    if(track){
+        this->metadataQuery.Clear();
+        this->metadataQuery.RequestAllMetakeys();
+        this->metadataQuery.RequestTrack(track);
+        LibraryPtr library  = this->currentTrack->Library();
+        if(library){
+            library->AddQuery(this->metadataQuery,musik::core::Query::Wait|musik::core::Query::AutoCallback|musik::core::Query::UnCanceable|musik::core::Query::Prioritize);
+        }
+    }
+}
+
 
 //////////////////////////////////////////
 ///\brief

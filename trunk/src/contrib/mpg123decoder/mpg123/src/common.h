@@ -9,7 +9,7 @@
 #ifndef _MPG123_COMMON_H_
 #define _MPG123_COMMON_H_
 
-#include "mpg123.h"
+#include "mpg123app.h"
 
 void (*catchsignal(int signum, void(*handler)()))();
 

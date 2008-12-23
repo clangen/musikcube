@@ -58,7 +58,10 @@ fi
 echo "Generating configuration files for $package, please wait...."
 
 # Create the (empty) build directory if it doesn't exist
-if ! [ -d build ]; then
+# Note the avoidance of the ! operator -- it is not portable!
+if [ -d build ]; then
+  echo "  build dir is there"
+else
 	echo "  creating build directory"
 	mkdir build
 fi
@@ -67,9 +70,11 @@ fi
 
 run_cmd() {
     echo "  running $* ..."
-    if ! $*; then
-			echo failed!
-			exit 1
+    if $*; then
+		echo "  fine"
+    else
+		echo failed!
+		exit 1
     fi
 }
 

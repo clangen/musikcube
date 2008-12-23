@@ -33,16 +33,16 @@
 
 #pragma once
 
-#include "core/audio/IAudioSource.h"
+#include <core/audio/IDecoderFactory.h>
 
 using namespace musik::core::audio;
 
-class OggSourceSupplier :  public IAudioSourceSupplier
+class OggSourceSupplier :  public IDecoderFactory
 {
 public: OggSourceSupplier();
 public: ~OggSourceSupplier();
 
-public: IAudioSource*   CreateAudioSource();
+public: IDecoder*       CreateDecoder();
 public: void            Destroy();
-public: bool            CanHandle(const utfchar* extension) const;
+public: bool            CanHandle(const utfchar* type) const;
 };

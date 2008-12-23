@@ -41,14 +41,14 @@ target_triplet = @target@
 EXTRA_PROGRAMS = testcpu$(EXEEXT)
 subdir = src/libmpg123
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(srcdir)/mpg123.h.in
+	$(srcdir)/libmpg123.sym.in $(srcdir)/mpg123.h.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/src/config.h
-CONFIG_CLEAN_FILES = mpg123.h
+CONFIG_CLEAN_FILES = mpg123.h libmpg123.sym
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
@@ -61,7 +61,8 @@ LTLIBRARIES = $(lib_LTLIBRARIES)
 am_libmpg123_la_OBJECTS = compat.lo parse.lo frame.lo format.lo \
 	decode_2to1.lo decode_4to1.lo decode_ntom.lo equalizer.lo \
 	icy.lo icy2utf8.lo id3.lo layer1.lo layer2.lo layer3.lo \
-	optimize.lo readers.lo tabinit.lo stringbuf.lo libmpg123.lo
+	optimize.lo readers.lo tabinit.lo stringbuf.lo libmpg123.lo \
+	index.lo
 libmpg123_la_OBJECTS = $(am_libmpg123_la_OBJECTS)
 testcpu_SOURCES = testcpu.c
 testcpu_OBJECTS = testcpu.$(OBJEXT)
@@ -193,6 +194,9 @@ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 JACK_CFLAGS = @JACK_CFLAGS@
 JACK_LDFLAGS = @JACK_LDFLAGS@
 JACK_LIBS = @JACK_LIBS@
+LARGEFILE_BITS = @LARGEFILE_BITS@
+LARGEFILE_SUFFIX = @LARGEFILE_SUFFIX@
+LARGEFILE_SWITCH = @LARGEFILE_SWITCH@
 LDFLAGS = @LDFLAGS@
 LIBLTDL = @LIBLTDL@
 LIBMPG123_VERSION = @LIBMPG123_VERSION@
@@ -360,6 +364,8 @@ libmpg123_la_SOURCES = \
 	mpg123lib_intern.h \
 	mangle.h \
 	getcpuflags.h \
+	index.h \
+	index.c \
 	libmpg123.sym
 
 EXTRA_libmpg123_la_SOURCES = \
@@ -423,6 +429,8 @@ $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 mpg123.h: $(top_builddir)/config.status $(srcdir)/mpg123.h.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+libmpg123.sym: $(top_builddir)/config.status $(srcdir)/libmpg123.sym.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 install-libLTLIBRARIES: $(lib_LTLIBRARIES)
 	@$(NORMAL_INSTALL)
 	test -z "$(libdir)" || $(mkdir_p) "$(DESTDIR)$(libdir)"
@@ -480,6 +488,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/icy.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/icy2utf8.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/id3.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/index.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/layer1.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/layer2.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/layer3.Plo@am__quote@

@@ -6,15 +6,21 @@
 	initially written by Eric B. Mitchell ("esd port" should be this file...)
 */
 
+/* First the common header, including config.h
+   ...this is important for stuff like _FILE_OFFSET_BITS */
+#include "mpg123app.h"
+
 #include <esd.h>
 #include <errno.h>
 #include <assert.h>
 
-#include "mpg123app.h"
-
 #ifdef SOLARIS
 #include <stropts.h>
 #include <sys/conf.h>
+#endif
+#ifdef NETBSD
+#include <sys/ioctl.h>
+#include <sys/audioio.h>
 #endif
 #include "debug.h"
 
@@ -154,7 +160,7 @@ mpg123_module_t mpg123_output_module_info = {
 	/* api_version */	MPG123_MODULE_API_VERSION,
 	/* name */			"esd",						
 	/* description */	"Output audio using ESounD (The Enlightened Sound Daemon).",
-	/* revision */		"$Rev: 1428 $",						
+	/* revision */		"$Rev: 1695 $",						
 	/* handle */		NULL,
 	
 	/* init_output */	init_esound,						

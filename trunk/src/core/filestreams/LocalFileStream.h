@@ -57,8 +57,10 @@ class LocalFileStream : public IFileStream{
         virtual PositionType Position();
         virtual bool Eof();
         virtual long Filesize();
+        virtual const utfchar* Type();
 
     private:
+        utfstring extension;
         FILE *file;
 
         long filesize;

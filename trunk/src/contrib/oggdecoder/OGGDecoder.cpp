@@ -112,7 +112,7 @@ void		OGGDecoder::Destroy(void){
 
 	delete this;
 }
-
+/*
 bool		OGGDecoder::GetFormat(unsigned long * SampleRate, unsigned long * Channels){
     vorbis_info *info   = ov_info(&this->oggFile,-1);
     if(info){
@@ -131,43 +131,36 @@ bool		OGGDecoder::GetLength(unsigned long * MS){
     }
     return false;
 }
-
-bool		OGGDecoder::SetPosition(unsigned long * MS,unsigned long totalMS){
-	double pos = *MS / 1000.0;
+*/
+double OGGDecoder::SetPosition(double second,double totalLength){
 
     if(ov_seekable(&this->oggFile)){
-		if(!ov_time_seek(&this->oggFile, pos)){
-			double time = ov_time_tell(&this->oggFile);
-			*MS = (unsigned long)(time * 1000.0);
-			return true;
+		if(!ov_time_seek(&this->oggFile, second)){
+			return ov_time_tell(&this->oggFile);
 		}
 	}
-
-    return false;
+    return -1;
 }
 
-bool        OGGDecoder::SetState(unsigned long State){
-	return true;
-}
-
-bool        OGGDecoder::GetBuffer(float ** ppBuffer, unsigned long * NumSamples){
-    static float buffer[7680];
-	float ** pcm;
-    int currentSelection;
+bool        OGGDecoder::GetBuffer(IBuffer *buffer){
     vorbis_info *info   = ov_info(&this->oggFile, -1);
-	*NumSamples =0;
 
-    int maxNOFSamples   = 7680/info->channels;
+    long nofSamplesMax = 1024*2;
+    int currentSelection;
 
-	unsigned long samplesRead = ov_read_float(&this->oggFile, &pcm, maxNOFSamples, &currentSelection);
+    buffer->SetChannels(info->channels);
+    buffer->SetSampleRate(info->rate);
+    buffer->SetSamples(nofSamplesMax);
+
+	float ** pcm;
+    unsigned long samplesRead = ov_read_float(&this->oggFile, &pcm, nofSamplesMax, &currentSelection);
     if(samplesRead == 0) {
 		return false;
     }
 
-    //Start by assuming that the samples are ordered right
-    *ppBuffer   = *pcm;
+    buffer->SetSamples(samplesRead);
 
-/*		TUNIAC EXPECTS
+/*		MUSIKCUBE EXPECTS
 SPEAKER_FRONT_LEFT 0x1 
 SPEAKER_FRONT_RIGHT 0x2 
 SPEAKER_FRONT_CENTER 0x4 
@@ -187,10 +180,10 @@ Six channels: (used in Dolby Digital/AC3) the stream is 5,1 surround. channel or
 */
 
 //		so we need to REORDER
+    float *pDataBuffer = buffer->BufferPointer();
 
     if(info->channels == 3){
-        *ppBuffer       = buffer;
-		float *pDataBuffer = buffer;
+        float *pDataBuffer = buffer->BufferPointer();
 		for(unsigned long x=0; x<samplesRead; ++x){
 			*pDataBuffer = pcm[0][x];
 			++pDataBuffer;
@@ -199,11 +192,7 @@ Six channels: (used in Dolby Digital/AC3) the stream is 5,1 surround. channel or
 			*pDataBuffer = pcm[1][x];
 			++pDataBuffer;
 		}
-	}
-	else if(info->channels == 5)
-	{
-        *ppBuffer       = buffer;
-		float *pDataBuffer = buffer;
+    }else if(info->channels == 5){
 		for(unsigned long x=0; x<samplesRead; ++x){
 			*pDataBuffer = pcm[0][x];
 			++pDataBuffer;
@@ -217,8 +206,6 @@ Six channels: (used in Dolby Digital/AC3) the stream is 5,1 surround. channel or
 			++pDataBuffer;
 		}
 	}else if(info->channels == 6){
-        *ppBuffer       = buffer;
-		float *pDataBuffer = buffer;
 		for(unsigned long x=0; x<samplesRead; ++x){
 			*pDataBuffer = pcm[0][x];
 			++pDataBuffer;
@@ -234,8 +221,6 @@ Six channels: (used in Dolby Digital/AC3) the stream is 5,1 surround. channel or
 			++pDataBuffer;
 		}
 	}else{
-        *ppBuffer       = buffer;
-		float *pDataBuffer = buffer;
 		for(unsigned long x=0; x<samplesRead; ++x){
 			for(int channel(0); channel<info->channels; ++channel){
 				*pDataBuffer = pcm[channel][x];
@@ -244,6 +229,5 @@ Six channels: (used in Dolby Digital/AC3) the stream is 5,1 surround. channel or
 		}
 	}
 
-	*NumSamples = samplesRead*info->channels;
     return true;
 }

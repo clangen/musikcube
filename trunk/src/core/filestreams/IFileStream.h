@@ -131,6 +131,17 @@ class IFileStream{
         //////////////////////////////////////////
         virtual long Filesize()=0;
 
+        //////////////////////////////////////////
+        ///\brief
+        ///Get the type of the file.
+        ///
+        ///This should return the extension or the mimetype of the file
+        ///
+        ///\returns
+        ///NULL if unknown
+        //////////////////////////////////////////
+        virtual const utfchar* Type()=0;
+
 };
 
 typedef boost::shared_ptr<IFileStream> FileStreamPtr;
