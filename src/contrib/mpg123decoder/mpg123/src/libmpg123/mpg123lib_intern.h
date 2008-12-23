@@ -19,8 +19,10 @@
 #ifndef attribute_align_arg
 #if defined(__GNUC__) && (__GNUC__ > 4 || __GNUC__ == 4 && __GNUC_MINOR__>1)
 #    define attribute_align_arg __attribute__((force_align_arg_pointer))
+/* The gcc that can align the stack does not need the check... nor does it work with gcc 4.3+, anyway. */
 #else
 #    define attribute_align_arg
+#    define NEED_ALIGNCHECK /* Other compilers get code to catch misaligned stack. */
 #endif
 #endif
 
@@ -28,9 +30,9 @@
 #if defined(WIN32) && defined(DYNAMIC_BUILD)
 #define BUILD_MPG123_DLL
 #endif
-#include "mpg123.h"
-#include "config.h"
+#include "config.h" /* Load this before mpg123.h, for example for largefile stuff. */
 #include "compat.h"
+#include "mpg123.h"
 
 #define SKIP_JUNK 1
 
@@ -125,43 +127,6 @@
 
 /* Pre Shift fo 16 to 8 bit converter table */
 #define AUSHIFT (3)
-
-/* stuff that should be moved... */
-#include        <stdio.h>
-#include        <string.h>
-#include        <signal.h>
-#include        <math.h>
-
-#ifndef WIN32
-#include        <sys/signal.h>
-#include        <unistd.h>
-#endif
-
-/* Types, types, types. */
-/* Do we actually need these two in addition to sys/types.h? As replacement? */
-#ifdef HAVE_INTTYPES_H
-#include <inttypes.h>
-#endif
-#ifdef HAVE_STDINT_H
-#include <stdint.h>
-#endif
-/* We want SIZE_MAX, etc. */
-#ifdef HAVE_LIMITS_H
-#include <limits.h>
-#endif
- 
-#ifndef SIZE_MAX
-#define SIZE_MAX ((size_t)-1)
-#endif
-#ifndef ULONG_MAX
-#define ULONG_MAX ((unsigned long)-1)
-#endif
-
-typedef unsigned char byte;
-
-#ifdef OS2
-#include <float.h>
-#endif
 
 #include "decode.h"
 #include "parse.h"

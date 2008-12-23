@@ -67,6 +67,8 @@ libmpg123_la_SOURCES = \
 	mpg123lib_intern.h \
 	mangle.h \
 	getcpuflags.h \
+	index.h \
+	index.c \
 	libmpg123.sym
 
 EXTRA_libmpg123_la_SOURCES = \

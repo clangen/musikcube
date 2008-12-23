@@ -68,88 +68,100 @@ void    MP3Decoder::Destroy(){
 }
 
 
-bool    MP3Decoder::GetLength(unsigned long * MS){
-/*    if(!this->cachedLength){
-        this->GuessLength();
+/*
+double MP3Decoder::Length(){
+
+    this->GuessLength();
+
+    if( this->cachedLength>0 && this->cachedRate>0){
+        return ((double)this->cachedLength)/((double)this->cachedRate);
     }
 
-    if(this->cachedLength){
-        *MS = (this->cachedLength/this->cachedRate);
-        return true;
-    }
-*/
-//    *MS = 2*60*1000;
-
-    return false;
+    return 0;
 }
 
 bool    MP3Decoder::GuessLength(){
-    if(this->cachedLength<=0){
-        this->cachedLength  = mpg123_length(this->decoder);
-        if(this->cachedLength<=0){
-            this->cachedLength  = 0;
-            return false;
+//    if(this->cachedLength<=0){
+        unsigned long newCachedLength  = mpg123_length(this->decoder);
+        if(newCachedLength>0){
+            this->cachedLength  = newCachedLength;
+            return true;
+        }else{
+            if(this->cachedLength>0){
+                return true;
+            }
         }
-    }
-    return true;
+//    }
+    return false;
 }
+*/
 
+double MP3Decoder::SetPosition(double second,double totalLength){
 
-bool    MP3Decoder::SetPosition(unsigned long * MS,unsigned long totalMS){
-
-    if(totalMS){
-        boost::mutex::scoped_lock lock(this->mutex);
-        unsigned long filePosition  = ((double)this->fileStream->Filesize()*(double)(*MS))/(double)(totalMS);
-        this->fileStream->SetPosition(filePosition);
-        return true;
-    }
-
-/*    off_t seekToFileOffset(0);
-    off_t seekToSampleOffset( ((double)(*MS) * (double)this->cachedRate)/1000.0f );
+    off_t seekToFileOffset(0);
+    off_t seekToSampleOffset( (second*(double)this->cachedRate) );
 
     off_t *indexOffset(NULL);
     off_t indexSet(0);
     size_t indexFill(0);
     int err=mpg123_index(this->decoder,&indexOffset,&indexSet,&indexFill);
 
-    off_t seekedTo  = mpg123_feedseek(this->decoder,seekToSampleOffset,SEEK_SET,&seekToFileOffset);
+    // Try to feed it some to be able to seek
+    off_t seekedTo(0);
+    int feedMore(20);
+    while( (seekedTo=mpg123_feedseek(this->decoder,seekToSampleOffset,SEEK_SET,&seekToFileOffset))==MPG123_NEED_MORE && feedMore>0){
+        if(!this->Feed()){
+            feedMore=0;
+        }
+        feedMore--;
+    }
+
     if(seekedTo>=0){
         if(this->fileStream->SetPosition(seekToFileOffset)){
-            return true;
+            return second;
+        }
+    }
+
+    // Try the fuzzy way
+/*    if(this->GuessLength()){
+        unsigned long filePosition  = ((double)this->fileStream->Filesize() * second )/this->Length();
+        if(this->fileStream->SetPosition(filePosition)){
+            return second;
         }
     }
 */
-    return false;
+
+    return -1;
 }
 
-
-bool    MP3Decoder::SetState(unsigned long State){
-    return true;
-}
-
-
+/*
 bool    MP3Decoder::GetFormat(unsigned long * SampleRate, unsigned long * Channels){
     *SampleRate     = this->cachedRate;
     *Channels       = this->cachedChannels;
     return true;
 }
+*/
 
+bool    MP3Decoder::GetBuffer(IBuffer *buffer){
+    long nofSamplesMax = 1024*2;
 
-bool    MP3Decoder::GetBuffer(float ** ppBuffer, unsigned long * NumSamples){
+    // Start by setting the buffer format
+    buffer->SetChannels(this->cachedChannels);
+    buffer->SetSampleRate(this->cachedRate);
+    buffer->SetSamples(nofSamplesMax);
 
-    static float buffer[7680];
-    int nofSamplesMax(7680/this->cachedChannels);
-    *ppBuffer   = buffer;
+//    static float buffer[7680];
+//    int nofSamplesMax(7680/this->cachedChannels);
+//    *ppBuffer   = buffer;
 
-    unsigned char* currentBuffer   = (unsigned char*)(&buffer);
-    unsigned long bytesLeft(nofSamplesMax*this->sampleSize);
+    unsigned char* currentBuffer   = (unsigned char*)(buffer->BufferPointer());
+//    unsigned long bytesLeft(nofSamplesMax*this->sampleSize);
+
     bool done(false);
 
+    size_t bytesWritten(0);
     do{
-        size_t bytesWritten(0);
-        int rc  = mpg123_read(this->decoder,currentBuffer,bytesLeft,&bytesWritten);
-        bytesLeft-=(unsigned long)bytesWritten;
-        currentBuffer+=bytesWritten;
+        int rc  = mpg123_read(this->decoder,currentBuffer,nofSamplesMax*this->sampleSize,&bytesWritten);
 
         switch(rc){
             case MPG123_DONE:
@@ -162,27 +174,19 @@ bool    MP3Decoder::GetBuffer(float ** ppBuffer, unsigned long * NumSamples){
                 }
                 break;
             case MPG123_ERR:
-    			*ppBuffer	= NULL;
-                *NumSamples = 0;
                 return false;
                 break;
         }
 
-    }while(bytesLeft>0 && !done);
+    }while(bytesWritten==0 && !done);
 
-    *NumSamples = (nofSamplesMax-bytesLeft/this->sampleSize)*this->cachedChannels;
+    buffer->SetSamples( bytesWritten/this->sampleSize );
 
-    if(*NumSamples==0){
-        *ppBuffer	= NULL;
-        if(done){
-            return false;
-        }
-    }
-    return true;
+
+    return bytesWritten>0;
 }
 
 bool MP3Decoder::Feed(){
-    boost::mutex::scoped_lock lock(this->mutex);
     // Feed stuff to mpg123
     if(this->fileStream){
         unsigned char buffer[STREAM_FEED_SIZE];
@@ -202,8 +206,10 @@ bool    MP3Decoder::Open(musik::core::filestreams::IFileStream *fileStream){
 
         if(mpg123_open_feed(this->decoder)==MPG123_OK){
 
+            mpg123_param(this->decoder,MPG123_ADD_FLAGS,MPG123_FUZZY|MPG123_SEEKBUFFER,0);
+
             // Set filelength to decoder for better seeking
-            //mpg123_set_filesize(this->decoder,this->fileStream->Filesize());
+            mpg123_set_filesize(this->decoder,this->fileStream->Filesize());
 
             // Set the format
             int encoding(0);
@@ -214,7 +220,6 @@ bool    MP3Decoder::Open(musik::core::filestreams::IFileStream *fileStream){
                 continueFeed    = continueFeed && this->Feed();
                 if(continueFeed){
                     if(mpg123_getformat(this->decoder,&this->cachedRate,&this->cachedChannels,&encoding)==MPG123_OK){
-                        this->GuessLength();
                         continueFeed    = (this->cachedRate==0);
                     }
                 }

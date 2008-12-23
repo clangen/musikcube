@@ -316,6 +316,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\mpg123\src\libmpg123\index.c"
+				>
+			</File>
+			<File
 				RelativePath=".\mpg123\src\libmpg123\l2tables.h"
 				>
 			</File>

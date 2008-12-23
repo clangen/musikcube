@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////
-// Copyright © 2007, Björn Olievier
+// Copyright © 2007, Daniel Önnerby
 //
 // All rights reserved.
 //
@@ -34,18 +34,13 @@
 
 #include <core/config.h>
 #include <core/filestreams/IFileStream.h>
+#include <core/audio/IBuffer.h>
 
 //////////////////////////////////////////////////////////////////////////////
 namespace musik { namespace core { namespace audio {
 //////////////////////////////////////////////////////////////////////////////
 
-//////////////////////////////////////////
-///\brief
-///IAudioSource is the main interface for decoders
-//////////////////////////////////////////
-class IAudioSource{
-    protected: 
-        virtual ~IAudioSource() {};
+class IDecoder{
 
     public:    
 
@@ -60,66 +55,27 @@ class IAudioSource{
 
         //////////////////////////////////////////
         ///\brief
-        ///Get the length of the source in milliseconds
-        ///
-        ///\param MS
-        ///Pointer to millisecond to set 
-        ///
-        ///\returns
-        ///true is set successfully
+        ///Get the length of the track in seconds
         //////////////////////////////////////////
-        virtual bool    GetLength(unsigned long * MS) = 0;
+        //virtual double Length() = 0;
 
         //////////////////////////////////////////
         ///\brief
-        ///Set the position in the source (in milliseconds)
-        ///
-        ///\param MS
-        ///Pointer to the position to set. This will be set to the actual position set on return.
+        ///Set the position in the source (in seconds)
         ///
         ///\returns
-        ///true on success
+        ///The acctual position set
         //////////////////////////////////////////
-        virtual bool    SetPosition(unsigned long * MS,unsigned long totalMS) = 0;
+        virtual double SetPosition(double seconds,double totalLength) = 0;
 
         //////////////////////////////////////////
         ///\brief
-        ///TODO: What does this one do?
-        //////////////////////////////////////////
-        virtual bool    SetState(unsigned long State) = 0;
-
-        //////////////////////////////////////////
-        ///\brief
-        ///Get samplerate and number of channels
-        ///
-        ///\param SampleRate
-        ///Samplerate to set
-        ///
-        ///\param Channels
-        ///Channels to set
+        ///Fill the next buffer
         ///
         ///\returns
-        ///true on success
+        ///false is there is nothing left
         //////////////////////////////////////////
-        virtual bool    GetFormat(unsigned long * SampleRate, unsigned long * Channels) = 0;
-
-        //////////////////////////////////////////
-        ///\brief
-        ///Get next buffer (decoded data)
-        ///
-        ///\param ppBuffer
-        ///Pointer to returned buffer
-        ///
-        ///\param NumSamples
-        ///Number of samples in the buffer (not entirely correct, it's samples*channels)
-        ///TODO: Rename to better name.
-        ///
-        ///\returns
-        ///false is there is nothing left to read
-        ///
-        ///The acctual bytes written to the buffer will be NumSamples*channels*sizeof(float)
-        //////////////////////////////////////////
-        virtual bool    GetBuffer(float ** ppBuffer, unsigned long * NumSamples) = 0; // return false to signal that we are done decoding.
+        virtual bool GetBuffer(IBuffer *buffer) = 0; // return false to signal that we are done decoding.
 
         //////////////////////////////////////////
         ///\brief
@@ -131,20 +87,7 @@ class IAudioSource{
         ///\returns
         ///True if successfully opened
         //////////////////////////////////////////
-        virtual bool    Open(musik::core::filestreams::IFileStream *fileStream) = 0;
-
-};
-
-//////////////////////////////////////////////////////////////////////////////
-
-class IAudioSourceSupplier{
-    protected: 
-        virtual ~IAudioSourceSupplier() {};
-
-    public: 
-        virtual IAudioSource*   CreateAudioSource() = 0;
-        virtual void            Destroy() = 0;
-        virtual bool            CanHandle(const utfchar* extension) const = 0;
+        virtual bool Open(musik::core::filestreams::IFileStream *fileStream) = 0;
 
 };
 

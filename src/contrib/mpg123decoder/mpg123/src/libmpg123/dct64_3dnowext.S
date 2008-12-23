@@ -46,7 +46,7 @@ ASM_NAME(dct64_3dnowext):
 	pushl	%esi
 	pushl	%ebx
 	subl	$256, %esp
-#APP
+/* APP */
 	movl 16(%ebp),%eax
 	leal 128+-268(%ebp),%edx
 	movl 8(%ebp),%esi
@@ -702,7 +702,7 @@ ASM_NAME(dct64_3dnowext):
 .L_bye:
 	femms
 	
-#NO_APP
+/* NO_APP */
 	addl	$256, %esp
 	popl	%ebx
 	popl	%esi

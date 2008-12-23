@@ -39,6 +39,9 @@ void frame_default_pars(mpg123_pars *mp)
 	mp->timeout = 0;
 #endif
 	mp->resync_limit = 1024;
+#ifdef FRAME_INDEX
+	mp->index_size = INDEX_SIZE;
+#endif
 	mpg123_fmt_all(mp);
 }
 
@@ -54,6 +57,7 @@ void frame_init_par(mpg123_handle *fr, mpg123_pars *mp)
 	fr->rawbuffs = NULL;
 	fr->rawdecwin = NULL;
 	fr->conv16to8_buf = NULL;
+	fr->xing_toc = NULL;
 	fr->cpu_opts.type = defopt;
 	fr->cpu_opts.class = (defopt == mmx || defopt == sse || defopt == dreidnowext) ? mmxsse : normal;
 	/* these two look unnecessary, check guarantee for synth_ntom_set_step (in control_generic, even)! */
@@ -67,16 +71,20 @@ void frame_init_par(mpg123_handle *fr, mpg123_pars *mp)
 	/* frame_outbuffer is missing... */
 	/* frame_buffers is missing... that one needs cpu opt setting! */
 	/* after these... frame_reset is needed before starting full decode */
-	fr->af.encoding = 0;
-	fr->af.rate = 0;
-	fr->af.channels = 0;
+	invalidate_format(&fr->af);
 	fr->rdat.r_read = NULL;
 	fr->rdat.r_lseek = NULL;
 	fr->decoder_change = 1;
 	fr->err = MPG123_OK;
 	if(mp == NULL) frame_default_pars(&fr->p);
 	else memcpy(&fr->p, mp, sizeof(struct mpg123_pars_struct));
+
+	fr->down_sample = 0; /* Initialize to silence harmless errors when debugging. */
 	frame_fixed_reset(fr); /* Reset only the fixed data, dynamic buffers are not there yet! */
+#ifdef FRAME_INDEX
+	fi_init(&fr->index);
+	frame_index_setup(fr); /* Apply the size setting. */
+#endif
 }
 
 mpg123_pars attribute_align_arg *mpg123_new_pars(int *error)
@@ -136,6 +144,31 @@ int attribute_align_arg mpg123_replace_buffer(mpg123_handle *mh, unsigned char *
 	mh->buffer.fill = 0;
 	return MPG123_OK;
 }
+
+#ifdef FRAME_INDEX
+int frame_index_setup(mpg123_handle *fr)
+{
+	int ret = MPG123_ERR;
+	if(fr->p.index_size >= 0)
+	{ /* Simple fixed index. */
+		fr->index.grow_size = 0;
+		debug1("resizing index to %li", fr->p.index_size);
+		ret = fi_resize(&fr->index, (size_t)fr->p.index_size);
+		debug2("index resized... %lu at %p", (unsigned long)fr->index.size, (void*)fr->index.data);
+	}
+	else
+	{ /* A growing index. We give it a start, though. */
+		fr->index.grow_size = (size_t)(- fr->p.index_size);
+		if(fr->index.size < fr->index.grow_size)
+		ret = fi_resize(&fr->index, fr->index.grow_size);
+		else
+		ret = MPG123_OK; /* We have minimal size already... and since growing is OK... */
+	}
+	debug2("set up frame index of size %lu (ret=%i)", (unsigned long)fr->index.size, ret);
+
+	return ret;
+}
+#endif
 
 int frame_buffers(mpg123_handle *fr)
 {
@@ -270,12 +303,42 @@ void frame_icy_reset(mpg123_handle* fr)
 	fr->icy.next = 0;
 }
 
+void frame_free_toc(mpg123_handle *fr)
+{
+	if(fr->xing_toc != NULL){ free(fr->xing_toc); fr->xing_toc = NULL; }
+}
+
+/* Just copy the Xing TOC over... */
+int frame_fill_toc(mpg123_handle *fr, unsigned char* in)
+{
+	if(fr->xing_toc == NULL) fr->xing_toc = malloc(100);
+	if(fr->xing_toc != NULL)
+	{
+		memcpy(fr->xing_toc, in, 100);
+#ifdef DEBUG
+		debug("Got a TOC! Showing the values...");
+		{
+			int i;
+			for(i=0; i<100; ++i)
+			debug2("entry %i = %i", i, fr->xing_toc[i]);
+		}
+#endif
+		return TRUE;
+	}
+	return FALSE;
+}
+
 /* Prepare the handle for a new track.
    Reset variables, buffers... */
 int frame_reset(mpg123_handle* fr)
 {
 	frame_buffers_reset(fr);
 	frame_fixed_reset(fr);
+	frame_free_toc(fr);
+#ifdef FRAME_INDEX
+	fi_reset(&fr->index);
+#endif
+
 	return 0;
 }
 
@@ -289,6 +352,9 @@ static void frame_fixed_reset(mpg123_handle *fr)
 	fr->metaflags = 0;
 	fr->outblock = mpg123_safe_buffer();
 	fr->num = -1;
+	fr->accurate = TRUE;
+	fr->silent_resync = 0;
+	fr->audio_start = 0;
 	fr->clip = 0;
 	fr->oldhead = 0;
 	fr->firsthead = 0;
@@ -307,10 +373,6 @@ static void frame_fixed_reset(mpg123_handle *fr)
 	fr->rva.gain[1] = 0;
 	fr->rva.peak[0] = 0;
 	fr->rva.peak[1] = 0;
-#ifdef FRAME_INDEX
-	fr->index.fill = 0;
-	fr->index.step = 1;
-#endif
 	fr->fsizeold = 0;
 	fr->firstframe = 0;
 	fr->ignoreframe = fr->firstframe-IGNORESHIFT;
@@ -347,9 +409,17 @@ void frame_free_buffers(mpg123_handle *fr)
 
 void frame_exit(mpg123_handle *fr)
 {
-	if(fr->own_buffer && fr->buffer.data != NULL) free(fr->buffer.data);
+	if(fr->own_buffer && fr->buffer.data != NULL)
+	{
+		debug1("freeing buffer at %p", (void*)fr->buffer.data);
+		free(fr->buffer.data);
+	}
 	fr->buffer.data = NULL;
 	frame_free_buffers(fr);
+	frame_free_toc(fr);
+#ifdef FRAME_INDEX
+	fi_exit(&fr->index);
+#endif
 	exit_id3(fr);
 	clear_icy(&fr->icy);
 }
@@ -387,6 +457,54 @@ int attribute_align_arg mpg123_info(mpg123_handle *mh, struct mpg123_frameinfo *
 	return MPG123_OK;
 }
 
+
+/*
+	Fuzzy frame offset searching (guessing).
+	When we don't have an accurate position, we may use an inaccurate one.
+	Possibilities:
+		- use approximate positions from Xing TOC (not yet parsed)
+		- guess wildly from mean framesize and offset of first frame / beginning of file.
+*/
+
+off_t frame_fuzzy_find(mpg123_handle *fr, off_t want_frame, off_t* get_frame)
+{
+	/* Default is to go to the beginning. */
+	off_t ret = fr->audio_start;
+	*get_frame = 0;
+
+	/* But we try to find something better. */
+	/* Xing VBR TOC works with relative positions, both in terms of audio frames and stream bytes.
+	   Thus, it only works when whe know the length of things.
+	   Oh... I assume the offsets are relative to the _total_ file length. */
+	if(fr->xing_toc != NULL && fr->track_frames > 0 && fr->rdat.filelen > 0)
+	{
+		/* One could round... */
+		int toc_entry = (int) ((double)want_frame*100./fr->track_frames);
+		/* It is an index in the 100-entry table. */
+		if(toc_entry < 0)  toc_entry = 0;
+		if(toc_entry > 99) toc_entry = 99;
+
+		/* Now estimate back what frame we get. */
+		*get_frame = (off_t) ((double)toc_entry/100. * fr->track_frames);
+		fr->accurate = FALSE;
+		fr->silent_resync = 1;
+		/* Question: Is the TOC for whole file size (with/without ID3) or the "real" audio data only?
+		   ID3v1 info could also matter. */
+		ret = (off_t) ((double)fr->xing_toc[toc_entry]/256.* fr->rdat.filelen);
+	}
+	else if(fr->mean_framesize > 0)
+	{	/* Just guess with mean framesize (may be exact with CBR files). */
+		/* Query filelen here or not? */
+		fr->accurate = FALSE; /* Fuzzy! */
+		fr->silent_resync = 1;
+		*get_frame = want_frame;
+		ret = fr->audio_start+fr->mean_framesize*want_frame;
+	}
+	debug5("fuzzy: want %li of %li, get %li at %li B of %li B",
+		(long)want_frame, (long)fr->track_frames, (long)*get_frame, (long)ret, (long)(fr->rdat.filelen-fr->audio_start));
+	return ret;
+}
+
 /*
 	find the best frame in index just before the wanted one, seek to there
 	then step to just before wanted one with read_frame
@@ -402,19 +520,35 @@ off_t frame_index_find(mpg123_handle *fr, off_t want_frame, off_t* get_frame)
 	off_t gopos = 0;
 	*get_frame = 0;
 #ifdef FRAME_INDEX
+	/* Possibly use VBRI index, too? I'd need an example for this... */
 	if(fr->index.fill)
 	{
 		/* find in index */
 		size_t fi;
 		/* at index fi there is frame step*fi... */
 		fi = want_frame/fr->index.step;
-		if(fi >= fr->index.fill) fi = fr->index.fill - 1;
+		if(fi >= fr->index.fill) /* If we are beyond the end of frame index...*/
+		{
+			/* When fuzzy seek is allowed, we have some limited tolerance for the frames we want to read rather then jump over. */
+			if(fr->p.flags & MPG123_FUZZY && want_frame - (fr->index.fill-1)*fr->index.step > 10)
+			{
+				gopos = frame_fuzzy_find(fr, want_frame, get_frame);
+				if(gopos > fr->audio_start) return gopos; /* Only in that case, we have a useful guess. */
+				/* Else... just continue, fuzzyness didn't help. */
+			}
+			/* Use the last available position, slowly advancing from that one. */
+			fi = fr->index.fill - 1;
+		}
+		/* We have index position, that yields frame and byte offsets. */
 		*get_frame = fi*fr->index.step;
 		gopos = fr->index.data[fi];
+		fr->accurate = TRUE; /* When using the frame index, we are accurate. */
 	}
 	else
 	{
 #endif
+		if(fr->p.flags & MPG123_FUZZY)
+		return frame_fuzzy_find(fr, want_frame, get_frame);
 		/* A bit hackish here... but we need to be fresh when looking for the first header again. */
 		fr->firsthead = 0;
 		fr->oldhead = 0;
@@ -434,7 +568,7 @@ off_t frame_ins2outs(mpg123_handle *fr, off_t ins)
 		case 1:
 		case 2: outs = ins>>fr->down_sample; break;
 		case 3: outs = ntom_ins2outs(fr, ins); break;
-		default: error("Bad down_sample ... should not be possible!!");
+		default: error1("Bad down_sample (%i) ... should not be possible!!", fr->down_sample);
 	}
 	return outs;
 }
@@ -448,7 +582,7 @@ off_t frame_outs(mpg123_handle *fr, off_t num)
 		case 1:
 		case 2: outs = (spf(fr)>>fr->down_sample)*num; break;
 		case 3: outs = ntom_frmouts(fr, num); break;
-		default: error("Bad down_sample ... should not be possible!!");
+		default: error1("Bad down_sample (%i) ... should not be possible!!", fr->down_sample);
 	}
 	return outs;
 }

@@ -8,7 +8,7 @@
 #ifndef MPG123_PLAYLIST_H
 #define MPG123_PLAYLIST_H
 
-#include "mpg123.h"
+#include "mpg123app.h"
 
 enum playlist_type { UNKNOWN = 0, M3U, PLS, NO_LIST };
 

@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Björn Olievier
+// The following are Copyright © 2008, Daniel Önnerby
 //
 // All rights reserved.
 //
@@ -49,9 +49,9 @@ class MP3DecoderPlugin : public musik::core::IPlugin
 {
     void Destroy() { delete this; };
 
-	const utfchar* Name()       { return TEXT("MP3 decoder"); };
+	const utfchar* Name()       { return TEXT("mpg123 decoder"); };
 	const utfchar* Version()    { return TEXT("1"); };
-	const utfchar* Author()     { return TEXT("Björn Olievier"); };
+	const utfchar* Author()     { return TEXT("Daniel Önnerby"); };
 };
 
 extern "C" __declspec(dllexport) musik::core::IPlugin* GetPlugin()
@@ -59,7 +59,7 @@ extern "C" __declspec(dllexport) musik::core::IPlugin* GetPlugin()
     return new MP3DecoderPlugin();
 }
 
-extern "C" __declspec(dllexport) IAudioSourceSupplier* CreateAudioSourceSupplier()
+extern "C" __declspec(dllexport) IDecoderFactory* GetDecoderFactory()
 {
 	return new MP3SourceSupplier();
 }

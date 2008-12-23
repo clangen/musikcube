@@ -113,10 +113,13 @@ class PlaybackQueue : public sigslot::has_slots<>{
 
     private:
         TrackPtr currentTrack;
+        TrackPtr nextTrack;
         void SetCurrentTrack(TrackPtr track);
         musik::core::Query::TrackMetadata metadataQuery;
 
         void OnPlaybackEndOrFail();
+        void OnPlaybackPrepare();
+        void GetAllTrackMetadata(TrackPtr track);
 
         bool signalDisabled;
 

@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////
-// Copyright © 2007, Björn Olievier
+// Copyright © 2007, Daniel Önnerby
 //
 // All rights reserved.
 //
@@ -30,20 +30,23 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
-
 #pragma once
 
-#include <sigslog/sigslot.h>
+#include <core/config.h>
+#include <core/audio/IDecoder.h>
 
-typedef sigslot::signal0<>  PlaybackStartedOk;
-typedef sigslot::signal0<>  PlaybackStartedFail;
-typedef sigslot::signal0<>  PlaybackStoppedOk;
-typedef sigslot::signal0<>  PlaybackStoppedFail;
-typedef sigslot::signal0<>  PlaybackInterrupted;
-typedef sigslot::signal0<>  VolumeChangedOk;
-typedef sigslot::signal0<>  VolumeChangedFail;
-typedef sigslot::signal0<>  StreamOpenOk;
-typedef sigslot::signal0<>  StreamOpenFail;
-typedef sigslot::signal0<>  MixpointReached;
-typedef sigslot::signal0<>  SetPositionOk;
-typedef sigslot::signal0<>  SetPositionFail;
+//////////////////////////////////////////////////////////////////////////////
+namespace musik { namespace core { namespace audio {
+//////////////////////////////////////////////////////////////////////////////
+
+class IDecoderFactory{
+    public: 
+        virtual IDecoder*       CreateDecoder() = 0;
+        virtual void            Destroy() = 0;
+        virtual bool            CanHandle(const utfchar* type) const = 0;
+
+};
+
+//////////////////////////////////////////////////////////////////////////////
+}}} // NS
+//////////////////////////////////////////////////////////////////////////////

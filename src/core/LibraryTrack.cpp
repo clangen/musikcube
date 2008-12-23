@@ -208,39 +208,42 @@ void LibraryTrack::InitMeta(){
 
 bool LibraryTrack::CompareDBAndFileInfo(const boost::filesystem::utfpath &file,db::Connection &dbConnection,DBINT currentFolderId){
  
-    this->SetValue("path",file.string().c_str());
-    this->SetValue("filename",file.leaf().c_str());
+    try{
+        this->SetValue("path",file.string().c_str());
+        this->SetValue("filename",file.leaf().c_str());
 
-    utfstring::size_type lastDot = file.leaf().find_last_of(UTF("."));
-    if(lastDot!=utfstring::npos){
-        this->SetValue("extension",file.leaf().substr(lastDot+1).c_str());
-    }
-
-    DBINT fileSize  = (DBINT)boost::filesystem::file_size(file);
-    DBTIME fileTime = (DBTIME)boost::filesystem::last_write_time(file);
-
-    this->SetValue("filesize",boost::lexical_cast<utfstring>(fileSize).c_str());
-    this->SetValue("filetime",boost::lexical_cast<utfstring>(fileTime).c_str());
-
-
-    db::CachedStatement stmt("SELECT id,filename,filesize,filetime FROM tracks t WHERE folder_id=? AND filename=?",dbConnection);
-    stmt.BindInt(0,currentFolderId);
-    stmt.BindTextUTF(1,this->GetValue("filename"));
-
-    bool fileDifferent(true);
-
-    if(stmt.Step()==db::ReturnCode::Row){
-        // File found in database.
-        this->id    = stmt.ColumnInt(0);
-        fileDifferent    = false;
-
-        // Check if the track needs to be reread.
-        if(fileSize!=stmt.ColumnInt(2) || fileTime!=stmt.ColumnInt(3)){
-            fileDifferent    = true;
+        utfstring::size_type lastDot = file.leaf().find_last_of(UTF("."));
+        if(lastDot!=utfstring::npos){
+            this->SetValue("extension",file.leaf().substr(lastDot+1).c_str());
         }
-    }
 
-    return fileDifferent;
+        DBINT fileSize  = (DBINT)boost::filesystem::file_size(file);
+        DBTIME fileTime = (DBTIME)boost::filesystem::last_write_time(file);
+
+        this->SetValue("filesize",boost::lexical_cast<utfstring>(fileSize).c_str());
+        this->SetValue("filetime",boost::lexical_cast<utfstring>(fileTime).c_str());
+
+
+        db::CachedStatement stmt("SELECT id,filename,filesize,filetime FROM tracks t WHERE folder_id=? AND filename=?",dbConnection);
+        stmt.BindInt(0,currentFolderId);
+        stmt.BindTextUTF(1,this->GetValue("filename"));
+
+        bool fileDifferent(true);
+
+        if(stmt.Step()==db::ReturnCode::Row){
+            // File found in database.
+            this->id    = stmt.ColumnInt(0);
+            fileDifferent    = false;
+
+            // Check if the track needs to be reread.
+            if(fileSize!=stmt.ColumnInt(2) || fileTime!=stmt.ColumnInt(3)){
+                fileDifferent    = true;
+            }
+        }
+        return fileDifferent;
+    }catch(...){
+    }
+    return false;
 }
 
 

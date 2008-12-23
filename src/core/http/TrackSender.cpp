@@ -73,9 +73,13 @@ void TrackSender::Execute(musik::core::http::IResponder* responder,musik::core::
             }
 
             // Send header
-            std::string header( "HTTP/1.1 200 OK\r\nContent-Type: audio/mpeg\r\nContent-Length: " );
-            header.append( musik::core::ConvertUTF8(track->GetValue("filesize")) );
-            header.append("\r\n\r\n");
+            std::string header( "HTTP/1.1 200 OK\r\nContent-Length: " );
+            header.append( UTF_TO_UTF8(track->GetValue("filesize")) + "\r\n" );
+
+            // Send content type as filename extension
+            // TODO: Fix to send mimetype
+            header.append( "Content-Type: " + UTF_TO_UTF8(file->Type()) + "\r\n" );
+            header.append("\r\n");
 
             responder->SendContent(header.c_str(),header.size());
 

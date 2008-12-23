@@ -7,10 +7,8 @@
 	old timestamp: Tue Apr  8 07:15:13 MET DST 1997
 */
 
-#include <stdio.h>
-#include "config.h"
-#include "getlopt.h"
 #include "compat.h"
+#include "getlopt.h"
 #include "debug.h"
 
 int loptind = 1;	/* index in argv[] */

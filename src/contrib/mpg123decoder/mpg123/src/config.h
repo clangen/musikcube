@@ -9,5 +9,5 @@
 #define HAVE_STDLIB_H
 #define HAVE_STRING_H
 
-#define INDEX_SIZE 1000
+#define INDEX_SIZE 10000
 #define FRAME_INDEX

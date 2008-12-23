@@ -9,7 +9,7 @@
 #ifndef MPG123_METAPRINT_H
 #define MPG123_METAPRINT_H
 
-#include "mpg123.h"
+#include "mpg123app.h"
 
 void print_id3_tag(mpg123_handle *mh, int long_meta, FILE *out);
 void print_icy(mpg123_handle *mh, FILE *out);

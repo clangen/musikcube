@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////
-// Copyright © 2007, Björn Olievier
+// Copyright © 2007, Daniel Önnerby
 //
 // All rights reserved.
 //
@@ -30,39 +30,32 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
-
 #pragma once
 
-namespace musik { namespace core { namespace audio {
+#include <core/audio/IBuffer.h>
+#include "Mmsystem.h"
+//////////////////////////////////////////////////////////////////////////////
+// Forward declare
+class WaveOut;
 
-class IAudioCallback;
+//////////////////////////////////////////////////////////////////////////////
 
-class IAudioOutput
+using namespace musik::core::audio;
+
+class WaveOutBuffer
 {
-public: virtual void Destroy() = 0;
+    public:
+        WaveOutBuffer(WaveOut *waveOut,IBuffer *buffer);
+        ~WaveOutBuffer(void);
 
-private:  virtual bool  Open(void)          = 0;
-private:  virtual bool  Close(void)         = 0;
-private:  virtual bool  Initialize(void)    = 0;
-private:  virtual bool  Shutdown(void)      = 0;
+        bool AddToOutput();
+        void PrepareBuffer();
+        bool ReadyToRelease();
 
-public: virtual void    SetCallback(IAudioCallback * pCallback)                     = 0;
-public: virtual bool    SetFormat(unsigned long SampleRate, unsigned long Channels) = 0;
+        WaveOut *waveOut;
+        IBuffer *buffer;
+        WAVEHDR header;
 
-public: virtual bool    Start(void) = 0;
-public: virtual bool    Stop(void)  = 0;
-public: virtual bool    Reset(void) = 0;
-
-public: virtual unsigned long   GetSampleRate()     const = 0;
-public: virtual unsigned long   GetChannels()       const = 0;
-public: virtual unsigned long   GetBlockSize()      const = 0;
-public: virtual unsigned long   GetOutputDevice()   const = 0;
-public: virtual unsigned long   GetBufferSizeMs()   const = 0;
 };
 
-class IAudioOutputSupplier
-{
-public: virtual void          Destroy()           = 0;
-public: virtual IAudioOutput* CreateAudioOutput() = 0;
-};
-}}} // NS
+//////////////////////////////////////////////////////////////////////////////

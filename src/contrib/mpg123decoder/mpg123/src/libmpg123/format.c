@@ -44,6 +44,7 @@ static int good_enc(int enc)
 	if(enc & MPG123_ENC_FLOAT) return FALSE;
 #endif
 	if(enc & MPG123_ENC_32) return FALSE; /* Not supported yet. */
+	if(enc == MPG123_ENC_UNSIGNED_16) return FALSE; /* Not supported yet... ever? */
 
 	return TRUE;
 }
@@ -309,3 +310,12 @@ int attribute_align_arg mpg123_fmt_support(mpg123_pars *mp, long rate, int encod
 	if(mp->audio_caps[1][ratei][enci]) ch |= MPG123_STEREO;
 	return ch;
 }
+
+/* Call this one to ensure that any valid format will be something different than this. */
+void invalidate_format(struct audioformat *af)
+{
+	af->encoding = 0;
+	af->rate     = 0;
+	af->channels = 0;
+}
+

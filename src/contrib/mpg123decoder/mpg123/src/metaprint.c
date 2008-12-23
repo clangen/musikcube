@@ -6,7 +6,6 @@
 	initially written by Thomas Orgis
 */
 
-#include "mpg123.h"
 #include "mpg123app.h"
 #include "genre.h"
 #include "debug.h"

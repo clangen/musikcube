@@ -109,6 +109,7 @@ struct parameter param = {
 	,NULL /* proxyurl */
 	,0 /* keep_open */
 	,0 /* force_utf8 */
+	,INDEX_SIZE
 };
 
 mpg123_handle *mh = NULL;
@@ -436,6 +437,9 @@ topt opts[] = {
 	{0, "ignore-mime", GLO_INT,  0, &param.ignore_mime, 1 },
 	{0, "keep-open", GLO_INT, 0, &param.keep_open, 1},
 	{0, "utf8", GLO_INT, 0, &param.force_utf8, 1},
+	{0, "fuzzy", GLO_INT,  set_frameflag, &frameflag, MPG123_FUZZY},
+	{0, "index-size", GLO_ARG|GLO_LONG, 0, &param.index_size, 0},
+	{0, "no-seekbuffer", GLO_INT, unset_frameflag, &frameflag, MPG123_SEEKBUFFER},
 	{0, 0, 0, 0, 0, 0}
 };
 
@@ -720,6 +724,7 @@ int main(int argc, char *argv[])
 #endif
 	mpg123_getpar(mp, MPG123_FLAGS, &parr, NULL);
 	param.flags = (int) parr;
+	param.flags |= MPG123_SEEKBUFFER; /* Default on, for HTTP streams. */
 	mpg123_getpar(mp, MPG123_RESYNC_LIMIT, &param.resync_limit, NULL);
 
 #ifdef OS2
@@ -792,7 +797,6 @@ int main(int argc, char *argv[])
 	/* Set the frame parameters from command line options */
 	if(param.quiet) param.flags |= MPG123_QUIET;
 
-	param.flags |= MPG123_SEEKBUFFER; /* For HTTP streams. */
 #ifdef OPT_3DNOW
 	if(dnow != 0) param.cpu = (dnow == SET_3DNOW) ? "3dnow" : "i586";
 #endif
@@ -831,6 +835,9 @@ int main(int argc, char *argv[])
 		safe_exit(45);
 	}
 	if (!(param.listentry < 0) && !param.quiet) print_title(stderr); /* do not pollute stdout! */
+
+	if( (result = mpg123_par(mp, MPG123_INDEX_SIZE, param.index_size, 0.)) != MPG123_OK )
+	error1("Setting of frame index size failed: %s", mpg123_plain_strerror(result));
 
 	if(param.force_rate && param.down_sample)
 	{
@@ -1116,6 +1123,7 @@ static void long_usage(int err)
 	fprintf(o,"\ninput options\n\n");
 	fprintf(o," -k <n> --skip <n>         skip n frames at beginning\n");
 	fprintf(o," -n     --frames <n>       play only <n> frames of every stream\n");
+	fprintf(o,"        --fuzzy            Enable fuzzy seeks (guessing byte offsets or using approximate seek points from Xing TOC)\n");
 	fprintf(o," -y     --no-resync        DISABLES resync on error (--resync is deprecated)\n");
 	fprintf(o," -p <f> --proxy <f>        set WWW proxy\n");
 	fprintf(o," -u     --auth             set auth values for HTTP access\n");
@@ -1131,6 +1139,7 @@ static void long_usage(int err)
 	fprintf(o," -Z     --random           full random play\n");
 	fprintf(o,"        --no-icy-meta      Do not accept ICY meta data\n");
 	fprintf(o," -i     --index            index / scan through the track before playback\n");
+	fprintf(o,"        --index-size       change size of frame index\n");
 	fprintf(o,"        --resync-limit <n> Set number of bytes to search for valid MPEG data; <0 means search whole stream.\n");
 	fprintf(o,"\noutput/processing options\n\n");
 	fprintf(o," -o <o> --output <o>       select audio output module\n");
