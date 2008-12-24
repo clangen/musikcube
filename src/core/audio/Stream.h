@@ -49,6 +49,7 @@ namespace musik { namespace core { namespace audio {
 
 // Forward declare
 class Stream;
+class Player;
 typedef boost::shared_ptr<Stream> StreamPtr;
 
 //////////////////////////////////////////////////////////////////////////////
@@ -78,6 +79,8 @@ class Stream {
         BufferPtr GetNextDecoderBuffer();
         BufferPtr GetNextBuffer();
 
+    private:
+        friend class Player;
         BufferPtr NewBuffer();
         void DeleteBuffer(BufferPtr oldBuffer);
 
