@@ -311,6 +311,7 @@ void Player::ReleaseBuffer(IBuffer *buffer){
     for(BufferList::iterator foundBuffer=this->lockedBuffers.begin();foundBuffer!=this->lockedBuffers.end();++foundBuffer){
         if(foundBuffer->get()==buffer){
             this->totalBufferSize -= buffer->Bytes();
+            this->stream->DeleteBuffer(*foundBuffer);
             this->lockedBuffers.erase(foundBuffer);
 
             // Calculate current position from front locked buffer
