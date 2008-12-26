@@ -228,11 +228,13 @@ void Player::ThreadLoop(){
                 }else{
                     // Buffer send to output
                     boost::mutex::scoped_lock lock(this->mutex);
-                    this->bufferQueue.pop_front();
+                    if(!this->bufferQueue.empty()){
+                        this->bufferQueue.pop_front();
 
-                    // Set currentPosition
-                    if(this->lockedBuffers.size()==1){
-                        this->currentPosition   = buffer->Position();
+                        // Set currentPosition
+                        if(this->lockedBuffers.size()==1){
+                            this->currentPosition   = buffer->Position();
+                        }
                     }
 
                 }
@@ -307,6 +309,13 @@ bool Player::Exited(){
 
 void Player::ReleaseBuffer(IBuffer *buffer){
     boost::mutex::scoped_lock lock(this->mutex);
+
+    if( this->state==Player::Quit ){
+        // Just in case that the stream and outputs have already been reset and output-plugin is still releasing buffers.
+        this->waitCondition.notify_all();
+        return;
+    }
+
     // Remove the buffer from lockedBuffers
     for(BufferList::iterator foundBuffer=this->lockedBuffers.begin();foundBuffer!=this->lockedBuffers.end();++foundBuffer){
         if(foundBuffer->get()==buffer){
