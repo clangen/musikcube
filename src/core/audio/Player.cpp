@@ -309,18 +309,13 @@ bool Player::Exited(){
 
 void Player::ReleaseBuffer(IBuffer *buffer){
     boost::mutex::scoped_lock lock(this->mutex);
-
-    if( this->state==Player::Quit ){
-        // Just in case that the stream and outputs have already been reset and output-plugin is still releasing buffers.
-        this->waitCondition.notify_all();
-        return;
-    }
-
     // Remove the buffer from lockedBuffers
     for(BufferList::iterator foundBuffer=this->lockedBuffers.begin();foundBuffer!=this->lockedBuffers.end();++foundBuffer){
         if(foundBuffer->get()==buffer){
             this->totalBufferSize -= buffer->Bytes();
-            this->stream->DeleteBuffer(*foundBuffer);
+            if( this->stream ){
+                this->stream->DeleteBuffer(*foundBuffer);
+            }
             this->lockedBuffers.erase(foundBuffer);
 
             // Calculate current position from front locked buffer
