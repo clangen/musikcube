@@ -40,6 +40,7 @@
 #include <boost/bind.hpp>
 #include <core/PluginFactory.h>
 #include <core/Plugin/IMetaDataReader.h>
+#include <core/filestreams/Factory.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -114,30 +115,32 @@ void NonLibraryTrackHelper::ThreadLoop(){
             }
         }
         if(track){
-            utfstring url(track->URL());
-            utfstring::size_type lastDot = url.find_last_of(UTF("."));
-            if(lastDot!=utfstring::npos){
-                track->SetValue("extension",url.substr(lastDot+1).c_str());
-            }
-            // Read track metadata
-            typedef MetadataReaderList::iterator Iterator;
-            Iterator it = metadataReaders.begin();
-            while (it != metadataReaders.end()) {
-                if((*it)->CanReadTag(track->GetValue("extension")) ){
-                    // Should be able to read the tag
-                    if( (*it)->ReadTag(track.get()) ){
-                        // Successfully read the tag.
-//                        tagRead=true;
+            // check if this is a local file
+            if(musik::core::filestreams::Factory::IsLocalFileStream(track->URL())){
+                utfstring url(track->URL());
+                utfstring::size_type lastDot = url.find_last_of(UTF("."));
+                if(lastDot!=utfstring::npos){
+                    track->SetValue("extension",url.substr(lastDot+1).c_str());
+                }
+                // Read track metadata
+                typedef MetadataReaderList::iterator Iterator;
+                Iterator it = metadataReaders.begin();
+                while (it != metadataReaders.end()) {
+                    if((*it)->CanReadTag(track->GetValue("extension")) ){
+                        // Should be able to read the tag
+                        if( (*it)->ReadTag(track.get()) ){
+                            // Successfully read the tag.
+    //                        tagRead=true;
+                        }
                     }
+
+                    it++;
                 }
 
-                it++;
+                // Lets notify that tracks has been read
+                this->TrackMetadataUpdated(track);
             }
-
-            // Lets notify that tracks has been read
-            this->TrackMetadataUpdated(track);
         }
-
     }
 
 }
