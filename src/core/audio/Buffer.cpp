@@ -53,7 +53,7 @@ BufferPtr Buffer::Create(){
     return BufferPtr(new Buffer());
 }
 
-long Buffer::SampleRate(){
+long Buffer::SampleRate() const{
     return this->sampleRate;
 }
 
@@ -61,7 +61,7 @@ void Buffer::SetSampleRate(long sampleRate){
     this->sampleRate    = sampleRate;
 }
 
-int Buffer::Channels(){
+int Buffer::Channels() const{
     return this->channels;
 }
 
@@ -70,16 +70,23 @@ void Buffer::SetChannels(int channels){
     this->ResizeBuffer();
 }
 
-float* Buffer::BufferPointer(){
+float* Buffer::BufferPointer() const{
     return this->buffer;
 }
 
-long Buffer::Samples(){
+long Buffer::Samples() const{
     return this->sampleSize;
 }
 
 void Buffer::SetSamples(long samples){
     this->sampleSize    = samples;
+    this->ResizeBuffer();
+}
+
+void Buffer::CopyFormat(BufferPtr fromBuffer){
+    this->sampleSize    = fromBuffer->Samples();
+    this->channels      = fromBuffer->Channels();
+    this->sampleRate    = fromBuffer->SampleRate();
     this->ResizeBuffer();
 }
 
@@ -98,11 +105,11 @@ void Buffer::ResizeBuffer(){
     }
 }
 
-long Buffer::Bytes(){
+long Buffer::Bytes() const{
     return this->internalBufferSize*sizeof(float);
 }
 
-double Buffer::Position(){
+double Buffer::Position() const{
     return this->position;
 }
 

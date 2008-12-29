@@ -174,6 +174,9 @@ BufferPtr Stream::GetNextBuffer(){
 
         // Now lets loop through all DSP plugins
         for(Dsps::iterator dsp=this->dsps.begin();dsp!=this->dsps.end();++dsp){
+            oldBuffer->CopyFormat(currentBuffer);
+            oldBuffer->position = currentBuffer->position;
+
             if( (*dsp)->ProcessBuffers(currentBuffer.get(),oldBuffer.get()) ){
                 // Success in processing DSP, swap the buffers
                 currentBuffer.swap(oldBuffer);
