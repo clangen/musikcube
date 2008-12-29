@@ -33,6 +33,7 @@
 #pragma once
 
 #include <core/audio/IBuffer.h>
+#include <core/audio/IPlayer.h>
 #include "Mmsystem.h"
 //////////////////////////////////////////////////////////////////////////////
 // Forward declare
@@ -45,15 +46,15 @@ using namespace musik::core::audio;
 class WaveOutBuffer
 {
     public:
-        WaveOutBuffer(WaveOut *waveOut,IBuffer *buffer);
+        WaveOutBuffer(WaveOut *waveOut,IBuffer *buffer,IPlayer *player);
         ~WaveOutBuffer(void);
 
         bool AddToOutput();
         void PrepareBuffer();
-        bool ReadyToRelease();
 
         WaveOut *waveOut;
         IBuffer *buffer;
+        IPlayer *player;
         WAVEHDR header;
 
 };

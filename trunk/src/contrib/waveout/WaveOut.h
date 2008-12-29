@@ -48,19 +48,18 @@
 
 using namespace musik::core::audio;
 
-class WaveOut : public IOutput
-{
+class WaveOut : public IOutput{
     public:
         WaveOut();
         ~WaveOut();
 
         virtual void Destroy();
-        virtual void Initialize(IPlayer *player);
+        //virtual void Initialize(IPlayer *player);
         virtual void Pause();
         virtual void Resume();
         virtual void SetVolume(double volume);
         virtual void ClearBuffers();
-        virtual bool PlayBuffer(IBuffer *buffer);
+        virtual bool PlayBuffer(IBuffer *buffer,IPlayer *player);
         virtual void ReleaseBuffers();
 
     public: 
@@ -76,7 +75,7 @@ class WaveOut : public IOutput
     protected:
         friend class WaveOutBuffer;
 
-        IPlayer *player;
+        //IPlayer *player;
 
         // Audio stuff
         HWAVEOUT        waveHandle;

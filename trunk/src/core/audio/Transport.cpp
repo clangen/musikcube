@@ -48,7 +48,14 @@ Transport::~Transport(){
 }
 
 void Transport::PrepareNextTrack(utfstring trackUrl){
-    this->nextPlayer    = Player::Create(trackUrl);
+
+    if(this->gapless && this->currentPlayer){
+        this->nextPlayer    = Player::Create(trackUrl,this->currentPlayer->output);
+        this->nextPlayer->Play();
+    }else{
+        this->nextPlayer    = Player::Create(trackUrl);
+    }
+
 }
 
 void Transport::Start(utfstring url){
@@ -138,6 +145,7 @@ void Transport::OnPlaybackAlmostEnded(Player *player){
         // Reuse the output
         if(this->nextPlayer && this->gapless){
             // TODO
+//            this->nex
         }
     }
 }

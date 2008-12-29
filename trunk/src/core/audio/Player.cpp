@@ -36,8 +36,8 @@
 
 using namespace musik::core::audio;
 
-PlayerPtr Player::Create(utfstring url){
-    return PlayerPtr(new Player(url,OutputPtr()));
+PlayerPtr Player::Create(utfstring url,OutputPtr output){
+    return PlayerPtr(new Player(url,output));
 }
 
 Player::Player(utfstring &url,OutputPtr output)
@@ -61,7 +61,7 @@ Player::Player(utfstring &url,OutputPtr output)
         if(!outputs.empty()){
             // Get the firstt available output
             this->output    = outputs.front();
-            this->output->Initialize(this);
+//            this->output->Initialize(this);
         }
     }
 
@@ -209,7 +209,7 @@ void Player::ThreadLoop(){
                 }
 
                 // Try to play the buffer
-                if(!this->output->PlayBuffer(buffer.get())){
+                if(!this->output->PlayBuffer(buffer.get(),this)){
                     {
                         // We didn't manage to play the buffer, remove it from the locked buffer queue
                         boost::mutex::scoped_lock lock(this->mutex);
@@ -260,7 +260,7 @@ void Player::ThreadLoop(){
                     this->waitCondition.wait(lock);
                 }
             }
-        }while(buffersEmpty && !this->Exited());
+        }while(!buffersEmpty && !this->Exited());
 
     }else{
         // Unable to open stream
