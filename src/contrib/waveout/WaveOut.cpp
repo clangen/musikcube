@@ -33,9 +33,8 @@
 #include "WaveOut.h"
 
 WaveOut::WaveOut()
- :player(NULL)
- ,waveHandle(NULL)
- ,maxBuffers(6)
+ :waveHandle(NULL)
+ ,maxBuffers(16)
  ,currentVolume(1.0)
  ,addToRemovedBuffers(false)
 {
@@ -55,19 +54,17 @@ WaveOut::~WaveOut(){
 void WaveOut::Destroy(){
     delete this;
 }
-
+/*
 void WaveOut::Initialize(IPlayer *player){
     this->player    = player;
 }
-
+*/
 void WaveOut::Pause(){
     waveOutPause(this->waveHandle);
-//    this->ReleaseBuffers();
 }
 
 void WaveOut::Resume(){
     waveOutRestart(this->waveHandle);
-//    this->ReleaseBuffers();
 }
 
 void WaveOut::SetVolume(double volume){
@@ -81,17 +78,7 @@ void WaveOut::SetVolume(double volume){
 }
 
 void WaveOut::ClearBuffers(){
-//    this->addToRemovedBuffers   = true;
     waveOutReset(this->waveHandle);
-
-//    this->ReleaseBuffers();
-
-//    this->addToRemovedBuffers   = false;
-/*    BufferList clearBuffers;
-    {
-        boost::mutex::scoped_lock lock(this->mutex);
-        clearBuffers.swap(this->removedBuffers);
-    }*/
 }
 
 void WaveOut::RemoveBuffer(WaveOutBuffer *buffer){
@@ -119,18 +106,14 @@ void WaveOut::ReleaseBuffers(){
     {
         boost::mutex::scoped_lock lock(this->mutex);
         for(BufferList::iterator buf=this->removedBuffers.begin();buf!=this->removedBuffers.end();){
-            if((*buf)->ReadyToRelease()){
-                clearBuffers.push_back(*buf);
-                buf = this->removedBuffers.erase(buf);
-            }else{
-                ++buf;
-            }
+            clearBuffers.push_back(*buf);
+            buf = this->removedBuffers.erase(buf);
         }
     }
 
 }
 
-bool WaveOut::PlayBuffer(IBuffer *buffer){
+bool WaveOut::PlayBuffer(IBuffer *buffer,IPlayer *player){
 
     size_t bufferSize  = 0;
     {
@@ -138,14 +121,20 @@ bool WaveOut::PlayBuffer(IBuffer *buffer){
         bufferSize  = this->buffers.size();
     }
 
-//    this->ReleaseBuffers();
+    // if the format should change, wait for all buffers to be released
+    if(bufferSize>0 && (this->currentChannels!=buffer->Channels() || this->currentSampleRate!=buffer->SampleRate())){
+        // Format has changed
+//        this->player->Notify()
+        return false;
+    }
+
 
     if(bufferSize<this->maxBuffers){
         // Start by checking the format
         this->SetFormat(buffer);
 
         // Add to the waveout internal buffers
-        WaveOutBufferPtr waveBuffer(new WaveOutBuffer(this,buffer));
+        WaveOutBufferPtr waveBuffer(new WaveOutBuffer(this,buffer,player));
 
         // Header should now be prepared, lets add to waveout
         if( waveBuffer->AddToOutput() ){
@@ -239,6 +228,6 @@ void CALLBACK WaveOut::WaveCallback(HWAVEOUT waveHandle, UINT msg, DWORD_PTR dwU
         WaveOutBuffer *waveOutBuffer     = (WaveOutBuffer*)waveoutHeader->dwUser;
 
         waveOutBuffer->waveOut->RemoveBuffer(waveOutBuffer);
-        waveOutBuffer->waveOut->player->Notify();
+        waveOutBuffer->player->Notify();
     }
 }

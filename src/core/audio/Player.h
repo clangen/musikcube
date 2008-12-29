@@ -57,7 +57,7 @@ class Player : public IPlayer {
     public:
         typedef boost::shared_ptr<IOutput> OutputPtr;
 
-        static PlayerPtr Create(utfstring url);
+        static PlayerPtr Create(utfstring url,OutputPtr output=OutputPtr());
     private:
         Player(utfstring &url,OutputPtr output);
     public:
@@ -86,6 +86,8 @@ class Player : public IPlayer {
         PlayerEvent PlaybackEnded;
         PlayerEvent PlaybackError;
 
+        OutputPtr output;
+
     private:
         void ThreadLoop();
         bool PreBuffer();
@@ -105,7 +107,6 @@ class Player : public IPlayer {
         long totalBufferSize;
         long maxBufferSize;
 
-        OutputPtr output;
 
         typedef boost::scoped_ptr<boost::thread> ThreadPtr;
         ThreadPtr thread;

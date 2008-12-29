@@ -54,7 +54,7 @@ class IOutput{
         //////////////////////////////////////////
         virtual void    Destroy() = 0;
 
-        virtual void Initialize(IPlayer *player) = 0;
+        //virtual void Initialize(IPlayer *player) = 0;
         virtual void Pause() = 0;
         virtual void Resume() = 0;
         virtual void SetVolume(double volume) = 0;
@@ -65,7 +65,7 @@ class IOutput{
         //////////////////////////////////////////
         virtual void ClearBuffers() = 0;
         virtual void ReleaseBuffers() = 0;
-        virtual bool PlayBuffer(IBuffer *buffer) = 0;
+        virtual bool PlayBuffer(IBuffer *buffer,IPlayer *player) = 0;
 
 };
 

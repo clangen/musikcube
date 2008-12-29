@@ -35,9 +35,10 @@
 
 //////////////////////////////////////////////////////////////////////////////
 
-WaveOutBuffer::WaveOutBuffer(WaveOut *waveOut,IBuffer *buffer)
+WaveOutBuffer::WaveOutBuffer(WaveOut *waveOut,IBuffer *buffer,IPlayer *player)
  :waveOut(waveOut) 
  ,buffer(buffer)
+ ,player(player)
 {
     this->PrepareBuffer();
 }
@@ -67,7 +68,7 @@ WaveOutBuffer::~WaveOutBuffer(void)
     if(this->waveOut->waveHandle && this->header.dwFlags&WHDR_PREPARED){
         waveOutUnprepareHeader(this->waveOut->waveHandle,&this->header,sizeof(WAVEHDR));
     }
-    this->waveOut->player->ReleaseBuffer(this->buffer);
+    this->player->ReleaseBuffer(this->buffer);
 }
 
 bool WaveOutBuffer::AddToOutput(){
@@ -76,12 +77,5 @@ bool WaveOutBuffer::AddToOutput(){
         return true;
     }
     return false;
-}
-
-bool WaveOutBuffer::ReadyToRelease(){
-/*    if(this->header.dwFlags&WHDR_INQUEUE){
-        return false;
-    }*/
-    return true;
 }
 
