@@ -36,6 +36,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mpg123decoder", "src\contri
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "flacdecoder", "src\contrib\flacdecoder\flacdecoder.vcproj", "{465EF178-91C1-4068-BE1D-F9616ECCB6DE}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dsp_example_echo", "src\contrib\dsp_example_echo\dsp_example_echo.vcproj", "{2BCB82E5-B163-4812-8C29-17335FF45A2B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -86,6 +88,10 @@ Global
 		{465EF178-91C1-4068-BE1D-F9616ECCB6DE}.Debug|Win32.Build.0 = Debug|Win32
 		{465EF178-91C1-4068-BE1D-F9616ECCB6DE}.Release|Win32.ActiveCfg = Release|Win32
 		{465EF178-91C1-4068-BE1D-F9616ECCB6DE}.Release|Win32.Build.0 = Release|Win32
+		{2BCB82E5-B163-4812-8C29-17335FF45A2B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{2BCB82E5-B163-4812-8C29-17335FF45A2B}.Debug|Win32.Build.0 = Debug|Win32
+		{2BCB82E5-B163-4812-8C29-17335FF45A2B}.Release|Win32.ActiveCfg = Release|Win32
+		{2BCB82E5-B163-4812-8C29-17335FF45A2B}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -97,5 +103,6 @@ Global
 		{05A68577-4991-44CF-822E-60292A9A4D5A} = {092264AD-38B7-401D-8E67-B56756A141E4}
 		{04118CC2-DE10-4627-A695-2219428C7D59} = {092264AD-38B7-401D-8E67-B56756A141E4}
 		{465EF178-91C1-4068-BE1D-F9616ECCB6DE} = {092264AD-38B7-401D-8E67-B56756A141E4}
+		{2BCB82E5-B163-4812-8C29-17335FF45A2B} = {092264AD-38B7-401D-8E67-B56756A141E4}
 	EndGlobalSection
 EndGlobal

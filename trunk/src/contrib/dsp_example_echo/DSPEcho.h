@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////
-// Copyright © 2007, Daniel Önnerby
+// Copyright  2007, Daniel Önnerby
 //
 // All rights reserved.
 //
@@ -32,59 +32,24 @@
 //////////////////////////////////////////////////////////////////////////////
 #pragma once
 
-#include <core/config.h>
-#include <boost/shared_ptr.hpp>
-#include <core/audio/IBuffer.h>
+#include <core/audio/IDSP.h>
 
-//////////////////////////////////////////////////////////////////////////////
-namespace musik { namespace core { namespace audio {
-//////////////////////////////////////////////////////////////////////////////
+using namespace musik::core::audio;
 
-// Forward
-class Buffer;
-class Stream;
-typedef boost::shared_ptr<Buffer> BufferPtr;
-
-//////////////////////////////////////////////////////////////////////////////
-class Buffer : public IBuffer {
+class DSPEcho : public IDSP{
     public:
-        static BufferPtr Create();
+        DSPEcho();
+        ~DSPEcho();
+
+        virtual void Destroy();
+        virtual bool ProcessBuffers(const IBuffer *inputBuffer,IBuffer *outputBuffer);
     private:
-        Buffer(void);
-    public:
-        ~Buffer(void);
 
-        virtual long SampleRate() const; 
-        virtual void SetSampleRate(long sampleRate); 
-        virtual int Channels() const; 
-        virtual void SetChannels(int channels); 
-        virtual float* BufferPointer() const; 
-        virtual long Samples() const;
-        virtual void SetSamples(long samples);
-        virtual long Bytes() const;
-        virtual double Position() const;
+        void SetBuffer(const IBuffer *inputBuffer);
 
-        bool Append(BufferPtr appendBuffer);
-        void CopyFormat(BufferPtr fromBuffer);
-
-    private:
-        // Methods
-        void ResizeBuffer();
-    private:
-        // Variables
-        float *buffer;
-        long sampleSize;
-        long internalBufferSize;
-
-        long sampleRate;
- 
+        float *internalBuffer;
+        long bufferSampleSize;
+        long bufferPosition;
         int channels;
-    protected:
-        friend class Stream;
-        double position;
-
+        long sampleRate;
 };
-
-//////////////////////////////////////////////////////////////////////////////
-} } }
-//////////////////////////////////////////////////////////////////////////////

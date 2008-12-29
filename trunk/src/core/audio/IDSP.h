@@ -42,7 +42,7 @@ namespace musik { namespace core { namespace audio {
 class IDSP {
     public:
         virtual void Destroy() = 0;
-        virtual bool ProcessBuffers(const IBuffer *inputBuffer,IBuffer *outputBuffer);
+        virtual bool ProcessBuffers(const IBuffer *inputBuffer,IBuffer *outputBuffer) = 0;
 };
 
 //////////////////////////////////////////////////////////////////////////////
