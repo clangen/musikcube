@@ -482,6 +482,10 @@ void Indexer::ThreadLoop(){
             this->RestartSync(false);
             this->Synchronize();
             this->RunAnalyzers();
+            {
+                boost::mutex::scoped_lock oLock(this->oProgressMutex);
+                this->iStatus       = 0;
+            }
             this->dbConnection.Close();
 
             this->SynchronizeEnd();
