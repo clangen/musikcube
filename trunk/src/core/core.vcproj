@@ -522,6 +522,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\audio\IAnalyzer.h"
+					>
+				</File>
+				<File
 					RelativePath=".\audio\IBuffer.h"
 					>
 				</File>
@@ -789,6 +793,14 @@
 				</File>
 				<File
 					RelativePath=".\GenericTrack.h"
+					>
+				</File>
+				<File
+					RelativePath=".\IndexerTrack.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\IndexerTrack.h"
 					>
 				</File>
 				<File

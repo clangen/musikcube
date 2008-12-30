@@ -40,11 +40,13 @@
 
 #include <core/config_filesystem.h>
 #include <core/config_format.h>
-#include <core/LibraryTrack.h>
+#include <core/IndexerTrack.h>
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>
 #include <core/PluginFactory.h>
 #include <core/Preferences.h>
+#include <core/audio/IAnalyzer.h>
+#include <core/audio/Stream.h>
 
 #include <boost/thread/xtime.hpp>
 #include <boost/bind.hpp>
@@ -97,6 +99,9 @@ utfstring Indexer::GetStatus(){
             break;
         case 5:
             sStatus    = UTF("Optimizing.");
+            break;
+        case 6:
+            sStatus    = boost::str( boost::utfformat(UTF("Analyzing audio: %1% (%2%)"))%this->iProgress%this->iNOFFiles);
             break;
     }
     return sStatus;
@@ -411,7 +416,7 @@ void Indexer::SyncDirectory(utfstring &sFolder,DBINT iParentFolderId,DBINT iPath
                 }
                 // This is a file, create a IndexerTrack object
                 //IndexerTrack oTrack(oFile->path());
-                musik::core::LibraryTrack track;
+                musik::core::IndexerTrack track(0);
 //                track.InitMeta(NULL);   // Not threadsafe, only used in this thread.
 
                 // Get file-info from database
@@ -476,6 +481,7 @@ void Indexer::ThreadLoop(){
             this->dbConnection.Open(this->database.c_str(),0);
             this->RestartSync(false);
             this->Synchronize();
+            this->RunAnalyzers();
             this->dbConnection.Close();
 
             this->SynchronizeEnd();
@@ -910,4 +916,105 @@ void Indexer::SyncAddRemovePaths(){
 }
 
 
+void Indexer::RunAnalyzers(){
+    typedef audio::IAnalyzer PluginType;
+    typedef PluginFactory::DestroyDeleter<PluginType> Deleter;
+    typedef boost::shared_ptr<PluginType> PluginPtr;
+    typedef std::vector<PluginPtr> PluginVector;
+    //
+    {
+        // Cleanup status
+        boost::mutex::scoped_lock oLock(this->oProgressMutex);
+        this->iProgress     = 0;
+        this->iStatus       = 6;
+        this->iNOFFiles     = 0;
+    }
+
+    // Loop through all tracks
+    DBINT trackId(0);
+    DBINT folderId(0);
+    db::Statement getNextTrack("SELECT id,folder_id FROM tracks WHERE id>? ORDER BY id LIMIT 1",this->dbConnection);
+    getNextTrack.BindInt(0,trackId);
+
+    while( getNextTrack.Step()==db::ReturnCode::Row ){
+        trackId     = getNextTrack.ColumnInt(0);
+        folderId    = getNextTrack.ColumnInt(1);
+        getNextTrack.Reset();
+        getNextTrack.UnBindAll();
+
+        boost::thread::yield();
+
+        IndexerTrack track(trackId);
+        if(track.GetTrackMetadata(this->dbConnection)){
+            // lets see if we should analyze the track
+            PluginVector analyzers =
+                PluginFactory::Instance().QueryInterface<PluginType, Deleter>("GetAudioAnalyzer");
+
+            // lets see what plugins that need to analyze the track audio
+            for(PluginVector::iterator plugin=analyzers.begin();plugin!=analyzers.end();){
+                if( (*plugin)->Start(&track) ){
+                    ++plugin;
+                }else{
+                    plugin  = analyzers.erase(plugin);
+                }
+            }
+            PluginVector runningAnalyzers(analyzers);
+
+            if(!runningAnalyzers.empty()){
+                // lets start a stream
+                audio::StreamPtr stream = audio::Stream::Create(audio::Stream::NoDSP);
+                if(stream){
+                    if(stream->OpenStream(track.URL())){
+                        // loop through the stream buffers, sending the buffers to the analyzers
+                        audio::BufferPtr buffer;
+                        while( (buffer=stream->NextBuffer()) && !runningAnalyzers.empty()){
+                            PluginVector::iterator plugin=runningAnalyzers.begin();
+                            while(plugin!=runningAnalyzers.end()){
+                                // analyze the audio, and remove plugin if it returns false
+                                if( (*plugin)->Analyze(&track,buffer.get()) ){
+                                    ++plugin;
+                                }else{
+                                    plugin  = runningAnalyzers.erase(plugin);
+                                }
+                                boost::thread::yield();
+                                if(this->Exited() || this->Restarted()){
+                                    return;
+                                }
+                            }
+                        }
+
+                        // everything is analyzed, lets send the End
+                        int successPlugins(0);
+                        for(PluginVector::iterator plugin=analyzers.begin();plugin!=analyzers.end();++plugin){
+                            if((*plugin)->End(&track)){
+                                successPlugins++;
+                            }
+                        }
+
+                        // finally save the track
+                        if(successPlugins>0){
+                            track.Save(this->dbConnection,this->libraryPath,folderId);
+
+                            boost::mutex::scoped_lock oLock(this->oProgressMutex);
+                            this->iProgress += 1;
+
+                        }
+
+                    }
+                }
+            }
+
+        }
+
+        if(this->Exited() || this->Restarted()){
+            return;
+        }
+        {
+            boost::mutex::scoped_lock oLock(this->oProgressMutex);
+            this->iNOFFiles++;
+        }
+        getNextTrack.BindInt(0,trackId);
+    }
+
+}
 

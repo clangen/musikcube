@@ -42,9 +42,6 @@
 
 //////////////////////////////////////////////////////////////////////////////
 // Forward declare
-namespace musik{ namespace core{ namespace http{
-    class Responder;
-} } }
 //////////////////////////////////////////////////////////////////////////////
 
 
@@ -56,12 +53,10 @@ namespace musik{ namespace core{
 ///\brief
 ///A LibraryTrack is a track related to a Library.
 //////////////////////////////////////////
-class LibraryTrack : public Track {
+class IndexerTrack : public Track {
     public:
-        LibraryTrack(void);
-        LibraryTrack(DBINT id,int libraryId);
-        LibraryTrack(DBINT id,musik::core::LibraryPtr library);
-        virtual ~LibraryTrack(void);
+        IndexerTrack(DBINT id);
+        virtual ~IndexerTrack(void);
 
         virtual const utfchar* GetValue(const char* metakey);
         virtual void SetValue(const char* metakey,const utfchar* value);
@@ -75,13 +70,14 @@ class LibraryTrack : public Track {
         virtual TrackPtr Copy();
 
         virtual DBINT Id();
-        virtual musik::core::LibraryPtr Library();
-        virtual int LibraryId();
+
+        bool CompareDBAndFileInfo(const boost::filesystem::utfpath &file,db::Connection &dbConnection,DBINT currentFolderId);
+        bool Save(db::Connection &dbConnection,utfstring libraryDirectory,DBINT folderId);
+        bool GetTrackMetadata(db::Connection &db);
 
     private:
         // The variables
         DBINT id;
-        int libraryId;
     private:
         class MetaData{
             public:
@@ -91,7 +87,6 @@ class LibraryTrack : public Track {
                 Track::MetadataMap metadata;
                 char *thumbnailData;
                 long thumbnailSize;
-                musik::core::LibraryPtr library;
         };
 
         MetaData *meta;
@@ -100,10 +95,9 @@ class LibraryTrack : public Track {
 
         void InitMeta();
 
-    private:
-        // Some special methods for the http::Responder
-        friend class http::Responder;
-        bool GetFileData(DBINT id,db::Connection &db);
+        DBINT _GetGenre(db::Connection &dbConnection,utfstring genre,bool addRelation,bool aggregated=false);
+        DBINT _GetArtist(db::Connection &dbConnection,utfstring artist,bool addRelation,bool aggregated=false);
+
 };
 
 

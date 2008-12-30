@@ -111,6 +111,7 @@ class Indexer : public ThreadHelper,private boost::noncopyable {
         void SyncCleanup();
         void SyncAddRemovePaths();
         void SyncOptimize();
+        void RunAnalyzers();
 
         class _AddRemovePath{
             public:
