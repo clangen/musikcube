@@ -11,3 +11,5 @@
 
 #define INDEX_SIZE 10000
 #define FRAME_INDEX
+#define GAPLESS
+
