@@ -112,17 +112,18 @@ class Stream {
         Dsps dsps;
 
         // Helper with decoder factories
-        class Helper{
+        class StreamHelper{
             public:
                 typedef boost::shared_ptr<IDecoderFactory> DecoderFactoryPtr;
                 typedef std::vector<DecoderFactoryPtr> DecoderFactories;
                 DecoderFactories decoderFactories;
 
-                Helper();
+                StreamHelper();
 
         };
 
-        static Helper helper;
+        typedef boost::shared_ptr<StreamHelper> StreamHelperPtr;
+        static StreamHelperPtr Helper();
 
 };
 

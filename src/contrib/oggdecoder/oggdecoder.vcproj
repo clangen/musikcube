@@ -62,9 +62,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/NODEFAULTLIB:LIBCMT&#x0D;&#x0A;"
-				AdditionalDependencies="ogg_static.lib vorbis_static.lib vorbisfile_static.lib"
+				AdditionalDependencies="libogg.lib vorbis_static.lib libvorbisfile.lib"
 				AdditionalLibraryDirectories="./lib;../../3rdparty/lib"
 				GenerateDebugInformation="true"
+				SubSystem="2"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -137,8 +138,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ogg_static.lib vorbis_static.lib vorbisfile_static.lib"
+				AdditionalDependencies="libogg.lib vorbis_static.lib libvorbisfile.lib"
 				AdditionalLibraryDirectories="./lib;../../3rdparty/lib"
+				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 			/>
