@@ -551,7 +551,7 @@ bool IndexerTrack::GetTrackMetadata(db::Connection &db){
     db::Statement genres("SELECT g.name FROM genres g,track_genres tg WHERE tg.genre_id=g.id AND tg.track_id=? ORDER BY tg.id",db);
     db::Statement artists("SELECT ar.name FROM artists ar,track_artists ta WHERE ta.artist_id=ar.id AND ta.track_id=? ORDER BY ta.id",db);
     db::Statement allMetadata("SELECT mv.content,mk.name FROM meta_values mv,meta_keys mk,track_meta tm WHERE tm.track_id=? AND tm.meta_value_id=mv.id AND mv.meta_key_id=mk.id ORDER BY tm.id",db);
-    db::Statement track("SELECT t.track,t.bpm,t.duration,t.filesize,t.year,t.title,t.filename,t.thumbnail_id,p.path||f.relative_path||'/'||t.filename,al.name FROM tracks t,folders f,paths p,albums al WHERE t.id=? AND t.folder_id=f.id AND f.path_id=p.id AND t.album_id=al.id",db);
+    db::Statement track("SELECT t.track,t.bpm,t.duration,t.filesize,t.year,t.title,t.filename,t.thumbnail_id,p.path||f.relative_path||'/'||t.filename,al.name,t.filetime FROM tracks t,folders f,paths p,albums al WHERE t.id=? AND t.folder_id=f.id AND f.path_id=p.id AND t.album_id=al.id",db);
 
     track.BindInt(0,this->id);
     if(track.Step()==db::Row){
@@ -565,6 +565,7 @@ bool IndexerTrack::GetTrackMetadata(db::Connection &db){
         this->SetValue("thumbnail_id",track.ColumnTextUTF(7));
         this->SetValue("path",track.ColumnTextUTF(8));
         this->SetValue("album",track.ColumnTextUTF(9));
+        this->SetValue("filetime",track.ColumnTextUTF(10));
 
         // genres
         genres.BindInt(0,this->id);
