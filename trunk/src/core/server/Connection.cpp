@@ -126,7 +126,7 @@ void Connection::ReadThread(){
             
             {
                 // Notify writing thread that the authentication have been read (or failed)
-                boost::mutex::scoped_lock lock(this->libraryMutex);
+                //boost::mutex::scoped_lock lock(this->libraryMutex);
                 this->authCondition.notify_all();
             }
 
@@ -155,9 +155,12 @@ void Connection::ReadThread(){
                     if(query->ReceiveQuery(queryNode)){
 
                         unsigned int options(0);
-                        try{
-                            options = boost::lexical_cast<unsigned int>(queryNode.Attributes()["options"]);
-                        }catch(...){}
+                        std::string optionsString   = queryNode.Attributes()["options"];
+                        if(!optionsString.empty()){
+                            try{
+                                options = boost::lexical_cast<unsigned int>(queryNode.Attributes()["options"]);
+                            }catch(...){}
+                        }
 
                         // Remove waiting on server side and autocallback
                         if(options&musik::core::Query::Wait){
@@ -335,15 +338,19 @@ utfstring Connection::GetInfo(){
 }
 
 void Connection::Exit(){
+    bool exited;
     {
         boost::mutex::scoped_lock lock(this->libraryMutex);
+        exited  = this->exit;
         if(!this->exit){
 	        this->exit    = true;
-            if(this->socket.is_open()){
-                this->socket.close();
-            }
-		    this->server->RemoveUserSession(this->userSession);
         }
+    }
+    if(!exited){
+        if(this->socket.is_open()){
+            this->socket.close();
+        }
+	    this->server->RemoveUserSession(this->userSession);
     }
     this->waitCondition.notify_all();
     this->authCondition.notify_all();

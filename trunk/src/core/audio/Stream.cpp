@@ -97,8 +97,8 @@ bool Stream::OpenStream(utfstring uri){
 
 
     // Look up what DecoderFactory to use
-    Helper::DecoderFactoryPtr decoderFactory;
-    for(Helper::DecoderFactories::iterator decoderFactoryIt=helper.decoderFactories.begin();decoderFactoryIt!=helper.decoderFactories.end() && !decoderFactory;++decoderFactoryIt){
+    StreamHelper::DecoderFactoryPtr decoderFactory;
+    for(StreamHelper::DecoderFactories::iterator decoderFactoryIt=Stream::Helper()->decoderFactories.begin();decoderFactoryIt!=Stream::Helper()->decoderFactories.end() && !decoderFactory;++decoderFactoryIt){
         if( (*decoderFactoryIt)->CanHandle(this->fileStream->Type())){
             decoderFactory  = (*decoderFactoryIt);
         }
@@ -117,7 +117,7 @@ bool Stream::OpenStream(utfstring uri){
 
     // Open the decoder
     typedef musik::core::PluginFactory::DestroyDeleter<IDecoder> IDecoderDeleter;
-    this->decoder   = DecoderPtr(decoderPtr,IDecoderDeleter());
+    this->decoder.reset(decoderPtr,IDecoderDeleter());
     if( !this->decoder->Open(this->fileStream.get()) ){
         return false;
     }
@@ -205,9 +205,15 @@ void Stream::DeleteBuffer(BufferPtr oldBuffer){
     this->availableBuffers.push_back(oldBuffer);
 }
 
-Stream::Helper Stream::helper;
+Stream::StreamHelperPtr Stream::Helper(){
+    static StreamHelperPtr helper;
+    if(!helper){
+        helper.reset(new Stream::StreamHelper());
+    }
+    return helper;
+}
 
-Stream::Helper::Helper(){
+Stream::StreamHelper::StreamHelper(){
     // Look up all DecoderFactories
     this->decoderFactories = musik::core::PluginFactory::Instance().QueryInterface<
         IDecoderFactory,

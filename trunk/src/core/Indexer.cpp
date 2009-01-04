@@ -925,7 +925,16 @@ void Indexer::RunAnalyzers(){
     typedef PluginFactory::DestroyDeleter<PluginType> Deleter;
     typedef boost::shared_ptr<PluginType> PluginPtr;
     typedef std::vector<PluginPtr> PluginVector;
-    //
+
+    // start by checking if there are any analyzers at all
+    {
+        PluginVector analyzers =
+            PluginFactory::Instance().QueryInterface<PluginType, Deleter>("GetAudioAnalyzer");
+        if(analyzers.empty()){
+            return;
+        }
+    }
+
     {
         // Cleanup status
         boost::mutex::scoped_lock oLock(this->oProgressMutex);
@@ -1003,7 +1012,6 @@ void Indexer::RunAnalyzers(){
                             this->iProgress += 1;
 
                         }
-
                     }
                 }
             }

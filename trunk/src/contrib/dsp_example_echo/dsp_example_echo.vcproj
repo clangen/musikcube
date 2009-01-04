@@ -59,7 +59,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="winmm.lib "
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="../../3rdparty/lib"
 				GenerateDebugInformation="true"
@@ -134,7 +133,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="winmm.lib "
 				AdditionalLibraryDirectories="../../3rdparty/lib"
 				SubSystem="2"
 				OptimizeReferences="2"

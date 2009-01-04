@@ -60,9 +60,13 @@ Server::~Server(void){
     this->Exit();
 
     {
-        boost::mutex::scoped_lock lock(this->serverMutex);
-        this->connectedUsers.clear();
-        this->connections.clear();
+        server::UserSessionMap clearedConnectedUsers;
+        server::ConnectionVector clearedConnections;
+        {
+            boost::mutex::scoped_lock lock(this->serverMutex);
+            clearedConnectedUsers.swap(this->connectedUsers);
+            clearedConnections.swap(this->connections);
+        }
     }
 
     this->nextConnection.reset();
