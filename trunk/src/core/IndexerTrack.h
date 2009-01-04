@@ -78,6 +78,7 @@ class IndexerTrack : public Track {
     private:
         // The variables
         DBINT id;
+        DBINT tempSortOrder;
     private:
         class MetaData{
             public:
