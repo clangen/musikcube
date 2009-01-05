@@ -216,13 +216,19 @@ bool    MP3Decoder::Open(musik::core::filestreams::IFileStream *fileStream){
             bool continueFeed(true);
 
             // Loop until we have a format
+            int maxLoops(256);   // 
             while(continueFeed){
-                continueFeed    = continueFeed && this->Feed();
+                continueFeed    = continueFeed && this->Feed() && maxLoops>0;
+                --maxLoops;
                 if(continueFeed){
                     if(mpg123_getformat(this->decoder,&this->cachedRate,&this->cachedChannels,&encoding)==MPG123_OK){
                         continueFeed    = (this->cachedRate==0);
                     }
                 }
+            }
+
+            if(this->cachedRate==0){
+                return false;
             }
 
             this->sampleSize    = this->cachedChannels*sizeof(float);
