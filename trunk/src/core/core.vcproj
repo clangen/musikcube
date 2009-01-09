@@ -632,6 +632,14 @@
 				Name="xml"
 				>
 				<File
+					RelativePath=".\xml\IReadSupplier.h"
+					>
+				</File>
+				<File
+					RelativePath=".\xml\IWriteSupplier.h"
+					>
+				</File>
+				<File
 					RelativePath=".\xml\Node.cpp"
 					>
 				</File>
@@ -653,6 +661,18 @@
 				</File>
 				<File
 					RelativePath=".\xml\ParserNode.h"
+					>
+				</File>
+				<File
+					RelativePath=".\xml\Reader.h"
+					>
+				</File>
+				<File
+					RelativePath=".\xml\Socket.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\xml\Socket.h"
 					>
 				</File>
 				<File

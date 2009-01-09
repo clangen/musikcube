@@ -39,6 +39,7 @@
 #include <core/Library/Remote.h>
 #include <core/Query/Base.h>
 #include <core/Preferences.h>
+#include <core/xml/Socket.h>
 #include <core/xml/Parser.h>
 #include <core/xml/Writer.h>
 #include <core/Crypt.h>
@@ -168,7 +169,8 @@ void Library::Remote::ReadThread(){
 
     try{
         // Lets start recieving queries
-        xml::Parser parser(&this->socket);
+        xml::SocketReader xmlSocketReader(this->socket);
+        xml::Parser parser(&xmlSocketReader);
         if( xml::ParserNode rootNode=parser.ChildNode("musik")){
 
             // Start by waiting for the authentication node
@@ -231,7 +233,8 @@ void Library::Remote::ReadThread(){
 //////////////////////////////////////////
 void Library::Remote::WriteThread(){
 
-    xml::Writer writer(&this->socket);
+    xml::SocketWriter xmlSocketWriter(this->socket);
+    xml::Writer writer(&xmlSocketWriter);
 
     // Start by writing the musik-tag
     xml::WriterNode rootNode(writer,"musik");
@@ -242,6 +245,8 @@ void Library::Remote::WriteThread(){
         authNode.Attributes()["username"]   = this->username;
         authNode.Content()  = musik::core::Crypt::Encrypt(this->password,this->sessionId);
     }
+
+    writer.Flush();
 
     
     while(!this->Exited()){
@@ -300,7 +305,10 @@ void Library::Remote::WriteThread(){
 
             }
         }
+        writer.Flush();
+
     }
+    writer.Flush();
 
 }
 

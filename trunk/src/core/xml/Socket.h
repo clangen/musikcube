@@ -36,44 +36,51 @@
 #pragma once
 
 #include <core/config.h>
-#include <string>
-
+#include <boost/asio.hpp>
+#include <boost/array.hpp>
 #include <core/xml/IWriteSupplier.h>
-#include <core/xml/Node.h>
-#include <core/xml/WriterNode.h>
+#include <core/xml/IReadSupplier.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
 namespace musik{ namespace core{ namespace xml{
 
 //////////////////////////////////////////////////////////////////////////////
-
-class Writer : public WriterNode{
+class SocketReader : public IReadSupplier{
     public:
-        Writer(IWriteSupplier *supplier);
-        ~Writer();
-        bool Exited();
+        SocketReader(boost::asio::ip::tcp::socket &socket);
+        ~SocketReader(void);
+
+        virtual bool Read(long recommendedBytes=1024);
+        virtual char* Buffer();
+        virtual long BufferSize();
+        virtual bool Exited();
 
     private:
-        IWriteSupplier *supplier;
+        boost::asio::ip::tcp::socket &socket;
+        bool exited;
+        long bufferSize;
+        boost::array<char, 4096> buffer;
+};
+
+//////////////////////////////////////////////////////////////////////////////
+class SocketWriter : public IWriteSupplier{
+    public:
+        SocketWriter(boost::asio::ip::tcp::socket &socket);
+        ~SocketWriter(void);
+
+        virtual bool Write(const char* buffer,long bytes);
+        virtual void Flush();
+        virtual bool Exited();
 
     private:
-        friend class WriterNode;
+        boost::asio::ip::tcp::socket &socket;
+        bool exited;
+        long bufferSize;
+        boost::array<char, 4096> buffer;
 
-        std::vector<Node::Ptr> currentNodeLevels;
-        Node::Ptr currentWritingNode;
-
-        void Send();
-
-        bool exit;
-        void Exit();
-
-        std::string sendBuffer;
-
-		static std::string EncodeSpecialCharacters(std::string xmlContent);
-
+        long maxBufferSize;
 };
 
 //////////////////////////////////////////////////////////////////////////////
 } } }
-
