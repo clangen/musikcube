@@ -57,6 +57,8 @@ class WriterNode {
         std::string& Content();
         Node::AttributeMap& Attributes();
 
+        void Flush();
+
     protected:
         friend class Writer;
 

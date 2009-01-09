@@ -36,11 +36,6 @@
 #pragma once
 
 #include <core/config.h>
-#include <string>
-
-#include <core/xml/IWriteSupplier.h>
-#include <core/xml/Node.h>
-#include <core/xml/WriterNode.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -48,32 +43,15 @@ namespace musik{ namespace core{ namespace xml{
 
 //////////////////////////////////////////////////////////////////////////////
 
-class Writer : public WriterNode{
+class IReadSupplier{
     public:
-        Writer(IWriteSupplier *supplier);
-        ~Writer();
-        bool Exited();
+        virtual bool Read(long recommendedBytes=1024) = 0;
+        virtual char* Buffer() = 0;
+        virtual long BufferSize() = 0;
 
-    private:
-        IWriteSupplier *supplier;
-
-    private:
-        friend class WriterNode;
-
-        std::vector<Node::Ptr> currentNodeLevels;
-        Node::Ptr currentWritingNode;
-
-        void Send();
-
-        bool exit;
-        void Exit();
-
-        std::string sendBuffer;
-
-		static std::string EncodeSpecialCharacters(std::string xmlContent);
-
+        virtual bool Exited() = 0;
 };
+
 
 //////////////////////////////////////////////////////////////////////////////
 } } }
-

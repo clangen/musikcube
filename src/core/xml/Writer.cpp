@@ -37,7 +37,6 @@
 #include <core/xml/Writer.h>
 #include <core/xml/WriterNode.h>
 #include <boost/algorithm/string/replace.hpp>
-#include <fstream>
 
 using namespace musik::core::xml;
 
@@ -54,8 +53,8 @@ using namespace musik::core::xml;
 ///read from the socket when there is no buffer
 ///left in the parser.
 //////////////////////////////////////////
-Writer::Writer(boost::asio::ip::tcp::socket *socket)
- :socket(socket)
+Writer::Writer(IWriteSupplier *supplier)
+ :supplier(supplier)
  ,exit(false)
 {
     this->writer    = this;
@@ -174,12 +173,8 @@ void Writer::Send(){
 
     try{
         // Time to send the buffer
-		if(!sendBuffer.empty() && this->socket->is_open()){
-            boost::asio::write(*(this->socket),boost::asio::buffer(sendBuffer));
-// Log
-//std::ofstream logFile("mc2_Writer.log",std::ios::app);
-//logFile << sendBuffer << std::endl;
-
+        if(!sendBuffer.empty() && !this->supplier->Exited()){
+            this->supplier->Write(sendBuffer.c_str(),sendBuffer.size());
             sendBuffer.clear();
         }
     }

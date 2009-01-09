@@ -33,47 +33,85 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
-#pragma once
+#include "pch.hpp"
+#include <core/xml/Socket.h>
 
-#include <core/config.h>
-#include <string>
+using namespace musik::core::xml;
+    
+SocketReader::SocketReader(boost::asio::ip::tcp::socket &socket)
+ :socket(socket)
+ ,exited(false)
+ ,bufferSize(0)
+{
 
-#include <core/xml/IWriteSupplier.h>
-#include <core/xml/Node.h>
-#include <core/xml/WriterNode.h>
+}
+
+SocketReader::~SocketReader(void){
+}
+
+bool SocketReader::Read(long recommendedBytes){
+    boost::system::error_code error;
+    this->bufferSize    = this->socket.read_some(boost::asio::buffer(this->buffer),error);
+
+    if(!error){
+        return true;
+    }
+
+    this->exited    = true;
+    return false;
+}
+
+char* SocketReader::Buffer(){
+    return this->buffer.c_array();
+}
+
+long SocketReader::BufferSize(){
+    return this->bufferSize;
+}
+
+bool SocketReader::Exited(){
+    return this->exited;
+}
+
 
 //////////////////////////////////////////////////////////////////////////////
 
-namespace musik{ namespace core{ namespace xml{
+SocketWriter::SocketWriter(boost::asio::ip::tcp::socket &socket)
+ :socket(socket)
+ ,bufferSize(0)
+ ,exited(false)
+ ,maxBufferSize(1024)
+{
 
-//////////////////////////////////////////////////////////////////////////////
+}
 
-class Writer : public WriterNode{
-    public:
-        Writer(IWriteSupplier *supplier);
-        ~Writer();
-        bool Exited();
+SocketWriter::~SocketWriter(void){
+}
 
-    private:
-        IWriteSupplier *supplier;
+bool SocketWriter::Write(const char* buffer,long bytes){
+    if(this->bufferSize+bytes>this->maxBufferSize){
+        this->Flush();
+    }
 
-    private:
-        friend class WriterNode;
+    CopyMemory(this->buffer.c_array()+this->bufferSize, buffer, bytes);
+    this->bufferSize    += bytes;
 
-        std::vector<Node::Ptr> currentNodeLevels;
-        Node::Ptr currentWritingNode;
+    return !this->exited;
+}
 
-        void Send();
+void SocketWriter::Flush(){
+	if(this->bufferSize && !this->Exited()){
+        boost::system::error_code error;
+        try{
+            boost::asio::write(this->socket,boost::asio::buffer(this->buffer,this->bufferSize));
+        }catch(...){
+            this->exited    = true;
+        }
+        this->bufferSize    = 0;
+    }
+}
 
-        bool exit;
-        void Exit();
-
-        std::string sendBuffer;
-
-		static std::string EncodeSpecialCharacters(std::string xmlContent);
-
-};
-
-//////////////////////////////////////////////////////////////////////////////
-} } }
+bool SocketWriter::Exited(){
+    return this->exited;
+}
 

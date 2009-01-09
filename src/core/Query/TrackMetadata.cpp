@@ -40,6 +40,8 @@
 #include <core/Query/TrackMetadata.h>
 #include <core/Library/Base.h>
 #include <core/LibraryTrack.h>
+#include <core/xml/ParserNode.h>
+#include <core/xml/WriterNode.h>
 #include <boost/algorithm/string.hpp>
 
 using namespace musik::core;

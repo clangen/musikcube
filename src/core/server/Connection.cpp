@@ -41,6 +41,7 @@
 #include <core/server/User.h>
 #include <core/server/UserSession.h>
 
+#include <core/xml/Socket.h>
 #include <core/xml/Parser.h>
 #include <core/xml/ParserNode.h>
 #include <core/xml/Writer.h>
@@ -94,7 +95,8 @@ bool Connection::Startup(){
 
 void Connection::ReadThread(){
 
-    musik::core::xml::Parser xmlParser(&this->socket);
+    musik::core::xml::SocketReader xmlSocketReader(this->socket);
+    musik::core::xml::Parser xmlParser(&xmlSocketReader);
 
     try{
 
@@ -245,7 +247,8 @@ void Connection::ParseThread(){
 
 void Connection::WriteThread(){
 
-    musik::core::xml::Writer xmlWriter(&this->socket);
+    musik::core::xml::SocketWriter xmlSocketWrite(this->socket);
+    musik::core::xml::Writer xmlWriter(&xmlSocketWrite);
 
     try{
         // Lets start with a <musik> node
@@ -257,6 +260,7 @@ void Connection::WriteThread(){
             musik::core::xml::WriterNode initNode(musikNode,"authentication");
             initNode.Content()  = this->salt;
         }
+        xmlWriter.Flush();
 
         // Wait for maximum 30 seconds for authentication
         {
@@ -300,6 +304,8 @@ void Connection::WriteThread(){
 
                     sendQuery->SendResults(queryNode,this);
                 }
+                
+                xmlWriter.Flush();
 
                 // Remove the query from the queue
                 {
