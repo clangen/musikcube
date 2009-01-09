@@ -77,7 +77,8 @@ class SocketWriter : public IWriteSupplier{
         boost::asio::ip::tcp::socket &socket;
         bool exited;
         long bufferSize;
-        boost::array<char, 4096> buffer;
+        //boost::array<char, 4096> buffer;
+        std::string buffer;
 
         long maxBufferSize;
 };
