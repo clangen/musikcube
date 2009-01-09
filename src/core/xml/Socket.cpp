@@ -93,7 +93,8 @@ bool SocketWriter::Write(const char* buffer,long bytes){
         this->Flush();
     }
 
-    CopyMemory(this->buffer.c_array()+this->bufferSize, buffer, bytes);
+    this->buffer.append(buffer,bytes);
+    //CopyMemory(this->buffer.c_array()+this->bufferSize, buffer, bytes);
     this->bufferSize    += bytes;
 
     return !this->exited;
@@ -103,10 +104,11 @@ void SocketWriter::Flush(){
 	if(this->bufferSize && !this->Exited()){
         boost::system::error_code error;
         try{
-            boost::asio::write(this->socket,boost::asio::buffer(this->buffer,this->bufferSize));
+            boost::asio::write(this->socket,boost::asio::buffer(this->buffer));
         }catch(...){
             this->exited    = true;
         }
+        this->buffer.clear();
         this->bufferSize    = 0;
     }
 }
