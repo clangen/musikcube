@@ -71,21 +71,21 @@ public: // constructors
     /*ctor*/    Frame(Window* child, const WindowPadding& padding);
 
 public: // methods
-    void    SetPadding(const WindowPadding& padding);
-    void    SetPadding(int padding);
+    void SetPadding(const WindowPadding& padding);
+    void SetPadding(int padding);
+    virtual Size ClientSize() const;
 
 protected: // methods
-    void    ResizeFromChild();
-    void    OnChildResized(Window* window, Size newSize);
+    void ResizeFromChild();
+    void OnChildResized(Window* window, Size newSize);
 
-    virtual bool    AddChildWindow(Window* window);
-    virtual void    OnChildAdded(Window* newChild);
-    virtual void    OnCreated();
-    virtual void    OnResized(const Size& newSize);
-    virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
-    virtual HWND    Create(Window* parent);
+    virtual bool AddChildWindow(Window* window);
+    virtual void OnChildAdded(Window* newChild);
+    virtual void OnCreated();
+    virtual void OnResized(const Size& newSize);
+    virtual HWND Create(Window* parent);
 
-    static bool     RegisterWindowClass();
+    static bool RegisterWindowClass();
 
 private: // instance data
     WindowPadding padding;
