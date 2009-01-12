@@ -123,6 +123,15 @@ bool        Frame::AddChildWindow(Window* window)
     return base::AddChildWindow(window);
 }
 
+Size        Frame::ClientSize() const
+{
+    Size clientSize = this->WindowSize();
+    clientSize.width -= (this->padding.left + this->padding.right);
+    clientSize.height -= (this->padding.top + this->padding.bottom);
+
+    return clientSize;
+}
+
 void        Frame::OnChildAdded(Window* newChild)
 {
     this->child = newChild;
@@ -130,7 +139,7 @@ void        Frame::OnChildAdded(Window* newChild)
     this->ResizeFromChild();
     this->child->Resized.connect(this, &Frame::OnChildResized);
 
-    newChild->MoveTo(0, 0);
+    newChild->MoveTo(this->padding.left, this->padding.top);
 }
 
 void        Frame::OnResized(const Size& newSize)
@@ -138,7 +147,7 @@ void        Frame::OnResized(const Size& newSize)
     if (this->child && (! isResizingHACK))
     {
         this->child->Resize(this->ClientSize());
-        this->child->MoveTo(0, 0);
+        this->child->MoveTo(this->padding.left, this->padding.top);
     }
 }
 
@@ -156,7 +165,7 @@ void        Frame::OnChildResized(Window* window, Size newSize)
 void        Frame::ResizeFromChild()
 {
     Size size = this->child->WindowSize();
- 
+
     size.width += (this->padding.left + this->padding.right);
     size.height += (this->padding.top + this->padding.bottom);
     //
@@ -164,51 +173,7 @@ void        Frame::ResizeFromChild()
     this->Resize(size);
     this->isResizingHACK = false;
 
-    this->child->MoveTo(0, 0);
-}
-
-LRESULT     Frame::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
-{
-    switch (message)
-    {
-    case WM_NCCALCSIZE:
-        {
-            if (wParam && lParam)
-            {
-                NCCALCSIZE_PARAMS* params =
-                    reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam);
-
-                (*params->rgrc).left += this->padding.left;
-                (*params->rgrc).right -= this->padding.right;
-                (*params->rgrc).top += this->padding.top;
-                (*params->rgrc).bottom -= this->padding.bottom;
-            }
-        }
-        return 0;
-
-    case WM_NCPAINT:
-        {
-            HDC hdc = ::GetWindowDC(this->Handle());
-
-            RECT windowRect = Rect(Point(0, 0), this->WindowSize());
-            Point clientLoc(this->padding.left, this->padding.top);
-            RECT clientRect = Rect(clientLoc, this->ClientSize());
-
-            ::ExcludeClipRect(
-                hdc,
-                clientRect.left, clientRect.top,
-                clientRect.right, clientRect.bottom);
-
-            HBRUSH backBrush = ::CreateSolidBrush(Color::SystemColor(COLOR_BTNFACE));
-            ::FillRect(hdc, &windowRect, backBrush);
-            ::DeleteObject(backBrush);
-
-            ReleaseDC(this->Handle(), hdc);
-        }
-        return 0;
-    }
-
-    return base::WindowProc(message, wParam, lParam);
+    this->child->MoveTo(this->padding.left, this->padding.top);
 }
 
 HWND        Frame::Create(Window* parent)
