@@ -38,6 +38,7 @@
 
 #include <core/PlaybackQueue.h>
 #include <core/TrackFactory.h>
+#include <core/tracklist/MultiLibraryList.h>
 
 #include <cube/dialog/OpenURLController.hpp>
 
@@ -45,6 +46,7 @@
 #include <win32cpp/Button.hpp>
 #include <win32cpp/EditView.hpp>
 #include <win32cpp/RedrawLock.hpp>
+#include <win32cpp/CheckBox.hpp>
 //////////////////////////////////////////////////////////////////////////////
 
 using namespace musik::cube::dialog;
@@ -79,7 +81,20 @@ void OpenURLController::OnCancel(win32cpp::Button* button){
 }
 
 void OpenURLController::OnOK(win32cpp::Button* button){
-    (*musik::core::PlaybackQueue::Instance().NowPlayingTracklist()) += musik::core::TrackFactory::CreateTrack( this->view->url->Caption().c_str() );
+    musik::core::TrackPtr track = musik::core::TrackFactory::CreateTrack( this->view->url->Caption().c_str() );
+    if(track){
+        if(this->view->append->IsChecked()){
+            // Append
+            (*musik::core::PlaybackQueue::Instance().NowPlayingTracklist()) += track;
+        }else{
+            // Create a playlist to play
+            musik::core::tracklist::MultiLibraryList playlist;
+            playlist += track;
+            playlist.SetPosition(0);
+
+            musik::core::PlaybackQueue::Instance().Play(playlist);
+        }
+    }
 	this->mainWindow.Close();
 }
 

@@ -41,6 +41,7 @@
 #include <win32cpp/Button.hpp>
 #include <win32cpp/LinearLayout.hpp>
 #include <win32cpp/EditView.hpp>
+#include <win32cpp/CheckBox.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -62,18 +63,16 @@ void OpenURLView::OnCreated()
     // Top Row layout
     LinearLayout* rowLayout = new LinearLayout(VerticalLayout,win32cpp::LayoutFillFill);
 
-    LinearLayout* firstRow = new LinearLayout(HorizontalLayout,win32cpp::LayoutFillFill);
-    Label *label    = firstRow->AddChild(new Label(_T("URL:") ));
+    Label *label    = rowLayout->AddChild(new Label(_T("URL:") ));
     label->SetFont(boldFont);
-    this->url       = firstRow->AddChild(new EditView(_T("url"),win32cpp::LayoutFillFill ));
-    rowLayout->AddChild(firstRow);
+    this->url       = rowLayout->AddChild(new EditView(_T(""),win32cpp::LayoutFillFill ));
+    this->append    = rowLayout->AddChild(new CheckBox(_T("Append to playlist"),win32cpp::LayoutFillFill ));
 
     // Last rows column layout
     LinearLayout* bottomButtonLayout = new LinearLayout(HorizontalLayout);
     this->cancelButton  = bottomButtonLayout->AddChild(new Button(_T("Cancel")));
     this->okButton      = bottomButtonLayout->AddChild(new Button(_T("OK")));
-//    this->cancelButton->Resize(60,20);
-//    this->okButton->Resize(60,20);
+
     rowLayout->AddChild(bottomButtonLayout);
     bottomButtonLayout->SetLayoutAlignment(LayoutAlignRight);
 
