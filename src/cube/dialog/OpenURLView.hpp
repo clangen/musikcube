@@ -40,6 +40,7 @@
 namespace win32cpp{
     class Button;
     class EditView;
+    class CheckBox;
 }
 //////////////////////////////////////////////////////////////////////////////
 
@@ -61,6 +62,7 @@ class OpenURLView: public win32cpp::Frame{
 
         win32cpp::Button *okButton, *cancelButton;
         win32cpp::EditView *url;
+        win32cpp::CheckBox *append;
 };
 
 //////////////////////////////////////////////////////////////////////////////
