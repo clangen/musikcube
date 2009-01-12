@@ -246,7 +246,7 @@ void PlaybackQueue::GetAllTrackMetadata(TrackPtr track){
         this->metadataQuery.Clear();
         this->metadataQuery.RequestAllMetakeys();
         this->metadataQuery.RequestTrack(track);
-        LibraryPtr library  = this->currentTrack->Library();
+        LibraryPtr library  = track->Library();
         if(library){
             library->AddQuery(this->metadataQuery,musik::core::Query::Wait|musik::core::Query::AutoCallback|musik::core::Query::UnCanceable|musik::core::Query::Prioritize);
         }

@@ -40,13 +40,59 @@ namespace musik { namespace core { namespace audio {
 
 class IBuffer {
     public:
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Get the samplerate of the buffer
+        //////////////////////////////////////////
         virtual long SampleRate() const = 0; 
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Set the buffers samplerate
+        //////////////////////////////////////////
         virtual void SetSampleRate(long sampleRate) = 0; 
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Get the number of channels of the buffer
+        //////////////////////////////////////////
         virtual int Channels() const = 0; 
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Set the number of channels of the buffer
+        //////////////////////////////////////////
         virtual void SetChannels(int channels) = 0; 
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Get the pointer to the real buffer.
+        ///
+        ///The pointer may change when you set any of the buffers
+        ///properties like samplerate, samples and channels
+        //////////////////////////////////////////
         virtual float* BufferPointer() const = 0; 
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Get the number of samples in the buffer
+        ///
+        ///To clairify, one sample = one sample for each channel
+        ///and that means that one sample = sizeof(float)*channels bytes big
+        //////////////////////////////////////////
         virtual long Samples() const = 0;
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Set the number of samples in the buffer
+        //////////////////////////////////////////
         virtual void SetSamples(long samples) = 0; 
+
+        //////////////////////////////////////////
+        ///\brief
+        ///How many bytes does this object take
+        //////////////////////////////////////////
         virtual long Bytes() const = 0;
 };
 

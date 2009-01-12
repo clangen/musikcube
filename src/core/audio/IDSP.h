@@ -39,9 +39,31 @@
 namespace musik { namespace core { namespace audio {
 //////////////////////////////////////////////////////////////////////////////
 
+//////////////////////////////////////////
+///\brief
+///Main interface for dsp plugins.
+///Each instance equals a track.
+//////////////////////////////////////////
 class IDSP {
     public:
+        //////////////////////////////////////////
+        ///\brief
+        ///Destroy this object
+        //////////////////////////////////////////
         virtual void Destroy() = 0;
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Process the buffer through the dsp plugin
+        ///
+        ///\param inputBuffer
+        ///Buffer to process
+        ///
+        ///\param outputBuffer
+        ///Empty buffer that you can write the processed inputBuffer to
+        ///
+        ///\return true if the buffer has been processed to the new outputBuffer.
+        //////////////////////////////////////////
         virtual bool ProcessBuffers(const IBuffer *inputBuffer,IBuffer *outputBuffer) = 0;
 };
 

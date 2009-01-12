@@ -39,10 +39,30 @@
 namespace musik { namespace core { namespace audio {
 //////////////////////////////////////////////////////////////////////////////
 
+//////////////////////////////////////////
+///\brief
+///Interface for decoder plugins to be able to create
+///instances of IDecoder
+//////////////////////////////////////////
 class IDecoderFactory{
     public: 
+        //////////////////////////////////////////
+        ///\brief
+        ///Create a instance of the decoder
+        //////////////////////////////////////////
         virtual IDecoder*       CreateDecoder() = 0;
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Destroy the object
+        //////////////////////////////////////////
         virtual void            Destroy() = 0;
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Can this plugin handle this kind of filetype?
+        ///The "type" can either be a file extension or a mimetype
+        //////////////////////////////////////////
         virtual bool            CanHandle(const utfchar* type) const = 0;
 
 };

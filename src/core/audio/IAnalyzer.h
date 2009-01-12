@@ -40,11 +40,45 @@
 namespace musik { namespace core { namespace audio {
 //////////////////////////////////////////////////////////////////////////////
 
+//////////////////////////////////////////
+///\brief
+///The main interface for a analyzer plugin
+///
+///A analyzer plugin will be executed from the Indexer
+///after all tags has been read. The plugin will first be
+///called with the Start method, and if that method returns true
+///a audio::Stream will be opened and the whole track will be
+///decoded and passed on to the Analyze method (or until the Analyze method
+///returns false). Finally the End method will be called where the
+///the plugin can make changes to the tracks metadata.
+//////////////////////////////////////////
 class IAnalyzer {
     public:
+        //////////////////////////////////////////
+        ///\brief
+        ///Destroy the object
+        //////////////////////////////////////////
         virtual void    Destroy() = 0;
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Start analyzing the track. Returns true if
+        ///the analyzing should continue.
+        //////////////////////////////////////////
         virtual bool    Start(musik::core::ITrack *track) = 0;
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Analyze a buffer
+        //////////////////////////////////////////
         virtual bool    Analyze(musik::core::ITrack *track,IBuffer *buffer) = 0;
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Called when the whole track has been analyzed.
+        ///If this call makes changes to the track it should
+        ///return true.
+        //////////////////////////////////////////
         virtual bool    End(musik::core::ITrack *track) = 0;
 };
 

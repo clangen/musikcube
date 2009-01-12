@@ -42,6 +42,8 @@
 #include <cube/MainMenuController.hpp>
 #include <cube/dialog/AddLibraryController.hpp>
 #include <cube/dialog/HelpAboutController.hpp>
+#include <cube/dialog/OpenURLController.hpp>
+
 #include <win32cpp/Application.hpp>
 #include <win32cpp/TopLevelWindow.hpp>
 #include <boost/format.hpp>
@@ -74,7 +76,8 @@ void        MainMenuController::ConnectMenuHandlers()
     this->helpAbout->Activated.connect(this, &MainMenuController::OnHelpAbout);
     this->fileAddLibraryLocal->Activated.connect(this,&MainMenuController::OnAddLibraryLocal);
     this->fileAddLibraryRemote->Activated.connect(this,&MainMenuController::OnAddLibraryRemote);
-    this->fileNewPlaylist->Activated.connect(this,&MainMenuController::OnNewPlaylist);
+//    this->fileNewPlaylist->Activated.connect(this,&MainMenuController::OnNewPlaylist);
+    this->fileOpenURL->Activated.connect(this,&MainMenuController::OnOpenURL);
 }
 
 void        MainMenuController::OnFileExit(MenuItemRef menuItem)
@@ -113,46 +116,20 @@ void        MainMenuController::OnHelpAbout(MenuItemRef menuItem)
     aboutDialog.ShowModal(&this->mainWindow);
 
     return;
-
-    // randomize the contribuitors' names
-    std::vector<uistring> names;
-    names.push_back(_T("  - avatar\n"));
-    names.push_back(_T("  - bjorn\n"));
-    names.push_back(_T("  - doep\n"));
-    names.push_back(_T("  - naaina\n"));
-    names.push_back(_T("  - Jooles\n"));
-
-    std::random_shuffle(names.begin(), names.end());
-
-    uistring randomNames;
-    for (std::vector<uistring>::iterator it = names.begin(); it != names.end(); it++)
-    {
-        randomNames += *it;
-    }
-
-    uistring message =
-        _T("mC2 are copyright (c) mC2 Team 2007-2008\n")
-        _T("win32cpp are copyright (c) Casey Langen 2007-2008\n\n")
-        _T("Credits:\n")
-        _T("%1%\n")
-        _T("mC2 wouldn't be possible without these file projects:\n")
-        _T("  - tuniac (http://tuniac.sf.net)\n")
-        _T("  - boost (http://www.boost.org)\n")
-        _T("  - sqlite3 (http://www.sqlite.org)\n")
-        _T("  - taglib (http://developer.kde.org/~wheeler/taglib)\n\n")
-        _T("Version 2 developer milestone 1");
-
-    message = (boost::wformat(message.c_str()) % randomNames).str();
-
-    ::MessageBox(
-        this->mainWindow.Handle(),
-        message.c_str(),
-        _T("mC2 - About"),
-        MB_ICONINFORMATION | MB_OK);
 }
 
 void MainMenuController::OnNewPlaylist(MenuItemRef menuItem){
 	musik::core::MessageQueue::SendMessage("NewPlaylist");
+}
+
+void MainMenuController::OnOpenURL(MenuItemRef menuItem){
+	win32cpp::TopLevelWindow popupDialog(_(_T("Open URL")));
+	popupDialog.SetMinimumSize(Size(300, 150));
+
+	dialog::OpenURLController openURL(popupDialog);
+
+	popupDialog.ShowModal(TopLevelWindow::FindFromAncestor(&this->mainWindow));
+
 }
 
 
@@ -180,7 +157,9 @@ MenuRef     MainMenuController::CreateMenu()
         this->fileAddLibraryRemote  = addLibrarySubmenu->Items().Append(MenuItem::Create(_(_T("&Remote library"))));
         addLibraryMenu->SetSubMenu(addLibrarySubmenu);
 
-        this->fileNewPlaylist       = fileItems.Append(MenuItem::Create(_(_T("&New Playlist"))));
+        //this->fileNewPlaylist       = fileItems.Append(MenuItem::Create(_(_T("&New Playlist"))));
+
+        this->fileOpenURL           = fileItems.Append(MenuItem::Create(_(_T("Open &URL"))));
 
         this->fileExit              = fileItems.Append(MenuItem::Create(_(_T("E&xit"))));
 

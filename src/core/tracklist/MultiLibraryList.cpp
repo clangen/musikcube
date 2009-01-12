@@ -110,10 +110,10 @@ musik::core::TrackPtr MultiLibraryList::TrackWithMetadata(long position){
 ///Get the current track
 //////////////////////////////////////////
 musik::core::TrackPtr MultiLibraryList::CurrentTrack(){
-    if(this->currentPosition==-1 && this->Size()>0){
+/*    if(this->currentPosition==-1 && this->Size()>0){
         this->SetPosition(0);
     }
-
+*/
     return (*this)[this->currentPosition];
 }
 
@@ -271,6 +271,9 @@ bool MultiLibraryList::operator +=(musik::core::TrackPtr track){
     }
 
     this->tracklist.push_back(track->Copy());
+
+    this->TracklistChanged(false);
+
     return true;
 }
 

@@ -80,20 +80,20 @@ bool DSPEcho::ProcessBuffers(const IBuffer *inputBuffer,IBuffer *outputBuffer){
     long internalBufferSize(this->channels*this->bufferSampleSize);
 
     long echo1distance(internalBufferSize-((long)(0.3*(double)this->sampleRate))*this->channels);
-    long echo2distance(internalBufferSize-((long)(0.6*(double)this->sampleRate))*this->channels);
+    long echo2distance(internalBufferSize-((long)(0.2*(double)this->sampleRate))*this->channels);
 
     for(long i(0);i<bufferLength;++i){
         float inSample(inBuffer[i]);
         float outSample(inSample);
         //add a 0.5 of 0.3 seconds away
-        outSample   += 0.5f*this->internalBuffer[(this->bufferPosition+echo1distance)%internalBufferSize];
+        //outSample   += 0.5f*this->internalBuffer[(this->bufferPosition+echo1distance)%internalBufferSize];
         //add a 0.2 of 0.6 seconds away
         outSample   += 0.2f*this->internalBuffer[(this->bufferPosition+echo2distance)%internalBufferSize];
 
         // set the out buffer
         outBuffer[i]    = outSample;
         // Save the insample to internal buffer
-        this->internalBuffer[this->bufferPosition]    = inSample;
+        this->internalBuffer[this->bufferPosition]    = outSample;
         this->bufferPosition    = (this->bufferPosition+1)%internalBufferSize;
     }
 

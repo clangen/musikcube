@@ -1,5 +1,8 @@
 //////////////////////////////////////////////////////////////////////////////
-// Copyright © 2007, Daniel Önnerby
+//
+// License Agreement:
+//
+// The following are Copyright © 2009, Daniel Önnerby
 //
 // All rights reserved.
 //
@@ -30,35 +33,57 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
-#pragma once
 
-#include <core/config.h>
-#include <core/audio/IBuffer.h>
+#include "pch.hpp"
+
+#include <core/PlaybackQueue.h>
+#include <core/TrackFactory.h>
+
+#include <cube/dialog/OpenURLController.hpp>
+
+#include <win32cpp/Window.hpp>
+#include <win32cpp/Button.hpp>
+#include <win32cpp/EditView.hpp>
+#include <win32cpp/RedrawLock.hpp>
+//////////////////////////////////////////////////////////////////////////////
+
+using namespace musik::cube::dialog;
+using namespace win32cpp;
 
 //////////////////////////////////////////////////////////////////////////////
-namespace musik { namespace core { namespace audio {
-//////////////////////////////////////////////////////////////////////////////
 
-//////////////////////////////////////////
-///\brief
-///Interface for the audio::Player to make IOuput plugins be able to make callbacks
-//////////////////////////////////////////
-class IPlayer{
-    public:
-        //////////////////////////////////////////
-        ///\brief
-        ///Release the specific buffer from the output
-        //////////////////////////////////////////
-        virtual void ReleaseBuffer(IBuffer *buffer) = 0; 
+OpenURLController::OpenURLController(win32cpp::TopLevelWindow &mainWindow)
+:mainWindow(mainWindow)
+{
+    this->view  = new OpenURLView();
+    this->mainWindow.AddChild(this->view);
+    this->mainWindow.Resized.connect(this,&OpenURLController::OnResize);
+    
+    this->view->Handle()
+        ? this->OnViewCreated(this->view)
+        : this->view->Created.connect(this, &OpenURLController::OnViewCreated);
+    
+}
 
-        //////////////////////////////////////////
-        ///\brief
-        ///Notifies the Player that there may be buffer 
-        ///ready to be released in the output plugin.
-        //////////////////////////////////////////
-        virtual void Notify() = 0; 
-};
+OpenURLController::~OpenURLController(){
+}
 
-//////////////////////////////////////////////////////////////////////////////
-} } }
-//////////////////////////////////////////////////////////////////////////////
+void OpenURLController::OnViewCreated(Window* window)
+{
+    this->view->cancelButton->Pressed.connect(this,&OpenURLController::OnCancel);
+    this->view->okButton->Pressed.connect(this,&OpenURLController::OnOK);
+}
+
+void OpenURLController::OnCancel(win32cpp::Button* button){
+    this->mainWindow.Close();
+}
+
+void OpenURLController::OnOK(win32cpp::Button* button){
+    (*musik::core::PlaybackQueue::Instance().NowPlayingTracklist()) += musik::core::TrackFactory::CreateTrack( this->view->url->Caption().c_str() );
+	this->mainWindow.Close();
+}
+
+void OpenURLController::OnResize(win32cpp::Window* window, win32cpp::Size size){
+    win32cpp::RedrawLock redrawLock(this->view);
+    this->view->Resize(this->mainWindow.ClientSize());
+}

@@ -73,12 +73,14 @@ class MainMenuController: public EventHandler
         void        OnAddLibraryLocal(MenuItemRef menuItem);
         void        OnAddLibraryRemote(MenuItemRef menuItem);
         void        OnNewPlaylist(MenuItemRef menuItem);
+        void        OnOpenURL(MenuItemRef menuItem);
 
     private:    
         TopLevelWindow& mainWindow;
         MenuRef mainMenu, fileMenu, helpMenu;
         MenuItemRef file, view, audio, tags, help;
-        MenuItemRef fileExit, helpAbout, fileAddLibraryRemote, fileAddLibraryLocal, fileNewPlaylist;
+        MenuItemRef fileExit, fileAddLibraryRemote, fileAddLibraryLocal, fileNewPlaylist, fileOpenFile, fileAppendFile, fileOpenURL;
+        MenuItemRef helpAbout;
 };
 
 //////////////////////////////////////////////////////////////////////////////

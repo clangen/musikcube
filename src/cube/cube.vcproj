@@ -514,6 +514,26 @@
 					>
 				</File>
 			</Filter>
+			<Filter
+				Name="OpenURL"
+				>
+				<File
+					RelativePath=".\dialog\OpenURLController.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\dialog\OpenURLController.hpp"
+					>
+				</File>
+				<File
+					RelativePath=".\dialog\OpenURLView.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\dialog\OpenURLView.hpp"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="support"

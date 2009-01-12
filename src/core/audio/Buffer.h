@@ -45,7 +45,12 @@ class Buffer;
 class Stream;
 typedef boost::shared_ptr<Buffer> BufferPtr;
 
-//////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////
+///\brief
+///Buffer is the ony implementation of the IBuffer and is used 
+///in the audioengine to pass along the raw audio data
+//////////////////////////////////////////
 class Buffer : public IBuffer {
     public:
         static BufferPtr Create();

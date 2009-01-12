@@ -1,5 +1,8 @@
 //////////////////////////////////////////////////////////////////////////////
-// Copyright © 2007, Daniel Önnerby
+//
+// License Agreement:
+//
+// The following are Copyright © 2009, Daniel Önnerby
 //
 // All rights reserved.
 //
@@ -30,35 +33,45 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
+
 #pragma once
 
-#include <core/config.h>
-#include <core/audio/IBuffer.h>
+//////////////////////////////////////////////////////////////////////////////
+// Forward declare
+namespace win32cpp{
+    class Window;
+    class Button;
+}
+//////////////////////////////////////////////////////////////////////////////
+
+#include <win32cpp/Types.hpp>
+#include <win32cpp/TopLevelWindow.hpp>
+
+#include <cube/dialog/OpenURLView.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
-namespace musik { namespace core { namespace audio {
+
+namespace musik { namespace cube { namespace dialog{
+
 //////////////////////////////////////////////////////////////////////////////
 
-//////////////////////////////////////////
-///\brief
-///Interface for the audio::Player to make IOuput plugins be able to make callbacks
-//////////////////////////////////////////
-class IPlayer{
-    public:
-        //////////////////////////////////////////
-        ///\brief
-        ///Release the specific buffer from the output
-        //////////////////////////////////////////
-        virtual void ReleaseBuffer(IBuffer *buffer) = 0; 
+class OpenURLController : public win32cpp::EventHandler{
 
-        //////////////////////////////////////////
-        ///\brief
-        ///Notifies the Player that there may be buffer 
-        ///ready to be released in the output plugin.
-        //////////////////////////////////////////
-        virtual void Notify() = 0; 
+    public:     
+		OpenURLController(win32cpp::TopLevelWindow &mainWindow);
+        ~OpenURLController();
+
+    private:  
+        void OnViewCreated(win32cpp::Window* window);
+        void OnCancel(win32cpp::Button* button);
+        void OnOK(win32cpp::Button* button);
+        void OnResize(win32cpp::Window* window, win32cpp::Size size);
+
+        win32cpp::TopLevelWindow &mainWindow;
+
+		OpenURLView *view;
 };
 
 //////////////////////////////////////////////////////////////////////////////
-} } }
-//////////////////////////////////////////////////////////////////////////////
+
+} } }    // musik::cube::dialog
