@@ -54,9 +54,22 @@ class IOutput{
         //////////////////////////////////////////
         virtual void    Destroy() = 0;
 
-        //virtual void Initialize(IPlayer *player) = 0;
+        //////////////////////////////////////////
+        ///\brief
+        ///Pause the current output
+        //////////////////////////////////////////
         virtual void Pause() = 0;
+
+        //////////////////////////////////////////
+        ///\brief
+        ///resume a paused output
+        //////////////////////////////////////////
         virtual void Resume() = 0;
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Set the volume on this output
+        //////////////////////////////////////////
         virtual void SetVolume(double volume) = 0;
 
         //////////////////////////////////////////
@@ -64,7 +77,17 @@ class IOutput{
         ///Clear internal buffers. Used when setting new position in a stream
         //////////////////////////////////////////
         virtual void ClearBuffers() = 0;
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Release all buffers that has already passed through the output.
+        //////////////////////////////////////////
         virtual void ReleaseBuffers() = 0;
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Play this buffer
+        //////////////////////////////////////////
         virtual bool PlayBuffer(IBuffer *buffer,IPlayer *player) = 0;
 
 };

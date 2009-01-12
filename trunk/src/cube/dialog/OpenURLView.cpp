@@ -1,5 +1,8 @@
 //////////////////////////////////////////////////////////////////////////////
-// Copyright © 2007, Daniel Önnerby
+//
+// License Agreement:
+//
+// The following are Copyright © 2009, Daniel Önnerby
 //
 // All rights reserved.
 //
@@ -30,35 +33,53 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
-#pragma once
 
-#include <core/config.h>
-#include <core/audio/IBuffer.h>
+#include "pch.hpp"
+#include <cube/dialog/OpenURLView.hpp>
 
-//////////////////////////////////////////////////////////////////////////////
-namespace musik { namespace core { namespace audio {
-//////////////////////////////////////////////////////////////////////////////
-
-//////////////////////////////////////////
-///\brief
-///Interface for the audio::Player to make IOuput plugins be able to make callbacks
-//////////////////////////////////////////
-class IPlayer{
-    public:
-        //////////////////////////////////////////
-        ///\brief
-        ///Release the specific buffer from the output
-        //////////////////////////////////////////
-        virtual void ReleaseBuffer(IBuffer *buffer) = 0; 
-
-        //////////////////////////////////////////
-        ///\brief
-        ///Notifies the Player that there may be buffer 
-        ///ready to be released in the output plugin.
-        //////////////////////////////////////////
-        virtual void Notify() = 0; 
-};
+#include <win32cpp/Label.hpp>
+#include <win32cpp/Button.hpp>
+#include <win32cpp/LinearLayout.hpp>
+#include <win32cpp/EditView.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
-} } }
+
+using namespace musik::cube::dialog;
+using namespace win32cpp;
+
 //////////////////////////////////////////////////////////////////////////////
+
+OpenURLView::OpenURLView()
+: Frame(NULL,WindowPadding(6))
+{
+}
+
+void OpenURLView::OnCreated()
+{
+    FontRef boldFont(Font::Create());
+    boldFont->SetBold(true);
+
+    // Top Row layout
+    LinearLayout* rowLayout = new LinearLayout(VerticalLayout,win32cpp::LayoutFillFill);
+
+    LinearLayout* firstRow = new LinearLayout(HorizontalLayout,win32cpp::LayoutFillFill);
+    Label *label    = firstRow->AddChild(new Label(_T("URL:") ));
+    label->SetFont(boldFont);
+    this->url       = firstRow->AddChild(new EditView(_T("url"),win32cpp::LayoutFillFill ));
+    rowLayout->AddChild(firstRow);
+
+    // Last rows column layout
+    LinearLayout* bottomButtonLayout = new LinearLayout(HorizontalLayout);
+    this->cancelButton  = bottomButtonLayout->AddChild(new Button(_T("Cancel")));
+    this->okButton      = bottomButtonLayout->AddChild(new Button(_T("OK")));
+//    this->cancelButton->Resize(60,20);
+//    this->okButton->Resize(60,20);
+    rowLayout->AddChild(bottomButtonLayout);
+    bottomButtonLayout->SetLayoutAlignment(LayoutAlignRight);
+
+    this->AddChild(rowLayout);
+
+}
+
+
+

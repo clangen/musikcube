@@ -123,17 +123,11 @@ void GenericTrack::SetThumbnail(const char *data,long size){
 }
 
 const utfchar* GenericTrack::URI(){
-    if(!this->uri.empty()){
-        return this->uri.c_str();
-    }
-    return NULL;
+    return this->uri.c_str();
 }
 
 const utfchar* GenericTrack::URL(){
-    if(!this->uri.empty()){
-        return this->uri.c_str();
-    }
-    return NULL;
+    return this->uri.c_str();
 }
 
 Track::MetadataIteratorRange GenericTrack::GetValues(const char* metakey){
