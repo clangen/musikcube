@@ -86,11 +86,11 @@ void        TransportView::OnCreated()
     uistring nowPlayingCaption = _(_T("Now playing"));
     nowPlayingCaption += _T(" ");
     nowPlayingLayout->AddChild(new Label(nowPlayingCaption.c_str()));
-    this->titleLabel = nowPlayingLayout->AddChild(new Label(_(_T("Song Title"))));
+    this->titleLabel = nowPlayingLayout->AddChild(new Label(_(_T("-"))));
     uistring byCaption = _(_T("by"));
     byCaption = _T(" ") + byCaption + _T(" ");
     nowPlayingLayout->AddChild(new Label(byCaption.c_str()));
-    this->artistLabel = nowPlayingLayout->AddChild(new Label(_(_T("Artist Name"))));
+    this->artistLabel = nowPlayingLayout->AddChild(new Label(_(_T("-"))));
     //
     this->titleLabel->SetFont(boldFont);
     this->artistLabel->SetFont(boldFont);

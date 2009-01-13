@@ -98,6 +98,8 @@ public:
 };
 
 #define _(ORIGINALTEXT) (win32cpp::Locale::Instance()->Translate(ORIGINALTEXT).c_str())
+#define _TT(ORIGINALTEXT) (win32cpp::Locale::Instance()->Translate(_T(ORIGINALTEXT)))
+#define _TTP(ORIGINALTEXT) (win32cpp::Locale::Instance()->Translate(_T(ORIGINALTEXT)).c_str())
 
 
 //////////////////////////////////////////////////////////////////////////////

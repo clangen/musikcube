@@ -139,11 +139,11 @@ MenuRef     MainMenuController::CreateMenu()
     this->mainMenu  = Menu::Create();
     MenuItemCollection& mainItems = this->mainMenu->Items();
     //
-    this->file = mainItems.Append(MenuItem::Create(_(_T("&File"))));
-    this->view = mainItems.Append(MenuItem::Create(_(_T("&View"))));
-    this->audio = mainItems.Append(MenuItem::Create(_(_T("&Audio"))));
-    this->tags = mainItems.Append(MenuItem::Create(_(_T("&Tags"))));
-    this->help = mainItems.Append(MenuItem::Create(_(_T("&Help"))));
+    this->file = mainItems.Append(MenuItem::Create(_TTP("&File")));
+    this->view = mainItems.Append(MenuItem::Create(_TTP("&View")));
+    this->audio = mainItems.Append(MenuItem::Create(_TTP("&Audio")));
+    this->tags = mainItems.Append(MenuItem::Create(_TTP("&Tags")));
+    this->help = mainItems.Append(MenuItem::Create(_TTP("&Help")));
 
         // file menu
         this->fileMenu  = Menu::Create();
@@ -151,24 +151,24 @@ MenuRef     MainMenuController::CreateMenu()
         //
         this->file->SetSubMenu(this->fileMenu);
 
-        MenuItemRef addLibraryMenu  = fileItems.Append(MenuItem::Create(_(_T("&New Library"))));
+        MenuItemRef addLibraryMenu  = fileItems.Append(MenuItem::Create(_TTP("&New Library")));
         MenuRef addLibrarySubmenu   = Menu::Create();
-        this->fileAddLibraryLocal   = addLibrarySubmenu->Items().Append(MenuItem::Create(_(_T("&Local library"))));
-        this->fileAddLibraryRemote  = addLibrarySubmenu->Items().Append(MenuItem::Create(_(_T("&Remote library"))));
+        this->fileAddLibraryLocal   = addLibrarySubmenu->Items().Append(MenuItem::Create(_TTP("&Local library")));
+        this->fileAddLibraryRemote  = addLibrarySubmenu->Items().Append(MenuItem::Create(_TTP("&Remote library")));
         addLibraryMenu->SetSubMenu(addLibrarySubmenu);
 
-        //this->fileNewPlaylist       = fileItems.Append(MenuItem::Create(_(_T("&New Playlist"))));
+        //this->fileNewPlaylist       = fileItems.Append(MenuItem::Create(_TTP("&New Playlist")));
 
-        this->fileOpenURL           = fileItems.Append(MenuItem::Create(_(_T("Open &URL"))));
+        this->fileOpenURL           = fileItems.Append(MenuItem::Create(_TTP("Open &URL\tCtrl+U")));
 
-        this->fileExit              = fileItems.Append(MenuItem::Create(_(_T("E&xit"))));
+        this->fileExit              = fileItems.Append(MenuItem::Create(_TTP("E&xit")));
 
         // help menu
         this->helpMenu  = Menu::Create();
         MenuItemCollection& helpItems = this->helpMenu->Items();
         //
         this->help->SetSubMenu(this->helpMenu);
-        this->helpAbout = helpItems.Append(MenuItem::Create(_(_T("&About"))));
+        this->helpAbout = helpItems.Append(MenuItem::Create(_TTP("&About")));
 
     this->ConnectMenuHandlers();
 

@@ -113,6 +113,11 @@ void PlaybackQueue::Play(){
 //    if( !this->nowPlaying->Library()->Exited() ){
         TrackPtr track(this->CurrentTrack());
 
+        if(!track){
+            this->nowPlaying->SetPosition(0);
+            track   = this->CurrentTrack();
+        }
+
         this->Stop();
 
         if(track){
@@ -159,7 +164,14 @@ void PlaybackQueue::Next(){
 	musik::core::TrackPtr track( this->nowPlaying->NextTrack() );
 
 	this->SetCurrentTrack(track);
-	this->Play();
+    this->Stop();
+
+    
+    if(track=this->CurrentTrack()){
+        this->playing   = true;
+        this->transport.Start(track->URL()); 
+        this->paused    = false;
+    }
 }
 
 //////////////////////////////////////////
@@ -211,6 +223,10 @@ TrackPtr PlaybackQueue::CurrentTrack(){
 ///for all the tracks metadata
 //////////////////////////////////////////
 void PlaybackQueue::SetCurrentTrack(TrackPtr track){
+
+    if(!this->currentTrack && !track){
+        return;
+    }
 
     if(track){
         this->currentTrack  = track->Copy();

@@ -44,6 +44,8 @@
 #include <core/Library/Base.h>
 #include <core/Query/SortTracksWithData.h>
 
+#include <boost/thread/mutex.hpp>
+
 #include <set>
 #include <map>
 #include <sigslot/sigslot.h>
@@ -142,6 +144,12 @@ class MultiLibraryList : public Base, public sigslot::has_slots<> {
             bool operator<(const SortHelper &sortHelper) const;
 
         };
+        
+        //////////////////////////////////////
+        ///\brief
+        ///mutex protexting the internal tracklist
+        //////////////////////////////////////
+        boost::mutex mutex;
 };
 
 //////////////////////////////////////////////////////////////////////////////

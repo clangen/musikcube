@@ -85,7 +85,7 @@ void        TransportController::OnViewCreated(Window* window)
         this, &TransportController::OnVolumeSliderChange);
 
     this->transportView.volumeSlider->SetPosition(
-        musik::core::PlaybackQueue::Instance().Transport().Volume()*100);
+        (short)(musik::core::PlaybackQueue::Instance().Transport().Volume()*(double)100));
 
     musik::core::PlaybackQueue::Instance().CurrentTrackChanged.connect(this,&TransportController::OnTrackChange);
 
@@ -153,23 +153,27 @@ void TransportController::OnTrackChange(musik::core::TrackPtr track){
         return;
     }
 
-    win32cpp::uistring title(_T("-"));
-    win32cpp::uistring artist(_T("-"));
+    if(track == musik::core::PlaybackQueue::Instance().CurrentTrack()){
+        win32cpp::uistring title(_T("-"));
+        win32cpp::uistring artist(_T("-"));
 
-    if(track){
+        if(track){
 
-        if(track->GetValue("title"))
-            title.assign( track->GetValue("title") );
+            if(track->GetValue("title"))
+                title.assign( track->GetValue("title") );
 
-        if(track->GetValue("visual_artist"))
-            artist.assign( track->GetValue("visual_artist") );
+            if(track->GetValue("visual_artist"))
+                artist.assign( track->GetValue("visual_artist") );
 
-    }else{
-        this->transportView.timeDurationLabel->SetCaption(_T("0:00"));
+            this->transportView.timeDurationLabel->SetCaption(this->FormatTime(this->CurrentTrackLength()));
+        }else{
+            this->transportView.timeElapsedLabel->SetCaption(_T("0:00"));
+            this->transportView.timeDurationLabel->SetCaption(_T("0:00"));
+        }
+
+        this->transportView.titleLabel->SetCaption(title);
+        this->transportView.artistLabel->SetCaption(artist);
     }
-
-    this->transportView.titleLabel->SetCaption(title);
-    this->transportView.artistLabel->SetCaption(artist);
 }
 
 void TransportController::OnPlaybackSliderChange(Trackbar *trackBar)
@@ -188,6 +192,10 @@ void TransportController::OnPlaybackSliderChange(Trackbar *trackBar)
 
 void TransportController::OnPlaybackSliderTimerTimedOut()
 {
+    if(!musik::core::PlaybackQueue::Instance().CurrentTrack()){
+        return;
+    }
+
     // Get the length from the track
     double trackLength  = this->CurrentTrackLength();
 
@@ -195,7 +203,7 @@ void TransportController::OnPlaybackSliderTimerTimedOut()
     double position         = musik::core::PlaybackQueue::Instance().Transport().Position();
     if (!this->playbackSliderMouseDown){
         if(trackLength>0){
-            this->transportView.playbackSlider->SetPosition( this->transportView.playbackSlider->Range()*(position/trackLength) );
+            this->transportView.playbackSlider->SetPosition( (short)((double)this->transportView.playbackSlider->Range()*(position/trackLength)) );
         }
         this->transportView.timeElapsedLabel->SetCaption(this->FormatTime(position));
         return;
@@ -266,29 +274,17 @@ void TransportController::OnPlaybackStopped()
         return;
     }
 
-
     this->displayedTrack.reset();
-/*
-    utfstring trackURI;
-    const utfchar* uri  = track->URI();
-    if(uri)
-        trackURI    = uri;
 
-    if(this->displayedTrack){
-        if (trackURI == this->displayedTrack->URI()) // For out of order signals
-        {*/
-            this->playing = false;
-            this->paused = false;
+    this->playing = false;
+    this->paused = false;
 
-            this->transportView.playButton->SetCaption(_T("Play"));
+    this->transportView.playButton->SetCaption(_T("Play"));
+    this->transportView.playbackSlider->SetPosition(0);
 
-            this->transportView.playbackSlider->SetPosition(0);
-//            this->playbackSliderTimer.Stop();  
-            
-            this->transportView.timeElapsedLabel->SetCaption(_T("0:00"));
-            this->transportView.timeDurationLabel->SetCaption(_T("0:00"));
-//        }
-//    }
+    this->OnTrackChange(musik::core::TrackPtr());
+    this->transportView.timeElapsedLabel->SetCaption(_T("0:00"));
+
 }
 
 void TransportController::OnPlaybackPaused()
