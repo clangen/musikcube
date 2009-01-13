@@ -145,7 +145,10 @@ bool Query::SortTracksWithData::ParseQuery(Library::Base *library,db::Connection
         while(selectTracks.Step()==db::ReturnCode::Row){
             TrackWithSortdata newSortData;
             newSortData.track.reset(new LibraryTrack(selectTracks.ColumnInt(0),library->Id()));
-            newSortData.sortData    = selectTracks.ColumnTextUTF(1);
+            const utfchar* sortDataPtr  = selectTracks.ColumnTextUTF(1);
+            if(sortDataPtr){
+                newSortData.sortData    = sortDataPtr;
+            }
 
             // Convert the content to lower if futher sorting need to be done
             boost::algorithm::to_lower(newSortData.sortData);
