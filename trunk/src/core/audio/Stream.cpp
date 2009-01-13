@@ -219,3 +219,14 @@ Stream::StreamHelper::StreamHelper(){
         IDecoderFactory,
         musik::core::PluginFactory::DestroyDeleter<IDecoderFactory> >("GetDecoderFactory");
 }
+
+double Stream::DecoderProgress(){
+    if(this->fileStream){
+        long fileSize       = this->fileStream->Filesize();
+        long filePosition   = this->fileStream->Position();
+        if(fileSize && filePosition){
+            return ((double)filePosition)/((double)fileSize);
+        }
+    }
+    return 0;
+}
