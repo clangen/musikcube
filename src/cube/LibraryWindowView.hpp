@@ -65,6 +65,8 @@ public:     friend class LibraryWindowController;
 public:     /*ctor*/        LibraryWindowView();
 public:     /*dtor*/        ~LibraryWindowView();
 
+public:     
+        Window* VisibleWindow();
 protected:  virtual void    OnCreated();
 };
 

@@ -58,68 +58,8 @@ void        LibraryWindowView::OnCreated()
 {
     this->SetPadding(0);
 }
-/*
-void        SourcesView::OnListViewCreated(Window* window)
-{
-    typedef ListView::Column Column;
 
-    Size clientSize = this->listView->ClientSize();
- 
-    this->mainColumn = Column::Create(_T("Sources"), clientSize.width, TextAlignCenter);
-    this->listView->AddColumn(this->mainColumn);
-
-    this->listView->Resized.connect(this, &SourcesView::OnListViewResized);
-    this->listView->ThemeChanged.connect(this, &SourcesView::OnListViewThemeChanged);
-    this->listView->HotRowChanged.connect(this, &SourcesView::OnListViewHotRowChanged);
-
-    this->listView->SetRowHeight(this->listView->RowHeight() + 2);
-    this->listView->SetScrollBarVisibility(HorizontalScrollBar, false);
-    this->listView->EnableColumnResizing(false);
-    this->listView->EnableMultipleSelection(false);
-    this->UpdateListViewBkgndColor();
-
-    int itemHeight = this->listView->RowHeight();
-    this->listView->SetRowHeight(max(itemHeight, 19));
+Window* LibraryWindowView::VisibleWindow(){
+    return this->visibleChild;
 }
 
-void        SourcesView::SetView(Window* view)
-{
-    Window* oldView = 
-        const_cast<Window*>(this->splitter->Child2());
-
-    if (view && (view != oldView))
-    {
-        RedrawLock lockRedraw(this);
-
-        oldView->SetVisible(false);
-        this->splitter->SetChild2(view);
-        view->SetVisible(true);
-    }
-}
-
-void        SourcesView::OnListViewResized(Window* window, Size size)
-{
-    this->listView->SetColumnWidth(this->mainColumn, this->listView->ClientSize().width);
-}
-
-void        SourcesView::OnListViewThemeChanged(Window* window)
-{
-    this->UpdateListViewBkgndColor();
-}
-
-void        SourcesView::UpdateListViewBkgndColor()
-{
-    this->listView->SetBackgroundColor(Color::SystemColor(COLOR_BTNFACE));
-}
-
-void        SourcesView::OnListViewHotRowChanged(ListView* listView, int rowIndex)
-{
-    // Redraw the newly hot, and previously hot row to get the fancy
-    // mouse hover effect. we need to redraw (and remember) the
-    // previously hot row to make sure to "remove" the effect from
-    // the old row.
-    if (rowIndex >= 0) this->listView->RedrawRow(rowIndex);
-    if (this->lastHotRowIndex != -1) this->listView->RedrawRow(this->lastHotRowIndex);
-    this->lastHotRowIndex = rowIndex;
-}
-*/

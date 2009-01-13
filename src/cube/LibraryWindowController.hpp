@@ -78,7 +78,7 @@ class LibraryWindowController : public EventHandler
 
 	protected:  
 		void OnViewCreated(Window* window);
-		void OnResize(Window* window, Size size);
+		void OnDestroyed(Window* window);
 
         void UpdateLibraryTabs();
 
