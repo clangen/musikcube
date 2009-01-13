@@ -73,11 +73,12 @@ public: // methods
     template <typename WindowType>
     WindowType* RemoveTab(WindowType* window);
 
-    Window*         ActiveWindow();
-    virtual Size    ClientSize() const;
-
-    int             Padding() const;
-    void            SetPadding(int padding);
+    Window* ActiveWindow();
+    virtual Size ClientSize() const;
+    int Padding() const;
+    void SetPadding(int padding);
+    void SetActiveTab(Window* window);
+    void SetActiveTab(unsigned index);
 
 protected: // methods
     virtual HWND    Create(Window* parent);
@@ -88,7 +89,7 @@ protected: // methods
     virtual void    Layout();
     virtual void    OnResized(const Size& newSize);
     virtual void    OnChildAdded(Window* child);
-
+    virtual LRESULT DrawItem(DRAWITEMSTRUCT& item);
     Window*         WindowForTabIndex(int tabIndex);
     void            SelectFirstChild();
 

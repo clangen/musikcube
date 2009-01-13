@@ -108,6 +108,11 @@ void        TabView::OnEraseBackground(HDC hdc)
     // do nothing!
 }
 
+LRESULT     TabView::DrawItem(DRAWITEMSTRUCT& item)
+{
+    return 0;
+}
+
 LRESULT     TabView::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
@@ -122,10 +127,32 @@ LRESULT     TabView::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
                 return 0;
             }
         }
-        return 0;   // stack overflow if we don't return that we handled this!
+        return 0;   // stack overflow if we don't return that we handled this! WHY?!
     }
 
     return this->DefaultWindowProc(message, wParam, lParam);
+}
+
+void        TabView::SetActiveTab(Window* window)
+{
+    int current = 0;
+    WindowList::iterator it = this->childWindows.begin();
+    while (it != childWindows.end())
+    {
+        if ((*it) == window)
+        {
+            this->SetActiveTab(current);
+            return;
+        }
+
+        ++current;
+        it++;
+    }
+}
+
+void        TabView::SetActiveTab(unsigned index)
+{
+    TabCtrl_SetCurFocus(this->Handle(), index);
 }
 
 void        TabView::OnTabSelected()
