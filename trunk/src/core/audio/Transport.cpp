@@ -67,6 +67,7 @@ void Transport::Start(utfstring url){
     if(!player || player->url!=url){
         // Or create a new player
         player  = Player::Create(url);
+        player->SetVolume(this->volume);
     }
 
     // Add to the players
@@ -128,7 +129,9 @@ double Transport::Volume(){
 void Transport::SetVolume(double volume){
     this->volume    = volume;
     if(this->currentPlayer){
-        this->currentPlayer->SetVolume(volume);
+        for(PlayerList::iterator player=this->players.begin();player!=this->players.end();++player){
+            (*player)->SetVolume(volume);
+        }
     }
 }
 

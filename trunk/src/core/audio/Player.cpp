@@ -125,9 +125,9 @@ double Player::Volume(){
 }
 
 void Player::SetVolume(double volume){
+    boost::mutex::scoped_lock lock(this->mutex);
+    this->volume    = volume;
     if(this->output){
-        boost::mutex::scoped_lock lock(this->mutex);
-        this->volume    = volume;
         this->output->SetVolume(this->volume);
     }
 }
