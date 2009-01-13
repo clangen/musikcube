@@ -67,8 +67,9 @@ MultiLibraryList::MultiLibraryList()
 ///shared pointer to track (could be a null pointer)
 //////////////////////////////////////////
 musik::core::TrackPtr MultiLibraryList::operator [](long position){
+    boost::mutex::scoped_lock lock(this->mutex);
     // Valid position?
-    if(position>=0 && position<this->Size()){
+    if(position>=0 && position<this->tracklist.size()){
         return this->tracklist[position];
     }
     return musik::core::TrackPtr();
@@ -92,11 +93,14 @@ musik::core::TrackPtr MultiLibraryList::operator [](long position){
 ///TrackMetadataUpdated
 //////////////////////////////////////////
 musik::core::TrackPtr MultiLibraryList::TrackWithMetadata(long position){
+    {
+        boost::mutex::scoped_lock lock(this->mutex);
 
-    // check the positionCache if the track is in the cache already
-    PositionCacheMap::iterator trackPosition    = this->positionCache.find(position);
-    if(trackPosition!=this->positionCache.end()){
-        return trackPosition->second;
+        // check the positionCache if the track is in the cache already
+        PositionCacheMap::iterator trackPosition    = this->positionCache.find(position);
+        if(trackPosition!=this->positionCache.end()){
+            return trackPosition->second;
+        }
     }
 
     // Load and add to cache
@@ -110,10 +114,6 @@ musik::core::TrackPtr MultiLibraryList::TrackWithMetadata(long position){
 ///Get the current track
 //////////////////////////////////////////
 musik::core::TrackPtr MultiLibraryList::CurrentTrack(){
-/*    if(this->currentPosition==-1 && this->Size()>0){
-        this->SetPosition(0);
-    }
-*/
     return (*this)[this->currentPosition];
 }
 
@@ -122,11 +122,13 @@ musik::core::TrackPtr MultiLibraryList::CurrentTrack(){
 ///Get the next track and increase the position.
 //////////////////////////////////////////
 musik::core::TrackPtr MultiLibraryList::NextTrack(){
-    long newPosition    = this->currentPosition+1;
+    long newPosition;
+    {
+        boost::mutex::scoped_lock lock(this->mutex);
+        newPosition = this->currentPosition+1;
+    }
     musik::core::TrackPtr nextTrack = (*this)[newPosition];
-//    if(nextTrack){
-        this->SetPosition(newPosition);
-//    }
+    this->SetPosition(newPosition);
     return nextTrack;
 }
 
@@ -135,11 +137,13 @@ musik::core::TrackPtr MultiLibraryList::NextTrack(){
 ///Get the previous track and decrease the position.
 //////////////////////////////////////////
 musik::core::TrackPtr MultiLibraryList::PreviousTrack(){
-    long newPosition    = this->currentPosition-1;
+    long newPosition;
+    {
+        boost::mutex::scoped_lock lock(this->mutex);
+        newPosition = this->currentPosition-1;
+    }
     musik::core::TrackPtr nextTrack = (*this)[newPosition];
-//    if(nextTrack){
-        this->SetPosition(newPosition);
-//    }
+    this->SetPosition(newPosition);
     return nextTrack;
 }
 
@@ -155,9 +159,12 @@ musik::core::TrackPtr MultiLibraryList::PreviousTrack(){
 ///True if position is a valid one and successfully set.
 //////////////////////////////////////////
 bool MultiLibraryList::SetPosition(long position){
-    if(position>=-1 && position<=this->tracklist.size()){
+    if(position>=-1 && position<=this->Size()){
         this->PositionChanged(position,this->currentPosition);
-        this->currentPosition   = position;
+        {
+            boost::mutex::scoped_lock lock(this->mutex);
+            this->currentPosition   = position;
+        }
         return true;
     }
 
@@ -169,6 +176,7 @@ bool MultiLibraryList::SetPosition(long position){
 ///Get the current position. -1 if undefined.
 //////////////////////////////////////////
 long MultiLibraryList::CurrentPosition(){
+    boost::mutex::scoped_lock lock(this->mutex);
     return this->currentPosition;
 }
 
@@ -177,6 +185,7 @@ long MultiLibraryList::CurrentPosition(){
 ///Get current size of the tracklist. -1 if unknown.
 //////////////////////////////////////////
 long MultiLibraryList::Size(){
+    boost::mutex::scoped_lock lock(this->mutex);
     return (long)this->tracklist.size();
 }
 
@@ -185,14 +194,20 @@ long MultiLibraryList::Size(){
 ///Clear the tracklist
 //////////////////////////////////////////
 void MultiLibraryList::Clear(){
-    this->tracklist.clear();
+    long oldPosition;
+    {
+        boost::mutex::scoped_lock lock(this->mutex);
+        this->tracklist.clear();
+        oldPosition = this->currentPosition;
+        this->currentPosition   = -1;
+    }
     this->ClearMetadata();
     this->TracklistChanged(true);
-    this->PositionChanged(-1,this->currentPosition);
-    this->currentPosition   = -1;
+    this->PositionChanged(-1,oldPosition);
 }
 
 void MultiLibraryList::ClearMetadata(){
+    boost::mutex::scoped_lock lock(this->mutex);
     this->positionCache.clear();
     this->trackCache.clear();
 }
@@ -215,13 +230,18 @@ bool MultiLibraryList::operator =(musik::core::tracklist::Base &tracklist){
     }
     if(&tracklist != this){
         this->Clear();
+    
+        {
+            boost::mutex::scoped_lock lock(this->mutex);
 
-        this->tracklist.reserve(tracklist.Size());
+            this->tracklist.reserve(tracklist.Size());
 
-        // Loop through the tracks and copy everything
-        for(long i(0);i<tracklist.Size();++i){
-            this->tracklist.push_back(tracklist[i]->Copy());
+            // Loop through the tracks and copy everything
+            for(long i(0);i<tracklist.Size();++i){
+                this->tracklist.push_back(tracklist[i]->Copy());
+            }
         }
+
         this->TracklistChanged(true);
         this->SetPosition(tracklist.CurrentPosition());
     }
@@ -242,11 +262,14 @@ bool MultiLibraryList::operator +=(musik::core::tracklist::Base &tracklist){
         this->inited    = true;
     }
 
-    this->tracklist.reserve(tracklist.Size()+this->Size());
+    {
+        boost::mutex::scoped_lock lock(this->mutex);
+        this->tracklist.reserve(tracklist.Size()+this->tracklist.size());
 
-    // Loop through the tracks and copy everything
-    for(long i(0);i<tracklist.Size();++i){
-        this->tracklist.push_back(tracklist[i]->Copy());
+        // Loop through the tracks and copy everything
+        for(long i(0);i<tracklist.Size();++i){
+            this->tracklist.push_back(tracklist[i]->Copy());
+        }
     }
 
     this->TracklistChanged(false);
@@ -270,7 +293,10 @@ bool MultiLibraryList::operator +=(musik::core::TrackPtr track){
         this->inited    = true;
     }
 
-    this->tracklist.push_back(track->Copy());
+    {
+        boost::mutex::scoped_lock lock(this->mutex);
+        this->tracklist.push_back(track->Copy());
+    }
 
     this->TracklistChanged(false);
 
@@ -319,6 +345,7 @@ void MultiLibraryList::LoadTrack(long position){
 ///Request metadata for track
 //////////////////////////////////////////
 bool MultiLibraryList::QueryForTrack(long position){
+
     PositionCacheMap::iterator trackIt=this->positionCache.find(position);
     if(trackIt==this->positionCache.end()){
         // Not in cache, lets find the track
@@ -339,10 +366,13 @@ bool MultiLibraryList::QueryForTrack(long position){
 void MultiLibraryList::OnTracksMetaFromQuery(musik::core::TrackVector *metaTracks){
     std::vector<long> updateTrackPositions;
 
-    for(musik::core::TrackVector::iterator track=metaTracks->begin();track!=metaTracks->end();++track){
-        TrackCacheMap::iterator position    = this->trackCache.find(*track);
-        if(position!=this->trackCache.end()){
-            updateTrackPositions.push_back(position->second);
+    {
+        boost::mutex::scoped_lock lock(this->mutex);
+        for(musik::core::TrackVector::iterator track=metaTracks->begin();track!=metaTracks->end();++track){
+            TrackCacheMap::iterator position    = this->trackCache.find(*track);
+            if(position!=this->trackCache.end()){
+                updateTrackPositions.push_back(position->second);
+            }
         }
     }
 
@@ -352,9 +382,12 @@ void MultiLibraryList::OnTracksMetaFromQuery(musik::core::TrackVector *metaTrack
 void MultiLibraryList::OnTracksMetaFromNonLibrary(musik::core::TrackPtr track){
     std::vector<long> updateTrackPositions;
 
-    TrackCacheMap::iterator position    = this->trackCache.find(track);
-    if(position!=this->trackCache.end()){
-        updateTrackPositions.push_back(position->second);
+    {
+        boost::mutex::scoped_lock lock(this->mutex);
+        TrackCacheMap::iterator position    = this->trackCache.find(track);
+        if(position!=this->trackCache.end()){
+            updateTrackPositions.push_back(position->second);
+        }
     }
 
     if(!updateTrackPositions.empty()){
@@ -363,6 +396,7 @@ void MultiLibraryList::OnTracksMetaFromNonLibrary(musik::core::TrackPtr track){
 }
 
 bool MultiLibraryList::SortTracks(std::string sortingMetakey){
+    boost::mutex::scoped_lock lock(this->mutex);
 
     this->queryState    = MultiLibraryList::Sorting;
 
