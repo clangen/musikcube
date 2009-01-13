@@ -41,8 +41,8 @@
 MP3Decoder::MP3Decoder(void)
  :cachedLength(0)
  ,decoder(NULL)
- ,cachedRate(44100)
- ,cachedChannels(2)
+ ,cachedRate(0)
+ ,cachedChannels(0)
  ,fileStream(NULL)
  ,lastMpg123Status(MPG123_NEED_MORE)
 {
@@ -221,8 +221,15 @@ bool    MP3Decoder::Open(musik::core::filestreams::IFileStream *fileStream){
                 continueFeed    = continueFeed && this->Feed() && !this->fileStream->Eof();
                 ++maxLoops;
                 if(continueFeed){
-                    if(mpg123_getformat(this->decoder,&this->cachedRate,&this->cachedChannels,&encoding)==MPG123_OK){
-                        continueFeed    = (this->cachedRate==0);
+
+                    continueFeed    = false;
+                    int gfCode  = mpg123_getformat(this->decoder,&this->cachedRate,&this->cachedChannels,&encoding);
+                    if(gfCode!=MPG123_OK){
+                        continueFeed    = true;
+                    }else{
+                        if(maxLoops<512){
+                            continueFeed    = true;
+                        }
                     }
                 }
             }
@@ -243,9 +250,8 @@ bool    MP3Decoder::Open(musik::core::filestreams::IFileStream *fileStream){
             // Force the encoding to float32
             int e=mpg123_format(this->decoder,this->cachedRate,this->cachedChannels,MPG123_ENC_FLOAT_32);
 
+            return true;
         }
-        
-        return true;
     }
     return false;
 }

@@ -75,6 +75,9 @@ class Stream {
  //       void SetPreferedBufferSampleSize(long samples);
 
         bool OpenStream(utfstring uri);
+        double DecoderProgress();
+        
+
     private:
         BufferPtr GetNextDecoderBuffer();
         BufferPtr GetNextBuffer();

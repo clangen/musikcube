@@ -92,15 +92,16 @@ class Indexer : public ThreadHelper,private boost::noncopyable {
         db::Connection dbConnection;
 
         utfstring libraryPath;
-        int iStatus;
-        bool bRestart;
+        int status;
+        bool restart;
 
-        boost::thread *oThread;
-        boost::mutex oProgressMutex;
+        boost::thread *thread;
+        boost::mutex progressMutex;
 
-        double iProgress;
-        int iNOFFiles;
-        int iFilesIndexed;
+        double progress;
+        double progress2;
+        int nofFiles;
+        int filesIndexed;
         int filesSaved;
 
         void CountFiles(utfstring &sFolder);

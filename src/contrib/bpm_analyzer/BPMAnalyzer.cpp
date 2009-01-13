@@ -51,15 +51,21 @@ void BPMAnalyzer::Destroy(){
 }
 
 bool BPMAnalyzer::Start(musik::core::ITrack *track){
-    const utfchar *bpmchar  = track->GetValue("bpm");
+    const utfchar *nobpmchar    = track->GetValue("nobpm");
+    if(nobpmchar){
+        utfstring nobpmstring(nobpmchar);
+        if(nobpmstring==UTF("true")){
+            return false;
+        }
+    }
+
+    const utfchar *bpmchar      = track->GetValue("bpm");
     if(bpmchar){
         utfstring bpmstring(bpmchar);
         if(!bpmstring.empty()){
             try{
                 double bpm  = boost::lexical_cast<double>(bpmstring);
-                if(bpm>0){
-                    return false;
-                }
+                return false;
             }
             catch(...){
             }
@@ -84,14 +90,16 @@ bool BPMAnalyzer::Analyze(musik::core::ITrack *track,IBuffer *buffer){
 bool BPMAnalyzer::End(musik::core::ITrack *track){
     if(this->detector){
         float bpm   = this->detector->getBpm();
-        if(bpm>0){
-            try{
+        try{
+            if(bpm==0.0f){
+                track->SetValue("nobpm",UTF("true"));
+            }else{
                 utfstring bpmString   = boost::str( boost::utfformat(UTF("%.2f"))%bpm);
                 track->SetValue("bpm",bpmString.c_str());
-                return true;
             }
-            catch(...){
-            }
+            return true;
+        }
+        catch(...){
         }
     }
     return false;
