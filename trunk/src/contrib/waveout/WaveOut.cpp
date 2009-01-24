@@ -34,7 +34,7 @@
 
 WaveOut::WaveOut()
  :waveHandle(NULL)
- ,maxBuffers(16)
+ ,maxBuffers(32)
  ,currentVolume(1.0)
  ,addToRemovedBuffers(false)
 {
