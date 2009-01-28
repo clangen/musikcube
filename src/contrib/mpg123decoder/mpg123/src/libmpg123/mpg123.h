@@ -7,6 +7,7 @@
 #ifndef MPG123_MSVC_H
 #define MPG123_MSVC_H
 
+#include <tchar.h>
 #include <stdlib.h>
 #include <sys/types.h>
 

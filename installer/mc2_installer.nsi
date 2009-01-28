@@ -11,8 +11,8 @@ SetCompressor /SOLID lzma
 !define MUI_BGCOLOR "FFFFFF"
 
 !define PROJECT_NAME "musikCube 2"
-!define SUB_NAME "developers milestone 2"
-!define INSTALLER_NAME "mC2dm2"
+!define SUB_NAME "developers milestone 3"
+!define INSTALLER_NAME "mC2dm3"
 !define INSTALL_DIR "musikCube 2"
 
 ;----------------------------------------------------------------
@@ -36,42 +36,69 @@ InstallDirRegKey HKCU "Software\${INSTALL_DIR}" ""
 !insertmacro MUI_PAGE_LICENSE "..\LICENSE.txt"
 !insertmacro MUI_PAGE_DIRECTORY
 Page custom RemoveOldFilesPage RemoveOldFilesLeave  ;Custom page
-;!insertmacro MUI_PAGE_COMPONENTS
+!insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_INSTFILES
 
 
-Section "mC2installation" main
+Section "!mC2" main
 
 	SectionIn RO
-
 	SetShellVarContext current
-
 	SetOverwrite on
 
 	SetOutPath "$INSTDIR"
 	File /r "..\bin\release\mC2.exe"
-	File /r "..\bin\release\musikServer.exe"
 	File /r "..\LICENSE.txt"
 	File /r "..\bin\release\resources"
 
 	SetOutPath "$INSTDIR\plugins"
 	Delete "*.dll"
-	File /r "..\bin\release\plugins\*.dll"
-
-	SetAutoClose false
-
+	File /r "..\bin\release\plugins\httpstream_plugin.dll"
+	File /r "..\bin\release\plugins\waveout.dll"
+	File /r "..\bin\release\plugins\taglib_plugin.dll"
 
 	IntCmpU $RemoveOldDatabases 0 DoNotRemoveDBFiles
 	; Remove the app data
 	RMDir /r "${MC2_DB_DIR}"
 	DoNotRemoveDBFiles:
 
-
 	CreateDirectory "$SMPROGRAMS\${PROJECT_NAME} ${SUB_NAME}"
 	CreateShortCut "$SMPROGRAMS\${PROJECT_NAME} ${SUB_NAME}\${PROJECT_NAME}.lnk" "$INSTDIR\mC2.exe"
-	CreateShortCut "$SMPROGRAMS\${PROJECT_NAME} ${SUB_NAME}\musikServer.lnk" "$INSTDIR\musikServer.exe"
 
 SectionEnd
+
+Section "musikServer"
+	SetShellVarContext current
+	SetOverwrite on
+	SetOutPath "$INSTDIR"
+	File /r "..\bin\release\musikServer.exe"
+	CreateShortCut "$SMPROGRAMS\${PROJECT_NAME} ${SUB_NAME}\musikServer.lnk" "$INSTDIR\musikServer.exe"
+SectionEnd
+
+SubSection Plugins plugins
+	Section "MP3 decoder"
+		SetOutPath "$INSTDIR\plugins"
+		File /r "..\bin\release\plugins\mpg123decoder.dll"
+	SectionEnd
+	Section "OGG decoder"
+		SetOutPath "$INSTDIR\plugins"
+		File /r "..\bin\release\plugins\oggdecoder.dll"
+	SectionEnd
+	Section "FLAC decoder"
+		SetOutPath "$INSTDIR\plugins"
+		File /r "..\bin\release\plugins\flacdecoder.dll"
+	SectionEnd
+	Section /o "BPM analyzer"
+		SetOutPath "$INSTDIR\plugins"
+		File /r "..\bin\release\plugins\bpm_analyzer.dll"
+	SectionEnd
+	Section /o "DSP echo test"
+		SetOutPath "$INSTDIR\plugins"
+		File /r "..\bin\release\plugins\dsp_example_echo.dll"
+	SectionEnd
+
+SubSectionEnd
+
 
 Section -Post
 	WriteRegStr HKCU "Software\${INSTALL_DIR}" "" $INSTDIR

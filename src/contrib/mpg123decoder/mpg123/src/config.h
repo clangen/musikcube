@@ -9,7 +9,9 @@
 #define HAVE_STDLIB_H
 #define HAVE_STRING_H
 
-#define INDEX_SIZE 10000
-#define FRAME_INDEX
-#define GAPLESS
+/* We want some frame index, eh? */
+#define FRAME_INDEX 1
+#define INDEX_SIZE 1000
 
+/* also gapless playback! */
+#define GAPLESS 1

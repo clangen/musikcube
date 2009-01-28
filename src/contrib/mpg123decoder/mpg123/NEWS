@@ -1,3 +1,8 @@
+1.6.4
+---
+- Fix NtoM resampling behaviour with the broken frame fillup (especiall false alarms after seeking).
+  As a side effect, the resampled output now should be consistent with seeks (always the same sample value at a certain sample offset).
+
 1.6.3
 ---
 
