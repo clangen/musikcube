@@ -1,3 +1,14 @@
+2009-01-10 14:45  thor
+
+	* tags/1.6.4: tagging 1.6.4 ... going to include the ntom / bad
+	  frame fill fix
+
+2008-12-20 16:32  thor
+
+	* tags/1.6.3/ChangeLog: yeah, adding it again... so that the one
+	  here is at least not outdated... do not get used to full
+	  changelog in svn
+
 2008-12-20 15:57  thor
 
 	* tags/1.6.3/NEWS, tags/1.6.3/configure.ac: fix fifo default
