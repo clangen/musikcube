@@ -47,15 +47,15 @@ Section "!mC2" main
 	SetOverwrite on
 
 	SetOutPath "$INSTDIR"
-	File /r "..\bin\release\mC2.exe"
-	File /r "..\LICENSE.txt"
+	File "..\bin\release\mC2.exe"
+	File "..\LICENSE.txt"
 	File /r "..\bin\release\resources"
 
 	SetOutPath "$INSTDIR\plugins"
 	Delete "*.dll"
-	File /r "..\bin\release\plugins\httpstream_plugin.dll"
-	File /r "..\bin\release\plugins\waveout.dll"
-	File /r "..\bin\release\plugins\taglib_plugin.dll"
+	File "..\bin\release\plugins\httpstream_plugin.dll"
+	File "..\bin\release\plugins\waveout.dll"
+	File "..\bin\release\plugins\taglib_plugin.dll"
 
 	IntCmpU $RemoveOldDatabases 0 DoNotRemoveDBFiles
 	; Remove the app data
@@ -71,30 +71,30 @@ Section "musikServer"
 	SetShellVarContext current
 	SetOverwrite on
 	SetOutPath "$INSTDIR"
-	File /r "..\bin\release\musikServer.exe"
+	File "..\bin\release\musikServer.exe"
 	CreateShortCut "$SMPROGRAMS\${PROJECT_NAME} ${SUB_NAME}\musikServer.lnk" "$INSTDIR\musikServer.exe"
 SectionEnd
 
 SubSection Plugins plugins
 	Section "MP3 decoder"
 		SetOutPath "$INSTDIR\plugins"
-		File /r "..\bin\release\plugins\mpg123decoder.dll"
+		File "..\bin\release\plugins\mpg123decoder.dll"
 	SectionEnd
 	Section "OGG decoder"
 		SetOutPath "$INSTDIR\plugins"
-		File /r "..\bin\release\plugins\oggdecoder.dll"
+		File "..\bin\release\plugins\oggdecoder.dll"
 	SectionEnd
 	Section "FLAC decoder"
 		SetOutPath "$INSTDIR\plugins"
-		File /r "..\bin\release\plugins\flacdecoder.dll"
+		File "..\bin\release\plugins\flacdecoder.dll"
 	SectionEnd
 	Section /o "BPM analyzer"
 		SetOutPath "$INSTDIR\plugins"
-		File /r "..\bin\release\plugins\bpm_analyzer.dll"
+		File "..\bin\release\plugins\bpm_analyzer.dll"
 	SectionEnd
 	Section /o "DSP echo test"
 		SetOutPath "$INSTDIR\plugins"
-		File /r "..\bin\release\plugins\dsp_example_echo.dll"
+		File "..\bin\release\plugins\dsp_example_echo.dll"
 	SectionEnd
 
 SubSectionEnd
