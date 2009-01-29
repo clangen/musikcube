@@ -82,7 +82,7 @@ void        UsersController::OnViewResized(Window* window, Size size)
 
 void UsersController::OnAddUser(Button* button){
     win32cpp::TopLevelWindow popupDialog(_T("Add user"));
-    popupDialog.SetMinimumSize(Size(300, 200));
+    popupDialog.SetMinimumSize(Size(250, 250));
 
     EditUserController addUser(popupDialog,this->server);
 
