@@ -148,7 +148,7 @@ public: // events
     PrepareContextMenuEvent PrepareContextMenu;
 
 public: // constructors
-    /*ctor*/        ListView();
+    /*ctor*/ ListView(LayoutFlags layoutFlags = LayoutWrapWrap);
 
 public: // methods
     void            AddColumn(ColumnRef column);

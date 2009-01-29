@@ -224,15 +224,33 @@ static int check_lame_tag(mpg123_handle *fr)
 				}
 				if(xing_flags & 0x2) /* bytes */
 				{
-					if(VERBOSE3)
+					unsigned long xing_bytes = make_long(fr->bsbuf, lame_offset);					/* We assume that this is the _total_ size of the file, including Xing frame ... and ID3 frames...
+					   It's not that clearly documented... */
+					if(fr->rdat.filelen < 1)
+					fr->rdat.filelen = (off_t) xing_bytes; /* One could start caring for overflow here. */
+					else
 					{
-						unsigned long xing_bytes = make_long(fr->bsbuf, lame_offset);
-						fprintf(stderr, "Note: Xing: %lu bytes\n", (long unsigned)xing_bytes);
+						if((off_t) xing_bytes != fr->rdat.filelen && NOQUIET)
+						{
+							double diff = 1.0/fr->rdat.filelen * (fr->rdat.filelen - (off_t)xing_bytes);
+							if(diff < 0.) diff = -diff;
+
+							if(VERBOSE3)
+							fprintf(stderr, "Note: Xing stream size %lu differs by %f%% from determined/given file size!\n", xing_bytes, diff);
+
+							if(diff > 1.)
+							fprintf(stderr, "Warning: Xing stream size off by more than 1%%, fuzzy seeking may be even more fuzzy than by design!\n");
+						}
 					}
+
+					if(VERBOSE3)
+					fprintf(stderr, "Note: Xing: %lu bytes\n", (long unsigned)xing_bytes);
+
 					lame_offset += 4;
 				}
 				if(xing_flags & 0x4) /* TOC */
 				{
+					frame_fill_toc(fr, fr->bsbuf+lame_offset);
 					lame_offset += 100; /* just skip */
 				}
 				if(xing_flags & 0x8) /* VBR quality */
@@ -447,18 +465,22 @@ init_resync:
 			fr->oldhead = 0;
 			goto read_again; /* Also in case of invalid ID3 tag (ret==0), try to get on track again. */
 		}
-		else if(VERBOSE2) fprintf(stderr,"Note: Junk at the beginning (0x%08lx)\n",newhead);
+		else if(VERBOSE2 && fr->silent_resync == 0) fprintf(stderr,"Note: Junk at the beginning (0x%08lx)\n",newhead);
 
 		/* I even saw RIFF headers at the beginning of MPEG streams ;( */
 		if(newhead == ('R'<<24)+('I'<<16)+('F'<<8)+'F') {
-			if(VERBOSE2) fprintf(stderr, "Note: Looks like a RIFF header.\n");
+			if(VERBOSE2 && fr->silent_resync == 0) fprintf(stderr, "Note: Looks like a RIFF header.\n");
+
 			if((ret=fr->rd->head_read(fr,&newhead))<=0){ debug("need more?"); goto read_frame_bad; }
+
 			while(newhead != ('d'<<24)+('a'<<16)+('t'<<8)+'a')
 			{
 				if((ret=fr->rd->head_shift(fr,&newhead))<=0){ debug("need more?"); goto read_frame_bad; }
 			}
 			if((ret=fr->rd->head_read(fr,&newhead))<=0){ debug("need more?"); goto read_frame_bad; }
-			if(VERBOSE2) fprintf(stderr,"Note: Skipped RIFF header!\n");
+
+			if(VERBOSE2 && fr->silent_resync == 0) fprintf(stderr,"Note: Skipped RIFF header!\n");
+
 			fr->oldhead = 0;
 			goto read_again;
 		}
@@ -540,7 +562,6 @@ init_resync:
 			if(NOQUIET) error1("Header 0x%08lx seems to indicate a free format stream; I do not handle that yet", newhead);
 
 			goto read_again;
-			return 0;
 		}
 		/* and those ugly ID3 tags */
 		if((newhead & 0xffffff00) == ('T'<<24)+('A'<<16)+('G'<<8))
@@ -566,7 +587,7 @@ init_resync:
 			fr->metaflags  |= MPG123_NEW_ID3|MPG123_ID3;
 			goto read_again;
 		}
-		else if(NOQUIET)
+		else if(NOQUIET && fr->silent_resync == 0)
 		{
 			fprintf(stderr,"Note: Illegal Audio-MPEG-Header 0x%08lx at offset 0x%lx.\n",
 				newhead, (long unsigned int)fr->rd->tell(fr)-4);
@@ -580,7 +601,7 @@ init_resync:
 			long try = 0;
 			long limit = fr->p.resync_limit;
 			/* TODO: make this more robust, I'd like to cat two mp3 fragments together (in a dirty way) and still have mpg123 beign able to decode all it somehow. */
-			if(NOQUIET) fprintf(stderr, "Note: Trying to resync...\n");
+			if(NOQUIET && fr->silent_resync == 0) fprintf(stderr, "Note: Trying to resync...\n");
 			/* Read more bytes until we find something that looks
 			 reasonably like a valid header.  This is not a
 			 perfect strategy, but it should get us back on the
@@ -596,9 +617,10 @@ init_resync:
 					debug("need more?");
 					if(NOQUIET) fprintf (stderr, "Note: Hit end of (available) data during resync.\n");
 
-				goto read_frame_bad;
+					goto read_frame_bad;
 				}
-				debug3("resync try %li at 0x%lx, got newhead 0x%08lx", try, (unsigned long)fr->rd->tell(fr),  newhead);
+				if(VERBOSE3) debug3("resync try %li at 0x%lx, got newhead 0x%08lx", try, (unsigned long)fr->rd->tell(fr),  newhead);
+
 				if(!fr->oldhead)
 				{
 					debug("going to init_resync...");
@@ -614,7 +636,7 @@ init_resync:
 			);
 			/* too many false positives 
 			}while (!(head_check(newhead) && decode_header(fr, newhead))); */
-			if(NOQUIET) fprintf (stderr, "Note: Skipped %li bytes in input.\n", try);
+			if(NOQUIET && fr->silent_resync == 0) fprintf (stderr, "Note: Skipped %li bytes in input.\n", try);
 
 			if(limit >= 0 && try >= limit)
 			{
@@ -673,23 +695,36 @@ init_resync:
 		fr->bsbuf = newbuf;
 	}
 	fr->bsnum = (fr->bsnum + 1) & 1;
+
 	if(!fr->firsthead)
 	{
-		/* In practice, Xing/LAME tags are layer 3 only. */
-		if(fr->lay == 3 && check_lame_tag(fr) == 1)
+		fr->firsthead = newhead; /* _now_ it's time to store it... the first real header */
+		/* This is the first header of our current stream segment.
+		   It is only the actual first header of the whole stream when fr->num is still below zero!
+		   Think of resyncs where firsthead has been reset for format flexibility. */
+		if(fr->num < 0)
 		{
-			if(fr->rd->forget != NULL) fr->rd->forget(fr);
-			fr->oldhead = 0;
-			goto read_again;
+			fr->audio_start = framepos;
+			/* Only check for LAME  tag at beginning of whole stream
+			   ... when there indeed is one in between, it's the user's problem. */
+			if(fr->lay == 3 && check_lame_tag(fr) == 1)
+			{ /* ...in practice, Xing/LAME tags are layer 3 only. */
+				if(fr->rd->forget != NULL) fr->rd->forget(fr);
+
+				fr->oldhead = 0;
+				goto read_again;
+			}
+			/* now adjust volume */
+			do_rva(fr);
 		}
 
-		fr->firsthead = newhead; /* _now_ it's time to store it... the first real header */
-		debug1("fr->firsthead: %08lx", fr->firsthead);
-		/* now adjust volume */
-		do_rva(fr);
+		debug2("fr->firsthead: %08lx, audio_start: %li", fr->firsthead, (long int)fr->audio_start);
 	}
+
   fr->bitindex = 0;
   fr->wordpointer = (unsigned char *) fr->bsbuf;
+	/* Question: How bad does the floating point value get with repeated recomputation?
+	   Also, considering that we can play the file or parts of many times. */
 	if(++fr->mean_frames != 0)
 	{
 		fr->mean_framesize = ((fr->mean_frames-1)*fr->mean_framesize+compute_bpf(fr)) / fr->mean_frames ;
@@ -703,36 +738,25 @@ init_resync:
 		debug("halfspeed - reusing old bsbuf ");
 		memcpy (fr->ssave, fr->bsbuf, fr->ssize);
 	}
+
 	/* index the position */
 #ifdef FRAME_INDEX
-	if(INDEX_SIZE > 0 && fr->rdat.flags & READER_SEEKABLE) /* any sane compiler should make a no-brainer out of this */
-	{
-		if(fr->num == fr->index.fill*fr->index.step)
-		{
-			if(fr->index.fill == INDEX_SIZE)
-			{
-				size_t c;
-				/* increase step, reduce fill */
-				fr->index.step *= 2;
-				fr->index.fill /= 2; /* divisable by 2! */
-				for(c = 0; c < fr->index.fill; ++c)
-				{
-					fr->index.data[c] = fr->index.data[2*c];
-				}
-			}
-			if(fr->num == fr->index.fill*fr->index.step)
-			{
-				fr->index.data[fr->index.fill] = framepos;
-				++fr->index.fill;
-			}
-		}
-	}
+	/* Keep track of true frame positions in our frame index.
+	   but only do so when we are sure that the frame number is accurate... */
+	if(fr->accurate && FI_NEXT(fr->index, fr->num))
+	fi_add(&fr->index, framepos);
 #endif
+
+	if(fr->silent_resync > 0) --fr->silent_resync;
+
 	if(fr->rd->forget != NULL) fr->rd->forget(fr);
+
 	fr->to_decode = fr->to_ignore = TRUE;
 	if(fr->error_protection) fr->crc = getbits(fr, 16); /* skip crc */
+
 	return 1;
 read_frame_bad:
+	fr->silent_resync = 0;
 	if(fr->err == MPG123_OK) fr->err = MPG123_ERR_READER;
 	fr->framesize = oldsize;
 	fr->halfphase = oldphase;

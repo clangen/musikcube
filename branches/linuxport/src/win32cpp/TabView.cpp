@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright  2007, Casey Langen
+// The following are Copyright © 2007, Casey Langen
 //
 // Sources and Binaries of: win32cpp
 //
@@ -50,9 +50,10 @@ using namespace win32cpp;
 
 ///\brief
 ///Default constructor.
-/*ctor*/    TabView::TabView()
-: base()
+/*ctor*/    TabView::TabView(LayoutFlags layoutFlags)
+: base(layoutFlags)
 , visibleChild(NULL)
+, padding(4)
 {
 }
 
@@ -68,7 +69,7 @@ HWND        TabView::Create(Window* parent)
         styleEx,                // ExStyle
         WC_TABCONTROL,          // Class name
         _T(""),                 // Window name
-        style,                  // Style
+        style ,                 // Style
         0,                      // X
         0,                      // Y
         120,                    // Width
@@ -77,6 +78,8 @@ HWND        TabView::Create(Window* parent)
         NULL,                   // Menu
         hInstance,              // Instance
         NULL);                  // lParam
+
+    this->tabStop = true;
 
     return hwnd;
 }
@@ -105,6 +108,11 @@ void        TabView::OnEraseBackground(HDC hdc)
     // do nothing!
 }
 
+LRESULT     TabView::DrawItem(DRAWITEMSTRUCT& item)
+{
+    return 0;
+}
+
 LRESULT     TabView::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
@@ -119,10 +127,32 @@ LRESULT     TabView::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
                 return 0;
             }
         }
-        return 0;   // stack overflow if we don't return that we handled this!
+        return 0;   // stack overflow if we don't return that we handled this! WHY?!
     }
 
     return this->DefaultWindowProc(message, wParam, lParam);
+}
+
+void        TabView::SetActiveTab(Window* window)
+{
+    int current = 0;
+    WindowList::iterator it = this->childWindows.begin();
+    while (it != childWindows.end())
+    {
+        if ((*it) == window)
+        {
+            this->SetActiveTab(current);
+            return;
+        }
+
+        ++current;
+        it++;
+    }
+}
+
+void        TabView::SetActiveTab(unsigned index)
+{
+    TabCtrl_SetCurFocus(this->Handle(), index);
 }
 
 void        TabView::OnTabSelected()
@@ -149,6 +179,28 @@ void        TabView::OnResized(const Size& newSize)
     this->Layout();
 }
 
+Size        TabView::ClientSize() const
+{
+    RECT windowRect = this->WindowRect();
+    TabCtrl_AdjustRect(this->Handle(), FALSE, &windowRect);
+
+    return Rect(windowRect).size;
+}
+
+int             TabView::Padding() const
+{
+    return this->padding;
+}
+
+void            TabView::SetPadding(int padding)
+{
+    if (this->padding != padding)
+    {
+        this->padding = padding;
+        this->Layout();
+    }
+}
+
 void        TabView::Layout()
 {
     if ( ! this->visibleChild)
@@ -158,6 +210,10 @@ void        TabView::Layout()
 
     // calculate the display rect
     RECT windowRect = this->WindowRect();
+    windowRect.left += this->padding;
+    windowRect.right -= this->padding;
+    windowRect.top += this->padding;
+    windowRect.bottom -= this->padding;
     TabCtrl_AdjustRect(this->Handle(), FALSE, &windowRect);
     //
     POINT topLeft;
@@ -212,13 +268,7 @@ Window*     TabView::WindowForTabIndex(int tabIndex)
     return NULL;
 }
 
-void        TabView::OnGainedFocus()
-{
-    // don't do anything! we can be focused.
-}
-
 Window* TabView::ActiveWindow()
 { 
     return this->WindowForTabIndex(TabCtrl_GetCurSel(this->Handle())); 
 }
-

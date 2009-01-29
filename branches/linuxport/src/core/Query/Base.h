@@ -70,15 +70,17 @@ namespace musik{ namespace core{ namespace Query{
 class Base;
 typedef boost::shared_ptr<Query::Base> Ptr;
 
-enum Options:unsigned int{
-    AutoCallback    = 1,
-    Wait            = 2,
-    Prioritize      = 4,
-    CancelQueue     = 8,
-    CancelSimilar   = 16,
-    UnCanceable     = 32,
-    CopyUniqueId    = 64
-};
+namespace Options{
+    enum Options{
+        AutoCallback    = 1,
+        Wait            = 2,
+        Prioritize      = 4,
+        CancelQueue     = 8,
+        CancelSimilar   = 16,
+        UnCanceable     = 32,
+        CopyUniqueId    = 64
+    };
+}
 
 //////////////////////////////////////////
 ///\brief
@@ -97,13 +99,14 @@ class Base : public sigslot::has_slots<> {
 
         // Variables:
 
-        enum Status:int{
-            Started       = 1,
-            Ended         = 2,
-            Canceled      = 4,
-            OutputStarted = 8,
-            OutputEnded   = 16,
-            Finished      = 32
+        class Status{
+	public:
+            const static int Started       = 1;
+            const static int Ended         = 2;
+            const static int Canceled      = 4;
+            const static int OutputStarted = 8;
+            const static int OutputEnded   = 16;
+            const static int Finished      = 32;
         };
 
         //////////////////////////////////////////
@@ -137,9 +140,9 @@ class Base : public sigslot::has_slots<> {
         unsigned int options;
 
     protected:
-        friend class Library::Base;
-        friend class Library::LocalDB;
-        friend class server::Connection;
+        //friend class Library::Base;			//Already friended above
+        //friend class Library::LocalDB;
+        //friend class server::Connection;
 
         // Methods:
         virtual std::string Name();
@@ -202,13 +205,24 @@ class Base : public sigslot::has_slots<> {
         virtual void PreAddQuery(Library::Base *library){};
 
 
-        virtual bool RecieveQuery(musik::core::xml::ParserNode &queryNode);
+        virtual bool ReceiveQuery(musik::core::xml::ParserNode &queryNode);
         virtual bool SendQuery(musik::core::xml::WriterNode &queryNode);
-        virtual bool RecieveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library);
+        virtual bool ReceiveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library);
         virtual bool SendResults(musik::core::xml::WriterNode &queryNode,Library::Base *library);
 
     public:
         void PostCopy();
+
+
+        //////////////////////////////////////////
+        typedef sigslot::signal3<Query::Base*,Library::Base*,bool> QueryFinishedEvent;
+        //////////////////////////////////////////
+        ///\brief
+        ///A signal called before the query is totaly removed from the library queue
+        ///The bool will indicate if the query was finished successfully
+        //////////////////////////////////////////
+        QueryFinishedEvent QueryFinished;
+
 };
 
 

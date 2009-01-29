@@ -50,6 +50,7 @@ namespace musik { namespace cube {
     class LibraryWindowView;
 	class SourcesView;
 	class SourcesController;
+    class TracklistController;
 } }
 //////////////////////////////////////////////////////////////////////////////
 
@@ -77,7 +78,7 @@ class LibraryWindowController : public EventHandler
 
 	protected:  
 		void OnViewCreated(Window* window);
-		void OnResize(Window* window, Size size);
+		void OnDestroyed(Window* window);
 
         void UpdateLibraryTabs();
 
@@ -93,6 +94,8 @@ class LibraryWindowController : public EventHandler
 
 		SourcesController* CurrentSourceController();
 
+    private:
+        TracklistController *nowPlayingController;
 };
 
 //////////////////////////////////////////////////////////////////////////////

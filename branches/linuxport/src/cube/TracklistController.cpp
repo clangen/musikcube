@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright  2007, Casey Langen
 //
 // Sources and Binaries of: mC2, win32cpp
 //
@@ -69,7 +69,7 @@ using namespace musik::cube;
     // Connect the tracklists TracklistInfoUpdated
     TracklistModel* model   = (TracklistModel*)this->model.get();
     if(model){
-        model->tracklist->TracklistInfoUpdated.connect(this,&TracklistController::OnTracklistInfo);
+        model->tracklist->SummaryInfoUpdated.connect(this,&TracklistController::OnTracklistInfo);
     }
 
 }
@@ -104,11 +104,6 @@ void        TracklistController::OnViewCreated(Window* window)
     listView->RowActivated.connect(this, &TracklistController::OnRowActivated);
     listView->Resized.connect( this, &TracklistController::OnResized);
     listView->ColumnClicked.connect( this, &TracklistController::OnColumnSort );
-
-    TracklistModel* model   = (TracklistModel*)this->model.get();
-    if(model){
-        model->ConnectToQuery(&this->sortQuery);
-    }
 
 
     // Add the context menu
@@ -165,7 +160,7 @@ void TracklistController::OnResized(Window* window, Size size){
     int rows    = size.height/this->view.listView->RowHeight();
     TracklistModel* model   = (TracklistModel*)this->model.get();
     if(model && rows>10 && rows<100){
-        model->tracklist->HintNumberOfRows(rows);
+        model->tracklist->HintVisibleRows(rows);
     }
 
 }
@@ -175,19 +170,7 @@ void TracklistController::OnColumnSort(ListView *listView,ColumnRef column){
     TracklistModel* model   = (TracklistModel*)this->model.get();
     if(tracklistColumn && model){
         // what to sort by
-        std::list<std::string> sortList;
-        sortList.push_back(tracklistColumn->metaKey);
-        this->sortQuery.SortByMetaKeys(sortList);
-
-        // Add the tracks to sort
-        this->sortQuery.AddTracks(*(model->tracklist));
-
-		musik::core::LibraryPtr library( model->tracklist->Library());
-		if(library){
-	        library->AddQuery(this->sortQuery,musik::core::Query::CancelSimilar);
-		}
-
-        this->sortQuery.ClearTracks();
+        model->tracklist->SortTracks(tracklistColumn->metaKey);
     }
 }
 

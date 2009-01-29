@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////
-// Copyright © 2007, mC2 team
+// Copyright  2007, mC2 team
 //
 // All rights reserved.
 //
@@ -33,6 +33,7 @@
 #include "pch.hpp"
 #include <core/PlaybackQueue.h>
 #include <core/LibraryFactory.h>
+#include <core/tracklist/MultiLibraryList.h>
 
 #include <boost/algorithm/string.hpp>
 
@@ -55,7 +56,10 @@ PlaybackQueue::PlaybackQueue(void)
  ,playing(false)
  ,paused(false)
 {
-    this->transport.EventMixpointReached.connect(this,&PlaybackQueue::OnPlaybackEndOrFail);
+    this->nowPlaying.reset(new tracklist::MultiLibraryList());
+//    this->transport.EventMixpointReached.connect(this,&PlaybackQueue::OnPlaybackEndOrFail);
+    this->transport.PlaybackEnded.connect(this,&PlaybackQueue::OnPlaybackEndOrFail);
+    this->transport.PlaybackAlmostDone.connect(this,&PlaybackQueue::OnPlaybackPrepare);
 }
 
 //////////////////////////////////////////
@@ -64,8 +68,8 @@ PlaybackQueue::PlaybackQueue(void)
 //////////////////////////////////////////
 PlaybackQueue::~PlaybackQueue(void)
 {
+    this->signalDisabled    = true;
     this->transport.Stop();
-	this->nowPlaying.reset();
 }
 
 //////////////////////////////////////////
@@ -81,6 +85,18 @@ void PlaybackQueue::OnPlaybackEndOrFail(){
     }
 }
 
+void PlaybackQueue::OnPlaybackPrepare(){
+    // Try to get the next track
+    long pos    = this->nowPlaying->CurrentPosition();
+	musik::core::TrackPtr track( (*this->nowPlaying)[pos+1] );
+
+    if(track){
+        this->GetAllTrackMetadata(track);
+        this->transport.PrepareNextTrack(track->URL());
+    }
+}
+
+
 //////////////////////////////////////////
 ///\brief
 ///Return a shared_ptr to the now playing tracklist
@@ -94,18 +110,24 @@ tracklist::Ptr PlaybackQueue::NowPlayingTracklist(){
 ///Start playing the current track.
 //////////////////////////////////////////
 void PlaybackQueue::Play(){
-    if( !this->nowPlaying->Library()->Exited() ){
+//    if( !this->nowPlaying->Library()->Exited() ){
         TrackPtr track(this->CurrentTrack());
 
+        if(!track){
+            this->nowPlaying->SetPosition(0);
+            track   = this->CurrentTrack();
+        }
+
+        this->Stop();
+
         if(track){
-            this->Stop();
 
             this->playing   = true;
-            this->transport.Start(track); 
+            this->transport.Start(track->URL()); 
 
             this->paused    = false;
         }
-    }
+//    }
 }
 
 //////////////////////////////////////////
@@ -139,12 +161,17 @@ void PlaybackQueue::Resume()
 ///Start playing the next track.
 //////////////////////////////////////////
 void PlaybackQueue::Next(){
-	if(this->nowPlaying){
-		musik::core::TrackPtr track( this->nowPlaying->NextTrack() );
+	musik::core::TrackPtr track( this->nowPlaying->NextTrack() );
 
-		this->SetCurrentTrack(track);
-		this->Play();
-	}
+	this->SetCurrentTrack(track);
+    this->Stop();
+
+    
+    if(track=this->CurrentTrack()){
+        this->playing   = true;
+        this->transport.Start(track->URL()); 
+        this->paused    = false;
+    }
 }
 
 //////////////////////////////////////////
@@ -152,12 +179,10 @@ void PlaybackQueue::Next(){
 ///Start playing the previous track.
 //////////////////////////////////////////
 void PlaybackQueue::Previous(){
-	if(this->nowPlaying){
-		musik::core::TrackPtr track( this->nowPlaying->PreviousTrack() );
+	musik::core::TrackPtr track( this->nowPlaying->PreviousTrack() );
 
-		this->SetCurrentTrack(track);
-		this->Play();
-	}
+	this->SetCurrentTrack(track);
+	this->Play();
 }
 
 //////////////////////////////////////////
@@ -178,19 +203,16 @@ void PlaybackQueue::Stop(){
 ///Return the current running track
 //////////////////////////////////////////
 TrackPtr PlaybackQueue::CurrentTrack(){
-	if(this->nowPlaying){
-		if (this->nowPlaying->Size() <= 0)
-		{
-			return TrackPtr();
-		}
-
-		if(!this->currentTrack){
-			// If the current track is empty, get a track from the nowPlaying tracklist
-			this->SetCurrentTrack( this->nowPlaying->CurrentTrack() );
-		}
-		return this->currentTrack;
+	if (this->nowPlaying->Size() <= 0)
+	{
+		return TrackPtr();
 	}
-	return TrackPtr();
+
+	if(!this->currentTrack){
+		// If the current track is empty, get a track from the nowPlaying tracklist
+		this->SetCurrentTrack( this->nowPlaying->CurrentTrack() );
+	}
+	return this->currentTrack;
 }
 
 //////////////////////////////////////////
@@ -202,24 +224,51 @@ TrackPtr PlaybackQueue::CurrentTrack(){
 //////////////////////////////////////////
 void PlaybackQueue::SetCurrentTrack(TrackPtr track){
 
+    if(!this->currentTrack && !track){
+        return;
+    }
+
     if(track){
         this->currentTrack  = track->Copy();
     }else{
         this->currentTrack    = musik::core::TrackPtr();
     }
 
-    // Get all metadata to the track
-    if(this->currentTrack){
-        this->metadataQuery.Clear();
-        this->metadataQuery.RequestAllMetakeys();
-        this->metadataQuery.RequestTrack(this->currentTrack);
-        this->nowPlaying->Library()->AddQuery(this->metadataQuery,musik::core::Query::Wait|musik::core::Query::AutoCallback|musik::core::Query::UnCanceable|musik::core::Query::Prioritize);
+    bool isNextTrack(false);
+
+    if(this->currentTrack && this->nextTrack){
+        utfstring trackURI( this->currentTrack->URI() );
+        utfstring nextTrackURI( this->nextTrack->URI() );
+        if(trackURI==nextTrackURI){
+            this->currentTrack  = this->nextTrack;
+            isNextTrack = true;
+        }
+    }
+
+    this->nextTrack.reset();
+
+    if(!isNextTrack){
+        // Get all metadata to the track
+        this->GetAllTrackMetadata(this->currentTrack);
     }
 
     // Call the signal if track updates
     this->CurrentTrackChanged(this->currentTrack);
 
 }
+
+void PlaybackQueue::GetAllTrackMetadata(TrackPtr track){
+    if(track){
+        this->metadataQuery.Clear();
+        this->metadataQuery.RequestAllMetakeys();
+        this->metadataQuery.RequestTrack(track);
+        LibraryPtr library  = track->Library();
+        if(library){
+            library->AddQuery(this->metadataQuery,musik::core::Query::Wait|musik::core::Query::AutoCallback|musik::core::Query::UnCanceable|musik::core::Query::Prioritize);
+        }
+    }
+}
+
 
 //////////////////////////////////////////
 ///\brief
@@ -228,18 +277,16 @@ void PlaybackQueue::SetCurrentTrack(TrackPtr track){
 ///\param tracklist
 ///Tracklist that should be copied to now playing
 //////////////////////////////////////////
-void PlaybackQueue::Play(tracklist::Ptr tracklist){
+void PlaybackQueue::Play(tracklist::Base &tracklist){
 
 	// Set the "now playing" to libraries own playlist
-	this->nowPlaying	= tracklist->Library()->NowPlaying();
+	(*this->nowPlaying)	= tracklist;
 
 	this->currentTrack.reset();
-    this->nowPlaying->CopyTracks(tracklist);
     this->Play();
 }
 
-void PlaybackQueue::Append(tracklist::Ptr tracklist){
+void PlaybackQueue::Append(tracklist::Base &tracklist){
 	// Set the "now playing" to libraries own playlist
-	this->nowPlaying	= tracklist->Library()->NowPlaying();
-    this->nowPlaying->AppendTracks(tracklist);
+	(*this->nowPlaying)	+= tracklist;
 }

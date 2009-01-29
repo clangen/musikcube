@@ -36,10 +36,9 @@
 
 #include "pch.h"
 
-#include "core/IPlugin.h"
-#include "core/audio/IAudioOutput.h"
-
+#include <core/IPlugin.h>
 #include "WaveOut.h"
+
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
 {
@@ -60,7 +59,13 @@ extern "C" __declspec(dllexport) musik::core::IPlugin* GetPlugin()
     return new WaveOutPlugin();
 }
 
+/*
 extern "C" __declspec(dllexport) musik::core::audio::IAudioOutputSupplier* CreateAudioOutputSupplier()
 {
     return new WaveOutSupplier();
+}*/
+
+extern "C" __declspec(dllexport) musik::core::audio::IOutput* GetAudioOutput()
+{
+    return new WaveOut();
 }

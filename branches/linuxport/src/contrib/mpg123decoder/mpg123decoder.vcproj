@@ -260,10 +260,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\mpg123\src\libmpg123\dnoise.c"
-				>
-			</File>
-			<File
 				RelativePath=".\mpg123\src\libmpg123\equalizer.c"
 				>
 			</File>
@@ -313,6 +309,10 @@
 			</File>
 			<File
 				RelativePath=".\mpg123\src\libmpg123\id3.h"
+				>
+			</File>
+			<File
+				RelativePath=".\mpg123\src\libmpg123\index.c"
 				>
 			</File>
 			<File

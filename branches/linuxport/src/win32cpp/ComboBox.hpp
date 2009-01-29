@@ -57,7 +57,7 @@ namespace win32cpp {
 // ComboBox
 //////////////////////////////////////////////////////////////////////////////
 
-    class ComboBox : public Window
+class ComboBox : public Window
 {
 public: 
     enum DisplayType {

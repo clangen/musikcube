@@ -58,32 +58,29 @@ namespace musik { namespace cube {
 
 class MainMenuController: public EventHandler
 {
-public:     
-    MainMenuController(TopLevelWindow& mainWindow);
-    ~MainMenuController();
+    public:     
+        MainMenuController(TopLevelWindow& mainWindow);
+        ~MainMenuController();
 
-protected:  
-    void        OnMainWindowCreated(Window* window);
-    MenuRef     CreateMenu();
-    void        ConnectMenuHandlers();
+    protected:  
+        void        OnMainWindowCreated(Window* window);
+        MenuRef     CreateMenu();
+        void        ConnectMenuHandlers();
 
-    //
-    void        OnFileExit(MenuItemRef menuItem);
-    void        OnFilePreferences(MenuItemRef menuItem);
-    void        OnHelpAbout(MenuItemRef menuItem);
-    void        OnAddLibraryLocal(MenuItemRef menuItem);
-    void        OnAddLibraryRemote(MenuItemRef menuItem);
-    void        OnNewPlaylist(MenuItemRef menuItem);
+        //
+        void        OnFileExit(MenuItemRef menuItem);
+        void        OnHelpAbout(MenuItemRef menuItem);
+        void        OnAddLibraryLocal(MenuItemRef menuItem);
+        void        OnAddLibraryRemote(MenuItemRef menuItem);
+        void        OnNewPlaylist(MenuItemRef menuItem);
+        void        OnOpenURL(MenuItemRef menuItem);
 
-private:    
-    TopLevelWindow& mainWindow;
-    
-    MenuRef     mainMenu;
-    MenuRef     fileMenu, helpMenu;
-
-    MenuItemRef file, view, audio, tags, help;
-    MenuItemRef fileExit, fileAddLibraryRemote, fileAddLibraryLocal, fileNewPlaylist, filePreferences;
-    MenuItemRef helpAbout;
+    private:    
+        TopLevelWindow& mainWindow;
+        MenuRef mainMenu, fileMenu, helpMenu;
+        MenuItemRef file, view, audio, tags, help;
+        MenuItemRef fileExit, fileAddLibraryRemote, fileAddLibraryLocal, fileNewPlaylist, fileOpenFile, fileAppendFile, fileOpenURL;
+        MenuItemRef helpAbout;
 };
 
 //////////////////////////////////////////////////////////////////////////////

@@ -51,6 +51,7 @@ namespace win32cpp {
 #include <win32cpp/Exception.hpp>
 #include <win32cpp/Font.hpp>
 #include <win32cpp/Menu.hpp>
+#include <win32cpp/WindowPadding.hpp>
 
 #include <vector>
 #include <map>
@@ -64,6 +65,28 @@ namespace win32cpp {
 //////////////////////////////////////////////////////////////////////////////
 
 class Window;
+
+///\brief Flags used for control layout
+enum LayoutFlags
+{
+    LayoutFillParent = -1,      /*!< */
+    LayoutWrapContent = -2,     /*!< */
+    LayoutWrapWrap = -3,        /*!< */
+    LayoutFillWrap = -4,        /*!< */
+    LayoutWrapFill = -5,        /*!< */
+    LayoutFillFill = -6         /*!< */
+};
+
+///\brief Specifies the alignment of a Layout's child
+enum LayoutAlignFlag
+{
+    LayoutAlignLeft = 0,     /*!< */
+    LayoutAlignRight = 1,    /*!< */
+    LayoutAlignCenter = 2,   /*!< */
+    LayoutAlignTop = 0,      /*!< */
+    LayoutAlignBottom = 1,   /*!< */
+    LayoutAlignMiddle = 2,   /*!< */
+};
 
 ///\brief Flags used for mouse related events emitted by Window.
 enum MouseEventFlags
@@ -94,6 +117,7 @@ enum MouseEventFlags
 /*! */ typedef sigslot::signal1<unsigned int> TimerEvent;
 /*! */ typedef sigslot::signal3<Window*, VirtualKeyCode, KeyEventFlags> KeyEvent;
 /*! */ typedef sigslot::signal2<Window*, bool> VisibilityChangedEvent;
+/*! */ typedef sigslot::signal1<Window*> LayoutParamsChangedEvent;
 
 ///\brief
 ///Window is the abstract base class for all controls.
@@ -125,6 +149,12 @@ public: // types
     ///\brief
     ///This exception is thrown if a Window parameter is NULL where it shouldn't be.
     class WindowIsNullException: public Exception { };
+    ///\brief
+    ///This exception is thrown if an invalid (negative) LayoutWeight is specified.
+    class InvalidLayoutWeightException: public Exception { };
+    ///\brief
+    ///This exception is thrown if invalid layout flags are specified.
+    class InvalidLayoutFlagsException: public Exception { };
 
 protected: // types
     typedef WNDPROC WindowProcFunc;
@@ -186,9 +216,12 @@ public:     // events
     FocusEvent                  RequestFocusPrev;
     ///\brief Emitted when a Window's visibility has changed
     VisibilityChangedEvent      VisibilityChanged;
+    ///\brief Emitted when a Window's layout parameters have changed.
+    LayoutParamsChangedEvent    LayoutParametersChanged;
 
 public: // ctor, dtor
     /*ctor*/            Window();
+    /*ctor*/            Window(LayoutFlags layoutFlags);
     /*dtor*/ virtual    ~Window();
 
 public: // methods
@@ -206,7 +239,7 @@ public: // methods
     Rect            ClientRect() const;
     Rect            WindowRect() const;
     Size            WindowSize() const;
-    Size            ClientSize() const;
+    virtual Size    ClientSize() const;
     Point           Location() const;
     Point           CursorPosition() const;
     LRESULT         SendMessage(UINT message, WPARAM wParam, LPARAM lParam);
@@ -226,6 +259,14 @@ public: // methods
     bool            SetFocus();
     bool            TabStop();
     void            SetTabStop(bool enabled);
+    LayoutFlags     LayoutWidth() const;
+    LayoutFlags     LayoutHeight() const;
+    LayoutAlignFlag LayoutAlignment() const;
+    void            SetLayoutFlags(LayoutFlags widthFlag, LayoutFlags heightFlag);
+    void            SetLayoutFlags(LayoutFlags flags);
+    void            SetLayoutAlignment(LayoutAlignFlag alignment);
+    float           LayoutWeight() const;
+    void            SetLayoutWeight(float weight);
 
     static Window*  SubclassedWindowFromHWND(HWND hwnd);
 
@@ -266,6 +307,7 @@ protected: // methods
     bool    OnKeyUpBase(VirtualKeyCode keyCode, KeyEventFlags flags);
     bool    OnCharBase(VirtualKeyCode keyCode, KeyEventFlags flags);
     void    OnVisibilityChangedBase(bool visible);
+    void    OnLayoutParametersChangedBase();
 
     // win32 event wrappers (virtual methods, for derived class use)
     virtual void    OnDestroyed() { }
@@ -285,6 +327,7 @@ protected: // methods
     virtual void    OnMeasureItem(MEASUREITEMSTRUCT* measureItemStruct) { }
     virtual void    OnParentChanged(Window* oldParent, Window* newParent) { }
     virtual void    OnCaptionChanged() { }
+    virtual void    OnLayoutParametersChanged() { }
     virtual bool    OnKeyDown(VirtualKeyCode keyCode, KeyEventFlags flags) { return false; }
     virtual bool    OnKeyUp(VirtualKeyCode keyCode, KeyEventFlags flags) { return false; }
     virtual bool    OnChar(VirtualKeyCode keyCode, KeyEventFlags flags) { return false; }
@@ -312,6 +355,9 @@ protected: // methods
     static bool     WindowHasParent(Window* window);
     static bool     WindowIsValid(Window* window);
 
+private:
+    void InitializeInstance();
+
 protected: // instance data
     WindowProcFunc defaultWindowProc;
     HWND windowHandle;
@@ -322,6 +368,9 @@ protected: // instance data
     bool usesDefaultFont;
     SignalList suppressedSignals;
     bool tabStop;
+    LayoutAlignFlag layoutAlignment;
+    LayoutFlags layoutWidth, layoutHeight;
+    float layoutWeight;
 
 protected: // class data
     static HandleToWindowMap sHandleToWindowMap;

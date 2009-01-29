@@ -92,15 +92,16 @@ class Indexer : public ThreadHelper,private boost::noncopyable {
         db::Connection dbConnection;
 
         utfstring libraryPath;
-        int iStatus;
-        bool bRestart;
+        int status;
+        bool restart;
 
-        boost::thread *oThread;
-        boost::mutex oProgressMutex;
+        boost::thread *thread;
+        boost::mutex progressMutex;
 
-        double iProgress;
-        int iNOFFiles;
-        int iFilesIndexed;
+        double progress;
+        double progress2;
+        int nofFiles;
+        int filesIndexed;
         int filesSaved;
 
         void CountFiles(utfstring &sFolder);
@@ -111,6 +112,7 @@ class Indexer : public ThreadHelper,private boost::noncopyable {
         void SyncCleanup();
         void SyncAddRemovePaths();
         void SyncOptimize();
+        void RunAnalyzers();
 
         class _AddRemovePath{
             public:
@@ -118,7 +120,7 @@ class Indexer : public ThreadHelper,private boost::noncopyable {
                 utfstring path;
         };
 
-        typedef std::vector<boost::shared_ptr<Plugin::IMetaDataReader>> MetadataReaderList;
+        typedef std::vector<boost::shared_ptr<Plugin::IMetaDataReader> > MetadataReaderList;
 
         std::deque<_AddRemovePath> addRemoveQueue;
 

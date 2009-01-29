@@ -40,6 +40,7 @@
 #include <win32cpp/LinearLayout.hpp>
 #include <win32cpp/RedrawLock.hpp>
 #include <algorithm>
+#include <limits>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -47,20 +48,22 @@ using namespace win32cpp;
 
 //////////////////////////////////////////////////////////////////////////////
 
+#define CLASS_NAME _T("LinearLayout")
+
 ///\brief
 ///Constructor.
 ///
 ///\param orientation
-///A win32cpp::LinearLayout.
-/*ctor*/    LinearLayout::LinearLayout(LinearLayoutOrientation orientation)
-: base()
+///The LinearLayout's orientation (LayoutHorizontal or LayoutVertical)
+///
+///\param layoutFlags
+///The size flags to be used when positioning this control within a parent
+/*ctor*/    LinearLayout::LinearLayout(LayoutOrientation orientation, LayoutFlags layoutFlags)
+: base(layoutFlags)
 , orientation(orientation)
 , spacing(4)
 , childIsResizing(false)
-, flexibleChild(NULL)
-, defaultChildFill(true)
-, defaultChildAlignment(ChildAlignLeft)
-, constraints(LayoutFillParent, LayoutFillParent)
+, isResizing(false)
 {
 }
 
@@ -90,38 +93,28 @@ int         LinearLayout::Spacing() const
 void        LinearLayout::OnChildAdded(Window* newChild)
 {
     newChild->Resized.connect(this, &LinearLayout::OnChildResized);
+    newChild->LayoutParametersChanged.connect(this, &LinearLayout::OnChildLayoutParametersChanged);
+    this->childSizeMap[newChild] = newChild->WindowSize();
 
-    // If the child being added is larger than the layout in the
-    // direction opposite of the orientation, make the child's height
-    // the new layout size.
-    Size childSize = newChild->WindowSize();
-    //
-    if (this->orientation == LinearColumnLayout)
-    {
-        this->layoutSize.height = 
-            max(this->layoutSize.height, childSize.height);
-    }
-    else
-    {
-        this->layoutSize.width = 
-            max(this->layoutSize.width, childSize.width);
-    }
-
-    // keep track of the child's size. it may get changed when
-    // its fill state changes, so remember its original size.
-    this->childSizeMap[newChild] = childSize;
-
+    this->ResizeWrapContent();
     this->Layout();
 }
 
 void        LinearLayout::OnChildRemoved(Window* oldChild)
 {
     oldChild->Resized.disconnect(this);
+    oldChild->LayoutParametersChanged.disconnect(this);
+    oldChild->Resize(childSizeMap[oldChild]);
 
-     // don't care about its fill status anymore
-    this->childFillMap.erase(oldChild);
     this->childSizeMap.erase(oldChild);
 
+    this->ResizeWrapContent();
+    this->Layout();
+}
+
+void        LinearLayout::OnChildLayoutParametersChanged(Window* window)
+{
+    this->ResizeWrapContent();
     this->Layout();
 }
 
@@ -129,21 +122,8 @@ void        LinearLayout::OnChildResized(Window* window, Size newSize)
 {
     if ( ! this->childIsResizing)
     {
-        // if a child was added that causes the layout to expand in the direction
-        // opposite of its orientation, then resize the layoutSize.
-        if (this->orientation == LinearColumnLayout)
-        {
-            newSize.height > this->layoutSize.height
-                ? this->layoutSize.height = newSize.height : 0;
-        }
-        else
-        {
-            newSize.width > this->layoutSize.width
-                ? this->layoutSize.width = newSize.width : 0;
-        }
-
         this->childSizeMap[window] = newSize;
-
+        this->ResizeWrapContent();
         this->Layout();
     }
 }
@@ -159,214 +139,100 @@ inline void LinearLayout::ThrowIfNotChild(Window* child)
     }
 }
 
-inline bool LinearLayout::ShouldFillChild(Window* child)
+void        LinearLayout::OnResized(const Size& newSize)
 {
-    ChildFillMap::iterator it = this->childFillMap.find(child);
-    if (it != this->childFillMap.end())
+    if ( ! this->isResizing)
     {
-        return it->second;
-    }
-
-    return this->defaultChildFill;
-}
-
-Size        LinearLayout::CheckedChildFillSize(Window* child)
-{
-    if ( ! this->ShouldFillChild(child))
-    {
-        return this->childSizeMap[child];
-    }
-
-    return this->ChildFillSize(child);
-}
-
-Size        LinearLayout::ChildFillSize(Window* child)
-{
-    Size parentSize;
-    Window* parent = this->Parent();
-    parentSize = parent ? parent->WindowSize() : Size(0, 0);
-
-    Size childSize = child->WindowSize();
-    Size layoutSize = this->layoutSize;
-
-    // apply constraints if LayoutFillParent is NOT specified
-    if (this->constraints.width != LayoutFillParent)
-    {
-        layoutSize.width = constraints.width;
-    }
-    else if (this->orientation == LinearColumnLayout)
-    {
-        layoutSize.width = parentSize.width;
-    }
-    //
-    if (this->constraints.height != LayoutFillParent)
-    {
-        layoutSize.height = constraints.height;
-    }
-    else if (this->orientation == LinearRowLayout)
-    {
-        layoutSize.height = parentSize.height;
-    }
-
-    (this->orientation == LinearColumnLayout)
-        ? childSize.height = layoutSize.height
-        : childSize.width = layoutSize.width;
-
-    return childSize;
-}
-
-///\brief
-///Sets whether or not child controls are filled by default
-///
-///\param enabled
-///Whether or not to fill child controls by default
-///
-///\see
-///LinearLayout::SetChildFill
-void        LinearLayout::SetDefaultChildFill(bool enabled)
-{
-    if (enabled != this->defaultChildFill)
-    {
-        this->defaultChildFill = enabled;
         this->Layout();
     }
 }
 
-///\brief
-///Sets whether or not the child will be automatically resized in the
-///direction opposite the orientation. See LinearLayout for an example.
-///
-///\param child
-///The child whose property to modify
-///
-///\param enabled
-///Whether or not to enable filling
-//
-///\throws Container::InvalidChildWindowException
-///if the specified child is not a child of this LinearLayout.
-void        LinearLayout::SetChildFill(Window* child, bool enabled)
+void        LinearLayout::ResizeWrapContent()
 {
-    this->ThrowIfNotChild(child);
+    bool wrapWidth = this->LayoutWidth() == LayoutWrapContent;
+    bool wrapHeight = this->LayoutHeight() == LayoutWrapContent;
 
-    this->childFillMap[child] = enabled;
-
-    this->Layout();
-}
-
-///\brief
-///Set the LinearLayout's flexible child.
-///
-///The flexible child will grow or shrink when the LinearLayout is resized.
-///
-///\param child
-///The child to set as flexible.
-///
-///\throws Container::InvalidChildWindowException
-///if the specified child is not a child of this LinearLayout.
-void        LinearLayout::SetFlexibleChild(Window* child)
-{
-    if (this->flexibleChild == child)
+    if (( ! wrapWidth) && ( ! wrapHeight))
     {
         return;
     }
 
-    if ( ! child)
-    {
-        this->flexibleChild = NULL;
-    }
-    else
-    {
-        this->ThrowIfNotChild(child);
-        this->flexibleChild = child;
-    }
+    bool isVertical = (this->orientation == VerticalLayout);
+    Size size = this->ClientSize();
+    int wrappedWidth = 0, wrappedHeight = 0;
+    WindowList::iterator it = this->childWindows.begin();
 
-    this->Layout();
-}
-
-///\brief
-///Set the alignment of the specified child within the LinearLayout.
-///
-///\param child
-///The child to align.
-///
-///\param alignment
-///The new alignment.
-///
-///\throws InvalidChildWindowException
-///if child is not a child window
-///
-///\see
-///ChildAlignment
-void        LinearLayout::SetChildAlignment(Window* child, ChildAlignment alignment)
-{
-    this->ThrowIfNotChild(child);
-    this->childAlignment[child] = alignment;
-    this->Layout();
-}
-
-///\brief
-///Sets the default alignment for child controls.
-///
-///\param alignment
-///The new default alignment.
-///
-///\see
-///ChildAlignment
-void        LinearLayout::SetDefaultChildAlignment(ChildAlignment alignment)
-{
-    if (alignment != this->defaultChildAlignment)
+    for ( ; it != this->childWindows.end(); it++)
     {
-        this->defaultChildAlignment = alignment;
-        this->Layout();
-    }
-}
+        Window* child = (*it);
+        Size size = child->WindowSize();
 
-ChildAlignment  LinearLayout::AlignmentForChild(Window* child)
-{
-    ChildAlignmentMap::iterator it = this->childAlignment.find(child);
-    if (it == this->childAlignment.end())
-    {
-        return this->defaultChildAlignment;
+        if (wrapWidth)
+        {
+            isVertical
+                ? wrappedWidth = max(wrappedWidth, size.width)
+                : wrappedWidth += size.width;
+        }
+
+        if (wrapHeight)
+        {
+            isVertical
+                ? wrappedHeight += size.height
+                : wrappedHeight = max(wrappedHeight, size.height);
+        }
     }
 
-    return it->second;
-}
+    int spacing = this->spacing * ((int) this->childWindows.size() - 1);
 
-void        LinearLayout::OnResized(const Size& newSize)
-{
-    if (this->layoutSize != newSize)
+    // adjust for spacing
+    if ((wrapWidth) && ( ! isVertical))
     {
-        this->layoutSize = newSize;
-        this->Layout();
+        wrappedWidth += spacing;
     }
+    //
+    if ((wrapHeight) && (isVertical))
+    {
+        wrappedHeight += spacing;
+    }
+
+    // keep current size in given orientation if not wrapping
+    if ( ! wrapWidth) wrappedWidth = size.width;
+    if ( ! wrapHeight) wrappedHeight = size.height;
+
+    this->isResizing = true;
+    this->Resize(wrappedWidth, wrappedHeight);
+    this->isResizing = false;
 }
 
-Point        LinearLayout::AlignChildInRect(ChildAlignment alignment, Size childSize, Rect alignmentRect)
+Point       LinearLayout::AlignChildInRect(LayoutAlignFlag alignment, Size childSize, Rect alignmentRect)
 {
-    bool isColumnLayout = (this->orientation == LinearColumnLayout);
+    bool isVertical = (this->orientation == VerticalLayout);
 
     Point result = alignmentRect.location;
 
-    int childLayoutSize = isColumnLayout
-        ? childSize.height : childSize.width;
+    int childLayoutSize = isVertical
+        ? childSize.width
+        : childSize.height;
 
-    int rectLayoutSize = isColumnLayout
-        ? alignmentRect.size.height : alignmentRect.size.width;
+    int rectLayoutSize = isVertical
+        ? alignmentRect.size.width
+        : alignmentRect.size.height;
 
-    int& location = isColumnLayout
-        ? result.y : result.x;
+    int& location = isVertical
+        ? result.x
+        : result.y;
 
     switch (alignment)
     {
-    case ChildAlignCenter:      // && ChildAlignMiddle
+    case LayoutAlignCenter:      // && LayoutAlignMiddle
         location += (rectLayoutSize - childLayoutSize) / 2;
         break;
 
-    case ChildAlignRight:       // && ChildAlignBottom
+    case LayoutAlignRight:       // && LayoutAlignBottom
         location += (rectLayoutSize - childLayoutSize);
         break;
 
-    case ChildAlignLeft:        // && ChildAlignTop
+    case LayoutAlignLeft:        // && LayoutAlignTop
     default:
         // don't need to do anything
         break;
@@ -375,12 +241,52 @@ Point        LinearLayout::AlignChildInRect(ChildAlignment alignment, Size child
     return result;
 }
 
-void        LinearLayout::SetSizeConstraints(int width , int height)
+HWND        LinearLayout::Create(Window* parent)
 {
-    constraints.width = width;
-    constraints.height = height;
+    HINSTANCE hInstance = Application::Instance();
 
-    this->Layout();
+    if ( ! LinearLayout::RegisterWindowClass())
+    {
+        return NULL;
+    }
+
+    // create the window
+    DWORD style = WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
+    //
+    HWND hwnd = CreateWindowEx(
+        NULL,                   // ExStyle
+        CLASS_NAME,             // Class name
+        _T(""),                 // Window name
+        style,                  // Style
+        0,                      // X
+        0,                      // Y
+        120,                    // Width
+        36,                     // Height
+        parent->Handle(),       // Parent
+        NULL,                   // Menu
+        hInstance,              // Instance
+        NULL);                  // lParam
+
+    return hwnd;
+}
+
+bool        LinearLayout::RegisterWindowClass()
+{
+    static bool registered  = false;
+
+    if ( ! registered)
+    {
+        WNDCLASSEX wc = { 0 };
+
+        // use STATIC window class as our base
+        ::GetClassInfoEx(NULL, _T("STATIC"), &wc);
+        wc.cbSize = sizeof(WNDCLASSEX);
+        wc.lpszClassName = CLASS_NAME;
+
+        registered = (::RegisterClassEx(&wc) != 0);
+    }
+
+    return registered;
 }
 
 void        LinearLayout::Layout()
@@ -392,109 +298,129 @@ void        LinearLayout::Layout()
 
     RedrawLock stopRedraw(this);
 
-    std::map<Window*, Size> childLayoutSizes;
-    bool isColumnLayout = (this->orientation == LinearColumnLayout);
-    int totalWidth = 0, totalHeight = 0;
+    bool isVertical = (this->orientation == VerticalLayout);
+    bool isHorizontal = ( ! isVertical);
 
-    // iterate over all non-fill child windows and calculate their
-    // final sizes and positions.
-    WindowList::iterator it = this->childWindows.begin();
-    for ( ; it != this->childWindows.end(); it++)
+    WindowList wrappedChildren;
+    WindowList filledChildren;
+    ChildSizeMap finalSizes;
+    int wrappedSize = 0;
+    float totalWeight = 0.0f;
+
+    WindowList::iterator it, end;
+
+    Size layoutSize = this->ClientSize();
+
+    // PASS 1: figure out which windows are wrapped in direction of the
+    // orientation, and which are filled. Also, calculate the correct
+    // size of the child opposite to its orientation.
+    it = this->childWindows.begin();
+    end = this->childWindows.end();
+    for ( ; it != end; it++)
     {
-        Window* current = (*it);
+        Window* child = (*it);
+        Size childSize = child->WindowSize();
 
-        Size finalSize = this->CheckedChildFillSize(current);
-
-        childLayoutSizes[current] = finalSize;
-
-        if (current != this->flexibleChild)
+        // map the child to its fill type
+        if (((isVertical) && (child->LayoutHeight() == LayoutFillParent))
+        || ((isHorizontal) && (child->LayoutWidth() == LayoutFillParent)))
         {
-            totalWidth += finalSize.width + this->spacing;
-            totalHeight += finalSize.height + this->spacing;
+            filledChildren.push_back(child);
+            totalWeight += child->LayoutWeight();
         }
-    }
+        else
+        {
+            wrappedChildren.push_back(child);
 
-    // apply constraints if LayoutFillParent is NOT specified
-    if (this->constraints.width != LayoutFillParent)
-    {
-        totalWidth = constraints.width;
+            // figure out the space all of the wrapped children will occupy.
+            wrappedSize += (isVertical ? childSize.height : childSize.width);
+        }
+
+        // fill direction opposite the orientation
+        if ((isVertical) && (child->LayoutWidth() == LayoutFillParent))
+        {
+            childSize.width = layoutSize.width;
+        }
+        else if ((isHorizontal) && (child->LayoutHeight() == LayoutFillParent))
+        {
+            childSize.height = layoutSize.height;
+        }
+        //
+        finalSizes[child] = childSize;
     }
     //
-    if (this->constraints.height != LayoutFillParent)
+    wrappedSize += (this->spacing * ((int) this->childWindows.size() - 1));
+
+    // PASS 2: determine final child size for the filled children based on
+    // their specified LayoutWeight()'s.
+    if (filledChildren.size())
     {
-        totalHeight = constraints.height;
+        int remainingSize = (isVertical)
+            ? layoutSize.height - wrappedSize
+            : layoutSize.width - wrappedSize;
+        //
+        int weightedSize = 0;
+        //
+        it = filledChildren.begin();
+        end = filledChildren.end();
+        for ( ; it != end; it++)
+        {
+            Window* child = (*it);
+            Size childSize = finalSizes[child];
+            float remainingRatio = (child->LayoutWeight() / totalWeight);
+            int newSize = (int) ((float) remainingSize * remainingRatio);
+
+            // using floating calculations may cause small rounding errors. give
+            // give the last filled child whatever space may be left over
+            weightedSize += newSize;
+            if ((it + 1) == end)
+            {
+                newSize += (remainingSize - weightedSize);
+            }
+
+            isVertical
+                ? childSize.height = newSize
+                : childSize.width = newSize;
+
+            finalSizes[child] = childSize;
+        }
     }
 
-    // figure out how big the flexible child should be, based on
-    // the totalWidth and totalHeight calculated last step
-    if (this->flexibleChild)
+    // PASS 3: layout everything out!
+    it = this->childWindows.begin();
+    end = this->childWindows.end();
+    int x = 0, y = 0;
+    for ( ; it != end; it++)
     {
-        Size flexibleSize = childLayoutSizes[this->flexibleChild];
+        Window* child = (*it);
 
-        if (isColumnLayout)
-        {
-            int width = this->layoutSize.width - totalWidth;
-            flexibleSize.width = max(width, 0);
-        }
-        else
-        {
-            int height = this->layoutSize.height - totalHeight;
-            flexibleSize.height = max(height, 0);
-        }
+        Size size = finalSizes[child];
 
-        childLayoutSizes[this->flexibleChild] = flexibleSize;
-    }
+        Size alignSize(
+            (isVertical) ? layoutSize.width : size.width,
+            (isVertical) ? size.height : layoutSize.height);
 
-    // iterate over all the windows and actually lay them out
-    int currentX = 0, currentY = 0;
-    for (it = this->childWindows.begin(); it != this->childWindows.end(); it++)
-    {
-        Window* current = (*it);
-
-        Size finalSize = childLayoutSizes[current];
-        Point finalLocation = Point(0, 0);
-
-        if (isColumnLayout)
-        {
-            finalLocation.x = currentX;
-            currentX += finalSize.width + this->spacing;
-
-            currentY = max(currentY, finalSize.height);
-        }
-        else
-        {
-            finalLocation.y = currentY;
-            currentY += finalSize.height + this->spacing;
-
-            currentX = max(currentX, finalSize.width);
-        }
+        Point location = this->AlignChildInRect(
+            child->LayoutAlignment(),
+            size,
+            Rect(Point(x, y), alignSize));
 
         this->childIsResizing = true;
-
-        // resize if necessary
-        Size currentSize = current->WindowSize();
-        Size calculatedSize = childLayoutSizes[current];
-        if (currentSize != calculatedSize)
         {
-            current->Resize(calculatedSize);
+            if (child->WindowSize() != size)
+            {
+                child->Resize(size);
+            }
+
+            if (child->Location() != location)
+            {
+                child->MoveTo(location);
+            }
         }
-
-        // reposition
-        finalLocation = this->AlignChildInRect(
-            this->AlignmentForChild(current),
-            calculatedSize,
-            Rect(finalLocation, this->ChildFillSize(current)));
-
-        current->MoveTo(finalLocation);
-
         this->childIsResizing = false;
-    }
 
-    (isColumnLayout ? currentX : currentY) -= this->spacing;
-    Size newSize = Size(currentX, currentY);
-
-    if (newSize != this->WindowSize())
-    {
-        this->Resize(newSize);
+        isVertical
+            ? y += (size.height + this->spacing)
+            : x += (size.width + this->spacing);
     }
 }

@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, mC2 Team
+// The following are Copyright  2007, mC2 Team
 //
 // Sources and Binaries of: mC2, win32cpp
 //
@@ -40,10 +40,10 @@
 
 #include <server/users/EditUserView.hpp>
 
+#include <win32cpp/Frame.hpp>
 #include <win32cpp/Label.hpp>
 #include <win32cpp/Button.hpp>
 #include <win32cpp/LinearLayout.hpp>
-#include <win32cpp/BarLayout.hpp>
 #include <win32cpp/EditView.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
@@ -54,66 +54,55 @@ using namespace win32cpp;
 //////////////////////////////////////////////////////////////////////////////
 
 EditUserView::EditUserView()
-: Frame(NULL,FramePadding(6))
+: Frame(NULL,WindowPadding(6))
 {
 }
 
 void EditUserView::OnCreated()
 {
+
+    Frame *frame    = this->AddChild(new Frame(0,WindowPadding(4)));
+    frame->SetLayoutFlags(LayoutFillFill);
+
     FontRef boldFont(Font::Create());
     boldFont->SetBold(true);
 
     // Top Row layout
-    LinearLayout* topRowLayout = new LinearLayout(LinearRowLayout);
-    topRowLayout->SetDefaultChildFill(false);
-    topRowLayout->SetDefaultChildAlignment(win32cpp::ChildAlignMiddle);
+    LinearLayout* topRowLayout = new LinearLayout(VerticalLayout,LayoutFillFill);
+//    topRowLayout->SetDefaultChildFill(false);
+//    topRowLayout->SetDefaultChildAlignment(win32cpp::ChildAlignMiddle);
 
     // First rows column layout
-    LinearLayout* firstColumnLayout = new LinearLayout(LinearColumnLayout);
-    firstColumnLayout->SetDefaultChildFill(false);
-    firstColumnLayout->SetDefaultChildAlignment(win32cpp::ChildAlignCenter);
+//    LinearLayout* firstColumnLayout = new LinearLayout(HorizontalLayout);
+//    firstColumnLayout->SetDefaultChildFill(false);
+//    firstColumnLayout->SetDefaultChildAlignment(win32cpp::ChildAlignCenter);
 
-    Label* title    = firstColumnLayout->AddChild(new Label(_T("Add user")));
+    Label* title    = topRowLayout->AddChild(new Label(_T("Add user")));
     title->SetFont(boldFont);
-    topRowLayout->AddChild(firstColumnLayout);
-
-
-    LinearLayout* row;
-    Label* label;
 
     // Username
-    row = new LinearLayout(LinearColumnLayout);
-    label   = row->AddChild(new Label(_T("Username:") ));
-    label->Resize(Size(80,0));
-    this->username  = row->AddChild(new EditView(160,20 ));
-    topRowLayout->AddChild(row);
+    Label* label   = topRowLayout->AddChild(new Label(_T("Username:") ));
+    this->username  = topRowLayout->AddChild(new EditView(160,20 ));
 
     // Password
-    row = new LinearLayout(LinearColumnLayout);
-    label   = row->AddChild(new Label(_T("Password:") ));
-    label->Resize(Size(80,0));
-    this->password  = row->AddChild(new EditView(160,20 ));
-    topRowLayout->AddChild(row);
+    label   = topRowLayout->AddChild(new Label(_T("Password:") ));
+    this->password  = topRowLayout->AddChild(new EditView(160,20 ));
 
     // Nickname
-    row = new LinearLayout(LinearColumnLayout);
-    label   = row->AddChild(new Label(_T("Nickname:") ));
-    label->Resize(Size(80,0));
-    this->nickname = row->AddChild(new EditView(160,20 ));
-    topRowLayout->AddChild(row);
-
+    label   = topRowLayout->AddChild(new Label(_T("Nickname:") ));
+    this->nickname = topRowLayout->AddChild(new EditView(160,20 ));
 
     // Last rows column layout
-    LinearLayout* bottomButtonLayout = new LinearLayout(LinearColumnLayout);
-    bottomButtonLayout->SetDefaultChildFill(false);
+    LinearLayout* bottomButtonLayout = new LinearLayout(HorizontalLayout);
+//    bottomButtonLayout->SetDefaultChildFill(false);
     this->cancelButton  = bottomButtonLayout->AddChild(new Button(_T("Cancel")));
     this->okButton      = bottomButtonLayout->AddChild(new Button(_T("OK")));
     this->cancelButton->Resize(60,20);
     this->okButton->Resize(60,20);
     topRowLayout->AddChild(bottomButtonLayout);
-    topRowLayout->SetChildAlignment(bottomButtonLayout,ChildAlignRight);
+ //   topRowLayout->SetChildAlignment(bottomButtonLayout,ChildAlignRight);
 
 
-    this->AddChild(topRowLayout);
+    frame->AddChild(topRowLayout);
 
 }

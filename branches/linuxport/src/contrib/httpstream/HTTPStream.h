@@ -56,6 +56,7 @@ class HTTPStream : public IFileStream
         virtual PositionType Position();
         virtual bool Eof();
         virtual long Filesize();
+        virtual const utfchar* Type();
     private:
         typedef boost::shared_ptr<HTTPRequest> HTTPRequestPtr;
         HTTPRequestPtr httpRequest;

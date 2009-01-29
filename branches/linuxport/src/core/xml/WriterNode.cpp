@@ -106,3 +106,9 @@ Node::AttributeMap& WriterNode::Attributes(){
     return this->node->attributes;
 }
 
+void WriterNode::Flush(){
+    if(this->writer){
+        this->writer->supplier->Flush();
+    }
+}
+

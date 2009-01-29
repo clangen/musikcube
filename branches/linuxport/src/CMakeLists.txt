@@ -1,0 +1,6 @@
+add_subdirectory(3rdparty)
+add_subdirectory(contrib)
+add_subdirectory(core)
+add_subdirectory(cube)
+add_subdirectory(server)
+add_subdirectory(square)

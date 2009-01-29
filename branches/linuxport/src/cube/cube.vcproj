@@ -515,37 +515,37 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="Preferences"
+				Name="OpenURL"
 				>
 				<File
-					RelativePath=".\dialog\PreferencesCategoriesModel.cpp"
+					RelativePath=".\dialog\OpenURLController.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\dialog\PreferencesCategoriesModel.hpp"
+					RelativePath=".\dialog\OpenURLController.hpp"
 					>
 				</File>
 				<File
-					RelativePath=".\dialog\PreferencesCategory.hpp"
+					RelativePath=".\dialog\OpenURLView.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\dialog\PreferencesController.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\dialog\PreferencesController.hpp"
-					>
-				</File>
-				<File
-					RelativePath=".\dialog\PreferencesView.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\dialog\PreferencesView.hpp"
+					RelativePath=".\dialog\OpenURLView.hpp"
 					>
 				</File>
 			</Filter>
+		</Filter>
+		<Filter
+			Name="support"
+			>
+			<File
+				RelativePath=".\CommandlineParser.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\CommandlineParser.h"
+				>
+			</File>
 		</Filter>
 		<File
 			RelativePath=".\main.cpp"

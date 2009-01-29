@@ -59,7 +59,7 @@ extern "C" __declspec(dllexport) musik::core::IPlugin* GetPlugin()
     return new FLACDecoderPlugin();
 }
 
-extern "C" __declspec(dllexport) IAudioSourceSupplier* CreateAudioSourceSupplier()
+extern "C" __declspec(dllexport) IDecoderFactory* GetDecoderFactory()
 {
     return new FLACSourceSupplier();
 }

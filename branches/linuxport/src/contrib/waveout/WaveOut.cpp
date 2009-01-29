@@ -1,359 +1,233 @@
+//////////////////////////////////////////////////////////////////////////////
+// Copyright  2007, Daniel nnerby
+//
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without 
+// modification, are permitted provided that the following conditions are met:
+//
+//    * Redistributions of source code must retain the above copyright notice,
+//      this list of conditions and the following disclaimer.
+//
+//    * Redistributions in binary form must reproduce the above copyright 
+//      notice, this list of conditions and the following disclaimer in the 
+//      documentation and/or other materials provided with the distribution.
+//
+//    * Neither the name of the author nor the names of other contributors may 
+//      be used to endorse or promote products derived from this software 
+//      without specific prior written permission. 
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+// POSSIBILITY OF SUCH DAMAGE. 
+//
+//////////////////////////////////////////////////////////////////////////////
 #include "WaveOut.h"
 
-#include <boost/bind.hpp>
-
-WaveOut::WaveOut(void) 
- :m_waveHandle(NULL)
- ,m_pCallback(NULL)
- ,audioThread(NULL)
- ,m_dwSamplesOut(0)
- ,m_LastPlayedBuffer(-1)
- ,m_NumBuffers(8) //TODO: config
- ,m_BlockSize(0)
- ,m_pfAudioBuffer(NULL)
+WaveOut::WaveOut()
+ :waveHandle(NULL)
+ ,maxBuffers(32)
+ ,currentVolume(1.0)
+ ,addToRemovedBuffers(false)
 {
-	ZeroMemory(&m_waveFormatPCMEx, sizeof(m_waveFormatPCMEx));
+}
 
-	QueryPerformanceFrequency(&m_liCountsPerSecond);
+WaveOut::~WaveOut(){
+    this->ClearBuffers();
+
+    if(this->waveHandle!=NULL){
+        waveOutClose(this->waveHandle);
+        this->waveHandle    = NULL;
+    }
 
 }
 
-WaveOut::~WaveOut(void)
-{
-	Shutdown();
-}
 
-void WaveOut::Destroy()
-{
+void WaveOut::Destroy(){
     delete this;
 }
-
-//////////////////////////////////////////////////////////////////////////////
-//
-//	Actual Audio Output Stuff!
-//
-//
-
-void CALLBACK WaveOut::WaveCallback(HWAVEOUT hWave, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR dw1, DWORD dw2)
-{
-    if(uMsg == WOM_DONE) 
-	{
-		WaveOut*	to			= (WaveOut *)dwUser;
-		LPWAVEHDR	whr					= (LPWAVEHDR)dw1;
-
-		to->m_dwSamplesOut		+= (whr->dwBufferLength / to->m_waveFormatPCMEx.Format.nBlockAlign);
-		to->m_LastPlayedBuffer	= (unsigned long)whr->dwUser;
-
-		QueryPerformanceCounter(&to->m_liLastPerformanceCount);
-
-        to->audioCondition.notify_one();
-   }
+/*
+void WaveOut::Initialize(IPlayer *player){
+    this->player    = player;
+}
+*/
+void WaveOut::Pause(){
+    waveOutPause(this->waveHandle);
 }
 
-bool WaveOut::Open(void)
-{
-	int r;
-	int currentDevice = this->GetOutputDevice();
-
-    boost::mutex::scoped_lock lock(this->audioMutex);
-
-	if(m_waveHandle==NULL)
-	{
-		r = waveOutOpen(&m_waveHandle, currentDevice, (WAVEFORMATEX*)&m_waveFormatPCMEx, (DWORD_PTR)WaveCallback, (DWORD_PTR)this, CALLBACK_FUNCTION);
-		if(r != MMSYSERR_NOERROR) 
-		{
-			return(false);
-		}
-
-		m_Buffers = (WAVEHDR *)VirtualAlloc(NULL, m_NumBuffers * sizeof(WAVEHDR), MEM_COMMIT, PAGE_READWRITE);
-
-        unsigned int bytesPerSample = m_waveFormatPCMEx.Format.wBitsPerSample/8;
-
-        m_dwBufferSize = m_BlockSize*bytesPerSample;
-
-		m_pfAudioBuffer = (float *)VirtualAlloc(NULL, m_dwBufferSize * m_NumBuffers, MEM_COMMIT, PAGE_READWRITE);		// allocate audio memory
-		VirtualLock(m_pfAudioBuffer, m_dwBufferSize * m_NumBuffers);													// lock the audio memory into physical memory
-
-		for(unsigned long x=0; x<m_NumBuffers; x++)
-		{
-            m_Buffers[x].dwBufferLength		= m_dwBufferSize;
-            m_Buffers[x].lpData				= (LPSTR)&(this->m_pfAudioBuffer[x*m_BlockSize]);
- 			m_Buffers[x].dwUser				= x;
-			m_Buffers[x].dwBytesRecorded	= 0;
-			m_Buffers[x].dwFlags			= 0;
-			m_Buffers[x].dwLoops			= 0;
-
-			waveOutPrepareHeader(m_waveHandle, &m_Buffers[x], sizeof(WAVEHDR));
-            m_Buffers[x].dwFlags			|= WHDR_DONE;
-		}
-
-		QueryPerformanceCounter(&m_liLastPerformanceCount);
-
-	}
-
-	return true;
+void WaveOut::Resume(){
+    waveOutRestart(this->waveHandle);
 }
 
-bool WaveOut::Close(void)
-{
-	int r;
+void WaveOut::SetVolume(double volume){
+    if(this->waveHandle){
+        DWORD newVolume = (DWORD)(volume*65535.0);
+        newVolume   += newVolume*65536;
 
-    boost::mutex::scoped_lock lock(this->audioMutex);
-
-	if(m_waveHandle)
-	{
-		m_Playing = false;
-
-        do{
-		    if(waveOutReset(m_waveHandle) == MMSYSERR_NOERROR)
-		    {
-			    for(unsigned long x=0; x<m_NumBuffers; x++)
-			    {
-				    if(m_Buffers[x].dwFlags & WHDR_PREPARED)
-					    waveOutUnprepareHeader(m_waveHandle, &m_Buffers[x], sizeof(WAVEHDR));
-			    }
-		    }
-        } while((r = waveOutClose(m_waveHandle)) != MMSYSERR_NOERROR);
-
-
-		m_waveHandle = NULL;
-
-		VirtualUnlock(m_pfAudioBuffer, m_dwBufferSize * m_NumBuffers);
-		VirtualFree(m_pfAudioBuffer, 0, MEM_RELEASE);
-		m_pfAudioBuffer = NULL;
-
-		VirtualFree(m_Buffers, 0, MEM_RELEASE);
-		m_Buffers = NULL;
-	}
-
-	return true;
-}
-
-///////////////////////////////////////////////////////////////////////
-//
-//
-
-unsigned long WaveOut::ThreadProc(void)
-{
-    bool hasPlayed = false;
-
-	while(m_bThreadRun && !hasPlayed)
-	{
-		while(m_Playing && this->m_pCallback)
-		{
-			boost::mutex::scoped_lock lock(this->audioMutex);
-
-            while(this->m_Buffers && m_Playing && ((m_Buffers[m_ActiveBuffer].dwFlags&WHDR_DONE)==0) )
-			{
-                this->audioCondition.wait(lock);
-			}
-
-			if(m_Playing)
-			{
-				if(m_pCallback->GetBuffer((float*)m_Buffers[m_ActiveBuffer].lpData, m_BlockSize))
-				{
-					m_Buffers[m_ActiveBuffer].dwUser = m_ActiveBuffer;
-                    waveOutWrite(m_waveHandle, &m_Buffers[m_ActiveBuffer], sizeof(WAVEHDR));
-                    m_ActiveBuffer++;
-					m_ActiveBuffer &= (m_NumBuffers-1);
-				}
-				else
-				{
-					m_Playing = false;
-                    hasPlayed = true;
-                    this->audioCondition.wait(lock);
-				}
-			}
-		}
+        waveOutSetVolume(this->waveHandle,newVolume); 
     }
-	return(0);
+    this->currentVolume = volume;
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//	Initialization and termination
-//
-//
-//
-
-bool WaveOut::Initialize(void)
-{
-	m_Playing = false;
-	m_ActiveBuffer	= 0;
-	m_QueuedBuffers	= 0;
-
-	if(!Open())
-		return(false);
-
-    m_bThreadRun = true;
-
-
-    this->audioThread = new boost::thread(boost::bind(&WaveOut::ThreadProc, this));
-
-	if(!this->audioThread)
-		return false;
-
-	return(true);
+void WaveOut::ClearBuffers(){
+    waveOutReset(this->waveHandle);
 }
 
-bool WaveOut::Shutdown(void)
-{
-	Close();
-     
-//    boost::mutex::scoped_lock lock(this->audioMutex);
+void WaveOut::RemoveBuffer(WaveOutBuffer *buffer){
+    BufferList clearBuffers;
+    {
+        boost::mutex::scoped_lock lock(this->mutex);
+        bool found(false);
+        for(BufferList::iterator buf=this->buffers.begin();buf!=this->buffers.end() && !found;){
+            if(buf->get()==buffer){
+//                if( !(*buf)->ReadyToRelease() ){
+                    this->removedBuffers.push_back(*buf);
+//                }
+                clearBuffers.push_back(*buf);
+                buf=this->buffers.erase(buf);
+                found=true;
+            }else{
+                ++buf;
+            }
+        }
+    }
+}
 
-	if(this->audioThread)
-	{
-		m_bThreadRun = false;
-
-        this->audioCondition.notify_one();
-        this->audioThread->join();
-        delete this->audioThread;
+void WaveOut::ReleaseBuffers(){
+    BufferList clearBuffers;
+    {
+        boost::mutex::scoped_lock lock(this->mutex);
+        for(BufferList::iterator buf=this->removedBuffers.begin();buf!=this->removedBuffers.end();){
+            clearBuffers.push_back(*buf);
+            buf = this->removedBuffers.erase(buf);
+        }
     }
 
-	return(true);
 }
 
+bool WaveOut::PlayBuffer(IBuffer *buffer,IPlayer *player){
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//		Setup Stuff, can only be called before initialize
-//
-//
+    size_t bufferSize  = 0;
+    {
+        boost::mutex::scoped_lock lock(this->mutex);
+        bufferSize  = this->buffers.size();
+    }
 
-bool WaveOut::SetFormat(unsigned long SampleRate, unsigned long Channels)
-{
-	if( (SampleRate != m_waveFormatPCMEx.Format.nSamplesPerSec) ||
-		(Channels != m_waveFormatPCMEx.Format.nChannels) )
-	{
-		Shutdown();
+    // if the format should change, wait for all buffers to be released
+    if(bufferSize>0 && (this->currentChannels!=buffer->Channels() || this->currentSampleRate!=buffer->SampleRate())){
+        // Format has changed
+//        this->player->Notify()
+        return false;
+    }
 
-		DWORD speakerconfig;
 
-		if(Channels == 1)
-		{
-			speakerconfig = KSAUDIO_SPEAKER_MONO;
-		}
-		else if(Channels == 2)
-		{
-			speakerconfig = KSAUDIO_SPEAKER_STEREO;
-		}
-		else if(Channels == 4)
-		{
-			speakerconfig = KSAUDIO_SPEAKER_QUAD;
-		}
-		else if(Channels == 5)
-		{
-			speakerconfig = (SPEAKER_FRONT_LEFT | SPEAKER_FRONT_RIGHT | SPEAKER_FRONT_CENTER | SPEAKER_BACK_LEFT  | SPEAKER_BACK_RIGHT);
-		}
-		else if(Channels == 6)
-		{
-			speakerconfig = KSAUDIO_SPEAKER_5POINT1;
-		}
-		else
-		{
-			speakerconfig = 0;
-		}
+    if(bufferSize<this->maxBuffers){
+        // Start by checking the format
+        this->SetFormat(buffer);
 
-		m_waveFormatPCMEx.Format.cbSize					= 22;
-		m_waveFormatPCMEx.Format.wFormatTag				= WAVE_FORMAT_EXTENSIBLE;
-		m_waveFormatPCMEx.Format.nChannels				= (WORD)Channels;
-		m_waveFormatPCMEx.Format.nSamplesPerSec			= SampleRate;
-		m_waveFormatPCMEx.Format.wBitsPerSample			= 32;
-		m_waveFormatPCMEx.Format.nBlockAlign			= (m_waveFormatPCMEx.Format.wBitsPerSample/8) * m_waveFormatPCMEx.Format.nChannels;
-		m_waveFormatPCMEx.Format.nAvgBytesPerSec		= ((m_waveFormatPCMEx.Format.wBitsPerSample/8) * m_waveFormatPCMEx.Format.nChannels) * m_waveFormatPCMEx.Format.nSamplesPerSec; //Compute using nBlkAlign * nSamp/Sec 
+        // Add to the waveout internal buffers
+        WaveOutBufferPtr waveBuffer(new WaveOutBuffer(this,buffer,player));
+
+        // Header should now be prepared, lets add to waveout
+        if( waveBuffer->AddToOutput() ){
+            // Add to the buffer list
+            {
+                boost::mutex::scoped_lock lock(this->mutex);
+                this->buffers.push_back(waveBuffer);
+            }
+            return true;
+        }
+
+    }
+
+    return false;
+}
+
+void WaveOut::SetFormat(IBuffer *buffer){
+    if(this->currentChannels!=buffer->Channels() || this->currentSampleRate!=buffer->SampleRate() ||this->waveHandle==NULL){
+        this->currentChannels   = buffer->Channels();
+        this->currentSampleRate = buffer->SampleRate();
+
+        // Close old waveout
+        if(this->waveHandle!=NULL){
+            waveOutClose(this->waveHandle);
+            this->waveHandle    = NULL;
+        }
+
+        // Create a new waveFormat
+	    ZeroMemory(&this->waveFormat, sizeof(this->waveFormat));
+        DWORD speakerconfig;
+
+        // Set speaker configuration
+        switch(buffer->Channels()){
+            case 1:
+                speakerconfig = KSAUDIO_SPEAKER_MONO;
+                break;
+            case 2:
+                speakerconfig = KSAUDIO_SPEAKER_STEREO;
+                break;
+            case 4:
+                speakerconfig = KSAUDIO_SPEAKER_QUAD;
+                break;
+            case 5:
+                speakerconfig = (SPEAKER_FRONT_LEFT | SPEAKER_FRONT_RIGHT | SPEAKER_FRONT_CENTER | SPEAKER_BACK_LEFT  | SPEAKER_BACK_RIGHT);
+                break;
+            case 6:
+                speakerconfig = KSAUDIO_SPEAKER_5POINT1;
+                break;
+            default:
+                speakerconfig = 0;
+        }
+
+        this->waveFormat.Format.cbSize					= 22;
+        this->waveFormat.Format.wFormatTag				= WAVE_FORMAT_EXTENSIBLE;
+        this->waveFormat.Format.nChannels				= (WORD)buffer->Channels();
+        this->waveFormat.Format.nSamplesPerSec			= (DWORD)buffer->SampleRate();
+        this->waveFormat.Format.wBitsPerSample			= 32;
+        this->waveFormat.Format.nBlockAlign			    = (this->waveFormat.Format.wBitsPerSample/8) * this->waveFormat.Format.nChannels;
+        this->waveFormat.Format.nAvgBytesPerSec		    = ((this->waveFormat.Format.wBitsPerSample/8) * this->waveFormat.Format.nChannels) * this->waveFormat.Format.nSamplesPerSec; //Compute using nBlkAlign * nSamp/Sec 
 
         // clangen: wValidBitsPerSample/wReserved/wSamplesPerBlock are a union,
         // so don't set wReserved or wSamplesPerBlock to 0 after assigning
         // wValidBitsPerSample. (Vista bug)
-		m_waveFormatPCMEx.Samples.wValidBitsPerSample	= 32;
-		
-		m_waveFormatPCMEx.dwChannelMask					= speakerconfig; 
-		m_waveFormatPCMEx.SubFormat						= KSDATAFORMAT_SUBTYPE_IEEE_FLOAT;
+        this->waveFormat.Samples.wValidBitsPerSample	= 32;
+        this->waveFormat.dwChannelMask                  = speakerconfig; 
+        this->waveFormat.SubFormat                      = KSDATAFORMAT_SUBTYPE_IEEE_FLOAT;
 
-		unsigned long samplesperms = ((unsigned long)((float)m_waveFormatPCMEx.Format.nSamplesPerSec / 1000.0f)) * m_waveFormatPCMEx.Format.nChannels;
 
-        m_Interval			= (this->GetBufferSizeMs() / m_NumBuffers) / 2;
-		m_BlockSize			= (this->GetBufferSizeMs() / m_NumBuffers) * samplesperms;	// this should be a 300MS buffer size!
-		while(m_BlockSize & m_waveFormatPCMEx.Format.nBlockAlign)
-			m_BlockSize++;
+        // Create new waveout
+        int openResult = waveOutOpen(
+                &this->waveHandle, 
+                WAVE_MAPPER, 
+                (WAVEFORMATEX*)&this->waveFormat, 
+                (DWORD_PTR)WaveCallback, 
+                (DWORD_PTR)this, 
+                CALLBACK_FUNCTION);
 
-		if(!Initialize())
-			return false;
-	}
+        if(openResult!=MMSYSERR_NOERROR){
+            throw;
+        }
 
-	return true;
+        // Set the volume if it's not already set
+        this->SetVolume(this->currentVolume);
+    }
 }
 
+void CALLBACK WaveOut::WaveCallback(HWAVEOUT waveHandle, UINT msg, DWORD_PTR dwUser, DWORD_PTR dw1, DWORD dw2){
+    if(msg==WOM_DONE){
+        // A buffer is finished, lets release it
+		LPWAVEHDR waveoutHeader         = (LPWAVEHDR)dw1;
+        WaveOutBuffer *waveOutBuffer     = (WaveOutBuffer*)waveoutHeader->dwUser;
 
-////////////////////////////////////////////////////////////////////////////////////////////
-// PLAYBACK CONTROLS
-//
-//
-bool WaveOut::Start(void)
-{
-//	if(!Open())
-//		return(false);
- 
-    boost::mutex::scoped_lock lock(this->audioMutex);
-
-	while(m_QueuedBuffers) // Handles pause/play?
-	{
-		waveOutWrite(m_waveHandle, &m_Buffers[m_ActiveBuffer], sizeof(WAVEHDR));
-		m_ActiveBuffer++;
-		m_ActiveBuffer &= (m_NumBuffers-1); // Probably only works if m_Numbuffers is power of 2
-
-		m_QueuedBuffers--;
-	}
-
-	m_Playing = true;
-	
-    this->audioCondition.notify_one();
-
-	return true;
-}
-
-bool WaveOut::Stop(void)
-{
-    boost::mutex::scoped_lock lock(this->audioMutex);
-
-	m_QueuedBuffers = 0;
-	m_Playing = false;
-
-	if(m_waveHandle)
-	{
-		for(unsigned long buffer=0; buffer<m_NumBuffers; buffer++)
-		{
-			if(	!(m_Buffers[buffer].dwFlags & WHDR_INQUEUE) )
-			{
-				m_QueuedBuffers++;
-			}
-		}
-		m_ActiveBuffer-= m_QueuedBuffers;
-		m_ActiveBuffer &= (m_NumBuffers-1);
-	}
-
-	Close();
-
-	return true;
-}
-
-bool WaveOut::Reset(void)
-{
-//	CAutoLock lock(&m_AudioLock);
-
-	// simmilar to stop, except we dont rewind the stream
-	if(m_waveHandle) 
-	{
-		waveOutReset(m_waveHandle);
-
-		m_ActiveBuffer = 0;
-		m_dwSamplesOut = 0;
-
-		m_LastPlayedBuffer = 0;
-
-		QueryPerformanceCounter(&m_liLastPerformanceCount);
-		return(true);
-	}
-	return false;
+        waveOutBuffer->waveOut->RemoveBuffer(waveOutBuffer);
+        waveOutBuffer->player->Notify();
+    }
 }

@@ -46,6 +46,8 @@ using namespace win32cpp;
 
 //////////////////////////////////////////////////////////////////////////////
 
+#define CLASS_NAME _T("Frame")
+
 ///\brief Constructor
 ///
 ///\remarks 
@@ -76,7 +78,7 @@ using namespace win32cpp;
 ///
 ///\param padding
 ///The padding parameters to use.
-/*ctor*/    Frame::Frame(Window* child, const FramePadding& padding)
+/*ctor*/    Frame::Frame(Window* child, const WindowPadding& padding)
 : base()
 , padding(padding)
 , child(child)
@@ -88,7 +90,7 @@ using namespace win32cpp;
 ///
 ///\param padding
 ///The new padding parameters to use.
-void        Frame::SetPadding(const FramePadding& padding)
+void        Frame::SetPadding(const WindowPadding& padding)
 {
     this->padding = padding;
     this->OnResized(this->WindowSize());
@@ -100,7 +102,7 @@ void        Frame::SetPadding(const FramePadding& padding)
 ///The amount of padding, in pixels, for all edges.
 void        Frame::SetPadding(int padding)
 {
-    this->SetPadding(FramePadding(padding, padding, padding, padding));
+    this->SetPadding(WindowPadding(padding, padding, padding, padding));
 }
 
 void        Frame::OnCreated()
@@ -121,6 +123,15 @@ bool        Frame::AddChildWindow(Window* window)
     return base::AddChildWindow(window);
 }
 
+Size        Frame::ClientSize() const
+{
+    Size clientSize = this->WindowSize();
+    clientSize.width -= (this->padding.left + this->padding.right);
+    clientSize.height -= (this->padding.top + this->padding.bottom);
+
+    return clientSize;
+}
+
 void        Frame::OnChildAdded(Window* newChild)
 {
     this->child = newChild;
@@ -128,17 +139,15 @@ void        Frame::OnChildAdded(Window* newChild)
     this->ResizeFromChild();
     this->child->Resized.connect(this, &Frame::OnChildResized);
 
-    newChild->MoveTo(0, 0);
+    newChild->MoveTo(this->padding.left, this->padding.top);
 }
 
 void        Frame::OnResized(const Size& newSize)
 {
     if (this->child && (! isResizingHACK))
     {
-        Size size = this->ClientSize();
-
-        this->child->Resize(size);
-        this->child->MoveTo(0, 0);
+        this->child->Resize(this->ClientSize());
+        this->child->MoveTo(this->padding.left, this->padding.top);
     }
 }
 
@@ -157,56 +166,60 @@ void        Frame::ResizeFromChild()
 {
     Size size = this->child->WindowSize();
 
-    size.width  += (this->padding.left + this->padding.right);
-    size.height += (this->padding.top  + this->padding.bottom);
-
+    size.width += (this->padding.left + this->padding.right);
+    size.height += (this->padding.top + this->padding.bottom);
+    //
     this->isResizingHACK = true;
     this->Resize(size);
     this->isResizingHACK = false;
 
-    this->child->MoveTo(0, 0);
+    this->child->MoveTo(this->padding.left, this->padding.top);
 }
 
-LRESULT     Frame::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
+HWND        Frame::Create(Window* parent)
 {
-    switch (message)
+    HINSTANCE hInstance = Application::Instance();
+
+    if ( ! Frame::RegisterWindowClass())
     {
-    case WM_NCCALCSIZE:
-        {
-            if (wParam && lParam)
-            {
-                NCCALCSIZE_PARAMS* params =
-                    reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam);
-
-                (*params->rgrc).left += this->padding.left;
-                (*params->rgrc).right -= this->padding.right;
-                (*params->rgrc).top += this->padding.top;
-                (*params->rgrc).bottom -= this->padding.bottom;
-            }
-        }
-        return 0;
-
-    case WM_NCPAINT:
-        {
-            HDC hdc = ::GetWindowDC(this->Handle());
-
-            RECT windowRect = Rect(Point(0, 0), this->WindowSize());
-            Point clientLoc(this->padding.left, this->padding.top);
-            RECT clientRect = Rect(clientLoc, this->ClientSize());
-
-            ::ExcludeClipRect(
-                hdc,
-                clientRect.left, clientRect.top,
-                clientRect.right, clientRect.bottom);
-
-            HBRUSH backBrush = ::CreateSolidBrush(Color::SystemColor(COLOR_BTNFACE));
-            ::FillRect(hdc, &windowRect, backBrush);
-            ::DeleteObject(backBrush);
-
-            ReleaseDC(this->Handle(), hdc);
-        }
-        return 0;
+        return NULL;
     }
 
-    return base::WindowProc(message, wParam, lParam);
+    // create the window
+    DWORD style = WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
+    //
+    HWND hwnd = CreateWindowEx(
+        NULL,                   // ExStyle
+        CLASS_NAME,             // Class name
+        _T(""),                 // Window name
+        style,                  // Style
+        0,                      // X
+        0,                      // Y
+        120,                    // Width
+        36,                     // Height
+        parent->Handle(),       // Parent
+        NULL,                   // Menu
+        hInstance,              // Instance
+        NULL);                  // lParam
+
+    return hwnd;
+}
+
+bool        Frame::RegisterWindowClass()
+{
+    static bool registered  = false;
+
+    if ( ! registered)
+    {
+        WNDCLASSEX wc = { 0 };
+
+        // use STATIC window class as our base
+        ::GetClassInfoEx(NULL, _T("STATIC"), &wc);
+        wc.cbSize = sizeof(WNDCLASSEX);
+        wc.lpszClassName = CLASS_NAME;
+
+        registered = (::RegisterClassEx(&wc) != 0);
+    }
+
+    return registered;
 }

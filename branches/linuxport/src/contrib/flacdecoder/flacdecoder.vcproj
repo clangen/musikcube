@@ -65,6 +65,7 @@
 				AdditionalDependencies=""
 				AdditionalLibraryDirectories="./lib;../../3rdparty/lib"
 				GenerateDebugInformation="true"
+				SubSystem="2"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -137,6 +138,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies=""
 				AdditionalLibraryDirectories="./lib;../../3rdparty/lib"
+				SubSystem="2"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -212,11 +214,11 @@
 				Name="headers"
 				>
 				<File
-					RelativePath=".\src\libFLAC\include\private\all.h"
+					RelativePath=".\src\libFLAC\include\protected\all.h"
 					>
 				</File>
 				<File
-					RelativePath=".\src\libFLAC\include\protected\all.h"
+					RelativePath=".\src\libFLAC\include\private\all.h"
 					>
 				</File>
 				<File

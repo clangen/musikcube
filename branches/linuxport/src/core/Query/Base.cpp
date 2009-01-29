@@ -61,15 +61,15 @@ Query::Base::~Base(void){
 
 //////////////////////////////////////////
 ///\brief
-///Recieve the query from XML
+///Receive the query from XML
 ///
 ///\param queryNode
 ///Reference to query XML node
 ///
 ///\returns
-///true when successfully recieved
+///true when successfully received
 //////////////////////////////////////////
-bool Query::Base::RecieveQuery(musik::core::xml::ParserNode &queryNode){
+bool Query::Base::ReceiveQuery(musik::core::xml::ParserNode &queryNode){
     return false;
 }
 
@@ -89,15 +89,15 @@ bool Query::Base::SendQuery(musik::core::xml::WriterNode &queryNode){
 
 //////////////////////////////////////////
 ///\brief
-///Recieve results from XML
+///Receive results from XML
 ///
 ///\param queryNode
 ///Reference to query XML node
 ///
 ///\returns
-///true when successfully recieved
+///true when successfully received
 //////////////////////////////////////////
-bool Query::Base::RecieveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library){
+bool Query::Base::ReceiveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library){
     return false;
 }
 

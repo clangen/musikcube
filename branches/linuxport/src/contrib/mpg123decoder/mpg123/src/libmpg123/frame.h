@@ -16,6 +16,9 @@
 #include "icy.h"
 #include "reader.h"
 #include "optimize.h"
+#ifdef FRAME_INDEX
+#include "index.h"
+#endif
 
 /* max = 1728 */
 #define MAXFRAMESIZE 3456
@@ -25,15 +28,6 @@ struct al_table
   short bits;
   short d;
 };
-
-#ifdef FRAME_INDEX
-struct frame_index
-{
-	off_t data[INDEX_SIZE];
-	size_t fill;
-	off_t step;
-};
-#endif
 
 /* the output buffer, used to be pcm_sample, pcm_point and audiobufsize */
 struct outbuffer
@@ -54,6 +48,8 @@ struct audioformat
 enum optdec { autodec=-1, nodec=0, generic, idrei, ivier, ifuenf, ifuenf_dither, mmx, dreidnow, dreidnowext, altivec, sse };
 enum optcla { nocla=0, normal, mmxsse };
 
+void invalidate_format(struct audioformat *af);
+
 struct mpg123_pars_struct
 {
 	int verbose;    /* verbose level */
@@ -73,6 +69,7 @@ struct mpg123_pars_struct
 	long icy_interval;
 	scale_t outscale;
 	long resync_limit;
+	long index_size; /* Long, because: negative values have a meaning. */
 };
 
 /* There is a lot to condense here... many ints can be merged as flags; though the main space is still consumed by buffers. */
@@ -174,6 +171,7 @@ struct mpg123_handle_struct
 	int II_sblimit;
 	int down_sample_sblimit;
 	int lsf; /* 0: MPEG 1.0; 1: MPEG 2.0/2.5 -- both used as bool and array index! */
+	/* Many flags in disguise as integers... wasting bytes. */
 	int mpeg25;
 	int down_sample;
 	int header_change;
@@ -193,6 +191,10 @@ struct mpg123_handle_struct
 	int freesize;  /* free format frame size */
 	enum mpg123_vbr vbr; /* 1 if variable bitrate was detected */
 	off_t num; /* frame offset ... */
+	off_t audio_start; /* The byte offset in the file where audio data begins. */
+	char accurate; /* Flag to see if we trust the frame number. */
+	char silent_resync; /* Do not complain for the next n resyncs. */
+	unsigned char* xing_toc; /* The seek TOC from Xing header. */
 
 	/* bitstream info; bsi */
 	int bitindex;
@@ -248,7 +250,7 @@ struct mpg123_handle_struct
 	off_t end_s;    /* overall end offset in samples */
 	off_t end_os;
 #endif
-	unsigned int crc;
+	unsigned int crc; /* Well, I need a safe 16bit type, actually. But wider doesn't hurt. */
 	struct reader *rd; /* pointer to the reading functions */
 	struct reader_data rdat; /* reader data and state info */
 	struct mpg123_pars_struct p;
@@ -275,8 +277,14 @@ int frame_reset(mpg123_handle* fr);   /* reset for next track */
 int frame_buffers_reset(mpg123_handle *fr);
 void frame_exit(mpg123_handle *fr);   /* end, free all buffers */
 
+/* Index functions... */
+/* Well... print it... */
 int mpg123_print_index(mpg123_handle *fr, FILE* out);
+/* Find a seek position in index. */
 off_t frame_index_find(mpg123_handle *fr, off_t want_frame, off_t* get_frame);
+/* Apply index_size setting. */
+int frame_index_setup(mpg123_handle *fr);
+
 int frame_cpu_opt(mpg123_handle *fr, const char* cpu);
 enum optdec dectype(const char* decoder);
 
@@ -329,6 +337,8 @@ off_t frame_offset(mpg123_handle *fr, off_t outs);
 void frame_set_frameseek(mpg123_handle *fr, off_t fe);
 void frame_set_seek(mpg123_handle *fr, off_t sp);
 off_t frame_tell_seek(mpg123_handle *fr);
+/* Take a copy of the Xing VBR TOC for fuzzy seeking. */
+int frame_fill_toc(mpg123_handle *fr, unsigned char* in);
 
 
 /* adjust volume to current outscale and rva values if wanted */

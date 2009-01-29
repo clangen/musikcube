@@ -52,6 +52,12 @@ using namespace win32cpp;
 {
 }
 
+/*ctor*/    Container::Container(LayoutFlags layoutFlags)
+: base(layoutFlags)
+, focusedWindow(NULL)
+{
+}
+
 /*dtor*/    Container::~Container()
 {
     this->DestroyChildren();

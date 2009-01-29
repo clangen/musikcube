@@ -45,6 +45,7 @@ namespace win32cpp{
     class TabView;
     class Window;
     class TopLevelWindow;
+    class Frame;
 }
 namespace musik { namespace cube {
     class SourcesController;
@@ -80,7 +81,7 @@ protected:  void        OnDestroyed(Window* window);
 protected:  void        OnFileExit(MenuItemRef menuItem);
 
 protected:  TopLevelWindow& mainWindow;
-protected:  Splitter* clientView;
+protected:  win32cpp::Frame* clientView;
 protected:  LibraryWindowController* libraryController;
 protected:  TransportController* transportController;
 

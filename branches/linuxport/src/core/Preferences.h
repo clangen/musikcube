@@ -78,7 +78,7 @@ class Preferences{
                 Setting(utfstring value);
                 Setting(db::Statement &stmt);
 
-                enum Type:int{
+                enum Type{
                     Bool=1,
                     Int=2,
                     Text=3

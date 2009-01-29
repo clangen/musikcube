@@ -257,18 +257,22 @@ bool Query::ListSelection::ParseQuery(Library::Base *library,db::Connection &db)
     // or selections that are empty
     for(MetadataSignals::iterator signal=this->metadataEvent.begin();signal!=this->metadataEvent.end();){
         if( !signal->second.has_connections() ){
-            signal    = this->metadataEvent.erase(signal);
+            /*signal    = this->metadataEvent.erase(signal);
         }else{
-            ++signal;
+            ++signal;*/
+	    this->metadataEvent.erase(signal);
         }
+	++signal;
     }
 
     for(SelectedMetadata::iterator selected=this->selectedMetadata.begin();selected!=this->selectedMetadata.end();){
         if( selected->second.empty() ){
-            selected    = this->selectedMetadata.erase(selected);
+            /*selected    = this->selectedMetadata.erase(selected);
         }else{
-            ++selected;
+            ++selected;*/
+	    this->selectedMetadata.erase(selected);
         }
+	++selected;
     }
 
     ////////////////////////////////////////////////
@@ -552,7 +556,7 @@ void Query::ListSelection::QueryForMetadata(const char *metakey,const char *sql,
 
 //////////////////////////////////////////
 ///\brief
-///Recieve the query from XML
+///Receive the query from XML
 ///
 ///\param queryNode
 ///Reference to query XML node
@@ -569,9 +573,9 @@ void Query::ListSelection::QueryForMetadata(const char *metakey,const char *sql,
 ///\endcode
 ///
 ///\returns
-///true when successfully recieved
+///true when successfully received
 //////////////////////////////////////////
-bool Query::ListSelection::RecieveQuery(musik::core::xml::ParserNode &queryNode){
+bool Query::ListSelection::ReceiveQuery(musik::core::xml::ParserNode &queryNode){
 
     while( musik::core::xml::ParserNode node = queryNode.ChildNode() ){
         if(node.Name()=="selections"){
@@ -595,7 +599,7 @@ bool Query::ListSelection::RecieveQuery(musik::core::xml::ParserNode &queryNode)
             }
 
         }else{
-            this->RecieveQueryStandardNodes(node);
+            this->ReceiveQueryStandardNodes(node);
         }
     }
     return true;

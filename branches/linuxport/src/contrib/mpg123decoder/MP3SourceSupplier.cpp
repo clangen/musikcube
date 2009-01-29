@@ -57,13 +57,21 @@ void MP3SourceSupplier::Destroy()
     delete this;
 }
 
-IAudioSource* MP3SourceSupplier::CreateAudioSource()
+IDecoder* MP3SourceSupplier::CreateDecoder()
 {
     return new MP3Decoder();
 }
 
-bool MP3SourceSupplier::CanHandle(const utfchar* extension) const
+bool MP3SourceSupplier::CanHandle(const utfchar* type) const
 {
-    utfstring ext(UTF("mp3"));
-    return ext==extension;
+    if(type){
+        utfstring typeString(type);
+        if(typeString.find(UTF("mp3"))!=utfstring::npos){
+            return true;
+        }
+        if(typeString.find(UTF("mpeg"))!=utfstring::npos){
+            return true;
+        }
+    }
+    return false;
 }

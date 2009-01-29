@@ -41,6 +41,7 @@
 #include <core/server/User.h>
 #include <core/server/UserSession.h>
 
+#include <core/xml/Socket.h>
 #include <core/xml/Parser.h>
 #include <core/xml/ParserNode.h>
 #include <core/xml/Writer.h>
@@ -56,10 +57,11 @@ using namespace musik::core::server;
 
 Connection::Connection(boost::asio::io_service &ioService,musik::core::Server *server)
  :socket(ioService)
- ,Base(UTF("Server"))
+ ,Base(UTF("Server"),0)
  ,server(server)
  ,salt(musik::core::Crypt::GenerateSalt())
 {
+    this->identifier    = this->Name();
 }
 
 Connection::~Connection(void){
@@ -93,7 +95,8 @@ bool Connection::Startup(){
 
 void Connection::ReadThread(){
 
-    musik::core::xml::Parser xmlParser(&this->socket);
+    musik::core::xml::SocketReader xmlSocketReader(this->socket);
+    musik::core::xml::Parser xmlParser(&xmlSocketReader);
 
     try{
 
@@ -125,7 +128,7 @@ void Connection::ReadThread(){
             
             {
                 // Notify writing thread that the authentication have been read (or failed)
-                boost::mutex::scoped_lock lock(this->libraryMutex);
+                //boost::mutex::scoped_lock lock(this->libraryMutex);
                 this->authCondition.notify_all();
             }
 
@@ -151,12 +154,15 @@ void Connection::ReadThread(){
                         query->uniqueId = boost::lexical_cast<unsigned int>(queryNode.Attributes()["uid"]);
                     }catch(...){}
 
-                    if(query->RecieveQuery(queryNode)){
+                    if(query->ReceiveQuery(queryNode)){
 
                         unsigned int options(0);
-                        try{
-                            options = boost::lexical_cast<unsigned int>(queryNode.Attributes()["options"]);
-                        }catch(...){}
+                        std::string optionsString   = queryNode.Attributes()["options"];
+                        if(!optionsString.empty()){
+                            try{
+                                options = boost::lexical_cast<unsigned int>(queryNode.Attributes()["options"]);
+                            }catch(...){}
+                        }
 
                         // Remove waiting on server side and autocallback
                         if(options&musik::core::Query::Wait){
@@ -241,7 +247,8 @@ void Connection::ParseThread(){
 
 void Connection::WriteThread(){
 
-    musik::core::xml::Writer xmlWriter(&this->socket);
+    musik::core::xml::SocketWriter xmlSocketWrite(this->socket);
+    musik::core::xml::Writer xmlWriter(&xmlSocketWrite);
 
     try{
         // Lets start with a <musik> node
@@ -253,6 +260,7 @@ void Connection::WriteThread(){
             musik::core::xml::WriterNode initNode(musikNode,"authentication");
             initNode.Content()  = this->salt;
         }
+        xmlWriter.Flush();
 
         // Wait for maximum 30 seconds for authentication
         {
@@ -296,6 +304,8 @@ void Connection::WriteThread(){
 
                     sendQuery->SendResults(queryNode,this);
                 }
+                
+                xmlWriter.Flush();
 
                 // Remove the query from the queue
                 {
@@ -334,15 +344,19 @@ utfstring Connection::GetInfo(){
 }
 
 void Connection::Exit(){
+    bool exited;
     {
         boost::mutex::scoped_lock lock(this->libraryMutex);
+        exited  = this->exit;
         if(!this->exit){
 	        this->exit    = true;
-            if(this->socket.is_open()){
-                this->socket.close();
-            }
-		    this->server->RemoveUserSession(this->userSession);
         }
+    }
+    if(!exited){
+        if(this->socket.is_open()){
+            this->socket.close();
+        }
+	    this->server->RemoveUserSession(this->userSession);
     }
     this->waitCondition.notify_all();
     this->authCondition.notify_all();

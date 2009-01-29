@@ -39,6 +39,7 @@
 #include <core/Library/Remote.h>
 #include <core/Query/Base.h>
 #include <core/Preferences.h>
+#include <core/xml/Socket.h>
 #include <core/xml/Parser.h>
 #include <core/xml/Writer.h>
 #include <core/Crypt.h>
@@ -58,8 +59,8 @@ using namespace musik::core;
 ///\see
 ///Startup
 //////////////////////////////////////////
-Library::Remote::Remote(utfstring identifier)
- :Base(identifier)
+Library::Remote::Remote(utfstring name,int id)
+ :Base(name,id)
  ,socket(ioService)
  ,httpPort("10544")
 {
@@ -69,8 +70,8 @@ Library::Remote::Remote(utfstring identifier)
 ///\brief
 ///Create a Remote library
 //////////////////////////////////////////
-LibraryPtr Library::Remote::Create(utfstring identifier){
-	LibraryPtr lib(new Library::Remote(identifier));
+LibraryPtr Library::Remote::Create(utfstring name,int id){
+	LibraryPtr lib(new Library::Remote(name,id));
 	lib->self	= lib;
 	return lib;
 }
@@ -125,7 +126,7 @@ void Library::Remote::ReadThread(){
     std::string username,password;
 
     {
-        Preferences prefs("Connection",this->Identifier().c_str());
+        Preferences prefs("Connection",this->Name().c_str());
 
         this->address   = UTF_TO_UTF8(prefs.GetString("address",UTF("localhost")));
         this->port      = UTF_TO_UTF8(prefs.GetString("port",UTF("10543")));
@@ -168,7 +169,8 @@ void Library::Remote::ReadThread(){
 
     try{
         // Lets start recieving queries
-        xml::Parser parser(&this->socket);
+        xml::SocketReader xmlSocketReader(this->socket);
+        xml::Parser parser(&xmlSocketReader);
         if( xml::ParserNode rootNode=parser.ChildNode("musik")){
 
             // Start by waiting for the authentication node
@@ -203,7 +205,7 @@ void Library::Remote::ReadThread(){
                         }
                     }
                     if(currentQuery){
-                        if(currentQuery->RecieveResults(node,this)){
+                        if(currentQuery->ReceiveResults(node,this)){
                             boost::mutex::scoped_lock lock(this->libraryMutex);
                             currentQuery->status |= Query::Base::Status::Ended;
                         }else{
@@ -231,7 +233,8 @@ void Library::Remote::ReadThread(){
 //////////////////////////////////////////
 void Library::Remote::WriteThread(){
 
-    xml::Writer writer(&this->socket);
+    xml::SocketWriter xmlSocketWriter(this->socket);
+    xml::Writer writer(&xmlSocketWriter);
 
     // Start by writing the musik-tag
     xml::WriterNode rootNode(writer,"musik");
@@ -242,6 +245,8 @@ void Library::Remote::WriteThread(){
         authNode.Attributes()["username"]   = this->username;
         authNode.Content()  = musik::core::Crypt::Encrypt(this->password,this->sessionId);
     }
+
+    writer.Flush();
 
     
     while(!this->Exited()){
@@ -300,7 +305,10 @@ void Library::Remote::WriteThread(){
 
             }
         }
+        writer.Flush();
+
     }
+    writer.Flush();
 
 }
 

@@ -42,67 +42,9 @@
 
 #include <win32cpp/Win32Config.hpp>
 #include <win32cpp/Panel.hpp>
+#include <win32cpp/WindowPadding.hpp>
 
 namespace win32cpp {
-
-//////////////////////////////////////////////////////////////////////////////
-
-///\brief
-///FramePadding is used by Frame to specify the padding around the child control.
-///
-///\see
-///Frame.
-struct FramePadding
-{
-    ///\brief Constructor.
-    /*ctor*/    FramePadding(int padding = 0)
-    : left(padding)
-    , right(padding)
-    , top(padding)
-    , bottom(padding)
-    {
-    }
-
-    ///\brief Constructor.
-    /*ctor*/    FramePadding(int left, int right, int top, int bottom)
-    : left(left)
-    , right(right)
-    , top(top)
-    , bottom(bottom)
-    {
-    }
-
-    ///\brief Copy constructor.
-    /*ctor*/    FramePadding(const FramePadding& padding)
-    : left(padding.left)
-    , right(padding.right)
-    , top(padding.top)
-    , bottom(padding.bottom)
-    {
-    }
-
-    ///\brief Equality operator
-    bool operator==(const FramePadding& padding) const
-    {
-        return ((padding.left == this->left) && (padding.right == this->right)
-                && (padding.top == this->top) && (padding.bottom == this->bottom));
-    }
-
-    ///\brief Inequality operator
-    bool operator!=(const FramePadding& padding) const
-    {
-        return ! (padding == *this);
-    }
-
-    ///\brief Left padding, in pixels
-    int left;
-    ///\brief Right padding, in pixels
-    int right;
-    ///\brief Top padding, in pixels
-    int top;
-    ///\brief Bottom padding, in pixels
-    int bottom;
-};
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -110,7 +52,7 @@ struct FramePadding
 ///Frame is a Container that adds a padding (border) to a single child Window.
 ///
 ///If the child is resized, Frame will automatically resize itself
-///to accomidate the child and respect the the specified FramePadding.
+///to accomidate the child and respect the the specified WindowPadding.
 ///If the Frame is resized, it will automatically resize the child window 
 ///to fit its new ClientSize.
 ///
@@ -126,26 +68,27 @@ private: //types
 
 public: // constructors
     /*ctor*/    Frame(Window* child = NULL, int padding = 0);
-    /*ctor*/    Frame(Window* child, const FramePadding& padding);
+    /*ctor*/    Frame(Window* child, const WindowPadding& padding);
 
 public: // methods
-    void    SetPadding(const FramePadding& padding);
-    void    SetPadding(int padding);
+    void SetPadding(const WindowPadding& padding);
+    void SetPadding(int padding);
+    virtual Size ClientSize() const;
 
 protected: // methods
-    void    ResizeFromChild();
-    void    OnChildResized(Window* window, Size newSize);
+    void ResizeFromChild();
+    void OnChildResized(Window* window, Size newSize);
 
-    virtual bool    AddChildWindow(Window* window);
-    virtual void    OnChildAdded(Window* newChild);
-    virtual void    OnCreated();
-    virtual void    OnResized(const Size& newSize);
-    virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+    virtual bool AddChildWindow(Window* window);
+    virtual void OnChildAdded(Window* newChild);
+    virtual void OnCreated();
+    virtual void OnResized(const Size& newSize);
+    virtual HWND Create(Window* parent);
 
-protected: // instance data
-    FramePadding padding;
+    static bool RegisterWindowClass();
 
 private: // instance data
+    WindowPadding padding;
     Window* child;
     bool isResizingHACK;
 };

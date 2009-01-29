@@ -68,6 +68,7 @@ class EditUserController : public win32cpp::EventHandler{
         void        OnViewCreated(win32cpp::Window* window);
         void        OnCancel(win32cpp::Button* button);
         void        OnOK(win32cpp::Button* button);
+        void        OnResize(win32cpp::Window* window, win32cpp::Size size);
 
         EditUserView* view;
 

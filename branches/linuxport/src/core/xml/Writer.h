@@ -37,9 +37,8 @@
 
 #include <core/config.h>
 #include <string>
-#include <boost/asio.hpp>
-//#include <boost/array.hpp>
 
+#include <core/xml/IWriteSupplier.h>
 #include <core/xml/Node.h>
 #include <core/xml/WriterNode.h>
 
@@ -51,16 +50,12 @@ namespace musik{ namespace core{ namespace xml{
 
 class Writer : public WriterNode{
     public:
-        Writer(boost::asio::ip::tcp::socket *socket);
+        Writer(IWriteSupplier *supplier);
         ~Writer();
         bool Exited();
 
     private:
-
-		// Socket stuff
-        boost::asio::ip::tcp::socket *socket;       
-//        boost::array<char, 4096> readBuffer;
-//        size_t readBufferLength;
+        IWriteSupplier *supplier;
 
     private:
         friend class WriterNode;

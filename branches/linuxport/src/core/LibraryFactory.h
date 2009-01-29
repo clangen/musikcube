@@ -38,6 +38,7 @@
 #include <core/config.h>
 #include <core/Library/Base.h>
 #include <sigslot/sigslot.h>
+#include <map>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -55,7 +56,7 @@ namespace musik{ namespace core{
 //////////////////////////////////////////
 class LibraryFactory{
     private:
-        static LibraryFactory sInstance;
+//        static LibraryFactory sInstance;
     public:
 
 		//////////////////////////////////////////
@@ -68,17 +69,20 @@ class LibraryFactory{
 		};
 
 		typedef std::vector<LibraryPtr> LibraryVector;
+		typedef std::map<int,LibraryPtr> LibraryMap;
 
         //////////////////////////////////////////
         ///\brief
         ///Get the LibraryFactory singleton
         //////////////////////////////////////////
-        static LibraryFactory& Instance(){ return sInstance; };
+        static LibraryFactory& Instance();
 
 		static LibraryVector& Libraries();
 
 		LibraryPtr CreateLibrary(utfstring name,int type,bool startup=true);
 		void DeleteLibrary(utfstring name);
+
+        LibraryPtr GetLibrary(int identifier);
 
         typedef sigslot::signal0<> LibrariesUpdatedEvent;
 
@@ -88,14 +92,15 @@ class LibraryFactory{
 		//////////////////////////////////////////
 		LibrariesUpdatedEvent LibrariesUpdated;
 
+        ~LibraryFactory(void);
     private:
 
         LibraryVector libraries;
+        LibraryMap libraryMap;
 
         LibraryFactory(void);
-        ~LibraryFactory(void);
 
-		LibraryPtr AddLibrary(utfstring name,int type,bool sendEvent=false,bool startup=true);
+		LibraryPtr AddLibrary(int id,utfstring name,int type,bool sendEvent=false,bool startup=true);
 		void RemoveLibrary(utfstring name);
 
 };

@@ -13,7 +13,7 @@
 #ifndef _HTTPGET_H_
 #define _HTTPGET_H_
 
-#include "mpg123.h"
+/* Pulled in by mpg123app.h! */
 
 struct httpdata
 {

@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////
-// Copyright © 2007, Björn Olievier
+// Copyright © 2007, Daniel Önnerby
 //
 // All rights reserved.
 //
@@ -30,114 +30,70 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
-
 #pragma once
 
-#include <map>
-#include <string>
-#include <vector>
-
+#include <core/config.h>
+#include <core/audio/Player.h>
 #include <boost/shared_ptr.hpp>
+#include <boost/scoped_ptr.hpp>
 #include <sigslot/sigslot.h>
 
-#include <core/config.h>
-#include <core/Track.h>
-
+//////////////////////////////////////////////////////////////////////////////
 namespace musik { namespace core { namespace audio {
+//////////////////////////////////////////////////////////////////////////////
 
-class AudioStream;
-class IAudioSourceSupplier;
-class IAudioOutputSupplier;
+class Transport : public sigslot::has_slots<>{
+    public:
+        Transport();
+        ~Transport();
 
-typedef std::vector<utfstring> AudioStreamOverview;
-typedef std::vector<utfstring>::const_iterator AudioStreamOverviewIterator;
+        void PrepareNextTrack(utfstring trackUrl);
+        void Start(utfstring trackUrl);
+        void Stop();
+        bool Pause();
+        bool Resume();
 
-///\brief
-///Transport is the API to the audio engine.  It keeps track of the active audio streams,
-///input and output.
-///
-///It takes care of finding the right decoder for a given file or URL.
-///
-///It can handle multiple streams to deal with crossfading.  The active stream is always the first stream.
-class Transport
-{
-public:     
-    Transport();
-    ~Transport();
+        double Position();
+        void SetPosition(double seconds);
 
-    ///\brief Start a new audiostream based on a Track.
-    ///\param trackPtr Pointer to the track
-    void    Start(TrackPtr  trackPtr);
-    ///\brief Stop the active stream.  All resources used are released.
-    void    Stop();
-    ///\brief Pause the active stream.  All resources stay in use.
-    bool    Pause();
-    ///\brief Resume the active stream
-    bool    Resume();
+        double Volume();
+        void SetVolume(double volume);
 
-    ///\brief Jump to a given position in the active stream.
-    ///\param position New position in milliseconds
-    void            SetTrackPosition(unsigned long position);
-    ///\brief Get current position in active stream
-    ///\return Current position in milliseconds
-    unsigned long   TrackPosition() const;
-    ///\brief Get length of active stream.
-    ///\return Length in in milliseconds.  Can be 0.
-    unsigned long   TrackLength()   const;
+    public:
 
-    ///\brief Set the volume for the active stream
-    ///\param volume New volume level in percent (0-100)
-    void            SetVolume(short volume);
-    ///\brief Get the current volume level
-    ///\return Current volume as a percentage (0-100)
-    short           Volume() const { return currVolume; };
+        enum PlaybackStatus:int{
+            Started = 1,
+            Ended   = 2,
+            Error   = 3
+        };
 
-    ///\brief Get the number of open streams
-    size_t          NumOfStreams()  const;
-    ///\brief Get a list with descriptions of the open streams
-    AudioStreamOverview    StreamsOverview()    const;
+        typedef sigslot::signal1<int> PlaybackStatusEvent;
+        PlaybackStatusEvent PlaybackStatusChange;
 
-private: 
-    typedef std::vector<boost::shared_ptr<IAudioSourceSupplier> > SourceSupplierList;
-    SourceSupplierList  registeredSourceSuppliers;
-    typedef std::vector<boost::shared_ptr<IAudioOutputSupplier> > OutputSupplierList;
-    OutputSupplierList  registeredOutputSuppliers;
+        typedef sigslot::signal0<> PlaybackEvent;
+        PlaybackEvent PlaybackAlmostDone;
+//        PlaybackEvent PlaybackChange;
+        PlaybackEvent PlaybackStarted;
+        PlaybackEvent PlaybackEnded;
+        PlaybackEvent PlaybackPause;
+        PlaybackEvent PlaybackResume;
 
-    std::vector<AudioStream*> openStreams;
-    AudioStream*    activeStream;
+    private:
+        void OnPlaybackStarted(Player *player);
+        void OnPlaybackAlmostEnded(Player *player);
+        void OnPlaybackEnded(Player *player);
 
-    AudioStream*    CreateStream(TrackPtr  trackPtr);
-    void            RemoveFinishedStreams();
+    private:
+        double volume;
+        bool gapless;
 
-    short currVolume;
-
-// Signals
-public:  
-    ///\brief Emitted when Start() completed successfully
-    sigslot::signal1<TrackPtr>  EventPlaybackStartedOk;
-    ///\brief Emitted when Start() failed
-    sigslot::signal1<TrackPtr>  EventPlaybackStartedFail;
-    ///\brief Emitted when Stop() completed successfully
-    sigslot::signal1<TrackPtr>  EventPlaybackStoppedOk;
-    ///\brief Emitted when Stop() failed
-    sigslot::signal1<TrackPtr>  EventPlaybackStoppedFail;
-
-    ///\brief Emitted when Pause() completed successfully
-    sigslot::signal0<>  EventPlaybackPausedOk;
-    ///\brief Emitted when Pause() failed
-    sigslot::signal0<>  EventPlaybackPausedFail;
-    ///\brief Emitted when Resume() completed successfully
-    sigslot::signal0<>  EventPlaybackResumedOk;
-    ///\brief Emitted when Resume() failed
-    sigslot::signal0<>  EventPlaybackResumedFail;
-
-    ///\brief Emitted when SetVolume() completed successfully
-    sigslot::signal0<>  EventVolumeChangedOk;
-    ///\brief Emitted when SetVolume() failed
-    sigslot::signal0<>  EventVolumeChangedFail;
-
-    ///\brief Emitted when crossfading can start.  The PlaybackQueue should offer the next track.  
-    sigslot::signal0<>  EventMixpointReached;
+        typedef std::list<PlayerPtr> PlayerList;
+        PlayerList players;
+        PlayerPtr currentPlayer;
+        PlayerPtr nextPlayer;
 };
 
-}}} // NS
+//////////////////////////////////////////////////////////////////////////////
+} } }
+//////////////////////////////////////////////////////////////////////////////
+

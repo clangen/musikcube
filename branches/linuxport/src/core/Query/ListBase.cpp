@@ -40,6 +40,7 @@
 #include <core/Common.h>
 #include <core/xml/ParserNode.h>
 #include <core/xml/WriterNode.h>
+#include <core/LibraryTrack.h>
 #include <boost/algorithm/string.hpp>
 
 using namespace musik::core;
@@ -130,7 +131,7 @@ Query::ListBase::MetadataSignal& Query::ListBase::OnMetadataEvent(const char* me
 }
 
 Query::ListBase::MetadataSignal& Query::ListBase::OnMetadataEvent(const wchar_t* metatag){
-    return this->metadataEvent[ConvertUTF8(std::wstring(metatag))];
+    return this->metadataEvent[UTF16_TO_UTF(std::wstring(metatag))];
 }
 
 Query::ListBase::TrackSignal& Query::ListBase::OnTrackEvent(){
@@ -149,7 +150,7 @@ bool Query::ListBase::ParseTracksSQL(std::string sql,Library::Base *library,db::
         tempTrackResults.reserve(101);
         int row(0);
         while(selectTracks.Step()==db::ReturnCode::Row){
-            tempTrackResults.push_back(TrackPtr(new Track(selectTracks.ColumnInt(0))));
+            tempTrackResults.push_back(TrackPtr(new LibraryTrack(selectTracks.ColumnInt(0),library->Id())));
             this->trackInfoDuration += selectTracks.ColumnInt64(1);
             this->trackInfoSize     += selectTracks.ColumnInt64(2);
             this->trackInfoTracks++;
@@ -227,7 +228,7 @@ bool Query::ListBase::SendResults(musik::core::xml::WriterNode &queryNode,Librar
                         musik::core::xml::WriterNode metaValueNode(results,"md");
                         metaValueNode.Attributes()["id"]    = boost::lexical_cast<std::string>( (*metaValue)->id );
 
-                        metaValueNode.Content() = musik::core::ConvertUTF8( (*metaValue)->value );
+                        metaValueNode.Content() = UTF_TO_UTF8( (*metaValue)->value );
 
                     }
 
@@ -253,7 +254,7 @@ bool Query::ListBase::SendResults(musik::core::xml::WriterNode &queryNode,Librar
                     if(trackCount!=0){
                         tracks.Content()    += ",";             
                     }
-                    tracks.Content()    += boost::lexical_cast<std::string>( (*track)->id );   
+                    tracks.Content()    += boost::lexical_cast<std::string>( (*track)->Id() );   
                     ++track;
                     ++trackCount;
                 }
@@ -282,10 +283,10 @@ bool Query::ListBase::SendResults(musik::core::xml::WriterNode &queryNode,Librar
     return true;
 }
 
-bool Query::ListBase::RecieveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library){
+bool Query::ListBase::ReceiveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library){
     while( musik::core::xml::ParserNode node = queryNode.ChildNode() ){
 
-		// Recieve metadata
+		// Receive metadata
         if( node.Name()=="metadata"){
 
             std::string metakey(node.Attributes()["key"]);
@@ -306,7 +307,7 @@ bool Query::ListBase::RecieveResults(musik::core::xml::ParserNode &queryNode,Lib
                         MetadataValuePtr(
                             new MetadataValue(
                                 boost::lexical_cast<unsigned int>( metaDataNode.Attributes()["id"] ),
-                                ConvertUTF16(metaDataNode.Content()).c_str()
+                                UTF8_TO_UTF(metaDataNode.Content()).c_str()
                                 )
                             )
                         );
@@ -328,7 +329,7 @@ bool Query::ListBase::RecieveResults(musik::core::xml::ParserNode &queryNode,Lib
 
 		typedef std::vector<std::string> StringVector;
 
-		// Recieve tracks
+		// Receive tracks
         if( node.Name()=="tracklist"){
             while( musik::core::xml::ParserNode tracksNode = node.ChildNode("tracks") ){
 				tracksNode.WaitForContent();
@@ -342,7 +343,7 @@ bool Query::ListBase::RecieveResults(musik::core::xml::ParserNode &queryNode,Lib
 
 	                for(StringVector::iterator value=values.begin();value!=values.end();++value){
 						int trackId(boost::lexical_cast<DBINT>(*value));
-			            tempTrackResults.push_back(TrackPtr(new Track(trackId)));
+                        tempTrackResults.push_back(TrackPtr(new LibraryTrack(trackId,library->Id())));
 					}
 
 					{
@@ -358,7 +359,7 @@ bool Query::ListBase::RecieveResults(musik::core::xml::ParserNode &queryNode,Lib
 		}
 
 
-		// Recieve trackinfo
+		// Receive trackinfo
         if( node.Name()=="trackinfo"){
 			node.WaitForContent();
 
@@ -393,7 +394,7 @@ void Query::ListBase::DummySlotTrackInfo(UINT64,UINT64,UINT64){
 }
 
 
-bool Query::ListBase::RecieveQueryStandardNodes(musik::core::xml::ParserNode &node){
+bool Query::ListBase::ReceiveQueryStandardNodes(musik::core::xml::ParserNode &node){
     if(node.Name()=="listeners"){
 
         // Wait for all content

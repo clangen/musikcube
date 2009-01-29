@@ -39,7 +39,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="./;../;../3rdparty/include/"
+				AdditionalIncludeDirectories="./;../;../3rdparty/include/;../3rdparty/include/jpeg-6b"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE;XML_STATIC"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -107,7 +107,7 @@
 				InlineFunctionExpansion="0"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="0"
-				AdditionalIncludeDirectories="./;../;../3rdparty/include/"
+				AdditionalIncludeDirectories="./;../;../3rdparty/include/;../3rdparty/include/jpeg-6b"
 				PreprocessorDefinitions="WIN32;_CRT_SECURE_NO_DEPRECATE;XML_STATIC"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="2"
@@ -214,6 +214,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\Image.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Image.h"
+					>
+				</File>
+				<File
 					RelativePath=".\MessageQueue.cpp"
 					>
 				</File>
@@ -242,27 +250,45 @@
 				Name="tracklist"
 				>
 				<File
-					RelativePath=".\tracklist\IBase.h"
+					RelativePath=".\tracklist\Base.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)2.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)2.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)2.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)2.xdc"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath=".\tracklist\Base.h"
 					>
 				</File>
 				<File
-					RelativePath=".\tracklist\IRandomAccess.h"
+					RelativePath=".\tracklist\LibraryList.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\tracklist\Playlist.cpp"
+					RelativePath=".\tracklist\LibraryList.h"
 					>
 				</File>
 				<File
-					RelativePath=".\tracklist\Playlist.h"
+					RelativePath=".\tracklist\MultiLibraryList.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\tracklist\Standard.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\tracklist\Standard.h"
+					RelativePath=".\tracklist\MultiLibraryList.h"
 					>
 				</File>
 			</Filter>
@@ -339,35 +365,19 @@
 						>
 					</File>
 					<File
-						RelativePath=".\Query\PlaylistLoad.cpp"
-						>
-					</File>
-					<File
-						RelativePath=".\Query\PlaylistLoad.h"
-						>
-					</File>
-					<File
-						RelativePath=".\Query\Playlists.cpp"
-						>
-					</File>
-					<File
-						RelativePath=".\Query\Playlists.h"
-						>
-					</File>
-					<File
-						RelativePath=".\Query\PlaylistSave.cpp"
-						>
-					</File>
-					<File
-						RelativePath=".\Query\PlaylistSave.h"
-						>
-					</File>
-					<File
 						RelativePath=".\Query\SortTracks.cpp"
 						>
 					</File>
 					<File
 						RelativePath=".\Query\SortTracks.h"
+						>
+					</File>
+					<File
+						RelativePath=".\Query\SortTracksWithData.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Query\SortTracksWithData.h"
 						>
 					</File>
 					<File
@@ -452,10 +462,6 @@
 				Name="metadata"
 				>
 				<File
-					RelativePath=".\ITrack.h"
-					>
-				</File>
-				<File
 					RelativePath=".\MetadataValue.cpp"
 					>
 				</File>
@@ -472,19 +478,11 @@
 					>
 				</File>
 				<File
-					RelativePath=".\Track.cpp"
+					RelativePath=".\NonLibraryTrackHelper.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\Track.h"
-					>
-				</File>
-				<File
-					RelativePath=".\TrackMeta.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\TrackMeta.h"
+					RelativePath=".\NonLibraryTrackHelper.h"
 					>
 				</File>
 			</Filter>
@@ -516,35 +514,55 @@
 				Name="audio"
 				>
 				<File
-					RelativePath=".\audio\AudioEvents.h"
+					RelativePath=".\audio\Buffer.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\audio\AudioPacketizer.cpp"
+					RelativePath=".\audio\Buffer.h"
 					>
 				</File>
 				<File
-					RelativePath=".\audio\AudioPacketizer.h"
+					RelativePath=".\audio\IAnalyzer.h"
 					>
 				</File>
 				<File
-					RelativePath=".\audio\AudioStream.cpp"
+					RelativePath=".\audio\IBuffer.h"
 					>
 				</File>
 				<File
-					RelativePath=".\audio\AudioStream.h"
+					RelativePath=".\audio\IDecoder.h"
 					>
 				</File>
 				<File
-					RelativePath=".\audio\IAudioCallback.h"
+					RelativePath=".\audio\IDecoderFactory.h"
 					>
 				</File>
 				<File
-					RelativePath=".\audio\IAudioOutput.h"
+					RelativePath=".\audio\IDSP.h"
 					>
 				</File>
 				<File
-					RelativePath=".\audio\IAudioSource.h"
+					RelativePath=".\audio\IOutput.h"
+					>
+				</File>
+				<File
+					RelativePath=".\audio\IPlayer.h"
+					>
+				</File>
+				<File
+					RelativePath=".\audio\Player.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\audio\Player.h"
+					>
+				</File>
+				<File
+					RelativePath=".\audio\Stream.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\audio\Stream.h"
 					>
 				</File>
 				<File
@@ -614,6 +632,14 @@
 				Name="xml"
 				>
 				<File
+					RelativePath=".\xml\IReadSupplier.h"
+					>
+				</File>
+				<File
+					RelativePath=".\xml\IWriteSupplier.h"
+					>
+				</File>
+				<File
 					RelativePath=".\xml\Node.cpp"
 					>
 				</File>
@@ -635,6 +661,18 @@
 				</File>
 				<File
 					RelativePath=".\xml\ParserNode.h"
+					>
+				</File>
+				<File
+					RelativePath=".\xml\Reader.h"
+					>
+				</File>
+				<File
+					RelativePath=".\xml\Socket.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\xml\Socket.h"
 					>
 				</File>
 				<File
@@ -763,6 +801,54 @@
 				</File>
 				<File
 					RelativePath=".\filestreams\LocalFileStream.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="tracks"
+				>
+				<File
+					RelativePath=".\GenericTrack.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\GenericTrack.h"
+					>
+				</File>
+				<File
+					RelativePath=".\IndexerTrack.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\IndexerTrack.h"
+					>
+				</File>
+				<File
+					RelativePath=".\ITrack.h"
+					>
+				</File>
+				<File
+					RelativePath=".\LibraryTrack.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\LibraryTrack.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Track.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Track.h"
+					>
+				</File>
+				<File
+					RelativePath=".\TrackFactory.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\TrackFactory.h"
 					>
 				</File>
 			</Filter>

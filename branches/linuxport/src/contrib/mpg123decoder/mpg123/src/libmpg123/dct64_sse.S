@@ -76,7 +76,7 @@ ASM_NAME(dct64_sse):
 
 	movl	ARG(2), %eax
 	movl	ARG(0), %ecx
-#APP
+/* APP */
 /* for (i = 0; i < 0x20 / 2; i += 4) cycle 1 */
 	movaps    ASM_NAME(costab_mmxsse), %xmm3
 	shufps    $27, %xmm3, %xmm3
@@ -92,9 +92,9 @@ ASM_NAME(dct64_sse):
 	mulps     %xmm3, %xmm4
 	movaps    %xmm4, B1(112)
 	
-#NO_APP
+/* NO_APP */
 	movl	ARG(1), %ebx
-#APP
+/* APP */
 /* for (i = 0; i < 0x20 / 2; i += 4) cycle 2 */
 	movaps    ASM_NAME(costab_mmxsse)+16, %xmm3
 	shufps    $27, %xmm3, %xmm3
@@ -397,7 +397,7 @@ ASM_NAME(dct64_sse):
 	mulps     %xmm2, %xmm5
 	movaps    %xmm5, B1(112)
 	
-#NO_APP
+/* NO_APP */
 	flds	B1(40)
 	movl	%esp, %edx
 	addl	$B1OFF, %edx
@@ -441,7 +441,7 @@ ASM_NAME(dct64_sse):
 	flds	B1(116)
 	fadds	B1(124)
 	fstps	B1(116)
-#APP
+/* APP */
 	flds       ASM_NAME(costab_mmxsse)+120
 	flds     (%eax)
 	fadds   4(%eax)
@@ -552,7 +552,7 @@ ASM_NAME(dct64_sse):
 	fistp 416(%ebx)
 	ffreep %st(0)
 	
-#NO_APP
+/* NO_APP */
 	movzwl	(%ecx), %eax
 	movw	%ax, (%ebx)
 	popl	%ebx

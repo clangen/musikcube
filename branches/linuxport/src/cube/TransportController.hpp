@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright  2007, Casey Langen
 //
 // Sources and Binaries of: mC2, win32cpp
 //
@@ -81,10 +81,11 @@ protected:
     void    OnPlaybackSliderMouseDown(Window* windows, MouseEventFlags flags, Point point);
     void    OnPlaybackSliderMouseUp(Window* windows, MouseEventFlags flags, Point point);
 
-    void    OnPlaybackStarted(musik::core::TrackPtr track);
-    void    OnPlaybackStopped(musik::core::TrackPtr track);
+    void    OnPlaybackStarted();
+    void    OnPlaybackStopped();
     void    OnPlaybackPaused();
     void    OnPlaybackResumed(); 
+    double  CurrentTrackLength();
 
     TransportView& transportView;
 
@@ -95,7 +96,8 @@ protected:
     bool    playbackSliderMouseDown;
 
     musik::core::TrackPtr   displayedTrack;
-    win32cpp::uistring FormatTime(unsigned long ms);
+    win32cpp::uistring FormatTime(double seconds);
+//    win32cpp::uistring FormatTime(const utfchar *seconds);
 };
 
 //////////////////////////////////////////////////////////////////////////////

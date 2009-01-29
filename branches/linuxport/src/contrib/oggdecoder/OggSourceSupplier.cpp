@@ -52,16 +52,27 @@ void OggSourceSupplier::Destroy()
     delete this;
 }
 
-IAudioSource* OggSourceSupplier::CreateAudioSource()
+IDecoder* OggSourceSupplier::CreateDecoder()
 {
     return new OGGDecoder();
 }
 
-bool OggSourceSupplier::CanHandle(const utfchar* extension) const
+bool OggSourceSupplier::CanHandle(const utfchar* type) const
 {
-    if( utfstring(UTF("ogg"))==extension){
-        return true;
+    if(type){
+        utfstring typeString(type);
+        if(typeString.find(UTF("ogg"))!=utfstring::npos){
+            return true;
+        }
+        if(typeString.find(UTF("oga"))!=utfstring::npos){
+            return true;
+        }
+        if(typeString.find(UTF("audio/ogg"))!=utfstring::npos){
+            return true;
+        }
+        if(typeString.find(UTF("audio/vorbis"))!=utfstring::npos){
+            return true;
+        }
     }
-
     return false;
 }

@@ -40,9 +40,8 @@
 
 #include <vector>
 #include <set>
-#include <boost/array.hpp>
-#include <boost/asio.hpp>
 
+#include <core/xml/IReadSupplier.h>
 #include <core/xml/Node.h>
 #include <core/xml/ParserNode.h>
 
@@ -89,10 +88,11 @@ namespace musik{ namespace core{ namespace xml{
 //////////////////////////////////////////
 class Parser : public ParserNode{
     public:
-        Parser(boost::asio::ip::tcp::socket *socket);
+        Parser(IReadSupplier *supplier);
         ~Parser();
 
     private:
+        IReadSupplier *supplier;
 		// XML Parser status
         XML_Parser xmlParser;
 		int xmlParserStatus;
@@ -100,12 +100,6 @@ class Parser : public ParserNode{
 		// XML specific info
         int level;
         std::vector<Node::Ptr> currentNodeLevels;
-
-
-		// Socket stuff
-        boost::asio::ip::tcp::socket *socket;       
-        boost::array<char, 4096> readBuffer;
-        size_t readBufferLength;
 
     private:
 
@@ -118,15 +112,12 @@ class Parser : public ParserNode{
 
 
     private:
-        void ReadFromSocket();
-
-    private:
         friend class ParserNode;
 
         bool exit;
         void Exit();
 
-        enum EventTypes:int{
+        enum EventTypes{
             NodeStart=1,
             NodeEnd=2,
             Content=3

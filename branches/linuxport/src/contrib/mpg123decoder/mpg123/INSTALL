@@ -95,6 +95,18 @@ Please note that the Makefile itself does not contain any x86 cpu specific CFLAG
 
 Look into the ports/ directory for some traces of "porting" mpg123 or usually libmpg123 alone to different systems and compilers.
 
+3a. Preparing Win32 binary packages.
+
+Caution: You should make sure to use some gcc >= 4.2.0, even if it's still the experimental package for MinGW32.
+This helps preventing incompatibilities between generated DLL files and other compilers (it's about stack alignment).
+
+Get MinGW/MSYS installed, run the MSYS shell.
+Enter the mpg123 source directory.
+Execute sh ./windows-builds.sh .
+
+After some time, you should have some relevant files under releases/ (or releases\, for Windows people;-).
+You don't just get one build -- there are several variants, corresponding to what usually is to be found under http://mpg123.org/download/win32 .
+
 
 4. Have fun!
 

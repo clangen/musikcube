@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright  2007, Casey Langen
 //
 // Sources and Binaries of: mC2, win32cpp
 //
@@ -49,7 +49,7 @@ using namespace musik::cube;
 //////////////////////////////////////////////////////////////////////////////
 
 /*ctor*/    TracklistView::TracklistView()
-: base(LinearRowLayout)
+: base(VerticalLayout,win32cpp::LayoutFillFill)
 , listView(NULL)
 , infoView(NULL)
 {
@@ -58,13 +58,10 @@ using namespace musik::cube;
 void        TracklistView::OnCreated()
 {
     this->infoView = this->AddChild(new TracklistInfoView());
-    //this->listView = this->AddChild(new ListView());
+    this->infoView->SetLayoutAlignment(win32cpp::LayoutAlignCenter);
 
-    // BUG: Workaround of a bug in win32cpp. Create the listView in a Frame instead
     this->listView = new ListView();
     Frame* listViewFrame = this->AddChild(new Frame(this->listView));
+    listViewFrame->SetLayoutFlags(win32cpp::LayoutFillFill);
 
-    this->SetChildAlignment(this->infoView, ChildAlignCenter);
-    this->SetChildFill(this->infoView, false);
-    this->SetFlexibleChild(listViewFrame);
 }

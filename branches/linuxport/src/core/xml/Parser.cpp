@@ -38,8 +38,6 @@
 #include <core/xml/ParserNode.h>
 #include <expat/expat.h>
 
-#include <fstream>
-
 using namespace musik::core::xml;
 
 //////////////////////////////////////////////////////////////////////////////
@@ -55,12 +53,11 @@ using namespace musik::core::xml;
 ///read from the socket when there is no buffer
 ///left in the parser.
 //////////////////////////////////////////
-Parser::Parser(boost::asio::ip::tcp::socket *socket)
+Parser::Parser(IReadSupplier *supplier)
  :level(0)
+ ,supplier(supplier)
  ,xmlParser(NULL)
- ,socket(socket)
  ,xmlParserStatus(XML_Status::XML_STATUS_OK)
- ,readBufferLength(0)
  ,currentEventType(0)
  ,exit(false)
 {
@@ -150,25 +147,6 @@ void Parser::OnContentReal(const char *content,int length){
 
 //////////////////////////////////////////////////////////////////////////////
 
-void Parser::ReadFromSocket(){
-    boost::system::error_code error;
-
-    // This is a likely place where a thread will wait
-    this->readBufferLength  = this->socket->read_some(boost::asio::buffer(this->readBuffer),error);
-
-    if(error){
-        // Connection closed or some other error occured
-        this->Exit();
-    }
-
-    // Log
-//    std::ofstream logFile("mc2_Parser.log",std::ios::app);
-//    logFile.write(this->readBuffer.c_array(),this->readBufferLength);
-//    logFile << std::endl;
-
-}
-
-//////////////////////////////////////////////////////////////////////////////
 
 void Parser::ContinueParsing(){
     this->xmlFound  = false;
@@ -178,8 +156,14 @@ void Parser::ContinueParsing(){
 		        this->xmlParserStatus	= XML_ResumeParser(this->xmlParser);
 		        break;
 	        case XML_Status::XML_STATUS_OK:
-		        this->ReadFromSocket();
-		        this->xmlParserStatus	= XML_Parse(this->xmlParser,this->readBuffer.c_array(),(int)this->readBufferLength,0);
+                if(this->supplier->Exited()){
+                    this->Exit();
+                    return;
+                }
+                if(!this->supplier->Read()){
+                    return;
+                }
+                this->xmlParserStatus	= XML_Parse(this->xmlParser,this->supplier->Buffer(),(int)this->supplier->BufferSize(),0);
 		        break;
             case XML_Status::XML_STATUS_ERROR:
                 this->Exit();

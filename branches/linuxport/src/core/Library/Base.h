@@ -57,7 +57,7 @@ namespace musik{ namespace core{
 
 #include <core/config.h>
 #include <core/db/Connection.h>
-#include <core/tracklist/IRandomAccess.h>
+//#include <core/tracklist/IRandomAccess.h>
 
 #include <boost/thread/thread.hpp>
 #include <boost/thread/condition.hpp>
@@ -89,7 +89,7 @@ namespace musik{ namespace core{ namespace Library{
 //////////////////////////////////////////
 class Base : boost::noncopyable{
     protected:
-        Base(utfstring identifier);
+        Base(utfstring name,int id);
 	public:
         virtual ~Base(void);
 
@@ -134,8 +134,10 @@ class Base : boost::noncopyable{
         bool Exited();
 
 		const utfstring& Identifier();
+		int Id();
+		const utfstring& Name();
 
-		musik::core::tracklist::Ptr NowPlaying();
+//		musik::core::tracklist::Ptr NowPlaying();
 
         virtual const std::string& AuthorizationKey();
 
@@ -204,6 +206,15 @@ class Base : boost::noncopyable{
         //////////////////////////////////////////
         boost::mutex resultMutex;
 
+        //////////////////////////////////////////
+        ///\brief
+        ///This mutex is used by the LibraryTrack to protect the metadata map.
+        ///
+        ///\remarks
+        ///This mutex needs to be public
+        //////////////////////////////////////////
+        boost::mutex trackMutex;
+
 
     protected:
         typedef std::list<Query::Ptr> QueryList;
@@ -246,6 +257,13 @@ class Base : boost::noncopyable{
         ///GetLibraryDirectory
         //////////////////////////////////////////
         utfstring identifier;
+        int id;
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Name of the library.
+        //////////////////////////////////////////
+        utfstring name;
 
         //////////////////////////////////////////
         ///\brief
@@ -265,7 +283,7 @@ class Base : boost::noncopyable{
         bool exit;
         boost::condition waitCondition;
 
-		musik::core::tracklist::WeakPtr nowPlaying;
+//		musik::core::tracklist::WeakPtr nowPlaying;
 
     public:
         boost::mutex libraryMutex;

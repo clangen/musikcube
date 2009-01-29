@@ -32,14 +32,14 @@
 //////////////////////////////////////////////////////////////////////////////
 #pragma once
 
-#include <core/audio/IAudioSource.h>
+#include <core/audio/IDecoder.h>
 #include "FLAC/stream_decoder.h"
 #include <stddef.h>
 
 
 using namespace musik::core::audio;
 
-class FLACDecoder :	public IAudioSource
+class FLACDecoder :	public IDecoder
 {
 
 public: 
@@ -48,11 +48,8 @@ public:
 
 public: 
     virtual void    Destroy();
-    virtual bool    GetLength(unsigned long * MS);
-    virtual bool    SetPosition(unsigned long * MS,unsigned long totalMS);
-    virtual bool    SetState(unsigned long State);
-    virtual bool    GetFormat(unsigned long * SampleRate, unsigned long * Channels);
-    virtual bool    GetBuffer(float ** ppBuffer, unsigned long * NumSamples);
+    virtual double  SetPosition(double seconds,double totalLength);
+    virtual bool    GetBuffer(IBuffer *buffer);
     virtual bool    Open(musik::core::filestreams::IFileStream *fileStream);
 
 public:

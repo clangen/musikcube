@@ -37,6 +37,7 @@
 #include "pch.hpp"
 #include <core/http/TrackSender.h>
 #include <core/Common.h>
+#include <core/filestreams/Factory.h>
 
 
 using namespace musik::core::http;
@@ -51,44 +52,47 @@ const char* TrackSender::WatchPath(){
     return this->watchPath.c_str();
 }
 
-void TrackSender::Execute(musik::core::http::IResponder* responder,musik::core::http::IRequestParser* request,const musik::core::ITrack* track){
+void TrackSender::Execute(musik::core::http::IResponder* responder,musik::core::http::IRequestParser* request,musik::core::ITrack* track){
     #define BUFFER_SIZE 4096
     char buffer[BUFFER_SIZE];
     std::size_t buffersize(0);
 
     // TODO: Should rewrite this in a multiplatform manner
     if(track && responder){
-        FILE *file    = _wfopen(track->GetValue("path"),UTF("rb"));
+        musik::core::filestreams::FileStreamPtr file( musik::core::filestreams::Factory::OpenFile(track->URL()) );
 
         if(file){
             const char *seekOffset   = request->Attribute("seek");
             if(seekOffset){
                 try{
                     long seekTo = boost::lexical_cast<long>(seekOffset);
-                    fseek(file,seekTo,SEEK_SET);
+                    file->SetPosition(seekTo);
                 }
                 catch(...){
                 }
             }
 
             // Send header
-            std::string header( "HTTP/1.1 200 OK\r\nContent-Type: audio/mpeg\r\nContent-Length: " );
-            header.append( musik::core::ConvertUTF8(track->GetValue("filesize")) );
-            header.append("\r\n\r\n");
+            std::string header( "HTTP/1.1 200 OK\r\nContent-Length: " );
+            header.append( UTF_TO_UTF8(track->GetValue("filesize")) + "\r\n" );
+
+            // Send content type as filename extension
+            // TODO: Fix to send mimetype
+            header.append( "Content-Type: " + UTF_TO_UTF8(file->Type()) + "\r\n" );
+            header.append("\r\n");
 
             responder->SendContent(header.c_str(),header.size());
 
-            while(!feof(file) && file && !responder->Exited()){
+            while(!file->Eof() && !responder->Exited()){
                 buffersize=0;
-                while(buffersize<BUFFER_SIZE && !feof(file)){
-                    buffersize += fread(buffer,sizeof(char),BUFFER_SIZE-buffersize,file);
+                while(buffersize<BUFFER_SIZE && !file->Eof()){
+                    buffersize += file->Read(buffer,BUFFER_SIZE-buffersize);
                 }
 
                 // send buffer
                 responder->SendContent(buffer,buffersize);
 
             }
-            fclose(file);
         }
     }
 }

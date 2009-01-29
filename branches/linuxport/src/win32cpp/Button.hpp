@@ -68,7 +68,7 @@ public: // events
     ButtonPressedEvent  Pressed;
 
 public: // constructors
-    /*ctor*/            Button(const uichar* caption = _T(""));
+    /*ctor*/            Button(const uichar* caption = _T(""), LayoutFlags = LayoutWrapWrap);
 
 protected: // methods
     virtual HWND        Create(Window* parent);

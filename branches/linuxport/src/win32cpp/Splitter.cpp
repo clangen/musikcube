@@ -64,22 +64,44 @@ HCURSOR Splitter::sArrowCursor = ::LoadCursor(0, MAKEINTRESOURCE(IDC_ARROW));
 ///
 ///\param child2
 ///The right (horizontal) or bottom (vertical) child.
-/*ctor*/    Splitter::Splitter(SplitDirection direction, Window* child1, Window* child2)
-: base()
-, child1(child1)
-, child2(child2)
-, child1Frame(new Frame(child1, 0))
-, child2Frame(new Frame(child2, 0))
-, gripperSize(4)
-, anchorSize(-1)
-, direction(direction)
-, isDragging(false)
-, isSizable(true)
-, anchor(direction == SplitColumn ? AnchorLeft : AnchorTop)
-, minAnchorSize(-1)
-, maxAnchorSize(-1)
-, sizeFromMouse(-1)
+///
+///\param layoutFlags
+///The size flags to be used when positioning this control within a parent
+/*ctor*/    Splitter::Splitter(SplitDirection direction, Window* child1, Window* child2, LayoutFlags layoutFlags)
+: base(layoutFlags)
 {
+    this->InitializeInstance(direction, child1, child2);
+}
+
+///\brief
+///Constructor.
+///
+///\param direction
+///The split direction, SplitColumn or SplitRow
+///
+///\param layoutFlags
+///The size flags to be used when positioning this control within a parent
+/*ctor*/    Splitter::Splitter(SplitDirection direction, LayoutFlags layoutFlags)
+: base(layoutFlags)
+{
+    this->InitializeInstance(direction, NULL, NULL);
+}
+
+void        Splitter::InitializeInstance(SplitDirection direction, Window* child1, Window* child2)
+{
+    this->child1 = child1;
+    this->child2 = child2;
+    this->child1Frame = new Frame(child1, 0);
+    this->child2Frame = new Frame(child2, 0);
+    this->gripperSize = 4;
+    this->anchorSize = -1;
+    this->direction = direction;
+    this->isDragging = false;
+    this->isSizable = true;
+    this->anchor = (direction == SplitColumn ? AnchorLeft : AnchorTop);
+    this->minAnchorSize = -1;
+    this->maxAnchorSize = -1;
+    this->sizeFromMouse = -1;
 }
 
 LRESULT     Splitter::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)

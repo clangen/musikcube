@@ -64,6 +64,7 @@ public: // types
 
 public: // constructors
     /*ctor*/    Panel();
+    /*ctor*/    Panel(LayoutFlags layoutFlags);
 
 protected: // methods
     virtual HWND        Create(Window* parent);

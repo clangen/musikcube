@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright  2007, Casey Langen
 //
 // Sources and Binaries of: mC2, win32cpp
 //
@@ -57,13 +57,13 @@ using namespace musik::cube;
 void        TransportView::OnCreated()
 {
     // main layout
-    LinearLayout* mainLayout = new LinearLayout(LinearRowLayout);
-    LinearLayout* topRowLayout = new LinearLayout(LinearColumnLayout);
-    LinearLayout* bottomRowLayout = new LinearLayout(LinearColumnLayout);
+    LinearLayout* mainLayout = new LinearLayout(VerticalLayout);
+    LinearLayout* topRowLayout = new LinearLayout(HorizontalLayout);
+    LinearLayout* bottomRowLayout = new LinearLayout(HorizontalLayout);
 
     // top row layout
-    topRowLayout->SetDefaultChildFill(false);
-    topRowLayout->SetDefaultChildAlignment(ChildAlignMiddle);
+//    topRowLayout->SetDefaultChildFill(false);
+//    topRowLayout->SetDefaultChildAlignment(ChildAlignMiddle);
 
     this->prevButton = topRowLayout->AddChild(new Button(_(_T("Prev"))));
     this->playButton = topRowLayout->AddChild(new Button(_(_T("Play"))));
@@ -79,43 +79,44 @@ void        TransportView::OnCreated()
     FontRef boldFont(Font::Create());
     boldFont->SetBold(true);
     //
-    LinearLayout* nowPlayingLayout = new LinearLayout(LinearColumnLayout);
+    LinearLayout* nowPlayingLayout = new LinearLayout(HorizontalLayout);
+    nowPlayingLayout->SetLayoutFlags(win32cpp::LayoutFillFill);
+    nowPlayingLayout->SetLayoutAlignment(win32cpp::LayoutAlignMiddle);
     //
     uistring nowPlayingCaption = _(_T("Now playing"));
     nowPlayingCaption += _T(" ");
     nowPlayingLayout->AddChild(new Label(nowPlayingCaption.c_str()));
-    this->titleLabel = nowPlayingLayout->AddChild(new Label(_(_T("Song Title"))));
+    this->titleLabel = nowPlayingLayout->AddChild(new Label(_(_T("-"))));
     uistring byCaption = _(_T("by"));
     byCaption = _T(" ") + byCaption + _T(" ");
     nowPlayingLayout->AddChild(new Label(byCaption.c_str()));
-    this->artistLabel = nowPlayingLayout->AddChild(new Label(_(_T("Artist Name"))));
+    this->artistLabel = nowPlayingLayout->AddChild(new Label(_(_T("-"))));
     //
     this->titleLabel->SetFont(boldFont);
     this->artistLabel->SetFont(boldFont);
     nowPlayingLayout->SetSpacing(0);
     //
     Frame* nowPlayingFrame = topRowLayout->AddChild(
-        new Frame(nowPlayingLayout, FramePadding(6, 0, 0, 0)));
-    topRowLayout->SetChildFill(nowPlayingFrame, false);
-    topRowLayout->SetChildAlignment(nowPlayingFrame, ChildAlignCenter);
-    topRowLayout->SetFlexibleChild(nowPlayingFrame);
+        new Frame(nowPlayingLayout, WindowPadding(6, 0, 0, 0)));
+    nowPlayingFrame->SetLayoutFlags(win32cpp::LayoutFillFill);
+
 
     this->volumeSlider = topRowLayout->AddChild(new Trackbar());
     this->volumeSlider->Resize(100, 28);
 
     // bottom row layout
     this->timeElapsedLabel = bottomRowLayout->AddChild(new Label(_T("0:00")));
+    this->timeElapsedLabel->SetLayoutAlignment(win32cpp::LayoutAlignMiddle);
     this->playbackSlider = bottomRowLayout->AddChild(new Trackbar(0, 10000));
+    this->playbackSlider->SetLayoutFlags(win32cpp::LayoutFillFill);
     this->timeDurationLabel = bottomRowLayout->AddChild(new Label(_T("0:00")));
-    //
-    this->playbackSlider->Resize(100, 20);
+    this->timeDurationLabel->SetLayoutAlignment(win32cpp::LayoutAlignMiddle);
 
-    bottomRowLayout->SetFlexibleChild(playbackSlider);
-    bottomRowLayout->SetDefaultChildFill(false);
-    bottomRowLayout->SetDefaultChildAlignment(ChildAlignMiddle);
 
     // put it all together!
-    mainLayout->AddChild(new Frame(topRowLayout, FramePadding(4, 0, 2, 0)));
-    mainLayout->AddChild(new Frame(bottomRowLayout, FramePadding(6, 6, 0, 0)));
+    win32cpp::Frame *topRowFrame    = mainLayout->AddChild(new Frame(topRowLayout, WindowPadding(4, 0, 2, 0)));
+    topRowFrame->SetLayoutFlags(win32cpp::LayoutFillFill);
+    win32cpp::Frame *bottomRowFrame = mainLayout->AddChild(new Frame(bottomRowLayout, WindowPadding(6, 6, 0, 0)));
+    bottomRowFrame->SetLayoutFlags(win32cpp::LayoutFillFill);
     this->AddChild(mainLayout);
 }

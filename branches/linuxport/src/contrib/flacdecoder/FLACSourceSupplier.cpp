@@ -52,16 +52,18 @@ void FLACSourceSupplier::Destroy()
     delete this;
 }
 
-IAudioSource* FLACSourceSupplier::CreateAudioSource()
+IDecoder* FLACSourceSupplier::CreateDecoder()
 {
     return new FLACDecoder();
 }
 
-bool FLACSourceSupplier::CanHandle(const utfchar* extension) const
+bool FLACSourceSupplier::CanHandle(const utfchar* type) const
 {
-    if( utfstring(UTF("flac"))==extension){
-        return true;
+    if(type){
+        utfstring typeString(type);
+        if(typeString.find(UTF("flac"))!=utfstring::npos){
+            return true;
+        }
     }
-
     return false;
 }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="8.00"
 	Name="win32cpp"
 	ProjectGUID="{E618F29F-BF28-441A-B039-9E10A631D881}"
 	RootNamespace="win32cpp"
@@ -105,7 +105,6 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="./;../;../3rdparty/include/"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_SCL_SECURE_NO_WARNINGS"
 				RuntimeLibrary="0"
@@ -218,6 +217,14 @@
 						>
 					</File>
 					<File
+						RelativePath=".\Image.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Image.hpp"
+						>
+					</File>
+					<File
 						RelativePath=".\MemoryDC.cpp"
 						>
 					</File>
@@ -291,6 +298,10 @@
 					</File>
 					<File
 						RelativePath=".\WindowGeometry.hpp"
+						>
+					</File>
+					<File
+						RelativePath=".\WindowPadding.hpp"
 						>
 					</File>
 					<Filter
@@ -382,6 +393,14 @@
 						>
 					</File>
 					<File
+						RelativePath=".\VirtualWindow.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\VirtualWindow.hpp"
+						>
+					</File>
+					<File
 						RelativePath=".\Window.cpp"
 						>
 					</File>
@@ -392,14 +411,6 @@
 					<Filter
 						Name="containers"
 						>
-						<File
-							RelativePath=".\BarLayout.cpp"
-							>
-						</File>
-						<File
-							RelativePath=".\BarLayout.hpp"
-							>
-						</File>
 						<File
 							RelativePath=".\Container.cpp"
 							>

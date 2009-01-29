@@ -51,8 +51,7 @@
 #include <core/LibraryFactory.h>
 #include <core/PlaybackQueue.h>
 #include <core/MetaKey.h>
-#include <core/tracklist/IRandomAccess.h>
-#include <core/tracklist/Standard.h>
+#include <core/tracklist/MultiLibraryList.h>
 
 
 using namespace musik::cube;
@@ -68,11 +67,16 @@ using namespace musik::cube;
 
     this->SetRowCount(0);
 
-    this->tracklist->TracksUpdated.connect(this,&TracklistModel::OnTracks);
-    this->tracklist->TrackMetaUpdated.connect(this,&TracklistModel::OnTrackMeta);
+    this->tracklist->TracklistChanged.connect(this,&TracklistModel::OnTracks);
+    this->tracklist->TrackMetadataUpdated.connect(this,&TracklistModel::OnTrackMeta);
     this->tracklist->PositionChanged.connect(this,&TracklistModel::OnPositionChanged);
 
     this->ConnectToQuery(connectedQuery);
+
+    // In case there are tracks in the list already.
+    if(this->tracklist->Size()){
+        this->OnTracks(true);
+    }
 }
 
 uistring            TracklistModel::CellValueToString(int rowIndex, ColumnRef column)
@@ -115,8 +119,13 @@ uistring            TracklistModel::CellValueToString(int rowIndex, ColumnRef co
     return _T("");
 }
 
-void TracklistModel::OnTrackMeta(std::vector<int> &trackPositions){
-    for(std::vector<int>::iterator row=trackPositions.begin();row!=trackPositions.end();++row){
+void TracklistModel::OnTrackMeta(std::vector<long> trackPositions){
+    if(!win32cpp::ApplicationThread::InMainThread()){
+        std::vector<long> positionCopy(trackPositions);
+        win32cpp::ApplicationThread::Call1(this,&TracklistModel::OnTrackMeta,positionCopy);
+        return;
+    }
+    for(std::vector<long>::iterator row=trackPositions.begin();row!=trackPositions.end();++row){
         this->InvalidateData(*row);
     }
 }
@@ -129,36 +138,34 @@ void TracklistModel::OnTracks(bool cleared){
 
 
 void TracklistModel::OnRowActivated(int row){
-    this->tracklist->SetCurrentPosition(row);
-    musik::core::PlaybackQueue::Instance().Play(this->tracklist);
+    this->tracklist->SetPosition(row);
+    musik::core::PlaybackQueue::Instance().Play(*this->tracklist);
 }
 
 void TracklistModel::OnPlayNow(win32cpp::ListView::RowIndexList& selectedRows){
     // Create a temporary tracklist to put into the "now playing" tracklist
-    musik::core::tracklist::Ptr selectedTracklist(new musik::core::tracklist::Standard());
-    selectedTracklist->SetLibrary(this->tracklist->Library());
+    musik::core::tracklist::Ptr selectedTracklist(new musik::core::tracklist::MultiLibraryList());
 
     for(win32cpp::ListView::RowIndexList::iterator row=selectedRows.begin();row!=selectedRows.end();++row){
         musik::core::TrackPtr track( (*this->tracklist)[*row] );
         if(track){
-            selectedTracklist->AppendTrack(track);
+            (*selectedTracklist) += track;
         }
     }
-    musik::core::PlaybackQueue::Instance().Play(selectedTracklist);
+    musik::core::PlaybackQueue::Instance().Play(*selectedTracklist);
 }
 
 void TracklistModel::OnEnqueue(win32cpp::ListView::RowIndexList& selectedRows){
     // Create a temporary tracklist to put into the "now playing" tracklist
-    musik::core::tracklist::Ptr selectedTracklist(new musik::core::tracklist::Standard());
-    selectedTracklist->SetLibrary(this->tracklist->Library());
+    musik::core::tracklist::Ptr selectedTracklist(new musik::core::tracklist::MultiLibraryList());
 
     for(win32cpp::ListView::RowIndexList::iterator row=selectedRows.begin();row!=selectedRows.end();++row){
         musik::core::TrackPtr track( (*this->tracklist)[*row] );
         if(track){
-            selectedTracklist->AppendTrack(track);
+            (*selectedTracklist) += track;
         }
     }
-    musik::core::PlaybackQueue::Instance().Append(selectedTracklist);
+    musik::core::PlaybackQueue::Instance().Append(*selectedTracklist);
 }
 
 void TracklistModel::ConnectToQuery(musik::core::Query::ListBase *connectedQuery){
@@ -167,7 +174,7 @@ void TracklistModel::ConnectToQuery(musik::core::Query::ListBase *connectedQuery
     }
 }
 
-void TracklistModel::OnPositionChanged(int activeRow,int oldActiveRow){
+void TracklistModel::OnPositionChanged(long activeRow,long oldActiveRow){
     if(!win32cpp::ApplicationThread::InMainThread()){
         win32cpp::ApplicationThread::Call2(this,&TracklistModel::OnPositionChanged,activeRow,oldActiveRow);
         return;

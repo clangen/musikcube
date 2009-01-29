@@ -10,11 +10,17 @@
 
 HTTPRequest::HTTPRequest(void)
  :socket(IOService)
+ ,pcBuffer(NULL)
+ ,pcBufferMaxSize(256*1024)
+ ,pcBufferSize(0)
+ ,pcBufferPosition(0)
 {
+    this->pcBuffer  = new char[256*1024];
 }
 
 HTTPRequest::~HTTPRequest(void)
 {
+    delete this->pcBuffer;
     this->socket.close();
 }
 
@@ -126,13 +132,56 @@ bool HTTPRequest::Request(const char *url){
 }
 
 long HTTPRequest::GetContent(void *buffer,long getLength){
-    // First just try to read_some so that we do not hold if not nessesary
-    boost::system::error_code error;
-    std::size_t bytesRead   = this->socket.read_some(boost::asio::buffer(buffer,getLength),error);
-
-    if(error){
-        return 0;
+    std::size_t bytesRead(0);
+    // lets check if ther is more that we can precache
+    if(this->pcBufferSize==0){
+        // if there is no available buffer, lets read directly to the buffer once there is something to read
+        boost::system::error_code error;        
+        bytesRead   = this->socket.read_some(boost::asio::buffer(buffer,getLength),error);
+        if(error){
+            return 0;
+        }
     }
+
+    // lets try to precache whatever is left 
+    size_t availableBuffer  = this->socket.available();
+    bool readError(false);
+    while(availableBuffer && this->pcBufferSize<this->pcBufferMaxSize && !readError){
+        // read to the internal precache buffer
+        std::size_t pcEndPosition       = (this->pcBufferPosition+this->pcBufferSize)%this->pcBufferMaxSize;
+
+        std::size_t rotationSizeLeft    = this->pcBufferMaxSize-pcEndPosition;
+        std::size_t pcBufferLeft        = this->pcBufferMaxSize-this->pcBufferSize;
+        std::size_t readMax             = pcBufferLeft<availableBuffer?pcBufferLeft:availableBuffer;
+        readMax                         = rotationSizeLeft<readMax?rotationSizeLeft:readMax;
+
+        boost::system::error_code error;        
+        std::size_t addedToPrecache     = this->socket.read_some(boost::asio::buffer(&this->pcBuffer[pcEndPosition],readMax),error);
+        if(error){
+            readError   = true;
+        }
+        this->pcBufferSize              += addedToPrecache;
+    
+        availableBuffer  = this->socket.available();
+    }
+
+    // if we havn't read anything yet and we have some cached buffer, lets copy from the precache buffer
+    if(!bytesRead && this->pcBufferSize){
+        while(bytesRead<getLength && this->pcBufferSize){
+            std::size_t rotationSizeLeft    = this->pcBufferMaxSize-this->pcBufferPosition;
+            std::size_t requestedLeft       = getLength-bytesRead;
+            std::size_t readMax             = rotationSizeLeft<this->pcBufferSize?rotationSizeLeft:this->pcBufferSize;
+            readMax                         = requestedLeft<readMax?requestedLeft:readMax;
+            memcpy((char*)buffer+bytesRead,this->pcBuffer+this->pcBufferPosition,readMax);
+
+            bytesRead           += readMax;
+            this->pcBufferSize  -= readMax;
+            this->pcBufferPosition  = (this->pcBufferPosition+readMax)%this->pcBufferMaxSize;
+
+        }
+    }
+
     return bytesRead;
+
 }
 

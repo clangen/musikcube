@@ -51,8 +51,8 @@ using namespace win32cpp;
 ///
 ///\param caption
 ///The caption that beside the checkbox
-/*ctor*/    CheckBox::CheckBox(const uichar* caption, int style)
-: base()
+/*ctor*/    CheckBox::CheckBox(const uichar* caption, LayoutFlags layoutFlags, int style)
+: base(layoutFlags)
 , caption(caption)
 , style(style)
 {
@@ -73,7 +73,7 @@ HWND        CheckBox::Create(Window* parent)
         0,                      // X
         0,                      // Y
         64,                     // Width
-        32,                     // Height
+        28,                     // Height
         parent->Handle(),       // Parent
         NULL,                   // Menu
         hInstance,              // Instance

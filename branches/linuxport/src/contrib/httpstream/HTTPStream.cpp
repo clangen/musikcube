@@ -131,5 +131,12 @@ long HTTPStream::Filesize(){
     return 0;
 }
 
+const utfchar* HTTPStream::Type(){
+    static utfstring contentType;
+    contentType.clear();
+    std::string temp    = this->httpRequest->attributes["Content-Type"];
+    utf8::utf8to16(temp.begin(),temp.end(),std::back_inserter(contentType));
+    return contentType.c_str();
+}
 
 

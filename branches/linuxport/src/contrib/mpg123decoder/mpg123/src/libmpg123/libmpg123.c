@@ -25,12 +25,22 @@ static int initialized = 0;
 
 #define ALIGNCHECK(mh)
 #define ALIGNCHECKK
-#ifdef DEBUG
-#ifdef CCALIGN
+/* On compilers that support data alignment but not the automatic stack realignment.
+   We check for properly aligned stack before risking a crash because of badly compiled
+   client program. */
+#if (defined CCALIGN) && (defined NEED_ALIGNCHECK) && ((defined DEBUG) || (defined CHECK_ALIGN))
+
+/* Common building block. */
+#define ALIGNMAINPART \
+	/* minimum size of 16 bytes, not all compilers would align a smaller piece of data */ \
+	double ALIGNED(16) altest[2]; \
+	debug2("testing alignment, with %lu %% 16 = %lu", \
+		(unsigned long)altest, (unsigned long)((size_t)altest % 16)); \
+	if((size_t)altest % 16 != 0)
+
 #undef ALIGNCHECK
 #define ALIGNCHECK(mh) \
-	double ALIGNED(16) altest[4]; \
-	if(((size_t)altest) % 16 != 0) \
+	ALIGNMAINPART \
 	{ \
 		error("Stack variable is not aligned! Your combination of compiler/library is dangerous!"); \
 		if(mh != NULL) mh->err = MPG123_BAD_ALIGN; \
@@ -39,13 +49,12 @@ static int initialized = 0;
 	}
 #undef ALIGNCHECKK
 #define ALIGNCHECKK \
-	double ALIGNED(16) altest[4]; \
-	if(((size_t)altest) % 16 != 0) \
+	ALIGNMAINPART \
 	{ \
 		error("Stack variable is not aligned! Your combination of compiler/library is dangerous!"); \
 		return MPG123_BAD_ALIGN; \
 	}
-#endif
+
 #endif
 
 
@@ -56,6 +65,9 @@ static int initialized = 0;
 */
 static void frame_buffercheck(mpg123_handle *fr)
 {
+	/* When we have no accurate position, gapless code does not make sense. */
+	if(!fr->accurate) return;
+
 	/* The first interesting frame: Skip some leading samples. */
 	if(fr->firstoff && fr->num == fr->firstframe)
 	{
@@ -211,6 +223,16 @@ int attribute_align_arg mpg123_param(mpg123_handle *mh, enum mpg123_parms key, l
 	if(mh == NULL) return MPG123_ERR;
 	r = mpg123_par(&mh->p, key, val, fval);
 	if(r != MPG123_OK){ mh->err = r; r = MPG123_ERR; }
+	else
+	{ /* Special treatment for some settings. */
+#ifdef FRAME_INDEX
+		if(key == MPG123_INDEX_SIZE)
+		{ /* Apply frame index size and grow property on the fly. */
+			r = frame_index_setup(mh);
+			if(r != MPG123_OK) mh->err = MPG123_INDEX_FAIL;
+		}
+#endif
+	}
 	return r;
 }
 
@@ -285,6 +307,13 @@ int attribute_align_arg mpg123_par(mpg123_pars *mp, enum mpg123_parms key, long 
 		case MPG123_RESYNC_LIMIT:
 			mp->resync_limit = val;
 		break;
+		case MPG123_INDEX_SIZE:
+#ifdef FRAME_INDEX
+			mp->index_size = val;
+#else
+			ret = MPG123_NO_INDEX;
+#endif
+		break;
 		default:
 			ret = MPG123_BAD_PARAM;
 	}
@@ -346,6 +375,30 @@ int attribute_align_arg mpg123_getpar(mpg123_pars *mp, enum mpg123_parms key, lo
 		default:
 			ret = MPG123_BAD_PARAM;
 	}
+	return ret;
+}
+
+int attribute_align_arg mpg123_getstate(mpg123_handle *mh, enum mpg123_state key, long *val, double *fval)
+{
+	int ret = MPG123_OK;
+	long theval = 0;
+	double thefval = 0.;
+	ALIGNCHECK(mh);
+	if(mh == NULL) return MPG123_ERR;
+
+	switch(key)
+	{
+		case MPG123_ACCURATE:
+			theval = mh->accurate;
+		break;
+		default:
+			mh->err = MPG123_BAD_KEY;
+			ret = MPG123_ERR;
+	}
+
+	if(val  != NULL) *val  = theval;
+	if(fval != NULL) *fval = thefval;
+
 	return ret;
 }
 
@@ -508,6 +561,9 @@ static int get_next_frame(mpg123_handle *mh)
 			debug1("ignoring frame %li", (long)mh->num);
 			/* Decoder structure must be current! decode_update has been called before... */
 			(mh->do_layer)(mh); mh->buffer.fill = 0;
+			/* The ignored decoding may have failed. Make sure ntom stays consistent. */
+			if(mh->down_sample == 3) ntom_set_ntom(mh, mh->num+1);
+
 			mh->to_ignore = mh->to_decode = FALSE;
 		}
 		/* Read new frame data; possibly breaking out here for MPG123_NEED_MORE. */
@@ -572,6 +628,7 @@ static int get_next_frame(mpg123_handle *mh)
 void decode_the_frame(mpg123_handle *fr)
 {
 	size_t needed_bytes = samples_to_bytes(fr, frame_outs(fr, fr->num+1)-frame_outs(fr, fr->num));
+
 	fr->clip += (fr->do_layer)(fr);
 	/* There could be less data than promised. */
 	if(fr->buffer.fill < needed_bytes)
@@ -581,6 +638,8 @@ void decode_the_frame(mpg123_handle *fr)
 		/* One could do a loop with individual samples instead... but zero is zero. */
 		memset(fr->buffer.data + fr->buffer.fill, 0, needed_bytes - fr->buffer.fill);
 		fr->buffer.fill = needed_bytes;
+		/* ntom_val will be wrong when the decoding wasn't carried out completely */
+		if(fr->down_sample == 3) ntom_set_ntom(fr, fr->num+1);
 	}
 }
 
@@ -636,7 +695,6 @@ int attribute_align_arg mpg123_decode_frame(mpg123_handle *mh, off_t *num, unsig
 			debug1("got next frame, %i", mh->to_decode);
 		}
 	}
-	return MPG123_ERR;
 }
 
 int attribute_align_arg mpg123_read(mpg123_handle *mh, unsigned char *out, size_t size, size_t *done)
@@ -851,14 +909,22 @@ static int do_the_seek(mpg123_handle *mh)
 	int b;
 	off_t fnum = SEEKFRAME(mh);
 	mh->buffer.fill = 0;
+
 	if(mh->num < mh->firstframe) mh->to_decode = FALSE;
+
 	if(mh->num == fnum && mh->to_decode) return MPG123_OK;
 	if(mh->num == fnum-1)
 	{
 		mh->to_decode = FALSE;
 		return MPG123_OK;
 	}
+	if(mh->down_sample == 3)
+	{
+		ntom_set_ntom(mh, fnum);
+		debug3("fixed ntom for frame %"OFF_P" to %i, num=%"OFF_P, fnum, mh->ntom_val[0], mh->num);
+	}
 	b = mh->rd->seek_frame(mh, fnum);
+	debug1("seek_frame returned: %i", b);
 	if(b<0) return b;
 	/* Only mh->to_ignore is TRUE. */
 	if(mh->num < mh->firstframe) mh->to_decode = FALSE;
@@ -1152,6 +1218,12 @@ int attribute_align_arg mpg123_close(mpg123_handle *mh)
 	if(mh == NULL) return MPG123_ERR;
 	if(mh->rd != NULL && mh->rd->close != NULL) mh->rd->close(mh);
 	mh->rd = NULL;
+	if(mh->new_format)
+	{
+		debug("Hey, we are closing a track before the new format has been queried...");
+		invalidate_format(&mh->af);
+		mh->new_format = 0;
+	}
 	return MPG123_OK;
 }
 
@@ -1200,7 +1272,10 @@ static const char *mpg123_error[] =
 	"Stack alignment is not good. (code 30)",
 	"You gave me a NULL buffer? (code 31)",
 	"File position is screwed up, please do an absolute seek (code 32)",
-	"Inappropriate NULL-pointer provided."
+	"Inappropriate NULL-pointer provided.",
+	"Bad key value given.",
+	"There is no frame index (disabled in this build).",
+	"Frame index operation failed."
 };
 
 const char* attribute_align_arg mpg123_plain_strerror(int errcode)

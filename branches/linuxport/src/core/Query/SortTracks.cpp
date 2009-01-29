@@ -113,7 +113,7 @@ bool Query::SortTracks::ParseQuery(Library::Base *library,db::Connection &db){
         } else {
             // Sort by metakeys table
             selectMetaKeyId.BindText(0,metakey);
-            if(selectMetaKeyId.Step()==db::Row){
+            if(selectMetaKeyId.Step()==db::ReturnCode::Row){
                 sortFieldsMetakeyId.push_back(selectMetaKeyId.ColumnInt(0));
 
                 std::string sortField = boost::str( boost::format("ef%1%")%(sortFieldsMetakeyId.size()-1) );
@@ -144,7 +144,7 @@ bool Query::SortTracks::ParseQuery(Library::Base *library,db::Connection &db){
 
         db::Statement selectMetaValue("SELECT mv.sort_order FROM meta_values mv,track_meta tm WHERE tm.meta_value_id=mv.id AND tm.track_id=? AND mv.meta_key_id=? LIMIT 1",db);
         for(int i(0);i<this->tracksToSort.size();++i){
-            int track(this->tracksToSort[i]);
+            DBINT track(this->tracksToSort[i]);
             insertTracks.BindInt(0,track);
 
             // Lets find the meta values
@@ -153,7 +153,7 @@ bool Query::SortTracks::ParseQuery(Library::Base *library,db::Connection &db){
                 int metakeyId(sortFieldsMetakeyId[field]);
                 selectMetaValue.BindInt(0,track);
                 selectMetaValue.BindInt(1,metakeyId);
-                if(selectMetaValue.Step()==db::Row){
+                if(selectMetaValue.Step()==db::ReturnCode::Row){
                     insertTracks.BindInt(field+1,selectMetaValue.ColumnInt(0));
                 }
             }
@@ -185,21 +185,21 @@ Query::Ptr Query::SortTracks::copy() const{
     return queryCopy;
 }
 
-void Query::SortTracks::AddTrack(int trackId){
+void Query::SortTracks::AddTrack(DBINT trackId){
     this->tracksToSort.push_back(trackId);
 }
 
-void Query::SortTracks::AddTracks(std::vector<int> &tracks){
+void Query::SortTracks::AddTracks(std::vector<DBINT> &tracks){
     this->tracksToSort.reserve(this->tracksToSort.size()+tracks.size());
-    for(std::vector<int>::iterator track=tracks.begin();track!=tracks.end();++track){
+    for(std::vector<DBINT>::iterator track=tracks.begin();track!=tracks.end();++track){
         this->tracksToSort.push_back(*track);
     }
 }
 
-void Query::SortTracks::AddTracks(musik::core::tracklist::IRandomAccess &tracks){
+void Query::SortTracks::AddTracks(musik::core::tracklist::LibraryList &tracks){
     this->tracksToSort.reserve(this->tracksToSort.size()+tracks.Size());
     for(int i(0);i<tracks.Size();++i){
-        this->tracksToSort.push_back(tracks[i]->id);
+        this->tracksToSort.push_back(tracks[i]->Id());
     }
 
 }
@@ -214,7 +214,7 @@ void Query::SortTracks::ClearTracks(){
 
 //////////////////////////////////////////
 ///\brief
-///Recieve the query from XML
+///Receive the query from XML
 ///
 ///\param queryNode
 ///Reference to query XML node
@@ -227,9 +227,9 @@ void Query::SortTracks::ClearTracks(){
 ///\endcode
 ///
 ///\returns
-///true when successfully recieved
+///true when successfully received
 //////////////////////////////////////////
-bool Query::SortTracks::RecieveQuery(musik::core::xml::ParserNode &queryNode){
+bool Query::SortTracks::ReceiveQuery(musik::core::xml::ParserNode &queryNode){
 
     while( musik::core::xml::ParserNode node = queryNode.ChildNode() ){
         if(node.Name()=="sortby"){
@@ -259,7 +259,7 @@ bool Query::SortTracks::RecieveQuery(musik::core::xml::ParserNode &queryNode){
             }
 
         }else{
-            this->RecieveQueryStandardNodes(node);
+            this->ReceiveQueryStandardNodes(node);
         }
     }
     return true;

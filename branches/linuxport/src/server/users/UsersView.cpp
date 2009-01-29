@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, mC2 Team
+// The following are Copyright  2007, mC2 Team
 //
 // Sources and Binaries of: mC2, win32cpp
 //
@@ -58,17 +58,12 @@ UsersView::UsersView()
 void UsersView::OnCreated()
 {
 
-    LinearLayout* pathLayout = new LinearLayout(LinearColumnLayout);
-    LinearLayout* pathButtonsLayout = new LinearLayout(LinearRowLayout);
-    
+    LinearLayout* pathLayout = new LinearLayout(HorizontalLayout,win32cpp::LayoutFillFill);
+    LinearLayout* pathButtonsLayout = new LinearLayout(VerticalLayout);
 
     // Path ListView
     this->usersList          = pathLayout->AddChild(new ListView());
-
-    pathLayout->SetDefaultChildFill(true);
-//    pathLayout->SetSizeConstraints(LayoutFillParent,120);
-    pathLayout->SetFlexibleChild(this->usersList);
-
+    this->usersList->SetLayoutFlags(win32cpp::LayoutFillFill);
 
     // pathButtons layout
     this->addUserButton     = pathButtonsLayout->AddChild(new Button(_T("Add user")));
@@ -77,14 +72,11 @@ void UsersView::OnCreated()
     this->addUserButton->Resize(90, 24);
     this->removeUserButton->Resize(90, 24);
 
-    pathButtonsLayout->SetDefaultChildFill(false);
-    pathButtonsLayout->SetDefaultChildAlignment(ChildAlignMiddle);
-    pathButtonsLayout->SetSizeConstraints(90,LayoutFillParent);
-
     pathLayout->AddChild(pathButtonsLayout);
 
 
     // Add to the layout
-    this->AddChild(new Frame(pathLayout,FramePadding(20)));
+    win32cpp::Frame *paddingFrame    = this->AddChild(new Frame(pathLayout,WindowPadding(20)));
+    paddingFrame->SetLayoutFlags(win32cpp::LayoutFillFill);
 
 }

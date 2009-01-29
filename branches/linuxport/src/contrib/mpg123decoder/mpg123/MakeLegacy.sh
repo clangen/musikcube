@@ -29,7 +29,7 @@ cp config.h.legacy config.h.new &&
 	echo "#define PACKAGE_VERSION \"$PACKAGE_VERSION\""
 	echo "#define PACKAGE_BUGREPORT \"$PACKAGE_BUGREPORT\""
 } >> config.h.new &&
-if test "`diff config.h config.h.new`" = ""; then
+if [ -e config.h ] && test "`diff config.h config.h.new`" = ""; then
 	echo "no change in config.h"
 else
 	echo "config.h changed... moving"

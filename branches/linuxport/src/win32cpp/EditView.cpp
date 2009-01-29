@@ -54,23 +54,37 @@ using namespace win32cpp;
 ///\param height
 ///The height of the edit box
 /*ctor*/    EditView::EditView(int width, int height)
-: base()
-, width(width)
-, height(height)
-, caption(caption)
+: base(LayoutWrapWrap)
 {
+    this->InitializeInstance();
 }
 
-/*ctor*/    EditView::EditView(const uistring& caption)
-: base()
-, width(200)
-, height(22)
-, caption(caption)
+///\brief
+///Constructor.
+///
+///\param layoutFlags
+///The layout hints to use when laying a control out in a parent.
+/*ctor*/    EditView::EditView(LayoutFlags layoutFlags)
+: base(layoutFlags)
 {
+    this->InitializeInstance();
+}
+
+/*ctor*/    EditView::EditView(const uistring& caption, LayoutFlags layoutFlags)
+: base(layoutFlags)
+{
+    this->InitializeInstance();
 }
 
 EditView::~EditView()
 {
+}
+
+void        EditView::InitializeInstance()
+{
+    this->width = 200;
+    this->height = 22;
+    this->caption = caption;
 }
 
 HWND        EditView::Create(Window* parent)

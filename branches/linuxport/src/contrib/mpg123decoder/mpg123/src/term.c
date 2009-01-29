@@ -422,6 +422,13 @@ static void term_handle_input(mpg123_handle *fr, audio_output_t *ao, int do_dela
 	break;
 	case FRAME_INDEX_KEY:
 		print_index(fr);
+		{
+			long accurate;
+			if(mpg123_getstate(fr, MPG123_ACCURATE, &accurate, NULL) == MPG123_OK)
+			fprintf(stderr, "Accurate position: %s\n", (accurate == 0 ? "no" : "yes"));
+			else
+			error1("Unable to get state: %s", mpg123_strerror(fr));
+		}
 	break;
 	default:
 	  ;

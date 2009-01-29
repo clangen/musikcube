@@ -1,3 +1,26 @@
+1.6.4
+---
+- Fix NtoM resampling behaviour with the broken frame fillup (especiall false alarms after seeking).
+  As a side effect, the resampled output now should be consistent with seeks (always the same sample value at a certain sample offset).
+
+1.6.3
+---
+
+- Fix sf.net bug #2413608: Make sure a new format does not slip through after early close.
+- Include equalizer example file and a piece of wrapper code for MSVC++ in the distribution.
+- Do not claim to support unsigned 16 bit encoding (never been the case).
+- Fix default fifo detection, now it actally activates fifo support!
+
+1.6.2
+---
+
+- Fix default IPv6 detection in configure.ac (a typo has been introduced before).
+
+1.6.1
+---
+
+- Fix printing of largefile offsets in remote control interface.
+- Some portability fixes (reduced compiler warnings on Solaris, p.ex.).
 
 1.6.0
 ---
@@ -10,8 +33,11 @@
 - added --keep-open command line flag (for remote control)
 - fixed equalizer file parsing to really handle comment lines as example file suggests
 - more elaborate detection of UTF-8 locale, also --utf8 switch to force it
-- libmpg123 9.0.9:
-  - added mpg123_geteq() and mpg123_tell_stream()
+- added --fuzzy to enable inexact seeking (see below)
+- added --index-size parameter for tuning accurate frame seek index
+- enabling largefile support via configure
+- libmpg123 11.0.11:
+  - added mpg123_geteq(), mpg123_tell_stream() and mpg123_getstate()
   - API cleanup (take const char* for mpg123_open())
   - calm down complainling (C++) compilers by completing the mpg123_channels enum
   - fixed several possible crashes when user provides NULLs where it isn't appropriate
@@ -23,8 +49,16 @@
   - Prevent ugly noise when the bit reservoir is not fully there (p.ex. ignorantly cut mp3 files).
     Concerned frames are silenced, but reservoir for following frames is kept.
     Thanks to Patrick Dehne for the investigation and patch!
+  - New option for fuzzy seeking; trading sample accuracy for speed.
+    With that option, seeks positions are guessed using mean framesize or the Xing VBR TOC is used.
+  - Feeder streams work with seek index now.
+  - Seek frame index is runtime tunable.
+  - more caution with alignment issues for varying library users
 - new project files to build/use libmpg123 with MSVC++ 2005 and 2008, provided by Patrick Dehne
 - fixed a regression that made the pause/loop mode in terminal control slowly go backwards
+
+Big note for libmpg123 users: Make sure your application is compiled with the same largefile setting as libmpg123!
+If that does not match, you will get unresolved symbols (which is better than weird errors when using a nonmatching off_t in arguments;-).
 
 1.5.1
 ---

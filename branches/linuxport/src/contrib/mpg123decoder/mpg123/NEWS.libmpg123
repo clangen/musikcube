@@ -1,5 +1,13 @@
 Changes in libmpg123 libtool interface versions...
 
+11.0.11
+	- added mpg123_getstate
+	- run-time tunable frame index
+	- officially configured with largefile support where available
+
+10.0.10
+	- new flag MPG123_FUZZY (along with the fuzzy seek functionality)
+
 9.0.9
 	- added mpg123_tell_stream
 

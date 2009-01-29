@@ -20,5 +20,9 @@ private:
     boost::asio::io_service IOService;
     boost::asio::ip::tcp::socket socket;
 
+    long pcBufferMaxSize;
+    long pcBufferSize;
+    long pcBufferPosition;
+    char *pcBuffer;
 
 };

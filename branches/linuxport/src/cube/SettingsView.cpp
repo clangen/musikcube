@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, mC2 Team
+// The following are Copyright  2007, mC2 Team
 //
 // Sources and Binaries of: mC2, win32cpp
 //
@@ -111,6 +111,7 @@ public:
 
 /*ctor*/    SettingsView::SettingsView()
 {
+    this->SetLayoutFlags(win32cpp::LayoutFillFill);
 }
 
 
@@ -128,10 +129,10 @@ void        SettingsView::OnPressTestCheckbox(CheckBox* CheckBox , int state)
 void        SettingsView::OnCreated()
 {
 
-    LinearLayout* mainLayout = new LinearLayout(LinearRowLayout);
-    LinearLayout* pathLayout = new LinearLayout(LinearColumnLayout);
-    LinearLayout* pathButtonsLayout = new LinearLayout(LinearRowLayout);
-    LinearLayout* libraryStatusLayout = new LinearLayout(LinearColumnLayout);
+    LinearLayout* mainLayout = new LinearLayout(VerticalLayout,win32cpp::LayoutFillWrap);
+    LinearLayout* pathLayout = new LinearLayout(HorizontalLayout);
+    LinearLayout* pathButtonsLayout = new LinearLayout(VerticalLayout);
+    LinearLayout* libraryStatusLayout = new LinearLayout(HorizontalLayout);
     
 
     // Library status
@@ -145,14 +146,15 @@ void        SettingsView::OnCreated()
     // Path list
 
     this->pathList          = pathLayout->AddChild(new ListView());
-/*    win32cpp::ListView::ColumnRef pathColumn = ListView::Column::Create(_T("Path"),1000);
+    win32cpp::ListView::ColumnRef pathColumn = ListView::Column::Create(_T("Path"),1000);
     this->pathList->AddColumn(pathColumn);
     this->pathList->SetScrollBarVisibility(win32cpp::ScrollBar::HorizontalScrollBar,false);
-*/
-    pathLayout->SetSizeConstraints(LayoutFillParent,120);
-    pathLayout->SetFlexibleChild(this->pathList);
-    pathLayout->SetDefaultChildFill(true);
-    pathLayout->SetDefaultChildAlignment(ChildAlignRight);
+
+    this->pathList->SetLayoutFlags(win32cpp::LayoutFillWrap);
+//    pathLayout->SetLayoutFlags(win32cpp::LayoutFillFill);
+
+    this->pathList->SetLayoutFlags(win32cpp::LayoutFillFill);
+    this->pathList->SetLayoutAlignment(win32cpp::LayoutAlignRight);
 
 
     // pathButtons layout
@@ -163,15 +165,13 @@ void        SettingsView::OnCreated()
     this->addPathButton->Resize(90, 24);
     this->removePathButton->Resize(90, 24);
 
-    pathButtonsLayout->SetDefaultChildFill(false);
-    pathButtonsLayout->SetDefaultChildAlignment(ChildAlignMiddle);
-    pathButtonsLayout->SetSizeConstraints(90,LayoutFillParent);
 
     pathLayout->AddChild(pathButtonsLayout);
 
     // Add to the layout
-    mainLayout->AddChild(new Frame(libraryStatusLayout,FramePadding(20,20,20,0)));
-    mainLayout->AddChild(new Frame(pathLayout,FramePadding(20,20,0,20)));
+    win32cpp::Frame *statusFrame    = mainLayout->AddChild(new Frame(libraryStatusLayout,WindowPadding(20,20,20,0)));
+    win32cpp::Frame *syncpathFrame  = mainLayout->AddChild(new Frame(pathLayout,WindowPadding(20,20,0,20)));
+    syncpathFrame->SetLayoutFlags(win32cpp::LayoutFillFill);
 
     // test CheckBox
 /*    CheckBox* c = new CheckBox(_T("Test 1"));

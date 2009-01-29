@@ -78,11 +78,12 @@ class Node{
         std::string NodeLevelPath();
         int NodeLevel();
 
-        enum Status:int{
-            Started     = 1,
-            Ended       = 2,
-            StartSend   = 4,
-            EndSend     = 8,
+        class Status{
+	public:
+            const static int Started     = 1;
+            const static int Ended       = 2;
+            const static int StartSend   = 4;
+            const static int EndSend     = 8;
         };
 
         unsigned int status;

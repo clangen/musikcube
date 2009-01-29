@@ -49,7 +49,7 @@ namespace musik{ namespace core{
 
 #include <core/config.h>
 #include <core/Query/Base.h>
-#include <core/tracklist/IRandomAccess.h>
+#include <core/tracklist/LibraryList.h>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>

@@ -41,6 +41,7 @@
 #include <core/http/RequestParser.h>
 #include <core/Common.h>
 #include <core/Server.h>
+#include <core/LibraryTrack.h>
 
 #include <iostream>
 #include <stdlib.h>
@@ -107,8 +108,9 @@ void Responder::ThreadLoop(){
                 const char* trackId = requester.Attribute("track_id");
                 if(trackId){
                     try{
-                        track.reset(new musik::core::Track());
-                        if(!track->GetFileData( boost::lexical_cast<DBINT>(trackId),this->db)){
+                        musik::core::LibraryTrack *libraryTrack = new musik::core::LibraryTrack();
+                        track.reset(libraryTrack);
+                        if(!libraryTrack->GetFileData( boost::lexical_cast<DBINT>(trackId),this->db)){
                             track.reset();
                         }
                     }

@@ -49,10 +49,10 @@ namespace win32cpp {
 //////////////////////////////////////////////////////////////////////////////
 
 ///\brief Specifies the orientation of a LinearLayout
-enum LinearLayoutOrientation
+enum LayoutOrientation
 {
-    LinearRowLayout,    /*!< */
-    LinearColumnLayout   /*!< */
+    VerticalLayout,    /*!< */
+    HorizontalLayout   /*!< */
 };
 
 ///\brief A Container that is used to stack controls horizontally or
@@ -63,10 +63,10 @@ enum LinearLayoutOrientation
 ///in which the children are arranged is determined by the order in
 ///which they are added to the Container. First in, first out.
 ///
-///The orientation (LinearRowLayout or LinearColumnLayout) is determined at 
+///The orientation (VerticalLayout or HorizontalLayout) is determined at
 ///construction time by specifying a win32cpp::LinearLayoutOrientation.
 ///
-///If a child is resized, LinearLayout will adjust its internal layout and sze.
+///If a child is resized, LinearLayout will adjust itself accordingly.
 ///
 ///\code
 /// // create a new Horizontal LinearLayout with 4 buttons.
@@ -77,121 +77,45 @@ enum LinearLayoutOrientation
 /// layout->AddChild(new Button(_T("Next")));
 ///\endcode
 ///
-///Children specified as "filled" may be automatically resized in the direction
-///opposite of the LinearLayout's orientation. Setting a child's "Fill" property
-///can is done via LinearLayout::SetChildFill. Consider the following illustration
-///of a horizontal LinearLayout with 4 children:
-///
-///\code
-///|-----------------------------------------------| <-- Column LinearLayout
-///|                                  |-----------||
-///||--------|                        |           ||
-///|| Child1 ||----------||----------||  Child4   ||
-///||        ||  Child2  ||  Child3  ||           ||
-///||--------||----------||----------||-----------||
-///|-----------------------------------------------|
-///\endcode
-///
-///Specifying Child2 as "Filled" will make the layout look as follows:
-///
-///\code
-///|-----------------------------------------------|
-///|          |----------|            |-----------||
-///||--------||          |            |           ||
-///|| Child1 ||  Child2  ||----------||  Child4   ||
-///||        ||          ||  Child3  ||           ||
-///||--------||----------||----------||-----------||
-///|-----------------------------------------------|
-///\endcode
-///
-///A LinearLayout can optionally include a single "flexible" child. The flexible child
-///will grow or shrink if the LinearLayout is resized manually by the user. Consider
-///the following example where a LinearLayout that has been resized:
-///
-///\code
-///|------------------------------------------------------------| <-- Column LinearLayout
-///||--------||--------||--------||---------|                   |
-///|| Child1 || Child2 || Child3 || Child4  |                   |
-///||--------||--------||--------||---------|                   |
-///|------------------------------------------------------------|
-///\endcode
-///
-///Setting Child2 as "flexible" will result in the following layout:
-///
-///\code
-///|------------------------------------------------------------|
-///||--------||-------------------------||----------||---------||
-///|| Child1 || Child2 (flexible)       ||  Child3  || Child4  ||
-///||--------||-------------------------||----------||---------||
-///|------------------------------------------------------------|
-///\endcode
-///
-///Child controls can also be aligned in a BoxLayout via LinearLayout::SetChildAlignment
-///and win32cpp::ChildAlignment
-///
-///\code
-///Column LinearLayout alignment styles
-///|--------------------|
-///|   ChildAlignTop    |
-///|                    |
-///|  ChildAlignMiddle  |
-///|                    |
-///|  ChildAlignBottom  |
-///|--------------------|
-///
-///Row LinearLayout alignment styles
-///|---------------------------------------------------------|
-///|                                                         |
-///| ChildAlignLeft     ChildAlignCenter     ChildAlignRight |
-///|                                                         |
-///|---------------------------------------------------------|
+///Children are positioned and sized according to their LayoutWidth(),
+///LayoutHeight(), LayoutAlignment(), and LayoutWeight() properties.
 ///\endcode
 class LinearLayout: public Panel, public ILayout
 {
 private: // types
     typedef Panel base;
-    typedef std::map<Window*, bool> ChildFillMap;
     typedef std::map<Window*, Size> ChildSizeMap;
-    typedef std::map<Window*, ChildAlignment> ChildAlignmentMap;
 
 public: // constructors
-    /*ctor*/    LinearLayout(LinearLayoutOrientation orientation = LinearRowLayout);
+    /*ctor*/    LinearLayout(
+                    LayoutOrientation orientation,
+                    LayoutFlags layoutFlags = LayoutWrapWrap);
 
 public: // methods
-    void    SetSpacing(int spacing);
-    int     Spacing() const;
-    void    SetChildFill(Window* child, bool enabled = true);
-    void    SetDefaultChildFill(bool enabled = true);
-    void    SetFlexibleChild(Window* child);
-    void    SetChildAlignment(Window* child, ChildAlignment alignment);
-    void    SetDefaultChildAlignment(ChildAlignment alignment);
-    void    SetSizeConstraints(int width = LayoutFillParent, int height = LayoutFillParent);
+    void SetSpacing(int spacing);
+    int Spacing() const;
 
 public: // ILayout
     virtual void Layout();
 
 protected: // methods
-    void            OnChildAdded(Window* newChild);
-    void            OnChildRemoved(Window* oldChild);
-    void            OnChildResized(Window* window, Size newSize);
-    Size            ChildFillSize(Window* child);
-    Size            CheckedChildFillSize(Window* child);
-    void            ThrowIfNotChild(Window* child);
-    bool            ShouldFillChild(Window* child);
-    Point           AlignChildInRect(ChildAlignment alignment, Size childSize, Rect alignmentRect);
-    ChildAlignment  AlignmentForChild(Window* child);
-    virtual void    OnResized(const Size& newSize);
+    static bool RegisterWindowClass();
+    virtual HWND Create(Window* parent);
+
+    virtual void OnResized(const Size& newSize);
+    void OnChildAdded(Window* newChild);
+    void OnChildLayoutParametersChanged(Window* newChild);
+    void OnChildRemoved(Window* oldChild);
+    void OnChildResized(Window* window, Size newSize);
+    void ThrowIfNotChild(Window* child);
+    void ResizeWrapContent();
+    Point AlignChildInRect(LayoutAlignFlag alignment, Size childSize, Rect alignmentRect);
 
 private: // instance data
-    LinearLayoutOrientation orientation;
+    LayoutOrientation orientation;
     int spacing;
-    ChildFillMap childFillMap;
     ChildSizeMap childSizeMap;
-    bool childIsResizing, defaultChildFill;
-    Window* flexibleChild;
-    ChildAlignmentMap childAlignment;
-    ChildAlignment defaultChildAlignment;
-    Size layoutSize, constraints;
+    bool childIsResizing, isResizing;
 };
 
 /////////////////////////////////////////////////////////////////////////////

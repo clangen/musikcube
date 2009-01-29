@@ -41,9 +41,13 @@
 #include <cube/LibraryWindowView.hpp>
 #include <cube/SourcesView.hpp>
 #include <cube/SourcesController.hpp>
+#include <cube/TracklistController.hpp>
+#include <cube/TracklistView.hpp>
 
 #include <core/LibraryFactory.h>
 #include <core/Pluginfactory.h>
+#include <core/PlaybackQueue.h>
+#include <core/Preferences.h>
 
 #include <win32cpp/Types.hpp>    // uichar, uistring
 #include <win32cpp/TopLevelWindow.hpp>
@@ -59,6 +63,7 @@ using namespace musik::cube;
 
 /*ctor*/    LibraryWindowController::LibraryWindowController(LibraryWindowView& view)
 : view(view)
+, nowPlayingController(NULL)
 {
     musik::core::PluginFactory::Instance();
 
@@ -66,16 +71,25 @@ using namespace musik::cube;
         ? this->OnViewCreated(&view)
         : this->view.Created.connect(this, &LibraryWindowController::OnViewCreated);
 
+    this->view.Destroyed.connect(this,&LibraryWindowController::OnDestroyed);
 }
 
 LibraryWindowController::~LibraryWindowController()
 {
+    delete this->nowPlayingController;
 }
 
 void        LibraryWindowController::OnViewCreated(Window* window)
 {
 
     using namespace musik::core;
+
+    // Start by adding the "now playing" tab
+    TracklistView *nowPlayingView   = new TracklistView();
+    this->nowPlayingController = new TracklistController(*nowPlayingView,NULL,musik::core::PlaybackQueue::Instance().NowPlayingTracklist(),TracklistController::Deletable|TracklistController::HighlightActive);
+    this->view.AddTab( uistring(UTF("Now Playing")) ,nowPlayingView);
+
+
 	// Get libraries from LibraryFactory
     this->UpdateLibraryTabs();
     LibraryFactory::Instance().LibrariesUpdated.connect(this,&LibraryWindowController::UpdateLibraryTabs);
@@ -86,6 +100,9 @@ void        LibraryWindowController::OnViewCreated(Window* window)
 
 void LibraryWindowController::UpdateLibraryTabs(){
     using namespace musik::core;
+
+    musik::core::Preferences windowPrefs("MainWindow");
+    int activeLibrary   = windowPrefs.GetInt("activeLibrary",1);
 
     RedrawLock redrawLock(&this->view);
 
@@ -107,16 +124,15 @@ void LibraryWindowController::UpdateLibraryTabs(){
         if(!found){
             SourcesView* sourcesView = new SourcesView();
             this->libraries[sourcesView]	= SourcesControllerPtr(new SourcesController(*sourcesView,*library));
-            this->view.AddTab( (*library)->Identifier() ,sourcesView);
+            this->view.AddTab( (*library)->Name() ,sourcesView);
+
+            // Active this library
+            if((*library)->Id()==activeLibrary){
+                this->view.SetActiveTab(sourcesView);
+            }
         }
 
     }
-}
-
-void LibraryWindowController::OnResize(Window* window, Size size)
-{
-    RedrawLock redrawLock(&this->view);
-//    this->clientView->Resize(this->mainWindow.ClientSize());
 }
 
 SourcesController* LibraryWindowController::CurrentSourceController(){
@@ -137,4 +153,17 @@ void LibraryWindowController::OnLibraryMessage(const char* identifier,void* data
 		}
 	}
 }
+
+void LibraryWindowController::OnDestroyed(Window* window){
+    musik::core::Preferences windowPrefs("MainWindow");
+    SourcesView *activeWindow    = (SourcesView*)this->view.VisibleWindow();
+
+    SourcesMap::iterator sourceController = this->libraries.find(activeWindow);
+    if(sourceController!=this->libraries.end()){
+        windowPrefs.SetInt("activeLibrary",sourceController->second->library->Id());
+    }else{
+        windowPrefs.SetInt("activeLibrary",0);
+    }
+}
+
 
