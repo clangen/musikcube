@@ -45,6 +45,8 @@
 #include <win32cpp/Window.hpp>
 #include <win32cpp/Button.hpp>
 #include <win32cpp/EditView.hpp>
+#include <win32cpp/RedrawLock.hpp>
+
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -60,6 +62,7 @@ EditUserController::EditUserController(win32cpp::TopLevelWindow &mainWindow,musi
 {
     this->view  = new EditUserView();
     this->mainWindow.AddChild(this->view);
+    this->mainWindow.Resized.connect(this,&EditUserController::OnResize);
     
     this->view->Handle()
         ? this->OnViewCreated(this->view)
@@ -91,4 +94,9 @@ void EditUserController::OnOK(win32cpp::Button* button){
 
 
     this->mainWindow.Close();
+}
+
+void EditUserController::OnResize(win32cpp::Window* window, win32cpp::Size size){
+    win32cpp::RedrawLock redrawLock(this->view);
+    this->view->Resize(this->mainWindow.ClientSize());
 }
