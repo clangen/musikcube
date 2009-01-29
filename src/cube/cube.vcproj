@@ -568,6 +568,10 @@
 			</FileConfiguration>
 		</File>
 		<File
+			RelativePath=".\resources\mC2.ico"
+			>
+		</File>
+		<File
 			RelativePath=".\pch.hpp"
 			>
 		</File>
