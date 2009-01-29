@@ -330,6 +330,10 @@
 			>
 		</File>
 		<File
+			RelativePath=".\resources\musikServer.ico"
+			>
+		</File>
+		<File
 			RelativePath=".\pch.cpp"
 			>
 			<FileConfiguration
