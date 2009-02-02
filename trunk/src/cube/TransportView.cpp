@@ -70,10 +70,10 @@ void        TransportView::OnCreated()
     this->stopButton = topRowLayout->AddChild(new Button(_(_T("Stop"))));
     this->nextButton = topRowLayout->AddChild(new Button(_(_T("Next"))));
     //
-    this->prevButton->Resize(50, 28);
-    this->playButton->Resize(50, 28);
-    this->stopButton->Resize(50, 28);
-    this->nextButton->Resize(50, 28);
+    this->prevButton->Resize(50, 24);
+    this->playButton->Resize(50, 24);
+    this->stopButton->Resize(50, 24);
+    this->nextButton->Resize(50, 24);
 
     // now playing layout
     FontRef boldFont(Font::Create());
