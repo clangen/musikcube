@@ -194,7 +194,9 @@ void SourcesModel::Load()
 {
     CategoryRef viewCategory(new Category(_(_T("View"))));
     viewCategory->Add(BrowseItem::Create(this->library));
-    viewCategory->Add(SettingsItem::Create(this->library));
+    if(this->library->Indexer()!=NULL){
+        viewCategory->Add(SettingsItem::Create(this->library));
+    }
     this->AddCategory(viewCategory);
 
     this->playlistCategory.reset(new Category(_(_T("Playlists"))));
