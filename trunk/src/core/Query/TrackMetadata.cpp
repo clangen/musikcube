@@ -73,14 +73,14 @@ void TrackMetadata::CreateSQL(){
     this->categoryFields.clear();
 
     //Lets find the fixed fields first
-    this->GetFixedTrackMetakeys(std::string("track"),fields);
-    this->GetFixedTrackMetakeys(std::string("bpm"),fields);
-    this->GetFixedTrackMetakeys(std::string("duration"),fields);
-    this->GetFixedTrackMetakeys(std::string("filesize"),fields);
-    this->GetFixedTrackMetakeys(std::string("year"),fields);
-    this->GetFixedTrackMetakeys(std::string("title"),fields);
-    this->GetFixedTrackMetakeys(std::string("filename"),fields);
-    this->GetFixedTrackMetakeys(std::string("thumbnail_id"),fields);
+    this->GetFixedTrackMetakeys("track",fields);
+    this->GetFixedTrackMetakeys("bpm",fields);
+    this->GetFixedTrackMetakeys("duration",fields);
+    this->GetFixedTrackMetakeys("filesize",fields);
+    this->GetFixedTrackMetakeys("year",fields);
+    this->GetFixedTrackMetakeys("title",fields);
+    this->GetFixedTrackMetakeys("filename",fields);
+    this->GetFixedTrackMetakeys("thumbnail_id",fields);
 
     if( (field=fields.find("path"))!=fields.end() ){
         this->sSQL          += ",p.path||f.relative_path||'/'||t.filename";
@@ -127,7 +127,7 @@ void TrackMetadata::CreateSQL(){
 
 }
 
-void TrackMetadata::GetFixedTrackMetakeys(std::string &fieldName,std::set<std::string> &fields){
+void TrackMetadata::GetFixedTrackMetakeys(std::string fieldName,std::set<std::string> &fields){
     std::set<std::string>::iterator field;
     if( (field=fields.find(fieldName))!=fields.end() ){
         this->sSQL    += ",t."+fieldName;
@@ -162,7 +162,7 @@ bool TrackMetadata::ParseQuery(Library::Base *library,db::Connection &db){
 
         trackData.BindInt(0,track->Id());
 
-        if(trackData.Step()==db::ReturnCode::Row){
+        if(trackData.Step()==db::Row){
 
             // fetch the result
             std::vector<std::string>::iterator field=this->fieldOrder.begin();
@@ -180,7 +180,7 @@ bool TrackMetadata::ParseQuery(Library::Base *library,db::Connection &db){
             if(this->requestAllFields){
                 // Get ALL meta
                 allMetadata.BindInt(0,track->Id());
-                while(allMetadata.Step()==db::ReturnCode::Row){
+                while(allMetadata.Step()==db::Row){
                     track->SetValue(allMetadata.ColumnText(1),allMetadata.ColumnTextUTF(0));
                 }
                 allMetadata.Reset();
@@ -191,7 +191,7 @@ bool TrackMetadata::ParseQuery(Library::Base *library,db::Connection &db){
                     metadata.BindInt(0,track->Id());
                     metadata.BindText(1,metaKey->c_str());
 
-                    while(metadata.Step()==db::ReturnCode::Row){
+                    while(metadata.Step()==db::Row){
                         track->SetValue(metaKey->c_str(),metadata.ColumnTextUTF(0));
                     }
                     metadata.Reset();
@@ -202,7 +202,7 @@ bool TrackMetadata::ParseQuery(Library::Base *library,db::Connection &db){
             // Find genres
             if( this->categoryFields.find("genre")!=this->categoryFields.end() ){
                 genres.BindInt(0,track->Id());
-                while(genres.Step()==db::ReturnCode::Row){
+                while(genres.Step()==db::Row){
                     track->SetValue("genre",genres.ColumnTextUTF(0));
                 }
                 genres.Reset();
@@ -211,7 +211,7 @@ bool TrackMetadata::ParseQuery(Library::Base *library,db::Connection &db){
             // Find artists
             if( this->categoryFields.find("artist")!=this->categoryFields.end() ){
                 artists.BindInt(0,track->Id());
-                while(artists.Step()==db::ReturnCode::Row){
+                while(artists.Step()==db::Row){
                     track->SetValue("artist",artists.ColumnTextUTF(0));
                 }
                 artists.Reset();
@@ -231,7 +231,7 @@ bool TrackMetadata::ParseQuery(Library::Base *library,db::Connection &db){
 
     {
         boost::mutex::scoped_lock lock(library->libraryMutex);
-        this->status |= Status::Ended;
+        this->status |= Base::Ended;
     }
 
     return true;
@@ -249,7 +249,7 @@ bool TrackMetadata::RunCallbacks(Library::Base *library){
     }
     {
         boost::mutex::scoped_lock lock(library->libraryMutex);
-        if( (this->status & Status::Ended)!=0){
+        if( (this->status & Base::Ended)!=0){
             bReturn    = true;
         }
 
@@ -391,7 +391,7 @@ bool TrackMetadata::SendResults(musik::core::xml::WriterNode &queryNode,Library:
         }
         {
             boost::mutex::scoped_lock lock(library->libraryMutex);
-            if( (this->status & Status::Ended)!=0){
+            if( (this->status & Base::Ended)!=0){
                 continueSending    = false;
             }
         }
@@ -410,7 +410,7 @@ bool TrackMetadata::SendResults(musik::core::xml::WriterNode &queryNode,Library:
                     for(Track::MetadataMap::const_iterator metaData=metaDatas.first;metaData!=metaDatas.second;++metaData){
                         musik::core::xml::WriterNode metaDataNode(trackNode,"md");
                         metaDataNode.Attributes()["k"]  = metaData->first;
-                        metaDataNode.Content().append( ConvertUTF8(metaData->second) );
+                        metaDataNode.Content().append( UTF_TO_UTF8(metaData->second) );
                     }
 
                 }
@@ -462,7 +462,7 @@ bool TrackMetadata::ReceiveResults(musik::core::xml::ParserNode &queryNode,Libra
                 // Get the metadata
                 while(musik::core::xml::ParserNode metadataNode=trackNode.ChildNode("md") ){
                     metadataNode.WaitForContent();
-                    currentTrack->SetValue( metadataNode.Attributes()["k"].c_str(),ConvertUTF16(metadataNode.Content()).c_str());
+                    currentTrack->SetValue( metadataNode.Attributes()["k"].c_str(),UTF8_TO_UTF(metadataNode.Content()).c_str());
                 }
 
                 // Special case for the "path" when connecting to a webserver

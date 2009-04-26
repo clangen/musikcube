@@ -78,12 +78,12 @@ class Node{
         std::string NodeLevelPath();
         int NodeLevel();
 
-        enum Status:int{
+        typedef enum {
             Started     = 1,
             Ended       = 2,
             StartSend   = 4,
             EndSend     = 8,
-        };
+        } Status;
 
         unsigned int status;
         Ptr parent;

@@ -162,7 +162,7 @@ bool IndexerTrack::CompareDBAndFileInfo(const boost::filesystem::utfpath &file,d
 
         bool fileDifferent(true);
 
-        if(stmt.Step()==db::ReturnCode::Row){
+        if(stmt.Step()==db::Row){
             // File found in database.
             this->id    = stmt.ColumnInt(0);
             fileDifferent    = false;
@@ -225,7 +225,7 @@ bool IndexerTrack::Save(db::Connection &dbConnection,utfstring libraryDirectory,
             stmt.BindInt(0,this->id);
         }
 
-        if(stmt.Step()==db::ReturnCode::Done){
+        if(stmt.Step()==db::Done){
             if(this->id==0){
                 this->id    = dbConnection.LastInsertedId();
             }
@@ -327,14 +327,14 @@ bool IndexerTrack::Save(db::Connection &dbConnection,utfstring libraryDirectory,
 
         stmt.BindTextUTF(0,album);
 
-        if(stmt.Step()==db::ReturnCode::Row){
+        if(stmt.Step()==db::Row){
             albumId    = stmt.ColumnInt(0);
         }else{
             // INSERT a new album
             db::Statement insertAlbum("INSERT INTO albums (name) VALUES (?)",dbConnection);
             insertAlbum.BindTextUTF(0,album);
 
-            if(insertAlbum.Step()==db::ReturnCode::Done){
+            if(insertAlbum.Step()==db::Done){
                 albumId    = dbConnection.LastInsertedId();
             }
         }
@@ -353,7 +353,7 @@ bool IndexerTrack::Save(db::Connection &dbConnection,utfstring libraryDirectory,
         thumbs.BindInt(0,this->meta->thumbnailSize);
         thumbs.BindInt64(1,sum);
 
-        if(thumbs.Step()==db::ReturnCode::Row){
+        if(thumbs.Step()==db::Row){
             thumbnailId    = thumbs.ColumnInt(0);
         }
 
@@ -363,7 +363,7 @@ bool IndexerTrack::Save(db::Connection &dbConnection,utfstring libraryDirectory,
             insertThumb.BindInt(0,this->meta->thumbnailSize);
             insertThumb.BindInt64(1,sum);
 
-            if(insertThumb.Step()==db::ReturnCode::Done){
+            if(insertThumb.Step()==db::Done){
                 thumbnailId    = dbConnection.LastInsertedId();
             }
 
@@ -371,7 +371,11 @@ bool IndexerTrack::Save(db::Connection &dbConnection,utfstring libraryDirectory,
             utfstring filename    = libraryDirectory+UTF("thumbs/")+boost::lexical_cast<utfstring>(thumbnailId)+UTF(".jpg");
 
             // TODO, fix for UTF wide of not
+#ifdef UTF_WIDECHAR
             FILE *thumbFile        = _wfopen(filename.c_str(),UTF("wb"));
+#else
+            FILE *thumbFile        = fopen(filename.c_str(),UTF("wb"));
+#endif
             fwrite(this->meta->thumbnailData,sizeof(char),this->meta->thumbnailSize,thumbFile);
             fclose(thumbFile);
 
@@ -412,14 +416,14 @@ bool IndexerTrack::Save(db::Connection &dbConnection,utfstring libraryDirectory,
 
             selectMetaKey.BindText(0,metaData->first);
 
-            if(selectMetaKey.Step()==db::ReturnCode::Row){
+            if(selectMetaKey.Step()==db::Row){
                 // key found
                 metaKeyId    = selectMetaKey.ColumnInt(0);
             }else{
                 // key not found, INSERT
                 db::CachedStatement insertMetaKey("INSERT INTO meta_keys (name) VALUES (?)",dbConnection);
                 insertMetaKey.BindText(0,metaData->first);
-                if(insertMetaKey.Step()==db::ReturnCode::Done){
+                if(insertMetaKey.Step()==db::Done){
                     metaKeyId    = dbConnection.LastInsertedId();
                 }
             }
@@ -433,14 +437,14 @@ bool IndexerTrack::Save(db::Connection &dbConnection,utfstring libraryDirectory,
                 selectMetaValue.BindInt(0,metaKeyId);
                 selectMetaValue.BindTextUTF(1,metaData->second);
 
-                if(selectMetaValue.Step()==db::ReturnCode::Row){
+                if(selectMetaValue.Step()==db::Row){
                     // Value found
                     metaValueId    = selectMetaValue.ColumnInt(0);
                 }else{
                     // Value not found, INSERT
                     insertMetaValue.BindInt(0,metaKeyId);
                     insertMetaValue.BindTextUTF(1,metaData->second);
-                    if(insertMetaValue.Step()==db::ReturnCode::Done){
+                    if(insertMetaValue.Step()==db::Done){
                         metaValueId    = dbConnection.LastInsertedId();
                     }
                     insertMetaValue.Reset();
@@ -468,7 +472,7 @@ DBINT IndexerTrack::_GetGenre(db::Connection &dbConnection,utfstring genre,bool 
     {
         db::CachedStatement stmt("SELECT id FROM genres WHERE name=?",dbConnection);
         stmt.BindTextUTF(0,genre);
-        if(stmt.Step()==db::ReturnCode::Row){
+        if(stmt.Step()==db::Row){
             genreId    = stmt.ColumnInt(0);
         }
     }
@@ -481,7 +485,7 @@ DBINT IndexerTrack::_GetGenre(db::Connection &dbConnection,utfstring genre,bool 
         stmt.BindTextUTF(0,genre);
         stmt.BindInt(1,aggregatedInt);
 
-        if(stmt.Step()==db::ReturnCode::Done){
+        if(stmt.Step()==db::Done){
             genreId        = dbConnection.LastInsertedId();
         }
     }
@@ -503,7 +507,7 @@ DBINT IndexerTrack::_GetArtist(db::Connection &dbConnection,utfstring artist,boo
     db::CachedStatement stmt("SELECT id FROM artists WHERE name=?",dbConnection);
     stmt.BindTextUTF(0,artist);
 
-    if(stmt.Step()==db::ReturnCode::Row){
+    if(stmt.Step()==db::Row){
         artistId    = stmt.ColumnInt(0);
     }
 
@@ -514,7 +518,7 @@ DBINT IndexerTrack::_GetArtist(db::Connection &dbConnection,utfstring artist,boo
         insertArtist.BindTextUTF(0,artist);
         insertArtist.BindInt(1,aggregatedInt);
 
-        if(insertArtist.Step()==db::ReturnCode::Done){
+        if(insertArtist.Step()==db::Done){
             artistId        = dbConnection.LastInsertedId();
         }
     }

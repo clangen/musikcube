@@ -120,7 +120,7 @@ class Indexer : public ThreadHelper,private boost::noncopyable {
                 utfstring path;
         };
 
-        typedef std::vector<boost::shared_ptr<Plugin::IMetaDataReader>> MetadataReaderList;
+        typedef std::vector<boost::shared_ptr<Plugin::IMetaDataReader> > MetadataReaderList;
 
         std::deque<_AddRemovePath> addRemoveQueue;
 

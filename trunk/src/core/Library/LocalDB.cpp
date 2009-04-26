@@ -154,7 +154,7 @@ void Library::LocalDB::ThreadLoop(){
                 this->outgoingQueries.push_back(query);
 
                 // Set query as started
-                query->status |= Query::Base::Status::Started;
+                query->status |= Query::Base::Started;
             }
 
             ////////////////////////////////////////////////////////////
@@ -167,7 +167,7 @@ void Library::LocalDB::ThreadLoop(){
                 boost::mutex::scoped_lock lock(this->libraryMutex);
                 this->runningQuery.reset();
                 // And set it as finished
-                query->status |= Query::Base::Status::Ended;
+                query->status |= Query::Base::Ended;
             }
 
             ////////////////////////////////////////////////////////////

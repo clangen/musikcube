@@ -36,9 +36,9 @@
 
 #include "pch.hpp"
 #include <core/PluginFactory.h>
+#include <core/config_filesystem.h>
 #include <core/Common.h>
 
-#include <boost/filesystem.hpp>
 
 using namespace musik::core;
 
@@ -70,11 +70,11 @@ void PluginFactory::LoadPlugins(){
     utfstring sPluginDir(GetPluginDirectory());
 
     // Open plugin directory
-    boost::filesystem::wpath oDir(sPluginDir);
+    boost::filesystem::utfpath oDir(sPluginDir);
 
     try{
-        boost::filesystem::wdirectory_iterator oEndFile;
-        for(boost::filesystem::wdirectory_iterator oFile(oDir);oFile!=oEndFile;++oFile){
+        boost::filesystem::utfdirectory_iterator oEndFile;
+        for(boost::filesystem::utfdirectory_iterator oFile(oDir);oFile!=oEndFile;++oFile){
             if(boost::filesystem::is_regular(oFile->status())){
                 // This is a file
                 utfstring sFile(oFile->path().string());

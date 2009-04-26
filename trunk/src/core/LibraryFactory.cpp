@@ -74,7 +74,7 @@ LibraryFactory::LibraryFactory(void){
 
 	// If there are no libraries, add a LocalDB
 	if(this->libraries.empty()){
-		this->CreateLibrary(UTF("Local Library"),Types::LocalDB);
+        this->CreateLibrary(UTF("Local Library"),LibraryFactory::LocalDB);
 	}
 
 }
@@ -108,7 +108,7 @@ LibraryFactory::~LibraryFactory(void){
 LibraryPtr LibraryFactory::AddLibrary(int id,utfstring name,int type,bool sendEvent,bool startup){
 	LibraryPtr lib;
 	switch(type){
-		case Types::Remote:
+        case LibraryFactory::Remote:
 			lib	= Library::Remote::Create(name,id);
 			break;
 		default:

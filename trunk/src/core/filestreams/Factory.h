@@ -52,7 +52,7 @@ class Factory {
         Factory();
 
     private:
-        typedef std::vector<boost::shared_ptr<IFileStreamFactory>> FileStreamFactoryVector;
+        typedef std::vector<boost::shared_ptr<IFileStreamFactory> > FileStreamFactoryVector;
         FileStreamFactoryVector fileStreamFactories;
 
     public:

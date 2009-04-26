@@ -78,11 +78,11 @@ class Preferences{
                 Setting(utfstring value);
                 Setting(db::Statement &stmt);
 
-                enum Type:int{
+                typedef enum {
                     Bool=1,
                     Int=2,
                     Text=3
-                };
+                } Type;
 
                 int type;
                 int valueInt;
@@ -109,7 +109,7 @@ class Preferences{
 
                 SettingMapPtr GetNamespace(const char* nameSpace,const utfchar* library,int &libraryId);
 
-                void SaveSetting(const char* nameSpace,int libraryId,const char *key,Setting &setting);
+                void SaveSetting(const char* nameSpace,int libraryId,const char *key,Setting setting);
 
                 static IO::Ptr Instance();
 

@@ -222,7 +222,7 @@ class Base : boost::noncopyable{
 
 
         //////////////////////////////////////////
-		typedef sigslot::signal1<std::vector<long>> TrackMetadataEvent;
+        typedef sigslot::signal1<std::vector<long> > TrackMetadataEvent;
         //////////////////////////////////////////
 		///\brief
 		///Event, called when metadata has been received.
