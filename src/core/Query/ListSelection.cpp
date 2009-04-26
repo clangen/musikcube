@@ -257,7 +257,8 @@ bool Query::ListSelection::ParseQuery(Library::Base *library,db::Connection &db)
     // or selections that are empty
     for(MetadataSignals::iterator signal=this->metadataEvent.begin();signal!=this->metadataEvent.end();){
         if( !signal->second.has_connections() ){
-            signal    = this->metadataEvent.erase(signal);
+            this->metadataEvent.erase(signal);
+            signal=this->metadataEvent.begin();
         }else{
             ++signal;
         }
@@ -265,7 +266,8 @@ bool Query::ListSelection::ParseQuery(Library::Base *library,db::Connection &db)
 
     for(SelectedMetadata::iterator selected=this->selectedMetadata.begin();selected!=this->selectedMetadata.end();){
         if( selected->second.empty() ){
-            selected    = this->selectedMetadata.erase(selected);
+            this->selectedMetadata.erase(selected);
+            selected    = this->selectedMetadata.begin();
         }else{
             ++selected;
         }
@@ -425,7 +427,7 @@ bool Query::ListSelection::ParseQuery(Library::Base *library,db::Connection &db)
 
             metakeyId.BindText(0,*metakey);
 
-            if(metakeyId.Step()==db::ReturnCode::Row){
+            if(metakeyId.Step()==db::Row){
 
                 std::string metadataKeyId(metakeyId.ColumnText(0));
                 std::string sql("SELECT mv.id,mv.content FROM meta_values mv WHERE mv.meta_key_id=");
@@ -524,7 +526,7 @@ void Query::ListSelection::QueryForMetadata(const char *metakey,const char *sql,
             this->metadataResults[metakey];
         }
 
-        while(metaValueStmt.Step()==db::ReturnCode::Row){
+        while(metaValueStmt.Step()==db::Row){
             tempMetadataValues.push_back(
                     MetadataValuePtr(
                         new MetadataValue(

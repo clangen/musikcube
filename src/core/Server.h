@@ -105,7 +105,7 @@ class Server{
         utfstring ServerIdentifier();
 
         friend class server::Connection;
-        server::UserPtr GetUser(const utfstring username);
+        server::UserPtr GetUser(std::string username);
 
         bool RemoveUserSession(server::UserSessionPtr userSession);
         bool AddUserSession(server::UserSessionPtr userSession);

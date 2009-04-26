@@ -175,7 +175,7 @@ bool Server::FreeResponder(Responder *responder){
     while(tempResponder!=this->busyResponders.end()){
         if(tempResponder->get()==responder){
             this->freeResponders.push(*tempResponder);
-            tempResponder   = this->busyResponders.erase(tempResponder);
+            this->busyResponders.erase(tempResponder);
             return true;
         }else{
             ++tempResponder;

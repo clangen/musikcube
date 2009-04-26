@@ -88,12 +88,14 @@ void Writer::Send(){
     std::string sendBuffer;
 
     bool keepSending(true);
+	bool sendNull(false);
+
     while(keepSending && this->currentWritingNode){
 
         keepSending=false;
 
         // If the node has already been send, and has childnodes, set currentWritingNode to the first childnode
-        if(this->currentWritingNode->status&Node::Status::StartSend && !this->currentWritingNode->childNodes.empty() ){
+        if(this->currentWritingNode->status&Node::StartSend && !this->currentWritingNode->childNodes.empty() ){
             this->currentWritingNode    = this->currentWritingNode->childNodes.front();
         }
 
@@ -105,11 +107,11 @@ void Writer::Send(){
         int status(node->status);
         bool noChildren(node->childNodes.empty());
 
-        if( !(status&Node::Status::StartSend) &&
+        if( !(status&Node::StartSend) &&
             (
-                (status&Node::Status::Started && !noChildren)
+                (status&Node::Started && !noChildren)
                 ||
-                (status&Node::Status::Ended)
+                (status&Node::Ended)
             )
            ){
 
@@ -126,7 +128,7 @@ void Writer::Send(){
             }
 
             // Set the node to StartSend
-            node->status |= Node::Status::StartSend;
+            node->status |= Node::StartSend;
 
             // Lets see if the node has any children to continue with
             if(!keepSending && !noChildren){
@@ -147,8 +149,8 @@ void Writer::Send(){
             noChildren  = node->childNodes.empty();
 
             if(!keepSending &&
-                status&Node::Status::StartSend &&
-                status&Node::Status::Ended &&
+                status&Node::StartSend &&
+                status&Node::Ended &&
                 noChildren
                 ){
 
@@ -159,7 +161,7 @@ void Writer::Send(){
                 }
 
                 // Set to send
-                node->status    |= Node::Status::EndSend;
+                node->status    |= Node::EndSend;
 
                 // Remove from parent node
                 node->RemoveFromParent();
@@ -174,7 +176,12 @@ void Writer::Send(){
     try{
         // Time to send the buffer
         if(!sendBuffer.empty() && !this->supplier->Exited()){
-            this->supplier->Write(sendBuffer.c_str(),sendBuffer.size());
+			if(this->currentNodeLevels.size() || this->currentWritingNode!=this->node){
+	            this->supplier->Write(sendBuffer.c_str(),sendBuffer.size());
+			}else{
+				// if this is a rootnode, lets send a null character
+	            this->supplier->Write(sendBuffer.c_str(),sendBuffer.size()+1);
+			}
             sendBuffer.clear();
         }
     }

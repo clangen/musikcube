@@ -68,7 +68,8 @@ bool Preferences::GetBool(const char* key,bool defaultValue){
     if(setting!=this->settings->end()){
         return setting->second.Value(defaultValue);
     }
-    this->IOPtr->SaveSetting(this->nameSpace.c_str(),this->libraryId,key,Setting(defaultValue));
+
+    this->IOPtr->SaveSetting(this->nameSpace.c_str(),this->libraryId,key,defaultValue);
     return defaultValue;
 }
 
@@ -78,7 +79,7 @@ int Preferences::GetInt(const char* key,int defaultValue){
     if(setting!=this->settings->end()){
         return setting->second.Value(defaultValue);
     }
-    this->IOPtr->SaveSetting(this->nameSpace.c_str(),this->libraryId,key,Setting(defaultValue));
+    this->IOPtr->SaveSetting(this->nameSpace.c_str(),this->libraryId,key,defaultValue);
     return defaultValue;
 }
 
@@ -88,23 +89,23 @@ utfstring Preferences::GetString(const char* key,const utfchar* defaultValue){
     if(setting!=this->settings->end()){
         return setting->second.Value(utfstring(defaultValue));
     }
-    this->IOPtr->SaveSetting(this->nameSpace.c_str(),this->libraryId,key,Setting(utfstring(defaultValue)));
+    this->IOPtr->SaveSetting(this->nameSpace.c_str(),this->libraryId,key,utfstring(defaultValue));
     return defaultValue;
 }
 
 void Preferences::SetBool(const char* key,bool value){
     boost::mutex::scoped_lock lock(IO::Instance()->mutex);
-    this->IOPtr->SaveSetting(this->nameSpace.c_str(),this->libraryId,key,Setting(value));
+    this->IOPtr->SaveSetting(this->nameSpace.c_str(),this->libraryId,key,value);
 }
 
 void Preferences::SetInt(const char* key,int value){
     boost::mutex::scoped_lock lock(IO::Instance()->mutex);
-    this->IOPtr->SaveSetting(this->nameSpace.c_str(),this->libraryId,key,Setting(value));
+    this->IOPtr->SaveSetting(this->nameSpace.c_str(),this->libraryId,key,value);
 }
 
 void Preferences::SetString(const char* key,const utfchar* value){
     boost::mutex::scoped_lock lock(IO::Instance()->mutex);
-    this->IOPtr->SaveSetting(this->nameSpace.c_str(),this->libraryId,key,Setting(utfstring(value)));
+    this->IOPtr->SaveSetting(this->nameSpace.c_str(),this->libraryId,key,utfstring(value));
 }
 
 
@@ -129,7 +130,7 @@ Preferences::IO::IO(void){
 
 }
 
-void Preferences::IO::SaveSetting(const char* nameSpace,int libraryId,const char *key,Setting &setting){
+void Preferences::IO::SaveSetting(const char* nameSpace,int libraryId,const char *key,Setting setting){
     int nameSpaceId(0);
     db::CachedStatement getStmt("SELECT id FROM namespaces WHERE name=? AND library_id=?",this->db);
     getStmt.BindText(0,nameSpace);

@@ -147,7 +147,7 @@ bool Indexer::Restarted(){
 ///If the path already exists it will not be added.
 //////////////////////////////////////////
 void Indexer::AddPath(utfstring sPath){
-    boost::filesystem::wpath oPath(sPath);
+    boost::filesystem::utfpath oPath(sPath);
     sPath    = oPath.string();    // Fix pathname for slash/backslash
     if(sPath.substr(sPath.size()-1,1)!=UTF("/")){
         sPath    += UTF("/");
@@ -238,7 +238,7 @@ void Indexer::Synchronize(){
         this->status    = 1;
         this->progress  = 0.0;
     }
-    for(int i(0);i<aPaths.size();++i){
+	for(std::size_t i(0);i<aPaths.size();++i){
         utfstring sPath    = aPaths[i];
         this->CountFiles(sPath);
     }
@@ -253,7 +253,7 @@ void Indexer::Synchronize(){
 
     this->filesSaved    = 0;
 
-    for(int i(0);i<aPaths.size();++i){
+    for(std::size_t i(0);i<aPaths.size();++i){
         utfstring sPath    = aPaths[i];
         DBINT iPathId    = aPathIds[i];
 
@@ -576,7 +576,7 @@ void Indexer::SyncDelete(std::vector<DBINT> aPaths){
         db::Statement stmt("SELECT f.id,p.path||f.relative_path FROM folders f,paths p WHERE f.path_id=p.id AND p.id=?",this->dbConnection);
         db::Statement stmtRemove("DELETE FROM folders WHERE id=?",this->dbConnection);
 
-        for(int i(0);i<aPaths.size();++i){
+        for(std::size_t i(0);i<aPaths.size();++i){
 
             stmt.BindInt(0,aPaths[i]);
 
@@ -639,7 +639,7 @@ void Indexer::SyncDelete(std::vector<DBINT> aPaths){
     db::Statement stmt("SELECT t.id,p.path||f.relative_path||'/'||t.filename FROM tracks t,folders f,paths p WHERE t.folder_id=f.id AND f.path_id=p.id AND p.id=?",this->dbConnection);
     db::Statement stmtRemove("DELETE FROM tracks WHERE id=?",this->dbConnection);
 
-    for(int i(0);i<aPaths.size();++i){
+    for(std::size_t i(0);i<aPaths.size();++i){
         stmt.BindInt(0,aPaths[i]);
 
         // Get the syncpath

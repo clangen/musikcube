@@ -54,6 +54,11 @@ bool SocketReader::Read(long recommendedBytes){
     this->bufferSize    = this->socket.read_some(boost::asio::buffer(this->buffer),error);
 
     if(!error){
+
+/*		if(this->bufferSize && this->buffer.c_array()[this->bufferSize-1]==(char)0){
+			this->bufferSize--;
+		}
+*/
         return true;
     }
 

@@ -86,7 +86,7 @@ class TrackMetadata : public Query::Base {
         TrackVector aResultTracks;
 
         void CreateSQL();
-        void GetFixedTrackMetakeys(std::string &fieldName,std::set<std::string> &fields);
+        void GetFixedTrackMetakeys(std::string fieldName,std::set<std::string> &fields);
     protected:
         friend class Library::Base;
         friend class Library::LocalDB;

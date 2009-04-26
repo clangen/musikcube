@@ -69,7 +69,7 @@ namespace musik{ namespace core{ namespace http{
 class Responder : public IResponder{
     public:
         Responder(Server &server,boost::asio::io_service &ioService,utfstring dbFilename);
-        ~Responder();
+        virtual ~Responder();
 
         bool Startup();
 

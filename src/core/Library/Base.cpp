@@ -42,8 +42,8 @@
 #include <core/Query/Base.h>
 #include <core/Common.h>
 
-//#include <boost/function.hpp>
 
+//#include <boost/function.hpp>
 using namespace musik::core;
 
 //////////////////////////////////////////
@@ -242,10 +242,10 @@ bool Library::Base::AddQuery( const Query::Base &query,unsigned int options ){
         // Clear unparsed queue that match CANCEL options
         for(std::list<Query::Ptr>::iterator oCheckQuery=this->incomingQueries.begin();oCheckQuery!=this->incomingQueries.end();){
             // Do not erase UNCANCEABLE
-            if( !((*oCheckQuery)->options & Query::Options::UnCanceable) ){
-                if( options & Query::Options::CancelQueue ){
+            if( !((*oCheckQuery)->options & Query::UnCanceable) ){
+                if( options & Query::CancelQueue ){
                     oCheckQuery    = this->incomingQueries.erase(oCheckQuery);
-                }else if( options & Query::Options::CancelSimilar ){
+                }else if( options & Query::CancelSimilar ){
                     if( (*oCheckQuery)->queryId == queryCopy->queryId ){
                         oCheckQuery    = this->incomingQueries.erase(oCheckQuery);
                     }else{
@@ -264,12 +264,12 @@ bool Library::Base::AddQuery( const Query::Base &query,unsigned int options ){
         for(std::list<Query::Ptr>::iterator oCheckQuery=this->outgoingQueries.begin();oCheckQuery!=this->outgoingQueries.end();++oCheckQuery){
 
             // Do not erase UNCANCEABLE
-            if( !((*oCheckQuery)->options & Query::Options::UnCanceable) ){
-                if( options & Query::Options::CancelQueue ){
-                    (*oCheckQuery)->status    |= Query::Base::Status::Canceled;
-                }else if( options & Query::Options::CancelSimilar ){
+            if( !((*oCheckQuery)->options & Query::UnCanceable) ){
+                if( options & Query::CancelQueue ){
+                    (*oCheckQuery)->status    |= Query::Base::Canceled;
+                }else if( options & Query::CancelSimilar ){
                     if( (*oCheckQuery)->queryId == queryCopy->queryId ){
-                        (*oCheckQuery)->status    |= Query::Base::Status::Canceled;
+                        (*oCheckQuery)->status    |= Query::Base::Canceled;
                     }
                 }
             }
@@ -278,10 +278,10 @@ bool Library::Base::AddQuery( const Query::Base &query,unsigned int options ){
         /////////////////////////////////////////////////////////////////////////////
         // Cancel running query
         if(this->runningQuery){
-            if( !(this->runningQuery->options & Query::Options::UnCanceable) ){
-                if( options & Query::Options::CancelQueue ){
+            if( !(this->runningQuery->options & Query::UnCanceable) ){
+                if( options & Query::CancelQueue ){
                     cancelCurrentQuery    = true;
-                }else if( options & Query::Options::CancelSimilar ){
+                }else if( options & Query::CancelSimilar ){
                     if( this->runningQuery->queryId == queryCopy->queryId ){
                         cancelCurrentQuery    = true;
                     }
@@ -291,7 +291,7 @@ bool Library::Base::AddQuery( const Query::Base &query,unsigned int options ){
 
         /////////////////////////////////////////////////////////////////////////////
         // Add the new query to front of incomming queue if the query is prioritized.
-        if(options & Query::Options::Prioritize){
+        if(options & Query::Prioritize){
             this->incomingQueries.push_front(queryCopy);
         }else{
             this->incomingQueries.push_back(queryCopy);
@@ -313,12 +313,12 @@ bool Library::Base::AddQuery( const Query::Base &query,unsigned int options ){
 
     /////////////////////////////////////////////////////////////////////////////
     // If the Query::Options::Wait is set, wait for query to finish.
-    if(options&Query::Options::Wait){
+    if(options&Query::Wait){
         {
             boost::mutex::scoped_lock lock(this->libraryMutex);
 
             // wait for the query to be finished or canceled
-            while( !(queryCopy->status&Query::Base::Status::Ended) && !(queryCopy->status&Query::Base::Status::Canceled) ){
+            while( !(queryCopy->status&Query::Base::Ended) && !(queryCopy->status&Query::Base::Canceled) ){
 
                 // To be on the safe side, lets check every second
                 boost::xtime waitingTime;
@@ -327,8 +327,8 @@ bool Library::Base::AddQuery( const Query::Base &query,unsigned int options ){
                 this->waitCondition.timed_wait(lock,waitingTime);
             }
 
-            if( options & Query::Options::AutoCallback ){    // Should the callbacks be involved?
-                queryCopy->status    |= Query::Base::Status::Finished;    // Set to finished for removal.
+            if( options & Query::AutoCallback ){    // Should the callbacks be involved?
+                queryCopy->status    |= Query::Base::Finished;    // Set to finished for removal.
             }
         }
 
@@ -336,7 +336,7 @@ bool Library::Base::AddQuery( const Query::Base &query,unsigned int options ){
         // Finaly, remove old, finished queries
         this->ClearFinishedQueries();
 
-        if( options & Query::Options::AutoCallback ){    // Should the callbacks be involved?
+        if( options & Query::AutoCallback ){    // Should the callbacks be involved?
             if( !this->QueryCanceled(queryCopy.get()) ){    // If not canceled
                 queryCopy->RunCallbacks(this);            // Run the callbacks.
             }
@@ -383,9 +383,9 @@ bool Library::Base::ClearFinishedQueries(){
 
         for(std::list<Query::Ptr>::iterator oCheckQuery=this->outgoingQueries.begin();oCheckQuery!=this->outgoingQueries.end();){
             unsigned int status    = (*oCheckQuery)->status;
-            if( (status & (Query::Base::Status::Finished | Query::Base::Status::Canceled)) ){
+            if( (status & (Query::Base::Finished | Query::Base::Canceled)) ){
                 // If canceled
-                if( status & Query::Base::Status::Canceled ){
+                if( status & Query::Base::Canceled ){
                     canceledQueries.push_back(*oCheckQuery);
                 }
                 oCheckQuery    = this->outgoingQueries.erase(oCheckQuery);
@@ -433,7 +433,7 @@ bool Library::Base::RunCallbacks(){
 
             if(this->outgoingQueries.size()!=0){
                 oQuery    = this->outgoingQueries.front();
-                if(oQuery->options & Query::Options::AutoCallback){
+                if(oQuery->options & Query::AutoCallback){
                     oQuery.reset();
                 }
             }
@@ -444,7 +444,7 @@ bool Library::Base::RunCallbacks(){
                 {
                     boost::mutex::scoped_lock lock(this->libraryMutex);
                     // Set to FINISHED if query returns true
-                    oQuery->status    |= Query::Base::Status::Finished;
+                    oQuery->status    |= Query::Base::Finished;
                 }
                 bAgain    = true;    // Continue to check results on the rest of the queue if this one is finished.
 
@@ -483,7 +483,7 @@ bool Library::Base::RunCallbacks(){
 //////////////////////////////////////////
 bool Library::Base::QueryCanceled(Query::Base *query){
     boost::mutex::scoped_lock lock(this->libraryMutex);
-    return query->status&Query::Base::Status::Canceled;
+	return (query->status&Query::Base::Canceled)?true:false;
 }
 
 //////////////////////////////////////////

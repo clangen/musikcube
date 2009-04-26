@@ -245,10 +245,10 @@ bool Server::RemoveUserSession(server::UserSessionPtr userSession){
     return true;
 }
 
-server::UserPtr Server::GetUser(const utfstring username){
+server::UserPtr Server::GetUser(std::string username){
     server::UserPtr user;
     db::Statement stmt("SELECT id,name,login,password FROM users WHERE login=?",this->db);
-    stmt.BindTextUTF(0,username);
+    stmt.BindText(0,username);
     if(stmt.Step()==db::Row){
         user.reset( new server::User(
             stmt.ColumnInt(0),

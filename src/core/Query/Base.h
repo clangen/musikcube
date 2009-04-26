@@ -70,7 +70,7 @@ namespace musik{ namespace core{ namespace Query{
 class Base;
 typedef boost::shared_ptr<Query::Base> Ptr;
 
-enum Options:unsigned int{
+typedef enum{
     AutoCallback    = 1,
     Wait            = 2,
     Prioritize      = 4,
@@ -78,7 +78,7 @@ enum Options:unsigned int{
     CancelSimilar   = 16,
     UnCanceable     = 32,
     CopyUniqueId    = 64
-};
+} Options;
 
 //////////////////////////////////////////
 ///\brief
@@ -97,14 +97,14 @@ class Base : public sigslot::has_slots<> {
 
         // Variables:
 
-        enum Status:int{
+        typedef enum {
             Started       = 1,
             Ended         = 2,
             Canceled      = 4,
             OutputStarted = 8,
             OutputEnded   = 16,
             Finished      = 32
-        };
+        } Status;
 
         //////////////////////////////////////////
         ///\brief
