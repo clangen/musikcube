@@ -161,7 +161,7 @@ void Parser::OnContentReal(const char *content,int length){
 void Parser::ContinueParsing(){
     this->xmlFound  = false;
 	std::string errorstring;
-    while(!this->xmlFound && !this->exit){
+	while( !this->xmlFound && !this->exit){
         switch(this->xmlParserStatus){
             case XML_STATUS_SUSPENDED:
 		        this->xmlParserStatus	= XML_ResumeParser(this->xmlParser);
@@ -175,15 +175,19 @@ void Parser::ContinueParsing(){
                     this->Exit();
                     return;
                 }
-                if(!this->supplier->Read()){
-                    return;
-                }
 
 				{
 					// create a temporary buffer to be able to remove null characters
 					std::string tempBuffer(this->nextBuffer);
 					this->nextBuffer.clear();
-					tempBuffer.append(this->supplier->Buffer(),this->supplier->BufferSize());
+
+					if(tempBuffer.empty()){
+						if(!this->supplier->Read()){
+							return;
+						}
+						tempBuffer.append(this->supplier->Buffer(),this->supplier->BufferSize());
+					}
+
 					static std::string nullCharacter("\0",1);
 					std::string::size_type nullPosition(tempBuffer.find(nullCharacter));
 					if(nullPosition!=std::string::npos){
@@ -191,6 +195,7 @@ void Parser::ContinueParsing(){
 						this->nextBuffer	= tempBuffer.substr(nullPosition+1);
 						tempBuffer.resize(nullPosition);
 					}
+
 
 	//                this->xmlParserStatus	= XML_Parse(this->xmlParser,this->supplier->Buffer(),(int)this->supplier->BufferSize(),0);
 					this->xmlParserStatus	= XML_Parse(this->xmlParser,tempBuffer.c_str(),(int)tempBuffer.size(),0);
