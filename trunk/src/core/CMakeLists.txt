@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 2.6)
 project( core )
 
 SET (CMAKE_BUILD_TYPE DEBUG)
@@ -71,6 +72,8 @@ if(CMAKE_SYSTEM_NAME MATCHES "Windows")
 	if(NOT DEFINED MINGW)
         	SET(SOURCES ${SOURCES} ${WINDOWS_EXTRAS})
 	endif(NOT DEFINED MINGW)
+else(CMAKE_SYSTEM_NAME MATCHES "Windows")
+  set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -fpermissive)
 endif(CMAKE_SYSTEM_NAME MATCHES "Windows")
 
 include_directories( 
@@ -86,5 +89,5 @@ add_definitions(
   -D_DEBUG
 )
 
-add_library( core STATIC ${SOURCES} )
+add_library( core SHARED ${SOURCES} )
 

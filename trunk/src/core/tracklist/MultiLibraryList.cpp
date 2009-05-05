@@ -34,7 +34,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.hpp"
+#include "../pch.hpp"
 #include <core/tracklist/MultiLibraryList.h>
 #include <core/LibraryTrack.h>
 #include <core/LibraryFactory.h>

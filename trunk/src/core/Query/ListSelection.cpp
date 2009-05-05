@@ -34,7 +34,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.hpp"
+#include "../pch.hpp"
 #include <core/Query/ListSelection.h>
 #include <core/Library/Base.h>
 #include <core/xml/ParserNode.h>
