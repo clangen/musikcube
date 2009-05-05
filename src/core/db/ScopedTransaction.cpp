@@ -34,7 +34,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.hpp"
+#include "../pch.hpp"
 #include <core/db/ScopedTransaction.h>
 #include <core/db/Connection.h>
 

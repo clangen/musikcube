@@ -33,7 +33,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
-#include "pch.hpp"
+#include "../pch.hpp"
 #include <core/filestreams/LocalFileStream.h>
 #include <core/config.h>
 #include <core/config_filesystem.h>

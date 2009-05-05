@@ -30,7 +30,7 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
-#include "pch.hpp"
+#include "../pch.hpp"
 #include <core/audio/Player.h>
 #include <core/PluginFactory.h>
 

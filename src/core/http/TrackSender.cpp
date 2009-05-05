@@ -34,7 +34,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.hpp"
+#include "../pch.hpp"
 #include <core/http/TrackSender.h>
 #include <core/Common.h>
 #include <core/filestreams/Factory.h>

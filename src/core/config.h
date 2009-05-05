@@ -54,12 +54,17 @@
     #endif
     typedef unsigned __int64 UINT64;
 
-	#define STDCALL(fp) __stdcall fp
+    #define STDCALL(fp) __stdcall fp
+
 #else
+    #include <assert.h>
+
     typedef unsigned long long UINT64;
     typedef long long __int64;		//TODO: Is this necessary?
 
-	#define STDCALL(fp) fp __attribute__((stdcall)) 
+    #define STDCALL(fp) fp __attribute__((stdcall)) 
+    #define _ASSERT assert
+
 #endif  // WIN32
 
 ////////////////////////////////
@@ -144,7 +149,10 @@ typedef unsigned int DBTIME;
 typedef std::basic_string<utfchar> utfstring;
 
 //////////////////////////////////////////////////////////////////////////////
-
-#define CopyFloat(dst, src, num) CopyMemory(dst, src, (num) * sizeof(float))
+#ifdef WIN32
+	#define CopyFloat(dst, src, num) CopyMemory(dst, src, (num) * sizeof(float))
+#else
+	#define CopyFloat(dst, src, num) memmove(dst, src, (num) * sizeof(float))
+#endif
 
 //////////////////////////////////////////////////////////////////////////////

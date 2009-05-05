@@ -33,7 +33,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
-#include "pch.hpp"
+#include "../pch.hpp"
 #include <core/xml/Writer.h>
 #include <core/xml/WriterNode.h>
 #include <boost/algorithm/string/replace.hpp>

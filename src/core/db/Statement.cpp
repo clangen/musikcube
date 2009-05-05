@@ -34,9 +34,9 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+//#pragma once --- Unneccessary
 
-#include "pch.hpp"
+#include "../pch.hpp"
 #include <core/db/Statement.h>
 #include <core/db/Connection.h>
 #include <sqlite/sqlite3.h>

@@ -34,7 +34,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.hpp"
+#include "../pch.hpp"
 #include <core/Library/LocalDB.h>
 #include <core/Query/Base.h>
 #include <core/Preferences.h>

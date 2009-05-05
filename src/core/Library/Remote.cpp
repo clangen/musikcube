@@ -34,7 +34,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.hpp"
+#include "../pch.hpp"
 #include <core/Common.h>
 #include <core/Library/Remote.h>
 #include <core/Query/Base.h>
