@@ -52,12 +52,15 @@
     #else
         #define DLLEXPORT __declspec( dllimport )
     #endif
+    typedef unsigned __int64 UINT64;
 
+#else
+    typedef unsigned long long UINT64;
+    typedef long long __int64;		//TODO: Is this necessary?
 #endif  // WIN32
 
 ////////////////////////////////
 
-typedef unsigned __int64 UINT64;
 typedef unsigned int DBINT;
 typedef UINT64 VERSION;
 typedef unsigned int DBTIME;
