@@ -44,6 +44,10 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/thread/mutex.hpp>
 
+#ifndef WIN32
+    #include <dlfcn.h>
+#endif //WIN32
+
 namespace musik{ namespace core{
 
     class PluginFactory{
@@ -92,7 +96,7 @@ namespace musik{ namespace core{
             template <class T, class D> std::vector< boost::shared_ptr<T> > QueryInterface(const char* functionName){
                 boost::mutex::scoped_lock lock(this->mutex);
 
-                typedef T* (__stdcall* PluginInterfaceCall)();
+                typedef T* STDCALL((* PluginInterfaceCall)());
 
                 std::vector< boost::shared_ptr<T> > plugins;
                 HandleList& allDlls = PluginFactory::sInstance.loadedDLLs;
@@ -100,9 +104,13 @@ namespace musik{ namespace core{
                 typedef HandleList::iterator Iterator;
                 Iterator currentDll = allDlls.begin();
                 while (currentDll != allDlls.end()){
-                    PluginInterfaceCall funcPtr =
-                        (PluginInterfaceCall) GetProcAddress((HMODULE)(*currentDll), functionName);
 
+		    PluginInterfaceCall funcPtr =
+#ifdef WIN32
+                        (PluginInterfaceCall) GetProcAddress((HMODULE)(*currentDll), functionName);
+#else
+			(PluginInterfaceCall) dlsym(*currentDll, functionName);
+#endif //WIN32
                     if(funcPtr) {
                         T* result = funcPtr();
                         if (result) {

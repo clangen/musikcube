@@ -85,4 +85,3 @@ namespace musik{ namespace core{
 #define UTF16_TO_UTF(s) musik::core::ConvertUTF8(s)
 
 #endif
-

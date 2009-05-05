@@ -34,7 +34,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.hpp"
+#include "../pch.hpp"
 
 #include <core/Common.h>
 #include <core/Query/TrackMetadata.h>

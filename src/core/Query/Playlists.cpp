@@ -34,7 +34,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.hpp"
+#include "../pch.hpp"
 #include <core/Query/Playlists.h>
 #include <core/Library/Base.h>
 #include <core/tracklist/Playlist.h>

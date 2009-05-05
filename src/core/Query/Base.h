@@ -137,9 +137,10 @@ class Base : public sigslot::has_slots<> {
         unsigned int options;
 
     protected:
-        friend class Library::Base;
+        /*friend class Library::Base;
         friend class Library::LocalDB;
-        friend class server::Connection;
+        friend class server::Connection;*/
+	//Friended twice - throwing up lots of warnings
 
         // Methods:
         virtual std::string Name();

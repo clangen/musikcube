@@ -34,7 +34,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.hpp"
+#include "../pch.hpp"
 #include <core/Query/ListBase.h>
 #include <core/Library/Base.h>
 #include <core/Common.h>

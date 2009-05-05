@@ -33,7 +33,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
-#include "pch.hpp"
+#include "../pch.hpp"
 #include <core/Query/Factory.h>
 
 #include <core/Query/ListSelection.h>

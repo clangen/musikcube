@@ -54,9 +54,12 @@
     #endif
     typedef unsigned __int64 UINT64;
 
+	#define STDCALL(fp) __stdcall fp
 #else
     typedef unsigned long long UINT64;
     typedef long long __int64;		//TODO: Is this necessary?
+
+	#define STDCALL(fp) fp __attribute__((stdcall)) 
 #endif  // WIN32
 
 ////////////////////////////////

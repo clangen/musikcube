@@ -113,11 +113,15 @@ utfstring musik::core::GetDataDirectory(){
 ///String with path.
 //////////////////////////////////////////
 utfstring musik::core::GetPath(const utfstring &sFile){
+    
     utfstring sPath;
+    int iStrLength;
+
+#ifdef WIN32
 
     utfchar szPath[2048];
     utfchar *szFile=NULL;
-    int iStrLength    = GetFullPathName(sFile.c_str(),2048,szPath,&szFile);
+    iStrLength    = GetFullPathName(sFile.c_str(),2048,szPath,&szFile);
     if(iStrLength!=0 && iStrLength<2048 ){
         sPath.assign(szPath);
         if(szFile!=0){
@@ -127,7 +131,11 @@ utfstring musik::core::GetPath(const utfstring &sFile){
     }else{
         sPath.assign(sFile);
     }
+ #else	//TODO: check this POSIX GetPath works
+    utfchar* szDir;
+    sPath.assign(getcwd((char*)szDir, (size_t) iStrLength));
 
+ #endif //WIN32
     return sPath;
 }
 
