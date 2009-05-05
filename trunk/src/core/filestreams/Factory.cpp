@@ -33,7 +33,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
-#include "pch.hpp"
+#include "../pch.hpp"
 #include <core/filestreams/Factory.h>
 #include <core/config_filesystem.h>
 #include <core/PluginFactory.h>

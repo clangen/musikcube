@@ -30,7 +30,7 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
-#include "pch.hpp"
+#include "../pch.hpp"
 #include <core/audio/Transport.h>
 
 using namespace musik::core::audio;

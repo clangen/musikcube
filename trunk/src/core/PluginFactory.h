@@ -60,7 +60,7 @@ namespace musik{ namespace core{
         private:
 
 #ifdef WIN32
-            typedef musik::core::IPlugin* (__stdcall* CallGetPlugin)();
+            typedef musik::core::IPlugin* STDCALL((* CallGetPlugin)());
 #endif
 
             PluginFactory(void);

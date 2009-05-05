@@ -34,7 +34,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.hpp"
+#include "../pch.hpp"
 #include <core/db/Connection.h>
 #include <boost/lexical_cast.hpp>
 #include <boost/thread/thread.hpp>

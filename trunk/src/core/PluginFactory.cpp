@@ -60,6 +60,8 @@ PluginFactory::~PluginFactory(void){
     for(std::vector<void*>::iterator oDLL=this->loadedDLLs.begin();oDLL!=this->loadedDLLs.end();){
         #ifdef WIN32
 //            FreeLibrary( (HMODULE)(*oDLL) );
+	#else
+	      dlclose(*oDLL);
         #endif
         oDLL    = this->loadedDLLs.erase(oDLL);
     }
@@ -101,7 +103,25 @@ void PluginFactory::LoadPlugins(){
 
 
                     }
-                #endif
+		#else	//GNU or other
+                    if(sFile.substr(sFile.size()-3)==UTF(".so")){    // And a shared lib
+		        void* oDLL = dlopen(sFile.c_str(), RTLD_NOW);
+			char* err;
+			if ((err = dlerror()) != NULL) {
+			    std::cerr << "Couldn't open shared library " << sFile << std::endl;
+			}
+			else	{
+                            IPlugin* getPluginCall = (IPlugin*)dlsym(oDLL,"GetPlugin");
+                            if(getPluginCall){
+                                this->loadedPlugins.push_back(getPluginCall);
+			        this->loadedDLLs.push_back(oDLL);
+			    }
+			    else	{
+			        dlclose(oDLL);
+			    }
+			}
+		    }
+                #endif //WIN32
             }
         }
     }
