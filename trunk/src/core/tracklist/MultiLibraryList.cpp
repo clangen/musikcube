@@ -34,7 +34,12 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "../pch.hpp"
+#ifdef WIN32
+#include "pch.hpp"
+#else
+#include <core/pch.hpp>
+#endif
+
 #include <core/tracklist/MultiLibraryList.h>
 #include <core/LibraryTrack.h>
 #include <core/LibraryFactory.h>
