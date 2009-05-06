@@ -34,7 +34,12 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "../pch.hpp"
+#ifdef WIN32
+#include "pch.hpp"
+#else
+#include <core/pch.hpp>
+#endif
+
 #include <core/http/TrackSender.h>
 #include <core/Common.h>
 #include <core/filestreams/Factory.h>

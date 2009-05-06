@@ -57,7 +57,7 @@
     #define STDCALL(fp) __stdcall fp
 
 #else
-    #include <assert.h>
+    #include <cassert>
 
     typedef unsigned long long UINT64;
     typedef long long __int64;		//TODO: Is this necessary?

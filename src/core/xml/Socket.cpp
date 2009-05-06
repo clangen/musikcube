@@ -33,7 +33,12 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
-#include "../pch.hpp"
+#ifdef WIN32
+#include "pch.hpp"
+#else
+#include <core/pch.hpp>
+#endif
+
 #include <core/xml/Socket.h>
 
 using namespace musik::core::xml;

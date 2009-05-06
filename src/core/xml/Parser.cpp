@@ -33,7 +33,12 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
-#include "../pch.hpp"
+#ifdef WIN32
+#include "pch.hpp"
+#else
+#include <core/pch.hpp>
+#endif
+
 #include <core/xml/Parser.h>
 #include <core/xml/ParserNode.h>
 #include <expat/expat.h>

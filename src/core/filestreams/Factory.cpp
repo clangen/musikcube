@@ -33,7 +33,12 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
-#include "../pch.hpp"
+#ifdef WIN32
+#include "pch.hpp"
+#else
+#include <core/pch.hpp>
+#endif
+
 #include <core/filestreams/Factory.h>
 #include <core/config_filesystem.h>
 #include <core/PluginFactory.h>

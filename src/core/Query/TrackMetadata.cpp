@@ -34,7 +34,11 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "../pch.hpp"
+#ifdef WIN32
+#include "pch.hpp"
+#else
+#include <core/pch.hpp>
+#endif
 
 #include <core/Common.h>
 #include <core/Query/TrackMetadata.h>

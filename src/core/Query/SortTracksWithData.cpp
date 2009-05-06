@@ -34,7 +34,12 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "../pch.hpp"
+#ifdef WIN32
+#include "pch.hpp"
+#else
+#include <core/pch.hpp>
+#endif
+
 #include <core/Query/SortTracksWithData.h>
 #include <core/Library/Base.h>
 #include <core/config_format.h>
