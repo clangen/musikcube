@@ -91,14 +91,15 @@ class core.Library
 	}
 	public function SocketRecieve(xml:XML):Void {
 //		trace("Library::SocketRecieve " + xml.firstChild.toString());
-		trace("Library::SocketRecieve " );
+//		trace("Library::SocketRecieve " );
+_level0["cube"]["thelog"].text 	= xml.toString();
 		
 		var queryId:Number	= Number(xml.firstChild.attributes["id"]);
 //		var queryUId:Number	= Number(xml.firstChild.attributes["uid"]);
 		
 		for (var i:Number = 0; i < this.queries.length; i++) {
 			if (this.queries[i].id == queryId) {
-trace("TJOO");				
+				
 				this.queries[i].RecieveResult(xml.firstChild);
 				
 				//remove query
@@ -122,7 +123,8 @@ trace("TJOO");
 		this.queries.push(query);
 		
 		var queryXML:XML	= query.SendQuery();
-		trace("Library::SendQuery " + queryXML.toString());
+		//trace("Library::SendQuery " + queryXML.toString());
+_level0["cube"]["thelog"].text 	= queryXML.toString();
 		this.socket.send(queryXML);
 	}
 	

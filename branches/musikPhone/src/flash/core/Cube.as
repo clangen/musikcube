@@ -23,6 +23,14 @@ class core.Cube extends MovieClip
 		trace("Cube::onLoad");
 		
 		this.library.statusChangeEvent.addListener(this, this.StatusChanged);
+		
+		Stage.addListener(this);
+		
+	}
+	
+	public function onResize():Void {
+		trace("Stage.resize");
+		this.currentView.Resize();
 	}
 		
 	private function StatusChanged(status:String, library:core.Library):Void {
@@ -70,6 +78,8 @@ class core.Cube extends MovieClip
 	}
 	
 	public function LoadForm(formMC:MovieClip):Void {
+		trace("LoadForm " + formMC);
+		formMC["password"].password = true;
 		this.saveData	= SharedObject.getLocal("mC2connection");
 		this.saveData.form = formMC;
 		SharedObject.addListener("mC2connection", this.SOLoaded);
@@ -83,6 +93,10 @@ class core.Cube extends MovieClip
 		if(so.data.httpPort){		formMC["httpport"].text=so.data.httpPort; }
 		if(so.data.username){		formMC["username"].text=so.data.username; }
 		if(so.data.password){		formMC["password"].text=so.data.password; }
+
+		formMC["host"].text	= "vallgraven.intermezzon.com";
+		formMC["username"].text = "doep";
+		formMC["password"].text = "doep";
 	}
 	
 }

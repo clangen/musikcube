@@ -25,6 +25,10 @@ class cube.MetakeyLister
 		this.NextView();
 	}
 	
+	public function Resize():Void {
+		this.listViews[this.currentView].Initialize(Stage.width, Stage.height);
+	}
+	
 	private function NextView():Void {
 		this.currentView++;
 		if (this.currentView > this.metakeyOrder.length) {
@@ -81,7 +85,9 @@ class cube.MetakeyLister
 		}
 		
 		// remove the old view
-		this.listViews[this.currentView+1].removeMovieClip();
+		this.listViews[this.currentView + 1].removeMovieClip();
+		
+		this.listViews[this.currentView].Initialize(Stage.width, Stage.height);
 		this.listViews[this.currentView].Activate();
 		this.listViews[this.currentView]._visible	= true;
 		this.listViews[this.currentView].SetEnterFrame();

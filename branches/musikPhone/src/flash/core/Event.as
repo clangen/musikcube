@@ -31,7 +31,7 @@ class core.Event
 		}
 	}
 	public function call2(param1, param2):Void {
-		trace(" event "+this.listeners.length);
+		//trace(" event "+this.listeners.length);
 		for (var i = 0; i < this.listeners.length; i++) {
 			this.listeners[i][1].call(this.listeners[i][0],param1,param2);
 		}

@@ -12,6 +12,7 @@ class cube.MetakeyList extends cube.ListView
 		super();
 		this.query	= new core.query.ListSelection();
 		this.query.ListEvent.addListener(this, this.RecieveResults);
+		this.query.ResultsRecievedEvent.addListener(this, this.ResultsRecieved);
 	}
 	
 	public function SetMetakey(key:String):Void {
@@ -27,7 +28,7 @@ class cube.MetakeyList extends cube.ListView
 	}
 	
 	private function RecieveResults(key, values):Void {
-		trace("RecieveResults " + key+ " "+this);
+		//trace("RecieveResults " + key+ " "+this);
 		if (key == this.metaKey) {
 			if(this.items.length==0){
 				this.items	= values;
@@ -36,9 +37,11 @@ class cube.MetakeyList extends cube.ListView
 					this.items.push(values[i]);
 				}
 			}
-			this.ScrollToLine(0);
-			this.Activate();
 		}
 	}
 	
+	private function ResultsRecieved():Void {
+		this.ScrollToLine(0);
+		this.Activate();
+	}
 }

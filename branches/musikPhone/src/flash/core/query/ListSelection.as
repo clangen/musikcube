@@ -10,6 +10,7 @@ class core.query.ListSelection extends core.query.Base
 	private var listTracks:Boolean;
 	
 	public var ListEvent:core.Event;
+	public var TracksEvent:core.Event;
 	
 	public function ListSelection() 
 	{
@@ -17,6 +18,7 @@ class core.query.ListSelection extends core.query.Base
 		this.listMetaKeys	= new Array();
 		this.selections		= new Array();
 		this.ListEvent		= new core.Event();
+		this.TracksEvent	= new core.Event();
 		this.type			= "ListSelection";
 		this.listTracks		= false;
 	}
@@ -41,7 +43,7 @@ class core.query.ListSelection extends core.query.Base
 	}
 	
 	public function GenerateQueryXML(xml) {
-		trace("GenerateQueryXML "+this.selections.length+" "+this.listMetaKeys.length);
+		//trace("GenerateQueryXML "+this.selections.length+" "+this.listMetaKeys.length);
 		var selections:XMLNode	= xml.createElement("selections");
 		for (var i = 0; i < this.selections.length; i++) {
 			var selection:XMLNode	= xml.createElement("selection");
@@ -77,7 +79,7 @@ class core.query.ListSelection extends core.query.Base
 	}
 
 	public function RecieveResult(xml:XMLNode):Void {
-trace("RecieveResult");
+//trace("RecieveResult");
 		for (var i:Number = 0; i < xml.childNodes.length; i++) {
 			if (xml.childNodes[i].nodeName == "metadata") {
 				var key:String	= xml.childNodes[i].attributes["key"];
@@ -87,10 +89,17 @@ trace("RecieveResult");
 						values.push({id:xml.childNodes[i].childNodes[j].attributes["id"],text:xml.childNodes[i].childNodes[j].firstChild.nodeValue});
 					}
 				}
-trace("   RecieveResult "+key+" "+values.length);
 				this.ListEvent.call2(key,values);
+			}else if (xml.childNodes[i].nodeName == "tracklist") {
+				// tracks recieved
+				for (var j:Number = 0; j < xml.childNodes[i].childNodes.length; j++) {
+					if (xml.childNodes[i].childNodes[j].nodeName == "tracks") {
+						this.TracksEvent.call1(xml.childNodes[i].childNodes[j].firstChild.nodeValue.split(","));
+					}
+				}
 			}
 		}
+		this.ResultsRecievedEvent.call0();
 	}
 	
 }

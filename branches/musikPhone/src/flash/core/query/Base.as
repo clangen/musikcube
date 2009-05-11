@@ -10,6 +10,8 @@ class core.query.Base
 	public var type:String		= "";
 	public var options:Number	= 0;
 	static var uidCounter:Number	= 0;
+
+	public var ResultsRecievedEvent:core.Event;
 	
 	public function Base() 
 	{
@@ -17,6 +19,7 @@ class core.query.Base
 		
 		this.id		= core.query.Base.uidCounter;
 		this.uid	= core.query.Base.uidCounter;
+		this.ResultsRecievedEvent	= new core.Event();
 	}
 
 	public function GenerateQueryXML(xml) {
@@ -25,10 +28,7 @@ class core.query.Base
 	
 	public function SendQuery():XML {
 		var xml:XML	= new XML("<query id=\"" + this.id + "\" uid=\"" + this.uid + "\" type=\"" + this.type + "\" options=\"" + this.options + "\"></query>");
-		trace("query.Base.SendQuery "+xml.toString());
-		xml	= this.GenerateQueryXML(xml);
-		trace("SendQuery "+xml.toString());
-		return xml;
+		return this.GenerateQueryXML(xml);
 	}
 	
 	

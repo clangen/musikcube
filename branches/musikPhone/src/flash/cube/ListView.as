@@ -52,7 +52,7 @@ class cube.ListView extends MovieClip
 	}
 	
 	public function ScrollToLine(lineNumber):Void {
-		trace("ScrollToLine "+this.height+" "+this.itemHeight);
+		//trace("ScrollToLine "+this.height+" "+this.itemHeight);
 		this.gotoY	= lineNumber * this.itemHeight -(this.height - this.itemHeight) / 2;
 		
 		if (this.gotoY > this.itemHeight * this.items.length - this.height ) {
@@ -120,13 +120,13 @@ class cube.ListView extends MovieClip
 	}
 	
 	private function DeactivateItem(itemIndex:Number):Void {
-		trace("DeactivateItem "+itemIndex+" "+this["item" + itemIndex]);
+		//trace("DeactivateItem "+itemIndex+" "+this["item" + itemIndex]);
 		if (this["item" + itemIndex]) {
 			this["item" + itemIndex].Deactivate(itemIndex);
 		}
 	}
 	private function ActivateItem(itemIndex:Number):Void {
-		trace("ActivateItem "+itemIndex+" "+this["item" + itemIndex]);
+		//trace("ActivateItem "+itemIndex+" "+this["item" + itemIndex]);
 		if (this["item" + itemIndex]) {
 			this["item" + itemIndex].Activate(itemIndex);
 		}
@@ -134,7 +134,7 @@ class cube.ListView extends MovieClip
 	}
 	
 	public function onKeyDown():Void {
-		trace("keydown " + Key.getCode());
+		//trace("keydown " + Key.getCode());
 		this.DeactivateItem(this.activeIndex);
 		
 		switch(Key.getCode()) {
