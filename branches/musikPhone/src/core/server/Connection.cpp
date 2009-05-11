@@ -101,15 +101,15 @@ void Connection::ReadThread(){
     try{
 
         // Test waiting for a Node
-        if( musik::core::xml::ParserNode root = xmlParser.ChildNode("musik") ){
+//        if( musik::core::xml::ParserNode root = xmlParser.ChildNode("musik") ){
             // musik node initialized
 
             // Wait for authentication
-            if( musik::core::xml::ParserNode userNode = root.ChildNode("authentication") ){
+            if( musik::core::xml::ParserNode userNode = xmlParser.ChildNode("authentication") ){
                 userNode.WaitForContent();
 
                 // Get the user
-                UserPtr user = this->server->GetUser(musik::core::ConvertUTF16(userNode.Attributes()["username"]));
+                UserPtr user = this->server->GetUser(userNode.Attributes()["username"]);
                 if(user){
                     // Create a new usersession
                     
@@ -117,7 +117,10 @@ void Connection::ReadThread(){
                     UserSessionPtr userSession( new UserSession(user,this->salt,endpoint.address().to_string()) );
 
                     // Check if encrypted password is the same
-                    if( musik::core::Crypt::Encrypt(UTF_TO_UTF8(user->Password()),this->salt)==userNode.Content() ){
+//                    if( musik::core::Crypt::Encrypt(UTF_TO_UTF8(user->Password()),this->salt)==userNode.Content() ){
+                    if( musik::core::Crypt::Encrypt(UTF_TO_UTF8(user->Password()),this->salt)==userNode.Content() ||
+						musik::core::Crypt::Encrypt(userNode.Content(),musik::core::Crypt::StaticSalt())==UTF_TO_UTF8(user->Password())
+						){
                         boost::mutex::scoped_lock lock(this->libraryMutex);
                         this->userSession   = userSession;
                         this->server->AddUserSession(userSession);
@@ -141,7 +144,7 @@ void Connection::ReadThread(){
             musik::core::Query::Factory::GetQueries(queryMap);
 
             // Loop waiting for queries
-            while( musik::core::xml::ParserNode queryNode = root.ChildNode("query") ){
+            while( musik::core::xml::ParserNode queryNode = xmlParser.ChildNode("query") ){
                 // Got a query
                 std::string queryType(queryNode.Attributes()["type"]);
                 
@@ -179,7 +182,7 @@ void Connection::ReadThread(){
 
                 }
             }
-        }
+//        }
         
     }
     catch(...){
@@ -211,7 +214,7 @@ void Connection::ParseThread(){
                 this->outgoingQueries.push_back(query);
 
                 // Set query as started
-                query->status |= Query::Base::Status::Started;
+                query->status |= Query::Base::Started;
             }
 
             ////////////////////////////////////////////////////////////
@@ -221,7 +224,7 @@ void Connection::ParseThread(){
                 boost::mutex::scoped_lock lock(this->libraryMutex);
                 this->runningQuery.reset();
                 // And set it as finished
-                query->status |= Query::Base::Status::Ended;
+                query->status |= Query::Base::Ended;
             }
 
             ////////////////////////////////////////////////////////////
@@ -252,12 +255,12 @@ void Connection::WriteThread(){
 
     try{
         // Lets start with a <musik> node
-        musik::core::xml::WriterNode musikNode(xmlWriter,"musik");
+//        musik::core::xml::WriterNode musikNode(xmlWriter,"musik");
 
         // Start by initializing the user
         // Send a random salt for password encryption
         {
-            musik::core::xml::WriterNode initNode(musikNode,"authentication");
+            musik::core::xml::WriterNode initNode(xmlWriter,"authentication");
             initNode.Content()  = this->salt;
         }
         xmlWriter.Flush();
@@ -297,7 +300,7 @@ void Connection::WriteThread(){
             if(sendQuery){
                 // Send the query
                 {
-                    musik::core::xml::WriterNode queryNode(musikNode,"queryresults");
+                    musik::core::xml::WriterNode queryNode(xmlWriter,"queryresults");
                     queryNode.Attributes()["type"]  = sendQuery->Name();
                     queryNode.Attributes()["id"]    = boost::lexical_cast<std::string>(sendQuery->queryId);
                     queryNode.Attributes()["uid"]   = boost::lexical_cast<std::string>(sendQuery->uniqueId);

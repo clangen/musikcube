@@ -49,7 +49,7 @@ WriterNode::WriterNode(WriterNode &parentNode,std::string name)
     if(parentNode.node){
         parentNode.node->childNodes.push_back(this->node);
         // if a childnode has been added to a node, it should be set to started
-        parentNode.node->status |= Node::Status::Started;
+        parentNode.node->status |= Node::Started;
     }
 
     this->writer->Send();
@@ -70,7 +70,7 @@ WriterNode::WriterNode()
 //////////////////////////////////////////
 WriterNode::~WriterNode(){
     if(this->node){
-        this->node->status  |= Node::Status::Started | Node::Status::Ended;
+        this->node->status  |= Node::Started | Node::Ended;
         if(this!=this->writer){
             this->writer->Send();
         }

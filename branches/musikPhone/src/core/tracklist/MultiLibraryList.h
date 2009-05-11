@@ -123,10 +123,10 @@ class MultiLibraryList : public Base, public sigslot::has_slots<> {
 
 		//////////////////////////////////////////
         // Sorting of tracks
-        enum QueryState:int{
+        typedef enum {
             Default=0,
             Sorting=1
-        };
+        } QueryState;
 
         int queryState;
 

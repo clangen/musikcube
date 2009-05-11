@@ -57,6 +57,11 @@ namespace musik{ namespace core{
     utfstring GetPath(const utfstring &sFile);
 
     /*****************************
+    Path to where the webfiles are located.
+    *****************************/
+    utfstring GetWebfilesDirectory();
+
+    /*****************************
     Path to where plugins are located.
     *****************************/
     utfstring GetPluginDirectory();

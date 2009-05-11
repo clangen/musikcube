@@ -101,7 +101,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="copy &quot;$(SolutionDir)\src\3rdparty\vld\*.*&quot; &quot;$(TargetDir)&quot;"
+				CommandLine="copy &quot;$(SolutionDir)\src\3rdparty\vld\*.*&quot; &quot;$(TargetDir)&quot;&#x0D;&#x0A;mkdir &quot;$(TargetDir)\htdocs&quot;&#x0D;&#x0A;copy /Y &quot;$(SolutionDir)\src\server\htdocs&quot; &quot;$(TargetDir)\htdocs&quot;"
 			/>
 		</Configuration>
 		<Configuration
@@ -187,6 +187,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="mkdir &quot;$(TargetDir)\htdocs&quot;&#x0D;&#x0A;copy /Y &quot;$(SolutionDir)\src\server\htdocs&quot; &quot;$(TargetDir)\htdocs&quot;"
 			/>
 		</Configuration>
 	</Configurations>

@@ -45,7 +45,7 @@ Stream::Stream(unsigned int options)
 {
     // Get all DSPs
     // TODO: fixing PluginFactory
-    if( (this->options&Options::NoDSP)==0){
+    if( (this->options&NoDSP)==0){
         this->dsps = musik::core::PluginFactory::Instance().QueryInterface<
             IDSP,
             musik::core::PluginFactory::DestroyDeleter<IDSP> >("GetDSP");

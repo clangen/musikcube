@@ -44,7 +44,7 @@
 typedef fpos_t  stdioPositionType;
 #else
 #define UTFFopen    fopen
-typedef int stdioPositionType;
+typedef fpos_t stdioPositionType;
 #endif
 //////////////////////////////////////////////////////////////////////////////
 

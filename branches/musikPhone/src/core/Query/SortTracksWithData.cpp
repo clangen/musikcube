@@ -119,7 +119,7 @@ bool Query::SortTracksWithData::ParseQuery(Library::Base *library,db::Connection
     {
         db::Statement insertTracks("INSERT INTO temp_track_sort (track_id) VALUES (?)",db);
 
-        for(int i(0);i<this->tracksToSort.size();++i){
+        for(std::size_t i(0);i<this->tracksToSort.size();++i){
             DBINT track(this->tracksToSort[i]);
             insertTracks.BindInt(0,track);
             insertTracks.Step();
@@ -142,7 +142,7 @@ bool Query::SortTracksWithData::ParseQuery(Library::Base *library,db::Connection
 
         TrackWithSortdataVector tempTrackResults;
         int row(0);
-        while(selectTracks.Step()==db::ReturnCode::Row){
+        while(selectTracks.Step()==db::Row){
             TrackWithSortdata newSortData;
             newSortData.track.reset(new LibraryTrack(selectTracks.ColumnInt(0),library->Id()));
             const utfchar* sortDataPtr  = selectTracks.ColumnTextUTF(1);
@@ -307,7 +307,7 @@ bool Query::SortTracksWithData::RunCallbacks(Library::Base *library){
 
     {
         boost::mutex::scoped_lock lock(library->libraryMutex);
-        if( (this->status & Status::Ended)!=0){
+        if( (this->status & Base::Ended)!=0){
             // If the query is finished, this function should return true to report that it is finished.
             bReturn    = true;
         }
@@ -358,7 +358,7 @@ bool Query::SortTracksWithData::SendResults(musik::core::xml::WriterNode &queryN
         {
             boost::mutex::scoped_lock lock(library->libraryMutex);
 
-            if( (this->status & Status::Ended)!=0){
+            if( (this->status & Base::Ended)!=0){
                 // If the query is finished, stop sending
                 continueSending = false;
             }

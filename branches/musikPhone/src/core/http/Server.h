@@ -91,7 +91,7 @@ class Server : private boost::noncopyable{
         bool FreeResponder(Responder *responder);
 
 //        
-        typedef std::map<std::string,boost::shared_ptr<IRequestPlugin>> PluginPathMap;
+        typedef std::map< std::string,boost::shared_ptr<IRequestPlugin> > PluginPathMap;
 
         PluginPathMap requestPlugins;
 

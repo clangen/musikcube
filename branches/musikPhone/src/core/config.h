@@ -38,7 +38,7 @@
 
 //////////////////////////////////////////////////////////////////////////////
 
-#if defined (WIN32)
+#ifdef WIN32
 
     #define WIN32_LEAN_AND_MEAN
     #define WINVER 0x0501
@@ -67,7 +67,7 @@ typedef unsigned int DBTIME;
 #include <string>
 
 
-#if defined(WIN32)
+#ifdef _MSC_VER
 
     //////////////////////////////////////////
     ///\brief
@@ -96,13 +96,13 @@ typedef unsigned int DBTIME;
     ///\brief
     ///utfstringstream is the stringstream for utfchar & utfstring
     //////////////////////////////////////////
-    namespace std
+/*    namespace std
     {
         typedef wstringstream   utfstringstream;
         typedef wostringstream  utfostringstream;
         typedef wistringstream  utfistringstream;
     }
-
+*/
 #else
     #undef UTF_WIDECHAR
 
@@ -126,13 +126,13 @@ typedef unsigned int DBTIME;
     ///\brief
     ///utfstringstream is the stringstream for utfchar & utfstring
     //////////////////////////////////////////
-    namespace std
+/*    namespace std
     {
         typedef stringstream   utfstringstream;
         typedef ostringstream  utfostringstream;
         typedef istringstream  utfistringstream;
     }
-
+*/
 #endif
 
 typedef std::basic_string<utfchar> utfstring;

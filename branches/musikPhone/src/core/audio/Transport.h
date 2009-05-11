@@ -61,11 +61,11 @@ class Transport : public sigslot::has_slots<>{
 
     public:
 
-        enum PlaybackStatus:int{
+        typedef enum {
             Started = 1,
             Ended   = 2,
             Error   = 3
-        };
+        } PlaybackStatus;
 
         typedef sigslot::signal1<int> PlaybackStatusEvent;
         PlaybackStatusEvent PlaybackStatusChange;

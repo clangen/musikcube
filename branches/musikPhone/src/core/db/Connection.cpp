@@ -176,7 +176,7 @@ int Connection::Execute(const char* sql){
         boost::mutex::scoped_lock lock(this->mutex);
         if(sqlite3_prepare_v2(this->connection,sql,-1,&stmt,NULL)!=SQLITE_OK){
             sqlite3_finalize(stmt);
-            return ReturnCode::Error;
+            return db::Error;
         }
     }
 
@@ -184,12 +184,12 @@ int Connection::Execute(const char* sql){
     int error   = this->StepStatement(stmt);
     if(error!=SQLITE_OK && error!=SQLITE_DONE){
         sqlite3_finalize(stmt);
-        return ReturnCode::Error;
+        return db::Error;
     }
 
     sqlite3_reset(stmt);
     sqlite3_finalize(stmt);
-    return ReturnCode::OK;
+    return db::OK;
 }
 
 
@@ -213,7 +213,7 @@ int Connection::Execute(const wchar_t* sql){
         int err = sqlite3_prepare16_v2(this->connection,sql,-1,&stmt,NULL);
         if(err!=SQLITE_OK){
             sqlite3_finalize(stmt);
-            return ReturnCode::Error;
+            return db::Error;
         }
     }
 
@@ -221,12 +221,12 @@ int Connection::Execute(const wchar_t* sql){
     int error   = this->StepStatement(stmt);
     if(error!=SQLITE_OK && error!=SQLITE_DONE){
         sqlite3_finalize(stmt);
-        return ReturnCode::Error;
+        return db::Error;
     }
 
     sqlite3_reset(stmt);
     sqlite3_finalize(stmt);
-    return ReturnCode::OK;
+    return db::OK;
 }
 
 void Connection::Analyze(){

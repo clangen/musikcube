@@ -44,8 +44,13 @@ using namespace musik::core;
 
 TrackPtr TrackFactory::CreateTrack(utfstring uri){
     if(uri.substr(0,7)==UTF("mcdb://")){
+#ifdef UTF_WIDECHAR
         boost::wregex reg(UTF("mcdb://([0-9]+)/([0-9]+)"));
         boost::wsmatch matches;
+#else
+        boost::regex reg(UTF("mcdb://([0-9]+)/([0-9]+)"));
+        boost::smatch matches;
+#endif
         if(boost::regex_match(uri,matches,reg)){
             return TrackPtr(new LibraryTrack(boost::lexical_cast<DBINT>(matches[1].str()),boost::lexical_cast<DBINT>(matches[0].str())));
         }

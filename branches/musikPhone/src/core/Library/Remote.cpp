@@ -171,10 +171,10 @@ void Library::Remote::ReadThread(){
         // Lets start recieving queries
         xml::SocketReader xmlSocketReader(this->socket);
         xml::Parser parser(&xmlSocketReader);
-        if( xml::ParserNode rootNode=parser.ChildNode("musik")){
+//        if( xml::ParserNode rootNode=parser.ChildNode("musik")){
 
             // Start by waiting for the authentication node
-            if( xml::ParserNode authNode=rootNode.ChildNode("authentication")){
+            if( xml::ParserNode authNode=parser.ChildNode("authentication")){
                 authNode.WaitForContent();
                 this->sessionId = authNode.Content();
             }else{
@@ -187,7 +187,7 @@ void Library::Remote::ReadThread(){
             this->threads.create_thread(boost::bind(&Library::Remote::WriteThread,this));
 
 
-            while(xml::ParserNode node=rootNode.ChildNode()){
+            while(xml::ParserNode node=parser.ChildNode()){
                 if(node.Name()=="queryresults"){
 
                     unsigned int queryId    = boost::lexical_cast<unsigned int>(node.Attributes()["id"]);
@@ -207,10 +207,10 @@ void Library::Remote::ReadThread(){
                     if(currentQuery){
                         if(currentQuery->ReceiveResults(node,this)){
                             boost::mutex::scoped_lock lock(this->libraryMutex);
-                            currentQuery->status |= Query::Base::Status::Ended;
+                            currentQuery->status |= Query::Base::Ended;
                         }else{
                             boost::mutex::scoped_lock lock(this->libraryMutex);
-                            currentQuery->status |= Query::Base::Status::Canceled | Query::Base::Status::Ended;
+                            currentQuery->status |= Query::Base::Canceled | Query::Base::Ended;
                         }
 
 
@@ -218,7 +218,7 @@ void Library::Remote::ReadThread(){
                 }
                 this->waitCondition.notify_all();
             }
-        }
+//        }
     }
     catch(...){
 
@@ -237,11 +237,11 @@ void Library::Remote::WriteThread(){
     xml::Writer writer(&xmlSocketWriter);
 
     // Start by writing the musik-tag
-    xml::WriterNode rootNode(writer,"musik");
+//    xml::WriterNode rootNode(writer,"musik");
 
     //Start by writing the authentication
     {
-        xml::WriterNode authNode(rootNode,"authentication");
+        xml::WriterNode authNode(writer,"authentication");
         authNode.Attributes()["username"]   = this->username;
         authNode.Content()  = musik::core::Crypt::Encrypt(this->password,this->sessionId);
     }
@@ -262,12 +262,12 @@ void Library::Remote::WriteThread(){
                 this->outgoingQueries.push_back(query);
 
                 // Set query as started
-                query->status |= Query::Base::Status::Started;
+                query->status |= Query::Base::Started;
             }
 
             ////////////////////////////////////////////////////////////
             // Lets send the query
-            xml::WriterNode queryNode(rootNode,"query");
+            xml::WriterNode queryNode(writer,"query");
             queryNode.Attributes()["type"]  = query->Name();
             queryNode.Attributes()["id"]    = boost::lexical_cast<std::string>(query->queryId);
             queryNode.Attributes()["uid"]   = boost::lexical_cast<std::string>(query->uniqueId);
@@ -279,7 +279,7 @@ void Library::Remote::WriteThread(){
 			if(!query->SendQuery(queryNode)){
 				// Query can not be send, lets cancel it
                 boost::mutex::scoped_lock lock(this->libraryMutex);
-				query->status |= Query::Base::Status::Canceled | Query::Base::Status::Ended;
+                query->status |= Query::Base::Canceled | Query::Base::Ended;
 			}
 
             ////////////////////////////////////////////////////////////

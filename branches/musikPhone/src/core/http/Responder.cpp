@@ -142,14 +142,41 @@ void Responder::ThreadLoop(){
                     plugin->second->Execute(this,&requester,track.get());
 
                 }else{
-                    // Send 404 error
-                    std::string send("HTTP/1.1 404 OK\r\nContent-Type: text/html\r\n\r\n<html><body bgcolor=\"#ff0000\">ERROR: ");
-                    send    += "<pre>";
-                    send    += request;
-                    send    += "</pre></body></html>";
-                    try{
-                        boost::asio::write(*this->socket,boost::asio::buffer(send.c_str(),send.size()));
-                    }catch(...){}
+
+					try{
+						bool sendError(true);
+						// no plugin, so lets try to act as a normal webserver, delivering files
+						std::string htdocsDir(UTF_TO_UTF8(musik::core::GetWebfilesDirectory()));
+						if(requester.Path()){
+							std::string htFile(requester.Path());
+							boost::filesystem::path requestPath(htdocsDir+htFile);
+							if(boost::filesystem::is_directory(requestPath)){
+								requestPath	= (requestPath.directory_string()+htFile+"index.html");
+							}
+
+							if(boost::filesystem::exists(requestPath)){
+								std::string send("HTTP/1.1 200 OK\r\n\r\n");
+								boost::asio::write(*this->socket,boost::asio::buffer(send.c_str(),send.size()));
+								sendError	= false;
+								std::ifstream file(requestPath.string().c_str(), std::ios::in|std::ios::binary );      
+ 
+								char buf[4096];
+								while(file.read( buf, sizeof( buf ) ).gcount() > 0 ){       
+									boost::asio::write( *this->socket,boost::asio::buffer(buf,file.gcount()));
+								}               							
+							}
+						}
+
+
+						if(sendError){
+							// Send 404 error
+							std::string send("HTTP/1.1 404 OK\r\nContent-Type: text/html\r\n\r\n<html><body bgcolor=\"#ff0000\">ERROR: ");
+							send    += "<pre>";
+							send    += request;
+							send    += "</pre></body></html>";
+							boost::asio::write(*this->socket,boost::asio::buffer(send.c_str(),send.size()));
+						}
+					}catch(...){}
                 }
             }
         }
