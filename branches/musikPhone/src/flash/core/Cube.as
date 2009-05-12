@@ -70,10 +70,11 @@ class core.Cube extends MovieClip
 			this.saveData.data.httpPort	= int(formMC["httpport"].text);
 			this.saveData.data.username	= formMC["username"].text;
 			this.saveData.data.password	= formMC["password"].text;
+			this.saveData.data.autologin= (formMC["autologin"]._currentframe==2);
 			this.saveData.flush();
 			trace("SubmitForm");
 		}
-		
+		this._parent.gotoAndStop(2);		
 		this.library.Connect();
 	}
 	
@@ -81,7 +82,8 @@ class core.Cube extends MovieClip
 		trace("LoadForm " + formMC);
 		formMC["password"].password = true;
 		this.saveData	= SharedObject.getLocal("mC2connection");
-		this.saveData.form = formMC;
+		this.saveData.form	= formMC;
+		this.saveData.cube	= this;
 		SharedObject.addListener("mC2connection", this.SOLoaded);
 	}
 	
@@ -94,9 +96,13 @@ class core.Cube extends MovieClip
 		if(so.data.username){		formMC["username"].text=so.data.username; }
 		if(so.data.password){		formMC["password"].text=so.data.password; }
 
-		formMC["host"].text	= "vallgraven.intermezzon.com";
+		formMC["host"].text	= "localhost";
 		formMC["username"].text = "doep";
 		formMC["password"].text = "doep";
+		
+//		if (so.data.autologin) {
+			so.cube.SubmitForm(formMC);
+//		}
 	}
 	
 }

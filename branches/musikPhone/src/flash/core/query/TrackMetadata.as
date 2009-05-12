@@ -14,6 +14,7 @@ class core.query.TrackMetadata extends core.query.Base
 		super();
 		this.requestMetakeys	= new Array();
 		this.TrackMetaEvent		= new core.Event();
+		this.type			= "TrackMetadata";
 	}
 	
 	public function RequestMetakeys(metakeys:Array):Void {
@@ -47,6 +48,22 @@ class core.query.TrackMetadata extends core.query.Base
 	}
 	
 	public function RecieveResult(xml:XMLNode):Void {
+
+		
+		for (var i:Number = 0; i < xml.childNodes.length; i++) {
+			if (xml.childNodes[i].nodeName == "t") {
+				// Track found
+				var newTrack:Object	= { id: int(xml.childNodes[i].attributes["id"]) };
+				for (var j:Number = 0; j < xml.childNodes[i].childNodes.length; j++) {
+					if (xml.childNodes[i].childNodes[j].nodeName == "md") {
+						// metadata found
+						newTrack[xml.childNodes[i].childNodes[j].attributes["k"]]	= xml.childNodes[i].childNodes[j].firstChild.nodeValue;
+					}
+				}
+				
+				this.TrackMetaEvent.call1(newTrack);
+			}
+		}
 		
 		this.ResultsRecievedEvent.call0();
 	}

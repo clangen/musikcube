@@ -113,6 +113,7 @@ class cube.ListView extends MovieClip
 	public function Activate():Void {
 		Key.addListener(this);
 		this.ActivateEvent.call1(true);
+		this.ActivateItem(this.activeIndex);
 	}
 	
 	public function Deactivate():Void {

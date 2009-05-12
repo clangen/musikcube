@@ -19,6 +19,7 @@ class cube.TrackList extends cube.ListView
 		this.metadataQuery	= new core.query.TrackMetadata();
 		this.metadataQuery.RequestMetakeys(["track", "title"]);
 		this.metadataQuery.ResultsRecievedEvent.addListener(this, this.TrackMetadataRecieved);
+		this.metadataQuery.TrackMetaEvent.addListener(this, this.TrackMetadata);
 	}
 	
 	public function SendQuery(library:core.Library):Void {
@@ -50,6 +51,16 @@ class cube.TrackList extends cube.ListView
 		this.metadataQuery.RequestTracks(tracks);
 		this.library.SendQuery(this.metadataQuery);
 				
+	}
+
+	public function TrackMetadata(track:Object):Void {
+		// find the track
+		for (var i:Number = 0; i < this.items.length; i++) {
+			if (this.items[i].id == track.id) {
+				// Found, lets format text
+				this.items[i].text	= track.track + ". " + track.title;
+			}
+		}
 	}
 	
 	public function TrackMetadataRecieved():Void {

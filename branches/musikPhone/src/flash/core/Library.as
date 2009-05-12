@@ -44,6 +44,10 @@ class core.Library
 		this.socket.onClose		= function() { this.library.SocketClosed(); }
 		this.socket.onConnect	= function(success:Boolean) { this.library.SocketConnect(success); }
 		this.socket.onXML		= function(xml:XML) { this.library.InitSocketRecieve(xml); }
+		this.socket.onData		= function(data) { 
+			_level0["cube"]["thelog"].text = "R: " + data;
+			this.onXML(new XML(data));
+		}
 		
 		if (!this.socket.connect(this.host, this.queryPort)) {
 			this.SetError("Unable to connect to " + this.host + ":" + this.queryPort);
@@ -56,6 +60,8 @@ class core.Library
 	
 	public function SocketClosed():Void {
 		trace("Library::SocketClosed");
+		_level0["cube"]["thelog"].text 	+= "Library::SocketClosed";
+		
 		this.statusChangeEvent.call2("closed",this);
 	}
 
@@ -124,7 +130,7 @@ _level0["cube"]["thelog"].text 	= xml.toString();
 		
 		var queryXML:XML	= query.SendQuery();
 		//trace("Library::SendQuery " + queryXML.toString());
-_level0["cube"]["thelog"].text 	= queryXML.toString();
+//_level0["cube"]["thelog"].text 	= queryXML.toString();
 		this.socket.send(queryXML);
 	}
 	
