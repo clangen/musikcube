@@ -24,6 +24,8 @@ class core.Cube extends MovieClip
 		
 		this.library.statusChangeEvent.addListener(this, this.StatusChanged);
 		
+		this._parent["player"].Initialize(this.library);
+		
 		Stage.addListener(this);
 		
 	}
@@ -35,7 +37,7 @@ class core.Cube extends MovieClip
 		
 	private function StatusChanged(status:String, library:core.Library):Void {
 		trace("Cube::StatusChanged " + status);
-		this["thelog"].text	+= "s:" + status + " " + this.library.GetLastError() + "\n";
+	//	this["thelog"].text	+= "s:" + status + " " + this.library.GetLastError() + "\n";
 		
 		if (status == "authorized" && this.library.connected) {
 			// Lets start sending queries
@@ -96,13 +98,14 @@ class core.Cube extends MovieClip
 		if(so.data.username){		formMC["username"].text=so.data.username; }
 		if(so.data.password){		formMC["password"].text=so.data.password; }
 
-		formMC["host"].text	= "localhost";
+/*		formMC["host"].text	= "vallgraven.intermezzon.com";
+//		formMC["host"].text	= "localhost";
 		formMC["username"].text = "doep";
 		formMC["password"].text = "doep";
-		
-//		if (so.data.autologin) {
+	*/	
+		if (so.data.autologin) {
 			so.cube.SubmitForm(formMC);
-//		}
+		}
 	}
 	
 }

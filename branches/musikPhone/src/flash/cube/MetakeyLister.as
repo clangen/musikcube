@@ -34,6 +34,16 @@ class cube.MetakeyLister
 		if (this.currentView > this.metakeyOrder.length) {
 			this.currentView--;
 			this.listViews[this.currentView].Activate();
+			
+			// Get all tracks
+			var tracklist:Array	= new Array();
+			for (var i = 0; i < this.listViews[this.currentView].items.length; i++) {
+				tracklist.push(this.listViews[this.currentView].items[i].id);
+			}
+_level0["cube"]["thelog"].text += "PLAY: " + tracklist.length+"\n";
+			// Play the tracks
+			core.Player.instance.PlayTracks(tracklist, this.listViews[this.currentView].activeIndex);
+			
 			return;
 		}
 		

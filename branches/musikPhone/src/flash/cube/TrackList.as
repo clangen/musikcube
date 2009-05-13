@@ -64,6 +64,7 @@ class cube.TrackList extends cube.ListView
 	}
 	
 	public function TrackMetadataRecieved():Void {
+		this.ResetItems();
 		this.ScrollToLine(0);
 		this.Activate();
 	}

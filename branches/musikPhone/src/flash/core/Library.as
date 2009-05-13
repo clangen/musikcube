@@ -45,7 +45,7 @@ class core.Library
 		this.socket.onConnect	= function(success:Boolean) { this.library.SocketConnect(success); }
 		this.socket.onXML		= function(xml:XML) { this.library.InitSocketRecieve(xml); }
 		this.socket.onData		= function(data) { 
-			_level0["cube"]["thelog"].text = "R: " + data;
+//			_level0["cube"]["thelog"].text = "R: " + data;
 			this.onXML(new XML(data));
 		}
 		
@@ -60,7 +60,7 @@ class core.Library
 	
 	public function SocketClosed():Void {
 		trace("Library::SocketClosed");
-		_level0["cube"]["thelog"].text 	+= "Library::SocketClosed";
+//		_level0["cube"]["thelog"].text 	+= "Library::SocketClosed";
 		
 		this.statusChangeEvent.call2("closed",this);
 	}
@@ -84,7 +84,7 @@ class core.Library
 	public function InitSocketRecieve(xml:XML):Void {
 		trace("Library::InitSocketRecieve " + xml.firstChild.toString());
 		if (xml.firstChild.nodeName == "authentication") {
-			this.authentication	= xml.firstChild.nodeValue;
+			this.authentication	= xml.firstChild.firstChild.nodeValue;
 		}
 		this.socket.onXML		= function(xml:XML) { this.library.SocketRecieve(xml); }
 		
@@ -98,7 +98,7 @@ class core.Library
 	public function SocketRecieve(xml:XML):Void {
 //		trace("Library::SocketRecieve " + xml.firstChild.toString());
 //		trace("Library::SocketRecieve " );
-_level0["cube"]["thelog"].text 	= xml.toString();
+//_level0["cube"]["thelog"].text 	= xml.toString();
 		
 		var queryId:Number	= Number(xml.firstChild.attributes["id"]);
 //		var queryUId:Number	= Number(xml.firstChild.attributes["uid"]);
