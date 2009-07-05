@@ -25,6 +25,7 @@ public class Reader extends ReaderNode {
 		
 		XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
         factory.setNamespaceAware(false);
+        factory.setValidating(false);
         this.parser	= factory.newPullParser();
 		this.parser.setInput(this.stream, null);
 		
@@ -47,11 +48,11 @@ public class Reader extends ReaderNode {
 			
 //        while (eventType != XmlPullParser.END_DOCUMENT) {
 			if(eventType == XmlPullParser.START_DOCUMENT) {
-				//Log.v("doep::Reader::Parse","Start document");
+				Log.v("doep::Reader::Parse","Start document");
 				// Start document
 			} else if(eventType == XmlPullParser.END_DOCUMENT) {
 				// End document
-				//Log.v("doep::Reader::Parse","End document");
+				Log.v("doep::Reader::Parse","End document");
 				
 				java.util.ListIterator<ReaderNode> it=this.nodeLevels.listIterator();
 				while(it.hasNext()){
@@ -59,7 +60,7 @@ public class Reader extends ReaderNode {
 				}
 				
 			} else if(eventType == XmlPullParser.START_TAG) {
-				//Log.v("doep::Reader::Parse","Start tag "+this.parser.getName());
+				Log.v("doep::Reader::Parse","Start tag "+this.parser.getName());
 			    //System.out.println("Start tag "+xpp.getName());
 				// Start a new node
 				ReaderNode node	= new ReaderNode(this.parser.getName(),this.nodeLevels.getLast());
@@ -77,7 +78,7 @@ public class Reader extends ReaderNode {
 				this.currentNode	= node;
 				
 			} else if(eventType == XmlPullParser.END_TAG) {
-				//Log.v("doep::Reader::Parse","End tag "+this.parser.getName());
+				Log.v("doep::Reader::Parse","End tag "+this.parser.getName());
 			    //System.out.println("End tag "+xpp.getName());
 				if(this.parser.getName().equals(this.currentNode.name)){
 					// End the node, and remove from levels
@@ -89,7 +90,7 @@ public class Reader extends ReaderNode {
 					throw new Exception("Wrong end tag.. expecting "+this.currentNode.name);
 				}
 			} else if(eventType == XmlPullParser.TEXT) {
-				//Log.v("doep::Reader::Parse","Text "+this.parser.getText());
+				Log.v("doep::Reader::Parse","Text "+this.parser.getText());
 			    //System.out.println("Text "+xpp.getText());
 				this.currentNode.content	+= this.parser.getText();
 			}

@@ -1,12 +1,15 @@
 package org.musikcube;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
-import org.musikcube.core.Library;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.ImageButton;
+import org.musikcube.CategoryList;
+
 
 public class main extends Activity {
-	
-	private org.musikcube.core.Library library;
 	
     /** Called when the activity is first created. */
     @Override
@@ -14,9 +17,34 @@ public class main extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         
-        this.library	= new org.musikcube.core.Library();
-        this.library.Connect("192.168.99.100", "doep", "doep", 10543, 10544);
+        ImageButton genreButton	= (ImageButton)findViewById(R.id.GenresButton);
+        genreButton.setOnClickListener(this.onGenreClick);
         
+        ImageButton artistsButton	= (ImageButton)findViewById(R.id.ArtistsButton);
+        artistsButton.setOnClickListener(this.onArtistsClick);
         
     }
+    
+    private OnClickListener onGenreClick = new OnClickListener() {
+    	
+    	public void onClick(View v){
+    		Intent intent	= new Intent(main.this, CategoryList.class);
+    		intent.putExtra("org.musikcube.CategoryList.listCategory", "genre");
+    		startActivity(intent);
+  		
+    	}
+
+    };
+    
+    private OnClickListener onArtistsClick = new OnClickListener() {
+    	
+    	public void onClick(View v){
+    		Intent intent	= new Intent(main.this, CategoryList.class);
+    		intent.putExtra("org.musikcube.CategoryList.listCategory", "artist");
+    		startActivity(intent);
+  		
+    	}
+
+    };
+    
 }
