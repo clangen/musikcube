@@ -2,4 +2,5 @@
 <resources>
     <string name="hello">Hello World, main!</string>
     <string name="app_name">musikCube</string>
+
 </resources>
