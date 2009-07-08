@@ -13,7 +13,7 @@ public class ListQuery extends IQuery {
 	public java.util.ArrayList<String> resultsStrings		= new java.util.ArrayList<String>(); 
 	public java.util.ArrayList<Integer> resultsInts			= new java.util.ArrayList<Integer>(); 
 	public java.util.ArrayList<Integer> trackList			= new java.util.ArrayList<Integer>(); 
-	
+	public boolean listTracks	= false;	
 	
 
 	public ListQuery() {
@@ -40,6 +40,12 @@ public class ListQuery extends IQuery {
 		WriterNode listenersNode	= queryNode.ChildNode("listeners");
 		listenersNode.content		= this.category;
 		
+		// List tracks?
+		if(this.listTracks){
+			WriterNode listtracksNode	= queryNode.ChildNode("listtracks");
+			listtracksNode.content	= "true";
+		}
+		
 		queryNode.End();
 	}
 	
@@ -61,7 +67,16 @@ public class ListQuery extends IQuery {
 					}
 				}
 			}else if(childNode.name.equals("tracklist")){
-				// TODO: get tracklist
+				// Get tracks
+				ReaderNode trackNode	= null;
+				while( (trackNode=childNode.ChildNode("tracks"))!=null ){
+					trackNode.End();	
+					String[] tracks	= trackNode.content.split(",");
+					int nofTracks	= tracks.length;
+					for(int i=0;i<nofTracks;i++){
+						this.trackList.add(Integer.parseInt(tracks[i]));
+					}
+				}
 			}
 			childNode.End();
 		}

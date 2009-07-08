@@ -38,16 +38,16 @@ public class ReaderNode {
 	public ReaderNode ChildNode(String name)
 		throws Exception
 	{
-		Log.v("doep::ReaderNode::ChildNode","Node: "+name+" ended: "+this.ended);
+		//Log.v("doep::ReaderNode::ChildNode","Node: "+name+" ended: "+this.ended);
 		// Check if this is the current node, if not - lets wait for it to bee
 		while(!this.ended){
 			this.reader.Parse();
-			Log.v("doep::ReaderNode::ChildNode1","Node: "+this.reader.currentNode.level+" "+this.level);
+			//Log.v("doep::ReaderNode::ChildNode1","Node: "+this.reader.currentNode.level+" "+this.level);
 			if(this.reader.currentNode.level==this.level+1){
 				// We have a childnode
-				Log.v("doep::ReaderNode::ChildNode2",""+this.reader.currentNode.name+"=="+name);
+				//Log.v("doep::ReaderNode::ChildNode2",""+this.reader.currentNode.name+"=="+name);
 				if(this.reader.currentNode.name.equals(name)){
-					Log.v("doep::ReaderNode::ChildNode3","FOUND "+this.reader.currentNode.name);
+					//Log.v("doep::ReaderNode::ChildNode3","FOUND "+this.reader.currentNode.name);
 					return this.reader.currentNode;
 				}else{
 					this.reader.currentNode.End();
@@ -56,7 +56,7 @@ public class ReaderNode {
 				this.reader.currentNode.End();
 			}
 		}
-		Log.v("doep::ReaderNode::ChildNode4","NOT FOUND "+name);
+		//Log.v("doep::ReaderNode::ChildNode4","NOT FOUND "+name);
 		return null;
 	}
 	

@@ -13,6 +13,7 @@
         </activity>
     <service android:name="Service" android:enabled="false" android:process=":remote"></service>
 <activity android:name="CategoryList"></activity>
+<activity android:name="TrackList"></activity>
 </application>
     <uses-sdk android:minSdkVersion="3" />
 

@@ -29,7 +29,7 @@ public class main extends Activity {
     	
     	public void onClick(View v){
     		Intent intent	= new Intent(main.this, CategoryList.class);
-    		intent.putExtra("org.musikcube.CategoryList.listCategory", "genre");
+    		intent.putExtra("org.musikcube.CategoryList.listCategory", "genre,artist,album");
     		startActivity(intent);
   		
     	}
@@ -40,7 +40,7 @@ public class main extends Activity {
     	
     	public void onClick(View v){
     		Intent intent	= new Intent(main.this, CategoryList.class);
-    		intent.putExtra("org.musikcube.CategoryList.listCategory", "artist");
+    		intent.putExtra("org.musikcube.CategoryList.listCategory", "artist,album");
     		startActivity(intent);
   		
     	}

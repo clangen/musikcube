@@ -64,7 +64,7 @@ public class Library implements Runnable{
 	}
 	
 	public boolean Connect(String host,String username,String password,int queryPort,int httpPort){
-		Log.i("Library","starting  "+host+":"+queryPort);
+		//Log.i("Library","starting  "+host+":"+queryPort);
 		if(!running){
 			this.host	= host;
 			this.username	= username;
@@ -86,7 +86,7 @@ public class Library implements Runnable{
 		// First try to connect
 		try{
 			this.socket	= new java.net.Socket(this.host,this.queryPort);
-			Log.v("Library::socket","Successfully connected to "+this.host+":"+this.queryPort);
+			//Log.v("Library::socket","Successfully connected to "+this.host+":"+this.queryPort);
 			
 			doep.xml.Reader reader	= new doep.xml.Reader(this.socket.getInputStream());
 			//Log.v("Library::run","Reader started");
@@ -107,11 +107,11 @@ public class Library implements Runnable{
 			this.writerThreadHelper		= new WriterThreadHelper(this);
 			
 			// Lets start waiting for query-results
-			Log.v("Library::socket","Waiting for query results");
+			//Log.v("Library::socket","Waiting for query results");
 			
 			doep.xml.ReaderNode queryNode	= null;
 			while((queryNode=reader.ChildNode("queryresults"))!=null){
-				Log.v("NODE","We have a "+queryNode.name);
+				//Log.v("NODE","We have a "+queryNode.name);
 				// Find the right query
 				IQuery query	= null;
 				
@@ -131,7 +131,7 @@ public class Library implements Runnable{
 				}
 
 				if(query!=null){
-					Log.v("Library::socket","Parse query results");
+					//Log.v("Library::socket","Parse query results");
 					// Parse the results
 					query.ReceiveQueryResult(queryNode);
 				}
@@ -139,7 +139,7 @@ public class Library implements Runnable{
 				
 			}
 			
-			Log.v("Library::socket","NOT Waiting for query results");
+			//Log.v("Library::socket","NOT Waiting for query results");
 		}
 		catch(IOException x){
 			Log.e("Library::socket","IOE "+x.getMessage());
@@ -151,7 +151,7 @@ public class Library implements Runnable{
 	}
 	
 	public void WriteThread(WriterThreadHelper thread){
-		Log.v("Library::WriteThread","Started");
+		//Log.v("Library::WriteThread","Started");
 		try{
 			doep.xml.Writer writer	= new doep.xml.Writer(this.socket.getOutputStream());
 			{
@@ -169,7 +169,7 @@ public class Library implements Runnable{
 					synchronized(this.sendQueryQueue){
 						if(this.sendQueryQueue.isEmpty()){
 							this.sendQueryQueue.wait(2000);
-							Log.v("Library::WriteThread","wait over");
+							//Log.v("Library::WriteThread","wait over");
 						}else{
 							// Get the first query
 							query	= this.sendQueryQueue.removeFirst();
@@ -177,7 +177,7 @@ public class Library implements Runnable{
 					}
 				}
 				catch(InterruptedException x){
-					Log.v("Library::WriteThread","Thread Notified");
+					//Log.v("Library::WriteThread","Thread Notified");
 				}
 				
 				if(query!=null){
@@ -200,7 +200,7 @@ public class Library implements Runnable{
 			Log.e("Library::WriteThread","E "+x.getMessage());
 		}
 		
-		Log.v("Library::WriteThread","Ended");
+		//Log.v("Library::WriteThread","Ended");
 	}
 	
 	public void Disconnect(){
