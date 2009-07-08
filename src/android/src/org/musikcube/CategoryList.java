@@ -3,6 +3,8 @@
  */
 package org.musikcube;
 
+import java.util.ArrayList;
+
 import org.musikcube.core.ListQuery;
 import org.musikcube.core.IQuery.OnQueryResultListener;
 
@@ -16,6 +18,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.TextView;
 
 /**
@@ -24,8 +27,12 @@ import android.widget.TextView;
  */
 public class CategoryList extends ListActivity implements OnQueryResultListener {
 	
-	private String category	= "";
+	private String category	= null;
+	private String nextCategoryList	= "";
 	private ListQuery query	= new ListQuery();
+	
+	private ArrayList<String> selectedCategory; 
+	private ArrayList<Integer> selectedCategoryIds; 
 	
 	// Need handler for callbacks to the UI thread
     final Handler callbackHandler = new Handler();
@@ -111,11 +118,36 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
 		this.listAdapter.query	= this.query;
 		setListAdapter(this.listAdapter);
 		
-		this.category	= intent.getStringExtra("org.musikcube.CategoryList.listCategory");
+
+		// Extract the category order
+		String categoryString	= intent.getStringExtra("org.musikcube.CategoryList.listCategory");
+		String[] categories	= categoryString.split(",");
+		this.category	= categories[0];
+		
+		// Save the next category lists
+		for(int i=1;i<categories.length;i++){
+			if(i>1){
+				this.nextCategoryList	+= ",";
+			}
+			this.nextCategoryList	+= categories[i];
+		}
+
+		this.setTitle("musikCube: "+this.category);
+		
+	
 		if(this.category!=null){
 			Log.v("musikcube.CategoryList", "category="+this.category);
 			// Query for data
 			this.query.category	= this.category;
+			
+			// check for selection
+			this.selectedCategory 		= intent.getStringArrayListExtra("org.musikcube.CategoryList.selectedCategory");
+			this.selectedCategoryIds 	= intent.getIntegerArrayListExtra("org.musikcube.CategoryList.selectedCategoryId");
+			if(this.selectedCategory!=null){
+				for(int i=0;i<this.selectedCategory.size();i++){
+					this.query.SelectData(this.selectedCategory.get(i), this.selectedCategoryIds.get(i));
+				}
+			}
 			
 			org.musikcube.core.Library library	= org.musikcube.core.Library.GetInstance();
 			
@@ -132,19 +164,45 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
 	
 	public void OnResults(){
 		Log.i("CategoryList::OnResults","In right thread "+this.query.resultsStrings.size());
-//		this.get
 		this.listAdapter.notifyDataSetChanged();
-/*		
-		int first = this.getListView().getPositionForView(this.getListView().getChildAt(0));
-		int last = first + this.getListView().getChildCount();
-		
-		Log.i("CategoryList::OnResults","VISIBLE "+first+" "+last);
-	*/	
 	}
 
 	public void OnQueryResults() {
 		// Call in right thread
 		this.callbackHandler.post(this.callbackRunnable);
+	}
+	
+	@Override
+	protected void onListItemClick(ListView l, View v, int position, long id){
+		Log.i("CategoryList::onListItemClick","clicked on "+position+" "+id);
+		
+		// List category
+		if(this.selectedCategory==null){
+			this.selectedCategory	= new ArrayList<String>();
+		}
+		if(this.selectedCategoryIds==null){
+			this.selectedCategoryIds	= new ArrayList<Integer>();
+		}
+		ArrayList<String> selectedCategory	= (ArrayList<String>)this.selectedCategory.clone(); 
+		ArrayList<Integer> selectedCategoryIds	= (ArrayList<Integer>)this.selectedCategoryIds.clone(); 
+
+		selectedCategory.add(this.category);
+		selectedCategoryIds.add((int)id);
+		
+		if(this.nextCategoryList.equals("")){
+			// List tracks
+			Intent intent	= new Intent(this, TrackList.class);
+			intent.putExtra("org.musikcube.CategoryList.listCategory", this.nextCategoryList);
+			intent.putExtra("org.musikcube.CategoryList.selectedCategory", selectedCategory);
+			intent.putExtra("org.musikcube.CategoryList.selectedCategoryId", selectedCategoryIds);
+			startActivity(intent);
+		}else{
+			Intent intent	= new Intent(this, CategoryList.class);
+			intent.putExtra("org.musikcube.CategoryList.listCategory", this.nextCategoryList);
+			intent.putExtra("org.musikcube.CategoryList.selectedCategory", selectedCategory);
+			intent.putExtra("org.musikcube.CategoryList.selectedCategoryId", selectedCategoryIds);
+			startActivity(intent);
+		}
 	}
 	
 }

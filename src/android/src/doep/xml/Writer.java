@@ -19,7 +19,7 @@ public class Writer extends WriterNode {
 	public void Write(String content)
 		throws java.io.IOException
 	{
-		Log.v("doep.xml.Writer","Write "+content);
+		//Log.v("doep.xml.Writer","Write "+content);
 		this.stream.write(content.getBytes());
 //		this.buffer		+= content;
 	}
@@ -33,7 +33,7 @@ public class Writer extends WriterNode {
 	public void Flush(boolean writeNull)
 		throws java.io.IOException
 	{
-		Log.v("doep.xml.Writer","Flush "+writeNull);
+		//Log.v("doep.xml.Writer","Flush "+writeNull);
 		if(writeNull){
 			this.stream.write(0);
 		}
