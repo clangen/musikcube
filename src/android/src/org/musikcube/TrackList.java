@@ -155,6 +155,12 @@ public class TrackList extends ListActivity implements OnQueryResultListener {
 			intent.putExtra("org.musikcube.CategoryList.selectedCategoryId", (int)id);
 			startActivity(intent);
 		}*/
+		
+		Intent intent	= new Intent(this, org.musikcube.Service.class);
+		intent.putExtra("org.musikcube.Service.tracklist", this.query.trackList);
+		intent.putExtra("org.musikcube.Service.position", position);
+		startService(intent);
+		
 	}
 	
 }

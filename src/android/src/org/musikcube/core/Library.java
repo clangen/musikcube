@@ -19,14 +19,16 @@ public class Library implements Runnable{
 
 	private String username;
 	private String password;
-	private String authorization;
-	private String host;
+	public String authorization	= "";
+	public String host;
 	private int queryPort;
-	private int httpPort;
+	public int httpPort;
 	
 	private Thread	thread;
 	private boolean running	= false;
 	private Socket socket;
+	
+	private java.lang.Object notifier	= new java.lang.Object();
 	
 	private java.util.LinkedList<IQuery> sendQueryQueue	= new java.util.LinkedList<IQuery>(); 
 	private java.util.LinkedList<IQuery> waitingQueryQueue	= new java.util.LinkedList<IQuery>(); 
@@ -65,21 +67,37 @@ public class Library implements Runnable{
 	
 	public boolean Connect(String host,String username,String password,int queryPort,int httpPort){
 		//Log.i("Library","starting  "+host+":"+queryPort);
-		if(!running){
-			this.host	= host;
-			this.username	= username;
-			this.password	= password;
-			this.queryPort	= queryPort;
-			this.httpPort	= httpPort;
-
-			// Startup thread
-			this.thread	= new Thread(this);
-//			this.thread.setDaemon(true);
-			this.running	= true;
-			this.thread.start();
-			return true;
+		synchronized (notifier) {
+			
+			if(!running){
+				this.host	= host;
+				this.username	= username;
+				this.password	= password;
+				this.queryPort	= queryPort;
+				this.httpPort	= httpPort;
+	
+				// Startup thread
+				this.thread	= new Thread(this);
+	//			this.thread.setDaemon(true);
+				this.running	= true;
+				this.thread.start();
+				return true;
+			}
+			return false;
 		}
-		return false;
+	}
+	
+	public void WaitForAuthroization(){
+		Log.v("Library::WaitForAuthroization","start");
+		synchronized (notifier) {
+			if(this.authorization.equals("")){
+				try {
+					notifier.wait();
+				} catch (InterruptedException e) {
+				}
+			}
+		}
+		Log.v("Library::WaitForAuthroization","end");
 	}
 	
 	public void run(){
@@ -97,9 +115,14 @@ public class Library implements Runnable{
 					//Log.v("Library::run","Authtag found");
 					// Wait for authorization tag to end
 					authNode.End();	
-					//Log.v("Library::run","Authtag end");
-					this.authorization	= authNode.content;
-					//Log.v("Library::run","Authorization="+this.authorization);
+					
+					synchronized (notifier) {
+						Log.v("Library::run","Authtag end");
+						this.authorization	= authNode.content;
+						Log.v("Library::run","Authorization="+this.authorization);
+						this.notifier.notifyAll();
+						Log.v("Library::run","Authorization notify");
+					}
 				}
 			}
 			

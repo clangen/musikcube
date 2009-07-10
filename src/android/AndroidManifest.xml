@@ -11,7 +11,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-    <service android:name="Service" android:enabled="false" android:process=":remote"></service>
+    <service android:name="Service" android:process=":remote" android:enabled="true"></service>
 <activity android:name="CategoryList"></activity>
 <activity android:name="TrackList"></activity>
 </application>
