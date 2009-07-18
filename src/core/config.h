@@ -62,8 +62,9 @@
     typedef unsigned long long UINT64;
     typedef long long __int64;		//TODO: Is this necessary?
 
-    #define STDCALL(fp) fp __attribute__((stdcall)) 
+    #define STDCALL(fp) fp __attribute__((stdcall))
     #define _ASSERT assert
+	#define TEXT(s) s		//There's no TEXT() on linux. This makes the current uses of it compile for me... Jooles
 
 #endif  // WIN32
 
@@ -137,13 +138,13 @@ typedef unsigned int DBTIME;
     ///\brief
     ///utfstringstream is the stringstream for utfchar & utfstring
     //////////////////////////////////////////
-/*    namespace std
+    namespace std
     {
         typedef stringstream   utfstringstream;
         typedef ostringstream  utfostringstream;
         typedef istringstream  utfistringstream;
     }
-*/
+
 #endif
 
 typedef std::basic_string<utfchar> utfstring;

@@ -7,4 +7,6 @@
 
 #include <core/config.h>
 
+#ifdef WIN32
 #include "vld/vld.h"
+#endif //WIN32

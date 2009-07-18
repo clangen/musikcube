@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Daniel Önnerby
+// The following are Copyright ï¿½ 2008, Daniel ï¿½nnerby
 //
 // All rights reserved.
 //
@@ -38,6 +38,7 @@
 
 #include "stdafx.h"
 
+#ifndef _HAVE_TAGLIB
 #include <toolkit/tlist.h>
 #include <toolkit/tfile.h>
 
@@ -46,11 +47,22 @@
 #include <taglib/audioproperties.h>
 
 #include <mpeg/id3v2/id3v2tag.h>
+#else //_HAVE_TAGLIB
+#include <taglib/tlist.h>
+#include <taglib/tfile.h>
+
+#include <taglib/tag.h>
+#include <taglib/fileref.h>
+#include <taglib/audioproperties.h>
+
+#include <taglib/id3v2tag.h>
+#endif //_HAVE_TAGLIB
 
 
 #include <set>
 
 #include <core/Plugin/IMetaDataReader.h>
+#include <core/Common.h>
 
 class TagReaderTaglib : public musik::core::Plugin::IMetaDataReader {
 	public:
@@ -69,7 +81,7 @@ class TagReaderTaglib : public musik::core::Plugin::IMetaDataReader {
         void SetAudioProperties(TagLib::AudioProperties *audioProperties,musik::core::ITrack *track);
 
 		void SetSlashSeparatedValues(const char* key,const TagLib::ID3v2::FrameList &frame,musik::core::ITrack *track);
-        void SetSlashSeparatedValues(const char* key,TagLib::String &tagString,musik::core::ITrack *track);
+        void SetSlashSeparatedValues(const char* key,TagLib::String tagString,musik::core::ITrack *track);
 
         bool GetID3v2Tag(musik::core::ITrack *track);
         bool GetGenericTag(musik::core::ITrack *track);

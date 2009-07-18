@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////
-// Copyright � 2007, Daniel �nnerby
+// Copyright © 2009, Julian Cromarty
 //
 // All rights reserved.
 //
@@ -32,46 +32,69 @@
 //////////////////////////////////////////////////////////////////////////////
 #pragma once
 
-#include <core/audio/IDecoder.h>
-#include <mpg123.h>
-//#include <boost/thread/mutex.hpp>
+#include "pch.h"
+#include "AlsaOutBuffer.h"
+/*
+#include <boost/thread/condition.hpp>
+#include <boost/thread/thread.hpp>
 
-#define STREAM_FEED_SIZE    1024
+#include <core/audio/IAudioCallback.h>
+#include <core/audio/IAudioOutput.h>
+*/
+#include <core/audio/IOutput.h>
+#include <list>
+#include <boost/shared_ptr.hpp>
+#include <boost/thread/mutex.hpp>
 
-//////////////////////////////////////////////////////////////////////////////
 using namespace musik::core::audio;
-//////////////////////////////////////////////////////////////////////////////
 
-class MP3Decoder :	public IDecoder{
+class AlsaOut : public IOutput{
+    public:
+        AlsaOut();
+        ~AlsaOut();
+
+        virtual void Destroy();
+        //virtual void Initialize(IPlayer *player);
+        virtual void Pause();
+        virtual void Resume();
+        virtual void SetVolume(double volume);
+        virtual void ClearBuffers();
+        virtual bool PlayBuffer(IBuffer *buffer,IPlayer *player);
+        virtual void ReleaseBuffers();
 
     public:
-	    MP3Decoder(void);
-	    ~MP3Decoder(void);
+        typedef boost::shared_ptr<AlsaOutBuffer> AlsaOutBufferPtr;
 
-        virtual void    Destroy();
-//        virtual double  Length();
-        virtual double  SetPosition(double second,double totalLength);
-//        virtual bool    GetFormat(unsigned long * SampleRate, unsigned long * Channels);
-        virtual bool    GetBuffer(IBuffer *buffer);
-        virtual bool    Open(musik::core::filestreams::IFileStream *fileStream);
+        //static void CALLBACK WaveCallback(HWAVEOUT hWave, UINT msg, DWORD_PTR dwUser, DWORD_PTR dw1, DWORD dw2);
+        void RemoveBuffer(AlsaOutBuffer *buffer);
 
     private:
-        bool Feed();
-//        bool GuessLength();
+        void SetFormat(IBuffer *buffer);
+        char *device;                        /* playback device */
 
-    private:
-        musik::core::filestreams::IFileStream *fileStream;
-        mpg123_handle *decoder;
+    protected:
+        friend class AlsaOutBuffer;
 
-        unsigned long cachedLength;
-        long cachedRate;
-        int cachedChannels;
+        //IPlayer *player;
 
-        long sampleSize;
+        // Audio stuff
+        snd_output_t *output;
+        snd_pcm_t        *waveHandle;
+        snd_pcm_format_t waveFormat;
+        snd_pcm_access_t waveAccess;
 
-        int lastMpg123Status;
+        // Current format
+        int currentChannels;
+        long currentSampleRate;
+        double currentVolume;
 
-//        boost::mutex mutex;
+        typedef std::list<AlsaOutBufferPtr> BufferList;
+        BufferList buffers;
+        BufferList removedBuffers;
+        size_t maxBuffers;
 
+        boost::mutex mutex;
+
+        bool addToRemovedBuffers;
 
 };

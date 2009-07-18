@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Daniel Önnerby
+// The following are Copyright ï¿½ 2008, Daniel ï¿½nnerby
 //
 // All rights reserved.
 //
@@ -38,9 +38,17 @@
 #include "stdafx.h"
 #include "TagReaderTaglib.h"
 #include "core/IPlugin.h"
+#ifndef _HAVE_TAGLIB
 #include <id3v2framefactory.h>
+#else
+#include <taglib/id3v2framefactory.h>
+#endif
 
+#ifdef WIN32
 #define DLLEXPORT __declspec(dllexport)
+#else
+#define DLLEXPORT
+#endif
 
 
 //////////////////////////////////////////
@@ -54,7 +62,7 @@ class TaglibBugFix : TagLib::ID3v2::FrameFactory{
         };
 };
 
-
+#ifdef WIN32
 BOOL APIENTRY DllMain( HMODULE hModule,DWORD  ul_reason_for_call,LPVOID lpReserved){
     if(ul_reason_for_call==DLL_PROCESS_DETACH){
         TaglibBugFix *ff    = (TaglibBugFix*)TagLib::ID3v2::FrameFactory::instance();
@@ -62,6 +70,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,DWORD  ul_reason_for_call,LPVOID lpReserv
     }
     return TRUE;
 }
+#endif //WIN32
 
 //TagReaderTaglib tagreader;
 
@@ -69,16 +78,16 @@ class TaglibPlugin : public musik::core::IPlugin
 {
     void Destroy() { delete this; };
 
-	const wchar_t* Name(){
-		return _T("Taglib 1.5 plugin");
+	const utfchar* Name(){
+		return UTF("Taglib 1.5 plugin");
 	};
 
-	const wchar_t* Version(){
-		return _T("0.1");
+	const utfchar* Version(){
+		return UTF("0.1");
 	};
 
-	const wchar_t* Author(){
-		return _T("Daniel Önnerby");
+	const utfchar* Author(){
+		return UTF("Daniel ï¿½nnerby");
 	};
 
 };

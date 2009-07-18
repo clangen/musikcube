@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Daniel Önnerby
+// The following are Copyright ï¿½ 2008, Daniel ï¿½nnerby
 //
 // All rights reserved.
 //
@@ -40,10 +40,12 @@
 
 #include "FLACSourceSupplier.h"
 
+#ifdef WIN32
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
 {
     return true;
 }
+#endif //WIN32
 
 class FLACDecoderPlugin : public musik::core::IPlugin
 {
@@ -51,15 +53,31 @@ class FLACDecoderPlugin : public musik::core::IPlugin
 
     const utfchar* Name()       { return TEXT("FLAC decoder"); };
     const utfchar* Version()    { return TEXT("1"); };
-    const utfchar* Author()     { return TEXT("Daniel Önnerby"); };
+    const utfchar* Author()     { return TEXT("Daniel ï¿½nnerby"); };
 };
 
-extern "C" __declspec(dllexport) musik::core::IPlugin* GetPlugin()
+#ifdef WIN32
+extern "C" __declspec(dllexport)
+#else //WIN32
+extern "C"	{
+#endif //WIN32
+musik::core::IPlugin* GetPlugin()
 {
     return new FLACDecoderPlugin();
 }
+#ifndef WIN32
+}
+#endif
 
-extern "C" __declspec(dllexport) IDecoderFactory* GetDecoderFactory()
+#ifdef WIN32
+extern "C" __declspec(dllexport)
+#else //WIN32
+extern "C"	{
+#endif //WIN32
+IDecoderFactory* GetDecoderFactory()
 {
     return new FLACSourceSupplier();
 }
+#ifndef WIN32
+}
+#endif

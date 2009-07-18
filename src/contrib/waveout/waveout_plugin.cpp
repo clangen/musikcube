@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Björn Olievier
+// The following are Copyright ï¿½ 2008, Bjï¿½rn Olievier
 //
 // All rights reserved.
 //
@@ -39,7 +39,6 @@
 #include <core/IPlugin.h>
 #include "WaveOut.h"
 
-
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
 {
     return true;
@@ -51,7 +50,7 @@ class WaveOutPlugin : public musik::core::IPlugin
 
     const utfchar* Name()       { return TEXT("WaveOut output plugin"); };
     const utfchar* Version()    { return TEXT("1"); };
-    const utfchar* Author()     { return TEXT("Björn Olievier"); };
+    const utfchar* Author()     { return TEXT("Bjï¿½rn Olievier"); };
 };
 
 extern "C" __declspec(dllexport) musik::core::IPlugin* GetPlugin()
