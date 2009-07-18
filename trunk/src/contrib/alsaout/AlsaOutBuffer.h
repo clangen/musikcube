@@ -1,8 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////
-//
-// License Agreement:
-//
-// The following are Copyright © 2008, Björn Olievier
+// Copyright ï¿½ 2007, Daniel ï¿½nnerby
 //
 // All rights reserved.
 //
@@ -33,22 +30,40 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
-
-// Precompiled headers
 #pragma once
 
-#include <core/config.h>
+#include <core/audio/IBuffer.h>
+#include <core/audio/IPlayer.h>
+#include <alsa/asoundlib.h>
 
-#ifdef WIN32 
-	#include <mmsystem.h>
-	#include <mmreg.h>
-	#include <ks.h>
-	#include <ksmedia.h>
+//////////////////////////////////////////////////////////////////////////////
+// Forward declare
+class AlsaOut;
 
-	#include "vld/vld.h"
+//////////////////////////////////////////////////////////////////////////////
 
-#else
+using namespace musik::core::audio;
 
-	#include <alsa/asoundlib.h>
+class AlsaOutBuffer
+{
+    public:
+        AlsaOutBuffer(AlsaOut *waveOut,IBuffer *buffer,IPlayer *player);
+        ~AlsaOutBuffer(void);
 
-#endif //WIN32
+        bool AddToOutput();
+        void PrepareBuffer();
+
+        AlsaOut *waveOut;
+        IBuffer *buffer;
+        IPlayer *player;
+
+        //snd_pcm_channel_area_t *areas;
+
+	 private:
+        snd_pcm_sframes_t frames;
+        float* data;
+        int bufferLength;
+
+};
+
+//////////////////////////////////////////////////////////////////////////////

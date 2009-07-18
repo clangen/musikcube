@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Björn Olievier
+// The following are Copyright ï¿½ 2008, Bjï¿½rn Olievier
 //
 // All rights reserved.
 //
@@ -39,16 +39,4 @@
 
 #include <core/config.h>
 
-#ifdef WIN32 
-	#include <mmsystem.h>
-	#include <mmreg.h>
-	#include <ks.h>
-	#include <ksmedia.h>
-
-	#include "vld/vld.h"
-
-#else
-
-	#include <alsa/asoundlib.h>
-
-#endif //WIN32
+#include <alsa/asoundlib.h>

@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Daniel Önnerby
+// The following are Copyright ï¿½ 2008, Daniel ï¿½nnerby
 //
 // All rights reserved.
 //
@@ -105,23 +105,20 @@ namespace musik{ namespace core{
                 Iterator currentDll = allDlls.begin();
                 while (currentDll != allDlls.end()){
 
-		    PluginInterfaceCall funcPtr =
+                	PluginInterfaceCall funcPtr =
 #ifdef WIN32
                         (PluginInterfaceCall) GetProcAddress((HMODULE)(*currentDll), functionName);
 #else
-			(PluginInterfaceCall) dlsym(*currentDll, functionName);
+						(PluginInterfaceCall) dlsym(*currentDll, functionName);
 #endif //WIN32
-                    if(funcPtr) {
-                        T* result = funcPtr();
-                        if (result) {
-                            plugins.push_back(boost::shared_ptr<T>(result, D()));
-                        }
-
-                    }
-
-                    currentDll++;
+					if(funcPtr) {
+						T* result = funcPtr();
+						if (result) {
+							plugins.push_back(boost::shared_ptr<T>(result, D()));
+						}
+					}
+					currentDll++;
                 }
-
                 return plugins;
             }
 

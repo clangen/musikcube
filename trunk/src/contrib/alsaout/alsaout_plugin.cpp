@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Björn Olievier
+// The following are Copyright Â© 2009, Julian Cromarty
 //
 // All rights reserved.
 //
@@ -34,21 +34,38 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-// Precompiled headers
-#pragma once
+#include "pch.h"
 
-#include <core/config.h>
+#include <core/IPlugin.h>
+#include "AlsaOut.h"
 
-#ifdef WIN32 
-	#include <mmsystem.h>
-	#include <mmreg.h>
-	#include <ks.h>
-	#include <ksmedia.h>
+class AlsaOutPlugin : public musik::core::IPlugin
+{
+    void Destroy() { delete this; };
 
-	#include "vld/vld.h"
+    const utfchar* Name()       { return TEXT("AlsaOut output plugin"); };
+    const utfchar* Version()    { return TEXT("1"); };
+    const utfchar* Author()     { return TEXT("Julian Cromarty"); };
+};
 
-#else
+extern "C" {
+	musik::core::IPlugin* GetPlugin()
+	{
+		return new AlsaOutPlugin();
+	}
+}
 
-	#include <alsa/asoundlib.h>
+/*
+extern "C" {
+	musik::core::audio::IAudioOutputSupplier* CreateAudioOutputSupplier()
+	{
+		return new AlsaOutSupplier();
+	}
+}*/
 
-#endif //WIN32
+extern "C" {
+	musik::core::audio::IOutput* GetAudioOutput()
+	{
+		return new AlsaOut();
+	}
+}

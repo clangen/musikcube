@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Daniel Önnerby
+// The following are Copyright ï¿½ 2008, Daniel ï¿½nnerby
 //
 // All rights reserved.
 //
@@ -49,13 +49,17 @@ PluginFactory::PluginFactory(void){
 }
 
 PluginFactory::~PluginFactory(void){
-
     for (size_t i=0; i<this->loadedPlugins.size(); ++i)
     {
         this->loadedPlugins[i]->Destroy();
     }
-    this->loadedPlugins.clear();
-
+    //this->loadedPlugins.clear();		//This causes a segmentation fault on linux due to loadedPlugins being already empty. Jooles
+    //Also somewhere here is another seg fault that only seems to occur when the program is run from within its directory
+    //eg. cd'ing to musikCube/bin and running square then quitting segfaults here. cd'ing to musikCube and running
+    // bin/square then quitting works fine.. Any ideas anyone? Jooles
+#ifdef _DEBUG
+    std::cerr << "Unloading DLLs" << std::endl;
+#endif
     // Unload dlls
     for(std::vector<void*>::iterator oDLL=this->loadedDLLs.begin();oDLL!=this->loadedDLLs.end();){
         #ifdef WIN32
@@ -109,12 +113,16 @@ void PluginFactory::LoadPlugins(){
 			char* err;
 			if ((err = dlerror()) != NULL) {
 			    std::cerr << "Couldn't open shared library " << sFile << std::endl;
+			    std::cerr << "Error: " << err << std::endl;
 			}
 			else	{
-                            IPlugin* getPluginCall = (IPlugin*)dlsym(oDLL,"GetPlugin");
-                            if(getPluginCall){
-                                this->loadedPlugins.push_back(getPluginCall);
+				IPlugin* getPluginCall = (IPlugin*)dlsym(oDLL,"GetPlugin");
+                if(getPluginCall){
+                	this->loadedPlugins.push_back(getPluginCall);
 			        this->loadedDLLs.push_back(oDLL);
+#ifdef _DEBUG
+			        std::cout << "Shared library " << sFile.c_str() << " loaded and opened." << std::endl;
+#endif
 			    }
 			    else	{
 			        dlclose(oDLL);

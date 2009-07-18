@@ -36,7 +36,6 @@ set(CORE_SOURCES
   audio/Stream.cpp
   audio/Transport.cpp
   server/Connection.cpp
-  Server.cpp
   server/User.cpp
   server/UserSession.cpp
   xml/Node.cpp
@@ -56,6 +55,8 @@ set(CORE_SOURCES
   LibraryTrack.cpp
   Track.cpp
   TrackFactory.cpp
+  Server.cpp
+  Server.h
 )
 
 if(CMAKE_SYSTEM_NAME MATCHES "Windows")
@@ -71,7 +72,6 @@ include_directories(
   ..
   ../3rdparty/include
   ../3rdparty/include/jpeg-6b
-  
 )
 
 add_definitions( 
@@ -80,5 +80,7 @@ add_definitions(
   -D_DEBUG
 )
 
-add_library( core SHARED ${CORE_SOURCES} )
+add_library( musik SHARED ${CORE_SOURCES} )
+target_link_libraries( musik ${musikCube_LINK_LIBS})
+
 

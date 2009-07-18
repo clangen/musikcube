@@ -34,7 +34,11 @@
 
 #include <core/audio/IBuffer.h>
 #include <core/audio/IPlayer.h>
-#include "Mmsystem.h"
+#ifdef WIN32
+	#include "Mmsystem.h"
+#else
+	#include <alsa/asoundlib.h>
+#endif
 //////////////////////////////////////////////////////////////////////////////
 // Forward declare
 class WaveOut;

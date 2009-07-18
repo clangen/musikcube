@@ -7,7 +7,9 @@
 
 #include <core/config.h>
 
-#include <shlwapi.h>
 #include <math.h>
 
+#ifdef WIN32
+#include <shlwapi.h>
 #include "vld/vld.h"
+#endif //WIN32
