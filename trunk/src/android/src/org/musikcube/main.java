@@ -3,9 +3,14 @@ package org.musikcube;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ImageButton;
+
 import org.musikcube.CategoryList;
 
 
@@ -46,5 +51,35 @@ public class main extends Activity {
     	}
 
     };
+    
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.default_menu, menu);
+        return true;
+    }    
+    
+    public boolean onOptionsItemSelected(MenuItem item) {
+    	Log.i("MC2.onContextItemSelected","item "+item.getItemId()+" "+R.id.context_settings);
+   	  switch (item.getItemId()) {
+    	  case R.id.context_settings:
+    		  	Intent intent	= new Intent(main.this, Preferences.class);
+	      		startActivity(intent);
+    		  return true;
+    	  default:
+    		  return super.onContextItemSelected(item);
+    	  }
+   	}
+    
+	@Override
+	protected void onPause() {
+		super.onPause();
+		org.musikcube.core.Library.GetInstance().RemovePointer();
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		org.musikcube.core.Library.GetInstance().AddPointer();
+	}
     
 }

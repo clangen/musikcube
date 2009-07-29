@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+ <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+         android:orientation="vertical"
+         android:layout_width="fill_parent" 
+         android:layout_height="fill_parent"
+         android:paddingLeft="8dp"
+         android:paddingRight="8dp" android:gravity="center">
+<LinearLayout android:id="@+id/LinearLayout01" android:layout_width="wrap_content" android:layout_height="wrap_content"  android:orientation="horizontal">
+	<ImageButton android:layout_width="wrap_content" android:layout_height="wrap_content" android:id="@+id/MediaPrev" android:clickable="true" android:src="@drawable/ic_media_previous" android:adjustViewBounds="true"></ImageButton>
+	<ImageButton android:layout_width="wrap_content" android:layout_height="wrap_content" android:adjustViewBounds="true" android:id="@+id/MediaPause" android:src="@drawable/ic_media_pause"></ImageButton>
+	<ImageButton android:layout_width="wrap_content" android:layout_height="wrap_content" android:id="@+id/MediaNext" android:adjustViewBounds="true" android:src="@drawable/ic_media_next"></ImageButton>
+</LinearLayout>
+
+</LinearLayout>
