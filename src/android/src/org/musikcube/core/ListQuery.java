@@ -1,7 +1,5 @@
 package org.musikcube.core;
 
-import java.io.IOException;
-
 import doep.xml.ReaderNode;
 import doep.xml.WriterNode;
 

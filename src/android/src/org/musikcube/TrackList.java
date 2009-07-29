@@ -80,7 +80,7 @@ public class TrackList extends ListActivity implements OnQueryResultListener {
             this.setOrientation(VERTICAL);
 
             mTitle = new TextView(context);
-            mTitle.setTextSize(18);
+            mTitle.setTextSize(22);
             mTitle.setText(title.toString());
             addView(mTitle, new LinearLayout.LayoutParams(
                     LayoutParams.FILL_PARENT, LayoutParams.WRAP_CONTENT));
@@ -159,8 +159,22 @@ public class TrackList extends ListActivity implements OnQueryResultListener {
 		Intent intent	= new Intent(this, org.musikcube.Service.class);
 		intent.putExtra("org.musikcube.Service.tracklist", this.query.trackList);
 		intent.putExtra("org.musikcube.Service.position", position);
+		intent.putExtra("org.musikcube.Service.action", "playlist");
 		startService(intent);
 		
+	}
+
+	
+	@Override
+	protected void onPause() {
+		super.onPause();
+		org.musikcube.core.Library.GetInstance().RemovePointer();
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		org.musikcube.core.Library.GetInstance().AddPointer();
 	}
 	
 }

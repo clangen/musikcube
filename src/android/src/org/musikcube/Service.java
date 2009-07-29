@@ -3,13 +3,10 @@
  */
 package org.musikcube;
 
-import java.io.IOException;
-import java.util.ArrayList;
-
 import org.musikcube.core.Library;
+import org.musikcube.core.Player;
 
 import android.content.Intent;
-import android.media.MediaPlayer;
 import android.os.IBinder;
 import android.util.Log;
 
@@ -20,9 +17,8 @@ import android.util.Log;
 public class Service extends android.app.Service {
 
 	Library library;
-	MediaPlayer	player;
+	Player player;
 	
-	ArrayList<Integer> nowPlaying	= new ArrayList<Integer>();
 	int nowPlayingPosition			= 0;
 	
 	/**
@@ -44,7 +40,8 @@ public class Service extends android.app.Service {
 	@Override 
 	public void onCreate(){
 		Log.i("musikcube::Service","CREATE");
-		this.library	= org.musikcube.core.Library.GetInstance();
+		this.player	= Player.GetInstance();
+		this.player.service	= this;
 	}
 
 	/* (non-Javadoc)
@@ -55,7 +52,22 @@ public class Service extends android.app.Service {
 		// TODO Auto-generated method stub
 		super.onStart(intent, startId);
 
-		if(intent.getIntegerArrayListExtra("org.musikcube.Service.tracklist")!=null){
+		String action	= intent.getStringExtra("org.musikcube.Service.action");
+		if(action.equals("playlist")){
+			Player player	= Player.GetInstance();
+			player.Play(intent.getIntegerArrayListExtra("org.musikcube.Service.tracklist"), intent.getIntExtra("org.musikcube.Service.position", 0));
+		}
+		if(action.equals("next")){
+			Player player	= Player.GetInstance();
+			player.Next();
+		}
+		if(action.equals("player ended")){
+			this.stopSelf();
+		}
+		
+//		if(intent getIntegerArrayListExtra("org.musikcube.Service.tracklist")!=null){
+		
+/*		if(intent.getIntegerArrayListExtra("org.musikcube.Service.tracklist")!=null){
 			
 			this.nowPlaying			= intent.getIntegerArrayListExtra("org.musikcube.Service.tracklist");
 			this.nowPlayingPosition	= intent.getIntExtra("org.musikcube.Service.position", 0);
@@ -70,7 +82,7 @@ public class Service extends android.app.Service {
 			this.library.WaitForAuthroization();
 			
 			try {
-				Log.i("musikcube::Service","onStart3 "+"http://"+this.library.host+":"+this.library.httpPort+"/track/?track_id="+this.nowPlaying.get(this.nowPlayingPosition)+"&auth_key="+this.library.authorization);
+//				Log.i("musikcube::Service","onStart3 "+"http://"+this.library.host+":"+this.library.httpPort+"/track/?track_id="+this.nowPlaying.get(this.nowPlayingPosition)+"&auth_key="+this.library.authorization);
 				this.player.setDataSource("http://"+this.library.host+":"+this.library.httpPort+"/track/?track_id="+this.nowPlaying.get(this.nowPlayingPosition)+"&auth_key="+this.library.authorization);
 				Log.i("musikcube::Service","onStart4");
 				this.player.prepare();
@@ -81,7 +93,12 @@ public class Service extends android.app.Service {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-		}
+		}*/
+	}
+
+	@Override
+	public void onDestroy() {
+		super.onDestroy();
 	}
 
 	

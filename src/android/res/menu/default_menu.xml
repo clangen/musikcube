@@ -1,0 +1,2 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"><item android:title="@string/menu_settings" android:id="@+id/context_settings" android:enabled="true" android:visible="true"></item>
+</menu>

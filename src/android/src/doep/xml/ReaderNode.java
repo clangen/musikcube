@@ -1,5 +1,4 @@
 package doep.xml;
-import android.util.Log;
 import doep.xml.Reader;
 
 public class ReaderNode {

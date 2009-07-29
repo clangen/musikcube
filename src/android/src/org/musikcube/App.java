@@ -11,5 +11,7 @@ public class App extends Application {
 		Log.i("MUSIKCUBE::APP","Start");
 		org.musikcube.core.Library library	= org.musikcube.core.Library.GetInstance();
 		
+		library.Startup(this);
+		
 	}
 }

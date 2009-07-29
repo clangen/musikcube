@@ -1,10 +1,8 @@
 package doep.xml;
 import org.xmlpull.v1.*;
 
-import android.util.Log;
 import doep.xml.ReaderNode;
 import java.io.InputStream;
-import java.util.LinkedList;
 import java.lang.Exception;
 
 

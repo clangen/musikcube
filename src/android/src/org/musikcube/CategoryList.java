@@ -85,7 +85,7 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
             this.setOrientation(VERTICAL);
 
             mTitle = new TextView(context);
-            mTitle.setTextSize(18);
+            mTitle.setTextSize(22);
             mTitle.setText(title);
             addView(mTitle, new LinearLayout.LayoutParams(
                     LayoutParams.FILL_PARENT, LayoutParams.WRAP_CONTENT));
@@ -172,6 +172,7 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
 		this.callbackHandler.post(this.callbackRunnable);
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Override
 	protected void onListItemClick(ListView l, View v, int position, long id){
 		Log.i("CategoryList::onListItemClick","clicked on "+position+" "+id);
@@ -203,6 +204,18 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
 			intent.putExtra("org.musikcube.CategoryList.selectedCategoryId", selectedCategoryIds);
 			startActivity(intent);
 		}
+	}
+
+	@Override
+	protected void onPause() {
+		super.onPause();
+		org.musikcube.core.Library.GetInstance().RemovePointer();
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		org.musikcube.core.Library.GetInstance().AddPointer();
 	}
 	
 }

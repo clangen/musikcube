@@ -11,12 +11,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-    <service android:name="Service" android:process=":remote" android:enabled="true"></service>
+    <service android:name="Service"></service>
 <activity android:name="CategoryList"></activity>
 <activity android:name="TrackList"></activity>
+<activity android:name="Preferences"></activity>
 </application>
     <uses-sdk android:minSdkVersion="3" />
 
 
 <uses-permission android:name="android.permission.INTERNET"></uses-permission>
+
+
 </manifest> 

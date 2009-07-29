@@ -1,7 +1,5 @@
 package doep.xml;
 
-import android.util.Log;
-
 
 public class Writer extends WriterNode {
 
