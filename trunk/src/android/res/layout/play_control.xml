@@ -4,11 +4,22 @@
          android:layout_width="fill_parent" 
          android:layout_height="fill_parent"
          android:paddingLeft="8dp"
-         android:paddingRight="8dp" android:gravity="center">
-<LinearLayout android:id="@+id/LinearLayout01" android:layout_width="wrap_content" android:layout_height="wrap_content"  android:orientation="horizontal">
+         android:paddingRight="8dp" android:gravity="center_vertical|center_horizontal">
+         
+<LinearLayout android:id="@+id/LinearLayout01" android:layout_weight="0.5" android:layout_width="wrap_content" android:layout_height="wrap_content"  android:orientation="vertical" android:gravity="left">
+<ImageView android:id="@+id/ImageView01" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/album" android:layout_marginTop="5sp" android:layout_marginBottom="5sp"></ImageView>
+<TextView android:id="@+id/TextView04" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Track" android:textSize="24sp"></TextView>
+<TextView android:id="@+id/TextView01" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Genre:"></TextView>
+<TextView android:id="@+id/TextView02" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Album:"></TextView>
+<TextView android:id="@+id/TextView03" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Artists:"></TextView>
+</LinearLayout>
+<LinearLayout android:id="@+id/LinearLayout02"  android:layout_weight="0.5" android:layout_width="wrap_content" android:layout_height="wrap_content"></LinearLayout><LinearLayout android:id="@+id/LinearLayout01" android:layout_width="wrap_content" android:layout_height="wrap_content"  android:orientation="horizontal">
 	<ImageButton android:layout_width="wrap_content" android:layout_height="wrap_content" android:id="@+id/MediaPrev" android:clickable="true" android:src="@drawable/ic_media_previous" android:adjustViewBounds="true"></ImageButton>
 	<ImageButton android:layout_width="wrap_content" android:layout_height="wrap_content" android:adjustViewBounds="true" android:id="@+id/MediaPause" android:src="@drawable/ic_media_pause"></ImageButton>
 	<ImageButton android:layout_width="wrap_content" android:layout_height="wrap_content" android:id="@+id/MediaNext" android:adjustViewBounds="true" android:src="@drawable/ic_media_next"></ImageButton>
 </LinearLayout>
+
+
+
 
 </LinearLayout>

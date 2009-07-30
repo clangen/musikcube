@@ -74,6 +74,13 @@ public class Player implements TrackPlayer.OnTrackStatusListener{
 		}
 	}
 	
+	public void Stop(){
+		synchronized(this.lock){
+			this.StopAllTracks();
+			this.End();
+		}
+	}
+	
 	private void StopAllTracks(){
 		synchronized(this.lock){
 			int trackCount	= this.playingTracks.size();
