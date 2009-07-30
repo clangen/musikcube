@@ -15,6 +15,7 @@
 <activity android:name="CategoryList"></activity>
 <activity android:name="TrackList"></activity>
 <activity android:name="Preferences"></activity>
+<activity android:name="PlayerControl"></activity>
 </application>
     <uses-sdk android:minSdkVersion="3" />
 
