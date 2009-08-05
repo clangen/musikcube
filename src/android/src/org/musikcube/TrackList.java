@@ -5,7 +5,11 @@ package org.musikcube;
 
 import java.util.ArrayList;
 
+import org.musikcube.core.IQuery;
+import org.musikcube.core.Library;
 import org.musikcube.core.ListQuery;
+import org.musikcube.core.MetadataQuery;
+import org.musikcube.core.Track;
 import org.musikcube.core.IQuery.OnQueryResultListener;
 
 import android.app.ListActivity;
@@ -28,6 +32,11 @@ import android.widget.TextView;
 public class TrackList extends ListActivity implements OnQueryResultListener {
 	
 	private ListQuery query	= new ListQuery();
+	public java.util.ArrayList<Integer> trackList	= new java.util.ArrayList<Integer>();	
+	public java.util.TreeMap<Integer, Track> trackCache	= new java.util.TreeMap<Integer,Track>();	
+	public java.util.TreeSet<Integer> waitingTracks = new java.util.TreeSet<Integer>();	
+	
+	private java.lang.Object lock 	= new java.lang.Object();
 	
 	// Need handler for callbacks to the UI thread
     final Handler callbackHandler = new Handler();
@@ -41,7 +50,7 @@ public class TrackList extends ListActivity implements OnQueryResultListener {
     
     public class ResultAdapter extends BaseAdapter{
 
-    	protected ListQuery query;
+    	protected TrackList trackList;
     	protected Context context;
     	
     	public ResultAdapter(Context context){
@@ -49,24 +58,24 @@ public class TrackList extends ListActivity implements OnQueryResultListener {
     	}
     	
 		public int getCount() {
-			return this.query.trackList.size();
+			return this.trackList.trackList.size();
 		}
 
 		public Object getItem(int position) {
-			return this.query.trackList.get(position);
+			return this.trackList.trackList.get(position);
 		}
 
 		public long getItemId(int position) {
-			return this.query.trackList.get(position);
+			return this.trackList.trackList.get(position);
 		}
 
 		public View getView(int position, View view, ViewGroup parent) {
 			TrackItemView item;
 			if(view==null){
-				item = new TrackItemView(this.context,this.query.trackList.get(position));
+				item = new TrackItemView(this.context,this.trackList.GetTrack(position));
 			}else{
 				item	= (TrackItemView)view;
-				item.SetTitle(this.query.trackList.get(position));
+				item.SetTitles(this.trackList.GetTrack(position));
 				
 			}
 			return item;
@@ -75,13 +84,13 @@ public class TrackList extends ListActivity implements OnQueryResultListener {
     }
     
     private class TrackItemView extends LinearLayout {
-        public TrackItemView(Context context, Integer title) {
+        public TrackItemView(Context context, Track track) {
             super(context);
             this.setOrientation(VERTICAL);
 
             mTitle = new TextView(context);
             mTitle.setTextSize(22);
-            mTitle.setText(title.toString());
+            this.SetTitles(track);
             addView(mTitle, new LinearLayout.LayoutParams(
                     LayoutParams.FILL_PARENT, LayoutParams.WRAP_CONTENT));
 
@@ -90,8 +99,25 @@ public class TrackList extends ListActivity implements OnQueryResultListener {
         /**
          * Convenience method to set the title of a CategoryItemView
          */
-        public void SetTitle(Integer title) {
-            mTitle.setText(title.toString());
+        public void SetTitles(Track track) {
+        	if(track!=null){
+        		String text	= "";
+        		String trackNumber	= track.metadata.get("track");
+        		String title	= track.metadata.get("title");
+        		if(trackNumber!=null){
+        			text	+= trackNumber+". ";
+        		}
+        		if(title!=null){
+        			text	+= title;
+        		}
+        		if(!text.equals("")){
+        			mTitle.setText(text);
+        		}else{
+        			mTitle.setText("unknown");
+        		}
+        	}else{
+                mTitle.setText("loading");        		
+        	}
         }
 
         private TextView mTitle;
@@ -110,7 +136,7 @@ public class TrackList extends ListActivity implements OnQueryResultListener {
 		this.query.SetResultListener(this);
 		
 		this.listAdapter	= new ResultAdapter(this);
-		this.listAdapter.query	= this.query;
+		this.listAdapter.trackList = this;
 		setListAdapter(this.listAdapter);
 		
 		this.setTitle("musikCube: Tracks");
@@ -134,28 +160,39 @@ public class TrackList extends ListActivity implements OnQueryResultListener {
 	}
 	
 	public void OnResults(){
-		Log.i("TrackList::OnResults","In right thread "+this.query.trackList.size());
-		this.listAdapter.notifyDataSetChanged();
+		//Log.i("TrackList::OnResults","In right thread "+this.query.trackList.size());
+		
+		if(this.query!=null){
+			this.trackList	= this.query.trackList;
+			this.query		= null;
+			this.listAdapter.notifyDataSetChanged();
+		}else{
+			//this is metadataquery results
+			// notify that list should update
+			this.listAdapter.notifyDataSetChanged();
+		}
 	}
 
-	public void OnQueryResults() {
+	public void OnQueryResults(IQuery query) {
+		
+		if(query.type=="TrackMetadata"){
+			MetadataQuery mdQuery	= (MetadataQuery)query;
+			synchronized(this.lock){
+				int trackCount	= mdQuery.resultTracks.size();
+				for(int i=0;i<trackCount;i++){
+					Track track	= mdQuery.resultTracks.get(i);
+					this.waitingTracks.remove(track.id);
+					this.trackCache.put(track.id,track);
+				}
+			}
+		}
+		
 		// Call in right thread
 		this.callbackHandler.post(this.callbackRunnable);
 	}
 	
 	@Override
-	protected void onListItemClick(ListView l, View v, int position, long id){
-/*		Log.i("CategoryList::onListItemClick","clicked on "+position+" "+id);
-		if(this.nextCategoryList.equals("")){
-			// List tracks
-		}else{
-			Intent intent	= new Intent(this, CategoryList.class);
-			intent.putExtra("org.musikcube.CategoryList.listCategory", this.nextCategoryList);
-			intent.putExtra("org.musikcube.CategoryList.selectedCategory", this.category);
-			intent.putExtra("org.musikcube.CategoryList.selectedCategoryId", (int)id);
-			startActivity(intent);
-		}*/
-		
+	protected void onListItemClick(ListView l, View v, int position, long id){		
 		Intent intent	= new Intent(this, org.musikcube.Service.class);
 		intent.putExtra("org.musikcube.Service.tracklist", this.query.trackList);
 		intent.putExtra("org.musikcube.Service.position", position);
@@ -178,6 +215,52 @@ public class TrackList extends ListActivity implements OnQueryResultListener {
 	protected void onResume() {
 		super.onResume();
 		org.musikcube.core.Library.GetInstance().AddPointer();
+	}
+
+	public Track GetTrack(int position){
+		synchronized(this.lock){
+			Integer trackId	= this.trackList.get(position);
+			Track track		= this.trackCache.get(trackId);
+			if(track==null){
+				//check if it's in the "requested" cache
+				if(!this.waitingTracks.contains(trackId)){
+					// request the track
+					MetadataQuery query	= new MetadataQuery();
+					query.requestedMetakeys.add("track");
+					query.requestedMetakeys.add("title");
+					query.requestedMetakeys.add("visual_artist");
+					query.SetResultListener(this);
+					
+					query.requestedTracks.add(trackId);
+					this.waitingTracks.add(trackId);
+					
+					// Add some more tracks
+					int trackListSize	= this.trackList.size();
+					for(int i=position;i<position+10 && i<trackListSize;i++){
+						Integer nextTrackId	= this.trackList.get(i);
+						if(!this.IsTrackInCache(nextTrackId)){
+							query.requestedTracks.add(nextTrackId);
+							this.waitingTracks.add(nextTrackId);
+						}
+					}
+					
+					Library.GetInstance().AddQuery(query);
+				}
+			}
+			return track;
+		}
+	}
+	
+	private boolean IsTrackInCache(int trackId){
+		Track track		= this.trackCache.get(trackId);
+		if(track==null){
+			//check if it's in the "requested" cache
+			if(!this.waitingTracks.contains(trackId)){
+				// request the track
+				return false;
+			}
+		}
+		return true;
 	}
 	
 }

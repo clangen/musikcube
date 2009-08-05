@@ -11,7 +11,7 @@ public class IQuery extends Object{
 	public static int uidCounter	= 0; 
 	
 	public interface OnQueryResultListener{
-		public void OnQueryResults();
+		public void OnQueryResults(IQuery query);
 	}
 	
 	protected OnQueryResultListener listener	= null;

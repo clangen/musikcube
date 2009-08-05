@@ -7,7 +7,7 @@
          android:paddingRight="8dp" android:gravity="center_vertical|center_horizontal">
          
 <LinearLayout android:id="@+id/LinearLayout01" android:layout_weight="0.5" android:layout_width="wrap_content" android:layout_height="wrap_content"  android:orientation="vertical" android:gravity="left">
-<ImageView android:id="@+id/ImageView01" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/album" android:layout_marginTop="5sp" android:layout_marginBottom="5sp"></ImageView>
+<ImageView android:id="@+id/ImageView01" android:layout_width="wrap_content" android:src="@drawable/album" android:layout_marginTop="5sp" android:layout_marginBottom="5sp" android:layout_height="wrap_content"></ImageView>
 <TextView android:id="@+id/TextView04" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Track" android:textSize="24sp"></TextView>
 <TextView android:id="@+id/TextView01" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Genre:"></TextView>
 <TextView android:id="@+id/TextView02" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Album:"></TextView>
@@ -22,4 +22,5 @@
 
 
 
+<SeekBar android:id="@+id/SeekBar01" android:layout_height="wrap_content" android:layout_width="fill_parent" android:max="1000" android:progress="300" android:secondaryProgress="100"></SeekBar>
 </LinearLayout>

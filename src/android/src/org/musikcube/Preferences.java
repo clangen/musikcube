@@ -1,5 +1,6 @@
 package org.musikcube;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.preference.PreferenceActivity;
 
@@ -30,6 +31,7 @@ public class Preferences extends PreferenceActivity {
 	protected void onResume() {
 		super.onResume();
 		org.musikcube.core.Library.GetInstance().AddPointer();
+		startService(new Intent(this, org.musikcube.Service.class));
 	}
 	
 }

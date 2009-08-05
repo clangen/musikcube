@@ -8,7 +8,6 @@ import org.musikcube.core.Player;
 
 import android.content.Intent;
 import android.os.IBinder;
-import android.util.Log;
 
 /**
  * @author doy
@@ -39,9 +38,11 @@ public class Service extends android.app.Service {
 	
 	@Override 
 	public void onCreate(){
-		Log.i("musikcube::Service","CREATE");
+		//Log.i("musikcube::Service","CREATE");
 		this.player	= Player.GetInstance();
 		this.player.service	= this;
+		this.library	= org.musikcube.core.Library.GetInstance();
+		this.library.Startup(this);
 	}
 
 	/* (non-Javadoc)
@@ -53,6 +54,10 @@ public class Service extends android.app.Service {
 		super.onStart(intent, startId);
 
 		String action	= intent.getStringExtra("org.musikcube.Service.action");
+		if(action==null){
+			return;
+		}
+		
 		if(action.equals("playlist")){
 			Player player	= Player.GetInstance();
 			player.Play(intent.getIntegerArrayListExtra("org.musikcube.Service.tracklist"), intent.getIntExtra("org.musikcube.Service.position", 0));
@@ -69,7 +74,8 @@ public class Service extends android.app.Service {
 			Player player	= Player.GetInstance();
 			player.Play();
 		}
-		if(action.equals("player ended")){
+		if(action.equals("shutdown")){
+			//Log.i("musikcube::Service","Shutdown");
 			this.stopSelf();
 		}
 		
@@ -106,6 +112,8 @@ public class Service extends android.app.Service {
 
 	@Override
 	public void onDestroy() {
+		//Log.i("musikcube::Service","EXIT");
+		this.library.Exit();
 		super.onDestroy();
 	}
 

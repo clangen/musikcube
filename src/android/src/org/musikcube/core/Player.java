@@ -106,11 +106,11 @@ public class Player implements TrackPlayer.OnTrackStatusListener{
 			if(this.library!=null){
 				this.library.RemovePointer();
 				this.library	= null;
-				
+/*				
 				Intent intent	= new Intent(this.service, org.musikcube.Service.class);
 				intent.putExtra("org.musikcube.Service.action", "player ended");
 				this.service.startService(intent);
-
+*/
 			}
 		}
 	}
