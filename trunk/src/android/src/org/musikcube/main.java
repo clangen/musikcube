@@ -3,18 +3,21 @@ package org.musikcube;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
+import android.os.Handler;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.widget.ImageButton;
+import android.widget.Button;
+import android.widget.TextView;
 
 import org.musikcube.CategoryList;
+import org.musikcube.core.Library;
+import org.musikcube.core.Library.OnLibraryStatusListener;
 
 
-public class main extends Activity {
+public class main extends Activity implements OnLibraryStatusListener {
 	
     /** Called when the activity is first created. */
     @Override
@@ -22,12 +25,16 @@ public class main extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         
-        ImageButton genreButton	= (ImageButton)findViewById(R.id.GenresButton);
+        Button genreButton	= (Button)findViewById(R.id.GenresButton);
         genreButton.setOnClickListener(this.onGenreClick);
         
-        ImageButton artistsButton	= (ImageButton)findViewById(R.id.ArtistsButton);
-        artistsButton.setOnClickListener(this.onArtistsClick);
+        genreButton.setEnabled(false);
         
+        Button artistsButton	= (Button)findViewById(R.id.ArtistsButton);
+        artistsButton.setOnClickListener(this.onArtistsClick);
+     
+        artistsButton.setEnabled(false);
+                
     }
     
     private OnClickListener onGenreClick = new OnClickListener() {
@@ -59,7 +66,7 @@ public class main extends Activity {
     }    
     
     public boolean onOptionsItemSelected(MenuItem item) {
-    	Log.i("MC2.onContextItemSelected","item "+item.getItemId()+" "+R.id.context_settings);
+    	//Log.i("MC2.onContextItemSelected","item "+item.getItemId()+" "+R.id.context_settings);
    	  switch (item.getItemId()) {
     	  case R.id.context_settings:
     		  	Intent intent	= new Intent(main.this, Preferences.class);
@@ -74,12 +81,62 @@ public class main extends Activity {
 	protected void onPause() {
 		super.onPause();
 		org.musikcube.core.Library.GetInstance().RemovePointer();
+		org.musikcube.core.Library.GetInstance().SetStatusListener(null);
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
 		org.musikcube.core.Library.GetInstance().AddPointer();
+		org.musikcube.core.Library.GetInstance().SetStatusListener(this);
+		startService(new Intent(this, org.musikcube.Service.class));
 	}
+
+	public void OnLibraryStatusChange(int status) {
+		this.libStatusHandler.post(this.libStatusRunnable);
+	}
+	
+    final Handler libStatusHandler = new Handler();
+    
+    // Create runnable for posting
+    final Runnable libStatusRunnable = new Runnable() {
+        public void run() {
+            OnLibraryStatus();
+        }
+    };
+    
+	public void OnLibraryStatus() {
+		int status	= Library.GetInstance().GetStatus();
+        Button genreButton	= (Button)findViewById(R.id.GenresButton);
+        Button artistsButton	= (Button)findViewById(R.id.ArtistsButton);
+
+        if(status==Library.STATUS_CONNECTED){
+            genreButton.setEnabled(true);
+            artistsButton.setEnabled(true);
+        }else{
+            genreButton.setEnabled(false);
+            artistsButton.setEnabled(false);
+        }
+        
+        TextView statusText	= (TextView)findViewById(R.id.StatusView);
+        
+        switch(status){
+        case Library.STATUS_AUTHENTICATING:
+        	statusText.setText("Status: Authenticating");
+        	break;
+        case Library.STATUS_CONNECTING:
+        	statusText.setText("Status: Connecting");
+        	break;
+        case Library.STATUS_SHUTDOWN:
+        	statusText.setText("Status: Disconnected");
+        	break;
+        case Library.STATUS_CONNECTED:
+        	statusText.setText("Status: Connected");
+        	break;
+        }
+        
+		
+	}
+    
     
 }

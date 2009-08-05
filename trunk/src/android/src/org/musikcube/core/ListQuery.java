@@ -81,7 +81,7 @@ public class ListQuery extends IQuery {
 		
 		// TODO: Notify that results are here
 		if(this.listener!=null){
-			this.listener.OnQueryResults();
+			this.listener.OnQueryResults(this);
 		}
 	}
 

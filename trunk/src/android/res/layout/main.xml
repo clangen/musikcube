@@ -4,9 +4,18 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent">
     
-<LinearLayout android:id="@+id/LinearLayout01" android:orientation="horizontal" android:layout_height="fill_parent" android:layout_width="fill_parent" android:layout_weight="0.5"><ImageButton android:layout_height="fill_parent" android:layout_width="fill_parent" android:layout_weight="0.5" android:layout_margin="5px" android:id="@+id/GenresButton" android:src="@drawable/genres" android:clickable="true"></ImageButton><ImageButton android:layout_height="fill_parent" android:layout_width="fill_parent" android:layout_weight="0.5" android:layout_margin="5px" android:id="@+id/ArtistsButton"></ImageButton></LinearLayout>
+<LinearLayout android:orientation="horizontal" android:layout_height="wrap_content" android:layout_width="fill_parent" android:padding="4sp" android:layout_weight="0.1">
+	<ImageView android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/icon"></ImageView>
+	<TextView android:layout_height="wrap_content" android:text="musikCube" android:layout_width="wrap_content" android:textSize="22sp" android:padding="4sp"></TextView>
+</LinearLayout>
 
-<LinearLayout android:id="@+id/LinearLayout02" android:layout_height="fill_parent" android:layout_width="fill_parent" android:layout_weight="0.5"><ImageButton android:id="@+id/ImageButton01" android:layout_height="fill_parent" android:layout_width="fill_parent" android:layout_weight="0.5" android:layout_margin="5px"></ImageButton><ImageButton android:id="@+id/ImageButton01" android:layout_height="fill_parent" android:layout_width="fill_parent" android:layout_weight="0.5" android:layout_margin="5px"></ImageButton></LinearLayout>
+<LinearLayout android:orientation="vertical" android:layout_height="wrap_content" android:layout_width="fill_parent" android:layout_weight="0.8">
+	<TextView android:id="@+id/TextView01" android:layout_height="wrap_content" android:text="Browse by:" android:layout_width="fill_parent" android:background="@color/headlineColor" android:textSize="16sp" android:padding="4sp"></TextView>
+	<Button android:layout_height="wrap_content" android:layout_width="fill_parent" android:textSize="22sp" android:text="Genre" android:id="@+id/GenresButton"></Button>
+	<Button android:layout_height="wrap_content" android:layout_width="fill_parent" android:textSize="22sp" android:id="@+id/ArtistsButton" android:text="Artist"></Button>
+</LinearLayout>
+
+<TextView android:id="@+id/StatusView" android:text="Status: -" android:layout_width="fill_parent" android:background="@color/headlineColor" android:textSize="16sp" android:padding="4sp" android:layout_height="wrap_content" android:layout_gravity="bottom" android:layout_weight="0.1"></TextView>
 
 
 </LinearLayout>

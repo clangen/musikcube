@@ -5,6 +5,7 @@ package org.musikcube;
 
 import java.util.ArrayList;
 
+import org.musikcube.core.IQuery;
 import org.musikcube.core.ListQuery;
 import org.musikcube.core.IQuery.OnQueryResultListener;
 
@@ -13,7 +14,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -107,7 +107,7 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
 	@Override
 	protected void onCreate(Bundle savedInstanceState){
 		super.onCreate(savedInstanceState);
-		Log.v("musikcube.CategoryList", "start");
+		//Log.v("musikcube.CategoryList", "start");
 		this.setContentView(R.layout.category_list);
 		
 		Intent intent	= this.getIntent();
@@ -136,7 +136,7 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
 		
 	
 		if(this.category!=null){
-			Log.v("musikcube.CategoryList", "category="+this.category);
+			//Log.v("musikcube.CategoryList", "category="+this.category);
 			// Query for data
 			this.query.category	= this.category;
 			
@@ -154,20 +154,20 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
 			library.AddQuery(this.query);
 			
 		}else{
-			Log.v("musikcube.CategoryList", "category=null");
+			//Log.v("musikcube.CategoryList", "category=null");
 			
 		}
 
-		Log.v("musikcube.CategoryList", "onCreate end");
+		//Log.v("musikcube.CategoryList", "onCreate end");
 		
 	}
 	
 	public void OnResults(){
-		Log.i("CategoryList::OnResults","In right thread "+this.query.resultsStrings.size());
+		//Log.i("CategoryList::OnResults","In right thread "+this.query.resultsStrings.size());
 		this.listAdapter.notifyDataSetChanged();
 	}
 
-	public void OnQueryResults() {
+	public void OnQueryResults(IQuery query) {
 		// Call in right thread
 		this.callbackHandler.post(this.callbackRunnable);
 	}
@@ -175,7 +175,7 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
 	@SuppressWarnings("unchecked")
 	@Override
 	protected void onListItemClick(ListView l, View v, int position, long id){
-		Log.i("CategoryList::onListItemClick","clicked on "+position+" "+id);
+		//Log.i("CategoryList::onListItemClick","clicked on "+position+" "+id);
 		
 		// List category
 		if(this.selectedCategory==null){
@@ -216,6 +216,7 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
 	protected void onResume() {
 		super.onResume();
 		org.musikcube.core.Library.GetInstance().AddPointer();
+		startService(new Intent(this, org.musikcube.Service.class));
 	}
 	
 }

@@ -7,6 +7,9 @@ import java.net.*;
 import java.io.*;
 
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.util.*;
 import doep.xml.*;
 
@@ -33,6 +36,13 @@ public class Library implements Runnable{
 	private Socket socket;
 	
 	private Context context;
+	private Integer status	= 0;
+	
+	
+	public static final int STATUS_SHUTDOWN	= 0;
+	public static final int STATUS_CONNECTING	= 1;
+	public static final int STATUS_AUTHENTICATING= 2;
+	public static final int STATUS_CONNECTED	= 3;
 	
 	int connections	= 0;
 	
@@ -50,6 +60,36 @@ public class Library implements Runnable{
 			Library.library	= new org.musikcube.core.Library();
 		}
 		return Library.library;
+	}
+	
+	private OnLibraryStatusListener statusListener	= null;
+	
+	public interface OnLibraryStatusListener{
+		public void OnLibraryStatusChange(int status);
+	}
+
+	public void SetStatusListener(OnLibraryStatusListener statusListener){
+		synchronized(this.status){
+			this.statusListener	= statusListener;
+			if(this.statusListener!=null){
+				this.statusListener.OnLibraryStatusChange(this.status.intValue());
+			}
+		}
+	}
+	
+	private void SetStatus(int status){
+		synchronized(this.status){
+			this.status	= status;
+			if(this.statusListener!=null){
+				this.statusListener.OnLibraryStatusChange(status);
+			}
+		}
+	}
+	
+	public int GetStatus(){
+		synchronized(this.status){
+			return this.status.intValue();
+		}
 	}
 
 	public void AddPointer(){
@@ -80,7 +120,7 @@ public class Library implements Runnable{
 	
 	
 	public void Startup(Context context){
-		if(context!=null){
+//		if(context!=null){
 			this.context	= context;
 			
 			// Startup thread when the application sends the context for the first time
@@ -88,7 +128,7 @@ public class Library implements Runnable{
 			this.running	= true;
 			this.thread.start();
 			
-		}
+//		}
 	}
 	
 	public void Restart(){
@@ -160,13 +200,19 @@ public class Library implements Runnable{
 			// First try to connect
 			try{
 				synchronized (notifier) {
-					this.host		= this.context.getString(R.string.host);
-					int queryPort	= Integer.parseInt(this.context.getString(R.string.queryport));
-					this.httpPort	= Integer.parseInt(this.context.getString(R.string.httpport));
+					SharedPreferences prefs	= PreferenceManager.getDefaultSharedPreferences(this.context);
+					this.host		= prefs.getString("host","");
+					int queryPort	= Integer.parseInt(prefs.getString("queryport","10543"));
+					this.httpPort	= Integer.parseInt(prefs.getString("httpport","10544"));
+					
+					this.SetStatus(STATUS_CONNECTING);
+					
 					this.socket	= new java.net.Socket(host,queryPort);
 				}
 				//Log.v("Library::socket","Successfully connected to "+this.host+":"+this.queryPort);
 				
+				this.SetStatus(STATUS_AUTHENTICATING);
+
 				doep.xml.Reader reader	= new doep.xml.Reader(this.socket.getInputStream());
 				//Log.v("Library::run","Reader started");
 				{
@@ -250,6 +296,8 @@ public class Library implements Runnable{
 				
 			}
 			
+			this.SetStatus(STATUS_SHUTDOWN);
+			
 			synchronized (notifier) {
 				if(this.connections!=0){
 					try{
@@ -259,7 +307,7 @@ public class Library implements Runnable{
 						
 					}
 				}
-			
+/*			
 				while(this.connections==0){
 					try{
 						this.notifier.wait();
@@ -267,7 +315,7 @@ public class Library implements Runnable{
 					catch(Exception x){
 						
 					}
-				}
+				}*/
 /*					int countDown	= 10;
 					while(!this.exit && !this.restart){
 						try{
@@ -278,7 +326,12 @@ public class Library implements Runnable{
 						}
 					}*/
 				
+				Log.i("musikcube::LIB","exit? "+this.exit);
+				
 				if(this.exit){
+					Intent intent	= new Intent(this.context, org.musikcube.Service.class);
+					intent.putExtra("org.musikcube.Service.action", "shutdown");
+					this.context.startService(intent);
 					return;
 				}
 				this.restart	= false;
@@ -293,8 +346,11 @@ public class Library implements Runnable{
 		try{
 			doep.xml.Writer writer	= new doep.xml.Writer(this.socket.getOutputStream());
 			{
-				String username	= this.context.getString(R.string.username);
-				String password	= this.context.getString(R.string.password);
+				SharedPreferences prefs	= PreferenceManager.getDefaultSharedPreferences(this.context);
+				this.host		= prefs.getString("host","");
+				
+				String username	= prefs.getString("username","");
+				String password	= prefs.getString("password","");
 				
 				// Authenticate
 				WriterNode authNode	= writer.ChildNode("authentication");
@@ -303,6 +359,8 @@ public class Library implements Runnable{
 				authNode.End();
 			}
 			
+			this.SetStatus(STATUS_CONNECTED);
+
 			// Wait for queries to send
 			while(this.running){
 				IQuery query	= null;
@@ -314,6 +372,7 @@ public class Library implements Runnable{
 							synchronized(this.notifier){
 								this.shutdownCounter--;
 								if(this.shutdownCounter==0){
+									this.exit	= true;
 									this.Restart();
 								}
 							}
@@ -349,6 +408,8 @@ public class Library implements Runnable{
 			Log.e("Library::WriteThread","E "+x.getMessage());
 		}
 
+		this.SetStatus(STATUS_SHUTDOWN);
+		
 		// Notify the "read"-thread by closing the socket
 		try {
 			this.socket.close();

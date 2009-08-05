@@ -2,13 +2,13 @@
 
 
 <PreferenceCategory android:title="Connection">
-<EditTextPreference android:key="@string/host" android:enabled="true" android:title="Host" android:dialogMessage="Hostname or IP to musikServer" android:summary="Hostname or IP to musikServer" android:dialogTitle="Host" android:selectable="true" android:defaultValue="vallgraven.intermezzon.com"></EditTextPreference>
-<EditTextPreference android:key="@string/queryport" android:enabled="true" android:inputType="number" android:title="Query port" android:dialogMessage="TCP port for querying musikServer" android:summary="TCP port for querying musikServer" android:dialogTitle="Query port" android:defaultValue="10543"></EditTextPreference>
-<EditTextPreference android:key="@string/httpport" android:enabled="true" android:inputType="number" android:title="HTTP port" android:dialogMessage="TCP port for streaming music" android:summary="TCP port for streaming music" android:dialogTitle="HTTP port" android:defaultValue="10544"></EditTextPreference>
+<EditTextPreference android:key="host" android:enabled="true" android:title="Host" android:dialogMessage="Hostname or IP to musikServer" android:summary="Hostname or IP to musikServer" android:dialogTitle="Host" android:selectable="true" android:defaultValue="vallgraven.intermezzon.com"></EditTextPreference>
+<EditTextPreference android:key="queryport" android:enabled="true" android:inputType="number" android:title="Query port" android:dialogMessage="TCP port for querying musikServer" android:summary="TCP port for querying musikServer" android:dialogTitle="Query port" android:defaultValue="10543"></EditTextPreference>
+<EditTextPreference android:key="httpport" android:enabled="true" android:inputType="number" android:title="HTTP port" android:dialogMessage="TCP port for streaming music" android:summary="TCP port for streaming music" android:dialogTitle="HTTP port" android:defaultValue="10544"></EditTextPreference>
 
 </PreferenceCategory>
 <PreferenceCategory android:title="Authentication">
-<EditTextPreference android:key="@string/username" android:enabled="true" android:title="Username" android:summary="Username to identify yourself to the musikServer" android:dialogTitle="Username" android:defaultValue="doep"></EditTextPreference>
-<EditTextPreference android:dialogTitle="Password" android:key="@string/password" android:inputType="textPassword" android:enabled="true" android:title="Password" android:summary="Password on the musikServer" android:defaultValue="doep"></EditTextPreference>
+<EditTextPreference android:key="username" android:enabled="true" android:title="Username" android:summary="Username to identify yourself to the musikServer" android:dialogTitle="Username" android:defaultValue="doep"></EditTextPreference>
+<EditTextPreference android:dialogTitle="Password" android:key="password" android:inputType="textPassword" android:enabled="true" android:title="Password" android:summary="Password on the musikServer" android:defaultValue="doep"></EditTextPreference>
 </PreferenceCategory>
 </PreferenceScreen>

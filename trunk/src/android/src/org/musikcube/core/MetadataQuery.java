@@ -44,6 +44,7 @@ public class MetadataQuery extends IQuery {
 		}
 		tracksNode.content	= tracks;
 		
+		
 		queryNode.End();
 	}
 	
@@ -62,10 +63,13 @@ public class MetadataQuery extends IQuery {
 				mdNode.End();
 				track.metadata.put(mdNode.attributes.get("k"), mdNode.content);
 			}
+			
+			this.resultTracks.add(track);
+			
 		}
 		
 		if(this.listener!=null){
-			this.listener.OnQueryResults();
+			this.listener.OnQueryResults(this);
 		}
 	}
 

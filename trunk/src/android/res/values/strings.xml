@@ -15,4 +15,5 @@
 <string name="password">doep</string>
 <string name="queryport">10543</string>
 <string name="httpport">10544</string>
+<color name="headlineColor">#333333</color>
 </resources>
