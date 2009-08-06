@@ -7,20 +7,25 @@
          android:paddingRight="8dp" android:gravity="center_vertical|center_horizontal">
          
 <LinearLayout android:id="@+id/LinearLayout01" android:layout_weight="0.5" android:layout_width="wrap_content" android:layout_height="wrap_content"  android:orientation="vertical" android:gravity="left">
-<ImageView android:id="@+id/ImageView01" android:layout_width="wrap_content" android:src="@drawable/album" android:layout_marginTop="5sp" android:layout_marginBottom="5sp" android:layout_height="wrap_content"></ImageView>
-<TextView android:id="@+id/TextView04" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Track" android:textSize="24sp"></TextView>
-<TextView android:id="@+id/TextView01" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Genre:"></TextView>
-<TextView android:id="@+id/TextView02" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Album:"></TextView>
-<TextView android:id="@+id/TextView03" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Artists:"></TextView>
+<ImageView android:id="@+id/ImageView01" android:src="@drawable/album" android:layout_marginTop="5sp" android:layout_marginBottom="5sp" android:layout_height="200sp" android:layout_width="200sp" android:scaleType="fitXY"></ImageView>
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="24sp" android:id="@+id/TrackTitle" android:text="Title:"></TextView>
+
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Album:" android:id="@+id/TrackAlbum"></TextView>
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Artists:" android:id="@+id/TrackArtist"></TextView>
 </LinearLayout>
 <LinearLayout android:id="@+id/LinearLayout02"  android:layout_weight="0.5" android:layout_width="wrap_content" android:layout_height="wrap_content"></LinearLayout><LinearLayout android:id="@+id/LinearLayout01" android:layout_width="wrap_content" android:layout_height="wrap_content"  android:orientation="horizontal">
-	<ImageButton android:layout_width="wrap_content" android:layout_height="wrap_content" android:id="@+id/MediaPrev" android:clickable="true" android:src="@drawable/ic_media_previous" android:adjustViewBounds="true"></ImageButton>
-	<ImageButton android:layout_width="wrap_content" android:layout_height="wrap_content" android:adjustViewBounds="true" android:id="@+id/MediaPause" android:src="@drawable/ic_media_pause"></ImageButton>
-	<ImageButton android:layout_width="wrap_content" android:layout_height="wrap_content" android:id="@+id/MediaNext" android:adjustViewBounds="true" android:src="@drawable/ic_media_next"></ImageButton>
+	<ImageButton android:layout_width="wrap_content" android:layout_height="wrap_content" android:id="@+id/MediaPrev" android:clickable="true" android:src="@drawable/ic_media_previous" android:adjustViewBounds="true" android:padding="15sp"></ImageButton>
+	<ImageButton android:layout_width="wrap_content" android:layout_height="wrap_content" android:adjustViewBounds="true" android:id="@+id/MediaPause" android:src="@drawable/ic_media_pause" android:padding="15sp"></ImageButton>
+	<ImageButton android:layout_width="wrap_content" android:layout_height="wrap_content" android:id="@+id/MediaNext" android:adjustViewBounds="true" android:src="@drawable/ic_media_next" android:padding="15sp"></ImageButton>
 </LinearLayout>
 
 
 
 
-<SeekBar android:id="@+id/SeekBar01" android:layout_height="wrap_content" android:layout_width="fill_parent" android:max="1000" android:progress="300" android:secondaryProgress="100"></SeekBar>
+<LinearLayout android:layout_width="fill_parent" android:layout_height="wrap_content">
+	<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0:00" android:id="@+id/TrackPosition" android:typeface="monospace"></TextView>
+	<TextView android:layout_width="fill_parent" android:layout_height="wrap_content" android:text="0:00" android:id="@+id/TrackDuration" android:typeface="monospace" android:gravity="right"></TextView>
+
+</LinearLayout>
+<SeekBar android:layout_height="wrap_content" android:layout_width="fill_parent" android:max="1000" android:progress="300" android:secondaryProgress="100" android:id="@+id/TrackProgress"></SeekBar>
 </LinearLayout>

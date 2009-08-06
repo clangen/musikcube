@@ -17,7 +17,9 @@ public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, 
 	private static final int STATUS_EXIT	= 10;
 	
 	public void run() {
-		this.mediaPlayer	= new MediaPlayer();
+		synchronized(this.lock){
+			this.mediaPlayer	= new MediaPlayer();
+		}
 		try {
 			
 			this.mediaPlayer.setOnCompletionListener(this);
@@ -141,5 +143,13 @@ public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, 
 		return false;
 	}
 	
+	public int GetTrackPosition(){
+		synchronized(this.lock){
+			if(this.mediaPlayer!=null){
+				return this.mediaPlayer.getCurrentPosition();
+			}
+		}
+		return 0;
+	}
 	
 }
