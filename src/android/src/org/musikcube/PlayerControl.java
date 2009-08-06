@@ -197,10 +197,13 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener, On
 		positionView.setText(positionText);
 
 		SeekBar seekBar	= (SeekBar)findViewById(R.id.TrackProgress);
-		if(this.duration==0){
-			seekBar.setProgress(0);
-		}else{
-			seekBar.setProgress(msPosition/this.duration);
+		synchronized (this.lock) {
+			if(this.duration==0){
+				seekBar.setProgress(0);
+			}else{
+				seekBar.setProgress(msPosition/this.duration);
+			}
+			seekBar.setSecondaryProgress(10*Player.GetInstance().GetTrackBuffer());
 		}
 		
 		// Next callback in 0.5 seconds
