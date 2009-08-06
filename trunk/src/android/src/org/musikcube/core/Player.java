@@ -2,6 +2,8 @@ package org.musikcube.core;
 
 import java.util.ArrayList;
 
+import org.musikcube.core.IQuery.OnQueryResultListener;
+
 import android.content.Intent;
 
 public class Player implements TrackPlayer.OnTrackStatusListener{
@@ -13,6 +15,7 @@ public class Player implements TrackPlayer.OnTrackStatusListener{
 	private java.lang.Object lock	= new java.lang.Object();
 	
 	private ArrayList<TrackPlayer> playingTracks	= new ArrayList<TrackPlayer>(); 
+	private TrackPlayer currentPlayer;
 	
 	public android.app.Service service;
 	
@@ -58,9 +61,36 @@ public class Player implements TrackPlayer.OnTrackStatusListener{
 			TrackPlayer	player	= new TrackPlayer(url,true);
 			player.listener	= this;
 			this.playingTracks.add(player);
+			this.currentPlayer	= player;
+			
+			if(this.listener!=null){
+				this.listener.OnTrackUpdate();
+				this.listener.OnTrackBufferUpdate(0);
+				this.listener.OnTrackPositionUpdate(0);
+			}
 		}
 		
 	}
+
+	///////////////////////////////
+	// Inteface for updated track
+	public interface OnTrackUpdateListener{
+		public void OnTrackUpdate();
+		public void OnTrackBufferUpdate(int percent);
+		public void OnTrackPositionUpdate(int secondsPlayed);
+	}
+	protected OnTrackUpdateListener listener	= null;
+	public void SetUpdateListener(OnTrackUpdateListener listener){
+		synchronized(this.lock){
+			this.listener	= listener;
+			if(this.listener!=null){
+				this.listener.OnTrackUpdate();
+				this.listener.OnTrackBufferUpdate(0);
+				this.listener.OnTrackPositionUpdate(0);
+			}
+		}
+	}
+	
 	
 	public void Next(){
 		synchronized(this.lock){
@@ -83,6 +113,7 @@ public class Player implements TrackPlayer.OnTrackStatusListener{
 	
 	private void StopAllTracks(){
 		synchronized(this.lock){
+			this.currentPlayer	= null;
 			int trackCount	= this.playingTracks.size();
 			for(int i=0;i<trackCount;i++){
 				this.playingTracks.get(i).listener	= null;
@@ -122,5 +153,24 @@ public class Player implements TrackPlayer.OnTrackStatusListener{
 		this.service.startService(intent);
 	}
 	
+	public int GetCurrentTrackId(){
+		synchronized(this.lock){
+			if(this.position>=0 && this.position<this.nowPlaying.size()){
+				return this.nowPlaying.get(this.position);
+			}
+			return 0;
+		}
+		
+	}
+	
+	public int GetTrackPosition(){
+		synchronized(this.lock){
+			TrackPlayer player	= this.currentPlayer;
+			if(player!=null){
+				return player.GetTrackPosition();
+			}
+		}
+		return 0;
+	}
 
 }
