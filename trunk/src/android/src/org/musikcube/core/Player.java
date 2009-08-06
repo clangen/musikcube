@@ -172,5 +172,15 @@ public class Player implements TrackPlayer.OnTrackStatusListener{
 		}
 		return 0;
 	}
+	
+	public int GetTrackBuffer(){
+		synchronized(this.lock){
+			TrackPlayer player	= this.currentPlayer;
+			if(player!=null){
+				return player.GetBuffer();
+			}
+		}
+		return 0;
+	}
 
 }

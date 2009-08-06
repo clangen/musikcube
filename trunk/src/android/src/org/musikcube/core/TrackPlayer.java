@@ -2,12 +2,13 @@ package org.musikcube.core;
 
 import android.media.MediaPlayer;
 
-public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener {
+public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener,MediaPlayer.OnBufferingUpdateListener {
 
 	private Thread	thread;
 	private String url;
 	private java.lang.Object lock	= new java.lang.Object();
 	private MediaPlayer mediaPlayer;
+	private int buffer	= 0;
 	
 	private int status = 1;
 	
@@ -24,6 +25,7 @@ public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, 
 			
 			this.mediaPlayer.setOnCompletionListener(this);
 			this.mediaPlayer.setOnErrorListener(this);
+			this.mediaPlayer.setOnBufferingUpdateListener(this);
 			
 			this.mediaPlayer.setDataSource(this.url);
 			this.mediaPlayer.prepare();
@@ -150,6 +152,18 @@ public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, 
 			}
 		}
 		return 0;
+	}
+
+	public void onBufferingUpdate(MediaPlayer mp, int percent) {
+		synchronized(this.lock){
+			this.buffer	= percent;
+		}
+	}
+	
+	public int GetBuffer(){
+		synchronized(this.lock){
+			return this.buffer;
+		}
 	}
 	
 }
