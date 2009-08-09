@@ -10,10 +10,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
-import android.util.*;
 import doep.xml.*;
 
-import org.musikcube.R;
 import org.musikcube.core.IQuery;
 
 /**
@@ -181,7 +179,7 @@ public class Library implements Runnable{
 	}
 	
 	public void WaitForAuthroization(){
-		Log.v("Library::WaitForAuthroization","start");
+//		Log.v("Library::WaitForAuthroization","start");
 		synchronized (notifier) {
 			if(this.authorization.equals("")){
 				try {
@@ -190,7 +188,7 @@ public class Library implements Runnable{
 				}
 			}
 		}
-		Log.v("Library::WaitForAuthroization","end");
+//		Log.v("Library::WaitForAuthroization","end");
 	}
 	
 	public void run(){
@@ -224,11 +222,11 @@ public class Library implements Runnable{
 						authNode.End();	
 						
 						synchronized (notifier) {
-							Log.v("Library::run","Authtag end");
+							//Log.v("Library::run","Authtag end");
 							this.authorization	= authNode.content;
-							Log.v("Library::run","Authorization="+this.authorization);
+							//Log.v("Library::run","Authorization="+this.authorization);
 							this.notifier.notifyAll();
-							Log.v("Library::run","Authorization notify");
+							//Log.v("Library::run","Authorization notify");
 						}
 					}
 				}
@@ -272,10 +270,10 @@ public class Library implements Runnable{
 				//Log.v("Library::socket","NOT Waiting for query results");
 			}
 			catch(IOException x){
-				Log.e("Library::socket","IOE "+x.getMessage());
+				//Log.e("Library::socket","IOE "+x.getMessage());
 			}
 			catch(Exception x){
-				Log.e("Library::socket","E "+x.getMessage());
+				//Log.e("Library::socket","E "+x.getMessage());
 			}
 			
 			synchronized (notifier) {
@@ -326,7 +324,7 @@ public class Library implements Runnable{
 						}
 					}*/
 				
-				Log.i("musikcube::LIB","exit? "+this.exit);
+				//Log.i("musikcube::LIB","exit? "+this.exit);
 				
 				if(this.exit){
 					Intent intent	= new Intent(this.context, org.musikcube.Service.class);
@@ -402,10 +400,10 @@ public class Library implements Runnable{
 			
 		}
 		catch(IOException x){
-			Log.e("Library::WriteThread","IOException error");
+			//Log.e("Library::WriteThread","IOException error");
 		}
 		catch(Exception x){
-			Log.e("Library::WriteThread","E "+x.getMessage());
+			//Log.e("Library::WriteThread","E "+x.getMessage());
 		}
 
 		this.SetStatus(STATUS_SHUTDOWN);
@@ -414,7 +412,7 @@ public class Library implements Runnable{
 		try {
 			this.socket.close();
 		} catch (Exception x) {
-			Log.e("Library::WriteThread","E "+x.getMessage());
+			//Log.e("Library::WriteThread","E "+x.getMessage());
 		}
 		
 		//Log.v("Library::WriteThread","Ended");
@@ -435,13 +433,13 @@ public class Library implements Runnable{
 			this.socket.close();
 		}
 		catch(Exception x){
-			Log.e("Library::Disconnect","Exception error "+x.getMessage());
+			//Log.e("Library::Disconnect","Exception error "+x.getMessage());
 		}
 		try{
 			this.thread.join();
 		}
 		catch(Exception x){
-			Log.e("Library::Disconnect","Exception error "+x.getMessage());
+			//Log.e("Library::Disconnect","Exception error "+x.getMessage());
 		}
 	}
 	

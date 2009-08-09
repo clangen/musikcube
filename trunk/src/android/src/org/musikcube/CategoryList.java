@@ -10,10 +10,12 @@ import org.musikcube.core.ListQuery;
 import org.musikcube.core.IQuery.OnQueryResultListener;
 
 import android.app.ListActivity;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -36,6 +38,7 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
 	
 	private ArrayList<String> selectedCategory; 
 	private ArrayList<Integer> selectedCategoryIds; 
+	private ProgressDialog loadingDialog;
 	
 	// Need handler for callbacks to the UI thread
     final Handler callbackHandler = new Handler();
@@ -50,10 +53,12 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
     public class ResultAdapter extends BaseAdapter{
 
     	protected ListQuery query;
-    	protected Context context;
+    	protected ListActivity context;
+    	private LayoutInflater inflator;
     	
-    	public ResultAdapter(Context context){
+    	public ResultAdapter(ListActivity context){
     		this.context	= context;
+    		this.inflator	= context.getLayoutInflater();
     	}
     	
 		public int getCount() {
@@ -69,20 +74,17 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
 		}
 
 		public View getView(int position, View view, ViewGroup parent) {
-			CategoryItemView item;
 			if(view==null){
-				item = new CategoryItemView(this.context,this.query.resultsStrings.get(position));
-			}else{
-				item	= (CategoryItemView)view;
-				item.SetTitle(this.query.resultsStrings.get(position));
-				
+				view	= inflator.inflate(R.layout.category_list_item, null);
 			}
-			return item;
+
+			((TextView) view.findViewById(R.id.text)).setText(this.query.resultsStrings.get(position)); 
+			return view;
 		}
     	
     }
     
-    private class CategoryItemView extends LinearLayout {
+/*    private class CategoryItemView extends LinearLayout {
         public CategoryItemView(Context context, String title) {
             super(context);
             this.setOrientation(VERTICAL);
@@ -95,16 +97,13 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
 
         }
 
-        /**
-         * Convenience method to set the title of a CategoryItemView
-         */
         public void SetTitle(String title) {
             mTitle.setText(title);
         }
 
         private TextView mTitle;
     }
-    
+ */
     private ResultAdapter listAdapter;
     
 	@Override
@@ -154,7 +153,8 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
 			
 			org.musikcube.core.Library library	= org.musikcube.core.Library.GetInstance();
 			
-			library.AddQuery(this.query);
+			this.loadingDialog = ProgressDialog.show(this, "", "Loading "+this.category+"...", true);
+            library.AddQuery(this.query);
 			
 		}else{
 			//Log.v("musikcube.CategoryList", "category=null");
@@ -167,6 +167,10 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
 	
 	public void OnResults(){
 		//Log.i("CategoryList::OnResults","In right thread "+this.query.resultsStrings.size());
+		if(this.loadingDialog!=null){
+			this.loadingDialog.dismiss();
+			this.loadingDialog	= null;
+		}
 		this.listAdapter.notifyDataSetChanged();
 	}
 
