@@ -1,2 +1,5 @@
-<menu xmlns:android="http://schemas.android.com/apk/res/android"><item android:title="@string/menu_settings" android:id="@+id/context_settings" android:enabled="true" android:visible="true"></item>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<item android:title="@string/menu_browse" android:id="@+id/context_browse" android:enabled="true" android:visible="true"></item>
+<item android:title="@string/menu_controls" android:id="@+id/context_controls" android:enabled="true" android:visible="true"></item>
+<item android:title="@string/menu_settings" android:id="@+id/context_settings" android:enabled="true" android:visible="true"></item>
 </menu>

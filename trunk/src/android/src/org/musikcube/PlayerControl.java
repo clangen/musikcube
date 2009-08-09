@@ -15,6 +15,9 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ImageButton;
@@ -219,4 +222,29 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener, On
 	     seconds+=0.1; updatecount();
 	} }, 100, 100);
 	*/	
+	
+    
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.default_menu, menu);
+        return true;
+    }    
+    
+    public boolean onOptionsItemSelected(MenuItem item) {
+    	//Log.i("MC2.onContextItemSelected","item "+item.getItemId()+" "+R.id.context_settings);
+   	  switch (item.getItemId()) {
+		  case R.id.context_settings:
+	    		startActivity(new Intent(this, org.musikcube.Preferences.class));
+			  return true;
+		  case R.id.context_browse:
+	    		startActivity(new Intent(this, org.musikcube.main.class));
+			  return true;
+		  case R.id.context_controls:
+	    		startActivity(new Intent(this, org.musikcube.PlayerControl.class));
+			  return true;
+    	  default:
+    		  return super.onContextItemSelected(item);
+    	  }
+   	}
+
 }

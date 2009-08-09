@@ -68,10 +68,15 @@ public class main extends Activity implements OnLibraryStatusListener {
     public boolean onOptionsItemSelected(MenuItem item) {
     	//Log.i("MC2.onContextItemSelected","item "+item.getItemId()+" "+R.id.context_settings);
    	  switch (item.getItemId()) {
-    	  case R.id.context_settings:
-    		  	Intent intent	= new Intent(main.this, Preferences.class);
-	      		startActivity(intent);
-    		  return true;
+		  case R.id.context_settings:
+	    		startActivity(new Intent(this, org.musikcube.Preferences.class));
+			  return true;
+		  case R.id.context_browse:
+	    		startActivity(new Intent(this, org.musikcube.main.class));
+			  return true;
+		  case R.id.context_controls:
+	    		startActivity(new Intent(this, org.musikcube.PlayerControl.class));
+			  return true;
     	  default:
     		  return super.onContextItemSelected(item);
     	  }
