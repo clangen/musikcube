@@ -18,6 +18,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -29,7 +30,9 @@ import android.widget.TextView;
  * @author doy
  *
  */
+
 public class TrackList extends ListActivity implements OnQueryResultListener {
+	
 	
 	private ListQuery query	= new ListQuery();
 	public java.util.ArrayList<Integer> trackList	= new java.util.ArrayList<Integer>();	
@@ -48,13 +51,21 @@ public class TrackList extends ListActivity implements OnQueryResultListener {
         }
     };
     
+	static class TrackViewHolder{
+		TextView track;
+		TextView title;
+		TextView artist;
+	}
+	
     public class ResultAdapter extends BaseAdapter{
 
     	protected TrackList trackList;
-    	protected Context context;
+    	protected ListActivity context;
+    	private LayoutInflater inflator;
     	
-    	public ResultAdapter(Context context){
+    	public ResultAdapter(ListActivity context){
     		this.context	= context;
+    		this.inflator	= context.getLayoutInflater();
     	}
     	
 		public int getCount() {
@@ -69,20 +80,54 @@ public class TrackList extends ListActivity implements OnQueryResultListener {
 			return this.trackList.trackList.get(position);
 		}
 
+		
 		public View getView(int position, View view, ViewGroup parent) {
-			TrackItemView item;
+			TrackViewHolder holder;
 			if(view==null){
-				item = new TrackItemView(this.context,this.trackList.GetTrack(position));
-			}else{
-				item	= (TrackItemView)view;
-				item.SetTitles(this.trackList.GetTrack(position));
+				view	= inflator.inflate(R.layout.track_list_item, null);
 				
+				holder	= new TrackViewHolder();
+				holder.title	= (TextView) view.findViewById(R.id.title); 
+				holder.track	= (TextView) view.findViewById(R.id.track); 
+				holder.artist	= (TextView) view.findViewById(R.id.artist); 
+				view.setTag(holder);
+			}else{
+				holder	= (TrackViewHolder)view.getTag();
 			}
-			return item;
+			
+			Track track	= this.trackList.GetTrack(position);
+			if(track==null){
+    			holder.track.setText("");
+    			holder.title.setText("....");
+    			holder.artist.setText("");
+				return view;
+			}
+			
+    		String trackNumber	= track.metadata.get("track");
+    		String title		= track.metadata.get("title");
+    		String artist		= track.metadata.get("visual_artist");
+    		if(trackNumber!=null){
+    			holder.track.setText(trackNumber);
+    		}else{
+    			holder.track.setText("");
+    		}
+    		if(title!=null){
+    			holder.title.setText(title);
+    		}else{
+    			holder.title.setText("");
+    		}
+    		if(artist!=null){
+    			holder.artist.setText(artist);
+    		}else{
+    			holder.artist.setText("");
+    		}
+
+			return view;
+			
 		}
     	
     }
-    
+    /*
     private class TrackItemView extends LinearLayout {
         public TrackItemView(Context context, Track track) {
             super(context);
@@ -96,9 +141,6 @@ public class TrackList extends ListActivity implements OnQueryResultListener {
 
         }
 
-        /**
-         * Convenience method to set the title of a CategoryItemView
-         */
         public void SetTitles(Track track) {
         	if(track!=null){
         		String text	= "";
@@ -121,14 +163,14 @@ public class TrackList extends ListActivity implements OnQueryResultListener {
         }
 
         private TextView mTitle;
-    }
+    }*/
     
     private ResultAdapter listAdapter;
     
 	@Override
 	protected void onCreate(Bundle savedInstanceState){
 		super.onCreate(savedInstanceState);
-		Log.v("musikcube.TrackList", "start");
+		//Log.v("musikcube.TrackList", "start");
 		this.setContentView(R.layout.track_list);
 		
 		Intent intent	= this.getIntent();

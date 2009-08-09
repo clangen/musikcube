@@ -1,19 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
  <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-         android:orientation="vertical"
+         android:orientation="horizontal"
          android:layout_width="fill_parent" 
-         android:layout_height="fill_parent"
-         android:paddingLeft="8dp"
-         android:paddingRight="8dp">
+         android:layout_height="fill_parent">
  
-     <ListView android:id="@id/android:list"
-               android:layout_width="fill_parent" 
-               android:layout_height="fill_parent"
-               android:layout_weight="1"
-               android:drawSelectorOnTop="false"/>
- 
-     <TextView android:id="@id/android:empty"
-               android:layout_width="fill_parent" 
-               android:layout_height="fill_parent"
-               android:text="Loading...."/>
+    <TextView android:id="@+id/text"
+        android:layout_width="0dip"
+        android:layout_weight="1.0"
+        android:layout_height="wrap_content" android:textSize="24sp" android:fadingEdge="horizontal" android:maxLines="1" android:fadingEdgeLength="10sp"/>
+        
  </LinearLayout>

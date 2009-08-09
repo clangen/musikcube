@@ -31,17 +31,6 @@ public class Player implements TrackPlayer.OnTrackStatusListener{
 		}
 		return Player.player;
 	}
-/*
-	private synchronized void StartThread(){
-		synchronized(lock){
-			if(this.running==false){
-				this.thread	= new Thread(this);
-				this.running	= true;
-				this.thread.start();
-			}
-		}
-	}
-	*/
 	
 	public void Play(java.util.ArrayList<Integer> playlist,int position){
 		
