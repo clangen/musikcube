@@ -4,18 +4,20 @@ import android.media.MediaPlayer;
 
 public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener,MediaPlayer.OnBufferingUpdateListener {
 
+	public int trackId	= 0;
 	private Thread	thread;
 	private String url;
 	private java.lang.Object lock	= new java.lang.Object();
 	private MediaPlayer mediaPlayer;
 	private int buffer	= 0;
+	private boolean almostDoneSend	= false;
 	
 	private int status = 1;
 	
-	private static final int STATUS_PREPARED	= 1;
-	private static final int STATUS_PLAYING	= 2;
-	private static final int STATUS_PAUSE = 3;
-	private static final int STATUS_EXIT	= 10;
+	public static final int STATUS_PREPARED	= 1;
+	public static final int STATUS_PLAYING	= 2;
+	public static final int STATUS_PAUSE = 3;
+	public static final int STATUS_EXIT	= 10;
 	
 	public void run() {
 		synchronized(this.lock){
@@ -44,37 +46,50 @@ public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, 
 				this.mediaPlayer.start();
 		
 			synchronized(this.lock){
-				while(this.status==STATUS_PLAYING)
-					this.lock.wait();
+				while(this.status==STATUS_PLAYING){
+					if(!this.almostDoneSend){
+						int duration	= this.mediaPlayer.getDuration();
+						int position	= this.mediaPlayer.getCurrentPosition();
+						if(duration>0 && position+10000>duration){
+							// The track is almost done
+							this.almostDoneSend	= true;
+							if(this.listener!=null){
+								this.listener.OnTrackAlmostDone(this);
+							}
+						}
+					}
+					this.lock.wait(3000);
+					
+				}
 			}
 			
 			this.mediaPlayer.stop();
 		
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			synchronized(this.lock){
-				this.status	= STATUS_EXIT;
-			}
+		}
+		synchronized(this.lock){
+			this.status	= STATUS_EXIT;
 		}
 		
 		this.CallListener();
 		
 	}
 
-	public TrackPlayer(String url){
+	public TrackPlayer(String url,int trackId){
+		this.trackId	= trackId;
 		this.url	= url;
 		this.thread	= new Thread(this);
 		this.thread.start();
 	}
 	
-	public TrackPlayer(String url,boolean start){
+/*	public TrackPlayer(String url,boolean start){
 		this.url	= url;
 		if(start==true){
 			this.status	= STATUS_PLAYING;
 		}
 		this.thread	= new Thread(this);
 		this.thread.start();
-	}
+	}*/
 	
 	private void Exit(){
 		synchronized(this.lock){
@@ -101,15 +116,13 @@ public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, 
 		}
 	}
 	
-	public boolean Play(){
+	public void Play(){
 		synchronized(this.lock){
 			if(this.status==STATUS_PLAYING || this.status==STATUS_PREPARED){
 				this.status = STATUS_PLAYING;
-				this.lock.notifyAll();
-				return true;
 			}
+			this.lock.notifyAll();
 		}
-		return false;
 	}
 	
 	private void CallListener(){
@@ -126,6 +139,7 @@ public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, 
 	
 	public interface OnTrackStatusListener{
 		public void OnTrackStatusUpdate(TrackPlayer trackPlayer,int status);
+		public void OnTrackAlmostDone(TrackPlayer trackPlayer);
 	}
 	
 	public OnTrackStatusListener listener	= null;

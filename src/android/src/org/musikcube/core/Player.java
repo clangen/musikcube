@@ -16,6 +16,7 @@ public class Player implements TrackPlayer.OnTrackStatusListener{
 	
 	private ArrayList<TrackPlayer> playingTracks	= new ArrayList<TrackPlayer>(); 
 	private TrackPlayer currentPlayer;
+	private TrackPlayer nextPlayer;
 	
 	public android.app.Service service;
 	
@@ -52,28 +53,56 @@ public class Player implements TrackPlayer.OnTrackStatusListener{
 		this.Play();
 	}
 	
+	private TrackPlayer PrepareTrack(int position){
+		synchronized(this.lock){
+			if(this.nowPlaying.size()>position && position>=0){
+				int trackId	= this.nowPlaying.get(position);
+				String url	= "http://"+this.library.host+":"+this.library.httpPort+"/track/?track_id="+trackId+"&auth_key="+this.library.authorization;
+				TrackPlayer	player	= new TrackPlayer(url,trackId);
+				return player;
+			}
+		}
+		return null;
+	}
+	
 	public void Play(){
 		this.Startup();
 		this.StopAllTracks();
-		
+
+		TrackPlayer newPlayer	= null;
 		synchronized(this.lock){
-			String url	= "http://"+this.library.host+":"+this.library.httpPort+"/track/?track_id="+this.nowPlaying.get(this.position)+"&auth_key="+this.library.authorization;
-			TrackPlayer	player	= new TrackPlayer(url,true);
-			player.listener	= this;
-			this.playingTracks.add(player);
-			this.currentPlayer	= player;
-			
-			if(this.listener!=null){
-				this.listener.OnTrackUpdate();
-				this.listener.OnTrackBufferUpdate(0);
-				this.listener.OnTrackPositionUpdate(0);
+			if(this.nowPlaying.size()>position && position>=0){
+				int trackId	= this.nowPlaying.get(position); 
+				if(this.nextPlayer!=null){
+					if(this.nextPlayer.trackId==trackId){
+						newPlayer	= this.nextPlayer;
+						this.nextPlayer	= null;
+					}else{
+						// Something wrong here, not the prepared track
+						this.nextPlayer.Stop();
+						this.nextPlayer	= null;
+					}
+				}
+				if(newPlayer==null){
+					newPlayer	= this.PrepareTrack(this.position);
+				}
+				this.playingTracks.add(newPlayer);
+				this.currentPlayer	= newPlayer;
+				newPlayer.listener	= this;
+				newPlayer.Play();
+				
+				if(this.listener!=null){
+					this.listener.OnTrackUpdate();
+					this.listener.OnTrackBufferUpdate(0);
+					this.listener.OnTrackPositionUpdate(0);
+				}
 			}
 		}
 		
 	}
 
 	///////////////////////////////
-	// Inteface for updated track
+	// Interface for updated track
 	public interface OnTrackUpdateListener{
 		public void OnTrackUpdate();
 		public void OnTrackBufferUpdate(int percent);
@@ -147,10 +176,12 @@ public class Player implements TrackPlayer.OnTrackStatusListener{
 	}
 
 	public void OnTrackStatusUpdate(TrackPlayer trackPlayer,int status) {
-//		this.Next();
-		Intent intent	= new Intent(this.service, org.musikcube.Service.class);
+		if(status==TrackPlayer.STATUS_EXIT){
+			this.Next();
+		}
+/*		Intent intent	= new Intent(this.service, org.musikcube.Service.class);
 		intent.putExtra("org.musikcube.Service.action", "next");
-		this.service.startService(intent);
+		this.service.startService(intent);*/
 	}
 	
 	public int GetCurrentTrackId(){
@@ -181,6 +212,14 @@ public class Player implements TrackPlayer.OnTrackStatusListener{
 			}
 		}
 		return 0;
+	}
+
+	public void OnTrackAlmostDone(TrackPlayer trackPlayer) {
+		synchronized(this.lock){
+			if(this.nextPlayer==null){
+				this.nextPlayer	= this.PrepareTrack(this.position+1);
+			}
+		}
 	}
 
 }
