@@ -146,6 +146,10 @@ public class Player implements TrackPlayer.OnTrackStatusListener{
 			if(this.library==null){
 				this.library	= Library.GetInstance();
 				this.library.AddPointer();
+				
+				Intent intent	= new Intent(this.service, org.musikcube.Service.class);
+				intent.putExtra("org.musikcube.Service.action", "player_start");
+				this.service.startService(intent);
 			}
 		}
 	}
@@ -155,22 +159,22 @@ public class Player implements TrackPlayer.OnTrackStatusListener{
 			if(this.library!=null){
 				this.library.RemovePointer();
 				this.library	= null;
-/*				
+				
 				Intent intent	= new Intent(this.service, org.musikcube.Service.class);
-				intent.putExtra("org.musikcube.Service.action", "player ended");
+				intent.putExtra("org.musikcube.Service.action", "player_end");
 				this.service.startService(intent);
-*/
+
 			}
 		}
 	}
 
 	public void OnTrackStatusUpdate(TrackPlayer trackPlayer,int status) {
-		if(status==TrackPlayer.STATUS_EXIT){
+/*		if(status==TrackPlayer.STATUS_EXIT){
 			this.Next();
-		}
-/*		Intent intent	= new Intent(this.service, org.musikcube.Service.class);
+		}*/
+		Intent intent	= new Intent(this.service, org.musikcube.Service.class);
 		intent.putExtra("org.musikcube.Service.action", "next");
-		this.service.startService(intent);*/
+		this.service.startService(intent);
 	}
 	
 	public int GetCurrentTrackId(){

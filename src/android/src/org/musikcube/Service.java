@@ -6,6 +6,10 @@ package org.musikcube;
 import org.musikcube.core.Library;
 import org.musikcube.core.Player;
 
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
 import android.os.IBinder;
 
@@ -77,6 +81,30 @@ public class Service extends android.app.Service {
 		if(action.equals("shutdown")){
 			//Log.i("musikcube::Service","Shutdown");
 			this.stopSelf();
+		}
+		if(action.equals("player_start")){
+			String ns = Context.NOTIFICATION_SERVICE;
+			NotificationManager mNotificationManager = (NotificationManager) getSystemService(ns);			
+			int icon = R.drawable.mc_notify;
+			CharSequence tickerText = "musikCube is playing";
+			long when = System.currentTimeMillis();
+			Notification notification	= new Notification(icon, tickerText, when);
+			Context context = getApplicationContext();
+			CharSequence contentTitle = "musikCube";
+			CharSequence contentText = "is playing!";
+			Intent notificationIntent = new Intent(this, PlayerControl.class);
+			PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+			
+			notification.flags	|= Notification.FLAG_ONGOING_EVENT|Notification.FLAG_NO_CLEAR;
+
+			notification.setLatestEventInfo(context, contentTitle, contentText, contentIntent);		
+			mNotificationManager.notify(1, notification);		
+		}
+		
+		if(action.equals("player_end")){
+			String ns = Context.NOTIFICATION_SERVICE;
+			NotificationManager mNotificationManager = (NotificationManager) getSystemService(ns);
+			mNotificationManager.cancel(1);
 		}
 		
 //		if(intent getIntegerArrayListExtra("org.musikcube.Service.tracklist")!=null){
