@@ -15,6 +15,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -35,6 +36,7 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener, On
 	
     @Override
     public void onCreate(Bundle savedInstanceState) {
+		Log.v("MC2::PC","OnCreate");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.play_control);
         
@@ -43,7 +45,8 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener, On
         ImageButton pauseButton	= (ImageButton)findViewById(R.id.MediaPause);
         pauseButton.setOnClickListener(this.onPauseClick);
         
-    }
+		this.callbackTrackPositionsUpdateHandler.postDelayed(callbackTrackPositionsUpdateRunnable,100);
+   }
 
     private OnClickListener onNextClick = new OnClickListener() {
     	public void onClick(View v){
@@ -114,19 +117,22 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener, On
 	
 	@Override
 	protected void onPause() {
+		Log.v("MC2::PC","OnPause");
 		Player.GetInstance().SetUpdateListener(null);
-		this.timer.cancel();
+		//this.timer.cancel();
 		super.onPause();
 	}
 	@Override
 	protected void onResume() {
+		Log.v("MC2::PC","OnResume");
 		Player.GetInstance().SetUpdateListener(this);
 		super.onResume();
 		
-		this.timer	= new Timer();
-		this.timer.schedule(new TimerTask() { public void run() {
+//		this.timer	= new Timer();
+/*		this.timer.schedule(new TimerTask() { public void run() {
 			callbackTrackPositionsUpdateHandler.post(callbackTrackPositionsUpdateRunnable);
-		} }, 100);
+		} }, 100);*/
+//		this.callbackTrackPositionsUpdateHandler.postDelayed(callbackTrackPositionsUpdateRunnable,100);
 	}
     
 	// Need handler for callbacks to the UI thread
@@ -210,12 +216,13 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener, On
 		}
 		
 		// Next callback in 0.5 seconds
-		this.timer.schedule(new TimerTask() { public void run() {
+		this.callbackTrackPositionsUpdateHandler.postDelayed(callbackTrackPositionsUpdateRunnable,500);
+/*		this.timer.schedule(new TimerTask() { public void run() {
 			callbackTrackPositionsUpdateHandler.post(callbackTrackPositionsUpdateRunnable);
-		} }, 500);
+		} }, 500);*/
 	}
 	
-	private java.util.Timer timer	= new java.util.Timer(); 
+//	private java.util.Timer timer	= new java.util.Timer(); 
 
 	/*
 	 gametimer.schedule(new TimerTask() { public void run() {

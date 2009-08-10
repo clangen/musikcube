@@ -19,6 +19,9 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -127,43 +130,7 @@ public class TrackList extends ListActivity implements OnQueryResultListener {
 		}
     	
     }
-    /*
-    private class TrackItemView extends LinearLayout {
-        public TrackItemView(Context context, Track track) {
-            super(context);
-            this.setOrientation(VERTICAL);
-
-            mTitle = new TextView(context);
-            mTitle.setTextSize(22);
-            this.SetTitles(track);
-            addView(mTitle, new LinearLayout.LayoutParams(
-                    LayoutParams.FILL_PARENT, LayoutParams.WRAP_CONTENT));
-
-        }
-
-        public void SetTitles(Track track) {
-        	if(track!=null){
-        		String text	= "";
-        		String trackNumber	= track.metadata.get("track");
-        		String title	= track.metadata.get("title");
-        		if(trackNumber!=null){
-        			text	+= trackNumber+". ";
-        		}
-        		if(title!=null){
-        			text	+= title;
-        		}
-        		if(!text.equals("")){
-        			mTitle.setText(text);
-        		}else{
-        			mTitle.setText("unknown");
-        		}
-        	}else{
-                mTitle.setText("loading");        		
-        	}
-        }
-
-        private TextView mTitle;
-    }*/
+  
     
     private ResultAdapter listAdapter;
     
@@ -304,5 +271,29 @@ public class TrackList extends ListActivity implements OnQueryResultListener {
 		}
 		return true;
 	}
+
+	
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.default_menu, menu);
+        return true;
+    }    
+    
+    public boolean onOptionsItemSelected(MenuItem item) {
+    	//Log.i("MC2.onContextItemSelected","item "+item.getItemId()+" "+R.id.context_settings);
+   	  switch (item.getItemId()) {
+		  case R.id.context_settings:
+	    		startActivity(new Intent(this, org.musikcube.Preferences.class));
+			  return true;
+		  case R.id.context_browse:
+	    		startActivity(new Intent(this, org.musikcube.main.class));
+			  return true;
+		  case R.id.context_controls:
+	    		startActivity(new Intent(this, org.musikcube.PlayerControl.class));
+			  return true;
+    	  default:
+    		  return super.onContextItemSelected(item);
+    	  }
+   	}
 	
 }
