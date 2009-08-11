@@ -5,6 +5,7 @@ package org.musikcube;
 
 import org.musikcube.core.Library;
 import org.musikcube.core.Player;
+import org.musikcube.core.Track;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -21,8 +22,7 @@ public class Service extends android.app.Service {
 
 	Library library;
 	Player player;
-	
-	int nowPlayingPosition			= 0;
+	boolean showingNotification	= false;
 	
 	/**
 	 * 
@@ -83,15 +83,32 @@ public class Service extends android.app.Service {
 			this.stopSelf();
 		}
 		if(action.equals("player_start")){
+			Track track	= Player.GetInstance().GetCurrentTrack();
+			
+			this.showingNotification	= true;
+			
 			String ns = Context.NOTIFICATION_SERVICE;
 			NotificationManager mNotificationManager = (NotificationManager) getSystemService(ns);			
 			int icon = R.drawable.mc_notify;
-			CharSequence tickerText = "musikCube is playing";
+			CharSequence tickerText = "mC2 playing";
 			long when = System.currentTimeMillis();
 			Notification notification	= new Notification(icon, tickerText, when);
 			Context context = getApplicationContext();
-			CharSequence contentTitle = "musikCube";
-			CharSequence contentText = "is playing!";
+			String contentTitle = "Playing: ";
+			if(track!=null){
+				String trackTitle	= track.metadata.get("title");
+				if(trackTitle!=null){
+					contentTitle	+= trackTitle;
+				}
+			}
+			
+			String contentText = "By: ";
+			if(track!=null){
+				String trackArtist	= track.metadata.get("visual_artist");
+				if(trackArtist!=null){
+					contentText 	+= trackArtist;
+				}
+			}
 			Intent notificationIntent = new Intent(this, PlayerControl.class);
 			PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
 			
@@ -102,11 +119,12 @@ public class Service extends android.app.Service {
 		}
 		
 		if(action.equals("player_end")){
+			this.showingNotification	= false;
 			String ns = Context.NOTIFICATION_SERVICE;
 			NotificationManager mNotificationManager = (NotificationManager) getSystemService(ns);
 			mNotificationManager.cancel(1);
 		}
-		
+						
 //		if(intent getIntegerArrayListExtra("org.musikcube.Service.tracklist")!=null){
 		
 /*		if(intent.getIntegerArrayListExtra("org.musikcube.Service.tracklist")!=null){

@@ -54,7 +54,7 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener, On
         ImageButton pauseButton	= (ImageButton)findViewById(R.id.MediaPause);
         pauseButton.setOnClickListener(this.onPauseClick);
         
-		this.callbackTrackPositionsUpdateHandler.postDelayed(callbackTrackPositionsUpdateRunnable,100);
+		this.callbackTrackPositionsUpdateHandler.postDelayed(callbackTrackPositionsUpdateRunnable,500);
    }
 
     private OnClickListener onNextClick = new OnClickListener() {
@@ -85,7 +85,7 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener, On
 		this.callbackTrackPositionsUpdateHandler.post(this.callbackTrackPositionsUpdateRunnable);
 	}
 	public void OnTrackUpdate() {
-		
+/*		
 		synchronized(lock){
 			int newTrackId	= Player.GetInstance().GetCurrentTrackId();
 			if(newTrackId!=this.trackId){
@@ -106,13 +106,13 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener, On
 					Library.GetInstance().AddQuery(query);
 				}
 			}
-		}
+		}*/
 		this.callbackTrackUpdateHandler.post(this.callbackTrackUpdateRunnable);
 	}
 	
 	
 	public void OnQueryResults(IQuery query) {
-		MetadataQuery mdQuery	= (MetadataQuery)query;
+/*		MetadataQuery mdQuery	= (MetadataQuery)query;
 		if(!mdQuery.resultTracks.isEmpty()){
 			synchronized(lock){
 				Track newTrack	= mdQuery.resultTracks.get(0);
@@ -121,7 +121,7 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener, On
 					this.callbackTrackUpdateHandler.post(this.callbackTrackUpdateRunnable);
 				}
 			}
-		}
+		}*/
 	}
 	
 	@Override
@@ -155,6 +155,12 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener, On
 		int thumbnailId	= 0;
 			
 		synchronized(lock){
+			
+			this.track	= Player.GetInstance().GetCurrentTrack();
+			if(this.track==null){
+				this.track	= new Track();
+			}
+			
 			String thumbnailString		= this.track.metadata.get("thumbnail_id");
 			if(thumbnailString!=null){
 				thumbnailId	= Integer.parseInt(thumbnailString);
@@ -192,7 +198,11 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener, On
 			durationText	+= Integer.toString(seconds);
 			durationView.setText(durationText);
 		}
-		
+
+		// clear image
+		ImageView cover	= (ImageView)findViewById(R.id.AlbumCover);
+		cover.setImageResource(R.drawable.album);
+
 		if(thumbnailId!=0){
 			// Load image
 			Library library	= Library.GetInstance();
@@ -222,7 +232,6 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener, On
 		
 		protected void onPostExecute(Bitmap result){
 			if(result==null){
-				
 			}else{
 				ImageView cover	= (ImageView)findViewById(R.id.AlbumCover);
 				cover.setImageBitmap(result);
