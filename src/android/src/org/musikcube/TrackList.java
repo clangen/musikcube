@@ -94,6 +94,7 @@ public class TrackList extends ListActivity implements OnQueryResultListener {
 				holder.track	= (TextView) view.findViewById(R.id.track); 
 				holder.artist	= (TextView) view.findViewById(R.id.artist); 
 				view.setTag(holder);
+				
 			}else{
 				holder	= (TrackViewHolder)view.getTag();
 			}
@@ -207,12 +208,13 @@ public class TrackList extends ListActivity implements OnQueryResultListener {
 		intent.putExtra("org.musikcube.Service.position", position);
 		intent.putExtra("org.musikcube.Service.action", "playlist");
 		startService(intent);
-
+		
 		Intent intent2	= new Intent(this, PlayerControl.class);
 		startActivity(intent2);
 		
 	}
 
+	
 	
 	@Override
 	protected void onPause() {
