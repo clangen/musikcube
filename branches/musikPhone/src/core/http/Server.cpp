@@ -41,6 +41,7 @@
 #include <core/http/Responder.h>
 #include <core/PluginFactory.h>
 #include <core/http/TrackSender.h>
+#include <core/http/AlbumCoverSender.h>
 
 #include <boost/bind.hpp>
 
@@ -74,6 +75,7 @@ Server::Server(int port)
 
     // Lets always add the TrackSender
     this->requestPlugins["track"]   = PluginPtr(new TrackSender());
+    this->requestPlugins["cover"]   = PluginPtr(new AlbumCoverSender());
 
     // Set some options for the acceptor
     boost::asio::socket_base::reuse_address option(true);

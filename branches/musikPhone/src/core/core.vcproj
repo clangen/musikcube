@@ -696,6 +696,14 @@
 				Name="http"
 				>
 				<File
+					RelativePath=".\http\AlbumCoverSender.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\http\AlbumCoverSender.h"
+					>
+				</File>
+				<File
 					RelativePath=".\http\IRequestParser.h"
 					>
 				</File>
