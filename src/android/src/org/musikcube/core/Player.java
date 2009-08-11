@@ -6,7 +6,7 @@ import org.musikcube.core.IQuery.OnQueryResultListener;
 
 import android.content.Intent;
 
-public class Player implements TrackPlayer.OnTrackStatusListener{
+public class Player implements TrackPlayer.OnTrackStatusListener, OnQueryResultListener{
 
 	private ArrayList<Integer> nowPlaying	= new ArrayList<Integer>();
 	private int position	= 0;
@@ -17,6 +17,7 @@ public class Player implements TrackPlayer.OnTrackStatusListener{
 	private ArrayList<TrackPlayer> playingTracks	= new ArrayList<TrackPlayer>(); 
 	private TrackPlayer currentPlayer;
 	private TrackPlayer nextPlayer;
+	private Track currentTrack	= new Track();
 	
 	public android.app.Service service;
 	
@@ -62,12 +63,14 @@ public class Player implements TrackPlayer.OnTrackStatusListener{
 		synchronized(this.lock){
 			if(this.nowPlaying.size()>position && position>=0){
 				int trackId	= this.nowPlaying.get(position); 
+				
 				if(this.nextPlayer!=null){
 					if(this.nextPlayer.trackId==trackId){
 						newPlayer	= this.nextPlayer;
 						this.nextPlayer	= null;
 					}else{
 						// Something wrong here, not the prepared track
+						this.nextPlayer.listener	= null;
 						this.nextPlayer.Stop();
 						this.nextPlayer	= null;
 					}
@@ -85,6 +88,20 @@ public class Player implements TrackPlayer.OnTrackStatusListener{
 					this.listener.OnTrackBufferUpdate(0);
 					this.listener.OnTrackPositionUpdate(0);
 				}
+
+				// query for metadata
+				MetadataQuery query	= new MetadataQuery();
+				query.requestedMetakeys.add("title");
+				query.requestedMetakeys.add("track");
+				query.requestedMetakeys.add("visual_artist");
+				query.requestedMetakeys.add("album");
+				query.requestedMetakeys.add("year");
+				query.requestedMetakeys.add("thumbnail_id");
+				query.requestedMetakeys.add("duration");
+				query.requestedTracks.add(trackId);
+				query.SetResultListener(this);
+				Library.GetInstance().AddQuery(query);
+				
 			}
 		}
 		
@@ -112,6 +129,7 @@ public class Player implements TrackPlayer.OnTrackStatusListener{
 	
 	public void Next(){
 		synchronized(this.lock){
+			this.currentTrack	= new Track();
 			this.position++;
 			if(this.position>=this.nowPlaying.size()){
 				this.StopAllTracks();
@@ -125,6 +143,11 @@ public class Player implements TrackPlayer.OnTrackStatusListener{
 	public void Stop(){
 		synchronized(this.lock){
 			this.StopAllTracks();
+			if(this.nextPlayer!=null){
+				this.nextPlayer.listener	= null;
+				this.nextPlayer.Stop();
+				this.nextPlayer	= null;
+			}
 			this.End();
 		}
 	}
@@ -156,6 +179,12 @@ public class Player implements TrackPlayer.OnTrackStatusListener{
 	
 	private void End(){
 		synchronized(this.lock){
+			this.currentTrack	= new Track();
+			if(this.listener!=null){
+				this.listener.OnTrackUpdate();
+				this.listener.OnTrackBufferUpdate(0);
+				this.listener.OnTrackPositionUpdate(0);
+			}
 			if(this.library!=null){
 				this.library.RemovePointer();
 				this.library	= null;
@@ -212,6 +241,26 @@ public class Player implements TrackPlayer.OnTrackStatusListener{
 			if(this.nextPlayer==null){
 				this.nextPlayer	= this.PrepareTrack(this.position+1);
 			}
+		}
+	}
+
+	public void OnQueryResults(IQuery query) {
+		MetadataQuery mdQuery = (MetadataQuery)query;
+		synchronized(this.lock){
+			this.currentTrack	= mdQuery.resultTracks.get(0);
+			if(this.listener!=null){
+				this.listener.OnTrackUpdate();
+			}
+		}
+		
+		Intent intent	= new Intent(this.service, org.musikcube.Service.class);
+		intent.putExtra("org.musikcube.Service.action", "player_start");
+		this.service.startService(intent);
+	}
+	
+	public Track GetCurrentTrack(){
+		synchronized(this.lock){
+			return this.currentTrack;
 		}
 	}
 
