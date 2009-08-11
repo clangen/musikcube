@@ -1,5 +1,9 @@
 package org.musikcube;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -13,6 +17,9 @@ import org.musikcube.core.Player.OnTrackUpdateListener;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -21,7 +28,9 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.webkit.DownloadListener;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -119,7 +128,6 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener, On
 	protected void onPause() {
 		Log.v("MC2::PC","OnPause");
 		Player.GetInstance().SetUpdateListener(null);
-		//this.timer.cancel();
 		super.onPause();
 	}
 	@Override
@@ -127,12 +135,6 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener, On
 		Log.v("MC2::PC","OnResume");
 		Player.GetInstance().SetUpdateListener(this);
 		super.onResume();
-		
-//		this.timer	= new Timer();
-/*		this.timer.schedule(new TimerTask() { public void run() {
-			callbackTrackPositionsUpdateHandler.post(callbackTrackPositionsUpdateRunnable);
-		} }, 100);*/
-//		this.callbackTrackPositionsUpdateHandler.postDelayed(callbackTrackPositionsUpdateRunnable,100);
 	}
     
 	// Need handler for callbacks to the UI thread
@@ -149,8 +151,15 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener, On
 		TextView albumView	= (TextView)findViewById(R.id.TrackAlbum);
 		TextView artistView	= (TextView)findViewById(R.id.TrackArtist);
 		TextView durationView	= (TextView)findViewById(R.id.TrackDuration);
+		
+		int thumbnailId	= 0;
 			
 		synchronized(lock){
+			String thumbnailString		= this.track.metadata.get("thumbnail_id");
+			if(thumbnailString!=null){
+				thumbnailId	= Integer.parseInt(thumbnailString);
+			}
+			
 			String title	= this.track.metadata.get("title");
 			if(title==null){
 				titleView.setText("Title:");
@@ -182,6 +191,42 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener, On
 			if(seconds<10){ durationText	+= "0"; }
 			durationText	+= Integer.toString(seconds);
 			durationView.setText(durationText);
+		}
+		
+		if(thumbnailId!=0){
+			// Load image
+			Library library	= Library.GetInstance();
+			new DownloadAlbumCoverTask().execute("http://"+library.host+":"+library.httpPort+"/cover/?cover_id="+thumbnailId);
+		}
+		
+	}
+	
+	private class DownloadAlbumCoverTask extends AsyncTask<String,Integer,Bitmap>{
+
+		protected Bitmap doInBackground(String... params) {
+			try {
+				URL url	= new URL(params[0]);
+		        HttpURLConnection conn= (HttpURLConnection)url.openConnection();
+	            conn.setDoInput(true);
+	            conn.connect();
+	            //int length = conn.getContentLength();
+	            InputStream is	= conn.getInputStream();
+	            Bitmap bm	= BitmapFactory.decodeStream(is);
+	            return bm;
+			} catch (Exception e) {
+				Log.v("mC2:PLAYER","Error "+e.getMessage());
+//				e.printStackTrace();
+				return null;
+			}
+		}
+		
+		protected void onPostExecute(Bitmap result){
+			if(result==null){
+				
+			}else{
+				ImageView cover	= (ImageView)findViewById(R.id.AlbumCover);
+				cover.setImageBitmap(result);
+			}
 		}
 	}
 	
@@ -217,19 +262,8 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener, On
 		
 		// Next callback in 0.5 seconds
 		this.callbackTrackPositionsUpdateHandler.postDelayed(callbackTrackPositionsUpdateRunnable,500);
-/*		this.timer.schedule(new TimerTask() { public void run() {
-			callbackTrackPositionsUpdateHandler.post(callbackTrackPositionsUpdateRunnable);
-		} }, 500);*/
-	}
-	
-//	private java.util.Timer timer	= new java.util.Timer(); 
 
-	/*
-	 gametimer.schedule(new TimerTask() { public void run() {
-	     seconds+=0.1; updatecount();
-	} }, 100, 100);
-	*/	
-	
+	}
     
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
