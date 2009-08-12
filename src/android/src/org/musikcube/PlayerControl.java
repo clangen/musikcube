@@ -1,15 +1,10 @@
 package org.musikcube;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Timer;
-import java.util.TimerTask;
-
 import org.musikcube.core.IQuery;
 import org.musikcube.core.Library;
-import org.musikcube.core.MetadataQuery;
 import org.musikcube.core.Player;
 import org.musikcube.core.Track;
 import org.musikcube.core.IQuery.OnQueryResultListener;
@@ -28,7 +23,6 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.webkit.DownloadListener;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
@@ -36,11 +30,8 @@ import android.widget.TextView;
 
 public class PlayerControl extends Activity implements OnTrackUpdateListener, OnQueryResultListener {
 
-	private int trackId		= 0;
 	private Track track		= new Track();
-	private int buffer	= 0;
 	private int duration = 0;
-	private int secondsPlayed	= 0;
 	private Object lock	= new Object();
 	
     @Override
@@ -74,13 +65,11 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener, On
 
 	public void OnTrackBufferUpdate(int percent) {
 		synchronized(lock){
-			this.buffer	= percent;
 		}
 		this.callbackTrackPositionsUpdateHandler.post(this.callbackTrackPositionsUpdateRunnable);
 	}
 	public void OnTrackPositionUpdate(int secondsPlayed) {
 		synchronized(lock){
-			this.secondsPlayed	= secondsPlayed;
 		}
 		this.callbackTrackPositionsUpdateHandler.post(this.callbackTrackPositionsUpdateRunnable);
 	}
