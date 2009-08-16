@@ -27,36 +27,43 @@ public class main extends Activity implements OnLibraryStatusListener {
         
         Button genreButton	= (Button)findViewById(R.id.GenresButton);
         genreButton.setOnClickListener(this.onGenreClick);
-        
         genreButton.setEnabled(false);
         
         Button artistsButton	= (Button)findViewById(R.id.ArtistsButton);
         artistsButton.setOnClickListener(this.onArtistsClick);
-     
         artistsButton.setEnabled(false);
+        
+        Button bpmButton	= (Button)findViewById(R.id.BPMButton);
+        bpmButton.setOnClickListener(this.onBPMClick);
+        bpmButton.setEnabled(false);
                 
     }
     
     private OnClickListener onGenreClick = new OnClickListener() {
-    	
     	public void onClick(View v){
     		Intent intent	= new Intent(main.this, CategoryList.class);
     		intent.putExtra("org.musikcube.CategoryList.listCategory", "genre,artist,album");
     		startActivity(intent);
-  		
     	}
-
     };
     
     private OnClickListener onArtistsClick = new OnClickListener() {
-    	
     	public void onClick(View v){
     		Intent intent	= new Intent(main.this, CategoryList.class);
     		intent.putExtra("org.musikcube.CategoryList.listCategory", "artist,album");
     		startActivity(intent);
-  		
     	}
+    };
 
+    private OnClickListener onBPMClick = new OnClickListener() {
+    	public void onClick(View v){
+    		Intent intent	= new Intent(main.this, org.musikcube.Service.class);
+    		intent.putExtra("org.musikcube.Service.action", "bpmstart");
+    		startService(intent);
+    		
+    		Intent intent2	= new Intent(main.this, PlayerControl.class);
+    		startActivity(intent2);
+    	}
     };
     
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -114,13 +121,16 @@ public class main extends Activity implements OnLibraryStatusListener {
 		int status	= Library.GetInstance().GetStatus();
         Button genreButton	= (Button)findViewById(R.id.GenresButton);
         Button artistsButton	= (Button)findViewById(R.id.ArtistsButton);
+        Button bpmButton	= (Button)findViewById(R.id.BPMButton);
 
         if(status==Library.STATUS_CONNECTED){
             genreButton.setEnabled(true);
             artistsButton.setEnabled(true);
+            bpmButton.setEnabled(true);
         }else{
             genreButton.setEnabled(false);
             artistsButton.setEnabled(false);
+            bpmButton.setEnabled(false);
         }
         
         TextView statusText	= (TextView)findViewById(R.id.StatusView);
