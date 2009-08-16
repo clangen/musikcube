@@ -4,6 +4,7 @@
 package org.musikcube;
 
 import org.musikcube.core.Library;
+import org.musikcube.core.PaceDetector;
 import org.musikcube.core.Player;
 import org.musikcube.core.Track;
 
@@ -23,6 +24,7 @@ public class Service extends android.app.Service {
 	Library library;
 	Player player;
 	boolean showingNotification	= false;
+	PaceDetector paceDetector;
 	
 	/**
 	 * 
@@ -82,6 +84,13 @@ public class Service extends android.app.Service {
 			//Log.i("musikcube::Service","Shutdown");
 			this.stopSelf();
 		}
+		if(action.equals("bpmstart")){
+			if(this.paceDetector==null){
+				this.paceDetector	= new PaceDetector();
+				this.paceDetector.StartSensor(this);
+			}
+		}
+				
 		if(action.equals("player_start")){
 			Track track	= Player.GetInstance().GetCurrentTrack();
 			
