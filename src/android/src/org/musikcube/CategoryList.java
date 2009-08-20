@@ -36,7 +36,7 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
 	
 	private ArrayList<String> selectedCategory; 
 	private ArrayList<Integer> selectedCategoryIds; 
-	private ProgressDialog loadingDialog;
+//	private ProgressDialog loadingDialog;
 	
 	// Need handler for callbacks to the UI thread
     final Handler callbackHandler = new Handler();
@@ -60,15 +60,28 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
     	}
     	
 		public int getCount() {
-			return this.query.resultsInts.size();
+			int size	= this.query.resultsInts.size();
+			if(size==0){
+				return 0;
+			}else{
+				return size+1;
+			}
 		}
 
 		public Object getItem(int position) {
-			return this.query.resultsInts.get(position);
+			if(position==0){
+				return 0;
+			}else{
+				return this.query.resultsInts.get(position-1);
+			}
 		}
 
 		public long getItemId(int position) {
-			return this.query.resultsInts.get(position);
+			if(position==0){
+				return 0;
+			}else{
+				return this.query.resultsInts.get(position-1);
+			}
 		}
 
 		public View getView(int position, View view, ViewGroup parent) {
@@ -76,32 +89,17 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
 				view	= inflator.inflate(R.layout.category_list_item, null);
 			}
 
-			((TextView) view.findViewById(R.id.text)).setText(this.query.resultsStrings.get(position)); 
+			//
+			if(position==0){
+				((TextView) view.findViewById(R.id.text)).setText("- All -");
+			}else{
+				((TextView) view.findViewById(R.id.text)).setText(this.query.resultsStrings.get(position-1));
+			}
 			return view;
 		}
     	
     }
     
-/*    private class CategoryItemView extends LinearLayout {
-        public CategoryItemView(Context context, String title) {
-            super(context);
-            this.setOrientation(VERTICAL);
-
-            mTitle = new TextView(context);
-            mTitle.setTextSize(22);
-            mTitle.setText(title);
-            addView(mTitle, new LinearLayout.LayoutParams(
-                    LayoutParams.FILL_PARENT, LayoutParams.WRAP_CONTENT));
-
-        }
-
-        public void SetTitle(String title) {
-            mTitle.setText(title);
-        }
-
-        private TextView mTitle;
-    }
- */
     private ResultAdapter listAdapter;
     
 	@Override
@@ -151,7 +149,7 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
 			
 			org.musikcube.core.Library library	= org.musikcube.core.Library.GetInstance();
 			
-			this.loadingDialog = ProgressDialog.show(this, "", "Loading "+this.category+"...", true);
+			//this.loadingDialog = ProgressDialog.show(this, "", "Loading "+this.category+"...", true);
             library.AddQuery(this.query);
 			
 		}else{
@@ -165,10 +163,10 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
 	
 	public void OnResults(){
 		//Log.i("CategoryList::OnResults","In right thread "+this.query.resultsStrings.size());
-		if(this.loadingDialog!=null){
+		/*if(this.loadingDialog!=null){
 			this.loadingDialog.dismiss();
 			this.loadingDialog	= null;
-		}
+		}*/
 		this.listAdapter.notifyDataSetChanged();
 	}
 
@@ -192,8 +190,10 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
 		ArrayList<String> selectedCategory	= (ArrayList<String>)this.selectedCategory.clone(); 
 		ArrayList<Integer> selectedCategoryIds	= (ArrayList<Integer>)this.selectedCategoryIds.clone(); 
 
-		selectedCategory.add(this.category);
-		selectedCategoryIds.add((int)id);
+		if(id!=0){
+			selectedCategory.add(this.category);
+			selectedCategoryIds.add((int)id);
+		}
 		
 		if(this.nextCategoryList.equals("")){
 			// List tracks

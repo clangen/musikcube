@@ -12,8 +12,12 @@
                android:layout_weight="1"
                android:drawSelectorOnTop="false"/>
  
-     <TextView android:id="@id/android:empty"
-               android:layout_width="fill_parent" 
-               android:layout_height="fill_parent"
-               android:text="Loading...."/>
+	<LinearLayout android:id="@id/android:empty"
+	         android:orientation="horizontal"
+	         android:paddingLeft="8dp"
+	         android:paddingRight="8dp" android:layout_width="wrap_content" android:layout_gravity="center_vertical|center_horizontal" android:layout_height="fill_parent">
+		<ProgressBar android:id="@+id/ProgressBar01" android:keepScreenOn="true" android:layout_gravity="center_vertical|center_horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content"></ProgressBar>
+		<TextView android:id="@+id/TextView01" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center_vertical" android:text="Loading..." android:layout_marginLeft="10sp"></TextView>
+	</LinearLayout>
+
  </LinearLayout>

@@ -13,6 +13,7 @@
 	<TextView android:id="@+id/TextView01" android:layout_height="wrap_content" android:text="Browse by:" android:layout_width="fill_parent" android:background="@color/headlineColor" android:textSize="16sp" android:padding="4sp"></TextView>
 	<Button android:layout_height="wrap_content" android:layout_width="fill_parent" android:textSize="22sp" android:text="Genre" android:id="@+id/GenresButton"></Button>
 	<Button android:layout_height="wrap_content" android:layout_width="fill_parent" android:textSize="22sp" android:id="@+id/ArtistsButton" android:text="Artist"></Button>
+	<Button android:layout_height="wrap_content" android:layout_width="fill_parent" android:textSize="22sp" android:id="@+id/YearButton" android:text="Year"></Button>
 	<Button android:layout_height="wrap_content" android:layout_width="fill_parent" android:textSize="22sp" android:id="@+id/BPMButton" android:text="Workout mode"></Button>
 </LinearLayout>
 
