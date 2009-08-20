@@ -28,11 +28,13 @@ import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-public class PlayerControl extends Activity implements OnTrackUpdateListener, OnQueryResultListener {
+public class PlayerControl extends Activity implements OnTrackUpdateListener {
 
 	private Track track		= new Track();
 	private int duration = 0;
 	private Object lock	= new Object();
+	private boolean enable	= false;
+	private int currentAlbumCoverId	= 0;
 	
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -74,56 +76,24 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener, On
 		this.callbackTrackPositionsUpdateHandler.post(this.callbackTrackPositionsUpdateRunnable);
 	}
 	public void OnTrackUpdate() {
-/*		
-		synchronized(lock){
-			int newTrackId	= Player.GetInstance().GetCurrentTrackId();
-			if(newTrackId!=this.trackId){
-				this.trackId	= newTrackId;
-				this.track	= new Track();
-				
-				if(this.trackId!=0){
-					MetadataQuery query	= new MetadataQuery();
-					query.requestedMetakeys.add("title");
-					query.requestedMetakeys.add("track");
-					query.requestedMetakeys.add("visual_artist");
-					query.requestedMetakeys.add("album");
-					query.requestedMetakeys.add("year");
-					query.requestedMetakeys.add("thumbnail_id");
-					query.requestedMetakeys.add("duration");
-					query.requestedTracks.add(this.trackId);
-					query.SetResultListener(this);
-					Library.GetInstance().AddQuery(query);
-				}
-			}
-		}*/
 		this.callbackTrackUpdateHandler.post(this.callbackTrackUpdateRunnable);
-	}
-	
-	
-	public void OnQueryResults(IQuery query) {
-/*		MetadataQuery mdQuery	= (MetadataQuery)query;
-		if(!mdQuery.resultTracks.isEmpty()){
-			synchronized(lock){
-				Track newTrack	= mdQuery.resultTracks.get(0);
-				if(this.trackId==newTrack.id){
-					this.track	= newTrack;
-					this.callbackTrackUpdateHandler.post(this.callbackTrackUpdateRunnable);
-				}
-			}
-		}*/
 	}
 	
 	@Override
 	protected void onPause() {
+		this.enable	= false;
 		Log.v("MC2::PC","OnPause");
 		Player.GetInstance().SetUpdateListener(null);
 		super.onPause();
 	}
 	@Override
 	protected void onResume() {
+		this.enable	= true;
 		Log.v("MC2::PC","OnResume");
 		Player.GetInstance().SetUpdateListener(this);
 		super.onResume();
+		this.OnUpdateTrackPositionsUI();
+		this.OnUpdateTrackUI();
 	}
     
 	// Need handler for callbacks to the UI thread
@@ -189,13 +159,16 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener, On
 		}
 
 		// clear image
-		ImageView cover	= (ImageView)findViewById(R.id.AlbumCover);
-		cover.setImageResource(R.drawable.album);
-
-		if(thumbnailId!=0){
-			// Load image
-			Library library	= Library.GetInstance();
-			new DownloadAlbumCoverTask().execute("http://"+library.host+":"+library.httpPort+"/cover/?cover_id="+thumbnailId);
+		if(this.currentAlbumCoverId!=thumbnailId){
+			this.currentAlbumCoverId=thumbnailId;
+			ImageView cover	= (ImageView)findViewById(R.id.AlbumCover);
+			cover.setImageResource(R.drawable.album);
+	
+			if(thumbnailId!=0){
+				// Load image
+				Library library	= Library.GetInstance();
+				new DownloadAlbumCoverTask().execute("http://"+library.host+":"+library.httpPort+"/cover/?cover_id="+thumbnailId);
+			}
 		}
 		
 	}
@@ -238,24 +211,26 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener, On
     };
     
 	public void OnUpdateTrackPositionsUI() {
-		int msPosition	= Player.GetInstance().GetTrackPosition();
-		int position	= msPosition/1000;
-		int minutes	= (int)Math.floor(position/60);
-		int seconds	= position-minutes*60;
-		String positionText	= Integer.toString(minutes)+":";
-		if(seconds<10){ positionText	+= "0"; }
-		positionText	+= Integer.toString(seconds);
-		TextView positionView	= (TextView)findViewById(R.id.TrackPosition);
-		positionView.setText(positionText);
-
-		SeekBar seekBar	= (SeekBar)findViewById(R.id.TrackProgress);
-		synchronized (this.lock) {
-			if(this.duration==0){
-				seekBar.setProgress(0);
-			}else{
-				seekBar.setProgress(msPosition/this.duration);
+		if(this.enable){
+			int msPosition	= Player.GetInstance().GetTrackPosition();
+			int position	= msPosition/1000;
+			int minutes	= (int)Math.floor(position/60);
+			int seconds	= position-minutes*60;
+			String positionText	= Integer.toString(minutes)+":";
+			if(seconds<10){ positionText	+= "0"; }
+			positionText	+= Integer.toString(seconds);
+			TextView positionView	= (TextView)findViewById(R.id.TrackPosition);
+			positionView.setText(positionText);
+	
+			SeekBar seekBar	= (SeekBar)findViewById(R.id.TrackProgress);
+			synchronized (this.lock) {
+				if(this.duration==0){
+					seekBar.setProgress(0);
+				}else{
+					seekBar.setProgress(msPosition/this.duration);
+				}
+				seekBar.setSecondaryProgress(10*Player.GetInstance().GetTrackBuffer());
 			}
-			seekBar.setSecondaryProgress(10*Player.GetInstance().GetTrackBuffer());
 		}
 		
 		// Next callback in 0.5 seconds

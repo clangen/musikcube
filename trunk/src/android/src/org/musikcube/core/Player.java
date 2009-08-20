@@ -19,6 +19,8 @@ public class Player implements TrackPlayer.OnTrackStatusListener, OnQueryResultL
 	private TrackPlayer nextPlayer;
 	private Track currentTrack	= new Track();
 	
+	public boolean playWhenPrepared	= false;
+	
 	public android.app.Service service;
 	
 	public void run() {
@@ -41,6 +43,27 @@ public class Player implements TrackPlayer.OnTrackStatusListener, OnQueryResultL
 		}
 
 		this.Play();
+	}
+
+	public void Append(java.util.ArrayList<Integer> playlist){
+		
+		synchronized(this.lock){
+			this.nowPlaying.addAll(playlist);
+		}
+	}
+	
+	public void PlayWhenPrepared(java.util.ArrayList<Integer> playlist,int position){
+		synchronized(this.lock){
+			this.nowPlaying	= playlist;
+			this.position	= position;
+			if(this.nextPlayer!=null){
+				this.nextPlayer.SetListener(null);
+				this.nextPlayer.Stop();
+			}
+			this.playWhenPrepared	= true;
+			this.nextPlayer	= this.PrepareTrack(this.position);
+			this.nextPlayer.SetListener(this);
+		}
 	}
 	
 	private TrackPlayer PrepareTrack(int position){
@@ -70,7 +93,7 @@ public class Player implements TrackPlayer.OnTrackStatusListener, OnQueryResultL
 						this.nextPlayer	= null;
 					}else{
 						// Something wrong here, not the prepared track
-						this.nextPlayer.listener	= null;
+						this.nextPlayer.SetListener(null);
 						this.nextPlayer.Stop();
 						this.nextPlayer	= null;
 					}
@@ -80,7 +103,7 @@ public class Player implements TrackPlayer.OnTrackStatusListener, OnQueryResultL
 				}
 				this.playingTracks.add(newPlayer);
 				this.currentPlayer	= newPlayer;
-				newPlayer.listener	= this;
+				newPlayer.SetListener(this);
 				newPlayer.Play();
 				
 				if(this.listener!=null){
@@ -114,7 +137,9 @@ public class Player implements TrackPlayer.OnTrackStatusListener, OnQueryResultL
 		public void OnTrackBufferUpdate(int percent);
 		public void OnTrackPositionUpdate(int secondsPlayed);
 	}
+	
 	protected OnTrackUpdateListener listener	= null;
+	
 	public void SetUpdateListener(OnTrackUpdateListener listener){
 		synchronized(this.lock){
 			this.listener	= listener;
@@ -144,7 +169,7 @@ public class Player implements TrackPlayer.OnTrackStatusListener, OnQueryResultL
 		synchronized(this.lock){
 			this.StopAllTracks();
 			if(this.nextPlayer!=null){
-				this.nextPlayer.listener	= null;
+				this.nextPlayer.SetListener(null);
 				this.nextPlayer.Stop();
 				this.nextPlayer	= null;
 			}
@@ -157,7 +182,7 @@ public class Player implements TrackPlayer.OnTrackStatusListener, OnQueryResultL
 			this.currentPlayer	= null;
 			int trackCount	= this.playingTracks.size();
 			for(int i=0;i<trackCount;i++){
-				this.playingTracks.get(i).listener	= null;
+				this.playingTracks.get(i).SetListener(null);
 				this.playingTracks.get(i).Stop();
 			}
 			this.playingTracks.clear();
@@ -261,6 +286,15 @@ public class Player implements TrackPlayer.OnTrackStatusListener, OnQueryResultL
 	public Track GetCurrentTrack(){
 		synchronized(this.lock){
 			return this.currentTrack;
+		}
+	}
+
+	public void OnTrackPrepared(TrackPlayer trackPlayer) {
+		synchronized(this.lock){
+			if(this.playWhenPrepared){
+				this.playWhenPrepared	= false;
+				this.Play();
+			}
 		}
 	}
 

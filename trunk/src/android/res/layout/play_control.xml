@@ -8,10 +8,10 @@
          
 <ImageView android:src="@drawable/album" android:layout_marginTop="5sp" android:layout_marginBottom="5sp" android:layout_height="200sp" android:layout_width="200sp" android:scaleType="fitXY" android:id="@+id/AlbumCover"></ImageView><LinearLayout android:id="@+id/LinearLayout01" android:layout_weight="0.5" android:layout_height="wrap_content"  android:orientation="vertical" android:gravity="left" android:layout_width="200sp">
 
-<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="24sp" android:id="@+id/TrackTitle" android:text="Title:"></TextView>
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="24sp" android:id="@+id/TrackTitle" android:text="Title:" android:lines="1"></TextView>
 
-<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Album:" android:id="@+id/TrackAlbum"></TextView>
-<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Artists:" android:id="@+id/TrackArtist"></TextView>
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Album:" android:id="@+id/TrackAlbum" android:lines="1"></TextView>
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Artists:" android:id="@+id/TrackArtist" android:lines="1"></TextView>
 </LinearLayout>
 <LinearLayout android:id="@+id/LinearLayout02"  android:layout_weight="0.5" android:layout_width="wrap_content" android:layout_height="wrap_content"></LinearLayout><LinearLayout android:id="@+id/LinearLayout01" android:layout_width="wrap_content" android:layout_height="wrap_content"  android:orientation="horizontal">
 	<ImageButton android:layout_width="wrap_content" android:layout_height="wrap_content" android:id="@+id/MediaPrev" android:src="@drawable/ic_media_previous" android:adjustViewBounds="true" android:padding="15sp"></ImageButton>
@@ -27,5 +27,5 @@
 	<TextView android:layout_width="fill_parent" android:layout_height="wrap_content" android:text="0:00" android:id="@+id/TrackDuration" android:typeface="monospace" android:gravity="right"></TextView>
 
 </LinearLayout>
-<SeekBar android:layout_height="wrap_content" android:layout_width="fill_parent" android:max="1000" android:progress="300" android:secondaryProgress="100" android:id="@+id/TrackProgress"></SeekBar>
+<SeekBar android:layout_height="wrap_content" android:layout_width="fill_parent" android:max="1000" android:id="@+id/TrackProgress" android:progress="0" android:secondaryProgress="0"></SeekBar>
 </LinearLayout>

@@ -68,6 +68,16 @@ public class Service extends android.app.Service {
 			Player player	= Player.GetInstance();
 			player.Play(intent.getIntegerArrayListExtra("org.musikcube.Service.tracklist"), intent.getIntExtra("org.musikcube.Service.position", 0));
 		}
+		if(action.equals("appendlist")){
+			Player player	= Player.GetInstance();
+			player.Append(intent.getIntegerArrayListExtra("org.musikcube.Service.tracklist"));
+		}
+		
+		if(action.equals("playlist_prepare")){
+			Player player	= Player.GetInstance();
+			player.PlayWhenPrepared(intent.getIntegerArrayListExtra("org.musikcube.Service.tracklist"), intent.getIntExtra("org.musikcube.Service.position", 0));
+		}
+				
 		if(action.equals("next")){
 			Player player	= Player.GetInstance();
 			player.Next();
@@ -88,6 +98,11 @@ public class Service extends android.app.Service {
 			if(this.paceDetector==null){
 				this.paceDetector	= new PaceDetector();
 				this.paceDetector.StartSensor(this);
+			}
+		}
+		if(action.equals("bpmstop")){
+			if(this.paceDetector!=null){
+				this.paceDetector.StopSensor(this);
 			}
 		}
 				

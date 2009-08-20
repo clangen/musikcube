@@ -1,6 +1,7 @@
 package org.musikcube.core;
 
 import android.media.MediaPlayer;
+import android.util.Log;
 
 public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener,MediaPlayer.OnBufferingUpdateListener {
 
@@ -20,6 +21,7 @@ public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, 
 	public static final int STATUS_EXIT	= 10;
 	
 	public void run() {
+		Log.v("mC2::TrackPlayer", "Thread started "+this.url);
 		synchronized(this.lock){
 			this.mediaPlayer	= new MediaPlayer();
 		}
@@ -30,9 +32,15 @@ public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, 
 			this.mediaPlayer.setOnBufferingUpdateListener(this);
 			
 			this.mediaPlayer.setDataSource(this.url);
+			Log.v("mC2::TrackPlayer", "Preparing "+this.url);
 			this.mediaPlayer.prepare();
+			Log.v("mC2::TrackPlayer", "Prepared "+this.url);
 			
 			synchronized(this.lock){
+				if(this.listener!=null){
+					this.listener.OnTrackPrepared(this);
+				}
+				
 				while(this.status==STATUS_PREPARED)
 					this.lock.wait();
 			}
@@ -42,6 +50,8 @@ public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, 
 				currentStatus	= this.status;
 			}
 
+			Log.v("mC2::TrackPlayer", "Start? "+this.url);
+			
 			if(currentStatus==STATUS_PLAYING)
 				this.mediaPlayer.start();
 		
@@ -54,6 +64,7 @@ public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, 
 							// The track is almost done
 							this.almostDoneSend	= true;
 							if(this.listener!=null){
+								Log.v("mC2::TrackPlayer", "OnTrackAlmostDone "+this.url);
 								this.listener.OnTrackAlmostDone(this);
 							}
 						}
@@ -62,16 +73,23 @@ public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, 
 					
 				}
 			}
+			Log.v("mC2::TrackPlayer", "Stopping "+this.url);
 			
 			this.mediaPlayer.stop();
+			this.mediaPlayer.release();
+			synchronized(this.lock){
+				this.mediaPlayer	= null;
+			}
 		
 		} catch (Exception e) {
 		}
 		synchronized(this.lock){
 			this.status	= STATUS_EXIT;
 		}
+		Log.v("mC2::TrackPlayer", "ExitCallbacks "+this.url);
 		
 		this.CallListener();
+		Log.v("mC2::TrackPlayer", "END "+this.url);
 		
 	}
 
@@ -126,8 +144,10 @@ public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, 
 	}
 	
 	private void CallListener(){
-		if(this.listener!=null){
-			this.listener.OnTrackStatusUpdate(this,this.status);
+		synchronized(this.lock){
+			if(this.listener!=null){
+				this.listener.OnTrackStatusUpdate(this,this.status);
+			}
 		}
 	}
 
@@ -138,11 +158,18 @@ public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, 
 	}
 	
 	public interface OnTrackStatusListener{
+		public void OnTrackPrepared(TrackPlayer trackPlayer);
 		public void OnTrackStatusUpdate(TrackPlayer trackPlayer,int status);
 		public void OnTrackAlmostDone(TrackPlayer trackPlayer);
 	}
 	
-	public OnTrackStatusListener listener	= null;
+	private OnTrackStatusListener listener	= null;
+	
+	public void SetListener(OnTrackStatusListener listener){
+		synchronized(this.lock){
+			this.listener	= listener;
+		}
+	}
 
 	public void onCompletion(MediaPlayer mp) {
 		synchronized(this.lock){

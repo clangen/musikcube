@@ -33,6 +33,10 @@ public class main extends Activity implements OnLibraryStatusListener {
         artistsButton.setOnClickListener(this.onArtistsClick);
         artistsButton.setEnabled(false);
         
+        Button yearButton	= (Button)findViewById(R.id.YearButton);
+        yearButton.setOnClickListener(this.onYearClick);
+        yearButton.setEnabled(false);
+        
         Button bpmButton	= (Button)findViewById(R.id.BPMButton);
         bpmButton.setOnClickListener(this.onBPMClick);
         bpmButton.setEnabled(false);
@@ -55,6 +59,14 @@ public class main extends Activity implements OnLibraryStatusListener {
     	}
     };
 
+    private OnClickListener onYearClick = new OnClickListener() {
+    	public void onClick(View v){
+    		Intent intent	= new Intent(main.this, CategoryList.class);
+    		intent.putExtra("org.musikcube.CategoryList.listCategory", "year,artist,album");
+    		startActivity(intent);
+    	}
+    };
+    
     private OnClickListener onBPMClick = new OnClickListener() {
     	public void onClick(View v){
     		Intent intent	= new Intent(main.this, org.musikcube.Service.class);
@@ -121,15 +133,18 @@ public class main extends Activity implements OnLibraryStatusListener {
 		int status	= Library.GetInstance().GetStatus();
         Button genreButton	= (Button)findViewById(R.id.GenresButton);
         Button artistsButton	= (Button)findViewById(R.id.ArtistsButton);
+        Button yearButton	= (Button)findViewById(R.id.YearButton);
         Button bpmButton	= (Button)findViewById(R.id.BPMButton);
 
         if(status==Library.STATUS_CONNECTED){
             genreButton.setEnabled(true);
             artistsButton.setEnabled(true);
-            bpmButton.setEnabled(true);
+            yearButton.setEnabled(true);
+//            bpmButton.setEnabled(true);
         }else{
             genreButton.setEnabled(false);
             artistsButton.setEnabled(false);
+            yearButton.setEnabled(false);
             bpmButton.setEnabled(false);
         }
         

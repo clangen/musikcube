@@ -16,15 +16,18 @@ import android.app.ListActivity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.AdapterView.AdapterContextMenuInfo;
 
 /**
  * @author doy
@@ -40,6 +43,11 @@ public class TrackList extends ListActivity implements OnQueryResultListener {
 	public java.util.TreeSet<Integer> waitingTracks = new java.util.TreeSet<Integer>();	
 	
 	private java.lang.Object lock 	= new java.lang.Object();
+	
+	final static public int PLAY_THIS_ID	= 0;
+	final static public int ADD_THIS_ID	= 1;
+	final static public int ADD_ALL_ID	= 2;
+
 	
 	// Need handler for callbacks to the UI thread
     final Handler callbackHandler = new Handler();
@@ -164,6 +172,8 @@ public class TrackList extends ListActivity implements OnQueryResultListener {
 		this.query.listTracks	= true;
 		library.AddQuery(this.query);
 		
+		
+		this.registerForContextMenu(this.getListView());
 	}
 	
 	public void OnResults(){
@@ -294,5 +304,46 @@ public class TrackList extends ListActivity implements OnQueryResultListener {
     		  return super.onContextItemSelected(item);
     	  }
    	}
+
+	@Override
+	public boolean onContextItemSelected(MenuItem item) {
+		AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
+		java.util.ArrayList<Integer> trackList	= new java.util.ArrayList<Integer>();
+		Intent intent	= new Intent(this, org.musikcube.Service.class);
+		intent.putExtra("org.musikcube.Service.position", 0);
+		switch (item.getItemId()) {
+			case PLAY_THIS_ID:
+				trackList.add((int)info.id);
+				intent.putExtra("org.musikcube.Service.tracklist", trackList);
+				intent.putExtra("org.musikcube.Service.action", "playlist");
+				startService(intent);
+				Intent intent2	= new Intent(this, PlayerControl.class);
+				startActivity(intent2);
+				return true;
+			case ADD_THIS_ID:
+				trackList.add((int)info.id);
+				intent.putExtra("org.musikcube.Service.tracklist", trackList);
+				intent.putExtra("org.musikcube.Service.action", "appendlist");
+				startService(intent);
+				return true;
+			case ADD_ALL_ID:
+				trackList.add((int)info.id);
+				intent.putExtra("org.musikcube.Service.tracklist", this.trackList);
+				intent.putExtra("org.musikcube.Service.action", "appendlist");
+				startService(intent);
+				return true;
+			default:
+				return super.onContextItemSelected(item);
+		}
+	}
+
+	@Override
+	public void onCreateContextMenu(ContextMenu menu, View v,
+			ContextMenuInfo menuInfo) {
+		super.onCreateContextMenu(menu, v, menuInfo);
+		menu.add(0, PLAY_THIS_ID, 0, "Play this track");
+		menu.add(0, ADD_THIS_ID, 0,  "Add this to current playlist");
+		menu.add(0, ADD_ALL_ID, 0,  "Add all to current playlist");
+	}
 	
 }

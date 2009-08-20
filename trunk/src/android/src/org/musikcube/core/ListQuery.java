@@ -6,8 +6,8 @@ import doep.xml.WriterNode;
 public class ListQuery extends IQuery {
 	
 	public String category		= "";
-	private java.util.ArrayList<String> selectionStrings	= new java.util.ArrayList<String>(); 
-	private java.util.ArrayList<Integer> selectionInts 		= new java.util.ArrayList<Integer>(); 
+	protected java.util.ArrayList<String> selectionStrings	= new java.util.ArrayList<String>(); 
+	protected java.util.ArrayList<Integer> selectionInts 		= new java.util.ArrayList<Integer>(); 
 	public java.util.ArrayList<String> resultsStrings		= new java.util.ArrayList<String>(); 
 	public java.util.ArrayList<Integer> resultsInts			= new java.util.ArrayList<Integer>(); 
 	public java.util.ArrayList<Integer> trackList			= new java.util.ArrayList<Integer>(); 
