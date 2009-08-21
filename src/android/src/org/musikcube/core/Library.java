@@ -103,6 +103,7 @@ public class Library implements Runnable{
 			}else{
 				this.shutdownCounter	= -1;
 			}
+			this.notifier.notifyAll();
 		}
 	}
 	public void RemovePointer(){
@@ -113,27 +114,24 @@ public class Library implements Runnable{
 			}else{
 				this.shutdownCounter	= -1;
 			}
+			this.notifier.notifyAll();
 		}
 	}
 	
 	
 	public void Startup(Context context){
-//		if(context!=null){
-			this.context	= context;
-			
-			// Startup thread when the application sends the context for the first time
-			this.thread	= new Thread(this);
-			this.running	= true;
-			this.thread.start();
-			
-//		}
+		this.context	= context;
+		
+		// Startup thread when the application sends the context for the first time
+		this.thread	= new Thread(this);
+		this.running	= true;
+		this.thread.start();
 	}
 	
 	public void Restart(){
 		synchronized(this.notifier){
 			this.running	= false;
 			this.restart	= true;
-//			this.Startup(null);
 			if(this.socket!=null){
 				try {
 					this.socket.shutdownInput();
@@ -175,7 +173,6 @@ public class Library implements Runnable{
 	private WriterThreadHelper writerThreadHelper;
 	  
 	protected Library(){
-//		this.writerThreadHelper		= new WriterThreadHelper(this);
 	}
 	
 	public void WaitForAuthroization(){
@@ -305,26 +302,6 @@ public class Library implements Runnable{
 						
 					}
 				}
-/*			
-				while(this.connections==0){
-					try{
-						this.notifier.wait();
-					}
-					catch(Exception x){
-						
-					}
-				}*/
-/*					int countDown	= 10;
-					while(!this.exit && !this.restart){
-						try{
-							this.notifier.wait(2000);
-						}
-						catch(Exception x){
-							
-						}
-					}*/
-				
-				//Log.i("musikcube::LIB","exit? "+this.exit);
 				
 				if(this.exit){
 					Intent intent	= new Intent(this.context, org.musikcube.Service.class);
@@ -393,6 +370,11 @@ public class Library implements Runnable{
 					}
 					// Send the query
 					query.SendQuery(writer);
+				}else{
+					// Send a ping
+					WriterNode pingNode	= writer.ChildNode("ping");
+					pingNode.End();
+					
 				}
 				
 			}
@@ -448,6 +430,16 @@ public class Library implements Runnable{
 			this.sendQueryQueue.addLast(query);
 			this.sendQueryQueue.notifyAll();
 		}
+	}
+	
+	public String GetTrackURL(int trackId){
+		synchronized (notifier) {
+			if(this.status==STATUS_CONNECTED){
+				String trackURL	= "http://"+this.host+":"+this.httpPort+"/track/?track_id="+trackId+"&auth_key="+this.authorization;
+				return trackURL;
+			}
+		}
+		return null;
 	}
 	
 }

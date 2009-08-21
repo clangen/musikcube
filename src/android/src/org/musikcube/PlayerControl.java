@@ -46,6 +46,8 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener {
         nextButton.setOnClickListener(this.onNextClick);
         ImageButton pauseButton	= (ImageButton)findViewById(R.id.MediaPause);
         pauseButton.setOnClickListener(this.onPauseClick);
+        ImageButton prevButton	= (ImageButton)findViewById(R.id.MediaPrev);
+        prevButton.setOnClickListener(this.onPrevClick);
         
 		this.callbackTrackPositionsUpdateHandler.postDelayed(callbackTrackPositionsUpdateRunnable,500);
    }
@@ -54,6 +56,13 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener {
     	public void onClick(View v){
     		Intent intent	= new Intent(PlayerControl.this, org.musikcube.Service.class);
     		intent.putExtra("org.musikcube.Service.action", "next");
+    		startService(intent);
+    	}
+    };
+    private OnClickListener onPrevClick = new OnClickListener() {
+    	public void onClick(View v){
+    		Intent intent	= new Intent(PlayerControl.this, org.musikcube.Service.class);
+    		intent.putExtra("org.musikcube.Service.action", "prev");
     		startService(intent);
     	}
     };
