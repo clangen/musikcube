@@ -70,8 +70,8 @@ public class Player implements TrackPlayer.OnTrackStatusListener, OnQueryResultL
 		synchronized(this.lock){
 			if(this.nowPlaying.size()>position && position>=0){
 				int trackId	= this.nowPlaying.get(position);
-				String url	= "http://"+this.library.host+":"+this.library.httpPort+"/track/?track_id="+trackId+"&auth_key="+this.library.authorization;
-				TrackPlayer	player	= new TrackPlayer(url,trackId);
+				//String url	= "http://"+this.library.host+":"+this.library.httpPort+"/track/?track_id="+trackId+"&auth_key="+this.library.authorization;
+				TrackPlayer	player	= new TrackPlayer(trackId);
 				return player;
 			}
 		}
@@ -156,6 +156,23 @@ public class Player implements TrackPlayer.OnTrackStatusListener, OnQueryResultL
 		synchronized(this.lock){
 			this.currentTrack	= new Track();
 			this.position++;
+			if(this.position>=this.nowPlaying.size()){
+				this.StopAllTracks();
+				this.End();
+			}else{
+				this.Play();
+			}
+		}
+	}
+	
+	public void Prev(){
+		synchronized(this.lock){
+			this.currentTrack	= new Track();
+			this.position--;
+			if(this.position<0){
+				this.position	= 0;
+			}
+			
 			if(this.position>=this.nowPlaying.size()){
 				this.StopAllTracks();
 				this.End();

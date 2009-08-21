@@ -82,6 +82,10 @@ public class Service extends android.app.Service {
 			Player player	= Player.GetInstance();
 			player.Next();
 		}
+		if(action.equals("prev")){
+			Player player	= Player.GetInstance();
+			player.Prev();
+		}
 		if(action.equals("stop")){
 			Player player	= Player.GetInstance();
 			player.Stop();
