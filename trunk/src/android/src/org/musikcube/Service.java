@@ -14,6 +14,10 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.os.IBinder;
+import android.telephony.PhoneStateListener;
+import android.telephony.TelephonyManager;
+import android.view.View;
+import android.view.View.OnClickListener;
 
 /**
  * @author doy
@@ -49,7 +53,24 @@ public class Service extends android.app.Service {
 		this.player.service	= this;
 		this.library	= org.musikcube.core.Library.GetInstance();
 		this.library.Startup(this);
+		
+		TelephonyManager telephony = (TelephonyManager)this.getSystemService(Context.TELEPHONY_SERVICE);
+		telephony.listen(phoneStateListener,PhoneStateListener.LISTEN_CALL_STATE);		
 	}
+	
+    private PhoneStateListener phoneStateListener = new PhoneStateListener() {
+    	public void onCallStateChanged(int state,String incomingNumber){
+    	    switch(state)
+    	    {
+    	     case TelephonyManager.CALL_STATE_RINGING:
+	    		Intent intent	= new Intent(Service.this, org.musikcube.Service.class);
+	    		intent.putExtra("org.musikcube.Service.action", "stop");
+	    		startService(intent);
+    	     break;
+    	    }
+    	}
+    };
+	
 
 	/* (non-Javadoc)
 	 * @see android.app.Service#onStart(android.content.Intent, int)

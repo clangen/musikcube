@@ -206,7 +206,6 @@ public class Library implements Runnable{
 				}
 				//Log.v("Library::socket","Successfully connected to "+this.host+":"+this.queryPort);
 				
-				this.SetStatus(STATUS_AUTHENTICATING);
 
 				doep.xml.Reader reader	= new doep.xml.Reader(this.socket.getInputStream());
 				//Log.v("Library::run","Reader started");
@@ -318,6 +317,8 @@ public class Library implements Runnable{
 	
 	public void WriteThread(WriterThreadHelper thread){
 		//Log.v("Library::WriteThread","Started");
+		this.SetStatus(STATUS_AUTHENTICATING);
+		
 		try{
 			doep.xml.Writer writer	= new doep.xml.Writer(this.socket.getOutputStream());
 			{
