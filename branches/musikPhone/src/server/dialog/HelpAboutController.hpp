@@ -2,7 +2,9 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, mC2 team
+// The following are Copyright © 2008, mC2 Team
+//
+// Sources and Binaries of: mC2, win32cpp
 //
 // All rights reserved.
 //
@@ -39,58 +41,33 @@
 //////////////////////////////////////////////////////////////////////////////
 // Forward declare
 namespace win32cpp{
-    class TopLevelWindow;
-    class Label;
-    class Frame;
+    class Window;
+    class Button;
 }
-namespace musik { namespace server {
-    class MainWindowController;
-    class ConnectedUsersListController;
-} }
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/Server.h>
-#include <win32cpp/Timer.hpp>
-#include <boost/shared_ptr.hpp>
-#include <server/MainMenuController.hpp>
+namespace musik { namespace server { namespace dialog {
 
 //////////////////////////////////////////////////////////////////////////////
 
-using namespace win32cpp;
-
-namespace musik { namespace server {
-
+class HelpAboutView;   // forward
 //////////////////////////////////////////////////////////////////////////////
 
-class ConnectedUsersController : public EventHandler
+class HelpAboutController : public win32cpp::EventHandler 
 {
-    public:
-        ConnectedUsersController(TopLevelWindow& mainWindow,musik::core::ServerPtr server);
-        ~ConnectedUsersController();
+public:     
+    HelpAboutController(win32cpp::TopLevelWindow &mainWindow);
+    ~HelpAboutController();
 
-        musik::core::ServerPtr server;
-    protected:  
-        void OnMainWindowCreated(Window* window);
-        void OnResize(Window* window, Size size);
-        void OnDestroyed(Window* window);
-        void OnFileExit(MenuItemRef menuItem);
-        void OnSettings(MenuItemRef menuItem);
+private:  
+    void        OnViewCreated(win32cpp::Window* window);
+    void        OnOK(win32cpp::Button* button);
 
-        void UpdateStatus();
-        void UpdateUserlist();
+    HelpAboutView* view;
 
-    protected:  
-        TopLevelWindow& mainWindow;
-        win32cpp::Label *statusLabel;
-        win32cpp::Frame *mainFrame;
-
-        win32cpp::Timer timer;
-
-        ConnectedUsersListController *listViewController;
-
-		MainMenuController menuController;
+    win32cpp::TopLevelWindow &mainWindow;
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-} }     // musik::server
+} } }    // musik::cube::dialog

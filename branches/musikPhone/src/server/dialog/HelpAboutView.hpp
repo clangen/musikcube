@@ -2,7 +2,9 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, mC2 team
+// The following are Copyright © 2008, mC2 Team
+//
+// Sources and Binaries of: mC2, win32cpp
 //
 // All rights reserved.
 //
@@ -33,64 +35,46 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
-
 #pragma once
+
+#include <boost/thread.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 // Forward declare
 namespace win32cpp{
-    class TopLevelWindow;
-    class Label;
-    class Frame;
+    class Button;
 }
-namespace musik { namespace server {
-    class MainWindowController;
-    class ConnectedUsersListController;
-} }
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/Server.h>
-#include <win32cpp/Timer.hpp>
-#include <boost/shared_ptr.hpp>
-#include <server/MainMenuController.hpp>
+#include <win32cpp/Frame.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
-using namespace win32cpp;
-
-namespace musik { namespace server {
+namespace musik { namespace server { namespace dialog {
 
 //////////////////////////////////////////////////////////////////////////////
+// forward 
+class HelpAboutController;
+//////////////////////////////////////////////////////////////////////////////
 
-class ConnectedUsersController : public EventHandler
-{
-    public:
-        ConnectedUsersController(TopLevelWindow& mainWindow,musik::core::ServerPtr server);
-        ~ConnectedUsersController();
+class HelpAboutView: public win32cpp::Frame {
+private:
+    HDC                 hdc;
+    BITMAPINFO*         bitmapinfo;
+    boost::thread*      drawingThread;
 
-        musik::core::ServerPtr server;
-    protected:  
-        void OnMainWindowCreated(Window* window);
-        void OnResize(Window* window, Size size);
-        void OnDestroyed(Window* window);
-        void OnFileExit(MenuItemRef menuItem);
-        void OnSettings(MenuItemRef menuItem);
+    static void         DrawingThread(HWND hwnd, BITMAPINFO* bmi);
 
-        void UpdateStatus();
-        void UpdateUserlist();
+public:     
+    HelpAboutView();
 
-    protected:  
-        TopLevelWindow& mainWindow;
-        win32cpp::Label *statusLabel;
-        win32cpp::Frame *mainFrame;
-
-        win32cpp::Timer timer;
-
-        ConnectedUsersListController *listViewController;
-
-		MainMenuController menuController;
+    void                StartDrawingThread();
+    virtual void        OnCreated();
+    virtual void        OnDestroyed();
+    win32cpp::Button*   okButton;
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-} }     // musik::server
+} } }     // musik::cube::dialog
+

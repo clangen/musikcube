@@ -40,6 +40,7 @@
 #include <core/Query/SortTracks.h>
 #include <core/Query/SortTracksWithData.h>
 #include <core/Query/TrackMetadata.h>
+#include <core/Query/BPMQuery.h>
 
 //////////////////////////////////////////////////////////////////////////////
 using namespace musik::core::Query;
@@ -55,4 +56,5 @@ void Factory::GetQueries(QueryMap &queryMap){
     queryMap["SortTracks"]          = Ptr(new SortTracks());
     queryMap["TrackMetadata"]       = Ptr(new TrackMetadata());
     queryMap["SortTracksWithData"]  = Ptr(new SortTracksWithData());
+    queryMap["BPMQuery"]			= Ptr(new BPMQuery());
 }

@@ -69,6 +69,7 @@ using namespace win32cpp;
  ,timer(200)
  ,statusLabel(NULL)
  ,listViewController(NULL)
+ ,menuController(mainWindow)
 {
 
     this->mainWindow.Created.connect(
@@ -90,6 +91,7 @@ void ConnectedUsersController::OnMainWindowCreated(Window* window)
     SendMessage( window->Handle(), WM_SETICON, WPARAM( ICON_SMALL ), LPARAM( icon16 ) );
     SendMessage( window->Handle(), WM_SETICON, WPARAM( ICON_BIG ), LPARAM( icon32 ) );
 
+	this->menuController.fileSettings->Activated.connect(this, &ConnectedUsersController::OnSettings);
 
     // Init Tray Icon
     MenuRef myMenu = Menu::CreatePopup();
@@ -196,8 +198,8 @@ void ConnectedUsersController::OnSettings(MenuItemRef menuItem){
 		MainWindowController settingsController(dialog,this->server);
 		dialog.ShowModal(&this->mainWindow);
 
-		this->mainWindow.Show(SW_HIDE);
-		this->mainWindow.Show(SW_MINIMIZE);
+//		this->mainWindow.Show(SW_HIDE);
+//		this->mainWindow.Show(SW_MINIMIZE);
 
 		settingsShowing	= false;
 	}

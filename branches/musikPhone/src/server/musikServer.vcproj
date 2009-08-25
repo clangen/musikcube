@@ -101,7 +101,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="copy &quot;$(SolutionDir)\src\3rdparty\vld\*.*&quot; &quot;$(TargetDir)&quot;&#x0D;&#x0A;mkdir &quot;$(TargetDir)\htdocs&quot;&#x0D;&#x0A;copy /Y &quot;$(SolutionDir)\src\server\htdocs&quot; &quot;$(TargetDir)\htdocs&quot;"
+				CommandLine="copy &quot;$(SolutionDir)\src\3rdparty\vld\*.*&quot; &quot;$(TargetDir)&quot;&#x0D;&#x0A;mkdir &quot;$(TargetDir)\htdocs&quot;&#x0D;&#x0A;copy /Y &quot;$(SolutionDir)\src\server\htdocs&quot; &quot;$(TargetDir)\htdocs&quot;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -187,7 +187,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="mkdir &quot;$(TargetDir)\htdocs&quot;&#x0D;&#x0A;copy /Y &quot;$(SolutionDir)\src\server\htdocs&quot; &quot;$(TargetDir)\htdocs&quot;"
+				CommandLine="mkdir &quot;$(TargetDir)\htdocs&quot;&#x0D;&#x0A;copy /Y &quot;$(SolutionDir)\src\server\htdocs&quot; &quot;$(TargetDir)\htdocs&quot;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>
@@ -197,6 +197,14 @@
 		<Filter
 			Name="src"
 			>
+			<File
+				RelativePath=".\MainMenuController.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\MainMenuController.hpp"
+				>
+			</File>
 			<File
 				RelativePath=".\MainWindowController.cpp"
 				>
@@ -322,6 +330,26 @@
 				</File>
 				<File
 					RelativePath=".\ConnectedUsersListModel.hpp"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="dialogs"
+				>
+				<File
+					RelativePath=".\dialog\HelpAboutController.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\dialog\HelpAboutController.hpp"
+					>
+				</File>
+				<File
+					RelativePath=".\dialog\HelpAboutView.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\dialog\HelpAboutView.hpp"
 					>
 				</File>
 			</Filter>

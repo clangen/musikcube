@@ -50,7 +50,7 @@
 #include <string>
 
 #include <core/config.h>
-#include <core/Query/ListBase.h>
+#include <core/Query/ListSelection.h>
 
 //////////////////////////////////////////////////////////////
 
@@ -65,57 +65,25 @@ namespace musik{ namespace core{ namespace Query{
 ///\see
 ///Query::ListBase
 //////////////////////////////////////////
-class ListSelection : public Query::ListBase{
+class BPMQuery : public Query::ListSelection{
     public:
-        ListSelection(void);
-        ~ListSelection(void);
+        BPMQuery(void);
+        ~BPMQuery(void);
 
-        void SelectMetadata(const char* metakey,DBINT metadataId);
-        void RemoveMetadata(const char* metakey,DBINT metadataId);
-        void ClearMetadata(const char* metakey=NULL);
+		double bpm;
+		std::string Name();
 
-        void SelectionOrderSensitive(bool sensitive);
     protected:
         friend class Library::Base;
         friend class Library::LocalDB;
         friend class server::Connection;
 
-        virtual std::string Name();
-        virtual bool ParseQuery(Library::Base *library,db::Connection &db);
+        bool ParseQuery(Library::Base *library,db::Connection &db);
 
         Ptr copy() const;
 
-        virtual bool ReceiveQuery(musik::core::xml::ParserNode &queryNode);
-        virtual bool SendQuery(musik::core::xml::WriterNode &queryNode);
-
-    protected:
-        typedef std::set<DBINT> SelectedMetadataIDs;
-        typedef std::map<std::string,SelectedMetadataIDs> SelectedMetadata;
-
-
-        //////////////////////////////////////////
-        ///\brief
-        ///A map of selected metakeys
-        //////////////////////////////////////////
-        SelectedMetadata selectedMetadata;
-
-        //////////////////////////////////////////
-        ///\brief
-        ///Setting if selection is sensitive to order of selection
-        //////////////////////////////////////////
-        bool selectionOrderSensitive;
-
-        //////////////////////////////////////////
-        ///\brief
-        ///A list of the metakeys selection order
-        //////////////////////////////////////////
-        std::vector<std::string> metakeySelectionOrder;
-
-
-        inline void SQLPrependWhereOrAnd(std::string &sql);
-        void SQLSelectQuery(const char *metakey,const char *sqlStart,const char *sqlEnd,std::set<std::string> &metakeysSelected,std::string &sqlSelectTrackWhere,Library::Base *library);
-        void QueryForMetadata(const char *metakey,const char *sql,std::set<std::string> &metakeysQueried,Library::Base *library,db::Connection &db);
-
+        bool ReceiveQuery(musik::core::xml::ParserNode &queryNode);
+        bool SendQuery(musik::core::xml::WriterNode &queryNode);
 };
 
 //////////////////////////////////////////////////////////////

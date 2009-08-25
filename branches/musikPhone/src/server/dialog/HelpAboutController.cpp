@@ -2,7 +2,9 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, mC2 team
+// The following are Copyright © 2008, mC2 Team
+//
+// Sources and Binaries of: mC2, win32cpp
 //
 // All rights reserved.
 //
@@ -34,63 +36,47 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "pch.hpp"
+#include <core/LibraryFactory.h>
+#include <core/Preferences.h>
+#include <core/Crypt.h>
+#include <core/Common.h>
 
-//////////////////////////////////////////////////////////////////////////////
-// Forward declare
-namespace win32cpp{
-    class TopLevelWindow;
-    class Label;
-    class Frame;
-}
-namespace musik { namespace server {
-    class MainWindowController;
-    class ConnectedUsersListController;
-} }
-//////////////////////////////////////////////////////////////////////////////
-
-#include <core/Server.h>
-#include <win32cpp/Timer.hpp>
-#include <boost/shared_ptr.hpp>
-#include <server/MainMenuController.hpp>
+#include <win32cpp/TopLevelWindow.hpp>
+#include <win32cpp/Button.hpp>
+#include <server/dialog/HelpAboutController.hpp>
+#include <server/dialog/HelpAboutView.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
+using namespace musik::server::dialog;
 using namespace win32cpp;
 
-namespace musik { namespace server {
-
 //////////////////////////////////////////////////////////////////////////////
 
-class ConnectedUsersController : public EventHandler
+HelpAboutController::HelpAboutController(win32cpp::TopLevelWindow &mainWindow)
+:mainWindow(mainWindow)
+,view(NULL)
 {
-    public:
-        ConnectedUsersController(TopLevelWindow& mainWindow,musik::core::ServerPtr server);
-        ~ConnectedUsersController();
+    this->view  = new HelpAboutView;
+    this->mainWindow.AddChild(this->view);
+    
+    this->view->Created.connect(this, &HelpAboutController::OnViewCreated);
 
-        musik::core::ServerPtr server;
-    protected:  
-        void OnMainWindowCreated(Window* window);
-        void OnResize(Window* window, Size size);
-        void OnDestroyed(Window* window);
-        void OnFileExit(MenuItemRef menuItem);
-        void OnSettings(MenuItemRef menuItem);
+    // Start drawing thread
+    this->view->StartDrawingThread();
+}
 
-        void UpdateStatus();
-        void UpdateUserlist();
+HelpAboutController::~HelpAboutController() 
+{
+}
 
-    protected:  
-        TopLevelWindow& mainWindow;
-        win32cpp::Label *statusLabel;
-        win32cpp::Frame *mainFrame;
+void HelpAboutController::OnViewCreated(Window* window) 
+{
+    this->view->okButton->Pressed.connect(this, &HelpAboutController::OnOK);
+}
 
-        win32cpp::Timer timer;
-
-        ConnectedUsersListController *listViewController;
-
-		MainMenuController menuController;
-};
-
-//////////////////////////////////////////////////////////////////////////////
-
-} }     // musik::server
+void HelpAboutController::OnOK(win32cpp::Button* button)
+{
+    this->mainWindow.Close();
+}

@@ -161,14 +161,18 @@ void Server::AcceptConnection(const boost::system::error_code& error){
 }
 
 void Server::CleanupConnections(){
-    boost::mutex::scoped_lock lock(this->serverMutex);
-    for(server::ConnectionVector::iterator connection=this->connections.begin();connection!=this->connections.end();){
-        if( (*connection)->Exited() ){
-            connection  = this->connections.erase(connection);
-        }else{
-            ++connection;
-        }
-    }
+	server::ConnectionVector cleanConnections;
+	{
+		boost::mutex::scoped_lock lock(this->serverMutex);
+		for(server::ConnectionVector::iterator connection=this->connections.begin();connection!=this->connections.end();){
+			if( (*connection)->Exited() ){
+				cleanConnections.push_back(*connection);
+				connection  = this->connections.erase(connection);
+			}else{
+				++connection;
+			}
+		}
+	}
 }
 
 bool Server::CreateUser(const utfstring username,const utfstring plainTextPassword,const utfstring name){

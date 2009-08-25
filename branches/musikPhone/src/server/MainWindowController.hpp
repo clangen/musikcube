@@ -54,6 +54,7 @@ namespace musik { namespace server {
 #include <win32cpp/Timer.hpp>
 
 #include <core/Server.h>
+#include <server/MainMenuController.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -80,6 +81,9 @@ class MainWindowController : public EventHandler
         win32cpp::Frame *mainFrame;
         SyncpathController *syncpathController;
         users::UsersController *usersController;
+
+	protected:  
+		MainMenuController menuController;
 };
 
 //////////////////////////////////////////////////////////////////////////////

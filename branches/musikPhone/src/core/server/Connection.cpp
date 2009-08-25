@@ -288,7 +288,16 @@ void Connection::WriteThread(){
             {
                 boost::mutex::scoped_lock lock(this->libraryMutex);
                 if(this->outgoingQueries.empty() && !this->exit){
-                    this->waitCondition.wait(lock);
+//                    this->waitCondition.wait(lock);
+					boost::xtime waitTime;
+					boost::xtime_get(&waitTime, boost::TIME_UTC);
+					waitTime.sec += 10;
+					this->waitCondition.timed_wait(lock,waitTime);
+	                if(this->outgoingQueries.empty() && !this->exit){
+						// Lets send a ping
+						musik::core::xml::WriterNode pingNode(xmlWriter,"ping");
+					}
+					xmlWriter.Flush();
                 }
 
                 if(!this->outgoingQueries.empty() && !this->exit){

@@ -2,7 +2,9 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, mC2 team
+// The following are Copyright © 2007, Casey Langen
+//
+// Sources and Binaries of: mC2, win32cpp
 //
 // All rights reserved.
 //
@@ -38,21 +40,13 @@
 
 //////////////////////////////////////////////////////////////////////////////
 // Forward declare
-namespace win32cpp{
+namespace win32cpp {
+    class Window;
     class TopLevelWindow;
-    class Label;
-    class Frame;
 }
-namespace musik { namespace server {
-    class MainWindowController;
-    class ConnectedUsersListController;
-} }
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/Server.h>
-#include <win32cpp/Timer.hpp>
-#include <boost/shared_ptr.hpp>
-#include <server/MainMenuController.hpp>
+#include <win32cpp/Menu.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -62,35 +56,35 @@ namespace musik { namespace server {
 
 //////////////////////////////////////////////////////////////////////////////
 
-class ConnectedUsersController : public EventHandler
+class MainMenuController: public EventHandler
 {
-    public:
-        ConnectedUsersController(TopLevelWindow& mainWindow,musik::core::ServerPtr server);
-        ~ConnectedUsersController();
-
-        musik::core::ServerPtr server;
-    protected:  
-        void OnMainWindowCreated(Window* window);
-        void OnResize(Window* window, Size size);
-        void OnDestroyed(Window* window);
-        void OnFileExit(MenuItemRef menuItem);
-        void OnSettings(MenuItemRef menuItem);
-
-        void UpdateStatus();
-        void UpdateUserlist();
+    public:     
+        MainMenuController(TopLevelWindow& mainWindow);
+        ~MainMenuController();
 
     protected:  
+        void        OnMainWindowCreated(Window* window);
+        MenuRef     CreateMenu();
+        void        ConnectMenuHandlers();
+
+        //
+        void        OnSettings(MenuItemRef menuItem);
+		void        OnFileExit(MenuItemRef menuItem);
+		void        OnHelpAbout(MenuItemRef menuItem);
+		void        OnFileSettings(MenuItemRef menuItem);
+
+    private:    
         TopLevelWindow& mainWindow;
-        win32cpp::Label *statusLabel;
-        win32cpp::Frame *mainFrame;
+        MenuRef mainMenu, fileMenu, helpMenu;
+        MenuItemRef file, help;
+//        MenuItemRef settings, view, audio, tags, help;
+        MenuItemRef fileExit;
+        MenuItemRef helpAbout;
+	public:
+        MenuItemRef fileSettings;
 
-        win32cpp::Timer timer;
-
-        ConnectedUsersListController *listViewController;
-
-		MainMenuController menuController;
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-} }     // musik::server
+} }     // musik::cube

@@ -68,6 +68,7 @@ using namespace win32cpp;
  ,mainFrame(NULL)
  ,syncpathController(NULL)
  ,usersController(NULL)
+ ,menuController(mainWindow)
 {
     this->mainWindow.Handle()
         ? this->OnMainWindowCreated(&this->mainWindow)
