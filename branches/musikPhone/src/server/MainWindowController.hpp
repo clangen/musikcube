@@ -83,7 +83,7 @@ class MainWindowController : public EventHandler
         users::UsersController *usersController;
 
 	protected:  
-		MainMenuController menuController;
+//		MainMenuController menuController;
 };
 
 //////////////////////////////////////////////////////////////////////////////
