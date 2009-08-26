@@ -18,4 +18,5 @@
 <color name="headlineColor">#333333</color>
 <string name="menu_controls">Player controls</string>
 <string name="menu_browse">Browse</string>
+<string name="menu_nowplaying">Now playing</string>
 </resources>
