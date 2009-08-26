@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -96,6 +97,9 @@ public class main extends Activity implements OnLibraryStatusListener {
 		  case R.id.context_controls:
 	    		startActivity(new Intent(this, org.musikcube.PlayerControl.class));
 			  return true;
+		  case R.id.context_nowplaying:
+	    		startActivity(new Intent(this, org.musikcube.NowPlayingList.class));
+			  return true;
     	  default:
     		  return super.onContextItemSelected(item);
     	  }
@@ -111,11 +115,11 @@ public class main extends Activity implements OnLibraryStatusListener {
 
 	@Override
 	protected void onResume() {
-//		Log.v("mC2::Main","onResume");
+		Log.v("mC2::Main","onResume");
 		super.onResume();
+		startService(new Intent(this, org.musikcube.Service.class));
 		org.musikcube.core.Library.GetInstance().AddPointer();
 		org.musikcube.core.Library.GetInstance().SetStatusListener(this);
-		startService(new Intent(this, org.musikcube.Service.class));
 	}
 
 	public void OnLibraryStatusChange(int status) {

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+ <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+         android:orientation="vertical"
+         android:layout_width="fill_parent" 
+         android:layout_height="fill_parent"
+         android:paddingLeft="8dp"
+         android:paddingRight="8dp">
+ 
+     <ListView android:id="@id/android:list"
+               android:layout_width="fill_parent" 
+               android:layout_height="fill_parent"
+               android:layout_weight="1"
+               android:drawSelectorOnTop="false"/>
+ 
+	<LinearLayout android:id="@id/android:empty"
+	         android:orientation="horizontal"
+	         android:paddingLeft="8dp"
+	         android:paddingRight="8dp" android:layout_width="wrap_content" android:layout_gravity="center_vertical|center_horizontal" android:layout_height="fill_parent">
+		
+		<TextView android:id="@+id/TextView01" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center_vertical" android:layout_marginLeft="10sp" android:text="Playlist is empty" android:textSize="28sp"></TextView>
+	</LinearLayout>
+
+ </LinearLayout>

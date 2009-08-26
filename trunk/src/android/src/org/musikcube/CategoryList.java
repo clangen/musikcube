@@ -219,8 +219,8 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
 	@Override
 	protected void onResume() {
 		super.onResume();
-		org.musikcube.core.Library.GetInstance().AddPointer();
 		startService(new Intent(this, org.musikcube.Service.class));
+		org.musikcube.core.Library.GetInstance().AddPointer();
 	}
 	
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -240,6 +240,9 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
 			  return true;
 		  case R.id.context_controls:
 	    		startActivity(new Intent(this, org.musikcube.PlayerControl.class));
+			  return true;
+		  case R.id.context_nowplaying:
+	    		startActivity(new Intent(this, org.musikcube.NowPlayingList.class));
 			  return true;
     	  default:
     		  return super.onContextItemSelected(item);

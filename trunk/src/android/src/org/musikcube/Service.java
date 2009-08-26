@@ -16,6 +16,7 @@ import android.content.Intent;
 import android.os.IBinder;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
+import android.util.Log;
 
 /**
  * @author doy
@@ -46,7 +47,7 @@ public class Service extends android.app.Service {
 	
 	@Override 
 	public void onCreate(){
-		//Log.i("musikcube::Service","CREATE");
+		Log.i("musikcube::Service","CREATE");
 		this.player	= Player.GetInstance();
 		this.player.service	= this;
 		this.library	= org.musikcube.core.Library.GetInstance();

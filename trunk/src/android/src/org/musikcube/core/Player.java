@@ -10,6 +10,7 @@ public class Player implements TrackPlayer.OnTrackStatusListener, OnQueryResultL
 
 	private ArrayList<Integer> nowPlaying	= new ArrayList<Integer>();
 	private int position	= 0;
+	private boolean repeat	= false;
 	private Library library;
 	
 	private java.lang.Object lock	= new java.lang.Object();
@@ -49,6 +50,9 @@ public class Player implements TrackPlayer.OnTrackStatusListener, OnQueryResultL
 		
 		synchronized(this.lock){
 			this.nowPlaying.addAll(playlist);
+			if(this.listListener!=null){
+				this.listListener.OnTrackListUpdate();
+			}
 		}
 	}
 	
@@ -63,6 +67,11 @@ public class Player implements TrackPlayer.OnTrackStatusListener, OnQueryResultL
 			this.playWhenPrepared	= true;
 			this.nextPlayer	= this.PrepareTrack(this.position);
 			this.nextPlayer.SetListener(this);
+			
+			if(this.listListener!=null){
+				this.listListener.OnTrackListUpdate();
+			}
+			
 		}
 	}
 	
@@ -138,7 +147,14 @@ public class Player implements TrackPlayer.OnTrackStatusListener, OnQueryResultL
 		public void OnTrackPositionUpdate(int secondsPlayed);
 	}
 	
-	protected OnTrackUpdateListener listener	= null;
+	public interface OnTrackListUpdateListener{
+		public void OnTrackListPositionUpdate();
+		public void OnTrackListUpdate();
+	}
+	
+	
+	protected OnTrackUpdateListener listener			= null;
+	protected OnTrackListUpdateListener listListener	= null;
 	
 	public void SetUpdateListener(OnTrackUpdateListener listener){
 		synchronized(this.lock){
@@ -150,18 +166,37 @@ public class Player implements TrackPlayer.OnTrackStatusListener, OnQueryResultL
 			}
 		}
 	}
+	public void SetListUpdateListener(OnTrackListUpdateListener listener){
+		synchronized(this.lock){
+			this.listListener	= listener;
+			if(this.listListener!=null){
+				this.listListener.OnTrackListUpdate();
+			}
+		}
+	}
 	
 	
 	public void Next(){
 		synchronized(this.lock){
 			this.currentTrack	= new Track();
 			this.position++;
+
 			if(this.position>=this.nowPlaying.size()){
-				this.StopAllTracks();
-				this.End();
+				if(this.repeat){
+					this.position=0;
+					this.Play();
+				}else{
+					this.StopAllTracks();
+					this.End();
+				}
 			}else{
 				this.Play();
 			}
+			
+			if(this.listListener!=null){
+				this.listListener.OnTrackListPositionUpdate();
+			}
+			
 		}
 	}
 	
@@ -171,6 +206,9 @@ public class Player implements TrackPlayer.OnTrackStatusListener, OnQueryResultL
 			this.position--;
 			if(this.position<0){
 				this.position	= 0;
+			}
+			if(this.listListener!=null){
+				this.listListener.OnTrackListPositionUpdate();
 			}
 			
 			if(this.position>=this.nowPlaying.size()){
@@ -312,6 +350,19 @@ public class Player implements TrackPlayer.OnTrackStatusListener, OnQueryResultL
 				this.playWhenPrepared	= false;
 				this.Play();
 			}
+		}
+	}
+	
+	public ArrayList<Integer> GetTracklist(){
+		synchronized(this.lock){
+			ArrayList<Integer> newPlaylist	=(ArrayList<Integer>) this.nowPlaying.clone();
+			return newPlaylist;
+		}
+	}
+	
+	public int GetPosition(){
+		synchronized(this.lock){
+			return this.position;
 		}
 	}
 

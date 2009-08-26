@@ -259,6 +259,9 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener {
 		  case R.id.context_controls:
 	    		startActivity(new Intent(this, org.musikcube.PlayerControl.class));
 			  return true;
+		  case R.id.context_nowplaying:
+	    		startActivity(new Intent(this, org.musikcube.NowPlayingList.class));
+			  return true;
     	  default:
     		  return super.onContextItemSelected(item);
     	  }
