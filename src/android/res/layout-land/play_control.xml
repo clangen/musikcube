@@ -7,7 +7,9 @@
          android:paddingRight="8dp" android:gravity="center_vertical">
          
 <LinearLayout android:layout_width="fill_parent" android:layout_height="wrap_content"  android:orientation="horizontal" android:gravity="center_vertical|center_horizontal">
-	<ImageView android:src="@drawable/album" android:layout_height="200sp" android:layout_width="200sp" android:scaleType="fitXY" android:layout_marginRight="10sp" android:id="@+id/AlbumCover"></ImageView>
+	<FrameLayout android:id="@+id/FrameLayout01" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_margin="10sp" android:padding="2sp" android:background="#666666">
+	<ImageView android:src="@drawable/album" android:layout_marginTop="5sp" android:layout_marginBottom="5sp" android:layout_height="200sp" android:layout_width="200sp" android:scaleType="fitXY" android:id="@+id/AlbumCover" android:background="#000000"></ImageView>
+	</FrameLayout>
 	<LinearLayout android:id="@+id/LinearLayout01" android:layout_height="wrap_content"  android:orientation="vertical" android:layout_width="wrap_content">
 		<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="24sp" android:id="@+id/TrackTitle" android:text="Title:" android:lines="1"></TextView>
 		<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Album:" android:id="@+id/TrackAlbum" android:lines="1"></TextView>
