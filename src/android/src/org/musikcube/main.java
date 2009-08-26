@@ -103,6 +103,7 @@ public class main extends Activity implements OnLibraryStatusListener {
     
 	@Override
 	protected void onPause() {
+//		Log.v("mC2::Main","onPause");
 		super.onPause();
 		org.musikcube.core.Library.GetInstance().RemovePointer();
 		org.musikcube.core.Library.GetInstance().SetStatusListener(null);
@@ -110,6 +111,7 @@ public class main extends Activity implements OnLibraryStatusListener {
 
 	@Override
 	protected void onResume() {
+//		Log.v("mC2::Main","onResume");
 		super.onResume();
 		org.musikcube.core.Library.GetInstance().AddPointer();
 		org.musikcube.core.Library.GetInstance().SetStatusListener(this);
@@ -162,6 +164,9 @@ public class main extends Activity implements OnLibraryStatusListener {
         	break;
         case Library.STATUS_CONNECTED:
         	statusText.setText("Status: Connected");
+        	break;
+        case Library.STATUS_ERROR:
+        	statusText.setText("Status: Error connecting");
         	break;
         }
         

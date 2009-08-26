@@ -16,8 +16,6 @@ import android.content.Intent;
 import android.os.IBinder;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
-import android.view.View;
-import android.view.View.OnClickListener;
 
 /**
  * @author doy
