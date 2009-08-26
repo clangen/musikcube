@@ -3,11 +3,9 @@ package org.musikcube;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import org.musikcube.core.IQuery;
 import org.musikcube.core.Library;
 import org.musikcube.core.Player;
 import org.musikcube.core.Track;
-import org.musikcube.core.IQuery.OnQueryResultListener;
 import org.musikcube.core.Player.OnTrackUpdateListener;
 
 import android.app.Activity;
@@ -75,13 +73,9 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener {
     };
 
 	public void OnTrackBufferUpdate(int percent) {
-		synchronized(lock){
-		}
 		this.callbackTrackPositionsUpdateHandler.post(this.callbackTrackPositionsUpdateRunnable);
 	}
 	public void OnTrackPositionUpdate(int secondsPlayed) {
-		synchronized(lock){
-		}
 		this.callbackTrackPositionsUpdateHandler.post(this.callbackTrackPositionsUpdateRunnable);
 	}
 	public void OnTrackUpdate() {

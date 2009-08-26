@@ -23,7 +23,7 @@ public class Library implements Runnable{
 //	private String username;
 //	private String password;
 	public String authorization	= "";
-	public String host;
+	public String host			= "";
 //	private int queryPort;
 	public int httpPort;
 
@@ -41,6 +41,7 @@ public class Library implements Runnable{
 	public static final int STATUS_CONNECTING	= 1;
 	public static final int STATUS_AUTHENTICATING= 2;
 	public static final int STATUS_CONNECTED	= 3;
+	public static final int STATUS_ERROR		= 4;
 	
 	int connections	= 0;
 	
@@ -77,6 +78,7 @@ public class Library implements Runnable{
 	
 	private void SetStatus(int status){
 		synchronized(this.status){
+			//Log.v("mC2::Lib","STATUS "+this.status);
 			this.status	= status;
 			if(this.statusListener!=null){
 				this.statusListener.OnLibraryStatusChange(status);
@@ -90,6 +92,12 @@ public class Library implements Runnable{
 		}
 	}
 
+	public String GetHost(){
+		synchronized(this.notifier){
+			return this.host;
+		}
+	}
+	
 	public void AddPointer(){
 		synchronized(this.notifier){
 			this.connections++;
@@ -189,23 +197,37 @@ public class Library implements Runnable{
 	}
 	
 	public void run(){
+		this.SetStatus(STATUS_SHUTDOWN);
 
 		while(true){
+			//Log.v("mC2::Lib","1");
+			
 			this.running	= true;
 			// First try to connect
 			try{
 				synchronized (notifier) {
-					SharedPreferences prefs	= PreferenceManager.getDefaultSharedPreferences(this.context);
-					this.host		= prefs.getString("host","");
-					int queryPort	= Integer.parseInt(prefs.getString("queryport","10543"));
-					this.httpPort	= Integer.parseInt(prefs.getString("httpport","10544"));
+					//Log.v("mC2::Lib","2");
+					do{
+						SharedPreferences prefs	= PreferenceManager.getDefaultSharedPreferences(this.context);
+						this.host		= prefs.getString("host","");
+						int queryPort	= Integer.parseInt(prefs.getString("queryport","10543"));
+						this.httpPort	= Integer.parseInt(prefs.getString("httpport","10544"));
+						
+						if(this.host.equals("")){
+							//Log.v("mC2::Lib","HOST =''");
+							this.notifier.wait(2000);
+						}else{
+							//Log.v("mC2::Lib","HOST ='"+this.host+"'");
+							this.socket	= new java.net.Socket(host,queryPort);
+						}
+					}while(this.host.equals(""));
 					
 					this.SetStatus(STATUS_CONNECTING);
 					
-					this.socket	= new java.net.Socket(host,queryPort);
 				}
 				//Log.v("Library::socket","Successfully connected to "+this.host+":"+this.queryPort);
 				
+				//Log.v("mC2::Lib","3");
 
 				doep.xml.Reader reader	= new doep.xml.Reader(this.socket.getInputStream());
 				//Log.v("Library::run","Reader started");
@@ -264,12 +286,10 @@ public class Library implements Runnable{
 				}
 				
 				//Log.v("Library::socket","NOT Waiting for query results");
-			}
-			catch(IOException x){
-				//Log.e("Library::socket","IOE "+x.getMessage());
+				this.SetStatus(STATUS_SHUTDOWN);
 			}
 			catch(Exception x){
-				//Log.e("Library::socket","E "+x.getMessage());
+				this.SetStatus(STATUS_ERROR);
 			}
 			
 			synchronized (notifier) {
@@ -290,10 +310,10 @@ public class Library implements Runnable{
 				
 			}
 			
-			this.SetStatus(STATUS_SHUTDOWN);
+			//Log.v("mC2::Lib","4");
 			
 			synchronized (notifier) {
-				if(this.connections!=0){
+				if(!this.restart){
 					try{
 						this.notifier.wait(2000);
 					}
@@ -301,8 +321,12 @@ public class Library implements Runnable{
 						
 					}
 				}
+				this.restart	 = false;
+				
+				//Log.v("mC2::Lib","5");
 				
 				if(this.exit){
+					//Log.v("mC2::Lib","EXIT");
 					Intent intent	= new Intent(this.context, org.musikcube.Service.class);
 					intent.putExtra("org.musikcube.Service.action", "shutdown");
 					this.context.startService(intent);
@@ -310,6 +334,7 @@ public class Library implements Runnable{
 				}
 				this.restart	= false;
 //				this.running	= true;
+				//Log.v("mC2::Lib","6");
 			}
 			
 		}

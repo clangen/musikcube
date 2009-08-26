@@ -11,6 +11,7 @@ public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, 
 	private MediaPlayer mediaPlayer;
 	private int buffer	= 0;
 	private boolean almostDoneSend	= false;
+	private boolean started			= false;
 	
 	private int status = 1;
 	
@@ -29,20 +30,22 @@ public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, 
 			this.mediaPlayer.setOnErrorListener(this);
 			this.mediaPlayer.setOnBufferingUpdateListener(this);
 				
-			{
-				String url	= Library.GetInstance().GetTrackURL(this.trackId);
-				while(url==null && (this.status==STATUS_PREPARED || this.status==STATUS_PLAYING)){
-					Log.v("mC2::TrackPlayer","Retrying "+this.trackId);
+			String url	= Library.GetInstance().GetTrackURL(this.trackId);
+			while(url==null && (this.status==STATUS_PREPARED || this.status==STATUS_PLAYING)){
+				Log.v("mC2::TrackPlayer","Retrying "+this.trackId);
+				synchronized(this.lock){
 					this.lock.wait(250);
-					url	= Library.GetInstance().GetTrackURL(this.trackId);
 				}
+				url	= Library.GetInstance().GetTrackURL(this.trackId);
+			}
 				
-				if(url==null){
-					this.status	= STATUS_EXIT; 
-				}else{
-					this.mediaPlayer.setDataSource(url);
-					this.mediaPlayer.prepare();
+			if(url==null){
+				synchronized(this.lock){
+					this.status	= STATUS_EXIT;
 				}
+			}else{
+				this.mediaPlayer.setDataSource(url);
+				this.mediaPlayer.prepare();
 			}
 			
 			synchronized(this.lock){
@@ -63,6 +66,8 @@ public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, 
 				this.mediaPlayer.start();
 		
 			synchronized(this.lock){
+				this.started	= true;
+				
 				while(this.status==STATUS_PLAYING){
 					if(!this.almostDoneSend){
 						int duration	= this.mediaPlayer.getDuration();
@@ -78,6 +83,7 @@ public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, 
 					this.lock.wait(3000);
 					
 				}
+				this.started	= false;
 			}
 			
 			this.mediaPlayer.stop();
@@ -181,7 +187,7 @@ public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, 
 	
 	public int GetTrackPosition(){
 		synchronized(this.lock){
-			if(this.mediaPlayer!=null){
+			if(this.mediaPlayer!=null && this.started){
 				return this.mediaPlayer.getCurrentPosition();
 			}
 		}

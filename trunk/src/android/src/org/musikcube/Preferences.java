@@ -15,6 +15,7 @@ public class Preferences extends PreferenceActivity {
 
 	@Override
 	protected void onStop() {
+//		Log.v("mC2::PREFS","onStop");
 		// TODO Auto-generated method stub
 		super.onStop();
 		// Let the library know to restart connection
@@ -23,12 +24,14 @@ public class Preferences extends PreferenceActivity {
 	
 	@Override
 	protected void onPause() {
+//		Log.v("mC2::PREFS","onPause");
 		super.onPause();
 		org.musikcube.core.Library.GetInstance().RemovePointer();
 	}
 
 	@Override
 	protected void onResume() {
+//		Log.v("mC2::PREFS","onResume");
 		super.onResume();
 		org.musikcube.core.Library.GetInstance().AddPointer();
 		startService(new Intent(this, org.musikcube.Service.class));

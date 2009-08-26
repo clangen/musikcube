@@ -10,7 +10,6 @@ import org.musikcube.core.ListQuery;
 import org.musikcube.core.IQuery.OnQueryResultListener;
 
 import android.app.ListActivity;
-import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
