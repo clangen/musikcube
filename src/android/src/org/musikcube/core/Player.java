@@ -10,7 +10,10 @@ public class Player implements TrackPlayer.OnTrackStatusListener, OnQueryResultL
 
 	private ArrayList<Integer> nowPlaying	= new ArrayList<Integer>();
 	private int position	= 0;
+	
 	private boolean repeat	= false;
+	private boolean shuffle = false;
+	
 	private Library library;
 	
 	private java.lang.Object lock	= new java.lang.Object();
@@ -366,4 +369,25 @@ public class Player implements TrackPlayer.OnTrackStatusListener, OnQueryResultL
 		}
 	}
 
+	public void SetRepeat(boolean repeat){
+		synchronized(this.lock){
+			this.repeat	= repeat;
+		}
+	}
+	public boolean GetRepeat(){
+		synchronized(this.lock){
+			return this.repeat;
+		}
+	}
+	public void SetShuffle(boolean shuffle){
+		synchronized(this.lock){
+			this.shuffle	= shuffle;
+		}
+	}
+	public boolean GetShuffle(){
+		synchronized(this.lock){
+			return this.shuffle;
+		}
+	}
+	
 }
