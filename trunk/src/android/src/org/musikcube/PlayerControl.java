@@ -46,8 +46,15 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener {
         pauseButton.setOnClickListener(this.onPauseClick);
         ImageButton prevButton	= (ImageButton)findViewById(R.id.MediaPrev);
         prevButton.setOnClickListener(this.onPrevClick);
+
+        ImageButton repeatButton	= (ImageButton)findViewById(R.id.MediaRepeat);
+        repeatButton.setOnClickListener(this.onRepeatClick);
+        ImageButton shuffleButton	= (ImageButton)findViewById(R.id.MediaShuffle);
+        shuffleButton.setOnClickListener(this.onShuffleClick);
         
 		this.callbackTrackPositionsUpdateHandler.postDelayed(callbackTrackPositionsUpdateRunnable,500);
+		
+		this.SetImages();
    }
 
     private OnClickListener onNextClick = new OnClickListener() {
@@ -69,6 +76,38 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener {
     		Intent intent	= new Intent(PlayerControl.this, org.musikcube.Service.class);
     		intent.putExtra("org.musikcube.Service.action", "stop");
     		startService(intent);
+    	}
+    };
+    
+    private void SetImages(){
+		Player player	= Player.GetInstance();
+        ImageButton button	= (ImageButton)findViewById(R.id.MediaRepeat);
+        if(player.GetRepeat()){
+        	button.setImageDrawable(getResources().getDrawable(R.drawable.ic_repeat_on));
+        }else{
+        	button.setImageDrawable(getResources().getDrawable(R.drawable.ic_repeat));
+        }
+        button	= (ImageButton)findViewById(R.id.MediaShuffle);
+        if(player.GetShuffle()){
+        	button.setImageDrawable(getResources().getDrawable(R.drawable.ic_shuffle_on));
+        }else{
+        	button.setImageDrawable(getResources().getDrawable(R.drawable.ic_shuffle));
+        }
+    	
+    }
+    
+    private OnClickListener onRepeatClick = new OnClickListener() {
+    	public void onClick(View v){
+    		Player player	= Player.GetInstance();
+    		player.SetRepeat(!player.GetRepeat());
+    		PlayerControl.this.SetImages();
+    	}
+    };
+    private OnClickListener onShuffleClick = new OnClickListener() {
+    	public void onClick(View v){
+    		Player player	= Player.GetInstance();
+    		player.SetShuffle(!player.GetShuffle());
+    		PlayerControl.this.SetImages();
     	}
     };
 
