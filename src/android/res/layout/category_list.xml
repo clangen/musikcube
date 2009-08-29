@@ -10,7 +10,7 @@
                android:layout_width="fill_parent" 
                android:layout_height="fill_parent"
                android:layout_weight="1"
-               android:drawSelectorOnTop="false"/>
+               android:drawSelectorOnTop="false" android:fastScrollEnabled="true"/>
                
 	<LinearLayout android:id="@id/android:empty"
 	         android:orientation="horizontal"
