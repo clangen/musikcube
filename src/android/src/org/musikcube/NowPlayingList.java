@@ -28,11 +28,11 @@ public class NowPlayingList extends TrackListBase implements OnTrackListUpdateLi
 	final static public int ADD_ALL_ID	= 2;
 	final static public int REMOVE_ID	= 3;
 	
-	public int position		= 0;
-	
 	@Override
 	protected void onCreate(Bundle savedInstanceState){
 
+		this.markPosition	= true;
+		
 		this.trackListViewId	= R.layout.now_playing_list;
 		this.trackListItemViewId	= R.layout.now_playing_list_item;
 		
@@ -74,6 +74,11 @@ public class NowPlayingList extends TrackListBase implements OnTrackListUpdateLi
 				intent.putExtra("org.musikcube.Service.action", "appendlist");
 				startService(intent);
 				return true;
+			case REMOVE_ID:
+				intent.putExtra("org.musikcube.Service.action", "remove_from_list");
+				intent.putExtra("org.musikcube.Service.position", info.position);
+				startService(intent);
+				return true;
 			default:
 				return super.onContextItemSelected(item);
 		}
@@ -86,6 +91,7 @@ public class NowPlayingList extends TrackListBase implements OnTrackListUpdateLi
 		menu.add(0, PLAY_THIS_ID, 0, "Play this track");
 		menu.add(0, ADD_THIS_ID, 0,  "Add this to current playlist");
 		menu.add(0, ADD_ALL_ID, 0,  "Add all to current playlist");
+		menu.add(0, REMOVE_ID, 0,  "Remove from playlist");
 	}
 	
 	public void OnTrackListPositionUpdate() {
@@ -106,7 +112,6 @@ public class NowPlayingList extends TrackListBase implements OnTrackListUpdateLi
 	}
 
 
-
 	@Override
 	protected void onPause() {
 		super.onPause();
@@ -117,6 +122,8 @@ public class NowPlayingList extends TrackListBase implements OnTrackListUpdateLi
 	protected void onResume() {
 		super.onResume();
 		Player.GetInstance().SetListUpdateListener(this);
+		this.position	= Player.GetInstance().GetPosition();
+		this.setSelection(this.position); 
 	}
 	
 	

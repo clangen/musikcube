@@ -23,7 +23,7 @@ public class ListQuery extends IQuery {
 	public void SendQuery(WriterNode node)
 		throws Exception 
 	{
-		WriterNode queryNode	= this.SendQueryNode(node);
+		final WriterNode queryNode	= this.SendQueryNode(node);
 		
 		// List selections
 		WriterNode selectionsNode	= queryNode.ChildNode("selections");
@@ -60,8 +60,11 @@ public class ListQuery extends IQuery {
 					ReaderNode mdNode	= null;
 					while( (mdNode=childNode.ChildNode("md"))!=null ){
 						mdNode.End();
-						this.resultsInts.add(Integer.parseInt(mdNode.attributes.get("id")));
-						this.resultsStrings.add(mdNode.content);
+						int resultId	= Integer.parseInt(mdNode.attributes.get("id"));
+						if(resultId!=0){
+							this.resultsInts.add(resultId);
+							this.resultsStrings.add(mdNode.content);
+						}
 					}
 				}
 			}else if(childNode.name.equals("tracklist")){
@@ -85,7 +88,7 @@ public class ListQuery extends IQuery {
 		}
 	}
 
-	public void SelectData(String category,int selection){
+	public final void SelectData(String category,int selection){
 		this.selectionStrings.add(category);
 		this.selectionInts.add(selection);
 	}

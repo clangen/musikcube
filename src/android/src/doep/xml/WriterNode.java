@@ -4,12 +4,12 @@ import java.util.ListIterator;
 import java.util.Map;
 
 public class WriterNode {
-	public String name	= "";
+	public final String name;
 	public String content	= "";
 	protected WriterNode parent;
 	protected Writer writer;
-	private java.util.List<WriterNode> children	= new java.util.LinkedList<WriterNode>();
-	public java.util.SortedMap<String,String> attributes = new java.util.TreeMap<String,String>();
+	private final java.util.List<WriterNode> children	= new java.util.LinkedList<WriterNode>();
+	public final java.util.SortedMap<String,String> attributes = new java.util.TreeMap<String,String>();
 	
 	protected int state	= 0;
 	
@@ -27,7 +27,7 @@ public class WriterNode {
 		return newNode;
 	}
 	
-	public void End()
+	public final void End()
 		throws java.io.IOException
 	{
 		if(this.parent.state==0){
@@ -61,7 +61,7 @@ public class WriterNode {
 		}
 	}
 	
-	protected void WriteStartTag()
+	protected final void WriteStartTag()
 		throws java.io.IOException
 	{
 		if(this.state==0){

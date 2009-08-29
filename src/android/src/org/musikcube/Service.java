@@ -92,6 +92,10 @@ public class Service extends android.app.Service {
 			Player player	= Player.GetInstance();
 			player.Append(intent.getIntegerArrayListExtra("org.musikcube.Service.tracklist"));
 		}
+		if(action.equals("remove_from_list")){
+			Player player	= Player.GetInstance();
+			player.RemoveFromList(intent.getIntExtra("org.musikcube.Service.position", -1));
+		}
 		
 		if(action.equals("playlist_prepare")){
 			Player player	= Player.GetInstance();
@@ -109,6 +113,9 @@ public class Service extends android.app.Service {
 		if(action.equals("stop")){
 			Player player	= Player.GetInstance();
 			player.Stop();
+			if(this.paceDetector!=null){
+				this.paceDetector.StopSensor(this);
+			}
 		}
 		if(action.equals("play")){
 			Player player	= Player.GetInstance();
@@ -119,6 +126,7 @@ public class Service extends android.app.Service {
 			this.stopSelf();
 		}
 		if(action.equals("bpmstart")){
+			Player.GetInstance().SetBPMMode(true);
 			if(this.paceDetector==null){
 				this.paceDetector	= new PaceDetector();
 				this.paceDetector.StartSensor(this);
@@ -157,7 +165,7 @@ public class Service extends android.app.Service {
 					contentText 	+= trackArtist;
 				}
 			}
-			Intent notificationIntent = new Intent(this, PlayerControl.class);
+			Intent notificationIntent = new Intent(this, Player.GetInstance().GetBPMMode()?PlayerBPMControl.class:PlayerControl.class);
 			PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
 			
 			notification.flags	|= Notification.FLAG_ONGOING_EVENT|Notification.FLAG_NO_CLEAR;

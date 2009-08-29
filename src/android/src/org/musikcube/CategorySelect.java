@@ -21,6 +21,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -29,7 +30,7 @@ import android.widget.TextView;
  * @author doy
  *
  */
-public class CategoryList extends ListActivity implements OnQueryResultListener {
+public class CategorySelect extends ListActivity implements OnQueryResultListener {
 	
 	private String category	= null;
 	private String nextCategoryList	= "";
@@ -50,7 +51,7 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
     };
 
     static class CategoryViewHolder{
-		TextView title;
+    	CheckBox title;
 	}
     
     public class ResultAdapter extends BaseAdapter{
@@ -92,9 +93,9 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
 		public View getView(int position, View view, ViewGroup parent) {
 			final CategoryViewHolder holder;
 			if(view==null){
-				view	= inflator.inflate(R.layout.category_list_item, null);
+				view	= inflator.inflate(R.layout.category_select_item, null);
 				holder	= new CategoryViewHolder();
-				holder.title	= (TextView) view.findViewById(R.id.text); 
+				holder.title	= (CheckBox) view.findViewById(R.id.text); 
 				view.setTag(holder);
 			}else{
 				holder	= (CategoryViewHolder)view.getTag();
@@ -117,7 +118,7 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
 	protected void onCreate(Bundle savedInstanceState){
 		super.onCreate(savedInstanceState);
 		//Log.v("musikcube.CategoryList", "start");
-		this.setContentView(R.layout.category_list);
+		this.setContentView(R.layout.category_select);
 		
 		Intent intent	= this.getIntent();
 		
@@ -129,7 +130,7 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
 		
 
 		// Extract the category order
-		String categoryString	= intent.getStringExtra("org.musikcube.CategoryList.listCategory");
+		String categoryString	= intent.getStringExtra("org.musikcube.CategorySelect.listCategory");
 		String[] categories	= categoryString.split(",");
 		this.category	= categories[0];
 		

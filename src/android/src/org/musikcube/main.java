@@ -70,12 +70,13 @@ public class main extends Activity implements OnLibraryStatusListener {
     
     private OnClickListener onBPMClick = new OnClickListener() {
     	public void onClick(View v){
-    		Intent intent	= new Intent(main.this, org.musikcube.Service.class);
-    		intent.putExtra("org.musikcube.Service.action", "bpmstart");
-    		startService(intent);
-    		
-    		Intent intent2	= new Intent(main.this, PlayerControl.class);
+/*    		Log.v("mC2::main","onBPMClick 1");
+    		Intent intent2	= new Intent(main.this, PlayerBPMControl.class);
     		startActivity(intent2);
+    		Log.v("mC2::main","onBPMClick 2");*/
+    		Intent intent	= new Intent(main.this, CategorySelect.class);
+    		intent.putExtra("org.musikcube.CategorySelect.listCategory", "genre");
+    		startActivity(intent);
     	}
     };
     
@@ -86,23 +87,11 @@ public class main extends Activity implements OnLibraryStatusListener {
     }    
     
     public boolean onOptionsItemSelected(MenuItem item) {
-    	//Log.i("MC2.onContextItemSelected","item "+item.getItemId()+" "+R.id.context_settings);
-   	  switch (item.getItemId()) {
-		  case R.id.context_settings:
-	    		startActivity(new Intent(this, org.musikcube.Preferences.class));
-			  return true;
-		  case R.id.context_browse:
-	    		startActivity(new Intent(this, org.musikcube.main.class));
-			  return true;
-		  case R.id.context_controls:
-	    		startActivity(new Intent(this, org.musikcube.PlayerControl.class));
-			  return true;
-		  case R.id.context_nowplaying:
-	    		startActivity(new Intent(this, org.musikcube.NowPlayingList.class));
-			  return true;
-    	  default:
-    		  return super.onContextItemSelected(item);
-    	  }
+    	if(Helper.DefaultOptionsItemSelected(item,this)){
+    		return true;
+    	}else{
+    		return super.onContextItemSelected(item);
+    	}
    	}
     
 	@Override
@@ -146,7 +135,7 @@ public class main extends Activity implements OnLibraryStatusListener {
             genreButton.setEnabled(true);
             artistsButton.setEnabled(true);
             yearButton.setEnabled(true);
-//            bpmButton.setEnabled(true);
+            bpmButton.setEnabled(false);
         }else{
             genreButton.setEnabled(false);
             artistsButton.setEnabled(false);

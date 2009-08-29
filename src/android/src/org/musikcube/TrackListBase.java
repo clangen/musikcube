@@ -20,6 +20,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -39,6 +40,9 @@ public class TrackListBase extends ListActivity implements OnQueryResultListener
 	
 	protected java.lang.Object lock 	= new java.lang.Object();
 	
+	protected int position		= -1;
+	protected boolean markPosition	= false;
+	
 	// Need handler for callbacks to the UI thread
     final Handler callbackHandler = new Handler();
 
@@ -53,6 +57,7 @@ public class TrackListBase extends ListActivity implements OnQueryResultListener
 		TextView track;
 		TextView title;
 		TextView artist;
+		ImageView marker;
 	}
 	
     public class ResultAdapter extends BaseAdapter{
@@ -82,16 +87,27 @@ public class TrackListBase extends ListActivity implements OnQueryResultListener
 		public View getView(int position, View view, ViewGroup parent) {
 			TrackViewHolder holder;
 			if(view==null){
-				view	= inflator.inflate(R.layout.track_list_item, null);
+				view	= inflator.inflate(TrackListBase.this.trackListItemViewId, null);
 				
 				holder	= new TrackViewHolder();
 				holder.title	= (TextView) view.findViewById(R.id.title); 
 				holder.track	= (TextView) view.findViewById(R.id.track); 
 				holder.artist	= (TextView) view.findViewById(R.id.artist); 
+				if(TrackListBase.this.markPosition){
+					holder.marker	= (ImageView) view.findViewById(R.id.PlayingImage); 
+				}
 				view.setTag(holder);
 				
 			}else{
 				holder	= (TrackViewHolder)view.getTag();
+			}
+			
+			if(holder.marker!=null){
+				if(position==this.trackList.position){
+					holder.marker.setImageResource(R.drawable.ic_playing);
+				}else{
+					holder.marker.setImageBitmap(null);
+				}
 			}
 			
 			Track track	= this.trackList.GetTrack(position);
@@ -248,23 +264,11 @@ public class TrackListBase extends ListActivity implements OnQueryResultListener
     }    
     
     public boolean onOptionsItemSelected(MenuItem item) {
-    	//Log.i("MC2.onContextItemSelected","item "+item.getItemId()+" "+R.id.context_settings);
-   	  switch (item.getItemId()) {
-		  case R.id.context_settings:
-	    		startActivity(new Intent(this, org.musikcube.Preferences.class));
-			  return true;
-		  case R.id.context_browse:
-	    		startActivity(new Intent(this, org.musikcube.main.class));
-			  return true;
-		  case R.id.context_controls:
-	    		startActivity(new Intent(this, org.musikcube.PlayerControl.class));
-			  return true;
-		  case R.id.context_nowplaying:
-	    		startActivity(new Intent(this, org.musikcube.NowPlayingList.class));
-			  return true;
-    	  default:
-    		  return super.onContextItemSelected(item);
-    	  }
+    	if(Helper.DefaultOptionsItemSelected(item,this)){
+    		return true;
+    	}else{
+    		return super.onContextItemSelected(item);
+    	}
    	}
 	
 }

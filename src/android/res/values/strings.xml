@@ -19,4 +19,6 @@
 <string name="menu_controls">Player controls</string>
 <string name="menu_browse">Browse</string>
 <string name="menu_nowplaying">Now playing</string>
+<string name="help_main">musikCube is a application that connects to you musikServer that you have installed on your desktop/server computer. Once musikCube is connected you are able to browse and play all your music directly on your phone without having to copy them to you SD card.</string>
+
 </resources>

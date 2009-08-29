@@ -5,8 +5,6 @@
          android:layout_height="fill_parent">
  
     <TextView android:id="@+id/text"
-        android:layout_width="0dip"
-        android:layout_weight="1.0"
-        android:layout_height="wrap_content" android:textSize="28sp" android:fadingEdge="horizontal" android:maxLines="1" android:fadingEdgeLength="10sp"/>
+        android:layout_height="wrap_content" android:textSize="28sp" android:fadingEdge="horizontal" android:maxLines="1" android:fadingEdgeLength="10sp" android:layout_width="wrap_content"/>
         
  </LinearLayout>

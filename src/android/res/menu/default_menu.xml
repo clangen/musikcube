@@ -3,4 +3,5 @@
 <item android:title="@string/menu_controls" android:id="@+id/context_controls" android:enabled="true" android:visible="true" android:icon="@drawable/ic_menu_play"></item>
 <item android:title="@string/menu_settings" android:id="@+id/context_settings" android:enabled="true" android:visible="true" android:icon="@drawable/ic_menu_preferences"></item>
 <item android:id="@+id/context_nowplaying" android:title="@string/menu_nowplaying" android:icon="@drawable/ic_menu_nowplaying"></item>
+<item android:id="@+id/context_help" android:title="@string/menu_help" android:icon="@drawable/ic_menu_help"></item>
 </menu>
