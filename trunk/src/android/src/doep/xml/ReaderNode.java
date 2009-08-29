@@ -3,10 +3,10 @@ import doep.xml.Reader;
 
 public class ReaderNode {
 
-	public String name		= "";
+	public final String name;
 	public boolean ended	= false;
 	public String content	= "";
-	public ReaderNode parent;
+	public final ReaderNode parent;
 	public Reader reader;
 	public int level		= 1;
 	
@@ -25,7 +25,7 @@ public class ReaderNode {
 	 * @param attribute
 	 * @return String or null
 	 */
-	public String Attribute(String attribute){
+	public final String Attribute(String attribute){
 		return this.attributes.get(attribute);
 	}
 	
@@ -34,7 +34,7 @@ public class ReaderNode {
 	 * @param name Name of node to be found
 	 * @return ReaderNode if found, or null if this goes out of scope
 	 */
-	public ReaderNode ChildNode(String name)
+	public final ReaderNode ChildNode(String name)
 		throws Exception
 	{
 		//Log.v("doep::ReaderNode::ChildNode","Node: "+name+" ended: "+this.ended);
@@ -59,7 +59,7 @@ public class ReaderNode {
 		return null;
 	}
 	
-	public void End()
+	public final void End()
 		throws Exception
 	{
 		while(!this.ended){
@@ -73,7 +73,7 @@ public class ReaderNode {
 	 * Wait for a childnode
 	 * @return ReaderNode if found, or null if this goes out of scope
 	 */
-	public ReaderNode ChildNode()
+	public final ReaderNode ChildNode()
 		throws Exception
 	{
 		while(!this.ended){

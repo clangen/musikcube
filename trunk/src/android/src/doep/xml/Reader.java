@@ -6,10 +6,10 @@ import java.io.InputStream;
 import java.lang.Exception;
 
 
-public class Reader extends ReaderNode {
-	private InputStream stream;
-	private org.xmlpull.v1.XmlPullParser parser;
-	private java.util.LinkedList<ReaderNode> nodeLevels	= new java.util.LinkedList<ReaderNode>();
+public final class Reader extends ReaderNode {
+	private final InputStream stream;
+	private final org.xmlpull.v1.XmlPullParser parser;
+	private final java.util.LinkedList<ReaderNode> nodeLevels	= new java.util.LinkedList<ReaderNode>();
 	public ReaderNode currentNode;
 	private boolean firstParse	= true;
 
@@ -33,7 +33,7 @@ public class Reader extends ReaderNode {
 	}
 	
 
-	public void Parse()
+	public final void Parse()
 		throws Exception
 	{
 		int eventType	= 0;

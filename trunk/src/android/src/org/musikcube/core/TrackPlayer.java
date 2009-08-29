@@ -31,12 +31,12 @@ public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, 
 			this.mediaPlayer.setOnBufferingUpdateListener(this);
 				
 			String url	= Library.GetInstance().GetTrackURL(this.trackId);
-			while(url==null && (this.status==STATUS_PREPARED || this.status==STATUS_PLAYING)){
-				Log.v("mC2::TrackPlayer","Retrying "+this.trackId);
-				synchronized(this.lock){
+			synchronized(this.lock){
+				while(url==null && (this.status==STATUS_PREPARED || this.status==STATUS_PLAYING)){
+					Log.v("mC2::TrackPlayer","Retrying "+this.trackId);
 					this.lock.wait(250);
+					url	= Library.GetInstance().GetTrackURL(this.trackId);
 				}
-				url	= Library.GetInstance().GetTrackURL(this.trackId);
 			}
 				
 			if(url==null){
@@ -49,8 +49,8 @@ public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, 
 			}
 			
 			synchronized(this.lock){
-				if(this.listener!=null){
-					this.listener.OnTrackPrepared(this);
+				if(this.listenerPrepare!=null){
+					this.listenerPrepare.OnTrackPrepared(this);
 				}
 				
 				while(this.status==STATUS_PREPARED)
@@ -157,16 +157,23 @@ public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, 
 	}
 	
 	public interface OnTrackStatusListener{
-		public void OnTrackPrepared(TrackPlayer trackPlayer);
 		public void OnTrackStatusUpdate(TrackPlayer trackPlayer,int status);
 		public void OnTrackAlmostDone(TrackPlayer trackPlayer);
 	}
+	public interface OnTrackPrepareListener{
+		public void OnTrackPrepared(TrackPlayer trackPlayer);
+	}
 	
 	private OnTrackStatusListener listener	= null;
-	
 	public void SetListener(OnTrackStatusListener listener){
 		synchronized(this.lock){
 			this.listener	= listener;
+		}
+	}
+	private OnTrackPrepareListener listenerPrepare	= null;
+	public void SetPrepareListener(OnTrackPrepareListener listener){
+		synchronized(this.lock){
+			this.listenerPrepare	= listener;
 		}
 	}
 

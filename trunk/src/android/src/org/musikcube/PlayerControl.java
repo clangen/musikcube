@@ -287,23 +287,11 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener {
     }    
     
     public boolean onOptionsItemSelected(MenuItem item) {
-    	//Log.i("MC2.onContextItemSelected","item "+item.getItemId()+" "+R.id.context_settings);
-   	  switch (item.getItemId()) {
-		  case R.id.context_settings:
-	    		startActivity(new Intent(this, org.musikcube.Preferences.class));
-			  return true;
-		  case R.id.context_browse:
-	    		startActivity(new Intent(this, org.musikcube.main.class));
-			  return true;
-		  case R.id.context_controls:
-	    		startActivity(new Intent(this, org.musikcube.PlayerControl.class));
-			  return true;
-		  case R.id.context_nowplaying:
-	    		startActivity(new Intent(this, org.musikcube.NowPlayingList.class));
-			  return true;
-    	  default:
-    		  return super.onContextItemSelected(item);
-    	  }
+    	if(Helper.DefaultOptionsItemSelected(item,this)){
+    		return true;
+    	}else{
+    		return super.onContextItemSelected(item);
+    	}
    	}
 
 }

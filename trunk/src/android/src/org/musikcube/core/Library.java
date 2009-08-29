@@ -18,7 +18,7 @@ import org.musikcube.core.IQuery;
  * @author doy
  *
  */
-public class Library implements Runnable{
+public final class Library implements Runnable{
 
 //	private String username;
 //	private String password;
@@ -67,7 +67,7 @@ public class Library implements Runnable{
 		public void OnLibraryStatusChange(int status);
 	}
 
-	public void SetStatusListener(OnLibraryStatusListener statusListener){
+	public final void SetStatusListener(OnLibraryStatusListener statusListener){
 		synchronized(this.status){
 			this.statusListener	= statusListener;
 			if(this.statusListener!=null){
@@ -76,7 +76,7 @@ public class Library implements Runnable{
 		}
 	}
 	
-	private void SetStatus(int status){
+	private final void SetStatus(int status){
 		synchronized(this.status){
 			//Log.v("mC2::Lib","STATUS "+this.status);
 			this.status	= status;
@@ -86,19 +86,19 @@ public class Library implements Runnable{
 		}
 	}
 	
-	public int GetStatus(){
+	public final int GetStatus(){
 		synchronized(this.status){
 			return this.status.intValue();
 		}
 	}
 
-	public String GetHost(){
+	public final String GetHost(){
 		synchronized(this.notifier){
 			return this.host;
 		}
 	}
 	
-	public void AddPointer(){
+	public final void AddPointer(){
 		synchronized(this.notifier){
 			this.connections++;
 			
@@ -114,7 +114,7 @@ public class Library implements Runnable{
 			this.notifier.notifyAll();
 		}
 	}
-	public void RemovePointer(){
+	public final void RemovePointer(){
 		synchronized(this.notifier){
 			this.connections--;
 			if(this.connections==0){
@@ -127,7 +127,7 @@ public class Library implements Runnable{
 	}
 	
 	
-	public void Startup(Context context){
+	public final void Startup(Context context){
 		this.context	= context;
 		
 		// Startup thread when the application sends the context for the first time
@@ -136,7 +136,7 @@ public class Library implements Runnable{
 		this.thread.start();
 	}
 	
-	public void Restart(){
+	public final void Restart(){
 		synchronized(this.notifier){
 			this.running	= false;
 			this.restart	= true;
@@ -152,7 +152,7 @@ public class Library implements Runnable{
 		}
 	}
 
-	public boolean Running(){
+	public final boolean Running(){
 		synchronized(this.notifier){
 			if(this.running==true){
 				return true;
@@ -161,7 +161,7 @@ public class Library implements Runnable{
 		return false;
 	}
 	
-	private class WriterThreadHelper implements Runnable{
+	private final class WriterThreadHelper implements Runnable{
 		private Thread	thread;
 		private Library library;
 		public WriterThreadHelper(Library library){
@@ -169,7 +169,7 @@ public class Library implements Runnable{
 			this.thread		= new Thread(this);
 		}
 		
-		public void Start(){
+		public final void Start(){
 			this.thread.start();
 		}
 		
@@ -183,7 +183,7 @@ public class Library implements Runnable{
 	protected Library(){
 	}
 	
-	public void WaitForAuthroization(){
+	public final void WaitForAuthroization(){
 //		Log.v("Library::WaitForAuthroization","start");
 		synchronized (notifier) {
 			if(this.authorization.equals("")){
@@ -340,7 +340,7 @@ public class Library implements Runnable{
 		}
 	}
 	
-	public void WriteThread(WriterThreadHelper thread){
+	public final void WriteThread(WriterThreadHelper thread){
 		//Log.v("Library::WriteThread","Started");
 		this.SetStatus(STATUS_AUTHENTICATING);
 		
@@ -426,7 +426,7 @@ public class Library implements Runnable{
 		//Log.v("Library::WriteThread","Ended");
 	}
 	
-	public void Exit(){
+	public final void Exit(){
 		synchronized(this.notifier){
 			this.exit		= true;
 			this.running	= false;
@@ -451,14 +451,14 @@ public class Library implements Runnable{
 		}
 	}
 	
-	public void AddQuery(IQuery query){
+	public final void AddQuery(IQuery query){
 		synchronized(this.sendQueryQueue){
 			this.sendQueryQueue.addLast(query);
 			this.sendQueryQueue.notifyAll();
 		}
 	}
 	
-	public String GetTrackURL(int trackId){
+	public final String GetTrackURL(int trackId){
 		synchronized (notifier) {
 			if(this.status==STATUS_CONNECTED){
 				String trackURL	= "http://"+this.host+":"+this.httpPort+"/track/?track_id="+trackId+"&auth_key="+this.authorization;

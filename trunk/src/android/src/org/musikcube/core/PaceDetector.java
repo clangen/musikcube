@@ -18,7 +18,7 @@ public class PaceDetector implements Runnable, SensorEventListener, OnQueryResul
 	static public float MAX_BPM	= 85;
 	static public float MIN_BPM	= 40;
 	static public int WAVE_MEMORY	= 20;
-	static public int WAVE_MIN_CALC	= 8;
+	static public int WAVE_MIN_CALC	= 10;
 	static public float WAVE_MIN_BPM_DIFF = 120;	// This is in miliseconds
 	static public int WAVE_COMPARE	= 4;
 	static public int MIN_PLAYTIME	= 20000;	// Play at leased 20 seconds of a track
@@ -53,80 +53,88 @@ public class PaceDetector implements Runnable, SensorEventListener, OnQueryResul
 			}
 			
 			if(this.lastDiff>=0 && diff<0){
-				// this is a top on the curve
-				this.beatTimes.add(android.os.SystemClock.elapsedRealtime());
-				this.amplitude.add(this.currentMax-this.currentMin);
-
-				// Reset the amplitude
-				this.currentMin	= value;
-				this.currentMax	= value;
-
-				// only keep the last 10 waves
-				while(this.beatTimes.size()>WAVE_MEMORY){
-					this.beatTimes.remove(0);
-					this.amplitude.remove(0);
-				}
-
-				// Lets calculate BPM
-				long bpmSum	= 0;
-				//java.util.TreeSet<Long> bpms	= new java.util.TreeSet<Long>();
-				java.util.ArrayList<Long> bpms	= new java.util.ArrayList<Long>();
-				for(int i=0;i<this.beatTimes.size()-WAVE_COMPARE;i++){
-					long orgSample	= this.beatTimes.get(i);
-					for(int j=i+1;j<i+WAVE_COMPARE;j++){
-						//float bpmSample	= 60000/(this.beatTimes.get(j)-orgSample);
-						long bpmSample	= this.beatTimes.get(j)-orgSample;
-						//Log.v("MC2::C","s "+bpmSample);
-						if(bpmSample>(60000/MAX_BPM) && bpmSample<(60000/MIN_BPM)){
-							bpms.add(bpmSample);
-							bpmSum	+= bpmSample;
+				
+				// Amplitude must be at leased 5
+				if(this.currentMax-this.currentMin<7){
+					this.currentMin	= value;
+					this.currentMax	= value;
+//					Log.v("APM","-- "+(this.currentMax-this.currentMin));
+				}else{
+//					Log.v("APM","B "+(this.currentMax-this.currentMin));
+					// this is a top on the curve
+					this.beatTimes.add(android.os.SystemClock.elapsedRealtime());
+					this.amplitude.add(this.currentMax-this.currentMin);
+	
+					// Reset the amplitude
+					this.currentMin	= value;
+					this.currentMax	= value;
+					// only keep the last 10 waves
+					while(this.beatTimes.size()>WAVE_MEMORY){
+						this.beatTimes.remove(0);
+						this.amplitude.remove(0);
+					}
+	
+					// Lets calculate BPM
+					long bpmSum	= 0;
+					//java.util.TreeSet<Long> bpms	= new java.util.TreeSet<Long>();
+					java.util.ArrayList<Long> bpms	= new java.util.ArrayList<Long>();
+					for(int i=0;i<this.beatTimes.size()-WAVE_COMPARE;i++){
+						long orgSample	= this.beatTimes.get(i);
+						for(int j=i+1;j<i+WAVE_COMPARE;j++){
+							//float bpmSample	= 60000/(this.beatTimes.get(j)-orgSample);
+							long bpmSample	= this.beatTimes.get(j)-orgSample;
+							//Log.v("MC2::C","s "+bpmSample);
+							if(bpmSample>(60000/MAX_BPM) && bpmSample<(60000/MIN_BPM)){
+								bpms.add(bpmSample);
+								bpmSum	+= bpmSample;
+							}
 						}
 					}
-				}
-				Collections.sort(bpms);
-				//Log.v("MC2::BEAT","B "+(bpms.size()));
-				
-				// Lets remove the most "off" samples and correct the AVG until we are down to the desired "diff"
-				boolean qualified	= false;
-				long bpmDiff	= 0;
-
-				while(!qualified && bpms.size()>=WAVE_MIN_CALC){
-					Long first	= bpms.get(0);
-					Long last	= bpms.get(bpms.size()-1);
-					bpmDiff	= last-first;
-					int bpmSize	= bpms.size();
-
-//	Log.v("MC2::DIFF","diff "+bpmSize+" "+first+"-"+last+" diff="+bpmDiff);
+					Collections.sort(bpms);
+					//Log.v("MC2::BEAT","B "+(bpms.size()));
 					
-					if(bpmDiff<WAVE_MIN_BPM_DIFF){
-						qualified	= true;
-					}else{
-						// Remove the element that is most far away from the average
-						long avg	= bpmSum/bpmSize;
-						if(avg-first>last-avg){
-							// Remove first
-							bpmSum	-= first;
-							bpms.remove(0);
+					// Lets remove the most "off" samples and correct the AVG until we are down to the desired "diff"
+					boolean qualified	= false;
+					long bpmDiff	= 0;
+	
+					while(!qualified && bpms.size()>=WAVE_MIN_CALC){
+						Long first	= bpms.get(0);
+						Long last	= bpms.get(bpms.size()-1);
+						bpmDiff	= last-first;
+						int bpmSize	= bpms.size();
+	
+	//	Log.v("MC2::DIFF","diff "+bpmSize+" "+first+"-"+last+" diff="+bpmDiff);
+						
+						if(bpmDiff<WAVE_MIN_BPM_DIFF){
+							qualified	= true;
 						}else{
-							// Remove last 
-							bpmSum	-= last;
-							bpms.remove(bpms.size()-1);
+							// Remove the element that is most far away from the average
+							long avg	= bpmSum/bpmSize;
+							if(avg-first>last-avg){
+								// Remove first
+								bpmSum	-= first;
+								bpms.remove(0);
+							}else{
+								// Remove last 
+								bpmSum	-= last;
+								bpms.remove(bpms.size()-1);
+							}
 						}
 					}
-				}
-				
-				if(qualified){
-					// Get avg amplitude
-					float amplitude	= this.amplitude.get(0);
-					for(int i=1;i<this.amplitude.size();i++){
-						amplitude+=this.amplitude.get(i);
+					
+					if(qualified){
+						// Get avg amplitude
+						float amplitude	= this.amplitude.get(0);
+						for(int i=1;i<this.amplitude.size();i++){
+							amplitude+=this.amplitude.get(i);
+						}
+						amplitude	/= this.amplitude.size();
+						
+						
+						this.currentBPM	= ((float)60000*bpms.size())/((float)bpmSum);
+						this.currentAccuracy	= (100-bpmDiff)+bpms.size()*13+amplitude*5;
+						PaceDetector.this.ChangeBPM(this.currentBPM,this.currentAccuracy);
 					}
-					amplitude	/= this.amplitude.size();
-					
-					
-					this.currentBPM	= ((float)60000*bpms.size())/((float)bpmSum);
-					this.currentAccuracy	= (100-bpmDiff)+bpms.size()*13+amplitude*5;
-					PaceDetector.this.ChangeBPM(this.currentBPM,this.currentAccuracy);
 				}
 			}
 			this.lastDiff	= diff;
@@ -158,10 +166,13 @@ public class PaceDetector implements Runnable, SensorEventListener, OnQueryResul
 			
 			long currentTime	= android.os.SystemClock.elapsedRealtime();
 			if(currentTime>this.currentBPMstart+MIN_PLAYTIME){
+				//Log.v("BPM","3 "+bpm);
 				// We have played more than minimum time
 				
 				if(bpm>this.currentBPM+BPM_THRESHOLD || bpm<this.currentBPM-BPM_THRESHOLD){
+					Log.v("BPM","4 "+bpm);
 					// BPM has changed enough to switch track
+					this.currentBPMstart	= currentTime; 
 					
 					this.currentBPM	= bpm;
 					this.currentAccuracy	= accuracy;
@@ -169,6 +180,8 @@ public class PaceDetector implements Runnable, SensorEventListener, OnQueryResul
 					BPMQuery query	= new BPMQuery();
 					query.queryForBPM	= this.currentBPM;
 					query.SetResultListener(this);
+					Library.GetInstance().AddQuery(query);
+					
 				}
 				
 			}
@@ -197,6 +210,7 @@ public class PaceDetector implements Runnable, SensorEventListener, OnQueryResul
 
 	public void OnQueryResults(IQuery query) {
 		BPMQuery bpmQuery	= (BPMQuery)query;
+		Log.v("mC2::PaceDetector","Change tracks "+bpmQuery.trackList.size());
 		if(!bpmQuery.trackList.isEmpty()){
 			Intent intent	= new Intent(this.context, org.musikcube.Service.class);
 			intent.putExtra("org.musikcube.Service.tracklist", bpmQuery.trackList);

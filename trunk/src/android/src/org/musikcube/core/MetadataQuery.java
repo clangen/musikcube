@@ -5,9 +5,9 @@ import doep.xml.WriterNode;
 
 public class MetadataQuery extends IQuery {
 	
-	public java.util.ArrayList<Integer> requestedTracks	= new java.util.ArrayList<Integer>(); 
-	public java.util.ArrayList<String> requestedMetakeys		= new java.util.ArrayList<String>(); 
-	public java.util.ArrayList<Track> resultTracks			= new java.util.ArrayList<Track>(); 
+	public final java.util.ArrayList<Integer> requestedTracks	= new java.util.ArrayList<Integer>(); 
+	public final java.util.ArrayList<String> requestedMetakeys		= new java.util.ArrayList<String>(); 
+	public final java.util.ArrayList<Track> resultTracks			= new java.util.ArrayList<Track>(); 
 	
 	public MetadataQuery() {
 		super();

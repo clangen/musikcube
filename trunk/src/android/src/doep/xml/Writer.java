@@ -1,10 +1,10 @@
 package doep.xml;
 
 
-public class Writer extends WriterNode {
+public final class Writer extends WriterNode {
 
 	public String buffer;
-	private java.io.OutputStream stream;
+	private final java.io.OutputStream stream;
 	
 	public Writer(java.io.OutputStream stream){
 		super("",null);
@@ -14,7 +14,7 @@ public class Writer extends WriterNode {
 		this.state	= 1;
 	}
 	
-	public void Write(String content)
+	public final void Write(String content)
 		throws java.io.IOException
 	{
 		//Log.v("doep.xml.Writer","Write "+content);
@@ -22,13 +22,13 @@ public class Writer extends WriterNode {
 //		this.buffer		+= content;
 	}
 	
-	public void Flush()
+	public final void Flush()
 		throws java.io.IOException
 	{
 		this.Flush(false);
 	}
 	
-	public void Flush(boolean writeNull)
+	public final void Flush(boolean writeNull)
 		throws java.io.IOException
 	{
 		//Log.v("doep.xml.Writer","Flush "+writeNull);

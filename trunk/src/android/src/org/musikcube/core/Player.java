@@ -1,18 +1,21 @@
 package org.musikcube.core;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 import org.musikcube.core.IQuery.OnQueryResultListener;
+import org.musikcube.core.TrackPlayer.OnTrackPrepareListener;
 
 import android.content.Intent;
 
-public class Player implements TrackPlayer.OnTrackStatusListener, OnQueryResultListener{
+public final class Player implements TrackPlayer.OnTrackStatusListener, OnQueryResultListener, OnTrackPrepareListener{
 
 	private ArrayList<Integer> nowPlaying	= new ArrayList<Integer>();
 	private int position	= 0;
 	
 	private boolean repeat	= false;
 	private boolean shuffle = false;
+	private int nextShufflePosition	= -1;
 	
 	private Library library;
 	
@@ -26,6 +29,8 @@ public class Player implements TrackPlayer.OnTrackStatusListener, OnQueryResultL
 	public boolean playWhenPrepared	= false;
 	
 	public android.app.Service service;
+	
+	private boolean bpmMode	= false;
 	
 	public void run() {
 	}
@@ -44,6 +49,9 @@ public class Player implements TrackPlayer.OnTrackStatusListener, OnQueryResultL
 		synchronized(this.lock){
 			this.nowPlaying	= playlist;
 			this.position	= position;
+			if(this.listListener!=null){
+				this.listListener.OnTrackListUpdate();
+			}
 		}
 
 		this.Play();
@@ -64,12 +72,13 @@ public class Player implements TrackPlayer.OnTrackStatusListener, OnQueryResultL
 			this.nowPlaying	= playlist;
 			this.position	= position;
 			if(this.nextPlayer!=null){
+				this.nextPlayer.SetPrepareListener(null);
 				this.nextPlayer.SetListener(null);
 				this.nextPlayer.Stop();
 			}
 			this.playWhenPrepared	= true;
 			this.nextPlayer	= this.PrepareTrack(this.position);
-			this.nextPlayer.SetListener(this);
+			this.nextPlayer.SetPrepareListener(this);
 			
 			if(this.listListener!=null){
 				this.listListener.OnTrackListUpdate();
@@ -182,7 +191,18 @@ public class Player implements TrackPlayer.OnTrackStatusListener, OnQueryResultL
 	public void Next(){
 		synchronized(this.lock){
 			this.currentTrack	= new Track();
-			this.position++;
+			
+			if(this.shuffle){
+				if(this.nextShufflePosition==-1){
+					Random rand	= new Random();
+					this.position	= rand.nextInt(this.nowPlaying.size());
+				}else{
+					this.position	= this.nextShufflePosition;
+					this.nextShufflePosition = -1;
+				}
+			}else{
+				this.position++;
+			}
 
 			if(this.position>=this.nowPlaying.size()){
 				if(this.repeat){
@@ -205,8 +225,20 @@ public class Player implements TrackPlayer.OnTrackStatusListener, OnQueryResultL
 	
 	public void Prev(){
 		synchronized(this.lock){
-			this.currentTrack	= new Track();
-			this.position--;
+			this.currentTrack	= new Track(); 
+			
+			if(this.shuffle){
+				if(this.nextShufflePosition==-1){
+					Random rand	= new Random();
+					this.position	= rand.nextInt(this.nowPlaying.size());
+				}else{
+					this.position	= this.nextShufflePosition;
+					this.nextShufflePosition = -1;
+				}
+			}else{
+				this.position--;
+			}
+			
 			if(this.position<0){
 				this.position	= 0;
 			}
@@ -322,7 +354,17 @@ public class Player implements TrackPlayer.OnTrackStatusListener, OnQueryResultL
 	public void OnTrackAlmostDone(TrackPlayer trackPlayer) {
 		synchronized(this.lock){
 			if(this.nextPlayer==null){
-				this.nextPlayer	= this.PrepareTrack(this.position+1);
+				if(this.shuffle){
+					if(this.nextShufflePosition==-1){
+						Random rand	= new Random();
+						this.nextShufflePosition = rand.nextInt(this.nowPlaying.size());
+						this.nextPlayer	= this.PrepareTrack(this.nextShufflePosition);
+					}else{
+						this.nextPlayer	= this.PrepareTrack(this.nextShufflePosition);
+					}
+				}else{
+					this.nextPlayer	= this.PrepareTrack(this.position+1);
+				}
 			}
 		}
 	}
@@ -389,5 +431,26 @@ public class Player implements TrackPlayer.OnTrackStatusListener, OnQueryResultL
 			return this.shuffle;
 		}
 	}
+	
+	public void SetBPMMode(boolean bpmMode){
+		synchronized(this.lock){
+			this.bpmMode	= bpmMode;
+		}
+	}
+	public boolean GetBPMMode(){
+		synchronized(this.lock){
+			return this.bpmMode;
+		}
+	}
+
+	public void RemoveFromList(int position){
+		synchronized(this.lock){
+			this.nowPlaying.remove(position);
+			if(this.listListener!=null){
+				this.listListener.OnTrackListUpdate();
+			}
+		}
+	}
+	
 	
 }

@@ -24,7 +24,7 @@ public class IQuery extends Object{
 
 	protected WriterNode SendQueryNode(WriterNode parentNode)
 	{
-		WriterNode queryNode	= parentNode.ChildNode("query");
+		final WriterNode queryNode	= parentNode.ChildNode("query");
 		queryNode.attributes.put("id",Integer.toString(this.id));
 		queryNode.attributes.put("uid",Integer.toString(this.uid));
 		queryNode.attributes.put("type",this.type);

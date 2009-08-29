@@ -19,71 +19,79 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-public class BPMControl extends Activity implements OnTrackUpdateListener {
+public class PlayerBPMControl extends Activity implements OnTrackUpdateListener {
 
 	private Track track		= new Track();
 	private int duration = 0;
 	private Object lock	= new Object();
+	private boolean enable	= false;
+	private int currentAlbumCoverId	= 0;
 	
     @Override
     public void onCreate(Bundle savedInstanceState) {
 		Log.v("MC2::PC","OnCreate");
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.play_control);
-/*        
+        setContentView(R.layout.play_bpm_control);
+        
         ImageButton nextButton	= (ImageButton)findViewById(R.id.MediaNext);
         nextButton.setOnClickListener(this.onNextClick);
         ImageButton pauseButton	= (ImageButton)findViewById(R.id.MediaPause);
         pauseButton.setOnClickListener(this.onPauseClick);
-  */      
+        
 		this.callbackTrackPositionsUpdateHandler.postDelayed(callbackTrackPositionsUpdateRunnable,500);
+		
+		Intent intent	= new Intent(PlayerBPMControl.this, org.musikcube.Service.class);
+		intent.putExtra("org.musikcube.Service.action", "bpmstart");
+		startService(intent);
    }
-/*
+
     private OnClickListener onNextClick = new OnClickListener() {
     	public void onClick(View v){
-    		Intent intent	= new Intent(PlayerControl.this, org.musikcube.Service.class);
+    		Intent intent	= new Intent(PlayerBPMControl.this, org.musikcube.Service.class);
     		intent.putExtra("org.musikcube.Service.action", "next");
     		startService(intent);
     	}
     };
     private OnClickListener onPauseClick = new OnClickListener() {
     	public void onClick(View v){
-    		Intent intent	= new Intent(PlayerControl.this, org.musikcube.Service.class);
+    		Intent intent	= new Intent(PlayerBPMControl.this, org.musikcube.Service.class);
     		intent.putExtra("org.musikcube.Service.action", "stop");
     		startService(intent);
     	}
     };
-*/
+    
 	public void OnTrackBufferUpdate(int percent) {
-		synchronized(lock){
-		}
 		this.callbackTrackPositionsUpdateHandler.post(this.callbackTrackPositionsUpdateRunnable);
 	}
 	public void OnTrackPositionUpdate(int secondsPlayed) {
-		synchronized(lock){
-		}
 		this.callbackTrackPositionsUpdateHandler.post(this.callbackTrackPositionsUpdateRunnable);
 	}
 	public void OnTrackUpdate() {
 		this.callbackTrackUpdateHandler.post(this.callbackTrackUpdateRunnable);
 	}
-
 	
 	@Override
 	protected void onPause() {
+		this.enable	= false;
 		Log.v("MC2::PC","OnPause");
 		Player.GetInstance().SetUpdateListener(null);
 		super.onPause();
 	}
 	@Override
 	protected void onResume() {
+		this.enable	= true;
 		Log.v("MC2::PC","OnResume");
 		Player.GetInstance().SetUpdateListener(this);
 		super.onResume();
+		this.OnUpdateTrackPositionsUI();
+		this.OnUpdateTrackUI();
 	}
     
 	// Need handler for callbacks to the UI thread
@@ -149,13 +157,16 @@ public class BPMControl extends Activity implements OnTrackUpdateListener {
 		}
 
 		// clear image
-		ImageView cover	= (ImageView)findViewById(R.id.AlbumCover);
-		cover.setImageResource(R.drawable.album);
-
-		if(thumbnailId!=0){
-			// Load image
-			Library library	= Library.GetInstance();
-			new DownloadAlbumCoverTask().execute("http://"+library.host+":"+library.httpPort+"/cover/?cover_id="+thumbnailId);
+		if(this.currentAlbumCoverId!=thumbnailId){
+			this.currentAlbumCoverId=thumbnailId;
+			ImageView cover	= (ImageView)findViewById(R.id.AlbumCover);
+			cover.setImageResource(R.drawable.album);
+	
+			if(thumbnailId!=0){
+				// Load image
+				Library library	= Library.GetInstance();
+				new DownloadAlbumCoverTask().execute("http://"+library.host+":"+library.httpPort+"/cover/?cover_id="+thumbnailId);
+			}
 		}
 		
 	}
@@ -198,24 +209,26 @@ public class BPMControl extends Activity implements OnTrackUpdateListener {
     };
     
 	public void OnUpdateTrackPositionsUI() {
-		int msPosition	= Player.GetInstance().GetTrackPosition();
-		int position	= msPosition/1000;
-		int minutes	= (int)Math.floor(position/60);
-		int seconds	= position-minutes*60;
-		String positionText	= Integer.toString(minutes)+":";
-		if(seconds<10){ positionText	+= "0"; }
-		positionText	+= Integer.toString(seconds);
-		TextView positionView	= (TextView)findViewById(R.id.TrackPosition);
-		positionView.setText(positionText);
-
-		SeekBar seekBar	= (SeekBar)findViewById(R.id.TrackProgress);
-		synchronized (this.lock) {
-			if(this.duration==0){
-				seekBar.setProgress(0);
-			}else{
-				seekBar.setProgress(msPosition/this.duration);
+		if(this.enable){
+			int msPosition	= Player.GetInstance().GetTrackPosition();
+			int position	= msPosition/1000;
+			int minutes	= (int)Math.floor(position/60);
+			int seconds	= position-minutes*60;
+			String positionText	= Integer.toString(minutes)+":";
+			if(seconds<10){ positionText	+= "0"; }
+			positionText	+= Integer.toString(seconds);
+			TextView positionView	= (TextView)findViewById(R.id.TrackPosition);
+			positionView.setText(positionText);
+	
+			SeekBar seekBar	= (SeekBar)findViewById(R.id.TrackProgress);
+			synchronized (this.lock) {
+				if(this.duration==0){
+					seekBar.setProgress(0);
+				}else{
+					seekBar.setProgress(msPosition/this.duration);
+				}
+				seekBar.setSecondaryProgress(10*Player.GetInstance().GetTrackBuffer());
 			}
-			seekBar.setSecondaryProgress(10*Player.GetInstance().GetTrackBuffer());
 		}
 		
 		// Next callback in 0.5 seconds
@@ -230,20 +243,11 @@ public class BPMControl extends Activity implements OnTrackUpdateListener {
     }    
     
     public boolean onOptionsItemSelected(MenuItem item) {
-    	//Log.i("MC2.onContextItemSelected","item "+item.getItemId()+" "+R.id.context_settings);
-   	  switch (item.getItemId()) {
-		  case R.id.context_settings:
-	    		startActivity(new Intent(this, org.musikcube.Preferences.class));
-			  return true;
-		  case R.id.context_browse:
-	    		startActivity(new Intent(this, org.musikcube.main.class));
-			  return true;
-		  case R.id.context_controls:
-	    		startActivity(new Intent(this, org.musikcube.PlayerControl.class));
-			  return true;
-    	  default:
-    		  return super.onContextItemSelected(item);
-    	  }
+    	if(Helper.DefaultOptionsItemSelected(item,this)){
+    		return true;
+    	}else{
+    		return super.onContextItemSelected(item);
+    	}
    	}
 
 }
