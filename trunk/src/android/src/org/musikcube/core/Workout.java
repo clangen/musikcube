@@ -111,6 +111,7 @@ public class Workout implements OnBPMListener, Runnable, OnQueryResultListener {
 	public void SetBPM(float bpm){
 		synchronized(lock){
 			if(this.paceDetector==null){
+				this.reportBPM	= bpm;
 				this.bpm	= bpm;
 				if(this.active){
 					this.QueryTracks(true);
@@ -180,14 +181,16 @@ public class Workout implements OnBPMListener, Runnable, OnQueryResultListener {
 
 	public void OnQueryResults(IQuery query) {
 		synchronized(this.lock){
-			this.lastQueryTime	= android.os.SystemClock.elapsedRealtime();
-			BPMQuery bpmQuery	= (BPMQuery)query;
-			if(!bpmQuery.trackList.isEmpty() && this.context!=null){
-				Intent intent	= new Intent(this.context, org.musikcube.Service.class);
-				intent.putExtra("org.musikcube.Service.tracklist", bpmQuery.trackList);
-				intent.putExtra("org.musikcube.Service.position", 0);
-				intent.putExtra("org.musikcube.Service.action", "playlist_prepare");
-				this.context.startService(intent);
+			if(this.active){
+				this.lastQueryTime	= android.os.SystemClock.elapsedRealtime();
+				BPMQuery bpmQuery	= (BPMQuery)query;
+				if(!bpmQuery.trackList.isEmpty() && this.context!=null){
+					Intent intent	= new Intent(this.context, org.musikcube.Service.class);
+					intent.putExtra("org.musikcube.Service.tracklist", bpmQuery.trackList);
+					intent.putExtra("org.musikcube.Service.position", 0);
+					intent.putExtra("org.musikcube.Service.action", "playlist_prepare");
+					this.context.startService(intent);
+				}
 			}
 		}
 	}
