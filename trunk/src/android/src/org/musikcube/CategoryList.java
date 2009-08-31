@@ -5,7 +5,6 @@ package org.musikcube;
 
 import java.util.ArrayList;
 
-import org.musikcube.TrackListBase.TrackViewHolder;
 import org.musikcube.core.IQuery;
 import org.musikcube.core.ListQuery;
 import org.musikcube.core.IQuery.OnQueryResultListener;
@@ -21,7 +20,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 

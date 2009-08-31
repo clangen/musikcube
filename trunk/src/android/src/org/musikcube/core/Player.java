@@ -452,5 +452,11 @@ public final class Player implements TrackPlayer.OnTrackStatusListener, OnQueryR
 		}
 	}
 	
+	public boolean Playing(){
+		synchronized(this.lock){
+			return (this.library!=null);
+		}
+	}
+	
 	
 }

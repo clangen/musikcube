@@ -1,7 +1,7 @@
 package org.musikcube.core;
 
 import android.media.MediaPlayer;
-import android.util.Log;
+
 
 public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener,MediaPlayer.OnBufferingUpdateListener {
 
@@ -33,7 +33,6 @@ public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, 
 			String url	= Library.GetInstance().GetTrackURL(this.trackId);
 			synchronized(this.lock){
 				while(url==null && (this.status==STATUS_PREPARED || this.status==STATUS_PLAYING)){
-					Log.v("mC2::TrackPlayer","Retrying "+this.trackId);
 					this.lock.wait(250);
 					url	= Library.GetInstance().GetTrackURL(this.trackId);
 				}
@@ -64,6 +63,7 @@ public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, 
 			
 			if(currentStatus==STATUS_PLAYING)
 				this.mediaPlayer.start();
+
 		
 			synchronized(this.lock){
 				this.started	= true;
@@ -85,18 +85,21 @@ public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, 
 				}
 				this.started	= false;
 			}
+
 			
 			this.mediaPlayer.stop();
 			this.mediaPlayer.release();
 			synchronized(this.lock){
 				this.mediaPlayer	= null;
 			}
+	
 		
 		} catch (Exception e) {
 		}
 		synchronized(this.lock){
 			this.status	= STATUS_EXIT;
 		}
+	
 		
 		this.CallListener();
 		

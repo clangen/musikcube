@@ -15,7 +15,6 @@ import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -33,10 +32,10 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener {
 	private Object lock	= new Object();
 	private boolean enable	= false;
 	private int currentAlbumCoverId	= 0;
+	private boolean playing	= false;
 	
     @Override
     public void onCreate(Bundle savedInstanceState) {
-		Log.v("MC2::PC","OnCreate");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.play_control);
         
@@ -74,7 +73,11 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener {
     private OnClickListener onPauseClick = new OnClickListener() {
     	public void onClick(View v){
     		Intent intent	= new Intent(PlayerControl.this, org.musikcube.Service.class);
-    		intent.putExtra("org.musikcube.Service.action", "stop");
+    		if(Player.GetInstance().Playing()){
+    			intent.putExtra("org.musikcube.Service.action", "stop");
+    		}else{
+	    		intent.putExtra("org.musikcube.Service.action", "play");
+    		}
     		startService(intent);
     	}
     };
@@ -124,14 +127,14 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener {
 	@Override
 	protected void onPause() {
 		this.enable	= false;
-		Log.v("MC2::PC","OnPause");
+		org.musikcube.core.Library.GetInstance().RemovePointer();
 		Player.GetInstance().SetUpdateListener(null);
 		super.onPause();
 	}
 	@Override
 	protected void onResume() {
 		this.enable	= true;
-		Log.v("MC2::PC","OnResume");
+		org.musikcube.core.Library.GetInstance().AddPointer();
 		Player.GetInstance().SetUpdateListener(this);
 		super.onResume();
 		this.OnUpdateTrackPositionsUI();
@@ -213,6 +216,14 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener {
 			}
 		}
 		
+		// Update play button
+		ImageButton playButton	= (ImageButton)findViewById(R.id.MediaPause);
+		if(Player.GetInstance().Playing()){
+			playButton.setImageResource(R.drawable.ic_media_pause);
+		}else{
+			playButton.setImageResource(R.drawable.ic_media_play);
+		}
+		
 	}
 	
 	private class DownloadAlbumCoverTask extends AsyncTask<String,Integer,Bitmap>{
@@ -228,8 +239,6 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener {
 	            Bitmap bm	= BitmapFactory.decodeStream(is);
 	            return bm;
 			} catch (Exception e) {
-				Log.v("mC2:PLAYER","Error "+e.getMessage());
-//				e.printStackTrace();
 				return null;
 			}
 		}
