@@ -7,6 +7,7 @@ import org.musikcube.core.PaceDetector.OnBPMListener;
 
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 
 public class Workout implements OnBPMListener, Runnable, OnQueryResultListener {
 
@@ -21,7 +22,9 @@ public class Workout implements OnBPMListener, Runnable, OnQueryResultListener {
 	private boolean useAccelerometer	= false;
 	private long lastQueryTime		 = -30000;
 	private int minimumPlaytime		= 30000;
-	static final public float BPM_THRESHOLD	= 10;	// if BPM is off by more than 10 bpm, switch track
+	static final public float BPM_THRESHOLD	= 8;	// if BPM is off by more than 10 bpm, switch track
+	
+	private float reportBPM	= 100;
 	
 	private ArrayList<Integer> selectedCategories	= new ArrayList<Integer>(); 
 	private String category	= "";
@@ -118,7 +121,7 @@ public class Workout implements OnBPMListener, Runnable, OnQueryResultListener {
 	
 	public float GetBPM(){
 		synchronized(lock){
-			return this.bpm;
+			return this.reportBPM;
 		}
 	}
 
@@ -126,12 +129,16 @@ public class Workout implements OnBPMListener, Runnable, OnQueryResultListener {
 		synchronized(lock){
 			final float bpm	= this.paceDetector.GetBPM();
 			if(bpm>0.0){
+				this.reportBPM	= bpm;
+//				Log.v("BPM","bpm="+bpm);
 				if(bpm>this.bpm+BPM_THRESHOLD || bpm<this.bpm-BPM_THRESHOLD){
 					this.bpm	= bpm;
-					if(this.listener!=null){
-						this.listener.OnBPMUpdate();
-					}
+					this.reportBPM	= bpm;
 					this.QueryTracks(false);
+				}
+				
+				if(this.listener!=null){
+					this.listener.OnBPMUpdate();
 				}
 			}
 		}
