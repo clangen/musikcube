@@ -8,7 +8,6 @@ import org.musikcube.core.Player.OnTrackListUpdateListener;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Handler;
 import android.view.ContextMenu;
 import android.view.MenuItem;
 import android.view.View;
@@ -39,8 +38,6 @@ public class NowPlayingList extends TrackListBase implements OnTrackListUpdateLi
 		super.onCreate(savedInstanceState);
 		
 		this.setTitle("musikCube: Now playing");
-		
-		org.musikcube.core.Library library	= org.musikcube.core.Library.GetInstance();
 		
 		this.registerForContextMenu(this.getListView());
 	}

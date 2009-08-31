@@ -3,8 +3,10 @@
     android:orientation="vertical"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent">
-
-<TextView android:id="@+id/TextView01" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/help_main" android:layout_margin="10sp"></TextView>
-
-
+<TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="musikCube is a application that is able to play music from you own desktop computer or server. Although it can be a little bit tricky to get it up and running since you probably need to do some port forwarding in your gateway to be able to access the server from outside your network." android:padding="4sp"></TextView>
+<TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="First of all, musikCube requires you to run a windows applications called musikServer that can be downloaded from:" android:padding="4sp"></TextView>
+<TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="http://code.google.com/p/musikcube/" android:textColor="#ffffff" android:padding="4sp"></TextView>
+<TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="On the project site you will also find help regarding gateway and firewall settings." android:padding="4sp"></TextView>
+<TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Once installed and opened up in gateways and firewalls you go to the settings in this application and edit where to find your musikServer." android:padding="4sp"></TextView>
+<TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Enjoy!" android:padding="4sp"></TextView>
 </LinearLayout>

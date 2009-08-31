@@ -2,31 +2,28 @@ package org.musikcube.core;
 
 import java.util.Collections;
 
-import org.musikcube.core.IQuery.OnQueryResultListener;
-
 import android.content.Context;
-import android.content.Intent;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.util.Log;
 
 
-public class PaceDetector implements Runnable, SensorEventListener, OnQueryResultListener {
+public class PaceDetector implements Runnable, SensorEventListener{
 	
-	static public float MAX_BPM	= 85;
-	static public float MIN_BPM	= 40;
-	static public int WAVE_MEMORY	= 20;
-	static public int WAVE_MIN_CALC	= 10;
-	static public float WAVE_MIN_BPM_DIFF = 120;	// This is in miliseconds
-	static public int WAVE_COMPARE	= 4;
-	static public int MIN_PLAYTIME	= 20000;	// Play at leased 20 seconds of a track
-	static public float BPM_THRESHOLD	= 10;	// if BPM is off by more than 10 bpm, switch track
+	static final public float MAX_BPM	= 100;
+	static final public float MIN_BPM	= 40;
+	static final public int WAVE_MEMORY	= 20;
+	static final public int WAVE_MIN_CALC	= 10;
+	static final public float WAVE_MIN_BPM_DIFF = 100;	// This is in miliseconds
+	static final public int WAVE_COMPARE	= 4;
+	static final public int MIN_PLAYTIME	= 20000;	// Play at leased 20 seconds of a track
+	//static final public float BPM_THRESHOLD	= 10;	// if BPM is off by more than 10 bpm, switch track
 	
 	private float currentBPM	= 0;
 	private float currentAccuracy = 0;
 	private long currentBPMstart	= 0;
+	private Object lock	= new Object();
 	
 	private Context context;
 	
@@ -43,7 +40,7 @@ public class PaceDetector implements Runnable, SensorEventListener, OnQueryResul
 		public float currentAccuracy	= 0;
 		
 		final public void NextValue(float value){
-			float diff	= value-this.lastValue;
+			final float diff	= value-this.lastValue;
 
 			if(value<this.currentMin){
 				this.currentMin	= value;
@@ -55,12 +52,10 @@ public class PaceDetector implements Runnable, SensorEventListener, OnQueryResul
 			if(this.lastDiff>=0 && diff<0){
 				
 				// Amplitude must be at leased 5
-				if(this.currentMax-this.currentMin<7){
+				if(this.currentMax-this.currentMin<4){
 					this.currentMin	= value;
 					this.currentMax	= value;
-//					Log.v("APM","-- "+(this.currentMax-this.currentMin));
 				}else{
-//					Log.v("APM","B "+(this.currentMax-this.currentMin));
 					// this is a top on the curve
 					this.beatTimes.add(android.os.SystemClock.elapsedRealtime());
 					this.amplitude.add(this.currentMax-this.currentMin);
@@ -143,6 +138,21 @@ public class PaceDetector implements Runnable, SensorEventListener, OnQueryResul
 		
 	}
 	
+	public interface OnBPMListener{
+		public void OnBPMUpdate();
+	}
+	protected OnBPMListener listener			= null;
+	
+	public void SetListener(OnBPMListener listener){
+		synchronized(this.lock){
+			this.listener	= listener;
+			if(this.listener!=null){
+				this.listener.OnBPMUpdate();
+			}
+		}
+	}
+	
+	
 	private PaceDimension xAxis	= new PaceDimension(); 
 	private PaceDimension yAxis	= new PaceDimension(); 
 	private PaceDimension zAxis	= new PaceDimension(); 
@@ -159,38 +169,40 @@ public class PaceDetector implements Runnable, SensorEventListener, OnQueryResul
 	}
 	
 	public void ChangeBPM(float bpm,float accuracy){
-		bpm	*= 2;	// BPM should be the double
+		while(bpm<85){
+			bpm	*= 2;
+		}
+		while(bpm>200){
+			bpm	*= 0.5;
+		}
 		
 		if(accuracy>=this.xAxis.currentAccuracy && accuracy>=this.yAxis.currentAccuracy && accuracy>=this.zAxis.currentAccuracy && accuracy>150){
 			// The BPM has changed
 			
 			long currentTime	= android.os.SystemClock.elapsedRealtime();
-			if(currentTime>this.currentBPMstart+MIN_PLAYTIME){
+//			if(currentTime>this.currentBPMstart+MIN_PLAYTIME){
 				//Log.v("BPM","3 "+bpm);
 				// We have played more than minimum time
 				
-				if(bpm>this.currentBPM+BPM_THRESHOLD || bpm<this.currentBPM-BPM_THRESHOLD){
-					Log.v("BPM","4 "+bpm);
+//				if(bpm>this.currentBPM+BPM_THRESHOLD || bpm<this.currentBPM-BPM_THRESHOLD){
 					// BPM has changed enough to switch track
 					this.currentBPMstart	= currentTime; 
-					
-					this.currentBPM	= bpm;
+
+					synchronized(lock){
+						this.currentBPM	= bpm;
+						if(this.listener!=null){
+							this.listener.OnBPMUpdate();
+						}
+					}
 					this.currentAccuracy	= accuracy;
 					
-					BPMQuery query	= new BPMQuery();
-					query.queryForBPM	= this.currentBPM;
-					query.SetResultListener(this);
-					Library.GetInstance().AddQuery(query);
-					
-				}
-				
-			}
+//				}
+//			}
 		}
 	}
 	
 	public void StartSensor(Context context){
 		this.context	= context;
-		Log.v("mC2::ACC","Sensor");
 		SensorManager sensorMgr	= (SensorManager)context.getSystemService(Context.SENSOR_SERVICE);
 		Sensor accelerometer	= sensorMgr.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 		sensorMgr.registerListener(this,accelerometer,SensorManager.SENSOR_DELAY_GAME);
@@ -204,19 +216,11 @@ public class PaceDetector implements Runnable, SensorEventListener, OnQueryResul
 	
 
 	public void run() {
-		// TODO Auto-generated method stub
-		
 	}
-
-	public void OnQueryResults(IQuery query) {
-		BPMQuery bpmQuery	= (BPMQuery)query;
-		Log.v("mC2::PaceDetector","Change tracks "+bpmQuery.trackList.size());
-		if(!bpmQuery.trackList.isEmpty()){
-			Intent intent	= new Intent(this.context, org.musikcube.Service.class);
-			intent.putExtra("org.musikcube.Service.tracklist", bpmQuery.trackList);
-			intent.putExtra("org.musikcube.Service.position", 0);
-			intent.putExtra("org.musikcube.Service.action", "playlist_prepare");
-			this.context.startService(intent);
+	
+	public float GetBPM(){
+		synchronized(this.lock){
+			return currentBPM;
 		}
 	}
 

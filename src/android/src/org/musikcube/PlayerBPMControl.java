@@ -6,7 +6,9 @@ import java.net.URL;
 import org.musikcube.core.Library;
 import org.musikcube.core.Player;
 import org.musikcube.core.Track;
+import org.musikcube.core.Workout;
 import org.musikcube.core.Player.OnTrackUpdateListener;
+import org.musikcube.core.Workout.OnWorkoutListener;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -15,18 +17,21 @@ import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.CompoundButton;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.ToggleButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
+import android.widget.SeekBar.OnSeekBarChangeListener;
 
-public class PlayerBPMControl extends Activity implements OnTrackUpdateListener {
+public class PlayerBPMControl extends Activity implements OnTrackUpdateListener, OnWorkoutListener {
 
 	private Track track		= new Track();
 	private int duration = 0;
@@ -36,7 +41,6 @@ public class PlayerBPMControl extends Activity implements OnTrackUpdateListener 
 	
     @Override
     public void onCreate(Bundle savedInstanceState) {
-		Log.v("MC2::PC","OnCreate");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.play_bpm_control);
         
@@ -44,12 +48,12 @@ public class PlayerBPMControl extends Activity implements OnTrackUpdateListener 
         nextButton.setOnClickListener(this.onNextClick);
         ImageButton pauseButton	= (ImageButton)findViewById(R.id.MediaPause);
         pauseButton.setOnClickListener(this.onPauseClick);
+		ToggleButton acc	= (ToggleButton)findViewById(R.id.ToggleAccelerator);
+		acc.setOnCheckedChangeListener(this.onAcceleratorToggle);
+        SeekBar bpmBar		= (SeekBar)findViewById(R.id.BPM);
+        bpmBar.setOnSeekBarChangeListener(this.onBPMChanged);
         
 		this.callbackTrackPositionsUpdateHandler.postDelayed(callbackTrackPositionsUpdateRunnable,500);
-		
-		Intent intent	= new Intent(PlayerBPMControl.this, org.musikcube.Service.class);
-		intent.putExtra("org.musikcube.Service.action", "bpmstart");
-		startService(intent);
    }
 
     private OnClickListener onNextClick = new OnClickListener() {
@@ -62,10 +66,44 @@ public class PlayerBPMControl extends Activity implements OnTrackUpdateListener 
     private OnClickListener onPauseClick = new OnClickListener() {
     	public void onClick(View v){
     		Intent intent	= new Intent(PlayerBPMControl.this, org.musikcube.Service.class);
-    		intent.putExtra("org.musikcube.Service.action", "stop");
+    		if(Workout.GetInstance().Active()){
+    			intent.putExtra("org.musikcube.Service.action", "workoutstop");
+    		}else{
+	    		intent.putExtra("org.musikcube.Service.action", "workoutstart");
+    		}
     		startService(intent);
+//    		PlayerBPMControl.this.OnUpdateTrackUI();
     	}
     };
+	private OnCheckedChangeListener onAcceleratorToggle = new OnCheckedChangeListener(){
+		public void onCheckedChanged(CompoundButton buttonView,boolean isChecked) {
+			Workout.GetInstance().UseAccelerometer(isChecked);
+		}
+	};
+	private OnSeekBarChangeListener onBPMChanged = new OnSeekBarChangeListener(){
+
+		public void onProgressChanged(SeekBar seekBar, int progress,
+				boolean fromUser) {
+			if(fromUser){
+				if(!Workout.GetInstance().Accelerometer()){
+					// Seek
+					float bpm	= (float) ((float)progress*150.0/1000.0+50.0);
+					Workout.GetInstance().SetBPM(bpm);
+					
+					TextView bpmTitle	= (TextView)PlayerBPMControl.this.findViewById(R.id.BPMTitle);
+					bpmTitle.setText("BPM: "+bpm);
+				}
+			}
+		}
+
+		public void onStartTrackingTouch(SeekBar seekBar) {
+		}
+
+		public void onStopTrackingTouch(SeekBar seekBar) {
+		}
+		
+	};
+
     
 	public void OnTrackBufferUpdate(int percent) {
 		this.callbackTrackPositionsUpdateHandler.post(this.callbackTrackPositionsUpdateRunnable);
@@ -80,18 +118,24 @@ public class PlayerBPMControl extends Activity implements OnTrackUpdateListener 
 	@Override
 	protected void onPause() {
 		this.enable	= false;
-		Log.v("MC2::PC","OnPause");
+		org.musikcube.core.Library.GetInstance().RemovePointer();
 		Player.GetInstance().SetUpdateListener(null);
+		Workout.GetInstance().SetListener(null);
 		super.onPause();
 	}
 	@Override
 	protected void onResume() {
 		this.enable	= true;
-		Log.v("MC2::PC","OnResume");
+		org.musikcube.core.Library.GetInstance().AddPointer();
 		Player.GetInstance().SetUpdateListener(this);
 		super.onResume();
 		this.OnUpdateTrackPositionsUI();
 		this.OnUpdateTrackUI();
+		
+		Workout.GetInstance().SetListener(this);
+		
+		ToggleButton acc	= (ToggleButton)findViewById(R.id.ToggleAccelerator);
+		acc.setChecked(Workout.GetInstance().Accelerometer());
 	}
     
 	// Need handler for callbacks to the UI thread
@@ -169,6 +213,15 @@ public class PlayerBPMControl extends Activity implements OnTrackUpdateListener 
 			}
 		}
 		
+		// Update play button
+		ImageButton playButton	= (ImageButton)findViewById(R.id.MediaPause);
+		if(Workout.GetInstance().Active()){
+			playButton.setImageResource(R.drawable.ic_media_pause);
+		}else{
+			playButton.setImageResource(R.drawable.ic_media_play);
+		}
+		
+		
 	}
 	
 	private class DownloadAlbumCoverTask extends AsyncTask<String,Integer,Bitmap>{
@@ -184,7 +237,6 @@ public class PlayerBPMControl extends Activity implements OnTrackUpdateListener 
 	            Bitmap bm	= BitmapFactory.decodeStream(is);
 	            return bm;
 			} catch (Exception e) {
-				Log.v("mC2:PLAYER","Error "+e.getMessage());
 //				e.printStackTrace();
 				return null;
 			}
@@ -231,6 +283,16 @@ public class PlayerBPMControl extends Activity implements OnTrackUpdateListener 
 			}
 		}
 		
+		// Update BPM
+		SeekBar bpmBar	= (SeekBar)findViewById(R.id.BPM);
+		final int startBPM	= 50;
+		final int endBPM		= 200;
+		final float currentBPM	= Workout.GetInstance().GetBPM();
+		bpmBar.setProgress( (int) (((float)currentBPM-startBPM)*1000/(endBPM-startBPM)) );
+		
+		TextView bpmTitle	= (TextView)findViewById(R.id.BPMTitle);
+		bpmTitle.setText("BPM: "+currentBPM);
+		
 		// Next callback in 0.5 seconds
 		this.callbackTrackPositionsUpdateHandler.postDelayed(callbackTrackPositionsUpdateRunnable,500);
 
@@ -249,5 +311,8 @@ public class PlayerBPMControl extends Activity implements OnTrackUpdateListener 
     		return super.onContextItemSelected(item);
     	}
    	}
+	public void OnBPMUpdate() {
+		this.callbackTrackUpdateHandler.post(this.callbackTrackUpdateRunnable);
+	}
 
 }

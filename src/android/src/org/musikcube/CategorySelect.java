@@ -5,26 +5,28 @@ package org.musikcube;
 
 import java.util.ArrayList;
 
-import org.musikcube.TrackListBase.TrackViewHolder;
 import org.musikcube.core.IQuery;
 import org.musikcube.core.ListQuery;
+import org.musikcube.core.Workout;
 import org.musikcube.core.IQuery.OnQueryResultListener;
 
 import android.app.ListActivity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
+import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.View.OnClickListener;
 import android.widget.BaseAdapter;
-import android.widget.CheckBox;
-import android.widget.ImageView;
+import android.widget.Button;
+import android.widget.CheckedTextView;
 import android.widget.ListView;
-import android.widget.TextView;
 
 /**
  * @author doy
@@ -51,7 +53,7 @@ public class CategorySelect extends ListActivity implements OnQueryResultListene
     };
 
     static class CategoryViewHolder{
-    	CheckBox title;
+    	CheckedTextView title;
 	}
     
     public class ResultAdapter extends BaseAdapter{
@@ -66,28 +68,15 @@ public class CategorySelect extends ListActivity implements OnQueryResultListene
     	}
     	
 		public int getCount() {
-			int size	= this.query.resultsInts.size();
-			if(size==0){
-				return 0;
-			}else{
-				return size+1;
-			}
+			return this.query.resultsInts.size();
 		}
 
 		public Object getItem(int position) {
-			if(position==0){
-				return 0;
-			}else{
-				return this.query.resultsInts.get(position-1);
-			}
+			return this.query.resultsInts.get(position);
 		}
 
 		public long getItemId(int position) {
-			if(position==0){
-				return 0;
-			}else{
-				return this.query.resultsInts.get(position-1);
-			}
+			return this.query.resultsInts.get(position);
 		}
 
 		public View getView(int position, View view, ViewGroup parent) {
@@ -95,22 +84,42 @@ public class CategorySelect extends ListActivity implements OnQueryResultListene
 			if(view==null){
 				view	= inflator.inflate(R.layout.category_select_item, null);
 				holder	= new CategoryViewHolder();
-				holder.title	= (CheckBox) view.findViewById(R.id.text); 
+				holder.title	= (CheckedTextView) view.findViewById(R.id.text); 
 				view.setTag(holder);
 			}else{
 				holder	= (CategoryViewHolder)view.getTag();
 			}
 
 			//
-			if(position==0){
-    			holder.title.setText("- All -");
-			}else{
-    			holder.title.setText(this.query.resultsStrings.get(position-1));
-			}
+   			holder.title.setText(this.query.resultsStrings.get(position));
 			return view;
 		}
     	
     }
+    
+    private OnClickListener onSaveClick = new OnClickListener() {
+    	public void onClick(View v){
+    		final Intent intent	= new Intent(CategorySelect.this, PlayerBPMControl.class);
+    		
+    		// Get selection
+    		final SparseBooleanArray selectionList	= CategorySelect.this.getListView().getCheckedItemPositions(); 
+    		final ArrayList<Integer> selections	= new ArrayList<Integer>();
+    		ArrayList<Integer> list	= CategorySelect.this.query.resultsInts;
+    		int listSize	= list.size();
+    		for(int i=0;i<listSize;i++){
+    			if(selectionList.get(i)){
+    				selections.add(list.get(i));
+    			}
+    		}
+    		Workout.GetInstance().SetCategory(selections, CategorySelect.this.category);
+    		Log.v("mC2::SAVE",CategorySelect.this.category);    		
+    		Log.v("mC2::SAVE",selections.toString());    		
+    		intent.putExtra("org.musikcube.PlayerBPMControl.category", CategorySelect.this.category);
+    		intent.putExtra("org.musikcube.PlayerBPMControl.selection", selections);
+    		startActivity(intent);
+    	}
+    };
+    
     
     private ResultAdapter listAdapter;
     
@@ -119,6 +128,15 @@ public class CategorySelect extends ListActivity implements OnQueryResultListene
 		super.onCreate(savedInstanceState);
 		//Log.v("musikcube.CategoryList", "start");
 		this.setContentView(R.layout.category_select);
+		
+		final ListView list	= this.getListView(); 
+		list.setItemsCanFocus(false);
+		list.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+		View footer	= this.getLayoutInflater().inflate(R.layout.category_select_footer, null);
+		list.addFooterView(footer);
+		
+        Button saveButton	= (Button)findViewById(R.id.SaveButton);
+        saveButton.setOnClickListener(this.onSaveClick);
 		
 		Intent intent	= this.getIntent();
 		
@@ -169,8 +187,6 @@ public class CategorySelect extends ListActivity implements OnQueryResultListene
 			
 		}
 
-		//Log.v("musikcube.CategoryList", "onCreate end");
-		
 	}
 	
 	public void OnResults(){
@@ -187,6 +203,7 @@ public class CategorySelect extends ListActivity implements OnQueryResultListene
 		this.callbackHandler.post(this.callbackRunnable);
 	}
 	
+	/*	
 	@SuppressWarnings("unchecked")
 	@Override
 	protected void onListItemClick(ListView l, View v, int position, long id){
@@ -221,7 +238,7 @@ public class CategorySelect extends ListActivity implements OnQueryResultListene
 			intent.putExtra("org.musikcube.CategoryList.selectedCategoryId", selectedCategoryIds);
 			startActivity(intent);
 		}
-	}
+	}*/
 
 	@Override
 	protected void onPause() {

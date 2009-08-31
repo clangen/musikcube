@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -38,9 +37,12 @@ public class main extends Activity implements OnLibraryStatusListener {
         yearButton.setOnClickListener(this.onYearClick);
         yearButton.setEnabled(false);
         
-        Button bpmButton	= (Button)findViewById(R.id.BPMButton);
-        bpmButton.setOnClickListener(this.onBPMClick);
-        bpmButton.setEnabled(false);
+        Button bpmGenreButton	= (Button)findViewById(R.id.BPMGenreButton);
+        bpmGenreButton.setOnClickListener(this.onBPMGenreClick);
+        bpmGenreButton.setEnabled(false);
+        Button bpmArtistButton	= (Button)findViewById(R.id.BPMArtistButton);
+        bpmArtistButton.setOnClickListener(this.onBPMArtistClick);
+        bpmArtistButton.setEnabled(false);
                 
     }
     
@@ -68,14 +70,18 @@ public class main extends Activity implements OnLibraryStatusListener {
     	}
     };
     
-    private OnClickListener onBPMClick = new OnClickListener() {
+    private OnClickListener onBPMGenreClick = new OnClickListener() {
     	public void onClick(View v){
-/*    		Log.v("mC2::main","onBPMClick 1");
-    		Intent intent2	= new Intent(main.this, PlayerBPMControl.class);
-    		startActivity(intent2);
-    		Log.v("mC2::main","onBPMClick 2");*/
     		Intent intent	= new Intent(main.this, CategorySelect.class);
     		intent.putExtra("org.musikcube.CategorySelect.listCategory", "genre");
+    		startActivity(intent);
+    	}
+    };
+    
+    private OnClickListener onBPMArtistClick = new OnClickListener() {
+    	public void onClick(View v){
+    		Intent intent	= new Intent(main.this, CategorySelect.class);
+    		intent.putExtra("org.musikcube.CategorySelect.listCategory", "artist");
     		startActivity(intent);
     	}
     };
@@ -104,7 +110,6 @@ public class main extends Activity implements OnLibraryStatusListener {
 
 	@Override
 	protected void onResume() {
-		Log.v("mC2::Main","onResume");
 		super.onResume();
 		startService(new Intent(this, org.musikcube.Service.class));
 		org.musikcube.core.Library.GetInstance().AddPointer();
@@ -129,18 +134,21 @@ public class main extends Activity implements OnLibraryStatusListener {
         Button genreButton	= (Button)findViewById(R.id.GenresButton);
         Button artistsButton	= (Button)findViewById(R.id.ArtistsButton);
         Button yearButton	= (Button)findViewById(R.id.YearButton);
-        Button bpmButton	= (Button)findViewById(R.id.BPMButton);
+        Button bpmGenreButton	= (Button)findViewById(R.id.BPMGenreButton);
+        Button bpmArtistButton	= (Button)findViewById(R.id.BPMArtistButton);
 
         if(status==Library.STATUS_CONNECTED){
             genreButton.setEnabled(true);
             artistsButton.setEnabled(true);
             yearButton.setEnabled(true);
-            bpmButton.setEnabled(false);
+            bpmGenreButton.setEnabled(true);
+            bpmArtistButton.setEnabled(true);
         }else{
             genreButton.setEnabled(false);
             artistsButton.setEnabled(false);
             yearButton.setEnabled(false);
-            bpmButton.setEnabled(false);
+            bpmGenreButton.setEnabled(false);
+            bpmArtistButton.setEnabled(false);
         }
         
         TextView statusText	= (TextView)findViewById(R.id.StatusView);

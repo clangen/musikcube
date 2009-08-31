@@ -1,6 +1,6 @@
 package org.musikcube;
 
-import org.musikcube.core.Player;
+import org.musikcube.core.Workout;
 
 import android.app.Dialog;
 import android.content.Context;
@@ -20,7 +20,7 @@ public class Helper {
 			  context.startActivity(new Intent(context, org.musikcube.main.class));
 			  return true;
 		  case R.id.context_controls:
-			  if(Player.GetInstance().GetBPMMode()){
+			  if(Workout.GetInstance().Active()){
 				  context.startActivity(new Intent(context, org.musikcube.PlayerBPMControl.class));
 			  }else{
 				  context.startActivity(new Intent(context, org.musikcube.PlayerControl.class));

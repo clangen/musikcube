@@ -4,9 +4,9 @@
 package org.musikcube;
 
 import org.musikcube.core.Library;
-import org.musikcube.core.PaceDetector;
 import org.musikcube.core.Player;
 import org.musikcube.core.Track;
+import org.musikcube.core.Workout;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -16,7 +16,6 @@ import android.content.Intent;
 import android.os.IBinder;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
-import android.util.Log;
 
 /**
  * @author doy
@@ -27,7 +26,8 @@ public class Service extends android.app.Service {
 	Library library;
 	Player player;
 	boolean showingNotification	= false;
-	PaceDetector paceDetector;
+	boolean bpmMode	= false;
+	Workout workout;
 	
 	/**
 	 * 
@@ -47,7 +47,6 @@ public class Service extends android.app.Service {
 	
 	@Override 
 	public void onCreate(){
-		Log.i("musikcube::Service","CREATE");
 		this.player	= Player.GetInstance();
 		this.player.service	= this;
 		this.library	= org.musikcube.core.Library.GetInstance();
@@ -78,19 +77,22 @@ public class Service extends android.app.Service {
 	public void onStart(Intent intent, int startId) {
 		// TODO Auto-generated method stub
 		super.onStart(intent, startId);
-
+		
+		boolean stopWorkout	= false;
+		
 		String action	= intent.getStringExtra("org.musikcube.Service.action");
 		if(action==null){
 			return;
 		}
-		
 		if(action.equals("playlist")){
 			Player player	= Player.GetInstance();
 			player.Play(intent.getIntegerArrayListExtra("org.musikcube.Service.tracklist"), intent.getIntExtra("org.musikcube.Service.position", 0));
+			stopWorkout	= true;
 		}
 		if(action.equals("appendlist")){
 			Player player	= Player.GetInstance();
 			player.Append(intent.getIntegerArrayListExtra("org.musikcube.Service.tracklist"));
+			stopWorkout	= true;
 		}
 		if(action.equals("remove_from_list")){
 			Player player	= Player.GetInstance();
@@ -113,9 +115,7 @@ public class Service extends android.app.Service {
 		if(action.equals("stop")){
 			Player player	= Player.GetInstance();
 			player.Stop();
-			if(this.paceDetector!=null){
-				this.paceDetector.StopSensor(this);
-			}
+			stopWorkout	= true;
 		}
 		if(action.equals("play")){
 			Player player	= Player.GetInstance();
@@ -124,21 +124,30 @@ public class Service extends android.app.Service {
 		if(action.equals("shutdown")){
 			//Log.i("musikcube::Service","Shutdown");
 			this.stopSelf();
+			stopWorkout	= true;
 		}
-		if(action.equals("bpmstart")){
-			Player.GetInstance().SetBPMMode(true);
-			if(this.paceDetector==null){
-				this.paceDetector	= new PaceDetector();
-				this.paceDetector.StartSensor(this);
+		
+		if(stopWorkout){
+			if(this.workout!=null){
+				this.workout.Stop();
+				this.workout	= null;
 			}
 		}
-		if(action.equals("bpmstop")){
-			if(this.paceDetector!=null){
-				this.paceDetector.StopSensor(this);
+		
+		if(action.equals("workoutstart")){
+			this.workout	= Workout.GetInstance();
+			this.workout.Startup(this);
+		}
+		if(action.equals("workoutstop")){
+			if(this.workout!=null){
+				this.workout.Stop();
+				this.workout	= null;
 			}
+			Player player	= Player.GetInstance();
+			player.Stop();
 		}
 				
-		if(action.equals("player_start")){
+		if(action.equals("player_start") || this.workout!=null){
 			Track track	= Player.GetInstance().GetCurrentTrack();
 			
 			this.showingNotification	= true;
@@ -165,7 +174,13 @@ public class Service extends android.app.Service {
 					contentText 	+= trackArtist;
 				}
 			}
-			Intent notificationIntent = new Intent(this, Player.GetInstance().GetBPMMode()?PlayerBPMControl.class:PlayerControl.class);
+			Intent notificationIntent;
+			if(this.workout==null){
+				notificationIntent = new Intent(this, PlayerControl.class);
+			}else{
+				notificationIntent = new Intent(this, PlayerBPMControl.class);
+			}
+			
 			PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
 			
 			notification.flags	|= Notification.FLAG_ONGOING_EVENT|Notification.FLAG_NO_CLEAR;
@@ -174,7 +189,7 @@ public class Service extends android.app.Service {
 			mNotificationManager.notify(1, notification);		
 		}
 		
-		if(action.equals("player_end")){
+		if(action.equals("player_end") && this.workout==null){
 			this.showingNotification	= false;
 			String ns = Context.NOTIFICATION_SERVICE;
 			NotificationManager mNotificationManager = (NotificationManager) getSystemService(ns);
