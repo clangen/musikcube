@@ -78,10 +78,12 @@ public class Service extends android.app.Service {
 		// TODO Auto-generated method stub
 		super.onStart(intent, startId);
 		
+		
 		boolean stopWorkout	= false;
 		
 		String action	= intent.getStringExtra("org.musikcube.Service.action");
 		if(action==null){
+			this.library.Startup(this);
 			return;
 		}
 		if(action.equals("playlist")){
