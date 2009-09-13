@@ -15,14 +15,14 @@ public class WriterNode {
 	
 	protected WriterNode(String name,WriterNode parent){
 		this.name	= name;
+		this.parent	= parent;
 		if(parent!=null){
-			this.parent	= parent;
 			this.writer	= parent.writer;
 		}
 	}
 	
-	public WriterNode ChildNode(String name){
-		WriterNode newNode	= new WriterNode(name,this);
+	public final WriterNode ChildNode(String name){
+		final WriterNode newNode	= new WriterNode(name,this);
 		this.children.add(newNode);
 		return newNode;
 	}

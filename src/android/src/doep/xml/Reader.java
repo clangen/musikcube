@@ -37,11 +37,12 @@ public final class Reader extends ReaderNode {
 		throws Exception
 	{
 		int eventType	= 0;
+		final XmlPullParser parser	= this.parser;
 		if(this.firstParse){
 			this.firstParse	= false;
-			eventType = this.parser.getEventType();
+			eventType = parser.getEventType();
 		}else{
-			eventType = this.parser.next();
+			eventType = parser.next();
 		}
 			
 //        while (eventType != XmlPullParser.END_DOCUMENT) {
@@ -61,12 +62,12 @@ public final class Reader extends ReaderNode {
 				//Log.v("doep::Reader::Parse","Start tag "+this.parser.getName());
 			    //System.out.println("Start tag "+xpp.getName());
 				// Start a new node
-				ReaderNode node	= new ReaderNode(this.parser.getName(),this.nodeLevels.getLast());
+				ReaderNode node	= new ReaderNode(parser.getName(),this.nodeLevels.getLast());
 				
 				// Get the attributes
-				int attributes	= this.parser.getAttributeCount();
+				int attributes	= parser.getAttributeCount();
 				for(int i=0;i<attributes;i++){
-					node.attributes.put(this.parser.getAttributeName(i),this.parser.getAttributeValue(i));
+					node.attributes.put(parser.getAttributeName(i),parser.getAttributeValue(i));
 				}
 				
 				// Add to the end of the levels
@@ -78,7 +79,7 @@ public final class Reader extends ReaderNode {
 			} else if(eventType == XmlPullParser.END_TAG) {
 				//Log.v("doep::Reader::Parse","End tag "+this.parser.getName());
 			    //System.out.println("End tag "+xpp.getName());
-				if(this.parser.getName().equals(this.currentNode.name)){
+				if(parser.getName().equals(this.currentNode.name)){
 					// End the node, and remove from levels
 					this.currentNode.ended	= true;
 					this.nodeLevels.removeLast();
@@ -90,7 +91,7 @@ public final class Reader extends ReaderNode {
 			} else if(eventType == XmlPullParser.TEXT) {
 				//Log.v("doep::Reader::Parse","Text "+this.parser.getText());
 			    //System.out.println("Text "+xpp.getText());
-				this.currentNode.content	+= this.parser.getText();
+				this.currentNode.content	+= parser.getText();
 			}
 //        }
 	}
