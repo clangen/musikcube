@@ -41,18 +41,19 @@ public class ReaderNode {
 		// Check if this is the current node, if not - lets wait for it to bee
 		while(!this.ended){
 			this.reader.Parse();
+			final ReaderNode currentNode	=  this.reader.currentNode;
 			//Log.v("doep::ReaderNode::ChildNode1","Node: "+this.reader.currentNode.level+" "+this.level);
-			if(this.reader.currentNode.level==this.level+1){
+			if(currentNode.level==this.level+1){
 				// We have a childnode
 				//Log.v("doep::ReaderNode::ChildNode2",""+this.reader.currentNode.name+"=="+name);
-				if(this.reader.currentNode.name.equals(name)){
+				if(currentNode.name.equals(name)){
 					//Log.v("doep::ReaderNode::ChildNode3","FOUND "+this.reader.currentNode.name);
-					return this.reader.currentNode;
+					return currentNode;
 				}else{
-					this.reader.currentNode.End();
+					currentNode.End();
 				}
-			}else if( this.reader.currentNode.level>this.level+1){
-				this.reader.currentNode.End();
+			}else if( currentNode.level>this.level+1){
+				currentNode.End();
 			}
 		}
 		//Log.v("doep::ReaderNode::ChildNode4","NOT FOUND "+name);
@@ -78,14 +79,16 @@ public class ReaderNode {
 	{
 		while(!this.ended){
 			this.reader.Parse();
-			if(this.reader.currentNode.level==this.level+1){
+			final ReaderNode currentNode	=  this.reader.currentNode;
+			if(currentNode.level==this.level+1){
 				// We have a childnode
-				return this.reader.currentNode;
-			}else if( this.reader.currentNode.level>this.level+1){
-				this.reader.currentNode.End();
+				return currentNode;
+			}else if( currentNode.level>this.level+1){
+				currentNode.End();
 			}
 		}
 		return null;
 	}
+
 	
 }

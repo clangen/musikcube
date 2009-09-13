@@ -25,10 +25,10 @@ public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, 
 			this.mediaPlayer	= new MediaPlayer();
 		}
 		try {
-			
-			this.mediaPlayer.setOnCompletionListener(this);
-			this.mediaPlayer.setOnErrorListener(this);
-			this.mediaPlayer.setOnBufferingUpdateListener(this);
+			MediaPlayer mP	 = this.mediaPlayer; 
+			mP.setOnCompletionListener(this);
+			mP.setOnErrorListener(this);
+			mP.setOnBufferingUpdateListener(this);
 				
 			String url	= Library.GetInstance().GetTrackURL(this.trackId);
 			synchronized(this.lock){
@@ -43,8 +43,8 @@ public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, 
 					this.status	= STATUS_EXIT;
 				}
 			}else{
-				this.mediaPlayer.setDataSource(url);
-				this.mediaPlayer.prepare();
+				mP.setDataSource(url);
+				mP.prepare();
 			}
 			
 			synchronized(this.lock){
@@ -62,7 +62,7 @@ public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, 
 			}
 			
 			if(currentStatus==STATUS_PLAYING)
-				this.mediaPlayer.start();
+				mP.start();
 
 		
 			synchronized(this.lock){
@@ -70,8 +70,8 @@ public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, 
 				
 				while(this.status==STATUS_PLAYING){
 					if(!this.almostDoneSend){
-						int duration	= this.mediaPlayer.getDuration();
-						int position	= this.mediaPlayer.getCurrentPosition();
+						int duration	= mP.getDuration();
+						int position	= mP.getCurrentPosition();
 						if(duration>0 && position+10000>duration){
 							// The track is almost done
 							this.almostDoneSend	= true;
@@ -87,10 +87,11 @@ public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, 
 			}
 
 			
-			this.mediaPlayer.stop();
-			this.mediaPlayer.release();
+			mP.stop();
+			mP.release();
 			synchronized(this.lock){
 				this.mediaPlayer	= null;
+				mP	= null;
 			}
 	
 		
