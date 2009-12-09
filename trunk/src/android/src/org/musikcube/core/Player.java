@@ -285,7 +285,7 @@ public final class Player implements TrackPlayer.OnTrackStatusListener, OnQueryR
 				this.library	= Library.GetInstance();
 				this.library.AddPointer();
 				
-				Intent intent	= new Intent(this.service, org.musikcube.Service.class);
+				Intent intent	= new Intent(this.service, org.musikcube.app1.Service.class);
 				intent.putExtra("org.musikcube.Service.action", "player_start");
 				this.service.startService(intent);
 			}
@@ -304,7 +304,7 @@ public final class Player implements TrackPlayer.OnTrackStatusListener, OnQueryR
 				this.library.RemovePointer();
 				this.library	= null;
 				
-				Intent intent	= new Intent(this.service, org.musikcube.Service.class);
+				Intent intent	= new Intent(this.service, org.musikcube.app1.Service.class);
 				intent.putExtra("org.musikcube.Service.action", "player_end");
 				this.service.startService(intent);
 
@@ -316,7 +316,7 @@ public final class Player implements TrackPlayer.OnTrackStatusListener, OnQueryR
 /*		if(status==TrackPlayer.STATUS_EXIT){
 			this.Next();
 		}*/
-		Intent intent	= new Intent(this.service, org.musikcube.Service.class);
+		Intent intent	= new Intent(this.service, org.musikcube.app1.Service.class);
 		intent.putExtra("org.musikcube.Service.action", "next");
 		this.service.startService(intent);
 	}
@@ -378,7 +378,7 @@ public final class Player implements TrackPlayer.OnTrackStatusListener, OnQueryR
 			}
 		}
 		
-		Intent intent	= new Intent(this.service, org.musikcube.Service.class);
+		Intent intent	= new Intent(this.service, org.musikcube.app1.Service.class);
 		intent.putExtra("org.musikcube.Service.action", "player_start");
 		this.service.startService(intent);
 	}

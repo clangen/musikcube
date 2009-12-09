@@ -1,4 +1,4 @@
-package org.musikcube;
+package org.musikcube.app1;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -34,7 +34,7 @@ public class Preferences extends PreferenceActivity {
 //		Log.v("mC2::PREFS","onResume");
 		super.onResume();
 		org.musikcube.core.Library.GetInstance().AddPointer();
-		startService(new Intent(this, org.musikcube.Service.class));
+		startService(new Intent(this, org.musikcube.app1.Service.class));
 	}
 	
 }

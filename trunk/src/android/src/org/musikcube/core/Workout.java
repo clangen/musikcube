@@ -185,7 +185,7 @@ public class Workout implements OnBPMListener, Runnable, OnQueryResultListener {
 				this.lastQueryTime	= android.os.SystemClock.elapsedRealtime();
 				BPMQuery bpmQuery	= (BPMQuery)query;
 				if(!bpmQuery.trackList.isEmpty() && this.context!=null){
-					Intent intent	= new Intent(this.context, org.musikcube.Service.class);
+					Intent intent	= new Intent(this.context, org.musikcube.app1.Service.class);
 					intent.putExtra("org.musikcube.Service.tracklist", bpmQuery.trackList);
 					intent.putExtra("org.musikcube.Service.position", 0);
 					intent.putExtra("org.musikcube.Service.action", "playlist_prepare");

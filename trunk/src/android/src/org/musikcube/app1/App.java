@@ -1,4 +1,4 @@
-package org.musikcube;
+package org.musikcube.app1;
 
 import android.app.Application;
 

@@ -1,4 +1,4 @@
-package org.musikcube;
+package org.musikcube.app1;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -12,7 +12,6 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
 
-import org.musikcube.CategoryList;
 import org.musikcube.core.Library;
 import org.musikcube.core.Library.OnLibraryStatusListener;
 
@@ -111,7 +110,7 @@ public class main extends Activity implements OnLibraryStatusListener {
 	@Override
 	protected void onResume() {
 		super.onResume();
-		startService(new Intent(this, org.musikcube.Service.class));
+		startService(new Intent(this, org.musikcube.app1.Service.class));
 		org.musikcube.core.Library.GetInstance().AddPointer();
 		org.musikcube.core.Library.GetInstance().SetStatusListener(this);
 	}

@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.musikcube;
+package org.musikcube.app1;
 
 import java.util.ArrayList;
 
@@ -14,7 +14,6 @@ import android.app.ListActivity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Log;
 import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -112,8 +111,8 @@ public class CategorySelect extends ListActivity implements OnQueryResultListene
     			}
     		}
     		Workout.GetInstance().SetCategory(selections, CategorySelect.this.category);
-    		Log.v("mC2::SAVE",CategorySelect.this.category);    		
-    		Log.v("mC2::SAVE",selections.toString());    		
+    		//Log.v("mC2::SAVE",CategorySelect.this.category);    		
+    		//Log.v("mC2::SAVE",selections.toString());    		
     		intent.putExtra("org.musikcube.PlayerBPMControl.category", CategorySelect.this.category);
     		intent.putExtra("org.musikcube.PlayerBPMControl.selection", selections);
     		startActivity(intent);
@@ -249,7 +248,7 @@ public class CategorySelect extends ListActivity implements OnQueryResultListene
 	@Override
 	protected void onResume() {
 		super.onResume();
-		startService(new Intent(this, org.musikcube.Service.class));
+		startService(new Intent(this, org.musikcube.app1.Service.class));
 		org.musikcube.core.Library.GetInstance().AddPointer();
 	}
 	

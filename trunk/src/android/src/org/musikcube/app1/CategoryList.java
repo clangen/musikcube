@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.musikcube;
+package org.musikcube.app1;
 
 import java.util.ArrayList;
 
@@ -229,7 +229,7 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
 	@Override
 	protected void onResume() {
 		super.onResume();
-		startService(new Intent(this, org.musikcube.Service.class));
+		startService(new Intent(this, org.musikcube.app1.Service.class));
 		org.musikcube.core.Library.GetInstance().AddPointer();
 	}
 	

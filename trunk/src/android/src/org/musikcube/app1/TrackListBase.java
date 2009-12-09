@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.musikcube;
+package org.musikcube.app1;
 
 import org.musikcube.core.IQuery;
 import org.musikcube.core.Library;
@@ -183,7 +183,7 @@ public class TrackListBase extends ListActivity implements OnQueryResultListener
 	
 	@Override
 	protected void onListItemClick(ListView l, View v, int position, long id){		
-		Intent intent	= new Intent(this, org.musikcube.Service.class);
+		Intent intent	= new Intent(this, org.musikcube.app1.Service.class);
 		intent.putExtra("org.musikcube.Service.tracklist", this.trackList);
 		intent.putExtra("org.musikcube.Service.position", position);
 		intent.putExtra("org.musikcube.Service.action", "playlist");
@@ -206,7 +206,7 @@ public class TrackListBase extends ListActivity implements OnQueryResultListener
 	@Override
 	protected void onResume() {
 		super.onResume();
-		startService(new Intent(this, org.musikcube.Service.class));
+		startService(new Intent(this, org.musikcube.app1.Service.class));
 		org.musikcube.core.Library.GetInstance().AddPointer();
 	}
 
