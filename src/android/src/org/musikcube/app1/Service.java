@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.musikcube;
+package org.musikcube.app1;
 
 import org.musikcube.core.Library;
 import org.musikcube.core.Player;
@@ -61,7 +61,7 @@ public class Service extends android.app.Service {
     	    switch(state)
     	    {
     	     case TelephonyManager.CALL_STATE_RINGING:
-	    		Intent intent	= new Intent(Service.this, org.musikcube.Service.class);
+	    		Intent intent	= new Intent(Service.this, org.musikcube.app1.Service.class);
 	    		intent.putExtra("org.musikcube.Service.action", "stop");
 	    		startService(intent);
     	     break;

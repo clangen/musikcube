@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.musikcube;
+package org.musikcube.app1;
 
 import org.musikcube.core.Player;
 import org.musikcube.core.Player.OnTrackListUpdateListener;
@@ -48,7 +48,7 @@ public class NowPlayingList extends TrackListBase implements OnTrackListUpdateLi
 	public boolean onContextItemSelected(MenuItem item) {
 		AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
 		java.util.ArrayList<Integer> trackList	= new java.util.ArrayList<Integer>();
-		Intent intent	= new Intent(this, org.musikcube.Service.class);
+		Intent intent	= new Intent(this, org.musikcube.app1.Service.class);
 		intent.putExtra("org.musikcube.Service.position", 0);
 		switch (item.getItemId()) {
 			case PLAY_THIS_ID:

@@ -10,7 +10,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
-import android.util.Log;
 import doep.xml.*;
 
 import org.musikcube.core.IQuery;
@@ -79,7 +78,7 @@ public final class Library implements Runnable{
 	
 	private final void SetStatus(int status){
 		synchronized(this.status){
-			Log.v("mC2::Lib","STATUS "+this.status);
+			//Log.v("mC2::Lib","STATUS "+this.status);
 			this.status	= status;
 			if(this.statusListener!=null){
 				this.statusListener.OnLibraryStatusChange(status);
@@ -206,7 +205,7 @@ public final class Library implements Runnable{
 		this.SetStatus(STATUS_SHUTDOWN);
 
 		while(true){
-			Log.v("mC2::Lib","1");
+			//Log.v("mC2::Lib","1");
 			
 			this.running	= true;
 			// First try to connect
@@ -316,7 +315,7 @@ public final class Library implements Runnable{
 				
 			}
 			
-			Log.v("mC2::Lib","4");
+			//Log.v("mC2::Lib","4");
 			
 			synchronized (notifier) {
 				if(!this.restart){
@@ -329,18 +328,18 @@ public final class Library implements Runnable{
 				}
 				this.restart	 = false;
 				
-				Log.v("mC2::Lib","5");
+				//Log.v("mC2::Lib","5");
 				
 				if(this.exit){
-					Log.v("mC2::Lib","EXIT");
-					Intent intent	= new Intent(this.context, org.musikcube.Service.class);
+					//Log.v("mC2::Lib","EXIT");
+					Intent intent	= new Intent(this.context, org.musikcube.app1.Service.class);
 					intent.putExtra("org.musikcube.Service.action", "shutdown");
 					this.context.startService(intent);
 					return;
 				}
 				this.restart	= false;
 //				this.running	= true;
-				Log.v("mC2::Lib","6");
+				//Log.v("mC2::Lib","6");
 			}
 			
 		}
@@ -384,7 +383,7 @@ public final class Library implements Runnable{
 								}
 							}
 							
-							Log.v("Library::WriteThread","wait over");
+							//Log.v("Library::WriteThread","wait over");
 						}else{
 							// Get the first query
 							query	= this.sendQueryQueue.removeFirst();
@@ -429,7 +428,7 @@ public final class Library implements Runnable{
 			//Log.e("Library::WriteThread","E "+x.getMessage());
 		}
 		
-		Log.v("Library::WriteThread","Ended");
+		//Log.v("Library::WriteThread","Ended");
 	}
 	
 	public final void Exit(){

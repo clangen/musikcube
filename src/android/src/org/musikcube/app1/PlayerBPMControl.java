@@ -1,4 +1,4 @@
-package org.musikcube;
+package org.musikcube.app1;
 
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -6,7 +6,9 @@ import java.net.URL;
 import org.musikcube.core.Library;
 import org.musikcube.core.Player;
 import org.musikcube.core.Track;
+import org.musikcube.core.Workout;
 import org.musikcube.core.Player.OnTrackUpdateListener;
+import org.musikcube.core.Workout.OnWorkoutListener;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -20,100 +22,89 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.CompoundButton;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.ToggleButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
+import android.widget.SeekBar.OnSeekBarChangeListener;
 
-public class PlayerControl extends Activity implements OnTrackUpdateListener {
+public class PlayerBPMControl extends Activity implements OnTrackUpdateListener, OnWorkoutListener {
 
 	private Track track		= new Track();
 	private int duration = 0;
 	private Object lock	= new Object();
 	private boolean enable	= false;
 	private int currentAlbumCoverId	= 0;
-	private boolean playing	= false;
 	
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.play_control);
+        setContentView(R.layout.play_bpm_control);
         
         ImageButton nextButton	= (ImageButton)findViewById(R.id.MediaNext);
         nextButton.setOnClickListener(this.onNextClick);
         ImageButton pauseButton	= (ImageButton)findViewById(R.id.MediaPause);
         pauseButton.setOnClickListener(this.onPauseClick);
-        ImageButton prevButton	= (ImageButton)findViewById(R.id.MediaPrev);
-        prevButton.setOnClickListener(this.onPrevClick);
-
-        ImageButton repeatButton	= (ImageButton)findViewById(R.id.MediaRepeat);
-        repeatButton.setOnClickListener(this.onRepeatClick);
-        ImageButton shuffleButton	= (ImageButton)findViewById(R.id.MediaShuffle);
-        shuffleButton.setOnClickListener(this.onShuffleClick);
+		ToggleButton acc	= (ToggleButton)findViewById(R.id.ToggleAccelerator);
+		acc.setOnCheckedChangeListener(this.onAcceleratorToggle);
+        SeekBar bpmBar		= (SeekBar)findViewById(R.id.BPM);
+        bpmBar.setOnSeekBarChangeListener(this.onBPMChanged);
         
 		this.callbackTrackPositionsUpdateHandler.postDelayed(callbackTrackPositionsUpdateRunnable,500);
-		
-		this.SetImages();
    }
 
     private OnClickListener onNextClick = new OnClickListener() {
     	public void onClick(View v){
-    		Intent intent	= new Intent(PlayerControl.this, org.musikcube.Service.class);
+    		Intent intent	= new Intent(PlayerBPMControl.this, org.musikcube.app1.Service.class);
     		intent.putExtra("org.musikcube.Service.action", "next");
-    		startService(intent);
-    	}
-    };
-    private OnClickListener onPrevClick = new OnClickListener() {
-    	public void onClick(View v){
-    		Intent intent	= new Intent(PlayerControl.this, org.musikcube.Service.class);
-    		intent.putExtra("org.musikcube.Service.action", "prev");
     		startService(intent);
     	}
     };
     private OnClickListener onPauseClick = new OnClickListener() {
     	public void onClick(View v){
-    		Intent intent	= new Intent(PlayerControl.this, org.musikcube.Service.class);
-    		if(Player.GetInstance().Playing()){
-    			intent.putExtra("org.musikcube.Service.action", "stop");
+    		Intent intent	= new Intent(PlayerBPMControl.this, org.musikcube.app1.Service.class);
+    		if(Workout.GetInstance().Active()){
+    			intent.putExtra("org.musikcube.Service.action", "workoutstop");
     		}else{
-	    		intent.putExtra("org.musikcube.Service.action", "play");
+	    		intent.putExtra("org.musikcube.Service.action", "workoutstart");
     		}
     		startService(intent);
+//    		PlayerBPMControl.this.OnUpdateTrackUI();
     	}
     };
-    
-    private void SetImages(){
-		Player player	= Player.GetInstance();
-        ImageButton button	= (ImageButton)findViewById(R.id.MediaRepeat);
-        if(player.GetRepeat()){
-        	button.setImageDrawable(getResources().getDrawable(R.drawable.ic_repeat_on));
-        }else{
-        	button.setImageDrawable(getResources().getDrawable(R.drawable.ic_repeat));
-        }
-        button	= (ImageButton)findViewById(R.id.MediaShuffle);
-        if(player.GetShuffle()){
-        	button.setImageDrawable(getResources().getDrawable(R.drawable.ic_shuffle_on));
-        }else{
-        	button.setImageDrawable(getResources().getDrawable(R.drawable.ic_shuffle));
-        }
-    	
-    }
-    
-    private OnClickListener onRepeatClick = new OnClickListener() {
-    	public void onClick(View v){
-    		Player player	= Player.GetInstance();
-    		player.SetRepeat(!player.GetRepeat());
-    		PlayerControl.this.SetImages();
-    	}
-    };
-    private OnClickListener onShuffleClick = new OnClickListener() {
-    	public void onClick(View v){
-    		Player player	= Player.GetInstance();
-    		player.SetShuffle(!player.GetShuffle());
-    		PlayerControl.this.SetImages();
-    	}
-    };
+	private OnCheckedChangeListener onAcceleratorToggle = new OnCheckedChangeListener(){
+		public void onCheckedChanged(CompoundButton buttonView,boolean isChecked) {
+			Workout.GetInstance().UseAccelerometer(isChecked);
+		}
+	};
+	private OnSeekBarChangeListener onBPMChanged = new OnSeekBarChangeListener(){
 
+		public void onProgressChanged(SeekBar seekBar, int progress,
+				boolean fromUser) {
+			if(fromUser){
+				if(!Workout.GetInstance().Accelerometer()){
+					// Seek
+					float bpm	= (float) ((float)progress*150.0/1000.0+50.0);
+					Workout.GetInstance().SetBPM(bpm);
+					
+					TextView bpmTitle	= (TextView)PlayerBPMControl.this.findViewById(R.id.BPMTitle);
+					bpmTitle.setText("BPM: "+bpm);
+				}
+			}
+		}
+
+		public void onStartTrackingTouch(SeekBar seekBar) {
+		}
+
+		public void onStopTrackingTouch(SeekBar seekBar) {
+		}
+		
+	};
+
+    
 	public void OnTrackBufferUpdate(int percent) {
 		this.callbackTrackPositionsUpdateHandler.post(this.callbackTrackPositionsUpdateRunnable);
 	}
@@ -129,6 +120,7 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener {
 		this.enable	= false;
 		org.musikcube.core.Library.GetInstance().RemovePointer();
 		Player.GetInstance().SetUpdateListener(null);
+		Workout.GetInstance().SetListener(null);
 		super.onPause();
 	}
 	@Override
@@ -139,6 +131,11 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener {
 		super.onResume();
 		this.OnUpdateTrackPositionsUI();
 		this.OnUpdateTrackUI();
+		
+		Workout.GetInstance().SetListener(this);
+		
+		ToggleButton acc	= (ToggleButton)findViewById(R.id.ToggleAccelerator);
+		acc.setChecked(Workout.GetInstance().Accelerometer());
 	}
     
 	// Need handler for callbacks to the UI thread
@@ -218,11 +215,12 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener {
 		
 		// Update play button
 		ImageButton playButton	= (ImageButton)findViewById(R.id.MediaPause);
-		if(Player.GetInstance().Playing()){
+		if(Workout.GetInstance().Active()){
 			playButton.setImageResource(R.drawable.ic_media_pause);
 		}else{
 			playButton.setImageResource(R.drawable.ic_media_play);
 		}
+		
 		
 	}
 	
@@ -239,6 +237,7 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener {
 	            Bitmap bm	= BitmapFactory.decodeStream(is);
 	            return bm;
 			} catch (Exception e) {
+//				e.printStackTrace();
 				return null;
 			}
 		}
@@ -284,6 +283,16 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener {
 			}
 		}
 		
+		// Update BPM
+		SeekBar bpmBar	= (SeekBar)findViewById(R.id.BPM);
+		final int startBPM	= 50;
+		final int endBPM		= 200;
+		final float currentBPM	= Workout.GetInstance().GetBPM();
+		bpmBar.setProgress( (int) (((float)currentBPM-startBPM)*1000/(endBPM-startBPM)) );
+		
+		TextView bpmTitle	= (TextView)findViewById(R.id.BPMTitle);
+		bpmTitle.setText("BPM: "+currentBPM);
+		
 		// Next callback in 0.5 seconds
 		this.callbackTrackPositionsUpdateHandler.postDelayed(callbackTrackPositionsUpdateRunnable,500);
 
@@ -302,5 +311,8 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener {
     		return super.onContextItemSelected(item);
     	}
    	}
+	public void OnBPMUpdate() {
+		this.callbackTrackUpdateHandler.post(this.callbackTrackUpdateRunnable);
+	}
 
 }
