@@ -207,29 +207,40 @@ public final class Library implements Runnable{
 		while(true){
 			//Log.v("mC2::Lib","1");
 			
-			this.running	= true;
+			synchronized (notifier) {
+				this.running	= true;
+			}
+			
 			// First try to connect
 			try{
-				synchronized (notifier) {
+				String tempHost;
+				int tempQueryPort;
 					//Log.v("mC2::Lib","2");
-					do{
+				do{
+					synchronized (notifier) {
 						SharedPreferences prefs	= PreferenceManager.getDefaultSharedPreferences(this.context);
 						this.host		= prefs.getString("host","");
+						tempHost		= prefs.getString("host","");
 						int queryPort	= Integer.parseInt(prefs.getString("queryport","10543"));
+						tempQueryPort	= queryPort;
 						this.httpPort	= Integer.parseInt(prefs.getString("httpport","10544"));
-						
+					
 						if(this.host.equals("")){
-							//Log.v("mC2::Lib","HOST =''");
+						//Log.v("mC2::Lib","HOST =''");
 							this.notifier.wait(2000);
-						}else{
-							//Log.v("mC2::Lib","HOST ='"+this.host+"'");
-							this.socket	= new java.net.Socket(host,queryPort);
 						}
-					}while(this.host.equals(""));
+					}
+					if(!tempHost.equals("")){
+						//Log.v("mC2::Lib","HOST ='"+this.host+"'");
+						java.net.Socket newSocket	= new java.net.Socket(tempHost,tempQueryPort);
+						synchronized (notifier) {
+							this.socket	= newSocket;
+						}
+					}
+				}while(tempHost.equals(""));
 					
-					this.SetStatus(STATUS_CONNECTING);
+				this.SetStatus(STATUS_CONNECTING);
 					
-				}
 				//Log.v("Library::socket","Successfully connected to "+this.host+":"+this.queryPort);
 				
 				//Log.v("mC2::Lib","3");
@@ -365,10 +376,13 @@ public final class Library implements Runnable{
 				authNode.End();
 			}
 			
-			this.SetStatus(STATUS_CONNECTED);
+			this.thread.sleep(100);
+			if(this.GetStatus()==STATUS_AUTHENTICATING){
+				this.SetStatus(STATUS_CONNECTED);
+			}
 
 			// Wait for queries to send
-			while(this.running){
+			while(this.Running()){
 				IQuery query	= null;
 				try{
 					synchronized(this.sendQueryQueue){
