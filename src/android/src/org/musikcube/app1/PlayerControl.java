@@ -212,7 +212,9 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener {
 			if(thumbnailId!=0){
 				// Load image
 				Library library	= Library.GetInstance();
-				new DownloadAlbumCoverTask().execute("http://"+library.host+":"+library.httpPort+"/cover/?cover_id="+thumbnailId);
+				String thumbString	= new String(""+thumbnailId);
+				
+				new DownloadAlbumCoverTask().execute("http://"+library.host+":"+library.httpPort+"/cover/?cover_id="+thumbnailId,thumbString);
 			}
 		}
 		
@@ -228,8 +230,11 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener {
 	
 	private class DownloadAlbumCoverTask extends AsyncTask<String,Integer,Bitmap>{
 
+		private String thumbString;
+		
 		protected Bitmap doInBackground(String... params) {
 			try {
+				this.thumbString	= params[1];
 				URL url	= new URL(params[0]);
 		        HttpURLConnection conn= (HttpURLConnection)url.openConnection();
 	            conn.setDoInput(true);
@@ -246,8 +251,17 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener {
 		protected void onPostExecute(Bitmap result){
 			if(result==null){
 			}else{
-				ImageView cover	= (ImageView)findViewById(R.id.AlbumCover);
-				cover.setImageBitmap(result);
+				// Get cover id
+				Track track	= Player.GetInstance().GetCurrentTrack();
+				if(track!=null){
+					String currentThumbnailString		= track.metadata.get("thumbnail_id");
+					if(currentThumbnailString!=null){
+						if(this.thumbString.equals(currentThumbnailString)){
+							ImageView cover	= (ImageView)findViewById(R.id.AlbumCover);
+							cover.setImageBitmap(result);
+						}
+					}
+				}
 			}
 		}
 	}
