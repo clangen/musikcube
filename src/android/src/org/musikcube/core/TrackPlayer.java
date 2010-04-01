@@ -12,6 +12,7 @@ public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, 
 	private int buffer	= 0;
 	private boolean almostDoneSend	= false;
 	private boolean started			= false;
+	private boolean paused			= false;
 	
 	private int status = 1;
 	
@@ -132,8 +133,21 @@ public class TrackPlayer implements Runnable, MediaPlayer.OnCompletionListener, 
 	
 	public void Pause(){
 		synchronized(this.lock){
-			this.status	= STATUS_PAUSE;
-			this.lock.notifyAll();
+			if(this.mediaPlayer!=null){
+				if(this.paused){
+					this.mediaPlayer.start();
+				}else{
+					this.mediaPlayer.pause();
+				}
+				this.paused	= !this.paused;
+				this.lock.notifyAll();
+			}
+		}
+	}
+
+	public boolean Paused(){
+		synchronized(this.lock){
+			return this.paused;
 		}
 	}
 	

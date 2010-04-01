@@ -57,14 +57,25 @@ public class Service extends android.app.Service {
 	}
 	
     private PhoneStateListener phoneStateListener = new PhoneStateListener() {
+    	public boolean callPause	= false;
     	public void onCallStateChanged(int state,String incomingNumber){
     	    switch(state)
     	    {
+    	     case TelephonyManager.CALL_STATE_OFFHOOK:
     	     case TelephonyManager.CALL_STATE_RINGING:
-	    		Intent intent	= new Intent(Service.this, org.musikcube.app1.Service.class);
-	    		intent.putExtra("org.musikcube.Service.action", "stop");
-	    		startService(intent);
+    	    	 if(Player.GetInstance().Playing()){
+	    	    	 callPause	= true;
+	    	    	 Intent intent	= new Intent(Service.this, org.musikcube.app1.Service.class);
+	    	    	 intent.putExtra("org.musikcube.Service.action", "pause");
+	    	    	 startService(intent);
+    	    	 }
     	     break;
+    	     case TelephonyManager.CALL_STATE_IDLE:
+    	    	 if(callPause && Player.GetInstance().Paused()){
+	    	    	 Intent intent	= new Intent(Service.this, org.musikcube.app1.Service.class);
+	    	    	 intent.putExtra("org.musikcube.Service.action", "pause");
+	    	    	 startService(intent);
+    	    	 }
     	    }
     	}
     };
@@ -117,6 +128,11 @@ public class Service extends android.app.Service {
 		if(action.equals("stop")){
 			Player player	= Player.GetInstance();
 			player.Stop();
+			stopWorkout	= true;
+		}
+		if(action.equals("pause")){
+			Player player	= Player.GetInstance();
+			player.Pause();
 			stopWorkout	= true;
 		}
 		if(action.equals("play")){

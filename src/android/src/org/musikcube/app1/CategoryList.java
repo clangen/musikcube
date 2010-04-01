@@ -19,6 +19,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -33,6 +34,7 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
 	private String nextCategoryList	= "";
 	private ListQuery query	= new ListQuery();
 	
+	private ArrayList<String> selectedTitles; 
 	private ArrayList<String> selectedCategory; 
 	private ArrayList<Integer> selectedCategoryIds; 
 //	private ProgressDialog loadingDialog;
@@ -115,6 +117,12 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
 	protected void onCreate(Bundle savedInstanceState){
 		super.onCreate(savedInstanceState);
 		//Log.v("musikcube.CategoryList", "start");
+
+		
+		requestWindowFeature(Window.FEATURE_NO_TITLE); 
+//		getWindow().setFeatureInt(Window.FEATURE_CUSTOM_TITLE,R.layout.mc2_title); 
+//		getWindow().setFe
+
 		this.setContentView(R.layout.category_list);
 		
 		Intent intent	= this.getIntent();
@@ -139,9 +147,8 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
 			this.nextCategoryList	+= categories[i];
 		}
 
-		this.setTitle("musikCube: "+this.category);
+		this.selectedTitles	= intent.getStringArrayListExtra("org.musikcube.CategoryList.selectedTitles");
 		
-	
 		if(this.category!=null){
 			//Log.v("musikcube.CategoryList", "category="+this.category);
 			// Query for data
@@ -166,6 +173,18 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
 			
 		}
 
+		// SET TITLES
+		TextView headerTitle	= 	(TextView) this.findViewById(R.id.HeaderTitle); 
+		headerTitle.setText(this.category);
+		
+		if(this.selectedTitles!=null){
+			TextView headerContent	= 	(TextView) this.findViewById(R.id.HeaderContent); 
+			String headerContentString	= "";
+			for(int i=0;i<this.selectedTitles.size();i++){
+				headerContentString += this.selectedTitles.get(i)+" / ";
+			}
+			headerContent.setText(headerContentString);
+		}
 		//Log.v("musikcube.CategoryList", "onCreate end");
 		
 	}
@@ -190,15 +209,25 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
 		//Log.i("CategoryList::onListItemClick","clicked on "+position+" "+id);
 		
 		// List category
+		if(this.selectedTitles==null){
+			this.selectedTitles	= new ArrayList<String>();
+		}
 		if(this.selectedCategory==null){
 			this.selectedCategory	= new ArrayList<String>();
 		}
 		if(this.selectedCategoryIds==null){
 			this.selectedCategoryIds	= new ArrayList<Integer>();
 		}
+		ArrayList<String> selectedTitles	= (ArrayList<String>)this.selectedTitles.clone(); 
 		ArrayList<String> selectedCategory	= (ArrayList<String>)this.selectedCategory.clone(); 
 		ArrayList<Integer> selectedCategoryIds	= (ArrayList<Integer>)this.selectedCategoryIds.clone(); 
-
+		
+		if(position==0){
+			selectedTitles.add("-");
+		}else{
+			selectedTitles.add(this.query.resultsStrings.get(position-1));
+		}
+		
 		if(id!=0){
 			selectedCategory.add(this.category);
 			selectedCategoryIds.add((int)id);
@@ -210,12 +239,14 @@ public class CategoryList extends ListActivity implements OnQueryResultListener 
 			intent.putExtra("org.musikcube.CategoryList.listCategory", this.nextCategoryList);
 			intent.putExtra("org.musikcube.CategoryList.selectedCategory", selectedCategory);
 			intent.putExtra("org.musikcube.CategoryList.selectedCategoryId", selectedCategoryIds);
+			intent.putExtra("org.musikcube.CategoryList.selectedTitles", selectedTitles);
 			startActivity(intent);
 		}else{
 			Intent intent	= new Intent(this, CategoryList.class);
 			intent.putExtra("org.musikcube.CategoryList.listCategory", this.nextCategoryList);
 			intent.putExtra("org.musikcube.CategoryList.selectedCategory", selectedCategory);
 			intent.putExtra("org.musikcube.CategoryList.selectedCategoryId", selectedCategoryIds);
+			intent.putExtra("org.musikcube.CategoryList.selectedTitles", selectedTitles);
 			startActivity(intent);
 		}
 	}
