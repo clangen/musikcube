@@ -11,7 +11,9 @@ import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.widget.TextView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 
 /**
@@ -37,7 +39,7 @@ public class TrackList extends TrackListBase {
 		
 		this.query.SetResultListener(this);
 		
-		this.setTitle("musikCube: Tracks");
+		//this.setTitle("musikCube: Tracks");
 		
 		// Query for data
 		
@@ -56,6 +58,21 @@ public class TrackList extends TrackListBase {
 		library.AddQuery(this.query);
 		
 		this.registerForContextMenu(this.getListView());
+		
+		// SET TITLES
+		ArrayList<String> selectedTitles	= intent.getStringArrayListExtra("org.musikcube.CategoryList.selectedTitles");
+		TextView headerTitle	= 	(TextView) this.findViewById(R.id.HeaderTitle); 
+		headerTitle.setText("Tracks");
+		
+		if(selectedTitles!=null){
+			TextView headerContent	= 	(TextView) this.findViewById(R.id.HeaderContent); 
+			String headerContentString	= "";
+			for(int i=0;i<selectedTitles.size();i++){
+				headerContentString += selectedTitles.get(i)+" / ";
+			}
+			headerContent.setText(headerContentString);
+		}
+		
 	}
 	
 	@Override

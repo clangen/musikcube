@@ -11,7 +11,9 @@ import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.widget.TextView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 
 /**
@@ -37,7 +39,9 @@ public class NowPlayingList extends TrackListBase implements OnTrackListUpdateLi
 		
 		super.onCreate(savedInstanceState);
 		
-		this.setTitle("musikCube: Now playing");
+		//this.setTitle("musikCube: Now playing");
+		TextView headerTitle	= 	(TextView) this.findViewById(R.id.HeaderTitle); 
+		headerTitle.setText("Now playing");
 		
 		this.registerForContextMenu(this.getListView());
 	}

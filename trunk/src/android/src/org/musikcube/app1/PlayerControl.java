@@ -19,6 +19,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
 import android.view.View.OnClickListener;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -37,10 +38,13 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+		requestWindowFeature(Window.FEATURE_NO_TITLE); 
         setContentView(R.layout.play_control);
         
         ImageButton nextButton	= (ImageButton)findViewById(R.id.MediaNext);
         nextButton.setOnClickListener(this.onNextClick);
+        ImageButton stopButton	= (ImageButton)findViewById(R.id.MediaStop);
+        stopButton.setOnClickListener(this.onStopClick);
         ImageButton pauseButton	= (ImageButton)findViewById(R.id.MediaPause);
         pauseButton.setOnClickListener(this.onPauseClick);
         ImageButton prevButton	= (ImageButton)findViewById(R.id.MediaPrev);
@@ -70,7 +74,7 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener {
     		startService(intent);
     	}
     };
-    private OnClickListener onPauseClick = new OnClickListener() {
+    private OnClickListener onStopClick = new OnClickListener() {
     	public void onClick(View v){
     		Intent intent	= new Intent(PlayerControl.this, org.musikcube.app1.Service.class);
     		if(Player.GetInstance().Playing()){
@@ -78,6 +82,13 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener {
     		}else{
 	    		intent.putExtra("org.musikcube.Service.action", "play");
     		}
+    		startService(intent);
+    	}
+    };
+    private OnClickListener onPauseClick = new OnClickListener() {
+    	public void onClick(View v){
+    		Intent intent	= new Intent(PlayerControl.this, org.musikcube.app1.Service.class);
+    		intent.putExtra("org.musikcube.Service.action", "pause");
     		startService(intent);
     	}
     };
@@ -219,9 +230,9 @@ public class PlayerControl extends Activity implements OnTrackUpdateListener {
 		}
 		
 		// Update play button
-		ImageButton playButton	= (ImageButton)findViewById(R.id.MediaPause);
+		ImageButton playButton	= (ImageButton)findViewById(R.id.MediaStop);
 		if(Player.GetInstance().Playing()){
-			playButton.setImageResource(R.drawable.ic_media_pause);
+			playButton.setImageResource(R.drawable.ic_media_stop);
 		}else{
 			playButton.setImageResource(R.drawable.ic_media_play);
 		}

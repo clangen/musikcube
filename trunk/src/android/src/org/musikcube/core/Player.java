@@ -267,6 +267,22 @@ public final class Player implements TrackPlayer.OnTrackStatusListener, OnQueryR
 		}
 	}
 	
+	public void Pause(){
+		synchronized(this.lock){
+			if(this.currentPlayer!=null){
+				this.currentPlayer.Pause();
+			}
+		}
+	}
+	public boolean Paused(){
+		synchronized(this.lock){
+			if(this.currentPlayer!=null){
+				return this.currentPlayer.Paused();
+			}
+		}
+		return false;
+	}
+	
 	private void StopAllTracks(){
 		synchronized(this.lock){
 			this.currentPlayer	= null;

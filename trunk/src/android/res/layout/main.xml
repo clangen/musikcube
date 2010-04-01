@@ -3,11 +3,9 @@
     android:orientation="vertical"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent">
+
+	<include android:layout_height="wrap_content" layout="@layout/mc2_title" android:id="@+id/title" android:layout_margin="0sp" android:layout_width="fill_parent"></include>
     
-<LinearLayout android:orientation="horizontal" android:layout_height="wrap_content" android:layout_width="fill_parent" android:padding="4sp" android:layout_weight="0.1">
-	<ImageView android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/icon"></ImageView>
-	<TextView android:layout_height="wrap_content" android:text="musikCube" android:layout_width="wrap_content" android:textSize="22sp" android:padding="4sp"></TextView>
-</LinearLayout>
 
 <LinearLayout android:orientation="vertical" android:layout_height="wrap_content" android:layout_width="fill_parent" android:layout_weight="0.8">
 	<TextView android:id="@+id/TextView01" android:layout_height="wrap_content" android:text="Browse by:" android:layout_width="fill_parent" android:background="@color/headlineColor" android:textSize="20sp" android:padding="4sp"></TextView>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_height="wrap_content" android:layout_width="fill_parent" android:orientation="horizontal" android:background="@drawable/header_bg">
+
+<ImageView android:id="@+id/ImageView01" android:layout_margin="0sp" android:scaleType="fitXY" android:src="@drawable/header_logo" android:layout_height="64sp" android:layout_width="70sp"></ImageView>
+
+<LinearLayout android:id="@+id/LinearLayout01" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical"><TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:textStyle="bold" android:text="musikCube" android:textSize="16sp" android:textColor="#ffffff" android:id="@+id/HeaderTitle" android:layout_marginLeft="8sp" android:layout_marginTop="8sp" android:layout_marginBottom="5sp"></TextView><TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="-" android:textSize="14sp" android:id="@+id/HeaderContent" android:layout_marginTop="0sp" android:textColor="#ffffff" android:layout_marginLeft="8sp" android:fadingEdge="horizontal" android:fadingEdgeLength="10sp" android:maxLines="1"></TextView>
+</LinearLayout>
+</LinearLayout>

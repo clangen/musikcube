@@ -3,8 +3,9 @@
          android:orientation="vertical"
          android:layout_width="fill_parent" 
          android:layout_height="fill_parent"
-         android:paddingLeft="8dp"
-         android:paddingRight="8dp">
+         android:paddingLeft="0dp"
+         android:paddingRight="0dp">
+	<include android:layout_height="wrap_content" layout="@layout/mc2_title" android:id="@+id/title" android:layout_margin="0sp" android:layout_width="fill_parent"></include>
  
      <ListView android:id="@id/android:list"
                android:layout_width="fill_parent" 

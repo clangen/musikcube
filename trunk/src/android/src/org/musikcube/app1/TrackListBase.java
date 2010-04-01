@@ -19,6 +19,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -149,6 +150,8 @@ public class TrackListBase extends ListActivity implements OnQueryResultListener
 	@Override
 	protected void onCreate(Bundle savedInstanceState){
 		super.onCreate(savedInstanceState);
+
+		requestWindowFeature(Window.FEATURE_NO_TITLE); 
 		//Log.v("musikcube.TrackList", "start");
 		this.setContentView(this.trackListViewId);
 		
