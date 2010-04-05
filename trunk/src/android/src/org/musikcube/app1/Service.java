@@ -63,7 +63,7 @@ public class Service extends android.app.Service {
     	    {
     	     case TelephonyManager.CALL_STATE_OFFHOOK:
     	     case TelephonyManager.CALL_STATE_RINGING:
-    	    	 if(Player.GetInstance().Playing()){
+    	    	 if(Player.GetInstance().Playing() && !Player.GetInstance().Paused()){
 	    	    	 callPause	= true;
 	    	    	 Intent intent	= new Intent(Service.this, org.musikcube.app1.Service.class);
 	    	    	 intent.putExtra("org.musikcube.Service.action", "pause");
