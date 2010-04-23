@@ -11,8 +11,8 @@ SetCompressor /SOLID lzma
 !define MUI_BGCOLOR "FFFFFF"
 
 !define PROJECT_NAME "musikCube 2"
-!define SUB_NAME "developers milestone 3.1"
-!define INSTALLER_NAME "mC2dm3.1"
+!define SUB_NAME "developers milestone 3.3.2"
+!define INSTALLER_NAME "mC2dm3.3.2"
 !define INSTALL_DIR "musikCube 2"
 
 ;----------------------------------------------------------------

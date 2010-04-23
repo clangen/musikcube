@@ -224,13 +224,25 @@ bool Query::ListBase::SendResults(musik::core::xml::WriterNode &queryNode,Librar
                         results.Attributes()["clear"] = "true";
                     }
 
-                    for(musik::core::MetadataValueVector::iterator metaValue=metatagResult->second.begin();metaValue!=metatagResult->second.end();++metaValue){
-                        musik::core::xml::WriterNode metaValueNode(results,"md");
-                        metaValueNode.Attributes()["id"]    = boost::lexical_cast<std::string>( (*metaValue)->id );
+					if( metatagResult->first=="album"){
+						// Special case for albums, includes thumbnailId
+						for(musik::core::MetadataValueVector::iterator metaValue=metatagResult->second.begin();metaValue!=metatagResult->second.end();++metaValue){
+							musik::core::xml::WriterNode metaValueNode(results,"md");
+							metaValueNode.Attributes()["id"]    = boost::lexical_cast<std::string>( (*metaValue)->id );
+							metaValueNode.Attributes()["thumb"]    = boost::lexical_cast<std::string>( ((MetadataValueAlbum *)(*metaValue).get())->thumbnailId );
 
-                        metaValueNode.Content() = UTF_TO_UTF8( (*metaValue)->value );
+							metaValueNode.Content() = UTF_TO_UTF8( (*metaValue)->value );
 
-                    }
+						}
+					}else{
+						for(musik::core::MetadataValueVector::iterator metaValue=metatagResult->second.begin();metaValue!=metatagResult->second.end();++metaValue){
+							musik::core::xml::WriterNode metaValueNode(results,"md");
+							metaValueNode.Attributes()["id"]    = boost::lexical_cast<std::string>( (*metaValue)->id );
+
+							metaValueNode.Content() = UTF_TO_UTF8( (*metaValue)->value );
+
+						}
+					}
 
                     this->metadataEvent[metatag](&metatagResult->second,clearMetatag);
                 }

@@ -180,7 +180,7 @@ bool IndexerTrack::CompareDBAndFileInfo(const boost::filesystem::utfpath &file,d
 
 
 
-bool IndexerTrack::Save(db::Connection &dbConnection,utfstring libraryDirectory,DBINT folderId){
+bool IndexerTrack::Save(db::Connection &dbConnection,utfstring libraryDirectory,DBINT folderId,utfstring folder){
 
     MetadataMap metadataCopy(this->meta->metadata);
 
@@ -314,37 +314,29 @@ bool IndexerTrack::Save(db::Connection &dbConnection,utfstring libraryDirectory,
     }
     metadataCopy.erase("artist");
 
-
     //////////////////////////////////////////////////////////////////////////////
-    // 5. Read album
-    DBINT albumId(0);
-    {
-        db::CachedStatement stmt("SELECT id FROM albums WHERE name=?",dbConnection);
-        const utfchar *album=this->GetValue("album");
-        if(album==NULL){
-            album=UTF("");
-        }
-
-        stmt.BindTextUTF(0,album);
-
-        if(stmt.Step()==db::Row){
-            albumId    = stmt.ColumnInt(0);
-        }else{
-            // INSERT a new album
-            db::Statement insertAlbum("INSERT INTO albums (name) VALUES (?)",dbConnection);
-            insertAlbum.BindTextUTF(0,album);
-
-            if(insertAlbum.Step()==db::Done){
-                albumId    = dbConnection.LastInsertedId();
-            }
-        }
-    }
-
-    metadataCopy.erase("album");
-
-    //////////////////////////////////////////////////////////////////////////////
-    // 6. Thumbnail
+    // 5. Thumbnail
     DBINT thumbnailId(0);
+
+	// Read folder.jpg
+	if(!this->meta->thumbnailData){
+		utfstring folderJpgPath(folder+UTF("/folder.jpg"));
+		
+		musik::core::filestreams::FileStreamPtr folderJpg( musik::core::filestreams::Factory::OpenFile(folderJpgPath.c_str()) );
+        if(folderJpg){
+			long folderJpgSize(folderJpg->Filesize());
+			if(folderJpgSize!=-1){
+				char *tempFolderJpg	= new char[folderJpgSize+4];
+
+				// Load file
+				folderJpg->Read(tempFolderJpg,folderJpgSize);
+				folderJpg->Close();
+				this->SetThumbnail(tempFolderJpg,folderJpgSize);
+
+				delete tempFolderJpg;
+			}
+		}
+	}
 
     if(this->meta->thumbnailData){
         UINT64 sum    = Checksum(this->meta->thumbnailData,this->meta->thumbnailSize);
@@ -384,7 +376,36 @@ bool IndexerTrack::Save(db::Connection &dbConnection,utfstring libraryDirectory,
     }
 
     //////////////////////////////////////////////////////////////////////////////
-    // 5. Update tracks table with relations
+    // 7. Read album
+    DBINT albumId(0);
+    {
+        db::CachedStatement stmt("SELECT id FROM albums WHERE name=? AND thumbnail_id=?",dbConnection);
+        const utfchar *album=this->GetValue("album");
+        if(album==NULL){
+            album=UTF("");
+        }
+
+        stmt.BindTextUTF(0,album);
+		stmt.BindInt(1,thumbnailId);
+
+        if(stmt.Step()==db::Row){
+            albumId    = stmt.ColumnInt(0);
+        }else{
+            // INSERT a new album
+            db::Statement insertAlbum("INSERT INTO albums (name,thumbnail_id) VALUES (?,?)",dbConnection);
+            insertAlbum.BindTextUTF(0,album);
+			insertAlbum.BindInt(1,thumbnailId);
+
+            if(insertAlbum.Step()==db::Done){
+                albumId    = dbConnection.LastInsertedId();
+            }
+        }
+    }
+
+    metadataCopy.erase("album");
+
+    //////////////////////////////////////////////////////////////////////////////
+    // 8. Update tracks table with relations
     {
         db::CachedStatement stmt("UPDATE tracks SET album_id=?,visual_genre_id=?,visual_artist_id=?,thumbnail_id=? WHERE id=?",dbConnection);
         stmt.BindInt(0,albumId);

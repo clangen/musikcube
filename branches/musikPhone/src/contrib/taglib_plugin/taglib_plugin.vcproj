@@ -40,8 +40,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../;../../3rdparty/include/;&quot;taglib-1.5&quot;;&quot;taglib-1.5/taglib&quot;;&quot;taglib-1.5/taglib/ape&quot;;&quot;taglib-1.5/taglib/flac&quot;;&quot;taglib-1.5/taglib/mpc&quot;;&quot;taglib-1.5/taglib/mpeg&quot;;&quot;taglib-1.5/taglib/mpeg/id3v1&quot;;&quot;taglib-1.5/taglib/mpeg/id3v2&quot;;&quot;taglib-1.5/taglib/mpeg/id3v2/frames&quot;;&quot;taglib-1.5/taglib/ogg&quot;;&quot;taglib-1.5/taglib/ogg/flac&quot;;&quot;taglib-1.5/taglib/ogg/speex&quot;;&quot;taglib-1.5/taglib/ogg/vorbis&quot;;&quot;taglib-1.5/taglib/toolkit&quot;;&quot;taglib-1.5/taglib/trueaudio&quot;;&quot;taglib-1.5/taglib/wavpack&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL"
+				AdditionalIncludeDirectories="../../;../../3rdparty/include/;&quot;taglib-1.6.1&quot;;&quot;taglib-1.6.1/taglib&quot;;&quot;taglib-1.6.1/taglib/ape&quot;;&quot;taglib-1.6.1/taglib/flac&quot;;&quot;taglib-1.6.1/taglib/mpc&quot;;&quot;taglib-1.6.1/taglib/mpeg&quot;;&quot;taglib-1.6.1/taglib/mpeg/id3v1&quot;;&quot;taglib-1.6.1/taglib/mpeg/id3v2&quot;;&quot;taglib-1.6.1/taglib/mpeg/id3v2/frames&quot;;&quot;taglib-1.6.1/taglib/ogg&quot;;&quot;taglib-1.6.1/taglib/ogg/flac&quot;;&quot;taglib-1.6.1/taglib/ogg/speex&quot;;&quot;taglib-1.6.1/taglib/ogg/vorbis&quot;;&quot;taglib-1.6.1/taglib/toolkit&quot;;&quot;taglib-1.6.1/taglib/trueaudio&quot;;&quot;taglib-1.6.1/taglib/wavpack&quot;;&quot;taglib-1.6.1/taglib/riff&quot;;&quot;taglib-1.6.1/taglib/riff/aiff&quot;;&quot;taglib-1.6.1/taglib/riff/wav&quot;;&quot;taglib-1.6.1/taglib/asf&quot;;&quot;taglib-1.6.1/taglib/mp4&quot;"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;TAGLIB_STATIC"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -125,8 +125,8 @@
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="../../;../../3rdparty/include/;&quot;taglib-1.5&quot;;&quot;taglib-1.5/taglib&quot;;&quot;taglib-1.5/taglib/ape&quot;;&quot;taglib-1.5/taglib/flac&quot;;&quot;taglib-1.5/taglib/mpc&quot;;&quot;taglib-1.5/taglib/mpeg&quot;;&quot;taglib-1.5/taglib/mpeg/id3v1&quot;;&quot;taglib-1.5/taglib/mpeg/id3v2&quot;;&quot;taglib-1.5/taglib/mpeg/id3v2/frames&quot;;&quot;taglib-1.5/taglib/ogg&quot;;&quot;taglib-1.5/taglib/ogg/flac&quot;;&quot;taglib-1.5/taglib/ogg/speex&quot;;&quot;taglib-1.5/taglib/ogg/vorbis&quot;;&quot;taglib-1.5/taglib/toolkit&quot;;&quot;taglib-1.5/taglib/trueaudio&quot;;&quot;taglib-1.5/taglib/wavpack&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL"
+				AdditionalIncludeDirectories="../../;../../3rdparty/include/;&quot;taglib-1.6.1&quot;;&quot;taglib-1.6.1/taglib&quot;;&quot;taglib-1.6.1/taglib/ape&quot;;&quot;taglib-1.6.1/taglib/flac&quot;;&quot;taglib-1.6.1/taglib/mpc&quot;;&quot;taglib-1.6.1/taglib/mpeg&quot;;&quot;taglib-1.6.1/taglib/mpeg/id3v1&quot;;&quot;taglib-1.6.1/taglib/mpeg/id3v2&quot;;&quot;taglib-1.6.1/taglib/mpeg/id3v2/frames&quot;;&quot;taglib-1.6.1/taglib/ogg&quot;;&quot;taglib-1.6.1/taglib/ogg/flac&quot;;&quot;taglib-1.6.1/taglib/ogg/speex&quot;;&quot;taglib-1.6.1/taglib/ogg/vorbis&quot;;&quot;taglib-1.6.1/taglib/toolkit&quot;;&quot;taglib-1.6.1/taglib/trueaudio&quot;;&quot;taglib-1.6.1/taglib/wavpack&quot;;&quot;taglib-1.6.1/taglib/riff&quot;;&quot;taglib-1.6.1/taglib/riff/aiff&quot;;&quot;taglib-1.6.1/taglib/riff/wav&quot;;&quot;taglib-1.6.1/taglib/asf&quot;;&quot;taglib-1.6.1/taglib/mp4&quot;"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;TAGLIB_STATIC"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
 				WarningLevel="0"
@@ -225,446 +225,1522 @@
 			</File>
 		</Filter>
 		<Filter
-			Name="taglib-1.5"
+			Name="taglib-1.6.1"
 			>
 			<File
-				RelativePath=".\taglib-1.5\taglib\ape\apefooter.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\riff\aiff\aifffile.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\ape\apefooter.h"
+				RelativePath=".\taglib-1.6.1\taglib\riff\aiff\aifffile.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\ape\apeitem.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\riff\aiff\aiffproperties.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\ape\apeitem.h"
+				RelativePath=".\taglib-1.6.1\taglib\riff\aiff\aiffproperties.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\ape\apetag.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\ape\apefooter.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\ape\apetag.h"
+				RelativePath=".\taglib-1.6.1\taglib\ape\apefooter.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v2\frames\attachedpictureframe.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\ape\apeitem.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v2\frames\attachedpictureframe.h"
+				RelativePath=".\taglib-1.6.1\taglib\ape\apeitem.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\audioproperties.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\ape\apetag.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\audioproperties.h"
+				RelativePath=".\taglib-1.6.1\taglib\ape\apetag.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v2\frames\commentsframe.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\asf\asfattribute.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v2\frames\commentsframe.h"
+				RelativePath=".\taglib-1.6.1\taglib\asf\asfattribute.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\fileref.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\asf\asffile.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\fileref.h"
+				RelativePath=".\taglib-1.6.1\taglib\asf\asffile.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\flac\flacfile.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\asf\asfproperties.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\flac\flacfile.h"
+				RelativePath=".\taglib-1.6.1\taglib\asf\asfproperties.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\flac\flacproperties.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\asf\asftag.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\flac\flacproperties.h"
+				RelativePath=".\taglib-1.6.1\taglib\asf\asftag.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v2\frames\generalencapsulatedobjectframe.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\frames\attachedpictureframe.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v2\frames\generalencapsulatedobjectframe.h"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\frames\attachedpictureframe.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v1\id3v1genres.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\audioproperties.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v1\id3v1genres.h"
+				RelativePath=".\taglib-1.6.1\taglib\audioproperties.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v1\id3v1tag.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\frames\commentsframe.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v1\id3v1tag.h"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\frames\commentsframe.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v2\id3v2extendedheader.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\fileref.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v2\id3v2extendedheader.h"
+				RelativePath=".\taglib-1.6.1\taglib\fileref.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v2\id3v2footer.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\flac\flacfile.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v2\id3v2footer.h"
+				RelativePath=".\taglib-1.6.1\taglib\flac\flacfile.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v2\id3v2frame.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\flac\flacproperties.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v2\id3v2frame.h"
+				RelativePath=".\taglib-1.6.1\taglib\flac\flacproperties.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v2\id3v2framefactory.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\frames\generalencapsulatedobjectframe.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v2\id3v2framefactory.h"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\frames\generalencapsulatedobjectframe.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v2\id3v2header.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v1\id3v1genres.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v2\id3v2header.h"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v1\id3v1genres.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v2\id3v2synchdata.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v1\id3v1tag.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v2\id3v2synchdata.h"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v1\id3v1tag.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v2\id3v2tag.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\id3v2extendedheader.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v2\id3v2tag.h"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\id3v2extendedheader.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpc\mpcfile.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\id3v2footer.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpc\mpcfile.h"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\id3v2footer.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpc\mpcproperties.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\id3v2frame.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpc\mpcproperties.h"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\id3v2frame.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\mpegfile.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\id3v2framefactory.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\mpegfile.h"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\id3v2framefactory.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\mpegheader.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\id3v2header.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\mpegheader.h"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\id3v2header.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\mpegproperties.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\id3v2synchdata.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\mpegproperties.h"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\id3v2synchdata.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\ogg\oggfile.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\id3v2tag.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\ogg\oggfile.h"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\id3v2tag.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\ogg\flac\oggflacfile.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\mp4\mp4atom.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\ogg\flac\oggflacfile.h"
+				RelativePath=".\taglib-1.6.1\taglib\mp4\mp4atom.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\ogg\oggpage.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\mp4\mp4coverart.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\ogg\oggpage.h"
+				RelativePath=".\taglib-1.6.1\taglib\mp4\mp4coverart.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\ogg\oggpageheader.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\mp4\mp4file.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\ogg\oggpageheader.h"
+				RelativePath=".\taglib-1.6.1\taglib\mp4\mp4file.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v2\frames\relativevolumeframe.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\mp4\mp4item.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v2\frames\relativevolumeframe.h"
+				RelativePath=".\taglib-1.6.1\taglib\mp4\mp4item.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\ogg\speex\speexfile.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\mp4\mp4properties.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\ogg\speex\speexfile.h"
+				RelativePath=".\taglib-1.6.1\taglib\mp4\mp4properties.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\ogg\speex\speexproperties.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\mp4\mp4tag.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\ogg\speex\speexproperties.h"
+				RelativePath=".\taglib-1.6.1\taglib\mp4\mp4tag.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\tag.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\mpc\mpcfile.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\tag.h"
+				RelativePath=".\taglib-1.6.1\taglib\mpc\mpcfile.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\toolkit\taglib.h"
+				RelativePath=".\taglib-1.6.1\taglib\mpc\mpcproperties.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\taglib_export.h"
+				RelativePath=".\taglib-1.6.1\taglib\mpc\mpcproperties.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\tagunion.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\mpegfile.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\tagunion.h"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\mpegfile.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\toolkit\tbytevector.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\mpegheader.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\toolkit\tbytevector.h"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\mpegheader.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\toolkit\tbytevectorlist.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\mpegproperties.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\toolkit\tbytevectorlist.h"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\mpegproperties.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\toolkit\tdebug.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\ogg\oggfile.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\toolkit\tdebug.h"
+				RelativePath=".\taglib-1.6.1\taglib\ogg\oggfile.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v2\frames\textidentificationframe.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\ogg\flac\oggflacfile.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v2\frames\textidentificationframe.h"
+				RelativePath=".\taglib-1.6.1\taglib\ogg\flac\oggflacfile.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\toolkit\tfile.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\ogg\oggpage.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\toolkit\tfile.h"
+				RelativePath=".\taglib-1.6.1\taglib\ogg\oggpage.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\toolkit\tlist.h"
+				RelativePath=".\taglib-1.6.1\taglib\ogg\oggpageheader.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\toolkit\tmap.h"
+				RelativePath=".\taglib-1.6.1\taglib\ogg\oggpageheader.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\trueaudio\trueaudiofile.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\frames\popularimeterframe.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\trueaudio\trueaudiofile.h"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\frames\popularimeterframe.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\trueaudio\trueaudioproperties.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\frames\privateframe.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\trueaudio\trueaudioproperties.h"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\frames\privateframe.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\toolkit\tstring.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\frames\relativevolumeframe.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\toolkit\tstring.h"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\frames\relativevolumeframe.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\toolkit\tstringlist.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\riff\rifffile.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\toolkit\tstringlist.h"
+				RelativePath=".\taglib-1.6.1\taglib\riff\rifffile.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\toolkit\unicode.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\ogg\speex\speexfile.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\toolkit\unicode.h"
+				RelativePath=".\taglib-1.6.1\taglib\ogg\speex\speexfile.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v2\frames\uniquefileidentifierframe.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\ogg\speex\speexproperties.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v2\frames\uniquefileidentifierframe.h"
+				RelativePath=".\taglib-1.6.1\taglib\ogg\speex\speexproperties.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v2\frames\unknownframe.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\tag.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v2\frames\unknownframe.h"
+				RelativePath=".\taglib-1.6.1\taglib\tag.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v2\frames\unsynchronizedlyricsframe.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\toolkit\taglib.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v2\frames\unsynchronizedlyricsframe.h"
+				RelativePath=".\taglib-1.6.1\taglib\taglib_config.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v2\frames\urllinkframe.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\taglib_export.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\id3v2\frames\urllinkframe.h"
+				RelativePath=".\taglib-1.6.1\taglib\tagunion.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\ogg\vorbis\vorbisfile.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\tagunion.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\ogg\vorbis\vorbisfile.h"
+				RelativePath=".\taglib-1.6.1\taglib\toolkit\tbytevector.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\ogg\vorbis\vorbisproperties.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\toolkit\tbytevector.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\ogg\vorbis\vorbisproperties.h"
+				RelativePath=".\taglib-1.6.1\taglib\toolkit\tbytevectorlist.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\wavpack\wavpackfile.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\toolkit\tbytevectorlist.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\wavpack\wavpackfile.h"
+				RelativePath=".\taglib-1.6.1\taglib\toolkit\tdebug.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\wavpack\wavpackproperties.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\toolkit\tdebug.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\wavpack\wavpackproperties.h"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\frames\textidentificationframe.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\xingheader.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\frames\textidentificationframe.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\mpeg\xingheader.h"
+				RelativePath=".\taglib-1.6.1\taglib\toolkit\tfile.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\ogg\xiphcomment.cpp"
+				RelativePath=".\taglib-1.6.1\taglib\toolkit\tfile.h"
 				>
 			</File>
 			<File
-				RelativePath=".\taglib-1.5\taglib\ogg\xiphcomment.h"
+				RelativePath=".\taglib-1.6.1\taglib\toolkit\tlist.h"
+				>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\toolkit\tmap.h"
+				>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\trueaudio\trueaudiofile.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\trueaudio\trueaudiofile.h"
+				>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\trueaudio\trueaudioproperties.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\trueaudio\trueaudioproperties.h"
+				>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\toolkit\tstring.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\toolkit\tstring.h"
+				>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\toolkit\tstringlist.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\toolkit\tstringlist.h"
+				>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\toolkit\unicode.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\toolkit\unicode.h"
+				>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\frames\uniquefileidentifierframe.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\frames\uniquefileidentifierframe.h"
+				>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\frames\unknownframe.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\frames\unknownframe.h"
+				>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\frames\unsynchronizedlyricsframe.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\frames\unsynchronizedlyricsframe.h"
+				>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\frames\urllinkframe.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\id3v2\frames\urllinkframe.h"
+				>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\ogg\vorbis\vorbisfile.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\ogg\vorbis\vorbisfile.h"
+				>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\ogg\vorbis\vorbisproperties.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\ogg\vorbis\vorbisproperties.h"
+				>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\riff\wav\wavfile.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\riff\wav\wavfile.h"
+				>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\wavpack\wavpackfile.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\wavpack\wavpackfile.h"
+				>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\wavpack\wavpackproperties.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\wavpack\wavpackproperties.h"
+				>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\riff\wav\wavproperties.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\riff\wav\wavproperties.h"
+				>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\xingheader.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\mpeg\xingheader.h"
+				>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\ogg\xiphcomment.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\taglib-1.6.1\taglib\ogg\xiphcomment.h"
 				>
 			</File>
 		</Filter>

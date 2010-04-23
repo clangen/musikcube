@@ -708,8 +708,11 @@ void Library::Base::CreateDatabase(db::Connection &db){
     db.Execute("CREATE UNIQUE INDEX IF NOT EXISTS folders_index ON folders (name,parent_id,path_id)");
     db.Execute("CREATE UNIQUE INDEX IF NOT EXISTS paths_index ON paths (path)");
     db.Execute("CREATE INDEX IF NOT EXISTS genre_index ON genres (sort_order)");
+    db.Execute("CREATE INDEX IF NOT EXISTS genre_index2 ON genres (name)");
     db.Execute("CREATE INDEX IF NOT EXISTS artist_index ON artists (sort_order)");
+    db.Execute("CREATE INDEX IF NOT EXISTS artist_index2 ON artists (name)");
     db.Execute("CREATE INDEX IF NOT EXISTS album_index ON albums (sort_order)");
+    db.Execute("CREATE INDEX IF NOT EXISTS album_index2 ON albums (name,thumbnail_id)");
     db.Execute("CREATE INDEX IF NOT EXISTS track_index1 ON tracks (album_id,sort_order1)");
     db.Execute("CREATE INDEX IF NOT EXISTS track_index7 ON tracks (folder_id)");
     db.Execute("CREATE INDEX IF NOT EXISTS thumbnail_index ON thumbnails (filesize)");
@@ -721,7 +724,9 @@ void Library::Base::CreateDatabase(db::Connection &db){
     db.Execute("CREATE INDEX IF NOT EXISTS trackmeta_index1 ON track_meta (track_id,meta_value_id)");
     db.Execute("CREATE INDEX IF NOT EXISTS trackmeta_index2 ON track_meta (meta_value_id,track_id)");
     db.Execute("CREATE INDEX IF NOT EXISTS metakey_index1 ON meta_keys (name)");
-    db.Execute("CREATE INDEX IF NOT EXISTS metavalues_index1 ON meta_values (meta_key_id)");
+    db.Execute("CREATE INDEX IF NOT EXISTS metavalues_index3 ON meta_values (meta_key_id,sort_order)");
+    db.Execute("CREATE INDEX IF NOT EXISTS metavalues_index2 ON meta_values (meta_key_id,content)");
+    db.Execute("DROP INDEX IF EXISTS metavalues_index1");
 
     db.Execute("CREATE INDEX IF NOT EXISTS playlist_index ON playlist_tracks (playlist_id,sort_order)");
 

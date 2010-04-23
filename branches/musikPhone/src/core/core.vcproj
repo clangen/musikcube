@@ -373,6 +373,14 @@
 						>
 					</File>
 					<File
+						RelativePath=".\Query\SearchQuery.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Query\SearchQuery.h"
+						>
+					</File>
+					<File
 						RelativePath=".\Query\SortTracks.cpp"
 						>
 					</File>

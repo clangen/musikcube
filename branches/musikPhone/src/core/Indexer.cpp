@@ -442,7 +442,7 @@ void Indexer::SyncDirectory(utfstring &sFolder,DBINT iParentFolderId,DBINT iPath
 
                     if(tagRead){
                         // Save
-                        track.Save(this->dbConnection,this->libraryPath,iFolderId);
+                        track.Save(this->dbConnection,this->libraryPath,iFolderId,oPath.string());
                         this->filesSaved++;
                         if(this->filesSaved%100==0){
                             this->TrackRefreshed();
@@ -1019,7 +1019,7 @@ void Indexer::RunAnalyzers(){
 
                         // finally save the track
                         if(successPlugins>0){
-                            track.Save(this->dbConnection,this->libraryPath,folderId);
+                            track.Save(this->dbConnection,this->libraryPath,folderId,UTF(""));
                         }
                         {
                             boost::mutex::scoped_lock lock(this->progressMutex);

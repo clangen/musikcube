@@ -72,7 +72,7 @@ class IndexerTrack : public Track {
         virtual DBINT Id();
 
         bool CompareDBAndFileInfo(const boost::filesystem::utfpath &file,db::Connection &dbConnection,DBINT currentFolderId);
-        bool Save(db::Connection &dbConnection,utfstring libraryDirectory,DBINT folderId);
+        bool Save(db::Connection &dbConnection,utfstring libraryDirectory,DBINT folderId,utfstring folder);
         bool GetTrackMetadata(db::Connection &db);
 
     private:

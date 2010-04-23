@@ -95,6 +95,10 @@ void Responder::ThreadLoop(){
 
         // OK, GO
         if(!this->Exited()){
+			boost::asio::socket_base::send_buffer_size option(65536);
+			this->socket->set_option(option);
+			boost::asio::socket_base::keep_alive option2(true);
+			this->socket->set_option(option2);
 
             std::string request;
 

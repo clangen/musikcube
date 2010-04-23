@@ -389,9 +389,9 @@ bool Query::ListSelection::ParseQuery(Library::Base *library,db::Connection &db)
 
     // Album
     if(metakeysSelectedCopy.empty()){
-        this->QueryForMetadata("album","SELECT a.id,a.name FROM albums a ORDER BY a.sort_order",metakeysQueried,library,db);
+        this->QueryForMetadata("album","SELECT a.id,a.name,a.thumbnail_id FROM albums a ORDER BY a.sort_order",metakeysQueried,library,db);
     }else{
-        this->QueryForMetadata("album","SELECT a.id,a.name FROM albums a WHERE a.id IN (SELECT album_id FROM temp_tracks_list) ORDER BY a.sort_order",metakeysQueried,library,db);
+        this->QueryForMetadata("album","SELECT a.id,a.name,a.thumbnail_id FROM albums a WHERE a.id IN (SELECT album_id FROM temp_tracks_list) ORDER BY a.sort_order",metakeysQueried,library,db);
     }
 
     // Track
@@ -525,16 +525,30 @@ void Query::ListSelection::QueryForMetadata(const char *metakey,const char *sql,
             boost::mutex::scoped_lock lock(library->resultMutex);
             this->metadataResults[metakey];
         }
+		
+		std::string metakeyString(metakey);
 
         while(metaValueStmt.Step()==db::Row){
-            tempMetadataValues.push_back(
-                    MetadataValuePtr(
-                        new MetadataValue(
-                            metaValueStmt.ColumnInt(0),
-                            metaValueStmt.ColumnTextUTF(1)
-                            )
-                        )
-                    );
+			if(metakeyString=="album"){
+				tempMetadataValues.push_back(
+						MetadataValuePtr(
+							new MetadataValueAlbum(
+								metaValueStmt.ColumnInt(0),
+								metaValueStmt.ColumnTextUTF(1),
+								metaValueStmt.ColumnInt(2)
+								)
+							)
+						);
+			}else{
+				tempMetadataValues.push_back(
+						MetadataValuePtr(
+							new MetadataValue(
+								metaValueStmt.ColumnInt(0),
+								metaValueStmt.ColumnTextUTF(1)
+								)
+							)
+						);
+			}
 
             if( (++row)%10==0 ){
                 boost::mutex::scoped_lock lock(library->resultMutex);

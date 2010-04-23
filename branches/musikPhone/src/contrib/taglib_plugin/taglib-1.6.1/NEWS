@@ -1,0 +1,56 @@
+TagLib 1.6.1 (Oct 31, 2009)
+===========================
+
+ * Better detection of the audio codec of .oga files in FileRef.
+ * Fixed saving of Vorbis comments to Ogg FLAC files. TagLib tried to
+   include the Vorbis framing bit, which is only correct for Ogg Vorbis.
+ * Public symbols now have explicitly set visibility to "default" on GCC.
+ * Added missing exports for static ID3v1 functions.
+ * Fixed a typo in taglib_c.pc
+ * Fixed a failing test on ppc64.
+ * Support for binary 'covr' atom in MP4 files. TagLib 1.6 treated them
+   as text atoms, which corrupted them in some cases.
+ * Fixed ID3v1-style genre to string conversion in MP4 files.
+
+TagLib 1.6 (Sep 13, 2009)
+=========================
+
+1.6:
+
+ * New CMake option to build a static version - ENABLE_STATIC.
+ * Added support for disabling dllimport/dllexport on Windows using the
+   TAGLIB_STATIC macro.
+ * Support for parsing the obsolete 'gnre' MP4 atom.
+ * New cpp macros TAGLIB_WITH_MP4 and TAGLIB_WITH_ASF to determin if
+   TagLib was built with MP4/ASF support.
+
+1.6 RC1:
+
+ * Split Ogg packets larger than 64k into multiple pages. (BUG:171957)
+ * TagLib can now use FLAC padding block. (BUG:107659)
+ * ID3v2.2 frames are now not incorrectly saved. (BUG:176373)
+ * Support for ID3v2.2 PIC frames. (BUG:167786)
+ * Fixed a bug in ByteVectorList::split().
+ * XiphComment::year() now falls back to YEAR if DATE doesn't exist
+   and XiphComment::year() falls back to TRACKNUM if TRACKNUMBER doesn't
+   exist. (BUG:144396)
+ * Improved ID3v2.3 genre parsing. (BUG:188578)
+ * Better checking of corrupted ID3v2 APIC data. (BUG:168382)
+ * Bitrate calculating using the Xing header now uses floating point
+   numbers. (BUG:172556)
+ * New TagLib::String method rfind().
+ * Added support for MP4 file format with iTunes-style metadata [optional].
+ * Added support for ASF (WMA) file format [optional].
+ * Fixed crash when saving a Locator APEv2 tag. (BUG:169810)
+ * Fixed a possible crash in the non-const version of String::operator[]
+   and in String::operator+=. (BUG:169389)
+ * Added support for PRIV ID3v2 frames.
+ * Empty ID3v2 genres are no longer treated as numeric ID3v1 genres.
+ * Added support for the POPM (rating/playcount) ID3v2 frame.
+ * Generic RIFF file format support:
+   * Support for AIFF files with ID3v2 tags.
+   * Support for WAV files with ID3v2 tags.
+ * Fixed crash on handling unsupported ID3v2 frames, e.g. on encrypted
+   frames. (BUG:161721)
+ * Fixed overflow while calculating bitrate of FLAC files with a very
+   high bitrate.

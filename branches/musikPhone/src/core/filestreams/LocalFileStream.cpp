@@ -37,6 +37,7 @@
 #include <core/filestreams/LocalFileStream.h>
 #include <core/config.h>
 #include <core/config_filesystem.h>
+#include <boost/algorithm/string.hpp> 
 
 //////////////////////////////////////////////////////////////////////////////
 #ifdef UTF_WIDECHAR
@@ -71,6 +72,7 @@ bool LocalFileStream::Open(const utfchar *filename,unsigned int options){
         boost::filesystem::utfpath file(filename);
         this->filesize  = (long)boost::filesystem::file_size(file);
         this->extension = file.extension();
+		boost::algorithm::to_lower(this->extension);
 
         this->file  = UTFFopen(filename,UTF("rb"));
         return this->file!=NULL;

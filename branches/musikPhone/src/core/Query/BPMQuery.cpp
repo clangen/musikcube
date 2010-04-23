@@ -90,8 +90,10 @@ bool Query::BPMQuery::ParseQuery(Library::Base *library,db::Connection &db){
     // Second. Select track
     std::string sqlSelectTrack("SELECT t.id AS id,t.duration AS sum_duration,t.filesize AS sum_filesize");
     std::string sqlSelectTrackFrom(" FROM tracks t ");
-    std::string sqlSelectTrackWhere;
-    std::string sqlSelectTrackOrder("ORDER BY t.sort_order1");
+    std::string sqlSelectTrackWhere(" WHERE t.bpm>=");
+	sqlSelectTrackWhere	+= boost::lexical_cast<std::string>(this->bpm);
+	sqlSelectTrackWhere	+= " ";
+    std::string sqlSelectTrackOrder("ORDER BY t.bpm ASC LIMIT 20");
 
     // Copy selected metakeys
     std::set<std::string> metakeysSelected,metakeysSelectedCopy;
@@ -260,7 +262,9 @@ bool Query::BPMQuery::ParseQuery(Library::Base *library,db::Connection &db){
 
     ////////////////////////////////////////////////
     // Select tracks
-    std::string sql("SELECT t.id,t.duration,t.filesize FROM tracks t ORDER BY t.sort_order1");
+    std::string sql("SELECT t.id,t.duration,t.filesize FROM tracks t WHERE t.bpm>=");
+	sql += boost::lexical_cast<std::string>(this->bpm);
+	sql += " ORDER BY t.bpm ASC LIMIT 20";
     if(!metakeysSelectedCopy.empty()){
         sql    = "SELECT t.id,t.sum_duration,t.sum_filesize FROM temp_tracks_list t";
     }
@@ -326,6 +330,8 @@ bool Query::BPMQuery::ReceiveQuery(musik::core::xml::ParserNode &queryNode){
             }
 
 		}else if(node.Name()=="bpm"){
+			node.WaitForContent();
+			this->bpm	= boost::lexical_cast<double>(node.Content());
 			// TODO
         }else{
             this->ReceiveQueryStandardNodes(node);

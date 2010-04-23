@@ -48,7 +48,7 @@ namespace musik{ namespace core{
         public:
             MetadataValue(void);
             MetadataValue(const DBINT newId,const utfchar *value);
-            ~MetadataValue(void);
+            virtual ~MetadataValue(void);
 
             DBINT id;
             utfstring value;
@@ -56,5 +56,15 @@ namespace musik{ namespace core{
     };
     typedef boost::shared_ptr<MetadataValue> MetadataValuePtr;
     typedef std::vector<MetadataValuePtr> MetadataValueVector;
+
+	class MetadataValueAlbum : public MetadataValue{
+        public:
+            MetadataValueAlbum(void);
+            MetadataValueAlbum(const DBINT newId,const utfchar *value,const DBINT thumbnailId);
+            ~MetadataValueAlbum(void);
+
+            DBINT thumbnailId;
+    };
+
 
 } }

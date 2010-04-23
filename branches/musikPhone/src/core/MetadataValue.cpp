@@ -50,3 +50,9 @@ MetadataValue::MetadataValue(const DBINT newId,const utfchar *value):id(newId){
 
 MetadataValue::~MetadataValue(void){
 }
+
+MetadataValueAlbum::MetadataValueAlbum(const DBINT newId,const utfchar *value,const DBINT thumbnailId):MetadataValue(newId,value),thumbnailId(thumbnailId){
+}
+
+MetadataValueAlbum::~MetadataValueAlbum(void){
+}

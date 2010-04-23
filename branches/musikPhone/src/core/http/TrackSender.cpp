@@ -53,7 +53,7 @@ const char* TrackSender::WatchPath(){
 }
 
 void TrackSender::Execute(musik::core::http::IResponder* responder,musik::core::http::IRequestParser* request,musik::core::ITrack* track){
-    #define BUFFER_SIZE 4096
+    #define BUFFER_SIZE 65536
     char buffer[BUFFER_SIZE];
     std::size_t buffersize(0);
 
@@ -73,14 +73,25 @@ void TrackSender::Execute(musik::core::http::IResponder* responder,musik::core::
             }
 
             // Send header
-            std::string header( "HTTP/1.1 200 OK\r\nContent-Length: " );
+            std::string header( "HTTP/1.0 200 OK\r\nContent-Length: " );
             header.append( UTF_TO_UTF8(track->GetValue("filesize")) );
             header.append( "\r\n" );
 
             // Send content type as filename extension
             // TODO: Fix to send mimetype
             header.append( "Content-Type: ");
-            header.append( UTF_TO_UTF8(file->Type()) );
+
+			std::string ext(UTF_TO_UTF8(file->Type()));
+			std::string mime("application/octet-stream");
+			if(ext==".mp3"){
+				mime.assign("audio/mpeg");
+			}else if(ext==".ogg"){
+				mime.assign("audio/ogg");
+			}else if(ext==".flac"){
+				mime.assign("audio/ogg");
+			}
+
+            header.append( mime );
             header.append( "\r\n" );
             header.append("\r\n");
 
