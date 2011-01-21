@@ -21,6 +21,7 @@
 #include <boost/math/tools/config.hpp>
 #include <boost/math/policies/error_handling.hpp>
 #include <boost/math/special_functions/ellint_rc.hpp>
+#include <boost/math/special_functions/ellint_rf.hpp>
 
 // Carlson's elliptic integral of the third kind
 // R_J(x, y, z, p) = 1.5 * \int_{0}^{\infty} (t+p)^{-1} [(t+x)(t+y)(t+z)]^{-1/2} dt

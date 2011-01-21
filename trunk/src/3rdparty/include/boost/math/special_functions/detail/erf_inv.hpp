@@ -277,12 +277,12 @@ T erf_inv_imp(const T& p, const T& q, const Policy&, const boost::mpl::int_<64>*
 template <class T, class Policy>
 struct erf_roots
 {
-   std::tr1::tuple<T,T,T> operator()(const T& guess)
+   boost::math::tuple<T,T,T> operator()(const T& guess)
    {
       BOOST_MATH_STD_USING
       T derivative = sign * (2 / sqrt(constants::pi<T>())) * exp(-(guess * guess));
       T derivative2 = -2 * guess * derivative;
-      return std::tr1::make_tuple(((sign > 0) ? boost::math::erf(guess, Policy()) : boost::math::erfc(guess, Policy())) - target, derivative, derivative2);
+      return boost::math::make_tuple(((sign > 0) ? boost::math::erf(guess, Policy()) : boost::math::erfc(guess, Policy())) - target, derivative, derivative2);
    }
    erf_roots(T z, int s) : target(z), sign(s) {}
 private:
@@ -304,14 +304,16 @@ T erf_inv_imp(const T& p, const T& q, const Policy& pol, const boost::mpl::int_<
    //
    if(policies::digits<T, Policy>() > 64)
    {
+      boost::uintmax_t max_iter = policies::get_max_root_iterations<Policy>();
       if(p <= 0.5)
       {
-         result = tools::halley_iterate(detail::erf_roots<typename remove_cv<T>::type, Policy>(p, 1), guess, static_cast<T>(0), tools::max_value<T>(), (policies::digits<T, Policy>() * 2) / 3);
+         result = tools::halley_iterate(detail::erf_roots<typename remove_cv<T>::type, Policy>(p, 1), guess, static_cast<T>(0), tools::max_value<T>(), (policies::digits<T, Policy>() * 2) / 3, max_iter);
       }
       else
       {
-         result = tools::halley_iterate(detail::erf_roots<typename remove_cv<T>::type, Policy>(q, -1), guess, static_cast<T>(0), tools::max_value<T>(), (policies::digits<T, Policy>() * 2) / 3);
+         result = tools::halley_iterate(detail::erf_roots<typename remove_cv<T>::type, Policy>(q, -1), guess, static_cast<T>(0), tools::max_value<T>(), (policies::digits<T, Policy>() * 2) / 3, max_iter);
       }
+      policies::check_root_iterations("boost::math::erf_inv<%1%>", max_iter, pol);
    }
    else
    {

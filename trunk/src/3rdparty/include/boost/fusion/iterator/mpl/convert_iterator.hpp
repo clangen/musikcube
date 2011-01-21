@@ -37,7 +37,7 @@ namespace boost { namespace fusion
         }
 
         static mpl_iterator<T>
-        call(T const& x, mpl::false_)
+        call(T const& /*x*/, mpl::false_)
         {
             return mpl_iterator<T>();
         }

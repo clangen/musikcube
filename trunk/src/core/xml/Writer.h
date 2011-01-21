@@ -37,6 +37,7 @@
 
 #include <core/config.h>
 #include <string>
+#include <vector>
 
 #include <core/xml/IWriteSupplier.h>
 #include <core/xml/Node.h>

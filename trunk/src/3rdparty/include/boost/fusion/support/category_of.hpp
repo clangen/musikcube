@@ -15,7 +15,7 @@ namespace boost { namespace fusion
 {
     // Special tags:
     struct boost_tuple_tag; // boost::tuples::tuple tag
-    struct array_tag; // boost::array tag
+    struct boost_array_tag; // boost::array tag
     struct mpl_sequence_tag; // mpl sequence tag
     struct std_pair_tag; // std::pair tag
 
@@ -33,7 +33,7 @@ namespace boost { namespace fusion
     struct random_access_traversal_tag
         : bidirectional_traversal_tag {};
 
-    struct associative_sequence_tag {};
+    struct associative_tag {};
 
     namespace extension
     {
@@ -48,7 +48,7 @@ namespace boost { namespace fusion
         struct category_of_impl<boost_tuple_tag>;
 
         template <>
-        struct category_of_impl<array_tag>;
+        struct category_of_impl<boost_array_tag>;
 
         template <>
         struct category_of_impl<mpl_sequence_tag>;
@@ -68,7 +68,7 @@ namespace boost { namespace fusion
         template <typename T>
         struct is_associative
             : is_base_of<
-                associative_sequence_tag
+                associative_tag
               , typename category_of<T>::type>
         {};
 

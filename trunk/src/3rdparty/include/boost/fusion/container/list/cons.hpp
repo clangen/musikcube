@@ -46,11 +46,11 @@ namespace boost { namespace fusion
         nil() {}
 
         template <typename Iterator>
-        nil(Iterator const& iter, mpl::true_ /*this_is_an_iterator*/)
+        nil(Iterator const& /*iter*/, mpl::true_ /*this_is_an_iterator*/)
         {}
 
         template <typename Iterator>
-        void assign_from_iter(Iterator const& iter)
+        void assign_from_iter(Iterator const& /*iter*/)
         {
         }
     };
@@ -69,13 +69,13 @@ namespace boost { namespace fusion
         cons()
             : car(), cdr() {}
 
-        explicit cons(typename detail::call_param<Car>::type car)
-            : car(car), cdr() {}
+        explicit cons(typename detail::call_param<Car>::type in_car)
+            : car(in_car), cdr() {}
 
         cons(
-            typename detail::call_param<Car>::type car
-          , typename detail::call_param<Cdr>::type cdr)
-            : car(car), cdr(cdr) {}
+            typename detail::call_param<Car>::type in_car
+          , typename detail::call_param<Cdr>::type in_cdr)
+            : car(in_car), cdr(in_cdr) {}
         
         template <typename Car2, typename Cdr2>
         cons(cons<Car2, Cdr2> const& rhs)
@@ -92,7 +92,7 @@ namespace boost { namespace fusion
                     is_convertible<Sequence, cons> // use copy ctor instead
                   , is_convertible<Sequence, Car>  // use copy to car instead
                 > 
-            >::type* dummy = 0
+            >::type* /*dummy*/ = 0
         )
             : car(*fusion::begin(seq))
             , cdr(fusion::next(fusion::begin(seq)), mpl::true_()) {}

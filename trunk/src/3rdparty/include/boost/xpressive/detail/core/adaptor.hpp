@@ -37,6 +37,12 @@ struct xpression_adaptor
     Xpr xpr_;
 
     xpression_adaptor(Xpr const &xpr)
+    #if BOOST_WORKAROUND(__GNUC__, BOOST_TESTED_AT(4))                          \
+      && ((__GNUC__ > 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 1)))
+        // Ugh, gcc has an optimizer bug which elides this c'tor call
+        // resulting in pure virtual function calls.
+        __attribute__((noinline))
+    #endif
       : xpr_(xpr)
     {
     }

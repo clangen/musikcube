@@ -11,6 +11,8 @@
 #pragma once
 #endif
 
+#include <math.h> // So we can check which std C lib we're using
+
 #ifdef __cplusplus
 
 #include <boost/config.hpp>
@@ -20,7 +22,6 @@ namespace boost{ namespace math{ namespace tr1{ extern "C"{
 
 #endif // __cplusplus
 
-#ifdef BOOST_HAS_DECLSPEC // defined in config system
 // we need to import/export our code only if the user has specifically
 // asked for it by defining either BOOST_ALL_DYN_LINK if they want all boost
 // libraries to be dynamically linked, or BOOST_MATH_TR1_DYN_LINK
@@ -28,16 +29,21 @@ namespace boost{ namespace math{ namespace tr1{ extern "C"{
 #if defined(BOOST_ALL_DYN_LINK) || defined(BOOST_MATH_TR1_DYN_LINK)
 // export if this is our own source, otherwise import:
 #ifdef BOOST_MATH_TR1_SOURCE
-# define BOOST_MATH_TR1_DECL __declspec(dllexport)
+# define BOOST_MATH_TR1_DECL BOOST_SYMBOL_EXPORT
 #else
-# define BOOST_MATH_TR1_DECL __declspec(dllimport)
+# define BOOST_MATH_TR1_DECL BOOST_SYMBOL_IMPORT
 #endif  // BOOST_MATH_TR1_SOURCE
+#else
+#  define BOOST_MATH_TR1_DECL
 #endif  // DYN_LINK
-#endif  // BOOST_HAS_DECLSPEC
 //
-// if BOOST_MATH_TR1_DECL isn't defined yet define it now:
-#ifndef BOOST_MATH_TR1_DECL
-#define BOOST_MATH_TR1_DECL
+// Set any throw specifications on the C99 extern "C" functions - these have to be
+// the same as used in the std lib if any.
+//
+#if defined(__GLIBC__) && defined(__THROW)
+#  define BOOST_MATH_C99_THROW_SPEC __THROW
+#else
+#  define BOOST_MATH_C99_THROW_SPEC
 #endif
 
 //
@@ -109,259 +115,260 @@ typedef long double double_t;
 #endif
 
 // C99 Functions:
-double BOOST_MATH_TR1_DECL acosh BOOST_PREVENT_MACRO_SUBSTITUTION(double x);
-float BOOST_MATH_TR1_DECL acoshf BOOST_PREVENT_MACRO_SUBSTITUTION(float x);
-long double BOOST_MATH_TR1_DECL acoshl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x);
+double BOOST_MATH_TR1_DECL acosh BOOST_PREVENT_MACRO_SUBSTITUTION(double x) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL acoshf BOOST_PREVENT_MACRO_SUBSTITUTION(float x) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL acoshl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x) BOOST_MATH_C99_THROW_SPEC;
 
-double BOOST_MATH_TR1_DECL asinh BOOST_PREVENT_MACRO_SUBSTITUTION(double x);
-float BOOST_MATH_TR1_DECL asinhf BOOST_PREVENT_MACRO_SUBSTITUTION(float x);
-long double BOOST_MATH_TR1_DECL asinhl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x);
+double BOOST_MATH_TR1_DECL asinh BOOST_PREVENT_MACRO_SUBSTITUTION(double x) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL asinhf BOOST_PREVENT_MACRO_SUBSTITUTION(float x) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL asinhl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x) BOOST_MATH_C99_THROW_SPEC;
 
-double BOOST_MATH_TR1_DECL atanh BOOST_PREVENT_MACRO_SUBSTITUTION(double x);
-float BOOST_MATH_TR1_DECL atanhf BOOST_PREVENT_MACRO_SUBSTITUTION(float x);
-long double BOOST_MATH_TR1_DECL atanhl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x);
+double BOOST_MATH_TR1_DECL atanh BOOST_PREVENT_MACRO_SUBSTITUTION(double x) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL atanhf BOOST_PREVENT_MACRO_SUBSTITUTION(float x) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL atanhl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x) BOOST_MATH_C99_THROW_SPEC;
 
-double BOOST_MATH_TR1_DECL cbrt BOOST_PREVENT_MACRO_SUBSTITUTION(double x);
-float BOOST_MATH_TR1_DECL cbrtf BOOST_PREVENT_MACRO_SUBSTITUTION(float x);
-long double BOOST_MATH_TR1_DECL cbrtl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x);
+double BOOST_MATH_TR1_DECL cbrt BOOST_PREVENT_MACRO_SUBSTITUTION(double x) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL cbrtf BOOST_PREVENT_MACRO_SUBSTITUTION(float x) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL cbrtl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x) BOOST_MATH_C99_THROW_SPEC;
 
-double BOOST_MATH_TR1_DECL copysign BOOST_PREVENT_MACRO_SUBSTITUTION(double x, double y);
-float BOOST_MATH_TR1_DECL copysignf BOOST_PREVENT_MACRO_SUBSTITUTION(float x, float y);
-long double BOOST_MATH_TR1_DECL copysignl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x, long double y);
+double BOOST_MATH_TR1_DECL copysign BOOST_PREVENT_MACRO_SUBSTITUTION(double x, double y) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL copysignf BOOST_PREVENT_MACRO_SUBSTITUTION(float x, float y) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL copysignl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x, long double y) BOOST_MATH_C99_THROW_SPEC;
 
-double BOOST_MATH_TR1_DECL erf BOOST_PREVENT_MACRO_SUBSTITUTION(double x);
-float BOOST_MATH_TR1_DECL erff BOOST_PREVENT_MACRO_SUBSTITUTION(float x);
-long double BOOST_MATH_TR1_DECL erfl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x);
+double BOOST_MATH_TR1_DECL erf BOOST_PREVENT_MACRO_SUBSTITUTION(double x) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL erff BOOST_PREVENT_MACRO_SUBSTITUTION(float x) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL erfl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x) BOOST_MATH_C99_THROW_SPEC;
 
-double BOOST_MATH_TR1_DECL erfc BOOST_PREVENT_MACRO_SUBSTITUTION(double x);
-float BOOST_MATH_TR1_DECL erfcf BOOST_PREVENT_MACRO_SUBSTITUTION(float x);
-long double BOOST_MATH_TR1_DECL erfcl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x);
+double BOOST_MATH_TR1_DECL erfc BOOST_PREVENT_MACRO_SUBSTITUTION(double x) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL erfcf BOOST_PREVENT_MACRO_SUBSTITUTION(float x) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL erfcl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x) BOOST_MATH_C99_THROW_SPEC;
 #if 0
-double BOOST_MATH_TR1_DECL exp2 BOOST_PREVENT_MACRO_SUBSTITUTION(double x);
-float BOOST_MATH_TR1_DECL exp2f BOOST_PREVENT_MACRO_SUBSTITUTION(float x);
-long double BOOST_MATH_TR1_DECL exp2l BOOST_PREVENT_MACRO_SUBSTITUTION(long double x);
+double BOOST_MATH_TR1_DECL exp2 BOOST_PREVENT_MACRO_SUBSTITUTION(double x) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL exp2f BOOST_PREVENT_MACRO_SUBSTITUTION(float x) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL exp2l BOOST_PREVENT_MACRO_SUBSTITUTION(long double x) BOOST_MATH_C99_THROW_SPEC;
 #endif
-double BOOST_MATH_TR1_DECL boost_expm1 BOOST_PREVENT_MACRO_SUBSTITUTION(double x);
-float BOOST_MATH_TR1_DECL boost_expm1f BOOST_PREVENT_MACRO_SUBSTITUTION(float x);
-long double BOOST_MATH_TR1_DECL boost_expm1l BOOST_PREVENT_MACRO_SUBSTITUTION(long double x);
+double BOOST_MATH_TR1_DECL boost_expm1 BOOST_PREVENT_MACRO_SUBSTITUTION(double x) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL boost_expm1f BOOST_PREVENT_MACRO_SUBSTITUTION(float x) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL boost_expm1l BOOST_PREVENT_MACRO_SUBSTITUTION(long double x) BOOST_MATH_C99_THROW_SPEC;
 #if 0
-double BOOST_MATH_TR1_DECL fdim BOOST_PREVENT_MACRO_SUBSTITUTION(double x, double y);
-float BOOST_MATH_TR1_DECL fdimf BOOST_PREVENT_MACRO_SUBSTITUTION(float x, float y);
-long double BOOST_MATH_TR1_DECL fdiml BOOST_PREVENT_MACRO_SUBSTITUTION(long double x, long double y);
-double BOOST_MATH_TR1_DECL fma BOOST_PREVENT_MACRO_SUBSTITUTION(double x, double y, double z);
-float BOOST_MATH_TR1_DECL fmaf BOOST_PREVENT_MACRO_SUBSTITUTION(float x, float y, float z);
-long double BOOST_MATH_TR1_DECL fmal BOOST_PREVENT_MACRO_SUBSTITUTION(long double x, long double y, long double z);
+double BOOST_MATH_TR1_DECL fdim BOOST_PREVENT_MACRO_SUBSTITUTION(double x, double y) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL fdimf BOOST_PREVENT_MACRO_SUBSTITUTION(float x, float y) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL fdiml BOOST_PREVENT_MACRO_SUBSTITUTION(long double x, long double y) BOOST_MATH_C99_THROW_SPEC;
+double BOOST_MATH_TR1_DECL fma BOOST_PREVENT_MACRO_SUBSTITUTION(double x, double y, double z) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL fmaf BOOST_PREVENT_MACRO_SUBSTITUTION(float x, float y, float z) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL fmal BOOST_PREVENT_MACRO_SUBSTITUTION(long double x, long double y, long double z) BOOST_MATH_C99_THROW_SPEC;
 #endif
-double BOOST_MATH_TR1_DECL fmax BOOST_PREVENT_MACRO_SUBSTITUTION(double x, double y);
-float BOOST_MATH_TR1_DECL fmaxf BOOST_PREVENT_MACRO_SUBSTITUTION(float x, float y);
-long double BOOST_MATH_TR1_DECL fmaxl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x, long double y);
+double BOOST_MATH_TR1_DECL fmax BOOST_PREVENT_MACRO_SUBSTITUTION(double x, double y) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL fmaxf BOOST_PREVENT_MACRO_SUBSTITUTION(float x, float y) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL fmaxl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x, long double y) BOOST_MATH_C99_THROW_SPEC;
 
-double BOOST_MATH_TR1_DECL fmin BOOST_PREVENT_MACRO_SUBSTITUTION(double x, double y);
-float BOOST_MATH_TR1_DECL fminf BOOST_PREVENT_MACRO_SUBSTITUTION(float x, float y);
-long double BOOST_MATH_TR1_DECL fminl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x, long double y);
+double BOOST_MATH_TR1_DECL fmin BOOST_PREVENT_MACRO_SUBSTITUTION(double x, double y) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL fminf BOOST_PREVENT_MACRO_SUBSTITUTION(float x, float y) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL fminl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x, long double y) BOOST_MATH_C99_THROW_SPEC;
 
-double BOOST_MATH_TR1_DECL hypot BOOST_PREVENT_MACRO_SUBSTITUTION(double x, double y);
-float BOOST_MATH_TR1_DECL hypotf BOOST_PREVENT_MACRO_SUBSTITUTION(float x, float y);
-long double BOOST_MATH_TR1_DECL hypotl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x, long double y);
+double BOOST_MATH_TR1_DECL hypot BOOST_PREVENT_MACRO_SUBSTITUTION(double x, double y) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL hypotf BOOST_PREVENT_MACRO_SUBSTITUTION(float x, float y) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL hypotl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x, long double y) BOOST_MATH_C99_THROW_SPEC;
 #if 0
-int BOOST_MATH_TR1_DECL ilogb BOOST_PREVENT_MACRO_SUBSTITUTION(double x);
-int BOOST_MATH_TR1_DECL ilogbf BOOST_PREVENT_MACRO_SUBSTITUTION(float x);
-int BOOST_MATH_TR1_DECL ilogbl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x);
+int BOOST_MATH_TR1_DECL ilogb BOOST_PREVENT_MACRO_SUBSTITUTION(double x) BOOST_MATH_C99_THROW_SPEC;
+int BOOST_MATH_TR1_DECL ilogbf BOOST_PREVENT_MACRO_SUBSTITUTION(float x) BOOST_MATH_C99_THROW_SPEC;
+int BOOST_MATH_TR1_DECL ilogbl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x) BOOST_MATH_C99_THROW_SPEC;
 #endif
-double BOOST_MATH_TR1_DECL lgamma BOOST_PREVENT_MACRO_SUBSTITUTION(double x);
-float BOOST_MATH_TR1_DECL lgammaf BOOST_PREVENT_MACRO_SUBSTITUTION(float x);
-long double BOOST_MATH_TR1_DECL lgammal BOOST_PREVENT_MACRO_SUBSTITUTION(long double x);
+double BOOST_MATH_TR1_DECL lgamma BOOST_PREVENT_MACRO_SUBSTITUTION(double x) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL lgammaf BOOST_PREVENT_MACRO_SUBSTITUTION(float x) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL lgammal BOOST_PREVENT_MACRO_SUBSTITUTION(long double x) BOOST_MATH_C99_THROW_SPEC;
+#ifdef BOOST_HAS_LONG_LONG
 #if 0
-long long BOOST_MATH_TR1_DECL llrint BOOST_PREVENT_MACRO_SUBSTITUTION(double x);
-long long BOOST_MATH_TR1_DECL llrintf BOOST_PREVENT_MACRO_SUBSTITUTION(float x);
-long long BOOST_MATH_TR1_DECL llrintl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x);
+::boost::long_long_type BOOST_MATH_TR1_DECL llrint BOOST_PREVENT_MACRO_SUBSTITUTION(double x) BOOST_MATH_C99_THROW_SPEC;
+::boost::long_long_type BOOST_MATH_TR1_DECL llrintf BOOST_PREVENT_MACRO_SUBSTITUTION(float x) BOOST_MATH_C99_THROW_SPEC;
+::boost::long_long_type BOOST_MATH_TR1_DECL llrintl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x) BOOST_MATH_C99_THROW_SPEC;
 #endif
-long long BOOST_MATH_TR1_DECL llround BOOST_PREVENT_MACRO_SUBSTITUTION(double x);
-long long BOOST_MATH_TR1_DECL llroundf BOOST_PREVENT_MACRO_SUBSTITUTION(float x);
-long long BOOST_MATH_TR1_DECL llroundl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x);
+::boost::long_long_type BOOST_MATH_TR1_DECL llround BOOST_PREVENT_MACRO_SUBSTITUTION(double x) BOOST_MATH_C99_THROW_SPEC;
+::boost::long_long_type BOOST_MATH_TR1_DECL llroundf BOOST_PREVENT_MACRO_SUBSTITUTION(float x) BOOST_MATH_C99_THROW_SPEC;
+::boost::long_long_type BOOST_MATH_TR1_DECL llroundl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x) BOOST_MATH_C99_THROW_SPEC;
+#endif
+double BOOST_MATH_TR1_DECL boost_log1p BOOST_PREVENT_MACRO_SUBSTITUTION(double x) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL boost_log1pf BOOST_PREVENT_MACRO_SUBSTITUTION(float x) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL boost_log1pl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x) BOOST_MATH_C99_THROW_SPEC;
+#if 0
+double BOOST_MATH_TR1_DECL log2 BOOST_PREVENT_MACRO_SUBSTITUTION(double x) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL log2f BOOST_PREVENT_MACRO_SUBSTITUTION(float x) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL log2l BOOST_PREVENT_MACRO_SUBSTITUTION(long double x) BOOST_MATH_C99_THROW_SPEC;
 
-double BOOST_MATH_TR1_DECL boost_log1p BOOST_PREVENT_MACRO_SUBSTITUTION(double x);
-float BOOST_MATH_TR1_DECL boost_log1pf BOOST_PREVENT_MACRO_SUBSTITUTION(float x);
-long double BOOST_MATH_TR1_DECL boost_log1pl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x);
+double BOOST_MATH_TR1_DECL logb BOOST_PREVENT_MACRO_SUBSTITUTION(double x) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL logbf BOOST_PREVENT_MACRO_SUBSTITUTION(float x) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL logbl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x) BOOST_MATH_C99_THROW_SPEC;
+long BOOST_MATH_TR1_DECL lrint BOOST_PREVENT_MACRO_SUBSTITUTION(double x) BOOST_MATH_C99_THROW_SPEC;
+long BOOST_MATH_TR1_DECL lrintf BOOST_PREVENT_MACRO_SUBSTITUTION(float x) BOOST_MATH_C99_THROW_SPEC;
+long BOOST_MATH_TR1_DECL lrintl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x) BOOST_MATH_C99_THROW_SPEC;
+#endif
+long BOOST_MATH_TR1_DECL lround BOOST_PREVENT_MACRO_SUBSTITUTION(double x) BOOST_MATH_C99_THROW_SPEC;
+long BOOST_MATH_TR1_DECL lroundf BOOST_PREVENT_MACRO_SUBSTITUTION(float x) BOOST_MATH_C99_THROW_SPEC;
+long BOOST_MATH_TR1_DECL lroundl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x) BOOST_MATH_C99_THROW_SPEC;
 #if 0
-double BOOST_MATH_TR1_DECL log2 BOOST_PREVENT_MACRO_SUBSTITUTION(double x);
-float BOOST_MATH_TR1_DECL log2f BOOST_PREVENT_MACRO_SUBSTITUTION(float x);
-long double BOOST_MATH_TR1_DECL log2l BOOST_PREVENT_MACRO_SUBSTITUTION(long double x);
+double BOOST_MATH_TR1_DECL nan BOOST_PREVENT_MACRO_SUBSTITUTION(const char *str) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL nanf BOOST_PREVENT_MACRO_SUBSTITUTION(const char *str) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL nanl BOOST_PREVENT_MACRO_SUBSTITUTION(const char *str) BOOST_MATH_C99_THROW_SPEC;
+double BOOST_MATH_TR1_DECL nearbyint BOOST_PREVENT_MACRO_SUBSTITUTION(double x) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL nearbyintf BOOST_PREVENT_MACRO_SUBSTITUTION(float x) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL nearbyintl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x) BOOST_MATH_C99_THROW_SPEC;
+#endif
+double BOOST_MATH_TR1_DECL boost_nextafter BOOST_PREVENT_MACRO_SUBSTITUTION(double x, double y) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL boost_nextafterf BOOST_PREVENT_MACRO_SUBSTITUTION(float x, float y) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL boost_nextafterl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x, long double y) BOOST_MATH_C99_THROW_SPEC;
 
-double BOOST_MATH_TR1_DECL logb BOOST_PREVENT_MACRO_SUBSTITUTION(double x);
-float BOOST_MATH_TR1_DECL logbf BOOST_PREVENT_MACRO_SUBSTITUTION(float x);
-long double BOOST_MATH_TR1_DECL logbl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x);
-long BOOST_MATH_TR1_DECL lrint BOOST_PREVENT_MACRO_SUBSTITUTION(double x);
-long BOOST_MATH_TR1_DECL lrintf BOOST_PREVENT_MACRO_SUBSTITUTION(float x);
-long BOOST_MATH_TR1_DECL lrintl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x);
-#endif
-long BOOST_MATH_TR1_DECL lround BOOST_PREVENT_MACRO_SUBSTITUTION(double x);
-long BOOST_MATH_TR1_DECL lroundf BOOST_PREVENT_MACRO_SUBSTITUTION(float x);
-long BOOST_MATH_TR1_DECL lroundl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x);
+double BOOST_MATH_TR1_DECL nexttoward BOOST_PREVENT_MACRO_SUBSTITUTION(double x, long double y) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL nexttowardf BOOST_PREVENT_MACRO_SUBSTITUTION(float x, long double y) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL nexttowardl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x, long double y) BOOST_MATH_C99_THROW_SPEC;
 #if 0
-double BOOST_MATH_TR1_DECL nan BOOST_PREVENT_MACRO_SUBSTITUTION(const char *str);
-float BOOST_MATH_TR1_DECL nanf BOOST_PREVENT_MACRO_SUBSTITUTION(const char *str);
-long double BOOST_MATH_TR1_DECL nanl BOOST_PREVENT_MACRO_SUBSTITUTION(const char *str);
-double BOOST_MATH_TR1_DECL nearbyint BOOST_PREVENT_MACRO_SUBSTITUTION(double x);
-float BOOST_MATH_TR1_DECL nearbyintf BOOST_PREVENT_MACRO_SUBSTITUTION(float x);
-long double BOOST_MATH_TR1_DECL nearbyintl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x);
+double BOOST_MATH_TR1_DECL remainder BOOST_PREVENT_MACRO_SUBSTITUTION(double x, double y) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL remainderf BOOST_PREVENT_MACRO_SUBSTITUTION(float x, float y) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL remainderl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x, long double y) BOOST_MATH_C99_THROW_SPEC;
+double BOOST_MATH_TR1_DECL remquo BOOST_PREVENT_MACRO_SUBSTITUTION(double x, double y, int *pquo) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL remquof BOOST_PREVENT_MACRO_SUBSTITUTION(float x, float y, int *pquo) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL remquol BOOST_PREVENT_MACRO_SUBSTITUTION(long double x, long double y, int *pquo) BOOST_MATH_C99_THROW_SPEC;
+double BOOST_MATH_TR1_DECL rint BOOST_PREVENT_MACRO_SUBSTITUTION(double x) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL rintf BOOST_PREVENT_MACRO_SUBSTITUTION(float x) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL rintl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x) BOOST_MATH_C99_THROW_SPEC;
 #endif
-double BOOST_MATH_TR1_DECL boost_nextafter BOOST_PREVENT_MACRO_SUBSTITUTION(double x, double y);
-float BOOST_MATH_TR1_DECL boost_nextafterf BOOST_PREVENT_MACRO_SUBSTITUTION(float x, float y);
-long double BOOST_MATH_TR1_DECL boost_nextafterl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x, long double y);
+double BOOST_MATH_TR1_DECL round BOOST_PREVENT_MACRO_SUBSTITUTION(double x) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL roundf BOOST_PREVENT_MACRO_SUBSTITUTION(float x) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL roundl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x) BOOST_MATH_C99_THROW_SPEC;
+#if 0
+double BOOST_MATH_TR1_DECL scalbln BOOST_PREVENT_MACRO_SUBSTITUTION(double x, long ex) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL scalblnf BOOST_PREVENT_MACRO_SUBSTITUTION(float x, long ex) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL scalblnl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x, long ex) BOOST_MATH_C99_THROW_SPEC;
+double BOOST_MATH_TR1_DECL scalbn BOOST_PREVENT_MACRO_SUBSTITUTION(double x, int ex) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL scalbnf BOOST_PREVENT_MACRO_SUBSTITUTION(float x, int ex) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL scalbnl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x, int ex) BOOST_MATH_C99_THROW_SPEC;
+#endif
+double BOOST_MATH_TR1_DECL tgamma BOOST_PREVENT_MACRO_SUBSTITUTION(double x) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL tgammaf BOOST_PREVENT_MACRO_SUBSTITUTION(float x) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL tgammal BOOST_PREVENT_MACRO_SUBSTITUTION(long double x) BOOST_MATH_C99_THROW_SPEC;
 
-double BOOST_MATH_TR1_DECL nexttoward BOOST_PREVENT_MACRO_SUBSTITUTION(double x, long double y);
-float BOOST_MATH_TR1_DECL nexttowardf BOOST_PREVENT_MACRO_SUBSTITUTION(float x, long double y);
-long double BOOST_MATH_TR1_DECL nexttowardl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x, long double y);
-#if 0
-double BOOST_MATH_TR1_DECL remainder BOOST_PREVENT_MACRO_SUBSTITUTION(double x, double y);
-float BOOST_MATH_TR1_DECL remainderf BOOST_PREVENT_MACRO_SUBSTITUTION(float x, float y);
-long double BOOST_MATH_TR1_DECL remainderl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x, long double y);
-double BOOST_MATH_TR1_DECL remquo BOOST_PREVENT_MACRO_SUBSTITUTION(double x, double y, int *pquo);
-float BOOST_MATH_TR1_DECL remquof BOOST_PREVENT_MACRO_SUBSTITUTION(float x, float y, int *pquo);
-long double BOOST_MATH_TR1_DECL remquol BOOST_PREVENT_MACRO_SUBSTITUTION(long double x, long double y, int *pquo);
-double BOOST_MATH_TR1_DECL rint BOOST_PREVENT_MACRO_SUBSTITUTION(double x);
-float BOOST_MATH_TR1_DECL rintf BOOST_PREVENT_MACRO_SUBSTITUTION(float x);
-long double BOOST_MATH_TR1_DECL rintl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x);
-#endif
-double BOOST_MATH_TR1_DECL round BOOST_PREVENT_MACRO_SUBSTITUTION(double x);
-float BOOST_MATH_TR1_DECL roundf BOOST_PREVENT_MACRO_SUBSTITUTION(float x);
-long double BOOST_MATH_TR1_DECL roundl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x);
-#if 0
-double BOOST_MATH_TR1_DECL scalbln BOOST_PREVENT_MACRO_SUBSTITUTION(double x, long ex);
-float BOOST_MATH_TR1_DECL scalblnf BOOST_PREVENT_MACRO_SUBSTITUTION(float x, long ex);
-long double BOOST_MATH_TR1_DECL scalblnl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x, long ex);
-double BOOST_MATH_TR1_DECL scalbn BOOST_PREVENT_MACRO_SUBSTITUTION(double x, int ex);
-float BOOST_MATH_TR1_DECL scalbnf BOOST_PREVENT_MACRO_SUBSTITUTION(float x, int ex);
-long double BOOST_MATH_TR1_DECL scalbnl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x, int ex);
-#endif
-double BOOST_MATH_TR1_DECL tgamma BOOST_PREVENT_MACRO_SUBSTITUTION(double x);
-float BOOST_MATH_TR1_DECL tgammaf BOOST_PREVENT_MACRO_SUBSTITUTION(float x);
-long double BOOST_MATH_TR1_DECL tgammal BOOST_PREVENT_MACRO_SUBSTITUTION(long double x);
-
-double BOOST_MATH_TR1_DECL trunc BOOST_PREVENT_MACRO_SUBSTITUTION(double x);
-float BOOST_MATH_TR1_DECL truncf BOOST_PREVENT_MACRO_SUBSTITUTION(float x);
-long double BOOST_MATH_TR1_DECL truncl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x);
+double BOOST_MATH_TR1_DECL trunc BOOST_PREVENT_MACRO_SUBSTITUTION(double x) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL truncf BOOST_PREVENT_MACRO_SUBSTITUTION(float x) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL truncl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x) BOOST_MATH_C99_THROW_SPEC;
 
 // [5.2.1.1] associated Laguerre polynomials:
-double BOOST_MATH_TR1_DECL assoc_laguerre BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned n, unsigned m, double x);
-float BOOST_MATH_TR1_DECL assoc_laguerref BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned n, unsigned m, float x);
-long double BOOST_MATH_TR1_DECL assoc_laguerrel BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned n, unsigned m, long double x);
+double BOOST_MATH_TR1_DECL assoc_laguerre BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned n, unsigned m, double x) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL assoc_laguerref BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned n, unsigned m, float x) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL assoc_laguerrel BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned n, unsigned m, long double x) BOOST_MATH_C99_THROW_SPEC;
 
 // [5.2.1.2] associated Legendre functions:
-double BOOST_MATH_TR1_DECL assoc_legendre BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned l, unsigned m, double x);
-float BOOST_MATH_TR1_DECL assoc_legendref BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned l, unsigned m, float x);
-long double BOOST_MATH_TR1_DECL assoc_legendrel BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned l, unsigned m, long double x);
+double BOOST_MATH_TR1_DECL assoc_legendre BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned l, unsigned m, double x) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL assoc_legendref BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned l, unsigned m, float x) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL assoc_legendrel BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned l, unsigned m, long double x) BOOST_MATH_C99_THROW_SPEC;
 
 // [5.2.1.3] beta function:
-double BOOST_MATH_TR1_DECL beta BOOST_PREVENT_MACRO_SUBSTITUTION(double x, double y);
-float BOOST_MATH_TR1_DECL betaf BOOST_PREVENT_MACRO_SUBSTITUTION(float x, float y);
-long double BOOST_MATH_TR1_DECL betal BOOST_PREVENT_MACRO_SUBSTITUTION(long double x, long double y);
+double BOOST_MATH_TR1_DECL beta BOOST_PREVENT_MACRO_SUBSTITUTION(double x, double y) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL betaf BOOST_PREVENT_MACRO_SUBSTITUTION(float x, float y) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL betal BOOST_PREVENT_MACRO_SUBSTITUTION(long double x, long double y) BOOST_MATH_C99_THROW_SPEC;
 
 // [5.2.1.4] (complete) elliptic integral of the first kind:
-double BOOST_MATH_TR1_DECL comp_ellint_1 BOOST_PREVENT_MACRO_SUBSTITUTION(double k);
-float BOOST_MATH_TR1_DECL comp_ellint_1f BOOST_PREVENT_MACRO_SUBSTITUTION(float k);
-long double BOOST_MATH_TR1_DECL comp_ellint_1l BOOST_PREVENT_MACRO_SUBSTITUTION(long double k);
+double BOOST_MATH_TR1_DECL comp_ellint_1 BOOST_PREVENT_MACRO_SUBSTITUTION(double k) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL comp_ellint_1f BOOST_PREVENT_MACRO_SUBSTITUTION(float k) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL comp_ellint_1l BOOST_PREVENT_MACRO_SUBSTITUTION(long double k) BOOST_MATH_C99_THROW_SPEC;
 
 // [5.2.1.5] (complete) elliptic integral of the second kind:
-double BOOST_MATH_TR1_DECL comp_ellint_2 BOOST_PREVENT_MACRO_SUBSTITUTION(double k);
-float BOOST_MATH_TR1_DECL comp_ellint_2f BOOST_PREVENT_MACRO_SUBSTITUTION(float k);
-long double BOOST_MATH_TR1_DECL comp_ellint_2l BOOST_PREVENT_MACRO_SUBSTITUTION(long double k);
+double BOOST_MATH_TR1_DECL comp_ellint_2 BOOST_PREVENT_MACRO_SUBSTITUTION(double k) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL comp_ellint_2f BOOST_PREVENT_MACRO_SUBSTITUTION(float k) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL comp_ellint_2l BOOST_PREVENT_MACRO_SUBSTITUTION(long double k) BOOST_MATH_C99_THROW_SPEC;
 
 // [5.2.1.6] (complete) elliptic integral of the third kind:
-double BOOST_MATH_TR1_DECL comp_ellint_3 BOOST_PREVENT_MACRO_SUBSTITUTION(double k, double nu);
-float BOOST_MATH_TR1_DECL comp_ellint_3f BOOST_PREVENT_MACRO_SUBSTITUTION(float k, float nu);
-long double BOOST_MATH_TR1_DECL comp_ellint_3l BOOST_PREVENT_MACRO_SUBSTITUTION(long double k, long double nu);
+double BOOST_MATH_TR1_DECL comp_ellint_3 BOOST_PREVENT_MACRO_SUBSTITUTION(double k, double nu) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL comp_ellint_3f BOOST_PREVENT_MACRO_SUBSTITUTION(float k, float nu) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL comp_ellint_3l BOOST_PREVENT_MACRO_SUBSTITUTION(long double k, long double nu) BOOST_MATH_C99_THROW_SPEC;
 #if 0
 // [5.2.1.7] confluent hypergeometric functions:
-double BOOST_MATH_TR1_DECL conf_hyperg BOOST_PREVENT_MACRO_SUBSTITUTION(double a, double c, double x);
-float BOOST_MATH_TR1_DECL conf_hypergf BOOST_PREVENT_MACRO_SUBSTITUTION(float a, float c, float x);
-long double BOOST_MATH_TR1_DECL conf_hypergl BOOST_PREVENT_MACRO_SUBSTITUTION(long double a, long double c, long double x);
+double BOOST_MATH_TR1_DECL conf_hyperg BOOST_PREVENT_MACRO_SUBSTITUTION(double a, double c, double x) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL conf_hypergf BOOST_PREVENT_MACRO_SUBSTITUTION(float a, float c, float x) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL conf_hypergl BOOST_PREVENT_MACRO_SUBSTITUTION(long double a, long double c, long double x) BOOST_MATH_C99_THROW_SPEC;
 #endif
 // [5.2.1.8] regular modified cylindrical Bessel functions:
-double BOOST_MATH_TR1_DECL cyl_bessel_i BOOST_PREVENT_MACRO_SUBSTITUTION(double nu, double x);
-float BOOST_MATH_TR1_DECL cyl_bessel_if BOOST_PREVENT_MACRO_SUBSTITUTION(float nu, float x);
-long double BOOST_MATH_TR1_DECL cyl_bessel_il BOOST_PREVENT_MACRO_SUBSTITUTION(long double nu, long double x);
+double BOOST_MATH_TR1_DECL cyl_bessel_i BOOST_PREVENT_MACRO_SUBSTITUTION(double nu, double x) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL cyl_bessel_if BOOST_PREVENT_MACRO_SUBSTITUTION(float nu, float x) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL cyl_bessel_il BOOST_PREVENT_MACRO_SUBSTITUTION(long double nu, long double x) BOOST_MATH_C99_THROW_SPEC;
 
 // [5.2.1.9] cylindrical Bessel functions (of the first kind):
-double BOOST_MATH_TR1_DECL cyl_bessel_j BOOST_PREVENT_MACRO_SUBSTITUTION(double nu, double x);
-float BOOST_MATH_TR1_DECL cyl_bessel_jf BOOST_PREVENT_MACRO_SUBSTITUTION(float nu, float x);
-long double BOOST_MATH_TR1_DECL cyl_bessel_jl BOOST_PREVENT_MACRO_SUBSTITUTION(long double nu, long double x);
+double BOOST_MATH_TR1_DECL cyl_bessel_j BOOST_PREVENT_MACRO_SUBSTITUTION(double nu, double x) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL cyl_bessel_jf BOOST_PREVENT_MACRO_SUBSTITUTION(float nu, float x) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL cyl_bessel_jl BOOST_PREVENT_MACRO_SUBSTITUTION(long double nu, long double x) BOOST_MATH_C99_THROW_SPEC;
 
 // [5.2.1.10] irregular modified cylindrical Bessel functions:
-double BOOST_MATH_TR1_DECL cyl_bessel_k BOOST_PREVENT_MACRO_SUBSTITUTION(double nu, double x);
-float BOOST_MATH_TR1_DECL cyl_bessel_kf BOOST_PREVENT_MACRO_SUBSTITUTION(float nu, float x);
-long double BOOST_MATH_TR1_DECL cyl_bessel_kl BOOST_PREVENT_MACRO_SUBSTITUTION(long double nu, long double x);
+double BOOST_MATH_TR1_DECL cyl_bessel_k BOOST_PREVENT_MACRO_SUBSTITUTION(double nu, double x) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL cyl_bessel_kf BOOST_PREVENT_MACRO_SUBSTITUTION(float nu, float x) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL cyl_bessel_kl BOOST_PREVENT_MACRO_SUBSTITUTION(long double nu, long double x) BOOST_MATH_C99_THROW_SPEC;
 
-// [5.2.1.11] cylindrical Neumann functions;
+// [5.2.1.11] cylindrical Neumann functions BOOST_MATH_C99_THROW_SPEC;
 // cylindrical Bessel functions (of the second kind):
-double BOOST_MATH_TR1_DECL cyl_neumann BOOST_PREVENT_MACRO_SUBSTITUTION(double nu, double x);
-float BOOST_MATH_TR1_DECL cyl_neumannf BOOST_PREVENT_MACRO_SUBSTITUTION(float nu, float x);
-long double BOOST_MATH_TR1_DECL cyl_neumannl BOOST_PREVENT_MACRO_SUBSTITUTION(long double nu, long double x);
+double BOOST_MATH_TR1_DECL cyl_neumann BOOST_PREVENT_MACRO_SUBSTITUTION(double nu, double x) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL cyl_neumannf BOOST_PREVENT_MACRO_SUBSTITUTION(float nu, float x) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL cyl_neumannl BOOST_PREVENT_MACRO_SUBSTITUTION(long double nu, long double x) BOOST_MATH_C99_THROW_SPEC;
 
 // [5.2.1.12] (incomplete) elliptic integral of the first kind:
-double BOOST_MATH_TR1_DECL ellint_1 BOOST_PREVENT_MACRO_SUBSTITUTION(double k, double phi);
-float BOOST_MATH_TR1_DECL ellint_1f BOOST_PREVENT_MACRO_SUBSTITUTION(float k, float phi);
-long double BOOST_MATH_TR1_DECL ellint_1l BOOST_PREVENT_MACRO_SUBSTITUTION(long double k, long double phi);
+double BOOST_MATH_TR1_DECL ellint_1 BOOST_PREVENT_MACRO_SUBSTITUTION(double k, double phi) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL ellint_1f BOOST_PREVENT_MACRO_SUBSTITUTION(float k, float phi) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL ellint_1l BOOST_PREVENT_MACRO_SUBSTITUTION(long double k, long double phi) BOOST_MATH_C99_THROW_SPEC;
 
 // [5.2.1.13] (incomplete) elliptic integral of the second kind:
-double BOOST_MATH_TR1_DECL ellint_2 BOOST_PREVENT_MACRO_SUBSTITUTION(double k, double phi);
-float BOOST_MATH_TR1_DECL ellint_2f BOOST_PREVENT_MACRO_SUBSTITUTION(float k, float phi);
-long double BOOST_MATH_TR1_DECL ellint_2l BOOST_PREVENT_MACRO_SUBSTITUTION(long double k, long double phi);
+double BOOST_MATH_TR1_DECL ellint_2 BOOST_PREVENT_MACRO_SUBSTITUTION(double k, double phi) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL ellint_2f BOOST_PREVENT_MACRO_SUBSTITUTION(float k, float phi) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL ellint_2l BOOST_PREVENT_MACRO_SUBSTITUTION(long double k, long double phi) BOOST_MATH_C99_THROW_SPEC;
 
 // [5.2.1.14] (incomplete) elliptic integral of the third kind:
-double BOOST_MATH_TR1_DECL ellint_3 BOOST_PREVENT_MACRO_SUBSTITUTION(double k, double nu, double phi);
-float BOOST_MATH_TR1_DECL ellint_3f BOOST_PREVENT_MACRO_SUBSTITUTION(float k, float nu, float phi);
-long double BOOST_MATH_TR1_DECL ellint_3l BOOST_PREVENT_MACRO_SUBSTITUTION(long double k, long double nu, long double phi);
+double BOOST_MATH_TR1_DECL ellint_3 BOOST_PREVENT_MACRO_SUBSTITUTION(double k, double nu, double phi) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL ellint_3f BOOST_PREVENT_MACRO_SUBSTITUTION(float k, float nu, float phi) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL ellint_3l BOOST_PREVENT_MACRO_SUBSTITUTION(long double k, long double nu, long double phi) BOOST_MATH_C99_THROW_SPEC;
 
 // [5.2.1.15] exponential integral:
-double BOOST_MATH_TR1_DECL expint BOOST_PREVENT_MACRO_SUBSTITUTION(double x);
-float BOOST_MATH_TR1_DECL expintf BOOST_PREVENT_MACRO_SUBSTITUTION(float x);
-long double BOOST_MATH_TR1_DECL expintl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x);
+double BOOST_MATH_TR1_DECL expint BOOST_PREVENT_MACRO_SUBSTITUTION(double x) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL expintf BOOST_PREVENT_MACRO_SUBSTITUTION(float x) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL expintl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x) BOOST_MATH_C99_THROW_SPEC;
 
 // [5.2.1.16] Hermite polynomials:
-double BOOST_MATH_TR1_DECL hermite BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned n, double x);
-float BOOST_MATH_TR1_DECL hermitef BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned n, float x);
-long double BOOST_MATH_TR1_DECL hermitel BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned n, long double x);
+double BOOST_MATH_TR1_DECL hermite BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned n, double x) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL hermitef BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned n, float x) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL hermitel BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned n, long double x) BOOST_MATH_C99_THROW_SPEC;
 
 #if 0
 // [5.2.1.17] hypergeometric functions:
-double BOOST_MATH_TR1_DECL hyperg BOOST_PREVENT_MACRO_SUBSTITUTION(double a, double b, double c, double x);
-float BOOST_MATH_TR1_DECL hypergf BOOST_PREVENT_MACRO_SUBSTITUTION(float a, float b, float c, float x);
+double BOOST_MATH_TR1_DECL hyperg BOOST_PREVENT_MACRO_SUBSTITUTION(double a, double b, double c, double x) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL hypergf BOOST_PREVENT_MACRO_SUBSTITUTION(float a, float b, float c, float x) BOOST_MATH_C99_THROW_SPEC;
 long double BOOST_MATH_TR1_DECL hypergl BOOST_PREVENT_MACRO_SUBSTITUTION(long double a, long double b, long double c,
-long double x);
+long double x) BOOST_MATH_C99_THROW_SPEC;
 #endif
 
 // [5.2.1.18] Laguerre polynomials:
-double BOOST_MATH_TR1_DECL laguerre BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned n, double x);
-float BOOST_MATH_TR1_DECL laguerref BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned n, float x);
-long double BOOST_MATH_TR1_DECL laguerrel BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned n, long double x);
+double BOOST_MATH_TR1_DECL laguerre BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned n, double x) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL laguerref BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned n, float x) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL laguerrel BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned n, long double x) BOOST_MATH_C99_THROW_SPEC;
 
 // [5.2.1.19] Legendre polynomials:
-double BOOST_MATH_TR1_DECL legendre BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned l, double x);
-float BOOST_MATH_TR1_DECL legendref BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned l, float x);
-long double BOOST_MATH_TR1_DECL legendrel BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned l, long double x);
+double BOOST_MATH_TR1_DECL legendre BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned l, double x) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL legendref BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned l, float x) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL legendrel BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned l, long double x) BOOST_MATH_C99_THROW_SPEC;
 
 // [5.2.1.20] Riemann zeta function:
-double BOOST_MATH_TR1_DECL riemann_zeta BOOST_PREVENT_MACRO_SUBSTITUTION(double);
-float BOOST_MATH_TR1_DECL riemann_zetaf BOOST_PREVENT_MACRO_SUBSTITUTION(float);
-long double BOOST_MATH_TR1_DECL riemann_zetal BOOST_PREVENT_MACRO_SUBSTITUTION(long double);
+double BOOST_MATH_TR1_DECL riemann_zeta BOOST_PREVENT_MACRO_SUBSTITUTION(double) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL riemann_zetaf BOOST_PREVENT_MACRO_SUBSTITUTION(float) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL riemann_zetal BOOST_PREVENT_MACRO_SUBSTITUTION(long double) BOOST_MATH_C99_THROW_SPEC;
 
 // [5.2.1.21] spherical Bessel functions (of the first kind):
-double BOOST_MATH_TR1_DECL sph_bessel BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned n, double x);
-float BOOST_MATH_TR1_DECL sph_besself BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned n, float x);
-long double BOOST_MATH_TR1_DECL sph_bessell BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned n, long double x);
+double BOOST_MATH_TR1_DECL sph_bessel BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned n, double x) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL sph_besself BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned n, float x) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL sph_bessell BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned n, long double x) BOOST_MATH_C99_THROW_SPEC;
 
 // [5.2.1.22] spherical associated Legendre functions:
-double BOOST_MATH_TR1_DECL sph_legendre BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned l, unsigned m, double theta);
-float BOOST_MATH_TR1_DECL sph_legendref BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned l, unsigned m, float theta);
-long double BOOST_MATH_TR1_DECL sph_legendrel BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned l, unsigned m, long double theta);
+double BOOST_MATH_TR1_DECL sph_legendre BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned l, unsigned m, double theta) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL sph_legendref BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned l, unsigned m, float theta) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL sph_legendrel BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned l, unsigned m, long double theta) BOOST_MATH_C99_THROW_SPEC;
 
-// [5.2.1.23] spherical Neumann functions;
+// [5.2.1.23] spherical Neumann functions BOOST_MATH_C99_THROW_SPEC;
 // spherical Bessel functions (of the second kind):
-double BOOST_MATH_TR1_DECL sph_neumann BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned n, double x);
-float BOOST_MATH_TR1_DECL sph_neumannf BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned n, float x);
-long double BOOST_MATH_TR1_DECL sph_neumannl BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned n, long double x);
+double BOOST_MATH_TR1_DECL sph_neumann BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned n, double x) BOOST_MATH_C99_THROW_SPEC;
+float BOOST_MATH_TR1_DECL sph_neumannf BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned n, float x) BOOST_MATH_C99_THROW_SPEC;
+long double BOOST_MATH_TR1_DECL sph_neumannl BOOST_PREVENT_MACRO_SUBSTITUTION(unsigned n, long double x) BOOST_MATH_C99_THROW_SPEC;
 
 #ifdef __cplusplus
 
@@ -487,19 +494,20 @@ inline long double lgamma BOOST_PREVENT_MACRO_SUBSTITUTION(long double x)
 template <class T>
 inline typename tools::promote_args<T>::type lgamma BOOST_PREVENT_MACRO_SUBSTITUTION(T x)
 { return boost::math::tr1::lgamma BOOST_PREVENT_MACRO_SUBSTITUTION(static_cast<typename tools::promote_args<T>::type>(x)); }
+#ifdef BOOST_HAS_LONG_LONG
 #if 0
-long long llrint BOOST_PREVENT_MACRO_SUBSTITUTION(double x);
-long long llrintf BOOST_PREVENT_MACRO_SUBSTITUTION(float x);
-long long llrintl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x);
+::boost::long_long_type llrint BOOST_PREVENT_MACRO_SUBSTITUTION(double x);
+::boost::long_long_type llrintf BOOST_PREVENT_MACRO_SUBSTITUTION(float x);
+::boost::long_long_type llrintl BOOST_PREVENT_MACRO_SUBSTITUTION(long double x);
 #endif
-inline long long llround BOOST_PREVENT_MACRO_SUBSTITUTION(float x)
+inline ::boost::long_long_type llround BOOST_PREVENT_MACRO_SUBSTITUTION(float x)
 { return boost::math::tr1::llroundf BOOST_PREVENT_MACRO_SUBSTITUTION(x); }
-inline long long llround BOOST_PREVENT_MACRO_SUBSTITUTION(long double x)
+inline ::boost::long_long_type llround BOOST_PREVENT_MACRO_SUBSTITUTION(long double x)
 { return boost::math::tr1::llroundl BOOST_PREVENT_MACRO_SUBSTITUTION(x); }
 template <class T>
-inline long long llround BOOST_PREVENT_MACRO_SUBSTITUTION(T x)
+inline ::boost::long_long_type llround BOOST_PREVENT_MACRO_SUBSTITUTION(T x)
 { return llround BOOST_PREVENT_MACRO_SUBSTITUTION(static_cast<double>(x)); }
-
+#endif
 inline float log1pf BOOST_PREVENT_MACRO_SUBSTITUTION(float x)
 { return boost::math::tr1::boost_log1pf BOOST_PREVENT_MACRO_SUBSTITUTION(x); }
 inline double log1p BOOST_PREVENT_MACRO_SUBSTITUTION(double x)

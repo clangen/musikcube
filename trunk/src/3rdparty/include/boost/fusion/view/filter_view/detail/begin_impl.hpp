@@ -11,7 +11,7 @@ namespace boost { namespace fusion
 {
     struct filter_view_tag;
 
-    template <typename First, typename Last, typename Pred>
+    template <typename Category, typename First, typename Last, typename Pred>
     struct filter_iterator;
 
     namespace extension
@@ -28,7 +28,8 @@ namespace boost { namespace fusion
                 typedef typename Sequence::first_type first_type;
                 typedef typename Sequence::last_type last_type;
                 typedef typename Sequence::pred_type pred_type;
-                typedef filter_iterator<first_type, last_type, pred_type> type;
+                typedef typename Sequence::category category;
+                typedef filter_iterator<category, first_type, last_type, pred_type> type;
 
                 static type
                 call(Sequence& s)

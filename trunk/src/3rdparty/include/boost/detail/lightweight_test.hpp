@@ -10,14 +10,15 @@
 //
 //  boost/detail/lightweight_test.hpp - lightweight test library
 //
-//  Copyright (c) 2002 Peter Dimov and Multi Media Ltd.
+//  Copyright (c) 2002, 2009 Peter Dimov
 //
-// Distributed under the Boost Software License, Version 1.0. (See
-// accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt)
+//  Distributed under the Boost Software License, Version 1.0.
+//  See accompanying file LICENSE_1_0.txt or copy at
+//  http://www.boost.org/LICENSE_1_0.txt
 //
 //  BOOST_TEST(expression)
 //  BOOST_ERROR(message)
+//  BOOST_TEST_EQ(expr1, expr2)
 //
 //  int boost::report_errors()
 //
@@ -49,13 +50,27 @@ inline void error_impl(char const * msg, char const * file, int line, char const
     ++test_errors();
 }
 
+template<class T, class U> inline void test_eq_impl( char const * expr1, char const * expr2, char const * file, int line, char const * function, T const & t, U const & u )
+{
+    if( t == u )
+    {
+    }
+    else
+    {
+        std::cerr << file << "(" << line << "): test '" << expr1 << " == " << expr2
+            << "' failed in function '" << function << "': "
+            << "'" << t << "' != '" << u << "'" << std::endl;
+        ++test_errors();
+    }
+}
+
 } // namespace detail
 
 inline int report_errors()
 {
     int errors = detail::test_errors();
 
-    if(errors == 0)
+    if( errors == 0 )
     {
         std::cerr << "No errors detected." << std::endl;
         return 0;
@@ -71,5 +86,6 @@ inline int report_errors()
 
 #define BOOST_TEST(expr) ((expr)? (void)0: ::boost::detail::test_failed_impl(#expr, __FILE__, __LINE__, BOOST_CURRENT_FUNCTION))
 #define BOOST_ERROR(msg) ::boost::detail::error_impl(msg, __FILE__, __LINE__, BOOST_CURRENT_FUNCTION)
+#define BOOST_TEST_EQ(expr1,expr2) ( ::boost::detail::test_eq_impl(#expr1, #expr2, __FILE__, __LINE__, BOOST_CURRENT_FUNCTION, expr1, expr2) )
 
 #endif // #ifndef BOOST_DETAIL_LIGHTWEIGHT_TEST_HPP_INCLUDED

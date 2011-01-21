@@ -1,8 +1,8 @@
 //
-// old_win_sdk_compat.hpp
-// ~~~~~~~~~~~~~~~~~~~~~~
+// detail/old_win_sdk_compat.hpp
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2008 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2010 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -15,11 +15,7 @@
 # pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
-#include <boost/asio/detail/push_options.hpp>
-
-#include <boost/asio/detail/push_options.hpp>
-#include <boost/config.hpp>
-#include <boost/asio/detail/pop_options.hpp>
+#include <boost/asio/detail/config.hpp>
 
 #if defined(BOOST_WINDOWS) || defined(__CYGWIN__)
 
@@ -35,6 +31,8 @@
 // N.B. this emulation is also used if building for a Windows 2000 target with
 // a recent (i.e. Vista or later) SDK, as the SDK does not provide IPv6 support
 // in that case.
+
+#include <boost/asio/detail/push_options.hpp>
 
 namespace boost {
 namespace asio {
@@ -323,6 +321,8 @@ inline int IN6_IS_ADDR_MC_GLOBAL(const in6_addr_emulation* a)
 } // namespace asio
 } // namespace boost
 
+#include <boost/asio/detail/pop_options.hpp>
+
 #endif // defined(BOOST_ASIO_HAS_OLD_WIN_SDK)
 
 // Even newer Platform SDKs that support IPv6 may not define IPV6_V6ONLY.
@@ -336,7 +336,5 @@ inline int IN6_IS_ADDR_MC_GLOBAL(const in6_addr_emulation* a)
 #endif
 
 #endif // defined(BOOST_WINDOWS) || defined(__CYGWIN__)
-
-#include <boost/asio/detail/pop_options.hpp>
 
 #endif // BOOST_ASIO_DETAIL_OLD_WIN_SDK_COMPAT_HPP

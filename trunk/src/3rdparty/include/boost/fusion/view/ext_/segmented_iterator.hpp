@@ -9,8 +9,10 @@
 #define FUSION_SEGMENTED_ITERATOR_EAN_05032006_1027
 
 #include <boost/mpl/if.hpp>
+#include <boost/mpl/int.hpp>
 #include <boost/mpl/not.hpp>
 #include <boost/mpl/assert.hpp>
+#include <boost/mpl/next_prior.hpp>
 #include <boost/mpl/placeholders.hpp>
 #include <boost/type_traits/is_same.hpp>
 #include <boost/type_traits/is_reference.hpp>
@@ -20,6 +22,7 @@
 #include <boost/fusion/view/filter_view.hpp>
 #include <boost/fusion/container/list/cons.hpp> // for nil
 #include <boost/fusion/container/generation/make_cons.hpp>
+#include <boost/fusion/iterator/advance.hpp>
 #include <boost/fusion/iterator/distance.hpp>
 #include <boost/fusion/sequence/intrinsic/ext_/segments.hpp>
 #include <boost/fusion/support/ext_/is_segmented.hpp>
@@ -47,24 +50,32 @@ namespace boost { namespace fusion
           : is_empty<Sequence>
         {};
 
+        ////////////////////////////////////////////////////////////////////////////
+        struct not_is_empty_pred
+        {
+            template<typename Sequence>
+            struct apply
+              : not_<is_empty<Sequence> >
+            {};
+        };
+
         struct segmented_range_tag;
 
         ////////////////////////////////////////////////////////////////////////////
-        template<typename Sequence, typename Iterator, bool IsSegmented>
+        template<typename Sequence, typename Index, bool IsSegmented>
         struct segmented_range
-          : sequence_base<segmented_range<Sequence, Iterator, IsSegmented> >
+          : sequence_base<segmented_range<Sequence, Index, IsSegmented> >
         {
             BOOST_MPL_ASSERT_NOT((is_reference<Sequence>));
             typedef mpl::bool_<IsSegmented> is_segmented;
             typedef segmented_range_tag fusion_tag;
             typedef fusion_sequence_tag tag; // this gets picked up by MPL
             typedef mpl::true_ is_view;
-            typedef Iterator iterator_type;
 
             // If this is a range of segments, skip over the empty ones
             typedef typename mpl::if_<
                 is_segmented
-              , filter_view<Sequence, not_<is_empty<_> > >
+              , filter_view<Sequence, not_is_empty_pred>
               , Sequence
             >::type sequence_non_ref_type;
 
@@ -74,20 +85,34 @@ namespace boost { namespace fusion
               , sequence_non_ref_type &
             >::type sequence_type;
 
+            typedef
+                typename fusion::result_of::advance<
+                    typename fusion::result_of::begin<sequence_non_ref_type>::type
+                  , Index
+                >::type
+            iterator_type;
+
             typedef typename traits::category_of<sequence_non_ref_type>::type category;
 
             explicit segmented_range(Sequence &sequence_)
               : sequence(sequence_type(sequence_))
-              , where_(fusion::begin(sequence))
             {}
 
-            segmented_range(sequence_type sequence_, iterator_type const &wh)
+            segmented_range(sequence_type sequence_, int)
               : sequence(sequence_)
-              , where_(wh)
             {}
+
+            iterator_type where_() const
+            {
+                return fusion::advance<Index>(
+                    fusion::begin(const_cast<sequence_non_ref_type &>(this->sequence))
+                );
+            }
 
             sequence_type sequence;
-            iterator_type where_;
+
+        private:
+            segmented_range &operator =(segmented_range const &);
         };
     }
 
@@ -139,7 +164,7 @@ namespace boost { namespace fusion
                 typedef typename Sequence::iterator_type type;
                 static type call(Sequence &seq)
                 {
-                    return seq.where_;
+                    return seq.where_();
                 }
             };
         };
@@ -167,15 +192,15 @@ namespace boost { namespace fusion
         template<typename Range>
         struct range_next;
 
-        template<typename Sequence, typename Iterator, bool IsSegmented>
-        struct range_next<segmented_range<Sequence, Iterator, IsSegmented> >
+        template<typename Sequence, typename Index, bool IsSegmented>
+        struct range_next<segmented_range<Sequence, Index, IsSegmented> >
         {
-            typedef typename result_of::next<Iterator>::type iterator_type;
-            typedef segmented_range<Sequence, iterator_type, IsSegmented> type;
+            typedef typename mpl::next<Index>::type index_type;
+            typedef segmented_range<Sequence, index_type, IsSegmented> type;
 
-            static type call(segmented_range<Sequence, Iterator, IsSegmented> const &rng)
+            static type call(segmented_range<Sequence, Index, IsSegmented> const &rng)
             {
-                return type(rng.sequence, fusion::next(rng.where_));
+                return type(rng.sequence, 0);
             }
         };
 
@@ -196,8 +221,7 @@ namespace boost { namespace fusion
         {
             typedef typename result_of::segments<Sequence>::type segments;
             typedef typename remove_reference<segments>::type sequence;
-            typedef typename result_of::begin<filter_view<sequence, not_<is_empty<_> > > >::type begin;
-            typedef segmented_range<sequence, begin, true> type;
+            typedef segmented_range<sequence, mpl::int_<0>, true> type;
 
             static type call(Sequence &seq)
             {
@@ -210,8 +234,7 @@ namespace boost { namespace fusion
         struct as_segmented_range<Sequence, false>
         {
             typedef typename remove_reference<Sequence>::type sequence;
-            typedef typename result_of::begin<sequence>::type begin;
-            typedef segmented_range<sequence, begin, false> type;
+            typedef segmented_range<sequence, mpl::int_<0>, false> type;
 
             static type call(Sequence &seq)
             {
@@ -219,10 +242,10 @@ namespace boost { namespace fusion
             }
         };
 
-        template<typename Sequence, typename Iterator, bool IsSegmented>
-        struct as_segmented_range<segmented_range<Sequence, Iterator, IsSegmented>, IsSegmented>
+        template<typename Sequence, typename Index, bool IsSegmented>
+        struct as_segmented_range<segmented_range<Sequence, Index, IsSegmented>, IsSegmented>
         {
-            typedef segmented_range<Sequence, Iterator, IsSegmented> type;
+            typedef segmented_range<Sequence, Index, IsSegmented> type;
             static type &call(type &seq)
             {
                 return seq;
@@ -318,8 +341,8 @@ namespace boost { namespace fusion
         typedef typename Cons::car_type car_type;
         typedef typename Cons::cdr_type cdr_type;
 
-        explicit segmented_iterator(Cons const &cons)
-          : cons_(cons)
+        explicit segmented_iterator(Cons const &c)
+          : cons_(c)
         {}
 
         cons_type const &cons() const { return this->cons_; };

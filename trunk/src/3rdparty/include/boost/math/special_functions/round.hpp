@@ -22,7 +22,7 @@ inline T round(const T& v, const Policy& pol)
    BOOST_MATH_STD_USING
    if(!(boost::math::isfinite)(v))
       return policies::raise_rounding_error("boost::math::round<%1%>(%1%)", 0, v, pol);
-   return floor(v + 0.5f);
+   return v < 0 ? static_cast<T>(ceil(v - 0.5f)) : static_cast<T>(floor(v + 0.5f));
 }
 template <class T>
 inline T round(const T& v)

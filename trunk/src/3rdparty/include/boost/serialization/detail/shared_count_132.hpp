@@ -24,7 +24,7 @@
 #endif
 
 #include <boost/checked_delete.hpp>
-#include <boost/throw_exception.hpp>
+#include <boost/serialization/throw_exception.hpp>
 #include <boost/detail/lightweight_mutex.hpp>
 
 #if defined(BOOST_SP_USE_QUICK_ALLOCATOR)
@@ -134,7 +134,7 @@ public:
 #if defined(BOOST_HAS_THREADS)
         mutex_type::scoped_lock lock(mtx_);
 #endif
-        if(use_count_ == 0) boost::throw_exception(bad_weak_ptr());
+        if(use_count_ == 0) boost::serialization::throw_exception(bad_weak_ptr());
         ++use_count_;
     }
 
@@ -201,12 +201,12 @@ public:
 
 #if defined(BOOST_SP_ENABLE_DEBUG_HOOKS)
 
-template<class T> void cbi_call_constructor_hook(sp_counted_base * pn, T * px, checked_deleter<T> const &, int)
+template<class T> void cbi_call_constructor_hook(sp_counted_base * pn, T * px, checked_deleter< T > const &, int)
 {
     boost::sp_scalar_constructor_hook(px, sizeof(T), pn);
 }
 
-template<class T> void cbi_call_constructor_hook(sp_counted_base *, T * px, checked_array_deleter<T> const &, int)
+template<class T> void cbi_call_constructor_hook(sp_counted_base *, T * px, checked_array_deleter< T > const &, int)
 {
     boost::sp_array_constructor_hook(px);
 }
@@ -215,12 +215,12 @@ template<class P, class D> void cbi_call_constructor_hook(sp_counted_base *, P c
 {
 }
 
-template<class T> void cbi_call_destructor_hook(sp_counted_base * pn, T * px, checked_deleter<T> const &, int)
+template<class T> void cbi_call_destructor_hook(sp_counted_base * pn, T * px, checked_deleter< T > const &, int)
 {
     boost::sp_scalar_destructor_hook(px, sizeof(T), pn);
 }
 
-template<class T> void cbi_call_destructor_hook(sp_counted_base *, T * px, checked_array_deleter<T> const &, int)
+template<class T> void cbi_call_destructor_hook(sp_counted_base *, T * px, checked_array_deleter< T > const &, int)
 {
     boost::sp_array_destructor_hook(px);
 }
@@ -292,12 +292,12 @@ public:
 
     void * operator new(std::size_t)
     {
-        return quick_allocator<this_type>::alloc();
+        return boost::detail::quick_allocator<this_type>::alloc();
     }
 
     void operator delete(void * p)
     {
-        quick_allocator<this_type>::dealloc(p);
+        boost::detail::quick_allocator<this_type>::dealloc(p);
     }
 
 #endif
@@ -357,7 +357,7 @@ public:
         if(pi_ == 0)
         {
             d(p); // delete p
-            boost::throw_exception(std::bad_alloc());
+            boost::serialization::throw_exception(std::bad_alloc());
         }
 
 #endif
@@ -551,7 +551,7 @@ inline shared_count::shared_count(weak_count const & r): pi_(r.pi_)
     }
     else
     {
-        boost::throw_exception(bad_weak_ptr());
+        boost::serialization::throw_exception(bad_weak_ptr());
     }
 }
 

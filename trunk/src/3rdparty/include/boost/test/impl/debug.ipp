@@ -1,4 +1,4 @@
-//  (C) Copyright Gennadiy Rozental 2006-2007.
+//  (C) Copyright Gennadiy Rozental 2006-2008.
 //  Use, modification, and distribution are subject to the
 //  Boost Software License, Version 1.0. (See accompanying file
 //  http://www.boost.org/LICENSE_1_0.txt)
@@ -7,7 +7,7 @@
 //
 //  File        : $RCSfile$
 //
-//  Version     : $Revision: 41369 $
+//  Version     : $Revision: 57992 $
 //
 //  Description : debug interfaces implementation
 // ***************************************************************************
@@ -23,7 +23,7 @@
 #include <boost/test/debug.hpp>
 #include <boost/test/debug_config.hpp>
 
-// Implementation in windows
+// Implementation on Windows
 #if defined(_WIN32) && !defined(UNDER_CE) && !defined(BOOST_DISABLE_WIN32) // ******* WIN32
 
 #  define BOOST_WIN32_BASED_DEBUG
@@ -32,6 +32,7 @@
 #  include <windows.h>
 #  include <winreg.h>
 #  include <cstdio>
+#  include <cstring>
 
 #  if !defined(NDEBUG) && defined(_MSC_VER)
 #    define BOOST_MS_CRT_BASED_DEBUG
@@ -56,8 +57,9 @@ namespace std { using ::memset; using ::sprintf; }
 #include <boost/test/utils/algorithm.hpp>
 
 // STL
-#include <cstring>
+#include <cstring>  // std::memcpy
 #include <map>
+#include <cstdio>
 #include <stdarg.h> // !! ?? cstdarg
 
 // SYSTEM API
@@ -495,7 +497,7 @@ start_gdb_in_emacs( dbg_startup_info const& dsi )
 //____________________________________________________________________________//
 
 static void
-start_gdb_in_xemacs( dbg_startup_info const& dsi )
+start_gdb_in_xemacs( dbg_startup_info const& )
 {
     // !! ??
 }
@@ -550,7 +552,7 @@ start_dbx_in_xterm( dbg_startup_info const& dsi )
 //____________________________________________________________________________//
 
 static void
-start_dbx_in_emacs( dbg_startup_info const& dsi )
+start_dbx_in_emacs( dbg_startup_info const& /*dsi*/ )
 {
 //    char dbg_cmd_buff[500]; // !! ??
 //
@@ -562,7 +564,7 @@ start_dbx_in_emacs( dbg_startup_info const& dsi )
 //____________________________________________________________________________//
 
 static void
-start_dbx_in_xemacs( dbg_startup_info const& dsi )
+start_dbx_in_xemacs( dbg_startup_info const& )
 {
     // !! ??
 }
@@ -651,7 +653,7 @@ under_debugger()
         if( dbg_list.find( pi.binary_name() ) != const_string::npos )
             return true;
 
-        pid = pi.parent_pid();
+        pid = (pi.parent_pid() == pid ? 0 : pi.parent_pid());
     }
 
     return false;
@@ -722,19 +724,11 @@ debugger_break()
 // **************            console debugger setup            ************** //
 // ************************************************************************** //
 
-#if BOOST_WORKAROUND( BOOST_MSVC, <1300)
-std::string
-set_debugger( unit_test::const_string dbg_id )
-{
-    dbg_starter s;
-#else
+#if defined(BOOST_UNIX_BASED_DEBUG) // ************************ UNIX
+
 std::string
 set_debugger( unit_test::const_string dbg_id, dbg_starter s )
 {
-#endif
-
-#if defined(BOOST_UNIX_BASED_DEBUG) // ************************ UNIX
-
     std::string old = s_info.p_dbg;
 
     assign_op( s_info.p_dbg.value, dbg_id, 0 );
@@ -743,13 +737,17 @@ set_debugger( unit_test::const_string dbg_id, dbg_starter s )
         s_info.m_dbg_starter_reg[s_info.p_dbg] = s;
 
     return old;
+}
 
 #else  // ***************************************************** default
 
+std::string
+set_debugger( unit_test::const_string, dbg_starter )
+{
     return std::string();
+}
 
 #endif
-}
 
 //____________________________________________________________________________//
 
@@ -836,8 +834,8 @@ attach_debugger( bool break_or_continue )
     bool created = !!::CreateProcessA(
         NULL,           // pointer to name of executable module; NULL - use the one in command line
         cmd_line,       // pointer to command line string
-        NULL,           // pointer to process security attributes; NULL - debugger's handle couldn't be inherited
-        NULL,           // pointer to thread security attributes; NULL - debugger's handle couldn't be inherited
+        NULL,           // pointer to process security attributes; NULL - debugger's handle can't be inherited
+        NULL,           // pointer to thread security attributes; NULL - debugger's handle can't be inherited
         true,           // debugger inherit opened handles
         0,              // priority flags; 0 - normal priority
         NULL,           // pointer to new environment block; NULL - use this process environment
@@ -853,6 +851,11 @@ attach_debugger( bool break_or_continue )
 
     if( !created )
         return false;
+
+    if( break_or_continue )
+        debugger_break();
+
+    return true;
 
 #elif defined(BOOST_UNIX_BASED_DEBUG) // ********************** UNIX
 
@@ -900,16 +903,16 @@ attach_debugger( bool break_or_continue )
 //    char dummy;
 //    while( ::read( init_done_lock_fd, &dummy, sizeof(char) ) == 0 );
 
+    if( break_or_continue )
+        debugger_break();
+
+    return true;
+
 #else // ****************************************************** default
 
     return false;
 
 #endif
-
-    if( break_or_continue )
-        debugger_break();
-
-    return true;
 }
 
 //____________________________________________________________________________//
@@ -964,3 +967,4 @@ break_memory_alloc( long mem_alloc_order_num )
 #include <boost/test/detail/enable_warnings.hpp>
 
 #endif // BOOST_TEST_DEBUG_API_IPP_112006GER
+

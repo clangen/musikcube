@@ -18,8 +18,15 @@
 
 #include <cassert>
 
+#include <cstddef> // size_t
 #include <boost/config.hpp> // for BOOST_DEDUCED_TYPENAME
-#include <boost/pfto.hpp>
+#if defined(BOOST_NO_STDC_NAMESPACE)
+namespace std{ 
+    using ::size_t; 
+} // namespace std
+#endif
+
+#include <boost/serialization/pfto.hpp>
 
 #include <boost/iterator/transform_iterator.hpp>
 #include <boost/archive/iterators/dataflow_exception.hpp>
@@ -43,7 +50,7 @@ struct from_6_bit {
             "0123456789"
             "+/";
         assert(t < 64);
-        return lookup_table[t];
+        return lookup_table[static_cast<size_t>(t)];
     }
 };
 
@@ -84,7 +91,7 @@ public:
     template<class T>
     base64_from_binary(BOOST_PFTO_WRAPPER(T) start) :
         super_t(
-            Base(BOOST_MAKE_PFTO_WRAPPER(static_cast<T>(start))),
+            Base(BOOST_MAKE_PFTO_WRAPPER(static_cast< T >(start))),
             detail::from_6_bit<CharType>()
         )
     {}

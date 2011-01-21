@@ -12,7 +12,7 @@
 #include <iomanip>
 #include <string>
 #include <cerrno>
-#include <cmath>
+#include <boost/config/no_tr1/cmath.hpp>
 #include <stdexcept>
 #include <boost/math/tools/config.hpp>
 #include <boost/math/policies/policy.hpp>
@@ -630,6 +630,15 @@ inline void check_series_iterations(const char* function, boost::uintmax_t max_i
       raise_evaluation_error<boost::uintmax_t>(
          function,
          "Series evaluation exceeded %1% iterations, giving up now.", max_iter, pol);
+}
+
+template <class Policy>
+inline void check_root_iterations(const char* function, boost::uintmax_t max_iter, const Policy& pol)
+{
+   if(max_iter >= policies::get_max_root_iterations<Policy>())
+      raise_evaluation_error<boost::uintmax_t>(
+         function,
+         "Root finding evaluation exceeded %1% iterations, giving up now.", max_iter, pol);
 }
 
 } //namespace policies

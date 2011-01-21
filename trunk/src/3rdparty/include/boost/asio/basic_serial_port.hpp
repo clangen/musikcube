@@ -2,7 +2,7 @@
 // basic_serial_port.hpp
 // ~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2008 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2010 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 // Copyright (c) 2008 Rep Invariant Systems, Inc. (info@repinvariant.com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
@@ -16,21 +16,19 @@
 # pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
-#include <boost/asio/detail/push_options.hpp>
-
-#include <boost/asio/detail/push_options.hpp>
-#include <string>
-#include <boost/config.hpp>
-#include <boost/asio/detail/pop_options.hpp>
-
-#include <boost/asio/basic_io_object.hpp>
-#include <boost/asio/error.hpp>
-#include <boost/asio/serial_port_base.hpp>
-#include <boost/asio/serial_port_service.hpp>
-#include <boost/asio/detail/throw_error.hpp>
+#include <boost/asio/detail/config.hpp>
 
 #if defined(BOOST_ASIO_HAS_SERIAL_PORT) \
   || defined(GENERATING_DOCUMENTATION)
+
+#include <string>
+#include <boost/asio/basic_io_object.hpp>
+#include <boost/asio/detail/throw_error.hpp>
+#include <boost/asio/error.hpp>
+#include <boost/asio/serial_port_base.hpp>
+#include <boost/asio/serial_port_service.hpp>
+
+#include <boost/asio/detail/push_options.hpp>
 
 namespace boost {
 namespace asio {
@@ -139,6 +137,20 @@ public:
    * is not transferred to the caller.
    */
   lowest_layer_type& lowest_layer()
+  {
+    return *this;
+  }
+
+  /// Get a const reference to the lowest layer.
+  /**
+   * This function returns a const reference to the lowest layer in a stack of
+   * layers. Since a basic_serial_port cannot contain any further layers, it
+   * simply returns a reference to itself.
+   *
+   * @return A const reference to the lowest layer in the stack of layers.
+   * Ownership is not transferred to the caller.
+   */
+  const lowest_layer_type& lowest_layer() const
   {
     return *this;
   }
@@ -602,9 +614,9 @@ public:
 } // namespace asio
 } // namespace boost
 
+#include <boost/asio/detail/pop_options.hpp>
+
 #endif // defined(BOOST_ASIO_HAS_SERIAL_PORT)
        //   || defined(GENERATING_DOCUMENTATION)
-
-#include <boost/asio/detail/pop_options.hpp>
 
 #endif // BOOST_ASIO_BASIC_SERIAL_PORT_HPP

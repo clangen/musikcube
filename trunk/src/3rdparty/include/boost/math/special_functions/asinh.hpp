@@ -1,6 +1,7 @@
 //    boost asinh.hpp header file
 
 //  (C) Copyright Eric Ford & Hubert Holin 2001.
+//  (C) Copyright John Maddock 2008.
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
 //  http://www.boost.org/LICENSE_1_0.txt)
@@ -15,10 +16,12 @@
 #endif
 
 
-#include <cmath>
+#include <boost/config/no_tr1/cmath.hpp>
 #include <boost/config.hpp>
 #include <boost/math/tools/precision.hpp>
 #include <boost/math/special_functions/math_fwd.hpp>
+#include <boost/math/special_functions/sqrt1pm1.hpp>
+#include <boost/math/special_functions/log1p.hpp>
 
 // This is the inverse of the hyperbolic sine function.
 
@@ -38,51 +41,41 @@ namespace boost
         using    ::std::numeric_limits;
 #endif
         
-        template<typename T>
-        inline T    asinh_imp(const T x)
+        template<typename T, class Policy>
+        inline T    asinh_imp(const T x, const Policy& pol)
         {
-            using    ::std::abs;
-            using    ::std::sqrt;
-            using    ::std::log;
+            BOOST_MATH_STD_USING
             
-            T const            one = static_cast<T>(1);
-            T const            two = static_cast<T>(2);
-            
-            static T const    taylor_2_bound = sqrt(tools::epsilon<T>());
-            static T const    taylor_n_bound = sqrt(taylor_2_bound);
-            static T const    upper_taylor_2_bound = one/taylor_2_bound;
-            static T const    upper_taylor_n_bound = one/taylor_n_bound;
-            
-            if        (x >= +taylor_n_bound)
+            if        (x >= tools::forth_root_epsilon<T>())
             {
-                if        (x > upper_taylor_n_bound)
+               if        (x > 1 / tools::root_epsilon<T>())
                 {
-                    if        (x > upper_taylor_2_bound)
-                    {
-                        // approximation by laurent series in 1/x at 0+ order from -1 to 0
-                        return( log( x * two) );
-                    }
-                    else
-                    {
-                        // approximation by laurent series in 1/x at 0+ order from -1 to 1
-                        return( log( x*two + (one/(x*two)) ) );
-                    }
+                    // http://functions.wolfram.com/ElementaryFunctions/ArcSinh/06/01/06/01/0001/
+                    // approximation by laurent series in 1/x at 0+ order from -1 to 1
+                    return log(x * 2) + 1/ (4 * x * x);
+                }
+                else if(x < 0.5f)
+                {
+                   // As below, but rearranged to preserve digits:
+                   return boost::math::log1p(x + boost::math::sqrt1pm1(x * x, pol), pol);
                 }
                 else
                 {
-                    return( log( x + sqrt(x*x+one) ) );
+                    // http://functions.wolfram.com/ElementaryFunctions/ArcSinh/02/
+                    return( log( x + sqrt(x*x+1) ) );
                 }
             }
-            else if    (x <= -taylor_n_bound)
+            else if    (x <= -tools::forth_root_epsilon<T>())
             {
                 return(-asinh(-x));
             }
             else
             {
+                // http://functions.wolfram.com/ElementaryFunctions/ArcSinh/06/01/03/01/0001/
                 // approximation by taylor series in x at 0 up to order 2
                 T    result = x;
                 
-                if    (abs(x) >= taylor_2_bound)
+                if    (abs(x) >= tools::root_epsilon<T>())
                 {
                     T    x3 = x*x*x;
                     
@@ -96,18 +89,24 @@ namespace boost
        }
 
         template<typename T>
-        inline typename tools::promote_args<T>::type asinh(const T x)
+        inline typename tools::promote_args<T>::type asinh(T x)
         {
-           typedef typename tools::promote_args<T>::type result_type;
-           return detail::asinh_imp(
-              static_cast<result_type>(x));
+           return boost::math::asinh(x, policies::policy<>());
         }
         template<typename T, typename Policy>
-        inline typename tools::promote_args<T>::type asinh(const T x, const Policy&)
+        inline typename tools::promote_args<T>::type asinh(T x, const Policy&)
         {
-           typedef typename tools::promote_args<T>::type result_type;
-           return detail::asinh_imp(
-              static_cast<result_type>(x));
+            typedef typename tools::promote_args<T>::type result_type;
+            typedef typename policies::evaluation<result_type, Policy>::type value_type;
+            typedef typename policies::normalise<
+               Policy, 
+               policies::promote_float<false>, 
+               policies::promote_double<false>, 
+               policies::discrete_quantile<>,
+               policies::assert_undefined<> >::type forwarding_policy;
+           return policies::checked_narrowing_cast<result_type, forwarding_policy>(
+              detail::asinh_imp(static_cast<value_type>(x), forwarding_policy()),
+              "boost::math::asinh<%1%>(%1%)");
         }
 
     }

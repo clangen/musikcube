@@ -80,7 +80,7 @@ namespace boost { namespace fusion
             type;
 
             static type
-            call(Iterator const& i)
+            call(Iterator const& /*i*/)
             {
                 return type();
             }

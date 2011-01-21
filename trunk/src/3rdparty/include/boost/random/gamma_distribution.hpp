@@ -7,22 +7,30 @@
  *
  * See http://www.boost.org for most recent version including documentation.
  *
- * $Id: gamma_distribution.hpp 41369 2007-11-25 18:07:19Z bemandawes $
+ * $Id: gamma_distribution.hpp 60755 2010-03-22 00:45:06Z steven_watanabe $
  *
  */
 
 #ifndef BOOST_RANDOM_GAMMA_DISTRIBUTION_HPP
 #define BOOST_RANDOM_GAMMA_DISTRIBUTION_HPP
 
-#include <cmath>
+#include <boost/config/no_tr1/cmath.hpp>
 #include <cassert>
 #include <boost/limits.hpp>
 #include <boost/static_assert.hpp>
+#include <boost/random/detail/config.hpp>
 #include <boost/random/exponential_distribution.hpp>
 
 namespace boost {
 
-// Knuth
+// The algorithm is taken from Knuth
+
+/**
+ * The gamma distribution is a continuous distribution with a single
+ * parameter alpha.
+ *
+ * It has \f$p(x) = x^{\alpha-1}\frac{e^{-x}}{\Gamma(\alpha)}\f$.
+ */
 template<class RealType = double>
 class gamma_distribution
 {
@@ -93,7 +101,7 @@ public:
     }
   }
 
-#if !defined(BOOST_NO_OPERATORS_IN_NAMESPACE) && !defined(BOOST_NO_MEMBER_TEMPLATE_FRIENDS)
+#ifndef BOOST_RANDOM_NO_STREAM_OPERATORS
   template<class CharT, class Traits>
   friend std::basic_ostream<CharT,Traits>&
   operator<<(std::basic_ostream<CharT,Traits>& os, const gamma_distribution& gd)
@@ -113,6 +121,7 @@ public:
 #endif
 
 private:
+  /// \cond hide_private_members
   void init()
   {
 #ifndef BOOST_NO_STDC_NAMESPACE
@@ -121,6 +130,7 @@ private:
 #endif
     _p = exp(result_type(1)) / (_alpha + exp(result_type(1)));
   }
+  /// \endcond
 
   exponential_distribution<RealType> _exp;
   result_type _alpha;

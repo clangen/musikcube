@@ -50,7 +50,7 @@ namespace boost { namespace fusion { namespace detail
     {
         template <typename I1, typename I2>
         static bool
-        call(I1 const& a, I2 const& b)
+        call(I1 const& /*a*/, I2 const& /*b*/)
         {
             return false;
         }

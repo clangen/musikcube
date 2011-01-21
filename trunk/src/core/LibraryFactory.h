@@ -39,6 +39,7 @@
 #include <core/Library/Base.h>
 #include <sigslot/sigslot.h>
 #include <map>
+#include <vector>
 
 //////////////////////////////////////////////////////////////////////////////
 

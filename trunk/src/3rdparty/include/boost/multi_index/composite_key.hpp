@@ -563,6 +563,11 @@ struct hash_cval:
 
 /* composite_key_result */
 
+#if defined(BOOST_MSVC)
+#pragma warning(push)
+#pragma warning(disable:4512)
+#endif
+
 template<typename CompositeKey>
 struct composite_key_result
 {
@@ -577,6 +582,10 @@ struct composite_key_result
   const composite_key_type& composite_key;
   const value_type&         value;
 };
+
+#if defined(BOOST_MSVC)
+#pragma warning(pop)
+#endif
 
 /* composite_key */
 

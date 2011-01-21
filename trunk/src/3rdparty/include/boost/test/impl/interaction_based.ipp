@@ -1,4 +1,4 @@
-//  (C) Copyright Gennadiy Rozental 2005-2007.
+//  (C) Copyright Gennadiy Rozental 2005-2008.
 //  Use, modification, and distribution are subject to the
 //  Boost Software License, Version 1.0. (See accompanying file
 //  http://www.boost.org/LICENSE_1_0.txt)
@@ -7,7 +7,7 @@
 //
 //  File        : $RCSfile$
 //
-//  Version     : $Revision: 41369 $
+//  Version     : $Revision: 54633 $
 //
 //  Description : Facilities to perform interaction-based testing
 // ***************************************************************************
@@ -18,10 +18,7 @@
 // Boost.Test
 #include <boost/test/detail/config.hpp>
 
-#if !BOOST_WORKAROUND(__GNUC__, < 3) && \
-    !BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x564)) && \
-    !BOOST_WORKAROUND(BOOST_MSVC, <1310) && \
-    !BOOST_WORKAROUND(__SUNPRO_CC, BOOST_TESTED_AT(0x530))
+#if BOOST_TEST_SUPPORT_INTERACTION_TESTING
 
 // Boost.Test
 #include <boost/test/detail/config.hpp>
@@ -69,8 +66,7 @@ manager::instance_ptr( bool reset, manager* new_ptr )
     
     if( reset ) {
         if( new_ptr ) {
-            if( ptr != &dummy )
-                throw unit_test::framework::setup_error( BOOST_TEST_L( "Couldn't run two interation based test the same time" ) );
+            BOOST_TEST_SETUP_ASSERT( ptr == &dummy, BOOST_TEST_L( "Can't run two interation based test the same time" ) );
                 
             ptr = new_ptr;
         }

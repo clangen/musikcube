@@ -1,4 +1,4 @@
-//  (C) Copyright Gennadiy Rozental 2005-2007.
+//  (C) Copyright Gennadiy Rozental 2005-2008.
 //  Distributed under the Boost Software License, Version 1.0.
 //  (See accompanying file LICENSE_1_0.txt or copy at 
 //  http://www.boost.org/LICENSE_1_0.txt)
@@ -7,7 +7,7 @@
 //
 //  File        : $RCSfile$
 //
-//  Version     : $Revision: 41369 $
+//  Version     : $Revision: 54633 $
 //
 //  Description : defines framework interface
 // ***************************************************************************
@@ -54,6 +54,8 @@ BOOST_TEST_DECL bool    is_initialized();
 // mutation access methods
 BOOST_TEST_DECL void    register_test_unit( test_case* tc );
 BOOST_TEST_DECL void    register_test_unit( test_suite* ts );
+BOOST_TEST_DECL void    deregister_test_unit( test_unit* tu );
+BOOST_TEST_DECL void    clear();
 
 BOOST_TEST_DECL void    register_observer( test_observer& );
 BOOST_TEST_DECL void    deregister_observer( test_observer& );
@@ -68,7 +70,7 @@ BOOST_TEST_DECL test_unit&  get( test_unit_id, test_unit_type );
 template<typename UnitType>
 UnitType&               get( test_unit_id id )
 {
-    return static_cast<UnitType&>( get( id, (test_unit_type)UnitType::type ) );
+    return static_cast<UnitType&>( get( id, static_cast<test_unit_type>(UnitType::type) ) );
 }
 
 // test initiation
@@ -91,6 +93,10 @@ struct internal_error : std::runtime_error {
 struct setup_error : std::runtime_error {
     setup_error( const_string m ) : std::runtime_error( std::string( m.begin(), m.size() ) ) {}
 };
+
+#define BOOST_TEST_SETUP_ASSERT( cond, msg ) if( cond ) {} else throw unit_test::framework::setup_error( msg )
+
+struct nothing_to_test {}; // not really an error
 
 } // namespace framework
 

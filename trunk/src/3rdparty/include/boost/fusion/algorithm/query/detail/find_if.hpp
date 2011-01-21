@@ -1,6 +1,7 @@
 /*=============================================================================
     Copyright (c) 2001-2006 Joel de Guzman
     Copyright (c) 2007 Dan Marsden
+    Copyright (c) 2009 Christopher Schmidt
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying 
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -13,7 +14,6 @@
 #include <boost/mpl/lambda.hpp>
 #include <boost/mpl/apply.hpp>
 #include <boost/mpl/identity.hpp>
-#include <boost/fusion/iterator/value_of.hpp>
 #include <boost/fusion/iterator/equal_to.hpp>
 #include <boost/fusion/iterator/next.hpp>
 #include <boost/fusion/sequence/intrinsic/begin.hpp>
@@ -31,7 +31,7 @@ namespace detail
     struct apply_filter
     {
         typedef typename mpl::apply1<
-            Pred, typename result_of::value_of<Iterator>::type>::type type;
+            Pred, Iterator>::type type;
         BOOST_STATIC_CONSTANT(int, value = type::value);
     };
 
@@ -85,7 +85,7 @@ namespace detail
         typedef typename
             mpl::apply1<
                 Pred
-              , typename result_of::value_of<Shifted>::type
+              , Shifted
             >::type
         type;
         BOOST_STATIC_CONSTANT(int, value = type::value);
@@ -225,26 +225,6 @@ namespace detail
         call(Iterator const& iter)
         {
             return choose_call(iter, typename traits::category_of<Iterator>::type());
-        }
-    };
-
-    template <typename First, typename Last, typename Pred>
-    struct static_seq_find_if : static_find_if<First, Last, Pred>
-    {
-        typedef typename static_find_if<First, Last, Pred>::type type;
-
-        template <typename Sequence>
-        static type
-        call(Sequence const& seq)
-        {
-            return static_find_if<First, Last, Pred>::call(fusion::begin(seq));
-        }
-
-        template <typename Sequence>
-        static type
-        call(Sequence& seq)
-        {
-            return static_find_if<First, Last, Pred>::call(fusion::begin(seq));
         }
     };
 }}}

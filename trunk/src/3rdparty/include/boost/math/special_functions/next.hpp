@@ -13,6 +13,7 @@
 #include <boost/math/policies/error_handling.hpp>
 #include <boost/math/special_functions/fpclassify.hpp>
 #include <boost/math/special_functions/sign.hpp>
+#include <boost/math/special_functions/trunc.hpp>
 
 #ifdef BOOST_MSVC
 #include <float.h>
@@ -183,23 +184,22 @@ T float_distance(const T& a, const T& b, const Policy& pol)
    if(a == b)
       return 0;
    if(a == 0)
-      return 1 + fabs(float_distance(boost::math::sign(b) * detail::get_smallest_value<T>(), b, pol));
+      return 1 + fabs(float_distance(static_cast<T>(boost::math::sign(b) * detail::get_smallest_value<T>()), b, pol));
    if(b == 0)
-      return 1 + fabs(float_distance(boost::math::sign(a) * detail::get_smallest_value<T>(), a, pol));
+      return 1 + fabs(float_distance(static_cast<T>(boost::math::sign(a) * detail::get_smallest_value<T>()), a, pol));
    if(boost::math::sign(a) != boost::math::sign(b))
-      return 2 + fabs(float_distance(boost::math::sign(b) * detail::get_smallest_value<T>(), b, pol))
-         + fabs(float_distance(boost::math::sign(a) * detail::get_smallest_value<T>(), a, pol));
+      return 2 + fabs(float_distance(static_cast<T>(boost::math::sign(b) * detail::get_smallest_value<T>()), b, pol))
+         + fabs(float_distance(static_cast<T>(boost::math::sign(a) * detail::get_smallest_value<T>()), a, pol));
    //
    // By the time we get here, both a and b must have the same sign, we want
    // b > a and both postive for the following logic:
    //
    if(a < 0)
-      return float_distance(-b, -a);
+      return float_distance(static_cast<T>(-b), static_cast<T>(-a));
 
    BOOST_ASSERT(a >= 0);
    BOOST_ASSERT(b >= a);
 
-   BOOST_MATH_STD_USING
    int expon;
    //
    // Note that if a is a denorm then the usual formula fails

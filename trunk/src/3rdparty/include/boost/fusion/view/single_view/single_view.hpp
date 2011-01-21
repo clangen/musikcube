@@ -15,6 +15,12 @@
 #include <boost/fusion/view/single_view/detail/end_impl.hpp>
 #include <boost/mpl/bool.hpp>
 #include <boost/mpl/int.hpp>
+#include <boost/config.hpp>
+
+#if defined (BOOST_MSVC)
+#  pragma warning(push)
+#  pragma warning (disable: 4512) // assignment operator could not be generated.
+#endif
 
 namespace boost { namespace fusion
 {
@@ -35,8 +41,8 @@ namespace boost { namespace fusion
         single_view()
             : val() {}
 
-        explicit single_view(typename detail::call_param<T>::type val)
-            : val(val) {}
+        explicit single_view(typename detail::call_param<T>::type in_val)
+            : val(in_val) {}
 
         value_type val;
     };
@@ -48,6 +54,10 @@ namespace boost { namespace fusion
         return single_view<typename detail::as_fusion_element<T>::type>(v);
     }
 }}
+
+#if defined (BOOST_MSVC)
+#  pragma warning(pop)
+#endif
 
 #endif
 

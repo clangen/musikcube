@@ -49,11 +49,11 @@ int temme_ik(T v, T x, T* K, T* K1, const Policy& pol)
     b = exp(v * a);
     sigma = -a * v;
     c = abs(v) < tools::epsilon<T>() ?
-       1 : boost::math::sin_pi(v) / (v * pi<T>());
+       T(1) : T(boost::math::sin_pi(v) / (v * pi<T>()));
     d = abs(sigma) < tools::epsilon<T>() ?
-        1 : sinh(sigma) / sigma;
+        T(1) : T(sinh(sigma) / sigma);
     gamma1 = abs(v) < tools::epsilon<T>() ?
-        -euler<T>() : (0.5f / v) * (gp - gm) * c;
+        T(-euler<T>()) : T((0.5f / v) * (gp - gm) * c);
     gamma2 = (2 + gp + gm) * c / 2;
 
     // initial values

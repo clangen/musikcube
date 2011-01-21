@@ -1,7 +1,7 @@
 #add_subdirectory( aacdecoder )
 #add_subdirectory( apedecoder )
 #add_subdirectory( bpm_analyzer )
-add_subdirectory( cddadecoder )
+#add_subdirectory( cddadecoder )
 #add_subdirectory( dsp_example_echo )
 add_subdirectory( flacdecoder )
 #add_subdirectory( httpstream )

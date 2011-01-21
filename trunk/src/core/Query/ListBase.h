@@ -45,6 +45,7 @@
 #include <map>
 #include <set>
 #include <boost/shared_ptr.hpp>
+#include <boost/lexical_cast.hpp>
 
 //////////////////////////////////////////////////////////////
 // Forward declarations

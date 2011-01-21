@@ -30,7 +30,7 @@ namespace std{
 
 #include <boost/io/ios_state.hpp>
 #include <boost/detail/no_exceptions_support.hpp>
-#include <boost/pfto.hpp>
+#include <boost/serialization/pfto.hpp>
 
 #include <boost/serialization/string.hpp>
 #include <boost/archive/add_facet.hpp>
@@ -73,7 +73,7 @@ xml_wiarchive_impl<Archive>::load(std::string & s){
     std::wstring ws;
     bool result = gimpl->parse_string(is, ws);
     if(! result)
-        boost::throw_exception(
+        boost::serialization::throw_exception(
             xml_archive_exception(xml_archive_exception::xml_archive_parsing_error)
         );
     #if BOOST_WORKAROUND(_RWSTD_VER, BOOST_TESTED_AT(20101))
@@ -98,7 +98,7 @@ BOOST_WARCHIVE_DECL(void)
 xml_wiarchive_impl<Archive>::load(std::wstring & ws){
     bool result = gimpl->parse_string(is, ws);
     if(! result)
-        boost::throw_exception(
+        boost::serialization::throw_exception(
             xml_archive_exception(xml_archive_exception::xml_archive_parsing_error)
         );
 }
@@ -110,7 +110,7 @@ xml_wiarchive_impl<Archive>::load(char * s){
     std::wstring ws;
     bool result = gimpl->parse_string(is, ws);
     if(! result)
-        boost::throw_exception(
+        boost::serialization::throw_exception(
             xml_archive_exception(xml_archive_exception::xml_archive_parsing_error)
         );
     copy_to_ptr(s, ws);
@@ -123,7 +123,7 @@ xml_wiarchive_impl<Archive>::load(wchar_t * ws){
     std::wstring twstring;
     bool result = gimpl->parse_string(is, twstring);
     if(! result)
-        boost::throw_exception(
+        boost::serialization::throw_exception(
             xml_archive_exception(xml_archive_exception::xml_archive_parsing_error)
         );
     std::memcpy(ws, twstring.c_str(), twstring.size());
@@ -136,7 +136,7 @@ BOOST_WARCHIVE_DECL(void)
 xml_wiarchive_impl<Archive>::load_override(class_name_type & t, int){
     const std::wstring & ws = gimpl->rv.class_name;
     if(ws.size() > BOOST_SERIALIZATION_MAX_KEY_SIZE - 1)
-        boost::throw_exception(
+        boost::serialization::throw_exception(
             archive_exception(archive_exception::invalid_class_name)
         );
     copy_to_ptr(t, ws);
@@ -146,7 +146,9 @@ template<class Archive>
 BOOST_WARCHIVE_DECL(void)
 xml_wiarchive_impl<Archive>::init(){
     gimpl->init(is);
-    this->set_library_version(gimpl->rv.version);
+    this->set_library_version(
+        library_version_type(gimpl->rv.version)
+    );
 }
 
 template<class Archive>

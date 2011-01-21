@@ -22,7 +22,7 @@ inline T trunc(const T& v, const Policy& pol)
    BOOST_MATH_STD_USING
    if(!(boost::math::isfinite)(v))
       return policies::raise_rounding_error("boost::math::trunc<%1%>(%1%)", 0, v, pol);
-   return (v >= 0) ? floor(v) : ceil(v);
+   return (v >= 0) ? static_cast<T>(floor(v)) : static_cast<T>(ceil(v));
 }
 template <class T>
 inline T trunc(const T& v)

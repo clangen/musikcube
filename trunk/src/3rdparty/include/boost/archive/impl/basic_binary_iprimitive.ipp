@@ -22,7 +22,7 @@ namespace std{
 
 #include <boost/detail/workaround.hpp> // fixup for RogueWave
 
-#include <boost/throw_exception.hpp>
+#include <boost/serialization/throw_exception.hpp>
 #include <boost/scoped_ptr.hpp>
 
 #include <boost/archive/archive_exception.hpp>
@@ -45,31 +45,46 @@ basic_binary_iprimitive<Archive, Elem, Tr>::init()
     unsigned char size;
     this->This()->load(size);
     if(sizeof(int) != size)
-        boost::throw_exception(
-            archive_exception(archive_exception::incompatible_native_format)
+        boost::serialization::throw_exception(
+            archive_exception(
+                archive_exception::incompatible_native_format,
+                "size of int"
+            )
         );
     this->This()->load(size);
     if(sizeof(long) != size)
-        boost::throw_exception(
-            archive_exception(archive_exception::incompatible_native_format)
+        boost::serialization::throw_exception(
+            archive_exception(
+                archive_exception::incompatible_native_format,
+                "size of long"
+            )
         );
     this->This()->load(size);
     if(sizeof(float) != size)
-        boost::throw_exception(
-            archive_exception(archive_exception::incompatible_native_format)
+        boost::serialization::throw_exception(
+            archive_exception(
+                archive_exception::incompatible_native_format,
+                "size of float"
+            )
         );
     this->This()->load(size);
     if(sizeof(double) != size)
-        boost::throw_exception(
-            archive_exception(archive_exception::incompatible_native_format)
+        boost::serialization::throw_exception(
+            archive_exception(
+                archive_exception::incompatible_native_format,
+                "size of double"
+            )
         );
 
     // for checking endian
     int i;
     this->This()->load(i);
     if(1 != i)
-        boost::throw_exception(
-            archive_exception(archive_exception::incompatible_native_format)
+        boost::serialization::throw_exception(
+            archive_exception(
+                archive_exception::incompatible_native_format,
+                "endian setting"
+            )
         );
 }
 
@@ -77,10 +92,10 @@ template<class Archive, class Elem, class Tr>
 BOOST_ARCHIVE_OR_WARCHIVE_DECL(void)
 basic_binary_iprimitive<Archive, Elem, Tr>::load(wchar_t * ws)
 {
-    std::size_t l;
+    std::size_t l; // number of wchar_t !!!
     this->This()->load(l);
     load_binary(ws, l * sizeof(wchar_t) / sizeof(char));
-    ws[l / sizeof(wchar_t)] = L'\0';
+    ws[l] = L'\0';
 }
 
 template<class Archive, class Elem, class Tr>
@@ -182,13 +197,11 @@ template<class Archive, class Elem, class Tr>
 BOOST_ARCHIVE_OR_WARCHIVE_DECL(BOOST_PP_EMPTY())
 basic_binary_iprimitive<Archive, Elem, Tr>::~basic_binary_iprimitive(){
     // push back unread characters
-    int result = static_cast<detail::input_streambuf_access<Elem, Tr> &>(
-        m_sb
-    ).sync();
-    if(0 != result){ 
-        boost::throw_exception(
-            archive_exception(archive_exception::stream_error)
-        );
+    //destructor can't throw !
+    try{
+        static_cast<detail::input_streambuf_access<Elem, Tr> &>(m_sb).sync();
+    }
+    catch(...){
     }
 }
 

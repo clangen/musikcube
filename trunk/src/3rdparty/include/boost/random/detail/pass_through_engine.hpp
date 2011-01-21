@@ -7,7 +7,7 @@
  *
  * See http://www.boost.org for most recent version including documentation.
  *
- * $Id: pass_through_engine.hpp 24096 2004-07-27 03:43:34Z dgregor $
+ * $Id: pass_through_engine.hpp 58649 2010-01-02 21:23:17Z steven_watanabe $
  *
  */
 
@@ -16,7 +16,7 @@
 
 #include <boost/config.hpp>
 #include <boost/random/detail/ptr_helper.hpp>
-
+#include <boost/random/detail/disable_warnings.hpp>
 
 namespace boost {
 namespace random {
@@ -93,6 +93,8 @@ operator>>(std::istream& is,
 } // namespace detail
 } // namespace random
 } // namespace boost
+
+#include <boost/random/detail/enable_warnings.hpp>
 
 #endif // BOOST_RANDOM_DETAIL_PASS_THROUGH_ENGINE_HPP
 

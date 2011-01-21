@@ -38,6 +38,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
+#include <boost/lexical_cast.hpp>
 //////////////////////////////////////////////////////////////////////////////
 // Forward declare
 namespace musik{ namespace core{

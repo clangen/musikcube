@@ -40,6 +40,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <core/Query/Base.h>
 #include <core/config.h>

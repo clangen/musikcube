@@ -51,10 +51,10 @@ template<class Archive>
 BOOST_ARCHIVE_OR_WARCHIVE_DECL(void)
 basic_text_oarchive<Archive>::init(){
     // write signature in an archive version independent manner
-    const std::string file_signature(ARCHIVE_SIGNATURE());
+    const std::string file_signature(BOOST_ARCHIVE_SIGNATURE());
     * this->This() << file_signature;
     // write library version
-    const version_type v(ARCHIVE_VERSION());
+    const library_version_type v(BOOST_ARCHIVE_VERSION());
     * this->This() << v;
 }
 

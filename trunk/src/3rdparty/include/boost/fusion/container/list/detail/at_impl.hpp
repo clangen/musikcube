@@ -1,7 +1,7 @@
 /*=============================================================================
     Copyright (c) 2001-2006 Joel de Guzman
 
-    Distributed under the Boost Software License, Version 1.0. (See accompanying 
+    Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 ==============================================================================*/
 #if !defined(FUSION_AT_IMPL_07172005_0726)
@@ -15,6 +15,71 @@
 
 namespace boost { namespace fusion
 {
+    namespace detail
+    {
+        template <typename Cons>
+        struct cons_deref
+        {
+            typedef typename Cons::car_type type;
+        };
+
+        template <typename Cons, int I>
+        struct cons_advance
+        {
+            typedef typename
+                cons_advance<Cons, I-1>::type::cdr_type
+            type;
+        };
+
+        template <typename Cons>
+        struct cons_advance<Cons, 0>
+        {
+            typedef Cons type;
+        };
+
+        template <typename Cons>
+        struct cons_advance<Cons, 1>
+        {
+            typedef typename Cons::cdr_type type;
+        };
+
+        template <typename Cons>
+        struct cons_advance<Cons, 2>
+        {
+#if BOOST_WORKAROUND(BOOST_MSVC, > 1400) // VC8 and above
+            typedef typename Cons::cdr_type::cdr_type type;
+#else
+            typedef typename Cons::cdr_type _a;
+            typedef typename _a::cdr_type type;
+#endif
+        };
+
+        template <typename Cons>
+        struct cons_advance<Cons, 3>
+        {
+#if BOOST_WORKAROUND(BOOST_MSVC, > 1400) // VC8 and above
+            typedef typename Cons::cdr_type::cdr_type::cdr_type type;
+#else
+            typedef typename Cons::cdr_type _a;
+            typedef typename _a::cdr_type _b;
+            typedef typename _b::cdr_type type;
+#endif
+        };
+
+        template <typename Cons>
+        struct cons_advance<Cons, 4>
+        {
+#if BOOST_WORKAROUND(BOOST_MSVC, > 1400) // VC8 and above
+            typedef typename Cons::cdr_type::cdr_type::cdr_type::cdr_type type;
+#else
+            typedef typename Cons::cdr_type _a;
+            typedef typename _a::cdr_type _b;
+            typedef typename _b::cdr_type _c;
+            typedef typename _c::cdr_type type;
+#endif
+        };
+    }
+
     struct cons_tag;
 
     namespace extension
@@ -26,22 +91,10 @@ namespace boost { namespace fusion
         struct at_impl<cons_tag>
         {
             template <typename Sequence, typename N>
-            struct apply 
+            struct apply
             {
-                typedef typename
-                    mpl::eval_if<
-                        is_const<Sequence>
-                      , add_const<typename Sequence::cdr_type>
-                      , mpl::identity<typename Sequence::cdr_type>
-                    >::type
-                cdr_type;
-
-                typedef typename 
-                    mpl::eval_if<
-                        mpl::bool_<N::value == 0>
-                      , mpl::identity<typename Sequence::car_type>
-                      , apply<cdr_type, mpl::int_<N::value-1> >
-                    >
+                typedef detail::cons_deref<
+                    typename detail::cons_advance<Sequence, N::value>::type>
                 element;
 
                 typedef typename

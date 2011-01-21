@@ -19,7 +19,7 @@
 #include <cassert>
 
 #include <boost/config.hpp> // for BOOST_DEDUCED_TYPENAME
-#include <boost/pfto.hpp>
+#include <boost/serialization/pfto.hpp>
 
 #include <boost/archive/iterators/escape.hpp>
 
@@ -44,7 +44,7 @@ public:
 
     template<class T>
     xml_escape(BOOST_PFTO_WRAPPER(T) start) :
-        super_t(Base(BOOST_MAKE_PFTO_WRAPPER(static_cast<T>(start))))
+        super_t(Base(BOOST_MAKE_PFTO_WRAPPER(static_cast< T >(start))))
     {}
     // intel 7.1 doesn't like default copy constructor
     xml_escape(const xml_escape & rhs) : 

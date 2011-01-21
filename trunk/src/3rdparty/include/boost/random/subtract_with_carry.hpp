@@ -7,7 +7,7 @@
  *
  * See http://www.boost.org for most recent version including documentation.
  *
- * $Id: subtract_with_carry.hpp 29116 2005-05-21 15:57:01Z dgregor $
+ * $Id: subtract_with_carry.hpp 60755 2010-03-22 00:45:06Z steven_watanabe $
  *
  * Revision history
  *  2002-03-02  created
@@ -16,16 +16,18 @@
 #ifndef BOOST_RANDOM_SUBTRACT_WITH_CARRY_HPP
 #define BOOST_RANDOM_SUBTRACT_WITH_CARRY_HPP
 
-#include <cmath>
+#include <boost/config/no_tr1/cmath.hpp>
 #include <iostream>
 #include <algorithm>     // std::equal
 #include <stdexcept>
-#include <cmath>         // std::pow
+#include <boost/config/no_tr1/cmath.hpp>         // std::pow
 #include <boost/config.hpp>
 #include <boost/limits.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/static_assert.hpp>
 #include <boost/detail/workaround.hpp>
+#include <boost/random/detail/config.hpp>
+#include <boost/random/detail/seed.hpp>
 #include <boost/random/linear_congruential.hpp>
 
 
@@ -60,10 +62,19 @@ namespace detail
     carry = value / modulus;
   }
 }
-# endif 
-// subtract-with-carry generator
-// Marsaglia and Zaman
+# endif
 
+/**
+ * Instantiations of @c subtract_with_carry model a
+ * \pseudo_random_number_generator.  The algorithm is
+ * described in
+ *
+ *  @blockquote
+ *  "A New Class of Random Number Generators", George
+ *  Marsaglia and Arif Zaman, Annals of Applied Probability,
+ *  Volume 1, Number 3 (1991), 462-480.
+ *  @endblockquote
+ */
 template<class IntType, IntType m, unsigned int s, unsigned int r,
   IntType val>
 class subtract_with_carry
@@ -85,14 +96,16 @@ public:
 #endif
     seed();
   }
-  explicit subtract_with_carry(uint32_t value) { seed(value); }
-  template<class Generator>
-  explicit subtract_with_carry(Generator & gen) { seed(gen); }
+  BOOST_RANDOM_DETAIL_ARITHMETIC_CONSTRUCTOR(subtract_with_carry, uint32_t, value)
+  { seed(value); }
+  BOOST_RANDOM_DETAIL_GENERATOR_CONSTRUCTOR(subtract_with_carry, Generator, gen)
+  { seed(gen); }
   template<class It> subtract_with_carry(It& first, It last) { seed(first,last); }
 
   // compiler-generated copy ctor and assignment operator are fine
 
-  void seed(uint32_t value = 19780503u)
+  void seed() { seed(19780503u); }
+  BOOST_RANDOM_DETAIL_ARITHMETIC_SEED(subtract_with_carry, uint32_t, value)
   {
     random::linear_congruential<int32_t, 40014, 0, 2147483563, 0> intgen(value);
     seed(intgen);
@@ -101,8 +114,7 @@ public:
   // For GCC, moving this function out-of-line prevents inlining, which may
   // reduce overall object code size.  However, MSVC does not grok
   // out-of-line template member functions.
-  template<class Generator>
-  void seed(Generator & gen)
+  BOOST_RANDOM_DETAIL_GENERATOR_SEED(subtract_with_carry, Generator, gen)
   {
     // I could have used std::generate_n, but it takes "gen" by value
     for(unsigned int j = 0; j < long_lag; ++j)
@@ -153,7 +165,7 @@ public:
   
 #ifndef BOOST_NO_OPERATORS_IN_NAMESPACE
 
-#ifndef BOOST_NO_MEMBER_TEMPLATE_FRIENDS
+#ifndef BOOST_RANDOM_NO_STREAM_OPERATORS
   template<class CharT, class Traits>
   friend std::basic_ostream<CharT,Traits>&
   operator<<(std::basic_ostream<CharT,Traits>& os,
@@ -202,11 +214,13 @@ public:
 #endif
 
 private:
+  /// \cond hide_private_members
   // returns x(i-r+index), where index is in 0..r-1
   IntType compute(unsigned int index) const
   {
     return x[(k+index) % long_lag];
   }
+  /// \endcond
 
   // state representation; next output (state) is x(i)
   //   x[0]  ... x[k] x[k+1] ... x[long_lag-1]     represents
@@ -245,6 +259,7 @@ const unsigned int subtract_with_carry<IntType, m, s, r, val>::short_lag;
 
 
 // use a floating-point representation to produce values in [0..1)
+/** @copydoc boost::random::subtract_with_carry */
 template<class RealType, int w, unsigned int s, unsigned int r, int val=0>
 class subtract_with_carry_01
 {
@@ -266,6 +281,7 @@ public:
   { init_modulus(); seed(first,last); }
 
 private:
+  /// \cond hide_private_members
   void init_modulus()
   {
 #ifndef BOOST_NO_STDC_NAMESPACE
@@ -274,6 +290,7 @@ private:
 #endif
     _modulus = pow(RealType(2), word_size);
   }
+  /// \endcond hide_private_members
 
 public:
   // compiler-generated copy ctor and assignment operator are fine
@@ -345,7 +362,7 @@ public:
   
 #ifndef BOOST_NO_OPERATORS_IN_NAMESPACE
 
-#ifndef BOOST_NO_MEMBER_TEMPLATE_FRIENDS
+#ifndef BOOST_RANDOM_NO_STREAM_OPERATORS
   template<class CharT, class Traits>
   friend std::basic_ostream<CharT,Traits>&
   operator<<(std::basic_ostream<CharT,Traits>& os,
@@ -413,7 +430,9 @@ public:
 #endif
 
 private:
+  /// \cond hide_private_members
   RealType compute(unsigned int index) const;
+  /// \endcond
   unsigned int k;
   RealType carry;
   RealType x[long_lag];
@@ -432,12 +451,13 @@ template<class RealType, int w, unsigned int s, unsigned int r, int val>
 const unsigned int subtract_with_carry_01<RealType, w, s, r, val>::short_lag;
 #endif
 
+/// \cond hide_private_members
 template<class RealType, int w, unsigned int s, unsigned int r, int val>
 RealType subtract_with_carry_01<RealType, w, s, r, val>::compute(unsigned int index) const
 {
   return x[(k+index) % long_lag];
 }
-
+/// \endcond
 
 } // namespace random
 } // namespace boost

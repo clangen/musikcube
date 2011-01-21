@@ -1,4 +1,4 @@
-/* Copyright 2003-2008 Joaquin M Lopez Munoz.
+/* Copyright 2003-2010 Joaquin M Lopez Munoz.
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE_1_0.txt or copy at
  * http://www.boost.org/LICENSE_1_0.txt)
@@ -396,7 +396,7 @@ public:
     return modify(
       position,
       modify_key_adaptor<Modifier,value_type,KeyFromValue>(mod,key),
-      modify_key_adaptor<Modifier,value_type,KeyFromValue>(back,key));
+      modify_key_adaptor<Rollback,value_type,KeyFromValue>(back,key));
   }
 
   void clear()

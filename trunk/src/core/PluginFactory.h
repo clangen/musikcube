@@ -40,6 +40,7 @@
 #include <core/IPlugin.h>
 
 #include <vector>
+#include <iostream>
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include <boost/thread/mutex.hpp>

@@ -132,7 +132,7 @@ template <typename From, typename To>
 struct is_convertible_basic_impl
 {
     static From _m_from;
-    static bool const value = sizeof( detail::checker<To>::_m_check(_m_from, 0) )
+    static bool const value = sizeof( boost::detail::checker<To>::_m_check(_m_from, 0) )
         == sizeof(::boost::type_traits::yes_type);
 };
 
@@ -256,7 +256,7 @@ struct is_convertible_basic_impl
 #ifdef BOOST_MSVC
 #pragma warning(push)
 #pragma warning(disable:4244)
-#if BOOST_WORKAROUND(_MSC_FULL_VER, >= 140050000)
+#if BOOST_WORKAROUND(BOOST_MSVC_FULL_VER, >= 140050000)
 #pragma warning(disable:6334)
 #endif
 #endif

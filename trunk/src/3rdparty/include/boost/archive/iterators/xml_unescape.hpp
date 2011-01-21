@@ -19,8 +19,9 @@
 #include <cassert>
 
 #include <boost/config.hpp> // for BOOST_DEDUCED_TYPENAME
-#include <boost/throw_exception.hpp>
-#include <boost/pfto.hpp>
+
+#include <boost/serialization/throw_exception.hpp>
+#include <boost/serialization/pfto.hpp>
 
 #include <boost/archive/iterators/unescape.hpp>
 #include <boost/archive/iterators/dataflow_exception.hpp>
@@ -44,12 +45,19 @@ class xml_unescape
         return unescape<xml_unescape<Base>, Base>::dereference();
     }
 public:
+    // workaround msvc 7.1 ICU crash
+    #if defined(BOOST_MSVC)
+        typedef int value_type;
+    #else
+        typedef BOOST_DEDUCED_TYPENAME this_t::value_type value_type;
+    #endif
+
     void drain_residue(const char *literal);
-    int drain();
+    value_type drain();
 
     template<class T>
     xml_unescape(BOOST_PFTO_WRAPPER(T) start) : 
-        super_t(Base(BOOST_MAKE_PFTO_WRAPPER(static_cast<T>(start))))
+        super_t(Base(BOOST_MAKE_PFTO_WRAPPER(static_cast< T >(start))))
     {}
     // intel 7.1 doesn't like default copy constructor
     xml_unescape(const xml_unescape & rhs) : 
@@ -61,7 +69,7 @@ template<class Base>
 void xml_unescape<Base>::drain_residue(const char * literal){
     do{
         if(* literal != * ++(this->base_reference()))
-            boost::throw_exception(
+            boost::serialization::throw_exception(
                 dataflow_exception(
                     dataflow_exception::invalid_xml_escape_sequence
                 )
@@ -75,8 +83,10 @@ void xml_unescape<Base>::drain_residue(const char * literal){
 // iterator refenence which would make subsequent iterator comparisons
 // incorrect and thereby break the composiblity of iterators.
 template<class Base>
-int xml_unescape<Base>::drain(){
-    int retval = * this->base_reference();
+BOOST_DEDUCED_TYPENAME xml_unescape<Base>::value_type 
+//int 
+xml_unescape<Base>::drain(){
+    value_type retval = * this->base_reference();
     if('&' != retval){
         return retval;
     }

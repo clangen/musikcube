@@ -7,7 +7,7 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 
-// Preprocessed version of "boost/mpl/shift_right.hpp" header
+// *Preprocessed* version of the main "shift_right.hpp" header
 // -- DO NOT modify by hand!
 
 namespace boost { namespace mpl {

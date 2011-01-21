@@ -531,22 +531,22 @@ namespace boost
 
    // inverse hyperbolics:
    template<typename T>
-   typename tools::promote_args<T>::type asinh(const T x);
+   typename tools::promote_args<T>::type asinh(T x);
 
    template<typename T, class Policy>
-   typename tools::promote_args<T>::type asinh(const T x, const Policy&);
+   typename tools::promote_args<T>::type asinh(T x, const Policy&);
 
    template<typename T>
-   typename tools::promote_args<T>::type acosh(const T x);
+   typename tools::promote_args<T>::type acosh(T x);
 
    template<typename T, class Policy>
-   typename tools::promote_args<T>::type acosh(const T x, const Policy&);
+   typename tools::promote_args<T>::type acosh(T x, const Policy&);
 
    template<typename T>
-   typename tools::promote_args<T>::type atanh(const T x);
+   typename tools::promote_args<T>::type atanh(T x);
 
    template<typename T, class Policy>
-   typename tools::promote_args<T>::type atanh(const T x, const Policy&);
+   typename tools::promote_args<T>::type atanh(T x, const Policy&);
 
    namespace detail{
 
@@ -1048,6 +1048,7 @@ namespace boost
    template <class T> T float_next(const T& a){ return boost::math::float_next(a, Policy()); }\
    template <class T> T float_prior(const T& a){ return boost::math::float_prior(a, Policy()); }\
    template <class T> T float_distance(const T& a, const T& b){ return boost::math::float_distance(a, b, Policy()); }\
+
 
 #endif // BOOST_MATH_SPECIAL_MATH_FWD_HPP
 

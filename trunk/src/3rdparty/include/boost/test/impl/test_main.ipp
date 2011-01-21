@@ -1,4 +1,4 @@
-//  (C) Copyright Gennadiy Rozental 2001-2007.
+//  (C) Copyright Gennadiy Rozental 2001-2008.
 //  (C) Copyright Beman Dawes 1995-2001.
 //  Distributed under the Boost Software License, Version 1.0.
 //  (See accompanying file LICENSE_1_0.txt or copy at
@@ -8,7 +8,7 @@
 //
 //  File        : $RCSfile$
 //
-//  Version     : $$Revision: 41369 $
+//  Version     : $$Revision: 49312 $
 //
 //  Description : implements main function for Test Execution Monitor.
 // ***************************************************************************

@@ -33,21 +33,21 @@ namespace detail{
  */
 
 template<int N>struct uintptr_candidates;
-template<>struct uintptr_candidates<-1>{typedef unsigned int       type;};
-template<>struct uintptr_candidates<0> {typedef unsigned int       type;};
-template<>struct uintptr_candidates<1> {typedef unsigned short     type;};
-template<>struct uintptr_candidates<2> {typedef unsigned long      type;};
+template<>struct uintptr_candidates<-1>{typedef unsigned int           type;};
+template<>struct uintptr_candidates<0> {typedef unsigned int           type;};
+template<>struct uintptr_candidates<1> {typedef unsigned short         type;};
+template<>struct uintptr_candidates<2> {typedef unsigned long          type;};
 
 #if defined(BOOST_HAS_LONG_LONG)
-template<>struct uintptr_candidates<3> {typedef unsigned long long type;};
+template<>struct uintptr_candidates<3> {typedef boost::ulong_long_type type;};
 #else
-template<>struct uintptr_candidates<3> {typedef unsigned int       type;};
+template<>struct uintptr_candidates<3> {typedef unsigned int           type;};
 #endif
 
 #if defined(BOOST_HAS_MS_INT64)
-template<>struct uintptr_candidates<4> {typedef unsigned __int64   type;};
+template<>struct uintptr_candidates<4> {typedef unsigned __int64       type;};
 #else
-template<>struct uintptr_candidates<4> {typedef unsigned int       type;};
+template<>struct uintptr_candidates<4> {typedef unsigned int           type;};
 #endif
 
 struct uintptr_aux

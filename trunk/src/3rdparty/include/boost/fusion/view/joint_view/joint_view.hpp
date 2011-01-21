@@ -19,6 +19,9 @@
 #include <boost/mpl/if.hpp>
 #include <boost/mpl/plus.hpp>
 #include <boost/mpl/bool.hpp>
+#include <boost/mpl/eval_if.hpp>
+#include <boost/mpl/inherit.hpp>
+#include <boost/mpl/identity.hpp>
 
 namespace boost { namespace fusion
 {
@@ -31,7 +34,16 @@ namespace boost { namespace fusion
     {
         typedef joint_view_tag fusion_tag;
         typedef fusion_sequence_tag tag; // this gets picked up by MPL
-        typedef forward_traversal_tag category;
+        typedef typename
+            mpl::eval_if<
+                mpl::and_<
+                    traits::is_associative<Sequence1>
+                  , traits::is_associative<Sequence2>
+                >
+              , mpl::inherit2<forward_traversal_tag,associative_tag>
+              , mpl::identity<forward_traversal_tag>
+            >::type
+        category;
         typedef mpl::true_ is_view;
 
         typedef typename result_of::begin<Sequence1>::type first_type;
@@ -40,9 +52,9 @@ namespace boost { namespace fusion
         typedef typename result_of::end<Sequence2>::type concat_last_type;
         typedef typename mpl::plus<result_of::size<Sequence1>, result_of::size<Sequence2> >::type size;
 
-        joint_view(Sequence1& seq1, Sequence2& seq2)
-            : seq1(seq1)
-            , seq2(seq2)
+        joint_view(Sequence1& in_seq1, Sequence2& in_seq2)
+            : seq1(in_seq1)
+            , seq2(in_seq2)
         {}
 
         first_type first() const { return fusion::begin(seq1); }
@@ -50,6 +62,8 @@ namespace boost { namespace fusion
         concat_last_type concat_last() const { return fusion::end(seq2); }
 
     private:
+        // silence MSVC warning C4512: assignment operator could not be generated
+        joint_view& operator= (joint_view const&);
 
         typename mpl::if_<traits::is_view<Sequence1>, Sequence1, Sequence1&>::type seq1;
         typename mpl::if_<traits::is_view<Sequence2>, Sequence2, Sequence2&>::type seq2;

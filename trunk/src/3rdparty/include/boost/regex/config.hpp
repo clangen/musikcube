@@ -92,6 +92,12 @@
 #if defined(_MSC_VER) && !defined(_MSC_EXTENSIONS)
 #  define BOOST_REGEX_NO_EXTERNAL_TEMPLATES
 #endif
+/*
+ * Shared regex lib will crash without this, frankly it looks a lot like a gcc bug:
+ */
+#if defined(__MINGW32__)
+#  define BOOST_REGEX_NO_EXTERNAL_TEMPLATES
+#endif
 
 /*
  * If there isn't good enough wide character support then there will
@@ -164,7 +170,7 @@
 #     pragma warning(push)
 #     pragma warning(disable : 4251 4231 4660)
 #  endif
-#  ifdef _DLL
+#  if defined(_DLL) && defined(BOOST_MSVC) && (BOOST_MSVC < 1600)
 #     include <string>
       extern template class __declspec(dllimport) std::basic_string<unsigned short>;
 #  endif
@@ -180,16 +186,19 @@
  *
  ****************************************************************************/
 
-#if defined(BOOST_HAS_DECLSPEC) && (defined(BOOST_REGEX_DYN_LINK) || defined(BOOST_ALL_DYN_LINK)) && !defined(BOOST_REGEX_STATIC_LINK)
-#  if defined(BOOST_REGEX_SOURCE)
-#     define BOOST_REGEX_DECL __declspec(dllexport)
-#     define BOOST_REGEX_BUILD_DLL
-#  else
-#     define BOOST_REGEX_DECL __declspec(dllimport)
-#  endif
+#ifndef BOOST_SYMBOL_EXPORT
+#  define BOOST_SYMBOL_EXPORT
+#  define BOOST_SYMBOL_IMPORT
 #endif
 
-#ifndef BOOST_REGEX_DECL
+#if (defined(BOOST_REGEX_DYN_LINK) || defined(BOOST_ALL_DYN_LINK)) && !defined(BOOST_REGEX_STATIC_LINK)
+#  if defined(BOOST_REGEX_SOURCE)
+#     define BOOST_REGEX_DECL BOOST_SYMBOL_EXPORT
+#     define BOOST_REGEX_BUILD_DLL
+#  else
+#     define BOOST_REGEX_DECL BOOST_SYMBOL_IMPORT
+#  endif
+#else
 #  define BOOST_REGEX_DECL
 #endif
 
@@ -244,6 +253,10 @@
 
 #ifdef BOOST_RE_LOCALE_CPP
 #  define BOOST_REGEX_USE_CPP_LOCALE
+#endif
+
+#if defined(__CYGWIN__)
+#  define BOOST_REGEX_USE_C_LOCALE
 #endif
 
 /* Win32 defaults to native Win32 locale: */

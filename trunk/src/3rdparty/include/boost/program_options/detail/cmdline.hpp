@@ -22,6 +22,11 @@
 #include <string>
 #include <vector>
 
+#if defined(BOOST_MSVC)
+#   pragma warning (push)
+#   pragma warning (disable:4251) // class 'std::vector<_Ty>' needs to have dll-interface to be used by clients of class 'boost::program_options::positional_options_description'
+#endif
+
 namespace boost { namespace program_options { namespace detail {
 
     /** Command line parser class. Main requirements were:
@@ -108,13 +113,15 @@ namespace boost { namespace program_options { namespace detail {
         void extra_style_parser(style_parser s);
 
         void check_style(int style) const;
-
+        
+        bool is_style_active(style_t style) const;
 
         void init(const std::vector<std::string>& args);
 
         void
         finish_option(option& opt,
-                      std::vector<std::string>& other_tokens);
+                      std::vector<std::string>& other_tokens,
+                      const std::vector<style_parser>& style_parsers);
 
         // Copies of input.
         std::vector<std::string> args;
@@ -131,6 +138,10 @@ namespace boost { namespace program_options { namespace detail {
     void test_cmdline_detail();
     
 }}}
+
+#if defined(BOOST_MSVC)
+#   pragma warning (pop)
+#endif
 
 #endif
 

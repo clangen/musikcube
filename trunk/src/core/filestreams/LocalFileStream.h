@@ -38,7 +38,8 @@
 
 #include <core/config.h>
 #include <core/filestreams/IFileStream.h>
-#include <stdio.h>
+#include <cstdio>
+#include <iostream>
 
 
 //////////////////////////////////////////////////////////////////////////////

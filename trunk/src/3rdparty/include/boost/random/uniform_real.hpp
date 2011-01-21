@@ -7,7 +7,7 @@
  *
  * See http://www.boost.org for most recent version including documentation.
  *
- * $Id: uniform_real.hpp 47233 2008-07-08 16:22:46Z steven_watanabe $
+ * $Id: uniform_real.hpp 60755 2010-03-22 00:45:06Z steven_watanabe $
  *
  * Revision history
  *  2001-04-08  added min<max assertion (N. Becker)
@@ -22,10 +22,21 @@
 #include <boost/config.hpp>
 #include <boost/limits.hpp>
 #include <boost/static_assert.hpp>
+#include <boost/random/detail/config.hpp>
 
 namespace boost {
 
-// uniform distribution on a real range
+/**
+ * The distribution function uniform_real models a random distribution.
+ * On each invocation, it returns a random floating-point value uniformly
+ * distributed in the range [min..max). The value is computed using
+ * std::numeric_limits<RealType>::digits random binary digits, i.e.
+ * the mantissa of the floating-point value is completely filled with
+ * random bits.
+ *
+ * Note: The current implementation is buggy, because it may not fill
+ * all of the mantissa with random bits.
+ */
 template<class RealType = double>
 class uniform_real
 {
@@ -33,6 +44,12 @@ public:
   typedef RealType input_type;
   typedef RealType result_type;
 
+  /**
+   * Constructs a uniform_real object. @c min and @c max are the
+   * parameters of the distribution.
+   *
+   * Requires: min <= max
+   */
   explicit uniform_real(RealType min_arg = RealType(0),
                         RealType max_arg = RealType(1))
     : _min(min_arg), _max(max_arg)
@@ -45,18 +62,26 @@ public:
 
   // compiler-generated copy ctor and assignment operator are fine
 
+  /**
+   * Returns: The "min" parameter of the distribution
+   */
   result_type min BOOST_PREVENT_MACRO_SUBSTITUTION () const { return _min; }
+  /**
+   * Returns: The "max" parameter of the distribution
+   */
   result_type max BOOST_PREVENT_MACRO_SUBSTITUTION () const { return _max; }
   void reset() { }
 
   template<class Engine>
   result_type operator()(Engine& eng) {
-    return static_cast<result_type>(eng() - eng.min BOOST_PREVENT_MACRO_SUBSTITUTION())
-           / static_cast<result_type>(eng.max BOOST_PREVENT_MACRO_SUBSTITUTION() - eng.min BOOST_PREVENT_MACRO_SUBSTITUTION())
-           * (_max - _min) + _min;
+    result_type numerator = static_cast<result_type>(eng() - eng.min BOOST_PREVENT_MACRO_SUBSTITUTION());
+    result_type divisor = static_cast<result_type>(eng.max BOOST_PREVENT_MACRO_SUBSTITUTION() - eng.min BOOST_PREVENT_MACRO_SUBSTITUTION());
+    assert(divisor > 0);
+    assert(numerator >= 0 && numerator <= divisor);
+    return numerator / divisor * (_max - _min) + _min;
   }
 
-#if !defined(BOOST_NO_OPERATORS_IN_NAMESPACE) && !defined(BOOST_NO_MEMBER_TEMPLATE_FRIENDS)
+#ifndef BOOST_RANDOM_NO_STREAM_OPERATORS
   template<class CharT, class Traits>
   friend std::basic_ostream<CharT,Traits>&
   operator<<(std::basic_ostream<CharT,Traits>& os, const uniform_real& ud)

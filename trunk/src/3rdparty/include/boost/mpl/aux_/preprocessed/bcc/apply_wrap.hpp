@@ -1,12 +1,12 @@
 
-// Copyright Aleksey Gurtovoy 2000-2004
+// Copyright Aleksey Gurtovoy 2000-2008
 //
 // Distributed under the Boost Software License, Version 1.0. 
 // (See accompanying file LICENSE_1_0.txt or copy at 
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 
-// Preprocessed version of "boost/mpl/apply_wrap.hpp" header
+// *Preprocessed* version of the main "apply_wrap.hpp" header
 // -- DO NOT modify by hand!
 
 namespace boost { namespace mpl {
@@ -15,6 +15,16 @@ template<
       int N, typename F
     >
 struct apply_wrap_impl0;
+
+template< typename F, bool F_has_apply >
+struct apply_wrap_impl0_bcb {
+    typedef typename F::template apply<na> type;
+};
+
+template< typename F >
+struct apply_wrap_impl0_bcb< F,true > {
+    typedef typename F::apply type;
+};
 
 template<
       typename F
@@ -25,12 +35,7 @@ struct apply_wrap_impl0<
        
         >
 {
-    typedef typename F::template apply<
-         
-/// since the defaults are "lost", we have to pass *something* even for nullary
-/// metafunction classes
-        na
-        > type;
+    typedef apply_wrap_impl0_bcb< F, aux::has_apply<F>::value >::type type;
 };
 
 template<

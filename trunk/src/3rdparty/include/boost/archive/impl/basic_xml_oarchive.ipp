@@ -44,7 +44,7 @@ struct XML_name {
         if((unsigned)t > 127)
             return;
         if(0 == lookup_table[(unsigned)t])
-            boost::throw_exception(
+            boost::serialization::throw_exception(
                 xml_archive_exception(
                     xml_archive_exception::xml_archive_tag_name_error
                 )
@@ -152,7 +152,7 @@ BOOST_ARCHIVE_OR_WARCHIVE_DECL(void)
 basic_xml_oarchive<Archive>::save_override(const object_id_type & t, int)
 {
     int i = t.t; // extra .t is for borland
-    write_attribute(OBJECT_ID(), i, "=\"_");
+    write_attribute(BOOST_ARCHIVE_XML_OBJECT_ID(), i, "=\"_");
 }
 template<class Archive>
 BOOST_ARCHIVE_OR_WARCHIVE_DECL(void)
@@ -161,14 +161,14 @@ basic_xml_oarchive<Archive>::save_override(
     int
 ){
     int i = t.t; // extra .t is for borland
-    write_attribute(OBJECT_REFERENCE(), i, "=\"_");
+    write_attribute(BOOST_ARCHIVE_XML_OBJECT_REFERENCE(), i, "=\"_");
 }
 template<class Archive>
 BOOST_ARCHIVE_OR_WARCHIVE_DECL(void)
 basic_xml_oarchive<Archive>::save_override(const version_type & t, int)
 {
     int i = t.t; // extra .t is for borland
-    write_attribute(VERSION(), i);
+    write_attribute(BOOST_ARCHIVE_XML_VERSION(), i);
 }
 #endif
 
@@ -178,7 +178,7 @@ basic_xml_oarchive<Archive>::save_override(const object_id_type & t, int)
 {
     // borland doesn't do conversion of STRONG_TYPEDEFs very well
     const unsigned int i = t;
-    write_attribute(OBJECT_ID(), i, "=\"_");
+    write_attribute(BOOST_ARCHIVE_XML_OBJECT_ID(), i, "=\"_");
 }
 template<class Archive>
 BOOST_ARCHIVE_OR_WARCHIVE_DECL(void)
@@ -187,21 +187,21 @@ basic_xml_oarchive<Archive>::save_override(
     int
 ){
     const unsigned int i = t;
-    write_attribute(OBJECT_REFERENCE(), i, "=\"_");
+    write_attribute(BOOST_ARCHIVE_XML_OBJECT_REFERENCE(), i, "=\"_");
 }
 template<class Archive>
 BOOST_ARCHIVE_OR_WARCHIVE_DECL(void)
 basic_xml_oarchive<Archive>::save_override(const version_type & t, int)
 {
     const unsigned int i = t;
-    write_attribute(VERSION(), i);
+    write_attribute(BOOST_ARCHIVE_XML_VERSION(), i);
 }
 
 template<class Archive>
 BOOST_ARCHIVE_OR_WARCHIVE_DECL(void)
 basic_xml_oarchive<Archive>::save_override(const class_id_type & t, int)
 {
-    write_attribute(CLASS_ID(), t);
+    write_attribute(BOOST_ARCHIVE_XML_CLASS_ID(), t);
 }
 template<class Archive>
 BOOST_ARCHIVE_OR_WARCHIVE_DECL(void)
@@ -209,7 +209,7 @@ basic_xml_oarchive<Archive>::save_override(
     const class_id_reference_type & t,
     int
 ){
-    write_attribute(CLASS_ID_REFERENCE(), t);
+    write_attribute(BOOST_ARCHIVE_XML_CLASS_ID_REFERENCE(), t);
 }
 template<class Archive>
 BOOST_ARCHIVE_OR_WARCHIVE_DECL(void)
@@ -217,7 +217,7 @@ basic_xml_oarchive<Archive>::save_override(
     const class_id_optional_type & t,
     int
 ){
-    write_attribute(CLASS_ID(), t);
+    write_attribute(BOOST_ARCHIVE_XML_CLASS_ID(), t);
 }
 template<class Archive>
 BOOST_ARCHIVE_OR_WARCHIVE_DECL(void)
@@ -226,14 +226,14 @@ basic_xml_oarchive<Archive>::save_override(const class_name_type & t, int)
     const char * key = t;
     if(NULL == key)
         return;
-    write_attribute(CLASS_NAME(), key);
+    write_attribute(BOOST_ARCHIVE_XML_CLASS_NAME(), key);
 }
 
 template<class Archive>
 BOOST_ARCHIVE_OR_WARCHIVE_DECL(void)
 basic_xml_oarchive<Archive>::save_override(const tracking_type & t, int)
 {
-    write_attribute(TRACKING(), t.t);
+    write_attribute(BOOST_ARCHIVE_XML_TRACKING(), t.t);
 }
 
 template<class Archive>
@@ -244,8 +244,8 @@ basic_xml_oarchive<Archive>::init(){
     this->This()->put("<!DOCTYPE boost_serialization>\n");
     // xml document wrapper - outer root
     this->This()->put("<boost_serialization");
-    write_attribute("signature", ARCHIVE_SIGNATURE());
-    write_attribute("version", ARCHIVE_VERSION());
+    write_attribute("signature", BOOST_ARCHIVE_SIGNATURE());
+    write_attribute("version", BOOST_ARCHIVE_VERSION());
     this->This()->put(">\n");
 }
 

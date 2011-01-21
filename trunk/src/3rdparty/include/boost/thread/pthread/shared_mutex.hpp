@@ -10,8 +10,8 @@
 #include <boost/assert.hpp>
 #include <boost/static_assert.hpp>
 #include <boost/thread/mutex.hpp>
-#include <boost/thread/thread.hpp>
 #include <boost/thread/condition_variable.hpp>
+#include <boost/thread/detail/thread_interruption.hpp>
 
 #include <boost/config/abi_prefix.hpp>
 
@@ -57,18 +57,18 @@ namespace boost
         void lock_shared()
         {
             boost::this_thread::disable_interruption do_not_disturb;
-            boost::mutex::scoped_lock lock(state_change);
+            boost::mutex::scoped_lock lk(state_change);
                 
             while(state.exclusive || state.exclusive_waiting_blocked)
             {
-                shared_cond.wait(lock);
+                shared_cond.wait(lk);
             }
             ++state.shared_count;
         }
 
         bool try_lock_shared()
         {
-            boost::mutex::scoped_lock lock(state_change);
+            boost::mutex::scoped_lock lk(state_change);
                 
             if(state.exclusive || state.exclusive_waiting_blocked)
             {
@@ -84,11 +84,11 @@ namespace boost
         bool timed_lock_shared(system_time const& timeout)
         {
             boost::this_thread::disable_interruption do_not_disturb;
-            boost::mutex::scoped_lock lock(state_change);
+            boost::mutex::scoped_lock lk(state_change);
                 
             while(state.exclusive || state.exclusive_waiting_blocked)
             {
-                if(!shared_cond.timed_wait(lock,timeout))
+                if(!shared_cond.timed_wait(lk,timeout))
                 {
                     return false;
                 }
@@ -105,7 +105,7 @@ namespace boost
 
         void unlock_shared()
         {
-            boost::mutex::scoped_lock lock(state_change);
+            boost::mutex::scoped_lock lk(state_change);
             bool const last_reader=!--state.shared_count;
                 
             if(last_reader)
@@ -127,12 +127,12 @@ namespace boost
         void lock()
         {
             boost::this_thread::disable_interruption do_not_disturb;
-            boost::mutex::scoped_lock lock(state_change);
+            boost::mutex::scoped_lock lk(state_change);
                 
             while(state.shared_count || state.exclusive)
             {
                 state.exclusive_waiting_blocked=true;
-                exclusive_cond.wait(lock);
+                exclusive_cond.wait(lk);
             }
             state.exclusive=true;
         }
@@ -140,12 +140,12 @@ namespace boost
         bool timed_lock(system_time const& timeout)
         {
             boost::this_thread::disable_interruption do_not_disturb;
-            boost::mutex::scoped_lock lock(state_change);
+            boost::mutex::scoped_lock lk(state_change);
 
             while(state.shared_count || state.exclusive)
             {
                 state.exclusive_waiting_blocked=true;
-                if(!exclusive_cond.timed_wait(lock,timeout))
+                if(!exclusive_cond.timed_wait(lk,timeout))
                 {
                     if(state.shared_count || state.exclusive)
                     {
@@ -168,7 +168,7 @@ namespace boost
 
         bool try_lock()
         {
-            boost::mutex::scoped_lock lock(state_change);
+            boost::mutex::scoped_lock lk(state_change);
                 
             if(state.shared_count || state.exclusive)
             {
@@ -184,7 +184,7 @@ namespace boost
 
         void unlock()
         {
-            boost::mutex::scoped_lock lock(state_change);
+            boost::mutex::scoped_lock lk(state_change);
             state.exclusive=false;
             state.exclusive_waiting_blocked=false;
             release_waiters();
@@ -193,10 +193,10 @@ namespace boost
         void lock_upgrade()
         {
             boost::this_thread::disable_interruption do_not_disturb;
-            boost::mutex::scoped_lock lock(state_change);
+            boost::mutex::scoped_lock lk(state_change);
             while(state.exclusive || state.exclusive_waiting_blocked || state.upgrade)
             {
-                shared_cond.wait(lock);
+                shared_cond.wait(lk);
             }
             ++state.shared_count;
             state.upgrade=true;
@@ -205,10 +205,10 @@ namespace boost
         bool timed_lock_upgrade(system_time const& timeout)
         {
             boost::this_thread::disable_interruption do_not_disturb;
-            boost::mutex::scoped_lock lock(state_change);
+            boost::mutex::scoped_lock lk(state_change);
             while(state.exclusive || state.exclusive_waiting_blocked || state.upgrade)
             {
-                if(!shared_cond.timed_wait(lock,timeout))
+                if(!shared_cond.timed_wait(lk,timeout))
                 {
                     if(state.exclusive || state.exclusive_waiting_blocked || state.upgrade)
                     {
@@ -225,12 +225,12 @@ namespace boost
         template<typename TimeDuration>
         bool timed_lock_upgrade(TimeDuration const & relative_time)
         {
-            return timed_lock(get_system_time()+relative_time);
+            return timed_lock_upgrade(get_system_time()+relative_time);
         }
 
         bool try_lock_upgrade()
         {
-            boost::mutex::scoped_lock lock(state_change);
+            boost::mutex::scoped_lock lk(state_change);
             if(state.exclusive || state.exclusive_waiting_blocked || state.upgrade)
             {
                 return false;
@@ -245,7 +245,7 @@ namespace boost
 
         void unlock_upgrade()
         {
-            boost::mutex::scoped_lock lock(state_change);
+            boost::mutex::scoped_lock lk(state_change);
             state.upgrade=false;
             bool const last_reader=!--state.shared_count;
                 
@@ -259,11 +259,11 @@ namespace boost
         void unlock_upgrade_and_lock()
         {
             boost::this_thread::disable_interruption do_not_disturb;
-            boost::mutex::scoped_lock lock(state_change);
+            boost::mutex::scoped_lock lk(state_change);
             --state.shared_count;
             while(state.shared_count)
             {
-                upgrade_cond.wait(lock);
+                upgrade_cond.wait(lk);
             }
             state.upgrade=false;
             state.exclusive=true;
@@ -271,7 +271,7 @@ namespace boost
 
         void unlock_and_lock_upgrade()
         {
-            boost::mutex::scoped_lock lock(state_change);
+            boost::mutex::scoped_lock lk(state_change);
             state.exclusive=false;
             state.upgrade=true;
             ++state.shared_count;
@@ -281,7 +281,7 @@ namespace boost
         
         void unlock_and_lock_shared()
         {
-            boost::mutex::scoped_lock lock(state_change);
+            boost::mutex::scoped_lock lk(state_change);
             state.exclusive=false;
             ++state.shared_count;
             state.exclusive_waiting_blocked=false;
@@ -290,7 +290,7 @@ namespace boost
         
         void unlock_upgrade_and_lock_shared()
         {
-            boost::mutex::scoped_lock lock(state_change);
+            boost::mutex::scoped_lock lk(state_change);
             state.upgrade=false;
             state.exclusive_waiting_blocked=false;
             release_waiters();
