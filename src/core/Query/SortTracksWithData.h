@@ -42,6 +42,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
+#include <boost/lexical_cast.hpp>
 #include <vector>
 #include <list>
 #include <string>

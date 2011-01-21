@@ -122,9 +122,9 @@ T erf_imp(T z, bool invert, const Policy& pol, const Tag& t)
    if(z < 0)
    {
       if(!invert)
-         return -erf_imp(-z, invert, pol, t);
+         return -erf_imp(T(-z), invert, pol, t);
       else
-         return 1 + erf_imp(-z, false, pol, t);
+         return 1 + erf_imp(T(-z), false, pol, t);
    }
 
    T result;
@@ -133,7 +133,7 @@ T erf_imp(T z, bool invert, const Policy& pol, const Tag& t)
    {
       detail::erf_asympt_series_t<T> s(z);
       boost::uintmax_t max_iter = policies::get_max_series_iterations<Policy>();
-      result = boost::math::tools::sum_series(s, policies::digits<T, Policy>(), max_iter, 1);
+      result = boost::math::tools::sum_series(s, policies::get_epsilon<T, Policy>(), max_iter, 1);
       policies::check_series_iterations("boost::math::erf<%1%>(%1%, %1%)", max_iter, pol);
    }
    else
@@ -160,7 +160,7 @@ T erf_imp(T z, bool invert, const Policy& pol, const Tag& t)
          invert = !invert;
          result = z * exp(-x);
          result /= sqrt(boost::math::constants::pi<T>());
-         result *= upper_gamma_fraction(T(0.5f), x, policies::digits<T, Policy>());
+         result *= upper_gamma_fraction(T(0.5f), x, policies::get_epsilon<T, Policy>());
       }
    }
    if(invert)
@@ -197,13 +197,16 @@ T erf_imp(T z, bool invert, const Policy& pol, const mpl::int_<53>& t)
       //
       // We're going to calculate erf:
       //
-      if(z == 0)
+      if(z < 1e-10)
       {
-         result = T(0);
-      }
-      else if(z < 1e-10)
-      {
-         result = static_cast<T>(z * 1.125f + z * 0.003379167095512573896158903121545171688L);
+         if(z == 0)
+         {
+            result = T(0);
+         }
+         else
+         {
+            result = static_cast<T>(z * 1.125f + z * 0.003379167095512573896158903121545171688L);
+         }
       }
       else
       {
@@ -227,10 +230,11 @@ T erf_imp(T z, bool invert, const Policy& pol, const mpl::int_<53>& t)
             0.00858571925074406212772L,
             0.000370900071787748000569L,
          };
-         result = z * (Y + tools::evaluate_polynomial(P, z * z) / tools::evaluate_polynomial(Q, z * z));
+         T zz = z * z;
+         result = z * (Y + tools::evaluate_polynomial(P, zz) / tools::evaluate_polynomial(Q, zz));
       }
    }
-   else if((z < 14) || ((z < 28) && invert))
+   else if(invert ? (z < 28) : (z < 5.8f))
    {
       //
       // We'll be calculating erfc:
@@ -425,7 +429,7 @@ T erf_imp(T z, bool invert, const Policy& pol, const mpl::int_<64>& t)
          result = z * (Y + tools::evaluate_polynomial(P, z * z) / tools::evaluate_polynomial(Q, z * z));
       }
    }
-   else if((z < 110) || ((z < 110) && invert))  // TODO FIXME!!!
+   else if(invert ? (z < 110) : (z < 6.4f))
    {
       //
       // We'll be calculating erfc:
@@ -634,7 +638,7 @@ T erf_imp(T z, bool invert, const Policy& pol, const mpl::int_<113>& t)
          result = z * (Y + tools::evaluate_polynomial(P, z * z) / tools::evaluate_polynomial(Q, z * z));
       }
    }
-   else if((z < 9) || ((z < 110) && invert))
+   else if(invert ? (z < 110) : (z < 8.65f))
    {
       //
       // We'll be calculating erfc:

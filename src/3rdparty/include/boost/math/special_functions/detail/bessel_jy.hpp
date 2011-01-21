@@ -16,7 +16,6 @@
 #include <boost/math/special_functions/hypot.hpp>
 #include <boost/math/special_functions/sin_pi.hpp>
 #include <boost/math/special_functions/cos_pi.hpp>
-#include <boost/math/special_functions/detail/simple_complex.hpp>
 #include <boost/math/special_functions/detail/bessel_jy_asym.hpp>
 #include <boost/math/constants/constants.hpp>
 #include <boost/math/policies/error_handling.hpp>
@@ -29,6 +28,45 @@
 namespace boost { namespace math {
 
 namespace detail {
+
+//
+// Simultaneous calculation of A&S 9.2.9 and 9.2.10
+// for use in A&S 9.2.5 and 9.2.6.
+// This series is quick to evaluate, but divergent unless
+// x is very large, in fact it's pretty hard to figure out
+// with any degree of precision when this series actually 
+// *will* converge!!  Consequently, we may just have to
+// try it and see...
+//
+template <class T, class Policy>
+bool hankel_PQ(T v, T x, T* p, T* q, const Policy& )
+{
+   BOOST_MATH_STD_USING
+   T tolerance = 2 * policies::get_epsilon<T, Policy>();
+   *p = 1;
+   *q = 0;
+   T k = 1;
+   T z8 = 8 * x;
+   T sq = 1;
+   T mu = 4 * v * v;
+   T term = 1;
+   bool ok = true;
+   do
+   {
+      term *= (mu - sq * sq) / (k * z8);
+      *q += term;
+      k += 1;
+      sq += 2;
+      T mult = (sq * sq - mu) / (k * z8);
+      ok = fabs(mult) < 0.5f;
+      term *= mult;
+      *p += term;
+      k += 1;
+      sq += 2;
+   }
+   while((fabs(term) > tolerance * *p) && ok);
+   return ok;
+}
 
 // Calculate Y(v, x) and Y(v+1, x) by Temme's method, see
 // Temme, Journal of Computational Physics, vol 21, 343 (1976)
@@ -55,12 +93,12 @@ int temme_jy(T v, T x, T* Y, T* Y1, const Policy& pol)
     sigma = -a * v;
     d = abs(sigma) < tools::epsilon<T>() ?
         T(1) : sinh(sigma) / sigma;
-    e = abs(v) < tools::epsilon<T>() ? v*pi<T>()*pi<T>() / 2
-        : 2 * spv2 * spv2 / v;
+    e = abs(v) < tools::epsilon<T>() ? T(v*pi<T>()*pi<T>() / 2)
+        : T(2 * spv2 * spv2 / v);
 
-    T g1 = (v == 0) ? -euler<T>() : (gp - gm) / ((1 + gp) * (1 + gm) * 2 * v);
+    T g1 = (v == 0) ? T(-euler<T>()) : T((gp - gm) / ((1 + gp) * (1 + gm) * 2 * v));
     T g2 = (2 + gp + gm) / ((1 + gp) * (1 + gm) * 2);
-    T vspv = (fabs(v) < tools::epsilon<T>()) ? 1/constants::pi<T>() : v / spv;
+    T vspv = (fabs(v) < tools::epsilon<T>()) ? T(1/constants::pi<T>()) : T(v / spv);
     f = (g1 * cosh(sigma) - g2 * a * d) * 2 * vspv;
 
     p = vspv / (xp * (1 + gm));
@@ -76,7 +114,7 @@ int temme_jy(T v, T x, T* Y, T* Y1, const Policy& pol)
     T coef_mult = -x * x / 4;
 
     // series summation
-    tolerance = tools::epsilon<T>();
+    tolerance = policies::get_epsilon<T, Policy>();
     for (k = 1; k < policies::get_max_series_iterations<Policy>(); k++)
     {
         f = (k * f + p + q) / (k*k - v2);
@@ -115,10 +153,10 @@ int CF1_jy(T v, T x, T* fv, int* sign, const Policy& pol)
 
     // modified Lentz's method, see
     // Lentz, Applied Optics, vol 15, 668 (1976)
-    tolerance = 2 * tools::epsilon<T>();
+    tolerance = 2 * policies::get_epsilon<T, Policy>();;
     tiny = sqrt(tools::min_value<T>());
     C = f = tiny;                           // b0 = 0, replace with tiny
-    D = 0.0L;
+    D = 0;
     for (k = 1; k < policies::get_max_series_iterations<Policy>() * 100; k++)
     {
         a = -1;
@@ -131,7 +169,7 @@ int CF1_jy(T v, T x, T* fv, int* sign, const Policy& pol)
         delta = C * D;
         f *= delta;
         if (D < 0) { s = -s; }
-        if (abs(delta - 1.0L) < tolerance) 
+        if (abs(delta - 1) < tolerance) 
         { break; }
     }
     policies::check_series_iterations("boost::math::bessel_jy<%1%>(%1%,%1%) in CF1_jy", k / 100, pol);
@@ -140,59 +178,87 @@ int CF1_jy(T v, T x, T* fv, int* sign, const Policy& pol)
 
     return 0;
 }
-
-template <class T>
-struct complex_trait
-{
-   typedef typename mpl::if_<is_floating_point<T>,
-      std::complex<T>, sc::simple_complex<T> >::type type;
-};
-
-// Evaluate continued fraction p + iq = (J' + iY') / (J + iY), see
-// Press et al, Numerical Recipes in C, 2nd edition, 1992
+//
+// This algorithm was originally written by Xiaogang Zhang
+// using std::complex to perform the complex arithmetic.
+// However, that turns out to 10x or more slower than using
+// all real-valued arithmetic, so it's been rewritten using
+// real values only.
+//
 template <typename T, typename Policy>
 int CF2_jy(T v, T x, T* p, T* q, const Policy& pol)
 {
-    BOOST_MATH_STD_USING
+   BOOST_MATH_STD_USING
 
-    typedef typename complex_trait<T>::type complex_type;
+   T Cr, Ci, Dr, Di, fr, fi, a, br, bi, delta_r, delta_i, temp;
+   T tiny;
+   unsigned long k;
 
-    complex_type C, D, f, a, b, delta, one(1);
-    T tiny, zero(0.0L);
-    unsigned long k;
+   // |x| >= |v|, CF2_jy converges rapidly
+   // |x| -> 0, CF2_jy fails to converge
+   BOOST_ASSERT(fabs(x) > 1);
 
-    // |x| >= |v|, CF2_jy converges rapidly
-    // |x| -> 0, CF2_jy fails to converge
-    BOOST_ASSERT(fabs(x) > 1);
+   // modified Lentz's method, complex numbers involved, see
+   // Lentz, Applied Optics, vol 15, 668 (1976)
+   T tolerance = 2 * policies::get_epsilon<T, Policy>();
+   tiny = sqrt(tools::min_value<T>());
+   Cr = fr = -0.5f / x;
+   Ci = fi = 1;
+   //Dr = Di = 0;
+   T v2 = v * v;
+   a = (0.25f - v2) / x; // Note complex this one time only!
+   br = 2 * x;
+   bi = 2;
+   temp = Cr * Cr + 1;
+   Ci = bi + a * Cr / temp;
+   Cr = br + a / temp;
+   Dr = br;
+   Di = bi;
+   //std::cout << "C = " << Cr << " " << Ci << std::endl;
+   //std::cout << "D = " << Dr << " " << Di << std::endl;
+   if (fabs(Cr) + fabs(Ci) < tiny) { Cr = tiny; }
+   if (fabs(Dr) + fabs(Di) < tiny) { Dr = tiny; }
+   temp = Dr * Dr + Di * Di;
+   Dr = Dr / temp;
+   Di = -Di / temp;
+   delta_r = Cr * Dr - Ci * Di;
+   delta_i = Ci * Dr + Cr * Di;
+   temp = fr;
+   fr = temp * delta_r - fi * delta_i;
+   fi = temp * delta_i + fi * delta_r;
+   //std::cout << fr << " " << fi << std::endl;
+   for (k = 2; k < policies::get_max_series_iterations<Policy>(); k++)
+   {
+      a = k - 0.5f;
+      a *= a;
+      a -= v2;
+      bi += 2;
+      temp = Cr * Cr + Ci * Ci;
+      Cr = br + a * Cr / temp;
+      Ci = bi - a * Ci / temp;
+      Dr = br + a * Dr;
+      Di = bi + a * Di;
+      //std::cout << "C = " << Cr << " " << Ci << std::endl;
+      //std::cout << "D = " << Dr << " " << Di << std::endl;
+      if (fabs(Cr) + fabs(Ci) < tiny) { Cr = tiny; }
+      if (fabs(Dr) + fabs(Di) < tiny) { Dr = tiny; }
+      temp = Dr * Dr + Di * Di;
+      Dr = Dr / temp;
+      Di = -Di / temp;
+      delta_r = Cr * Dr - Ci * Di;
+      delta_i = Ci * Dr + Cr * Di;
+      temp = fr;
+      fr = temp * delta_r - fi * delta_i;
+      fi = temp * delta_i + fi * delta_r;
+      if (fabs(delta_r - 1) + fabs(delta_i) < tolerance)
+         break;
+      //std::cout << fr << " " << fi << std::endl;
+   }
+   policies::check_series_iterations("boost::math::bessel_jy<%1%>(%1%,%1%) in CF2_jy", k, pol);
+   *p = fr;
+   *q = fi;
 
-    // modified Lentz's method, complex numbers involved, see
-    // Lentz, Applied Optics, vol 15, 668 (1976)
-    T tolerance = 2 * tools::epsilon<T>();
-    tiny = sqrt(tools::min_value<T>());
-    C = f = complex_type(-0.5f/x, 1.0L);
-    D = 0;
-    for (k = 1; k < policies::get_max_series_iterations<Policy>(); k++)
-    {
-        a = (k - 0.5f)*(k - 0.5f) - v*v;
-        if (k == 1)
-        {
-            a *= complex_type(T(0), 1/x);
-        }
-        b = complex_type(2*x, T(2*k));
-        C = b + a / C;
-        D = b + a * D;
-        if (C == zero) { C = tiny; }
-        if (D == zero) { D = tiny; }
-        D = one / D;
-        delta = C * D;
-        f *= delta;
-        if (abs(delta - one) < tolerance) { break; }
-    }
-    policies::check_series_iterations("boost::math::bessel_jy<%1%>(%1%,%1%) in CF2_jy", k, pol);
-    *p = real(f);
-    *q = imag(f);
-
-    return 0;
+   return 0;
 }
 
 enum
@@ -237,7 +303,22 @@ int bessel_jy(T v, T x, T* J, T* Y, int kind, const Policy& pol)
 
     // x is positive until reflection
     W = T(2) / (x * pi<T>());               // Wronskian
-    if (x <= 2)                           // x in (0, 2]
+    if((x > 8) && (x < 1000) && hankel_PQ(v, x, &p, &q, pol))
+    {
+       //
+       // Hankel approximation: note that this method works best when x 
+       // is large, but in that case we end up calculating sines and cosines
+       // of large values, with horrendous resulting accuracy.  It is fast though
+       // when it works....
+       //
+       T chi = x - fmod(T(v / 2 + 0.25f), T(2)) * boost::math::constants::pi<T>();
+       T sc = sin(chi);
+       T cc = cos(chi);
+       chi = sqrt(2 / (boost::math::constants::pi<T>() * x));
+       Yv = chi * (p * sc + q * cc);
+       Jv = chi * (p * cc - q * sc);
+    }
+    else if (x <= 2)                           // x in (0, 2]
     {
         if(temme_jy(u, x, &Yu, &Yu1, pol))             // Temme series
         {
@@ -289,7 +370,7 @@ int bessel_jy(T v, T x, T* J, T* Y, int kind, const Policy& pol)
            if(kind&need_y)
            {
               Yu = asymptotic_bessel_y_large_x_2(u, x);
-              Yu1 = asymptotic_bessel_y_large_x_2(u + 1, x);
+              Yu1 = asymptotic_bessel_y_large_x_2(T(u + 1), x);
            }
            else
               Yu = std::numeric_limits<T>::quiet_NaN(); // any value will do, we're not using it.

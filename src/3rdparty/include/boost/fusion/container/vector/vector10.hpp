@@ -39,7 +39,8 @@ namespace boost { namespace fusion
     struct fusion_sequence_tag;
     struct random_access_traversal_tag;
 
-    struct vector0 : sequence_base<vector0>
+    template <typename Dummy = void>
+    struct vector0 : sequence_base<vector0<Dummy> >
     {
         typedef mpl::vector0<> types;
         typedef vector_tag fusion_tag;
@@ -51,7 +52,7 @@ namespace boost { namespace fusion
         vector0() {}
 
         template<typename Sequence>
-        vector0(Sequence const& seq)
+        vector0(Sequence const& /*seq*/)
         {}
     };
 

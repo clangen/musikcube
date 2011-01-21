@@ -1,4 +1,4 @@
-//  (C) Copyright Gennadiy Rozental 2001-2007.
+//  (C) Copyright Gennadiy Rozental 2001-2008.
 //  Distributed under the Boost Software License, Version 1.0.
 //  (See accompanying file LICENSE_1_0.txt or copy at 
 //  http://www.boost.org/LICENSE_1_0.txt)
@@ -7,7 +7,7 @@
 //
 //  File        : $RCSfile$
 //
-//  Version     : $Revision: 41369 $
+//  Version     : $Revision: 57992 $
 //
 //  Description : defines Unit Test Framework public API
 // ***************************************************************************
@@ -116,12 +116,12 @@ BOOST_FIXTURE_TEST_CASE( test_name, BOOST_AUTO_TEST_CASE_FIXTURE )
 /**/
 
 // ************************************************************************** //
-// **************        BOOST_AUTO_TEST_CASE_TEMPLATE         ************** //
+// **************       BOOST_FIXTURE_TEST_CASE_TEMPLATE       ************** //
 // ************************************************************************** //
 
-#define BOOST_AUTO_TEST_CASE_TEMPLATE( test_name, type_name, TL )       \
+#define BOOST_FIXTURE_TEST_CASE_TEMPLATE( test_name, type_name, TL, F ) \
 template<typename type_name>                                            \
-struct test_name : public BOOST_AUTO_TEST_CASE_FIXTURE                  \
+struct test_name : public F                                             \
 { void test_method(); };                                                \
                                                                         \
 struct BOOST_AUTO_TC_INVOKER( test_name ) {                             \
@@ -140,6 +140,42 @@ BOOST_AUTO_TU_REGISTRAR( test_name )(                                   \
                                                                         \
 template<typename type_name>                                            \
 void test_name<type_name>::test_method()                                \
+/**/
+
+// ************************************************************************** //
+// **************        BOOST_AUTO_TEST_CASE_TEMPLATE         ************** //
+// ************************************************************************** //
+
+#define BOOST_AUTO_TEST_CASE_TEMPLATE( test_name, type_name, TL )       \
+BOOST_FIXTURE_TEST_CASE_TEMPLATE( test_name, type_name, TL, BOOST_AUTO_TEST_CASE_FIXTURE )
+
+// ************************************************************************** //
+// **************           BOOST_TEST_CASE_TEMPLATE           ************** //
+// ************************************************************************** //
+
+#define BOOST_TEST_CASE_TEMPLATE( name, typelist )                          \
+    boost::unit_test::ut_detail::template_test_case_gen<name,typelist >(    \
+        BOOST_TEST_STRINGIZE( name ) )                                      \
+/**/
+
+// ************************************************************************** //
+// **************      BOOST_TEST_CASE_TEMPLATE_FUNCTION       ************** //
+// ************************************************************************** //
+
+#define BOOST_TEST_CASE_TEMPLATE_FUNCTION( name, type_name )    \
+template<typename type_name>                                    \
+void BOOST_JOIN( name, _impl )( boost::type<type_name>* );      \
+                                                                \
+struct name {                                                   \
+    template<typename TestType>                                 \
+    static void run( boost::type<TestType>* frwrd = 0 )         \
+    {                                                           \
+       BOOST_JOIN( name, _impl )( frwrd );                      \
+    }                                                           \
+};                                                              \
+                                                                \
+template<typename type_name>                                    \
+void BOOST_JOIN( name, _impl )( boost::type<type_name>* )       \
 /**/
 
 // ************************************************************************** //
@@ -162,7 +198,7 @@ struct nil_t {};
 } // unit_test
 } // namespace boost
 
-// Intentionally is in global namespace, so that FIXURE_TEST_SUITE could reset it in user code.
+// Intentionally is in global namespace, so that FIXURE_TEST_SUITE can reset it in user code.
 typedef ::boost::unit_test::ut_detail::nil_t BOOST_AUTO_TEST_CASE_FIXTURE;
 
 // ************************************************************************** //

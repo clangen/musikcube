@@ -1,4 +1,4 @@
-//  (C) Copyright Gennadiy Rozental 2005-2007.
+//  (C) Copyright Gennadiy Rozental 2005-2008.
 //  Use, modification, and distribution are subject to the
 //  Boost Software License, ELOG_VER 1.0. (See accompanying file
 //  http://www.boost.org/LICENSE_1_0.txt)
@@ -7,7 +7,7 @@
 //
 //  File        : $RCSfile$
 //
-//  Version     : $Revision: 41369 $
+//  Version     : $Revision: 54633 $
 //
 //  Description : Facilities to perform interaction based testng of logged expectations
 // ***************************************************************************
@@ -18,10 +18,7 @@
 // Boost.Test
 #include <boost/test/detail/config.hpp>
 
-#if !BOOST_WORKAROUND(__GNUC__, < 3) && \
-    !BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x564)) && \
-    !BOOST_WORKAROUND(BOOST_MSVC, <1310) && \
-    !BOOST_WORKAROUND(__SUNPRO_CC, BOOST_TESTED_AT(0x530))
+#if BOOST_TEST_SUPPORT_INTERACTION_TESTING
 
 #include <boost/test/detail/global_typedef.hpp>
 
@@ -88,7 +85,7 @@ expectations_logger::expectations_logger( const_string log_file_name, bool test_
     m_log_file.open( log_file_name.begin(), test_or_log ? std::ios::in : std::ios::out );
 
     BOOST_REQUIRE_MESSAGE( m_log_file.is_open(),
-                           "Couldn't open expectations log file " << log_file_name
+                           "Can't open expectations log file " << log_file_name
                                 << " for " << ( m_test_or_log ? "reading" : "writing") );
 
     if( m_test_or_log ) {

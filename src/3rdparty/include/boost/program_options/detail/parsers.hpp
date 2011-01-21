@@ -8,6 +8,8 @@
 
 #include <boost/program_options/detail/convert.hpp>
 
+#include <iterator>
+
 namespace boost { namespace program_options {
 
     namespace detail {
@@ -27,8 +29,8 @@ namespace boost { namespace program_options {
     template<class charT>
     basic_command_line_parser<charT>::
     basic_command_line_parser(const std::vector<
-                              std::basic_string<charT> >& args)
-       : detail::cmdline(to_internal(args))
+                              std::basic_string<charT> >& xargs)
+       : detail::cmdline(to_internal(xargs))
     {}
 
 
@@ -62,9 +64,9 @@ namespace boost { namespace program_options {
 
     template<class charT>
     basic_command_line_parser<charT>& 
-    basic_command_line_parser<charT>::style(int style)
+    basic_command_line_parser<charT>::style(int xstyle)
     {
-        detail::cmdline::style(style);
+        detail::cmdline::style(xstyle);
         return *this;
     }
 

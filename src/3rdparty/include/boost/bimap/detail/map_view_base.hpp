@@ -21,6 +21,7 @@
 #include <stdexcept>
 #include <utility>
 
+#include <boost/throw_exception.hpp>
 #include <boost/type_traits/is_const.hpp>
 #include <boost/mpl/if.hpp>
 

@@ -35,7 +35,7 @@ namespace boost { namespace fusion { namespace detail
 
         template <typename IS>
         static void
-        read(IS& is, char const* delim, mpl::true_)
+        read(IS&, char const*, mpl::true_)
         {
         }
     };
@@ -44,7 +44,7 @@ namespace boost { namespace fusion { namespace detail
     {
         template <typename IS, typename First, typename Last>
         static void
-        call(IS& is, First const&, Last const&, mpl::true_)
+        call(IS&, First const&, Last const&, mpl::true_)
         {
         }
 

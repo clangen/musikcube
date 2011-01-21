@@ -36,7 +36,7 @@
 
 #pragma once
 
-#include <core/config.h>
+//#include <core/config.h>
 
 #include <core/ThreadHelper.h>
 #include <core/db/Connection.h>
@@ -45,10 +45,11 @@
 #include <sigslot/sigslot.h>
 
 #include <boost/thread/thread.hpp>
-#include <boost/thread/condition.hpp>
-#include <boost/thread/mutex.hpp>
+//#include <boost/thread/condition.hpp>
+//#include <boost/thread/mutex.hpp>
 
 #include <deque>
+#include <vector>
 
 //////////////////////////////////////////////////////////////////////////////
 

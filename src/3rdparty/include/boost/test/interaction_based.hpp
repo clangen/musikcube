@@ -1,4 +1,4 @@
-//  (C) Copyright Gennadiy Rozental 2005-2007.
+//  (C) Copyright Gennadiy Rozental 2005-2008.
 //  Distributed under the Boost Software License, Version 1.0.
 //  (See accompanying file LICENSE_1_0.txt or copy at 
 //  http://www.boost.org/LICENSE_1_0.txt)
@@ -7,7 +7,7 @@
 //
 //  File        : $RCSfile$
 //
-//  Version     : $Revision: 41369 $
+//  Version     : $Revision: 49312 $
 //
 //  Description : Facilities to perform interaction-based testing
 // ***************************************************************************
@@ -200,6 +200,9 @@ struct location {
 
 # ifdef BOOST_NO_STDC_NAMESPACE
 namespace std { using ::malloc; using ::free; }
+# endif
+# ifdef _CRTDBG_MAP_ALLOC
+namespace std { using ::_malloc_dbg; using ::_free_dbg; }
 # endif
 
 inline void*

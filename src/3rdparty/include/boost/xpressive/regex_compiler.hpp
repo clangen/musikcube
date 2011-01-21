@@ -23,6 +23,8 @@
 #include <boost/mpl/assert.hpp>
 #include <boost/throw_exception.hpp>
 #include <boost/type_traits/is_same.hpp>
+#include <boost/type_traits/is_pointer.hpp>
+#include <boost/utility/enable_if.hpp>
 #include <boost/iterator/iterator_traits.hpp>
 #include <boost/xpressive/basic_regex.hpp>
 #include <boost/xpressive/detail/dynamic/parser.hpp>
@@ -111,7 +113,8 @@ struct regex_compiler
     /// \throw  regex_error when the range of characters has invalid regular
     ///         expression syntax.
     template<typename InputIter>
-    basic_regex<BidiIter> compile(InputIter begin, InputIter end, flag_type flags = regex_constants::ECMAScript)
+    basic_regex<BidiIter>
+    compile(InputIter begin, InputIter end, flag_type flags = regex_constants::ECMAScript)
     {
         typedef typename iterator_category<InputIter>::type category;
         return this->compile_(begin, end, flags, category());
@@ -120,14 +123,16 @@ struct regex_compiler
     /// \overload
     ///
     template<typename InputRange>
-    basic_regex<BidiIter> compile(InputRange const &pat, flag_type flags = regex_constants::ECMAScript)
+    typename disable_if<is_pointer<InputRange>, basic_regex<BidiIter> >::type
+    compile(InputRange const &pat, flag_type flags = regex_constants::ECMAScript)
     {
         return this->compile(boost::begin(pat), boost::end(pat), flags);
     }
 
     /// \overload
     ///
-    basic_regex<BidiIter> compile(char_type const *begin, flag_type flags = regex_constants::ECMAScript)
+    basic_regex<BidiIter>
+    compile(char_type const *begin, flag_type flags = regex_constants::ECMAScript)
     {
         BOOST_ASSERT(0 != begin);
         char_type const *end = begin + std::char_traits<char_type>::length(begin);
@@ -188,11 +193,11 @@ private:
         // Check if this regex is a named rule:
         string_type name;
         if(token_group_begin == this->traits_.get_token(tmp, end) &&
-           detail::ensure(tmp != end, error_paren, "mismatched parenthesis") &&
+           BOOST_XPR_ENSURE_(tmp != end, error_paren, "mismatched parenthesis") &&
            token_rule_assign == this->traits_.get_group_type(tmp, end, name))
         {
             begin = tmp;
-            detail::ensure
+            BOOST_XPR_ENSURE_
             (
                 begin != end && token_group_end == this->traits_.get_token(begin, end)
               , error_paren
@@ -205,7 +210,7 @@ private:
 
         // at the top level, a regex is a sequence of alternates
         detail::sequence<BidiIter> seq = this->parse_alternates(begin, end);
-        detail::ensure(begin == end, error_paren, "mismatched parenthesis");
+        BOOST_XPR_ENSURE_(begin == end, error_paren, "mismatched parenthesis");
 
         // terminate the sequence
         seq += detail::make_dynamic<BidiIter>(detail::end_matcher());
@@ -333,12 +338,12 @@ private:
             break;
 
         case token_comment:
-            while(detail::ensure(begin != end, error_paren, "mismatched parenthesis"))
+            while(BOOST_XPR_ENSURE_(begin != end, error_paren, "mismatched parenthesis"))
             {
                 switch(this->traits_.get_token(begin, end))
                 {
                 case token_group_end: return this->parse_atom(begin, end);
-                case token_escape: detail::ensure(begin != end, error_escape, "incomplete escape sequence");
+                case token_escape: BOOST_XPR_ENSURE_(begin != end, error_escape, "incomplete escape sequence");
                 case token_literal: ++begin;
                 default:;
                 }
@@ -346,7 +351,7 @@ private:
             break;
 
         case token_recurse:
-            detail::ensure
+            BOOST_XPR_ENSURE_
             (
                 begin != end && token_group_end == this->traits_.get_token(begin, end)
               , error_paren
@@ -355,7 +360,7 @@ private:
             return detail::make_dynamic<BidiIter>(detail::regex_byref_matcher<BidiIter>(this->self_));
 
         case token_rule_assign:
-            boost::throw_exception(
+            BOOST_THROW_EXCEPTION(
                 regex_error(error_badrule, "rule assignments must be at the front of the regex")
             );
             break;
@@ -363,7 +368,7 @@ private:
         case token_rule_ref:
             {
                 typedef detail::core_access<BidiIter> access;
-                detail::ensure
+                BOOST_XPR_ENSURE_
                 (
                     begin != end && token_group_end == this->traits_.get_token(begin, end)
                   , error_paren
@@ -379,7 +384,7 @@ private:
             mark_nbr = static_cast<int>(++this->mark_count_);
             for(std::size_t i = 0; i < this->self_->named_marks_.size(); ++i)
             {
-                detail::ensure(this->self_->named_marks_[i].name_ != name, error_badmark, "named mark already exists");
+                BOOST_XPR_ENSURE_(this->self_->named_marks_[i].name_ != name, error_badmark, "named mark already exists");
             }
             this->self_->named_marks_.push_back(detail::named_mark<char_type>(name, this->mark_count_));
             seq = detail::make_dynamic<BidiIter>(detail::mark_begin_matcher(mark_nbr));
@@ -387,7 +392,7 @@ private:
             break;
 
         case token_named_mark_ref:
-            detail::ensure
+            BOOST_XPR_ENSURE_
             (
                 begin != end && token_group_end == this->traits_.get_token(begin, end)
               , error_paren
@@ -404,7 +409,7 @@ private:
                     );
                 }
             }
-            boost::throw_exception(regex_error(error_badmark, "invalid named back-reference"));
+            BOOST_THROW_EXCEPTION(regex_error(error_badmark, "invalid named back-reference"));
             break;
 
         default:
@@ -417,7 +422,7 @@ private:
         // alternates
         seq += this->parse_alternates(begin, end);
         seq += seq_end;
-        detail::ensure
+        BOOST_XPR_ENSURE_
         (
             begin != end && token_group_end == this->traits_.get_token(begin, end)
           , error_paren
@@ -544,7 +549,7 @@ private:
             return this->parse_charset(begin, end);
 
         case token_invalid_quantifier:
-            boost::throw_exception(regex_error(error_badrepeat, "quantifier not expected"));
+            BOOST_THROW_EXCEPTION(regex_error(error_badrepeat, "quantifier not expected"));
             break;
 
         case token_quote_meta_begin:
@@ -554,7 +559,7 @@ private:
             );
 
         case token_quote_meta_end:
-            boost::throw_exception(
+            BOOST_THROW_EXCEPTION(
                 regex_error(
                     error_escape
                   , "found quote-meta end without corresponding quote-meta begin"
@@ -684,7 +689,8 @@ private:
             switch(this->traits_.get_token(begin, end))
             {
             case token_quote_meta_end: return string_type(old_begin, old_end);
-            case token_escape: detail::ensure(begin != end, error_escape, "incomplete escape sequence");
+            case token_escape: BOOST_XPR_ENSURE_(begin != end, error_escape, "incomplete escape sequence");
+            case token_invalid_quantifier:
             case token_literal: ++begin;
             default:;
             }
@@ -698,7 +704,7 @@ private:
     template<typename FwdIter>
     escape_value parse_escape(FwdIter &begin, FwdIter end)
     {
-        detail::ensure(begin != end, regex_constants::error_escape, "incomplete escape sequence");
+        BOOST_XPR_ENSURE_(begin != end, regex_constants::error_escape, "incomplete escape sequence");
 
         // first, check to see if this can be a backreference
         if(0 < this->rxtraits().value(*begin, 10))

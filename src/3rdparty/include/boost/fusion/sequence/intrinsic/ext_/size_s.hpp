@@ -28,8 +28,8 @@ namespace boost { namespace fusion
             template<typename Sig>
             struct result;
 
-            template<typename This, typename Seq, typename State>
-            struct result<This(Seq, State)>
+            template<typename This, typename State, typename Seq>
+            struct result<This(State, Seq)>
               : mpl::plus<
                     segmented_size<typename remove_reference<Seq>::type>
                   , typename remove_reference<State>::type

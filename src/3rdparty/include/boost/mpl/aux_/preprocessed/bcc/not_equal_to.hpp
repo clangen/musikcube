@@ -6,7 +6,7 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 
-// Preprocessed version of "boost/mpl/not_equal_to.hpp" header
+// *Preprocessed* version of the main "not_equal_to.hpp" header
 // -- DO NOT modify by hand!
 
 namespace boost { namespace mpl {

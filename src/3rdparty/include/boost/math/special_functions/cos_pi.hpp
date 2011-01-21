@@ -10,7 +10,7 @@
 #pragma once
 #endif
 
-#include <cmath>
+#include <boost/config/no_tr1/cmath.hpp>
 #include <boost/math/tools/config.hpp>
 #include <boost/math/special_functions/trunc.hpp>
 #include <boost/math/tools/promotion.hpp>
@@ -44,7 +44,7 @@ T cos_pi_imp(T x, const Policy& pol)
       return 0;
    
    rem = cos(constants::pi<T>() * rem);
-   return invert ? -rem : rem;
+   return invert ? T(-rem) : rem;
 }
 
 } // namespace detail

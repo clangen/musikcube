@@ -7,7 +7,7 @@
  *
  * See http://www.boost.org for most recent version including documentation.
  *
- * $Id: bernoulli_distribution.hpp 41369 2007-11-25 18:07:19Z bemandawes $
+ * $Id: bernoulli_distribution.hpp 60755 2010-03-22 00:45:06Z steven_watanabe $
  *
  * Revision history
  *  2001-02-18  moved to individual header files
@@ -18,10 +18,16 @@
 
 #include <cassert>
 #include <iostream>
+#include <boost/random/detail/config.hpp>
 
 namespace boost {
 
-// Bernoulli distribution: p(true) = p, p(false) = 1-p   (boolean)
+/**
+ * Instantiations of class template \bernoulli_distribution model a
+ * \random_distribution. Such a random distribution produces bool values
+ * distributed with probabilities P(true) = p and P(false) = 1-p. p is
+ * the parameter of the distribution.
+ */
 template<class RealType = double>
 class bernoulli_distribution
 {
@@ -32,6 +38,12 @@ public:
   typedef int input_type;
   typedef bool result_type;
 
+  /** 
+   * Constructs a \bernoulli_distribution object.
+   * p is the parameter of the distribution.
+   *
+   * Requires: 0 <= p <= 1
+   */
   explicit bernoulli_distribution(const RealType& p_arg = RealType(0.5)) 
     : _p(p_arg)
   {
@@ -41,9 +53,20 @@ public:
 
   // compiler-generated copy ctor and assignment operator are fine
 
+  /**
+   * Returns: The "p" parameter of the distribution.
+   */
   RealType p() const { return _p; }
+  /**
+   * Effects: Subsequent uses of the distribution do not depend
+   * on values produced by any engine prior to invoking reset.
+   */
   void reset() { }
 
+  /**
+   * Returns: a random variate distributed according to the
+   * \bernoulli_distribution.
+   */
   template<class Engine>
   result_type operator()(Engine& eng)
   {
@@ -53,7 +76,10 @@ public:
       return RealType(eng() - (eng.min)()) <= _p * RealType((eng.max)()-(eng.min)());
   }
 
-#if !defined(BOOST_NO_OPERATORS_IN_NAMESPACE) && !defined(BOOST_NO_MEMBER_TEMPLATE_FRIENDS)
+#ifndef BOOST_RANDOM_NO_STREAM_OPERATORS
+  /**
+   * Writes the parameters of the distribution to a @c std::ostream.
+   */
   template<class CharT, class Traits>
   friend std::basic_ostream<CharT,Traits>&
   operator<<(std::basic_ostream<CharT,Traits>& os, const bernoulli_distribution& bd)
@@ -62,6 +88,9 @@ public:
     return os;
   }
 
+  /**
+   * Reads the parameters of the distribution from a @c std::istream.
+   */
   template<class CharT, class Traits>
   friend std::basic_istream<CharT,Traits>&
   operator>>(std::basic_istream<CharT,Traits>& is, bernoulli_distribution& bd)

@@ -425,7 +425,7 @@ bool MultiLibraryList::SortTracks(std::string sortingMetakey){
             const utfchar *metavalue    = (*track)->GetValue(sortingMetakey.c_str());
             if(metavalue){
                 sortData.sortData   = metavalue;
-                boost::algorithm::to_lower(sortData.sortData);
+                boost::to_lower(sortData.sortData);
             }
             this->genericTrackSortVector.push_back( sortData );
         }

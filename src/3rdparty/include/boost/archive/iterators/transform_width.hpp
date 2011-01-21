@@ -25,7 +25,7 @@
 // or 3 8 bit characters
 
 #include <boost/config.hpp> // for BOOST_DEDUCED_TYPENAME & PTFO
-#include <boost/pfto.hpp>
+#include <boost/serialization/pfto.hpp>
 
 #include <boost/iterator/iterator_adaptor.hpp>
 #include <boost/iterator/iterator_traits.hpp>
@@ -113,7 +113,7 @@ public:
     // make composible buy using templated constructor
     template<class T>
     transform_width(BOOST_PFTO_WRAPPER(T) start) : 
-        super_t(Base(BOOST_MAKE_PFTO_WRAPPER(static_cast<T>(start)))),
+        super_t(Base(BOOST_MAKE_PFTO_WRAPPER(static_cast< T >(start)))),
         m_displacement(0),
         m_full(false),
         m_bufferfull(false)

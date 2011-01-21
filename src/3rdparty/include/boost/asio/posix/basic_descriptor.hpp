@@ -1,8 +1,8 @@
 //
-// basic_descriptor.hpp
-// ~~~~~~~~~~~~~~~~~~~~
+// posix/basic_descriptor.hpp
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2008 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2010 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -15,16 +15,17 @@
 # pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
-#include <boost/asio/detail/push_options.hpp>
+#include <boost/asio/detail/config.hpp>
 
-#include <boost/asio/detail/push_options.hpp>
-#include <boost/config.hpp>
-#include <boost/asio/detail/pop_options.hpp>
+#if defined(BOOST_ASIO_HAS_POSIX_STREAM_DESCRIPTOR) \
+  || defined(GENERATING_DOCUMENTATION)
 
 #include <boost/asio/basic_io_object.hpp>
+#include <boost/asio/detail/throw_error.hpp>
 #include <boost/asio/error.hpp>
 #include <boost/asio/posix/descriptor_base.hpp>
-#include <boost/asio/detail/throw_error.hpp>
+
+#include <boost/asio/detail/push_options.hpp>
 
 namespace boost {
 namespace asio {
@@ -96,6 +97,20 @@ public:
    * is not transferred to the caller.
    */
   lowest_layer_type& lowest_layer()
+  {
+    return *this;
+  }
+
+  /// Get a const reference to the lowest layer.
+  /**
+   * This function returns a const reference to the lowest layer in a stack of
+   * layers. Since a basic_descriptor cannot contain any further layers, it
+   * simply returns a reference to itself.
+   *
+   * @return A const reference to the lowest layer in the stack of layers.
+   * Ownership is not transferred to the caller.
+   */
+  const lowest_layer_type& lowest_layer() const
   {
     return *this;
   }
@@ -278,5 +293,8 @@ protected:
 } // namespace boost
 
 #include <boost/asio/detail/pop_options.hpp>
+
+#endif // defined(BOOST_ASIO_HAS_POSIX_STREAM_DESCRIPTOR)
+       //   || defined(GENERATING_DOCUMENTATION)
 
 #endif // BOOST_ASIO_POSIX_BASIC_DESCRIPTOR_HPP

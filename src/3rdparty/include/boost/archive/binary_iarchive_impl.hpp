@@ -17,9 +17,14 @@
 //  See http://www.boost.org for updates, documentation, and revision history.
 
 #include <istream>
-#include <boost/pfto.hpp>
+#include <boost/serialization/pfto.hpp>
 #include <boost/archive/basic_binary_iprimitive.hpp>
 #include <boost/archive/basic_binary_iarchive.hpp>
+
+#ifdef BOOST_MSVC
+#  pragma warning(push)
+#  pragma warning(disable : 4511 4512)
+#endif
 
 namespace boost { 
 namespace archive {
@@ -83,5 +88,9 @@ protected:
 
 } // namespace archive
 } // namespace boost
+
+#ifdef BOOST_MSVC
+#pragma warning(pop)
+#endif
 
 #endif // BOOST_ARCHIVE_BINARY_IARCHIVE_IMPL_HPP

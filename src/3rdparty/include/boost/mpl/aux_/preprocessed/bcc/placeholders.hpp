@@ -7,7 +7,7 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 
-// Preprocessed version of "boost/mpl/placeholders.hpp" header
+// *Preprocessed* version of the main "placeholders.hpp" header
 // -- DO NOT modify by hand!
 
 BOOST_MPL_AUX_ADL_BARRIER_NAMESPACE_OPEN

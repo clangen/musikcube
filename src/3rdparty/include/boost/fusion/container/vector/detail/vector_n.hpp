@@ -9,7 +9,7 @@
 #if !defined(FUSION_MACRO_05042005)
 #define FUSION_MACRO_05042005
 
-#define FUSION_MEMBER_DEFAULT_INIT(z, n, _)     m##n(T##n())
+#define FUSION_MEMBER_DEFAULT_INIT(z, n, _)     m##n()
 #define FUSION_MEMBER_INIT(z, n, _)             m##n(_##n)
 #define FUSION_COPY_INIT(z, n, _)               m##n(other.m##n)
 #define FUSION_MEMBER_DECL(z, n, _)             T##n m##n;
@@ -105,7 +105,7 @@
         BOOST_PP_CAT(vector, N)(
             Sequence const& seq
 #if (N == 1)
-          , typename disable_if<is_convertible<Sequence, T0> >::type* dummy = 0
+          , typename disable_if<is_convertible<Sequence, T0> >::type* /*dummy*/ = 0
 #endif
             )
             : base_type(base_type::init_from_sequence(seq)) {}
@@ -133,14 +133,14 @@
 
         template<typename I>
         typename add_reference<typename mpl::at<types, I>::type>::type
-        at_impl(I i)
+        at_impl(I)
         {
             return this->at_impl(mpl::int_<I::value>());
         }
 
         template<typename I>
         typename add_reference<typename add_const<typename mpl::at<types, I>::type>::type>::type
-        at_impl(I i) const
+        at_impl(I) const
         {
             return this->at_impl(mpl::int_<I::value>());
         }

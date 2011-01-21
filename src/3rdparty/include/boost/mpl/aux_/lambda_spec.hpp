@@ -10,9 +10,9 @@
 //
 // See http://www.boost.org/libs/mpl for documentation.
 
-// $Source$
-// $Date: 2007-01-29 02:28:45 -0500 (Mon, 29 Jan 2007) $
-// $Revision: 36830 $
+// $Id: lambda_spec.hpp 49267 2008-10-11 06:19:02Z agurtovoy $
+// $Date: 2008-10-11 02:19:02 -0400 (Sat, 11 Oct 2008) $
+// $Revision: 49267 $
 
 #include <boost/mpl/void.hpp>
 #include <boost/mpl/lambda_fwd.hpp>

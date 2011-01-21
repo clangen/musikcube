@@ -13,6 +13,8 @@
 namespace boost { namespace fusion
 {
     struct void_;
+    struct map_tag;
+    struct map_iterator_tag;
 
     template <
         BOOST_PP_ENUM_PARAMS_WITH_A_DEFAULT(

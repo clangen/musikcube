@@ -10,9 +10,9 @@
 //
 // See http://www.boost.org/libs/mpl for documentation.
 
-// $Source$
-// $Date: 2004-09-07 04:53:22 -0400 (Tue, 07 Sep 2004) $
-// $Revision: 24947 $
+// $Id: is_placeholder.hpp 49267 2008-10-11 06:19:02Z agurtovoy $
+// $Date: 2008-10-11 02:19:02 -0400 (Sat, 11 Oct 2008) $
+// $Revision: 49267 $
 
 #include <boost/mpl/arg_fwd.hpp>
 #include <boost/mpl/bool.hpp>

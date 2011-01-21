@@ -35,6 +35,10 @@ enum compiler_token_type
     token_charset_backspace,            // \b
     token_posix_charset_begin,          // [:
     token_posix_charset_end,            // :]
+    token_equivalence_class_begin,      // [=
+    token_equivalence_class_end,        // =]
+    token_collation_element_begin,      // [.
+    token_collation_element_end,        // .]
 
     token_quote_meta_begin,             // \Q
     token_quote_meta_end,               // \E

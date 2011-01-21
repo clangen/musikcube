@@ -1,4 +1,4 @@
-//  (C) Copyright Gennadiy Rozental 2001-2007.
+//  (C) Copyright Gennadiy Rozental 2001-2008.
 //  Distributed under the Boost Software License, Version 1.0.
 //  (See accompanying file LICENSE_1_0.txt or copy at 
 //  http://www.boost.org/LICENSE_1_0.txt)
@@ -7,7 +7,7 @@
 //
 //  File        : $RCSfile$
 //
-//  Version     : $Revision: 41369 $
+//  Version     : $Revision: 54633 $
 //
 //  Description : simple facility that mimmic notion of read-only read-write 
 //  properties in C++ classes. Original idea by Henrik Ravn.
@@ -48,11 +48,7 @@ class class_property {
 protected:
     typedef typename call_traits<PropertyType>::const_reference     read_access_t;
     typedef typename call_traits<PropertyType>::param_type          write_param_t;
-#if BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x570))
-    typedef typename add_pointer<PropertyType const>::type address_res_t;
-#else
     typedef typename add_pointer<typename add_const<PropertyType>::type>::type address_res_t;
-#endif
 public:
     // Constructor
                     class_property() : value( PropertyType() ) {}

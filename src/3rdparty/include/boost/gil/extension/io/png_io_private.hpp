@@ -23,6 +23,7 @@
 #include <boost/static_assert.hpp>
 #include "../../gil_all.hpp"
 #include "io_error.hpp"
+#include <png.h>
 
 namespace boost { namespace gil {
 

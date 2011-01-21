@@ -32,7 +32,11 @@ struct is_fundamental_impl
 } // namespace detail
 
 //* is a type T a fundamental type described in the standard (3.9.1)
+#if defined( __CODEGEARC__ )
+BOOST_TT_AUX_BOOL_TRAIT_DEF1(is_fundamental,T,__is_fundamental(T))
+#else
 BOOST_TT_AUX_BOOL_TRAIT_DEF1(is_fundamental,T,::boost::detail::is_fundamental_impl<T>::value)
+#endif
 
 } // namespace boost
 

@@ -6,7 +6,7 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 
-// Preprocessed version of "boost/mpl/aux_/lambda_no_ctps.hpp" header
+// *Preprocessed* version of the main "lambda_no_ctps.hpp" header
 // -- DO NOT modify by hand!
 
 namespace boost { namespace mpl {

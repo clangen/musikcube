@@ -26,7 +26,7 @@ public:
    eps_tolerance(unsigned bits)
    {
       BOOST_MATH_STD_USING
-      eps = (std::max)(T(ldexp(1.0F, 1-bits)), 2 * tools::epsilon<T>());
+      eps = (std::max)(T(ldexp(1.0F, 1-bits)), T(2 * tools::epsilon<T>()));
    }
    bool operator()(const T& a, const T& b)
    {
@@ -193,9 +193,9 @@ T quadratic_interpolate(const T& a, const T& b, T const& d,
    //
    // Start by obtaining the coefficients of the quadratic polynomial:
    //
-   T B = safe_div(fb - fa, b - a, tools::max_value<T>());
-   T A = safe_div(fd - fb, d - b, tools::max_value<T>());
-   A = safe_div(A - B, d - a, T(0));
+   T B = safe_div(T(fb - fa), T(b - a), tools::max_value<T>());
+   T A = safe_div(T(fd - fb), T(d - b), tools::max_value<T>());
+   A = safe_div(T(A - B), T(d - a), T(0));
 
    if(a == 0)
    {
@@ -220,7 +220,7 @@ T quadratic_interpolate(const T& a, const T& b, T const& d,
    for(unsigned i = 1; i <= count; ++i)
    {
       //c -= safe_div(B * c, (B + A * (2 * c - a - b)), 1 + c - a);
-      c -= safe_div(fa+(B+A*(c-b))*(c-a), (B + A * (2 * c - a - b)), 1 + c - a);
+      c -= safe_div(T(fa+(B+A*(c-b))*(c-a)), T(B + A * (2 * c - a - b)), T(1 + c - a));
    }
    if((c <= a) || (c >= b))
    {
@@ -436,7 +436,7 @@ std::pair<T, T> toms748_solve(F f, const T& ax, const T& bx, const T& fax, const
       //
       e = d;
       fe = fd;
-      detail::bracket(f, a, b, a + (b - a) / 2, fa, fb, d, fd);
+      detail::bracket(f, a, b, T(a + (b - a) / 2), fa, fb, d, fd);
       --count;
       BOOST_MATH_INSTRUMENT_CODE("Not converging: Taking a bisection!!!!");
       BOOST_MATH_INSTRUMENT_CODE(" a = " << a << " b = " << b);

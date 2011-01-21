@@ -1,4 +1,4 @@
-//  (C) Copyright Gennadiy Rozental 2004-2007.
+//  (C) Copyright Gennadiy Rozental 2004-2008.
 //  Distributed under the Boost Software License, Version 1.0.
 //  (See accompanying file LICENSE_1_0.txt or copy at
 //  http://www.boost.org/LICENSE_1_0.txt)
@@ -7,7 +7,7 @@
 //
 //  File        : $RCSfile$
 //
-//  Version     : $Revision: 41369 $
+//  Version     : $Revision: 57992 $
 //
 //  Description : common code used by any agent serving as XML printer
 // ***************************************************************************
@@ -20,6 +20,7 @@
 #include <boost/test/utils/fixed_mapping.hpp>
 #include <boost/test/utils/custom_manip.hpp>
 #include <boost/test/utils/foreach.hpp>
+#include <boost/test/utils/basic_cstring/io.hpp>
 
 // Boost
 #include <boost/config.hpp>
@@ -67,7 +68,7 @@ print_escaped( std::ostream& where_to, const_string value )
 inline void
 print_escaped( std::ostream& where_to, std::string const& value )
 {
-        print_escaped( where_to, const_string( value ) );
+    print_escaped( where_to, const_string( value ) );
 }
 
 //____________________________________________________________________________//
@@ -76,7 +77,7 @@ template<typename T>
 inline void
 print_escaped( std::ostream& where_to, T const& value )
 {
-        where_to << value;
+    where_to << value;
 }
 
 //____________________________________________________________________________//
@@ -87,23 +88,21 @@ template<typename T>
 inline std::ostream&
 operator<<( custom_printer<attr_value> const& p, T const& value )
 {
-        *p << "=\"";
-        print_escaped( *p, value );
-        *p << '"';
+    *p << "=\"";
+    print_escaped( *p, value );
+    *p << '"';
 
-        return *p;
+    return *p;
 }
 
 //____________________________________________________________________________//
 
-typedef custom_manip<struct pcdata_t> pcdata;
+typedef custom_manip<struct cdata_t> cdata;
 
 inline std::ostream&
-operator<<( custom_printer<pcdata> const& p, const_string value )
+operator<<( custom_printer<cdata> const& p, const_string value )
 {
-    print_escaped( *p, value );
-
-    return *p;
+    return *p << BOOST_TEST_L( "<![CDATA[" ) << value << BOOST_TEST_L( "]]>" );
 }
 
 //____________________________________________________________________________//

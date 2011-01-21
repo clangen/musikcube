@@ -18,7 +18,7 @@ namespace boost { namespace fusion
 {
     // Special tags:
     struct iterator_facade_tag; // iterator facade tag
-    struct array_iterator_tag; // boost::array iterator tag
+    struct boost_array_iterator_tag; // boost::array iterator tag
     struct mpl_iterator_tag; // mpl sequence iterator tag
     struct std_pair_iterator_tag; // std::pair iterator tag
 
@@ -42,7 +42,7 @@ namespace boost { namespace fusion
         };
 
         template <>
-        struct equal_to_impl<array_iterator_tag>;
+        struct equal_to_impl<boost_array_iterator_tag>;
 
         template <>
         struct equal_to_impl<mpl_iterator_tag>;

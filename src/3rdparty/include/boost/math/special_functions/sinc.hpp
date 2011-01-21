@@ -19,7 +19,7 @@
 #include <boost/math/tools/precision.hpp>
 #include <boost/math/policies/policy.hpp>
 #include <boost/math/special_functions/math_fwd.hpp>
-#include <cmath>
+#include <boost/config/no_tr1/cmath.hpp>
 #include <boost/limits.hpp>
 #include <string>
 #include <stdexcept>
@@ -117,7 +117,7 @@ namespace boost
         {
 #if defined(BOOST_FUNCTION_SCOPE_USING_DECLARATION_BREAKS_ADL) || defined(__GNUC__)
             using namespace std;
-#elif    defined(BOOST_NO_STDC_NAMESPACE)
+#elif    defined(BOOST_NO_STDC_NAMESPACE) && !defined(__SUNPRO_CC)
             using    ::abs;
             using    ::sin;
             using    ::sqrt;

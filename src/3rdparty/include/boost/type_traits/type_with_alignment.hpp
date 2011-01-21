@@ -286,43 +286,43 @@ struct __declspec(align(128)) a128 {
 template<> class type_with_alignment<8>  
 { 
    typedef mpl::if_c<
-      ::boost::alignment_of<detail::max_align>::value < 8,
+      ::boost::alignment_of<boost::detail::max_align>::value < 8,
       align::a8,
-      detail::type_with_alignment_imp<8> >::type t1; 
+      boost::detail::type_with_alignment_imp<8> >::type t1; 
 public: 
    typedef t1::type type;
 };
 template<> class type_with_alignment<16> 
 { 
    typedef mpl::if_c<
-      ::boost::alignment_of<detail::max_align>::value < 16,
+      ::boost::alignment_of<boost::detail::max_align>::value < 16,
       align::a16,
-      detail::type_with_alignment_imp<16> >::type t1; 
+      boost::detail::type_with_alignment_imp<16> >::type t1; 
 public: 
    typedef t1::type type;
 };
 template<> class type_with_alignment<32> 
 { 
    typedef mpl::if_c<
-      ::boost::alignment_of<detail::max_align>::value < 32,
+      ::boost::alignment_of<boost::detail::max_align>::value < 32,
       align::a32,
-      detail::type_with_alignment_imp<32> >::type t1; 
+      boost::detail::type_with_alignment_imp<32> >::type t1; 
 public: 
    typedef t1::type type;
 };
 template<> class type_with_alignment<64> {
    typedef mpl::if_c<
-      ::boost::alignment_of<detail::max_align>::value < 64,
+      ::boost::alignment_of<boost::detail::max_align>::value < 64,
       align::a64,
-      detail::type_with_alignment_imp<64> >::type t1; 
+      boost::detail::type_with_alignment_imp<64> >::type t1; 
 public: 
    typedef t1::type type;
 };
 template<> class type_with_alignment<128> {
    typedef mpl::if_c<
-      ::boost::alignment_of<detail::max_align>::value < 128,
+      ::boost::alignment_of<boost::detail::max_align>::value < 128,
       align::a128,
-      detail::type_with_alignment_imp<128> >::type t1; 
+      boost::detail::type_with_alignment_imp<128> >::type t1; 
 public: 
    typedef t1::type type;
 };
@@ -357,10 +357,12 @@ namespace detail {
 
 typedef ::boost::align::a16 max_align;
 
+//#if ! BOOST_WORKAROUND(__CODEGEARC__, BOOST_TESTED_AT(0x610))
 BOOST_TT_AUX_BOOL_TRAIT_IMPL_SPEC1(is_pod,::boost::align::a2,true)
 BOOST_TT_AUX_BOOL_TRAIT_IMPL_SPEC1(is_pod,::boost::align::a4,true)
 BOOST_TT_AUX_BOOL_TRAIT_IMPL_SPEC1(is_pod,::boost::align::a8,true)
 BOOST_TT_AUX_BOOL_TRAIT_IMPL_SPEC1(is_pod,::boost::align::a16,true)
+//#endif
 }
 
 template <std::size_t N> struct type_with_alignment

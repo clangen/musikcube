@@ -5,7 +5,7 @@
 
 ///// header body
 
-// Copyright Aleksey Gurtovoy 2000-2004
+// Copyright Aleksey Gurtovoy 2000-2008
 //
 // Distributed under the Boost Software License, Version 1.0. 
 // (See accompanying file LICENSE_1_0.txt or copy at 
@@ -13,9 +13,9 @@
 //
 // See http://www.boost.org/libs/mpl for documentation.
 
-// $Source$
-// $Date: 2005-10-04 14:01:35 -0400 (Tue, 04 Oct 2005) $
-// $Revision: 31196 $
+// $Id: sequence_wrapper.hpp 49271 2008-10-11 06:46:00Z agurtovoy $
+// $Date: 2008-10-11 02:46:00 -0400 (Sat, 11 Oct 2008) $
+// $Revision: 49271 $
 
 #   include <boost/mpl/aux_/config/ctps.hpp>
 #   include <boost/mpl/aux_/config/static_constant.hpp>
@@ -124,13 +124,13 @@ namespace boost { namespace mpl {
     BOOST_PP_ENUM_PARAMS(n, AUX778076_SEQUENCE_TEMPLATE_PARAM) \
     /**/
 
-#   define AUX778076_CONVERT_CN_TO(z,n,TARGET) \
-    TARGET(BOOST_PP_CAT(C,n)) \
-    /**/
-    
+#   if !defined(AUX778076_SEQUENCE_CONVERT_CN_TO)
+#       define AUX778076_SEQUENCE_CONVERT_CN_TO(z,n,TARGET) BOOST_PP_CAT(C,n)
+#   endif
+
 #   define AUX778076_SEQUENCE_N_ARGS(n) \
     T BOOST_PP_COMMA_IF(n) \
-    BOOST_PP_ENUM(n,AUX778076_CONVERT_CN_TO,T) \
+    BOOST_PP_ENUM(n,AUX778076_SEQUENCE_CONVERT_CN_TO,T) \
     /**/
 
 #   define AUX778076_SEQUENCE_N_PARTIAL_SPEC_ARGS(n) \
@@ -207,8 +207,8 @@ struct AUX778076_SEQUENCE_NAME
 #endif // BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION
 
 #   undef AUX778076_SEQUENCE_N_PARTIAL_SPEC_ARGS
-#   undef AUX778076_CONVERT_CN_TO
 #   undef AUX778076_SEQUENCE_N_ARGS
+#   undef AUX778076_SEQUENCE_CONVERT_CN_TO
 #   undef AUX778076_SEQUENCE_N_PARAMS
 #   undef AUX778076_SEQUENCE_DEFAULT_PARAMS
 #   undef AUX778076_SEQUENCE_ARGS

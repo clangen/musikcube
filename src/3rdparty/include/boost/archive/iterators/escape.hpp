@@ -97,7 +97,7 @@ class escape :
     const base_value_type *m_bnext;
     const base_value_type *m_bend;
     bool m_full;
-    BOOST_DEDUCED_TYPENAME boost::iterator_value<Base>::type m_current_value;
+    base_value_type m_current_value;
 public:
     escape(Base base) : 
         super_t(base),

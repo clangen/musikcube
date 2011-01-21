@@ -7,7 +7,7 @@
  *
  * See http://www.boost.org for most recent version including documentation.
  *
- * $Id: mersenne_twister.hpp 41369 2007-11-25 18:07:19Z bemandawes $
+ * $Id: mersenne_twister.hpp 60755 2010-03-22 00:45:06Z steven_watanabe $
  *
  * Revision history
  *  2001-02-18  moved to individual header files
@@ -26,12 +26,41 @@
 #include <boost/cstdint.hpp>
 #include <boost/random/linear_congruential.hpp>
 #include <boost/detail/workaround.hpp>
+#include <boost/random/detail/config.hpp>
 #include <boost/random/detail/ptr_helper.hpp>
+#include <boost/random/detail/seed.hpp>
 
 namespace boost {
 namespace random {
 
-// http://www.math.keio.ac.jp/matumoto/emt.html
+/**
+ * Instantiations of class template mersenne_twister model a
+ * \pseudo_random_number_generator. It uses the algorithm described in
+ *
+ *  @blockquote
+ *  "Mersenne Twister: A 623-dimensionally equidistributed uniform
+ *  pseudo-random number generator", Makoto Matsumoto and Takuji Nishimura,
+ *  ACM Transactions on Modeling and Computer Simulation: Special Issue on
+ *  Uniform Random Number Generation, Vol. 8, No. 1, January 1998, pp. 3-30. 
+ *  @endblockquote
+ *
+ * @xmlnote
+ * The boost variant has been implemented from scratch and does not
+ * derive from or use mt19937.c provided on the above WWW site. However, it
+ * was verified that both produce identical output.
+ * @endxmlnote
+ *
+ * The seeding from an integer was changed in April 2005 to address a
+ * <a href="http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/MT2002/emt19937ar.html">weakness</a>.
+ * 
+ * The quality of the generator crucially depends on the choice of the
+ * parameters.  User code should employ one of the sensibly parameterized
+ * generators such as \mt19937 instead.
+ *
+ * The generator requires considerable amounts of memory for the storage of
+ * its state array. For example, \mt11213b requires about 1408 bytes and
+ * \mt19937 requires about 2496 bytes.
+ */
 template<class UIntType, int w, int n, int m, int r, UIntType a, int u,
   int s, UIntType b, int t, UIntType c, int l, UIntType val>
 class mersenne_twister
@@ -52,30 +81,40 @@ public:
 
   BOOST_STATIC_CONSTANT(bool, has_fixed_range = false);
   
+  /**
+   * Constructs a @c mersenne_twister and calls @c seed().
+   */
   mersenne_twister() { seed(); }
 
-#if defined(__SUNPRO_CC) && (__SUNPRO_CC <= 0x520)
-  // Work around overload resolution problem (Gennadiy E. Rozental)
-  explicit mersenne_twister(const UIntType& value)
-#else
-  explicit mersenne_twister(UIntType value)
-#endif
+  /**
+   * Constructs a @c mersenne_twister and calls @c seed(value).
+   */
+  BOOST_RANDOM_DETAIL_ARITHMETIC_CONSTRUCTOR(mersenne_twister, UIntType, value)
   { seed(value); }
   template<class It> mersenne_twister(It& first, It last) { seed(first,last); }
 
-  template<class Generator>
-  explicit mersenne_twister(Generator & gen) { seed(gen); }
+  /**
+   * Constructs a mersenne_twister and calls @c seed(gen).
+   *
+   * @xmlnote
+   * The copy constructor will always be preferred over
+   * the templated constructor.
+   * @endxmlnote
+   */
+  BOOST_RANDOM_DETAIL_GENERATOR_CONSTRUCTOR(mersenne_twister, Generator, gen)
+  { seed(gen); }
 
   // compiler-generated copy ctor and assignment operator are fine
 
+  /** Calls @c seed(result_type(5489)). */
   void seed() { seed(UIntType(5489)); }
 
-#if defined(__SUNPRO_CC) && (__SUNPRO_CC <= 0x520)
-  // Work around overload resolution problem (Gennadiy E. Rozental)
-  void seed(const UIntType& value)
-#else
-  void seed(UIntType value)
-#endif
+  /**
+   * Sets the state x(0) to v mod 2w. Then, iteratively,
+   * sets x(i) to (i + 1812433253 * (x(i-1) xor (x(i-1) rshift w-2))) mod 2<sup>w</sup>
+   * for i = 1 .. n-1. x(n) is the first value to be returned by operator().
+   */
+  BOOST_RANDOM_DETAIL_ARITHMETIC_SEED(mersenne_twister, UIntType, value)
   {
     // New seeding algorithm from 
     // http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/MT2002/emt19937ar.html
@@ -89,11 +128,13 @@ public:
     }
   }
 
-  // For GCC, moving this function out-of-line prevents inlining, which may
-  // reduce overall object code size.  However, MSVC does not grok
-  // out-of-line definitions of member function templates.
-  template<class Generator>
-  void seed(Generator & gen)
+  /**
+   * Sets the state of this mersenne_twister to the values
+   * returned by n invocations of gen.
+   *
+   * Complexity: Exactly n invocations of gen.
+   */
+  BOOST_RANDOM_DETAIL_GENERATOR_SEED(mersenne_twister, Generator, gen)
   {
 #ifndef BOOST_NO_LIMITS_COMPILE_TIME_CONSTANTS
     BOOST_STATIC_ASSERT(!std::numeric_limits<result_type>::is_signed);
@@ -130,7 +171,7 @@ public:
 
 #ifndef BOOST_NO_OPERATORS_IN_NAMESPACE
 
-#ifndef BOOST_NO_MEMBER_TEMPLATE_FRIENDS
+#ifndef BOOST_RANDOM_NO_STREAM_OPERATORS
   template<class CharT, class Traits>
   friend std::basic_ostream<CharT,Traits>&
   operator<<(std::basic_ostream<CharT,Traits>& os, const mersenne_twister& mt)
@@ -179,6 +220,7 @@ public:
 #endif
 
 private:
+  /// \cond hide_private_members
   // returns x(i-n+index), where index is in 0..n-1
   UIntType compute(unsigned int index) const
   {
@@ -186,6 +228,7 @@ private:
     return x[ (i + n + index) % (2*n) ];
   }
   void twist(int block);
+  /// \endcond
 
   // state representation: next output is o(x(i))
   //   x[0]  ... x[k] x[k+1] ... x[n-1]     x[n]     ... x[2*n-1]   represents
@@ -234,6 +277,7 @@ template<class UIntType, int w, int n, int m, int r, UIntType a, int u,
 const int mersenne_twister<UIntType,w,n,m,r,a,u,s,b,t,c,l,val>::output_l;
 #endif
 
+/// \cond hide_private_members
 template<class UIntType, int w, int n, int m, int r, UIntType a, int u,
   int s, UIntType b, int t, UIntType c, int l, UIntType val>
 void mersenne_twister<UIntType,w,n,m,r,a,u,s,b,t,c,l,val>::twist(int block)
@@ -265,6 +309,7 @@ void mersenne_twister<UIntType,w,n,m,r,a,u,s,b,t,c,l,val>::twist(int block)
     i = 0;
   }
 }
+/// \endcond
 
 template<class UIntType, int w, int n, int m, int r, UIntType a, int u,
   int s, UIntType b, int t, UIntType c, int l, UIntType val>
@@ -287,11 +332,31 @@ mersenne_twister<UIntType,w,n,m,r,a,u,s,b,t,c,l,val>::operator()()
 
 } // namespace random
 
-
+/**
+ * The specializations \mt11213b and \mt19937 are from
+ *
+ *  @blockquote
+ *  "Mersenne Twister: A 623-dimensionally equidistributed
+ *  uniform pseudo-random number generator", Makoto Matsumoto
+ *  and Takuji Nishimura, ACM Transactions on Modeling and
+ *  Computer Simulation: Special Issue on Uniform Random Number
+ *  Generation, Vol. 8, No. 1, January 1998, pp. 3-30. 
+ *  @endblockquote
+ */
 typedef random::mersenne_twister<uint32_t,32,351,175,19,0xccab8ee7,11,
   7,0x31b6ab00,15,0xffe50000,17, 0xa37d3c92> mt11213b;
 
-// validation by experiment from mt19937.c
+/**
+ * The specializations \mt11213b and \mt19937 are from
+ *
+ *  @blockquote
+ *  "Mersenne Twister: A 623-dimensionally equidistributed
+ *  uniform pseudo-random number generator", Makoto Matsumoto
+ *  and Takuji Nishimura, ACM Transactions on Modeling and
+ *  Computer Simulation: Special Issue on Uniform Random Number
+ *  Generation, Vol. 8, No. 1, January 1998, pp. 3-30. 
+ *  @endblockquote
+ */
 typedef random::mersenne_twister<uint32_t,32,624,397,31,0x9908b0df,11,
   7,0x9d2c5680,15,0xefc60000,18, 3346425566U> mt19937;
 

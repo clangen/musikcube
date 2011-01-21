@@ -19,6 +19,7 @@
 #include <boost/config.hpp>
 #ifndef BOOST_NO_EXCEPTIONS
 #include <exception>
+#endif //BOOST_NO_EXCEPTIONS
 
 #include <cassert>
 
@@ -76,5 +77,4 @@ public:
 } // namespace archive
 } // namespace boost
 
-#endif //BOOST_NO_EXCEPTIONS
 #endif //BOOST_ARCHIVE_ITERATORS_DATAFLOW_EXCEPTION_HPP

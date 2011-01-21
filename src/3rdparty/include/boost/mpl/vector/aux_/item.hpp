@@ -10,9 +10,9 @@
 //
 // See http://www.boost.org/libs/mpl for documentation.
 
-// $Source$
-// $Date: 2005-05-14 20:39:04 -0400 (Sat, 14 May 2005) $
-// $Revision: 28913 $
+// $Id: item.hpp 49267 2008-10-11 06:19:02Z agurtovoy $
+// $Date: 2008-10-11 02:19:02 -0400 (Sat, 11 Oct 2008) $
+// $Revision: 49267 $
 
 #include <boost/mpl/long.hpp>
 #include <boost/mpl/void.hpp>

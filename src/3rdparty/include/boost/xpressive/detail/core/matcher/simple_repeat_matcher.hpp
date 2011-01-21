@@ -38,7 +38,7 @@ namespace boost { namespace xpressive { namespace detail
     template<typename Xpr, typename Greedy, typename Random>
     struct simple_repeat_traits
     {
-        typedef typename mpl::if_<Greedy, greedy_slow_tag, non_greedy_tag>::type tag_type;
+        typedef typename mpl::if_c<Greedy::value, greedy_slow_tag, non_greedy_tag>::type tag_type;
     };
 
     template<>
@@ -177,8 +177,7 @@ namespace boost { namespace xpressive { namespace detail
             {
                 if(this->leading_)
                 {
-                    // BUGBUG
-                    state.next_search_ = boost::next(tmp);
+                    state.next_search_ = (tmp == state.end_) ? tmp : boost::next(tmp);
                 }
                 return false;
             }

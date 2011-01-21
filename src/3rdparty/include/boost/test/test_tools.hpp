@@ -1,4 +1,4 @@
-//  (C) Copyright Gennadiy Rozental 2001-2007.
+//  (C) Copyright Gennadiy Rozental 2001-2008.
 //  Distributed under the Boost Software License, Version 1.0.
 //  (See accompanying file LICENSE_1_0.txt or copy at 
 //  http://www.boost.org/LICENSE_1_0.txt)
@@ -7,7 +7,7 @@
 //
 //  File        : $RCSfile$
 //
-//  Version     : $Revision: 42130 $
+//  Version     : $Revision: 54633 $
 //
 //  Description : contains definition for all test tools in test toolbox
 // ***************************************************************************
@@ -18,6 +18,7 @@
 // Boost.Test
 #include <boost/test/predicate_result.hpp>
 #include <boost/test/unit_test_log.hpp>
+#include <boost/test/floating_point_comparison.hpp>
 
 #include <boost/test/detail/config.hpp>
 #include <boost/test/detail/global_typedef.hpp>
@@ -25,6 +26,7 @@
 
 #include <boost/test/utils/wrap_stringstream.hpp>
 #include <boost/test/utils/basic_cstring/io.hpp>
+#include <boost/test/utils/lazy_ostream.hpp>
 
 // Boost
 #include <boost/preprocessor/seq/for_each.hpp>
@@ -33,6 +35,7 @@
 #include <boost/preprocessor/repetition/repeat.hpp>
 #include <boost/preprocessor/punctuation/comma_if.hpp>
 #include <boost/preprocessor/arithmetic/add.hpp>
+
 #include <boost/limits.hpp>
 
 #include <boost/type_traits/is_array.hpp>
@@ -44,7 +47,12 @@
 // STL
 #include <cstddef>          // for std::size_t
 #include <iosfwd>
+#include <ios>              // for std::boolalpha
 #include <climits>          // for CHAR_BIT
+
+#ifdef BOOST_MSVC
+# pragma warning(disable: 4127) // conditional expression is constant
+#endif
 
 #include <boost/test/detail/suppress_warnings.hpp>
 
@@ -65,14 +73,14 @@
 // CT - check type
 // ARGS - arguments list
 
-#define BOOST_TEST_TOOL_IMPL( func, P, check_descr, TL, CT ) \
-    ::boost::test_tools::tt_detail::func(                    \
-        P,                                                   \
-        ::boost::wrap_stringstream().ref() << check_descr,   \
-        BOOST_TEST_L(__FILE__),                              \
-        (std::size_t)__LINE__,                               \
-        ::boost::test_tools::tt_detail::TL,                  \
-        ::boost::test_tools::tt_detail::CT                   \
+#define BOOST_TEST_TOOL_IMPL( func, P, check_descr, TL, CT )            \
+    ::boost::test_tools::tt_detail::func(                               \
+        P,                                                              \
+        ::boost::unit_test::lazy_ostream::instance() << check_descr,    \
+        BOOST_TEST_L(__FILE__),                                         \
+        static_cast<std::size_t>(__LINE__),                             \
+        ::boost::test_tools::tt_detail::TL,                             \
+        ::boost::test_tools::tt_detail::CT                              \
 /**/
 
 //____________________________________________________________________________//
@@ -300,44 +308,20 @@ typedef unit_test::const_string      const_string;
 
 namespace { bool dummy_cond = false; }
 
-namespace tt_detail {
-
 // ************************************************************************** //
-// **************              tools classification            ************** //
-// ************************************************************************** //
-
-enum check_type {
-    CHECK_PRED, 
-    CHECK_MSG,
-    CHECK_EQUAL,
-    CHECK_NE,
-    CHECK_LT,
-    CHECK_LE,
-    CHECK_GT,
-    CHECK_GE,
-    CHECK_CLOSE,
-    CHECK_CLOSE_FRACTION,
-    CHECK_SMALL,
-    CHECK_BITWISE_EQUAL,
-    CHECK_PRED_WITH_ARGS,
-    CHECK_EQUAL_COLL
-};
-
-enum tool_level {
-    WARN, CHECK, REQUIRE, PASS
-};
-
-// ************************************************************************** //
-// **************               log print helper               ************** //
+// **************                print_log_value               ************** //
 // ************************************************************************** //
 
 template<typename T>
 struct print_log_value {
     void    operator()( std::ostream& ostr, T const& t )
     {
-        typedef typename mpl::or_<is_array<T>,is_function<T>,is_abstract<T> >::type couldnt_use_nl;
+        // avoid warning: 'boost::test_tools::<unnamed>::dummy_cond' defined but not used 
+        if (::boost::test_tools::dummy_cond) {}
 
-        set_precision( ostr, couldnt_use_nl() );
+        typedef typename mpl::or_<is_array<T>,is_function<T>,is_abstract<T> >::type cant_use_nl;
+
+        set_precision( ostr, cant_use_nl() );
 
         ostr << t; // by default print the value
     }
@@ -353,13 +337,13 @@ struct print_log_value {
 
 //____________________________________________________________________________//
 
-#define BOOST_TEST_DONT_PRINT_LOG_VALUE( the_type )                 \
-namespace boost { namespace test_tools { namespace tt_detail {      \
-template<>                                                          \
-struct print_log_value<the_type > {                                 \
-    void operator()( std::ostream& ostr, the_type const& t ) {}     \
-};                                                                  \
-}}}                                                                 \
+#define BOOST_TEST_DONT_PRINT_LOG_VALUE( the_type )         \
+namespace boost { namespace test_tools {                    \
+template<>                                                  \
+struct print_log_value<the_type > {                         \
+    void operator()( std::ostream&, the_type const& ) {}    \
+};                                                          \
+}}                                                          \
 /**/
 
 //____________________________________________________________________________//
@@ -373,6 +357,16 @@ struct print_log_value< T[N] > {
     }
 };
 #endif
+
+//____________________________________________________________________________//
+
+template<>
+struct BOOST_TEST_DECL print_log_value<bool> {
+    void    operator()( std::ostream& ostr, bool t )
+    {
+         ostr << std::boolalpha << t;
+    }
+};
 
 //____________________________________________________________________________//
 
@@ -403,6 +397,39 @@ struct BOOST_TEST_DECL print_log_value<wchar_t const*> {
 };
 
 //____________________________________________________________________________//
+
+namespace tt_detail {
+
+// ************************************************************************** //
+// **************              tools classification            ************** //
+// ************************************************************************** //
+
+enum check_type {
+    CHECK_PRED, 
+    CHECK_MSG,
+    CHECK_EQUAL,
+    CHECK_NE,
+    CHECK_LT,
+    CHECK_LE,
+    CHECK_GT,
+    CHECK_GE,
+    CHECK_CLOSE,
+    CHECK_CLOSE_FRACTION,
+    CHECK_SMALL,
+    CHECK_BITWISE_EQUAL,
+    CHECK_PRED_WITH_ARGS,
+    CHECK_EQUAL_COLL
+};
+
+enum tool_level {
+    WARN, CHECK, REQUIRE, PASS
+};
+
+// ************************************************************************** //
+// **************                 print_helper                 ************** //
+// ************************************************************************** //
+// Adds level of indirection to the output operation, allowing us to customize 
+// it for types that do not support operator << directly or for any other reason
 
 template<typename T>
 struct print_helper_t {
@@ -449,7 +476,7 @@ operator<<( std::ostream& ostr, print_helper_t<T> const& ph )
 // ************************************************************************** //
 
 BOOST_TEST_DECL 
-void check_impl( predicate_result const& pr, wrap_stringstream& check_descr,
+bool check_impl( predicate_result const& pr, ::boost::unit_test::lazy_ostream const& check_descr,
                  const_string file_name, std::size_t line_num,
                  tool_level tl, check_type ct,
                  std::size_t num_args, ... );
@@ -458,29 +485,29 @@ void check_impl( predicate_result const& pr, wrap_stringstream& check_descr,
 
 #define TEMPL_PARAMS( z, m, dummy ) , typename BOOST_JOIN( Arg, m )
 #define FUNC_PARAMS( z, m, dummy )                                                  \
-    , BOOST_JOIN( Arg, m ) const& BOOST_JOIN( arg, m )                              \
-    , char const* BOOST_JOIN( BOOST_JOIN( arg, m ), _descr )                        \
+ , BOOST_JOIN( Arg, m ) const& BOOST_JOIN( arg, m )                                 \
+ , char const* BOOST_JOIN( BOOST_JOIN( arg, m ), _descr )                           \
 /**/
 
 #define PRED_PARAMS( z, m, dummy ) BOOST_PP_COMMA_IF( m ) BOOST_JOIN( arg, m ) 
 
 #define ARG_INFO( z, m, dummy )                                                     \
-    , BOOST_JOIN( BOOST_JOIN( arg, m ), _descr )                                    \
-    , (boost::wrap_stringstream().ref()                                             \
-        << ::boost::test_tools::tt_detail::                                         \
-            print_helper( BOOST_JOIN( arg, m ) )).str().c_str()                     \
+ , BOOST_JOIN( BOOST_JOIN( arg, m ), _descr )                                       \
+ , &static_cast<const unit_test::lazy_ostream&>(unit_test::lazy_ostream::instance() \
+        << ::boost::test_tools::tt_detail::print_helper( BOOST_JOIN( arg, m ) ))    \
 /**/
 
 #define IMPL_FRWD( z, n, dummy )                                                    \
 template<typename Pred                                                              \
          BOOST_PP_REPEAT_ ## z( BOOST_PP_ADD( n, 1 ), TEMPL_PARAMS, _ )>            \
-inline void                                                                         \
-check_frwd( Pred P, wrap_stringstream& check_descr,                                 \
+inline bool                                                                         \
+check_frwd( Pred P, unit_test::lazy_ostream const& check_descr,                     \
             const_string file_name, std::size_t line_num,                           \
             tool_level tl, check_type ct                                            \
             BOOST_PP_REPEAT_ ## z( BOOST_PP_ADD( n, 1 ), FUNC_PARAMS, _ )           \
 )                                                                                   \
 {                                                                                   \
+    return                                                                          \
     check_impl( P( BOOST_PP_REPEAT_ ## z( BOOST_PP_ADD( n, 1 ), PRED_PARAMS, _ ) ), \
                 check_descr, file_name, line_num, tl, ct,                           \
                 BOOST_PP_ADD( n, 1 )                                                \
@@ -512,15 +539,15 @@ predicate_result equal_impl( Left const& left, Right const& right )
 //____________________________________________________________________________//
 
 predicate_result        BOOST_TEST_DECL equal_impl( char const* left, char const* right );
-inline predicate_result equal_impl( char* left, char const* right ) { return equal_impl( (char const*)left, (char const*)right ); }
-inline predicate_result equal_impl( char const* left, char* right ) { return equal_impl( (char const*)left, (char const*)right ); }
-inline predicate_result equal_impl( char* left, char* right )       { return equal_impl( (char const*)left, (char const*)right ); }
+inline predicate_result equal_impl( char* left, char const* right ) { return equal_impl( static_cast<char const*>(left), static_cast<char const*>(right) ); }
+inline predicate_result equal_impl( char const* left, char* right ) { return equal_impl( static_cast<char const*>(left), static_cast<char const*>(right) ); }
+inline predicate_result equal_impl( char* left, char* right )       { return equal_impl( static_cast<char const*>(left), static_cast<char const*>(right) ); }
 
 #if !defined( BOOST_NO_CWCHAR )
 predicate_result        BOOST_TEST_DECL equal_impl( wchar_t const* left, wchar_t const* right );
-inline predicate_result equal_impl( wchar_t* left, wchar_t const* right ) { return equal_impl( (wchar_t const*)left, (wchar_t const*)right ); }
-inline predicate_result equal_impl( wchar_t const* left, wchar_t* right ) { return equal_impl( (wchar_t const*)left, (wchar_t const*)right ); }
-inline predicate_result equal_impl( wchar_t* left, wchar_t* right )       { return equal_impl( (wchar_t const*)left, (wchar_t const*)right ); }
+inline predicate_result equal_impl( wchar_t* left, wchar_t const* right ) { return equal_impl( static_cast<wchar_t const*>(left), static_cast<wchar_t const*>(right) ); }
+inline predicate_result equal_impl( wchar_t const* left, wchar_t* right ) { return equal_impl( static_cast<wchar_t const*>(left), static_cast<wchar_t const*>(right) ); }
+inline predicate_result equal_impl( wchar_t* left, wchar_t* right )       { return equal_impl( static_cast<wchar_t const*>(left), static_cast<wchar_t const*>(right) ); }
 #endif
 
 //____________________________________________________________________________//

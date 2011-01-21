@@ -2,7 +2,7 @@
 #ifndef BOOST_MPL_VECTOR_C_HPP_INCLUDED
 #define BOOST_MPL_VECTOR_C_HPP_INCLUDED
 
-// Copyright Aleksey Gurtovoy 2000-2004
+// Copyright Aleksey Gurtovoy 2000-2008
 //
 // Distributed under the Boost Software License, Version 1.0. 
 // (See accompanying file LICENSE_1_0.txt or copy at 
@@ -10,9 +10,9 @@
 //
 // See http://www.boost.org/libs/mpl for documentation.
 
-// $Source$
-// $Date: 2004-11-27 20:58:27 -0500 (Sat, 27 Nov 2004) $
-// $Revision: 26325 $
+// $Id: vector_c.hpp 49271 2008-10-11 06:46:00Z agurtovoy $
+// $Date: 2008-10-11 02:46:00 -0400 (Sat, 11 Oct 2008) $
+// $Revision: 49271 $
 
 #if !defined(BOOST_MPL_PREPROCESSING_MODE)
 #   include <boost/mpl/limits/vector.hpp>
@@ -53,6 +53,7 @@
 #   define AUX778076_SEQUENCE_NAME vector_c
 #   define AUX778076_SEQUENCE_LIMIT BOOST_MPL_LIMIT_VECTOR_SIZE
 #   define AUX778076_SEQUENCE_NAME_N(n) BOOST_PP_CAT(BOOST_PP_CAT(vector,n),_c)
+#   define AUX778076_SEQUENCE_CONVERT_CN_TO(z,n,TARGET) TARGET(BOOST_PP_CAT(C,n))
 #   define AUX778076_SEQUENCE_INTEGRAL_WRAPPER
 #   include <boost/mpl/aux_/sequence_wrapper.hpp>
 

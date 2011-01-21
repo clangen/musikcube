@@ -64,11 +64,6 @@ namespace boost
                 return timed_lock(get_system_time()+timeout);
             }
 
-            long get_active_count()
-            {
-                return mutex.get_active_count();
-            }
-
             void unlock()
             {
                 if(!--recursion_count)
@@ -78,11 +73,6 @@ namespace boost
                 }
             }
 
-            bool locked()
-            {
-                return mutex.locked();
-            }
-            
         private:
             bool try_recursive_lock(long current_thread_id)
             {

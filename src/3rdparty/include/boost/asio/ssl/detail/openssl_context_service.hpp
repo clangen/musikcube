@@ -1,9 +1,9 @@
 //
-// openssl_context_service.hpp
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ssl/detail/openssl_context_service.hpp
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
 // Copyright (c) 2005 Voipster / Indrek dot Juhani at voipster dot com
-// Copyright (c) 2005-2008 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2005-2010 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -16,20 +16,17 @@
 # pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
-#include <boost/asio/detail/push_options.hpp>
-
-#include <boost/asio/detail/push_options.hpp>
+#include <boost/asio/detail/config.hpp>
 #include <cstring>
 #include <string>
 #include <boost/function.hpp>
-#include <boost/asio/detail/pop_options.hpp>
-
 #include <boost/asio/error.hpp>
 #include <boost/asio/io_service.hpp>
-#include <boost/asio/detail/service_base.hpp>
 #include <boost/asio/ssl/context_base.hpp>
 #include <boost/asio/ssl/detail/openssl_init.hpp>
 #include <boost/asio/ssl/detail/openssl_types.hpp>
+
+#include <boost/asio/detail/push_options.hpp>
 
 namespace boost {
 namespace asio {
@@ -67,49 +64,48 @@ public:
   // Create a new context implementation.
   void create(impl_type& impl, context_base::method m)
   {
-    ::SSL_METHOD* ssl_method = 0;
     switch (m)
     {
     case context_base::sslv2:
-      ssl_method = ::SSLv2_method();
+      impl = ::SSL_CTX_new(::SSLv2_method());
       break;
     case context_base::sslv2_client:
-      ssl_method = ::SSLv2_client_method();
+      impl = ::SSL_CTX_new(::SSLv2_client_method());
       break;
     case context_base::sslv2_server:
-      ssl_method = ::SSLv2_server_method();
+      impl = ::SSL_CTX_new(::SSLv2_server_method());
       break;
     case context_base::sslv3:
-      ssl_method = ::SSLv3_method();
+      impl = ::SSL_CTX_new(::SSLv3_method());
       break;
     case context_base::sslv3_client:
-      ssl_method = ::SSLv3_client_method();
+      impl = ::SSL_CTX_new(::SSLv3_client_method());
       break;
     case context_base::sslv3_server:
-      ssl_method = ::SSLv3_server_method();
+      impl = ::SSL_CTX_new(::SSLv3_server_method());
       break;
     case context_base::tlsv1:
-      ssl_method = ::TLSv1_method();
+      impl = ::SSL_CTX_new(::TLSv1_method());
       break;
     case context_base::tlsv1_client:
-      ssl_method = ::TLSv1_client_method();
+      impl = ::SSL_CTX_new(::TLSv1_client_method());
       break;
     case context_base::tlsv1_server:
-      ssl_method = ::TLSv1_server_method();
+      impl = ::SSL_CTX_new(::TLSv1_server_method());
       break;
     case context_base::sslv23:
-      ssl_method = ::SSLv23_method();
+      impl = ::SSL_CTX_new(::SSLv23_method());
       break;
     case context_base::sslv23_client:
-      ssl_method = ::SSLv23_client_method();
+      impl = ::SSL_CTX_new(::SSLv23_client_method());
       break;
     case context_base::sslv23_server:
-      ssl_method = ::SSLv23_server_method();
+      impl = ::SSL_CTX_new(::SSLv23_server_method());
       break;
     default:
+      impl = ::SSL_CTX_new(0);
       break;
     }
-    impl = ::SSL_CTX_new(ssl_method);
   }
 
   // Destroy a context implementation.

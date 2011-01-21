@@ -7,7 +7,7 @@
  *
  * See http://www.boost.org for most recent version including documentation.
  *
- * $Id: shuffle_output.hpp 41369 2007-11-25 18:07:19Z bemandawes $
+ * $Id: shuffle_output.hpp 60755 2010-03-22 00:45:06Z steven_watanabe $
  *
  * Revision history
  *  2001-02-18  moved to individual header files
@@ -28,7 +28,30 @@
 namespace boost {
 namespace random {
 
-// Carter Bays and S.D. Durham 1979
+/**
+ * Instatiations of class template shuffle_output model a
+ * \pseudo_random_number_generator. It mixes the output
+ * of some (usually \linear_congruential) \uniform_random_number_generator
+ * to get better statistical properties.
+ * The algorithm is described in
+ *
+ *  @blockquote
+ *  "Improving a poor random number generator", Carter Bays
+ *  and S.D. Durham, ACM Transactions on Mathematical Software,
+ *  Vol 2, No. 1, March 1976, pp. 59-64.
+ *  http://doi.acm.org/10.1145/355666.355670
+ *  @endblockquote
+ *
+ * The output of the base generator is buffered in an array of
+ * length k. Every output X(n) has a second role: It gives an
+ * index into the array where X(n+1) will be retrieved. Used
+ * array elements are replaced with fresh output from the base
+ * generator.
+ *
+ * Template parameters are the base generator and the array
+ * length k, which should be around 100. The template parameter
+ * val is the validation value checked by validation.
+ */
 template<class UniformRandomNumberGenerator, int k,
 #ifndef BOOST_NO_DEPENDENT_TYPES_IN_TEMPLATE_VALUE_PARAMETERS
   typename UniformRandomNumberGenerator::result_type 
@@ -45,18 +68,45 @@ public:
   BOOST_STATIC_CONSTANT(bool, has_fixed_range = false);
   BOOST_STATIC_CONSTANT(int, buffer_size = k);
 
+  /**
+   * Constructs a @c shuffle_output generator by invoking the
+   * default constructor of the base generator.
+   *
+   * Complexity: Exactly k+1 invocations of the base generator.
+   */
   shuffle_output() : _rng() { init(); }
 #if defined(BOOST_MSVC) && _MSC_VER < 1300
   // MSVC does not implicitly generate the copy constructor here
   shuffle_output(const shuffle_output & x)
     : _rng(x._rng), y(x.y) { std::copy(x.v, x.v+k, v); }
 #endif
+  /**
+   * Constructs a shuffle_output generator by invoking the one-argument
+   * constructor of the base generator with the parameter seed.
+   *
+   * Complexity: Exactly k+1 invocations of the base generator.
+   */
   template<class T>
   explicit shuffle_output(T s) : _rng(s) { init(); }
+  /**
+   * Constructs a shuffle_output generator by using a copy
+   * of the provided generator.
+   *
+   * Precondition: The template argument UniformRandomNumberGenerator
+   * shall denote a CopyConstructible type.
+   *
+   * Complexity: Exactly k+1 invocations of the base generator.
+   */
   explicit shuffle_output(const base_type & rng) : _rng(rng) { init(); }
   template<class It> shuffle_output(It& first, It last)
     : _rng(first, last) { init(); }
   void seed() { _rng.seed(); init(); }
+  /**
+   * Invokes the one-argument seed method of the base generator
+   * with the parameter seed and re-initializes the internal buffer array.
+   *
+   * Complexity: Exactly k+1 invocations of the base generator.
+   */
   template<class T>
   void seed(T s) { _rng.seed(s); init(); }
   template<class It> void seed(It& first, It last)
@@ -84,7 +134,7 @@ public:
 
 #ifndef BOOST_NO_OPERATORS_IN_NAMESPACE
 
-#ifndef BOOST_NO_MEMBER_TEMPLATE_FRIENDS
+#ifndef BOOST_RANDOM_NO_STREAM_OPERATORS
   template<class CharT, class Traits>
   friend std::basic_ostream<CharT,Traits>&
   operator<<(std::basic_ostream<CharT,Traits>& os, const shuffle_output& s)
@@ -165,6 +215,15 @@ const int shuffle_output<UniformRandomNumberGenerator, k, val>::buffer_size;
 } // namespace random
 
 // validation by experiment from Harry Erwin's generator.h (private e-mail)
+/**
+ * According to Harry Erwin (private e-mail), the specialization
+ * @c kreutzer1986 was suggested in:
+ *
+ * @blockquote
+ * "System Simulation: Programming Styles and Languages (International
+ * Computer Science Series)", Wolfgang Kreutzer, Addison-Wesley, December 1986.
+ * @endblockquote
+ */
 typedef random::shuffle_output<
     random::linear_congruential<uint32_t, 1366, 150889, 714025, 0>,
   97, 139726> kreutzer1986;

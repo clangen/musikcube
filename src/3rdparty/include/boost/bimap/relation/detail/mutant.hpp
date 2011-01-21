@@ -56,7 +56,7 @@ View&
     BOOST_MPL_ASSERT((
         ::boost::mpl::contains<BOOST_DEDUCED_TYPENAME Type::mutant_views,View>
     ));
-    return *reinterpret_cast< View* >(addressof(m));
+    return *reinterpret_cast< View* >(boost::addressof(m));
 }
 
 template< class View, class Type >
@@ -69,7 +69,7 @@ const View&
     BOOST_MPL_ASSERT((
         ::boost::mpl::contains<BOOST_DEDUCED_TYPENAME Type::mutant_views,View> 
     ));
-    return *reinterpret_cast< const View* >(addressof(m));
+    return *reinterpret_cast< const View* >(boost::addressof(m));
 }
 
 //@}

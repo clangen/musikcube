@@ -50,8 +50,7 @@
 # endif
 #endif
 
-#include <boost/xpressive/proto/proto_fwd.hpp>
-#include <boost/xpressive/proto/traits.hpp>
+#include <boost/proto/proto_fwd.hpp>
 
 namespace boost { namespace xpressive
 {
@@ -78,12 +77,13 @@ namespace boost { namespace xpressive
         };
 
         struct mark_placeholder;
-        typedef proto::terminal<mark_placeholder>::type basic_mark_tag;
-        struct mark_tag;
+        typedef proto::expr<proto::tag::terminal, proto::term<mark_placeholder>, 0> basic_mark_tag;
+
+        struct regex_domain;
 
     } // namespace detail
 
-    using detail::mark_tag;
+    struct mark_tag;
 
     typedef void const *regex_id_type;
 

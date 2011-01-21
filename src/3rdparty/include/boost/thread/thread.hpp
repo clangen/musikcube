@@ -20,6 +20,8 @@
 #endif
 
 #include <boost/thread/detail/thread.hpp>
+#include <boost/thread/detail/thread_interruption.hpp>
+#include <boost/thread/detail/thread_group.hpp>
 
 
 #endif

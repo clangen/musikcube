@@ -1,8 +1,8 @@
 //
-// random_access_handle_service.hpp
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// windows/random_access_handle_service.hpp
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2008 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2010 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -15,27 +15,19 @@
 # pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
-#include <boost/asio/detail/push_options.hpp>
-
-#include <boost/asio/detail/push_options.hpp>
-#include <cstddef>
-#include <boost/config.hpp>
-#include <boost/cstdint.hpp>
-#include <boost/asio/detail/pop_options.hpp>
-
-#include <boost/asio/error.hpp>
-#include <boost/asio/io_service.hpp>
-#include <boost/asio/detail/service_base.hpp>
-#include <boost/asio/detail/win_iocp_handle_service.hpp>
-
-#if !defined(BOOST_ASIO_DISABLE_WINDOWS_RANDOM_ACCESS_HANDLE)
-# if defined(BOOST_ASIO_HAS_IOCP)
-#  define BOOST_ASIO_HAS_WINDOWS_RANDOM_ACCESS_HANDLE 1
-# endif // defined(BOOST_ASIO_HAS_IOCP)
-#endif // !defined(BOOST_ASIO_DISABLE_WINDOWS_RANDOM_ACCESS_HANDLE)
+#include <boost/asio/detail/config.hpp>
 
 #if defined(BOOST_ASIO_HAS_WINDOWS_RANDOM_ACCESS_HANDLE) \
   || defined(GENERATING_DOCUMENTATION)
+
+#include <cstddef>
+#include <boost/config.hpp>
+#include <boost/cstdint.hpp>
+#include <boost/asio/detail/win_iocp_handle_service.hpp>
+#include <boost/asio/error.hpp>
+#include <boost/asio/io_service.hpp>
+
+#include <boost/asio/detail/push_options.hpp>
 
 namespace boost {
 namespace asio {
@@ -78,13 +70,14 @@ public:
   explicit random_access_handle_service(boost::asio::io_service& io_service)
     : boost::asio::detail::service_base<
         random_access_handle_service>(io_service),
-      service_impl_(boost::asio::use_service<service_impl_type>(io_service))
+      service_impl_(io_service)
   {
   }
 
   /// Destroy all user-defined handler objects owned by the service.
   void shutdown_service()
   {
+    service_impl_.shutdown_service();
   }
 
   /// Construct a new random-access handle implementation.
@@ -165,17 +158,17 @@ public:
   }
 
 private:
-  // The service that provides the platform-specific implementation.
-  service_impl_type& service_impl_;
+  // The platform-specific implementation.
+  service_impl_type service_impl_;
 };
 
 } // namespace windows
 } // namespace asio
 } // namespace boost
 
+#include <boost/asio/detail/pop_options.hpp>
+
 #endif // defined(BOOST_ASIO_HAS_WINDOWS_RANDOM_ACCESS_HANDLE)
        //   || defined(GENERATING_DOCUMENTATION)
-
-#include <boost/asio/detail/pop_options.hpp>
 
 #endif // BOOST_ASIO_WINDOWS_RANDOM_ACCESS_HANDLE_SERVICE_HPP

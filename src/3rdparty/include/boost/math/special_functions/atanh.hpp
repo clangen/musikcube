@@ -1,6 +1,7 @@
 //    boost atanh.hpp header file
 
 //  (C) Copyright Hubert Holin 2001.
+//  (C) Copyright John Maddock 2008.
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
 //  http://www.boost.org/LICENSE_1_0.txt)
@@ -15,11 +16,12 @@
 #endif
 
 
-#include <cmath>
+#include <boost/config/no_tr1/cmath.hpp>
 #include <boost/config.hpp>
 #include <boost/math/tools/precision.hpp>
 #include <boost/math/policies/error_handling.hpp>
 #include <boost/math/special_functions/math_fwd.hpp>
+#include <boost/math/special_functions/log1p.hpp>
 
 // This is the inverse of the hyperbolic tangent function.
 
@@ -45,52 +47,45 @@ namespace boost
         template<typename T, typename Policy>
         inline T    atanh_imp(const T x, const Policy& pol)
         {
-            using    ::std::abs;
-            using    ::std::sqrt;
-            using    ::std::log;
-            
-            using    ::std::numeric_limits;
-            
-            T const            one = static_cast<T>(1);
-            T const            two = static_cast<T>(2);
-            
-            static T const    taylor_2_bound = sqrt(tools::epsilon<T>());
-            static T const    taylor_n_bound = sqrt(taylor_2_bound);
-
+            BOOST_MATH_STD_USING
             static const char* function = "boost::math::atanh<%1%>(%1%)";
             
-            if        (x < -one)
+            if(x < -1)
             {
                return policies::raise_domain_error<T>(
                   function,
                   "atanh requires x >= -1, but got x = %1%.", x, pol);
             }
-            else if    (x < -one + tools::epsilon<T>())
+            else if(x < -1 + tools::epsilon<T>())
             {
                // -Infinity:
                return -policies::raise_overflow_error<T>(function, 0, pol);
             }
-            else if    (x > one - tools::epsilon<T>())
+            else if(x > 1 - tools::epsilon<T>())
             {
                // Infinity:
                return -policies::raise_overflow_error<T>(function, 0, pol);
             }
-            else if    (x > +one)
+            else if(x > 1)
             {
                return policies::raise_domain_error<T>(
                   function,
                   "atanh requires x <= 1, but got x = %1%.", x, pol);
             }
-            else if    (abs(x) >= taylor_n_bound)
+            else if(abs(x) >= tools::forth_root_epsilon<T>())
             {
-                return(log( (one + x) / (one - x) ) / two);
+                // http://functions.wolfram.com/ElementaryFunctions/ArcTanh/02/
+                if(abs(x) < 0.5f)
+                   return (boost::math::log1p(x, pol) - boost::math::log1p(-x, pol)) / 2;
+                return(log( (1 + x) / (1 - x) ) / 2);
             }
             else
             {
+                // http://functions.wolfram.com/ElementaryFunctions/ArcTanh/06/01/03/01/
                 // approximation by taylor series in x at 0 up to order 2
                 T    result = x;
                 
-                if    (abs(x) >= taylor_2_bound)
+                if    (abs(x) >= tools::root_epsilon<T>())
                 {
                     T    x3 = x*x*x;
                     
@@ -104,18 +99,24 @@ namespace boost
        }
 
         template<typename T, typename Policy>
-        inline typename tools::promote_args<T>::type atanh(const T x, const Policy& pol)
+        inline typename tools::promote_args<T>::type atanh(T x, const Policy&)
         {
-           typedef typename tools::promote_args<T>::type result_type;
-           return detail::atanh_imp(
-              static_cast<result_type>(x), pol);
+            typedef typename tools::promote_args<T>::type result_type;
+            typedef typename policies::evaluation<result_type, Policy>::type value_type;
+            typedef typename policies::normalise<
+               Policy, 
+               policies::promote_float<false>, 
+               policies::promote_double<false>, 
+               policies::discrete_quantile<>,
+               policies::assert_undefined<> >::type forwarding_policy;
+           return policies::checked_narrowing_cast<result_type, forwarding_policy>(
+              detail::atanh_imp(static_cast<value_type>(x), forwarding_policy()),
+              "boost::math::atanh<%1%>(%1%)");
         }
         template<typename T>
-        inline typename tools::promote_args<T>::type atanh(const T x)
+        inline typename tools::promote_args<T>::type atanh(T x)
         {
-           typedef typename tools::promote_args<T>::type result_type;
-           return detail::atanh_imp(
-              static_cast<result_type>(x), policies::policy<>());
+           return boost::math::atanh(x, policies::policy<>());
         }
 
     }

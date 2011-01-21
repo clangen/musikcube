@@ -35,7 +35,7 @@ namespace boost { namespace fusion { namespace detail
 
         template <typename OS>
         static void
-        print(OS& os, char const* delim, mpl::true_)
+        print(OS&, char const*, mpl::true_)
         {
         }
     };
@@ -44,7 +44,7 @@ namespace boost { namespace fusion { namespace detail
     {
         template <typename OS, typename First, typename Last>
         static void
-        call(OS& os, First const&, Last const&, mpl::true_)
+        call(OS&, First const&, Last const&, mpl::true_)
         {
         }
 

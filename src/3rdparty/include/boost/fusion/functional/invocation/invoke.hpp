@@ -1,8 +1,8 @@
 /*=============================================================================
-    Copyright (c) 2005-2006 João Abecasis
+    Copyright (c) 2005-2006 Joao Abecasis
     Copyright (c) 2006-2007 Tobias Schwinger
-  
-    Use modification and distribution are subject to the Boost Software 
+
+    Use modification and distribution are subject to the Boost Software
     License, Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
     http://www.boost.org/LICENSE_1_0.txt).
 ==============================================================================*/
@@ -71,21 +71,21 @@ namespace boost { namespace fusion
     {
         namespace ft = function_types;
 
-        template< 
-            typename Function, class Sequence, 
+        template<
+            typename Function, class Sequence,
             int N = result_of::size<Sequence>::value,
             bool CBI = ft::is_callable_builtin<Function>::value,
             bool RandomAccess = traits::is_random_access<Sequence>::value
             >
         struct invoke_impl;
 
-        template <class Sequence, int N> 
+        template <class Sequence, int N>
         struct invoke_param_types;
 
         template <typename T, class Sequence>
         struct invoke_data_member;
 
-        template <typename Function, class Sequence, int N, bool RandomAccess> 
+        template <typename Function, class Sequence, int N, bool RandomAccess>
         struct invoke_mem_fn;
 
         #define  BOOST_PP_FILENAME_1 <boost/fusion/functional/invocation/invoke.hpp>
@@ -116,7 +116,7 @@ namespace boost { namespace fusion
                     invoke_mem_fn<Function,Sequence,1,RandomAccess>,
                     invoke_data_member<Function, Sequence> >,
                 mpl::identity< invoke_nonmember_builtin<
-                    Function,Sequence,1,RandomAccess> > 
+                    Function,Sequence,1,RandomAccess> >
             >::type
         { };
 
@@ -139,7 +139,7 @@ namespace boost { namespace fusion
 
         public:
 
-            typedef typename boost::add_reference<qualified_type>::type 
+            typedef typename boost::add_reference<qualified_type>::type
                 result_type;
 
             static inline result_type call(T C::* f, Sequence & s)
@@ -154,10 +154,10 @@ namespace boost { namespace fusion
     {
         template <typename Function, class Sequence> struct invoke
         {
-            typedef typename detail::invoke_impl< 
+            typedef typename detail::invoke_impl<
                 typename boost::remove_reference<Function>::type, Sequence
               >::result_type type;
-        }; 
+        };
     }
 
     template <typename Function, class Sequence>
@@ -199,6 +199,8 @@ namespace boost { namespace fusion
                     Function(BOOST_PP_ENUM(N,M,~)) >::type result_type;
 #undef M
 
+#if N > 0
+
             template <typename F>
             static inline result_type
             call(F & f, Sequence & s)
@@ -206,6 +208,17 @@ namespace boost { namespace fusion
 #define M(z,j,data) fusion::at_c<j>(s)
                 return f( BOOST_PP_ENUM(N,M,~) );
             }
+
+#else
+            template <typename F>
+            static inline result_type
+            call(F & f, Sequence & /*s*/)
+            {
+                return f();
+            }
+
+#endif
+
         };
 
 
@@ -242,19 +255,31 @@ namespace boost { namespace fusion
         public:
 
             typedef typename boost::result_of<
-                Function(BOOST_PP_ENUM_PARAMS(N,typename seq::T)) 
+                Function(BOOST_PP_ENUM_PARAMS(N,typename seq::T))
                 >::type result_type;
+
+#if N > 0
 
             template <typename F>
             static inline result_type
             call(F & f, Sequence & s)
             {
-#if N > 0
                 typename seq::I0 i0 = fusion::begin(s);
                 BOOST_PP_REPEAT_FROM_TO(1,N,M,~)
-#endif
                 return f( BOOST_PP_ENUM_PARAMS(N,*i) );
             }
+
+#else
+
+            template <typename F>
+            static inline result_type
+            call(F & f, Sequence & /*s*/)
+            {
+                return f();
+            }
+
+#endif
+
         };
 
 #if N > 0
@@ -274,7 +299,7 @@ namespace boost { namespace fusion
                 typename seq::I0 i0 = fusion::begin(s);
                 BOOST_PP_REPEAT_FROM_TO(1,N,M,~)
 
-                return (that_ptr< typename mpl::front< 
+                return (that_ptr< typename mpl::front<
                                       ft::parameter_types<Function> >::type
                     >::get(*i0)->*f)(BOOST_PP_ENUM_SHIFTED_PARAMS(N,*i));
             }
@@ -302,5 +327,5 @@ namespace boost { namespace fusion
 
 #undef N
 #endif // defined(BOOST_PP_IS_ITERATING)
-#endif 
+#endif
 

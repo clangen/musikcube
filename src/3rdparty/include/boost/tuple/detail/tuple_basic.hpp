@@ -213,7 +213,7 @@ struct element_impl<0, T, true /* IsConst */>
 
 
 template<int N, class T>
-struct element: 
+struct element:
   public detail::element_impl<N, T, ::boost::is_const<T>::value>
 {
 };
@@ -489,10 +489,19 @@ struct length<tuple<> > {
 };
 
 template<>
+struct length<tuple<> const> {
+  BOOST_STATIC_CONSTANT(int, value = 0);
+};
+
+template<>
 struct length<null_type> {
   BOOST_STATIC_CONSTANT(int, value = 0);
 };
 
+template<>
+struct length<null_type const> {
+  BOOST_STATIC_CONSTANT(int, value = 0);
+};
 
 namespace detail {
 

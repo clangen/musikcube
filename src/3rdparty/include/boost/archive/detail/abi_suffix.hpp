@@ -8,12 +8,12 @@
 
 //  See http://www.boost.org for updates, documentation, and revision history.
 
-#if defined( __BORLANDC__ )
-#pragma nopushoptwarn
-#endif
-
 #ifdef BOOST_MSVC
 #pragma warning(pop)
 #endif
 #include <boost/config/abi_suffix.hpp> // pops abi_suffix.hpp pragmas
+
+#if defined( __BORLANDC__ )
+#pragma nopushoptwarn
+#endif
 

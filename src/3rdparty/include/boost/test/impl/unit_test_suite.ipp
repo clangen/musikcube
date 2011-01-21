@@ -1,4 +1,4 @@
-//  (C) Copyright Gennadiy Rozental 2005-2007.
+//  (C) Copyright Gennadiy Rozental 2005-2008.
 //  Distributed under the Boost Software License, Version 1.0.
 //  (See accompanying file LICENSE_1_0.txt or copy at
 //  http://www.boost.org/LICENSE_1_0.txt)
@@ -7,10 +7,10 @@
 //
 //  File        : $RCSfile$
 //
-//  Version     : $Revision: 41369 $
+//  Version     : $Revision: 54633 $
 //
-//  Description : privide core implementation for Unit Test Framework.
-//  Extensions could be provided in separate files
+//  Description : privides core implementation for Unit Test Framework.
+//                Extensions can be provided in separate files
 // ***************************************************************************
 
 #ifndef BOOST_TEST_UNIT_TEST_SUITE_IPP_012205GER
@@ -60,6 +60,13 @@ test_unit::test_unit( const_string name, test_unit_type t )
 
 //____________________________________________________________________________//
 
+test_unit::~test_unit()
+{
+    framework::deregister_test_unit( this );
+}
+
+//____________________________________________________________________________//
+
 void
 test_unit::depends_on( test_unit* tu )
 {
@@ -97,7 +104,7 @@ test_unit::increase_exp_fail( unsigned num )
 // ************************************************************************** //
 
 test_case::test_case( const_string name, callback0<> const& test_func )
-: test_unit( name, (test_unit_type)type )
+: test_unit( name, static_cast<test_unit_type>(type) )
 , m_test_func( test_func )
 {
      // !! weirdest MSVC BUG; try to remove this statement; looks like it eats first token of next statement   
@@ -116,7 +123,7 @@ test_case::test_case( const_string name, callback0<> const& test_func )
 //____________________________________________________________________________//
 
 test_suite::test_suite( const_string name )
-: test_unit( name, (test_unit_type)type )
+: test_unit( name, static_cast<test_unit_type>(type) )
 {
     framework::register_test_unit( this );
 }
@@ -154,7 +161,7 @@ test_suite::add( test_unit_generator const& gen, unsigned timeout )
 void
 test_suite::remove( test_unit_id id )
 {
-    std::vector<test_unit_id>::iterator it = std::find( m_members.begin(), m_members.begin(), id );
+    std::vector<test_unit_id>::iterator it = std::find( m_members.begin(), m_members.end(), id );
 
     if( it != m_members.end() )
         m_members.erase( it );
@@ -166,7 +173,7 @@ test_unit_id
 test_suite::get( const_string tu_name ) const
 {
     BOOST_TEST_FOREACH( test_unit_id, id, m_members ) {
-        if( tu_name == framework::get( id, test_id_2_unit_type( id ) ).p_name.get() )
+        if( tu_name == framework::get( id, ut_detail::test_id_2_unit_type( id ) ).p_name.get() )
             return id;
     }
 
@@ -221,7 +228,7 @@ traverse_test_tree( test_suite const& suite, test_tree_visitor& V )
 void
 traverse_test_tree( test_unit_id id, test_tree_visitor& V )
 {
-    if( test_id_2_unit_type( id ) == tut_case )
+    if( ut_detail::test_id_2_unit_type( id ) == tut_case )
         traverse_test_tree( framework::get<test_case>( id ), V );
     else
         traverse_test_tree( framework::get<test_suite>( id ), V );

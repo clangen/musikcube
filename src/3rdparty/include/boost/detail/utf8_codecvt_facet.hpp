@@ -1,4 +1,4 @@
-// Copyright © 2001 Ronald Garcia, Indiana University (garcia@osl.iu.edu)
+// Copyright (c) 2001 Ronald Garcia, Indiana University (garcia@osl.iu.edu)
 // Andrew Lumsdaine, Indiana University (lums@osl.iu.edu).
 // Distributed under the Boost Software License, Version 1.0. (See accompany-
 // ing file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -79,25 +79,18 @@
 // specialized on those types for this to work.
 
 #include <locale>
-// for mbstate_t
-#include <wchar.h>
-// for std::size_t
-#include <cstddef>
+#include <cwchar>   // for mbstate_t
+#include <cstddef>  // for std::size_t
 
 #include <boost/config.hpp>
 #include <boost/detail/workaround.hpp>
 
+#if defined(BOOST_NO_STDC_NAMESPACE)
 namespace std {
-    #if defined(__LIBCOMO__)
-        using ::mbstate_t;
-    #elif defined(BOOST_DINKUMWARE_STDLIB) && !defined(__BORLANDC__)
-        using ::mbstate_t;
-    #elif defined(__SGI_STL_PORT)
-    #elif defined(BOOST_NO_STDC_NAMESPACE)
-        using ::mbstate_t;
-        using ::codecvt;
-    #endif
-} // namespace std
+    using ::mbstate_t;
+    using ::size_t;
+}
+#endif
 
 #if !defined(__MSL_CPP__) && !defined(__LIBCOMO__)
     #define BOOST_CODECVT_DO_LENGTH_CONST const

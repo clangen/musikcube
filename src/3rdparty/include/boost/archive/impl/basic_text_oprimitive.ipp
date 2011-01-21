@@ -9,7 +9,7 @@
 //  See http://www.boost.org for updates, documentation, and revision history.
 
 #include <cstddef> // NULL
-#include <boost/pfto.hpp>
+#include <boost/serialization/pfto.hpp>
 
 #include <boost/archive/basic_text_oprimitive.hpp>
 #include <boost/archive/codecvt_null.hpp>
@@ -36,7 +36,9 @@ basic_text_oprimitive<OStream>::save_binary(
         return;
     
     if(os.fail())
-        boost::throw_exception(archive_exception(archive_exception::stream_error));
+        boost::serialization::throw_exception(
+            archive_exception(archive_exception::output_stream_error)
+        );
         
     os.put('\n');
     
@@ -62,12 +64,13 @@ basic_text_oprimitive<OStream>::save_binary(
         ),
         oi
     );
-    std::size_t padding = 2 - count % 3;
-    if(padding > 1)
-        *oi = '=';
-        if(padding > 2)
+    
+    std::size_t tail = count % 3;
+    if(tail > 0){
+        *oi++ = '=';
+        if(tail < 2)
             *oi = '=';
-
+    }
 }
 
 template<class OStream>
@@ -81,7 +84,7 @@ basic_text_oprimitive<OStream>::basic_text_oprimitive(
     flags_saver(os_),
     precision_saver(os_),
     archive_locale(NULL),
-    locale_saver(os_)
+    locale_saver(* os_.rdbuf())
 {
     if(! no_codecvt){
         archive_locale.reset(

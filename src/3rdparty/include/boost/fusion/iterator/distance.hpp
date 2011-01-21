@@ -22,7 +22,7 @@ namespace boost { namespace fusion
 
     // Special tags:
     struct iterator_facade_tag; // iterator facade tag
-    struct array_iterator_tag; // boost::array iterator tag
+    struct boost_array_iterator_tag; // boost::array iterator tag
     struct mpl_iterator_tag; // mpl sequence iterator tag
     struct std_pair_iterator_tag; // std::pair iterator tag
 
@@ -48,7 +48,7 @@ namespace boost { namespace fusion
         };
 
         template <>
-        struct distance_impl<array_iterator_tag>;
+        struct distance_impl<boost_array_iterator_tag>;
 
         template <>
         struct distance_impl<mpl_iterator_tag>;
@@ -61,8 +61,8 @@ namespace boost { namespace fusion
     {
         template <typename First, typename Last>
         struct distance
-        : extension::distance_impl<typename detail::tag_of<First>::type>:: 
-        template apply<First, Last>
+          : extension::distance_impl<typename detail::tag_of<First>::type>::
+                template apply<First, Last>
         {
             typedef typename extension::distance_impl<typename detail::tag_of<First>::type>:: 
             template apply<First, Last>::type distance_application;

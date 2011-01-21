@@ -208,7 +208,7 @@ inline T asymptotic_bessel_j_limit(const T& v, const mpl::int_<0>&)
 {
    // default case:
    BOOST_MATH_STD_USING
-   T v2 = (std::max)(T(3), v * v);
+   T v2 = (std::max)(T(3), T(v * v));
    return v2 / pow(100 * tools::epsilon<T>() / T(2e-5f), T(0.17f));
 }
 template <class T>

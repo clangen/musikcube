@@ -82,7 +82,7 @@
 #   define BOOST_HAS_TYPE_TRAITS_INTRINSICS
 #endif
 
-#if defined(BOOST_MSVC) && defined(_MSC_FULL_VER) && (_MSC_FULL_VER >=140050215)
+#if defined(BOOST_MSVC) && defined(BOOST_MSVC_FULL_VER) && (BOOST_MSVC_FULL_VER >=140050215)
 #   include <boost/type_traits/is_same.hpp>
 
 #   define BOOST_IS_UNION(T) __is_union(T)
@@ -105,7 +105,8 @@
 #   define BOOST_IS_ENUM(T) __is_enum(T)
 //  This one doesn't quite always do the right thing:
 //  #   define BOOST_IS_POLYMORPHIC(T) __is_polymorphic(T)
-#   define BOOST_ALIGNMENT_OF(T) __alignof(T)
+//  This one fails if the default alignment has been changed with /Zp:
+//  #   define BOOST_ALIGNMENT_OF(T) __alignof(T)
 
 #   define BOOST_HAS_TYPE_TRAITS_INTRINSICS
 #endif
@@ -126,7 +127,39 @@
 #   define BOOST_HAS_TYPE_TRAITS_INTRINSICS
 #endif
 
-#if defined(__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 3)))
+#if defined(__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 3) && !defined(__GCCXML__)))
+#   include <boost/type_traits/is_same.hpp>
+#   include <boost/type_traits/is_reference.hpp>
+#   include <boost/type_traits/is_volatile.hpp>
+
+#   define BOOST_IS_UNION(T) __is_union(T)
+#   define BOOST_IS_POD(T) __is_pod(T)
+#   define BOOST_IS_EMPTY(T) __is_empty(T)
+#   define BOOST_HAS_TRIVIAL_CONSTRUCTOR(T) __has_trivial_constructor(T)
+#   define BOOST_HAS_TRIVIAL_COPY(T) (__has_trivial_copy(T) && !is_reference<T>::value)
+#   define BOOST_HAS_TRIVIAL_ASSIGN(T) __has_trivial_assign(T)
+#   define BOOST_HAS_TRIVIAL_DESTRUCTOR(T) __has_trivial_destructor(T)
+#   define BOOST_HAS_NOTHROW_CONSTRUCTOR(T) __has_nothrow_constructor(T)
+#   define BOOST_HAS_NOTHROW_COPY(T) (__has_nothrow_copy(T) && !is_volatile<T>::value && !is_reference<T>::value)
+#   define BOOST_HAS_NOTHROW_ASSIGN(T) (__has_nothrow_assign(T) && !is_volatile<T>::value)
+#   define BOOST_HAS_VIRTUAL_DESTRUCTOR(T) __has_virtual_destructor(T)
+
+#   define BOOST_IS_ABSTRACT(T) __is_abstract(T)
+#   define BOOST_IS_BASE_OF(T,U) (__is_base_of(T,U) && !is_same<T,U>::value)
+#   define BOOST_IS_CLASS(T) __is_class(T)
+#   define BOOST_IS_ENUM(T) __is_enum(T)
+#   define BOOST_IS_POLYMORPHIC(T) __is_polymorphic(T)
+#   if (!defined(unix) && !defined(__unix__)) || defined(__LP64__)
+      // GCC sometimes lies about alignment requirements
+      // of type double on 32-bit unix platforms, use the
+      // old implementation instead in that case:
+#     define BOOST_ALIGNMENT_OF(T) __alignof__(T)
+#   endif
+
+#   define BOOST_HAS_TYPE_TRAITS_INTRINSICS
+#endif
+
+#if defined(__ghs__) && (__GHS_VERSION_NUMBER >= 600)
 #   include <boost/type_traits/is_same.hpp>
 #   include <boost/type_traits/is_reference.hpp>
 #   include <boost/type_traits/is_volatile.hpp>
@@ -149,6 +182,35 @@
 #   define BOOST_IS_ENUM(T) __is_enum(T)
 #   define BOOST_IS_POLYMORPHIC(T) __is_polymorphic(T)
 #   define BOOST_ALIGNMENT_OF(T) __alignof__(T)
+
+#   define BOOST_HAS_TYPE_TRAITS_INTRINSICS
+#endif
+
+# if defined(__CODEGEARC__)
+#   include <boost/type_traits/is_same.hpp>
+#   include <boost/type_traits/is_reference.hpp>
+#   include <boost/type_traits/is_volatile.hpp>
+#   include <boost/type_traits/is_void.hpp>
+
+#   define BOOST_IS_UNION(T) __is_union(T)
+#   define BOOST_IS_POD(T) __is_pod(T)
+#   define BOOST_IS_EMPTY(T) __is_empty(T)
+#   define BOOST_HAS_TRIVIAL_CONSTRUCTOR(T) (__has_trivial_default_constructor(T) || is_void<T>::value)
+#   define BOOST_HAS_TRIVIAL_COPY(T) (__has_trivial_copy_constructor(T) && !is_volatile<T>::value && !is_reference<T>::value || is_void<T>::value)
+#   define BOOST_HAS_TRIVIAL_ASSIGN(T) (__has_trivial_assign(T) && !is_volatile<T>::value || is_void<T>::value)
+#   define BOOST_HAS_TRIVIAL_DESTRUCTOR(T) (__has_trivial_destructor(T) || is_void<T>::value)
+#   define BOOST_HAS_NOTHROW_CONSTRUCTOR(T) (__has_nothrow_default_constructor(T) || is_void<T>::value)
+#   define BOOST_HAS_NOTHROW_COPY(T) (__has_nothrow_copy_constructor(T) && !is_volatile<T>::value && !is_reference<T>::value || is_void<T>::value)
+#   define BOOST_HAS_NOTHROW_ASSIGN(T) (__has_nothrow_assign(T) && !is_volatile<T>::value || is_void<T>::value)
+#   define BOOST_HAS_VIRTUAL_DESTRUCTOR(T) __has_virtual_destructor(T)
+
+#   define BOOST_IS_ABSTRACT(T) __is_abstract(T)
+#   define BOOST_IS_BASE_OF(T,U) (__is_base_of(T,U) && !is_void<T>::value && !is_void<U>::value)
+#   define BOOST_IS_CLASS(T) __is_class(T)
+#   define BOOST_IS_CONVERTIBLE(T,U) (__is_convertible(T,U) || is_void<U>::value)
+#   define BOOST_IS_ENUM(T) __is_enum(T)
+#   define BOOST_IS_POLYMORPHIC(T) __is_polymorphic(T)
+#   define BOOST_ALIGNMENT_OF(T) alignof(T)
 
 #   define BOOST_HAS_TYPE_TRAITS_INTRINSICS
 #endif

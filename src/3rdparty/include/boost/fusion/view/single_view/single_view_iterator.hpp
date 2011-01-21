@@ -12,6 +12,12 @@
 #include <boost/fusion/view/single_view/detail/deref_impl.hpp>
 #include <boost/fusion/view/single_view/detail/next_impl.hpp>
 #include <boost/fusion/view/single_view/detail/value_of_impl.hpp>
+#include <boost/config.hpp>
+
+#if defined (BOOST_MSVC)
+#  pragma warning(push)
+#  pragma warning (disable: 4512) // assignment operator could not be generated.
+#endif
 
 namespace boost { namespace fusion
 {
@@ -41,6 +47,10 @@ namespace boost { namespace fusion
         value_type val;
     };
 }}
+
+#if defined (BOOST_MSVC)
+#  pragma warning(pop)
+#endif
 
 #endif
 

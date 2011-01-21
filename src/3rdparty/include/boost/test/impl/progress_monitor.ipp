@@ -1,4 +1,4 @@
-//  (C) Copyright Gennadiy Rozental 2005-2007.
+//  (C) Copyright Gennadiy Rozental 2005-2008.
 //  Distributed under the Boost Software License, Version 1.0.
 //  (See accompanying file LICENSE_1_0.txt or copy at
 //  http://www.boost.org/LICENSE_1_0.txt)
@@ -7,7 +7,7 @@
 //
 //  File        : $RCSfile$
 //
-//  Version     : $Revision: 41369 $
+//  Version     : $Revision: 57992 $
 //
 //  Description : implements simple text based progress monitor
 // ***************************************************************************
@@ -18,6 +18,8 @@
 // Boost.Test
 #include <boost/test/progress_monitor.hpp>
 #include <boost/test/unit_test_suite_impl.hpp>
+
+#include <boost/test/detail/unit_test_parameters.hpp>
 
 // Boost
 #include <boost/progress.hpp>
@@ -40,7 +42,7 @@ namespace {
 struct progress_monitor_impl {
     // Constructor
     progress_monitor_impl()
-    : m_stream( &std::cout )
+        : m_stream( runtime_config::log_sink() )
     {}
 
     std::ostream*                m_stream;

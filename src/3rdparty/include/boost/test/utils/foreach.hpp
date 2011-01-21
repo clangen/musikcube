@@ -1,5 +1,5 @@
 //  (C) Copyright Eric Niebler 2004-2005
-//  (C) Copyright Gennadiy Rozental 2005-2007.
+//  (C) Copyright Gennadiy Rozental 2005-2008.
 //  Distributed under the Boost Software License, Version 1.0.
 //  (See accompanying file LICENSE_1_0.txt or copy at
 //  http://www.boost.org/LICENSE_1_0.txt)
@@ -8,10 +8,10 @@
 //
 //  File        : $RCSfile$
 //
-//  Version     : $Revision: 41369 $
+//  Version     : $Revision: 54633 $
 //
 //  Description : this is an abridged version of an excelent BOOST_FOREACH facility
-//  presented by Eric Niebler. I am so fond of it so I couldn't wait till it 
+//  presented by Eric Niebler. I am so fond of it so I can't wait till it 
 //  going to be accepted into Boost. Also I need version with less number of dependencies 
 //  and more portable. This version doesn't support rvalues and will reeveluate it's 
 //  parameters, but should be good enough for my purposes.
@@ -203,10 +203,6 @@ deref( static_any_t cur, C const&, ::boost::type<RefType>, mpl::true_ )
 // **************              BOOST_TEST_FOREACH              ************** //
 // ************************************************************************** //
 
-#if BOOST_WORKAROUND(__GNUC__, < 3)
-#define BOOST_TEST_FE_MULTISTATEMENT
-#endif
-
 #define BOOST_TEST_FE_ANY                   ::boost::unit_test::for_each::static_any_t
 #define BOOST_TEST_FE_IS_CONST( COL )       ::boost::unit_test::for_each::is_const_coll( COL )
 
@@ -258,8 +254,6 @@ deref( static_any_t cur, C const&, ::boost::type<RefType>, mpl::true_ )
 #define BOOST_TEST_FE_END_VAR   BOOST_JOIN( _fe_end_, BOOST_TEST_LINE_NUM )
 #define BOOST_TEST_FE_CON_VAR   BOOST_JOIN( _fe_con_, BOOST_TEST_LINE_NUM )
 
-#ifndef BOOST_TEST_FE_MULTISTATEMENT
-
 #define BOOST_TEST_FOREACH( RefType, var, COL )                                             \
 if( BOOST_TEST_FE_ANY BOOST_TEST_FE_CUR_VAR = BOOST_TEST_FE_BEG( COL ) ) {} else            \
 if( BOOST_TEST_FE_ANY BOOST_TEST_FE_END_VAR = BOOST_TEST_FE_END( COL ) ) {} else            \
@@ -271,24 +265,6 @@ for( bool BOOST_TEST_FE_CON_VAR = true;                                         
     for( RefType var = BOOST_TEST_FE_DEREF( COL, RefType );                                 \
          !BOOST_TEST_FE_CON_VAR; BOOST_TEST_FE_CON_VAR = true )                             \
 /**/
-
-#else
-
-#define BOOST_TEST_FOREACH( RefType, var, COL )                                     \
-BOOST_TEST_FE_ANY BOOST_TEST_FE_CUR_VAR = BOOST_TEST_FE_BEG( COL ),                 \
-                  BOOST_TEST_FE_END_VAR = BOOST_TEST_FE_END( COL );                 \
-                                                                                    \
-for( bool BOOST_TEST_FE_CON_VAR = true; BOOST_TEST_FE_CON_VAR; )                    \
-for( ;                                                                              \
-     BOOST_TEST_FE_CON_VAR && (BOOST_TEST_FE_CON_VAR = !BOOST_TEST_FE_DONE( COL )); \
-     BOOST_TEST_FE_CON_VAR ? BOOST_TEST_FE_NEXT( COL ) : BOOST_FOREACH_NOOP( COL )) \
-                                                                                    \
-    if( (BOOST_TEST_FE_CON_VAR = false, false) ) {} else                            \
-    for( RefType var = BOOST_TEST_FE_DEREF( COL, RefType );                         \
-         !BOOST_TEST_FE_CON_VAR; BOOST_TEST_FE_CON_VAR = true )                     \
-/**/
-
-#endif
 
 //____________________________________________________________________________//
 

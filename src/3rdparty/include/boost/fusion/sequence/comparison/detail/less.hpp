@@ -32,9 +32,8 @@ namespace boost { namespace fusion { namespace detail
         static bool
         call(I1 const& a, I2 const& b, mpl::false_)
         {
-            return *a < *b
-                || !(*b < *a)
-                && call(fusion::next(a), fusion::next(b));
+            return *a < *b ||
+                (!(*b < *a) && call(fusion::next(a), fusion::next(b)));
         }
 
         template <typename I1, typename I2>
