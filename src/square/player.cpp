@@ -37,7 +37,11 @@
 
 using namespace musik::square;
 
+#ifdef WIN32
 int _tmain(int argc, _TCHAR* argv[])
+#else
+int main(int argc, char* argv[])
+#endif
 {
     ConsoleUI* instance = new ConsoleUI();
     instance->Run();
