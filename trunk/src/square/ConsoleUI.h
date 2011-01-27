@@ -81,7 +81,10 @@ private: DummyAudioEventHandler     audioEventHandler;
 private: boost::mutex   mutex;
 
 private: void ShutDown();
+
+#ifdef WIN32
 public: static DWORD WINAPI ThreadRun(LPVOID param);
+#endif
 
 public: void StartNew();
 };

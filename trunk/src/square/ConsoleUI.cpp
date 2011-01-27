@@ -42,8 +42,9 @@
 #include <core/IPlugin.h>
 #include <core/PluginFactory.h>
 
-using namespace std;
 using namespace musik::square;
+
+//enum audioEventHandler;
 
 ConsoleUI::ConsoleUI() 
 : shouldQuit(false)
@@ -55,10 +56,12 @@ ConsoleUI::ConsoleUI()
 //    this->transport.EventPlaybackStoppedOk.connect(&audioEventHandler, &DummyAudioEventHandler::OnPlaybackStoppedOk);
 //    this->transport.EventPlaybackStoppedFail.connect(&audioEventHandler, &DummyAudioEventHandler::OnPlaybackStoppedFail);
 
-    this->transport.EventVolumeChangedOk.connect(&audioEventHandler, &DummyAudioEventHandler::OnVolumeChangedOk);
-    this->transport.EventVolumeChangedFail.connect(&audioEventHandler, &DummyAudioEventHandler::OnVolumeChangedFail);
+ //   this->transport.EventVolumeChangedOk.connect(&audioEventHandler, &DummyAudioEventHandler::OnVolumeChangedOk);
+ //   this->transport.EventVolumeChangedFail.connect(&audioEventHandler, &DummyAudioEventHandler::OnVolumeChangedFail);
 
-    this->transport.EventMixpointReached.connect(&audioEventHandler, &DummyAudioEventHandler::OnMixpointReached);
+ //   this->transport.EventMixpointReached.connect(&audioEventHandler, &DummyAudioEventHandler::OnMixpointReached);
+ 	
+	this->transport.PlaybackStarted.connect(&this->audioEventHandler, &DummyAudioEventHandler::OnPlaybackStartedOk);
 }
 
 ConsoleUI::~ConsoleUI()
@@ -71,7 +74,7 @@ void ConsoleUI::Print(utfstring s)
 
 	utfcout << "\n*******************************\n\n";
     utfcout << s;
-    utfcout << "\n*******************************\n" << endl;
+    utfcout << "\n*******************************\n" << std::endl;
 }
 
 void ConsoleUI::Run()
@@ -98,7 +101,7 @@ void ConsoleUI::PrintCommands()
     utfcout << "\tlp: list loaded plugins\n";
     utfcout << "\tv <p>: set volume to p%\n";
     utfcout << "\tq: quit";
-    utfcout << endl;
+    utfcout << std::endl;
 }
 
 void ConsoleUI::ProcessCommand(utfstring commandString)
@@ -109,30 +112,30 @@ void ConsoleUI::ProcessCommand(utfstring commandString)
         
     split(args, commandString, is_any_of(" "));
 
-    utfstring command = args.size() > 0 ? args[0] : _T("");
+    utfstring command = args.size() > 0 ? args[0] : UTF("");
     args.erase(args.begin());
 
-    if (command == _T("p"))
+    if (command == UTF("p"))
     {
         this->PlayFile(args);
     }
-    else if (command == _T("s"))
+    else if (command == UTF("s"))
     {
         this->Stop(args);
     }
-    else if (command == _T("l"))
+    /*else if (command == UTF("l"))
     {
         this->ListPlaying();
-    }
-    else if (command == _T("lp"))
+    }*/
+    else if (command == UTF("lp"))
     {
         this->ListPlugins();
     }
-    else if (command == _T("v"))
+    else if (command == UTF("v"))
     {
         this->SetVolume(args);
     }
-    else if (command == _T("q"))
+    else if (command == UTF("q"))
     {
         this->Quit();
     }
@@ -151,7 +154,7 @@ void ConsoleUI::PlayFile(Args args)
     }
     else
     {
-        filename = _T("C:\\temp\\musik\\ding.mp3"); //TODO: remove.  For quick testing only
+        filename = UTF("C:\\temp\\musik\\ding.mp3"); //TODO: remove.  For quick testing only
     }
 
     int repeat = 1;
@@ -174,7 +177,7 @@ void ConsoleUI::PlayFile(Args args)
 //        transport.Start(filename.c_str()); //TODO: fix to use TrackPtr
         if (delay)
         {
-            Sleep(delay);
+            sleep(delay);
         }
     }
 }
@@ -188,11 +191,12 @@ void ConsoleUI::Stop()
 {
     transport.Stop();
 }
-
+/*
 void ConsoleUI::ListPlaying()
 {
-	AudioStreamOverview overview = transport.StreamsOverview();
+	/*AudioStreamOverview overview = transport.StreamsOverview();
 	AudioStreamOverviewIterator it;
+	
 
 	for (it = overview.begin(); it != overview.end(); ++it)
 	{
@@ -200,15 +204,15 @@ void ConsoleUI::ListPlaying()
 	}
     
 	utfcout << "------------------\n";
-	utfcout << transport.NumOfStreams() << " playing" << endl;
-}
+	utfcout << transport.NumOfStreams() << " playing" << std::std::endl;
+}*/
 
 void ConsoleUI::ListPlugins()
 {
     using musik::core::IPlugin;
     using musik::core::PluginFactory;
 
-    typedef std::vector<boost::shared_ptr<IPlugin>> PluginList;
+    typedef std::vector<boost::shared_ptr<IPlugin> > PluginList;
     typedef PluginFactory::NullDeleter<IPlugin> Deleter;
 
     PluginList plugins = 
@@ -247,6 +251,7 @@ void ConsoleUI::ShutDown()
 {
 }
 
+#ifdef WIN32
 /*static*/ DWORD WINAPI ConsoleUI::ThreadRun(LPVOID param)
 {
     ConsoleUI* instance = (ConsoleUI*)param;
@@ -254,6 +259,7 @@ void ConsoleUI::ShutDown()
     delete instance;
     return 0;
 }
+#endif
 
 void ConsoleUI::StartNew()
 {

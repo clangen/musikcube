@@ -44,17 +44,17 @@
 namespace std
 {
 #if defined UNICODE || defined _UNICODE
-#   define utfcerr            wcerr
-#   define utfcin             wcin
-#   define utfclog            wclog
-#   define utfcout            wcout
+#   define utfcerr            std::wcerr
+#   define utfcin             std::wcin
+#   define utfclog            std::wclog
+#   define utfcout            std::wcout
  
 #else // defined UNICODE || defined _UNICODE
 
-#   define utfcerr            cerr
-#   define utfcin             cin
-#   define utfclog            clog
-#   define utfcout            cout
+#   define utfcerr            std::cerr
+#   define utfcin             std::cin
+#   define utfclog            std::clog
+#   define utfcout            std::cout
  
 #endif // defined UNICODE || defined _UNICODE
 } // namespace std

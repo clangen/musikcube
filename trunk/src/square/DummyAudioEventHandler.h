@@ -35,6 +35,8 @@
 
 #include "stdafx.h"
 
+#include "config.h"
+
 #include <vector>
 
 #include <sigslot/sigslot.h>
@@ -43,7 +45,7 @@ namespace musik { namespace square {
 
 class ConsoleUI;
 
-enum AudioStreamEvent;
+//enum AudioStreamEvent;
 
 class DummyAudioEventHandler : public sigslot::has_slots<>
 {
@@ -54,18 +56,18 @@ private: ConsoleUI* cui; // TODO: should probably be interface
 private: void PrintEvent(utfstring s);
 
 // Slots
-public: void    OnPlaybackStartedOk()       {   this->PrintEvent(_T("Playback started OK")); };
-public: void    OnPlaybackStartedFail()     {   this->PrintEvent(_T("Playback started FAIL")); };
-public: void    OnPlaybackStoppedOk()       {   this->PrintEvent(_T("Playback stopped OK")); };
-public: void    OnPlaybackStoppedFail()     {   this->PrintEvent(_T("Playback stopped FAIL")); };
-public: void    OnPlaybackInterrupted()     {   this->PrintEvent(_T("Playback interrupted")); };
-public: void    OnVolumeChangedOk()         {   this->PrintEvent(_T("Volume changed OK")); };
-public: void    OnVolumeChangedFail()       {   this->PrintEvent(_T("Volume changed FAIL")); };
-public: void    OnStreamOpenOk()            {   this->PrintEvent(_T("Stream open OK")); };
-public: void    OnStreamOpenFail()          {   this->PrintEvent(_T("Stream open FAIL")); };
+public: void    OnPlaybackStartedOk()       {   this->PrintEvent(UTF("Playback started OK")); };
+public: void    OnPlaybackStartedFail()     {   this->PrintEvent(UTF("Playback started FAIL")); };
+public: void    OnPlaybackStoppedOk()       {   this->PrintEvent(UTF("Playback stopped OK")); };
+public: void    OnPlaybackStoppedFail()     {   this->PrintEvent(UTF("Playback stopped FAIL")); };
+public: void    OnPlaybackInterrupted()     {   this->PrintEvent(UTF("Playback interrupted")); };
+public: void    OnVolumeChangedOk()         {   this->PrintEvent(UTF("Volume changed OK")); };
+public: void    OnVolumeChangedFail()       {   this->PrintEvent(UTF("Volume changed FAIL")); };
+public: void    OnStreamOpenOk()            {   this->PrintEvent(UTF("Stream open OK")); };
+public: void    OnStreamOpenFail()          {   this->PrintEvent(UTF("Stream open FAIL")); };
 public: void    OnMixpointReached()         ;
-public: void    OnSetPositionOk()           {   this->PrintEvent(_T("Set position OK")); };
-public: void    OnSetPositionFail()         {   this->PrintEvent(_T("Set position FAIL")); };
+public: void    OnSetPositionOk()           {   this->PrintEvent(UTF("Set position OK")); };
+public: void    OnSetPositionFail()         {   this->PrintEvent(UTF("Set position FAIL")); };
 };
 
 }} // NS
