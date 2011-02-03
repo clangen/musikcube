@@ -78,9 +78,10 @@ bool AlsaOutBuffer::AddToOutput(){
         return true;
     }*/
 	int err;
-    frames = snd_pcm_writei(waveOut->waveHandle, (void*)data, bufferLength);
+	snd_pcm_t* wHandle = waveOut->getWaveHandle();
+    frames = snd_pcm_writei(wHandle, (void*)data, bufferLength);
                  if (frames < 0)
-                         frames = snd_pcm_recover(waveOut->waveHandle, frames, 0);
+                         frames = snd_pcm_recover(wHandle, frames, 0);
                  if (frames < 0) {
                          printf("snd_pcm_writei failed: %s\n", snd_strerror(err));
                          return false;

@@ -35,6 +35,7 @@
 #else
 #include <core/pch.hpp>
 #endif
+#include <iostream>
 
 #include <core/audio/Transport.h>
 
@@ -64,26 +65,44 @@ void Transport::PrepareNextTrack(utfstring trackUrl){
 }
 
 void Transport::Start(utfstring url){
+#ifdef _DEBUG
+	std::cerr << "Transport::Start called" << std::endl;
+#endif
     // Check if this is already Prepared
     PlayerPtr player    = this->nextPlayer;
     this->nextPlayer.reset();
+#ifdef _DEBUG
+	std::cerr << "Transport: nextPlayer reset" << std::endl;
+#endif
 
     // If the nextPlayer wasn't the same as the one started, lets create a new one
     if(!player || player->url!=url){
         // Or create a new player
-        player  = Player::Create(url);
+    	Player::OutputPtr output;
+#ifdef _DEBUG
+	std::cerr << "Transport: new output created for player" << std::endl;
+#endif
+        player  = Player::Create(url, output);
         player->SetVolume(this->volume);
+#ifdef _DEBUG
+	std::cerr << "Transport: new player created" << std::endl;
+#endif
     }
 
     // Add to the players
     this->players.push_front(player);
     this->currentPlayer = player;
+#ifdef _DEBUG
+	std::cerr << "Transport: player added to player list" << std::endl;
+#endif
 
     // Lets connect to the signals of the currentPlayer
     this->currentPlayer->PlaybackStarted.connect(this,&Transport::OnPlaybackStarted);
     this->currentPlayer->PlaybackAlmostEnded.connect(this,&Transport::OnPlaybackAlmostEnded);
     this->currentPlayer->PlaybackEnded.connect(this,&Transport::OnPlaybackEnded);
-
+#ifdef _DEBUG
+	std::cerr << "Transport: player-Play() about to be called" << std::endl;
+#endif
     // Start playing
     player->Play();
 }

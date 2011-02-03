@@ -38,5 +38,6 @@
 #pragma once
 
 #include <core/config.h>
+#include <iostream>
 
 #include <alsa/asoundlib.h>

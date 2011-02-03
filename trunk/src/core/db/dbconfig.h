@@ -38,8 +38,11 @@
 
 
 #ifdef _DEBUG
+#ifdef __MSVC__
     #define DB_ASSERT(x)        _ASSERT(x==0)
-//    #define DB_ASSERT(x)        x
+#else //__MSVC__
+    #define DB_ASSERT(x)        x
+#endif//__MSVC
 #else
     #define DB_ASSERT(x)        x
 #endif

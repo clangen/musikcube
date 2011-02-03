@@ -44,7 +44,7 @@ class AlsaOutPlugin : public musik::core::IPlugin
     void Destroy() { delete this; };
 
     const utfchar* Name()       { return TEXT("AlsaOut output plugin"); };
-    const utfchar* Version()    { return TEXT("1"); };
+    const utfchar* Version()    { return TEXT("0.1"); };
     const utfchar* Author()     { return TEXT("Julian Cromarty"); };
 };
 

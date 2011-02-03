@@ -62,6 +62,8 @@ ConsoleUI::ConsoleUI()
  //   this->transport.EventMixpointReached.connect(&audioEventHandler, &DummyAudioEventHandler::OnMixpointReached);
  	
 	this->transport.PlaybackStarted.connect(&this->audioEventHandler, &DummyAudioEventHandler::OnPlaybackStartedOk);
+	this->transport.PlaybackAlmostDone.connect(&this->audioEventHandler, &DummyAudioEventHandler::OnPlaybackAlmostEnded);
+	this->transport.PlaybackEnded.connect(&this->audioEventHandler, &DummyAudioEventHandler::OnPlaybackStoppedFail);
 }
 
 ConsoleUI::~ConsoleUI()
@@ -106,11 +108,11 @@ void ConsoleUI::PrintCommands()
 
 void ConsoleUI::ProcessCommand(utfstring commandString)
 {
-    using namespace boost::algorithm;
+    //using namespace boost::algorithm;
 
     Args args;
         
-    split(args, commandString, is_any_of(" "));
+    boost::algorithm::split(args, commandString, boost::is_any_of(" "));
 
     utfstring command = args.size() > 0 ? args[0] : UTF("");
     args.erase(args.begin());
@@ -154,7 +156,11 @@ void ConsoleUI::PlayFile(Args args)
     }
     else
     {
+#ifdef WIN32
         filename = UTF("C:\\temp\\musik\\ding.mp3"); //TODO: remove.  For quick testing only
+#else
+        filename = UTF("/tmp/test.mp3"); //TODO: remove.  For quick testing only
+#endif
     }
 
     int repeat = 1;
@@ -174,7 +180,7 @@ void ConsoleUI::PlayFile(Args args)
 
     for (int i = 0; i < repeat; ++i)
     {
-//        transport.Start(filename.c_str()); //TODO: fix to use TrackPtr
+        transport.Start(filename.c_str()); //TODO: fix to use TrackPtr
         if (delay)
         {
             sleep(delay);
