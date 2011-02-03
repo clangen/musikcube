@@ -143,7 +143,9 @@ int Player::State(){
 }
 
 void Player::ThreadLoop(){
-
+#ifdef _DEBUG
+	std::cerr << "Player::ThreadLoop started" << std::endl;
+#endif
     // First start the stream
     this->stream    = Stream::Create();
     if(this->stream->OpenStream(this->url)){

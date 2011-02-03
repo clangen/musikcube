@@ -56,6 +56,7 @@ private: ConsoleUI* cui; // TODO: should probably be interface
 private: void PrintEvent(utfstring s);
 
 // Slots
+public: void	OnPlaybackAlmostEnded()		{	this->PrintEvent(UTF("Playback almost done")); };
 public: void    OnPlaybackStartedOk()       {   this->PrintEvent(UTF("Playback started OK")); };
 public: void    OnPlaybackStartedFail()     {   this->PrintEvent(UTF("Playback started FAIL")); };
 public: void    OnPlaybackStoppedOk()       {   this->PrintEvent(UTF("Playback stopped OK")); };

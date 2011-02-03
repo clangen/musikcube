@@ -33,7 +33,7 @@ else(WIN32 AND NOT UNIX)
 	)
 	set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}
 		${CMAKE_CURRENT_SOURCE_DIR}/Modules )
-	include(UseDoxygen)
+	#include(UseDoxygen)
 	set(DOXYFILE_OUTPUT_DIRECTORY docs)
 endif(WIN32 AND NOT UNIX)
 

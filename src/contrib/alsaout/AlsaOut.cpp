@@ -40,6 +40,101 @@ AlsaOut::AlsaOut()
  ,device("default")
  ,output(NULL)
 {
+#ifdef _DEBUG
+	std::cerr << "AlsaOut::AlsaOut() called" << std::endl;
+#endif
+	int err;
+	if ((err = snd_pcm_open (&waveHandle, 0, SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
+		std::cerr << "AlsaOut: cannot open audio device 0" << snd_strerror(err) << std::endl;
+		exit (1);
+	}
+	#ifdef _DEBUG
+	else {
+		std::cerr << "AlsaOut: audio device opened" << std::endl;
+	}
+	#endif
+	
+	if ((err = snd_pcm_hw_params_malloc (&hw_params)) < 0) {
+		std::cerr << "AlsaOut: cannot allocate hardware parameter structure " << snd_strerror(err) << std::endl;
+		exit (1);
+	}
+	#ifdef _DEBUG
+	else {
+		std::cerr << "AlsaOut: audio interface prepared for use" << std::endl;
+	}
+	#endif
+	
+	if ((err = snd_pcm_hw_params_any (waveHandle, hw_params)) < 0) {
+		std::cerr << "AlsaOut: cannot initialize hardware parameter structure " << snd_strerror(err) << std::endl;
+		exit (1);
+	}
+	#ifdef _DEBUG
+	else {
+		std::cerr << "AlsaOut: audio interface prepared for use" << std::endl;
+	}
+	#endif
+	
+	if ((err = snd_pcm_hw_params_set_access (waveHandle, hw_params, SND_PCM_ACCESS_RW_INTERLEAVED)) < 0) {
+		std::cerr << "AlsaOut: cannot set access type " << snd_strerror(err) << std::endl;
+		exit (1);
+	}
+	#ifdef _DEBUG
+	else {
+		std::cerr << "AlsaOut: access type set" << std::endl;
+	}
+	#endif
+	
+	if ((err = snd_pcm_hw_params_set_format (waveHandle, hw_params, SND_PCM_FORMAT_S16_LE)) < 0) {
+		std::cerr << "AlsaOut: cannot set sample format " << snd_strerror(err) << std::endl;
+		exit (1);
+	}
+	#ifdef _DEBUG
+	else {
+		std::cerr << "AlsaOut: sample format set" << std::endl;
+	}
+	#endif
+	
+	if ((err = snd_pcm_hw_params_set_rate_resample (waveHandle, hw_params, 44100)) < 0) {
+		std::cerr << "AlsaOut: cannot set sample rate " << snd_strerror(err) << std::endl;
+		exit (1);
+	}
+	#ifdef _DEBUG
+	else {
+		std::cerr << "AlsaOut: sample rate set" << std::endl;
+	}
+	#endif
+	
+	if ((err = snd_pcm_hw_params_set_channels (waveHandle, hw_params, 2)) < 0) {
+		std::cerr << "AlsaOut: cannot set channel count " << snd_strerror(err) << std::endl;
+		exit (1);
+	}
+	#ifdef _DEBUG
+	else {
+		std::cerr << "AlsaOut: channel count set" << std::endl;
+	}
+	#endif
+	
+	if ((err = snd_pcm_hw_params (waveHandle, hw_params)) < 0) {
+		std::cerr << "AlsaOut: cannot set parameters " << snd_strerror(err) << std::endl;
+		exit (1);
+	}
+	#ifdef _DEBUG
+	else {
+		std::cerr << "AlsaOut: parameters set" << std::endl;
+	}
+	#endif
+	
+	snd_pcm_hw_params_free (hw_params);
+	
+	if ((err = snd_pcm_prepare (waveHandle)) < 0) {
+		std::cerr << "cannot prepare audio interface for use " << snd_strerror(err) << std::endl;
+		exit (1);
+	}
+	#ifdef _DEBUG
+	else {
+		std::cerr << "AlsaOut: audio interface prepared for use" << std::endl;
+	}
+	#endif
 }
 
 AlsaOut::~AlsaOut(){
@@ -52,6 +147,9 @@ AlsaOut::~AlsaOut(){
 
 }
 
+snd_pcm_t* AlsaOut::getWaveHandle() {
+	return this->waveHandle;
+}
 
 void AlsaOut::Destroy(){
     delete this;

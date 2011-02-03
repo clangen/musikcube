@@ -61,6 +61,8 @@ class AlsaOut : public IOutput{
         virtual void ClearBuffers();
         virtual bool PlayBuffer(IBuffer *buffer,IPlayer *player);
         virtual void ReleaseBuffers();
+        
+        snd_pcm_t* getWaveHandle();
 
     public:
         typedef boost::shared_ptr<AlsaOutBuffer> AlsaOutBufferPtr;
@@ -82,6 +84,7 @@ class AlsaOut : public IOutput{
         snd_pcm_t        *waveHandle;
         snd_pcm_format_t waveFormat;
         snd_pcm_access_t waveAccess;
+        snd_pcm_hw_params_t *hw_params;
 
         // Current format
         int currentChannels;

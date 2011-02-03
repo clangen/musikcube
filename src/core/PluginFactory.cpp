@@ -46,6 +46,9 @@ PluginFactory PluginFactory::sInstance;
 
 PluginFactory::PluginFactory(void){
     this->LoadPlugins();
+#ifdef _DEBUG
+    std::cerr << "Loading DLLs" << std::endl;
+#endif
 }
 
 PluginFactory::~PluginFactory(void){
