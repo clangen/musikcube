@@ -22,8 +22,23 @@ if(WIN32 AND NOT UNIX)
 	endif (Boost_FOUND)
 else(WIN32 AND NOT UNIX)
 	find_package(Boost 1.36.0 REQUIRED ${BOOST_LIBS}) 
-	add_definitions (-DHAVE_BOOST
-						-D_FILE_OFFSET_BITS=64)
+	if(Boost_FOUND)
+		add_definitions (-DHAVE_BOOST
+				-D_FILE_OFFSET_BITS=64)
+		set (BOOST_LINK_LIBS 
+			${Boost_LIBRARIES})
+	#	message(STATUS "Libs: " ${BOOST_LINK_LIBS})
+	#	message(STATUS "Includes: " ${Boost_INCLUDE_DIRS})
+	else(Boost_FOUND)
+		set (BOOST_LINK_LIBS
+			boost_system
+			boost_iostreams
+			boost_filesystem
+			boost_thread
+			boost_regex
+			boost_date_time
+			)
+	endif(Boost_FOUND)
 	find_package(Qt4 REQUIRED)
 	#add_definitions(${QT_DEFINITIONS})
 	#include_directories(${QT_INCLUDE_DIR})
@@ -45,12 +60,7 @@ link_directories (${musikCube_SOURCE_DIR}/lib)
 
 set (musikCube_LINK_LIBS
 	${linux_LINK_LIBS}
-	boost_system
-	boost_iostreams
-	boost_filesystem
-	boost_thread
-	boost_regex
-	boost_date_time
+	${BOOST_LINK_LIBS}
 	sqlite3
 	md5
 )
