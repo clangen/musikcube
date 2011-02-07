@@ -44,9 +44,9 @@ AlsaOut::AlsaOut()
 	std::cerr << "AlsaOut::AlsaOut() called" << std::endl;
 #endif
 	int err;
-	if ((err = snd_pcm_open (&waveHandle, 0, SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
-		std::cerr << "AlsaOut: cannot open audio device 0" << snd_strerror(err) << std::endl;
-		exit (1);
+	if ((err = snd_pcm_open (&waveHandle, "default", SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
+		std::cerr << "AlsaOut: cannot open audio device 'default' :" << snd_strerror(err) << std::endl;
+		return;
 	}
 	#ifdef _DEBUG
 	else {
