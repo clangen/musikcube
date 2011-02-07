@@ -6,6 +6,9 @@
 add_subdirectory( flacdecoder )
 #add_subdirectory( httpstream )
 #add_subdirectory( oggdecoder )
+
+add_subdirectory( stdout )
+
 find_package(Taglib)
 add_definitions(-D_HAVE_TAGLIB)
 add_subdirectory( taglib_plugin )
