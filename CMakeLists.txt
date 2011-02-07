@@ -19,6 +19,18 @@ if(WIN32 AND NOT UNIX)
 	find_package(Boost 1.36.0 COMPONENTS ${BOOST_LIBS} )
 	if (Boost_FOUND)
 		add_definitions (-DHAVE_BOOST)
+		set (BOOST_LINK_LIBS 
+			${Boost_LIBRARIES})
+	else (Boost_FOUND)
+		set (BOOST_LINK_LIBS
+			boost_system
+			boost_iostreams
+			boost_filesystem
+			boost_thread
+			boost_regex
+			boost_date_time
+			)
+		include_directories ("${musikCube_SOURCE_DIR}/src/3rdparty/boost")
 	endif (Boost_FOUND)
 else(WIN32 AND NOT UNIX)
 	find_package(Boost 1.36.0 REQUIRED ${BOOST_LIBS}) 
@@ -38,6 +50,7 @@ else(WIN32 AND NOT UNIX)
 			boost_regex
 			boost_date_time
 			)
+		include_directories ("${musikCube_SOURCE_DIR}/src/3rdparty/boost")
 	endif(Boost_FOUND)
 	find_package(Qt4 REQUIRED)
 	#add_definitions(${QT_DEFINITIONS})
