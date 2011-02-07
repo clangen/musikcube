@@ -79,6 +79,10 @@ bool AlsaOutBuffer::AddToOutput(){
     }*/
 	int err;
 	snd_pcm_t* wHandle = waveOut->getWaveHandle();
+	if (wHandle == NULL) {
+		printf("Error. No device handle \n");
+		return false;
+	}
     frames = snd_pcm_writei(wHandle, (void*)data, bufferLength);
                  if (frames < 0)
                          frames = snd_pcm_recover(wHandle, frames, 0);
