@@ -100,6 +100,7 @@ void Transport::Start(utfstring url){
     this->currentPlayer->PlaybackStarted.connect(this,&Transport::OnPlaybackStarted);
     this->currentPlayer->PlaybackAlmostEnded.connect(this,&Transport::OnPlaybackAlmostEnded);
     this->currentPlayer->PlaybackEnded.connect(this,&Transport::OnPlaybackEnded);
+    this->currentPlayer->PlaybackError.connect(this, &Transport::OnPlaybackError);
 #ifdef _DEBUG
 	std::cerr << "Transport: player-Play() about to be called" << std::endl;
 #endif
@@ -187,6 +188,10 @@ void Transport::OnPlaybackEnded(Player *player){
         }
     }
 }
+
+void Transport::OnPlaybackError(Player *player) {
+	this->PlaybackError();
+}	
 
 
 
