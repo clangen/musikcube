@@ -1,8 +1,7 @@
-set ( mpg123decoder_SOURCES
-	mp3decoder_plugin.cpp
-	MP3Decoder.cpp
-	MP3SourceSupplier.cpp
-	stdafx.cpp
+set ( esdout_SOURCES
+	esdout_plugin.cpp
+	EsdOut.cpp
+	EsdOutBuffer.cpp
 	)
 
 if(CMAKE_SYSTEM_NAME MATCHES "Windows")
@@ -20,7 +19,10 @@ add_definitions(
   -D_DEBUG
 )
 
-add_library( mpg123decoder SHARED ${mpg123decoder_SOURCES} )
-target_link_libraries( mpg123decoder ${musikCube_LINK_LIBS} mpg123)
+#include_directories( ../../core )
+include_directories(/usr/include)
+
+add_library( esdout SHARED ${esdout_SOURCES} )
+target_link_libraries( esdout ${musikCube_LINK_LIBS} esd)
 
 
