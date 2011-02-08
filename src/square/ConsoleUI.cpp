@@ -63,7 +63,7 @@ ConsoleUI::ConsoleUI()
  	
 	this->transport.PlaybackStarted.connect(&this->audioEventHandler, &DummyAudioEventHandler::OnPlaybackStartedOk);
 	this->transport.PlaybackAlmostDone.connect(&this->audioEventHandler, &DummyAudioEventHandler::OnPlaybackAlmostEnded);
-	this->transport.PlaybackEnded.connect(&this->audioEventHandler, &DummyAudioEventHandler::OnPlaybackStoppedFail);
+	this->transport.PlaybackError.connect(&this->audioEventHandler, &DummyAudioEventHandler::OnPlaybackStoppedFail);
 }
 
 ConsoleUI::~ConsoleUI()

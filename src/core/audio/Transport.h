@@ -77,11 +77,13 @@ class Transport : public sigslot::has_slots<>{
         PlaybackEvent PlaybackEnded;
         PlaybackEvent PlaybackPause;
         PlaybackEvent PlaybackResume;
+	PlaybackEvent PlaybackError;
 
     private:
         void OnPlaybackStarted(Player *player);
         void OnPlaybackAlmostEnded(Player *player);
         void OnPlaybackEnded(Player *player);
+	void OnPlaybackError(Player *player);
 
     private:
         double volume;
