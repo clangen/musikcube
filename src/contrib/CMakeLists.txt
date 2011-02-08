@@ -7,7 +7,7 @@ add_subdirectory( flacdecoder )
 #add_subdirectory( httpstream )
 #add_subdirectory( oggdecoder )
 
-add_subdirectory( stdout )
+#add_subdirectory( stdout )
 
 find_package(Taglib)
 add_definitions(-D_HAVE_TAGLIB)
@@ -20,6 +20,7 @@ if(CMAKE_SYSTEM_NAME MATCHES "Windows")
 #	endif(NOT DEFINED MINGW)
 else(CMAKE_SYSTEM_NAME MATCHES "Windows")
 	add_subdirectory( alsaout )
+	add_subdirectory( esdout )
 	add_subdirectory( mpg123decoder )
 endif(CMAKE_SYSTEM_NAME MATCHES "Windows")
 

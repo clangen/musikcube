@@ -71,6 +71,10 @@ class StdOut : public IOutput{
     protected:
         friend class StdOutBuffer;
 
+        // Audio stuff
+        void* waveHandle;
+        FILE* output;
+
         // Current format
         int currentChannels;
         long currentSampleRate;

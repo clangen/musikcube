@@ -30,73 +30,84 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
-#include "StdOut.h"
+#include "EsdOut.h"
 
-StdOut::StdOut()
+EsdOut::EsdOut()
  :waveHandle(NULL)
  ,maxBuffers(32)
  ,currentVolume(1.0)
  ,addToRemovedBuffers(false)
  ,device("default")
- ,output(stdout)
+ //,output(NULL)
 {
 #ifdef _DEBUG
-	std::cerr << "StdOut::StdOut() called" << std::endl;
+	std::cerr << "EsdOut::EsdOut() called" << std::endl;
 #endif
 }
 
-StdOut::~StdOut(){
+EsdOut::~EsdOut(){
 #ifdef _DEBUG
-	std::cerr << "StdOut::~StdOut() called" << std::endl;
+	std::cerr << "EsdOut::~EsdOut()" << std::endl;
 #endif
     this->ClearBuffers();
+
+    esd_close( *this->waveHandle );
+
 }
 
-void* StdOut::getWaveHandle() {
+int* EsdOut::getWaveHandle() {
 #ifdef _DEBUG
-	std::cerr << "StdOut::getWaveHandle() called" << std::endl;
+	std::cerr << "EsdOut::getWaveHandle()" << std::endl;
 #endif
 	return this->waveHandle;
 }
 
-void StdOut::Destroy(){
+void EsdOut::Destroy(){
 #ifdef _DEBUG
-	std::cerr << "StdOut::Destroy() called" << std::endl;
+	std::cerr << "EsdOut::Destroy()" << std::endl;
 #endif
     delete this;
 }
 
-void StdOut::Pause(){
+void EsdOut::Pause(){
 #ifdef _DEBUG
-	std::cerr << "StdOut::Pause() called" << std::endl;
+	std::cerr << "EsdOut::Pause()" << std::endl;
 #endif
-    //TODO: Do something here
+    esd_standby(*this->waveHandle);
 }
 
-void StdOut::Resume(){
+void EsdOut::Resume(){
 #ifdef _DEBUG
-	std::cerr << "StdOut::Resume() called" << std::endl;
+	std::cerr << "EsdOut::Resume()" << std::endl;
 #endif
-    //TODO: Do something here
+    esd_resume(*this->waveHandle);
 }
 
-void StdOut::SetVolume(double volume){
+void EsdOut::SetVolume(double volume){
 #ifdef _DEBUG
-	std::cerr << "StdOut::SetVolume() called" << std::endl;
+	std::cerr << "EsdOut::SetVolume()" << std::endl;
 #endif
-    this->currentVolume = volume; //TODO: Finish SetVolume() function
+    /*if(this->waveHandle){
+        DWORD newVolume = (DWORD)(volume*65535.0);
+        newVolume   += newVolume*65536;
+
+        waveOutSetVolume(this->waveHandle,newVolume);
+    }*/
+    this->currentVolume = volume; //TODO: Write Esd SetVolume() function
 }
 
-void StdOut::ClearBuffers(){
+void EsdOut::ClearBuffers(){
 #ifdef _DEBUG
-	std::cerr << "StdOut::ClearBuffers() called" << std::endl;
+	std::cerr << "EsdOut::ClearBuffers()" << std::endl;
 #endif
-    //TODO: Clear buffers
+	 //snd_pcm_drop(this->waveHandle);
+    //snd_pcm_reset(this->waveHandle);
+	//TODO: check nothing needs doing here
 }
 
-void StdOut::RemoveBuffer(StdOutBuffer *buffer){
+void EsdOut::RemoveBuffer(EsdOutBuffer *buffer){
 #ifdef _DEBUG
-	std::cerr << "StdOut::RemoveBuffer() called" << std::endl;
+	std::cerr << "EsdOut::RemoveBuffer()" << std::endl;
 #endif
     BufferList clearBuffers;
     {
@@ -117,9 +128,9 @@ void StdOut::RemoveBuffer(StdOutBuffer *buffer){
     }
 }
 
-void StdOut::ReleaseBuffers(){
+void EsdOut::ReleaseBuffers(){
 #ifdef _DEBUG
-	std::cerr << "StdOut::ReleaseBuffers() called" << std::endl;
+	std::cerr << "EsdOut::ReleaseBuffers()" << std::endl;
 #endif
     BufferList clearBuffers;
     {
@@ -132,9 +143,9 @@ void StdOut::ReleaseBuffers(){
 
 }
 
-bool StdOut::PlayBuffer(IBuffer *buffer,IPlayer *player){
+bool EsdOut::PlayBuffer(IBuffer *buffer,IPlayer *player){
 #ifdef _DEBUG
-	std::cerr << "StdOut::PlayBuffer() called" << std::endl;
+	std::cerr << "EsdOut::PlayBuffer()" << std::endl;
 #endif
 
     size_t bufferSize  = 0;
@@ -152,16 +163,18 @@ bool StdOut::PlayBuffer(IBuffer *buffer,IPlayer *player){
 
 
     if(bufferSize<this->maxBuffers){
+        // Start by checking the format
+        this->SetFormat(buffer);
 
         // Add to the waveout internal buffers
-        StdOutBufferPtr outBuffer(new StdOutBuffer(this,buffer,player));
+        EsdOutBufferPtr EsdBuffer(new EsdOutBuffer(this,buffer,player));
 
         // Header should now be prepared, lets add to waveout
-        if( outBuffer->AddToOutput() ){
+        if( EsdBuffer->AddToOutput() ){
             // Add to the buffer list
             {
                 boost::mutex::scoped_lock lock(this->mutex);
-                this->buffers.push_back(outBuffer);
+                this->buffers.push_back(EsdBuffer);
             }
             return true;
         }
@@ -171,18 +184,21 @@ bool StdOut::PlayBuffer(IBuffer *buffer,IPlayer *player){
     return false;
 }
 
-void StdOut::SetFormat(IBuffer *buffer){
+void EsdOut::SetFormat(IBuffer *buffer){
 #ifdef _DEBUG
-	std::cerr << "StdOut::SetFormat() called" << std::endl;
+	std::cerr << "EsdOut::SetFormat()" << std::endl;
 #endif
     if(this->currentChannels!=buffer->Channels() || this->currentSampleRate!=buffer->SampleRate() ||this->waveHandle==NULL){
         this->currentChannels   = buffer->Channels();
         this->currentSampleRate = buffer->SampleRate();
 
+        //TODO: Do something here?
+
         // Close old waveout
-        if(this->waveHandle!=NULL){
+        /*if(this->waveHandle!=NULL){
+            snd_pcm_close(this->waveHandle);
             this->waveHandle    = NULL;
-        }
+        }*/
 /*
         // Create a new waveFormat
 	    ZeroMemory(&this->waveFormat, sizeof(this->waveFormat));
@@ -208,9 +224,46 @@ void StdOut::SetFormat(IBuffer *buffer){
             default:
                 speakerconfig = 0;
         }
-*/
 
+        this->waveFormat.Format.cbSize					= 22;
+        this->waveFormat.Format.wFormatTag				= WAVE_FORMAT_EXTENSIBLE;
+        this->waveFormat.Format.nChannels				= (WORD)buffer->Channels();
+        this->waveFormat.Format.nSamplesPerSec			= (DWORD)buffer->SampleRate();
+        this->waveFormat.Format.wBitsPerSample			= 32;
+        this->waveFormat.Format.nBlockAlign			    = (this->waveFormat.Format.wBitsPerSample/8) * this->waveFormat.Format.nChannels;
+        this->waveFormat.Format.nAvgBytesPerSec		    = ((this->waveFormat.Format.wBitsPerSample/8) * this->waveFormat.Format.nChannels) * this->waveFormat.Format.nSamplesPerSec; //Compute using nBlkAlign * nSamp/Sec
+
+        // clangen: wValidBitsPerSample/wReserved/wSamplesPerBlock are a union,
+        // so don't set wReserved or wSamplesPerBlock to 0 after assigning
+        // wValidBitsPerSample. (Vista bug)
+        this->waveFormat.Samples.wValidBitsPerSample	= 32;
+        this->waveFormat.dwChannelMask                  = speakerconfig;
+        this->waveFormat.SubFormat                      = KSDATAFORMAT_SUBTYPE_IEEE_FLOAT;
+        */
+        //this->waveFormat						= SND_PCM_FORMAT_FLOAT_LE;
+        //this->waveAccess						= SND_PCM_ACCESS_RW_INTERLEAVED;
+
+        //int err;
+		//Open the device
+		/*	if ((err = snd_pcm_open(&this->waveHandle, device, SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
+	         printf("Playback open error: %s\n", snd_strerror(err));
+	         return;
+         }*/
+		//Set simple parameters
+		/*	if (( err = snd_pcm_set_params(
+					this->waveHandle,
+					this->waveFormat,
+					this->waveAccess,
+					this->currentChannels,
+					this->currentSampleRate,
+					1,		//Allow Esd-lib software resampling
+					500000)	//Required overall latency (us) 0.5s
+					) > 0)	{	//If an error...
+						printf("Playback open error: %s\n", snd_strerror(err));
+	               exit(EXIT_FAILURE);
+	            }
+*/
         // Set the volume if it's not already set
-        this->SetVolume(this->currentVolume);
+  //      this->SetVolume(this->currentVolume);
     }
 }
