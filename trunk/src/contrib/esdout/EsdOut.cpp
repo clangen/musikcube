@@ -36,6 +36,9 @@ EsdOut::EsdOut()
  :waveHandle(NULL)
  ,maxBuffers(32)
  ,currentVolume(1.0)
+ ,currentBits(ESD_BITS16)
+ ,currentMode(ESD_STEREO)
+ ,currentFunc(ESD_PLAY)
  ,addToRemovedBuffers(false)
  ,device("default")
  //,output(NULL)
@@ -43,6 +46,7 @@ EsdOut::EsdOut()
 #ifdef _DEBUG
 	std::cerr << "EsdOut::EsdOut() called" << std::endl;
 #endif
+	const char* host;
 }
 
 EsdOut::~EsdOut(){
@@ -191,6 +195,12 @@ void EsdOut::SetFormat(IBuffer *buffer){
     if(this->currentChannels!=buffer->Channels() || this->currentSampleRate!=buffer->SampleRate() ||this->waveHandle==NULL){
         this->currentChannels   = buffer->Channels();
         this->currentSampleRate = buffer->SampleRate();
+
+        this->waveFormat= this->currentBits | this->currentChannels | this->currentMode | this->currentFunc;
+
+        //this->waveHandle = esd_play_stream(this->waveFormat, (int)this->currentSampleRate, this->host, )
+        int sock = esd_open_sound(NULL);
+        this->waveHandle = &sock;
 
         //TODO: Do something here?
 

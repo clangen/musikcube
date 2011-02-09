@@ -57,9 +57,9 @@ class Player : public IPlayer {
     public:
         typedef boost::shared_ptr<IOutput> OutputPtr;
 
-        static PlayerPtr Create(utfstring url,OutputPtr output=OutputPtr());
+        static PlayerPtr Create(utfstring &url,OutputPtr *output=&OutputPtr());
     private:
-        Player(utfstring &url,OutputPtr output);
+        Player(utfstring &url,OutputPtr *output);
     public:
         ~Player(void);
 
