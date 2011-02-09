@@ -68,17 +68,44 @@ LocalFileStream::~LocalFileStream(){
 }
 
 bool LocalFileStream::Open(const utfchar *filename,unsigned int options){
+#ifdef _DEBUG
+	std::cerr << "LocalFileStream::Open()" << std::endl;
+#endif
     if(filename==NULL){
         return false;
     }
 
     try{
         boost::filesystem::utfpath file(filename);
+//#ifdef _DEBUG
+//	std::cerr << "file: " << file  << std::endl;
+//#endif
+	if (!boost::filesystem::exists(file)) {
+		std::cerr << "File not found" << std::endl;
+	}
+	if (!boost::filesystem::is_regular(file)) {
+		std::cerr << "File not a regular file" << std::endl;
+	}
         this->filesize  = (long)boost::filesystem::file_size(file);
+//#ifdef _DEBUG
+//	std::cerr << "filesize: " << this->filesize  << std::endl;
+//#endif
         this->extension = file.extension();
+//#ifdef _DEBUG
+//	std::cerr << "extension: " << this->extension << std::endl;
+//#endif
 	this->file = UTFFopen(filename,UTF("rb"));
+//#ifdef _DEBUG
+//	std::cerr << "this->file: " << this->file  << std::endl;
+//#endif
         this->fd  = new boost::iostreams::file_descriptor(filename);
+//#ifdef _DEBUG
+//	std::cerr << "fd: " << this->fd  << std::endl;
+//#endif
 	this->fileStream = new boost::iostreams::stream<boost::iostreams::file_descriptor>(*this->fd);
+//#ifdef _DEBUG
+//	std::cerr << "this->fileStream: " << this->fileStream << std::endl;
+//#endif
 	this->fileStream->exceptions ( std::ios_base::eofbit | std::ios_base::failbit | std::ios_base::badbit );
         return this->file!=NULL;
 

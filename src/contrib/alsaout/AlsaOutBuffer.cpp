@@ -44,6 +44,9 @@ AlsaOutBuffer::AlsaOutBuffer(AlsaOut *alsaOut,IBuffer *buffer,IPlayer *player)
 }
 
 void AlsaOutBuffer::PrepareBuffer(){
+#ifdef _DEBUG
+	std::cerr << "AlsaOutBuffer::PrepareBuffer()" << std::endl;
+#endif
 	//unsigned float bufSize = this->buffer->Samples()*this->buffer->Channels()*sizeof(float);
     /*// Prepare the header
     this->header.dwBufferLength		= this->buffer->Samples()*this->buffer->Channels()*sizeof(float);
@@ -73,17 +76,29 @@ AlsaOutBuffer::~AlsaOutBuffer(void)
 }
 
 bool AlsaOutBuffer::AddToOutput(){
+#ifdef _DEBUG
+	std::cerr << "AlsaOutBuffer::AddToOutput()" << std::endl;
+	std::cerr << "Waveout: " << waveOut << std::endl;
+#endif
     /*MMRESULT result = waveOutWrite(this->waveOut->waveHandle,&this->header,sizeof(WAVEHDR));
     if(result==MMSYSERR_NOERROR){
         return true;
     }*/
 	int err;
 	snd_pcm_t* wHandle = waveOut->getWaveHandle();
+#ifdef _DEBUG
+	std::cerr << "whandle: " << wHandle << std::endl;
+	std::cerr << "data: " << *data << std::endl;
+	std::cerr << "bufferLength: " << bufferLength << std::endl;
+#endif
 	if (wHandle == NULL) {
 		printf("Error. No device handle \n");
 		return false;
 	}
-    frames = snd_pcm_writei(wHandle, (void*)data, bufferLength);
+	frames = snd_pcm_writei(wHandle, (void*)data, bufferLength);
+#ifdef _DEBUG
+	std::cerr << "frames: " << frames << std::endl;
+#endif
                  if (frames < 0)
                          frames = snd_pcm_recover(wHandle, frames, 0);
                  if (frames < 0) {
