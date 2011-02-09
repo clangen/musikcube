@@ -56,7 +56,7 @@ Transport::~Transport(){
 void Transport::PrepareNextTrack(utfstring trackUrl){
 
     if(this->gapless && this->currentPlayer){
-        this->nextPlayer    = Player::Create(trackUrl,this->currentPlayer->output);
+        this->nextPlayer    = Player::Create(trackUrl,&this->currentPlayer->output);
         this->nextPlayer->Play();
     }else{
         this->nextPlayer    = Player::Create(trackUrl);
@@ -82,7 +82,7 @@ void Transport::Start(utfstring url){
 #ifdef _DEBUG
 	std::cerr << "Transport: new output created for player" << std::endl;
 #endif
-        player  = Player::Create(url, output);
+        player  = Player::Create(url, &output);
         player->SetVolume(this->volume);
 #ifdef _DEBUG
 	std::cerr << "Transport: new player created" << std::endl;

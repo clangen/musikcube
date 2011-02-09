@@ -90,8 +90,11 @@ class EsdOut : public IOutput{
         int mode = ESD_STREAM, func = ESD_PLAY ;*/
 
         // Current format
+        int currentBits;
         int currentChannels;
         long currentSampleRate;
+        int currentMode;
+        int currentFunc;
         double currentVolume;
 
         typedef std::list<EsdOutBufferPtr> BufferList;

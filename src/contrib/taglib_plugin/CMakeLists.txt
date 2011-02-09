@@ -20,6 +20,6 @@ add_definitions(
 )
 
 add_library( taglib_plugin SHARED ${taglib_plugin_SOURCES} )
-target_link_libraries( taglib_plugin ${musikCube_LINK_LIBS})
+target_link_libraries( taglib_plugin ${musikCube_LINK_LIBS} tag)
 
 

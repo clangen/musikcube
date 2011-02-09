@@ -21,6 +21,6 @@ add_definitions(
 )
 
 add_library( flacdecoder SHARED ${flacdecoder_SOURCES} )
-target_link_libraries( flacdecoder ${musikCube_LINK_LIBS})
+target_link_libraries( flacdecoder ${musikCube_LINK_LIBS} FLAC++)
 
 

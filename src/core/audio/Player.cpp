@@ -41,11 +41,11 @@
 
 using namespace musik::core::audio;
 
-PlayerPtr Player::Create(utfstring url,OutputPtr output){
+PlayerPtr Player::Create(utfstring &url,OutputPtr *output){
     return PlayerPtr(new Player(url,output));
 }
 
-Player::Player(utfstring &url,OutputPtr output)
+Player::Player(utfstring &url,OutputPtr *output)
  :volume(1.0)
  ,state(Player::Precache)
  ,url(url)
@@ -54,8 +54,8 @@ Player::Player(utfstring &url,OutputPtr output)
  ,currentPosition(0)
  ,setPosition(-1)
 {
-    if(output){
-        this->output    = output;
+    if(*output){
+        this->output    = *output;
     }else{
         // Start by finding out what output to use
         typedef std::vector<OutputPtr> OutputVector;
@@ -145,7 +145,6 @@ int Player::State(){
 void Player::ThreadLoop(){
 #ifdef _DEBUG
 	std::cerr << "Player::ThreadLoop started" << std::endl;
-	std::cerr << "this->url = " << this->url.c_str() << std::endl;
 #endif
     // First start the stream
     this->stream    = Stream::Create();
