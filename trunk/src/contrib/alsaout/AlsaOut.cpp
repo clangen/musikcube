@@ -134,6 +134,7 @@ AlsaOut::AlsaOut()
 	else {
 		std::cerr << "AlsaOut: audio interface prepared for use" << std::endl;
 	}
+	std::cerr << "waveHandle: " << waveHandle << std::endl;
 	#endif
 }
 
@@ -215,15 +216,24 @@ void AlsaOut::ReleaseBuffers(){
 }
 
 bool AlsaOut::PlayBuffer(IBuffer *buffer,IPlayer *player){
-
+#ifdef _DEBUG
+	std::cerr << "AlsaOut::PlayBuffer()" << std::endl;
+	std::cerr << "Buffer: " << buffer << std::endl;
+#endif
     size_t bufferSize  = 0;
     {
         boost::mutex::scoped_lock lock(this->mutex);
         bufferSize  = this->buffers.size();
     }
+#ifdef _DEBUG
+	std::cerr << "buffer size: " << bufferSize << std::endl;
+#endif
 
     // if the format should change, wait for all buffers to be released
     if(bufferSize>0 && (this->currentChannels!=buffer->Channels() || this->currentSampleRate!=buffer->SampleRate())){
+#ifdef _DEBUG
+	std::cerr << "format changed" << std::endl;
+#endif
         // Format has changed
 //        this->player->Notify()
         return false;
@@ -233,21 +243,36 @@ bool AlsaOut::PlayBuffer(IBuffer *buffer,IPlayer *player){
     if(bufferSize<this->maxBuffers){
         // Start by checking the format
         this->SetFormat(buffer);
+#ifdef _DEBUG
+	std::cerr << "format set" << std::endl;
+#endif
 
         // Add to the waveout internal buffers
         AlsaOutBufferPtr alsaBuffer(new AlsaOutBuffer(this,buffer,player));
+#ifdef _DEBUG
+	std::cerr << "alsaBuffer created" << std::endl;
+#endif
 
         // Header should now be prepared, lets add to waveout
         if( alsaBuffer->AddToOutput() ){
+#ifdef _DEBUG
+	std::cerr << "added to internal buffer" << std::endl;
+#endif
             // Add to the buffer list
             {
                 boost::mutex::scoped_lock lock(this->mutex);
                 this->buffers.push_back(alsaBuffer);
+#ifdef _DEBUG
+	std::cerr << "added to buffer list" << std::endl;
+#endif
             }
             return true;
         }
 
     }
+#ifdef _DEBUG
+	std::cerr << "buffer size too big" << std::endl;
+#endif
 
     return false;
 }
