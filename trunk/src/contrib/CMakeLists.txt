@@ -19,8 +19,8 @@ if(CMAKE_SYSTEM_NAME MATCHES "Windows")
 #        	
 #	endif(NOT DEFINED MINGW)
 else(CMAKE_SYSTEM_NAME MATCHES "Windows")
-	add_subdirectory( alsaout )
-#	add_subdirectory( esdout )
+	#	add_subdirectory( alsaout )
+	add_subdirectory( esdout )
 	add_subdirectory( mpg123decoder )
 endif(CMAKE_SYSTEM_NAME MATCHES "Windows")
 

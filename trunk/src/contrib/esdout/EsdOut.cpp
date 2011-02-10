@@ -36,17 +36,24 @@ EsdOut::EsdOut()
  :waveHandle(NULL)
  ,maxBuffers(32)
  ,currentVolume(1.0)
- ,currentBits(ESD_BITS16)
- ,currentMode(ESD_STEREO)
- ,currentFunc(ESD_PLAY)
+ ,currentBits(16)
  ,addToRemovedBuffers(false)
- ,device("default")
- //,output(NULL)
+ ,host(NULL)
 {
 #ifdef _DEBUG
 	std::cerr << "EsdOut::EsdOut() called" << std::endl;
 #endif
-	const char* host;
+	//const char* host;
+	/*int esd;
+	esd_server_info_t *info;
+	if ((esd = esd_open_sound(NULL)) >= 0)
+	{
+		info = esd_get_server_info(esd);
+		esd_rate = info->rate;
+		fmt = info->format;
+		esd_free_server_info(info);
+		esd_close(esd);
+	}*/
 }
 
 EsdOut::~EsdOut(){
@@ -55,7 +62,7 @@ EsdOut::~EsdOut(){
 #endif
     this->ClearBuffers();
 
-    esd_close( *this->waveHandle );
+    esd_close( this->waveHandle );
 
 }
 
@@ -63,7 +70,7 @@ int* EsdOut::getWaveHandle() {
 #ifdef _DEBUG
 	std::cerr << "EsdOut::getWaveHandle()" << std::endl;
 #endif
-	return this->waveHandle;
+	return &this->waveHandle;
 }
 
 void EsdOut::Destroy(){
@@ -77,14 +84,14 @@ void EsdOut::Pause(){
 #ifdef _DEBUG
 	std::cerr << "EsdOut::Pause()" << std::endl;
 #endif
-    esd_standby(*this->waveHandle);
+    esd_standby(this->waveHandle);
 }
 
 void EsdOut::Resume(){
 #ifdef _DEBUG
 	std::cerr << "EsdOut::Resume()" << std::endl;
 #endif
-    esd_resume(*this->waveHandle);
+    esd_resume(this->waveHandle);
 }
 
 void EsdOut::SetVolume(double volume){
@@ -195,85 +202,43 @@ void EsdOut::SetFormat(IBuffer *buffer){
     if(this->currentChannels!=buffer->Channels() || this->currentSampleRate!=buffer->SampleRate() ||this->waveHandle==NULL){
         this->currentChannels   = buffer->Channels();
         this->currentSampleRate = buffer->SampleRate();
-
-        this->waveFormat= this->currentBits | this->currentChannels | this->currentMode | this->currentFunc;
-
-        //this->waveHandle = esd_play_stream(this->waveFormat, (int)this->currentSampleRate, this->host, )
-        int sock = esd_open_sound(NULL);
-        this->waveHandle = &sock;
-
-        //TODO: Do something here?
-
-        // Close old waveout
-        /*if(this->waveHandle!=NULL){
-            snd_pcm_close(this->waveHandle);
-            this->waveHandle    = NULL;
-        }*/
-/*
-        // Create a new waveFormat
-	    ZeroMemory(&this->waveFormat, sizeof(this->waveFormat));
-        DWORD speakerconfig;
-
-        // Set speaker configuration
-        switch(buffer->Channels()){
-            case 1:
-                speakerconfig = KSAUDIO_SPEAKER_MONO;
-                break;
-            case 2:
-                speakerconfig = KSAUDIO_SPEAKER_STEREO;
-                break;
-            case 4:
-                speakerconfig = KSAUDIO_SPEAKER_QUAD;
-                break;
-            case 5:
-                speakerconfig = (SPEAKER_FRONT_LEFT | SPEAKER_FRONT_RIGHT | SPEAKER_FRONT_CENTER | SPEAKER_BACK_LEFT  | SPEAKER_BACK_RIGHT);
-                break;
-            case 6:
-                speakerconfig = KSAUDIO_SPEAKER_5POINT1;
-                break;
-            default:
-                speakerconfig = 0;
+#ifdef _DEBUG
+      std::cerr << "Channels: " << this->currentChannels << std::endl;
+      std::cerr << "Rate: " << this->currentSampleRate << std::endl;
+      std::cerr << "Bits: " << this->currentBits << std::endl;
+#endif
+        if (this->waveHandle) {
+        	esd_close(this->waveHandle);
         }
 
-        this->waveFormat.Format.cbSize					= 22;
-        this->waveFormat.Format.wFormatTag				= WAVE_FORMAT_EXTENSIBLE;
-        this->waveFormat.Format.nChannels				= (WORD)buffer->Channels();
-        this->waveFormat.Format.nSamplesPerSec			= (DWORD)buffer->SampleRate();
-        this->waveFormat.Format.wBitsPerSample			= 32;
-        this->waveFormat.Format.nBlockAlign			    = (this->waveFormat.Format.wBitsPerSample/8) * this->waveFormat.Format.nChannels;
-        this->waveFormat.Format.nAvgBytesPerSec		    = ((this->waveFormat.Format.wBitsPerSample/8) * this->waveFormat.Format.nChannels) * this->waveFormat.Format.nSamplesPerSec; //Compute using nBlkAlign * nSamp/Sec
+    	this->waveFormat = 0;
 
-        // clangen: wValidBitsPerSample/wReserved/wSamplesPerBlock are a union,
-        // so don't set wReserved or wSamplesPerBlock to 0 after assigning
-        // wValidBitsPerSample. (Vista bug)
-        this->waveFormat.Samples.wValidBitsPerSample	= 32;
-        this->waveFormat.dwChannelMask                  = speakerconfig;
-        this->waveFormat.SubFormat                      = KSDATAFORMAT_SUBTYPE_IEEE_FLOAT;
-        */
-        //this->waveFormat						= SND_PCM_FORMAT_FLOAT_LE;
-        //this->waveAccess						= SND_PCM_ACCESS_RW_INTERLEAVED;
+    	if (this->currentBits == 8) {
+    		this->waveFormat |= ESD_BITS8;
+    	}
+    	else if (this->currentBits == 16) {
+    		this->waveFormat |= ESD_BITS16;
+    	}
+    	else {
+    		std::cerr << "EsdOut - Incorrect number of bits: " << this->currentBits << ". Should be 8 or 16" << std::endl;
+    	}
 
-        //int err;
-		//Open the device
-		/*	if ((err = snd_pcm_open(&this->waveHandle, device, SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
-	         printf("Playback open error: %s\n", snd_strerror(err));
-	         return;
-         }*/
-		//Set simple parameters
-		/*	if (( err = snd_pcm_set_params(
-					this->waveHandle,
-					this->waveFormat,
-					this->waveAccess,
-					this->currentChannels,
-					this->currentSampleRate,
-					1,		//Allow Esd-lib software resampling
-					500000)	//Required overall latency (us) 0.5s
-					) > 0)	{	//If an error...
-						printf("Playback open error: %s\n", snd_strerror(err));
-	               exit(EXIT_FAILURE);
-	            }
-*/
-        // Set the volume if it's not already set
-  //      this->SetVolume(this->currentVolume);
+    	if (this->currentChannels == 2) {
+    		this->waveFormat |= ESD_STEREO;
+    	}
+    	else if (this->currentChannels == 1) {
+    		this->waveFormat |= ESD_MONO;
+    	}
+    	else {
+    		std::cerr << "EsdOut - Incorrect number of channels: " << this->currentChannels << ". Should be 1 or 2" << std::endl;
+    	}
+
+    	this->waveFormat |= ESD_STREAM;
+    	this->waveFormat |= ESD_PLAY;
+
+    	this->waveHandle = esd_play_stream(this->waveFormat, (int)this->currentSampleRate, "192.168.10.1:16001", "musik");
+#ifdef _DEBUG
+    	std::cerr << "waveHandle: " << this->waveHandle << std::endl;
+#endif
     }
 }
