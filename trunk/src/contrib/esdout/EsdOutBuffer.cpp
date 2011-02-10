@@ -102,7 +102,7 @@ bool EsdOutBuffer::AddToOutput(){
                          printf("Short write (expected %li, wrote %li)\n", (long)bufferLength, frames);
                          return false;
                  }*/
-	if ( write( *wHandle, *data, bufferLength ) <= 0 )
+	if ( write( *wHandle, data, bufferLength ) <= 0 )
 		    return false;
 	return true;
 }
