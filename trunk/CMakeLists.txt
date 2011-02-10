@@ -16,11 +16,13 @@ regex
 
 set (Boost_ADDITIONAL_VERSIONS "1.37.0" )
 if(WIN32 AND NOT UNIX)
-	find_package(Boost 1.36.0 COMPONENTS ${BOOST_LIBS} )
+	find_package(Boost 1.42.0 REQUIRED ${BOOST_LIBS} )
 	if (Boost_FOUND)
 		add_definitions (-DHAVE_BOOST)
 		set (BOOST_LINK_LIBS 
 			${Boost_LIBRARIES})
+		include_directories (${Boost_INCLUDE_DIRS})
+		message(STATUS "Includes: " ${Boost_INCLUDE_DIRS})
 	else (Boost_FOUND)
 		set (BOOST_LINK_LIBS
 			boost_system
@@ -33,7 +35,7 @@ if(WIN32 AND NOT UNIX)
 		include_directories ("${musikCube_SOURCE_DIR}/src/3rdparty/boost")
 	endif (Boost_FOUND)
 else(WIN32 AND NOT UNIX)
-	find_package(Boost 1.36.0 REQUIRED ${BOOST_LIBS}) 
+	find_package(Boost 1.42.0 REQUIRED ${BOOST_LIBS}) 
 	if(Boost_FOUND)
 		add_definitions (-DHAVE_BOOST
 				-D_FILE_OFFSET_BITS=64)
@@ -59,6 +61,7 @@ else(WIN32 AND NOT UNIX)
 		dl
 		expat
 	)
+	include_directories( "/usr/include/taglib" )
 	set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}
 		${CMAKE_CURRENT_SOURCE_DIR}/Modules )
 	#include(UseDoxygen)
@@ -66,10 +69,10 @@ else(WIN32 AND NOT UNIX)
 endif(WIN32 AND NOT UNIX)
 
 SET (CMAKE_BUILD_TYPE DEBUG)
-set (LIBRARY_OUTPUT_PATH ${musikCube_SOURCE_DIR}/lib)
+set (LIBRARY_OUTPUT_PATH ${musikCube_SOURCE_DIR}/bin/plugins)
 set (EXECUTABLE_OUTPUT_PATH ${musikCube_SOURCE_DIR}/bin)
 
-link_directories (${musikCube_SOURCE_DIR}/lib)
+link_directories (${musikCube_SOURCE_DIR}/bin/plugins)
 
 set (musikCube_LINK_LIBS
 	${linux_LINK_LIBS}
@@ -78,7 +81,7 @@ set (musikCube_LINK_LIBS
 	md5
 )
 
-include_directories (	"/usr/include/taglib"
+include_directories (
 			"${musikCube_SOURCE_DIR}/src"
 			"${musikCube_SOURCE_DIR}/src/core"
 			"${musikCube_SOURCE_DIR}/src/3rdparty/include")
