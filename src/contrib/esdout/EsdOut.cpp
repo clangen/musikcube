@@ -235,8 +235,14 @@ void EsdOut::SetFormat(IBuffer *buffer){
 
     	this->waveFormat |= ESD_STREAM;
     	this->waveFormat |= ESD_PLAY;
-
-    	this->waveHandle = esd_play_stream(this->waveFormat, (int)this->currentSampleRate, "192.168.10.1:16001", "musik");
+#ifdef _DEBUG
+    	std::cerr << "waveFormat: " << this->waveFormat << std::endl;
+#endif
+	char* host = getenv("ESPEAKER");
+#ifdef _DEBUG
+    	std::cerr << "host: " << host << std::endl;
+#endif
+    	this->waveHandle = esd_play_stream(this->waveFormat, (int)this->currentSampleRate, host, "musik");
 #ifdef _DEBUG
     	std::cerr << "waveHandle: " << this->waveHandle << std::endl;
 #endif
