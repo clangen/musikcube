@@ -175,15 +175,9 @@ void Player::ThreadLoop(){
         // Player should be started or quit by now
         bool finished(false);
         while(!finished && !this->Exited()){
-#ifdef _DEBUG
-	std::cerr << "while loop" << std::endl;
-#endif
             if(this->setPosition!=-1){
                 // Set a new position
                 this->output->ClearBuffers();
-#ifdef _DEBUG
-	std::cerr << "Buffers cleared" << std::endl;
-#endif
                 this->stream->SetPosition(this->setPosition);
                 {
                     boost::mutex::scoped_lock lock(this->mutex);
@@ -193,14 +187,8 @@ void Player::ThreadLoop(){
                     this->totalBufferSize   = 0;
                 }
             }
-#ifdef _DEBUG
-	std::cerr << "position set" << std::endl;
-#endif
 
             this->output->ReleaseBuffers();
-#ifdef _DEBUG
-	std::cerr << "buffers released" << std::endl;
-#endif
 
             // Get a buffer, either from the bufferQueue, or from the stream
             BufferPtr buffer;
@@ -214,22 +202,13 @@ void Player::ThreadLoop(){
                     boost::mutex::scoped_lock lock(this->mutex);
                     this->bufferQueue.push_back(buffer);
                     this->totalBufferSize += buffer->Bytes();
-#ifdef _DEBUG
-	std::cerr << "got buffer" << std::endl;
-#endif
                 }
 		else {
-#ifdef _DEBUG
-	std::cerr << "not got buffer :(" << std::endl;
-#endif
 			
 		}
             }
 
             if(buffer){
-#ifdef _DEBUG
-	std::cerr << "good buffer" << std::endl;
-#endif
 
                 {
                     // Add the buffer to locked buffers so the output do not have time to play and 
@@ -237,15 +216,9 @@ void Player::ThreadLoop(){
                     boost::mutex::scoped_lock lock(this->mutex);
                     this->lockedBuffers.push_back(buffer);
                 }
-#ifdef _DEBUG
-	std::cerr << "locked buffer" << std::endl;
-#endif
 
                 // Try to play the buffer
                 if(!this->output->PlayBuffer(buffer.get(),this)){
-#ifdef _DEBUG
-	std::cerr << "couldn't play buffer" << std::endl;
-#endif
                     {
                         // We didn't manage to play the buffer, remove it from the locked buffer queue
                         boost::mutex::scoped_lock lock(this->mutex);
@@ -253,7 +226,9 @@ void Player::ThreadLoop(){
                     }
 
                     if(!this->PreBuffer()){
-
+#ifdef _DEBUG
+        	std::cerr << "!this->PreBuffer" << std::endl;
+#endif
                         // Wait for buffersize to become smaller
                         boost::mutex::scoped_lock lock(this->mutex);
                         if(this->totalBufferSize>this->maxBufferSize){
@@ -268,6 +243,7 @@ void Player::ThreadLoop(){
                     // Buffer send to output
                     boost::mutex::scoped_lock lock(this->mutex);
                     if(!this->bufferQueue.empty()){
+                    	this->output->RemoveBuffer()
                         this->bufferQueue.pop_front();
 
                         // Set currentPosition
@@ -279,7 +255,7 @@ void Player::ThreadLoop(){
                 }
             }else{
 #ifdef _DEBUG
-	std::cerr << "has got more buffer" << std::endl;
+	std::cerr << "has got no more buffer" << std::endl;
 #endif
                 // We have no more to decode
                 finished    = true;
@@ -295,9 +271,6 @@ void Player::ThreadLoop(){
         bool buffersEmpty=false;
         do{
             this->output->ReleaseBuffers();
-#ifdef _DEBUG
-	std::cerr << "release buffer" << std::endl;
-#endif
             {
                 boost::mutex::scoped_lock lock(this->mutex);
                 buffersEmpty    = this->lockedBuffers.empty();
@@ -357,6 +330,9 @@ void Player::ReleaseBuffer(IBuffer *buffer){
     // Remove the buffer from lockedBuffers
     for(BufferList::iterator foundBuffer=this->lockedBuffers.begin();foundBuffer!=this->lockedBuffers.end();++foundBuffer){
         if(foundBuffer->get()==buffer){
+#ifdef _DEBUG
+        	std::cerr << "Found buffer to delete in locked buffer list" << std::endl;
+#endif
             this->totalBufferSize -= buffer->Bytes();
             if( this->stream ){
                 this->stream->DeleteBuffer(*foundBuffer);
