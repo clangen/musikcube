@@ -67,9 +67,6 @@ EsdOut::~EsdOut(){
 }
 
 int* EsdOut::getWaveHandle() {
-#ifdef _DEBUG
-	std::cerr << "EsdOut::getWaveHandle()" << std::endl;
-#endif
 	return &this->waveHandle;
 }
 
@@ -126,6 +123,9 @@ void EsdOut::RemoveBuffer(EsdOutBuffer *buffer){
         bool found(false);
         for(BufferList::iterator buf=this->buffers.begin();buf!=this->buffers.end() && !found;){
             if(buf->get()==buffer){
+#ifdef _DEBUG
+        	std::cerr << "Remove loop" << std::endl;
+#endif
 //                if( !(*buf)->ReadyToRelease() ){
                     this->removedBuffers.push_back(*buf);
 //                }
@@ -147,6 +147,9 @@ void EsdOut::ReleaseBuffers(){
     {
         boost::mutex::scoped_lock lock(this->mutex);
         for(BufferList::iterator buf=this->removedBuffers.begin();buf!=this->removedBuffers.end();){
+#ifdef _DEBUG
+        	std::cerr << "Release loop" << std::endl;
+#endif
             clearBuffers.push_back(*buf);
             buf = this->removedBuffers.erase(buf);
         }
@@ -155,9 +158,6 @@ void EsdOut::ReleaseBuffers(){
 }
 
 bool EsdOut::PlayBuffer(IBuffer *buffer,IPlayer *player){
-#ifdef _DEBUG
-	std::cerr << "EsdOut::PlayBuffer()" << std::endl;
-#endif
 
     size_t bufferSize  = 0;
     {
@@ -196,17 +196,11 @@ bool EsdOut::PlayBuffer(IBuffer *buffer,IPlayer *player){
 }
 
 void EsdOut::SetFormat(IBuffer *buffer){
-#ifdef _DEBUG
-	std::cerr << "EsdOut::SetFormat()" << std::endl;
-#endif
+
     if(this->currentChannels!=buffer->Channels() || this->currentSampleRate!=buffer->SampleRate() ||this->waveHandle==NULL){
         this->currentChannels   = buffer->Channels();
         this->currentSampleRate = buffer->SampleRate();
-#ifdef _DEBUG
-      std::cerr << "Channels: " << this->currentChannels << std::endl;
-      std::cerr << "Rate: " << this->currentSampleRate << std::endl;
-      std::cerr << "Bits: " << this->currentBits << std::endl;
-#endif
+
         if (this->waveHandle) {
         	esd_close(this->waveHandle);
         }
@@ -235,16 +229,10 @@ void EsdOut::SetFormat(IBuffer *buffer){
 
     	this->waveFormat |= ESD_STREAM;
     	this->waveFormat |= ESD_PLAY;
-#ifdef _DEBUG
-    	std::cerr << "waveFormat: " << this->waveFormat << std::endl;
-#endif
-	char* host = getenv("ESPEAKER");
-#ifdef _DEBUG
-    	std::cerr << "host: " << host << std::endl;
-#endif
+
+    	char* host = getenv("ESPEAKER");
+
     	this->waveHandle = esd_play_stream(this->waveFormat, (int)this->currentSampleRate, host, "musik");
-#ifdef _DEBUG
-    	std::cerr << "waveHandle: " << this->waveHandle << std::endl;
-#endif
+
     }
 }

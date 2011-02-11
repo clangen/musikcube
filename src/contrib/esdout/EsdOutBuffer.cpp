@@ -40,37 +40,13 @@ EsdOutBuffer::EsdOutBuffer(EsdOut *EsdOut,IBuffer *buffer,IPlayer *player)
  ,buffer(buffer)
  ,player(player)
 {
-#ifdef _DEBUG
-	std::cerr << "EsdOutBuffer::EsdOutBuffer()" << std::endl;
-#endif
     this->PrepareBuffer();
 }
 
 void EsdOutBuffer::PrepareBuffer(){
-#ifdef _DEBUG
-	std::cerr << "EsdOutBuffer::PrepareBuffer()" << std::endl;
-#endif
-	//unsigned float bufSize = this->buffer->Samples()*this->buffer->Channels()*sizeof(float);
-    /*// Prepare the header
-    this->header.dwBufferLength		= this->buffer->Samples()*this->buffer->Channels()*sizeof(float);
-    this->header.lpData				= (LPSTR)this->buffer->BufferPointer();
-	this->header.dwUser				= (DWORD_PTR)this;
-	this->header.dwBytesRecorded	= 0;
-	this->header.dwFlags			= 0;
-	this->header.dwLoops			= 0;
-    this->header.lpNext             = NULL;
-    this->header.reserved           = NULL;
-
-    MMRESULT result = waveOutPrepareHeader(this->waveOut->waveHandle,&this->header,sizeof(WAVEHDR));
-    if(result!=MMSYSERR_NOERROR){
-        throw;
-    }
-    this->header.dwFlags			|= WHDR_DONE;
-	*/
 	data = (char*)this->buffer->BufferPointer();
 	bufferLength = this->buffer->Samples()*this->buffer->Channels()*sizeof(float);
 			//TODO: Check data types.
-
 }
 
 EsdOutBuffer::~EsdOutBuffer(void)
@@ -82,28 +58,15 @@ EsdOutBuffer::~EsdOutBuffer(void)
 }
 
 bool EsdOutBuffer::AddToOutput(){
-#ifdef _DEBUG
-	std::cerr << "EsdOutBuffer::AddToOutput()" << std::endl;
-#endif
     //int err;
 	int* wHandle = waveOut->getWaveHandle();
 	if (wHandle == NULL) {
 		printf("Error. No device handle \n");
 		return false;
 	}
-    /*frames = snd_pcm_writei(wHandle, (void*)data, bufferLength);
-                 if (frames < 0)
-                         frames = snd_pcm_recover(wHandle, frames, 0);
-                 if (frames < 0) {
-                         printf("snd_pcm_writei failed: %s\n", snd_strerror(err));
-                         return false;
-                 }
-                 if (frames > 0 && frames < (long)bufferLength)	{
-                         printf("Short write (expected %li, wrote %li)\n", (long)bufferLength, frames);
-                         return false;
-                 }*/
 	if ( write( *wHandle, data, bufferLength ) <= 0 )
 		    return false;
+
 	return true;
 }
 
