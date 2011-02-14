@@ -51,10 +51,7 @@ void EsdOutBuffer::PrepareBuffer(){
 
 EsdOutBuffer::~EsdOutBuffer(void)
 {
-#ifdef _DEBUG
-	std::cerr << "EsdOutBuffer::~EsdOutBuffer()" << std::endl;
-#endif
-    this->player->ReleaseBuffer(this->buffer);
+
 }
 
 bool EsdOutBuffer::AddToOutput(){

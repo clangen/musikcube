@@ -143,9 +143,6 @@ int Player::State(){
 }
 
 void Player::ThreadLoop(){
-#ifdef _DEBUG
-	std::cerr << "Player::ThreadLoop started" << std::endl;
-#endif
     // First start the stream
     this->stream    = Stream::Create();
     if(this->stream->OpenStream(this->url)){
@@ -237,13 +234,9 @@ void Player::ThreadLoop(){
 
                     }
                 }else{
-#ifdef _DEBUG
-	std::cerr << "send buffer to output" << std::endl;
-#endif
                     // Buffer send to output
                     boost::mutex::scoped_lock lock(this->mutex);
                     if(!this->bufferQueue.empty()){
-                    	this->output->RemoveBuffer()
                         this->bufferQueue.pop_front();
 
                         // Set currentPosition
@@ -254,9 +247,6 @@ void Player::ThreadLoop(){
 
                 }
             }else{
-#ifdef _DEBUG
-	std::cerr << "has got no more buffer" << std::endl;
-#endif
                 // We have no more to decode
                 finished    = true;
             }
