@@ -32,4 +32,6 @@ The following commands will compile musikCube
 cmake -G 'Unix Makefiles' <path-to-musikcube-root-directory>
 make
 }}}
+CMake can also generate project files for KDevelop, Eclipse and Code::Blocks IDEs. Just run cmake with no arguments for details
+
 Any questions about the linux version, email me at urioxis AT gmail DOT com
