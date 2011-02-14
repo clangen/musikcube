@@ -1,6 +1,7 @@
 #summary Getting started with the development.
 
 = Getting started with the development =
+== Windows ==
 To work on mc2, you will need a copy of Visual Studio. We mainly use Visual C++ 2005. Unfortunately the 2005 Express Edition does not support native windows application development out of the box. It might work together with the Platform SDK, but you are on your own there. If you do not have Visual Studio 200X Standard or better, you can download the free Visual C++ 2008 Express Edition from [http://www.microsoft.com microsoft.com].
 
 To access the source code repository, I recommend using [http://rapidsvn.tigris.org/ RapidSVN]. With Visual C++ 2005 you should be able to compile right after the initial checkout. With other versions of Visual C++, you will have to download the boost libraries. You can find an installer for precompiled binaries at http://www.boostpro.com/products/free. 
@@ -19,3 +20,16 @@ If you're going to test current trunk of mC2 you currently need to manually add 
  * In the sqlite prompt write  {{{INSERT INTO paths (path) VALUES ('C:/MyMusikPath/');}}} and press enter.
  * Close sqlite.exe and restart mC2.exe
  * mC2 will now start indexing the files in the added path. You can click on the genre/artist/album views "All" to refresh.
+
+== Linux ==
+Not everything is working yet in Linux, but the core library and some plugins do compile and run, as does the basic command line app musikSquare.
+
+To compile, you will need Boost, and cmake. For the various plugins you will also need taglib, libmpg123, libflac and libesd (ESD is currently the only working output plugin on Linux).
+
+The following commands will compile musikCube
+
+{{{
+cmake -G 'Unix Makefiles' <path-to-musikcube-root-directory>
+make
+}}}
+Any questions about the linux version, email me at urioxis AT gmail DOT com
