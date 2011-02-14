@@ -38,31 +38,19 @@ EsdOut::EsdOut()
  ,currentVolume(1.0)
  ,currentBits(16)
  ,addToRemovedBuffers(false)
- ,host(NULL)
 {
-#ifdef _DEBUG
-	std::cerr << "EsdOut::EsdOut() called" << std::endl;
-#endif
-	//const char* host;
-	/*int esd;
+	this->host = getenv("ESPEAKER");
 	esd_server_info_t *info;
-	if ((esd = esd_open_sound(NULL)) >= 0)
+	if ((this->esd = esd_open_sound(this->host)) < 0)
 	{
-		info = esd_get_server_info(esd);
-		esd_rate = info->rate;
-		fmt = info->format;
-		esd_free_server_info(info);
-		esd_close(esd);
-	}*/
+		std::cerr << "Couldn't connect to esd server" << std::endl;
+	}
 }
 
 EsdOut::~EsdOut(){
-#ifdef _DEBUG
-	std::cerr << "EsdOut::~EsdOut()" << std::endl;
-#endif
-    this->ClearBuffers();
 
-    esd_close( this->waveHandle );
+    //esd_close( this->waveHandle );
+    esd_close( this->esd );
 
 }
 
@@ -71,24 +59,15 @@ int* EsdOut::getWaveHandle() {
 }
 
 void EsdOut::Destroy(){
-#ifdef _DEBUG
-	std::cerr << "EsdOut::Destroy()" << std::endl;
-#endif
     delete this;
 }
 
 void EsdOut::Pause(){
-#ifdef _DEBUG
-	std::cerr << "EsdOut::Pause()" << std::endl;
-#endif
-    esd_standby(this->waveHandle);
+    esd_standby(this->esd);
 }
 
 void EsdOut::Resume(){
-#ifdef _DEBUG
-	std::cerr << "EsdOut::Resume()" << std::endl;
-#endif
-    esd_resume(this->waveHandle);
+    esd_resume(this->esd);
 }
 
 void EsdOut::SetVolume(double volume){
@@ -102,59 +81,15 @@ void EsdOut::SetVolume(double volume){
         waveOutSetVolume(this->waveHandle,newVolume);
     }*/
     this->currentVolume = volume; //TODO: Write Esd SetVolume() function
+    								//Will probably involve adjusting the data manually to be quieter
 }
 
 void EsdOut::ClearBuffers(){
-#ifdef _DEBUG
-	std::cerr << "EsdOut::ClearBuffers()" << std::endl;
-#endif
-	 //snd_pcm_drop(this->waveHandle);
-    //snd_pcm_reset(this->waveHandle);
 	//TODO: check nothing needs doing here
 }
 
-void EsdOut::RemoveBuffer(EsdOutBuffer *buffer){
-#ifdef _DEBUG
-	std::cerr << "EsdOut::RemoveBuffer()" << std::endl;
-#endif
-    BufferList clearBuffers;
-    {
-        boost::mutex::scoped_lock lock(this->mutex);
-        bool found(false);
-        for(BufferList::iterator buf=this->buffers.begin();buf!=this->buffers.end() && !found;){
-            if(buf->get()==buffer){
-#ifdef _DEBUG
-        	std::cerr << "Remove loop" << std::endl;
-#endif
-//                if( !(*buf)->ReadyToRelease() ){
-                    this->removedBuffers.push_back(*buf);
-//                }
-                clearBuffers.push_back(*buf);
-                buf=this->buffers.erase(buf);
-                found=true;
-            }else{
-                ++buf;
-            }
-        }
-    }
-}
-
 void EsdOut::ReleaseBuffers(){
-#ifdef _DEBUG
-	std::cerr << "EsdOut::ReleaseBuffers()" << std::endl;
-#endif
-    BufferList clearBuffers;
-    {
-        boost::mutex::scoped_lock lock(this->mutex);
-        for(BufferList::iterator buf=this->removedBuffers.begin();buf!=this->removedBuffers.end();){
-#ifdef _DEBUG
-        	std::cerr << "Release loop" << std::endl;
-#endif
-            clearBuffers.push_back(*buf);
-            buf = this->removedBuffers.erase(buf);
-        }
-    }
-
+	//TODO: check nothing needs doing here
 }
 
 bool EsdOut::PlayBuffer(IBuffer *buffer,IPlayer *player){
@@ -182,11 +117,12 @@ bool EsdOut::PlayBuffer(IBuffer *buffer,IPlayer *player){
 
         // Header should now be prepared, lets add to waveout
         if( EsdBuffer->AddToOutput() ){
+        	//Don't think this is necessary as the esd server deals with its own buffers
             // Add to the buffer list
-            {
+            /*{
                 boost::mutex::scoped_lock lock(this->mutex);
                 this->buffers.push_back(EsdBuffer);
-            }
+            }*/
             return true;
         }
 
@@ -230,9 +166,7 @@ void EsdOut::SetFormat(IBuffer *buffer){
     	this->waveFormat |= ESD_STREAM;
     	this->waveFormat |= ESD_PLAY;
 
-    	char* host = getenv("ESPEAKER");
-
-    	this->waveHandle = esd_play_stream(this->waveFormat, (int)this->currentSampleRate, host, "musik");
+    	this->waveHandle = esd_play_stream(this->waveFormat, (int)this->currentSampleRate, this->host, "musik");
 
     }
 }

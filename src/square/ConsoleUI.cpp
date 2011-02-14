@@ -49,6 +49,7 @@ using namespace musik::square;
 ConsoleUI::ConsoleUI() 
 : shouldQuit(false)
 , audioEventHandler(this)
+, paused(false)
 {
 //    this->transport.EventPlaybackStartedOk.connect(&audioEventHandler, &DummyAudioEventHandler::OnPlaybackStartedOk);
 //    this->transport.EventPlaybackStartedFail.connect(&audioEventHandler, &DummyAudioEventHandler::OnPlaybackStartedFail);
@@ -63,6 +64,7 @@ ConsoleUI::ConsoleUI()
  	
 	this->transport.PlaybackStarted.connect(&this->audioEventHandler, &DummyAudioEventHandler::OnPlaybackStartedOk);
 	this->transport.PlaybackAlmostDone.connect(&this->audioEventHandler, &DummyAudioEventHandler::OnPlaybackAlmostEnded);
+	this->transport.PlaybackEnded.connect(&this->audioEventHandler, &DummyAudioEventHandler::OnPlaybackStoppedOk);
 	this->transport.PlaybackError.connect(&this->audioEventHandler, &DummyAudioEventHandler::OnPlaybackStoppedFail);
 }
 
@@ -121,14 +123,22 @@ void ConsoleUI::ProcessCommand(utfstring commandString)
     {
         this->PlayFile(args);
     }
+    else if (command == UTF("pa"))
+    {
+        this->Pause();
+    }
     else if (command == UTF("s"))
     {
         this->Stop(args);
     }
-    /*else if (command == UTF("l"))
+    else if (command == UTF("sp"))
+    {
+    	this->SetPosition(args);
+    }
+    else if (command == UTF("l"))
     {
         this->ListPlaying();
-    }*/
+    }
     else if (command == UTF("lp"))
     {
         this->ListPlugins();
@@ -188,6 +198,19 @@ void ConsoleUI::PlayFile(Args args)
     }
 }
 
+void ConsoleUI::Pause()
+{
+	if (this->paused) {
+		transport.Resume();
+		this->paused = !this->paused;
+	}
+	else
+	{
+		transport.Pause();
+		this->paused = !this->paused;
+	}
+}
+
 void ConsoleUI::Stop(Args args)
 {
     this->Stop();
@@ -197,10 +220,11 @@ void ConsoleUI::Stop()
 {
     transport.Stop();
 }
-/*
+
 void ConsoleUI::ListPlaying()
 {
-	/*AudioStreamOverview overview = transport.StreamsOverview();
+	/*
+	AudioStreamOverview overview = transport.StreamsOverview();
 	AudioStreamOverviewIterator it;
 	
 
@@ -210,8 +234,8 @@ void ConsoleUI::ListPlaying()
 	}
     
 	utfcout << "------------------\n";
-	utfcout << transport.NumOfStreams() << " playing" << std::std::endl;
-}*/
+	utfcout << transport.NumOfStreams() << " playing" << std::std::endl;*/
+}
 
 void ConsoleUI::ListPlugins()
 {
@@ -229,6 +253,16 @@ void ConsoleUI::ListPlugins()
     {
         utfcout << (*it)->Name() << '\t' << (*it)->Version() << '\t' << (*it)->Author() << '\n';
     }
+}
+
+void ConsoleUI::SetPosition(Args args)
+{
+	if (args.size() > 0) {
+		double newPosition = 0;
+		if (convertString<double>(newPosition, args[0])) {
+			transport.SetPosition(newPosition);
+		}
+	}
 }
 
 void ConsoleUI::SetVolume(Args args)

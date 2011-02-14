@@ -65,16 +65,19 @@ public:  void        Print(utfstring s);
 
 // Commands
 private: void   PlayFile(Args args);
+private: void	Pause();
 private: void   Stop(Args args);
 private: void   Stop();
 private: void   ListPlaying();
 private: void   ListPlugins();
+private: void	SetPosition(Args args);
 private: void   SetVolume(Args args);
 private: void   SetVolume(short volume);
 private: void   Quit();
 
 // Members
 private: bool                       shouldQuit;
+private: bool						paused;
 private: Transport                  transport;
 private: DummyAudioEventHandler     audioEventHandler;
 

@@ -80,6 +80,8 @@ class EsdOut : public IOutput{
         //IPlayer *player;
 
         // Audio stuff
+        char* host;
+        int esd;
         int waveHandle;
         esd_format_t waveFormat;
 
@@ -90,7 +92,6 @@ class EsdOut : public IOutput{
         int currentBits;
         int currentChannels;
         long currentSampleRate;
-        char* host;
         double currentVolume;
 
         typedef std::list<EsdOutBufferPtr> BufferList;

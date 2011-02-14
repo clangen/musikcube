@@ -48,9 +48,6 @@ Stream::Stream(unsigned int options)
  ,decoderSampleRate(0)
  ,decoderSamplePosition(0)
 {
-#ifdef _DEBUG
-    std::cerr << "Stream::Stream()" << std::endl;
-#endif
     // Get all DSPs
     // TODO: fixing PluginFactory
     if( (this->options&NoDSP)==0){
@@ -96,18 +93,12 @@ void Stream::SetPreferedBufferSampleSize(long samples){
 }
 */
 bool Stream::OpenStream(utfstring uri){
-#ifdef _DEBUG
-    std::cerr << "Stream::OpenStream()" << std::endl;
-#endif
 
     // Open the filestream
     this->fileStream    = musik::core::filestreams::Factory::OpenFile(uri.c_str());
     if(!this->fileStream){
         return false;
     }
-#ifdef _DEBUG
-    std::cerr << "File opened" << std::endl;
-#endif
 
     // Look up what DecoderFactory to use
     StreamHelper::DecoderFactoryPtr decoderFactory;
@@ -117,17 +108,10 @@ bool Stream::OpenStream(utfstring uri){
         }
     }
 
-#ifdef _DEBUG
-    std::cerr << "File decoder looked for" << std::endl;
-#endif
-
     if(!decoderFactory){
         // We have failed to get a working decoderFactory
         return false;
     }
-#ifdef _DEBUG
-    std::cerr << "Found file decoder" << std::endl;
-#endif
 
 
     // Create the decoder
@@ -136,9 +120,6 @@ bool Stream::OpenStream(utfstring uri){
         return false;
     }
 
-#ifdef _DEBUG
-    std::cerr << "Decoder opened" << std::endl;
-#endif
 
     // Open the decoder
     typedef musik::core::PluginFactory::DestroyDeleter<IDecoder> IDecoderDeleter;
@@ -146,9 +127,6 @@ bool Stream::OpenStream(utfstring uri){
     if( !this->decoder->Open(this->fileStream.get()) ){
         return false;
     }
-#ifdef _DEBUG
-    std::cerr << "File opened by decoder" << std::endl;
-#endif
     return true;
 
 }
