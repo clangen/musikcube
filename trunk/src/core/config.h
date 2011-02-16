@@ -96,7 +96,7 @@ typedef unsigned int DBTIME;
     ///\remarks
     ///We thought that the _T was a little bit too microsoft specific.
     //////////////////////////////////////////
-    #define UTF(x)  _T(x)
+    #define UTF(x)  L"x"
 
     //////////////////////////////////////////
     ///\brief

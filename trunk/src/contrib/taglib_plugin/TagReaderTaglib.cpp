@@ -99,15 +99,15 @@ void TagReaderTaglib::Destroy() {
 bool TagReaderTaglib::CanReadTag(const utfchar *extension){
 
     if(extension){
-	    utfstring ext(extension);
+		std::wstring ext(extension);
 
         boost::algorithm::to_lower(ext);    // Convert to lower case
 
-        if(	ext==UTF("mp3") ||
-            ext==UTF("ogg") ||
-            ext==UTF("flac") ||
-            ext==UTF("ape") ||
-            ext==UTF("mpc")
+        if(	ext.compare(UTF("mp3")) == 0 ||
+            ext.compare(UTF("ogg")) == 0 ||
+            ext.compare(UTF("flac")) == 0 ||
+            ext.compare(UTF("ape")) == 0 ||
+            ext.compare(UTF("mpc")) == 0
                 ) {
 		    return true;
 	    }
@@ -316,9 +316,9 @@ bool TagReaderTaglib::GetID3v2Tag(musik::core::ITrack *track){
 
 			if(description.empty()){
 				this->SetTagValue("comment",comment->toString(),track);
-			}else if(strcmp(UTF16_TO_UTF(description).c_str(), "MusicMatch_Mood") == 0){
+			}else if(description.compare(UTF("MusicMatch_Mood")) == 0){
 				this->SetTagValue("mood",comment->toString(),track);
-			}else if(strcmp(UTF16_TO_UTF(description).c_str(),"MusicMatch_Preference") == 0){
+			}else if(description.compare(UTF("MusicMatch_Preference")) == 0){
 				this->SetTagValue("textrating",comment->toString(),track);
 			}
 		}
@@ -367,12 +367,13 @@ void TagReaderTaglib::SetTagValue(const char* key,const TagLib::String tagString
 
 void TagReaderTaglib::SetTagValue(const char* key,const wchar_t* string,musik::core::ITrack *track){
 	using namespace musik::core;
-	track->SetValue(key,UTF16_TO_UTF(string).c_str());
+	std::wstring temp (string);
+	track->SetValue(key,temp.c_str());
 }
 
 void TagReaderTaglib::SetTagValue(const char* key,const int tagInt,musik::core::ITrack *track){
-    std::wstring temp = boost::str(boost::wformat(UTF_TO_UTF16("%1%"))%tagInt);
-    track->SetValue(key,UTF16_TO_UTF(temp).c_str());
+    std::wstring temp = boost::str(boost::wformat(UTF("%1%"))%tagInt);
+    track->SetValue(key,temp.c_str());
 }
 
 
@@ -414,7 +415,7 @@ void TagReaderTaglib::SetSlashSeparatedValues(const char* key,TagLib::String tag
 		boost::algorithm::split(splitValues,value,boost::algorithm::is_any_of(UTF("/")));
 
 		for(std::vector<std::wstring>::iterator theValue=splitValues.begin();theValue!=splitValues.end();++theValue){
-            track->SetValue(key,UTF16_TO_UTF(theValue->c_str()).c_str());
+            track->SetValue(key,theValue->c_str());
 		}
 	}
 }
@@ -441,18 +442,18 @@ void TagReaderTaglib::SetSlashSeparatedValues(const char* key,const TagLib::ID3v
 
 void TagReaderTaglib::SetAudioProperties(TagLib::AudioProperties *audioProperties,musik::core::ITrack *track){
 	if(audioProperties){
-		std::wstring duration	= boost::str(boost::wformat(UTF_TO_UTF16("%1%"))%audioProperties->length());
+		std::wstring duration	= boost::str(boost::wformat(UTF("%1%"))%audioProperties->length());
 		this->SetTagValue("duration",duration,track);
 
         int bitrate( audioProperties->bitrate() );
         if(bitrate){
-			std::wstring temp( boost::str(boost::wformat(UTF_TO_UTF16("%1%"))%bitrate ) );
+			std::wstring temp( boost::str(boost::wformat(UTF("%1%"))%bitrate ) );
 			this->SetTagValue("bitrate",temp,track);
         }
 
         int channels( audioProperties->channels() );
         if(channels){
-			std::wstring temp( boost::str(boost::wformat(UTF_TO_UTF16("%1%"))%channels ) );
+			std::wstring temp( boost::str(boost::wformat(UTF("%1%"))%channels ) );
 			this->SetTagValue("channels",temp,track);
         }
 	}
