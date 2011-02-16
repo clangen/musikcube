@@ -9,7 +9,7 @@ add_subdirectory( flacdecoder )
 
 #add_subdirectory( stdout )
 
-find_package(Taglib)
+#find_package(Taglib)
 add_definitions(-D_HAVE_TAGLIB)
 add_subdirectory( taglib_plugin )
 if(CMAKE_SYSTEM_NAME MATCHES "Windows")

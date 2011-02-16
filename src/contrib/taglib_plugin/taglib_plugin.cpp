@@ -41,7 +41,7 @@
 #ifndef _HAVE_TAGLIB
 #include <id3v2framefactory.h>
 #else
-#include <taglib/id3v2framefactory.h>
+#include <taglib/mpeg/id3v2/id3v2framefactory.h>
 #endif
 
 #ifdef WIN32

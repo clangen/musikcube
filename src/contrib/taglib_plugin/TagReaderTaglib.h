@@ -48,14 +48,14 @@
 
 #include <mpeg/id3v2/id3v2tag.h>
 #else //_HAVE_TAGLIB
-#include <taglib/tlist.h>
-#include <taglib/tfile.h>
+#include <toolkit/tlist.h>
+#include <toolkit/tfile.h>
 
-#include <taglib/tag.h>
-#include <taglib/fileref.h>
-#include <taglib/audioproperties.h>
+#include <tag.h>
+#include <fileref.h>
+#include <audioproperties.h>
 
-#include <taglib/id3v2tag.h>
+#include <taglib/mpeg/id3v2/id3v2tag.h>
 #endif //_HAVE_TAGLIB
 
 

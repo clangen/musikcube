@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/audio/IAudioSource.h"
+#include <core/audio/IAudioSource.h>
 
 #include "FrameSplitter.h"
 #include "Layer3Decoder.h"
