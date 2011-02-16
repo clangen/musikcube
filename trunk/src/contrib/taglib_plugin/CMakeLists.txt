@@ -1,3 +1,5 @@
+add_subdirectory(taglib-1.6.3)
+
 set ( taglib_plugin_SOURCES
 	taglib_plugin.cpp
 	TagReaderTaglib.cpp
@@ -17,7 +19,14 @@ add_definitions(
   -DXML_STATIC
   -D_CRT_SECURE_NO_DEPRECATE
   -D_DEBUG
+  -DTAGLIB_NO_CONFIG
 )
+
+include_directories( ${musikCube_SOURCE_DIR}/src/contrib/taglib_plugin/taglib-1.6.3/ )
+include_directories( ${musikCube_SOURCE_DIR}/src/contrib/taglib_plugin/taglib-1.6.3/taglib )
+include_directories( ${musikCube_SOURCE_DIR}/src/contrib/taglib_plugin/taglib-1.6.3/taglib/toolkit )
+include_directories( ${musikCube_SOURCE_DIR}/src/contrib/taglib_plugin/taglib-1.6.3/taglib/mpeg/id3v2 )
+include_directories( ${musikCube_SOURCE_DIR}/src/contrib/taglib_plugin/taglib-1.6.3/taglib/mpeg/id3v2/frames )
 
 add_library( taglib_plugin SHARED ${taglib_plugin_SOURCES} )
 target_link_libraries( taglib_plugin ${musikCube_LINK_LIBS} tag)

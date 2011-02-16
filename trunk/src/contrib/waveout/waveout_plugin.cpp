@@ -48,9 +48,9 @@ class WaveOutPlugin : public musik::core::IPlugin
 {
     void Destroy() { delete this; };
 
-    const utfchar* Name()       { return TEXT("WaveOut output plugin"); };
-    const utfchar* Version()    { return TEXT("1"); };
-    const utfchar* Author()     { return TEXT("Bj�rn Olievier"); };
+    const utfchar* Name()       { return UTF("WaveOut output plugin"); };
+    const utfchar* Version()    { return UTF("1"); };
+    const utfchar* Author()     { return UTF("Bj�rn Olievier"); };
 };
 
 extern "C" __declspec(dllexport) musik::core::IPlugin* GetPlugin()

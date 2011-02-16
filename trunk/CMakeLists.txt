@@ -61,7 +61,7 @@ else(WIN32 AND NOT UNIX)
 		dl
 		expat
 	)
-	include_directories( "/usr/include/taglib" )
+	#include_directories( "/usr/include/taglib" )
 	set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}
 		${CMAKE_CURRENT_SOURCE_DIR}/Modules )
 	#include(UseDoxygen)
