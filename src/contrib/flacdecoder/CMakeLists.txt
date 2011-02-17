@@ -20,6 +20,13 @@ add_definitions(
   -D_DEBUG
 )
 
+include_directories( ${musikCube_SOURCE_DIR}/src/contrib/flacdecoder/include )
+find_package(flac)
+if (flac_found)
+	link_directories ( flac_link_dirs )
+else (flac_found)
+	
+endif (flac_found)
 add_library( flacdecoder SHARED ${flacdecoder_SOURCES} )
 target_link_libraries( flacdecoder ${musikCube_LINK_LIBS} FLAC++)
 

@@ -372,7 +372,11 @@ void TagReaderTaglib::SetTagValue(const char* key,const utfchar* string,musik::c
 }
 
 void TagReaderTaglib::SetTagValue(const char* key,const int tagInt,musik::core::ITrack *track){
-    utfstring temp = boost::str(boost::format(UTF("%1%"))%tagInt);
+#ifdef WIN32
+	utfstring temp = boost::str(boost::wformat(UTF("%1%"))%tagInt);
+#else
+	utfstring temp = boost::str(boost::format(UTF("%1%"))%tagInt);
+#endif
     track->SetValue(key,temp.c_str());
 }
 
@@ -442,18 +446,30 @@ void TagReaderTaglib::SetSlashSeparatedValues(const char* key,const TagLib::ID3v
 
 void TagReaderTaglib::SetAudioProperties(TagLib::AudioProperties *audioProperties,musik::core::ITrack *track){
 	if(audioProperties){
+#ifdef WIN32
+		utfstring duration	= boost::str(boost::wformat(UTF("%1%"))%audioProperties->length());
+#else
 		utfstring duration	= boost::str(boost::format(UTF("%1%"))%audioProperties->length());
+#endif
 		this->SetTagValue("duration",duration,track);
 
         int bitrate( audioProperties->bitrate() );
         if(bitrate){
+#ifdef WIN32
+			utfstring temp( boost::str(boost::wformat(UTF("%1%"))%bitrate ) );
+#else
 			utfstring temp( boost::str(boost::format(UTF("%1%"))%bitrate ) );
+#endif
 			this->SetTagValue("bitrate",temp,track);
         }
 
         int channels( audioProperties->channels() );
         if(channels){
+#ifdef WIN32
+			utfstring temp( boost::str(boost::wformat(UTF("%1%"))%channels ) );
+#else
 			utfstring temp( boost::str(boost::format(UTF("%1%"))%channels ) );
+#endif
 			this->SetTagValue("channels",temp,track);
         }
 	}
