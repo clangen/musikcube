@@ -74,7 +74,7 @@ class TagReaderTaglib : public musik::core::Plugin::IMetaDataReader {
 	private:
 //		bool getStandardTags(musik::core::ITrack &track,TagLib::Tag *oTag,TagLib::AudioProperties *oAudioProperties);
 
-		void SetTagValue(const char* key,const wchar_t* string,musik::core::ITrack *track);
+		void SetTagValue(const char* key,const utfchar* string,musik::core::ITrack *track);
 		void SetTagValue(const char* key,const TagLib::String tagString,musik::core::ITrack *track);
 		void SetTagValue(const char* key,const int tagInt,musik::core::ITrack *track);
 		void SetTagValues(const char* key,const TagLib::ID3v2::FrameList &frame,musik::core::ITrack *track);
