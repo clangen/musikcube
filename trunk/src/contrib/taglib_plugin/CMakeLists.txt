@@ -28,6 +28,7 @@ include_directories( ${musikCube_SOURCE_DIR}/src/contrib/taglib_plugin/taglib-1.
 include_directories( ${musikCube_SOURCE_DIR}/src/contrib/taglib_plugin/taglib-1.6.3/taglib/mpeg/id3v2 )
 include_directories( ${musikCube_SOURCE_DIR}/src/contrib/taglib_plugin/taglib-1.6.3/taglib/mpeg/id3v2/frames )
 
+
 add_library( taglib_plugin SHARED ${taglib_plugin_SOURCES} )
 target_link_libraries( taglib_plugin ${musikCube_LINK_LIBS} tag)
 

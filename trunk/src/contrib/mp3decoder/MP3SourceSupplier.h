@@ -33,7 +33,7 @@
 
 #pragma once
 
-#include <core/audio/IAudioSource.h>
+#include <core\audio\IAudioSource.h>
 
 using namespace musik::core::audio;
 
