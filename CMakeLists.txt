@@ -4,6 +4,7 @@ project( musikCube )
 set ( musikCube_VERSION_MAJOR 2)
 set ( musikCube_VERSION_MINOR 0)
 
+set (CMAKE_MODULE_PATH ${musikCube_SOURCE_DIR}/modules)
 
 set (BOOST_LIBS
 system
@@ -13,6 +14,8 @@ iostreams
 thread
 regex
 )
+
+include_directories(${musikCube_SOURCE_DIR}/src/3rdparty/lib)
 
 set (Boost_ADDITIONAL_VERSIONS "1.37.0" )
 if(WIN32 AND NOT UNIX)
@@ -34,6 +37,15 @@ if(WIN32 AND NOT UNIX)
 			)
 		include_directories ("${musikCube_SOURCE_DIR}/src/3rdparty/boost")
 	endif (Boost_FOUND)
+	set (VLD_ROOT_DIR ${musikCube_SOURCE_DIR}/src/3rdparty/lib)
+	set (VLD_INCLUDE_DIR ${musikCube_SOURCE_DIR}/src/3rdparty/include)
+	find_package(vld REQUIRED)
+	if (VLD_FOUND)
+		message(STATUS "VLD Found")
+		link_directories(${VLD_LIBRARIES_DIR})
+	else (VLD_FOUND)
+		message(STATUS "VLD not found")
+	endif (VLD_FOUND)
 else(WIN32 AND NOT UNIX)
 	find_package(Boost 1.42.0 REQUIRED ${BOOST_LIBS}) 
 	if(Boost_FOUND)
@@ -84,6 +96,7 @@ set (musikCube_LINK_LIBS
 include_directories (
 			"${musikCube_SOURCE_DIR}/src"
 			"${musikCube_SOURCE_DIR}/src/core"
+			"${musikCube_SOURCE_DIR}/src/core/audio"
 			"${musikCube_SOURCE_DIR}/src/3rdparty/include")
 
 add_subdirectory(src/3rdparty)

@@ -15,8 +15,11 @@ set (3rdParty_SQLITE_SOURCES
 	src/sqlite/sqlite3.c
 )
 
+set (ZLIB_INCLUDE_DIR ${musikCube_SOURCE_DIRECTORY}/src/3rdparty/include)
+set (ZLIB_LIBRARY ${musikCube_SOURCE_DIRECTORY}/src/3rdparty/lib)
+
 include_directories ( include/md5 )
 add_library( md5 STATIC ${3rdParty_MD5_SOURCES} )
 include_directories ( include/sqlite )
-target_link_libraries ( lib/vld )
+
 add_library( sqlite3 STATIC ${3rdParty_SQLITE_SOURCES} )

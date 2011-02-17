@@ -1,4 +1,4 @@
-set ( mpg123decoder_SOURCES
+set ( mp3decoder_SOURCES
 	BaseDecoder.cpp
 	BitStream.cpp
 	CRC.cpp
@@ -14,9 +14,6 @@ set ( mpg123decoder_SOURCES
 
 if(CMAKE_SYSTEM_NAME MATCHES "Windows")
   add_definitions(-DWIN32)
-	if(NOT DEFINED MINGW)
-        	
-	endif(NOT DEFINED MINGW)
 else(CMAKE_SYSTEM_NAME MATCHES "Windows")
   set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -fpermissive)
 endif(CMAKE_SYSTEM_NAME MATCHES "Windows")
@@ -27,7 +24,7 @@ add_definitions(
   -D_DEBUG
 )
 
-add_library( mpg123decoder SHARED ${mpg123decoder_SOURCES} )
-target_link_libraries( mpg123decoder ${musikCube_LINK_LIBS} )
+add_library( mp3decoder SHARED ${mp3decoder_SOURCES} )
+target_link_libraries( mp3decoder ${musikCube_LINK_LIBS} )
 
 
