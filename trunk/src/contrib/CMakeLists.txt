@@ -4,6 +4,7 @@
 #add_subdirectory( cddadecoder )
 #add_subdirectory( dsp_example_echo )
 add_subdirectory( flacdecoder )
+add_subdirectory( mpg123decoder )
 #add_subdirectory( httpstream )
 #add_subdirectory( oggdecoder )
 
@@ -14,13 +15,12 @@ add_definitions(-D_HAVE_TAGLIB)
 add_subdirectory( taglib_plugin )
 if(WIN32 AND NOT UNIX)
 	add_subdirectory( waveout )
-	add_subdirectory( mp3decoder )
+	#add_subdirectory( mp3decoder )
 #	if(NOT DEFINED MINGW)
 #        	
 #	endif(NOT DEFINED MINGW)
 else(WIN32 AND NOT UNIX)
 	#	add_subdirectory( alsaout )
 	add_subdirectory( esdout )
-	add_subdirectory( mpg123decoder )
 endif(WIN32 AND NOT UNIX)
 
