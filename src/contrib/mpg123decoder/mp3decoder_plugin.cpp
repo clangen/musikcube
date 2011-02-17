@@ -51,9 +51,9 @@ class MP3DecoderPlugin : public musik::core::IPlugin
 {
     void Destroy() { delete this; };
 
-	const utfchar* Name()       { return TEXT("mpg123 decoder"); };
-	const utfchar* Version()    { return TEXT("1"); };
-	const utfchar* Author()     { return TEXT("Daniel �nnerby"); };
+	const utfchar* Name()       { return UTF("mpg123 decoder"); };
+	const utfchar* Version()    { return UTF("1"); };
+	const utfchar* Author()     { return UTF("Daniel �nnerby"); };
 };
 
 #ifdef WIN32
