@@ -33,6 +33,6 @@ else (flac_found)
 	endif (${MSVC90})
 endif (flac_found)
 add_library( flacdecoder SHARED ${flacdecoder_SOURCES} )
-target_link_libraries( flacdecoder ${musikCube_LINK_LIBS} FLAC++)
+target_link_libraries( flacdecoder ${musikCube_LINK_LIBS} FLAC FLAC++)
 
 
