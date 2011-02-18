@@ -25,7 +25,9 @@ if(WIN32 AND NOT UNIX)
 		set (BOOST_LINK_LIBS 
 			${Boost_LIBRARIES})
 		include_directories (${Boost_INCLUDE_DIRS})
-		message(STATUS "Includes: " ${Boost_INCLUDE_DIRS})
+		link_directories(${Boost_INCLUDE_DIRS})
+		message(STATUS "Boost includes: " ${Boost_INCLUDE_DIRS})
+		message(STATUS "Boost libs: " ${Boost_LIBRARIES})
 	else (Boost_FOUND)
 		set (BOOST_LINK_LIBS
 			boost_system
