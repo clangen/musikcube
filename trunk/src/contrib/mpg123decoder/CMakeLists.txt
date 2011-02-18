@@ -5,8 +5,6 @@ set ( mpg123decoder_SOURCES
 	stdafx.cpp
 	)
 
-add_library( mpg123decoder SHARED ${mpg123decoder_SOURCES} )
-
 if(CMAKE_SYSTEM_NAME MATCHES "Windows")
   add_definitions(-DWIN32)
   if (${MSVC90})
@@ -17,14 +15,11 @@ if(CMAKE_SYSTEM_NAME MATCHES "Windows")
 		${musikCube_SOURCE_DIR}/src/contrib/mpg123decoder/mpg123/ports/MSVC++
 		${musikCube_SOURCE_DIR}/src/contrib/mpg123decoder/VC2008 )
 	link_directories( ${musikCube_SOURCE_DIR}/src/contrib/mpg123decoder/VC2008 )
-	
-	target_link_libraries( mpg123decoder ${musikCube_LINK_LIBS} libmpg123)
   else (${MSVC90})
     message(STATUS "VC 2008 not found")
   endif (${MSVC90})
 else(CMAKE_SYSTEM_NAME MATCHES "Windows")
   set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -fpermissive)
-  target_link_libraries( mpg123decoder ${musikCube_LINK_LIBS} mpg123)
 endif(CMAKE_SYSTEM_NAME MATCHES "Windows")
 
 add_definitions( 
@@ -33,4 +28,5 @@ add_definitions(
   -D_DEBUG
 )
 
-
+add_library( mpg123decoder SHARED ${mpg123decoder_SOURCES} )
+target_link_libraries( mpg123decoder ${musikCube_LINK_LIBS} mpg123)
