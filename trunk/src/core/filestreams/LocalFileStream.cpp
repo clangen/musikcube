@@ -41,6 +41,7 @@
 
 #include <core/filestreams/LocalFileStream.h>
 #include <core/config.h>
+#include <core/common.h>
 #include <core/config_filesystem.h>
 
 //////////////////////////////////////////////////////////////////////////////
@@ -76,7 +77,7 @@ bool LocalFileStream::Open(const utfchar *filename,unsigned int options){
     }
 
     try{
-        boost::filesystem::utfpath file(filename);
+        boost::filesystem::utfpath file(UTF(filename));
 //#ifdef _DEBUG
 //	std::cerr << "file: " << file  << std::endl;
 //#endif
@@ -98,7 +99,7 @@ bool LocalFileStream::Open(const utfchar *filename,unsigned int options){
 //#ifdef _DEBUG
 //	std::cerr << "this->file: " << this->file  << std::endl;
 //#endif
-        this->fd  = new boost::iostreams::file_descriptor(filename);
+        this->fd  = new boost::iostreams::file_descriptor(file);
 //#ifdef _DEBUG
 //	std::cerr << "fd: " << this->fd  << std::endl;
 //#endif
