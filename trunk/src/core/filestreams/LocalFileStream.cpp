@@ -41,7 +41,7 @@
 
 #include <core/filestreams/LocalFileStream.h>
 #include <core/config.h>
-#include <core/common.h>
+#include <core/Common.h>
 #include <core/config_filesystem.h>
 
 //////////////////////////////////////////////////////////////////////////////
