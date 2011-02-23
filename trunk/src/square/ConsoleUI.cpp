@@ -193,7 +193,11 @@ void ConsoleUI::PlayFile(Args args)
         transport.Start(filename.c_str()); //TODO: fix to use TrackPtr
         if (delay)
         {
+#ifdef WIN32
+			Sleep(delay);
+#else
             sleep(delay);
+#endif
         }
     }
 }

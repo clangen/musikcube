@@ -139,11 +139,7 @@ set (CORE_HEADERS
 	xml/WriterNode.h
 )
 
-SOURCE_GROUP(audio FILES
-	audio/Buffer.cpp
-	audio/Player.cpp
-	audio/Stream.cpp
-	audio/Transport.cpp
+SOURCE_GROUP("Header Files\\audio" FILES
 	audio/IAnalyzer.h
 	audio/IBuffer.h
 	audio/IDecoder.h
@@ -154,28 +150,31 @@ SOURCE_GROUP(audio FILES
 	audio/Player.h
 	audio/Stream.h
 	audio/Transport.h)
-SOURCE_GROUP(db FILES 
-	db/CachedStatement.cpp
-	db/Connection.cpp
-	db/ScopedTransaction.cpp
-	db/Statement.cpp
+SOURCE_GROUP("Source Files\\audio" FILES
+	audio/Buffer.cpp
+	audio/Player.cpp
+	audio/Stream.cpp
+	audio/Transport.cpp)
+SOURCE_GROUP("Header Files\\db" FILES 
 	db/CachedStatement.h
 	db/Connection.h
 	db/dbconfig.h
 	db/ScopedTransaction.h
 	db/Statement.h)
-SOURCE_GROUP(filestreams FILES 
-	filestreams/Factory.cpp
-	filestreams/LocalFileStream.cpp
+SOURCE_GROUP("Source Files\\db" FILES
+	db/CachedStatement.cpp
+	db/Connection.cpp
+	db/ScopedTransaction.cpp
+	db/Statement.cpp)
+SOURCE_GROUP("Header Files\\filestreams" FILES 
 	filestreams/Factory.h
 	filestreams/IFileStream.h
 	filestreams/IFileStreamFactory.h
 	filestreams/LocalFileStream.h)
-SOURCE_GROUP(http FILES 
-	http/RequestParser.cpp
-	http/Responder.cpp
-	http/Server.cpp
-	http/TrackSender.cpp
+SOURCE_GROUP("Source Files\\filestreams" FILES 
+	filestreams/Factory.cpp
+	filestreams/LocalFileStream.cpp)
+SOURCE_GROUP("Header Files\\http" FILES 
 	http/IRequestParser.h
 	http/IRequestPlugin.h
 	http/IResponder.h
@@ -183,23 +182,22 @@ SOURCE_GROUP(http FILES
 	http/Responder.h
 	http/Server.h
 	http/TrackSender.h)
-SOURCE_GROUP(library FILES 
-	Library/Base.cpp
-	Library/LocalDB.cpp
-	Library/Remote.cpp
+SOURCE_GROUP("Source Files\\http" FILES 
+	http/RequestParser.cpp
+	http/Responder.cpp
+	http/Server.cpp
+	http/TrackSender.cpp)
+SOURCE_GROUP("Header Files\\library" FILES 
 	Library/Base.h
 	Library/LocalDB.h
 	Library/Remote.h)
-SOURCE_GROUP(plugin FILES
+SOURCE_GROUP("Source Files\\library" FILES 
+	Library/Base.cpp
+	Library/LocalDB.cpp
+	Library/Remote.cpp)
+SOURCE_GROUP("Header Files\\plugin" FILES
 	Plugin/IMetaDataReader.h)
-SOURCE_GROUP(query FILES 
-	Query/Base.cpp
-	Query/Factory.cpp
-	Query/ListBase.cpp
-	Query/ListSelection.cpp
-	Query/SortTracks.cpp
-	Query/SortTracksWithData.cpp
-	Query/TrackMetadata.cpp
+SOURCE_GROUP("Header Files\\query" FILES 
 	Query/Base.h
 	Query/Factory.h
 	Query/ListBase.h
@@ -210,27 +208,31 @@ SOURCE_GROUP(query FILES
 	Query/SortTracks.h
 	Query/SortTracksWithData.h
 	Query/TrackMetadata.h)
-SOURCE_GROUP(server FILES 
-	server/Connection.cpp
-	server/User.cpp
-	server/UserSession.cpp
+SOURCE_GROUP("Source Files\\query" FILES 
+	Query/Base.cpp
+	Query/Factory.cpp
+	Query/ListBase.cpp
+	Query/ListSelection.cpp
+	Query/SortTracks.cpp
+	Query/SortTracksWithData.cpp
+	Query/TrackMetadata.cpp)
+SOURCE_GROUP("Header Files\\server" FILES 
 	server/Connection.h
 	server/User.h
 	server/UserSession.h)
-SOURCE_GROUP(tracklist FILES 
-	tracklist/Base.cpp
-	tracklist/LibraryList.cpp
-	tracklist/MultiLibraryList.cpp
+SOURCE_GROUP("Source Files\\server" FILES 
+	server/Connection.cpp
+	server/User.cpp
+	server/UserSession.cpp)
+SOURCE_GROUP("Header Files\\tracklist" FILES 
 	tracklist/Base.h
 	tracklist/LibraryList.h
 	tracklist/MultiLibraryList.h)
-SOURCE_GROUP(xml FILES 
-	xml/Node.cpp
-	xml/Parser.cpp
-	xml/ParserNode.cpp
-	xml/Socket.cpp
-	xml/Writer.cpp
-	xml/WriterNode.cpp
+SOURCE_GROUP("Source Files\\tracklist" FILES 
+	tracklist/Base.cpp
+	tracklist/LibraryList.cpp
+	tracklist/MultiLibraryList.cpp)
+SOURCE_GROUP("Header Files\\xml" FILES 
 	xml/IReadSupplier.h
 	xml/IWriteSupplier.h
 	xml/Node.h
@@ -239,6 +241,13 @@ SOURCE_GROUP(xml FILES
 	xml/Socket.h
 	xml/Writer.h
 	xml/WriterNode.h)
+SOURCE_GROUP("Source Files\\xml" FILES 
+	xml/Node.cpp
+	xml/Parser.cpp
+	xml/ParserNode.cpp
+	xml/Socket.cpp
+	xml/Writer.cpp
+	xml/WriterNode.cpp)
 
 
 if(CMAKE_SYSTEM_NAME MATCHES "Windows")
@@ -263,6 +272,6 @@ add_definitions(
 )
 
 add_library( musik SHARED ${CORE_SOURCES} ${CORE_HEADERS})
-target_link_libraries( musik ${musikCube_LINK_LIBS})
+target_link_libraries( musik ${musikCube_LINK_LIBS} expat)
 
 
