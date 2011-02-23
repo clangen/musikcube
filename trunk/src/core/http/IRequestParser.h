@@ -44,7 +44,7 @@ namespace musik{ namespace core{ namespace http{
 
 //////////////////////////////////////////////////////////////////////////////
 
-class MUSIK_EXPORT IRequestParser{
+class  IRequestParser{
     public:
         virtual const char* Attribute(const char* key)=0;
         virtual const char* Path()=0;

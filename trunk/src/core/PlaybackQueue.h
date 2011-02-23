@@ -85,7 +85,7 @@ class PlaybackQueue : public sigslot::has_slots<>{
         ///\brief
         ///Access to the PlaybackQueue singleton
         //////////////////////////////////////////
-        static MUSIK_EXPORT PlaybackQueue& Instance(){ return sInstance; };
+        static  PlaybackQueue& Instance(){ return sInstance; };
 
         //////////////////////////////////////////
         ///\brief

@@ -44,10 +44,10 @@
 namespace musik{ namespace core{ namespace xml{
 
 // Forward
-class MUSIK_EXPORT Writer;
+class  Writer;
 
 
-class MUSIK_EXPORT WriterNode {
+class  WriterNode {
     public:
 
         WriterNode(WriterNode &parentNode,std::string name);

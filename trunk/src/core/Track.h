@@ -45,10 +45,10 @@
 // Forward declare
 namespace musik{ namespace core{
     namespace Library{
-        class MUSIK_EXPORT Base;
+        class  Base;
     }
 	typedef boost::shared_ptr<Library::Base> LibraryPtr;
-    class MUSIK_EXPORT Track;
+    class  Track;
     typedef boost::shared_ptr<Track> TrackPtr;
     typedef std::vector<TrackPtr> TrackVector;
 } }
@@ -63,7 +63,7 @@ namespace musik{ namespace core{
 ///\brief
 ///The most basic implementation of a track
 //////////////////////////////////////////
-class MUSIK_EXPORT Track : public ITrack {
+class  Track : public ITrack {
     public:
         virtual ~Track();
         virtual DBINT Id();

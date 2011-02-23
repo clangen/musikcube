@@ -56,8 +56,8 @@ class Factory {
         FileStreamFactoryVector fileStreamFactories;
 
     public:
-        static FileStreamPtr MUSIK_EXPORT OpenFile(const utfchar *uri);
-        static bool MUSIK_EXPORT IsLocalFileStream(const utfchar *uri);
+        static FileStreamPtr  OpenFile(const utfchar *uri);
+        static bool  IsLocalFileStream(const utfchar *uri);
 };
 
 //////////////////////////////////////////////////////////////////////////////

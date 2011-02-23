@@ -54,10 +54,10 @@ namespace musik{ namespace core{ namespace Query{
 
 //////////////////////////////////////////////////////////////////////////////
 // Forward declaration
-class MUSIK_EXPORT Base;
+class  Base;
 //////////////////////////////////////////////////////////////////////////////
 
-class MUSIK_EXPORT TrackMetadata : public Query::Base {
+class  TrackMetadata : public Query::Base {
     public:
         TrackMetadata(void);
         ~TrackMetadata(void);

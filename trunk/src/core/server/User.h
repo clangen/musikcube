@@ -48,7 +48,7 @@ namespace musik{ namespace core{ namespace server{
 
 //////////////////////////////////////////////////////////////////////////////
 
-class MUSIK_EXPORT User
+class  User
 {
     public:
         User(int id,const utfchar *username,const utfchar *password,const utfchar *name);

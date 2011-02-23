@@ -49,7 +49,7 @@ namespace musik{ namespace core{ namespace xml{
 
 //////////////////////////////////////////////////////////////////////////////
 
-class MUSIK_EXPORT Writer : public WriterNode{
+class  Writer : public WriterNode{
     public:
         Writer(IWriteSupplier *supplier);
         ~Writer();

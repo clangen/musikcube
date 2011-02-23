@@ -42,14 +42,14 @@
 //////////////////////////////////////////////////////////////////////////////
 // Forward declare
 namespace musik{ namespace core{
-    class MUSIK_EXPORT Indexer;
+    class  Indexer;
 
     namespace Query{
-        class MUSIK_EXPORT Base;
+        class  Base;
         typedef boost::shared_ptr<musik::core::Query::Base> Ptr;
     }
     namespace Library{
-        class MUSIK_EXPORT Base;
+        class  Base;
     }
 	typedef boost::shared_ptr<Library::Base> LibraryPtr;
 	typedef boost::weak_ptr<Library::Base> LibraryWeakPtr;
@@ -88,7 +88,7 @@ namespace musik{ namespace core{ namespace Library{
 ///\see
 ///musik::core::Library::LocalDB
 //////////////////////////////////////////
-class MUSIK_EXPORT Base : boost::noncopyable{
+class  Base : boost::noncopyable{
     protected:
         Base(utfstring name,int id);
 	public:

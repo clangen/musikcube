@@ -38,7 +38,7 @@
 
 namespace musik{ namespace core{
     namespace Query{
-        class MUSIK_EXPORT Base;
+        class  Base;
     }
 } }
 
@@ -57,7 +57,7 @@ namespace musik{ namespace core{ namespace Library{
 ///\brief
 ///Library used for your remote music.
 //////////////////////////////////////////
-class MUSIK_EXPORT Remote : public Library::Base{
+class  Remote : public Library::Base{
 	private:
         Remote(utfstring name,int id);
     public:

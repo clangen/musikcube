@@ -43,7 +43,7 @@ namespace musik{ namespace core{ namespace xml{
 
 //////////////////////////////////////////////////////////////////////////////
 
-class MUSIK_EXPORT IWriteSupplier{
+class  IWriteSupplier{
     public:
         virtual bool Write(const char* buffer,long bytes) = 0;
         virtual void Flush() = 0;

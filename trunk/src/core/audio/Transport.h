@@ -45,7 +45,7 @@ namespace musik { namespace core { namespace audio {
 /**
  *	Interface between application and Player objects
  */
-class MUSIK_EXPORT Transport : public sigslot::has_slots<>{
+class  Transport : public sigslot::has_slots<>{
     public:
         Transport();
         ~Transport();

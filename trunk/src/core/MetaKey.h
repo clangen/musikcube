@@ -43,7 +43,7 @@ namespace musik{ namespace core{
 
 //////////////////////////////////////////////////////////////////////////////
 
-class MUSIK_EXPORT MetaKey{
+class  MetaKey{
     private:
         MetaKey(void);
         ~MetaKey(void);

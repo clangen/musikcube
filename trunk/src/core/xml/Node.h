@@ -47,13 +47,13 @@ namespace musik{ namespace core{ namespace xml{
 
 //////////////////////////////////////////////////////////////////////////////
 // Forward declare
-class MUSIK_EXPORT Parser;
-class MUSIK_EXPORT ParserNode;
-class MUSIK_EXPORT Writer;
-class MUSIK_EXPORT WriterNode;
+class  Parser;
+class  ParserNode;
+class  Writer;
+class  WriterNode;
 //////////////////////////////////////////////////////////////////////////////
 
-class MUSIK_EXPORT Node{
+class  Node{
     public:
         ~Node(void);
     private:

@@ -41,8 +41,8 @@ namespace musik { namespace core { namespace audio {
 //////////////////////////////////////////////////////////////////////////////
 
 // Forward
-class MUSIK_EXPORT Buffer;
-class MUSIK_EXPORT Stream;
+class  Buffer;
+class  Stream;
 typedef boost::shared_ptr<Buffer> BufferPtr;
 
 
@@ -51,7 +51,7 @@ typedef boost::shared_ptr<Buffer> BufferPtr;
 ///Buffer is the ony implementation of the IBuffer and is used 
 ///in the audioengine to pass along the raw audio data
 //////////////////////////////////////////
-class MUSIK_EXPORT Buffer : public IBuffer {
+class  Buffer : public IBuffer {
     public:
         static BufferPtr Create();
     private:

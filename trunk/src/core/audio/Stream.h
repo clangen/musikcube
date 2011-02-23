@@ -48,12 +48,12 @@ namespace musik { namespace core { namespace audio {
 //////////////////////////////////////////////////////////////////////////////
 
 // Forward declare
-class MUSIK_EXPORT Stream;
-class MUSIK_EXPORT Player;
+class  Stream;
+class  Player;
 typedef boost::shared_ptr<Stream> StreamPtr;
 
 //////////////////////////////////////////////////////////////////////////////
-class MUSIK_EXPORT Stream {
+class  Stream {
     public:
         static StreamPtr Create(unsigned int options=0);
 
