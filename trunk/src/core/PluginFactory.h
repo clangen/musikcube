@@ -51,10 +51,10 @@
 
 namespace musik{ namespace core{
 
-    class MUSIK_EXPORT PluginFactory{
+    class PluginFactory{
         public:
 
-        static PluginFactory& Instance() {
+        static MUSIK_EXPORT PluginFactory& Instance() {
             return sInstance;
         }
 

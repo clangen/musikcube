@@ -40,7 +40,7 @@
 // forward declare
 namespace musik{ namespace core{
     namespace db{
-        class MUSIK_EXPORT Connection;
+        class Connection;
     }
     namespace Library{
         class MUSIK_EXPORT Base;
@@ -48,7 +48,7 @@ namespace musik{ namespace core{
         class MUSIK_EXPORT Remote;
     }
     namespace server{
-        class MUSIK_EXPORT Connection;
+        class Connection;
     }
     namespace xml{
         class MUSIK_EXPORT ParserNode;

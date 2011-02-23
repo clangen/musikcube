@@ -51,15 +51,15 @@ struct MessageQueueData{
 	virtual ~MessageQueueData();
 };
 
-class MUSIK_EXPORT MessageQueue {
+class MessageQueue {
     
     public:
         typedef sigslot::signal2<const char*,void*> ControllerEventSignal;
         typedef sigslot::signal1<void*> EventSignal;
 
-        static ControllerEventSignal& EventController();
-        static EventSignal& MessageEvent(const char* identifier);
-        static void SendMessage(const char* identifier,void* data=NULL);
+        static MUSIK_EXPORT ControllerEventSignal& EventController();
+        static MUSIK_EXPORT EventSignal& MessageEvent(const char* identifier);
+        static void MUSIK_EXPORT SendMessage(const char* identifier,void* data=NULL);
 
 
     private:

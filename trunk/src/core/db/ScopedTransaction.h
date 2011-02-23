@@ -44,7 +44,7 @@
 namespace musik{ namespace core{ namespace db{
 
     // Forward declare
-    class MUSIK_EXPORT Connection;
+    class Connection;
 
     //////////////////////////////////////////
     ///\brief

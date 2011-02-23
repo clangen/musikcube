@@ -45,7 +45,7 @@ namespace musik{ namespace core{ namespace filestreams{
 //////////////////////////////////////////////////////////////////////////////
 
 
-class MUSIK_EXPORT Factory {
+class Factory {
     private:
         static Factory sInstance;
 
@@ -56,8 +56,8 @@ class MUSIK_EXPORT Factory {
         FileStreamFactoryVector fileStreamFactories;
 
     public:
-        static FileStreamPtr OpenFile(const utfchar *uri);
-        static bool IsLocalFileStream(const utfchar *uri);
+        static FileStreamPtr MUSIK_EXPORT OpenFile(const utfchar *uri);
+        static bool MUSIK_EXPORT IsLocalFileStream(const utfchar *uri);
 };
 
 //////////////////////////////////////////////////////////////////////////////
