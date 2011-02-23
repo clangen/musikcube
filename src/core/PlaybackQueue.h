@@ -53,7 +53,7 @@ namespace musik { namespace core {
 ///\see
 ///musik::core::audio::Transport|musik::core::tracklist::Standard
 //////////////////////////////////////////
-class MUSIK_EXPORT PlaybackQueue : public sigslot::has_slots<>{
+class PlaybackQueue : public sigslot::has_slots<>{
     private:
         PlaybackQueue(void);
 
@@ -85,7 +85,7 @@ class MUSIK_EXPORT PlaybackQueue : public sigslot::has_slots<>{
         ///\brief
         ///Access to the PlaybackQueue singleton
         //////////////////////////////////////////
-        static PlaybackQueue& Instance(){ return sInstance; };
+        static MUSIK_EXPORT PlaybackQueue& Instance(){ return sInstance; };
 
         //////////////////////////////////////////
         ///\brief

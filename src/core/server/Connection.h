@@ -61,13 +61,13 @@ namespace musik{ namespace core{ namespace server{
 
 //////////////////////////////////////////////////////////////////////////////
 // Forward declare
-class MUSIK_EXPORT Connection;
+class Connection;
 typedef boost::shared_ptr<Connection> ConnectionPtr;
 typedef std::vector<ConnectionPtr> ConnectionVector;
 //////////////////////////////////////////////////////////////////////////////
 
 
-class MUSIK_EXPORT Connection : public musik::core::Library::Base{
+class Connection : public musik::core::Library::Base{
     public:
         Connection(boost::asio::io_service &ioService,musik::core::Server *server);
         ~Connection(void);

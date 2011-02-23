@@ -49,7 +49,7 @@ struct sqlite3_stmt;
 
 namespace musik{ namespace core{ namespace db{
 
-    class MUSIK_EXPORT Connection;
+    class Connection;
     class MUSIK_EXPORT CachedStatement;
 
 
