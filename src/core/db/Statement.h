@@ -50,14 +50,14 @@ struct sqlite3_stmt;
 namespace musik{ namespace core{ namespace db{
 
     class Connection;
-    class MUSIK_EXPORT CachedStatement;
+    class  CachedStatement;
 
 
     //////////////////////////////////////////
     ///\brief
     ///Class for precompiling SQL statements
     //////////////////////////////////////////
-    class MUSIK_EXPORT Statement : boost::noncopyable{
+    class  Statement : boost::noncopyable{
         public: 
             Statement(const char* sql,Connection &connection);
             virtual ~Statement();

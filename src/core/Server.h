@@ -69,7 +69,7 @@ namespace musik{ namespace core{
 ///\see
 ///Indexer | http::Server | server::Connection
 //////////////////////////////////////////
-class MUSIK_EXPORT Server{
+class  Server{
     public:
         // Methods
         Server(unsigned int port,unsigned int httpPort);

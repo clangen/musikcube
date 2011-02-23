@@ -53,7 +53,7 @@ namespace musik{ namespace core{
 
 class NonLibraryTrackHelper{
     public:
-        static MUSIK_EXPORT NonLibraryTrackHelper& Instance();
+        static  NonLibraryTrackHelper& Instance();
         static boost::mutex& TrackMutex();
 
         void ReadTrack(musik::core::TrackPtr track);

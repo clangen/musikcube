@@ -45,7 +45,7 @@
 namespace musik{ namespace core{ namespace xml{
 
 // Forward
-class MUSIK_EXPORT Parser;
+class  Parser;
 
 
 //////////////////////////////////////////
@@ -57,7 +57,7 @@ class MUSIK_EXPORT Parser;
 ///\see
 ///musik::core::xml::Parser
 //////////////////////////////////////////
-class MUSIK_EXPORT ParserNode {
+class  ParserNode {
     public:
 
         ParserNode();

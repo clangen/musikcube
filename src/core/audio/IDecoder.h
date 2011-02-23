@@ -40,7 +40,7 @@
 namespace musik { namespace core { namespace audio {
 //////////////////////////////////////////////////////////////////////////////
 
-class MUSIK_EXPORT IDecoder{
+class  IDecoder{
 
     public:
 

@@ -42,7 +42,7 @@
 namespace musik{ namespace core{ namespace db{
     
     // Forward declare
-    class MUSIK_EXPORT Statement;
+    class  Statement;
 
     //////////////////////////////////////////
     ///\brief
@@ -60,7 +60,7 @@ namespace musik{ namespace core{ namespace db{
     ///\see
     ///musik::core::db::Statement
     //////////////////////////////////////////
-    class MUSIK_EXPORT CachedStatement : public Statement{
+    class  CachedStatement : public Statement{
         public: 
             CachedStatement(const char* sql,Connection &connection);
             ~CachedStatement();

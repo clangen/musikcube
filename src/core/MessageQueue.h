@@ -57,9 +57,9 @@ class MessageQueue {
         typedef sigslot::signal2<const char*,void*> ControllerEventSignal;
         typedef sigslot::signal1<void*> EventSignal;
 
-        static MUSIK_EXPORT ControllerEventSignal& EventController();
-        static MUSIK_EXPORT EventSignal& MessageEvent(const char* identifier);
-        static void MUSIK_EXPORT SendMessage(const char* identifier,void* data=NULL);
+        static  ControllerEventSignal& EventController();
+        static  EventSignal& MessageEvent(const char* identifier);
+        static void  SendMessage(const char* identifier,void* data=NULL);
 
 
     private:

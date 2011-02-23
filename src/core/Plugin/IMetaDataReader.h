@@ -40,7 +40,7 @@
 #include <core/ITrack.h>
 
 namespace musik{ namespace core{ namespace Plugin{
-    class MUSIK_EXPORT IMetaDataReader{
+    class  IMetaDataReader{
         public:
             virtual bool ReadTag(musik::core::ITrack *track)=0;
             virtual bool CanReadTag(const utfchar *extension)=0;

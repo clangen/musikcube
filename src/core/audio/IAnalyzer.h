@@ -52,7 +52,7 @@ namespace musik { namespace core { namespace audio {
 ///returns false). Finally the End method will be called where the
 ///the plugin can make changes to the tracks metadata.
 //////////////////////////////////////////
-class MUSIK_EXPORT IAnalyzer {
+class  IAnalyzer {
     public:
         //////////////////////////////////////////
         ///\brief

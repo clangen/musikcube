@@ -55,7 +55,7 @@ namespace musik{ namespace core{
 ///When the LibraryFactory is first initialized it will load all
 ///libraries from the settings.db database.
 //////////////////////////////////////////
-class MUSIK_EXPORT LibraryFactory{
+class  LibraryFactory{
     private:
 //        static LibraryFactory sInstance;
     public:

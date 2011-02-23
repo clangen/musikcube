@@ -52,7 +52,7 @@ typedef struct XML_ParserStruct *XML_Parser;
 
 namespace musik{ namespace core{ namespace xml{
     // Forward
-    class MUSIK_EXPORT ParserNode;
+    class  ParserNode;
 } } }
 //////////////////////////////////////////////////////////////////////////////
 
@@ -86,7 +86,7 @@ namespace musik{ namespace core{ namespace xml{
 ///\see
 ///musik::core::xml::ParserNode
 //////////////////////////////////////////
-class MUSIK_EXPORT Parser : public ParserNode{
+class  Parser : public ParserNode{
     public:
         Parser(IReadSupplier *supplier);
         ~Parser();

@@ -2,22 +2,22 @@
 #ifndef _musik_DLLDEFINES_H_
 #define _musik_DLLDEFINES_H_
 
-/* Cmake will define musik_EXPORTS on Windows when it
+/* Cmake will define S on Windows when it
 configures to build a shared library. If you are going to use
 another build system on windows or create the visual studio
-projects by hand you need to define musik_EXPORTS when
+projects by hand you need to define S when
 building a DLL on windows.
 */
 // We are using the Visual Studio Compiler and building Shared libraries
 
 #if defined (_WIN32) 
-  #if defined(musik_EXPORTS)
-    #define  MUSIK_EXPORT __declspec(dllexport)
+  #if defined(S)
+    #define   __declspec(dllexport)
   #else
-    #define  MUSIK_EXPORT __declspec(dllimport)
-  #endif /* musik_EXPORTS */
+    #define   __declspec(dllimport)
+  #endif /* S */
 #else /* defined (_WIN32) */
- #define MUSIK_EXPORT
+ #define 
 #endif
 
 #endif /* _musik_DLLDEFINES_H_ */

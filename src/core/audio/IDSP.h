@@ -44,7 +44,7 @@ namespace musik { namespace core { namespace audio {
 ///Main interface for dsp plugins.
 ///Each instance equals a track.
 //////////////////////////////////////////
-class MUSIK_EXPORT IDSP {
+class  IDSP {
     public:
         //////////////////////////////////////////
         ///\brief

@@ -43,16 +43,16 @@ namespace musik{ namespace core{
         class Connection;
     }
     namespace Library{
-        class MUSIK_EXPORT Base;
-        class MUSIK_EXPORT LocalDB;
-        class MUSIK_EXPORT Remote;
+        class  Base;
+        class  LocalDB;
+        class  Remote;
     }
     namespace server{
         class Connection;
     }
     namespace xml{
-        class MUSIK_EXPORT ParserNode;
-        class MUSIK_EXPORT WriterNode;
+        class  ParserNode;
+        class  WriterNode;
     }
 } }
 //////////////////////////////////////////////////////////////////////////////
@@ -67,7 +67,7 @@ namespace musik{ namespace core{
 namespace musik{ namespace core{ namespace Query{
 
 //////////////////////////////////////////////////////////////////////////////
-class MUSIK_EXPORT Base;
+class  Base;
 typedef boost::shared_ptr<Query::Base> Ptr;
 
 typedef enum{
@@ -84,7 +84,7 @@ typedef enum{
 ///\brief
 ///Interface class for all queries.
 //////////////////////////////////////////
-class MUSIK_EXPORT Base : public sigslot::has_slots<> {
+class  Base : public sigslot::has_slots<> {
     public:
         Base(void);
         virtual ~Base(void);

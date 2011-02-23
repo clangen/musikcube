@@ -49,7 +49,7 @@ namespace musik{ namespace core{ namespace http{
 
 //////////////////////////////////////////////////////////////////////////////
 
-class MUSIK_EXPORT RequestParser : public IRequestParser{
+class  RequestParser : public IRequestParser{
     public:
         RequestParser();
         void Parse(const std::string &request);

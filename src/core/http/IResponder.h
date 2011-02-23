@@ -45,7 +45,7 @@ namespace musik{ namespace core{ namespace http{
 
 //////////////////////////////////////////////////////////////////////////////
 
-class MUSIK_EXPORT IResponder{
+class  IResponder{
     public:
         virtual void SendContent(const char* buffer,const std::size_t bufferSize)=0;
         virtual bool Exited()=0;

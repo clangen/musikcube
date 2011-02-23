@@ -46,7 +46,7 @@
 namespace musik{ namespace core{ namespace filestreams{
 //////////////////////////////////////////////////////////////////////////////
 
-class MUSIK_EXPORT LocalFileStream : public IFileStream{
+class  LocalFileStream : public IFileStream{
     public:
         LocalFileStream();
         ~LocalFileStream();
