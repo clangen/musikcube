@@ -40,7 +40,7 @@
 // Forward declare
 namespace musik{ namespace core{
     namespace Query{
-        class Base;
+        class MUSIK_EXPORT Base;
     }
 } }
 //////////////////////////////////////////////////////////////////////////////
@@ -68,7 +68,7 @@ namespace musik{ namespace core{ namespace Library{
 ///\see
 ///Indexer
 //////////////////////////////////////////
-class LocalDB : public Library::Base{
+class MUSIK_EXPORT LocalDB : public Library::Base{
 	private:
         LocalDB(utfstring name,int id);
     public:

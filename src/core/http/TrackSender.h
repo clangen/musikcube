@@ -48,7 +48,7 @@
 namespace musik{ namespace core{ namespace http {
 
 //////////////////////////////////////////////////////////////////////////////
-class TrackSender : public IRequestPlugin{
+class MUSIK_EXPORT TrackSender : public IRequestPlugin{
     public:
         TrackSender();
 

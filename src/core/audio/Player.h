@@ -48,12 +48,12 @@ namespace musik { namespace core { namespace audio {
 //////////////////////////////////////////////////////////////////////////////
 
 // Forward declare
-class Player;
-class Transport;
+class MUSIK_EXPORT Player;
+class MUSIK_EXPORT Transport;
 typedef boost::shared_ptr<Player> PlayerPtr;
 
 //////////////////////////////////////////////////////////////////////////////
-class Player : public IPlayer {
+class MUSIK_EXPORT Player : public IPlayer {
     public:
         typedef boost::shared_ptr<IOutput> OutputPtr;
 

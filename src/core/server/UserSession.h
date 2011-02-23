@@ -48,7 +48,7 @@ namespace musik{ namespace core{ namespace server{
 
 //////////////////////////////////////////////////////////////////////////////
 
-class UserSession
+class MUSIK_EXPORT UserSession
 {
     public:
         UserSession(UserPtr& user,std::string uniqueId,std::string ip);

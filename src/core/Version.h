@@ -41,7 +41,7 @@
 #include <string>
 
 namespace musik{ namespace core{
-    class Version{
+    class MUSIK_EXPORT Version{
         public:
             Version(void);
             Version(VERSION iMajor,VERSION iMinor,VERSION iRevision,VERSION iBuild);

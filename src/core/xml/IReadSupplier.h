@@ -43,7 +43,7 @@ namespace musik{ namespace core{ namespace xml{
 
 //////////////////////////////////////////////////////////////////////////////
 
-class IReadSupplier{
+class MUSIK_EXPORT IReadSupplier{
     public:
         virtual bool Read(long recommendedBytes=1024) = 0;
         virtual char* Buffer() = 0;

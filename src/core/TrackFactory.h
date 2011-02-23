@@ -47,7 +47,7 @@ namespace musik{ namespace core{
 ///\brief
 ///The TrackFactory helps to create tracks from a uri
 //////////////////////////////////////////
-class TrackFactory{
+class MUSIK_EXPORT TrackFactory{
     public:
         static TrackPtr CreateTrack(utfstring uri);
 };

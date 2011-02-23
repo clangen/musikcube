@@ -51,7 +51,7 @@ struct MessageQueueData{
 	virtual ~MessageQueueData();
 };
 
-class MessageQueue {
+class MUSIK_EXPORT MessageQueue {
     
     public:
         typedef sigslot::signal2<const char*,void*> ControllerEventSignal;

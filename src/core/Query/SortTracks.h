@@ -52,7 +52,7 @@
 namespace musik{ namespace core{
     namespace Query{
 
-        class SortTracks : public Query::ListBase{
+        class MUSIK_EXPORT SortTracks : public Query::ListBase{
             public:
                 SortTracks(void);
                 ~SortTracks(void);

@@ -51,7 +51,7 @@
 //////////////////////////////////////////////////////////////
 namespace musik{ namespace core{
     namespace Library{
-        class Base;
+        class MUSIK_EXPORT Base;
     }
 } }
 
@@ -59,7 +59,7 @@ namespace musik{ namespace core{
 namespace musik{ namespace core{
     namespace Query{
 
-        class PlaylistSave : public Query::Base{
+        class MUSIK_EXPORT PlaylistSave : public Query::Base{
             public:
                 PlaylistSave(void);
                 ~PlaylistSave(void);

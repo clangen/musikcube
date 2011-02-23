@@ -55,7 +55,7 @@
 namespace musik{ namespace core{
 
     namespace Query{
-        class ListBase : public Query::Base {
+        class MUSIK_EXPORT ListBase : public Query::Base {
             public:
                 ListBase(void);
                 virtual ~ListBase(void);

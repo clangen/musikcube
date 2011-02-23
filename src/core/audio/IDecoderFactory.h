@@ -44,7 +44,7 @@ namespace musik { namespace core { namespace audio {
 ///Interface for decoder plugins to be able to create
 ///instances of IDecoder
 //////////////////////////////////////////
-class IDecoderFactory{
+class MUSIK_EXPORT IDecoderFactory{
     public: 
         //////////////////////////////////////////
         ///\brief

@@ -43,7 +43,7 @@ namespace musik{ namespace core{
 
 //////////////////////////////////////////////////////////////////////////////
 
-class Crypt{
+class MUSIK_EXPORT Crypt{
     public:
         static std::string GenerateSalt();
         static std::string StaticSalt();

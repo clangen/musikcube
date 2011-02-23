@@ -46,7 +46,7 @@ namespace musik{ namespace core{
 ///\brief
 ///The virtual base for all tracks
 //////////////////////////////////////////
-class ITrack {
+class MUSIK_EXPORT ITrack {
     public:
         virtual ~ITrack(){};
         virtual const utfchar* GetValue(const char* metakey) = 0;
