@@ -61,7 +61,7 @@ namespace musik{ namespace core{
         private:
 
 #ifdef WIN32
-            typedef musik::core::IPlugin* STDCALL((* CallGetPlugin)());
+            typedef musik::core::IPlugin* STDCALL(CallGetPlugin);
 #endif
 
             PluginFactory(void);
@@ -97,7 +97,7 @@ namespace musik{ namespace core{
             template <class T, class D> std::vector< boost::shared_ptr<T> > QueryInterface(const char* functionName){
                 boost::mutex::scoped_lock lock(this->mutex);
 
-                typedef T* STDCALL((* PluginInterfaceCall)());
+                typedef T* STDCALL(PluginInterfaceCall);
 
                 std::vector< boost::shared_ptr<T> > plugins;
                 HandleList& allDlls = PluginFactory::sInstance.loadedDLLs;

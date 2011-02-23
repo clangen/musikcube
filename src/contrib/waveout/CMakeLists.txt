@@ -23,6 +23,6 @@ add_definitions(
 #include_directories( ../../core )
 
 add_library( waveout SHARED ${waveout_SOURCES} )
-target_link_libraries( waveout ${musikCube_LINK_LIBS})
+target_link_libraries( waveout ${musikCube_LINK_LIBS} winmm)
 
 

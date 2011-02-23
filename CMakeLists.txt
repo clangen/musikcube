@@ -50,6 +50,9 @@ if(WIN32 AND NOT UNIX)
 	else (VLD_FOUND)
 		message(STATUS "VLD not found")
 	endif (VLD_FOUND)
+	add_definitions (
+		-DUNICODE
+		)
 else(WIN32 AND NOT UNIX)
 	find_package(Boost 1.42.0 REQUIRED ${BOOST_LIBS}) 
 	if(Boost_FOUND)
