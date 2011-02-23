@@ -51,7 +51,7 @@
 
 namespace musik{ namespace core{
 
-    class PluginFactory{
+    class MUSIK_EXPORT PluginFactory{
         public:
 
         static PluginFactory& Instance() {
@@ -82,14 +82,14 @@ namespace musik{ namespace core{
         public:
 
             template <typename T>
-            class DestroyDeleter {
+            class MUSIK_EXPORT DestroyDeleter {
             public: void operator()(T* t) {
                     t->Destroy();
                 }
             };
 
             template <typename T>
-            class NullDeleter {
+            class MUSIK_EXPORT NullDeleter {
             public: void operator()(T* t) {
                 }
             };

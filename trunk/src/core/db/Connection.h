@@ -60,7 +60,7 @@ namespace musik{ namespace core{ namespace db{
     ///
     ///A Connection to the database
     //////////////////////////////////////////
-    class Connection : boost::noncopyable{
+    class MUSIK_EXPORT Connection : boost::noncopyable{
         public: 
             Connection();
             ~Connection();

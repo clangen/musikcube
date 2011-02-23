@@ -49,7 +49,7 @@ namespace musik{ namespace core{
 
 //////////////////////////////////////////////////////////////////////////////
 
-class Preferences{
+class MUSIK_EXPORT Preferences{
     public:
         Preferences(const char* nameSpace,const utfchar* library=NULL);
         ~Preferences(void);

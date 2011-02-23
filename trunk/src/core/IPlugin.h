@@ -39,7 +39,7 @@
 
 
 namespace musik{ namespace core{
-    class IPlugin{
+    class MUSIK_EXPORT IPlugin{
         protected:             
             virtual ~IPlugin() {};
         public:

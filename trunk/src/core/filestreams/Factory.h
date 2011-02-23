@@ -45,7 +45,7 @@ namespace musik{ namespace core{ namespace filestreams{
 //////////////////////////////////////////////////////////////////////////////
 
 
-class Factory {
+class MUSIK_EXPORT Factory {
     private:
         static Factory sInstance;
 

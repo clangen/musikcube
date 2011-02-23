@@ -54,7 +54,7 @@
 namespace musik{ namespace core{ namespace http {
 
 //////////////////////////////////////////////////////////////////////////////
-class Server : private boost::noncopyable{
+class MUSIK_EXPORT Server : private boost::noncopyable{
     public:
         Server(int port);
         ~Server();

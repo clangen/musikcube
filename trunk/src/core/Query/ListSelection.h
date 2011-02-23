@@ -65,7 +65,7 @@ namespace musik{ namespace core{ namespace Query{
 ///\see
 ///Query::ListBase
 //////////////////////////////////////////
-class ListSelection : public Query::ListBase{
+class MUSIK_EXPORT ListSelection : public Query::ListBase{
     public:
         ListSelection(void);
         ~ListSelection(void);

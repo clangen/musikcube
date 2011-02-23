@@ -53,7 +53,7 @@ namespace musik{ namespace core{
 ///\brief
 ///A LibraryTrack is a track related to a Library.
 //////////////////////////////////////////
-class IndexerTrack : public Track {
+class MUSIK_EXPORT IndexerTrack : public Track {
     public:
         IndexerTrack(DBINT id);
         virtual ~IndexerTrack(void);

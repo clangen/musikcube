@@ -47,7 +47,7 @@ namespace musik{ namespace core{ namespace http{
 
 //////////////////////////////////////////////////////////////////////////////
 
-class IRequestPlugin{
+class MUSIK_EXPORT IRequestPlugin{
     public:
         virtual void Destroy()=0;
         virtual const char* WatchPath()=0;

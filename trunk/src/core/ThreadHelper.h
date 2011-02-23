@@ -43,7 +43,7 @@
 
 
 namespace musik{ namespace core{
-    class ThreadHelper{
+    class MUSIK_EXPORT ThreadHelper{
         public:
             ThreadHelper(void);
             virtual ~ThreadHelper(void);

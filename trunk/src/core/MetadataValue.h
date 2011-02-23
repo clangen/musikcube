@@ -44,7 +44,7 @@
 #include <vector>
 
 namespace musik{ namespace core{
-    class MetadataValue{
+    class MUSIK_EXPORT MetadataValue{
         public:
             MetadataValue(void);
             MetadataValue(const DBINT newId,const utfchar *value);

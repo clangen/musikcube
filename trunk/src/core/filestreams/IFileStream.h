@@ -49,7 +49,7 @@ namespace musik{ namespace core{ namespace filestreams{
 
 typedef long PositionType;
 
-class IFileStream{
+class MUSIK_EXPORT IFileStream{
     public:
 
 

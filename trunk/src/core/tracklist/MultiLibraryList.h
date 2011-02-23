@@ -61,7 +61,7 @@ namespace musik{ namespace core{ namespace tracklist {
 ///\brief
 ///The MultiLibraryList can contain tracks from multiple libraries and GenericTracks
 //////////////////////////////////////////
-class MultiLibraryList : public Base, public sigslot::has_slots<> {
+class MUSIK_EXPORT MultiLibraryList : public Base, public sigslot::has_slots<> {
     public:
         MultiLibraryList();
 

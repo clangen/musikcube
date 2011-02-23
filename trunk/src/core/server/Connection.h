@@ -38,7 +38,7 @@
 //////////////////////////////////////////////////////////////////////////////
 // Forward declare
 namespace musik{ namespace core{
-    class Server;
+    class MUSIK_EXPORT Server;
 } }
 //////////////////////////////////////////////////////////////////////////////
 
@@ -61,13 +61,13 @@ namespace musik{ namespace core{ namespace server{
 
 //////////////////////////////////////////////////////////////////////////////
 // Forward declare
-class Connection;
+class MUSIK_EXPORT Connection;
 typedef boost::shared_ptr<Connection> ConnectionPtr;
 typedef std::vector<ConnectionPtr> ConnectionVector;
 //////////////////////////////////////////////////////////////////////////////
 
 
-class Connection : public musik::core::Library::Base{
+class MUSIK_EXPORT Connection : public musik::core::Library::Base{
     public:
         Connection(boost::asio::io_service &ioService,musik::core::Server *server);
         ~Connection(void);

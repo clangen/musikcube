@@ -44,7 +44,7 @@
 namespace musik{ namespace core{ namespace db{
 
     // Forward declare
-    class Connection;
+    class MUSIK_EXPORT Connection;
 
     //////////////////////////////////////////
     ///\brief
@@ -61,7 +61,7 @@ namespace musik{ namespace core{ namespace db{
     ///\remarks
     ///Nested transations are partially supported. First scope is the one deciding when transaction is commited.
     //////////////////////////////////////////
-    class ScopedTransaction : boost::noncopyable{
+    class MUSIK_EXPORT ScopedTransaction : boost::noncopyable{
         public: 
             ScopedTransaction(Connection &connection);
             ~ScopedTransaction();

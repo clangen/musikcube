@@ -51,9 +51,9 @@
 //////////////////////////////////////////////////////////////////////////////
 // Forward declare
 namespace musik{ namespace core{ namespace http{
-    class Responder;
-    class Server;
-    class RequestParser;
+    class MUSIK_EXPORT Responder;
+    class MUSIK_EXPORT Server;
+    class MUSIK_EXPORT RequestParser;
     typedef boost::shared_ptr<Responder> ResponderPtr;
 } } }
 //////////////////////////////////////////////////////////////////////////////
@@ -66,7 +66,7 @@ namespace musik{ namespace core{ namespace http{
 
 //////////////////////////////////////////////////////////////////////////////
 
-class Responder : public IResponder{
+class MUSIK_EXPORT Responder : public IResponder{
     public:
         Responder(Server &server,boost::asio::io_service &ioService,utfstring dbFilename);
         virtual ~Responder();

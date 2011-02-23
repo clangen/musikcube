@@ -48,7 +48,7 @@ namespace musik{ namespace core{ namespace Query{
 
 typedef std::map<std::string,musik::core::Query::Ptr> QueryMap;
 
-class Factory{
+class MUSIK_EXPORT Factory{
 
     private:
         Factory(void);

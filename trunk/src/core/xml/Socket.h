@@ -46,7 +46,7 @@
 namespace musik{ namespace core{ namespace xml{
 
 //////////////////////////////////////////////////////////////////////////////
-class SocketReader : public IReadSupplier{
+class MUSIK_EXPORT SocketReader : public IReadSupplier{
     public:
         SocketReader(boost::asio::ip::tcp::socket &socket);
         ~SocketReader(void);
@@ -64,7 +64,7 @@ class SocketReader : public IReadSupplier{
 };
 
 //////////////////////////////////////////////////////////////////////////////
-class SocketWriter : public IWriteSupplier{
+class MUSIK_EXPORT SocketWriter : public IWriteSupplier{
     public:
         SocketWriter(boost::asio::ip::tcp::socket &socket);
         ~SocketWriter(void);

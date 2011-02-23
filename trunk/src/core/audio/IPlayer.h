@@ -43,7 +43,7 @@ namespace musik { namespace core { namespace audio {
 ///\brief
 ///Interface for the audio::Player to make IOuput plugins be able to make callbacks
 //////////////////////////////////////////
-class IPlayer{
+class MUSIK_EXPORT IPlayer{
     public:
         //////////////////////////////////////////
         ///\brief

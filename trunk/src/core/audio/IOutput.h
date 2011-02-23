@@ -41,7 +41,7 @@
 namespace musik { namespace core { namespace audio {
 //////////////////////////////////////////////////////////////////////////////
 
-class IOutput{
+class MUSIK_EXPORT IOutput{
 
     public:    
 

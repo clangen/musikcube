@@ -61,7 +61,7 @@ namespace musik{ namespace core{ namespace Query{
 ///\see
 ///musik::core::Query::SortTracks
 //////////////////////////////////////////
-class SortTracksWithData : public Query::Base{
+class MUSIK_EXPORT SortTracksWithData : public Query::Base{
     public:
         SortTracksWithData(void);
         ~SortTracksWithData(void);

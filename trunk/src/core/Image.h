@@ -45,7 +45,7 @@ namespace musik{ namespace core{
 
 //////////////////////////////////////////////////////////////////////////////
 
-class Image{
+class MUSIK_EXPORT Image{
     public:
         Image(void);
         ~Image(void);

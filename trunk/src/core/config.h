@@ -46,12 +46,13 @@
     #include <windows.h>
     #include <tchar.h>
 
-    #ifndef MUSIKCOREIMPORT
+	#include "musik_dll_exports.h"
+    /*#ifndef MUSIKCOREIMPORT
         //#define DLLEXPORT __declspec( dllexport )
         #define DLLEXPORT
     #else
         #define DLLEXPORT __declspec( dllimport )
-    #endif
+    #endif*/
     typedef unsigned __int64 UINT64;
 
     #define STDCALL(fp) (__stdcall* fp)()

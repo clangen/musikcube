@@ -72,6 +72,7 @@ set (CORE_HEADERS
 	MessageQueue.h
 	MetadataValue.h
 	MetaKey.h
+	musik_dll_exports.h
 	NonLibraryTrackHelper.h
 	pch.hpp
 	PlaybackQueue.h
@@ -271,7 +272,12 @@ add_definitions(
   -D_DEBUG
 )
 
-add_library( musik SHARED ${CORE_SOURCES} ${CORE_HEADERS})
+if (WIN32)
+	#Just until I can figure out how to get rid of the last linker errors when exporting dll functions
+	add_library( musik STATIC ${CORE_SOURCES} ${CORE_HEADERS})
+else (WIN32)
+	add_library( musik SHARED ${CORE_SOURCES} ${CORE_HEADERS})
+endif (WIN32)
 target_link_libraries( musik ${musikCube_LINK_LIBS} expat)
 
 
