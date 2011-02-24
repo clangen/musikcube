@@ -11,5 +11,5 @@
 
 #ifdef WIN32
 #include <shlwapi.h>
-#include "vld/vld.h"
+//#include "vld/vld.h"
 #endif //WIN32

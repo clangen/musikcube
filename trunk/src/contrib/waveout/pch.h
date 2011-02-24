@@ -45,7 +45,7 @@
 	#include <ks.h>
 	#include <ksmedia.h>
 
-	#include "vld/vld.h"
+	//#include "vld/vld.h"
 
 #else
 
