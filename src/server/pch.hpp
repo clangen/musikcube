@@ -46,7 +46,7 @@
 //////////////////////////////////////////////////////////////////////////////
 #pragma warning (disable : 4996 4018 4482)
 
-#include "vld/vld.h"
+//#include "vld/vld.h"
 
 #include <core/config.h>
 

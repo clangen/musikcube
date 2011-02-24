@@ -13,8 +13,8 @@ set (SQUARE_HEADERS
 	stdafx.h
 )
 
-SOURCE_GROUP (source FILES ${SQUARE_SRCS})
-SOURCE_GROUP (headers FILES ${SQUARE_HEADERS})
+SOURCE_GROUP ("Source Files" FILES ${SQUARE_SRCS})
+SOURCE_GROUP ("Header Files" FILES ${SQUARE_HEADERS})
 
 add_executable(square ${SQUARE_SRCS} ${SQUARE_HEADERS})
 target_link_libraries(square ${musikCube_LINK_LIBS} musik)

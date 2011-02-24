@@ -10,4 +10,4 @@
 #include <shlwapi.h>
 #include <math.h>
 
-#include "vld/vld.h"
+//#include "vld/vld.h"

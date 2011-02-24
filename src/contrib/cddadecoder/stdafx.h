@@ -7,4 +7,4 @@
 
 #include <core/config.h>
 #include <shlwapi.h>
-#include "vld/vld.h"
+//#include "vld/vld.h"
