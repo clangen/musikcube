@@ -46,7 +46,7 @@
     #include <windows.h>
     #include <tchar.h>
 
-	#include "musik_dll_exports.h"
+	//#include "musik_dll_exports.h"
 
     typedef unsigned __int64 UINT64;
 
@@ -74,7 +74,6 @@ typedef unsigned int DBTIME;
 
 #include <string>
 
-
 #ifdef _MSC_VER
 
     //////////////////////////////////////////
@@ -92,7 +91,7 @@ typedef unsigned int DBTIME;
     ///\remarks
     ///We thought that the _T was a little bit too microsoft specific.
     //////////////////////////////////////////
-    #define UTF(x)  L"x"
+    #define UTF(x)  _T(x)
 
     //////////////////////////////////////////
     ///\brief

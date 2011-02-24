@@ -99,7 +99,7 @@ void TagReaderTaglib::Destroy() {
 bool TagReaderTaglib::CanReadTag(const utfchar *extension){
 
     if(extension){
-		utfstring ext(UTF(extension));
+		utfstring ext(extension);
 
         boost::algorithm::to_lower(ext);    // Convert to lower case
 

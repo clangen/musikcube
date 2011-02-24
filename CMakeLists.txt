@@ -52,6 +52,7 @@ if(WIN32 AND NOT UNIX)
 	#endif (VLD_FOUND)
 	add_definitions (
 		-DUNICODE
+		-D_UNICODE
 		)
 else(WIN32 AND NOT UNIX)
 	find_package(Boost 1.42.0 REQUIRED ${BOOST_LIBS}) 

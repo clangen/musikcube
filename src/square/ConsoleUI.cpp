@@ -110,8 +110,6 @@ void ConsoleUI::PrintCommands()
 
 void ConsoleUI::ProcessCommand(utfstring commandString)
 {
-    //using namespace boost::algorithm;
-
     Args args;
         
     boost::algorithm::split(args, commandString, boost::is_any_of(" "));
