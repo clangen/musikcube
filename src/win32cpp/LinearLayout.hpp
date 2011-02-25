@@ -43,6 +43,7 @@
 #include <win32cpp/Win32Config.hpp>
 #include <win32cpp/Panel.hpp>
 #include <win32cpp/ILayout.hpp>
+#include <win32cpp/Application.hpp>
 
 namespace win32cpp {
 

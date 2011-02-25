@@ -39,6 +39,8 @@
 #pragma once
 
 #include <win32cpp/Win32Config.hpp>
+#include <win32cpp/Types.hpp>
+#include <win32cpp/Exception.hpp>
 
 //////////////////////////////////////////////////////////////////////////////
 

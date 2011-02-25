@@ -110,6 +110,7 @@ include_directories (
 add_subdirectory(src/3rdparty)
 add_subdirectory(src/core)
 add_subdirectory(src/contrib)
-#add_subdirectory(src/server)
+add_subdirectory(src/win32cpp)
+add_subdirectory(src/server)
 add_subdirectory(src/square)
 #add_subdirectory(src/cube)

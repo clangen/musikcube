@@ -40,6 +40,7 @@
 
 //////////////////////////////////////////////////////////////////////////////
 
+#include <win32cpp/Application.hpp>
 #include <win32cpp/Win32Config.hpp>
 #include <win32cpp/Panel.hpp>
 
