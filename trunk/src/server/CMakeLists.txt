@@ -68,7 +68,7 @@ add_definitions(
   -D_DEBUG
 )
 
-add_executable( musikServer ${SERVER_SOURCES} ${SERVER_HEADERS})
+add_executable( musikServer WIN32 ${SERVER_SOURCES} ${SERVER_HEADERS})
 target_link_libraries( musikServer win32cpp musik comctl32)
 
 
