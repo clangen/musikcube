@@ -86,7 +86,7 @@ void PluginFactory::LoadPlugins(){
         for(boost::filesystem::utfdirectory_iterator oFile(oDir);oFile!=oEndFile;++oFile){
             if(boost::filesystem::is_regular(oFile->status())){
                 // This is a file
-                utfstring sFile(oFile->path().string());
+                utfstring sFile(oFile->path().wstring());
 
                 #ifdef WIN32
                     if(sFile.substr(sFile.size()-4)==UTF(".dll")){    // And a DLL

@@ -137,16 +137,15 @@ void IndexerTrack::InitMeta(){
     }
 }
 
-
 bool IndexerTrack::CompareDBAndFileInfo(const boost::filesystem::utfpath &file,db::Connection &dbConnection,DBINT currentFolderId){
  
     try{
-        this->SetValue("path",file.string().c_str());
+        this->SetValue("path",file.wstring().c_str());
         this->SetValue("filename",file.leaf().c_str());
 
-        utfstring::size_type lastDot = file.leaf().find_last_of(UTF("."));
+        size_t lastDot = file.leaf().wstring().find_last_of(UTF("."));
         if(lastDot!=utfstring::npos){
-            this->SetValue("extension",file.leaf().substr(lastDot+1).c_str());
+            this->SetValue("extension",file.leaf().wstring().substr(lastDot+1).c_str());
         }
 
         DBINT fileSize  = (DBINT)boost::filesystem::file_size(file);

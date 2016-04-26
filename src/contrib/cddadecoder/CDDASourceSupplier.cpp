@@ -48,7 +48,7 @@ void CDDASourceSupplier::Destroy()
     delete this;
 }
 
-IAudioSource* CDDASourceSupplier::CreateAudioSource()
+IDecoder* CDDASourceSupplier::CreateDecoder()
 {
     return new CDDAAudioSource();
 }

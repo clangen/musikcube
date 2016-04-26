@@ -1,13 +1,13 @@
 #pragma once
 
-#include <core/audio/IAudioSource.h>
+#include <core/audio/Stream.h>
 
 #include "ntddcdrm.h"
 #include "devioctl.h"
 
 using namespace musik::core::audio;
 
-class CDDAAudioSource : public IAudioSource
+class CDDAAudioSource : public IDecoder
 {
 protected:
 	LONGLONG		m_llPosition, 

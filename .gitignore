@@ -1,0 +1,15 @@
+**/*.vcxproj.filters
+**/*.vcxproj.user
+**/*.VC.db
+**/*.VC.opendb
+**/*.suo
+bin
+obj
+ipch
+src/3rdparty/bin
+src/3rdparty/obj
+src/core/obj
+src/square/obj
+src/contrib/oggdecoder/obj
+src/contrib/waveout/obj
+src/contrib/taglib_plugin/obj

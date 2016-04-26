@@ -148,7 +148,7 @@ bool Indexer::Restarted(){
 //////////////////////////////////////////
 void Indexer::AddPath(utfstring sPath){
     boost::filesystem::utfpath oPath(sPath);
-    sPath    = oPath.string();    // Fix pathname for slash/backslash
+    sPath    = oPath.wstring();    // Fix pathname for slash/backslash
     if(sPath.substr(sPath.size()-1,1)!=UTF("/")){
         sPath    += UTF("/");
     }
@@ -316,7 +316,7 @@ void Indexer::CountFiles(utfstring &sFolder){
             for(boost::filesystem::utfdirectory_iterator oFile(oPath);oFile!=oEndFile;++oFile){
                 if(is_directory(oFile->status())){
                     utfstring sDirectory;
-                    sDirectory.assign(oFile->path().string());
+                    sDirectory.assign(oFile->path().wstring());
                     this->CountFiles(sDirectory);
                 }else{
                     boost::mutex::scoped_lock lock(this->progressMutex);
@@ -353,9 +353,9 @@ void Indexer::SyncDirectory(utfstring &sFolder,DBINT iParentFolderId,DBINT iPath
     }
 
     boost::filesystem::utfpath oPath(sFolder);
-    sFolder    = oPath.string();    // Fix pathname for slash/backslash
+    sFolder    = oPath.wstring();    // Fix pathname for slash/backslash
 
-    utfstring sFolderLeaf(oPath.leaf());
+    utfstring sFolderLeaf(oPath.leaf().wstring());
     DBINT iFolderId(0);
 
     // Get this folder ID
@@ -406,7 +406,7 @@ void Indexer::SyncDirectory(utfstring &sFolder,DBINT iParentFolderId,DBINT iPath
 
                 // It's a directory
                 utfstring oDirectory;
-                oDirectory.assign(oFile->path().string());
+                oDirectory.assign(oFile->path().wstring());
 
                 // If this is a directory, recurse down
                 this->SyncDirectory(oDirectory,iFolderId,iPathId,syncPath);
@@ -500,7 +500,7 @@ void Indexer::ThreadLoop(){
         if(syncTimeout){
             // Sync every "syncTimeout" second
             boost::xtime oWaitTime;
-            boost::xtime_get(&oWaitTime, boost::TIME_UTC);
+            boost::xtime_get(&oWaitTime, boost::TIME_UTC_);
             oWaitTime.sec += syncTimeout;
 
             if(!this->Restarted()){

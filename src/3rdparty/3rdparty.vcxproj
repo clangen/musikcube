@@ -1,0 +1,160 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{B2165720-B4B2-4F4B-8888-8C390C3CB4DB}</ProjectGuid>
+    <RootNamespace>doe</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">bin/$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">obj/$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">bin/$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">obj/$(Configuration)\</IntDir>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>./include/;./include/sqlite/;./include/expat;./include/md5;./include/jpeg-6b;../../../boost_1_60_0/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE;SQLITE_THREADSAFE;COMPILED_FROM_DSP;XML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
+      <AdditionalIncludeDirectories>./include/;./include/sqlite/;./include/expat;./include/md5;./include/jpeg-6b;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_DEPRECATE;SQLITE_THREADSAFE;COMPILED_FROM_DSP;XML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\sqlite\sqlite3.c">
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level1</WarningLevel>
+    </ClCompile>
+    <ClCompile Include="src\expat\xmlparse.c" />
+    <ClCompile Include="src\expat\xmlrole.c" />
+    <ClCompile Include="src\expat\xmltok.c" />
+    <ClCompile Include="src\expat\xmltok_impl.c" />
+    <ClCompile Include="src\expat\xmltok_ns.c" />
+    <ClCompile Include="src\md5\md5.c" />
+    <ClCompile Include="src\jpeg-6b\jcapimin.c" />
+    <ClCompile Include="src\jpeg-6b\jcapistd.c" />
+    <ClCompile Include="src\jpeg-6b\jccoefct.c" />
+    <ClCompile Include="src\jpeg-6b\jccolor.c" />
+    <ClCompile Include="src\jpeg-6b\jcdctmgr.c" />
+    <ClCompile Include="src\jpeg-6b\jchuff.c" />
+    <ClCompile Include="src\jpeg-6b\jcinit.c" />
+    <ClCompile Include="src\jpeg-6b\jcmainct.c" />
+    <ClCompile Include="src\jpeg-6b\jcmarker.c" />
+    <ClCompile Include="src\jpeg-6b\jcmaster.c" />
+    <ClCompile Include="src\jpeg-6b\jcomapi.c" />
+    <ClCompile Include="src\jpeg-6b\jcparam.c" />
+    <ClCompile Include="src\jpeg-6b\jcphuff.c" />
+    <ClCompile Include="src\jpeg-6b\jcprepct.c" />
+    <ClCompile Include="src\jpeg-6b\jcsample.c" />
+    <ClCompile Include="src\jpeg-6b\jctrans.c" />
+    <ClCompile Include="src\jpeg-6b\jdapimin.c" />
+    <ClCompile Include="src\jpeg-6b\jdapistd.c" />
+    <ClCompile Include="src\jpeg-6b\jdatadst.c" />
+    <ClCompile Include="src\jpeg-6b\jdatasrc.c" />
+    <ClCompile Include="src\jpeg-6b\jdcoefct.c" />
+    <ClCompile Include="src\jpeg-6b\jdcolor.c" />
+    <ClCompile Include="src\jpeg-6b\jddctmgr.c" />
+    <ClCompile Include="src\jpeg-6b\jdhuff.c" />
+    <ClCompile Include="src\jpeg-6b\jdinput.c" />
+    <ClCompile Include="src\jpeg-6b\jdmainct.c" />
+    <ClCompile Include="src\jpeg-6b\jdmarker.c" />
+    <ClCompile Include="src\jpeg-6b\jdmaster.c" />
+    <ClCompile Include="src\jpeg-6b\jdmerge.c" />
+    <ClCompile Include="src\jpeg-6b\jdphuff.c" />
+    <ClCompile Include="src\jpeg-6b\jdpostct.c" />
+    <ClCompile Include="src\jpeg-6b\jdsample.c" />
+    <ClCompile Include="src\jpeg-6b\jdtrans.c" />
+    <ClCompile Include="src\jpeg-6b\jerror.c" />
+    <ClCompile Include="src\jpeg-6b\jfdctflt.c" />
+    <ClCompile Include="src\jpeg-6b\jfdctfst.c" />
+    <ClCompile Include="src\jpeg-6b\jfdctint.c" />
+    <ClCompile Include="src\jpeg-6b\jidctflt.c" />
+    <ClCompile Include="src\jpeg-6b\jidctfst.c" />
+    <ClCompile Include="src\jpeg-6b\jidctint.c" />
+    <ClCompile Include="src\jpeg-6b\jidctred.c" />
+    <ClCompile Include="src\jpeg-6b\jmemmgr.c" />
+    <ClCompile Include="src\jpeg-6b\jmemnobs.c" />
+    <ClCompile Include="src\jpeg-6b\jpegtran.c" />
+    <ClCompile Include="src\jpeg-6b\jquant1.c" />
+    <ClCompile Include="src\jpeg-6b\jquant2.c" />
+    <ClCompile Include="src\jpeg-6b\jutils.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\sqlite\sqlite3.h" />
+    <ClInclude Include="include\sqlite\sqlite3ext.h" />
+    <ClInclude Include="include\sigslot\sigslot.h" />
+    <ClInclude Include="include\expat\ascii.h" />
+    <ClInclude Include="include\expat\asciitab.h" />
+    <ClInclude Include="include\expat\expat.h" />
+    <ClInclude Include="include\expat\expat_external.h" />
+    <ClInclude Include="include\expat\iasciitab.h" />
+    <ClInclude Include="include\expat\internal.h" />
+    <ClInclude Include="include\expat\latin1tab.h" />
+    <ClInclude Include="include\expat\nametab.h" />
+    <ClInclude Include="include\expat\utf8tab.h" />
+    <ClInclude Include="include\expat\winconfig.h" />
+    <ClInclude Include="include\expat\xmlrole.h" />
+    <ClInclude Include="include\expat\xmltok.h" />
+    <ClInclude Include="include\expat\xmltok_impl.h" />
+    <ClInclude Include="include\md5\md5.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

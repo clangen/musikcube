@@ -33,14 +33,14 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
-#ifdef WIN32
-#include "pch.hpp"
-#else
-#include <core/pch.hpp>
-#endif
+//#ifdef WIN32
+	#include "pch.hpp"
+//#else
+//	#include <core/pch.hpp>
+//#endif
 
-#include <core/xml/WriterNode.h>
-#include <core/xml/Writer.h>
+#include "WriterNode.h"
+#include "Writer.h"
 
 using namespace musik::core::xml;
 

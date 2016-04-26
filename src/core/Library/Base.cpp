@@ -33,11 +33,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
-#ifdef WIN32
+
 #include "pch.hpp"
-#else
-#include <core/pch.hpp>
-#endif
 
 #include <core/Library/Base.h>
 
@@ -146,7 +143,7 @@ utfstring Library::Base::GetLibraryDirectory(){
         boost::filesystem::create_directories(oFolder);
     }
 
-    directory   = oFolder.string();
+    directory = oFolder.wstring();
 
     return directory;
 }
@@ -325,7 +322,7 @@ bool Library::Base::AddQuery( const Query::Base &query,unsigned int options ){
 
                 // To be on the safe side, lets check every second
                 boost::xtime waitingTime;
-                boost::xtime_get(&waitingTime, boost::TIME_UTC);
+                boost::xtime_get(&waitingTime, boost::TIME_UTC_);
                 waitingTime.sec += 1;
                 this->waitCondition.timed_wait(lock,waitingTime);
             }

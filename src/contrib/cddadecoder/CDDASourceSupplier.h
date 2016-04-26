@@ -33,16 +33,17 @@
 
 #pragma once
 
-#include <core/Audio/IAudioSource.h>
+#include <core/Audio/Stream.h>
+#include <core/audio/IDecoderFactory.h>
 
 using namespace musik::core::audio;
 
-class CDDASourceSupplier : public IAudioSourceSupplier
+class CDDASourceSupplier : public IDecoderFactory
 {
 public:     CDDASourceSupplier();
 public:     ~CDDASourceSupplier();
 
-public:     IAudioSource* CreateAudioSource();
+public:     IDecoder* CreateDecoder();
 public:     void Destroy();
 public:     bool CanHandle(const utfchar* source) const;
 };

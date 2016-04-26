@@ -30,11 +30,8 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
-#ifdef WIN32
+
 #include "pch.hpp"
-#else
-#include <core/pch.hpp>
-#endif
 
 #include <core/audio/Player.h>
 #include <core/PluginFactory.h>
@@ -144,8 +141,8 @@ int Player::State(){
 
 void Player::ThreadLoop(){
     // First start the stream
-    this->stream    = Stream::Create();
-    if(this->stream->OpenStream(this->url)){
+    this->stream = Stream::Create();
+    if (this->stream->OpenStream(this->url)) {
         {
             boost::mutex::scoped_lock lock(this->mutex);
             // Set the volume in the output
@@ -153,16 +150,16 @@ void Player::ThreadLoop(){
         }
 
         // If it's not started, lets precache
-        bool keepPrecaching(true);
-        while(this->State()==Precache && keepPrecaching){
-            keepPrecaching  = this->PreBuffer();
+        bool keepPrecaching = true;
+        while(this->State() == Precache && keepPrecaching) {
+            keepPrecaching = this->PreBuffer();
             boost::thread::yield();
         }
 
         // Lets wait until we are not precaching anymore
         {
             boost::mutex::scoped_lock lock(this->mutex);
-            while(this->state==Precache){
+            while (this->state==Precache) {
                 this->waitCondition.wait(lock);
             }
         }
@@ -172,14 +169,14 @@ void Player::ThreadLoop(){
         // Player should be started or quit by now
         bool finished(false);
         while(!finished && !this->Exited()){
-            if(this->setPosition!=-1){
+            if(this->setPosition != -1) {
                 // Set a new position
                 this->output->ClearBuffers();
                 this->stream->SetPosition(this->setPosition);
+
                 {
                     boost::mutex::scoped_lock lock(this->mutex);
                     this->bufferQueue.clear();
-//                    this->lockedBuffers.clear();
                     this->setPosition       = -1;
                     this->totalBufferSize   = 0;
                 }
@@ -190,23 +187,20 @@ void Player::ThreadLoop(){
             // Get a buffer, either from the bufferQueue, or from the stream
             BufferPtr buffer;
 
-            if(!this->BufferQueueEmpty()){
+            if (!this->BufferQueueEmpty()) {
                 boost::mutex::scoped_lock lock(this->mutex);
-                buffer  = this->bufferQueue.front();
-            }else{
+                buffer = this->bufferQueue.front();
+            }
+			else {
                 buffer  = this->stream->NextBuffer();
-                if(buffer){
+                if(buffer) {
                     boost::mutex::scoped_lock lock(this->mutex);
                     this->bufferQueue.push_back(buffer);
                     this->totalBufferSize += buffer->Bytes();
                 }
-		else {
-			
-		}
             }
 
-            if(buffer){
-
+            if(buffer) {
                 {
                     // Add the buffer to locked buffers so the output do not have time to play and 
                     // try to release the buffer before we have to add it.
@@ -215,92 +209,87 @@ void Player::ThreadLoop(){
                 }
 
                 // Try to play the buffer
-                if(!this->output->PlayBuffer(buffer.get(),this)){
+                if(!this->output->PlayBuffer(buffer.get(),this)) {
                     {
                         // We didn't manage to play the buffer, remove it from the locked buffer queue
                         boost::mutex::scoped_lock lock(this->mutex);
                         this->lockedBuffers.pop_back();
                     }
 
-                    if(!this->PreBuffer()){
-#ifdef _DEBUG
-        	std::cerr << "!this->PreBuffer" << std::endl;
-#endif
+                    if(!this->PreBuffer()) {
                         // Wait for buffersize to become smaller
                         boost::mutex::scoped_lock lock(this->mutex);
-                        if(this->totalBufferSize>this->maxBufferSize){
+                        if(this->totalBufferSize>this->maxBufferSize) {
                             this->waitCondition.wait(lock);
                         }
-
                     }
-                }else{
+                }
+				else{
                     // Buffer send to output
                     boost::mutex::scoped_lock lock(this->mutex);
-                    if(!this->bufferQueue.empty()){
+                    if(!this->bufferQueue.empty()) {
                         this->bufferQueue.pop_front();
 
                         // Set currentPosition
-                        if(this->lockedBuffers.size()==1){
-                            this->currentPosition   = buffer->Position();
+                        if(this->lockedBuffers.size() == 1){
+                            this->currentPosition = buffer->Position();
                         }
                     }
-
                 }
-            }else{
+            }
+			else{
                 // We have no more to decode
-                finished    = true;
+                finished = true;
             }
         }
 
-        // TODO: call a signal to notify that player is almost done
-        if(!this->Exited()){
+        if(!this->Exited()) {
             this->PlaybackAlmostEnded(this);
         }
 
         // We need to wait for all the lockedBuffers to be released
         bool buffersEmpty=false;
-        do{
+        do {
             this->output->ReleaseBuffers();
             {
                 boost::mutex::scoped_lock lock(this->mutex);
-                buffersEmpty    = this->lockedBuffers.empty();
-                if(!buffersEmpty && this->state!=Player::Quit){
+                buffersEmpty = this->lockedBuffers.empty();
+                if(!buffersEmpty && this->state!=Player::Quit) {
                     this->waitCondition.wait(lock);
                 }
             }
-        }while(!buffersEmpty && !this->Exited());
+        } while(!buffersEmpty && !this->Exited());
 
-    }else{
+    }
+	else {
         // Unable to open stream
         this->PlaybackError(this);
     }
 
     {
         boost::mutex::scoped_lock lock(this->mutex);
-        this->state    = Player::Quit;
+        this->state = Player::Quit;
     }
 
     this->PlaybackEnded(this);
-
     this->output->ReleaseBuffers();
-
     this->output.reset();
     this->stream.reset();
-
 }
 
-bool Player::BufferQueueEmpty(){
+bool Player::BufferQueueEmpty() {
     boost::mutex::scoped_lock lock(this->mutex);
     return this->bufferQueue.empty();
 }
 
 bool Player::PreBuffer(){
     // But not if buffer is full
-    if(this->totalBufferSize>this->maxBufferSize){
+    if(this->totalBufferSize>this->maxBufferSize) {
         return false;
-    }else{
+    }
+	else{
         BufferPtr newBuffer = this->stream->NextBuffer();
-        if(newBuffer){
+        if(newBuffer) {
             boost::mutex::scoped_lock lock(this->mutex);
             this->bufferQueue.push_back(newBuffer);
             this->totalBufferSize += newBuffer->Bytes();
@@ -310,23 +299,23 @@ bool Player::PreBuffer(){
     }
 }
 
-bool Player::Exited(){
+bool Player::Exited() {
     boost::mutex::scoped_lock lock(this->mutex);
     return this->state==Player::Quit;
 }
 
-void Player::ReleaseBuffer(IBuffer *buffer){
+void Player::ReleaseBuffer(IBuffer *buffer) {
     boost::mutex::scoped_lock lock(this->mutex);
+
     // Remove the buffer from lockedBuffers
-    for(BufferList::iterator foundBuffer=this->lockedBuffers.begin();foundBuffer!=this->lockedBuffers.end();++foundBuffer){
-        if(foundBuffer->get()==buffer){
-#ifdef _DEBUG
-        	std::cerr << "Found buffer to delete in locked buffer list" << std::endl;
-#endif
+    for (BufferList::iterator foundBuffer = this->lockedBuffers.begin(); foundBuffer != this->lockedBuffers.end(); ++foundBuffer) {
+        if (foundBuffer->get() == buffer) {
             this->totalBufferSize -= buffer->Bytes();
-            if( this->stream ){
+            
+			if(this->stream ) {
                 this->stream->DeleteBuffer(*foundBuffer);
             }
+
             this->lockedBuffers.erase(foundBuffer);
 
             // Calculate current position from front locked buffer
@@ -339,11 +328,12 @@ void Player::ReleaseBuffer(IBuffer *buffer){
             return;
         }
     }
+
     // We should never reach this point
     //throw "Releasing nonexisting buffer";
 }
 
-void Player::Notify(){
+void Player::Notify() {
     this->waitCondition.notify_all();
 }
 

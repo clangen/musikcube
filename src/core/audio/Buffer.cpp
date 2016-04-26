@@ -30,11 +30,8 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
-#ifdef WIN32
+
 #include "pch.hpp"
-#else
-#include <core/pch.hpp>
-#endif
 
 #include <core/audio/Buffer.h>
 

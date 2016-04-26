@@ -34,12 +34,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#ifdef WIN32
 #include "pch.hpp"
-#else
-#include <core/pch.hpp>
-#endif
-
 
 #include <core/http/RequestParser.h>
 #include <boost/algorithm/string.hpp>

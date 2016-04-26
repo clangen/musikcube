@@ -74,7 +74,7 @@ typedef unsigned int DBTIME;
 
 #include <string>
 
-#ifdef _MSC_VER
+#if WIN32
 
     //////////////////////////////////////////
     ///\brief

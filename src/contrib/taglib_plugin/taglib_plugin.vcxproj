@@ -1,0 +1,237 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{7CD00EC4-D090-48BE-9388-FA4857AC332C}</ProjectGuid>
+    <RootNamespace>taglib_plugin</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)/bin/$(Configuration)/plugins\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">./obj/$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)/bin/$(Configuration)/plugins\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">./obj/$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>../../;../../3rdparty/include/;../../../../boost_1_60_0/;taglib-1.5;taglib-1.5/taglib;taglib-1.5/taglib/ape;taglib-1.5/taglib/flac;taglib-1.5/taglib/mpc;taglib-1.5/taglib/mpeg;taglib-1.5/taglib/mpeg/id3v1;taglib-1.5/taglib/mpeg/id3v2;taglib-1.5/taglib/mpeg/id3v2/frames;taglib-1.5/taglib/ogg;taglib-1.5/taglib/ogg/flac;taglib-1.5/taglib/ogg/speex;taglib-1.5/taglib/ogg/vorbis;taglib-1.5/taglib/toolkit;taglib-1.5/taglib/trueaudio;taglib-1.5/taglib/wavpack;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>false</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <BrowseInformation>true</BrowseInformation>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
+      <AdditionalLibraryDirectories>../../3rdparty/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateMapFile>true</GenerateMapFile>
+      <MapFileName>$(TargetDir)$(TargetName).map</MapFileName>
+      <MapExports>true</MapExports>
+      <SubSystem>Windows</SubSystem>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <AdditionalIncludeDirectories>../../;../../3rdparty/include/;taglib-1.5;taglib-1.5/taglib;taglib-1.5/taglib/ape;taglib-1.5/taglib/flac;taglib-1.5/taglib/mpc;taglib-1.5/taglib/mpeg;taglib-1.5/taglib/mpeg/id3v1;taglib-1.5/taglib/mpeg/id3v2;taglib-1.5/taglib/mpeg/id3v2/frames;taglib-1.5/taglib/ogg;taglib-1.5/taglib/ogg/flac;taglib-1.5/taglib/ogg/speex;taglib-1.5/taglib/ogg/vorbis;taglib-1.5/taglib/toolkit;taglib-1.5/taglib/trueaudio;taglib-1.5/taglib/wavpack;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
+      <AdditionalLibraryDirectories>../../3rdparty/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="taglib_plugin.cpp" />
+    <ClCompile Include="TagReaderTaglib.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\ape\apefooter.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\ape\apeitem.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\ape\apetag.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v2\frames\attachedpictureframe.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\audioproperties.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v2\frames\commentsframe.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\fileref.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\flac\flacfile.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\flac\flacproperties.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v2\frames\generalencapsulatedobjectframe.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v1\id3v1genres.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v1\id3v1tag.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v2\id3v2extendedheader.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v2\id3v2footer.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v2\id3v2frame.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v2\id3v2framefactory.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v2\id3v2header.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v2\id3v2synchdata.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v2\id3v2tag.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\mpc\mpcfile.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\mpc\mpcproperties.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\mpeg\mpegfile.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\mpeg\mpegheader.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\mpeg\mpegproperties.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\ogg\oggfile.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\ogg\flac\oggflacfile.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\ogg\oggpage.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\ogg\oggpageheader.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v2\frames\relativevolumeframe.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\ogg\speex\speexfile.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\ogg\speex\speexproperties.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\tag.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\tagunion.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\toolkit\tbytevector.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\toolkit\tbytevectorlist.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\toolkit\tdebug.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v2\frames\textidentificationframe.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\toolkit\tfile.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\trueaudio\trueaudiofile.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\trueaudio\trueaudioproperties.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\toolkit\tstring.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\toolkit\tstringlist.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\toolkit\unicode.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v2\frames\uniquefileidentifierframe.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v2\frames\unknownframe.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v2\frames\unsynchronizedlyricsframe.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v2\frames\urllinkframe.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\ogg\vorbis\vorbisfile.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\ogg\vorbis\vorbisproperties.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\wavpack\wavpackfile.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\wavpack\wavpackproperties.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\mpeg\xingheader.cpp" />
+    <ClCompile Include="taglib-1.5\taglib\ogg\xiphcomment.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="TagReaderTaglib.h" />
+    <ClInclude Include="taglib-1.5\taglib\ape\apefooter.h" />
+    <ClInclude Include="taglib-1.5\taglib\ape\apeitem.h" />
+    <ClInclude Include="taglib-1.5\taglib\ape\apetag.h" />
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v2\frames\attachedpictureframe.h" />
+    <ClInclude Include="taglib-1.5\taglib\audioproperties.h" />
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v2\frames\commentsframe.h" />
+    <ClInclude Include="taglib-1.5\taglib\fileref.h" />
+    <ClInclude Include="taglib-1.5\taglib\flac\flacfile.h" />
+    <ClInclude Include="taglib-1.5\taglib\flac\flacproperties.h" />
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v2\frames\generalencapsulatedobjectframe.h" />
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v1\id3v1genres.h" />
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v1\id3v1tag.h" />
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v2\id3v2extendedheader.h" />
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v2\id3v2footer.h" />
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v2\id3v2frame.h" />
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v2\id3v2framefactory.h" />
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v2\id3v2header.h" />
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v2\id3v2synchdata.h" />
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v2\id3v2tag.h" />
+    <ClInclude Include="taglib-1.5\taglib\mpc\mpcfile.h" />
+    <ClInclude Include="taglib-1.5\taglib\mpc\mpcproperties.h" />
+    <ClInclude Include="taglib-1.5\taglib\mpeg\mpegfile.h" />
+    <ClInclude Include="taglib-1.5\taglib\mpeg\mpegheader.h" />
+    <ClInclude Include="taglib-1.5\taglib\mpeg\mpegproperties.h" />
+    <ClInclude Include="taglib-1.5\taglib\ogg\oggfile.h" />
+    <ClInclude Include="taglib-1.5\taglib\ogg\flac\oggflacfile.h" />
+    <ClInclude Include="taglib-1.5\taglib\ogg\oggpage.h" />
+    <ClInclude Include="taglib-1.5\taglib\ogg\oggpageheader.h" />
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v2\frames\relativevolumeframe.h" />
+    <ClInclude Include="taglib-1.5\taglib\ogg\speex\speexfile.h" />
+    <ClInclude Include="taglib-1.5\taglib\ogg\speex\speexproperties.h" />
+    <ClInclude Include="taglib-1.5\taglib\tag.h" />
+    <ClInclude Include="taglib-1.5\taglib\toolkit\taglib.h" />
+    <ClInclude Include="taglib-1.5\taglib\taglib_export.h" />
+    <ClInclude Include="taglib-1.5\taglib\tagunion.h" />
+    <ClInclude Include="taglib-1.5\taglib\toolkit\tbytevector.h" />
+    <ClInclude Include="taglib-1.5\taglib\toolkit\tbytevectorlist.h" />
+    <ClInclude Include="taglib-1.5\taglib\toolkit\tdebug.h" />
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v2\frames\textidentificationframe.h" />
+    <ClInclude Include="taglib-1.5\taglib\toolkit\tfile.h" />
+    <ClInclude Include="taglib-1.5\taglib\toolkit\tlist.h" />
+    <ClInclude Include="taglib-1.5\taglib\toolkit\tmap.h" />
+    <ClInclude Include="taglib-1.5\taglib\trueaudio\trueaudiofile.h" />
+    <ClInclude Include="taglib-1.5\taglib\trueaudio\trueaudioproperties.h" />
+    <ClInclude Include="taglib-1.5\taglib\toolkit\tstring.h" />
+    <ClInclude Include="taglib-1.5\taglib\toolkit\tstringlist.h" />
+    <ClInclude Include="taglib-1.5\taglib\toolkit\unicode.h" />
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v2\frames\uniquefileidentifierframe.h" />
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v2\frames\unknownframe.h" />
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v2\frames\unsynchronizedlyricsframe.h" />
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v2\frames\urllinkframe.h" />
+    <ClInclude Include="taglib-1.5\taglib\ogg\vorbis\vorbisfile.h" />
+    <ClInclude Include="taglib-1.5\taglib\ogg\vorbis\vorbisproperties.h" />
+    <ClInclude Include="taglib-1.5\taglib\wavpack\wavpackfile.h" />
+    <ClInclude Include="taglib-1.5\taglib\wavpack\wavpackproperties.h" />
+    <ClInclude Include="taglib-1.5\taglib\mpeg\xingheader.h" />
+    <ClInclude Include="taglib-1.5\taglib\ogg\xiphcomment.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\core\core.vcxproj">
+      <Project>{b2165720-b4b2-4f4b-9634-8c390c3cb4db}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -58,7 +58,7 @@ extern "C" __declspec(dllexport) musik::core::IPlugin* GetPlugin()
     return new CDDADecoderPlugin();
 }
 
-extern "C" __declspec(dllexport) IAudioSourceSupplier* CreateAudioSourceSupplier()
+extern "C" __declspec(dllexport) IDecoderFactory* GetDecoderFactory()
 {
 	return new CDDASourceSupplier();
 }

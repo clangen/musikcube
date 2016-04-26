@@ -33,11 +33,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
-#ifdef WIN32
+
 #include "pch.hpp"
-#else
-#include <core/pch.hpp>
-#endif
 
 #include <core/server/Connection.h>
 #include <core/Common.h>
@@ -271,7 +268,7 @@ void Connection::WriteThread(){
         {
             boost::mutex::scoped_lock lock(this->libraryMutex);
             boost::xtime waitTime;
-            boost::xtime_get(&waitTime, boost::TIME_UTC);
+            boost::xtime_get(&waitTime, boost::TIME_UTC_);
             waitTime.sec += 30;
 
             if(!this->userSession){

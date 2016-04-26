@@ -34,11 +34,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#ifdef WIN32
 #include "pch.hpp"
-#else
-#include <core/pch.hpp>
-#endif
 
 #include <core/db/ScopedTransaction.h>
 #include <core/db/Connection.h>

@@ -33,11 +33,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
-#ifdef WIN32
+
 #include "pch.hpp"
-#else
-#include <core/pch.hpp>
-#endif
 
 #include <core/filestreams/LocalFileStream.h>
 #include <core/config.h>
@@ -45,6 +42,7 @@
 #include <core/config_filesystem.h>
 
 //////////////////////////////////////////////////////////////////////////////
+
 #ifdef UTF_WIDECHAR
 #define UTFFopen    _wfopen
 typedef fpos_t  stdioPositionType;
@@ -52,103 +50,98 @@ typedef fpos_t  stdioPositionType;
 #define UTFFopen    fopen
 typedef fpos_t stdioPositionType;
 #endif
-//////////////////////////////////////////////////////////////////////////////
 
+//////////////////////////////////////////////////////////////////////////////
 
 using namespace musik::core::filestreams;
 
 //////////////////////////////////////////////////////////////////////////////
 LocalFileStream::LocalFileStream()
- :file(NULL)
- ,filesize(-1)
+: file(NULL)
+, filesize(-1)
 {
 
 }
-LocalFileStream::~LocalFileStream(){
+LocalFileStream::~LocalFileStream() {
     this->Close();
 }
 
 bool LocalFileStream::Open(const utfchar *filename,unsigned int options){
-    if(filename==NULL){
+    if(filename == NULL) {
         return false;
     }
 
-    try{
+    try {
         boost::filesystem::utfpath file(filename);
 
 		if (!boost::filesystem::exists(file)) {
 			std::cerr << "File not found" << std::endl;
 		}
+
 		if (!boost::filesystem::is_regular(file)) {
 			std::cerr << "File not a regular file" << std::endl;
 		}
+
         this->filesize  = (long)boost::filesystem::file_size(file);
-
-        this->extension = file.extension();
-
+        this->extension = file.extension().wstring();
 		this->file = UTFFopen(filename,UTF("rb"));
-
         this->fd  = new boost::iostreams::file_descriptor(file);
-
 		this->fileStream = new boost::iostreams::stream<boost::iostreams::file_descriptor>(*this->fd);
+		this->fileStream->exceptions(std::ios_base::eofbit | std::ios_base::failbit | std::ios_base::badbit);
 
-		this->fileStream->exceptions ( std::ios_base::eofbit | std::ios_base::failbit | std::ios_base::badbit );
 	    return this->file!=NULL;
-
     }
-    catch(...){
+    catch(...) {
         return false;
     }
 }
 
-bool LocalFileStream::Close(){
-    if(this->file){
-        if(fclose(this->file)==0){
+bool LocalFileStream::Close() {
+    if (this->file) {
+        if (fclose(this->file) == 0) {
             this->file  = NULL;
-	    delete this->fd;
-	    delete this->fileStream;
+			delete this->fd;
+			delete this->fileStream;
             return true;
         }
     }
+
     return false;
 }
 
-void LocalFileStream::Destroy(){
+void LocalFileStream::Destroy() {
     delete this;
 }
 
-PositionType LocalFileStream::Read(void* buffer,PositionType readBytes){
-    //return (PositionType)fread(buffer,1,readBytes,this->file);
+PositionType LocalFileStream::Read(void* buffer,PositionType readBytes) {
     try	{
-    	this->fileStream->read((char*)buffer, readBytes);
+    	this->fileStream->read((char*) buffer, readBytes);
     }
-    catch (std::ios_base::failure)	{
-	if(this->fileStream->eof())	{
-		//EOF reached
-		return sizeof(buffer);
-	}
-	else	{
-		std::cerr << "Error reading from file" << std::endl;
-	}
-	return 0;
+    catch (std::ios_base::failure){
+		if(!this->fileStream->eof()) {
+			std::cerr << "Error reading from file" << std::endl;
+			return 0;
+		}
     }
-    return readBytes;
+
+	return this->fileStream->gcount();
 }
 
-bool LocalFileStream::SetPosition(PositionType position){
+bool LocalFileStream::SetPosition(PositionType position) {
     /*stdioPositionType newPosition  = (stdioPositionType)position;
     return fsetpos(this->file,&newPosition)==0;*/
     try	{
-    	this->fileStream->seekp(position);
-    	this->fileStream->seekg(position);
+		this->fileStream->clear();
+		this->fileStream->seekg(position);
     }
-    catch (std::ios_base::failure)	{
+    catch (std::ios_base::failure ex) {
     	return false;
     }
+
     return true;
 }
 
-PositionType LocalFileStream::Position(){
+PositionType LocalFileStream::Position() {
     /*stdioPositionType currentPosition(0);
     if(fgetpos(this->file,&currentPosition)==0){
         return (PositionType)currentPosition;
@@ -157,16 +150,15 @@ PositionType LocalFileStream::Position(){
     return this->fileStream->tellg();
 }
 
-bool LocalFileStream::Eof(){
+bool LocalFileStream::Eof() {
     //return feof(this->file)!=0;
     return this->fileStream->eof();
 }
 
-long LocalFileStream::Filesize(){
+long LocalFileStream::Filesize() {
     return this->filesize;
 }
 
-const utfchar* LocalFileStream::Type(){
+const utfchar* LocalFileStream::Type() {
     return this->extension.c_str();
 }
-

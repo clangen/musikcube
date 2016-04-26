@@ -1,0 +1,255 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{B2165720-B4B2-4F4B-9634-8C390C3CB4DB}</ProjectGuid>
+    <RootNamespace>core</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)/bin/$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">obj/$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">bin/$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">obj/$(Configuration)\</IntDir>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>./;../;../3rdparty/include/;../3rdparty/include/jpeg-6b;../../../boost_1_60_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE;XML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
+      <AdditionalIncludeDirectories>./;../;../3rdparty/include/;../3rdparty/include/jpeg-6b;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_DEPRECATE;XML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="PlaybackQueue.cpp" />
+    <ClCompile Include="Common.cpp" />
+    <ClCompile Include="Crypt.cpp" />
+    <ClCompile Include="Image.cpp" />
+    <ClCompile Include="MessageQueue.cpp" />
+    <ClCompile Include="Preferences.cpp" />
+    <ClCompile Include="ThreadHelper.cpp" />
+    <ClCompile Include="tracklist\Base.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)%(Filename)2.obj</ObjectFileName>
+      <XMLDocumentationFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)%(Filename)2.xdc</XMLDocumentationFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)%(Filename)2.obj</ObjectFileName>
+      <XMLDocumentationFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)%(Filename)2.xdc</XMLDocumentationFileName>
+    </ClCompile>
+    <ClCompile Include="tracklist\LibraryList.cpp" />
+    <ClCompile Include="tracklist\MultiLibraryList.cpp" />
+    <ClCompile Include="Indexer.cpp" />
+    <ClCompile Include="LibraryFactory.cpp" />
+    <ClCompile Include="Query\Base.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)%(Filename)1.obj</ObjectFileName>
+      <XMLDocumentationFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)%(Filename)1.xdc</XMLDocumentationFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)%(Filename)1.obj</ObjectFileName>
+      <XMLDocumentationFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)%(Filename)1.xdc</XMLDocumentationFileName>
+    </ClCompile>
+    <ClCompile Include="Query\Factory.cpp" />
+    <ClCompile Include="Query\ListBase.cpp" />
+    <ClCompile Include="Query\ListSelection.cpp" />
+    <ClCompile Include="Query\SortTracks.cpp" />
+    <ClCompile Include="Query\SortTracksWithData.cpp" />
+    <ClCompile Include="Query\TrackMetadata.cpp" />
+    <ClCompile Include="Library\Base.cpp" />
+    <ClCompile Include="Library\LocalDB.cpp" />
+    <ClCompile Include="Library\Remote.cpp" />
+    <ClCompile Include="db\CachedStatement.cpp" />
+    <ClCompile Include="db\Connection.cpp" />
+    <ClCompile Include="db\ScopedTransaction.cpp" />
+    <ClCompile Include="db\Statement.cpp" />
+    <ClCompile Include="MetadataValue.cpp" />
+    <ClCompile Include="MetaKey.cpp" />
+    <ClCompile Include="NonLibraryTrackHelper.cpp" />
+    <ClCompile Include="PluginFactory.cpp" />
+    <ClCompile Include="audio\Buffer.cpp" />
+    <ClCompile Include="audio\Player.cpp" />
+    <ClCompile Include="audio\Stream.cpp" />
+    <ClCompile Include="audio\Transport.cpp" />
+    <ClCompile Include="server\Connection.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)%(Filename)1.obj</ObjectFileName>
+      <XMLDocumentationFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)%(Filename)1.xdc</XMLDocumentationFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)%(Filename)1.obj</ObjectFileName>
+      <XMLDocumentationFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)%(Filename)1.xdc</XMLDocumentationFileName>
+    </ClCompile>
+    <ClCompile Include="Server.cpp" />
+    <ClCompile Include="server\User.cpp" />
+    <ClCompile Include="server\UserSession.cpp" />
+    <ClCompile Include="xml\Node.cpp" />
+    <ClCompile Include="xml\Parser.cpp" />
+    <ClCompile Include="xml\ParserNode.cpp" />
+    <ClCompile Include="xml\Socket.cpp" />
+    <ClCompile Include="xml\Writer.cpp" />
+    <ClCompile Include="xml\WriterNode.cpp" />
+    <ClCompile Include="http\RequestParser.cpp" />
+    <ClCompile Include="http\Responder.cpp" />
+    <ClCompile Include="http\Server.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)%(Filename)1.obj</ObjectFileName>
+      <XMLDocumentationFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)%(Filename)1.xdc</XMLDocumentationFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)%(Filename)1.obj</ObjectFileName>
+      <XMLDocumentationFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)%(Filename)1.xdc</XMLDocumentationFileName>
+    </ClCompile>
+    <ClCompile Include="http\TrackSender.cpp" />
+    <ClCompile Include="filestreams\Factory.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)%(Filename)1.obj</ObjectFileName>
+      <XMLDocumentationFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)%(Filename)1.xdc</XMLDocumentationFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)%(Filename)1.obj</ObjectFileName>
+      <XMLDocumentationFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)%(Filename)1.xdc</XMLDocumentationFileName>
+    </ClCompile>
+    <ClCompile Include="filestreams\LocalFileStream.cpp" />
+    <ClCompile Include="GenericTrack.cpp" />
+    <ClCompile Include="IndexerTrack.cpp" />
+    <ClCompile Include="LibraryTrack.cpp" />
+    <ClCompile Include="Track.cpp" />
+    <ClCompile Include="TrackFactory.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.hpp" />
+    <ClInclude Include="PlaybackQueue.h" />
+    <ClInclude Include="Common.h" />
+    <ClInclude Include="config.h" />
+    <ClInclude Include="config_filesystem.h" />
+    <ClInclude Include="config_format.h" />
+    <ClInclude Include="Crypt.h" />
+    <ClInclude Include="Image.h" />
+    <ClInclude Include="MessageQueue.h" />
+    <ClInclude Include="Preferences.h" />
+    <ClInclude Include="ThreadHelper.h" />
+    <ClInclude Include="tracklist\Base.h" />
+    <ClInclude Include="tracklist\LibraryList.h" />
+    <ClInclude Include="tracklist\MultiLibraryList.h" />
+    <ClInclude Include="Indexer.h" />
+    <ClInclude Include="LibraryFactory.h" />
+    <ClInclude Include="Query\Base.h" />
+    <ClInclude Include="Query\Factory.h" />
+    <ClInclude Include="Query\ListBase.h" />
+    <ClInclude Include="Query\ListSelection.h" />
+    <ClInclude Include="Query\SortTracks.h" />
+    <ClInclude Include="Query\SortTracksWithData.h" />
+    <ClInclude Include="Query\TrackMetadata.h" />
+    <ClInclude Include="Library\Base.h" />
+    <ClInclude Include="Library\LocalDB.h" />
+    <ClInclude Include="Library\Remote.h" />
+    <ClInclude Include="db\CachedStatement.h" />
+    <ClInclude Include="db\Connection.h" />
+    <ClInclude Include="db\dbconfig.h" />
+    <ClInclude Include="db\ScopedTransaction.h" />
+    <ClInclude Include="db\Statement.h" />
+    <ClInclude Include="MetadataValue.h" />
+    <ClInclude Include="MetaKey.h" />
+    <ClInclude Include="NonLibraryTrackHelper.h" />
+    <ClInclude Include="Plugin\IMetaDataReader.h" />
+    <ClInclude Include="Plugin\IMetaDataWriter.h" />
+    <ClInclude Include="IPlugin.h" />
+    <ClInclude Include="PluginFactory.h" />
+    <ClInclude Include="audio\Buffer.h" />
+    <ClInclude Include="audio\IAnalyzer.h" />
+    <ClInclude Include="audio\IBuffer.h" />
+    <ClInclude Include="audio\IDecoder.h" />
+    <ClInclude Include="audio\IDecoderFactory.h" />
+    <ClInclude Include="audio\IDSP.h" />
+    <ClInclude Include="audio\IOutput.h" />
+    <ClInclude Include="audio\IPlayer.h" />
+    <ClInclude Include="audio\Player.h" />
+    <ClInclude Include="audio\Stream.h" />
+    <ClInclude Include="audio\Transport.h" />
+    <ClInclude Include="server\Connection.h" />
+    <ClInclude Include="Server.h" />
+    <ClInclude Include="server\User.h" />
+    <ClInclude Include="server\UserSession.h" />
+    <ClInclude Include="xml\IReadSupplier.h" />
+    <ClInclude Include="xml\IWriteSupplier.h" />
+    <ClInclude Include="xml\Node.h" />
+    <ClInclude Include="xml\Parser.h" />
+    <ClInclude Include="xml\ParserNode.h" />
+    <ClInclude Include="xml\Reader.h" />
+    <ClInclude Include="xml\Socket.h" />
+    <ClInclude Include="xml\Writer.h" />
+    <ClInclude Include="xml\WriterNode.h" />
+    <ClInclude Include="http\IRequestParser.h" />
+    <ClInclude Include="http\IRequestPlugin.h" />
+    <ClInclude Include="http\IResponder.h" />
+    <ClInclude Include="http\RequestParser.h" />
+    <ClInclude Include="http\Responder.h" />
+    <ClInclude Include="http\Server.h" />
+    <ClInclude Include="http\TrackSender.h" />
+    <ClInclude Include="filestreams\Factory.h" />
+    <ClInclude Include="filestreams\IFileStream.h" />
+    <ClInclude Include="filestreams\IFileStreamFactory.h" />
+    <ClInclude Include="filestreams\LocalFileStream.h" />
+    <ClInclude Include="GenericTrack.h" />
+    <ClInclude Include="IndexerTrack.h" />
+    <ClInclude Include="ITrack.h" />
+    <ClInclude Include="LibraryTrack.h" />
+    <ClInclude Include="Track.h" />
+    <ClInclude Include="TrackFactory.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\3rdparty\3rdparty.vcxproj">
+      <Project>{b2165720-b4b2-4f4b-8888-8c390c3cb4db}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

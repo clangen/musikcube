@@ -42,8 +42,8 @@
 #ifdef UTF_WIDECHAR
     namespace boost{
         namespace filesystem{
-            typedef boost::filesystem::wpath utfpath;
-            typedef wdirectory_iterator utfdirectory_iterator;
+            typedef boost::filesystem::path utfpath;
+            typedef boost::filesystem::directory_iterator utfdirectory_iterator;
         }
     }
 #else
