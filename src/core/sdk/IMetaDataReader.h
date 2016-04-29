@@ -35,19 +35,19 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #pragma once
+
 #include <core/config.h>
+#include "ITrack.h"
 
+namespace musik { namespace core { namespace Plugin {
 
-namespace musik{ namespace core{
-    class  IPlugin{
-        protected:             
-            virtual ~IPlugin() {};
+    class  IMetaDataReader{
         public:
-            virtual void Destroy() =0;
-
-            virtual const utfchar* Name()=0;
-            virtual const utfchar* Version()=0;
-            virtual const utfchar* Author()=0;
+            virtual bool ReadTag(musik::core::ITrack *track)=0;
+            virtual bool CanReadTag(const utfchar *extension)=0;
+            virtual void Destroy()=0;
     };
-} }
+
+} } }
+
 

@@ -33,66 +33,51 @@
 #pragma once
 
 #include "pch.h"
-#include "WaveOutBuffer.h"
-/*
-#include <boost/thread/condition.hpp>
-#include <boost/thread/thread.hpp> 
-
-#include <core/audio/IAudioCallback.h>
-#include <core/audio/IAudioOutput.h>
-*/
-#include <core/audio/IOutput.h>
 #include <list>
 #include <boost/shared_ptr.hpp> 
 #include <boost/thread/mutex.hpp>
+#include <boost/thread/condition.hpp>
+#include "WaveOutBuffer.h"
+#include <core/sdk/IOutput.h>
 
 using namespace musik::core::audio;
 
-class WaveOut : public IOutput{
+class WaveOut : public IOutput {
     public:
         WaveOut();
         ~WaveOut();
 
         virtual void Destroy();
-        //virtual void Initialize(IPlayer *player);
         virtual void Pause();
         virtual void Resume();
         virtual void SetVolume(double volume);
         virtual void ClearBuffers();
-        virtual bool PlayBuffer(IBuffer *buffer,IPlayer *player);
+        virtual bool PlayBuffer(IBuffer *buffer, IPlayer *player);
         virtual void ReleaseBuffers();
 
     public: 
         typedef boost::shared_ptr<WaveOutBuffer> WaveOutBufferPtr;
-
         static void CALLBACK WaveCallback(HWAVEOUT hWave, UINT msg, DWORD_PTR dwUser, DWORD_PTR dw1, DWORD dw2);
-        void RemoveBuffer(WaveOutBuffer *buffer);
+
+        void OnBufferWrittenToOutput(WaveOutBuffer *buffer);
 
     private:
         void SetFormat(IBuffer *buffer);
 
-
     protected:
         friend class WaveOutBuffer;
+        typedef std::list<WaveOutBufferPtr> BufferList;
 
-        //IPlayer *player;
-
-        // Audio stuff
-        HWAVEOUT        waveHandle;
+        HWAVEOUT waveHandle;
         WAVEFORMATPCMEX waveFormat;
 
-        // Current format
         int currentChannels;
         long currentSampleRate;
         double currentVolume;
 
-        typedef std::list<WaveOutBufferPtr> BufferList;
         BufferList buffers;
-        BufferList removedBuffers;
         size_t maxBuffers;
 
         boost::mutex mutex;
-
-        bool addToRemovedBuffers;
-
+        boost::condition bufferRemovedCondition;
 };

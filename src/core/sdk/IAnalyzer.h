@@ -30,10 +30,12 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
+
 #pragma once
 
 #include <core/config.h>
-#include <core/audio/IBuffer.h>
+#include "ITrack.h"
+#include "IBuffer.h"
 
 //////////////////////////////////////////////////////////////////////////////
 namespace musik { namespace core { namespace audio {
@@ -41,22 +43,44 @@ namespace musik { namespace core { namespace audio {
 
 //////////////////////////////////////////
 ///\brief
-///Interface for the audio::Player to make IOuput plugins be able to make callbacks
+///The main interface for a analyzer plugin
+///
+///A analyzer plugin will be executed from the Indexer
+///after all tags has been read. The plugin will first be
+///called with the Start method, and if that method returns true
+///a audio::Stream will be opened and the whole track will be
+///decoded and passed on to the Analyze method (or until the Analyze method
+///returns false). Finally the End method will be called where the
+///the plugin can make changes to the tracks metadata.
 //////////////////////////////////////////
-class  IPlayer{
+class  IAnalyzer {
     public:
         //////////////////////////////////////////
         ///\brief
-        ///Release the specific buffer from the output
+        ///Destroy the object
         //////////////////////////////////////////
-        virtual void ReleaseBuffer(IBuffer *buffer) = 0; 
+        virtual void    Destroy() = 0;
 
         //////////////////////////////////////////
         ///\brief
-        ///Notifies the Player that there may be buffer 
-        ///ready to be released in the output plugin.
+        ///Start analyzing the track. Returns true if
+        ///the analyzing should continue.
         //////////////////////////////////////////
-        virtual void Notify() = 0; 
+        virtual bool    Start(musik::core::ITrack *track) = 0;
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Analyze a buffer
+        //////////////////////////////////////////
+        virtual bool    Analyze(musik::core::ITrack *track, IBuffer *buffer) = 0;
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Called when the whole track has been analyzed.
+        ///If this call makes changes to the track it should
+        ///return true.
+        //////////////////////////////////////////
+        virtual bool    End(musik::core::ITrack *track) = 0;
 };
 
 //////////////////////////////////////////////////////////////////////////////

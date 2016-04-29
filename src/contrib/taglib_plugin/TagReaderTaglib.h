@@ -61,7 +61,7 @@
 
 #include <set>
 
-#include <core/Plugin/IMetaDataReader.h>
+#include <core/sdk/IMetaDataReader.h>
 #include <core/Common.h>
 
 class TagReaderTaglib : public musik::core::Plugin::IMetaDataReader {

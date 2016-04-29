@@ -34,8 +34,8 @@
 
 #include <core/config.h>
 #include <core/audio/Stream.h>
-#include <core/audio/IOutput.h>
-#include <core/audio/IPlayer.h>
+#include <core/sdk/IOutput.h>
+#include <core/sdk/IPlayer.h>
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread/mutex.hpp>
@@ -58,12 +58,14 @@ class  Player : public IPlayer {
         typedef boost::shared_ptr<IOutput> OutputPtr;
 
         static PlayerPtr Create(utfstring &url,OutputPtr *output=&OutputPtr());
+    
     private:
         Player(utfstring &url,OutputPtr *output);
+
     public:
         ~Player(void);
 
-        virtual void ReleaseBuffer(IBuffer *buffer); 
+        virtual void OnBufferProcessed(IBuffer *buffer);
         virtual void Notify(); 
 
         void Play();
@@ -93,39 +95,37 @@ class  Player : public IPlayer {
         bool PreBuffer();
         int State();
         bool BufferQueueEmpty();
+        void ReleaseAllBuffers();
 
     protected:
         friend class Transport;
         utfstring url;
+
     private:
-        StreamPtr stream;
-        double volume;
-        double currentPosition;
-
-        double setPosition;
-
-        long totalBufferSize;
-        long maxBufferSize;
-
-
         typedef boost::scoped_ptr<boost::thread> ThreadPtr;
-        ThreadPtr thread;
-
         typedef std::list<BufferPtr> BufferList;
         typedef std::set<BufferPtr> BufferSet;
-        BufferList bufferQueue;
-        BufferList lockedBuffers;
-    
+
         typedef enum {
-            Precache    = 0,
-            Playing     = 1,
-            Quit        = 2
+            Precache = 0,
+            Playing = 1,
+            Quit = 2
         } States;
 
-        int state;
+        StreamPtr stream;
+        ThreadPtr thread;
+        BufferList bufferQueue;
+        BufferList lockedBuffers;
+
         boost::mutex mutex;
         boost::condition waitCondition;
 
+        double volume;
+        double currentPosition;
+        double setPosition;
+        long totalBufferSize;
+        long maxBufferSize;
+        int state;
 };
 
 //////////////////////////////////////////////////////////////////////////////

@@ -30,68 +30,73 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
+
 #pragma once
 
 #include <core/config.h>
-#include <core/filestreams/IFileStream.h>
-#include <core/audio/IBuffer.h>
-#include <core/audio/IPlayer.h>
 
 //////////////////////////////////////////////////////////////////////////////
 namespace musik { namespace core { namespace audio {
 //////////////////////////////////////////////////////////////////////////////
 
-class  IOutput{
-
-    public:    
+class  IBuffer {
+    public:
 
         //////////////////////////////////////////
         ///\brief
-        ///Destroy the object
+        ///Get the samplerate of the buffer
+        //////////////////////////////////////////
+        virtual long SampleRate() const = 0; 
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Set the buffers samplerate
+        //////////////////////////////////////////
+        virtual void SetSampleRate(long sampleRate) = 0; 
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Get the number of channels of the buffer
+        //////////////////////////////////////////
+        virtual int Channels() const = 0; 
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Set the number of channels of the buffer
+        //////////////////////////////////////////
+        virtual void SetChannels(int channels) = 0; 
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Get the pointer to the real buffer.
         ///
-        ///The Destroy method is used so that it's guaranteed that the object is 
-        ///destroyed inside the right DLL/exe
+        ///The pointer may change when you set any of the buffers
+        ///properties like samplerate, samples and channels
         //////////////////////////////////////////
-        virtual void    Destroy() = 0;
+        virtual float* BufferPointer() const = 0; 
 
         //////////////////////////////////////////
         ///\brief
-        ///Pause the current output
+        ///Get the number of samples in the buffer
+        ///
+        ///To clairify, one sample = one sample for each channel
+        ///and that means that one sample = sizeof(float)*channels bytes big
         //////////////////////////////////////////
-        virtual void Pause() = 0;
+        virtual long Samples() const = 0;
 
         //////////////////////////////////////////
         ///\brief
-        ///resume a paused output
+        ///Set the number of samples in the buffer
         //////////////////////////////////////////
-        virtual void Resume() = 0;
+        virtual void SetSamples(long samples) = 0; 
 
         //////////////////////////////////////////
         ///\brief
-        ///Set the volume on this output
+        ///How many bytes does this object take
         //////////////////////////////////////////
-        virtual void SetVolume(double volume) = 0;
-
-        //////////////////////////////////////////
-        ///\brief
-        ///Clear internal buffers. Used when setting new position in a stream
-        //////////////////////////////////////////
-        virtual void ClearBuffers() = 0;
-
-        //////////////////////////////////////////
-        ///\brief
-        ///Release all buffers that has already passed through the output.
-        //////////////////////////////////////////
-        virtual void ReleaseBuffers() = 0;
-
-        //////////////////////////////////////////
-        ///\brief
-        ///Play this buffer
-        //////////////////////////////////////////
-        virtual bool PlayBuffer(IBuffer *buffer,IPlayer *player) = 0;
-
+        virtual long Bytes() const = 0;
 };
 
 //////////////////////////////////////////////////////////////////////////////
-}}} // NS
+} } }
 //////////////////////////////////////////////////////////////////////////////

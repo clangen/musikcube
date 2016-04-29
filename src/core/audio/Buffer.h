@@ -34,29 +34,27 @@
 
 #include <core/config.h>
 #include <boost/shared_ptr.hpp>
-#include <core/audio/IBuffer.h>
+#include <core/sdk/IBuffer.h>
 
 //////////////////////////////////////////////////////////////////////////////
 namespace musik { namespace core { namespace audio {
 //////////////////////////////////////////////////////////////////////////////
 
-// Forward
 class  Buffer;
 class  Stream;
 typedef boost::shared_ptr<Buffer> BufferPtr;
 
-
 //////////////////////////////////////////
 ///\brief
-///Buffer is the ony implementation of the IBuffer and is used 
+///Buffer is the only implementation of the IBuffer and is used 
 ///in the audioengine to pass along the raw audio data
 //////////////////////////////////////////
-class  Buffer : public IBuffer {
-    public:
-        static BufferPtr Create();
+class Buffer : public IBuffer {
     private:
         Buffer(void);
+
     public:
+        static BufferPtr Create();
         ~Buffer(void);
 
         virtual long SampleRate() const; 
@@ -73,21 +71,18 @@ class  Buffer : public IBuffer {
         void CopyFormat(BufferPtr fromBuffer);
 
     private:
-        // Methods
         void ResizeBuffer();
+
     private:
-        // Variables
         float *buffer;
         long sampleSize;
         long internalBufferSize;
-
         long sampleRate;
- 
         int channels;
+
     protected:
         friend class Stream;
         double position;
-
 };
 
 //////////////////////////////////////////////////////////////////////////////

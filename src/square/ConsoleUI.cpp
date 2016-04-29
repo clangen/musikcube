@@ -39,7 +39,7 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include <core/IPlugin.h>
+#include <core/sdk/IPlugin.h>
 #include <core/PluginFactory.h>
 
 using namespace musik::square;

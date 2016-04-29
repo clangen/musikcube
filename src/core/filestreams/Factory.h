@@ -36,19 +36,20 @@
 #pragma once
 
 #include <core/config.h>
-#include <core/filestreams/IFileStream.h>
-#include <core/filestreams/IFileStreamFactory.h>
+#include <core/sdk/IFileStream.h>
+#include <core/sdk/IFileStreamFactory.h>
 #include <vector>
 
 //////////////////////////////////////////////////////////////////////////////
 namespace musik{ namespace core{ namespace filestreams{
 //////////////////////////////////////////////////////////////////////////////
-
-
+	
 class Factory {
+	public:
+		typedef boost::shared_ptr<IFileStream> FileStreamPtr;
+
     private:
         static Factory sInstance;
-
         Factory();
 
     private:

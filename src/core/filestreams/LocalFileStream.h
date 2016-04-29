@@ -36,20 +36,25 @@
 
 #pragma once
 
+#include <boost/shared_ptr.hpp>
+#include <boost/iostreams/stream.hpp>
+#include <boost/iostreams/stream_buffer.hpp>
+#include <boost/iostreams/device/file_descriptor.hpp>
+
 #include <core/config.h>
-#include <core/filestreams/IFileStream.h>
+#include <core/sdk/IFileStream.h>
 #include <cstdio>
 #include <iostream>
-
 
 //////////////////////////////////////////////////////////////////////////////
 namespace musik{ namespace core{ namespace filestreams{
 //////////////////////////////////////////////////////////////////////////////
 
-class  LocalFileStream : public IFileStream{
+class  LocalFileStream : public IFileStream {
     public:
         LocalFileStream();
-        ~LocalFileStream();
+        virtual ~LocalFileStream();
+
         virtual bool Open(const utfchar *filename,unsigned int options=0);
         virtual bool Close();
         virtual void Destroy();
@@ -62,13 +67,10 @@ class  LocalFileStream : public IFileStream{
 
     private:
         utfstring extension;
-	FILE *file;
-
-	boost::iostreams::file_descriptor* fd;
-	boost::iostreams::stream<boost::iostreams::file_descriptor>* fileStream;
-
+        FILE *file;
+        boost::iostreams::file_descriptor* fd;
+        boost::iostreams::stream<boost::iostreams::file_descriptor>* fileStream;
         long filesize;
-
 };
 
 //////////////////////////////////////////////////////////////////////////////

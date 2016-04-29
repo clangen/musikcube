@@ -37,7 +37,7 @@
 
 #include "stdafx.h"
 #include "TagReaderTaglib.h"
-#include "core/IPlugin.h"
+#include "core/sdk/IPlugin.h"
 #ifndef _HAVE_TAGLIB
 #include <id3v2framefactory.h>
 #else

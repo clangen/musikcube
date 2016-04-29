@@ -1,8 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////
-//
-// License Agreement:
-//
-// The following are Copyright © 2008, Daniel Önnerby
+// Copyright ï¿½ 2007, Daniel ï¿½nnerby
 //
 // All rights reserved.
 //
@@ -37,25 +34,64 @@
 #pragma once
 
 #include <core/config.h>
-#include <core/http/IResponder.h>
-#include <core/http/IRequestParser.h>
-#include <core/ITrack.h>
+#include "IFileStream.h"
+#include "IBuffer.h"
 
 //////////////////////////////////////////////////////////////////////////////
-
-namespace musik{ namespace core{ namespace http{
-
+namespace musik { namespace core { namespace audio {
 //////////////////////////////////////////////////////////////////////////////
 
-class  IRequestPlugin{
+class  IDecoder{
+
     public:
-        virtual void Destroy()=0;
-        virtual const char* WatchPath()=0;
-        virtual void Execute(musik::core::http::IResponder* responder,musik::core::http::IRequestParser* request,musik::core::ITrack* track)=0;
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Destroy the object
+        ///
+        ///The Destroy method is used so that it's guaranteed that the object is
+        ///destroyed inside the right DLL/exe
+        //////////////////////////////////////////
+        virtual void    Destroy() = 0;
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Get the length of the track in seconds
+        //////////////////////////////////////////
+        //virtual double Length() = 0;
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Set the position in the source (in seconds)
+        ///
+        ///\returns
+        ///The actual position set
+        //////////////////////////////////////////
+        virtual double SetPosition(double seconds,double totalLength) = 0;
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Fill the next buffer
+        ///
+        ///\returns
+        ///false is there is nothing left
+        //////////////////////////////////////////
+        virtual bool GetBuffer(IBuffer *buffer) = 0; // return false to signal that we are done decoding.
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Open the stream
+        ///
+        ///\param fileStream
+        ///pointer to the filestream object.
+        ///
+        ///\returns
+        ///True if successfully opened
+        //////////////////////////////////////////
+        virtual bool Open(musik::core::filestreams::IFileStream *fileStream) = 0;
+
 };
 
 //////////////////////////////////////////////////////////////////////////////
-} } }
+}}} // NS
 //////////////////////////////////////////////////////////////////////////////
-
-

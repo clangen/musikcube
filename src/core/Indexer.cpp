@@ -45,7 +45,7 @@
 #include <core/db/Statement.h>
 #include <core/PluginFactory.h>
 #include <core/Preferences.h>
-#include <core/audio/IAnalyzer.h>
+#include <core/sdk/IAnalyzer.h>
 #include <core/audio/Stream.h>
 
 #include <boost/thread/xtime.hpp>

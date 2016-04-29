@@ -39,8 +39,8 @@
 #include <boost/lexical_cast.hpp>
 
 #include <core/config.h>
-#include <core/http/IRequestPlugin.h>
-#include <core/ITrack.h>
+#include <core/sdk/IRequestPlugin.h>
+#include <core/sdk/ITrack.h>
 #include <string>
 
 //////////////////////////////////////////////////////////////////////////////

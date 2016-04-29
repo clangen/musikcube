@@ -33,67 +33,30 @@
 #pragma once
 
 #include <core/config.h>
+#include "IBuffer.h"
 
 //////////////////////////////////////////////////////////////////////////////
 namespace musik { namespace core { namespace audio {
 //////////////////////////////////////////////////////////////////////////////
 
-class  IBuffer {
+//////////////////////////////////////////
+///\brief
+///Interface for the audio::Player to make IOuput plugins be able to make callbacks
+//////////////////////////////////////////
+class  IPlayer{
     public:
+        //////////////////////////////////////////
+        ///\brief
+        ///Release the specific buffer from the output
+        //////////////////////////////////////////
+        virtual void OnBufferProcessed(IBuffer *buffer) = 0;
 
         //////////////////////////////////////////
         ///\brief
-        ///Get the samplerate of the buffer
+        ///Notifies the Player that there may be buffer 
+        ///ready to be released in the output plugin.
         //////////////////////////////////////////
-        virtual long SampleRate() const = 0; 
-
-        //////////////////////////////////////////
-        ///\brief
-        ///Set the buffers samplerate
-        //////////////////////////////////////////
-        virtual void SetSampleRate(long sampleRate) = 0; 
-
-        //////////////////////////////////////////
-        ///\brief
-        ///Get the number of channels of the buffer
-        //////////////////////////////////////////
-        virtual int Channels() const = 0; 
-
-        //////////////////////////////////////////
-        ///\brief
-        ///Set the number of channels of the buffer
-        //////////////////////////////////////////
-        virtual void SetChannels(int channels) = 0; 
-
-        //////////////////////////////////////////
-        ///\brief
-        ///Get the pointer to the real buffer.
-        ///
-        ///The pointer may change when you set any of the buffers
-        ///properties like samplerate, samples and channels
-        //////////////////////////////////////////
-        virtual float* BufferPointer() const = 0; 
-
-        //////////////////////////////////////////
-        ///\brief
-        ///Get the number of samples in the buffer
-        ///
-        ///To clairify, one sample = one sample for each channel
-        ///and that means that one sample = sizeof(float)*channels bytes big
-        //////////////////////////////////////////
-        virtual long Samples() const = 0;
-
-        //////////////////////////////////////////
-        ///\brief
-        ///Set the number of samples in the buffer
-        //////////////////////////////////////////
-        virtual void SetSamples(long samples) = 0; 
-
-        //////////////////////////////////////////
-        ///\brief
-        ///How many bytes does this object take
-        //////////////////////////////////////////
-        virtual long Bytes() const = 0;
+        virtual void Notify() = 0; 
 };
 
 //////////////////////////////////////////////////////////////////////////////

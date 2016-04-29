@@ -38,7 +38,7 @@
 
 #include <core/config.h>
 #include <core/http/Responder.h>
-#include <core/http/IRequestPlugin.h>
+#include <core/sdk/IRequestPlugin.h>
 
 #include <boost/asio.hpp>
 #include <boost/noncopyable.hpp>

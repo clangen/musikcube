@@ -36,30 +36,26 @@
 
 #include "stdafx.h"
 
-#include <core/IPlugin.h>
+#include <core/sdk/IPlugin.h>
 
 #include "OggSourceSupplier.h"
 
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
-{
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
     return true;
 }
 
-class OggDecoderPlugin : public musik::core::IPlugin
-{
+class OggDecoderPlugin : public musik::core::IPlugin {
+public:
     void Destroy() { delete this; };
-
     const utfchar* Name()       { return TEXT("Ogg decoder"); };
     const utfchar* Version()    { return TEXT("1"); };
     const utfchar* Author()     { return TEXT("Björn Olievier"); };
 };
 
-extern "C" __declspec(dllexport) musik::core::IPlugin* GetPlugin()
-{
+extern "C" __declspec(dllexport) musik::core::IPlugin* GetPlugin() {
     return new OggDecoderPlugin();
 }
 
-extern "C" __declspec(dllexport) IDecoderFactory* GetDecoderFactory()
-{
+extern "C" __declspec(dllexport) IDecoderFactory* GetDecoderFactory() {
     return new OggSourceSupplier();
 }

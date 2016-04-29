@@ -54,8 +54,7 @@ Buffer::Buffer(void)
 ///\brief
 ///Destructor
 //////////////////////////////////////////
-Buffer::~Buffer(void)
-{
+Buffer::~Buffer(void) {
     delete this->buffer;
 }
 
@@ -63,7 +62,7 @@ Buffer::~Buffer(void)
 ///\brief
 ///Create a new Buffer
 //////////////////////////////////////////
-BufferPtr Buffer::Create(){
+BufferPtr Buffer::Create() {
     return BufferPtr(new Buffer());
 }
 
@@ -71,7 +70,7 @@ BufferPtr Buffer::Create(){
 ///\brief
 ///Get the samplerate of the buffer
 //////////////////////////////////////////
-long Buffer::SampleRate() const{
+long Buffer::SampleRate() const {
     return this->sampleRate;
 }
 
@@ -79,15 +78,15 @@ long Buffer::SampleRate() const{
 ///\brief
 ///Set the buffers samplerate
 //////////////////////////////////////////
-void Buffer::SetSampleRate(long sampleRate){
-    this->sampleRate    = sampleRate;
+void Buffer::SetSampleRate(long sampleRate) {
+    this->sampleRate = sampleRate;
 }
 
 //////////////////////////////////////////
 ///\brief
 ///Get the number of channels of the buffer
 //////////////////////////////////////////
-int Buffer::Channels() const{
+int Buffer::Channels() const {
     return this->channels;
 }
 
@@ -95,8 +94,8 @@ int Buffer::Channels() const{
 ///\brief
 ///Set the number of channels of the buffer
 //////////////////////////////////////////
-void Buffer::SetChannels(int channels){
-    this->channels  = channels;
+void Buffer::SetChannels(int channels) {
+    this->channels = channels;
     this->ResizeBuffer();
 }
 
@@ -107,7 +106,7 @@ void Buffer::SetChannels(int channels){
 ///The pointer may change when you set any of the buffers
 ///properties like samplerate, samples and channels
 //////////////////////////////////////////
-float* Buffer::BufferPointer() const{
+float* Buffer::BufferPointer() const {
     return this->buffer;
 }
 
@@ -118,7 +117,7 @@ float* Buffer::BufferPointer() const{
 ///To clairify, one sample = one sample for each channel
 ///and that means that one sample = sizeof(float)*channels bytes big
 //////////////////////////////////////////
-long Buffer::Samples() const{
+long Buffer::Samples() const {
     return this->sampleSize;
 }
 
@@ -126,8 +125,8 @@ long Buffer::Samples() const{
 ///\brief
 ///Set the number of samples in the buffer
 //////////////////////////////////////////
-void Buffer::SetSamples(long samples){
-    this->sampleSize    = samples;
+void Buffer::SetSamples(long samples) {
+    this->sampleSize = samples;
     this->ResizeBuffer();
 }
 
@@ -135,10 +134,10 @@ void Buffer::SetSamples(long samples){
 ///\brief
 ///Copies all the formats from one buffer to another
 //////////////////////////////////////////
-void Buffer::CopyFormat(BufferPtr fromBuffer){
-    this->sampleSize    = fromBuffer->Samples();
-    this->channels      = fromBuffer->Channels();
-    this->sampleRate    = fromBuffer->SampleRate();
+void Buffer::CopyFormat(BufferPtr fromBuffer) {
+    this->sampleSize = fromBuffer->Samples();
+    this->channels = fromBuffer->Channels();
+    this->sampleRate = fromBuffer->SampleRate();
     this->ResizeBuffer();
 }
 
@@ -146,18 +145,16 @@ void Buffer::CopyFormat(BufferPtr fromBuffer){
 ///\brief
 ///Resize the internal buffer to match the formats
 //////////////////////////////////////////
-void Buffer::ResizeBuffer(){
-    long requiredBufferSize( this->sampleSize * this->channels );
-    if(requiredBufferSize>this->internalBufferSize){
-        // Only resize when internalBufferSize if too small
-        if(this->buffer){
-            // Delete old buffer
+void Buffer::ResizeBuffer() {
+    long requiredBufferSize = this->sampleSize * this->channels;
+    if (requiredBufferSize > this->internalBufferSize) {
+        if(this->buffer) {
             delete this->buffer;
-            this->buffer    = NULL;
+            this->buffer = NULL;
         }
-        // Create a new buffer
-        this->buffer    = new float[requiredBufferSize];
-        this->internalBufferSize    = requiredBufferSize;
+
+        this->buffer = new float[requiredBufferSize];
+        this->internalBufferSize = requiredBufferSize;
     }
 }
 
@@ -165,7 +162,7 @@ void Buffer::ResizeBuffer(){
 ///\brief
 ///How many bytes does this object take
 //////////////////////////////////////////
-long Buffer::Bytes() const{
+long Buffer::Bytes() const {
     return this->internalBufferSize*sizeof(float);
 }
 
@@ -173,7 +170,7 @@ long Buffer::Bytes() const{
 ///\brief
 ///What position in a track is this buffer (in seconds)
 //////////////////////////////////////////
-double Buffer::Position() const{
+double Buffer::Position() const {
     return this->position;
 }
 
@@ -181,41 +178,41 @@ double Buffer::Position() const{
 ///\brief
 ///Append another buffer to this one
 //////////////////////////////////////////
-bool Buffer::Append(BufferPtr appendBuffer){
-    if(this->SampleRate()==appendBuffer->SampleRate() && this->Channels()==appendBuffer->Channels()){
-        long newBufferSize      = (this->Samples()+appendBuffer->Samples())*this->channels;
+bool Buffer::Append(BufferPtr appendBuffer) {
+    if (this->SampleRate() == appendBuffer->SampleRate() &&
+        this->Channels() == appendBuffer->Channels())
+    {
+        long newBufferSize = (this->Samples() + appendBuffer->Samples()) * this->channels;
 
-        if(newBufferSize>this->internalBufferSize){
-            // Internal buffer too small. We need to make a new buffer
-            // Create a new buffer
-            float *newBuffer    = new float[newBufferSize];
+        if (newBufferSize > this->internalBufferSize) { /* resize */
+            float *newBuffer = new float[newBufferSize];
 
-            CopyFloat(newBuffer,this->buffer,this->sampleSize*this->channels);
+            CopyFloat(newBuffer, this->buffer, this->sampleSize * this->channels);
 
-            float *dst  = &newBuffer[this->sampleSize*this->channels];
-            float *src  = appendBuffer->BufferPointer();
-            long si     = appendBuffer->Samples()*this->channels;
-            CopyFloat(dst,src,si);
+            float *dst = &newBuffer[this->sampleSize*this->channels];
+            float *src = appendBuffer->BufferPointer();
+            long count = appendBuffer->Samples() * this->channels;
 
-            if(this->buffer){
-                // Delete old buffer
+            CopyFloat(dst, src, count);
+
+            if (this->buffer) {
                 delete this->buffer;
             }
-            // Set the new buffer
-            this->buffer                = newBuffer;
-            this->internalBufferSize    = newBufferSize;
-        }else{
-            // append the appendBuffer
-            float *dst  = &this->buffer[this->sampleSize*this->channels];
-            float *src  = appendBuffer->BufferPointer();
-            long si     = appendBuffer->Samples()*this->channels;
-//            CopyFloat( this->buffer + this->sampleSize*this->channels*sizeof(float),appendBuffer->BufferPointer(),appendBuffer->Samples()*this->channels);
-            CopyFloat( dst,src,si);
+
+            this->buffer = newBuffer;
+            this->internalBufferSize = newBufferSize;
+        }
+        else { /* append, no resize required */
+            float *dst = &this->buffer[this->sampleSize*this->channels];
+            float *src = appendBuffer->BufferPointer();
+            long count = appendBuffer->Samples() * this->channels;
+
+            CopyFloat( dst,src,count);
         }
 
-        this->sampleSize    = newBufferSize/this->channels;
+        this->sampleSize = newBufferSize/this->channels;
         return true;
-
     }
+
     return false;
 }

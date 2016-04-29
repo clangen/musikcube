@@ -34,7 +34,7 @@
 #include "pch.hpp"
 
 #include <core/audio/Stream.h>
-#include <core/audio/IDecoderFactory.h>
+#include <core/sdk/IDecoderFactory.h>
 #include <core/PluginFactory.h>
 
 using namespace musik::core::audio;

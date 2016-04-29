@@ -37,15 +37,48 @@
 #pragma once
 
 #include <core/config.h>
-#include <core/ITrack.h>
+#include "IFileStream.h"
 
-namespace musik{ namespace core{ namespace Plugin{
-    class  IMetaDataReader{
-        public:
-            virtual bool ReadTag(musik::core::ITrack *track)=0;
-            virtual bool CanReadTag(const utfchar *extension)=0;
-            virtual void Destroy()=0;
-    };
+//////////////////////////////////////////////////////////////////////////////
+namespace musik{ namespace core{ namespace filestreams{
+//////////////////////////////////////////////////////////////////////////////
+
+class  IFileStreamFactory{
+    public:
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Can the factory read the specified filename
+        ///
+        ///\param filename
+        ///Filename to check
+        ///
+        ///\returns
+        ///True if able
+        //////////////////////////////////////////
+        virtual bool CanReadFile(const utfchar *filename)=0;
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Open the file for reading
+        ///
+        ///\param filename
+        ///Filename to open
+        ///
+        ///\returns
+        ///IFileStream object or NULL on fail
+        //////////////////////////////////////////
+        virtual IFileStream* OpenFile(const utfchar *filename,unsigned int options=0)=0;
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Destroy the object (not the file)
+        //////////////////////////////////////////
+        virtual void Destroy()=0;
+};
+
+//////////////////////////////////////////////////////////////////////////////
 } } }
+//////////////////////////////////////////////////////////////////////////////
 
 

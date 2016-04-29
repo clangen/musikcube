@@ -58,7 +58,7 @@ Factory::Factory(){
 }
 
 
-FileStreamPtr Factory::OpenFile(const utfchar *uri){
+Factory::FileStreamPtr Factory::OpenFile(const utfchar *uri){
 #ifdef _DEBUG
     std::cerr << "Factory::OpenFile(" << uri << ")" << std::endl;
 #endif

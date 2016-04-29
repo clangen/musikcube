@@ -37,7 +37,7 @@
 #pragma once
 
 #include <core/config.h>
-#include <core/IPlugin.h>
+#include <core/sdk/IPlugin.h>
 
 #include <vector>
 #include <iostream>

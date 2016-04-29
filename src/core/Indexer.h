@@ -40,7 +40,7 @@
 
 #include <core/ThreadHelper.h>
 #include <core/db/Connection.h>
-#include <core/Plugin/IMetaDataReader.h>
+#include <core/sdk/IMetaDataReader.h>
 
 #include <sigslot/sigslot.h>
 

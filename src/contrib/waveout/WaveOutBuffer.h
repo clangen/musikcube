@@ -32,35 +32,38 @@
 //////////////////////////////////////////////////////////////////////////////
 #pragma once
 
-#include <core/audio/IBuffer.h>
-#include <core/audio/IPlayer.h>
+#include <core/sdk/IBuffer.h>
+#include <core/sdk/IPlayer.h>
 #ifdef WIN32
 	#include "Mmsystem.h"
 #else
 	#include <alsa/asoundlib.h>
 #endif
-//////////////////////////////////////////////////////////////////////////////
-// Forward declare
-class WaveOut;
 
 //////////////////////////////////////////////////////////////////////////////
+
+class WaveOut;
 
 using namespace musik::core::audio;
 
 class WaveOutBuffer
 {
-    public:
-        WaveOutBuffer(WaveOut *waveOut,IBuffer *buffer,IPlayer *player);
-        ~WaveOutBuffer(void);
+public:
+    WaveOutBuffer(WaveOut *waveOut, IBuffer *buffer, IPlayer *player);
+    ~WaveOutBuffer();
 
-        bool AddToOutput();
-        void PrepareBuffer();
+    void Destroy();
+    bool WriteToOutput();
+    void OnWriteFinished();
 
-        WaveOut *waveOut;
-        IBuffer *buffer;
-        IPlayer *player;
-        WAVEHDR header;
+private:
+    void Initialize();
 
+    WaveOut *waveOut;
+    IBuffer *buffer;
+    IPlayer *player;
+    WAVEHDR header;
+    bool destroyed;
 };
 
 //////////////////////////////////////////////////////////////////////////////

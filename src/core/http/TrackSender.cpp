@@ -60,7 +60,7 @@ void TrackSender::Execute(musik::core::http::IResponder* responder,musik::core::
 
     // TODO: Should rewrite this in a multiplatform manner
     if(track && responder){
-        musik::core::filestreams::FileStreamPtr file( musik::core::filestreams::Factory::OpenFile(track->URL()) );
+        musik::core::filestreams::Factory::FileStreamPtr file( musik::core::filestreams::Factory::OpenFile(track->URL()) );
 
         if(file){
             const char *seekOffset   = request->Attribute("seek");

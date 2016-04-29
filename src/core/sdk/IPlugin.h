@@ -36,23 +36,18 @@
 
 #pragma once
 
-#include <core/config.h>
-#include <stddef.h>
+namespace musik { namespace core {
 
-//////////////////////////////////////////////////////////////////////////////
+    class  IPlugin{
+        protected:             
+            virtual ~IPlugin() {};
+        public:
+            virtual void Destroy() =0;
 
-namespace musik{ namespace core{ namespace http{
+            virtual const utfchar* Name()=0;
+            virtual const utfchar* Version()=0;
+            virtual const utfchar* Author()=0;
+    };
 
-//////////////////////////////////////////////////////////////////////////////
-
-class  IResponder{
-    public:
-        virtual void SendContent(const char* buffer,const std::size_t bufferSize)=0;
-        virtual bool Exited()=0;
-};
-
-//////////////////////////////////////////////////////////////////////////////
-} } }
-//////////////////////////////////////////////////////////////////////////////
-
+} }
 

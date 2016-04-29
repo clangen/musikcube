@@ -36,7 +36,7 @@
 
 #pragma once
 
-#include <core/ITrack.h>
+#include <core/sdk/ITrack.h>
 #include <boost/shared_ptr.hpp>
 #include <vector>
 #include <map>

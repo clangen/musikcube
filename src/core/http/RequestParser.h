@@ -37,7 +37,7 @@
 #pragma once
 
 #include <core/config.h>
-#include <core/http/IRequestParser.h>
+#include <core/sdk/IRequestParser.h>
 
 #include <string>
 #include <vector>

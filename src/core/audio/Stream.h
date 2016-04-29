@@ -35,9 +35,9 @@
 #include <core/config.h>
 #include <core/filestreams/Factory.h>
 #include <core/audio/Buffer.h>
-#include <core/audio/IDecoder.h>
-#include <core/audio/IDSP.h>
-#include <core/audio/IDecoderFactory.h>
+#include <core/sdk/IDecoder.h>
+#include <core/sdk/IDSP.h>
+#include <core/sdk/IDecoderFactory.h>
 
 #include <boost/shared_ptr.hpp>
 //#include <boost/thread/mutex.hpp>
@@ -96,7 +96,7 @@ class  Stream {
         UINT64 decoderSamplePosition;
 
         utfstring uri;
-        musik::core::filestreams::FileStreamPtr fileStream;
+        musik::core::filestreams::Factory::FileStreamPtr fileStream;
 
         typedef std::list<BufferPtr> BufferList;
         BufferList availableBuffers;

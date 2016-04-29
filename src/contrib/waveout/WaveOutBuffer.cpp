@@ -30,52 +30,64 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
+
 #include "WaveOutBuffer.h"
 #include "WaveOut.h"
 
-//////////////////////////////////////////////////////////////////////////////
-
-WaveOutBuffer::WaveOutBuffer(WaveOut *waveOut,IBuffer *buffer,IPlayer *player)
- :waveOut(waveOut) 
- ,buffer(buffer)
- ,player(player)
+WaveOutBuffer::WaveOutBuffer(WaveOut *waveOut, IBuffer *buffer, IPlayer *player)
+: waveOut(waveOut) 
+, buffer(buffer)
+, player(player)
+, destroyed(false)
 {
-    this->PrepareBuffer();
+    this->Initialize();
 }
 
-void WaveOutBuffer::PrepareBuffer(){
+void WaveOutBuffer::Initialize() {
+    this->header.dwBufferLength = this->buffer->Samples() * this->buffer->Channels()*sizeof(float);
+    this->header.lpData = (LPSTR)this->buffer->BufferPointer();
+	this->header.dwUser = (DWORD_PTR)this;
+	this->header.dwBytesRecorded = 0;
+	this->header.dwFlags = 0;
+	this->header.dwLoops = 0;
+    this->header.lpNext = NULL;
+    this->header.reserved = NULL;
 
-    // Prepare the header
-    this->header.dwBufferLength		= this->buffer->Samples()*this->buffer->Channels()*sizeof(float);
-    this->header.lpData				= (LPSTR)this->buffer->BufferPointer();
-	this->header.dwUser				= (DWORD_PTR)this;
-	this->header.dwBytesRecorded	= 0;
-	this->header.dwFlags			= 0;
-	this->header.dwLoops			= 0;
-    this->header.lpNext             = NULL;
-    this->header.reserved           = NULL;
-
-    MMRESULT result = waveOutPrepareHeader(this->waveOut->waveHandle,&this->header,sizeof(WAVEHDR));
-    if(result!=MMSYSERR_NOERROR){
+    MMRESULT result = waveOutPrepareHeader(this->waveOut->waveHandle, &this->header, sizeof(WAVEHDR));
+    if (result != MMSYSERR_NOERROR) {
         throw;
     }
-    this->header.dwFlags			|= WHDR_DONE;
 
+    this->header.dwFlags |= WHDR_DONE;
 }
 
-WaveOutBuffer::~WaveOutBuffer(void)
-{
-    if(this->waveOut->waveHandle && this->header.dwFlags&WHDR_PREPARED){
-        waveOutUnprepareHeader(this->waveOut->waveHandle,&this->header,sizeof(WAVEHDR));
+void WaveOutBuffer::Destroy() {
+    if (!this->destroyed) {
+        if (this->waveOut->waveHandle && this->header.dwFlags & WHDR_PREPARED) {
+            waveOutUnprepareHeader(this->waveOut->waveHandle, &this->header, sizeof(WAVEHDR));
+        }
+
+        this->player->Notify();
+        this->destroyed = true;
     }
-    this->player->ReleaseBuffer(this->buffer);
 }
 
-bool WaveOutBuffer::AddToOutput(){
-    MMRESULT result = waveOutWrite(this->waveOut->waveHandle,&this->header,sizeof(WAVEHDR));
-    if(result==MMSYSERR_NOERROR){
+WaveOutBuffer::~WaveOutBuffer() {
+    this->Destroy();
+    this->player->OnBufferProcessed(this->buffer);
+}
+
+void WaveOutBuffer::OnWriteFinished() {
+    this->waveOut->OnBufferWrittenToOutput(this); /* implicitly deletes 'this' */
+}
+
+bool WaveOutBuffer::WriteToOutput() {
+    MMRESULT result = waveOutWrite(this->waveOut->waveHandle, &this->header, sizeof(WAVEHDR));
+    
+    if (result == MMSYSERR_NOERROR) {
         return true;
     }
+
     return false;
 }
 

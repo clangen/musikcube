@@ -38,11 +38,11 @@
 
 using namespace musik::core::audio;
 
-PlayerPtr Player::Create(utfstring &url,OutputPtr *output){
+PlayerPtr Player::Create(utfstring &url, OutputPtr *output) {
     return PlayerPtr(new Player(url,output));
 }
 
-Player::Player(utfstring &url,OutputPtr *output)
+Player::Player(utfstring &url, OutputPtr *output)
  :volume(1.0)
  ,state(Player::Precache)
  ,url(url)
@@ -51,156 +51,164 @@ Player::Player(utfstring &url,OutputPtr *output)
  ,currentPosition(0)
  ,setPosition(-1)
 {
-    if(*output){
-        this->output    = *output;
-    }else{
-        // Start by finding out what output to use
+    if (*output) {
+        this->output = *output;
+    }
+    else{
+        /* if no output is specified, find all output plugins, and select the first one. */
         typedef std::vector<OutputPtr> OutputVector;
-        OutputVector outputs = musik::core::PluginFactory::Instance().QueryInterface<
-            IOutput,
-            musik::core::PluginFactory::DestroyDeleter<IOutput> >("GetAudioOutput");
 
-        if(!outputs.empty()){
-            // Get the firstt available output
-            this->output    = outputs.front();
-//            this->output->Initialize(this);
+        OutputVector outputs = musik::core::PluginFactory::Instance().QueryInterface<
+            IOutput, musik::core::PluginFactory::DestroyDeleter<IOutput>>("GetAudioOutput");
+
+        if (!outputs.empty()) {
+            this->output = outputs.front();
         }
     }
 
-    // Start the thread
+    /* each player instance is driven by a background thread. start it. */
     this->thread.reset(new boost::thread(boost::bind(&Player::ThreadLoop,this)));
-
 }
 
-Player::~Player(void){
+Player::~Player() {
     this->Stop();
-    if(this->thread){
+
+    if (this->thread) {
         this->thread->join();
     }
 }
 
-void Player::Play(){
+void Player::Play() {
     boost::mutex::scoped_lock lock(this->mutex);
-    this->state    = Player::Playing;
+    this->state = Player::Playing;
     this->waitCondition.notify_all();
 }
 
-void Player::Stop(){
+void Player::Stop() {
     {
         boost::mutex::scoped_lock lock(this->mutex);
-        this->state    = Player::Quit;
+        this->state = Player::Quit;
         this->bufferQueue.clear();
     }
     
-    OutputPtr theOutput(this->output);
-    if(theOutput){
-        this->output->ClearBuffers();
+    /* TODO: why are we caching this locally? */
+    OutputPtr output = this->output;
+    if(output) {
+        output->ClearBuffers();
     }
-
 }
 
-void Player::Pause(){
-    if(this->output){
+void Player::Pause() {
+    if (this->output) {
         this->output->Pause();
     }
 }
 
-void Player::Resume(){
-    if(this->output){
+void Player::Resume() {
+    if (this->output) {
         this->output->Resume();
     }
 }
 
-double Player::Position(){
+double Player::Position() {
     boost::mutex::scoped_lock lock(this->mutex);
     return this->currentPosition;
 }
 
-void Player::SetPosition(double seconds){
+void Player::SetPosition(double seconds) {
     boost::mutex::scoped_lock lock(this->mutex);
-    this->setPosition   = seconds;
+    this->setPosition = seconds;
 }
 
-double Player::Volume(){
+double Player::Volume() {
     boost::mutex::scoped_lock lock(this->mutex);
     return this->volume;
 }
 
-void Player::SetVolume(double volume){
+void Player::SetVolume(double volume) {
     boost::mutex::scoped_lock lock(this->mutex);
-    this->volume    = volume;
-    if(this->output){
+
+    this->volume = volume;
+
+    if (this->output) {
         this->output->SetVolume(this->volume);
     }
 }
 
-int Player::State(){
+int Player::State() {
     boost::mutex::scoped_lock lock(this->mutex);
     return this->state;
 }
 
-void Player::ThreadLoop(){
-    // First start the stream
+void Player::ThreadLoop() {
+    /* create and open the stream */
     this->stream = Stream::Create();
     if (this->stream->OpenStream(this->url)) {
+        /* ensure the volume is set properly */
         {
             boost::mutex::scoped_lock lock(this->mutex);
-            // Set the volume in the output
             this->output->SetVolume(this->volume);
         }
 
-        // If it's not started, lets precache
+        /* precache until buffers are full */
         bool keepPrecaching = true;
         while(this->State() == Precache && keepPrecaching) {
             keepPrecaching = this->PreBuffer();
             boost::thread::yield();
         }
 
-        // Lets wait until we are not precaching anymore
+        /* wait until we enter the Playing or Quit state; we may still
+        be in the Precache state, but with full buffers */
         {
             boost::mutex::scoped_lock lock(this->mutex);
-            while (this->state==Precache) {
+            while (this->state == Precache) {
                 this->waitCondition.wait(lock);
             }
         }
 
         this->PlaybackStarted(this);
 
-        // Player should be started or quit by now
-        bool finished(false);
-        while(!finished && !this->Exited()){
-            if(this->setPosition != -1) {
-                // Set a new position
+        /* we're ready to go.... */
+        bool finished = false;
+        while(!finished && !this->Exited()) {
+            /* see if we've been asked to seek since the last sample was
+            played. if we have, clear our output buffer and seek the 
+            stream. */
+            if (this->setPosition != -1) {
                 this->output->ClearBuffers();
                 this->stream->SetPosition(this->setPosition);
 
                 {
                     boost::mutex::scoped_lock lock(this->mutex);
                     this->bufferQueue.clear();
-                    this->setPosition       = -1;
-                    this->totalBufferSize   = 0;
+                    this->setPosition = -1;
+                    this->totalBufferSize = 0;
                 }
             }
 
+            /* TODO: why do we release buffers from the output here?? */
             this->output->ReleaseBuffers();
 
-            // Get a buffer, either from the bufferQueue, or from the stream
             BufferPtr buffer;
 
+            /* the buffer queue may already have some buffers available if it was
+            prefetched. */
             if (!this->BufferQueueEmpty()) {
                 boost::mutex::scoped_lock lock(this->mutex);
                 buffer = this->bufferQueue.front();
             }
+            /* otherwise, we need to grab a buffer from the stream and add it to the queue */
 			else {
                 buffer  = this->stream->NextBuffer();
-                if(buffer) {
+                if (buffer) {
                     boost::mutex::scoped_lock lock(this->mutex);
                     this->bufferQueue.push_back(buffer);
                     this->totalBufferSize += buffer->Bytes();
                 }
             }
 
-            if(buffer) {
+            /* if we have a buffer available, let's try to send it to the output device */
+            if (buffer) {
                 {
                     // Add the buffer to locked buffers so the output do not have time to play and 
                     // try to release the buffer before we have to add it.
@@ -209,7 +217,7 @@ void Player::ThreadLoop(){
                 }
 
                 // Try to play the buffer
-                if(!this->output->PlayBuffer(buffer.get(),this)) {
+                if (!this->output->PlayBuffer(buffer.get(), this)) {
                     {
                         // We didn't manage to play the buffer, remove it from the locked buffer queue
                         boost::mutex::scoped_lock lock(this->mutex);
@@ -237,44 +245,53 @@ void Player::ThreadLoop(){
                     }
                 }
             }
-			else{
-                // We have no more to decode
+
+            /* if we're unable to obtain a buffer, it means we're out of data and the
+            player is finished. terminate the thread. */
+			else {
                 finished = true;
             }
         }
 
-        if(!this->Exited()) {
+        /* if the Quit flag isn't set, that means the stream has sent the final
+        buffers to the output, and is about to end. raise the "almost ended"
+        event. */
+        if (!this->Exited()) {
             this->PlaybackAlmostEnded(this);
         }
-
-        // We need to wait for all the lockedBuffers to be released
-        bool buffersEmpty=false;
-        do {
-            this->output->ReleaseBuffers();
-            {
-                boost::mutex::scoped_lock lock(this->mutex);
-                buffersEmpty = this->lockedBuffers.empty();
-                if(!buffersEmpty && this->state!=Player::Quit) {
-                    this->waitCondition.wait(lock);
-                }
-            }
-        } while(!buffersEmpty && !this->Exited());
-
     }
+
+    /* if the stream failed to open... */
 	else {
-        // Unable to open stream
         this->PlaybackError(this);
     }
 
+    /* need to wait until all the buffers have been released */
+    this->ReleaseAllBuffers();
+
+    /* set the final state */
     {
         boost::mutex::scoped_lock lock(this->mutex);
         this->state = Player::Quit;
     }
 
     this->PlaybackEnded(this);
-    this->output->ReleaseBuffers();
+
     this->output.reset();
     this->stream.reset();
+}
+
+void Player::ReleaseAllBuffers() {
+    this->output->ReleaseBuffers();
+        
+    {
+        boost::mutex::scoped_lock lock(this->mutex);
+        this->lockedBuffers.empty();
+
+        while (this->state != Player::Quit) {
+            this->waitCondition.wait(lock);
+        }
+    }
 }
 
 bool Player::BufferQueueEmpty() {
@@ -282,55 +299,55 @@ bool Player::BufferQueueEmpty() {
     return this->bufferQueue.empty();
 }
 
-bool Player::PreBuffer(){
-    // But not if buffer is full
-    if(this->totalBufferSize>this->maxBufferSize) {
+bool Player::PreBuffer() {
+    /* don't prebuffer if the buffer is already full */
+    if(this->totalBufferSize > this->maxBufferSize) {
         return false;
     }
-	else{
+	else {
         BufferPtr newBuffer = this->stream->NextBuffer();
-        if(newBuffer) {
+
+        if (newBuffer) {
             boost::mutex::scoped_lock lock(this->mutex);
             this->bufferQueue.push_back(newBuffer);
             this->totalBufferSize += newBuffer->Bytes();
-            this->waitCondition.notify_all();
+            this->waitCondition.notify_all(); /* TODO: what's waiting on this? */
         }
+
         return true;
     }
 }
 
 bool Player::Exited() {
     boost::mutex::scoped_lock lock(this->mutex);
-    return this->state==Player::Quit;
+    return (this->state == Player::Quit);
 }
 
-void Player::ReleaseBuffer(IBuffer *buffer) {
+void Player::OnBufferProcessed(IBuffer *buffer) {
     boost::mutex::scoped_lock lock(this->mutex);
 
-    // Remove the buffer from lockedBuffers
-    for (BufferList::iterator foundBuffer = this->lockedBuffers.begin(); foundBuffer != this->lockedBuffers.end(); ++foundBuffer) {
-        if (foundBuffer->get() == buffer) {
+    /* removes the specified buffer from the list of locked buffers, and also
+    removes it from the stream. after this, recalculate the current position */
+    BufferList::iterator it = this->lockedBuffers.begin();
+    for ( ; it != this->lockedBuffers.end(); ++it) {
+        if (it->get() == buffer) {
             this->totalBufferSize -= buffer->Bytes();
-            
-			if(this->stream ) {
-                this->stream->DeleteBuffer(*foundBuffer);
+
+			if (this->stream) {
+                this->stream->DeleteBuffer(*it);
             }
 
-            this->lockedBuffers.erase(foundBuffer);
+            this->lockedBuffers.erase(it);
 
-            // Calculate current position from front locked buffer
-            if(!this->lockedBuffers.empty()){
-                this->currentPosition   = this->lockedBuffers.front()->Position();
+            if (!this->lockedBuffers.empty()) {
+                this->currentPosition = this->lockedBuffers.front()->Position();
             }
 
-            // Notify
-            this->waitCondition.notify_all();
+            this->waitCondition.notify_all(); /* TODO: what's waiting on this? */
+
             return;
         }
     }
-
-    // We should never reach this point
-    //throw "Releasing nonexisting buffer";
 }
 
 void Player::Notify() {

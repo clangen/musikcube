@@ -33,40 +33,65 @@
 #pragma once
 
 #include <core/config.h>
-#include <core/audio/IBuffer.h>
+#include "IFileStream.h"
+#include "IBuffer.h"
+#include "IPlayer.h"
 
 //////////////////////////////////////////////////////////////////////////////
 namespace musik { namespace core { namespace audio {
 //////////////////////////////////////////////////////////////////////////////
 
-//////////////////////////////////////////
-///\brief
-///Main interface for dsp plugins.
-///Each instance equals a track.
-//////////////////////////////////////////
-class  IDSP {
-    public:
+class  IOutput{
+
+    public:    
+
         //////////////////////////////////////////
         ///\brief
-        ///Destroy this object
+        ///Destroy the object
+        ///
+        ///The Destroy method is used so that it's guaranteed that the object is 
+        ///destroyed inside the right DLL/exe
         //////////////////////////////////////////
         virtual void Destroy() = 0;
 
         //////////////////////////////////////////
         ///\brief
-        ///Process the buffer through the dsp plugin
-        ///
-        ///\param inputBuffer
-        ///Buffer to process
-        ///
-        ///\param outputBuffer
-        ///Empty buffer that you can write the processed inputBuffer to
-        ///
-        ///\return true if the buffer has been processed to the new outputBuffer.
+        ///Pause the current output
         //////////////////////////////////////////
-        virtual bool ProcessBuffers(const IBuffer *inputBuffer,IBuffer *outputBuffer) = 0;
+        virtual void Pause() = 0;
+
+        //////////////////////////////////////////
+        ///\brief
+        ///resume a paused output
+        //////////////////////////////////////////
+        virtual void Resume() = 0;
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Set the volume on this output
+        //////////////////////////////////////////
+        virtual void SetVolume(double volume) = 0;
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Clear internal buffers. Used when setting new position in a stream
+        //////////////////////////////////////////
+        virtual void ClearBuffers() = 0;
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Release all buffers that has already passed through the output.
+        //////////////////////////////////////////
+        virtual void ReleaseBuffers() = 0;
+
+        //////////////////////////////////////////
+        ///\brief
+        ///Play this buffer
+        //////////////////////////////////////////
+        virtual bool PlayBuffer(IBuffer *buffer, IPlayer *player) = 0;
+
 };
 
 //////////////////////////////////////////////////////////////////////////////
-} } }
+}}} // NS
 //////////////////////////////////////////////////////////////////////////////
