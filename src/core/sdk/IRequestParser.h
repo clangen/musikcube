@@ -36,13 +36,23 @@
 
 #pragma once
 
-namespace musik { namespace core {
-    class IPlugin{
-        public:
-            virtual void Destroy() = 0;
-            virtual const utfchar* Name() = 0;
-            virtual const utfchar* Version() = 0;
-            virtual const utfchar* Author() = 0;
-    };
-} }
+#include <core/config.h>
+
+//////////////////////////////////////////////////////////////////////////////
+
+namespace musik{ namespace core{ namespace http{
+
+//////////////////////////////////////////////////////////////////////////////
+
+class  IRequestParser{
+    public:
+        virtual const char* Attribute(const char* key)=0;
+        virtual const char* Path()=0;
+        virtual const char* SubPath(int position)=0;
+};
+
+//////////////////////////////////////////////////////////////////////////////
+} } }   // musik::core:http
+//////////////////////////////////////////////////////////////////////////////
+
 

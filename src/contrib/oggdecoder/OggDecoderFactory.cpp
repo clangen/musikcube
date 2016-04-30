@@ -31,18 +31,42 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "stdafx.h"
+#include <cctype>
+#include "OggDecoderFactory.h"
+#include "VorbisDecoder.h"
 
-#include <core/sdk/IDecoderFactory.h>
+OggDecoderFactory::OggDecoderFactory() {
+}
 
-using namespace musik::core::audio;
+OggDecoderFactory::~OggDecoderFactory() {
+}
 
-class OggSourceSupplier : public IDecoderFactory {
-public:
-	OggSourceSupplier();
-	~OggSourceSupplier();
+void OggDecoderFactory::Destroy() {
+    delete this;
+}
 
-	IDecoder* CreateDecoder();
-	void Destroy();
-	bool CanHandle(const utfchar* type) const;
-};
+IDecoder* OggDecoderFactory::CreateDecoder() {
+    return new VorbisDecoder();
+}
+
+bool OggDecoderFactory::CanHandle(const utfchar* type) const {
+    if (type) {
+        utfstring typeString(type);
+
+        if (typeString.find(UTF("ogg")) != utfstring::npos) {
+            return true;
+        }
+        if (typeString.find(UTF("oga")) != utfstring::npos) {
+            return true;
+        }
+        if (typeString.find(UTF("audio/ogg")) != utfstring::npos) {
+            return true;
+        }
+        if (typeString.find(UTF("audio/vorbis")) != utfstring::npos) {
+            return true;
+        }
+    }
+
+    return false;
+}

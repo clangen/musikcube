@@ -93,14 +93,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="OGGDecoder.cpp" />
+    <ClCompile Include="VorbisDecoder.cpp" />
     <ClCompile Include="oggdecoder_plugin.cpp" />
-    <ClCompile Include="OggSourceSupplier.cpp" />
+    <ClCompile Include="OggDecoderFactory.cpp" />
     <ClCompile Include="stdafx.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="OGGDecoder.h" />
-    <ClInclude Include="OggSourceSupplier.h" />
+    <ClInclude Include="VorbisDecoder.h" />
+    <ClInclude Include="OggDecoderFactory.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

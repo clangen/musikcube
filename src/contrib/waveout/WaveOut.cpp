@@ -33,7 +33,7 @@
 
 #include "WaveOut.h"
 
-#define MAX_VOLUME 65535.0
+#define MAX_VOLUME 0xFFFF
 
 WaveOut::WaveOut()
 : waveHandle(NULL)
@@ -51,7 +51,7 @@ WaveOut::~WaveOut(){
     }
 }
 
-void WaveOut::Destroy(){
+void WaveOut::Destroy() {
     delete this;
 }
 
@@ -66,7 +66,8 @@ void WaveOut::Resume() {
 void WaveOut::SetVolume(double volume) {
     if (this->waveHandle) {
         DWORD newVolume = (DWORD)(volume * MAX_VOLUME);
-        waveOutSetVolume(this->waveHandle,newVolume); 
+        DWORD leftAndRight = (newVolume << 16) | newVolume;
+        waveOutSetVolume(this->waveHandle, leftAndRight); 
     }
 
     this->currentVolume = volume;
@@ -148,7 +149,7 @@ void WaveOut::SetFormat(IBuffer *buffer) {
         this->currentSampleRate = buffer->SampleRate();
 
         /* format changed, kill the old output device */
-        if(this->waveHandle!=NULL) {
+        if (this->waveHandle != NULL) {
             waveOutClose(this->waveHandle);
             this->waveHandle = NULL;
         }
@@ -156,44 +157,41 @@ void WaveOut::SetFormat(IBuffer *buffer) {
         /* reset, and configure speaker output */
 	    ZeroMemory(&this->waveFormat, sizeof(this->waveFormat));
 
-        DWORD speakerconfig = 0;
+        DWORD speakerConfig = 0;
 
         switch (buffer->Channels()) {
             case 1:
-                speakerconfig = KSAUDIO_SPEAKER_MONO;
+                speakerConfig = KSAUDIO_SPEAKER_MONO;
                 break;
             case 2:
-                speakerconfig = KSAUDIO_SPEAKER_STEREO;
+                speakerConfig = KSAUDIO_SPEAKER_STEREO;
                 break;
             case 4:
-                speakerconfig = KSAUDIO_SPEAKER_QUAD;
+                speakerConfig = KSAUDIO_SPEAKER_QUAD;
                 break;
             case 5:
-                speakerconfig = (SPEAKER_FRONT_LEFT | SPEAKER_FRONT_RIGHT | SPEAKER_FRONT_CENTER | SPEAKER_BACK_LEFT  | SPEAKER_BACK_RIGHT);
+                speakerConfig = (SPEAKER_FRONT_LEFT | SPEAKER_FRONT_RIGHT | SPEAKER_FRONT_CENTER | SPEAKER_BACK_LEFT | SPEAKER_BACK_RIGHT);
                 break;
             case 6:
-                speakerconfig = KSAUDIO_SPEAKER_5POINT1;
+                speakerConfig = KSAUDIO_SPEAKER_5POINT1;
                 break;
         }
 
-        this->waveFormat.Format.cbSize = 22;
+        this->waveFormat.Format.cbSize = sizeof(WAVEFORMATEXTENSIBLE) - sizeof(WAVEFORMATEX);
         this->waveFormat.Format.wFormatTag = WAVE_FORMAT_EXTENSIBLE;
         this->waveFormat.Format.nChannels = (WORD) buffer->Channels();
+        this->waveFormat.Format.wBitsPerSample = sizeof(float) * 8;
         this->waveFormat.Format.nSamplesPerSec = (DWORD) buffer->SampleRate();
-        this->waveFormat.Format.wBitsPerSample = 32;
 
-        this->waveFormat.Format.nBlockAlign = 
-            (this->waveFormat.Format.wBitsPerSample / 8) * this->waveFormat.Format.nChannels;
+        int bytesPerSample = this->waveFormat.Format.wBitsPerSample / 8;
+        this->waveFormat.Format.nBlockAlign = bytesPerSample * this->waveFormat.Format.nChannels;
 
         this->waveFormat.Format.nAvgBytesPerSec =
-            ((this->waveFormat.Format.wBitsPerSample/8) *
-            this->waveFormat.Format.nChannels) * 
-            this->waveFormat.Format.nSamplesPerSec; /* Compute using nBlkAlign * nSamp/Sec */
+            this->waveFormat.Format.nBlockAlign * this->waveFormat.Format.nSamplesPerSec;
 
-        /* IMPORTANT NOTE: wValidBitsPerSample/wReserved/wSamplesPerBlock are a union,
-        so don't set wReserved or wSamplesPerBlock to 0 after assigning wValidBitsPerSample. */
-        this->waveFormat.Samples.wValidBitsPerSample = 32;
-        this->waveFormat.dwChannelMask = speakerconfig; 
+        /* NOTE: wValidBitsPerSample/wReserved/wSamplesPerBlock are a union */
+        this->waveFormat.Samples.wValidBitsPerSample = this->waveFormat.Format.wBitsPerSample;
+        this->waveFormat.dwChannelMask = speakerConfig;
         this->waveFormat.SubFormat = KSDATAFORMAT_SUBTYPE_IEEE_FLOAT;
 
         /* create the output device */

@@ -186,7 +186,9 @@ void Player::ThreadLoop() {
                 }
             }
 
-            /* TODO: why do we release buffers from the output here?? */
+            /* TODO: why do we release buffers from the output here?? this appears to be
+            an old hack to fix up some WaveOut issues where pending buffers need to be
+            released before the device can be closed. we can probably remove this now. */
             this->output->ReleaseBuffers();
 
             BufferPtr buffer;
@@ -206,6 +208,8 @@ void Player::ThreadLoop() {
                     this->totalBufferSize += buffer->Bytes();
                 }
             }
+
+            /* TODO CLEAN UP AND DOCUMENT */
 
             /* if we have a buffer available, let's try to send it to the output device */
             if (buffer) {
@@ -232,7 +236,7 @@ void Player::ThreadLoop() {
                         }
                     }
                 }
-				else{
+				else {
                     // Buffer send to output
                     boost::mutex::scoped_lock lock(this->mutex);
                     if(!this->bufferQueue.empty()) {
@@ -245,6 +249,8 @@ void Player::ThreadLoop() {
                     }
                 }
             }
+
+            /* END TODO CLEAN UP AND DOCUMENT */
 
             /* if we're unable to obtain a buffer, it means we're out of data and the
             player is finished. terminate the thread. */

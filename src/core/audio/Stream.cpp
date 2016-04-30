@@ -38,6 +38,7 @@
 #include <core/PluginFactory.h>
 
 using namespace musik::core::audio;
+using musik::core::PluginFactory;
 
 Stream::Stream(unsigned int options)
  :preferedBufferSampleSize(4096)
@@ -45,12 +46,9 @@ Stream::Stream(unsigned int options)
  ,decoderSampleRate(0)
  ,decoderSamplePosition(0)
 {
-    // Get all DSPs
-    // TODO: fixing PluginFactory
-    if( (this->options&NoDSP)==0){
-        this->dsps = musik::core::PluginFactory::Instance().QueryInterface<
-            IDSP,
-            musik::core::PluginFactory::DestroyDeleter<IDSP> >("GetDSP");
+    if((this->options&NoDSP) == 0){
+        typedef PluginFactory::DestroyDeleter<IDSP> Deleter;
+        this->dsps = PluginFactory::Instance().QueryInterface<IDSP, Deleter>("GetDSP");
     }
 }
 
@@ -62,9 +60,7 @@ StreamPtr Stream::Create(unsigned int options){
     return StreamPtr(new Stream(options));
 }
 
-BufferPtr Stream::NextBuffer(){
-
-    // Decode a new buffer
+BufferPtr Stream::NextBuffer() {
     return this->GetNextBuffer();
 }
 
@@ -82,110 +78,104 @@ double Stream::SetPosition(double seconds){
     }
     return newPosition;
 }
-/*
-void Stream::SetMaxCacheLength(double seconds){
-}
 
-void Stream::SetPreferedBufferSampleSize(long samples){
-}
-*/
-bool Stream::OpenStream(utfstring uri){
-
-    // Open the filestream
-    this->fileStream    = musik::core::filestreams::Factory::OpenFile(uri.c_str());
-    if(!this->fileStream){
+bool Stream::OpenStream(utfstring uri) {
+    /* use our file stream abstraction to open the data at the 
+    specified URI */
+    this->fileStream = musik::core::filestreams::Factory::OpenFile(uri.c_str());
+    if (!this->fileStream) {
         return false;
     }
 
-    // Look up what DecoderFactory to use
+    /* find a DecoderFactory we can use for this type of data*/
     StreamHelper::DecoderFactoryPtr decoderFactory;
-    for(StreamHelper::DecoderFactories::iterator decoderFactoryIt=Stream::Helper()->decoderFactories.begin();decoderFactoryIt!=Stream::Helper()->decoderFactories.end() && !decoderFactory;++decoderFactoryIt){
-        if( (*decoderFactoryIt)->CanHandle(this->fileStream->Type())){
-            decoderFactory  = (*decoderFactoryIt);
+    StreamHelper::DecoderFactories::iterator factories = Stream::Helper()->decoderFactories.begin();
+    StreamHelper::DecoderFactories::iterator end = Stream::Helper()->decoderFactories.end();
+
+    for( ; factories != end && !decoderFactory; ++factories) {
+        if((*factories)->CanHandle(this->fileStream->Type())){
+            decoderFactory  = (*factories);
         }
     }
 
-    if(!decoderFactory){
-        // We have failed to get a working decoderFactory
+    if (!decoderFactory) {
+        /* nothing can decode this type of file */
         return false;
     }
 
-
-    // Create the decoder
-    IDecoder *decoderPtr    =   decoderFactory->CreateDecoder();
-    if(!decoderPtr){
+    IDecoder *decoder = decoderFactory->CreateDecoder();
+    if (!decoder) {
+        /* shouldn't ever happen, the factory said it can handle this file */
         return false;
     }
 
+    typedef PluginFactory::DestroyDeleter<IDecoder> Deleter;
 
-    // Open the decoder
-    typedef musik::core::PluginFactory::DestroyDeleter<IDecoder> IDecoderDeleter;
-    this->decoder.reset(decoderPtr,IDecoderDeleter());
-    if( !this->decoder->Open(this->fileStream.get()) ){
+    /* ask the decoder to open the data stream. if it returns true we're
+    good to start pulling data out of it! */
+    this->decoder.reset(decoder, Deleter());
+    if (!this->decoder->Open(this->fileStream.get())) {
         return false;
     }
+
     return true;
-
 }
 
-BufferPtr Stream::GetNextDecoderBuffer(){
-    // First get a buffer
+BufferPtr Stream::GetNextDecoderBuffer() {
+    /* get a spare buffer, then ask the decoder for some data */
     BufferPtr buffer = this->NewBuffer();
-
-    // Get the buffer from the decoder
-    if(!this->decoder->GetBuffer(buffer.get())){
-        // Nothing to decode left, return a empty buffer
+    if(!this->decoder->GetBuffer(buffer.get())) {
         return BufferPtr();
     }
 
-    // We need to save the decoders samplerate to be able to calculate the current time-position
+    /* remember the samplerate so we can calculate the current time-position */
     if(!this->decoderSampleRate){
         this->decoderSampleRate = buffer->SampleRate();
     }
 
-    // Calculate the current sample position
+    /* calculate the current offset, in samples */
     this->decoderSamplePosition += buffer->Samples();
 
-    // Save the position (seconds) in the buffer
-    buffer->position    = ((double)this->decoderSamplePosition)/((double)this->decoderSampleRate);
+    /* calculate the position (seconds) in the buffer */
+    buffer->position = ((double)this->decoderSamplePosition) / ((double)this->decoderSampleRate);
 
     return buffer;
-
 }
 
-BufferPtr Stream::GetNextBuffer(){
-    // First get the next decoded buffer
+BufferPtr Stream::GetNextBuffer() {
+    /* ask the decoder for the next buffer */
     BufferPtr currentBuffer = this->GetNextDecoderBuffer();
 
-    if(currentBuffer){
-        /////////////////////////////////////////////
-        // Lets check if the buffer is too small
-        bool moreBuffers(true);
-        while(currentBuffer->Samples()<this->preferedBufferSampleSize && moreBuffers){
-            BufferPtr appendBuffer = this->GetNextDecoderBuffer();
-            if(appendBuffer){
-                currentBuffer->Append(appendBuffer);
-                this->DeleteBuffer(appendBuffer);
-            }else{
+    if(currentBuffer) {
+        /* try to fill the buffer to its optimal size; if the decoder didn't return
+        a full buffer, ask it for some more data. */
+        bool moreBuffers = true;
+        while (currentBuffer->Samples() < this->preferedBufferSampleSize && moreBuffers) {
+            BufferPtr bufferToAppend = this->GetNextDecoderBuffer();
+            if (bufferToAppend) {
+                currentBuffer->Append(bufferToAppend);
+                this->DeleteBuffer(bufferToAppend);
+            }
+            else {
                 moreBuffers = false;
             }
         }
-        /////////////////////////////////////////////
 
-        BufferPtr oldBuffer     = this->NewBuffer();
+        /* let DSP plugins process the buffer */
+        if (this->dsps.size() > 0) {
+            BufferPtr oldBuffer = this->NewBuffer();
 
-        // Now lets loop through all DSP plugins
-        for(Dsps::iterator dsp=this->dsps.begin();dsp!=this->dsps.end();++dsp){
-            oldBuffer->CopyFormat(currentBuffer);
-            oldBuffer->position = currentBuffer->position;
+            for (Dsps::iterator dsp = this->dsps.begin(); dsp != this->dsps.end(); ++dsp) {
+                oldBuffer->CopyFormat(currentBuffer);
+                oldBuffer->position = currentBuffer->position;
 
-            if( (*dsp)->ProcessBuffers(currentBuffer.get(),oldBuffer.get()) ){
-                // Success in processing DSP, swap the buffers
-                currentBuffer.swap(oldBuffer);
+                if ((*dsp)->ProcessBuffers(currentBuffer.get(), oldBuffer.get())) {
+                    currentBuffer.swap(oldBuffer);
+                }
             }
-        }
 
-        this->DeleteBuffer(oldBuffer);
+            this->DeleteBuffer(oldBuffer);
+        }
 
     }
 
@@ -203,7 +193,7 @@ BufferPtr Stream::NewBuffer(){
     return buffer;
 }
 
-void Stream::DeleteBuffer(BufferPtr oldBuffer){
+void Stream::DeleteBuffer(BufferPtr oldBuffer) {
     this->availableBuffers.push_back(oldBuffer);
 }
 
@@ -215,20 +205,22 @@ Stream::StreamHelperPtr Stream::Helper(){
     return helper;
 }
 
-Stream::StreamHelper::StreamHelper(){
-    // Look up all DecoderFactories
-    this->decoderFactories = musik::core::PluginFactory::Instance().QueryInterface<
-        IDecoderFactory,
-        musik::core::PluginFactory::DestroyDeleter<IDecoderFactory> >("GetDecoderFactory");
+Stream::StreamHelper::StreamHelper() {
+    PluginFactory::DestroyDeleter<IDecoderFactory> typedef Deleter;
+
+    this->decoderFactories = PluginFactory::Instance()
+        .QueryInterface<IDecoderFactory, Deleter>("GetDecoderFactory");
 }
 
-double Stream::DecoderProgress(){
-    if(this->fileStream){
-        long fileSize       = this->fileStream->Filesize();
-        long filePosition   = this->fileStream->Position();
-        if(fileSize && filePosition){
-            return ((double)filePosition)/((double)fileSize);
+double Stream::DecoderProgress() {
+    if (this->fileStream) {
+        long fileSize = this->fileStream->Filesize();
+        long filePosition = this->fileStream->Position();
+
+        if (fileSize && filePosition) {
+            return ((double) filePosition) / ((double) fileSize);
         }
     }
+
     return 0;
 }

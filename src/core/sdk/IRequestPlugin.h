@@ -36,13 +36,26 @@
 
 #pragma once
 
-namespace musik { namespace core {
-    class IPlugin{
-        public:
-            virtual void Destroy() = 0;
-            virtual const utfchar* Name() = 0;
-            virtual const utfchar* Version() = 0;
-            virtual const utfchar* Author() = 0;
-    };
-} }
+#include <core/config.h>
+#include "IResponder.h"
+#include "IRequestParser.h"
+#include "ITrack.h"
+
+//////////////////////////////////////////////////////////////////////////////
+
+namespace musik{ namespace core{ namespace http{
+
+//////////////////////////////////////////////////////////////////////////////
+
+class  IRequestPlugin{
+    public:
+        virtual void Destroy()=0;
+        virtual const char* WatchPath()=0;
+        virtual void Execute(musik::core::http::IResponder* responder,musik::core::http::IRequestParser* request,musik::core::ITrack* track)=0;
+};
+
+//////////////////////////////////////////////////////////////////////////////
+} } }
+//////////////////////////////////////////////////////////////////////////////
+
 

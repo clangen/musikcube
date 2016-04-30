@@ -41,8 +41,6 @@
 #include <core/Common.h>
 #include <core/config_filesystem.h>
 
-//////////////////////////////////////////////////////////////////////////////
-
 #ifdef UTF_WIDECHAR
 #define UTFFopen    _wfopen
 typedef fpos_t  stdioPositionType;
@@ -51,11 +49,8 @@ typedef fpos_t  stdioPositionType;
 typedef fpos_t stdioPositionType;
 #endif
 
-//////////////////////////////////////////////////////////////////////////////
-
 using namespace musik::core::filestreams;
 
-//////////////////////////////////////////////////////////////////////////////
 LocalFileStream::LocalFileStream()
 : file(NULL)
 , filesize(-1)
@@ -82,10 +77,10 @@ bool LocalFileStream::Open(const utfchar *filename,unsigned int options){
 			std::cerr << "File not a regular file" << std::endl;
 		}
 
-        this->filesize  = (long)boost::filesystem::file_size(file);
+        this->filesize = (long)boost::filesystem::file_size(file);
         this->extension = file.extension().wstring();
 		this->file = UTFFopen(filename,UTF("rb"));
-        this->fd  = new boost::iostreams::file_descriptor(file);
+        this->fd = new boost::iostreams::file_descriptor(file);
 		this->fileStream = new boost::iostreams::stream<boost::iostreams::file_descriptor>(*this->fd);
 		this->fileStream->exceptions(std::ios_base::eofbit | std::ios_base::failbit | std::ios_base::badbit);
 
@@ -128,8 +123,6 @@ PositionType LocalFileStream::Read(void* buffer,PositionType readBytes) {
 }
 
 bool LocalFileStream::SetPosition(PositionType position) {
-    /*stdioPositionType newPosition  = (stdioPositionType)position;
-    return fsetpos(this->file,&newPosition)==0;*/
     try	{
 		this->fileStream->clear();
 		this->fileStream->seekg(position);
@@ -142,16 +135,10 @@ bool LocalFileStream::SetPosition(PositionType position) {
 }
 
 PositionType LocalFileStream::Position() {
-    /*stdioPositionType currentPosition(0);
-    if(fgetpos(this->file,&currentPosition)==0){
-        return (PositionType)currentPosition;
-    }
-    return -1;*/
     return this->fileStream->tellg();
 }
 
 bool LocalFileStream::Eof() {
-    //return feof(this->file)!=0;
     return this->fileStream->eof();
 }
 

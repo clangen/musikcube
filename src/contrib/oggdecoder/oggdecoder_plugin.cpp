@@ -38,7 +38,7 @@
 
 #include <core/sdk/IPlugin.h>
 
-#include "OggSourceSupplier.h"
+#include "OggDecoderFactory.h"
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
     return true;
@@ -57,5 +57,5 @@ extern "C" __declspec(dllexport) musik::core::IPlugin* GetPlugin() {
 }
 
 extern "C" __declspec(dllexport) IDecoderFactory* GetDecoderFactory() {
-    return new OggSourceSupplier();
+    return new OggDecoderFactory();
 }

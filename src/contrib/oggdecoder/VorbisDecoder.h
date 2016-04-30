@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////
-// Copyright © 2007, Björn Olievier
+// Copyright © 2007, mC2 team
 //
 // All rights reserved.
 //
@@ -30,49 +30,37 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
+#pragma once
 
-#include "stdafx.h"
+#include <core/sdk/IDecoder.h>
 
-#include <cctype>
+#include "vorbis/codec.h"
+#include "vorbis/vorbisfile.h"
 
-#include "OggSourceSupplier.h"
+using namespace musik::core::audio;
 
-#include "OggDecoder.h"
-
-OggSourceSupplier::OggSourceSupplier()
+class VorbisDecoder : public IDecoder
 {
-}
 
-OggSourceSupplier::~OggSourceSupplier()
-{
-}
+public: 
+    VorbisDecoder();
+    ~VorbisDecoder();
 
-void OggSourceSupplier::Destroy()
-{
-    delete this;
-}
+public: 
+    virtual void Destroy();
+    virtual double SetPosition(double second, double totalLength);
+    virtual bool GetBuffer(IBuffer *buffer);
+    virtual bool Open(musik::core::filestreams::IFileStream *fileStream);
 
-IDecoder* OggSourceSupplier::CreateDecoder()
-{
-    return new OGGDecoder();
-}
+public:
+    /* libvorbis callbacks */
+    static size_t OggRead(void *buffer, size_t nofParts, size_t partSize, void *datasource);
+    static int OggSeek(void *datasource, ogg_int64_t offset, int whence);
+    static long OggTell(void *datasource);
+    static int OggClose(void *datasource);
 
-bool OggSourceSupplier::CanHandle(const utfchar* type) const
-{
-    if(type){
-        utfstring typeString(type);
-        if(typeString.find(UTF("ogg"))!=utfstring::npos){
-            return true;
-        }
-        if(typeString.find(UTF("oga"))!=utfstring::npos){
-            return true;
-        }
-        if(typeString.find(UTF("audio/ogg"))!=utfstring::npos){
-            return true;
-        }
-        if(typeString.find(UTF("audio/vorbis"))!=utfstring::npos){
-            return true;
-        }
-    }
-    return false;
-}
+protected: 
+    musik::core::filestreams::IFileStream *fileStream;
+    OggVorbis_File oggFile;
+    ov_callbacks oggCallbacks;
+};

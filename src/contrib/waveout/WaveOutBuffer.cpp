@@ -34,6 +34,8 @@
 #include "WaveOutBuffer.h"
 #include "WaveOut.h"
 
+#include <iostream>
+
 WaveOutBuffer::WaveOutBuffer(WaveOut *waveOut, IBuffer *buffer, IPlayer *player)
 : waveOut(waveOut) 
 , buffer(buffer)
@@ -44,9 +46,9 @@ WaveOutBuffer::WaveOutBuffer(WaveOut *waveOut, IBuffer *buffer, IPlayer *player)
 }
 
 void WaveOutBuffer::Initialize() {
-    this->header.dwBufferLength = this->buffer->Samples() * this->buffer->Channels()*sizeof(float);
-    this->header.lpData = (LPSTR)this->buffer->BufferPointer();
-	this->header.dwUser = (DWORD_PTR)this;
+    this->header.dwBufferLength = this->buffer->Samples() * this->buffer->Channels() * sizeof(float);
+    this->header.lpData = (LPSTR) this->buffer->BufferPointer();
+	this->header.dwUser = (DWORD_PTR) this;
 	this->header.dwBytesRecorded = 0;
 	this->header.dwFlags = 0;
 	this->header.dwLoops = 0;
@@ -57,14 +59,13 @@ void WaveOutBuffer::Initialize() {
     if (result != MMSYSERR_NOERROR) {
         throw;
     }
-
-    this->header.dwFlags |= WHDR_DONE;
 }
 
 void WaveOutBuffer::Destroy() {
     if (!this->destroyed) {
         if (this->waveOut->waveHandle && this->header.dwFlags & WHDR_PREPARED) {
             waveOutUnprepareHeader(this->waveOut->waveHandle, &this->header, sizeof(WAVEHDR));
+            this->header.dwFlags = WHDR_DONE;
         }
 
         this->player->Notify();
