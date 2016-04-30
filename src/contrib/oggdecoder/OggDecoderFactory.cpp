@@ -34,7 +34,7 @@
 #include "stdafx.h"
 #include <cctype>
 #include "OggDecoderFactory.h"
-#include "VorbisDecoder.h"
+#include "OggDecoder.h"
 
 OggDecoderFactory::OggDecoderFactory() {
 }
@@ -47,7 +47,7 @@ void OggDecoderFactory::Destroy() {
 }
 
 IDecoder* OggDecoderFactory::CreateDecoder() {
-    return new VorbisDecoder();
+    return new OggDecoder();
 }
 
 bool OggDecoderFactory::CanHandle(const utfchar* type) const {

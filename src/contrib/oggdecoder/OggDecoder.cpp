@@ -32,40 +32,40 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "StdAfx.h"
-#include "VorbisDecoder.h"
+#include "OggDecoder.h"
 
-VorbisDecoder::VorbisDecoder() {
+OggDecoder::OggDecoder() {
     this->oggCallbacks.read_func = &OggRead;
     this->oggCallbacks.seek_func = &OggSeek;
     this->oggCallbacks.tell_func = &OggTell;
     this->oggCallbacks.close_func = &OggClose;
 }
 
-size_t VorbisDecoder::OggRead(void *buffer, size_t nofParts, size_t partSize, void *datasource) {
-    return (size_t)((VorbisDecoder*)datasource)->fileStream->Read(buffer,(long)(nofParts*partSize));
+size_t OggDecoder::OggRead(void *buffer, size_t nofParts, size_t partSize, void *datasource) {
+    return (size_t)((OggDecoder*)datasource)->fileStream->Read(buffer,(long)(nofParts*partSize));
 }
 
-int VorbisDecoder::OggSeek(void *datasource, ogg_int64_t offset, int whence) {
+int OggDecoder::OggSeek(void *datasource, ogg_int64_t offset, int whence) {
     switch(whence) {
         case SEEK_CUR:
             {
-                long currentPosition = ((VorbisDecoder*)datasource)->fileStream->Position();
-                if(((VorbisDecoder*)datasource)->fileStream->SetPosition(currentPosition+(long) offset)) {
+                long currentPosition = ((OggDecoder*)datasource)->fileStream->Position();
+                if(((OggDecoder*)datasource)->fileStream->SetPosition(currentPosition+(long) offset)) {
                     return 0;
                 }
             }
             break;
         case SEEK_END:
             {
-                long fileSize = ((VorbisDecoder*) datasource)->fileStream->Filesize();
-                if(((VorbisDecoder*) datasource)->fileStream->SetPosition(fileSize)) {
+                long fileSize = ((OggDecoder*) datasource)->fileStream->Filesize();
+                if(((OggDecoder*) datasource)->fileStream->SetPosition(fileSize)) {
                     return 0;
                 }
             }
             break;
         default:
             {
-                if(((VorbisDecoder*) datasource)->fileStream->SetPosition((long) offset)) {
+                if(((OggDecoder*) datasource)->fileStream->SetPosition((long) offset)) {
                     return 0;
                 }
             }
@@ -74,21 +74,21 @@ int VorbisDecoder::OggSeek(void *datasource, ogg_int64_t offset, int whence) {
     return -1;
 }
 
-long VorbisDecoder::OggTell(void *datasource) {
-    return ((VorbisDecoder*)datasource)->fileStream->Position();
+long OggDecoder::OggTell(void *datasource) {
+    return ((OggDecoder*)datasource)->fileStream->Position();
 }
 
-int VorbisDecoder::OggClose(void *datasource) {
-    if(((VorbisDecoder*)datasource)->fileStream->Close()) {
+int OggDecoder::OggClose(void *datasource) {
+    if(((OggDecoder*)datasource)->fileStream->Close()) {
         return 0;
     }
     return -1;
 }
 
-VorbisDecoder::~VorbisDecoder() {
+OggDecoder::~OggDecoder() {
 }
 
-bool VorbisDecoder::Open(musik::core::filestreams::IFileStream *fileStream) {
+bool OggDecoder::Open(musik::core::filestreams::IFileStream *fileStream) {
     this->fileStream = fileStream;
 
     if (ov_open_callbacks(this, &this->oggFile, NULL, 0, this->oggCallbacks) != 0) {
@@ -98,12 +98,12 @@ bool VorbisDecoder::Open(musik::core::filestreams::IFileStream *fileStream) {
     return true;
 }
 
-void VorbisDecoder::Destroy() {
+void OggDecoder::Destroy() {
     ov_clear(&this->oggFile);
 	delete this;
 }
 
-double VorbisDecoder::SetPosition(double second, double totalLength) {
+double OggDecoder::SetPosition(double second, double totalLength) {
     if (ov_seekable(&this->oggFile)) {
 		if (!ov_time_seek(&this->oggFile, second)) {
 			return ov_time_tell(&this->oggFile);
@@ -115,7 +115,7 @@ double VorbisDecoder::SetPosition(double second, double totalLength) {
 
 #define OGG_MAX_SAMPLES 1024
 
-bool VorbisDecoder::GetBuffer(IBuffer *buffer) {
+bool OggDecoder::GetBuffer(IBuffer *buffer) {
     int bitstream;
 	float **pcm;
 

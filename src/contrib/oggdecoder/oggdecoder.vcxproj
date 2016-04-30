@@ -93,13 +93,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="VorbisDecoder.cpp" />
+    <ClCompile Include="OggDecoder.cpp" />
     <ClCompile Include="oggdecoder_plugin.cpp" />
     <ClCompile Include="OggDecoderFactory.cpp" />
     <ClCompile Include="stdafx.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="VorbisDecoder.h" />
+    <ClInclude Include="OggDecoder.h" />
     <ClInclude Include="OggDecoderFactory.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>

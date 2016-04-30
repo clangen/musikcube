@@ -39,12 +39,12 @@
 
 using namespace musik::core::audio;
 
-class VorbisDecoder : public IDecoder
+class OggDecoder : public IDecoder
 {
 
 public: 
-    VorbisDecoder();
-    ~VorbisDecoder();
+    OggDecoder();
+    ~OggDecoder();
 
 public: 
     virtual void Destroy();
