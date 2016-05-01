@@ -51,9 +51,8 @@ class WaveOut : public IOutput {
         virtual void Pause();
         virtual void Resume();
         virtual void SetVolume(double volume);
-        virtual void ClearBuffers();
-        virtual bool PlayBuffer(IBuffer *buffer, IPlayer *player);
-        virtual void ReleaseBuffers();
+        virtual void Stop();
+        virtual bool Play(IBuffer *buffer, IPlayer *player);
 
     public: 
         typedef boost::shared_ptr<WaveOutBuffer> WaveOutBufferPtr;
@@ -66,6 +65,10 @@ class WaveOut : public IOutput {
 
     protected:
         friend class WaveOutBuffer;
+
+        /* note we apparently use a std::list<> here, and not std::set<> because
+        when we need to do a lookup we have a WaveOutBuffer*, and not a shared_ptr. 
+        we could fix this up by using boost::enable_shared_from_this */
         typedef std::list<WaveOutBufferPtr> BufferList;
 
         HWAVEOUT waveHandle;
@@ -75,9 +78,8 @@ class WaveOut : public IOutput {
         long currentSampleRate;
         double currentVolume;
 
-        BufferList buffers;
+        BufferList queuedBuffers;
         size_t maxBuffers;
 
         boost::mutex mutex;
-        boost::condition bufferRemovedCondition;
 };

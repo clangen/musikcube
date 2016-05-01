@@ -76,20 +76,13 @@ class  IOutput{
         ///\brief
         ///Clear internal buffers. Used when setting new position in a stream
         //////////////////////////////////////////
-        virtual void ClearBuffers() = 0;
-
-        //////////////////////////////////////////
-        ///\brief
-        ///Release all buffers that has already passed through the output.
-        //////////////////////////////////////////
-        virtual void ReleaseBuffers() = 0;
+        virtual void Stop() = 0;
 
         //////////////////////////////////////////
         ///\brief
         ///Play this buffer
         //////////////////////////////////////////
-        virtual bool PlayBuffer(IBuffer *buffer, IPlayer *player) = 0;
-
+        virtual bool Play(IBuffer *buffer, IPlayer *player) = 0;
 };
 
 //////////////////////////////////////////////////////////////////////////////

@@ -91,10 +91,8 @@ void Player::Stop() {
         this->bufferQueue.clear();
     }
     
-    /* TODO: why are we caching this locally? */
-    OutputPtr output = this->output;
-    if(output) {
-        output->ClearBuffers();
+    if (this->output) {
+        this->output->Stop();
     }
 }
 
@@ -152,13 +150,13 @@ void Player::ThreadLoop() {
 
         /* precache until buffers are full */
         bool keepPrecaching = true;
-        while(this->State() == Precache && keepPrecaching) {
+        while (this->State() == Precache && keepPrecaching) {
             keepPrecaching = this->PreBuffer();
             boost::thread::yield();
         }
 
         /* wait until we enter the Playing or Quit state; we may still
-        be in the Precache state, but with full buffers */
+        be in the Precache state. */
         {
             boost::mutex::scoped_lock lock(this->mutex);
             while (this->state == Precache) {
@@ -175,7 +173,7 @@ void Player::ThreadLoop() {
             played. if we have, clear our output buffer and seek the 
             stream. */
             if (this->setPosition != -1) {
-                this->output->ClearBuffers();
+                this->output->Stop();
                 this->stream->SetPosition(this->setPosition);
 
                 {
@@ -185,11 +183,6 @@ void Player::ThreadLoop() {
                     this->totalBufferSize = 0;
                 }
             }
-
-            /* TODO: why do we release buffers from the output here?? this appears to be
-            an old hack to fix up some WaveOut issues where pending buffers need to be
-            released before the device can be closed. we can probably remove this now. */
-            this->output->ReleaseBuffers();
 
             BufferPtr buffer;
 
@@ -201,7 +194,7 @@ void Player::ThreadLoop() {
             }
             /* otherwise, we need to grab a buffer from the stream and add it to the queue */
 			else {
-                buffer  = this->stream->NextBuffer();
+                buffer  = this->stream->GetNextProcessedOutputBuffer();
                 if (buffer) {
                     boost::mutex::scoped_lock lock(this->mutex);
                     this->bufferQueue.push_back(buffer);
@@ -209,49 +202,30 @@ void Player::ThreadLoop() {
                 }
             }
 
-            /* TODO CLEAN UP AND DOCUMENT */
-
-            /* if we have a buffer available, let's try to send it to the output device */
+            /* if we have a decoded, processed buffer available. let's try to send it to 
+            the output device. */
             if (buffer) {
-                {
-                    // Add the buffer to locked buffers so the output do not have time to play and 
-                    // try to release the buffer before we have to add it.
+                if (this->output->Play(buffer.get(), this)) {
+                    /* success! the buffer was accepted by the output.*/
                     boost::mutex::scoped_lock lock(this->mutex);
+
+                    /* lock it down so it's not destroyed until the output device lets us
+                    know it's done with it. */
                     this->lockedBuffers.push_back(buffer);
-                }
 
-                // Try to play the buffer
-                if (!this->output->PlayBuffer(buffer.get(), this)) {
-                    {
-                        // We didn't manage to play the buffer, remove it from the locked buffer queue
-                        boost::mutex::scoped_lock lock(this->mutex);
-                        this->lockedBuffers.pop_back();
-                    }
-
-                    if(!this->PreBuffer()) {
-                        // Wait for buffersize to become smaller
-                        boost::mutex::scoped_lock lock(this->mutex);
-                        if(this->totalBufferSize>this->maxBufferSize) {
-                            this->waitCondition.wait(lock);
-                        }
-                    }
-                }
-				else {
-                    // Buffer send to output
-                    boost::mutex::scoped_lock lock(this->mutex);
-                    if(!this->bufferQueue.empty()) {
+                    /* TODO: don't understand this yet...  seems like every time we enqueue a
+                    new buffer to the output we remove the old one that was at the front of
+                    */
+                    if (!this->bufferQueue.empty()) {
                         this->bufferQueue.pop_front();
 
                         // Set currentPosition
-                        if(this->lockedBuffers.size() == 1){
+                        if (this->lockedBuffers.size() == 1) {
                             this->currentPosition = buffer->Position();
                         }
                     }
                 }
             }
-
-            /* END TODO CLEAN UP AND DOCUMENT */
-
             /* if we're unable to obtain a buffer, it means we're out of data and the
             player is finished. terminate the thread. */
 			else {
@@ -259,9 +233,8 @@ void Player::ThreadLoop() {
             }
         }
 
-        /* if the Quit flag isn't set, that means the stream has sent the final
-        buffers to the output, and is about to end. raise the "almost ended"
-        event. */
+        /* if the Quit flag isn't set, that means the stream has ended "naturally", i.e.
+        it wasn't stopped by the user. raise the "almost ended" flag. */
         if (!this->Exited()) {
             this->PlaybackAlmostEnded(this);
         }
@@ -281,6 +254,9 @@ void Player::ThreadLoop() {
         this->state = Player::Quit;
     }
 
+    /* TOOD: there's definitely a bug here... the output device may still be processing
+    some buffers asynchronously. playback likely hasn't actually ended yet... we need
+    to wait until the output has released all of our pending buffers... */
     this->PlaybackEnded(this);
 
     this->output.reset();
@@ -288,16 +264,8 @@ void Player::ThreadLoop() {
 }
 
 void Player::ReleaseAllBuffers() {
-    this->output->ReleaseBuffers();
-        
-    {
-        boost::mutex::scoped_lock lock(this->mutex);
-        this->lockedBuffers.empty();
-
-        while (this->state != Player::Quit) {
-            this->waitCondition.wait(lock);
-        }
-    }
+    boost::mutex::scoped_lock lock(this->mutex);
+    this->lockedBuffers.empty();
 }
 
 bool Player::BufferQueueEmpty() {
@@ -307,11 +275,11 @@ bool Player::BufferQueueEmpty() {
 
 bool Player::PreBuffer() {
     /* don't prebuffer if the buffer is already full */
-    if(this->totalBufferSize > this->maxBufferSize) {
+    if (this->totalBufferSize > this->maxBufferSize) {
         return false;
     }
 	else {
-        BufferPtr newBuffer = this->stream->NextBuffer();
+        BufferPtr newBuffer = this->stream->GetNextProcessedOutputBuffer();
 
         if (newBuffer) {
             boost::mutex::scoped_lock lock(this->mutex);
@@ -329,18 +297,18 @@ bool Player::Exited() {
     return (this->state == Player::Quit);
 }
 
-void Player::OnBufferProcessed(IBuffer *buffer) {
+void Player::OnBufferProcessedByOutput(IBuffer *buffer) {
     boost::mutex::scoped_lock lock(this->mutex);
 
     /* removes the specified buffer from the list of locked buffers, and also
-    removes it from the stream. after this, recalculate the current position */
+    lets the stream know it can be recycled. */
     BufferList::iterator it = this->lockedBuffers.begin();
     for ( ; it != this->lockedBuffers.end(); ++it) {
         if (it->get() == buffer) {
             this->totalBufferSize -= buffer->Bytes();
 
 			if (this->stream) {
-                this->stream->DeleteBuffer(*it);
+                this->stream->OnBufferProcessedByPlayer(*it);
             }
 
             this->lockedBuffers.erase(it);

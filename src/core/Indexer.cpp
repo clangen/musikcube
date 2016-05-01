@@ -988,7 +988,7 @@ void Indexer::RunAnalyzers(){
                     if(stream->OpenStream(track.URL())){
                         // loop through the stream buffers, sending the buffers to the analyzers
                         audio::BufferPtr buffer;
-                        while( (buffer=stream->NextBuffer()) && !runningAnalyzers.empty()){
+                        while((buffer=stream->GetNextProcessedOutputBuffer()) && !runningAnalyzers.empty()){
                             {
                                 boost::mutex::scoped_lock lock(this->progressMutex);
                                 this->progress2 = stream->DecoderProgress();

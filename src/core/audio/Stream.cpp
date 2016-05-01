@@ -46,36 +46,28 @@ Stream::Stream(unsigned int options)
  ,decoderSampleRate(0)
  ,decoderSamplePosition(0)
 {
-    if((this->options&NoDSP) == 0){
+    if ((this->options & NoDSP) == 0) {
         typedef PluginFactory::DestroyDeleter<IDSP> Deleter;
         this->dsps = PluginFactory::Instance().QueryInterface<IDSP, Deleter>("GetDSP");
     }
+
+    this->LoadDecoderPlugins();
 }
 
-Stream::~Stream(void)
-{
+Stream::~Stream(void) {
 }
 
-StreamPtr Stream::Create(unsigned int options){
+StreamPtr Stream::Create(unsigned int options) {
     return StreamPtr(new Stream(options));
 }
 
-BufferPtr Stream::NextBuffer() {
-    return this->GetNextBuffer();
-}
+double Stream::SetPosition(double seconds) {
+    double newPosition = this->decoder->SetPosition(seconds,0);
 
-bool Stream::PreCache(){
-
-    return false;
-}
-
-double Stream::SetPosition(double seconds){
-    double newPosition  = this->decoder->SetPosition(seconds,0);
-
-    if(newPosition!=-1){
-        // Calculate new sample position
+    if (newPosition!=-1) {
         this->decoderSamplePosition = (UINT64)(newPosition*((double)this->decoderSampleRate));
     }
+
     return newPosition;
 }
 
@@ -83,14 +75,15 @@ bool Stream::OpenStream(utfstring uri) {
     /* use our file stream abstraction to open the data at the 
     specified URI */
     this->fileStream = musik::core::filestreams::Factory::OpenFile(uri.c_str());
+
     if (!this->fileStream) {
         return false;
     }
 
     /* find a DecoderFactory we can use for this type of data*/
-    StreamHelper::DecoderFactoryPtr decoderFactory;
-    StreamHelper::DecoderFactories::iterator factories = Stream::Helper()->decoderFactories.begin();
-    StreamHelper::DecoderFactories::iterator end = Stream::Helper()->decoderFactories.end();
+    DecoderFactoryList::iterator factories = this->decoderFactories.begin();
+    DecoderFactoryList::iterator end = this->decoderFactories.end();
+    DecoderFactoryPtr decoderFactory;
 
     for( ; factories != end && !decoderFactory; ++factories) {
         if((*factories)->CanHandle(this->fileStream->Type())){
@@ -109,10 +102,10 @@ bool Stream::OpenStream(utfstring uri) {
         return false;
     }
 
-    typedef PluginFactory::DestroyDeleter<IDecoder> Deleter;
-
     /* ask the decoder to open the data stream. if it returns true we're
     good to start pulling data out of it! */
+    typedef PluginFactory::DestroyDeleter<IDecoder> Deleter;
+
     this->decoder.reset(decoder, Deleter());
     if (!this->decoder->Open(this->fileStream.get())) {
         return false;
@@ -121,19 +114,23 @@ bool Stream::OpenStream(utfstring uri) {
     return true;
 }
 
-BufferPtr Stream::GetNextDecoderBuffer() {
+void Stream::OnBufferProcessedByPlayer(BufferPtr buffer) {
+    this->RecycleBuffer(buffer);
+}
+
+BufferPtr Stream::GetNextBufferFromDecoder() {
     /* get a spare buffer, then ask the decoder for some data */
-    BufferPtr buffer = this->NewBuffer();
+    BufferPtr buffer = this->GetEmptyBuffer();
     if(!this->decoder->GetBuffer(buffer.get())) {
         return BufferPtr();
     }
 
-    /* remember the samplerate so we can calculate the current time-position */
+    /* remember the sample rate so we can calculate the current time-position */
     if(!this->decoderSampleRate){
         this->decoderSampleRate = buffer->SampleRate();
     }
 
-    /* calculate the current offset, in samples */
+    /* offset, in samples */
     this->decoderSamplePosition += buffer->Samples();
 
     /* calculate the position (seconds) in the buffer */
@@ -142,19 +139,19 @@ BufferPtr Stream::GetNextDecoderBuffer() {
     return buffer;
 }
 
-BufferPtr Stream::GetNextBuffer() {
+BufferPtr Stream::GetNextProcessedOutputBuffer() {
     /* ask the decoder for the next buffer */
-    BufferPtr currentBuffer = this->GetNextDecoderBuffer();
+    BufferPtr currentBuffer = this->GetNextBufferFromDecoder();
 
     if(currentBuffer) {
         /* try to fill the buffer to its optimal size; if the decoder didn't return
         a full buffer, ask it for some more data. */
         bool moreBuffers = true;
         while (currentBuffer->Samples() < this->preferedBufferSampleSize && moreBuffers) {
-            BufferPtr bufferToAppend = this->GetNextDecoderBuffer();
+            BufferPtr bufferToAppend = this->GetNextBufferFromDecoder();
             if (bufferToAppend) {
                 currentBuffer->Append(bufferToAppend);
-                this->DeleteBuffer(bufferToAppend);
+                this->RecycleBuffer(bufferToAppend);
             }
             else {
                 moreBuffers = false;
@@ -163,7 +160,7 @@ BufferPtr Stream::GetNextBuffer() {
 
         /* let DSP plugins process the buffer */
         if (this->dsps.size() > 0) {
-            BufferPtr oldBuffer = this->NewBuffer();
+            BufferPtr oldBuffer = this->GetEmptyBuffer();
 
             for (Dsps::iterator dsp = this->dsps.begin(); dsp != this->dsps.end(); ++dsp) {
                 oldBuffer->CopyFormat(currentBuffer);
@@ -174,42 +171,31 @@ BufferPtr Stream::GetNextBuffer() {
                 }
             }
 
-            this->DeleteBuffer(oldBuffer);
+            this->RecycleBuffer(oldBuffer);
         }
-
     }
 
     return currentBuffer;
 }
 
-BufferPtr Stream::NewBuffer(){
+/* returns a previously used buffer, if one is available. otherwise, a
+new one will be allocated. */
+BufferPtr Stream::GetEmptyBuffer() {
     BufferPtr buffer;
-    if(!this->availableBuffers.empty()){
-        buffer  = this->availableBuffers.front();
-        this->availableBuffers.pop_front();
-    }else{
-        buffer  = Buffer::Create();
+    if (!this->recycledBuffers.empty()) {
+        buffer = this->recycledBuffers.front();
+        this->recycledBuffers.pop_front();
     }
+    else {
+        buffer = Buffer::Create();
+    }
+
     return buffer;
 }
 
-void Stream::DeleteBuffer(BufferPtr oldBuffer) {
-    this->availableBuffers.push_back(oldBuffer);
-}
-
-Stream::StreamHelperPtr Stream::Helper(){
-    static StreamHelperPtr helper;
-    if(!helper){
-        helper.reset(new Stream::StreamHelper());
-    }
-    return helper;
-}
-
-Stream::StreamHelper::StreamHelper() {
-    PluginFactory::DestroyDeleter<IDecoderFactory> typedef Deleter;
-
-    this->decoderFactories = PluginFactory::Instance()
-        .QueryInterface<IDecoderFactory, Deleter>("GetDecoderFactory");
+/* marks a used buffer as recycled so it can be re-used later. */
+void Stream::RecycleBuffer(BufferPtr oldBuffer) {
+    this->recycledBuffers.push_back(oldBuffer);
 }
 
 double Stream::DecoderProgress() {
@@ -223,4 +209,11 @@ double Stream::DecoderProgress() {
     }
 
     return 0;
+}
+
+void Stream::LoadDecoderPlugins() {
+    PluginFactory::DestroyDeleter<IDecoderFactory> typedef Deleter;
+
+    this->decoderFactories = PluginFactory::Instance()
+        .QueryInterface<IDecoderFactory, Deleter>("GetDecoderFactory");
 }

@@ -68,18 +68,21 @@ void WaveOutBuffer::Destroy() {
             this->header.dwFlags = WHDR_DONE;
         }
 
-        this->player->Notify();
+        this->player->Notify(); /* WaveOut should do this... whatever it is. */
         this->destroyed = true;
     }
 }
 
-WaveOutBuffer::~WaveOutBuffer() {
-    this->Destroy();
-    this->player->OnBufferProcessed(this->buffer);
+IPlayer* WaveOutBuffer::GetPlayer() const {
+    return this->player;
 }
 
-void WaveOutBuffer::OnWriteFinished() {
-    this->waveOut->OnBufferWrittenToOutput(this); /* implicitly deletes 'this' */
+IBuffer* WaveOutBuffer::GetWrappedBuffer() const {
+    return this->buffer;
+}
+
+WaveOutBuffer::~WaveOutBuffer() {
+    this->Destroy();
 }
 
 bool WaveOutBuffer::WriteToOutput() {

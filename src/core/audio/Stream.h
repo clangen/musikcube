@@ -30,6 +30,7 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
+
 #pragma once
 
 #include <core/config.h>
@@ -40,19 +41,14 @@
 #include <core/sdk/IDecoderFactory.h>
 
 #include <boost/shared_ptr.hpp>
-//#include <boost/thread/mutex.hpp>
 #include <list>
 
-//////////////////////////////////////////////////////////////////////////////
 namespace musik { namespace core { namespace audio {
-//////////////////////////////////////////////////////////////////////////////
 
-// Forward declare
 class  Stream;
 class  Player;
 typedef boost::shared_ptr<Stream> StreamPtr;
 
-//////////////////////////////////////////////////////////////////////////////
 class  Stream {
     public:
         static StreamPtr Create(unsigned int options=0);
@@ -63,71 +59,42 @@ class  Stream {
 
     private:
         Stream(unsigned int options);
+
     public:
         ~Stream(void);
 
-        BufferPtr NextBuffer();
-        bool PreCache();
-
+        BufferPtr GetNextProcessedOutputBuffer();
+        void OnBufferProcessedByPlayer(BufferPtr buffer);
         double SetPosition(double seconds);
-
-//        void SetMaxCacheLength(double seconds=1.5);
- //       void SetPreferedBufferSampleSize(long samples);
-
         bool OpenStream(utfstring uri);
         double DecoderProgress();
-        
 
     private:
-        BufferPtr GetNextDecoderBuffer();
-        BufferPtr GetNextBuffer();
-
-    private:
-        friend class Player;
-        BufferPtr NewBuffer();
-        void DeleteBuffer(BufferPtr oldBuffer);
+        void RecycleBuffer(BufferPtr oldBuffer);
+        BufferPtr GetNextBufferFromDecoder();
+        BufferPtr GetEmptyBuffer();
+        void LoadDecoderPlugins();
 
     private:        
+        typedef std::list<BufferPtr> BufferList;
+        typedef boost::shared_ptr<IDecoderFactory> DecoderFactoryPtr;
+        typedef std::vector<DecoderFactoryPtr> DecoderFactoryList;
+        typedef boost::shared_ptr<IDecoder> DecoderPtr;
+        typedef boost::shared_ptr<IDSP> DspPtr;
+        typedef std::vector<DspPtr> Dsps;
+
         long preferedBufferSampleSize;
         double maxCacheLength;
         unsigned int options;
-
         long decoderSampleRate;
         UINT64 decoderSamplePosition;
-
         utfstring uri;
         musik::core::filestreams::Factory::FileStreamPtr fileStream;
+        BufferList recycledBuffers;
 
-        typedef std::list<BufferPtr> BufferList;
-        BufferList availableBuffers;
-        
-//        boost::mutex bufferMutex;
-
-        /////////////////////////////
-        // Decoder stuff
-        typedef boost::shared_ptr<IDecoder> DecoderPtr;
+        DecoderFactoryList decoderFactories;
         DecoderPtr decoder;
-
-        /////////////////////////////
-        // DSP Stuff
-        typedef boost::shared_ptr<IDSP> DspPtr;
-        typedef std::vector<DspPtr> Dsps;
         Dsps dsps;
-
-        // Helper with decoder factories
-        class StreamHelper{
-            public:
-                typedef boost::shared_ptr<IDecoderFactory> DecoderFactoryPtr;
-                typedef std::vector<DecoderFactoryPtr> DecoderFactories;
-                DecoderFactories decoderFactories;
-
-                StreamHelper();
-
-        };
-
-        typedef boost::shared_ptr<StreamHelper> StreamHelperPtr;
-        static StreamHelperPtr Helper();
-
 };
 
 //////////////////////////////////////////////////////////////////////////////

@@ -47,14 +47,16 @@ class  IPlayer{
     public:
         //////////////////////////////////////////
         ///\brief
-        ///Release the specific buffer from the output
+        ///Release used by the output to notify the player a buffer has finished
+        ///processing. 
         //////////////////////////////////////////
-        virtual void OnBufferProcessed(IBuffer *buffer) = 0;
+        virtual void OnBufferProcessedByOutput(IBuffer *buffer) = 0;
 
         //////////////////////////////////////////
         ///\brief
-        ///Notifies the Player that there may be buffer 
+        ///Notifies the Player that there may be buffer. 
         ///ready to be released in the output plugin.
+        ///TOOD: ugh... what?
         //////////////////////////////////////////
         virtual void Notify() = 0; 
 };

@@ -43,7 +43,7 @@ WaveOut::WaveOut()
 }
 
 WaveOut::~WaveOut(){
-    this->ClearBuffers();
+    this->Stop();
 
     if (this->waveHandle != NULL) {
         waveOutClose(this->waveHandle);
@@ -65,7 +65,7 @@ void WaveOut::Resume() {
 
 void WaveOut::SetVolume(double volume) {
     if (this->waveHandle) {
-        DWORD newVolume = (DWORD)(volume * MAX_VOLUME);
+        DWORD newVolume = (DWORD) (volume * MAX_VOLUME);
         DWORD leftAndRight = (newVolume << 16) | newVolume;
         waveOutSetVolume(this->waveHandle, leftAndRight); 
     }
@@ -73,12 +73,12 @@ void WaveOut::SetVolume(double volume) {
     this->currentVolume = volume;
 }
 
-void WaveOut::ClearBuffers() {
+void WaveOut::Stop() {
     {
         boost::mutex::scoped_lock lock(this->mutex);
 
-        BufferList::iterator it = this->buffers.begin();
-        for (; it != this->buffers.end(); ++it) {
+        BufferList::iterator it = this->queuedBuffers.begin();
+        for ( ; it != this->queuedBuffers.end(); ++it) {
             (*it)->Destroy();
         }
     }
@@ -89,26 +89,28 @@ void WaveOut::ClearBuffers() {
 void WaveOut::OnBufferWrittenToOutput(WaveOutBuffer *buffer) {
     boost::mutex::scoped_lock lock(this->mutex);
 
-    bool found = false;
-    BufferList::iterator it = this->buffers.begin();
+    /* let the player know the output device is done with the buffer; the
+    Player ensures buffers are locked down and not freed/reused until it
+    gets confirmation it's been played (or the user stops playback) */
+    IPlayer* player = buffer->GetPlayer();
+    player->OnBufferProcessedByOutput(buffer->GetWrappedBuffer());
+    
+    /* remove it from our internal list. seems we should be using an 
+    std::set here instead of a vector. */
+    BufferList::iterator it = this->queuedBuffers.begin();
 
-    for( ; it != this->buffers.end() && !found ; ++it) {
+    for( ; it != this->queuedBuffers.end(); ++it) {
         if (it->get() == buffer) {
-            it = this->buffers.erase(it);
-            this->bufferRemovedCondition.notify_all();
+            it = this->queuedBuffers.erase(it);
             return;
         }
     }
 }
 
-void WaveOut::ReleaseBuffers() {
-    boost::mutex::scoped_lock lock(this->mutex);
-}
-
-bool WaveOut::PlayBuffer(IBuffer *buffer, IPlayer *player) {
+bool WaveOut::Play(IBuffer *buffer, IPlayer *player) {
     boost::mutex::scoped_lock lock(this->mutex);
 
-    size_t bufferCount = this->buffers.size();
+    size_t bufferCount = this->queuedBuffers.size();
 
     /* if we have a different format, return false and wait for the pending 
     buffers to be written to the output device. */
@@ -132,7 +134,7 @@ bool WaveOut::PlayBuffer(IBuffer *buffer, IPlayer *player) {
         WaveOutBufferPtr waveBuffer(new WaveOutBuffer(this, buffer, player));
 
         if (waveBuffer->WriteToOutput()) {
-            this->buffers.push_back(waveBuffer);
+            this->queuedBuffers.push_back(waveBuffer);
             return true;
         }
     }
@@ -216,6 +218,7 @@ void CALLBACK WaveOut::WaveCallback(
 {
     if (msg == WOM_DONE) {
 		LPWAVEHDR waveoutHeader = (LPWAVEHDR) dw1;
-        ((WaveOutBuffer*) waveoutHeader->dwUser)->OnWriteFinished();
+        WaveOutBuffer* buffer = (WaveOutBuffer*) waveoutHeader->dwUser;
+        ((WaveOut*) dwUser)->OnBufferWrittenToOutput(buffer);
     }
 }

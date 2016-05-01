@@ -43,92 +43,86 @@
 #include <boost/thread/condition.hpp>
 #include <sigslot/sigslot.h>
 
-//////////////////////////////////////////////////////////////////////////////
 namespace musik { namespace core { namespace audio {
-//////////////////////////////////////////////////////////////////////////////
 
-// Forward declare
-class  Player;
-class  Transport;
-typedef boost::shared_ptr<Player> PlayerPtr;
+    class  Player;
+    class  Transport;
+    typedef boost::shared_ptr<Player> PlayerPtr;
 
-//////////////////////////////////////////////////////////////////////////////
-class  Player : public IPlayer {
-    public:
-        typedef boost::shared_ptr<IOutput> OutputPtr;
+    class Player : public IPlayer {
+        public:
+            typedef boost::shared_ptr<IOutput> OutputPtr;
 
-        static PlayerPtr Create(utfstring &url,OutputPtr *output=&OutputPtr());
+            static PlayerPtr Create(utfstring &url,OutputPtr *output=&OutputPtr());
     
-    private:
-        Player(utfstring &url,OutputPtr *output);
+        private:
+            Player(utfstring &url,OutputPtr *output);
 
-    public:
-        ~Player(void);
+        public:
+            ~Player(void);
 
-        virtual void OnBufferProcessed(IBuffer *buffer);
-        virtual void Notify(); 
+            virtual void OnBufferProcessedByOutput(IBuffer *buffer);
+            virtual void Notify(); 
 
-        void Play();
-        void Stop();
-        void Pause();
-        void Resume();
+            void Play();
+            void Stop();
+            void Pause();
+            void Resume();
 
-        double Position();
-        void SetPosition(double seconds);
+            double Position();
+            void SetPosition(double seconds);
 
-        double Volume();
-        void SetVolume(double volume);
+            double Volume();
+            void SetVolume(double volume);
 
-        bool Exited();
+            bool Exited();
 
-    public:
-        typedef sigslot::signal1<Player*> PlayerEvent;
-        PlayerEvent PlaybackStarted;
-        PlayerEvent PlaybackAlmostEnded;
-        PlayerEvent PlaybackEnded;
-        PlayerEvent PlaybackError;
+        public:
+            typedef sigslot::signal1<Player*> PlayerEvent;
+            PlayerEvent PlaybackStarted;
+            PlayerEvent PlaybackAlmostEnded;
+            PlayerEvent PlaybackEnded;
+            PlayerEvent PlaybackError;
 
-        OutputPtr output;
+            OutputPtr output;
 
-    private:
-        void ThreadLoop();
-        bool PreBuffer();
-        int State();
-        bool BufferQueueEmpty();
-        void ReleaseAllBuffers();
+        private:
+            void ThreadLoop();
+            bool PreBuffer();
+            int State();
+            bool BufferQueueEmpty();
+            void ReleaseAllBuffers();
 
-    protected:
-        friend class Transport;
-        utfstring url;
+        protected:
+            friend class Transport;
+            utfstring url;
 
-    private:
-        typedef boost::scoped_ptr<boost::thread> ThreadPtr;
-        typedef std::list<BufferPtr> BufferList;
-        typedef std::set<BufferPtr> BufferSet;
+        private:
+            typedef boost::scoped_ptr<boost::thread> ThreadPtr;
+            typedef std::list<BufferPtr> BufferList;
+            typedef std::set<BufferPtr> BufferSet;
 
-        typedef enum {
-            Precache = 0,
-            Playing = 1,
-            Quit = 2
-        } States;
+            typedef enum {
+                Precache = 0,
+                Playing = 1,
+                Quit = 2
+            } States;
 
-        StreamPtr stream;
-        ThreadPtr thread;
-        BufferList bufferQueue;
-        BufferList lockedBuffers;
+            StreamPtr stream;
+            ThreadPtr thread;
+            BufferList bufferQueue;
+            BufferList lockedBuffers;
 
-        boost::mutex mutex;
-        boost::condition waitCondition;
+            boost::mutex mutex;
+            boost::condition waitCondition;
 
-        double volume;
-        double currentPosition;
-        double setPosition;
-        long totalBufferSize;
-        long maxBufferSize;
-        int state;
-};
+            double volume;
+            double currentPosition;
+            double setPosition;
+            long totalBufferSize;
+            long maxBufferSize;
+            int state;
+    };
 
-//////////////////////////////////////////////////////////////////////////////
 } } }
-//////////////////////////////////////////////////////////////////////////////
 

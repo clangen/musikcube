@@ -54,7 +54,8 @@ public:
 
     void Destroy();
     bool WriteToOutput();
-    void OnWriteFinished();
+    IPlayer* GetPlayer() const;
+    IBuffer* GetWrappedBuffer() const;
 
 private:
     void Initialize();
