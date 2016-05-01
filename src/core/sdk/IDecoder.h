@@ -56,12 +56,6 @@ class  IDecoder{
 
         //////////////////////////////////////////
         ///\brief
-        ///Get the length of the track in seconds
-        //////////////////////////////////////////
-        //virtual double Length() = 0;
-
-        //////////////////////////////////////////
-        ///\brief
         ///Set the position in the source (in seconds)
         ///
         ///\returns

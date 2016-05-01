@@ -62,7 +62,6 @@ namespace musik { namespace core { namespace audio {
             ~Player(void);
 
             virtual void OnBufferProcessedByOutput(IBuffer *buffer);
-            virtual void Notify(); 
 
             void Play();
             void Stop();
@@ -90,7 +89,6 @@ namespace musik { namespace core { namespace audio {
             void ThreadLoop();
             bool PreBuffer();
             int State();
-            bool BufferQueueEmpty();
             void ReleaseAllBuffers();
 
         protected:
@@ -114,7 +112,7 @@ namespace musik { namespace core { namespace audio {
             BufferList lockedBuffers;
 
             boost::mutex mutex;
-            boost::condition waitCondition;
+            boost::condition writeToOutputCondition;
 
             double volume;
             double currentPosition;

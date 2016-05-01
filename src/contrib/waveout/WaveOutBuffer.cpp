@@ -68,7 +68,6 @@ void WaveOutBuffer::Destroy() {
             this->header.dwFlags = WHDR_DONE;
         }
 
-        this->player->Notify(); /* WaveOut should do this... whatever it is. */
         this->destroyed = true;
     }
 }

@@ -43,7 +43,7 @@ namespace musik { namespace core { namespace audio {
 ///\brief
 ///Interface for the audio::Player to make IOuput plugins be able to make callbacks
 //////////////////////////////////////////
-class  IPlayer{
+class IPlayer {
     public:
         //////////////////////////////////////////
         ///\brief
@@ -51,14 +51,6 @@ class  IPlayer{
         ///processing. 
         //////////////////////////////////////////
         virtual void OnBufferProcessedByOutput(IBuffer *buffer) = 0;
-
-        //////////////////////////////////////////
-        ///\brief
-        ///Notifies the Player that there may be buffer. 
-        ///ready to be released in the output plugin.
-        ///TOOD: ugh... what?
-        //////////////////////////////////////////
-        virtual void Notify() = 0; 
 };
 
 //////////////////////////////////////////////////////////////////////////////

@@ -115,7 +115,7 @@ bool WaveOut::Play(IBuffer *buffer, IPlayer *player) {
     /* if we have a different format, return false and wait for the pending 
     buffers to be written to the output device. */
     if (bufferCount > 0) {
-        bool formatChanged =  
+        bool formatChanged =
             this->currentChannels != buffer->Channels() || 
             this->currentSampleRate != buffer->SampleRate();
 

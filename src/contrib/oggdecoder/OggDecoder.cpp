@@ -50,7 +50,7 @@ int OggDecoder::OggSeek(void *datasource, ogg_int64_t offset, int whence) {
         case SEEK_CUR:
             {
                 long currentPosition = ((OggDecoder*)datasource)->fileStream->Position();
-                if(((OggDecoder*)datasource)->fileStream->SetPosition(currentPosition+(long) offset)) {
+                if(((OggDecoder*) datasource)->fileStream->SetPosition(currentPosition + (long) offset)) {
                     return 0;
                 }
             }
@@ -63,23 +63,24 @@ int OggDecoder::OggSeek(void *datasource, ogg_int64_t offset, int whence) {
                 }
             }
             break;
-        default:
+        case SEEK_SET:
             {
                 if(((OggDecoder*) datasource)->fileStream->SetPosition((long) offset)) {
                     return 0;
                 }
             }
+            break;
     }
 
     return -1;
 }
 
 long OggDecoder::OggTell(void *datasource) {
-    return ((OggDecoder*)datasource)->fileStream->Position();
+    return ((OggDecoder*) datasource)->fileStream->Position();
 }
 
 int OggDecoder::OggClose(void *datasource) {
-    if(((OggDecoder*)datasource)->fileStream->Close()) {
+    if(((OggDecoder*) datasource)->fileStream->Close()) {
         return 0;
     }
     return -1;

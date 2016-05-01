@@ -134,7 +134,7 @@ BufferPtr Stream::GetNextBufferFromDecoder() {
     this->decoderSamplePosition += buffer->Samples();
 
     /* calculate the position (seconds) in the buffer */
-    buffer->position = ((double)this->decoderSamplePosition) / ((double)this->decoderSampleRate);
+    buffer->position = ((double) this->decoderSamplePosition) / ((double) this->decoderSampleRate);
 
     return buffer;
 }

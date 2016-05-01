@@ -81,7 +81,7 @@ Player::~Player() {
 void Player::Play() {
     boost::mutex::scoped_lock lock(this->mutex);
     this->state = Player::Playing;
-    this->waitCondition.notify_all();
+    this->writeToOutputCondition.notify_all();
 }
 
 void Player::Stop() {
@@ -89,6 +89,7 @@ void Player::Stop() {
         boost::mutex::scoped_lock lock(this->mutex);
         this->state = Player::Quit;
         this->bufferQueue.clear();
+        this->writeToOutputCondition.notify_all();
     }
     
     if (this->output) {
@@ -160,7 +161,7 @@ void Player::ThreadLoop() {
         {
             boost::mutex::scoped_lock lock(this->mutex);
             while (this->state == Precache) {
-                this->waitCondition.wait(lock);
+                this->writeToOutputCondition.wait(lock);
             }
         }
 
@@ -168,6 +169,8 @@ void Player::ThreadLoop() {
 
         /* we're ready to go.... */
         bool finished = false;
+        BufferPtr buffer;
+
         while(!finished && !this->Exited()) {
             /* see if we've been asked to seek since the last sample was
             played. if we have, clear our output buffer and seek the 
@@ -184,21 +187,22 @@ void Player::ThreadLoop() {
                 }
             }
 
-            BufferPtr buffer;
-
-            /* the buffer queue may already have some buffers available if it was
-            prefetched. */
-            if (!this->BufferQueueEmpty()) {
+            /* let's see if we can find some samples to play */
+            if (!buffer) {
                 boost::mutex::scoped_lock lock(this->mutex);
-                buffer = this->bufferQueue.front();
-            }
-            /* otherwise, we need to grab a buffer from the stream and add it to the queue */
-			else {
-                buffer  = this->stream->GetNextProcessedOutputBuffer();
-                if (buffer) {
-                    boost::mutex::scoped_lock lock(this->mutex);
-                    this->bufferQueue.push_back(buffer);
-                    this->totalBufferSize += buffer->Bytes();
+
+                /* the buffer queue may already have some available if it was prefetched. */
+                if (!this->bufferQueue.empty()) {
+                    buffer = this->bufferQueue.front();
+                    this->bufferQueue.pop_front();
+                }
+                /* otherwise, we need to grab a buffer from the stream and add it to the queue */
+                else {
+                    buffer = this->stream->GetNextProcessedOutputBuffer();
+
+                    if (buffer) {
+                        this->totalBufferSize += buffer->Bytes();
+                    }
                 }
             }
 
@@ -213,17 +217,17 @@ void Player::ThreadLoop() {
                     know it's done with it. */
                     this->lockedBuffers.push_back(buffer);
 
-                    /* TODO: don't understand this yet...  seems like every time we enqueue a
-                    new buffer to the output we remove the old one that was at the front of
-                    */
-                    if (!this->bufferQueue.empty()) {
-                        this->bufferQueue.pop_front();
-
-                        // Set currentPosition
-                        if (this->lockedBuffers.size() == 1) {
-                            this->currentPosition = buffer->Position();
-                        }
+                    if (this->lockedBuffers.size() == 1) {
+                        this->currentPosition = buffer->Position();
                     }
+
+                    buffer.reset(); /* important! we're done with this one locally. */
+                }
+                else {
+                    /* the output device queue is full. we should block and wait until
+                    the output lets us know that it needs more data */
+                    boost::mutex::scoped_lock lock(this->mutex);
+                    writeToOutputCondition.wait(this->mutex);
                 }
             }
             /* if we're unable to obtain a buffer, it means we're out of data and the
@@ -268,11 +272,6 @@ void Player::ReleaseAllBuffers() {
     this->lockedBuffers.empty();
 }
 
-bool Player::BufferQueueEmpty() {
-    boost::mutex::scoped_lock lock(this->mutex);
-    return this->bufferQueue.empty();
-}
-
 bool Player::PreBuffer() {
     /* don't prebuffer if the buffer is already full */
     if (this->totalBufferSize > this->maxBufferSize) {
@@ -285,7 +284,6 @@ bool Player::PreBuffer() {
             boost::mutex::scoped_lock lock(this->mutex);
             this->bufferQueue.push_back(newBuffer);
             this->totalBufferSize += newBuffer->Bytes();
-            this->waitCondition.notify_all(); /* TODO: what's waiting on this? */
         }
 
         return true;
@@ -317,16 +315,13 @@ void Player::OnBufferProcessedByOutput(IBuffer *buffer) {
                 this->currentPosition = this->lockedBuffers.front()->Position();
             }
 
-            this->waitCondition.notify_all(); /* TODO: what's waiting on this? */
+            /* if the output device's internal buffers are full, it will stop
+            accepting new samples. now that a buffer has been processed, we can
+            try to enqueue another sample. the thread loop blocks on this condition */
+            this->writeToOutputCondition.notify_all();
 
             return;
         }
     }
 }
-
-void Player::Notify() {
-    this->waitCondition.notify_all();
-}
-
-
 
