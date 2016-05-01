@@ -108,8 +108,11 @@ namespace musik { namespace core { namespace audio {
 
             StreamPtr stream;
             ThreadPtr thread;
-            BufferList bufferQueue;
             BufferList lockedBuffers;
+
+            BufferList prebufferQueue;
+            long prebufferSizeBytes;
+            long maxPrebufferSizeBytes;
 
             boost::mutex mutex;
             boost::condition writeToOutputCondition;
@@ -117,8 +120,6 @@ namespace musik { namespace core { namespace audio {
             double volume;
             double currentPosition;
             double setPosition;
-            long totalBufferSize;
-            long maxBufferSize;
             int state;
     };
 

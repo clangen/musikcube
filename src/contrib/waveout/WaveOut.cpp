@@ -34,21 +34,26 @@
 #include "WaveOut.h"
 
 #define MAX_VOLUME 0xFFFF
+#define MAX_BUFFERS 32
+
+static void notifyBufferProcessed(WaveOutBuffer *buffer) {
+    /* let the player know the output device is done with the buffer; the
+    Player ensures buffers are locked down and not freed/reused until it
+    gets confirmation it's been played (or the user stops playback) */
+    IPlayer* player = buffer->GetPlayer();
+    player->OnBufferProcessedByOutput(buffer->GetWrappedBuffer());
+}
 
 WaveOut::WaveOut()
 : waveHandle(NULL)
-, maxBuffers(32)
 , currentVolume(1.0)
+, threadId(0)
+, threadHandle(NULL)
 {
 }
 
-WaveOut::~WaveOut(){
+WaveOut::~WaveOut() {
     this->Stop();
-
-    if (this->waveHandle != NULL) {
-        waveOutClose(this->waveHandle);
-        this->waveHandle = NULL;
-    }
 }
 
 void WaveOut::Destroy() {
@@ -74,31 +79,40 @@ void WaveOut::SetVolume(double volume) {
 }
 
 void WaveOut::Stop() {
-    {
-        boost::mutex::scoped_lock lock(this->mutex);
+    boost::recursive_mutex::scoped_lock lock(this->outputDeviceMutex);
 
-        BufferList::iterator it = this->queuedBuffers.begin();
-        for ( ; it != this->queuedBuffers.end(); ++it) {
-            (*it)->Destroy();
-        }
+    if (this->waveHandle != NULL) {
+        waveOutReset(this->waveHandle);
     }
 
-    waveOutReset(this->waveHandle);
+    /* stop the thread so nothing else is processed */
+    this->StopWaveOutThread();
+
+    /* reset will free the buffers, close deallocs */
+    if (this->waveHandle != NULL) {
+        waveOutClose(this->waveHandle);
+        this->waveHandle = NULL;
+    }
+
+    /* notify and free any pending buffers, the Player in the core
+    will be waiting for all pending buffers to be processed. */
+    if (this->queuedBuffers.size() > 0) {
+        BufferList::iterator it = this->queuedBuffers.begin();
+        for (; it != this->queuedBuffers.end(); ++it) {
+            notifyBufferProcessed((*it).get());
+        }
+
+        this->queuedBuffers.clear();
+    }
 }
 
 void WaveOut::OnBufferWrittenToOutput(WaveOutBuffer *buffer) {
-    boost::mutex::scoped_lock lock(this->mutex);
+    boost::recursive_mutex::scoped_lock lock(this->bufferQueueMutex);
 
-    /* let the player know the output device is done with the buffer; the
-    Player ensures buffers are locked down and not freed/reused until it
-    gets confirmation it's been played (or the user stops playback) */
-    IPlayer* player = buffer->GetPlayer();
-    player->OnBufferProcessedByOutput(buffer->GetWrappedBuffer());
+    notifyBufferProcessed(buffer);
     
-    /* remove it from our internal list. seems we should be using an 
-    std::set here instead of a vector. */
+    /* removed the buffer. it should be at the front of the queue. */
     BufferList::iterator it = this->queuedBuffers.begin();
-
     for( ; it != this->queuedBuffers.end(); ++it) {
         if (it->get() == buffer) {
             it = this->queuedBuffers.erase(it);
@@ -107,16 +121,35 @@ void WaveOut::OnBufferWrittenToOutput(WaveOutBuffer *buffer) {
     }
 }
 
+void WaveOut::StartWaveOutThread() {
+    this->threadHandle = CreateThread(
+        NULL,
+        0,
+        &WaveOut::WaveCallbackThreadProc,
+        this,
+        NULL,
+        &this->threadId);
+}
+
+void WaveOut::StopWaveOutThread() {
+    if (this->threadHandle != NULL) {
+        PostThreadMessage(this->threadId, WM_QUIT, 0, 0);
+        WaitForSingleObject(this->threadHandle, INFINITE);
+        this->threadHandle = NULL;
+        this->threadId = 0;
+    }
+}
+
 bool WaveOut::Play(IBuffer *buffer, IPlayer *player) {
-    boost::mutex::scoped_lock lock(this->mutex);
+    boost::recursive_mutex::scoped_lock lock(this->bufferQueueMutex);
 
-    size_t bufferCount = this->queuedBuffers.size();
+    size_t bufferCount = bufferCount = this->queuedBuffers.size();
 
-    /* if we have a different format, return false and wait for the pending 
+    /* if we have a different format, return false and wait for the pending
     buffers to be written to the output device. */
     if (bufferCount > 0) {
         bool formatChanged =
-            this->currentChannels != buffer->Channels() || 
+            this->currentChannels != buffer->Channels() ||
             this->currentSampleRate != buffer->SampleRate();
 
         if (formatChanged) {
@@ -124,7 +157,7 @@ bool WaveOut::Play(IBuffer *buffer, IPlayer *player) {
         }
     }
 
-    if (this->maxBuffers > bufferCount) {
+    if (MAX_BUFFERS > bufferCount) {
         /* ensure the output device itself (the WAVEOUT) is configured correctly 
         for the new buffer */
         this->SetFormat(buffer);
@@ -147,14 +180,13 @@ void WaveOut::SetFormat(IBuffer *buffer) {
         this->currentSampleRate != buffer->SampleRate() ||
         this->waveHandle == NULL)
     {
+        boost::recursive_mutex::scoped_lock lock(this->outputDeviceMutex);
+
         this->currentChannels = buffer->Channels();
         this->currentSampleRate = buffer->SampleRate();
 
-        /* format changed, kill the old output device */
-        if (this->waveHandle != NULL) {
-            waveOutClose(this->waveHandle);
-            this->waveHandle = NULL;
-        }
+        this->Stop();
+        this->StartWaveOutThread();
 
         /* reset, and configure speaker output */
 	    ZeroMemory(&this->waveFormat, sizeof(this->waveFormat));
@@ -201,9 +233,9 @@ void WaveOut::SetFormat(IBuffer *buffer) {
             &this->waveHandle, 
             WAVE_MAPPER, 
             (WAVEFORMATEX*) &this->waveFormat, 
-            (DWORD_PTR) WaveCallback, 
+            this->threadId, 
             (DWORD_PTR) this, 
-            CALLBACK_FUNCTION);
+            CALLBACK_THREAD);
 
         if (openResult != MMSYSERR_NOERROR) {
             throw;
@@ -213,12 +245,30 @@ void WaveOut::SetFormat(IBuffer *buffer) {
     }
 }
 
-void CALLBACK WaveOut::WaveCallback(
-    HWAVEOUT waveHandle, UINT msg, DWORD_PTR dwUser, DWORD_PTR dw1, DWORD dw2)
-{
-    if (msg == WOM_DONE) {
-		LPWAVEHDR waveoutHeader = (LPWAVEHDR) dw1;
-        WaveOutBuffer* buffer = (WaveOutBuffer*) waveoutHeader->dwUser;
-        ((WaveOut*) dwUser)->OnBufferWrittenToOutput(buffer);
+DWORD WINAPI WaveOut::WaveCallbackThreadProc(LPVOID params) {
+    WaveOut* waveOut = (WaveOut*) params;
+
+    MSG msg;
+
+    /* create message queue implicitly. */
+    PeekMessage(&msg, NULL, WM_USER, WM_USER, PM_NOREMOVE);
+
+    bool stop = false;
+    while (!stop && GetMessage(&msg, NULL, 0, 0)) {
+        switch (msg.message) {
+            case WOM_DONE: {
+                LPWAVEHDR waveoutHeader = (LPWAVEHDR) msg.lParam;
+                WaveOutBuffer* buffer = (WaveOutBuffer*) waveoutHeader->dwUser;
+                waveOut->OnBufferWrittenToOutput(buffer);
+                break;
+            }
+
+            case WM_QUIT: {
+                stop = true;
+                break;
+            }
+        }
     }
+
+    return 0;
 }

@@ -49,7 +49,7 @@ typedef fpos_t  stdioPositionType;
 typedef fpos_t stdioPositionType;
 #endif
 
-using namespace musik::core::filestreams;
+using namespace musik::core::io;
 
 LocalFileStream::LocalFileStream()
 : file(NULL)

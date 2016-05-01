@@ -178,8 +178,8 @@
     <ClInclude Include="sdk\IDecoder.h" />
     <ClInclude Include="sdk\IDecoderFactory.h" />
     <ClInclude Include="sdk\IDSP.h" />
-    <ClInclude Include="sdk\IFileStream.h" />
-    <ClInclude Include="sdk\IFileStreamFactory.h" />
+    <ClInclude Include="sdk\IDataStream.h" />
+    <ClInclude Include="sdk\IDataStreamFactory.h" />
     <ClInclude Include="sdk\IMetaDataReader.h" />
     <ClInclude Include="sdk\IOutput.h" />
     <ClInclude Include="sdk\IPlayer.h" />

@@ -41,7 +41,7 @@
 #include <core/PluginFactory.h>
 #include <core/filestreams/LocalFileStream.h>
 
-using namespace musik::core::filestreams;
+using namespace musik::core::io;
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -49,47 +49,46 @@ Factory Factory::sInstance;
 
 Factory::Factory(){
 
-    // Get all IFileStreamFactory plugins
-    typedef IFileStreamFactory PluginType;
+    // Get all IDataStreamFactory plugins
+    typedef IDataStreamFactory PluginType;
     typedef musik::core::PluginFactory::DestroyDeleter<PluginType> Deleter;
 
-    this->fileStreamFactories   =
-        musik::core::PluginFactory::Instance().QueryInterface<PluginType, Deleter>("GetFileStreamFactory");
+    this->dataStreamFactories = musik::core::PluginFactory::Instance().QueryInterface<PluginType, Deleter>("GetFileStreamFactory");
 }
 
 
-Factory::FileStreamPtr Factory::OpenFile(const utfchar *uri){
+Factory::DataStreamPtr Factory::OpenUri(const utfchar *uri){
 #ifdef _DEBUG
     std::cerr << "Factory::OpenFile(" << uri << ")" << std::endl;
 #endif
-    typedef musik::core::PluginFactory::DestroyDeleter<IFileStream> StreamDeleter;
+    typedef musik::core::PluginFactory::DestroyDeleter<IDataStream> StreamDeleter;
 
     if(uri){
-        for(FileStreamFactoryVector::iterator factory=sInstance.fileStreamFactories.begin();factory!=sInstance.fileStreamFactories.end();++factory){
+        for(DataStreamFactoryVector::iterator factory=sInstance.dataStreamFactories.begin();factory!=sInstance.dataStreamFactories.end();++factory){
             if( (*factory)->CanReadFile(uri) ){
-                IFileStream* fileStream( (*factory)->OpenFile(uri) );
+                IDataStream* fileStream( (*factory)->OpenFile(uri) );
                 if(fileStream){
-                    return FileStreamPtr(fileStream,StreamDeleter());
+                    return DataStreamPtr(fileStream,StreamDeleter());
                 }else{
-                    return FileStreamPtr();
+                    return DataStreamPtr();
                 }
             }
         }
 
         // If non of the plugins match, lets create a regular file stream
-        FileStreamPtr regularFile( new LocalFileStream(),StreamDeleter() );
+        DataStreamPtr regularFile( new LocalFileStream(),StreamDeleter() );
         if(regularFile->Open(uri)){
             return regularFile;
         }
     }
-    return FileStreamPtr();
+    return DataStreamPtr();
 }
 
 bool Factory::IsLocalFileStream(const utfchar *uri){
-    typedef musik::core::PluginFactory::DestroyDeleter<IFileStream> StreamDeleter;
+    typedef musik::core::PluginFactory::DestroyDeleter<IDataStream> StreamDeleter;
 
     if(uri){
-        for(FileStreamFactoryVector::iterator factory=sInstance.fileStreamFactories.begin();factory!=sInstance.fileStreamFactories.end();++factory){
+        for(DataStreamFactoryVector::iterator factory=sInstance.dataStreamFactories.begin();factory!=sInstance.dataStreamFactories.end();++factory){
             if( (*factory)->CanReadFile(uri) ){
                 return false;
             }

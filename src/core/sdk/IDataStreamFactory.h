@@ -37,13 +37,13 @@
 #pragma once
 
 #include <core/config.h>
-#include "IFileStream.h"
+#include "IDataStream.h"
 
 //////////////////////////////////////////////////////////////////////////////
-namespace musik{ namespace core{ namespace filestreams{
+namespace musik{ namespace core{ namespace io {
 //////////////////////////////////////////////////////////////////////////////
 
-class  IFileStreamFactory{
+class IDataStreamFactory{
     public:
 
         //////////////////////////////////////////
@@ -66,9 +66,9 @@ class  IFileStreamFactory{
         ///Filename to open
         ///
         ///\returns
-        ///IFileStream object or NULL on fail
+        ///IDataStream object or NULL on fail
         //////////////////////////////////////////
-        virtual IFileStream* OpenFile(const utfchar *filename,unsigned int options=0)=0;
+        virtual IDataStream* OpenFile(const utfchar *filename,unsigned int options=0)=0;
 
         //////////////////////////////////////////
         ///\brief

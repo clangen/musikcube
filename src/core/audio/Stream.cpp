@@ -41,10 +41,10 @@ using namespace musik::core::audio;
 using musik::core::PluginFactory;
 
 Stream::Stream(unsigned int options)
- :preferedBufferSampleSize(4096)
- ,options(options)
- ,decoderSampleRate(0)
- ,decoderSamplePosition(0)
+: preferedBufferSampleSize(4096)
+, options(options)
+, decoderSampleRate(0)
+, decoderSamplePosition(0)
 {
     if ((this->options & NoDSP) == 0) {
         typedef PluginFactory::DestroyDeleter<IDSP> Deleter;
@@ -54,29 +54,30 @@ Stream::Stream(unsigned int options)
     this->LoadDecoderPlugins();
 }
 
-Stream::~Stream(void) {
+Stream::~Stream() {
 }
 
 StreamPtr Stream::Create(unsigned int options) {
     return StreamPtr(new Stream(options));
 }
 
-double Stream::SetPosition(double seconds) {
-    double newPosition = this->decoder->SetPosition(seconds,0);
+double Stream::SetPosition(double requestedSeconds) {
+    double actualSeconds = this->decoder->SetPosition(requestedSeconds, 0);
 
-    if (newPosition!=-1) {
-        this->decoderSamplePosition = (UINT64)(newPosition*((double)this->decoderSampleRate));
+    if (actualSeconds != -1) {
+        double rate = (double) this->decoderSampleRate;
+        this->decoderSamplePosition = (UINT64)(actualSeconds * rate);
     }
 
-    return newPosition;
+    return actualSeconds;
 }
 
 bool Stream::OpenStream(utfstring uri) {
     /* use our file stream abstraction to open the data at the 
     specified URI */
-    this->fileStream = musik::core::filestreams::Factory::OpenFile(uri.c_str());
+    this->dataStream = musik::core::io::Factory::OpenUri(uri.c_str());
 
-    if (!this->fileStream) {
+    if (!this->dataStream) {
         return false;
     }
 
@@ -85,8 +86,8 @@ bool Stream::OpenStream(utfstring uri) {
     DecoderFactoryList::iterator end = this->decoderFactories.end();
     DecoderFactoryPtr decoderFactory;
 
-    for( ; factories != end && !decoderFactory; ++factories) {
-        if((*factories)->CanHandle(this->fileStream->Type())){
+    for ( ; factories != end && !decoderFactory; ++factories) {
+        if ((*factories)->CanHandle(this->dataStream->Type())) {
             decoderFactory  = (*factories);
         }
     }
@@ -107,7 +108,7 @@ bool Stream::OpenStream(utfstring uri) {
     typedef PluginFactory::DestroyDeleter<IDecoder> Deleter;
 
     this->decoder.reset(decoder, Deleter());
-    if (!this->decoder->Open(this->fileStream.get())) {
+    if (!this->decoder->Open(this->dataStream.get())) {
         return false;
     }
 
@@ -121,12 +122,12 @@ void Stream::OnBufferProcessedByPlayer(BufferPtr buffer) {
 BufferPtr Stream::GetNextBufferFromDecoder() {
     /* get a spare buffer, then ask the decoder for some data */
     BufferPtr buffer = this->GetEmptyBuffer();
-    if(!this->decoder->GetBuffer(buffer.get())) {
-        return BufferPtr();
+    if (!this->decoder->GetBuffer(buffer.get())) {
+        return BufferPtr(); /* return NULL */
     }
 
     /* remember the sample rate so we can calculate the current time-position */
-    if(!this->decoderSampleRate){
+    if (!this->decoderSampleRate) {
         this->decoderSampleRate = buffer->SampleRate();
     }
 
@@ -199,9 +200,9 @@ void Stream::RecycleBuffer(BufferPtr oldBuffer) {
 }
 
 double Stream::DecoderProgress() {
-    if (this->fileStream) {
-        long fileSize = this->fileStream->Filesize();
-        long filePosition = this->fileStream->Position();
+    if (this->dataStream) {
+        long fileSize = this->dataStream->Filesize();
+        long filePosition = this->dataStream->Position();
 
         if (fileSize && filePosition) {
             return ((double) filePosition) / ((double) fileSize);

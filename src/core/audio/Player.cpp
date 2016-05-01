@@ -43,18 +43,18 @@ PlayerPtr Player::Create(utfstring &url, OutputPtr *output) {
 }
 
 Player::Player(utfstring &url, OutputPtr *output)
- :volume(1.0)
- ,state(Player::Precache)
- ,url(url)
- ,totalBufferSize(0)
- ,maxBufferSize(2000000)
- ,currentPosition(0)
- ,setPosition(-1)
+: volume(1.0)
+, state(Player::Precache)
+, url(url)
+, prebufferSizeBytes(0)
+, maxPrebufferSizeBytes(2000000)
+, currentPosition(0)
+, setPosition(-1)
 {
     if (*output) {
         this->output = *output;
     }
-    else{
+    else {
         /* if no output is specified, find all output plugins, and select the first one. */
         typedef std::vector<OutputPtr> OutputVector;
 
@@ -88,7 +88,7 @@ void Player::Stop() {
     {
         boost::mutex::scoped_lock lock(this->mutex);
         this->state = Player::Quit;
-        this->bufferQueue.clear();
+        this->prebufferQueue.clear();
         this->writeToOutputCondition.notify_all();
     }
     
@@ -171,20 +171,27 @@ void Player::ThreadLoop() {
         bool finished = false;
         BufferPtr buffer;
 
-        while(!finished && !this->Exited()) {
+        while (!finished && !this->Exited()) {
             /* see if we've been asked to seek since the last sample was
-            played. if we have, clear our output buffer and seek the 
+            played. if we have, clear our output buffer and seek the
             stream. */
             if (this->setPosition != -1) {
                 this->output->Stop();
+
+                while (this->lockedBuffers.size() > 0) {
+                    writeToOutputCondition.wait(this->mutex);
+                }
+
                 this->stream->SetPosition(this->setPosition);
 
                 {
                     boost::mutex::scoped_lock lock(this->mutex);
-                    this->bufferQueue.clear();
                     this->setPosition = -1;
-                    this->totalBufferSize = 0;
+                    this->prebufferQueue.clear();
+                    this->prebufferSizeBytes = 0;
                 }
+
+                buffer.reset();
             }
 
             /* let's see if we can find some samples to play */
@@ -192,21 +199,18 @@ void Player::ThreadLoop() {
                 boost::mutex::scoped_lock lock(this->mutex);
 
                 /* the buffer queue may already have some available if it was prefetched. */
-                if (!this->bufferQueue.empty()) {
-                    buffer = this->bufferQueue.front();
-                    this->bufferQueue.pop_front();
+                if (!this->prebufferQueue.empty()) {
+                    buffer = this->prebufferQueue.front();
+                    this->prebufferQueue.pop_front();
+                    this->prebufferSizeBytes -= buffer->Bytes();
                 }
                 /* otherwise, we need to grab a buffer from the stream and add it to the queue */
                 else {
                     buffer = this->stream->GetNextProcessedOutputBuffer();
-
-                    if (buffer) {
-                        this->totalBufferSize += buffer->Bytes();
-                    }
                 }
             }
 
-            /* if we have a decoded, processed buffer available. let's try to send it to 
+            /* if we have a decoded, processed buffer available. let's try to send it to
             the output device. */
             if (buffer) {
                 if (this->output->Play(buffer.get(), this)) {
@@ -232,7 +236,7 @@ void Player::ThreadLoop() {
             }
             /* if we're unable to obtain a buffer, it means we're out of data and the
             player is finished. terminate the thread. */
-			else {
+            else {
                 finished = true;
             }
         }
@@ -245,22 +249,29 @@ void Player::ThreadLoop() {
     }
 
     /* if the stream failed to open... */
-	else {
+    else {
         this->PlaybackError(this);
     }
 
-    /* need to wait until all the buffers have been released */
-    this->ReleaseAllBuffers();
-
-    /* set the final state */
+    /* wait until all remaining buffers have been written, set final state... */
     {
         boost::mutex::scoped_lock lock(this->mutex);
-        this->state = Player::Quit;
+
+        /* if the state is "Quit" that means the user terminated the stream, so no
+        more buffers will be played / recycled from the output device. kill them now.*/
+        if (this->state == Player::Quit) {
+            this->lockedBuffers.clear();
+        }
+        /* otherwise wait for their completion */
+        else {
+            while (this->lockedBuffers.size() > 0) {
+                writeToOutputCondition.wait(this->mutex);
+            }
+
+            this->state = Player::Quit;
+        }
     }
 
-    /* TOOD: there's definitely a bug here... the output device may still be processing
-    some buffers asynchronously. playback likely hasn't actually ended yet... we need
-    to wait until the output has released all of our pending buffers... */
     this->PlaybackEnded(this);
 
     this->output.reset();
@@ -274,7 +285,7 @@ void Player::ReleaseAllBuffers() {
 
 bool Player::PreBuffer() {
     /* don't prebuffer if the buffer is already full */
-    if (this->totalBufferSize > this->maxBufferSize) {
+    if (this->prebufferSizeBytes > this->maxPrebufferSizeBytes) {
         return false;
     }
 	else {
@@ -282,8 +293,8 @@ bool Player::PreBuffer() {
 
         if (newBuffer) {
             boost::mutex::scoped_lock lock(this->mutex);
-            this->bufferQueue.push_back(newBuffer);
-            this->totalBufferSize += newBuffer->Bytes();
+            this->prebufferQueue.push_back(newBuffer);
+            this->prebufferSizeBytes += newBuffer->Bytes();
         }
 
         return true;
@@ -303,8 +314,6 @@ void Player::OnBufferProcessedByOutput(IBuffer *buffer) {
     BufferList::iterator it = this->lockedBuffers.begin();
     for ( ; it != this->lockedBuffers.end(); ++it) {
         if (it->get() == buffer) {
-            this->totalBufferSize -= buffer->Bytes();
-
 			if (this->stream) {
                 this->stream->OnBufferProcessedByPlayer(*it);
             }

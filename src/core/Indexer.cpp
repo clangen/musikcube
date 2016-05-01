@@ -80,7 +80,6 @@ Indexer::~Indexer(void){
     }
 }
 
-
 //////////////////////////////////////////
 ///\brief
 ///Get the current status (text)

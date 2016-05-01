@@ -33,7 +33,7 @@
 #pragma once
 
 #include <core/config.h>
-#include "IFileStream.h"
+#include "IDataStream.h"
 #include "IBuffer.h"
 #include "IPlayer.h"
 

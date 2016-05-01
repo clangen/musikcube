@@ -54,7 +54,7 @@ Buffer::Buffer(void)
 ///\brief
 ///Destructor
 //////////////////////////////////////////
-Buffer::~Buffer(void) {
+Buffer::~Buffer() {
     delete this->buffer;
 }
 
@@ -163,7 +163,9 @@ void Buffer::ResizeBuffer() {
 ///How many bytes does this object take
 //////////////////////////////////////////
 long Buffer::Bytes() const {
-    return this->internalBufferSize*sizeof(float);
+    /* note that we don't return our internal size; instead, we 
+    return the actual number of bytes that have valid samples */
+    return this->sampleSize * sizeof(float); 
 }
 
 //////////////////////////////////////////

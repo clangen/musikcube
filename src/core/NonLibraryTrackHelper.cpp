@@ -116,7 +116,7 @@ void NonLibraryTrackHelper::ThreadLoop(){
         }
         if(track){
             // check if this is a local file
-            if(musik::core::filestreams::Factory::IsLocalFileStream(track->URL())){
+            if(musik::core::io::Factory::IsLocalFileStream(track->URL())){
                 utfstring url(track->URL());
                 utfstring::size_type lastDot = url.find_last_of(UTF("."));
                 if(lastDot!=utfstring::npos){

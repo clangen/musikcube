@@ -42,15 +42,15 @@
 #include <boost/iostreams/device/file_descriptor.hpp>
 
 #include <core/config.h>
-#include <core/sdk/IFileStream.h>
+#include <core/sdk/IDataStream.h>
 #include <cstdio>
 #include <iostream>
 
 //////////////////////////////////////////////////////////////////////////////
-namespace musik{ namespace core{ namespace filestreams{
+namespace musik{ namespace core{ namespace io{
 //////////////////////////////////////////////////////////////////////////////
 
-class  LocalFileStream : public IFileStream {
+class  LocalFileStream : public IDataStream {
     public:
         LocalFileStream();
         virtual ~LocalFileStream();

@@ -46,26 +46,28 @@ size_t OggDecoder::OggRead(void *buffer, size_t nofParts, size_t partSize, void 
 }
 
 int OggDecoder::OggSeek(void *datasource, ogg_int64_t offset, int whence) {
+    OggDecoder* decoder = (OggDecoder*) datasource;
+
     switch(whence) {
         case SEEK_CUR:
             {
-                long currentPosition = ((OggDecoder*)datasource)->fileStream->Position();
-                if(((OggDecoder*) datasource)->fileStream->SetPosition(currentPosition + (long) offset)) {
+                long currentPosition = decoder->fileStream->Position();
+                if (decoder->fileStream->SetPosition(currentPosition + (long) offset)) {
                     return 0;
                 }
             }
             break;
         case SEEK_END:
             {
-                long fileSize = ((OggDecoder*) datasource)->fileStream->Filesize();
-                if(((OggDecoder*) datasource)->fileStream->SetPosition(fileSize)) {
+                long fileSize = decoder->fileStream->Filesize();
+                if (decoder->fileStream->SetPosition(fileSize)) {
                     return 0;
                 }
             }
             break;
         case SEEK_SET:
             {
-                if(((OggDecoder*) datasource)->fileStream->SetPosition((long) offset)) {
+                if (decoder->fileStream->SetPosition((long) offset)) {
                     return 0;
                 }
             }
@@ -89,7 +91,7 @@ int OggDecoder::OggClose(void *datasource) {
 OggDecoder::~OggDecoder() {
 }
 
-bool OggDecoder::Open(musik::core::filestreams::IFileStream *fileStream) {
+bool OggDecoder::Open(musik::core::io::IDataStream *fileStream) {
     this->fileStream = fileStream;
 
     if (ov_open_callbacks(this, &this->oggFile, NULL, 0, this->oggCallbacks) != 0) {

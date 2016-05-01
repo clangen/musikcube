@@ -36,29 +36,29 @@
 #pragma once
 
 #include <core/config.h>
-#include <core/sdk/IFileStream.h>
-#include <core/sdk/IFileStreamFactory.h>
+#include <core/sdk/IDataStream.h>
+#include <core/sdk/IDataStreamFactory.h>
 #include <vector>
 
 //////////////////////////////////////////////////////////////////////////////
-namespace musik{ namespace core{ namespace filestreams{
+namespace musik{ namespace core{ namespace io{
 //////////////////////////////////////////////////////////////////////////////
 	
 class Factory {
 	public:
-		typedef boost::shared_ptr<IFileStream> FileStreamPtr;
+		typedef boost::shared_ptr<IDataStream> DataStreamPtr;
 
     private:
         static Factory sInstance;
         Factory();
 
     private:
-        typedef std::vector<boost::shared_ptr<IFileStreamFactory> > FileStreamFactoryVector;
-        FileStreamFactoryVector fileStreamFactories;
+        typedef std::vector<boost::shared_ptr<IDataStreamFactory> > DataStreamFactoryVector;
+        DataStreamFactoryVector dataStreamFactories;
 
     public:
-        static FileStreamPtr  OpenFile(const utfchar *uri);
-        static bool  IsLocalFileStream(const utfchar *uri);
+        static DataStreamPtr OpenUri(const utfchar *uri);
+        static bool IsLocalFileStream(const utfchar *uri);
 };
 
 //////////////////////////////////////////////////////////////////////////////

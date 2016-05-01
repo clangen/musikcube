@@ -38,67 +38,58 @@
 #include <boost/scoped_ptr.hpp>
 #include <sigslot/sigslot.h>
 
-//////////////////////////////////////////////////////////////////////////////
 namespace musik { namespace core { namespace audio {
-//////////////////////////////////////////////////////////////////////////////
 
-/**
- *	Interface between application and Player objects
- */
-class  Transport : public sigslot::has_slots<>{
-    public:
-        Transport();
-        ~Transport();
+    class Transport : public sigslot::has_slots<> {
+        public:
+            Transport();
+            ~Transport();
 
-        void PrepareNextTrack(utfstring trackUrl);
-        void Start(utfstring trackUrl);
-        void Stop();
-        bool Pause();
-        bool Resume();
+            void PrepareNextTrack(utfstring trackUrl);
+            void Start(utfstring trackUrl);
+            void Stop();
+            bool Pause();
+            bool Resume();
 
-        double Position();
-        void SetPosition(double seconds);
+            double Position();
+            void SetPosition(double seconds);
 
-        double Volume();
-        void SetVolume(double volume);
+            double Volume();
+            void SetVolume(double volume);
 
-    public:
+        public:
 
-        typedef enum {
-            Started = 1,
-            Ended   = 2,
-            Error   = 3
-        } PlaybackStatus;
+            typedef enum {
+                Started = 1,
+                Ended   = 2,
+                Error   = 3
+            } PlaybackStatus;
 
-        typedef sigslot::signal1<int> PlaybackStatusEvent;
-        PlaybackStatusEvent PlaybackStatusChange;
+            typedef sigslot::signal1<int> PlaybackStatusEvent;
+            PlaybackStatusEvent PlaybackStatusChange;
 
-        typedef sigslot::signal0<> PlaybackEvent;
-        PlaybackEvent PlaybackAlmostDone;
-//        PlaybackEvent PlaybackChange;
-        PlaybackEvent PlaybackStarted;
-        PlaybackEvent PlaybackEnded;
-        PlaybackEvent PlaybackPause;
-        PlaybackEvent PlaybackResume;
-        PlaybackEvent PlaybackError;
+            typedef sigslot::signal0<> PlaybackEvent;
+            PlaybackEvent PlaybackAlmostDone;
+            PlaybackEvent PlaybackStarted;
+            PlaybackEvent PlaybackEnded;
+            PlaybackEvent PlaybackPause;
+            PlaybackEvent PlaybackResume;
+            PlaybackEvent PlaybackError;
 
-    private:
-		void OnPlaybackStarted(Player *player);
-		void OnPlaybackAlmostEnded(Player *player);
-		void OnPlaybackEnded(Player *player);
-	    void OnPlaybackError(Player *player);
+        private:
+		    void OnPlaybackStarted(Player *player);
+		    void OnPlaybackAlmostEnded(Player *player);
+		    void OnPlaybackEnded(Player *player);
+	        void OnPlaybackError(Player *player);
 
-    private:
-        double volume;
-        bool gapless;
+        private:
+            double volume;
+            bool gapless;
 
-        typedef std::list<PlayerPtr> PlayerList;
-        PlayerList players;
-        PlayerPtr currentPlayer;
-        PlayerPtr nextPlayer;
-};
+            typedef std::list<PlayerPtr> PlayerList;
+            PlayerList players;
+            PlayerPtr currentPlayer;
+            PlayerPtr nextPlayer;
+    };
 
-//////////////////////////////////////////////////////////////////////////////
 } } }
-//////////////////////////////////////////////////////////////////////////////
-

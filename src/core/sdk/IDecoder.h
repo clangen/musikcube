@@ -34,7 +34,7 @@
 #pragma once
 
 #include <core/config.h>
-#include "IFileStream.h"
+#include "IDataStream.h"
 #include "IBuffer.h"
 
 //////////////////////////////////////////////////////////////////////////////
@@ -82,8 +82,7 @@ class  IDecoder{
         ///\returns
         ///True if successfully opened
         //////////////////////////////////////////
-        virtual bool Open(musik::core::filestreams::IFileStream *fileStream) = 0;
-
+        virtual bool Open(musik::core::io::IDataStream *fileStream) = 0;
 };
 
 //////////////////////////////////////////////////////////////////////////////

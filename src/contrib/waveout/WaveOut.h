@@ -34,8 +34,9 @@
 
 #include "pch.h"
 #include <list>
+#include <boost/thread/thread.hpp>
 #include <boost/shared_ptr.hpp> 
-#include <boost/thread/mutex.hpp>
+#include <boost/thread/recursive_mutex.hpp>
 #include <boost/thread/condition.hpp>
 #include "WaveOutBuffer.h"
 #include <core/sdk/IOutput.h>
@@ -56,12 +57,14 @@ class WaveOut : public IOutput {
 
     public: 
         typedef boost::shared_ptr<WaveOutBuffer> WaveOutBufferPtr;
-        static void CALLBACK WaveCallback(HWAVEOUT hWave, UINT msg, DWORD_PTR dwUser, DWORD_PTR dw1, DWORD dw2);
+        static DWORD WINAPI WaveCallbackThreadProc(LPVOID params);
 
         void OnBufferWrittenToOutput(WaveOutBuffer *buffer);
 
     private:
         void SetFormat(IBuffer *buffer);
+        void StartWaveOutThread();
+        void StopWaveOutThread();
 
     protected:
         friend class WaveOutBuffer;
@@ -71,15 +74,26 @@ class WaveOut : public IOutput {
         we could fix this up by using boost::enable_shared_from_this */
         typedef std::list<WaveOutBufferPtr> BufferList;
 
+        /* instance state relating to output device, including the thread that
+        drives the callback message pump */
         HWAVEOUT waveHandle;
         WAVEFORMATPCMEX waveFormat;
+        DWORD threadId;
+        HANDLE threadHandle;
 
+        /* stream information. */
         int currentChannels;
         long currentSampleRate;
         double currentVolume;
 
+        /* a queue of buffers we've recieved from the core Player, and have enqueued
+        to the output device. we need to notify the IPlayer when they have finished
+        playing. */
         BufferList queuedBuffers;
-        size_t maxBuffers;
 
-        boost::mutex mutex;
+        /* used to protect access to the WaveOut and message pump */
+        boost::recursive_mutex outputDeviceMutex;
+
+        /* used to protect access to the queue of buffers that in flight */
+        boost::recursive_mutex bufferQueueMutex;
 };

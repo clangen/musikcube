@@ -44,8 +44,6 @@
 
 using namespace musik::square;
 
-//enum audioEventHandler;
-
 ConsoleUI::ConsoleUI() 
 : shouldQuit(false)
 , audioEventHandler(this)
@@ -68,8 +66,7 @@ ConsoleUI::ConsoleUI()
 	this->transport.PlaybackError.connect(&this->audioEventHandler, &DummyAudioEventHandler::OnPlaybackStoppedFail);
 }
 
-ConsoleUI::~ConsoleUI()
-{
+ConsoleUI::~ConsoleUI() {
 }
 
 void ConsoleUI::Print(utfstring s)
@@ -129,7 +126,7 @@ void ConsoleUI::ProcessCommand(utfstring commandString)
     {
         this->Stop(args);
     }
-    else if (command == UTF("sp"))
+    else if (command == UTF("seek"))
     {
     	this->SetPosition(args);
     }
@@ -161,14 +158,6 @@ void ConsoleUI::PlayFile(Args args)
     if (args.size() > 0) 
     {
         filename = args[0];
-    }
-    else
-    {
-#ifdef WIN32
-        filename = UTF("C:\\temp\\musik\\ding.mp3"); //TODO: remove.  For quick testing only
-#else
-        filename = UTF("/tmp/test.mp3"); //TODO: remove.  For quick testing only
-#endif
     }
 
     int repeat = 1;

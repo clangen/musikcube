@@ -50,7 +50,7 @@ public:
     virtual void Destroy();
     virtual double SetPosition(double second, double totalLength);
     virtual bool GetBuffer(IBuffer *buffer);
-    virtual bool Open(musik::core::filestreams::IFileStream *fileStream);
+    virtual bool Open(musik::core::io::IDataStream *fileStream);
 
 public:
     /* libvorbis callbacks */
@@ -60,7 +60,7 @@ public:
     static int OggClose(void *datasource);
 
 protected: 
-    musik::core::filestreams::IFileStream *fileStream;
+    musik::core::io::IDataStream *fileStream;
     OggVorbis_File oggFile;
     ov_callbacks oggCallbacks;
 };
