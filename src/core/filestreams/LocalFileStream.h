@@ -55,7 +55,7 @@ class  LocalFileStream : public IDataStream {
         LocalFileStream();
         virtual ~LocalFileStream();
 
-        virtual bool Open(const utfchar *filename,unsigned int options=0);
+        virtual bool Open(const char *filename,unsigned int options=0);
         virtual bool Close();
         virtual void Destroy();
         virtual PositionType Read(void* buffer,PositionType readBytes);
@@ -63,10 +63,10 @@ class  LocalFileStream : public IDataStream {
         virtual PositionType Position();
         virtual bool Eof();
         virtual long Filesize();
-        virtual const utfchar* Type();
+        virtual const char* Type();
 
     private:
-        utfstring extension;
+        std::string extension;
         FILE *file;
         boost::iostreams::file_descriptor* fd;
         boost::iostreams::stream<boost::iostreams::file_descriptor>* fileStream;

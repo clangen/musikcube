@@ -78,15 +78,15 @@ class TaglibPlugin : public musik::core::IPlugin
 {
     void Destroy() { delete this; };
 
-	const utfchar* Name(){
+	const char* Name(){
 		return UTF("Taglib 1.5 plugin");
 	};
 
-	const utfchar* Version(){
+	const char* Version(){
 		return UTF("0.1");
 	};
 
-	const utfchar* Author(){
+	const char* Author(){
 		return UTF("Daniel �nnerby");
 	};
 

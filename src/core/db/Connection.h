@@ -64,8 +64,8 @@ namespace musik{ namespace core{ namespace db{
         public: 
             Connection();
             ~Connection();
-            int Open(const utfchar *database,unsigned int options=0,unsigned int cache=0);
-            int Open(const utfstring &database,unsigned int options=0,unsigned int cache=0);
+            int Open(const char *database,unsigned int options=0,unsigned int cache=0);
+            int Open(const std::string &database,unsigned int options=0,unsigned int cache=0);
             int Close();
             int Execute(const char* sql);
             int Execute(const wchar_t* sql);

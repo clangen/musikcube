@@ -49,7 +49,7 @@ Transport::~Transport(){
     this->players.clear();
 }
 
-void Transport::PrepareNextTrack(utfstring trackUrl){
+void Transport::PrepareNextTrack(std::string trackUrl){
 
     if(this->gapless && this->currentPlayer){
         this->nextPlayer    = Player::Create(trackUrl,&this->currentPlayer->output);
@@ -60,7 +60,7 @@ void Transport::PrepareNextTrack(utfstring trackUrl){
 
 }
 
-void Transport::Start(utfstring url){
+void Transport::Start(std::string url){
 #ifdef _DEBUG
 	std::cerr << "Transport::Start called" << std::endl;
 #endif

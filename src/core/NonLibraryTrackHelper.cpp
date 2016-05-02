@@ -117,10 +117,10 @@ void NonLibraryTrackHelper::ThreadLoop(){
         if(track){
             // check if this is a local file
             if(musik::core::io::Factory::IsLocalFileStream(track->URL())){
-                utfstring url(track->URL());
-                utfstring::size_type lastDot = url.find_last_of(UTF("."));
-                if(lastDot!=utfstring::npos){
-                    track->SetValue("extension",url.substr(lastDot+1).c_str());
+                std::string url(track->URL());
+                std::string::size_type lastDot = url.find_last_of(UTF("."));
+                if(lastDot != std::string::npos){
+                    track->SetValue("extension", url.substr(lastDot+1).c_str());
                 }
                 // Read track metadata
                 typedef MetadataReaderList::iterator Iterator;

@@ -53,10 +53,10 @@ namespace musik { namespace core { namespace audio {
         public:
             typedef boost::shared_ptr<IOutput> OutputPtr;
 
-            static PlayerPtr Create(utfstring &url,OutputPtr *output=&OutputPtr());
+            static PlayerPtr Create(std::string &url,OutputPtr *output=&OutputPtr());
     
         private:
-            Player(utfstring &url,OutputPtr *output);
+            Player(std::string &url,OutputPtr *output);
 
         public:
             ~Player(void);
@@ -93,7 +93,7 @@ namespace musik { namespace core { namespace audio {
 
         protected:
             friend class Transport;
-            utfstring url;
+            std::string url;
 
         private:
             typedef boost::scoped_ptr<boost::thread> ThreadPtr;

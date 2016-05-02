@@ -44,5 +44,5 @@ public:
 
 	IDecoder* CreateDecoder();
 	void Destroy();
-	bool CanHandle(const utfchar* type) const;
+	bool CanHandle(const char* type) const;
 };

@@ -38,7 +38,7 @@
 
 #include <core/Query/SortTracks.h>
 #include <core/Library/Base.h>
-#include <core/config_format.h>
+#include <core/config.h>
 #include <boost/algorithm/string.hpp>
 #include <core/xml/ParserNode.h>
 #include <core/xml/WriterNode.h>

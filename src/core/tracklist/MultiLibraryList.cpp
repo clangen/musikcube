@@ -418,7 +418,7 @@ bool MultiLibraryList::SortTracks(std::string sortingMetakey){
             // A generic track
             musik::core::Query::SortTracksWithData::TrackWithSortdata sortData;
             sortData.track  = *track;
-            const utfchar *metavalue    = (*track)->GetValue(sortingMetakey.c_str());
+            const char *metavalue    = (*track)->GetValue(sortingMetakey.c_str());
             if(metavalue){
                 sortData.sortData   = metavalue;
                 boost::to_lower(sortData.sortData);

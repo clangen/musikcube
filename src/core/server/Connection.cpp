@@ -119,7 +119,7 @@ void Connection::ReadThread(){
                     UserSessionPtr userSession( new UserSession(user,this->salt,endpoint.address().to_string()) );
 
                     // Check if encrypted password is the same
-                    if( musik::core::Crypt::Encrypt(UTF_TO_UTF8(user->Password()),this->salt)==userNode.Content() ){
+                    if( musik::core::Crypt::Encrypt(user->Password(),this->salt)==userNode.Content() ){
                         boost::mutex::scoped_lock lock(this->libraryMutex);
                         this->userSession   = userSession;
                         this->server->AddUserSession(userSession);
@@ -197,7 +197,7 @@ void Connection::ParseThread(){
 
     Preferences prefs("Server");
 
-    utfstring database(this->GetDBPath());
+    std::string database(this->GetDBPath());
     this->db.Open(database.c_str(),0,prefs.GetInt("DatabaseCache",4096));
 
     while(!this->Exited()){
@@ -341,7 +341,7 @@ void Connection::CancelCurrentQuery( ){
     this->db.Interrupt();
 }
 
-utfstring Connection::GetInfo(){
+std::string Connection::GetInfo(){
     return UTF("");
 }
 

@@ -70,14 +70,14 @@ namespace musik{ namespace core{ namespace Library{
 //////////////////////////////////////////
 class  LocalDB : public Library::Base{
 	private:
-        LocalDB(utfstring name,int id);
+        LocalDB(std::string name,int id);
     public:
         // Methods:
-		static LibraryPtr Create(utfstring name,int id);
+		static LibraryPtr Create(std::string name,int id);
         ~LocalDB(void);
 
         bool Startup();
-        utfstring GetInfo();
+        std::string GetInfo();
         musik::core::Indexer *Indexer();
 
     protected:

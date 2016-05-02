@@ -38,8 +38,8 @@
 
 #include <core/Indexer.h>
 
-#include <core/config_filesystem.h>
-#include <core/config_format.h>
+#include <core/config.h>
+#include <core/config.h>
 #include <core/IndexerTrack.h>
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>
@@ -84,27 +84,27 @@ Indexer::~Indexer(void){
 ///\brief
 ///Get the current status (text)
 //////////////////////////////////////////
-utfstring Indexer::GetStatus(){
+std::string Indexer::GetStatus(){
     boost::mutex::scoped_lock lock(this->progressMutex);
-    utfstring sStatus;
+    std::string sStatus;
     switch(this->status){
         case 1:
-            sStatus    = boost::str( boost::utfformat(UTF("Counting files: %1%"))%this->nofFiles );
+            sStatus = boost::str(boost::format(UTF("Counting files: %1%"))%this->nofFiles );
             break;
         case 2:
-            sStatus    = boost::str( boost::utfformat(UTF("Indexing: %.2f"))%(this->progress*100)) + UTF("%");
+            sStatus = boost::str(boost::format(UTF("Indexing: %.2f"))%(this->progress*100)) + UTF("%");
             break;
         case 3:
-            sStatus    = boost::str( boost::utfformat(UTF("Removing old files: %.2f"))%(this->progress*100)) + UTF("%");
+            sStatus = boost::str(boost::format(UTF("Removing old files: %.2f"))%(this->progress*100)) + UTF("%");
             break;
         case 4:
-            sStatus    = UTF("Cleaning up.");
+            sStatus = UTF("Cleaning up.");
             break;
         case 5:
-            sStatus    = UTF("Optimizing.");
+            sStatus = UTF("Optimizing.");
             break;
         case 6:
-            sStatus    = boost::str( boost::utfformat(UTF("Analyzing: %.2f%% (current %.1f%%)"))%(100.0*this->progress/(double)this->nofFiles)%(this->progress2*100.0));
+            sStatus = boost::str(boost::format(UTF("Analyzing: %.2f%% (current %.1f%%)"))%(100.0*this->progress/(double)this->nofFiles)%(this->progress2*100.0));
             break;
     }
     return sStatus;
@@ -145,16 +145,16 @@ bool Indexer::Restarted(){
 ///\remarks
 ///If the path already exists it will not be added.
 //////////////////////////////////////////
-void Indexer::AddPath(utfstring sPath){
-    boost::filesystem::utfpath oPath(sPath);
-    sPath    = oPath.wstring();    // Fix pathname for slash/backslash
+void Indexer::AddPath(std::string sPath){
+    boost::filesystem::path oPath(sPath);
+    sPath = oPath.string();    // Fix pathname for slash/backslash
     if(sPath.substr(sPath.size()-1,1)!=UTF("/")){
-        sPath    += UTF("/");
+        sPath += UTF("/");
     }
 
     Indexer::_AddRemovePath addPath;
-    addPath.add         = true;
-    addPath.path        = sPath;
+    addPath.add = true;
+    addPath.path = sPath;
 
     {
         boost::mutex::scoped_lock lock(this->exitMutex);
@@ -171,7 +171,7 @@ void Indexer::AddPath(utfstring sPath){
 ///\param sPath
 ///Path to remove
 //////////////////////////////////////////
-void Indexer::RemovePath(utfstring sPath){
+void Indexer::RemovePath(std::string sPath){
 
     Indexer::_AddRemovePath removePath;
     removePath.add          = false;
@@ -207,7 +207,7 @@ void Indexer::Synchronize(){
     this->SyncAddRemovePaths();
 
     // Get the paths
-    std::vector<utfstring> aPaths;
+    std::vector<std::string> aPaths;
     std::vector<DBINT> aPathIds;
 
     {
@@ -216,10 +216,10 @@ void Indexer::Synchronize(){
         while( stmt.Step()==db::Row ){
             // For each path
             DBINT iPathId( stmt.ColumnInt(0) );
-            utfstring sPath( stmt.ColumnTextUTF(1) );
+            std::string sPath( stmt.ColumnTextUTF(1) );
 
             // Check to see if folder exists, otherwise ignore (unavaliable paths are not removed)
-            boost::filesystem::utfpath oFolder(sPath);
+            boost::filesystem::path oFolder(sPath);
             try{
                 if(boost::filesystem::exists(oFolder)){
                     aPaths.push_back(sPath);
@@ -238,7 +238,7 @@ void Indexer::Synchronize(){
         this->progress  = 0.0;
     }
 	for(std::size_t i(0);i<aPaths.size();++i){
-        utfstring sPath    = aPaths[i];
+        std::string sPath = aPaths[i];
         this->CountFiles(sPath);
     }
 
@@ -253,8 +253,8 @@ void Indexer::Synchronize(){
     this->filesSaved    = 0;
 
     for(std::size_t i(0);i<aPaths.size();++i){
-        utfstring sPath    = aPaths[i];
-        DBINT iPathId    = aPathIds[i];
+        std::string sPath = aPaths[i];
+        DBINT iPathId = aPathIds[i];
 
         this->SyncDirectory(sPath,0,iPathId,sPath);
     }
@@ -307,15 +307,15 @@ void Indexer::Synchronize(){
 ///\param sFolder
 ///Folder to count files in.
 //////////////////////////////////////////
-void Indexer::CountFiles(utfstring &sFolder){
+void Indexer::CountFiles(std::string &sFolder){
     if(!this->Exited() && !this->Restarted()){
-        boost::filesystem::utfpath oPath(sFolder);
+        boost::filesystem::path oPath(sFolder);
         try{
-            boost::filesystem::utfdirectory_iterator oEndFile;
-            for(boost::filesystem::utfdirectory_iterator oFile(oPath);oFile!=oEndFile;++oFile){
+            boost::filesystem::directory_iterator oEndFile;
+            for(boost::filesystem::directory_iterator oFile(oPath);oFile!=oEndFile;++oFile){
                 if(is_directory(oFile->status())){
-                    utfstring sDirectory;
-                    sDirectory.assign(oFile->path().wstring());
+                    std::string sDirectory;
+                    sDirectory.assign(oFile->path().string());
                     this->CountFiles(sDirectory);
                 }else{
                     boost::mutex::scoped_lock lock(this->progressMutex);
@@ -345,16 +345,16 @@ void Indexer::CountFiles(utfstring &sFolder){
 ///
 ///Read all tracks in a folder. All folders in that folder is recursively called.
 //////////////////////////////////////////
-void Indexer::SyncDirectory(utfstring &sFolder,DBINT iParentFolderId,DBINT iPathId,utfstring &syncPath){
+void Indexer::SyncDirectory(std::string &sFolder,DBINT iParentFolderId,DBINT iPathId, std::string &syncPath){
 
     if(this->Exited() || this->Restarted()){
         return;
     }
 
-    boost::filesystem::utfpath oPath(sFolder);
-    sFolder    = oPath.wstring();    // Fix pathname for slash/backslash
+    boost::filesystem::path oPath(sFolder);
+    sFolder = oPath.string();    // Fix pathname for slash/backslash
 
-    utfstring sFolderLeaf(oPath.leaf().wstring());
+    std::string sFolderLeaf(oPath.leaf().string());
     DBINT iFolderId(0);
 
     // Get this folder ID
@@ -375,7 +375,7 @@ void Indexer::SyncDirectory(utfstring &sFolder,DBINT iParentFolderId,DBINT iPath
     if(iFolderId==0){
 
         // Only save the relative path
-        utfstring relativePath( sFolder.substr(syncPath.size()) );
+        std::string relativePath( sFolder.substr(syncPath.size()) );
 
         db::CachedStatement stmt("INSERT INTO folders (name,path_id,parent_id,relative_path) VALUES(?,?,?,?)",this->dbConnection);
         stmt.BindTextUTF(0,sFolderLeaf);
@@ -398,14 +398,14 @@ void Indexer::SyncDirectory(utfstring &sFolder,DBINT iParentFolderId,DBINT iPath
     // Loop through the files in the current folder
 
     try{        // boost::filesystem may throw
-        boost::filesystem::utfdirectory_iterator oEndFile;
-        for(boost::filesystem::utfdirectory_iterator oFile(oPath);oFile!=oEndFile && !this->Exited() && !this->Restarted();++oFile){
+        boost::filesystem::directory_iterator oEndFile;
+        for(boost::filesystem::directory_iterator oFile(oPath);oFile!=oEndFile && !this->Exited() && !this->Restarted();++oFile){
 
             if(is_directory(oFile->status())){
 
                 // It's a directory
-                utfstring oDirectory;
-                oDirectory.assign(oFile->path().wstring());
+                std::string oDirectory;
+                oDirectory.assign(oFile->path().string());
 
                 // If this is a directory, recurse down
                 this->SyncDirectory(oDirectory,iFolderId,iPathId,syncPath);
@@ -529,12 +529,12 @@ void Indexer::ThreadLoop(){
 ///\see
 ///<ThreadLoop>
 //////////////////////////////////////////
-bool Indexer::Startup(utfstring setLibraryPath){
+bool Indexer::Startup(std::string setLibraryPath){
 
     this->libraryPath    = setLibraryPath;
 
     // Create thumbnail cache directory
-    boost::filesystem::utfpath thumbPath(this->libraryPath+UTF("thumbs/"));
+    boost::filesystem::path thumbPath(this->libraryPath+UTF("thumbs/"));
     if(!boost::filesystem::exists(thumbPath)){
         boost::filesystem::create_directories(thumbPath);
     }
@@ -582,22 +582,22 @@ void Indexer::SyncDelete(std::vector<DBINT> aPaths){
             // Get the syncpath
             stmtSyncPath.BindInt(0,aPaths[i]);
             stmtSyncPath.Step();
-            utfstring syncPathString( stmtSyncPath.ColumnTextUTF(0) );
+            std::string syncPathString( stmtSyncPath.ColumnTextUTF(0) );
             stmtSyncPath.Reset();
 
             while( stmt.Step()==db::Row && !this->Exited() && !this->Restarted() ){
                 // Check to see if file still exists
 
                 bool bRemove(true);
-                utfstring sFolder   = stmt.ColumnTextUTF(1);
+                std::string sFolder   = stmt.ColumnTextUTF(1);
 
                 try{
-                    boost::filesystem::utfpath oFolder(sFolder);
+                    boost::filesystem::path oFolder(sFolder);
                     if(boost::filesystem::exists(oFolder)){
                         bRemove    = false;
                     }else{
                         // Also do a check so that the syncpath is still up, or else do not remove
-                        boost::filesystem::utfpath syncPath(syncPathString);
+                        boost::filesystem::path syncPath(syncPathString);
                         if(!boost::filesystem::exists(syncPath)){
                             bRemove    = false;
                         }
@@ -644,7 +644,7 @@ void Indexer::SyncDelete(std::vector<DBINT> aPaths){
         // Get the syncpath
         stmtSyncPath.BindInt(0,aPaths[i]);
         stmtSyncPath.Step();
-        utfstring syncPathString( stmtSyncPath.ColumnTextUTF(0) );
+        std::string syncPathString( stmtSyncPath.ColumnTextUTF(0) );
         stmtSyncPath.Reset();
 
         while( stmt.Step()==db::Row  && !this->Exited() && !this->Restarted() ){
@@ -657,15 +657,15 @@ void Indexer::SyncDelete(std::vector<DBINT> aPaths){
             }
 
             bool bRemove(true);
-            utfstring sFile = stmt.ColumnTextUTF(1);
+            std::string sFile = stmt.ColumnTextUTF(1);
 
             try{
-                boost::filesystem::utfpath oFile(sFile);
+                boost::filesystem::path oFile(sFile);
                 if(boost::filesystem::exists(oFile)){
                     bRemove    = false;
                 }else{
                     // Also do a check so that the syncpath is still up, or else do not remove
-                    boost::filesystem::utfpath syncPath(syncPathString);
+                    boost::filesystem::path syncPath(syncPathString);
                     if(!boost::filesystem::exists(syncPath)){
                         bRemove    = false;
                     }
@@ -740,8 +740,8 @@ void Indexer::SyncCleanup(){
 ///\brief
 ///Get a vector with all sync paths
 //////////////////////////////////////////
-std::vector<utfstring> Indexer::GetPaths(){
-    std::vector<utfstring> aPaths;
+std::vector<std::string> Indexer::GetPaths(){
+    std::vector<std::string> aPaths;
 
     db::Connection tempDB;
 

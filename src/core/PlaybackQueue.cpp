@@ -237,8 +237,8 @@ void PlaybackQueue::SetCurrentTrack(TrackPtr track){
     bool isNextTrack(false);
 
     if(this->currentTrack && this->nextTrack){
-        utfstring trackURI( this->currentTrack->URI() );
-        utfstring nextTrackURI( this->nextTrack->URI() );
+        std::string trackURI( this->currentTrack->URI() );
+        std::string nextTrackURI( this->nextTrack->URI() );
         if(trackURI==nextTrackURI){
             this->currentTrack  = this->nextTrack;
             isNextTrack = true;

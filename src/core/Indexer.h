@@ -67,21 +67,21 @@ namespace musik{ namespace core{
 //////////////////////////////////////////
 class  Indexer : public ThreadHelper,private boost::noncopyable {
     public:
-        Indexer(void);
-        ~Indexer(void);
+        Indexer();
+        ~Indexer();
 
-        void AddPath(utfstring sPath);
-        void RemovePath(utfstring sPath);
-        std::vector<utfstring> GetPaths();
+        void AddPath(std::string sPath);
+        void RemovePath(std::string sPath);
+        std::vector<std::string> GetPaths();
 
-        bool Startup(utfstring setLibraryPath);
+        bool Startup(std::string setLibraryPath);
         void ThreadLoop();
 
-        utfstring GetStatus();
+        std::string GetStatus();
         void RestartSync(bool bNewRestart=true);
         bool Restarted();
 
-        utfstring database;
+        std::string database;
 
         sigslot::signal0<> SynchronizeStart;
         sigslot::signal0<> SynchronizeEnd;
@@ -92,7 +92,7 @@ class  Indexer : public ThreadHelper,private boost::noncopyable {
         
         db::Connection dbConnection;
 
-        utfstring libraryPath;
+        std::string libraryPath;
         int status;
         bool restart;
 
@@ -105,10 +105,10 @@ class  Indexer : public ThreadHelper,private boost::noncopyable {
         int filesIndexed;
         int filesSaved;
 
-        void CountFiles(utfstring &sFolder);
+        void CountFiles(std::string &sFolder);
 
         void Synchronize();
-        void SyncDirectory(utfstring &sFolder,DBINT iParentFolderId,DBINT iPathId,utfstring &syncPath);
+        void SyncDirectory(std::string &sFolder,DBINT iParentFolderId,DBINT iPathId, std::string &syncPath);
         void SyncDelete(std::vector<DBINT> aPaths);
         void SyncCleanup();
         void SyncAddRemovePaths();
@@ -118,7 +118,7 @@ class  Indexer : public ThreadHelper,private boost::noncopyable {
         class _AddRemovePath{
             public:
                 bool add;
-                utfstring path;
+                std::string path;
         };
 
         typedef std::vector<boost::shared_ptr<Plugin::IMetaDataReader> > MetadataReaderList;

@@ -40,9 +40,9 @@ namespace musik { namespace core {
     class IPlugin{
         public:
             virtual void Destroy() = 0;
-            virtual const utfchar* Name() = 0;
-            virtual const utfchar* Version() = 0;
-            virtual const utfchar* Author() = 0;
+            virtual const char* Name() = 0;
+            virtual const char* Version() = 0;
+            virtual const char* Author() = 0;
     };
 } }
 

@@ -38,7 +38,7 @@
 
 #include <core/Library/Base.h>
 
-#include <core/config_filesystem.h>
+#include <core/config.h>
 #include <core/Query/Base.h>
 #include <core/Common.h>
 
@@ -50,14 +50,14 @@ using namespace musik::core;
 ///\brief
 ///Constructor
 //////////////////////////////////////////
-Library::Base::Base(utfstring name,int id) 
+Library::Base::Base(std::string name,int id)
  :name(name)
  ,id(id)
  ,queueCallbackStarted(false)
  ,exit(false)
  ,userId(1)
 {
-    this->identifier    = boost::lexical_cast<utfstring>(id);
+    this->identifier = boost::lexical_cast<std::string>(id);
 }
 
 //////////////////////////////////////////
@@ -99,7 +99,7 @@ Library::Base::~Base(void){
 ///\returns
 ///A string with the identifier
 //////////////////////////////////////////
-const utfstring& Library::Base::Identifier(){
+const std::string& Library::Base::Identifier(){
 	return this->identifier;
 }
 
@@ -111,7 +111,7 @@ int Library::Base::Id(){
 ///\brief
 ///Name of the library
 //////////////////////////////////////////
-const utfstring& Library::Base::Name(){
+const std::string& Library::Base::Name(){
 	return this->name;
 }
 
@@ -131,19 +131,19 @@ const utfstring& Library::Base::Name(){
 ///\remarks
 ///If the directory does not exist, this method will create it.
 //////////////////////////////////////////
-utfstring Library::Base::GetLibraryDirectory(){
-    utfstring directory( musik::core::GetDataDirectory() );
+std::string Library::Base::GetLibraryDirectory(){
+    std::string directory( musik::core::GetDataDirectory() );
 
     if(!this->identifier.empty()){
         directory.append(this->identifier+UTF("/"));
     }
 
-    boost::filesystem::utfpath oFolder(directory);
+    boost::filesystem::path oFolder(directory);
     if(!boost::filesystem::exists(oFolder)){
         boost::filesystem::create_directories(oFolder);
     }
 
-    directory = oFolder.wstring();
+    directory = oFolder.string();
 
     return directory;
 }
@@ -155,14 +155,11 @@ utfstring Library::Base::GetLibraryDirectory(){
 ///\returns
 ///String with the path
 //////////////////////////////////////////
-utfstring Library::Base::GetDBPath(){
-    utfstring sPath    = this->GetLibraryDirectory();
+std::string Library::Base::GetDBPath(){
+    std::string sPath = this->GetLibraryDirectory();
     sPath.append(UTF("musik.db"));
     return sPath;
 }
-
-
-
 
 //////////////////////////////////////////
 ///\brief
@@ -735,7 +732,7 @@ void Library::Base::CreateDatabase(db::Connection &db){
 ///This method is mostly used by the Library::Remote to
 ///get the HTTP-address to the tracks
 //////////////////////////////////////////
-utfstring Library::Base::BasePath(){
+std::string Library::Base::BasePath(){
     return UTF("");
 }
 

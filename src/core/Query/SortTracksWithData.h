@@ -76,7 +76,7 @@ class  SortTracksWithData : public Query::Base{
 		//////////////////////////////////////////
 		struct TrackWithSortdata{
             musik::core::TrackPtr track;
-            utfstring sortData;
+            std::string sortData;
             bool operator<(const TrackWithSortdata &trackWithSortData) const;
         };
 

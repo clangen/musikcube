@@ -59,7 +59,7 @@ class  Server : private boost::noncopyable{
         Server(int port);
         ~Server();
 
-        bool Startup(utfstring dbFilename);
+        bool Startup(std::string dbFilename);
 
         int port;
 
@@ -84,13 +84,12 @@ class  Server : private boost::noncopyable{
         boost::asio::deadline_timer timer;
 
         boost::thread *thread;
-        utfstring dbFilename;
+        std::string dbFilename;
     private:
         friend class Responder;
 
         bool FreeResponder(Responder *responder);
 
-//        
         typedef std::map< std::string,boost::shared_ptr<IRequestPlugin> > PluginPathMap;
 
         PluginPathMap requestPlugins;

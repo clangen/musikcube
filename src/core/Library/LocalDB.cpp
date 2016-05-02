@@ -54,7 +54,7 @@ using namespace musik::core;
 ///\see
 ///Startup
 //////////////////////////////////////////
-Library::LocalDB::LocalDB(utfstring name,int id)
+Library::LocalDB::LocalDB(std::string name,int id)
  :Base(name,id)
 {
 }
@@ -63,7 +63,7 @@ Library::LocalDB::LocalDB(utfstring name,int id)
 ///\brief
 ///Create a LocalDB library
 //////////////////////////////////////////
-LibraryPtr Library::LocalDB::Create(utfstring name,int id){
+LibraryPtr Library::LocalDB::Create(std::string name,int id){
 	LibraryPtr lib(new Library::LocalDB(name,id));
 	lib->self	= lib;
 	return lib;
@@ -88,7 +88,7 @@ Library::LocalDB::~LocalDB(void){
 ///The information is mostly used to get the information
 ///about the Indexer.
 //////////////////////////////////////////
-utfstring Library::LocalDB::GetInfo(){
+std::string Library::LocalDB::GetInfo(){
     return this->indexer.GetStatus();
 }
 
@@ -133,7 +133,7 @@ void Library::LocalDB::ThreadLoop(){
 
     Preferences prefs("Library");
 
-    utfstring database(this->GetDBPath());
+    std::string database(this->GetDBPath());
     this->db.Open(database.c_str(),0,prefs.GetInt("DatabaseCache",4096));
 
     Library::Base::CreateDatabase(this->db);

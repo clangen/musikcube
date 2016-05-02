@@ -54,7 +54,7 @@ namespace musik { namespace core { namespace io {
             ///\returns
             ///true if file is opened succesfully
             //////////////////////////////////////////
-            virtual bool Open(const utfchar *filename, unsigned int options = 0) = 0;
+            virtual bool Open(const char *filename, unsigned int options = 0) = 0;
 
             //////////////////////////////////////////
             ///\brief
@@ -134,7 +134,7 @@ namespace musik { namespace core { namespace io {
             ///\returns
             ///NULL if unknown
             //////////////////////////////////////////
-            virtual const utfchar* Type() = 0;
+            virtual const char* Type() = 0;
     };
 
 } } }

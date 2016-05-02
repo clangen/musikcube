@@ -229,7 +229,7 @@ bool Query::ListBase::SendResults(musik::core::xml::WriterNode &queryNode,Librar
                         musik::core::xml::WriterNode metaValueNode(results,"md");
                         metaValueNode.Attributes()["id"]    = boost::lexical_cast<std::string>( (*metaValue)->id );
 
-                        metaValueNode.Content() = UTF_TO_UTF8( (*metaValue)->value );
+                        metaValueNode.Content() = (*metaValue)->value;
 
                     }
 
@@ -308,7 +308,7 @@ bool Query::ListBase::ReceiveResults(musik::core::xml::ParserNode &queryNode,Lib
                         MetadataValuePtr(
                             new MetadataValue(
                                 boost::lexical_cast<unsigned int>( metaDataNode.Attributes()["id"] ),
-                                UTF8_TO_UTF(metaDataNode.Content()).c_str()
+                                metaDataNode.Content().c_str()
                                 )
                             )
                         );

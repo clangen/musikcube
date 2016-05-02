@@ -44,6 +44,9 @@
 
 using namespace musik::square;
 
+using std::cout;
+using std::cin;
+
 ConsoleUI::ConsoleUI() 
 : shouldQuit(false)
 , audioEventHandler(this)
@@ -69,24 +72,24 @@ ConsoleUI::ConsoleUI()
 ConsoleUI::~ConsoleUI() {
 }
 
-void ConsoleUI::Print(utfstring s)
+void ConsoleUI::Print(std::string s)
 {
     boost::mutex::scoped_lock   lock(mutex);
 
-	utfcout << "\n*******************************\n\n";
-    utfcout << s;
-    utfcout << "\n*******************************\n" << std::endl;
+	cout << "\n*******************************\n\n";
+    cout << s;
+    cout << "\n*******************************\n" << std::endl;
 }
 
 void ConsoleUI::Run()
 {
-    utfstring command; 
+    std::string command; 
 
     while (!this->shouldQuit)
     {
         this->PrintCommands();
-        utfcout << UTF("Enter command: ");
-        std::getline(utfcin, command); // Need getline to handle spaces!
+        cout << UTF("Enter command: ");
+        std::getline(cin, command); // Need getline to handle spaces!
         this->ProcessCommand(command);
     }
 }
@@ -95,23 +98,23 @@ void ConsoleUI::PrintCommands()
 {
     boost::mutex::scoped_lock   lock(mutex);
 
-    utfcout << "Commands:\n";
-    utfcout << "\tp [file]: play file (enter full path)\n";
-    utfcout << "\ts: stop playing\n";
-    utfcout << "\tl: list currently playing\n";
-    utfcout << "\tlp: list loaded plugins\n";
-    utfcout << "\tv <p>: set volume to p%\n";
-    utfcout << "\tq: quit";
-    utfcout << std::endl;
+    cout << "Commands:\n";
+    cout << "\tp [file]: play file (enter full path)\n";
+    cout << "\ts: stop playing\n";
+    cout << "\tl: list currently playing\n";
+    cout << "\tlp: list loaded plugins\n";
+    cout << "\tv <p>: set volume to p%\n";
+    cout << "\tq: quit";
+    cout << std::endl;
 }
 
-void ConsoleUI::ProcessCommand(utfstring commandString)
+void ConsoleUI::ProcessCommand(std::string commandString)
 {
     Args args;
         
     boost::algorithm::split(args, commandString, boost::is_any_of(" "));
 
-    utfstring command = args.size() > 0 ? args[0] : UTF("");
+    std::string command = args.size() > 0 ? args[0] : UTF("");
     args.erase(args.begin());
 
     if (command == UTF("p"))
@@ -148,13 +151,13 @@ void ConsoleUI::ProcessCommand(utfstring commandString)
     }
     else
     {
-        utfcout << "Unknown command\n";
+        cout << "Unknown command\n";
     }
 }
 
 void ConsoleUI::PlayFile(Args args)
 {
-    utfstring filename;
+    std::string filename;
     if (args.size() > 0) 
     {
         filename = args[0];
@@ -221,11 +224,11 @@ void ConsoleUI::ListPlaying()
 
 	for (it = overview.begin(); it != overview.end(); ++it)
 	{
-		utfcout << *it << '\n';
+		cout << *it << '\n';
 	}
     
-	utfcout << "------------------\n";
-	utfcout << transport.NumOfStreams() << " playing" << std::std::endl;*/
+	cout << "------------------\n";
+	cout << transport.NumOfStreams() << " playing" << std::std::endl;*/
 }
 
 void ConsoleUI::ListPlugins()
@@ -242,7 +245,7 @@ void ConsoleUI::ListPlugins()
     PluginList::iterator it = plugins.begin();
     for ( ; it != plugins.end(); it++)
     {
-        utfcout << (*it)->Name() << '\t' << (*it)->Version() << '\t' << (*it)->Author() << '\n';
+        cout << (*it)->Name() << '\t' << (*it)->Version() << '\t' << (*it)->Author() << '\n';
     }
 }
 

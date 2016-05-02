@@ -43,7 +43,7 @@ using namespace musik::core::server;
 
 //////////////////////////////////////////////////////////////////////////////
 
-User::User(int id,const utfchar *username,const utfchar *password,const utfchar *name)
+User::User(int id,const char *username,const char *password,const char *name)
  :id(id)
  ,username(username)
  ,password(password)
@@ -51,19 +51,18 @@ User::User(int id,const utfchar *username,const utfchar *password,const utfchar 
 {
 }
 
-User::~User(void)
-{
+User::~User(void) {
 }
 
-utfstring& User::Username(){
+std::string& User::Username(){
     return this->username;
 }
 
-utfstring& User::Password(){
+std::string& User::Password(){
     return this->password;
 }
 
-utfstring& User::Name(){
+std::string& User::Name(){
     return this->name;
 }
 

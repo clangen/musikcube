@@ -67,7 +67,7 @@ IndexerTrack::~IndexerTrack(void){
     }
 }
 
-const utfchar* IndexerTrack::GetValue(const char* metakey){
+const char* IndexerTrack::GetValue(const char* metakey){
     if(metakey && this->meta){
         MetadataMap::iterator metavalue = this->meta->metadata.find(metakey);
         if(metavalue!=this->meta->metadata.end()){
@@ -77,10 +77,10 @@ const utfchar* IndexerTrack::GetValue(const char* metakey){
     return NULL;
 }
 
-void IndexerTrack::SetValue(const char* metakey,const utfchar* value){
+void IndexerTrack::SetValue(const char* metakey,const char* value){
     this->InitMeta();
     if(metakey && value){
-        this->meta->metadata.insert(std::pair<std::string,utfstring>(metakey,value));
+        this->meta->metadata.insert(std::pair<std::string, std::string>(metakey,value));
     }
 }
 
@@ -104,11 +104,11 @@ void IndexerTrack::SetThumbnail(const char *data,long size){
     memcpy(this->meta->thumbnailData,data,size);
 }
 
-const utfchar* IndexerTrack::URI(){
+const char* IndexerTrack::URI(){
     return NULL;
 }
 
-const utfchar* IndexerTrack::URL(){
+const char* IndexerTrack::URL(){
     return this->GetValue("path");
 }
 
@@ -137,22 +137,22 @@ void IndexerTrack::InitMeta(){
     }
 }
 
-bool IndexerTrack::CompareDBAndFileInfo(const boost::filesystem::utfpath &file,db::Connection &dbConnection,DBINT currentFolderId){
+bool IndexerTrack::CompareDBAndFileInfo(const boost::filesystem::path &file,db::Connection &dbConnection,DBINT currentFolderId){
  
     try{
-        this->SetValue("path",file.wstring().c_str());
-        this->SetValue("filename",file.leaf().c_str());
+        this->SetValue("path", file.string().c_str());
+        this->SetValue("filename", file.leaf().string().c_str());
 
-        size_t lastDot = file.leaf().wstring().find_last_of(UTF("."));
-        if(lastDot!=utfstring::npos){
-            this->SetValue("extension",file.leaf().wstring().substr(lastDot+1).c_str());
+        size_t lastDot = file.leaf().string().find_last_of(UTF("."));
+        if(lastDot != std::string::npos){
+            this->SetValue("extension",file.leaf().string().substr(lastDot+1).c_str());
         }
 
         DBINT fileSize  = (DBINT)boost::filesystem::file_size(file);
         DBTIME fileTime = (DBTIME)boost::filesystem::last_write_time(file);
 
-        this->SetValue("filesize",boost::lexical_cast<utfstring>(fileSize).c_str());
-        this->SetValue("filetime",boost::lexical_cast<utfstring>(fileTime).c_str());
+        this->SetValue("filesize", boost::lexical_cast<std::string>(fileSize).c_str());
+        this->SetValue("filetime", boost::lexical_cast<std::string>(fileTime).c_str());
 
 
         db::CachedStatement stmt("SELECT id,filename,filesize,filetime FROM tracks t WHERE folder_id=? AND filename=?",dbConnection);
@@ -179,7 +179,7 @@ bool IndexerTrack::CompareDBAndFileInfo(const boost::filesystem::utfpath &file,d
 
 
 
-bool IndexerTrack::Save(db::Connection &dbConnection,utfstring libraryDirectory,DBINT folderId){
+bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirectory, DBINT folderId){
 
     MetadataMap metadataCopy(this->meta->metadata);
 
@@ -248,10 +248,10 @@ bool IndexerTrack::Save(db::Connection &dbConnection,utfstring libraryDirectory,
 
     //////////////////////////////////////////////////////////////////////////////
     // 3. Read genres
-    utfstring    visualGenres;
-    DBINT            genreId(0);
-    count            = 0;
-    std::set<utfstring> alreadySetGenres;        // Cache for not saving duplicates
+    std::string visualGenres;
+    DBINT genreId(0);
+    count = 0;
+    std::set<std::string> alreadySetGenres;        // Cache for not saving duplicates
 
     MetadataIteratorRange genres    = this->GetValues("genre");
     while(genres.first!=genres.second){
@@ -282,10 +282,10 @@ bool IndexerTrack::Save(db::Connection &dbConnection,utfstring libraryDirectory,
 
     //////////////////////////////////////////////////////////////////////////////
     // 4. Read artists
-    utfstring    visualArtists;
-    DBINT            artistId(0);
-    count            = 0;
-    std::set<utfstring> alreadySetArtists;        // Cache for not saving duplicates
+    std::string visualArtists;
+    DBINT artistId(0);
+    count = 0;
+    std::set<std::string> alreadySetArtists;        // Cache for not saving duplicates
 
     MetadataIteratorRange artists = this->GetValues("artist");
     while(artists.first!=artists.second){
@@ -294,7 +294,7 @@ bool IndexerTrack::Save(db::Connection &dbConnection,utfstring libraryDirectory,
             alreadySetArtists.insert(artists.first->second);
 
             // First save the artist
-            artistId        = this->_GetArtist(dbConnection,artists.first->second,true);
+            artistId = this->_GetArtist(dbConnection,artists.first->second,true);
 
             // Second, add to the visual artist
             if(count!=0){
@@ -319,7 +319,7 @@ bool IndexerTrack::Save(db::Connection &dbConnection,utfstring libraryDirectory,
     DBINT albumId(0);
     {
         db::CachedStatement stmt("SELECT id FROM albums WHERE name=?",dbConnection);
-        const utfchar *album=this->GetValue("album");
+        const char *album=this->GetValue("album");
         if(album==NULL){
             album=UTF("");
         }
@@ -367,13 +367,17 @@ bool IndexerTrack::Save(db::Connection &dbConnection,utfstring libraryDirectory,
             }
 
             // Save the file
-            utfstring filename    = libraryDirectory+UTF("thumbs/")+boost::lexical_cast<utfstring>(thumbnailId)+UTF(".jpg");
+            std::string filename = 
+                libraryDirectory + 
+                UTF("thumbs/") + 
+                boost::lexical_cast<std::string>(thumbnailId) + 
+                UTF(".jpg");
 
-            // TODO, fix for UTF wide of not
-#ifdef UTF_WIDECHAR
-            FILE *thumbFile        = _wfopen(filename.c_str(),UTF("wb"));
+#ifdef WIN32
+            std::wstring wfilename = u8to16(filename);
+            FILE *thumbFile = _wfopen(wfilename.c_str(), _T("wb"));
 #else
-            FILE *thumbFile        = fopen(filename.c_str(),UTF("wb"));
+            FILE *thumbFile = fopen(filename.c_str(),UTF("wb"));
 #endif
             fwrite(this->meta->thumbnailData,sizeof(char),this->meta->thumbnailSize,thumbFile);
             fclose(thumbFile);
@@ -466,7 +470,7 @@ bool IndexerTrack::Save(db::Connection &dbConnection,utfstring libraryDirectory,
     return true;
 }
 
-DBINT IndexerTrack::_GetGenre(db::Connection &dbConnection,utfstring genre,bool addRelation,bool aggregated){
+DBINT IndexerTrack::_GetGenre(db::Connection &dbConnection, std::string genre,bool addRelation,bool aggregated){
     DBINT genreId(0);
     {
         db::CachedStatement stmt("SELECT id FROM genres WHERE name=?",dbConnection);
@@ -500,7 +504,7 @@ DBINT IndexerTrack::_GetGenre(db::Connection &dbConnection,utfstring genre,bool 
     return genreId;
 }
 
-DBINT IndexerTrack::_GetArtist(db::Connection &dbConnection,utfstring artist,bool addRelation,bool aggregated){
+DBINT IndexerTrack::_GetArtist(db::Connection &dbConnection, std::string artist,bool addRelation,bool aggregated){
     DBINT artistId(0);
 
     db::CachedStatement stmt("SELECT id FROM artists WHERE name=?",dbConnection);

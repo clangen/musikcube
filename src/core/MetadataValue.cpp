@@ -42,7 +42,7 @@ using namespace musik::core;
 MetadataValue::MetadataValue(void){
 }
 
-MetadataValue::MetadataValue(const DBINT newId,const utfchar *value):id(newId){
+MetadataValue::MetadataValue(const DBINT newId,const char *value):id(newId){
     if(value){
         this->value    = value;
     }

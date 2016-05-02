@@ -203,12 +203,8 @@ void Statement::BindTextW(int position,const std::wstring &bindText){
 ///\param bindText
 ///Text to bind
 //////////////////////////////////////////
-void Statement::BindTextUTF(int position,const utfchar* bindText){
-    #ifdef UTF_WIDECHAR
-        DB_ASSERT(sqlite3_bind_text16(this->stmt,position+1,bindText,-1,SQLITE_STATIC));
-    #else
-        DB_ASSERT(sqlite3_bind_text(this->stmt,position-1,bindText,-1,SQLITE_STATIC));
-    #endif
+void Statement::BindTextUTF(int position,const char* bindText){
+    DB_ASSERT(sqlite3_bind_text(this->stmt,position-1,bindText,-1,SQLITE_STATIC));
 }
 
 //////////////////////////////////////////
@@ -221,15 +217,9 @@ void Statement::BindTextUTF(int position,const utfchar* bindText){
 ///\param bindText
 ///Text to bind
 //////////////////////////////////////////
-void Statement::BindTextUTF(int position,const utfstring &bindText){
-    #ifdef UTF_WIDECHAR
-        DB_ASSERT(sqlite3_bind_text16(this->stmt,position+1,bindText.c_str(),-1,SQLITE_STATIC));
-    #else
-        DB_ASSERT(sqlite3_bind_text(this->stmt,position-1,bindText.c_str(),-1,SQLITE_STATIC));
-    #endif
+void Statement::BindTextUTF(int position,const std::string &bindText){
+    DB_ASSERT(sqlite3_bind_text(this->stmt,position-1,bindText.c_str(),-1,SQLITE_STATIC));
     const char *error = sqlite3_errmsg(this->connection->connection);
-
-
 }
 
 
@@ -303,11 +293,11 @@ const wchar_t* Statement::ColumnTextW(int column){
 ///\returns
 ///Column data
 //////////////////////////////////////////
-const utfchar* Statement::ColumnTextUTF(int column){
+const char* Statement::ColumnTextUTF(int column){
     #ifdef UTF_WIDECHAR
-        return (utfchar*)sqlite3_column_text16(this->stmt,column);
+        return (char*)sqlite3_column_text16(this->stmt,column);
     #else
-        return (utfchar*)sqlite3_column_text(this->stmt,column);
+        return (char*)sqlite3_column_text(this->stmt,column);
     #endif
 }
 

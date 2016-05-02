@@ -89,7 +89,7 @@ Server::~Server(){
     }
 }
 
-bool Server::Startup(utfstring dbFilename){
+bool Server::Startup(std::string dbFilename){
 
     this->dbFilename    = dbFilename;
 

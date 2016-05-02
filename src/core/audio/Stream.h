@@ -66,7 +66,7 @@ namespace musik { namespace core { namespace audio {
             BufferPtr GetNextProcessedOutputBuffer();
             void OnBufferProcessedByPlayer(BufferPtr buffer);
             double SetPosition(double seconds);
-            bool OpenStream(utfstring uri);
+            bool OpenStream(std::string uri);
             double DecoderProgress();
 
         private:
@@ -88,7 +88,7 @@ namespace musik { namespace core { namespace audio {
             unsigned int options;
             long decoderSampleRate;
             UINT64 decoderSamplePosition;
-            utfstring uri;
+            std::string uri;
             musik::core::io::Factory::DataStreamPtr dataStream;
             BufferList recycledBuffers;
 

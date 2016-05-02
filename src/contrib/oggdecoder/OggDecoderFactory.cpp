@@ -50,20 +50,20 @@ IDecoder* OggDecoderFactory::CreateDecoder() {
     return new OggDecoder();
 }
 
-bool OggDecoderFactory::CanHandle(const utfchar* type) const {
+bool OggDecoderFactory::CanHandle(const char* type) const {
     if (type) {
-        utfstring typeString(type);
+        std::string typeString(type);
 
-        if (typeString.find(UTF("ogg")) != utfstring::npos) {
+        if (typeString.find("ogg") != std::string::npos) {
             return true;
         }
-        if (typeString.find(UTF("oga")) != utfstring::npos) {
+        if (typeString.find("oga") != std::string::npos) {
             return true;
         }
-        if (typeString.find(UTF("audio/ogg")) != utfstring::npos) {
+        if (typeString.find("audio/ogg") != std::string::npos) {
             return true;
         }
-        if (typeString.find(UTF("audio/vorbis")) != utfstring::npos) {
+        if (typeString.find("audio/vorbis") != std::string::npos) {
             return true;
         }
     }

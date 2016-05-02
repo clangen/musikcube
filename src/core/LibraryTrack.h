@@ -36,7 +36,7 @@
 
 #pragma once
 
-#include <core/config_filesystem.h>
+#include <core/config.h>
 #include <core/Track.h>
 #include <core/Library/Base.h>
 
@@ -63,12 +63,12 @@ class LibraryTrack : public Track {
         LibraryTrack(DBINT id,musik::core::LibraryPtr library);
         virtual ~LibraryTrack(void);
 
-        virtual const utfchar* GetValue(const char* metakey);
-        virtual void SetValue(const char* metakey,const utfchar* value);
+        virtual const char* GetValue(const char* metakey);
+        virtual void SetValue(const char* metakey,const char* value);
         virtual void ClearValue(const char* metakey);
         virtual void SetThumbnail(const char *data,long size);
-        virtual const utfchar* URI();
-        virtual const utfchar* URL();
+        virtual const char* URI();
+        virtual const char* URL();
 
         virtual MetadataIteratorRange GetValues(const char* metakey);
         virtual MetadataIteratorRange GetAllValues();

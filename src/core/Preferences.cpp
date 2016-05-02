@@ -49,7 +49,7 @@ using namespace musik::core;
 
 //////////////////////////////////////////////////////////////////////////////
 
-Preferences::Preferences(const char* nameSpace,const utfchar* library) 
+Preferences::Preferences(const char* nameSpace,const char* library) 
  :nameSpace(nameSpace)
  ,libraryId(0)
 {
@@ -83,13 +83,13 @@ int Preferences::GetInt(const char* key,int defaultValue){
     return defaultValue;
 }
 
-utfstring Preferences::GetString(const char* key,const utfchar* defaultValue){
+std::string Preferences::GetString(const char* key,const char* defaultValue){
     boost::mutex::scoped_lock lock(IO::Instance()->mutex);
     IO::SettingMap::iterator setting = this->settings->find(key);
     if(setting!=this->settings->end()){
-        return setting->second.Value(utfstring(defaultValue));
+        return setting->second.Value(std::string(defaultValue));
     }
-    this->IOPtr->SaveSetting(this->nameSpace.c_str(),this->libraryId,key,utfstring(defaultValue));
+    this->IOPtr->SaveSetting(this->nameSpace.c_str(),this->libraryId,key,std::string(defaultValue));
     return defaultValue;
 }
 
@@ -103,9 +103,9 @@ void Preferences::SetInt(const char* key,int value){
     this->IOPtr->SaveSetting(this->nameSpace.c_str(),this->libraryId,key,value);
 }
 
-void Preferences::SetString(const char* key,const utfchar* value){
+void Preferences::SetString(const char* key,const char* value){
     boost::mutex::scoped_lock lock(IO::Instance()->mutex);
-    this->IOPtr->SaveSetting(this->nameSpace.c_str(),this->libraryId,key,utfstring(value));
+    this->IOPtr->SaveSetting(this->nameSpace.c_str(),this->libraryId,key,std::string(value));
 }
 
 
@@ -122,8 +122,8 @@ Preferences::IO::Ptr Preferences::IO::Instance(){
 
 Preferences::IO::IO(void){
     boost::mutex::scoped_lock lock(this->mutex);
-    utfstring dataDir   = GetDataDirectory();
-    utfstring dbFile    = GetDataDirectory() + UTF("settings.db");
+    std::string dataDir   = GetDataDirectory();
+    std::string dbFile    = GetDataDirectory() + UTF("settings.db");
     this->db.Open(dbFile.c_str(),0,128);
     
     Preferences::CreateDB(this->db);
@@ -172,7 +172,7 @@ Preferences::Setting::Setting(bool value) : type(1),valueBool(value){
 Preferences::Setting::Setting(int value) : type(2),valueInt(value){
 }
 
-Preferences::Setting::Setting(utfstring value) : type(3),valueText(value){
+Preferences::Setting::Setting(std::string value) : type(3),valueText(value){
 }
 
 
@@ -224,14 +224,14 @@ int Preferences::Setting::Value(int defaultValue){
     return defaultValue;
 }
 
-utfstring Preferences::Setting::Value(utfstring defaultValue){
+std::string Preferences::Setting::Value(std::string defaultValue){
     switch(this->type){
         case Setting::Bool:
             return this->valueBool?UTF("1"):UTF("0");
             break;
         case Setting::Int:
             try{
-                return boost::lexical_cast<utfstring>(this->valueInt);
+                return boost::lexical_cast<std::string>(this->valueInt);
             }
             catch(...){
             }
@@ -245,7 +245,7 @@ utfstring Preferences::Setting::Value(utfstring defaultValue){
 
 
 
-Preferences::IO::SettingMapPtr Preferences::IO::GetNamespace(const char* nameSpace,const utfchar* library,int &libraryId){
+Preferences::IO::SettingMapPtr Preferences::IO::GetNamespace(const char* nameSpace,const char* library,int &libraryId){
 
     boost::mutex::scoped_lock lock(this->mutex);
 

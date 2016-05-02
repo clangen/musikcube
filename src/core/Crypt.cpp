@@ -35,7 +35,7 @@
 //////////////////////////////////////////////////////////////////////////////
 #include "pch.hpp"
 #include <core/Crypt.h>
-#include <core/config_format.h>
+#include <core/config.h>
 
 #include <md5/md5.h>
 #include <boost/random.hpp>

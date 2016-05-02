@@ -36,7 +36,7 @@
 
 #pragma once
 
-#include <core/config_filesystem.h>
+#include <core/config.h>
 #include <core/Track.h>
 #include <core/Library/Base.h>
 
@@ -58,12 +58,12 @@ class  IndexerTrack : public Track {
         IndexerTrack(DBINT id);
         virtual ~IndexerTrack(void);
 
-        virtual const utfchar* GetValue(const char* metakey);
-        virtual void SetValue(const char* metakey,const utfchar* value);
+        virtual const char* GetValue(const char* metakey);
+        virtual void SetValue(const char* metakey,const char* value);
         virtual void ClearValue(const char* metakey);
         virtual void SetThumbnail(const char *data,long size);
-        virtual const utfchar* URI();
-        virtual const utfchar* URL();
+        virtual const char* URI();
+        virtual const char* URL();
 
         virtual MetadataIteratorRange GetValues(const char* metakey);
         virtual MetadataIteratorRange GetAllValues();
@@ -71,8 +71,8 @@ class  IndexerTrack : public Track {
 
         virtual DBINT Id();
 
-        bool CompareDBAndFileInfo(const boost::filesystem::utfpath &file,db::Connection &dbConnection,DBINT currentFolderId);
-        bool Save(db::Connection &dbConnection,utfstring libraryDirectory,DBINT folderId);
+        bool CompareDBAndFileInfo(const boost::filesystem::path &file,db::Connection &dbConnection,DBINT currentFolderId);
+        bool Save(db::Connection &dbConnection, std::string libraryDirectory,DBINT folderId);
         bool GetTrackMetadata(db::Connection &db);
 
     private:
@@ -96,8 +96,8 @@ class  IndexerTrack : public Track {
 
         void InitMeta();
 
-        DBINT _GetGenre(db::Connection &dbConnection,utfstring genre,bool addRelation,bool aggregated=false);
-        DBINT _GetArtist(db::Connection &dbConnection,utfstring artist,bool addRelation,bool aggregated=false);
+        DBINT _GetGenre(db::Connection &dbConnection, std::string genre,bool addRelation,bool aggregated=false);
+        DBINT _GetArtist(db::Connection &dbConnection, std::string artist,bool addRelation,bool aggregated=false);
 
 };
 

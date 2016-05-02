@@ -92,7 +92,7 @@ bool Server::Startup(){
     return true;
 }
 
-utfstring Server::ServerIdentifier(){
+std::string Server::ServerIdentifier(){
     return UTF("server");
 }
 
@@ -102,11 +102,11 @@ void Server::ThreadLoop(){
     musik::core::Preferences prefs("Server");
 
     // Get directory and database paths
-    utfstring directory( musik::core::GetDataDirectory()+this->ServerIdentifier()+UTF("/") );
-    utfstring database(directory+UTF("musik.db"));
+    std::string directory( musik::core::GetDataDirectory()+this->ServerIdentifier()+UTF("/") );
+    std::string database(directory+UTF("musik.db"));
 
     // Create directory if not existing
-    boost::filesystem::utfpath folder(directory);
+    boost::filesystem::path folder(directory);
     if(!boost::filesystem::exists(folder)){
         boost::filesystem::create_directories(folder);
     }
@@ -171,12 +171,10 @@ void Server::CleanupConnections(){
     }
 }
 
-bool Server::CreateUser(const utfstring username,const utfstring plainTextPassword,const utfstring name){
+bool Server::CreateUser(const std::string username,const std::string plainTextPassword,const std::string name){
 
-    utfstring password( 
-        UTF8_TO_UTF( 
-            musik::core::Crypt::Encrypt(
-                UTF_TO_UTF8(plainTextPassword),musik::core::Crypt::StaticSalt())));
+    std::string password(musik::core::Crypt::Encrypt(
+        plainTextPassword,musik::core::Crypt::StaticSalt()));
 
     db::Statement stmt("INSERT INTO users (login,password,name) VALUES (?,?,?)",this->db);
     stmt.BindTextUTF(0,username.c_str());
@@ -189,7 +187,7 @@ bool Server::CreateUser(const utfstring username,const utfstring plainTextPasswo
     return returnBool;
 }
 
-bool Server::DeleteUser(const utfstring username){
+bool Server::DeleteUser(const std::string username){
     db::Statement stmt("DELETE FROM users WHERE login=?",this->db);
     stmt.BindTextUTF(0,username.c_str());
 

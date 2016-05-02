@@ -38,11 +38,11 @@
 
 using namespace musik::core::audio;
 
-PlayerPtr Player::Create(utfstring &url, OutputPtr *output) {
+PlayerPtr Player::Create(std::string &url, OutputPtr *output) {
     return PlayerPtr(new Player(url,output));
 }
 
-Player::Player(utfstring &url, OutputPtr *output)
+Player::Player(std::string &url, OutputPtr *output)
 : volume(1.0)
 , state(Player::Precache)
 , url(url)

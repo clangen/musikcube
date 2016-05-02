@@ -45,7 +45,7 @@ using namespace musik::core;
 
 //////////////////////////////////////////////////////////////////////////////
 
-TrackPtr GenericTrack::Create(const utfchar *uri){
+TrackPtr GenericTrack::Create(const char *uri){
     GenericTrack *newTrack  = new GenericTrack(uri);
     TrackPtr track( newTrack );
     if(newTrack){
@@ -63,7 +63,7 @@ GenericTrack::GenericTrack(void)
 {
 }
 
-GenericTrack::GenericTrack(const utfchar *uri)
+GenericTrack::GenericTrack(const char *uri)
 {
     if(uri){
         this->uri   = uri;
@@ -73,7 +73,7 @@ GenericTrack::GenericTrack(const utfchar *uri)
 GenericTrack::~GenericTrack(void){
 }
 
-const utfchar* GenericTrack::GetValue(const char* metakey){
+const char* GenericTrack::GetValue(const char* metakey){
     if(metakey){
         std::string metaKey(metakey);
         {
@@ -86,9 +86,9 @@ const utfchar* GenericTrack::GetValue(const char* metakey){
 
         if(metaKey=="title"){
             // In case there is no title
-            utfstring::size_type lastSlash = this->uri.find_last_of(UTF("/\\"));
-            if(lastSlash!=utfstring::npos){
-                static utfstring tempString;
+            std::string::size_type lastSlash = this->uri.find_last_of(UTF("/\\"));
+            if(lastSlash!=std::string::npos){
+                static std::string tempString;
                 tempString  = this->uri.substr(lastSlash+1);
                 return tempString.c_str();
             }else{
@@ -105,10 +105,10 @@ const utfchar* GenericTrack::GetValue(const char* metakey){
     return NULL;
 }
 
-void GenericTrack::SetValue(const char* metakey,const utfchar* value){
+void GenericTrack::SetValue(const char* metakey,const char* value){
     if(metakey && value){
         boost::mutex::scoped_lock lock(NonLibraryTrackHelper::TrackMutex());
-        this->metadata.insert(std::pair<std::string,utfstring>(metakey,value));
+        this->metadata.insert(std::pair<std::string, std::string>(metakey,value));
     }
 }
 
@@ -122,11 +122,11 @@ void GenericTrack::ClearValue(const char* metakey){
 void GenericTrack::SetThumbnail(const char *data,long size){
 }
 
-const utfchar* GenericTrack::URI(){
+const char* GenericTrack::URI(){
     return this->uri.c_str();
 }
 
-const utfchar* GenericTrack::URL(){
+const char* GenericTrack::URL(){
     return this->uri.c_str();
 }
 

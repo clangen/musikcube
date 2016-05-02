@@ -47,11 +47,11 @@ namespace musik{ namespace core{
     class  MetadataValue{
         public:
             MetadataValue(void);
-            MetadataValue(const DBINT newId,const utfchar *value);
+            MetadataValue(const DBINT newId,const char *value);
             ~MetadataValue(void);
 
             DBINT id;
-            utfstring value;
+            std::string value;
 
     };
     typedef boost::shared_ptr<MetadataValue> MetadataValuePtr;

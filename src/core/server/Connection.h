@@ -71,7 +71,7 @@ class Connection : public musik::core::Library::Base{
     public:
         Connection(boost::asio::io_service &ioService,musik::core::Server *server);
         ~Connection(void);
-        utfstring GetInfo();
+        std::string GetInfo();
 
         bool Startup();
 

@@ -59,15 +59,15 @@ namespace musik{ namespace core{ namespace Library{
 //////////////////////////////////////////
 class  Remote : public Library::Base{
 	private:
-        Remote(utfstring name,int id);
+        Remote(std::string name,int id);
     public:
         // Methods:
-		static LibraryPtr Create(utfstring name,int id);
+		static LibraryPtr Create(std::string name,int id);
         ~Remote(void);
 
         bool Startup();
-        utfstring GetInfo();
-        virtual utfstring BasePath();
+        std::string GetInfo();
+        virtual std::string BasePath();
         virtual const std::string& AuthorizationKey();
 
     protected:

@@ -47,9 +47,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 class OggDecoderPlugin : public musik::core::IPlugin {
 public:
     void Destroy() { delete this; };
-    const utfchar* Name()       { return TEXT("Ogg decoder"); };
-    const utfchar* Version()    { return TEXT("1"); };
-    const utfchar* Author()     { return TEXT("Björn Olievier"); };
+    const char* Name() { return "Ogg decoder"; };
+    const char* Version() { return "1"; };
+    const char* Author() { return "Björn Olievier"; };
 };
 
 extern "C" __declspec(dllexport) musik::core::IPlugin* GetPlugin() {

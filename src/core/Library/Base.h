@@ -90,7 +90,8 @@ namespace musik{ namespace core{ namespace Library{
 //////////////////////////////////////////
 class  Base : boost::noncopyable{
     protected:
-        Base(utfstring name,int id);
+        Base(std::string name,int id);
+
 	public:
         virtual ~Base(void);
 
@@ -118,25 +119,25 @@ class  Base : boost::noncopyable{
         ///\remarks
         ///Empty string means that the library thread is holding.
         //////////////////////////////////////////
-        virtual utfstring GetInfo()=0;
+        virtual std::string GetInfo()=0;
         
         virtual bool AddQuery( const Query::Base &query,unsigned int options=0 );
 
         virtual bool RunCallbacks();
 
-        utfstring GetLibraryDirectory();
+        std::string GetLibraryDirectory();
 
         bool QueryCanceled(Query::Base *query);
 
         virtual musik::core::Indexer *Indexer();
 
-        virtual utfstring BasePath();
+        virtual std::string BasePath();
 
         bool Exited();
 
-		const utfstring& Identifier();
+		const std::string& Identifier();
 		int Id();
-		const utfstring& Name();
+		const std::string& Name();
 
 //		musik::core::tracklist::Ptr NowPlaying();
 
@@ -157,7 +158,7 @@ class  Base : boost::noncopyable{
 
         virtual void CancelCurrentQuery( );
 
-        utfstring GetDBPath();
+        std::string GetDBPath();
 
     private:
         // Methods:
@@ -257,14 +258,14 @@ class  Base : boost::noncopyable{
         ///\see
         ///GetLibraryDirectory
         //////////////////////////////////////////
-        utfstring identifier;
+        std::string identifier;
         int id;
 
         //////////////////////////////////////////
         ///\brief
         ///Name of the library.
         //////////////////////////////////////////
-        utfstring name;
+        std::string name;
 
         //////////////////////////////////////////
         ///\brief
@@ -283,8 +284,6 @@ class  Base : boost::noncopyable{
 
         bool exit;
         boost::condition waitCondition;
-
-//		musik::core::tracklist::WeakPtr nowPlaying;
 
     public:
         boost::mutex libraryMutex;

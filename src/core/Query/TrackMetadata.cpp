@@ -168,7 +168,7 @@ bool TrackMetadata::ParseQuery(Library::Base *library,db::Connection &db){
             std::vector<std::string>::iterator field=this->fieldOrder.begin();
             int dbField(1);    // one ahead to ignore the id
             while(field!=this->fieldOrder.end()){
-                const utfchar *valuePointer=trackData.ColumnTextUTF(dbField);
+                const char *valuePointer=trackData.ColumnTextUTF(dbField);
                 if(valuePointer){
                     track->SetValue(field->c_str(),valuePointer);
                 }
@@ -410,7 +410,7 @@ bool TrackMetadata::SendResults(musik::core::xml::WriterNode &queryNode,Library:
                     for(Track::MetadataMap::const_iterator metaData=metaDatas.first;metaData!=metaDatas.second;++metaData){
                         musik::core::xml::WriterNode metaDataNode(trackNode,"md");
                         metaDataNode.Attributes()["k"]  = metaData->first;
-                        metaDataNode.Content().append( UTF_TO_UTF8(metaData->second) );
+                        metaDataNode.Content().append(metaData->second);
                     }
 
                 }
@@ -434,9 +434,9 @@ bool TrackMetadata::SendResults(musik::core::xml::WriterNode &queryNode,Library:
 bool TrackMetadata::ReceiveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library){
 
     bool requestPath( this->requestedFields.find("path")!=this->requestedFields.end() );
-    utfstring pathPrefix(library->BasePath()+UTF("track/?auth_key="));
-    pathPrefix  += UTF8_TO_UTF(library->AuthorizationKey());
-    pathPrefix  += UTF("&track_id=");
+    std::string pathPrefix(library->BasePath()+UTF("track/?auth_key="));
+    pathPrefix += library->AuthorizationKey();
+    pathPrefix += UTF("&track_id=");
 
     while(musik::core::xml::ParserNode trackNode=queryNode.ChildNode("t") ){
         try{
@@ -462,13 +462,13 @@ bool TrackMetadata::ReceiveResults(musik::core::xml::ParserNode &queryNode,Libra
                 // Get the metadata
                 while(musik::core::xml::ParserNode metadataNode=trackNode.ChildNode("md") ){
                     metadataNode.WaitForContent();
-                    currentTrack->SetValue( metadataNode.Attributes()["k"].c_str(),UTF8_TO_UTF(metadataNode.Content()).c_str());
+                    currentTrack->SetValue( metadataNode.Attributes()["k"].c_str(), metadataNode.Content().c_str());
                 }
 
                 // Special case for the "path" when connecting to a webserver
                 if(requestPath){
-                    utfstring path(pathPrefix);
-                    path    += boost::lexical_cast<utfstring>( currentTrack->Id() );
+                    std::string path(pathPrefix);
+                    path += boost::lexical_cast<std::string>( currentTrack->Id() );
                     currentTrack->SetValue("path",path.c_str());
                 }
 

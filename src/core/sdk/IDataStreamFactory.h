@@ -56,7 +56,7 @@ class IDataStreamFactory{
         ///\returns
         ///True if able
         //////////////////////////////////////////
-        virtual bool CanReadFile(const utfchar *filename)=0;
+        virtual bool CanReadFile(const char *filename)=0;
 
         //////////////////////////////////////////
         ///\brief
@@ -68,7 +68,7 @@ class IDataStreamFactory{
         ///\returns
         ///IDataStream object or NULL on fail
         //////////////////////////////////////////
-        virtual IDataStream* OpenFile(const utfchar *filename,unsigned int options=0)=0;
+        virtual IDataStream* OpenFile(const char *filename,unsigned int options=0)=0;
 
         //////////////////////////////////////////
         ///\brief

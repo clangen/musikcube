@@ -82,7 +82,7 @@ Connection::~Connection(){
 ///\returns
 ///Error code returned by SQLite
 //////////////////////////////////////////
-int Connection::Open(const utfchar *database,unsigned int options,unsigned int cache){
+int Connection::Open(const char *database,unsigned int options,unsigned int cache){
 //    sqlite3_enable_shared_cache(1);
 
     int error;
@@ -114,12 +114,11 @@ int Connection::Open(const utfchar *database,unsigned int options,unsigned int c
 ///\returns
 ///Error code returned by SQLite
 //////////////////////////////////////////
-int Connection::Open(const utfstring &database,unsigned int options,unsigned int cache){
-//    sqlite3_enable_shared_cache(1);
-
+int Connection::Open(const std::string &database,unsigned int options,unsigned int cache){
     int error;
-    #ifdef UTF_WIDECHAR
-        error   = sqlite3_open16(database.c_str(),&this->connection);
+    #ifdef WIN32
+        std::wstring wdatabase = u8to16(database);
+        error   = sqlite3_open16(wdatabase.c_str(),&this->connection);
     #else
         error   = sqlite3_open(database.c_str(),&this->connection);
     #endif

@@ -37,26 +37,6 @@
 #ifndef SQUARE_CONFIG_H
 #define SQUARE_CONFIG_H
 
-#include <string>
-
 #include <core/config.h>
-
-namespace std
-{
-#if defined UNICODE || defined _UNICODE
-#   define utfcerr            std::wcerr
-#   define utfcin             std::wcin
-#   define utfclog            std::wclog
-#   define utfcout            std::wcout
- 
-#else // defined UNICODE || defined _UNICODE
-
-#   define utfcerr            std::cerr
-#   define utfcin             std::cin
-#   define utfclog            std::clog
-#   define utfcout            std::cout
- 
-#endif // defined UNICODE || defined _UNICODE
-} // namespace std
 
 #endif // SQUARE_CONFIG_H

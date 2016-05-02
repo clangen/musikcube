@@ -54,14 +54,13 @@
 using namespace musik::core::http;
 
 
-Responder::Responder(Server &server,boost::asio::io_service &ioService,utfstring dbFilename) 
+Responder::Responder(Server &server,boost::asio::io_service &ioService, std::string dbFilename) 
  :socket(new boost::asio::ip::tcp::socket(ioService))
  ,thread(NULL)
  ,server(server)
  ,exited(false)
 {
     this->db.Open(dbFilename,0,256);
-
 }
 
 Responder::~Responder(void){
@@ -77,7 +76,7 @@ Responder::~Responder(void){
 
 bool Responder::Startup(){
     // start the thread
-    this->thread    = new boost::thread(boost::bind(&Responder::ThreadLoop,this));
+    this->thread = new boost::thread(boost::bind(&Responder::ThreadLoop,this));
     return true;
 }
 

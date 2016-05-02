@@ -53,7 +53,7 @@ public:	DummyAudioEventHandler(ConsoleUI* c);
 public:	~DummyAudioEventHandler();
 
 private: ConsoleUI* cui; // TODO: should probably be interface
-private: void PrintEvent(utfstring s);
+private: void PrintEvent(std::string s);
 
 // Slots
 public: void	OnPlaybackAlmostEnded()		{	this->PrintEvent(UTF("Playback almost done")); };

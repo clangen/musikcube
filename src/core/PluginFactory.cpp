@@ -36,7 +36,7 @@
 
 #include "pch.hpp"
 #include <core/PluginFactory.h>
-#include <core/config_filesystem.h>
+#include <core/config.h>
 #include <core/Common.h>
 
 
@@ -76,22 +76,23 @@ PluginFactory::~PluginFactory(void){
 
 void PluginFactory::LoadPlugins(){
     boost::mutex::scoped_lock lock(this->mutex);
-    utfstring sPluginDir(GetPluginDirectory());
+    std::string sPluginDir(GetPluginDirectory());
 
     // Open plugin directory
-    boost::filesystem::utfpath oDir(sPluginDir);
+    boost::filesystem::path oDir(sPluginDir);
 
     try{
-        boost::filesystem::utfdirectory_iterator oEndFile;
-        for(boost::filesystem::utfdirectory_iterator oFile(oDir);oFile!=oEndFile;++oFile){
+        boost::filesystem::directory_iterator oEndFile;
+        for(boost::filesystem::directory_iterator oFile(oDir);oFile!=oEndFile;++oFile){
             if(boost::filesystem::is_regular(oFile->status())){
                 // This is a file
-                utfstring sFile(oFile->path().wstring());
+                std::string sFile(oFile->path().string());
 
                 #ifdef WIN32
                     if(sFile.substr(sFile.size()-4)==UTF(".dll")){    // And a DLL
 
-                        HMODULE oDLL = LoadLibrary(sFile.c_str());
+                        std::wstring wpath = u8to16(sFile);
+                        HMODULE oDLL = LoadLibrary(wpath.c_str());
                         if(oDLL!=NULL){
                             CallGetPlugin getPluginCall = (CallGetPlugin)GetProcAddress(oDLL,"GetPlugin");
                             if(getPluginCall){

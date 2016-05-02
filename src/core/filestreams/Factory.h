@@ -57,8 +57,8 @@ class Factory {
         DataStreamFactoryVector dataStreamFactories;
 
     public:
-        static DataStreamPtr OpenUri(const utfchar *uri);
-        static bool IsLocalFileStream(const utfchar *uri);
+        static DataStreamPtr OpenUri(const char *uri);
+        static bool IsLocalFileStream(const char *uri);
 };
 
 //////////////////////////////////////////////////////////////////////////////

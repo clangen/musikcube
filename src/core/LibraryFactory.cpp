@@ -58,8 +58,8 @@ LibraryFactory& LibraryFactory::Instance(){
 //////////////////////////////////////////
 LibraryFactory::LibraryFactory(void){
 	// Connect to the settings.db
-	utfstring dataDir   = GetDataDirectory();
-    utfstring dbFile    = GetDataDirectory() + UTF("settings.db");
+    std::string dataDir = GetDataDirectory();
+    std::string dbFile = GetDataDirectory() + UTF("settings.db");
 	musik::core::db::Connection db;
     db.Open(dbFile.c_str(),0,128);
 
@@ -105,7 +105,7 @@ LibraryFactory::~LibraryFactory(void){
 ///\returns
 ///LibraryPtr of the added library. (NULL pointer on failure)
 //////////////////////////////////////////
-LibraryPtr LibraryFactory::AddLibrary(int id,utfstring name,int type,bool sendEvent,bool startup){
+LibraryPtr LibraryFactory::AddLibrary(int id, std::string name,int type,bool sendEvent,bool startup){
 	LibraryPtr lib;
 	switch(type){
         case LibraryFactory::Remote:
@@ -134,7 +134,7 @@ LibraryPtr LibraryFactory::AddLibrary(int id,utfstring name,int type,bool sendEv
     return lib;
 }
 
-void LibraryFactory::RemoveLibrary(utfstring name){
+void LibraryFactory::RemoveLibrary(std::string name){
 }
 
 //////////////////////////////////////////
@@ -153,10 +153,10 @@ void LibraryFactory::RemoveLibrary(utfstring name){
 ///\returns
 ///LibraryPtr of the added library. (NULL pointer on failure)
 //////////////////////////////////////////
-LibraryPtr LibraryFactory::CreateLibrary(utfstring name,int type,bool startup){
+LibraryPtr LibraryFactory::CreateLibrary(std::string name,int type,bool startup){
 	// Connect to the settings.db
-	utfstring dataDir   = GetDataDirectory();
-    utfstring dbFile    = GetDataDirectory() + UTF("settings.db");
+    std::string dataDir   = GetDataDirectory();
+    std::string dbFile    = GetDataDirectory() + UTF("settings.db");
 	musik::core::db::Connection db;
     db.Open(dbFile.c_str(),0,128);
 
@@ -169,7 +169,7 @@ LibraryPtr LibraryFactory::CreateLibrary(utfstring name,int type,bool startup){
 	return LibraryPtr();
 }
 
-void LibraryFactory::DeleteLibrary(utfstring name){
+void LibraryFactory::DeleteLibrary(std::string name){
 }
 
 //////////////////////////////////////////

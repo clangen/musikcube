@@ -36,7 +36,7 @@
 
 #pragma once
 
-#include <core/config_filesystem.h>
+#include <core/config.h>
 #include <core/Track.h>
 #include <boost/scoped_ptr.hpp>
 #include <boost/weak_ptr.hpp>
@@ -64,8 +64,8 @@ class NonLibraryTrackHelper{
     private:
         static NonLibraryTrackHelper sInstance;
 
-        NonLibraryTrackHelper(void);
-        ~NonLibraryTrackHelper(void);
+        NonLibraryTrackHelper();
+        ~NonLibraryTrackHelper();
 
         void ThreadLoop();
 

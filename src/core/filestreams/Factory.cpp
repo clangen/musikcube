@@ -37,7 +37,7 @@
 #include "pch.hpp"
 
 #include <core/filestreams/Factory.h>
-#include <core/config_filesystem.h>
+#include <core/config.h>
 #include <core/PluginFactory.h>
 #include <core/filestreams/LocalFileStream.h>
 
@@ -57,7 +57,7 @@ Factory::Factory(){
 }
 
 
-Factory::DataStreamPtr Factory::OpenUri(const utfchar *uri){
+Factory::DataStreamPtr Factory::OpenUri(const char *uri){
 #ifdef _DEBUG
     std::cerr << "Factory::OpenFile(" << uri << ")" << std::endl;
 #endif
@@ -84,7 +84,7 @@ Factory::DataStreamPtr Factory::OpenUri(const utfchar *uri){
     return DataStreamPtr();
 }
 
-bool Factory::IsLocalFileStream(const utfchar *uri){
+bool Factory::IsLocalFileStream(const char *uri){
     typedef musik::core::PluginFactory::DestroyDeleter<IDataStream> StreamDeleter;
 
     if(uri){
@@ -95,7 +95,7 @@ bool Factory::IsLocalFileStream(const utfchar *uri){
         }
 
         //Check for local file
-        boost::filesystem::utfpath filename(uri);
+        boost::filesystem::path filename(uri);
         try{
             if(boost::filesystem::exists(filename)){
                 return true;

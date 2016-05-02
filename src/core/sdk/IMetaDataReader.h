@@ -44,7 +44,7 @@ namespace musik { namespace core { namespace Plugin {
     class  IMetaDataReader{
         public:
             virtual bool ReadTag(musik::core::ITrack *track)=0;
-            virtual bool CanReadTag(const utfchar *extension)=0;
+            virtual bool CanReadTag(const char *extension)=0;
             virtual void Destroy()=0;
     };
 

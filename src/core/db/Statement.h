@@ -70,14 +70,14 @@ namespace musik{ namespace core{ namespace db{
             void BindText(int position,const std::string &bindText);
             void BindTextW(int position,const wchar_t* bindText);
             void BindTextW(int position,const std::wstring &bindText);
-            void BindTextUTF(int position,const utfchar* bindText);
-            void BindTextUTF(int position,const utfstring &bindText);
+            void BindTextUTF(int position,const char* bindText);
+            void BindTextUTF(int position,const std::string &bindText);
 
             int ColumnInt(int column);
             UINT64 ColumnInt64(int column);
             const char* ColumnText(int column);
             const wchar_t* ColumnTextW(int column);
-            const utfchar* ColumnTextUTF(int column);
+            const char* ColumnTextUTF(int column);
 
             void UnBindAll();
         private:

@@ -49,15 +49,9 @@ class  Image{
     public:
         Image(void);
         ~Image(void);
-        bool Load(utfstring image);
+        bool Load(std::string image);
 
-/*        int Width();
-        int Height();
-*/
         typedef boost::shared_ptr<boost::gil::rgba8_image_t> ImageBufferPtr;
-//        ImageBufferPtr GetImage(int width,int height);
-
-
 };
 
 //////////////////////////////////////////////////////////////////////////////

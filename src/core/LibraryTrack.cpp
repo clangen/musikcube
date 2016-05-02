@@ -84,7 +84,7 @@ LibraryTrack::~LibraryTrack(void){
 
 }
 
-const utfchar* LibraryTrack::GetValue(const char* metakey){
+const char* LibraryTrack::GetValue(const char* metakey){
     if(metakey && this->meta){
         if(this->meta->library){
             // Threadsafe
@@ -103,16 +103,16 @@ const utfchar* LibraryTrack::GetValue(const char* metakey){
     return NULL;
 }
 
-void LibraryTrack::SetValue(const char* metakey,const utfchar* value){
+void LibraryTrack::SetValue(const char* metakey,const char* value){
     this->InitMeta();
 
     if(metakey && value){
         if(this->meta->library){
             // Threadsafe
             boost::mutex::scoped_lock lock(this->meta->library->trackMutex);
-            this->meta->metadata.insert(std::pair<std::string,utfstring>(metakey,value));
+            this->meta->metadata.insert(std::pair<std::string, std::string>(metakey,value));
         }else{
-            this->meta->metadata.insert(std::pair<std::string,utfstring>(metakey,value));
+            this->meta->metadata.insert(std::pair<std::string, std::string>(metakey,value));
         }
     }
 }
@@ -142,19 +142,30 @@ void LibraryTrack::SetThumbnail(const char *data,long size){
     memcpy(this->meta->thumbnailData,data,size);
 }
 
-const utfchar* LibraryTrack::URI(){
-    static utfstring uri;
+const char* LibraryTrack::URI(){
+    static std::string uri;
     if(this->meta){
-        uri     = UTF("mcdb://")+this->meta->library->Identifier()+UTF("/")+boost::lexical_cast<utfstring>(this->id);
+        uri = 
+            UTF("mcdb://") + 
+            this->meta->library->Identifier() + 
+            UTF("/") + 
+            boost::lexical_cast<std::string>(this->id);
+
         return uri.c_str();
-    }else{
-        uri     = UTF("mcdb://")+boost::lexical_cast<utfstring>(this->libraryId)+UTF("/")+boost::lexical_cast<utfstring>(this->id);
+    }
+    else{
+        uri = 
+            UTF("mcdb://") + 
+            boost::lexical_cast<std::string>(this->libraryId) + 
+            UTF("/") + 
+            boost::lexical_cast<std::string>(this->id);
+
         return uri.c_str();
     }
     return NULL;
 }
 
-const utfchar* LibraryTrack::URL(){
+const char* LibraryTrack::URL(){
     return this->GetValue("path");
 }
 

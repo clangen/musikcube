@@ -68,7 +68,7 @@ namespace musik{ namespace core{ namespace http{
 
 class  Responder : public IResponder{
     public:
-        Responder(Server &server,boost::asio::io_service &ioService,utfstring dbFilename);
+        Responder(Server &server,boost::asio::io_service &ioService, std::string dbFilename);
         virtual ~Responder();
 
         bool Startup();
@@ -82,7 +82,7 @@ class  Responder : public IResponder{
         void ThreadLoop();
         bool ReadRequest(std::string &request);
         void CloseSocket();
-//        bool GetFileName(utfstring &fileName,int &fileSize,const RequestParser &request);
+//        bool GetFileName(string &fileName,int &fileSize,const RequestParser &request);
 
 
         bool exited;

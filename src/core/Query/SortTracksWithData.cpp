@@ -38,7 +38,7 @@
 
 #include <core/Query/SortTracksWithData.h>
 #include <core/Library/Base.h>
-#include <core/config_format.h>
+#include <core/config.h>
 #include <boost/algorithm/string.hpp>
 #include <core/xml/ParserNode.h>
 #include <core/xml/WriterNode.h>
@@ -146,7 +146,7 @@ bool Query::SortTracksWithData::ParseQuery(Library::Base *library,db::Connection
         while(selectTracks.Step()==db::Row){
             TrackWithSortdata newSortData;
             newSortData.track.reset(new LibraryTrack(selectTracks.ColumnInt(0),library->Id()));
-            const utfchar* sortDataPtr  = selectTracks.ColumnTextUTF(1);
+            const char* sortDataPtr  = selectTracks.ColumnTextUTF(1);
             if(sortDataPtr){
                 newSortData.sortData    = sortDataPtr;
             }
@@ -378,7 +378,7 @@ bool Query::SortTracksWithData::SendResults(musik::core::xml::WriterNode &queryN
             for(TrackWithSortdataVector::iterator track=trackResultsCopy.begin();track!=trackResultsCopy.end();++track){
                 musik::core::xml::WriterNode trackNode(tracklist,"t");
                 trackNode.Attributes()["id"]    = boost::lexical_cast<std::string>( track->track->Id() );
-                trackNode.Content()     = UTF_TO_UTF8(track->sortData);
+                trackNode.Content() = track->sortData;
             }
 
         }
@@ -412,7 +412,7 @@ bool Query::SortTracksWithData::ReceiveResults(musik::core::xml::ParserNode &que
                 DBINT trackId(boost::lexical_cast<DBINT>(trackNode.Attributes()["id"]));
                 TrackWithSortdata newSortData;
                 newSortData.track.reset(new LibraryTrack(trackId,library->Id()));
-                newSortData.sortData    = UTF8_TO_UTF(trackNode.Content());
+                newSortData.sortData = trackNode.Content();
                 
                 {
                     boost::mutex::scoped_lock lock(library->resultMutex);

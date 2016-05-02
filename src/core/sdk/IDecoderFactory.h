@@ -64,7 +64,7 @@ class  IDecoderFactory{
         ///Can this plugin handle this kind of filetype?
         ///The "type" can either be a file extension or a mimetype
         //////////////////////////////////////////
-        virtual bool            CanHandle(const utfchar* type) const = 0;
+        virtual bool            CanHandle(const char* type) const = 0;
 
 };
 

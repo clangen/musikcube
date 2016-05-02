@@ -35,6 +35,10 @@
 
 #include "ConsoleUI.h"
 
+#include <boost/locale.hpp>
+#include <boost/filesystem/path.hpp>
+#include <boost/filesystem/fstream.hpp>
+
 using namespace musik::square;
 
 #ifdef WIN32
@@ -43,6 +47,10 @@ int _tmain(int argc, _TCHAR* argv[])
 int main(int argc, char* argv[])
 #endif
 {
+    /* the following allows boost::filesystem to use utf8 on Windows */
+    std::locale::global(boost::locale::generator().generate(""));
+    boost::filesystem::path::imbue(std::locale());
+
     ConsoleUI* instance = new ConsoleUI();
     instance->Run();
     delete instance;

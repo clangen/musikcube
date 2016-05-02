@@ -51,23 +51,22 @@ namespace musik{ namespace core{ namespace server{
 class  User
 {
     public:
-        User(int id,const utfchar *username,const utfchar *password,const utfchar *name);
+        User(int id,const char *username,const char *password,const char *name);
         ~User(void);
 
-        utfstring& Username();
-        utfstring& Password();
-        utfstring& Name();
+        std::string& Username();
+        std::string& Password();
+        std::string& Name();
 
     protected:
         int id;
-        utfstring username;
-        utfstring password;
-        utfstring name;
-
+        std::string username;
+        std::string password;
+        std::string name;
 };
 
 typedef boost::shared_ptr<User> UserPtr;
-typedef std::map<utfstring,UserPtr> UserMap;
+typedef std::map<std::string,UserPtr> UserMap;
 typedef std::vector<UserPtr> UserVector;
 typedef std::set<UserPtr> UserSet;
 

@@ -80,8 +80,8 @@ class  LibraryFactory{
 
 		static LibraryVector& Libraries();
 
-		LibraryPtr CreateLibrary(utfstring name,int type,bool startup=true);
-		void DeleteLibrary(utfstring name);
+		LibraryPtr CreateLibrary(std::string name,int type,bool startup=true);
+		void DeleteLibrary(std::string name);
 
         LibraryPtr GetLibrary(int identifier);
 
@@ -101,8 +101,8 @@ class  LibraryFactory{
 
         LibraryFactory(void);
 
-		LibraryPtr AddLibrary(int id,utfstring name,int type,bool sendEvent=false,bool startup=true);
-		void RemoveLibrary(utfstring name);
+		LibraryPtr AddLibrary(int id, std::string name,int type,bool sendEvent=false,bool startup=true);
+		void RemoveLibrary(std::string name);
 
 };
 

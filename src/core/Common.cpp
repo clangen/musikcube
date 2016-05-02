@@ -36,7 +36,7 @@
 
 #include "pch.hpp"
 #include <core/Common.h>
-#include <core/config_filesystem.h>
+#include <core/config.h>
 #include <utf8/utf8.h>
 
 //////////////////////////////////////////
@@ -49,8 +49,8 @@
 ///\see
 ///<GetApplicationDirectory>
 //////////////////////////////////////////
-utfstring musik::core::GetPluginDirectory(){
-    utfstring sDirectory(GetApplicationDirectory());
+std::string musik::core::GetPluginDirectory(){
+    std::string sDirectory(GetApplicationDirectory());
     sDirectory.append(UTF("plugins/"));
     return sDirectory;
 }
@@ -62,38 +62,35 @@ utfstring musik::core::GetPluginDirectory(){
 ///\returns
 ///String with the path
 //////////////////////////////////////////
-utfstring musik::core::GetApplicationDirectory(){
-
-    utfstring sDirectory;
+std::string musik::core::GetApplicationDirectory() {
+    std::string sDirectory;
 
     #ifdef WIN32
-        utfchar szPath[2048];
-        int iStrLength    = GetModuleFileName(NULL,szPath,2048);
-        if(iStrLength!=0 && iStrLength<2048 ){
-            sDirectory.assign( GetPath(utfstring(szPath)) );
+        wchar_t szPath[2048];
+        int iStrLength = GetModuleFileName(NULL, szPath, 2048);
+        if(iStrLength != 0 && iStrLength < 2048){
+            sDirectory.assign(GetPath(u16to8(szPath).c_str()));
         }
     #endif
 
     return sDirectory;
 }
 
-utfstring musik::core::GetDataDirectory(){
-    utfstring directory;
+std::string musik::core::GetDataDirectory(){
+    std::string directory;
 
     #ifdef WIN32
-        DWORD iBufferSize    = GetEnvironmentVariable(UTF("APPDATA"), 0, 0);
-
-        utfchar *sBuffer    = new utfchar[iBufferSize+2];
-        GetEnvironmentVariable(UTF("APPDATA"), sBuffer, iBufferSize);
-        directory.assign(sBuffer);
-
+        DWORD iBufferSize = GetEnvironmentVariable(_T("APPDATA"), 0, 0);
+        wchar_t *sBuffer = new wchar_t[iBufferSize + 2];
+        GetEnvironmentVariable(_T("APPDATA"), sBuffer, iBufferSize);
+        directory.assign(u16to8(sBuffer));
         delete [] sBuffer;
     #endif
 
     directory.append(UTF("/mC2/"));
 
     // Create folder if it does not exist
-    boost::filesystem::utfpath oFolder(directory);
+    boost::filesystem::path oFolder(directory);
     if(!boost::filesystem::exists(oFolder)){
         boost::filesystem::create_directories(oFolder);
     }
@@ -112,27 +109,28 @@ utfstring musik::core::GetDataDirectory(){
 ///\returns
 ///String with path.
 //////////////////////////////////////////
-utfstring musik::core::GetPath(const utfstring &sFile){
+std::string musik::core::GetPath(const std::string &sFile){
     
-    utfstring sPath;
+    std::string sPath;
     int iStrLength;
 
 #ifdef WIN32
+    wchar_t szPath[2048];
+    wchar_t *szFile = NULL;
 
-    utfchar szPath[2048];
-    utfchar *szFile=NULL;
-    iStrLength    = GetFullPathName(sFile.c_str(),2048,szPath,&szFile);
-    if(iStrLength!=0 && iStrLength<2048 ){
-        sPath.assign(szPath);
-        if(szFile!=0){
-            utfstring sTheFile(szFile);
+    iStrLength = GetFullPathName(u8to16(sFile).c_str(), 2048, szPath, &szFile);
+    if(iStrLength != 0 && iStrLength < 2048) {
+        sPath.assign(u16to8(szPath).c_str());
+        if(szFile!=0) {
+            std::string sTheFile = u16to8(szFile);
             sPath.assign(sPath.substr(0,iStrLength-sTheFile.length()));
         }
-    }else{
+    }
+    else {
         sPath.assign(sFile);
     }
  #else	//TODO: check this POSIX GetPath works
-    utfchar* szDir;
+    char* szDir;
     sPath.assign(getcwd((char*)szDir, (size_t) iStrLength));
 
  #endif //WIN32

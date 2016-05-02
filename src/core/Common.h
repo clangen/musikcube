@@ -44,22 +44,22 @@ namespace musik{ namespace core{
     /*****************************
     Path to where the executable is located.
     *****************************/
-    utfstring GetApplicationDirectory();
+    std::string GetApplicationDirectory();
 
     /*****************************
     Path to where the executable is located.
     *****************************/
-    utfstring GetDataDirectory();
+    std::string GetDataDirectory();
 
     /*****************************
     Get the full path of the sFile
     *****************************/
-    utfstring GetPath(const utfstring &sFile);
+    std::string GetPath(const std::string &sFile);
 
     /*****************************
     Path to where plugins are located.
     *****************************/
-    utfstring GetPluginDirectory();
+    std::string GetPluginDirectory();
 
     std::string ConvertUTF8(const std::wstring &sString);
     std::wstring ConvertUTF16(const std::string &sString);
@@ -68,20 +68,3 @@ namespace musik{ namespace core{
     UINT64 Checksum(char *data,unsigned int bytes);
 
 } }
-
-// UTF Conversion MACROS
-#ifdef UTF_WIDECHAR
-
-#define UTF_TO_UTF8(s)  musik::core::ConvertUTF8(s)
-#define UTF_TO_UTF16(s) s
-#define UTF8_TO_UTF(s)  musik::core::ConvertUTF16(s)
-#define UTF16_TO_UTF(s) s
-
-#else
-
-#define UTF_TO_UTF8(s)  s
-#define UTF_TO_UTF16(s) musik::core::ConvertUTF16(s)
-#define UTF8_TO_UTF(s)  s
-#define UTF16_TO_UTF(s) musik::core::ConvertUTF8(s)
-
-#endif

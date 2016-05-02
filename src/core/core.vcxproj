@@ -167,8 +167,6 @@
     <ClInclude Include="PlaybackQueue.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="config.h" />
-    <ClInclude Include="config_filesystem.h" />
-    <ClInclude Include="config_format.h" />
     <ClInclude Include="Crypt.h" />
     <ClInclude Include="Image.h" />
     <ClInclude Include="MessageQueue.h" />

@@ -51,7 +51,7 @@ class AudioStream;
 
 namespace musik { namespace square {
 
-typedef std::vector<utfstring> Args;
+typedef std::vector<std::string> Args;
 
 class ConsoleUI
 {
@@ -60,8 +60,8 @@ public: ~ConsoleUI();
 
 public:  void        Run();
 private: void        PrintCommands();
-private: void        ProcessCommand(utfstring commandString);
-public:  void        Print(utfstring s);
+private: void        ProcessCommand(std::string commandString);
+public:  void        Print(std::string s);
 
 // Commands
 private: void   PlayFile(Args args);
@@ -98,9 +98,8 @@ public: void StartNew();
 #include <sstream>
 
 template <class T>
-bool convertString(T& t, const utfstring& s)
+bool convertString(T& t, const std::string& s)
 {
-    std::utfistringstream iss(s);
-    
+    std::istringstream iss(s);
     return !(iss >> t).fail();
 }

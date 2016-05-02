@@ -36,7 +36,7 @@
 
 #pragma once
 
-#include <core/config_filesystem.h>
+#include <core/config.h>
 #include <core/Track.h>
 #include <core/Library/Base.h>
 #include <boost/weak_ptr.hpp>
@@ -51,19 +51,19 @@ namespace musik{ namespace core{
 //////////////////////////////////////////
 class GenericTrack : public Track {
     public:
-        static TrackPtr Create(const utfchar *uri);
+        static TrackPtr Create(const char *uri);
     protected:
         GenericTrack(void);
-        GenericTrack(const utfchar *uri);
+        GenericTrack(const char *uri);
     public:
         virtual ~GenericTrack(void);
 
-        virtual const utfchar* GetValue(const char* metakey);
-        virtual void SetValue(const char* metakey,const utfchar* value);
+        virtual const char* GetValue(const char* metakey);
+        virtual void SetValue(const char* metakey,const char* value);
         virtual void ClearValue(const char* metakey);
         virtual void SetThumbnail(const char *data,long size);
-        virtual const utfchar* URI();
-        virtual const utfchar* URL();
+        virtual const char* URI();
+        virtual const char* URL();
 
         virtual MetadataIteratorRange GetValues(const char* metakey);
         virtual MetadataIteratorRange GetAllValues();
@@ -71,7 +71,7 @@ class GenericTrack : public Track {
 
     private:
         // The variables
-        utfstring uri;
+        std::string uri;
         Track::MetadataMap metadata;
     
         typedef boost::weak_ptr<Track> SelfWeakPtr;

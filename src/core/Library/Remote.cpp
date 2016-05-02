@@ -60,7 +60,7 @@ using namespace musik::core;
 ///\see
 ///Startup
 //////////////////////////////////////////
-Library::Remote::Remote(utfstring name,int id)
+Library::Remote::Remote(std::string name,int id)
  :Base(name,id)
  ,socket(ioService)
  ,httpPort("10544")
@@ -71,7 +71,7 @@ Library::Remote::Remote(utfstring name,int id)
 ///\brief
 ///Create a Remote library
 //////////////////////////////////////////
-LibraryPtr Library::Remote::Create(utfstring name,int id){
+LibraryPtr Library::Remote::Create(std::string name,int id){
 	LibraryPtr lib(new Library::Remote(name,id));
 	lib->self	= lib;
 	return lib;
@@ -96,7 +96,7 @@ Library::Remote::~Remote(void){
 ///The information is mostly used to get the information
 ///about the Indexer.
 //////////////////////////////////////////
-utfstring Library::Remote::GetInfo(){
+std::string Library::Remote::GetInfo(){
     return UTF("");
 }
 
@@ -129,10 +129,10 @@ void Library::Remote::ReadThread(){
     {
         Preferences prefs("Connection",this->Name().c_str());
 
-        this->address   = UTF_TO_UTF8(prefs.GetString("address",UTF("localhost")));
-        this->port      = UTF_TO_UTF8(prefs.GetString("port",UTF("10543")));
-        this->username  = UTF_TO_UTF8(prefs.GetString("username",UTF("")));
-        this->password  = UTF_TO_UTF8(prefs.GetString("password",UTF("")));
+        this->address   = prefs.GetString("address",UTF("localhost"));
+        this->port      = prefs.GetString("port",UTF("10543"));
+        this->username  = prefs.GetString("username",UTF(""));
+        this->password  = prefs.GetString("password",UTF(""));
     }
 
     boost::asio::ip::tcp::resolver resolver(this->ioService);
@@ -340,13 +340,13 @@ void Library::Remote::Exit(){
 ///This method is mostly used by the Library::Remote to
 ///get the HTTP-address to the tracks
 //////////////////////////////////////////
-utfstring Library::Remote::BasePath(){
-    utfstring path(UTF("http://"));
+std::string Library::Remote::BasePath(){
+    std:: string path(UTF("http://"));
     boost::asio::ip::tcp::endpoint endPoint = this->socket.remote_endpoint();
     boost::asio::ip::address address        = endPoint.address();
 
-    path    += UTF8_TO_UTF(address.to_string());
-    path    += UTF(":") + UTF8_TO_UTF(this->httpPort) + UTF("/");
+    path += address.to_string();
+    path += UTF(":") + this->httpPort + UTF("/");
     return path;
 }
 

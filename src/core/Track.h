@@ -70,14 +70,12 @@ class  Track : public ITrack {
         virtual musik::core::LibraryPtr Library();
         virtual int LibraryId();
 
-        typedef std::multimap<std::string,utfstring> MetadataMap;
+        typedef std::multimap<std::string, std::string> MetadataMap;
         typedef std::pair<MetadataMap::iterator,MetadataMap::iterator> MetadataIteratorRange;
         virtual MetadataIteratorRange GetValues(const char* metakey) = 0;
         virtual MetadataIteratorRange GetAllValues() = 0;
 
         virtual TrackPtr Copy() = 0;
-
-
 };
 
 

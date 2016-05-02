@@ -49,7 +49,7 @@ namespace musik{ namespace core{
 //////////////////////////////////////////
 class  TrackFactory{
     public:
-        static TrackPtr CreateTrack(utfstring uri);
+        static TrackPtr CreateTrack(std::string uri);
 };
 
 //////////////////////////////////////////////////////////////////////////////

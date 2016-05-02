@@ -35,7 +35,7 @@
 //////////////////////////////////////////////////////////////////////////////
 #pragma once
 
-#include <core/config_filesystem.h>
+#include <core/config.h>
 #include <core/server/Connection.h>
 #include <core/db/Connection.h>
 
@@ -76,8 +76,8 @@ class  Server{
         ~Server(void);
         bool Startup();
 
-        bool CreateUser(const utfstring username,const utfstring plainTextPassword,const utfstring name);
-        bool DeleteUser(const utfstring username);
+        bool CreateUser(const std::string username,const std::string plainTextPassword,const std::string name);
+        bool DeleteUser(const std::string username);
 
         server::UserVector AllUsers();
         server::UserSessionVector ConnectedUserSessions();
@@ -102,7 +102,7 @@ class  Server{
         void SetNextConnection();
         void CleanupConnections();
 
-        utfstring ServerIdentifier();
+        std::string ServerIdentifier();
 
         friend class server::Connection;
         server::UserPtr GetUser(std::string username);

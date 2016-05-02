@@ -51,16 +51,16 @@ namespace musik{ namespace core{
 
 class  Preferences{
     public:
-        Preferences(const char* nameSpace,const utfchar* library=NULL);
+        Preferences(const char* nameSpace,const char* library=NULL);
         ~Preferences(void);
 
         bool GetBool(const char* key,bool defaultValue);
         int GetInt(const char* key,int defaultValue);
-        utfstring GetString(const char* key,const utfchar* defaultValue);
+        std::string GetString(const char* key,const char* defaultValue);
 
         void SetBool(const char* key,bool value);
         void SetInt(const char* key,int value);
-        void SetString(const char* key,const utfchar* value);
+        void SetString(const char* key,const char* value);
 
         std::string nameSpace;
         int libraryId;
@@ -75,7 +75,7 @@ class  Preferences{
                 Setting();
                 Setting(bool value);
                 Setting(int value);
-                Setting(utfstring value);
+                Setting(std::string value);
                 Setting(db::Statement &stmt);
 
                 typedef enum {
@@ -87,11 +87,11 @@ class  Preferences{
                 int type;
                 int valueInt;
                 bool valueBool;
-                utfstring valueText;
+                std::string valueText;
 
                 bool Value(bool defaultValue);
                 int Value(int defaultValue);
-                utfstring Value(utfstring defaultValue);
+                std::string Value(std::string defaultValue);
         };
     private:
 
@@ -107,7 +107,7 @@ class  Preferences{
                 typedef std::map<int,NamespaceMap> LibNamespaceMap;
                 typedef boost::shared_ptr<IO> Ptr;
 
-                SettingMapPtr GetNamespace(const char* nameSpace,const utfchar* library,int &libraryId);
+                SettingMapPtr GetNamespace(const char* nameSpace,const char* library,int &libraryId);
 
                 void SaveSetting(const char* nameSpace,int libraryId,const char *key,Setting setting);
 

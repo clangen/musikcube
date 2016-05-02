@@ -39,7 +39,7 @@
 #include <core/filestreams/LocalFileStream.h>
 #include <core/config.h>
 #include <core/Common.h>
-#include <core/config_filesystem.h>
+#include <core/config.h>
 
 #ifdef UTF_WIDECHAR
 #define UTFFopen    _wfopen
@@ -61,13 +61,13 @@ LocalFileStream::~LocalFileStream() {
     this->Close();
 }
 
-bool LocalFileStream::Open(const utfchar *filename,unsigned int options){
+bool LocalFileStream::Open(const char *filename,unsigned int options){
     if(filename == NULL) {
         return false;
     }
 
     try {
-        boost::filesystem::utfpath file(filename);
+        boost::filesystem::path file(filename);
 
 		if (!boost::filesystem::exists(file)) {
 			std::cerr << "File not found" << std::endl;
@@ -78,7 +78,7 @@ bool LocalFileStream::Open(const utfchar *filename,unsigned int options){
 		}
 
         this->filesize = (long)boost::filesystem::file_size(file);
-        this->extension = file.extension().wstring();
+        this->extension = file.extension().string();
 		this->file = UTFFopen(filename,UTF("rb"));
         this->fd = new boost::iostreams::file_descriptor(file);
 		this->fileStream = new boost::iostreams::stream<boost::iostreams::file_descriptor>(*this->fd);
@@ -146,6 +146,6 @@ long LocalFileStream::Filesize() {
     return this->filesize;
 }
 
-const utfchar* LocalFileStream::Type() {
+const char* LocalFileStream::Type() {
     return this->extension.c_str();
 }
