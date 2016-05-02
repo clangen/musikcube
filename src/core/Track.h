@@ -66,7 +66,7 @@ namespace musik{ namespace core{
 class  Track : public ITrack {
     public:
         virtual ~Track();
-        virtual DBINT Id();
+        virtual DBID Id();
         virtual musik::core::LibraryPtr Library();
         virtual int LibraryId();
 

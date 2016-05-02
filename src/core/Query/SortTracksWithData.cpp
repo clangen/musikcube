@@ -121,7 +121,7 @@ bool Query::SortTracksWithData::ParseQuery(Library::Base *library,db::Connection
         db::Statement insertTracks("INSERT INTO temp_track_sort (track_id) VALUES (?)",db);
 
         for(std::size_t i(0);i<this->tracksToSort.size();++i){
-            DBINT track(this->tracksToSort[i]);
+            DBID track(this->tracksToSort[i]);
             insertTracks.BindInt(0,track);
             insertTracks.Step();
             insertTracks.Reset();
@@ -194,7 +194,7 @@ Query::Ptr Query::SortTracksWithData::copy() const{
 ///\brief
 ///Add a track (trackId) in for sorting
 //////////////////////////////////////////
-void Query::SortTracksWithData::AddTrack(DBINT trackId){
+void Query::SortTracksWithData::AddTrack(DBID trackId){
     this->tracksToSort.push_back(trackId);
 }
 
@@ -247,7 +247,7 @@ bool Query::SortTracksWithData::ReceiveQuery(musik::core::xml::ParserNode &query
             try{    // lexical_cast can throw
                 boost::algorithm::split(values,node.Content(),boost::algorithm::is_any_of(","));
                 for(StringVector::iterator value=values.begin();value!=values.end();++value){
-                    this->tracksToSort.push_back( boost::lexical_cast<DBINT>(*value) );
+                    this->tracksToSort.push_back( boost::lexical_cast<DBID>(*value) );
                 }
             }
             catch(...){
@@ -409,7 +409,7 @@ bool Query::SortTracksWithData::ReceiveResults(musik::core::xml::ParserNode &que
             while( musik::core::xml::ParserNode trackNode = node.ChildNode("t") ){
 				trackNode.WaitForContent();
 
-                DBINT trackId(boost::lexical_cast<DBINT>(trackNode.Attributes()["id"]));
+                DBID trackId(boost::lexical_cast<DBID>(trackNode.Attributes()["id"]));
                 TrackWithSortdata newSortData;
                 newSortData.track.reset(new LibraryTrack(trackId,library->Id()));
                 newSortData.sortData = trackNode.Content();

@@ -55,7 +55,7 @@ namespace musik{ namespace core{
 //////////////////////////////////////////
 class  IndexerTrack : public Track {
     public:
-        IndexerTrack(DBINT id);
+        IndexerTrack(DBID id);
         virtual ~IndexerTrack(void);
 
         virtual const char* GetValue(const char* metakey);
@@ -69,16 +69,25 @@ class  IndexerTrack : public Track {
         virtual MetadataIteratorRange GetAllValues();
         virtual TrackPtr Copy();
 
-        virtual DBINT Id();
+        virtual DBID Id();
 
-        bool CompareDBAndFileInfo(const boost::filesystem::path &file,db::Connection &dbConnection,DBINT currentFolderId);
-        bool Save(db::Connection &dbConnection, std::string libraryDirectory,DBINT folderId);
+        bool CompareDBAndFileInfo(
+            const boost::filesystem::path &file,
+            db::Connection &dbConnection,
+            DBID currentFolderId);
+
+        bool Save(
+            db::Connection &dbConnection, 
+            std::string libraryDirectory,
+            DBID folderId);
+
         bool GetTrackMetadata(db::Connection &db);
 
     private:
         // The variables
-        DBINT id;
-        DBINT tempSortOrder;
+        DBID id;
+        DBID tempSortOrder;
+
     private:
         class MetaData{
             public:
@@ -96,8 +105,8 @@ class  IndexerTrack : public Track {
 
         void InitMeta();
 
-        DBINT _GetGenre(db::Connection &dbConnection, std::string genre,bool addRelation,bool aggregated=false);
-        DBINT _GetArtist(db::Connection &dbConnection, std::string artist,bool addRelation,bool aggregated=false);
+        DBID _GetGenre(db::Connection &dbConnection, std::string genre,bool addRelation,bool aggregated=false);
+        DBID _GetArtist(db::Connection &dbConnection, std::string artist,bool addRelation,bool aggregated=false);
 
 };
 

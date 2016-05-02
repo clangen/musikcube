@@ -335,7 +335,7 @@ bool TrackMetadata::ReceiveQuery(musik::core::xml::ParserNode &queryNode){
             try{    // lexical_cast can throw
                 boost::algorithm::split(values,metakeysNode.Content(),boost::algorithm::is_any_of(","));
                 for(StringVector::iterator value=values.begin();value!=values.end();++value){
-                    this->RequestTrack(TrackPtr(new LibraryTrack( boost::lexical_cast<DBINT>(*value),0 )));
+                    this->RequestTrack(TrackPtr(new LibraryTrack( boost::lexical_cast<DBID>(*value),0 )));
                 }
             }
             catch(...){
@@ -440,7 +440,7 @@ bool TrackMetadata::ReceiveResults(musik::core::xml::ParserNode &queryNode,Libra
 
     while(musik::core::xml::ParserNode trackNode=queryNode.ChildNode("t") ){
         try{
-            DBINT trackId( boost::lexical_cast<DBINT>(trackNode.Attributes()["id"]) );
+            DBID trackId( boost::lexical_cast<DBID>(trackNode.Attributes()["id"]) );
 
             // Find the track in the aRequestTracks
             TrackVector::iterator track=this->aRequestTracks.begin();

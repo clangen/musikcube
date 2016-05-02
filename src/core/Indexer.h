@@ -108,8 +108,8 @@ class  Indexer : public ThreadHelper,private boost::noncopyable {
         void CountFiles(std::string &sFolder);
 
         void Synchronize();
-        void SyncDirectory(std::string &sFolder,DBINT iParentFolderId,DBINT iPathId, std::string &syncPath);
-        void SyncDelete(std::vector<DBINT> aPaths);
+        void SyncDirectory(std::string &sFolder,DBID iParentFolderId,DBID iPathId, std::string &syncPath);
+        void SyncDelete(std::vector<DBID> aPaths);
         void SyncCleanup();
         void SyncAddRemovePaths();
         void SyncOptimize();

@@ -70,8 +70,8 @@ class  ListSelection : public Query::ListBase{
         ListSelection(void);
         ~ListSelection(void);
 
-        void SelectMetadata(const char* metakey,DBINT metadataId);
-        void RemoveMetadata(const char* metakey,DBINT metadataId);
+        void SelectMetadata(const char* metakey,DBID metadataId);
+        void RemoveMetadata(const char* metakey,DBID metadataId);
         void ClearMetadata(const char* metakey=NULL);
 
         void SelectionOrderSensitive(bool sensitive);
@@ -89,7 +89,7 @@ class  ListSelection : public Query::ListBase{
         virtual bool SendQuery(musik::core::xml::WriterNode &queryNode);
 
     private:
-        typedef std::set<DBINT> SelectedMetadataIDs;
+        typedef std::set<DBID> SelectedMetadataIDs;
         typedef std::map<std::string,SelectedMetadataIDs> SelectedMetadata;
 
 

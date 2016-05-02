@@ -64,8 +64,8 @@ namespace musik{ namespace core{ namespace db{
             void Reset();
             int Step();
 
-            void BindInt(int position,int bindInt);
-            void BindInt64(int position,UINT64 bindInt);
+            void BindInt(int position, int bindInt);
+            void BindInt(int position, UINT64 bindInt);
             void BindText(int position,const char* bindText);
             void BindText(int position,const std::string &bindText);
             void BindTextW(int position,const wchar_t* bindText);

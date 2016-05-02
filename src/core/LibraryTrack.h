@@ -59,8 +59,8 @@ namespace musik{ namespace core{
 class LibraryTrack : public Track {
     public:
         LibraryTrack(void);
-        LibraryTrack(DBINT id,int libraryId);
-        LibraryTrack(DBINT id,musik::core::LibraryPtr library);
+        LibraryTrack(DBID id,int libraryId);
+        LibraryTrack(DBID id,musik::core::LibraryPtr library);
         virtual ~LibraryTrack(void);
 
         virtual const char* GetValue(const char* metakey);
@@ -74,13 +74,13 @@ class LibraryTrack : public Track {
         virtual MetadataIteratorRange GetAllValues();
         virtual TrackPtr Copy();
 
-        virtual DBINT Id();
+        virtual DBID Id();
         virtual musik::core::LibraryPtr Library();
         virtual int LibraryId();
 
     private:
         // The variables
-        DBINT id;
+        DBID id;
         int libraryId;
     private:
         class MetaData{
@@ -103,7 +103,7 @@ class LibraryTrack : public Track {
     private:
         // Some special methods for the http::Responder
         friend class http::Responder;
-        bool GetFileData(DBINT id,db::Connection &db);
+        bool GetFileData(DBID id,db::Connection &db);
 };
 
 

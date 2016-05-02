@@ -331,7 +331,7 @@ bool TagReaderTaglib::GetID3v2Tag(musik::core::ITrack *track){
 			// Just get the front() picture
 			TagLib::ID3v2::AttachedPictureFrame *picture = static_cast<TagLib::ID3v2::AttachedPictureFrame*>(pictures.front());
 			TagLib::ByteVector pictureData	= picture->picture();
-			DBINT size	= pictureData.size();
+			DBID size	= pictureData.size();
 
 			if(size>32){	// Noticed that some id3tags have like a 4-8 byte size with no thumbnail
 				char *data	= pictureData.data();

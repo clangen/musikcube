@@ -109,7 +109,7 @@ void Query::ListSelection::SelectionOrderSensitive(bool sensitive){
 ///\see
 ///ClearMetadata|RemoveMetadata
 //////////////////////////////////////////
-void Query::ListSelection::SelectMetadata(const char* metakey,DBINT metadataId){
+void Query::ListSelection::SelectMetadata(const char* metakey,DBID metadataId){
 
     if(this->selectionOrderSensitive){
         std::vector<std::string>::iterator    themetakey    = std::find(this->metakeySelectionOrder.begin(),this->metakeySelectionOrder.end(),metakey);
@@ -143,7 +143,7 @@ void Query::ListSelection::SelectMetadata(const char* metakey,DBINT metadataId){
 ///\see
 ///ClearMetadata|SelectMetadata
 //////////////////////////////////////////
-void Query::ListSelection::RemoveMetadata(const char* metatag,DBINT metadataId){
+void Query::ListSelection::RemoveMetadata(const char* metatag,DBID metadataId){
     SelectedMetadata::iterator    keyiterator    = this->selectedMetadata.find(metatag);
     if(keyiterator!=this->selectedMetadata.end()){
         keyiterator->second.erase(metadataId);
@@ -241,7 +241,7 @@ void Query::ListSelection::ClearMetadata(const char* metatag){
 ///        2. Getting fixed fields
 ///            Well.. I guess I could do this at the same time when I select the tracks by adding them in the select
 ///                SELECT t.id,t.year FROM tracks t ORDER BY t.sort_order1
-///            and store the output in a std::set<DBINT> to get the uniq fields
+///            and store the output in a std::set<DBID> to get the uniq fields
 ///            This way they will also be sorted.
 ///            Do the same for the "album" but get album_id and query for it later.
 ///
@@ -491,7 +491,7 @@ void Query::ListSelection::SQLSelectQuery(const char *metakey,const char *sqlSta
             sqlSelectTrackWhere.append(sqlStart);
 
             bool first(true);
-            for(std::set<DBINT>::iterator id=selected->second.begin();id!=selected->second.end();++id){
+            for(std::set<DBID>::iterator id=selected->second.begin();id!=selected->second.end();++id){
                 if(first){
                     first=false;
                 }else{
@@ -592,7 +592,7 @@ bool Query::ListSelection::ReceiveQuery(musik::core::xml::ParserNode &queryNode)
                 boost::algorithm::split(values,selectionNode.Content(),boost::algorithm::is_any_of(","));
 
                 for(StringVector::iterator value=values.begin();value!=values.end();++value){
-                    this->SelectMetadata(selectionNode.Attributes()["key"].c_str(),boost::lexical_cast<DBINT>(*value));
+                    this->SelectMetadata(selectionNode.Attributes()["key"].c_str(),boost::lexical_cast<DBID>(*value));
                 }
 
             }

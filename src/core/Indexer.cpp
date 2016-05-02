@@ -208,14 +208,14 @@ void Indexer::Synchronize(){
 
     // Get the paths
     std::vector<std::string> aPaths;
-    std::vector<DBINT> aPathIds;
+    std::vector<DBID> aPathIds;
 
     {
         db::Statement stmt("SELECT id,path FROM paths",this->dbConnection);
 
         while( stmt.Step()==db::Row ){
             // For each path
-            DBINT iPathId( stmt.ColumnInt(0) );
+            DBID iPathId( stmt.ColumnInt(0) );
             std::string sPath( stmt.ColumnTextUTF(1) );
 
             // Check to see if folder exists, otherwise ignore (unavaliable paths are not removed)
@@ -254,7 +254,7 @@ void Indexer::Synchronize(){
 
     for(std::size_t i(0);i<aPaths.size();++i){
         std::string sPath = aPaths[i];
-        DBINT iPathId = aPathIds[i];
+        DBID iPathId = aPathIds[i];
 
         this->SyncDirectory(sPath,0,iPathId,sPath);
     }
@@ -345,7 +345,7 @@ void Indexer::CountFiles(std::string &sFolder){
 ///
 ///Read all tracks in a folder. All folders in that folder is recursively called.
 //////////////////////////////////////////
-void Indexer::SyncDirectory(std::string &sFolder,DBINT iParentFolderId,DBINT iPathId, std::string &syncPath){
+void Indexer::SyncDirectory(std::string &sFolder,DBID iParentFolderId,DBID iPathId, std::string &syncPath){
 
     if(this->Exited() || this->Restarted()){
         return;
@@ -355,7 +355,7 @@ void Indexer::SyncDirectory(std::string &sFolder,DBINT iParentFolderId,DBINT iPa
     sFolder = oPath.string();    // Fix pathname for slash/backslash
 
     std::string sFolderLeaf(oPath.leaf().string());
-    DBINT iFolderId(0);
+    DBID iFolderId(0);
 
     // Get this folder ID
     {
@@ -563,7 +563,7 @@ bool Indexer::Startup(std::string setLibraryPath){
 ///\remarks
 ///This method will not delete related information (meta-data, albums, etc)
 //////////////////////////////////////////
-void Indexer::SyncDelete(std::vector<DBINT> aPaths){
+void Indexer::SyncDelete(std::vector<DBID> aPaths){
 
     // Remove unwanted folder-paths
     this->dbConnection.Execute("DELETE FROM folders WHERE path_id NOT IN (SELECT id FROM paths)");
@@ -629,7 +629,7 @@ void Indexer::SyncDelete(std::vector<DBINT> aPaths){
 
     // Remove tracks
     db::Statement stmtCount("SELECT count(*) FROM tracks",this->dbConnection);
-    DBINT iSongs(0),iCount(0);
+    DBID iSongs(0),iCount(0);
     if(stmtCount.Step()==db::Row){
         iSongs = stmtCount.ColumnInt(0);
     }
@@ -762,7 +762,7 @@ std::vector<std::string> Indexer::GetPaths(){
 //////////////////////////////////////////
 void Indexer::SyncOptimize(){
 
-    DBINT iCount(0),iId(0);
+    DBID iCount(0),iId(0);
 
 
     {
@@ -951,8 +951,8 @@ void Indexer::RunAnalyzers(){
     }
 
     // Loop through all tracks
-    DBINT trackId(0);
-    DBINT folderId(0);
+    DBID trackId(0);
+    DBID folderId(0);
     db::Statement getNextTrack("SELECT id,folder_id FROM tracks WHERE id>? ORDER BY id LIMIT 1",this->dbConnection);
     getNextTrack.BindInt(0,trackId);
 

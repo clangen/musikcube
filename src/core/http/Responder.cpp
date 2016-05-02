@@ -109,7 +109,7 @@ void Responder::ThreadLoop(){
                     try{
                         musik::core::LibraryTrack *libraryTrack = new musik::core::LibraryTrack();
                         track.reset(libraryTrack);
-                        if(!libraryTrack->GetFileData( boost::lexical_cast<DBINT>(trackId),this->db)){
+                        if(!libraryTrack->GetFileData( boost::lexical_cast<DBID>(trackId),this->db)){
                             track.reset();
                         }
                     }

@@ -52,7 +52,7 @@ using namespace musik::core;
 
 //////////////////////////////////////////////////////////////////////////////
 
-IndexerTrack::IndexerTrack(DBINT id)
+IndexerTrack::IndexerTrack(DBID id)
  :meta(NULL)
  ,id(id)
  ,tempSortOrder(0)
@@ -126,7 +126,7 @@ Track::MetadataIteratorRange IndexerTrack::GetAllValues(){
     return Track::MetadataIteratorRange();
 }
 
-DBINT IndexerTrack::Id(){
+DBID IndexerTrack::Id(){
     return this->id;
 }
 
@@ -137,8 +137,11 @@ void IndexerTrack::InitMeta(){
     }
 }
 
-bool IndexerTrack::CompareDBAndFileInfo(const boost::filesystem::path &file,db::Connection &dbConnection,DBINT currentFolderId){
- 
+bool IndexerTrack::CompareDBAndFileInfo(
+    const boost::filesystem::path &file,
+    db::Connection &dbConnection, 
+    DBID currentFolderId)
+{
     try{
         this->SetValue("path", file.string().c_str());
         this->SetValue("filename", file.leaf().string().c_str());
@@ -148,7 +151,7 @@ bool IndexerTrack::CompareDBAndFileInfo(const boost::filesystem::path &file,db::
             this->SetValue("extension",file.leaf().string().substr(lastDot+1).c_str());
         }
 
-        DBINT fileSize  = (DBINT)boost::filesystem::file_size(file);
+        DBID fileSize  = (DBID)boost::filesystem::file_size(file);
         DBTIME fileTime = (DBTIME)boost::filesystem::last_write_time(file);
 
         this->SetValue("filesize", boost::lexical_cast<std::string>(fileSize).c_str());
@@ -179,8 +182,7 @@ bool IndexerTrack::CompareDBAndFileInfo(const boost::filesystem::path &file,db::
 
 
 
-bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirectory, DBINT folderId){
-
+bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirectory, DBID folderId) {
     MetadataMap metadataCopy(this->meta->metadata);
 
     unsigned int count;
@@ -249,7 +251,7 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
     //////////////////////////////////////////////////////////////////////////////
     // 3. Read genres
     std::string visualGenres;
-    DBINT genreId(0);
+    DBID genreId(0);
     count = 0;
     std::set<std::string> alreadySetGenres;        // Cache for not saving duplicates
 
@@ -283,7 +285,7 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
     //////////////////////////////////////////////////////////////////////////////
     // 4. Read artists
     std::string visualArtists;
-    DBINT artistId(0);
+    DBID artistId(0);
     count = 0;
     std::set<std::string> alreadySetArtists;        // Cache for not saving duplicates
 
@@ -316,7 +318,7 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
 
     //////////////////////////////////////////////////////////////////////////////
     // 5. Read album
-    DBINT albumId(0);
+    DBID albumId(0);
     {
         db::CachedStatement stmt("SELECT id FROM albums WHERE name=?",dbConnection);
         const char *album=this->GetValue("album");
@@ -343,14 +345,14 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
 
     //////////////////////////////////////////////////////////////////////////////
     // 6. Thumbnail
-    DBINT thumbnailId(0);
+    DBID thumbnailId(0);
 
     if(this->meta->thumbnailData){
         UINT64 sum    = Checksum(this->meta->thumbnailData,this->meta->thumbnailSize);
 
         db::CachedStatement thumbs("SELECT id FROM thumbnails WHERE filesize=? AND checksum=?",dbConnection);
         thumbs.BindInt(0,this->meta->thumbnailSize);
-        thumbs.BindInt64(1,sum);
+        thumbs.BindInt(1,sum);
 
         if(thumbs.Step()==db::Row){
             thumbnailId    = thumbs.ColumnInt(0);
@@ -360,7 +362,7 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
             // INSERT thumbnail
             db::Statement insertThumb("INSERT INTO thumbnails (filesize,checksum) VALUES (?,?)",dbConnection);
             insertThumb.BindInt(0,this->meta->thumbnailSize);
-            insertThumb.BindInt64(1,sum);
+            insertThumb.BindInt(1,sum);
 
             if(insertThumb.Step()==db::Done){
                 thumbnailId    = dbConnection.LastInsertedId();
@@ -414,7 +416,7 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
         for(MetadataMap::const_iterator metaData=metadataCopy.begin();metaData!=metadataCopy.end();++metaData){
 
             // 1. Find the meta_key
-            DBINT metaKeyId(0);
+            DBID metaKeyId(0);
             std::string key;
 
             selectMetaKey.BindText(0,metaData->first);
@@ -435,7 +437,7 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
 
             // 2. Find meta value
             if(metaKeyId!=0){
-                DBINT metaValueId(0);
+                DBID metaValueId(0);
                 // 2.1 Find meta_value
                 selectMetaValue.BindInt(0,metaKeyId);
                 selectMetaValue.BindTextUTF(1,metaData->second);
@@ -470,8 +472,8 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
     return true;
 }
 
-DBINT IndexerTrack::_GetGenre(db::Connection &dbConnection, std::string genre,bool addRelation,bool aggregated){
-    DBINT genreId(0);
+DBID IndexerTrack::_GetGenre(db::Connection &dbConnection, std::string genre,bool addRelation,bool aggregated){
+    DBID genreId(0);
     {
         db::CachedStatement stmt("SELECT id FROM genres WHERE name=?",dbConnection);
         stmt.BindTextUTF(0,genre);
@@ -482,7 +484,7 @@ DBINT IndexerTrack::_GetGenre(db::Connection &dbConnection, std::string genre,bo
 
     if(genreId==0){
         // Insert the genre
-        DBINT aggregatedInt    = (aggregated?1:0);
+        DBID aggregatedInt    = (aggregated?1:0);
 
         db::CachedStatement stmt("INSERT INTO genres (name,aggregated) VALUES (?,?)",dbConnection);
         stmt.BindTextUTF(0,genre);
@@ -504,8 +506,8 @@ DBINT IndexerTrack::_GetGenre(db::Connection &dbConnection, std::string genre,bo
     return genreId;
 }
 
-DBINT IndexerTrack::_GetArtist(db::Connection &dbConnection, std::string artist,bool addRelation,bool aggregated){
-    DBINT artistId(0);
+DBID IndexerTrack::_GetArtist(db::Connection &dbConnection, std::string artist,bool addRelation,bool aggregated){
+    DBID artistId(0);
 
     db::CachedStatement stmt("SELECT id FROM artists WHERE name=?",dbConnection);
     stmt.BindTextUTF(0,artist);
@@ -516,7 +518,7 @@ DBINT IndexerTrack::_GetArtist(db::Connection &dbConnection, std::string artist,
 
     if(artistId==0){
         // Insert the genre
-        DBINT aggregatedInt    = (aggregated?1:0);
+        DBID aggregatedInt    = (aggregated?1:0);
         db::Statement insertArtist("INSERT INTO artists (name,aggregated) VALUES (?,?)",dbConnection);
         insertArtist.BindTextUTF(0,artist);
         insertArtist.BindInt(1,aggregatedInt);

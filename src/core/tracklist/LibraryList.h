@@ -102,7 +102,7 @@ class  LibraryList : public Base, public sigslot::has_slots<> {
         ///This is used instead of a std::vector<TrackPtr> because of
         ///speed and memory issues.
 		//////////////////////////////////////////
-		std::vector<DBINT> tracklist;
+		std::vector<DBID> tracklist;
 
     private:
 		//////////////////////////////////////////

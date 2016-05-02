@@ -145,7 +145,7 @@ bool Query::SortTracks::ParseQuery(Library::Base *library,db::Connection &db){
 
         db::Statement selectMetaValue("SELECT mv.sort_order FROM meta_values mv,track_meta tm WHERE tm.meta_value_id=mv.id AND tm.track_id=? AND mv.meta_key_id=? LIMIT 1",db);
 		for(std::size_t i(0);i<this->tracksToSort.size();++i){
-            DBINT track(this->tracksToSort[i]);
+            DBID track(this->tracksToSort[i]);
             insertTracks.BindInt(0,track);
 
             // Lets find the meta values
@@ -186,13 +186,13 @@ Query::Ptr Query::SortTracks::copy() const{
     return queryCopy;
 }
 
-void Query::SortTracks::AddTrack(DBINT trackId){
+void Query::SortTracks::AddTrack(DBID trackId){
     this->tracksToSort.push_back(trackId);
 }
 
-void Query::SortTracks::AddTracks(std::vector<DBINT> &tracks){
+void Query::SortTracks::AddTracks(std::vector<DBID> &tracks){
     this->tracksToSort.reserve(this->tracksToSort.size()+tracks.size());
-    for(std::vector<DBINT>::iterator track=tracks.begin();track!=tracks.end();++track){
+    for(std::vector<DBID>::iterator track=tracks.begin();track!=tracks.end();++track){
         this->tracksToSort.push_back(*track);
     }
 }
@@ -252,7 +252,7 @@ bool Query::SortTracks::ReceiveQuery(musik::core::xml::ParserNode &queryNode){
             try{    // lexical_cast can throw
                 boost::algorithm::split(values,node.Content(),boost::algorithm::is_any_of(","));
                 for(StringVector::iterator value=values.begin();value!=values.end();++value){
-                    this->tracksToSort.push_back( boost::lexical_cast<DBINT>(*value) );
+                    this->tracksToSort.push_back( boost::lexical_cast<DBID>(*value) );
                 }
             }
             catch(...){

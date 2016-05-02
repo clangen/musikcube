@@ -65,7 +65,7 @@
 #endif  // WIN32
 
 
-typedef UINT64 DBINT;
+typedef UINT64 DBID;
 typedef UINT64 VERSION;
 typedef UINT64 DBTIME;
 

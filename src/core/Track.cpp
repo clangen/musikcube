@@ -49,7 +49,7 @@ using namespace musik::core;
 Track::~Track(void){
 }
 
-DBINT Track::Id(){
+DBID Track::Id(){
     return 0;
 }
 

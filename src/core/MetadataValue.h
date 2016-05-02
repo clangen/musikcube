@@ -47,10 +47,10 @@ namespace musik{ namespace core{
     class  MetadataValue{
         public:
             MetadataValue(void);
-            MetadataValue(const DBINT newId,const char *value);
+            MetadataValue(const DBID newId,const char *value);
             ~MetadataValue(void);
 
-            DBINT id;
+            DBID id;
             std::string value;
 
     };

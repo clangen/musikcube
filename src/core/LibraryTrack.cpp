@@ -60,14 +60,14 @@ LibraryTrack::LibraryTrack(void)
 {
 }
 
-LibraryTrack::LibraryTrack(DBINT id,int libraryId)
+LibraryTrack::LibraryTrack(DBID id,int libraryId)
  :meta(NULL)
  ,id(id)
  ,libraryId(libraryId)
 {
 }
 
-LibraryTrack::LibraryTrack(DBINT id,musik::core::LibraryPtr library)
+LibraryTrack::LibraryTrack(DBID id,musik::core::LibraryPtr library)
  :meta(NULL)
  ,id(id)
  ,libraryId(library->Id())
@@ -188,7 +188,7 @@ Track::MetadataIteratorRange LibraryTrack::GetAllValues(){
     return Track::MetadataIteratorRange();
 }
 
-DBINT LibraryTrack::Id(){
+DBID LibraryTrack::Id(){
     return this->id;
 }
 
@@ -222,7 +222,7 @@ TrackPtr LibraryTrack::Copy(){
 }
 
 
-bool LibraryTrack::GetFileData(DBINT id,db::Connection &db){
+bool LibraryTrack::GetFileData(DBID id,db::Connection &db){
     this->InitMeta();
 
     this->id    = id;

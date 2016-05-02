@@ -66,7 +66,7 @@ class  SortTracksWithData : public Query::Base{
         SortTracksWithData(void);
         ~SortTracksWithData(void);
 
-        void AddTrack(DBINT trackId);
+        void AddTrack(DBID trackId);
         void ClearTracks();
         void SortByMetaKey(std::string metaKey);
 
@@ -89,7 +89,7 @@ class  SortTracksWithData : public Query::Base{
 
     protected:
 
-        typedef std::vector<DBINT> IntVector;
+        typedef std::vector<DBID> IntVector;
         IntVector tracksToSort;
 
         std::string sortByMetaKey;

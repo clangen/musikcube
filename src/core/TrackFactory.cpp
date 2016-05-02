@@ -47,7 +47,9 @@ TrackPtr TrackFactory::CreateTrack(std::string uri){
         boost::regex reg(UTF("mcdb://([0-9]+)/([0-9]+)"));
         boost::smatch matches;
         if(boost::regex_match(uri,matches,reg)){
-            return TrackPtr(new LibraryTrack(boost::lexical_cast<DBINT>(matches[1].str()),boost::lexical_cast<DBINT>(matches[0].str())));
+            return TrackPtr(new LibraryTrack(
+                boost::lexical_cast<DBID>(matches[1].str()),
+                boost::lexical_cast<int>(matches[0].str())));
         }
     }
     return GenericTrack::Create(uri.c_str());

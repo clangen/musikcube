@@ -343,7 +343,7 @@ bool Query::ListBase::ReceiveResults(musik::core::xml::ParserNode &queryNode,Lib
 			        tempTrackResults.reserve(101);
 
 	                for(StringVector::iterator value=values.begin();value!=values.end();++value){
-						int trackId(boost::lexical_cast<DBINT>(*value));
+						DBID trackId = boost::lexical_cast<DBID>(*value);
                         tempTrackResults.push_back(TrackPtr(new LibraryTrack(trackId,library->Id())));
 					}
 

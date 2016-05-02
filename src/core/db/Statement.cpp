@@ -130,7 +130,7 @@ void Statement::BindInt(int position,int bindInt){
 ///\param bindInt
 ///Integer to bind
 //////////////////////////////////////////
-void Statement::BindInt64(int position,UINT64 bindInt){
+void Statement::BindInt(int position, UINT64 bindInt){
     DB_ASSERT(sqlite3_bind_int64(this->stmt,position+1,bindInt));
 }
 
