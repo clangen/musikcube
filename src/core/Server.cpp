@@ -93,7 +93,7 @@ bool Server::Startup(){
 }
 
 std::string Server::ServerIdentifier(){
-    return UTF("server");
+    return "server";
 }
 
 
@@ -102,8 +102,8 @@ void Server::ThreadLoop(){
     musik::core::Preferences prefs("Server");
 
     // Get directory and database paths
-    std::string directory( musik::core::GetDataDirectory()+this->ServerIdentifier()+UTF("/") );
-    std::string database(directory+UTF("musik.db"));
+    std::string directory( musik::core::GetDataDirectory()+this->ServerIdentifier()+"/" );
+    std::string database(directory+"musik.db");
 
     // Create directory if not existing
     boost::filesystem::path folder(directory);

@@ -135,7 +135,7 @@ std::string Library::Base::GetLibraryDirectory(){
     std::string directory( musik::core::GetDataDirectory() );
 
     if(!this->identifier.empty()){
-        directory.append(this->identifier+UTF("/"));
+        directory.append(this->identifier+"/");
     }
 
     boost::filesystem::path oFolder(directory);
@@ -157,7 +157,7 @@ std::string Library::Base::GetLibraryDirectory(){
 //////////////////////////////////////////
 std::string Library::Base::GetDBPath(){
     std::string sPath = this->GetLibraryDirectory();
-    sPath.append(UTF("musik.db"));
+    sPath.append("musik.db");
     return sPath;
 }
 
@@ -733,7 +733,7 @@ void Library::Base::CreateDatabase(db::Connection &db){
 ///get the HTTP-address to the tracks
 //////////////////////////////////////////
 std::string Library::Base::BasePath(){
-    return UTF("");
+    return "";
 }
 
 LibraryPtr Library::Base::GetSelfPtr(){

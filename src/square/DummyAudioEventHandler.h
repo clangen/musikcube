@@ -56,19 +56,19 @@ private: ConsoleUI* cui; // TODO: should probably be interface
 private: void PrintEvent(std::string s);
 
 // Slots
-public: void	OnPlaybackAlmostEnded()		{	this->PrintEvent(UTF("Playback almost done")); };
-public: void    OnPlaybackStartedOk()       {   this->PrintEvent(UTF("Playback started OK")); };
-public: void    OnPlaybackStartedFail()     {   this->PrintEvent(UTF("Playback started FAIL")); };
-public: void    OnPlaybackStoppedOk()       {   this->PrintEvent(UTF("Playback stopped OK")); };
-public: void    OnPlaybackStoppedFail()     {   this->PrintEvent(UTF("Playback stopped FAIL")); };
-public: void    OnPlaybackInterrupted()     {   this->PrintEvent(UTF("Playback interrupted")); };
-public: void    OnVolumeChangedOk()         {   this->PrintEvent(UTF("Volume changed OK")); };
-public: void    OnVolumeChangedFail()       {   this->PrintEvent(UTF("Volume changed FAIL")); };
-public: void    OnStreamOpenOk()            {   this->PrintEvent(UTF("Stream open OK")); };
-public: void    OnStreamOpenFail()          {   this->PrintEvent(UTF("Stream open FAIL")); };
+public: void	OnPlaybackAlmostEnded()		{	this->PrintEvent("Playback almost done"); };
+public: void    OnPlaybackStartedOk()       {   this->PrintEvent("Playback started OK"); };
+public: void    OnPlaybackStartedFail()     {   this->PrintEvent("Playback started FAIL"); };
+public: void    OnPlaybackStoppedOk()       {   this->PrintEvent("Playback stopped OK"); };
+public: void    OnPlaybackStoppedFail()     {   this->PrintEvent("Playback stopped FAIL"); };
+public: void    OnPlaybackInterrupted()     {   this->PrintEvent("Playback interrupted"); };
+public: void    OnVolumeChangedOk()         {   this->PrintEvent("Volume changed OK"); };
+public: void    OnVolumeChangedFail()       {   this->PrintEvent("Volume changed FAIL"); };
+public: void    OnStreamOpenOk()            {   this->PrintEvent("Stream open OK"); };
+public: void    OnStreamOpenFail()          {   this->PrintEvent("Stream open FAIL"); };
 public: void    OnMixpointReached()         ;
-public: void    OnSetPositionOk()           {   this->PrintEvent(UTF("Set position OK")); };
-public: void    OnSetPositionFail()         {   this->PrintEvent(UTF("Set position FAIL")); };
+public: void    OnSetPositionOk()           {   this->PrintEvent("Set position OK"); };
+public: void    OnSetPositionFail()         {   this->PrintEvent("Set position FAIL"); };
 };
 
 }} // NS

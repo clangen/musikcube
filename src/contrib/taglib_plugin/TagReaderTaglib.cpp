@@ -103,11 +103,11 @@ bool TagReaderTaglib::CanReadTag(const char *extension){
 
         boost::algorithm::to_lower(ext);    // Convert to lower case
 
-        if(	ext.compare(UTF("mp3")) == 0 ||
-            ext.compare(UTF("ogg")) == 0 ||
-            ext.compare(UTF("flac")) == 0 ||
-            ext.compare(UTF("ape")) == 0 ||
-            ext.compare(UTF("mpc")) == 0
+        if(	ext.compare("mp3") == 0 ||
+            ext.compare("ogg") == 0 ||
+            ext.compare("flac") == 0 ||
+            ext.compare("ape") == 0 ||
+            ext.compare("mpc") == 0
                 ) {
 		    return true;
 	    }
@@ -125,14 +125,14 @@ bool TagReaderTaglib::ReadTag(musik::core::ITrack *track){
     	string ext(extension);
         boost::algorithm::to_lower(ext);    // Convert to lower case
 
-        if(ext==UTF("mp3"))
+        if(ext=="mp3")
             if(this->GetID3v2Tag(track)){
                 // Get the generic tag as well, just in case there is only a id3v1 tag.
                 this->GetGenericTag(track);
                 return true;
             }
 
-        if(ext==UTF("ogg"))
+        if(ext=="ogg")
             if(this->GetOGGTag(track))
                 return true;
 
@@ -228,7 +228,7 @@ bool TagReaderTaglib::GetID3v2Tag(musik::core::ITrack *track){
         std::vector<string> splitTrack;
         if(!aAllTags["TRCK"].isEmpty()){
         	TagLib::wstring tempTrack = aAllTags["TRCK"].front()->toString().toWString();
-            boost::algorithm::split(splitTrack,tempTrack,boost::algorithm::is_any_of(UTF("/")));
+            boost::algorithm::split(splitTrack,tempTrack,boost::algorithm::is_any_of("/"));
             this->SetTagValue("track",splitTrack[0].c_str(),track);
             if(splitTrack.size()>1){
                 this->SetTagValue("totaltracks",splitTrack[1].c_str(),track);
@@ -316,9 +316,9 @@ bool TagReaderTaglib::GetID3v2Tag(musik::core::ITrack *track){
 
 			if(description.empty()){
 				this->SetTagValue("comment",comment->toString(),track);
-			}else if(description.compare(UTF("MusicMatch_Mood")) == 0){
+			}else if(description.compare("MusicMatch_Mood") == 0){
 				this->SetTagValue("mood",comment->toString(),track);
-			}else if(description.compare(UTF("MusicMatch_Preference")) == 0){
+			}else if(description.compare("MusicMatch_Preference") == 0){
 				this->SetTagValue("textrating",comment->toString(),track);
 			}
 		}
@@ -372,7 +372,7 @@ void TagReaderTaglib::SetTagValue(const char* key,const char* string,musik::core
 }
 
 void TagReaderTaglib::SetTagValue(const char* key,const int tagInt,musik::core::ITrack *track){
-	string temp = boost::str(boost::format(UTF("%1%"))%tagInt);
+	string temp = boost::str(boost::format("%1%")%tagInt);
     track->SetValue(key,temp.c_str());
 }
 
@@ -411,7 +411,7 @@ void TagReaderTaglib::SetSlashSeparatedValues(const char* key,TagLib::String tag
 		string value(tagString.begin(),tagString.end());
 		std::vector<string> splitValues;
 
-		boost::algorithm::split(splitValues,value,boost::algorithm::is_any_of(UTF("/")));
+		boost::algorithm::split(splitValues,value,boost::algorithm::is_any_of("/"));
 
 		for(std::vector<string>::iterator theValue=splitValues.begin();theValue!=splitValues.end();++theValue){
             track->SetValue(key,theValue->c_str());
@@ -441,19 +441,19 @@ void TagReaderTaglib::SetSlashSeparatedValues(const char* key,const TagLib::ID3v
 
 void TagReaderTaglib::SetAudioProperties(TagLib::AudioProperties *audioProperties,musik::core::ITrack *track){
 	if(audioProperties){
-		string duration	= boost::str(boost::format(UTF("%1%"))%audioProperties->length());
+		string duration	= boost::str(boost::format("%1%")%audioProperties->length());
 
 		this->SetTagValue("duration",duration,track);
 
         int bitrate( audioProperties->bitrate() );
         if(bitrate){
-			string temp( boost::str(boost::format(UTF("%1%"))%bitrate ) );
+			string temp( boost::str(boost::format("%1%")%bitrate ) );
 			this->SetTagValue("bitrate",temp,track);
         }
 
         int channels( audioProperties->channels() );
         if(channels){
-			string temp( boost::str(boost::format(UTF("%1%"))%channels ) );
+			string temp( boost::str(boost::format("%1%")%channels ) );
 			this->SetTagValue("channels",temp,track);
         }
 	}

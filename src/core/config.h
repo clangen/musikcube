@@ -69,16 +69,6 @@ typedef UINT64 DBID;
 typedef UINT64 VERSION;
 typedef UINT64 DBTIME;
 
-//////////////////////////////////////////
-///\brief
-///The UTF macro is the text macro when writing texts in the code that
-///should be utf encoded.
-///
-///\remarks
-///We thought that the _T was a little bit too microsoft specific.
-//////////////////////////////////////////
-#define UTF(x) x
-
 #ifdef WIN32
 	#define CopyFloat(dst, src, num) CopyMemory(dst, src, (num) * sizeof(float))
 #else

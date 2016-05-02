@@ -59,7 +59,7 @@ using namespace musik::core::server;
 
 Connection::Connection(boost::asio::io_service &ioService,musik::core::Server *server)
  :socket(ioService)
- ,Base(UTF("Server"),0)
+ ,Base("Server",0)
  ,server(server)
  ,salt(musik::core::Crypt::GenerateSalt())
 {
@@ -342,7 +342,7 @@ void Connection::CancelCurrentQuery( ){
 }
 
 std::string Connection::GetInfo(){
-    return UTF("");
+    return "";
 }
 
 void Connection::Exit(){

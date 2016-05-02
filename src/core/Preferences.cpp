@@ -123,7 +123,7 @@ Preferences::IO::Ptr Preferences::IO::Instance(){
 Preferences::IO::IO(void){
     boost::mutex::scoped_lock lock(this->mutex);
     std::string dataDir   = GetDataDirectory();
-    std::string dbFile    = GetDataDirectory() + UTF("settings.db");
+    std::string dbFile    = GetDataDirectory() + "settings.db";
     this->db.Open(dbFile.c_str(),0,128);
     
     Preferences::CreateDB(this->db);
@@ -227,7 +227,7 @@ int Preferences::Setting::Value(int defaultValue){
 std::string Preferences::Setting::Value(std::string defaultValue){
     switch(this->type){
         case Setting::Bool:
-            return this->valueBool?UTF("1"):UTF("0");
+            return this->valueBool ? "1" : "0";
             break;
         case Setting::Int:
             try{

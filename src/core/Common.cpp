@@ -51,7 +51,7 @@
 //////////////////////////////////////////
 std::string musik::core::GetPluginDirectory(){
     std::string sDirectory(GetApplicationDirectory());
-    sDirectory.append(UTF("plugins/"));
+    sDirectory.append("plugins/");
     return sDirectory;
 }
 
@@ -87,7 +87,7 @@ std::string musik::core::GetDataDirectory(){
         delete [] sBuffer;
     #endif
 
-    directory.append(UTF("/mC2/"));
+    directory.append("/mC2/");
 
     // Create folder if it does not exist
     boost::filesystem::path oFolder(directory);

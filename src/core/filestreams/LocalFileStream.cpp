@@ -79,7 +79,7 @@ bool LocalFileStream::Open(const char *filename,unsigned int options){
 
         this->filesize = (long)boost::filesystem::file_size(file);
         this->extension = file.extension().string();
-		this->file = UTFFopen(filename,UTF("rb"));
+		this->file = UTFFopen(filename,"rb");
         this->fd = new boost::iostreams::file_descriptor(file);
 		this->fileStream = new boost::iostreams::stream<boost::iostreams::file_descriptor>(*this->fd);
 		this->fileStream->exceptions(std::ios_base::eofbit | std::ios_base::failbit | std::ios_base::badbit);

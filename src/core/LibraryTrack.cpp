@@ -146,18 +146,18 @@ const char* LibraryTrack::URI(){
     static std::string uri;
     if(this->meta){
         uri = 
-            UTF("mcdb://") + 
+            "mcdb://" + 
             this->meta->library->Identifier() + 
-            UTF("/") + 
+            "/" + 
             boost::lexical_cast<std::string>(this->id);
 
         return uri.c_str();
     }
     else{
         uri = 
-            UTF("mcdb://") + 
+            "mcdb://" + 
             boost::lexical_cast<std::string>(this->libraryId) + 
-            UTF("/") + 
+            "/" + 
             boost::lexical_cast<std::string>(this->id);
 
         return uri.c_str();

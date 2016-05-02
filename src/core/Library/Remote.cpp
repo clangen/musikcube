@@ -97,7 +97,7 @@ Library::Remote::~Remote(void){
 ///about the Indexer.
 //////////////////////////////////////////
 std::string Library::Remote::GetInfo(){
-    return UTF("");
+    return "";
 }
 
 
@@ -129,10 +129,10 @@ void Library::Remote::ReadThread(){
     {
         Preferences prefs("Connection",this->Name().c_str());
 
-        this->address   = prefs.GetString("address",UTF("localhost"));
-        this->port      = prefs.GetString("port",UTF("10543"));
-        this->username  = prefs.GetString("username",UTF(""));
-        this->password  = prefs.GetString("password",UTF(""));
+        this->address   = prefs.GetString("address","localhost");
+        this->port      = prefs.GetString("port","10543");
+        this->username  = prefs.GetString("username","");
+        this->password  = prefs.GetString("password","");
     }
 
     boost::asio::ip::tcp::resolver resolver(this->ioService);
@@ -341,12 +341,12 @@ void Library::Remote::Exit(){
 ///get the HTTP-address to the tracks
 //////////////////////////////////////////
 std::string Library::Remote::BasePath(){
-    std:: string path(UTF("http://"));
+    std:: string path("http://");
     boost::asio::ip::tcp::endpoint endPoint = this->socket.remote_endpoint();
     boost::asio::ip::address address        = endPoint.address();
 
     path += address.to_string();
-    path += UTF(":") + this->httpPort + UTF("/");
+    path += ":" + this->httpPort + "/";
     return path;
 }
 

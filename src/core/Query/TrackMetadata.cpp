@@ -434,9 +434,9 @@ bool TrackMetadata::SendResults(musik::core::xml::WriterNode &queryNode,Library:
 bool TrackMetadata::ReceiveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library){
 
     bool requestPath( this->requestedFields.find("path")!=this->requestedFields.end() );
-    std::string pathPrefix(library->BasePath()+UTF("track/?auth_key="));
+    std::string pathPrefix(library->BasePath()+"track/?auth_key=");
     pathPrefix += library->AuthorizationKey();
-    pathPrefix += UTF("&track_id=");
+    pathPrefix += "&track_id=";
 
     while(musik::core::xml::ParserNode trackNode=queryNode.ChildNode("t") ){
         try{

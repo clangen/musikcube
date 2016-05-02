@@ -118,7 +118,7 @@ void NonLibraryTrackHelper::ThreadLoop(){
             // check if this is a local file
             if(musik::core::io::Factory::IsLocalFileStream(track->URL())){
                 std::string url(track->URL());
-                std::string::size_type lastDot = url.find_last_of(UTF("."));
+                std::string::size_type lastDot = url.find_last_of(".");
                 if(lastDot != std::string::npos){
                     track->SetValue("extension", url.substr(lastDot+1).c_str());
                 }

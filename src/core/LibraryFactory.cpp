@@ -59,7 +59,7 @@ LibraryFactory& LibraryFactory::Instance(){
 LibraryFactory::LibraryFactory(void){
 	// Connect to the settings.db
     std::string dataDir = GetDataDirectory();
-    std::string dbFile = GetDataDirectory() + UTF("settings.db");
+    std::string dbFile = GetDataDirectory() + "settings.db";
 	musik::core::db::Connection db;
     db.Open(dbFile.c_str(),0,128);
 
@@ -74,7 +74,7 @@ LibraryFactory::LibraryFactory(void){
 
 	// If there are no libraries, add a LocalDB
 	if(this->libraries.empty()){
-        this->CreateLibrary(UTF("Local Library"),LibraryFactory::LocalDB);
+        this->CreateLibrary("Local Library",LibraryFactory::LocalDB);
 	}
 
 }
@@ -156,7 +156,7 @@ void LibraryFactory::RemoveLibrary(std::string name){
 LibraryPtr LibraryFactory::CreateLibrary(std::string name,int type,bool startup){
 	// Connect to the settings.db
     std::string dataDir   = GetDataDirectory();
-    std::string dbFile    = GetDataDirectory() + UTF("settings.db");
+    std::string dbFile    = GetDataDirectory() + "settings.db";
 	musik::core::db::Connection db;
     db.Open(dbFile.c_str(),0,128);
 

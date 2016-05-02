@@ -89,22 +89,22 @@ std::string Indexer::GetStatus(){
     std::string sStatus;
     switch(this->status){
         case 1:
-            sStatus = boost::str(boost::format(UTF("Counting files: %1%"))%this->nofFiles );
+            sStatus = boost::str(boost::format("Counting files: %1%")%this->nofFiles );
             break;
         case 2:
-            sStatus = boost::str(boost::format(UTF("Indexing: %.2f"))%(this->progress*100)) + UTF("%");
+            sStatus = boost::str(boost::format("Indexing: %.2f") % (this->progress*100)) + "%";
             break;
         case 3:
-            sStatus = boost::str(boost::format(UTF("Removing old files: %.2f"))%(this->progress*100)) + UTF("%");
+            sStatus = boost::str(boost::format("Removing old files: %.2f") % (this->progress*100)) + "%";
             break;
         case 4:
-            sStatus = UTF("Cleaning up.");
+            sStatus = "Cleaning up.";
             break;
         case 5:
-            sStatus = UTF("Optimizing.");
+            sStatus = "Optimizing.";
             break;
         case 6:
-            sStatus = boost::str(boost::format(UTF("Analyzing: %.2f%% (current %.1f%%)"))%(100.0*this->progress/(double)this->nofFiles)%(this->progress2*100.0));
+            sStatus = boost::str(boost::format("Analyzing: %.2f%% (current %.1f%%)")%(100.0*this->progress/(double)this->nofFiles)%(this->progress2*100.0));
             break;
     }
     return sStatus;
@@ -148,8 +148,8 @@ bool Indexer::Restarted(){
 void Indexer::AddPath(std::string sPath){
     boost::filesystem::path oPath(sPath);
     sPath = oPath.string();    // Fix pathname for slash/backslash
-    if(sPath.substr(sPath.size()-1,1)!=UTF("/")){
-        sPath += UTF("/");
+    if(sPath.substr(sPath.size()-1,1)!="/"){
+        sPath += "/";
     }
 
     Indexer::_AddRemovePath addPath;
@@ -457,7 +457,7 @@ void Indexer::SyncDirectory(std::string &sFolder,DBID iParentFolderId,DBID iPath
         }
     }
     catch(...){
-//        std::wcout << UTF("ERROR ") << sFolder << std::endl;
+//        std::wcout << "ERROR " << sFolder << std::endl;
     }
 }
 
@@ -534,7 +534,7 @@ bool Indexer::Startup(std::string setLibraryPath){
     this->libraryPath    = setLibraryPath;
 
     // Create thumbnail cache directory
-    boost::filesystem::path thumbPath(this->libraryPath+UTF("thumbs/"));
+    boost::filesystem::path thumbPath(this->libraryPath+"thumbs/");
     if(!boost::filesystem::exists(thumbPath)){
         boost::filesystem::create_directories(thumbPath);
     }

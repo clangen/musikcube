@@ -228,7 +228,10 @@ void WaveOut::SetFormat(IBuffer *buffer) {
         this->waveFormat.dwChannelMask = speakerConfig;
         this->waveFormat.SubFormat = KSDATAFORMAT_SUBTYPE_IEEE_FLOAT;
 
-        /* create the output device */
+        /* create the output device. note that we use a thread instead of a simple callback
+        here. that's because processing a buffer after calling waveOutReset() can lead to
+        crashes; so we can use a thread and ensure it's shut down before resetting the
+        output device, making it impossible to reach this condition. */
         int openResult = waveOutOpen(
             &this->waveHandle, 
             WAVE_MAPPER, 

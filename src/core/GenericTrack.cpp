@@ -86,7 +86,7 @@ const char* GenericTrack::GetValue(const char* metakey){
 
         if(metaKey=="title"){
             // In case there is no title
-            std::string::size_type lastSlash = this->uri.find_last_of(UTF("/\\"));
+            std::string::size_type lastSlash = this->uri.find_last_of("/\\");
             if(lastSlash!=std::string::npos){
                 static std::string tempString;
                 tempString  = this->uri.substr(lastSlash+1);

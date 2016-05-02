@@ -89,7 +89,7 @@ void PluginFactory::LoadPlugins(){
                 std::string sFile(oFile->path().string());
 
                 #ifdef WIN32
-                    if(sFile.substr(sFile.size()-4)==UTF(".dll")){    // And a DLL
+                    if(sFile.substr(sFile.size()-4)==".dll"){    // And a DLL
 
                         std::wstring wpath = u8to16(sFile);
                         HMODULE oDLL = LoadLibrary(wpath.c_str());
@@ -112,7 +112,7 @@ void PluginFactory::LoadPlugins(){
 
                     }
 		#else	//GNU or other
-                    if(sFile.substr(sFile.size()-3)==UTF(".so")){    // And a shared lib
+                    if(sFile.substr(sFile.size()-3)==".so"){    // And a shared lib
 		        void* oDLL = dlopen(sFile.c_str(), RTLD_NOW);
 			char* err;
 			if ((err = dlerror()) != NULL) {

@@ -88,7 +88,7 @@ void ConsoleUI::Run()
     while (!this->shouldQuit)
     {
         this->PrintCommands();
-        cout << UTF("Enter command: ");
+        cout << "Enter command: ";
         std::getline(cin, command); // Need getline to handle spaces!
         this->ProcessCommand(command);
     }
@@ -114,38 +114,38 @@ void ConsoleUI::ProcessCommand(std::string commandString)
         
     boost::algorithm::split(args, commandString, boost::is_any_of(" "));
 
-    std::string command = args.size() > 0 ? args[0] : UTF("");
+    std::string command = args.size() > 0 ? args[0] : "";
     args.erase(args.begin());
 
-    if (command == UTF("p"))
+    if (command == "p")
     {
         this->PlayFile(args);
     }
-    else if (command == UTF("pa"))
+    else if (command == "pa")
     {
         this->Pause();
     }
-    else if (command == UTF("s"))
+    else if (command == "s")
     {
         this->Stop(args);
     }
-    else if (command == UTF("seek"))
+    else if (command == "seek")
     {
     	this->SetPosition(args);
     }
-    else if (command == UTF("l"))
+    else if (command == "l")
     {
         this->ListPlaying();
     }
-    else if (command == UTF("lp"))
+    else if (command == "lp")
     {
         this->ListPlugins();
     }
-    else if (command == UTF("v"))
+    else if (command == "v")
     {
         this->SetVolume(args);
     }
-    else if (command == UTF("q"))
+    else if (command == "q")
     {
         this->Quit();
     }

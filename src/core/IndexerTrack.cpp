@@ -146,7 +146,7 @@ bool IndexerTrack::CompareDBAndFileInfo(
         this->SetValue("path", file.string().c_str());
         this->SetValue("filename", file.leaf().string().c_str());
 
-        size_t lastDot = file.leaf().string().find_last_of(UTF("."));
+        size_t lastDot = file.leaf().string().find_last_of(".");
         if(lastDot != std::string::npos){
             this->SetValue("extension",file.leaf().string().substr(lastDot+1).c_str());
         }
@@ -266,7 +266,7 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
 
             // Second, add to the visual genre
             if(count!=0){
-                visualGenres    += UTF(", ");
+                visualGenres    += ", ";
             }
             visualGenres    += genres.first->second;
 
@@ -300,7 +300,7 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
 
             // Second, add to the visual artist
             if(count!=0){
-                visualArtists    += UTF(", ");
+                visualArtists    += ", ";
             }
             visualArtists    += artists.first->second;
 
@@ -323,7 +323,7 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
         db::CachedStatement stmt("SELECT id FROM albums WHERE name=?",dbConnection);
         const char *album=this->GetValue("album");
         if(album==NULL){
-            album=UTF("");
+            album="";
         }
 
         stmt.BindTextUTF(0,album);
@@ -371,15 +371,15 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
             // Save the file
             std::string filename = 
                 libraryDirectory + 
-                UTF("thumbs/") + 
+                "thumbs/" + 
                 boost::lexical_cast<std::string>(thumbnailId) + 
-                UTF(".jpg");
+                ".jpg";
 
 #ifdef WIN32
             std::wstring wfilename = u8to16(filename);
             FILE *thumbFile = _wfopen(wfilename.c_str(), _T("wb"));
 #else
-            FILE *thumbFile = fopen(filename.c_str(),UTF("wb"));
+            FILE *thumbFile = fopen(filename.c_str(),"wb");
 #endif
             fwrite(this->meta->thumbnailData,sizeof(char),this->meta->thumbnailSize,thumbFile);
             fclose(thumbFile);
