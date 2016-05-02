@@ -51,21 +51,20 @@ class  IDecoderFactory{
         ///\brief
         ///Create a instance of the decoder
         //////////////////////////////////////////
-        virtual IDecoder*       CreateDecoder() = 0;
+        virtual IDecoder* CreateDecoder() = 0;
 
         //////////////////////////////////////////
         ///\brief
         ///Destroy the object
         //////////////////////////////////////////
-        virtual void            Destroy() = 0;
+        virtual void Destroy() = 0;
 
         //////////////////////////////////////////
         ///\brief
         ///Can this plugin handle this kind of filetype?
         ///The "type" can either be a file extension or a mimetype
         //////////////////////////////////////////
-        virtual bool            CanHandle(const char* type) const = 0;
-
+        virtual bool CanHandle(const char* type) const = 0;
 };
 
 //////////////////////////////////////////////////////////////////////////////

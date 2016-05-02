@@ -81,6 +81,8 @@ void WaveOut::SetVolume(double volume) {
 void WaveOut::Stop() {
     boost::recursive_mutex::scoped_lock lock(this->outputDeviceMutex);
 
+    /* reset waveout first. if we don't do this, it seems like it'll still
+    try to send events to the thread, and fail with a runtime exception. */
     if (this->waveHandle != NULL) {
         waveOutReset(this->waveHandle);
     }
@@ -88,7 +90,7 @@ void WaveOut::Stop() {
     /* stop the thread so nothing else is processed */
     this->StopWaveOutThread();
 
-    /* reset will free the buffers, close deallocs */
+    /* dealloc the handle, we'll create a new one later if we need to... */
     if (this->waveHandle != NULL) {
         waveOutClose(this->waveHandle);
         this->waveHandle = NULL;

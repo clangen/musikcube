@@ -148,7 +148,7 @@ void Buffer::CopyFormat(BufferPtr fromBuffer) {
 void Buffer::ResizeBuffer() {
     long requiredBufferSize = this->sampleSize * this->channels;
     if (requiredBufferSize > this->internalBufferSize) {
-        if(this->buffer) {
+        if (this->buffer) {
             delete this->buffer;
             this->buffer = NULL;
         }

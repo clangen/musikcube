@@ -35,31 +35,26 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
+#include <core/sdk/IPlugin.h>
+#include <core/sdk/IDecoder.h>
+#include "Mp3DecoderFactory.h"
 
-#include "core/IPlugin.h"
-
-#include "MP3SourceSupplier.h"
-
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
-{
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
     return true;
 }
 
 class MP3DecoderPlugin : public musik::core::IPlugin
 {
-    void Destroy() { delete this; };
-
-	const utfchar* Name()       { return TEXT("MP3 decoder"); };
-	const utfchar* Version()    { return TEXT("1"); };
-	const utfchar* Author()     { return TEXT("Björn Olievier"); };
+    void Destroy() { delete this; }
+	const char* Name() { return "MP3 decoder"; };
+	const char* Version() { return "1"; };
+	const char* Author() { return "Björn Olievier"; };
 };
 
-extern "C" __declspec(dllexport) musik::core::IPlugin* GetPlugin()
-{
+extern "C" __declspec(dllexport) musik::core::IPlugin* GetPlugin() {
     return new MP3DecoderPlugin();
 }
 
-extern "C" __declspec(dllexport) IAudioSourceSupplier* CreateAudioSourceSupplier()
-{
-	return new MP3SourceSupplier();
+extern "C" __declspec(dllexport) IDecoderFactory* GetDecoderFactory() {
+	return new Mp3DecoderFactory();
 }

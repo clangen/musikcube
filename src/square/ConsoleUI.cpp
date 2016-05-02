@@ -85,6 +85,8 @@ void ConsoleUI::Run()
 {
     std::string command; 
 
+    transport.SetVolume(0.1);
+
     while (!this->shouldQuit)
     {
         this->PrintCommands();

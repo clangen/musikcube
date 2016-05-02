@@ -84,7 +84,7 @@ namespace musik { namespace core { namespace io {
             ///\returns
             ///how much has acctually been read
             //////////////////////////////////////////
-            virtual PositionType Read(void* buffer, PositionType readBytes) = 0;
+            virtual PositionType Read(void *buffer, PositionType readBytes) = 0;
 
             //////////////////////////////////////////
             ///\brief

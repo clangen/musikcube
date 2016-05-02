@@ -52,7 +52,7 @@ class  IDecoder{
         ///The Destroy method is used so that it's guaranteed that the object is
         ///destroyed inside the right DLL/exe
         //////////////////////////////////////////
-        virtual void    Destroy() = 0;
+        virtual void Destroy() = 0;
 
         //////////////////////////////////////////
         ///\brief
@@ -61,7 +61,7 @@ class  IDecoder{
         ///\returns
         ///The actual position set
         //////////////////////////////////////////
-        virtual double SetPosition(double seconds,double totalLength) = 0;
+        virtual double SetPosition(double seconds, double totalLength) = 0;
 
         //////////////////////////////////////////
         ///\brief
@@ -70,7 +70,7 @@ class  IDecoder{
         ///\returns
         ///false is there is nothing left
         //////////////////////////////////////////
-        virtual bool GetBuffer(IBuffer *buffer) = 0; // return false to signal that we are done decoding.
+        virtual bool GetBuffer(IBuffer *buffer) = 0;
 
         //////////////////////////////////////////
         ///\brief

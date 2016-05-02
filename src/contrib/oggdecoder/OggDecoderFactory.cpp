@@ -51,21 +51,22 @@ IDecoder* OggDecoderFactory::CreateDecoder() {
 }
 
 bool OggDecoderFactory::CanHandle(const char* type) const {
-    if (type) {
-        std::string typeString(type);
+    std::string typeString(type);
 
-        if (typeString.find("ogg") != std::string::npos) {
-            return true;
-        }
-        if (typeString.find("oga") != std::string::npos) {
-            return true;
-        }
-        if (typeString.find("audio/ogg") != std::string::npos) {
-            return true;
-        }
-        if (typeString.find("audio/vorbis") != std::string::npos) {
-            return true;
-        }
+    if (typeString.find("ogg") != std::string::npos) {
+        return true;
+    }
+
+    if (typeString.find("oga") != std::string::npos) {
+        return true;
+    }
+    
+    if (typeString.find("audio/ogg") != std::string::npos) {
+        return true;
+    }
+    
+    if (typeString.find("audio/vorbis") != std::string::npos) {
+        return true;
     }
 
     return false;

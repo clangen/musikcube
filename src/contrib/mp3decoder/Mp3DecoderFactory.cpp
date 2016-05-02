@@ -36,42 +36,36 @@
 #include "boost/algorithm/string.hpp"
 #include "boost/filesystem.hpp"
 
-#include "MP3SourceSupplier.h"
-
+#include "Mp3DecoderFactory.h"
 #include "MP3Decoder.h"
 
 #include <string>
 
-MP3SourceSupplier::MP3SourceSupplier()
-{
+Mp3DecoderFactory::Mp3DecoderFactory() {
 }
 
-MP3SourceSupplier::~MP3SourceSupplier()
-{
+Mp3DecoderFactory::~Mp3DecoderFactory() {
 }
 
-void MP3SourceSupplier::Destroy()
-{
+void Mp3DecoderFactory::Destroy() {
     delete this;
 }
 
-IAudioSource* MP3SourceSupplier::CreateAudioSource()
-{
+IDecoder* Mp3DecoderFactory::CreateDecoder() {
     return new MP3Decoder();
 }
 
-bool MP3SourceSupplier::CanHandle(const utfchar* source) const
+bool Mp3DecoderFactory::CanHandle(const char* source) const
 {
-    using namespace boost::filesystem;
-    using namespace boost::algorithm;
+    std::string str(source);
 
-    wpath sourcepath(source);
+    if (str.find("mp3") != std::string::npos ||
+        str.find("audio/mpeg3") != std::string::npos ||
+        str.find("audio/x-mpeg-3") != std::string::npos ||
+        str.find("audio/mp3") != std::string::npos)
+    {
+        return true;
+    }
 
-    if (!is_regular(sourcepath)) 
-        return false;
-
-    if (to_lower_copy(extension(sourcepath)) != TEXT(".mp3"))
-        return false;
-
-    return true;
+    return false;
 }
