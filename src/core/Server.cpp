@@ -177,9 +177,9 @@ bool Server::CreateUser(const std::string username,const std::string plainTextPa
         plainTextPassword,musik::core::Crypt::StaticSalt()));
 
     db::Statement stmt("INSERT INTO users (login,password,name) VALUES (?,?,?)",this->db);
-    stmt.BindTextUTF(0,username.c_str());
-    stmt.BindTextUTF(1,password.c_str());
-    stmt.BindTextUTF(2,name.c_str());
+    stmt.BindText(0,username.c_str());
+    stmt.BindText(1,password.c_str());
+    stmt.BindText(2,name.c_str());
 
     bool returnBool(stmt.Step()==db::Done);
 
@@ -189,7 +189,7 @@ bool Server::CreateUser(const std::string username,const std::string plainTextPa
 
 bool Server::DeleteUser(const std::string username){
     db::Statement stmt("DELETE FROM users WHERE login=?",this->db);
-    stmt.BindTextUTF(0,username.c_str());
+    stmt.BindText(0,username.c_str());
 
     bool returnBool(stmt.Step()==db::Done);
 
@@ -203,9 +203,9 @@ server::UserVector Server::AllUsers(){
     while(stmt.Step()==db::Row){
         users.push_back(server::UserPtr(new server::User(
             stmt.ColumnInt(0),
-            stmt.ColumnTextUTF(2),
-            stmt.ColumnTextUTF(3),
-            stmt.ColumnTextUTF(1)
+            stmt.ColumnText(2),
+            stmt.ColumnText(3),
+            stmt.ColumnText(1)
             )));
     }
     return users;
@@ -250,9 +250,9 @@ server::UserPtr Server::GetUser(std::string username){
     if(stmt.Step()==db::Row){
         user.reset( new server::User(
             stmt.ColumnInt(0),
-            stmt.ColumnTextUTF(2),
-            stmt.ColumnTextUTF(3),
-            stmt.ColumnTextUTF(1)
+            stmt.ColumnText(2),
+            stmt.ColumnText(3),
+            stmt.ColumnText(1)
             ));
     }
     return user;

@@ -150,7 +150,7 @@ void Preferences::IO::SaveSetting(const char* nameSpace,int libraryId,const char
                 insertSetting.BindInt(3,setting.valueInt);
                 break;
             case (Setting::Text):
-                insertSetting.BindTextUTF(3,setting.valueText);
+                insertSetting.BindText(3,setting.valueText);
                 break;
         }
         insertSetting.Step();
@@ -186,7 +186,7 @@ Preferences::Setting::Setting(db::Statement &stmt) :
             this->valueBool = (stmt.ColumnInt(2)>0);
             break;
         default:
-            this->valueText.assign(stmt.ColumnTextUTF(2));
+            this->valueText.assign(stmt.ColumnText(2));
     }
 }
 
@@ -251,7 +251,7 @@ Preferences::IO::SettingMapPtr Preferences::IO::GetNamespace(const char* nameSpa
 
     if(library!=NULL){
         db::Statement getLibStmt("SELECT id FROM libraries WHERE name=?",this->db);
-        getLibStmt.BindTextUTF(0,library);
+        getLibStmt.BindText(0,library);
         if(getLibStmt.Step()==db::Row){
             libraryId   = getLibStmt.ColumnInt(0);
         }

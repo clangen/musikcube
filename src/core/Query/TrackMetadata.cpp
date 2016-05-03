@@ -168,7 +168,7 @@ bool TrackMetadata::ParseQuery(Library::Base *library,db::Connection &db){
             std::vector<std::string>::iterator field=this->fieldOrder.begin();
             int dbField(1);    // one ahead to ignore the id
             while(field!=this->fieldOrder.end()){
-                const char *valuePointer=trackData.ColumnTextUTF(dbField);
+                const char *valuePointer=trackData.ColumnText(dbField);
                 if(valuePointer){
                     track->SetValue(field->c_str(),valuePointer);
                 }
@@ -181,7 +181,7 @@ bool TrackMetadata::ParseQuery(Library::Base *library,db::Connection &db){
                 // Get ALL meta
                 allMetadata.BindInt(0,track->Id());
                 while(allMetadata.Step()==db::Row){
-                    track->SetValue(allMetadata.ColumnText(1),allMetadata.ColumnTextUTF(0));
+                    track->SetValue(allMetadata.ColumnText(1),allMetadata.ColumnText(0));
                 }
                 allMetadata.Reset();
 
@@ -192,7 +192,7 @@ bool TrackMetadata::ParseQuery(Library::Base *library,db::Connection &db){
                     metadata.BindText(1,metaKey->c_str());
 
                     while(metadata.Step()==db::Row){
-                        track->SetValue(metaKey->c_str(),metadata.ColumnTextUTF(0));
+                        track->SetValue(metaKey->c_str(),metadata.ColumnText(0));
                     }
                     metadata.Reset();
                 }
@@ -203,7 +203,7 @@ bool TrackMetadata::ParseQuery(Library::Base *library,db::Connection &db){
             if( this->categoryFields.find("genre")!=this->categoryFields.end() ){
                 genres.BindInt(0,track->Id());
                 while(genres.Step()==db::Row){
-                    track->SetValue("genre",genres.ColumnTextUTF(0));
+                    track->SetValue("genre",genres.ColumnText(0));
                 }
                 genres.Reset();
             }
@@ -212,7 +212,7 @@ bool TrackMetadata::ParseQuery(Library::Base *library,db::Connection &db){
             if( this->categoryFields.find("artist")!=this->categoryFields.end() ){
                 artists.BindInt(0,track->Id());
                 while(artists.Step()==db::Row){
-                    track->SetValue("artist",artists.ColumnTextUTF(0));
+                    track->SetValue("artist",artists.ColumnText(0));
                 }
                 artists.Reset();
             }

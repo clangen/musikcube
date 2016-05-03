@@ -56,25 +56,28 @@ LibraryFactory& LibraryFactory::Instance(){
 ///\brief
 ///Constructor
 //////////////////////////////////////////
-LibraryFactory::LibraryFactory(void){
+LibraryFactory::LibraryFactory() {
 	// Connect to the settings.db
     std::string dataDir = GetDataDirectory();
     std::string dbFile = GetDataDirectory() + "settings.db";
 	musik::core::db::Connection db;
-    db.Open(dbFile.c_str(),0,128);
+    db.Open(dbFile.c_str(), 0, 128);
 
     Preferences::CreateDB(db);
 
 	// Get the libraries
-	db::Statement stmtGetLibs("SELECT id,name,type FROM libraries ORDER BY id",db);
+	db::Statement stmtGetLibs("SELECT id, name, type FROM libraries ORDER BY id",db);
 
-	while(stmtGetLibs.Step()==db::Row){
-        this->AddLibrary( stmtGetLibs.ColumnInt(0),stmtGetLibs.ColumnTextUTF(1),stmtGetLibs.ColumnInt(2) );
+	while(stmtGetLibs.Step() == db::Row) {
+        int id = stmtGetLibs.ColumnInt(0);
+        std::string name = stmtGetLibs.ColumnText(1);
+        int type = stmtGetLibs.ColumnInt(2);
+        this->AddLibrary(id, name, type);
 	}
 
 	// If there are no libraries, add a LocalDB
-	if(this->libraries.empty()){
-        this->CreateLibrary("Local Library",LibraryFactory::LocalDB);
+	if (this->libraries.empty()) {
+        this->CreateLibrary("Local Library", LibraryFactory::LocalDB);
 	}
 
 }
@@ -161,7 +164,7 @@ LibraryPtr LibraryFactory::CreateLibrary(std::string name,int type,bool startup)
     db.Open(dbFile.c_str(),0,128);
 
 	db::Statement stmtInsert("INSERT OR FAIL INTO libraries (name,type) VALUES (?,?)",db);
-	stmtInsert.BindTextUTF(0,name);
+	stmtInsert.BindText(0,name);
 	stmtInsert.BindInt(1,type);
 	if(stmtInsert.Step()==db::Done){
         return this->AddLibrary(db.LastInsertedId(),name,type,true,startup);

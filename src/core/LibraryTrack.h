@@ -40,75 +40,64 @@
 #include <core/Track.h>
 #include <core/Library/Base.h>
 
-//////////////////////////////////////////////////////////////////////////////
-// Forward declare
-namespace musik{ namespace core{ namespace http{
+namespace musik { namespace core { namespace http {
     class Responder;
 } } }
-//////////////////////////////////////////////////////////////////////////////
+
+namespace musik { namespace core {
+
+    //////////////////////////////////////////
+    ///\brief
+    ///A LibraryTrack is a track related to a Library.
+    //////////////////////////////////////////
+    class LibraryTrack : public Track {
+        public:
+            LibraryTrack();
+            LibraryTrack(DBID id,int libraryId);
+            LibraryTrack(DBID id,musik::core::LibraryPtr library);
+            virtual ~LibraryTrack(void);
+
+            virtual musik::core::LibraryPtr Library();
+            virtual int LibraryId();
+
+            virtual DBID Id();
+
+            virtual const char* GetValue(const char* metakey);
+            virtual void SetValue(const char* metakey,const char* value);
+            virtual void ClearValue(const char* metakey);
+            virtual void SetThumbnail(const char *data,long size);
+
+            virtual const char* URI();
+            virtual const char* URL();
+
+            virtual MetadataIteratorRange GetValues(const char* metakey);
+            virtual MetadataIteratorRange GetAllValues();
+            virtual TrackPtr Copy();
+
+        private:
+            void InitMeta();
 
 
-//////////////////////////////////////////////////////////////////////////////
-namespace musik{ namespace core{
-//////////////////////////////////////////////////////////////////////////////
+            // The variables
+            DBID id;
+            int libraryId;
 
-//////////////////////////////////////////
-///\brief
-///A LibraryTrack is a track related to a Library.
-//////////////////////////////////////////
-class LibraryTrack : public Track {
-    public:
-        LibraryTrack(void);
-        LibraryTrack(DBID id,int libraryId);
-        LibraryTrack(DBID id,musik::core::LibraryPtr library);
-        virtual ~LibraryTrack(void);
+            class MetaData {
+                public:
+                    MetaData();
+                    ~MetaData();
 
-        virtual const char* GetValue(const char* metakey);
-        virtual void SetValue(const char* metakey,const char* value);
-        virtual void ClearValue(const char* metakey);
-        virtual void SetThumbnail(const char *data,long size);
-        virtual const char* URI();
-        virtual const char* URL();
+                    Track::MetadataMap metadata;
+                    char *thumbnailData;
+                    long thumbnailSize;
+                    musik::core::LibraryPtr library;
+            };
 
-        virtual MetadataIteratorRange GetValues(const char* metakey);
-        virtual MetadataIteratorRange GetAllValues();
-        virtual TrackPtr Copy();
+            MetaData *meta;
+            /* friends */
+            friend class http::Responder;
+            bool GetFileData(DBID id, db::Connection &db); /* used by Responder */
+    };
 
-        virtual DBID Id();
-        virtual musik::core::LibraryPtr Library();
-        virtual int LibraryId();
-
-    private:
-        // The variables
-        DBID id;
-        int libraryId;
-    private:
-        class MetaData{
-            public:
-                MetaData();
-                ~MetaData();
-
-                Track::MetadataMap metadata;
-                char *thumbnailData;
-                long thumbnailSize;
-                musik::core::LibraryPtr library;
-        };
-
-        MetaData *meta;
-
-    private:
-
-        void InitMeta();
-
-    private:
-        // Some special methods for the http::Responder
-        friend class http::Responder;
-        bool GetFileData(DBID id,db::Connection &db);
-};
-
-
-//////////////////////////////////////////////////////////////////////////////
-} } // musik::core
-//////////////////////////////////////////////////////////////////////////////
-
+} }
 

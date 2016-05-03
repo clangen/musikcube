@@ -53,81 +53,82 @@
 
 //////////////////////////////////////////////////////////////////////////////
 
-namespace musik{ namespace core{
+namespace musik { namespace core {
 
 //////////////////////////////////////////////////////////////////////////////
 
-//////////////////////////////////////////
-///\brief
-///The Indexer is the class that syncronizes musik tracks with the database
-///
-///The Indexer is often a member of classes like the LocalDB
-///but can also be used as a standalone class for indexing files.
-///All you need to do is create a Indexer object and call Startup()
-//////////////////////////////////////////
-class  Indexer : public ThreadHelper,private boost::noncopyable {
-    public:
-        Indexer();
-        ~Indexer();
+    //////////////////////////////////////////
+    ///\brief
+    ///The Indexer is the class that syncronizes musik tracks with the database
+    ///
+    ///The Indexer is often a member of classes like the LocalDB
+    ///but can also be used as a standalone class for indexing files.
+    ///All you need to do is create a Indexer object and call Startup()
+    //////////////////////////////////////////
+    class Indexer : public ThreadHelper,private boost::noncopyable {
+        public:
+            Indexer();
+            ~Indexer();
 
-        void AddPath(std::string sPath);
-        void RemovePath(std::string sPath);
-        std::vector<std::string> GetPaths();
+            void AddPath(std::string sPath);
+            void RemovePath(std::string sPath);
+            std::vector<std::string> GetPaths();
 
-        bool Startup(std::string setLibraryPath);
-        void ThreadLoop();
+            bool Startup(std::string setLibraryPath);
+            void ThreadLoop();
 
-        std::string GetStatus();
-        void RestartSync(bool bNewRestart=true);
-        bool Restarted();
+            std::string GetStatus();
+            void RestartSync(bool bNewRestart=true);
+            bool Restarted();
 
-        std::string database;
+            std::string database;
 
-        sigslot::signal0<> SynchronizeStart;
-        sigslot::signal0<> SynchronizeEnd;
-        sigslot::signal0<> PathsUpdated;
-        sigslot::signal0<> TrackRefreshed;
+            sigslot::signal0<> SynchronizeStart;
+            sigslot::signal0<> SynchronizeEnd;
+            sigslot::signal0<> PathsUpdated;
+            sigslot::signal0<> TrackRefreshed;
 
-    private:
+        private:
         
-        db::Connection dbConnection;
+            db::Connection dbConnection;
 
-        std::string libraryPath;
-        int status;
-        bool restart;
+            std::string libraryPath;
+            int status;
+            bool restart;
 
-        boost::thread *thread;
-        boost::mutex progressMutex;
+            boost::thread *thread;
+            boost::mutex progressMutex;
 
-        double progress;
-        double progress2;
-        int nofFiles;
-        int filesIndexed;
-        int filesSaved;
+            double progress;
+            double progress2;
+            int nofFiles;
+            int filesIndexed;
+            int filesSaved;
 
-        void CountFiles(std::string &sFolder);
+            void CountFiles(const std::string &dir);
 
-        void Synchronize();
-        void SyncDirectory(std::string &sFolder,DBID iParentFolderId,DBID iPathId, std::string &syncPath);
-        void SyncDelete(std::vector<DBID> aPaths);
-        void SyncCleanup();
-        void SyncAddRemovePaths();
-        void SyncOptimize();
-        void RunAnalyzers();
+            void Synchronize();
+            void SyncDirectory(const std::string& dir, DBID parentDirId, DBID pathId, std::string &syncPath);
+            void SyncDelete(const std::vector<DBID>& paths);
+            void SyncCleanup();
+            void ProcessAddRemoveQueue();
+            void SyncOptimize();
+            void RunAnalyzers();
 
-        class _AddRemovePath{
-            public:
-                bool add;
-                std::string path;
-        };
+            class AddRemoveContext {
+                public:
+                    bool add;
+                    std::string path;
+            };
 
-        typedef std::vector<boost::shared_ptr<Plugin::IMetaDataReader> > MetadataReaderList;
+            typedef std::vector<boost::shared_ptr<Plugin::IMetaDataReader> > MetadataReaderList;
 
-        std::deque<_AddRemovePath> addRemoveQueue;
+            std::deque<AddRemoveContext> addRemoveQueue;
 
-        MetadataReaderList metadataReaders;
+            MetadataReaderList metadataReaders;
+    };
 
-};
+    typedef boost::shared_ptr<Indexer> IndexerPtr;
 
 //////////////////////////////////////////////////////////////////////////////
 } } // musik::core

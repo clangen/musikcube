@@ -53,15 +53,15 @@
 
 using namespace musik::core;
 
-Indexer::Indexer(void) 
-:thread(NULL)
-,progress(0)
-,progress2(0)
-,status(0)
-,restart(false)
-,nofFiles(0)
-,filesIndexed(0)
-,filesSaved(0)
+Indexer::Indexer() 
+: thread(NULL)
+, progress(0)
+, progress2(0)
+, status(0)
+, restart(false)
+, nofFiles(0)
+, filesIndexed(0)
+, filesSaved(0)
 {
 }
 
@@ -71,12 +71,12 @@ Indexer::Indexer(void)
 ///
 ///Exits and joins threads
 //////////////////////////////////////////
-Indexer::~Indexer(void){
-    if(this->thread){
+Indexer::~Indexer(){
+    if (this->thread) {
         this->Exit();
         this->thread->join();
         delete this->thread;
-        this->thread    = NULL;
+        this->thread = NULL;
     }
 }
 
@@ -84,30 +84,22 @@ Indexer::~Indexer(void){
 ///\brief
 ///Get the current status (text)
 //////////////////////////////////////////
-std::string Indexer::GetStatus(){
+std::string Indexer::GetStatus() {
     boost::mutex::scoped_lock lock(this->progressMutex);
-    std::string sStatus;
-    switch(this->status){
-        case 1:
-            sStatus = boost::str(boost::format("Counting files: %1%")%this->nofFiles );
-            break;
-        case 2:
-            sStatus = boost::str(boost::format("Indexing: %.2f") % (this->progress*100)) + "%";
-            break;
-        case 3:
-            sStatus = boost::str(boost::format("Removing old files: %.2f") % (this->progress*100)) + "%";
-            break;
-        case 4:
-            sStatus = "Cleaning up.";
-            break;
-        case 5:
-            sStatus = "Optimizing.";
-            break;
-        case 6:
-            sStatus = boost::str(boost::format("Analyzing: %.2f%% (current %.1f%%)")%(100.0*this->progress/(double)this->nofFiles)%(this->progress2*100.0));
-            break;
+    
+    std::string status;
+    switch(this->status) {
+        case 1: return boost::str(boost::format("Counting files: %1%")%this->nofFiles );
+        case 2: return boost::str(boost::format("Indexing: %.2f") % (this->progress*100)) + "%";
+        case 3: return boost::str(boost::format("Removing old files: %.2f") % (this->progress*100)) + "%";
+        case 4: return "Cleaning up.";
+        case 5: return "Optimizing.";
+        case 6: return boost::str(boost::format("Analyzing: %.2f%% (current %.1f%%)")
+            % (100.0 * this->progress / (double) this->nofFiles)
+            % (this->progress2*100.0));
     }
-    return sStatus;
+
+    return status;
 }
 
 
@@ -118,11 +110,13 @@ std::string Indexer::GetStatus(){
 ///\param bNewRestart
 ///Should if be restarted or not
 //////////////////////////////////////////
-void Indexer::RestartSync(bool bNewRestart){
+void Indexer::RestartSync(bool restart){
     boost::mutex::scoped_lock lock(this->exitMutex);
-    this->restart    = bNewRestart;
-    if(this->restart){
-        this->Notify();
+
+    this->restart = restart;
+
+    if (this->restart) {
+        this->Notify(); /* rename Notify()? */
     }
 }
 
@@ -130,8 +124,9 @@ void Indexer::RestartSync(bool bNewRestart){
 ///\brief
 ///Should the sync be restarted?
 //////////////////////////////////////////
-bool Indexer::Restarted(){
+bool Indexer::Restarted() {
     boost::mutex::scoped_lock lock(this->exitMutex);
+
     return this->restart;
 }
 
@@ -145,20 +140,21 @@ bool Indexer::Restarted(){
 ///\remarks
 ///If the path already exists it will not be added.
 //////////////////////////////////////////
-void Indexer::AddPath(std::string sPath){
-    boost::filesystem::path oPath(sPath);
-    sPath = oPath.string();    // Fix pathname for slash/backslash
-    if(sPath.substr(sPath.size()-1,1)!="/"){
-        sPath += "/";
+void Indexer::AddPath(std::string path) {
+    boost::filesystem::path fsPath(path);
+    path = fsPath.string(); /* canonicalize */
+
+    if (path.substr(path.size() -1 , 1) != "/") {
+        path += "/";
     }
 
-    Indexer::_AddRemovePath addPath;
-    addPath.add = true;
-    addPath.path = sPath;
+    Indexer::AddRemoveContext context;
+    context.add = true;
+    context.path = path;
 
     {
         boost::mutex::scoped_lock lock(this->exitMutex);
-        this->addRemoveQueue.push_back(addPath);
+        this->addRemoveQueue.push_back(context);
     }
 
     this->RestartSync();
@@ -171,132 +167,135 @@ void Indexer::AddPath(std::string sPath){
 ///\param sPath
 ///Path to remove
 //////////////////////////////////////////
-void Indexer::RemovePath(std::string sPath){
+void Indexer::RemovePath(std::string path) {
 
-    Indexer::_AddRemovePath removePath;
-    removePath.add          = false;
-    removePath.path         = sPath;
+    Indexer::AddRemoveContext context;
+    context.add = false;
+    context.path = path;
 
     {
         boost::mutex::scoped_lock lock(this->exitMutex);
-        this->addRemoveQueue.push_back(removePath);
+        this->addRemoveQueue.push_back(context);
     }
 
     this->RestartSync();
 }
 
-
 //////////////////////////////////////////
 ///\brief
 ///Main method for doing the synchronization.
 //////////////////////////////////////////
-void Indexer::Synchronize(){
-
+void Indexer::Synchronize() {
+    /* load all of the metadata (tag) reader plugins */
     typedef Plugin::IMetaDataReader PluginType;
     typedef PluginFactory::DestroyDeleter<PluginType> Deleter;
-    //
-    this->metadataReaders =
-        PluginFactory::Instance().QueryInterface<PluginType, Deleter>("GetMetaDataReader");
+
+    this->metadataReaders = PluginFactory::Instance()
+        .QueryInterface<PluginType, Deleter>("GetMetaDataReader");
 
     {
         boost::mutex::scoped_lock lock(this->progressMutex);
-        this->nofFiles        = 0;
-        this->filesIndexed    = 0;
+        this->nofFiles = 0;
+        this->filesIndexed = 0;
     }
 
-    this->SyncAddRemovePaths();
+    this->ProcessAddRemoveQueue();
 
-    // Get the paths
-    std::vector<std::string> aPaths;
-    std::vector<DBID> aPathIds;
+    /* get sync paths and ids from the db */
+
+    std::vector<std::string> paths;
+    std::vector<DBID> pathIds;
 
     {
-        db::Statement stmt("SELECT id,path FROM paths",this->dbConnection);
+        db::Statement stmt("SELECT id, path FROM paths", this->dbConnection);
 
-        while( stmt.Step()==db::Row ){
-            // For each path
-            DBID iPathId( stmt.ColumnInt(0) );
-            std::string sPath( stmt.ColumnTextUTF(1) );
+        while (stmt.Step()==db::Row) {
+            try {
+                DBID id = stmt.ColumnInt(0);
+                std::string path = stmt.ColumnText(1);
+                boost::filesystem::path dir(path);
 
-            // Check to see if folder exists, otherwise ignore (unavaliable paths are not removed)
-            boost::filesystem::path oFolder(sPath);
-            try{
-                if(boost::filesystem::exists(oFolder)){
-                    aPaths.push_back(sPath);
-                    aPathIds.push_back(iPathId);
+                if (boost::filesystem::exists(dir)) {
+                    paths.push_back(path);
+                    pathIds.push_back(id);
                 }
             }
-            catch(...){
+            catch(...) {
             }
         }
     }
 
-    // Count files
-    {
-        boost::mutex::scoped_lock lock(this->progressMutex);
-        this->status    = 1;
-        this->progress  = 0.0;
-    }
-	for(std::size_t i(0);i<aPaths.size();++i){
-        std::string sPath = aPaths[i];
-        this->CountFiles(sPath);
-    }
-
-
-    // Index files
-    {
-        boost::mutex::scoped_lock lock(this->progressMutex);
-        this->status    = 2;
-        this->progress  = 0.0;
-    }
-
-    this->filesSaved    = 0;
-
-    for(std::size_t i(0);i<aPaths.size();++i){
-        std::string sPath = aPaths[i];
-        DBID iPathId = aPathIds[i];
-
-        this->SyncDirectory(sPath,0,iPathId,sPath);
-    }
+    /* count the files that need to be processed */
 
     {
         boost::mutex::scoped_lock lock(this->progressMutex);
-        this->progress    = 0.0;
-        this->status    = 3;
+        this->status = 1;
+        this->progress = 0.0;
     }
 
-    // Cleaning up
-    if(!this->Restarted() && !this->Exited()){
-        this->SyncDelete(aPathIds);
+	for(std::size_t i = 0; i < paths.size(); ++i){
+        std::string path = paths[i];
+        this->CountFiles(path);
     }
+
+    /* add new files  */
 
     {
-        // Cleanup status
         boost::mutex::scoped_lock lock(this->progressMutex);
-        this->progress    = 0.0;
-        this->status    = 4;
+        this->status = 2;
+        this->progress = 0.0;
+        this->filesSaved = 0;
     }
+    
+    for(std::size_t i = 0; i < paths.size(); ++i) {
+        std::string path = paths[i];
+        this->SyncDirectory(path ,0, pathIds[i], path);
+    }
+
+    /* remove undesired entries from db (files themselves will remain) */
+
+    {
+        boost::mutex::scoped_lock lock(this->progressMutex);
+        this->status = 3;
+        this->progress = 0.0;
+    }
+
+    if (!this->Restarted() && !this->Exited()) {
+        this->SyncDelete(pathIds);
+    }
+
+    /* cleanup -- remove stale artists, albums, genres, etc */
+
+    {
+        boost::mutex::scoped_lock lock(this->progressMutex);
+        this->progress = 0.0;
+        this->status = 4;
+    }
+
+
     if(!this->Restarted() && !this->Exited()){
         this->SyncCleanup();
     }
 
+    /* optimize */
+
     {
-        // Optimize status
-        boost::mutex::scoped_lock lock(this->progressMutex);
-        this->progress    = 0.0;
-        this->status    = 5;
+       boost::mutex::scoped_lock lock(this->progressMutex);
+        this->progress = 0.0;
+        this->status = 5;
     }
 
     if(!this->Restarted() && !this->Exited()){
         this->SyncOptimize();
     }
 
-    // Unload the IMetaDataReaders
+    /* unload reader DLLs*/
+
     this->metadataReaders.clear();
 
     {
         boost::mutex::scoped_lock lock(this->progressMutex);
-        this->status    = 0;
+        this->status = 0;
     }
 }
 
@@ -304,27 +303,27 @@ void Indexer::Synchronize(){
 ///\brief
 ///Counts the number of files to synchronize
 ///
-///\param sFolder
+///\param dir
 ///Folder to count files in.
 //////////////////////////////////////////
-void Indexer::CountFiles(std::string &sFolder){
+void Indexer::CountFiles(const std::string &dir) {
     if(!this->Exited() && !this->Restarted()){
-        boost::filesystem::path oPath(sFolder);
+        boost::filesystem::path path(dir);
         try{
-            boost::filesystem::directory_iterator oEndFile;
-            for(boost::filesystem::directory_iterator oFile(oPath);oFile!=oEndFile;++oFile){
-                if(is_directory(oFile->status())){
-                    std::string sDirectory;
-                    sDirectory.assign(oFile->path().string());
-                    this->CountFiles(sDirectory);
-                }else{
+            boost::filesystem::directory_iterator invalidFile;
+            boost::filesystem::directory_iterator file(path);
+
+            for ( ; file != invalidFile; ++file) {
+                if (is_directory(file->status())) {
+                    this->CountFiles(file->path().string());
+                }
+                else {
                     boost::mutex::scoped_lock lock(this->progressMutex);
                     this->nofFiles++;
                 }
             }
         }
-        catch(...){
-
+        catch(...) {
         }
     }
 
@@ -334,130 +333,126 @@ void Indexer::CountFiles(std::string &sFolder){
 ///\brief
 ///Reads all tracks in a folder
 ///
-///\param sFolder
+///\param dir
 ///Folder to check files in
 ///
-///\param iParentFolderId
+///\param parentDirId
 ///Database ID of the parent folder (folders table)
 ///
-///\param iPathId
+///\param pathId
 ///Database ID of the current path (paths table)
 ///
 ///Read all tracks in a folder. All folders in that folder is recursively called.
 //////////////////////////////////////////
-void Indexer::SyncDirectory(std::string &sFolder,DBID iParentFolderId,DBID iPathId, std::string &syncPath){
 
-    if(this->Exited() || this->Restarted()){
+void Indexer::SyncDirectory(
+    const std::string &inDir,
+    DBID parentDirId,
+    DBID pathId, 
+    std::string &syncPath)
+{
+    if(this->Exited() || this->Restarted()) {
         return;
     }
 
-    boost::filesystem::path oPath(sFolder);
-    sFolder = oPath.string();    // Fix pathname for slash/backslash
+    boost::filesystem::path path(inDir);
+    std::string dir = path.string(); /* canonicalize slash*/
 
-    std::string sFolderLeaf(oPath.leaf().string());
-    DBID iFolderId(0);
+    std::string leaf(path.leaf().string());
+    DBID dirId = 0;
 
-    // Get this folder ID
+    /* get folder id */
+
     {
-        db::CachedStatement stmt("SELECT id FROM folders WHERE name=? AND path_id=? AND parent_id=?",this->dbConnection);
-        stmt.BindTextUTF(0,sFolderLeaf);
-        stmt.BindInt(1,iPathId);
-        stmt.BindInt(2,iParentFolderId);
+        db::CachedStatement stmt("SELECT id FROM folders WHERE name=? AND path_id=? AND parent_id=?", this->dbConnection);
+        stmt.BindText(0, leaf);
+        stmt.BindInt(1, pathId);
+        stmt.BindInt(2, parentDirId);
 
-        if(stmt.Step()==db::Row){
-            iFolderId    = stmt.ColumnInt(0);
+        if(stmt.Step()==db::Row) {
+            dirId = stmt.ColumnInt(0);
         }
     }
 
     boost::thread::yield();
 
-    // If it do not exists, create it
-    if(iFolderId==0){
+    /* no ID yet? needs to be inserted... */
 
-        // Only save the relative path
-        std::string relativePath( sFolder.substr(syncPath.size()) );
+    if (dirId == 0) {
+        std::string relativePath(dir.substr(syncPath.size()));
 
-        db::CachedStatement stmt("INSERT INTO folders (name,path_id,parent_id,relative_path) VALUES(?,?,?,?)",this->dbConnection);
-        stmt.BindTextUTF(0,sFolderLeaf);
-        stmt.BindInt(1,iPathId);
-        stmt.BindInt(2,iParentFolderId);
-        stmt.BindTextUTF(3,relativePath);
+        db::CachedStatement stmt("INSERT INTO folders (name, path_id, parent_id, relative_path) VALUES(?,?,?,?)", this->dbConnection);
+        stmt.BindText(0, leaf);
+        stmt.BindInt(1, pathId);
+        stmt.BindInt(2, parentDirId);
+        stmt.BindText(3, relativePath);
 
-        if(stmt.Step()==db::Done){
-            iFolderId    = this->dbConnection.LastInsertedId();
-        }else{
-            // Error, failed to insert
-            return;
+        if (!stmt.Step() == db::Done) {
+            return; /* ugh, failed? */
         }
 
+        dirId = this->dbConnection.LastInsertedId();
     }
 
+    boost::thread::yield(); /* whistle... */
 
-    boost::thread::yield();
+    /* start recursive filesystem scan */
 
-    // Loop through the files in the current folder
+    try { /* boost::filesystem may throw */
+        boost::filesystem::directory_iterator end;
+        boost::filesystem::directory_iterator file(path);
+        for( ; file != end && !this->Exited() && !this->Restarted();++file) {
+            if (is_directory(file->status())) {
+                /* recursion here */
+                this->SyncDirectory(file->path().string(), dirId,pathId,syncPath);
+            }
+            else {
+                ++this->filesIndexed;
 
-    try{        // boost::filesystem may throw
-        boost::filesystem::directory_iterator oEndFile;
-        for(boost::filesystem::directory_iterator oFile(oPath);oFile!=oEndFile && !this->Exited() && !this->Restarted();++oFile){
+                /* update progress every so often... */
 
-            if(is_directory(oFile->status())){
-
-                // It's a directory
-                std::string oDirectory;
-                oDirectory.assign(oFile->path().string());
-
-                // If this is a directory, recurse down
-                this->SyncDirectory(oDirectory,iFolderId,iPathId,syncPath);
-
-            }else{
-
-                ++this->filesIndexed;            // Count the files indexed.
-                if(this->filesIndexed%5==0){    // Every 5s file
+                if (this->filesIndexed % 25 == 0) {
                     boost::mutex::scoped_lock lock(this->progressMutex);
-                    this->progress    = (double)this->filesIndexed/(double)this->nofFiles;
+                    this->progress = (double) this->filesIndexed / (double)this->nofFiles;
                 }
-                // This is a file, create a IndexerTrack object
+
                 musik::core::IndexerTrack track(0);
 
-                // Get file-info from database
-                if(track.CompareDBAndFileInfo(oFile->path(),this->dbConnection,iFolderId)){
+                /* get cached filesize, parts, size, etc */
+                if(track.CompareDBAndFileInfo(file->path(),this->dbConnection,dirId)){
+                    bool saveToDb = false;
 
-                    // Find out what TagReader can read the file
-                    bool tagRead=false;
+                    /* read the tag from the plugin */
+
                     typedef MetadataReaderList::iterator Iterator;
                     Iterator it = this->metadataReaders.begin();
                     while (it != this->metadataReaders.end()) {
                         if((*it)->CanReadTag(track.GetValue("extension")) ){
-                            // Should be able to read the tag
                             if( (*it)->ReadTag(&track) ){
-                                // Successfully read the tag.
-                                tagRead=true;
+                                saveToDb = true;
                             }
                         }
 
                         it++;
                     }
 
-                    if(tagRead){
-                        // Save
-                        track.Save(this->dbConnection,this->libraryPath,iFolderId);
+                    /* write it to the db, if we read successfully*/
+
+                    if (saveToDb) {
+                        track.Save(this->dbConnection, this->libraryPath, dirId);
+
                         this->filesSaved++;
-                        if(this->filesSaved%100==0){
-                            this->TrackRefreshed();
+                        if (this->filesSaved % 100 == 0){
+                            this->TrackRefreshed(); /* no idea... */
                         }
                     }
-
                 }
-
             }
 
             boost::thread::yield();
-
         }
     }
     catch(...){
-//        std::wcout << "ERROR " << sFolder << std::endl;
     }
 }
 
@@ -563,7 +558,7 @@ bool Indexer::Startup(std::string setLibraryPath){
 ///\remarks
 ///This method will not delete related information (meta-data, albums, etc)
 //////////////////////////////////////////
-void Indexer::SyncDelete(std::vector<DBID> aPaths){
+void Indexer::SyncDelete(const std::vector<DBID>& aPaths){
 
     // Remove unwanted folder-paths
     this->dbConnection.Execute("DELETE FROM folders WHERE path_id NOT IN (SELECT id FROM paths)");
@@ -582,17 +577,17 @@ void Indexer::SyncDelete(std::vector<DBID> aPaths){
             // Get the syncpath
             stmtSyncPath.BindInt(0,aPaths[i]);
             stmtSyncPath.Step();
-            std::string syncPathString( stmtSyncPath.ColumnTextUTF(0) );
+            std::string syncPathString( stmtSyncPath.ColumnText(0) );
             stmtSyncPath.Reset();
 
             while( stmt.Step()==db::Row && !this->Exited() && !this->Restarted() ){
                 // Check to see if file still exists
 
                 bool bRemove(true);
-                std::string sFolder   = stmt.ColumnTextUTF(1);
+                std::string dir   = stmt.ColumnText(1);
 
                 try{
-                    boost::filesystem::path oFolder(sFolder);
+                    boost::filesystem::path oFolder(dir);
                     if(boost::filesystem::exists(oFolder)){
                         bRemove    = false;
                     }else{
@@ -644,7 +639,7 @@ void Indexer::SyncDelete(std::vector<DBID> aPaths){
         // Get the syncpath
         stmtSyncPath.BindInt(0,aPaths[i]);
         stmtSyncPath.Step();
-        std::string syncPathString( stmtSyncPath.ColumnTextUTF(0) );
+        std::string syncPathString( stmtSyncPath.ColumnText(0) );
         stmtSyncPath.Reset();
 
         while( stmt.Step()==db::Row  && !this->Exited() && !this->Restarted() ){
@@ -657,11 +652,11 @@ void Indexer::SyncDelete(std::vector<DBID> aPaths){
             }
 
             bool bRemove(true);
-            std::string sFile = stmt.ColumnTextUTF(1);
+            std::string sFile = stmt.ColumnText(1);
 
             try{
-                boost::filesystem::path oFile(sFile);
-                if(boost::filesystem::exists(oFile)){
+                boost::filesystem::path file(sFile);
+                if(boost::filesystem::exists(file)){
                     bRemove    = false;
                 }else{
                     // Also do a check so that the syncpath is still up, or else do not remove
@@ -750,7 +745,7 @@ std::vector<std::string> Indexer::GetPaths(){
     db::Statement stmt("SELECT path FROM paths ORDER BY id",tempDB);
 
     while(stmt.Step()==db::Row){
-        aPaths.push_back(stmt.ColumnTextUTF(0));
+        aPaths.push_back(stmt.ColumnText(0));
     }
 
     return aPaths;
@@ -880,7 +875,7 @@ void Indexer::SyncOptimize(){
 ///\brief
 ///Method for adding/removing paths in the database
 //////////////////////////////////////////
-void Indexer::SyncAddRemovePaths(){
+void Indexer::ProcessAddRemoveQueue(){
 
     boost::mutex::scoped_lock lock(this->exitMutex);
 
@@ -891,20 +886,20 @@ void Indexer::SyncAddRemovePaths(){
 
             // First check for the path
             db::Statement stmt("SELECT id FROM paths WHERE path=?",this->dbConnection);
-            stmt.BindTextUTF(0,this->addRemoveQueue.front().path);
+            stmt.BindText(0,this->addRemoveQueue.front().path);
 
             if(stmt.Step()==db::Row){
                 // Path already exists. Do not add
             }else{
                 db::Statement insertPath("INSERT INTO paths (path) VALUES (?)",this->dbConnection);
-                insertPath.BindTextUTF(0,this->addRemoveQueue.front().path);
+                insertPath.BindText(0,this->addRemoveQueue.front().path);
                 insertPath.Step();
             }
 
         }else{
             // Remove front path
             db::Statement stmt("DELETE FROM paths WHERE path=?",this->dbConnection);
-            stmt.BindTextUTF(0,this->addRemoveQueue.front().path);
+            stmt.BindText(0,this->addRemoveQueue.front().path);
             stmt.Step();
         }
 

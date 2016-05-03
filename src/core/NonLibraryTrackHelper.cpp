@@ -42,107 +42,96 @@
 #include <core/sdk/IMetaDataReader.h>
 #include <core/filestreams/Factory.h>
 
-//////////////////////////////////////////////////////////////////////////////
-
 using namespace musik::core;
-
-//////////////////////////////////////////////////////////////////////////////
 
 NonLibraryTrackHelper NonLibraryTrackHelper::sInstance;
 
-
 NonLibraryTrackHelper::NonLibraryTrackHelper(void)
- :threadIsRunning(false)
-{
+: threadIsRunning(false) {
 }
 
-NonLibraryTrackHelper::~NonLibraryTrackHelper(void){
+NonLibraryTrackHelper::~NonLibraryTrackHelper(void) {
 }
 
-NonLibraryTrackHelper& NonLibraryTrackHelper::Instance(){
+NonLibraryTrackHelper& NonLibraryTrackHelper::Instance() {
     return NonLibraryTrackHelper::sInstance;
 }
 
-boost::mutex& NonLibraryTrackHelper::TrackMutex(){
-    return NonLibraryTrackHelper::sInstance.trackMutex;
-}
+void NonLibraryTrackHelper::ReadTrack(musik::core::TrackPtr track) {
+    bool threadRunning = false;
 
-void NonLibraryTrackHelper::ReadTrack(musik::core::TrackPtr track){
-    bool threadRunning(false);
     {
         boost::mutex::scoped_lock lock(this->mutex);
         this->tracksToRead.push_back(TrackWeakPtr(track));
-        threadRunning   = this->threadIsRunning;
+        threadRunning = this->threadIsRunning;
     }
 
-    if(!threadRunning){
-        if(this->helperThread){
+    if (!threadRunning) {
+        if (this->helperThread) {
             this->helperThread->join();
         }
-        this->helperThread.reset(new boost::thread(boost::bind(&NonLibraryTrackHelper::ThreadLoop,this)));
 
+        this->helperThread.reset(new boost::thread(
+            boost::bind(&NonLibraryTrackHelper::ThreadLoop,this)));
     }
 }
 
-void NonLibraryTrackHelper::ThreadLoop(){
-
-    // Get the metadatareaders
+void NonLibraryTrackHelper::ThreadLoop() {
+    /* load all IMetadataReaer plugins */
     typedef Plugin::IMetaDataReader PluginType;
     typedef PluginFactory::DestroyDeleter<PluginType> Deleter;
-    typedef std::vector<boost::shared_ptr<Plugin::IMetaDataReader> > MetadataReaderList;
-    MetadataReaderList metadataReaders = PluginFactory::Instance().QueryInterface<PluginType, Deleter>("GetMetaDataReader");
+    typedef std::vector<boost::shared_ptr<Plugin::IMetaDataReader>> MetadataReaderList;
 
+    MetadataReaderList metadataReaders = PluginFactory::Instance()
+            .QueryInterface<PluginType, Deleter>("GetMetaDataReader");
 
-    // pop a track, read the metadata, notify and continue
-    bool moreTracks(true);
-    while(moreTracks){
-        moreTracks  = false;
+    bool moreTracks = true;
+
+    while (moreTracks) {
         musik::core::TrackPtr track;
+
+        /* pop the next track, if one exists. */
         {
             boost::mutex::scoped_lock lock(this->mutex);
 
-            if(!this->tracksToRead.empty()){
-                // is this a valid track
+            if (!this->tracksToRead.empty()) {
                 track = this->tracksToRead.front().lock();
                 this->tracksToRead.pop_front();
             }
 
-            moreTracks  = !this->tracksToRead.empty();
+            moreTracks = !this->tracksToRead.empty();
 
-            if(!moreTracks){
-                // Set to "not running". No locking beyond this point. 
-                this->threadIsRunning   = false;
+            if (!moreTracks) {
+                this->threadIsRunning = false;
             }
         }
-        if(track){
-            // check if this is a local file
-            if(musik::core::io::Factory::IsLocalFileStream(track->URL())){
-                std::string url(track->URL());
+
+        if (track) {
+            /* we only support local files. other URIs are ignored */
+            if (musik::core::io::Factory::IsLocalFileStream(track->URL())) {
+                std::string url = track->URL();
+                
                 std::string::size_type lastDot = url.find_last_of(".");
-                if(lastDot != std::string::npos){
-                    track->SetValue("extension", url.substr(lastDot+1).c_str());
+                if (lastDot != std::string::npos) {
+                    track->SetValue("extension", url.substr(lastDot + 1).c_str());
                 }
-                // Read track metadata
+
+                /* see if we can find a MetadataReader plugin that supports this file */
                 typedef MetadataReaderList::iterator Iterator;
                 Iterator it = metadataReaders.begin();
                 while (it != metadataReaders.end()) {
-                    if((*it)->CanReadTag(track->GetValue("extension")) ){
-                        // Should be able to read the tag
-                        if( (*it)->ReadTag(track.get()) ){
-                            // Successfully read the tag.
-    //                        tagRead=true;
-                        }
+                    if ((*it)->CanReadTag(track->GetValue("extension"))) {
+                        (*it)->ReadTag(track.get());
+                        break;
                     }
 
                     it++;
                 }
 
-                // Lets notify that tracks has been read
                 this->TrackMetadataUpdated(track);
             }
         }
     }
-
 }
 
 

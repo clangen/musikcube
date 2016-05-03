@@ -159,10 +159,9 @@ void Statement::BindText(int position,const char* bindText){
 ///\param bindText
 ///Text to bind
 //////////////////////////////////////////
-void Statement::BindText(int position,const std::string &bindText){
-    DB_ASSERT(sqlite3_bind_text(this->stmt,position+1,bindText.c_str(),-1,SQLITE_STATIC));
+void Statement::BindText(int position ,const std::string &bindText){
+    DB_ASSERT(sqlite3_bind_text(this->stmt, position+1,bindText.c_str(),-1,SQLITE_STATIC));
 }
-
 
 //////////////////////////////////////////
 ///\brief
@@ -191,37 +190,6 @@ void Statement::BindTextW(int position,const wchar_t* bindText){
 void Statement::BindTextW(int position,const std::wstring &bindText){
     DB_ASSERT(sqlite3_bind_text16(this->stmt,position+1,bindText.c_str(),-1,SQLITE_STATIC));
 }
-
-
-//////////////////////////////////////////
-///\brief
-///Bind a text to a statment parameter
-///
-///\param position
-///Position of the parameter (0 is the first)
-///
-///\param bindText
-///Text to bind
-//////////////////////////////////////////
-void Statement::BindTextUTF(int position,const char* bindText){
-    DB_ASSERT(sqlite3_bind_text(this->stmt,position-1,bindText,-1,SQLITE_STATIC));
-}
-
-//////////////////////////////////////////
-///\brief
-///Bind a text to a statment parameter
-///
-///\param position
-///Position of the parameter (0 is the first)
-///
-///\param bindText
-///Text to bind
-//////////////////////////////////////////
-void Statement::BindTextUTF(int position,const std::string &bindText){
-    DB_ASSERT(sqlite3_bind_text(this->stmt,position-1,bindText.c_str(),-1,SQLITE_STATIC));
-    const char *error = sqlite3_errmsg(this->connection->connection);
-}
-
 
 //////////////////////////////////////////
 ///\brief
@@ -264,7 +232,8 @@ UINT64 Statement::ColumnInt64(int column){
 ///Column data
 //////////////////////////////////////////
 const char* Statement::ColumnText(int column){
-    return (char*)sqlite3_column_text(this->stmt,column);
+    const char* text = (char*)sqlite3_column_text(this->stmt, column);
+    return text ? text : "";
 }
 
 
@@ -281,23 +250,3 @@ const char* Statement::ColumnText(int column){
 const wchar_t* Statement::ColumnTextW(int column){
     return (wchar_t*)sqlite3_column_text16(this->stmt,column);
 }
-
-
-//////////////////////////////////////////
-///\brief
-///Get the results of a column if Step() return a musik::core::db::Row
-///
-///\param column
-///Column to get (0 is the first)
-///
-///\returns
-///Column data
-//////////////////////////////////////////
-const char* Statement::ColumnTextUTF(int column){
-    #ifdef UTF_WIDECHAR
-        return (char*)sqlite3_column_text16(this->stmt,column);
-    #else
-        return (char*)sqlite3_column_text(this->stmt,column);
-    #endif
-}
-

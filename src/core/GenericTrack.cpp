@@ -39,115 +39,103 @@
 #include <core/GenericTrack.h>
 #include <core/NonLibraryTrackHelper.h>
 
-//////////////////////////////////////////////////////////////////////////////
-
 using namespace musik::core;
 
-//////////////////////////////////////////////////////////////////////////////
-
-TrackPtr GenericTrack::Create(const char *uri){
+TrackPtr GenericTrack::Create(const char *uri) {
     GenericTrack *newTrack  = new GenericTrack(uri);
-    TrackPtr track( newTrack );
-    if(newTrack){
-        newTrack->selfPtr   = track;
-    }
-
-    // Add this to the NonLibraryTrackHelper to read the metadata
+    TrackPtr track(newTrack);
+    newTrack->selfPtr = track; /* used to make another shared_ptr */
     NonLibraryTrackHelper::Instance().ReadTrack(track);
-
     return track;
 }
 
-
-GenericTrack::GenericTrack(void)
-{
+GenericTrack::GenericTrack() {
 }
 
-GenericTrack::GenericTrack(const char *uri)
-{
-    if(uri){
-        this->uri   = uri;
+GenericTrack::GenericTrack(const char *uri) {
+    if (uri) {
+        this->uri = uri;
     }
 }
 
-GenericTrack::~GenericTrack(void){
+GenericTrack::~GenericTrack() {
 }
 
-const char* GenericTrack::GetValue(const char* metakey){
-    if(metakey){
+const char* GenericTrack::GetValue(const char* metakey) {
+    if (metakey) {
         std::string metaKey(metakey);
+
         {
-            boost::mutex::scoped_lock lock(NonLibraryTrackHelper::TrackMutex());
+            boost::mutex::scoped_lock lock(this->metadataMutex);
             MetadataMap::iterator metavalue = this->metadata.find(metaKey);
-            if(metavalue!=this->metadata.end()){
+            if(metavalue != this->metadata.end()) {
                 return metavalue->second.c_str();
             }
         }
 
-        if(metaKey=="title"){
-            // In case there is no title
+        if (metaKey == "title") {
+            if (this->title.size()) {
+                return this->title.c_str();
+            }
+
             std::string::size_type lastSlash = this->uri.find_last_of("/\\");
-            if(lastSlash!=std::string::npos){
-                static std::string tempString;
-                tempString  = this->uri.substr(lastSlash+1);
-                return tempString.c_str();
-            }else{
+            if (lastSlash != std::string::npos) {
+                this->title = this->uri.substr(lastSlash+1);
+                return title.c_str();
+            }
+            else {
                 return this->uri.c_str();
             }
         }
 
-        // Lets try prepend "visual_"
-        if(metaKey.substr(0,7)=="visual_"){
+        /* TODO: figure out -- i have no idea what this means... */
+        if(metaKey.substr(0,7) == "visual_") {
             metaKey = metaKey.substr(7);
             return this->GetValue(metaKey.c_str());
         }
     }
-    return NULL;
+
+    return "";
 }
 
-void GenericTrack::SetValue(const char* metakey,const char* value){
-    if(metakey && value){
-        boost::mutex::scoped_lock lock(NonLibraryTrackHelper::TrackMutex());
+void GenericTrack::SetValue(const char* metakey, const char* value){
+    if (metakey && value) {
+        boost::mutex::scoped_lock lock(this->metadataMutex);
         this->metadata.insert(std::pair<std::string, std::string>(metakey,value));
     }
 }
 
-void GenericTrack::ClearValue(const char* metakey){
-    boost::mutex::scoped_lock lock(NonLibraryTrackHelper::TrackMutex());
+void GenericTrack::ClearValue(const char* metakey) {
+    boost::mutex::scoped_lock lock(this->metadataMutex);
     this->metadata.erase(metakey);
 }
 
-
-
-void GenericTrack::SetThumbnail(const char *data,long size){
+void GenericTrack::SetThumbnail(const char *data,long size) {
 }
 
-const char* GenericTrack::URI(){
+const char* GenericTrack::URI() {
     return this->uri.c_str();
 }
 
-const char* GenericTrack::URL(){
+const char* GenericTrack::URL() {
     return this->uri.c_str();
 }
 
-Track::MetadataIteratorRange GenericTrack::GetValues(const char* metakey){
-    boost::mutex::scoped_lock lock(NonLibraryTrackHelper::TrackMutex());
+Track::MetadataIteratorRange GenericTrack::GetValues(const char* metakey) {
+    boost::mutex::scoped_lock lock(this->metadataMutex);
     return this->metadata.equal_range(metakey);
 }
 
-Track::MetadataIteratorRange GenericTrack::GetAllValues(){
+Track::MetadataIteratorRange GenericTrack::GetAllValues() {
     return Track::MetadataIteratorRange(this->metadata.begin(),this->metadata.end());
 }
 
-
-
-
-TrackPtr GenericTrack::Copy(){
-    // Do not copy generic tracks, try to return a selfPtr instead
+TrackPtr GenericTrack::Copy() {
     TrackPtr trackCopy;
-    if(trackCopy = this->selfPtr.lock()){
+    if (trackCopy = this->selfPtr.lock()) {
         return trackCopy;
     }
+
     return GenericTrack::Create(this->uri.c_str());
 }
 

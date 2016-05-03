@@ -4,6 +4,10 @@
 #include "mp3decoder.h"
 
 static bool splitFrame(musik::core::io::IDataStream *dataStream, Frame &fr) {
+    if (dataStream->Eof()) {
+        return false;
+    }
+
     unsigned char headerbuf[4] = { 0, 0, 0, 0 };
     unsigned char crcbuf[2];
     unsigned char sideInfoBuffer[32];
@@ -60,7 +64,7 @@ static bool splitFrame(musik::core::io::IDataStream *dataStream, Frame &fr) {
 }
 
 MP3Decoder::MP3Decoder()
-: m_pDecoder(NULL) {
+: decoder(NULL) {
 }
 
 MP3Decoder::~MP3Decoder() {
@@ -98,7 +102,7 @@ bool MP3Decoder::GetXingHeader(unsigned char * xingBuffer) {
 
 	unsigned long i;
 
-	m_bXingValid = false;
+	this->xingValid = false;
 
     if (strncmp((char *) xingBuffer, "Xing", 4)) {
         if (strncmp((char *)xingBuffer, "Info", 4)) {
@@ -110,34 +114,34 @@ bool MP3Decoder::GetXingHeader(unsigned char * xingBuffer) {
 
 	unsigned long headFlags = GET_INT32BE(xingBuffer);
 
-	m_NumFrames = 0;
+    this->numFrames = 0;
     if (headFlags & FRAMES_FLAG) {
-        m_NumFrames = GET_INT32BE(xingBuffer);
+        this->numFrames = GET_INT32BE(xingBuffer);
     }
 
-    if (m_NumFrames < 1) {
+    if (this->numFrames < 1) {
         return false;
     }
 
-	m_StreamDataLength = 0;
+    this->streamDataLength = 0;
     if (headFlags & BYTES_FLAG) {
-        m_StreamDataLength = GET_INT32BE(xingBuffer);
+        this->streamDataLength = GET_INT32BE(xingBuffer);
     }
 
 	if (headFlags & TOC_FLAG) {
         for (i = 0; i < 100; i++) {
-            m_TOC[i] = xingBuffer[i];
+            this->toc[i] = xingBuffer[i];
         }
 
         xingBuffer += 100;
 	}
 		
-	m_VbrScale = -1;
+	this->vbrScale = -1;
 	if (headFlags & VBR_SCALE_FLAG) {
-		m_VbrScale = GET_INT32BE(xingBuffer);
+        this->vbrScale = GET_INT32BE(xingBuffer);
 	}
 
-	m_bXingValid = true;
+	this->xingValid = true;
 
 	return true;
 }
@@ -148,54 +152,50 @@ bool MP3Decoder::GetStreamData() {
 	Frame fr;
 
     this->dataStream->Read(tbuf, 10);
-    m_ID3v2Length = GetID3HeaderLength(tbuf);
-    this->dataStream->SetPosition(m_ID3v2Length);
+    this->id3v2Length = GetID3HeaderLength(tbuf);
+    this->dataStream->SetPosition(this->id3v2Length);
 
-	if(splitFrame(this->dataStream, fr)) {
+	if (splitFrame(this->dataStream, fr)) {
 		unsigned char * pHeader = fr.m_Data;
-		if(!GetXingHeader(pHeader))
-		{
-			// analyse file here
-            this->dataStream->SetPosition(m_ID3v2Length);
+		if(!GetXingHeader(pHeader)) {
+            this->dataStream->SetPosition(this->id3v2Length);
 
             // just guesstimate the number of frames!
             /* DANGEROUS -- ASSUMES FINITE LENGTH*/
-			m_StreamDataLength = this->dataStream->Filesize() - m_ID3v2Length;
+			this->streamDataLength = this->dataStream->Filesize() - this->id3v2Length;
 
 			// TODO: check for ID3 TAG at the end of the file and subtract
 			// also remove the size of this current header
-			m_StreamDataLength -= fr.m_Header.GetTotalFrameSize();
-			m_NumFrames = m_StreamDataLength / fr.m_Header.GetTotalFrameSize(); 
+            this->streamDataLength -= fr.m_Header.GetTotalFrameSize();
+            this->numFrames = this->streamDataLength / fr.m_Header.GetTotalFrameSize();
         }
         else {
-            if (m_bXingValid == false) {
+            if (!this->xingValid) {
                 std::cout << "Mp3Decoder.cpp: Mp3 has Xing header but it is invalid.";
             }
         }
 
         double bs[3] = { 384.0, 1152.0, 1152.0 };
-        double TimePerFrame = (double)bs[fr.m_Header.GetLayer()] / (((double)fr.m_Header.GetSampleFrequency() / 1000.0));
+        double timePerFrame = (double)bs[fr.m_Header.GetLayer()] / (((double)fr.m_Header.GetSampleFrequency() / 1000.0));
 
-        m_StreamLengthMS = TimePerFrame * m_NumFrames;
+        this->streamLengthMs = timePerFrame * this->numFrames;
 
         if (fr.m_Header.GetMpegVersion() != MPEG1) {
-            m_StreamLengthMS /= 2;
+            this->streamLengthMs /= 2;
         }
 
-        m_SampleRate = fr.m_Header.GetSampleFrequency();
-        m_NumChannels = fr.m_Header.GetChannels();
+        this->sampleRate = fr.m_Header.GetSampleFrequency();
+        this->numChannels = fr.m_Header.GetChannels();
 
         return true;
     }
-
-    LogConsoleMessage(TEXT("MP3 Decoder"), TEXT("Error calculating mp3 stream information."));
 
     return false;
 }
 
 bool MP3Decoder::Open(musik::core::io::IDataStream *dataStream) {
     this->dataStream = dataStream;
-    this->m_LastLayer = -1;
+    this->lastLayer = -1;
     return GetStreamData();
 }
 
@@ -206,79 +206,73 @@ void MP3Decoder::Destroy(void) {
 #define MP3_BUFFER_FLOAT_ALLOWANCE 2304 /* why? */
 
 bool MP3Decoder::GetBuffer(IBuffer *buffer) {
-    buffer->SetChannels(this->m_NumChannels);
+    buffer->SetChannels(this->numChannels);
     buffer->SetSamples(MP3_BUFFER_FLOAT_ALLOWANCE / buffer->Channels());
-    buffer->SetSampleRate(this->m_SampleRate);
+    buffer->SetSampleRate(this->sampleRate);
 
-    if (splitFrame(this->dataStream, m_Frame)) {
+    if (splitFrame(this->dataStream, this->frame)) {
         /* bail if the mpeg layer is incorrect*/
-        if ((m_Frame.m_Header.GetLayer() != m_LastLayer) || (m_pDecoder == NULL)) {
-            switch (m_Frame.m_Header.GetLayer()) {
+        if ((this->frame.m_Header.GetLayer() != this->lastLayer) || (this->decoder == NULL)) {
+            switch (this->frame.m_Header.GetLayer()) {
                 case LAYER3: {
-                    if (m_pDecoder) {
-                        delete m_pDecoder;
-                        m_pDecoder = NULL;
-                    }
-                    m_pDecoder = new CLayer3Decoder();
-                    m_LastLayer = LAYER3;
+                    delete this->decoder;
+                    this->decoder = NULL;
+                    this->decoder = new CLayer3Decoder();
+                    this->lastLayer = LAYER3;
                 }
                 break;
 
                 default: {
-                    LogConsoleMessage(
-                        L"MP3 Decoder", 
-                        L"Unsupported Layer (Only Layer 3 supported).");
                     return false;
                 }
             }
         }
 
+        /* we have an mp3... */
         unsigned long bufferCount = 0;
-        if (!m_pDecoder->ProcessFrame(&m_Frame, buffer->BufferPointer(), &bufferCount)) {
-            m_Frame.m_Header.Reset();
+        if (!this->decoder->ProcessFrame(&this->frame, buffer->BufferPointer(), &bufferCount)) {
+            this->frame.m_Header.Reset(); /* we're done if ProcessFrame returns false */
             return false;
         }
 
         buffer->SetSamples(bufferCount / buffer->Channels());
+        return true;
     }
 
-    return true;
+    return false;
 }
 
 double MP3Decoder::SetPosition(double seconds, double totalLength) {
     float milliseconds = (float) seconds * 1000.0f;
-	float percent = 100.00f * ((float) milliseconds / (float) m_StreamLengthMS);
+	float percent = 100.00f * ((float) milliseconds / (float) this->streamLengthMs);
 	unsigned long offset;
 
-	if (m_bXingValid)
-	{
+	if (this->xingValid) {
 		/* interpolate in TOC to get file seek point in bytes */ 
 		int a = min(percent, 99);
 		float fa, fb, fx;
 
-        fa = m_TOC[a];
+        fa = this->toc[a];
 		
         if (a < 99) {
-            fb = m_TOC[a + 1];
+            fb = this->toc[a + 1];
         }
         else {
             fb = 256;
         }
 		
 		fx = fa + (fb - fa) * (percent - a);
-		offset = (1.0f / 256.0f) * fx * m_StreamDataLength;
+		offset = (1.0f / 256.0f) * fx * this->streamDataLength;
 	}
 	else {
-		offset = (float) m_StreamDataLength * (float)(percent/ 100.0f) ;
+		offset = (float) this->streamDataLength * (float)(percent/ 100.0f) ;
 	}
 
-    this->dataStream->SetPosition(offset + m_ID3v2Length);
-	bool result = splitFrame(this->dataStream, m_Frame);
+    this->dataStream->SetPosition(offset + this->id3v2Length);
+	bool result = splitFrame(this->dataStream, this->frame);
 
-    if (m_pDecoder) {
-		delete m_pDecoder;
-		m_pDecoder = NULL;
-	}
+	delete this->decoder;
+    this->decoder = NULL;
 
     return result ? seconds : -1;
 }

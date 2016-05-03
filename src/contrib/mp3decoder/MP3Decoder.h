@@ -19,29 +19,24 @@ public:
 	bool GetBuffer(IBuffer *buffer);
     void Destroy();
 
-protected:
-    CFrameSplitter m_Splitter;
-    IMPEGDecoder *m_pDecoder;
-    Frame m_Frame;
-
-    unsigned long m_LastLayer;
-    unsigned long m_SampleRate;
-    unsigned long m_NumChannels;
-    unsigned long m_ID3v2Length;
-    unsigned long m_StreamLengthMS;
-    unsigned long m_NumFrames;
-    unsigned long m_StreamDataLength;
-    unsigned long m_VbrScale;
-    unsigned char m_TOC[100];
-    bool m_bXingValid;
-
-    unsigned long GetID3HeaderLength(unsigned char * buffer);
+private:
     bool GetXingHeader(unsigned char * XingBuffer);
     bool GetStreamData();
+    unsigned long GetID3HeaderLength(unsigned char * buffer);
 
-private:
     musik::core::io::IDataStream *dataStream;
 
-	// Stubs
-	void LogConsoleMessage(LPTSTR szModuleName, LPTSTR szMessage) {}; // TODO: replace with sigslot
+    IMPEGDecoder *decoder;
+    Frame frame;
+
+    unsigned long lastLayer;
+    unsigned long sampleRate;
+    unsigned long numChannels;
+    unsigned long id3v2Length;
+    unsigned long streamLengthMs;
+    unsigned long numFrames;
+    unsigned long streamDataLength;
+    unsigned long vbrScale;
+    unsigned char toc[100];
+    bool xingValid;
 };

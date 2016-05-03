@@ -43,10 +43,8 @@ namespace musik{ namespace core{
 } }
 
 #include <string>
-
 #include <core/config.h>
 #include <core/Library/Base.h>
-
 #include <boost/asio.hpp>
 
 //////////////////////////////////////////

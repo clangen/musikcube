@@ -41,43 +41,41 @@
 #include <vector>
 #include <map>
 
-//////////////////////////////////////////////////////////////////////////////
-// Forward declare
-namespace musik{ namespace core{
-    namespace Library{
+/* forward decl */
+namespace musik { namespace core {
+    
+    namespace Library {
         class  Base;
     }
+
 	typedef boost::shared_ptr<Library::Base> LibraryPtr;
     class  Track;
     typedef boost::shared_ptr<Track> TrackPtr;
     typedef std::vector<TrackPtr> TrackVector;
+
 } }
-//////////////////////////////////////////////////////////////////////////////
 
-
-//////////////////////////////////////////////////////////////////////////////
 namespace musik{ namespace core{
-//////////////////////////////////////////////////////////////////////////////
 
-//////////////////////////////////////////
-///\brief
-///The most basic implementation of a track
-//////////////////////////////////////////
-class  Track : public ITrack {
-    public:
-        virtual ~Track();
-        virtual DBID Id();
-        virtual musik::core::LibraryPtr Library();
-        virtual int LibraryId();
+    //////////////////////////////////////////
+    ///\brief
+    ///The most basic implementation of a track
+    //////////////////////////////////////////
+    class  Track : public ITrack {
+        public:
+            typedef std::multimap<std::string, std::string> MetadataMap;
+            typedef std::pair<MetadataMap::iterator, MetadataMap::iterator> MetadataIteratorRange;
 
-        typedef std::multimap<std::string, std::string> MetadataMap;
-        typedef std::pair<MetadataMap::iterator,MetadataMap::iterator> MetadataIteratorRange;
-        virtual MetadataIteratorRange GetValues(const char* metakey) = 0;
-        virtual MetadataIteratorRange GetAllValues() = 0;
+            virtual ~Track();
+        
+            virtual DBID Id();
 
-        virtual TrackPtr Copy() = 0;
-};
+            virtual musik::core::LibraryPtr Library();
+            virtual int LibraryId();
 
+            virtual MetadataIteratorRange GetValues(const char* metakey) = 0;
+            virtual MetadataIteratorRange GetAllValues() = 0;
+            virtual TrackPtr Copy() = 0;
+    };
 
-//////////////////////////////////////////////////////////////////////////////
-} } // musik::core
+} } 

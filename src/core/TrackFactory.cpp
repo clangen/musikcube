@@ -33,6 +33,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
+
 #include "pch.hpp"
 #include <core/TrackFactory.h>
 #include <core/LibraryTrack.h>
@@ -42,16 +43,17 @@
 
 using namespace musik::core;
 
-TrackPtr TrackFactory::CreateTrack(std::string uri){
-    if(uri.substr(0,7)=="mcdb://"){
+TrackPtr TrackFactory::CreateTrack(const std::string& uri) {
+    if (uri.substr(0,7)=="mcdb://") {
         boost::regex reg("mcdb://([0-9]+)/([0-9]+)");
         boost::smatch matches;
-        if(boost::regex_match(uri,matches,reg)){
+        if (boost::regex_match(uri, matches, reg)) {
             return TrackPtr(new LibraryTrack(
                 boost::lexical_cast<DBID>(matches[1].str()),
                 boost::lexical_cast<int>(matches[0].str())));
         }
     }
+
     return GenericTrack::Create(uri.c_str());
 }
 

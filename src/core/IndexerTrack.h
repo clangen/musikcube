@@ -40,79 +40,64 @@
 #include <core/Track.h>
 #include <core/Library/Base.h>
 
-//////////////////////////////////////////////////////////////////////////////
-// Forward declare
-//////////////////////////////////////////////////////////////////////////////
+namespace musik { namespace core {
 
+    //////////////////////////////////////////
+    ///\brief
+    ///A LibraryTrack is a track related to a Library.
+    //////////////////////////////////////////
+    class  IndexerTrack : public Track {
+        public:
+            IndexerTrack(DBID id);
+            virtual ~IndexerTrack(void);
 
-//////////////////////////////////////////////////////////////////////////////
-namespace musik{ namespace core{
-//////////////////////////////////////////////////////////////////////////////
+            virtual const char* GetValue(const char* metakey);
+            virtual void SetValue(const char* metakey,const char* value);
+            virtual void ClearValue(const char* metakey);
+            virtual void SetThumbnail(const char *data,long size);
+            virtual const char* URI();
+            virtual const char* URL();
 
-//////////////////////////////////////////
-///\brief
-///A LibraryTrack is a track related to a Library.
-//////////////////////////////////////////
-class  IndexerTrack : public Track {
-    public:
-        IndexerTrack(DBID id);
-        virtual ~IndexerTrack(void);
+            virtual MetadataIteratorRange GetValues(const char* metakey);
+            virtual MetadataIteratorRange GetAllValues();
+            virtual TrackPtr Copy();
 
-        virtual const char* GetValue(const char* metakey);
-        virtual void SetValue(const char* metakey,const char* value);
-        virtual void ClearValue(const char* metakey);
-        virtual void SetThumbnail(const char *data,long size);
-        virtual const char* URI();
-        virtual const char* URL();
+            virtual DBID Id();
 
-        virtual MetadataIteratorRange GetValues(const char* metakey);
-        virtual MetadataIteratorRange GetAllValues();
-        virtual TrackPtr Copy();
+            bool CompareDBAndFileInfo(
+                const boost::filesystem::path &file,
+                db::Connection &dbConnection,
+                DBID currentFolderId);
 
-        virtual DBID Id();
+            bool Save(
+                db::Connection &dbConnection, 
+                std::string libraryDirectory,
+                DBID folderId);
 
-        bool CompareDBAndFileInfo(
-            const boost::filesystem::path &file,
-            db::Connection &dbConnection,
-            DBID currentFolderId);
+            bool GetTrackMetadata(db::Connection &db);
 
-        bool Save(
-            db::Connection &dbConnection, 
-            std::string libraryDirectory,
-            DBID folderId);
+        private:
+            DBID id;
+            DBID tempSortOrder;
 
-        bool GetTrackMetadata(db::Connection &db);
+        private:
+            class MetaData{
+                public:
+                    MetaData();
+                    ~MetaData();
 
-    private:
-        // The variables
-        DBID id;
-        DBID tempSortOrder;
+                    Track::MetadataMap metadata;
+                    char *thumbnailData;
+                    long thumbnailSize;
+            };
 
-    private:
-        class MetaData{
-            public:
-                MetaData();
-                ~MetaData();
+            MetaData *meta;
 
-                Track::MetadataMap metadata;
-                char *thumbnailData;
-                long thumbnailSize;
-        };
+        private:
+            void InitMeta();
+            DBID _GetGenre(db::Connection &dbConnection, std::string genre,bool addRelation,bool aggregated=false);
+            DBID _GetArtist(db::Connection &dbConnection, std::string artist, bool addRelation, bool aggregated = false);
+    };
 
-        MetaData *meta;
-
-    private:
-
-        void InitMeta();
-
-        DBID _GetGenre(db::Connection &dbConnection, std::string genre,bool addRelation,bool aggregated=false);
-        DBID _GetArtist(db::Connection &dbConnection, std::string artist,bool addRelation,bool aggregated=false);
-
-};
-
-
-//////////////////////////////////////////////////////////////////////////////
-} } // musik::core
-//////////////////////////////////////////////////////////////////////////////
-
+} }
 

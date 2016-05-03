@@ -47,104 +47,92 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/thread/mutex.hpp>
 
-//////////////////////////////////////////////////////////////////////////////
-
 using namespace musik::core;
 
-//////////////////////////////////////////////////////////////////////////////
-
-LibraryTrack::LibraryTrack(void)
- :meta(NULL)
- ,id(0)
- ,libraryId(0)
-{
+LibraryTrack::LibraryTrack()
+: meta(NULL)
+, id(0)
+, libraryId(0) {
 }
 
-LibraryTrack::LibraryTrack(DBID id,int libraryId)
- :meta(NULL)
- ,id(id)
- ,libraryId(libraryId)
-{
+LibraryTrack::LibraryTrack(DBID id, int libraryId)
+: meta(NULL)
+, id(id)
+, libraryId(libraryId) {
 }
 
-LibraryTrack::LibraryTrack(DBID id,musik::core::LibraryPtr library)
- :meta(NULL)
- ,id(id)
- ,libraryId(library->Id())
-{
+LibraryTrack::LibraryTrack(DBID id, musik::core::LibraryPtr library)
+: meta(NULL)
+, id(id)
+, libraryId(library->Id()) {
 }
 
-
-
-LibraryTrack::~LibraryTrack(void){
-    if(this->meta){
-        delete this->meta;
-        this->meta  = NULL;
-    }
-
+LibraryTrack::~LibraryTrack(){
+    delete this->meta;
+    this->meta = NULL;
 }
 
-const char* LibraryTrack::GetValue(const char* metakey){
-    if(metakey && this->meta){
-        if(this->meta->library){
-            // Threadsafe
-            boost::mutex::scoped_lock lock(this->meta->library->trackMutex);
+const char* LibraryTrack::GetValue(const char* metakey) {
+    if (metakey && this->meta) {
+        if (this->meta->library) {
+            boost::mutex::scoped_lock lock(this->meta->library->trackMutex); /* ?? */
             MetadataMap::iterator metavalue = this->meta->metadata.find(metakey);
-            if(metavalue!=this->meta->metadata.end()){
+            if (metavalue != this->meta->metadata.end()) {
                 return metavalue->second.c_str();
             }
-        }else{
+        }
+        else {
             MetadataMap::iterator metavalue = this->meta->metadata.find(metakey);
-            if(metavalue!=this->meta->metadata.end()){
+            if(metavalue != this->meta->metadata.end()) {
                 return metavalue->second.c_str();
             }
         }
     }
-    return NULL;
+
+    return "";
 }
 
-void LibraryTrack::SetValue(const char* metakey,const char* value){
+void LibraryTrack::SetValue(const char* metakey, const char* value) {
     this->InitMeta();
 
-    if(metakey && value){
-        if(this->meta->library){
-            // Threadsafe
+    if (metakey && value) {
+        if(this->meta->library) {
             boost::mutex::scoped_lock lock(this->meta->library->trackMutex);
             this->meta->metadata.insert(std::pair<std::string, std::string>(metakey,value));
-        }else{
+        }
+        else {
             this->meta->metadata.insert(std::pair<std::string, std::string>(metakey,value));
         }
     }
 }
 
-void LibraryTrack::ClearValue(const char* metakey){
-    if(this->meta){
-        if(this->meta->library){
+void LibraryTrack::ClearValue(const char* metakey) {
+    if (this->meta) {
+        if (this->meta->library) {
             boost::mutex::scoped_lock lock(this->meta->library->trackMutex);
             this->meta->metadata.erase(metakey);
-        }else{
+        }
+        else {
             this->meta->metadata.erase(metakey);
         }
     }
 }
 
-
-
-void LibraryTrack::SetThumbnail(const char *data,long size){
+void LibraryTrack::SetThumbnail(const char *data, long size) {
     this->InitMeta();
 
-    if(this->meta->thumbnailData)
-        delete this->meta->thumbnailData;
+    delete this->meta->thumbnailData;
+    this->meta->thumbnailData = new char[size];
+    this->meta->thumbnailSize = size;
 
-    this->meta->thumbnailData        = new char[size];
-    this->meta->thumbnailSize        = size;
-
-    memcpy(this->meta->thumbnailData,data,size);
+    memcpy(this->meta->thumbnailData, data, size);
 }
 
 const char* LibraryTrack::URI(){
     static std::string uri;
-    if(this->meta){
+
+    /* todo: don't use static; create during InitMeta() */
+    if (this->meta) {
         uri = 
             "mcdb://" + 
             this->meta->library->Identifier() + 
@@ -153,7 +141,7 @@ const char* LibraryTrack::URI(){
 
         return uri.c_str();
     }
-    else{
+    else {
         uri = 
             "mcdb://" + 
             boost::lexical_cast<std::string>(this->libraryId) + 
@@ -162,93 +150,95 @@ const char* LibraryTrack::URI(){
 
         return uri.c_str();
     }
+
     return NULL;
 }
 
-const char* LibraryTrack::URL(){
+const char* LibraryTrack::URL() {
     return this->GetValue("path");
 }
 
-Track::MetadataIteratorRange LibraryTrack::GetValues(const char* metakey){
-    if(this->meta){
-        if(this->meta->library){
+Track::MetadataIteratorRange LibraryTrack::GetValues(const char* metakey) {
+    if (this->meta) {
+        if (this->meta->library) {
             boost::mutex::scoped_lock lock(this->meta->library->trackMutex);
             return this->meta->metadata.equal_range(metakey);
-        }else{
+        }
+        else {
             return this->meta->metadata.equal_range(metakey);
         }
     }
+
     return Track::MetadataIteratorRange();
 }
 
-Track::MetadataIteratorRange LibraryTrack::GetAllValues(){
-    if(this->meta){
-        return Track::MetadataIteratorRange(this->meta->metadata.begin(),this->meta->metadata.end());
+Track::MetadataIteratorRange LibraryTrack::GetAllValues() {
+    if (this->meta) {
+        return Track::MetadataIteratorRange(
+            this->meta->metadata.begin(), this->meta->metadata.end());
     }
+
     return Track::MetadataIteratorRange();
 }
 
-DBID LibraryTrack::Id(){
+DBID LibraryTrack::Id() {
     return this->id;
 }
 
-musik::core::LibraryPtr LibraryTrack::Library(){
-    if(this->meta){
+musik::core::LibraryPtr LibraryTrack::Library() {
+    if (this->meta) {
         return this->meta->library;
     }
+
     return LibraryFactory::Instance().GetLibrary(this->libraryId);
 }
 
-int LibraryTrack::LibraryId(){
+int LibraryTrack::LibraryId() {
     return this->libraryId;
 }
 
-
-
-void LibraryTrack::InitMeta(){
-    if(!this->meta){
-        // Create the metadata
-        this->meta  = new MetaData();
-        if(this->libraryId){
+void LibraryTrack::InitMeta() {
+    if (!this->meta) {
+        this->meta = new MetaData();
+        if (this->libraryId) {
             this->meta->library = LibraryFactory::Instance().GetLibrary(this->libraryId);
         }
     }
 }
 
-
-
-TrackPtr LibraryTrack::Copy(){
+TrackPtr LibraryTrack::Copy() {
     return TrackPtr(new LibraryTrack(this->id,this->libraryId));
 }
 
-
-bool LibraryTrack::GetFileData(DBID id,db::Connection &db){
+bool LibraryTrack::GetFileData(DBID id, db::Connection &db) {
     this->InitMeta();
 
-    this->id    = id;
+    this->id = id;
 
-    db::CachedStatement stmt("SELECT t.filename,t.filesize,t.filetime,p.path||f.relative_path||'/'||t.filename FROM tracks t,folders f,paths p WHERE t.folder_id=f.id AND f.path_id=p.id AND t.id=?",db);
-    stmt.BindInt(0,id);
+    db::CachedStatement stmt(
+        "SELECT t.filename, t.filesize, t.filetime, p.path || f.relative_path || '/'|| t.filename " \
+        "FROM tracks t, folders f, paths p " \
+        "WHERE t.folder_id=f.id AND f.path_id=p.id AND t.id=?", db);
 
-    if(stmt.Step()==db::Row){
-        this->SetValue("filename"   ,stmt.ColumnTextUTF(0));
-        this->SetValue("filesize"   ,stmt.ColumnTextUTF(1));
-        this->SetValue("filetime"   ,stmt.ColumnTextUTF(2));
-        this->SetValue("path"       ,stmt.ColumnTextUTF(3));
+    stmt.BindInt(0, id);
+
+    if (stmt.Step() == db::Row) {
+        this->SetValue("filename", stmt.ColumnText(0));
+        this->SetValue("filesize", stmt.ColumnText(1));
+        this->SetValue("filetime", stmt.ColumnText(2));
+        this->SetValue("path", stmt.ColumnText(3));
         return true;
     }
+
     return false;
 }
 
 LibraryTrack::MetaData::MetaData()
  :thumbnailData(NULL)
- ,thumbnailSize(0)
-{
+ ,thumbnailSize(0) {
 }
 
-
-LibraryTrack::MetaData::~MetaData(){
-    if(this->thumbnailData)
-        delete this->thumbnailData;
+LibraryTrack::MetaData::~MetaData() {
+    delete this->thumbnailData;
 }
 

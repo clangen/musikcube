@@ -42,6 +42,10 @@
 #include <core/sdk/IPlugin.h>
 #include <core/PluginFactory.h>
 
+#include <core/TrackFactory.h>
+#include <core/LibraryFactory.h>
+#include <core/Indexer.h>
+
 using namespace musik::square;
 
 using std::cout;
@@ -87,8 +91,20 @@ void ConsoleUI::Run()
 
     transport.SetVolume(0.1);
 
-    while (!this->shouldQuit)
-    {
+    using musik::core::Indexer;
+    using musik::core::IndexerPtr;
+    using musik::core::LibraryFactory;
+    using musik::core::LibraryPtr;
+    using musik::core::TrackFactory;
+    using musik::core::TrackPtr;
+   
+    LibraryPtr library = LibraryFactory::Libraries().at(0); /* there's always at least 1... */
+    library->Indexer()->AddPath("e:/music");
+    library->Indexer()->RestartSync();
+
+    TrackPtr track = TrackFactory::CreateTrack("c:/test.ogg");
+
+    while (!this->shouldQuit) {
         this->PrintCommands();
         cout << "Enter command: ";
         std::getline(cin, command); // Need getline to handle spaces!

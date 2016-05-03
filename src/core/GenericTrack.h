@@ -40,47 +40,45 @@
 #include <core/Track.h>
 #include <core/Library/Base.h>
 #include <boost/weak_ptr.hpp>
+#include <boost/thread/mutex.hpp>
 
-//////////////////////////////////////////////////////////////////////////////
-namespace musik{ namespace core{
-//////////////////////////////////////////////////////////////////////////////
+namespace musik { namespace core {
 
-//////////////////////////////////////////
-///\brief
-///A GenericTrack is not related to any library. It must contain a URI
-//////////////////////////////////////////
-class GenericTrack : public Track {
-    public:
-        static TrackPtr Create(const char *uri);
-    protected:
-        GenericTrack(void);
-        GenericTrack(const char *uri);
-    public:
-        virtual ~GenericTrack(void);
-
-        virtual const char* GetValue(const char* metakey);
-        virtual void SetValue(const char* metakey,const char* value);
-        virtual void ClearValue(const char* metakey);
-        virtual void SetThumbnail(const char *data,long size);
-        virtual const char* URI();
-        virtual const char* URL();
-
-        virtual MetadataIteratorRange GetValues(const char* metakey);
-        virtual MetadataIteratorRange GetAllValues();
-        virtual TrackPtr Copy();
-
-    private:
-        // The variables
-        std::string uri;
-        Track::MetadataMap metadata;
+    //////////////////////////////////////////
+    ///\brief
+    ///A GenericTrack is not related to any library. It must contain a URI
+    //////////////////////////////////////////
+    class GenericTrack : public Track {
+        public:
+            static TrackPtr Create(const char *uri);
     
-        typedef boost::weak_ptr<Track> SelfWeakPtr;
-        SelfWeakPtr selfPtr;
-};
+    protected:
+            GenericTrack();
+            GenericTrack(const char *uri);
 
+        public:
+            virtual ~GenericTrack();
 
-//////////////////////////////////////////////////////////////////////////////
-} } // musik::core
-//////////////////////////////////////////////////////////////////////////////
+            virtual const char* GetValue(const char* metakey);
+            virtual void SetValue(const char* metakey,const char* value);
+            virtual void ClearValue(const char* metakey);
+            virtual void SetThumbnail(const char *data,long size);
+            virtual const char* URI();
+            virtual const char* URL();
+
+            virtual MetadataIteratorRange GetValues(const char* metakey);
+            virtual MetadataIteratorRange GetAllValues();
+            virtual TrackPtr Copy();
+
+        private:
+            typedef boost::weak_ptr<Track> SelfWeakPtr;
+            SelfWeakPtr selfPtr;
+            Track::MetadataMap metadata;
+            std::string uri;
+            std::string title;
+            boost::mutex metadataMutex;
+    };
+
+} }
 
 

@@ -53,8 +53,7 @@ namespace musik{ namespace core{
 
 class NonLibraryTrackHelper{
     public:
-        static  NonLibraryTrackHelper& Instance();
-        static boost::mutex& TrackMutex();
+        static NonLibraryTrackHelper& Instance();
 
         void ReadTrack(musik::core::TrackPtr track);
 
@@ -70,7 +69,6 @@ class NonLibraryTrackHelper{
         void ThreadLoop();
 
     private:
-        boost::mutex trackMutex;
         boost::mutex mutex;
         bool threadIsRunning;
 

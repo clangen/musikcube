@@ -39,25 +39,20 @@
 #include <core/Track.h>
 #include <core/Library/Base.h>
 
-//////////////////////////////////////////////////////////////////////////////
-
 using namespace musik::core;
 
-//////////////////////////////////////////////////////////////////////////////
-
-
-Track::~Track(void){
+Track::~Track() {
 }
 
-DBID Track::Id(){
+DBID Track::Id() {
     return 0;
 }
 
-LibraryPtr Track::Library(){
+LibraryPtr Track::Library() {
     static LibraryPtr nullLibrary;
     return nullLibrary;
 }
 
-int Track::LibraryId(){
+int Track::LibraryId() {
     return 0;
 }

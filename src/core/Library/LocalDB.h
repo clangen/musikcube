@@ -71,8 +71,8 @@ namespace musik{ namespace core{ namespace Library{
 class  LocalDB : public Library::Base{
 	private:
         LocalDB(std::string name,int id);
+
     public:
-        // Methods:
 		static LibraryPtr Create(std::string name,int id);
         ~LocalDB(void);
 

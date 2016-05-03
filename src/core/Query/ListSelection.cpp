@@ -532,7 +532,7 @@ void Query::ListSelection::QueryForMetadata(const char *metakey,const char *sql,
                     MetadataValuePtr(
                         new MetadataValue(
                             metaValueStmt.ColumnInt(0),
-                            metaValueStmt.ColumnTextUTF(1)
+                            metaValueStmt.ColumnText(1)
                             )
                         )
                     );

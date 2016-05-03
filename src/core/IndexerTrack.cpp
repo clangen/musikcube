@@ -160,7 +160,7 @@ bool IndexerTrack::CompareDBAndFileInfo(
 
         db::CachedStatement stmt("SELECT id,filename,filesize,filetime FROM tracks t WHERE folder_id=? AND filename=?",dbConnection);
         stmt.BindInt(0,currentFolderId);
-        stmt.BindTextUTF(1,this->GetValue("filename"));
+        stmt.BindText(1,this->GetValue("filename"));
 
         bool fileDifferent(true);
 
@@ -211,15 +211,15 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
         db::CachedStatement stmt("INSERT OR REPLACE INTO tracks (id,track,bpm,duration,filesize,year,folder_id,title,filename,filetime,sort_order1) VALUES (?,?,?,?,?,?,?,?,?,?,?)",dbConnection);
 
         // Bind all "static" tags (the once that are in the tracks tables)
-        stmt.BindTextUTF(1,this->GetValue("track"));
-        stmt.BindTextUTF(2,this->GetValue("bpm"));
-        stmt.BindTextUTF(3,this->GetValue("duration"));
-        stmt.BindTextUTF(4,this->GetValue("filesize"));
-        stmt.BindTextUTF(5,this->GetValue("year"));
+        stmt.BindText(1,this->GetValue("track"));
+        stmt.BindText(2,this->GetValue("bpm"));
+        stmt.BindText(3,this->GetValue("duration"));
+        stmt.BindText(4,this->GetValue("filesize"));
+        stmt.BindText(5,this->GetValue("year"));
         stmt.BindInt(6,folderId);
-        stmt.BindTextUTF(7,this->GetValue("title"));
-        stmt.BindTextUTF(8,this->GetValue("filename"));
-        stmt.BindTextUTF(9,this->GetValue("filetime"));
+        stmt.BindText(7,this->GetValue("title"));
+        stmt.BindText(8,this->GetValue("filename"));
+        stmt.BindText(9,this->GetValue("filetime"));
         stmt.BindInt(10,this->tempSortOrder);
 
         if(this->id!=0){
@@ -326,14 +326,14 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
             album="";
         }
 
-        stmt.BindTextUTF(0,album);
+        stmt.BindText(0,album);
 
         if(stmt.Step()==db::Row){
             albumId    = stmt.ColumnInt(0);
         }else{
             // INSERT a new album
             db::Statement insertAlbum("INSERT INTO albums (name) VALUES (?)",dbConnection);
-            insertAlbum.BindTextUTF(0,album);
+            insertAlbum.BindText(0,album);
 
             if(insertAlbum.Step()==db::Done){
                 albumId    = dbConnection.LastInsertedId();
@@ -440,7 +440,7 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
                 DBID metaValueId(0);
                 // 2.1 Find meta_value
                 selectMetaValue.BindInt(0,metaKeyId);
-                selectMetaValue.BindTextUTF(1,metaData->second);
+                selectMetaValue.BindText(1,metaData->second);
 
                 if(selectMetaValue.Step()==db::Row){
                     // Value found
@@ -448,7 +448,7 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
                 }else{
                     // Value not found, INSERT
                     insertMetaValue.BindInt(0,metaKeyId);
-                    insertMetaValue.BindTextUTF(1,metaData->second);
+                    insertMetaValue.BindText(1,metaData->second);
                     if(insertMetaValue.Step()==db::Done){
                         metaValueId    = dbConnection.LastInsertedId();
                     }
@@ -476,7 +476,7 @@ DBID IndexerTrack::_GetGenre(db::Connection &dbConnection, std::string genre,boo
     DBID genreId(0);
     {
         db::CachedStatement stmt("SELECT id FROM genres WHERE name=?",dbConnection);
-        stmt.BindTextUTF(0,genre);
+        stmt.BindText(0,genre);
         if(stmt.Step()==db::Row){
             genreId    = stmt.ColumnInt(0);
         }
@@ -487,7 +487,7 @@ DBID IndexerTrack::_GetGenre(db::Connection &dbConnection, std::string genre,boo
         DBID aggregatedInt    = (aggregated?1:0);
 
         db::CachedStatement stmt("INSERT INTO genres (name,aggregated) VALUES (?,?)",dbConnection);
-        stmt.BindTextUTF(0,genre);
+        stmt.BindText(0,genre);
         stmt.BindInt(1,aggregatedInt);
 
         if(stmt.Step()==db::Done){
@@ -510,7 +510,7 @@ DBID IndexerTrack::_GetArtist(db::Connection &dbConnection, std::string artist,b
     DBID artistId(0);
 
     db::CachedStatement stmt("SELECT id FROM artists WHERE name=?",dbConnection);
-    stmt.BindTextUTF(0,artist);
+    stmt.BindText(0,artist);
 
     if(stmt.Step()==db::Row){
         artistId    = stmt.ColumnInt(0);
@@ -520,7 +520,7 @@ DBID IndexerTrack::_GetArtist(db::Connection &dbConnection, std::string artist,b
         // Insert the genre
         DBID aggregatedInt    = (aggregated?1:0);
         db::Statement insertArtist("INSERT INTO artists (name,aggregated) VALUES (?,?)",dbConnection);
-        insertArtist.BindTextUTF(0,artist);
+        insertArtist.BindText(0,artist);
         insertArtist.BindInt(1,aggregatedInt);
 
         if(insertArtist.Step()==db::Done){
@@ -566,33 +566,33 @@ bool IndexerTrack::GetTrackMetadata(db::Connection &db){
 
     track.BindInt(0,this->id);
     if(track.Step()==db::Row){
-        this->SetValue("track",track.ColumnTextUTF(0));
-        this->SetValue("bpm",track.ColumnTextUTF(1));
-        this->SetValue("duration",track.ColumnTextUTF(2));
-        this->SetValue("filesize",track.ColumnTextUTF(3));
-        this->SetValue("year",track.ColumnTextUTF(4));
-        this->SetValue("title",track.ColumnTextUTF(5));
-        this->SetValue("filename",track.ColumnTextUTF(6));
-        this->SetValue("thumbnail_id",track.ColumnTextUTF(7));
-        this->SetValue("path",track.ColumnTextUTF(8));
-        this->SetValue("album",track.ColumnTextUTF(9));
-        this->SetValue("filetime",track.ColumnTextUTF(10));
+        this->SetValue("track",track.ColumnText(0));
+        this->SetValue("bpm",track.ColumnText(1));
+        this->SetValue("duration",track.ColumnText(2));
+        this->SetValue("filesize",track.ColumnText(3));
+        this->SetValue("year",track.ColumnText(4));
+        this->SetValue("title",track.ColumnText(5));
+        this->SetValue("filename",track.ColumnText(6));
+        this->SetValue("thumbnail_id",track.ColumnText(7));
+        this->SetValue("path",track.ColumnText(8));
+        this->SetValue("album",track.ColumnText(9));
+        this->SetValue("filetime",track.ColumnText(10));
         this->tempSortOrder = track.ColumnInt(11);
 
         // genres
         genres.BindInt(0,this->id);
         while(genres.Step()==db::Row){
-            this->SetValue("genre",genres.ColumnTextUTF(0));
+            this->SetValue("genre",genres.ColumnText(0));
         }
         // artists
         artists.BindInt(0,this->id);
         while(artists.Step()==db::Row){
-            this->SetValue("artist",artists.ColumnTextUTF(0));
+            this->SetValue("artist",artists.ColumnText(0));
         }
         // other metadata
         allMetadata.BindInt(0,this->id);
         while(allMetadata.Step()==db::Row){
-            this->SetValue(allMetadata.ColumnText(1),allMetadata.ColumnTextUTF(0));
+            this->SetValue(allMetadata.ColumnText(1),allMetadata.ColumnText(0));
         }
 
         return true;

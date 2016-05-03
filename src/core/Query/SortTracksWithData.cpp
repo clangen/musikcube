@@ -146,7 +146,7 @@ bool Query::SortTracksWithData::ParseQuery(Library::Base *library,db::Connection
         while(selectTracks.Step()==db::Row){
             TrackWithSortdata newSortData;
             newSortData.track.reset(new LibraryTrack(selectTracks.ColumnInt(0),library->Id()));
-            const char* sortDataPtr  = selectTracks.ColumnTextUTF(1);
+            const char* sortDataPtr  = selectTracks.ColumnText(1);
             if(sortDataPtr){
                 newSortData.sortData    = sortDataPtr;
             }

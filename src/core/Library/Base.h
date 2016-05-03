@@ -139,10 +139,7 @@ class  Base : boost::noncopyable{
 		int Id();
 		const std::string& Name();
 
-//		musik::core::tracklist::Ptr NowPlaying();
-
         virtual const std::string& AuthorizationKey();
-
 
         static bool IsStaticMetaKey(std::string &metakey);
         static bool IsSpecialMTOMetaKey(std::string &metakey);
@@ -151,18 +148,12 @@ class  Base : boost::noncopyable{
         static void CreateDatabase(db::Connection &db);
 
     protected:
-        // Methods:
         virtual void Exit();
-
+        virtual void CancelCurrentQuery();
         Query::Ptr GetNextQuery();
-
-        virtual void CancelCurrentQuery( );
-
         std::string GetDBPath();
 
     private:
-        // Methods:
-
         bool ClearFinishedQueries();
 
     public:
@@ -288,11 +279,8 @@ class  Base : boost::noncopyable{
     public:
         boost::mutex libraryMutex;
 		LibraryWeakPtr self;
-
         LibraryPtr GetSelfPtr();
-
         int userId;
-
 };
 
 //////////////////////////////////////////////////////////////////////////////
