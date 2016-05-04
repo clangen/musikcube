@@ -47,16 +47,15 @@ namespace musik { namespace core {
     }
 
     namespace library {
-        class  Base;
-        class  LocalDB;
-        class  Remote;
+        class  LibraryBase;
+        class  LocalLibrary;
     }
 } }
 
 namespace musik { namespace core { namespace query {
 
-    class Base;
-    typedef boost::shared_ptr<query::Base> Ptr;
+    class QueryBase;
+    typedef boost::shared_ptr<query::QueryBase> Ptr;
 
     typedef enum{
         AutoCallback = 1,
@@ -72,15 +71,14 @@ namespace musik { namespace core { namespace query {
     ///\brief
     ///Interface class for all queries.
     //////////////////////////////////////////
-    class  Base : public sigslot::has_slots<> {
+    class QueryBase : public sigslot::has_slots<> {
         public:
-            Base(void);
-            virtual ~Base(void);
+            QueryBase();
+            virtual ~QueryBase();
 
         protected:
-            friend class library::Base;
-            friend class library::Remote;
-            friend class library::LocalDB;
+            friend class library::LibraryBase;
+            friend class library::LocalLibrary;
 
             typedef enum {
                 Started       = 1,
@@ -96,7 +94,7 @@ namespace musik { namespace core { namespace query {
             ///Current status of the query
             ///
             ///\remarks
-            ///status is protected by the library::Base::libraryMutex
+            ///status is protected by the library::LibraryBase::libraryMutex
             //////////////////////////////////////////
             unsigned int status;
 
@@ -117,7 +115,7 @@ namespace musik { namespace core { namespace query {
             ///It is therefore considered threadsafe.
             ///
             ///\see
-            ///musik::core::library::Base::AddQuery
+            ///musik::core::library::LibraryBase::AddQuery
             //////////////////////////////////////////
             unsigned int options;
 
@@ -129,13 +127,13 @@ namespace musik { namespace core { namespace query {
             ///Copy method that is required to be implemented.
             ///
             ///\returns
-            ///Shared pointer to query::Base object.
+            ///Shared pointer to query::QueryBase object.
             ///
             ///This method is required by all queries since they are
-            ///copied every time a library::Base::AddQuery is called.
+            ///copied every time a library::LibraryBase::AddQuery is called.
             ///
             ///\see
-            ///library::Base::AddQuery
+            ///library::LibraryBase::AddQuery
             //////////////////////////////////////////
             virtual Ptr copy() const=0;
 
@@ -149,7 +147,7 @@ namespace musik { namespace core { namespace query {
             ///\returns
             ///Should return true if query is totaly finished. false otherwise.
             //////////////////////////////////////////
-            virtual bool RunCallbacks(library::Base *library){return true;};
+            virtual bool RunCallbacks(library::LibraryBase *library){return true;};
 
             //////////////////////////////////////////
             ///\brief
@@ -167,25 +165,25 @@ namespace musik { namespace core { namespace query {
             ///The ParseQuery should consider that all sqlite
             ///calls could be interrupted by the sqlite3_interrupt call.
             //////////////////////////////////////////
-            virtual bool ParseQuery(library::Base *library,db::Connection &db)=0;
+            virtual bool ParseQuery(library::LibraryBase *library,db::Connection &db)=0;
 
             //////////////////////////////////////////
             ///\brief
-            ///PreAddQuery is called from the library::Base::AddQuery when the copied query is added to the library.
+            ///PreAddQuery is called from the library::LibraryBase::AddQuery when the copied query is added to the library.
             ///
             ///\param library
             ///Pointer to library
             ///
             ///\see
-            ///library::Base::AddQuery
+            ///library::LibraryBase::AddQuery
             //////////////////////////////////////////
-            virtual void PreAddQuery(library::Base *library){};
+            virtual void PreAddQuery(library::LibraryBase *library){};
 
         public:
             void PostCopy();
 
-            //////////////////////////////////////////
-            typedef sigslot::signal3<query::Base*,library::Base*,bool> QueryFinishedEvent;
+            typedef sigslot::signal3<query::QueryBase*, library::LibraryBase*, bool> QueryFinishedEvent;
+
             //////////////////////////////////////////
             ///\brief
             ///A signal called before the query is totaly removed from the library queue

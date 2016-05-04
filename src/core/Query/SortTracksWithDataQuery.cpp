@@ -36,8 +36,8 @@
 
 #include "pch.hpp"
 
-#include <core/Query/SortTracksWithData.h>
-#include <core/Library/Base.h>
+#include <core/Query/SortTracksWithDataQuery.h>
+#include <core/library/LibraryBase.h>
 #include <core/config.h>
 #include <boost/algorithm/string.hpp>
 #include <core/LibraryTrack.h>
@@ -50,7 +50,7 @@ using namespace musik::core::query;
 ///\brief
 ///Constructor
 //////////////////////////////////////////
-SortTracksWithData::SortTracksWithData()
+SortTracksWithDataQuery::SortTracksWithDataQuery()
 : clearedTrackResults(false) {
 }
 
@@ -58,7 +58,7 @@ SortTracksWithData::SortTracksWithData()
 ///\brief
 ///Destructor
 //////////////////////////////////////////
-SortTracksWithData::~SortTracksWithData() {
+SortTracksWithDataQuery::~SortTracksWithDataQuery() {
 }
 
 //////////////////////////////////////////
@@ -68,8 +68,8 @@ SortTracksWithData::~SortTracksWithData() {
 ///\returns
 ///A shared_ptr to the Base
 //////////////////////////////////////////
-Ptr SortTracksWithData::copy() const {
-    Ptr queryCopy(new SortTracksWithData(*this));
+Ptr SortTracksWithDataQuery::copy() const {
+    Ptr queryCopy(new SortTracksWithDataQuery(*this));
     queryCopy->PostCopy();
     return queryCopy;
 }
@@ -78,7 +78,7 @@ Ptr SortTracksWithData::copy() const {
 ///\brief
 ///Add a track (trackId) in for sorting
 //////////////////////////////////////////
-void SortTracksWithData::AddTrack(DBID trackId){
+void SortTracksWithDataQuery::AddTrack(DBID trackId){
     this->tracksToSort.push_back(trackId);
 }
 
@@ -87,7 +87,7 @@ void SortTracksWithData::AddTrack(DBID trackId){
 ///\brief
 ///What metakey to sort by
 //////////////////////////////////////////
-void SortTracksWithData::SortByMetaKey(std::string metaKey){
+void SortTracksWithDataQuery::SortByMetaKey(std::string metaKey){
     this->sortByMetaKey = metaKey;
 }
 
@@ -95,23 +95,23 @@ void SortTracksWithData::SortByMetaKey(std::string metaKey){
 ///\brief
 ///If you are reusing the query, clear what tracks to sort by
 //////////////////////////////////////////
-void SortTracksWithData::ClearTracks(){
+void SortTracksWithDataQuery::ClearTracks(){
     this->tracksToSort.clear();
 }
 
 //////////////////////////////////////////
 ///\brief
-///The name ("SortTracksWithData") of the query. 
+///The name ("SortTracksWithDataQuery") of the query. 
 //////////////////////////////////////////
-std::string SortTracksWithData::Name(){
-    return "SortTracksWithData";
+std::string SortTracksWithDataQuery::Name(){
+    return "SortTracksWithDataQuery";
 }
 
 //////////////////////////////////////////
 ///\brief
 ///Execute the callbacks. In this case the "TrackResults" signal
 //////////////////////////////////////////
-bool SortTracksWithData::RunCallbacks(library::Base *library){
+bool SortTracksWithDataQuery::RunCallbacks(library::LibraryBase *library){
 
     bool bReturn(false);
 
@@ -124,7 +124,7 @@ bool SortTracksWithData::RunCallbacks(library::Base *library){
 
     {
         boost::mutex::scoped_lock lock(library->libraryMutex);
-        if( (this->status & Base::Ended)!=0){
+        if( (this->status & QueryBase::Ended)!=0){
             // If the query is finished, this function should return true to report that it is finished.
             bReturn    = true;
         }
@@ -150,7 +150,7 @@ bool SortTracksWithData::RunCallbacks(library::Base *library){
 ///\brief
 ///Operator to be able to sort using the sortData
 //////////////////////////////////////////
-bool SortTracksWithData::TrackWithSortdata::operator<(const TrackWithSortdata &trackWithSortData) const{
+bool SortTracksWithDataQuery::TrackWithSortdata::operator<(const TrackWithSortdata &trackWithSortData) const{
     return this->sortData < trackWithSortData.sortData;
 }
 
@@ -158,7 +158,7 @@ bool SortTracksWithData::TrackWithSortdata::operator<(const TrackWithSortdata &t
 ///\brief
 ///Executes the query, meaning id does all the querying to the database.
 //////////////////////////////////////////
-bool SortTracksWithData::ParseQuery(library::Base *library, db::Connection &db) {
+bool SortTracksWithDataQuery::ParseQuery(library::LibraryBase *library, db::Connection &db) {
     // Create smart SQL statment
     std::string selectSQL("SELECT temp_track_sort.track_id ");
     std::string selectSQLTables("temp_track_sort JOIN tracks ON tracks.id=temp_track_sort.track_id ");
@@ -167,13 +167,13 @@ bool SortTracksWithData::ParseQuery(library::Base *library, db::Connection &db) 
     db::CachedStatement selectMetaKeyId("SELECT id FROM meta_keys WHERE name=?", db);
 
     // Check if it's a fixed field
-    if (musik::core::library::Base::IsStaticMetaKey(this->sortByMetaKey)) {
+    if (musik::core::library::LibraryBase::IsStaticMetaKey(this->sortByMetaKey)) {
         selectSQL += ",tracks." + this->sortByMetaKey;
         selectSQLSort += (selectSQLSort.empty() ? " ORDER BY tracks." : ",tracks.") + this->sortByMetaKey;
 
         // Check if it's a special MTO (many to one relation) field
     }
-    else if (musik::core::library::Base::IsSpecialMTOMetaKey(this->sortByMetaKey) || musik::core::library::Base::IsSpecialMTMMetaKey(this->sortByMetaKey)) {
+    else if (musik::core::library::LibraryBase::IsSpecialMTOMetaKey(this->sortByMetaKey) || musik::core::library::LibraryBase::IsSpecialMTMMetaKey(this->sortByMetaKey)) {
         if (this->sortByMetaKey == "album") {
             selectSQLTables += " LEFT OUTER JOIN albums ON albums.id=tracks.album_id ";
             selectSQL += ",albums.name";

@@ -40,8 +40,8 @@
 
 #include <core/config.h>
 #include <core/Track.h>
-#include <core/Library/Base.h>
-#include <core/Query/ListBase.h>
+#include <core/library/LibraryBase.h>
+#include <core/Query/ListQueryBase.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -50,16 +50,16 @@
 #include <set>
 
 //////////////////////////////////////////////////////////////////////////////
-namespace musik{ namespace core{ namespace tracklist {
+namespace musik{ namespace core { namespace tracklist {
 //////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////
 ///\brief
 ///The virtual base that sets up the required methods for a tracklist
 //////////////////////////////////////////
-class Base : boost::noncopyable{
+class TrackListQueryBase : boost::noncopyable{
     public:
-        virtual ~Base();
+        virtual ~TrackListQueryBase();
 
 		//////////////////////////////////////////
 		///\brief
@@ -150,7 +150,7 @@ class Base : boost::noncopyable{
 		///\returns
 		///True if successfully copied.
 		//////////////////////////////////////////
-		virtual bool operator =(musik::core::tracklist::Base &tracklist) = 0;
+		virtual bool operator =(TrackListQueryBase &tracklist) = 0;
 
         //////////////////////////////////////////
 		///\brief
@@ -162,7 +162,7 @@ class Base : boost::noncopyable{
 		///\returns
 		///True if successfully appended
 		//////////////////////////////////////////
-		virtual bool operator +=(musik::core::tracklist::Base &tracklist) = 0;
+		virtual bool operator +=(TrackListQueryBase &tracklist) = 0;
 
         //////////////////////////////////////////
 		///\brief
@@ -191,9 +191,9 @@ class Base : boost::noncopyable{
 
         //////////////////////////////////////////
 		///\brief
-		///Connect the tracklist to receive tracks from a ListBase query.
+		///Connect the tracklist to receive tracks from a ListQueryBase query.
 		//////////////////////////////////////////
-        virtual bool ConnectToQuery(musik::core::query::ListBase &query);
+        virtual bool ConnectToQuery(musik::core::query::ListQueryBase &query);
 
         //////////////////////////////////////////
 		///\brief
@@ -271,7 +271,7 @@ class Base : boost::noncopyable{
 
 };
 
-typedef boost::shared_ptr<Base> Ptr;
+typedef boost::shared_ptr<TrackListQueryBase> Ptr;
 
 //////////////////////////////////////////////////////////////////////////////
 } } } // musik::core

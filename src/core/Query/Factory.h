@@ -36,7 +36,7 @@
 #pragma once
 
 #include <core/config.h>
-#include <core/Query/Base.h>
+#include <core/Query/QueryBase.h>
 
 #include <map>
 

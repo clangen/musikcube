@@ -42,7 +42,7 @@
 #include <boost/function.hpp>
 #include <boost/lexical_cast.hpp>
 
-#include <core/Query/Base.h>
+#include <core/Query/QueryBase.h>
 #include <core/config.h>
 #include <core/Track.h>
 
@@ -57,12 +57,12 @@ namespace musik{ namespace core{ namespace query{
 class  Base;
 //////////////////////////////////////////////////////////////////////////////
 
-class  TrackMetadata : public query::Base {
+class  TrackMetadataQuery : public query::QueryBase {
     public:
-        TrackMetadata(void);
-        ~TrackMetadata(void);
+        TrackMetadataQuery(void);
+        ~TrackMetadataQuery(void);
 
-        bool RunCallbacks(library::Base *library);
+        bool RunCallbacks(library::LibraryBase *library);
 
         void Clear();
         void RequestTrack(TrackPtr track);
@@ -89,12 +89,12 @@ class  TrackMetadata : public query::Base {
         void CreateSQL();
         void GetFixedTrackMetakeys(std::string fieldName,std::set<std::string> &fields);
     protected:
-        friend class library::Base;
-        friend class library::LocalDB;
+        friend class library::LibraryBase;
+        friend class library::LocalLibrary;
         Ptr copy() const;
-        void PreAddQuery(library::Base *library);
+        void PreAddQuery(library::LibraryBase *library);
 
-        virtual bool ParseQuery(library::Base *library,db::Connection &db);
+        virtual bool ParseQuery(library::LibraryBase *library,db::Connection &db);
 
         virtual std::string Name();
 

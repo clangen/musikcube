@@ -36,7 +36,7 @@
 #pragma once
 
 #include <core/config.h>
-#include <core/Library/Base.h>
+#include <core/library/LibraryBase.h>
 #include <sigslot/sigslot.h>
 #include <map>
 #include <vector>
@@ -51,7 +51,7 @@ namespace musik{ namespace core{
 ///\brief
 ///Factory for Libraries
 ///
-///LibraryFactory contains all Libraries (LocalDB and Remote)
+///LibraryFactory contains all Libraries (LocalLibrary and Remote)
 ///When the LibraryFactory is first initialized it will load all
 ///libraries from the settings.db database.
 //////////////////////////////////////////
@@ -65,7 +65,7 @@ class  LibraryFactory{
 		///enum for the different library types
 		//////////////////////////////////////////
         typedef enum {
-			LocalDB=1,
+			LocalLibrary=1,
 			Remote=2
         } Types;
 

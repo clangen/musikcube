@@ -38,10 +38,10 @@
 
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/tracklist/Base.h>
-#include <core/Query/ListBase.h>
-#include <core/Query/TrackMetadata.h>
-#include <core/Library/Base.h>
+#include <core/tracklist/TrackListQueryBase.h>
+#include <core/Query/ListQueryBase.h>
+#include <core/Query/TrackMetadataQuery.h>
+#include <core/library/LibraryBase.h>
 
 #include <set>
 #include <map>
@@ -55,11 +55,11 @@ namespace musik{ namespace core{ namespace tracklist {
 
 //////////////////////////////////////////
 ///\brief
-///A LibraryList can only contain track from one single library
+///A LibraryTrackListQuery can only contain track from one single library
 //////////////////////////////////////////
-class  LibraryList : public Base, public sigslot::has_slots<> {
+class  LibraryTrackListQuery : public TrackListQueryBase, public sigslot::has_slots<> {
     public:
-        LibraryList(musik::core::LibraryPtr library);
+        LibraryTrackListQuery(musik::core::LibraryPtr library);
 
         virtual musik::core::TrackPtr operator [](long position);
         virtual musik::core::TrackPtr TrackWithMetadata(long position);
@@ -72,13 +72,13 @@ class  LibraryList : public Base, public sigslot::has_slots<> {
         virtual long Size();
         virtual void Clear();
 
-        virtual bool operator =(musik::core::tracklist::Base &tracklist);
-        virtual bool operator +=(musik::core::tracklist::Base &tracklist);
+        virtual bool operator =(TrackListQueryBase &tracklist);
+        virtual bool operator +=(TrackListQueryBase &tracklist);
         virtual bool operator +=(musik::core::TrackPtr track);
     
 		virtual musik::core::LibraryPtr Library();
 
-        virtual bool ConnectToQuery(musik::core::query::ListBase &query);
+        virtual bool ConnectToQuery(musik::core::query::ListQueryBase &query);
 
         virtual void ClearMetadata();
         virtual bool AddRequestedMetakey(std::string metakey);
@@ -120,7 +120,7 @@ class  LibraryList : public Base, public sigslot::has_slots<> {
 
         long currentPosition;
 
-        musik::core::query::TrackMetadata metadataQuery;
+        musik::core::query::TrackMetadataQuery metadataQuery;
 
         long maxCacheSize;
 

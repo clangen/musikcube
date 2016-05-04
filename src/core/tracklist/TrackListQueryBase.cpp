@@ -36,32 +36,38 @@
 
 #include "pch.hpp"
 
-#include <core/Query/Base.h>
-#include <core/Library/Base.h>
+#include <core/tracklist/TrackListQueryBase.h>
 
-using namespace musik::core;
+//////////////////////////////////////////////////////////////////////////////
 
-query::Base::Base() 
-: status(0)
-, options(0)
-, uniqueId(0) {
-    // This will guarantee that the query id is uniq for each query, but copies will not.
-    // This is usefull when canceling similar queries
-    static unsigned int uniqueQueryId(0);
-    uniqueQueryId++;
-    this->queryId   = uniqueQueryId;
+using namespace musik::core::tracklist;
+
+//////////////////////////////////////////////////////////////////////////////
+
+musik::core::LibraryPtr TrackListQueryBase::Library(){
+    return musik::core::LibraryPtr();
 }
 
-query::Base::~Base() {
+TrackListQueryBase::~TrackListQueryBase(){
 }
 
-std::string query::Base::Name() {
-    return "Unknown";
+bool TrackListQueryBase::SortTracks(std::string sortingMetakey){
+    return false;
 }
 
-void query::Base::PostCopy(){
-    static unsigned int uniqueQueryId(0);
-    uniqueQueryId++;
-    this->uniqueId  = uniqueQueryId;
+bool TrackListQueryBase::ConnectToQuery(musik::core::query::ListQueryBase &query){
+    return false;
+}
+
+bool TrackListQueryBase::AddRequestedMetakey(std::string metakey){
+    this->requestedMetakeys.insert(metakey);
+    return true;
+}
+
+void TrackListQueryBase::HintVisibleRows(long rows){
+    this->hintedRows    = rows;
+}
+
+void TrackListQueryBase::ClearMetadata(){
 }
 

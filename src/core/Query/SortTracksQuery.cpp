@@ -36,31 +36,30 @@
 
 #include "pch.hpp"
 
-#include <core/Query/SortTracks.h>
-#include <core/Library/Base.h>
+#include <core/Query/SortTracksQuery.h>
+#include <core/library/LibraryBase.h>
 #include <core/config.h>
 #include <boost/algorithm/string.hpp>
 
 using namespace musik::core;
 using namespace musik::core::query;
 
-
 //////////////////////////////////////////
 ///\brief
 ///Constructor
 //////////////////////////////////////////
-SortTracks::SortTracks(void){
+SortTracksQuery::SortTracksQuery(void){
 }
 
 //////////////////////////////////////////
 ///\brief
 ///Destructor
 //////////////////////////////////////////
-SortTracks::~SortTracks(void){
+SortTracksQuery::~SortTracksQuery(void){
 }
 
 
-bool SortTracks::ParseQuery(library::Base *library,db::Connection &db){
+bool SortTracksQuery::ParseQuery(library::LibraryBase *library,db::Connection &db){
 
     std::vector<int> sortFieldsMetakeyId;
 
@@ -83,12 +82,12 @@ bool SortTracks::ParseQuery(library::Base *library,db::Connection &db){
         std::string metakey   = this->sortMetaKeys.front();
 
         // Check if it's a fixed field
-        if(musik::core::library::Base::IsStaticMetaKey(metakey)){
+        if(musik::core::library::LibraryBase::IsStaticMetaKey(metakey)){
 //            selectSQL     += ",tracks."+metakey;
             selectSQLSort += (selectSQLSort.empty()?" ORDER BY tracks.":",tracks.") + metakey;
 
         // Check if it's a special MTO field
-        }else if(musik::core::library::Base::IsSpecialMTOMetaKey(metakey) || musik::core::library::Base::IsSpecialMTMMetaKey(metakey)){
+        }else if(musik::core::library::LibraryBase::IsSpecialMTOMetaKey(metakey) || musik::core::library::LibraryBase::IsSpecialMTMMetaKey(metakey)){
             if(metakey=="album"){
                 selectSQLTables += " LEFT OUTER JOIN albums ON albums.id=tracks.album_id ";
 //                selectSQLTables += " albums al ";
@@ -179,24 +178,24 @@ bool SortTracks::ParseQuery(library::Base *library,db::Connection &db){
 ///\returns
 ///A shared_ptr to the Base
 //////////////////////////////////////////
-Ptr SortTracks::copy() const{
-    Ptr queryCopy(new SortTracks(*this));
+Ptr SortTracksQuery::copy() const{
+    Ptr queryCopy(new SortTracksQuery(*this));
     queryCopy->PostCopy();
     return queryCopy;
 }
 
-void SortTracks::AddTrack(DBID trackId){
+void SortTracksQuery::AddTrack(DBID trackId){
     this->tracksToSort.push_back(trackId);
 }
 
-void SortTracks::AddTracks(std::vector<DBID> &tracks){
+void SortTracksQuery::AddTracks(std::vector<DBID> &tracks){
     this->tracksToSort.reserve(this->tracksToSort.size()+tracks.size());
     for(std::vector<DBID>::iterator track=tracks.begin();track!=tracks.end();++track){
         this->tracksToSort.push_back(*track);
     }
 }
 
-void SortTracks::AddTracks(musik::core::tracklist::LibraryList &tracks){
+void SortTracksQuery::AddTracks(musik::core::tracklist::LibraryTrackListQuery &tracks){
     this->tracksToSort.reserve(this->tracksToSort.size()+tracks.Size());
     for(int i(0);i<tracks.Size();++i){
         this->tracksToSort.push_back(tracks[i]->Id());
@@ -204,14 +203,14 @@ void SortTracks::AddTracks(musik::core::tracklist::LibraryList &tracks){
 
 }
 
-void SortTracks::SortByMetaKeys(std::list<std::string> metaKeys){
+void SortTracksQuery::SortByMetaKeys(std::list<std::string> metaKeys){
     this->sortMetaKeys  = metaKeys;
 }
 
-void SortTracks::ClearTracks(){
+void SortTracksQuery::ClearTracks(){
     this->tracksToSort.clear();
 }
 
-std::string SortTracks::Name(){
+std::string SortTracksQuery::Name(){
     return "SortTracks";
 }

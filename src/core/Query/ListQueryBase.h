@@ -34,40 +34,56 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.hpp"
+#pragma once
 
-#include <core/tracklist/Base.h>
+#include <core/Query/QueryBase.h>
+#include <core/MetadataValue.h>
+#include <core/LibraryTrack.h>
 
-//////////////////////////////////////////////////////////////////////////////
+#include <sigslot/sigslot.h>
+#include <vector>
+#include <map>
+#include <set>
+#include <boost/shared_ptr.hpp>
+#include <boost/lexical_cast.hpp>
 
-using namespace musik::core::tracklist;
+namespace musik { namespace core { namespace query {
 
-//////////////////////////////////////////////////////////////////////////////
+    class ListQueryBase : public query::QueryBase {
+        public:
+            typedef std::map<std::string, MetadataValueVector> MetadataResults;
+            typedef sigslot::signal2<MetadataValueVector*, bool> MetadataSignal;
+            typedef std::map<std::string, MetadataSignal> MetadataSignals;
+            typedef sigslot::signal2<TrackVector*, bool> TrackSignal;
+            typedef sigslot::signal3<UINT64, UINT64, UINT64> TrackInfoSignal;
 
-musik::core::LibraryPtr Base::Library(){
-    return musik::core::LibraryPtr();
-}
+            MetadataSignal& OnMetadataEvent(const char* metatag);
+            MetadataSignal& OnMetadataEvent(const wchar_t* metatag);
+            TrackSignal& OnTrackEvent();
+            TrackInfoSignal& OnTrackInfoEvent();
 
-Base::~Base(){
-}
+            ListQueryBase();
+            virtual ~ListQueryBase();
 
-bool Base::SortTracks(std::string sortingMetakey){
-    return false;
-}
+        protected:
+            friend class library::LibraryBase;
+            friend class library::LocalLibrary;
 
-bool Base::ConnectToQuery(musik::core::query::ListBase &query){
-    return false;
-}
+            bool RunCallbacks(library::LibraryBase *library);
+            bool ParseTracksSQL(std::string sql, library::LibraryBase *library, db::Connection &db);
 
-bool Base::AddRequestedMetakey(std::string metakey){
-    this->requestedMetakeys.insert(metakey);
-    return true;
-}
+            MetadataResults metadataResults;
+            TrackVector trackResults;
+            std::set<std::string> clearedMetadataResults;
+            bool clearedTrackResults;
 
-void Base::HintVisibleRows(long rows){
-    this->hintedRows    = rows;
-}
+            MetadataSignals metadataEvent;
+            TrackSignal trackEvent;
+            TrackInfoSignal trackInfoEvent;
 
-void Base::ClearMetadata(){
-}
+            UINT64 trackInfoTracks;
+            UINT64 trackInfoDuration;
+            UINT64 trackInfoSize;
+    };
 
+} } }

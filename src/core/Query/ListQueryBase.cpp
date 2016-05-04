@@ -36,8 +36,8 @@
 
 #include "pch.hpp"
 
-#include <core/Query/ListBase.h>
-#include <core/Library/Base.h>
+#include <core/Query/ListQueryBase.h>
+#include <core/library/LibraryBase.h>
 #include <core/Common.h>
 #include <core/LibraryTrack.h>
 #include <boost/algorithm/string.hpp>
@@ -45,17 +45,17 @@
 using namespace musik::core;
 using namespace musik::core::query;
 
-ListBase::ListBase() 
+ListQueryBase::ListQueryBase() 
 : clearedTrackResults(false)
 , trackInfoTracks(0)
 , trackInfoDuration(0)
 , trackInfoSize(0) {
 }
 
-ListBase::~ListBase() {
+ListQueryBase::~ListQueryBase() {
 }
 
-bool ListBase::RunCallbacks(library::Base *library) {
+bool ListQueryBase::RunCallbacks(library::LibraryBase *library) {
     bool result = false;
 
     MetadataResults metadataResultsCopy;
@@ -72,7 +72,7 @@ bool ListBase::RunCallbacks(library::Base *library) {
         boost::mutex::scoped_lock lock(library->libraryMutex);
 
         /* query may already be finished */
-        if ((this->status & Base::Ended) != 0) {
+        if ((this->status & QueryBase::Ended) != 0) {
             result = true;
         }
     }
@@ -115,23 +115,23 @@ bool ListBase::RunCallbacks(library::Base *library) {
     return result;
 }
 
-ListBase::MetadataSignal& ListBase::OnMetadataEvent(const char* metatag){
+ListQueryBase::MetadataSignal& ListQueryBase::OnMetadataEvent(const char* metatag){
     return this->metadataEvent[metatag];
 }
 
-ListBase::MetadataSignal& ListBase::OnMetadataEvent(const wchar_t* metatag){
+ListQueryBase::MetadataSignal& ListQueryBase::OnMetadataEvent(const wchar_t* metatag){
     return this->metadataEvent[ConvertUTF8(std::wstring(metatag))];
 }
 
-ListBase::TrackSignal& ListBase::OnTrackEvent(){
+ListQueryBase::TrackSignal& ListQueryBase::OnTrackEvent(){
     return this->trackEvent;
 }
 
-ListBase::TrackInfoSignal& ListBase::OnTrackInfoEvent(){
+ListQueryBase::TrackInfoSignal& ListQueryBase::OnTrackInfoEvent(){
     return this->trackInfoEvent;
 }
 
-bool ListBase::ParseTracksSQL(std::string sql, library::Base *library, db::Connection &db) {
+bool ListQueryBase::ParseTracksSQL(std::string sql, library::LibraryBase *library, db::Connection &db) {
     if (this->trackEvent.has_connections() && !library->QueryCanceled(this)) {
         db::Statement selectTracks(sql.c_str(), db);
 

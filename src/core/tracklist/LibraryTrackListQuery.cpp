@@ -36,21 +36,21 @@
 
 #include "pch.hpp"
 
-#include <core/tracklist/LibraryList.h>
+#include <core/tracklist/LibraryTrackListQuery.h>
 #include <core/LibraryTrack.h>
-#include <core/Query/SortTracks.h>
+#include <core/Query/SortTracksQuery.h>
 
 //////////////////////////////////////////////////////////////////////////////
 using namespace musik::core::tracklist;
 //////////////////////////////////////////////////////////////////////////////
 
-LibraryList::LibraryList(musik::core::LibraryPtr library)
+LibraryTrackListQuery::LibraryTrackListQuery(musik::core::LibraryPtr library)
  :library(library)
  ,currentPosition(-1)
  ,maxCacheSize(100)
 {
     this->hintedRows    = 10;
-    this->metadataQuery.OnTracksEvent.connect(this,&LibraryList::OnTracksMetaFromQuery);
+    this->metadataQuery.OnTracksEvent.connect(this,&LibraryTrackListQuery::OnTracksMetaFromQuery);
 }
 
 
@@ -64,7 +64,7 @@ LibraryList::LibraryList(musik::core::LibraryPtr library)
 ///\returns
 ///shared pointer to track (could be a null pointer)
 //////////////////////////////////////////
-musik::core::TrackPtr LibraryList::operator [](long position){
+musik::core::TrackPtr LibraryTrackListQuery::operator [](long position){
     // Valid position?
     if(position>=0 && position<this->Size()){
         // If in cache?
@@ -94,7 +94,7 @@ musik::core::TrackPtr LibraryList::operator [](long position){
 ///\see
 ///TrackMetadataUpdated
 //////////////////////////////////////////
-musik::core::TrackPtr LibraryList::TrackWithMetadata(long position){
+musik::core::TrackPtr LibraryTrackListQuery::TrackWithMetadata(long position){
 
     // check the positionCache if the track is in the cache already
     PositionCacheMap::iterator trackPosition    = this->positionCache.find(position);
@@ -112,7 +112,7 @@ musik::core::TrackPtr LibraryList::TrackWithMetadata(long position){
 ///\brief
 ///Get the current track
 //////////////////////////////////////////
-musik::core::TrackPtr LibraryList::CurrentTrack(){
+musik::core::TrackPtr LibraryTrackListQuery::CurrentTrack(){
     if(this->currentPosition==-1 && this->Size()>0){
         this->SetPosition(0);
     }
@@ -124,7 +124,7 @@ musik::core::TrackPtr LibraryList::CurrentTrack(){
 ///\brief
 ///Get the next track and increase the position.
 //////////////////////////////////////////
-musik::core::TrackPtr LibraryList::NextTrack(){
+musik::core::TrackPtr LibraryTrackListQuery::NextTrack(){
     long newPosition    = this->currentPosition+1;
     musik::core::TrackPtr nextTrack = (*this)[newPosition];
     if(nextTrack){
@@ -137,7 +137,7 @@ musik::core::TrackPtr LibraryList::NextTrack(){
 ///\brief
 ///Get the previous track and decrease the position.
 //////////////////////////////////////////
-musik::core::TrackPtr LibraryList::PreviousTrack(){
+musik::core::TrackPtr LibraryTrackListQuery::PreviousTrack(){
     long newPosition    = this->currentPosition-1;
     musik::core::TrackPtr nextTrack = (*this)[newPosition];
     if(nextTrack){
@@ -157,7 +157,7 @@ musik::core::TrackPtr LibraryList::PreviousTrack(){
 ///\returns
 ///True if position is a valid one and successfully set.
 //////////////////////////////////////////
-bool LibraryList::SetPosition(long position){
+bool LibraryTrackListQuery::SetPosition(long position){
     if(position>=0 && position<this->tracklist.size()){
         this->PositionChanged(position,this->currentPosition);
         this->currentPosition   = position;
@@ -171,7 +171,7 @@ bool LibraryList::SetPosition(long position){
 ///\brief
 ///Get the current position. -1 if undefined.
 //////////////////////////////////////////
-long LibraryList::CurrentPosition(){
+long LibraryTrackListQuery::CurrentPosition(){
     return this->currentPosition;
 }
 
@@ -179,7 +179,7 @@ long LibraryList::CurrentPosition(){
 ///\brief
 ///Get current size of the tracklist. -1 if unknown.
 //////////////////////////////////////////
-long LibraryList::Size(){
+long LibraryTrackListQuery::Size(){
     return (long)this->tracklist.size();
 }
 
@@ -187,7 +187,7 @@ long LibraryList::Size(){
 ///\brief
 ///Clear the tracklist
 //////////////////////////////////////////
-void LibraryList::Clear(){
+void LibraryTrackListQuery::Clear(){
     this->tracklist.clear();
     this->ClearMetadata();
     this->TracklistChanged(true);
@@ -199,7 +199,7 @@ void LibraryList::Clear(){
 ///\brief
 ///Clear the internal used cache
 //////////////////////////////////////////
-void LibraryList::ClearMetadata(){
+void LibraryTrackListQuery::ClearMetadata(){
     this->positionCache.clear();
     this->trackCache.clear();
 }
@@ -214,11 +214,11 @@ void LibraryList::ClearMetadata(){
 ///\returns
 ///True if successfully copied.
 //////////////////////////////////////////
-bool LibraryList::operator =(musik::core::tracklist::Base &tracklist){
+bool LibraryTrackListQuery::operator =(TrackListQueryBase &tracklist){
     this->Clear();
 
     // optimize if dynamic_cast works
-    LibraryList *fromLibraryList    = dynamic_cast<LibraryList*>(&tracklist);
+    LibraryTrackListQuery *fromLibraryList    = dynamic_cast<LibraryTrackListQuery*>(&tracklist);
     if(fromLibraryList){
         if(fromLibraryList->library==this->library){
             this->tracklist         = fromLibraryList->tracklist;
@@ -258,7 +258,7 @@ bool LibraryList::operator =(musik::core::tracklist::Base &tracklist){
 ///It will append all tracks that comes from
 ///the same library and ignore the rest.
 //////////////////////////////////////////
-bool LibraryList::operator +=(musik::core::tracklist::Base &tracklist){
+bool LibraryTrackListQuery::operator +=(TrackListQueryBase &tracklist){
 
     this->tracklist.reserve(tracklist.Size()+this->Size());
 
@@ -291,7 +291,7 @@ bool LibraryList::operator +=(musik::core::tracklist::Base &tracklist){
 ///\returns
 ///True if successfully appended
 //////////////////////////////////////////
-bool LibraryList::operator +=(musik::core::TrackPtr track){
+bool LibraryTrackListQuery::operator +=(musik::core::TrackPtr track){
     if(this->library->Id()==track->LibraryId()){
         this->tracklist.push_back(track->Id());
 
@@ -306,7 +306,7 @@ bool LibraryList::operator +=(musik::core::TrackPtr track){
 ///\brief
 ///Get related library. Null pointer if non.
 //////////////////////////////////////////
-musik::core::LibraryPtr LibraryList::Library(){
+musik::core::LibraryPtr LibraryTrackListQuery::Library(){
     return this->library;
 }
 
@@ -316,7 +316,7 @@ musik::core::LibraryPtr LibraryList::Library(){
 ///\brief
 ///Load a tracks metadata (if not already loaded) 
 //////////////////////////////////////////
-void LibraryList::LoadTrack(long position){
+void LibraryTrackListQuery::LoadTrack(long position){
     if(this->QueryForTrack(position)){
         // If the track should load, then preload others as well
 
@@ -369,7 +369,7 @@ void LibraryList::LoadTrack(long position){
 ///\brief
 ///Request metadata for track
 //////////////////////////////////////////
-bool LibraryList::QueryForTrack(long position){
+bool LibraryTrackListQuery::QueryForTrack(long position){
     PositionCacheMap::iterator trackIt=this->positionCache.find(position);
     if(trackIt==this->positionCache.end()){
         // Not in cache, lets find the track
@@ -389,11 +389,11 @@ bool LibraryList::QueryForTrack(long position){
 
 //////////////////////////////////////////
 ///\brief
-///Connect to receive results from any query based on the musik::core::query::ListBase
+///Connect to receive results from any query based on the musik::core::query::ListQueryBase
 //////////////////////////////////////////
-bool LibraryList::ConnectToQuery(musik::core::query::ListBase &query){
-    query.OnTrackEvent().connect(this,&LibraryList::OnTracksFromQuery);
-    query.OnTrackInfoEvent().connect(this,&LibraryList::OnTracksSummaryFromQuery);
+bool LibraryTrackListQuery::ConnectToQuery(musik::core::query::ListQueryBase &query){
+    query.OnTrackEvent().connect(this,&LibraryTrackListQuery::OnTracksFromQuery);
+    query.OnTrackInfoEvent().connect(this,&LibraryTrackListQuery::OnTracksSummaryFromQuery);
     return true;
 }
 
@@ -408,7 +408,7 @@ bool LibraryList::ConnectToQuery(musik::core::query::ListBase &query){
 ///\param clear
 ///Should the tracklist be cleared before tracks are added.
 //////////////////////////////////////////
-void LibraryList::OnTracksFromQuery(musik::core::TrackVector *newTracks,bool clear){
+void LibraryTrackListQuery::OnTracksFromQuery(musik::core::TrackVector *newTracks,bool clear){
     if(clear){
         this->positionCache.clear();
         this->trackCache.clear();
@@ -429,7 +429,7 @@ void LibraryList::OnTracksFromQuery(musik::core::TrackVector *newTracks,bool cle
 ///\brief
 ///Called by connected queries to receive summary from tracklist
 //////////////////////////////////////////
-void LibraryList::OnTracksSummaryFromQuery(UINT64 tracks,UINT64 duration,UINT64 filesize){
+void LibraryTrackListQuery::OnTracksSummaryFromQuery(UINT64 tracks,UINT64 duration,UINT64 filesize){
     this->SummaryInfoUpdated(tracks,duration,filesize);
 }
 
@@ -438,7 +438,7 @@ void LibraryList::OnTracksSummaryFromQuery(UINT64 tracks,UINT64 duration,UINT64 
 ///\brief
 ///Receives what tracks now have metadata, and pass them forward to the TrackMetadataUpdated signal
 //////////////////////////////////////////
-void LibraryList::OnTracksMetaFromQuery(musik::core::TrackVector *metaTracks){
+void LibraryTrackListQuery::OnTracksMetaFromQuery(musik::core::TrackVector *metaTracks){
     std::vector<long> updateTrackPositions;
 
     for(musik::core::TrackVector::iterator track=metaTracks->begin();track!=metaTracks->end();++track){
@@ -456,7 +456,7 @@ void LibraryList::OnTracksMetaFromQuery(musik::core::TrackVector *metaTracks){
 ///\brief
 ///Request another metakey
 //////////////////////////////////////////
-bool LibraryList::AddRequestedMetakey(std::string metakey){
+bool LibraryTrackListQuery::AddRequestedMetakey(std::string metakey){
     this->requestedMetakeys.insert(metakey);
     this->metadataQuery.RequestMetakeys(this->requestedMetakeys);
 
@@ -471,10 +471,10 @@ bool LibraryList::AddRequestedMetakey(std::string metakey){
 ///The method will not wait for the tracklist to be sorted.
 ///Instead the query will be send to the library for parsing.
 //////////////////////////////////////////
-bool LibraryList::SortTracks(std::string sortingMetakey){
-    musik::core::query::SortTracks sortQuery;
+bool LibraryTrackListQuery::SortTracks(std::string sortingMetakey){
+    musik::core::query::SortTracksQuery sortQuery;
     sortQuery.AddTracks(this->tracklist);
-    sortQuery.OnTrackEvent().connect(this,&LibraryList::OnTracksFromQuery);
+    sortQuery.OnTrackEvent().connect(this,&LibraryTrackListQuery::OnTracksFromQuery);
 
     std::list<std::string> sortBy;
     sortBy.push_back(sortingMetakey);

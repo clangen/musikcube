@@ -55,16 +55,16 @@ namespace musik { namespace core {
     class  Indexer;
 
     namespace query {
-        class Base;
-        typedef boost::shared_ptr<musik::core::query::Base> Ptr;
+        class QueryBase;
+        typedef boost::shared_ptr<musik::core::query::QueryBase> Ptr;
     }
 
     namespace library {
-        class Base;
+        class LibraryBase;
     }
 
-	typedef boost::shared_ptr<library::Base> LibraryPtr;
-	typedef boost::weak_ptr<library::Base> LibraryWeakPtr;
+	typedef boost::shared_ptr<library::LibraryBase> LibraryPtr;
+	typedef boost::weak_ptr<library::LibraryBase> LibraryWeakPtr;
 } }
 
 namespace musik { namespace core { namespace library {
@@ -75,23 +75,23 @@ namespace musik { namespace core { namespace library {
     ///\brief
     ///This is the base class that all Libraries should extend.
     ///
-    ///The library::Base is the main interface for all libraries
+    ///The library::LibraryBase is the main interface for all libraries
     ///and contains the main functionallity for parsing the query queue
     ///and is responsible for calling callbacks in the right order.
     ///
     ///\remarks
-    ///library::Base is only the interface and can not be used directly.
-    ///library::Base is a noncopyable object.
+    ///library::LibraryBase is only the interface and can not be used directly.
+    ///library::LibraryBase is a noncopyable object.
     ///
     ///\see
-    ///musik::core::library::LocalDB
+    ///musik::core::library::LocalLibrary
     //////////////////////////////////////////
-    class Base : boost::noncopyable{
+    class LibraryBase : boost::noncopyable {
         protected:
-            Base(std::string name,int id);
+            LibraryBase(std::string name,int id);
 
 	    public:
-            virtual ~Base();
+            virtual ~LibraryBase();
 
             //////////////////////////////////////////
             ///\brief
@@ -112,17 +112,17 @@ namespace musik { namespace core { namespace library {
             ///Status of the library. May be empty.
             ///
             ///Get the current status of the Library.
-            ///Will for instance report current status of the indexer in the LocalDB.
+            ///Will for instance report current status of the indexer in the LocalLibrary.
             ///
             ///\remarks
             ///Empty string means that the library thread is holding.
             //////////////////////////////////////////
             virtual std::string GetInfo() = 0;
         
-            virtual bool AddQuery( const query::Base &query,unsigned int options=0 );
+            virtual bool AddQuery( const query::QueryBase &query,unsigned int options=0 );
             virtual bool RunCallbacks();
             std::string GetLibraryDirectory();
-            bool QueryCanceled(query::Base *query);
+            bool QueryCanceled(query::QueryBase *query);
             virtual musik::core::Indexer *Indexer();
             virtual std::string BasePath();
             bool Exited();
@@ -267,6 +267,6 @@ namespace musik { namespace core { namespace library {
 } } }
 
 namespace musik { namespace core { 
-    typedef boost::shared_ptr<musik::core::library::Base> LibraryPtr;
-	typedef boost::weak_ptr<library::Base> LibraryWeakPtr;
+    typedef boost::shared_ptr<musik::core::library::LibraryBase> LibraryPtr;
+	typedef boost::weak_ptr<library::LibraryBase> LibraryWeakPtr;
 } }

@@ -36,8 +36,8 @@
 
 #include "pch.hpp"
 
-#include <core/Query/ListSelection.h>
-#include <core/Library/Base.h>
+#include <core/Query/ListSelectionQuery.h>
+#include <core/library/LibraryBase.h>
 
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
@@ -50,14 +50,14 @@ using namespace musik::core::query;
 ///\brief
 ///Constructor
 //////////////////////////////////////////
-ListSelection::ListSelection(void) : selectionOrderSensitive(true){
+ListSelectionQuery::ListSelectionQuery(void) : selectionOrderSensitive(true){
 }
 
 //////////////////////////////////////////
 ///\brief
 ///Destructor
 //////////////////////////////////////////
-ListSelection::~ListSelection(void){
+ListSelectionQuery::~ListSelectionQuery(void){
 }
 
 //////////////////////////////////////////
@@ -71,7 +71,7 @@ ListSelection::~ListSelection(void){
 ///Consider the folloing example:
 ///\code
 /// ...
-/// musik::core::ListSelection query;
+/// musik::core::ListSelectionQuery query;
 /// ... // Connect the "artist" and "album" using the OnMetadataEvent()
 ///
 /// query.SelectMetadata("genre",1); // selects the genre with id 1
@@ -86,7 +86,7 @@ ListSelection::~ListSelection(void){
 ///\endcode
 ///
 //////////////////////////////////////////
-void ListSelection::SelectionOrderSensitive(bool sensitive){
+void ListSelectionQuery::SelectionOrderSensitive(bool sensitive){
     this->selectionOrderSensitive    = sensitive;
 }
 
@@ -107,7 +107,7 @@ void ListSelection::SelectionOrderSensitive(bool sensitive){
 ///\see
 ///ClearMetadata|RemoveMetadata
 //////////////////////////////////////////
-void ListSelection::SelectMetadata(const char* metakey,DBID metadataId){
+void ListSelectionQuery::SelectMetadata(const char* metakey,DBID metadataId){
 
     if(this->selectionOrderSensitive){
         std::vector<std::string>::iterator    themetakey    = std::find(this->metakeySelectionOrder.begin(),this->metakeySelectionOrder.end(),metakey);
@@ -141,7 +141,7 @@ void ListSelection::SelectMetadata(const char* metakey,DBID metadataId){
 ///\see
 ///ClearMetadata|SelectMetadata
 //////////////////////////////////////////
-void ListSelection::RemoveMetadata(const char* metatag,DBID metadataId){
+void ListSelectionQuery::RemoveMetadata(const char* metatag,DBID metadataId){
     SelectedMetadata::iterator    keyiterator    = this->selectedMetadata.find(metatag);
     if(keyiterator!=this->selectedMetadata.end()){
         keyiterator->second.erase(metadataId);
@@ -173,7 +173,7 @@ void ListSelection::RemoveMetadata(const char* metatag,DBID metadataId){
 ///\see
 ///RemoveMetadata|SelectMetadata
 //////////////////////////////////////////
-void ListSelection::ClearMetadata(const char* metatag){
+void ListSelectionQuery::ClearMetadata(const char* metatag){
     if(metatag==NULL){
         this->selectedMetadata.clear();
         this->metakeySelectionOrder.clear();
@@ -247,7 +247,7 @@ void ListSelection::ClearMetadata(const char* metatag){
 ///            SELECT id,content FROM meta_values WHERE meta_key_id IN (SELECT id FROM meta_keys WHERE name=?) AND id IN (SELECT meta_value_id FROM track_meta WHERE track_id IN ($tracklist$)) ORDER BY sort_order
 ///
 //////////////////////////////////////////
-bool ListSelection::ParseQuery(library::Base *library,db::Connection &db){
+bool ListSelectionQuery::ParseQuery(library::LibraryBase *library,db::Connection &db){
 
     bool success(true);
 
@@ -358,7 +358,7 @@ bool ListSelection::ParseQuery(library::Base *library,db::Connection &db){
         sqlTracks    = "CREATE TEMPORARY TABLE temp_tracks_list AS ";
         sqlTracks.append(sqlSelectTrack+sqlSelectTrackFrom+sqlSelectTrackWhere+sqlSelectTrackOrder);
 
-        // Drop table if last ListSelection was canceled
+        // Drop table if last ListSelectionQuery was canceled
         db.Execute("DROP TABLE IF EXISTS temp_tracks_list");
         db.Execute(sqlTracks.c_str());
     }
@@ -461,13 +461,13 @@ bool ListSelection::ParseQuery(library::Base *library,db::Connection &db){
 ///\returns
 ///A shared_ptr to the Base
 //////////////////////////////////////////
-Ptr ListSelection::copy() const{
-    Ptr queryCopy(new ListSelection(*this));
+Ptr ListSelectionQuery::copy() const{
+    Ptr queryCopy(new ListSelectionQuery(*this));
     queryCopy->PostCopy();
     return queryCopy;
 }
 
-void ListSelection::SQLPrependWhereOrAnd(std::string &sql){
+void ListSelectionQuery::SQLPrependWhereOrAnd(std::string &sql){
     if(sql.empty()){
         sql.append("WHERE ");
     }else{
@@ -479,7 +479,7 @@ void ListSelection::SQLPrependWhereOrAnd(std::string &sql){
 ///\brief
 ///Helper method to construct SQL query for selected metakeys
 //////////////////////////////////////////
-void ListSelection::SQLSelectQuery(const char *metakey,const char *sqlStart,const char *sqlEnd,std::set<std::string> &metakeysSelected,std::string &sqlSelectTrackWhere,library::Base *library){
+void ListSelectionQuery::SQLSelectQuery(const char *metakey,const char *sqlStart,const char *sqlEnd,std::set<std::string> &metakeysSelected,std::string &sqlSelectTrackWhere,library::LibraryBase *library){
 
     if(!library->QueryCanceled(this)){
         SelectedMetadata::iterator selected    = this->selectedMetadata.find(metakey);
@@ -508,7 +508,7 @@ void ListSelection::SQLSelectQuery(const char *metakey,const char *sqlStart,cons
 ///\brief
 ///Method called by ParseQuery for every queried metakey
 //////////////////////////////////////////
-void ListSelection::QueryForMetadata(const char *metakey,const char *sql,std::set<std::string> &metakeysQueried,library::Base *library,db::Connection &db){
+void ListSelectionQuery::QueryForMetadata(const char *metakey,const char *sql,std::set<std::string> &metakeysQueried,library::LibraryBase *library,db::Connection &db){
     if(library->QueryCanceled(this))
         return;
 
@@ -551,6 +551,6 @@ void ListSelection::QueryForMetadata(const char *metakey,const char *sql,std::se
     }
 }
 
-std::string ListSelection::Name(){
-    return "ListSelection";
+std::string ListSelectionQuery::Name(){
+    return "ListSelectionQuery";
 }

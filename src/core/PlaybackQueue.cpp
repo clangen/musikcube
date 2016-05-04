@@ -33,7 +33,7 @@
 #include "pch.hpp"
 #include <core/PlaybackQueue.h>
 #include <core/LibraryFactory.h>
-#include <core/tracklist/MultiLibraryList.h>
+#include <core/tracklist/MultiLibraryTrackListQuery.h>
 
 #include <boost/algorithm/string.hpp>
 
@@ -56,7 +56,7 @@ PlaybackQueue::PlaybackQueue(void)
  ,playing(false)
  ,paused(false)
 {
-    this->nowPlaying.reset(new tracklist::MultiLibraryList());
+    this->nowPlaying.reset(new tracklist::MultiLibraryTrackListQuery());
 //    this->transport.EventMixpointReached.connect(this,&PlaybackQueue::OnPlaybackEndOrFail);
     this->transport.PlaybackEnded.connect(this,&PlaybackQueue::OnPlaybackEndOrFail);
     this->transport.PlaybackAlmostDone.connect(this,&PlaybackQueue::OnPlaybackPrepare);
@@ -277,7 +277,7 @@ void PlaybackQueue::GetAllTrackMetadata(TrackPtr track){
 ///\param tracklist
 ///Tracklist that should be copied to now playing
 //////////////////////////////////////////
-void PlaybackQueue::Play(tracklist::Base &tracklist){
+void PlaybackQueue::Play(TrackListQueryBase &tracklist){
 
 	// Set the "now playing" to libraries own playlist
 	(*this->nowPlaying)	= tracklist;
@@ -286,7 +286,7 @@ void PlaybackQueue::Play(tracklist::Base &tracklist){
     this->Play();
 }
 
-void PlaybackQueue::Append(tracklist::Base &tracklist){
+void PlaybackQueue::Append(TrackListQueryBase &tracklist){
 	// Set the "now playing" to libraries own playlist
 	(*this->nowPlaying)	+= tracklist;
 }

@@ -49,58 +49,52 @@ namespace musik{ namespace core{
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>
 #include <core/db/ScopedTransaction.h>
-#include <core/Library/Base.h>
+#include <core/Library/LibraryBase.h>
 #include <core/Indexer.h>
 
 //////////////////////////////////////////////////////////////////////////////
 
 namespace musik{ namespace core{ namespace library{
 
-//////////////////////////////////////////////////////////////////////////////
-    
-//////////////////////////////////////////
-///\brief
-///Library used for your local music.
-///
-///This library is used for music located
-///on you local computer.
-///
-///\see
-///Indexer
-//////////////////////////////////////////
-class  LocalDB : public library::Base{
-	private:
-        LocalDB(std::string name,int id);
+    //////////////////////////////////////////
+    ///\brief
+    ///Library used for your local music.
+    ///
+    ///This library is used for music located
+    ///on you local computer.
+    ///
+    ///\see
+    ///Indexer
+    //////////////////////////////////////////
+    class LocalLibrary : public library::LibraryBase {
+	    private:
+            LocalLibrary(std::string name, int id);
 
-    public:
-		static LibraryPtr Create(std::string name,int id);
-        ~LocalDB(void);
+        public:
+		    static LibraryPtr Create(std::string name,int id);
+            ~LocalLibrary(void);
 
-        bool Startup();
-        std::string GetInfo();
-        musik::core::Indexer *Indexer();
+            bool Startup();
+            std::string GetInfo();
+            musik::core::Indexer *Indexer();
 
-    protected:
-        void CancelCurrentQuery( );
+        protected:
+            void CancelCurrentQuery( );
 
-    private:
-        // Methods:
+        private:
+            // Methods:
 
-        void ThreadLoop();
+            void ThreadLoop();
 
-    private:
-        // Variables:
-        db::Connection db;
+        private:
+            // Variables:
+            db::Connection db;
 
-        //////////////////////////////////////////
-        ///\brief
-        ///Indexer that indexes all your tracks.
-        //////////////////////////////////////////
-        musik::core::Indexer indexer;
+            //////////////////////////////////////////
+            ///\brief
+            ///Indexer that indexes all your tracks.
+            //////////////////////////////////////////
+            musik::core::Indexer indexer;
+    };
 
-
-};
-
-//////////////////////////////////////////////////////////////////////////////
-} } }   // musik::core::Library
-//////////////////////////////////////////////////////////////////////////////
+} } }

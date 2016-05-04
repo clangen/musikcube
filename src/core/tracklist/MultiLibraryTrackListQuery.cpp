@@ -36,7 +36,7 @@
 
 #include "pch.hpp"
 
-#include <core/tracklist/MultiLibraryList.h>
+#include <core/tracklist/MultiLibraryTrackListQuery.h>
 #include <core/LibraryTrack.h>
 #include <core/LibraryFactory.h>
 #include <core/NonLibraryTrackHelper.h>
@@ -49,10 +49,10 @@ using namespace musik::core::tracklist;
 
 //////////////////////////////////////////////////////////////////////////////
 
-MultiLibraryList::MultiLibraryList()
+MultiLibraryTrackListQuery::MultiLibraryTrackListQuery()
  :currentPosition(-1)
  ,inited(false)
- ,queryState(MultiLibraryList::Default)
+ ,queryState(MultiLibraryTrackListQuery::Default)
 {
 }
 
@@ -67,7 +67,7 @@ MultiLibraryList::MultiLibraryList()
 ///\returns
 ///shared pointer to track (could be a null pointer)
 //////////////////////////////////////////
-musik::core::TrackPtr MultiLibraryList::operator [](long position){
+musik::core::TrackPtr MultiLibraryTrackListQuery::operator [](long position){
     boost::mutex::scoped_lock lock(this->mutex);
     // Valid position?
     if(position>=0 && position<this->tracklist.size()){
@@ -93,7 +93,7 @@ musik::core::TrackPtr MultiLibraryList::operator [](long position){
 ///\see
 ///TrackMetadataUpdated
 //////////////////////////////////////////
-musik::core::TrackPtr MultiLibraryList::TrackWithMetadata(long position){
+musik::core::TrackPtr MultiLibraryTrackListQuery::TrackWithMetadata(long position){
     {
         boost::mutex::scoped_lock lock(this->mutex);
 
@@ -114,7 +114,7 @@ musik::core::TrackPtr MultiLibraryList::TrackWithMetadata(long position){
 ///\brief
 ///Get the current track
 //////////////////////////////////////////
-musik::core::TrackPtr MultiLibraryList::CurrentTrack(){
+musik::core::TrackPtr MultiLibraryTrackListQuery::CurrentTrack(){
     return (*this)[this->currentPosition];
 }
 
@@ -122,7 +122,7 @@ musik::core::TrackPtr MultiLibraryList::CurrentTrack(){
 ///\brief
 ///Get the next track and increase the position.
 //////////////////////////////////////////
-musik::core::TrackPtr MultiLibraryList::NextTrack(){
+musik::core::TrackPtr MultiLibraryTrackListQuery::NextTrack(){
     long newPosition;
     {
         boost::mutex::scoped_lock lock(this->mutex);
@@ -137,7 +137,7 @@ musik::core::TrackPtr MultiLibraryList::NextTrack(){
 ///\brief
 ///Get the previous track and decrease the position.
 //////////////////////////////////////////
-musik::core::TrackPtr MultiLibraryList::PreviousTrack(){
+musik::core::TrackPtr MultiLibraryTrackListQuery::PreviousTrack(){
     long newPosition;
     {
         boost::mutex::scoped_lock lock(this->mutex);
@@ -159,7 +159,7 @@ musik::core::TrackPtr MultiLibraryList::PreviousTrack(){
 ///\returns
 ///True if position is a valid one and successfully set.
 //////////////////////////////////////////
-bool MultiLibraryList::SetPosition(long position){
+bool MultiLibraryTrackListQuery::SetPosition(long position){
     if(position>=-1 && position<=this->Size()){
         this->PositionChanged(position,this->currentPosition);
         {
@@ -176,7 +176,7 @@ bool MultiLibraryList::SetPosition(long position){
 ///\brief
 ///Get the current position. -1 if undefined.
 //////////////////////////////////////////
-long MultiLibraryList::CurrentPosition(){
+long MultiLibraryTrackListQuery::CurrentPosition(){
     boost::mutex::scoped_lock lock(this->mutex);
     return this->currentPosition;
 }
@@ -185,7 +185,7 @@ long MultiLibraryList::CurrentPosition(){
 ///\brief
 ///Get current size of the tracklist. -1 if unknown.
 //////////////////////////////////////////
-long MultiLibraryList::Size(){
+long MultiLibraryTrackListQuery::Size(){
     boost::mutex::scoped_lock lock(this->mutex);
     return (long)this->tracklist.size();
 }
@@ -194,7 +194,7 @@ long MultiLibraryList::Size(){
 ///\brief
 ///Clear the tracklist
 //////////////////////////////////////////
-void MultiLibraryList::Clear(){
+void MultiLibraryTrackListQuery::Clear(){
     long oldPosition;
     {
         boost::mutex::scoped_lock lock(this->mutex);
@@ -207,7 +207,7 @@ void MultiLibraryList::Clear(){
     this->PositionChanged(-1,oldPosition);
 }
 
-void MultiLibraryList::ClearMetadata(){
+void MultiLibraryTrackListQuery::ClearMetadata(){
     boost::mutex::scoped_lock lock(this->mutex);
     this->positionCache.clear();
     this->trackCache.clear();
@@ -224,9 +224,9 @@ void MultiLibraryList::ClearMetadata(){
 ///\returns
 ///True if successfully copied.
 //////////////////////////////////////////
-bool MultiLibraryList::operator =(musik::core::tracklist::Base &tracklist){
+bool MultiLibraryTrackListQuery::operator =(TrackListQueryBase &tracklist){
     if(!this->inited){
-        musik::core::NonLibraryTrackHelper::Instance().TrackMetadataUpdated.connect(this,&MultiLibraryList::OnTracksMetaFromNonLibrary);
+        musik::core::NonLibraryTrackHelper::Instance().TrackMetadataUpdated.connect(this,&MultiLibraryTrackListQuery::OnTracksMetaFromNonLibrary);
         this->inited    = true;
     }
     if(&tracklist != this){
@@ -257,9 +257,9 @@ bool MultiLibraryList::operator =(musik::core::tracklist::Base &tracklist){
 ///It will append all tracks that comes from
 ///the same library and ignore the rest.
 //////////////////////////////////////////
-bool MultiLibraryList::operator +=(musik::core::tracklist::Base &tracklist){
+bool MultiLibraryTrackListQuery::operator +=(TrackListQueryBase &tracklist){
     if(!this->inited){
-        musik::core::NonLibraryTrackHelper::Instance().TrackMetadataUpdated.connect(this,&MultiLibraryList::OnTracksMetaFromNonLibrary);
+        musik::core::NonLibraryTrackHelper::Instance().TrackMetadataUpdated.connect(this,&MultiLibraryTrackListQuery::OnTracksMetaFromNonLibrary);
         this->inited    = true;
     }
 
@@ -288,9 +288,9 @@ bool MultiLibraryList::operator +=(musik::core::tracklist::Base &tracklist){
 ///\returns
 ///True if successfully appended
 //////////////////////////////////////////
-bool MultiLibraryList::operator +=(musik::core::TrackPtr track){
+bool MultiLibraryTrackListQuery::operator +=(musik::core::TrackPtr track){
     if(!this->inited){
-        musik::core::NonLibraryTrackHelper::Instance().TrackMetadataUpdated.connect(this,&MultiLibraryList::OnTracksMetaFromNonLibrary);
+        musik::core::NonLibraryTrackHelper::Instance().TrackMetadataUpdated.connect(this,&MultiLibraryTrackListQuery::OnTracksMetaFromNonLibrary);
         this->inited    = true;
     }
 
@@ -308,7 +308,7 @@ bool MultiLibraryList::operator +=(musik::core::TrackPtr track){
 ///\brief
 ///Load a tracks metadata (if not already loaded) 
 //////////////////////////////////////////
-void MultiLibraryList::LoadTrack(long position){
+void MultiLibraryTrackListQuery::LoadTrack(long position){
     if(this->QueryForTrack(position)){
         // If the track should load, then preload others as well
 
@@ -326,7 +326,7 @@ void MultiLibraryList::LoadTrack(long position){
             musik::core::LibraryPtr library = musik::core::LibraryFactory::Instance().GetLibrary(query->first);
             if(library){
                 // Add the callbacks
-                query->second.OnTracksEvent.connect(this,&MultiLibraryList::OnTracksMetaFromQuery);
+                query->second.OnTracksEvent.connect(this,&MultiLibraryTrackListQuery::OnTracksMetaFromQuery);
 
                 // What keys are requested
                 query->second.RequestMetakeys(this->requestedMetakeys);
@@ -345,7 +345,7 @@ void MultiLibraryList::LoadTrack(long position){
 ///\brief
 ///Request metadata for track
 //////////////////////////////////////////
-bool MultiLibraryList::QueryForTrack(long position){
+bool MultiLibraryTrackListQuery::QueryForTrack(long position){
 
     PositionCacheMap::iterator trackIt=this->positionCache.find(position);
     if(trackIt==this->positionCache.end()){
@@ -364,7 +364,7 @@ bool MultiLibraryList::QueryForTrack(long position){
     return false;
 }
 
-void MultiLibraryList::OnTracksMetaFromQuery(musik::core::TrackVector *metaTracks){
+void MultiLibraryTrackListQuery::OnTracksMetaFromQuery(musik::core::TrackVector *metaTracks){
     std::vector<long> updateTrackPositions;
 
     {
@@ -380,7 +380,7 @@ void MultiLibraryList::OnTracksMetaFromQuery(musik::core::TrackVector *metaTrack
     this->TrackMetadataUpdated(updateTrackPositions);
 }
 
-void MultiLibraryList::OnTracksMetaFromNonLibrary(musik::core::TrackPtr track){
+void MultiLibraryTrackListQuery::OnTracksMetaFromNonLibrary(musik::core::TrackPtr track){
     std::vector<long> updateTrackPositions;
 
     {
@@ -396,10 +396,10 @@ void MultiLibraryList::OnTracksMetaFromNonLibrary(musik::core::TrackPtr track){
     }
 }
 
-bool MultiLibraryList::SortTracks(std::string sortingMetakey){
+bool MultiLibraryTrackListQuery::SortTracks(std::string sortingMetakey){
     boost::mutex::scoped_lock lock(this->mutex);
 
-    this->queryState    = MultiLibraryList::Sorting;
+    this->queryState    = MultiLibraryTrackListQuery::Sorting;
 
     // Trick method. We need to sort al genericTracks by ourselfs
     // and send all the other tracks for sorting to it's own libraries
@@ -416,7 +416,7 @@ bool MultiLibraryList::SortTracks(std::string sortingMetakey){
             queries[libraryId].AddTrack((*track)->Id());
         }else{
             // A generic track
-            musik::core::query::SortTracksWithData::TrackWithSortdata sortData;
+            musik::core::query::SortTracksWithDataQuery::TrackWithSortdata sortData;
             sortData.track  = *track;
             std::string metavalue = (*track)->GetValue(sortingMetakey.c_str());
             if(metavalue.size()){
@@ -446,8 +446,8 @@ bool MultiLibraryList::SortTracks(std::string sortingMetakey){
     // So, lets send the tracks to the libraries for sorting
     for(SortTracksQueryMap::iterator query=queries.begin();query!=queries.end();++query){
         // First, connect to callbacks for results
-        query->second.TrackResults.connect(this,&MultiLibraryList::OnTracksFromSortQuery);
-        query->second.QueryFinished.connect(this,&MultiLibraryList::OnSortQueryFinished);
+        query->second.TrackResults.connect(this,&MultiLibraryTrackListQuery::OnTracksFromSortQuery);
+        query->second.QueryFinished.connect(this,&MultiLibraryTrackListQuery::OnSortQueryFinished);
         query->second.SortByMetaKey(sortingMetakey);
         // Then send the query
         musik::core::LibraryPtr lib = musik::core::LibraryFactory::Instance().GetLibrary(query->first);
@@ -466,8 +466,8 @@ bool MultiLibraryList::SortTracks(std::string sortingMetakey){
     return true;
 }
 
-void MultiLibraryList::OnTracksFromSortQuery(musik::core::query::SortTracksWithData::TrackWithSortdataVector *newTracks,bool clear){
-    typedef musik::core::query::SortTracksWithData::TrackWithSortdataVector SortDataVector;
+void MultiLibraryTrackListQuery::OnTracksFromSortQuery(musik::core::query::SortTracksWithDataQuery::TrackWithSortdataVector *newTracks,bool clear){
+    typedef musik::core::query::SortTracksWithDataQuery::TrackWithSortdataVector SortDataVector;
 
     if(newTracks){
         if(!newTracks->empty()){
@@ -481,14 +481,14 @@ void MultiLibraryList::OnTracksFromSortQuery(musik::core::query::SortTracksWithD
     }
 }
 
-void MultiLibraryList::OnSortQueryFinished(musik::core::query::Base *query,musik::core::library::Base *library,bool success){
+void MultiLibraryTrackListQuery::OnSortQueryFinished(musik::core::query::QueryBase *query,musik::core::library::LibraryBase *library,bool success){
     if(success){
         this->sortQueryCount--;
         this->SortTheLists();
     }
 }
 
-void MultiLibraryList::SortTheLists(){
+void MultiLibraryTrackListQuery::SortTheLists(){
     if(this->sortQueryCount==0){
         // All queries should be finished, lets do the real sorting
         typedef std::multiset<SortHelper> SortHelperSet;
@@ -536,7 +536,7 @@ void MultiLibraryList::SortTheLists(){
     }
 }
 
-bool MultiLibraryList::SortHelper::operator<(const MultiLibraryList::SortHelper &sortHelper) const{
+bool MultiLibraryTrackListQuery::SortHelper::operator<(const MultiLibraryTrackListQuery::SortHelper &sortHelper) const{
     return this->sortData.front().sortData < sortHelper.sortData.front().sortData;
 }
 

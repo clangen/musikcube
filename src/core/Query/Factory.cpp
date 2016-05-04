@@ -38,10 +38,10 @@
 
 #include <core/Query/Factory.h>
 
-#include <core/Query/ListSelection.h>
-#include <core/Query/SortTracks.h>
-#include <core/Query/SortTracksWithData.h>
-#include <core/Query/TrackMetadata.h>
+#include <core/Query/ListSelectionQuery.h>
+#include <core/Query/SortTracksQuery.h>
+#include <core/Query/SortTracksWithDataQuery.h>
+#include <core/Query/TrackMetadataQuery.h>
 
 using namespace musik::core::query;
 
@@ -52,8 +52,8 @@ Factory::~Factory() {
 }
 
 void Factory::GetQueries(QueryMap &queryMap) {
-    queryMap["ListSelection"] = Ptr(new ListSelection());
-    queryMap["SortTracks"] = Ptr(new SortTracks());
-    queryMap["TrackMetadata"] = Ptr(new TrackMetadata());
-    queryMap["SortTracksWithData"] = Ptr(new SortTracksWithData());
+    queryMap["ListSelectionQuery"] = Ptr(new ListSelectionQuery());
+    queryMap["SortTracks"] = Ptr(new SortTracksQuery());
+    queryMap["TrackMetadataQuery"] = Ptr(new TrackMetadataQuery());
+    queryMap["SortTracksWithDataQuery"] = Ptr(new SortTracksWithDataQuery());
 }

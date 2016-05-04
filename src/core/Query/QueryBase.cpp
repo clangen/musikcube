@@ -34,49 +34,35 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "pch.hpp"
 
-#include <boost/shared_ptr.hpp>
-#include <boost/function.hpp>
-#include <vector>
-#include <list>
-#include <string>
+#include <core/Query/QueryBase.h>
+#include <core/Library/LibraryBase.h>
 
-#include <core/config.h>
-#include <core/Query/ListBase.h>
-#include <core/tracklist/LibraryList.h>
+using namespace musik::core;
+using namespace musik::core::query;
 
-namespace musik { namespace core { namespace query {
+QueryBase::QueryBase()
+: status(0)
+, options(0)
+, uniqueId(0) {
+    // This will guarantee that the query id is uniq for each query, but copies will not.
+    // This is usefull when canceling similar queries
+    static unsigned int uniqueQueryId(0);
+    uniqueQueryId++;
+    this->queryId   = uniqueQueryId;
+}
 
-    class SortTracks : public query::ListBase{
-        public:
-            SortTracks(void);
-            ~SortTracks(void);
+QueryBase::~QueryBase() {
+}
 
-            void AddTrack(DBID trackId);
-            void AddTracks(std::vector<DBID> &tracks);
-            void AddTracks(musik::core::tracklist::LibraryList &tracks);
+std::string QueryBase::Name() {
+    return "Unknown";
+}
 
-            void ClearTracks();
-
-            void SortByMetaKeys(std::list<std::string> metaKeys);
-
-        protected:
-            friend class library::Base;
-            friend class library::LocalDB;
-
-            typedef std::vector<DBID> IntVector;
-            typedef std::list<std::string> StringList;
-
-            IntVector tracksToSort;
-            StringList sortMetaKeys;
-
-            bool SortTracks::ParseQuery(library::Base *library, db::Connection &db);
-            Ptr copy() const;
-
-            virtual std::string Name();
-    };
-
-} } }
-
+void QueryBase::PostCopy(){
+    static unsigned int uniqueQueryId(0);
+    uniqueQueryId++;
+    this->uniqueId  = uniqueQueryId;
+}
 

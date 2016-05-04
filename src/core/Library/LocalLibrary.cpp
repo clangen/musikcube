@@ -36,14 +36,14 @@
 
 #include "pch.hpp"
 
-#include <core/Library/LocalDB.h>
-#include <core/Query/Base.h>
+#include <core/Library/LocalLibrary.h>
+#include <core/Query/QueryBase.h>
 #include <core/Preferences.h>
 
 #include <boost/bind.hpp>
 
 using namespace musik::core;
-
+using namespace musik::core::library;
 
 //////////////////////////////////////////
 ///\brief
@@ -54,17 +54,17 @@ using namespace musik::core;
 ///\see
 ///Startup
 //////////////////////////////////////////
-library::LocalDB::LocalDB(std::string name,int id)
- :Base(name,id)
+LocalLibrary::LocalLibrary(std::string name,int id)
+: LibraryBase(name, id)
 {
 }
 
 //////////////////////////////////////////
 ///\brief
-///Create a LocalDB library
+///Create a LocalLibrary library
 //////////////////////////////////////////
-LibraryPtr library::LocalDB::Create(std::string name,int id){
-	LibraryPtr lib(new library::LocalDB(name,id));
+LibraryPtr LocalLibrary::Create(std::string name,int id){
+	LibraryPtr lib(new LocalLibrary(name,id));
 	lib->self	= lib;
 	return lib;
 }
@@ -73,7 +73,7 @@ LibraryPtr library::LocalDB::Create(std::string name,int id){
 ///\brief
 ///Destructor that exits and joins all threads
 //////////////////////////////////////////
-library::LocalDB::~LocalDB(void){
+LocalLibrary::~LocalLibrary() {
     this->Exit();
     this->threads.join_all();
 }
@@ -88,7 +88,7 @@ library::LocalDB::~LocalDB(void){
 ///The information is mostly used to get the information
 ///about the Indexer.
 //////////////////////////////////////////
-std::string library::LocalDB::GetInfo(){
+std::string LocalLibrary::GetInfo(){
     return this->indexer.GetStatus();
 }
 
@@ -103,17 +103,17 @@ std::string library::LocalDB::GetInfo(){
 ///Start up the Library like this:
 ///\code
 /// // Create a library
-/// musik::core::library::LocalDB library;
+/// musik::core::library::LocalLibrary library;
 /// // Start the library (and indexer that is included)
 /// library.Startup();
 /// // The library is now ready to receive queries
 ///\endcode
 //////////////////////////////////////////
-bool library::LocalDB::Startup(){
+bool LocalLibrary::Startup(){
 
     // Start the library thread
     try{
-        this->threads.create_thread(boost::bind(&library::LocalDB::ThreadLoop,this));
+        this->threads.create_thread(boost::bind(&LocalLibrary::ThreadLoop,this));
     }
     catch(...){
         return false;
@@ -129,14 +129,14 @@ bool library::LocalDB::Startup(){
 ///
 ///The loop will run until Exit() has been called.
 //////////////////////////////////////////
-void library::LocalDB::ThreadLoop(){
+void LocalLibrary::ThreadLoop(){
 
     Preferences prefs("Library");
 
     std::string database(this->GetDBPath());
     this->db.Open(database.c_str(),0,prefs.GetInt("DatabaseCache",4096));
 
-    library::Base::CreateDatabase(this->db);
+    LibraryBase::CreateDatabase(this->db);
 
     // Startup the indexer
     this->indexer.database    = database;
@@ -155,7 +155,7 @@ void library::LocalDB::ThreadLoop(){
                 this->outgoingQueries.push_back(query);
 
                 // Set query as started
-                query->status |= query::Base::Started;
+                query->status |= query::QueryBase::Started;
             }
 
             ////////////////////////////////////////////////////////////
@@ -168,7 +168,7 @@ void library::LocalDB::ThreadLoop(){
                 boost::mutex::scoped_lock lock(this->libraryMutex);
                 this->runningQuery.reset();
                 // And set it as finished
-                query->status |= query::Base::Ended;
+                query->status |= query::QueryBase::Ended;
             }
 
             ////////////////////////////////////////////////////////////
@@ -200,7 +200,7 @@ void library::LocalDB::ThreadLoop(){
 ///This method will also send a sqlite3_interrupt to cancel the
 ///current running SQL Query
 //////////////////////////////////////////
-void library::LocalDB::CancelCurrentQuery( ){
+void LocalLibrary::CancelCurrentQuery( ){
     this->db.Interrupt();
 }
 
@@ -208,7 +208,7 @@ void library::LocalDB::CancelCurrentQuery( ){
 ///\brief
 ///Get a pointer to the librarys Indexer (NULL if none)
 //////////////////////////////////////////
-musik::core::Indexer *library::LocalDB::Indexer(){
+musik::core::Indexer* LocalLibrary::Indexer(){
     return &this->indexer;
 }
 

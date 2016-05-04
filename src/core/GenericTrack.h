@@ -38,7 +38,7 @@
 
 #include <core/config.h>
 #include <core/Track.h>
-#include <core/Library/Base.h>
+#include <core/library/LibraryBase.h>
 #include <boost/weak_ptr.hpp>
 #include <boost/thread/mutex.hpp>
 

@@ -35,7 +35,7 @@
 //////////////////////////////////////////////////////////////////////////////
 #include "pch.hpp"
 #include <core/LibraryFactory.h>
-#include <core/Library/LocalDB.h>
+#include <core/Library/LocalLibrary.h>
 #include <core/db/Connection.h>
 #include <core/Common.h>
 #include <core/Preferences.h>
@@ -74,9 +74,9 @@ LibraryFactory::LibraryFactory() {
         this->AddLibrary(id, name, type);
 	}
 
-	// If there are no libraries, add a LocalDB
+	// If there are no libraries, add a LocalLibrary
 	if (this->libraries.empty()) {
-        this->CreateLibrary("Local Library", LibraryFactory::LocalDB);
+        this->CreateLibrary("Local Library", LibraryFactory::LocalLibrary);
 	}
 
 }
@@ -110,8 +110,8 @@ LibraryFactory::~LibraryFactory(void){
 LibraryPtr LibraryFactory::AddLibrary(int id, std::string name,int type,bool sendEvent,bool startup){
 	LibraryPtr lib;
 	switch(type){
-        case LibraryFactory::LocalDB:
-			lib	= library::LocalDB::Create(name,id);
+        case LibraryFactory::LocalLibrary:
+			lib	= library::LocalLibrary::Create(name,id);
             break;
 
         default:

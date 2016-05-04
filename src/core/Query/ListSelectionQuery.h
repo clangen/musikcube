@@ -50,7 +50,7 @@
 #include <string>
 
 #include <core/config.h>
-#include <core/Query/ListBase.h>
+#include <core/Query/ListQueryBase.h>
 
 //////////////////////////////////////////////////////////////
 
@@ -58,17 +58,17 @@ namespace musik{ namespace core{ namespace query{
 
 //////////////////////////////////////////
 ///\brief
-///ListSelection is the query used when listing tracks and metalists from a metalist (genres, artists, etc) selection.
+///ListSelectionQuery is the query used when listing tracks and metalists from a metalist (genres, artists, etc) selection.
 ///
-///Write detailed description for ListSelection here.
+///Write detailed description for ListSelectionQuery here.
 ///
 ///\see
-///query::ListBase
+///query::ListQueryBase
 //////////////////////////////////////////
-class  ListSelection : public query::ListBase{
+class  ListSelectionQuery : public query::ListQueryBase{
     public:
-        ListSelection(void);
-        ~ListSelection(void);
+        ListSelectionQuery(void);
+        ~ListSelectionQuery(void);
 
         void SelectMetadata(const char* metakey,DBID metadataId);
         void RemoveMetadata(const char* metakey,DBID metadataId);
@@ -76,11 +76,11 @@ class  ListSelection : public query::ListBase{
 
         void SelectionOrderSensitive(bool sensitive);
     protected:
-        friend class library::Base;
-        friend class library::LocalDB;
+        friend class library::LibraryBase;
+        friend class library::LocalLibrary;
 
         virtual std::string Name();
-        virtual bool ParseQuery(library::Base *library,db::Connection &db);
+        virtual bool ParseQuery(library::LibraryBase *library,db::Connection &db);
 
         Ptr copy() const;
 
@@ -109,8 +109,8 @@ class  ListSelection : public query::ListBase{
 
 
         inline void SQLPrependWhereOrAnd(std::string &sql);
-        void SQLSelectQuery(const char *metakey,const char *sqlStart,const char *sqlEnd,std::set<std::string> &metakeysSelected,std::string &sqlSelectTrackWhere,library::Base *library);
-        void QueryForMetadata(const char *metakey,const char *sql,std::set<std::string> &metakeysQueried,library::Base *library,db::Connection &db);
+        void SQLSelectQuery(const char *metakey,const char *sqlStart,const char *sqlEnd,std::set<std::string> &metakeysSelected,std::string &sqlSelectTrackWhere,library::LibraryBase *library);
+        void QueryForMetadata(const char *metakey,const char *sql,std::set<std::string> &metakeysQueried,library::LibraryBase *library,db::Connection &db);
 };
 
 //////////////////////////////////////////////////////////////
