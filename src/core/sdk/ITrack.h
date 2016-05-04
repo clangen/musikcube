@@ -36,20 +36,19 @@
 
 #pragma once
 
-#include <core/config.h>
+#include "config.h"
 
-namespace musik{ namespace core{
+namespace musik { namespace core {
 
     //////////////////////////////////////////
     ///\brief
     ///The virtual base for all tracks
     //////////////////////////////////////////
-    class  ITrack {
+    class ITrack {
         public:
             virtual void SetValue(const char* metakey, const char* value) = 0;
             virtual void ClearValue(const char* metakey) = 0;
             virtual void SetThumbnail(const char *data, long size) = 0;
     };
-
 
 } }

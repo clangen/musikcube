@@ -36,34 +36,10 @@
 
 #pragma once
 
-#include <string>
+#include <core/sdk/config.h>
 #include <utf8/utf8.h>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
-
-#ifdef WIN32
-    #define WIN32_LEAN_AND_MEAN
-    #define WINVER 0x0501
-    #define _WIN32_WINNT 0x0501
-    #include <windows.h>
-    #include <tchar.h>
-
-    typedef unsigned __int64 UINT64;
-
-    #define STDCALL(fp) (__stdcall* fp)()
-
-#else
-    #include <cassert>
-
-    typedef unsigned long long UINT64;
-    typedef long long __int64;		//TODO: Is this necessary?
-
-    #define STDCALL(fp) (* fp)() __attribute__((stdcall))
-    #define _ASSERT assert
-	#define TEXT(s) s		//There's no TEXT() on linux. This makes the current uses of it compile for me... Jooles
-
-#endif  // WIN32
-
 
 typedef UINT64 DBID;
 typedef UINT64 VERSION;

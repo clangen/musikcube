@@ -312,5 +312,8 @@
     <ClInclude Include="library\metadata\MetadataValue.h">
       <Filter>src\library\metadata</Filter>
     </ClInclude>
+    <ClInclude Include="sdk\config.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -36,7 +36,7 @@
 
 #pragma once
 
-#include <core/config.h>
+#include "config.h"
 
 namespace musik { namespace core { namespace io {
 

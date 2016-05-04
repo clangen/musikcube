@@ -36,49 +36,43 @@
 
 #pragma once
 
-#include <core/config.h>
+#include "config.h"
 #include "IDataStream.h"
 
-//////////////////////////////////////////////////////////////////////////////
-namespace musik{ namespace core{ namespace io {
-//////////////////////////////////////////////////////////////////////////////
+namespace musik { namespace core { namespace io {
 
-class IDataStreamFactory{
-    public:
+    class IDataStreamFactory{
+        public:
 
-        //////////////////////////////////////////
-        ///\brief
-        ///Can the factory read the specified filename
-        ///
-        ///\param filename
-        ///Filename to check
-        ///
-        ///\returns
-        ///True if able
-        //////////////////////////////////////////
-        virtual bool CanReadFile(const char *filename)=0;
+            //////////////////////////////////////////
+            ///\brief
+            ///Can the factory read the specified filename
+            ///
+            ///\param filename
+            ///Filename to check
+            ///
+            ///\returns
+            ///True if able
+            //////////////////////////////////////////
+            virtual bool CanReadFile(const char *filename)=0;
 
-        //////////////////////////////////////////
-        ///\brief
-        ///Open the file for reading
-        ///
-        ///\param filename
-        ///Filename to open
-        ///
-        ///\returns
-        ///IDataStream object or NULL on fail
-        //////////////////////////////////////////
-        virtual IDataStream* OpenFile(const char *filename,unsigned int options=0)=0;
+            //////////////////////////////////////////
+            ///\brief
+            ///Open the file for reading
+            ///
+            ///\param filename
+            ///Filename to open
+            ///
+            ///\returns
+            ///IDataStream object or NULL on fail
+            //////////////////////////////////////////
+            virtual IDataStream* OpenFile(const char *filename,unsigned int options=0)=0;
 
-        //////////////////////////////////////////
-        ///\brief
-        ///Destroy the object (not the file)
-        //////////////////////////////////////////
-        virtual void Destroy()=0;
-};
+            //////////////////////////////////////////
+            ///\brief
+            ///Destroy the object (not the file)
+            //////////////////////////////////////////
+            virtual void Destroy()=0;
+    };
 
-//////////////////////////////////////////////////////////////////////////////
 } } }
-//////////////////////////////////////////////////////////////////////////////
-
-

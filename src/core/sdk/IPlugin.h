@@ -36,13 +36,17 @@
 
 #pragma once
 
+#include "config.h"
+
 namespace musik { namespace core {
-    class IPlugin{
+
+    class IPlugin {
         public:
             virtual void Destroy() = 0;
             virtual const char* Name() = 0;
             virtual const char* Version() = 0;
             virtual const char* Author() = 0;
     };
+
 } }
 

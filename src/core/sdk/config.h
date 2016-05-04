@@ -36,18 +36,24 @@
 
 #pragma once
 
-#include "config.h"
-#include "ITrack.h"
+#include <string>
 
-namespace musik { namespace core { namespace Plugin {
+#ifdef WIN32
+    #define WIN32_LEAN_AND_MEAN
+    #define WINVER 0x0501
+    #define _WIN32_WINNT 0x0501
 
-    class  IMetaDataReader{
-        public:
-            virtual bool ReadTag(const char *uri, musik::core::ITrack *track) = 0;
-            virtual bool CanReadTag(const char *extension)=0;
-            virtual void Destroy()=0;
-    };
+    #include <windows.h>
+    #include <tchar.h>
 
-} } }
+    typedef unsigned __int64 UINT64;
+    #define STDCALL(fp) (__stdcall* fp)()
+#else
+    #include <cassert>
 
-
+    typedef unsigned long long UINT64;
+    typedef long long __int64;
+    
+    #define STDCALL(fp) (* fp)() __attribute__((stdcall))
+    #define _ASSERT assert
+#endif

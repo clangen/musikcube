@@ -148,6 +148,7 @@
     <ClInclude Include="playback\PlaybackQueue.h" />
     <ClInclude Include="playback\Transport.h" />
     <ClInclude Include="plugin\PluginFactory.h" />
+    <ClInclude Include="sdk\config.h" />
     <ClInclude Include="sdk\IAnalyzer.h" />
     <ClInclude Include="sdk\IBuffer.h" />
     <ClInclude Include="sdk\IDecoder.h" />
