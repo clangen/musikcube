@@ -82,7 +82,7 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>../../;../../3rdparty/include/;taglib-1.5;taglib-1.5/taglib;taglib-1.5/taglib/ape;taglib-1.5/taglib/flac;taglib-1.5/taglib/mpc;taglib-1.5/taglib/mpeg;taglib-1.5/taglib/mpeg/id3v1;taglib-1.5/taglib/mpeg/id3v2;taglib-1.5/taglib/mpeg/id3v2/frames;taglib-1.5/taglib/ogg;taglib-1.5/taglib/ogg/flac;taglib-1.5/taglib/ogg/speex;taglib-1.5/taglib/ogg/vorbis;taglib-1.5/taglib/toolkit;taglib-1.5/taglib/trueaudio;taglib-1.5/taglib/wavpack;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../;../../3rdparty/include/;taglib-1.5;taglib-1.5/taglib;taglib-1.5/taglib/ape;taglib-1.5/taglib/flac;taglib-1.5/taglib/mpc;taglib-1.5/taglib/mpeg;taglib-1.5/taglib/mpeg/id3v1;taglib-1.5/taglib/mpeg/id3v2;taglib-1.5/taglib/mpeg/id3v2/frames;taglib-1.5/taglib/ogg;taglib-1.5/taglib/ogg/flac;taglib-1.5/taglib/ogg/speex;taglib-1.5/taglib/ogg/vorbis;taglib-1.5/taglib/toolkit;taglib-1.5/taglib/trueaudio;taglib-1.5/taglib/wavpack;../../../../boost_1_60_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -93,7 +93,7 @@
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
-      <AdditionalLibraryDirectories>../../3rdparty/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../3rdparty/lib;../../../../boost_1_60_0/lib32-msvc-14.0;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
