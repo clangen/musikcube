@@ -37,9 +37,9 @@
 #include "pch.hpp"
 
 #include <core/library/query/MultiLibraryTrackListQuery.h>
-#include <core/LibraryTrack.h>
-#include <core/LibraryFactory.h>
-#include <core/NonLibraryTrackHelper.h>
+#include <core/library/track/LibraryTrack.h>
+#include <core/library/LibraryFactory.h>
+#include <core/playback/NonLibraryTrackHelper.h>
 
 #include <set>
 

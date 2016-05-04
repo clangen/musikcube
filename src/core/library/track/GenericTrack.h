@@ -37,67 +37,48 @@
 #pragma once
 
 #include <core/config.h>
-#include <core/library/query/QueryBase.h>
 #include <core/library/track/Track.h>
+#include <core/library/LibraryBase.h>
+#include <boost/weak_ptr.hpp>
+#include <boost/thread/mutex.hpp>
 
-#include <boost/shared_ptr.hpp>
-#include <boost/function.hpp>
-#include <boost/lexical_cast.hpp>
-#include <vector>
-#include <list>
-#include <string>
+namespace musik { namespace core {
 
-
-namespace musik { namespace core { namespace query {
-    
     //////////////////////////////////////////
     ///\brief
-    ///SortTracksWithDataQuery is a query used to receive sorted tracklists along with the data the tracks are sorted by
-    ///
-    ///\remarks
-    ///First concider to use the SortTracks query instead.
-    ///
-    ///\see
-    ///musik::core::query::SortTracks
+    ///A GenericTrack is not related to any library. It must contain a URI
     //////////////////////////////////////////
-    class SortTracksWithDataQuery : public query::QueryBase{
+    class GenericTrack : public Track {
         public:
-            //////////////////////////////////////////
-            ///\brief
-            ///The struct used to return both the track and the sorted data
-            //////////////////////////////////////////
-            struct TrackWithSortdata {
-                musik::core::TrackPtr track;
-                std::string sortData;
-                bool operator<(const TrackWithSortdata &trackWithSortData) const;
-            };
+            static TrackPtr Create(const char *uri);
+    
+    protected:
+            GenericTrack();
+            GenericTrack(const char *uri);
 
-            typedef std::list<TrackWithSortdata> TrackWithSortdataVector;
-            typedef sigslot::signal2<TrackWithSortdataVector*, bool> TrackWithdataSignal;
+        public:
+            virtual ~GenericTrack();
 
-            SortTracksWithDataQuery();
-            ~SortTracksWithDataQuery();
+            virtual std::string GetValue(const char* metakey);
+            virtual void SetValue(const char* metakey,const char* value);
+            virtual void ClearValue(const char* metakey);
+            virtual void SetThumbnail(const char *data, long size);
+            virtual std::string URI();
+            virtual std::string URL();
 
-            void AddTrack(DBID trackId);
-            void ClearTracks();
-            void SortByMetaKey(std::string metaKey);
+            virtual MetadataIteratorRange GetValues(const char* metakey);
+            virtual MetadataIteratorRange GetAllValues();
+            virtual TrackPtr Copy();
 
-            TrackWithdataSignal TrackResults;
-            TrackWithSortdataVector trackResults;
-
-        protected:
-            friend class library::LibraryBase;
-            friend class library::LocalLibrary;
-            typedef std::vector<DBID> IntVector;
-
-            IntVector tracksToSort;
-            std::string sortByMetaKey;
-            bool clearedTrackResults;
-            Ptr copy() const;
-            bool RunCallbacks(library::LibraryBase *library);
-            bool SortTracksWithDataQuery::ParseQuery(library::LibraryBase *library, db::Connection &db);
-
-            virtual std::string Name();
+        private:
+            typedef boost::weak_ptr<Track> SelfWeakPtr;
+            SelfWeakPtr selfPtr;
+            Track::MetadataMap metadata;
+            std::string uri;
+            std::string title;
+            boost::mutex metadataMutex;
     };
 
-} } }
+} }
+
+

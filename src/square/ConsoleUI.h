@@ -41,7 +41,7 @@
 
 #include <boost/thread/mutex.hpp>
 
-#include <core/audio/Transport.h>
+#include <core/playback/Transport.h>
 
 #include "DummyAudioEventHandler.h"
 

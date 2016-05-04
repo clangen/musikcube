@@ -37,7 +37,7 @@
 #include "pch.hpp"
 
 #include <core/library/query/LibraryTrackListQuery.h>
-#include <core/LibraryTrack.h>
+#include <core/library/track/LibraryTrack.h>
 #include <core/library/query/SortTracksQuery.h>
 
 //////////////////////////////////////////////////////////////////////////////

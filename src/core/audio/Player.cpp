@@ -34,7 +34,7 @@
 #include "pch.hpp"
 
 #include <core/audio/Player.h>
-#include <core/PluginFactory.h>
+#include <core/plugin/PluginFactory.h>
 
 using namespace musik::core::audio;
 

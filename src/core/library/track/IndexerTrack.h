@@ -37,67 +37,67 @@
 #pragma once
 
 #include <core/config.h>
-#include <core/library/query/QueryBase.h>
 #include <core/library/track/Track.h>
+#include <core/library/LibraryBase.h>
 
-#include <boost/shared_ptr.hpp>
-#include <boost/function.hpp>
-#include <boost/lexical_cast.hpp>
-#include <vector>
-#include <list>
-#include <string>
+namespace musik { namespace core {
 
-
-namespace musik { namespace core { namespace query {
-    
     //////////////////////////////////////////
     ///\brief
-    ///SortTracksWithDataQuery is a query used to receive sorted tracklists along with the data the tracks are sorted by
-    ///
-    ///\remarks
-    ///First concider to use the SortTracks query instead.
-    ///
-    ///\see
-    ///musik::core::query::SortTracks
+    ///A LibraryTrack is a track related to a Library.
     //////////////////////////////////////////
-    class SortTracksWithDataQuery : public query::QueryBase{
+    class  IndexerTrack : public Track {
         public:
-            //////////////////////////////////////////
-            ///\brief
-            ///The struct used to return both the track and the sorted data
-            //////////////////////////////////////////
-            struct TrackWithSortdata {
-                musik::core::TrackPtr track;
-                std::string sortData;
-                bool operator<(const TrackWithSortdata &trackWithSortData) const;
+            IndexerTrack(DBID id);
+            virtual ~IndexerTrack(void);
+
+            virtual std::string GetValue(const char* metakey);
+            virtual void SetValue(const char* metakey,const char* value);
+            virtual void ClearValue(const char* metakey);
+            virtual void SetThumbnail(const char *data,long size);
+            virtual std::string URI();
+            virtual std::string URL();
+
+            virtual MetadataIteratorRange GetValues(const char* metakey);
+            virtual MetadataIteratorRange GetAllValues();
+            virtual TrackPtr Copy();
+
+            virtual DBID Id();
+
+            bool CompareDBAndFileInfo(
+                const boost::filesystem::path &file,
+                db::Connection &dbConnection,
+                DBID currentFolderId);
+
+            bool Save(
+                db::Connection &dbConnection, 
+                std::string libraryDirectory,
+                DBID folderId);
+
+            bool GetTrackMetadata(db::Connection &db);
+
+        private:
+            DBID id;
+            DBID tempSortOrder;
+
+        private:
+            class MetaData{
+                public:
+                    MetaData();
+                    ~MetaData();
+
+                    Track::MetadataMap metadata;
+                    char *thumbnailData;
+                    long thumbnailSize;
             };
 
-            typedef std::list<TrackWithSortdata> TrackWithSortdataVector;
-            typedef sigslot::signal2<TrackWithSortdataVector*, bool> TrackWithdataSignal;
+            MetaData *meta;
 
-            SortTracksWithDataQuery();
-            ~SortTracksWithDataQuery();
-
-            void AddTrack(DBID trackId);
-            void ClearTracks();
-            void SortByMetaKey(std::string metaKey);
-
-            TrackWithdataSignal TrackResults;
-            TrackWithSortdataVector trackResults;
-
-        protected:
-            friend class library::LibraryBase;
-            friend class library::LocalLibrary;
-            typedef std::vector<DBID> IntVector;
-
-            IntVector tracksToSort;
-            std::string sortByMetaKey;
-            bool clearedTrackResults;
-            Ptr copy() const;
-            bool RunCallbacks(library::LibraryBase *library);
-            bool SortTracksWithDataQuery::ParseQuery(library::LibraryBase *library, db::Connection &db);
-
-            virtual std::string Name();
+        private:
+            void InitMeta();
+            DBID _GetGenre(db::Connection &dbConnection, std::string genre,bool addRelation,bool aggregated=false);
+            DBID _GetArtist(db::Connection &dbConnection, std::string artist, bool addRelation, bool aggregated = false);
     };
 
-} } }
+} }
+

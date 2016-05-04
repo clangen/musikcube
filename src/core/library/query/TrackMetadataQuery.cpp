@@ -36,10 +36,10 @@
 
 #include "pch.hpp"
 
-#include <core/Common.h>
+#include <core/support/Common.h>
 #include <core/library/query/TrackMetadataQuery.h>
 #include <core/library/LibraryBase.h>
-#include <core/LibraryTrack.h>
+#include <core/library/track/LibraryTrack.h>
 #include <boost/algorithm/string.hpp>
 
 using namespace musik::core;

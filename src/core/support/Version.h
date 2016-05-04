@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright ï¿½ 2008, Daniel ï¿½nnerby
+// The following are Copyright © 2008, Daniel Önnerby
 //
 // All rights reserved.
 //
@@ -36,51 +36,30 @@
 
 #pragma once
 
-#include "stdafx.h"
+#include <core/config.h>
 
-#ifndef _HAVE_TAGLIB
-#include <toolkit/tlist.h>
-#include <toolkit/tfile.h>
+#include <string>
 
-#include <taglib/tag.h>
-#include <taglib/fileref.h>
-#include <taglib/audioproperties.h>
+namespace musik { namespace core {
+    class Version{
+        public:
+            Version();
+            Version(VERSION major, VERSION minor, VERSION revision, VERSION build);
+            Version(VERSION version);
+            ~Version();
 
-#include <mpeg/id3v2/id3v2tag.h>
-#else //_HAVE_TAGLIB
-#include <toolkit/tlist.h>
-#include <toolkit/tfile.h>
+            std::string getVersion();
+            void setVersion(VERSION major, VERSION minor, VERSION revision, VERSION build);
+            void setVersion(VERSION version);
 
-#include <tag.h>
-#include <fileref.h>
-#include <audioproperties.h>
+            int getMajorVersion();
+            int getMinorVersion();
+            int getRevisionVersion();
+            int getBuildVersion();
 
-#include <taglib/mpeg/id3v2/id3v2tag.h>
-#endif //_HAVE_TAGLIB
+        private:
+            VERSION version;
+    };
+} }
 
-#include <set>
-#include <core/sdk/IMetaDataReader.h>
-#include <core/support/Common.h>
-
-class TagReaderTaglib : public musik::core::Plugin::IMetaDataReader {
-	public:
-		TagReaderTaglib();
-		virtual ~TagReaderTaglib();
-		bool ReadTag(const char *uri, musik::core::ITrack *track);
-		virtual bool CanReadTag(const char *extension);
-        virtual void Destroy();
-
-	private:
-		void SetTagValue(const char* key,const char* string,musik::core::ITrack *track);
-		void SetTagValue(const char* key,const TagLib::String tagString,musik::core::ITrack *track);
-		void SetTagValue(const char* key,const int tagInt,musik::core::ITrack *track);
-		void SetTagValues(const char* key,const TagLib::ID3v2::FrameList &frame,musik::core::ITrack *track);
-        void SetAudioProperties(TagLib::AudioProperties *audioProperties,musik::core::ITrack *track);
-
-		void SetSlashSeparatedValues(const char* key,const TagLib::ID3v2::FrameList &frame,musik::core::ITrack *track);
-        void SetSlashSeparatedValues(const char* key,TagLib::String tagString,musik::core::ITrack *track);
-
-        bool GetID3v2Tag(const char* uri, musik::core::ITrack *track);
-        bool GetGenericTag(const char* uri, musik::core::ITrack *track);
-};
 

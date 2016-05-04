@@ -36,10 +36,10 @@
 
 #include "pch.hpp"
 
-#include <core/Library/LibraryBase.h>
+#include <core/library/LibraryBase.h>
 #include <core/config.h>
 #include <core/library/query/QueryBase.h>
-#include <core/Common.h>
+#include <core/support/Common.h>
 
 using namespace musik::core;
 using namespace musik::core::library;

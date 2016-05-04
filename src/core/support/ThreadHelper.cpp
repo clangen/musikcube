@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright ï¿½ 2008, Daniel ï¿½nnerby
+// The following are Copyright © 2008, Daniel Önnerby
 //
 // All rights reserved.
 //
@@ -34,53 +34,43 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "pch.hpp"
+#include <core/support/ThreadHelper.h>
 
-#include "stdafx.h"
+using namespace musik::core;
 
-#ifndef _HAVE_TAGLIB
-#include <toolkit/tlist.h>
-#include <toolkit/tfile.h>
 
-#include <taglib/tag.h>
-#include <taglib/fileref.h>
-#include <taglib/audioproperties.h>
+ThreadHelper::ThreadHelper(void):bExit(false){
+}
 
-#include <mpeg/id3v2/id3v2tag.h>
-#else //_HAVE_TAGLIB
-#include <toolkit/tlist.h>
-#include <toolkit/tfile.h>
+ThreadHelper::~ThreadHelper(void){
+}
 
-#include <tag.h>
-#include <fileref.h>
-#include <audioproperties.h>
+bool ThreadHelper::Exited(){
+    boost::mutex::scoped_lock oLock(this->exitMutex);
+    return this->bExit;
+}
 
-#include <taglib/mpeg/id3v2/id3v2tag.h>
-#endif //_HAVE_TAGLIB
+void ThreadHelper::Exit(){
+    boost::mutex::scoped_lock oLock(this->exitMutex);
+    this->bExit    = true;
+    this->notify.notify_all();
+}
 
-#include <set>
-#include <core/sdk/IMetaDataReader.h>
-#include <core/support/Common.h>
+void ThreadHelper::NotificationWait(){
+    boost::mutex::scoped_lock oLock(this->exitMutex);
+    if(!this->bExit){
+        this->notify.wait(oLock);
+    }
+}
 
-class TagReaderTaglib : public musik::core::Plugin::IMetaDataReader {
-	public:
-		TagReaderTaglib();
-		virtual ~TagReaderTaglib();
-		bool ReadTag(const char *uri, musik::core::ITrack *track);
-		virtual bool CanReadTag(const char *extension);
-        virtual void Destroy();
+void ThreadHelper::NotificationTimedWait(const boost::xtime &oTime){
+    boost::mutex::scoped_lock oLock(this->exitMutex);
+    if(!this->bExit){
+        this->notify.timed_wait(oLock,oTime);
+    }
+}
 
-	private:
-		void SetTagValue(const char* key,const char* string,musik::core::ITrack *track);
-		void SetTagValue(const char* key,const TagLib::String tagString,musik::core::ITrack *track);
-		void SetTagValue(const char* key,const int tagInt,musik::core::ITrack *track);
-		void SetTagValues(const char* key,const TagLib::ID3v2::FrameList &frame,musik::core::ITrack *track);
-        void SetAudioProperties(TagLib::AudioProperties *audioProperties,musik::core::ITrack *track);
-
-		void SetSlashSeparatedValues(const char* key,const TagLib::ID3v2::FrameList &frame,musik::core::ITrack *track);
-        void SetSlashSeparatedValues(const char* key,TagLib::String tagString,musik::core::ITrack *track);
-
-        bool GetID3v2Tag(const char* uri, musik::core::ITrack *track);
-        bool GetGenericTag(const char* uri, musik::core::ITrack *track);
-};
-
+void ThreadHelper::Notify(){
+    this->notify.notify_all();
+}

@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright ï¿½ 2008, Daniel ï¿½nnerby
+// The following are Copyright © 2008, Daniel Önnerby
 //
 // All rights reserved.
 //
@@ -36,51 +36,52 @@
 
 #pragma once
 
-#include "stdafx.h"
+#include <core/config.h>
+#include <core/library/track/Track.h>
+#include <boost/scoped_ptr.hpp>
+#include <boost/weak_ptr.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/thread.hpp>
+#include <sigslot/sigslot.h>
+#include <list>
 
-#ifndef _HAVE_TAGLIB
-#include <toolkit/tlist.h>
-#include <toolkit/tfile.h>
+//////////////////////////////////////////////////////////////////////////////
 
-#include <taglib/tag.h>
-#include <taglib/fileref.h>
-#include <taglib/audioproperties.h>
+namespace musik{ namespace core{
 
-#include <mpeg/id3v2/id3v2tag.h>
-#else //_HAVE_TAGLIB
-#include <toolkit/tlist.h>
-#include <toolkit/tfile.h>
+//////////////////////////////////////////////////////////////////////////////
 
-#include <tag.h>
-#include <fileref.h>
-#include <audioproperties.h>
+class NonLibraryTrackHelper{
+    public:
+        static NonLibraryTrackHelper& Instance();
 
-#include <taglib/mpeg/id3v2/id3v2tag.h>
-#endif //_HAVE_TAGLIB
+        void ReadTrack(musik::core::TrackPtr track);
 
-#include <set>
-#include <core/sdk/IMetaDataReader.h>
-#include <core/support/Common.h>
+        typedef sigslot::signal1<musik::core::TrackPtr> TrackMetadataUpdatedEvent;
+        TrackMetadataUpdatedEvent TrackMetadataUpdated;
 
-class TagReaderTaglib : public musik::core::Plugin::IMetaDataReader {
-	public:
-		TagReaderTaglib();
-		virtual ~TagReaderTaglib();
-		bool ReadTag(const char *uri, musik::core::ITrack *track);
-		virtual bool CanReadTag(const char *extension);
-        virtual void Destroy();
+    private:
+        static NonLibraryTrackHelper sInstance;
 
-	private:
-		void SetTagValue(const char* key,const char* string,musik::core::ITrack *track);
-		void SetTagValue(const char* key,const TagLib::String tagString,musik::core::ITrack *track);
-		void SetTagValue(const char* key,const int tagInt,musik::core::ITrack *track);
-		void SetTagValues(const char* key,const TagLib::ID3v2::FrameList &frame,musik::core::ITrack *track);
-        void SetAudioProperties(TagLib::AudioProperties *audioProperties,musik::core::ITrack *track);
+        NonLibraryTrackHelper();
+        ~NonLibraryTrackHelper();
 
-		void SetSlashSeparatedValues(const char* key,const TagLib::ID3v2::FrameList &frame,musik::core::ITrack *track);
-        void SetSlashSeparatedValues(const char* key,TagLib::String tagString,musik::core::ITrack *track);
+        void ThreadLoop();
 
-        bool GetID3v2Tag(const char* uri, musik::core::ITrack *track);
-        bool GetGenericTag(const char* uri, musik::core::ITrack *track);
+    private:
+        boost::mutex mutex;
+        bool threadIsRunning;
+
+        typedef boost::weak_ptr<musik::core::Track> TrackWeakPtr;
+        std::list<TrackWeakPtr> tracksToRead;
+
+        typedef boost::scoped_ptr<boost::thread> ThreadPtr;
+        ThreadPtr helperThread;
 };
+
+
+//////////////////////////////////////////////////////////////////////////////
+} } // musik::core
+//////////////////////////////////////////////////////////////////////////////
+
 

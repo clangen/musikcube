@@ -38,7 +38,7 @@
 
 #include <core/io/DataStreamFactory.h>
 #include <core/config.h>
-#include <core/PluginFactory.h>
+#include <core/plugin/PluginFactory.h>
 #include <core/io/LocalFileStream.h>
 
 using namespace musik::core::io;

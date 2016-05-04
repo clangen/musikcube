@@ -37,67 +37,67 @@
 #pragma once
 
 #include <core/config.h>
-#include <core/library/query/QueryBase.h>
 #include <core/library/track/Track.h>
+#include <core/library/LibraryBase.h>
 
-#include <boost/shared_ptr.hpp>
-#include <boost/function.hpp>
-#include <boost/lexical_cast.hpp>
-#include <vector>
-#include <list>
-#include <string>
+namespace musik { namespace core { namespace http {
+    class Responder;
+} } }
 
+namespace musik { namespace core {
 
-namespace musik { namespace core { namespace query {
-    
     //////////////////////////////////////////
     ///\brief
-    ///SortTracksWithDataQuery is a query used to receive sorted tracklists along with the data the tracks are sorted by
-    ///
-    ///\remarks
-    ///First concider to use the SortTracks query instead.
-    ///
-    ///\see
-    ///musik::core::query::SortTracks
+    ///A LibraryTrack is a track related to a Library.
     //////////////////////////////////////////
-    class SortTracksWithDataQuery : public query::QueryBase{
+    class LibraryTrack : public Track {
         public:
-            //////////////////////////////////////////
-            ///\brief
-            ///The struct used to return both the track and the sorted data
-            //////////////////////////////////////////
-            struct TrackWithSortdata {
-                musik::core::TrackPtr track;
-                std::string sortData;
-                bool operator<(const TrackWithSortdata &trackWithSortData) const;
+            LibraryTrack();
+            LibraryTrack(DBID id,int libraryId);
+            LibraryTrack(DBID id,musik::core::LibraryPtr library);
+            virtual ~LibraryTrack(void);
+
+            virtual musik::core::LibraryPtr Library();
+            virtual int LibraryId();
+
+            virtual DBID Id();
+
+            virtual std::string GetValue(const char* metakey);
+            virtual void SetValue(const char* metakey,const char* value);
+            virtual void ClearValue(const char* metakey);
+            virtual void SetThumbnail(const char *data,long size);
+
+            virtual std::string URI();
+            virtual std::string URL();
+
+            virtual MetadataIteratorRange GetValues(const char* metakey);
+            virtual MetadataIteratorRange GetAllValues();
+            virtual TrackPtr Copy();
+
+        private:
+            void InitMeta();
+
+
+            // The variables
+            DBID id;
+            int libraryId;
+
+            class MetaData {
+                public:
+                    MetaData();
+                    ~MetaData();
+
+                    Track::MetadataMap metadata;
+                    char *thumbnailData;
+                    long thumbnailSize;
+                    musik::core::LibraryPtr library;
             };
 
-            typedef std::list<TrackWithSortdata> TrackWithSortdataVector;
-            typedef sigslot::signal2<TrackWithSortdataVector*, bool> TrackWithdataSignal;
-
-            SortTracksWithDataQuery();
-            ~SortTracksWithDataQuery();
-
-            void AddTrack(DBID trackId);
-            void ClearTracks();
-            void SortByMetaKey(std::string metaKey);
-
-            TrackWithdataSignal TrackResults;
-            TrackWithSortdataVector trackResults;
-
-        protected:
-            friend class library::LibraryBase;
-            friend class library::LocalLibrary;
-            typedef std::vector<DBID> IntVector;
-
-            IntVector tracksToSort;
-            std::string sortByMetaKey;
-            bool clearedTrackResults;
-            Ptr copy() const;
-            bool RunCallbacks(library::LibraryBase *library);
-            bool SortTracksWithDataQuery::ParseQuery(library::LibraryBase *library, db::Connection &db);
-
-            virtual std::string Name();
+            MetaData *meta;
+            /* friends */
+            friend class http::Responder;
+            bool GetFileData(DBID id, db::Connection &db); /* used by Responder */
     };
 
-} } }
+} }
+

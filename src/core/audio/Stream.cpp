@@ -35,7 +35,7 @@
 
 #include <core/audio/Stream.h>
 #include <core/sdk/IDecoderFactory.h>
-#include <core/PluginFactory.h>
+#include <core/plugin/PluginFactory.h>
 
 using namespace musik::core::audio;
 using musik::core::PluginFactory;

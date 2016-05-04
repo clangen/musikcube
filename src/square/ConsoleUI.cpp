@@ -40,11 +40,11 @@
 #include <boost/algorithm/string.hpp>
 
 #include <core/sdk/IPlugin.h>
-#include <core/PluginFactory.h>
+#include <core/plugin/PluginFactory.h>
 
-#include <core/TrackFactory.h>
-#include <core/LibraryFactory.h>
-#include <core/Indexer.h>
+#include <core/library/track/TrackFactory.h>
+#include <core/library/LibraryFactory.h>
+#include <core/library/Indexer.h>
 
 using namespace musik::square;
 

@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright ï¿½ 2008, Daniel ï¿½nnerby
+// The following are Copyright © 2008, Daniel Önnerby
 //
 // All rights reserved.
 //
@@ -34,53 +34,52 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "pch.hpp"
+#include <core/support/Version.h>
+#include <boost/format.hpp>
 
-#include "stdafx.h"
+using namespace musik::core;
 
-#ifndef _HAVE_TAGLIB
-#include <toolkit/tlist.h>
-#include <toolkit/tfile.h>
+Version::Version()
+: version(0) {
+}
 
-#include <taglib/tag.h>
-#include <taglib/fileref.h>
-#include <taglib/audioproperties.h>
+Version::Version(VERSION major, VERSION minor, VERSION revision, VERSION build) {
+    version = ((major & 0xff) << 48) | ((minor & 0xff) << 32) | ((revision & 0xff) << 16) | (build & 0xff);
+}
 
-#include <mpeg/id3v2/id3v2tag.h>
-#else //_HAVE_TAGLIB
-#include <toolkit/tlist.h>
-#include <toolkit/tfile.h>
+Version::Version(VERSION version)
+: version(version){
+}
 
-#include <tag.h>
-#include <fileref.h>
-#include <audioproperties.h>
+void Version::setVersion(VERSION major, VERSION minor, VERSION revision, VERSION build){
+    version = ((major & 0xff) << 48) | ((minor & 0xff) << 32) | ((revision & 0xff) << 16) | (build & 0xff);
+}
 
-#include <taglib/mpeg/id3v2/id3v2tag.h>
-#endif //_HAVE_TAGLIB
+void Version::setVersion(VERSION version){
+    version = version;
+}
 
-#include <set>
-#include <core/sdk/IMetaDataReader.h>
-#include <core/support/Common.h>
+Version::~Version(void){
+}
 
-class TagReaderTaglib : public musik::core::Plugin::IMetaDataReader {
-	public:
-		TagReaderTaglib();
-		virtual ~TagReaderTaglib();
-		bool ReadTag(const char *uri, musik::core::ITrack *track);
-		virtual bool CanReadTag(const char *extension);
-        virtual void Destroy();
+std::string Version::getVersion() {
+    return boost::str(boost::format("%1%.%2%.%3%.%4%")
+        % ((version >> 48) & 0xff)
+        % ((version >> 32) & 0xff)
+        % ((version >> 16) & 0xff)
+        % (version & 0xff));
+}
 
-	private:
-		void SetTagValue(const char* key,const char* string,musik::core::ITrack *track);
-		void SetTagValue(const char* key,const TagLib::String tagString,musik::core::ITrack *track);
-		void SetTagValue(const char* key,const int tagInt,musik::core::ITrack *track);
-		void SetTagValues(const char* key,const TagLib::ID3v2::FrameList &frame,musik::core::ITrack *track);
-        void SetAudioProperties(TagLib::AudioProperties *audioProperties,musik::core::ITrack *track);
-
-		void SetSlashSeparatedValues(const char* key,const TagLib::ID3v2::FrameList &frame,musik::core::ITrack *track);
-        void SetSlashSeparatedValues(const char* key,TagLib::String tagString,musik::core::ITrack *track);
-
-        bool GetID3v2Tag(const char* uri, musik::core::ITrack *track);
-        bool GetGenericTag(const char* uri, musik::core::ITrack *track);
-};
-
+int Version::getMajorVersion() {
+    return (int)((version >> 48) & 0xff);
+}
+int Version::getMinorVersion() {
+    return (int)((version >> 32) & 0xff);
+}
+int Version::getRevisionVersion() {
+    return (int)((version >> 16) & 0xff);
+}
+int Version::getBuildVersion() {
+    return (int)(version & 0xff);
+}

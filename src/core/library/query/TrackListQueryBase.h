@@ -39,7 +39,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <core/config.h>
-#include <core/Track.h>
+#include <core/library/track/Track.h>
 #include <core/library/LibraryBase.h>
 #include <core/library/query/ListQueryBase.h>
 

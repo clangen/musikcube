@@ -44,7 +44,7 @@
 
 #include <core/library/query/QueryBase.h>
 #include <core/config.h>
-#include <core/Track.h>
+#include <core/library/track/Track.h>
 
 #include <map>
 #include <set>

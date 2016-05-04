@@ -37,8 +37,8 @@
 #pragma once
 
 #include <core/library/query/QueryBase.h>
-#include <core/MetadataValue.h>
-#include <core/LibraryTrack.h>
+#include <core/library/metadata/MetadataValue.h>
+#include <core/library/track/LibraryTrack.h>
 
 #include <sigslot/sigslot.h>
 #include <vector>

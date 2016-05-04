@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright ï¿½ 2008, Daniel ï¿½nnerby
+// The following are Copyright © 2008, Daniel Önnerby
 //
 // All rights reserved.
 //
@@ -34,53 +34,27 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "pch.hpp"
+#include <core/library/track/TrackFactory.h>
+#include <core/library/track/LibraryTrack.h>
+#include <core/library/track/GenericTrack.h>
+#include <boost/regex.hpp>
+#include <boost/lexical_cast.hpp>
 
-#include "stdafx.h"
+using namespace musik::core;
 
-#ifndef _HAVE_TAGLIB
-#include <toolkit/tlist.h>
-#include <toolkit/tfile.h>
+TrackPtr TrackFactory::CreateTrack(const std::string& uri) {
+    if (uri.substr(0,7)=="mcdb://") {
+        boost::regex reg("mcdb://([0-9]+)/([0-9]+)");
+        boost::smatch matches;
+        if (boost::regex_match(uri, matches, reg)) {
+            return TrackPtr(new LibraryTrack(
+                boost::lexical_cast<DBID>(matches[1].str()),
+                boost::lexical_cast<int>(matches[0].str())));
+        }
+    }
 
-#include <taglib/tag.h>
-#include <taglib/fileref.h>
-#include <taglib/audioproperties.h>
+    return GenericTrack::Create(uri.c_str());
+}
 
-#include <mpeg/id3v2/id3v2tag.h>
-#else //_HAVE_TAGLIB
-#include <toolkit/tlist.h>
-#include <toolkit/tfile.h>
-
-#include <tag.h>
-#include <fileref.h>
-#include <audioproperties.h>
-
-#include <taglib/mpeg/id3v2/id3v2tag.h>
-#endif //_HAVE_TAGLIB
-
-#include <set>
-#include <core/sdk/IMetaDataReader.h>
-#include <core/support/Common.h>
-
-class TagReaderTaglib : public musik::core::Plugin::IMetaDataReader {
-	public:
-		TagReaderTaglib();
-		virtual ~TagReaderTaglib();
-		bool ReadTag(const char *uri, musik::core::ITrack *track);
-		virtual bool CanReadTag(const char *extension);
-        virtual void Destroy();
-
-	private:
-		void SetTagValue(const char* key,const char* string,musik::core::ITrack *track);
-		void SetTagValue(const char* key,const TagLib::String tagString,musik::core::ITrack *track);
-		void SetTagValue(const char* key,const int tagInt,musik::core::ITrack *track);
-		void SetTagValues(const char* key,const TagLib::ID3v2::FrameList &frame,musik::core::ITrack *track);
-        void SetAudioProperties(TagLib::AudioProperties *audioProperties,musik::core::ITrack *track);
-
-		void SetSlashSeparatedValues(const char* key,const TagLib::ID3v2::FrameList &frame,musik::core::ITrack *track);
-        void SetSlashSeparatedValues(const char* key,TagLib::String tagString,musik::core::ITrack *track);
-
-        bool GetID3v2Tag(const char* uri, musik::core::ITrack *track);
-        bool GetGenericTag(const char* uri, musik::core::ITrack *track);
-};
 

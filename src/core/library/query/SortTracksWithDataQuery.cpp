@@ -40,8 +40,8 @@
 #include <core/library/LibraryBase.h>
 #include <core/config.h>
 #include <boost/algorithm/string.hpp>
-#include <core/LibraryTrack.h>
-#include <core/Common.h>
+#include <core/library/track/LibraryTrack.h>
+#include <core/support/Common.h>
 
 using namespace musik::core;
 using namespace musik::core::query;

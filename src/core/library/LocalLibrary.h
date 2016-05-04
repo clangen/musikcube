@@ -49,8 +49,8 @@ namespace musik{ namespace core{
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>
 #include <core/db/ScopedTransaction.h>
-#include <core/Library/LibraryBase.h>
-#include <core/Indexer.h>
+#include <core/library/LibraryBase.h>
+#include <core/library/Indexer.h>
 
 //////////////////////////////////////////////////////////////////////////////
 

@@ -38,7 +38,7 @@
 
 #include <core/io/LocalFileStream.h>
 #include <core/config.h>
-#include <core/Common.h>
+#include <core/support/Common.h>
 #include <core/config.h>
 
 #ifdef UTF_WIDECHAR

@@ -37,7 +37,7 @@
 #include "pch.hpp"
 
 #include <core/library/query/QueryBase.h>
-#include <core/Library/LibraryBase.h>
+#include <core/library/LibraryBase.h>
 
 using namespace musik::core;
 using namespace musik::core::query;
