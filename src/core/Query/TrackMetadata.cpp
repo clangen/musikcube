@@ -40,12 +40,10 @@
 #include <core/Query/TrackMetadata.h>
 #include <core/Library/Base.h>
 #include <core/LibraryTrack.h>
-#include <core/xml/ParserNode.h>
-#include <core/xml/WriterNode.h>
 #include <boost/algorithm/string.hpp>
 
 using namespace musik::core;
-using namespace musik::core::Query;
+using namespace musik::core::query;
 
 TrackMetadata::TrackMetadata(void) : requestAllFields(false){
 
@@ -137,7 +135,7 @@ void TrackMetadata::GetFixedTrackMetakeys(std::string fieldName,std::set<std::st
 }
 
 
-bool TrackMetadata::ParseQuery(Library::Base *library,db::Connection &db){
+bool TrackMetadata::ParseQuery(library::Base *library,db::Connection &db){
 
     db::CachedStatement genres("SELECT g.name FROM genres g,track_genres tg WHERE tg.genre_id=g.id AND tg.track_id=? ORDER BY tg.id",db);
     db::CachedStatement artists("SELECT ar.name FROM artists ar,track_artists ta WHERE ta.artist_id=ar.id AND ta.track_id=? ORDER BY ta.id",db);
@@ -237,7 +235,7 @@ bool TrackMetadata::ParseQuery(Library::Base *library,db::Connection &db){
     return true;
 }
 
-bool TrackMetadata::RunCallbacks(Library::Base *library){
+bool TrackMetadata::RunCallbacks(library::Base *library){
 
     TrackVector aResultCopy;
     bool bReturn(false);
@@ -291,13 +289,13 @@ void TrackMetadata::RequestAllMetakeys(){
 
 }
 
-Query::Ptr TrackMetadata::copy() const{
-    Query::Ptr queryCopy(new Query::TrackMetadata(*this));
+query::Ptr TrackMetadata::copy() const{
+    query::Ptr queryCopy(new query::TrackMetadata(*this));
     queryCopy->PostCopy();
     return queryCopy;
 }
 
-void TrackMetadata::PreAddQuery(Library::Base *library){
+void TrackMetadata::PreAddQuery(library::Base *library){
 /*    for(TrackVector::iterator track=this->aRequestTracks.begin();track!=this->aRequestTracks.end();++track){
         (*track)->InitMeta(library);
     }*/
@@ -306,184 +304,3 @@ void TrackMetadata::PreAddQuery(Library::Base *library){
 std::string TrackMetadata::Name(){
     return "TrackMetadata";
 }
-
-
-bool TrackMetadata::ReceiveQuery(musik::core::xml::ParserNode &queryNode){
-
-    while(musik::core::xml::ParserNode metakeysNode = queryNode.ChildNode()){
-        if(metakeysNode.Name()=="metakeys"){
-            if(metakeysNode.Attributes()["all"]=="true"){
-                this->RequestAllMetakeys();
-            }else{
-                metakeysNode.WaitForContent();
-
-                StringSet values;
-
-                try{    // lexical_cast can throw
-                    boost::algorithm::split(values,metakeysNode.Content(),boost::algorithm::is_any_of(","));
-                    this->RequestMetakeys(values);
-                }
-                catch(...){
-                    return false;
-                }
-            }
-        }else if(metakeysNode.Name()=="tracks"){
-            metakeysNode.WaitForContent();
-
-            typedef std::vector<std::string> StringVector;
-            StringVector values;
-            try{    // lexical_cast can throw
-                boost::algorithm::split(values,metakeysNode.Content(),boost::algorithm::is_any_of(","));
-                for(StringVector::iterator value=values.begin();value!=values.end();++value){
-                    this->RequestTrack(TrackPtr(new LibraryTrack( boost::lexical_cast<DBID>(*value),0 )));
-                }
-            }
-            catch(...){
-                return false;
-            }
-        }
-    }
-
-    return true;
-}
-
-
-bool TrackMetadata::SendQuery(musik::core::xml::WriterNode &queryNode){
-    {
-        musik::core::xml::WriterNode metakeysNode(queryNode,"metakeys");
-        if(this->requestAllFields){
-            metakeysNode.Attributes()["all"]  = "true";
-        }else{
-            for(StringSet::iterator metakey=this->requestedFields.begin();metakey!=this->requestedFields.end();++metakey){
-                if(!metakeysNode.Content().empty()){
-                    metakeysNode.Content().append(",");
-                }
-                metakeysNode.Content().append(*metakey);
-            }
-        }
-    }
-
-    {
-        musik::core::xml::WriterNode tracksNode(queryNode,"tracks");
-
-        for(TrackVector::iterator track=this->aRequestTracks.begin();track!=this->aRequestTracks.end();++track){
-            if(!tracksNode.Content().empty()){
-                tracksNode.Content().append(",");
-            }
-            tracksNode.Content().append( boost::lexical_cast<std::string>( (*track)->Id()) );
-        }
-    }
-
-
-    return true;
-}
-
-
-bool TrackMetadata::SendResults(musik::core::xml::WriterNode &queryNode,Library::Base *library){
-
-    bool continueSending(true);
-
-    while(continueSending){
-        TrackVector resultCopy;
-        {
-            boost::mutex::scoped_lock lock(library->resultMutex);
-            resultCopy.swap(this->aResultTracks);
-        }
-        {
-            boost::mutex::scoped_lock lock(library->libraryMutex);
-            if( (this->status & Base::Ended)!=0){
-                continueSending    = false;
-            }
-        }
-
-        // Send the results
-        if( !resultCopy.empty() ){
-            try{
-                for(TrackVector::iterator track=resultCopy.begin();track!=resultCopy.end();++track){
-                    // Erase the path.. is translated in the ReceiveResults
-                    (*track)->ClearValue("path");
-
-                    musik::core::xml::WriterNode trackNode(queryNode,"t");
-                    trackNode.Attributes()["id"]    = boost::lexical_cast<std::string>( (*track)->Id() );
-
-                    Track::MetadataIteratorRange metaDatas( (*track)->GetAllValues() );
-                    for(Track::MetadataMap::const_iterator metaData=metaDatas.first;metaData!=metaDatas.second;++metaData){
-                        musik::core::xml::WriterNode metaDataNode(trackNode,"md");
-                        metaDataNode.Attributes()["k"]  = metaData->first;
-                        metaDataNode.Content().append(metaData->second);
-                    }
-
-                }
-            }
-            catch(...){
-                return false;
-            }
-        }
-
-        // Wait for more results
-        if( continueSending && resultCopy.empty()){
-            boost::thread::yield();
-        }
-
-    }
-
-    return true;
-}
-
-
-bool TrackMetadata::ReceiveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library){
-
-    bool requestPath( this->requestedFields.find("path")!=this->requestedFields.end() );
-    std::string pathPrefix(library->BasePath()+"track/?auth_key=");
-    pathPrefix += library->AuthorizationKey();
-    pathPrefix += "&track_id=";
-
-    while(musik::core::xml::ParserNode trackNode=queryNode.ChildNode("t") ){
-        try{
-            DBID trackId( boost::lexical_cast<DBID>(trackNode.Attributes()["id"]) );
-
-            // Find the track in the aRequestTracks
-            TrackVector::iterator track=this->aRequestTracks.begin();
-            bool trackFound(false);
-            while(track!=this->aRequestTracks.end() && !trackFound){
-                if( (*track)->Id()==trackId ){
-                    // TrackPtr found
-                    trackFound  = true;
-                }else{
-                    ++track;
-                }
-            }
-            if(track!=this->aRequestTracks.end() && trackFound){
-                TrackPtr currentTrack(*track);
-
-                // Remove the track from the aRequestTracks
-                this->aRequestTracks.erase(track);                
-
-                // Get the metadata
-                while(musik::core::xml::ParserNode metadataNode=trackNode.ChildNode("md") ){
-                    metadataNode.WaitForContent();
-                    currentTrack->SetValue( metadataNode.Attributes()["k"].c_str(), metadataNode.Content().c_str());
-                }
-
-                // Special case for the "path" when connecting to a webserver
-                if(requestPath){
-                    std::string path(pathPrefix);
-                    path += boost::lexical_cast<std::string>( currentTrack->Id() );
-                    currentTrack->SetValue("path",path.c_str());
-                }
-
-                {
-                    boost::mutex::scoped_lock oLock(library->resultMutex);
-                    this->aResultTracks.push_back(currentTrack);
-                }
-            }
-        }
-        catch(...){
-//            return false;
-        }
-    }    
-
-    return true;
-}
-
-

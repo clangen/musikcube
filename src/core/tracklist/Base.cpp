@@ -55,7 +55,7 @@ bool Base::SortTracks(std::string sortingMetakey){
     return false;
 }
 
-bool Base::ConnectToQuery(musik::core::Query::ListBase &query){
+bool Base::ConnectToQuery(musik::core::query::ListBase &query){
     return false;
 }
 

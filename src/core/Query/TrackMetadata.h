@@ -50,19 +50,19 @@
 #include <set>
 //////////////////////////////////////////////////////////////////////////////
 
-namespace musik{ namespace core{ namespace Query{
+namespace musik{ namespace core{ namespace query{
 
 //////////////////////////////////////////////////////////////////////////////
 // Forward declaration
 class  Base;
 //////////////////////////////////////////////////////////////////////////////
 
-class  TrackMetadata : public Query::Base {
+class  TrackMetadata : public query::Base {
     public:
         TrackMetadata(void);
         ~TrackMetadata(void);
 
-        bool RunCallbacks(Library::Base *library);
+        bool RunCallbacks(library::Base *library);
 
         void Clear();
         void RequestTrack(TrackPtr track);
@@ -89,22 +89,18 @@ class  TrackMetadata : public Query::Base {
         void CreateSQL();
         void GetFixedTrackMetakeys(std::string fieldName,std::set<std::string> &fields);
     protected:
-        friend class Library::Base;
-        friend class Library::LocalDB;
+        friend class library::Base;
+        friend class library::LocalDB;
         Ptr copy() const;
-        void PreAddQuery(Library::Base *library);
+        void PreAddQuery(library::Base *library);
 
-        virtual bool ParseQuery(Library::Base *library,db::Connection &db);
+        virtual bool ParseQuery(library::Base *library,db::Connection &db);
 
         virtual std::string Name();
-        virtual bool ReceiveQuery(musik::core::xml::ParserNode &queryNode);
-        virtual bool SendQuery(musik::core::xml::WriterNode &queryNode);
-        virtual bool SendResults(musik::core::xml::WriterNode &queryNode,Library::Base *library);
-        virtual bool ReceiveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library);
 
 };
 
 //////////////////////////////////////////////////////////////////////////////
-} } }   // musik::core::Query
+} } }   // musik::core::query
 //////////////////////////////////////////////////////////////////////////////
 

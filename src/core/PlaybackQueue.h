@@ -115,7 +115,7 @@ class PlaybackQueue : public sigslot::has_slots<>{
         TrackPtr currentTrack;
         TrackPtr nextTrack;
         void SetCurrentTrack(TrackPtr track);
-        musik::core::Query::TrackMetadata metadataQuery;
+        musik::core::query::TrackMetadata metadataQuery;
 
         void OnPlaybackEndOrFail();
         void OnPlaybackPrepare();

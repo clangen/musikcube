@@ -61,7 +61,7 @@ GenericTrack::GenericTrack(const char *uri) {
 GenericTrack::~GenericTrack() {
 }
 
-const char* GenericTrack::GetValue(const char* metakey) {
+std::string GenericTrack::GetValue(const char* metakey) {
     if (metakey) {
         std::string metaKey(metakey);
 
@@ -69,13 +69,13 @@ const char* GenericTrack::GetValue(const char* metakey) {
             boost::mutex::scoped_lock lock(this->metadataMutex);
             MetadataMap::iterator metavalue = this->metadata.find(metaKey);
             if(metavalue != this->metadata.end()) {
-                return metavalue->second.c_str();
+                return metavalue->second;
             }
         }
 
         if (metaKey == "title") {
             if (this->title.size()) {
-                return this->title.c_str();
+                return this->title;
             }
 
             std::string::size_type lastSlash = this->uri.find_last_of("/\\");
@@ -84,7 +84,7 @@ const char* GenericTrack::GetValue(const char* metakey) {
                 return title.c_str();
             }
             else {
-                return this->uri.c_str();
+                return this->uri;
             }
         }
 
@@ -113,12 +113,12 @@ void GenericTrack::ClearValue(const char* metakey) {
 void GenericTrack::SetThumbnail(const char *data,long size) {
 }
 
-const char* GenericTrack::URI() {
-    return this->uri.c_str();
+std::string GenericTrack::URI() {
+    return this->uri;
 }
 
-const char* GenericTrack::URL() {
-    return this->uri.c_str();
+std::string GenericTrack::URL() {
+    return this->uri;
 }
 
 Track::MetadataIteratorRange GenericTrack::GetValues(const char* metakey) {

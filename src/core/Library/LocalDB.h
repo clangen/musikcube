@@ -39,7 +39,7 @@
 //////////////////////////////////////////////////////////////////////////////
 // Forward declare
 namespace musik{ namespace core{
-    namespace Query{
+    namespace query{
         class  Base;
     }
 } }
@@ -54,7 +54,7 @@ namespace musik{ namespace core{
 
 //////////////////////////////////////////////////////////////////////////////
 
-namespace musik{ namespace core{ namespace Library{
+namespace musik{ namespace core{ namespace library{
 
 //////////////////////////////////////////////////////////////////////////////
     
@@ -68,7 +68,7 @@ namespace musik{ namespace core{ namespace Library{
 ///\see
 ///Indexer
 //////////////////////////////////////////
-class  LocalDB : public Library::Base{
+class  LocalDB : public library::Base{
 	private:
         LocalDB(std::string name,int id);
 

@@ -58,21 +58,19 @@
 #include <taglib/mpeg/id3v2/id3v2tag.h>
 #endif //_HAVE_TAGLIB
 
-
 #include <set>
-
 #include <core/sdk/IMetaDataReader.h>
 #include <core/Common.h>
 
 class TagReaderTaglib : public musik::core::Plugin::IMetaDataReader {
 	public:
-		TagReaderTaglib(void);
-		virtual ~TagReaderTaglib(void);
-		bool ReadTag(musik::core::ITrack *track);
+		TagReaderTaglib();
+		virtual ~TagReaderTaglib();
+		bool ReadTag(const char *uri, musik::core::ITrack *track);
 		virtual bool CanReadTag(const char *extension);
         virtual void Destroy();
-	private:
 
+	private:
 		void SetTagValue(const char* key,const char* string,musik::core::ITrack *track);
 		void SetTagValue(const char* key,const TagLib::String tagString,musik::core::ITrack *track);
 		void SetTagValue(const char* key,const int tagInt,musik::core::ITrack *track);
@@ -82,8 +80,7 @@ class TagReaderTaglib : public musik::core::Plugin::IMetaDataReader {
 		void SetSlashSeparatedValues(const char* key,const TagLib::ID3v2::FrameList &frame,musik::core::ITrack *track);
         void SetSlashSeparatedValues(const char* key,TagLib::String tagString,musik::core::ITrack *track);
 
-        bool GetID3v2Tag(musik::core::ITrack *track);
-        bool GetGenericTag(musik::core::ITrack *track);
-        bool GetOGGTag(musik::core::ITrack *track);
+        bool GetID3v2Tag(const char* uri, musik::core::ITrack *track);
+        bool GetGenericTag(const char* uri, musik::core::ITrack *track);
 };
 

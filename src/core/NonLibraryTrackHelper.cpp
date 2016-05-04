@@ -108,7 +108,7 @@ void NonLibraryTrackHelper::ThreadLoop() {
 
         if (track) {
             /* we only support local files. other URIs are ignored */
-            if (musik::core::io::Factory::IsLocalFileStream(track->URL())) {
+            if (musik::core::io::Factory::IsLocalFileStream(track->URL().c_str())) {
                 std::string url = track->URL();
                 
                 std::string::size_type lastDot = url.find_last_of(".");
@@ -120,8 +120,8 @@ void NonLibraryTrackHelper::ThreadLoop() {
                 typedef MetadataReaderList::iterator Iterator;
                 Iterator it = metadataReaders.begin();
                 while (it != metadataReaders.end()) {
-                    if ((*it)->CanReadTag(track->GetValue("extension"))) {
-                        (*it)->ReadTag(track.get());
+                    if ((*it)->CanReadTag(track->GetValue("extension").c_str())) {
+                        (*it)->ReadTag(url.c_str(), track.get());
                         break;
                     }
 

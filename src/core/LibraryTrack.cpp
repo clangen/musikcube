@@ -72,19 +72,19 @@ LibraryTrack::~LibraryTrack(){
     this->meta = NULL;
 }
 
-const char* LibraryTrack::GetValue(const char* metakey) {
+std::string LibraryTrack::GetValue(const char* metakey) {
     if (metakey && this->meta) {
         if (this->meta->library) {
             boost::mutex::scoped_lock lock(this->meta->library->trackMutex); /* ?? */
             MetadataMap::iterator metavalue = this->meta->metadata.find(metakey);
             if (metavalue != this->meta->metadata.end()) {
-                return metavalue->second.c_str();
+                return metavalue->second;
             }
         }
         else {
             MetadataMap::iterator metavalue = this->meta->metadata.find(metakey);
             if(metavalue != this->meta->metadata.end()) {
-                return metavalue->second.c_str();
+                return metavalue->second;
             }
         }
     }
@@ -128,7 +128,7 @@ void LibraryTrack::SetThumbnail(const char *data, long size) {
     memcpy(this->meta->thumbnailData, data, size);
 }
 
-const char* LibraryTrack::URI(){
+std::string LibraryTrack::URI(){
     static std::string uri;
 
     /* todo: don't use static; create during InitMeta() */
@@ -154,7 +154,7 @@ const char* LibraryTrack::URI(){
     return NULL;
 }
 
-const char* LibraryTrack::URL() {
+std::string LibraryTrack::URL() {
     return this->GetValue("path");
 }
 

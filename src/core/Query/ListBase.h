@@ -47,65 +47,43 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/lexical_cast.hpp>
 
-//////////////////////////////////////////////////////////////
-// Forward declarations
-//////////////////////////////////////////////////////////////
+namespace musik { namespace core { namespace query {
 
+    class ListBase : public query::Base {
+        public:
+            typedef std::map<std::string, MetadataValueVector> MetadataResults;
+            typedef sigslot::signal2<MetadataValueVector*, bool> MetadataSignal;
+            typedef std::map<std::string, MetadataSignal> MetadataSignals;
+            typedef sigslot::signal2<TrackVector*, bool> TrackSignal;
+            typedef sigslot::signal3<UINT64, UINT64, UINT64> TrackInfoSignal;
 
-namespace musik{ namespace core{
+            MetadataSignal& OnMetadataEvent(const char* metatag);
+            MetadataSignal& OnMetadataEvent(const wchar_t* metatag);
+            TrackSignal& OnTrackEvent();
+            TrackInfoSignal& OnTrackInfoEvent();
 
-    namespace Query{
-        class  ListBase : public Query::Base {
-            public:
-                ListBase(void);
-                virtual ~ListBase(void);
+            ListBase();
+            virtual ~ListBase();
 
-                typedef std::map<std::string,MetadataValueVector> MetadataResults;
-                typedef sigslot::signal2<MetadataValueVector*,bool> MetadataSignal;
-                typedef std::map<std::string,MetadataSignal> MetadataSignals;
-                typedef sigslot::signal2<TrackVector*,bool> TrackSignal;
-                typedef sigslot::signal3<UINT64,UINT64,UINT64> TrackInfoSignal;
+        protected:
+            friend class library::Base;
+            friend class library::LocalDB;
 
-            protected:
-                friend class Library::Base;
-                friend class Library::LocalDB;
-                friend class server::Connection;
+            bool RunCallbacks(library::Base *library);
+            bool ParseTracksSQL(std::string sql, library::Base *library, db::Connection &db);
 
-                bool RunCallbacks(Library::Base *library);
+            MetadataResults metadataResults;
+            TrackVector trackResults;
+            std::set<std::string> clearedMetadataResults;
+            bool clearedTrackResults;
 
-                bool ParseTracksSQL(std::string sql,Library::Base *library,db::Connection &db);
+            MetadataSignals metadataEvent;
+            TrackSignal trackEvent;
+            TrackInfoSignal trackInfoEvent;
 
-                bool ReceiveQueryStandardNodes(musik::core::xml::ParserNode &node);
-                bool SendQueryStandardNodes(musik::core::xml::WriterNode &queryNode);
+            UINT64 trackInfoTracks;
+            UINT64 trackInfoDuration;
+            UINT64 trackInfoSize;
+    };
 
-                MetadataResults metadataResults;
-                TrackVector trackResults;
-
-                std::set<std::string> clearedMetadataResults;
-                bool clearedTrackResults;
-
-                MetadataSignals metadataEvent;
-                TrackSignal trackEvent;
-                TrackInfoSignal trackInfoEvent;
-
-                UINT64 trackInfoTracks;
-                UINT64 trackInfoDuration;
-                UINT64 trackInfoSize;
-
-                virtual bool SendResults(musik::core::xml::WriterNode &queryNode,Library::Base *library);
-                virtual bool ReceiveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library);
-
-            public:
-                MetadataSignal& OnMetadataEvent(const char* metatag);
-                MetadataSignal& OnMetadataEvent(const wchar_t* metatag);
-                TrackSignal& OnTrackEvent();
-                TrackInfoSignal& OnTrackInfoEvent();
-            public:
-                void DummySlot(MetadataValueVector*,bool);
-                void DummySlotTracks(TrackVector*,bool);
-                void DummySlotTrackInfo(UINT64,UINT64,UINT64);
-        };
-    }
-} }
-
-
+} } }

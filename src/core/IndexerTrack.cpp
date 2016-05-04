@@ -67,14 +67,14 @@ IndexerTrack::~IndexerTrack(void){
     }
 }
 
-const char* IndexerTrack::GetValue(const char* metakey){
+std::string IndexerTrack::GetValue(const char* metakey){
     if(metakey && this->meta){
         MetadataMap::iterator metavalue = this->meta->metadata.find(metakey);
         if(metavalue!=this->meta->metadata.end()){
-            return metavalue->second.c_str();
+            return metavalue->second;
         }
     }
-    return NULL;
+    return "";
 }
 
 void IndexerTrack::SetValue(const char* metakey,const char* value){
@@ -104,11 +104,11 @@ void IndexerTrack::SetThumbnail(const char *data,long size){
     memcpy(this->meta->thumbnailData,data,size);
 }
 
-const char* IndexerTrack::URI(){
-    return NULL;
+std::string IndexerTrack::URI(){
+    return "";
 }
 
-const char* IndexerTrack::URL(){
+std::string IndexerTrack::URL(){
     return this->GetValue("path");
 }
 
@@ -321,10 +321,7 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
     DBID albumId(0);
     {
         db::CachedStatement stmt("SELECT id FROM albums WHERE name=?",dbConnection);
-        const char *album=this->GetValue("album");
-        if(album==NULL){
-            album="";
-        }
+        std::string album = this->GetValue("album");
 
         stmt.BindText(0,album);
 

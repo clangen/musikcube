@@ -54,7 +54,7 @@ using namespace musik::core;
 ///\see
 ///Startup
 //////////////////////////////////////////
-Library::LocalDB::LocalDB(std::string name,int id)
+library::LocalDB::LocalDB(std::string name,int id)
  :Base(name,id)
 {
 }
@@ -63,8 +63,8 @@ Library::LocalDB::LocalDB(std::string name,int id)
 ///\brief
 ///Create a LocalDB library
 //////////////////////////////////////////
-LibraryPtr Library::LocalDB::Create(std::string name,int id){
-	LibraryPtr lib(new Library::LocalDB(name,id));
+LibraryPtr library::LocalDB::Create(std::string name,int id){
+	LibraryPtr lib(new library::LocalDB(name,id));
 	lib->self	= lib;
 	return lib;
 }
@@ -73,7 +73,7 @@ LibraryPtr Library::LocalDB::Create(std::string name,int id){
 ///\brief
 ///Destructor that exits and joins all threads
 //////////////////////////////////////////
-Library::LocalDB::~LocalDB(void){
+library::LocalDB::~LocalDB(void){
     this->Exit();
     this->threads.join_all();
 }
@@ -88,7 +88,7 @@ Library::LocalDB::~LocalDB(void){
 ///The information is mostly used to get the information
 ///about the Indexer.
 //////////////////////////////////////////
-std::string Library::LocalDB::GetInfo(){
+std::string library::LocalDB::GetInfo(){
     return this->indexer.GetStatus();
 }
 
@@ -103,17 +103,17 @@ std::string Library::LocalDB::GetInfo(){
 ///Start up the Library like this:
 ///\code
 /// // Create a library
-/// musik::core::Library::LocalDB library;
+/// musik::core::library::LocalDB library;
 /// // Start the library (and indexer that is included)
 /// library.Startup();
 /// // The library is now ready to receive queries
 ///\endcode
 //////////////////////////////////////////
-bool Library::LocalDB::Startup(){
+bool library::LocalDB::Startup(){
 
     // Start the library thread
     try{
-        this->threads.create_thread(boost::bind(&Library::LocalDB::ThreadLoop,this));
+        this->threads.create_thread(boost::bind(&library::LocalDB::ThreadLoop,this));
     }
     catch(...){
         return false;
@@ -129,21 +129,21 @@ bool Library::LocalDB::Startup(){
 ///
 ///The loop will run until Exit() has been called.
 //////////////////////////////////////////
-void Library::LocalDB::ThreadLoop(){
+void library::LocalDB::ThreadLoop(){
 
     Preferences prefs("Library");
 
     std::string database(this->GetDBPath());
     this->db.Open(database.c_str(),0,prefs.GetInt("DatabaseCache",4096));
 
-    Library::Base::CreateDatabase(this->db);
+    library::Base::CreateDatabase(this->db);
 
     // Startup the indexer
     this->indexer.database    = database;
     this->indexer.Startup(this->GetLibraryDirectory());
 
     while(!this->Exited()){
-        Query::Ptr query(this->GetNextQuery());
+        query::Ptr query(this->GetNextQuery());
 
         if(query){    // No empty query
 
@@ -155,7 +155,7 @@ void Library::LocalDB::ThreadLoop(){
                 this->outgoingQueries.push_back(query);
 
                 // Set query as started
-                query->status |= Query::Base::Started;
+                query->status |= query::Base::Started;
             }
 
             ////////////////////////////////////////////////////////////
@@ -168,7 +168,7 @@ void Library::LocalDB::ThreadLoop(){
                 boost::mutex::scoped_lock lock(this->libraryMutex);
                 this->runningQuery.reset();
                 // And set it as finished
-                query->status |= Query::Base::Ended;
+                query->status |= query::Base::Ended;
             }
 
             ////////////////////////////////////////////////////////////
@@ -200,7 +200,7 @@ void Library::LocalDB::ThreadLoop(){
 ///This method will also send a sqlite3_interrupt to cancel the
 ///current running SQL Query
 //////////////////////////////////////////
-void Library::LocalDB::CancelCurrentQuery( ){
+void library::LocalDB::CancelCurrentQuery( ){
     this->db.Interrupt();
 }
 
@@ -208,7 +208,7 @@ void Library::LocalDB::CancelCurrentQuery( ){
 ///\brief
 ///Get a pointer to the librarys Indexer (NULL if none)
 //////////////////////////////////////////
-musik::core::Indexer *Library::LocalDB::Indexer(){
+musik::core::Indexer *library::LocalDB::Indexer(){
     return &this->indexer;
 }
 

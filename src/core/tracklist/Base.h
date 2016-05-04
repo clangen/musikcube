@@ -193,7 +193,7 @@ class Base : boost::noncopyable{
 		///\brief
 		///Connect the tracklist to receive tracks from a ListBase query.
 		//////////////////////////////////////////
-        virtual bool ConnectToQuery(musik::core::Query::ListBase &query);
+        virtual bool ConnectToQuery(musik::core::query::ListBase &query);
 
         //////////////////////////////////////////
 		///\brief

@@ -91,8 +91,8 @@ class  MultiLibraryList : public Base, public sigslot::has_slots<> {
         void OnTracksMetaFromQuery(musik::core::TrackVector *metaTracks);
         void OnTracksMetaFromNonLibrary(musik::core::TrackPtr track);
 
-        void OnTracksFromSortQuery(musik::core::Query::SortTracksWithData::TrackWithSortdataVector *newTracks,bool clear);
-        void OnSortQueryFinished(musik::core::Query::Base *query,musik::core::Library::Base *library,bool success);
+        void OnTracksFromSortQuery(musik::core::query::SortTracksWithData::TrackWithSortdataVector *newTracks,bool clear);
+        void OnSortQueryFinished(musik::core::query::Base *query,musik::core::library::Base *library,bool success);
         void SortTheLists();
 
     protected:
@@ -119,7 +119,7 @@ class  MultiLibraryList : public Base, public sigslot::has_slots<> {
         bool inited;
 
         // map with queries, to check for metadata
-        typedef std::map<int,musik::core::Query::TrackMetadata> MetadataQueryMap;
+        typedef std::map<int,musik::core::query::TrackMetadata> MetadataQueryMap;
         MetadataQueryMap metadataQueries;
 
 		//////////////////////////////////////////
@@ -131,16 +131,16 @@ class  MultiLibraryList : public Base, public sigslot::has_slots<> {
 
         int queryState;
 
-        typedef std::map<int,musik::core::Query::SortTracksWithData> SortTracksQueryMap;
-        typedef std::map<int,musik::core::Query::SortTracksWithData::TrackWithSortdataVector> SortTracksResults;
+        typedef std::map<int,musik::core::query::SortTracksWithData> SortTracksQueryMap;
+        typedef std::map<int,musik::core::query::SortTracksWithData::TrackWithSortdataVector> SortTracksResults;
         SortTracksResults sortResultMap;
         int sortQueryCount;
-        musik::core::Query::SortTracksWithData::TrackWithSortdataVector genericTrackSortVector;
+        musik::core::query::SortTracksWithData::TrackWithSortdataVector genericTrackSortVector;
 
         // Helper class for sorting
         struct SortHelper{
-            SortHelper(musik::core::Query::SortTracksWithData::TrackWithSortdataVector &sortData):sortData(sortData){}   
-            musik::core::Query::SortTracksWithData::TrackWithSortdataVector &sortData;
+            SortHelper(musik::core::query::SortTracksWithData::TrackWithSortdataVector &sortData):sortData(sortData){}   
+            musik::core::query::SortTracksWithData::TrackWithSortdataVector &sortData;
 
             bool operator<(const SortHelper &sortHelper) const;
 

@@ -46,50 +46,37 @@
 #include <core/Query/ListBase.h>
 #include <core/tracklist/LibraryList.h>
 
+namespace musik { namespace core { namespace query {
 
+    class SortTracks : public query::ListBase{
+        public:
+            SortTracks(void);
+            ~SortTracks(void);
 
+            void AddTrack(DBID trackId);
+            void AddTracks(std::vector<DBID> &tracks);
+            void AddTracks(musik::core::tracklist::LibraryList &tracks);
 
-namespace musik{ namespace core{
-    namespace Query{
+            void ClearTracks();
 
-        class  SortTracks : public Query::ListBase{
-            public:
-                SortTracks(void);
-                ~SortTracks(void);
+            void SortByMetaKeys(std::list<std::string> metaKeys);
 
-                void AddTrack(DBID trackId);
-                void AddTracks(std::vector<DBID> &tracks);
-                void AddTracks(musik::core::tracklist::LibraryList &tracks);
+        protected:
+            friend class library::Base;
+            friend class library::LocalDB;
 
-                void ClearTracks();
+            typedef std::vector<DBID> IntVector;
+            typedef std::list<std::string> StringList;
 
-                void SortByMetaKeys(std::list<std::string> metaKeys);
+            IntVector tracksToSort;
+            StringList sortMetaKeys;
 
-            protected:
+            bool SortTracks::ParseQuery(library::Base *library, db::Connection &db);
+            Ptr copy() const;
 
-                typedef std::vector<DBID> IntVector;
-                IntVector tracksToSort;
+            virtual std::string Name();
+    };
 
-                typedef std::list<std::string> StringList;
-                StringList sortMetaKeys;
-
-
-                friend class Library::Base;
-                friend class Library::LocalDB;
-
-
-                Ptr copy() const;
-
-                virtual std::string Name();
-                virtual bool ParseQuery(Library::Base *library,db::Connection &db);
-                virtual bool ReceiveQuery(musik::core::xml::ParserNode &queryNode);
-                virtual bool SendQuery(musik::core::xml::WriterNode &queryNode);
-
-            private:
-
-        };
-
-    }
-} }
+} } }
 
 

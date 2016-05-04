@@ -427,8 +427,8 @@ void Indexer::SyncDirectory(
                     typedef MetadataReaderList::iterator Iterator;
                     Iterator it = this->metadataReaders.begin();
                     while (it != this->metadataReaders.end()) {
-                        if((*it)->CanReadTag(track.GetValue("extension")) ){
-                            if( (*it)->ReadTag(&track) ){
+                        if ((*it)->CanReadTag(track.GetValue("extension").c_str())) {
+                            if ((*it)->ReadTag(file->path().string().c_str(), &track)) {
                                 saveToDb = true;
                             }
                         }
@@ -442,7 +442,7 @@ void Indexer::SyncDirectory(
                         track.Save(this->dbConnection, this->libraryPath, dirId);
 
                         this->filesSaved++;
-                        if (this->filesSaved % 100 == 0){
+                        if (this->filesSaved % 100 == 0) {
                             this->TrackRefreshed(); /* no idea... */
                         }
                     }

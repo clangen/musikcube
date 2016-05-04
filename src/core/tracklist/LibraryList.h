@@ -78,7 +78,7 @@ class  LibraryList : public Base, public sigslot::has_slots<> {
     
 		virtual musik::core::LibraryPtr Library();
 
-        virtual bool ConnectToQuery(musik::core::Query::ListBase &query);
+        virtual bool ConnectToQuery(musik::core::query::ListBase &query);
 
         virtual void ClearMetadata();
         virtual bool AddRequestedMetakey(std::string metakey);
@@ -120,7 +120,7 @@ class  LibraryList : public Base, public sigslot::has_slots<> {
 
         long currentPosition;
 
-        musik::core::Query::TrackMetadata metadataQuery;
+        musik::core::query::TrackMetadata metadataQuery;
 
         long maxCacheSize;
 

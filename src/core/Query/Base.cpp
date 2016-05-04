@@ -38,88 +38,28 @@
 
 #include <core/Query/Base.h>
 #include <core/Library/Base.h>
-#include <core/xml/ParserNode.h>
-#include <core/xml/WriterNode.h>
 
 using namespace musik::core;
 
-Query::Base::Base(void) 
-:status(0)
-,options(0)
-,uniqueId(0)
-{
+query::Base::Base() 
+: status(0)
+, options(0)
+, uniqueId(0) {
     // This will guarantee that the query id is uniq for each query, but copies will not.
     // This is usefull when canceling similar queries
     static unsigned int uniqueQueryId(0);
     uniqueQueryId++;
     this->queryId   = uniqueQueryId;
-
 }
 
-Query::Base::~Base(void){
+query::Base::~Base() {
 }
 
-//////////////////////////////////////////
-///\brief
-///Receive the query from XML
-///
-///\param queryNode
-///Reference to query XML node
-///
-///\returns
-///true when successfully received
-//////////////////////////////////////////
-bool Query::Base::ReceiveQuery(musik::core::xml::ParserNode &queryNode){
-    return false;
-}
-
-//////////////////////////////////////////
-///\brief
-///Serialize query to XML
-///
-///\param queryNode
-///Reference to query XML node
-///
-///\returns
-///true when successfully send
-//////////////////////////////////////////
-bool Query::Base::SendQuery(musik::core::xml::WriterNode &queryNode){
-    return false;
-}
-
-//////////////////////////////////////////
-///\brief
-///Receive results from XML
-///
-///\param queryNode
-///Reference to query XML node
-///
-///\returns
-///true when successfully received
-//////////////////////////////////////////
-bool Query::Base::ReceiveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library){
-    return false;
-}
-
-//////////////////////////////////////////
-///\brief
-///Serialize results to XML
-///
-///\param queryNode
-///Reference to query XML node
-///
-///\returns
-///true when successfully send
-//////////////////////////////////////////
-bool Query::Base::SendResults(musik::core::xml::WriterNode &queryNode,Library::Base *library){
-    return false;
-}
-
-std::string Query::Base::Name(){
+std::string query::Base::Name() {
     return "Unknown";
 }
 
-void Query::Base::PostCopy(){
+void query::Base::PostCopy(){
     static unsigned int uniqueQueryId(0);
     uniqueQueryId++;
     this->uniqueId  = uniqueQueryId;

@@ -43,18 +43,17 @@
 #include <core/Query/SortTracksWithData.h>
 #include <core/Query/TrackMetadata.h>
 
-//////////////////////////////////////////////////////////////////////////////
-using namespace musik::core::Query;
+using namespace musik::core::query;
 
-Factory::Factory(void){
+Factory::Factory() {
 }
 
-Factory::~Factory(void){
+Factory::~Factory() {
 }
 
-void Factory::GetQueries(QueryMap &queryMap){
-    queryMap["ListSelection"]       = Ptr(new ListSelection());
-    queryMap["SortTracks"]          = Ptr(new SortTracks());
-    queryMap["TrackMetadata"]       = Ptr(new TrackMetadata());
-    queryMap["SortTracksWithData"]  = Ptr(new SortTracksWithData());
+void Factory::GetQueries(QueryMap &queryMap) {
+    queryMap["ListSelection"] = Ptr(new ListSelection());
+    queryMap["SortTracks"] = Ptr(new SortTracks());
+    queryMap["TrackMetadata"] = Ptr(new TrackMetadata());
+    queryMap["SortTracksWithData"] = Ptr(new SortTracksWithData());
 }

@@ -40,28 +40,27 @@
 #include <core/Library/Base.h>
 #include <core/config.h>
 #include <boost/algorithm/string.hpp>
-#include <core/xml/ParserNode.h>
-#include <core/xml/WriterNode.h>
 
 using namespace musik::core;
+using namespace musik::core::query;
 
 
 //////////////////////////////////////////
 ///\brief
 ///Constructor
 //////////////////////////////////////////
-Query::SortTracks::SortTracks(void){
+SortTracks::SortTracks(void){
 }
 
 //////////////////////////////////////////
 ///\brief
 ///Destructor
 //////////////////////////////////////////
-Query::SortTracks::~SortTracks(void){
+SortTracks::~SortTracks(void){
 }
 
 
-bool Query::SortTracks::ParseQuery(Library::Base *library,db::Connection &db){
+bool SortTracks::ParseQuery(library::Base *library,db::Connection &db){
 
     std::vector<int> sortFieldsMetakeyId;
 
@@ -84,12 +83,12 @@ bool Query::SortTracks::ParseQuery(Library::Base *library,db::Connection &db){
         std::string metakey   = this->sortMetaKeys.front();
 
         // Check if it's a fixed field
-        if(musik::core::Library::Base::IsStaticMetaKey(metakey)){
+        if(musik::core::library::Base::IsStaticMetaKey(metakey)){
 //            selectSQL     += ",tracks."+metakey;
             selectSQLSort += (selectSQLSort.empty()?" ORDER BY tracks.":",tracks.") + metakey;
 
         // Check if it's a special MTO field
-        }else if(musik::core::Library::Base::IsSpecialMTOMetaKey(metakey) || musik::core::Library::Base::IsSpecialMTMMetaKey(metakey)){
+        }else if(musik::core::library::Base::IsSpecialMTOMetaKey(metakey) || musik::core::library::Base::IsSpecialMTMMetaKey(metakey)){
             if(metakey=="album"){
                 selectSQLTables += " LEFT OUTER JOIN albums ON albums.id=tracks.album_id ";
 //                selectSQLTables += " albums al ";
@@ -178,26 +177,26 @@ bool Query::SortTracks::ParseQuery(Library::Base *library,db::Connection &db){
 ///Copy a query
 ///
 ///\returns
-///A shared_ptr to the Query::Base
+///A shared_ptr to the Base
 //////////////////////////////////////////
-Query::Ptr Query::SortTracks::copy() const{
-    Query::Ptr queryCopy(new Query::SortTracks(*this));
+Ptr SortTracks::copy() const{
+    Ptr queryCopy(new SortTracks(*this));
     queryCopy->PostCopy();
     return queryCopy;
 }
 
-void Query::SortTracks::AddTrack(DBID trackId){
+void SortTracks::AddTrack(DBID trackId){
     this->tracksToSort.push_back(trackId);
 }
 
-void Query::SortTracks::AddTracks(std::vector<DBID> &tracks){
+void SortTracks::AddTracks(std::vector<DBID> &tracks){
     this->tracksToSort.reserve(this->tracksToSort.size()+tracks.size());
     for(std::vector<DBID>::iterator track=tracks.begin();track!=tracks.end();++track){
         this->tracksToSort.push_back(*track);
     }
 }
 
-void Query::SortTracks::AddTracks(musik::core::tracklist::LibraryList &tracks){
+void SortTracks::AddTracks(musik::core::tracklist::LibraryList &tracks){
     this->tracksToSort.reserve(this->tracksToSort.size()+tracks.Size());
     for(int i(0);i<tracks.Size();++i){
         this->tracksToSort.push_back(tracks[i]->Id());
@@ -205,96 +204,14 @@ void Query::SortTracks::AddTracks(musik::core::tracklist::LibraryList &tracks){
 
 }
 
-void Query::SortTracks::SortByMetaKeys(std::list<std::string> metaKeys){
+void SortTracks::SortByMetaKeys(std::list<std::string> metaKeys){
     this->sortMetaKeys  = metaKeys;
 }
 
-void Query::SortTracks::ClearTracks(){
+void SortTracks::ClearTracks(){
     this->tracksToSort.clear();
 }
 
-//////////////////////////////////////////
-///\brief
-///Receive the query from XML
-///
-///\param queryNode
-///Reference to query XML node
-///
-///The excpeted input format is like this:
-///\code
-///<query type="SortTracks">
-///   <tracks>1,3,5,7</tracks>
-///</query>
-///\endcode
-///
-///\returns
-///true when successfully received
-//////////////////////////////////////////
-bool Query::SortTracks::ReceiveQuery(musik::core::xml::ParserNode &queryNode){
-
-    while( musik::core::xml::ParserNode node = queryNode.ChildNode() ){
-        if(node.Name()=="sortby"){
-            node.WaitForContent();
-            try{
-                // Split list directly into the sortMetaKeys
-                boost::algorithm::split(this->sortMetaKeys,node.Content(),boost::algorithm::is_any_of(","));
-            }
-            catch(...){
-                return false;
-            }
-
-        } else if(node.Name()=="tracks"){
-            node.WaitForContent();
-
-            typedef std::vector<std::string> StringVector;
-            StringVector values;
-
-            try{    // lexical_cast can throw
-                boost::algorithm::split(values,node.Content(),boost::algorithm::is_any_of(","));
-                for(StringVector::iterator value=values.begin();value!=values.end();++value){
-                    this->tracksToSort.push_back( boost::lexical_cast<DBID>(*value) );
-                }
-            }
-            catch(...){
-                return false;
-            }
-
-        }else{
-            this->ReceiveQueryStandardNodes(node);
-        }
-    }
-    return true;
-}
-
-std::string Query::SortTracks::Name(){
+std::string SortTracks::Name(){
     return "SortTracks";
 }
-
-bool Query::SortTracks::SendQuery(musik::core::xml::WriterNode &queryNode){
-    {
-        xml::WriterNode sortbyNode(queryNode,"sortby");
-
-        for(StringList::iterator metaKey=this->sortMetaKeys.begin();metaKey!=this->sortMetaKeys.end();++metaKey){
-            if(!sortbyNode.Content().empty()){
-                sortbyNode.Content().append(",");
-            }
-            sortbyNode.Content().append(*metaKey);
-        }
-    }
-    {
-        xml::WriterNode tracksNode(queryNode,"tracks");
-
-        for(IntVector::iterator trackId=this->tracksToSort.begin();trackId!=this->tracksToSort.end();++trackId){
-            if(!tracksNode.Content().empty()){
-                tracksNode.Content().append(",");
-            }
-            tracksNode.Content().append(boost::lexical_cast<std::string>(*trackId));
-        }
-    }
-
-    this->SendQueryStandardNodes(queryNode);
-
-    return true;
-    
-}
-

@@ -88,14 +88,6 @@
     <ClCompile Include="MessageQueue.cpp" />
     <ClCompile Include="Preferences.cpp" />
     <ClCompile Include="ThreadHelper.cpp" />
-    <ClCompile Include="tracklist\Base.cpp">
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)%(Filename)2.obj</ObjectFileName>
-      <XMLDocumentationFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)%(Filename)2.xdc</XMLDocumentationFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)%(Filename)2.obj</ObjectFileName>
-      <XMLDocumentationFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)%(Filename)2.xdc</XMLDocumentationFileName>
-    </ClCompile>
-    <ClCompile Include="tracklist\LibraryList.cpp" />
-    <ClCompile Include="tracklist\MultiLibraryList.cpp" />
     <ClCompile Include="Indexer.cpp" />
     <ClCompile Include="LibraryFactory.cpp" />
     <ClCompile Include="Query\Base.cpp">
@@ -112,7 +104,6 @@
     <ClCompile Include="Query\TrackMetadata.cpp" />
     <ClCompile Include="Library\Base.cpp" />
     <ClCompile Include="Library\LocalDB.cpp" />
-    <ClCompile Include="Library\Remote.cpp" />
     <ClCompile Include="db\CachedStatement.cpp" />
     <ClCompile Include="db\Connection.cpp" />
     <ClCompile Include="db\ScopedTransaction.cpp" />
@@ -125,30 +116,6 @@
     <ClCompile Include="audio\Player.cpp" />
     <ClCompile Include="audio\Stream.cpp" />
     <ClCompile Include="audio\Transport.cpp" />
-    <ClCompile Include="server\Connection.cpp">
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)%(Filename)1.obj</ObjectFileName>
-      <XMLDocumentationFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)%(Filename)1.xdc</XMLDocumentationFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)%(Filename)1.obj</ObjectFileName>
-      <XMLDocumentationFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)%(Filename)1.xdc</XMLDocumentationFileName>
-    </ClCompile>
-    <ClCompile Include="Server.cpp" />
-    <ClCompile Include="server\User.cpp" />
-    <ClCompile Include="server\UserSession.cpp" />
-    <ClCompile Include="xml\Node.cpp" />
-    <ClCompile Include="xml\Parser.cpp" />
-    <ClCompile Include="xml\ParserNode.cpp" />
-    <ClCompile Include="xml\Socket.cpp" />
-    <ClCompile Include="xml\Writer.cpp" />
-    <ClCompile Include="xml\WriterNode.cpp" />
-    <ClCompile Include="http\RequestParser.cpp" />
-    <ClCompile Include="http\Responder.cpp" />
-    <ClCompile Include="http\Server.cpp">
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)%(Filename)1.obj</ObjectFileName>
-      <XMLDocumentationFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)%(Filename)1.xdc</XMLDocumentationFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)%(Filename)1.obj</ObjectFileName>
-      <XMLDocumentationFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)%(Filename)1.xdc</XMLDocumentationFileName>
-    </ClCompile>
-    <ClCompile Include="http\TrackSender.cpp" />
     <ClCompile Include="filestreams\Factory.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)%(Filename)1.obj</ObjectFileName>
       <XMLDocumentationFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)%(Filename)1.xdc</XMLDocumentationFileName>
@@ -161,6 +128,9 @@
     <ClCompile Include="LibraryTrack.cpp" />
     <ClCompile Include="Track.cpp" />
     <ClCompile Include="TrackFactory.cpp" />
+    <ClCompile Include="tracklist\Base.cpp" />
+    <ClCompile Include="tracklist\LibraryList.cpp" />
+    <ClCompile Include="tracklist\MultiLibraryList.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp" />
@@ -182,9 +152,6 @@
     <ClInclude Include="sdk\IOutput.h" />
     <ClInclude Include="sdk\IPlayer.h" />
     <ClInclude Include="sdk\IPlugin.h" />
-    <ClInclude Include="sdk\IRequestParser.h" />
-    <ClInclude Include="sdk\IRequestPlugin.h" />
-    <ClInclude Include="sdk\IResponder.h" />
     <ClInclude Include="sdk\ITrack.h" />
     <ClInclude Include="ThreadHelper.h" />
     <ClInclude Include="tracklist\Base.h" />
@@ -201,7 +168,6 @@
     <ClInclude Include="Query\TrackMetadata.h" />
     <ClInclude Include="Library\Base.h" />
     <ClInclude Include="Library\LocalDB.h" />
-    <ClInclude Include="Library\Remote.h" />
     <ClInclude Include="db\CachedStatement.h" />
     <ClInclude Include="db\Connection.h" />
     <ClInclude Include="db\dbconfig.h" />
@@ -215,23 +181,6 @@
     <ClInclude Include="audio\Player.h" />
     <ClInclude Include="audio\Stream.h" />
     <ClInclude Include="audio\Transport.h" />
-    <ClInclude Include="server\Connection.h" />
-    <ClInclude Include="Server.h" />
-    <ClInclude Include="server\User.h" />
-    <ClInclude Include="server\UserSession.h" />
-    <ClInclude Include="xml\IReadSupplier.h" />
-    <ClInclude Include="xml\IWriteSupplier.h" />
-    <ClInclude Include="xml\Node.h" />
-    <ClInclude Include="xml\Parser.h" />
-    <ClInclude Include="xml\ParserNode.h" />
-    <ClInclude Include="xml\Reader.h" />
-    <ClInclude Include="xml\Socket.h" />
-    <ClInclude Include="xml\Writer.h" />
-    <ClInclude Include="xml\WriterNode.h" />
-    <ClInclude Include="http\RequestParser.h" />
-    <ClInclude Include="http\Responder.h" />
-    <ClInclude Include="http\Server.h" />
-    <ClInclude Include="http\TrackSender.h" />
     <ClInclude Include="filestreams\Factory.h" />
     <ClInclude Include="filestreams\LocalFileStream.h" />
     <ClInclude Include="GenericTrack.h" />

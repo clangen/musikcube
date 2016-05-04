@@ -62,13 +62,13 @@ namespace musik { namespace core {
 
             virtual DBID Id();
 
-            virtual const char* GetValue(const char* metakey);
+            virtual std::string GetValue(const char* metakey);
             virtual void SetValue(const char* metakey,const char* value);
             virtual void ClearValue(const char* metakey);
             virtual void SetThumbnail(const char *data,long size);
 
-            virtual const char* URI();
-            virtual const char* URL();
+            virtual std::string URI();
+            virtual std::string URL();
 
             virtual MetadataIteratorRange GetValues(const char* metakey);
             virtual MetadataIteratorRange GetAllValues();

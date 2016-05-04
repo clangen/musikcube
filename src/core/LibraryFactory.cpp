@@ -36,7 +36,6 @@
 #include "pch.hpp"
 #include <core/LibraryFactory.h>
 #include <core/Library/LocalDB.h>
-#include <core/Library/Remote.h>
 #include <core/db/Connection.h>
 #include <core/Common.h>
 #include <core/Preferences.h>
@@ -111,11 +110,12 @@ LibraryFactory::~LibraryFactory(void){
 LibraryPtr LibraryFactory::AddLibrary(int id, std::string name,int type,bool sendEvent,bool startup){
 	LibraryPtr lib;
 	switch(type){
-        case LibraryFactory::Remote:
-			lib	= Library::Remote::Create(name,id);
-			break;
-		default:
-			lib	= Library::LocalDB::Create(name,id);
+        case LibraryFactory::LocalDB:
+			lib	= library::LocalDB::Create(name,id);
+            break;
+
+        default:
+            throw "invalid library type!";
 	}
 
 	if(lib){

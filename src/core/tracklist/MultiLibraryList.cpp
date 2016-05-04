@@ -332,7 +332,7 @@ void MultiLibraryList::LoadTrack(long position){
                 query->second.RequestMetakeys(this->requestedMetakeys);
 
                 // Execute the query
-                library->AddQuery(query->second,musik::core::Query::Prioritize);
+                library->AddQuery(query->second,musik::core::query::Prioritize);
             }
         }
 
@@ -416,10 +416,10 @@ bool MultiLibraryList::SortTracks(std::string sortingMetakey){
             queries[libraryId].AddTrack((*track)->Id());
         }else{
             // A generic track
-            musik::core::Query::SortTracksWithData::TrackWithSortdata sortData;
+            musik::core::query::SortTracksWithData::TrackWithSortdata sortData;
             sortData.track  = *track;
-            const char *metavalue    = (*track)->GetValue(sortingMetakey.c_str());
-            if(metavalue){
+            std::string metavalue = (*track)->GetValue(sortingMetakey.c_str());
+            if(metavalue.size()){
                 sortData.sortData   = metavalue;
                 boost::to_lower(sortData.sortData);
             }
@@ -466,8 +466,8 @@ bool MultiLibraryList::SortTracks(std::string sortingMetakey){
     return true;
 }
 
-void MultiLibraryList::OnTracksFromSortQuery(musik::core::Query::SortTracksWithData::TrackWithSortdataVector *newTracks,bool clear){
-    typedef musik::core::Query::SortTracksWithData::TrackWithSortdataVector SortDataVector;
+void MultiLibraryList::OnTracksFromSortQuery(musik::core::query::SortTracksWithData::TrackWithSortdataVector *newTracks,bool clear){
+    typedef musik::core::query::SortTracksWithData::TrackWithSortdataVector SortDataVector;
 
     if(newTracks){
         if(!newTracks->empty()){
@@ -481,7 +481,7 @@ void MultiLibraryList::OnTracksFromSortQuery(musik::core::Query::SortTracksWithD
     }
 }
 
-void MultiLibraryList::OnSortQueryFinished(musik::core::Query::Base *query,musik::core::Library::Base *library,bool success){
+void MultiLibraryList::OnSortQueryFinished(musik::core::query::Base *query,musik::core::library::Base *library,bool success){
     if(success){
         this->sortQueryCount--;
         this->SortTheLists();

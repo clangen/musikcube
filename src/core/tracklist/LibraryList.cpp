@@ -330,7 +330,7 @@ void LibraryList::LoadTrack(long position){
         }
 
         // Send the query to the library
-        this->library->AddQuery(this->metadataQuery,musik::core::Query::Prioritize);
+        this->library->AddQuery(this->metadataQuery,musik::core::query::Prioritize);
 
         // Finally, clear the query for futher metadata
         this->metadataQuery.Clear();
@@ -389,9 +389,9 @@ bool LibraryList::QueryForTrack(long position){
 
 //////////////////////////////////////////
 ///\brief
-///Connect to receive results from any query based on the musik::core::Query::ListBase
+///Connect to receive results from any query based on the musik::core::query::ListBase
 //////////////////////////////////////////
-bool LibraryList::ConnectToQuery(musik::core::Query::ListBase &query){
+bool LibraryList::ConnectToQuery(musik::core::query::ListBase &query){
     query.OnTrackEvent().connect(this,&LibraryList::OnTracksFromQuery);
     query.OnTrackInfoEvent().connect(this,&LibraryList::OnTracksSummaryFromQuery);
     return true;
@@ -472,7 +472,7 @@ bool LibraryList::AddRequestedMetakey(std::string metakey){
 ///Instead the query will be send to the library for parsing.
 //////////////////////////////////////////
 bool LibraryList::SortTracks(std::string sortingMetakey){
-    musik::core::Query::SortTracks sortQuery;
+    musik::core::query::SortTracks sortQuery;
     sortQuery.AddTracks(this->tracklist);
     sortQuery.OnTrackEvent().connect(this,&LibraryList::OnTracksFromQuery);
 

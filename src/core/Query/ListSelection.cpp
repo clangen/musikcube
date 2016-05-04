@@ -38,28 +38,26 @@
 
 #include <core/Query/ListSelection.h>
 #include <core/Library/Base.h>
-#include <core/xml/ParserNode.h>
-#include <core/xml/WriterNode.h>
 
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
 
 using namespace musik::core;
-
+using namespace musik::core::query;
 
 //////////////////////////////////////////
 ///\brief
 ///Constructor
 //////////////////////////////////////////
-Query::ListSelection::ListSelection(void) : selectionOrderSensitive(true){
+ListSelection::ListSelection(void) : selectionOrderSensitive(true){
 }
 
 //////////////////////////////////////////
 ///\brief
 ///Destructor
 //////////////////////////////////////////
-Query::ListSelection::~ListSelection(void){
+ListSelection::~ListSelection(void){
 }
 
 //////////////////////////////////////////
@@ -73,7 +71,7 @@ Query::ListSelection::~ListSelection(void){
 ///Consider the folloing example:
 ///\code
 /// ...
-/// musik::core::Query::ListSelection query;
+/// musik::core::ListSelection query;
 /// ... // Connect the "artist" and "album" using the OnMetadataEvent()
 ///
 /// query.SelectMetadata("genre",1); // selects the genre with id 1
@@ -88,7 +86,7 @@ Query::ListSelection::~ListSelection(void){
 ///\endcode
 ///
 //////////////////////////////////////////
-void Query::ListSelection::SelectionOrderSensitive(bool sensitive){
+void ListSelection::SelectionOrderSensitive(bool sensitive){
     this->selectionOrderSensitive    = sensitive;
 }
 
@@ -109,7 +107,7 @@ void Query::ListSelection::SelectionOrderSensitive(bool sensitive){
 ///\see
 ///ClearMetadata|RemoveMetadata
 //////////////////////////////////////////
-void Query::ListSelection::SelectMetadata(const char* metakey,DBID metadataId){
+void ListSelection::SelectMetadata(const char* metakey,DBID metadataId){
 
     if(this->selectionOrderSensitive){
         std::vector<std::string>::iterator    themetakey    = std::find(this->metakeySelectionOrder.begin(),this->metakeySelectionOrder.end(),metakey);
@@ -143,7 +141,7 @@ void Query::ListSelection::SelectMetadata(const char* metakey,DBID metadataId){
 ///\see
 ///ClearMetadata|SelectMetadata
 //////////////////////////////////////////
-void Query::ListSelection::RemoveMetadata(const char* metatag,DBID metadataId){
+void ListSelection::RemoveMetadata(const char* metatag,DBID metadataId){
     SelectedMetadata::iterator    keyiterator    = this->selectedMetadata.find(metatag);
     if(keyiterator!=this->selectedMetadata.end()){
         keyiterator->second.erase(metadataId);
@@ -175,7 +173,7 @@ void Query::ListSelection::RemoveMetadata(const char* metatag,DBID metadataId){
 ///\see
 ///RemoveMetadata|SelectMetadata
 //////////////////////////////////////////
-void Query::ListSelection::ClearMetadata(const char* metatag){
+void ListSelection::ClearMetadata(const char* metatag){
     if(metatag==NULL){
         this->selectedMetadata.clear();
         this->metakeySelectionOrder.clear();
@@ -249,7 +247,7 @@ void Query::ListSelection::ClearMetadata(const char* metatag){
 ///            SELECT id,content FROM meta_values WHERE meta_key_id IN (SELECT id FROM meta_keys WHERE name=?) AND id IN (SELECT meta_value_id FROM track_meta WHERE track_id IN ($tracklist$)) ORDER BY sort_order
 ///
 //////////////////////////////////////////
-bool Query::ListSelection::ParseQuery(Library::Base *library,db::Connection &db){
+bool ListSelection::ParseQuery(library::Base *library,db::Connection &db){
 
     bool success(true);
 
@@ -360,7 +358,7 @@ bool Query::ListSelection::ParseQuery(Library::Base *library,db::Connection &db)
         sqlTracks    = "CREATE TEMPORARY TABLE temp_tracks_list AS ";
         sqlTracks.append(sqlSelectTrack+sqlSelectTrackFrom+sqlSelectTrackWhere+sqlSelectTrackOrder);
 
-        // Drop table if last Query::ListSelection was canceled
+        // Drop table if last ListSelection was canceled
         db.Execute("DROP TABLE IF EXISTS temp_tracks_list");
         db.Execute(sqlTracks.c_str());
     }
@@ -461,15 +459,15 @@ bool Query::ListSelection::ParseQuery(Library::Base *library,db::Connection &db)
 ///Copy a query
 ///
 ///\returns
-///A shared_ptr to the Query::Base
+///A shared_ptr to the Base
 //////////////////////////////////////////
-Query::Ptr Query::ListSelection::copy() const{
-    Query::Ptr queryCopy(new Query::ListSelection(*this));
+Ptr ListSelection::copy() const{
+    Ptr queryCopy(new ListSelection(*this));
     queryCopy->PostCopy();
     return queryCopy;
 }
 
-void Query::ListSelection::SQLPrependWhereOrAnd(std::string &sql){
+void ListSelection::SQLPrependWhereOrAnd(std::string &sql){
     if(sql.empty()){
         sql.append("WHERE ");
     }else{
@@ -481,7 +479,7 @@ void Query::ListSelection::SQLPrependWhereOrAnd(std::string &sql){
 ///\brief
 ///Helper method to construct SQL query for selected metakeys
 //////////////////////////////////////////
-void Query::ListSelection::SQLSelectQuery(const char *metakey,const char *sqlStart,const char *sqlEnd,std::set<std::string> &metakeysSelected,std::string &sqlSelectTrackWhere,Library::Base *library){
+void ListSelection::SQLSelectQuery(const char *metakey,const char *sqlStart,const char *sqlEnd,std::set<std::string> &metakeysSelected,std::string &sqlSelectTrackWhere,library::Base *library){
 
     if(!library->QueryCanceled(this)){
         SelectedMetadata::iterator selected    = this->selectedMetadata.find(metakey);
@@ -510,7 +508,7 @@ void Query::ListSelection::SQLSelectQuery(const char *metakey,const char *sqlSta
 ///\brief
 ///Method called by ParseQuery for every queried metakey
 //////////////////////////////////////////
-void Query::ListSelection::QueryForMetadata(const char *metakey,const char *sql,std::set<std::string> &metakeysQueried,Library::Base *library,db::Connection &db){
+void ListSelection::QueryForMetadata(const char *metakey,const char *sql,std::set<std::string> &metakeysQueried,library::Base *library,db::Connection &db){
     if(library->QueryCanceled(this))
         return;
 
@@ -553,89 +551,6 @@ void Query::ListSelection::QueryForMetadata(const char *metakey,const char *sql,
     }
 }
 
-//////////////////////////////////////////
-///\brief
-///Receive the query from XML
-///
-///\param queryNode
-///Reference to query XML node
-///
-///The excpeted input format is like this:
-///\code
-///<query type="ListSelection">
-///   <selections>
-///      <selection key="genre">1,3,5,7</selection>
-///      <selection key="artist">6,7,8</selection>
-///   </selections>
-///   <listeners>genre,artist,album</listeners>
-///</query>
-///\endcode
-///
-///\returns
-///true when successfully received
-//////////////////////////////////////////
-bool Query::ListSelection::ReceiveQuery(musik::core::xml::ParserNode &queryNode){
-
-    while( musik::core::xml::ParserNode node = queryNode.ChildNode() ){
-        if(node.Name()=="selections"){
-            // Get metakey nodes
-            // Expected tag is likle this:
-            // <selection key="genre">2,5,3</selection>
-            while( musik::core::xml::ParserNode selectionNode = node.ChildNode("selection") ){
-
-                // Wait for all content
-                selectionNode.WaitForContent();
-
-                // Split comaseparated list
-                typedef std::vector<std::string> StringVector;
-                StringVector values;
-                boost::algorithm::split(values,selectionNode.Content(),boost::algorithm::is_any_of(","));
-
-                for(StringVector::iterator value=values.begin();value!=values.end();++value){
-                    this->SelectMetadata(selectionNode.Attributes()["key"].c_str(),boost::lexical_cast<DBID>(*value));
-                }
-
-            }
-
-        }else{
-            this->ReceiveQueryStandardNodes(node);
-        }
-    }
-    return true;
-}
-
-std::string Query::ListSelection::Name(){
+std::string ListSelection::Name(){
     return "ListSelection";
 }
-
-///   <selections>
-///      <selection key="genre">1,3,5,7</selection>
-///      <selection key="artist">6,7,8</selection>
-///   </selections>
-bool Query::ListSelection::SendQuery(musik::core::xml::WriterNode &queryNode){
-    xml::WriterNode selectionsNode(queryNode,"selections");
-
-    // Start with the selection nodes
-    for(SelectedMetadata::iterator selection=this->selectedMetadata.begin();selection!=this->selectedMetadata.end();++selection){
-        xml::WriterNode selectionNode(selectionsNode,"selection");
-        selectionNode.Attributes()["key"]   = selection->first;
-
-        std::string selectionIDs;
-
-        for(SelectedMetadataIDs::iterator id=selection->second.begin();id!=selection->second.end();++id){
-            if(!selectionIDs.empty()){
-                selectionIDs.append(",");
-            }
-            selectionIDs.append(boost::lexical_cast<std::string>(*id));
-        }
-
-        selectionNode.Content() = selectionIDs;
-
-    }
-
-    this->SendQueryStandardNodes(queryNode);
-
-    return true;
-    
-}
-

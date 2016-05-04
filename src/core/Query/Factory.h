@@ -40,27 +40,18 @@
 
 #include <map>
 
-//////////////////////////////////////////////////////////////////////////////
+namespace musik { namespace core { namespace query {
 
-namespace musik{ namespace core{ namespace Query{
+    typedef std::map<std::string,musik::core::query::Ptr> QueryMap;
 
-//////////////////////////////////////////////////////////////////////////////
+    class Factory{
+        private:
+            Factory();
+            ~Factory();
 
-typedef std::map<std::string,musik::core::Query::Ptr> QueryMap;
+        public:
+            static void GetQueries(QueryMap &queryMap);
+    };
 
-class  Factory{
 
-    private:
-        Factory(void);
-        ~Factory(void);
-
-    public:
-            
-        static void GetQueries(QueryMap &queryMap);
-
-};
-
-//////////////////////////////////////////////////////////////////////////////
 } } } 
-//////////////////////////////////////////////////////////////////////////////
-

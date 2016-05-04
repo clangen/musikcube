@@ -84,12 +84,10 @@
 #include <boost/lexical_cast.hpp>
 
 
-// Create a instance
-
-TagReaderTaglib::TagReaderTaglib(void){
+TagReaderTaglib::TagReaderTaglib() {
 }
 
-TagReaderTaglib::~TagReaderTaglib(void){
+TagReaderTaglib::~TagReaderTaglib() {
 }
 
 void TagReaderTaglib::Destroy() {
@@ -97,124 +95,93 @@ void TagReaderTaglib::Destroy() {
 }
 
 bool TagReaderTaglib::CanReadTag(const char *extension){
-
-    if(extension){
+    if (extension) {
 		string ext(extension);
+        boost::algorithm::to_lower(ext);
 
-        boost::algorithm::to_lower(ext);    // Convert to lower case
-
-        if(	ext.compare("mp3") == 0 ||
+        return
+            ext.compare("mp3") == 0 ||
             ext.compare("ogg") == 0 ||
             ext.compare("flac") == 0 ||
             ext.compare("ape") == 0 ||
-            ext.compare("mpc") == 0
-                ) {
-		    return true;
-	    }
+            ext.compare("mpc") == 0;
     }
 
 	return false;
-
 }
 
-bool TagReaderTaglib::ReadTag(musik::core::ITrack *track){
+bool TagReaderTaglib::ReadTag(const char* uri, musik::core::ITrack *track) {
+    std::string path(uri);
+    std::string extension;
 
-
-    const char *extension    = track->GetValue("extension");
-    if(extension){
-    	string ext(extension);
-        boost::algorithm::to_lower(ext);    // Convert to lower case
-
-        if(ext=="mp3")
-            if(this->GetID3v2Tag(track)){
-                // Get the generic tag as well, just in case there is only a id3v1 tag.
-                this->GetGenericTag(track);
-                return true;
-            }
-
-        if(ext=="ogg")
-            if(this->GetOGGTag(track))
-                return true;
-
+    std::string::size_type lastDot = path.find_last_of(".");
+    if (lastDot != std::string::npos) {
+        extension = path.substr(lastDot + 1).c_str();
     }
 
-    if(this->GetGenericTag(track))   // secondary: try generic way
-        return true;
+    if(extension.size()) {
+        boost::algorithm::to_lower(extension);
 
-    return false;
+        if (extension == "mp3") {
+            this->GetID3v2Tag(uri, track);
+        }
+    }
+
+    return this->GetGenericTag(uri, track);
 }
 
-bool TagReaderTaglib::GetOGGTag(musik::core::ITrack *track){
-/*
-    TagLib::Ogg::File file(track->GetValue("path"));
-*/
-    return false;
-}
+bool TagReaderTaglib::GetGenericTag(const char* uri, musik::core::ITrack *track) {
+    TagLib::FileRef file(uri);
+    if(!file.isNull()) {
+        TagLib::Tag *tag = file.tag();
 
+        if(tag) {
 
-bool TagReaderTaglib::GetGenericTag(musik::core::ITrack *track){
-    TagLib::FileRef oFile(track->URL());
-    if(!oFile.isNull()){
-        TagLib::Tag *tag	= oFile.tag();
-	    TagLib::AudioProperties *oAudioProperties	= oFile.audioProperties();
-	    if(tag){
-            // TITLE
-            if(!tag->title().isEmpty()){
-			    this->SetTagValue("title",tag->title(),track);
-		    }else{
-			    this->SetTagValue("title",track->GetValue("filename"),track);
+            if (!tag->title().isEmpty()) {
+			    this->SetTagValue("title", tag->title(), track);
+		    }
+            else {
+			    this->SetTagValue("title", uri, track);
 		    }
 
-            // ALBUM
-		    this->SetTagValue("album",tag->album(),track);
-            // ARTISTS
-            this->SetSlashSeparatedValues("artist",tag->artist(),track);
-            // GENRES
-            this->SetTagValue("genre",tag->genre(),track);
-            // COMMENT
-            this->SetTagValue("comment",tag->comment(),track);
-            // TRACK
-            if(tag->track()){
-                this->SetTagValue("track",tag->track(),track);
-            }
-            // TRACK
-            if(tag->year()){
-                this->SetTagValue("year",tag->year(),track);
+		    this->SetTagValue("album",tag->album(), track);
+            this->SetSlashSeparatedValues("artist",tag->artist() ,track);
+            this->SetTagValue("genre",tag->genre(), track);
+            this->SetTagValue("comment",tag->comment(), track);
+
+            if (tag->track()) {
+                this->SetTagValue("track", tag->track(), track);
             }
 
-            this->SetAudioProperties(oAudioProperties,track);
+            if (tag->year()) {
+                this->SetTagValue("year", tag->year(), track);
+            }
+
+            TagLib::AudioProperties *audio = file.audioProperties();
+            this->SetAudioProperties(audio,track);
 
             return true;
         }
     }
 
     return false;
-
 }
 
+bool TagReaderTaglib::GetID3v2Tag(const char* uri, musik::core::ITrack *track){
+    TagLib::ID3v2::FrameFactory::instance()->setDefaultTextEncoding(TagLib::String::UTF8);
 
-bool TagReaderTaglib::GetID3v2Tag(musik::core::ITrack *track){
-    #ifdef UTF_WIDECHAR
-        TagLib::ID3v2::FrameFactory::instance()->setDefaultTextEncoding(TagLib::String::UTF16);
-    #else
-    	TagLib::ID3v2::FrameFactory::instance()->setDefaultTextEncoding(TagLib::String::UTF8);
-    #endif
+    TagLib::MPEG::File file(uri);
+	TagLib::ID3v2::Tag *id3v2 = file.ID3v2Tag();
 
-    TagLib::MPEG::File oFile(track->URL());
-	TagLib::ID3v2::Tag *oTagv2	= oFile.ID3v2Tag();
-	if(oTagv2){
+	if(id3v2) {
+        TagLib::AudioProperties *audio = file.audioProperties();
 
-        TagLib::AudioProperties *oAudioProperties	= oFile.audioProperties();
-		// Successfully found ID3V2-tag
+        TagLib::ID3v2::FrameListMap aAllTags = id3v2->frameListMap();
 
-		//////////////////////////////////////////////////////////////////////////////
-		// Get ALL tags in a map
-		TagLib::ID3v2::FrameListMap aAllTags	= oTagv2->frameListMap();
-
-		if(!oTagv2->title().isEmpty()){
-			this->SetTagValue("title",oTagv2->title(),track);
+		if(!id3v2->title().isEmpty()){
+			this->SetTagValue("title",id3v2->title(),track);
 		}
-		this->SetTagValue("album",oTagv2->album(),track);
+		this->SetTagValue("album",id3v2->album(),track);
 
 		//////////////////////////////////////////////////////////////////////////////
 		// YEAR
@@ -303,7 +270,7 @@ bool TagReaderTaglib::GetID3v2Tag(musik::core::ITrack *track){
 
 		//////////////////////////////////////////////////////////////////////////////
 		// Audio properties
-        this->SetAudioProperties(oAudioProperties,track);
+        this->SetAudioProperties(audio,track);
 
 		//////////////////////////////////////////////////////////////////////////////
 		// Comments
@@ -343,19 +310,7 @@ bool TagReaderTaglib::GetID3v2Tag(musik::core::ITrack *track){
 
 		return true;
 	}
-/*	}
 
-	// Try the "generic" way
-	TagLib::FileRef	oFile(oMedia->sFileFullPath.c_str());
-	TagLib::Tag		*oTag	= oFile.tag();
-	TagLib::AudioProperties *oAudioProperties	= oFile.audioProperties();
-	if(oTag && oAudioProperties){
-		// Successfully found tags
-		return this->getStandardTags(oMedia,oTag,oAudioProperties);
-	}
-
-	//oFile.audioProperties();
-*/
 	return false;
 }
 
@@ -389,23 +344,6 @@ void TagReaderTaglib::SetTagValues(const char* key,const TagLib::ID3v2::FrameLis
 	}
 }
 
-/*
-bool TagReaderTaglib::getStandardTags(musik::core::ITrack &track,TagLib::Tag *oTag,TagLib::AudioProperties *oAudioProperties){
-	oMedia->setArtist(oTag->artist().toCString(false));
-	oMedia->setAlbum(oTag->album().toCString(false));
-	oMedia->setGenre(oTag->genre().toCString(false));
-	oMedia->setTitle(oTag->title().toCString(false));
-	oMedia->iTrack		= oTag->track();
-	oMedia->iYear		= oTag->year();
-	oMedia->setComment(oTag->comment().toCString(false));
-
-	if(oAudioProperties){
-		oMedia->iDuration	= oAudioProperties->length();
-	}
-
-	return true;
-}
-*/
 void TagReaderTaglib::SetSlashSeparatedValues(const char* key,TagLib::String tagString,musik::core::ITrack *track){
 	if( !tagString.isEmpty() ){
 		string value(tagString.begin(),tagString.end());
@@ -424,16 +362,6 @@ void TagReaderTaglib::SetSlashSeparatedValues(const char* key,const TagLib::ID3v
 	if(!frame.isEmpty()){
 		for(TagLib::ID3v2::FrameList::ConstIterator frameValue=frame.begin();frameValue!=frame.end();++frameValue){
 			TagLib::String tagString	= (*frameValue)->toString();
-/*			if( !tagString.isEmpty() ){
-				std::wstring value(tagString.begin(),tagString.end());
-				std::vector<std::wstring> splitValues;
-
-				boost::algorithm::split(splitValues,value,boost::algorithm::is_any_of(_T("/")));
-
-				for(std::vector<std::wstring>::iterator theValue=splitValues.begin();theValue!=splitValues.end();++theValue){
-                    track->SetValue(key,theValue->c_str());
-				}
-			}*/
             this->SetSlashSeparatedValues(key,tagString,track);
 		}
 	}

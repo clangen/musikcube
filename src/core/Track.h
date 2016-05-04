@@ -44,11 +44,11 @@
 /* forward decl */
 namespace musik { namespace core {
     
-    namespace Library {
+    namespace library {
         class  Base;
     }
 
-	typedef boost::shared_ptr<Library::Base> LibraryPtr;
+	typedef boost::shared_ptr<library::Base> LibraryPtr;
     class  Track;
     typedef boost::shared_ptr<Track> TrackPtr;
     typedef std::vector<TrackPtr> TrackVector;
@@ -72,6 +72,10 @@ namespace musik{ namespace core{
 
             virtual musik::core::LibraryPtr Library();
             virtual int LibraryId();
+
+            virtual std::string GetValue(const char* metakey) = 0;
+            virtual std::string URI() = 0;
+            virtual std::string URL() = 0;
 
             virtual MetadataIteratorRange GetValues(const char* metakey) = 0;
             virtual MetadataIteratorRange GetAllValues() = 0;

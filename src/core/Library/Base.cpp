@@ -37,20 +37,18 @@
 #include "pch.hpp"
 
 #include <core/Library/Base.h>
-
 #include <core/config.h>
 #include <core/Query/Base.h>
 #include <core/Common.h>
 
-
-//#include <boost/function.hpp>
 using namespace musik::core;
+using namespace musik::core::library;
 
 //////////////////////////////////////////
 ///\brief
 ///Constructor
 //////////////////////////////////////////
-Library::Base::Base(std::string name,int id)
+Base::Base(std::string name,int id)
  :name(name)
  ,id(id)
  ,queueCallbackStarted(false)
@@ -62,32 +60,11 @@ Library::Base::Base(std::string name,int id)
 
 //////////////////////////////////////////
 ///\brief
-///Get the librarys "now playing" tracklist
-///
-///\returns
-///a tracklist::Ptr
-//////////////////////////////////////////
-/*musik::core::tracklist::Ptr Library::Base::NowPlaying(){
-	if(tracklist::Ptr tracklist	= this->nowPlaying.lock()){
-		return tracklist;
-	}
-
-	tracklist::Ptr tracklist(new musik::core::tracklist::Standard());
-	this->nowPlaying	= tracklist;
-
-	if(LibraryPtr thisPtr = this->self.lock()){
-		tracklist->SetLibrary(thisPtr);
-	}
-	return tracklist;
-}*/
-
-//////////////////////////////////////////
-///\brief
 ///Destructor
 ///
 ///The destructor will exit all threads created by the library
 //////////////////////////////////////////
-Library::Base::~Base(void){
+Base::~Base(void){
     this->Exit();
     this->threads.join_all();
 }
@@ -99,11 +76,11 @@ Library::Base::~Base(void){
 ///\returns
 ///A string with the identifier
 //////////////////////////////////////////
-const std::string& Library::Base::Identifier(){
+const std::string& Base::Identifier(){
 	return this->identifier;
 }
 
-int Library::Base::Id(){
+int Base::Id(){
     return this->id;
 }
 
@@ -111,7 +88,7 @@ int Library::Base::Id(){
 ///\brief
 ///Name of the library
 //////////////////////////////////////////
-const std::string& Library::Base::Name(){
+const std::string& Base::Name(){
 	return this->name;
 }
 
@@ -131,7 +108,7 @@ const std::string& Library::Base::Name(){
 ///\remarks
 ///If the directory does not exist, this method will create it.
 //////////////////////////////////////////
-std::string Library::Base::GetLibraryDirectory(){
+std::string Base::GetLibraryDirectory(){
     std::string directory( musik::core::GetDataDirectory() );
 
     if(!this->identifier.empty()){
@@ -155,7 +132,7 @@ std::string Library::Base::GetLibraryDirectory(){
 ///\returns
 ///String with the path
 //////////////////////////////////////////
-std::string Library::Base::GetDBPath(){
+std::string Base::GetDBPath(){
     std::string sPath = this->GetLibraryDirectory();
     sPath.append("musik.db");
     return sPath;
@@ -166,19 +143,19 @@ std::string Library::Base::GetDBPath(){
 ///Add a Query for parsing to the Library
 ///
 ///\param queryCopy
-///Copy of the query that needs to be parsed. Need to be derivated from the Query::Base. Look at musik::core::Query::copy
+///Copy of the query that needs to be parsed. Need to be derivated from the query::Base. Look at musik::core::query::copy
 ///
 ///\param options
 ///A bitfield with options for the query.
 ///Available options are:
-///    - Query::Options::AutoCallback : The callbacks in the Query should automaticaly be called.
-///        Note that if you pass Query::Options::AutoCallback without Query::Options::Wait, the callbacks will be called from the Library thread.
-///    - Query::Options::Wait : Wait for the Query to finish executing and then continue.
-///    - Query::Options::Prioritize : Will make the library prioritize the Query.
-///    - Query::Options::CancelQueue : Cancel all other queries that are to be executed by the Library.
-///    - Query::Options::CancelSimilar : Cancel all similar queries. A similar query is a query that originates from the same Query::Base that is passed to the AddQuery.
-///    - Query::Options::UnCanceable : Under no circumstances is this Query allowed to be canceled.
-///    - Query::Options::UnCanceable : Under no circumstances is this Query allowed to be canceled.
+///    - query::Options::AutoCallback : The callbacks in the Query should automaticaly be called.
+///        Note that if you pass query::Options::AutoCallback without query::Options::Wait, the callbacks will be called from the Library thread.
+///    - query::Options::Wait : Wait for the Query to finish executing and then continue.
+///    - query::Options::Prioritize : Will make the library prioritize the Query.
+///    - query::Options::CancelQueue : Cancel all other queries that are to be executed by the Library.
+///    - query::Options::CancelSimilar : Cancel all similar queries. A similar query is a query that originates from the same query::Base that is passed to the AddQuery.
+///    - query::Options::UnCanceable : Under no circumstances is this Query allowed to be canceled.
+///    - query::Options::UnCanceable : Under no circumstances is this Query allowed to be canceled.
 ///
 ///The query will be copied by the library and executed in the library thread.
 ///
@@ -186,19 +163,19 @@ std::string Library::Base::GetDBPath(){
 ///true if successfully added to the queue
 ///
 ///\see
-///musik::core::Query::Base::copy
+///musik::core::query::Base::copy
 //////////////////////////////////////////
-bool Library::Base::AddQuery( const Query::Base &query,unsigned int options ){
+bool Base::AddQuery( const query::Base &query,unsigned int options ){
 
 	if(this->Exited()){
 		return false;
 	}
 
     // Start by making a copy
-    Query::Ptr queryCopy( query.copy() );
+    query::Ptr queryCopy( query.copy() );
 
     // 
-    if(options&Query::CopyUniqueId){
+    if(options&query::CopyUniqueId){
         queryCopy->uniqueId = query.uniqueId;
     }
 
@@ -237,12 +214,12 @@ bool Library::Base::AddQuery( const Query::Base &query,unsigned int options ){
 
         /////////////////////////////////////////////////////////////////////////////
         // Clear unparsed queue that match CANCEL options
-        for(std::list<Query::Ptr>::iterator oCheckQuery=this->incomingQueries.begin();oCheckQuery!=this->incomingQueries.end();){
+        for(std::list<query::Ptr>::iterator oCheckQuery=this->incomingQueries.begin();oCheckQuery!=this->incomingQueries.end();){
             // Do not erase UNCANCEABLE
-            if( !((*oCheckQuery)->options & Query::UnCanceable) ){
-                if( options & Query::CancelQueue ){
+            if( !((*oCheckQuery)->options & query::UnCanceable) ){
+                if( options & query::CancelQueue ){
                     oCheckQuery    = this->incomingQueries.erase(oCheckQuery);
-                }else if( options & Query::CancelSimilar ){
+                }else if( options & query::CancelSimilar ){
                     if( (*oCheckQuery)->queryId == queryCopy->queryId ){
                         oCheckQuery    = this->incomingQueries.erase(oCheckQuery);
                     }else{
@@ -258,15 +235,15 @@ bool Library::Base::AddQuery( const Query::Base &query,unsigned int options ){
 
         /////////////////////////////////////////////////////////////////////////////
         // Even cancel parsed queries
-        for(std::list<Query::Ptr>::iterator oCheckQuery=this->outgoingQueries.begin();oCheckQuery!=this->outgoingQueries.end();++oCheckQuery){
+        for(std::list<query::Ptr>::iterator oCheckQuery=this->outgoingQueries.begin();oCheckQuery!=this->outgoingQueries.end();++oCheckQuery){
 
             // Do not erase UNCANCEABLE
-            if( !((*oCheckQuery)->options & Query::UnCanceable) ){
-                if( options & Query::CancelQueue ){
-                    (*oCheckQuery)->status    |= Query::Base::Canceled;
-                }else if( options & Query::CancelSimilar ){
+            if( !((*oCheckQuery)->options & query::UnCanceable) ){
+                if( options & query::CancelQueue ){
+                    (*oCheckQuery)->status    |= query::Base::Canceled;
+                }else if( options & query::CancelSimilar ){
                     if( (*oCheckQuery)->queryId == queryCopy->queryId ){
-                        (*oCheckQuery)->status    |= Query::Base::Canceled;
+                        (*oCheckQuery)->status    |= query::Base::Canceled;
                     }
                 }
             }
@@ -275,10 +252,10 @@ bool Library::Base::AddQuery( const Query::Base &query,unsigned int options ){
         /////////////////////////////////////////////////////////////////////////////
         // Cancel running query
         if(this->runningQuery){
-            if( !(this->runningQuery->options & Query::UnCanceable) ){
-                if( options & Query::CancelQueue ){
+            if( !(this->runningQuery->options & query::UnCanceable) ){
+                if( options & query::CancelQueue ){
                     cancelCurrentQuery    = true;
-                }else if( options & Query::CancelSimilar ){
+                }else if( options & query::CancelSimilar ){
                     if( this->runningQuery->queryId == queryCopy->queryId ){
                         cancelCurrentQuery    = true;
                     }
@@ -288,7 +265,7 @@ bool Library::Base::AddQuery( const Query::Base &query,unsigned int options ){
 
         /////////////////////////////////////////////////////////////////////////////
         // Add the new query to front of incomming queue if the query is prioritized.
-        if(options & Query::Prioritize){
+        if(options & query::Prioritize){
             this->incomingQueries.push_front(queryCopy);
         }else{
             this->incomingQueries.push_back(queryCopy);
@@ -309,13 +286,13 @@ bool Library::Base::AddQuery( const Query::Base &query,unsigned int options ){
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // If the Query::Options::Wait is set, wait for query to finish.
-    if(options&Query::Wait){
+    // If the query::Options::Wait is set, wait for query to finish.
+    if(options&query::Wait){
         {
             boost::mutex::scoped_lock lock(this->libraryMutex);
 
             // wait for the query to be finished or canceled
-            while( !(queryCopy->status&Query::Base::Ended) && !(queryCopy->status&Query::Base::Canceled) ){
+            while( !(queryCopy->status&query::Base::Ended) && !(queryCopy->status&query::Base::Canceled) ){
 
                 // To be on the safe side, lets check every second
                 boost::xtime waitingTime;
@@ -324,8 +301,8 @@ bool Library::Base::AddQuery( const Query::Base &query,unsigned int options ){
                 this->waitCondition.timed_wait(lock,waitingTime);
             }
 
-            if( options & Query::AutoCallback ){    // Should the callbacks be involved?
-                queryCopy->status    |= Query::Base::Finished;    // Set to finished for removal.
+            if( options & query::AutoCallback ){    // Should the callbacks be involved?
+                queryCopy->status    |= query::Base::Finished;    // Set to finished for removal.
             }
         }
 
@@ -333,7 +310,7 @@ bool Library::Base::AddQuery( const Query::Base &query,unsigned int options ){
         // Finaly, remove old, finished queries
         this->ClearFinishedQueries();
 
-        if( options & Query::AutoCallback ){    // Should the callbacks be involved?
+        if( options & query::AutoCallback ){    // Should the callbacks be involved?
             if( !this->QueryCanceled(queryCopy.get()) ){    // If not canceled
                 queryCopy->RunCallbacks(this);            // Run the callbacks.
             }
@@ -350,17 +327,17 @@ bool Library::Base::AddQuery( const Query::Base &query,unsigned int options ){
 ///\brief
 ///Pull the next query from the incomingQueries
 //////////////////////////////////////////
-Query::Ptr Library::Base::GetNextQuery(){
+query::Ptr Base::GetNextQuery(){
     boost::mutex::scoped_lock lock(this->libraryMutex);
 
     if(this->incomingQueries.size()!=0){
-        Query::Ptr query    = this->incomingQueries.front();    // Cast back to query
+        query::Ptr query    = this->incomingQueries.front();    // Cast back to query
         this->incomingQueries.pop_front();
         return query;
     }
 
     // Or return an empty query
-    return Query::Ptr();
+    return query::Ptr();
 
 }
 
@@ -371,18 +348,18 @@ Query::Ptr Library::Base::GetNextQuery(){
 ///\returns
 ///Returns true if all queues are finished
 //////////////////////////////////////////
-bool Library::Base::ClearFinishedQueries(){
-    std::vector<Query::Ptr> canceledQueries;
+bool Base::ClearFinishedQueries(){
+    std::vector<query::Ptr> canceledQueries;
 
     {
         // Remove old queries
         boost::mutex::scoped_lock lock(this->libraryMutex);
 
-        for(std::list<Query::Ptr>::iterator oCheckQuery=this->outgoingQueries.begin();oCheckQuery!=this->outgoingQueries.end();){
+        for(std::list<query::Ptr>::iterator oCheckQuery=this->outgoingQueries.begin();oCheckQuery!=this->outgoingQueries.end();){
             unsigned int status    = (*oCheckQuery)->status;
-            if( (status & (Query::Base::Finished | Query::Base::Canceled)) ){
+            if( (status & (query::Base::Finished | query::Base::Canceled)) ){
                 // If canceled
-                if( status & Query::Base::Canceled ){
+                if( status & query::Base::Canceled ){
                     canceledQueries.push_back(*oCheckQuery);
                 }
                 oCheckQuery    = this->outgoingQueries.erase(oCheckQuery);
@@ -393,7 +370,7 @@ bool Library::Base::ClearFinishedQueries(){
     }
 
     // Lets notify queries that they have been canceled
-    for(std::vector<Query::Ptr>::iterator query=canceledQueries.begin();query!=canceledQueries.end();++query){
+    for(std::vector<query::Ptr>::iterator query=canceledQueries.begin();query!=canceledQueries.end();++query){
         (*query)->QueryFinished(query->get(),this,false);
     }
 
@@ -415,14 +392,14 @@ bool Library::Base::ClearFinishedQueries(){
 ///\see
 ///OnQueryQueueEnd
 //////////////////////////////////////////
-bool Library::Base::RunCallbacks(){
+bool Base::RunCallbacks(){
 
     this->ClearFinishedQueries();
 
     bool bAgain(true);
 
     while(bAgain){
-        Query::Ptr oQuery;
+        query::Ptr oQuery;
         bAgain    = false;
 
         {
@@ -430,7 +407,7 @@ bool Library::Base::RunCallbacks(){
 
             if(this->outgoingQueries.size()!=0){
                 oQuery    = this->outgoingQueries.front();
-                if(oQuery->options & Query::AutoCallback){
+                if(oQuery->options & query::AutoCallback){
                     oQuery.reset();
                 }
             }
@@ -441,7 +418,7 @@ bool Library::Base::RunCallbacks(){
                 {
                     boost::mutex::scoped_lock lock(this->libraryMutex);
                     // Set to FINISHED if query returns true
-                    oQuery->status    |= Query::Base::Finished;
+                    oQuery->status    |= query::Base::Finished;
                 }
                 bAgain    = true;    // Continue to check results on the rest of the queue if this one is finished.
 
@@ -478,9 +455,9 @@ bool Library::Base::RunCallbacks(){
 ///\see
 ///CancelCurrentQuery
 //////////////////////////////////////////
-bool Library::Base::QueryCanceled(Query::Base *query){
+bool Base::QueryCanceled(query::Base *query){
     boost::mutex::scoped_lock lock(this->libraryMutex);
-	return (query->status&Query::Base::Canceled)?true:false;
+	return (query->status&query::Base::Canceled)?true:false;
 }
 
 //////////////////////////////////////////
@@ -495,7 +472,7 @@ bool Library::Base::QueryCanceled(Query::Base *query){
 ///\see
 ///QueryCanceled
 //////////////////////////////////////////
-void Library::Base::CancelCurrentQuery(){
+void Base::CancelCurrentQuery(){
 //    this->bCurrentQueryCanceled    = true;
 }
 
@@ -504,7 +481,7 @@ void Library::Base::CancelCurrentQuery(){
 ///\brief
 ///Has the library exited?
 //////////////////////////////////////////
-bool Library::Base::Exited(){
+bool Base::Exited(){
     boost::mutex::scoped_lock lock(this->libraryMutex);
     return this->exit;
 }
@@ -515,7 +492,7 @@ bool Library::Base::Exited(){
 ///
 ///Will set the library to Exited and notify all sleeping threads
 //////////////////////////////////////////
-void Library::Base::Exit(){
+void Base::Exit(){
     {
         boost::mutex::scoped_lock lock(this->libraryMutex);
         this->exit    = true;
@@ -528,7 +505,7 @@ void Library::Base::Exit(){
 ///\brief
 ///Helper method to determin what metakeys are "static"
 //////////////////////////////////////////
-bool Library::Base::IsStaticMetaKey(std::string &metakey){
+bool Base::IsStaticMetaKey(std::string &metakey){
     static std::set<std::string> staticMetaKeys;
 
     if(staticMetaKeys.empty()){
@@ -550,7 +527,7 @@ bool Library::Base::IsStaticMetaKey(std::string &metakey){
 ///\brief
 ///Helper method to determin what metakeys that have a special many to one relation
 //////////////////////////////////////////
-bool Library::Base::IsSpecialMTOMetaKey(std::string &metakey){
+bool Base::IsSpecialMTOMetaKey(std::string &metakey){
     static std::set<std::string> specialMTOMetaKeys;
 
     if(specialMTOMetaKeys.empty()){
@@ -566,7 +543,7 @@ bool Library::Base::IsSpecialMTOMetaKey(std::string &metakey){
 ///\brief
 ///Helper method to determin what metakeys that have a special many to meny relation
 //////////////////////////////////////////
-bool Library::Base::IsSpecialMTMMetaKey(std::string &metakey){
+bool Base::IsSpecialMTMMetaKey(std::string &metakey){
     static std::set<std::string> specialMTMMetaKeys;
 
     if(specialMTMMetaKeys.empty()){
@@ -580,7 +557,7 @@ bool Library::Base::IsSpecialMTMMetaKey(std::string &metakey){
 ///\brief
 ///Get a pointer to the librarys Indexer (NULL if none)
 //////////////////////////////////////////
-musik::core::Indexer *Library::Base::Indexer(){
+musik::core::Indexer *Base::Indexer(){
     return NULL;
 }
 
@@ -591,7 +568,7 @@ musik::core::Indexer *Library::Base::Indexer(){
 ///
 ///This will assume that the database has been initialized.
 //////////////////////////////////////////
-void Library::Base::CreateDatabase(db::Connection &db){
+void Base::CreateDatabase(db::Connection &db){
     // Create the tracks-table
     db.Execute("CREATE TABLE IF NOT EXISTS tracks ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
@@ -729,21 +706,21 @@ void Library::Base::CreateDatabase(db::Connection &db){
 ///\brief
 ///Get the base path to where the tracks are located
 ///
-///This method is mostly used by the Library::Remote to
+///This method is mostly used by the Remote to
 ///get the HTTP-address to the tracks
 //////////////////////////////////////////
-std::string Library::Base::BasePath(){
+std::string Base::BasePath(){
     return "";
 }
 
-LibraryPtr Library::Base::GetSelfPtr(){
+LibraryPtr Base::GetSelfPtr(){
     if(LibraryPtr thisPtr = this->self.lock()){
         return thisPtr;
     }
     return LibraryPtr();
 }
 
-const std::string& Library::Base::AuthorizationKey(){
+const std::string& Base::AuthorizationKey(){
     static std::string emptyAuthString;
     return emptyAuthString;
 }

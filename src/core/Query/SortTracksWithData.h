@@ -47,74 +47,57 @@
 #include <list>
 #include <string>
 
-//////////////////////////////////////////////////////////////////////////////
-namespace musik{ namespace core{ namespace Query{
-//////////////////////////////////////////////////////////////////////////////
 
-//////////////////////////////////////////
-///\brief
-///SortTracksWithData is a query used to receive sorted tracklists along with the data the tracks are sorted by
-///
-///\remarks
-///First concider to use the SortTracks query instead.
-///
-///\see
-///musik::core::Query::SortTracks
-//////////////////////////////////////////
-class  SortTracksWithData : public Query::Base{
-    public:
-        SortTracksWithData(void);
-        ~SortTracksWithData(void);
+namespace musik { namespace core { namespace query {
+    
+    //////////////////////////////////////////
+    ///\brief
+    ///SortTracksWithData is a query used to receive sorted tracklists along with the data the tracks are sorted by
+    ///
+    ///\remarks
+    ///First concider to use the SortTracks query instead.
+    ///
+    ///\see
+    ///musik::core::query::SortTracks
+    //////////////////////////////////////////
+    class SortTracksWithData : public query::Base{
+        public:
+            //////////////////////////////////////////
+            ///\brief
+            ///The struct used to return both the track and the sorted data
+            //////////////////////////////////////////
+            struct TrackWithSortdata {
+                musik::core::TrackPtr track;
+                std::string sortData;
+                bool operator<(const TrackWithSortdata &trackWithSortData) const;
+            };
 
-        void AddTrack(DBID trackId);
-        void ClearTracks();
-        void SortByMetaKey(std::string metaKey);
+            typedef std::list<TrackWithSortdata> TrackWithSortdataVector;
+            typedef sigslot::signal2<TrackWithSortdataVector*, bool> TrackWithdataSignal;
 
-        //////////////////////////////////////////
-		///\brief
-		///The struct used to return both the track and the sorted data
-		//////////////////////////////////////////
-		struct TrackWithSortdata{
-            musik::core::TrackPtr track;
-            std::string sortData;
-            bool operator<(const TrackWithSortdata &trackWithSortData) const;
-        };
+            SortTracksWithData();
+            ~SortTracksWithData();
 
-        typedef std::list<TrackWithSortdata> TrackWithSortdataVector;
+            void AddTrack(DBID trackId);
+            void ClearTracks();
+            void SortByMetaKey(std::string metaKey);
 
-        typedef sigslot::signal2<TrackWithSortdataVector*,bool> TrackWithdataSignal;
-        TrackWithdataSignal TrackResults;
+            TrackWithdataSignal TrackResults;
+            TrackWithSortdataVector trackResults;
 
-        TrackWithSortdataVector trackResults;
+        protected:
+            friend class library::Base;
+            friend class library::LocalDB;
+            typedef std::vector<DBID> IntVector;
 
-    protected:
+            IntVector tracksToSort;
+            std::string sortByMetaKey;
+            bool clearedTrackResults;
+            Ptr copy() const;
+            bool RunCallbacks(library::Base *library);
+            bool SortTracksWithData::ParseQuery(library::Base *library, db::Connection &db);
 
-        typedef std::vector<DBID> IntVector;
-        IntVector tracksToSort;
+            virtual std::string Name();
+    };
 
-        std::string sortByMetaKey;
-        bool clearedTrackResults;
-
-        friend class Library::Base;
-        friend class Library::LocalDB;
-
-
-        Ptr copy() const;
-
-        virtual std::string Name();
-        virtual bool ParseQuery(Library::Base *library,db::Connection &db);
-        virtual bool ReceiveQuery(musik::core::xml::ParserNode &queryNode);
-        virtual bool SendQuery(musik::core::xml::WriterNode &queryNode);
-        virtual bool SendResults(musik::core::xml::WriterNode &queryNode,Library::Base *library);
-        virtual bool ReceiveResults(musik::core::xml::ParserNode &queryNode,Library::Base *library);
-        bool RunCallbacks(Library::Base *library);
-
-    private:
-
-};
-
-//////////////////////////////////////////////////////////////////////////////
 } } }
-//////////////////////////////////////////////////////////////////////////////
-
-
