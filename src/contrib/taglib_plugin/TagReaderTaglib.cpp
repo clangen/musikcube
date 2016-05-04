@@ -119,7 +119,7 @@ bool TagReaderTaglib::ReadTag(const char* uri, musik::core::ITrack *track) {
         extension = path.substr(lastDot + 1).c_str();
     }
 
-    if(extension.size()) {
+    if (extension.size()) {
         boost::algorithm::to_lower(extension);
 
         if (extension == "mp3") {
@@ -132,6 +132,7 @@ bool TagReaderTaglib::ReadTag(const char* uri, musik::core::ITrack *track) {
 
 bool TagReaderTaglib::GetGenericTag(const char* uri, musik::core::ITrack *track) {
     TagLib::FileRef file(uri);
+
     if(!file.isNull()) {
         TagLib::Tag *tag = file.tag();
 
@@ -173,28 +174,28 @@ bool TagReaderTaglib::GetID3v2Tag(const char* uri, musik::core::ITrack *track){
     TagLib::MPEG::File file(uri);
 	TagLib::ID3v2::Tag *id3v2 = file.ID3v2Tag();
 
-	if(id3v2) {
+	if (id3v2) {
         TagLib::AudioProperties *audio = file.audioProperties();
+        TagLib::ID3v2::FrameListMap allTags = id3v2->frameListMap();
 
-        TagLib::ID3v2::FrameListMap aAllTags = id3v2->frameListMap();
-
-		if(!id3v2->title().isEmpty()){
-			this->SetTagValue("title",id3v2->title(),track);
+		if(!id3v2->title().isEmpty()) {
+			this->SetTagValue("title",id3v2->title(), track);
 		}
-		this->SetTagValue("album",id3v2->album(),track);
+
+		this->SetTagValue("album",id3v2->album(), track);
 
 		//////////////////////////////////////////////////////////////////////////////
 		// YEAR
-		if( !aAllTags["TYER"].isEmpty() )		// ID3 2.3
-			this->SetTagValue("year",aAllTags["TYER"].front()->toString().substr(0,4),track);
-		if( !aAllTags["TDRC"].isEmpty() )		// ID3 2.4
-			this->SetTagValue("year",aAllTags["TDRC"].front()->toString().substr(0,4),track);
+		if( !allTags["TYER"].isEmpty() )		// ID3 2.3
+			this->SetTagValue("year",allTags["TYER"].front()->toString().substr(0,4),track);
+		if( !allTags["TDRC"].isEmpty() )		// ID3 2.4
+			this->SetTagValue("year",allTags["TDRC"].front()->toString().substr(0,4),track);
 
 
         // Split TRCK to track and totaltracks
         std::vector<string> splitTrack;
-        if(!aAllTags["TRCK"].isEmpty()){
-        	TagLib::wstring tempTrack = aAllTags["TRCK"].front()->toString().toWString();
+        if(!allTags["TRCK"].isEmpty()){
+        	TagLib::wstring tempTrack = allTags["TRCK"].front()->toString().toWString();
             boost::algorithm::split(splitTrack,tempTrack,boost::algorithm::is_any_of("/"));
             this->SetTagValue("track",splitTrack[0].c_str(),track);
             if(splitTrack.size()>1){
@@ -202,23 +203,23 @@ bool TagReaderTaglib::GetID3v2Tag(const char* uri, musik::core::ITrack *track){
             }
         }
 
-		this->SetTagValues("bpm",aAllTags["TBPM"],track);
-		this->SetSlashSeparatedValues("composer",aAllTags["TCOM"],track);
-		this->SetTagValues("copyright",aAllTags["TCOP"],track);
-		this->SetTagValues("encoder",aAllTags["TENC"],track);
-		this->SetTagValues("writer",aAllTags["TEXT"],track);
-		this->SetTagValues("org.writer",aAllTags["TOLY"],track);
-		this->SetSlashSeparatedValues("publisher",aAllTags["TPUB"],track);
-		this->SetTagValues("mood",aAllTags["TMOO"],track);
-		this->SetSlashSeparatedValues("org.artist",aAllTags["TOPE"],track);
-		this->SetTagValues("language",aAllTags["TLAN"],track);
-		this->SetTagValues("disc",aAllTags["TPOS"],track);
-		this->SetTagValues("lyrics",aAllTags["USLT"],track);
+		this->SetTagValues("bpm",allTags["TBPM"],track);
+		this->SetSlashSeparatedValues("composer",allTags["TCOM"],track);
+		this->SetTagValues("copyright",allTags["TCOP"],track);
+		this->SetTagValues("encoder",allTags["TENC"],track);
+		this->SetTagValues("writer",allTags["TEXT"],track);
+		this->SetTagValues("org.writer",allTags["TOLY"],track);
+		this->SetSlashSeparatedValues("publisher",allTags["TPUB"],track);
+		this->SetTagValues("mood",allTags["TMOO"],track);
+		this->SetSlashSeparatedValues("org.artist",allTags["TOPE"],track);
+		this->SetTagValues("language",allTags["TLAN"],track);
+		this->SetTagValues("disc",allTags["TPOS"],track);
+		this->SetTagValues("lyrics",allTags["USLT"],track);
 
 		//////////////////////////////////////////////////////////////////////////////
 		// GENRES
-		if(!aAllTags["TCON"].isEmpty()){
-			TagLib::ID3v2::FrameList genres	= aAllTags["TCON"];
+		if(!allTags["TCON"].isEmpty()){
+			TagLib::ID3v2::FrameList genres	= allTags["TCON"];
 			for(TagLib::ID3v2::FrameList::ConstIterator genreFrame=genres.begin();genreFrame!=genres.end();++genreFrame){
 				TagLib::String genreString	= (*genreFrame)->toString();
 				if( !genreString.isEmpty() ){
@@ -263,10 +264,10 @@ bool TagReaderTaglib::GetID3v2Tag(const char* uri, musik::core::ITrack *track){
 
 		//////////////////////////////////////////////////////////////////////////////
 		// ARTISTS
-		this->SetSlashSeparatedValues("artist",aAllTags["TPE1"],track);
-		this->SetSlashSeparatedValues("artist",aAllTags["TPE2"],track);
-		this->SetSlashSeparatedValues("conductor",aAllTags["TPE3"],track);
-		this->SetSlashSeparatedValues("interpreted",aAllTags["TPE4"],track);
+		this->SetSlashSeparatedValues("artist",allTags["TPE1"],track);
+		this->SetSlashSeparatedValues("artist",allTags["TPE2"],track);
+		this->SetSlashSeparatedValues("conductor",allTags["TPE3"],track);
+		this->SetSlashSeparatedValues("interpreted",allTags["TPE4"],track);
 
 		//////////////////////////////////////////////////////////////////////////////
 		// Audio properties
@@ -274,7 +275,7 @@ bool TagReaderTaglib::GetID3v2Tag(const char* uri, musik::core::ITrack *track){
 
 		//////////////////////////////////////////////////////////////////////////////
 		// Comments
-		TagLib::ID3v2::FrameList	comments	= aAllTags["COMM"];
+		TagLib::ID3v2::FrameList	comments	= allTags["COMM"];
 		for(TagLib::ID3v2::FrameList::Iterator commentFrame=comments.begin();commentFrame!=comments.end();++commentFrame){
 			TagLib::ID3v2::CommentsFrame *comment	= dynamic_cast<TagLib::ID3v2::CommentsFrame*> (*commentFrame);
 
@@ -292,7 +293,7 @@ bool TagReaderTaglib::GetID3v2Tag(const char* uri, musik::core::ITrack *track){
 
 		//////////////////////////////////////////////////////////////////////////////
 		// Thumbnail
-		TagLib::ID3v2::FrameList pictures	= aAllTags["APIC"];
+		TagLib::ID3v2::FrameList pictures	= allTags["APIC"];
 		if(!pictures.isEmpty()){
 			// Thumbnail exists
 			// Just get the front() picture

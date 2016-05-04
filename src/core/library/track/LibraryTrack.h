@@ -94,9 +94,6 @@ namespace musik { namespace core {
             };
 
             MetaData *meta;
-            /* friends */
-            friend class http::Responder;
-            bool GetFileData(DBID id, db::Connection &db); /* used by Responder */
     };
 
 } }

@@ -57,8 +57,7 @@ namespace musik{ namespace core{
             void NotificationTimedWait(const boost::xtime &oTime);
             void Notify();
 
-            bool bExit;
-//            boost::mutex oNotificationMutex;
+            bool exit;
             boost::condition notify;
 
     };

@@ -307,8 +307,9 @@ void Indexer::Synchronize() {
 ///Folder to count files in.
 //////////////////////////////////////////
 void Indexer::CountFiles(const std::string &dir) {
-    if(!this->Exited() && !this->Restarted()){
+    if (!this->Exited() && !this->Restarted()) {
         boost::filesystem::path path(dir);
+
         try{
             boost::filesystem::directory_iterator invalidFile;
             boost::filesystem::directory_iterator file(path);
@@ -369,7 +370,7 @@ void Indexer::SyncDirectory(
         stmt.BindInt(1, pathId);
         stmt.BindInt(2, parentDirId);
 
-        if(stmt.Step()==db::Row) {
+        if(stmt.Step() == db::Row) {
             dirId = stmt.ColumnInt(0);
         }
     }
@@ -419,11 +420,10 @@ void Indexer::SyncDirectory(
                 musik::core::IndexerTrack track(0);
 
                 /* get cached filesize, parts, size, etc */
-                if(track.CompareDBAndFileInfo(file->path(),this->dbConnection,dirId)){
+                if (track.NeedsToBeIndexed(file->path(), this->dbConnection, dirId)) {
                     bool saveToDb = false;
 
                     /* read the tag from the plugin */
-
                     typedef MetadataReaderList::iterator Iterator;
                     Iterator it = this->metadataReaders.begin();
                     while (it != this->metadataReaders.end()) {
@@ -436,14 +436,13 @@ void Indexer::SyncDirectory(
                         it++;
                     }
 
-                    /* write it to the db, if we read successfully*/
-
+                    /* write it to the db, if read successfully */
                     if (saveToDb) {
                         track.Save(this->dbConnection, this->libraryPath, dirId);
 
                         this->filesSaved++;
                         if (this->filesSaved % 100 == 0) {
-                            this->TrackRefreshed(); /* no idea... */
+                            this->TrackRefreshed(); /* no idea... something listens to this. maybe?*/
                         }
                     }
                 }
@@ -461,54 +460,49 @@ void Indexer::SyncDirectory(
 ///Main loop the thread is running in.
 //////////////////////////////////////////
 void Indexer::ThreadLoop(){
+    bool firstTime = true; /* through the loop */
 
-    bool firstTime(true);
-
-    while(!this->Exited()){
-
-        // Get preferences
+    while (!this->Exited()) {
         Preferences prefs("Indexer");
 
-        if(!firstTime || (firstTime && prefs.GetBool("SyncOnStartup",true))){
-
+        if(!firstTime || (firstTime && prefs.GetBool("SyncOnStartup", true))) { /* first time through the loop skips this */
             this->SynchronizeStart();
 
-            // Database should only be open when synchronizing
-            this->dbConnection.Open(this->database.c_str(),0);
+            this->dbConnection.Open(this->database.c_str(), 0); /* ensure the db is open*/
+
             this->RestartSync(false);
             this->Synchronize();
             this->RunAnalyzers();
+            
             {
                 boost::mutex::scoped_lock lock(this->progressMutex);
-                this->status       = 0;
+                this->status = 0;
             }
-            this->dbConnection.Close();
+            
+            this->dbConnection.Close(); /* TODO: raii */
 
             this->SynchronizeEnd();
-        }
-        firstTime   = false;
+        } /* end skip */
 
+        firstTime = false;
         
-        int syncTimeout = prefs.GetInt("SyncTimeout",3600);
+        int weightTime = prefs.GetInt("SyncTimeout", 3600); /* sleep before we try again... */
 
-        if(syncTimeout){
-            // Sync every "syncTimeout" second
-            boost::xtime oWaitTime;
-            boost::xtime_get(&oWaitTime, boost::TIME_UTC_);
-            oWaitTime.sec += syncTimeout;
+        if (weightTime) {
+            boost::xtime waitTimeout;
+            boost::xtime_get(&waitTimeout, boost::TIME_UTC_);
+            waitTimeout.sec += weightTime;
 
-            if(!this->Restarted()){
-                this->NotificationTimedWait(oWaitTime);
-            }
-        }else{
-            // No continous syncing
-            if(!this->Restarted()){
-                this->NotificationWait();
+            if (!this->Restarted()) {
+                this->NotificationTimedWait(waitTimeout);
             }
         }
-
+        else {
+            if (!this->Restarted()) {
+                this->NotificationWait(); /* zzz */
+            }
+        }
     }
-
 }
 
 //////////////////////////////////////////
@@ -524,23 +518,23 @@ void Indexer::ThreadLoop(){
 ///\see
 ///<ThreadLoop>
 //////////////////////////////////////////
-bool Indexer::Startup(std::string setLibraryPath){
-
-    this->libraryPath    = setLibraryPath;
+bool Indexer::Startup(std::string setLibraryPath) {
+    this->libraryPath = setLibraryPath;
 
     // Create thumbnail cache directory
-    boost::filesystem::path thumbPath(this->libraryPath+"thumbs/");
-    if(!boost::filesystem::exists(thumbPath)){
+    boost::filesystem::path thumbPath(this->libraryPath + "thumbs/");
+
+    if (!boost::filesystem::exists(thumbPath)) {
         boost::filesystem::create_directories(thumbPath);
     }
 
-    // start the thread
-    try{
-        this->thread        = new boost::thread(boost::bind(&Indexer::ThreadLoop,this));
+    try {
+        this->thread = new boost::thread(boost::bind(&Indexer::ThreadLoop,this));
     }
-    catch(...){
+    catch(...) {
         return false;
     }
+
     return true;
 }
 
@@ -548,7 +542,7 @@ bool Indexer::Startup(std::string setLibraryPath){
 ///\brief
 ///Part of the synchronizer to delete removed files.
 ///
-///\param aPaths
+///\param paths
 ///Vector of path-id to check for deletion
 ///
 ///This method will first check for removed folders and automaticaly
@@ -558,53 +552,49 @@ bool Indexer::Startup(std::string setLibraryPath){
 ///\remarks
 ///This method will not delete related information (meta-data, albums, etc)
 //////////////////////////////////////////
-void Indexer::SyncDelete(const std::vector<DBID>& aPaths){
-
-    // Remove unwanted folder-paths
+void Indexer::SyncDelete(const std::vector<DBID>& paths) {
+    /* delete pruned paths from path table */
     this->dbConnection.Execute("DELETE FROM folders WHERE path_id NOT IN (SELECT id FROM paths)");
 
-    db::Statement stmtSyncPath("SELECT p.path FROM paths p WHERE p.id=?",this->dbConnection);
+    db::Statement stmtSyncPath("SELECT p.path FROM paths p WHERE p.id=?", this->dbConnection);
 
     {
         // Remove non existing folders
         db::Statement stmt("SELECT f.id,p.path||f.relative_path FROM folders f,paths p WHERE f.path_id=p.id AND p.id=?",this->dbConnection);
         db::Statement stmtRemove("DELETE FROM folders WHERE id=?",this->dbConnection);
 
-        for(std::size_t i(0);i<aPaths.size();++i){
-
-            stmt.BindInt(0,aPaths[i]);
+        for (std::size_t i = 0; i < paths.size(); ++i) {
+            stmt.BindInt(0, paths[i]);
 
             // Get the syncpath
-            stmtSyncPath.BindInt(0,aPaths[i]);
+            stmtSyncPath.BindInt(0, paths[i]);
             stmtSyncPath.Step();
-            std::string syncPathString( stmtSyncPath.ColumnText(0) );
+            std::string syncPathString(stmtSyncPath.ColumnText(0));
             stmtSyncPath.Reset();
 
-            while( stmt.Step()==db::Row && !this->Exited() && !this->Restarted() ){
-                // Check to see if file still exists
+            while (stmt.Step() == db::Row && !this->Exited() && !this->Restarted()) {
+                bool remove = true;
+                std::string dir = stmt.ColumnText(1);
 
-                bool bRemove(true);
-                std::string dir   = stmt.ColumnText(1);
-
-                try{
-                    boost::filesystem::path oFolder(dir);
-                    if(boost::filesystem::exists(oFolder)){
-                        bRemove    = false;
-                    }else{
-                        // Also do a check so that the syncpath is still up, or else do not remove
+                try {
+                    boost::filesystem::path path(dir);
+                    if (boost::filesystem::exists(path)) {
+                        remove = false;
+                    }
+                    else {
                         boost::filesystem::path syncPath(syncPathString);
-                        if(!boost::filesystem::exists(syncPath)){
-                            bRemove    = false;
+                        
+                        if (!boost::filesystem::exists(syncPath)) {
+                            remove = false;
                         }
                     }
                 }
-                catch(...){
-                    bRemove    = false;
+                catch (...){
+                    remove = false;
                 }
 
-                if(bRemove){
-                    // Remove the folder
-                    stmtRemove.BindInt(0,stmt.ColumnInt(0));
+                if (remove) {
+                    stmtRemove.BindInt(0, stmt.ColumnInt(0));
                     stmtRemove.Step();
                     stmtRemove.Reset();
                 }
@@ -614,8 +604,7 @@ void Indexer::SyncDelete(const std::vector<DBID>& aPaths){
         }
     }
 
-
-    boost::thread::yield();
+    boost::thread::yield(); /* so much yielding */
 
     // Remove songs with no folder
     this->dbConnection.Execute("DELETE FROM tracks WHERE folder_id NOT IN (SELECT id FROM folders)");
@@ -623,66 +612,69 @@ void Indexer::SyncDelete(const std::vector<DBID>& aPaths){
     boost::thread::yield();
 
     // Remove tracks
-    db::Statement stmtCount("SELECT count(*) FROM tracks",this->dbConnection);
-    DBID iSongs(0),iCount(0);
-    if(stmtCount.Step()==db::Row){
-        iSongs = stmtCount.ColumnInt(0);
+    db::Statement stmtCount("SELECT count(*) FROM tracks", this->dbConnection);
+    DBID songs = 0, count = 0;
+    
+    if (stmtCount.Step() == db::Row) {
+        songs = stmtCount.ColumnInt(0);
     }
 
+    db::Statement stmt(
+        "SELECT t.id, p.path || f.relative_path || '/' || t.filename "\
+        "FROM tracks t, folders f, paths p " \
+        "WHERE t.folder_id=f.id AND f.path_id=p.id AND p.id=?",
+        this->dbConnection);
 
-    db::Statement stmt("SELECT t.id,p.path||f.relative_path||'/'||t.filename FROM tracks t,folders f,paths p WHERE t.folder_id=f.id AND f.path_id=p.id AND p.id=?",this->dbConnection);
-    db::Statement stmtRemove("DELETE FROM tracks WHERE id=?",this->dbConnection);
+    db::Statement stmtRemove("DELETE FROM tracks WHERE id=?", this->dbConnection);
 
-    for(std::size_t i(0);i<aPaths.size();++i){
-        stmt.BindInt(0,aPaths[i]);
+    for (std::size_t i = 0; i < paths.size(); ++i) {
+        stmt.BindInt(0, paths[i]);
 
-        // Get the syncpath
-        stmtSyncPath.BindInt(0,aPaths[i]);
+        stmtSyncPath.BindInt(0,paths[i]);
         stmtSyncPath.Step();
-        std::string syncPathString( stmtSyncPath.ColumnText(0) );
+        
+        std::string syncPathString = stmtSyncPath.ColumnText(0);
+
         stmtSyncPath.Reset();
 
-        while( stmt.Step()==db::Row  && !this->Exited() && !this->Restarted() ){
-            // Check to see if file still exists
+        while(stmt.Step() == db::Row && !this->Exited() && !this->Restarted()) {
             {
                 boost::mutex::scoped_lock lock(this->progressMutex);
-                if(iSongs>0){
-                    this->progress    = 0.2+0.8*(double)iCount/(double)iSongs;
+                if (songs > 0) {
+                    this->progress = 0.2+0.8*(double)count/(double)(songs);
                 }
             }
 
-            bool bRemove(true);
-            std::string sFile = stmt.ColumnText(1);
+            bool remove = true;
+            std::string file = stmt.ColumnText(1);
 
             try{
-                boost::filesystem::path file(sFile);
-                if(boost::filesystem::exists(file)){
-                    bRemove    = false;
-                }else{
-                    // Also do a check so that the syncpath is still up, or else do not remove
+                boost::filesystem::path file(file);
+                if (boost::filesystem::exists(file)) {
+                    remove = false;
+                }
+                else {
                     boost::filesystem::path syncPath(syncPathString);
-                    if(!boost::filesystem::exists(syncPath)){
-                        bRemove    = false;
+                    if (!boost::filesystem::exists(syncPath)) {
+                        remove = false;
                     }
                 }
             }
-            catch(...){
-                bRemove    = false;
+            catch(...) {
+                remove = false;
             }
 
-            if(bRemove){
-                stmtRemove.BindInt(0,stmt.ColumnInt(0));
+            if (remove) {
+                stmtRemove.BindInt(0, stmt.ColumnInt(0));
                 stmtRemove.Step();
                 stmtRemove.Reset();
             }
-            ++iCount;
+
+            ++count;
         }
         
         stmt.Reset();
-
     }
-
-
 }
 
 //////////////////////////////////////////
@@ -694,8 +686,7 @@ void Indexer::SyncDelete(const std::vector<DBID>& aPaths){
 ///\see
 ///<SyncDelete>
 //////////////////////////////////////////
-void Indexer::SyncCleanup(){
-
+void Indexer::SyncCleanup() {
     // Remove old artists
     this->dbConnection.Execute("DELETE FROM track_artists WHERE track_id NOT IN (SELECT id FROM tracks)");
     boost::thread::yield();
@@ -722,124 +713,87 @@ void Indexer::SyncCleanup(){
 
     // ANALYZE
     this->dbConnection.Execute("ANALYZE");
-    boost::thread::yield();
 
     // Vacuum to remove unwanted space
     this->dbConnection.Execute("VACUUM");
 
     this->TrackRefreshed();
-
 }
 
 //////////////////////////////////////////
 ///\brief
 ///Get a vector with all sync paths
 //////////////////////////////////////////
-std::vector<std::string> Indexer::GetPaths(){
-    std::vector<std::string> aPaths;
+std::vector<std::string> Indexer::GetPaths() {
+    std::vector<std::string> paths;
 
     db::Connection tempDB;
 
     tempDB.Open(this->database.c_str());
 
-    db::Statement stmt("SELECT path FROM paths ORDER BY id",tempDB);
+    db::Statement stmt("SELECT path FROM paths ORDER BY id", tempDB);
 
-    while(stmt.Step()==db::Row){
-        aPaths.push_back(stmt.ColumnText(0));
+    while (stmt.Step() == db::Row) {
+        paths.push_back(stmt.ColumnText(0));
     }
 
-    return aPaths;
+    return paths;
+}
+
+static int optimize(
+    musik::core::db::Connection &connection, 
+    std::string singular, 
+    std::string plural) 
+{
+    std::string outer = boost::str(
+        boost::format("SELECT id, lower(trim(name)) AS %1% FROM %2% ORDER BY %3%") 
+        % singular % plural % singular);
+
+    db::Statement outerStmt(outer.c_str(), connection);
+
+    std::string inner = boost::str(boost::format("UPDATE %1% SET sort_order=? WHERE id=?") % plural);
+    db::Statement innerStmt(inner.c_str(), connection);
+
+    int count = 0;
+    while (outerStmt.Step() == db::Row) {
+        innerStmt.BindInt(0, count);
+        innerStmt.BindInt(1, outerStmt.ColumnInt(0));
+        innerStmt.Step();
+        innerStmt.Reset();
+        ++count;
+    }
+
+    boost::thread::yield();
+
+    return count;
 }
 
 //////////////////////////////////////////
 ///\brief
 ///Optimizes and fixing sorting and indexes
 //////////////////////////////////////////
-void Indexer::SyncOptimize(){
-
-    DBID iCount(0),iId(0);
-
+void Indexer::SyncOptimize() {
+    DBID count = 0, id = 0;
 
     {
         db::ScopedTransaction transaction(this->dbConnection);
-
-        // Fix sort order on genres
-        db::Statement stmt("SELECT id,lower(trim(name)) AS genre FROM genres ORDER BY genre",this->dbConnection);
-        db::Statement stmtUpdate("UPDATE genres SET sort_order=? WHERE id=?",this->dbConnection);
-        iCount    = 0;
-        while(stmt.Step()==db::Row){
-
-            stmtUpdate.BindInt(0,iCount);
-            stmtUpdate.BindInt(1,stmt.ColumnInt(0));
-            stmtUpdate.Step();
-            stmtUpdate.Reset();
-
-            ++iCount;
-        }
+        optimize(this->dbConnection, "genre", "genres");
     }
-
-    boost::thread::yield();
-
 
     {
         db::ScopedTransaction transaction(this->dbConnection);
-        // Fix sort order on artists
-        db::Statement stmt("SELECT id,lower(trim(name)) AS artist FROM artists ORDER BY artist",this->dbConnection);
-        db::Statement stmtUpdate("UPDATE artists SET sort_order=? WHERE id=?",this->dbConnection);
-        iCount    = 0;
-        while(stmt.Step()==db::Row){
-
-            stmtUpdate.BindInt(0,iCount);
-            stmtUpdate.BindInt(1,stmt.ColumnInt(0));
-            stmtUpdate.Step();
-            stmtUpdate.Reset();
-
-            ++iCount;
-        }
+        optimize(this->dbConnection, "artist", "artists");
     }
-
-    boost::thread::yield();
-
 
     {
         db::ScopedTransaction transaction(this->dbConnection);
-        // Fix sort order on albums
-        db::Statement stmt("SELECT id,lower(trim(name)) AS album FROM albums ORDER BY album",this->dbConnection);
-        db::Statement stmtUpdate("UPDATE albums SET sort_order=? WHERE id=?",this->dbConnection);
-        iCount    = 0;
-        while(stmt.Step()==db::Row){
-
-            stmtUpdate.BindInt(0,iCount);
-            stmtUpdate.BindInt(1,stmt.ColumnInt(0));
-            stmtUpdate.Step();
-            stmtUpdate.Reset();
-            ++iCount;
-
-        }
+        optimize(this->dbConnection, "album", "albums");
     }
-
-    boost::thread::yield();
-
 
     {
         db::ScopedTransaction transaction(this->dbConnection);
-        // Fix sort order on meta_values
-        db::Statement stmt("SELECT id,lower(content) AS content FROM meta_values ORDER BY content",this->dbConnection);
-        db::Statement stmtUpdate("UPDATE meta_values SET sort_order=? WHERE id=?",this->dbConnection);
-        iCount    = 0;
-        while(stmt.Step()==db::Row){
-
-            stmtUpdate.BindInt(0,iCount);
-            stmtUpdate.BindInt(1,stmt.ColumnInt(0));
-            stmtUpdate.Step();
-            stmtUpdate.Reset();
-            ++iCount;
-
-        }
+        optimize(this->dbConnection, "content", "meta_values");
     }
-
-    boost::thread::yield();
-
 
     {
         db::ScopedTransaction transaction(this->dbConnection);
@@ -849,20 +803,25 @@ void Indexer::SyncOptimize(){
         genre, artist, album, track number, path, filename
         ************************************/
 
-        db::Statement stmt("SELECT t.id FROM tracks t LEFT OUTER JOIN artists ar ON ar.id=t.visual_artist_id LEFT OUTER JOIN albums al ON al.id=t.album_id LEFT OUTER JOIN folders f ON f.id=t.folder_id ORDER BY ar.sort_order,al.sort_order,t.track,f.relative_path,t.filename",this->dbConnection);
+        db::Statement outer("SELECT t.id FROM tracks t " \
+            "LEFT OUTER JOIN artists ar ON ar.id=t.visual_artist_id " \
+            "LEFT OUTER JOIN albums al ON al.id=t.album_id " \
+            "LEFT OUTER JOIN folders f ON f.id=t.folder_id " \
+            "ORDER BY ar.sort_order, al.sort_order, t.track, f.relative_path, t.filename",
+            this->dbConnection);
 
-        db::Statement stmtUpdate("UPDATE tracks SET sort_order1=? WHERE id=?",this->dbConnection);
-        iCount    = 0;
-        while(stmt.Step()==db::Row){
+        db::Statement inner("UPDATE tracks SET sort_order1=? WHERE id=?",this->dbConnection);
 
-            stmtUpdate.BindInt(0,iCount);
-            stmtUpdate.BindInt(1,stmt.ColumnInt(0));
-            stmtUpdate.Step();
-            stmtUpdate.Reset();
-            ++iCount;
+        count = 0;
+        while(outer.Step() == db::Row) {
+            inner.BindInt(0,count);
+            inner.BindInt(1, outer.ColumnInt(0));
+            inner.Step();
+            inner.Reset();
+            ++count;
 
-            if(iCount%1000==0){
-                transaction.CommitAndRestart();
+            if (count % 1000 == 0) {
+                transaction.CommitAndRestart(); /* i guess we only commit the transaction every 1000 files?*/
             }
         }
     }
@@ -870,49 +829,38 @@ void Indexer::SyncOptimize(){
 
 }
 
-
 //////////////////////////////////////////
 ///\brief
 ///Method for adding/removing paths in the database
 //////////////////////////////////////////
-void Indexer::ProcessAddRemoveQueue(){
-
+void Indexer::ProcessAddRemoveQueue() {
     boost::mutex::scoped_lock lock(this->exitMutex);
 
-    // Loop through all add-remove paths
-    while(!this->addRemoveQueue.empty()){
-        if(this->addRemoveQueue.front().add){
-            // Add front path
+    while (!this->addRemoveQueue.empty()) {
+        AddRemoveContext context = this->addRemoveQueue.front();
 
-            // First check for the path
-            db::Statement stmt("SELECT id FROM paths WHERE path=?",this->dbConnection);
-            stmt.BindText(0,this->addRemoveQueue.front().path);
+        if (context.add){
+            db::Statement stmt("SELECT id FROM paths WHERE path=?", this->dbConnection);
+            stmt.BindText(0, context.path);
 
-            if(stmt.Step()==db::Row){
-                // Path already exists. Do not add
-            }else{
-                db::Statement insertPath("INSERT INTO paths (path) VALUES (?)",this->dbConnection);
-                insertPath.BindText(0,this->addRemoveQueue.front().path);
+            if (stmt.Step() != db::Row) {
+                db::Statement insertPath("INSERT INTO paths (path) VALUES (?)", this->dbConnection);
+                insertPath.BindText(0, context.path);
                 insertPath.Step();
             }
-
-        }else{
-            // Remove front path
-            db::Statement stmt("DELETE FROM paths WHERE path=?",this->dbConnection);
-            stmt.BindText(0,this->addRemoveQueue.front().path);
+        }
+        else {
+            db::Statement stmt("DELETE FROM paths WHERE path=?", this->dbConnection);
+            stmt.BindText(0, context.path);
             stmt.Step();
         }
 
-        // remove the front and go to the next.
         this->addRemoveQueue.pop_front();
-
     }
 
-    // Small cleanup
     this->dbConnection.Execute("DELETE FROM folders WHERE path_id NOT IN (SELECT id FROM paths)");
 
     this->PathsUpdated();
-
 }
 
 
@@ -960,7 +908,7 @@ void Indexer::RunAnalyzers(){
         boost::thread::yield();
 
         IndexerTrack track(trackId);
-        if(track.GetTrackMetadata(this->dbConnection)){
+        if (track.Reload(this->dbConnection)) {
             // lets see if we should analyze the track
             PluginVector analyzers =
                 PluginFactory::Instance().QueryInterface<PluginType, Deleter>("GetAudioAnalyzer");

@@ -42,7 +42,6 @@ namespace musik { namespace core { namespace audio {
 
     class IOutput {
         public:    
-
             //////////////////////////////////////////
             ///\brief
             ///Destroy the object

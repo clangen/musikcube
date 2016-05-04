@@ -88,7 +88,8 @@ std::string GenericTrack::GetValue(const char* metakey) {
             }
         }
 
-        /* TODO: figure out -- i have no idea what this means... */
+        /* "visual_" columns are actually display columns, and may be aggregate
+        fields (for example, a comma separated list of genres) */
         if(metaKey.substr(0,7) == "visual_") {
             metaKey = metaKey.substr(7);
             return this->GetValue(metaKey.c_str());

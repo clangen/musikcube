@@ -109,31 +109,30 @@ LibraryFactory::~LibraryFactory(void){
 //////////////////////////////////////////
 LibraryPtr LibraryFactory::AddLibrary(int id, std::string name,int type,bool sendEvent,bool startup){
 	LibraryPtr lib;
-	switch(type){
+	
+    switch(type) {
         case LibraryFactory::LocalLibrary:
-			lib	= library::LocalLibrary::Create(name,id);
+			lib	= library::LocalLibrary::Create(name, id);
             break;
 
         default:
             throw "invalid library type!";
 	}
 
-	if(lib){
+	if (lib) {
 		this->libraries.push_back(lib);
-        this->libraryMap[id]    = lib;
+        this->libraryMap[id] = lib;
 
-        if(sendEvent){
+        if(sendEvent) {
             this->LibrariesUpdated();
         }
 
-		// Start the library
-        if(startup){
+        if(startup) {
             lib->Startup();
         }
 
-        return lib;
-
 	}
+
     return lib;
 }
 
@@ -158,17 +157,19 @@ void LibraryFactory::RemoveLibrary(std::string name){
 //////////////////////////////////////////
 LibraryPtr LibraryFactory::CreateLibrary(std::string name,int type,bool startup){
 	// Connect to the settings.db
-    std::string dataDir   = GetDataDirectory();
-    std::string dbFile    = GetDataDirectory() + "settings.db";
+    std::string dataDir = GetDataDirectory();
+    std::string dbFile = GetDataDirectory() + "settings.db";
 	musik::core::db::Connection db;
-    db.Open(dbFile.c_str(),0,128);
+    db.Open(dbFile.c_str(), 0, 128);
 
-	db::Statement stmtInsert("INSERT OR FAIL INTO libraries (name,type) VALUES (?,?)",db);
-	stmtInsert.BindText(0,name);
-	stmtInsert.BindInt(1,type);
-	if(stmtInsert.Step()==db::Done){
-        return this->AddLibrary(db.LastInsertedId(),name,type,true,startup);
+	db::Statement stmtInsert("INSERT OR FAIL INTO libraries (name,type) VALUES (?,?)", db);
+	stmtInsert.BindText(0, name);
+	stmtInsert.BindInt(1, type);
+
+	if (stmtInsert.Step() == db::Done) {
+        return this->AddLibrary(db.LastInsertedId(), name, type, true, startup);
 	}
+
 	return LibraryPtr();
 }
 
@@ -184,9 +185,9 @@ LibraryFactory::LibraryVector& LibraryFactory::Libraries(){
 }
 
 LibraryPtr LibraryFactory::GetLibrary(int identifier){
-    if(identifier){
-        LibraryMap::iterator lib    = this->libraryMap.find(identifier);
-        if(lib!=this->libraryMap.end()){
+    if (identifier) {
+        LibraryMap::iterator lib = this->libraryMap.find(identifier);
+        if (lib != this->libraryMap.end()) {
             return lib->second;
         }
     }

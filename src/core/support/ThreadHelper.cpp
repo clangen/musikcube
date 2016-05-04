@@ -39,35 +39,35 @@
 
 using namespace musik::core;
 
-
-ThreadHelper::ThreadHelper(void):bExit(false){
+ThreadHelper::ThreadHelper()
+: exit(false) {
 }
 
-ThreadHelper::~ThreadHelper(void){
+ThreadHelper::~ThreadHelper() {
 }
 
-bool ThreadHelper::Exited(){
-    boost::mutex::scoped_lock oLock(this->exitMutex);
-    return this->bExit;
+bool ThreadHelper::Exited() {
+    boost::mutex::scoped_lock lock(this->exitMutex);
+    return this->exit;
 }
 
-void ThreadHelper::Exit(){
-    boost::mutex::scoped_lock oLock(this->exitMutex);
-    this->bExit    = true;
+void ThreadHelper::Exit() {
+    boost::mutex::scoped_lock lock(this->exitMutex);
+    this->exit = true;
     this->notify.notify_all();
 }
 
 void ThreadHelper::NotificationWait(){
-    boost::mutex::scoped_lock oLock(this->exitMutex);
-    if(!this->bExit){
-        this->notify.wait(oLock);
+    boost::mutex::scoped_lock lock(this->exitMutex);
+    if (!this->exit) {
+        this->notify.wait(lock);
     }
 }
 
-void ThreadHelper::NotificationTimedWait(const boost::xtime &oTime){
-    boost::mutex::scoped_lock oLock(this->exitMutex);
-    if(!this->bExit){
-        this->notify.timed_wait(oLock,oTime);
+void ThreadHelper::NotificationTimedWait(const boost::xtime &time) {
+    boost::mutex::scoped_lock lock(this->exitMutex);
+    if (!this->exit) {
+        this->notify.timed_wait(lock, time);
     }
 }
 

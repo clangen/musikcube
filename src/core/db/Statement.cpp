@@ -146,7 +146,7 @@ void Statement::BindInt(int position, UINT64 bindInt){
 ///Text to bind
 //////////////////////////////////////////
 void Statement::BindText(int position,const char* bindText){
-    DB_ASSERT(sqlite3_bind_text(this->stmt,position+1,bindText,-1,SQLITE_STATIC));
+    DB_ASSERT(sqlite3_bind_text(this->stmt, position + 1, bindText, -1, SQLITE_STATIC));
 }
 
 //////////////////////////////////////////
@@ -160,7 +160,7 @@ void Statement::BindText(int position,const char* bindText){
 ///Text to bind
 //////////////////////////////////////////
 void Statement::BindText(int position ,const std::string &bindText){
-    DB_ASSERT(sqlite3_bind_text(this->stmt, position+1,bindText.c_str(),-1,SQLITE_STATIC));
+    DB_ASSERT(sqlite3_bind_text(this->stmt, position + 1, bindText.c_str(), -1, SQLITE_STATIC));
 }
 
 //////////////////////////////////////////

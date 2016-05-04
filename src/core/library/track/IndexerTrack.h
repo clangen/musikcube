@@ -44,17 +44,17 @@ namespace musik { namespace core {
 
     //////////////////////////////////////////
     ///\brief
-    ///A LibraryTrack is a track related to a Library.
+    ///A concrete implementation of Track used for indexing and insertion into the database.
     //////////////////////////////////////////
-    class  IndexerTrack : public Track {
+    class IndexerTrack : public Track {
         public:
             IndexerTrack(DBID id);
             virtual ~IndexerTrack(void);
 
             virtual std::string GetValue(const char* metakey);
-            virtual void SetValue(const char* metakey,const char* value);
+            virtual void SetValue(const char* metakey, const char* value);
             virtual void ClearValue(const char* metakey);
-            virtual void SetThumbnail(const char *data,long size);
+            virtual void SetThumbnail(const char *data, long size);
             virtual std::string URI();
             virtual std::string URL();
 
@@ -64,7 +64,7 @@ namespace musik { namespace core {
 
             virtual DBID Id();
 
-            bool CompareDBAndFileInfo(
+            bool NeedsToBeIndexed(
                 const boost::filesystem::path &file,
                 db::Connection &dbConnection,
                 DBID currentFolderId);
@@ -74,29 +74,51 @@ namespace musik { namespace core {
                 std::string libraryDirectory,
                 DBID folderId);
 
-            bool GetTrackMetadata(db::Connection &db);
+            bool Reload(db::Connection &db);
 
         private:
             DBID id;
             DBID tempSortOrder;
 
         private:
-            class MetaData{
+            class MetadataWithThumbnail {
                 public:
-                    MetaData();
-                    ~MetaData();
+                    MetadataWithThumbnail();
+                    ~MetadataWithThumbnail();
 
                     Track::MetadataMap metadata;
                     char *thumbnailData;
                     long thumbnailSize;
             };
 
-            MetaData *meta;
+            MetadataWithThumbnail *internalMetadata;
 
-        private:
-            void InitMeta();
-            DBID _GetGenre(db::Connection &dbConnection, std::string genre,bool addRelation,bool aggregated=false);
-            DBID _GetArtist(db::Connection &dbConnection, std::string artist, bool addRelation, bool aggregated = false);
+            DBID ExtractThumbnail(
+                db::Connection& connection, 
+                const std::string& libraryDirectory);
+
+            DBID ExtractAlbum(db::Connection& connection);
+            
+            DBID ExtractGenre(db::Connection& connection);
+
+            DBID ExtractArtist(db::Connection& connection);
+
+            DBID ExtractAndSaveMultiValueField(
+                db::Connection& connection,
+                const std::string& tracksTableColumnName,
+                const std::string& fieldTableName,
+                const std::string& junctionTableName,
+                const std::string& junctionTableForeignKeyColumnName);
+
+            DBID SaveNormalizedFieldValue(
+                db::Connection& dbConnection, 
+                const std::string& tableName, 
+                const std::string& fieldValue, 
+                bool isAggregatedValue,
+                const std::string& relationJunctionTableName = "",
+                const std::string& relationJunctionTableColumn = "");
+
+            void ProcessNonStandardMetadata(db::Connection& connection);
     };
 
 } }

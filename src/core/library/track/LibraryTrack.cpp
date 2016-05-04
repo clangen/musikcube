@@ -210,32 +210,9 @@ TrackPtr LibraryTrack::Copy() {
     return TrackPtr(new LibraryTrack(this->id,this->libraryId));
 }
 
-bool LibraryTrack::GetFileData(DBID id, db::Connection &db) {
-    this->InitMeta();
-
-    this->id = id;
-
-    db::CachedStatement stmt(
-        "SELECT t.filename, t.filesize, t.filetime, p.path || f.relative_path || '/'|| t.filename " \
-        "FROM tracks t, folders f, paths p " \
-        "WHERE t.folder_id=f.id AND f.path_id=p.id AND t.id=?", db);
-
-    stmt.BindInt(0, id);
-
-    if (stmt.Step() == db::Row) {
-        this->SetValue("filename", stmt.ColumnText(0));
-        this->SetValue("filesize", stmt.ColumnText(1));
-        this->SetValue("filetime", stmt.ColumnText(2));
-        this->SetValue("path", stmt.ColumnText(3));
-        return true;
-    }
-
-    return false;
-}
-
 LibraryTrack::MetaData::MetaData()
- :thumbnailData(NULL)
- ,thumbnailSize(0) {
+: thumbnailData(NULL)
+, thumbnailSize(0) {
 }
 
 LibraryTrack::MetaData::~MetaData() {

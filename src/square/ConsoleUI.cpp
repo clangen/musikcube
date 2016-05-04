@@ -99,10 +99,8 @@ void ConsoleUI::Run()
     using musik::core::TrackPtr;
    
     LibraryPtr library = LibraryFactory::Libraries().at(0); /* there's always at least 1... */
-    library->Indexer()->AddPath("e:/music");
+    library->Indexer()->AddPath("E:/music/ripped/MR_Bungle");
     library->Indexer()->RestartSync();
-
-    TrackPtr track = TrackFactory::CreateTrack("c:/test.ogg");
 
     while (!this->shouldQuit) {
         this->PrintCommands();
