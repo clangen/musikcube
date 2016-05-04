@@ -1,0 +1,361 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="plugin">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="taglib-1.5">
+      <UniqueIdentifier>{10d05a69-1fa6-4dd2-a79b-9abcfe9b4ed0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib_plugin.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="TagReaderTaglib.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\ape\apefooter.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\ape\apeitem.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\ape\apetag.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v2\frames\attachedpictureframe.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\audioproperties.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v2\frames\commentsframe.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\fileref.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\flac\flacfile.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\flac\flacproperties.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v2\frames\generalencapsulatedobjectframe.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v1\id3v1genres.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v1\id3v1tag.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v2\id3v2extendedheader.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v2\id3v2footer.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v2\id3v2frame.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v2\id3v2framefactory.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v2\id3v2header.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v2\id3v2synchdata.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v2\id3v2tag.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\mpc\mpcfile.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\mpc\mpcproperties.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\mpeg\mpegfile.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\mpeg\mpegheader.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\mpeg\mpegproperties.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\ogg\oggfile.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\ogg\flac\oggflacfile.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\ogg\oggpage.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\ogg\oggpageheader.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v2\frames\relativevolumeframe.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\ogg\speex\speexfile.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\ogg\speex\speexproperties.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\tag.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\tagunion.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\toolkit\tbytevector.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\toolkit\tbytevectorlist.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\toolkit\tdebug.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v2\frames\textidentificationframe.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\toolkit\tfile.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\trueaudio\trueaudiofile.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\trueaudio\trueaudioproperties.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\toolkit\tstring.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\toolkit\tstringlist.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\toolkit\unicode.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v2\frames\uniquefileidentifierframe.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v2\frames\unknownframe.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v2\frames\unsynchronizedlyricsframe.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\mpeg\id3v2\frames\urllinkframe.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\ogg\vorbis\vorbisfile.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\ogg\vorbis\vorbisproperties.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\wavpack\wavpackfile.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\wavpack\wavpackproperties.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\mpeg\xingheader.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.5\taglib\ogg\xiphcomment.cpp">
+      <Filter>taglib-1.5</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="TagReaderTaglib.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\ape\apefooter.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\ape\apeitem.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\ape\apetag.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v2\frames\attachedpictureframe.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\audioproperties.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v2\frames\commentsframe.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\fileref.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\flac\flacfile.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\flac\flacproperties.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v2\frames\generalencapsulatedobjectframe.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v1\id3v1genres.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v1\id3v1tag.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v2\id3v2extendedheader.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v2\id3v2footer.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v2\id3v2frame.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v2\id3v2framefactory.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v2\id3v2header.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v2\id3v2synchdata.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v2\id3v2tag.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\mpc\mpcfile.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\mpc\mpcproperties.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\mpeg\mpegfile.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\mpeg\mpegheader.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\mpeg\mpegproperties.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\ogg\oggfile.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\ogg\flac\oggflacfile.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\ogg\oggpage.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\ogg\oggpageheader.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v2\frames\relativevolumeframe.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\ogg\speex\speexfile.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\ogg\speex\speexproperties.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\tag.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\toolkit\taglib.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\taglib_export.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\tagunion.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\toolkit\tbytevector.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\toolkit\tbytevectorlist.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\toolkit\tdebug.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v2\frames\textidentificationframe.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\toolkit\tfile.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\toolkit\tlist.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\toolkit\tmap.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\trueaudio\trueaudiofile.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\trueaudio\trueaudioproperties.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\toolkit\tstring.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\toolkit\tstringlist.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\toolkit\unicode.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v2\frames\uniquefileidentifierframe.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v2\frames\unknownframe.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v2\frames\unsynchronizedlyricsframe.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\mpeg\id3v2\frames\urllinkframe.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\ogg\vorbis\vorbisfile.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\ogg\vorbis\vorbisproperties.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\wavpack\wavpackfile.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\wavpack\wavpackproperties.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\mpeg\xingheader.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.5\taglib\ogg\xiphcomment.h">
+      <Filter>taglib-1.5</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,244 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="src\boost">
+      <UniqueIdentifier>{a4d636c2-85c0-4fc5-8aab-db55589df747}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\sqlite">
+      <UniqueIdentifier>{1196607d-f9be-4406-b2b7-d40ad621d1c0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\sigslot">
+      <UniqueIdentifier>{57af24a7-d581-4aac-94af-fb79332228ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\expat">
+      <UniqueIdentifier>{0f07e711-650f-4aea-8eb5-d024980a664b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\md5">
+      <UniqueIdentifier>{d5daddec-d920-4412-a600-3e0998d7dfe9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\jpeg-6b">
+      <UniqueIdentifier>{4b07d4a6-c94d-4b33-b664-dc80f14ca558}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\sqlite\sqlite3.c">
+      <Filter>src\sqlite</Filter>
+    </ClCompile>
+    <ClCompile Include="src\expat\xmlparse.c">
+      <Filter>src\expat</Filter>
+    </ClCompile>
+    <ClCompile Include="src\expat\xmlrole.c">
+      <Filter>src\expat</Filter>
+    </ClCompile>
+    <ClCompile Include="src\expat\xmltok.c">
+      <Filter>src\expat</Filter>
+    </ClCompile>
+    <ClCompile Include="src\expat\xmltok_impl.c">
+      <Filter>src\expat</Filter>
+    </ClCompile>
+    <ClCompile Include="src\expat\xmltok_ns.c">
+      <Filter>src\expat</Filter>
+    </ClCompile>
+    <ClCompile Include="src\md5\md5.c">
+      <Filter>src\md5</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jcapimin.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jcapistd.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jccoefct.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jccolor.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jcdctmgr.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jchuff.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jcinit.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jcmainct.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jcmarker.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jcmaster.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jcomapi.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jcparam.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jcphuff.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jcprepct.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jcsample.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jctrans.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jdapimin.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jdapistd.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jdatadst.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jdatasrc.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jdcoefct.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jdcolor.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jddctmgr.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jdhuff.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jdinput.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jdmainct.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jdmarker.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jdmaster.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jdmerge.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jdphuff.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jdpostct.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jdsample.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jdtrans.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jerror.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jfdctflt.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jfdctfst.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jfdctint.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jidctflt.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jidctfst.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jidctint.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jidctred.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jmemmgr.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jmemnobs.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jpegtran.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jquant1.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jquant2.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg-6b\jutils.c">
+      <Filter>src\jpeg-6b</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\sqlite\sqlite3.h">
+      <Filter>src\sqlite</Filter>
+    </ClInclude>
+    <ClInclude Include="include\sqlite\sqlite3ext.h">
+      <Filter>src\sqlite</Filter>
+    </ClInclude>
+    <ClInclude Include="include\sigslot\sigslot.h">
+      <Filter>src\sigslot</Filter>
+    </ClInclude>
+    <ClInclude Include="include\expat\ascii.h">
+      <Filter>src\expat</Filter>
+    </ClInclude>
+    <ClInclude Include="include\expat\asciitab.h">
+      <Filter>src\expat</Filter>
+    </ClInclude>
+    <ClInclude Include="include\expat\expat.h">
+      <Filter>src\expat</Filter>
+    </ClInclude>
+    <ClInclude Include="include\expat\expat_external.h">
+      <Filter>src\expat</Filter>
+    </ClInclude>
+    <ClInclude Include="include\expat\iasciitab.h">
+      <Filter>src\expat</Filter>
+    </ClInclude>
+    <ClInclude Include="include\expat\internal.h">
+      <Filter>src\expat</Filter>
+    </ClInclude>
+    <ClInclude Include="include\expat\latin1tab.h">
+      <Filter>src\expat</Filter>
+    </ClInclude>
+    <ClInclude Include="include\expat\nametab.h">
+      <Filter>src\expat</Filter>
+    </ClInclude>
+    <ClInclude Include="include\expat\utf8tab.h">
+      <Filter>src\expat</Filter>
+    </ClInclude>
+    <ClInclude Include="include\expat\winconfig.h">
+      <Filter>src\expat</Filter>
+    </ClInclude>
+    <ClInclude Include="include\expat\xmlrole.h">
+      <Filter>src\expat</Filter>
+    </ClInclude>
+    <ClInclude Include="include\expat\xmltok.h">
+      <Filter>src\expat</Filter>
+    </ClInclude>
+    <ClInclude Include="include\expat\xmltok_impl.h">
+      <Filter>src\expat</Filter>
+    </ClInclude>
+    <ClInclude Include="include\md5\md5.h">
+      <Filter>src\md5</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
