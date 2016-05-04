@@ -42,7 +42,7 @@
 #include <boost/function.hpp>
 #include <boost/lexical_cast.hpp>
 
-#include <core/Query/QueryBase.h>
+#include <core/library/query/QueryBase.h>
 #include <core/config.h>
 #include <core/Track.h>
 

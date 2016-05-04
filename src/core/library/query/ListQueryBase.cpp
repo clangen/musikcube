@@ -36,7 +36,7 @@
 
 #include "pch.hpp"
 
-#include <core/Query/ListQueryBase.h>
+#include <core/library/query/ListQueryBase.h>
 #include <core/library/LibraryBase.h>
 #include <core/Common.h>
 #include <core/LibraryTrack.h>

@@ -42,7 +42,7 @@
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>
 #include <core/library/LibraryBase.h>
-#include <core/filestreams/Factory.h>
+#include <core/datastream/Factory.h>
 
 #include <boost/lexical_cast.hpp>
 

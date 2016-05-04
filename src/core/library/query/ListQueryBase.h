@@ -36,52 +36,54 @@
 
 #pragma once
 
-#include <boost/shared_ptr.hpp>
-#include <boost/function.hpp>
-#include <set>
-#include <map>
+#include <core/library/query/QueryBase.h>
+#include <core/MetadataValue.h>
+#include <core/LibraryTrack.h>
+
+#include <sigslot/sigslot.h>
 #include <vector>
-#include <string>
+#include <map>
+#include <set>
+#include <boost/shared_ptr.hpp>
+#include <boost/lexical_cast.hpp>
 
-#include <core/config.h>
-#include <core/Query/ListBase.h>
+namespace musik { namespace core { namespace query {
 
-//////////////////////////////////////////////////////////////
-// Forward declarations
-//////////////////////////////////////////////////////////////
-namespace musik{ namespace core{
-    namespace Library{
-        class  Base;
-    }
-} }
+    class ListQueryBase : public query::QueryBase {
+        public:
+            typedef std::map<std::string, MetadataValueVector> MetadataResults;
+            typedef sigslot::signal2<MetadataValueVector*, bool> MetadataSignal;
+            typedef std::map<std::string, MetadataSignal> MetadataSignals;
+            typedef sigslot::signal2<TrackVector*, bool> TrackSignal;
+            typedef sigslot::signal3<UINT64, UINT64, UINT64> TrackInfoSignal;
 
+            MetadataSignal& OnMetadataEvent(const char* metatag);
+            MetadataSignal& OnMetadataEvent(const wchar_t* metatag);
+            TrackSignal& OnTrackEvent();
+            TrackInfoSignal& OnTrackInfoEvent();
 
-namespace musik{ namespace core{
-    namespace Query{
+            ListQueryBase();
+            virtual ~ListQueryBase();
 
-        class  PlaylistLoad : public Query::ListBase{
-            public:
-                PlaylistLoad(void);
-                ~PlaylistLoad(void);
+        protected:
+            friend class library::LibraryBase;
+            friend class library::LocalLibrary;
 
-                void LoadPlaylist(int playlistId);
+            bool RunCallbacks(library::LibraryBase *library);
+            bool ParseTracksSQL(std::string sql, library::LibraryBase *library, db::Connection &db);
 
-            protected:
+            MetadataResults metadataResults;
+            TrackVector trackResults;
+            std::set<std::string> clearedMetadataResults;
+            bool clearedTrackResults;
 
-                int playlistId;
+            MetadataSignals metadataEvent;
+            TrackSignal trackEvent;
+            TrackInfoSignal trackInfoEvent;
 
-                friend class Library::Base;
-                friend class Library::LocalDB;
+            UINT64 trackInfoTracks;
+            UINT64 trackInfoDuration;
+            UINT64 trackInfoSize;
+    };
 
-                virtual bool ParseQuery(Library::Base *library,db::Connection &db);
-
-                Ptr copy() const;
-
-            private:
-
-        };
-
-    }
-} }
-
-
+} } }

@@ -36,9 +36,9 @@
 
 #include "pch.hpp"
 
-#include <core/tracklist/LibraryTrackListQuery.h>
+#include <core/library/query/LibraryTrackListQuery.h>
 #include <core/LibraryTrack.h>
-#include <core/Query/SortTracksQuery.h>
+#include <core/library/query/SortTracksQuery.h>
 
 //////////////////////////////////////////////////////////////////////////////
 using namespace musik::core::tracklist;

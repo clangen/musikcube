@@ -36,8 +36,8 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <core/audio/Transport.h>
-#include <core/tracklist/TrackListQueryBase.h>
-#include <core/Query/TrackMetadataQuery.h>
+#include <core/library/query/TrackListQueryBase.h>
+#include <core/library/query/TrackMetadataQuery.h>
 #include <sigslot/sigslot.h>
 
 //////////////////////////////////////////////////////////////////////////////

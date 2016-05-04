@@ -37,7 +37,7 @@
 #include "pch.hpp"
 
 #include <core/Common.h>
-#include <core/Query/TrackMetadataQuery.h>
+#include <core/library/query/TrackMetadataQuery.h>
 #include <core/library/LibraryBase.h>
 #include <core/LibraryTrack.h>
 #include <boost/algorithm/string.hpp>

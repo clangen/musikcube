@@ -41,7 +41,7 @@
 #include <core/config.h>
 #include <core/Track.h>
 #include <core/library/LibraryBase.h>
-#include <core/Query/ListQueryBase.h>
+#include <core/library/query/ListQueryBase.h>
 
 //////////////////////////////////////////////////////////////////////////////
 

@@ -33,7 +33,7 @@
 #include "pch.hpp"
 #include <core/PlaybackQueue.h>
 #include <core/LibraryFactory.h>
-#include <core/tracklist/MultiLibraryTrackListQuery.h>
+#include <core/library/query/MultiLibraryTrackListQuery.h>
 
 #include <boost/algorithm/string.hpp>
 

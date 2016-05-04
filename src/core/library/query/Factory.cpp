@@ -34,49 +34,26 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "pch.hpp"
 
-#include <boost/shared_ptr.hpp>
-#include <boost/function.hpp>
-#include <vector>
-#include <list>
-#include <string>
+#include <core/library/query/Factory.h>
 
-#include <core/config.h>
-#include <core/Query/ListQueryBase.h>
-#include <core/tracklist/LibraryTrackListQuery.h>
+#include <core/library/query/ListSelectionQuery.h>
+#include <core/library/query/SortTracksQuery.h>
+#include <core/library/query/SortTracksWithDataQuery.h>
+#include <core/library/query/TrackMetadataQuery.h>
 
-namespace musik { namespace core { namespace query {
+using namespace musik::core::query;
 
-    class SortTracksQuery : public query::ListQueryBase{
-        public:
-            SortTracksQuery();
-            ~SortTracksQuery();
+Factory::Factory() {
+}
 
-            void AddTrack(DBID trackId);
-            void AddTracks(std::vector<DBID> &tracks);
-            void AddTracks(musik::core::tracklist::LibraryTrackListQuery &tracks);
+Factory::~Factory() {
+}
 
-            void ClearTracks();
-
-            void SortByMetaKeys(std::list<std::string> metaKeys);
-
-        protected:
-            friend class library::LibraryBase;
-            friend class library::LocalLibrary;
-
-            typedef std::vector<DBID> IntVector;
-            typedef std::list<std::string> StringList;
-
-            IntVector tracksToSort;
-            StringList sortMetaKeys;
-
-            bool SortTracksQuery::ParseQuery(library::LibraryBase *library, db::Connection &db);
-            Ptr copy() const;
-
-            virtual std::string Name();
-    };
-
-} } }
-
-
+void Factory::GetQueries(QueryMap &queryMap) {
+    queryMap["ListSelectionQuery"] = Ptr(new ListSelectionQuery());
+    queryMap["SortTracks"] = Ptr(new SortTracksQuery());
+    queryMap["TrackMetadataQuery"] = Ptr(new TrackMetadataQuery());
+    queryMap["SortTracksWithDataQuery"] = Ptr(new SortTracksWithDataQuery());
+}

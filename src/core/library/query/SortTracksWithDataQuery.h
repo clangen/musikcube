@@ -36,54 +36,68 @@
 
 #pragma once
 
-#include <core/Query/QueryBase.h>
-#include <core/MetadataValue.h>
-#include <core/LibraryTrack.h>
+#include <core/config.h>
+#include <core/library/query/QueryBase.h>
+#include <core/Track.h>
 
-#include <sigslot/sigslot.h>
-#include <vector>
-#include <map>
-#include <set>
 #include <boost/shared_ptr.hpp>
+#include <boost/function.hpp>
 #include <boost/lexical_cast.hpp>
+#include <vector>
+#include <list>
+#include <string>
+
 
 namespace musik { namespace core { namespace query {
-
-    class ListQueryBase : public query::QueryBase {
+    
+    //////////////////////////////////////////
+    ///\brief
+    ///SortTracksWithDataQuery is a query used to receive sorted tracklists along with the data the tracks are sorted by
+    ///
+    ///\remarks
+    ///First concider to use the SortTracks query instead.
+    ///
+    ///\see
+    ///musik::core::query::SortTracks
+    //////////////////////////////////////////
+    class SortTracksWithDataQuery : public query::QueryBase{
         public:
-            typedef std::map<std::string, MetadataValueVector> MetadataResults;
-            typedef sigslot::signal2<MetadataValueVector*, bool> MetadataSignal;
-            typedef std::map<std::string, MetadataSignal> MetadataSignals;
-            typedef sigslot::signal2<TrackVector*, bool> TrackSignal;
-            typedef sigslot::signal3<UINT64, UINT64, UINT64> TrackInfoSignal;
+            //////////////////////////////////////////
+            ///\brief
+            ///The struct used to return both the track and the sorted data
+            //////////////////////////////////////////
+            struct TrackWithSortdata {
+                musik::core::TrackPtr track;
+                std::string sortData;
+                bool operator<(const TrackWithSortdata &trackWithSortData) const;
+            };
 
-            MetadataSignal& OnMetadataEvent(const char* metatag);
-            MetadataSignal& OnMetadataEvent(const wchar_t* metatag);
-            TrackSignal& OnTrackEvent();
-            TrackInfoSignal& OnTrackInfoEvent();
+            typedef std::list<TrackWithSortdata> TrackWithSortdataVector;
+            typedef sigslot::signal2<TrackWithSortdataVector*, bool> TrackWithdataSignal;
 
-            ListQueryBase();
-            virtual ~ListQueryBase();
+            SortTracksWithDataQuery();
+            ~SortTracksWithDataQuery();
+
+            void AddTrack(DBID trackId);
+            void ClearTracks();
+            void SortByMetaKey(std::string metaKey);
+
+            TrackWithdataSignal TrackResults;
+            TrackWithSortdataVector trackResults;
 
         protected:
             friend class library::LibraryBase;
             friend class library::LocalLibrary;
+            typedef std::vector<DBID> IntVector;
 
-            bool RunCallbacks(library::LibraryBase *library);
-            bool ParseTracksSQL(std::string sql, library::LibraryBase *library, db::Connection &db);
-
-            MetadataResults metadataResults;
-            TrackVector trackResults;
-            std::set<std::string> clearedMetadataResults;
+            IntVector tracksToSort;
+            std::string sortByMetaKey;
             bool clearedTrackResults;
+            Ptr copy() const;
+            bool RunCallbacks(library::LibraryBase *library);
+            bool SortTracksWithDataQuery::ParseQuery(library::LibraryBase *library, db::Connection &db);
 
-            MetadataSignals metadataEvent;
-            TrackSignal trackEvent;
-            TrackInfoSignal trackInfoEvent;
-
-            UINT64 trackInfoTracks;
-            UINT64 trackInfoDuration;
-            UINT64 trackInfoSize;
+            virtual std::string Name();
     };
 
 } } }

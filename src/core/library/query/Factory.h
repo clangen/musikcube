@@ -33,36 +33,25 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
+#pragma once
 
-#include "pch.hpp"
+#include <core/config.h>
+#include <core/library/query/QueryBase.h>
 
-#include <core/Query/QueryBase.h>
-#include <core/Library/LibraryBase.h>
+#include <map>
 
-using namespace musik::core;
-using namespace musik::core::query;
+namespace musik { namespace core { namespace query {
 
-QueryBase::QueryBase()
-: status(0)
-, options(0)
-, uniqueId(0) {
-    // This will guarantee that the query id is uniq for each query, but copies will not.
-    // This is usefull when canceling similar queries
-    static unsigned int uniqueQueryId(0);
-    uniqueQueryId++;
-    this->queryId   = uniqueQueryId;
-}
+    typedef std::map<std::string,musik::core::query::Ptr> QueryMap;
 
-QueryBase::~QueryBase() {
-}
+    class Factory{
+        private:
+            Factory();
+            ~Factory();
 
-std::string QueryBase::Name() {
-    return "Unknown";
-}
+        public:
+            static void GetQueries(QueryMap &queryMap);
+    };
 
-void QueryBase::PostCopy(){
-    static unsigned int uniqueQueryId(0);
-    uniqueQueryId++;
-    this->uniqueId  = uniqueQueryId;
-}
 
+} } } 

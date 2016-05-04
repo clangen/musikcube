@@ -36,7 +36,7 @@
 
 #include "pch.hpp"
 
-#include <core/tracklist/MultiLibraryTrackListQuery.h>
+#include <core/library/query/MultiLibraryTrackListQuery.h>
 #include <core/LibraryTrack.h>
 #include <core/LibraryFactory.h>
 #include <core/NonLibraryTrackHelper.h>

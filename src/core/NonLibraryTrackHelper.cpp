@@ -40,7 +40,7 @@
 #include <boost/bind.hpp>
 #include <core/PluginFactory.h>
 #include <core/sdk/IMetaDataReader.h>
-#include <core/filestreams/Factory.h>
+#include <core/datastream/Factory.h>
 
 using namespace musik::core;
 

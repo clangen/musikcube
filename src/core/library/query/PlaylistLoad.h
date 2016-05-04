@@ -33,25 +33,55 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
+
 #pragma once
 
-#include <core/config.h>
-#include <core/Query/QueryBase.h>
-
+#include <boost/shared_ptr.hpp>
+#include <boost/function.hpp>
+#include <set>
 #include <map>
+#include <vector>
+#include <string>
 
-namespace musik { namespace core { namespace query {
+#include <core/config.h>
+#include <core/library/query/ListBase.h>
 
-    typedef std::map<std::string,musik::core::query::Ptr> QueryMap;
-
-    class Factory{
-        private:
-            Factory();
-            ~Factory();
-
-        public:
-            static void GetQueries(QueryMap &queryMap);
-    };
+//////////////////////////////////////////////////////////////
+// Forward declarations
+//////////////////////////////////////////////////////////////
+namespace musik{ namespace core{
+    namespace Library{
+        class  Base;
+    }
+} }
 
 
-} } } 
+namespace musik{ namespace core{
+    namespace Query{
+
+        class  PlaylistLoad : public Query::ListBase{
+            public:
+                PlaylistLoad(void);
+                ~PlaylistLoad(void);
+
+                void LoadPlaylist(int playlistId);
+
+            protected:
+
+                int playlistId;
+
+                friend class Library::Base;
+                friend class Library::LocalDB;
+
+                virtual bool ParseQuery(Library::Base *library,db::Connection &db);
+
+                Ptr copy() const;
+
+            private:
+
+        };
+
+    }
+} }
+
+

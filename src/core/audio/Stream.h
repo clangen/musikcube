@@ -34,7 +34,7 @@
 #pragma once
 
 #include <core/config.h>
-#include <core/filestreams/Factory.h>
+#include <core/datastream/Factory.h>
 #include <core/audio/Buffer.h>
 #include <core/sdk/IDecoder.h>
 #include <core/sdk/IDSP.h>

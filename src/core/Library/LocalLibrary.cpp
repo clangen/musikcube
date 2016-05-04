@@ -37,7 +37,7 @@
 #include "pch.hpp"
 
 #include <core/Library/LocalLibrary.h>
-#include <core/Query/QueryBase.h>
+#include <core/library/query/QueryBase.h>
 #include <core/Preferences.h>
 
 #include <boost/bind.hpp>

@@ -35,9 +35,9 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "../pch.hpp"
-#include <core/Query/Playlists.h>
+#include <core/library/query/PlaylistSave.h>
 #include <core/Library/Base.h>
-#include <core/tracklist/Playlist.h>
+#include <core/LibraryTrack.h>
 
 using namespace musik::core;
 
@@ -46,33 +46,64 @@ using namespace musik::core;
 ///\brief
 ///Constructor
 //////////////////////////////////////////
-Query::Playlists::Playlists(void){
+Query::PlaylistSave::PlaylistSave(void){
 }
 
 //////////////////////////////////////////
 ///\brief
 ///Destructor
 //////////////////////////////////////////
-Query::Playlists::~Playlists(void){
+Query::PlaylistSave::~PlaylistSave(void){
 }
 
+void Query::PlaylistSave::SavePlaylist(const utfstring playlistName,int playlistId,musik::core::tracklist::IRandomAccess *tracklist){
+    this->playlistId    = playlistId;
+    this->playlistName  = playlistName;
 
-bool Query::Playlists::ParseQuery(Library::Base *library,db::Connection &db){
+	this->tracks.clear();
 
-    db::Statement stmt("SELECT id,name FROM playlists WHERE user_id=?",db);
+	if(tracklist){
+		for(int i(0);i<tracklist->Size();++i){
+//            LibraryTrack *t = (LibraryTrack*)(*tracklist)[i].get();
+			this->tracks.push_back( (*tracklist)[i]->Id() );
+		}
+	}
+}
 
-	stmt.BindInt(0,library->userId);
+bool Query::PlaylistSave::ParseQuery(Library::Base *library,db::Connection &db){
 
-    while(stmt.Step()==db::Row){
-        tracklist::Ptr playlist( new tracklist::Playlist(
-                stmt.ColumnInt(0),
-                stmt.ColumnTextUTF(1),
-                library->GetSelfPtr()
-            ) );
+    db::ScopedTransaction transaction(db);
 
-        this->tracklistVector.push_back(playlist); 
+    {
+        db::Statement updatePlaylist("INSERT OR REPLACE INTO playlists (id,name,user_id) VALUES (?,?,?)",db);
+        if(this->playlistId!=0){
+            updatePlaylist.BindInt(0,this->playlistId);
+        }
+        updatePlaylist.BindTextUTF(1,this->playlistName);
+		updatePlaylist.BindInt(2,library->userId);
+
+        if( updatePlaylist.Step()==db::Done ){
+            if(this->playlistId==0){
+                this->playlistId    = db.LastInsertedId();
+            }
+        }
     }
 
+    {
+        db::Statement deleteTracks("DELETE FROM playlist_tracks WHERE playlist_id=?",db);
+        deleteTracks.BindInt(0,this->playlistId);
+        deleteTracks.Step();
+    }
+
+    db::Statement insertTracks("INSERT INTO playlist_tracks (track_id,playlist_id,sort_order) VALUES (?,?,?)",db);
+
+    for(int i(0);i<this->tracks.size();++i){
+        insertTracks.BindInt(0,this->tracks[i]);
+        insertTracks.BindInt(1,this->playlistId);
+        insertTracks.BindInt(2,i);
+        insertTracks.Step();
+        insertTracks.Reset();
+    }
     return true;
 }
 
@@ -83,24 +114,23 @@ bool Query::Playlists::ParseQuery(Library::Base *library,db::Connection &db){
 ///\returns
 ///A shared_ptr to the Query::Base
 //////////////////////////////////////////
-Query::Ptr Query::Playlists::copy() const{
-    return Query::Ptr(new Query::Playlists(*this));
+Query::Ptr Query::PlaylistSave::copy() const{
+    return Query::Ptr(new Query::PlaylistSave(*this));
 }
 
-bool Query::Playlists::RunCallbacks(Library::Base *library){
-    bool bReturn(false);
-    {
-        boost::mutex::scoped_lock lock(library->libraryMutex);
-        if( (this->status & Status::Ended)!=0){
-            // If the query is finished, this function should return true to report that it is finished.
-            bReturn    = true;
-        }
-    }
+bool Query::PlaylistSave::RunCallbacks(Library::Base *library){
+	bool callCallbacks(false);
+	{
+		boost::mutex::scoped_lock lock(library->libraryMutex);
+		if( (this->status & Status::Ended)!=0){
+			callCallbacks	= true;
+		}
+	}
 
-    if(bReturn){
-        this->PlaylistList(this->tracklistVector);
-    }
-
-    return bReturn;
+	if(callCallbacks){
+        this->PlaylistSaved(this->playlistId);
+	}
+    return callCallbacks;
 }
+
 

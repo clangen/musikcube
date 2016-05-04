@@ -34,56 +34,49 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#ifdef WIN32
-#include "pch.hpp"
-#else
-#include <core/pch.hpp>
-#endif
+#pragma once
 
-#include <core/Query/PlaylistLoad.h>
-#include <core/Library/Base.h>
+#include <boost/shared_ptr.hpp>
+#include <boost/function.hpp>
+#include <vector>
+#include <list>
+#include <string>
 
-using namespace musik::core;
+#include <core/config.h>
+#include <core/library/query/ListQueryBase.h>
+#include <core/library/query/LibraryTrackListQuery.h>
 
+namespace musik { namespace core { namespace query {
 
-//////////////////////////////////////////
-///\brief
-///Constructor
-//////////////////////////////////////////
-Query::PlaylistLoad::PlaylistLoad(void){
-}
+    class SortTracksQuery : public query::ListQueryBase{
+        public:
+            SortTracksQuery();
+            ~SortTracksQuery();
 
-//////////////////////////////////////////
-///\brief
-///Destructor
-//////////////////////////////////////////
-Query::PlaylistLoad::~PlaylistLoad(void){
-}
+            void AddTrack(DBID trackId);
+            void AddTracks(std::vector<DBID> &tracks);
+            void AddTracks(musik::core::tracklist::LibraryTrackListQuery &tracks);
 
-void Query::PlaylistLoad::LoadPlaylist(int playlistId){
-    this->playlistId    = playlistId;
-}
+            void ClearTracks();
 
-bool Query::PlaylistLoad::ParseQuery(Library::Base *library,db::Connection &db){
+            void SortByMetaKeys(std::list<std::string> metaKeys);
 
-    db::Statement selectTracks("SELECT track_id FROM playlist_tracks WHERE playlist_id=? ORDER BY sort_order",db);
-    selectTracks.BindInt(0,this->playlistId);
+        protected:
+            friend class library::LibraryBase;
+            friend class library::LocalLibrary;
 
-    while(selectTracks.Step()==db::Row){
-        boost::mutex::scoped_lock lock(library->resultMutex);
-        this->trackResults.push_back(TrackPtr(new LibraryTrack(selectTracks.ColumnInt(0),library->Id())));
-    }
-    return true;
-}
+            typedef std::vector<DBID> IntVector;
+            typedef std::list<std::string> StringList;
 
-//////////////////////////////////////////
-///\brief
-///Copy a query
-///
-///\returns
-///A shared_ptr to the Query::Base
-//////////////////////////////////////////
-Query::Ptr Query::PlaylistLoad::copy() const{
-    return Query::Ptr(new Query::PlaylistLoad(*this));
-}
+            IntVector tracksToSort;
+            StringList sortMetaKeys;
+
+            bool SortTracksQuery::ParseQuery(library::LibraryBase *library, db::Connection &db);
+            Ptr copy() const;
+
+            virtual std::string Name();
+    };
+
+} } }
+
 

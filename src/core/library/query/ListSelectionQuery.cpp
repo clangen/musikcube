@@ -36,7 +36,7 @@
 
 #include "pch.hpp"
 
-#include <core/Query/ListSelectionQuery.h>
+#include <core/library/query/ListSelectionQuery.h>
 #include <core/library/LibraryBase.h>
 
 #include <boost/format.hpp>

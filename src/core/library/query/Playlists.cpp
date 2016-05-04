@@ -34,26 +34,73 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.hpp"
+#include "../pch.hpp"
+#include <core/library/query/Playlists.h>
+#include <core/Library/Base.h>
+#include <core/library/query/Playlist.h>
 
-#include <core/Query/Factory.h>
+using namespace musik::core;
 
-#include <core/Query/ListSelectionQuery.h>
-#include <core/Query/SortTracksQuery.h>
-#include <core/Query/SortTracksWithDataQuery.h>
-#include <core/Query/TrackMetadataQuery.h>
 
-using namespace musik::core::query;
-
-Factory::Factory() {
+//////////////////////////////////////////
+///\brief
+///Constructor
+//////////////////////////////////////////
+Query::Playlists::Playlists(void){
 }
 
-Factory::~Factory() {
+//////////////////////////////////////////
+///\brief
+///Destructor
+//////////////////////////////////////////
+Query::Playlists::~Playlists(void){
 }
 
-void Factory::GetQueries(QueryMap &queryMap) {
-    queryMap["ListSelectionQuery"] = Ptr(new ListSelectionQuery());
-    queryMap["SortTracks"] = Ptr(new SortTracksQuery());
-    queryMap["TrackMetadataQuery"] = Ptr(new TrackMetadataQuery());
-    queryMap["SortTracksWithDataQuery"] = Ptr(new SortTracksWithDataQuery());
+
+bool Query::Playlists::ParseQuery(Library::Base *library,db::Connection &db){
+
+    db::Statement stmt("SELECT id,name FROM playlists WHERE user_id=?",db);
+
+	stmt.BindInt(0,library->userId);
+
+    while(stmt.Step()==db::Row){
+        tracklist::Ptr playlist( new tracklist::Playlist(
+                stmt.ColumnInt(0),
+                stmt.ColumnTextUTF(1),
+                library->GetSelfPtr()
+            ) );
+
+        this->tracklistVector.push_back(playlist); 
+    }
+
+    return true;
 }
+
+//////////////////////////////////////////
+///\brief
+///Copy a query
+///
+///\returns
+///A shared_ptr to the Query::Base
+//////////////////////////////////////////
+Query::Ptr Query::Playlists::copy() const{
+    return Query::Ptr(new Query::Playlists(*this));
+}
+
+bool Query::Playlists::RunCallbacks(Library::Base *library){
+    bool bReturn(false);
+    {
+        boost::mutex::scoped_lock lock(library->libraryMutex);
+        if( (this->status & Status::Ended)!=0){
+            // If the query is finished, this function should return true to report that it is finished.
+            bReturn    = true;
+        }
+    }
+
+    if(bReturn){
+        this->PlaylistList(this->tracklistVector);
+    }
+
+    return bReturn;
+}
+

@@ -36,7 +36,7 @@
 
 #include "pch.hpp"
 
-#include <core/Query/SortTracksQuery.h>
+#include <core/library/query/SortTracksQuery.h>
 #include <core/library/LibraryBase.h>
 #include <core/config.h>
 #include <boost/algorithm/string.hpp>

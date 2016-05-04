@@ -34,61 +34,40 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "pch.hpp"
 
-#include <boost/shared_ptr.hpp>
-#include <boost/function.hpp>
+#include <core/library/query/TrackListQueryBase.h>
 
-#include <vector>
-#include <sigslot/sigslot.h>
+//////////////////////////////////////////////////////////////////////////////
 
-#include <core/config.h>
-#include <core/Query/Base.h>
-#include <core/tracklist/LibraryList.h>
+using namespace musik::core::tracklist;
 
-//////////////////////////////////////////////////////////////
-// Forward declarations
-//////////////////////////////////////////////////////////////
-namespace musik{ namespace core{
-    namespace Library{
-        class  Base;
-    }
-} }
+//////////////////////////////////////////////////////////////////////////////
 
+musik::core::LibraryPtr TrackListQueryBase::Library(){
+    return musik::core::LibraryPtr();
+}
 
-namespace musik{ namespace core{
-    namespace Query{
+TrackListQueryBase::~TrackListQueryBase(){
+}
 
-        class  PlaylistSave : public Query::Base{
-            public:
-                PlaylistSave(void);
-                ~PlaylistSave(void);
+bool TrackListQueryBase::SortTracks(std::string sortingMetakey){
+    return false;
+}
 
-                void SavePlaylist(const utfstring playlistName,int playlistId=0,musik::core::tracklist::Base *tracklist=NULL);
+bool TrackListQueryBase::ConnectToQuery(musik::core::query::ListQueryBase &query){
+    return false;
+}
 
-                sigslot::signal1<int> PlaylistSaved;
+bool TrackListQueryBase::AddRequestedMetakey(std::string metakey){
+    this->requestedMetakeys.insert(metakey);
+    return true;
+}
 
-            protected:
+void TrackListQueryBase::HintVisibleRows(long rows){
+    this->hintedRows    = rows;
+}
 
-                bool RunCallbacks(Library::Base *library);
-
-                int playlistId;
-                utfstring playlistName;
-
-                std::vector<int> tracks;
-
-                friend class Library::Base;
-                friend class Library::LocalDB;
-
-                virtual bool ParseQuery(Library::Base *library,db::Connection &db);
-
-                Ptr copy() const;
-
-            private:
-
-        };
-
-    }
-} }
-
+void TrackListQueryBase::ClearMetadata(){
+}
 

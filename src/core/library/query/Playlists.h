@@ -39,78 +39,48 @@
 //////////////////////////////////////////////////////////////
 // Forward declarations
 //////////////////////////////////////////////////////////////
+namespace musik{ namespace core{
+    namespace Library{
+        class  Base;
+    }
+} }
 
 //////////////////////////////////////////////////////////////
+
+#include <core/config.h>
+#include <core/library/query/Base.h>
+#include <core/library/query/LibraryList.h>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
-#include <set>
-#include <map>
 #include <vector>
-#include <string>
-
-#include <core/config.h>
-#include <core/Query/ListQueryBase.h>
+#include <sigslot/sigslot.h>
 
 //////////////////////////////////////////////////////////////
 
-namespace musik{ namespace core{ namespace query{
+namespace musik{ namespace core{ namespace Query{
 
-//////////////////////////////////////////
-///\brief
-///ListSelectionQuery is the query used when listing tracks and metalists from a metalist (genres, artists, etc) selection.
-///
-///Write detailed description for ListSelectionQuery here.
-///
-///\see
-///query::ListQueryBase
-//////////////////////////////////////////
-class  ListSelectionQuery : public query::ListQueryBase{
+//////////////////////////////////////////////////////////////
+
+class  Playlists : public Query::Base{
     public:
-        ListSelectionQuery(void);
-        ~ListSelectionQuery(void);
+        Playlists(void);
+        ~Playlists(void);
 
-        void SelectMetadata(const char* metakey,DBID metadataId);
-        void RemoveMetadata(const char* metakey,DBID metadataId);
-        void ClearMetadata(const char* metakey=NULL);
+        typedef std::vector<musik::core::tracklist::Ptr> TracklistVector;
+        typedef sigslot::signal1<TracklistVector> PlaylistListEvent;
 
-        void SelectionOrderSensitive(bool sensitive);
+        PlaylistListEvent PlaylistList;
+
     protected:
-        friend class library::LibraryBase;
-        friend class library::LocalLibrary;
 
-        virtual std::string Name();
-        virtual bool ParseQuery(library::LibraryBase *library,db::Connection &db);
+        bool RunCallbacks(Library::Base *library);
+        virtual bool ParseQuery(Library::Base *library,db::Connection &db);
 
         Ptr copy() const;
 
     private:
-        typedef std::set<DBID> SelectedMetadataIDs;
-        typedef std::map<std::string,SelectedMetadataIDs> SelectedMetadata;
-
-
-        //////////////////////////////////////////
-        ///\brief
-        ///A map of selected metakeys
-        //////////////////////////////////////////
-        SelectedMetadata selectedMetadata;
-
-        //////////////////////////////////////////
-        ///\brief
-        ///Setting if selection is sensitive to order of selection
-        //////////////////////////////////////////
-        bool selectionOrderSensitive;
-
-        //////////////////////////////////////////
-        ///\brief
-        ///A list of the metakeys selection order
-        //////////////////////////////////////////
-        std::vector<std::string> metakeySelectionOrder;
-
-
-        inline void SQLPrependWhereOrAnd(std::string &sql);
-        void SQLSelectQuery(const char *metakey,const char *sqlStart,const char *sqlEnd,std::set<std::string> &metakeysSelected,std::string &sqlSelectTrackWhere,library::LibraryBase *library);
-        void QueryForMetadata(const char *metakey,const char *sql,std::set<std::string> &metakeysQueried,library::LibraryBase *library,db::Connection &db);
+        TracklistVector tracklistVector;
 };
 
 //////////////////////////////////////////////////////////////

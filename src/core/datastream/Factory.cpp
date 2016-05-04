@@ -36,10 +36,10 @@
 
 #include "pch.hpp"
 
-#include <core/filestreams/Factory.h>
+#include <core/datastream/Factory.h>
 #include <core/config.h>
 #include <core/PluginFactory.h>
-#include <core/filestreams/LocalFileStream.h>
+#include <core/datastream/LocalFileStream.h>
 
 using namespace musik::core::io;
 

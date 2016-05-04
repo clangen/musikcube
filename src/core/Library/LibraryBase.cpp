@@ -38,7 +38,7 @@
 
 #include <core/Library/LibraryBase.h>
 #include <core/config.h>
-#include <core/Query/QueryBase.h>
+#include <core/library/query/QueryBase.h>
 #include <core/Common.h>
 
 using namespace musik::core;
