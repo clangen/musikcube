@@ -77,10 +77,10 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="datastream\Factory.cpp" />
-    <ClCompile Include="datastream\LocalFileStream.cpp" />
+    <ClCompile Include="io\DataStreamFactory.cpp" />
+    <ClCompile Include="io\LocalFileStream.cpp" />
     <ClCompile Include="Library\LocalLibrary.cpp" />
-    <ClCompile Include="Library\query\Factory.cpp" />
+    <ClCompile Include="Library\query\QueryFactory.cpp" />
     <ClCompile Include="Library\query\LibraryTrackListQuery.cpp" />
     <ClCompile Include="Library\query\ListQueryBase.cpp" />
     <ClCompile Include="Library\query\ListSelectionQuery.cpp" />
@@ -123,10 +123,10 @@
     <ClCompile Include="TrackFactory.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="datastream\Factory.h" />
-    <ClInclude Include="datastream\LocalFileStream.h" />
+    <ClInclude Include="io\DataStreamFactory.h" />
+    <ClInclude Include="io\LocalFileStream.h" />
     <ClInclude Include="Library\LocalLibrary.h" />
-    <ClInclude Include="Library\query\Factory.h" />
+    <ClInclude Include="Library\query\QueryFactory.h" />
     <ClInclude Include="Library\query\LibraryTrackListQuery.h" />
     <ClInclude Include="Library\query\ListQueryBase.h" />
     <ClInclude Include="Library\query\ListSelectionQuery.h" />

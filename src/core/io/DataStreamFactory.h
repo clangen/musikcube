@@ -33,27 +33,34 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
+#pragma once
 
-#include "pch.hpp"
+#include <core/config.h>
+#include <core/sdk/IDataStream.h>
+#include <core/sdk/IDataStreamFactory.h>
+#include <vector>
 
-#include <core/library/query/Factory.h>
+//////////////////////////////////////////////////////////////////////////////
+namespace musik { namespace core { namespace io {
+//////////////////////////////////////////////////////////////////////////////
+	
+class DataStreamFactory {
+	public:
+		typedef boost::shared_ptr<IDataStream> DataStreamPtr;
 
-#include <core/library/query/ListSelectionQuery.h>
-#include <core/library/query/SortTracksQuery.h>
-#include <core/library/query/SortTracksWithDataQuery.h>
-#include <core/library/query/TrackMetadataQuery.h>
+    private:
+        static DataStreamFactory sInstance;
+        DataStreamFactory();
 
-using namespace musik::core::query;
+    private:
+        typedef std::vector<boost::shared_ptr<IDataStreamFactory>> DataStreamFactoryVector;
+        DataStreamFactoryVector dataStreamFactories;
 
-Factory::Factory() {
-}
+    public:
+        static DataStreamPtr OpenUri(const char *uri);
+        static bool IsLocalFileStream(const char *uri);
+};
 
-Factory::~Factory() {
-}
-
-void Factory::GetQueries(QueryMap &queryMap) {
-    queryMap["ListSelectionQuery"] = Ptr(new ListSelectionQuery());
-    queryMap["SortTracks"] = Ptr(new SortTracksQuery());
-    queryMap["TrackMetadataQuery"] = Ptr(new TrackMetadataQuery());
-    queryMap["SortTracksWithDataQuery"] = Ptr(new SortTracksWithDataQuery());
-}
+//////////////////////////////////////////////////////////////////////////////
+} } }
+//////////////////////////////////////////////////////////////////////////////

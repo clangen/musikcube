@@ -34,7 +34,7 @@
 #pragma once
 
 #include <core/config.h>
-#include <core/datastream/Factory.h>
+#include <core/io/DataStreamFactory.h>
 #include <core/audio/Buffer.h>
 #include <core/sdk/IDecoder.h>
 #include <core/sdk/IDSP.h>
@@ -89,7 +89,7 @@ namespace musik { namespace core { namespace audio {
             long decoderSampleRate;
             UINT64 decoderSamplePosition;
             std::string uri;
-            musik::core::io::Factory::DataStreamPtr dataStream;
+            musik::core::io::DataStreamFactory::DataStreamPtr dataStream;
             BufferList recycledBuffers;
 
             DecoderFactoryList decoderFactories;

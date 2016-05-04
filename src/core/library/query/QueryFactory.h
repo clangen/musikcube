@@ -44,10 +44,10 @@ namespace musik { namespace core { namespace query {
 
     typedef std::map<std::string,musik::core::query::Ptr> QueryMap;
 
-    class Factory{
+    class QueryFactory {
         private:
-            Factory();
-            ~Factory();
+            QueryFactory();
+            ~QueryFactory();
 
         public:
             static void GetQueries(QueryMap &queryMap);

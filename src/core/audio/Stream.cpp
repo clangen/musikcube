@@ -75,7 +75,7 @@ double Stream::SetPosition(double requestedSeconds) {
 bool Stream::OpenStream(std::string uri) {
     /* use our file stream abstraction to open the data at the 
     specified URI */
-    this->dataStream = musik::core::io::Factory::OpenUri(uri.c_str());
+    this->dataStream = musik::core::io::DataStreamFactory::OpenUri(uri.c_str());
 
     if (!this->dataStream) {
         return false;

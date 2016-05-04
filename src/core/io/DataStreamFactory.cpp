@@ -36,18 +36,16 @@
 
 #include "pch.hpp"
 
-#include <core/datastream/Factory.h>
+#include <core/io/DataStreamFactory.h>
 #include <core/config.h>
 #include <core/PluginFactory.h>
-#include <core/datastream/LocalFileStream.h>
+#include <core/io/LocalFileStream.h>
 
 using namespace musik::core::io;
 
-//////////////////////////////////////////////////////////////////////////////
+DataStreamFactory DataStreamFactory::sInstance;
 
-Factory Factory::sInstance;
-
-Factory::Factory(){
+DataStreamFactory::DataStreamFactory(){
 
     // Get all IDataStreamFactory plugins
     typedef IDataStreamFactory PluginType;
@@ -57,10 +55,7 @@ Factory::Factory(){
 }
 
 
-Factory::DataStreamPtr Factory::OpenUri(const char *uri){
-#ifdef _DEBUG
-    std::cerr << "Factory::OpenFile(" << uri << ")" << std::endl;
-#endif
+DataStreamFactory::DataStreamPtr DataStreamFactory::OpenUri(const char *uri){
     typedef musik::core::PluginFactory::DestroyDeleter<IDataStream> StreamDeleter;
 
     if(uri){
@@ -84,7 +79,7 @@ Factory::DataStreamPtr Factory::OpenUri(const char *uri){
     return DataStreamPtr();
 }
 
-bool Factory::IsLocalFileStream(const char *uri){
+bool DataStreamFactory::IsLocalFileStream(const char *uri){
     typedef musik::core::PluginFactory::DestroyDeleter<IDataStream> StreamDeleter;
 
     if(uri){

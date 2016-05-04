@@ -40,7 +40,7 @@
 #include <boost/bind.hpp>
 #include <core/PluginFactory.h>
 #include <core/sdk/IMetaDataReader.h>
-#include <core/datastream/Factory.h>
+#include <core/io/DataStreamFactory.h>
 
 using namespace musik::core;
 
@@ -108,7 +108,7 @@ void NonLibraryTrackHelper::ThreadLoop() {
 
         if (track) {
             /* we only support local files. other URIs are ignored */
-            if (musik::core::io::Factory::IsLocalFileStream(track->URL().c_str())) {
+            if (musik::core::io::DataStreamFactory::IsLocalFileStream(track->URL().c_str())) {
                 std::string url = track->URL();
                 
                 std::string::size_type lastDot = url.find_last_of(".");
