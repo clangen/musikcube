@@ -119,10 +119,6 @@ ListQueryBase::MetadataSignal& ListQueryBase::OnMetadataEvent(const char* metata
     return this->metadataEvent[metatag];
 }
 
-ListQueryBase::MetadataSignal& ListQueryBase::OnMetadataEvent(const wchar_t* metatag){
-    return this->metadataEvent[ConvertUTF8(std::wstring(metatag))];
-}
-
 ListQueryBase::TrackSignal& ListQueryBase::OnTrackEvent(){
     return this->trackEvent;
 }

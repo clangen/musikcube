@@ -95,7 +95,6 @@ static inline std::wstring utf8to16(const char* utf8) {
 }
 #endif
 
-
 TagReaderTaglib::TagReaderTaglib() {
 }
 

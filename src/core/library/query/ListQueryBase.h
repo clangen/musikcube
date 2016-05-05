@@ -58,7 +58,6 @@ namespace musik { namespace core { namespace query {
             typedef sigslot::signal3<UINT64, UINT64, UINT64> TrackInfoSignal;
 
             MetadataSignal& OnMetadataEvent(const char* metatag);
-            MetadataSignal& OnMetadataEvent(const wchar_t* metatag);
             TrackSignal& OnTrackEvent();
             TrackInfoSignal& OnTrackInfoEvent();
 

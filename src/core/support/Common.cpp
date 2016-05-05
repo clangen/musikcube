@@ -137,55 +137,6 @@ std::string musik::core::GetPath(const std::string &sFile){
     return sPath;
 }
 
-//////////////////////////////////////////
-///\brief
-///Convert std::wstring to std::string
-///
-///\param sString
-///std::wstring
-///
-///\returns
-///Converted string
-//////////////////////////////////////////
-std::string musik::core::ConvertUTF8(const std::wstring &sString){
-    std::string sUTF8;
-    utf8::utf16to8(sString.begin(),sString.end(),std::back_inserter(sUTF8));
-    return sUTF8;
-}
-
-//////////////////////////////////////////
-///\brief
-///Convert std::string to std::wstring
-///
-///\param sString
-///std::string
-///
-///\returns
-///Converted string
-//////////////////////////////////////////
-std::wstring musik::core::ConvertUTF16(const std::string &sString){
-    std::wstring sUTF16;
-    utf8::utf8to16(sString.begin(),sString.end(),std::back_inserter(sUTF16));
-    return sUTF16;
-}
-
-//////////////////////////////////////////
-///\brief
-///Convert char* to std::wstring
-///
-///\param sString
-///std::wstring
-///
-///\returns
-///Converted string
-//////////////////////////////////////////
-std::wstring musik::core::ConvertUTF16(const char *string){
-    std::string sString(string);
-    std::wstring sUTF16;
-    utf8::utf8to16(sString.begin(),sString.end(),std::back_inserter(sUTF16));
-    return sUTF16;
-}
-
 UINT64 musik::core::Checksum(char *data,unsigned int bytes){
     UINT64 sum(0);
     for(unsigned int i(0);i<bytes;++i){

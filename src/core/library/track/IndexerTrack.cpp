@@ -449,8 +449,6 @@ DBID IndexerTrack::ExtractArtist(db::Connection& dbConnection) {
 }
 
 bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirectory, DBID folderId) {
-    unsigned int count;
-
     db::ScopedTransaction transaction(dbConnection);
 
     /* remove existing relations -- we're going to update them with fresh data */
