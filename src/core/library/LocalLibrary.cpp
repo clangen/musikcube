@@ -80,21 +80,6 @@ LocalLibrary::~LocalLibrary() {
 
 //////////////////////////////////////////
 ///\brief
-///Get a short status string of what is going on in the Library.
-///
-///\returns
-///Information string.
-///
-///The information is mostly used to get the information
-///about the Indexer.
-//////////////////////////////////////////
-std::string LocalLibrary::GetInfo(){
-    return this->indexer.GetStatus();
-}
-
-
-//////////////////////////////////////////
-///\brief
 ///Startup the library threads.
 ///
 ///\returns

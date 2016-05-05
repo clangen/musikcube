@@ -63,8 +63,8 @@ namespace musik { namespace core {
         class LibraryBase;
     }
 
-	typedef boost::shared_ptr<library::LibraryBase> LibraryPtr;
-	typedef boost::weak_ptr<library::LibraryBase> LibraryWeakPtr;
+    typedef boost::shared_ptr<library::LibraryBase> LibraryPtr;
+    typedef boost::weak_ptr<library::LibraryBase> LibraryWeakPtr;
 } }
 
 namespace musik { namespace core { namespace library {
@@ -90,7 +90,7 @@ namespace musik { namespace core { namespace library {
         protected:
             LibraryBase(std::string name,int id);
 
-	    public:
+        public:
             virtual ~LibraryBase();
 
             //////////////////////////////////////////
@@ -104,21 +104,6 @@ namespace musik { namespace core { namespace library {
             //////////////////////////////////////////
             virtual bool Startup() = 0;
 
-            //////////////////////////////////////////
-            ///\brief
-            ///Get state of the library
-            ///
-            ///\returns
-            ///Status of the library. May be empty.
-            ///
-            ///Get the current status of the Library.
-            ///Will for instance report current status of the indexer in the LocalLibrary.
-            ///
-            ///\remarks
-            ///Empty string means that the library thread is holding.
-            //////////////////////////////////////////
-            virtual std::string GetInfo() = 0;
-        
             virtual bool AddQuery( const query::QueryBase &query,unsigned int options=0 );
             virtual bool RunCallbacks();
             std::string GetLibraryDirectory();
@@ -126,9 +111,9 @@ namespace musik { namespace core { namespace library {
             virtual musik::core::Indexer *Indexer();
             virtual std::string BasePath();
             bool Exited();
-		    const std::string& Identifier();
-		    int Id();
-		    const std::string& Name();
+            const std::string& Identifier();
+            int Id();
+            const std::string& Name();
             virtual const std::string& AuthorizationKey();
 
             static bool IsStaticMetaKey(std::string &metakey);
@@ -258,7 +243,7 @@ namespace musik { namespace core { namespace library {
 
         public:
             boost::mutex libraryMutex;
-		    LibraryWeakPtr self;
+            LibraryWeakPtr self;
             LibraryPtr GetSelfPtr();
             int userId;
     };
@@ -268,5 +253,5 @@ namespace musik { namespace core { namespace library {
 
 namespace musik { namespace core { 
     typedef boost::shared_ptr<musik::core::library::LibraryBase> LibraryPtr;
-	typedef boost::weak_ptr<library::LibraryBase> LibraryWeakPtr;
+    typedef boost::weak_ptr<library::LibraryBase> LibraryWeakPtr;
 } }

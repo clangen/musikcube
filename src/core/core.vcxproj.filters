@@ -198,16 +198,10 @@
     <ClInclude Include="sdk\IPlayer.h">
       <Filter>src\sdk</Filter>
     </ClInclude>
-    <ClInclude Include="sdk\IPlugin.h">
-      <Filter>src\sdk</Filter>
-    </ClInclude>
     <ClInclude Include="sdk\IAnalyzer.h">
       <Filter>src\sdk</Filter>
     </ClInclude>
     <ClInclude Include="sdk\IBuffer.h">
-      <Filter>src\sdk</Filter>
-    </ClInclude>
-    <ClInclude Include="sdk\ITrack.h">
       <Filter>src\sdk</Filter>
     </ClInclude>
     <ClInclude Include="sdk\IDataStream.h">
@@ -313,6 +307,12 @@
       <Filter>src\sdk</Filter>
     </ClInclude>
     <ClInclude Include="sdk\IMetadataReader.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IMetadataWriter.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IPlugin.h">
       <Filter>src\sdk</Filter>
     </ClInclude>
   </ItemGroup>

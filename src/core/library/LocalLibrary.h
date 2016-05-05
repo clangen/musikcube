@@ -67,15 +67,14 @@ namespace musik{ namespace core{ namespace library{
     ///Indexer
     //////////////////////////////////////////
     class LocalLibrary : public library::LibraryBase {
-	    private:
+        private:
             LocalLibrary(std::string name, int id);
 
         public:
-		    static LibraryPtr Create(std::string name,int id);
+            static LibraryPtr Create(std::string name,int id);
             ~LocalLibrary(void);
 
             bool Startup();
-            std::string GetInfo();
             musik::core::Indexer *Indexer();
 
         protected:

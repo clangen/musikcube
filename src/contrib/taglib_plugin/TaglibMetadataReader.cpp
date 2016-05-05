@@ -34,7 +34,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "TagReaderTaglib.h"
+#include "TaglibMetadataReader.h"
 
 #include <toolkit/tlist.h>
 #include <toolkit/tfile.h>
@@ -73,17 +73,17 @@ static inline std::wstring utf8to16(const char* utf8) {
 }
 #endif
 
-TagReaderTaglib::TagReaderTaglib() {
+TaglibMetadataReader::TaglibMetadataReader() {
 }
 
-TagReaderTaglib::~TagReaderTaglib() {
+TaglibMetadataReader::~TaglibMetadataReader() {
 }
 
-void TagReaderTaglib::Destroy() {
+void TaglibMetadataReader::Destroy() {
     delete this;
 }
 
-bool TagReaderTaglib::CanReadTag(const char *extension){
+bool TaglibMetadataReader::CanReadTag(const char *extension){
     if (extension) {
         std::string ext(extension);
         boost::algorithm::to_lower(ext);
@@ -99,7 +99,7 @@ bool TagReaderTaglib::CanReadTag(const char *extension){
     return false;
 }
 
-bool TagReaderTaglib::ReadTag(const char* uri, musik::core::ITrack *track) {
+bool TaglibMetadataReader::ReadTag(const char* uri, musik::core::IMetadataWriter *track) {
     std::string path(uri);
     std::string extension;
 
@@ -119,7 +119,7 @@ bool TagReaderTaglib::ReadTag(const char* uri, musik::core::ITrack *track) {
     return this->GetGenericTag(uri, track);
 }
 
-bool TagReaderTaglib::GetGenericTag(const char* uri, musik::core::ITrack *track) {
+bool TaglibMetadataReader::GetGenericTag(const char* uri, musik::core::IMetadataWriter *target) {
 #ifdef WIN32
     TagLib::FileRef file(utf8to16(uri).c_str());
 #else
@@ -132,27 +132,27 @@ bool TagReaderTaglib::GetGenericTag(const char* uri, musik::core::ITrack *track)
         if(tag) {
 
             if (!tag->title().isEmpty()) {
-                this->SetTagValue("title", tag->title(), track);
+                this->SetTagValue("title", tag->title(), target);
             }
             else {
-                this->SetTagValue("title", uri, track);
+                this->SetTagValue("title", uri, target);
             }
 
-            this->SetTagValue("album",tag->album(), track);
-            this->SetSlashSeparatedValues("artist",tag->artist() ,track);
-            this->SetTagValue("genre",tag->genre(), track);
-            this->SetTagValue("comment",tag->comment(), track);
+            this->SetTagValue("album",tag->album(), target);
+            this->SetSlashSeparatedValues("artist",tag->artist() , target);
+            this->SetTagValue("genre",tag->genre(), target);
+            this->SetTagValue("comment",tag->comment(), target);
 
             if (tag->track()) {
-                this->SetTagValue("track", tag->track(), track);
+                this->SetTagValue("track", tag->track(), target);
             }
 
             if (tag->year()) {
-                this->SetTagValue("year", tag->year(), track);
+                this->SetTagValue("year", tag->year(), target);
             }
 
             TagLib::AudioProperties *audio = file.audioProperties();
-            this->SetAudioProperties(audio,track);
+            this->SetAudioProperties(audio, target);
 
             return true;
         }
@@ -161,7 +161,7 @@ bool TagReaderTaglib::GetGenericTag(const char* uri, musik::core::ITrack *track)
     return false;
 }
 
-bool TagReaderTaglib::GetID3v2Tag(const char* uri, musik::core::ITrack *track) {
+bool TaglibMetadataReader::GetID3v2Tag(const char* uri, musik::core::IMetadataWriter *track) {
     TagLib::ID3v2::FrameFactory::instance()->setDefaultTextEncoding(TagLib::String::UTF8);
 
 #ifdef WIN32
@@ -327,37 +327,37 @@ bool TagReaderTaglib::GetID3v2Tag(const char* uri, musik::core::ITrack *track) {
     return false;
 }
 
-void TagReaderTaglib::SetTagValue(
+void TaglibMetadataReader::SetTagValue(
     const char* key,
     const TagLib::String tagString,
-    musik::core::ITrack *track)
+    musik::core::IMetadataWriter *track)
 {
     std::string value(tagString.begin(), tagString.end());
     track->SetValue(key, value.c_str());
 }
 
-void TagReaderTaglib::SetTagValue(
+void TaglibMetadataReader::SetTagValue(
     const char* key,
     const char* string,
-    musik::core::ITrack *track)
+    musik::core::IMetadataWriter *track)
 {
     std::string temp(string);
     track->SetValue(key, temp.c_str());
 }
 
-void TagReaderTaglib::SetTagValue(
+void TaglibMetadataReader::SetTagValue(
     const char* key,
     const int tagInt,
-    musik::core::ITrack *track)
+    musik::core::IMetadataWriter *target)
 {
     std::string temp = boost::str(boost::format("%1%") % tagInt);
-    track->SetValue(key, temp.c_str());
+    target->SetValue(key, temp.c_str());
 }
 
-void TagReaderTaglib::SetTagValues(
+void TaglibMetadataReader::SetTagValues(
     const char* key,
     const TagLib::ID3v2::FrameList &frame,
-    musik::core::ITrack *track)
+    musik::core::IMetadataWriter *target)
 {
     if (!frame.isEmpty()) {
         TagLib::ID3v2::FrameList::ConstIterator value = frame.begin();
@@ -366,16 +366,16 @@ void TagReaderTaglib::SetTagValues(
             TagLib::String tagString = (*value)->toString();
             if(!tagString.isEmpty()) {
                 std::string value(tagString.begin(), tagString.end());
-                track->SetValue(key,value.c_str());
+                target->SetValue(key,value.c_str());
             }
         }
     }
 }
 
-void TagReaderTaglib::SetSlashSeparatedValues(
+void TaglibMetadataReader::SetSlashSeparatedValues(
     const char* key,
     TagLib::String tagString, 
-    musik::core::ITrack *track)
+    musik::core::IMetadataWriter *track)
 {
     if(!tagString.isEmpty()) {
         std::string value(tagString.begin(), tagString.end());
@@ -391,10 +391,10 @@ void TagReaderTaglib::SetSlashSeparatedValues(
     }
 }
 
-void TagReaderTaglib::SetSlashSeparatedValues(
+void TaglibMetadataReader::SetSlashSeparatedValues(
     const char* key,
     const TagLib::ID3v2::FrameList &frame,
-    musik::core::ITrack *track)
+    musik::core::IMetadataWriter *track)
 {
     if(!frame.isEmpty()) {
         TagLib::ID3v2::FrameList::ConstIterator value = frame.begin();
@@ -405,9 +405,9 @@ void TagReaderTaglib::SetSlashSeparatedValues(
     }
 }
 
-void TagReaderTaglib::SetAudioProperties(
+void TaglibMetadataReader::SetAudioProperties(
     TagLib::AudioProperties *audioProperties,
-    musik::core::ITrack *track)
+    musik::core::IMetadataWriter *track)
 {
     /* FIXME: it's overkill to bring boost in just to convert ints to strings */
 

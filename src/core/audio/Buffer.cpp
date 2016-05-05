@@ -186,7 +186,7 @@ bool Buffer::Append(BufferPtr appendBuffer) {
     {
         long newBufferSize = (this->Samples() + appendBuffer->Samples()) * this->channels;
 
-        if (newBufferSize > this->internalBufferSize) { /* resize */
+        if (newBufferSize > this->internalBufferSize) { /* resize, then copy, if too small */
             float *newBuffer = new float[newBufferSize];
 
             CopyFloat(newBuffer, this->buffer, this->sampleSize * this->channels);

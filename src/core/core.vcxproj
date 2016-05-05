@@ -160,7 +160,7 @@
     <ClInclude Include="sdk\IOutput.h" />
     <ClInclude Include="sdk\IPlayer.h" />
     <ClInclude Include="sdk\IPlugin.h" />
-    <ClInclude Include="sdk\ITrack.h" />
+    <ClInclude Include="sdk\IMetadataWriter.h" />
     <ClInclude Include="db\CachedStatement.h" />
     <ClInclude Include="db\Connection.h" />
     <ClInclude Include="db\dbconfig.h" />

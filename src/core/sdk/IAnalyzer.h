@@ -34,7 +34,7 @@
 #pragma once
 
 #include "config.h"
-#include "ITrack.h"
+#include "IMetadataWriter.h"
 #include "IBuffer.h"
 
 namespace musik { namespace core { namespace audio {
@@ -64,13 +64,13 @@ namespace musik { namespace core { namespace audio {
             ///Start analyzing the track. Returns true if
             ///the analyzing should continue.
             //////////////////////////////////////////
-            virtual bool Start(musik::core::ITrack *track) = 0;
+            virtual bool Start(musik::core::IMetadataWriter *target) = 0;
 
             //////////////////////////////////////////
             ///\brief
             ///Analyze a buffer
             //////////////////////////////////////////
-            virtual bool Analyze(musik::core::ITrack *track, IBuffer *buffer) = 0;
+            virtual bool Analyze(musik::core::IMetadataWriter *target, IBuffer *buffer) = 0;
 
             //////////////////////////////////////////
             ///\brief
@@ -78,7 +78,7 @@ namespace musik { namespace core { namespace audio {
             ///If this call makes changes to the track it should
             ///return true.
             //////////////////////////////////////////
-            virtual bool End(musik::core::ITrack *track) = 0;
+            virtual bool End(musik::core::IMetadataWriter *target) = 0;
     };
 
 

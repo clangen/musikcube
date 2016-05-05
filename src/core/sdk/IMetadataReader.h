@@ -37,13 +37,13 @@
 #pragma once
 
 #include "config.h"
-#include "ITrack.h"
+#include "IMetadataWriter.h"
 
 namespace musik { namespace core { namespace metadata {
 
-    class  IMetadataReader {
+    class IMetadataReader {
         public:
-            virtual bool ReadTag(const char *uri, musik::core::ITrack *track) = 0;
+            virtual bool ReadTag(const char *uri, musik::core::IMetadataWriter *target) = 0;
             virtual bool CanReadTag(const char *extension) = 0;
             virtual void Destroy() = 0;
     };

@@ -57,7 +57,7 @@ namespace musik { namespace core {
     ///but can also be used as a standalone class for indexing files.
     ///All you need to do is create a Indexer object and call Startup()
     //////////////////////////////////////////
-    class Indexer : public ThreadHelper,private boost::noncopyable {
+    class Indexer : public ThreadHelper, private boost::noncopyable {
         public:
             Indexer();
             ~Indexer();

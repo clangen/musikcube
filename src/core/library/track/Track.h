@@ -36,7 +36,7 @@
 
 #pragma once
 
-#include <core/sdk/ITrack.h>
+#include <core/sdk/IMetadataWriter.h>
 #include <boost/shared_ptr.hpp>
 #include <vector>
 #include <map>
@@ -60,13 +60,13 @@ namespace musik{ namespace core{
     ///\brief
     ///The most basic implementation of a track
     //////////////////////////////////////////
-    class  Track : public ITrack {
+    class  Track : public IMetadataWriter {
         public:
             typedef std::multimap<std::string, std::string> MetadataMap;
             typedef std::pair<MetadataMap::iterator, MetadataMap::iterator> MetadataIteratorRange;
 
             virtual ~Track();
-        
+
             virtual DBID Id();
 
             virtual musik::core::LibraryPtr Library();

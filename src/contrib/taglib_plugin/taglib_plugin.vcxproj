@@ -213,7 +213,7 @@
     <ClCompile Include="taglib-1.11\taglib\xm\xmfile.cpp" />
     <ClCompile Include="taglib-1.11\taglib\xm\xmproperties.cpp" />
     <ClCompile Include="taglib_plugin.cpp" />
-    <ClCompile Include="TagReaderTaglib.cpp" />
+    <ClCompile Include="TaglibMetadataReader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -330,7 +330,7 @@
     <ClInclude Include="taglib-1.11\taglib\wavpack\wavpackproperties.h" />
     <ClInclude Include="taglib-1.11\taglib\xm\xmfile.h" />
     <ClInclude Include="taglib-1.11\taglib\xm\xmproperties.h" />
-    <ClInclude Include="TagReaderTaglib.h" />
+    <ClInclude Include="TaglibMetadataReader.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\core\core.vcxproj">

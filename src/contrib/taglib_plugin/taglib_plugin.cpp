@@ -36,7 +36,7 @@
 
 
 #include "stdafx.h"
-#include "TagReaderTaglib.h"
+#include "TaglibMetadataReader.h"
 #include "core/sdk/IPlugin.h"
 #ifndef _HAVE_TAGLIB
 #include <id3v2framefactory.h>
@@ -77,7 +77,7 @@ class TaglibPlugin : public musik::core::IPlugin {
 
 extern "C" {
     DLLEXPORT musik::core::metadata::IMetadataReader* GetMetadataReader() {
-        return new TagReaderTaglib();
+        return new TaglibMetadataReader();
     }
 
     DLLEXPORT musik::core::IPlugin* GetPlugin() {
