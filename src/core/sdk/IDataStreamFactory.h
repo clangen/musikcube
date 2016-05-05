@@ -43,7 +43,6 @@ namespace musik { namespace core { namespace io {
 
     class IDataStreamFactory{
         public:
-
             //////////////////////////////////////////
             ///\brief
             ///Can the factory read the specified filename

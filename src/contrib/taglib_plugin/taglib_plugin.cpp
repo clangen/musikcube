@@ -93,7 +93,7 @@ class TaglibPlugin : public musik::core::IPlugin
 };
 
 extern "C"{
-	DLLEXPORT musik::core::Plugin::IMetaDataReader* GetMetaDataReader(){
+	DLLEXPORT musik::core::Plugin::IMetadataReader* GetMetaDataReader(){
 		return new TagReaderTaglib();
 	}
 

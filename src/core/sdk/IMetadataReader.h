@@ -41,11 +41,11 @@
 
 namespace musik { namespace core { namespace Plugin {
 
-    class  IMetaDataReader{
+    class  IMetadataReader {
         public:
             virtual bool ReadTag(const char *uri, musik::core::ITrack *track) = 0;
-            virtual bool CanReadTag(const char *extension)=0;
-            virtual void Destroy()=0;
+            virtual bool CanReadTag(const char *extension) = 0;
+            virtual void Destroy() = 0;
     };
 
 } } }

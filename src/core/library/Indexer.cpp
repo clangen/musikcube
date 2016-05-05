@@ -187,7 +187,7 @@ void Indexer::RemovePath(std::string path) {
 //////////////////////////////////////////
 void Indexer::Synchronize() {
     /* load all of the metadata (tag) reader plugins */
-    typedef Plugin::IMetaDataReader PluginType;
+    typedef Plugin::IMetadataReader PluginType;
     typedef PluginFactory::DestroyDeleter<PluginType> Deleter;
 
     this->metadataReaders = PluginFactory::Instance()

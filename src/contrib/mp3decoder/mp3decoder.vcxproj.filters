@@ -34,9 +34,6 @@
     <ClCompile Include="SideInfo.cpp">
       <Filter>decoder</Filter>
     </ClCompile>
-    <ClCompile Include="MP3Decoder.cpp">
-      <Filter>plugin</Filter>
-    </ClCompile>
     <ClCompile Include="mp3decoder_plugin.cpp">
       <Filter>plugin</Filter>
     </ClCompile>
@@ -44,6 +41,9 @@
       <Filter>plugin</Filter>
     </ClCompile>
     <ClCompile Include="Mp3DecoderFactory.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="Mp3Decoder.cpp">
       <Filter>plugin</Filter>
     </ClCompile>
   </ItemGroup>
@@ -81,13 +81,13 @@
     <ClInclude Include="SideInfo.h">
       <Filter>decoder</Filter>
     </ClInclude>
-    <ClInclude Include="MP3Decoder.h">
-      <Filter>plugin</Filter>
-    </ClInclude>
     <ClInclude Include="stdafx.h">
       <Filter>plugin</Filter>
     </ClInclude>
     <ClInclude Include="Mp3DecoderFactory.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="Mp3Decoder.h">
       <Filter>plugin</Filter>
     </ClInclude>
   </ItemGroup>

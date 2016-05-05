@@ -59,10 +59,10 @@
 #endif //_HAVE_TAGLIB
 
 #include <set>
-#include <core/sdk/IMetaDataReader.h>
+#include <core/sdk/IMetadataReader.h>
 #include <core/support/Common.h>
 
-class TagReaderTaglib : public musik::core::Plugin::IMetaDataReader {
+class TagReaderTaglib : public musik::core::Plugin::IMetadataReader {
 	public:
 		TagReaderTaglib();
 		virtual ~TagReaderTaglib();

@@ -192,9 +192,6 @@
     <ClInclude Include="sdk\IDSP.h">
       <Filter>src\sdk</Filter>
     </ClInclude>
-    <ClInclude Include="sdk\IMetaDataReader.h">
-      <Filter>src\sdk</Filter>
-    </ClInclude>
     <ClInclude Include="sdk\IOutput.h">
       <Filter>src\sdk</Filter>
     </ClInclude>
@@ -313,6 +310,9 @@
       <Filter>src\library\metadata</Filter>
     </ClInclude>
     <ClInclude Include="sdk\config.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IMetadataReader.h">
       <Filter>src\sdk</Filter>
     </ClInclude>
   </ItemGroup>

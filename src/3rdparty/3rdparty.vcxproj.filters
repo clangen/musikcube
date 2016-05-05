@@ -5,9 +5,6 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
-    <Filter Include="src\boost">
-      <UniqueIdentifier>{a4d636c2-85c0-4fc5-8aab-db55589df747}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\sqlite">
       <UniqueIdentifier>{1196607d-f9be-4406-b2b7-d40ad621d1c0}</UniqueIdentifier>
     </Filter>

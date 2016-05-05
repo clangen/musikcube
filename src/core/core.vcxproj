@@ -156,7 +156,7 @@
     <ClInclude Include="sdk\IDSP.h" />
     <ClInclude Include="sdk\IDataStream.h" />
     <ClInclude Include="sdk\IDataStreamFactory.h" />
-    <ClInclude Include="sdk\IMetaDataReader.h" />
+    <ClInclude Include="sdk\IMetadataReader.h" />
     <ClInclude Include="sdk\IOutput.h" />
     <ClInclude Include="sdk\IPlayer.h" />
     <ClInclude Include="sdk\IPlugin.h" />

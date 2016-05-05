@@ -37,9 +37,8 @@
 
 namespace musik { namespace core { namespace audio {
 
-    class  IBuffer {
+    class IBuffer {
         public:
-
             //////////////////////////////////////////
             ///\brief
             ///Get the samplerate of the buffer

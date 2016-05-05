@@ -63,7 +63,7 @@ namespace musik { namespace core { namespace audio {
             ///
             ///\return true if the buffer has been processed to the new outputBuffer.
             //////////////////////////////////////////
-            virtual bool ProcessBuffers(const IBuffer *inputBuffer, IBuffer *outputBuffer) = 0;
+            virtual bool Process(const IBuffer *inputBuffer, IBuffer *outputBuffer) = 0;
     };
 
 } } }

@@ -7,12 +7,12 @@
 
 using namespace musik::core::audio;
 
-class MP3Decoder : public IDecoder
+class Mp3Decoder : public IDecoder
 {
 public:
 
-	MP3Decoder();
-	~MP3Decoder();
+	Mp3Decoder();
+	~Mp3Decoder();
 
     bool Open(musik::core::io::IDataStream *dataStream);
 	double SetPosition(double seconds, double totalLength);

@@ -36,6 +36,7 @@
 
 #pragma once
 
+#include <string>
 #include <core/sdk/config.h>
 #include <utf8/utf8.h>
 #include <boost/filesystem.hpp>

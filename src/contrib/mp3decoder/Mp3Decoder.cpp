@@ -63,14 +63,14 @@ static bool splitFrame(musik::core::io::IDataStream *dataStream, Frame &fr) {
     return true;
 }
 
-MP3Decoder::MP3Decoder()
+Mp3Decoder::Mp3Decoder()
 : decoder(NULL) {
 }
 
-MP3Decoder::~MP3Decoder() {
+Mp3Decoder::~Mp3Decoder() {
 }
 
-unsigned long MP3Decoder::GetID3HeaderLength(unsigned char * buffer) {
+unsigned long Mp3Decoder::GetID3HeaderLength(unsigned char * buffer) {
 	unsigned char VerMajor;
 	unsigned char VerMinor;
 	unsigned char Flags;
@@ -93,7 +93,7 @@ unsigned long MP3Decoder::GetID3HeaderLength(unsigned char * buffer) {
     return 0;
 }
 
-bool MP3Decoder::GetXingHeader(unsigned char * xingBuffer) {
+bool Mp3Decoder::GetXingHeader(unsigned char * xingBuffer) {
     #define FRAMES_FLAG         0x0001
     #define BYTES_FLAG          0x0002
     #define TOC_FLAG            0x0004
@@ -146,7 +146,7 @@ bool MP3Decoder::GetXingHeader(unsigned char * xingBuffer) {
 	return true;
 }
 
-bool MP3Decoder::GetStreamData() {
+bool Mp3Decoder::GetStreamData() {
 	unsigned char tbuf[11];
 	unsigned long bytesread;
 	Frame fr;
@@ -193,19 +193,19 @@ bool MP3Decoder::GetStreamData() {
     return false;
 }
 
-bool MP3Decoder::Open(musik::core::io::IDataStream *dataStream) {
+bool Mp3Decoder::Open(musik::core::io::IDataStream *dataStream) {
     this->dataStream = dataStream;
     this->lastLayer = -1;
     return GetStreamData();
 }
 
-void MP3Decoder::Destroy(void) {
+void Mp3Decoder::Destroy(void) {
     delete this;
 }
 
 #define MP3_BUFFER_FLOAT_ALLOWANCE 2304 /* why? */
 
-bool MP3Decoder::GetBuffer(IBuffer *buffer) {
+bool Mp3Decoder::GetBuffer(IBuffer *buffer) {
     buffer->SetChannels(this->numChannels);
     buffer->SetSamples(MP3_BUFFER_FLOAT_ALLOWANCE / buffer->Channels());
     buffer->SetSampleRate(this->sampleRate);
@@ -242,7 +242,7 @@ bool MP3Decoder::GetBuffer(IBuffer *buffer) {
     return false;
 }
 
-double MP3Decoder::SetPosition(double seconds, double totalLength) {
+double Mp3Decoder::SetPosition(double seconds, double totalLength) {
     float milliseconds = (float) seconds * 1000.0f;
 	float percent = 100.00f * ((float) milliseconds / (float) this->streamLengthMs);
 	unsigned long offset;

@@ -36,8 +36,6 @@
 
 #pragma once
 
-#include <string>
-
 #ifdef WIN32
     #define WIN32_LEAN_AND_MEAN
     #define WINVER 0x0501

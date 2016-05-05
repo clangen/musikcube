@@ -39,7 +39,7 @@
 #include <core/playback/NonLibraryTrackHelper.h>
 #include <boost/bind.hpp>
 #include <core/plugin/PluginFactory.h>
-#include <core/sdk/IMetaDataReader.h>
+#include <core/sdk/IMetadataReader.h>
 #include <core/io/DataStreamFactory.h>
 
 using namespace musik::core;
@@ -78,9 +78,9 @@ void NonLibraryTrackHelper::ReadTrack(musik::core::TrackPtr track) {
 
 void NonLibraryTrackHelper::ThreadLoop() {
     /* load all IMetadataReaer plugins */
-    typedef Plugin::IMetaDataReader PluginType;
+    typedef Plugin::IMetadataReader PluginType;
     typedef PluginFactory::DestroyDeleter<PluginType> Deleter;
-    typedef std::vector<boost::shared_ptr<Plugin::IMetaDataReader>> MetadataReaderList;
+    typedef std::vector<boost::shared_ptr<Plugin::IMetadataReader>> MetadataReaderList;
 
     MetadataReaderList metadataReaders = PluginFactory::Instance()
             .QueryInterface<PluginType, Deleter>("GetMetaDataReader");

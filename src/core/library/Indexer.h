@@ -40,7 +40,7 @@
 
 #include <core/support/ThreadHelper.h>
 #include <core/db/Connection.h>
-#include <core/sdk/IMetaDataReader.h>
+#include <core/sdk/IMetadataReader.h>
 
 #include <sigslot/sigslot.h>
 
@@ -121,7 +121,7 @@ namespace musik { namespace core {
                     std::string path;
             };
 
-            typedef std::vector<boost::shared_ptr<Plugin::IMetaDataReader> > MetadataReaderList;
+            typedef std::vector<boost::shared_ptr<Plugin::IMetadataReader> > MetadataReaderList;
 
             std::deque<AddRemoveContext> addRemoveQueue;
 

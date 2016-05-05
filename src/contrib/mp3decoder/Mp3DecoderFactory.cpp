@@ -37,7 +37,7 @@
 #include "boost/filesystem.hpp"
 
 #include "Mp3DecoderFactory.h"
-#include "MP3Decoder.h"
+#include "Mp3Decoder.h"
 
 #include <string>
 
@@ -52,7 +52,7 @@ void Mp3DecoderFactory::Destroy() {
 }
 
 IDecoder* Mp3DecoderFactory::CreateDecoder() {
-    return new MP3Decoder();
+    return new Mp3Decoder();
 }
 
 bool Mp3DecoderFactory::CanHandle(const char* source) const

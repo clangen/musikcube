@@ -167,7 +167,7 @@ BufferPtr Stream::GetNextProcessedOutputBuffer() {
                 oldBuffer->CopyFormat(currentBuffer);
                 oldBuffer->position = currentBuffer->position;
 
-                if ((*dsp)->ProcessBuffers(currentBuffer.get(), oldBuffer.get())) {
+                if ((*dsp)->Process(currentBuffer.get(), oldBuffer.get())) {
                     currentBuffer.swap(oldBuffer);
                 }
             }
