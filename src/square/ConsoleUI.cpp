@@ -99,8 +99,9 @@ void ConsoleUI::Run()
     using musik::core::TrackPtr;
    
     LibraryPtr library = LibraryFactory::Libraries().at(0); /* there's always at least 1... */
-    library->Indexer()->AddPath("E:/music/ripped/MR_Bungle");
-    library->Indexer()->AddPath("E:/music/downloaded/the beatles (remastered)");
+    //library->Indexer()->AddPath("E:/music/ripped/MR_Bungle");
+    //library->Indexer()->AddPath("E:/music/downloaded/the beatles (remastered)");
+    library->Indexer()->AddPath("E:/testmusic");
     library->Indexer()->RestartSync();
 
     while (!this->shouldQuit) {
