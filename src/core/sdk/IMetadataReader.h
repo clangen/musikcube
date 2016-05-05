@@ -39,7 +39,7 @@
 #include "config.h"
 #include "ITrack.h"
 
-namespace musik { namespace core { namespace Plugin {
+namespace musik { namespace core { namespace metadata {
 
     class  IMetadataReader {
         public:

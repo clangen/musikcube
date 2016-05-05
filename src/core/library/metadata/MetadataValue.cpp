@@ -39,14 +39,16 @@
 
 using namespace musik::core;
 
-MetadataValue::MetadataValue(void){
-}
-
-MetadataValue::MetadataValue(const DBID newId,const char *value):id(newId){
-    if(value){
+MetadataValue::MetadataValue(const DBID newId, const char *value)
+: id(newId)
+{
+    if(value) {
         this->value    = value;
     }
 }
 
-MetadataValue::~MetadataValue(void){
+MetadataValue::MetadataValue() {
+}
+
+MetadataValue::~MetadataValue() {
 }

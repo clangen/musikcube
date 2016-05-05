@@ -62,7 +62,7 @@
 #include <core/sdk/IMetadataReader.h>
 #include <core/support/Common.h>
 
-class TagReaderTaglib : public musik::core::Plugin::IMetadataReader {
+class TagReaderTaglib : public musik::core::metadata::IMetadataReader {
 	public:
 		TagReaderTaglib();
 		virtual ~TagReaderTaglib();

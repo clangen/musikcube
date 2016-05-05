@@ -36,8 +36,6 @@
 
 #pragma once
 
-//#include <core/config.h>
-
 #include <core/support/ThreadHelper.h>
 #include <core/db/Connection.h>
 #include <core/sdk/IMetadataReader.h>
@@ -45,17 +43,11 @@
 #include <sigslot/sigslot.h>
 
 #include <boost/thread/thread.hpp>
-//#include <boost/thread/condition.hpp>
-//#include <boost/thread/mutex.hpp>
 
 #include <deque>
 #include <vector>
 
-//////////////////////////////////////////////////////////////////////////////
-
 namespace musik { namespace core {
-
-//////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////
     ///\brief
@@ -99,8 +91,8 @@ namespace musik { namespace core {
             boost::thread *thread;
             boost::mutex progressMutex;
 
-            double progress;
-            double progress2;
+            double overallProgress;
+            double currentProgress;
             int nofFiles;
             int filesIndexed;
             int filesSaved;
@@ -121,7 +113,7 @@ namespace musik { namespace core {
                     std::string path;
             };
 
-            typedef std::vector<boost::shared_ptr<Plugin::IMetadataReader> > MetadataReaderList;
+            typedef std::vector<boost::shared_ptr<metadata::IMetadataReader> > MetadataReaderList;
 
             std::deque<AddRemoveContext> addRemoveQueue;
 
@@ -130,8 +122,4 @@ namespace musik { namespace core {
 
     typedef boost::shared_ptr<Indexer> IndexerPtr;
 
-//////////////////////////////////////////////////////////////////////////////
-} } // musik::core
-//////////////////////////////////////////////////////////////////////////////
-
-
+} } 

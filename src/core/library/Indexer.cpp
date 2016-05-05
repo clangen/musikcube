@@ -55,14 +55,13 @@ using namespace musik::core;
 
 Indexer::Indexer() 
 : thread(NULL)
-, progress(0)
-, progress2(0)
+, overallProgress(0)
+, currentProgress(0)
 , status(0)
 , restart(false)
 , nofFiles(0)
 , filesIndexed(0)
-, filesSaved(0)
-{
+, filesSaved(0) {
 }
 
 //////////////////////////////////////////
@@ -90,13 +89,13 @@ std::string Indexer::GetStatus() {
     std::string status;
     switch(this->status) {
         case 1: return boost::str(boost::format("Counting files: %1%")%this->nofFiles );
-        case 2: return boost::str(boost::format("Indexing: %.2f") % (this->progress*100)) + "%";
-        case 3: return boost::str(boost::format("Removing old files: %.2f") % (this->progress*100)) + "%";
+        case 2: return boost::str(boost::format("Indexing: %.2f") % (this->overallProgress*100)) + "%";
+        case 3: return boost::str(boost::format("Removing old files: %.2f") % (this->overallProgress*100)) + "%";
         case 4: return "Cleaning up.";
         case 5: return "Optimizing.";
         case 6: return boost::str(boost::format("Analyzing: %.2f%% (current %.1f%%)")
-            % (100.0 * this->progress / (double) this->nofFiles)
-            % (this->progress2*100.0));
+            % (100.0 * this->overallProgress / (double) this->nofFiles)
+            % (this->currentProgress * 100.0));
     }
 
     return status;
@@ -144,7 +143,7 @@ void Indexer::AddPath(std::string path) {
     boost::filesystem::path fsPath(path);
     path = fsPath.string(); /* canonicalize */
 
-    if (path.substr(path.size() -1 , 1) != "/") {
+    if (path.substr(path.size() -1, 1) != "/") {
         path += "/";
     }
 
@@ -187,11 +186,11 @@ void Indexer::RemovePath(std::string path) {
 //////////////////////////////////////////
 void Indexer::Synchronize() {
     /* load all of the metadata (tag) reader plugins */
-    typedef Plugin::IMetadataReader PluginType;
+    typedef metadata::IMetadataReader PluginType;
     typedef PluginFactory::DestroyDeleter<PluginType> Deleter;
 
     this->metadataReaders = PluginFactory::Instance()
-        .QueryInterface<PluginType, Deleter>("GetMetaDataReader");
+        .QueryInterface<PluginType, Deleter>("GetMetadataReader");
 
     {
         boost::mutex::scoped_lock lock(this->progressMutex);
@@ -230,7 +229,7 @@ void Indexer::Synchronize() {
     {
         boost::mutex::scoped_lock lock(this->progressMutex);
         this->status = 1;
-        this->progress = 0.0;
+        this->overallProgress = 0.0;
     }
 
 	for(std::size_t i = 0; i < paths.size(); ++i){
@@ -243,7 +242,7 @@ void Indexer::Synchronize() {
     {
         boost::mutex::scoped_lock lock(this->progressMutex);
         this->status = 2;
-        this->progress = 0.0;
+        this->overallProgress = 0.0;
         this->filesSaved = 0;
     }
     
@@ -257,7 +256,7 @@ void Indexer::Synchronize() {
     {
         boost::mutex::scoped_lock lock(this->progressMutex);
         this->status = 3;
-        this->progress = 0.0;
+        this->overallProgress = 0.0;
     }
 
     if (!this->Restarted() && !this->Exited()) {
@@ -268,7 +267,7 @@ void Indexer::Synchronize() {
 
     {
         boost::mutex::scoped_lock lock(this->progressMutex);
-        this->progress = 0.0;
+        this->overallProgress = 0.0;
         this->status = 4;
     }
 
@@ -281,7 +280,7 @@ void Indexer::Synchronize() {
 
     {
        boost::mutex::scoped_lock lock(this->progressMutex);
-        this->progress = 0.0;
+        this->overallProgress = 0.0;
         this->status = 5;
     }
 
@@ -362,7 +361,7 @@ void Indexer::SyncDirectory(
     std::string leaf(path.leaf().string());
     DBID dirId = 0;
 
-    /* get folder id */
+    /* get relative folder id */
 
     {
         db::CachedStatement stmt("SELECT id FROM folders WHERE name=? AND path_id=? AND parent_id=?", this->dbConnection);
@@ -410,11 +409,11 @@ void Indexer::SyncDirectory(
             else {
                 ++this->filesIndexed;
 
-                /* update progress every so often... */
+                /* update overallProgress every so often... */
 
                 if (this->filesIndexed % 25 == 0) {
                     boost::mutex::scoped_lock lock(this->progressMutex);
-                    this->progress = (double) this->filesIndexed / (double)this->nofFiles;
+                    this->overallProgress = (double) this->filesIndexed / (double)this->nofFiles;
                 }
 
                 musik::core::IndexerTrack track(0);
@@ -451,7 +450,7 @@ void Indexer::SyncDirectory(
             boost::thread::yield();
         }
     }
-    catch(...){
+    catch(...) {
     }
 }
 
@@ -521,7 +520,8 @@ void Indexer::ThreadLoop(){
 bool Indexer::Startup(std::string setLibraryPath) {
     this->libraryPath = setLibraryPath;
 
-    // Create thumbnail cache directory
+    /* ensure image artwork directory exists */
+
     boost::filesystem::path thumbPath(this->libraryPath + "thumbs/");
 
     if (!boost::filesystem::exists(thumbPath)) {
@@ -559,14 +559,16 @@ void Indexer::SyncDelete(const std::vector<DBID>& paths) {
     db::Statement stmtSyncPath("SELECT p.path FROM paths p WHERE p.id=?", this->dbConnection);
 
     {
-        // Remove non existing folders
-        db::Statement stmt("SELECT f.id,p.path||f.relative_path FROM folders f,paths p WHERE f.path_id=p.id AND p.id=?",this->dbConnection);
+        db::Statement stmt(
+            "SELECT f.id, p.path || f.relative_path "
+            "FROM folders f, paths p "
+            "WHERE f.path_id=p.id AND p.id=?", this->dbConnection);
+
         db::Statement stmtRemove("DELETE FROM folders WHERE id=?",this->dbConnection);
 
         for (std::size_t i = 0; i < paths.size(); ++i) {
             stmt.BindInt(0, paths[i]);
 
-            // Get the syncpath
             stmtSyncPath.BindInt(0, paths[i]);
             stmtSyncPath.Step();
             std::string syncPathString(stmtSyncPath.ColumnText(0));
@@ -604,12 +606,9 @@ void Indexer::SyncDelete(const std::vector<DBID>& paths) {
         }
     }
 
-    boost::thread::yield(); /* so much yielding */
+    /* we deleted folders above. remove all tracks that were in those dirs*/
 
-    // Remove songs with no folder
     this->dbConnection.Execute("DELETE FROM tracks WHERE folder_id NOT IN (SELECT id FROM folders)");
-
-    boost::thread::yield();
 
     // Remove tracks
     db::Statement stmtCount("SELECT count(*) FROM tracks", this->dbConnection);
@@ -620,10 +619,9 @@ void Indexer::SyncDelete(const std::vector<DBID>& paths) {
     }
 
     db::Statement stmt(
-        "SELECT t.id, p.path || f.relative_path || '/' || t.filename "\
-        "FROM tracks t, folders f, paths p " \
-        "WHERE t.folder_id=f.id AND f.path_id=p.id AND p.id=?",
-        this->dbConnection);
+        "SELECT t.id, p.path || f.relative_path || '/' || t.filename "
+        "FROM tracks t, folders f, paths p "
+        "WHERE t.folder_id=f.id AND f.path_id=p.id AND p.id=?", this->dbConnection);
 
     db::Statement stmtRemove("DELETE FROM tracks WHERE id=?", this->dbConnection);
 
@@ -641,7 +639,7 @@ void Indexer::SyncDelete(const std::vector<DBID>& paths) {
             {
                 boost::mutex::scoped_lock lock(this->progressMutex);
                 if (songs > 0) {
-                    this->progress = 0.2+0.8*(double)count/(double)(songs);
+                    this->overallProgress = 0.2+0.8*(double)count/(double)(songs);
                 }
             }
 
@@ -797,11 +795,9 @@ void Indexer::SyncOptimize() {
 
     {
         db::ScopedTransaction transaction(this->dbConnection);
-        // Fix sort order on tracks
-        /************************************
-        The sort order of a track is by default in the following order
-        genre, artist, album, track number, path, filename
-        ************************************/
+
+        /* the sort order of a track is by default in the following order
+        genre, artist, album, track number, path, filename */
 
         db::Statement outer("SELECT t.id FROM tracks t " \
             "LEFT OUTER JOIN artists ar ON ar.id=t.visual_artist_id " \
@@ -813,7 +809,8 @@ void Indexer::SyncOptimize() {
         db::Statement inner("UPDATE tracks SET sort_order1=? WHERE id=?",this->dbConnection);
 
         count = 0;
-        while(outer.Step() == db::Row) {
+
+        while (outer.Step() == db::Row) {
             inner.BindInt(0,count);
             inner.BindInt(1, outer.ColumnInt(0));
             inner.Step();
@@ -839,7 +836,7 @@ void Indexer::ProcessAddRemoveQueue() {
     while (!this->addRemoveQueue.empty()) {
         AddRemoveContext context = this->addRemoveQueue.front();
 
-        if (context.add){
+        if (context.add) { /* insert new paths */
             db::Statement stmt("SELECT id FROM paths WHERE path=?", this->dbConnection);
             stmt.BindText(0, context.path);
 
@@ -849,7 +846,7 @@ void Indexer::ProcessAddRemoveQueue() {
                 insertPath.Step();
             }
         }
-        else {
+        else { /* remove old ones */
             db::Statement stmt("DELETE FROM paths WHERE path=?", this->dbConnection);
             stmt.BindText(0, context.path);
             stmt.Step();
@@ -864,123 +861,133 @@ void Indexer::ProcessAddRemoveQueue() {
 }
 
 
-void Indexer::RunAnalyzers(){
+void Indexer::RunAnalyzers() {
     typedef audio::IAnalyzer PluginType;
     typedef PluginFactory::DestroyDeleter<PluginType> Deleter;
     typedef boost::shared_ptr<PluginType> PluginPtr;
     typedef std::vector<PluginPtr> PluginVector;
 
-    // start by checking if there are any analyzers at all
-    {
-        PluginVector analyzers =
-            PluginFactory::Instance().QueryInterface<PluginType, Deleter>("GetAudioAnalyzer");
-        if(analyzers.empty()){
-            return;
-        }
+    /* short circuit if there aren't any analyzers */
+
+    PluginVector analyzers = PluginFactory::Instance()
+        .QueryInterface<PluginType, Deleter>("GetAudioAnalyzer");
+
+    if (analyzers.empty()) {
+        return;
     }
 
+    /* initialize status */
+
     {
-        // Cleanup status
         boost::mutex::scoped_lock lock(this->progressMutex);
-        this->progress     = 0;
-        this->progress2    = 0;
-        this->status       = 6;
+        this->overallProgress = 0;
+        this->currentProgress = 0;
+        this->nofFiles = 0;
+        this->status = 6;
     }
 
-    // Get the number of tracks to be able to show percentage status.
-    db::Statement totalTracks("SELECT count(*) FROM tracks",this->dbConnection);
-    if(totalTracks.Step()==db::Row){
-        this->nofFiles  = totalTracks.ColumnInt(0);
+    /* figure out how many files we need to process */
+
+    db::Statement totalTracks("SELECT count(*) FROM tracks", this->dbConnection);
+    if (totalTracks.Step() == db::Row){
+        this->nofFiles = totalTracks.ColumnInt(0);
     }
 
-    // Loop through all tracks
-    DBID trackId(0);
-    DBID folderId(0);
-    db::Statement getNextTrack("SELECT id,folder_id FROM tracks WHERE id>? ORDER BY id LIMIT 1",this->dbConnection);
-    getNextTrack.BindInt(0,trackId);
+    /* for each track... */
 
-    while( getNextTrack.Step()==db::Row ){
-        trackId     = getNextTrack.ColumnInt(0);
-        folderId    = getNextTrack.ColumnInt(1);
+    DBID trackId = 0;
+    DBID folderId = 0;
+
+    db::Statement getNextTrack(
+        "SELECT id, folder_id FROM tracks WHERE id>? ORDER BY id LIMIT 1",
+        this->dbConnection);
+
+    getNextTrack.BindInt(0, trackId);
+
+    while(getNextTrack.Step() == db::Row ) {
+        trackId = getNextTrack.ColumnInt(0);
+        folderId = getNextTrack.ColumnInt(1);
+
         getNextTrack.Reset();
         getNextTrack.UnBindAll();
 
-        boost::thread::yield();
-
         IndexerTrack track(trackId);
-        if (track.Reload(this->dbConnection)) {
-            // lets see if we should analyze the track
-            PluginVector analyzers =
-                PluginFactory::Instance().QueryInterface<PluginType, Deleter>("GetAudioAnalyzer");
 
-            // lets see what plugins that need to analyze the track audio
-            for(PluginVector::iterator plugin=analyzers.begin();plugin!=analyzers.end();){
-                if( (*plugin)->Start(&track) ){
-                    ++plugin;
-                }else{
-                    plugin  = analyzers.erase(plugin);
+        if (track.Reload(this->dbConnection)) {
+            PluginVector runningAnalyzers;
+
+            PluginVector::iterator plugin = analyzers.begin();
+            for ( ; plugin != analyzers.end(); ++plugin) {
+                if ((*plugin)->Start(&track)) {
+                    runningAnalyzers.push_back(*plugin);
                 }
             }
-            PluginVector runningAnalyzers(analyzers);
 
-            if(!runningAnalyzers.empty()){
-                // lets start a stream
+            if(!runningAnalyzers.empty()) {
                 audio::StreamPtr stream = audio::Stream::Create(audio::Stream::NoDSP);
-                if(stream){
-                    if(stream->OpenStream(track.URL())){
-                        // loop through the stream buffers, sending the buffers to the analyzers
+
+                if (stream) {
+                    if (stream->OpenStream(track.URL())) {
+
+                        /* decode the stream quickly, passing to all analyzers*/
+
                         audio::BufferPtr buffer;
-                        while((buffer=stream->GetNextProcessedOutputBuffer()) && !runningAnalyzers.empty()){
+                        
+                        while ((buffer = stream->GetNextProcessedOutputBuffer()) && !runningAnalyzers.empty()) {
                             {
                                 boost::mutex::scoped_lock lock(this->progressMutex);
-                                this->progress2 = stream->DecoderProgress();
+                                this->currentProgress = stream->DecoderProgress();
                             }
 
-                            PluginVector::iterator plugin=runningAnalyzers.begin();
-                            while(plugin!=runningAnalyzers.end()){
-                                // analyze the audio, and remove plugin if it returns false
-                                if( (*plugin)->Analyze(&track,buffer.get()) ){
+                            PluginVector::iterator plugin = runningAnalyzers.begin();
+                            while(plugin != runningAnalyzers.end()) {
+                                if ((*plugin)->Analyze(&track, buffer.get())) {
                                     ++plugin;
-                                }else{
-                                    plugin  = runningAnalyzers.erase(plugin);
                                 }
-                                boost::thread::yield();
-                                if(this->Exited() || this->Restarted()){
-                                    return;
+                                else {
+                                    /* TODO: dangerous? should we be removing elements from
+                                    this vector as we're iterating over it? */
+                                    plugin  = runningAnalyzers.erase(plugin);
                                 }
                             }
                         }
 
-                        // everything is analyzed, lets send the End
-                        int successPlugins(0);
-                        for(PluginVector::iterator plugin=analyzers.begin();plugin!=analyzers.end();++plugin){
+                        /* done with track decoding and analysis, let the plugins know */
+                        int successPlugins = 0;
+                        PluginVector::iterator plugin = analyzers.begin();
+
+                        for( ; plugin != analyzers.end(); ++plugin){
                             if((*plugin)->End(&track)){
                                 successPlugins++;
                             }
                         }
 
-                        // finally save the track
-                        if(successPlugins>0){
-                            track.Save(this->dbConnection,this->libraryPath,folderId);
+                        /* the analyzers can write metadata back to the DB, so if any of them
+                        completed successfully, then save the track. */
+
+                        if(successPlugins>0) {
+                            track.Save(this->dbConnection, this->libraryPath,folderId);
                         }
+
                         {
                             boost::mutex::scoped_lock lock(this->progressMutex);
-                            this->progress2 = 0;
+                            this->currentProgress = 0;
                         }
                     }
                 }
             }
-
         }
 
         if(this->Exited() || this->Restarted()){
             return;
         }
+
         {
             boost::mutex::scoped_lock lock(this->progressMutex);
-            this->progress++;
+            this->overallProgress++;
         }
-        getNextTrack.BindInt(0,trackId);
+
+        getNextTrack.BindInt(0, trackId);
     }
 
 }

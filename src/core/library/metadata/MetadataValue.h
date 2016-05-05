@@ -44,6 +44,7 @@
 #include <vector>
 
 namespace musik { namespace core {
+
     class MetadataValue{
         public:
             MetadataValue(void);
@@ -52,7 +53,6 @@ namespace musik { namespace core {
 
             DBID id;
             std::string value;
-
     };
 
     typedef boost::shared_ptr<MetadataValue> MetadataValuePtr;

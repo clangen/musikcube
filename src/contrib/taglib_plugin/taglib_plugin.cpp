@@ -50,54 +50,37 @@
 #define DLLEXPORT
 #endif
 
-
-//////////////////////////////////////////
-///\brief
-///Class for fixing leaking TagLib::ID3v2::FrameFactory without changing TagLib code.
-//////////////////////////////////////////
-class TaglibBugFix : TagLib::ID3v2::FrameFactory{
-    public:
-        ~TaglibBugFix(){
-
-        };
-};
-
 #ifdef WIN32
 BOOL APIENTRY DllMain( HMODULE hModule,DWORD  ul_reason_for_call,LPVOID lpReserved){
     if(ul_reason_for_call==DLL_PROCESS_DETACH){
-        TaglibBugFix *ff    = (TaglibBugFix*)TagLib::ID3v2::FrameFactory::instance();
-        delete ff;
     }
     return TRUE;
 }
-#endif //WIN32
+#endif
 
-//TagReaderTaglib tagreader;
-
-class TaglibPlugin : public musik::core::IPlugin
-{
+class TaglibPlugin : public musik::core::IPlugin {
     void Destroy() { delete this; };
 
-	const char* Name(){
-		return "Taglib 1.5 plugin";
-	};
+    const char* Name(){
+        return "Taglib 1.5 plugin";
+    };
 
-	const char* Version(){
-		return "0.1";
-	};
+    const char* Version(){
+        return "0.1";
+    };
 
-	const char* Author(){
-		return "Daniel �nnerby";
-	};
+    const char* Author(){
+        return "Daniel �nnerby";
+    };
 
 };
 
-extern "C"{
-	DLLEXPORT musik::core::Plugin::IMetadataReader* GetMetaDataReader(){
-		return new TagReaderTaglib();
-	}
+extern "C" {
+    DLLEXPORT musik::core::metadata::IMetadataReader* GetMetadataReader() {
+        return new TagReaderTaglib();
+    }
 
-	DLLEXPORT musik::core::IPlugin* GetPlugin(){
-		return new TaglibPlugin();
-	}
+    DLLEXPORT musik::core::IPlugin* GetPlugin() {
+        return new TaglibPlugin();
+    }
 }

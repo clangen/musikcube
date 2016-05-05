@@ -73,7 +73,7 @@ IndexerTrack::~IndexerTrack() {
 std::string IndexerTrack::GetValue(const char* metakey) {
     if (metakey && this->internalMetadata) {
         MetadataMap::iterator metavalue = this->internalMetadata->metadata.find(metakey);
-        if(metavalue != this->internalMetadata->metadata.end()) {
+        if (metavalue != this->internalMetadata->metadata.end()) {
             return metavalue->second;
         }
     }
@@ -83,7 +83,8 @@ std::string IndexerTrack::GetValue(const char* metakey) {
 
 void IndexerTrack::SetValue(const char* metakey, const char* value) {
     if (metakey && value) {
-        this->internalMetadata->metadata.insert(std::pair<std::string, std::string>(metakey,value));
+        this->internalMetadata->metadata.insert(
+            std::pair<std::string, std::string>(metakey,value));
     }
 }
 
@@ -122,7 +123,9 @@ Track::MetadataIteratorRange IndexerTrack::GetValues(const char* metakey) {
 
 Track::MetadataIteratorRange IndexerTrack::GetAllValues() {
     if (this->internalMetadata) {
-        return Track::MetadataIteratorRange(this->internalMetadata->metadata.begin(), this->internalMetadata->metadata.end());
+        return Track::MetadataIteratorRange(
+            this->internalMetadata->metadata.begin(),
+            this->internalMetadata->metadata.end());
     }
 
     return Track::MetadataIteratorRange();
@@ -305,13 +308,13 @@ void IndexerTrack::ProcessNonStandardMetadata(db::Connection& connection) {
 
         selectMetaKey.BindText(0, it->first);
     
-        if (selectMetaKey.Step()==db::Row) {
+        if (selectMetaKey.Step() == db::Row) {
             keyId = selectMetaKey.ColumnInt(0);
         }
         else {
             insertMetaKey.BindText(0, it->first);
             
-            if (insertMetaKey.Step()==db::Done) {
+            if (insertMetaKey.Step() == db::Done) {
                 keyId = connection.LastInsertedId();
             }
         }

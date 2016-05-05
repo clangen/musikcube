@@ -77,13 +77,13 @@ void NonLibraryTrackHelper::ReadTrack(musik::core::TrackPtr track) {
 }
 
 void NonLibraryTrackHelper::ThreadLoop() {
-    /* load all IMetadataReaer plugins */
-    typedef Plugin::IMetadataReader PluginType;
+    /* load all IMetadataReader plugins */
+    typedef metadata::IMetadataReader PluginType;
     typedef PluginFactory::DestroyDeleter<PluginType> Deleter;
-    typedef std::vector<boost::shared_ptr<Plugin::IMetadataReader>> MetadataReaderList;
+    typedef std::vector<boost::shared_ptr<metadata::IMetadataReader>> MetadataReaderList;
 
-    MetadataReaderList metadataReaders = PluginFactory::Instance()
-            .QueryInterface<PluginType, Deleter>("GetMetaDataReader");
+    MetadataReaderList metadataReaders = 
+        PluginFactory::Instance() .QueryInterface<PluginType, Deleter>("GetMetadataReader");
 
     bool moreTracks = true;
 
