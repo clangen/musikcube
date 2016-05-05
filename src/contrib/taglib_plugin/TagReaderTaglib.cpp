@@ -84,6 +84,18 @@
 #include <boost/lexical_cast.hpp>
 
 
+#ifdef WIN32
+static inline std::wstring utf8to16(const char* utf8) {
+    int size = MultiByteToWideChar(CP_UTF8, 0, utf8, -1, 0, 0);
+    wchar_t* buffer = new wchar_t[size];
+    MultiByteToWideChar(CP_UTF8, 0, utf8, -1, buffer, size);
+    std::wstring utf16fn(buffer);
+    delete[] buffer;
+    return utf16fn;
+}
+#endif
+
+
 TagReaderTaglib::TagReaderTaglib() {
 }
 
@@ -131,7 +143,11 @@ bool TagReaderTaglib::ReadTag(const char* uri, musik::core::ITrack *track) {
 }
 
 bool TagReaderTaglib::GetGenericTag(const char* uri, musik::core::ITrack *track) {
+#ifdef WIN32
+    TagLib::FileRef file(utf8to16(uri).c_str());
+#else
     TagLib::FileRef file(uri);
+#endif
 
     if(!file.isNull()) {
         TagLib::Tag *tag = file.tag();
@@ -171,8 +187,13 @@ bool TagReaderTaglib::GetGenericTag(const char* uri, musik::core::ITrack *track)
 bool TagReaderTaglib::GetID3v2Tag(const char* uri, musik::core::ITrack *track){
     TagLib::ID3v2::FrameFactory::instance()->setDefaultTextEncoding(TagLib::String::UTF8);
 
+#ifdef WIN32
+    TagLib::MPEG::File file(utf8to16(uri).c_str());
+#else
     TagLib::MPEG::File file(uri);
-	TagLib::ID3v2::Tag *id3v2 = file.ID3v2Tag();
+#endif
+
+    TagLib::ID3v2::Tag *id3v2 = file.ID3v2Tag();
 
 	if (id3v2) {
         TagLib::AudioProperties *audio = file.audioProperties();

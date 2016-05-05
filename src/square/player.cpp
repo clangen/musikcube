@@ -38,6 +38,7 @@
 #include <boost/locale.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/fstream.hpp>
+#include <boost/filesystem/detail/utf8_codecvt_facet.hpp>
 
 using namespace musik::square;
 
@@ -48,9 +49,11 @@ int main(int argc, char* argv[])
 #endif
 {
     /* the following allows boost::filesystem to use utf8 on Windows */
-    std::locale::global(boost::locale::generator().generate(""));
-    boost::filesystem::path::imbue(std::locale());
-
+    //std::locale::global(boost::locale::generator().generate(""));
+    std::locale locale = std::locale();
+    std::locale utf8Locale(locale, new boost::filesystem::detail::utf8_codecvt_facet);
+    boost::filesystem::path::imbue(utf8Locale);
+    
     ConsoleUI* instance = new ConsoleUI();
     instance->Run();
     delete instance;

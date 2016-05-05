@@ -52,10 +52,16 @@ using namespace musik::core::db;
 ///\param connection
 ///database Connection
 //////////////////////////////////////////
-Statement::Statement(const char* sql,Connection &connection) : connection(&connection),stmt(NULL){
+Statement::Statement(const char* sql,Connection &connection) 
+: connection(&connection)
+, stmt(NULL)
+{
     boost::mutex::scoped_lock lock(connection.mutex);
-    int err    = sqlite3_prepare_v2(this->connection->connection,sql,-1,&this->stmt,NULL);
-    if(err!=SQLITE_OK){
+
+    int err = sqlite3_prepare_v2(
+        this->connection->connection, sql, -1, &this->stmt, NULL);
+
+    if (err!=SQLITE_OK) {
         return;
     }
 }
@@ -67,7 +73,6 @@ Statement::Statement(const char* sql,Connection &connection) : connection(&conne
 Statement::Statement(Connection &connection) : connection(&connection),stmt(NULL) {
 }
 
-
 //////////////////////////////////////////
 ///\brief
 ///Destructor that will finalize the statement
@@ -75,7 +80,6 @@ Statement::Statement(Connection &connection) : connection(&connection),stmt(NULL
 Statement::~Statement(){
     int err=sqlite3_finalize(this->stmt);
 }
-
 
 //////////////////////////////////////////
 ///\brief
@@ -104,7 +108,6 @@ int Statement::Step(){
     return this->connection->StepStatement(this->stmt);
 }
 
-
 //////////////////////////////////////////
 ///\brief
 ///Bind a integer to a statment parameter
@@ -116,9 +119,8 @@ int Statement::Step(){
 ///Integer to bind
 //////////////////////////////////////////
 void Statement::BindInt(int position,int bindInt){
-    DB_ASSERT(sqlite3_bind_int(this->stmt,position+1,bindInt));
+    DB_ASSERT(sqlite3_bind_int(this->stmt, position + 1, bindInt));
 }
-
 
 //////////////////////////////////////////
 ///\brief
@@ -131,22 +133,7 @@ void Statement::BindInt(int position,int bindInt){
 ///Integer to bind
 //////////////////////////////////////////
 void Statement::BindInt(int position, UINT64 bindInt){
-    DB_ASSERT(sqlite3_bind_int64(this->stmt,position+1,bindInt));
-}
-
-
-//////////////////////////////////////////
-///\brief
-///Bind a text to a statment parameter
-///
-///\param position
-///Position of the parameter (0 is the first)
-///
-///\param bindText
-///Text to bind
-//////////////////////////////////////////
-void Statement::BindText(int position,const char* bindText){
-    DB_ASSERT(sqlite3_bind_text(this->stmt, position + 1, bindText, -1, SQLITE_STATIC));
+    DB_ASSERT(sqlite3_bind_int64(this->stmt, position + 1, bindInt));
 }
 
 //////////////////////////////////////////
@@ -159,8 +146,31 @@ void Statement::BindText(int position,const char* bindText){
 ///\param bindText
 ///Text to bind
 //////////////////////////////////////////
-void Statement::BindText(int position ,const std::string &bindText){
-    DB_ASSERT(sqlite3_bind_text(this->stmt, position + 1, bindText.c_str(), -1, SQLITE_STATIC));
+void Statement::BindText(int position, const char* bindText) {
+    DB_ASSERT(sqlite3_bind_text(
+        this->stmt, 
+        position + 1,
+        bindText, 
+        -1, 
+        SQLITE_STATIC));
+}
+
+//////////////////////////////////////////
+///\brief
+///Bind a text to a statment parameter
+///
+///\param position
+///Position of the parameter (0 is the first)
+///
+///\param bindText
+///Text to bind
+//////////////////////////////////////////
+void Statement::BindText(int position ,const std::string &bindText) {
+    DB_ASSERT(sqlite3_bind_text(
+        this->stmt, position + 1, 
+        bindText.c_str(), 
+        -1, 
+        SQLITE_TRANSIENT));
 }
 
 //////////////////////////////////////////
@@ -174,7 +184,12 @@ void Statement::BindText(int position ,const std::string &bindText){
 ///Text to bind
 //////////////////////////////////////////
 void Statement::BindTextW(int position,const wchar_t* bindText){
-    DB_ASSERT(sqlite3_bind_text16(this->stmt,position+1,bindText,-1,SQLITE_STATIC));
+    DB_ASSERT(sqlite3_bind_text16(
+        this->stmt,
+        position + 1,
+        bindText, 
+        -1,
+        SQLITE_STATIC));
 }
 
 //////////////////////////////////////////
@@ -188,7 +203,12 @@ void Statement::BindTextW(int position,const wchar_t* bindText){
 ///Text to bind
 //////////////////////////////////////////
 void Statement::BindTextW(int position,const std::wstring &bindText){
-    DB_ASSERT(sqlite3_bind_text16(this->stmt,position+1,bindText.c_str(),-1,SQLITE_STATIC));
+    DB_ASSERT(sqlite3_bind_text16(
+        this->stmt,
+        position + 1,
+        bindText.c_str(),
+        -1,
+        SQLITE_TRANSIENT));
 }
 
 //////////////////////////////////////////
@@ -205,7 +225,6 @@ int Statement::ColumnInt(int column){
     return sqlite3_column_int(this->stmt,column);
 }
 
-
 //////////////////////////////////////////
 ///\brief
 ///Get the results of a column if Step() return a musik::core::db::Row
@@ -220,7 +239,6 @@ UINT64 Statement::ColumnInt64(int column){
     return sqlite3_column_int64(this->stmt,column);
 }
 
-
 //////////////////////////////////////////
 ///\brief
 ///Get the results of a column if Step() return a musik::core::db::Row
@@ -232,10 +250,9 @@ UINT64 Statement::ColumnInt64(int column){
 ///Column data
 //////////////////////////////////////////
 const char* Statement::ColumnText(int column){
-    const char* text = (char*)sqlite3_column_text(this->stmt, column);
+    const char* text = (char*) sqlite3_column_text(this->stmt, column);
     return text ? text : "";
 }
-
 
 //////////////////////////////////////////
 ///\brief
@@ -248,5 +265,6 @@ const char* Statement::ColumnText(int column){
 ///Column data
 //////////////////////////////////////////
 const wchar_t* Statement::ColumnTextW(int column){
-    return (wchar_t*)sqlite3_column_text16(this->stmt,column);
+    const wchar_t* text = (wchar_t*) sqlite3_column_text16(this->stmt,column);
+    return text ? text : L"";
 }

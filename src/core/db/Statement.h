@@ -66,10 +66,10 @@ namespace musik{ namespace core{ namespace db{
 
             void BindInt(int position, int bindInt);
             void BindInt(int position, UINT64 bindInt);
-            void BindText(int position,const char* bindText);
-            void BindText(int position,const std::string &bindText);
-            void BindTextW(int position,const wchar_t* bindText);
-            void BindTextW(int position,const std::wstring &bindText);
+            void BindText(int position, const char* bindText);
+            void BindText(int position, const std::string &bindText);
+            void BindTextW(int position, const wchar_t* bindText);
+            void BindTextW(int position, const std::wstring &bindText);
 
             int ColumnInt(int column);
             UINT64 ColumnInt64(int column);

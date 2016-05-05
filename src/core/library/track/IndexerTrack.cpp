@@ -81,7 +81,7 @@ std::string IndexerTrack::GetValue(const char* metakey) {
     return "";
 }
 
-void IndexerTrack::SetValue(const char* metakey,const char* value) {
+void IndexerTrack::SetValue(const char* metakey, const char* value) {
     if (metakey && value) {
         this->internalMetadata->metadata.insert(std::pair<std::string, std::string>(metakey,value));
     }
@@ -162,20 +162,20 @@ bool IndexerTrack::NeedsToBeIndexed(
 
         bool fileDifferent = true;
 
-        if (stmt.Step()==db::Row) {
+        if (stmt.Step() == db::Row) {
             this->id = stmt.ColumnInt(0);
-            fileDifferent = false;
+            int dbFileSize = stmt.ColumnInt(2);
+            int dbFileTime = stmt.ColumnInt(3);
 
-            if (fileSize != stmt.ColumnInt(2) || fileTime != stmt.ColumnInt(3)) {
-                fileDifferent = true;
+            if (fileSize == dbFileSize && fileTime == dbFileTime) {
+                return false;
             }
         }
-        return fileDifferent;
     }
     catch(...) {
     }
 
-    return false;
+    return true;
 }
 
 static DBID writeToTracksTable(
@@ -190,24 +190,16 @@ static DBID writeToTracksTable(
 
     /* pull these out into local vars so they stay in scope long enough
     for sqlite to process them without making a copy. */
-    std::string title = track.GetValue("title");
-    std::string trackNumber = track.GetValue("track");
-    std::string filename = track.GetValue("filename");
-    std::string bpm = track.GetValue("bpm");
-    std::string duration = track.GetValue("duration");
-    std::string filesize = track.GetValue("filesize");
-    std::string year = track.GetValue("year");
-    std::string filetime = track.GetValue("filetime");
 
-    stmt.BindText(1, trackNumber);
-    stmt.BindText(2, bpm);
-    stmt.BindText(3, duration);
-    stmt.BindText(4, filesize);
-    stmt.BindText(5, year);
+    stmt.BindText(1, track.GetValue("track"));
+    stmt.BindText(2, track.GetValue("bpm"));
+    stmt.BindText(3, track.GetValue("duration"));
+    stmt.BindText(4, track.GetValue("filesize"));
+    stmt.BindText(5, track.GetValue("year"));
     stmt.BindInt(6, folderId);
-    stmt.BindText(7, title);
-    stmt.BindText(8, filename);
-    stmt.BindText(9, filetime);
+    stmt.BindText(7, track.GetValue("title"));
+    stmt.BindText(8, track.GetValue("filename"));
+    stmt.BindText(9, track.GetValue("filetime"));
     stmt.BindInt(10, tempSortOrder);
 
     if (track.Id() != 0) {
@@ -294,8 +286,7 @@ DBID IndexerTrack::ExtractThumbnail(db::Connection& connection, const std::strin
     return thumbnailId;
 }
 
-void IndexerTrack::ProcessNonStandardMetadata(db::Connection& connection)
-{
+void IndexerTrack::ProcessNonStandardMetadata(db::Connection& connection) {
     MetadataMap unknownFields(this->internalMetadata->metadata);
     removeKnownFields(unknownFields);
 
