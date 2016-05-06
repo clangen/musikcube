@@ -53,7 +53,7 @@ class WaveOut : public IOutput {
         virtual void Resume();
         virtual void SetVolume(double volume);
         virtual void Stop();
-        virtual bool Play(IBuffer *buffer, IPlayer *player);
+        virtual bool Play(IBuffer *buffer, IBufferProvider *provider);
 
     public: 
         typedef boost::shared_ptr<WaveOutBuffer> WaveOutBufferPtr;
@@ -87,7 +87,7 @@ class WaveOut : public IOutput {
         double currentVolume;
 
         /* a queue of buffers we've recieved from the core Player, and have enqueued
-        to the output device. we need to notify the IPlayer when they have finished
+        to the output device. we need to notify the IBufferProvider when they have finished
         playing. */
         BufferList queuedBuffers;
 

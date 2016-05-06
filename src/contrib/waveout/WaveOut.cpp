@@ -37,11 +37,11 @@
 #define MAX_BUFFERS 32
 
 static void notifyBufferProcessed(WaveOutBuffer *buffer) {
-    /* let the player know the output device is done with the buffer; the
+    /* let the provider know the output device is done with the buffer; the
     Player ensures buffers are locked down and not freed/reused until it
     gets confirmation it's been played (or the user stops playback) */
-    IPlayer* player = buffer->GetPlayer();
-    player->OnBufferProcessedByOutput(buffer->GetWrappedBuffer());
+    IBufferProvider* provider = buffer->GetBufferProvider();
+    provider->OnBufferProcessed(buffer->GetWrappedBuffer());
 }
 
 WaveOut::WaveOut()
@@ -142,7 +142,7 @@ void WaveOut::StopWaveOutThread() {
     }
 }
 
-bool WaveOut::Play(IBuffer *buffer, IPlayer *player) {
+bool WaveOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     boost::recursive_mutex::scoped_lock lock(this->bufferQueueMutex);
 
     size_t bufferCount = bufferCount = this->queuedBuffers.size();
@@ -166,7 +166,7 @@ bool WaveOut::Play(IBuffer *buffer, IPlayer *player) {
 
         /* add the raw buffer to a WaveOutBuffer; this will ensure a correct WAVEHDR 
         is configured for the WAVEOUT device */
-        WaveOutBufferPtr waveBuffer(new WaveOutBuffer(this, buffer, player));
+        WaveOutBufferPtr waveBuffer(new WaveOutBuffer(this, buffer, provider));
 
         if (waveBuffer->WriteToOutput()) {
             this->queuedBuffers.push_back(waveBuffer);

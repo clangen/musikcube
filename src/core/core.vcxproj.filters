@@ -201,9 +201,6 @@
     <ClInclude Include="sdk\IOutput.h">
       <Filter>src\sdk</Filter>
     </ClInclude>
-    <ClInclude Include="sdk\IPlayer.h">
-      <Filter>src\sdk</Filter>
-    </ClInclude>
     <ClInclude Include="sdk\IAnalyzer.h">
       <Filter>src\sdk</Filter>
     </ClInclude>
@@ -323,6 +320,9 @@
     </ClInclude>
     <ClInclude Include="log\debug.h">
       <Filter>src\log</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IBufferProvider.h">
+      <Filter>src\sdk</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

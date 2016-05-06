@@ -36,10 +36,10 @@
 
 #include <iostream>
 
-WaveOutBuffer::WaveOutBuffer(WaveOut *waveOut, IBuffer *buffer, IPlayer *player)
+WaveOutBuffer::WaveOutBuffer(WaveOut *waveOut, IBuffer *buffer, IBufferProvider *provider)
 : waveOut(waveOut) 
 , buffer(buffer)
-, player(player)
+, provider(provider)
 , destroyed(false)
 {
     this->Initialize();
@@ -72,8 +72,8 @@ void WaveOutBuffer::Destroy() {
     }
 }
 
-IPlayer* WaveOutBuffer::GetPlayer() const {
-    return this->player;
+IBufferProvider* WaveOutBuffer::GetBufferProvider() const {
+    return this->provider;
 }
 
 IBuffer* WaveOutBuffer::GetWrappedBuffer() const {

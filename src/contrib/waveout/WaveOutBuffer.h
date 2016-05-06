@@ -33,7 +33,7 @@
 #pragma once
 
 #include <core/sdk/IBuffer.h>
-#include <core/sdk/IPlayer.h>
+#include <core/sdk/IBufferProvider.h>
 #ifdef WIN32
 	#include "Mmsystem.h"
 #else
@@ -49,12 +49,12 @@ using namespace musik::core::audio;
 class WaveOutBuffer
 {
 public:
-    WaveOutBuffer(WaveOut *waveOut, IBuffer *buffer, IPlayer *player);
+    WaveOutBuffer(WaveOut *waveOut, IBuffer *buffer, IBufferProvider *provider);
     ~WaveOutBuffer();
 
     void Destroy();
     bool WriteToOutput();
-    IPlayer* GetPlayer() const;
+    IBufferProvider* GetBufferProvider() const;
     IBuffer* GetWrappedBuffer() const;
 
 private:
@@ -62,7 +62,7 @@ private:
 
     WaveOut *waveOut;
     IBuffer *buffer;
-    IPlayer *player;
+    IBufferProvider *provider;
     WAVEHDR header;
     bool destroyed;
 };

@@ -42,14 +42,14 @@ namespace musik { namespace core { namespace audio {
     ///\brief
     ///Interface for the audio::Player to make IOuput plugins be able to make callbacks
     //////////////////////////////////////////
-    class IPlayer {
+    class IBufferProvider {
         public:
             //////////////////////////////////////////
             ///\brief
             ///Release used by the output to notify the player a buffer has finished
             ///processing. 
             //////////////////////////////////////////
-            virtual void OnBufferProcessedByOutput(IBuffer *buffer) = 0;
+            virtual void OnBufferProcessed(IBuffer *buffer) = 0;
     };
 
 } } }

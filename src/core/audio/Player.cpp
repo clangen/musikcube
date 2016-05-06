@@ -288,7 +288,7 @@ bool Player::PreBuffer() {
     if (this->prebufferSizeBytes > this->maxPrebufferSizeBytes) {
         return false;
     }
-	else {
+    else {
         BufferPtr newBuffer = this->stream->GetNextProcessedOutputBuffer();
 
         if (newBuffer) {
@@ -306,7 +306,7 @@ bool Player::Exited() {
     return (this->state == Player::Quit);
 }
 
-void Player::OnBufferProcessedByOutput(IBuffer *buffer) {
+void Player::OnBufferProcessed(IBuffer *buffer) {
     boost::mutex::scoped_lock lock(this->mutex);
 
     /* removes the specified buffer from the list of locked buffers, and also
@@ -314,7 +314,7 @@ void Player::OnBufferProcessedByOutput(IBuffer *buffer) {
     BufferList::iterator it = this->lockedBuffers.begin();
     for ( ; it != this->lockedBuffers.end(); ++it) {
         if (it->get() == buffer) {
-			if (this->stream) {
+            if (this->stream) {
                 this->stream->OnBufferProcessedByPlayer(*it);
             }
 

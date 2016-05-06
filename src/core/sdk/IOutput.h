@@ -36,7 +36,7 @@
 #include "config.h"
 #include "IDataStream.h"
 #include "IBuffer.h"
-#include "IPlayer.h"
+#include "IBufferProvider.h"
 
 namespace musik { namespace core { namespace audio {
 
@@ -79,7 +79,7 @@ namespace musik { namespace core { namespace audio {
             ///\brief
             ///Play this buffer
             //////////////////////////////////////////
-            virtual bool Play(IBuffer *buffer, IPlayer *player) = 0;
+            virtual bool Play(IBuffer *buffer, IBufferProvider *provider) = 0;
     };
 
 } } }

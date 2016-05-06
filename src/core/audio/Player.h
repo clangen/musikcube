@@ -36,7 +36,7 @@
 #include <core/config.h>
 #include <core/audio/Stream.h>
 #include <core/sdk/IOutput.h>
-#include <core/sdk/IPlayer.h>
+#include <core/sdk/IBufferProvider.h>
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread/mutex.hpp>
@@ -50,7 +50,7 @@ namespace musik { namespace core { namespace audio {
     class  Transport;
     typedef boost::shared_ptr<Player> PlayerPtr;
 
-    class Player : public IPlayer {
+    class Player : public IBufferProvider {
         public:
             typedef boost::shared_ptr<IOutput> OutputPtr;
 
@@ -60,9 +60,9 @@ namespace musik { namespace core { namespace audio {
             Player(std::string &url,OutputPtr *output);
 
         public:
-            ~Player(void);
+            ~Player();
 
-            virtual void OnBufferProcessedByOutput(IBuffer *buffer);
+            virtual void OnBufferProcessed(IBuffer *buffer);
 
             void Play();
             void Stop();
