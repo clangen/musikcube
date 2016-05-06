@@ -36,7 +36,7 @@
 
 #include "pch.hpp"
 
-#include <core/log/debug.h>
+#include <core/debug.h>
 #include <core/io/LocalFileStream.h>
 #include <core/config.h>
 #include <core/support/Common.h>

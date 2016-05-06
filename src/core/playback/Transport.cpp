@@ -33,7 +33,7 @@
 
 #include "pch.hpp"
 
-#include <core/log/debug.h>
+#include <core/debug.h>
 #include <core/playback/Transport.h>
 
 using namespace musik::core::audio;

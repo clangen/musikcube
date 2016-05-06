@@ -83,6 +83,7 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="debug.cpp" />
     <ClCompile Include="io\DataStreamFactory.cpp" />
     <ClCompile Include="io\LocalFileStream.cpp" />
     <ClCompile Include="library\Indexer.cpp" />
@@ -105,7 +106,6 @@
     <ClCompile Include="library\track\LibraryTrack.cpp" />
     <ClCompile Include="library\track\Track.cpp" />
     <ClCompile Include="library\track\TrackFactory.cpp" />
-    <ClCompile Include="log\debug.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -127,6 +127,7 @@
     <ClCompile Include="support\Version.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="debug.h" />
     <ClInclude Include="io\DataStreamFactory.h" />
     <ClInclude Include="io\LocalFileStream.h" />
     <ClInclude Include="library\Indexer.h" />
@@ -149,7 +150,6 @@
     <ClInclude Include="library\track\LibraryTrack.h" />
     <ClInclude Include="library\track\Track.h" />
     <ClInclude Include="library\track\TrackFactory.h" />
-    <ClInclude Include="log\debug.h" />
     <ClInclude Include="pch.hpp" />
     <ClInclude Include="config.h" />
     <ClInclude Include="playback\NonLibraryTrackHelper.h" />

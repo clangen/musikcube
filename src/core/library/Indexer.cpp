@@ -36,7 +36,7 @@
 
 #include "pch.hpp"
 
-#include <core/log/debug.h>
+#include <core/debug.h>
 #include <core/library/Indexer.h>
 
 #include <core/config.h>

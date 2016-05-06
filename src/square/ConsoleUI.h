@@ -39,7 +39,7 @@
 
 #include <vector>
 #include <boost/thread/mutex.hpp>
-#include <core/log/debug.h>
+#include <core/debug.h>
 #include <core/playback/Transport.h>
 #include "TransportEvents.h"
 

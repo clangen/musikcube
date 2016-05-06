@@ -38,9 +38,6 @@
     <Filter Include="src\library\metadata">
       <UniqueIdentifier>{9f9ee41d-111b-4dab-8663-946253eeb46f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\log">
-      <UniqueIdentifier>{66b1a48d-9dee-4b10-86cd-e6893c283440}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -157,8 +154,8 @@
     <ClCompile Include="library\metadata\MetadataValue.cpp">
       <Filter>src\library\metadata</Filter>
     </ClCompile>
-    <ClCompile Include="log\debug.cpp">
-      <Filter>src\log</Filter>
+    <ClCompile Include="debug.cpp">
+      <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -318,11 +315,11 @@
     <ClInclude Include="sdk\IPlugin.h">
       <Filter>src\sdk</Filter>
     </ClInclude>
-    <ClInclude Include="log\debug.h">
-      <Filter>src\log</Filter>
-    </ClInclude>
     <ClInclude Include="sdk\IBufferProvider.h">
       <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="debug.h">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

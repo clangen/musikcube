@@ -41,7 +41,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/thread/mutex.hpp>
 
-#include <core/log/debug.h>
+#include <core/debug.h>
 #include <core/sdk/IPlugin.h>
 #include <core/plugin/PluginFactory.h>
 #include <core/library/track/TrackFactory.h>
