@@ -79,21 +79,6 @@ Indexer::~Indexer(){
     }
 }
 
-static std::string getStatus(int status, int fileCount, float overall, float current) {
-    switch (status) {
-    case 1: return boost::str(boost::format("Counting files: %1%") % fileCount);
-    case 2: return boost::str(boost::format("Indexing: %.2f") % (overall * 100)) + "%";
-    case 3: return boost::str(boost::format("Removing old files: %.2f") % (overall * 100)) + "%";
-    case 4: return "Cleaning up.";
-    case 5: return "Optimizing.";
-    case 6: return boost::str(boost::format("Analyzing: %.2f%% (current %.1f%%)")
-        % (100.0 * overall / (double) fileCount)
-        % (current * 100.0));
-    }
-
-    return "unknown indexer status";
-}
-
 //////////////////////////////////////////
 ///\brief
 ///Get the current status (text)
@@ -101,11 +86,18 @@ static std::string getStatus(int status, int fileCount, float overall, float cur
 std::string Indexer::GetStatus() {
     boost::mutex::scoped_lock lock(this->progressMutex);
     
-    return getStatus(
-        this->status, 
-        this->nofFiles, 
-        this->overallProgress, 
-        this->currentProgress);
+    switch (status) {
+    case 1: return boost::str(boost::format("Counting files: %1%") % this->nofFiles);
+    case 2: return boost::str(boost::format("Indexing: %.2f") % (this->overallProgress * 100)) + "%";
+    case 3: return boost::str(boost::format("Removing old files: %.2f") % (this->overallProgress * 100)) + "%";
+    case 4: return "Cleaning up.";
+    case 5: return "Optimizing.";
+    case 6: return boost::str(boost::format("Analyzing: %.2f%% (current %.1f%%)")
+        % (100.0 * this->overallProgress / (double) this->nofFiles)
+        % (this->currentProgress * 100.0));
+    }
+
+    return "unknown indexer status";
 }
 
 //////////////////////////////////////////
@@ -410,7 +402,7 @@ void Indexer::SyncDirectory(
         for( ; file != end && !this->Exited() && !this->Restarted();++file) {
             if (is_directory(file->status())) {
                 /* recursion here */
-                std::cout << getStatus(this->status, this->nofFiles, this->overallProgress, this->currentProgress) << "\n";
+                std::cout << this->GetStatus() << "\n";
                 this->SyncDirectory(file->path().string(), dirId,pathId,syncPath);
             }
             else {
