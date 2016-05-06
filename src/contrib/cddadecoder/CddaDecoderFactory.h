@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////
-// Copyright © 2007, mC2 team
+// Copyright © 2007, Björn Olievier
 //
 // All rights reserved.
 //
@@ -30,37 +30,19 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
+
 #pragma once
 
-#include <core/sdk/IDecoder.h>
-
-#include "vorbis/codec.h"
-#include "vorbis/vorbisfile.h"
+#include <core/sdk/IDecoderFactory.h>
 
 using namespace musik::core::audio;
 
-class OggDecoder : public IDecoder
-{
-
-public: 
-    OggDecoder();
-    ~OggDecoder();
-
-public: 
-    virtual void Destroy();
-    virtual double SetPosition(double second);
-    virtual bool GetBuffer(IBuffer *buffer);
-    virtual bool Open(musik::core::io::IDataStream *fileStream);
-
+class CddaDecoderFactory : public IDecoderFactory {
 public:
-    /* libvorbis callbacks */
-    static size_t OggRead(void *buffer, size_t nofParts, size_t partSize, void *datasource);
-    static int OggSeek(void *datasource, ogg_int64_t offset, int whence);
-    static long OggTell(void *datasource);
-    static int OggClose(void *datasource);
+    CddaDecoderFactory();
+    ~CddaDecoderFactory();
 
-protected: 
-    musik::core::io::IDataStream *fileStream;
-    OggVorbis_File oggFile;
-    ov_callbacks oggCallbacks;
+    IDecoder* CreateDecoder();
+    void Destroy();
+    bool CanHandle(const char* type) const;
 };

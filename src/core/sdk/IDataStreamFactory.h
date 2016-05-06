@@ -40,7 +40,6 @@
 #include "IDataStream.h"
 
 namespace musik { namespace core { namespace io {
-
     class IDataStreamFactory{
         public:
             //////////////////////////////////////////
@@ -53,7 +52,7 @@ namespace musik { namespace core { namespace io {
             ///\returns
             ///True if able
             //////////////////////////////////////////
-            virtual bool CanReadFile(const char *filename)=0;
+            virtual bool CanReadFile(const char *uri) = 0;
 
             //////////////////////////////////////////
             ///\brief
@@ -65,13 +64,13 @@ namespace musik { namespace core { namespace io {
             ///\returns
             ///IDataStream object or NULL on fail
             //////////////////////////////////////////
-            virtual IDataStream* OpenFile(const char *filename,unsigned int options=0)=0;
+            virtual IDataStream* OpenFile(const char *uri, unsigned int options = 0) = 0;
 
             //////////////////////////////////////////
             ///\brief
             ///Destroy the object (not the file)
             //////////////////////////////////////////
-            virtual void Destroy()=0;
+            virtual void Destroy() = 0;
     };
 
 } } }

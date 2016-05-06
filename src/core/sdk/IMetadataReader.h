@@ -49,5 +49,3 @@ namespace musik { namespace core { namespace metadata {
     };
 
 } } }
-
-

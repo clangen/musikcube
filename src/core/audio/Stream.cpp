@@ -62,7 +62,7 @@ StreamPtr Stream::Create(unsigned int options) {
 }
 
 double Stream::SetPosition(double requestedSeconds) {
-    double actualSeconds = this->decoder->SetPosition(requestedSeconds, 0);
+    double actualSeconds = this->decoder->SetPosition(requestedSeconds);
 
     if (actualSeconds != -1) {
         double rate = (double) this->decoderSampleRate;
@@ -201,7 +201,7 @@ void Stream::RecycleBuffer(BufferPtr oldBuffer) {
 
 double Stream::DecoderProgress() {
     if (this->dataStream) {
-        long fileSize = this->dataStream->Filesize();
+        long fileSize = this->dataStream->Length();
         long filePosition = this->dataStream->Position();
 
         if (fileSize && filePosition) {

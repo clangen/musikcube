@@ -123,7 +123,7 @@ namespace musik { namespace core { namespace io {
             ///\returns
             ///-1 if unknown
             //////////////////////////////////////////
-            virtual long Filesize() = 0;
+            virtual long Length() = 0;
 
             //////////////////////////////////////////
             ///\brief

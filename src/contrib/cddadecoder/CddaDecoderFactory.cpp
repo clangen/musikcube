@@ -31,19 +31,26 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "stdafx.h"
+#include <string>
+#include "CddaDecoderFactory.h"
+#include "CddaDecoder.h"
 
-#include <core/Audio/Stream.h>
-#include <core/audio/IDecoderFactory.h>
+CddaDecoderFactory::CddaDecoderFactory() {
+}
 
-using namespace musik::core::audio;
+CddaDecoderFactory::~CddaDecoderFactory() {
+}
 
-class CDDASourceSupplier : public IDecoderFactory
-{
-public:     CDDASourceSupplier();
-public:     ~CDDASourceSupplier();
+void CddaDecoderFactory::Destroy() {
+    delete this;
+}
 
-public:     IDecoder* CreateDecoder();
-public:     void Destroy();
-public:     bool CanHandle(const utfchar* source) const;
-};
+IDecoder* CddaDecoderFactory::CreateDecoder() {
+    return new CddaDecoder();
+}
+
+bool CddaDecoderFactory::CanHandle(const char* source) const {
+    std::string type(source);
+    return type == "cda";
+}

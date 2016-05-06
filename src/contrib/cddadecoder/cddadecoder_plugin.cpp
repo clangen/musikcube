@@ -36,29 +36,29 @@
 
 #include "stdafx.h"
 
-#include "CDDASourceSupplier.h"
-#include <core/IPlugin.h>
+#include "CddaDecoderFactory.h"
+#include "CddaDataStreamFactory.h"
+#include <core/sdk/IPlugin.h>
 
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
-{
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
     return true;
 }
 
-class CDDADecoderPlugin : public musik::core::IPlugin
-{
+class CddaDecoderPlugin : public musik::core::IPlugin {
     void Destroy() { delete this; };
-
-	const utfchar* Name()       { return TEXT("CDDA decoder"); };
-	const utfchar* Version()    { return TEXT("1"); };
-	const utfchar* Author()     { return TEXT("Björn Olievier"); };
+    const char* Name() { return "CDDA decoder"; };
+    const char* Version() { return "1"; };
+    const char* Author() { return "Björn Olievier"; };
 };
 
-extern "C" __declspec(dllexport) musik::core::IPlugin* GetPlugin()
-{
-    return new CDDADecoderPlugin();
+extern "C" __declspec(dllexport) musik::core::IPlugin* GetPlugin() {
+    return new CddaDecoderPlugin();
 }
 
-extern "C" __declspec(dllexport) IDecoderFactory* GetDecoderFactory()
-{
-	return new CDDASourceSupplier();
+extern "C" __declspec(dllexport) IDecoderFactory* GetDecoderFactory() {
+    return new CddaDecoderFactory();
+}
+
+extern "C" __declspec(dllexport) IDataStreamFactory* GetDataStreamFactory() {
+    return new CddaDataStreamFactory();
 }

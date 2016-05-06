@@ -57,7 +57,7 @@ namespace musik { namespace core { namespace audio {
             ///\returns
             ///The actual position set
             //////////////////////////////////////////
-            virtual double SetPosition(double seconds, double totalLength) = 0;
+            virtual double SetPosition(double seconds) = 0;
 
             //////////////////////////////////////////
             ///\brief

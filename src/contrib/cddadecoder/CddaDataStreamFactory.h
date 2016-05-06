@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////
-// Copyright © 2007, Björn Olievier
+// Copyright © 2007, Daniel Önnerby
 //
 // All rights reserved.
 //
@@ -31,30 +31,16 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
-#include "CDDASourceSupplier.h"
-#include "CDDAAudioSource.h"
+#include <core/sdk/IDataStreamFactory.h>
 
-CDDASourceSupplier::CDDASourceSupplier()
-{
-}
+using namespace musik::core::io;
 
-CDDASourceSupplier::~CDDASourceSupplier()
-{
-}
+class CddaDataStreamFactory : public IDataStreamFactory {
+public:
+    CddaDataStreamFactory();
+    ~CddaDataStreamFactory();
 
-void CDDASourceSupplier::Destroy()
-{
-    delete this;
-}
-
-IDecoder* CDDASourceSupplier::CreateDecoder()
-{
-    return new CDDAAudioSource();
-}
-
-bool CDDASourceSupplier::CanHandle(const utfchar* source) const
-{
-    //TODO: implement check for cd drive
-	return false;
-}
+    virtual bool CanReadFile(const char *uri);
+    virtual IDataStream* OpenFile(const char *uri, unsigned int options = 0);
+    virtual void Destroy();
+};

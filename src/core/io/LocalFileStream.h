@@ -50,7 +50,7 @@
 namespace musik{ namespace core{ namespace io{
 //////////////////////////////////////////////////////////////////////////////
 
-class  LocalFileStream : public IDataStream {
+class LocalFileStream : public IDataStream {
     public:
         LocalFileStream();
         virtual ~LocalFileStream();
@@ -62,7 +62,7 @@ class  LocalFileStream : public IDataStream {
         virtual bool SetPosition(PositionType position);
         virtual PositionType Position();
         virtual bool Eof();
-        virtual long Filesize();
+        virtual long Length();
         virtual const char* Type();
 
     private:

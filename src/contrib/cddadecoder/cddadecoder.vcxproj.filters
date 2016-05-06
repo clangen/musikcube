@@ -8,38 +8,53 @@
     <Filter Include="plugin">
       <UniqueIdentifier>{f9e1d5f4-2b16-4312-bdba-45d853fb9b7f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="plugin\device">
+      <UniqueIdentifier>{2068ce86-170f-48a7-a165-c11d2d56918e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CDDAAudioSource.cpp">
-      <Filter>plugin</Filter>
-    </ClCompile>
     <ClCompile Include="cddadecoder_plugin.cpp">
-      <Filter>plugin</Filter>
-    </ClCompile>
-    <ClCompile Include="CDDASourceSupplier.cpp">
       <Filter>plugin</Filter>
     </ClCompile>
     <ClCompile Include="stdafx.cpp">
       <Filter>plugin</Filter>
     </ClCompile>
+    <ClCompile Include="CddaDecoderFactory.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="CddaDecoder.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="CddaDataStream.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="CddaDataStreamFactory.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CDDAAudioSource.h">
-      <Filter>plugin</Filter>
-    </ClInclude>
-    <ClInclude Include="CDDASourceSupplier.h">
+    <ClInclude Include="stdafx.h">
       <Filter>plugin</Filter>
     </ClInclude>
     <ClInclude Include="devioctl.h">
-      <Filter>plugin</Filter>
+      <Filter>plugin\device</Filter>
     </ClInclude>
     <ClInclude Include="ntddcdrm.h">
-      <Filter>plugin</Filter>
+      <Filter>plugin\device</Filter>
     </ClInclude>
     <ClInclude Include="ntddstor.h">
+      <Filter>plugin\device</Filter>
+    </ClInclude>
+    <ClInclude Include="CddaDecoderFactory.h">
       <Filter>plugin</Filter>
     </ClInclude>
-    <ClInclude Include="stdafx.h">
+    <ClInclude Include="CddaDecoder.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="CddaDataStreamFactory.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="CddaDataStream.h">
       <Filter>plugin</Filter>
     </ClInclude>
   </ItemGroup>

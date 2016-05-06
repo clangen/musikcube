@@ -59,7 +59,7 @@ int OggDecoder::OggSeek(void *datasource, ogg_int64_t offset, int whence) {
             break;
         case SEEK_END:
             {
-                long fileSize = decoder->fileStream->Filesize();
+                long fileSize = decoder->fileStream->Length();
                 if (decoder->fileStream->SetPosition(fileSize)) {
                     return 0;
                 }
@@ -103,15 +103,15 @@ bool OggDecoder::Open(musik::core::io::IDataStream *fileStream) {
 
 void OggDecoder::Destroy() {
     ov_clear(&this->oggFile);
-	delete this;
+    delete this;
 }
 
-double OggDecoder::SetPosition(double second, double totalLength) {
+double OggDecoder::SetPosition(double second) {
     if (ov_seekable(&this->oggFile)) {
-		if (!ov_time_seek(&this->oggFile, second)) {
-			return ov_time_tell(&this->oggFile);
-		}
-	}
+        if (!ov_time_seek(&this->oggFile, second)) {
+            return ov_time_tell(&this->oggFile);
+        }
+    }
 
     return -1;
 }
@@ -120,12 +120,12 @@ double OggDecoder::SetPosition(double second, double totalLength) {
 
 bool OggDecoder::GetBuffer(IBuffer *buffer) {
     int bitstream;
-	float **pcm;
+    float **pcm;
 
     unsigned long samplesRead = ov_read_float(&this->oggFile, &pcm, OGG_MAX_SAMPLES, &bitstream);
 
     if (samplesRead == 0) {
-		return false;
+        return false;
     }
 
     vorbis_info *info = ov_info(&this->oggFile, -1);
@@ -165,53 +165,53 @@ bool OggDecoder::GetBuffer(IBuffer *buffer) {
         }
     }
     else if (info->channels == 3) {
-		for (unsigned long x=0; x < samplesRead; ++x) {
-			*pDataBuffer = pcm[0][x];
-			++pDataBuffer;
-			*pDataBuffer = pcm[2][x];
-			++pDataBuffer;
-			*pDataBuffer = pcm[1][x];
-			++pDataBuffer;
-		}
+        for (unsigned long x=0; x < samplesRead; ++x) {
+            *pDataBuffer = pcm[0][x];
+            ++pDataBuffer;
+            *pDataBuffer = pcm[2][x];
+            ++pDataBuffer;
+            *pDataBuffer = pcm[1][x];
+            ++pDataBuffer;
+        }
     }
     else if (info->channels == 5) {
-		for (unsigned long x = 0; x < samplesRead; ++x) {
-			*pDataBuffer = pcm[0][x];
-			++pDataBuffer;
-			*pDataBuffer = pcm[2][x];
-			++pDataBuffer;
-			*pDataBuffer = pcm[1][x];
-			++pDataBuffer;
-			*pDataBuffer = pcm[3][x];
-			++pDataBuffer;
-			*pDataBuffer = pcm[4][x];
-			++pDataBuffer;
-		}
-	}
+        for (unsigned long x = 0; x < samplesRead; ++x) {
+            *pDataBuffer = pcm[0][x];
+            ++pDataBuffer;
+            *pDataBuffer = pcm[2][x];
+            ++pDataBuffer;
+            *pDataBuffer = pcm[1][x];
+            ++pDataBuffer;
+            *pDataBuffer = pcm[3][x];
+            ++pDataBuffer;
+            *pDataBuffer = pcm[4][x];
+            ++pDataBuffer;
+        }
+    }
     else if (info->channels == 6) {
-		for (unsigned long x = 0; x < samplesRead; ++x) {
-			*pDataBuffer = pcm[0][x];
-			++pDataBuffer;
-			*pDataBuffer = pcm[2][x];
-			++pDataBuffer;
-			*pDataBuffer = pcm[1][x];
-			++pDataBuffer;
-			*pDataBuffer = pcm[5][x];
-			++pDataBuffer;
-			*pDataBuffer = pcm[3][x];
-			++pDataBuffer;
-			*pDataBuffer = pcm[4][x];
-			++pDataBuffer;
-		}
-	}
+        for (unsigned long x = 0; x < samplesRead; ++x) {
+            *pDataBuffer = pcm[0][x];
+            ++pDataBuffer;
+            *pDataBuffer = pcm[2][x];
+            ++pDataBuffer;
+            *pDataBuffer = pcm[1][x];
+            ++pDataBuffer;
+            *pDataBuffer = pcm[5][x];
+            ++pDataBuffer;
+            *pDataBuffer = pcm[3][x];
+            ++pDataBuffer;
+            *pDataBuffer = pcm[4][x];
+            ++pDataBuffer;
+        }
+    }
     else {
-		for (unsigned long x = 0; x < samplesRead; ++x) {
-			for (int channel(0); channel < info->channels; ++channel) {
-				*pDataBuffer = pcm[channel][x];
-				++pDataBuffer;
-			}
-		}
-	}
+        for (unsigned long x = 0; x < samplesRead; ++x) {
+            for (int channel(0); channel < info->channels; ++channel) {
+                *pDataBuffer = pcm[channel][x];
+                ++pDataBuffer;
+            }
+        }
+    }
 
     return true;
 }

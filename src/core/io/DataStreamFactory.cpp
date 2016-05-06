@@ -45,58 +45,61 @@ using namespace musik::core::io;
 
 DataStreamFactory DataStreamFactory::sInstance;
 
-DataStreamFactory::DataStreamFactory(){
-
-    // Get all IDataStreamFactory plugins
+DataStreamFactory::DataStreamFactory() {
     typedef IDataStreamFactory PluginType;
     typedef musik::core::PluginFactory::DestroyDeleter<PluginType> Deleter;
 
-    this->dataStreamFactories = musik::core::PluginFactory::Instance().QueryInterface<PluginType, Deleter>("GetFileStreamFactory");
+    this->dataStreamFactories = musik::core::PluginFactory::Instance()
+        .QueryInterface<PluginType, Deleter>("GetDataStreamFactory");
 }
 
-
-DataStreamFactory::DataStreamPtr DataStreamFactory::OpenUri(const char *uri){
+DataStreamFactory::DataStreamPtr DataStreamFactory::OpenUri(const char *uri) {
     typedef musik::core::PluginFactory::DestroyDeleter<IDataStream> StreamDeleter;
 
-    if(uri){
-        for(DataStreamFactoryVector::iterator factory=sInstance.dataStreamFactories.begin();factory!=sInstance.dataStreamFactories.end();++factory){
-            if( (*factory)->CanReadFile(uri) ){
-                IDataStream* fileStream( (*factory)->OpenFile(uri) );
-                if(fileStream){
-                    return DataStreamPtr(fileStream,StreamDeleter());
-                }else{
-                    return DataStreamPtr();
+    if (uri) {
+        DataStreamFactoryVector::iterator it = sInstance.dataStreamFactories.begin();
+
+        /* plugins get the first crack at the uri */
+        for( ; it != sInstance.dataStreamFactories.end(); it++) {
+            if ((*it)->CanReadFile(uri)) {
+                IDataStream* dataStream = (*it)->OpenFile(uri);
+                
+                if (dataStream) {
+                    return DataStreamPtr(dataStream, StreamDeleter());
                 }
             }
         }
 
-        // If non of the plugins match, lets create a regular file stream
-        DataStreamPtr regularFile( new LocalFileStream(),StreamDeleter() );
-        if(regularFile->Open(uri)){
+        /* no plugins accepted it? try to open as a local file */
+        DataStreamPtr regularFile(new LocalFileStream(), StreamDeleter());
+        
+        if (regularFile->Open(uri)) {
             return regularFile;
         }
     }
+
     return DataStreamPtr();
 }
 
 bool DataStreamFactory::IsLocalFileStream(const char *uri){
     typedef musik::core::PluginFactory::DestroyDeleter<IDataStream> StreamDeleter;
 
-    if(uri){
-        for(DataStreamFactoryVector::iterator factory=sInstance.dataStreamFactories.begin();factory!=sInstance.dataStreamFactories.end();++factory){
-            if( (*factory)->CanReadFile(uri) ){
+    if (uri) {
+        /* see if a plugin can handle this. if it can, then it's not
+        considered to be a local file stream */
+        DataStreamFactoryVector::iterator it = sInstance.dataStreamFactories.begin();
+        for( ; it != sInstance.dataStreamFactories.end(); ++it) {
+            if ((*it)->CanReadFile(uri)) {
                 return false;
             }
         }
 
-        //Check for local file
+        /* now test local filesystem */
         boost::filesystem::path filename(uri);
-        try{
-            if(boost::filesystem::exists(filename)){
-                return true;
-            }
+        try {
+            return boost::filesystem::exists(filename);
         }
-        catch(...){
+        catch(...) {
         }
     }
 

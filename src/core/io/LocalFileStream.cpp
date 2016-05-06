@@ -53,38 +53,37 @@ using namespace musik::core::io;
 
 LocalFileStream::LocalFileStream()
 : file(NULL)
-, filesize(-1)
-{
-
+, filesize(-1) {
 }
+
 LocalFileStream::~LocalFileStream() {
     this->Close();
 }
 
-bool LocalFileStream::Open(const char *filename,unsigned int options){
-    if(filename == NULL) {
+bool LocalFileStream::Open(const char *filename, unsigned int options) {
+    if (filename == NULL) {
         return false;
     }
 
     try {
         boost::filesystem::path file(filename);
 
-		if (!boost::filesystem::exists(file)) {
-			std::cerr << "File not found" << std::endl;
-		}
+        if (!boost::filesystem::exists(file)) {
+            std::cerr << "File not found" << std::endl;
+        }
 
-		if (!boost::filesystem::is_regular(file)) {
-			std::cerr << "File not a regular file" << std::endl;
-		}
+        if (!boost::filesystem::is_regular(file)) {
+            std::cerr << "File not a regular file" << std::endl;
+        }
 
         this->filesize = (long)boost::filesystem::file_size(file);
         this->extension = file.extension().string();
-		this->file = UTFFopen(filename,"rb");
+        this->file = UTFFopen(filename,"rb");
         this->fd = new boost::iostreams::file_descriptor(file);
-		this->fileStream = new boost::iostreams::stream<boost::iostreams::file_descriptor>(*this->fd);
-		this->fileStream->exceptions(std::ios_base::eofbit | std::ios_base::failbit | std::ios_base::badbit);
+        this->fileStream = new boost::iostreams::stream<boost::iostreams::file_descriptor>(*this->fd);
+        this->fileStream->exceptions(std::ios_base::eofbit | std::ios_base::failbit | std::ios_base::badbit);
 
-	    return this->file!=NULL;
+        return this->file!=NULL;
     }
     catch(...) {
         return false;
@@ -95,8 +94,8 @@ bool LocalFileStream::Close() {
     if (this->file) {
         if (fclose(this->file) == 0) {
             this->file  = NULL;
-			delete this->fd;
-			delete this->fileStream;
+            delete this->fd;
+            delete this->fileStream;
             return true;
         }
     }
@@ -109,26 +108,26 @@ void LocalFileStream::Destroy() {
 }
 
 PositionType LocalFileStream::Read(void* buffer,PositionType readBytes) {
-    try	{
-    	this->fileStream->read((char*) buffer, readBytes);
+    try {
+        this->fileStream->read((char*) buffer, readBytes);
     }
     catch (std::ios_base::failure){
-		if(!this->fileStream->eof()) {
-			std::cerr << "Error reading from file" << std::endl;
-			return 0;
-		}
+        if(!this->fileStream->eof()) {
+            std::cerr << "Error reading from file" << std::endl;
+            return 0;
+        }
     }
 
-	return this->fileStream->gcount();
+    return this->fileStream->gcount();
 }
 
 bool LocalFileStream::SetPosition(PositionType position) {
-    try	{
-		this->fileStream->clear();
-		this->fileStream->seekg(position);
+    try {
+        this->fileStream->clear();
+        this->fileStream->seekg(position);
     }
     catch (std::ios_base::failure ex) {
-    	return false;
+        return false;
     }
 
     return true;
@@ -142,7 +141,7 @@ bool LocalFileStream::Eof() {
     return this->fileStream->eof();
 }
 
-long LocalFileStream::Filesize() {
+long LocalFileStream::Length() {
     return this->filesize;
 }
 

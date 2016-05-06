@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////
-// Copyright © 2007, mC2 team
+// Copyright © 2007, Daniel Önnerby
 //
 // All rights reserved.
 //
@@ -30,37 +30,36 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
-#pragma once
 
-#include <core/sdk/IDecoder.h>
+#include "shlwapi.h"
+#include <string>
+#include "CddaDataStreamFactory.h"
+#include "CddaDataStream.h";
 
-#include "vorbis/codec.h"
-#include "vorbis/vorbisfile.h"
+CddaDataStreamFactory::CddaDataStreamFactory() {
 
-using namespace musik::core::audio;
+}
 
-class OggDecoder : public IDecoder
-{
+CddaDataStreamFactory::~CddaDataStreamFactory() {
 
-public: 
-    OggDecoder();
-    ~OggDecoder();
+}
 
-public: 
-    virtual void Destroy();
-    virtual double SetPosition(double second);
-    virtual bool GetBuffer(IBuffer *buffer);
-    virtual bool Open(musik::core::io::IDataStream *fileStream);
+bool CddaDataStreamFactory::CanReadFile(const char *uri) {
+    std::string extension = PathFindExtension(uri);
+    return (extension == ".cda");
+}
 
-public:
-    /* libvorbis callbacks */
-    static size_t OggRead(void *buffer, size_t nofParts, size_t partSize, void *datasource);
-    static int OggSeek(void *datasource, ogg_int64_t offset, int whence);
-    static long OggTell(void *datasource);
-    static int OggClose(void *datasource);
+IDataStream* CddaDataStreamFactory::OpenFile(const char *uri, unsigned int options) {
+    CddaDataStream* stream = new CddaDataStream();
 
-protected: 
-    musik::core::io::IDataStream *fileStream;
-    OggVorbis_File oggFile;
-    ov_callbacks oggCallbacks;
-};
+    if (stream->Open(uri, options)) {
+        return stream;
+    }
+
+    delete stream;
+    return NULL;
+}
+
+void CddaDataStreamFactory::Destroy() {
+    delete this;
+}

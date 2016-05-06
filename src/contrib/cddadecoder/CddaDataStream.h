@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////
-// Copyright © 2007, mC2 team
+// Copyright © 2007, Daniel Önnerby
 //
 // All rights reserved.
 //
@@ -30,37 +30,38 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
-#pragma once
 
-#include <core/sdk/IDecoder.h>
+#include <core/sdk/IDataStream.h>
 
-#include "vorbis/codec.h"
-#include "vorbis/vorbisfile.h"
+#include "ntddcdrm.h"
+#include "devioctl.h"
 
-using namespace musik::core::audio;
+using namespace musik::core::io;
 
-class OggDecoder : public IDecoder
-{
+class CddaDataStream : public IDataStream {
+    public:
+        CddaDataStream();
+        virtual ~CddaDataStream();
 
-public: 
-    OggDecoder();
-    ~OggDecoder();
+        virtual bool Open(const char *filename, unsigned int options = 0);
+        virtual bool Close();
+        virtual void Destroy();
+        virtual PositionType Read(void* buffer, PositionType readBytes);
+        virtual bool SetPosition(PositionType position);
+        virtual PositionType Position();
+        virtual bool Eof();
+        virtual long Length();
+        virtual const char* Type();
 
-public: 
-    virtual void Destroy();
-    virtual double SetPosition(double second);
-    virtual bool GetBuffer(IBuffer *buffer);
-    virtual bool Open(musik::core::io::IDataStream *fileStream);
+        int GetChannelCount();
 
-public:
-    /* libvorbis callbacks */
-    static size_t OggRead(void *buffer, size_t nofParts, size_t partSize, void *datasource);
-    static int OggSeek(void *datasource, ogg_int64_t offset, int whence);
-    static long OggTell(void *datasource);
-    static int OggClose(void *datasource);
+    private:
+        LONGLONG position, length;
+        HANDLE drive;
+        CDROM_TOC toc;
+        UINT firstSector, startSector, stopSector;
+        unsigned long channels;
+        volatile bool closed;
 
-protected: 
-    musik::core::io::IDataStream *fileStream;
-    OggVorbis_File oggFile;
-    ov_callbacks oggCallbacks;
+        HRESULT Read(PBYTE pbBuffer, DWORD dwBytesToRead, BOOL bAlign, LPDWORD pdwBytesRead);
 };

@@ -40,27 +40,24 @@
 #include <core/sdk/IDataStreamFactory.h>
 #include <vector>
 
-//////////////////////////////////////////////////////////////////////////////
 namespace musik { namespace core { namespace io {
-//////////////////////////////////////////////////////////////////////////////
-	
-class DataStreamFactory {
-	public:
-		typedef boost::shared_ptr<IDataStream> DataStreamPtr;
 
-    private:
-        static DataStreamFactory sInstance;
-        DataStreamFactory();
+    class DataStreamFactory {
+        public:
+            typedef boost::shared_ptr<IDataStream> DataStreamPtr;
 
-    private:
-        typedef std::vector<boost::shared_ptr<IDataStreamFactory>> DataStreamFactoryVector;
-        DataStreamFactoryVector dataStreamFactories;
+        private:
+            static DataStreamFactory sInstance;
+            DataStreamFactory();
 
-    public:
-        static DataStreamPtr OpenUri(const char *uri);
-        static bool IsLocalFileStream(const char *uri);
-};
+        private:
+            typedef std::vector<boost::shared_ptr<IDataStreamFactory>> DataStreamFactoryVector;
+            DataStreamFactoryVector dataStreamFactories;
 
-//////////////////////////////////////////////////////////////////////////////
+        public:
+            static DataStreamPtr OpenUri(const char *uri);
+            static bool IsLocalFileStream(const char *uri);
+    };
+
 } } }
-//////////////////////////////////////////////////////////////////////////////
+
