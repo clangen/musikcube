@@ -34,41 +34,37 @@
 #pragma once
 
 #include "stdafx.h"
-
 #include "config.h"
-
 #include <vector>
-
 #include <sigslot/sigslot.h>
 
 namespace musik { namespace square {
 
-class ConsoleUI;
+    class ConsoleUI;
 
-//enum AudioStreamEvent;
+    class TransportEvents : public sigslot::has_slots<> {
+        public:    
+            TransportEvents(ConsoleUI* c);
+            ~TransportEvents();
 
-class DummyAudioEventHandler : public sigslot::has_slots<>
-{
-public:	DummyAudioEventHandler(ConsoleUI* c);
-public:	~DummyAudioEventHandler();
+            void OnPlaybackAlmostEnded() { this->LogEvent("about to end"); };
+            void OnPlaybackStartedOk() { this->LogEvent("started"); };
+            void OnPlaybackStartedFail() { this->LogEvent("failed"); };
+            void OnPlaybackStoppedOk() { this->LogEvent("stopped"); };
+            void OnPlaybackStoppedFail() { this->LogEvent("stopped because of failure"); };
+            void OnPlaybackInterrupted() { this->LogEvent("interrupted (??)"); };
+            void OnVolumeChangedOk() { this->LogEvent("volume changed"); };
+            void OnStreamOpenOk() { this->LogEvent("stream open ok"); };
+            void OnStreamOpenFail() { this->LogEvent("stream open fail"); };
+            void OnMixpointReached() { this->LogEvent("mix point reached"); }
+            void OnSetPositionOk() { this->LogEvent("set position"); };
+            void OnSetPositionFail() { this->LogEvent("set position failed"); };
+            void OnPlaybackPaused() { this->LogEvent("paused"); };
+            void OnPlaybackResumed() { this->LogEvent("resumed"); };
 
-private: ConsoleUI* cui; // TODO: should probably be interface
-private: void PrintEvent(std::string s);
+        private:
+            ConsoleUI* cui;
+            void LogEvent(std::string s);
+    };
 
-// Slots
-public: void	OnPlaybackAlmostEnded()		{	this->PrintEvent("Playback almost done"); };
-public: void    OnPlaybackStartedOk()       {   this->PrintEvent("Playback started OK"); };
-public: void    OnPlaybackStartedFail()     {   this->PrintEvent("Playback started FAIL"); };
-public: void    OnPlaybackStoppedOk()       {   this->PrintEvent("Playback stopped OK"); };
-public: void    OnPlaybackStoppedFail()     {   this->PrintEvent("Playback stopped FAIL"); };
-public: void    OnPlaybackInterrupted()     {   this->PrintEvent("Playback interrupted"); };
-public: void    OnVolumeChangedOk()         {   this->PrintEvent("Volume changed OK"); };
-public: void    OnVolumeChangedFail()       {   this->PrintEvent("Volume changed FAIL"); };
-public: void    OnStreamOpenOk()            {   this->PrintEvent("Stream open OK"); };
-public: void    OnStreamOpenFail()          {   this->PrintEvent("Stream open FAIL"); };
-public: void    OnMixpointReached()         ;
-public: void    OnSetPositionOk()           {   this->PrintEvent("Set position OK"); };
-public: void    OnSetPositionFail()         {   this->PrintEvent("Set position FAIL"); };
-};
-
-}} // NS
+} }

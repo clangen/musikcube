@@ -36,6 +36,7 @@
 
 #include "pch.hpp"
 
+#include <core/log/debug.h>
 #include <core/io/LocalFileStream.h>
 #include <core/config.h>
 #include <core/support/Common.h>
@@ -69,11 +70,11 @@ bool LocalFileStream::Open(const char *filename, unsigned int options) {
         boost::filesystem::path file(filename);
 
         if (!boost::filesystem::exists(file)) {
-            std::cerr << "File not found" << std::endl;
+            debug::log("LocalFileStream", "file not found");
         }
 
         if (!boost::filesystem::is_regular(file)) {
-            std::cerr << "File not a regular file" << std::endl;
+            debug::log("LocalFileStream", "not a regular file");
         }
 
         this->filesize = (long)boost::filesystem::file_size(file);
@@ -113,7 +114,7 @@ PositionType LocalFileStream::Read(void* buffer,PositionType readBytes) {
     }
     catch (std::ios_base::failure){
         if(!this->fileStream->eof()) {
-            std::cerr << "Error reading from file" << std::endl;
+            debug::log("LocalFileStream", "file read error");
             return 0;
         }
     }

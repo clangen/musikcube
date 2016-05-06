@@ -111,7 +111,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ConsoleUI.cpp" />
-    <ClCompile Include="DummyAudioEventHandler.cpp" />
+    <ClCompile Include="TransportEvents.cpp" />
     <ClCompile Include="player.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -121,7 +121,7 @@
   <ItemGroup>
     <ClInclude Include="config.h" />
     <ClInclude Include="ConsoleUI.h" />
-    <ClInclude Include="DummyAudioEventHandler.h" />
+    <ClInclude Include="TransportEvents.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>

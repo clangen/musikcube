@@ -32,29 +32,18 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
-
-#include "DummyAudioEventHandler.h"
-
+#include "TransportEvents.h"
 #include "ConsoleUI.h"
 
 using namespace musik::square;
 
-DummyAudioEventHandler::DummyAudioEventHandler(ConsoleUI* c)
-: cui(c)
-{
+TransportEvents::TransportEvents(ConsoleUI* c)
+: cui(c) {
 }
 
-DummyAudioEventHandler::~DummyAudioEventHandler()
-{
+TransportEvents::~TransportEvents() {
 }
 
-void DummyAudioEventHandler::PrintEvent(std::string s)
-{
-    this->cui->Print("EVENT: " + s + "\n"); 
-}
-
-void DummyAudioEventHandler::OnMixpointReached()
-{
-     this->PrintEvent("Mix point reached");
-     //this->cui->StartNew(); // Endless test loop
+void TransportEvents::LogEvent(std::string s) {
+    musik::debug::log("playback", s); 
 }

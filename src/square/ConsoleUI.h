@@ -38,12 +38,10 @@
 #include "stdafx.h"
 
 #include <vector>
-
 #include <boost/thread/mutex.hpp>
-
+#include <core/log/debug.h>
 #include <core/playback/Transport.h>
-
-#include "DummyAudioEventHandler.h"
+#include "TransportEvents.h"
 
 using namespace musik::core::audio;
 
@@ -51,55 +49,45 @@ class AudioStream;
 
 namespace musik { namespace square {
 
-typedef std::vector<std::string> Args;
+    typedef std::vector<std::string> Args;
 
-class ConsoleUI
-{
-public:  ConsoleUI();
-public: ~ConsoleUI();
+    class ConsoleUI : public sigslot::has_slots<> {
+        public:
+             ConsoleUI();
+            ~ConsoleUI();
 
-public:  void        Run();
-private: void        PrintCommands();
-private: void        ProcessCommand(std::string commandString);
-public:  void        Print(std::string s);
+            void Run();
 
-// Commands
-private: void   PlayFile(Args args);
-private: void	Pause();
-private: void   Stop(Args args);
-private: void   Stop();
-private: void   ListPlaying();
-private: void   ListPlugins();
-private: void	SetPosition(Args args);
-private: void   SetVolume(Args args);
-private: void   SetVolume(float volume);
-private: void   Quit();
+        private:
+            void Help();
+            void Process(const std::string& cmd);
 
-// Members
-private: bool                       shouldQuit;
-private: bool						paused;
-private: Transport                  transport;
-private: DummyAudioEventHandler     audioEventHandler;
+            void PlayFile(Args args);
+            void Pause();
+            void Stop(Args args);
+            void Stop();
+            void ListPlaying();
+            void ListPlugins();
+            void SetPosition(Args args);
+            void SetVolume(Args args);
+            void SetVolume(float volume);
+            void Quit();
 
-private: boost::mutex   mutex;
+            void OnDebug(musik::debug::log_level level, std::string tag, std::string message);
 
-private: void ShutDown();
+            bool shouldQuit;
+            bool paused;
+            Transport transport;
+            TransportEvents audioEventHandler;
 
-#ifdef WIN32
-public: static DWORD WINAPI ThreadRun(LPVOID param);
-#endif
+            boost::mutex mutex;
 
-public: void StartNew();
-};
+            void ShutDown();
+
+            #ifdef WIN32
+                public: static DWORD WINAPI ThreadRun(LPVOID param);
+            #endif
+
+    };
 
 }} // NS
-
-// TODO: move to utility file
-#include <sstream>
-
-template <class T>
-bool convertString(T& t, const std::string& s)
-{
-    std::istringstream iss(s);
-    return !(iss >> t).fail();
-}

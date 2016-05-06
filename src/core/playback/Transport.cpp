@@ -33,6 +33,7 @@
 
 #include "pch.hpp"
 
+#include <core/log/debug.h>
 #include <core/playback/Transport.h>
 
 using namespace musik::core::audio;
@@ -61,45 +62,39 @@ void Transport::PrepareNextTrack(std::string trackUrl){
 }
 
 void Transport::Start(std::string url){
-#ifdef _DEBUG
-	std::cerr << "Transport::Start called" << std::endl;
-#endif
+    musik::debug::log("transport", "start");
+
     // Check if this is already Prepared
-    PlayerPtr player    = this->nextPlayer;
+    PlayerPtr player = this->nextPlayer;
     this->nextPlayer.reset();
-#ifdef _DEBUG
-	std::cerr << "Transport: nextPlayer reset" << std::endl;
-#endif
+
+    musik::debug::log("transport", "next player reset");
 
     // If the nextPlayer wasn't the same as the one started, lets create a new one
     if(!player || player->url!=url){
-        // Or create a new player
     	Player::OutputPtr output;
-#ifdef _DEBUG
-	std::cerr << "Transport: new output created for player" << std::endl;
-#endif
+        musik::debug::log("transport", "created output device");
+
         player  = Player::Create(url, &output);
         player->SetVolume(this->volume);
-#ifdef _DEBUG
-	std::cerr << "Transport: new player created" << std::endl;
-#endif
+
+        musik::debug::log("transport", "created player");
     }
 
     // Add to the players
     this->players.push_front(player);
     this->currentPlayer = player;
-#ifdef _DEBUG
-	std::cerr << "Transport: player added to player list" << std::endl;
-#endif
+	
+    musik::debug::log("transport", "player added to player list");
 
     // Lets connect to the signals of the currentPlayer
     this->currentPlayer->PlaybackStarted.connect(this,&Transport::OnPlaybackStarted);
     this->currentPlayer->PlaybackAlmostEnded.connect(this,&Transport::OnPlaybackAlmostEnded);
     this->currentPlayer->PlaybackEnded.connect(this,&Transport::OnPlaybackEnded);
     this->currentPlayer->PlaybackError.connect(this, &Transport::OnPlaybackError);
-#ifdef _DEBUG
-	std::cerr << "Transport: player-Play() about to be called" << std::endl;
-#endif
+
+    musik::debug::log("transport", "play()");
+
     // Start playing
     player->Play();
 }

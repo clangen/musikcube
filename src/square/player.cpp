@@ -49,14 +49,17 @@ int main(int argc, char* argv[])
 #endif
 {
     /* the following allows boost::filesystem to use utf8 on Windows */
-    //std::locale::global(boost::locale::generator().generate(""));
     std::locale locale = std::locale();
     std::locale utf8Locale(locale, new boost::filesystem::detail::utf8_codecvt_facet);
     boost::filesystem::path::imbue(utf8Locale);
     
+    musik::debug::init();
+
     ConsoleUI* instance = new ConsoleUI();
     instance->Run();
     delete instance;
 
-	return 0;
+    musik::debug::deinit();
+
+    return 0;
 }

@@ -36,171 +36,177 @@
 #include "ConsoleUI.h"
 
 #include <iostream>
+#include <sstream>
 
 #include <boost/algorithm/string.hpp>
+#include <boost/thread/mutex.hpp>
 
+#include <core/log/debug.h>
 #include <core/sdk/IPlugin.h>
 #include <core/plugin/PluginFactory.h>
-
 #include <core/library/track/TrackFactory.h>
 #include <core/library/LibraryFactory.h>
 #include <core/library/Indexer.h>
+
+template <class T>
+bool tostr(T& t, const std::string& s) {
+    std::istringstream iss(s);
+    return !(iss >> t).fail();
+}
 
 using namespace musik::square;
 
 using std::cout;
 using std::cin;
+using musik::core::Indexer;
+using musik::core::IndexerPtr;
+using musik::core::LibraryFactory;
+using musik::core::LibraryPtr;
+using musik::core::TrackFactory;
+using musik::core::TrackPtr;
+
+static boost::mutex outputMutex;
+
+typedef boost::mutex::scoped_lock Lock;
+static Lock lockOutput() {
+    return Lock(outputMutex);
+}
 
 ConsoleUI::ConsoleUI() 
 : shouldQuit(false)
 , audioEventHandler(this)
-, paused(false)
-{
-//    this->transport.EventPlaybackStartedOk.connect(&audioEventHandler, &DummyAudioEventHandler::OnPlaybackStartedOk);
-//    this->transport.EventPlaybackStartedFail.connect(&audioEventHandler, &DummyAudioEventHandler::OnPlaybackStartedFail);
+, paused(false) {
 
-//    this->transport.EventPlaybackStoppedOk.connect(&audioEventHandler, &DummyAudioEventHandler::OnPlaybackStoppedOk);
-//    this->transport.EventPlaybackStoppedFail.connect(&audioEventHandler, &DummyAudioEventHandler::OnPlaybackStoppedFail);
+    musik::debug::string_logged.connect(this, &ConsoleUI::OnDebug);
 
- //   this->transport.EventVolumeChangedOk.connect(&audioEventHandler, &DummyAudioEventHandler::OnVolumeChangedOk);
- //   this->transport.EventVolumeChangedFail.connect(&audioEventHandler, &DummyAudioEventHandler::OnVolumeChangedFail);
+//    this->transport.EventPlaybackStopped.connect(&audioEventHandler, &TransportEvents::OnPlaybackStopped);
+//    this->transport.EventVolumeChanged.connect(&audioEventHandler, &TransportEvents::OnVolumeChanged);
+//    this->transport.EventMixpointReached.connect(&audioEventHandler, &TransportEvents::OnMixpointReached);
+    this->transport.PlaybackStarted.connect(&this->audioEventHandler, &TransportEvents::OnPlaybackStartedOk);
+    this->transport.PlaybackAlmostDone.connect(&this->audioEventHandler, &TransportEvents::OnPlaybackAlmostEnded);
+    this->transport.PlaybackEnded.connect(&this->audioEventHandler, &TransportEvents::OnPlaybackStoppedOk);
+    this->transport.PlaybackError.connect(&this->audioEventHandler, &TransportEvents::OnPlaybackStoppedFail);
+    this->transport.PlaybackPause.connect(&this->audioEventHandler, &TransportEvents::OnPlaybackPaused);
+    this->transport.PlaybackResume.connect(&this->audioEventHandler, &TransportEvents::OnPlaybackResumed);
 
- //   this->transport.EventMixpointReached.connect(&audioEventHandler, &DummyAudioEventHandler::OnMixpointReached);
- 	
-	this->transport.PlaybackStarted.connect(&this->audioEventHandler, &DummyAudioEventHandler::OnPlaybackStartedOk);
-	this->transport.PlaybackAlmostDone.connect(&this->audioEventHandler, &DummyAudioEventHandler::OnPlaybackAlmostEnded);
-	this->transport.PlaybackEnded.connect(&this->audioEventHandler, &DummyAudioEventHandler::OnPlaybackStoppedOk);
-	this->transport.PlaybackError.connect(&this->audioEventHandler, &DummyAudioEventHandler::OnPlaybackStoppedFail);
+}
+
+void ConsoleUI::OnDebug(musik::debug::log_level level, std::string tag, std::string message) {
+    std::cout << "    [" << tag << "] " << message << "\n";
 }
 
 ConsoleUI::~ConsoleUI() {
 }
 
-void ConsoleUI::Print(std::string s)
-{
-    boost::mutex::scoped_lock   lock(mutex);
-
-	cout << "\n*******************************\n\n";
-    cout << s;
-    cout << "\n*******************************\n" << std::endl;
-}
-
-void ConsoleUI::Run()
-{
-    std::string command; 
+void ConsoleUI::Run() {
+    std::string cmd; 
 
     transport.SetVolume(0.1);
-
-    using musik::core::Indexer;
-    using musik::core::IndexerPtr;
-    using musik::core::LibraryFactory;
-    using musik::core::LibraryPtr;
-    using musik::core::TrackFactory;
-    using musik::core::TrackPtr;
    
     LibraryPtr library = LibraryFactory::Libraries().at(0); /* there's always at least 1... */
     library->Indexer()->AddPath("E:/music/");
-    library->Indexer()->RestartSync();
+
+    this->Help();
 
     while (!this->shouldQuit) {
-        this->PrintCommands();
-        cout << "Enter command: ";
-        std::getline(cin, command); // Need getline to handle spaces!
-        this->ProcessCommand(command);
+        cout << "> ";
+        std::getline(cin, cmd);
+        this->Process(cmd);
     }
 }
 
-void ConsoleUI::PrintCommands()
-{
-    boost::mutex::scoped_lock   lock(mutex);
+void ConsoleUI::Help() {
+    Lock lock = lockOutput();
 
-    cout << "Commands:\n";
-    cout << "\tp [file]: play file (enter full path)\n";
-    cout << "\ts: stop playing\n";
-    cout << "\tl: list currently playing\n";
-    cout << "\tlp: list loaded plugins\n";
-    cout << "\tv <p>: set volume to p%\n";
-    cout << "\tq: quit";
-    cout << std::endl;
+    cout << "help:\n";
+    cout << "  pl [file]: play file at path\n";
+    cout << "  pa: toggle pause/resume";
+    cout << "  st: stop playing\n";
+    cout << "  ls: list currently playing\n";
+    cout << "  lp: list loaded plugins\n";
+    cout << "  v: <0.0-1.0>: set volume to p%\n";
+    cout << "  sk <seconds>: seek to <seconds> into track\n";
+    cout << "  rescan: rescan/index music directories\n";
+    cout << "\n  q: quit\n\n";
 }
 
-void ConsoleUI::ProcessCommand(std::string commandString)
+void ConsoleUI::Process(const std::string& cmd)
 {
     Args args;
         
-    boost::algorithm::split(args, commandString, boost::is_any_of(" "));
+    boost::algorithm::split(args, cmd, boost::is_any_of(" "));
 
     std::string command = args.size() > 0 ? args[0] : "";
     args.erase(args.begin());
 
-    if (command == "p")
-    {
+    if (command == "rmdir") {
+
+    }
+    else if (command == "addir") {
+
+    }
+    else if (command == "dirs") {
+
+    }
+    else if (command == "rescan" || command == "scan" || command == "index") {
+        LibraryPtr library = LibraryFactory::Libraries().at(0); /* there's always at least 1... */
+        library->Indexer()->RestartSync();
+    }
+    else if (command == "h" || command == "help") {
+        this->Help();
+    }
+    else if (command == "p" || command == "pl") {
         this->PlayFile(args);
     }
-    else if (command == "pa")
-    {
+    else if (command == "pa") {
         this->Pause();
     }
-    else if (command == "s")
-    {
+    else if (command == "s") {
         this->Stop(args);
     }
-    else if (command == "seek")
-    {
-    	this->SetPosition(args);
+    else if (command == "sk" || command == "seek") {
+        this->SetPosition(args);
     }
-    else if (command == "l")
-    {
+    else if (command == "np" || command == "pl") {
         this->ListPlaying();
     }
-    else if (command == "lp")
-    {
+    else if (command == "plugins") {
         this->ListPlugins();
     }
-    else if (command == "v")
-    {
+    else if (command == "v" || command == "volume") {
         this->SetVolume(args);
     }
-    else if (command == "q")
-    {
+    else if (command == "q" || command == "quit" || command == "exit") {
         this->Quit();
     }
-    else
-    {
-        cout << "Unknown command\n";
+    else {
+        cout << "\n\nunknown command ('h' for help)\n\n";
     }
 }
 
-void ConsoleUI::PlayFile(Args args)
-{
+void ConsoleUI::PlayFile(Args args) {
     std::string filename;
-    if (args.size() > 0) 
-    {
+    if (args.size() > 0)  {
         filename = args[0];
     }
 
     int repeat = 1;
-    if (args.size() > 1)
-    {
-        convertString<int>(repeat, args[1]);
+    if (args.size() > 1) {
+        tostr<int>(repeat, args[1]);
     }
 
     unsigned int delay = 0;
-    if (args.size() > 2)
-    {        
-        if (!convertString<unsigned int>(delay, args[2]))
-        {
+    if (args.size() > 2) {
+        if (!tostr<unsigned int>(delay, args[2])) {
             delay = 0;
         }
     }
 
-    for (int i = 0; i < repeat; ++i)
-    {
+    for (int i = 0; i < repeat; ++i) {
         transport.Start(filename.c_str()); //TODO: fix to use TrackPtr
-        if (delay)
-        {
+        if (delay) {
 #ifdef WIN32
-			Sleep(delay);
+            Sleep(delay);
 #else
             sleep(delay);
 #endif
@@ -208,111 +214,91 @@ void ConsoleUI::PlayFile(Args args)
     }
 }
 
-void ConsoleUI::Pause()
-{
-	if (this->paused) {
-		transport.Resume();
-		this->paused = !this->paused;
-	}
-	else
-	{
-		transport.Pause();
-		this->paused = !this->paused;
-	}
+void ConsoleUI::Pause() {
+    if (this->paused) {
+        transport.Resume();
+        this->paused = !this->paused;
+    }
+    else {
+        transport.Pause();
+        this->paused = !this->paused;
+    }
 }
 
-void ConsoleUI::Stop(Args args)
-{
+void ConsoleUI::Stop(Args args) {
     this->Stop();
 }
 
-void ConsoleUI::Stop()
-{
+void ConsoleUI::Stop() {
     transport.Stop();
 }
 
-void ConsoleUI::ListPlaying()
-{
-	/*
-	AudioStreamOverview overview = transport.StreamsOverview();
-	AudioStreamOverviewIterator it;
-	
-
-	for (it = overview.begin(); it != overview.end(); ++it)
-	{
-		cout << *it << '\n';
-	}
+void ConsoleUI::ListPlaying() {
+    /*
+    AudioStreamOverview overview = transport.StreamsOverview();
+    AudioStreamOverviewIterator it;
     
-	cout << "------------------\n";
-	cout << transport.NumOfStreams() << " playing" << std::std::endl;*/
+
+    for (it = overview.begin(); it != overview.end(); ++it) {
+        cout << *it << '\n';
+    }
+    
+    cout << "------------------\n";
+    cout << transport.NumOfStreams() << " playing" << std::std::endl;*/
 }
 
-void ConsoleUI::ListPlugins()
-{
+void ConsoleUI::ListPlugins() {
     using musik::core::IPlugin;
     using musik::core::PluginFactory;
 
     typedef std::vector<boost::shared_ptr<IPlugin> > PluginList;
     typedef PluginFactory::NullDeleter<IPlugin> Deleter;
 
-    PluginList plugins = 
-        PluginFactory::Instance().QueryInterface<IPlugin, Deleter>("GetPlugin");
+    PluginList plugins = PluginFactory::Instance()
+        .QueryInterface<IPlugin, Deleter>("GetPlugin");
 
     PluginList::iterator it = plugins.begin();
-    for ( ; it != plugins.end(); it++)
-    {
-        cout << (*it)->Name() << '\t' << (*it)->Version() << '\t' << (*it)->Author() << '\n';
+    for ( ; it != plugins.end(); it++) {
+        cout << (*it)->Name() << '\t' << 
+            (*it)->Version() << '\t' << 
+            (*it)->Author() << '\n';
     }
 }
 
-void ConsoleUI::SetPosition(Args args)
-{
-	if (args.size() > 0) {
-		double newPosition = 0;
-		if (convertString<double>(newPosition, args[0])) {
-			transport.SetPosition(newPosition);
-		}
-	}
+void ConsoleUI::SetPosition(Args args) {
+    if (args.size() > 0) {
+        double newPosition = 0;
+        if (tostr<double>(newPosition, args[0])) {
+            transport.SetPosition(newPosition);
+        }
+    }
 }
 
-void ConsoleUI::SetVolume(Args args)
-{
-    if (args.size() > 0)
-    {
+void ConsoleUI::SetVolume(Args args) {
+    if (args.size() > 0) {
         float newVolume = 0;
-        if (convertString<float>(newVolume, args[0]))
-        {
+        if (tostr<float>(newVolume, args[0])) {
             this->SetVolume(newVolume);
         }
     }
 }
 
-void ConsoleUI::SetVolume(float volume)
-{
+void ConsoleUI::SetVolume(float volume) {
     transport.SetVolume(volume);
 }
 
-void ConsoleUI::Quit()
-{   
+void ConsoleUI::Quit() {
     this->shouldQuit = true;
 }
 
-void ConsoleUI::ShutDown()
-{
+void ConsoleUI::ShutDown() {
 }
 
 #ifdef WIN32
-/*static*/ DWORD WINAPI ConsoleUI::ThreadRun(LPVOID param)
-{
-    ConsoleUI* instance = (ConsoleUI*)param;
+/*static*/ DWORD WINAPI ConsoleUI::ThreadRun(LPVOID param) {
+    ConsoleUI* instance = (ConsoleUI*) param;
     instance->Run();
     delete instance;
     return 0;
 }
 #endif
-
-void ConsoleUI::StartNew()
-{
-    Args a;
-    this->PlayFile(a);
-}

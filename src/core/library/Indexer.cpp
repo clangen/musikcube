@@ -36,6 +36,7 @@
 
 #include "pch.hpp"
 
+#include <core/log/debug.h>
 #include <core/library/Indexer.h>
 
 #include <core/config.h>
@@ -87,17 +88,17 @@ std::string Indexer::GetStatus() {
     boost::mutex::scoped_lock lock(this->progressMutex);
     
     switch (status) {
-    case 1: return boost::str(boost::format("Counting files: %1%") % this->nofFiles);
-    case 2: return boost::str(boost::format("Indexing: %.2f") % (this->overallProgress * 100)) + "%";
-    case 3: return boost::str(boost::format("Removing old files: %.2f") % (this->overallProgress * 100)) + "%";
-    case 4: return "Cleaning up.";
-    case 5: return "Optimizing.";
-    case 6: return boost::str(boost::format("Analyzing: %.2f%% (current %.1f%%)")
+    case 1: return boost::str(boost::format("counting... %1%") % this->nofFiles);
+    case 2: return boost::str(boost::format("indexing... %.2f") % (this->overallProgress * 100)) + "%";
+    case 3: return boost::str(boost::format("removing... %.2f") % (this->overallProgress * 100)) + "%";
+    case 4: return "cleaning...";
+    case 5: return "optimizing...";
+    case 6: return boost::str(boost::format("running analyzers...: %.2f%% (current %.1f%%)")
         % (100.0 * this->overallProgress / (double) this->nofFiles)
         % (this->currentProgress * 100.0));
     }
 
-    return "unknown indexer status";
+    return "doing something... (unknown)";
 }
 
 //////////////////////////////////////////
@@ -402,7 +403,7 @@ void Indexer::SyncDirectory(
         for( ; file != end && !this->Exited() && !this->Restarted();++file) {
             if (is_directory(file->status())) {
                 /* recursion here */
-                std::cout << this->GetStatus() << "\n";
+                musik::debug::log("indexer", this->GetStatus());
                 this->SyncDirectory(file->path().string(), dirId,pathId,syncPath);
             }
             else {
