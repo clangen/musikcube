@@ -35,6 +35,8 @@
 
 #include "ConsoleUI.h"
 
+#include <curses.h>
+
 #include <boost/locale.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/fstream.hpp>

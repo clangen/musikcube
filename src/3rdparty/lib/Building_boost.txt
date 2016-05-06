@@ -1,5 +1,0 @@
-The following boost libs has been build with the following command:
-
-bjam.exe --toolset=msvc --with-system --with-date_time --with-filesystem --with-regex --with-thread variant=debug threading=multi link=static runtime-link=static stage
-bjam.exe --toolset=msvc --with-system --with-date_time --with-filesystem --with-regex --with-thread variant=release threading=multi link=static runtime-link=static optimization=speed stage
-
