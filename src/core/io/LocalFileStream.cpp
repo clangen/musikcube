@@ -50,6 +50,8 @@ typedef fpos_t  stdioPositionType;
 typedef fpos_t stdioPositionType;
 #endif
 
+static const std::string TAG = "LocalFileStream";
+
 using namespace musik::core::io;
 
 LocalFileStream::LocalFileStream()
@@ -62,33 +64,39 @@ LocalFileStream::~LocalFileStream() {
 }
 
 bool LocalFileStream::Open(const char *filename, unsigned int options) {
-    if (filename == NULL) {
-        return false;
-    }
-
     try {
+        std::string fn(filename);
+        debug::info(TAG, "opening file: " + std::string(filename));
+
         boost::filesystem::path file(filename);
 
         if (!boost::filesystem::exists(file)) {
-            debug::log("LocalFileStream", "file not found");
+            debug::err(TAG, "open failed " + fn);
+            return false;
         }
 
         if (!boost::filesystem::is_regular(file)) {
-            debug::log("LocalFileStream", "not a regular file");
+            debug::err(TAG, "not a regular file" + fn);
+            return false;
         }
 
         this->filesize = (long)boost::filesystem::file_size(file);
         this->extension = file.extension().string();
-        this->file = UTFFopen(filename,"rb");
+        this->file = UTFFopen(filename, "rb");
         this->fd = new boost::iostreams::file_descriptor(file);
         this->fileStream = new boost::iostreams::stream<boost::iostreams::file_descriptor>(*this->fd);
         this->fileStream->exceptions(std::ios_base::eofbit | std::ios_base::failbit | std::ios_base::badbit);
-
-        return this->file!=NULL;
+    
+        if (this->file != NULL) {
+            debug::info(TAG, "opened successfully");
+            return true;
+        }
     }
     catch(...) {
-        return false;
     }
+
+    debug::err(TAG, "open failed " + std::string(filename));
+    return false;
 }
 
 bool LocalFileStream::Close() {
@@ -114,7 +122,7 @@ PositionType LocalFileStream::Read(void* buffer,PositionType readBytes) {
     }
     catch (std::ios_base::failure){
         if(!this->fileStream->eof()) {
-            debug::log("LocalFileStream", "file read error");
+            debug::err("LocalFileStream", "file read error");
             return 0;
         }
     }

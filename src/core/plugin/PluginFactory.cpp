@@ -39,16 +39,17 @@
 #include <core/plugin/PluginFactory.h>
 #include <core/config.h>
 #include <core/support/Common.h>
+#include <core/debug.h>
+
+static const std::string TAG = "PluginFactory";
 
 using namespace musik::core;
 
 PluginFactory PluginFactory::sInstance;
 
-PluginFactory::PluginFactory(void){
+PluginFactory::PluginFactory() {
+    musik::debug::info(TAG, "loading plugins");
     this->LoadPlugins();
-#ifdef _DEBUG
-    std::cerr << "Loading DLLs" << std::endl;
-#endif
 }
 
 PluginFactory::~PluginFactory(void){
@@ -56,13 +57,7 @@ PluginFactory::~PluginFactory(void){
     {
         this->loadedPlugins[i]->Destroy();
     }
-    //this->loadedPlugins.clear();		//This causes a segmentation fault on linux due to loadedPlugins being already empty. Jooles
-    //Also somewhere here is another seg fault that only seems to occur when the program is run from within its directory
-    //eg. cd'ing to musikCube/bin and running square then quitting segfaults here. cd'ing to musikCube and running
-    // bin/square then quitting works fine.. Any ideas anyone? Jooles
-#ifdef _DEBUG
-    std::cerr << "Unloading DLLs" << std::endl;
-#endif
+
     // Unload dlls
     for(std::vector<void*>::iterator oDLL=this->loadedDLLs.begin();oDLL!=this->loadedDLLs.end();){
         #ifdef WIN32

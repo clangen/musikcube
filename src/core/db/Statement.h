@@ -77,6 +77,7 @@ namespace musik{ namespace core{ namespace db{
             const wchar_t* ColumnTextW(int column);
 
             void UnBindAll();
+
         private:
             friend class Connection;
 

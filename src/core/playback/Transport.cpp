@@ -38,6 +38,8 @@
 
 using namespace musik::core::audio;
 
+static std::string TAG = "Transport";
+
 Transport::Transport()
  :volume(1.0)
  ,gapless(true)
@@ -62,30 +64,30 @@ void Transport::PrepareNextTrack(std::string trackUrl){
 }
 
 void Transport::Start(std::string url){
-    musik::debug::log("transport", "start");
+    musik::debug::info(TAG, "start");
 
     // Check if this is already Prepared
     PlayerPtr player = this->nextPlayer;
     this->nextPlayer.reset();
 
-    musik::debug::log("transport", "next player reset");
+    musik::debug::info(TAG, "next player reset");
 
     // If the nextPlayer wasn't the same as the one started, lets create a new one
     if(!player || player->url!=url){
     	Player::OutputPtr output;
-        musik::debug::log("transport", "created output device");
+        musik::debug::info(TAG, "created output device");
 
         player  = Player::Create(url, &output);
         player->SetVolume(this->volume);
 
-        musik::debug::log("transport", "created player");
+        musik::debug::info(TAG, "created player");
     }
 
     // Add to the players
     this->players.push_front(player);
     this->currentPlayer = player;
 	
-    musik::debug::log("transport", "player added to player list");
+    musik::debug::info(TAG, "player added to player list");
 
     // Lets connect to the signals of the currentPlayer
     this->currentPlayer->PlaybackStarted.connect(this,&Transport::OnPlaybackStarted);
@@ -93,13 +95,14 @@ void Transport::Start(std::string url){
     this->currentPlayer->PlaybackEnded.connect(this,&Transport::OnPlaybackEnded);
     this->currentPlayer->PlaybackError.connect(this, &Transport::OnPlaybackError);
 
-    musik::debug::log("transport", "play()");
+    musik::debug::info(TAG, "play()");
 
     // Start playing
     player->Play();
 }
 
 void Transport::Stop(){
+    musik::debug::info(TAG, "stop");
     this->players.clear();
     this->currentPlayer.reset();
     this->nextPlayer.reset();
@@ -107,6 +110,8 @@ void Transport::Stop(){
 }
 
 bool Transport::Pause(){
+    musik::debug::info(TAG, "pause");
+
     // pause all players
     for(PlayerList::iterator player=this->players.begin();player!=this->players.end();++player){
         (*player)->Pause();
@@ -115,6 +120,8 @@ bool Transport::Pause(){
     return true;
 }
 bool Transport::Resume(){
+    musik::debug::info(TAG, "resume");
+
     // Resume all players
     for(PlayerList::iterator player=this->players.begin();player!=this->players.end();++player){
         (*player)->Resume();
@@ -143,6 +150,8 @@ double Transport::Volume(){
 }
 
 void Transport::SetVolume(double volume){
+    musik::debug::info("transport", boost::str(boost::format("set volume %d%%") % (volume * 100)));
+
     this->volume    = volume;
     if(this->currentPlayer){
         for(PlayerList::iterator player=this->players.begin();player!=this->players.end();++player){

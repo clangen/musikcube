@@ -1,7 +1,5 @@
 /* Public Domain Curses */
 
-/* $Id: term.h,v 1.16 2008/07/13 16:08:16 wmcbrine Exp $ */
-
 /* PDCurses doesn't operate with terminfo, but we need these functions for 
    compatibility, to allow some things (notably, interface libraries for 
    other languages) to be compiled. Anyone who tries to actually _use_ 

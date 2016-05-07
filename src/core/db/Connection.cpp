@@ -149,7 +149,7 @@ int Connection::Close(){
 
     if(sqlite3_close(this->connection)==SQLITE_OK){
         this->connection    = 0;
-        return musik::core::db::OK;
+        return musik::core::db::Okay;
     }
     return musik::core::db::Error;
 }
@@ -189,7 +189,7 @@ int Connection::Execute(const char* sql){
 
     sqlite3_reset(stmt);
     sqlite3_finalize(stmt);
-    return db::OK;
+    return musik::core::db::Okay;
 }
 
 
@@ -226,7 +226,7 @@ int Connection::Execute(const wchar_t* sql){
 
     sqlite3_reset(stmt);
     sqlite3_finalize(stmt);
-    return db::OK;
+    return musik::core::db::Okay;
 }
 
 void Connection::Analyze(){

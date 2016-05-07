@@ -55,7 +55,7 @@ namespace musik{ namespace core{ namespace db{
     ///The ReturnCode is used by several method to return the status of a execution
     //////////////////////////////////////////
     typedef enum {
-        OK      = 0,
+        Okay    = 0,
         Row     = 100,
         Done    = 101,
         Error   = 1

@@ -33,10 +33,13 @@
 
 #include "pch.hpp"
 
+#include <core/debug.h>
 #include <core/audio/Player.h>
 #include <core/plugin/PluginFactory.h>
 
 using namespace musik::core::audio;
+
+static std::string TAG = "Player";
 
 PlayerPtr Player::Create(std::string &url, OutputPtr *output) {
     return PlayerPtr(new Player(url,output));

@@ -143,8 +143,16 @@ void debug::deinit() {
     }
 }
 
-void debug::log(const std::string& tag, const std::string& string) {
-    log(debug::info, tag, string);
+void debug::info(const std::string& tag, const std::string& string) {
+    log(debug::level_info, tag, string);
+}
+
+void debug::warn(const std::string& tag, const std::string& string) {
+    log(debug::level_warning, tag, string);
+}
+
+void debug::err(const std::string& tag, const std::string& string) {
+    log(debug::level_error, tag, string);
 }
 
 void debug::log(log_level level, const std::string& tag, const std::string& string) {

@@ -403,7 +403,7 @@ void Indexer::SyncDirectory(
         for( ; file != end && !this->Exited() && !this->Restarted();++file) {
             if (is_directory(file->status())) {
                 /* recursion here */
-                musik::debug::log("indexer", this->GetStatus());
+                musik::debug::info("indexer", this->GetStatus());
                 this->SyncDirectory(file->path().string(), dirId,pathId,syncPath);
             }
             else {

@@ -33,7 +33,8 @@
 
 #include "stdafx.h"
 #include "TransportEvents.h"
-#include "ConsoleUI.h"
+
+#include <core/debug.h>
 
 using namespace musik::square;
 
@@ -45,5 +46,5 @@ TransportEvents::~TransportEvents() {
 }
 
 void TransportEvents::LogEvent(std::string s) {
-    musik::debug::log("playback", s); 
+    musik::debug::info("playback", s); 
 }

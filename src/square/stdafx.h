@@ -7,3 +7,5 @@
 #else
     #include <unistd.h>
 #endif
+
+typedef __int64 int64;

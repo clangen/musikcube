@@ -33,12 +33,15 @@
 
 #include "pch.hpp"
 
+#include <core/debug.h>
 #include <core/audio/Stream.h>
 #include <core/sdk/IDecoderFactory.h>
 #include <core/plugin/PluginFactory.h>
 
 using namespace musik::core::audio;
 using musik::core::PluginFactory;
+
+static std::string TAG = "Stream";
 
 Stream::Stream(unsigned int options)
 : preferedBufferSampleSize(4096)
@@ -73,11 +76,14 @@ double Stream::SetPosition(double requestedSeconds) {
 }
 
 bool Stream::OpenStream(std::string uri) {
+    musik::debug::info(TAG, "opening " + uri);
+
     /* use our file stream abstraction to open the data at the 
     specified URI */
     this->dataStream = musik::core::io::DataStreamFactory::OpenUri(uri.c_str());
 
     if (!this->dataStream) {
+        musik::debug::err(TAG, "failed to open " + uri);
         return false;
     }
 
@@ -94,6 +100,7 @@ bool Stream::OpenStream(std::string uri) {
 
     if (!decoderFactory) {
         /* nothing can decode this type of file */
+        musik::debug::err(TAG, "nothing could open " + uri);
         return false;
     }
 
@@ -109,8 +116,11 @@ bool Stream::OpenStream(std::string uri) {
 
     this->decoder.reset(decoder, Deleter());
     if (!this->decoder->Open(this->dataStream.get())) {
+        musik::debug::err(TAG, "open ok, but decode failed " + uri);
         return false;
     }
+
+    musik::debug::info(TAG, "about ready to play: " + uri);
 
     return true;
 }

@@ -75,10 +75,10 @@
       <AdditionalLibraryDirectories>../3rdparty/lib;../../../boost_1_60_0/lib32-msvc-14.0;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <ImportLibrary>../../bin/$(Configuration)/mC2.lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalDependencies>pdcurses.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>pdcursesd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(SolutionDir)\src\3rdparty\vld\*.*" "$(TargetDir)" </Command>
@@ -100,7 +100,7 @@
       <AdditionalLibraryDirectories>../3rdparty/lib;../../../boost_1_60_0/lib32-msvc-14.0;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>false</GenerateDebugInformation>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <OptimizeReferences>
       </OptimizeReferences>
       <EnableCOMDATFolding>
@@ -112,19 +112,31 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="ConsoleUI.cpp" />
+    <ClCompile Include="BorderedWindow.cpp" />
+    <ClCompile Include="Colors.cpp" />
+    <ClCompile Include="CommandWindow.cpp" />
+    <ClCompile Include="LogWindow.cpp" />
+    <ClCompile Include="OutputWindow.cpp" />
+    <ClCompile Include="Screen.cpp" />
     <ClCompile Include="TransportEvents.cpp" />
-    <ClCompile Include="player.cpp" />
+    <ClCompile Include="Main.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="TransportWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BorderedWindow.h" />
+    <ClInclude Include="Colors.h" />
     <ClInclude Include="config.h" />
-    <ClInclude Include="ConsoleUI.h" />
+    <ClInclude Include="CommandWindow.h" />
+    <ClInclude Include="LogWindow.h" />
+    <ClInclude Include="OutputWindow.h" />
+    <ClInclude Include="Screen.h" />
     <ClInclude Include="TransportEvents.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="TransportWindow.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\3rdparty\3rdparty.vcxproj">

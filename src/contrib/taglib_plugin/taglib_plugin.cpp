@@ -59,18 +59,20 @@ BOOL APIENTRY DllMain( HMODULE hModule,DWORD  ul_reason_for_call,LPVOID lpReserv
 #endif
 
 class TaglibPlugin : public musik::core::IPlugin {
-    void Destroy() { delete this; };
-
-    const char* Name(){
-        return "Taglib 1.5 plugin";
+    void Destroy() {
+        delete this; 
     };
 
-    const char* Version(){
-        return "0.1";
+    const char* Name() {
+        return "Taglib 1.11 IMetadataReader";
     };
 
-    const char* Author(){
-        return "Daniel �nnerby";
+    const char* Version() {
+        return "0.2";
+    };
+
+    const char* Author() {
+        return "Daniel Önnerby, _avatar";
     };
 
 };

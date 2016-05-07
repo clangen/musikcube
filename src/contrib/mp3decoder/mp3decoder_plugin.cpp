@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Björn Olievier
+// The following are Copyright Â© 2008, BjÃ¶rn Olievier
 //
 // All rights reserved.
 //
@@ -46,9 +46,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 class MP3DecoderPlugin : public musik::core::IPlugin
 {
     void Destroy() { delete this; }
-	const char* Name() { return "MP3 decoder"; };
-	const char* Version() { return "1"; };
-	const char* Author() { return "Björn Olievier"; };
+	const char* Name() { return "MP3 IDecoder"; };
+	const char* Version() { return "0.2"; };
+	const char* Author() { return "BjÃ¶rn Olievier, _avatar"; };
 };
 
 extern "C" __declspec(dllexport) musik::core::IPlugin* GetPlugin() {
