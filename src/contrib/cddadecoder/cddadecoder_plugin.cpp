@@ -46,9 +46,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 
 class CddaDecoderPlugin : public musik::core::IPlugin {
     void Destroy() { delete this; };
-    const char* Name() { return "CDDA IDecoder"; };
+    const char* Name() { return "CD Audio (CDDA) IDecoder"; };
     const char* Version() { return "0.2"; };
-    const char* Author() { return "Björn Olievier, _avatar"; };
+    const char* Author() { return "Björn Olievier, _avatar Björn Olievier, _avatar Björn Olievier, _avatar"; };
 };
 
 extern "C" __declspec(dllexport) musik::core::IPlugin* GetPlugin() {

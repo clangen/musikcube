@@ -13,7 +13,7 @@ class SimpleScrollAdapter : public IScrollAdapter {
         virtual size_t GetLineCount(size_t width);
         virtual size_t GetEntryCount();
         virtual void DrawPage(WINDOW* window, size_t index);
-        virtual void AddLine(const std::string& str);
+        virtual void AddLine(const std::string& str, int64 attrs = 0);
 
     private:
         class Entry {
@@ -22,14 +22,20 @@ class SimpleScrollAdapter : public IScrollAdapter {
 
                 size_t GetIndex();
                 void SetIndex(size_t index);
-                size_t GetLineCount(size_t width);
-                std::string GetLine(size_t line, size_t width);
+                size_t GetLineCount();
+                std::string GetLine(size_t line);
                 std::string GetValue();
+                void SetWidth(size_t width);
+                void SetAttrs(int64 attrs);
+                int64 GetAttrs();
 
             private:
                 size_t index;
                 std::string value;
+                std::vector<std::string> lines;
                 size_t charCount;
+                int64 attrs;
+                size_t width;
         };
 
 
