@@ -2,8 +2,6 @@
 
 #include "stdafx.h"
 
-#include <boost/shared_ptr.hpp>
-#include <curses.h>
 #include "IScrollAdapter.h";
 
 class SimpleScrollAdapter : public IScrollAdapter {
@@ -18,23 +16,31 @@ class SimpleScrollAdapter : public IScrollAdapter {
         virtual void AddLine(const std::string& str);
 
     private:
-        size_t lineCount, width, height;
-
-        class Entry : public IEntry {
+        class Entry {
             public:
                 Entry(const std::string& value);
 
-                virtual size_t GetLineCount(size_t width);
-                virtual std::string GetLine(size_t line, size_t width);
-                virtual std::string GetValue();
+                size_t GetIndex();
+                void SetIndex(size_t index);
+                size_t GetLineCount(size_t width);
+                std::string GetLine(size_t line, size_t width);
+                std::string GetValue();
 
             private:
+                size_t index;
                 std::string value;
                 size_t charCount;
         };
 
+
+    private:
         typedef std::vector<boost::shared_ptr<Entry>> EntryList;
         typedef EntryList::iterator Iterator;
 
+
+        void Reindex();
+        size_t FindEntryIndex(int index);
+
         EntryList entries;
+        size_t lineCount, width, height;
 };

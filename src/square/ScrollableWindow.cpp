@@ -49,7 +49,7 @@ void ScrollableWindow::ScrollToBottom() {
     int total = (int) adapter->GetLineCount(this->GetWidth());
     int height = this->GetContentHeight();
 
-    int actual = total - height + 1;
+    int actual = total - height;
     actual = (actual < 0) ? 0 : actual;
 
     adapter->DrawPage(this->GetContents(), actual);
@@ -75,7 +75,7 @@ void ScrollableWindow::ScrollDown(int delta) {
 
     int total = adapter->GetLineCount(this->GetWidth());
     int height = this->GetContentHeight();
-    int optimal = total - height + 1;
+    int optimal = total - height;
     int max = max(0, optimal);
 
     int actual = (int) this->scrollPosition + delta;
