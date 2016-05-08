@@ -39,6 +39,8 @@ CommandWindow::CommandWindow(Transport& transport, OutputWindow& output) {
     this->Create();
     this->output = &output;
     this->paused = false;
+
+    this->ListPlugins();
     this->ListPlugins();
 }
 

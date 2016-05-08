@@ -48,7 +48,7 @@ class CddaDecoderPlugin : public musik::core::IPlugin {
     void Destroy() { delete this; };
     const char* Name() { return "CD Audio (CDDA) IDecoder"; };
     const char* Version() { return "0.2"; };
-    const char* Author() { return "Björn Olievier, _avatar Björn Olievier, _avatar Björn Olievier, _avatar"; };
+    const char* Author() { return "Björn Olievier, _avatar"; };
 };
 
 extern "C" __declspec(dllexport) musik::core::IPlugin* GetPlugin() {

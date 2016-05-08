@@ -38,7 +38,6 @@ class SimpleScrollAdapter : public IScrollAdapter {
                 size_t width;
         };
 
-
     private:
         typedef std::vector<boost::shared_ptr<Entry>> EntryList;
         typedef EntryList::iterator Iterator;

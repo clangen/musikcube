@@ -47,14 +47,15 @@ void SimpleScrollAdapter::DrawPage(WINDOW* window, size_t lineNumber) {
     do {
         size_t count = (*it)->GetLineCount();
 
-        for (size_t i = c; i < count; i++) {
+        for (size_t i = c; i < count && remaining != 0; i++) {
             int64 attrs = (*it)->GetAttrs();
 
             if (attrs != 0) {
                 wattron(window, attrs);
             }
 
-            wprintw(window, "%s\n", (*it)->GetLine(i).c_str());
+            std::string line = (*it)->GetLine(i).c_str();
+            wprintw(window, "%s\n", line.c_str());
 
             if (attrs != 0) {
                 wattroff(window, attrs);
@@ -180,7 +181,7 @@ inline static void breakIntoSubLines(
         
         /* this isn't super efficient, but let's find all words that are greater
         than the width and break them into more sublines... it's possible to
-        do this more efficiently in the following loop with a bunch of additional 
+        do this more efficiently in the loop below this with a bunch of additional 
         logic, but let's keep things simple unless we run into performance
         problems! */
 
@@ -188,14 +189,23 @@ inline static void breakIntoSubLines(
         for (size_t i = 0; i < words.size(); i++) {
             std::string word = words.at(i);
             int len = std::distance(word.begin(), word.end());
+
+            /* this string is fine, it'll easily fit on its own line of necessary */
+
             if (width >= len) {
                 sanitizedWords.push_back(word);
             }
+
+            /* otherwise, the word needs to be broken into multiple lines. */
+
             else {
                 std::string accum;
                 
                 /* ugh, we gotta split on UTF8 characters, not actual characters.
-                this makes things a bit more difficult... */
+                this makes things a bit more difficult... we iterate over the string
+                one displayable character at a time, and break it apart into separate
+                lines. */
+
                 std::string::iterator begin = word.begin();
                 std::string::iterator end = word.begin();
                 int count = 0;
@@ -212,6 +222,8 @@ inline static void breakIntoSubLines(
                 }
             }
         }
+
+        words.clear();
 
         /* now we have a bunch of tokenized words. let's string them together 
         into sequences that fit in the output window's width */
@@ -279,7 +291,3 @@ void SimpleScrollAdapter::Entry::SetWidth(size_t width) {
         }
     }
 }
-
-
-
-
