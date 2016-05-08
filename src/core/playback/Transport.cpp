@@ -64,23 +64,22 @@ void Transport::PrepareNextTrack(std::string trackUrl){
 }
 
 void Transport::Start(std::string url){
-    musik::debug::info(TAG, "start");
+    musik::debug::info(TAG, "we were asked to start the track at " + url);
 
     // Check if this is already Prepared
     PlayerPtr player = this->nextPlayer;
     this->nextPlayer.reset();
 
-    musik::debug::info(TAG, "next player reset");
+    musik::debug::info(TAG, "creating a Player...");
 
     // If the nextPlayer wasn't the same as the one started, lets create a new one
-    if(!player || player->url!=url){
+    if(!player || player->url != url){
     	Player::OutputPtr output;
-        musik::debug::info(TAG, "created output device");
 
         player  = Player::Create(url, &output);
         player->SetVolume(this->volume);
 
-        musik::debug::info(TAG, "created player");
+        musik::debug::info(TAG, "Player created successfully");
     }
 
     // Add to the players

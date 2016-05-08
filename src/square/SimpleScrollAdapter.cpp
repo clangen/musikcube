@@ -31,6 +31,10 @@ size_t SimpleScrollAdapter::GetEntryCount() {
 void SimpleScrollAdapter::DrawPage(WINDOW* window, size_t lineNumber) {
     wclear(window);
 
+    if (this->lineCount <= 0) {
+        return;
+    }
+
     /* binary search to find where we need to start */
 
     size_t offset = this->FindEntryIndex(lineNumber);
@@ -47,21 +51,19 @@ void SimpleScrollAdapter::DrawPage(WINDOW* window, size_t lineNumber) {
     do {
         size_t count = (*it)->GetLineCount();
 
+        int64 attrs = (*it)->GetAttrs();
+        if (attrs != 0) {
+            wattron(window, attrs);
+        }
+
         for (size_t i = c; i < count && remaining != 0; i++) {
-            int64 attrs = (*it)->GetAttrs();
-
-            if (attrs != 0) {
-                wattron(window, attrs);
-            }
-
             std::string line = (*it)->GetLine(i).c_str();
             wprintw(window, "%s\n", line.c_str());
-
-            if (attrs != 0) {
-                wattroff(window, attrs);
-            }
-
             --remaining;
+        }
+
+        if (attrs != 0) {
+            wattroff(window, attrs);
         }
 
         ++it;
@@ -190,7 +192,7 @@ inline static void breakIntoSubLines(
             std::string word = words.at(i);
             int len = std::distance(word.begin(), word.end());
 
-            /* this string is fine, it'll easily fit on its own line of necessary */
+            /* this word is fine, it'll easily fit on its own line of necessary */
 
             if (width >= len) {
                 sanitizedWords.push_back(word);
@@ -204,7 +206,7 @@ inline static void breakIntoSubLines(
                 /* ugh, we gotta split on UTF8 characters, not actual characters.
                 this makes things a bit more difficult... we iterate over the string
                 one displayable character at a time, and break it apart into separate
-                lines. */
+                lines as necessary. */
 
                 std::string::iterator begin = word.begin();
                 std::string::iterator end = word.begin();

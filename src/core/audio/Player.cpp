@@ -54,6 +54,8 @@ Player::Player(std::string &url, OutputPtr *output)
 , currentPosition(0)
 , setPosition(-1)
 {
+    musik::debug::info(TAG, "new instance created");
+    
     if (*output) {
         this->output = *output;
     }
@@ -65,6 +67,7 @@ Player::Player(std::string &url, OutputPtr *output)
             IOutput, musik::core::PluginFactory::DestroyDeleter<IOutput>>("GetAudioOutput");
 
         if (!outputs.empty()) {
+            musik::debug::info(TAG, "found an IOutput device!");
             this->output = outputs.front();
         }
     }

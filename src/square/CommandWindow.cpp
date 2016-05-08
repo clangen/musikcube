@@ -40,8 +40,7 @@ CommandWindow::CommandWindow(Transport& transport, OutputWindow& output) {
     this->output = &output;
     this->paused = false;
 
-    this->ListPlugins();
-    this->ListPlugins();
+    this->output->WriteLine("hello! type 'h' or 'help'");
 }
 
 CommandWindow::~CommandWindow() {
@@ -105,7 +104,7 @@ void CommandWindow::SetVolume(float volume) {
 }
 
 void CommandWindow::Help() {
-    this->output->WriteLine("\n\nhelp:");
+    this->output->WriteLine("\nhelp:");
     this->output->WriteLine("  pl [file]: play file at path");
     this->output->WriteLine("  pa: toggle pause/resume");
     this->output->WriteLine("  st: stop playing");

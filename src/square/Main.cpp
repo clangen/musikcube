@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////
-// Copyright © 2007, Björn Olievier
+// Copyright Â© 2007, BjÃ¶rn Olievier
 //
 // All rights reserved.
 //
@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
     curs_set(0);
 
 #ifdef __PDCURSES__
-    PDC_set_title("musikbox");
+    PDC_set_title("â™« rect");
 #endif
 
     {
@@ -95,7 +95,12 @@ int main(int argc, char* argv[])
         CommandWindow command(tp, output);
         TransportWindow transport(tp);
 
-        int f1 = KEY_F(2);
+        std::vector<ScrollableWindow*> order;
+        order.push_back(&logs);
+        order.push_back(&output);
+
+        int index = 0;
+        ScrollableWindow *scrollable = order.at(index);
 
         int ch;
         timeout(500);
@@ -103,19 +108,26 @@ int main(int argc, char* argv[])
             if (ch == -1) { /* timeout */
                 logs.Update();
             }
+            else if (ch == 9) { /* tab */
+                index++;
+                if (index >= order.size()) {
+                    index = 0;
+                }
+                scrollable = order.at(index);
+            }
             else if (ch >= KEY_F(0) && ch <= KEY_F(12)) {
             }
             else if (ch == KEY_NPAGE) {
-                output.PageDown();
+                scrollable->PageDown();
             }
             else if (ch == KEY_PPAGE) {
-                output.PageUp();
+                scrollable->PageUp();
             }
             else if (ch == KEY_DOWN) {
-                output.ScrollDown();
+                scrollable->ScrollDown();
             }
             else if (ch == KEY_UP) {
-                output.ScrollUp();
+                scrollable->ScrollUp();
             }
             else {
                 command.WriteChar(ch);

@@ -4,14 +4,18 @@
 
 #include <core/debug.h>
 #include <boost/thread/mutex.hpp>
-#include "BorderedWindow.h"
+#include "ScrollableWindow.h"
+#include "SimpleScrollAdapter.h"
 
-class LogWindow : public BorderedWindow, public sigslot::has_slots<> {
+class LogWindow : public ScrollableWindow, public sigslot::has_slots<> {
     public:
         LogWindow();
         ~LogWindow();
 
         void Update();
+
+    protected:
+        virtual IScrollAdapter& GetScrollAdapter();
 
     private:
         void OnLogged(
@@ -27,4 +31,5 @@ class LogWindow : public BorderedWindow, public sigslot::has_slots<> {
 
         boost::mutex pendingMutex;
         std::vector<LogEntry*> pending;
+        SimpleScrollAdapter* adapter;
 };

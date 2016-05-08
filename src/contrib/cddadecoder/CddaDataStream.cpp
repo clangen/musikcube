@@ -85,7 +85,12 @@ static int getTrackNumber(const char* uri) {
     if (lastDot != std::string::npos) {
         /* always in the format F:\Track01.cda */
         std::string number = filename.substr(lastDot - 2, 2);
-        return stoi(number);
+        try {
+            return stoi(number);
+        }
+        catch (...) {
+            return 1;
+        }
     }
 
     return 1;

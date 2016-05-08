@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>square</ProjectName>
+    <ProjectName>rect</ProjectName>
     <ProjectGuid>{C7102EB1-7311-4B36-A7FF-89DD7F077FF9}</ProjectGuid>
     <RootNamespace>square</RootNamespace>
     <Keyword>Win32Proj</Keyword>
