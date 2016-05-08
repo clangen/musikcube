@@ -17,7 +17,7 @@ LogWindow::LogWindow() {
     this->Create();
 
     musik::debug::string_logged.connect(this, &LogWindow::OnLogged);
-    musik::debug::err("LogWindow", "initialized");
+    musik::debug::warn("LogWindow", "initialized");
 }
 
 LogWindow::~LogWindow() {

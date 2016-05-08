@@ -167,7 +167,8 @@ bool CommandWindow::ProcessCommand(const std::string& cmd) {
 
 bool CommandWindow::PlayFile(const std::vector<std::string>& args) {
     if (args.size() > 0) {
-        transport->Start(args.at(0));
+        std::string filename = boost::algorithm::join(args, " ");
+        transport->Start(filename);
         return true;
     }
 

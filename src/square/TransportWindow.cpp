@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "stdafx.h"
 #include "TransportWindow.h"
@@ -38,7 +38,7 @@ void TransportWindow::Repaint() {
     WINDOW *c = this->GetContents();
 
     std::string volume = boost::str(boost::format(
-        "♫ volume: %1%\n") % this->transport->Volume());
+        "volume: %1%\n") % this->transport->Volume());
 
     wprintw(c, volume.c_str());
     wprintw(c, "filename: ");
