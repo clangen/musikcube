@@ -20,6 +20,8 @@ class BorderedWindow {
         void Clear();
         int GetWidth() const;
         int GetHeight() const;
+        int GetContentHeight() const;
+        int GetContentWidth() const;
         int GetX() const;
         int GetY() const;
         bool GetScrollable() const;

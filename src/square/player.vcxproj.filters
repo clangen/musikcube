@@ -9,6 +9,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
     </Filter>
+    <Filter Include="Source Files\curses">
+      <UniqueIdentifier>{7ff6ce0d-725d-497c-9ecc-afcbe79faa5b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\windows">
+      <UniqueIdentifier>{80afa65b-4102-40a7-8f73-b06776d9d610}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -17,29 +23,38 @@
     <ClCompile Include="TransportEvents.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CommandWindow.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="LogWindow.cpp">
+    <ClCompile Include="Main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="BorderedWindow.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\curses</Filter>
     </ClCompile>
     <ClCompile Include="Colors.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\curses</Filter>
     </ClCompile>
-    <ClCompile Include="Screen.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="SimpleScrollAdapter.cpp">
+      <Filter>Source Files\curses</Filter>
+    </ClCompile>
+    <ClCompile Include="IScrollAdapter.h">
+      <Filter>Source Files\curses</Filter>
+    </ClCompile>
+    <ClCompile Include="LogWindow.cpp">
+      <Filter>Source Files\windows</Filter>
     </ClCompile>
     <ClCompile Include="OutputWindow.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\windows</Filter>
     </ClCompile>
     <ClCompile Include="TransportWindow.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\windows</Filter>
     </ClCompile>
-    <ClCompile Include="Main.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="Screen.cpp">
+      <Filter>Source Files\curses</Filter>
+    </ClCompile>
+    <ClCompile Include="CommandWindow.cpp">
+      <Filter>Source Files\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="ScrollableWindow.cpp">
+      <Filter>Source Files\curses</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -52,26 +67,32 @@
     <ClInclude Include="TransportEvents.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="CommandWindow.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="LogWindow.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="BorderedWindow.h">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\curses</Filter>
     </ClInclude>
     <ClInclude Include="Colors.h">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\curses</Filter>
     </ClInclude>
-    <ClInclude Include="Screen.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="SimpleScrollAdapter.h">
+      <Filter>Source Files\curses</Filter>
+    </ClInclude>
+    <ClInclude Include="LogWindow.h">
+      <Filter>Source Files\windows</Filter>
     </ClInclude>
     <ClInclude Include="OutputWindow.h">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\windows</Filter>
     </ClInclude>
     <ClInclude Include="TransportWindow.h">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\windows</Filter>
+    </ClInclude>
+    <ClInclude Include="Screen.h">
+      <Filter>Source Files\curses</Filter>
+    </ClInclude>
+    <ClInclude Include="CommandWindow.h">
+      <Filter>Source Files\windows</Filter>
+    </ClInclude>
+    <ClInclude Include="ScrollableWindow.h">
+      <Filter>Source Files\curses</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

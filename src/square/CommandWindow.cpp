@@ -64,15 +64,14 @@ void CommandWindow::WriteChar(int ch) {
         this->buffer[bufferPosition] = 0;
         std::string cmd(buffer);
 
-        if (this->ProcessCommand(cmd)) {
-            wclear(this->GetContents());
-            this->bufferPosition = 0;
-        }
-        else {
+        if (!this->ProcessCommand(cmd)) {
             if (cmd.size()) {
                 output->WriteLine("illegal command: '" + cmd + "'");
             }
         }
+
+        wclear(this->GetContents());
+        this->bufferPosition = 0;
     }
     else {
         this->buffer[bufferPosition++] = ch;

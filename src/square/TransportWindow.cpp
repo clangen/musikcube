@@ -24,6 +24,7 @@ using musik::core::audio::Transport;
 TransportWindow::TransportWindow(Transport& transport) {
     this->SetSize(Screen::GetWidth() / 2, 4);
     this->SetPosition(0, 0);
+    this->SetColor(BOX_COLOR_BLACK_ON_GREEN);
     this->transport = &transport;
     this->paused = false;
     this->Create();

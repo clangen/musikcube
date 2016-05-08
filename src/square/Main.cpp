@@ -95,11 +95,27 @@ int main(int argc, char* argv[])
         CommandWindow command(tp, output);
         TransportWindow transport(tp);
 
+        int f1 = KEY_F(2);
+
         int ch;
         timeout(500);
         while (ch = getch()) {
             if (ch == -1) { /* timeout */
                 logs.Update();
+            }
+            else if (ch >= KEY_F(0) && ch <= KEY_F(12)) {
+            }
+            else if (ch == KEY_NPAGE) {
+                output.PageDown();
+            }
+            else if (ch == KEY_PPAGE) {
+                output.PageUp();
+            }
+            else if (ch == KEY_DOWN) {
+                output.ScrollDown();
+            }
+            else if (ch == KEY_UP) {
+                output.ScrollUp();
             }
             else {
                 command.WriteChar(ch);
@@ -115,3 +131,4 @@ int main(int argc, char* argv[])
 
     return 0;
 }
+

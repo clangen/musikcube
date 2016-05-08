@@ -35,6 +35,14 @@ int BorderedWindow::GetHeight() const {
     return this->height;
 }
 
+int BorderedWindow::GetContentHeight() const {
+    return this->height - 2;
+}
+
+int BorderedWindow::GetContentWidth() const {
+    return this->width - 2;
+}
+
 int BorderedWindow::GetX() const {
     return this->x;
 }

@@ -63,3 +63,7 @@ inline std::string u16to8(const std::wstring& u16) {
     utf8::utf16to8(u16.begin(), u16.end(), std::back_inserter(result));
     return result;
 }
+
+inline size_t u8len(const std::string& u8) {
+    return utf8::distance(u8.begin(), u8.end());
+}
