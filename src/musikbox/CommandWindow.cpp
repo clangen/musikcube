@@ -64,14 +64,12 @@ void CommandWindow::WriteChar(int ch) {
         this->buffer[bufferPosition] = 0;
         std::string cmd(buffer);
 
+        output->WriteLine("> " + cmd + "\n", COLOR_PAIR(BOX_COLOR_BLACK_ON_GREY));
+
         if (!this->ProcessCommand(cmd)) {
             if (cmd.size()) {
-                output->WriteLine("> " + cmd, COLOR_PAIR(BOX_COLOR_BLACK_ON_GREY));
                 output->WriteLine("illegal command: '" + cmd + "'\n", COLOR_PAIR(BOX_COLOR_RED_ON_GREY));
             }
-        }
-        else {
-            output->WriteLine("> " + cmd + "\n", COLOR_PAIR(BOX_COLOR_GREEN_ON_BLACK));
         }
 
         wclear(this->GetContents());
@@ -95,9 +93,9 @@ void CommandWindow::Seek(const std::vector<std::string>& args) {
 
 void CommandWindow::SetVolume(const std::vector<std::string>& args) {
     if (args.size() > 0) {
-        int newVolume = 0;
-        if (tostr<int>(newVolume, args[0])) {
-            this->SetVolume((float) newVolume / 100.0f);
+        float newVolume = 0;
+        if (tostr<float>(newVolume, args[0])) {
+            this->SetVolume(newVolume / 100.0f);
         }
     }
 }
@@ -108,7 +106,7 @@ void CommandWindow::SetVolume(float volume) {
 
 void CommandWindow::Help() {
     int64 s = -1;
-    this->output->WriteLine("\nhelp:\n", s);
+    this->output->WriteLine("help:\n", s);
     this->output->WriteLine("  <tab> to switch between windows\n", s);
     this->output->WriteLine("  pl [file]: play file at path", s);
     this->output->WriteLine("  pa: toggle pause/resume", s);
@@ -119,8 +117,9 @@ void CommandWindow::Help() {
     this->output->WriteLine("  sk <seconds>: seek to <seconds> into track", s);
     this->output->WriteLine("  addir <dir>: add a directory to be indexed", s);
     this->output->WriteLine("  rmdir <dir>: remove indexed directory path", s);
+    this->output->WriteLine("  lsdirs: list all directories used by the indexer", s);
     this->output->WriteLine("  rescan: rescan metadata in index paths", s);
-    this->output->WriteLine("\n  q: quit\n\n", s);
+    this->output->WriteLine("\n  q: quit\n", s);
 }
 
 bool CommandWindow::ProcessCommand(const std::string& cmd) {
@@ -136,9 +135,22 @@ bool CommandWindow::ProcessCommand(const std::string& cmd) {
     else if (name == "play" || name == "pl" || name == "p") {
         return this->PlayFile(args);
     }
-    else if (name == "adddir") {
+    else if (name == "addir") {
         std::string path = boost::algorithm::join(args, " ");
         library->Indexer()->AddPath(path);
+    }
+    else if (name == "rmdir") {
+        std::string path = boost::algorithm::join(args, " ");
+        library->Indexer()->RemovePath(path);
+    }
+    else if (name == "lsdirs") {
+        /* should not be returning a vector, should be pass by ref */
+        std::vector<std::string> paths = library->Indexer()->GetPaths();
+        this->output->WriteLine("paths:");
+        for (size_t i = 0; i < paths.size(); i++) {
+            this->output->WriteLine("  " + paths.at(i));
+        }
+        this->output->WriteLine("");
     }
     else if (name == "rescan" || name == "scan" || name == "index") {
         library->Indexer()->RestartSync();

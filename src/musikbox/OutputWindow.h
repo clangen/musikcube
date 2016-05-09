@@ -10,7 +10,7 @@ class OutputWindow : public ScrollableWindow {
         OutputWindow();
         ~OutputWindow();
 
-        void WriteLine(const std::string& line, int64 attrs);
+        void WriteLine(const std::string& line, int64 attrs = -1);
         virtual IScrollAdapter& GetScrollAdapter();
 
     private:
