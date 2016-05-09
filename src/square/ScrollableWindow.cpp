@@ -32,7 +32,7 @@ size_t ScrollableWindow::GetFirstVisible() {
 }
 
 size_t ScrollableWindow::GetLastVisible() {
-    int total = GetScrollAdapter().GetLineCount(this->GetContentWidth());
+    size_t total = GetScrollAdapter().GetLineCount(this->GetContentWidth());
     return min(scrollPosition + this->GetContentHeight(), total);
 }
 

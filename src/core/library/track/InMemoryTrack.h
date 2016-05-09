@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, musikCube team
+// The following are Copyright © 2008, Daniel Önnerby
 //
 // All rights reserved.
 //
@@ -34,9 +34,51 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#ifndef SQUARE_CONFIG_H
-#define SQUARE_CONFIG_H
+#pragma once
 
 #include <core/config.h>
+#include <core/library/track/Track.h>
+#include <core/library/LibraryBase.h>
+#include <boost/weak_ptr.hpp>
+#include <boost/thread/mutex.hpp>
 
-#endif // SQUARE_CONFIG_H
+namespace musik { namespace core {
+
+    //////////////////////////////////////////
+    ///\brief
+    ///A InMemoryTrack is not related to any library. It must contain a URI
+    //////////////////////////////////////////
+    class InMemoryTrack : public Track {
+        public:
+            static TrackPtr Create(const char *uri);
+    
+    protected:
+            InMemoryTrack();
+            InMemoryTrack(const char *uri);
+
+        public:
+            virtual ~InMemoryTrack();
+
+            virtual std::string GetValue(const char* metakey);
+            virtual void SetValue(const char* metakey,const char* value);
+            virtual void ClearValue(const char* metakey);
+            virtual void SetThumbnail(const char *data, long size);
+            virtual std::string URI();
+            virtual std::string URL();
+
+            virtual MetadataIteratorRange GetValues(const char* metakey);
+            virtual MetadataIteratorRange GetAllValues();
+            virtual TrackPtr Copy();
+
+        private:
+            typedef boost::weak_ptr<Track> SelfWeakPtr;
+            SelfWeakPtr selfPtr;
+            Track::MetadataMap metadata;
+            std::string uri;
+            std::string title;
+            boost::mutex metadataMutex;
+    };
+
+} }
+
+

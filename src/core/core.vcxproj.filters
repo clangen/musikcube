@@ -124,9 +124,6 @@
     <ClCompile Include="library\LocalLibrary.cpp">
       <Filter>src\library</Filter>
     </ClCompile>
-    <ClCompile Include="library\track\GenericTrack.cpp">
-      <Filter>src\library\track</Filter>
-    </ClCompile>
     <ClCompile Include="library\track\IndexerTrack.cpp">
       <Filter>src\library\track</Filter>
     </ClCompile>
@@ -156,6 +153,9 @@
     </ClCompile>
     <ClCompile Include="debug.cpp">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="library\track\InMemoryTrack.cpp">
+      <Filter>src\library\track</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -273,9 +273,6 @@
     <ClInclude Include="library\LocalLibrary.h">
       <Filter>src\library</Filter>
     </ClInclude>
-    <ClInclude Include="library\track\GenericTrack.h">
-      <Filter>src\library\track</Filter>
-    </ClInclude>
     <ClInclude Include="library\track\IndexerTrack.h">
       <Filter>src\library\track</Filter>
     </ClInclude>
@@ -320,6 +317,9 @@
     </ClInclude>
     <ClInclude Include="debug.h">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="library\track\InMemoryTrack.h">
+      <Filter>src\library\track</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -37,7 +37,7 @@
 #include "pch.hpp"
 #include <core/library/track/TrackFactory.h>
 #include <core/library/track/LibraryTrack.h>
-#include <core/library/track/GenericTrack.h>
+#include <core/library/track/InMemoryTrack.h>
 #include <boost/regex.hpp>
 #include <boost/lexical_cast.hpp>
 
@@ -54,7 +54,7 @@ TrackPtr TrackFactory::CreateTrack(const std::string& uri) {
         }
     }
 
-    return GenericTrack::Create(uri.c_str());
+    return InMemoryTrack::Create(uri.c_str());
 }
 
 

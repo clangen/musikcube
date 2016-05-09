@@ -38,8 +38,7 @@
 #include "CommandWindow.h"
 #include "OutputWindow.h"
 #include "TransportWindow.h"
-
-#include <curses.h>
+#include "ResourcesWindow.h"
 
 #include <boost/locale.hpp>
 #include <boost/filesystem/path.hpp>
@@ -82,7 +81,7 @@ int main(int argc, char* argv[])
     curs_set(0);
 
 #ifdef __PDCURSES__
-    PDC_set_title("♫ rect");
+    PDC_set_title("musikbox ♫");
 #endif
 
     {
@@ -92,6 +91,7 @@ int main(int argc, char* argv[])
         Colors::Init();
         LogWindow logs;
         OutputWindow output;
+        ResourcesWindow resources;
         CommandWindow command(tp, output);
         TransportWindow transport(tp);
 
@@ -99,21 +99,28 @@ int main(int argc, char* argv[])
         order.push_back(&logs);
         order.push_back(&output);
 
-        int index = 0;
+        size_t index = 0;
         ScrollableWindow *scrollable = order.at(index);
+        scrollable->SetBorderColor(BOX_COLOR_YELLOW_ON_BLACK);
 
         int ch;
         timeout(500);
         while (ch = getch()) {
             if (ch == -1) { /* timeout */
                 logs.Update();
+                transport.Repaint();
+                resources.Repaint();
             }
             else if (ch == 9) { /* tab */
+                scrollable->SetBorderColor(BOX_COLOR_WHITE_ON_BLACK);
+
                 index++;
                 if (index >= order.size()) {
                     index = 0;
                 }
+
                 scrollable = order.at(index);
+                scrollable->SetBorderColor(BOX_COLOR_YELLOW_ON_BLACK);
             }
             else if (ch >= KEY_F(0) && ch <= KEY_F(12)) {
             }
@@ -132,8 +139,6 @@ int main(int argc, char* argv[])
             else {
                 command.WriteChar(ch);
             }
-
-            transport.Repaint();
         }
     }
 

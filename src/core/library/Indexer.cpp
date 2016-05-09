@@ -386,7 +386,7 @@ void Indexer::SyncDirectory(
         stmt.BindInt(2, parentDirId);
         stmt.BindText(3, relativePath);
 
-        if (!stmt.Step() == db::Done) {
+        if (stmt.Step() != db::Done) {
             return; /* ugh, failed? */
         }
 
@@ -822,8 +822,6 @@ void Indexer::SyncOptimize() {
             }
         }
     }
-
-
 }
 
 //////////////////////////////////////////
@@ -978,7 +976,7 @@ void Indexer::RunAnalyzers() {
             }
         }
 
-        if(this->Exited() || this->Restarted()){
+        if (this->Exited() || this->Restarted()){
             return;
         }
 

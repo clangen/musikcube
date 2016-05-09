@@ -149,9 +149,10 @@ double Transport::Volume(){
 }
 
 void Transport::SetVolume(double volume){
-    musik::debug::info("transport", boost::str(boost::format("set volume %d%%") % (volume * 100)));
+    musik::debug::info(TAG, boost::str(boost::format("set volume %d%%") % round(volume * 100)));
 
-    this->volume    = volume;
+    volume = max(0, min(1.0, volume));
+    this->volume = volume;
     if(this->currentPlayer){
         for(PlayerList::iterator player=this->players.begin();player!=this->players.end();++player){
             (*player)->SetVolume(volume);

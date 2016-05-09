@@ -1,6 +1,6 @@
 #pragma once
 
-#include "stdafx.h"
+#include "curses_config.h"
 
 class Screen {
     private:

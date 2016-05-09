@@ -10,7 +10,7 @@ OutputWindow::OutputWindow()
 {
     this->SetSize(Screen::GetWidth() / 2, Screen::GetHeight() - 3 - 4);
     this->SetPosition(0, 4);
-    this->SetColor(BOX_COLOR_BLACK_ON_GREY);
+    this->SetContentColor(BOX_COLOR_BLACK_ON_GREY);
 
     this->adapter = new SimpleScrollAdapter();
     this->adapter->SetDisplaySize(this->GetContentWidth(), this->GetContentHeight());

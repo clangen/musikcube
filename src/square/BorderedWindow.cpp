@@ -9,7 +9,8 @@ BorderedWindow::BorderedWindow() {
     this->width = 0;
     this->x = 0;
     this->y = 0;
-    this->color = -1;
+    this->contentColor = -1;
+    this->borderColor = -1;
     this->scrollable = false;
 }
 
@@ -51,8 +52,22 @@ int BorderedWindow::GetY() const {
     return this->y;
 }
 
-void BorderedWindow::SetColor(int color) {
-    this->color = color;
+void BorderedWindow::SetContentColor(int color) {
+    this->contentColor = color;
+
+    if (this->contentColor != -1 && this->contents) {
+        wbkgd(this->contents, COLOR_PAIR(this->contentColor));
+        this->Repaint();
+    }
+}
+
+void BorderedWindow::SetBorderColor(int color) {
+    this->borderColor = color;
+
+    if (this->borderColor != -1 && this->border) {
+        wbkgd(this->border, COLOR_PAIR(this->borderColor));
+        this->Repaint();
+    }
 }
 
 void BorderedWindow::SetScrollable(bool scrollable) {
@@ -83,8 +98,12 @@ void BorderedWindow::Create() {
 
     scrollok(this->contents, this->scrollable);
 
-    if (this->color != -1) {
-        wbkgd(this->contents, COLOR_PAIR(this->color));
+    if (this->contentColor != -1) {
+        wbkgd(this->contents, COLOR_PAIR(this->contentColor));
+    }
+
+    if (this->borderColor != -1) {
+        wbkgd(this->border, COLOR_PAIR(this->borderColor));
     }
 
     touchwin(this->contents);

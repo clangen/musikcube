@@ -24,7 +24,7 @@ using musik::core::audio::Transport;
 TransportWindow::TransportWindow(Transport& transport) {
     this->SetSize(Screen::GetWidth() / 2, 4);
     this->SetPosition(0, 0);
-    this->SetColor(BOX_COLOR_BLACK_ON_GREEN);
+    this->SetContentColor(BOX_COLOR_BLACK_ON_GREEN);
     this->transport = &transport;
     this->paused = false;
     this->Create();
@@ -37,10 +37,10 @@ void TransportWindow::Repaint() {
     this->Clear();
     WINDOW *c = this->GetContents();
 
-    std::string volume = boost::str(boost::format(
-        "volume: %1%\n") % this->transport->Volume());
+    int volume = (int) round(this->transport->Volume() * 100);
 
-    wprintw(c, volume.c_str());
+    wprintw(c, "volume %d%%\n", volume);
     wprintw(c, "filename: ");
+
     BorderedWindow::Repaint();
 }

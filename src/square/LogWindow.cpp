@@ -7,8 +7,8 @@
 #include <curses.h>
 
 LogWindow::LogWindow() {
-    this->SetColor(BOX_COLOR_WHITE_ON_BLUE);
-    this->SetSize(Screen::GetWidth() / 2, Screen::GetHeight());
+    this->SetContentColor(BOX_COLOR_WHITE_ON_BLUE);
+    this->SetSize(Screen::GetWidth() / 2, Screen::GetHeight() - 3);
     this->SetPosition(Screen::GetWidth() / 2, 0);
 
     this->adapter = new SimpleScrollAdapter();

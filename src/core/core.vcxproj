@@ -101,7 +101,7 @@
     <ClCompile Include="Library\query\SortTracksWithDataQuery.cpp" />
     <ClCompile Include="Library\query\TrackListQueryBase.cpp" />
     <ClCompile Include="Library\query\TrackMetadataQuery.cpp" />
-    <ClCompile Include="library\track\GenericTrack.cpp" />
+    <ClCompile Include="library\track\InMemoryTrack.cpp" />
     <ClCompile Include="library\track\IndexerTrack.cpp" />
     <ClCompile Include="library\track\LibraryTrack.cpp" />
     <ClCompile Include="library\track\Track.cpp" />
@@ -145,7 +145,7 @@
     <ClInclude Include="Library\query\SortTracksWithDataQuery.h" />
     <ClInclude Include="Library\query\TrackListQueryBase.h" />
     <ClInclude Include="Library\query\TrackMetadataQuery.h" />
-    <ClInclude Include="library\track\GenericTrack.h" />
+    <ClInclude Include="library\track\InMemoryTrack.h" />
     <ClInclude Include="library\track\IndexerTrack.h" />
     <ClInclude Include="library\track\LibraryTrack.h" />
     <ClInclude Include="library\track\Track.h" />

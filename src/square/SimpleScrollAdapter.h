@@ -1,7 +1,6 @@
 #pragma once 
 
-#include "stdafx.h"
-
+#include "curses_config.h"
 #include "IScrollAdapter.h";
 
 class SimpleScrollAdapter : public IScrollAdapter {
@@ -44,7 +43,7 @@ class SimpleScrollAdapter : public IScrollAdapter {
 
 
         void Reindex();
-        size_t FindEntryIndex(int index);
+        size_t FindEntryIndex(size_t index);
 
         EntryList entries;
         size_t lineCount, width, height;

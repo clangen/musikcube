@@ -1,6 +1,6 @@
 #pragma once
 
-#include <curses.h>
+#include "curses_config.h"
 
 class BorderedWindow {
     public:
@@ -11,11 +11,14 @@ class BorderedWindow {
         void Destroy();
         virtual void Repaint();
 
+        virtual void SetContentColor(int color);
+        virtual void SetBorderColor(int color);
+
     protected:
         WINDOW* GetContents() const;
         void SetSize(int width, int height);
         void SetPosition(int x, int y);
-        void SetColor(int color);
+
         void SetScrollable(bool scrollable);
         void Clear();
         int GetWidth() const;
@@ -29,6 +32,6 @@ class BorderedWindow {
     private:
         WINDOW* border;
         WINDOW* contents;
-        int width, height, x, y, color;
+        int width, height, x, y, contentColor, borderColor;
         bool scrollable;
 };

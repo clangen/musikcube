@@ -36,32 +36,32 @@
 
 #include "pch.hpp"
 
-#include <core/library/track/GenericTrack.h>
+#include <core/library/track/InMemoryTrack.h>
 #include <core/playback/NonLibraryTrackHelper.h>
 
 using namespace musik::core;
 
-TrackPtr GenericTrack::Create(const char *uri) {
-    GenericTrack *newTrack  = new GenericTrack(uri);
+TrackPtr InMemoryTrack::Create(const char *uri) {
+    InMemoryTrack *newTrack  = new InMemoryTrack(uri);
     TrackPtr track(newTrack);
     newTrack->selfPtr = track; /* used to make another shared_ptr */
     NonLibraryTrackHelper::Instance().ReadTrack(track);
     return track;
 }
 
-GenericTrack::GenericTrack() {
+InMemoryTrack::InMemoryTrack() {
 }
 
-GenericTrack::GenericTrack(const char *uri) {
+InMemoryTrack::InMemoryTrack(const char *uri) {
     if (uri) {
         this->uri = uri;
     }
 }
 
-GenericTrack::~GenericTrack() {
+InMemoryTrack::~InMemoryTrack() {
 }
 
-std::string GenericTrack::GetValue(const char* metakey) {
+std::string InMemoryTrack::GetValue(const char* metakey) {
     if (metakey) {
         std::string metaKey(metakey);
 
@@ -99,44 +99,44 @@ std::string GenericTrack::GetValue(const char* metakey) {
     return "";
 }
 
-void GenericTrack::SetValue(const char* metakey, const char* value){
+void InMemoryTrack::SetValue(const char* metakey, const char* value){
     if (metakey && value) {
         boost::mutex::scoped_lock lock(this->metadataMutex);
         this->metadata.insert(std::pair<std::string, std::string>(metakey,value));
     }
 }
 
-void GenericTrack::ClearValue(const char* metakey) {
+void InMemoryTrack::ClearValue(const char* metakey) {
     boost::mutex::scoped_lock lock(this->metadataMutex);
     this->metadata.erase(metakey);
 }
 
-void GenericTrack::SetThumbnail(const char *data,long size) {
+void InMemoryTrack::SetThumbnail(const char *data,long size) {
 }
 
-std::string GenericTrack::URI() {
+std::string InMemoryTrack::URI() {
     return this->uri;
 }
 
-std::string GenericTrack::URL() {
+std::string InMemoryTrack::URL() {
     return this->uri;
 }
 
-Track::MetadataIteratorRange GenericTrack::GetValues(const char* metakey) {
+Track::MetadataIteratorRange InMemoryTrack::GetValues(const char* metakey) {
     boost::mutex::scoped_lock lock(this->metadataMutex);
     return this->metadata.equal_range(metakey);
 }
 
-Track::MetadataIteratorRange GenericTrack::GetAllValues() {
+Track::MetadataIteratorRange InMemoryTrack::GetAllValues() {
     return Track::MetadataIteratorRange(this->metadata.begin(),this->metadata.end());
 }
 
-TrackPtr GenericTrack::Copy() {
+TrackPtr InMemoryTrack::Copy() {
     TrackPtr trackCopy;
     if (trackCopy = this->selfPtr.lock()) {
         return trackCopy;
     }
 
-    return GenericTrack::Create(this->uri.c_str());
+    return InMemoryTrack::Create(this->uri.c_str());
 }
 

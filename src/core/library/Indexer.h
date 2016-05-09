@@ -113,7 +113,7 @@ namespace musik { namespace core {
                     std::string path;
             };
 
-            typedef std::vector<boost::shared_ptr<metadata::IMetadataReader> > MetadataReaderList;
+            typedef std::vector<boost::shared_ptr<metadata::IMetadataReader>> MetadataReaderList;
 
             std::deque<AddRemoveContext> addRemoveQueue;
 

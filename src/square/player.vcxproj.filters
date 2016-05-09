@@ -56,12 +56,15 @@
     <ClCompile Include="ScrollableWindow.cpp">
       <Filter>Source Files\curses</Filter>
     </ClCompile>
+    <ClCompile Include="SystemInfo.cpp">
+      <Filter>Source Files\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="ResourcesWindow.cpp">
+      <Filter>Source Files\windows</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="config.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="TransportEvents.h">
@@ -93,6 +96,15 @@
     </ClInclude>
     <ClInclude Include="ScrollableWindow.h">
       <Filter>Source Files\curses</Filter>
+    </ClInclude>
+    <ClInclude Include="curses_config.h">
+      <Filter>Source Files\curses</Filter>
+    </ClInclude>
+    <ClInclude Include="SystemInfo.h">
+      <Filter>Source Files\windows</Filter>
+    </ClInclude>
+    <ClInclude Include="ResourcesWindow.h">
+      <Filter>Source Files\windows</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

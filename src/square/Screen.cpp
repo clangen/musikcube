@@ -2,7 +2,6 @@
 
 #include "stdafx.h"
 #include "Screen.h"
-#include <curses.h>
 
 Screen::Screen() {
 }

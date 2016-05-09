@@ -34,7 +34,6 @@
 #pragma once
 
 #include "stdafx.h"
-#include "config.h"
 #include <vector>
 #include <sigslot/sigslot.h>
 

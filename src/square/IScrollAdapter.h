@@ -1,7 +1,6 @@
 #pragma once
 
 #include "stdafx.h"
-#include <curses.h>
 
 class IScrollAdapter {
     public:
@@ -10,3 +9,4 @@ class IScrollAdapter {
         virtual size_t GetEntryCount() = 0;
         virtual void DrawPage(WINDOW* window, size_t index) = 0;
 };
+

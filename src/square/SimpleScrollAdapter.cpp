@@ -81,7 +81,7 @@ void SimpleScrollAdapter::AddLine(const std::string& str, int64 attrs) {
     this->lineCount += entry->GetLineCount();
 }
 
-size_t SimpleScrollAdapter::FindEntryIndex(int lineNumber) {
+size_t SimpleScrollAdapter::FindEntryIndex(size_t lineNumber) {
     if (lineCount == -1) {
         Reindex();
     }
@@ -190,7 +190,7 @@ inline static void breakIntoSubLines(
         std::vector<std::string> sanitizedWords;
         for (size_t i = 0; i < words.size(); i++) {
             std::string word = words.at(i);
-            int len = std::distance(word.begin(), word.end());
+            size_t len = std::distance(word.begin(), word.end());
 
             /* this word is fine, it'll easily fit on its own line of necessary */
 

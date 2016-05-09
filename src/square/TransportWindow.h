@@ -1,6 +1,6 @@
 #pragma once
 
-#include "stdafx.h"
+#include "curses_config.h"
 #include "BorderedWindow.h"
 #include "OutputWindow.h"
 #include <core/playback/Transport.h>

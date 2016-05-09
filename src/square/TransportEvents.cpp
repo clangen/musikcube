@@ -33,7 +33,6 @@
 
 #include "stdafx.h"
 #include "TransportEvents.h"
-
 #include <core/debug.h>
 
 using namespace musik::square;
