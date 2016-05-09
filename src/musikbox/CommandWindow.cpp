@@ -39,7 +39,7 @@ CommandWindow::CommandWindow(Transport& transport, OutputWindow& output) {
     this->output = &output;
     this->paused = false;
     this->library = LibraryFactory::Libraries().at(0);
-    this->output->WriteLine("type 'h' or 'help'\n");
+    this->output->WriteLine("type 'h' or 'help'\n", BOX_COLOR_BLACK_ON_GREY);
 }
 
 CommandWindow::~CommandWindow() {
@@ -66,8 +66,12 @@ void CommandWindow::WriteChar(int ch) {
 
         if (!this->ProcessCommand(cmd)) {
             if (cmd.size()) {
-                output->WriteLine("illegal command: '" + cmd + "'");
+                output->WriteLine("> " + cmd, COLOR_PAIR(BOX_COLOR_BLACK_ON_GREY));
+                output->WriteLine("illegal command: '" + cmd + "'\n", COLOR_PAIR(BOX_COLOR_RED_ON_GREY));
             }
+        }
+        else {
+            output->WriteLine("> " + cmd + "\n", COLOR_PAIR(BOX_COLOR_GREEN_ON_BLACK));
         }
 
         wclear(this->GetContents());
@@ -91,9 +95,9 @@ void CommandWindow::Seek(const std::vector<std::string>& args) {
 
 void CommandWindow::SetVolume(const std::vector<std::string>& args) {
     if (args.size() > 0) {
-        float newVolume = 0;
-        if (tostr<float>(newVolume, args[0])) {
-            this->SetVolume(newVolume);
+        int newVolume = 0;
+        if (tostr<int>(newVolume, args[0])) {
+            this->SetVolume((float) newVolume / 100.0f);
         }
     }
 }
@@ -103,16 +107,20 @@ void CommandWindow::SetVolume(float volume) {
 }
 
 void CommandWindow::Help() {
-    this->output->WriteLine("\nhelp:");
-    this->output->WriteLine("  pl [file]: play file at path");
-    this->output->WriteLine("  pa: toggle pause/resume");
-    this->output->WriteLine("  st: stop playing");
-    this->output->WriteLine("  ls: list currently playing");
-    this->output->WriteLine("  lp: list loaded plugins");
-    this->output->WriteLine("  v: <0.0-1.0>: set volume to p%");
-    this->output->WriteLine("  sk <seconds>: seek to <seconds> into track");
-    this->output->WriteLine("  rescan: rescan/index music directories");
-    this->output->WriteLine("\n  q: quit\n\n");
+    int64 s = -1;
+    this->output->WriteLine("\nhelp:\n", s);
+    this->output->WriteLine("  <tab> to switch between windows\n", s);
+    this->output->WriteLine("  pl [file]: play file at path", s);
+    this->output->WriteLine("  pa: toggle pause/resume", s);
+    this->output->WriteLine("  st: stop playing", s);
+    //this->output->WriteLine("  ls: list currently playing", s);
+    this->output->WriteLine("  lp: list loaded plugins", s);
+    this->output->WriteLine("  v: <0 - 100>: set % volume", s);
+    this->output->WriteLine("  sk <seconds>: seek to <seconds> into track", s);
+    this->output->WriteLine("  addir <dir>: add a directory to be indexed", s);
+    this->output->WriteLine("  rmdir <dir>: remove indexed directory path", s);
+    this->output->WriteLine("  rescan: rescan metadata in index paths", s);
+    this->output->WriteLine("\n  q: quit\n\n", s);
 }
 
 bool CommandWindow::ProcessCommand(const std::string& cmd) {
@@ -225,6 +233,6 @@ void CommandWindow::ListPlugins() const {
             "v" + std::string((*it)->Version()) + "\n"
             "  author: " + std::string((*it)->Author()) + "\n";
 
-        this->output->WriteLine(format);
+        this->output->WriteLine(format, BOX_COLOR_RED_ON_BLUE);
     }
 }

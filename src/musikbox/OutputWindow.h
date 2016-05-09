@@ -3,13 +3,14 @@
 #include "curses_config.h"
 #include "ScrollableWindow.h"
 #include "SimpleScrollAdapter.h"
+#include "Colors.h"
 
 class OutputWindow : public ScrollableWindow {
     public:
         OutputWindow();
         ~OutputWindow();
 
-        void WriteLine(const std::string& line);
+        void WriteLine(const std::string& line, int64 attrs);
         virtual IScrollAdapter& GetScrollAdapter();
 
     private:

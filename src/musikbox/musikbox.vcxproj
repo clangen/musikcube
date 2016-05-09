@@ -118,6 +118,7 @@
     <ClCompile Include="BorderedWindow.cpp" />
     <ClCompile Include="Colors.cpp" />
     <ClCompile Include="CommandWindow.cpp" />
+    <ClCompile Include="IInput.h" />
     <ClCompile Include="IScrollAdapter.h" />
     <ClCompile Include="LogWindow.cpp" />
     <ClCompile Include="OutputWindow.cpp" />

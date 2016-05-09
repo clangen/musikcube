@@ -39,6 +39,7 @@
 #include "OutputWindow.h"
 #include "TransportWindow.h"
 #include "ResourcesWindow.h"
+#include "IInput.h"
 
 #include <boost/locale.hpp>
 #include <boost/filesystem/path.hpp>
@@ -95,49 +96,61 @@ int main(int argc, char* argv[])
         CommandWindow command(tp, output);
         TransportWindow transport(tp);
 
-        std::vector<ScrollableWindow*> order;
+        std::vector<BorderedWindow*> order;
+        order.push_back(&command);
         order.push_back(&logs);
         order.push_back(&output);
 
         size_t index = 0;
-        ScrollableWindow *scrollable = order.at(index);
-        scrollable->SetBorderColor(BOX_COLOR_RED_ON_BLACK);
+        BorderedWindow *focused = order.at(index);
+        focused->SetBorderColor(BOX_COLOR_RED_ON_BLACK);
 
         int ch;
         timeout(500);
         while (ch = getch()) {
+            ScrollableWindow *scrollable = dynamic_cast<ScrollableWindow*>(focused);
+            IInput *input = dynamic_cast<IInput*>(focused);
+
             if (ch == -1) { /* timeout */
                 logs.Update();
                 transport.Repaint();
                 resources.Repaint();
             }
             else if (ch == 9) { /* tab */
-                scrollable->SetBorderColor(BOX_COLOR_WHITE_ON_BLACK);
+                focused->SetBorderColor(BOX_COLOR_WHITE_ON_BLACK);
 
                 index++;
                 if (index >= order.size()) {
                     index = 0;
                 }
 
-                scrollable = order.at(index);
-                scrollable->SetBorderColor(BOX_COLOR_RED_ON_BLACK);
+                focused = order.at(index);
+                focused->SetBorderColor(BOX_COLOR_RED_ON_BLACK);
             }
             else if (ch >= KEY_F(0) && ch <= KEY_F(12)) {
             }
             else if (ch == KEY_NPAGE) {
-                scrollable->PageDown();
+                if (scrollable) {
+                    scrollable->PageDown();
+                }
             }
             else if (ch == KEY_PPAGE) {
-                scrollable->PageUp();
+                if (scrollable) {
+                    scrollable->PageUp();
+                }
             }
             else if (ch == KEY_DOWN) {
-                scrollable->ScrollDown();
+                if (scrollable) {
+                    scrollable->ScrollDown();
+                }
             }
             else if (ch == KEY_UP) {
-                scrollable->ScrollUp();
+                if (scrollable) {
+                    scrollable->ScrollUp();
+                }
             }
-            else {
-                command.WriteChar(ch);
+            else if (input) {
+                input->WriteChar(ch);
             }
         }
     }

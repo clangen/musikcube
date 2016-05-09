@@ -40,6 +40,9 @@
     <ClCompile Include="TransportWindow.cpp">
       <Filter>windows</Filter>
     </ClCompile>
+    <ClCompile Include="IInput.h">
+      <Filter>curses</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TransportEvents.h" />

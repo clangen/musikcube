@@ -52,6 +52,8 @@
 #include <boost/thread/xtime.hpp>
 #include <boost/bind.hpp>
 
+static const std::string TAG = "Indexer";
+
 using namespace musik::core;
 
 Indexer::Indexer() 
@@ -225,16 +227,16 @@ void Indexer::Synchronize() {
 
     /* count the files that need to be processed */
 
-    {
-        boost::mutex::scoped_lock lock(this->progressMutex);
-        this->status = 1;
-        this->overallProgress = 0.0;
-    }
+ //   {
+ //       boost::mutex::scoped_lock lock(this->progressMutex);
+ //       this->status = 1;
+ //       this->overallProgress = 0.0;
+ //   }
 
-	for(std::size_t i = 0; i < paths.size(); ++i){
-        std::string path = paths[i];
-        this->CountFiles(path);
-    }
+	//for(std::size_t i = 0; i < paths.size(); ++i){
+ //       std::string path = paths[i];
+ //       this->CountFiles(path);
+ //   }
 
     /* add new files  */
 
@@ -252,6 +254,8 @@ void Indexer::Synchronize() {
 
     /* remove undesired entries from db (files themselves will remain) */
 
+    musik::debug::info(TAG, "cleanup 1/2");
+
     {
         boost::mutex::scoped_lock lock(this->progressMutex);
         this->status = 3;
@@ -264,6 +268,8 @@ void Indexer::Synchronize() {
 
     /* cleanup -- remove stale artists, albums, genres, etc */
 
+    musik::debug::info(TAG, "cleanup 2/2");
+    
     {
         boost::mutex::scoped_lock lock(this->progressMutex);
         this->overallProgress = 0.0;
@@ -276,6 +282,8 @@ void Indexer::Synchronize() {
     }
 
     /* optimize */
+
+    musik::debug::info(TAG, "optimizing");
 
     {
        boost::mutex::scoped_lock lock(this->progressMutex);
@@ -295,6 +303,8 @@ void Indexer::Synchronize() {
         boost::mutex::scoped_lock lock(this->progressMutex);
         this->status = 0;
     }
+
+    musik::debug::info(TAG, "done!");
 }
 
 //////////////////////////////////////////
@@ -403,8 +413,8 @@ void Indexer::SyncDirectory(
         for( ; file != end && !this->Exited() && !this->Restarted();++file) {
             if (is_directory(file->status())) {
                 /* recursion here */
-                musik::debug::info("indexer", this->GetStatus());
-                this->SyncDirectory(file->path().string(), dirId,pathId,syncPath);
+                musik::debug::info(TAG, "scanning " + file->path().string());
+                this->SyncDirectory(file->path().string(), dirId, pathId, syncPath);
             }
             else {
                 ++this->filesIndexed;

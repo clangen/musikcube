@@ -10,6 +10,8 @@
 #define BOX_COLOR_YELLOW_ON_BLACK 6
 #define BOX_COLOR_WHITE_ON_BLACK 7
 #define BOX_COLOR_RED_ON_BLACK 8
+#define BOX_COLOR_RED_ON_GREY 9
+#define BOX_COLOR_GREEN_ON_BLACK 10
 
 class Colors {
     private:

@@ -3,19 +3,19 @@
 #include "curses_config.h"
 #include "BorderedWindow.h"
 #include "OutputWindow.h"
-
+#include "IInput.h"
 #include <core/playback/Transport.h>
 #include <core/library/LibraryFactory.h>
 
 using musik::core::LibraryPtr;
 using namespace musik::core::audio;
 
-class CommandWindow : public BorderedWindow {
+class CommandWindow : public BorderedWindow, public IInput {
     public:
         CommandWindow(Transport& transport, OutputWindow& output);
         ~CommandWindow();
 
-        void WriteChar(int ch);
+        virtual void WriteChar(int ch);
 
     private:
         void ListPlugins() const;

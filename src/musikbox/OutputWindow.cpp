@@ -27,7 +27,7 @@ IScrollAdapter& OutputWindow::GetScrollAdapter() {
     return (IScrollAdapter&) *this->adapter;
 }
 
-void OutputWindow::WriteLine(const std::string& text) {
-    this->adapter->AddLine(text);
+void OutputWindow::WriteLine(const std::string& text, int64 attrs) {
+    this->adapter->AddLine(text, attrs);
     this->OnAdapterChanged();
 }
