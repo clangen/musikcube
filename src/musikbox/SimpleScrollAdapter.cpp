@@ -268,7 +268,7 @@ inline static void breakIntoSubLines(
         for (size_t i = 0; i < sanitizedWords.size(); i++) {
             std::string word = sanitizedWords.at(i);
             size_t wordLength = utf8Length(word);
-            size_t extra = (i != 0);
+            size_t extra = (i != 0) && (sanitizedWords.size() - 1);
 
             /* we have enough space for this new word. accumulate it. the
             +1 here is to take the space into account */
@@ -312,6 +312,7 @@ inline static void breakIntoSubLines(
 }
 
 void SimpleScrollAdapter::Entry::SetWidth(size_t width) {
+    width--;
     if (this->width != width) {
         this->width = width;
 
