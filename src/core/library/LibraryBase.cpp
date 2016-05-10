@@ -49,11 +49,9 @@ using namespace musik::core::library;
 ///Constructor
 //////////////////////////////////////////
 LibraryBase::LibraryBase(std::string name,int id)
- :name(name)
- ,id(id)
- ,queueCallbackStarted(false)
- ,exit(false)
- ,userId(1)
+: name(name)
+, id(id)
+, exit(false)
 {
     this->identifier = boost::lexical_cast<std::string>(id);
 }
@@ -64,7 +62,7 @@ LibraryBase::LibraryBase(std::string name,int id)
 ///
 ///The destructor will exit all threads created by the library
 //////////////////////////////////////////
-LibraryBase::~LibraryBase(void){
+LibraryBase::~LibraryBase(){
     this->Exit();
     this->threads.join_all();
 }
@@ -77,7 +75,7 @@ LibraryBase::~LibraryBase(void){
 ///A string with the identifier
 //////////////////////////////////////////
 const std::string& LibraryBase::Identifier(){
-	return this->identifier;
+    return this->identifier;
 }
 
 int LibraryBase::Id(){
@@ -89,7 +87,7 @@ int LibraryBase::Id(){
 ///Name of the library
 //////////////////////////////////////////
 const std::string& LibraryBase::Name(){
-	return this->name;
+    return this->name;
 }
 
 //////////////////////////////////////////
@@ -108,19 +106,19 @@ const std::string& LibraryBase::Name(){
 ///\remarks
 ///If the directory does not exist, this method will create it.
 //////////////////////////////////////////
-std::string LibraryBase::GetLibraryDirectory(){
-    std::string directory( musik::core::GetDataDirectory() );
+std::string LibraryBase::GetLibraryDirectory() {
+    std::string directory(musik::core::GetDataDirectory());
 
-    if(!this->identifier.empty()){
-        directory.append(this->identifier+"/");
+    if (!this->identifier.empty()) {
+        directory.append(this->identifier + "/" );
     }
 
-    boost::filesystem::path oFolder(directory);
-    if(!boost::filesystem::exists(oFolder)){
-        boost::filesystem::create_directories(oFolder);
+    boost::filesystem::path dir(directory);
+    if(!boost::filesystem::exists(dir)){
+        boost::filesystem::create_directories(dir);
     }
 
-    directory = oFolder.string();
+    directory = dir.string();
 
     return directory;
 }
@@ -132,10 +130,8 @@ std::string LibraryBase::GetLibraryDirectory(){
 ///\returns
 ///String with the path
 //////////////////////////////////////////
-std::string LibraryBase::GetDBPath(){
-    std::string sPath = this->GetLibraryDirectory();
-    sPath.append("musik.db");
-    return sPath;
+std::string LibraryBase::GetDatabasePath() {
+    return this->GetLibraryDirectory() + "musik.db";
 }
 
 //////////////////////////////////////////
@@ -165,219 +161,8 @@ std::string LibraryBase::GetDBPath(){
 ///\see
 ///musik::core::query::QueryBase::copy
 //////////////////////////////////////////
-bool LibraryBase::AddQuery( const query::QueryBase &query,unsigned int options ){
-
-	if(this->Exited()){
-		return false;
-	}
-
-    // Start by making a copy
-    query::Ptr queryCopy( query.copy() );
-
-    // 
-    if(options&query::CopyUniqueId){
-        queryCopy->uniqueId = query.uniqueId;
-    }
-
-    queryCopy->PreAddQuery(this);
-
-    // Since query is not added to queue yet, variables can now be changed without locking.
-
-    // Set the options in the query. They should not be altered and are therefore threadsafe.
-    queryCopy->options    = options;
-
-    // From here on mutexes should be used
-
-    /////////////////////////////////////////////////////////////////////////////
-    // First lets check if the OnQueryQueueStart should be called.
-    // No mutexes should be locked when this is called or deadlock might occure
-    bool queueStart(false);
-    {
-        // Start by checking
-        boost::mutex::scoped_lock lock(this->libraryMutex);
-
-        if( !this->queueCallbackStarted ){
-            this->queueCallbackStarted = true;
-            queueStart        = true;
-        }
-    }
-    if(queueStart){
-        this->OnQueryQueueStart();
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
-    {
-        // Lock the mutex for accessing the query queues and query status
-        boost::mutex::scoped_lock lock(this->libraryMutex);
-
-        bool cancelCurrentQuery(false);
-
-        /////////////////////////////////////////////////////////////////////////////
-        // Clear unparsed queue that match CANCEL options
-        for(std::list<query::Ptr>::iterator oCheckQuery=this->incomingQueries.begin();oCheckQuery!=this->incomingQueries.end();){
-            // Do not erase UNCANCEABLE
-            if( !((*oCheckQuery)->options & query::UnCanceable) ){
-                if( options & query::CancelQueue ){
-                    oCheckQuery    = this->incomingQueries.erase(oCheckQuery);
-                }else if( options & query::CancelSimilar ){
-                    if( (*oCheckQuery)->queryId == queryCopy->queryId ){
-                        oCheckQuery    = this->incomingQueries.erase(oCheckQuery);
-                    }else{
-                        ++oCheckQuery;
-                    }
-                }else{
-                    ++oCheckQuery;
-                }
-            }else{
-                ++oCheckQuery;
-            }
-        }
-
-        /////////////////////////////////////////////////////////////////////////////
-        // Even cancel parsed queries
-        for(std::list<query::Ptr>::iterator oCheckQuery=this->outgoingQueries.begin();oCheckQuery!=this->outgoingQueries.end();++oCheckQuery){
-
-            // Do not erase UNCANCEABLE
-            if( !((*oCheckQuery)->options & query::UnCanceable) ){
-                if( options & query::CancelQueue ){
-                    (*oCheckQuery)->status    |= query::QueryBase::Canceled;
-                }else if( options & query::CancelSimilar ){
-                    if( (*oCheckQuery)->queryId == queryCopy->queryId ){
-                        (*oCheckQuery)->status    |= query::QueryBase::Canceled;
-                    }
-                }
-            }
-        }
-
-        /////////////////////////////////////////////////////////////////////////////
-        // Cancel running query
-        if(this->runningQuery){
-            if( !(this->runningQuery->options & query::UnCanceable) ){
-                if( options & query::CancelQueue ){
-                    cancelCurrentQuery    = true;
-                }else if( options & query::CancelSimilar ){
-                    if( this->runningQuery->queryId == queryCopy->queryId ){
-                        cancelCurrentQuery    = true;
-                    }
-                }
-            }
-        }
-
-        /////////////////////////////////////////////////////////////////////////////
-        // Add the new query to front of incomming queue if the query is prioritized.
-        if(options & query::Prioritize){
-            this->incomingQueries.push_front(queryCopy);
-        }else{
-            this->incomingQueries.push_back(queryCopy);
-        }
-
-        /////////////////////////////////////////////////////////////////////////////
-        // Cancel currently running query
-        if(cancelCurrentQuery){
-            this->CancelCurrentQuery();
-        }
-
-    }
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // Notify library thread that a query has been added.
-    this->waitCondition.notify_all();
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // If the query::Options::Wait is set, wait for query to finish.
-    if(options&query::Wait){
-        {
-            boost::mutex::scoped_lock lock(this->libraryMutex);
-
-            // wait for the query to be finished or canceled
-            while( !(queryCopy->status&query::QueryBase::Ended) && !(queryCopy->status&query::QueryBase::Canceled) ){
-
-                // To be on the safe side, lets check every second
-                boost::xtime waitingTime;
-                boost::xtime_get(&waitingTime, boost::TIME_UTC_);
-                waitingTime.sec += 1;
-                this->waitCondition.timed_wait(lock,waitingTime);
-            }
-
-            if( options & query::AutoCallback ){    // Should the callbacks be involved?
-                queryCopy->status    |= query::QueryBase::Finished;    // Set to finished for removal.
-            }
-        }
-
-        /////////////////////////////////////////////////////////////////////////////
-        // Finaly, remove old, finished queries
-        this->ClearFinishedQueries();
-
-        if( options & query::AutoCallback ){    // Should the callbacks be involved?
-            if( !this->QueryCanceled(queryCopy.get()) ){    // If not canceled
-                queryCopy->RunCallbacks(this);            // Run the callbacks.
-            }
-        }
-
-
-    }
-
-    return true;
-}
-
-
-//////////////////////////////////////////
-///\brief
-///Pull the next query from the incomingQueries
-//////////////////////////////////////////
-query::Ptr LibraryBase::GetNextQuery(){
-    boost::mutex::scoped_lock lock(this->libraryMutex);
-
-    if(this->incomingQueries.size()!=0){
-        query::Ptr query    = this->incomingQueries.front();    // Cast back to query
-        this->incomingQueries.pop_front();
-        return query;
-    }
-
-    // Or return an empty query
-    return query::Ptr();
-
-}
-
-//////////////////////////////////////////
-///\brief
-///Clears all finished queries from the outgoingQueries
-///
-///\returns
-///Returns true if all queues are finished
-//////////////////////////////////////////
-bool LibraryBase::ClearFinishedQueries(){
-    std::vector<query::Ptr> canceledQueries;
-
-    {
-        // Remove old queries
-        boost::mutex::scoped_lock lock(this->libraryMutex);
-
-        for(std::list<query::Ptr>::iterator oCheckQuery=this->outgoingQueries.begin();oCheckQuery!=this->outgoingQueries.end();){
-            unsigned int status    = (*oCheckQuery)->status;
-            if( (status & (query::QueryBase::Finished | query::QueryBase::Canceled)) ){
-                // If canceled
-                if( status & query::QueryBase::Canceled ){
-                    canceledQueries.push_back(*oCheckQuery);
-                }
-                oCheckQuery    = this->outgoingQueries.erase(oCheckQuery);
-            }else{
-                ++oCheckQuery;
-            }
-        }
-    }
-
-    // Lets notify queries that they have been canceled
-    for(std::vector<query::Ptr>::iterator query=canceledQueries.begin();query!=canceledQueries.end();++query){
-        (*query)->QueryFinished(query->get(),this,false);
-    }
-
-    {
-        boost::mutex::scoped_lock lock(this->libraryMutex);
-        return (this->incomingQueries.size()==0 && this->outgoingQueries.size()==0);
-    }
+bool LibraryBase::AddQuery(const query::QueryBase &query, unsigned int options) {
+    return false;
 }
 
 //////////////////////////////////////////
@@ -392,96 +177,15 @@ bool LibraryBase::ClearFinishedQueries(){
 ///\see
 ///OnQueryQueueEnd
 //////////////////////////////////////////
-bool LibraryBase::RunCallbacks(){
-
-    this->ClearFinishedQueries();
-
-    bool bAgain(true);
-
-    while(bAgain){
-        query::Ptr oQuery;
-        bAgain    = false;
-
-        {
-            boost::mutex::scoped_lock lock(this->libraryMutex);
-
-            if(this->outgoingQueries.size()!=0){
-                oQuery    = this->outgoingQueries.front();
-                if(oQuery->options & query::AutoCallback){
-                    oQuery.reset();
-                }
-            }
-        }
-
-        if(oQuery){
-            if(oQuery->RunCallbacks(this)){
-                {
-                    boost::mutex::scoped_lock lock(this->libraryMutex);
-                    // Set to FINISHED if query returns true
-                    oQuery->status    |= query::QueryBase::Finished;
-                }
-                bAgain    = true;    // Continue to check results on the rest of the queue if this one is finished.
-
-                // Call the query signal that the query is finished
-                oQuery->QueryFinished(oQuery.get(),this,true);
-            }
-        }
-        this->ClearFinishedQueries();
-
-    }
-
-    if(this->ClearFinishedQueries()){
-        this->queueCallbackStarted  = false;
-        this->OnQueryQueueEnd();
-        return true;
-    }
-
+bool LibraryBase::RunCallbacks() {
     return false;
 }
 
 //////////////////////////////////////////
 ///\brief
-///Check if the current running query is canceled.
-///
-///\returns
-///True if canceled.
-///
-///This method is used by the Queries to check if they are canceled
-///while they are running.
-///
-///\remarks
-///This memthod is threadsafe
-///
-///\see
-///CancelCurrentQuery
-//////////////////////////////////////////
-bool LibraryBase::QueryCanceled(query::QueryBase *query){
-    boost::mutex::scoped_lock lock(this->libraryMutex);
-	return (query->status&query::QueryBase::Canceled)?true:false;
-}
-
-//////////////////////////////////////////
-///\brief
-///Cancel the current running query
-///
-///\remarks
-///This method is virtual so that a library may do more to stop the query.
-///For instance a database library may try to interrupt the current running SQL-query.
-///This method assumes that the libraryMutex is locked.
-///
-///\see
-///QueryCanceled
-//////////////////////////////////////////
-void LibraryBase::CancelCurrentQuery(){
-//    this->bCurrentQueryCanceled    = true;
-}
-
-
-//////////////////////////////////////////
-///\brief
 ///Has the library exited?
 //////////////////////////////////////////
-bool LibraryBase::Exited(){
+bool LibraryBase::Exited() {
     boost::mutex::scoped_lock lock(this->libraryMutex);
     return this->exit;
 }
@@ -492,11 +196,12 @@ bool LibraryBase::Exited(){
 ///
 ///Will set the library to Exited and notify all sleeping threads
 //////////////////////////////////////////
-void LibraryBase::Exit(){
+void LibraryBase::Exit() {
     {
         boost::mutex::scoped_lock lock(this->libraryMutex);
-        this->exit    = true;
+        this->exit = true;
     }
+
     this->waitCondition.notify_all();
 }
 
@@ -508,7 +213,7 @@ void LibraryBase::Exit(){
 bool LibraryBase::IsStaticMetaKey(std::string &metakey){
     static std::set<std::string> staticMetaKeys;
 
-    if(staticMetaKeys.empty()){
+    if (staticMetaKeys.empty()) {
         staticMetaKeys.insert("track");
         staticMetaKeys.insert("bpm");
         staticMetaKeys.insert("duration");
@@ -519,38 +224,40 @@ bool LibraryBase::IsStaticMetaKey(std::string &metakey){
         staticMetaKeys.insert("filetime");
     }
 
-    return staticMetaKeys.find(metakey)!=staticMetaKeys.end();
+    return staticMetaKeys.find(metakey) != staticMetaKeys.end();
 
 }
 
 //////////////////////////////////////////
 ///\brief
-///Helper method to determin what metakeys that have a special many to one relation
+///Helper method to determine what metakeys that have a special many to one relation
 //////////////////////////////////////////
 bool LibraryBase::IsSpecialMTOMetaKey(std::string &metakey){
     static std::set<std::string> specialMTOMetaKeys;
 
-    if(specialMTOMetaKeys.empty()){
+    if (specialMTOMetaKeys.empty()) {
         specialMTOMetaKeys.insert("album");
         specialMTOMetaKeys.insert("visual_genre");
         specialMTOMetaKeys.insert("visual_artist");
         specialMTOMetaKeys.insert("folder");
     }
+
     return specialMTOMetaKeys.find(metakey)!=specialMTOMetaKeys.end();
 }
 
 //////////////////////////////////////////
 ///\brief
-///Helper method to determin what metakeys that have a special many to meny relation
+///Helper method to determine what metakeys that have a special many to meny relation
 //////////////////////////////////////////
-bool LibraryBase::IsSpecialMTMMetaKey(std::string &metakey){
+bool LibraryBase::IsSpecialMTMMetaKey(std::string &metakey) {
     static std::set<std::string> specialMTMMetaKeys;
 
-    if(specialMTMMetaKeys.empty()){
+    if (specialMTMMetaKeys.empty()) {
         specialMTMMetaKeys.insert("artist");
         specialMTMMetaKeys.insert("genre");
     }
-    return specialMTMMetaKeys.find(metakey)!=specialMTMMetaKeys.end();
+
+    return specialMTMMetaKeys.find(metakey) != specialMTMMetaKeys.end();
 }
 
 //////////////////////////////////////////
@@ -701,27 +408,3 @@ void LibraryBase::CreateDatabase(db::Connection &db){
 
     db.Analyze();
 }
-
-//////////////////////////////////////////
-///\brief
-///Get the base path to where the tracks are located
-///
-///This method is mostly used by the Remote to
-///get the HTTP-address to the tracks
-//////////////////////////////////////////
-std::string LibraryBase::BasePath(){
-    return "";
-}
-
-LibraryPtr LibraryBase::GetSelfPtr(){
-    if(LibraryPtr thisPtr = this->self.lock()){
-        return thisPtr;
-    }
-    return LibraryPtr();
-}
-
-const std::string& LibraryBase::AuthorizationKey(){
-    static std::string emptyAuthString;
-    return emptyAuthString;
-}
-

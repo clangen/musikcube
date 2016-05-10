@@ -53,86 +53,83 @@ PluginFactory::PluginFactory() {
 }
 
 PluginFactory::~PluginFactory(void){
-    for (size_t i=0; i<this->loadedPlugins.size(); ++i)
-    {
+    for (size_t i = 0; i<this->loadedPlugins.size(); i++) {
         this->loadedPlugins[i]->Destroy();
     }
 
-    // Unload dlls
-    for(std::vector<void*>::iterator oDLL=this->loadedDLLs.begin();oDLL!=this->loadedDLLs.end();){
+    std::vector<void*>::iterator dll = this->loadedDlls.begin();
+    for( ; dll != this->loadedDlls.end(); dll++) {
         #ifdef WIN32
-//            FreeLibrary( (HMODULE)(*oDLL) );
-	#else
-	      dlclose(*oDLL);
+            FreeLibrary((HMODULE) (*dll));
+        #else
+            dlclose(*dll);
         #endif
-        oDLL    = this->loadedDLLs.erase(oDLL);
     }
+
+    loadedDlls.clear();
 }
 
 void PluginFactory::LoadPlugins(){
     boost::mutex::scoped_lock lock(this->mutex);
-    std::string sPluginDir(GetPluginDirectory());
 
-    // Open plugin directory
-    boost::filesystem::path oDir(sPluginDir);
+    std::string pluginDir(GetPluginDirectory());
+    boost::filesystem::path dir(pluginDir);
 
-    try{
-        boost::filesystem::directory_iterator oEndFile;
-        for(boost::filesystem::directory_iterator oFile(oDir);oFile!=oEndFile;++oFile){
-            if(boost::filesystem::is_regular(oFile->status())){
-                // This is a file
-                std::string sFile(oFile->path().string());
+    try {
+        boost::filesystem::directory_iterator end;
+        for (boost::filesystem::directory_iterator file(dir); file != end; file++) {
+            if (boost::filesystem::is_regular(file->status())){
+                std::string filename(file->path().string());
 
-                #ifdef WIN32
-                    if(sFile.substr(sFile.size()-4)==".dll"){    // And a DLL
+#ifdef WIN32
+                /* if the file ends with ".dll", we'll try to load ig*/
 
-                        std::wstring wpath = u8to16(sFile);
-                        HMODULE oDLL = LoadLibrary(wpath.c_str());
-                        if(oDLL!=NULL){
-                            CallGetPlugin getPluginCall = (CallGetPlugin)GetProcAddress(oDLL,"GetPlugin");
-                            if(getPluginCall){
-                                this->loadedPlugins.push_back(getPluginCall());
-                                this->loadedDLLs.push_back(oDLL);
-                            }else{
-                                FreeLibrary( oDLL );
-                            }
-/*
-                            // Check for tagreader
-                            CallGetTagReader getTagReader = (CallGetTagReader)GetProcAddress(oDLL,"GetTagReader");
-                            if(getTagReader){
-                                this->aTagReaders.push_back(getTagReader());
-                            }*/
+                if (filename.substr(filename.size() - 4) == ".dll") {
+
+                    HMODULE dll = LoadLibrary(u8to16(filename).c_str());
+                    if (dll != NULL) {
+                        /* every plugin has a "GetPlugin" method. */
+                        CallGetPlugin getPluginCall = (CallGetPlugin) GetProcAddress(dll, "GetPlugin");
+
+                        if (getPluginCall) {
+                            /* exists? add it! */
+                            this->loadedPlugins.push_back(getPluginCall());
+                            this->loadedDlls.push_back(dll);
                         }
-
-
+                        else {
+                            /* otherwise, free nad move on */
+                            FreeLibrary(dll);
+                        }
                     }
-		#else	//GNU or other
-                    if(sFile.substr(sFile.size()-3)==".so"){    // And a shared lib
-		        void* oDLL = dlopen(sFile.c_str(), RTLD_NOW);
-			char* err;
-			if ((err = dlerror()) != NULL) {
-			    std::cerr << "Couldn't open shared library " << sFile << std::endl;
-			    std::cerr << "Error: " << err << std::endl;
-			}
-			else	{
-				IPlugin* getPluginCall = (IPlugin*)dlsym(oDLL,"GetPlugin");
-                if(getPluginCall){
-                	this->loadedPlugins.push_back(getPluginCall);
-			        this->loadedDLLs.push_back(oDLL);
-#ifdef _DEBUG
-			        std::cout << "Shared library " << sFile.c_str() << " loaded and opened." << std::endl;
+                }
+#else
+                if (filename.substr(filename.size() - 3) == ".so") {
+                    void* dll = dlopen(filename.c_str(), RTLD_NOW);
+                    char* err;
+
+                    if ((err = dlerror()) != NULL) {
+                        musik::debug::err(
+                            "could not load shared library " + filename + 
+                            " error: " + std::string(err));
+                    }
+                    else {
+                        CallGetPlugin getPluginCall;
+                        *(void **)(&getPluginCall) = dlsym(dll, "GetPlugin");
+
+                        if (getPluginCall) {
+                            this->loadedPlugins.push_back(getPluginCall);
+                            this->loadedDLLs.push_back(dll);
+                        }
+                        else {
+                            dlclose(dll);
+                        }
+                    }
+                }
 #endif
-			    }
-			    else	{
-			        dlclose(oDLL);
-			    }
-			}
-		    }
-                #endif //WIN32
             }
         }
     }
-    catch(...){
+    catch(...) {
     }
 }
 

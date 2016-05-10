@@ -75,7 +75,7 @@ LibraryTrack::~LibraryTrack(){
 std::string LibraryTrack::GetValue(const char* metakey) {
     if (metakey && this->meta) {
         if (this->meta->library) {
-            boost::mutex::scoped_lock lock(this->meta->library->trackMutex); /* ?? */
+            boost::mutex::scoped_lock lock(this->meta->mutex);
             MetadataMap::iterator metavalue = this->meta->metadata.find(metakey);
             if (metavalue != this->meta->metadata.end()) {
                 return metavalue->second;
@@ -97,7 +97,7 @@ void LibraryTrack::SetValue(const char* metakey, const char* value) {
 
     if (metakey && value) {
         if(this->meta->library) {
-            boost::mutex::scoped_lock lock(this->meta->library->trackMutex);
+            boost::mutex::scoped_lock lock(this->meta->mutex);
             this->meta->metadata.insert(std::pair<std::string, std::string>(metakey,value));
         }
         else {
@@ -109,7 +109,7 @@ void LibraryTrack::SetValue(const char* metakey, const char* value) {
 void LibraryTrack::ClearValue(const char* metakey) {
     if (this->meta) {
         if (this->meta->library) {
-            boost::mutex::scoped_lock lock(this->meta->library->trackMutex);
+            boost::mutex::scoped_lock lock(this->meta->mutex);
             this->meta->metadata.erase(metakey);
         }
         else {
@@ -161,7 +161,7 @@ std::string LibraryTrack::URL() {
 Track::MetadataIteratorRange LibraryTrack::GetValues(const char* metakey) {
     if (this->meta) {
         if (this->meta->library) {
-            boost::mutex::scoped_lock lock(this->meta->library->trackMutex);
+            boost::mutex::scoped_lock lock(this->meta->mutex);
             return this->meta->metadata.equal_range(metakey);
         }
         else {
@@ -175,7 +175,8 @@ Track::MetadataIteratorRange LibraryTrack::GetValues(const char* metakey) {
 Track::MetadataIteratorRange LibraryTrack::GetAllValues() {
     if (this->meta) {
         return Track::MetadataIteratorRange(
-            this->meta->metadata.begin(), this->meta->metadata.end());
+            this->meta->metadata.begin(),
+            this->meta->metadata.end());
     }
 
     return Track::MetadataIteratorRange();
@@ -207,7 +208,7 @@ void LibraryTrack::InitMeta() {
 }
 
 TrackPtr LibraryTrack::Copy() {
-    return TrackPtr(new LibraryTrack(this->id,this->libraryId));
+    return TrackPtr(new LibraryTrack(this->id, this->libraryId));
 }
 
 LibraryTrack::MetaData::MetaData()

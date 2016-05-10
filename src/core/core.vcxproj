@@ -13,6 +13,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{B2165720-B4B2-4F4B-9634-8C390C3CB4DB}</ProjectGuid>
     <RootNamespace>core</RootNamespace>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -91,16 +92,7 @@
     <ClCompile Include="library\LibraryFactory.cpp" />
     <ClCompile Include="library\LocalLibrary.cpp" />
     <ClCompile Include="library\metadata\MetadataValue.cpp" />
-    <ClCompile Include="Library\query\QueryFactory.cpp" />
-    <ClCompile Include="Library\query\LibraryTrackListQuery.cpp" />
-    <ClCompile Include="Library\query\ListQueryBase.cpp" />
-    <ClCompile Include="Library\query\ListSelectionQuery.cpp" />
-    <ClCompile Include="Library\query\MultiLibraryTrackListQuery.cpp" />
     <ClCompile Include="Library\query\QueryBase.cpp" />
-    <ClCompile Include="Library\query\SortTracksQuery.cpp" />
-    <ClCompile Include="Library\query\SortTracksWithDataQuery.cpp" />
-    <ClCompile Include="Library\query\TrackListQueryBase.cpp" />
-    <ClCompile Include="Library\query\TrackMetadataQuery.cpp" />
     <ClCompile Include="library\track\InMemoryTrack.cpp" />
     <ClCompile Include="library\track\IndexerTrack.cpp" />
     <ClCompile Include="library\track\LibraryTrack.cpp" />
@@ -115,7 +107,6 @@
     <ClCompile Include="db\ScopedTransaction.cpp" />
     <ClCompile Include="db\Statement.cpp" />
     <ClCompile Include="playback\NonLibraryTrackHelper.cpp" />
-    <ClCompile Include="playback\PlaybackQueue.cpp" />
     <ClCompile Include="playback\Transport.cpp" />
     <ClCompile Include="audio\Buffer.cpp" />
     <ClCompile Include="audio\Player.cpp" />
@@ -135,16 +126,7 @@
     <ClInclude Include="library\LibraryFactory.h" />
     <ClInclude Include="library\LocalLibrary.h" />
     <ClInclude Include="library\metadata\MetadataValue.h" />
-    <ClInclude Include="Library\query\QueryFactory.h" />
-    <ClInclude Include="Library\query\LibraryTrackListQuery.h" />
-    <ClInclude Include="Library\query\ListQueryBase.h" />
-    <ClInclude Include="Library\query\ListSelectionQuery.h" />
-    <ClInclude Include="Library\query\MultiLibraryTrackListQuery.h" />
     <ClInclude Include="Library\query\QueryBase.h" />
-    <ClInclude Include="Library\query\SortTracksQuery.h" />
-    <ClInclude Include="Library\query\SortTracksWithDataQuery.h" />
-    <ClInclude Include="Library\query\TrackListQueryBase.h" />
-    <ClInclude Include="Library\query\TrackMetadataQuery.h" />
     <ClInclude Include="library\track\InMemoryTrack.h" />
     <ClInclude Include="library\track\IndexerTrack.h" />
     <ClInclude Include="library\track\LibraryTrack.h" />
@@ -153,7 +135,6 @@
     <ClInclude Include="pch.hpp" />
     <ClInclude Include="config.h" />
     <ClInclude Include="playback\NonLibraryTrackHelper.h" />
-    <ClInclude Include="playback\PlaybackQueue.h" />
     <ClInclude Include="playback\Transport.h" />
     <ClInclude Include="plugin\PluginFactory.h" />
     <ClInclude Include="sdk\config.h" />

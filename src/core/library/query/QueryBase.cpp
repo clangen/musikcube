@@ -45,24 +45,39 @@ using namespace musik::core::query;
 QueryBase::QueryBase()
 : status(0)
 , options(0)
-, uniqueId(0) {
-    // This will guarantee that the query id is uniq for each query, but copies will not.
-    // This is usefull when canceling similar queries
-    static unsigned int uniqueQueryId(0);
-    uniqueQueryId++;
-    this->queryId   = uniqueQueryId;
+, queryId(0) {
+    static unsigned int uniqueQueryId = 0;
+    this->queryId = uniqueQueryId++;
 }
 
 QueryBase::~QueryBase() {
 }
 
 std::string QueryBase::Name() {
-    return "Unknown";
+    return "QueryBase";
 }
 
-void QueryBase::PostCopy(){
-    static unsigned int uniqueQueryId(0);
-    uniqueQueryId++;
-    this->uniqueId  = uniqueQueryId;
+int QueryBase::GetStatus() {
+    boost::mutex::scoped_lock lock(this->stateMutex);
+    return this->status;
 }
 
+void QueryBase::SetStatus(int status) {
+    boost::mutex::scoped_lock lock(this->stateMutex);
+    this->status = status;
+}
+
+int QueryBase::GetQueryId() {
+    boost::mutex::scoped_lock lock(this->stateMutex);
+    return this->queryId;
+}
+
+int QueryBase::GetOptions() {
+    boost::mutex::scoped_lock lock(this->stateMutex);
+    return this->options;
+}
+
+void QueryBase::SetOptions(int options) {
+    boost::mutex::scoped_lock lock(this->stateMutex);
+    this->options = options;
+}

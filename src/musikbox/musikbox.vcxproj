@@ -127,7 +127,6 @@
     <ClCompile Include="ScrollableWindow.cpp" />
     <ClCompile Include="SimpleScrollAdapter.cpp" />
     <ClCompile Include="SystemInfo.cpp" />
-    <ClCompile Include="TransportEvents.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -149,7 +148,6 @@
     <ClInclude Include="ScrollableWindow.h" />
     <ClInclude Include="SimpleScrollAdapter.h" />
     <ClInclude Include="SystemInfo.h" />
-    <ClInclude Include="TransportEvents.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="TransportWindow.h" />
   </ItemGroup>

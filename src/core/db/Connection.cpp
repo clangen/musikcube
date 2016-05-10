@@ -372,16 +372,6 @@ void Connection::Maintenance(bool init){
     }
 }
 
-int Connection::StepStatement(sqlite3_stmt *stmt){
-/*    int waitCount(100);
-    int error(0);
-    do{
-        error   = sqlite3_step(stmt);
-        if(error==SQLITE_LOCKED){
-            boost::thread::yield();
-            waitCount--;
-        }
-    }while(error==SQLITE_LOCKED && waitCount>0);
-*/
+int Connection::StepStatement(sqlite3_stmt *stmt) {
     return sqlite3_step(stmt);
 }

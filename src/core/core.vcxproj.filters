@@ -64,38 +64,11 @@
     <ClCompile Include="audio\Stream.cpp">
       <Filter>src\audio</Filter>
     </ClCompile>
-    <ClCompile Include="Library\query\LibraryTrackListQuery.cpp">
-      <Filter>src\library\query</Filter>
-    </ClCompile>
-    <ClCompile Include="Library\query\ListQueryBase.cpp">
-      <Filter>src\library\query</Filter>
-    </ClCompile>
-    <ClCompile Include="Library\query\ListSelectionQuery.cpp">
-      <Filter>src\library\query</Filter>
-    </ClCompile>
-    <ClCompile Include="Library\query\MultiLibraryTrackListQuery.cpp">
-      <Filter>src\library\query</Filter>
-    </ClCompile>
     <ClCompile Include="Library\query\QueryBase.cpp">
-      <Filter>src\library\query</Filter>
-    </ClCompile>
-    <ClCompile Include="Library\query\SortTracksQuery.cpp">
-      <Filter>src\library\query</Filter>
-    </ClCompile>
-    <ClCompile Include="Library\query\SortTracksWithDataQuery.cpp">
-      <Filter>src\library\query</Filter>
-    </ClCompile>
-    <ClCompile Include="Library\query\TrackListQueryBase.cpp">
-      <Filter>src\library\query</Filter>
-    </ClCompile>
-    <ClCompile Include="Library\query\TrackMetadataQuery.cpp">
       <Filter>src\library\query</Filter>
     </ClCompile>
     <ClCompile Include="io\LocalFileStream.cpp">
       <Filter>src\io</Filter>
-    </ClCompile>
-    <ClCompile Include="Library\query\QueryFactory.cpp">
-      <Filter>src\library\query</Filter>
     </ClCompile>
     <ClCompile Include="io\DataStreamFactory.cpp">
       <Filter>src\io</Filter>
@@ -110,9 +83,6 @@
       <Filter>src\support</Filter>
     </ClCompile>
     <ClCompile Include="playback\Transport.cpp">
-      <Filter>src\playback</Filter>
-    </ClCompile>
-    <ClCompile Include="playback\PlaybackQueue.cpp">
       <Filter>src\playback</Filter>
     </ClCompile>
     <ClCompile Include="library\Indexer.cpp">
@@ -210,38 +180,11 @@
     <ClInclude Include="sdk\IDataStreamFactory.h">
       <Filter>src\sdk</Filter>
     </ClInclude>
-    <ClInclude Include="Library\query\LibraryTrackListQuery.h">
-      <Filter>src\library\query</Filter>
-    </ClInclude>
-    <ClInclude Include="Library\query\ListQueryBase.h">
-      <Filter>src\library\query</Filter>
-    </ClInclude>
-    <ClInclude Include="Library\query\ListSelectionQuery.h">
-      <Filter>src\library\query</Filter>
-    </ClInclude>
-    <ClInclude Include="Library\query\MultiLibraryTrackListQuery.h">
-      <Filter>src\library\query</Filter>
-    </ClInclude>
     <ClInclude Include="Library\query\QueryBase.h">
-      <Filter>src\library\query</Filter>
-    </ClInclude>
-    <ClInclude Include="Library\query\SortTracksQuery.h">
-      <Filter>src\library\query</Filter>
-    </ClInclude>
-    <ClInclude Include="Library\query\SortTracksWithDataQuery.h">
-      <Filter>src\library\query</Filter>
-    </ClInclude>
-    <ClInclude Include="Library\query\TrackListQueryBase.h">
-      <Filter>src\library\query</Filter>
-    </ClInclude>
-    <ClInclude Include="Library\query\TrackMetadataQuery.h">
       <Filter>src\library\query</Filter>
     </ClInclude>
     <ClInclude Include="io\LocalFileStream.h">
       <Filter>src\io</Filter>
-    </ClInclude>
-    <ClInclude Include="Library\query\QueryFactory.h">
-      <Filter>src\library\query</Filter>
     </ClInclude>
     <ClInclude Include="io\DataStreamFactory.h">
       <Filter>src\io</Filter>
@@ -259,9 +202,6 @@
       <Filter>src\support</Filter>
     </ClInclude>
     <ClInclude Include="playback\Transport.h">
-      <Filter>src\playback</Filter>
-    </ClInclude>
-    <ClInclude Include="playback\PlaybackQueue.h">
       <Filter>src\playback</Filter>
     </ClInclude>
     <ClInclude Include="library\Indexer.h">

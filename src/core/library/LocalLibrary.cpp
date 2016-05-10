@@ -55,18 +55,16 @@ using namespace musik::core::library;
 ///Startup
 //////////////////////////////////////////
 LocalLibrary::LocalLibrary(std::string name,int id)
-: LibraryBase(name, id)
-{
+: LibraryBase(name, id) {
 }
 
 //////////////////////////////////////////
 ///\brief
 ///Create a LocalLibrary library
 //////////////////////////////////////////
-LibraryPtr LocalLibrary::Create(std::string name,int id){
-	LibraryPtr lib(new LocalLibrary(name,id));
-	lib->self	= lib;
-	return lib;
+LibraryPtr LocalLibrary::Create(std::string name,int id) {
+    LibraryPtr lib(new LocalLibrary(name, id));
+    return lib;
 }
 
 //////////////////////////////////////////
@@ -75,7 +73,8 @@ LibraryPtr LocalLibrary::Create(std::string name,int id){
 //////////////////////////////////////////
 LocalLibrary::~LocalLibrary() {
     this->Exit();
-    this->threads.join_all();
+    this->thread->join();
+    delete this->thread;
 }
 
 //////////////////////////////////////////
@@ -94,19 +93,10 @@ LocalLibrary::~LocalLibrary() {
 /// // The library is now ready to receive queries
 ///\endcode
 //////////////////////////////////////////
-bool LocalLibrary::Startup(){
-
-    // Start the library thread
-    try{
-        this->threads.create_thread(boost::bind(&LocalLibrary::ThreadLoop,this));
-    }
-    catch(...){
-        return false;
-    }
-
+bool LocalLibrary::Startup() {
+    this->thread = new boost::thread(boost::bind(&LocalLibrary::ThreadLoop, this));
     return true;
 }
-
 
 //////////////////////////////////////////
 ///\brief
@@ -114,87 +104,28 @@ bool LocalLibrary::Startup(){
 ///
 ///The loop will run until Exit() has been called.
 //////////////////////////////////////////
-void LocalLibrary::ThreadLoop(){
-
+void LocalLibrary::ThreadLoop() {
     Preferences prefs("Library");
 
-    std::string database(this->GetDBPath());
-    this->db.Open(database.c_str(),0,prefs.GetInt("DatabaseCache",4096));
+    std::string database(this->GetDatabasePath());
+    this->db.Open(database.c_str(), 0, prefs.GetInt("DatabaseCache", 4096));
 
     LibraryBase::CreateDatabase(this->db);
 
-    // Startup the indexer
-    this->indexer.database    = database;
+    /* start the indexer running */
+
+    this->indexer.database = database;
     this->indexer.Startup(this->GetLibraryDirectory());
 
-    while(!this->Exited()){
-        query::Ptr query(this->GetNextQuery());
+    //while (!this->Exited()) {
 
-        if(query){    // No empty query
-
-            ////////////////////////////////////////////////////////////
-            // Add to the finished queries
-            {
-                boost::mutex::scoped_lock lock(this->libraryMutex);
-                this->runningQuery    = query;
-                this->outgoingQueries.push_back(query);
-
-                // Set query as started
-                query->status |= query::QueryBase::Started;
-            }
-
-            ////////////////////////////////////////////////////////////
-            // Lets parse the query
-            if(!this->QueryCanceled(query.get())){
-                query->ParseQuery(this,this->db);
-            }
-
-            {
-                boost::mutex::scoped_lock lock(this->libraryMutex);
-                this->runningQuery.reset();
-                // And set it as finished
-                query->status |= query::QueryBase::Ended;
-            }
-
-            ////////////////////////////////////////////////////////////
-            // Notify that the Query is finished.
-            this->waitCondition.notify_all();
-
-        }else{
-
-            ////////////////////////////////////////////////////////////
-            // Tricky part, waiting for queries to be added.
-            // Not sure I'm doing this the right way.
-            // Could this part lead to a deadlock???
-            boost::mutex::scoped_lock lock(this->libraryMutex);
-            if(!this->exit && this->incomingQueries.size()==0 ){
-
-                // This is a likely place where a thread will wait
-                this->waitCondition.wait(lock);
-
-            }
-        }
-    }
-
-}
-
-//////////////////////////////////////////
-///\brief
-///Cancel the current running query
-///
-///This method will also send a sqlite3_interrupt to cancel the
-///current running SQL Query
-//////////////////////////////////////////
-void LocalLibrary::CancelCurrentQuery( ){
-    this->db.Interrupt();
+    //}
 }
 
 //////////////////////////////////////////
 ///\brief
 ///Get a pointer to the librarys Indexer (NULL if none)
 //////////////////////////////////////////
-musik::core::Indexer* LocalLibrary::Indexer(){
+musik::core::Indexer* LocalLibrary::Indexer() {
     return &this->indexer;
 }
-
-

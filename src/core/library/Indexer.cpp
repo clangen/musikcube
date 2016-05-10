@@ -394,7 +394,7 @@ void Indexer::SyncDirectory(
 ///\brief
 ///Main loop the thread is running in.
 //////////////////////////////////////////
-void Indexer::ThreadLoop(){
+void Indexer::ThreadLoop() {
     bool firstTime = true; /* through the loop */
 
     while (!this->Exited()) {
@@ -464,12 +464,7 @@ bool Indexer::Startup(std::string setLibraryPath) {
         boost::filesystem::create_directories(thumbPath);
     }
 
-    try {
-        this->thread = new boost::thread(boost::bind(&Indexer::ThreadLoop,this));
-    }
-    catch(...) {
-        return false;
-    }
+    this->thread = new boost::thread(boost::bind(&Indexer::ThreadLoop, this));
 
     return true;
 }

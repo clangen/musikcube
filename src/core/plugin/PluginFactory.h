@@ -47,36 +47,37 @@
 
 #ifndef WIN32
     #include <dlfcn.h>
-#endif //WIN32
+#endif
 
 namespace musik{ namespace core{
 
     class PluginFactory{
         public:
 
-        static  PluginFactory& Instance() {
-            return sInstance;
-        }
+            static  PluginFactory& Instance() {
+                return sInstance;
+            }
 
         private:
 
+            PluginFactory();
+            ~PluginFactory();
+            void LoadPlugins();
+
+        private:
 #ifdef WIN32
             typedef musik::core::IPlugin* STDCALL(CallGetPlugin);
+#else
+            typedef musik::core::IPlugin* (*CallGetPlugin)();
 #endif
-
-            PluginFactory(void);
-            ~PluginFactory(void);
-
-            void LoadPlugins();
 
             typedef std::vector<IPlugin*> PluginList;
             typedef std::vector<void*> HandleList;
 
-            PluginList loadedPlugins;
-            HandleList loadedDLLs;
-
             static PluginFactory sInstance;
 
+            PluginList loadedPlugins;
+            HandleList loadedDlls;
             boost::mutex mutex;
 
         public:
@@ -94,34 +95,35 @@ namespace musik{ namespace core{
                 }
             };
 
-            template <class T, class D> std::vector< boost::shared_ptr<T> > QueryInterface(const char* functionName){
+            template <class T, class D> std::vector<boost::shared_ptr<T>> QueryInterface(const char* functionName) {
                 boost::mutex::scoped_lock lock(this->mutex);
 
                 typedef T* STDCALL(PluginInterfaceCall);
 
-                std::vector< boost::shared_ptr<T> > plugins;
-                HandleList& allDlls = PluginFactory::sInstance.loadedDLLs;
+                std::vector<boost::shared_ptr<T>> plugins;
+                HandleList& allDlls = PluginFactory::sInstance.loadedDlls;
 
                 typedef HandleList::iterator Iterator;
                 Iterator currentDll = allDlls.begin();
-                while (currentDll != allDlls.end()){
-
-                	PluginInterfaceCall funcPtr =
+                while (currentDll != allDlls.end()) {
+                    PluginInterfaceCall funcPtr =
 #ifdef WIN32
                         (PluginInterfaceCall) GetProcAddress((HMODULE)(*currentDll), functionName);
 #else
-						(PluginInterfaceCall) dlsym(*currentDll, functionName);
-#endif //WIN32
-					if(funcPtr) {
-						T* result = funcPtr();
-						if (result) {
-							plugins.push_back(boost::shared_ptr<T>(result, D()));
-						}
-					}
-					currentDll++;
+                        (PluginInterfaceCall) dlsym(*currentDll, functionName);
+#endif
+                    if (funcPtr) {
+                        T* result = funcPtr();
+
+                        if (result) {
+                            plugins.push_back(boost::shared_ptr<T>(result, D()));
+                        }
+                    }
+
+                    currentDll++;
                 }
+
                 return plugins;
             }
-
     };
 } }

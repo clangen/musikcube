@@ -71,29 +71,20 @@ namespace musik{ namespace core{ namespace library{
             LocalLibrary(std::string name, int id);
 
         public:
-            static LibraryPtr Create(std::string name,int id);
-            ~LocalLibrary(void);
+            static LibraryPtr Create(std::string name, int id);
+
+            virtual ~LocalLibrary();
 
             bool Startup();
             musik::core::Indexer *Indexer();
 
-        protected:
-            void CancelCurrentQuery( );
-
         private:
-            // Methods:
-
             void ThreadLoop();
 
         private:
-            // Variables:
             db::Connection db;
-
-            //////////////////////////////////////////
-            ///\brief
-            ///Indexer that indexes all your tracks.
-            //////////////////////////////////////////
             musik::core::Indexer indexer;
+            boost::thread* thread;
     };
 
 } } }

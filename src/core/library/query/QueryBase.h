@@ -57,9 +57,8 @@ namespace musik { namespace core { namespace query {
     class QueryBase;
     typedef boost::shared_ptr<query::QueryBase> Ptr;
 
-    typedef enum{
+    typedef enum {
         AutoCallback = 1,
-        Wait = 2,
         Prioritize = 4,
         CancelQueue = 8,
         CancelSimilar = 16,
@@ -71,125 +70,44 @@ namespace musik { namespace core { namespace query {
     ///\brief
     ///Interface class for all queries.
     //////////////////////////////////////////
+
     class QueryBase : public sigslot::has_slots<> {
         public:
+            typedef sigslot::signal3<
+                query::QueryBase*, 
+                library::LibraryBase*, 
+                bool> QueryFinishedEvent;
+
+            typedef enum {
+                Idle = 1,
+                Running = 2,
+                Canceled = 3,
+                Finished = 4,
+            } Status;
+
+            QueryFinishedEvent QueryFinished;
+
             QueryBase();
             virtual ~QueryBase();
 
-        protected:
-            friend class library::LibraryBase;
-            friend class library::LocalLibrary;
-
-            typedef enum {
-                Started       = 1,
-                Ended         = 2,
-                Canceled      = 4,
-                OutputStarted = 8,
-                OutputEnded   = 16,
-                Finished      = 32
-            } Status;
-
-            //////////////////////////////////////////
-            ///\brief
-            ///Current status of the query
-            ///
-            ///\remarks
-            ///status is protected by the library::LibraryBase::libraryMutex
-            //////////////////////////////////////////
-            unsigned int status;
-
-            //////////////////////////////////////////
-            ///\brief
-            ///The query id is a unique number for each query.
-            ///
-            ///Used for comparing queries and find similar queries.
-            //////////////////////////////////////////
-            unsigned int queryId;
-            unsigned int uniqueId;
-
-            //////////////////////////////////////////
-            ///\brief
-            ///Query options
-            ///
-            ///options is only set inside the AddQuery and should not be altered later.
-            ///It is therefore considered threadsafe.
-            ///
-            ///\see
-            ///musik::core::library::LibraryBase::AddQuery
-            //////////////////////////////////////////
-            unsigned int options;
+            int GetStatus();
+            int GetQueryId();
+            int GetOptions();
 
         protected:
+            void SetStatus(int status);
+            void SetOptions(int options);
+
+            virtual bool RunCallbacks(library::LibraryBase *library) { return true; };
+            virtual bool RunQuery(library::LibraryBase *library, db::Connection &db) = 0;
+
             virtual std::string Name();
 
-            //////////////////////////////////////////
-            ///\brief
-            ///Copy method that is required to be implemented.
-            ///
-            ///\returns
-            ///Shared pointer to query::QueryBase object.
-            ///
-            ///This method is required by all queries since they are
-            ///copied every time a library::LibraryBase::AddQuery is called.
-            ///
-            ///\see
-            ///library::LibraryBase::AddQuery
-            //////////////////////////////////////////
-            virtual Ptr copy() const=0;
-
-            //////////////////////////////////////////
-            ///\brief
-            ///Method for calling all the querys signals
-            ///
-            ///\param library
-            ///Pointer to the library running the query
-            ///
-            ///\returns
-            ///Should return true if query is totaly finished. false otherwise.
-            //////////////////////////////////////////
-            virtual bool RunCallbacks(library::LibraryBase *library){return true;};
-
-            //////////////////////////////////////////
-            ///\brief
-            ///Method that do the acctual work.
-            ///
-            ///\param library
-            ///Pointer to executing library
-            ///
-            ///\param oDB
-            ///Pointer to DBConnection
-            ///
-            ///\returns
-            ///true when successfully executed.
-            ///
-            ///The ParseQuery should consider that all sqlite
-            ///calls could be interrupted by the sqlite3_interrupt call.
-            //////////////////////////////////////////
-            virtual bool ParseQuery(library::LibraryBase *library,db::Connection &db)=0;
-
-            //////////////////////////////////////////
-            ///\brief
-            ///PreAddQuery is called from the library::LibraryBase::AddQuery when the copied query is added to the library.
-            ///
-            ///\param library
-            ///Pointer to library
-            ///
-            ///\see
-            ///library::LibraryBase::AddQuery
-            //////////////////////////////////////////
-            virtual void PreAddQuery(library::LibraryBase *library){};
-
-        public:
-            void PostCopy();
-
-            typedef sigslot::signal3<query::QueryBase*, library::LibraryBase*, bool> QueryFinishedEvent;
-
-            //////////////////////////////////////////
-            ///\brief
-            ///A signal called before the query is totaly removed from the library queue
-            ///The bool will indicate if the query was finished successfully
-            //////////////////////////////////////////
-            QueryFinishedEvent QueryFinished;
+        private:
+            unsigned int status;
+            unsigned int queryId;
+            unsigned int options;
+            boost::mutex stateMutex;
     };
 
 
