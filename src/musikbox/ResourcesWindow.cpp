@@ -34,11 +34,11 @@ void ResourcesWindow::Repaint() {
     float physicalMemoryUsed = (float) systemInfo->GetUsedPhysicalMemory() / BYTES_PER_MEGABYTE;
 
     wprintw(
-        this->GetContents(), 
+        this->GetContent(), 
         "cpu %.2f%% - virt %.2f (mb) - phys %.2f (mb)", 
         systemInfo->GetCpuUsage(),
         virtualMemoryUsed,
         physicalMemoryUsed);
 
-    BorderedWindow::Repaint();
+    Window::Repaint();
 }

@@ -8,7 +8,7 @@
 #include <core/debug.h>
 
 ScrollableWindow::ScrollableWindow()
-: BorderedWindow() {
+: Window() {
     scrollPosition = 0;
     scrolledToBottom = true;
 }
@@ -22,7 +22,7 @@ void ScrollableWindow::OnAdapterChanged() {
         this->ScrollToBottom();
     }
     else {
-        GetScrollAdapter().DrawPage(this->GetContents(), this->scrollPosition);
+        GetScrollAdapter().DrawPage(this->GetContent(), this->scrollPosition);
         this->Repaint();
     }
 }
@@ -37,7 +37,7 @@ size_t ScrollableWindow::GetLastVisible() {
 }
 
 void ScrollableWindow::ScrollToTop() {
-    GetScrollAdapter().DrawPage(this->GetContents(), 0);
+    GetScrollAdapter().DrawPage(this->GetContent(), 0);
     this->scrollPosition = 0;
     this->Repaint();
     this->CheckScrolledToBottom();
@@ -52,7 +52,7 @@ void ScrollableWindow::ScrollToBottom() {
     int actual = total - height;
     actual = (actual < 0) ? 0 : actual;
 
-    adapter->DrawPage(this->GetContents(), actual);
+    adapter->DrawPage(this->GetContent(), actual);
 
     this->scrollPosition = actual;
     this->Repaint();
@@ -63,7 +63,7 @@ void ScrollableWindow::ScrollUp(int delta) {
     int actual = (int) this->scrollPosition - delta;
     actual = (actual < 0) ? 0 : actual;
 
-    GetScrollAdapter().DrawPage(this->GetContents(), actual);
+    GetScrollAdapter().DrawPage(this->GetContent(), actual);
 
     this->scrollPosition = (size_t) actual;
     this->Repaint();
@@ -81,7 +81,7 @@ void ScrollableWindow::ScrollDown(int delta) {
     int actual = (int) this->scrollPosition + delta;
     actual = (actual > max) ? max : actual;
 
-    adapter->DrawPage(this->GetContents(), actual);
+    adapter->DrawPage(this->GetContent(), actual);
 
     this->scrollPosition = (size_t) actual;
     this->Repaint();

@@ -6,6 +6,15 @@
 
 #define MAX_ENTRY_COUNT 0xffffffff
 
+inline static int utf8Length(const std::string& str) {
+    try {
+        return utf8::distance(str.begin(), str.end());
+    }
+    catch (...) {
+        return str.length();
+    }
+}
+
 SimpleScrollAdapter::SimpleScrollAdapter() {
     this->lineCount = 0;
 
@@ -66,7 +75,7 @@ void SimpleScrollAdapter::DrawPage(WINDOW* window, size_t lineNumber) {
     Iterator end = this->entries.end();
     size_t remaining = this->height;
     size_t w = this->width;
-    size_t c = lineNumber - (*it)->GetIndex();
+    size_t c = lineNumber - ((*it)->GetIndex() - removedOffset);
 
     do {
         size_t count = (*it)->GetLineCount();
@@ -78,7 +87,12 @@ void SimpleScrollAdapter::DrawPage(WINDOW* window, size_t lineNumber) {
 
         for (size_t i = c; i < count && remaining != 0; i++) {
             std::string line = (*it)->GetLine(i).c_str();
-            wprintw(window, "%s\n", line.c_str());
+            size_t len = utf8Length(line);
+
+            /* don't add a newline if we're going to hit the end of the line, the
+            newline will be added automatically. */
+            wprintw(window, "%s%s", line.c_str(), len >= this->width ? "" : "\n");
+
             --remaining;
         }
 
@@ -181,15 +195,6 @@ void SimpleScrollAdapter::Entry::SetAttrs(int64 attrs) {
     this->attrs = attrs;
 }
 
-inline static int utf8Length(const std::string& str) {
-    try {
-        return utf8::distance(str.begin(), str.end());
-    }
-    catch (...) {
-        return str.length();
-    }
-}
-
 inline static void breakIntoSubLines(
     std::string& line,
     size_t width,
@@ -222,7 +227,7 @@ inline static void breakIntoSubLines(
         std::vector<std::string> sanitizedWords;
         for (size_t i = 0; i < words.size(); i++) {
             std::string word = words.at(i);
-            size_t len = std::distance(word.begin(), word.end());
+            size_t len = utf8Length(word);
 
             /* this word is fine, it'll easily fit on its own line of necessary */
 
@@ -248,7 +253,7 @@ inline static void breakIntoSubLines(
                     utf8::unchecked::next(end);
                     ++count;
 
-                    if (count == width - 1 || end == word.end()) {
+                    if (count == width || end == word.end()) {
                         sanitizedWords.push_back(std::string(begin, end));
                         begin = end;
                         count = 0;
@@ -268,7 +273,7 @@ inline static void breakIntoSubLines(
         for (size_t i = 0; i < sanitizedWords.size(); i++) {
             std::string word = sanitizedWords.at(i);
             size_t wordLength = utf8Length(word);
-            size_t extra = (i != 0) && (sanitizedWords.size() - 1);
+            size_t extra = (i != 0) && (i != sanitizedWords.size() - 1);
 
             /* we have enough space for this new word. accumulate it. the
             +1 here is to take the space into account */
@@ -285,7 +290,9 @@ inline static void breakIntoSubLines(
             /* otherwise, flush the current line, and start a new one... */
 
             else {
-                output.push_back(accum);
+                if (accum.size()) {
+                    output.push_back(accum);
+                }
 
                 /* special case -- if the word is the exactly length of the
                 width, just add it as a new line and reset... */
@@ -312,7 +319,6 @@ inline static void breakIntoSubLines(
 }
 
 void SimpleScrollAdapter::Entry::SetWidth(size_t width) {
-    width--;
     if (this->width != width) {
         this->width = width;
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "curses_config.h"
-#include "BorderedWindow.h"
+#include "Window.h"
 #include "OutputWindow.h"
 #include "IInput.h"
 #include <core/playback/Transport.h>
@@ -10,12 +10,13 @@
 using musik::core::LibraryPtr;
 using namespace musik::core::audio;
 
-class CommandWindow : public BorderedWindow, public IInput {
+class CommandWindow : public Window, public IInput {
     public:
         CommandWindow(Transport& transport, OutputWindow& output);
         ~CommandWindow();
 
         virtual void WriteChar(int ch);
+        virtual void Focus();
 
     private:
         void ListPlugins() const;

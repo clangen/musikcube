@@ -62,14 +62,13 @@ namespace musik { namespace core {
             Indexer();
             ~Indexer();
 
-            void AddPath(std::string sPath);
-            void RemovePath(std::string sPath);
-            std::vector<std::string> GetPaths();
+            void AddPath(const std::string& paths);
+            void RemovePath(const std::string& paths);
+            void GetPaths(std::vector<std::string>& paths);
 
             bool Startup(std::string setLibraryPath);
             void ThreadLoop();
 
-            std::string GetStatus();
             void RestartSync(bool bNewRestart=true);
             bool Restarted();
 
@@ -91,16 +90,17 @@ namespace musik { namespace core {
             boost::thread *thread;
             boost::mutex progressMutex;
 
-            double overallProgress;
-            double currentProgress;
-            int nofFiles;
             int filesIndexed;
             int filesSaved;
 
-            void CountFiles(const std::string &dir);
-
             void Synchronize();
-            void SyncDirectory(const std::string& dir, DBID parentDirId, DBID pathId, std::string &syncPath);
+            
+            void SyncDirectory(
+                const std::string& syncRoot,
+                const std::string& currentPath, 
+                DBID parentDirId,
+                DBID pathId);
+
             void SyncDelete(const std::vector<DBID>& paths);
             void SyncCleanup();
             void ProcessAddRemoveQueue();

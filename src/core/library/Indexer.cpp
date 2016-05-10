@@ -56,13 +56,25 @@ static const std::string TAG = "Indexer";
 
 using namespace musik::core;
 
+static std::string normalizeDir(std::string path) {
+    path = boost::filesystem::path(path).make_preferred().string();
+
+    std::string sep(1, boost::filesystem::path::preferred_separator);
+    if (path.substr(path.size() - 1, 1) != sep) {
+        path += sep;
+    }
+
+    return path;
+}
+
+static std::string normalizePath(const std::string& path) {
+    return boost::filesystem::path(path).make_preferred().string();
+}
+
 Indexer::Indexer() 
 : thread(NULL)
-, overallProgress(0)
-, currentProgress(0)
 , status(0)
 , restart(false)
-, nofFiles(0)
 , filesIndexed(0)
 , filesSaved(0) {
 }
@@ -80,27 +92,6 @@ Indexer::~Indexer(){
         delete this->thread;
         this->thread = NULL;
     }
-}
-
-//////////////////////////////////////////
-///\brief
-///Get the current status (text)
-//////////////////////////////////////////
-std::string Indexer::GetStatus() {
-    boost::mutex::scoped_lock lock(this->progressMutex);
-    
-    switch (status) {
-    case 1: return boost::str(boost::format("counting... %1%") % this->nofFiles);
-    case 2: return boost::str(boost::format("indexing... %.2f") % (this->overallProgress * 100)) + "%";
-    case 3: return boost::str(boost::format("removing... %.2f") % (this->overallProgress * 100)) + "%";
-    case 4: return "cleaning...";
-    case 5: return "optimizing...";
-    case 6: return boost::str(boost::format("running analyzers...: %.2f%% (current %.1f%%)")
-        % (100.0 * this->overallProgress / (double) this->nofFiles)
-        % (this->currentProgress * 100.0));
-    }
-
-    return "doing something... (unknown)";
 }
 
 //////////////////////////////////////////
@@ -140,17 +131,10 @@ bool Indexer::Restarted() {
 ///\remarks
 ///If the path already exists it will not be added.
 //////////////////////////////////////////
-void Indexer::AddPath(std::string path) {
-    boost::filesystem::path fsPath(path);
-    path = fsPath.string(); /* canonicalize */
-
-    if (path.substr(path.size() -1, 1) != "/") {
-        path += "/";
-    }
-
+void Indexer::AddPath(const std::string& path) {
     Indexer::AddRemoveContext context;
     context.add = true;
-    context.path = path;
+    context.path = normalizeDir(path);
 
     {
         boost::mutex::scoped_lock lock(this->exitMutex);
@@ -167,11 +151,10 @@ void Indexer::AddPath(std::string path) {
 ///\param sPath
 ///Path to remove
 //////////////////////////////////////////
-void Indexer::RemovePath(std::string path) {
-
+void Indexer::RemovePath(const std::string& path) {
     Indexer::AddRemoveContext context;
     context.add = false;
-    context.path = path;
+    context.path = normalizeDir(path);
 
     {
         boost::mutex::scoped_lock lock(this->exitMutex);
@@ -195,7 +178,6 @@ void Indexer::Synchronize() {
 
     {
         boost::mutex::scoped_lock lock(this->progressMutex);
-        this->nofFiles = 0;
         this->filesIndexed = 0;
     }
 
@@ -209,7 +191,7 @@ void Indexer::Synchronize() {
     {
         db::Statement stmt("SELECT id, path FROM paths", this->dbConnection);
 
-        while (stmt.Step()==db::Row) {
+        while (stmt.Step() == db::Row) {
             try {
                 DBID id = stmt.ColumnInt(0);
                 std::string path = stmt.ColumnText(1);
@@ -225,31 +207,17 @@ void Indexer::Synchronize() {
         }
     }
 
-    /* count the files that need to be processed */
-
- //   {
- //       boost::mutex::scoped_lock lock(this->progressMutex);
- //       this->status = 1;
- //       this->overallProgress = 0.0;
- //   }
-
-	//for(std::size_t i = 0; i < paths.size(); ++i){
- //       std::string path = paths[i];
- //       this->CountFiles(path);
- //   }
-
     /* add new files  */
 
     {
         boost::mutex::scoped_lock lock(this->progressMutex);
         this->status = 2;
-        this->overallProgress = 0.0;
         this->filesSaved = 0;
     }
     
     for(std::size_t i = 0; i < paths.size(); ++i) {
         std::string path = paths[i];
-        this->SyncDirectory(path ,0, pathIds[i], path);
+        this->SyncDirectory(path, path ,0, pathIds[i]);
     }
 
     /* remove undesired entries from db (files themselves will remain) */
@@ -259,7 +227,6 @@ void Indexer::Synchronize() {
     {
         boost::mutex::scoped_lock lock(this->progressMutex);
         this->status = 3;
-        this->overallProgress = 0.0;
     }
 
     if (!this->Restarted() && !this->Exited()) {
@@ -272,7 +239,6 @@ void Indexer::Synchronize() {
     
     {
         boost::mutex::scoped_lock lock(this->progressMutex);
-        this->overallProgress = 0.0;
         this->status = 4;
     }
 
@@ -287,8 +253,7 @@ void Indexer::Synchronize() {
 
     {
        boost::mutex::scoped_lock lock(this->progressMutex);
-        this->overallProgress = 0.0;
-        this->status = 5;
+       this->status = 5;
     }
 
     if(!this->Restarted() && !this->Exited()){
@@ -309,37 +274,6 @@ void Indexer::Synchronize() {
 
 //////////////////////////////////////////
 ///\brief
-///Counts the number of files to synchronize
-///
-///\param dir
-///Folder to count files in.
-//////////////////////////////////////////
-void Indexer::CountFiles(const std::string &dir) {
-    if (!this->Exited() && !this->Restarted()) {
-        boost::filesystem::path path(dir);
-
-        try{
-            boost::filesystem::directory_iterator invalidFile;
-            boost::filesystem::directory_iterator file(path);
-
-            for ( ; file != invalidFile; ++file) {
-                if (is_directory(file->status())) {
-                    this->CountFiles(file->path().string());
-                }
-                else {
-                    boost::mutex::scoped_lock lock(this->progressMutex);
-                    this->nofFiles++;
-                }
-            }
-        }
-        catch(...) {
-        }
-    }
-
-}
-
-//////////////////////////////////////////
-///\brief
 ///Reads all tracks in a folder
 ///
 ///\param dir
@@ -355,19 +289,19 @@ void Indexer::CountFiles(const std::string &dir) {
 //////////////////////////////////////////
 
 void Indexer::SyncDirectory(
-    const std::string &inDir,
+    const std::string &syncRoot,
+    const std::string &currentPath,
     DBID parentDirId,
-    DBID pathId, 
-    std::string &syncPath)
+    DBID pathId)
 {
-    if(this->Exited() || this->Restarted()) {
+    if (this->Exited() || this->Restarted()) {
         return;
     }
 
-    boost::filesystem::path path(inDir);
-    std::string dir = path.string(); /* canonicalize slash*/
+    std::string normalizedSyncRoot = normalizeDir(syncRoot);
+    std::string normalizedCurrentPath = normalizeDir(currentPath);
+    std::string leaf = boost::filesystem::path(currentPath).leaf().string(); /* trailing subdir in currentPath */
 
-    std::string leaf(path.leaf().string());
     DBID dirId = 0;
 
     /* get relative folder id */
@@ -378,17 +312,15 @@ void Indexer::SyncDirectory(
         stmt.BindInt(1, pathId);
         stmt.BindInt(2, parentDirId);
 
-        if(stmt.Step() == db::Row) {
+        if (stmt.Step() == db::Row) {
             dirId = stmt.ColumnInt(0);
         }
     }
 
-    boost::thread::yield();
-
     /* no ID yet? needs to be inserted... */
 
     if (dirId == 0) {
-        std::string relativePath(dir.substr(syncPath.size()));
+        std::string relativePath(normalizedCurrentPath.substr(normalizedSyncRoot.size()));
 
         db::CachedStatement stmt("INSERT INTO folders (name, path_id, parent_id, relative_path) VALUES(?,?,?,?)", this->dbConnection);
         stmt.BindText(0, leaf);
@@ -403,28 +335,24 @@ void Indexer::SyncDirectory(
         dirId = this->dbConnection.LastInsertedId();
     }
 
-    boost::thread::yield(); /* whistle... */
-
     /* start recursive filesystem scan */
 
     try { /* boost::filesystem may throw */
+
+        /* for each file in the current path... */
+
+        boost::filesystem::path path(currentPath);
         boost::filesystem::directory_iterator end;
         boost::filesystem::directory_iterator file(path);
-        for( ; file != end && !this->Exited() && !this->Restarted();++file) {
+
+        for( ; file != end && !this->Exited() && !this->Restarted(); file++) {
             if (is_directory(file->status())) {
                 /* recursion here */
                 musik::debug::info(TAG, "scanning " + file->path().string());
-                this->SyncDirectory(file->path().string(), dirId, pathId, syncPath);
+                this->SyncDirectory(syncRoot, file->path().string(), dirId, pathId);
             }
             else {
                 ++this->filesIndexed;
-
-                /* update overallProgress every so often... */
-
-                if (this->filesIndexed % 25 == 0) {
-                    boost::mutex::scoped_lock lock(this->progressMutex);
-                    this->overallProgress = (double) this->filesIndexed / (double)this->nofFiles;
-                }
 
                 musik::core::IndexerTrack track(0);
 
@@ -456,8 +384,6 @@ void Indexer::SyncDirectory(
                     }
                 }
             }
-
-            boost::thread::yield();
         }
     }
     catch(...) {
@@ -646,13 +572,6 @@ void Indexer::SyncDelete(const std::vector<DBID>& paths) {
         stmtSyncPath.Reset();
 
         while(stmt.Step() == db::Row && !this->Exited() && !this->Restarted()) {
-            {
-                boost::mutex::scoped_lock lock(this->progressMutex);
-                if (songs > 0) {
-                    this->overallProgress = 0.2+0.8*(double)count/(double)(songs);
-                }
-            }
-
             bool remove = true;
             std::string file = stmt.ColumnText(1);
 
@@ -732,20 +651,14 @@ void Indexer::SyncCleanup() {
 ///\brief
 ///Get a vector with all sync paths
 //////////////////////////////////////////
-std::vector<std::string> Indexer::GetPaths() {
-    std::vector<std::string> paths;
-
-    db::Connection tempDB;
-
-    tempDB.Open(this->database.c_str());
-
-    db::Statement stmt("SELECT path FROM paths ORDER BY id", tempDB);
+void Indexer::GetPaths(std::vector<std::string>& paths) {
+    db::Connection connection;
+    connection.Open(this->database.c_str());
+    db::Statement stmt("SELECT path FROM paths ORDER BY id", connection);
 
     while (stmt.Step() == db::Row) {
         paths.push_back(stmt.ColumnText(0));
     }
-
-    return paths;
 }
 
 static int optimize(
@@ -888,17 +801,7 @@ void Indexer::RunAnalyzers() {
 
     {
         boost::mutex::scoped_lock lock(this->progressMutex);
-        this->overallProgress = 0;
-        this->currentProgress = 0;
-        this->nofFiles = 0;
         this->status = 6;
-    }
-
-    /* figure out how many files we need to process */
-
-    db::Statement totalTracks("SELECT count(*) FROM tracks", this->dbConnection);
-    if (totalTracks.Step() == db::Row){
-        this->nofFiles = totalTracks.ColumnInt(0);
     }
 
     /* for each track... */
@@ -942,11 +845,6 @@ void Indexer::RunAnalyzers() {
                         audio::BufferPtr buffer;
                         
                         while ((buffer = stream->GetNextProcessedOutputBuffer()) && !runningAnalyzers.empty()) {
-                            {
-                                boost::mutex::scoped_lock lock(this->progressMutex);
-                                this->currentProgress = stream->DecoderProgress();
-                            }
-
                             PluginVector::iterator plugin = runningAnalyzers.begin();
                             while(plugin != runningAnalyzers.end()) {
                                 if ((*plugin)->Analyze(&track, buffer.get())) {
@@ -976,11 +874,6 @@ void Indexer::RunAnalyzers() {
                         if(successPlugins>0) {
                             track.Save(this->dbConnection, this->libraryPath,folderId);
                         }
-
-                        {
-                            boost::mutex::scoped_lock lock(this->progressMutex);
-                            this->currentProgress = 0;
-                        }
                     }
                 }
             }
@@ -988,11 +881,6 @@ void Indexer::RunAnalyzers() {
 
         if (this->Exited() || this->Restarted()){
             return;
-        }
-
-        {
-            boost::mutex::scoped_lock lock(this->progressMutex);
-            this->overallProgress++;
         }
 
         getNextTrack.BindInt(0, trackId);

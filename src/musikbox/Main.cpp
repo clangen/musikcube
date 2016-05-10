@@ -79,7 +79,6 @@ int main(int argc, char* argv[])
     start_color();
     use_default_colors();
     refresh();
-    curs_set(0);
 
 #ifdef __PDCURSES__
     PDC_set_title("musikbox ♫");
@@ -96,28 +95,51 @@ int main(int argc, char* argv[])
         CommandWindow command(tp, output);
         TransportWindow transport(tp);
 
-        std::vector<BorderedWindow*> order;
+        std::vector<IWindow*> order;
         order.push_back(&command);
         order.push_back(&logs);
         order.push_back(&output);
 
+        /* set the initial state: select the command window and get
+        the focused state painting properly. it will be done automatically
+        every time after this */
+
         size_t index = 0;
-        BorderedWindow *focused = order.at(index);
-        focused->SetBorderColor(BOX_COLOR_RED_ON_BLACK);
+        IWindow *focused = order.at(index);
+        ScrollableWindow *scrollable = NULL;
+        IInput *input = &command;
+
+        focused->SetFrameColor(BOX_COLOR_RED_ON_BLACK);
+        curs_set(1);
+        input->Focus();
+        wtimeout(focused->GetContent(), 500);
+
+        bool disable = false;
 
         int ch;
         timeout(500);
-        while (ch = getch()) {
-            ScrollableWindow *scrollable = dynamic_cast<ScrollableWindow*>(focused);
-            IInput *input = dynamic_cast<IInput*>(focused);
+        bool quit = false;
+        while (!quit) {
+            /* if the focused item is an IInput, then get characters from it,
+            so it can draw a pretty cursor if it wants */
+            ch = (input != NULL) ? wgetch(focused->GetContent()) : getch();
 
             if (ch == -1) { /* timeout */
-                logs.Update();
+                if (!disable) {
+                    logs.Update();
+                }
                 transport.Repaint();
                 resources.Repaint();
             }
+            else if (ch == 'f') {
+                disable = true;
+            }
             else if (ch == 9) { /* tab */
-                focused->SetBorderColor(BOX_COLOR_WHITE_ON_BLACK);
+                if (input != NULL) {
+                    wtimeout(focused->GetContent(), 0);
+                }
+
+                focused->SetFrameColor(BOX_COLOR_WHITE_ON_BLACK);
 
                 index++;
                 if (index >= order.size()) {
@@ -125,7 +147,19 @@ int main(int argc, char* argv[])
                 }
 
                 focused = order.at(index);
-                focused->SetBorderColor(BOX_COLOR_RED_ON_BLACK);
+                focused->SetFrameColor(BOX_COLOR_RED_ON_BLACK);
+
+                scrollable = dynamic_cast<ScrollableWindow*>(focused);
+                input = dynamic_cast<IInput*>(focused);
+
+                if (input != NULL) {
+                    curs_set(1);
+                    input->Focus();
+                    wtimeout(focused->GetContent(), 500);
+                }
+                else {
+                    curs_set(0);
+                }
             }
             else if (ch >= KEY_F(0) && ch <= KEY_F(12)) {
             }

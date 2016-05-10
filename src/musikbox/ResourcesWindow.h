@@ -1,10 +1,10 @@
 #pragma once
 
 #include "curses_config.h"
-#include "BorderedWindow.h"
+#include "Window.h"
 #include "SystemInfo.h"
 
-class ResourcesWindow : public BorderedWindow {
+class ResourcesWindow : public Window {
     public:
         ResourcesWindow();
         virtual ~ResourcesWindow();

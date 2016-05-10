@@ -4,9 +4,6 @@
     <ClCompile Include="TransportEvents.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="stdafx.cpp" />
-    <ClCompile Include="BorderedWindow.cpp">
-      <Filter>curses</Filter>
-    </ClCompile>
     <ClCompile Include="Colors.cpp">
       <Filter>curses</Filter>
     </ClCompile>
@@ -43,13 +40,13 @@
     <ClCompile Include="IInput.h">
       <Filter>curses</Filter>
     </ClCompile>
+    <ClCompile Include="Window.cpp">
+      <Filter>curses</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TransportEvents.h" />
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="BorderedWindow.h">
-      <Filter>curses</Filter>
-    </ClInclude>
     <ClInclude Include="Colors.h">
       <Filter>curses</Filter>
     </ClInclude>
@@ -82,6 +79,15 @@
     </ClInclude>
     <ClInclude Include="TransportWindow.h">
       <Filter>windows</Filter>
+    </ClInclude>
+    <ClInclude Include="ILayout.h">
+      <Filter>curses</Filter>
+    </ClInclude>
+    <ClInclude Include="IWindow.h">
+      <Filter>curses</Filter>
+    </ClInclude>
+    <ClInclude Include="Window.h">
+      <Filter>curses</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

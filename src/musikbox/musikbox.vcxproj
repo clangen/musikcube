@@ -115,7 +115,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="BorderedWindow.cpp" />
+    <ClCompile Include="Window.cpp" />
     <ClCompile Include="Colors.cpp" />
     <ClCompile Include="CommandWindow.cpp" />
     <ClCompile Include="IInput.h" />
@@ -136,10 +136,12 @@
     <ClCompile Include="TransportWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BorderedWindow.h" />
+    <ClInclude Include="Window.h" />
     <ClInclude Include="Colors.h" />
     <ClInclude Include="CommandWindow.h" />
     <ClInclude Include="curses_config.h" />
+    <ClInclude Include="ILayout.h" />
+    <ClInclude Include="IWindow.h" />
     <ClInclude Include="LogWindow.h" />
     <ClInclude Include="OutputWindow.h" />
     <ClInclude Include="ResourcesWindow.h" />

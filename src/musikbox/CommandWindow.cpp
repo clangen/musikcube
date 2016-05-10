@@ -46,15 +46,19 @@ CommandWindow::~CommandWindow() {
     delete[] buffer;
 }
 
+void CommandWindow::Focus() {
+    wmove(this->GetContent(), 0, bufferPosition);
+}
+
 void CommandWindow::WriteChar(int ch) {
     if (bufferPosition >= MAX_SIZE) {
         return;
     }
 
-    waddch(this->GetContents(), ch);
+    waddch(this->GetContent(), ch);
 
     if (ch == 8) { /* backspace */
-        wdelch(this->GetContents());
+        wdelch(this->GetContent());
 
         if (bufferPosition > 0) {
             --bufferPosition;
@@ -72,7 +76,7 @@ void CommandWindow::WriteChar(int ch) {
             }
         }
 
-        wclear(this->GetContents());
+        wclear(this->GetContent());
         this->bufferPosition = 0;
     }
     else {
@@ -144,8 +148,8 @@ bool CommandWindow::ProcessCommand(const std::string& cmd) {
         library->Indexer()->RemovePath(path);
     }
     else if (name == "lsdirs") {
-        /* should not be returning a vector, should be pass by ref */
-        std::vector<std::string> paths = library->Indexer()->GetPaths();
+        std::vector<std::string> paths;
+        library->Indexer()->GetPaths(paths);
         this->output->WriteLine("paths:");
         for (size_t i = 0; i < paths.size(); i++) {
             this->output->WriteLine("  " + paths.at(i));

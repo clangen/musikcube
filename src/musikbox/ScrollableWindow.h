@@ -1,10 +1,10 @@
 #pragma once
 
 #include "curses_config.h"
-#include "BorderedWindow.h"
+#include "Window.h"
 #include "IScrollAdapter.h"
 
-class ScrollableWindow : public BorderedWindow {
+class ScrollableWindow : public Window {
     public:
         ScrollableWindow();
         ~ScrollableWindow();
