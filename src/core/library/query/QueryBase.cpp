@@ -37,17 +37,19 @@
 #include "pch.hpp"
 
 #include <core/library/query/QueryBase.h>
-#include <core/library/LibraryBase.h>
+#include <core/library/LocalLibrary.h>
+#include <boost/atomic.hpp>
 
 using namespace musik::core;
 using namespace musik::core::query;
+
+static boost::atomic<int> nextId(0);
 
 QueryBase::QueryBase()
 : status(0)
 , options(0)
 , queryId(0) {
-    static unsigned int uniqueQueryId = 0;
-    this->queryId = uniqueQueryId++;
+    this->queryId = nextId++;
 }
 
 QueryBase::~QueryBase() {
@@ -55,6 +57,21 @@ QueryBase::~QueryBase() {
 
 std::string QueryBase::Name() {
     return "QueryBase";
+}
+
+bool QueryBase::Run(db::Connection &db) {
+    this->SetStatus(Running);
+    try {
+        if (OnRun(db)) {
+            this->SetStatus(Finished);
+            return true;
+        }
+    }
+    catch (...) {
+    }
+
+    this->SetStatus(Failed);
+    return false;
 }
 
 int QueryBase::GetStatus() {
@@ -67,7 +84,7 @@ void QueryBase::SetStatus(int status) {
     this->status = status;
 }
 
-int QueryBase::GetQueryId() {
+int QueryBase::GetId() {
     boost::mutex::scoped_lock lock(this->stateMutex);
     return this->queryId;
 }

@@ -37,95 +37,342 @@
 #include "pch.hpp"
 
 #include <core/library/LocalLibrary.h>
+#include <core/config.h>
 #include <core/library/query/QueryBase.h>
+#include <core/support/Common.h>
 #include <core/support/Preferences.h>
-
-#include <boost/bind.hpp>
+#include <core/library/Indexer.h>
 
 using namespace musik::core;
 using namespace musik::core::library;
 
-//////////////////////////////////////////
-///\brief
-///Constructor.
-///
-///The constructor will not start the Library.
-///
-///\see
-///Startup
-//////////////////////////////////////////
-LocalLibrary::LocalLibrary(std::string name,int id)
-: LibraryBase(name, id) {
-}
-
-//////////////////////////////////////////
-///\brief
-///Create a LocalLibrary library
-//////////////////////////////////////////
-LibraryPtr LocalLibrary::Create(std::string name,int id) {
+LibraryPtr LocalLibrary::Create(std::string name, int id) {
     LibraryPtr lib(new LocalLibrary(name, id));
     return lib;
 }
 
-//////////////////////////////////////////
-///\brief
-///Destructor that exits and joins all threads
-//////////////////////////////////////////
+LocalLibrary::LocalLibrary(std::string name,int id)
+: name(name)
+, id(id)
+, exit(false) {
+    this->identifier = boost::lexical_cast<std::string>(id);
+
+    Preferences prefs("Library");
+
+    this->db.Open(
+        this->GetDatabaseFilename().c_str(), 
+        0, 
+        prefs.GetInt("DatabaseCache", 
+        4096));
+
+    LocalLibrary::CreateDatabase(this->db);
+
+    this->indexer = new core::Indexer(
+        this->GetLibraryDirectory(), 
+        this->GetDatabaseFilename());
+
+    this->thread = new boost::thread(boost::bind(&LocalLibrary::ThreadProc, this));
+}
+
 LocalLibrary::~LocalLibrary() {
     this->Exit();
     this->thread->join();
+    this->threads.join_all();
     delete this->thread;
+    delete this->indexer;
+}
+
+int LocalLibrary::Id() {
+    return this->id;
 }
 
 //////////////////////////////////////////
 ///\brief
-///Startup the library threads.
+///Name of the library
+//////////////////////////////////////////
+const std::string& LocalLibrary::Name() {
+    return this->name;
+}
+
+//////////////////////////////////////////
+///\brief
+///Get the directory-location of the library where you may store extra files.
 ///
 ///\returns
-///True if successfully started. This should always be true. Nothing else is expected.
+///String with the path
 ///
-///Start up the Library like this:
-///\code
-/// // Create a library
-/// musik::core::library::LocalLibrary library;
-/// // Start the library (and indexer that is included)
-/// library.Startup();
-/// // The library is now ready to receive queries
-///\endcode
+///The library directory is a directory where you may store
+///the librarys database and other files like thumbnail cache.
+///In a win32 environment this path will be located in the users
+///$APPDATA/mC2/"identifier"/
+///where the identifier is set in the library itself.
+///
+///\remarks
+///If the directory does not exist, this method will create it.
 //////////////////////////////////////////
-bool LocalLibrary::Startup() {
-    this->thread = new boost::thread(boost::bind(&LocalLibrary::ThreadLoop, this));
-    return true;
+std::string LocalLibrary::GetLibraryDirectory() {
+    std::string directory(musik::core::GetDataDirectory());
+
+    if (!this->identifier.empty()) {
+        directory.append(this->identifier + "/" );
+    }
+
+    boost::filesystem::path dir(directory);
+    if(!boost::filesystem::exists(dir)){
+        boost::filesystem::create_directories(dir);
+    }
+
+    directory = dir.string();
+
+    return directory;
+}
+
+std::string LocalLibrary::GetDatabaseFilename() {
+    return this->GetLibraryDirectory() + "musik.db";
+}
+
+int LocalLibrary::Enqueue(QueryPtr query, unsigned int options) {
+    boost::recursive_mutex::scoped_lock l(this->mutex);
+
+    queryQueue.push_back(query);
+    queueCondition.notify_all();
+
+    return query->GetId();
+}
+
+bool LocalLibrary::Exited() {
+    boost::recursive_mutex::scoped_lock lock(this->mutex);
+    return this->exit;
+}
+
+void LocalLibrary::Exit() {
+    {
+        boost::recursive_mutex::scoped_lock lock(this->mutex);
+        this->exit = true;
+    }
+
+    /* kick sleeping threads back to the top of the loop */
+    this->queueCondition.notify_all();
+}
+
+QueryPtr LocalLibrary::GetNextQuery() {
+    if (queryQueue.size()) {
+        QueryPtr front = queryQueue.front();
+        queryQueue.pop_front();
+        return front;
+    }
+
+    return QueryPtr();
+}
+
+void LocalLibrary::ThreadProc() {
+    while (!this->Exited()) {
+        QueryPtr query;
+
+        {
+            boost::recursive_mutex::scoped_lock lock(this->mutex);
+            query = GetNextQuery();
+
+            while (!query && !this->Exited()) {
+                this->queueCondition.wait(lock);
+                query = GetNextQuery();
+            }
+        }
+
+        if (query) {
+            query->Run(this->db);
+            this->QueryCompleted(query);
+            query.reset();
+        }
+    }
+}
+
+musik::core::IIndexer* LocalLibrary::Indexer() {
+    return this->indexer;
 }
 
 //////////////////////////////////////////
 ///\brief
-///Main loop the library thread is running in.
-///
-///The loop will run until Exit() has been called.
+///Helper method to determin what metakeys are "static"
 //////////////////////////////////////////
-void LocalLibrary::ThreadLoop() {
-    Preferences prefs("Library");
+bool LocalLibrary::IsStaticMetaKey(std::string &metakey){
+    static std::set<std::string> staticMetaKeys;
 
-    std::string database(this->GetDatabasePath());
-    this->db.Open(database.c_str(), 0, prefs.GetInt("DatabaseCache", 4096));
+    if (staticMetaKeys.empty()) {
+        staticMetaKeys.insert("track");
+        staticMetaKeys.insert("bpm");
+        staticMetaKeys.insert("duration");
+        staticMetaKeys.insert("filesize");
+        staticMetaKeys.insert("year");
+        staticMetaKeys.insert("title");
+        staticMetaKeys.insert("filename");
+        staticMetaKeys.insert("filetime");
+    }
 
-    LibraryBase::CreateDatabase(this->db);
-
-    /* start the indexer running */
-
-    this->indexer.database = database;
-    this->indexer.Startup(this->GetLibraryDirectory());
-
-    //while (!this->Exited()) {
-
-    //}
+    return staticMetaKeys.find(metakey) != staticMetaKeys.end();
 }
 
 //////////////////////////////////////////
 ///\brief
-///Get a pointer to the librarys Indexer (NULL if none)
+///Helper method to determine what metakeys that have a special many to one relation
 //////////////////////////////////////////
-musik::core::Indexer* LocalLibrary::Indexer() {
-    return &this->indexer;
+bool LocalLibrary::IsSpecialMTOMetaKey(std::string &metakey){
+    static std::set<std::string> specialMTOMetaKeys;
+
+    if (specialMTOMetaKeys.empty()) {
+        specialMTOMetaKeys.insert("album");
+        specialMTOMetaKeys.insert("visual_genre");
+        specialMTOMetaKeys.insert("visual_artist");
+        specialMTOMetaKeys.insert("folder");
+    }
+
+    return specialMTOMetaKeys.find(metakey)!=specialMTOMetaKeys.end();
+}
+
+//////////////////////////////////////////
+///\brief
+///Helper method to determine what metakeys that have a special many to meny relation
+//////////////////////////////////////////
+bool LocalLibrary::IsSpecialMTMMetaKey(std::string &metakey) {
+    static std::set<std::string> specialMTMMetaKeys;
+
+    if (specialMTMMetaKeys.empty()) {
+        specialMTMMetaKeys.insert("artist");
+        specialMTMMetaKeys.insert("genre");
+    }
+
+    return specialMTMMetaKeys.find(metakey) != specialMTMMetaKeys.end();
+}
+
+//////////////////////////////////////////
+///\brief
+///Create all tables, indexes, etc in the database.
+///
+///This will assume that the database has been initialized.
+//////////////////////////////////////////
+void LocalLibrary::CreateDatabase(db::Connection &db){
+    // Create the tracks-table
+    db.Execute("CREATE TABLE IF NOT EXISTS tracks ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "track INTEGER DEFAULT 0,"
+            "bpm REAL DEFAULT 0,"
+            "duration INTEGER DEFAULT 0,"
+            "filesize INTEGER DEFAULT 0,"
+            "year INTEGER DEFAULT 0,"
+            "visual_genre_id INTEGER DEFAULT 0,"
+            "visual_artist_id INTEGER DEFAULT 0,"
+            "album_id INTEGER DEFAULT 0,"
+            "folder_id INTEGER DEFAULT 0,"
+            "title TEXT default '',"
+            "filename TEXT default '',"
+            "filetime INTEGER DEFAULT 0,"
+            "thumbnail_id INTEGER DEFAULT 0,"
+            "sort_order1 INTEGER)");
+
+    // Create the genres-table
+    db.Execute("CREATE TABLE IF NOT EXISTS genres ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "name TEXT default '',"
+            "aggregated INTEGER DEFAULT 0,"
+            "sort_order INTEGER DEFAULT 0)");
+
+    db.Execute("CREATE TABLE IF NOT EXISTS track_genres ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "track_id INTEGER DEFAULT 0,"
+            "genre_id INTEGER DEFAULT 0)");
+
+    // Create the artists-table
+    db.Execute("CREATE TABLE IF NOT EXISTS artists ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "name TEXT default '',"
+            "aggregated INTEGER DEFAULT 0,"
+            "sort_order INTEGER DEFAULT 0)");
+
+    db.Execute("CREATE TABLE IF NOT EXISTS track_artists ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "track_id INTEGER DEFAULT 0,"
+            "artist_id INTEGER DEFAULT 0)");
+
+    // Create the meta-tables
+    db.Execute("CREATE TABLE IF NOT EXISTS meta_keys ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "name TEXT)");
+
+    db.Execute("CREATE TABLE IF NOT EXISTS meta_values ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "meta_key_id INTEGER DEFAULT 0,"
+            "sort_order INTEGER DEFAULT 0,"
+            "content TEXT)");
+
+    db.Execute("CREATE TABLE IF NOT EXISTS track_meta ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "track_id INTEGER DEFAULT 0,"
+            "meta_value_id INTEGER DEFAULT 0)");
+
+    // Create the albums-table
+    db.Execute("CREATE TABLE IF NOT EXISTS albums ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "name TEXT default '',"
+            "thumbnail_id INTEGER default 0,"
+            "sort_order INTEGER DEFAULT 0)");
+
+    // Create the paths-table
+    db.Execute("CREATE TABLE IF NOT EXISTS paths ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "path TEXT default ''"
+            ")");
+
+    // Create the folders-table
+    db.Execute("CREATE TABLE IF NOT EXISTS folders ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "name TEXT default '',"
+            "relative_path TEXT default '',"
+            "parent_id INTEGER DEFAULT 0,"
+            "path_id INTEGER DEFAULT 0"
+            ")");
+
+    // Create the folders-table
+    db.Execute("CREATE TABLE IF NOT EXISTS thumbnails ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "filename TEXT default '',"
+            "filesize INTEGER DEFAULT 0,"
+            "checksum INTEGER DEFAULT 0"
+            ")");
+
+    // Create the playlists-table
+    db.Execute("CREATE TABLE IF NOT EXISTS playlists ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "name TEXT default '',"
+            "user_id INTEGER default 0"
+            ")");
+    // Create the playlists-table
+    db.Execute("CREATE TABLE IF NOT EXISTS playlist_tracks ("
+            "track_id INTEGER DEFAULT 0,"
+            "playlist_id INTEGER DEFAULT 0,"
+            "sort_order INTEGER DEFAULT 0"
+            ")");
+
+    // INDEXES
+    db.Execute("CREATE UNIQUE INDEX IF NOT EXISTS users_index ON users (login)");
+    db.Execute("CREATE UNIQUE INDEX IF NOT EXISTS folders_index ON folders (name,parent_id,path_id)");
+    db.Execute("CREATE UNIQUE INDEX IF NOT EXISTS paths_index ON paths (path)");
+    db.Execute("CREATE INDEX IF NOT EXISTS genre_index ON genres (sort_order)");
+    db.Execute("CREATE INDEX IF NOT EXISTS artist_index ON artists (sort_order)");
+    db.Execute("CREATE INDEX IF NOT EXISTS album_index ON albums (sort_order)");
+    db.Execute("CREATE INDEX IF NOT EXISTS track_index1 ON tracks (album_id,sort_order1)");
+    db.Execute("CREATE INDEX IF NOT EXISTS track_index7 ON tracks (folder_id)");
+    db.Execute("CREATE INDEX IF NOT EXISTS thumbnail_index ON thumbnails (filesize)");
+
+    db.Execute("CREATE INDEX IF NOT EXISTS trackgenre_index1 ON track_genres (track_id,genre_id)");
+    db.Execute("CREATE INDEX IF NOT EXISTS trackgenre_index2 ON track_genres (genre_id,track_id)");
+    db.Execute("CREATE INDEX IF NOT EXISTS trackartist_index1 ON track_artists (track_id,artist_id)");
+    db.Execute("CREATE INDEX IF NOT EXISTS trackartist_index2 ON track_artists (artist_id,track_id)");
+    db.Execute("CREATE INDEX IF NOT EXISTS trackmeta_index1 ON track_meta (track_id,meta_value_id)");
+    db.Execute("CREATE INDEX IF NOT EXISTS trackmeta_index2 ON track_meta (meta_value_id,track_id)");
+    db.Execute("CREATE INDEX IF NOT EXISTS metakey_index1 ON meta_keys (name)");
+    db.Execute("CREATE INDEX IF NOT EXISTS metavalues_index1 ON meta_values (meta_key_id)");
+
+    db.Execute("CREATE INDEX IF NOT EXISTS playlist_index ON playlist_tracks (playlist_id,sort_order)");
+
+    db.Analyze();
 }

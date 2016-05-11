@@ -88,12 +88,6 @@
     <ClCompile Include="library\Indexer.cpp">
       <Filter>src\library</Filter>
     </ClCompile>
-    <ClCompile Include="library\LibraryBase.cpp">
-      <Filter>src\library</Filter>
-    </ClCompile>
-    <ClCompile Include="library\LocalLibrary.cpp">
-      <Filter>src\library</Filter>
-    </ClCompile>
     <ClCompile Include="library\track\IndexerTrack.cpp">
       <Filter>src\library\track</Filter>
     </ClCompile>
@@ -126,6 +120,9 @@
     </ClCompile>
     <ClCompile Include="library\track\InMemoryTrack.cpp">
       <Filter>src\library\track</Filter>
+    </ClCompile>
+    <ClCompile Include="library\LocalLibrary.cpp">
+      <Filter>src\library</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -207,12 +204,6 @@
     <ClInclude Include="library\Indexer.h">
       <Filter>src\library</Filter>
     </ClInclude>
-    <ClInclude Include="library\LibraryBase.h">
-      <Filter>src\library</Filter>
-    </ClInclude>
-    <ClInclude Include="library\LocalLibrary.h">
-      <Filter>src\library</Filter>
-    </ClInclude>
     <ClInclude Include="library\track\IndexerTrack.h">
       <Filter>src\library\track</Filter>
     </ClInclude>
@@ -260,6 +251,18 @@
     </ClInclude>
     <ClInclude Include="library\track\InMemoryTrack.h">
       <Filter>src\library\track</Filter>
+    </ClInclude>
+    <ClInclude Include="library\LocalLibrary.h">
+      <Filter>src\library</Filter>
+    </ClInclude>
+    <ClInclude Include="library\ILibrary.h">
+      <Filter>src\library</Filter>
+    </ClInclude>
+    <ClInclude Include="library\IIndexer.h">
+      <Filter>src\library</Filter>
+    </ClInclude>
+    <ClInclude Include="library\IQuery.h">
+      <Filter>src\library</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

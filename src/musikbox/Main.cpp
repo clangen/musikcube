@@ -39,6 +39,7 @@
 #include "OutputWindow.h"
 #include "TransportWindow.h"
 #include "ResourcesWindow.h"
+#include "MainLayout.h"
 #include "IInput.h"
 
 #include <boost/locale.hpp>
@@ -48,6 +49,8 @@
 
 #ifdef WIN32
 #undef MOUSE_MOVED
+
+#define IDLE_TIMEOUT_MS 500
 
 int _main(int argc, _TCHAR* argv[]);
 
@@ -85,77 +88,48 @@ int main(int argc, char* argv[])
 #endif
 
     {
+        Colors::Init();
+
         Transport tp;
         tp.SetVolume(0.01);
 
-        Colors::Init();
-        LogWindow logs;
-        OutputWindow output;
-        ResourcesWindow resources;
-        CommandWindow command(tp, output);
-        TransportWindow transport(tp);
-
-        std::vector<IWindow*> order;
-        order.push_back(&command);
-        order.push_back(&logs);
-        order.push_back(&output);
-
-        /* set the initial state: select the command window and get
-        the focused state painting properly. it will be done automatically
-        every time after this */
-
-        size_t index = 0;
-        IWindow *focused = order.at(index);
-        ScrollableWindow *scrollable = NULL;
-        IInput *input = &command;
-
-        focused->SetFrameColor(BOX_COLOR_RED_ON_BLACK);
-        curs_set(1);
-        input->Focus();
-        wtimeout(focused->GetContent(), 500);
-
-        bool disable = false;
+        MainLayout layout(tp);
 
         int ch;
-        timeout(500);
+        timeout(IDLE_TIMEOUT_MS);
         bool quit = false;
+
+        IWindow* focused = layout.GetFocus();
+        IInput* input = dynamic_cast<IInput*>(focused);
+        IScrollable* scrollable = dynamic_cast<IScrollable*>(focused);
+
+        if (input != NULL) {
+            curs_set(1);
+            wtimeout(focused->GetContent(), IDLE_TIMEOUT_MS);
+        }
+
         while (!quit) {
             /* if the focused item is an IInput, then get characters from it,
             so it can draw a pretty cursor if it wants */
             ch = (input != NULL) ? wgetch(focused->GetContent()) : getch();
 
             if (ch == -1) { /* timeout */
-                if (!disable) {
-                    logs.Update();
-                }
-                transport.Repaint();
-                resources.Repaint();
-            }
-            else if (ch == 'f') {
-                disable = true;
+                layout.OnIdle();
             }
             else if (ch == 9) { /* tab */
                 if (input != NULL) {
+                    /* losing focus, reset timeout */
                     wtimeout(focused->GetContent(), 0);
                 }
 
-                focused->SetFrameColor(BOX_COLOR_WHITE_ON_BLACK);
-
-                index++;
-                if (index >= order.size()) {
-                    index = 0;
-                }
-
-                focused = order.at(index);
-                focused->SetFrameColor(BOX_COLOR_RED_ON_BLACK);
-
+                focused = layout.FocusNext();
                 scrollable = dynamic_cast<ScrollableWindow*>(focused);
                 input = dynamic_cast<IInput*>(focused);
 
                 if (input != NULL) {
                     curs_set(1);
                     input->Focus();
-                    wtimeout(focused->GetContent(), 500);
+                    wtimeout(focused->GetContent(), IDLE_TIMEOUT_MS);
                 }
                 else {
                     curs_set(0);
@@ -191,6 +165,7 @@ int main(int argc, char* argv[])
 
     endwin();
 
+    musik::core::LibraryFactory::Instance().Shutdown();
     musik::debug::deinit();
 
     return 0;

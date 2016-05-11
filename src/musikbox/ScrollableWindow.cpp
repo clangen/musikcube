@@ -27,6 +27,11 @@ void ScrollableWindow::OnAdapterChanged() {
     }
 }
 
+void ScrollableWindow::Create() {
+    Window::Create();
+    this->OnAdapterChanged();
+}
+
 size_t ScrollableWindow::GetFirstVisible() {
     return scrollPosition;
 }

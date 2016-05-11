@@ -71,12 +71,15 @@ static std::string normalizePath(const std::string& path) {
     return boost::filesystem::path(path).make_preferred().string();
 }
 
-Indexer::Indexer() 
+Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename) 
 : thread(NULL)
 , status(0)
 , restart(false)
 , filesIndexed(0)
 , filesSaved(0) {
+    this->dbFilename = dbFilename;
+    this->libraryPath = libraryPath;
+    this->thread = new boost::thread(boost::bind(&Indexer::ThreadLoop, this));
 }
 
 //////////////////////////////////////////
@@ -101,14 +104,10 @@ Indexer::~Indexer(){
 ///\param bNewRestart
 ///Should if be restarted or not
 //////////////////////////////////////////
-void Indexer::RestartSync(bool restart){
+void Indexer::Synchronize(bool restart) {
     boost::mutex::scoped_lock lock(this->exitMutex);
-
     this->restart = restart;
-
-    if (this->restart) {
-        this->Notify(); /* rename Notify()? */
-    }
+    this->Notify();
 }
 
 //////////////////////////////////////////
@@ -117,7 +116,6 @@ void Indexer::RestartSync(bool restart){
 //////////////////////////////////////////
 bool Indexer::Restarted() {
     boost::mutex::scoped_lock lock(this->exitMutex);
-
     return this->restart;
 }
 
@@ -141,7 +139,7 @@ void Indexer::AddPath(const std::string& path) {
         this->addRemoveQueue.push_back(context);
     }
 
-    this->RestartSync();
+    this->Synchronize();
 }
 
 //////////////////////////////////////////
@@ -161,14 +159,14 @@ void Indexer::RemovePath(const std::string& path) {
         this->addRemoveQueue.push_back(context);
     }
 
-    this->RestartSync();
+    this->Synchronize();
 }
 
 //////////////////////////////////////////
 ///\brief
 ///Main method for doing the synchronization.
 //////////////////////////////////////////
-void Indexer::Synchronize() {
+void Indexer::SynchronizeInternal() {
     /* load all of the metadata (tag) reader plugins */
     typedef metadata::IMetadataReader PluginType;
     typedef PluginFactory::DestroyDeleter<PluginType> Deleter;
@@ -395,6 +393,12 @@ void Indexer::SyncDirectory(
 ///Main loop the thread is running in.
 //////////////////////////////////////////
 void Indexer::ThreadLoop() {
+    boost::filesystem::path thumbPath(this->libraryPath + "thumbs/");
+
+    if (!boost::filesystem::exists(thumbPath)) {
+        boost::filesystem::create_directories(thumbPath);
+    }
+
     bool firstTime = true; /* through the loop */
 
     while (!this->Exited()) {
@@ -403,10 +407,9 @@ void Indexer::ThreadLoop() {
         if(!firstTime || (firstTime && prefs.GetBool("SyncOnStartup", true))) { /* first time through the loop skips this */
             this->SynchronizeStart();
 
-            this->dbConnection.Open(this->database.c_str(), 0); /* ensure the db is open*/
+            this->dbConnection.Open(this->dbFilename.c_str(), 0); /* ensure the db is open*/
 
-            this->RestartSync(false);
-            this->Synchronize();
+            this->SynchronizeInternal();
             this->RunAnalyzers();
             
             {
@@ -421,12 +424,12 @@ void Indexer::ThreadLoop() {
 
         firstTime = false;
         
-        int weightTime = prefs.GetInt("SyncTimeout", 3600); /* sleep before we try again... */
+        int waitTime = prefs.GetInt("SyncTimeout", 3600); /* sleep before we try again... */
 
-        if (weightTime) {
+        if (waitTime) {
             boost::xtime waitTimeout;
             boost::xtime_get(&waitTimeout, boost::TIME_UTC_);
-            waitTimeout.sec += weightTime;
+            waitTimeout.sec += waitTime;
 
             if (!this->Restarted()) {
                 this->NotificationTimedWait(waitTimeout);
@@ -438,35 +441,6 @@ void Indexer::ThreadLoop() {
             }
         }
     }
-}
-
-//////////////////////////////////////////
-///\brief
-///Start up the Indexer.
-///
-///\returns
-///true if successfully started.
-///
-///This method will start the Indexer thread that will
-///start up ThreadLoop and then return.
-///
-///\see
-///<ThreadLoop>
-//////////////////////////////////////////
-bool Indexer::Startup(std::string setLibraryPath) {
-    this->libraryPath = setLibraryPath;
-
-    /* ensure image artwork directory exists */
-
-    boost::filesystem::path thumbPath(this->libraryPath + "thumbs/");
-
-    if (!boost::filesystem::exists(thumbPath)) {
-        boost::filesystem::create_directories(thumbPath);
-    }
-
-    this->thread = new boost::thread(boost::bind(&Indexer::ThreadLoop, this));
-
-    return true;
 }
 
 //////////////////////////////////////////
@@ -648,7 +622,7 @@ void Indexer::SyncCleanup() {
 //////////////////////////////////////////
 void Indexer::GetPaths(std::vector<std::string>& paths) {
     db::Connection connection;
-    connection.Open(this->database.c_str());
+    connection.Open(this->dbFilename.c_str());
     db::Statement stmt("SELECT path FROM paths ORDER BY id", connection);
 
     while (stmt.Step() == db::Row) {
@@ -736,7 +710,7 @@ void Indexer::SyncOptimize() {
             ++count;
 
             if (count % 1000 == 0) {
-                transaction.CommitAndRestart(); /* i guess we only commit the transaction every 1000 files?*/
+                transaction.CommitAndRestart();
             }
         }
     }
@@ -775,7 +749,6 @@ void Indexer::ProcessAddRemoveQueue() {
 
     this->PathsUpdated();
 }
-
 
 void Indexer::RunAnalyzers() {
     typedef audio::IAnalyzer PluginType;
@@ -846,9 +819,7 @@ void Indexer::RunAnalyzers() {
                                     ++plugin;
                                 }
                                 else {
-                                    /* TODO: dangerous? should we be removing elements from
-                                    this vector as we're iterating over it? */
-                                    plugin  = runningAnalyzers.erase(plugin);
+                                    plugin = runningAnalyzers.erase(plugin);
                                 }
                             }
                         }
@@ -880,6 +851,5 @@ void Indexer::RunAnalyzers() {
 
         getNextTrack.BindInt(0, trackId);
     }
-
 }
 

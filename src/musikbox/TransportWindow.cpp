@@ -21,13 +21,11 @@
 
 using musik::core::audio::Transport;
 
-TransportWindow::TransportWindow(Transport& transport) {
-    this->SetSize(Screen::GetWidth() / 2, 4);
-    this->SetPosition(0, 0);
+TransportWindow::TransportWindow(Transport& transport)
+: Window() {
     this->SetContentColor(BOX_COLOR_BLACK_ON_GREEN);
     this->transport = &transport;
     this->paused = false;
-    this->Create();
 }
 
 TransportWindow::~TransportWindow() {
@@ -37,7 +35,7 @@ void TransportWindow::Repaint() {
     this->Clear();
     WINDOW *c = this->GetContent();
 
-    float volume = (this->transport->Volume() * 100.0);
+    double volume = (this->transport->Volume() * 100.0);
 
     wprintw(c, "volume %.1f%%\n", volume);
     wprintw(c, "filename: ");

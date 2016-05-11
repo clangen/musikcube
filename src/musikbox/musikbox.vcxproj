@@ -115,6 +115,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CategoryListQuery.cpp" />
+    <ClCompile Include="MainLayout.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="Colors.cpp" />
     <ClCompile Include="CommandWindow.cpp" />
@@ -135,6 +137,9 @@
     <ClCompile Include="TransportWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CategoryListQuery.h" />
+    <ClInclude Include="IScrollable.h" />
+    <ClInclude Include="MainLayout.h" />
     <ClInclude Include="Window.h" />
     <ClInclude Include="Colors.h" />
     <ClInclude Include="CommandWindow.h" />

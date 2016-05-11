@@ -1,7 +1,7 @@
 #pragma once 
 
 #include "curses_config.h"
-#include "IScrollAdapter.h";
+#include "IScrollAdapter.h"
 #include <deque>
 
 class SimpleScrollAdapter : public IScrollAdapter {
@@ -43,7 +43,6 @@ class SimpleScrollAdapter : public IScrollAdapter {
     private:
         typedef std::deque<boost::shared_ptr<Entry>> EntryList;
         typedef EntryList::iterator Iterator;
-
 
         void Reindex();
         size_t FindEntryIndex(size_t index);

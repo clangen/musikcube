@@ -41,7 +41,7 @@
 #include <core/support/Common.h>
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>
-#include <core/library/LibraryBase.h>
+#include <core/library/LocalLibrary.h>
 #include <core/io/DataStreamFactory.h>
 
 #include <boost/lexical_cast.hpp>

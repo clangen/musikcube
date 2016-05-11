@@ -5,6 +5,8 @@
 #include "Screen.h"
 #include "Colors.h"
 
+#include "CategoryListQuery.h"
+
 #include <core/debug.h>
 #include <core/sdk/IPlugin.h>
 #include <core/plugin/PluginFactory.h>
@@ -22,6 +24,7 @@ using musik::core::LibraryFactory;
 using musik::core::LibraryPtr;
 using musik::core::TrackFactory;
 using musik::core::TrackPtr;
+using musik::core::QueryPtr;
 
 template <class T>
 bool tostr(T& t, const std::string& s) {
@@ -29,17 +32,16 @@ bool tostr(T& t, const std::string& s) {
     return !(iss >> t).fail();
 }
 
-CommandWindow::CommandWindow(Transport& transport, OutputWindow& output) {
+CommandWindow::CommandWindow(Transport& transport, OutputWindow& output) 
+: Window() {
     this->transport = &transport;
     this->buffer = new char[BUFFER_SIZE];
     this->bufferPosition = 0;
-    this->SetSize(Screen::GetWidth() / 2, 3);
-    this->SetPosition(0, Screen::GetHeight() - 3);
-    this->Create();
     this->output = &output;
     this->paused = false;
     this->library = LibraryFactory::Libraries().at(0);
     this->output->WriteLine("type 'h' or 'help'\n", BOX_COLOR_BLACK_ON_GREY);
+    this->library->Enqueue(QueryPtr(new CategoryListQuery()));
 }
 
 CommandWindow::~CommandWindow() {
@@ -157,7 +159,7 @@ bool CommandWindow::ProcessCommand(const std::string& cmd) {
         this->output->WriteLine("");
     }
     else if (name == "rescan" || name == "scan" || name == "index") {
-        library->Indexer()->RestartSync();
+        library->Indexer()->Synchronize();
     }
     else if (name == "h" || name == "help") {
         this->Help();

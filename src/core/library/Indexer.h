@@ -39,6 +39,7 @@
 #include <core/support/ThreadHelper.h>
 #include <core/db/Connection.h>
 #include <core/sdk/IMetadataReader.h>
+#include <core/library/IIndexer.h>
 
 #include <sigslot/sigslot.h>
 
@@ -57,33 +58,43 @@ namespace musik { namespace core {
     ///but can also be used as a standalone class for indexing files.
     ///All you need to do is create a Indexer object and call Startup()
     //////////////////////////////////////////
-    class Indexer : public ThreadHelper, private boost::noncopyable {
+    class Indexer : public IIndexer, public ThreadHelper, private boost::noncopyable {
         public:
-            Indexer();
+            Indexer(
+                const std::string& libraryPath, 
+                const std::string& dbFilename);
+
             ~Indexer();
 
-            void AddPath(const std::string& paths);
-            void RemovePath(const std::string& paths);
-            void GetPaths(std::vector<std::string>& paths);
-
-            bool Startup(std::string setLibraryPath);
-            void ThreadLoop();
-
-            void RestartSync(bool bNewRestart=true);
-            bool Restarted();
-
-            std::string database;
-
-            sigslot::signal0<> SynchronizeStart;
-            sigslot::signal0<> SynchronizeEnd;
-            sigslot::signal0<> PathsUpdated;
-            sigslot::signal0<> TrackRefreshed;
+            virtual void AddPath(const std::string& paths);
+            virtual void RemovePath(const std::string& paths);
+            virtual void GetPaths(std::vector<std::string>& paths);
+            virtual void Synchronize(bool restart = false);
 
         private:
-        
+            void ThreadLoop();
+
+            bool Restarted();
+
+            void SyncDelete(const std::vector<DBID>& paths);
+            void SyncCleanup();
+            void ProcessAddRemoveQueue();
+            void SyncOptimize();
+            void RunAnalyzers();
+
+            void SynchronizeInternal();
+
+            void SyncDirectory(
+                const std::string& syncRoot,
+                const std::string& currentPath,
+                DBID parentDirId,
+                DBID pathId);
+
             db::Connection dbConnection;
 
             std::string libraryPath;
+            std::string dbFilename;
+
             int status;
             bool restart;
 
@@ -93,19 +104,6 @@ namespace musik { namespace core {
             int filesIndexed;
             int filesSaved;
 
-            void Synchronize();
-            
-            void SyncDirectory(
-                const std::string& syncRoot,
-                const std::string& currentPath, 
-                DBID parentDirId,
-                DBID pathId);
-
-            void SyncDelete(const std::vector<DBID>& paths);
-            void SyncCleanup();
-            void ProcessAddRemoveQueue();
-            void SyncOptimize();
-            void RunAnalyzers();
 
             class AddRemoveContext {
                 public:

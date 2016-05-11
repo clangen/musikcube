@@ -3,18 +3,21 @@
 #include "curses_config.h"
 #include "Window.h"
 #include "IScrollAdapter.h"
+#include "IScrollable.h"
 
-class ScrollableWindow : public Window {
+class ScrollableWindow : public IScrollable, public Window {
     public:
         ScrollableWindow();
         ~ScrollableWindow();
 
-        void ScrollToTop();
-        void ScrollToBottom();
-        void ScrollUp(int delta = 1);
-        void ScrollDown(int delta = 1);
-        void PageUp();
-        void PageDown();
+        virtual void ScrollToTop();
+        virtual void ScrollToBottom();
+        virtual void ScrollUp(int delta = 1);
+        virtual void ScrollDown(int delta = 1);
+        virtual void PageUp();
+        virtual void PageDown();
+
+        virtual void Create();
 
     protected:
         virtual IScrollAdapter& GetScrollAdapter() = 0;

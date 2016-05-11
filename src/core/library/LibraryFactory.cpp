@@ -42,9 +42,7 @@
 
 using namespace musik::core;
 
-//LibraryFactory LibraryFactory::sInstance;
-
-LibraryFactory& LibraryFactory::Instance(){ 
+LibraryFactory& LibraryFactory::Instance() { 
     typedef boost::shared_ptr<LibraryFactory> InstanceType;
     static InstanceType sInstance(new LibraryFactory());
     return *sInstance; 
@@ -56,36 +54,32 @@ LibraryFactory& LibraryFactory::Instance(){
 ///Constructor
 //////////////////////////////////////////
 LibraryFactory::LibraryFactory() {
-	// Connect to the settings.db
+    // Connect to the settings.db
     std::string dataDir = GetDataDirectory();
     std::string dbFile = GetDataDirectory() + "settings.db";
-	musik::core::db::Connection db;
+    musik::core::db::Connection db;
     db.Open(dbFile.c_str(), 0, 128);
 
     Preferences::CreateDB(db);
 
-	// Get the libraries
-	db::Statement stmtGetLibs("SELECT id, name, type FROM libraries ORDER BY id",db);
+    // Get the libraries
+    db::Statement stmtGetLibs("SELECT id, name, type FROM libraries ORDER BY id", db);
 
-	while(stmtGetLibs.Step() == db::Row) {
+    while(stmtGetLibs.Step() == db::Row) {
         int id = stmtGetLibs.ColumnInt(0);
         std::string name = stmtGetLibs.ColumnText(1);
         int type = stmtGetLibs.ColumnInt(2);
-        this->AddLibrary(id, name, type);
-	}
+        this->AddLibrary(id, type, name);
+    }
 
-	// If there are no libraries, add a LocalLibrary
-	if (this->libraries.empty()) {
-        this->CreateLibrary("Local Library", LibraryFactory::LocalLibrary);
-	}
+    // If there are no libraries, add a LocalLibrary
+    if (this->libraries.empty()) {
+        this->CreateLibrary("Local Library", LocalLibrary);
+    }
 
 }
 
-//////////////////////////////////////////
-///\brief
-///Destructor
-//////////////////////////////////////////
-LibraryFactory::~LibraryFactory(void){
+LibraryFactory::~LibraryFactory() {
 }
 
 //////////////////////////////////////////
@@ -107,36 +101,21 @@ LibraryFactory::~LibraryFactory(void){
 ///\returns
 ///LibraryPtr of the added library. (NULL pointer on failure)
 //////////////////////////////////////////
-LibraryPtr LibraryFactory::AddLibrary(int id, std::string name,int type,bool sendEvent,bool startup){
-	LibraryPtr lib;
-	
-    switch(type) {
-        case LibraryFactory::LocalLibrary:
-			lib	= library::LocalLibrary::Create(name, id);
-            break;
+LibraryPtr LibraryFactory::AddLibrary(int id, int type, const std::string& name)
+{
+    LibraryPtr library = library::LocalLibrary::Create(name, id);
+    
+    if (library) {
+        this->libraries.push_back(library);
+        this->libraryMap[id] = library;
+        this->LibrariesUpdated();
+    }
 
-        default:
-            throw "invalid library type!";
-	}
-
-	if (lib) {
-		this->libraries.push_back(lib);
-        this->libraryMap[id] = lib;
-
-        if(sendEvent) {
-            this->LibrariesUpdated();
-        }
-
-        if(startup) {
-            lib->Startup();
-        }
-
-	}
-
-    return lib;
+    return library;
 }
 
-void LibraryFactory::RemoveLibrary(std::string name){
+void LibraryFactory::Shutdown() {
+    Instance().libraries.clear();
 }
 
 //////////////////////////////////////////
@@ -155,25 +134,22 @@ void LibraryFactory::RemoveLibrary(std::string name){
 ///\returns
 ///LibraryPtr of the added library. (NULL pointer on failure)
 //////////////////////////////////////////
-LibraryPtr LibraryFactory::CreateLibrary(std::string name,int type,bool startup){
-	// Connect to the settings.db
+LibraryPtr LibraryFactory::CreateLibrary(const std::string& name, int type) {
+    // Connect to the settings.db
     std::string dataDir = GetDataDirectory();
     std::string dbFile = GetDataDirectory() + "settings.db";
-	musik::core::db::Connection db;
+    musik::core::db::Connection db;
     db.Open(dbFile.c_str(), 0, 128);
 
-	db::Statement stmtInsert("INSERT OR FAIL INTO libraries (name,type) VALUES (?,?)", db);
-	stmtInsert.BindText(0, name);
-	stmtInsert.BindInt(1, type);
+    db::Statement stmtInsert("INSERT OR FAIL INTO libraries (name,type) VALUES (?,?)", db);
+    stmtInsert.BindText(0, name);
+    stmtInsert.BindInt(1, type);
 
-	if (stmtInsert.Step() == db::Done) {
-        return this->AddLibrary(db.LastInsertedId(), name, type, true, startup);
-	}
+    if (stmtInsert.Step() == db::Done) {
+        return this->AddLibrary(db.LastInsertedId(), type, name);
+    }
 
-	return LibraryPtr();
-}
-
-void LibraryFactory::DeleteLibrary(std::string name){
+    return LibraryPtr();
 }
 
 //////////////////////////////////////////

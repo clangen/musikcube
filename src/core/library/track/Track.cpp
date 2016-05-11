@@ -37,7 +37,7 @@
 #include "pch.hpp"
 
 #include <core/library/track/Track.h>
-#include <core/library/LibraryBase.h>
+#include <core/library/LocalLibrary.h>
 
 using namespace musik::core;
 

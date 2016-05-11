@@ -42,7 +42,7 @@
 #include <core/support/Common.h>
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>
-#include <core/library/LibraryBase.h>
+#include <core/library/LocalLibrary.h>
 
 #include <boost/lexical_cast.hpp>
 #include <boost/thread/mutex.hpp>
@@ -128,30 +128,9 @@ void LibraryTrack::SetThumbnail(const char *data, long size) {
     memcpy(this->meta->thumbnailData, data, size);
 }
 
-std::string LibraryTrack::URI(){
-    static std::string uri;
-
-    /* todo: don't use static; create during InitMeta() */
-    if (this->meta) {
-        uri = 
-            "mcdb://" + 
-            this->meta->library->Identifier() + 
-            "/" + 
-            boost::lexical_cast<std::string>(this->id);
-
-        return uri.c_str();
-    }
-    else {
-        uri = 
-            "mcdb://" + 
-            boost::lexical_cast<std::string>(this->libraryId) + 
-            "/" + 
-            boost::lexical_cast<std::string>(this->id);
-
-        return uri.c_str();
-    }
-
-    return NULL;
+std::string LibraryTrack::URI() {
+    int libraryId = this->meta ? this->meta->library->Id() : this->libraryId;
+    return boost::str(boost::format("mcdb://%1%/%2%") % libraryId % this->id);
 }
 
 std::string LibraryTrack::URL() {

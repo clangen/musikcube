@@ -36,38 +36,28 @@
 
 #pragma once
 
-//////////////////////////////////////////////////////////////////////////////
-// Forward declare
-namespace musik{ namespace core{
-    namespace query{
-        class  Base;
-    }
-} }
-//////////////////////////////////////////////////////////////////////////////
+#include <boost/shared_ptr.hpp>
+#include <boost/weak_ptr.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <core/config.h>
 #include <core/db/Connection.h>
-#include <core/db/Statement.h>
-#include <core/db/ScopedTransaction.h>
-#include <core/library/LibraryBase.h>
-#include <core/library/Indexer.h>
 
-//////////////////////////////////////////////////////////////////////////////
+#include <core/library/ILibrary.h>
+#include <core/library/IIndexer.h>
+#include <core/library/IQuery.h>
 
-namespace musik{ namespace core{ namespace library{
+#include <boost/thread/thread.hpp>
+#include <boost/thread/condition.hpp>
+#include <boost/thread/recursive_mutex.hpp>
+#include <boost/utility.hpp>
+#include <sigslot/sigslot.h>
+#include <string>
 
-    //////////////////////////////////////////
-    ///\brief
-    ///Library used for your local music.
-    ///
-    ///This library is used for music located
-    ///on you local computer.
-    ///
-    ///\see
-    ///Indexer
-    //////////////////////////////////////////
-    class LocalLibrary : public library::LibraryBase {
-        private:
+namespace musik { namespace core { namespace library {
+
+    class LocalLibrary : public ILibrary, boost::noncopyable {
+        protected:
             LocalLibrary(std::string name, int id);
 
         public:
@@ -75,16 +65,44 @@ namespace musik{ namespace core{ namespace library{
 
             virtual ~LocalLibrary();
 
-            bool Startup();
-            musik::core::Indexer *Indexer();
+            virtual int Enqueue(QueryPtr query, unsigned int options = 0);
+            virtual musik::core::IIndexer *Indexer();
+            virtual int Id();
+            virtual const std::string& Name();
+
+            std::string GetLibraryDirectory();
+            std::string GetDatabaseFilename();
+
+            static bool IsStaticMetaKey(std::string &metakey);
+            static bool IsSpecialMTOMetaKey(std::string &metakey);
+            static bool IsSpecialMTMMetaKey(std::string &metakey);
+            static void CreateDatabase(db::Connection &db);
+
+        protected:
+            virtual void Exit();
+            bool Exited();
+            void ThreadProc();
+            void NotifyQueryCompleted(QueryPtr query);
+            QueryPtr GetNextQuery();
 
         private:
-            void ThreadLoop();
+            typedef std::list<QueryPtr> QueryList;
 
-        private:
-            db::Connection db;
-            musik::core::Indexer indexer;
+            boost::recursive_mutex mutex;
+            QueryList queryQueue;
+
+            std::string identifier;
+            int id;
+            std::string name;
+            bool exit;
+
             boost::thread* thread;
+
+            boost::thread_group threads;
+            boost::condition queueCondition;
+
+            core::IIndexer *indexer;
+            core::db::Connection db;
     };
 
 } } }

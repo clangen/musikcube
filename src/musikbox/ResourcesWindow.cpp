@@ -9,16 +9,9 @@
 #include <boost/format.hpp>
 
 
-ResourcesWindow::ResourcesWindow() {
-
-    this->SetSize(Screen::GetWidth() / 2, 3);
-
-    this->SetPosition(
-        Screen::GetWidth() / 2, 
-        Screen::GetHeight() - this->GetHeight());
-
+ResourcesWindow::ResourcesWindow() 
+: Window() {
     this->systemInfo = SystemInfo::Create();
-    this->Create();
 }
 
 ResourcesWindow::~ResourcesWindow() {

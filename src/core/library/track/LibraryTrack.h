@@ -38,7 +38,7 @@
 
 #include <core/config.h>
 #include <core/library/track/Track.h>
-#include <core/library/LibraryBase.h>
+#include <core/library/LocalLibrary.h>
 
 namespace musik { namespace core { namespace http {
     class Responder;

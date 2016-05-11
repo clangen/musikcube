@@ -6,16 +6,13 @@
 #include "Screen.h"
 #include <curses.h>
 
-LogWindow::LogWindow() {
+LogWindow::LogWindow() 
+: ScrollableWindow() {
     this->SetContentColor(BOX_COLOR_WHITE_ON_BLUE);
-    this->SetSize(Screen::GetWidth() / 2, Screen::GetHeight() - 3);
-    this->SetPosition(Screen::GetWidth() / 2, 0);
 
     this->adapter = new SimpleScrollAdapter();
     this->adapter->SetDisplaySize(this->GetContentWidth(), this->GetContentHeight());
     this->adapter->SetMaxEntries(500);
-
-    this->Create();
 
     musik::debug::string_logged.connect(this, &LogWindow::OnLogged);
     musik::debug::warn("LogWindow", "initialized");

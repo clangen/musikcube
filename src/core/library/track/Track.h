@@ -37,30 +37,22 @@
 #pragma once
 
 #include <core/sdk/IMetadataWriter.h>
+#include <core/library/ILibrary.h>
 #include <boost/shared_ptr.hpp>
 #include <vector>
 #include <map>
 
-/* forward decl */
 namespace musik { namespace core {
+
     class Track;
-
-    namespace library {
-        class LibraryBase;
-    }
-
-	typedef boost::shared_ptr<library::LibraryBase> LibraryPtr;
     typedef boost::shared_ptr<Track> TrackPtr;
     typedef std::vector<TrackPtr> TrackVector;
-} }
-
-namespace musik{ namespace core{
 
     //////////////////////////////////////////
     ///\brief
     ///The most basic implementation of a track
     //////////////////////////////////////////
-    class  Track : public IMetadataWriter {
+    class Track : public IMetadataWriter {
         public:
             typedef std::multimap<std::string, std::string> MetadataMap;
             typedef std::pair<MetadataMap::iterator, MetadataMap::iterator> MetadataIteratorRange;

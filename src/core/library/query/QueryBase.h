@@ -39,69 +39,31 @@
 #include <core/config.h>
 #include <sigslot/sigslot.h>
 #include <boost/shared_ptr.hpp>
-
-/* forward decl */
-namespace musik { namespace core {
-    namespace db {
-        class Connection;
-    }
-
-    namespace library {
-        class  LibraryBase;
-        class  LocalLibrary;
-    }
-} }
+#include <boost/thread/mutex.hpp>
+#include <core/library/IQuery.h>
 
 namespace musik { namespace core { namespace query {
 
-    class QueryBase;
-    typedef boost::shared_ptr<query::QueryBase> Ptr;
-
     typedef enum {
-        AutoCallback = 1,
-        Prioritize = 4,
-        CancelQueue = 8,
-        CancelSimilar = 16,
-        UnCanceable = 32,
-        CopyUniqueId = 64
+        Prioritize = 1
     } Options;
 
-    //////////////////////////////////////////
-    ///\brief
-    ///Interface class for all queries.
-    //////////////////////////////////////////
-
-    class QueryBase : public sigslot::has_slots<> {
+    class QueryBase : public IQuery, public sigslot::has_slots<> {
         public:
-            typedef sigslot::signal3<
-                query::QueryBase*, 
-                library::LibraryBase*, 
-                bool> QueryFinishedEvent;
-
-            typedef enum {
-                Idle = 1,
-                Running = 2,
-                Canceled = 3,
-                Finished = 4,
-            } Status;
-
-            QueryFinishedEvent QueryFinished;
-
             QueryBase();
             virtual ~QueryBase();
-
-            int GetStatus();
-            int GetQueryId();
-            int GetOptions();
+            
+            virtual bool Run(db::Connection &db);
+            virtual int GetStatus();
+            virtual int GetId();
+            virtual int GetOptions();
 
         protected:
             void SetStatus(int status);
             void SetOptions(int options);
 
-            virtual bool RunCallbacks(library::LibraryBase *library) { return true; };
-            virtual bool RunQuery(library::LibraryBase *library, db::Connection &db) = 0;
-
-            virtual std::string Name();
+            virtual bool OnRun(db::Connection &db) = 0;
+            virtual std::string Name() = 0;
 
         private:
             unsigned int status;
@@ -110,7 +72,4 @@ namespace musik { namespace core { namespace query {
             boost::mutex stateMutex;
     };
 
-
-//////////////////////////////////////////////////////////////////////////////
-} } }   // musik::core::query
-//////////////////////////////////////////////////////////////////////////////
+} } }

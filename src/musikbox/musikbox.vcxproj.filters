@@ -42,6 +42,12 @@
     <ClCompile Include="Window.cpp">
       <Filter>curses</Filter>
     </ClCompile>
+    <ClCompile Include="CategoryListQuery.cpp">
+      <Filter>queries</Filter>
+    </ClCompile>
+    <ClCompile Include="MainLayout.cpp">
+      <Filter>windows</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -87,6 +93,15 @@
     <ClInclude Include="Window.h">
       <Filter>curses</Filter>
     </ClInclude>
+    <ClInclude Include="CategoryListQuery.h">
+      <Filter>queries</Filter>
+    </ClInclude>
+    <ClInclude Include="MainLayout.h">
+      <Filter>windows</Filter>
+    </ClInclude>
+    <ClInclude Include="IScrollable.h">
+      <Filter>curses</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="curses">
@@ -94,6 +109,9 @@
     </Filter>
     <Filter Include="windows">
       <UniqueIdentifier>{c1ada983-8f4e-4ac4-86be-fa6fdffec375}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="queries">
+      <UniqueIdentifier>{8de1fc82-96fd-4871-a6b0-fed0d6b21aa1}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

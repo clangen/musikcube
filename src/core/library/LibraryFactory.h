@@ -36,77 +36,41 @@
 #pragma once
 
 #include <core/config.h>
-#include <core/library/LibraryBase.h>
+#include <core/library/LocalLibrary.h>
 #include <sigslot/sigslot.h>
 #include <map>
 #include <vector>
 
-//////////////////////////////////////////////////////////////////////////////
-
 namespace musik{ namespace core{
 
-//////////////////////////////////////////////////////////////////////////////
+    class  LibraryFactory{
+        public:
+            typedef std::vector<LibraryPtr> LibraryVector;
+            typedef std::map<int, LibraryPtr> LibraryMap;
+            typedef sigslot::signal0<> LibrariesUpdatedEvent;
 
-//////////////////////////////////////////
-///\brief
-///Factory for Libraries
-///
-///LibraryFactory contains all Libraries (LocalLibrary and Remote)
-///When the LibraryFactory is first initialized it will load all
-///libraries from the settings.db database.
-//////////////////////////////////////////
-class  LibraryFactory{
-    private:
-//        static LibraryFactory sInstance;
-    public:
+            enum LibraryType {
+                LocalLibrary = 1
+            };
 
-		//////////////////////////////////////////
-		///\brief
-		///enum for the different library types
-		//////////////////////////////////////////
-        typedef enum {
-			LocalLibrary=1,
-			Remote=2
-        } Types;
+            ~LibraryFactory();
 
-		typedef std::vector<LibraryPtr> LibraryVector;
-		typedef std::map<int,LibraryPtr> LibraryMap;
+            static LibraryFactory& Instance();
+            static LibraryVector& Libraries();
 
-        //////////////////////////////////////////
-        ///\brief
-        ///Get the LibraryFactory singleton
-        //////////////////////////////////////////
-        static LibraryFactory& Instance();
+            LibraryPtr CreateLibrary(const std::string& name, int type);
+            void Shutdown();
 
-		static LibraryVector& Libraries();
+            LibraryPtr GetLibrary(int identifier);
+            LibrariesUpdatedEvent LibrariesUpdated;
 
-		LibraryPtr CreateLibrary(std::string name,int type,bool startup=true);
-		void DeleteLibrary(std::string name);
+        private:
+            LibraryFactory();
 
-        LibraryPtr GetLibrary(int identifier);
+            LibraryPtr AddLibrary(int id, int type, const std::string& name);
 
-        typedef sigslot::signal0<> LibrariesUpdatedEvent;
+            LibraryVector libraries;
+            LibraryMap libraryMap;
+    };
 
-        //////////////////////////////////////////
-		///\brief
-		///signal alerting that a library has been added/removed
-		//////////////////////////////////////////
-		LibrariesUpdatedEvent LibrariesUpdated;
-
-        ~LibraryFactory(void);
-    private:
-
-        LibraryVector libraries;
-        LibraryMap libraryMap;
-
-        LibraryFactory(void);
-
-		LibraryPtr AddLibrary(int id, std::string name,int type,bool sendEvent=false,bool startup=true);
-		void RemoveLibrary(std::string name);
-
-};
-
-//////////////////////////////////////////////////////////////////////////////
-} } // musik::core
-//////////////////////////////////////////////////////////////////////////////
-
+} } 
