@@ -10,16 +10,16 @@
       <Filter>curses</Filter>
     </ClCompile>
     <ClCompile Include="CommandWindow.cpp">
-      <Filter>windows</Filter>
+      <Filter>view</Filter>
     </ClCompile>
     <ClCompile Include="LogWindow.cpp">
-      <Filter>windows</Filter>
+      <Filter>view</Filter>
     </ClCompile>
     <ClCompile Include="OutputWindow.cpp">
-      <Filter>windows</Filter>
+      <Filter>view</Filter>
     </ClCompile>
     <ClCompile Include="ResourcesWindow.cpp">
-      <Filter>windows</Filter>
+      <Filter>view</Filter>
     </ClCompile>
     <ClCompile Include="Screen.cpp">
       <Filter>curses</Filter>
@@ -31,10 +31,10 @@
       <Filter>curses</Filter>
     </ClCompile>
     <ClCompile Include="SystemInfo.cpp">
-      <Filter>windows</Filter>
+      <Filter>view</Filter>
     </ClCompile>
     <ClCompile Include="TransportWindow.cpp">
-      <Filter>windows</Filter>
+      <Filter>view</Filter>
     </ClCompile>
     <ClCompile Include="IInput.h">
       <Filter>curses</Filter>
@@ -43,10 +43,10 @@
       <Filter>curses</Filter>
     </ClCompile>
     <ClCompile Include="CategoryListQuery.cpp">
-      <Filter>queries</Filter>
+      <Filter>query</Filter>
     </ClCompile>
     <ClCompile Include="MainLayout.cpp">
-      <Filter>windows</Filter>
+      <Filter>view</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -58,16 +58,16 @@
       <Filter>curses</Filter>
     </ClInclude>
     <ClInclude Include="CommandWindow.h">
-      <Filter>windows</Filter>
+      <Filter>view</Filter>
     </ClInclude>
     <ClInclude Include="LogWindow.h">
-      <Filter>windows</Filter>
+      <Filter>view</Filter>
     </ClInclude>
     <ClInclude Include="OutputWindow.h">
-      <Filter>windows</Filter>
+      <Filter>view</Filter>
     </ClInclude>
     <ClInclude Include="ResourcesWindow.h">
-      <Filter>windows</Filter>
+      <Filter>view</Filter>
     </ClInclude>
     <ClInclude Include="Screen.h">
       <Filter>curses</Filter>
@@ -79,10 +79,10 @@
       <Filter>curses</Filter>
     </ClInclude>
     <ClInclude Include="SystemInfo.h">
-      <Filter>windows</Filter>
+      <Filter>view</Filter>
     </ClInclude>
     <ClInclude Include="TransportWindow.h">
-      <Filter>windows</Filter>
+      <Filter>view</Filter>
     </ClInclude>
     <ClInclude Include="ILayout.h">
       <Filter>curses</Filter>
@@ -94,10 +94,10 @@
       <Filter>curses</Filter>
     </ClInclude>
     <ClInclude Include="CategoryListQuery.h">
-      <Filter>queries</Filter>
+      <Filter>query</Filter>
     </ClInclude>
     <ClInclude Include="MainLayout.h">
-      <Filter>windows</Filter>
+      <Filter>view</Filter>
     </ClInclude>
     <ClInclude Include="IScrollable.h">
       <Filter>curses</Filter>
@@ -107,11 +107,11 @@
     <Filter Include="curses">
       <UniqueIdentifier>{04a2cf62-168c-4f1b-ac33-a55f7cbecff0}</UniqueIdentifier>
     </Filter>
-    <Filter Include="windows">
-      <UniqueIdentifier>{c1ada983-8f4e-4ac4-86be-fa6fdffec375}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="queries">
+    <Filter Include="query">
       <UniqueIdentifier>{8de1fc82-96fd-4871-a6b0-fed0d6b21aa1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="view">
+      <UniqueIdentifier>{c1ada983-8f4e-4ac4-86be-fa6fdffec375}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

@@ -11,7 +11,6 @@ LogWindow::LogWindow()
     this->SetContentColor(BOX_COLOR_WHITE_ON_BLUE);
 
     this->adapter = new SimpleScrollAdapter();
-    this->adapter->SetDisplaySize(this->GetContentWidth(), this->GetContentHeight());
     this->adapter->SetMaxEntries(500);
 
     musik::debug::string_logged.connect(this, &LogWindow::OnLogged);

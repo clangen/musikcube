@@ -18,5 +18,3 @@ void Colors::Init() {
     init_pair(BOX_COLOR_RED_ON_GREY, COLOR_RED, COLOR_WHITE);
     init_pair(BOX_COLOR_GREEN_ON_BLACK, COLOR_GREEN, COLOR_BLACK);
 }
-
-

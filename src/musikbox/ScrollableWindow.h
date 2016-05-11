@@ -10,6 +10,8 @@ class ScrollableWindow : public IScrollable, public Window {
         ScrollableWindow();
         ~ScrollableWindow();
 
+        virtual void SetSize(int width, int height);
+
         virtual void ScrollToTop();
         virtual void ScrollToBottom();
         virtual void ScrollUp(int delta = 1);
