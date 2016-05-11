@@ -41,7 +41,8 @@ CommandWindow::CommandWindow(Transport& transport, OutputWindow& output)
     this->paused = false;
     this->library = LibraryFactory::Libraries().at(0);
     this->output->WriteLine("type 'h' or 'help'\n", BOX_COLOR_BLACK_ON_GREY);
-    this->library->Enqueue(QueryPtr(new CategoryListQuery()));
+
+    this->library->QueryCompleted.connect(this, &CommandWindow::OnQueryCompleted);
 }
 
 CommandWindow::~CommandWindow() {
@@ -110,6 +111,11 @@ void CommandWindow::SetVolume(float volume) {
     transport->SetVolume(volume);
 }
 
+void CommandWindow::OnQueryCompleted(QueryPtr query) {
+    CategoryListQuery *result = (CategoryListQuery *) query.get();
+    CategoryListQuery::Result data = result->GetResult();
+}
+
 void CommandWindow::Help() {
     int64 s = -1;
     this->output->WriteLine("help:\n", s);
@@ -137,6 +143,9 @@ bool CommandWindow::ProcessCommand(const std::string& cmd) {
 
     if (name == "plugins") {
         this->ListPlugins();
+    }
+    if (name == "artists") {
+        this->artistQueryId = this->library->Enqueue(QueryPtr(new CategoryListQuery()));
     }
     else if (name == "play" || name == "pl" || name == "p") {
         return this->PlayFile(args);
@@ -231,7 +240,6 @@ void CommandWindow::ListPlaying() {
     cout << "------------------\n";
     cout << transport.NumOfStreams() << " playing" << std::std::endl;*/
 }
-
 
 void CommandWindow::ListPlugins() const {
     using musik::core::IPlugin;

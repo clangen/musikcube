@@ -2,9 +2,12 @@
 
 #include "stdafx.h"
 #include "LogWindow.h"
+#include "MultiLineEntry.h"
 #include "Colors.h"
 #include "Screen.h"
 #include <curses.h>
+
+typedef IScrollAdapter::IEntry IEntry;
 
 LogWindow::LogWindow() 
 : ScrollableWindow() {
@@ -53,7 +56,7 @@ void LogWindow::Update() {
         std::string s = boost::str(boost::format(
             "[%1%] %2%") % entry->tag % entry->message);
 
-        this->adapter->AddLine(s, attrs);
+        this->adapter->AddEntry(boost::shared_ptr<IEntry>(new MultiLineEntry(s, attrs)));
 
         delete entry;
     }

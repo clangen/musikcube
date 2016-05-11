@@ -28,6 +28,7 @@ namespace musik { namespace core {
             virtual int GetStatus() = 0;
             virtual int GetId() = 0;
             virtual int GetOptions() = 0;
+            virtual std::string Name() = 0;
     };
 
 } }

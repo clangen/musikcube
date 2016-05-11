@@ -4,6 +4,9 @@
 #include "OutputWindow.h"
 #include "Screen.h"
 #include "Colors.h"
+#include "MultiLineEntry.h"
+
+typedef IScrollAdapter::IEntry IEntry;
 
 OutputWindow::OutputWindow() 
 : ScrollableWindow()
@@ -24,6 +27,6 @@ IScrollAdapter& OutputWindow::GetScrollAdapter() {
 }
 
 void OutputWindow::WriteLine(const std::string& text, int64 attrs) {
-    this->adapter->AddLine(text, attrs);
+    this->adapter->AddEntry(boost::shared_ptr<IEntry>(new MultiLineEntry(text, attrs)));
     this->OnAdapterChanged();
 }

@@ -48,6 +48,18 @@
     <ClCompile Include="MainLayout.cpp">
       <Filter>view</Filter>
     </ClCompile>
+    <ClCompile Include="LibraryLayout.cpp">
+      <Filter>view</Filter>
+    </ClCompile>
+    <ClCompile Include="CategoryListView.cpp">
+      <Filter>view</Filter>
+    </ClCompile>
+    <ClCompile Include="SingleLineEntry.cpp">
+      <Filter>curses</Filter>
+    </ClCompile>
+    <ClCompile Include="MultiLineEntry.cpp">
+      <Filter>curses</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -100,6 +112,18 @@
       <Filter>view</Filter>
     </ClInclude>
     <ClInclude Include="IScrollable.h">
+      <Filter>curses</Filter>
+    </ClInclude>
+    <ClInclude Include="LibraryLayout.h">
+      <Filter>view</Filter>
+    </ClInclude>
+    <ClInclude Include="CategoryListView.h">
+      <Filter>view</Filter>
+    </ClInclude>
+    <ClInclude Include="SingleLineEntry.h">
+      <Filter>curses</Filter>
+    </ClInclude>
+    <ClInclude Include="MultiLineEntry.h">
       <Filter>curses</Filter>
     </ClInclude>
   </ItemGroup>

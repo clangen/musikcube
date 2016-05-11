@@ -116,7 +116,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CategoryListQuery.cpp" />
+    <ClCompile Include="CategoryListView.cpp" />
+    <ClCompile Include="LibraryLayout.cpp" />
     <ClCompile Include="MainLayout.cpp" />
+    <ClCompile Include="MultiLineEntry.cpp" />
+    <ClCompile Include="SingleLineEntry.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="Colors.cpp" />
     <ClCompile Include="CommandWindow.cpp" />
@@ -138,8 +142,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CategoryListQuery.h" />
+    <ClInclude Include="CategoryListView.h" />
     <ClInclude Include="IScrollable.h" />
+    <ClInclude Include="LibraryLayout.h" />
     <ClInclude Include="MainLayout.h" />
+    <ClInclude Include="MultiLineEntry.h" />
+    <ClInclude Include="SingleLineEntry.h" />
     <ClInclude Include="Window.h" />
     <ClInclude Include="Colors.h" />
     <ClInclude Include="CommandWindow.h" />

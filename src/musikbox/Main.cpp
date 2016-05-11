@@ -40,6 +40,7 @@
 #include "TransportWindow.h"
 #include "ResourcesWindow.h"
 #include "MainLayout.h"
+#include "LibraryLayout.h"
 #include "IInput.h"
 
 #include <boost/locale.hpp>
@@ -93,13 +94,15 @@ int main(int argc, char* argv[])
         Transport tp;
         tp.SetVolume(0.01);
 
-        MainLayout layout(tp);
+        MainLayout mainLayout(tp);
+        LibraryLayout library;
 
         int ch;
         timeout(IDLE_TIMEOUT_MS);
         bool quit = false;
 
-        IWindow* focused = layout.GetFocus();
+        ILayout* layout = &mainLayout;
+        IWindow* focused = layout->GetFocus();
         IInput* input = dynamic_cast<IInput*>(focused);
         IScrollable* scrollable = dynamic_cast<IScrollable*>(focused);
 
@@ -114,7 +117,7 @@ int main(int argc, char* argv[])
             ch = (input != NULL) ? wgetch(focused->GetContent()) : getch();
 
             if (ch == -1) { /* timeout */
-                layout.OnIdle();
+                layout->OnIdle();
             }
             else if (ch == 9) { /* tab */
                 if (input != NULL) {
@@ -122,14 +125,17 @@ int main(int argc, char* argv[])
                     wtimeout(focused->GetContent(), 0);
                 }
 
-                focused = layout.FocusNext();
+                focused = layout->FocusNext();
                 scrollable = dynamic_cast<ScrollableWindow*>(focused);
                 input = dynamic_cast<IInput*>(focused);
 
                 if (input != NULL) {
                     curs_set(1);
                     input->Focus();
-                    wtimeout(focused->GetContent(), IDLE_TIMEOUT_MS);
+
+                    if (focused) {
+                        wtimeout(focused->GetContent(), IDLE_TIMEOUT_MS);
+                    }
                 }
                 else {
                     curs_set(0);

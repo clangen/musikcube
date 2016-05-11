@@ -14,34 +14,11 @@ class SimpleScrollAdapter : public IScrollAdapter {
         virtual size_t GetEntryCount();
         virtual void DrawPage(WINDOW* window, size_t index);
 
-        virtual void AddLine(const std::string& str, int64 attrs = -1);
+        virtual void AddEntry(boost::shared_ptr<IEntry> entry);
         virtual void SetMaxEntries(const size_t size = 500);
 
     private:
-        class Entry {
-            public:
-                Entry(const std::string& value);
-
-                size_t GetIndex();
-                void SetIndex(size_t index);
-                size_t GetLineCount();
-                std::string GetLine(size_t line);
-                std::string GetValue();
-                void SetWidth(size_t width);
-                void SetAttrs(int64 attrs);
-                int64 GetAttrs();
-
-            private:
-                size_t index;
-                std::string value;
-                std::vector<std::string> lines;
-                size_t charCount;
-                int64 attrs;
-                size_t width;
-        };
-
-    private:
-        typedef std::deque<boost::shared_ptr<Entry>> EntryList;
+        typedef std::deque<boost::shared_ptr<IEntry>> EntryList;
         typedef EntryList::iterator Iterator;
 
         void Reindex();

@@ -64,6 +64,24 @@ inline std::string u16to8(const std::wstring& u16) {
     return result;
 }
 
-inline size_t u8len(const std::string& u8) {
-    return utf8::distance(u8.begin(), u8.end());
+inline static int u8len(const std::string& str) {
+    try {
+        return utf8::distance(str.begin(), str.end());
+    }
+    catch (...) {
+        return str.length();
+    }
+}
+
+inline static std::string u8substr(const std::string& in, int offset, int len) {
+    std::string::const_iterator begin = in.begin() + offset;
+    std::string::const_iterator it = begin;
+
+    int count = 0;
+    while (count < len && it != in.end()) {
+        utf8::unchecked::next(it);
+        ++count;
+    }
+
+    return std::string(begin, it);
 }
