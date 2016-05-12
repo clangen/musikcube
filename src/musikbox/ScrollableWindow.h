@@ -25,12 +25,9 @@ class ScrollableWindow : public IScrollable, public Window {
         virtual IScrollAdapter& GetScrollAdapter() = 0;
         void OnAdapterChanged();
 
-        size_t GetFirstVisible();
-        size_t GetLastVisible();
-
     private:
-        void CheckScrolledToBottom();
+        bool IsLastItemVisible();
+        size_t GetPreviousPageEntryIndex();
 
-        size_t scrollPosition;
-        bool scrolledToBottom;
+        IScrollAdapter::ScrollPosition scrollPosition;
 };

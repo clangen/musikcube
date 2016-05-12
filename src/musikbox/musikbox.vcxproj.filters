@@ -24,9 +24,6 @@
     <ClCompile Include="Screen.cpp">
       <Filter>curses</Filter>
     </ClCompile>
-    <ClCompile Include="ScrollableWindow.cpp">
-      <Filter>curses</Filter>
-    </ClCompile>
     <ClCompile Include="SimpleScrollAdapter.cpp">
       <Filter>curses</Filter>
     </ClCompile>
@@ -60,6 +57,12 @@
     <ClCompile Include="MultiLineEntry.cpp">
       <Filter>curses</Filter>
     </ClCompile>
+    <ClCompile Include="ScrollAdapterBase.cpp">
+      <Filter>curses</Filter>
+    </ClCompile>
+    <ClCompile Include="ScrollableWindow.cpp">
+      <Filter>curses</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -82,9 +85,6 @@
       <Filter>view</Filter>
     </ClInclude>
     <ClInclude Include="Screen.h">
-      <Filter>curses</Filter>
-    </ClInclude>
-    <ClInclude Include="ScrollableWindow.h">
       <Filter>curses</Filter>
     </ClInclude>
     <ClInclude Include="SimpleScrollAdapter.h">
@@ -124,6 +124,12 @@
       <Filter>curses</Filter>
     </ClInclude>
     <ClInclude Include="MultiLineEntry.h">
+      <Filter>curses</Filter>
+    </ClInclude>
+    <ClInclude Include="ScrollAdapterBase.h">
+      <Filter>curses</Filter>
+    </ClInclude>
+    <ClInclude Include="ScrollableWindow.h">
       <Filter>curses</Filter>
     </ClInclude>
   </ItemGroup>

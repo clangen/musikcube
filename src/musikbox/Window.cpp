@@ -36,11 +36,11 @@ int Window::GetHeight() const {
 }
 
 int Window::GetContentHeight() const {
-    return this->height - 2;
+    return this->height ? this->height - 2 : 0;
 }
 
 int Window::GetContentWidth() const {
-    return this->width - 2;
+    return this->width ? this->width - 2 : 0;
 }
 
 int Window::GetX() const {

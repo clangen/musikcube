@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
                 }
 
                 focused = layout->FocusNext();
-                scrollable = dynamic_cast<ScrollableWindow*>(focused);
+                scrollable = dynamic_cast<IScrollable*>(focused);
                 input = dynamic_cast<IInput*>(focused);
 
                 if (input != NULL) {

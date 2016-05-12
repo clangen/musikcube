@@ -117,9 +117,11 @@
   <ItemGroup>
     <ClCompile Include="CategoryListQuery.cpp" />
     <ClCompile Include="CategoryListView.cpp" />
+    <ClCompile Include="ScrollAdapterBase.cpp" />
     <ClCompile Include="LibraryLayout.cpp" />
     <ClCompile Include="MainLayout.cpp" />
     <ClCompile Include="MultiLineEntry.cpp" />
+    <ClCompile Include="ScrollableWindow.cpp" />
     <ClCompile Include="SingleLineEntry.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="Colors.cpp" />
@@ -130,7 +132,6 @@
     <ClCompile Include="OutputWindow.cpp" />
     <ClCompile Include="ResourcesWindow.cpp" />
     <ClCompile Include="Screen.cpp" />
-    <ClCompile Include="ScrollableWindow.cpp" />
     <ClCompile Include="SimpleScrollAdapter.cpp" />
     <ClCompile Include="SystemInfo.cpp" />
     <ClCompile Include="Main.cpp" />
@@ -143,10 +144,12 @@
   <ItemGroup>
     <ClInclude Include="CategoryListQuery.h" />
     <ClInclude Include="CategoryListView.h" />
+    <ClInclude Include="ScrollAdapterBase.h" />
     <ClInclude Include="IScrollable.h" />
     <ClInclude Include="LibraryLayout.h" />
     <ClInclude Include="MainLayout.h" />
     <ClInclude Include="MultiLineEntry.h" />
+    <ClInclude Include="ScrollableWindow.h" />
     <ClInclude Include="SingleLineEntry.h" />
     <ClInclude Include="Window.h" />
     <ClInclude Include="Colors.h" />
@@ -158,7 +161,6 @@
     <ClInclude Include="OutputWindow.h" />
     <ClInclude Include="ResourcesWindow.h" />
     <ClInclude Include="Screen.h" />
-    <ClInclude Include="ScrollableWindow.h" />
     <ClInclude Include="SimpleScrollAdapter.h" />
     <ClInclude Include="SystemInfo.h" />
     <ClInclude Include="stdafx.h" />

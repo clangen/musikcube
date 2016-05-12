@@ -9,8 +9,6 @@
 
 ScrollableWindow::ScrollableWindow()
 : Window() {
-    scrollPosition = 0;
-    scrolledToBottom = true;
 }
 
 ScrollableWindow::~ScrollableWindow() {
@@ -23,11 +21,15 @@ void ScrollableWindow::SetSize(int width, int height) {
 
 void ScrollableWindow::OnAdapterChanged() {
     IScrollAdapter *adapter = &GetScrollAdapter();
-    if (scrolledToBottom) {
+    if (IsLastItemVisible()) {
         this->ScrollToBottom();
     }
     else {
-        GetScrollAdapter().DrawPage(this->GetContent(), this->scrollPosition);
+        GetScrollAdapter().DrawPage(
+            this->GetContent(), 
+            this->scrollPosition.firstVisibleEntryIndex, 
+            &this->scrollPosition);
+
         this->Repaint();
     }
 }
@@ -37,75 +39,77 @@ void ScrollableWindow::Create() {
     this->OnAdapterChanged();
 }
 
-size_t ScrollableWindow::GetFirstVisible() {
-    return scrollPosition;
-}
-
-size_t ScrollableWindow::GetLastVisible() {
-    size_t total = GetScrollAdapter().GetLineCount();
-    return min(scrollPosition + this->GetContentHeight(), total);
-}
-
 void ScrollableWindow::ScrollToTop() {
-    GetScrollAdapter().DrawPage(this->GetContent(), 0);
-    this->scrollPosition = 0;
+    GetScrollAdapter().DrawPage(this->GetContent(), 0, &scrollPosition);
     this->Repaint();
-    this->CheckScrolledToBottom();
 }
 
 void ScrollableWindow::ScrollToBottom() {
-    IScrollAdapter *adapter = &GetScrollAdapter();
+    GetScrollAdapter().DrawPage(
+        this->GetContent(), 
+        GetScrollAdapter().GetEntryCount(),
+        &scrollPosition);
 
-    int total = (int) adapter->GetLineCount();
-    int height = this->GetContentHeight();
-
-    int actual = total - height;
-    actual = (actual < 0) ? 0 : actual;
-
-    adapter->DrawPage(this->GetContent(), actual);
-
-    this->scrollPosition = actual;
     this->Repaint();
-    this->CheckScrolledToBottom();
 }
 
 void ScrollableWindow::ScrollUp(int delta) {
-    int actual = (int) this->scrollPosition - delta;
-    actual = (actual < 0) ? 0 : actual;
+    if (this->scrollPosition.firstVisibleEntryIndex > 0) {
+        GetScrollAdapter().DrawPage(
+            this->GetContent(),
+            this->scrollPosition.firstVisibleEntryIndex - delta,
+            &scrollPosition);
 
-    GetScrollAdapter().DrawPage(this->GetContent(), actual);
-
-    this->scrollPosition = (size_t) actual;
-    this->Repaint();
-    this->CheckScrolledToBottom();
+        this->Repaint();
+    }
 }
 
 void ScrollableWindow::ScrollDown(int delta) {
-    IScrollAdapter *adapter = &GetScrollAdapter();
+    GetScrollAdapter().DrawPage(
+        this->GetContent(),
+        this->scrollPosition.firstVisibleEntryIndex + delta,
+        &scrollPosition);
 
-    int total = adapter->GetLineCount();
-    int height = this->GetContentHeight();
-    int optimal = total - height;
-    int max = max(0, optimal);
-
-    int actual = (int) this->scrollPosition + delta;
-    actual = (actual > max) ? max : actual;
-
-    adapter->DrawPage(this->GetContent(), actual);
-
-    this->scrollPosition = (size_t) actual;
     this->Repaint();
-    this->CheckScrolledToBottom();
+}
+
+size_t ScrollableWindow::GetPreviousPageEntryIndex() {
+    IScrollAdapter* adapter = &GetScrollAdapter();
+    int remaining = this->GetContentHeight();
+    int width = this->GetContentWidth();
+
+    int i = this->scrollPosition.firstVisibleEntryIndex;
+    while (i >= 0) {
+        IScrollAdapter::EntryPtr entry = adapter->GetEntry(i);
+        entry->SetWidth(width);
+    
+        int count = entry->GetLineCount();
+        if (count > remaining) {
+            break;
+        }
+
+        i--;
+        remaining -= count;
+    }
+
+    return max(0, i);
 }
 
 void ScrollableWindow::PageUp() {
-    ScrollUp(this->GetContentHeight() - 1);
+    ScrollUp(
+        this->scrollPosition.firstVisibleEntryIndex -
+        GetPreviousPageEntryIndex());
 }
 
 void ScrollableWindow::PageDown() {
-    ScrollDown(this->GetContentHeight() - 1);
+    ScrollDown(this->scrollPosition.visibleEntryCount - 1);
 }
 
-void ScrollableWindow::CheckScrolledToBottom() {
+bool ScrollableWindow::IsLastItemVisible() {
+    size_t lastIndex = this->scrollPosition.totalEntries;
+    lastIndex = (lastIndex == 0) ? lastIndex : lastIndex - 1;
 
+    size_t firstVisible = this->scrollPosition.firstVisibleEntryIndex;
+    size_t lastVisible = firstVisible + this->scrollPosition.visibleEntryCount;
+    return lastIndex >= firstVisible && lastIndex <= lastVisible;
 }
