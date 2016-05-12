@@ -13,7 +13,11 @@ using namespace musik::core::audio;
 
 class CommandWindow : public Window, public IInput, public sigslot::has_slots<> {
     public:
-        CommandWindow(Transport& transport, OutputWindow& output);
+        CommandWindow(
+            Transport& transport, 
+            LibraryPtr library,
+            OutputWindow& output);
+
         ~CommandWindow();
 
         virtual void WriteChar(int ch);
@@ -31,13 +35,10 @@ class CommandWindow : public Window, public IInput, public sigslot::has_slots<> 
         void SetVolume(float volume);
         void Help();
 
-        void OnQueryCompleted(QueryPtr query);
-
         char* buffer;
         int bufferPosition;
         OutputWindow* output;
         Transport* transport;
         LibraryPtr library;
         bool paused;
-        int artistQueryId;
 };

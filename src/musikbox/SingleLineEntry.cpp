@@ -4,6 +4,7 @@
 
 SingleLineEntry::SingleLineEntry(const std::string& value) {
     this->value = value;
+    this->attrs = -1;
 }
 
 size_t SingleLineEntry::GetIndex() {
@@ -33,6 +34,7 @@ size_t SingleLineEntry::GetLineCount() {
 std::string SingleLineEntry::GetLine(size_t line) {
     return u8substr(this->value, 0, this->width > 0 ? this->width : 0);
 }
+
 std::string SingleLineEntry::GetValue() {
     return this->value;
 }

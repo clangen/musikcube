@@ -63,6 +63,9 @@
     <ClCompile Include="ScrollableWindow.cpp">
       <Filter>curses</Filter>
     </ClCompile>
+    <ClCompile Include="TrackListView.cpp">
+      <Filter>view</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -131,6 +134,9 @@
     </ClInclude>
     <ClInclude Include="ScrollableWindow.h">
       <Filter>curses</Filter>
+    </ClInclude>
+    <ClInclude Include="TrackListView.h">
+      <Filter>view</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -4,6 +4,8 @@
 #include "MainLayout.h"
 #include "Screen.h"
 
+/* most top-level layouts are going to want this functionality. it
+should probably live someplace shared. */
 static inline IWindow* adjustFocus(IWindow* oldFocus, IWindow* newFocus) {
     if (oldFocus) {
         oldFocus->SetFrameColor(BOX_COLOR_WHITE_ON_BLACK);
@@ -16,11 +18,11 @@ static inline IWindow* adjustFocus(IWindow* oldFocus, IWindow* newFocus) {
     return newFocus;
 }
 
-MainLayout::MainLayout(Transport& transport) {
+MainLayout::MainLayout(Transport& transport, LibraryPtr library) {
     this->logs.reset(new LogWindow());
     this->output.reset(new OutputWindow());
     this->resources.reset(new ResourcesWindow());
-    this->commands.reset(new CommandWindow(transport, *this->output));
+    this->commands.reset(new CommandWindow(transport, library, *this->output));
     this->transport.reset(new TransportWindow(transport));
 
     this->focusOrder.push_back(commands.get());

@@ -23,6 +23,9 @@ class ScrollableWindow : public IScrollable, public Window {
 
     protected:
         virtual IScrollAdapter& GetScrollAdapter() = 0;
+
+        IScrollAdapter::ScrollPosition GetScrollPosition();
+
         void OnAdapterChanged();
 
     private:

@@ -32,17 +32,15 @@ bool tostr(T& t, const std::string& s) {
     return !(iss >> t).fail();
 }
 
-CommandWindow::CommandWindow(Transport& transport, OutputWindow& output) 
+CommandWindow::CommandWindow(Transport& transport, LibraryPtr library, OutputWindow& output) 
 : Window() {
     this->transport = &transport;
+    this->library = library;
     this->buffer = new char[BUFFER_SIZE];
     this->bufferPosition = 0;
     this->output = &output;
     this->paused = false;
-    this->library = LibraryFactory::Libraries().at(0);
     this->output->WriteLine("type 'h' or 'help'\n", BOX_COLOR_BLACK_ON_GREY);
-
-    this->library->QueryCompleted.connect(this, &CommandWindow::OnQueryCompleted);
 }
 
 CommandWindow::~CommandWindow() {
@@ -111,11 +109,6 @@ void CommandWindow::SetVolume(float volume) {
     transport->SetVolume(volume);
 }
 
-void CommandWindow::OnQueryCompleted(QueryPtr query) {
-    CategoryListQuery *result = (CategoryListQuery *) query.get();
-    CategoryListQuery::Result data = result->GetResult();
-}
-
 void CommandWindow::Help() {
     int64 s = -1;
     this->output->WriteLine("help:\n", s);
@@ -143,9 +136,6 @@ bool CommandWindow::ProcessCommand(const std::string& cmd) {
 
     if (name == "plugins") {
         this->ListPlugins();
-    }
-    if (name == "artists") {
-        this->artistQueryId = this->library->Enqueue(QueryPtr(new CategoryListQuery()));
     }
     else if (name == "play" || name == "pl" || name == "p") {
         return this->PlayFile(args);

@@ -123,6 +123,7 @@
     <ClCompile Include="MultiLineEntry.cpp" />
     <ClCompile Include="ScrollableWindow.cpp" />
     <ClCompile Include="SingleLineEntry.cpp" />
+    <ClCompile Include="TrackListView.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="Colors.cpp" />
     <ClCompile Include="CommandWindow.cpp" />
@@ -151,6 +152,7 @@
     <ClInclude Include="MultiLineEntry.h" />
     <ClInclude Include="ScrollableWindow.h" />
     <ClInclude Include="SingleLineEntry.h" />
+    <ClInclude Include="TrackListView.h" />
     <ClInclude Include="Window.h" />
     <ClInclude Include="Colors.h" />
     <ClInclude Include="CommandWindow.h" />

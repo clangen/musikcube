@@ -2,10 +2,15 @@
 
 #include "ILayout.h"
 #include "CategoryListView.h"
+#include "TrackListView.h"
+
+#include <core/library/ILibrary.h>
+
+using musik::core::LibraryPtr;
 
 class LibraryLayout : public ILayout {
     public:
-        LibraryLayout();
+        LibraryLayout(LibraryPtr library);
         ~LibraryLayout(); /* not virtual */
 
         virtual IWindow* FocusNext();
@@ -15,5 +20,6 @@ class LibraryLayout : public ILayout {
         virtual void OnIdle();
 
     private:
-        CategoryListView albumList;
+        boost::shared_ptr<CategoryListView> albumList;
+        boost::shared_ptr<TrackListView> trackList;
 };

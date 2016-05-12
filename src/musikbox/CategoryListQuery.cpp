@@ -26,9 +26,10 @@ bool CategoryListQuery::OnRun(Connection& db) {
     }
 
     std::string query =
-        "SELECT DISTINCT artists.name "
-        "FROM artists, tracks "
-        "WHERE artists.id = tracks.visual_artist_id;";
+        "SELECT DISTINCT albums.name "
+        "FROM albums, tracks "
+        "WHERE albums.id = tracks.album_id "
+        "ORDER BY albums.sort_order;";
 
     Statement stmt(query.c_str(), db);
     
@@ -36,5 +37,5 @@ bool CategoryListQuery::OnRun(Connection& db) {
         result->push_back(stmt.ColumnText(0));
     }
 
-    return false;
+    return true;
 }

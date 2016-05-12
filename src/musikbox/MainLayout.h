@@ -16,7 +16,7 @@ using musik::core::audio::Transport;
 
 class MainLayout : public ILayout {
     public:
-        MainLayout(Transport& transport);
+        MainLayout(Transport& transport, LibraryPtr library);
         ~MainLayout();
 
         virtual IWindow* FocusNext();

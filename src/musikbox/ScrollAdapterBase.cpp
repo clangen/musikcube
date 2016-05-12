@@ -73,6 +73,7 @@ void ScrollAdapterBase::DrawPage(WINDOW* window, size_t index, ScrollPosition *r
         result->firstVisibleEntryIndex = 0;
         result->lineCount = 0;
         result->totalEntries = 0;
+        result->logicalIndex = 0;
     }
 
     wclear(window);
@@ -84,6 +85,10 @@ void ScrollAdapterBase::DrawPage(WINDOW* window, size_t index, ScrollPosition *r
     if (index >= GetEntryCount()) {
         index = GetEntryCount() - 1;
     }
+
+    /* unfortunately this needs to go here so the GetEntry() method knows
+    what the the implied focus is */
+    result->logicalIndex = index;
 
     std::deque<EntryPtr> visible;
     size_t topIndex; /* calculated by GetVisibleItems */
@@ -121,5 +126,6 @@ void ScrollAdapterBase::DrawPage(WINDOW* window, size_t index, ScrollPosition *r
         result->firstVisibleEntryIndex = topIndex;
         result->lineCount = drawnLines;
         result->totalEntries = GetEntryCount();
+        result->logicalIndex = index;
     }
 }

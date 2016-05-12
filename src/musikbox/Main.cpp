@@ -48,6 +48,8 @@
 #include <boost/filesystem/fstream.hpp>
 #include <boost/filesystem/detail/utf8_codecvt_facet.hpp>
 
+#include <core/library/LibraryFactory.h>
+
 #ifdef WIN32
 #undef MOUSE_MOVED
 
@@ -83,6 +85,7 @@ int main(int argc, char* argv[])
     start_color();
     use_default_colors();
     refresh();
+    curs_set(0);
 
 #ifdef __PDCURSES__
     PDC_set_title("musikbox ♫");
@@ -94,8 +97,11 @@ int main(int argc, char* argv[])
         Transport tp;
         tp.SetVolume(0.01);
 
-        MainLayout mainLayout(tp);
-        LibraryLayout library;
+        using musik::core::LibraryFactory;
+        LibraryPtr library = LibraryFactory::Libraries().at(0);
+
+        MainLayout mainLayout(tp, library);
+        //LibraryLayout libraryLayout(library);
 
         int ch;
         timeout(IDLE_TIMEOUT_MS);

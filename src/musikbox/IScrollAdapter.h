@@ -10,6 +10,7 @@ class IScrollAdapter {
                 firstVisibleEntryIndex = 0;
                 visibleEntryCount = 0;
                 lineCount = 0;
+                logicalIndex = 0;
                 totalEntries = 0;
             }
 
@@ -17,6 +18,7 @@ class IScrollAdapter {
             size_t visibleEntryCount;
             size_t lineCount;
             size_t totalEntries;
+            size_t logicalIndex;
         };
 
         class IEntry {

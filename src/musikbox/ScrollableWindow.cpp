@@ -19,6 +19,10 @@ void ScrollableWindow::SetSize(int width, int height) {
     GetScrollAdapter().SetDisplaySize(GetContentWidth(), GetContentHeight());
 }
 
+IScrollAdapter::ScrollPosition ScrollableWindow::GetScrollPosition() {
+    return this->scrollPosition;
+}
+
 void ScrollableWindow::OnAdapterChanged() {
     IScrollAdapter *adapter = &GetScrollAdapter();
     if (IsLastItemVisible()) {
