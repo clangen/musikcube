@@ -2,8 +2,9 @@
 
 #include <sigslot/sigslot.h>
 
-#include "ScrollableWindow.h"
+#include "ListWindow.h"
 #include "ScrollAdapterBase.h"
+#include "CategoryListQuery.h"
 
 #include <core/library/IQuery.h>
 #include <core/library/ILibrary.h>
@@ -11,7 +12,7 @@
 using musik::core::QueryPtr;
 using musik::core::LibraryPtr;
 
-class CategoryListView : public ScrollableWindow, public sigslot::has_slots<> {
+class CategoryListView : public ListWindow, public sigslot::has_slots<> {
     public:
         CategoryListView(LibraryPtr library);
         ~CategoryListView(); /* non-virtual for now*/
@@ -35,8 +36,8 @@ class CategoryListView : public ScrollableWindow, public sigslot::has_slots<> {
 
     private:
         LibraryPtr library;
-        QueryPtr activeQuery;
         Adapter *adapter;
 
+        boost::shared_ptr<CategoryListQuery> activeQuery;
         boost::shared_ptr<std::vector<std::string>> metadata;
 };

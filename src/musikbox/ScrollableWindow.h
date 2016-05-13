@@ -8,7 +8,7 @@
 class ScrollableWindow : public IScrollable, public Window {
     public:
         ScrollableWindow();
-        ~ScrollableWindow();
+        virtual ~ScrollableWindow();
 
         virtual void SetSize(int width, int height);
 
@@ -23,14 +23,12 @@ class ScrollableWindow : public IScrollable, public Window {
 
     protected:
         virtual IScrollAdapter& GetScrollAdapter() = 0;
+        virtual IScrollAdapter::ScrollPosition& GetScrollPosition();
+        virtual void OnAdapterChanged();
 
-        IScrollAdapter::ScrollPosition GetScrollPosition();
-
-        void OnAdapterChanged();
+        size_t GetPreviousPageEntryIndex();
+        bool IsLastItemVisible();
 
     private:
-        bool IsLastItemVisible();
-        size_t GetPreviousPageEntryIndex();
-
         IScrollAdapter::ScrollPosition scrollPosition;
 };

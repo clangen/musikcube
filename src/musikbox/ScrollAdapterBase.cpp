@@ -34,7 +34,7 @@ void ScrollAdapterBase::GetVisibleItems(
 
     /* forward search first... */
     int end = (int) GetEntryCount();
-    for (int i = (int) desired; i < end && totalHeight >= 0; i++) {
+    for (int i = (int) desired; i < end && totalHeight > 0; i++) {
         EntryPtr entry = this->GetEntry(i);
         entry->SetWidth(this->width);
         totalHeight -= entry->GetLineCount();
@@ -109,9 +109,17 @@ void ScrollAdapterBase::DrawPage(WINDOW* window, size_t index, ScrollPosition *r
             std::string line = entry->GetLine(i);
             size_t len = u8len(line);
 
-            /* don't add a newline if we're going to hit the end of the line, the
-            newline will be added automatically. */
-            wprintw(window, "%s%s", line.c_str(), len >= this->width ? "" : "\n");
+            /* pad with empty spaces to the end of the line. this allows us to
+            do highlight rows. this should probably be configurable. */
+
+            int remain = this->width - len;
+            if (remain > 0) {
+                line += std::string(remain, ' ');
+            }
+
+            /* string is padded above, we don't need a \n */
+
+            wprintw(window, "%s", line.c_str());
 
             ++drawnLines;
         }

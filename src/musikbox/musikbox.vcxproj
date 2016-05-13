@@ -117,6 +117,7 @@
   <ItemGroup>
     <ClCompile Include="CategoryListQuery.cpp" />
     <ClCompile Include="CategoryListView.cpp" />
+    <ClCompile Include="ListWindow.cpp" />
     <ClCompile Include="ScrollAdapterBase.cpp" />
     <ClCompile Include="LibraryLayout.cpp" />
     <ClCompile Include="MainLayout.cpp" />
@@ -151,6 +152,7 @@
     <ClInclude Include="MainLayout.h" />
     <ClInclude Include="MultiLineEntry.h" />
     <ClInclude Include="ScrollableWindow.h" />
+    <ClInclude Include="ListWindow.h" />
     <ClInclude Include="SingleLineEntry.h" />
     <ClInclude Include="TrackListView.h" />
     <ClInclude Include="Window.h" />

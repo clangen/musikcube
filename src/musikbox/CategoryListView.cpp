@@ -11,10 +11,10 @@ using musik::core::LibraryPtr;
 using musik::core::IQuery;
 
 CategoryListView::CategoryListView(LibraryPtr library) 
-: ScrollableWindow() {
+: ListWindow() {
     this->library = library;
     this->adapter = new Adapter(*this);
-    this->activeQuery = QueryPtr(new CategoryListQuery());
+    this->activeQuery.reset(new CategoryListQuery());
     this->library->Enqueue(activeQuery);
 }
 
@@ -24,10 +24,7 @@ CategoryListView::~CategoryListView() {
 
 void CategoryListView::OnIdle() {
     if (activeQuery && activeQuery->GetStatus() == IQuery::Finished) {
-        /* need to make better use of smart pointers here... there should
-        be a way to "cast" smart_ptr<Query> to smart_ptr<FooQuery>. */
-        CategoryListQuery *clq = (CategoryListQuery *) activeQuery.get();
-        this->metadata = clq->GetResult();
+        this->metadata = activeQuery->GetResult();
         activeQuery.reset();
         this->OnAdapterChanged();
     }
@@ -46,9 +43,7 @@ size_t CategoryListView::Adapter::GetEntryCount() {
 }
 
 IScrollAdapter::EntryPtr CategoryListView::Adapter::GetEntry(size_t index) {
-    this->spos = this->parent.GetScrollPosition();
-    int64 attrs = index == this->spos.logicalIndex ? COLOR_PAIR(BOX_COLOR_BLACK_ON_GREEN) : -1;
-    
+    int64 attrs = (index == parent.GetSelectedIndex()) ? COLOR_PAIR(BOX_COLOR_BLACK_ON_GREEN) : -1;
     IScrollAdapter::EntryPtr entry(new SingleLineEntry(parent.metadata->at(index)));
     entry->SetAttrs(attrs);
 

@@ -66,6 +66,9 @@
     <ClCompile Include="TrackListView.cpp">
       <Filter>view</Filter>
     </ClCompile>
+    <ClCompile Include="ListWindow.cpp">
+      <Filter>curses</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -137,6 +140,9 @@
     </ClInclude>
     <ClInclude Include="TrackListView.h">
       <Filter>view</Filter>
+    </ClInclude>
+    <ClInclude Include="ListWindow.h">
+      <Filter>curses</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -169,6 +169,16 @@ int main(int argc, char* argv[])
                     scrollable->ScrollUp();
                 }
             }
+            else if (ch == KEY_HOME) {
+                if (scrollable) {
+                    scrollable->ScrollToTop();
+                }
+            }
+            else if (ch == KEY_END) {
+                if (scrollable) {
+                    scrollable->ScrollToBottom();
+                }
+            }
             else if (input) {
                 input->WriteChar(ch);
             }

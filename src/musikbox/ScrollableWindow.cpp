@@ -7,6 +7,8 @@
 
 #include <core/debug.h>
 
+typedef IScrollAdapter::ScrollPosition ScrollPos;
+
 ScrollableWindow::ScrollableWindow()
 : Window() {
 }
@@ -19,20 +21,23 @@ void ScrollableWindow::SetSize(int width, int height) {
     GetScrollAdapter().SetDisplaySize(GetContentWidth(), GetContentHeight());
 }
 
-IScrollAdapter::ScrollPosition ScrollableWindow::GetScrollPosition() {
+ScrollPos& ScrollableWindow::GetScrollPosition() {
     return this->scrollPosition;
 }
 
 void ScrollableWindow::OnAdapterChanged() {
     IScrollAdapter *adapter = &GetScrollAdapter();
+
     if (IsLastItemVisible()) {
         this->ScrollToBottom();
     }
     else {
+        ScrollPos &pos = this->GetScrollPosition();
+
         GetScrollAdapter().DrawPage(
             this->GetContent(), 
-            this->scrollPosition.firstVisibleEntryIndex, 
-            &this->scrollPosition);
+            pos.firstVisibleEntryIndex, 
+            &pos);
 
         this->Repaint();
     }
@@ -44,7 +49,7 @@ void ScrollableWindow::Create() {
 }
 
 void ScrollableWindow::ScrollToTop() {
-    GetScrollAdapter().DrawPage(this->GetContent(), 0, &scrollPosition);
+    GetScrollAdapter().DrawPage(this->GetContent(), 0, &this->GetScrollPosition());
     this->Repaint();
 }
 
@@ -52,27 +57,31 @@ void ScrollableWindow::ScrollToBottom() {
     GetScrollAdapter().DrawPage(
         this->GetContent(), 
         GetScrollAdapter().GetEntryCount(),
-        &scrollPosition);
+        &this->GetScrollPosition());
 
     this->Repaint();
 }
 
 void ScrollableWindow::ScrollUp(int delta) {
-    if (this->scrollPosition.firstVisibleEntryIndex > 0) {
+    ScrollPos &pos = this->GetScrollPosition();
+
+    if (pos.firstVisibleEntryIndex > 0) {
         GetScrollAdapter().DrawPage(
             this->GetContent(),
-            this->scrollPosition.firstVisibleEntryIndex - delta,
-            &scrollPosition);
+            pos.firstVisibleEntryIndex - delta,
+            &pos);
 
         this->Repaint();
     }
 }
 
 void ScrollableWindow::ScrollDown(int delta) {
+    ScrollPos &pos = this->GetScrollPosition();
+
     GetScrollAdapter().DrawPage(
         this->GetContent(),
-        this->scrollPosition.firstVisibleEntryIndex + delta,
-        &scrollPosition);
+        pos.firstVisibleEntryIndex + delta,
+        &pos);
 
     this->Repaint();
 }
@@ -82,7 +91,7 @@ size_t ScrollableWindow::GetPreviousPageEntryIndex() {
     int remaining = this->GetContentHeight();
     int width = this->GetContentWidth();
 
-    int i = this->scrollPosition.firstVisibleEntryIndex;
+    int i = this->GetScrollPosition().firstVisibleEntryIndex;
     while (i >= 0) {
         IScrollAdapter::EntryPtr entry = adapter->GetEntry(i);
         entry->SetWidth(width);
@@ -101,19 +110,21 @@ size_t ScrollableWindow::GetPreviousPageEntryIndex() {
 
 void ScrollableWindow::PageUp() {
     ScrollUp(
-        this->scrollPosition.firstVisibleEntryIndex -
+        this->GetScrollPosition().firstVisibleEntryIndex -
         GetPreviousPageEntryIndex());
 }
 
 void ScrollableWindow::PageDown() {
-    ScrollDown(this->scrollPosition.visibleEntryCount - 1);
+    ScrollDown(this->GetScrollPosition().visibleEntryCount - 1);
 }
 
 bool ScrollableWindow::IsLastItemVisible() {
-    size_t lastIndex = this->scrollPosition.totalEntries;
+    ScrollPos &pos = this->GetScrollPosition();
+
+    size_t lastIndex = pos.totalEntries;
     lastIndex = (lastIndex == 0) ? lastIndex : lastIndex - 1;
 
-    size_t firstVisible = this->scrollPosition.firstVisibleEntryIndex;
-    size_t lastVisible = firstVisible + this->scrollPosition.visibleEntryCount;
+    size_t firstVisible = pos.firstVisibleEntryIndex;
+    size_t lastVisible = firstVisible + pos.visibleEntryCount;
     return lastIndex >= firstVisible && lastIndex <= lastVisible;
 }
