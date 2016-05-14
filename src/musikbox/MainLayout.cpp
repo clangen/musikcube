@@ -32,6 +32,14 @@ MainLayout::MainLayout(Transport& transport, LibraryPtr library)
     this->commands.reset(new CommandWindow(this, transport, library, *this->output));
     this->transport.reset(new TransportWindow(this, transport));
 
+    /* UGH THIS IS GROSS PLEASE FIX */
+    this->AddWindow(this->logs);
+    this->AddWindow(this->output);
+    this->AddWindow(this->resources);
+    this->AddWindow(this->commands);
+    this->AddWindow(this->transport);
+
+    /* SHOULD BE HANDLED BY BASE CLASS SOMEHOW */
     this->focusOrder.push_back(commands.get());
     this->focusOrder.push_back(output.get());
     this->focusOrder.push_back(logs.get());

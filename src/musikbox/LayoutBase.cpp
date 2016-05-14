@@ -60,3 +60,11 @@ size_t LayoutBase::GetWindowCount() {
 IWindowPtr LayoutBase::GetWindowAt(size_t position) {
     return this->children.at(position);
 }
+
+void LayoutBase::Hide() {
+    this->Destroy();
+}
+
+void LayoutBase::Show() {
+    this->Create();
+}

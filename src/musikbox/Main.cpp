@@ -55,6 +55,64 @@
 
 #define IDLE_TIMEOUT_MS 500
 
+struct WindowState {
+    ILayout* layout;
+    IWindow* focused;
+    IInput* input;
+    IScrollable* scrollable;
+};
+
+void changeLayout(WindowState& current, ILayout* newLayout) {
+    if (current.layout == newLayout) {
+        return;
+    }
+
+    if (current.input && current.focused) {
+        /* the current input is about to lose focus. reset the timeout */
+        wtimeout(current.focused->GetContent(), 0);
+    }
+
+    if (current.layout) {
+        current.layout->Hide();
+        current.layout = { 0 };
+    }
+
+    if (newLayout) {
+        current.layout = newLayout;
+        current.layout->Show();
+        current.focused = newLayout->GetFocus();
+        current.input = dynamic_cast<IInput*>(current.focused);
+        current.scrollable = dynamic_cast<IScrollable*>(current.focused);
+    }
+
+    if (current.input) {
+        curs_set(1);
+        wtimeout(current.focused->GetContent(), IDLE_TIMEOUT_MS);
+    }
+}
+
+void focusNextInLayout(WindowState& current) {
+    if (!current.layout) {
+        return;
+    }
+
+    current.focused = current.layout->FocusNext();
+    current.scrollable = dynamic_cast<IScrollable*>(current.focused);
+    current.input = dynamic_cast<IInput*>(current.focused);
+
+    if (current.input != NULL) {
+        curs_set(1);
+        current.input->Focus();
+
+        if (current.focused) {
+            wtimeout(current.focused->GetContent(), IDLE_TIMEOUT_MS);
+        }
+    }
+    else {
+        curs_set(0);
+    }
+}
+
 int _main(int argc, _TCHAR* argv[]);
 
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow) {
@@ -102,86 +160,81 @@ int main(int argc, char* argv[])
         LibraryPtr library = LibraryFactory::Libraries().at(0);
 
         MainLayout mainLayout(tp, library);
-        //LibraryLayout libraryLayout(library);
+        LibraryLayout libraryLayout(library);
 
-        int ch;
+        mainLayout.Hide();
+        libraryLayout.Hide();
+
+        int64 ch;
         timeout(IDLE_TIMEOUT_MS);
         bool quit = false;
 
-        ILayout* layout = &mainLayout;
-        IWindow* focused = layout->GetFocus();
-        IInput* input = dynamic_cast<IInput*>(focused);
-        IScrollable* scrollable = dynamic_cast<IScrollable*>(focused);
+        WindowState state = { 0 };
+        changeLayout(state, &mainLayout);
 
-        if (input != NULL) {
+        if (state.input != NULL) {
             curs_set(1);
-            wtimeout(focused->GetContent(), IDLE_TIMEOUT_MS);
+            wtimeout(state.focused->GetContent(), IDLE_TIMEOUT_MS);
         }
 
         while (!quit) {
             /* if the focused item is an IInput, then get characters from it,
             so it can draw a pretty cursor if it wants */
-            ch = (input != NULL) ? wgetch(focused->GetContent()) : getch();
+            if (state.input) {
+                WINDOW *c = state.focused->GetContent();
+                keypad(c, TRUE);
+                ch = wgetch(c);
+            }
+            else {
+                ch = getch();
+            }
 
             if (ch == -1) { /* timeout */
-                layout->OnIdle();
+                state.layout->OnIdle();
             }
             else if (ch == 9) { /* tab */
-                if (input != NULL) {
-                    /* losing focus, reset timeout */
-                    wtimeout(focused->GetContent(), 0);
-                }
-
-                focused = layout->FocusNext();
-                scrollable = dynamic_cast<IScrollable*>(focused);
-                input = dynamic_cast<IInput*>(focused);
-
-                if (input != NULL) {
-                    curs_set(1);
-                    input->Focus();
-
-                    if (focused) {
-                        wtimeout(focused->GetContent(), IDLE_TIMEOUT_MS);
-                    }
-                }
-                else {
-                    curs_set(0);
-                }
+                focusNextInLayout(state);
             }
             else if (ch >= KEY_F(0) && ch <= KEY_F(12)) {
+                if (ch == KEY_F(1)) {
+                    changeLayout(state, &mainLayout);
+                }
+                else if (ch == KEY_F(2)) {
+                    changeLayout(state, &libraryLayout);
+                }
             }
             else if (ch == KEY_NPAGE) {
-                if (scrollable) {
-                    scrollable->PageDown();
+                if (state.scrollable) {
+                    state.scrollable->PageDown();
                 }
             }
             else if (ch == KEY_PPAGE) {
-                if (scrollable) {
-                    scrollable->PageUp();
+                if (state.scrollable) {
+                    state.scrollable->PageUp();
                 }
             }
             else if (ch == KEY_DOWN) {
-                if (scrollable) {
-                    scrollable->ScrollDown();
+                if (state.scrollable) {
+                    state.scrollable->ScrollDown();
                 }
             }
             else if (ch == KEY_UP) {
-                if (scrollable) {
-                    scrollable->ScrollUp();
+                if (state.scrollable) {
+                    state.scrollable->ScrollUp();
                 }
             }
             else if (ch == KEY_HOME) {
-                if (scrollable) {
-                    scrollable->ScrollToTop();
+                if (state.scrollable) {
+                    state.scrollable->ScrollToTop();
                 }
             }
             else if (ch == KEY_END) {
-                if (scrollable) {
-                    scrollable->ScrollToBottom();
+                if (state.scrollable) {
+                    state.scrollable->ScrollToBottom();
                 }
             }
-            else if (input) {
-                input->WriteChar(ch);
+            else if (state.input) {
+                state.input->WriteChar(ch);
             }
         }
     }

@@ -8,5 +8,8 @@ class ILayout : public IWindowGroup {
         virtual IWindow* FocusPrev() = 0;
         virtual IWindow* GetFocus() = 0;
         virtual void Layout() = 0;
+        virtual void Hide() = 0;
+        virtual void Show() = 0;
+
         virtual void OnIdle() = 0;
 };

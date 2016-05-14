@@ -19,6 +19,10 @@ class LayoutBase : public Window, public ILayout {
         virtual IWindow* FocusPrev() = 0;
         virtual IWindow* GetFocus() = 0;
         virtual void Layout() = 0;
+
+        virtual void Hide();
+        virtual void Show();
+
         virtual void OnIdle() = 0;
 
         /* IWindowGroup */
