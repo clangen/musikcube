@@ -3,8 +3,8 @@
 
 typedef IScrollAdapter::ScrollPosition ScrollPos;
 
-ListWindow::ListWindow() 
-: ScrollableWindow() {
+ListWindow::ListWindow(IWindow *parent) 
+: ScrollableWindow(parent) {
     this->selectedIndex = 0;
 }
 

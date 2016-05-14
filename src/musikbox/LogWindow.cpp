@@ -9,8 +9,8 @@
 
 typedef IScrollAdapter::IEntry IEntry;
 
-LogWindow::LogWindow() 
-: ScrollableWindow() {
+LogWindow::LogWindow(IWindow *parent) 
+: ScrollableWindow(parent) {
     this->SetContentColor(BOX_COLOR_WHITE_ON_BLUE);
 
     this->adapter = new SimpleScrollAdapter();

@@ -6,7 +6,7 @@
 
 class ResourcesWindow : public Window {
     public:
-        ResourcesWindow();
+        ResourcesWindow(IWindow *parent = NULL);
         virtual ~ResourcesWindow();
 
         virtual void Repaint();

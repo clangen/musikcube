@@ -14,7 +14,7 @@ using musik::core::LibraryPtr;
 
 class CategoryListView : public ListWindow, public sigslot::has_slots<> {
     public:
-        CategoryListView(LibraryPtr library);
+        CategoryListView(IWindow *parent, LibraryPtr library);
         ~CategoryListView(); /* non-virtual for now*/
 
         void OnIdle();

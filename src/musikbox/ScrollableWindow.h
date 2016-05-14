@@ -7,9 +7,10 @@
 
 class ScrollableWindow : public IScrollable, public Window {
     public:
-        ScrollableWindow();
+        ScrollableWindow(IWindow *parent = NULL);
         virtual ~ScrollableWindow();
 
+        virtual void Create();
         virtual void SetSize(int width, int height);
 
         virtual void ScrollToTop();
@@ -18,8 +19,6 @@ class ScrollableWindow : public IScrollable, public Window {
         virtual void ScrollDown(int delta = 1);
         virtual void PageUp();
         virtual void PageDown();
-
-        virtual void Create();
 
     protected:
         virtual IScrollAdapter& GetScrollAdapter() = 0;

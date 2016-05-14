@@ -21,8 +21,8 @@
 
 using musik::core::audio::Transport;
 
-TransportWindow::TransportWindow(Transport& transport)
-: Window() {
+TransportWindow::TransportWindow(IWindow *parent, Transport& transport)
+: Window(parent) {
     this->SetContentColor(BOX_COLOR_BLACK_ON_GREEN);
     this->transport = &transport;
     this->paused = false;

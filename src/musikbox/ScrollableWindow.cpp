@@ -9,8 +9,8 @@
 
 typedef IScrollAdapter::ScrollPosition ScrollPos;
 
-ScrollableWindow::ScrollableWindow()
-: Window() {
+ScrollableWindow::ScrollableWindow(IWindow *parent)
+: Window(parent) {
 }
 
 ScrollableWindow::~ScrollableWindow() {
@@ -28,13 +28,15 @@ ScrollPos& ScrollableWindow::GetScrollPosition() {
 void ScrollableWindow::OnAdapterChanged() {
     IScrollAdapter *adapter = &GetScrollAdapter();
 
+    adapter->SetDisplaySize(GetContentWidth(), GetContentHeight());
+
     if (IsLastItemVisible()) {
         this->ScrollToBottom();
     }
     else {
         ScrollPos &pos = this->GetScrollPosition();
 
-        GetScrollAdapter().DrawPage(
+        adapter->DrawPage(
             this->GetContent(), 
             pos.firstVisibleEntryIndex, 
             &pos);

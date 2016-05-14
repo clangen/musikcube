@@ -14,7 +14,8 @@ using namespace musik::core::audio;
 class CommandWindow : public Window, public IInput, public sigslot::has_slots<> {
     public:
         CommandWindow(
-            Transport& transport, 
+            IWindow *parent,
+            Transport& transport,
             LibraryPtr library,
             OutputWindow& output);
 

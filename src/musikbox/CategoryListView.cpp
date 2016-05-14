@@ -10,8 +10,8 @@
 using musik::core::LibraryPtr;
 using musik::core::IQuery;
 
-CategoryListView::CategoryListView(LibraryPtr library) 
-: ListWindow() {
+CategoryListView::CategoryListView(IWindow *parent, LibraryPtr library) 
+: ListWindow(parent) {
     this->library = library;
     this->adapter = new Adapter(*this);
     this->activeQuery.reset(new CategoryListQuery());

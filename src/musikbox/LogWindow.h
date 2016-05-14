@@ -9,7 +9,7 @@
 
 class LogWindow : public ScrollableWindow, public sigslot::has_slots<> {
     public:
-        LogWindow();
+        LogWindow(IWindow *parent = NULL);
         ~LogWindow();
 
         void Update();

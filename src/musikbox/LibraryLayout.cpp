@@ -1,10 +1,15 @@
 #include "stdafx.h"
+#include "Colors.h"
 #include "Screen.h"
 #include "LibraryLayout.h"
 
 LibraryLayout::LibraryLayout(LibraryPtr library) {
-    this->albumList.reset(new CategoryListView(library));
-    this->trackList.reset(new TrackListView());
+    this->SetSize(Screen::GetWidth(), Screen::GetHeight());
+    this->SetPosition(0, 0);
+    this->Create();
+
+    this->albumList.reset(new CategoryListView(this, library));
+    this->trackList.reset(new TrackListView(this));
     this->Layout();
 }
 
@@ -26,11 +31,11 @@ IWindow* LibraryLayout::GetFocus() {
 
 void LibraryLayout::Layout() {
     this->albumList->SetPosition(0, 0);
-    this->albumList->SetSize(20, Screen::GetHeight());
+    this->albumList->SetSize(20, this->GetHeight());
     this->albumList->Create();
 
     this->trackList->SetPosition(20, 0);
-    this->trackList->SetSize(Screen::GetWidth() - 20, Screen::GetHeight());
+    this->trackList->SetSize(this->GetWidth() - 20, this->GetHeight());
     this->trackList->Create();
 }
 

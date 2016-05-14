@@ -19,11 +19,16 @@ static inline IWindow* adjustFocus(IWindow* oldFocus, IWindow* newFocus) {
 }
 
 MainLayout::MainLayout(Transport& transport, LibraryPtr library) {
-    this->logs.reset(new LogWindow());
-    this->output.reset(new OutputWindow());
-    this->resources.reset(new ResourcesWindow());
-    this->commands.reset(new CommandWindow(transport, library, *this->output));
-    this->transport.reset(new TransportWindow(transport));
+    this->SetSize(Screen::GetWidth(), Screen::GetHeight());
+    this->SetPosition(0, 0);
+    this->SetFrameVisible(false);
+    this->Create();
+
+    this->logs.reset(new LogWindow(this));
+    this->output.reset(new OutputWindow(this));
+    this->resources.reset(new ResourcesWindow(this));
+    this->commands.reset(new CommandWindow(this, transport, library, *this->output));
+    this->transport.reset(new TransportWindow(this, transport));
 
     this->focusOrder.push_back(commands.get());
     this->focusOrder.push_back(output.get());

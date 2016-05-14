@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ILayout.h"
+#include "LayoutBase.h"
 #include "LogWindow.h"
 #include "CommandWindow.h"
 #include "OutputWindow.h"
@@ -14,7 +14,7 @@
 
 using musik::core::audio::Transport;
 
-class MainLayout : public ILayout {
+class MainLayout : public LayoutBase {
     public:
         MainLayout(Transport& transport, LibraryPtr library);
         ~MainLayout();

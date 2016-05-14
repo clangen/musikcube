@@ -5,13 +5,16 @@
 
 class Window : public IWindow {
     public:
-        Window();
+        Window(IWindow* parent = NULL);
         virtual ~Window();
 
-        void Create();
+        virtual void Create();
         void Destroy();
 
         virtual void Repaint();
+
+        void SetFrameVisible(bool enabled);
+        bool IsFrameVisible();
 
         virtual void SetContentColor(int color);
         virtual void SetFrameColor(int color);
@@ -29,10 +32,14 @@ class Window : public IWindow {
         virtual WINDOW* GetContent() const;
 
     protected:
+        IWindow* GetParent() const;
+
         void Clear();
 
     private:
+        IWindow* parent;
         WINDOW* frame;
         WINDOW* content;
+        bool drawFrame;
         int width, height, x, y, contentColor, frameColor;
 };

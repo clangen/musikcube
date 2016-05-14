@@ -32,8 +32,12 @@ bool tostr(T& t, const std::string& s) {
     return !(iss >> t).fail();
 }
 
-CommandWindow::CommandWindow(Transport& transport, LibraryPtr library, OutputWindow& output) 
-: Window() {
+CommandWindow::CommandWindow(
+    IWindow *parent,
+    Transport& transport,
+    LibraryPtr library, 
+    OutputWindow& output) 
+: Window(parent) {
     this->transport = &transport;
     this->library = library;
     this->buffer = new char[BUFFER_SIZE];

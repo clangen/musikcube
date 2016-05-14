@@ -7,7 +7,7 @@
 
 class OutputWindow : public ScrollableWindow {
     public:
-        OutputWindow();
+        OutputWindow(IWindow *parent = NULL);
         ~OutputWindow();
 
         void WriteLine(const std::string& line, int64 attrs = -1);

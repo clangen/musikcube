@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ILayout.h"
+#include "LayoutBase.h"
 #include "CategoryListView.h"
 #include "TrackListView.h"
 
@@ -8,7 +8,7 @@
 
 using musik::core::LibraryPtr;
 
-class LibraryLayout : public ILayout {
+class LibraryLayout : public LayoutBase {
     public:
         LibraryLayout(LibraryPtr library);
         ~LibraryLayout(); /* not virtual */

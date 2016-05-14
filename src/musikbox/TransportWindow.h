@@ -9,7 +9,7 @@ using namespace musik::core::audio;
 
 class TransportWindow : public Window {
     public:
-        TransportWindow(Transport& transport);
+        TransportWindow(IWindow *parent, Transport& transport);
         ~TransportWindow();
 
         virtual void Repaint();

@@ -3,14 +3,16 @@
 #include "stdafx.h"
 #include "Window.h"
 
-Window::Window() {
+Window::Window(IWindow *parent) {
     this->frame = this->content = 0;
+    this->parent = parent;
     this->height = 0;
     this->width = 0;
     this->x = 0;
     this->y = 0;
     this->contentColor = -1;
     this->frameColor = -1;
+    this->drawFrame = true;
 }
 
 Window::~Window() {
@@ -36,10 +38,18 @@ int Window::GetHeight() const {
 }
 
 int Window::GetContentHeight() const {
+    if (!this->drawFrame) {
+        return this->height;
+    }
+
     return this->height ? this->height - 2 : 0;
 }
 
 int Window::GetContentWidth() const {
+    if (!this->drawFrame) {
+        return this->width;
+    }
+
     return this->width ? this->width - 2 : 0;
 }
 
@@ -63,7 +73,7 @@ void Window::SetContentColor(int color) {
 void Window::SetFrameColor(int color) {
     this->frameColor = color;
 
-    if (this->frameColor != -1 && this->frame) {
+    if (this->drawFrame && this->frameColor != -1 && this->frame) {
         wbkgd(this->frame, COLOR_PAIR(this->frameColor));
         this->Repaint();
     }
@@ -80,27 +90,76 @@ WINDOW* Window::GetFrame() const {
 void Window::Create() {
     this->Destroy();
 
-    this->frame = newwin(this->height, this->width, this->y, this->x);
-    box(this->frame, 0, 0);
-    wrefresh(this->frame);
+    this->frame = (this->parent == NULL)
+        ? newwin(
+            this->height, 
+            this->width, 
+            this->y, 
+            this->x)
+        : derwin(
+            this->parent->GetFrame(), 
+            this->height, 
+            this->width, 
+            this->y, 
+            this->x);
 
-    this->content = derwin(
-        this->frame, 
-        this->height - 2, 
-        this->width - 2, 
-        1, 
-        1);
+    /* if we were asked not to draw a frame, we'll set the frame equal to
+    the content view, and use the content views colors*/
 
-    if (this->contentColor != -1) {
-        wbkgd(this->content, COLOR_PAIR(this->contentColor));
+    if (!this->drawFrame) {
+        this->content = this->frame;
+
+        if (this->contentColor != -1) {
+            wbkgd(this->frame, COLOR_PAIR(this->contentColor));
+        }
+
+        wrefresh(this->content);
     }
 
-    if (this->frameColor != -1) {
-        wbkgd(this->frame, COLOR_PAIR(this->frameColor));
-    }
+    /* otherwise we'll draw a box around the frame, and create a content
+    sub-window inside */
 
-    touchwin(this->content);
-    wrefresh(this->content);
+    else {
+        box(this->frame, 0, 0);
+
+        this->content = derwin(
+            this->frame,
+            this->height - 2,
+            this->width - 2,
+            1,
+            1);
+
+        if (this->frameColor != -1) {
+            wbkgd(this->frame, COLOR_PAIR(this->frameColor));
+        }
+
+        if (this->contentColor != -1) {
+            wbkgd(this->content, COLOR_PAIR(this->contentColor));
+        }
+
+        wrefresh(this->frame);
+        touchwin(this->content);
+        wrefresh(this->content);
+    }
+}
+
+void Window::SetFrameVisible(bool enabled) {
+    if (enabled != this->drawFrame) {
+        this->drawFrame = enabled;
+
+        if (this->frame || this->content) {
+            this->Destroy();
+            this->Create();
+        }
+    }
+}
+
+bool Window::IsFrameVisible() {
+    return this->drawFrame;
+}
+
+IWindow* Window::GetParent() const {
+    return this->parent;
 }
 
 void Window::Clear() {
@@ -117,7 +176,11 @@ void Window::Repaint() {
 void Window::Destroy() {
     if (this->frame) {
         delwin(this->content);
-        delwin(this->frame);
+
+        if (this->content != this->frame) {
+            delwin(this->frame);
+        }
+
         this->frame = this->content = NULL;
     }
 }

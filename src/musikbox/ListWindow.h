@@ -6,7 +6,7 @@
 
 class ListWindow : public ScrollableWindow {
     public:
-        ListWindow();
+        ListWindow(IWindow *parent = NULL);
         virtual ~ListWindow();
 
         virtual void ScrollToTop();

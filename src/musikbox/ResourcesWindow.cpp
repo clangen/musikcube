@@ -9,8 +9,8 @@
 #include <boost/format.hpp>
 
 
-ResourcesWindow::ResourcesWindow() 
-: Window() {
+ResourcesWindow::ResourcesWindow(IWindow *parent) 
+: Window(parent) {
     this->systemInfo = SystemInfo::Create();
 }
 
