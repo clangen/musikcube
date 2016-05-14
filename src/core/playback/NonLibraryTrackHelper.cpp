@@ -80,7 +80,7 @@ void NonLibraryTrackHelper::ThreadLoop() {
     /* load all IMetadataReader plugins */
     typedef metadata::IMetadataReader PluginType;
     typedef PluginFactory::DestroyDeleter<PluginType> Deleter;
-    typedef std::vector<boost::shared_ptr<metadata::IMetadataReader>> MetadataReaderList;
+    typedef std::vector<std::shared_ptr<metadata::IMetadataReader>> MetadataReaderList;
 
     MetadataReaderList metadataReaders = 
         PluginFactory::Instance() .QueryInterface<PluginType, Deleter>("GetMetadataReader");

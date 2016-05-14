@@ -239,7 +239,7 @@ void CommandWindow::ListPlugins() const {
     using musik::core::IPlugin;
     using musik::core::PluginFactory;
 
-    typedef std::vector<boost::shared_ptr<IPlugin>> PluginList;
+    typedef std::vector<std::shared_ptr<IPlugin>> PluginList;
     typedef PluginFactory::NullDeleter<IPlugin> Deleter;
 
     PluginList plugins = PluginFactory::Instance()

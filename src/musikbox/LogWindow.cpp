@@ -56,7 +56,7 @@ void LogWindow::Update() {
         std::string s = boost::str(boost::format(
             "[%1%] %2%") % entry->tag % entry->message);
 
-        this->adapter->AddEntry(boost::shared_ptr<IEntry>(new MultiLineEntry(s, attrs)));
+        this->adapter->AddEntry(std::shared_ptr<IEntry>(new MultiLineEntry(s, attrs)));
 
         delete entry;
     }

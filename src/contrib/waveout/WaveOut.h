@@ -56,7 +56,7 @@ class WaveOut : public IOutput {
         virtual bool Play(IBuffer *buffer, IBufferProvider *provider);
 
     public: 
-        typedef boost::shared_ptr<WaveOutBuffer> WaveOutBufferPtr;
+        typedef std::shared_ptr<WaveOutBuffer> WaveOutBufferPtr;
         static DWORD WINAPI WaveCallbackThreadProc(LPVOID params);
 
         void OnBufferWrittenToOutput(WaveOutBuffer *buffer);

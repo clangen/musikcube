@@ -42,7 +42,7 @@ namespace musik { namespace core { namespace audio {
 
 class  Buffer;
 class  Stream;
-typedef boost::shared_ptr<Buffer> BufferPtr;
+typedef std::shared_ptr<Buffer> BufferPtr;
 
 //////////////////////////////////////////
 ///\brief

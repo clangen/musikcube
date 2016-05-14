@@ -44,7 +44,7 @@
 using namespace musik::core;
 
 LibraryFactory& LibraryFactory::Instance() { 
-    typedef boost::shared_ptr<LibraryFactory> InstanceType;
+    typedef std::shared_ptr<LibraryFactory> InstanceType;
     static InstanceType sInstance(new LibraryFactory());
     return *sInstance; 
 };

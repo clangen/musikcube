@@ -753,7 +753,7 @@ void Indexer::ProcessAddRemoveQueue() {
 void Indexer::RunAnalyzers() {
     typedef audio::IAnalyzer PluginType;
     typedef PluginFactory::DestroyDeleter<PluginType> Deleter;
-    typedef boost::shared_ptr<PluginType> PluginPtr;
+    typedef std::shared_ptr<PluginType> PluginPtr;
     typedef std::vector<PluginPtr> PluginVector;
 
     /* short circuit if there aren't any analyzers */

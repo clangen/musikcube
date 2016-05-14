@@ -10,7 +10,7 @@
 namespace musik { namespace core {
     
     class ILibrary;
-    typedef boost::shared_ptr<ILibrary> LibraryPtr;
+    typedef std::shared_ptr<ILibrary> LibraryPtr;
 
     class ILibrary {
         public:

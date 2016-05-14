@@ -71,7 +71,7 @@ namespace musik { namespace core {
             virtual TrackPtr Copy();
 
         private:
-            typedef boost::weak_ptr<Track> SelfWeakPtr;
+            typedef std::weak_ptr<Track> SelfWeakPtr;
             SelfWeakPtr selfPtr;
             Track::MetadataMap metadata;
             std::string uri;

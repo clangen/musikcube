@@ -48,11 +48,11 @@ namespace musik { namespace core { namespace audio {
 
     class  Player;
     class  Transport;
-    typedef boost::shared_ptr<Player> PlayerPtr;
+    typedef std::shared_ptr<Player> PlayerPtr;
 
     class Player : public IBufferProvider {
         public:
-            typedef boost::shared_ptr<IOutput> OutputPtr;
+            typedef std::shared_ptr<IOutput> OutputPtr;
 
             static PlayerPtr Create(std::string &url,OutputPtr *output=&OutputPtr());
     

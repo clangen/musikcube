@@ -47,7 +47,7 @@ namespace musik { namespace core { namespace audio {
 
     class  Stream;
     class  Player;
-    typedef boost::shared_ptr<Stream> StreamPtr;
+    typedef std::shared_ptr<Stream> StreamPtr;
 
     class  Stream {
         public:
@@ -77,10 +77,10 @@ namespace musik { namespace core { namespace audio {
 
         private:        
             typedef std::list<BufferPtr> BufferList;
-            typedef boost::shared_ptr<IDecoderFactory> DecoderFactoryPtr;
+            typedef std::shared_ptr<IDecoderFactory> DecoderFactoryPtr;
             typedef std::vector<DecoderFactoryPtr> DecoderFactoryList;
-            typedef boost::shared_ptr<IDecoder> DecoderPtr;
-            typedef boost::shared_ptr<IDSP> DspPtr;
+            typedef std::shared_ptr<IDecoder> DecoderPtr;
+            typedef std::shared_ptr<IDSP> DspPtr;
             typedef std::vector<DspPtr> Dsps;
 
             long preferedBufferSampleSize;

@@ -31,7 +31,7 @@ class IScrollAdapter {
             virtual int64 GetAttrs() = 0;
         };
 
-        typedef boost::shared_ptr<IEntry> EntryPtr;
+        typedef std::shared_ptr<IEntry> EntryPtr;
 
         virtual void SetDisplaySize(size_t width, size_t height) = 0;
         virtual size_t GetEntryCount() = 0;

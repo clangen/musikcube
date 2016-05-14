@@ -38,6 +38,6 @@ class CategoryListView : public ListWindow, public sigslot::has_slots<> {
         LibraryPtr library;
         Adapter *adapter;
 
-        boost::shared_ptr<CategoryListQuery> activeQuery;
-        boost::shared_ptr<std::vector<std::string>> metadata;
+        std::shared_ptr<CategoryListQuery> activeQuery;
+        std::shared_ptr<std::vector<std::string>> metadata;
 };

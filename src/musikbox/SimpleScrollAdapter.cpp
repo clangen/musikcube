@@ -34,7 +34,7 @@ EntryPtr SimpleScrollAdapter::GetEntry(size_t index) {
     return this->entries.at(index);
 }
 
-void SimpleScrollAdapter::AddEntry(boost::shared_ptr<IEntry> entry) {
+void SimpleScrollAdapter::AddEntry(std::shared_ptr<IEntry> entry) {
     entry->SetWidth(this->GetWidth());
     entries.push_back(entry);
 

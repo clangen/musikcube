@@ -26,11 +26,11 @@ class MainLayout : public LayoutBase {
         virtual void OnIdle();
 
     private:
-        boost::shared_ptr<LogWindow> logs;
-        boost::shared_ptr<CommandWindow> commands;
-        boost::shared_ptr<OutputWindow> output;
-        boost::shared_ptr<TransportWindow> transport;
-        boost::shared_ptr<ResourcesWindow> resources;
+        std::shared_ptr<LogWindow> logs;
+        std::shared_ptr<CommandWindow> commands;
+        std::shared_ptr<OutputWindow> output;
+        std::shared_ptr<TransportWindow> transport;
+        std::shared_ptr<ResourcesWindow> resources;
         
         std::vector<IWindow*> focusOrder;
         int focusIndex;

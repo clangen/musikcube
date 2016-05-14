@@ -55,7 +55,7 @@ namespace musik { namespace core {
             std::string value;
     };
 
-    typedef boost::shared_ptr<MetadataValue> MetadataValuePtr;
+    typedef std::shared_ptr<MetadataValue> MetadataValuePtr;
     typedef std::vector<MetadataValuePtr> MetadataValueVector;
 
 } }

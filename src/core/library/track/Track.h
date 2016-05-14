@@ -45,7 +45,7 @@
 namespace musik { namespace core {
 
     class Track;
-    typedef boost::shared_ptr<Track> TrackPtr;
+    typedef std::shared_ptr<Track> TrackPtr;
     typedef std::vector<TrackPtr> TrackVector;
 
     //////////////////////////////////////////

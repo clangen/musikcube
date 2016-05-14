@@ -11,7 +11,7 @@
 namespace musik { namespace core {
     
     class IQuery;
-    typedef boost::shared_ptr<IQuery> QueryPtr;
+    typedef std::shared_ptr<IQuery> QueryPtr;
 
     class IQuery {
         public:

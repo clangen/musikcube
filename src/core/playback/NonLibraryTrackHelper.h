@@ -72,7 +72,7 @@ class NonLibraryTrackHelper{
         boost::mutex mutex;
         bool threadIsRunning;
 
-        typedef boost::weak_ptr<musik::core::Track> TrackWeakPtr;
+        typedef std::weak_ptr<musik::core::Track> TrackWeakPtr;
         std::list<TrackWeakPtr> tracksToRead;
 
         typedef boost::scoped_ptr<boost::thread> ThreadPtr;

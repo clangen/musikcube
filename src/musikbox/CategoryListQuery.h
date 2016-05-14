@@ -8,7 +8,7 @@ using musik::core::db::Connection;
 
 class CategoryListQuery : public QueryBase {
     public:
-        typedef boost::shared_ptr<std::vector<std::string>> Result;
+        typedef std::shared_ptr<std::vector<std::string>> Result;
 
         CategoryListQuery();
         ~CategoryListQuery();

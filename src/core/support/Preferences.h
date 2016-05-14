@@ -102,10 +102,10 @@ class  Preferences{
                 ~IO(void);
 
                 typedef std::map<std::string,Setting> SettingMap;
-                typedef boost::shared_ptr<SettingMap> SettingMapPtr;
+                typedef std::shared_ptr<SettingMap> SettingMapPtr;
                 typedef std::map<std::string,SettingMapPtr> NamespaceMap;
                 typedef std::map<int,NamespaceMap> LibNamespaceMap;
-                typedef boost::shared_ptr<IO> Ptr;
+                typedef std::shared_ptr<IO> Ptr;
 
                 SettingMapPtr GetNamespace(const char* nameSpace,const char* library,int &libraryId);
 

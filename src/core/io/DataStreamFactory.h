@@ -44,14 +44,14 @@ namespace musik { namespace core { namespace io {
 
     class DataStreamFactory {
         public:
-            typedef boost::shared_ptr<IDataStream> DataStreamPtr;
+            typedef std::shared_ptr<IDataStream> DataStreamPtr;
 
         private:
             static DataStreamFactory sInstance;
             DataStreamFactory();
 
         private:
-            typedef std::vector<boost::shared_ptr<IDataStreamFactory>> DataStreamFactoryVector;
+            typedef std::vector<std::shared_ptr<IDataStreamFactory>> DataStreamFactoryVector;
             DataStreamFactoryVector dataStreamFactories;
 
         public:

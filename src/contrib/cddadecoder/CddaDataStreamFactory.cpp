@@ -34,7 +34,7 @@
 #include "shlwapi.h"
 #include <string>
 #include "CddaDataStreamFactory.h"
-#include "CddaDataStream.h";
+#include "CddaDataStream.h"
 
 CddaDataStreamFactory::CddaDataStreamFactory() {
 

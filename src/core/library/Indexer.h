@@ -111,13 +111,13 @@ namespace musik { namespace core {
                     std::string path;
             };
 
-            typedef std::vector<boost::shared_ptr<metadata::IMetadataReader>> MetadataReaderList;
+            typedef std::vector<std::shared_ptr<metadata::IMetadataReader>> MetadataReaderList;
 
             std::deque<AddRemoveContext> addRemoveQueue;
 
             MetadataReaderList metadataReaders;
     };
 
-    typedef boost::shared_ptr<Indexer> IndexerPtr;
+    typedef std::shared_ptr<Indexer> IndexerPtr;
 
 } } 
