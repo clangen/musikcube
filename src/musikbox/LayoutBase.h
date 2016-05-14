@@ -11,18 +11,15 @@ class LayoutBase : public Window, public ILayout {
         virtual ~LayoutBase();
 
         /* IWindow */
-        virtual void Create();
-        virtual void Destroy();
+        virtual void Show();
+        virtual void Hide();
 
         /* ILayout */
-        virtual IWindow* FocusNext() = 0;
-        virtual IWindow* FocusPrev() = 0;
-        virtual IWindow* GetFocus() = 0;
+        virtual IWindow* FocusNext();
+        virtual IWindow* FocusPrev();
+        virtual IWindow* GetFocus();
+
         virtual void Layout() = 0;
-
-        virtual void Hide();
-        virtual void Show();
-
         virtual void OnIdle() = 0;
 
         /* IWindowGroup */
@@ -32,5 +29,10 @@ class LayoutBase : public Window, public ILayout {
         virtual IWindowPtr GetWindowAt(size_t position);
 
     private: 
+        void AddFocusable(IWindowPtr window);
+        void RemoveFocusable(IWindowPtr window);
+
         std::vector<IWindowPtr> children;
+        std::vector<IWindowPtr> focusable;
+        int focused;
 };

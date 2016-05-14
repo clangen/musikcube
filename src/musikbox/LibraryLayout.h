@@ -13,9 +13,6 @@ class LibraryLayout : public LayoutBase {
         LibraryLayout(LibraryPtr library);
         ~LibraryLayout(); /* not virtual */
 
-        virtual IWindow* FocusNext();
-        virtual IWindow* FocusPrev();
-        virtual IWindow* GetFocus();
         virtual void Layout();
         virtual void OnIdle();
 

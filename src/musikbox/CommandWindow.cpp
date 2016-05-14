@@ -55,7 +55,7 @@ void CommandWindow::Focus() {
     wmove(this->GetContent(), 0, bufferPosition);
 }
 
-void CommandWindow::WriteChar(int ch) {
+void CommandWindow::WriteChar(int64 ch) {
     if (bufferPosition >= MAX_SIZE) {
         return;
     }

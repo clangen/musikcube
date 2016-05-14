@@ -89,6 +89,9 @@ void changeLayout(WindowState& current, ILayout* newLayout) {
         curs_set(1);
         wtimeout(current.focused->GetContent(), IDLE_TIMEOUT_MS);
     }
+    else {
+        curs_set(0);
+    }
 }
 
 void focusNextInLayout(WindowState& current) {

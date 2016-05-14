@@ -21,7 +21,7 @@ class CommandWindow : public Window, public IInput, public sigslot::has_slots<> 
 
         ~CommandWindow();
 
-        virtual void WriteChar(int ch);
+        virtual void WriteChar(int64 ch);
         virtual void Focus();
 
     private:

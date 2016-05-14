@@ -45,8 +45,8 @@ void ScrollableWindow::OnAdapterChanged() {
     }
 }
 
-void ScrollableWindow::Create() {
-    Window::Create();
+void ScrollableWindow::Show() {
+    Window::Show();
     this->OnAdapterChanged();
 }
 

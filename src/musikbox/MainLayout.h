@@ -19,9 +19,6 @@ class MainLayout : public LayoutBase {
         MainLayout(Transport& transport, LibraryPtr library);
         ~MainLayout();
 
-        virtual IWindow* FocusNext();
-        virtual IWindow* FocusPrev();
-        virtual IWindow* GetFocus();
         virtual void Layout();
         virtual void OnIdle();
 
@@ -31,7 +28,4 @@ class MainLayout : public LayoutBase {
         std::shared_ptr<OutputWindow> output;
         std::shared_ptr<TransportWindow> transport;
         std::shared_ptr<ResourcesWindow> resources;
-        
-        std::vector<IWindow*> focusOrder;
-        int focusIndex;
 };

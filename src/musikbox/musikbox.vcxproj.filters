@@ -153,6 +153,9 @@
     <ClInclude Include="IWindowGroup.h">
       <Filter>curses</Filter>
     </ClInclude>
+    <ClInclude Include="IDisplayable.h">
+      <Filter>curses</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="curses">

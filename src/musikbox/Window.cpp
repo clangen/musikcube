@@ -4,6 +4,8 @@
 #include "Window.h"
 #include "IWindowGroup.h"
 
+static int NEXT_ID = 0;
+
 Window::Window(IWindow *parent) {
     this->frame = this->content = 0;
     this->parent = parent;
@@ -14,10 +16,16 @@ Window::Window(IWindow *parent) {
     this->contentColor = -1;
     this->frameColor = -1;
     this->drawFrame = true;
+    this->focusOrder = -1;
+    this->id = NEXT_ID++;
 }
 
 Window::~Window() {
-    this->Destroy();
+    this->Hide();
+}
+
+int Window::GetId() const {
+    return this->id;
 }
 
 void Window::SetParent(IWindow* parent) {
@@ -31,8 +39,8 @@ void Window::SetParent(IWindow* parent) {
         this->parent = parent;
 
         if (this->frame) {
-            this->Destroy();
-            this->Create();
+            this->Hide();
+            this->Show();
         }
     }
 }
@@ -105,8 +113,16 @@ WINDOW* Window::GetFrame() const {
     return this->frame;
 }
 
-void Window::Create() {
-    this->Destroy();
+int Window::GetFocusOrder() {
+    return this->focusOrder;
+}
+
+void Window::SetFocusOrder(int order) {
+    this->focusOrder = order;
+}
+
+void Window::Show() {
+    this->Hide();
 
     this->frame = (this->parent == NULL)
         ? newwin(
@@ -167,8 +183,8 @@ void Window::SetFrameVisible(bool enabled) {
         this->drawFrame = enabled;
 
         if (this->frame || this->content) {
-            this->Destroy();
-            this->Create();
+            this->Hide();
+            this->Show();
         }
     }
 }
@@ -193,7 +209,7 @@ void Window::Repaint() {
     }
 }
 
-void Window::Destroy() {
+void Window::Hide() {
     if (this->frame) {
         wclear(this->frame);
         wclear(this->content);
