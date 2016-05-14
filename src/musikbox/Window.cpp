@@ -137,9 +137,10 @@ void Window::Create() {
             wbkgd(this->content, COLOR_PAIR(this->contentColor));
         }
 
-        wrefresh(this->frame);
         touchwin(this->content);
-        wrefresh(this->content);
+        wnoutrefresh(this->frame);
+        wnoutrefresh(this->content);
+        doupdate();
     }
 }
 
@@ -168,8 +169,9 @@ void Window::Clear() {
 
 void Window::Repaint() {
     if (this->frame && this->content) {
-        wrefresh(this->frame);
-        wrefresh(this->content);
+        wnoutrefresh(this->frame);
+        wnoutrefresh(this->content);
+        doupdate();
     }
 }
 

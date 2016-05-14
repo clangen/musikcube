@@ -94,20 +94,21 @@ int main(int argc, char* argv[])
     {
         Colors::Init();
 
+        using musik::core::audio::Transport;
         Transport tp;
         tp.SetVolume(0.01);
 
         using musik::core::LibraryFactory;
         LibraryPtr library = LibraryFactory::Libraries().at(0);
 
-        //MainLayout mainLayout(tp, library);
-        LibraryLayout libraryLayout(library);
+        MainLayout mainLayout(tp, library);
+        //LibraryLayout libraryLayout(library);
 
         int ch;
         timeout(IDLE_TIMEOUT_MS);
         bool quit = false;
 
-        ILayout* layout = &libraryLayout;
+        ILayout* layout = &mainLayout;
         IWindow* focused = layout->GetFocus();
         IInput* input = dynamic_cast<IInput*>(focused);
         IScrollable* scrollable = dynamic_cast<IScrollable*>(focused);
