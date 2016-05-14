@@ -2,6 +2,7 @@
 
 #include "stdafx.h"
 #include "Window.h"
+#include "IWindowGroup.h"
 
 Window::Window(IWindow *parent) {
     this->frame = this->content = 0;
@@ -17,6 +18,23 @@ Window::Window(IWindow *parent) {
 
 Window::~Window() {
     this->Destroy();
+}
+
+void Window::SetParent(IWindow* parent) {
+    if (this->parent != parent) {
+        IWindowGroup* group = dynamic_cast<IWindowGroup*>(parent);
+
+        if (group) {
+            group->RemoveWindow(shared_from_this());
+        }
+
+        this->parent = parent;
+
+        if (this->frame) {
+            this->Destroy();
+            this->Create();
+        }
+    }
 }
 
 void Window::SetSize(int width, int height) {
@@ -113,7 +131,7 @@ void Window::Create() {
             wbkgd(this->frame, COLOR_PAIR(this->contentColor));
         }
 
-        wrefresh(this->content);
+        wnoutrefresh(this->content);
     }
 
     /* otherwise we'll draw a box around the frame, and create a content
@@ -137,8 +155,8 @@ void Window::Create() {
             wbkgd(this->content, COLOR_PAIR(this->contentColor));
         }
 
-        touchwin(this->content);
         wnoutrefresh(this->frame);
+        touchwin(this->content);
         wnoutrefresh(this->content);
         doupdate();
     }
@@ -177,6 +195,10 @@ void Window::Repaint() {
 
 void Window::Destroy() {
     if (this->frame) {
+        wclear(this->frame);
+        wclear(this->content);
+        this->Repaint();
+
         delwin(this->content);
 
         if (this->content != this->frame) {

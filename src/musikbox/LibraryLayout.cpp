@@ -3,13 +3,18 @@
 #include "Screen.h"
 #include "LibraryLayout.h"
 
-LibraryLayout::LibraryLayout(LibraryPtr library) {
+LibraryLayout::LibraryLayout(LibraryPtr library) 
+: LayoutBase() {
     this->SetSize(Screen::GetWidth(), Screen::GetHeight());
     this->SetPosition(0, 0);
     this->Create();
 
-    this->albumList.reset(new CategoryListView(this, library));
-    this->trackList.reset(new TrackListView(this));
+    this->albumList.reset(new CategoryListView(NULL, library));
+    this->trackList.reset(new TrackListView(NULL));
+
+    this->AddWindow(this->albumList);
+    this->AddWindow(this->trackList);
+
     this->Layout();
 }
 

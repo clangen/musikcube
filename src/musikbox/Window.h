@@ -3,13 +3,15 @@
 #include "curses_config.h"
 #include "IWindow.h"
 
-class Window : public IWindow {
+class Window : public IWindow, public std::enable_shared_from_this<IWindow> {
     public:
         Window(IWindow* parent = NULL);
         virtual ~Window();
 
+        virtual void SetParent(IWindow* parent);
+
         virtual void Create();
-        void Destroy();
+        virtual void Destroy();
 
         virtual void Repaint();
 

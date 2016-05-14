@@ -147,6 +147,7 @@
   <ItemGroup>
     <ClInclude Include="CategoryListQuery.h" />
     <ClInclude Include="CategoryListView.h" />
+    <ClInclude Include="IWindowGroup.h" />
     <ClInclude Include="LayoutBase.h" />
     <ClInclude Include="ScrollAdapterBase.h" />
     <ClInclude Include="IScrollable.h" />

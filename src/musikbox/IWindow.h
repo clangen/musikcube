@@ -6,6 +6,11 @@ class IWindow {
     public:
         virtual void Repaint() = 0;
 
+        virtual void SetParent(IWindow* parent) = 0;
+
+        virtual void Create() = 0;
+        virtual void Destroy() = 0;
+
         virtual void SetContentColor(int color) = 0;
         virtual void SetFrameColor(int color) = 0;
 
@@ -24,3 +29,5 @@ class IWindow {
         virtual WINDOW* GetFrame() const = 0;
         virtual WINDOW* GetContent() const = 0;
 };
+
+typedef std::shared_ptr<IWindow> IWindowPtr;

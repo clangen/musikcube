@@ -1,8 +1,8 @@
 #pragma once
 
-#include "IWindow.h"
+#include "IWindowGroup.h"
 
-class ILayout {
+class ILayout : public IWindowGroup {
     public:
         virtual IWindow* FocusNext() = 0;
         virtual IWindow* FocusPrev() = 0;

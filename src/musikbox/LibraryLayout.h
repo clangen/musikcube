@@ -20,6 +20,6 @@ class LibraryLayout : public LayoutBase {
         virtual void OnIdle();
 
     private:
-        boost::shared_ptr<CategoryListView> albumList;
-        boost::shared_ptr<TrackListView> trackList;
+        std::shared_ptr<CategoryListView> albumList;
+        std::shared_ptr<TrackListView> trackList;
 };

@@ -18,7 +18,9 @@ static inline IWindow* adjustFocus(IWindow* oldFocus, IWindow* newFocus) {
     return newFocus;
 }
 
-MainLayout::MainLayout(Transport& transport, LibraryPtr library) {
+MainLayout::MainLayout(Transport& transport, LibraryPtr library)
+: LayoutBase() 
+{
     this->SetSize(Screen::GetWidth(), Screen::GetHeight());
     this->SetPosition(0, 0);
     this->SetFrameVisible(false);
