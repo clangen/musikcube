@@ -34,6 +34,8 @@ class Window : public IWindow, public std::enable_shared_from_this<IWindow> {
         virtual int GetY() const;
         virtual int GetId() const;
 
+        virtual void ProcessMessage(IWindowMessage &message);
+
         virtual WINDOW* GetFrame() const;
         virtual WINDOW* GetContent() const;
 

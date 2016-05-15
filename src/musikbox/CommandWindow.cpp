@@ -26,6 +26,9 @@ using musik::core::TrackFactory;
 using musik::core::TrackPtr;
 using musik::core::QueryPtr;
 
+#include "WindowMessageQueue.h"
+#include "WindowMessage.h"
+
 template <class T>
 bool tostr(T& t, const std::string& s) {
     std::istringstream iss(s);
@@ -54,6 +57,15 @@ CommandWindow::~CommandWindow() {
 
 void CommandWindow::Show() {
     Window::Show();
+
+    //WindowMessageQueue::Instance().Post(
+    //    WindowMessage::Create(shared_from_this(), 100, 0, 0), 500);
+
+    //WindowMessageQueue::Instance().Post(
+    //    WindowMessage::Create(shared_from_this(), 101, 0, 0), 1000);
+
+    //WindowMessageQueue::Instance().Post(
+    //    WindowMessage::Create(shared_from_this(), 99, 0, 0), 250);
 
     wmove(this->GetContent(), 0, 0);
     std::string buf(buffer, bufferPosition);

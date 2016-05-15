@@ -3,6 +3,7 @@
 #include "stdafx.h"
 #include "Window.h"
 #include "IWindowGroup.h"
+#include "WindowMessageQueue.h"
 
 static int NEXT_ID = 0;
 static bool drawPending = false;
@@ -30,10 +31,15 @@ Window::Window(IWindow *parent) {
 
 Window::~Window() {
     this->Hide();
+    WindowMessageQueue::Instance().Remove(this);
 }
 
 int Window::GetId() const {
     return this->id;
+}
+
+void Window::ProcessMessage(IWindowMessage &message) {
+   
 }
 
 void Window::SetParent(IWindow* parent) {

@@ -2,6 +2,15 @@
 
 #include "WindowMessage.h"
 
+IWindowMessagePtr WindowMessage::Create(
+    IWindowPtr target,
+    int messageType,
+    int64 data1,
+    int64 data2)
+{
+    return IWindowMessagePtr(new WindowMessage(target, messageType, data1, data2));
+}
+
 WindowMessage::WindowMessage(
     IWindowPtr target,
     int messageType,

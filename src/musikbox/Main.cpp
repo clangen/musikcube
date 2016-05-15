@@ -42,6 +42,7 @@
 #include "MainLayout.h"
 #include "LibraryLayout.h"
 #include "IInput.h"
+#include "WindowMessageQueue.h"
 
 #include <boost/locale.hpp>
 #include <boost/filesystem/path.hpp>
@@ -235,6 +236,7 @@ int main(int argc, char* argv[])
             }
 
             Window::WriteToScreen();
+            WindowMessageQueue::Instance().Dispatch();
         }
     }
 
