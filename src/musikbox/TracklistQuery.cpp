@@ -27,16 +27,15 @@ bool TracklistQuery::OnRun(Connection& db) {
     }
 
     std::string query =
-        "SELECT DISTINCT albums.name "
-        "FROM albums, tracks "
-        "WHERE albums.id = tracks.album_id "
-        "ORDER BY albums.sort_order;";
+        "SELECT DISTINCT track.name "
+        "FROM tracks "
+        "ORDER BY track.name;";
 
     Statement stmt(query.c_str(), db);
 
-    //while (stmt.Step() == Row) {
-    //    result->push_back(stmt.ColumnText(0));
-    //}
+    while (stmt.Step() == Row) {
+        //result->push_back(stmt.ColumnText(0));
+    }
 
     return true;
 }

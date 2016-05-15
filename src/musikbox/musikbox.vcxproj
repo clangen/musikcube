@@ -125,6 +125,7 @@
     <ClCompile Include="MultiLineEntry.cpp" />
     <ClCompile Include="ScrollableWindow.cpp" />
     <ClCompile Include="SingleLineEntry.cpp" />
+    <ClCompile Include="TracklistQuery.cpp" />
     <ClCompile Include="TrackListView.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="Colors.cpp" />
@@ -143,12 +144,15 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="TransportWindow.cpp" />
+    <ClCompile Include="WindowMessage.cpp" />
+    <ClCompile Include="WindowMessageQueue.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CategoryListQuery.h" />
     <ClInclude Include="CategoryListView.h" />
     <ClInclude Include="IDisplayable.h" />
     <ClInclude Include="IWindowGroup.h" />
+    <ClInclude Include="IWindowMessage.h" />
     <ClInclude Include="LayoutBase.h" />
     <ClInclude Include="ScrollAdapterBase.h" />
     <ClInclude Include="IScrollable.h" />
@@ -158,6 +162,7 @@
     <ClInclude Include="ScrollableWindow.h" />
     <ClInclude Include="ListWindow.h" />
     <ClInclude Include="SingleLineEntry.h" />
+    <ClInclude Include="TracklistQuery.h" />
     <ClInclude Include="TrackListView.h" />
     <ClInclude Include="Window.h" />
     <ClInclude Include="Colors.h" />
@@ -173,6 +178,8 @@
     <ClInclude Include="SystemInfo.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="TransportWindow.h" />
+    <ClInclude Include="WindowMessage.h" />
+    <ClInclude Include="WindowMessageQueue.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\3rdparty\3rdparty.vcxproj">

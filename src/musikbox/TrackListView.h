@@ -1,12 +1,42 @@
 #pragma once
 
 #include "curses_config.h"
-#include "Window.h"
 
-class TrackListView : public Window {
+#include "ListWindow.h"
+#include "TracklistQuery.h"
+#include "ScrollAdapterBase.h"
+
+#include <core/library/ILibrary.h>
+
+using musik::core::QueryPtr;
+using musik::core::LibraryPtr;
+
+class TrackListView : public ListWindow {
     public:
-        TrackListView(IWindow *parent = NULL);
+        TrackListView(LibraryPtr library, IWindow *parent = NULL);
         ~TrackListView();
 
+        void OnIdle();
+        void Requery();
+
+    protected:
+        virtual IScrollAdapter& GetScrollAdapter();
+
+        class Adapter : public ScrollAdapterBase {
+        public:
+            Adapter(TrackListView &parent);
+
+            virtual size_t GetEntryCount();
+            virtual EntryPtr GetEntry(size_t index);
+
+        private:
+            TrackListView &parent;
+            IScrollAdapter::ScrollPosition spos;
+        };
+
     private:
+        std::shared_ptr<TracklistQuery> query;
+        std::shared_ptr<std::vector<TrackPtr>> metadata;
+        Adapter* adapter;
+        LibraryPtr library;
 };

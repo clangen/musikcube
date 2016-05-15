@@ -18,6 +18,7 @@ class CategoryListView : public ListWindow, public sigslot::has_slots<> {
         ~CategoryListView(); /* non-virtual for now*/
 
         void OnIdle();
+        void Requery();
 
     protected:
         virtual IScrollAdapter& GetScrollAdapter();

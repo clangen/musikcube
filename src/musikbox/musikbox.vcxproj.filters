@@ -72,6 +72,15 @@
     <ClCompile Include="LayoutBase.cpp">
       <Filter>curses</Filter>
     </ClCompile>
+    <ClCompile Include="TracklistQuery.cpp">
+      <Filter>query</Filter>
+    </ClCompile>
+    <ClCompile Include="WindowMessage.cpp">
+      <Filter>curses</Filter>
+    </ClCompile>
+    <ClCompile Include="WindowMessageQueue.cpp">
+      <Filter>curses</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -154,6 +163,18 @@
       <Filter>curses</Filter>
     </ClInclude>
     <ClInclude Include="IDisplayable.h">
+      <Filter>curses</Filter>
+    </ClInclude>
+    <ClInclude Include="TracklistQuery.h">
+      <Filter>query</Filter>
+    </ClInclude>
+    <ClInclude Include="IWindowMessage.h">
+      <Filter>curses</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowMessage.h">
+      <Filter>curses</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowMessageQueue.h">
       <Filter>curses</Filter>
     </ClInclude>
   </ItemGroup>

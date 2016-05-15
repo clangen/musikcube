@@ -12,14 +12,18 @@ using musik::core::IQuery;
 
 CategoryListView::CategoryListView(LibraryPtr library, IWindow *parent)
 : ListWindow(parent) {
+    this->SetContentColor(BOX_COLOR_WHITE_ON_BLACK);
     this->library = library;
     this->adapter = new Adapter(*this);
-    this->activeQuery.reset(new CategoryListQuery());
-    this->library->Enqueue(activeQuery);
 }
 
 CategoryListView::~CategoryListView() {
     delete adapter;
+}
+
+void CategoryListView::Requery() {
+    this->activeQuery.reset(new CategoryListQuery());
+    this->library->Enqueue(activeQuery);
 }
 
 void CategoryListView::OnIdle() {

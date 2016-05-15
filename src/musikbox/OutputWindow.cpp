@@ -9,10 +9,8 @@
 typedef IScrollAdapter::EntryPtr EntryPtr;
 
 OutputWindow::OutputWindow(IWindow *parent) 
-: ScrollableWindow(parent)
-{
+: ScrollableWindow(parent) {
     this->SetContentColor(BOX_COLOR_BLACK_ON_GREY);
-
     this->adapter = new SimpleScrollAdapter();
     this->adapter->SetDisplaySize(this->GetContentWidth(), this->GetContentHeight());
     this->adapter->SetMaxEntries(500);

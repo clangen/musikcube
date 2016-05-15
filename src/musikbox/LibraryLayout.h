@@ -15,9 +15,11 @@ class LibraryLayout : public LayoutBase {
 
         virtual void Layout();
         virtual void OnIdle();
+        virtual void Show();
 
     private:
-        void InitializeViews();
+        void UpdateWindows();
+        void InitializeWindows();
 
         LibraryPtr library;
         std::shared_ptr<CategoryListView> albumList;

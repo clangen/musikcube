@@ -53,7 +53,7 @@
 #ifdef WIN32
 #undef MOUSE_MOVED
 
-#define IDLE_TIMEOUT_MS 500
+#define IDLE_TIMEOUT_MS 0
 
 struct WindowState {
     ILayout* layout;
