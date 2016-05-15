@@ -53,6 +53,9 @@ void LayoutBase::Show() {
     for (size_t i = 0; i < this->children.size(); i++) {
         this->children.at(i)->Show();
     }
+
+    this->IndexFocusables();
+    this->SortFocusables();
 }
 
 void LayoutBase::Hide() {
@@ -95,26 +98,41 @@ bool LayoutBase::RemoveWindow(IWindowPtr window) {
 void LayoutBase::AddFocusable(IWindowPtr window) {
     int order = window->GetFocusOrder();
     if (order >= 0 && find(this->focusable, window) < 0) {
-        IWindowPtr focusedWindow;
-        if (focused >= 0 && (int) this->focusable.size() > focused) {
-            focusedWindow = this->focusable.at(focused);
-        }
-
         this->focusable.push_back(window);
+        this->SortFocusables();
+    }
+}
 
-        std::sort(
-            this->focusable.begin(), 
-            this->focusable.end(), 
-            sortByFocusOrder);
+void LayoutBase::IndexFocusables() {
+    IWindowPtr focusedWindow;
+    if (focused >= 0 && (int) this->focusable.size() > focused) {
+        focusedWindow = this->focusable.at(focused);
+    }
 
-        if (focusedWindow) {
-            this->focused = find(this->focusable, focusedWindow);
-        }
+    this->focusable.clear();
+    for (size_t i = 0; i < this->children.size(); i++) {
+        AddFocusable(this->children.at(i));
+    }
+}
 
-        if (focused == -1) {
-            this->focused = 0;
-            adjustFocus(NULL, this->focusable[this->focused].get());
-        }
+void LayoutBase::SortFocusables() {
+    IWindowPtr focusedWindow;
+    if (focused >= 0 && (int) this->focusable.size() > focused) {
+        focusedWindow = this->focusable.at(focused);
+    }
+
+    std::sort(
+        this->focusable.begin(),
+        this->focusable.end(),
+        sortByFocusOrder);
+
+    if (focusedWindow) {
+        this->focused = find(this->focusable, focusedWindow);
+    }
+
+    if (focused == -1 && this->focusable.size() > 0) {
+        this->focused = 0;
+        adjustFocus(NULL, this->focusable[this->focused].get());
     }
 }
 
@@ -155,5 +173,9 @@ IWindow* LayoutBase::FocusPrev() {
 }
 
 IWindow* LayoutBase::GetFocus() {
-    return this->focusable[this->focused].get();
+    if (this->focused >= 0 && this->focusable.size() > 0) {
+        return this->focusable[this->focused].get();
+    }
+
+    return NULL;
 }

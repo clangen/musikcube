@@ -8,6 +8,7 @@
 #include <core/debug.h>
 #include <boost/format.hpp>
 
+#define BYTES_PER_MEGABYTE 1048576.0f
 
 ResourcesWindow::ResourcesWindow(IWindow *parent) 
 : Window(parent) {
@@ -17,8 +18,6 @@ ResourcesWindow::ResourcesWindow(IWindow *parent)
 ResourcesWindow::~ResourcesWindow() {
     delete this->systemInfo;
 }
-
-#define BYTES_PER_MEGABYTE 1048576.0f
 
 void ResourcesWindow::Repaint() {
     this->Clear();

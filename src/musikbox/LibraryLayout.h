@@ -11,12 +11,15 @@ using musik::core::LibraryPtr;
 class LibraryLayout : public LayoutBase {
     public:
         LibraryLayout(LibraryPtr library);
-        ~LibraryLayout(); /* not virtual */
+        virtual ~LibraryLayout();
 
         virtual void Layout();
         virtual void OnIdle();
 
     private:
+        void InitializeViews();
+
+        LibraryPtr library;
         std::shared_ptr<CategoryListView> albumList;
         std::shared_ptr<TrackListView> trackList;
 };

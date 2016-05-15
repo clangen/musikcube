@@ -10,7 +10,7 @@
 using musik::core::LibraryPtr;
 using musik::core::IQuery;
 
-CategoryListView::CategoryListView(IWindow *parent, LibraryPtr library) 
+CategoryListView::CategoryListView(LibraryPtr library, IWindow *parent)
 : ListWindow(parent) {
     this->library = library;
     this->adapter = new Adapter(*this);

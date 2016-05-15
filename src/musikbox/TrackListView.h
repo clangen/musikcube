@@ -5,7 +5,7 @@
 
 class TrackListView : public Window {
     public:
-        TrackListView(IWindow *parent);
+        TrackListView(IWindow *parent = NULL);
         ~TrackListView();
 
     private:

@@ -79,6 +79,7 @@ void changeLayout(WindowState& current, ILayout* newLayout) {
 
     if (newLayout) {
         current.layout = newLayout;
+        current.layout->Layout();
         current.layout->Show();
         current.focused = newLayout->GetFocus();
         current.input = dynamic_cast<IInput*>(current.focused);

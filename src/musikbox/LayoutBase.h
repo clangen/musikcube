@@ -31,6 +31,8 @@ class LayoutBase : public Window, public ILayout {
     private: 
         void AddFocusable(IWindowPtr window);
         void RemoveFocusable(IWindowPtr window);
+        void SortFocusables();
+        void IndexFocusables();
 
         std::vector<IWindowPtr> children;
         std::vector<IWindowPtr> focusable;

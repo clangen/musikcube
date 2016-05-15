@@ -21,8 +21,11 @@ class MainLayout : public LayoutBase {
 
         virtual void Layout();
         virtual void OnIdle();
+        virtual void Show();
 
     private:
+        void UpdateWindows();
+
         std::shared_ptr<LogWindow> logs;
         std::shared_ptr<CommandWindow> commands;
         std::shared_ptr<OutputWindow> output;
