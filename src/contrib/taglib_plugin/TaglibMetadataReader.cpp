@@ -196,7 +196,7 @@ bool TaglibMetadataReader::GetID3v2Tag(const char* uri, musik::core::IMetadataWr
 
         std::vector<std::string> splitTrack;
         if (!allTags["TRCK"].isEmpty()) {
-            std::string tempTrack = allTags["TRCK"].front()->toString().toCString();
+            std::string tempTrack = allTags["TRCK"].front()->toString().toCString(true);
             boost::algorithm::split(splitTrack, tempTrack, boost::algorithm::is_any_of("/"));
             this->SetTagValue("track", splitTrack[0].c_str(), track);
 
@@ -332,7 +332,7 @@ void TaglibMetadataReader::SetTagValue(
     const TagLib::String tagString,
     musik::core::IMetadataWriter *track)
 {
-    std::string value(tagString.begin(), tagString.end());
+    std::string value(tagString.to8Bit(true));
     track->SetValue(key, value.c_str());
 }
 
@@ -365,7 +365,7 @@ void TaglibMetadataReader::SetTagValues(
         for ( ; value != frame.end(); ++value) {
             TagLib::String tagString = (*value)->toString();
             if(!tagString.isEmpty()) {
-                std::string value(tagString.begin(), tagString.end());
+                std::string value(tagString.to8Bit(true));
                 target->SetValue(key,value.c_str());
             }
         }
@@ -378,11 +378,10 @@ void TaglibMetadataReader::SetSlashSeparatedValues(
     musik::core::IMetadataWriter *track)
 {
     if(!tagString.isEmpty()) {
-        std::string value(tagString.begin(), tagString.end());
+        std::string value(tagString.to8Bit(true));
         std::vector<std::string> splitValues;
 
-        boost::algorithm::split(
-            splitValues, value, boost::algorithm::is_any_of("/"));
+        boost::algorithm::split(splitValues, value, boost::algorithm::is_any_of("/"));
 
         std::vector<std::string>::iterator it = splitValues.begin();
         for( ; it != splitValues.end(); ++it) {

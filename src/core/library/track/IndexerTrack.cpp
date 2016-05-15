@@ -191,9 +191,6 @@ static DBID writeToTracksTable(
         "(id, track, bpm, duration, filesize, year, folder_id, title, filename, filetime, sort_order1) " \
         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", dbConnection);
 
-    /* pull these out into local vars so they stay in scope long enough
-    for sqlite to process them without making a copy. */
-
     stmt.BindText(1, track.GetValue("track"));
     stmt.BindText(2, track.GetValue("bpm"));
     stmt.BindText(3, track.GetValue("duration"));
@@ -256,7 +253,7 @@ DBID IndexerTrack::ExtractThumbnail(db::Connection& connection, const std::strin
         thumbs.BindInt(0, this->internalMetadata->thumbnailSize);
         thumbs.BindInt(1, sum);
     
-        if (thumbs.Step()==db::Row) {
+        if (thumbs.Step() == db::Row) {
             thumbnailId = thumbs.ColumnInt(0); /* thumbnail already exists */
         }
     
@@ -612,8 +609,7 @@ bool IndexerTrack::Reload(db::Connection &db) {
 
 IndexerTrack::MetadataWithThumbnail::MetadataWithThumbnail()
 : thumbnailData(NULL)
-, thumbnailSize(0)
-{
+, thumbnailSize(0) {
 }
 
 IndexerTrack::MetadataWithThumbnail::~MetadataWithThumbnail() {
