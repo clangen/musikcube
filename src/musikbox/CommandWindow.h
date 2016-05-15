@@ -23,6 +23,7 @@ class CommandWindow : public Window, public IInput, public sigslot::has_slots<> 
 
         virtual void WriteChar(int64 ch);
         virtual void Focus();
+        virtual void Show();
 
     private:
         void ListPlugins() const;

@@ -113,6 +113,10 @@ void LayoutBase::IndexFocusables() {
     for (size_t i = 0; i < this->children.size(); i++) {
         AddFocusable(this->children.at(i));
     }
+
+    if (focusedWindow) {
+        this->focused = find(this->focusable, focusedWindow);
+    }
 }
 
 void LayoutBase::SortFocusables() {

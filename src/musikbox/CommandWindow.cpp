@@ -51,6 +51,14 @@ CommandWindow::~CommandWindow() {
     delete[] buffer;
 }
 
+void CommandWindow::Show() {
+    Window::Show();
+
+    wmove(this->GetContent(), 0, 0);
+    std::string buf(buffer, bufferPosition);
+    wprintw(this->GetContent(), "%s", buf.c_str());
+}
+
 void CommandWindow::Focus() {
     wmove(this->GetContent(), 0, bufferPosition);
 }

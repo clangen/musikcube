@@ -81,13 +81,14 @@ void changeLayout(WindowState& current, ILayout* newLayout) {
         current.layout = newLayout;
         current.layout->Layout();
         current.layout->Show();
-        current.focused = newLayout->GetFocus();
+        current.focused = current.layout->GetFocus();
         current.input = dynamic_cast<IInput*>(current.focused);
         current.scrollable = dynamic_cast<IScrollable*>(current.focused);
     }
 
     if (current.input) {
         curs_set(1);
+        current.input->Focus();
         wtimeout(current.focused->GetContent(), IDLE_TIMEOUT_MS);
     }
     else {
@@ -175,11 +176,6 @@ int main(int argc, char* argv[])
 
         WindowState state = { 0 };
         changeLayout(state, &mainLayout);
-
-        if (state.input != NULL) {
-            curs_set(1);
-            wtimeout(state.focused->GetContent(), IDLE_TIMEOUT_MS);
-        }
 
         while (!quit) {
             /* if the focused item is an IInput, then get characters from it,
