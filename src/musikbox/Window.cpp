@@ -5,6 +5,14 @@
 #include "IWindowGroup.h"
 
 static int NEXT_ID = 0;
+static bool drawPending = false;
+
+void Window::WriteToScreen() {
+    if (drawPending) {
+        drawPending = false;
+        doupdate();
+    }
+}
 
 Window::Window(IWindow *parent) {
     this->frame = this->content = 0;
@@ -87,20 +95,30 @@ int Window::GetY() const {
     return this->y;
 }
 
-void Window::SetContentColor(int color) {
+void Window::SetContentColor(int64 color) {
     this->contentColor = color;
 
     if (this->contentColor != -1 && this->content) {
-        wbkgd(this->content, COLOR_PAIR(this->contentColor));
+        wbkgd(this->frame, COLOR_PAIR(this->frameColor));
+
+        if (this->content != this->frame) {
+            wbkgd(this->content, COLOR_PAIR(this->contentColor));
+        }
+
         this->Repaint();
     }
 }
 
-void Window::SetFrameColor(int color) {
+void Window::SetFrameColor(int64 color) {
     this->frameColor = color;
 
     if (this->drawFrame && this->frameColor != -1 && this->frame) {
         wbkgd(this->frame, COLOR_PAIR(this->frameColor));
+
+        if (this->content != this->frame) {
+            wbkgd(this->content, COLOR_PAIR(this->contentColor));
+        }
+
         this->Repaint();
     }
 }
@@ -124,18 +142,18 @@ void Window::SetFocusOrder(int order) {
 void Window::Show() {
     this->Hide();
 
+    /* if we have a parent, place the new window relative to the parent. */
     this->frame = (this->parent == NULL)
         ? newwin(
             this->height, 
             this->width, 
             this->y, 
             this->x)
-        : derwin(
-            this->parent->GetFrame(), 
+        : newwin(
             this->height, 
             this->width, 
-            this->y, 
-            this->x);
+            this->parent->GetY() + this->y, 
+            this->parent->GetX() + this->x);
 
     /* if we were asked not to draw a frame, we'll set the frame equal to
     the content view, and use the content views colors*/
@@ -146,8 +164,6 @@ void Window::Show() {
         if (this->contentColor != -1) {
             wbkgd(this->frame, COLOR_PAIR(this->contentColor));
         }
-
-        wnoutrefresh(this->content);
     }
 
     /* otherwise we'll draw a box around the frame, and create a content
@@ -156,12 +172,11 @@ void Window::Show() {
     else {
         box(this->frame, 0, 0);
 
-        this->content = derwin(
-            this->frame,
+        this->content = newwin(
             this->height - 2,
             this->width - 2,
-            1,
-            1);
+            this->GetY() + 1,
+            this->GetX() + 1);
 
         if (this->frameColor != -1) {
             wbkgd(this->frame, COLOR_PAIR(this->frameColor));
@@ -170,12 +185,9 @@ void Window::Show() {
         if (this->contentColor != -1) {
             wbkgd(this->content, COLOR_PAIR(this->contentColor));
         }
-
-        wnoutrefresh(this->frame);
-        touchwin(this->content);
-        wnoutrefresh(this->content);
-        doupdate();
     }
+
+    this->Repaint();
 }
 
 void Window::SetFrameVisible(bool enabled) {
@@ -204,9 +216,21 @@ void Window::Clear() {
 void Window::Repaint() {
     if (this->frame && this->content) {
         wnoutrefresh(this->frame);
-        wnoutrefresh(this->content);
-        doupdate();
+
+        if (this->frame != this->content) {
+            wnoutrefresh(this->content);
+        }
+
+        drawPending = true;
     }
+}
+
+void Window::Focus() {
+
+}
+
+void Window::Blur() {
+
 }
 
 void Window::Hide() {

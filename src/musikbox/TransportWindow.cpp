@@ -32,13 +32,13 @@ TransportWindow::~TransportWindow() {
 }
 
 void TransportWindow::Repaint() {
-    this->Clear();
-    WINDOW *c = this->GetContent();
+    //this->Clear();
+    //WINDOW *c = this->GetContent();
 
-    double volume = (this->transport->Volume() * 100.0);
+    //double volume = (this->transport->Volume() * 100.0);
 
-    wprintw(c, "volume %.1f%%\n", volume);
-    wprintw(c, "filename: ");
+    //wprintw(c, "volume %.1f%%\n", volume);
+    //wprintw(c, "filename: ");
 
     Window::Repaint();
 }

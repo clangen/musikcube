@@ -50,6 +50,5 @@ IScrollAdapter::EntryPtr CategoryListView::Adapter::GetEntry(size_t index) {
     int64 attrs = (index == parent.GetSelectedIndex()) ? COLOR_PAIR(BOX_COLOR_BLACK_ON_GREEN) : -1;
     IScrollAdapter::EntryPtr entry(new SingleLineEntry(parent.metadata->at(index)));
     entry->SetAttrs(attrs);
-
     return entry;
 }

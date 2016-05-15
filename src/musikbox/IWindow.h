@@ -12,8 +12,11 @@ class IWindow : public IDisplayable {
         virtual void Show() = 0;
         virtual void Hide() = 0;
 
-        virtual void SetContentColor(int color) = 0;
-        virtual void SetFrameColor(int color) = 0;
+        virtual void Focus() = 0;
+        virtual void Blur() = 0;
+
+        virtual void SetContentColor(int64 color) = 0;
+        virtual void SetFrameColor(int64 color) = 0;
 
         virtual void SetSize(int width, int height) = 0;
         virtual void SetPosition(int x, int y) = 0;

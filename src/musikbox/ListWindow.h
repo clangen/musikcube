@@ -15,6 +15,7 @@ class ListWindow : public ScrollableWindow {
         virtual void ScrollDown(int delta = 1);
         virtual void PageUp();
         virtual void PageDown();
+        virtual void Focus();
 
         virtual size_t GetSelectedIndex();
 

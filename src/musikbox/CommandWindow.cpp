@@ -38,6 +38,7 @@ CommandWindow::CommandWindow(
     LibraryPtr library, 
     OutputWindow& output) 
 : Window(parent) {
+    this->SetContentColor(BOX_COLOR_WHITE_ON_BLACK);
     this->transport = &transport;
     this->library = library;
     this->buffer = new char[BUFFER_SIZE];

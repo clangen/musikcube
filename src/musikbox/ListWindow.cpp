@@ -25,6 +25,13 @@ void ListWindow::ScrollToBottom() {
     this->Repaint();
 }
 
+void ListWindow::Focus() {
+    GetScrollAdapter().DrawPage(
+        this->GetContent(), 
+        this->scrollPosition.firstVisibleEntryIndex, 
+        &this->scrollPosition);
+}
+
 void ListWindow::ScrollUp(int delta) {
     ScrollPos spos = this->GetScrollPosition();
     IScrollAdapter& adapter = this->GetScrollAdapter();

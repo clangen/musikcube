@@ -28,10 +28,12 @@ bool sortByFocusOrder(IWindowPtr a, IWindowPtr b) {
 static inline IWindow* adjustFocus(IWindow* oldFocus, IWindow* newFocus) {
     if (oldFocus) {
         oldFocus->SetFrameColor(BOX_COLOR_WHITE_ON_BLACK);
+        oldFocus->Blur();
     }
 
     if (newFocus) {
         newFocus->SetFrameColor(BOX_COLOR_RED_ON_BLACK);
+        newFocus->Focus();
     }
 
     return newFocus;
@@ -64,6 +66,17 @@ void LayoutBase::Hide() {
     }
 
     Window::Hide();
+}
+
+void LayoutBase::Repaint() {
+    /* repaint bottom up. start with ourselves, then our children,
+    recursively. */
+
+    Window::Repaint();
+
+    for (size_t i = 0; i < this->children.size(); i++) {
+        this->children.at(i)->Repaint();
+    }
 }
 
 bool LayoutBase::AddWindow(IWindowPtr window) {

@@ -13,6 +13,7 @@ class LayoutBase : public Window, public ILayout {
         /* IWindow */
         virtual void Show();
         virtual void Hide();
+        virtual void Repaint();
 
         /* ILayout */
         virtual IWindow* FocusNext();
@@ -21,7 +22,7 @@ class LayoutBase : public Window, public ILayout {
 
         virtual void Layout() = 0;
         virtual void OnIdle() = 0;
-
+        
         /* IWindowGroup */
         virtual bool AddWindow(IWindowPtr window);
         virtual bool RemoveWindow(IWindowPtr window);

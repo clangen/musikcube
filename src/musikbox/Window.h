@@ -18,8 +18,11 @@ class Window : public IWindow, public std::enable_shared_from_this<IWindow> {
         void SetFrameVisible(bool enabled);
         bool IsFrameVisible();
 
-        virtual void SetContentColor(int color);
-        virtual void SetFrameColor(int color);
+        virtual void Focus();
+        virtual void Blur();
+
+        virtual void SetContentColor(int64 color);
+        virtual void SetFrameColor(int64 color);
         virtual void SetSize(int width, int height);
         virtual void SetPosition(int x, int y);
 
@@ -37,6 +40,8 @@ class Window : public IWindow, public std::enable_shared_from_this<IWindow> {
         virtual int GetFocusOrder();
         virtual void SetFocusOrder(int order = -1);
 
+        static void WriteToScreen();
+
     protected:
         IWindow* GetParent() const;
 
@@ -49,5 +54,6 @@ class Window : public IWindow, public std::enable_shared_from_this<IWindow> {
         bool drawFrame;
         int focusOrder;
         int id;
-        int width, height, x, y, contentColor, frameColor;
+        int64 contentColor, frameColor;
+        int width, height, x, y;
 };

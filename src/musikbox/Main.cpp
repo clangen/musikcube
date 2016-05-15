@@ -88,7 +88,6 @@ void changeLayout(WindowState& current, ILayout* newLayout) {
 
     if (current.input) {
         curs_set(1);
-        current.input->Focus();
         wtimeout(current.focused->GetContent(), IDLE_TIMEOUT_MS);
     }
     else {
@@ -107,7 +106,6 @@ void focusNextInLayout(WindowState& current) {
 
     if (current.input != NULL) {
         curs_set(1);
-        current.input->Focus();
 
         if (current.focused) {
             wtimeout(current.focused->GetContent(), IDLE_TIMEOUT_MS);
@@ -188,7 +186,6 @@ int main(int argc, char* argv[])
             else {
                 ch = getch();
             }
-
             if (ch == -1) { /* timeout */
                 state.layout->OnIdle();
             }
@@ -236,6 +233,8 @@ int main(int argc, char* argv[])
             else if (state.input) {
                 state.input->WriteChar(ch);
             }
+
+            Window::WriteToScreen();
         }
     }
 
