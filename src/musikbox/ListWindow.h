@@ -25,6 +25,7 @@ class ListWindow : public ScrollableWindow {
     protected:
         virtual void SetSelectedIndex(size_t index);
         virtual void OnAdapterChanged();
+        virtual void OnSelectionChanged(size_t newIndex, size_t oldIndex);
         virtual IScrollAdapter::ScrollPosition& GetScrollPosition();
 
     private:

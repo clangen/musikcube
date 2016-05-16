@@ -110,11 +110,16 @@ void ListWindow::PageDown() {
     this->Repaint();
 }
 
+void ListWindow::OnSelectionChanged(size_t newIndex, size_t oldIndex) {
+    /* for subclass use */
+}
+
 void ListWindow::SetSelectedIndex(size_t index) {
     if (this->selectedIndex != index) {
         size_t prev = this->selectedIndex;
         this->selectedIndex = index;
-        this->SelectionChanged(this, index, prev);
+        this->OnSelectionChanged(index, prev); /* internal */
+        this->SelectionChanged(this, index, prev); /* external */
     }
 }
 

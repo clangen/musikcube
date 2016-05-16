@@ -39,9 +39,6 @@
     <ClCompile Include="Window.cpp">
       <Filter>curses</Filter>
     </ClCompile>
-    <ClCompile Include="CategoryListQuery.cpp">
-      <Filter>query</Filter>
-    </ClCompile>
     <ClCompile Include="MainLayout.cpp">
       <Filter>view</Filter>
     </ClCompile>
@@ -72,14 +69,17 @@
     <ClCompile Include="LayoutBase.cpp">
       <Filter>curses</Filter>
     </ClCompile>
-    <ClCompile Include="TracklistQuery.cpp">
-      <Filter>query</Filter>
-    </ClCompile>
     <ClCompile Include="WindowMessage.cpp">
       <Filter>curses</Filter>
     </ClCompile>
     <ClCompile Include="WindowMessageQueue.cpp">
       <Filter>curses</Filter>
+    </ClCompile>
+    <ClCompile Include="TrackListViewQuery.cpp">
+      <Filter>query</Filter>
+    </ClCompile>
+    <ClCompile Include="CategoryListViewQuery.cpp">
+      <Filter>query</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -123,9 +123,6 @@
     <ClInclude Include="Window.h">
       <Filter>curses</Filter>
     </ClInclude>
-    <ClInclude Include="CategoryListQuery.h">
-      <Filter>query</Filter>
-    </ClInclude>
     <ClInclude Include="MainLayout.h">
       <Filter>view</Filter>
     </ClInclude>
@@ -165,9 +162,6 @@
     <ClInclude Include="IDisplayable.h">
       <Filter>curses</Filter>
     </ClInclude>
-    <ClInclude Include="TracklistQuery.h">
-      <Filter>query</Filter>
-    </ClInclude>
     <ClInclude Include="IWindowMessage.h">
       <Filter>curses</Filter>
     </ClInclude>
@@ -176,6 +170,12 @@
     </ClInclude>
     <ClInclude Include="WindowMessageQueue.h">
       <Filter>curses</Filter>
+    </ClInclude>
+    <ClInclude Include="TrackListViewQuery.h">
+      <Filter>query</Filter>
+    </ClInclude>
+    <ClInclude Include="CategoryListViewQuery.h">
+      <Filter>query</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

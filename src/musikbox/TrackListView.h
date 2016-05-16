@@ -3,7 +3,7 @@
 #include "curses_config.h"
 
 #include "ListWindow.h"
-#include "TracklistQuery.h"
+#include "TrackListViewQuery.h"
 #include "ScrollAdapterBase.h"
 
 #include <core/library/ILibrary.h>
@@ -17,7 +17,7 @@ class TrackListView : public ListWindow, public sigslot::has_slots<> {
         ~TrackListView();
 
         virtual void ProcessMessage(IWindowMessage &message);
-        void Requery();
+        void Requery(const std::string& column, DBID id);
 
     protected:
         virtual IScrollAdapter& GetScrollAdapter();
@@ -36,7 +36,7 @@ class TrackListView : public ListWindow, public sigslot::has_slots<> {
         };
 
     private:
-        std::shared_ptr<TracklistQuery> query;
+        std::shared_ptr<TrackListViewQuery> query;
         std::shared_ptr<std::vector<TrackPtr>> metadata;
         Adapter* adapter;
         LibraryPtr library;

@@ -4,7 +4,7 @@
 
 #include "ListWindow.h"
 #include "ScrollAdapterBase.h"
-#include "CategoryListQuery.h"
+#include "CategoryListViewQuery.h"
 
 #include <core/library/IQuery.h>
 #include <core/library/ILibrary.h>
@@ -15,10 +15,11 @@ using musik::core::LibraryPtr;
 class CategoryListView : public ListWindow, public sigslot::has_slots<> {
     public:
         CategoryListView(LibraryPtr library, IWindow *parent = NULL);
-        ~CategoryListView(); /* non-virtual for now*/
+        virtual ~CategoryListView();
 
         void Requery();
         virtual void ProcessMessage(IWindowMessage &message);
+        DBID GetSelectedId();
 
     protected:
         virtual IScrollAdapter& GetScrollAdapter();
@@ -40,6 +41,6 @@ class CategoryListView : public ListWindow, public sigslot::has_slots<> {
         LibraryPtr library;
         Adapter *adapter;
 
-        std::shared_ptr<CategoryListQuery> activeQuery;
-        std::shared_ptr<std::vector<std::string>> metadata;
+        std::shared_ptr<CategoryListViewQuery> activeQuery;
+        CategoryListViewQuery::ResultList metadata;
 };

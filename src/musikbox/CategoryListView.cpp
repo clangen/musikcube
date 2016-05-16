@@ -5,7 +5,7 @@
 #include "CategoryListView.h"
 #include "SingleLineEntry.h"
 #include "MultiLineEntry.h"
-#include "CategoryListQuery.h"
+#include "CategoryListViewQuery.h"
 #include "IWindowMessage.h"
 
 using musik::core::LibraryPtr;
@@ -26,8 +26,16 @@ CategoryListView::~CategoryListView() {
 }
 
 void CategoryListView::Requery() {
-    this->activeQuery.reset(new CategoryListQuery());
+    this->activeQuery.reset(new CategoryListViewQuery());
     this->library->Enqueue(activeQuery);
+}
+
+DBID CategoryListView::GetSelectedId() {
+    size_t index = this->GetSelectedIndex();
+    if (this->metadata && index < this->metadata->size()) {
+        return this->metadata->at(index)->id;
+    }
+    return -1;
 }
 
 void CategoryListView::OnQueryCompleted(QueryPtr query) {
@@ -58,7 +66,7 @@ size_t CategoryListView::Adapter::GetEntryCount() {
 
 IScrollAdapter::EntryPtr CategoryListView::Adapter::GetEntry(size_t index) {
     int64 attrs = (index == parent.GetSelectedIndex()) ? COLOR_PAIR(BOX_COLOR_BLACK_ON_GREEN) : -1;
-    IScrollAdapter::EntryPtr entry(new SingleLineEntry(parent.metadata->at(index)));
+    IScrollAdapter::EntryPtr entry(new SingleLineEntry(parent.metadata->at(index)->displayValue));
     entry->SetAttrs(attrs);
     return entry;
 }

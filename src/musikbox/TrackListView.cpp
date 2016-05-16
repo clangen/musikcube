@@ -7,6 +7,8 @@
 #include "IWindowMessage.h"
 
 #include <boost/format.hpp>
+#include <boost/format/group.hpp>
+#include <iomanip>
 
 #define WINDOW_MESSAGE_QUERY_COMPLETED 1002
 
@@ -24,8 +26,8 @@ TrackListView::~TrackListView() {
 
 }
 
-void TrackListView::Requery() {
-    this->query.reset(new TracklistQuery());
+void TrackListView::Requery(const std::string& column, DBID id) {
+    this->query.reset(new TrackListViewQuery(this->library, column, id));
     this->library->Enqueue(this->query);
 }
 
@@ -54,13 +56,23 @@ TrackListView::Adapter::Adapter(TrackListView &parent)
 }
 
 size_t TrackListView::Adapter::GetEntryCount() {
-    return 23847;//parent.metadata ? parent.metadata->size() : 0;
+    return parent.metadata ? parent.metadata->size() : 0;
 }
 
 IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(size_t index) {
     int64 attrs = (index == parent.GetSelectedIndex()) ? COLOR_PAIR(BOX_COLOR_BLACK_ON_GREEN) : -1;
-    std::string text = boost::str(boost::format("%1% %2%") % index % "need to fill in the metadata");
-    IScrollAdapter::EntryPtr entry(new SingleLineEntry(/*parent.metadata->at(index)*/ text));
+
+    TrackPtr track = parent.metadata->at(index);
+    std::string trackNum = track->GetValue("track");
+    std::string title = track->GetValue("title");
+
+    std::string text = boost::str(
+        boost::format("%s  %s") 
+            % boost::io::group(std::setw(3), std::setfill(' '), trackNum)
+            % title);
+
+    IScrollAdapter::EntryPtr entry(new SingleLineEntry(text));
+
     entry->SetAttrs(attrs);
 
     return entry;

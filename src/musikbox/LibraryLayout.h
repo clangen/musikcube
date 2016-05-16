@@ -6,9 +6,11 @@
 
 #include <core/library/ILibrary.h>
 
+#include <sigslot/sigslot.h>
+
 using musik::core::LibraryPtr;
 
-class LibraryLayout : public LayoutBase {
+class LibraryLayout : public LayoutBase, public sigslot::has_slots<> {
     public:
         LibraryLayout(LibraryPtr library);
         virtual ~LibraryLayout();
@@ -18,6 +20,9 @@ class LibraryLayout : public LayoutBase {
 
     private:
         void InitializeWindows();
+
+        void OnCategoryViewSelectionChanged(
+            ListWindow *view, size_t newIndex, size_t oldIndex);
 
         LibraryPtr library;
         std::shared_ptr<CategoryListView> albumList;

@@ -3,22 +3,22 @@
 #include <core/library/query/QueryBase.h>
 #include <core/db/Connection.h>
 #include <core/library/track/Track.h>
-#include "CategoryListQuery.h"
+#include "CategoryListViewQuery.h"
 
 using musik::core::query::QueryBase;
 using musik::core::db::Connection;
 using musik::core::TrackPtr;
+using musik::core::LibraryPtr;
 
-class TracklistQuery : public QueryBase {
+class TrackListViewQuery : public QueryBase {
     public:
         typedef std::shared_ptr<std::vector<TrackPtr>> Result;
-        typedef std::shared_ptr<CategoryListQuery> Category;
 
-        TracklistQuery();
-        ~TracklistQuery();
+        TrackListViewQuery(LibraryPtr library, const std::string& column, DBID id);
+        ~TrackListViewQuery();
 
         std::string Name() {
-            return "TracklistQuery";
+            return "TrackListViewQuery";
         }
 
         virtual Result GetResult();
@@ -29,6 +29,7 @@ class TracklistQuery : public QueryBase {
         Result result;
 
     private:
-        std::vector<Category> categories;
-        
+        LibraryPtr library;
+        std::string column;
+        DBID id;
 };

@@ -33,11 +33,23 @@ void LibraryLayout::InitializeWindows() {
     this->AddWindow(this->albumList);
     this->AddWindow(this->trackList);
 
+    this->albumList->SelectionChanged.connect(
+        this, &LibraryLayout::OnCategoryViewSelectionChanged);
+
     this->Layout();
 }
 
 void LibraryLayout::Show() {
     LayoutBase::Show();
-    this->trackList->Requery();
     this->albumList->Requery();
+}
+
+void LibraryLayout::OnCategoryViewSelectionChanged(
+    ListWindow *view, size_t newIndex, size_t oldIndex) {
+    if (view == this->albumList.get()) {
+        DBID id = this->albumList->GetSelectedId();
+        if (id != -1) {
+            this->trackList->Requery("album_id", id);
+        }
+    }
 }

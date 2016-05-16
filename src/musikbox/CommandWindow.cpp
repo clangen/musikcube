@@ -5,7 +5,7 @@
 #include "Screen.h"
 #include "Colors.h"
 
-#include "CategoryListQuery.h"
+#include "CategoryListViewQuery.h"
 
 #include <core/debug.h>
 #include <core/sdk/IPlugin.h>
@@ -132,7 +132,7 @@ void CommandWindow::Help() {
     this->output->WriteLine("  pa: toggle pause/resume", s);
     this->output->WriteLine("  st: stop playing", s);
     //this->output->WriteLine("  ls: list currently playing", s);
-    this->output->WriteLine("  lp: list loaded plugins", s);
+    this->output->WriteLine("  plugins: list loaded plugins", s);
     this->output->WriteLine("  v: <0 - 100>: set % volume", s);
     this->output->WriteLine("  sk <seconds>: seek to <seconds> into track", s);
     this->output->WriteLine("  addir <dir>: add a directory to be indexed", s);
