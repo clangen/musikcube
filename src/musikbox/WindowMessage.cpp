@@ -3,7 +3,7 @@
 #include "WindowMessage.h"
 
 IWindowMessagePtr WindowMessage::Create(
-    IWindowPtr target,
+    IWindow* target,
     int messageType,
     int64 data1,
     int64 data2)
@@ -12,7 +12,7 @@ IWindowMessagePtr WindowMessage::Create(
 }
 
 WindowMessage::WindowMessage(
-    IWindowPtr target,
+    IWindow* target,
     int messageType,
     int64 data1,
     int64 data2)
@@ -23,7 +23,7 @@ WindowMessage::WindowMessage(
     this->data2 = data2;
 }
 
-IWindowPtr WindowMessage::Target() {
+IWindow* WindowMessage::Target() {
     return this->target;
 }
 

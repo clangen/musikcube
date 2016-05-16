@@ -65,7 +65,7 @@ void WindowMessageQueue::Remove(IWindow *target, int type) {
     while (it != this->queue.end()) {
         IWindowMessagePtr current = (*it)->message;
 
-        if (current->Target().get() == target) {
+        if (current->Target() == target) {
             if (type == -1 || type == current->MessageType()) {
                 delete (*it);
                 it = this->queue.erase(it);

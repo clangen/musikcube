@@ -36,18 +36,8 @@ void LibraryLayout::InitializeWindows() {
     this->Layout();
 }
 
-void LibraryLayout::OnIdle() {
-    this->UpdateWindows();
-}
-
 void LibraryLayout::Show() {
     LayoutBase::Show();
     this->trackList->Requery();
     this->albumList->Requery();
-}
-
-void LibraryLayout::UpdateWindows() {
-    /* update() or repaint() or whatever */
-    this->albumList->OnIdle();
-    this->trackList->OnIdle();
 }

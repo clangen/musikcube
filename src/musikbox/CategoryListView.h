@@ -17,11 +17,12 @@ class CategoryListView : public ListWindow, public sigslot::has_slots<> {
         CategoryListView(LibraryPtr library, IWindow *parent = NULL);
         ~CategoryListView(); /* non-virtual for now*/
 
-        void OnIdle();
         void Requery();
+        virtual void ProcessMessage(IWindowMessage &message);
 
     protected:
         virtual IScrollAdapter& GetScrollAdapter();
+        void OnQueryCompleted(QueryPtr query);
 
         class Adapter : public ScrollAdapterBase {
             public:

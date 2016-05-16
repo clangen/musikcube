@@ -32,8 +32,8 @@ Window::Window(IWindow *parent) {
 }
 
 Window::~Window() {
-    this->Hide();
     WindowMessageQueue::Instance().Remove(this);
+    this->Hide();
 }
 
 int Window::GetId() const {
@@ -55,7 +55,7 @@ bool Window::IsVisible() {
 void Window::Post(int messageType, int64 user1, int64 user2, int64 delay) {
     WindowMessageQueue::Instance().Post(
         WindowMessage::Create(
-            shared_from_this(), 
+            this, 
             messageType, 
             user1, 
             user2),

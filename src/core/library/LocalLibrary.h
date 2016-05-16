@@ -82,7 +82,6 @@ namespace musik { namespace core { namespace library {
             virtual void Exit();
             bool Exited();
             void ThreadProc();
-            void NotifyQueryCompleted(QueryPtr query);
             QueryPtr GetNextQuery();
 
         private:

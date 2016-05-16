@@ -5,25 +5,25 @@
 class WindowMessage : public IWindowMessage {
     private:
         WindowMessage(
-            IWindowPtr target, 
+            IWindow* target, 
             int messageType,
             int64 data1, 
             int64 data2);
         
     public:
         static IWindowMessagePtr Create(
-            IWindowPtr target,
+            IWindow* target,
             int messageType,
             int64 data1,
             int64 data2);
         
-        virtual IWindowPtr Target();
+        virtual IWindow* Target();
         virtual int MessageType();
         virtual int64 UserData1();
         virtual int64 UserData2();
 
     private:
-        IWindowPtr target;
+        IWindow* target;
         int messageType;
         int64 data1, data2;
 };

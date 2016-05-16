@@ -135,7 +135,10 @@ double WindowsSystemInfo::GetCpuUsage() {
         (double) (sys.QuadPart - lastSysCpu.QuadPart) +
         (double) (user.QuadPart - lastUserCpu.QuadPart);
 
-    percent /= (now.QuadPart - lastCpu.QuadPart);
+    ULONGLONG diff = now.QuadPart - lastCpu.QuadPart;
+    diff = max(1, diff);
+
+    percent /= diff;
     percent /= processorCount;
     
     lastCpu = now;

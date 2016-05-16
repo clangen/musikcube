@@ -14,11 +14,9 @@ class LibraryLayout : public LayoutBase {
         virtual ~LibraryLayout();
 
         virtual void Layout();
-        virtual void OnIdle();
         virtual void Show();
 
     private:
-        void UpdateWindows();
         void InitializeWindows();
 
         LibraryPtr library;

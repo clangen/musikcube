@@ -20,8 +20,8 @@ class MainLayout : public LayoutBase {
         ~MainLayout();
 
         virtual void Layout();
-        virtual void OnIdle();
         virtual void Show();
+        virtual void ProcessMessage(IWindowMessage &message);
 
     private:
         void UpdateWindows();

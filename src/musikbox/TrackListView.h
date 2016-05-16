@@ -11,16 +11,17 @@
 using musik::core::QueryPtr;
 using musik::core::LibraryPtr;
 
-class TrackListView : public ListWindow {
+class TrackListView : public ListWindow, public sigslot::has_slots<> {
     public:
         TrackListView(LibraryPtr library, IWindow *parent = NULL);
         ~TrackListView();
 
-        void OnIdle();
+        virtual void ProcessMessage(IWindowMessage &message);
         void Requery();
 
     protected:
         virtual IScrollAdapter& GetScrollAdapter();
+        void OnQueryCompleted(QueryPtr query);
 
         class Adapter : public ScrollAdapterBase {
         public:

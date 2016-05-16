@@ -19,18 +19,19 @@ ResourcesWindow::~ResourcesWindow() {
     delete this->systemInfo;
 }
 
-void ResourcesWindow::Repaint() {
+void ResourcesWindow::Update() {
     this->Clear();
 
-    float virtualMemoryUsed = (float) systemInfo->GetUsedVirtualMemory() / BYTES_PER_MEGABYTE;
-    float physicalMemoryUsed = (float) systemInfo->GetUsedPhysicalMemory() / BYTES_PER_MEGABYTE;
+    double virtualMemoryUsed = (double) systemInfo->GetUsedVirtualMemory() / BYTES_PER_MEGABYTE;
+    double physicalMemoryUsed = (double) systemInfo->GetUsedPhysicalMemory() / BYTES_PER_MEGABYTE;
+    double cpuUsage = (double) systemInfo->GetCpuUsage();
 
     wprintw(
         this->GetContent(), 
         "cpu %.2f%% - virt %.2f (mb) - phys %.2f (mb)", 
-        systemInfo->GetCpuUsage(),
+        cpuUsage,
         virtualMemoryUsed,
         physicalMemoryUsed);
 
-    Window::Repaint();
+    this->Repaint();
 }

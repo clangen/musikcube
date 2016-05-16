@@ -6,14 +6,18 @@
 #include "SingleLineEntry.h"
 #include "MultiLineEntry.h"
 #include "CategoryListQuery.h"
+#include "IWindowMessage.h"
 
 using musik::core::LibraryPtr;
 using musik::core::IQuery;
+
+#define WINDOW_MESSAGE_QUERY_COMPLETED 1002
 
 CategoryListView::CategoryListView(LibraryPtr library, IWindow *parent)
 : ListWindow(parent) {
     this->SetContentColor(BOX_COLOR_WHITE_ON_BLACK);
     this->library = library;
+    this->library->QueryCompleted.connect(this, &CategoryListView::OnQueryCompleted);
     this->adapter = new Adapter(*this);
 }
 
@@ -26,8 +30,14 @@ void CategoryListView::Requery() {
     this->library->Enqueue(activeQuery);
 }
 
-void CategoryListView::OnIdle() {
-    if (activeQuery && activeQuery->GetStatus() == IQuery::Finished) {
+void CategoryListView::OnQueryCompleted(QueryPtr query) {
+    if (query == this->activeQuery) {
+        Post(WINDOW_MESSAGE_QUERY_COMPLETED);
+    }
+}
+
+void CategoryListView::ProcessMessage(IWindowMessage &message) {
+    if (message.MessageType() == WINDOW_MESSAGE_QUERY_COMPLETED) {
         this->metadata = activeQuery->GetResult();
         activeQuery.reset();
         this->OnAdapterChanged();

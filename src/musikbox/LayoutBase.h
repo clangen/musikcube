@@ -21,7 +21,6 @@ class LayoutBase : public Window, public ILayout {
         virtual IWindow* GetFocus();
 
         virtual void Layout() = 0;
-        virtual void OnIdle() = 0;
         
         /* IWindowGroup */
         virtual bool AddWindow(IWindowPtr window);

@@ -3,6 +3,10 @@
 #include "stdafx.h"
 #include "MainLayout.h"
 #include "Screen.h"
+#include "IWindowMessage.h"
+
+#define MESSAGE_TYPE_UPDATE 1001
+#define UPDATE_INTERVAL_MS 500
 
 MainLayout::MainLayout(Transport& transport, LibraryPtr library)
 : LayoutBase() {
@@ -57,13 +61,18 @@ void MainLayout::Layout() {
 void MainLayout::Show() {
     LayoutBase::Show();
     this->UpdateWindows();
+    Post(MESSAGE_TYPE_UPDATE, 0, 0, UPDATE_INTERVAL_MS);
 }
 
-void MainLayout::OnIdle() {
-    this->UpdateWindows();
+void MainLayout::ProcessMessage(IWindowMessage &message) {
+    if (message.MessageType() == MESSAGE_TYPE_UPDATE) {
+        this->UpdateWindows();
+        Post(MESSAGE_TYPE_UPDATE, 0, 0, UPDATE_INTERVAL_MS);
+    }
 }
 
 void MainLayout::UpdateWindows() {
     this->logs->Update();
-    this->resources->Repaint();
+    this->resources->Update();
+    this->transport->Update();
 }

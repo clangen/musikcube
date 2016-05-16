@@ -187,8 +187,8 @@ int main(int argc, char* argv[])
             else {
                 ch = getch();
             }
-            if (ch == -1) { /* timeout */
-                state.layout->OnIdle();
+            if (ch == -1) { 
+                /* idle timeout */
             }
             else if (ch == 9) { /* tab */
                 focusNextInLayout(state);

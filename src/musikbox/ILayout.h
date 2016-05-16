@@ -9,5 +9,4 @@ class ILayout : public IWindowGroup, public IDisplayable {
         virtual IWindow* FocusPrev() = 0;
         virtual IWindow* GetFocus() = 0;
         virtual void Layout() = 0;
-        virtual void OnIdle() = 0;
 };

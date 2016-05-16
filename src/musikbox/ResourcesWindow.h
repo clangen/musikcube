@@ -9,7 +9,7 @@ class ResourcesWindow : public Window {
         ResourcesWindow(IWindow *parent = NULL);
         virtual ~ResourcesWindow();
 
-        virtual void Repaint();
+        virtual void Update();
 
     private:
 
