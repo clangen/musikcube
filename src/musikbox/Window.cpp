@@ -218,6 +218,24 @@ void Window::Show() {
     this->isVisible = true;
 }
 
+void Window::Hide() {
+    if (this->frame) {
+        wclear(this->frame);
+        wclear(this->content);
+        this->Repaint();
+
+        delwin(this->content);
+
+        if (this->content != this->frame) {
+            delwin(this->frame);
+        }
+
+        this->frame = this->content = NULL;
+    }
+
+    this->isVisible = false;
+}
+
 void Window::SetFrameVisible(bool enabled) {
     if (enabled != this->drawFrame) {
         this->drawFrame = enabled;
@@ -259,22 +277,4 @@ void Window::Focus() {
 
 void Window::Blur() {
 
-}
-
-void Window::Hide() {
-    if (this->frame) {
-        wclear(this->frame);
-        wclear(this->content);
-        this->Repaint();
-
-        delwin(this->content);
-
-        if (this->content != this->frame) {
-            delwin(this->frame);
-        }
-
-        this->frame = this->content = NULL;
-    }
-
-    this->isVisible = false;
 }

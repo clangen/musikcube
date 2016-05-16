@@ -6,7 +6,7 @@
 #include "IWindowMessage.h"
 
 #define MESSAGE_TYPE_UPDATE 1001
-#define UPDATE_INTERVAL_MS 500
+#define UPDATE_INTERVAL_MS 1000
 
 MainLayout::MainLayout(Transport& transport, LibraryPtr library)
 : LayoutBase() {
@@ -21,6 +21,8 @@ MainLayout::MainLayout(Transport& transport, LibraryPtr library)
     this->AddWindow(this->output);
     this->AddWindow(this->resources);
     this->AddWindow(this->transport);
+
+    Post(MESSAGE_TYPE_UPDATE, 0, 0, UPDATE_INTERVAL_MS);
 }
 
 MainLayout::~MainLayout() {
@@ -61,7 +63,6 @@ void MainLayout::Layout() {
 void MainLayout::Show() {
     LayoutBase::Show();
     this->UpdateWindows();
-    Post(MESSAGE_TYPE_UPDATE, 0, 0, UPDATE_INTERVAL_MS);
 }
 
 void MainLayout::ProcessMessage(IWindowMessage &message) {

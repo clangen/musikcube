@@ -78,7 +78,7 @@ double SystemInfo::GetCpuUsage() {
 WindowsSystemInfo::WindowsSystemInfo() {
     PdhOpenQuery(NULL, NULL, &cpuQuery);
     PdhAddCounter(cpuQuery, "\\Processor(_Total)\\% Processor Time", NULL, &cpuTotal);
-    //PdhCollectQueryData(cpuQuery);
+    PdhCollectQueryData(cpuQuery);
 
     SYSTEM_INFO sysInfo;
     FILETIME ftime, fsys, fuser;
@@ -145,6 +145,6 @@ double WindowsSystemInfo::GetCpuUsage() {
     lastUserCpu = user;
     lastSysCpu = sys;
     
-    return percent * 100;
+    return (percent * 100.0f);
 }
 #endif

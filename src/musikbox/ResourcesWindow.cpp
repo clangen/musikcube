@@ -8,6 +8,8 @@
 #include <core/debug.h>
 #include <boost/format.hpp>
 
+#include <core/debug.h>
+
 #define BYTES_PER_MEGABYTE 1048576.0f
 
 ResourcesWindow::ResourcesWindow(IWindow *parent) 
