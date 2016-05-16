@@ -4,6 +4,7 @@
 #include "TransportWindow.h"
 #include "Screen.h"
 #include "Colors.h"
+#include "WindowMessage.h"
 
 #include <core/debug.h>
 #include <core/sdk/IPlugin.h>
@@ -16,8 +17,8 @@
 
 #include <boost/algorithm/string.hpp>
 
-#define BUFFER_SIZE 2048
-#define MAX_SIZE 2046
+#define MESSAGE_TYPE_UPDATE 1001
+#define UPDATE_INTERVAL_MS 500
 
 using musik::core::audio::Transport;
 
@@ -31,14 +32,27 @@ TransportWindow::TransportWindow(IWindow *parent, Transport& transport)
 TransportWindow::~TransportWindow() {
 }
 
-void TransportWindow::Repaint() {
-    //this->Clear();
-    //WINDOW *c = this->GetContent();
+void TransportWindow::Show() {
+    Window::Show();
+    this->UpdateAndRepaint();
+    Post(MESSAGE_TYPE_UPDATE, 0, 0, UPDATE_INTERVAL_MS);
+}
 
-    //double volume = (this->transport->Volume() * 100.0);
+void TransportWindow::ProcessMessage(IWindowMessage &message) {
+    if (message.MessageType() == MESSAGE_TYPE_UPDATE) {
+        this->UpdateAndRepaint();
+        Post(MESSAGE_TYPE_UPDATE, 0, 0, UPDATE_INTERVAL_MS);
+    }
+}
 
-    //wprintw(c, "volume %.1f%%\n", volume);
-    //wprintw(c, "filename: ");
+void TransportWindow::UpdateAndRepaint() {
+    this->Clear();
+    WINDOW *c = this->GetContent();
 
-    Window::Repaint();
+    double volume = (this->transport->Volume() * 100.0);
+
+    wprintw(c, "volume %.1f%%\n", volume);
+    wprintw(c, "filename: ");
+
+    this->Repaint();
 }

@@ -65,6 +65,5 @@ void MainLayout::OnIdle() {
 
 void MainLayout::UpdateWindows() {
     this->logs->Update();
-    this->transport->Repaint();
     this->resources->Repaint();
 }

@@ -17,22 +17,44 @@ void WindowMessageQueue::Dispatch() {
     milliseconds now = duration_cast<milliseconds>(
         system_clock::now().time_since_epoch());
 
-    boost::recursive_mutex::scoped_lock lock(this->queueMutex);
+    typedef std::list<EnqueuedMessage*>::iterator Iterator;
+    std::list<EnqueuedMessage*> toDispatch;
 
-    bool done = false;
-    while (!done && !this->queue.empty()) {
-        /* messages are time-ordered. pop and dispatch one at a time
-        until we hit one that shouldn't be sent yet. */
+    {
+        boost::recursive_mutex::scoped_lock lock(this->queueMutex);
 
-        EnqueuedMessage *m = this->queue.front();
-        if (now >= m->time) {
-            this->Dispatch(m->message);
-            this->queue.pop_front();
-            delete m;
+        Iterator it = this->queue.begin();
+
+        bool done = false;
+        while (!done && it != this->queue.end()) {
+            /* messages are time-ordered. pop and dispatch one at a time
+            until we get to a message that should be delivered in the future,
+            or the queue has been exhausted. */
+
+            EnqueuedMessage *m = (*it);
+
+            if (now >= m->time) {
+                if (m->message.get()->Target()->IsAcceptingMessages()) {
+                    toDispatch.push_back(m);
+                    it = this->queue.erase(it);
+                }
+                else {
+                    it++;
+                }
+            }
+            else {
+                done = true;
+            }
         }
-        else {
-            done = true;
-        }
+    }
+
+    /* dispatch outside of the critical section */
+
+    Iterator it = toDispatch.begin();
+    while (it != toDispatch.end()) {
+        this->Dispatch((*it)->message);
+        delete *it;
+        it++;
     }
 }
 
@@ -60,9 +82,12 @@ void WindowMessageQueue::Post(IWindowMessagePtr message, int64 delayMs) {
 
     delayMs = max(0, delayMs);
 
+    milliseconds now = duration_cast<milliseconds>(
+        system_clock::now().time_since_epoch());
+
     EnqueuedMessage *m = new EnqueuedMessage();
     m->message = message;
-    m->time = milliseconds::zero() + milliseconds(delayMs);
+    m->time = now + milliseconds(delayMs);
 
     /* the queue is time ordered. start from the front of the queue, and
     work our way back until we find the correct place to insert the new one */

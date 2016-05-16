@@ -26,6 +26,7 @@ class IWindow : public IDisplayable {
         virtual int GetId() const = 0;
         virtual int GetFocusOrder() = 0;
         virtual void SetFocusOrder(int order = -1) = 0;
+        virtual bool IsAcceptingMessages() = 0;
         virtual void ProcessMessage(IWindowMessage &message) = 0;
         virtual WINDOW* GetFrame() const = 0;
         virtual WINDOW* GetContent() const = 0;

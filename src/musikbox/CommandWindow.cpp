@@ -58,14 +58,9 @@ CommandWindow::~CommandWindow() {
 void CommandWindow::Show() {
     Window::Show();
 
-    //WindowMessageQueue::Instance().Post(
-    //    WindowMessage::Create(shared_from_this(), 100, 0, 0), 500);
-
-    //WindowMessageQueue::Instance().Post(
-    //    WindowMessage::Create(shared_from_this(), 101, 0, 0), 1000);
-
-    //WindowMessageQueue::Instance().Post(
-    //    WindowMessage::Create(shared_from_this(), 99, 0, 0), 250);
+    this->Post(100, 0, 0, 500);
+    this->Post(101, 0, 0, 10000);
+    this->Post(99, 0, 0, 250);
 
     wmove(this->GetContent(), 0, 0);
     std::string buf(buffer, bufferPosition);

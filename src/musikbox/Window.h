@@ -35,6 +35,7 @@ class Window : public IWindow, public std::enable_shared_from_this<IWindow> {
         virtual int GetId() const;
 
         virtual void ProcessMessage(IWindowMessage &message);
+        virtual bool IsAcceptingMessages();
 
         virtual WINDOW* GetFrame() const;
         virtual WINDOW* GetContent() const;
@@ -46,6 +47,8 @@ class Window : public IWindow, public std::enable_shared_from_this<IWindow> {
 
     protected:
         IWindow* GetParent() const;
+        void Post(int messageType, int64 user1 = 0, int64 user2 = 0, int64 delay = 0);
+        bool IsVisible();
 
         void Clear();
 
@@ -54,6 +57,7 @@ class Window : public IWindow, public std::enable_shared_from_this<IWindow> {
         WINDOW* frame;
         WINDOW* content;
         bool drawFrame;
+        bool isVisible;
         int focusOrder;
         int id;
         int64 contentColor, frameColor;

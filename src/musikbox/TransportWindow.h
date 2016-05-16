@@ -12,9 +12,11 @@ class TransportWindow : public Window {
         TransportWindow(IWindow *parent, Transport& transport);
         ~TransportWindow();
 
-        virtual void Repaint();
+        virtual void Show();
+        virtual void ProcessMessage(IWindowMessage &message);
 
     private:
+        void UpdateAndRepaint();
 
         bool paused;
         Transport* transport;

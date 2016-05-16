@@ -3,6 +3,7 @@
 #include "stdafx.h"
 #include "Window.h"
 #include "IWindowGroup.h"
+#include "WindowMessage.h"
 #include "WindowMessageQueue.h"
 
 static int NEXT_ID = 0;
@@ -25,6 +26,7 @@ Window::Window(IWindow *parent) {
     this->contentColor = -1;
     this->frameColor = -1;
     this->drawFrame = true;
+    this->isVisible = false;
     this->focusOrder = -1;
     this->id = NEXT_ID++;
 }
@@ -40,6 +42,24 @@ int Window::GetId() const {
 
 void Window::ProcessMessage(IWindowMessage &message) {
    
+}
+
+bool Window::IsAcceptingMessages() {
+    return this->IsVisible();
+}
+
+bool Window::IsVisible() {
+    return this->isVisible;
+}
+
+void Window::Post(int messageType, int64 user1, int64 user2, int64 delay) {
+    WindowMessageQueue::Instance().Post(
+        WindowMessage::Create(
+            shared_from_this(), 
+            messageType, 
+            user1, 
+            user2),
+        delay);
 }
 
 void Window::SetParent(IWindow* parent) {
@@ -194,6 +214,8 @@ void Window::Show() {
     }
 
     this->Repaint();
+
+    this->isVisible = true;
 }
 
 void Window::SetFrameVisible(bool enabled) {
@@ -253,4 +275,6 @@ void Window::Hide() {
 
         this->frame = this->content = NULL;
     }
+
+    this->isVisible = false;
 }
