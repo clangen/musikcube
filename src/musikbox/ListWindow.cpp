@@ -13,14 +13,14 @@ ListWindow::~ListWindow() {
 }
 
 void ListWindow::ScrollToTop() {
-    this->selectedIndex = 0;
+    this->SetSelectedIndex(0);
     this->GetScrollAdapter().DrawPage(this->GetContent(), 0, &scrollPosition);
     this->Repaint();
 }
 
 void ListWindow::ScrollToBottom() {
     IScrollAdapter& adapter = this->GetScrollAdapter();
-    this->selectedIndex = adapter.GetEntryCount() - 1;
+    this->SetSelectedIndex(max(0, adapter.GetEntryCount() - 1));
     adapter.DrawPage(this->GetContent(), selectedIndex, &scrollPosition);
     this->Repaint();
 }
@@ -48,9 +48,10 @@ void ListWindow::ScrollUp(int delta) {
         drawIndex = newIndex - 1;
     }
 
-    selectedIndex = newIndex;
-
     drawIndex = max(0, drawIndex);
+
+    this->SetSelectedIndex(newIndex);
+
     adapter.DrawPage(this->GetContent(), drawIndex, &this->scrollPosition);
 
     this->Repaint();
@@ -72,7 +73,7 @@ void ListWindow::ScrollDown(int delta) {
         drawIndex = drawIndex + delta;
     }
 
-    selectedIndex = newIndex;
+    this->SetSelectedIndex(newIndex);
 
     adapter.DrawPage(this->GetContent(), drawIndex, &this->scrollPosition);
 
@@ -88,7 +89,8 @@ void ListWindow::PageUp() {
     the top of the list. otherwise, scroll down by one to give indication
     there is more to see. */
     target = (target > 0) ? target + 1 : 0;
-    this->selectedIndex = (target == 0) ? 0 : target + 1;
+
+    this->SetSelectedIndex((target == 0) ? 0 : target + 1);
 
     adapter.DrawPage(this->GetContent(), target, &this->scrollPosition);
     this->Repaint();
@@ -102,10 +104,18 @@ void ListWindow::PageDown() {
     ScrollPos spos = this->GetScrollPosition();
 
     size_t lastVisible = spos.firstVisibleEntryIndex + spos.visibleEntryCount - 1;
-    this->selectedIndex = min(adapter.GetEntryCount() - 1, lastVisible + 1);
+    this->SetSelectedIndex(min(adapter.GetEntryCount() - 1, lastVisible + 1));
 
     adapter.DrawPage(this->GetContent(), lastVisible, &this->scrollPosition);
     this->Repaint();
+}
+
+void ListWindow::SetSelectedIndex(size_t index) {
+    if (this->selectedIndex != index) {
+        size_t prev = this->selectedIndex;
+        this->selectedIndex = index;
+        this->SelectionChanged(this, index, prev);
+    }
 }
 
 size_t ListWindow::GetSelectedIndex() {
