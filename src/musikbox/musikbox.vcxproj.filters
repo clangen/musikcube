@@ -3,71 +3,41 @@
   <ItemGroup>
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="stdafx.cpp" />
-    <ClCompile Include="Colors.cpp">
-      <Filter>curses</Filter>
-    </ClCompile>
     <ClCompile Include="IScrollAdapter.h">
       <Filter>curses</Filter>
     </ClCompile>
     <ClCompile Include="CommandWindow.cpp">
-      <Filter>view</Filter>
+      <Filter>window</Filter>
     </ClCompile>
     <ClCompile Include="LogWindow.cpp">
-      <Filter>view</Filter>
+      <Filter>window</Filter>
     </ClCompile>
     <ClCompile Include="OutputWindow.cpp">
-      <Filter>view</Filter>
+      <Filter>window</Filter>
     </ClCompile>
     <ClCompile Include="ResourcesWindow.cpp">
-      <Filter>view</Filter>
-    </ClCompile>
-    <ClCompile Include="Screen.cpp">
-      <Filter>curses</Filter>
-    </ClCompile>
-    <ClCompile Include="SimpleScrollAdapter.cpp">
-      <Filter>curses</Filter>
+      <Filter>window</Filter>
     </ClCompile>
     <ClCompile Include="SystemInfo.cpp">
-      <Filter>view</Filter>
+      <Filter>window</Filter>
     </ClCompile>
     <ClCompile Include="TransportWindow.cpp">
-      <Filter>view</Filter>
+      <Filter>window</Filter>
     </ClCompile>
     <ClCompile Include="IInput.h">
       <Filter>curses</Filter>
     </ClCompile>
-    <ClCompile Include="Window.cpp">
-      <Filter>curses</Filter>
-    </ClCompile>
     <ClCompile Include="MainLayout.cpp">
-      <Filter>view</Filter>
+      <Filter>window</Filter>
     </ClCompile>
     <ClCompile Include="LibraryLayout.cpp">
-      <Filter>view</Filter>
+      <Filter>window</Filter>
     </ClCompile>
     <ClCompile Include="CategoryListView.cpp">
-      <Filter>view</Filter>
-    </ClCompile>
-    <ClCompile Include="SingleLineEntry.cpp">
-      <Filter>curses</Filter>
-    </ClCompile>
-    <ClCompile Include="MultiLineEntry.cpp">
-      <Filter>curses</Filter>
-    </ClCompile>
-    <ClCompile Include="ScrollAdapterBase.cpp">
-      <Filter>curses</Filter>
-    </ClCompile>
-    <ClCompile Include="ScrollableWindow.cpp">
-      <Filter>curses</Filter>
+      <Filter>window</Filter>
     </ClCompile>
     <ClCompile Include="TrackListView.cpp">
-      <Filter>view</Filter>
-    </ClCompile>
-    <ClCompile Include="ListWindow.cpp">
-      <Filter>curses</Filter>
-    </ClCompile>
-    <ClCompile Include="LayoutBase.cpp">
-      <Filter>curses</Filter>
+      <Filter>window</Filter>
     </ClCompile>
     <ClCompile Include="WindowMessage.cpp">
       <Filter>curses</Filter>
@@ -81,38 +51,59 @@
     <ClCompile Include="CategoryListViewQuery.cpp">
       <Filter>query</Filter>
     </ClCompile>
+    <ClCompile Include="Colors.cpp">
+      <Filter>curses\util</Filter>
+    </ClCompile>
+    <ClCompile Include="Screen.cpp">
+      <Filter>curses\util</Filter>
+    </ClCompile>
+    <ClCompile Include="LayoutBase.cpp">
+      <Filter>curses\window</Filter>
+    </ClCompile>
+    <ClCompile Include="ListWindow.cpp">
+      <Filter>curses\window</Filter>
+    </ClCompile>
+    <ClCompile Include="MultiLineEntry.cpp">
+      <Filter>curses\window</Filter>
+    </ClCompile>
+    <ClCompile Include="ScrollableWindow.cpp">
+      <Filter>curses\window</Filter>
+    </ClCompile>
+    <ClCompile Include="ScrollAdapterBase.cpp">
+      <Filter>curses\window</Filter>
+    </ClCompile>
+    <ClCompile Include="SimpleScrollAdapter.cpp">
+      <Filter>curses\window</Filter>
+    </ClCompile>
+    <ClCompile Include="SingleLineEntry.cpp">
+      <Filter>curses\window</Filter>
+    </ClCompile>
+    <ClCompile Include="Window.cpp">
+      <Filter>curses\window</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="Colors.h">
-      <Filter>curses</Filter>
-    </ClInclude>
     <ClInclude Include="curses_config.h">
       <Filter>curses</Filter>
     </ClInclude>
     <ClInclude Include="CommandWindow.h">
-      <Filter>view</Filter>
+      <Filter>window</Filter>
     </ClInclude>
     <ClInclude Include="LogWindow.h">
-      <Filter>view</Filter>
+      <Filter>window</Filter>
     </ClInclude>
     <ClInclude Include="OutputWindow.h">
-      <Filter>view</Filter>
+      <Filter>window</Filter>
     </ClInclude>
     <ClInclude Include="ResourcesWindow.h">
-      <Filter>view</Filter>
-    </ClInclude>
-    <ClInclude Include="Screen.h">
-      <Filter>curses</Filter>
-    </ClInclude>
-    <ClInclude Include="SimpleScrollAdapter.h">
-      <Filter>curses</Filter>
+      <Filter>window</Filter>
     </ClInclude>
     <ClInclude Include="SystemInfo.h">
-      <Filter>view</Filter>
+      <Filter>window</Filter>
     </ClInclude>
     <ClInclude Include="TransportWindow.h">
-      <Filter>view</Filter>
+      <Filter>window</Filter>
     </ClInclude>
     <ClInclude Include="ILayout.h">
       <Filter>curses</Filter>
@@ -120,41 +111,20 @@
     <ClInclude Include="IWindow.h">
       <Filter>curses</Filter>
     </ClInclude>
-    <ClInclude Include="Window.h">
-      <Filter>curses</Filter>
-    </ClInclude>
     <ClInclude Include="MainLayout.h">
-      <Filter>view</Filter>
+      <Filter>window</Filter>
     </ClInclude>
     <ClInclude Include="IScrollable.h">
       <Filter>curses</Filter>
     </ClInclude>
     <ClInclude Include="LibraryLayout.h">
-      <Filter>view</Filter>
+      <Filter>window</Filter>
     </ClInclude>
     <ClInclude Include="CategoryListView.h">
-      <Filter>view</Filter>
-    </ClInclude>
-    <ClInclude Include="SingleLineEntry.h">
-      <Filter>curses</Filter>
-    </ClInclude>
-    <ClInclude Include="MultiLineEntry.h">
-      <Filter>curses</Filter>
-    </ClInclude>
-    <ClInclude Include="ScrollAdapterBase.h">
-      <Filter>curses</Filter>
-    </ClInclude>
-    <ClInclude Include="ScrollableWindow.h">
-      <Filter>curses</Filter>
+      <Filter>window</Filter>
     </ClInclude>
     <ClInclude Include="TrackListView.h">
-      <Filter>view</Filter>
-    </ClInclude>
-    <ClInclude Include="ListWindow.h">
-      <Filter>curses</Filter>
-    </ClInclude>
-    <ClInclude Include="LayoutBase.h">
-      <Filter>curses</Filter>
+      <Filter>window</Filter>
     </ClInclude>
     <ClInclude Include="IWindowGroup.h">
       <Filter>curses</Filter>
@@ -177,6 +147,36 @@
     <ClInclude Include="CategoryListViewQuery.h">
       <Filter>query</Filter>
     </ClInclude>
+    <ClInclude Include="Colors.h">
+      <Filter>curses\util</Filter>
+    </ClInclude>
+    <ClInclude Include="Screen.h">
+      <Filter>curses\util</Filter>
+    </ClInclude>
+    <ClInclude Include="LayoutBase.h">
+      <Filter>curses\window</Filter>
+    </ClInclude>
+    <ClInclude Include="ListWindow.h">
+      <Filter>curses\window</Filter>
+    </ClInclude>
+    <ClInclude Include="MultiLineEntry.h">
+      <Filter>curses\window</Filter>
+    </ClInclude>
+    <ClInclude Include="ScrollableWindow.h">
+      <Filter>curses\window</Filter>
+    </ClInclude>
+    <ClInclude Include="ScrollAdapterBase.h">
+      <Filter>curses\window</Filter>
+    </ClInclude>
+    <ClInclude Include="SimpleScrollAdapter.h">
+      <Filter>curses\window</Filter>
+    </ClInclude>
+    <ClInclude Include="SingleLineEntry.h">
+      <Filter>curses\window</Filter>
+    </ClInclude>
+    <ClInclude Include="Window.h">
+      <Filter>curses\window</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="curses">
@@ -185,8 +185,14 @@
     <Filter Include="query">
       <UniqueIdentifier>{8de1fc82-96fd-4871-a6b0-fed0d6b21aa1}</UniqueIdentifier>
     </Filter>
-    <Filter Include="view">
+    <Filter Include="curses\util">
+      <UniqueIdentifier>{c7d44e46-7435-49a2-a8fb-f304ad069a96}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="window">
       <UniqueIdentifier>{c1ada983-8f4e-4ac4-86be-fa6fdffec375}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="curses\window">
+      <UniqueIdentifier>{e225eaf8-808a-4550-96b6-d86e748bedab}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

@@ -264,5 +264,8 @@
     <ClInclude Include="library\IQuery.h">
       <Filter>src\library</Filter>
     </ClInclude>
+    <ClInclude Include="library\LocalLibraryConstants.h">
+      <Filter>src\library</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

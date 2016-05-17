@@ -126,6 +126,7 @@
     <ClInclude Include="library\IQuery.h" />
     <ClInclude Include="library\LocalLibrary.h" />
     <ClInclude Include="library\LibraryFactory.h" />
+    <ClInclude Include="library\LocalLibraryConstants.h" />
     <ClInclude Include="library\metadata\MetadataValue.h" />
     <ClInclude Include="Library\query\QueryBase.h" />
     <ClInclude Include="library\track\InMemoryTrack.h" />
