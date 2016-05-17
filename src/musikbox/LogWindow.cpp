@@ -1,11 +1,12 @@
 #pragma once
 
 #include "stdafx.h"
+
 #include "LogWindow.h"
-#include "MultiLineEntry.h"
-#include "Colors.h"
-#include "Screen.h"
-#include <curses.h>
+
+#include <cursespp/MultiLineEntry.h>
+#include <cursespp/Colors.h>
+#include <cursespp/Screen.h>
 
 typedef IScrollAdapter::IEntry IEntry;
 

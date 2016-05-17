@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include <stdafx.h>
 #include "WindowMessageQueue.h"
 
 using namespace boost::chrono;

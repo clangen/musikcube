@@ -1,6 +1,6 @@
 #pragma once
 
-#include "stdafx.h"
+#include <stdafx.h>
 
 class IKeyHandler {
     public:

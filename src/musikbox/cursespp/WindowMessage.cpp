@@ -1,5 +1,4 @@
-#include "stdafx.h"
-
+#include <stdafx.h>
 #include "WindowMessage.h"
 
 IWindowMessagePtr WindowMessage::Create(

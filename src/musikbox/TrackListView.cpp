@@ -1,10 +1,12 @@
 #pragma once
 
 #include "stdafx.h"
-#include "Colors.h"
-#include "SingleLineEntry.h"
+
+#include <cursespp/Colors.h>
+#include <cursespp/SingleLineEntry.h>
+#include <cursespp/IWindowMessage.h>
+
 #include "TrackListView.h"
-#include "IWindowMessage.h"
 
 #include <core/library/LocalLibraryConstants.h>
 

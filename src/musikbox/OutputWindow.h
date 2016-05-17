@@ -1,9 +1,9 @@
 #pragma once
 
-#include "curses_config.h"
-#include "ScrollableWindow.h"
-#include "SimpleScrollAdapter.h"
-#include "Colors.h"
+#include <cursespp/curses_config.h>
+#include <cursespp/ScrollableWindow.h>
+#include <cursespp/SimpleScrollAdapter.h>
+#include <cursespp/Colors.h>
 
 class OutputWindow : public ScrollableWindow {
     public:

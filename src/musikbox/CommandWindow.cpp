@@ -1,10 +1,13 @@
 #pragma once
 
 #include "stdafx.h"
-#include "CommandWindow.h"
-#include "Screen.h"
-#include "Colors.h"
 
+#include <cursespp/Screen.h>
+#include <cursespp/Colors.h>
+#include <cursespp/WindowMessageQueue.h>
+#include <cursespp/WindowMessage.h>
+
+#include "CommandWindow.h"
 #include "CategoryListViewQuery.h"
 
 #include <core/debug.h>
@@ -26,8 +29,7 @@ using musik::core::TrackFactory;
 using musik::core::TrackPtr;
 using musik::core::QueryPtr;
 
-#include "WindowMessageQueue.h"
-#include "WindowMessage.h"
+
 
 template <class T>
 bool tostr(T& t, const std::string& s) {

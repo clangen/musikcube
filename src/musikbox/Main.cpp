@@ -33,7 +33,11 @@
 
 #include "stdafx.h"
 
-#include "Colors.h"
+#include <cursespp/Colors.h>
+#include <cursespp/IInput.h>
+#include <cursespp/IKeyHandler.h>
+#include <cursespp/WindowMessageQueue.h>
+
 #include "LogWindow.h"
 #include "CommandWindow.h"
 #include "OutputWindow.h"
@@ -41,9 +45,6 @@
 #include "ResourcesWindow.h"
 #include "MainLayout.h"
 #include "LibraryLayout.h"
-#include "IInput.h"
-#include "IKeyHandler.h"
-#include "WindowMessageQueue.h"
 
 #include <boost/locale.hpp>
 #include <boost/filesystem/path.hpp>

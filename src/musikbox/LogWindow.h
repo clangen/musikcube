@@ -3,9 +3,11 @@
 #include <sigslot/sigslot.h>
 
 #include <core/debug.h>
+
 #include <boost/thread/mutex.hpp>
-#include "ScrollableWindow.h"
-#include "SimpleScrollAdapter.h"
+
+#include <cursespp/ScrollableWindow.h>
+#include <cursespp/SimpleScrollAdapter.h>
 
 class LogWindow : public ScrollableWindow, public sigslot::has_slots<> {
     public:

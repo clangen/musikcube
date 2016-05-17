@@ -2,8 +2,8 @@
 
 #include <sigslot/sigslot.h>
 
-#include "ListWindow.h"
-#include "ScrollAdapterBase.h"
+#include <cursespp/ListWindow.h>
+#include <cursespp/ScrollAdapterBase.h>
 #include "CategoryListViewQuery.h"
 
 #include <core/library/IQuery.h>

@@ -2,9 +2,10 @@
 
 #include "stdafx.h"
 #include "OutputWindow.h"
-#include "Screen.h"
-#include "Colors.h"
-#include "MultiLineEntry.h"
+
+#include <cursespp/Screen.h>
+#include <cursespp/Colors.h>
+#include <cursespp/MultiLineEntry.h>
 
 typedef IScrollAdapter::EntryPtr EntryPtr;
 

@@ -2,8 +2,8 @@
 
 #include "stdafx.h"
 #include "MainLayout.h"
-#include "Screen.h"
-#include "IWindowMessage.h"
+#include <cursespp/Screen.h>
+#include <cursespp/IWindowMessage.h>
 
 #define MESSAGE_TYPE_UPDATE 1001
 #define UPDATE_INTERVAL_MS 1000

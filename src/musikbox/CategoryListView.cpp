@@ -1,12 +1,14 @@
 #pragma once
 
 #include "stdafx.h"
-#include "Colors.h"
+#include <cursespp/Colors.h>
+
+#include <cursespp/SingleLineEntry.h>
+#include <cursespp/MultiLineEntry.h>
+#include <cursespp/IWindowMessage.h>
+
 #include "CategoryListView.h"
-#include "SingleLineEntry.h"
-#include "MultiLineEntry.h"
 #include "CategoryListViewQuery.h"
-#include "IWindowMessage.h"
 
 using musik::core::LibraryPtr;
 using musik::core::IQuery;

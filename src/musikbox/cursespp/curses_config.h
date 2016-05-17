@@ -6,4 +6,3 @@
 #endif
 
 #include <curses.h>
-#include <panel.h>

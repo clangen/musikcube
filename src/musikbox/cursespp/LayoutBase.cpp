@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include <stdafx.h>
 #include "LayoutBase.h"
 #include "Colors.h"
 

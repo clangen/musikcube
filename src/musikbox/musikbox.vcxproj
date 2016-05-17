@@ -59,7 +59,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../;../3rdparty/include;../../../boost_1_60_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./;../;../3rdparty/include;../../../boost_1_60_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -88,7 +88,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../;../3rdparty/include;../../../boost_1_60_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./;../;../3rdparty/include;../../../boost_1_60_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -117,26 +117,26 @@
   <ItemGroup>
     <ClCompile Include="CategoryListViewQuery.cpp" />
     <ClCompile Include="CategoryListView.cpp" />
-    <ClCompile Include="LayoutBase.cpp" />
-    <ClCompile Include="ListWindow.cpp" />
-    <ClCompile Include="ScrollAdapterBase.cpp" />
+    <ClCompile Include="cursespp\Colors.cpp" />
+    <ClCompile Include="cursespp\LayoutBase.cpp" />
+    <ClCompile Include="cursespp\ListWindow.cpp" />
+    <ClCompile Include="cursespp\MultiLineEntry.cpp" />
+    <ClCompile Include="cursespp\Screen.cpp" />
+    <ClCompile Include="cursespp\ScrollableWindow.cpp" />
+    <ClCompile Include="cursespp\ScrollAdapterBase.cpp" />
+    <ClCompile Include="cursespp\SimpleScrollAdapter.cpp" />
+    <ClCompile Include="cursespp\SingleLineEntry.cpp" />
+    <ClCompile Include="cursespp\Window.cpp" />
+    <ClCompile Include="cursespp\WindowMessage.cpp" />
+    <ClCompile Include="cursespp\WindowMessageQueue.cpp" />
     <ClCompile Include="LibraryLayout.cpp" />
     <ClCompile Include="MainLayout.cpp" />
-    <ClCompile Include="MultiLineEntry.cpp" />
-    <ClCompile Include="ScrollableWindow.cpp" />
-    <ClCompile Include="SingleLineEntry.cpp" />
     <ClCompile Include="TrackListViewQuery.cpp" />
     <ClCompile Include="TrackListView.cpp" />
-    <ClCompile Include="Window.cpp" />
-    <ClCompile Include="Colors.cpp" />
     <ClCompile Include="CommandWindow.cpp" />
-    <ClCompile Include="IInput.h" />
-    <ClCompile Include="IScrollAdapter.h" />
     <ClCompile Include="LogWindow.cpp" />
     <ClCompile Include="OutputWindow.cpp" />
     <ClCompile Include="ResourcesWindow.cpp" />
-    <ClCompile Include="Screen.cpp" />
-    <ClCompile Include="SimpleScrollAdapter.cpp" />
     <ClCompile Include="SystemInfo.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="stdafx.cpp">
@@ -144,43 +144,43 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="TransportWindow.cpp" />
-    <ClCompile Include="WindowMessage.cpp" />
-    <ClCompile Include="WindowMessageQueue.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CategoryListViewQuery.h" />
     <ClInclude Include="CategoryListView.h" />
-    <ClInclude Include="IDisplayable.h" />
-    <ClInclude Include="IKeyHandler.h" />
-    <ClInclude Include="IWindowGroup.h" />
-    <ClInclude Include="IWindowMessage.h" />
-    <ClInclude Include="LayoutBase.h" />
-    <ClInclude Include="ScrollAdapterBase.h" />
-    <ClInclude Include="IScrollable.h" />
+    <ClInclude Include="cursespp\Colors.h" />
+    <ClInclude Include="cursespp\curses_config.h" />
+    <ClInclude Include="cursespp\IDisplayable.h" />
+    <ClInclude Include="cursespp\IInput.h" />
+    <ClInclude Include="cursespp\IKeyHandler.h" />
+    <ClInclude Include="cursespp\ILayout.h" />
+    <ClInclude Include="cursespp\IScrollable.h" />
+    <ClInclude Include="cursespp\IScrollAdapter.h" />
+    <ClInclude Include="cursespp\IWindow.h" />
+    <ClInclude Include="cursespp\IWindowGroup.h" />
+    <ClInclude Include="cursespp\IWindowMessage.h" />
+    <ClInclude Include="cursespp\LayoutBase.h" />
+    <ClInclude Include="cursespp\ListWindow.h" />
+    <ClInclude Include="cursespp\MultiLineEntry.h" />
+    <ClInclude Include="cursespp\Screen.h" />
+    <ClInclude Include="cursespp\ScrollableWindow.h" />
+    <ClInclude Include="cursespp\ScrollAdapterBase.h" />
+    <ClInclude Include="cursespp\SimpleScrollAdapter.h" />
+    <ClInclude Include="cursespp\SingleLineEntry.h" />
+    <ClInclude Include="cursespp\Window.h" />
+    <ClInclude Include="cursespp\WindowMessage.h" />
+    <ClInclude Include="cursespp\WindowMessageQueue.h" />
     <ClInclude Include="LibraryLayout.h" />
     <ClInclude Include="MainLayout.h" />
-    <ClInclude Include="MultiLineEntry.h" />
-    <ClInclude Include="ScrollableWindow.h" />
-    <ClInclude Include="ListWindow.h" />
-    <ClInclude Include="SingleLineEntry.h" />
     <ClInclude Include="TrackListViewQuery.h" />
     <ClInclude Include="TrackListView.h" />
-    <ClInclude Include="Window.h" />
-    <ClInclude Include="Colors.h" />
     <ClInclude Include="CommandWindow.h" />
-    <ClInclude Include="curses_config.h" />
-    <ClInclude Include="ILayout.h" />
-    <ClInclude Include="IWindow.h" />
     <ClInclude Include="LogWindow.h" />
     <ClInclude Include="OutputWindow.h" />
     <ClInclude Include="ResourcesWindow.h" />
-    <ClInclude Include="Screen.h" />
-    <ClInclude Include="SimpleScrollAdapter.h" />
     <ClInclude Include="SystemInfo.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="TransportWindow.h" />
-    <ClInclude Include="WindowMessage.h" />
-    <ClInclude Include="WindowMessageQueue.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\3rdparty\3rdparty.vcxproj">

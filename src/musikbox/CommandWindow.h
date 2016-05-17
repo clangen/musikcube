@@ -1,11 +1,11 @@
 #pragma once
 
-#include "curses_config.h"
-#include "Window.h"
-#include "OutputWindow.h"
-#include "IInput.h"
+#include <cursespp/curses_config.h>
+#include <cursespp/Window.h>
+#include <cursespp/IInput.h>
 #include <core/playback/Transport.h>
 #include <core/library/LibraryFactory.h>
+#include "OutputWindow.h"
 
 using musik::core::LibraryPtr;
 using musik::core::QueryPtr;

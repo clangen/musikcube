@@ -1,9 +1,8 @@
 #pragma once
 
-#include "curses_config.h"
-#include "Window.h"
-#include "OutputWindow.h"
+#include <cursespp/Window.h>
 #include <core/playback/Transport.h>
+#include "OutputWindow.h"
 
 using namespace musik::core::audio;
 

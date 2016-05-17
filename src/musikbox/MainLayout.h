@@ -1,6 +1,7 @@
 #pragma once
 
-#include "LayoutBase.h"
+#include <cursespp/LayoutBase.h>
+
 #include "LogWindow.h"
 #include "CommandWindow.h"
 #include "OutputWindow.h"

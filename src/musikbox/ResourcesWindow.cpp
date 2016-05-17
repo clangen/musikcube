@@ -1,11 +1,12 @@
 ﻿#pragma once
 
 #include "stdafx.h"
-#include "ResourcesWindow.h"
-#include "Screen.h"
-#include "Colors.h"
 
-#include <core/debug.h>
+#include "ResourcesWindow.h"
+
+#include <cursespp/Screen.h>
+#include <cursespp/Colors.h>
+
 #include <boost/format.hpp>
 
 #include <core/debug.h>

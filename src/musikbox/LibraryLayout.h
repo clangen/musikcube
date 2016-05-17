@@ -1,6 +1,7 @@
 #pragma once
 
-#include "LayoutBase.h"
+#include <cursespp/LayoutBase.h>
+
 #include "CategoryListView.h"
 #include "TrackListView.h"
 

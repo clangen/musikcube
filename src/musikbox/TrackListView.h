@@ -1,11 +1,11 @@
 #pragma once
 
-#include "curses_config.h"
+#include <cursespp/curses_config.h>
+#include <cursespp/ScrollAdapterBase.h>
+#include <cursespp/IKeyHandler.h>
 
-#include "ListWindow.h"
+#include <cursespp/ListWindow.h>
 #include "TrackListViewQuery.h"
-#include "ScrollAdapterBase.h"
-#include "IKeyHandler.h"
 
 #include <core/playback/Transport.h>
 #include <core/library/ILibrary.h>

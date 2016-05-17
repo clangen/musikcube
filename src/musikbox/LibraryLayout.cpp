@@ -1,6 +1,6 @@
 #include "stdafx.h"
-#include "Colors.h"
-#include "Screen.h"
+#include <cursespp/Colors.h>
+#include <cursespp/Screen.h>
 #include "LibraryLayout.h"
 
 #define CATEGORY_WIDTH 25

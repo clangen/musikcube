@@ -2,9 +2,10 @@
 
 #include "stdafx.h"
 #include "TransportWindow.h"
-#include "Screen.h"
-#include "Colors.h"
-#include "WindowMessage.h"
+
+#include <cursespp/Screen.h>
+#include <cursespp/Colors.h>
+#include <cursespp/WindowMessage.h>
 
 #include <core/debug.h>
 
