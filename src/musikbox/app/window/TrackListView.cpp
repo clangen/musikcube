@@ -46,7 +46,7 @@ void TrackListView::OnQueryCompleted(QueryPtr query) {
 }
 
 void TrackListView::KeyPress(int64 ch) {
-    if (ch == 10) { /* return */
+    if (ch == '\n') { /* return */
         size_t selected = this->GetSelectedIndex();
         if (this->metadata->size() > selected) {
             TrackPtr track = this->metadata->at(selected);
@@ -54,6 +54,9 @@ void TrackListView::KeyPress(int64 ch) {
             this->transport->Stop();
             this->transport->Start(fn);
         }
+    }
+    else {
+        ListWindow::KeyPress(ch);
     }
 }
 

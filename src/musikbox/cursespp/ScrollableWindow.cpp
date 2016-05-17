@@ -25,6 +25,17 @@ ScrollPos& ScrollableWindow::GetScrollPosition() {
     return this->scrollPosition;
 }
 
+void ScrollableWindow::KeyPress(int64 ch) {
+    switch (ch) {
+        case KEY_NPAGE: this->PageDown(); break;
+        case KEY_PPAGE: this->PageUp(); break;
+        case KEY_DOWN: this->ScrollDown(); break;
+        case KEY_UP: this->ScrollUp(); break;
+        case KEY_HOME: this->ScrollToTop(); break;
+        case KEY_END: this->ScrollToBottom(); break;
+    }
+}
+
 void ScrollableWindow::OnAdapterChanged() {
     IScrollAdapter *adapter = &GetScrollAdapter();
 

@@ -15,7 +15,7 @@ using musik::core::QueryPtr;
 using musik::core::LibraryPtr;
 using musik::core::audio::Transport;
 
-class TrackListView : public ListWindow, public IKeyHandler, public sigslot::has_slots<> {
+class TrackListView : public ListWindow, public sigslot::has_slots<> {
     public:
         TrackListView(Transport& transport, LibraryPtr library, IWindow *parent = NULL);
         ~TrackListView();

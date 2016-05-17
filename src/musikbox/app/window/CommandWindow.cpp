@@ -74,14 +74,14 @@ void CommandWindow::WriteChar(int64 ch) {
 
     waddch(this->GetContent(), ch);
 
-    if (ch == 8) { /* backspace */
+    if (ch == '\b') { /* backspace */
         wdelch(this->GetContent());
 
         if (bufferPosition > 0) {
             --bufferPosition;
         }
     }
-    else if (ch == 10) { /* return */
+    else if (ch == '\n') { /* return */
         this->buffer[bufferPosition] = 0;
         std::string cmd(buffer);
 

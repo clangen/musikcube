@@ -187,55 +187,25 @@ int main(int argc, char* argv[])
             else {
                 ch = getch();
             }
-            if (ch == -1) { 
-                /* idle timeout */
-            }
-            else if (ch == 9) { /* tab */
-                focusNextInLayout(state);
-            }
-            else if (ch >= KEY_F(0) && ch <= KEY_F(12)) {
-                if (ch == KEY_F(1)) {
-                    changeLayout(state, &mainLayout);
+
+            if (ch != -1) { /* -1 = idle timeout */
+                if (ch == '\t') { /* tab */
+                    focusNextInLayout(state);
                 }
-                else if (ch == KEY_F(2)) {
-                    changeLayout(state, &libraryLayout);
+                else if (ch >= KEY_F(0) && ch <= KEY_F(12)) {
+                    if (ch == KEY_F(1)) {
+                        changeLayout(state, &mainLayout);
+                    }
+                    else if (ch == KEY_F(2)) {
+                        changeLayout(state, &libraryLayout);
+                    }
                 }
-            }
-            else if (ch == KEY_NPAGE) {
-                if (state.scrollable) {
-                    state.scrollable->PageDown();
+                else if (state.input) {
+                    state.input->WriteChar(ch);
                 }
-            }
-            else if (ch == KEY_PPAGE) {
-                if (state.scrollable) {
-                    state.scrollable->PageUp();
+                else if (state.keyHandler) {
+                    state.keyHandler->KeyPress(ch);
                 }
-            }
-            else if (ch == KEY_DOWN) {
-                if (state.scrollable) {
-                    state.scrollable->ScrollDown();
-                }
-            }
-            else if (ch == KEY_UP) {
-                if (state.scrollable) {
-                    state.scrollable->ScrollUp();
-                }
-            }
-            else if (ch == KEY_HOME) {
-                if (state.scrollable) {
-                    state.scrollable->ScrollToTop();
-                }
-            }
-            else if (ch == KEY_END) {
-                if (state.scrollable) {
-                    state.scrollable->ScrollToBottom();
-                }
-            }
-            else if (state.input) {
-                state.input->WriteChar(ch);
-            }
-            else if (state.keyHandler) {
-                state.keyHandler->KeyPress(ch);
             }
 
             Window::WriteToScreen();

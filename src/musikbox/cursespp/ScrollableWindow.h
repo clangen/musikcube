@@ -4,14 +4,17 @@
 #include "Window.h"
 #include "IScrollAdapter.h"
 #include "IScrollable.h"
+#include "IKeyHandler.h"
 
-class ScrollableWindow : public IScrollable, public Window {
+class ScrollableWindow : public IScrollable, public IKeyHandler, public Window {
     public:
         ScrollableWindow(IWindow *parent = NULL);
         virtual ~ScrollableWindow();
 
         virtual void Show();
         virtual void SetSize(int width, int height);
+
+        virtual void KeyPress(int64 ch);
 
         virtual void ScrollToTop();
         virtual void ScrollToBottom();
