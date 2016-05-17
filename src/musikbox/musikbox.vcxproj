@@ -115,8 +115,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="CategoryListViewQuery.cpp" />
-    <ClCompile Include="CategoryListView.cpp" />
+    <ClCompile Include="app\layout\LibraryLayout.cpp" />
+    <ClCompile Include="app\layout\MainLayout.cpp" />
+    <ClCompile Include="app\query\CategoryListViewQuery.cpp" />
+    <ClCompile Include="app\query\TrackListViewQuery.cpp" />
+    <ClCompile Include="app\util\SystemInfo.cpp" />
+    <ClCompile Include="app\window\CategoryListView.cpp" />
+    <ClCompile Include="app\window\CommandWindow.cpp" />
+    <ClCompile Include="app\window\LogWindow.cpp" />
+    <ClCompile Include="app\window\OutputWindow.cpp" />
+    <ClCompile Include="app\window\ResourcesWindow.cpp" />
+    <ClCompile Include="app\window\TrackListView.cpp" />
+    <ClCompile Include="app\window\TransportWindow.cpp" />
     <ClCompile Include="cursespp\Colors.cpp" />
     <ClCompile Include="cursespp\LayoutBase.cpp" />
     <ClCompile Include="cursespp\ListWindow.cpp" />
@@ -129,25 +139,25 @@
     <ClCompile Include="cursespp\Window.cpp" />
     <ClCompile Include="cursespp\WindowMessage.cpp" />
     <ClCompile Include="cursespp\WindowMessageQueue.cpp" />
-    <ClCompile Include="LibraryLayout.cpp" />
-    <ClCompile Include="MainLayout.cpp" />
-    <ClCompile Include="TrackListViewQuery.cpp" />
-    <ClCompile Include="TrackListView.cpp" />
-    <ClCompile Include="CommandWindow.cpp" />
-    <ClCompile Include="LogWindow.cpp" />
-    <ClCompile Include="OutputWindow.cpp" />
-    <ClCompile Include="ResourcesWindow.cpp" />
-    <ClCompile Include="SystemInfo.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="TransportWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CategoryListViewQuery.h" />
-    <ClInclude Include="CategoryListView.h" />
+    <ClInclude Include="app\layout\LibraryLayout.h" />
+    <ClInclude Include="app\layout\MainLayout.h" />
+    <ClInclude Include="app\query\CategoryListViewQuery.h" />
+    <ClInclude Include="app\query\TrackListViewQuery.h" />
+    <ClInclude Include="app\util\SystemInfo.h" />
+    <ClInclude Include="app\window\CategoryListView.h" />
+    <ClInclude Include="app\window\CommandWindow.h" />
+    <ClInclude Include="app\window\LogWindow.h" />
+    <ClInclude Include="app\window\OutputWindow.h" />
+    <ClInclude Include="app\window\ResourcesWindow.h" />
+    <ClInclude Include="app\window\TrackListView.h" />
+    <ClInclude Include="app\window\TransportWindow.h" />
     <ClInclude Include="cursespp\Colors.h" />
     <ClInclude Include="cursespp\curses_config.h" />
     <ClInclude Include="cursespp\IDisplayable.h" />
@@ -170,17 +180,7 @@
     <ClInclude Include="cursespp\Window.h" />
     <ClInclude Include="cursespp\WindowMessage.h" />
     <ClInclude Include="cursespp\WindowMessageQueue.h" />
-    <ClInclude Include="LibraryLayout.h" />
-    <ClInclude Include="MainLayout.h" />
-    <ClInclude Include="TrackListViewQuery.h" />
-    <ClInclude Include="TrackListView.h" />
-    <ClInclude Include="CommandWindow.h" />
-    <ClInclude Include="LogWindow.h" />
-    <ClInclude Include="OutputWindow.h" />
-    <ClInclude Include="ResourcesWindow.h" />
-    <ClInclude Include="SystemInfo.h" />
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="TransportWindow.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\3rdparty\3rdparty.vcxproj">

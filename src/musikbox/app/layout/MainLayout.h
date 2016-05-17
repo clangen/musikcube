@@ -2,11 +2,11 @@
 
 #include <cursespp/LayoutBase.h>
 
-#include "LogWindow.h"
-#include "CommandWindow.h"
-#include "OutputWindow.h"
-#include "TransportWindow.h"
-#include "ResourcesWindow.h"
+#include <app/window/LogWindow.h>
+#include <app/window/CommandWindow.h>
+#include <app/window/OutputWindow.h>
+#include <app/window/TransportWindow.h>
+#include <app/window/ResourcesWindow.h>
 
 #include <vector>
 

@@ -5,7 +5,8 @@
 #include <cursespp/IKeyHandler.h>
 
 #include <cursespp/ListWindow.h>
-#include "TrackListViewQuery.h"
+
+#include <app/query/TrackListViewQuery.h>
 
 #include <core/playback/Transport.h>
 #include <core/library/ILibrary.h>

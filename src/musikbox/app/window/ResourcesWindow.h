@@ -3,7 +3,7 @@
 #include <cursespp/curses_config.h>
 #include <cursespp/Window.h>
 
-#include "SystemInfo.h"
+#include <app/util/SystemInfo.h>
 
 class ResourcesWindow : public Window {
     public:

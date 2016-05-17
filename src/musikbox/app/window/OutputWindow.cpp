@@ -1,6 +1,7 @@
 #pragma once
 
 #include "stdafx.h"
+
 #include "OutputWindow.h"
 
 #include <cursespp/Screen.h>

@@ -38,13 +38,8 @@
 #include <cursespp/IKeyHandler.h>
 #include <cursespp/WindowMessageQueue.h>
 
-#include "LogWindow.h"
-#include "CommandWindow.h"
-#include "OutputWindow.h"
-#include "TransportWindow.h"
-#include "ResourcesWindow.h"
-#include "MainLayout.h"
-#include "LibraryLayout.h"
+#include <app/layout/MainLayout.h>
+#include <app/layout/LibraryLayout.h>
 
 #include <boost/locale.hpp>
 #include <boost/filesystem/path.hpp>

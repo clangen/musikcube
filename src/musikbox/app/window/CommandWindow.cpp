@@ -8,7 +8,6 @@
 #include <cursespp/WindowMessage.h>
 
 #include "CommandWindow.h"
-#include "CategoryListViewQuery.h"
 
 #include <core/debug.h>
 #include <core/sdk/IPlugin.h>

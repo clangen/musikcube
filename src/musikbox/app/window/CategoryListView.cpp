@@ -7,8 +7,9 @@
 #include <cursespp/MultiLineEntry.h>
 #include <cursespp/IWindowMessage.h>
 
+#include <app/query/CategoryListViewQuery.h>
+
 #include "CategoryListView.h"
-#include "CategoryListViewQuery.h"
 
 using musik::core::LibraryPtr;
 using musik::core::IQuery;

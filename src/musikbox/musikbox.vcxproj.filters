@@ -3,42 +3,6 @@
   <ItemGroup>
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="stdafx.cpp" />
-    <ClCompile Include="CommandWindow.cpp">
-      <Filter>window</Filter>
-    </ClCompile>
-    <ClCompile Include="LogWindow.cpp">
-      <Filter>window</Filter>
-    </ClCompile>
-    <ClCompile Include="OutputWindow.cpp">
-      <Filter>window</Filter>
-    </ClCompile>
-    <ClCompile Include="ResourcesWindow.cpp">
-      <Filter>window</Filter>
-    </ClCompile>
-    <ClCompile Include="SystemInfo.cpp">
-      <Filter>window</Filter>
-    </ClCompile>
-    <ClCompile Include="TransportWindow.cpp">
-      <Filter>window</Filter>
-    </ClCompile>
-    <ClCompile Include="MainLayout.cpp">
-      <Filter>window</Filter>
-    </ClCompile>
-    <ClCompile Include="LibraryLayout.cpp">
-      <Filter>window</Filter>
-    </ClCompile>
-    <ClCompile Include="CategoryListView.cpp">
-      <Filter>window</Filter>
-    </ClCompile>
-    <ClCompile Include="TrackListView.cpp">
-      <Filter>window</Filter>
-    </ClCompile>
-    <ClCompile Include="TrackListViewQuery.cpp">
-      <Filter>query</Filter>
-    </ClCompile>
-    <ClCompile Include="CategoryListViewQuery.cpp">
-      <Filter>query</Filter>
-    </ClCompile>
     <ClCompile Include="cursespp\ListWindow.cpp">
       <Filter>cursespp</Filter>
     </ClCompile>
@@ -75,45 +39,45 @@
     <ClCompile Include="cursespp\LayoutBase.cpp">
       <Filter>cursespp</Filter>
     </ClCompile>
+    <ClCompile Include="app\layout\MainLayout.cpp">
+      <Filter>app\layout</Filter>
+    </ClCompile>
+    <ClCompile Include="app\layout\LibraryLayout.cpp">
+      <Filter>app\layout</Filter>
+    </ClCompile>
+    <ClCompile Include="app\query\TrackListViewQuery.cpp">
+      <Filter>app\query</Filter>
+    </ClCompile>
+    <ClCompile Include="app\query\CategoryListViewQuery.cpp">
+      <Filter>app\query</Filter>
+    </ClCompile>
+    <ClCompile Include="app\util\SystemInfo.cpp">
+      <Filter>app\util</Filter>
+    </ClCompile>
+    <ClCompile Include="app\window\OutputWindow.cpp">
+      <Filter>app\window</Filter>
+    </ClCompile>
+    <ClCompile Include="app\window\ResourcesWindow.cpp">
+      <Filter>app\window</Filter>
+    </ClCompile>
+    <ClCompile Include="app\window\TrackListView.cpp">
+      <Filter>app\window</Filter>
+    </ClCompile>
+    <ClCompile Include="app\window\TransportWindow.cpp">
+      <Filter>app\window</Filter>
+    </ClCompile>
+    <ClCompile Include="app\window\CategoryListView.cpp">
+      <Filter>app\window</Filter>
+    </ClCompile>
+    <ClCompile Include="app\window\CommandWindow.cpp">
+      <Filter>app\window</Filter>
+    </ClCompile>
+    <ClCompile Include="app\window\LogWindow.cpp">
+      <Filter>app\window</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="CommandWindow.h">
-      <Filter>window</Filter>
-    </ClInclude>
-    <ClInclude Include="LogWindow.h">
-      <Filter>window</Filter>
-    </ClInclude>
-    <ClInclude Include="OutputWindow.h">
-      <Filter>window</Filter>
-    </ClInclude>
-    <ClInclude Include="ResourcesWindow.h">
-      <Filter>window</Filter>
-    </ClInclude>
-    <ClInclude Include="SystemInfo.h">
-      <Filter>window</Filter>
-    </ClInclude>
-    <ClInclude Include="TransportWindow.h">
-      <Filter>window</Filter>
-    </ClInclude>
-    <ClInclude Include="MainLayout.h">
-      <Filter>window</Filter>
-    </ClInclude>
-    <ClInclude Include="LibraryLayout.h">
-      <Filter>window</Filter>
-    </ClInclude>
-    <ClInclude Include="CategoryListView.h">
-      <Filter>window</Filter>
-    </ClInclude>
-    <ClInclude Include="TrackListView.h">
-      <Filter>window</Filter>
-    </ClInclude>
-    <ClInclude Include="TrackListViewQuery.h">
-      <Filter>query</Filter>
-    </ClInclude>
-    <ClInclude Include="CategoryListViewQuery.h">
-      <Filter>query</Filter>
-    </ClInclude>
     <ClInclude Include="cursespp\ListWindow.h">
       <Filter>cursespp</Filter>
     </ClInclude>
@@ -180,16 +144,61 @@
     <ClInclude Include="cursespp\LayoutBase.h">
       <Filter>cursespp</Filter>
     </ClInclude>
+    <ClInclude Include="app\layout\MainLayout.h">
+      <Filter>app\layout</Filter>
+    </ClInclude>
+    <ClInclude Include="app\layout\LibraryLayout.h">
+      <Filter>app\layout</Filter>
+    </ClInclude>
+    <ClInclude Include="app\query\CategoryListViewQuery.h">
+      <Filter>app\query</Filter>
+    </ClInclude>
+    <ClInclude Include="app\query\TrackListViewQuery.h">
+      <Filter>app\query</Filter>
+    </ClInclude>
+    <ClInclude Include="app\util\SystemInfo.h">
+      <Filter>app\util</Filter>
+    </ClInclude>
+    <ClInclude Include="app\window\LogWindow.h">
+      <Filter>app\window</Filter>
+    </ClInclude>
+    <ClInclude Include="app\window\OutputWindow.h">
+      <Filter>app\window</Filter>
+    </ClInclude>
+    <ClInclude Include="app\window\ResourcesWindow.h">
+      <Filter>app\window</Filter>
+    </ClInclude>
+    <ClInclude Include="app\window\TrackListView.h">
+      <Filter>app\window</Filter>
+    </ClInclude>
+    <ClInclude Include="app\window\TransportWindow.h">
+      <Filter>app\window</Filter>
+    </ClInclude>
+    <ClInclude Include="app\window\CategoryListView.h">
+      <Filter>app\window</Filter>
+    </ClInclude>
+    <ClInclude Include="app\window\CommandWindow.h">
+      <Filter>app\window</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="query">
-      <UniqueIdentifier>{8de1fc82-96fd-4871-a6b0-fed0d6b21aa1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="window">
-      <UniqueIdentifier>{c1ada983-8f4e-4ac4-86be-fa6fdffec375}</UniqueIdentifier>
-    </Filter>
     <Filter Include="cursespp">
       <UniqueIdentifier>{04a2cf62-168c-4f1b-ac33-a55f7cbecff0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="app">
+      <UniqueIdentifier>{26da8545-6d30-4bcf-8246-8d596051ac44}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="app\window">
+      <UniqueIdentifier>{26e5a2dc-1762-435f-83be-4fbca7be43bf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="app\layout">
+      <UniqueIdentifier>{2e94c5cc-9ae5-475f-a714-3af205ca2ea8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="app\util">
+      <UniqueIdentifier>{629374d5-c682-472d-85a3-1f7fa29c3e04}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="app\query">
+      <UniqueIdentifier>{5c751253-4250-4a81-8b5f-ca6244954d64}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

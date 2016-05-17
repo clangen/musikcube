@@ -2,8 +2,8 @@
 
 #include <cursespp/LayoutBase.h>
 
-#include "CategoryListView.h"
-#include "TrackListView.h"
+#include <app/window/CategoryListView.h>
+#include <app/window/TrackListView.h>
 
 #include <core/playback/Transport.h>
 #include <core/library/ILibrary.h>

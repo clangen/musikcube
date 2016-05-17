@@ -4,7 +4,8 @@
 
 #include <cursespp/ListWindow.h>
 #include <cursespp/ScrollAdapterBase.h>
-#include "CategoryListViewQuery.h"
+
+#include <app/query/CategoryListViewQuery.h>
 
 #include <core/library/IQuery.h>
 #include <core/library/ILibrary.h>
