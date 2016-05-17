@@ -49,13 +49,13 @@ namespace musik { namespace core { namespace library { namespace constants {
         static const char* DISPLAY_GENRE_ID = "visual_genre_id";
         static const char* DISPLAY_ARTIST_ID = "visual_artist_id";
         static const char* ALBUM_ID = "album_id";
-        static const char* RELATIVE_PATH_ID = "folder_id";
+        static const char* PATH_ID = "path_id";
         static const char* TITLE = "title";
         static const char* FILENAME = "filename";
         static const char* FILETIME = "filetime";
         static const char* THUMBNAIL_ID = "thumbnail_id";
         static const char* SORT_ORDER = "sort_order1";
-        static const char* PATH = "path"; /* not in DB; synthesized */
+        static const char* PATH = "path";
     }
 
     namespace Genres {
@@ -121,15 +121,6 @@ namespace musik { namespace core { namespace library { namespace constants {
         static const char* TABLE_NAME = "paths";
         static const char* ID = "id";
         static const char* PATH = "path";
-    }
-
-    namespace RelativePaths {
-        static const char* TABLE_NAME = "folders";
-        static const char* ID = "id";
-        static const char* NAME = "name";
-        static const char* RELATIVE_PATH = "relative_path";
-        static const char* PARENT_ID = "parent_id";
-        static const char* PATH_ID = "path_id";
     }
 
     namespace Thumbnails {

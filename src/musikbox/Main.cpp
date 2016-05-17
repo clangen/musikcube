@@ -42,6 +42,7 @@
 #include "MainLayout.h"
 #include "LibraryLayout.h"
 #include "IInput.h"
+#include "IKeyHandler.h"
 #include "WindowMessageQueue.h"
 
 #include <boost/locale.hpp>
@@ -60,6 +61,7 @@ struct WindowState {
     ILayout* layout;
     IWindow* focused;
     IInput* input;
+    IKeyHandler* keyHandler;
     IScrollable* scrollable;
 };
 
@@ -85,6 +87,7 @@ void changeLayout(WindowState& current, ILayout* newLayout) {
         current.focused = current.layout->GetFocus();
         current.input = dynamic_cast<IInput*>(current.focused);
         current.scrollable = dynamic_cast<IScrollable*>(current.focused);
+        current.keyHandler = dynamic_cast<IKeyHandler*>(current.focused);
     }
 
     if (current.input) {
@@ -102,8 +105,9 @@ void focusNextInLayout(WindowState& current) {
     }
 
     current.focused = current.layout->FocusNext();
-    current.scrollable = dynamic_cast<IScrollable*>(current.focused);
     current.input = dynamic_cast<IInput*>(current.focused);
+    current.scrollable = dynamic_cast<IScrollable*>(current.focused);
+    current.keyHandler = dynamic_cast<IKeyHandler*>(current.focused);
 
     if (current.input != NULL) {
         curs_set(1);
@@ -164,7 +168,7 @@ int main(int argc, char* argv[])
         LibraryPtr library = LibraryFactory::Libraries().at(0);
 
         MainLayout mainLayout(tp, library);
-        LibraryLayout libraryLayout(library);
+        LibraryLayout libraryLayout(tp, library);
 
         mainLayout.Hide();
         libraryLayout.Hide();
@@ -233,6 +237,9 @@ int main(int argc, char* argv[])
             }
             else if (state.input) {
                 state.input->WriteChar(ch);
+            }
+            else if (state.keyHandler) {
+                state.keyHandler->KeyPress(ch);
             }
 
             Window::WriteToScreen();

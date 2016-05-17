@@ -198,4 +198,3 @@ LibraryTrack::MetaData::MetaData()
 LibraryTrack::MetaData::~MetaData() {
     delete this->thumbnailData;
 }
-

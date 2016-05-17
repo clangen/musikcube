@@ -151,6 +151,7 @@
     <ClInclude Include="CategoryListViewQuery.h" />
     <ClInclude Include="CategoryListView.h" />
     <ClInclude Include="IDisplayable.h" />
+    <ClInclude Include="IKeyHandler.h" />
     <ClInclude Include="IWindowGroup.h" />
     <ClInclude Include="IWindowMessage.h" />
     <ClInclude Include="LayoutBase.h" />

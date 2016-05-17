@@ -66,13 +66,11 @@ namespace musik { namespace core {
 
             bool NeedsToBeIndexed(
                 const boost::filesystem::path &file,
-                db::Connection &dbConnection,
-                DBID currentFolderId);
+                db::Connection &dbConnection);
 
             bool Save(
                 db::Connection &dbConnection, 
-                std::string libraryDirectory,
-                DBID folderId);
+                std::string libraryDirectory);
 
             bool Reload(db::Connection &db);
 

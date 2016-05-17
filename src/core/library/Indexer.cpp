@@ -215,7 +215,7 @@ void Indexer::SynchronizeInternal() {
     
     for(std::size_t i = 0; i < paths.size(); ++i) {
         std::string path = paths[i];
-        this->SyncDirectory(path, path ,0, pathIds[i]);
+        this->SyncDirectory(path, path, pathIds[i]);
     }
 
     /* remove undesired entries from db (files themselves will remain) */
@@ -228,7 +228,7 @@ void Indexer::SynchronizeInternal() {
     }
 
     if (!this->Restarted() && !this->Exited()) {
-        this->SyncDelete(pathIds);
+        this->SyncDelete();
     }
 
     /* cleanup -- remove stale artists, albums, genres, etc */
@@ -270,26 +270,9 @@ void Indexer::SynchronizeInternal() {
     musik::debug::info(TAG, "done!");
 }
 
-//////////////////////////////////////////
-///\brief
-///Reads all tracks in a folder
-///
-///\param dir
-///Folder to check files in
-///
-///\param parentDirId
-///Database ID of the parent folder (folders table)
-///
-///\param pathId
-///Database ID of the current path (paths table)
-///
-///Read all tracks in a folder. All folders in that folder is recursively called.
-//////////////////////////////////////////
-
 void Indexer::SyncDirectory(
     const std::string &syncRoot,
     const std::string &currentPath,
-    DBID parentDirId,
     DBID pathId)
 {
     if (this->Exited() || this->Restarted()) {
@@ -299,39 +282,6 @@ void Indexer::SyncDirectory(
     std::string normalizedSyncRoot = normalizeDir(syncRoot);
     std::string normalizedCurrentPath = normalizeDir(currentPath);
     std::string leaf = boost::filesystem::path(currentPath).leaf().string(); /* trailing subdir in currentPath */
-
-    DBID dirId = 0;
-
-    /* get relative folder id */
-
-    {
-        db::CachedStatement stmt("SELECT id FROM folders WHERE name=? AND path_id=? AND parent_id=?", this->dbConnection);
-        stmt.BindText(0, leaf);
-        stmt.BindInt(1, pathId);
-        stmt.BindInt(2, parentDirId);
-
-        if (stmt.Step() == db::Row) {
-            dirId = stmt.ColumnInt(0);
-        }
-    }
-
-    /* no ID yet? needs to be inserted... */
-
-    if (dirId == 0) {
-        std::string relativePath(normalizedCurrentPath.substr(normalizedSyncRoot.size()));
-
-        db::CachedStatement stmt("INSERT INTO folders (name, path_id, parent_id, relative_path) VALUES(?,?,?,?)", this->dbConnection);
-        stmt.BindText(0, leaf);
-        stmt.BindInt(1, pathId);
-        stmt.BindInt(2, parentDirId);
-        stmt.BindText(3, relativePath);
-
-        if (stmt.Step() != db::Done) {
-            return; /* ugh, failed? */
-        }
-
-        dirId = this->dbConnection.LastInsertedId();
-    }
 
     /* start recursive filesystem scan */
 
@@ -343,11 +293,13 @@ void Indexer::SyncDirectory(
         boost::filesystem::directory_iterator end;
         boost::filesystem::directory_iterator file(path);
 
+        std::string pathIdStr = boost::lexical_cast<std::string>(pathId);
+
         for( ; file != end && !this->Exited() && !this->Restarted(); file++) {
             if (is_directory(file->status())) {
                 /* recursion here */
                 musik::debug::info(TAG, "scanning " + file->path().string());
-                this->SyncDirectory(syncRoot, file->path().string(), dirId, pathId);
+                this->SyncDirectory(syncRoot, file->path().string(), pathId);
             }
             else {
                 ++this->filesIndexed;
@@ -355,7 +307,7 @@ void Indexer::SyncDirectory(
                 musik::core::IndexerTrack track(0);
 
                 /* get cached filesize, parts, size, etc */
-                if (track.NeedsToBeIndexed(file->path(), this->dbConnection, dirId)) {
+                if (track.NeedsToBeIndexed(file->path(), this->dbConnection)) {
                     bool saveToDb = false;
 
                     /* read the tag from the plugin */
@@ -373,7 +325,8 @@ void Indexer::SyncDirectory(
 
                     /* write it to the db, if read successfully */
                     if (saveToDb) {
-                        track.Save(this->dbConnection, this->libraryPath, dirId);
+                        track.SetValue("path_id", pathIdStr.c_str());
+                        track.Save(this->dbConnection, this->libraryPath);
 
                         this->filesSaved++;
                         if (this->filesSaved % 100 == 0) {
@@ -443,133 +396,38 @@ void Indexer::ThreadLoop() {
     }
 }
 
-//////////////////////////////////////////
-///\brief
-///Part of the synchronizer to delete removed files.
-///
-///\param paths
-///Vector of path-id to check for deletion
-///
-///This method will first check for removed folders and automaticaly
-///delete all tracks in the removed folders.
-///Secondly it will check all files it they are removed.
-///
-///\remarks
-///This method will not delete related information (meta-data, albums, etc)
-//////////////////////////////////////////
-void Indexer::SyncDelete(const std::vector<DBID>& paths) {
-    /* delete pruned paths from path table */
-    this->dbConnection.Execute("DELETE FROM folders WHERE path_id NOT IN (SELECT id FROM paths)");
+void Indexer::SyncDelete() {
+    /* remove all tracks that no longer reference a valid path entry */
 
-    db::Statement stmtSyncPath("SELECT p.path FROM paths p WHERE p.id=?", this->dbConnection);
+    this->dbConnection.Execute("DELETE FROM tracks WHERE path_id NOT IN (SELECT id FROM paths)");
 
-    {
-        db::Statement stmt(
-            "SELECT f.id, p.path || f.relative_path "
-            "FROM folders f, paths p "
-            "WHERE f.path_id=p.id AND p.id=?", this->dbConnection);
-
-        db::Statement stmtRemove("DELETE FROM folders WHERE id=?",this->dbConnection);
-
-        for (std::size_t i = 0; i < paths.size(); ++i) {
-            stmt.BindInt(0, paths[i]);
-
-            stmtSyncPath.BindInt(0, paths[i]);
-            stmtSyncPath.Step();
-            std::string syncPathString(stmtSyncPath.ColumnText(0));
-            stmtSyncPath.Reset();
-
-            while (stmt.Step() == db::Row && !this->Exited() && !this->Restarted()) {
-                bool remove = true;
-                std::string dir = stmt.ColumnText(1);
-
-                try {
-                    boost::filesystem::path path(dir);
-                    if (boost::filesystem::exists(path)) {
-                        remove = false;
-                    }
-                    else {
-                        boost::filesystem::path syncPath(syncPathString);
-                        
-                        if (!boost::filesystem::exists(syncPath)) {
-                            remove = false;
-                        }
-                    }
-                }
-                catch (...){
-                    remove = false;
-                }
-
-                if (remove) {
-                    stmtRemove.BindInt(0, stmt.ColumnInt(0));
-                    stmtRemove.Step();
-                    stmtRemove.Reset();
-                }
-            }
-
-            stmt.Reset();
-        }
-    }
-
-    /* we deleted folders above. remove all tracks that were in those dirs*/
-
-    this->dbConnection.Execute("DELETE FROM tracks WHERE folder_id NOT IN (SELECT id FROM folders)");
-
-    // Remove tracks
-    db::Statement stmtCount("SELECT count(*) FROM tracks", this->dbConnection);
-    DBID songs = 0, count = 0;
-    
-    if (stmtCount.Step() == db::Row) {
-        songs = stmtCount.ColumnInt(0);
-    }
-
-    db::Statement stmt(
-        "SELECT t.id, p.path || f.relative_path || '/' || t.filename "
-        "FROM tracks t, folders f, paths p "
-        "WHERE t.folder_id=f.id AND f.path_id=p.id AND p.id=?", this->dbConnection);
+    /* remove files that are no longer on the filesystem. */
 
     db::Statement stmtRemove("DELETE FROM tracks WHERE id=?", this->dbConnection);
 
-    for (std::size_t i = 0; i < paths.size(); ++i) {
-        stmt.BindInt(0, paths[i]);
+    db::Statement allTracks(
+        "SELECT t.id, t.filename "
+        "FROM tracks t "
+        "WHERE p.id=?", this->dbConnection);
 
-        stmtSyncPath.BindInt(0,paths[i]);
-        stmtSyncPath.Step();
-        
-        std::string syncPathString = stmtSyncPath.ColumnText(0);
+    while(allTracks.Step() == db::Row && !this->Exited() && !this->Restarted()) {
+        bool remove = false;
+        std::string file = allTracks.ColumnText(1);
 
-        stmtSyncPath.Reset();
-
-        while(stmt.Step() == db::Row && !this->Exited() && !this->Restarted()) {
-            bool remove = true;
-            std::string file = stmt.ColumnText(1);
-
-            try{
-                boost::filesystem::path file(file);
-                if (boost::filesystem::exists(file)) {
-                    remove = false;
-                }
-                else {
-                    boost::filesystem::path syncPath(syncPathString);
-                    if (!boost::filesystem::exists(syncPath)) {
-                        remove = false;
-                    }
-                }
+        try {
+            boost::filesystem::path file(file);
+            if (!boost::filesystem::exists(file)) {
+                remove = true;
             }
-            catch(...) {
-                remove = false;
-            }
-
-            if (remove) {
-                stmtRemove.BindInt(0, stmt.ColumnInt(0));
-                stmtRemove.Step();
-                stmtRemove.Reset();
-            }
-
-            ++count;
         }
-        
-        stmt.Reset();
+        catch(...) {
+        }
+
+        if (remove) {
+            stmtRemove.BindInt(0, allTracks.ColumnInt(0));
+            stmtRemove.Step();
+            stmtRemove.Reset();
+        }
     }
 }
 
@@ -694,8 +552,7 @@ void Indexer::SyncOptimize() {
         db::Statement outer("SELECT t.id FROM tracks t " \
             "LEFT OUTER JOIN artists ar ON ar.id=t.visual_artist_id " \
             "LEFT OUTER JOIN albums al ON al.id=t.album_id " \
-            "LEFT OUTER JOIN folders f ON f.id=t.folder_id " \
-            "ORDER BY ar.sort_order, al.sort_order, t.track, f.relative_path, t.filename",
+            "ORDER BY ar.sort_order, al.sort_order, t.track, t.filename",
             this->dbConnection);
 
         db::Statement inner("UPDATE tracks SET sort_order1=? WHERE id=?",this->dbConnection);
@@ -745,8 +602,6 @@ void Indexer::ProcessAddRemoveQueue() {
         this->addRemoveQueue.pop_front();
     }
 
-    this->dbConnection.Execute("DELETE FROM folders WHERE path_id NOT IN (SELECT id FROM paths)");
-
     this->PathsUpdated();
 }
 
@@ -775,17 +630,15 @@ void Indexer::RunAnalyzers() {
     /* for each track... */
 
     DBID trackId = 0;
-    DBID folderId = 0;
 
     db::Statement getNextTrack(
-        "SELECT id, folder_id FROM tracks WHERE id>? ORDER BY id LIMIT 1",
+        "SELECT id FROM tracks WHERE id>? ORDER BY id LIMIT 1",
         this->dbConnection);
 
     getNextTrack.BindInt(0, trackId);
 
     while(getNextTrack.Step() == db::Row ) {
         trackId = getNextTrack.ColumnInt(0);
-        folderId = getNextTrack.ColumnInt(1);
 
         getNextTrack.Reset();
         getNextTrack.UnBindAll();
@@ -838,7 +691,7 @@ void Indexer::RunAnalyzers() {
                         completed successfully, then save the track. */
 
                         if(successPlugins>0) {
-                            track.Save(this->dbConnection, this->libraryPath,folderId);
+                            track.Save(this->dbConnection, this->libraryPath);
                         }
                     }
                 }

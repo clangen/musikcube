@@ -5,18 +5,23 @@
 #include "ListWindow.h"
 #include "TrackListViewQuery.h"
 #include "ScrollAdapterBase.h"
+#include "IKeyHandler.h"
 
+#include <core/playback/Transport.h>
 #include <core/library/ILibrary.h>
 
 using musik::core::QueryPtr;
 using musik::core::LibraryPtr;
+using musik::core::audio::Transport;
 
-class TrackListView : public ListWindow, public sigslot::has_slots<> {
+class TrackListView : public ListWindow, public IKeyHandler, public sigslot::has_slots<> {
     public:
-        TrackListView(LibraryPtr library, IWindow *parent = NULL);
+        TrackListView(Transport& transport, LibraryPtr library, IWindow *parent = NULL);
         ~TrackListView();
 
         virtual void ProcessMessage(IWindowMessage &message);
+        virtual void KeyPress(int64 ch);
+
         void Requery(const std::string& column, DBID id);
 
     protected:
@@ -39,5 +44,6 @@ class TrackListView : public ListWindow, public sigslot::has_slots<> {
         std::shared_ptr<TrackListViewQuery> query;
         std::shared_ptr<std::vector<TrackPtr>> metadata;
         Adapter* adapter;
+        Transport* transport;
         LibraryPtr library;
 };

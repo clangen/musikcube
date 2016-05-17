@@ -234,7 +234,6 @@ bool LocalLibrary::IsSpecialMTOMetaKey(std::string &metakey){
         specialMTOMetaKeys.insert("album");
         specialMTOMetaKeys.insert("visual_genre");
         specialMTOMetaKeys.insert("visual_artist");
-        specialMTOMetaKeys.insert("folder");
     }
 
     return specialMTOMetaKeys.find(metakey)!=specialMTOMetaKeys.end();
@@ -272,8 +271,8 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
             "year INTEGER DEFAULT 0,"
             "visual_genre_id INTEGER DEFAULT 0,"
             "visual_artist_id INTEGER DEFAULT 0,"
+            "path_id INTEGER,"
             "album_id INTEGER DEFAULT 0,"
-            "folder_id INTEGER DEFAULT 0,"
             "title TEXT default '',"
             "filename TEXT default '',"
             "filetime INTEGER DEFAULT 0,"
@@ -333,16 +332,7 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
             "path TEXT default ''"
             ")");
 
-    // Create the folders-table
-    db.Execute("CREATE TABLE IF NOT EXISTS folders ("
-            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-            "name TEXT default '',"
-            "relative_path TEXT default '',"
-            "parent_id INTEGER DEFAULT 0,"
-            "path_id INTEGER DEFAULT 0"
-            ")");
-
-    // Create the folders-table
+    // Create the thumbnails table
     db.Execute("CREATE TABLE IF NOT EXISTS thumbnails ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "filename TEXT default '',"
@@ -350,13 +340,14 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
             "checksum INTEGER DEFAULT 0"
             ")");
 
-    // Create the playlists-table
+    // Create the playlists
     db.Execute("CREATE TABLE IF NOT EXISTS playlists ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "name TEXT default '',"
             "user_id INTEGER default 0"
             ")");
-    // Create the playlists-table
+
+    // Create the playlist_tracks table
     db.Execute("CREATE TABLE IF NOT EXISTS playlist_tracks ("
             "track_id INTEGER DEFAULT 0,"
             "playlist_id INTEGER DEFAULT 0,"
@@ -365,13 +356,11 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
 
     // INDEXES
     db.Execute("CREATE UNIQUE INDEX IF NOT EXISTS users_index ON users (login)");
-    db.Execute("CREATE UNIQUE INDEX IF NOT EXISTS folders_index ON folders (name,parent_id,path_id)");
     db.Execute("CREATE UNIQUE INDEX IF NOT EXISTS paths_index ON paths (path)");
     db.Execute("CREATE INDEX IF NOT EXISTS genre_index ON genres (sort_order)");
     db.Execute("CREATE INDEX IF NOT EXISTS artist_index ON artists (sort_order)");
     db.Execute("CREATE INDEX IF NOT EXISTS album_index ON albums (sort_order)");
     db.Execute("CREATE INDEX IF NOT EXISTS track_index1 ON tracks (album_id,sort_order1)");
-    db.Execute("CREATE INDEX IF NOT EXISTS track_index7 ON tracks (folder_id)");
     db.Execute("CREATE INDEX IF NOT EXISTS thumbnail_index ON thumbnails (filesize)");
 
     db.Execute("CREATE INDEX IF NOT EXISTS trackgenre_index1 ON track_genres (track_id,genre_id)");

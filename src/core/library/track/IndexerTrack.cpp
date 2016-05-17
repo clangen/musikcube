@@ -137,12 +137,11 @@ DBID IndexerTrack::Id() {
 
 bool IndexerTrack::NeedsToBeIndexed(
     const boost::filesystem::path &file,
-    db::Connection &dbConnection, 
-    DBID currentFolderId)
+    db::Connection &dbConnection)
 {
     try {
         this->SetValue("path", file.string().c_str());
-        this->SetValue("filename", file.leaf().string().c_str());
+        this->SetValue("filename", file.string().c_str());
 
         size_t lastDot = file.leaf().string().find_last_of(".");
         if (lastDot != std::string::npos){
@@ -158,10 +157,9 @@ bool IndexerTrack::NeedsToBeIndexed(
         db::CachedStatement stmt(
             "SELECT id, filename, filesize, filetime " \
             "FROM tracks t " \
-            "WHERE folder_id=? AND filename=?", dbConnection);
+            "WHERE filename=?", dbConnection);
 
-        stmt.BindInt(0, currentFolderId);
-        stmt.BindText(1, this->GetValue("filename"));
+        stmt.BindText(0, this->GetValue("filename"));
 
         bool fileDifferent = true;
 
@@ -184,11 +182,10 @@ bool IndexerTrack::NeedsToBeIndexed(
 static DBID writeToTracksTable(
     db::Connection &dbConnection,
     IndexerTrack& track, 
-    DBID folderId, 
     DBID tempSortOrder)
 {
     db::CachedStatement stmt("INSERT OR REPLACE INTO tracks " \
-        "(id, track, bpm, duration, filesize, year, folder_id, title, filename, filetime, sort_order1) " \
+        "(id, track, bpm, duration, filesize, year, title, filename, filetime, path_id, sort_order1) " \
         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", dbConnection);
 
     stmt.BindText(1, track.GetValue("track"));
@@ -196,10 +193,10 @@ static DBID writeToTracksTable(
     stmt.BindText(3, track.GetValue("duration"));
     stmt.BindText(4, track.GetValue("filesize"));
     stmt.BindText(5, track.GetValue("year"));
-    stmt.BindInt(6, folderId);
-    stmt.BindText(7, track.GetValue("title"));
-    stmt.BindText(8, track.GetValue("filename"));
-    stmt.BindText(9, track.GetValue("filetime"));
+    stmt.BindText(6, track.GetValue("title"));
+    stmt.BindText(7, track.GetValue("filename"));
+    stmt.BindText(8, track.GetValue("filetime"));
+    stmt.BindText(9, track.GetValue("path_id"));
     stmt.BindInt(10, tempSortOrder);
 
     if (track.Id() != 0) {
@@ -448,7 +445,7 @@ DBID IndexerTrack::ExtractArtist(db::Connection& dbConnection) {
         ARTIST_TRACK_FOREIGN_KEY);
 }
 
-bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirectory, DBID folderId) {
+bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirectory) {
     db::ScopedTransaction transaction(dbConnection);
 
     /* remove existing relations -- we're going to update them with fresh data */
@@ -461,7 +458,7 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
 
     /* write generic info to the tracks table */
 
-    this->id = writeToTracksTable(dbConnection, *this, folderId, tempSortOrder);
+    this->id = writeToTracksTable(dbConnection, *this, tempSortOrder);
 
     DBID albumId = this->ExtractAlbum(dbConnection);
     DBID genreId = this->ExtractGenre(dbConnection);
@@ -567,9 +564,9 @@ bool IndexerTrack::Reload(db::Connection &db) {
         "ORDER BY tm.id", db);
 
     db::Statement track(
-        "SELECT t.track, t.bpm, t.duration, t.filesize, t.year, t.title, t.filename, t.thumbnail_id, p.path|| f.relative_path || '/' || t.filename, al.name, t.filetime, t.sort_order1 " \
-        "FROM tracks t, folders f, paths p, albums al " \
-        "WHERE t.id=? AND t.folder_id=f.id AND f.path_id=p.id AND t.album_id=al.id", db);
+        "SELECT t.track, t.bpm, t.duration, t.filesize, t.year, t.title, t.filename, t.thumbnail_id, al.name, t.filetime, t.sort_order1 " \
+        "FROM tracks t, paths p, albums al " \
+        "WHERE t.id=? AND t.album_id=al.id", db);
 
     track.BindInt(0, this->id);
     if(track.Step() == db::Row) {
@@ -581,10 +578,9 @@ bool IndexerTrack::Reload(db::Connection &db) {
         this->SetValue("title", track.ColumnText(5));
         this->SetValue("filename", track.ColumnText(6));
         this->SetValue("thumbnail_id", track.ColumnText(7));
-        this->SetValue("path", track.ColumnText(8));
-        this->SetValue("album", track.ColumnText(9));
-        this->SetValue("filetime", track.ColumnText(10));
-        this->tempSortOrder = track.ColumnInt(11);
+        this->SetValue("album", track.ColumnText(8));
+        this->SetValue("filetime", track.ColumnText(9));
+        this->tempSortOrder = track.ColumnInt(10);
 
         genres.BindInt(0, this->id);
         while (genres.Step() == db::Row) {
@@ -592,7 +588,7 @@ bool IndexerTrack::Reload(db::Connection &db) {
         }
 
         artists.BindInt(0, this->id);
-        while (artists.Step()==db::Row) {
+        while (artists.Step() == db::Row) {
             this->SetValue("artist", artists.ColumnText(0));
         }
 

@@ -16,7 +16,6 @@ class TrackListViewQuery : public QueryBase {
 
         TrackListViewQuery(LibraryPtr library, const std::string& column, DBID id);
         ~TrackListViewQuery();
-
         std::string Name() {
             return "TrackListViewQuery";
         }

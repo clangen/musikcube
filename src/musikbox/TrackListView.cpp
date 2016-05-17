@@ -6,17 +6,23 @@
 #include "TrackListView.h"
 #include "IWindowMessage.h"
 
+#include <core/library/LocalLibraryConstants.h>
+
 #include <boost/format.hpp>
 #include <boost/format/group.hpp>
+
 #include <iomanip>
 
 #define WINDOW_MESSAGE_QUERY_COMPLETED 1002
 
 using musik::core::IQuery;
+using musik::core::audio::Transport;
+using namespace musik::core::library::constants;
 
-TrackListView::TrackListView(LibraryPtr library, IWindow *parent) 
+TrackListView::TrackListView(Transport& transport, LibraryPtr library, IWindow *parent) 
 : ListWindow(parent) {
     this->SetContentColor(BOX_COLOR_WHITE_ON_BLACK);
+    this->transport = &transport;
     this->library = library;
     this->library->QueryCompleted.connect(this, &TrackListView::OnQueryCompleted);
     this->adapter = new Adapter(*this);
@@ -34,6 +40,18 @@ void TrackListView::Requery(const std::string& column, DBID id) {
 void TrackListView::OnQueryCompleted(QueryPtr query) {
     if (query == this->query) {
         Post(WINDOW_MESSAGE_QUERY_COMPLETED);
+    }
+}
+
+void TrackListView::KeyPress(int64 ch) {
+    if (ch == 10) { /* return */
+        size_t selected = this->GetSelectedIndex();
+        if (this->metadata->size() > selected) {
+            TrackPtr track = this->metadata->at(selected);
+            std::string fn = track->GetValue(Track::FILENAME);
+            this->transport->Stop();
+            this->transport->Start(fn);
+        }
     }
 }
 

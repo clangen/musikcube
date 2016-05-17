@@ -3,8 +3,11 @@
 #include "Screen.h"
 #include "LibraryLayout.h"
 
-LibraryLayout::LibraryLayout(LibraryPtr library) 
+#define CATEGORY_WIDTH 25
+
+LibraryLayout::LibraryLayout(Transport& transport, LibraryPtr library)
 : LayoutBase() {
+    this->transport = &transport;
     this->library = library;
     this->InitializeWindows();
 }
@@ -18,17 +21,17 @@ void LibraryLayout::Layout() {
     this->SetPosition(0, 0);
 
     this->albumList->SetPosition(0, 0);
-    this->albumList->SetSize(20, this->GetHeight());
+    this->albumList->SetSize(CATEGORY_WIDTH, this->GetHeight());
     this->albumList->SetFocusOrder(0);
 
-    this->trackList->SetPosition(20, 0);
-    this->trackList->SetSize(this->GetWidth() - 20, this->GetHeight());
+    this->trackList->SetPosition(CATEGORY_WIDTH, 0);
+    this->trackList->SetSize(this->GetWidth() - CATEGORY_WIDTH, this->GetHeight());
     this->trackList->SetFocusOrder(1);
 }
 
 void LibraryLayout::InitializeWindows() {
-    this->albumList.reset(new CategoryListView(library));
-    this->trackList.reset(new TrackListView(library));
+    this->albumList.reset(new CategoryListView(this->library));
+    this->trackList.reset(new TrackListView(*this->transport, this->library));
 
     this->AddWindow(this->albumList);
     this->AddWindow(this->trackList);

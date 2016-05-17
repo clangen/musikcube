@@ -39,6 +39,7 @@
 #include <core/config.h>
 #include <core/library/track/Track.h>
 #include <core/library/LocalLibrary.h>
+#include <core/db/Connection.h>
 
 namespace musik { namespace core { namespace http {
     class Responder;
@@ -63,9 +64,9 @@ namespace musik { namespace core {
             virtual DBID Id();
 
             virtual std::string GetValue(const char* metakey);
-            virtual void SetValue(const char* metakey,const char* value);
+            virtual void SetValue(const char* metakey, const char* value);
             virtual void ClearValue(const char* metakey);
-            virtual void SetThumbnail(const char *data,long size);
+            virtual void SetThumbnail(const char *data, long size);
 
             virtual std::string URI();
             virtual std::string URL();

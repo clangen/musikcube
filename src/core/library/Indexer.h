@@ -76,7 +76,7 @@ namespace musik { namespace core {
 
             bool Restarted();
 
-            void SyncDelete(const std::vector<DBID>& paths);
+            void SyncDelete();
             void SyncCleanup();
             void ProcessAddRemoveQueue();
             void SyncOptimize();
@@ -87,7 +87,6 @@ namespace musik { namespace core {
             void SyncDirectory(
                 const std::string& syncRoot,
                 const std::string& currentPath,
-                DBID parentDirId,
                 DBID pathId);
 
             db::Connection dbConnection;

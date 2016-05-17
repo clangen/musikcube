@@ -177,6 +177,9 @@
     <ClInclude Include="Window.h">
       <Filter>curses\window</Filter>
     </ClInclude>
+    <ClInclude Include="IKeyHandler.h">
+      <Filter>curses</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="curses">
