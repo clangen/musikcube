@@ -30,8 +30,7 @@ class LibraryLayout : public LayoutBase, public sigslot::has_slots<> {
 
         Transport& transport;
         LibraryPtr library;
-        std::shared_ptr<CategoryListView> albumList;
+        std::shared_ptr<CategoryListView> categoryList;
         std::shared_ptr<TrackListView> trackList;
         std::shared_ptr<TransportWindow> transportView;
-
 };

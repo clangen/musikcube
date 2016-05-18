@@ -82,16 +82,32 @@ size_t TrackListView::Adapter::GetEntryCount() {
     return parent.metadata ? parent.metadata->size() : 0;
 }
 
+static inline void trunc(std::string& s, int max) {
+    if (s.size() > max) {
+        s = s.substr(0, max);
+    }
+}
+
+#define MAX_ARTIST 12
+#define MAX_ALBUM 12
+
 IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(size_t index) {
     int64 attrs = (index == parent.GetSelectedIndex()) ? COLOR_PAIR(BOX_COLOR_BLACK_ON_GREEN) : -1;
 
     TrackPtr track = parent.metadata->at(index);
-    std::string trackNum = track->GetValue("track");
-    std::string title = track->GetValue("title");
+    std::string trackNum = track->GetValue(Track::TRACK_NUM);
+    std::string artist = track->GetValue(Track::ARTIST_ID);
+    std::string album = track->GetValue(Track::ALBUM_ID);
+    std::string title = track->GetValue(Track::TITLE);
+
+    trunc(artist, MAX_ARTIST);
+    trunc(album, MAX_ALBUM);
 
     std::string text = boost::str(
-        boost::format("%s  %s") 
+        boost::format("%s   %s   %s   %s") 
             % boost::io::group(std::setw(3), std::setfill(' '), trackNum)
+            % boost::io::group(std::setw(MAX_ARTIST), std::setiosflags(std::ios::left), std::setfill(' '), artist)
+            % boost::io::group(std::setw(MAX_ALBUM), std::setiosflags(std::ios::left), std::setfill(' '), album)
             % title);
 
     IScrollAdapter::EntryPtr entry(new SingleLineEntry(text));

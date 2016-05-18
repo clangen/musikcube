@@ -41,12 +41,18 @@ using namespace musik::core::audio;
 static std::string TAG = "Transport";
 
 Transport::Transport()
-: volume(1.0) {
+: volume(1.0) 
+, state(StateStopped) {
 }
 
 Transport::~Transport() {
     this->nextPlayer.reset();
     this->currentPlayer.reset();
+}
+
+Transport::PlaybackState Transport::GetPlaybackState() {
+    boost::mutex::scoped_lock lock(this->stateMutex);
+    return this->state;
 }
 
 void Transport::PrepareNextTrack(std::string trackUrl) {
@@ -60,6 +66,12 @@ void Transport::PrepareNextTrack(std::string trackUrl) {
 
 void Transport::Start(std::string url) {
     musik::debug::info(TAG, "we were asked to start the track at " + url);
+
+    /* TODO FIXME: hack; the player is reference counted, we don't want the count
+    to reach zero within the critical section, because its background thread may
+    raise an event and cause a deadlock. do we really need shared_ptrs for these
+    Player instances? */
+    PlayerPtr current;
 
     PlayerPtr player;
 
@@ -77,6 +89,7 @@ void Transport::Start(std::string url) {
             musik::debug::info(TAG, "Player created successfully");
         }
 
+        current = this->currentPlayer; /* see hack note above. */
         this->currentPlayer = newPlayer;
 
         this->currentPlayer->PlaybackStarted.connect(this, &Transport::OnPlaybackStarted);
@@ -85,7 +98,7 @@ void Transport::Start(std::string url) {
         this->currentPlayer->PlaybackError.connect(this, &Transport::OnPlaybackError);
 
         musik::debug::info(TAG, "play()");
-        this->currentPlayer->Play();
+        this->currentPlayer->Play(); /* non-blocking */
 
         player = this->currentPlayer;
     }
@@ -272,6 +285,24 @@ void Transport::OnPlaybackError(Player *player) {
 }
 
 void Transport::RaisePlaybackEvent(int type, PlayerPtr player) {
+    /* TODO FIXME: should be either decoupled or merged with the playback
+    event enum. */
+    switch (type) {
+        case EventStarted:
+        case EventResumed:
+            this->state = StatePlaying;
+            break;
+
+        case EventFinished:
+        case EventError:
+            this->state = StateStopped;
+            break;
+
+        case EventPaused:
+            this->state = StatePaused;
+            break;
+    }
+
     std::string uri = player ? player->GetUrl() : "";
     this->PlaybackEvent(type, uri);
 }

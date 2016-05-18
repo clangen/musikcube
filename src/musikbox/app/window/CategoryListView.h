@@ -15,12 +15,17 @@ using musik::core::LibraryPtr;
 
 class CategoryListView : public ListWindow, public sigslot::has_slots<> {
     public:
-        CategoryListView(LibraryPtr library, IWindow *parent = NULL);
+        CategoryListView(LibraryPtr library, const std::string& fieldName);
         virtual ~CategoryListView();
 
         void Requery();
+
         virtual void ProcessMessage(IWindowMessage &message);
+        virtual void KeyPress(int64 ch);
+
         DBID GetSelectedId();
+        std::string GetFieldName();
+        void SetFieldName(const std::string& fieldName);
 
     protected:
         virtual IScrollAdapter& GetScrollAdapter();
@@ -42,6 +47,7 @@ class CategoryListView : public ListWindow, public sigslot::has_slots<> {
         LibraryPtr library;
         Adapter *adapter;
 
+        std::string fieldName;
         std::shared_ptr<CategoryListViewQuery> activeQuery;
         CategoryListViewQuery::ResultList metadata;
 };

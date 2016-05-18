@@ -46,8 +46,8 @@ namespace musik { namespace core { namespace library { namespace constants {
         static const char* DURATION = "duration";
         static const char* FILESIZE = "filesize";
         static const char* YEAR = "year";
-        static const char* DISPLAY_GENRE_ID = "visual_genre_id";
-        static const char* DISPLAY_ARTIST_ID = "visual_artist_id";
+        static const char* GENRE_ID = "visual_genre_id";
+        static const char* ARTIST_ID = "visual_artist_id";
         static const char* ALBUM_ID = "album_id";
         static const char* PATH_ID = "path_id";
         static const char* TITLE = "title";

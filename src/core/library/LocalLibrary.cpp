@@ -49,6 +49,8 @@ static const std::string TAG = "LocalLibrary";
 using namespace musik::core;
 using namespace musik::core::library;
 
+#define VERBOSE_LOGGING 0
+
 LibraryPtr LocalLibrary::Create(std::string name, int id) {
     LibraryPtr lib(new LocalLibrary(name, id));
     return lib;
@@ -140,7 +142,9 @@ int LocalLibrary::Enqueue(QueryPtr query, unsigned int options) {
     queryQueue.push_back(query);
     queueCondition.notify_all();
 
-    musik::debug::info(TAG, "query '" + query->Name() + "' enqueued");
+    if (VERBOSE_LOGGING) {
+        musik::debug::info(TAG, "query '" + query->Name() + "' enqueued");
+    }
 
     return query->GetId();
 }
@@ -185,13 +189,19 @@ void LocalLibrary::ThreadProc() {
         }
 
         if (query) {
-            musik::debug::info(TAG, "query '" + query->Name() + "' running");
+            if (VERBOSE_LOGGING) {
+                musik::debug::info(TAG, "query '" + query->Name() + "' running");
+            }
 
             query->Run(this->db);
             this->QueryCompleted(query);
 
-            musik::debug::info(TAG, boost::str(boost::format(
-                "query '%1%' finished with status=%2%") % query->Name() % query->GetStatus()));
+            if (VERBOSE_LOGGING) {
+                musik::debug::info(TAG, boost::str(boost::format(
+                    "query '%1%' finished with status=%2%") 
+                    % query->Name() 
+                    % query->GetStatus()));
+            }
 
             query.reset();
         }

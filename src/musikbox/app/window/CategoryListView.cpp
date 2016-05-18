@@ -7,20 +7,24 @@
 #include <cursespp/MultiLineEntry.h>
 #include <cursespp/IWindowMessage.h>
 
+#include <core/library/LocalLibraryConstants.h>
+
 #include <app/query/CategoryListViewQuery.h>
 
 #include "CategoryListView.h"
 
 using musik::core::LibraryPtr;
 using musik::core::IQuery;
+using namespace musik::core::library::constants;
 
 #define WINDOW_MESSAGE_QUERY_COMPLETED 1002
 
-CategoryListView::CategoryListView(LibraryPtr library, IWindow *parent)
-: ListWindow(parent) {
+CategoryListView::CategoryListView(LibraryPtr library, const std::string& fieldName)
+: ListWindow(NULL) {
     this->SetContentColor(BOX_COLOR_WHITE_ON_BLACK);
     this->library = library;
     this->library->QueryCompleted.connect(this, &CategoryListView::OnQueryCompleted);
+    this->fieldName = fieldName;
     this->adapter = new Adapter(*this);
 }
 
@@ -28,8 +32,25 @@ CategoryListView::~CategoryListView() {
     delete adapter;
 }
 
+void CategoryListView::KeyPress(int64 ch) {
+    std::string kn = keyname((int) ch);
+
+    if (kn == "ALT_1") {
+        this->SetFieldName(Track::ARTIST_ID);
+    }
+    else if (kn == "ALT_2") {
+        this->SetFieldName(Track::ALBUM_ID);
+    }
+    else if (kn == "ALT_3") {
+        this->SetFieldName(Track::GENRE_ID);
+    }
+    else {
+        ListWindow::KeyPress(ch);
+    }
+}
+
 void CategoryListView::Requery() {
-    this->activeQuery.reset(new CategoryListViewQuery());
+    this->activeQuery.reset(new CategoryListViewQuery(this->fieldName));
     this->library->Enqueue(activeQuery);
 }
 
@@ -39,6 +60,17 @@ DBID CategoryListView::GetSelectedId() {
         return this->metadata->at(index)->id;
     }
     return -1;
+}
+
+std::string CategoryListView::GetFieldName() {
+    return this->fieldName;
+}
+
+void CategoryListView::SetFieldName(const std::string& fieldName) {
+    if (this->fieldName != fieldName) {
+        this->fieldName = fieldName;
+        this->Requery();
+    }
 }
 
 void CategoryListView::OnQueryCompleted(QueryPtr query) {

@@ -78,6 +78,9 @@
     <ClCompile Include="app\query\SingleTrackQuery.cpp">
       <Filter>app\query</Filter>
     </ClCompile>
+    <ClCompile Include="app\util\GlobalHotkeys.cpp">
+      <Filter>app\util</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -185,6 +188,9 @@
     </ClInclude>
     <ClInclude Include="app\query\SingleTrackQuery.h">
       <Filter>app\query</Filter>
+    </ClInclude>
+    <ClInclude Include="app\util\GlobalHotkeys.h">
+      <Filter>app\util</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

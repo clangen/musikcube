@@ -40,6 +40,7 @@
 
 #include <app/layout/MainLayout.h>
 #include <app/layout/LibraryLayout.h>
+#include <app/util/GlobalHotkeys.h>
 
 #include <boost/locale.hpp>
 #include <boost/filesystem/path.hpp>
@@ -163,6 +164,8 @@ int main(int argc, char* argv[])
         using musik::core::LibraryFactory;
         LibraryPtr library = LibraryFactory::Libraries().at(0);
 
+        GlobalHotkeys globalHotkeys(tp);
+
         LibraryLayout libraryLayout(tp, library);
         MainLayout mainLayout(tp, library);
 
@@ -186,33 +189,29 @@ int main(int argc, char* argv[])
             }
 
             if (ch != -1) { /* -1 = idle timeout */
-                std::string kn = keyname(ch);
+                std::string kn = keyname((int) ch);
 
                 if (ch == '\t') { /* tab */
                     focusNextInLayout(state);
                 }
-                else if (kn == "^D") {
+                else if (kn == "^D") { /* ctrl+d quits */
                     quit = true;
                 }
-                else if (kn == "ALT_K") {
-                    tp.SetVolume(tp.Volume() + 0.05); /* 5% */
-                }
-                else if (kn == "ALT_J") {
-                    tp.SetVolume(tp.Volume() - 0.05);
-                }
-                else if (ch >= KEY_F(0) && ch <= KEY_F(12)) {
-                    if (ch == KEY_F(1)) {
-                        changeLayout(state, &mainLayout);
+                else if (!globalHotkeys.Handle(ch)) {
+                    if (ch >= KEY_F(0) && ch <= KEY_F(12)) {
+                        if (ch == KEY_F(1)) {
+                            changeLayout(state, &mainLayout);
+                        }
+                        else if (ch == KEY_F(2)) {
+                            changeLayout(state, &libraryLayout);
+                        }
                     }
-                    else if (ch == KEY_F(2)) {
-                        changeLayout(state, &libraryLayout);
+                    else if (state.input) {
+                        state.input->WriteChar(ch);
                     }
-                }
-                else if (state.input) {
-                    state.input->WriteChar(ch);
-                }
-                else if (state.keyHandler) {
-                    state.keyHandler->KeyPress(ch);
+                    else if (state.keyHandler) {
+                        state.keyHandler->KeyPress(ch);
+                    }
                 }
             }
 

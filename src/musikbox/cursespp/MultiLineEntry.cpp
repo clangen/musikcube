@@ -117,8 +117,7 @@ inline static void breakIntoSubLines(
             size_t wordLength = u8len(word);
             size_t extra = (i != 0);
 
-            /* we have enough space for this new word. accumulate it. the
-            +1 here is to take the space into account */
+            /* we have enough space for this new word. accumulate it. */
 
             if (accumLength + extra + wordLength < width) {
                 if (extra) {

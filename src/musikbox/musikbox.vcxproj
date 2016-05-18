@@ -120,6 +120,7 @@
     <ClCompile Include="app\query\CategoryListViewQuery.cpp" />
     <ClCompile Include="app\query\SingleTrackQuery.cpp" />
     <ClCompile Include="app\query\TrackListViewQuery.cpp" />
+    <ClCompile Include="app\util\GlobalHotkeys.cpp" />
     <ClCompile Include="app\util\SystemInfo.cpp" />
     <ClCompile Include="app\window\CategoryListView.cpp" />
     <ClCompile Include="app\window\CommandWindow.cpp" />
@@ -152,6 +153,7 @@
     <ClInclude Include="app\query\CategoryListViewQuery.h" />
     <ClInclude Include="app\query\SingleTrackQuery.h" />
     <ClInclude Include="app\query\TrackListViewQuery.h" />
+    <ClInclude Include="app\util\GlobalHotkeys.h" />
     <ClInclude Include="app\util\SystemInfo.h" />
     <ClInclude Include="app\window\CategoryListView.h" />
     <ClInclude Include="app\window\CommandWindow.h" />

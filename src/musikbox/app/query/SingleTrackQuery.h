@@ -13,7 +13,7 @@ using musik::core::LibraryPtr;
 class SingleTrackQuery : public QueryBase {
     public:
         SingleTrackQuery(const std::string& path);
-        ~SingleTrackQuery();
+        virtual ~SingleTrackQuery();
 
         virtual std::string Name() { return "SingleTrackQuery"; }
         virtual TrackPtr GetResult();

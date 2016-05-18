@@ -37,12 +37,31 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <sigslot/sigslot.h>
-#include <boost/thread/mutex.hpp>
+#include <boost/thread/recursive_mutex.hpp>
 
 namespace musik { namespace core { namespace audio {
 
     class Transport : public sigslot::has_slots<> {
         public:
+            sigslot::signal2<int, std::string> PlaybackEvent;
+            sigslot::signal0<> VolumeChanged;
+
+            typedef enum {
+                StateStopped,
+                StatePaused,
+                StatePlaying
+            } PlaybackState;
+
+            typedef enum {
+                EventScheduled = 0,
+                EventStarted = 1,
+                EventPaused = 2,
+                EventResumed = 3,
+                EventAlmostDone = 4,
+                EventFinished = 5,
+                EventError = -1
+            } PlaybackEventType;
+
             Transport();
             ~Transport();
 
@@ -58,19 +77,7 @@ namespace musik { namespace core { namespace audio {
             double Volume();
             void SetVolume(double volume);
 
-        public:
-            typedef enum {
-                EventScheduled = 0,
-                EventStarted = 1,
-                EventPaused = 2,
-                EventResumed = 3,
-                EventAlmostDone = 4,
-                EventFinished = 5,
-                EventError = -1
-            } PlaybackEventType;
-
-            sigslot::signal2<int, std::string> PlaybackEvent;
-            sigslot::signal0<> VolumeChanged;
+            PlaybackState GetPlaybackState();
 
         private:
             void RaisePlaybackEvent(int type, PlayerPtr player);
@@ -82,6 +89,7 @@ namespace musik { namespace core { namespace audio {
 
         private:
             double volume;
+            PlaybackState state;
 
             boost::mutex stateMutex;
             PlayerPtr currentPlayer;

@@ -17,17 +17,16 @@ class CategoryListViewQuery : public QueryBase {
         typedef std::shared_ptr<std::vector<
             std::shared_ptr<Result>>> ResultList;
 
-        CategoryListViewQuery();
-        ~CategoryListViewQuery();
+        CategoryListViewQuery(const std::string& trackField);
+        virtual ~CategoryListViewQuery();
 
-        std::string Name() {
-            return "CategoryListViewQuery";
-        }
+        std::string Name() { return "CategoryListViewQuery"; }
 
         virtual ResultList GetResult();
 
     protected:
         virtual bool OnRun(Connection &db);
 
+        std::string trackField;
         ResultList result;
 };

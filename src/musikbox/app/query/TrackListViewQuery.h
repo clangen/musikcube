@@ -15,10 +15,9 @@ class TrackListViewQuery : public QueryBase {
         typedef std::shared_ptr<std::vector<TrackPtr>> Result;
 
         TrackListViewQuery(LibraryPtr library, const std::string& column, DBID id);
-        ~TrackListViewQuery();
-        std::string Name() {
-            return "TrackListViewQuery";
-        }
+        virtual ~TrackListViewQuery();
+        
+        std::string Name() { return "TrackListViewQuery"; }
 
         virtual Result GetResult();
 
