@@ -35,7 +35,7 @@ void CategoryListView::Requery() {
 
 DBID CategoryListView::GetSelectedId() {
     size_t index = this->GetSelectedIndex();
-    if (this->metadata && index < this->metadata->size()) {
+    if (index != NO_SELECTION && this->metadata && index < this->metadata->size()) {
         return this->metadata->at(index)->id;
     }
     return -1;

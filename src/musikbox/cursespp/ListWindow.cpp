@@ -3,9 +3,11 @@
 
 typedef IScrollAdapter::ScrollPosition ScrollPos;
 
+size_t ListWindow::NO_SELECTION = (size_t) -1;
+
 ListWindow::ListWindow(IWindow *parent) 
 : ScrollableWindow(parent) {
-    this->selectedIndex = 0;
+    this->selectedIndex = (size_t) -1;
 }
 
 ListWindow::~ListWindow() {
@@ -129,6 +131,18 @@ size_t ListWindow::GetSelectedIndex() {
 
 void ListWindow::OnAdapterChanged() {
     IScrollAdapter *adapter = &GetScrollAdapter();
+
+    size_t count = adapter->GetEntryCount();
+
+    /* update initial state... */
+    if (selectedIndex == NO_SELECTION) {
+        if (adapter->GetEntryCount()) {
+            this->SetSelectedIndex(0);
+        }
+    }
+    else if (count == 0) {
+        this->SetSelectedIndex(NO_SELECTION);
+    }
 
     GetScrollAdapter().DrawPage(
         this->GetContent(),

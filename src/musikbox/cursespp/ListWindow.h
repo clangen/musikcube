@@ -7,6 +7,8 @@
 
 class ListWindow : public ScrollableWindow {
     public:
+        static size_t NO_SELECTION;
+
         sigslot::signal3<ListWindow*, size_t, size_t> SelectionChanged;
 
         ListWindow(IWindow *parent = NULL);
