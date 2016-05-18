@@ -23,7 +23,7 @@ class TransportWindow : public Window, public sigslot::has_slots<> {
         void Update();
 
     private:
-        void OnTransportStarted(std::string url);
+        void OnTransportPlaybackEvent(int eventType, std::string url);
         void OnTransportVolumeChanged();
         void OnQueryCompleted(QueryPtr query);
 

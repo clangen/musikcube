@@ -24,6 +24,8 @@ namespace musik { namespace core {
                 Finished = 4,
             } Status;
 
+            virtual ~IQuery() = 0 { }
+
             virtual bool Run(db::Connection &db) = 0;
             virtual int GetStatus() = 0;
             virtual int GetId() = 0;

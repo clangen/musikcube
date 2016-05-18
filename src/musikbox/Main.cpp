@@ -191,6 +191,9 @@ int main(int argc, char* argv[])
                 if (ch == '\t') { /* tab */
                     focusNextInLayout(state);
                 }
+                else if (kn == "^D") {
+                    quit = true;
+                }
                 else if (kn == "ALT_K") {
                     tp.SetVolume(tp.Volume() + 0.05); /* 5% */
                 }

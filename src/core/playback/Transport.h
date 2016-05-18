@@ -37,6 +37,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <sigslot/sigslot.h>
+#include <boost/thread/mutex.hpp>
 
 namespace musik { namespace core { namespace audio {
 
@@ -59,26 +60,21 @@ namespace musik { namespace core { namespace audio {
 
         public:
             typedef enum {
-                Started = 1,
-                Ended = 2,
-                Error = 3
-            } PlaybackStatus;
+                EventScheduled = 0,
+                EventStarted = 1,
+                EventPaused = 2,
+                EventResumed = 3,
+                EventAlmostDone = 4,
+                EventFinished = 5,
+                EventError = -1
+            } PlaybackEventType;
 
-            sigslot::signal1<std::string> TrackStarted;
+            sigslot::signal2<int, std::string> PlaybackEvent;
             sigslot::signal0<> VolumeChanged;
-            
-            typedef sigslot::signal1<int> PlaybackStatusEvent;
-            PlaybackStatusEvent PlaybackStatusChange;
-
-            typedef sigslot::signal0<> PlaybackEvent;
-            PlaybackEvent PlaybackAlmostDone;
-            PlaybackEvent PlaybackStarted;
-            PlaybackEvent PlaybackEnded;
-            PlaybackEvent PlaybackPause;
-            PlaybackEvent PlaybackResume;
-            PlaybackEvent PlaybackError;
 
         private:
+            void RaisePlaybackEvent(int type, PlayerPtr player);
+
             void OnPlaybackStarted(Player *player);
             void OnPlaybackAlmostEnded(Player *player);
             void OnPlaybackEnded(Player *player);
@@ -86,10 +82,8 @@ namespace musik { namespace core { namespace audio {
 
         private:
             double volume;
-            bool gapless;
 
-            typedef std::list<PlayerPtr> PlayerList;
-            PlayerList players;
+            boost::mutex stateMutex;
             PlayerPtr currentPlayer;
             PlayerPtr nextPlayer;
     };

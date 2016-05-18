@@ -6,6 +6,7 @@
 
 class IWindowMessage {
     public:
+        virtual ~IWindowMessage() = 0 { }
         virtual IWindow* Target() = 0;
         virtual int MessageType() = 0;
         virtual int64 UserData1() = 0;

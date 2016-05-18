@@ -51,7 +51,7 @@ namespace musik {
             }
 
             if (!active_) {
-                throw stopped_exception();
+                return NULL;
             }
 
             log_entry* top = queue_.front();
@@ -101,8 +101,10 @@ static void thread_proc() {
     try {
         while (!cancel_) {
             log_queue::log_entry* entry = queue_->pop_top();
-            debug::string_logged(entry->level_, entry->tag_, entry->message_);
-            delete entry;
+            if (entry) {
+                debug::string_logged(entry->level_, entry->tag_, entry->message_);
+                delete entry;
+            }
         }
     }
     catch (log_queue::stopped_exception&) {

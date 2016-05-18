@@ -46,18 +46,17 @@
 
 namespace musik { namespace core { namespace audio {
 
-    class  Player;
-    class  Transport;
+    class Player;
     typedef std::shared_ptr<Player> PlayerPtr;
 
     class Player : public IBufferProvider {
         public:
             typedef std::shared_ptr<IOutput> OutputPtr;
 
-            static PlayerPtr Create(std::string &url,OutputPtr *output = NULL);
+            static PlayerPtr Create(std::string &url, OutputPtr output = OutputPtr());
     
         private:
-            Player(std::string &url,OutputPtr *output);
+            Player(std::string &url, OutputPtr output);
 
         public:
             ~Player();
@@ -75,6 +74,8 @@ namespace musik { namespace core { namespace audio {
             double Volume();
             void SetVolume(double volume);
 
+            std::string GetUrl() const { return this->url; }
+
             bool Exited();
 
         public:
@@ -83,18 +84,12 @@ namespace musik { namespace core { namespace audio {
             PlayerEvent PlaybackAlmostEnded;
             PlayerEvent PlaybackEnded;
             PlayerEvent PlaybackError;
-
-            OutputPtr output;
-
+            
         private:
             void ThreadLoop();
             bool PreBuffer();
             int State();
             void ReleaseAllBuffers();
-
-        protected:
-            friend class Transport;
-            std::string url;
 
         private:
             typedef boost::scoped_ptr<boost::thread> ThreadPtr;
@@ -107,9 +102,12 @@ namespace musik { namespace core { namespace audio {
                 Quit = 2
             } States;
 
+            OutputPtr output;
             StreamPtr stream;
             ThreadPtr thread;
             BufferList lockedBuffers;
+
+            std::string url;
 
             BufferList prebufferQueue;
             long prebufferSizeBytes;

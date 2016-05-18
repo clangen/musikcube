@@ -45,7 +45,7 @@ void Window::ProcessMessage(IWindowMessage &message) {
 }
 
 bool Window::IsAcceptingMessages() {
-    return this->IsVisible();
+    return true; //this->IsVisible();
 }
 
 bool Window::IsVisible() {
@@ -260,14 +260,16 @@ void Window::Clear() {
 }
 
 void Window::Repaint() {
-    if (this->frame && this->content) {
-        wnoutrefresh(this->frame);
+    if (this->isVisible) {
+        if (this->frame && this->content) {
+            wnoutrefresh(this->frame);
 
-        if (this->frame != this->content) {
-            wnoutrefresh(this->content);
+            if (this->frame != this->content) {
+                wnoutrefresh(this->content);
+            }
+
+            drawPending = true;
         }
-
-        drawPending = true;
     }
 }
 

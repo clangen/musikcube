@@ -29,7 +29,7 @@ TransportWindow::TransportWindow(LibraryPtr library, Transport& transport)
     this->library = library;
     this->library->QueryCompleted.connect(this, &TransportWindow::OnQueryCompleted);
     this->transport = &transport;
-    this->transport->TrackStarted.connect(this, &TransportWindow::OnTransportStarted);
+    this->transport->PlaybackEvent.connect(this, &TransportWindow::OnTransportPlaybackEvent);
     this->transport->VolumeChanged.connect(this, &TransportWindow::OnTransportVolumeChanged);
     this->paused = false;
 }
@@ -48,9 +48,11 @@ void TransportWindow::ProcessMessage(IWindowMessage &message) {
     }
 }
 
-void TransportWindow::OnTransportStarted(std::string url) {
-    this->trackQuery.reset(new SingleTrackQuery(url));
-    this->library->Enqueue(this->trackQuery);
+void TransportWindow::OnTransportPlaybackEvent(int eventType, std::string url) {
+    if (eventType == Transport::EventStarted) {
+        this->trackQuery.reset(new SingleTrackQuery(url));
+        this->library->Enqueue(this->trackQuery);
+    }
 }
 
 void TransportWindow::OnTransportVolumeChanged() {

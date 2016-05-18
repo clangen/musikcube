@@ -7,6 +7,7 @@ class IWindowMessage;
 
 class IWindow : public IDisplayable {
     public:
+        virtual ~IWindow() = 0 { }
         virtual void Repaint() = 0;
         virtual void SetParent(IWindow* parent) = 0;
         virtual void Show() = 0;

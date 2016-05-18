@@ -16,6 +16,8 @@ namespace musik { namespace core {
         public:
             sigslot::signal1<QueryPtr> QueryCompleted;
 
+            virtual ~ILibrary() = 0 { }
+
             virtual int Enqueue(QueryPtr query, unsigned int options = 0) = 0;
             virtual IIndexer *Indexer() = 0;
             virtual int Id() = 0;

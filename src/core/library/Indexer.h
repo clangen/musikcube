@@ -64,7 +64,7 @@ namespace musik { namespace core {
                 const std::string& libraryPath, 
                 const std::string& dbFilename);
 
-            ~Indexer();
+            virtual ~Indexer();
 
             virtual void AddPath(const std::string& paths);
             virtual void RemovePath(const std::string& paths);
