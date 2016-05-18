@@ -158,23 +158,20 @@ int main(int argc, char* argv[])
 
         using musik::core::audio::Transport;
         Transport tp;
-        tp.SetVolume(0.01);
+        tp.SetVolume(0.75);
 
         using musik::core::LibraryFactory;
         LibraryPtr library = LibraryFactory::Libraries().at(0);
 
-        MainLayout mainLayout(tp, library);
         LibraryLayout libraryLayout(tp, library);
-
-        mainLayout.Hide();
-        libraryLayout.Hide();
+        MainLayout mainLayout(tp, library);
 
         int64 ch;
         timeout(IDLE_TIMEOUT_MS);
         bool quit = false;
 
         WindowState state = { 0 };
-        changeLayout(state, &mainLayout);
+        changeLayout(state, &libraryLayout);
 
         while (!quit) {
             /* if the focused item is an IInput, then get characters from it,
@@ -185,12 +182,20 @@ int main(int argc, char* argv[])
                 ch = wgetch(c);
             }
             else {
-                ch = getch();
+                ch = wgetch(stdscr);
             }
 
             if (ch != -1) { /* -1 = idle timeout */
+                std::string kn = keyname(ch);
+
                 if (ch == '\t') { /* tab */
                     focusNextInLayout(state);
+                }
+                else if (kn == "ALT_K") {
+                    tp.SetVolume(tp.Volume() + 0.05); /* 5% */
+                }
+                else if (kn == "ALT_J") {
+                    tp.SetVolume(tp.Volume() - 0.05);
                 }
                 else if (ch >= KEY_F(0) && ch <= KEY_F(12)) {
                     if (ch == KEY_F(1)) {

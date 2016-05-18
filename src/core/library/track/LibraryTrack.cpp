@@ -190,6 +190,89 @@ TrackPtr LibraryTrack::Copy() {
     return TrackPtr(new LibraryTrack(this->id, this->libraryId));
 }
 
+bool LibraryTrack::Load(Track *target, db::Connection &db) {
+    /* if no ID is specified, see if we can look one up by filename
+    in the current database. */
+    if (target->Id() == 0) {
+        std::string path = target->GetValue("filename");
+
+        if (!path.size()) {
+            return false;
+        }
+
+        db::Statement idFromFn(
+            "SELECT id " \
+            "FROM tracks " \
+            "WHERE filename=? " \
+            "LIMIT 1", db);
+
+        idFromFn.BindText(0, path.c_str());
+
+        if (idFromFn.Step() != db::Row) {
+            return false;
+        }
+
+        target->SetId(idFromFn.ColumnInt(0));
+    }
+
+    db::Statement genresQuery(
+        "SELECT g.name " \
+        "FROM genres g, track_genres tg " \
+        "WHERE tg.genre_id=g.id AND tg.track_id=? " \
+        "ORDER BY tg.id", db);
+
+    db::Statement artistsQuery(
+        "SELECT ar.name " \
+        "FROM artists ar, track_artists ta " \
+        "WHERE ta.artist_id=ar.id AND ta.track_id=? "\
+        "ORDER BY ta.id", db);
+
+    db::Statement allMetadataQuery(
+        "SELECT mv.content, mk.name " \
+        "FROM meta_values mv, meta_keys mk, track_meta tm " \
+        "WHERE tm.track_id=? AND tm.meta_value_id=mv.id AND mv.meta_key_id=mk.id " \
+        "ORDER BY tm.id", db);
+
+    db::Statement trackQuery(
+        "SELECT t.track, t.bpm, t.duration, t.filesize, t.year, t.title, t.filename, t.thumbnail_id, al.name, t.filetime " \
+        "FROM tracks t, paths p, albums al " \
+        "WHERE t.id=? AND t.album_id=al.id", db);
+
+    trackQuery.BindInt(0, target->Id());
+    if (trackQuery.Step() == db::Row) {
+        target->SetValue("track", trackQuery.ColumnText(0));
+        target->SetValue("bpm", trackQuery.ColumnText(1));
+        target->SetValue("duration", trackQuery.ColumnText(2));
+        target->SetValue("filesize", trackQuery.ColumnText(3));
+        target->SetValue("year", trackQuery.ColumnText(4));
+        target->SetValue("title", trackQuery.ColumnText(5));
+        target->SetValue("filename", trackQuery.ColumnText(6));
+        target->SetValue("thumbnail_id", trackQuery.ColumnText(7));
+        target->SetValue("album", trackQuery.ColumnText(8));
+        target->SetValue("filetime", trackQuery.ColumnText(9));
+
+        genresQuery.BindInt(0, target->Id());
+        while (genresQuery.Step() == db::Row) {
+            target->SetValue("genre", genresQuery.ColumnText(0));
+        }
+
+        artistsQuery.BindInt(0, target->Id());
+        while (artistsQuery.Step() == db::Row) {
+            target->SetValue("artist", artistsQuery.ColumnText(0));
+        }
+
+        allMetadataQuery.BindInt(0, target->Id());
+        while (allMetadataQuery.Step() == db::Row) {
+            target->SetValue(allMetadataQuery.ColumnText(1), allMetadataQuery.ColumnText(0));
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+
 LibraryTrack::MetaData::MetaData()
 : thumbnailData(NULL)
 , thumbnailSize(0) {

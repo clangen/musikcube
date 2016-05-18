@@ -42,25 +42,24 @@
 #include <core/support/Common.h>
 #include <core/config.h>
 
-#ifdef UTF_WIDECHAR
-#define UTFFopen    _wfopen
-typedef fpos_t  stdioPositionType;
-#else
-#define UTFFopen    fopen
-typedef fpos_t stdioPositionType;
-#endif
-
 static const std::string TAG = "LocalFileStream";
 
 using namespace musik::core::io;
 
 LocalFileStream::LocalFileStream()
 : file(NULL)
-, filesize(-1) {
+, filesize(-1)
+, fd(NULL)
+, fileStream(NULL) {
 }
 
 LocalFileStream::~LocalFileStream() {
-    this->Close();
+    try {
+        this->Close();
+    }
+    catch (...) {
+        musik::debug::err(TAG, "error closing file");
+    }
 }
 
 bool LocalFileStream::Open(const char *filename, unsigned int options) {
@@ -82,7 +81,7 @@ bool LocalFileStream::Open(const char *filename, unsigned int options) {
 
         this->filesize = (long)boost::filesystem::file_size(file);
         this->extension = file.extension().string();
-        this->file = UTFFopen(filename, "rb");
+        this->file = fopen(filename, "rb");
         this->fd = new boost::iostreams::file_descriptor(file);
         this->fileStream = new boost::iostreams::stream<boost::iostreams::file_descriptor>(*this->fd);
         this->fileStream->exceptions(std::ios_base::eofbit | std::ios_base::failbit | std::ios_base::badbit);

@@ -62,6 +62,7 @@ namespace musik { namespace core {
             virtual int LibraryId();
 
             virtual DBID Id();
+            virtual void SetId(DBID id) { this->id = id; }
 
             virtual std::string GetValue(const char* metakey);
             virtual void SetValue(const char* metakey, const char* value);
@@ -74,6 +75,8 @@ namespace musik { namespace core {
             virtual MetadataIteratorRange GetValues(const char* metakey);
             virtual MetadataIteratorRange GetAllValues();
             virtual TrackPtr Copy();
+
+            static bool LibraryTrack::Load(Track *target, db::Connection &db);
 
         private:
             void InitMeta();

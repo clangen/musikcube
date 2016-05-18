@@ -88,7 +88,7 @@ void Transport::Start(std::string url){
 	
     musik::debug::info(TAG, "player added to player list");
 
-    // Lets connect to the signals of the currentPlayer
+    // Lets connect to the signals of the currentPlayer /* FIXME event binding is reversed here */
     this->currentPlayer->PlaybackStarted.connect(this,&Transport::OnPlaybackStarted);
     this->currentPlayer->PlaybackAlmostEnded.connect(this,&Transport::OnPlaybackAlmostEnded);
     this->currentPlayer->PlaybackEnded.connect(this,&Transport::OnPlaybackEnded);
@@ -98,6 +98,7 @@ void Transport::Start(std::string url){
 
     // Start playing
     player->Play();
+    this->TrackStarted(url);
 }
 
 void Transport::Stop(){
@@ -149,10 +150,18 @@ double Transport::Volume(){
 }
 
 void Transport::SetVolume(double volume){
+    double oldVolume = this->volume;
+    
+    volume = max(0, min(1.0, volume));
+
+    this->volume = volume;
+
+    if (oldVolume != this->volume) {
+        this->VolumeChanged();
+    }
+
     musik::debug::info(TAG, boost::str(boost::format("set volume %d%%") % round(volume * 100)));
 
-    volume = max(0, min(1.0, volume));
-    this->volume = volume;
     if(this->currentPlayer){
         for(PlayerList::iterator player=this->players.begin();player!=this->players.end();++player){
             (*player)->SetVolume(volume);

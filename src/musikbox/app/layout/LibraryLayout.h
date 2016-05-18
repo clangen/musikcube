@@ -4,6 +4,7 @@
 
 #include <app/window/CategoryListView.h>
 #include <app/window/TrackListView.h>
+#include <app/window/TransportWindow.h>
 
 #include <core/playback/Transport.h>
 #include <core/library/ILibrary.h>
@@ -27,8 +28,10 @@ class LibraryLayout : public LayoutBase, public sigslot::has_slots<> {
         void OnCategoryViewSelectionChanged(
             ListWindow *view, size_t newIndex, size_t oldIndex);
 
-        Transport* transport;
+        Transport& transport;
         LibraryPtr library;
         std::shared_ptr<CategoryListView> albumList;
         std::shared_ptr<TrackListView> trackList;
+        std::shared_ptr<TransportWindow> transportView;
+
 };

@@ -263,21 +263,20 @@ bool LocalLibrary::IsSpecialMTMMetaKey(std::string &metakey) {
 void LocalLibrary::CreateDatabase(db::Connection &db){
     // Create the tracks-table
     db.Execute("CREATE TABLE IF NOT EXISTS tracks ("
-            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-            "track INTEGER DEFAULT 0,"
-            "bpm REAL DEFAULT 0,"
-            "duration INTEGER DEFAULT 0,"
-            "filesize INTEGER DEFAULT 0,"
-            "year INTEGER DEFAULT 0,"
-            "visual_genre_id INTEGER DEFAULT 0,"
-            "visual_artist_id INTEGER DEFAULT 0,"
-            "path_id INTEGER,"
-            "album_id INTEGER DEFAULT 0,"
-            "title TEXT default '',"
-            "filename TEXT default '',"
-            "filetime INTEGER DEFAULT 0,"
-            "thumbnail_id INTEGER DEFAULT 0,"
-            "sort_order1 INTEGER)");
+        "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+        "track INTEGER DEFAULT 0,"
+        "bpm REAL DEFAULT 0,"
+        "duration INTEGER DEFAULT 0,"
+        "filesize INTEGER DEFAULT 0,"
+        "year INTEGER DEFAULT 0,"
+        "visual_genre_id INTEGER DEFAULT 0,"
+        "visual_artist_id INTEGER DEFAULT 0,"
+        "path_id INTEGER,"
+        "album_id INTEGER DEFAULT 0,"
+        "title TEXT default '',"
+        "filename TEXT default '',"
+        "filetime INTEGER DEFAULT 0,"
+        "thumbnail_id INTEGER DEFAULT 0)");
 
     // Create the genres-table
     db.Execute("CREATE TABLE IF NOT EXISTS genres ("
@@ -360,7 +359,6 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
     db.Execute("CREATE INDEX IF NOT EXISTS genre_index ON genres (sort_order)");
     db.Execute("CREATE INDEX IF NOT EXISTS artist_index ON artists (sort_order)");
     db.Execute("CREATE INDEX IF NOT EXISTS album_index ON albums (sort_order)");
-    db.Execute("CREATE INDEX IF NOT EXISTS track_index1 ON tracks (album_id,sort_order1)");
     db.Execute("CREATE INDEX IF NOT EXISTS thumbnail_index ON thumbnails (filesize)");
 
     db.Execute("CREATE INDEX IF NOT EXISTS trackgenre_index1 ON track_genres (track_id,genre_id)");

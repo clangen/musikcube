@@ -48,7 +48,7 @@ void TrackListView::OnQueryCompleted(QueryPtr query) {
 void TrackListView::KeyPress(int64 ch) {
     if (ch == '\n') { /* return */
         size_t selected = this->GetSelectedIndex();
-        if (this->metadata->size() > selected) {
+        if (this->metadata && this->metadata->size() > selected) {
             TrackPtr track = this->metadata->at(selected);
             std::string fn = track->GetValue(Track::FILENAME);
             this->transport->Stop();

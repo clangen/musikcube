@@ -14,7 +14,7 @@ MainLayout::MainLayout(Transport& transport, LibraryPtr library)
     this->output.reset(new OutputWindow(this));
     this->resources.reset(new ResourcesWindow(this));
     this->commands.reset(new CommandWindow(this, transport, library, *this->output));
-    this->transport.reset(new TransportWindow(this, transport));
+    this->transport.reset(new TransportWindow(library, transport));
 
     this->AddWindow(this->commands);
     this->AddWindow(this->logs);
@@ -36,13 +36,13 @@ void MainLayout::Layout() {
     this->SetFrameVisible(false);
 
     /* top left */
-    this->transport->SetSize(Screen::GetWidth() / 2, 4);
-    this->transport->SetPosition(0, 0);
+    this->transport->SetSize((Screen::GetWidth() / 2) - 2, 2);
+    this->transport->SetPosition(1, 0);
     this->transport->Repaint();
 
     /* middle left */
-    this->output->SetSize(Screen::GetWidth() / 2, Screen::GetHeight() - 3 - 4);
-    this->output->SetPosition(0, 4);
+    this->output->SetSize(Screen::GetWidth() / 2, Screen::GetHeight() - 3 - 2);
+    this->output->SetPosition(0, 2);
     this->output->SetFocusOrder(1);
 
     /* bottom left */

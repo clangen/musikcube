@@ -54,7 +54,7 @@ namespace musik { namespace core { namespace audio {
         public:
             typedef std::shared_ptr<IOutput> OutputPtr;
 
-            static PlayerPtr Create(std::string &url,OutputPtr *output=&OutputPtr());
+            static PlayerPtr Create(std::string &url,OutputPtr *output = NULL);
     
         private:
             Player(std::string &url,OutputPtr *output);

@@ -54,7 +54,6 @@ namespace musik { namespace core { namespace library { namespace constants {
         static const char* FILENAME = "filename";
         static const char* FILETIME = "filetime";
         static const char* THUMBNAIL_ID = "thumbnail_id";
-        static const char* SORT_ORDER = "sort_order1";
         static const char* PATH = "path";
     }
 

@@ -61,7 +61,6 @@ using namespace musik::core;
 IndexerTrack::IndexerTrack(DBID id)
 : internalMetadata(new IndexerTrack::MetadataWithThumbnail())
 , id(id)
-, tempSortOrder(0)
 {
 }
 
@@ -110,7 +109,7 @@ std::string IndexerTrack::URI() {
 }
 
 std::string IndexerTrack::URL() {
-    return this->GetValue("path");
+    return this->GetValue("filename");
 }
 
 Track::MetadataIteratorRange IndexerTrack::GetValues(const char* metakey) {
@@ -181,12 +180,11 @@ bool IndexerTrack::NeedsToBeIndexed(
 
 static DBID writeToTracksTable(
     db::Connection &dbConnection,
-    IndexerTrack& track, 
-    DBID tempSortOrder)
+    IndexerTrack& track)
 {
     db::CachedStatement stmt("INSERT OR REPLACE INTO tracks " \
-        "(id, track, bpm, duration, filesize, year, title, filename, filetime, path_id, sort_order1) " \
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", dbConnection);
+        "(id, track, bpm, duration, filesize, year, title, filename, filetime, path_id) " \
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", dbConnection);
 
     stmt.BindText(1, track.GetValue("track"));
     stmt.BindText(2, track.GetValue("bpm"));
@@ -197,7 +195,6 @@ static DBID writeToTracksTable(
     stmt.BindText(7, track.GetValue("filename"));
     stmt.BindText(8, track.GetValue("filetime"));
     stmt.BindText(9, track.GetValue("path_id"));
-    stmt.BindInt(10, tempSortOrder);
 
     if (track.Id() != 0) {
         stmt.BindInt(0, track.Id());
@@ -458,7 +455,7 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
 
     /* write generic info to the tracks table */
 
-    this->id = writeToTracksTable(dbConnection, *this, tempSortOrder);
+    this->id = writeToTracksTable(dbConnection, *this);
 
     DBID albumId = this->ExtractAlbum(dbConnection);
     DBID genreId = this->ExtractGenre(dbConnection);
@@ -542,65 +539,6 @@ DBID IndexerTrack::SaveNormalizedFieldValue(
 
 TrackPtr IndexerTrack::Copy() {
     return TrackPtr(new IndexerTrack(this->id));
-}
-
-bool IndexerTrack::Reload(db::Connection &db) {
-    db::Statement genres(
-        "SELECT g.name " \
-        "FROM genres g, track_genres tg " \
-        "WHERE tg.genre_id=g.id AND tg.track_id=? " \
-        "ORDER BY tg.id", db);
-    
-    db::Statement artists(
-        "SELECT ar.name " \
-        "FROM artists ar, track_artists ta " \
-        "WHERE ta.artist_id=ar.id AND ta.track_id=? "\
-        "ORDER BY ta.id", db);
-
-    db::Statement allMetadata(
-        "SELECT mv.content, mk.name " \
-        "FROM meta_values mv, meta_keys mk, track_meta tm " \
-        "WHERE tm.track_id=? AND tm.meta_value_id=mv.id AND mv.meta_key_id=mk.id " \
-        "ORDER BY tm.id", db);
-
-    db::Statement track(
-        "SELECT t.track, t.bpm, t.duration, t.filesize, t.year, t.title, t.filename, t.thumbnail_id, al.name, t.filetime, t.sort_order1 " \
-        "FROM tracks t, paths p, albums al " \
-        "WHERE t.id=? AND t.album_id=al.id", db);
-
-    track.BindInt(0, this->id);
-    if(track.Step() == db::Row) {
-        this->SetValue("track", track.ColumnText(0));
-        this->SetValue("bpm", track.ColumnText(1));
-        this->SetValue("duration", track.ColumnText(2));
-        this->SetValue("filesize", track.ColumnText(3));
-        this->SetValue("year", track.ColumnText(4));
-        this->SetValue("title", track.ColumnText(5));
-        this->SetValue("filename", track.ColumnText(6));
-        this->SetValue("thumbnail_id", track.ColumnText(7));
-        this->SetValue("album", track.ColumnText(8));
-        this->SetValue("filetime", track.ColumnText(9));
-        this->tempSortOrder = track.ColumnInt(10);
-
-        genres.BindInt(0, this->id);
-        while (genres.Step() == db::Row) {
-            this->SetValue("genre", genres.ColumnText(0));
-        }
-
-        artists.BindInt(0, this->id);
-        while (artists.Step() == db::Row) {
-            this->SetValue("artist", artists.ColumnText(0));
-        }
-
-        allMetadata.BindInt(0, this->id);
-        while (allMetadata.Step() == db::Row) {
-            this->SetValue(allMetadata.ColumnText(1), allMetadata.ColumnText(0));
-        }
-
-        return true;
-    }
-
-    return false;
 }
 
 IndexerTrack::MetadataWithThumbnail::MetadataWithThumbnail()

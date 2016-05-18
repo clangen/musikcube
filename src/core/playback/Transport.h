@@ -58,13 +58,15 @@ namespace musik { namespace core { namespace audio {
             void SetVolume(double volume);
 
         public:
-
             typedef enum {
                 Started = 1,
-                Ended   = 2,
-                Error   = 3
+                Ended = 2,
+                Error = 3
             } PlaybackStatus;
 
+            sigslot::signal1<std::string> TrackStarted;
+            sigslot::signal0<> VolumeChanged;
+            
             typedef sigslot::signal1<int> PlaybackStatusEvent;
             PlaybackStatusEvent PlaybackStatusChange;
 
@@ -77,10 +79,10 @@ namespace musik { namespace core { namespace audio {
             PlaybackEvent PlaybackError;
 
         private:
-		    void OnPlaybackStarted(Player *player);
-		    void OnPlaybackAlmostEnded(Player *player);
-		    void OnPlaybackEnded(Player *player);
-	        void OnPlaybackError(Player *player);
+            void OnPlaybackStarted(Player *player);
+            void OnPlaybackAlmostEnded(Player *player);
+            void OnPlaybackEnded(Player *player);
+            void OnPlaybackError(Player *player);
 
         private:
             double volume;

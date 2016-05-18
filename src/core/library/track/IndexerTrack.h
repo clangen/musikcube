@@ -63,6 +63,7 @@ namespace musik { namespace core {
             virtual TrackPtr Copy();
 
             virtual DBID Id();
+            virtual void SetId(DBID id) { this->id = id; }
 
             bool NeedsToBeIndexed(
                 const boost::filesystem::path &file,
@@ -72,11 +73,8 @@ namespace musik { namespace core {
                 db::Connection &dbConnection, 
                 std::string libraryDirectory);
 
-            bool Reload(db::Connection &db);
-
         private:
             DBID id;
-            DBID tempSortOrder;
 
         private:
             class MetadataWithThumbnail {

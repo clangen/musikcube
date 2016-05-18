@@ -118,6 +118,7 @@
     <ClCompile Include="app\layout\LibraryLayout.cpp" />
     <ClCompile Include="app\layout\MainLayout.cpp" />
     <ClCompile Include="app\query\CategoryListViewQuery.cpp" />
+    <ClCompile Include="app\query\SingleTrackQuery.cpp" />
     <ClCompile Include="app\query\TrackListViewQuery.cpp" />
     <ClCompile Include="app\util\SystemInfo.cpp" />
     <ClCompile Include="app\window\CategoryListView.cpp" />
@@ -149,6 +150,7 @@
     <ClInclude Include="app\layout\LibraryLayout.h" />
     <ClInclude Include="app\layout\MainLayout.h" />
     <ClInclude Include="app\query\CategoryListViewQuery.h" />
+    <ClInclude Include="app\query\SingleTrackQuery.h" />
     <ClInclude Include="app\query\TrackListViewQuery.h" />
     <ClInclude Include="app\util\SystemInfo.h" />
     <ClInclude Include="app\window\CategoryListView.h" />

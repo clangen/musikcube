@@ -34,7 +34,7 @@ bool TrackListViewQuery::OnRun(Connection& db) {
     }
 
     std::string query = boost::str(boost::format(
-        "SELECT DISTINCT t.track, t.bpm, t.duration, t.filesize, t.year, t.title, t.filename, t.thumbnail_id, al.name AS album, gn.name AS genre, ar.name AS artist, t.filetime, t.sort_order1 " \
+        "SELECT DISTINCT t.track, t.bpm, t.duration, t.filesize, t.year, t.title, t.filename, t.thumbnail_id, al.name AS album, gn.name AS genre, ar.name AS artist, t.filetime " \
         "FROM tracks t, paths p, albums al, artists ar, genres gn " \
         "WHERE t.%s=? AND t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id") % this->column);
         

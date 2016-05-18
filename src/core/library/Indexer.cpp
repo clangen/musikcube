@@ -42,6 +42,7 @@
 #include <core/config.h>
 #include <core/config.h>
 #include <core/library/track/IndexerTrack.h>
+#include <core/library/track/LibraryTrack.h>
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>
 #include <core/plugin/PluginFactory.h>
@@ -542,35 +543,6 @@ void Indexer::SyncOptimize() {
         db::ScopedTransaction transaction(this->dbConnection);
         optimize(this->dbConnection, "content", "meta_values");
     }
-
-    {
-        db::ScopedTransaction transaction(this->dbConnection);
-
-        /* the sort order of a track is by default in the following order
-        genre, artist, album, track number, path, filename */
-
-        db::Statement outer("SELECT t.id FROM tracks t " \
-            "LEFT OUTER JOIN artists ar ON ar.id=t.visual_artist_id " \
-            "LEFT OUTER JOIN albums al ON al.id=t.album_id " \
-            "ORDER BY ar.sort_order, al.sort_order, t.track, t.filename",
-            this->dbConnection);
-
-        db::Statement inner("UPDATE tracks SET sort_order1=? WHERE id=?",this->dbConnection);
-
-        count = 0;
-
-        while (outer.Step() == db::Row) {
-            inner.BindInt(0,count);
-            inner.BindInt(1, outer.ColumnInt(0));
-            inner.Step();
-            inner.Reset();
-            ++count;
-
-            if (count % 1000 == 0) {
-                transaction.CommitAndRestart();
-            }
-        }
-    }
 }
 
 //////////////////////////////////////////
@@ -645,7 +617,7 @@ void Indexer::RunAnalyzers() {
 
         IndexerTrack track(trackId);
 
-        if (track.Reload(this->dbConnection)) {
+        if (LibraryTrack::Load(&track, this->dbConnection)) {
             PluginVector runningAnalyzers;
 
             PluginVector::iterator plugin = analyzers.begin();

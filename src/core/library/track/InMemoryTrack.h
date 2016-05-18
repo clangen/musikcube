@@ -65,6 +65,7 @@ namespace musik { namespace core {
             virtual void SetThumbnail(const char *data, long size);
             virtual std::string URI();
             virtual std::string URL();
+            virtual void SetId(DBID id) { };
 
             virtual MetadataIteratorRange GetValues(const char* metakey);
             virtual MetadataIteratorRange GetAllValues();
