@@ -25,15 +25,17 @@ ScrollPos& ScrollableWindow::GetScrollPosition() {
     return this->scrollPosition;
 }
 
-void ScrollableWindow::KeyPress(int64 ch) {
+bool ScrollableWindow::KeyPress(int64 ch) {
     switch (ch) {
-        case KEY_NPAGE: this->PageDown(); break;
-        case KEY_PPAGE: this->PageUp(); break;
-        case KEY_DOWN: this->ScrollDown(); break;
-        case KEY_UP: this->ScrollUp(); break;
-        case KEY_HOME: this->ScrollToTop(); break;
-        case KEY_END: this->ScrollToBottom(); break;
+        case KEY_NPAGE: this->PageDown(); return true;
+        case KEY_PPAGE: this->PageUp(); return true;
+        case KEY_DOWN: this->ScrollDown(); return true;
+        case KEY_UP: this->ScrollUp(); return true;
+        case KEY_HOME: this->ScrollToTop(); return true;
+        case KEY_END: this->ScrollToBottom(); return true;
     }
+
+    return false;
 }
 
 void ScrollableWindow::OnAdapterChanged() {
@@ -108,7 +110,7 @@ size_t ScrollableWindow::GetPreviousPageEntryIndex() {
     while (i >= 0) {
         IScrollAdapter::EntryPtr entry = adapter->GetEntry(i);
         entry->SetWidth(width);
-    
+
         int count = entry->GetLineCount();
         if (count > remaining) {
             break;

@@ -122,6 +122,7 @@
     <ClCompile Include="app\query\TrackListViewQuery.cpp" />
     <ClCompile Include="app\util\GlobalHotkeys.cpp" />
     <ClCompile Include="app\util\SystemInfo.cpp" />
+    <ClCompile Include="app\util\Text.cpp" />
     <ClCompile Include="app\window\CategoryListView.cpp" />
     <ClCompile Include="app\window\CommandWindow.cpp" />
     <ClCompile Include="app\window\LogWindow.cpp" />
@@ -155,6 +156,7 @@
     <ClInclude Include="app\query\TrackListViewQuery.h" />
     <ClInclude Include="app\util\GlobalHotkeys.h" />
     <ClInclude Include="app\util\SystemInfo.h" />
+    <ClInclude Include="app\util\Text.h" />
     <ClInclude Include="app\window\CategoryListView.h" />
     <ClInclude Include="app\window\CommandWindow.h" />
     <ClInclude Include="app\window\LogWindow.h" />

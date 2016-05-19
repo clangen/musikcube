@@ -30,6 +30,5 @@ class MainLayout : public LayoutBase {
         std::shared_ptr<LogWindow> logs;
         std::shared_ptr<CommandWindow> commands;
         std::shared_ptr<OutputWindow> output;
-        std::shared_ptr<TransportWindow> transport;
         std::shared_ptr<ResourcesWindow> resources;
 };

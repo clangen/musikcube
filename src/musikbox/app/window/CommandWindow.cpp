@@ -97,7 +97,7 @@ void CommandWindow::WriteChar(int64 ch) {
         this->bufferPosition = 0;
     }
     else {
-        this->buffer[bufferPosition++] = ch;
+        this->buffer[bufferPosition++] = (char) ch;
     }
 
     this->Repaint();
@@ -132,7 +132,6 @@ void CommandWindow::Help() {
     this->output->WriteLine("  pl [file]: play file at path", s);
     this->output->WriteLine("  pa: toggle pause/resume", s);
     this->output->WriteLine("  st: stop playing", s);
-    //this->output->WriteLine("  ls: list currently playing", s);
     this->output->WriteLine("  plugins: list loaded plugins", s);
     this->output->WriteLine("  v: <0 - 100>: set % volume", s);
     this->output->WriteLine("  sk <seconds>: seek to <seconds> into track", s);
@@ -140,7 +139,7 @@ void CommandWindow::Help() {
     this->output->WriteLine("  rmdir <dir>: remove indexed directory path", s);
     this->output->WriteLine("  lsdirs: list all directories used by the indexer", s);
     this->output->WriteLine("  rescan: rescan metadata in index paths", s);
-    this->output->WriteLine("\n  q: quit\n", s);
+    this->output->WriteLine("\n  <ctrl+d>: quit\n", s);
 }
 
 bool CommandWindow::ProcessCommand(const std::string& cmd) {
@@ -188,17 +187,11 @@ bool CommandWindow::ProcessCommand(const std::string& cmd) {
     else if (name == "sk" || name == "seek") {
         this->Seek(args);
     }
-    else if (name == "np" || name == "pl") {
-        this->ListPlaying();
-    }
     else if (name == "plugins") {
         this->ListPlugins();
     }
     else if (name == "v" || name == "volume") {
         this->SetVolume(args);
-    }
-    else if (name == "q" || name == "quit" || name == "exit") {
-        /* */
     }
     else {
         return false;
@@ -231,20 +224,6 @@ void CommandWindow::Pause() {
 
 void CommandWindow::Stop() {
     this->transport->Stop();
-}
-
-void CommandWindow::ListPlaying() {
-    /*
-    AudioStreamOverview overview = transport.StreamsOverview();
-    AudioStreamOverviewIterator it;
-
-
-    for (it = overview.begin(); it != overview.end(); ++it) {
-    cout << *it << '\n';
-    }
-
-    cout << "------------------\n";
-    cout << transport.NumOfStreams() << " playing" << std::std::endl;*/
 }
 
 void CommandWindow::ListPlugins() const {

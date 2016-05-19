@@ -12,12 +12,14 @@ static bool drawPending = false;
 void Window::WriteToScreen() {
     if (drawPending) {
         drawPending = false;
+        update_panels();
         doupdate();
     }
 }
 
 Window::Window(IWindow *parent) {
     this->frame = this->content = 0;
+    this->framePanel = this->contentPanel = 0;
     this->parent = parent;
     this->height = 0;
     this->width = 0;
@@ -33,7 +35,7 @@ Window::Window(IWindow *parent) {
 
 Window::~Window() {
     WindowMessageQueue::Instance().Remove(this);
-    this->Hide();
+    this->Destroy();
 }
 
 int Window::GetId() const {
@@ -45,11 +47,31 @@ void Window::ProcessMessage(IWindowMessage &message) {
 }
 
 bool Window::IsAcceptingMessages() {
-    return true; //this->IsVisible();
+    return true;
 }
 
 bool Window::IsVisible() {
     return this->isVisible;
+}
+
+void Window::BringToTop() {
+    if (this->framePanel) {
+        top_panel(this->framePanel);
+
+        if (this->contentPanel != this->framePanel) {
+            top_panel(this->contentPanel);
+        }
+    }
+}
+
+void Window::SendToBottom() {
+    if (this->framePanel) {
+        bottom_panel(this->contentPanel);
+
+        if (this->contentPanel != this->framePanel) {
+            bottom_panel(this->framePanel);
+        }
+    }
 }
 
 void Window::Post(int messageType, int64 user1, int64 user2, int64 delay) {
@@ -166,9 +188,25 @@ void Window::SetFocusOrder(int order) {
 }
 
 void Window::Show() {
-    this->Hide();
+    if (this->framePanel) {
+        show_panel(this->framePanel);
 
+        if (this->framePanel != this->contentPanel) {
+            show_panel(this->contentPanel);
+        }
+
+        this->isVisible = true;
+        drawPending = true;
+        return;
+    }
+    else {
+        this->Create();
+    }
+}
+
+void Window::Create() {
     /* if we have a parent, place the new window relative to the parent. */
+
     this->frame = (this->parent == NULL)
         ? newwin(
             this->height, 
@@ -180,6 +218,8 @@ void Window::Show() {
             this->width, 
             this->parent->GetY() + this->y, 
             this->parent->GetX() + this->x);
+
+    this->framePanel = new_panel(this->frame);
 
     /* if we were asked not to draw a frame, we'll set the frame equal to
     the content view, and use the content views colors*/
@@ -204,6 +244,8 @@ void Window::Show() {
             this->GetY() + 1,
             this->GetX() + 1);
 
+        this->contentPanel = new_panel(this->content);
+
         if (this->frameColor != -1) {
             wbkgd(this->frame, COLOR_PAIR(this->frameColor));
         }
@@ -219,20 +261,31 @@ void Window::Show() {
 
 void Window::Hide() {
     if (this->frame) {
-        wclear(this->frame);
-        wclear(this->content);
-        this->Repaint();
-
-        delwin(this->content);
+        hide_panel(this->framePanel);
 
         if (this->content != this->frame) {
-            delwin(this->frame);
+            hide_panel(this->contentPanel);
         }
-
-        this->frame = this->content = NULL;
     }
 
     this->isVisible = false;
+}
+
+void Window::Destroy() {
+    this->Hide();
+
+    if (this->frame) {
+        del_panel(this->framePanel);
+        delwin(this->frame);
+
+        if (this->content != this->frame) {
+            del_panel(this->contentPanel);
+            delwin(this->content);
+        }
+    }
+
+    this->framePanel = this->contentPanel = 0;
+    this->content = this->frame = 0;
 }
 
 void Window::SetFrameVisible(bool enabled) {
@@ -240,7 +293,7 @@ void Window::SetFrameVisible(bool enabled) {
         this->drawFrame = enabled;
 
         if (this->frame || this->content) {
-            this->Hide();
+            this->Destroy();
             this->Show();
         }
     }
@@ -260,13 +313,7 @@ void Window::Clear() {
 
 void Window::Repaint() {
     if (this->isVisible) {
-        if (this->frame && this->content) {
-            wnoutrefresh(this->frame);
-
-            if (this->frame != this->content) {
-                wnoutrefresh(this->content);
-            }
-
+        if (this->frame) {
             drawPending = true;
         }
     }

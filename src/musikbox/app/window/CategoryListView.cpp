@@ -9,6 +9,7 @@
 
 #include <core/library/LocalLibraryConstants.h>
 
+#include <app/util/Text.h>
 #include <app/query/CategoryListViewQuery.h>
 
 #include "CategoryListView.h"
@@ -16,6 +17,7 @@
 using musik::core::LibraryPtr;
 using musik::core::IQuery;
 using namespace musik::core::library::constants;
+using namespace musik::box;
 
 #define WINDOW_MESSAGE_QUERY_COMPLETED 1002
 
@@ -30,23 +32,6 @@ CategoryListView::CategoryListView(LibraryPtr library, const std::string& fieldN
 
 CategoryListView::~CategoryListView() {
     delete adapter;
-}
-
-void CategoryListView::KeyPress(int64 ch) {
-    std::string kn = keyname((int) ch);
-
-    if (kn == "ALT_1") {
-        this->SetFieldName(Track::ARTIST_ID);
-    }
-    else if (kn == "ALT_2") {
-        this->SetFieldName(Track::ALBUM_ID);
-    }
-    else if (kn == "ALT_3") {
-        this->SetFieldName(Track::GENRE_ID);
-    }
-    else {
-        ListWindow::KeyPress(ch);
-    }
 }
 
 void CategoryListView::Requery() {
@@ -69,6 +54,12 @@ std::string CategoryListView::GetFieldName() {
 void CategoryListView::SetFieldName(const std::string& fieldName) {
     if (this->fieldName != fieldName) {
         this->fieldName = fieldName;
+
+        if (this->metadata) {
+            this->metadata.reset();
+            this->OnAdapterChanged();
+        }
+
         this->Requery();
     }
 }
@@ -100,8 +91,11 @@ size_t CategoryListView::Adapter::GetEntryCount() {
 }
 
 IScrollAdapter::EntryPtr CategoryListView::Adapter::GetEntry(size_t index) {
+    std::string value = parent.metadata->at(index)->displayValue;
+    text::Ellipsize(value, this->GetWidth());
+
     int64 attrs = (index == parent.GetSelectedIndex()) ? COLOR_PAIR(BOX_COLOR_BLACK_ON_GREEN) : -1;
-    IScrollAdapter::EntryPtr entry(new SingleLineEntry(parent.metadata->at(index)->displayValue));
+    IScrollAdapter::EntryPtr entry(new SingleLineEntry(value));
     entry->SetAttrs(attrs);
     return entry;
 }

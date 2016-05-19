@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "stdafx.h"
 #include "TransportWindow.h"
@@ -70,8 +70,6 @@ void TransportWindow::Update() {
     this->Clear();
     WINDOW *c = this->GetContent();
 
-    double volume = (this->transport->Volume() * 100.0);
-
     int64 gb = COLOR_PAIR(BOX_COLOR_GREEN_ON_BLACK);
 
     std::string title, album;
@@ -95,9 +93,16 @@ void TransportWindow::Update() {
     wattron(c, gb);
     wprintw(c, album.c_str());
     wattroff(c, gb);
+
+    wprintw(c, "\nvol ");
     
-    wprintw(c, "\n");
-    wprintw(c, "volume %.1f%%", volume);
+    std::string volume = "";
+    int v = (int) max(0, round(transport->Volume() * 10.0f) - 1);
+    for (int i = 0; i < 10; i++) {
+        volume += (i == v) ? "■" : "─";
+    }
+
+    wprintw(c, volume.c_str());
 
     this->Repaint();
 }

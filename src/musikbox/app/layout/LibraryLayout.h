@@ -21,6 +21,7 @@ class LibraryLayout : public LayoutBase, public sigslot::has_slots<> {
 
         virtual void Layout();
         virtual void Show();
+        virtual bool LibraryLayout::KeyPress(int64 ch);
 
     private:
         void InitializeWindows();

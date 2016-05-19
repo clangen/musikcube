@@ -25,7 +25,7 @@ bool sortByFocusOrder(IWindowPtr a, IWindowPtr b) {
     return orderA > orderB;
 }
 
-static inline IWindow* adjustFocus(IWindow* oldFocus, IWindow* newFocus) {
+static inline IWindowPtr adjustFocus(IWindowPtr oldFocus, IWindowPtr newFocus) {
     if (oldFocus) {
         oldFocus->SetFrameColor(BOX_COLOR_WHITE_ON_BLACK);
         oldFocus->Blur();
@@ -58,14 +58,62 @@ void LayoutBase::Show() {
 
     this->IndexFocusables();
     this->SortFocusables();
+
+    if (this->overlay) {
+        this->overlay->window->Show();
+    }
 }
 
 void LayoutBase::Hide() {
+    if (this->overlay) {
+        this->overlay->window->Hide();
+    }
+
     for (size_t i = 0; i < this->children.size(); i++) {
         this->children.at(i)->Hide();
     }
 
     Window::Hide();
+}
+
+void LayoutBase::BringToTop() {
+    this->BringToTop();
+
+    for (size_t i = 0; i < this->children.size(); i++) {
+        this->children.at(i)->BringToTop();
+    }
+}
+
+void LayoutBase::ShowOverlay(IWindowPtr window) {
+    if (this->overlay && window != this->overlay->window) {
+        throw "there's already a different overlay visible!";
+    }
+
+    this->overlay.reset(new Overlay());
+
+    this->overlay->window = window;
+    this->overlay->layout = dynamic_cast<ILayout*>(window.get());
+    this->overlay->window->Show();
+    this->overlay->window->BringToTop();
+}
+
+void LayoutBase::CloseOverlay() {
+    if (this->overlay) {
+        this->overlay->window->Hide();
+        this->overlay.reset();
+    }
+}
+
+IWindowPtr LayoutBase::GetOverlay() {
+    return (this->overlay) ? this->overlay->window : IWindowPtr();
+}
+
+void LayoutBase::SendToBottom() {
+    for (size_t i = 0; i < this->children.size(); i++) {
+        this->children.at(i)->SendToBottom();
+    }
+
+    this->SendToBottom();
 }
 
 void LayoutBase::Repaint() {
@@ -149,7 +197,7 @@ void LayoutBase::SortFocusables() {
 
     if (focused == -1 && this->focusable.size() > 0) {
         this->focused = 0;
-        adjustFocus(NULL, this->focusable[this->focused].get());
+        adjustFocus(IWindowPtr(), this->focusable[this->focused]);
     }
 }
 
@@ -171,28 +219,56 @@ IWindowPtr LayoutBase::GetWindowAt(size_t position) {
     return this->children.at(position);
 }
 
-IWindow* LayoutBase::FocusNext() {
-    IWindow* oldFocus = GetFocus();
-    if (++this->focused >= (int) this->focusable.size()) {
-        this->focused = 0;
+IWindowPtr LayoutBase::FocusNext() {
+    if (overlay) {
+        if (overlay->layout) {
+            return overlay->layout->FocusNext();
+        }
+        else {
+            return overlay->window;
+        }
     }
+    else {
+        IWindowPtr oldFocus = GetFocus();
+        if (++this->focused >= (int) this->focusable.size()) {
+            this->focused = 0;
+        }
 
-    return adjustFocus(oldFocus, GetFocus());
+        return adjustFocus(oldFocus, GetFocus());
+    }
 }
 
-IWindow* LayoutBase::FocusPrev() {
-    IWindow* oldFocus = GetFocus();
-    if (--this->focused <= 0) {
-        this->focused = (int) this->focusable.size() - 1;
+IWindowPtr LayoutBase::FocusPrev() {
+    if (overlay) {
+        if (overlay->layout) {
+            return overlay->layout->FocusPrev();
+        }
+        else {
+            return overlay->window;
+        }
     }
+    else {
+        IWindowPtr oldFocus = GetFocus();
+        if (--this->focused <= 0) {
+            this->focused = (int) this->focusable.size() - 1;
+        }
 
-    return adjustFocus(oldFocus, GetFocus());
+        return adjustFocus(oldFocus, GetFocus());
+    }
 }
 
-IWindow* LayoutBase::GetFocus() {
+IWindowPtr LayoutBase::GetFocus() {
+    if (overlay) {
+        return overlay->window;
+    }
+
     if (this->focused >= 0 && this->focusable.size() > 0) {
-        return this->focusable[this->focused].get();
+        return this->focusable[this->focused];
     }
 
-    return NULL;
+    return IWindowPtr();
+}
+
+bool LayoutBase::KeyPress(int64 ch) {
+    return false;
 }

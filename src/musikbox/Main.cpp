@@ -51,18 +51,24 @@
 
 #ifdef WIN32
 #undef MOUSE_MOVED
+#endif
 
 #define IDLE_TIMEOUT_MS 0
 
 struct WindowState {
-    ILayout* layout;
-    IWindow* focused;
+    ILayoutPtr layout;
+    IWindowPtr focused;
     IInput* input;
     IKeyHandler* keyHandler;
-    IScrollable* scrollable;
 };
 
-void changeLayout(WindowState& current, ILayout* newLayout) {
+static void updateFocusedWindow(WindowState& current, IWindowPtr window) {
+    current.focused = window;
+    current.input = dynamic_cast<IInput*>(window.get());
+    current.keyHandler = dynamic_cast<IKeyHandler*>(window.get());
+}
+
+static void changeLayout(WindowState& current, ILayoutPtr newLayout) {
     if (current.layout == newLayout) {
         return;
     }
@@ -81,10 +87,7 @@ void changeLayout(WindowState& current, ILayout* newLayout) {
         current.layout = newLayout;
         current.layout->Layout();
         current.layout->Show();
-        current.focused = current.layout->GetFocus();
-        current.input = dynamic_cast<IInput*>(current.focused);
-        current.scrollable = dynamic_cast<IScrollable*>(current.focused);
-        current.keyHandler = dynamic_cast<IKeyHandler*>(current.focused);
+        updateFocusedWindow(current, current.layout->GetFocus());
     }
 
     if (current.input) {
@@ -96,15 +99,12 @@ void changeLayout(WindowState& current, ILayout* newLayout) {
     }
 }
 
-void focusNextInLayout(WindowState& current) {
+static void focusNextInLayout(WindowState& current) {
     if (!current.layout) {
         return;
     }
 
-    current.focused = current.layout->FocusNext();
-    current.input = dynamic_cast<IInput*>(current.focused);
-    current.scrollable = dynamic_cast<IScrollable*>(current.focused);
-    current.keyHandler = dynamic_cast<IKeyHandler*>(current.focused);
+    updateFocusedWindow(current, current.layout->FocusNext());
 
     if (current.input != NULL) {
         curs_set(1);
@@ -118,6 +118,7 @@ void focusNextInLayout(WindowState& current) {
     }
 }
 
+#ifdef WIN32
 int _main(int argc, _TCHAR* argv[]);
 
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow) {
@@ -166,15 +167,15 @@ int main(int argc, char* argv[])
 
         GlobalHotkeys globalHotkeys(tp);
 
-        LibraryLayout libraryLayout(tp, library);
-        MainLayout mainLayout(tp, library);
+        ILayoutPtr libraryLayout(new LibraryLayout(tp, library));
+        ILayoutPtr consoleLayout(new MainLayout(tp, library));
 
         int64 ch;
         timeout(IDLE_TIMEOUT_MS);
         bool quit = false;
 
         WindowState state = { 0 };
-        changeLayout(state, &libraryLayout);
+        changeLayout(state, libraryLayout);
 
         while (!quit) {
             /* if the focused item is an IInput, then get characters from it,
@@ -200,17 +201,20 @@ int main(int argc, char* argv[])
                 else if (!globalHotkeys.Handle(ch)) {
                     if (ch >= KEY_F(0) && ch <= KEY_F(12)) {
                         if (ch == KEY_F(1)) {
-                            changeLayout(state, &mainLayout);
+                            changeLayout(state, consoleLayout);
                         }
                         else if (ch == KEY_F(2)) {
-                            changeLayout(state, &libraryLayout);
+                            changeLayout(state, libraryLayout);
                         }
                     }
                     else if (state.input) {
                         state.input->WriteChar(ch);
                     }
-                    else if (state.keyHandler) {
-                        state.keyHandler->KeyPress(ch);
+                    /* otherwise, send the unhandled keypress directly to the
+                    focused window. if it can't do anything with it, send it to
+                    the layout for special processing, if necessary */
+                    else if (!state.keyHandler || !state.keyHandler->KeyPress(ch)) {
+                        state.layout->KeyPress(ch);
                     }
                 }
             }

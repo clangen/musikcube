@@ -10,8 +10,11 @@
 
 #include <core/library/LocalLibraryConstants.h>
 
+#include <app/util/Text.h>
+
 #include <boost/format.hpp>
 #include <boost/format/group.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <iomanip>
 
@@ -20,6 +23,12 @@
 using musik::core::IQuery;
 using musik::core::audio::Transport;
 using namespace musik::core::library::constants;
+using namespace musik::box;
+
+using boost::io::group;
+using std::setw;
+using std::setfill;
+using std::setiosflags;
 
 TrackListView::TrackListView(Transport& transport, LibraryPtr library, IWindow *parent) 
 : ListWindow(parent) {
@@ -45,7 +54,7 @@ void TrackListView::OnQueryCompleted(QueryPtr query) {
     }
 }
 
-void TrackListView::KeyPress(int64 ch) {
+bool TrackListView::KeyPress(int64 ch) {
     if (ch == '\n') { /* return */
         size_t selected = this->GetSelectedIndex();
         if (this->metadata && this->metadata->size() > selected) {
@@ -53,11 +62,11 @@ void TrackListView::KeyPress(int64 ch) {
             std::string fn = track->GetValue(Track::FILENAME);
             this->transport->Stop();
             this->transport->Start(fn);
+            return true;
         }
     }
-    else {
-        ListWindow::KeyPress(ch);
-    }
+
+    return ListWindow::KeyPress(ch);
 }
 
 void TrackListView::ProcessMessage(IWindowMessage &message) {
@@ -65,6 +74,7 @@ void TrackListView::ProcessMessage(IWindowMessage &message) {
         if (this->query && this->query->GetStatus() == IQuery::Finished) {
             this->metadata = this->query->GetResult();
             this->query.reset();
+            this->SetSelectedIndex(0);
             this->OnAdapterChanged();
         }
     }
@@ -82,14 +92,10 @@ size_t TrackListView::Adapter::GetEntryCount() {
     return parent.metadata ? parent.metadata->size() : 0;
 }
 
-static inline void trunc(std::string& s, int max) {
-    if (s.size() > max) {
-        s = s.substr(0, max);
-    }
-}
-
-#define MAX_ARTIST 12
-#define MAX_ALBUM 12
+#define TRACK_NUM_LENGTH 3
+#define ARTIST_LENGTH 14
+#define ALBUM_LENGTH 14
+#define DURATION_LENGTH 5 /* 00:00 */
 
 IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(size_t index) {
     int64 attrs = (index == parent.GetSelectedIndex()) ? COLOR_PAIR(BOX_COLOR_BLACK_ON_GREEN) : -1;
@@ -99,16 +105,28 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(size_t index) {
     std::string artist = track->GetValue(Track::ARTIST_ID);
     std::string album = track->GetValue(Track::ALBUM_ID);
     std::string title = track->GetValue(Track::TITLE);
+    std::string duration = track->GetValue(Track::DURATION);
 
-    trunc(artist, MAX_ARTIST);
-    trunc(album, MAX_ALBUM);
+    size_t titleCount = 
+        this->GetWidth() - 
+        TRACK_NUM_LENGTH - 
+        ARTIST_LENGTH - 
+        ALBUM_LENGTH - 
+        DURATION_LENGTH - 
+        (3 * 4); /* 3 = spacing */
+
+    text::Ellipsize(artist, ARTIST_LENGTH);
+    text::Ellipsize(album, ALBUM_LENGTH);
+    text::Ellipsize(title, titleCount);
+    text::Duration(duration);
 
     std::string text = boost::str(
-        boost::format("%s   %s   %s   %s") 
-            % boost::io::group(std::setw(3), std::setfill(' '), trackNum)
-            % boost::io::group(std::setw(MAX_ARTIST), std::setiosflags(std::ios::left), std::setfill(' '), artist)
-            % boost::io::group(std::setw(MAX_ALBUM), std::setiosflags(std::ios::left), std::setfill(' '), album)
-            % title);
+        boost::format("%s   %s   %s   %s   %s") 
+            % group(setw(TRACK_NUM_LENGTH), setfill(' '), trackNum)
+            % group(setw(titleCount), setiosflags(std::ios::left), setfill(' '), title)
+            % group(setw(DURATION_LENGTH), setiosflags(std::ios::right), setfill(' '), duration)
+            % group(setw(ARTIST_LENGTH), setiosflags(std::ios::left), setfill(' '), artist)
+            % group(setw(ALBUM_LENGTH), setiosflags(std::ios::left), setfill(' '), album));
 
     IScrollAdapter::EntryPtr entry(new SingleLineEntry(text));
 

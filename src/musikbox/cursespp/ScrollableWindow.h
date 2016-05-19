@@ -14,7 +14,7 @@ class ScrollableWindow : public IScrollable, public IKeyHandler, public Window {
         virtual void Show();
         virtual void SetSize(int width, int height);
 
-        virtual void KeyPress(int64 ch);
+        virtual bool KeyPress(int64 ch);
 
         virtual void ScrollToTop();
         virtual void ScrollToBottom();

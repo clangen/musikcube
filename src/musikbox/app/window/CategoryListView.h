@@ -21,7 +21,6 @@ class CategoryListView : public ListWindow, public sigslot::has_slots<> {
         void Requery();
 
         virtual void ProcessMessage(IWindowMessage &message);
-        virtual void KeyPress(int64 ch);
 
         DBID GetSelectedId();
         std::string GetFieldName();

@@ -81,6 +81,9 @@
     <ClCompile Include="app\util\GlobalHotkeys.cpp">
       <Filter>app\util</Filter>
     </ClCompile>
+    <ClCompile Include="app\util\Text.cpp">
+      <Filter>app\util</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -190,6 +193,9 @@
       <Filter>app\query</Filter>
     </ClInclude>
     <ClInclude Include="app\util\GlobalHotkeys.h">
+      <Filter>app\util</Filter>
+    </ClInclude>
+    <ClInclude Include="app\util\Text.h">
       <Filter>app\util</Filter>
     </ClInclude>
   </ItemGroup>

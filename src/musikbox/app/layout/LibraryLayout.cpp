@@ -59,6 +59,15 @@ void LibraryLayout::InitializeWindows() {
 void LibraryLayout::Show() {
     LayoutBase::Show();
     this->categoryList->Requery();
+
+    //if (GetOverlay()) {
+    //    this->CloseOverlay();
+    //}
+
+    //std::shared_ptr<IWindow> overlay(new OutputWindow(NULL));
+    //overlay->SetPosition(2, 2);
+    //overlay->SetSize(20, 20);
+    //this->ShowOverlay(overlay);
 }
 
 void LibraryLayout::OnCategoryViewSelectionChanged(
@@ -69,4 +78,23 @@ void LibraryLayout::OnCategoryViewSelectionChanged(
             this->trackList->Requery(this->categoryList->GetFieldName(), id);
         }
     }
+}
+
+bool LibraryLayout::KeyPress(int64 ch) {
+    std::string kn = keyname((int)ch);
+
+    if (kn == "ALT_1") {
+        this->categoryList->SetFieldName(Track::ARTIST_ID);
+        return true;
+    }
+    else if (kn == "ALT_2") {
+        this->categoryList->SetFieldName(Track::ALBUM_ID);
+        return true;
+    }
+    else if (kn == "ALT_3") {
+        this->categoryList->SetFieldName(Track::GENRE_ID);
+        return true;
+    }
+
+    return LayoutBase::KeyPress(ch);
 }

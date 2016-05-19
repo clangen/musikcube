@@ -15,12 +15,18 @@ class LayoutBase : public Window, public ILayout {
         virtual void Hide();
         virtual void Repaint();
 
+        virtual void BringToTop();
+        virtual void SendToBottom();
+
         /* ILayout */
-        virtual IWindow* FocusNext();
-        virtual IWindow* FocusPrev();
-        virtual IWindow* GetFocus();
+        virtual IWindowPtr FocusNext();
+        virtual IWindowPtr FocusPrev();
+        virtual IWindowPtr GetFocus();
 
         virtual void Layout() = 0;
+
+        /* IKeyHandler */
+        virtual bool KeyPress(int64 ch);
         
         /* IWindowGroup */
         virtual bool AddWindow(IWindowPtr window);
@@ -28,7 +34,17 @@ class LayoutBase : public Window, public ILayout {
         virtual size_t GetWindowCount();
         virtual IWindowPtr GetWindowAt(size_t position);
 
+    protected:
+        void ShowOverlay(IWindowPtr window);
+        void CloseOverlay();
+        IWindowPtr GetOverlay();
+
     private: 
+        struct Overlay {
+            IWindowPtr window;
+            ILayout *layout;
+        };
+        
         void AddFocusable(IWindowPtr window);
         void RemoveFocusable(IWindowPtr window);
         void SortFocusables();
@@ -36,5 +52,6 @@ class LayoutBase : public Window, public ILayout {
 
         std::vector<IWindowPtr> children;
         std::vector<IWindowPtr> focusable;
+        std::unique_ptr<Overlay> overlay;
         int focused;
 };

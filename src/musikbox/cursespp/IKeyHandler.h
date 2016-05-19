@@ -5,5 +5,5 @@
 class IKeyHandler {
     public:
         virtual ~IKeyHandler() = 0 { }
-        virtual void KeyPress(int64 ch) = 0;
+        virtual bool KeyPress(int64 ch) = 0;
 };
