@@ -50,7 +50,7 @@ void TrackListView::Requery(const std::string& column, DBID id) {
 
 void TrackListView::OnQueryCompleted(QueryPtr query) {
     if (query == this->query) {
-        Post(WINDOW_MESSAGE_QUERY_COMPLETED);
+        this->PostMessage(WINDOW_MESSAGE_QUERY_COMPLETED);
     }
 }
 
@@ -107,18 +107,18 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(size_t index) {
     std::string title = track->GetValue(Track::TITLE);
     std::string duration = track->GetValue(Track::DURATION);
 
-    size_t titleCount = 
-        this->GetWidth() - 
-        TRACK_NUM_LENGTH - 
-        ARTIST_LENGTH - 
-        ALBUM_LENGTH - 
-        DURATION_LENGTH - 
+    size_t titleCount =
+        this->GetWidth() -
+        TRACK_NUM_LENGTH -
+        ARTIST_LENGTH -
+        ALBUM_LENGTH -
+        DURATION_LENGTH -
         (3 * 4); /* 3 = spacing */
 
     text::Ellipsize(artist, ARTIST_LENGTH);
     text::Ellipsize(album, ALBUM_LENGTH);
     text::Ellipsize(title, titleCount);
-    text::Duration(duration);
+    duration = text::Duration(duration);
 
     std::string text = boost::str(
         boost::format("%s   %s   %s   %s   %s") 

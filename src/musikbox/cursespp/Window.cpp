@@ -74,7 +74,7 @@ void Window::SendToBottom() {
     }
 }
 
-void Window::Post(int messageType, int64 user1, int64 user2, int64 delay) {
+void Window::PostMessage(int messageType, int64 user1, int64 user2, int64 delay) {
     WindowMessageQueue::Instance().Post(
         WindowMessage::Create(
             this, 
@@ -82,6 +82,10 @@ void Window::Post(int messageType, int64 user1, int64 user2, int64 delay) {
             user1, 
             user2),
         delay);
+}
+
+void Window::RemoveMessage(int messageType) {
+    WindowMessageQueue::Instance().Remove(this, messageType);
 }
 
 void Window::SetParent(IWindow* parent) {

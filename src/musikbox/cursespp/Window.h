@@ -50,7 +50,8 @@ class Window : public IWindow, public std::enable_shared_from_this<IWindow> {
 
     protected:
         IWindow* GetParent() const;
-        void Post(int messageType, int64 user1 = 0, int64 user2 = 0, int64 delay = 0);
+        void PostMessage(int messageType, int64 user1 = 0, int64 user2 = 0, int64 delay = 0);
+        void RemoveMessage(int messageType);
         bool IsVisible();
         void Create();
         void Destroy();

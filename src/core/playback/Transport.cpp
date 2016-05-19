@@ -168,6 +168,15 @@ bool Transport::Resume() {
     return false;
 }
 
+double Transport::Duration() {
+    boost::mutex::scoped_lock lock(this->stateMutex);
+
+    if (this->currentPlayer) {
+        return this->currentPlayer->Position();
+    }
+
+}
+
 double Transport::Position() {
     boost::mutex::scoped_lock lock(this->stateMutex);
 

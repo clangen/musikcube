@@ -18,11 +18,19 @@ namespace musik {
                 }
             }
 
-            void Duration(std::string& str) {
-                int n = boost::lexical_cast<int>(str);
-                int mins = (n / 60);
-                int secs = n - (mins * 60);
-                str = boost::str(boost::format("%d:%02d") % mins % secs);
+            std::string Duration(int seconds) {
+                int mins = (seconds / 60);
+                int secs = seconds - (mins * 60);
+                return boost::str(boost::format("%d:%02d") % mins % secs);
+            }
+
+            std::string Duration(double seconds) {
+                return Duration((int) round(seconds));
+            }
+
+            std::string Duration(std::string& str) {
+                int seconds = boost::lexical_cast<int>(str);
+                return Duration(seconds);
             }
         }
     }

@@ -11,7 +11,9 @@ namespace musik {
         namespace text {
             void Truncate(std::string& str, size_t len);
             void Ellipsize(std::string& str, size_t len);
-            void Duration(std::string& str);
+            std::string Duration(std::string& str);
+            std::string Duration(int seconds);
+            std::string Duration(double seconds);
         }
     }
 }

@@ -7,6 +7,8 @@
 #include <cursespp/Colors.h>
 #include <cursespp/WindowMessage.h>
 
+#include <app/util/Text.h>
+
 #include <core/debug.h>
 #include <core/library/track/LibraryTrack.h>
 #include <core/playback/NonLibraryTrackHelper.h>
@@ -18,9 +20,14 @@ using musik::core::TrackPtr;
 using musik::core::LibraryTrack;
 using musik::core::NonLibraryTrackHelper;
 using musik::core::QueryPtr;
+using namespace musik::box;
 
-#define UPDATE_MESSAGE_TYPE 1000
-#define UPDATE_INTERVAL_MS 250
+#define REFRESH_TRANSPORT_READOUT 1001
+#define REFRESH_INTERVAL_MS 1000
+
+#define SCHEDULE_REFRESH(x) \
+    this->RemoveMessage(REFRESH_TRANSPORT_READOUT); \
+    this->PostMessage(REFRESH_TRANSPORT_READOUT, 0, 0, x);
 
 TransportWindow::TransportWindow(LibraryPtr library, Transport& transport)
 : Window(NULL) {
@@ -43,8 +50,11 @@ void TransportWindow::Show() {
 }
 
 void TransportWindow::ProcessMessage(IWindowMessage &message) {
-    if (message.MessageType() == UPDATE_MESSAGE_TYPE) {
+    int type = message.MessageType();
+    
+    if (type == REFRESH_TRANSPORT_READOUT) {
         this->Update();
+        SCHEDULE_REFRESH(REFRESH_INTERVAL_MS)
     }
 }
 
@@ -52,17 +62,18 @@ void TransportWindow::OnTransportPlaybackEvent(int eventType, std::string url) {
     if (eventType == Transport::EventStarted) {
         this->trackQuery.reset(new SingleTrackQuery(url));
         this->library->Enqueue(this->trackQuery);
+        SCHEDULE_REFRESH(0)
     }
 }
 
 void TransportWindow::OnTransportVolumeChanged() {
-    Post(UPDATE_MESSAGE_TYPE);
+    SCHEDULE_REFRESH(0)
 }
 
 void TransportWindow::OnQueryCompleted(QueryPtr query) {
     if (query == this->trackQuery && query->GetStatus() == QueryBase::Finished) {
         this->currentTrack = this->trackQuery->GetResult();
-        Post(UPDATE_MESSAGE_TYPE);
+        SCHEDULE_REFRESH(0)
     }
 }
 
@@ -72,16 +83,20 @@ void TransportWindow::Update() {
 
     int64 gb = COLOR_PAIR(BOX_COLOR_GREEN_ON_BLACK);
 
-    std::string title, album;
+    /* playing SONG TITLE from ALBUM NAME */
+
+    std::string title, album, duration;
     
     if (this->currentTrack) {
         title = this->currentTrack->GetValue("title");
         album = this->currentTrack->GetValue("album");
+        duration = this->currentTrack->GetValue("duration");
     }
     
     title = title.size() ? title : "song title";
     album = album.size() ? album : "album name";
-    
+    duration = duration.size() ? duration : "0";
+
     wprintw(c, "playing ");
 
     wattron(c, gb);
@@ -94,15 +109,52 @@ void TransportWindow::Update() {
     wprintw(c, album.c_str());
     wattroff(c, gb);
 
-    wprintw(c, "\nvol ");
+    /* volume slider */
+
+    wprintw(c, "\n");
     
-    std::string volume = "";
+    std::string volume = "vol ";
     int v = (int) max(0, round(transport->Volume() * 10.0f) - 1);
     for (int i = 0; i < 10; i++) {
         volume += (i == v) ? "■" : "─";
     }
+    volume += "  ";
 
     wprintw(c, volume.c_str());
+
+    /* time slider */
+
+    transport->Position();
+
+    int secondsCurrent = (int) round(transport->Position());
+    int secondsTotal = boost::lexical_cast<int>(duration);
+
+    std::string currentTime = text::Duration(secondsCurrent);
+    std::string totalTime = text::Duration(secondsTotal);
+
+    size_t timerWidth =
+        this->GetContentWidth() -
+        u8len(volume) -
+        currentTime.size() -
+        totalTime.size() -
+        2; /* padding */
+
+    size_t thumbOffset = 0;
+
+    if (secondsTotal) {
+        size_t progress = (secondsCurrent * 100) / secondsTotal;
+        thumbOffset = min(timerWidth - 1, (progress * timerWidth) / 100);
+    }
+
+    std::string timerTrack = "";
+    for (size_t i = 0; i < timerWidth; i++) {
+        timerTrack += (i == thumbOffset) ? "■" : "─";
+    }
+
+    wprintw(c, "%s %s %s", 
+        currentTime.c_str(), 
+        timerTrack.c_str(), 
+        totalTime.c_str());
 
     this->Repaint();
 }
