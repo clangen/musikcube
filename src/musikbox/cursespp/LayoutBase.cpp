@@ -1,5 +1,6 @@
 #include <stdafx.h>
 #include "LayoutBase.h"
+#include "LayoutStack.h"
 #include "Colors.h"
 
 template <typename T> static int find(std::vector<T>& haystack, T& needle) {
@@ -42,6 +43,7 @@ static inline IWindowPtr adjustFocus(IWindowPtr oldFocus, IWindowPtr newFocus) {
 LayoutBase::LayoutBase(IWindow* parent) 
 : Window(parent) {
     this->focused = -1;
+    this->layoutStack = 0;
     this->SetFrameVisible(false);
 }
 
@@ -58,17 +60,9 @@ void LayoutBase::Show() {
 
     this->IndexFocusables();
     this->SortFocusables();
-
-    if (this->overlay) {
-        this->overlay->window->Show();
-    }
 }
 
 void LayoutBase::Hide() {
-    if (this->overlay) {
-        this->overlay->window->Hide();
-    }
-
     for (size_t i = 0; i < this->children.size(); i++) {
         this->children.at(i)->Hide();
     }
@@ -77,35 +71,13 @@ void LayoutBase::Hide() {
 }
 
 void LayoutBase::BringToTop() {
-    this->BringToTop();
+    Window::BringToTop();
 
     for (size_t i = 0; i < this->children.size(); i++) {
         this->children.at(i)->BringToTop();
     }
-}
 
-void LayoutBase::ShowOverlay(IWindowPtr window) {
-    if (this->overlay && window != this->overlay->window) {
-        throw "there's already a different overlay visible!";
-    }
-
-    this->overlay.reset(new Overlay());
-
-    this->overlay->window = window;
-    this->overlay->layout = dynamic_cast<ILayout*>(window.get());
-    this->overlay->window->Show();
-    this->overlay->window->BringToTop();
-}
-
-void LayoutBase::CloseOverlay() {
-    if (this->overlay) {
-        this->overlay->window->Hide();
-        this->overlay.reset();
-    }
-}
-
-IWindowPtr LayoutBase::GetOverlay() {
-    return (this->overlay) ? this->overlay->window : IWindowPtr();
+    this->Repaint();
 }
 
 void LayoutBase::SendToBottom() {
@@ -113,7 +85,7 @@ void LayoutBase::SendToBottom() {
         this->children.at(i)->SendToBottom();
     }
 
-    this->SendToBottom();
+    Window::SendToBottom();
 }
 
 void LayoutBase::Repaint() {
@@ -220,48 +192,24 @@ IWindowPtr LayoutBase::GetWindowAt(size_t position) {
 }
 
 IWindowPtr LayoutBase::FocusNext() {
-    if (overlay) {
-        if (overlay->layout) {
-            return overlay->layout->FocusNext();
-        }
-        else {
-            return overlay->window;
-        }
+    IWindowPtr oldFocus = GetFocus();
+    if (++this->focused >= (int) this->focusable.size()) {
+        this->focused = 0;
     }
-    else {
-        IWindowPtr oldFocus = GetFocus();
-        if (++this->focused >= (int) this->focusable.size()) {
-            this->focused = 0;
-        }
 
-        return adjustFocus(oldFocus, GetFocus());
-    }
+    return adjustFocus(oldFocus, GetFocus());
 }
 
 IWindowPtr LayoutBase::FocusPrev() {
-    if (overlay) {
-        if (overlay->layout) {
-            return overlay->layout->FocusPrev();
-        }
-        else {
-            return overlay->window;
-        }
+    IWindowPtr oldFocus = GetFocus();
+    if (--this->focused <= 0) {
+        this->focused = (int) this->focusable.size() - 1;
     }
-    else {
-        IWindowPtr oldFocus = GetFocus();
-        if (--this->focused <= 0) {
-            this->focused = (int) this->focusable.size() - 1;
-        }
 
-        return adjustFocus(oldFocus, GetFocus());
-    }
+    return adjustFocus(oldFocus, GetFocus());
 }
 
 IWindowPtr LayoutBase::GetFocus() {
-    if (overlay) {
-        return overlay->window;
-    }
-
     if (this->focused >= 0 && this->focusable.size() > 0) {
         return this->focusable[this->focused];
     }
@@ -271,4 +219,12 @@ IWindowPtr LayoutBase::GetFocus() {
 
 bool LayoutBase::KeyPress(int64 ch) {
     return false;
+}
+
+ILayoutStack* LayoutBase::GetLayoutStack() {
+    return this->layoutStack;
+}
+
+void LayoutBase::SetLayoutStack(ILayoutStack* stack) {
+    this->layoutStack = stack;
 }

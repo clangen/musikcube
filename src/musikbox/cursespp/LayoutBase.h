@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ILayout.h"
+#include "ILayoutStack.h"
 #include "Window.h"
 
 #include <vector>
@@ -15,6 +16,7 @@ class LayoutBase : public Window, public ILayout {
         virtual void Hide();
         virtual void Repaint();
 
+        /* IOrderable */
         virtual void BringToTop();
         virtual void SendToBottom();
 
@@ -22,6 +24,8 @@ class LayoutBase : public Window, public ILayout {
         virtual IWindowPtr FocusNext();
         virtual IWindowPtr FocusPrev();
         virtual IWindowPtr GetFocus();
+        virtual ILayoutStack* GetLayoutStack();
+        virtual void SetLayoutStack(ILayoutStack* stack);
 
         virtual void Layout() = 0;
 
@@ -34,24 +38,14 @@ class LayoutBase : public Window, public ILayout {
         virtual size_t GetWindowCount();
         virtual IWindowPtr GetWindowAt(size_t position);
 
-    protected:
-        void ShowOverlay(IWindowPtr window);
-        void CloseOverlay();
-        IWindowPtr GetOverlay();
-
     private: 
-        struct Overlay {
-            IWindowPtr window;
-            ILayout *layout;
-        };
-        
         void AddFocusable(IWindowPtr window);
         void RemoveFocusable(IWindowPtr window);
         void SortFocusables();
         void IndexFocusables();
 
+        ILayoutStack* layoutStack;
         std::vector<IWindowPtr> children;
         std::vector<IWindowPtr> focusable;
-        std::unique_ptr<Overlay> overlay;
         int focused;
 };

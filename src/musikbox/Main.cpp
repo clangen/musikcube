@@ -37,9 +37,12 @@
 #include <cursespp/IInput.h>
 #include <cursespp/IKeyHandler.h>
 #include <cursespp/WindowMessageQueue.h>
+#include <cursespp/LayoutStack.h>
+#include <cursespp/WindowLayout.h>
 
 #include <app/layout/MainLayout.h>
 #include <app/layout/LibraryLayout.h>
+#include <app/window/OutputWindow.h>
 #include <app/util/GlobalHotkeys.h>
 
 #include <boost/locale.hpp>
@@ -66,6 +69,12 @@ static void updateFocusedWindow(WindowState& current, IWindowPtr window) {
     current.focused = window;
     current.input = dynamic_cast<IInput*>(window.get());
     current.keyHandler = dynamic_cast<IKeyHandler*>(window.get());
+}
+
+static void ensureFocusIsValid(WindowState& current) {
+    if (current.layout && current.layout->GetFocus() != current.focused) {
+        updateFocusedWindow(current, current.layout->GetFocus());
+    }
 }
 
 static void changeLayout(WindowState& current, ILayoutPtr newLayout) {
@@ -200,10 +209,10 @@ int main(int argc, char* argv[])
                 }
                 else if (!globalHotkeys.Handle(ch)) {
                     if (ch >= KEY_F(0) && ch <= KEY_F(12)) {
-                        if (ch == KEY_F(1)) {
+                        if (ch == KEY_F(8)) {
                             changeLayout(state, consoleLayout);
                         }
-                        else if (ch == KEY_F(2)) {
+                        else if (ch == KEY_F(1)) {
                             changeLayout(state, libraryLayout);
                         }
                     }
@@ -219,6 +228,7 @@ int main(int argc, char* argv[])
                 }
             }
 
+            ensureFocusIsValid(state);
             Window::WriteToScreen();
             WindowMessageQueue::Instance().Dispatch();
         }

@@ -132,6 +132,7 @@
     <ClCompile Include="app\window\TransportWindow.cpp" />
     <ClCompile Include="cursespp\Colors.cpp" />
     <ClCompile Include="cursespp\LayoutBase.cpp" />
+    <ClCompile Include="cursespp\LayoutStack.cpp" />
     <ClCompile Include="cursespp\ListWindow.cpp" />
     <ClCompile Include="cursespp\MultiLineEntry.cpp" />
     <ClCompile Include="cursespp\Screen.cpp" />
@@ -140,6 +141,7 @@
     <ClCompile Include="cursespp\SimpleScrollAdapter.cpp" />
     <ClCompile Include="cursespp\SingleLineEntry.cpp" />
     <ClCompile Include="cursespp\Window.cpp" />
+    <ClCompile Include="cursespp\WindowLayout.cpp" />
     <ClCompile Include="cursespp\WindowMessage.cpp" />
     <ClCompile Include="cursespp\WindowMessageQueue.cpp" />
     <ClCompile Include="Main.cpp" />
@@ -170,6 +172,9 @@
     <ClInclude Include="cursespp\IInput.h" />
     <ClInclude Include="cursespp\IKeyHandler.h" />
     <ClInclude Include="cursespp\ILayout.h" />
+    <ClInclude Include="cursespp\ILayoutStack.h" />
+    <ClInclude Include="cursespp\IOrderable.h" />
+    <ClInclude Include="cursespp\LayoutStack.h" />
     <ClInclude Include="cursespp\IScrollable.h" />
     <ClInclude Include="cursespp\IScrollAdapter.h" />
     <ClInclude Include="cursespp\IWindow.h" />
@@ -184,6 +189,7 @@
     <ClInclude Include="cursespp\SimpleScrollAdapter.h" />
     <ClInclude Include="cursespp\SingleLineEntry.h" />
     <ClInclude Include="cursespp\Window.h" />
+    <ClInclude Include="cursespp\WindowLayout.h" />
     <ClInclude Include="cursespp\WindowMessage.h" />
     <ClInclude Include="cursespp\WindowMessageQueue.h" />
     <ClInclude Include="stdafx.h" />

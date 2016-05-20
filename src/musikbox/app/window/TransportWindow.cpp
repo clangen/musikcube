@@ -113,11 +113,15 @@ void TransportWindow::Update() {
 
     wprintw(c, "\n");
     
+    int volumePercent = (size_t) round(this->transport->Volume() * 100.0f) - 1;
+    int thumbOffset = min(9, (volumePercent * 10) / 100);
+
     std::string volume = "vol ";
-    int v = (int) max(0, round(transport->Volume() * 10.0f) - 1);
+
     for (int i = 0; i < 10; i++) {
-        volume += (i == v) ? "■" : "─";
+        volume += (i == thumbOffset) ? "■" : "─";
     }
+
     volume += "  ";
 
     wprintw(c, volume.c_str());
@@ -139,7 +143,7 @@ void TransportWindow::Update() {
         totalTime.size() -
         2; /* padding */
 
-    size_t thumbOffset = 0;
+    thumbOffset = 0;
 
     if (secondsTotal) {
         size_t progress = (secondsCurrent * 100) / secondsTotal;
