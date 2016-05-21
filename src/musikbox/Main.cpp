@@ -174,7 +174,7 @@ int main(int argc, char* argv[])
         using musik::core::LibraryFactory;
         LibraryPtr library = LibraryFactory::Libraries().at(0);
 
-        GlobalHotkeys globalHotkeys(tp);
+        GlobalHotkeys globalHotkeys(tp, library);
 
         ILayoutPtr libraryLayout(new LibraryLayout(tp, library));
         ILayoutPtr consoleLayout(new MainLayout(tp, library));
@@ -207,16 +207,14 @@ int main(int argc, char* argv[])
                 else if (kn == "^D") { /* ctrl+d quits */
                     quit = true;
                 }
+                else if (ch == KEY_F(1)) {
+                    changeLayout(state, libraryLayout);
+                }
+                else if (ch == KEY_F(8)) {
+                    changeLayout(state, consoleLayout);
+                }
                 else if (!globalHotkeys.Handle(ch)) {
-                    if (ch >= KEY_F(0) && ch <= KEY_F(12)) {
-                        if (ch == KEY_F(8)) {
-                            changeLayout(state, consoleLayout);
-                        }
-                        else if (ch == KEY_F(1)) {
-                            changeLayout(state, libraryLayout);
-                        }
-                    }
-                    else if (state.input) {
+                    if (state.input) {
                         state.input->WriteChar(ch);
                     }
                     /* otherwise, send the unhandled keypress directly to the

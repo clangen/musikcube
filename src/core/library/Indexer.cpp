@@ -356,6 +356,8 @@ void Indexer::ThreadLoop() {
     bool firstTime = true; /* through the loop */
 
     while (!this->Exited()) {
+        this->restart = false;
+
         Preferences prefs("Indexer");
 
         if(!firstTime || (firstTime && prefs.GetBool("SyncOnStartup", true))) { /* first time through the loop skips this */
@@ -444,27 +446,19 @@ void Indexer::SyncDelete() {
 void Indexer::SyncCleanup() {
     // Remove old artists
     this->dbConnection.Execute("DELETE FROM track_artists WHERE track_id NOT IN (SELECT id FROM tracks)");
-    boost::thread::yield();
-    this->dbConnection.Execute("DELETE FROM artists WHERE id NOT IN (SELECT DISTINCT(visual_artist_id) FROM tracks) AND id NOT IN (SELECT DISTINCT(artist_id) FROM track_artists)");
-    boost::thread::yield();
+    this->dbConnection.Execute("DELETE FROM artists WHERE id NOT IN (SELECT DISTINCT(visual_artist_id) FROM tracks) AND id NOT IN (SELECT DISTINCT(album_artist_id) FROM tracks) AND id NOT IN (SELECT DISTINCT(artist_id) FROM track_artists)");
 
     // Remove old genres
     this->dbConnection.Execute("DELETE FROM track_genres WHERE track_id NOT IN (SELECT id FROM tracks)");
-    boost::thread::yield();
     this->dbConnection.Execute("DELETE FROM genres WHERE id NOT IN (SELECT DISTINCT(visual_genre_id) FROM tracks) AND id NOT IN (SELECT DISTINCT(genre_id) FROM track_genres)");
-    boost::thread::yield();
 
     // Remove old albums
     this->dbConnection.Execute("DELETE FROM albums WHERE id NOT IN (SELECT DISTINCT(album_id) FROM tracks)");
-    boost::thread::yield();
 
     // Remove metadata
     this->dbConnection.Execute("DELETE FROM track_meta WHERE track_id NOT IN (SELECT id FROM tracks)");
-    boost::thread::yield();
     this->dbConnection.Execute("DELETE FROM meta_values WHERE id NOT IN (SELECT DISTINCT(meta_value_id) FROM track_meta)");
-    boost::thread::yield();
     this->dbConnection.Execute("DELETE FROM meta_keys WHERE id NOT IN (SELECT DISTINCT(meta_key_id) FROM meta_values)");
-    boost::thread::yield();
 
     // ANALYZE
     this->dbConnection.Execute("ANALYZE");

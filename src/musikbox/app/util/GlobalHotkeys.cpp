@@ -1,9 +1,11 @@
 #include "stdafx.h"
 #include "GlobalHotkeys.h"
 
-GlobalHotkeys::GlobalHotkeys(Transport& transport) 
-: transport(transport) {
+using musik::core::LibraryPtr;
 
+GlobalHotkeys::GlobalHotkeys(Transport& transport, LibraryPtr library) 
+: transport(transport) {
+    this->library = library;
 }
 
 GlobalHotkeys::~GlobalHotkeys() {
@@ -29,6 +31,9 @@ bool GlobalHotkeys::Handle(int64 ch) {
     else if (kn == "ALT_J") {
         this->transport.SetVolume(this->transport.Volume() - 0.05);
         return true;
+    }
+    else if (ch == KEY_F(5)) {
+        library->Indexer()->Synchronize(true);
     }
 
     return false;

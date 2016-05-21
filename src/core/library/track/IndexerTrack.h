@@ -89,17 +89,24 @@ namespace musik { namespace core {
 
             MetadataWithThumbnail *internalMetadata;
 
-            DBID ExtractThumbnail(
+            DBID SaveThumbnail(
                 db::Connection& connection, 
                 const std::string& libraryDirectory);
 
-            DBID ExtractAlbum(db::Connection& connection);
+            DBID SaveAlbum(db::Connection& connection);
             
-            DBID ExtractGenre(db::Connection& connection);
+            DBID SaveGenre(db::Connection& connection);
 
-            DBID ExtractArtist(db::Connection& connection);
+            DBID SaveArtist(db::Connection& connection);
 
-            DBID ExtractAndSaveMultiValueField(
+            DBID SaveAlbumArtist(db::Connection& connection);
+
+            DBID SaveSingleValueField(
+                db::Connection& connection,
+                const std::string& trackMetadataKeyName,
+                const std::string& fieldTableName);
+
+            DBID SaveMultiValueField(
                 db::Connection& connection,
                 const std::string& tracksTableColumnName,
                 const std::string& fieldTableName,

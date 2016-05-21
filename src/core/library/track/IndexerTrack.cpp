@@ -237,7 +237,7 @@ static void removeKnownFields(Track::MetadataMap& metadata) {
     metadata.erase("album");
 }
 
-DBID IndexerTrack::ExtractThumbnail(db::Connection& connection, const std::string& libraryDirectory) {
+DBID IndexerTrack::SaveThumbnail(db::Connection& connection, const std::string& libraryDirectory) {
     DBID thumbnailId = 0;
     
     if (this->internalMetadata->thumbnailData) {
@@ -351,29 +351,40 @@ void IndexerTrack::ProcessNonStandardMetadata(db::Connection& connection) {
     }
 }
 
-DBID IndexerTrack::ExtractAlbum(db::Connection& dbConnection) {
-    DBID albumId = 0;
-    db::CachedStatement stmt("SELECT id FROM albums WHERE name=?", dbConnection);
-    std::string album = this->GetValue("album");
-    
-    stmt.BindText(0, album);
-    
+DBID IndexerTrack::SaveSingleValueField(
+    db::Connection& dbConnection,
+    const std::string& trackMetadataKeyName,
+    const std::string& fieldTableName)
+{
+    DBID id = 0;
+
+    std::string selectQuery = boost::str(boost::format(
+        "SELECT id FROM %1% WHERE name=?") % fieldTableName);
+
+    db::CachedStatement stmt(selectQuery.c_str(), dbConnection);
+    std::string value = this->GetValue(trackMetadataKeyName.c_str());
+
+    stmt.BindText(0, value);
+
     if (stmt.Step() == db::Row) {
-        albumId = stmt.ColumnInt(0);
+        id = stmt.ColumnInt(0);
     }
     else {
-        db::Statement insertAlbum("INSERT INTO albums (name) VALUES (?)", dbConnection);
-        insertAlbum.BindText(0,album);
-    
-        if (insertAlbum.Step() == db::Done) {
-            albumId = dbConnection.LastInsertedId();
+        std::string insertStatement = boost::str(boost::format(
+            "INSERT INTO %1% (name) VALUES (?)") % fieldTableName);
+
+        db::Statement insertValue(insertStatement.c_str(), dbConnection);
+        insertValue.BindText(0, value);
+
+        if (insertValue.Step() == db::Done) {
+            id = dbConnection.LastInsertedId();
         }
     }
 
-    return albumId;
+    return id;
 }
 
-DBID IndexerTrack::ExtractAndSaveMultiValueField(
+DBID IndexerTrack::SaveMultiValueField(
     db::Connection& connection,
     const std::string& tracksTableColumnName,
     const std::string& fieldTableName,
@@ -386,12 +397,12 @@ DBID IndexerTrack::ExtractAndSaveMultiValueField(
 
     std::set<std::string> processed; /* for deduping */
 
-    MetadataIteratorRange genres = this->GetValues(tracksTableColumnName.c_str());
-    while (genres.first != genres.second) {
-        if (processed.find(genres.first->second) == processed.end()) {
-            processed.insert(genres.first->second);
+    MetadataIteratorRange values = this->GetValues(tracksTableColumnName.c_str());
+    while (values.first != values.second) {
+        if (processed.find(values.first->second) == processed.end()) {
+            processed.insert(values.first->second);
 
-            std::string value = genres.first->second;
+            std::string value = values.first->second;
 
             fieldId = SaveNormalizedFieldValue(
                 connection,
@@ -410,7 +421,7 @@ DBID IndexerTrack::ExtractAndSaveMultiValueField(
             ++count;
         }
 
-        ++genres.first;
+        ++values.first;
     }
 
     if (count > 1 || fieldId == 0) {
@@ -424,8 +435,8 @@ DBID IndexerTrack::ExtractAndSaveMultiValueField(
     return fieldId;
 }
 
-DBID IndexerTrack::ExtractGenre(db::Connection& dbConnection) {
-    return this->ExtractAndSaveMultiValueField(
+DBID IndexerTrack::SaveGenre(db::Connection& dbConnection) {
+    return this->SaveMultiValueField(
         dbConnection,
         GENRE_TRACK_COLUMN_NAME,
         GENRES_TABLE_NAME,
@@ -433,8 +444,8 @@ DBID IndexerTrack::ExtractGenre(db::Connection& dbConnection) {
         GENRE_TRACK_FOREIGN_KEY);
 }
 
-DBID IndexerTrack::ExtractArtist(db::Connection& dbConnection) {
-    return this->ExtractAndSaveMultiValueField(
+DBID IndexerTrack::SaveArtist(db::Connection& dbConnection) {
+    return this->SaveMultiValueField(
         dbConnection,
         ARTIST_TRACK_COLUMN_NAME,
         ARTISTS_TABLE_NAME,
@@ -444,6 +455,10 @@ DBID IndexerTrack::ExtractArtist(db::Connection& dbConnection) {
 
 bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirectory) {
     db::ScopedTransaction transaction(dbConnection);
+
+    if (this->GetValue("album_artist") == "") {
+        this->SetValue("album_artist", this->GetValue("artist").c_str());
+    }
 
     /* remove existing relations -- we're going to update them with fresh data */
 
@@ -457,24 +472,26 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
 
     this->id = writeToTracksTable(dbConnection, *this);
 
-    DBID albumId = this->ExtractAlbum(dbConnection);
-    DBID genreId = this->ExtractGenre(dbConnection);
-    DBID artistId = this->ExtractArtist(dbConnection);
-    DBID thumbnailId = this->ExtractThumbnail(dbConnection, libraryDirectory);
+    DBID albumId = this->SaveSingleValueField(dbConnection, "album", "albums");
+    DBID genreId = this->SaveGenre(dbConnection);
+    DBID artistId = this->SaveArtist(dbConnection);
+    DBID albumArtistId = this->SaveSingleValueField(dbConnection, "album_artist", "artists");
+    DBID thumbnailId = this->SaveThumbnail(dbConnection, libraryDirectory);
 
     /* update all of the track foreign keys */
 
     {
         db::CachedStatement stmt(
             "UPDATE tracks " \
-            "SET album_id=?, visual_genre_id=?, visual_artist_id=?, thumbnail_id=? " \
+            "SET album_id=?, visual_genre_id=?, visual_artist_id=?, album_artist_id=?, thumbnail_id=? " \
             "WHERE id=?", dbConnection);
 
         stmt.BindInt(0, albumId);
         stmt.BindInt(1, genreId);
         stmt.BindInt(2, artistId);
-        stmt.BindInt(3, thumbnailId);
-        stmt.BindInt(4, this->id);
+        stmt.BindInt(3, albumArtistId);
+        stmt.BindInt(4, thumbnailId);
+        stmt.BindInt(5, this->id);
         stmt.Step();
     }
 

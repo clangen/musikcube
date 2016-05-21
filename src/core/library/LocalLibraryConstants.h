@@ -39,6 +39,7 @@
 namespace musik { namespace core { namespace library { namespace constants {
 
     namespace Track {
+        /* DB fields */
         static const char* TABLE_NAME = "tracks";
         static const char* ID = "id";
         static const char* TRACK_NUM = "track";
@@ -46,15 +47,22 @@ namespace musik { namespace core { namespace library { namespace constants {
         static const char* DURATION = "duration";
         static const char* FILESIZE = "filesize";
         static const char* YEAR = "year";
-        static const char* GENRE_ID = "visual_genre_id";
-        static const char* ARTIST_ID = "visual_artist_id";
-        static const char* ALBUM_ID = "album_id";
-        static const char* PATH_ID = "path_id";
         static const char* TITLE = "title";
         static const char* FILENAME = "filename";
         static const char* FILETIME = "filetime";
         static const char* THUMBNAIL_ID = "thumbnail_id";
-        static const char* PATH = "path";
+        static const char* GENRE_ID = "visual_genre_id";
+        static const char* ARTIST_ID = "visual_artist_id";
+        static const char* ALBUM_ARTIST_ID = "album_artist_id";
+        static const char* ALBUM_ID = "album_id";
+        static const char* PATH_ID = "path_id";
+
+        /* used in Track instances where foreign key IDs have been
+        replaced with actual values... */
+        static const char* GENRE = "genre";
+        static const char* ARTIST = "artist";
+        static const char* ALBUM = "album";
+        static const char* ALBUM_ARTIST = "album_artist";
     }
 
     namespace Genres {

@@ -129,8 +129,7 @@ bool TaglibMetadataReader::GetGenericTag(const char* uri, musik::core::IMetadata
     if (!file.isNull()) {
         TagLib::Tag *tag = file.tag();
 
-        if(tag) {
-
+        if (tag) {
             if (!tag->title().isEmpty()) {
                 this->SetTagValue("title", tag->title(), target);
             }
@@ -272,7 +271,7 @@ bool TaglibMetadataReader::GetID3v2Tag(const char* uri, musik::core::IMetadataWr
         /* artists */
 
         this->SetSlashSeparatedValues("artist" ,allTags["TPE1"], track);
-        this->SetSlashSeparatedValues("artist", allTags["TPE2"], track);
+        this->SetSlashSeparatedValues("album_artist", allTags["TPE2"], track);
         this->SetSlashSeparatedValues("conductor", allTags["TPE3"], track);
         this->SetSlashSeparatedValues("interpreted", allTags["TPE4"], track);
 

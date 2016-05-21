@@ -281,6 +281,7 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
         "year INTEGER DEFAULT 0,"
         "visual_genre_id INTEGER DEFAULT 0,"
         "visual_artist_id INTEGER DEFAULT 0,"
+        "album_artist_id INTEGER DEFAULT 0,"
         "path_id INTEGER,"
         "album_id INTEGER DEFAULT 0,"
         "title TEXT default '',"
