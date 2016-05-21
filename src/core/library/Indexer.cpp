@@ -410,8 +410,7 @@ void Indexer::SyncDelete() {
 
     db::Statement allTracks(
         "SELECT t.id, t.filename "
-        "FROM tracks t "
-        "WHERE p.id=?", this->dbConnection);
+        "FROM tracks t ", this->dbConnection);
 
     while(allTracks.Step() == db::Row && !this->Exited() && !this->Restarted()) {
         bool remove = false;
