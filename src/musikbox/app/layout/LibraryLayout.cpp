@@ -59,15 +59,6 @@ void LibraryLayout::InitializeWindows() {
 void LibraryLayout::Show() {
     LayoutBase::Show();
     this->categoryList->Requery();
-
-    //if (GetOverlay()) {
-    //    this->CloseOverlay();
-    //}
-
-    //std::shared_ptr<IWindow> overlay(new OutputWindow(NULL));
-    //overlay->SetPosition(2, 2);
-    //overlay->SetSize(20, 20);
-    //this->ShowOverlay(overlay);
 }
 
 void LibraryLayout::OnCategoryViewSelectionChanged(
@@ -93,6 +84,10 @@ bool LibraryLayout::KeyPress(int64 ch) {
     }
     else if (kn == "ALT_3") {
         this->categoryList->SetFieldName(Track::GENRE_ID);
+        return true;
+    }
+    else if (ch == KEY_F(5)) {
+        this->categoryList->Requery();
         return true;
     }
 

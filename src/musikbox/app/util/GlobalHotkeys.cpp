@@ -32,7 +32,7 @@ bool GlobalHotkeys::Handle(int64 ch) {
         this->transport.SetVolume(this->transport.Volume() - 0.05);
         return true;
     }
-    else if (ch == KEY_F(5)) {
+    else if (kn == "^R") {
         library->Indexer()->Synchronize(true);
     }
 
