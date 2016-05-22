@@ -12,11 +12,11 @@ class MessageQueue {
 
         void Post(IMessagePtr message, int64 delayMs = 0);
         void Remove(IMessageTarget *target, int type = -1);
-
         void Dispatch();
 
     private:
         static MessageQueue instance;
+
 
         struct EnqueuedMessage {
             IMessagePtr message;

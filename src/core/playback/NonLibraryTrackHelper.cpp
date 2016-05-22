@@ -108,8 +108,8 @@ void NonLibraryTrackHelper::ThreadLoop() {
 
         if (track) {
             /* we only support local files. other URIs are ignored */
-            if (musik::core::io::DataStreamFactory::IsLocalFileStream(track->URL().c_str())) {
-                std::string url = track->URL();
+            if (musik::core::io::DataStreamFactory::IsLocalFileStream(track->URI().c_str())) {
+                std::string url = track->URI();
                 
                 std::string::size_type lastDot = url.find_last_of(".");
                 if (lastDot != std::string::npos) {

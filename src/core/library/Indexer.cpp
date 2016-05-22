@@ -624,7 +624,7 @@ void Indexer::RunAnalyzers() {
                 audio::StreamPtr stream = audio::Stream::Create(audio::Stream::NoDSP);
 
                 if (stream) {
-                    if (stream->OpenStream(track.URL())) {
+                    if (stream->OpenStream(track.URI())) {
 
                         /* decode the stream quickly, passing to all analyzers*/
 

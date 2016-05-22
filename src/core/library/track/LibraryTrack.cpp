@@ -94,7 +94,7 @@ void LibraryTrack::SetThumbnail(const char *data, long size) {
     memcpy(this->data.thumbnailData, data, size);
 }
 
-std::string LibraryTrack::URL() {
+std::string LibraryTrack::URI() {
     return this->GetValue("path");
 }
 

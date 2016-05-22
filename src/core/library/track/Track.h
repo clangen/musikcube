@@ -66,7 +66,7 @@ namespace musik { namespace core {
             virtual int LibraryId();
 
             virtual std::string GetValue(const char* metakey) = 0;
-            virtual std::string URL() = 0;
+            virtual std::string URI() = 0;
 
             virtual MetadataIteratorRange GetValues(const char* metakey) = 0;
             virtual MetadataIteratorRange GetAllValues() = 0;
