@@ -90,6 +90,9 @@
     <ClCompile Include="cursespp\WindowLayout.cpp">
       <Filter>cursespp</Filter>
     </ClCompile>
+    <ClCompile Include="app\playback\TrackListQueue.cpp">
+      <Filter>app\playback</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -215,6 +218,9 @@
     </ClInclude>
     <ClInclude Include="cursespp\ILayoutStack.h">
       <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="app\playback\TrackListQueue.h">
+      <Filter>app\playback</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

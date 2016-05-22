@@ -7,14 +7,32 @@ namespace musik {
     namespace box {
         namespace text {
             void Truncate(std::string& str, size_t len) {
-                if (str.size() > len) {
-                    str = str.substr(0, len);
+                /* not a simple substr anymore, gotta deal with multi-byte
+                characters... */
+                if (u8len(str) > len) {
+                    std::string::iterator it = str.begin();
+                    std::string::iterator end = str.end();
+
+                    size_t c = 0;
+                    while (c < len && it != str.end()) {
+                        try {
+                            utf8::next(it++, end);
+                        }
+                        catch (...) {
+                            it++; /* invalid encoding, just treat as a single char */
+                        }
+
+                        ++c;
+                    }
+
+                    str = std::string(str.begin(), it);
                 }
             }
 
             void Ellipsize(std::string& str, size_t len) {
-                if (str.size() > len) {
-                    str = str.substr(0, len - 2) + "..";
+                if (u8len(str) > len) {
+                    Truncate(str, len - 2);
+                    str += "..";
                 }
             }
 

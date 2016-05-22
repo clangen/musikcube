@@ -92,10 +92,17 @@ size_t TrackListView::Adapter::GetEntryCount() {
     return parent.metadata ? parent.metadata->size() : 0;
 }
 
-#define TRACK_NUM_LENGTH 3
-#define ARTIST_LENGTH 14
-#define ALBUM_LENGTH 14
-#define DURATION_LENGTH 5 /* 00:00 */
+#define TRACK_COL_WIDTH 3
+#define ARTIST_COL_WIDTH 14
+#define ALBUM_COL_WIDTH 14
+#define DURATION_COL_WIDTH 5 /* 00:00 */
+
+/* so this part is a bit tricky... we draw multiple columns, but we use
+standard std::setw() stuff, which is not aware of multi-byte characters.
+so we have to manually adjust the widths (i.e. we can't just use simple
+constants) */
+#define DISPLAY_WIDTH(chars, str) \
+    chars + (str.size() - u8len(str))
 
 IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(size_t index) {
     int64 attrs = (index == parent.GetSelectedIndex()) ? COLOR_PAIR(BOX_COLOR_BLACK_ON_GREEN) : -1;
@@ -107,26 +114,34 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(size_t index) {
     std::string title = track->GetValue(Track::TITLE);
     std::string duration = track->GetValue(Track::DURATION);
 
-    size_t titleCount =
+
+    int column0Width = DISPLAY_WIDTH(TRACK_COL_WIDTH, trackNum);
+    int column2Width = DISPLAY_WIDTH(DURATION_COL_WIDTH, duration);
+    int column3Width = DISPLAY_WIDTH(ARTIST_COL_WIDTH, artist);
+    int column4Width = DISPLAY_WIDTH(ALBUM_COL_WIDTH, album);
+
+    size_t column1CharacterCount =
         this->GetWidth() -
-        TRACK_NUM_LENGTH -
-        ARTIST_LENGTH -
-        ALBUM_LENGTH -
-        DURATION_LENGTH -
+        column0Width -
+        column2Width -
+        column3Width -
+        column4Width -
         (3 * 4); /* 3 = spacing */
 
-    text::Ellipsize(artist, ARTIST_LENGTH);
-    text::Ellipsize(album, ALBUM_LENGTH);
-    text::Ellipsize(title, titleCount);
+    int column1Width = DISPLAY_WIDTH(column1CharacterCount, title);
+
+    text::Ellipsize(artist, ARTIST_COL_WIDTH);
+    text::Ellipsize(album, ALBUM_COL_WIDTH);
+    text::Ellipsize(title, column1CharacterCount);
     duration = text::Duration(duration);
 
     std::string text = boost::str(
         boost::format("%s   %s   %s   %s   %s") 
-            % group(setw(TRACK_NUM_LENGTH), setfill(' '), trackNum)
-            % group(setw(titleCount), setiosflags(std::ios::left), setfill(' '), title)
-            % group(setw(DURATION_LENGTH), setiosflags(std::ios::right), setfill(' '), duration)
-            % group(setw(ARTIST_LENGTH), setiosflags(std::ios::left), setfill(' '), artist)
-            % group(setw(ALBUM_LENGTH), setiosflags(std::ios::left), setfill(' '), album));
+            % group(setw(column0Width), setfill(' '), trackNum)
+            % group(setw(column1Width), setiosflags(std::ios::left), setfill(' '), title)
+            % group(setw(column2Width), setiosflags(std::ios::right), setfill(' '), duration)
+            % group(setw(column3Width), setiosflags(std::ios::left), setfill(' '), artist)
+            % group(setw(column4Width), setiosflags(std::ios::left), setfill(' '), album));
 
     IScrollAdapter::EntryPtr entry(new SingleLineEntry(text));
 

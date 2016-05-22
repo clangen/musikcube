@@ -117,6 +117,7 @@
   <ItemGroup>
     <ClCompile Include="app\layout\LibraryLayout.cpp" />
     <ClCompile Include="app\layout\MainLayout.cpp" />
+    <ClCompile Include="app\playback\TrackListQueue.cpp" />
     <ClCompile Include="app\query\CategoryListViewQuery.cpp" />
     <ClCompile Include="app\query\SingleTrackQuery.cpp" />
     <ClCompile Include="app\query\TrackListViewQuery.cpp" />
@@ -153,6 +154,7 @@
   <ItemGroup>
     <ClInclude Include="app\layout\LibraryLayout.h" />
     <ClInclude Include="app\layout\MainLayout.h" />
+    <ClInclude Include="app\playback\TrackListQueue.h" />
     <ClInclude Include="app\query\CategoryListViewQuery.h" />
     <ClInclude Include="app\query\SingleTrackQuery.h" />
     <ClInclude Include="app\query\TrackListViewQuery.h" />

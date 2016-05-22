@@ -81,7 +81,12 @@ bool LocalFileStream::Open(const char *filename, unsigned int options) {
 
         this->filesize = (long)boost::filesystem::file_size(file);
         this->extension = file.extension().string();
+#ifdef WIN32
+        std::wstring u16fn = u8to16(fn);
+        this->file = _wfopen(u16fn.c_str(), L"rb");
+#else
         this->file = fopen(filename, "rb");
+#endif
         this->fd = new boost::iostreams::file_descriptor(file);
         this->fileStream = new boost::iostreams::stream<boost::iostreams::file_descriptor>(*this->fd);
         this->fileStream->exceptions(std::ios_base::eofbit | std::ios_base::failbit | std::ios_base::badbit);
@@ -126,7 +131,7 @@ PositionType LocalFileStream::Read(void* buffer,PositionType readBytes) {
         }
     }
 
-    return this->fileStream->gcount();
+    return (PositionType) this->fileStream->gcount();
 }
 
 bool LocalFileStream::SetPosition(PositionType position) {
@@ -142,7 +147,7 @@ bool LocalFileStream::SetPosition(PositionType position) {
 }
 
 PositionType LocalFileStream::Position() {
-    return this->fileStream->tellg();
+    return (PositionType) this->fileStream->tellg();
 }
 
 bool LocalFileStream::Eof() {
