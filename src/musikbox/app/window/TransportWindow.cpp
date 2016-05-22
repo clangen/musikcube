@@ -5,7 +5,7 @@
 
 #include <cursespp/Screen.h>
 #include <cursespp/Colors.h>
-#include <cursespp/WindowMessage.h>
+#include <cursespp/Message.h>
 
 #include <app/util/Text.h>
 
@@ -56,7 +56,7 @@ void TransportWindow::Show() {
     this->Update();
 }
 
-void TransportWindow::ProcessMessage(IWindowMessage &message) {
+void TransportWindow::ProcessMessage(IMessage &message) {
     int type = message.MessageType();
     
     if (type == REFRESH_TRANSPORT_READOUT) {

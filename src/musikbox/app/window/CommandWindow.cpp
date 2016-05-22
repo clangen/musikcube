@@ -4,8 +4,8 @@
 
 #include <cursespp/Screen.h>
 #include <cursespp/Colors.h>
-#include <cursespp/WindowMessageQueue.h>
-#include <cursespp/WindowMessage.h>
+#include <cursespp/MessageQueue.h>
+#include <cursespp/Message.h>
 
 #include "CommandWindow.h"
 

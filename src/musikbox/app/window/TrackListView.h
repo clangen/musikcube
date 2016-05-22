@@ -20,7 +20,7 @@ class TrackListView : public ListWindow, public sigslot::has_slots<> {
         TrackListView(Transport& transport, LibraryPtr library, IWindow *parent = NULL);
         ~TrackListView();
 
-        virtual void ProcessMessage(IWindowMessage &message);
+        virtual void ProcessMessage(IMessage &message);
         virtual bool KeyPress(int64 ch);
 
         void Requery(const std::string& column, DBID id);

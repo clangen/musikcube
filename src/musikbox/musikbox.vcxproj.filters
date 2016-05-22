@@ -27,12 +27,6 @@
     <ClCompile Include="cursespp\Window.cpp">
       <Filter>cursespp</Filter>
     </ClCompile>
-    <ClCompile Include="cursespp\WindowMessage.cpp">
-      <Filter>cursespp</Filter>
-    </ClCompile>
-    <ClCompile Include="cursespp\WindowMessageQueue.cpp">
-      <Filter>cursespp</Filter>
-    </ClCompile>
     <ClCompile Include="cursespp\Colors.cpp">
       <Filter>cursespp</Filter>
     </ClCompile>
@@ -93,6 +87,12 @@
     <ClCompile Include="app\service\PlaybackService.cpp">
       <Filter>app\service</Filter>
     </ClCompile>
+    <ClCompile Include="cursespp\Message.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\MessageQueue.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -118,12 +118,6 @@
       <Filter>cursespp</Filter>
     </ClInclude>
     <ClInclude Include="cursespp\Window.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\WindowMessage.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\WindowMessageQueue.h">
       <Filter>cursespp</Filter>
     </ClInclude>
     <ClInclude Include="cursespp\Colors.h">
@@ -154,9 +148,6 @@
       <Filter>cursespp</Filter>
     </ClInclude>
     <ClInclude Include="cursespp\IWindowGroup.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\IWindowMessage.h">
       <Filter>cursespp</Filter>
     </ClInclude>
     <ClInclude Include="cursespp\LayoutBase.h">
@@ -221,6 +212,18 @@
     </ClInclude>
     <ClInclude Include="app\service\PlaybackService.h">
       <Filter>app\service</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\IMessage.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\Message.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\MessageQueue.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\IMessageTarget.h">
+      <Filter>cursespp</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

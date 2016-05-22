@@ -36,7 +36,7 @@
 #include <cursespp/Colors.h>
 #include <cursespp/IInput.h>
 #include <cursespp/IKeyHandler.h>
-#include <cursespp/WindowMessageQueue.h>
+#include <cursespp/MessageQueue.h>
 #include <cursespp/LayoutStack.h>
 #include <cursespp/WindowLayout.h>
 
@@ -228,7 +228,7 @@ int main(int argc, char* argv[])
 
             ensureFocusIsValid(state);
             Window::WriteToScreen();
-            WindowMessageQueue::Instance().Dispatch();
+            MessageQueue::Instance().Dispatch();
         }
     }
 

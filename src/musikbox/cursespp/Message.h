@@ -1,29 +1,29 @@
 #pragma once
 
-#include "IWindowMessage.h"
+#include "IMessage.h"
 
-class WindowMessage : public IWindowMessage {
+class Message : public IMessage {
     private:
-        WindowMessage(
-            IWindow* target, 
+        Message(
+            IMessageTarget* target,
             int messageType,
             int64 data1, 
             int64 data2);
         
     public:
-        static IWindowMessagePtr Create(
-            IWindow* target,
+        static IMessagePtr Create(
+            IMessageTarget* target,
             int messageType,
             int64 data1,
             int64 data2);
         
-        virtual IWindow* Target();
+        virtual IMessageTarget* Target();
         virtual int MessageType();
         virtual int64 UserData1();
         virtual int64 UserData2();
 
     private:
-        IWindow* target;
+        IMessageTarget* target;
         int messageType;
         int64 data1, data2;
 };

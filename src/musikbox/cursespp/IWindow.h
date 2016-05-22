@@ -3,10 +3,11 @@
 #include "curses_config.h"
 #include "IDisplayable.h"
 #include "IOrderable.h"
+#include "IMessageTarget.h"
 
-class IWindowMessage;
+class IMessage;
 
-class IWindow : public IOrderable, public IDisplayable {
+class IWindow : public IOrderable, public IDisplayable, public IMessageTarget {
     public:
         virtual ~IWindow() = 0 { }
         virtual void Repaint() = 0;
@@ -28,8 +29,6 @@ class IWindow : public IOrderable, public IDisplayable {
         virtual int GetId() const = 0;
         virtual int GetFocusOrder() = 0;
         virtual void SetFocusOrder(int order = -1) = 0;
-        virtual bool IsAcceptingMessages() = 0;
-        virtual void ProcessMessage(IWindowMessage &message) = 0;
         virtual WINDOW* GetFrame() const = 0;
         virtual WINDOW* GetContent() const = 0;
 };

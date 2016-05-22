@@ -22,7 +22,7 @@ class MainLayout : public LayoutBase {
 
         virtual void Layout();
         virtual void Show();
-        virtual void ProcessMessage(IWindowMessage &message);
+        virtual void ProcessMessage(IMessage &message);
 
     private:
         void UpdateWindows();

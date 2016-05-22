@@ -4,7 +4,7 @@
 
 #include <cursespp/Colors.h>
 #include <cursespp/SingleLineEntry.h>
-#include <cursespp/IWindowMessage.h>
+#include <cursespp/IMessage.h>
 
 #include "TrackListView.h"
 
@@ -69,7 +69,7 @@ bool TrackListView::KeyPress(int64 ch) {
     return ListWindow::KeyPress(ch);
 }
 
-void TrackListView::ProcessMessage(IWindowMessage &message) {
+void TrackListView::ProcessMessage(IMessage &message) {
     if (message.MessageType() == WINDOW_MESSAGE_QUERY_COMPLETED) {
         if (this->query && this->query->GetStatus() == IQuery::Finished) {
             this->metadata = this->query->GetResult();

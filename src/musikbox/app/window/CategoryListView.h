@@ -20,7 +20,7 @@ class CategoryListView : public ListWindow, public sigslot::has_slots<> {
 
         void Requery();
 
-        virtual void ProcessMessage(IWindowMessage &message);
+        virtual void ProcessMessage(IMessage &message);
 
         DBID GetSelectedId();
         std::string GetFieldName();

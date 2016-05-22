@@ -1,17 +1,17 @@
 #include <stdafx.h>
-#include "WindowMessage.h"
+#include "Message.h"
 
-IWindowMessagePtr WindowMessage::Create(
-    IWindow* target,
+IMessagePtr Message::Create(
+    IMessageTarget* target,
     int messageType,
     int64 data1,
     int64 data2)
 {
-    return IWindowMessagePtr(new WindowMessage(target, messageType, data1, data2));
+    return IMessagePtr(new Message(target, messageType, data1, data2));
 }
 
-WindowMessage::WindowMessage(
-    IWindow* target,
+Message::Message(
+    IMessageTarget* target,
     int messageType,
     int64 data1,
     int64 data2)
@@ -22,18 +22,18 @@ WindowMessage::WindowMessage(
     this->data2 = data2;
 }
 
-IWindow* WindowMessage::Target() {
+IMessageTarget* Message::Target() {
     return this->target;
 }
 
-int WindowMessage::MessageType() {
+int Message::MessageType() {
     return this->messageType;
 }
 
-int64 WindowMessage::UserData1() {
+int64 Message::UserData1() {
     return this->data1;
 }
 
-int64 WindowMessage::UserData2() {
+int64 Message::UserData2() {
     return this->data2;
 }

@@ -143,8 +143,8 @@
     <ClCompile Include="cursespp\SingleLineEntry.cpp" />
     <ClCompile Include="cursespp\Window.cpp" />
     <ClCompile Include="cursespp\WindowLayout.cpp" />
-    <ClCompile Include="cursespp\WindowMessage.cpp" />
-    <ClCompile Include="cursespp\WindowMessageQueue.cpp" />
+    <ClCompile Include="cursespp\Message.cpp" />
+    <ClCompile Include="cursespp\MessageQueue.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -175,13 +175,14 @@
     <ClInclude Include="cursespp\IKeyHandler.h" />
     <ClInclude Include="cursespp\ILayout.h" />
     <ClInclude Include="cursespp\ILayoutStack.h" />
+    <ClInclude Include="cursespp\IMessageTarget.h" />
     <ClInclude Include="cursespp\IOrderable.h" />
     <ClInclude Include="cursespp\LayoutStack.h" />
     <ClInclude Include="cursespp\IScrollable.h" />
     <ClInclude Include="cursespp\IScrollAdapter.h" />
     <ClInclude Include="cursespp\IWindow.h" />
     <ClInclude Include="cursespp\IWindowGroup.h" />
-    <ClInclude Include="cursespp\IWindowMessage.h" />
+    <ClInclude Include="cursespp\IMessage.h" />
     <ClInclude Include="cursespp\LayoutBase.h" />
     <ClInclude Include="cursespp\ListWindow.h" />
     <ClInclude Include="cursespp\MultiLineEntry.h" />
@@ -192,8 +193,8 @@
     <ClInclude Include="cursespp\SingleLineEntry.h" />
     <ClInclude Include="cursespp\Window.h" />
     <ClInclude Include="cursespp\WindowLayout.h" />
-    <ClInclude Include="cursespp\WindowMessage.h" />
-    <ClInclude Include="cursespp\WindowMessageQueue.h" />
+    <ClInclude Include="cursespp\Message.h" />
+    <ClInclude Include="cursespp\MessageQueue.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>

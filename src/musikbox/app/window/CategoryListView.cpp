@@ -5,7 +5,7 @@
 
 #include <cursespp/SingleLineEntry.h>
 #include <cursespp/MultiLineEntry.h>
-#include <cursespp/IWindowMessage.h>
+#include <cursespp/IMessage.h>
 
 #include <core/library/LocalLibraryConstants.h>
 
@@ -70,7 +70,7 @@ void CategoryListView::OnQueryCompleted(QueryPtr query) {
     }
 }
 
-void CategoryListView::ProcessMessage(IWindowMessage &message) {
+void CategoryListView::ProcessMessage(IMessage &message) {
     if (message.MessageType() == WINDOW_MESSAGE_QUERY_COMPLETED) {
         this->metadata = activeQuery->GetResult();
         activeQuery.reset();

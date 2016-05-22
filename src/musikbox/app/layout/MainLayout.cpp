@@ -3,7 +3,7 @@
 #include "stdafx.h"
 #include "MainLayout.h"
 #include <cursespp/Screen.h>
-#include <cursespp/IWindowMessage.h>
+#include <cursespp/IMessage.h>
 
 #define MESSAGE_TYPE_UPDATE 1001
 #define UPDATE_INTERVAL_MS 1000
@@ -58,7 +58,7 @@ void MainLayout::Show() {
     this->UpdateWindows();
 }
 
-void MainLayout::ProcessMessage(IWindowMessage &message) {
+void MainLayout::ProcessMessage(IMessage &message) {
     if (message.MessageType() == MESSAGE_TYPE_UPDATE) {
         this->UpdateWindows();
         this->PostMessage(MESSAGE_TYPE_UPDATE, 0, 0, UPDATE_INTERVAL_MS);

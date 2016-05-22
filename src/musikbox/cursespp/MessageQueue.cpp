@@ -1,19 +1,19 @@
 #include <stdafx.h>
-#include "WindowMessageQueue.h"
+#include "MessageQueue.h"
 
 using namespace boost::chrono;
 
-WindowMessageQueue WindowMessageQueue::instance;
+MessageQueue MessageQueue::instance;
 
-WindowMessageQueue::WindowMessageQueue() {
+MessageQueue::MessageQueue() {
 
 }
 
-WindowMessageQueue& WindowMessageQueue::Instance() {
-    return WindowMessageQueue::instance;
+MessageQueue& MessageQueue::Instance() {
+    return MessageQueue::instance;
 }
 
-void WindowMessageQueue::Dispatch() {
+void MessageQueue::Dispatch() {
     milliseconds now = duration_cast<milliseconds>(
         system_clock::now().time_since_epoch());
 
@@ -58,12 +58,12 @@ void WindowMessageQueue::Dispatch() {
     }
 }
 
-void WindowMessageQueue::Remove(IWindow *target, int type) {
+void MessageQueue::Remove(IMessageTarget *target, int type) {
     boost::recursive_mutex::scoped_lock lock(this->queueMutex);
 
     std::list<EnqueuedMessage*>::iterator it = this->queue.begin();
     while (it != this->queue.end()) {
-        IWindowMessagePtr current = (*it)->message;
+        IMessagePtr current = (*it)->message;
 
         if (current->Target() == target) {
             if (type == -1 || type == current->MessageType()) {
@@ -77,7 +77,7 @@ void WindowMessageQueue::Remove(IWindow *target, int type) {
     }
 }
 
-void WindowMessageQueue::Post(IWindowMessagePtr message, int64 delayMs) {
+void MessageQueue::Post(IMessagePtr message, int64 delayMs) {
     boost::recursive_mutex::scoped_lock lock(this->queueMutex);
 
     delayMs = max(0, delayMs);
@@ -107,6 +107,6 @@ void WindowMessageQueue::Post(IWindowMessagePtr message, int64 delayMs) {
     this->queue.insert(curr, m);
 }
 
-void WindowMessageQueue::Dispatch(IWindowMessagePtr message) {
+void MessageQueue::Dispatch(IMessagePtr message) {
     message->Target()->ProcessMessage(*message);
 }

@@ -3,8 +3,8 @@
 #include <stdafx.h>
 #include "Window.h"
 #include "IWindowGroup.h"
-#include "WindowMessage.h"
-#include "WindowMessageQueue.h"
+#include "Message.h"
+#include "MessageQueue.h"
 
 static int NEXT_ID = 0;
 static bool drawPending = false;
@@ -34,7 +34,7 @@ Window::Window(IWindow *parent) {
 }
 
 Window::~Window() {
-    WindowMessageQueue::Instance().Remove(this);
+    MessageQueue::Instance().Remove(this);
     this->Destroy();
 }
 
@@ -42,7 +42,7 @@ int Window::GetId() const {
     return this->id;
 }
 
-void Window::ProcessMessage(IWindowMessage &message) {
+void Window::ProcessMessage(IMessage &message) {
    
 }
 
@@ -75,8 +75,8 @@ void Window::SendToBottom() {
 }
 
 void Window::PostMessage(int messageType, int64 user1, int64 user2, int64 delay) {
-    WindowMessageQueue::Instance().Post(
-        WindowMessage::Create(
+    MessageQueue::Instance().Post(
+        Message::Create(
             this, 
             messageType, 
             user1, 
@@ -85,7 +85,7 @@ void Window::PostMessage(int messageType, int64 user1, int64 user2, int64 delay)
 }
 
 void Window::RemoveMessage(int messageType) {
-    WindowMessageQueue::Instance().Remove(this, messageType);
+    MessageQueue::Instance().Remove(this, messageType);
 }
 
 void Window::SetParent(IWindow* parent) {

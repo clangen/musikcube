@@ -18,7 +18,7 @@ class TransportWindow : public Window, public sigslot::has_slots<> {
         TransportWindow(LibraryPtr library, Transport& transport);
         ~TransportWindow();
 
-        virtual void ProcessMessage(IWindowMessage &message);
+        virtual void ProcessMessage(IMessage &message);
         virtual void Show();
         void Update();
 

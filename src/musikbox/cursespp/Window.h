@@ -37,7 +37,7 @@ class Window : public IWindow, public std::enable_shared_from_this<IWindow> {
         virtual void BringToTop();
         virtual void SendToBottom();
 
-        virtual void ProcessMessage(IWindowMessage &message);
+        virtual void ProcessMessage(IMessage &message);
         virtual bool IsAcceptingMessages();
 
         virtual WINDOW* GetFrame() const;

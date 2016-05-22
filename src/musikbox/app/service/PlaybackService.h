@@ -1,6 +1,8 @@
 #pragma once
 
-class PlaybackService {
+#include <cursespp/IMessageTarget.h>
+
+class PlaybackService : public IMessageTarget {
     public:
         
 };
