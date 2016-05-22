@@ -12,7 +12,8 @@
 #include <core/debug.h>
 #include <core/sdk/IPlugin.h>
 #include <core/plugin/PluginFactory.h>
-#include <core/library/track/TrackFactory.h>
+#include <core/library/Indexer.h>
+#include <core/library/track/Track.h>
 #include <core/library/Indexer.h>
 
 #include <boost/algorithm/string.hpp>
@@ -24,11 +25,8 @@ using musik::core::Indexer;
 using musik::core::IndexerPtr;
 using musik::core::LibraryFactory;
 using musik::core::LibraryPtr;
-using musik::core::TrackFactory;
 using musik::core::TrackPtr;
 using musik::core::QueryPtr;
-
-
 
 template <class T>
 bool tostr(T& t, const std::string& s) {

@@ -44,96 +44,14 @@ namespace musik { namespace core { namespace io {
 
     class IDataStream {
         public:
-            //////////////////////////////////////////
-            ///\brief
-            ///Open the file for reading
-            ///
-            ///\param filename
-            ///Filename to open
-            ///
-            ///\returns
-            ///true if file is opened succesfully
-            //////////////////////////////////////////
             virtual bool Open(const char *filename, unsigned int options = 0) = 0;
-
-            //////////////////////////////////////////
-            ///\brief
-            ///Close the file
-            ///
-            ///\returns
-            ///true if file is closed succesfully
-            //////////////////////////////////////////
             virtual bool Close() = 0;
-
-            //////////////////////////////////////////
-            ///\brief
-            ///Destroy the object (not the file)
-            //////////////////////////////////////////
             virtual void Destroy() = 0;
-
-            //////////////////////////////////////////
-            ///\brief
-            ///Read some from the file
-            ///
-            ///\param buffer
-            ///Buffer to write the read content to
-            ///
-            ///\param readBytes
-            ///How much (max) to read from the stream
-            ///
-            ///\returns
-            ///how much has acctually been read
-            //////////////////////////////////////////
             virtual PositionType Read(void *buffer, PositionType readBytes) = 0;
-
-            //////////////////////////////////////////
-            ///\brief
-            ///Set the position in the file
-            ///
-            ///\param position
-            ///what position to set
-            ///
-            ///\returns
-            ///true if the seek is succesful
-            //////////////////////////////////////////
             virtual bool SetPosition(PositionType position) = 0;
-
-            //////////////////////////////////////////
-            ///\brief
-            ///Get the position in the file
-            ///
-            ///\returns
-            ///Current position
-            //////////////////////////////////////////
             virtual PositionType Position() = 0;
-
-            //////////////////////////////////////////
-            ///\brief
-            ///If the position in the "end of file"
-            ///
-            ///\returns
-            ///true if file is ended
-            //////////////////////////////////////////
             virtual bool Eof() = 0;
-            
-            //////////////////////////////////////////
-            ///\brief
-            ///Get files size
-            ///
-            ///\returns
-            ///-1 if unknown
-            //////////////////////////////////////////
             virtual long Length() = 0;
-
-            //////////////////////////////////////////
-            ///\brief
-            ///Get the type of the file.
-            ///
-            ///This should return the extension or the mimetype of the file
-            ///
-            ///\returns
-            ///NULL if unknown
-            //////////////////////////////////////////
             virtual const char* Type() = 0;
     };
 

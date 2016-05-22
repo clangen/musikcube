@@ -66,7 +66,7 @@ void TransportWindow::ProcessMessage(IWindowMessage &message) {
 }
 
 void TransportWindow::OnTransportPlaybackEvent(int eventType, std::string url) {
-    if (eventType == Transport::EventStarted) {
+    if (eventType == Transport::EventPlaying) {
         this->trackQuery.reset(new SingleTrackQuery(url));
         this->library->Enqueue(this->trackQuery);
         SCHEDULE_REFRESH(0)

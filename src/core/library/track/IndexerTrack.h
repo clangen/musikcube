@@ -55,7 +55,6 @@ namespace musik { namespace core {
             virtual void SetValue(const char* metakey, const char* value);
             virtual void ClearValue(const char* metakey);
             virtual void SetThumbnail(const char *data, long size);
-            virtual std::string URI();
             virtual std::string URL();
 
             virtual MetadataIteratorRange GetValues(const char* metakey);
@@ -93,13 +92,9 @@ namespace musik { namespace core {
                 db::Connection& connection, 
                 const std::string& libraryDirectory);
 
-            DBID SaveAlbum(db::Connection& connection);
-            
             DBID SaveGenre(db::Connection& connection);
 
             DBID SaveArtist(db::Connection& connection);
-
-            DBID SaveAlbumArtist(db::Connection& connection);
 
             DBID SaveSingleValueField(
                 db::Connection& connection,

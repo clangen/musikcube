@@ -54,11 +54,11 @@ namespace musik { namespace core { namespace audio {
 
             typedef enum {
                 EventScheduled = 0,
-                EventStarted = 1,
+                EventPlaying = 1,
                 EventPaused = 2,
                 EventResumed = 3,
                 EventAlmostDone = 4,
-                EventFinished = 5,
+                EventStopped = 5,
                 EventError = -1
             } PlaybackEventType;
 
@@ -95,6 +95,7 @@ namespace musik { namespace core { namespace audio {
             boost::mutex stateMutex;
             PlayerPtr currentPlayer;
             PlayerPtr nextPlayer;
+
     };
 
 } } }

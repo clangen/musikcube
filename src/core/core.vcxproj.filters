@@ -97,9 +97,6 @@
     <ClCompile Include="library\track\Track.cpp">
       <Filter>src\library\track</Filter>
     </ClCompile>
-    <ClCompile Include="library\track\TrackFactory.cpp">
-      <Filter>src\library\track</Filter>
-    </ClCompile>
     <ClCompile Include="library\LibraryFactory.cpp">
       <Filter>src\library</Filter>
     </ClCompile>
@@ -117,9 +114,6 @@
     </ClCompile>
     <ClCompile Include="debug.cpp">
       <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="library\track\InMemoryTrack.cpp">
-      <Filter>src\library\track</Filter>
     </ClCompile>
     <ClCompile Include="library\LocalLibrary.cpp">
       <Filter>src\library</Filter>
@@ -213,9 +207,6 @@
     <ClInclude Include="library\track\Track.h">
       <Filter>src\library\track</Filter>
     </ClInclude>
-    <ClInclude Include="library\track\TrackFactory.h">
-      <Filter>src\library\track</Filter>
-    </ClInclude>
     <ClInclude Include="library\LibraryFactory.h">
       <Filter>src\library</Filter>
     </ClInclude>
@@ -248,9 +239,6 @@
     </ClInclude>
     <ClInclude Include="debug.h">
       <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="library\track\InMemoryTrack.h">
-      <Filter>src\library\track</Filter>
     </ClInclude>
     <ClInclude Include="library\LocalLibrary.h">
       <Filter>src\library</Filter>

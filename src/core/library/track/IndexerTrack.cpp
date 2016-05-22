@@ -104,10 +104,6 @@ void IndexerTrack::SetThumbnail(const char *data,long size) {
     memcpy(this->internalMetadata->thumbnailData, data, size);
 }
 
-std::string IndexerTrack::URI() {
-    return "";
-}
-
 std::string IndexerTrack::URL() {
     return this->GetValue("filename");
 }

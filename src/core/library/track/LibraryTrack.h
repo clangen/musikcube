@@ -58,7 +58,6 @@ namespace musik { namespace core {
             LibraryTrack(DBID id,musik::core::LibraryPtr library);
             virtual ~LibraryTrack();
 
-            virtual musik::core::LibraryPtr Library();
             virtual int LibraryId();
 
             virtual DBID Id();
@@ -69,7 +68,6 @@ namespace musik { namespace core {
             virtual void ClearValue(const char* metakey);
             virtual void SetThumbnail(const char *data, long size);
 
-            virtual std::string URI();
             virtual std::string URL();
 
             virtual MetadataIteratorRange GetValues(const char* metakey);
@@ -79,14 +77,12 @@ namespace musik { namespace core {
             static bool LibraryTrack::Load(Track *target, db::Connection &db);
 
         private:
-            void InitMeta();
-
             DBID id;
             int libraryId;
 
-            struct MetaData {
-                MetaData();
-                ~MetaData();
+            struct LibraryData {
+                LibraryData();
+                ~LibraryData();
 
                 Track::MetadataMap metadata;
                 char *thumbnailData;
@@ -95,7 +91,7 @@ namespace musik { namespace core {
                 musik::core::LibraryPtr library;
             };
 
-            MetaData *meta;
+            LibraryData data;
     };
 
 } }

@@ -120,7 +120,7 @@ void Transport::Stop() {
     }
 
     if (player) {
-        this->RaisePlaybackEvent(Transport::EventFinished, player);
+        this->RaisePlaybackEvent(Transport::EventStopped, player);
     }
 }
 
@@ -234,7 +234,7 @@ void Transport::OnPlaybackStarted(Player *player) {
     }
 
     if (playerForEvent) {
-        this->RaisePlaybackEvent(Transport::EventStarted, playerForEvent);
+        this->RaisePlaybackEvent(Transport::EventPlaying, playerForEvent);
     }
 }
 
@@ -269,7 +269,7 @@ void Transport::OnPlaybackEnded(Player *player) {
     }
 
     if (playerForEvent) {
-        this->RaisePlaybackEvent(Transport::EventFinished, playerForEvent);
+        this->RaisePlaybackEvent(Transport::EventStopped, playerForEvent);
     }
 
     if (nextPlayer) {
@@ -297,12 +297,12 @@ void Transport::RaisePlaybackEvent(int type, PlayerPtr player) {
     /* TODO FIXME: should be either decoupled or merged with the playback
     event enum. */
     switch (type) {
-        case EventStarted:
+        case EventPlaying:
         case EventResumed:
             this->state = StatePlaying;
             break;
 
-        case EventFinished:
+        case EventStopped:
         case EventError:
             this->state = StateStopped;
             break;

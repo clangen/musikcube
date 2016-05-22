@@ -15,7 +15,7 @@ GlobalHotkeys::~GlobalHotkeys() {
 bool GlobalHotkeys::Handle(int64 ch) {
     std::string kn = keyname((int) ch);
 
-    if (kn == "ALT_K") {
+    if (kn == "^P") {
         int state = this->transport.GetPlaybackState();
         if (state == Transport::StatePaused) {
             this->transport.Resume();
@@ -24,11 +24,11 @@ bool GlobalHotkeys::Handle(int64 ch) {
             this->transport.Pause();
         }
     }
-    if (kn == "ALT_L") {
+    if (kn == "ALT_I") {
         this->transport.SetVolume(this->transport.Volume() + 0.05); /* 5% */
         return true;
     }
-    else if (kn == "ALT_J") {
+    else if (kn == "ALT_K") {
         this->transport.SetVolume(this->transport.Volume() - 0.05);
         return true;
     }
