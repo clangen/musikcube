@@ -236,5 +236,8 @@
     <Filter Include="app\query">
       <UniqueIdentifier>{5c751253-4250-4a81-8b5f-ca6244954d64}</UniqueIdentifier>
     </Filter>
+    <Filter Include="app\playback">
+      <UniqueIdentifier>{c1d1d375-e69f-4b98-b51b-24f76be0ee8e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>

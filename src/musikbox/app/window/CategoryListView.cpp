@@ -57,7 +57,7 @@ void CategoryListView::SetFieldName(const std::string& fieldName) {
 
         if (this->metadata) {
             this->metadata.reset();
-            this->OnAdapterChanged();
+            //this->OnAdapterChanged();
         }
 
         this->Requery();
@@ -75,6 +75,7 @@ void CategoryListView::ProcessMessage(IWindowMessage &message) {
         this->metadata = activeQuery->GetResult();
         activeQuery.reset();
         this->OnAdapterChanged();
+        this->OnInvalidated();
     }
 }
 

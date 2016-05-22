@@ -26,8 +26,13 @@ class LibraryLayout : public LayoutBase, public sigslot::has_slots<> {
     private:
         void InitializeWindows();
 
+        void RequeryTrackList(ListWindow *view);
+
         void OnCategoryViewSelectionChanged(
             ListWindow *view, size_t newIndex, size_t oldIndex);
+
+        void OnCategoryViewInvalidated(
+            ListWindow *view, size_t selectedIndex);
 
         Transport& transport;
         LibraryPtr library;

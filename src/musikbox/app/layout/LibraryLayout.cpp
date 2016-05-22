@@ -53,6 +53,9 @@ void LibraryLayout::InitializeWindows() {
     this->categoryList->SelectionChanged.connect(
         this, &LibraryLayout::OnCategoryViewSelectionChanged);
 
+    this->categoryList->Invalidated.connect(
+        this, &LibraryLayout::OnCategoryViewInvalidated);
+
     this->Layout();
 }
 
@@ -61,14 +64,23 @@ void LibraryLayout::Show() {
     this->categoryList->Requery();
 }
 
-void LibraryLayout::OnCategoryViewSelectionChanged(
-    ListWindow *view, size_t newIndex, size_t oldIndex) {
+void LibraryLayout::RequeryTrackList(ListWindow *view) {
     if (view == this->categoryList.get()) {
         DBID id = this->categoryList->GetSelectedId();
         if (id != -1) {
             this->trackList->Requery(this->categoryList->GetFieldName(), id);
         }
     }
+}
+
+void LibraryLayout::OnCategoryViewSelectionChanged(
+    ListWindow *view, size_t newIndex, size_t oldIndex) {
+    this->RequeryTrackList(view);
+}
+
+void LibraryLayout::OnCategoryViewInvalidated(
+    ListWindow *view, size_t selectedIndex) {
+    this->RequeryTrackList(view);
 }
 
 bool LibraryLayout::KeyPress(int64 ch) {
@@ -89,6 +101,17 @@ bool LibraryLayout::KeyPress(int64 ch) {
     else if (ch == KEY_F(5)) {
         this->categoryList->Requery();
         return true;
+    }
+    else if (ch == ' ') {
+        /* copied from GlobalHotkeys. should probably be generalized
+        at some point. */
+        int state = this->transport.GetPlaybackState();
+        if (state == Transport::StatePaused) {
+            this->transport.Resume();
+        }
+        else if (state == Transport::StatePlaying) {
+            this->transport.Pause();
+        }
     }
 
     return LayoutBase::KeyPress(ch);

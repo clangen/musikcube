@@ -10,6 +10,7 @@ class ListWindow : public ScrollableWindow {
         static size_t NO_SELECTION;
 
         sigslot::signal3<ListWindow*, size_t, size_t> SelectionChanged;
+        sigslot::signal2<ListWindow*, size_t> Invalidated;
 
         ListWindow(IWindow *parent = NULL);
         virtual ~ListWindow();
@@ -28,6 +29,8 @@ class ListWindow : public ScrollableWindow {
         virtual void SetSelectedIndex(size_t index);
         virtual void OnAdapterChanged();
         virtual void OnSelectionChanged(size_t newIndex, size_t oldIndex);
+        virtual void OnInvalidated();
+
         virtual IScrollAdapter::ScrollPosition& GetScrollPosition();
 
     private:

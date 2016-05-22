@@ -11,16 +11,23 @@
 
 #include <core/debug.h>
 #include <core/library/track/LibraryTrack.h>
+#include <core/library/LocalLibraryConstants.h>
 #include <core/playback/NonLibraryTrackHelper.h>
+
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/chrono.hpp>
 
 using musik::core::audio::Transport;
 using musik::core::TrackPtr;
 using musik::core::LibraryTrack;
 using musik::core::NonLibraryTrackHelper;
 using musik::core::QueryPtr;
+
+using namespace musik::core::library::constants;
 using namespace musik::box;
+
+using namespace boost::chrono;
 
 #define REFRESH_TRANSPORT_READOUT 1001
 #define REFRESH_INTERVAL_MS 1000
@@ -81,6 +88,7 @@ void TransportWindow::Update() {
     this->Clear();
     WINDOW *c = this->GetContent();
 
+    bool paused = (transport->GetPlaybackState() == Transport::StatePaused);
     int64 gb = COLOR_PAIR(BOX_COLOR_GREEN_ON_BLACK);
 
     /* playing SONG TITLE from ALBUM NAME */
@@ -88,11 +96,11 @@ void TransportWindow::Update() {
     std::string title, album, duration;
     
     if (this->currentTrack) {
-        title = this->currentTrack->GetValue("title");
-        album = this->currentTrack->GetValue("album");
-        duration = this->currentTrack->GetValue("duration");
+        title = this->currentTrack->GetValue(Track::TITLE);
+        album = this->currentTrack->GetValue(Track::ALBUM);
+        duration = this->currentTrack->GetValue(Track::DURATION);
     }
-    
+
     title = title.size() ? title : "song title";
     album = album.size() ? album : "album name";
     duration = duration.size() ? duration : "0";
@@ -128,6 +136,17 @@ void TransportWindow::Update() {
 
     /* time slider */
 
+    int64 timerAttrs = 0;
+
+    if (paused) { /* blink the track if paused */
+        int64 now = duration_cast<seconds>(
+            system_clock::now().time_since_epoch()).count();
+
+        if (now % 2 == 0) {
+            timerAttrs = COLOR_PAIR(BOX_COLOR_BLACK_ON_BLACK);
+        }
+    }
+
     transport->Position();
 
     int secondsCurrent = (int) round(transport->Position());
@@ -155,8 +174,11 @@ void TransportWindow::Update() {
         timerTrack += (i == thumbOffset) ? "■" : "─";
     }
 
-    wprintw(c, "%s %s %s", 
-        currentTime.c_str(), 
+    wattron(c, timerAttrs); /* blink if paused */
+    wprintw(c, currentTime.c_str());
+    wattroff(c, timerAttrs);
+
+    wprintw(c, " %s %s", 
         timerTrack.c_str(), 
         totalTime.c_str());
 

@@ -59,6 +59,10 @@ void ListWindow::ScrollUp(int delta) {
     this->Repaint();
 }
 
+void ListWindow::OnInvalidated() {
+    this->Invalidated(this, this->GetSelectedIndex());
+}
+
 void ListWindow::ScrollDown(int delta) {
     ScrollPos spos = this->GetScrollPosition();
     IScrollAdapter& adapter = this->GetScrollAdapter();
