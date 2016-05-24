@@ -3,8 +3,9 @@
 
 using musik::core::LibraryPtr;
 
-GlobalHotkeys::GlobalHotkeys(Transport& transport, LibraryPtr library) 
-: transport(transport) {
+GlobalHotkeys::GlobalHotkeys(PlaybackService& playback, LibraryPtr library)
+: playback(playback)
+, transport(playback.GetTransport()) {
     this->library = library;
 }
 
@@ -31,6 +32,12 @@ bool GlobalHotkeys::Handle(int64 ch) {
     else if (kn == "ALT_K") {
         this->transport.SetVolume(this->transport.Volume() - 0.05);
         return true;
+    }
+    else if (kn == "ALT_J") {
+        this->playback.Previous();
+    }
+    else if (kn == "ALT_L") {
+        this->playback.Next();
     }
     else if (kn == "^R") {
         library->Indexer()->Synchronize(true);

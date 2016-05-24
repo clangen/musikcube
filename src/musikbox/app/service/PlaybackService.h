@@ -19,8 +19,12 @@ class PlaybackService : public IMessageTarget, public sigslot::has_slots<> {
 
         Transport& GetTransport() { return this->transport; }
 
-        void Start(std::vector<TrackPtr>& tracks, size_t index);
-        void Start(size_t index);
+        void Play(std::vector<TrackPtr>& tracks, size_t index);
+        void Play(size_t index);
+        bool Next();
+        bool Previous();
+        void Stop() { transport.Stop(); }
+
         size_t Count() { return this->playlist.size(); }
 
     private:

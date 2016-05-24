@@ -177,7 +177,7 @@ int main(int argc, char* argv[])
         using musik::core::LibraryFactory;
         LibraryPtr library = LibraryFactory::Libraries().at(0);
 
-        GlobalHotkeys globalHotkeys(tp, library);
+        GlobalHotkeys globalHotkeys(playback, library);
 
         ILayoutPtr libraryLayout(new LibraryLayout(playback, library));
         ILayoutPtr consoleLayout(new MainLayout(tp, library));
@@ -233,6 +233,8 @@ int main(int argc, char* argv[])
             Window::WriteToScreen();
             MessageQueue::Instance().Dispatch();
         }
+
+        playback.Stop();
     }
 
     endwin();

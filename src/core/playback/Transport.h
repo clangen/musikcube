@@ -59,6 +59,7 @@ namespace musik { namespace core { namespace audio {
                 StreamPlaying = 1,
                 StreamAlmostDone = 4,
                 StreamFinished = 5,
+                StreamStopped = 6,
                 StreamError = -1
             } StreamEventType;
 
@@ -89,7 +90,8 @@ namespace musik { namespace core { namespace audio {
 
             void OnPlaybackStarted(Player* player);
             void OnPlaybackAlmostEnded(Player* player);
-            void OnPlaybackEnded(Player* player);
+            void OnPlaybackFinished(Player* player);
+            void OnPlaybackStopped(Player* player);
             void OnPlaybackError(Player* player);
 
         private:

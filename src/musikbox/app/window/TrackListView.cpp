@@ -58,7 +58,7 @@ bool TrackListView::KeyPress(int64 ch) {
     if (ch == '\n') { /* return */
         size_t selected = this->GetSelectedIndex();
         if (this->metadata && this->metadata->size() > selected) {
-            playback.Start(*this->metadata, selected);
+            playback.Play(*this->metadata, selected);
             return true;
         }
     }

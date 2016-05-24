@@ -101,7 +101,8 @@ void Transport::StartWithPlayer(Player* newPlayer) {
 
             newPlayer->PlaybackStarted.connect(this, &Transport::OnPlaybackStarted);
             newPlayer->PlaybackAlmostEnded.connect(this, &Transport::OnPlaybackAlmostEnded);
-            newPlayer->PlaybackEnded.connect(this, &Transport::OnPlaybackEnded);
+            newPlayer->PlaybackFinished.connect(this, &Transport::OnPlaybackFinished);
+            newPlayer->PlaybackStopped.connect(this, &Transport::OnPlaybackStopped);
             newPlayer->PlaybackError.connect(this, &Transport::OnPlaybackError);
 
             musik::debug::info(TAG, "play()");
@@ -254,7 +255,7 @@ void Transport::RemoveActive(Player* player) {
     }
 }
 
-void Transport::OnPlaybackEnded(Player* player) {
+void Transport::OnPlaybackFinished(Player* player) {
     this->RaiseStreamEvent(Transport::StreamFinished, player);
 
     if (this->nextPlayer) {
@@ -264,6 +265,12 @@ void Transport::OnPlaybackEnded(Player* player) {
         this->SetPlaybackState(Transport::PlaybackStopped);
     }
 
+    boost::async(boost::bind(&Transport::RemoveActive, this, player));
+}
+
+void Transport::OnPlaybackStopped (Player* player) {
+    this->RaiseStreamEvent(Transport::StreamStopped, player);
+    this->SetPlaybackState(Transport::PlaybackStopped);
     boost::async(boost::bind(&Transport::RemoveActive, this, player));
 }
 

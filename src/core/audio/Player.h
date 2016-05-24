@@ -79,7 +79,8 @@ namespace musik { namespace core { namespace audio {
             typedef sigslot::signal1<Player*> PlayerEvent;
             PlayerEvent PlaybackStarted;
             PlayerEvent PlaybackAlmostEnded;
-            PlayerEvent PlaybackEnded;
+            PlayerEvent PlaybackFinished;
+            PlayerEvent PlaybackStopped;
             PlayerEvent PlaybackError;
             
         private:

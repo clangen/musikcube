@@ -277,7 +277,12 @@ void Player::ThreadLoop() {
         }
     }
 
-    this->PlaybackEnded(this);
+    if (this->Exited()) {
+        this->PlaybackStopped(this);
+    }
+    else {
+        this->PlaybackFinished(this);
+    }
 
     this->output.reset();
     this->stream.reset();
