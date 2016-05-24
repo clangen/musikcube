@@ -43,7 +43,7 @@ TransportWindow::TransportWindow(LibraryPtr library, Transport& transport)
     this->library = library;
     this->library->QueryCompleted.connect(this, &TransportWindow::OnQueryCompleted);
     this->transport = &transport;
-    this->transport->PlaybackEvent.connect(this, &TransportWindow::OnTransportPlaybackEvent);
+    this->transport->StreamEvent.connect(this, &TransportWindow::OnTransportStreamEvent);
     this->transport->VolumeChanged.connect(this, &TransportWindow::OnTransportVolumeChanged);
     this->paused = false;
 }
@@ -65,8 +65,8 @@ void TransportWindow::ProcessMessage(IMessage &message) {
     }
 }
 
-void TransportWindow::OnTransportPlaybackEvent(int eventType, std::string url) {
-    if (eventType == Transport::EventPlaying) {
+void TransportWindow::OnTransportStreamEvent(int eventType, std::string url) {
+    if (eventType == Transport::StreamPlaying) {
         this->trackQuery.reset(new SingleTrackQuery(url));
         this->library->Enqueue(this->trackQuery);
         SCHEDULE_REFRESH(0)
@@ -88,7 +88,7 @@ void TransportWindow::Update() {
     this->Clear();
     WINDOW *c = this->GetContent();
 
-    bool paused = (transport->GetPlaybackState() == Transport::StatePaused);
+    bool paused = (transport->GetPlaybackState() == Transport::PlaybackPaused);
     int64 gb = COLOR_PAIR(BOX_COLOR_GREEN_ON_BLACK);
 
     /* playing SONG TITLE from ALBUM NAME */

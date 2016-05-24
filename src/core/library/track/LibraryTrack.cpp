@@ -95,7 +95,7 @@ void LibraryTrack::SetThumbnail(const char *data, long size) {
 }
 
 std::string LibraryTrack::URI() {
-    return this->GetValue("path");
+    return this->GetValue("filename");
 }
 
 Track::MetadataIteratorRange LibraryTrack::GetValues(const char* metakey) {

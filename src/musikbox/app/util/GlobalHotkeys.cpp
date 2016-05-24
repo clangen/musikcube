@@ -17,10 +17,10 @@ bool GlobalHotkeys::Handle(int64 ch) {
 
     if (kn == "^P") {
         int state = this->transport.GetPlaybackState();
-        if (state == Transport::StatePaused) {
+        if (state == Transport::PlaybackPaused) {
             this->transport.Resume();
         }
-        else if (state == Transport::StatePlaying) {
+        else if (state == Transport::PlaybackPlaying) {
             this->transport.Pause();
         }
     }

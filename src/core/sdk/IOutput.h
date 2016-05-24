@@ -42,43 +42,11 @@ namespace musik { namespace core { namespace audio {
 
     class IOutput {
         public:    
-            //////////////////////////////////////////
-            ///\brief
-            ///Destroy the object
-            ///
-            ///The Destroy method is used so that it's guaranteed that the object is 
-            ///destroyed inside the right DLL/exe
-            //////////////////////////////////////////
             virtual void Destroy() = 0;
-
-            //////////////////////////////////////////
-            ///\brief
-            ///Pause the current output
-            //////////////////////////////////////////
             virtual void Pause() = 0;
-
-            //////////////////////////////////////////
-            ///\brief
-            ///resume a paused output
-            //////////////////////////////////////////
             virtual void Resume() = 0;
-
-            //////////////////////////////////////////
-            ///\brief
-            ///Set the volume on this output
-            //////////////////////////////////////////
             virtual void SetVolume(double volume) = 0;
-
-            //////////////////////////////////////////
-            ///\brief
-            ///Clear internal buffers. Used when setting new position in a stream
-            //////////////////////////////////////////
             virtual void Stop() = 0;
-
-            //////////////////////////////////////////
-            ///\brief
-            ///Play this buffer
-            //////////////////////////////////////////
             virtual bool Play(IBuffer *buffer, IBufferProvider *provider) = 0;
     };
 

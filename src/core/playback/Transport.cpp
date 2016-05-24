@@ -35,111 +35,124 @@
 
 #include <core/debug.h>
 #include <core/playback/Transport.h>
+#include <core/plugin/PluginFactory.h>
+
+#include <boost/thread/future.hpp>
 
 using namespace musik::core::audio;
 
 static std::string TAG = "Transport";
 
+#define RESET_NEXT_PLAYER() \
+    delete this->nextPlayer; \
+    this->nextPlayer = NULL;
+
+static void pausePlayer(Player* p) {
+    p->Pause();
+}
+
+static void resumePlayer(Player* p) {
+    p->Resume();
+}
+
+static void deletePlayer(Player* p) {
+    delete p;
+}
+
 Transport::Transport()
 : volume(1.0) 
-, state(StateStopped) {
+, state(PlaybackStopped)
+, nextPlayer(NULL) {
 }
 
 Transport::~Transport() {
-    this->nextPlayer.reset();
-    this->currentPlayer.reset();
 }
 
 Transport::PlaybackState Transport::GetPlaybackState() {
-    boost::mutex::scoped_lock lock(this->stateMutex);
+    boost::recursive_mutex::scoped_lock lock(this->stateMutex);
     return this->state;
 }
 
-void Transport::PrepareNextTrack(std::string trackUrl) {
-    PlayerPtr player = Player::Create(trackUrl);
-
-    {
-        boost::mutex::scoped_lock lock(this->stateMutex);
-        this->currentPlayer = player;
-    }
+void Transport::PrepareNextTrack(const std::string& trackUrl) {
+    boost::recursive_mutex::scoped_lock lock(this->stateMutex);
+    this->nextPlayer = new Player(trackUrl);
 }
 
-void Transport::Start(std::string url) {
+void Transport::Start(const std::string& url) {
     musik::debug::info(TAG, "we were asked to start the track at " + url);
 
-    /* TODO FIXME: hack; the player is reference counted, we don't want the count
-    to reach zero within the critical section, because its background thread may
-    raise an event and cause a deadlock. do we really need shared_ptrs for these
-    Player instances? */
-    PlayerPtr current;
+    Player* newPlayer = new Player(url);
+    newPlayer->SetVolume(this->volume);
+    musik::debug::info(TAG, "Player created successfully");
 
-    PlayerPtr player;
+    this->StartWithPlayer(newPlayer);
+}
 
-    {
-        boost::mutex::scoped_lock lock(this->stateMutex);
+void Transport::StartWithPlayer(Player* newPlayer) {
+    if (newPlayer) {
+        {
+            boost::recursive_mutex::scoped_lock lock(this->stateMutex);
 
-        PlayerPtr newPlayer = this->nextPlayer;
-        this->nextPlayer.reset();
+            if (newPlayer != nextPlayer) {
+                delete nextPlayer;
+            }
 
-        musik::debug::info(TAG, "creating a Player...");
+            this->nextPlayer = NULL;
 
-        if (!newPlayer || newPlayer->GetUrl() != url) {
-            newPlayer = Player::Create(url); /* non-blocking */
-            newPlayer->SetVolume(this->volume);
-            musik::debug::info(TAG, "Player created successfully");
+            newPlayer->PlaybackStarted.connect(this, &Transport::OnPlaybackStarted);
+            newPlayer->PlaybackAlmostEnded.connect(this, &Transport::OnPlaybackAlmostEnded);
+            newPlayer->PlaybackEnded.connect(this, &Transport::OnPlaybackEnded);
+            newPlayer->PlaybackError.connect(this, &Transport::OnPlaybackError);
+
+            musik::debug::info(TAG, "play()");
+
+            this->active.push_front(newPlayer);
+            newPlayer->Play();
         }
 
-        current = this->currentPlayer; /* see hack note above. */
-        this->currentPlayer = newPlayer;
-
-        this->currentPlayer->PlaybackStarted.connect(this, &Transport::OnPlaybackStarted);
-        this->currentPlayer->PlaybackAlmostEnded.connect(this, &Transport::OnPlaybackAlmostEnded);
-        this->currentPlayer->PlaybackEnded.connect(this, &Transport::OnPlaybackEnded);
-        this->currentPlayer->PlaybackError.connect(this, &Transport::OnPlaybackError);
-
-        musik::debug::info(TAG, "play()");
-        this->currentPlayer->Play(); /* non-blocking */
-
-        player = this->currentPlayer;
+        this->RaiseStreamEvent(Transport::StreamScheduled, newPlayer);
     }
-
-    this->RaisePlaybackEvent(Transport::EventScheduled, player);
 }
+
 
 void Transport::Stop() {
     musik::debug::info(TAG, "stop");
 
     PlayerPtr player = NULL;
 
-    {
-        boost::mutex::scoped_lock lock(this->stateMutex);
+    std::list<Player*> toDelete;
 
-        player = this->currentPlayer;
-        this->currentPlayer.reset();
-        this->nextPlayer.reset();
+    {
+        boost::recursive_mutex::scoped_lock lock(this->stateMutex);
+
+        RESET_NEXT_PLAYER();
+        std::swap(toDelete, this->active);
     }
 
+    /* do the actual delete outside of the critical section! the players run 
+    in a background thread that will emit a signal on completion, but the 
+    destructor joins(). */
+    std::for_each(toDelete.begin(), toDelete.end(), deletePlayer);
+    this->active.clear();
+
     if (player) {
-        this->RaisePlaybackEvent(Transport::EventStopped, player);
+        this->SetPlaybackState(PlaybackStopped);
     }
 }
 
 bool Transport::Pause() {
     musik::debug::info(TAG, "pause");
 
-    PlayerPtr player;
+    size_t count = 0;
 
     {
-        boost::mutex::scoped_lock lock(this->stateMutex);
-
-        if (this->currentPlayer) {
-            this->currentPlayer->Pause();
-            player = this->currentPlayer;
-        }
+        boost::recursive_mutex::scoped_lock lock(this->stateMutex);
+        std::for_each(this->active.begin(), this->active.end(), pausePlayer);
+        count = this->active.size();
     }
 
-    if (player) {
-        this->RaisePlaybackEvent(Transport::EventPaused, player);
+    if (count) {
+        this->SetPlaybackState(PlaybackPaused);
         return true;
     }
 
@@ -149,19 +162,16 @@ bool Transport::Pause() {
 bool Transport::Resume() {
     musik::debug::info(TAG, "resume");
 
-    PlayerPtr player;
+    size_t count = 0;
     
     {
-        boost::mutex::scoped_lock lock(this->stateMutex);
-
-        if (this->currentPlayer) {
-            this->currentPlayer->Resume();
-            player = this->currentPlayer;
-        }
+        boost::recursive_mutex::scoped_lock lock(this->stateMutex);
+        std::for_each(this->active.begin(), this->active.end(), resumePlayer);
+        count = this->active.size();
     }
 
-    if (player) {
-        this->RaisePlaybackEvent(Transport::EventResumed, player);
+    if (count) {
+        this->SetPlaybackState(Transport::PlaybackPlaying);
         return true;
     }
 
@@ -169,29 +179,30 @@ bool Transport::Resume() {
 }
 
 double Transport::Duration() {
-    boost::mutex::scoped_lock lock(this->stateMutex);
+    boost::recursive_mutex::scoped_lock lock(this->stateMutex);
 
-    if (this->currentPlayer) {
-        return this->currentPlayer->Position();
+    if (!this->active.empty()) {
+        return this->active.front()->Position();
     }
 
+    return 0;
 }
 
 double Transport::Position() {
-    boost::mutex::scoped_lock lock(this->stateMutex);
+    boost::recursive_mutex::scoped_lock lock(this->stateMutex);
 
-    if (this->currentPlayer) {
-        return this->currentPlayer->Position();
+    if (!this->active.empty()) {
+        return this->active.front()->Position();
     }
 
     return 0;
 }
 
 void Transport::SetPosition(double seconds) {
-    boost::mutex::scoped_lock lock(this->stateMutex);
+    boost::recursive_mutex::scoped_lock lock(this->stateMutex);
     
-    if (this->currentPlayer) {
-        return this->currentPlayer->SetPosition(seconds);
+    if (!this->active.empty()) {
+        return this->active.front()->SetPosition(seconds);
     }
 }
 
@@ -214,104 +225,67 @@ void Transport::SetVolume(double volume) {
         boost::format("set volume %d%%") % round(volume * 100)));
 
     {
-        boost::mutex::scoped_lock lock(this->stateMutex);
+        boost::recursive_mutex::scoped_lock lock(this->stateMutex);
 
-        if (this->currentPlayer) {
-            this->currentPlayer->SetVolume(volume);
+        if (!this->active.empty()) {
+            this->active.front()->SetVolume(volume);
         }
     }
 }
 
-void Transport::OnPlaybackStarted(Player *player) {
-    PlayerPtr playerForEvent;
+void Transport::OnPlaybackStarted(Player* player) {
+    this->RaiseStreamEvent(Transport::StreamPlaying, player);
+    this->SetPlaybackState(Transport::PlaybackPlaying);
+}
+
+void Transport::OnPlaybackAlmostEnded(Player* player) {
+    this->RaiseStreamEvent(Transport::StreamAlmostDone, player);
+}
+
+void Transport::RemoveActive(Player* player) {
+    boost::recursive_mutex::scoped_lock lock(this->stateMutex);
+
+    std::list<Player*>::iterator it =
+        std::find(this->active.begin(), this->active.end(), player);
+
+    if (it != this->active.end()) {
+        delete (*it);
+        this->active.erase(it);
+    }
+}
+
+void Transport::OnPlaybackEnded(Player* player) {
+    this->RaiseStreamEvent(Transport::StreamFinished, player);
+
+    if (this->nextPlayer) {
+        this->StartWithPlayer(this->nextPlayer);
+    }
+    else {
+        this->SetPlaybackState(Transport::PlaybackStopped);
+    }
+
+    boost::async(boost::bind(&Transport::RemoveActive, this, player));
+}
+
+void Transport::OnPlaybackError(Player* player) {
+    this->RaiseStreamEvent(Transport::StreamError, player);
+    this->SetPlaybackState(Transport::PlaybackStopped);
+    boost::async(boost::bind(&Transport::RemoveActive, this, player));
+}
+
+void Transport::SetPlaybackState(int state) {
+    bool changed = false;
 
     {
-        boost::mutex::scoped_lock lock(this->stateMutex);
-
-        if (this->currentPlayer.get() == player) {
-            playerForEvent = this->currentPlayer;
-        }
+        boost::recursive_mutex::scoped_lock lock(this->stateMutex);
+        this->state = (PlaybackState) state;
     }
 
-    if (playerForEvent) {
-        this->RaisePlaybackEvent(Transport::EventPlaying, playerForEvent);
+    if (changed) {
+        this->PlaybackEvent(state);
     }
 }
 
-void Transport::OnPlaybackAlmostEnded(Player *player) {
-    PlayerPtr playerForEvent;
-
-    {
-        boost::mutex::scoped_lock lock(this->stateMutex);
-
-        if (this->currentPlayer.get() == player) {
-            playerForEvent = this->currentPlayer;
-        }
-    }
-
-    this->RaisePlaybackEvent(Transport::EventAlmostDone, playerForEvent);
-}
-
-void Transport::OnPlaybackEnded(Player *player) {
-    PlayerPtr playerForEvent;
-    PlayerPtr nextPlayer;
-
-    {
-        boost::mutex::scoped_lock lock(this->stateMutex);
-
-        if (this->currentPlayer.get() == player) {
-            playerForEvent = this->currentPlayer;
-        }
-
-        if (this->nextPlayer) {
-            nextPlayer = this->nextPlayer;
-        }
-    }
-
-    if (playerForEvent) {
-        this->RaisePlaybackEvent(Transport::EventStopped, playerForEvent);
-    }
-
-    if (nextPlayer) {
-        this->Start(nextPlayer->GetUrl().c_str());
-    }
-}
-
-void Transport::OnPlaybackError(Player *player) {
-    PlayerPtr playerForEvent;
-
-    {
-        boost::mutex::scoped_lock lock(this->stateMutex);
-
-        if (this->currentPlayer.get() == player) {
-            playerForEvent = this->currentPlayer;
-        }
-    }
-
-    if (playerForEvent) {
-        this->RaisePlaybackEvent(Transport::EventError, playerForEvent);
-    }
-}
-
-void Transport::RaisePlaybackEvent(int type, PlayerPtr player) {
-    /* TODO FIXME: should be either decoupled or merged with the playback
-    event enum. */
-    switch (type) {
-        case EventPlaying:
-        case EventResumed:
-            this->state = StatePlaying;
-            break;
-
-        case EventStopped:
-        case EventError:
-            this->state = StateStopped;
-            break;
-
-        case EventPaused:
-            this->state = StatePaused;
-            break;
-    }
-
-    std::string uri = player ? player->GetUrl() : "";
-    this->PlaybackEvent(type, uri);
+void Transport::RaiseStreamEvent(int type, Player* player) {
+    this->StreamEvent(type, player->GetUrl());
 }

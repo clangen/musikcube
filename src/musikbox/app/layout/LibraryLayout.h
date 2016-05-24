@@ -5,6 +5,7 @@
 #include <app/window/CategoryListView.h>
 #include <app/window/TrackListView.h>
 #include <app/window/TransportWindow.h>
+#include <app/service/PlaybackService.h>
 
 #include <core/playback/Transport.h>
 #include <core/library/ILibrary.h>
@@ -16,7 +17,7 @@ using musik::core::audio::Transport;
 
 class LibraryLayout : public LayoutBase, public sigslot::has_slots<> {
     public:
-        LibraryLayout(Transport& transport, LibraryPtr library);
+        LibraryLayout(PlaybackService& playback, LibraryPtr library);
         virtual ~LibraryLayout();
 
         virtual void Layout();
@@ -34,6 +35,7 @@ class LibraryLayout : public LayoutBase, public sigslot::has_slots<> {
         void OnCategoryViewInvalidated(
             ListWindow *view, size_t selectedIndex);
 
+        PlaybackService& playback;
         Transport& transport;
         LibraryPtr library;
         std::shared_ptr<CategoryListView> categoryList;

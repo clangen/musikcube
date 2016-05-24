@@ -53,12 +53,9 @@ namespace musik { namespace core { namespace audio {
         public:
             typedef std::shared_ptr<IOutput> OutputPtr;
 
-            static PlayerPtr Create(std::string &url, OutputPtr output = OutputPtr());
-    
-        private:
-            Player(std::string &url, OutputPtr output);
+            static PlayerPtr Create(const std::string &url, OutputPtr output = OutputPtr());
 
-        public:
+            Player(const std::string &url, OutputPtr output = OutputPtr());
             ~Player();
 
             virtual void OnBufferProcessed(IBuffer *buffer);

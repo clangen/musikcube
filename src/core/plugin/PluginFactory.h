@@ -49,9 +49,9 @@
     #include <dlfcn.h>
 #endif
 
-namespace musik{ namespace core{
+namespace musik { namespace core {
 
-    class PluginFactory{
+    class PluginFactory {
         public:
 
             static  PluginFactory& Instance() {

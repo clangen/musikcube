@@ -44,6 +44,8 @@ namespace musik { namespace core { namespace audio {
     //////////////////////////////////////////
     class IBufferProvider {
         public:
+            virtual ~IBufferProvider() = 0 { }
+
             //////////////////////////////////////////
             ///\brief
             ///Release used by the output to notify the player a buffer has finished

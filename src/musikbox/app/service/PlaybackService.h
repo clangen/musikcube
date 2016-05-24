@@ -24,9 +24,9 @@ class PlaybackService : public IMessageTarget, public sigslot::has_slots<> {
         size_t Count() { return this->playlist.size(); }
 
     private:
-        void OnTransportEvent(int eventType, std::string uri);
+        void OnStreamEvent(int eventType, std::string uri);
 
         Transport& transport;
         std::vector<TrackPtr> playlist;
-        size_t index, next;
+        size_t index;
 };

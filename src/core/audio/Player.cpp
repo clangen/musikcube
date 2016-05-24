@@ -41,16 +41,16 @@ using namespace musik::core::audio;
 
 static std::string TAG = "Player";
 
-PlayerPtr Player::Create(std::string &url, OutputPtr output) {
+PlayerPtr Player::Create(const std::string &url, OutputPtr output) {
     return PlayerPtr(new Player(url, output));
 }
 
-Player::Player(std::string &url, OutputPtr output)
+Player::Player(const std::string &url, OutputPtr output)
 : volume(1.0)
 , state(Player::Precache)
 , url(url)
 , prebufferSizeBytes(0)
-, maxPrebufferSizeBytes(2000000)
+, maxPrebufferSizeBytes(100000)
 , currentPosition(0)
 , setPosition(-1) {
     musik::debug::info(TAG, "new instance created");

@@ -75,7 +75,7 @@ namespace musik { namespace core { namespace audio {
             BufferPtr GetEmptyBuffer();
             void LoadDecoderPlugins();
 
-        private:        
+        private:
             typedef std::list<BufferPtr> BufferList;
             typedef std::shared_ptr<IDecoderFactory> DecoderFactoryPtr;
             typedef std::vector<DecoderFactoryPtr> DecoderFactoryList;

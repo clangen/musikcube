@@ -39,29 +39,12 @@
 #include <core/config.h>
 #include <utf8/utf8.h>
 
-//////////////////////////////////////////
-///\brief
-///Get the directory where plugin-dlls are located.
-///
-///\returns
-///String with the directory
-///
-///\see
-///<GetApplicationDirectory>
-//////////////////////////////////////////
 std::string musik::core::GetPluginDirectory(){
     std::string sDirectory(GetApplicationDirectory());
     sDirectory.append("plugins/");
     return sDirectory;
 }
 
-//////////////////////////////////////////
-///\brief
-///Get path to where the application is located.
-///
-///\returns
-///String with the path
-//////////////////////////////////////////
 std::string musik::core::GetApplicationDirectory() {
     std::string sDirectory;
 
@@ -98,17 +81,6 @@ std::string musik::core::GetDataDirectory(){
     return directory;
 }
 
-
-//////////////////////////////////////////
-///\brief
-///Find out the full path to a file.
-///
-///\param sFile
-///File to get the full path to.
-///
-///\returns
-///String with path.
-//////////////////////////////////////////
 std::string musik::core::GetPath(const std::string &sFile){
     
     std::string sPath;

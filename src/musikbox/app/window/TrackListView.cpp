@@ -30,10 +30,10 @@ using std::setw;
 using std::setfill;
 using std::setiosflags;
 
-TrackListView::TrackListView(Transport& transport, LibraryPtr library, IWindow *parent) 
-: ListWindow(parent) {
+TrackListView::TrackListView(PlaybackService& playback, LibraryPtr library, IWindow *parent)
+: ListWindow(parent)
+, playback(playback) {
     this->SetContentColor(BOX_COLOR_WHITE_ON_BLACK);
-    this->transport = &transport;
     this->library = library;
     this->library->QueryCompleted.connect(this, &TrackListView::OnQueryCompleted);
     this->adapter = new Adapter(*this);
@@ -58,10 +58,7 @@ bool TrackListView::KeyPress(int64 ch) {
     if (ch == '\n') { /* return */
         size_t selected = this->GetSelectedIndex();
         if (this->metadata && this->metadata->size() > selected) {
-            TrackPtr track = this->metadata->at(selected);
-            std::string fn = track->GetValue(Track::FILENAME);
-            this->transport->Stop();
-            this->transport->Start(fn);
+            playback.Start(*this->metadata, selected);
             return true;
         }
     }

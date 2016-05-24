@@ -44,6 +44,7 @@
 #include <app/layout/LibraryLayout.h>
 #include <app/window/OutputWindow.h>
 #include <app/util/GlobalHotkeys.h>
+#include <app/service/PlaybackService.h>
 
 #include <boost/locale.hpp>
 #include <boost/filesystem/path.hpp>
@@ -171,12 +172,14 @@ int main(int argc, char* argv[])
         Transport tp;
         tp.SetVolume(0.75);
 
+        PlaybackService playback(tp);
+
         using musik::core::LibraryFactory;
         LibraryPtr library = LibraryFactory::Libraries().at(0);
 
         GlobalHotkeys globalHotkeys(tp, library);
 
-        ILayoutPtr libraryLayout(new LibraryLayout(tp, library));
+        ILayoutPtr libraryLayout(new LibraryLayout(playback, library));
         ILayoutPtr consoleLayout(new MainLayout(tp, library));
 
         int64 ch;

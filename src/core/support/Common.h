@@ -39,28 +39,12 @@
 #include <string>
 #include <core/config.h>
 
-namespace musik{ namespace core{
+namespace musik { namespace core {
 
-    /*****************************
-    Path to where the executable is located.
-    *****************************/
     std::string GetApplicationDirectory();
-
-    /*****************************
-    Path to where the executable is located.
-    *****************************/
     std::string GetDataDirectory();
-
-    /*****************************
-    Get the full path of the sFile
-    *****************************/
     std::string GetPath(const std::string &sFile);
-
-    /*****************************
-    Path to where plugins are located.
-    *****************************/
     std::string GetPluginDirectory();
-
     UINT64 Checksum(char *data,unsigned int bytes);
 
 } }

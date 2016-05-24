@@ -13,9 +13,10 @@ using namespace musik::core::library::constants;
 #define TRANSPORT_HEIGHT 3
 #define DEFAULT_CATEGORY Track::ALBUM_ID
 
-LibraryLayout::LibraryLayout(Transport& transport, LibraryPtr library)
+LibraryLayout::LibraryLayout(PlaybackService& playback, LibraryPtr library)
 : LayoutBase()
-, transport(transport) {
+, playback(playback)
+, transport(playback.GetTransport()) {
     this->library = library;
     this->InitializeWindows();
 }
@@ -43,7 +44,7 @@ void LibraryLayout::Layout() {
 
 void LibraryLayout::InitializeWindows() {
     this->categoryList.reset(new CategoryListView(this->library, DEFAULT_CATEGORY));
-    this->trackList.reset(new TrackListView(this->transport, this->library));
+    this->trackList.reset(new TrackListView(this->playback, this->library));
     this->transportView.reset(new TransportWindow(this->library, this->transport));
 
     this->AddWindow(this->categoryList);
@@ -106,10 +107,10 @@ bool LibraryLayout::KeyPress(int64 ch) {
         /* copied from GlobalHotkeys. should probably be generalized
         at some point. */
         int state = this->transport.GetPlaybackState();
-        if (state == Transport::StatePaused) {
+        if (state == Transport::PlaybackPaused) {
             this->transport.Resume();
         }
-        else if (state == Transport::StatePlaying) {
+        else if (state == Transport::PlaybackPlaying) {
             this->transport.Pause();
         }
     }

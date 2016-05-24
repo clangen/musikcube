@@ -34,6 +34,7 @@
 
 #include <core/config.h>
 #include <core/audio/Player.h>
+#include <core/sdk/IOutput.h>
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <sigslot/sigslot.h>
@@ -43,30 +44,29 @@ namespace musik { namespace core { namespace audio {
 
     class Transport : public sigslot::has_slots<> {
         public:
-            sigslot::signal2<int, std::string> PlaybackEvent;
+            sigslot::signal2<int, std::string> StreamEvent;
+            sigslot::signal1<int> PlaybackEvent;
             sigslot::signal0<> VolumeChanged;
 
             typedef enum {
-                StateStopped,
-                StatePaused,
-                StatePlaying
+                PlaybackStopped,
+                PlaybackPaused,
+                PlaybackPlaying
             } PlaybackState;
 
             typedef enum {
-                EventScheduled = 0,
-                EventPlaying = 1,
-                EventPaused = 2,
-                EventResumed = 3,
-                EventAlmostDone = 4,
-                EventStopped = 5,
-                EventError = -1
-            } PlaybackEventType;
+                StreamScheduled = 0,
+                StreamPlaying = 1,
+                StreamAlmostDone = 4,
+                StreamFinished = 5,
+                StreamError = -1
+            } StreamEventType;
 
             Transport();
             ~Transport();
 
-            void PrepareNextTrack(std::string trackUrl);
-            void Start(std::string trackUrl);
+            void PrepareNextTrack(const std::string& trackUrl);
+            void Start(const std::string& trackUrl);
             void Stop();
             bool Pause();
             bool Resume();
@@ -81,20 +81,24 @@ namespace musik { namespace core { namespace audio {
             PlaybackState GetPlaybackState();
 
         private:
-            void RaisePlaybackEvent(int type, PlayerPtr player);
+            void StartWithPlayer(Player* player);
+            void RemoveActive(Player* player);
 
-            void OnPlaybackStarted(Player *player);
-            void OnPlaybackAlmostEnded(Player *player);
-            void OnPlaybackEnded(Player *player);
-            void OnPlaybackError(Player *player);
+            void RaiseStreamEvent(int type, Player* player);
+            void SetPlaybackState(int state);
+
+            void OnPlaybackStarted(Player* player);
+            void OnPlaybackAlmostEnded(Player* player);
+            void OnPlaybackEnded(Player* player);
+            void OnPlaybackError(Player* player);
 
         private:
             double volume;
             PlaybackState state;
 
-            boost::mutex stateMutex;
-            PlayerPtr currentPlayer;
-            PlayerPtr nextPlayer;
+            boost::recursive_mutex stateMutex;
+            Player* nextPlayer;
+            std::list<Player*> active;
 
     };
 
