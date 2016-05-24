@@ -11,7 +11,6 @@ using musik::core::audio::Transport;
 using namespace musik::core::library::constants;
 
 #define URI_AT_INDEX(x) this->playlist.at(x)->URI()
-#define MESSAGE_START_NEXT_TRACK 1234
 #define PREVIOUS_GRACE_PERIOD 2.0f
 
 class StreamEvent : public IMessage {
@@ -24,14 +23,8 @@ PlaybackService::PlaybackService(Transport& transport)
     this->index = (size_t) -1;
 }
 
-
 void PlaybackService::ProcessMessage(IMessage &message) {
-    if (message.MessageType() == MESSAGE_START_NEXT_TRACK) {
-        if (!Next()) {
-            transport.Stop();
-            index = (size_t)-1;
-        }
-    }
+
 }
 
 bool PlaybackService::Next() {
@@ -79,14 +72,10 @@ void PlaybackService::Play(size_t index) {
 }
 
 void PlaybackService::OnStreamEvent(int eventType, std::string uri) {
-    if (eventType == Transport::StreamFinished) {
-        MessageQueue::Instance().Post(
-            Message::Create(this, MESSAGE_START_NEXT_TRACK, 0, 0));
+    if (eventType == Transport::StreamAlmostDone) {
+        if (this->playlist.size() > this->index + 1) {
+            this->transport.PrepareNextTrack(URI_AT_INDEX(index + 1));
+            index++;
+        }
     }
-    //if (eventType == Transport::StreamAlmostDone) {
-    //    if (this->playlist.size() > this->index + 1) {
-    //        this->transport.PrepareNextTrack(URI_AT_INDEX(index + 1));
-    //        index++;
-    //    }
-    //}
 }

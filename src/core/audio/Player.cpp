@@ -258,6 +258,8 @@ void Player::ThreadLoop() {
         this->PlaybackError(this);
     }
 
+    bool stopped = false;
+
     /* wait until all remaining buffers have been written, set final state... */
     {
         boost::mutex::scoped_lock lock(this->mutex);
@@ -272,12 +274,13 @@ void Player::ThreadLoop() {
             while (this->lockedBuffers.size() > 0) {
                 writeToOutputCondition.wait(this->mutex);
             }
-
-            this->state = Player::Quit;
         }
+
+        stopped = (this->state == Player::Quit);
+        this->state = Player::Quit;
     }
 
-    if (this->Exited()) {
+    if (stopped) {
         this->PlaybackStopped(this);
     }
     else {
