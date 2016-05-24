@@ -72,7 +72,6 @@ namespace musik { namespace core { namespace audio {
             bool Pause();
             bool Resume();
 
-            double Duration();
             double Position();
             void SetPosition(double seconds);
 

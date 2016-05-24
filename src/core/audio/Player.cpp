@@ -121,7 +121,7 @@ double Player::Position() {
 
 void Player::SetPosition(double seconds) {
     boost::mutex::scoped_lock lock(this->mutex);
-    this->setPosition = seconds;
+    this->setPosition = max(0, seconds);
 }
 
 double Player::Volume() {

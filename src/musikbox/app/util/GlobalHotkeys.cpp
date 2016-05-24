@@ -39,6 +39,14 @@ bool GlobalHotkeys::Handle(int64 ch) {
     else if (kn == "ALT_L") {
         this->playback.Next();
     }
+    else if (kn == "ALT_U") {
+        double time = this->transport.Position();
+        this->transport.SetPosition(time - 10.0f);
+    }
+    else if (kn == "ALT_O") {
+        double time = this->transport.Position();
+        this->transport.SetPosition(time + 10.0f);
+    }
     else if (kn == "^R") {
         library->Indexer()->Synchronize(true);
     }

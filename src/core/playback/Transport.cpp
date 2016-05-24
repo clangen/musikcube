@@ -179,16 +179,6 @@ bool Transport::Resume() {
     return false;
 }
 
-double Transport::Duration() {
-    boost::recursive_mutex::scoped_lock lock(this->stateMutex);
-
-    if (!this->active.empty()) {
-        return this->active.front()->Position();
-    }
-
-    return 0;
-}
-
 double Transport::Position() {
     boost::recursive_mutex::scoped_lock lock(this->stateMutex);
 
