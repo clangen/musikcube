@@ -8,7 +8,9 @@
 #include <core/library/LocalLibraryConstants.h>
 
 using musik::core::audio::Transport;
+
 using namespace musik::core::library::constants;
+using namespace musik::box;
 
 #define URI_AT_INDEX(x) this->playlist.at(x)->URI()
 #define PREVIOUS_GRACE_PERIOD 2.0f

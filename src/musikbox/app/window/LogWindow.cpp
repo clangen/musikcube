@@ -8,6 +8,8 @@
 #include <cursespp/Colors.h>
 #include <cursespp/Screen.h>
 
+using namespace musik::box;
+
 typedef IScrollAdapter::IEntry IEntry;
 
 LogWindow::LogWindow(IWindow *parent) 

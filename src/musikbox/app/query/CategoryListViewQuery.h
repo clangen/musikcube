@@ -7,26 +7,30 @@
 using musik::core::query::QueryBase;
 using musik::core::db::Connection;
 
-class CategoryListViewQuery : public QueryBase {
-    public:
-        struct Result {
-            std::string displayValue;
-            DBID id;
+namespace musik {
+    namespace box {
+        class CategoryListViewQuery : public QueryBase {
+            public:
+                struct Result {
+                    std::string displayValue;
+                    DBID id;
+                };
+
+                typedef std::shared_ptr<std::vector<
+                    std::shared_ptr<Result>>> ResultList;
+
+                CategoryListViewQuery(const std::string& trackField);
+                virtual ~CategoryListViewQuery();
+
+                std::string Name() { return "CategoryListViewQuery"; }
+
+                virtual ResultList GetResult();
+
+            protected:
+                virtual bool OnRun(Connection &db);
+
+                std::string trackField;
+                ResultList result;
         };
-
-        typedef std::shared_ptr<std::vector<
-            std::shared_ptr<Result>>> ResultList;
-
-        CategoryListViewQuery(const std::string& trackField);
-        virtual ~CategoryListViewQuery();
-
-        std::string Name() { return "CategoryListViewQuery"; }
-
-        virtual ResultList GetResult();
-
-    protected:
-        virtual bool OnRun(Connection &db);
-
-        std::string trackField;
-        ResultList result;
-};
+    }
+}

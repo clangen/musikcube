@@ -13,24 +13,28 @@ using musik::core::TrackPtr;
 using musik::core::LibraryPtr;
 using musik::core::QueryPtr;
 
-class TransportWindow : public Window, public sigslot::has_slots<> {
-    public:
-        TransportWindow(LibraryPtr library, Transport& transport);
-        ~TransportWindow();
+namespace musik {
+    namespace box {
+        class TransportWindow : public Window, public sigslot::has_slots<> {
+            public:
+                TransportWindow(LibraryPtr library, Transport& transport);
+                ~TransportWindow();
 
-        virtual void ProcessMessage(IMessage &message);
-        virtual void Show();
-        void Update();
+                virtual void ProcessMessage(IMessage &message);
+                virtual void Show();
+                void Update();
 
-    private:
-        void OnTransportStreamEvent(int eventType, std::string url);
-        void OnTransportVolumeChanged();
-        void OnTransportTimeChanged(double time);
-        void OnQueryCompleted(QueryPtr query);
+            private:
+                void OnTransportStreamEvent(int eventType, std::string url);
+                void OnTransportVolumeChanged();
+                void OnTransportTimeChanged(double time);
+                void OnQueryCompleted(QueryPtr query);
 
-        bool paused;
-        LibraryPtr library;
-        Transport* transport;
-        TrackPtr currentTrack;
-        std::shared_ptr<SingleTrackQuery> trackQuery;
-};
+                bool paused;
+                LibraryPtr library;
+                Transport* transport;
+                TrackPtr currentTrack;
+                std::shared_ptr<SingleTrackQuery> trackQuery;
+        };
+    }
+}

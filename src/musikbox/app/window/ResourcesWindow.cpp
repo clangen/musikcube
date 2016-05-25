@@ -11,6 +11,8 @@
 
 #include <core/debug.h>
 
+using namespace musik::box;
+
 #define BYTES_PER_MEGABYTE 1048576.0f
 
 ResourcesWindow::ResourcesWindow(IWindow *parent) 

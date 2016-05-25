@@ -13,6 +13,8 @@ using namespace musik::core::library::constants;
 #define TRANSPORT_HEIGHT 3
 #define DEFAULT_CATEGORY Track::ALBUM_ID
 
+using namespace musik::box;
+
 LibraryLayout::LibraryLayout(PlaybackService& playback, LibraryPtr library)
 : LayoutBase()
 , playback(playback)

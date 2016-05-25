@@ -9,29 +9,33 @@
 #include <cursespp/ScrollableWindow.h>
 #include <cursespp/SimpleScrollAdapter.h>
 
-class LogWindow : public ScrollableWindow, public sigslot::has_slots<> {
-    public:
-        LogWindow(IWindow *parent = NULL);
-        ~LogWindow();
+namespace musik {
+    namespace box {
+        class LogWindow : public ScrollableWindow, public sigslot::has_slots<> {
+            public:
+                LogWindow(IWindow *parent = NULL);
+                ~LogWindow();
 
-        void Update();
+                void Update();
 
-    protected:
-        virtual IScrollAdapter& GetScrollAdapter();
+            protected:
+                virtual IScrollAdapter& GetScrollAdapter();
 
-    private:
-        void OnLogged(
-            musik::debug::log_level level, 
-            std::string tag, 
-            std::string message);
+            private:
+                void OnLogged(
+                    musik::debug::log_level level,
+                    std::string tag,
+                    std::string message);
 
-        struct LogEntry {
-            int level;
-            std::string tag;
-            std::string message;
+                struct LogEntry {
+                    int level;
+                    std::string tag;
+                    std::string message;
+                };
+
+                boost::mutex pendingMutex;
+                std::vector<LogEntry*> pending;
+                SimpleScrollAdapter* adapter;
         };
-
-        boost::mutex pendingMutex;
-        std::vector<LogEntry*> pending;
-        SimpleScrollAdapter* adapter;
-};
+    }
+}

@@ -5,14 +5,17 @@
 
 #include <app/util/SystemInfo.h>
 
-class ResourcesWindow : public Window {
-    public:
-        ResourcesWindow(IWindow *parent = NULL);
-        virtual ~ResourcesWindow();
+namespace musik {
+    namespace box {
+        class ResourcesWindow : public Window {
+            public:
+                ResourcesWindow(IWindow *parent = NULL);
+                virtual ~ResourcesWindow();
 
-        virtual void Update();
+                virtual void Update();
 
-    private:
-
-        SystemInfo* systemInfo;
-};
+            private:
+                SystemInfo* systemInfo;
+        };
+    }
+}

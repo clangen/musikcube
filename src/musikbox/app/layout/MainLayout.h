@@ -15,20 +15,24 @@
 
 using musik::core::audio::Transport;
 
-class MainLayout : public LayoutBase {
-    public:
-        MainLayout(Transport& transport, LibraryPtr library);
-        ~MainLayout();
+namespace musik {
+    namespace box {
+        class MainLayout : public LayoutBase {
+            public:
+                MainLayout(Transport& transport, LibraryPtr library);
+                ~MainLayout();
 
-        virtual void Layout();
-        virtual void Show();
-        virtual void ProcessMessage(IMessage &message);
+                virtual void Layout();
+                virtual void Show();
+                virtual void ProcessMessage(IMessage &message);
 
-    private:
-        void UpdateWindows();
+            private:
+                void UpdateWindows();
 
-        std::shared_ptr<LogWindow> logs;
-        std::shared_ptr<CommandWindow> commands;
-        std::shared_ptr<OutputWindow> output;
-        std::shared_ptr<ResourcesWindow> resources;
-};
+                std::shared_ptr<LogWindow> logs;
+                std::shared_ptr<CommandWindow> commands;
+                std::shared_ptr<OutputWindow> output;
+                std::shared_ptr<ResourcesWindow> resources;
+        };
+    }
+}

@@ -10,24 +10,28 @@ using musik::core::db::Connection;
 using musik::core::TrackPtr;
 using musik::core::LibraryPtr;
 
-class TrackListViewQuery : public QueryBase {
-    public:
-        typedef std::shared_ptr<std::vector<TrackPtr>> Result;
+namespace musik {
+    namespace box {
+        class TrackListViewQuery : public QueryBase {
+            public:
+                typedef std::shared_ptr<std::vector<TrackPtr>> Result;
 
-        TrackListViewQuery(LibraryPtr library, const std::string& column, DBID id);
-        virtual ~TrackListViewQuery();
-        
-        std::string Name() { return "TrackListViewQuery"; }
+                TrackListViewQuery(LibraryPtr library, const std::string& column, DBID id);
+                virtual ~TrackListViewQuery();
 
-        virtual Result GetResult();
+                std::string Name() { return "TrackListViewQuery"; }
 
-    protected:
-        virtual bool OnRun(Connection &db);
+                virtual Result GetResult();
 
-        Result result;
+            protected:
+                virtual bool OnRun(Connection &db);
 
-    private:
-        LibraryPtr library;
-        std::string column;
-        DBID id;
-};
+                Result result;
+
+            private:
+                LibraryPtr library;
+                std::string column;
+                DBID id;
+        };
+    }
+}

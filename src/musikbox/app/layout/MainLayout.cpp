@@ -8,6 +8,8 @@
 #define MESSAGE_TYPE_UPDATE 1001
 #define UPDATE_INTERVAL_MS 1000
 
+using namespace musik::box;
+
 MainLayout::MainLayout(Transport& transport, LibraryPtr library)
 : LayoutBase() {
     this->logs.reset(new LogWindow(this));

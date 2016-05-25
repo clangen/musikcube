@@ -6,6 +6,8 @@
 #include "psapi.h"
 #include "pdh.h"
 
+using namespace musik::box;
+
 #ifdef WIN32
 class WindowsSystemInfo : public SystemInfo {
     public:

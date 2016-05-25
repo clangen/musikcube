@@ -12,7 +12,9 @@
 
 using musik::core::db::Statement;
 using musik::core::db::Row;
+
 using namespace musik::core::library::constants;
+using namespace musik::box;
 
 #define reset(x) x.reset(new std::vector<std::shared_ptr<Result>>);
 

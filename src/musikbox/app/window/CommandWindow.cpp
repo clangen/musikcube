@@ -28,6 +28,8 @@ using musik::core::LibraryPtr;
 using musik::core::TrackPtr;
 using musik::core::QueryPtr;
 
+using namespace musik::box;
+
 template <class T>
 bool tostr(T& t, const std::string& s) {
     std::istringstream iss(s);

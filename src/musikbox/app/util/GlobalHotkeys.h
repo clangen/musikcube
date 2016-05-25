@@ -8,15 +8,19 @@
 using musik::core::audio::Transport;
 using musik::core::LibraryPtr;
 
-class GlobalHotkeys {
-    public:
-        GlobalHotkeys(PlaybackService& playback, LibraryPtr library);
-        ~GlobalHotkeys(); /* non-virtual; do not use as a base class */
+namespace musik {
+    namespace box {
+        class GlobalHotkeys {
+            public:
+                GlobalHotkeys(PlaybackService& playback, LibraryPtr library);
+                ~GlobalHotkeys(); /* non-virtual; do not use as a base class */
 
-        bool Handle(int64 ch);
+                bool Handle(int64 ch);
 
-    private:
-        PlaybackService& playback;
-        Transport& transport;
-        LibraryPtr library;
-};
+            private:
+                PlaybackService& playback;
+                Transport& transport;
+                LibraryPtr library;
+        };
+    }
+}

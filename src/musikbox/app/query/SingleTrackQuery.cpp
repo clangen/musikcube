@@ -11,7 +11,9 @@ using musik::core::db::Statement;
 using musik::core::db::Row;
 using musik::core::TrackPtr;
 using musik::core::LibraryTrack;
+
 using namespace musik::core::library::constants;
+using namespace musik::box;
 
 SingleTrackQuery::SingleTrackQuery(const std::string& filename) {
     this->filename = filename;

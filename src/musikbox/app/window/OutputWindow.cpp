@@ -8,6 +8,8 @@
 #include <cursespp/Colors.h>
 #include <cursespp/MultiLineEntry.h>
 
+using namespace musik::box;
+
 typedef IScrollAdapter::EntryPtr EntryPtr;
 
 OutputWindow::OutputWindow(IWindow *parent) 

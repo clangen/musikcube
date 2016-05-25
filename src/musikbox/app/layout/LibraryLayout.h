@@ -15,30 +15,34 @@
 using musik::core::LibraryPtr;
 using musik::core::audio::Transport;
 
-class LibraryLayout : public LayoutBase, public sigslot::has_slots<> {
-    public:
-        LibraryLayout(PlaybackService& playback, LibraryPtr library);
-        virtual ~LibraryLayout();
+namespace musik {
+    namespace box {
+        class LibraryLayout : public LayoutBase, public sigslot::has_slots<> {
+            public:
+                LibraryLayout(PlaybackService& playback, LibraryPtr library);
+                virtual ~LibraryLayout();
 
-        virtual void Layout();
-        virtual void Show();
-        virtual bool LibraryLayout::KeyPress(int64 ch);
+                virtual void Layout();
+                virtual void Show();
+                virtual bool LibraryLayout::KeyPress(int64 ch);
 
-    private:
-        void InitializeWindows();
+            private:
+                void InitializeWindows();
 
-        void RequeryTrackList(ListWindow *view);
+                void RequeryTrackList(ListWindow *view);
 
-        void OnCategoryViewSelectionChanged(
-            ListWindow *view, size_t newIndex, size_t oldIndex);
+                void OnCategoryViewSelectionChanged(
+                    ListWindow *view, size_t newIndex, size_t oldIndex);
 
-        void OnCategoryViewInvalidated(
-            ListWindow *view, size_t selectedIndex);
+                void OnCategoryViewInvalidated(
+                    ListWindow *view, size_t selectedIndex);
 
-        PlaybackService& playback;
-        Transport& transport;
-        LibraryPtr library;
-        std::shared_ptr<CategoryListView> categoryList;
-        std::shared_ptr<TrackListView> trackList;
-        std::shared_ptr<TransportWindow> transportView;
-};
+                PlaybackService& playback;
+                Transport& transport;
+                LibraryPtr library;
+                std::shared_ptr<CategoryListView> categoryList;
+                std::shared_ptr<TrackListView> trackList;
+                std::shared_ptr<TransportWindow> transportView;
+        };
+    }
+}

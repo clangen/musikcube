@@ -10,18 +10,22 @@ using musik::core::db::Connection;
 using musik::core::TrackPtr;
 using musik::core::LibraryPtr;
 
-class SingleTrackQuery : public QueryBase {
-    public:
-        SingleTrackQuery(const std::string& path);
-        virtual ~SingleTrackQuery();
+namespace musik {
+    namespace box {
+        class SingleTrackQuery : public QueryBase {
+            public:
+                SingleTrackQuery(const std::string& path);
+                virtual ~SingleTrackQuery();
 
-        virtual std::string Name() { return "SingleTrackQuery"; }
-        virtual TrackPtr GetResult();
+                virtual std::string Name() { return "SingleTrackQuery"; }
+                virtual TrackPtr GetResult();
 
-    protected:
-        virtual bool OnRun(Connection &db);
+            protected:
+                virtual bool OnRun(Connection &db);
 
-    private:
-        TrackPtr result;
-        std::string filename;
-};
+            private:
+                TrackPtr result;
+                std::string filename;
+        };
+    }
+}

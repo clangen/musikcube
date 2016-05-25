@@ -2,6 +2,7 @@
 #include "GlobalHotkeys.h"
 
 using musik::core::LibraryPtr;
+using namespace musik::box;
 
 GlobalHotkeys::GlobalHotkeys(PlaybackService& playback, LibraryPtr library)
 : playback(playback)

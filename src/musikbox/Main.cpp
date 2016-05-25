@@ -59,6 +59,14 @@
 
 #define IDLE_TIMEOUT_MS 0
 
+using musik::core::audio::Transport;
+using musik::core::LibraryFactory;
+
+using musik::box::LibraryLayout;
+using musik::box::MainLayout;
+using musik::box::PlaybackService;
+using musik::box::GlobalHotkeys;
+
 struct WindowState {
     ILayoutPtr layout;
     IWindowPtr focused;
@@ -169,13 +177,12 @@ int main(int argc, char* argv[])
     {
         Colors::Init();
 
-        using musik::core::audio::Transport;
+
         Transport tp;
         tp.SetVolume(0.75);
 
         PlaybackService playback(tp);
 
-        using musik::core::LibraryFactory;
         LibraryPtr library = LibraryFactory::Libraries().at(0);
 
         GlobalHotkeys globalHotkeys(playback, library);
