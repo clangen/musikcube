@@ -20,6 +20,5 @@ class SimpleScrollAdapter : public ScrollAdapterBase {
         typedef EntryList::iterator Iterator;
 
         EntryList entries;
-        size_t removedOffset;
         size_t maxEntries;
 };

@@ -53,10 +53,30 @@ WaveOut::WaveOut()
 }
 
 WaveOut::~WaveOut() {
-    this->Stop();
 }
 
 void WaveOut::Destroy() {
+    {
+        boost::recursive_mutex::scoped_lock lock(this->outputDeviceMutex);
+
+        /* reset playback immediately. this will invalidate all pending
+        buffers */
+        if (this->waveHandle != NULL) {
+            waveOutReset(this->waveHandle);
+        }
+
+        /* stop the thread so nothing else is processed */
+        this->StopWaveOutThread();
+
+        /* close it down after the threadproc has finished */
+        if (this->waveHandle != NULL) {
+            waveOutClose(this->waveHandle);
+            this->waveHandle = NULL;
+        }
+    }
+
+    this->ClearBufferQueue();
+
     delete this;
 }
 
@@ -79,28 +99,25 @@ void WaveOut::SetVolume(double volume) {
 }
 
 void WaveOut::Stop() {
-    boost::recursive_mutex::scoped_lock lock(this->outputDeviceMutex);
+    {
+        boost::recursive_mutex::scoped_lock lock(this->outputDeviceMutex);
 
-    /* reset waveout first. if we don't do this, it seems like it'll still
-    try to send events to the thread, and fail with a runtime exception. */
-    if (this->waveHandle != NULL) {
-        waveOutReset(this->waveHandle);
+        if (this->waveHandle != NULL) {
+            waveOutReset(this->waveHandle);
+        }
     }
 
-    /* stop the thread so nothing else is processed */
-    this->StopWaveOutThread();
+    this->ClearBufferQueue();
+}
 
-    /* dealloc the handle, we'll create a new one later if we need to... */
-    if (this->waveHandle != NULL) {
-        waveOutClose(this->waveHandle);
-        this->waveHandle = NULL;
-    }
+void WaveOut::ClearBufferQueue() {
+    boost::recursive_mutex::scoped_lock lock(this->bufferQueueMutex);
 
     /* notify and free any pending buffers, the Player in the core
     will be waiting for all pending buffers to be processed. */
     if (this->queuedBuffers.size() > 0) {
         BufferList::iterator it = this->queuedBuffers.begin();
-        for (; it != this->queuedBuffers.end(); ++it) {
+        for (; it != this->queuedBuffers.end(); it++) {
             notifyBufferProcessed((*it).get());
         }
 
@@ -110,14 +127,13 @@ void WaveOut::Stop() {
 
 void WaveOut::OnBufferWrittenToOutput(WaveOutBuffer *buffer) {
     boost::recursive_mutex::scoped_lock lock(this->bufferQueueMutex);
-
-    notifyBufferProcessed(buffer);
-    
+   
     /* removed the buffer. it should be at the front of the queue. */
     BufferList::iterator it = this->queuedBuffers.begin();
-    for( ; it != this->queuedBuffers.end(); ++it) {
+    for( ; it != this->queuedBuffers.end(); it++) {
         if (it->get() == buffer) {
-            it = this->queuedBuffers.erase(it);
+            notifyBufferProcessed(buffer);
+            this->queuedBuffers.erase(it);
             return;
         }
     }

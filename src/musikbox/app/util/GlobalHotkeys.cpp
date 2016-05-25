@@ -24,6 +24,7 @@ bool GlobalHotkeys::Handle(int64 ch) {
         else if (state == Transport::PlaybackPlaying) {
             this->transport.Pause();
         }
+        return true;
     }
     if (kn == "ALT_I") {
         this->transport.SetVolume(this->transport.Volume() + 0.05); /* 5% */
@@ -35,20 +36,25 @@ bool GlobalHotkeys::Handle(int64 ch) {
     }
     else if (kn == "ALT_J") {
         this->playback.Previous();
+        return true;
     }
     else if (kn == "ALT_L") {
         this->playback.Next();
+        return true;
     }
     else if (kn == "ALT_U") {
         double time = this->transport.Position();
         this->transport.SetPosition(time - 10.0f);
+        return true;
     }
     else if (kn == "ALT_O") {
         double time = this->transport.Position();
         this->transport.SetPosition(time + 10.0f);
+        return true;
     }
     else if (kn == "^R") {
         library->Indexer()->Synchronize(true);
+        return true;
     }
 
     return false;

@@ -32,7 +32,7 @@ using namespace boost::chrono;
 #define REFRESH_TRANSPORT_READOUT 1001
 #define REFRESH_INTERVAL_MS 1000
 
-#define SCHEDULE_REFRESH(x) \
+#define DEBOUNCE_REFRESH(x) \
     this->RemoveMessage(REFRESH_TRANSPORT_READOUT); \
     this->PostMessage(REFRESH_TRANSPORT_READOUT, 0, 0, x);
 
@@ -45,6 +45,7 @@ TransportWindow::TransportWindow(LibraryPtr library, Transport& transport)
     this->transport = &transport;
     this->transport->StreamEvent.connect(this, &TransportWindow::OnTransportStreamEvent);
     this->transport->VolumeChanged.connect(this, &TransportWindow::OnTransportVolumeChanged);
+    this->transport->TimeChanged.connect(this, &TransportWindow::OnTransportTimeChanged);
     this->paused = false;
 }
 
@@ -61,7 +62,7 @@ void TransportWindow::ProcessMessage(IMessage &message) {
     
     if (type == REFRESH_TRANSPORT_READOUT) {
         this->Update();
-        SCHEDULE_REFRESH(REFRESH_INTERVAL_MS)
+        DEBOUNCE_REFRESH(REFRESH_INTERVAL_MS)
     }
 }
 
@@ -69,18 +70,22 @@ void TransportWindow::OnTransportStreamEvent(int eventType, std::string url) {
     if (eventType == Transport::StreamPlaying) {
         this->trackQuery.reset(new SingleTrackQuery(url));
         this->library->Enqueue(this->trackQuery);
-        SCHEDULE_REFRESH(0)
+        DEBOUNCE_REFRESH(0);
     }
 }
 
 void TransportWindow::OnTransportVolumeChanged() {
-    SCHEDULE_REFRESH(0)
+    DEBOUNCE_REFRESH(0)
+}
+
+void TransportWindow::OnTransportTimeChanged(double time) {
+    DEBOUNCE_REFRESH(0)
 }
 
 void TransportWindow::OnQueryCompleted(QueryPtr query) {
     if (query == this->trackQuery && query->GetStatus() == QueryBase::Finished) {
         this->currentTrack = this->trackQuery->GetResult();
-        SCHEDULE_REFRESH(0)
+        DEBOUNCE_REFRESH(0)
     }
 }
 

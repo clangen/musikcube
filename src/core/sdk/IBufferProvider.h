@@ -38,19 +38,12 @@
 
 namespace musik { namespace core { namespace audio {
 
-    //////////////////////////////////////////
-    ///\brief
-    ///Interface for the audio::Player to make IOuput plugins be able to make callbacks
-    //////////////////////////////////////////
     class IBufferProvider {
         public:
             virtual ~IBufferProvider() = 0 { }
 
-            //////////////////////////////////////////
-            ///\brief
-            ///Release used by the output to notify the player a buffer has finished
-            ///processing. 
-            //////////////////////////////////////////
+            /* the output calls this interface to let the provider know 
+            it's done with the Buffer, so it can be recycled or released */
             virtual void OnBufferProcessed(IBuffer *buffer) = 0;
     };
 

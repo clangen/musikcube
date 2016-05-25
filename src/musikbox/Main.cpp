@@ -163,6 +163,7 @@ int main(int argc, char* argv[])
 
 #ifdef __PDCURSES__
     PDC_set_title("musikbox ♫");
+    PDC_set_function_key(FUNCTION_KEY_SHUT_DOWN, 4);
 #endif
 
     {

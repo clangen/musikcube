@@ -25,6 +25,7 @@ class TransportWindow : public Window, public sigslot::has_slots<> {
     private:
         void OnTransportStreamEvent(int eventType, std::string url);
         void OnTransportVolumeChanged();
+        void OnTransportTimeChanged(double time);
         void OnQueryCompleted(QueryPtr query);
 
         bool paused;

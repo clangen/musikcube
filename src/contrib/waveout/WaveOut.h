@@ -65,6 +65,7 @@ class WaveOut : public IOutput {
         void SetFormat(IBuffer *buffer);
         void StartWaveOutThread();
         void StopWaveOutThread();
+        void ClearBufferQueue();
 
     protected:
         friend class WaveOutBuffer;

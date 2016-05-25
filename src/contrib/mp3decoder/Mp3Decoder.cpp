@@ -68,6 +68,7 @@ Mp3Decoder::Mp3Decoder()
 }
 
 Mp3Decoder::~Mp3Decoder() {
+    delete decoder;
 }
 
 unsigned long Mp3Decoder::GetID3HeaderLength(unsigned char * buffer) {

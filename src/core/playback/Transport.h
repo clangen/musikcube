@@ -47,6 +47,7 @@ namespace musik { namespace core { namespace audio {
             sigslot::signal2<int, std::string> StreamEvent;
             sigslot::signal1<int> PlaybackEvent;
             sigslot::signal0<> VolumeChanged;
+            sigslot::signal1<double> TimeChanged;
 
             typedef enum {
                 PlaybackStopped,

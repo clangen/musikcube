@@ -82,7 +82,6 @@ void Transport::Start(const std::string& url) {
     musik::debug::info(TAG, "we were asked to start the track at " + url);
 
     Player* newPlayer = new Player(url);
-    newPlayer->SetVolume(this->volume);
     musik::debug::info(TAG, "Player created successfully");
 
     this->StartWithPlayer(newPlayer);
@@ -108,6 +107,7 @@ void Transport::StartWithPlayer(Player* newPlayer) {
             musik::debug::info(TAG, "play()");
 
             this->active.push_front(newPlayer);
+            newPlayer->SetVolume(this->volume);
             newPlayer->Play();
         }
 
@@ -193,7 +193,8 @@ void Transport::SetPosition(double seconds) {
     boost::recursive_mutex::scoped_lock lock(this->stateMutex);
     
     if (!this->active.empty()) {
-        return this->active.front()->SetPosition(seconds);
+        this->active.front()->SetPosition(seconds);
+        this->TimeChanged(seconds);
     }
 }
 

@@ -11,10 +11,6 @@
 typedef IScrollAdapter::EntryPtr EntryPtr;
 
 SimpleScrollAdapter::SimpleScrollAdapter() {
-    /* the adapters can have a maximum size. as we remove elements from
-    the back, we don't want to re-index everything. instead, we'll use
-    this offset for future calculations when searching for items. */
-    this->removedOffset = 0; 
     this->maxEntries = MAX_ENTRY_COUNT;
 }
 
