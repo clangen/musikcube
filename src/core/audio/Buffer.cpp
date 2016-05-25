@@ -37,103 +37,52 @@
 
 using namespace musik::core::audio;
 
-//////////////////////////////////////////
-///\brief
-///Constructor
-//////////////////////////////////////////
 Buffer::Buffer(void)
  :buffer(NULL)
  ,sampleSize(0)
  ,internalBufferSize(0)
  ,sampleRate(44100)
- ,channels(2)
-{
+ ,channels(2) {
 }
 
-//////////////////////////////////////////
-///\brief
-///Destructor
-//////////////////////////////////////////
 Buffer::~Buffer() {
     delete this->buffer;
 }
 
-//////////////////////////////////////////
-///\brief
-///Create a new Buffer
-//////////////////////////////////////////
 BufferPtr Buffer::Create() {
     return BufferPtr(new Buffer());
 }
 
-//////////////////////////////////////////
-///\brief
-///Get the samplerate of the buffer
-//////////////////////////////////////////
 long Buffer::SampleRate() const {
     return this->sampleRate;
 }
 
-//////////////////////////////////////////
-///\brief
-///Set the buffers samplerate
-//////////////////////////////////////////
 void Buffer::SetSampleRate(long sampleRate) {
     this->sampleRate = sampleRate;
 }
 
-//////////////////////////////////////////
-///\brief
-///Get the number of channels of the buffer
-//////////////////////////////////////////
 int Buffer::Channels() const {
     return this->channels;
 }
 
-//////////////////////////////////////////
-///\brief
-///Set the number of channels of the buffer
-//////////////////////////////////////////
 void Buffer::SetChannels(int channels) {
     this->channels = channels;
     this->ResizeBuffer();
 }
 
-//////////////////////////////////////////
-///\brief
-///Get the pointer to the real buffer.
-///
-///The pointer may change when you set any of the buffers
-///properties like samplerate, samples and channels
-//////////////////////////////////////////
 float* Buffer::BufferPointer() const {
     return this->buffer;
 }
 
-//////////////////////////////////////////
-///\brief
-///Get the number of samples in the buffer
-///
-///To clairify, one sample = one sample for each channel
-///and that means that one sample = sizeof(float)*channels bytes big
-//////////////////////////////////////////
 long Buffer::Samples() const {
     return this->sampleSize;
 }
 
-//////////////////////////////////////////
-///\brief
-///Set the number of samples in the buffer
-//////////////////////////////////////////
 void Buffer::SetSamples(long samples) {
     this->sampleSize = samples;
     this->ResizeBuffer();
 }
 
-//////////////////////////////////////////
-///\brief
-///Copies all the formats from one buffer to another
-//////////////////////////////////////////
 void Buffer::CopyFormat(BufferPtr fromBuffer) {
     this->sampleSize = fromBuffer->Samples();
     this->channels = fromBuffer->Channels();
@@ -141,10 +90,6 @@ void Buffer::CopyFormat(BufferPtr fromBuffer) {
     this->ResizeBuffer();
 }
 
-//////////////////////////////////////////
-///\brief
-///Resize the internal buffer to match the formats
-//////////////////////////////////////////
 void Buffer::ResizeBuffer() {
     long requiredBufferSize = this->sampleSize * this->channels;
     if (requiredBufferSize > this->internalBufferSize) {
@@ -158,28 +103,16 @@ void Buffer::ResizeBuffer() {
     }
 }
 
-//////////////////////////////////////////
-///\brief
-///How many bytes does this object take
-//////////////////////////////////////////
 long Buffer::Bytes() const {
     /* note that we don't return our internal size; instead, we 
     return the actual number of bytes that have valid samples */
     return this->sampleSize * sizeof(float); 
 }
 
-//////////////////////////////////////////
-///\brief
-///What position in a track is this buffer (in seconds)
-//////////////////////////////////////////
 double Buffer::Position() const {
     return this->position;
 }
 
-//////////////////////////////////////////
-///\brief
-///Append another buffer to this one
-//////////////////////////////////////////
 bool Buffer::Append(BufferPtr appendBuffer) {
     if (this->SampleRate() == appendBuffer->SampleRate() &&
         this->Channels() == appendBuffer->Channels())
