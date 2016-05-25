@@ -8,19 +8,17 @@
 #include <sigslot/sigslot.h>
 #include "OutputWindow.h"
 
-using namespace musik::core::audio;
-using musik::core::TrackPtr;
-using musik::core::LibraryPtr;
-using musik::core::QueryPtr;
-
 namespace musik {
     namespace box {
-        class TransportWindow : public Window, public sigslot::has_slots<> {
+        class TransportWindow : public cursespp::Window, public sigslot::has_slots<> {
             public:
-                TransportWindow(LibraryPtr library, Transport& transport);
+                TransportWindow(
+                    musik::core::LibraryPtr library, 
+                    musik::core::audio::Transport& transport);
+
                 ~TransportWindow();
 
-                virtual void ProcessMessage(IMessage &message);
+                virtual void ProcessMessage(cursespp::IMessage &message);
                 virtual void Show();
                 void Update();
 
@@ -28,12 +26,12 @@ namespace musik {
                 void OnTransportStreamEvent(int eventType, std::string url);
                 void OnTransportVolumeChanged();
                 void OnTransportTimeChanged(double time);
-                void OnQueryCompleted(QueryPtr query);
+                void OnQueryCompleted(musik::core::QueryPtr query);
 
                 bool paused;
-                LibraryPtr library;
-                Transport* transport;
-                TrackPtr currentTrack;
+                musik::core::LibraryPtr library;
+                musik::core::audio::Transport* transport;
+                musik::core::TrackPtr currentTrack;
                 std::shared_ptr<SingleTrackQuery> trackQuery;
         };
     }

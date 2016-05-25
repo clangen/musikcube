@@ -14,10 +14,12 @@
 #define BOX_COLOR_GREEN_ON_BLACK 10
 #define BOX_COLOR_BLACK_ON_BLACK 11
 
-class Colors {
-    private:
-        Colors();
+namespace cursespp {
+    class Colors {
+        private:
+            Colors();
 
-    public:
-        static void Init();
-};
+        public:
+            static void Init();
+    };
+}

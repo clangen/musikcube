@@ -4,6 +4,8 @@
 #include "WindowLayout.h"
 #include "LayoutStack.h"
 
+using namespace cursespp;
+
 WindowLayout::WindowLayout(IWindowPtr window) {
     this->window = window;
     this->stack = 0;

@@ -3,6 +3,8 @@
 #include "LayoutStack.h"
 #include "Colors.h"
 
+using namespace cursespp;
+
 template <typename T> static int find(std::vector<T>& haystack, T& needle) {
     int i = 0;
     std::vector<T>::iterator it = haystack.begin();

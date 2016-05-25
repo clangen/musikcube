@@ -3,15 +3,18 @@
 #include <stdafx.h>
 #include <memory>
 
-class IMessageTarget;
+namespace cursespp {
 
-class IMessage {
-    public:
-        virtual ~IMessage() = 0 { }
-        virtual IMessageTarget* Target() = 0;
-        virtual int MessageType() = 0;
-        virtual int64 UserData1() = 0;
-        virtual int64 UserData2() = 0;
-};
+    class IMessageTarget;
 
-typedef std::shared_ptr<IMessage> IMessagePtr;
+    class IMessage {
+        public:
+            virtual ~IMessage() = 0 { }
+            virtual IMessageTarget* Target() = 0;
+            virtual int MessageType() = 0;
+            virtual int64 UserData1() = 0;
+            virtual int64 UserData2() = 0;
+    };
+
+    typedef std::shared_ptr<IMessage> IMessagePtr;
+}

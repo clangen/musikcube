@@ -5,18 +5,17 @@
 #include <core/library/track/Track.h>
 #include "CategoryListViewQuery.h"
 
-using musik::core::query::QueryBase;
-using musik::core::db::Connection;
-using musik::core::TrackPtr;
-using musik::core::LibraryPtr;
-
 namespace musik {
     namespace box {
-        class TrackListViewQuery : public QueryBase {
+        class TrackListViewQuery : public musik::core::query::QueryBase {
             public:
-                typedef std::shared_ptr<std::vector<TrackPtr>> Result;
+                typedef std::shared_ptr<
+                    std::vector<musik::core::TrackPtr>> Result;
 
-                TrackListViewQuery(LibraryPtr library, const std::string& column, DBID id);
+                TrackListViewQuery(
+                    musik::core::LibraryPtr library, 
+                    const std::string& column, DBID id);
+
                 virtual ~TrackListViewQuery();
 
                 std::string Name() { return "TrackListViewQuery"; }
@@ -24,12 +23,12 @@ namespace musik {
                 virtual Result GetResult();
 
             protected:
-                virtual bool OnRun(Connection &db);
+                virtual bool OnRun(musik::core::db::Connection &db);
 
                 Result result;
 
             private:
-                LibraryPtr library;
+                musik::core::LibraryPtr library;
                 std::string column;
                 DBID id;
         };

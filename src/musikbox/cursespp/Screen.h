@@ -2,11 +2,13 @@
 
 #include "curses_config.h"
 
-class Screen {
-    private:
-        Screen();
+namespace cursespp {
+    class Screen {
+        private:
+            Screen();
 
-    public:
-        static int GetWidth();
-        static int GetHeight();
-};
+        public:
+            static int GetWidth();
+            static int GetHeight();
+    };
+}

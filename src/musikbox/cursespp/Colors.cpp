@@ -3,6 +3,8 @@
 #include <stdafx.h>
 #include "Colors.h"
 
+using namespace cursespp;
+
 Colors::Colors() {
 }
 

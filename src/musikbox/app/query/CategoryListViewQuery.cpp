@@ -13,6 +13,7 @@
 using musik::core::db::Statement;
 using musik::core::db::Row;
 
+using namespace musik::core::db;
 using namespace musik::core::library::constants;
 using namespace musik::box;
 

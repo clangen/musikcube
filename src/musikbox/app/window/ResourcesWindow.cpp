@@ -12,6 +12,7 @@
 #include <core/debug.h>
 
 using namespace musik::box;
+using namespace cursespp;
 
 #define BYTES_PER_MEGABYTE 1048576.0f
 

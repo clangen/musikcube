@@ -13,6 +13,7 @@ using musik::core::TrackPtr;
 using musik::core::LibraryTrack;
 
 using namespace musik::core::library::constants;
+using namespace musik::core::db;
 using namespace musik::box;
 
 SingleTrackQuery::SingleTrackQuery(const std::string& filename) {

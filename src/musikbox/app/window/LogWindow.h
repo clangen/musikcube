@@ -11,15 +11,15 @@
 
 namespace musik {
     namespace box {
-        class LogWindow : public ScrollableWindow, public sigslot::has_slots<> {
+        class LogWindow : public cursespp::ScrollableWindow, public sigslot::has_slots<> {
             public:
-                LogWindow(IWindow *parent = NULL);
+                LogWindow(cursespp::IWindow *parent = NULL);
                 ~LogWindow();
 
                 void Update();
 
             protected:
-                virtual IScrollAdapter& GetScrollAdapter();
+                virtual cursespp::IScrollAdapter& GetScrollAdapter();
 
             private:
                 void OnLogged(
@@ -35,7 +35,7 @@ namespace musik {
 
                 boost::mutex pendingMutex;
                 std::vector<LogEntry*> pending;
-                SimpleScrollAdapter* adapter;
+                cursespp::SimpleScrollAdapter* adapter;
         };
     }
 }

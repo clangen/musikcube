@@ -12,14 +12,14 @@
 
 #include <sigslot/sigslot.h>
 
-using musik::core::LibraryPtr;
-using musik::core::audio::Transport;
-
 namespace musik {
     namespace box {
-        class LibraryLayout : public LayoutBase, public sigslot::has_slots<> {
+        class LibraryLayout : public cursespp::LayoutBase, public sigslot::has_slots<> {
             public:
-                LibraryLayout(PlaybackService& playback, LibraryPtr library);
+                LibraryLayout(
+                    PlaybackService& playback, 
+                    musik::core::LibraryPtr library);
+
                 virtual ~LibraryLayout();
 
                 virtual void Layout();
@@ -38,8 +38,8 @@ namespace musik {
                     ListWindow *view, size_t selectedIndex);
 
                 PlaybackService& playback;
-                Transport& transport;
-                LibraryPtr library;
+                musik::core::audio::Transport& transport;
+                musik::core::LibraryPtr library;
                 std::shared_ptr<CategoryListView> categoryList;
                 std::shared_ptr<TrackListView> trackList;
                 std::shared_ptr<TransportWindow> transportView;

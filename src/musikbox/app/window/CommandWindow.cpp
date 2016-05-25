@@ -28,7 +28,9 @@ using musik::core::LibraryPtr;
 using musik::core::TrackPtr;
 using musik::core::QueryPtr;
 
+using namespace musik::core::audio;
 using namespace musik::box;
+using namespace cursespp;
 
 template <class T>
 bool tostr(T& t, const std::string& s) {

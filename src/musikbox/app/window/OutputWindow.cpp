@@ -9,6 +9,7 @@
 #include <cursespp/MultiLineEntry.h>
 
 using namespace musik::box;
+using namespace cursespp;
 
 typedef IScrollAdapter::EntryPtr EntryPtr;
 

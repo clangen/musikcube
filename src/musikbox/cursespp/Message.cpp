@@ -1,6 +1,8 @@
 #include <stdafx.h>
 #include "Message.h"
 
+using namespace cursespp;
+
 IMessagePtr Message::Create(
     IMessageTarget* target,
     int messageType,

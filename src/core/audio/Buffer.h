@@ -36,55 +36,51 @@
 #include <boost/shared_ptr.hpp>
 #include <core/sdk/IBuffer.h>
 
-//////////////////////////////////////////////////////////////////////////////
 namespace musik { namespace core { namespace audio {
-//////////////////////////////////////////////////////////////////////////////
 
-class  Buffer;
-class  Stream;
-typedef std::shared_ptr<Buffer> BufferPtr;
+    class  Buffer;
+    class  Stream;
+    typedef std::shared_ptr<Buffer> BufferPtr;
 
-//////////////////////////////////////////
-///\brief
-///Buffer is the only implementation of the IBuffer and is used 
-///in the audioengine to pass along the raw audio data
-//////////////////////////////////////////
-class Buffer : public IBuffer {
-    private:
-        Buffer(void);
+    //////////////////////////////////////////
+    ///\brief
+    ///Buffer is the only implementation of the IBuffer and is used 
+    ///in the audioengine to pass along the raw audio data
+    //////////////////////////////////////////
+    class Buffer : public IBuffer {
+        private:
+            Buffer(void);
 
-    public:
-        static BufferPtr Create();
-        ~Buffer(void);
+        public:
+            static BufferPtr Create();
+            ~Buffer(void);
 
-        virtual long SampleRate() const; 
-        virtual void SetSampleRate(long sampleRate); 
-        virtual int Channels() const; 
-        virtual void SetChannels(int channels); 
-        virtual float* BufferPointer() const; 
-        virtual long Samples() const;
-        virtual void SetSamples(long samples);
-        virtual long Bytes() const;
-        virtual double Position() const;
+            virtual long SampleRate() const; 
+            virtual void SetSampleRate(long sampleRate); 
+            virtual int Channels() const; 
+            virtual void SetChannels(int channels); 
+            virtual float* BufferPointer() const; 
+            virtual long Samples() const;
+            virtual void SetSamples(long samples);
+            virtual long Bytes() const;
+            virtual double Position() const;
 
-        bool Append(BufferPtr appendBuffer);
-        void CopyFormat(BufferPtr fromBuffer);
+            bool Append(BufferPtr appendBuffer);
+            void CopyFormat(BufferPtr fromBuffer);
 
-    private:
-        void ResizeBuffer();
+        private:
+            void ResizeBuffer();
 
-    private:
-        float *buffer;
-        long sampleSize;
-        long internalBufferSize;
-        long sampleRate;
-        int channels;
+        private:
+            float *buffer;
+            long sampleSize;
+            long internalBufferSize;
+            long sampleRate;
+            int channels;
 
-    protected:
-        friend class Stream;
-        double position;
-};
+        protected:
+            friend class Stream;
+            double position;
+    };
 
-//////////////////////////////////////////////////////////////////////////////
 } } }
-//////////////////////////////////////////////////////////////////////////////

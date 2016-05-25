@@ -7,9 +7,9 @@
 
 namespace musik {
     namespace box {
-        class ResourcesWindow : public Window {
+        class ResourcesWindow : public cursespp::Window {
             public:
-                ResourcesWindow(IWindow *parent = NULL);
+                ResourcesWindow(cursespp::IWindow *parent = NULL);
                 virtual ~ResourcesWindow();
 
                 virtual void Update();

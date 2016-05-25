@@ -6,31 +6,33 @@
 #include "IScrollable.h"
 #include "IKeyHandler.h"
 
-class ScrollableWindow : public IScrollable, public IKeyHandler, public Window {
-    public:
-        ScrollableWindow(IWindow *parent = NULL);
-        virtual ~ScrollableWindow();
+namespace cursespp {
+    class ScrollableWindow : public IScrollable, public IKeyHandler, public Window {
+        public:
+            ScrollableWindow(IWindow *parent = NULL);
+            virtual ~ScrollableWindow();
 
-        virtual void Show();
-        virtual void SetSize(int width, int height);
+            virtual void Show();
+            virtual void SetSize(int width, int height);
 
-        virtual bool KeyPress(int64 ch);
+            virtual bool KeyPress(int64 ch);
 
-        virtual void ScrollToTop();
-        virtual void ScrollToBottom();
-        virtual void ScrollUp(int delta = 1);
-        virtual void ScrollDown(int delta = 1);
-        virtual void PageUp();
-        virtual void PageDown();
+            virtual void ScrollToTop();
+            virtual void ScrollToBottom();
+            virtual void ScrollUp(int delta = 1);
+            virtual void ScrollDown(int delta = 1);
+            virtual void PageUp();
+            virtual void PageDown();
 
-    protected:
-        virtual IScrollAdapter& GetScrollAdapter() = 0;
-        virtual IScrollAdapter::ScrollPosition& GetScrollPosition();
-        virtual void OnAdapterChanged();
+        protected:
+            virtual IScrollAdapter& GetScrollAdapter() = 0;
+            virtual IScrollAdapter::ScrollPosition& GetScrollPosition();
+            virtual void OnAdapterChanged();
 
-        size_t GetPreviousPageEntryIndex();
-        bool IsLastItemVisible();
+            size_t GetPreviousPageEntryIndex();
+            bool IsLastItemVisible();
 
-    private:
-        IScrollAdapter::ScrollPosition scrollPosition;
-};
+        private:
+            IScrollAdapter::ScrollPosition scrollPosition;
+    };
+}

@@ -2,6 +2,8 @@
 #include "MultiLineEntry.h"
 #include <boost/algorithm/string.hpp>
 
+using namespace cursespp;
+
 MultiLineEntry::MultiLineEntry(const std::string& value, int64 attrs) {
     this->value = value;
     this->charCount = value.size();

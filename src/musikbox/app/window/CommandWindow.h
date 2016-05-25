@@ -7,18 +7,18 @@
 #include <core/library/LibraryFactory.h>
 #include "OutputWindow.h"
 
-using musik::core::LibraryPtr;
-using musik::core::QueryPtr;
-using namespace musik::core::audio;
-
 namespace musik {
     namespace box {
-        class CommandWindow : public Window, public IInput, public sigslot::has_slots<> {
+        class CommandWindow : 
+            public cursespp::Window, 
+            public cursespp::IInput, 
+            public sigslot::has_slots<> 
+        {
             public:
                 CommandWindow(
-                    IWindow *parent,
-                    Transport& transport,
-                    LibraryPtr library,
+                    cursespp::IWindow *parent,
+                    musik::core::audio::Transport& transport,
+                    musik::core::LibraryPtr library,
                     OutputWindow& output);
 
                 ~CommandWindow();
@@ -41,8 +41,8 @@ namespace musik {
                 char* buffer;
                 int bufferPosition;
                 OutputWindow* output;
-                Transport* transport;
-                LibraryPtr library;
+                musik::core::audio::Transport* transport;
+                musik::core::LibraryPtr library;
                 bool paused;
         };
     }

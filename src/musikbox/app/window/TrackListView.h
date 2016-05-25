@@ -11,36 +11,35 @@
 #include <core/playback/Transport.h>
 #include <core/library/ILibrary.h>
 
-using musik::core::QueryPtr;
-using musik::core::LibraryPtr;
-using musik::core::audio::Transport;
-
 namespace musik {
     namespace box {
-        class TrackListView : public ListWindow, public sigslot::has_slots<> {
+        class TrackListView : public cursespp::ListWindow, public sigslot::has_slots<> {
             public:
-                TrackListView(PlaybackService& playback, LibraryPtr library, IWindow *parent = NULL);
+                TrackListView(
+                    PlaybackService& playback, 
+                    musik::core::LibraryPtr library);
+
                 ~TrackListView();
 
-                virtual void ProcessMessage(IMessage &message);
+                virtual void ProcessMessage(cursespp::IMessage &message);
                 virtual bool KeyPress(int64 ch);
 
                 void Requery(const std::string& column, DBID id);
 
             protected:
-                virtual IScrollAdapter& GetScrollAdapter();
-                void OnQueryCompleted(QueryPtr query);
+                virtual cursespp::IScrollAdapter& GetScrollAdapter();
+                void OnQueryCompleted(musik::core::QueryPtr query);
 
-                class Adapter : public ScrollAdapterBase {
-                public:
-                    Adapter(TrackListView &parent);
+                class Adapter : public cursespp::ScrollAdapterBase {
+                    public:
+                        Adapter(TrackListView &parent);
 
-                    virtual size_t GetEntryCount();
-                    virtual EntryPtr GetEntry(size_t index);
+                        virtual size_t GetEntryCount();
+                        virtual EntryPtr GetEntry(size_t index);
 
-                private:
-                    TrackListView &parent;
-                    IScrollAdapter::ScrollPosition spos;
+                    private:
+                        TrackListView &parent;
+                        IScrollAdapter::ScrollPosition spos;
                 };
 
             private:
@@ -48,7 +47,7 @@ namespace musik {
                 std::shared_ptr<std::vector<TrackPtr>> metadata;
                 Adapter* adapter;
                 PlaybackService& playback;
-                LibraryPtr library;
+                musik::core::LibraryPtr library;
         };
     }
 }

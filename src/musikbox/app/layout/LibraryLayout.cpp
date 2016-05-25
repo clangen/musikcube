@@ -15,6 +15,13 @@ using namespace musik::core::library::constants;
 
 using namespace musik::box;
 
+using musik::core::LibraryPtr;
+using musik::core::audio::Transport;
+
+using cursespp::LayoutBase;
+using cursespp::ListWindow;
+using cursespp::Screen;
+
 LibraryLayout::LibraryLayout(PlaybackService& playback, LibraryPtr library)
 : LayoutBase()
 , playback(playback)

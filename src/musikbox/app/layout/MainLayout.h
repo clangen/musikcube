@@ -13,18 +13,19 @@
 #include <core/playback/Transport.h>
 #include <boost/shared_ptr.hpp>
 
-using musik::core::audio::Transport;
-
 namespace musik {
     namespace box {
-        class MainLayout : public LayoutBase {
+        class MainLayout : public cursespp::LayoutBase {
             public:
-                MainLayout(Transport& transport, LibraryPtr library);
+                MainLayout(
+                    musik::core::audio::Transport& transport, 
+                    musik::core::LibraryPtr library);
+
                 ~MainLayout();
 
                 virtual void Layout();
                 virtual void Show();
-                virtual void ProcessMessage(IMessage &message);
+                virtual void ProcessMessage(cursespp::IMessage &message);
 
             private:
                 void UpdateWindows();

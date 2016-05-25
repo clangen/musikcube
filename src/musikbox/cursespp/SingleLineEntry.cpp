@@ -2,6 +2,8 @@
 #include "SingleLineEntry.h"
 #include <boost/algorithm/string.hpp>
 
+using namespace cursespp;
+
 SingleLineEntry::SingleLineEntry(const std::string& value) {
     this->value = value;
     this->attrs = -1;

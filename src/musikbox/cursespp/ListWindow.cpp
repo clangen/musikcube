@@ -1,6 +1,8 @@
 #include <stdafx.h>
 #include "ListWindow.h"
 
+using namespace cursespp;
+
 typedef IScrollAdapter::ScrollPosition ScrollPos;
 
 size_t ListWindow::NO_SELECTION = (size_t) -1;

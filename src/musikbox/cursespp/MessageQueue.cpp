@@ -2,6 +2,7 @@
 #include "MessageQueue.h"
 
 using namespace boost::chrono;
+using namespace cursespp;
 
 MessageQueue MessageQueue::instance;
 

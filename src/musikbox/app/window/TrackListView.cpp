@@ -20,18 +20,18 @@
 
 #define WINDOW_MESSAGE_QUERY_COMPLETED 1002
 
-using musik::core::IQuery;
-using musik::core::audio::Transport;
-using namespace musik::core::library::constants;
+using namespace musik::core;
+using namespace musik::core::audio;
+using namespace musik::core::library;
 using namespace musik::box;
-
+using namespace cursespp;
 using boost::io::group;
 using std::setw;
 using std::setfill;
 using std::setiosflags;
 
-TrackListView::TrackListView(PlaybackService& playback, LibraryPtr library, IWindow *parent)
-: ListWindow(parent)
+TrackListView::TrackListView(PlaybackService& playback, LibraryPtr library)
+: ListWindow(NULL)
 , playback(playback) {
     this->SetContentColor(BOX_COLOR_WHITE_ON_BLACK);
     this->library = library;
@@ -105,12 +105,11 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(size_t index) {
     int64 attrs = (index == parent.GetSelectedIndex()) ? COLOR_PAIR(BOX_COLOR_BLACK_ON_GREEN) : -1;
 
     TrackPtr track = parent.metadata->at(index);
-    std::string trackNum = track->GetValue(Track::TRACK_NUM);
-    std::string artist = track->GetValue(Track::ARTIST_ID);
-    std::string album = track->GetValue(Track::ALBUM_ID);
-    std::string title = track->GetValue(Track::TITLE);
-    std::string duration = track->GetValue(Track::DURATION);
-
+    std::string trackNum = track->GetValue(constants::Track::TRACK_NUM);
+    std::string artist = track->GetValue(constants::Track::ARTIST_ID);
+    std::string album = track->GetValue(constants::Track::ALBUM_ID);
+    std::string title = track->GetValue(constants::Track::TITLE);
+    std::string duration = track->GetValue(constants::Track::DURATION);
 
     int column0Width = DISPLAY_WIDTH(TRACK_COL_WIDTH, trackNum);
     int column2Width = DISPLAY_WIDTH(DURATION_COL_WIDTH, duration);

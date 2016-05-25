@@ -18,6 +18,7 @@ using musik::core::LibraryPtr;
 using musik::core::IQuery;
 using namespace musik::core::library::constants;
 using namespace musik::box;
+using cursespp::SingleLineEntry;
 
 #define WINDOW_MESSAGE_QUERY_COMPLETED 1002
 

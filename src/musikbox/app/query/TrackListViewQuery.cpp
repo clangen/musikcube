@@ -11,7 +11,9 @@ using musik::core::db::Statement;
 using musik::core::db::Row;
 using musik::core::TrackPtr;
 using musik::core::LibraryTrack;
+using musik::core::LibraryPtr;
 
+using namespace musik::core::db;
 using namespace musik::core::library::constants;
 using namespace musik::box;
 

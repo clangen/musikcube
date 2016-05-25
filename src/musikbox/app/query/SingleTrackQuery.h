@@ -5,26 +5,21 @@
 #include <core/library/track/Track.h>
 #include "CategoryListViewQuery.h"
 
-using musik::core::query::QueryBase;
-using musik::core::db::Connection;
-using musik::core::TrackPtr;
-using musik::core::LibraryPtr;
-
 namespace musik {
     namespace box {
-        class SingleTrackQuery : public QueryBase {
+        class SingleTrackQuery : public musik::core::query::QueryBase {
             public:
                 SingleTrackQuery(const std::string& path);
                 virtual ~SingleTrackQuery();
 
                 virtual std::string Name() { return "SingleTrackQuery"; }
-                virtual TrackPtr GetResult();
+                virtual musik::core::TrackPtr GetResult();
 
             protected:
-                virtual bool OnRun(Connection &db);
+                virtual bool OnRun(musik::core::db::Connection &db);
 
             private:
-                TrackPtr result;
+                musik::core::TrackPtr result;
                 std::string filename;
         };
     }

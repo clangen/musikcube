@@ -9,6 +9,7 @@
 #include <cursespp/Screen.h>
 
 using namespace musik::box;
+using namespace cursespp;
 
 typedef IScrollAdapter::IEntry IEntry;
 

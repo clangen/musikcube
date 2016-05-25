@@ -6,6 +6,8 @@
 #include <boost/algorithm/string.hpp>
 #include <utf8/utf8/unchecked.h>
 
+using namespace cursespp;
+
 #define MAX_ENTRY_COUNT 0xffffffff
 
 typedef IScrollAdapter::EntryPtr EntryPtr;

@@ -45,11 +45,11 @@
 
 namespace musik { namespace core { namespace audio {
 
-    class  Stream;
-    class  Player;
+    class Stream;
+    class Player;
     typedef std::shared_ptr<Stream> StreamPtr;
 
-    class  Stream {
+    class Stream {
         public:
             static StreamPtr Create(unsigned int options=0);
 

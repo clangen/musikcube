@@ -2,6 +2,8 @@
 #include "ScrollAdapterBase.h"
 #include "MultiLineEntry.h"
 
+using namespace cursespp;
+
 typedef IScrollAdapter::EntryPtr EntryPtr;
 
 ScrollAdapterBase::ScrollAdapterBase() {

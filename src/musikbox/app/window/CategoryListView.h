@@ -13,6 +13,11 @@
 using musik::core::QueryPtr;
 using musik::core::LibraryPtr;
 
+using cursespp::IMessage;
+using cursespp::ListWindow;
+using cursespp::IScrollAdapter;
+using cursespp::ScrollAdapterBase;
+
 namespace musik {
     namespace box {
         class CategoryListView : public ListWindow, public sigslot::has_slots<> {

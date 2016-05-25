@@ -7,16 +7,16 @@
 
 namespace musik {
     namespace box {
-        class OutputWindow : public ScrollableWindow {
+        class OutputWindow : public cursespp::ScrollableWindow {
         public:
-            OutputWindow(IWindow *parent = NULL);
+            OutputWindow(cursespp::IWindow *parent = NULL);
             ~OutputWindow();
 
             void WriteLine(const std::string& line, int64 attrs = -1);
-            virtual IScrollAdapter& GetScrollAdapter();
+            virtual cursespp::IScrollAdapter& GetScrollAdapter();
 
         private:
-            SimpleScrollAdapter* adapter;
+            cursespp::SimpleScrollAdapter* adapter;
         };
     }
 }

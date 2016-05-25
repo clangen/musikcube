@@ -15,10 +15,6 @@ using namespace musik::box;
 #define URI_AT_INDEX(x) this->playlist.at(x)->URI()
 #define PREVIOUS_GRACE_PERIOD 2.0f
 
-class StreamEvent : public IMessage {
-
-};
-
 PlaybackService::PlaybackService(Transport& transport)
 : transport(transport) {
     transport.StreamEvent.connect(this, &PlaybackService::OnStreamEvent);

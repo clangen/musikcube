@@ -7,6 +7,8 @@
 
 #include <core/debug.h>
 
+using namespace cursespp;
+
 typedef IScrollAdapter::ScrollPosition ScrollPos;
 
 ScrollableWindow::ScrollableWindow(IWindow *parent)

@@ -6,6 +6,8 @@
 #include "Message.h"
 #include "MessageQueue.h"
 
+using namespace cursespp;
+
 static int NEXT_ID = 0;
 static bool drawPending = false;
 

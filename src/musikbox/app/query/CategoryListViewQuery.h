@@ -4,12 +4,9 @@
 #include <core/db/Connection.h>
 #include <memory>
 
-using musik::core::query::QueryBase;
-using musik::core::db::Connection;
-
 namespace musik {
     namespace box {
-        class CategoryListViewQuery : public QueryBase {
+        class CategoryListViewQuery : public musik::core::query::QueryBase {
             public:
                 struct Result {
                     std::string displayValue;
@@ -27,7 +24,7 @@ namespace musik {
                 virtual ResultList GetResult();
 
             protected:
-                virtual bool OnRun(Connection &db);
+                virtual bool OnRun(musik::core::db::Connection &db);
 
                 std::string trackField;
                 ResultList result;

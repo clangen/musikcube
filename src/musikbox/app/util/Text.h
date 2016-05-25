@@ -4,8 +4,6 @@
 
 #include <core/playback/Transport.h>
 
-using musik::core::audio::Transport;
-
 namespace musik {
     namespace box {
         namespace text {

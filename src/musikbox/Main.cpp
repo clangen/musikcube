@@ -59,13 +59,10 @@
 
 #define IDLE_TIMEOUT_MS 0
 
-using musik::core::audio::Transport;
-using musik::core::LibraryFactory;
-
-using musik::box::LibraryLayout;
-using musik::box::MainLayout;
-using musik::box::PlaybackService;
-using musik::box::GlobalHotkeys;
+using namespace musik::core;
+using namespace musik::core::audio;
+using namespace musik::box;
+using namespace cursespp;
 
 struct WindowState {
     ILayoutPtr layout;

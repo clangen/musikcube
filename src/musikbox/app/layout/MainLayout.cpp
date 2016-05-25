@@ -8,7 +8,10 @@
 #define MESSAGE_TYPE_UPDATE 1001
 #define UPDATE_INTERVAL_MS 1000
 
+using namespace musik::core;
+using namespace musik::core::audio;
 using namespace musik::box;
+using namespace cursespp;
 
 MainLayout::MainLayout(Transport& transport, LibraryPtr library)
 : LayoutBase() {

@@ -18,16 +18,14 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/chrono.hpp>
 
-using musik::core::audio::Transport;
-using musik::core::TrackPtr;
-using musik::core::LibraryTrack;
-using musik::core::NonLibraryTrackHelper;
-using musik::core::QueryPtr;
-
-using namespace musik::core::library::constants;
+using namespace musik::core;
+using namespace musik::core::audio;
+using namespace musik::core::library;
+using namespace musik::core::query;
+using namespace musik::core::db;
 using namespace musik::box;
-
 using namespace boost::chrono;
+using namespace cursespp;
 
 #define REFRESH_TRANSPORT_READOUT 1001
 #define REFRESH_INTERVAL_MS 1000
@@ -101,9 +99,9 @@ void TransportWindow::Update() {
     std::string title, album, duration;
     
     if (this->currentTrack) {
-        title = this->currentTrack->GetValue(Track::TITLE);
-        album = this->currentTrack->GetValue(Track::ALBUM);
-        duration = this->currentTrack->GetValue(Track::DURATION);
+        title = this->currentTrack->GetValue(constants::Track::TITLE);
+        album = this->currentTrack->GetValue(constants::Track::ALBUM);
+        duration = this->currentTrack->GetValue(constants::Track::DURATION);
     }
 
     title = title.size() ? title : "song title";

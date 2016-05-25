@@ -10,6 +10,9 @@
 using musik::core::TrackPtr;
 using musik::core::audio::Transport;
 
+using cursespp::IMessageTarget;
+using cursespp::IMessage;
+
 namespace musik {
     namespace box {
         class PlaybackService : public IMessageTarget, public sigslot::has_slots<> {

@@ -3,6 +3,8 @@
 #include <stdafx.h>
 #include "LayoutStack.h"
 
+using namespace cursespp;
+
 LayoutStack::LayoutStack() {
     this->visible = false;
     this->stack = 0;
