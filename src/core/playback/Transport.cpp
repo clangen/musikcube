@@ -63,6 +63,7 @@ Transport::Transport()
 : volume(1.0) 
 , state(PlaybackStopped)
 , nextPlayer(NULL) {
+    this->output = Player::CreateDefaultOutput();
 }
 
 Transport::~Transport() {
@@ -75,13 +76,13 @@ Transport::PlaybackState Transport::GetPlaybackState() {
 
 void Transport::PrepareNextTrack(const std::string& trackUrl) {
     boost::recursive_mutex::scoped_lock lock(this->stateMutex);
-    this->nextPlayer = new Player(trackUrl);
+    this->nextPlayer = new Player(trackUrl, this->volume, this->output);
 }
 
 void Transport::Start(const std::string& url) {
     musik::debug::info(TAG, "we were asked to start the track at " + url);
 
-    Player* newPlayer = new Player(url);
+    Player* newPlayer = new Player(url, this->volume, this->output);
     musik::debug::info(TAG, "Player created successfully");
 
     this->StartWithPlayer(newPlayer);
@@ -114,7 +115,6 @@ void Transport::StartWithPlayer(Player* newPlayer) {
         this->RaiseStreamEvent(Transport::StreamScheduled, newPlayer);
     }
 }
-
 
 void Transport::Stop() {
     musik::debug::info(TAG, "stop");

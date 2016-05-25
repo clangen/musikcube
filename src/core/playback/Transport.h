@@ -100,6 +100,7 @@ namespace musik { namespace core { namespace audio {
 
             boost::recursive_mutex stateMutex;
             Player* nextPlayer;
+            std::shared_ptr<IOutput> output;
             std::list<Player*> active;
 
     };

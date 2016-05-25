@@ -53,9 +53,18 @@ namespace musik { namespace core { namespace audio {
         public:
             typedef std::shared_ptr<IOutput> OutputPtr;
 
-            static PlayerPtr Create(const std::string &url, OutputPtr output = OutputPtr());
+            static OutputPtr CreateDefaultOutput();
 
-            Player(const std::string &url, OutputPtr output = OutputPtr());
+            static PlayerPtr Create(
+                const std::string &url,
+                double volume = 1.0f,
+                OutputPtr output = OutputPtr());
+
+            Player(
+                const std::string &url,
+                double volume = 1.0f,
+                OutputPtr output = OutputPtr());
+
             ~Player();
 
             virtual void OnBufferProcessed(IBuffer *buffer);
@@ -108,8 +117,6 @@ namespace musik { namespace core { namespace audio {
             std::string url;
 
             BufferList prebufferQueue;
-            long prebufferSizeBytes;
-            long maxPrebufferSizeBytes;
 
             boost::mutex mutex;
             boost::condition writeToOutputCondition;

@@ -37,39 +37,43 @@
 #include <core/audio/Player.h>
 #include <core/plugin/PluginFactory.h>
 
+#define MAX_PREBUFFER_QUEUE_COUNT 16
+
 using namespace musik::core::audio;
 
 static std::string TAG = "Player";
 
-PlayerPtr Player::Create(const std::string &url, OutputPtr output) {
-    return PlayerPtr(new Player(url, output));
+PlayerPtr Player::Create(const std::string &url, double volume, OutputPtr output) {
+    return PlayerPtr(new Player(url, volume, output));
 }
 
-Player::Player(const std::string &url, OutputPtr output)
-: volume(1.0)
+Player::OutputPtr Player::CreateDefaultOutput() {
+    /* if no output is specified, find all output plugins, and select the first one. */
+    typedef std::vector<OutputPtr> OutputVector;
+
+    OutputVector outputs = musik::core::PluginFactory::Instance().QueryInterface<
+        IOutput, musik::core::PluginFactory::DestroyDeleter<IOutput>>("GetAudioOutput");
+
+    if (!outputs.empty()) {
+        musik::debug::info(TAG, "found an IOutput device!");
+        return outputs.front();
+    }
+
+    return Player::OutputPtr();
+}
+
+
+Player::Player(const std::string &url, double volume, OutputPtr output)
+: volume(volume)
 , state(Player::Precache)
 , url(url)
-, prebufferSizeBytes(0)
-, maxPrebufferSizeBytes(100000)
 , currentPosition(0)
 , setPosition(-1) {
     musik::debug::info(TAG, "new instance created");
-    
-    if (output) {
-        this->output = output;
-    }
-    else {
-        /* if no output is specified, find all output plugins, and select the first one. */
-        typedef std::vector<OutputPtr> OutputVector;
 
-        OutputVector outputs = musik::core::PluginFactory::Instance().QueryInterface<
-            IOutput, musik::core::PluginFactory::DestroyDeleter<IOutput>>("GetAudioOutput");
-
-        if (!outputs.empty()) {
-            musik::debug::info(TAG, "found an IOutput device!");
-            this->output = outputs.front();
-        }
-    }
+    /* we allow callers to specify an output device; but if they don't, 
+    we will create and manage our own. */
+    this->output = output ? output : Player::CreateDefaultOutput();
 
     /* each player instance is driven by a background thread. start it. */
     this->thread.reset(new boost::thread(boost::bind(&Player::ThreadLoop,this)));
@@ -193,7 +197,6 @@ void Player::ThreadLoop() {
                     boost::mutex::scoped_lock lock(this->mutex);
                     this->setPosition = -1;
                     this->prebufferQueue.clear();
-                    this->prebufferSizeBytes = 0;
                 }
 
                 buffer.reset();
@@ -207,7 +210,6 @@ void Player::ThreadLoop() {
                 if (!this->prebufferQueue.empty()) {
                     buffer = this->prebufferQueue.front();
                     this->prebufferQueue.pop_front();
-                    this->prebufferSizeBytes -= buffer->Bytes();
                 }
                 /* otherwise, we need to grab a buffer from the stream and add it to the queue */
                 else {
@@ -298,20 +300,18 @@ void Player::ReleaseAllBuffers() {
 
 bool Player::PreBuffer() {
     /* don't prebuffer if the buffer is already full */
-    if (this->prebufferSizeBytes > this->maxPrebufferSizeBytes) {
-        return false;
-    }
-    else {
+    if (this->prebufferQueue.size() < MAX_PREBUFFER_QUEUE_COUNT) {
         BufferPtr newBuffer = this->stream->GetNextProcessedOutputBuffer();
 
         if (newBuffer) {
             boost::mutex::scoped_lock lock(this->mutex);
             this->prebufferQueue.push_back(newBuffer);
-            this->prebufferSizeBytes += newBuffer->Bytes();
         }
 
         return true;
     }
+
+    return false;
 }
 
 bool Player::Exited() {
