@@ -42,11 +42,6 @@ namespace musik { namespace core { namespace audio {
     class  Stream;
     typedef std::shared_ptr<Buffer> BufferPtr;
 
-    //////////////////////////////////////////
-    ///\brief
-    ///Buffer is the only implementation of the IBuffer and is used 
-    ///in the audioengine to pass along the raw audio data
-    //////////////////////////////////////////
     class Buffer : public IBuffer {
         private:
             Buffer(void);

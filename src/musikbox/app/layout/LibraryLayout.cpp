@@ -11,16 +11,13 @@ using namespace musik::core::library::constants;
 
 #define CATEGORY_WIDTH 25
 #define TRANSPORT_HEIGHT 3
-#define DEFAULT_CATEGORY Track::ALBUM_ID
+#define DEFAULT_CATEGORY constants::Track::ALBUM_ID
 
+using namespace musik::core;
+using namespace musik::core::audio;
+using namespace musik::core::library;
 using namespace musik::box;
-
-using musik::core::LibraryPtr;
-using musik::core::audio::Transport;
-
-using cursespp::LayoutBase;
-using cursespp::ListWindow;
-using cursespp::Screen;
+using namespace cursespp;
 
 LibraryLayout::LibraryLayout(PlaybackService& playback, LibraryPtr library)
 : LayoutBase()
@@ -69,6 +66,10 @@ void LibraryLayout::InitializeWindows() {
     this->Layout();
 }
 
+IWindowPtr LibraryLayout::GetFocus() {
+    return this->focused ? this->focused : LayoutBase::GetFocus();
+}
+
 void LibraryLayout::Show() {
     LayoutBase::Show();
     this->categoryList->Requery();
@@ -97,18 +98,28 @@ bool LibraryLayout::KeyPress(int64 ch) {
     std::string kn = keyname((int)ch);
 
     if (kn == "ALT_1") {
-        this->categoryList->SetFieldName(Track::ARTIST_ID);
+        this->categoryList->SetFieldName(constants::Track::ARTIST_ID);
         return true;
     }
     else if (kn == "ALT_2") {
-        this->categoryList->SetFieldName(Track::ALBUM_ID);
+        this->categoryList->SetFieldName(constants::Track::ALBUM_ID);
         return true;
     }
     else if (kn == "ALT_3") {
-        this->categoryList->SetFieldName(Track::GENRE_ID);
-        return true;
+        this->categoryList->SetFieldName(constants::Track::GENRE_ID);
+        return true;    
     }
-    else if (ch == KEY_F(5)) {
+    else if (kn == "CTL_DOWN") {
+        this->focused = this->transportView;
+        this->transportView->Focus();
+    }
+    else if (kn == "CTL_UP") {
+        if (this->focused) {
+            this->focused->Blur();
+            this->focused.reset();
+        }
+    }
+    else if (ch == KEY_END) {
         this->categoryList->Requery();
         return true;
     }

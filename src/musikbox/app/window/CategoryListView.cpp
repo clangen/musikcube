@@ -72,7 +72,7 @@ void CategoryListView::OnQueryCompleted(QueryPtr query) {
 }
 
 void CategoryListView::ProcessMessage(IMessage &message) {
-    if (message.MessageType() == WINDOW_MESSAGE_QUERY_COMPLETED) {
+    if (message.Type() == WINDOW_MESSAGE_QUERY_COMPLETED) {
         this->metadata = activeQuery->GetResult();
         activeQuery.reset();
         this->OnAdapterChanged();

@@ -44,7 +44,7 @@ TransportWindow::TransportWindow(LibraryPtr library, Transport& transport)
     this->transport->StreamEvent.connect(this, &TransportWindow::OnTransportStreamEvent);
     this->transport->VolumeChanged.connect(this, &TransportWindow::OnTransportVolumeChanged);
     this->transport->TimeChanged.connect(this, &TransportWindow::OnTransportTimeChanged);
-    this->paused = false;
+    this->paused = this->focused = false;
 }
 
 TransportWindow::~TransportWindow() {
@@ -56,7 +56,7 @@ void TransportWindow::Show() {
 }
 
 void TransportWindow::ProcessMessage(IMessage &message) {
-    int type = message.MessageType();
+    int type = message.Type();
     
     if (type == REFRESH_TRANSPORT_READOUT) {
         this->Update();
@@ -87,38 +87,59 @@ void TransportWindow::OnQueryCompleted(QueryPtr query) {
     }
 }
 
+void TransportWindow::Focus() {
+    this->focused = true;
+    DEBOUNCE_REFRESH(0)
+}
+
+void TransportWindow::Blur() {
+    this->focused = false;
+    DEBOUNCE_REFRESH(0)
+}
+
 void TransportWindow::Update() {
     this->Clear();
     WINDOW *c = this->GetContent();
 
     bool paused = (transport->GetPlaybackState() == Transport::PlaybackPaused);
-    int64 gb = COLOR_PAIR(BOX_COLOR_GREEN_ON_BLACK);
+    
+    int64 gb = COLOR_PAIR(this->focused 
+        ? BOX_COLOR_RED_ON_BLACK 
+        : BOX_COLOR_GREEN_ON_BLACK);
 
     /* playing SONG TITLE from ALBUM NAME */
+    std::string duration = "0";
 
-    std::string title, album, duration;
-    
-    if (this->currentTrack) {
-        title = this->currentTrack->GetValue(constants::Track::TITLE);
-        album = this->currentTrack->GetValue(constants::Track::ALBUM);
-        duration = this->currentTrack->GetValue(constants::Track::DURATION);
+    if (transport->GetPlaybackState() == Transport::PlaybackStopped) {
+        wattron(c, gb);
+        wprintw(c, "playback is stopped");
+        wattroff(c, gb);
     }
+    else {
+        std::string title, album;
 
-    title = title.size() ? title : "song title";
-    album = album.size() ? album : "album name";
-    duration = duration.size() ? duration : "0";
+        if (this->currentTrack) {
+            title = this->currentTrack->GetValue(constants::Track::TITLE);
+            album = this->currentTrack->GetValue(constants::Track::ALBUM);
+            duration = this->currentTrack->GetValue(constants::Track::DURATION);
+        }
 
-    wprintw(c, "playing ");
+        title = title.size() ? title : "song title";
+        album = album.size() ? album : "album name";
+        duration = duration.size() ? duration : "0";
 
-    wattron(c, gb);
-    wprintw(c, title.c_str());
-    wattroff(c, gb);
+        wprintw(c, "playing ");
 
-    wprintw(c, " from ");
+        wattron(c, gb);
+        wprintw(c, title.c_str());
+        wattroff(c, gb);
 
-    wattron(c, gb);
-    wprintw(c, album.c_str());
-    wattroff(c, gb);
+        wprintw(c, " from ");
+
+        wattron(c, gb);
+        wprintw(c, album.c_str());
+        wattroff(c, gb);
+    }
 
     /* volume slider */
 

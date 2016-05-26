@@ -19,7 +19,11 @@ namespace musik {
                 ~TransportWindow();
 
                 virtual void ProcessMessage(cursespp::IMessage &message);
+
                 virtual void Show();
+                virtual void Focus();
+                virtual void Blur();
+
                 void Update();
 
             private:
@@ -28,7 +32,7 @@ namespace musik {
                 void OnTransportTimeChanged(double time);
                 void OnQueryCompleted(musik::core::QueryPtr query);
 
-                bool paused;
+                bool paused, focused;
                 musik::core::LibraryPtr library;
                 musik::core::audio::Transport* transport;
                 musik::core::TrackPtr currentTrack;

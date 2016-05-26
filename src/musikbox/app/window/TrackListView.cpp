@@ -67,7 +67,7 @@ bool TrackListView::KeyPress(int64 ch) {
 }
 
 void TrackListView::ProcessMessage(IMessage &message) {
-    if (message.MessageType() == WINDOW_MESSAGE_QUERY_COMPLETED) {
+    if (message.Type() == WINDOW_MESSAGE_QUERY_COMPLETED) {
         if (this->query && this->query->GetStatus() == IQuery::Finished) {
             this->metadata = this->query->GetResult();
             this->query.reset();

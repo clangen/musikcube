@@ -67,7 +67,7 @@ void MessageQueue::Remove(IMessageTarget *target, int type) {
         IMessagePtr current = (*it)->message;
 
         if (current->Target() == target) {
-            if (type == -1 || type == current->MessageType()) {
+            if (type == -1 || type == current->Type()) {
                 delete (*it);
                 it = this->queue.erase(it);
                 continue;

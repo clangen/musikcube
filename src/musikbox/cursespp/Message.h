@@ -19,7 +19,7 @@ namespace cursespp {
                 int64 data2);
 
             virtual IMessageTarget* Target();
-            virtual int MessageType();
+            virtual int Type();
             virtual int64 UserData1();
             virtual int64 UserData2();
 

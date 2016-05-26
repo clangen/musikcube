@@ -119,8 +119,6 @@ void Transport::StartWithPlayer(Player* newPlayer) {
 void Transport::Stop() {
     musik::debug::info(TAG, "stop");
 
-    PlayerPtr player = NULL;
-
     std::list<Player*> toDelete;
 
     {
@@ -136,9 +134,7 @@ void Transport::Stop() {
     std::for_each(toDelete.begin(), toDelete.end(), deletePlayer);
     this->active.clear();
 
-    if (player) {
-        this->SetPlaybackState(PlaybackStopped);
-    }
+    this->SetPlaybackState(PlaybackStopped);
 }
 
 bool Transport::Pause() {

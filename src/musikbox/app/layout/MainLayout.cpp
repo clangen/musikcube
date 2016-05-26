@@ -64,7 +64,7 @@ void MainLayout::Show() {
 }
 
 void MainLayout::ProcessMessage(IMessage &message) {
-    if (message.MessageType() == MESSAGE_TYPE_UPDATE) {
+    if (message.Type() == MESSAGE_TYPE_UPDATE) {
         this->UpdateWindows();
         this->PostMessage(MESSAGE_TYPE_UPDATE, 0, 0, UPDATE_INTERVAL_MS);
     }

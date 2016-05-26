@@ -25,6 +25,7 @@ namespace musik {
                 virtual void Layout();
                 virtual void Show();
                 virtual bool LibraryLayout::KeyPress(int64 ch);
+                virtual cursespp::IWindowPtr GetFocus();
 
             private:
                 void InitializeWindows();
@@ -43,6 +44,7 @@ namespace musik {
                 std::shared_ptr<CategoryListView> categoryList;
                 std::shared_ptr<TrackListView> trackList;
                 std::shared_ptr<TransportWindow> transportView;
+                cursespp::IWindowPtr focused;
         };
     }
 }

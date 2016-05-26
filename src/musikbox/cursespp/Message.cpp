@@ -28,7 +28,7 @@ IMessageTarget* Message::Target() {
     return this->target;
 }
 
-int Message::MessageType() {
+int Message::Type() {
     return this->messageType;
 }
 

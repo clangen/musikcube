@@ -56,23 +56,22 @@ WaveOut::~WaveOut() {
 }
 
 void WaveOut::Destroy() {
-    {
-        boost::recursive_mutex::scoped_lock lock(this->outputDeviceMutex);
+    boost::recursive_mutex::scoped_lock lock1(this->bufferQueueMutex);
+    boost::recursive_mutex::scoped_lock lock2(this->outputDeviceMutex);
 
-        /* reset playback immediately. this will invalidate all pending
-        buffers */
-        if (this->waveHandle != NULL) {
-            waveOutReset(this->waveHandle);
-        }
+    /* reset playback immediately. this will invalidate all pending
+    buffers */
+    if (this->waveHandle != NULL) {
+        waveOutReset(this->waveHandle);
+    }
 
-        /* stop the thread so nothing else is processed */
-        this->StopWaveOutThread();
+    /* stop the thread so nothing else is processed */
+    this->StopWaveOutThread();
 
-        /* close it down after the threadproc has finished */
-        if (this->waveHandle != NULL) {
-            waveOutClose(this->waveHandle);
-            this->waveHandle = NULL;
-        }
+    /* close it down after the threadproc has finished */
+    if (this->waveHandle != NULL) {
+        waveOutClose(this->waveHandle);
+        this->waveHandle = NULL;
     }
 
     this->ClearBufferQueue();
@@ -99,12 +98,11 @@ void WaveOut::SetVolume(double volume) {
 }
 
 void WaveOut::Stop() {
-    {
-        boost::recursive_mutex::scoped_lock lock(this->outputDeviceMutex);
+    boost::recursive_mutex::scoped_lock lock1(this->bufferQueueMutex);
+    boost::recursive_mutex::scoped_lock lock2(this->outputDeviceMutex);
 
-        if (this->waveHandle != NULL) {
-            waveOutReset(this->waveHandle);
-        }
+    if (this->waveHandle != NULL) {
+        waveOutReset(this->waveHandle);
     }
 
     this->ClearBufferQueue();
