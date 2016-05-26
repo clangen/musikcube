@@ -37,8 +37,7 @@
 
 using namespace musik::core::audio;
 
-class Mp3DecoderFactory : public IDecoderFactory
-{
+class Mp3DecoderFactory : public IDecoderFactory {
 public:
     Mp3DecoderFactory();
     virtual ~Mp3DecoderFactory();

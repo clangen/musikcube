@@ -10,7 +10,7 @@ class Mp3Decoder : public IDecoder
 public:
 
     Mp3Decoder();
-    ~Mp3Decoder();
+    virtual ~Mp3Decoder();
 
     bool Open(musik::core::io::IDataStream *dataStream);
     double SetPosition(double seconds);
