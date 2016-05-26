@@ -1,5 +1,3 @@
-#pragma once
-
 #include "stdafx.h"
 
 #include "LogWindow.h"
@@ -13,7 +11,7 @@ using namespace cursespp;
 
 typedef IScrollAdapter::IEntry IEntry;
 
-LogWindow::LogWindow(IWindow *parent) 
+LogWindow::LogWindow(IWindow *parent)
 : ScrollableWindow(parent) {
     this->SetContentColor(BOX_COLOR_WHITE_ON_BLUE);
 

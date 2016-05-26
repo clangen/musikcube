@@ -14,7 +14,7 @@ namespace musik {
                 };
 
                 typedef std::shared_ptr<std::vector<
-                    std::shared_ptr<Result>>> ResultList;
+                    std::shared_ptr<Result> > > ResultList;
 
                 CategoryListViewQuery(const std::string& trackField);
                 virtual ~CategoryListViewQuery();

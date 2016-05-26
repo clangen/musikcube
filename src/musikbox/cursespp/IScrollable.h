@@ -3,7 +3,7 @@
 namespace cursespp {
     class IScrollable {
         public:
-            virtual ~IScrollable() = 0 { }
+            virtual ~IScrollable() { }
             virtual void ScrollToTop() = 0;
             virtual void ScrollToBottom() = 0;
             virtual void ScrollUp(int delta = 1) = 0;

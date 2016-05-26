@@ -5,7 +5,7 @@
 namespace cursespp {
     class IScrollAdapter {
         public:
-            virtual ~IScrollAdapter() = 0 { }
+            virtual ~IScrollAdapter() { }
 
             struct ScrollPosition {
                 ScrollPosition() {
@@ -25,7 +25,7 @@ namespace cursespp {
 
             class IEntry {
             public:
-                virtual ~IEntry() = 0 { }
+                virtual ~IEntry() { }
                 virtual size_t GetLineCount() = 0;
                 virtual std::string GetLine(size_t line) = 0;
                 virtual std::string GetValue() = 0;
@@ -42,4 +42,3 @@ namespace cursespp {
             virtual void DrawPage(WINDOW* window, size_t index, ScrollPosition *result = NULL) = 0;
     };
 }
-

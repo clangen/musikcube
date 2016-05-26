@@ -9,7 +9,7 @@ namespace cursespp {
 
     class IMessage {
         public:
-            virtual ~IMessage() = 0 { }
+            virtual ~IMessage() { }
             virtual IMessageTarget* Target() = 0;
             virtual int Type() = 0;
             virtual int64 UserData1() = 0;

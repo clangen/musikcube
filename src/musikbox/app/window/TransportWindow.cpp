@@ -1,5 +1,3 @@
-#pragma once
-
 #include "stdafx.h"
 #include "TransportWindow.h"
 
@@ -17,6 +15,8 @@
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/chrono.hpp>
+
+#include <algorithm>
 
 using namespace musik::core;
 using namespace musik::core::audio;
@@ -57,7 +57,7 @@ void TransportWindow::Show() {
 
 void TransportWindow::ProcessMessage(IMessage &message) {
     int type = message.Type();
-    
+
     if (type == REFRESH_TRANSPORT_READOUT) {
         this->Update();
         DEBOUNCE_REFRESH(REFRESH_INTERVAL_MS)
@@ -102,9 +102,9 @@ void TransportWindow::Update() {
     WINDOW *c = this->GetContent();
 
     bool paused = (transport->GetPlaybackState() == Transport::PlaybackPaused);
-    
-    int64 gb = COLOR_PAIR(this->focused 
-        ? BOX_COLOR_RED_ON_BLACK 
+
+    int64 gb = COLOR_PAIR(this->focused
+        ? BOX_COLOR_RED_ON_BLACK
         : BOX_COLOR_GREEN_ON_BLACK);
 
     /* playing SONG TITLE from ALBUM NAME */
@@ -144,9 +144,9 @@ void TransportWindow::Update() {
     /* volume slider */
 
     wprintw(c, "\n");
-    
+
     int volumePercent = (size_t) round(this->transport->Volume() * 100.0f) - 1;
-    int thumbOffset = min(9, (volumePercent * 10) / 100);
+    int thumbOffset = std::min(9, (volumePercent * 10) / 100);
 
     std::string volume = "vol ";
 
@@ -190,7 +190,7 @@ void TransportWindow::Update() {
 
     if (secondsTotal) {
         size_t progress = (secondsCurrent * 100) / secondsTotal;
-        thumbOffset = min(timerWidth - 1, (progress * timerWidth) / 100);
+        thumbOffset = std::min(timerWidth - 1, (progress * timerWidth) / 100);
     }
 
     std::string timerTrack = "";
@@ -202,8 +202,8 @@ void TransportWindow::Update() {
     wprintw(c, currentTime.c_str());
     wattroff(c, timerAttrs);
 
-    wprintw(c, " %s %s", 
-        timerTrack.c_str(), 
+    wprintw(c, " %s %s",
+        timerTrack.c_str(),
         totalTime.c_str());
 
     this->Repaint();

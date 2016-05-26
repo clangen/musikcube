@@ -20,7 +20,11 @@ using cursespp::ScrollAdapterBase;
 
 namespace musik {
     namespace box {
-        class CategoryListView : public ListWindow, public sigslot::has_slots<> {
+        class CategoryListView :
+            public ListWindow,
+            public std::enable_shared_from_this<CategoryListView>,
+            public sigslot::has_slots<>
+        {
             public:
                 CategoryListView(LibraryPtr library, const std::string& fieldName);
                 virtual ~CategoryListView();

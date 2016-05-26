@@ -1,5 +1,3 @@
-#pragma once
-
 #include "stdafx.h"
 
 #include <cursespp/Screen.h>
@@ -41,8 +39,8 @@ bool tostr(T& t, const std::string& s) {
 CommandWindow::CommandWindow(
     IWindow *parent,
     Transport& transport,
-    LibraryPtr library, 
-    OutputWindow& output) 
+    LibraryPtr library,
+    OutputWindow& output)
 : Window(parent) {
     this->SetContentColor(BOX_COLOR_WHITE_ON_BLACK);
     this->transport = &transport;
@@ -232,7 +230,7 @@ void CommandWindow::ListPlugins() const {
     using musik::core::IPlugin;
     using musik::core::PluginFactory;
 
-    typedef std::vector<std::shared_ptr<IPlugin>> PluginList;
+    typedef std::vector<std::shared_ptr<IPlugin> > PluginList;
     typedef PluginFactory::NullDeleter<IPlugin> Deleter;
 
     PluginList plugins = PluginFactory::Instance()

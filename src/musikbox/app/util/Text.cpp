@@ -16,12 +16,13 @@ namespace musik {
                     size_t c = 0;
                     while (c < len && it != str.end()) {
                         try {
-                            utf8::next(it++, end);
+                            utf8::next(it, end);
                         }
                         catch (...) {
-                            it++; /* invalid encoding, just treat as a single char */
+                             /* invalid encoding, just treat as a single char */
                         }
 
+                        ++it;
                         ++c;
                     }
 

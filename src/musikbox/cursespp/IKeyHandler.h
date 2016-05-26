@@ -5,7 +5,7 @@
 namespace cursespp {
     class IKeyHandler {
         public:
-            virtual ~IKeyHandler() = 0 { }
+            virtual ~IKeyHandler() { }
             virtual bool KeyPress(int64 ch) = 0;
     };
 }

@@ -1,20 +1,84 @@
-set (SQUARE_SRCS
-	stdafx.cpp
-	player.cpp
-	DummyAudioEventHandler.cpp
-	ConsoleUI.cpp
+set (BOX_SRCS
+	./Main.cpp
+	./stdafx.cpp
+	./app/layout/LibraryLayout.cpp
+	./app/layout/MainLayout.cpp
+	./app/query/CategoryListViewQuery.cpp
+	./app/query/SingleTrackQuery.cpp
+	./app/query/TrackListViewQuery.cpp
+	./app/service/PlaybackService.cpp
+	./app/util/GlobalHotkeys.cpp
+	./app/util/SystemInfo.cpp
+	./app/util/Text.cpp
+	./app/window/CategoryListView.cpp
+	./app/window/CommandWindow.cpp
+	./app/window/LogWindow.cpp
+	./app/window/OutputWindow.cpp
+	./app/window/ResourcesWindow.cpp
+	./app/window/TrackListView.cpp
+	./app/window/TransportWindow.cpp
+	./cursespp/Colors.cpp
+	./cursespp/LayoutBase.cpp
+	./cursespp/LayoutStack.cpp
+	./cursespp/ListWindow.cpp
+	./cursespp/Message.cpp
+	./cursespp/MessageQueue.cpp
+	./cursespp/MultiLineEntry.cpp
+	./cursespp/Screen.cpp
+	./cursespp/ScrollableWindow.cpp
+	./cursespp/ScrollAdapterBase.cpp
+	./cursespp/SimpleScrollAdapter.cpp
+	./cursespp/SingleLineEntry.cpp
+	./cursespp/Window.cpp
+	./cursespp/WindowLayout.cpp
 )
 
-set (SQUARE_HEADERS
-	config.h
-	ConsoleUI.h
-	DummyAudioEventHandler.h
-	memtrace.h
-	stdafx.h
+set (BOX_HEADERS
+	./stdafx.h
+	./app/layout/LibraryLayout.h
+	./app/layout/MainLayout.h
+	./app/query/CategoryListViewQuery.h
+	./app/query/SingleTrackQuery.h
+	./app/query/TrackListViewQuery.h
+	./app/service/PlaybackService.h
+	./app/util/GlobalHotkeys.h
+	./app/util/SystemInfo.h
+	./app/util/Text.h
+	./app/window/CategoryListView.h
+	./app/window/CommandWindow.h
+	./app/window/LogWindow.h
+	./app/window/OutputWindow.h
+	./app/window/ResourcesWindow.h
+	./app/window/TrackListView.h
+	./app/window/TransportWindow.h
+	./cursespp/Colors.h
+	./cursespp/curses_config.h
+	./cursespp/IDisplayable.h
+	./cursespp/IInput.h
+	./cursespp/IKeyHandler.h
+	./cursespp/ILayout.h
+	./cursespp/ILayoutStack.h
+	./cursespp/IMessage.h
+	./cursespp/IMessageTarget.h
+	./cursespp/IOrderable.h
+	./cursespp/IScrollable.h
+	./cursespp/IScrollAdapter.h
+	./cursespp/IWindow.h
+	./cursespp/IWindowGroup.h
+	./cursespp/LayoutBase.h
+	./cursespp/LayoutStack.h
+	./cursespp/ListWindow.h
+	./cursespp/Message.h
+	./cursespp/MessageQueue.h
+	./cursespp/MultiLineEntry.h
+	./cursespp/Screen.h
+	./cursespp/ScrollableWindow.h
+	./cursespp/ScrollAdapterBase.h
+	./cursespp/SimpleScrollAdapter.h
+	./cursespp/SingleLineEntry.h
+	./cursespp/Window.h
+	./cursespp/WindowLayout.h
 )
 
-SOURCE_GROUP ("Source Files" FILES ${SQUARE_SRCS})
-SOURCE_GROUP ("Header Files" FILES ${SQUARE_HEADERS})
-
-add_executable(square ${SQUARE_SRCS} ${SQUARE_HEADERS})
-target_link_libraries(square ${musikCube_LINK_LIBS} musik)
+add_executable(musikbox ${BOX_SRCS} ${BOX_HEADERS})
+target_link_libraries(musikbox ${musikbox_LINK_LIBS} curses panel musikcore)

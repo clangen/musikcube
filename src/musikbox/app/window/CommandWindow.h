@@ -9,10 +9,11 @@
 
 namespace musik {
     namespace box {
-        class CommandWindow : 
-            public cursespp::Window, 
-            public cursespp::IInput, 
-            public sigslot::has_slots<> 
+        class CommandWindow :
+            public cursespp::Window,
+            public cursespp::IInput,
+            public std::enable_shared_from_this<CommandWindow>,
+            public sigslot::has_slots<>
         {
             public:
                 CommandWindow(
@@ -21,7 +22,7 @@ namespace musik {
                     musik::core::LibraryPtr library,
                     OutputWindow& output);
 
-                ~CommandWindow();
+                virtual ~CommandWindow();
 
                 virtual void WriteChar(int64 ch);
                 virtual void Focus();

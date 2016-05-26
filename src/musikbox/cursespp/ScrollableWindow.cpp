@@ -1,6 +1,6 @@
-#pragma once
-
 #include <stdafx.h>
+#include <algorithm>
+
 #include "ScrollableWindow.h"
 #include "Screen.h"
 #include "Colors.h"
@@ -52,8 +52,8 @@ void ScrollableWindow::OnAdapterChanged() {
         ScrollPos &pos = this->GetScrollPosition();
 
         adapter->DrawPage(
-            this->GetContent(), 
-            pos.firstVisibleEntryIndex, 
+            this->GetContent(),
+            pos.firstVisibleEntryIndex,
             &pos);
 
         this->Repaint();
@@ -72,7 +72,7 @@ void ScrollableWindow::ScrollToTop() {
 
 void ScrollableWindow::ScrollToBottom() {
     GetScrollAdapter().DrawPage(
-        this->GetContent(), 
+        this->GetContent(),
         GetScrollAdapter().GetEntryCount(),
         &this->GetScrollPosition());
 
@@ -122,7 +122,7 @@ size_t ScrollableWindow::GetPreviousPageEntryIndex() {
         remaining -= count;
     }
 
-    return max(0, i);
+    return std::max(0, i);
 }
 
 void ScrollableWindow::PageUp() {

@@ -1,5 +1,3 @@
-#pragma once
-
 #include "stdafx.h"
 
 #include <cursespp/Colors.h>
@@ -132,7 +130,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(size_t index) {
     duration = text::Duration(duration);
 
     std::string text = boost::str(
-        boost::format("%s   %s   %s   %s   %s") 
+        boost::format("%s   %s   %s   %s   %s")
             % group(setw(column0Width), setfill(' '), trackNum)
             % group(setw(column1Width), setiosflags(std::ios::left), setfill(' '), title)
             % group(setw(column2Width), setiosflags(std::ios::right), setfill(' '), duration)

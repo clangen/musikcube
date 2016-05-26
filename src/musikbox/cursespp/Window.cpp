@@ -1,5 +1,3 @@
-#pragma once
-
 #include <stdafx.h>
 #include "Window.h"
 #include "IWindowGroup.h"
@@ -45,7 +43,7 @@ int Window::GetId() const {
 }
 
 void Window::ProcessMessage(IMessage &message) {
-   
+
 }
 
 bool Window::IsAcceptingMessages() {
@@ -79,9 +77,9 @@ void Window::SendToBottom() {
 void Window::PostMessage(int messageType, int64 user1, int64 user2, int64 delay) {
     MessageQueue::Instance().Post(
         Message::Create(
-            this, 
-            messageType, 
-            user1, 
+            this,
+            messageType,
+            user1,
             user2),
         delay);
 }
@@ -215,14 +213,14 @@ void Window::Create() {
 
     this->frame = (this->parent == NULL)
         ? newwin(
-            this->height, 
-            this->width, 
-            this->y, 
+            this->height,
+            this->width,
+            this->y,
             this->x)
         : newwin(
-            this->height, 
-            this->width, 
-            this->parent->GetY() + this->y, 
+            this->height,
+            this->width,
+            this->parent->GetY() + this->y,
             this->parent->GetX() + this->x);
 
     this->framePanel = new_panel(this->frame);

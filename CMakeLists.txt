@@ -48,10 +48,11 @@ set (musikbox_LINK_LIBS
 include_directories (
   "${musikbox_SOURCE_DIR}/src"
   "${musikbox_SOURCE_DIR}/src/core"
+  "${musikbox_SOURCE_DIR}/src/musikbox"
   "${musikbox_SOURCE_DIR}/src/3rdparty/include"
 )
 
 add_subdirectory(src/3rdparty)
 add_subdirectory(src/core)
 #add_subdirectory(src/contrib)
-#add_subdirectory(src/musikbox)
+add_subdirectory(src/musikbox)

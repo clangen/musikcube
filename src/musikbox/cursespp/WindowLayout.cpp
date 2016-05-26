@@ -1,5 +1,3 @@
-#pragma once
-
 #include <stdafx.h>
 #include "WindowLayout.h"
 #include "LayoutStack.h"
@@ -15,19 +13,19 @@ WindowLayout::~WindowLayout() {
 }
 
 bool WindowLayout::AddWindow(IWindowPtr window) {
-    throw std::exception("AddWindow() not supported in LayoutStack. Use Push()");
+    throw std::runtime_error("AddWindow() not supported in LayoutStack. Use Push()");
 }
 
 bool WindowLayout::RemoveWindow(IWindowPtr window) {
-    throw std::exception("RemoveWindow() not supported in LayoutStack. Use Push()");
+    throw std::runtime_error("RemoveWindow() not supported in LayoutStack. Use Push()");
 }
 
 size_t WindowLayout::GetWindowCount() {
-    throw std::exception("GetWindowCount() not supported in LayoutStack.");
+    throw std::runtime_error("GetWindowCount() not supported in LayoutStack.");
 }
 
 IWindowPtr WindowLayout::GetWindowAt(size_t position) {
-    throw std::exception("GetWindowAt() not supported in LayoutStack.");
+    throw std::runtime_error("GetWindowAt() not supported in LayoutStack.");
 }
 
 void WindowLayout::Show() {

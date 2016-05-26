@@ -10,10 +10,10 @@ namespace musik {
         class TrackListViewQuery : public musik::core::query::QueryBase {
             public:
                 typedef std::shared_ptr<
-                    std::vector<musik::core::TrackPtr>> Result;
+                    std::vector<musik::core::TrackPtr> > Result;
 
                 TrackListViewQuery(
-                    musik::core::LibraryPtr library, 
+                    musik::core::LibraryPtr library,
                     const std::string& column, DBID id);
 
                 virtual ~TrackListViewQuery();

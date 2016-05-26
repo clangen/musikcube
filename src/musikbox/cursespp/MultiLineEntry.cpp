@@ -1,6 +1,8 @@
 #include <stdafx.h>
-#include "MultiLineEntry.h"
+#include <math.h>
+#include <algorithm>
 #include <boost/algorithm/string.hpp>
+#include "MultiLineEntry.h"
 
 using namespace cursespp;
 
@@ -12,7 +14,7 @@ MultiLineEntry::MultiLineEntry(const std::string& value, int64 attrs) {
 }
 
 size_t MultiLineEntry::GetLineCount() {
-    return max(1, this->lines.size());
+    return std::max(1UL, this->lines.size());
 }
 
 std::string MultiLineEntry::GetLine(size_t n) {

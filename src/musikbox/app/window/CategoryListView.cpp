@@ -1,5 +1,3 @@
-#pragma once
-
 #include "stdafx.h"
 #include <cursespp/Colors.h>
 
@@ -84,7 +82,7 @@ IScrollAdapter& CategoryListView::GetScrollAdapter() {
     return *adapter;
 }
 
-CategoryListView::Adapter::Adapter(CategoryListView &parent) 
+CategoryListView::Adapter::Adapter(CategoryListView &parent)
 : parent(parent) {
 }
 

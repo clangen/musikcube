@@ -5,7 +5,7 @@
 namespace cursespp {
     class IWindowGroup {
         public:
-            virtual ~IWindowGroup() = 0 { }
+            virtual ~IWindowGroup() { }
             virtual bool AddWindow(IWindowPtr window) = 0;
             virtual bool RemoveWindow(IWindowPtr window) = 0;
             virtual size_t GetWindowCount() = 0;

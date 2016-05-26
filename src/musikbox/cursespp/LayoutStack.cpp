@@ -1,5 +1,3 @@
-#pragma once
-
 #include <stdafx.h>
 #include "LayoutStack.h"
 
@@ -40,19 +38,19 @@ static inline bool erase(std::deque<ILayoutPtr>& group, ILayoutPtr ptr) {
 }
 
 bool LayoutStack::AddWindow(IWindowPtr window) {
-    throw std::exception("AddWindow() not supported in LayoutStack. Use Push()");
+    throw std::runtime_error("AddWindow() not supported in LayoutStack. Use Push()");
 }
 
 bool LayoutStack::RemoveWindow(IWindowPtr window) {
-    throw std::exception("RemoveWindow() not supported in LayoutStack. Use Push()");
+    throw std::runtime_error("RemoveWindow() not supported in LayoutStack. Use Push()");
 }
 
 size_t LayoutStack::GetWindowCount() {
-    throw std::exception("GetWindowCount() not supported in LayoutStack.");
+    throw std::runtime_error("GetWindowCount() not supported in LayoutStack.");
 }
 
 IWindowPtr LayoutStack::GetWindowAt(size_t position) {
-    throw std::exception("GetWindowAt() not supported in LayoutStack.");
+    throw std::runtime_error("GetWindowAt() not supported in LayoutStack.");
 }
 
 ILayoutStack* LayoutStack::GetLayoutStack() {

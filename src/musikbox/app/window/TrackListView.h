@@ -13,13 +13,17 @@
 
 namespace musik {
     namespace box {
-        class TrackListView : public cursespp::ListWindow, public sigslot::has_slots<> {
+        class TrackListView :
+            public cursespp::ListWindow,
+            public std::enable_shared_from_this<TrackListView>,
+            public sigslot::has_slots<>
+        {
             public:
                 TrackListView(
-                    PlaybackService& playback, 
+                    PlaybackService& playback,
                     musik::core::LibraryPtr library);
 
-                ~TrackListView();
+                virtual ~TrackListView();
 
                 virtual void ProcessMessage(cursespp::IMessage &message);
                 virtual bool KeyPress(int64 ch);
@@ -44,7 +48,7 @@ namespace musik {
 
             private:
                 std::shared_ptr<TrackListViewQuery> query;
-                std::shared_ptr<std::vector<TrackPtr>> metadata;
+                std::shared_ptr<std::vector<TrackPtr> > metadata;
                 Adapter* adapter;
                 PlaybackService& playback;
                 musik::core::LibraryPtr library;

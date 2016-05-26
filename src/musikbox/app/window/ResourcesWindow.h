@@ -7,7 +7,10 @@
 
 namespace musik {
     namespace box {
-        class ResourcesWindow : public cursespp::Window {
+        class ResourcesWindow :
+            public cursespp::Window,
+            public std::enable_shared_from_this<ResourcesWindow>
+        {
             public:
                 ResourcesWindow(cursespp::IWindow *parent = NULL);
                 virtual ~ResourcesWindow();

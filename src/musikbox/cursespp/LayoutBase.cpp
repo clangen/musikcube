@@ -7,7 +7,7 @@ using namespace cursespp;
 
 template <typename T> static int find(std::vector<T>& haystack, T& needle) {
     int i = 0;
-    std::vector<T>::iterator it = haystack.begin();
+    typename std::vector<T>::iterator it = haystack.begin();
     for (; it != haystack.end(); it++, i++) {
         if ((*it) == needle) {
             return i;
@@ -42,7 +42,7 @@ static inline IWindowPtr adjustFocus(IWindowPtr oldFocus, IWindowPtr newFocus) {
     return newFocus;
 }
 
-LayoutBase::LayoutBase(IWindow* parent) 
+LayoutBase::LayoutBase(IWindow* parent)
 : Window(parent) {
     this->focused = -1;
     this->layoutStack = 0;

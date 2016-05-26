@@ -17,15 +17,15 @@ namespace musik {
         class LibraryLayout : public cursespp::LayoutBase, public sigslot::has_slots<> {
             public:
                 LibraryLayout(
-                    PlaybackService& playback, 
+                    PlaybackService& playback,
                     musik::core::LibraryPtr library);
 
                 virtual ~LibraryLayout();
 
                 virtual void Layout();
                 virtual void Show();
-                virtual bool LibraryLayout::KeyPress(int64 ch);
                 virtual cursespp::IWindowPtr GetFocus();
+                virtual bool KeyPress(int64 ch);
 
             private:
                 void InitializeWindows();

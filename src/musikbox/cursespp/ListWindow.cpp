@@ -1,4 +1,5 @@
 #include <stdafx.h>
+#include <algorithm>
 #include "ListWindow.h"
 
 using namespace cursespp;
@@ -7,7 +8,7 @@ typedef IScrollAdapter::ScrollPosition ScrollPos;
 
 size_t ListWindow::NO_SELECTION = (size_t) -1;
 
-ListWindow::ListWindow(IWindow *parent) 
+ListWindow::ListWindow(IWindow *parent)
 : ScrollableWindow(parent) {
     this->selectedIndex = (size_t) -1;
 }
@@ -24,15 +25,15 @@ void ListWindow::ScrollToTop() {
 
 void ListWindow::ScrollToBottom() {
     IScrollAdapter& adapter = this->GetScrollAdapter();
-    this->SetSelectedIndex(max(0, adapter.GetEntryCount() - 1));
+    this->SetSelectedIndex(std::max(0UL, adapter.GetEntryCount() - 1));
     adapter.DrawPage(this->GetContent(), selectedIndex, &scrollPosition);
     this->Repaint();
 }
 
 void ListWindow::Focus() {
     GetScrollAdapter().DrawPage(
-        this->GetContent(), 
-        this->scrollPosition.firstVisibleEntryIndex, 
+        this->GetContent(),
+        this->scrollPosition.firstVisibleEntryIndex,
         &this->scrollPosition);
 }
 
@@ -46,13 +47,13 @@ void ListWindow::ScrollUp(int delta) {
 
     int minIndex = 0;
     int newIndex = this->selectedIndex - delta;
-    newIndex = max(newIndex, minIndex);
+    newIndex = std::max(newIndex, minIndex);
 
     if (newIndex < (int) first + 1) {
         drawIndex = newIndex - 1;
     }
 
-    drawIndex = max(0, drawIndex);
+    drawIndex = std::max(0, drawIndex);
 
     this->SetSelectedIndex(newIndex);
 
@@ -75,7 +76,7 @@ void ListWindow::ScrollDown(int delta) {
 
     size_t maxIndex = adapter.GetEntryCount() - 1;
     size_t newIndex = this->selectedIndex + delta;
-    newIndex = min(newIndex, maxIndex);
+    newIndex = std::min(newIndex, maxIndex);
 
     if (newIndex >= last - 1) {
         drawIndex = drawIndex + delta;
@@ -92,7 +93,7 @@ void ListWindow::PageUp() {
     IScrollAdapter &adapter = this->GetScrollAdapter();
     ScrollPos spos = this->GetScrollPosition();
     int target = (int) this->GetPreviousPageEntryIndex();
-    
+
     /* if the target position is zero, let it be so the user can see
     the top of the list. otherwise, scroll down by one to give indication
     there is more to see. */
@@ -112,7 +113,7 @@ void ListWindow::PageDown() {
     ScrollPos spos = this->GetScrollPosition();
 
     size_t lastVisible = spos.firstVisibleEntryIndex + spos.visibleEntryCount - 1;
-    this->SetSelectedIndex(min(adapter.GetEntryCount() - 1, lastVisible + 1));
+    this->SetSelectedIndex(std::min(adapter.GetEntryCount() - 1, lastVisible + 1));
 
     adapter.DrawPage(this->GetContent(), lastVisible, &this->scrollPosition);
     this->Repaint();

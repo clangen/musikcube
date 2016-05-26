@@ -10,7 +10,7 @@ namespace cursespp {
 
     class ILayout : public IWindowGroup, public IKeyHandler, public IOrderable, public IDisplayable {
         public:
-            virtual ~ILayout() = 0 { }
+            virtual ~ILayout() { }
             virtual IWindowPtr FocusNext() = 0;
             virtual IWindowPtr FocusPrev() = 0;
             virtual IWindowPtr GetFocus() = 0;

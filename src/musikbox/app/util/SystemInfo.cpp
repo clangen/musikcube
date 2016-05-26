@@ -2,13 +2,14 @@
 
 #include "SystemInfo.h"
 
+using namespace musik::box;
+
+#ifdef WIN32
+
 #include "windows.h"
 #include "psapi.h"
 #include "pdh.h"
 
-using namespace musik::box;
-
-#ifdef WIN32
 class WindowsSystemInfo : public SystemInfo {
     public:
         WindowsSystemInfo();
@@ -125,15 +126,15 @@ double WindowsSystemInfo::GetCpuUsage() {
     FILETIME ftime, fsys, fuser;
     ULARGE_INTEGER now, sys, user;
     double percent;
-    
+
     GetSystemTimeAsFileTime(&ftime);
     memcpy(&now, &ftime, sizeof(FILETIME));
-    
+
     GetProcessTimes(self, &ftime, &ftime, &fsys, &fuser);
     memcpy(&sys, &fsys, sizeof(FILETIME));
     memcpy(&user, &fuser, sizeof(FILETIME));
-    
-    percent = 
+
+    percent =
         (double) (sys.QuadPart - lastSysCpu.QuadPart) +
         (double) (user.QuadPart - lastUserCpu.QuadPart);
 
@@ -142,11 +143,11 @@ double WindowsSystemInfo::GetCpuUsage() {
 
     percent /= diff;
     percent /= processorCount;
-    
+
     lastCpu = now;
     lastUserCpu = user;
     lastSysCpu = sys;
-    
+
     return (percent * 100.0f);
 }
 #endif

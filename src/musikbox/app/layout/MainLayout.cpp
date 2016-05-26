@@ -1,5 +1,3 @@
-#pragma once
-
 #include "stdafx.h"
 #include "MainLayout.h"
 #include <cursespp/Screen.h>

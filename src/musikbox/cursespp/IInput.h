@@ -5,7 +5,7 @@
 namespace cursespp {
     class IInput {
         public:
-            virtual ~IInput() = 0 { }
+            virtual ~IInput() { }
             virtual void WriteChar(int64 ch) = 0;
     };
 }

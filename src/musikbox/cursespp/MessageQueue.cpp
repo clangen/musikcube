@@ -1,4 +1,5 @@
 #include <stdafx.h>
+#include <algorithm>
 #include "MessageQueue.h"
 
 using namespace boost::chrono;
@@ -81,7 +82,7 @@ void MessageQueue::Remove(IMessageTarget *target, int type) {
 void MessageQueue::Post(IMessagePtr message, int64 delayMs) {
     boost::recursive_mutex::scoped_lock lock(this->queueMutex);
 
-    delayMs = max(0, delayMs);
+    delayMs = std::max(0LL, delayMs);
 
     milliseconds now = duration_cast<milliseconds>(
         system_clock::now().time_since_epoch());

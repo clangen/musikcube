@@ -1,5 +1,3 @@
-﻿#pragma once
-
 #include "stdafx.h"
 
 #include "ResourcesWindow.h"
@@ -16,7 +14,7 @@ using namespace cursespp;
 
 #define BYTES_PER_MEGABYTE 1048576.0f
 
-ResourcesWindow::ResourcesWindow(IWindow *parent) 
+ResourcesWindow::ResourcesWindow(IWindow *parent)
 : Window(parent) {
     this->systemInfo = SystemInfo::Create();
 }
@@ -33,8 +31,8 @@ void ResourcesWindow::Update() {
     double cpuUsage = (double) systemInfo->GetCpuUsage();
 
     wprintw(
-        this->GetContent(), 
-        "cpu %.2f%% - virt %.2f (mb) - phys %.2f (mb)", 
+        this->GetContent(),
+        "cpu %.2f%% - virt %.2f (mb) - phys %.2f (mb)",
         cpuUsage,
         virtualMemoryUsed,
         physicalMemoryUsed);

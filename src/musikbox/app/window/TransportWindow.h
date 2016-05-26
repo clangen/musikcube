@@ -10,10 +10,14 @@
 
 namespace musik {
     namespace box {
-        class TransportWindow : public cursespp::Window, public sigslot::has_slots<> {
+        class TransportWindow :
+            public cursespp::Window,
+            public std::enable_shared_from_this<TransportWindow>,
+            public sigslot::has_slots<>
+        {
             public:
                 TransportWindow(
-                    musik::core::LibraryPtr library, 
+                    musik::core::LibraryPtr library,
                     musik::core::audio::Transport& transport);
 
                 ~TransportWindow();

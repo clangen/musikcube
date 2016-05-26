@@ -1,5 +1,3 @@
-#pragma once
-
 #include "stdafx.h"
 
 #include "OutputWindow.h"
@@ -13,7 +11,7 @@ using namespace cursespp;
 
 typedef IScrollAdapter::EntryPtr EntryPtr;
 
-OutputWindow::OutputWindow(IWindow *parent) 
+OutputWindow::OutputWindow(IWindow *parent)
 : ScrollableWindow(parent) {
     this->SetContentColor(BOX_COLOR_BLACK_ON_GREY);
     this->adapter = new SimpleScrollAdapter();

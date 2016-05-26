@@ -11,10 +11,14 @@
 
 namespace musik {
     namespace box {
-        class LogWindow : public cursespp::ScrollableWindow, public sigslot::has_slots<> {
+        class LogWindow :
+            public cursespp::ScrollableWindow,
+            public std::enable_shared_from_this<LogWindow>,
+            public sigslot::has_slots<>
+        {
             public:
                 LogWindow(cursespp::IWindow *parent = NULL);
-                ~LogWindow();
+                virtual ~LogWindow();
 
                 void Update();
 
