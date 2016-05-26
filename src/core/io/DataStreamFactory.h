@@ -47,8 +47,8 @@ namespace musik { namespace core { namespace io {
             typedef std::shared_ptr<IDataStream> DataStreamPtr;
 
         private:
-            static DataStreamFactory sInstance;
             DataStreamFactory();
+            static DataStreamFactory* Instance();
 
         private:
             typedef std::vector<std::shared_ptr<IDataStreamFactory> > DataStreamFactoryVector;

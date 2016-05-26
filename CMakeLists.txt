@@ -6,6 +6,7 @@ set (musikbox_VERSION_MAJOR 0)
 set (musikbox_VERSION_MINOR 1)
 
 set (CMAKE_MODULE_PATH ${musikbox_SOURCE_DIR}/modules)
+set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-fpermissive -g")
 
 set (BOOST_LIBS
   system
@@ -22,12 +23,9 @@ add_definitions (-DHAVE_BOOST
   -D_FILE_OFFSET_BITS=64)
 set (BOOST_LINK_LIBS
   ${Boost_LIBRARIES})
-message(STATUS "Libs: " ${BOOST_LINK_LIBS})
-message(STATUS "Includes: " ${Boost_INCLUDE_DIRS})
 
-set (linux_LINK_LIBS
-  dl
-)
+#message(STATUS "Libs: " ${BOOST_LINK_LIBS})
+#message(STATUS "Includes: " ${Boost_INCLUDE_DIRS})
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}/Modules)
@@ -41,6 +39,7 @@ link_directories (${musikbox_SOURCE_DIR}/bin/plugins)
 set (musikbox_LINK_LIBS
   ${linux_LINK_LIBS}
   ${BOOST_LINK_LIBS}
+  dl
   sqlite3
   md5
 )
@@ -54,5 +53,6 @@ include_directories (
 
 add_subdirectory(src/3rdparty)
 add_subdirectory(src/core)
-#add_subdirectory(src/contrib)
 add_subdirectory(src/musikbox)
+add_subdirectory(src/contrib/taglib_plugin)
+add_subdirectory(src/contrib/mp3decoder)

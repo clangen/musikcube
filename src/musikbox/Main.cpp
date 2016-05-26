@@ -51,13 +51,19 @@
 #include <boost/filesystem/fstream.hpp>
 #include <boost/filesystem/detail/utf8_codecvt_facet.hpp>
 
+#include <core/plugin/PluginFactory.h>
 #include <core/library/LibraryFactory.h>
 
 #ifdef WIN32
 #undef MOUSE_MOVED
 #endif
 
-#define IDLE_TIMEOUT_MS 0
+#ifdef WIN32
+    #define IDLE_TIMEOUT_MS 0
+#else
+    #define IDLE_TIMEOUT_MS 100
+#endif
+
 
 using namespace musik::core;
 using namespace musik::core::audio;
@@ -150,7 +156,12 @@ int main(int argc, char* argv[])
     std::locale utf8Locale(locale, new boost::filesystem::detail::utf8_codecvt_facet);
     boost::filesystem::path::imbue(utf8Locale);
 
+#ifndef WIN32
+    setlocale(LC_ALL, "");
+#endif
+
     musik::debug::init();
+    PluginFactory::Instance(); /* initialize */
 
     ttytype[0] = 30; /* min height */
     ttytype[1] = 30; /* max height */
@@ -173,7 +184,6 @@ int main(int argc, char* argv[])
 
     {
         Colors::Init();
-
 
         Transport tp;
         tp.SetVolume(0.75);

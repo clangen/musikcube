@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Daniel Önnerby
+// The following are Copyright ï¿½ 2008, Daniel ï¿½nnerby
 //
 // All rights reserved.
 //
@@ -43,8 +43,6 @@
 
 using namespace musik::core::io;
 
-DataStreamFactory DataStreamFactory::sInstance;
-
 DataStreamFactory::DataStreamFactory() {
     typedef IDataStreamFactory PluginType;
     typedef musik::core::PluginFactory::DestroyDeleter<PluginType> Deleter;
@@ -53,17 +51,28 @@ DataStreamFactory::DataStreamFactory() {
         .QueryInterface<PluginType, Deleter>("GetDataStreamFactory");
 }
 
+DataStreamFactory* DataStreamFactory::Instance() {
+    static DataStreamFactory* instance = NULL;
+
+    if (instance == NULL) {
+        instance = new DataStreamFactory();
+    }
+
+    return instance;
+}
+
 DataStreamFactory::DataStreamPtr DataStreamFactory::OpenUri(const char *uri) {
     typedef musik::core::PluginFactory::DestroyDeleter<IDataStream> StreamDeleter;
 
     if (uri) {
-        DataStreamFactoryVector::iterator it = sInstance.dataStreamFactories.begin();
+        DataStreamFactoryVector::iterator it =
+            DataStreamFactory::Instance()->dataStreamFactories.begin();
 
         /* plugins get the first crack at the uri */
-        for( ; it != sInstance.dataStreamFactories.end(); it++) {
+        for( ; it != DataStreamFactory::Instance()->dataStreamFactories.end(); it++) {
             if ((*it)->CanReadFile(uri)) {
                 IDataStream* dataStream = (*it)->OpenFile(uri);
-                
+
                 if (dataStream) {
                     return DataStreamPtr(dataStream, StreamDeleter());
                 }
@@ -72,7 +81,7 @@ DataStreamFactory::DataStreamPtr DataStreamFactory::OpenUri(const char *uri) {
 
         /* no plugins accepted it? try to open as a local file */
         DataStreamPtr regularFile(new LocalFileStream(), StreamDeleter());
-        
+
         if (regularFile->Open(uri)) {
             return regularFile;
         }
@@ -81,14 +90,16 @@ DataStreamFactory::DataStreamPtr DataStreamFactory::OpenUri(const char *uri) {
     return DataStreamPtr();
 }
 
-bool DataStreamFactory::IsLocalFileStream(const char *uri){
+bool DataStreamFactory::IsLocalFileStream(const char *uri) {
     typedef musik::core::PluginFactory::DestroyDeleter<IDataStream> StreamDeleter;
 
     if (uri) {
         /* see if a plugin can handle this. if it can, then it's not
         considered to be a local file stream */
-        DataStreamFactoryVector::iterator it = sInstance.dataStreamFactories.begin();
-        for( ; it != sInstance.dataStreamFactories.end(); ++it) {
+        DataStreamFactoryVector::iterator it =
+            DataStreamFactory::Instance()->dataStreamFactories.begin();
+
+        for( ; it != DataStreamFactory::Instance()->dataStreamFactories.end(); ++it) {
             if ((*it)->CanReadFile(uri)) {
                 return false;
             }

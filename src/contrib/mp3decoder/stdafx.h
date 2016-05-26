@@ -1,13 +1,11 @@
-// stdafx.h : include file for standard system include files,
-// or project specific include files that are used frequently, but
-// are changed infrequently
-//
-
 #pragma once
 
-#include <core/config.h>
+#include <core/sdk/config.h>
 
+#ifdef WIN32
 #include <shlwapi.h>
-#include <math.h>
+#else
+  #define __forceinline inline
+#endif
 
-//#include "vld/vld.h"
+#include <math.h>

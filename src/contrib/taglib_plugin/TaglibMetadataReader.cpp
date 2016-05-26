@@ -36,25 +36,20 @@
 
 #include "TaglibMetadataReader.h"
 
-#include <toolkit/tlist.h>
-#include <toolkit/tfile.h>
-
+#include <taglib/tlist.h>
+#include <taglib/tfile.h>
 #include <taglib/tag.h>
 #include <taglib/fileref.h>
 #include <taglib/audioproperties.h>
-
-#include <mpeg/mpegfile.h>
-
-#include <mpeg/id3v1/id3v1tag.h>
-#include <mpeg/id3v1/id3v1genres.h>
-
-#include <mpeg/id3v2/id3v2tag.h>
-#include <mpeg/id3v2/id3v2header.h>
-#include <mpeg/id3v2/id3v2frame.h>
-#include <mpeg/id3v2/frames/attachedpictureframe.h>
-#include <mpeg/id3v2/frames/commentsframe.h>
-
-#include <taglib/ogg/oggfile.h>
+#include <taglib/mpegfile.h>
+#include <taglib/id3v1tag.h>
+#include <taglib/id3v1genres.h>
+#include <taglib/id3v2tag.h>
+#include <taglib/id3v2header.h>
+#include <taglib/id3v2frame.h>
+#include <taglib/attachedpictureframe.h>
+#include <taglib/commentsframe.h>
+#include <taglib/oggfile.h>
 
 #include <vector>
 #include <string>
@@ -186,7 +181,7 @@ bool TaglibMetadataReader::GetID3v2Tag(const char* uri, musik::core::IMetadataWr
         if (!allTags["TYER"].isEmpty()) { /* ID3v2.3*/
             this->SetTagValue("year", allTags["TYER"].front()->toString().substr(0, 4), track);
         }
-        
+
         if (!allTags["TDRC"].isEmpty()) { /* ID3v2.4*/
             this->SetTagValue("year", allTags["TDRC"].front()->toString().substr(0, 4), track);
         }
@@ -309,11 +304,11 @@ bool TaglibMetadataReader::GetID3v2Tag(const char* uri, musik::core::IMetadataWr
             /* there can be multiple pictures, apparently. let's just use
             the first one. */
 
-            TagLib::ID3v2::AttachedPictureFrame *picture = 
+            TagLib::ID3v2::AttachedPictureFrame *picture =
                 static_cast<TagLib::ID3v2::AttachedPictureFrame*>(pictures.front());
 
             TagLib::ByteVector pictureData = picture->picture();
-            DBID size = pictureData.size();
+            long long size = pictureData.size();
 
             if(size > 32) {    /* noticed that some id3tags have like a 4-8 byte size with no thumbnail */
                 track->SetThumbnail(pictureData.data(), size);
@@ -373,7 +368,7 @@ void TaglibMetadataReader::SetTagValues(
 
 void TaglibMetadataReader::SetSlashSeparatedValues(
     const char* key,
-    TagLib::String tagString, 
+    TagLib::String tagString,
     musik::core::IMetadataWriter *track)
 {
     if(!tagString.isEmpty()) {
@@ -428,5 +423,3 @@ void TaglibMetadataReader::SetAudioProperties(
         }
     }
 }
-
-

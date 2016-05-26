@@ -39,22 +39,30 @@
 #include <core/sdk/IDecoder.h>
 #include "Mp3DecoderFactory.h"
 
+#ifdef WIN32
+#define DLLEXPORT __declspec(dllexport)
+#else
+#define DLLEXPORT
+#endif
+
+#ifdef WIN32
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
     return true;
 }
+#endif
 
 class MP3DecoderPlugin : public musik::core::IPlugin
 {
     void Destroy() { delete this; }
-	const char* Name() { return "MP3 IDecoder"; };
-	const char* Version() { return "0.2"; };
-	const char* Author() { return "Björn Olievier, _avatar"; };
+    const char* Name() { return "MP3 IDecoder"; };
+    const char* Version() { return "0.2"; };
+    const char* Author() { return "Björn Olievier, _avatar"; };
 };
 
-extern "C" __declspec(dllexport) musik::core::IPlugin* GetPlugin() {
+extern "C" DLLEXPORT musik::core::IPlugin* GetPlugin() {
     return new MP3DecoderPlugin();
 }
 
-extern "C" __declspec(dllexport) IDecoderFactory* GetDecoderFactory() {
+extern "C" DLLEXPORT IDecoderFactory* GetDecoderFactory() {
 	return new Mp3DecoderFactory();
 }

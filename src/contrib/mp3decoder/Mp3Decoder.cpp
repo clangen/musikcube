@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include <math.h>
 #include <iostream>
+#include <algorithm>
 #include "mp3decoder.h"
 
 static bool splitFrame(musik::core::io::IDataStream *dataStream, Frame &fr) {
@@ -136,7 +137,7 @@ bool Mp3Decoder::GetXingHeader(unsigned char * xingBuffer) {
 
         xingBuffer += 100;
     }
-        
+
     this->vbrScale = -1;
     if (headFlags & VBR_SCALE_FLAG) {
         this->vbrScale = GET_INT32BE(xingBuffer);
@@ -249,19 +250,19 @@ double Mp3Decoder::SetPosition(double seconds) {
     unsigned long offset;
 
     if (this->xingValid) {
-        /* interpolate in TOC to get file seek point in bytes */ 
-        int a = min(percent, 99);
+        /* interpolate in TOC to get file seek point in bytes */
+        int a = std::min(percent, 99.0f);
         float fa, fb, fx;
 
         fa = this->toc[a];
-        
+
         if (a < 99) {
             fb = this->toc[a + 1];
         }
         else {
             fb = 256;
         }
-        
+
         fx = fa + (fb - fa) * (percent - a);
         offset = (1.0f / 256.0f) * fx * this->streamDataLength;
     }

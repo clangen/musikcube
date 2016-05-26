@@ -42,10 +42,21 @@
 #include <core/debug.h>
 
 static const std::string TAG = "PluginFactory";
+static boost::mutex instanceMutex;
 
 using namespace musik::core;
 
-PluginFactory PluginFactory::sInstance;
+PluginFactory& PluginFactory:: Instance() {
+    boost::mutex::scoped_lock lock(instanceMutex);
+
+    static PluginFactory* instance = NULL;
+
+    if (instance == NULL) {
+        instance = new PluginFactory();
+    }
+
+    return *instance;
+}
 
 PluginFactory::PluginFactory() {
     musik::debug::info(TAG, "loading plugins");
@@ -53,7 +64,7 @@ PluginFactory::PluginFactory() {
 }
 
 PluginFactory::~PluginFactory(void){
-    for (size_t i = 0; i<this->loadedPlugins.size(); i++) {
+    for (size_t i = 0; i < this->loadedPlugins.size(); i++) {
         this->loadedPlugins[i]->Destroy();
     }
 
@@ -80,9 +91,8 @@ void PluginFactory::LoadPlugins(){
         for (boost::filesystem::directory_iterator file(dir); file != end; file++) {
             if (boost::filesystem::is_regular(file->status())){
                 std::string filename(file->path().string());
-
 #ifdef WIN32
-                /* if the file ends with ".dll", we'll try to load ig*/
+                /* if the file ends with ".dll", we'll try to load it*/
 
                 if (filename.substr(filename.size() - 4) == ".dll") {
 
@@ -102,14 +112,21 @@ void PluginFactory::LoadPlugins(){
                         }
                     }
                 }
-#else
-                if (filename.substr(filename.size() - 3) == ".so") {
-                    void* dll = dlopen(filename.c_str(), RTLD_NOW);
+#elif __APPLE__
+                if (filename.substr(filename.size() - 6) == ".dylib") {
+                    void* dll = NULL;
                     char* err;
 
-                    if ((err = dlerror()) != NULL) {
+                    try {
+                        dll = dlopen(filename.c_str(), RTLD_LOCAL);
+                    }
+                    catch (...) {
+                        err = "exception caught loading plugin";
+                    }
+
+                    if (err != NULL || (err = dlerror()) != NULL) {
                         musik::debug::err(
-                            "PluginFactory",
+                            TAG,
                             "could not load shared library " + filename +
                             " error: " + std::string(err));
                     }
@@ -118,6 +135,7 @@ void PluginFactory::LoadPlugins(){
                         *(void **)(&getPluginCall) = dlsym(dll, "GetPlugin");
 
                         if (getPluginCall) {
+                            musik::debug::info(TAG, "loaded: " + filename);
                             this->loadedPlugins.push_back(getPluginCall());
                             this->loadedDlls.push_back(dll);
                         }

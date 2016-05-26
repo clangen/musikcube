@@ -1,8 +1,6 @@
 #pragma once
 
 #include <core/sdk/IDecoder.h>
-
-#include "FrameSplitter.h"
 #include "Layer3Decoder.h"
 
 using namespace musik::core::audio;

@@ -53,10 +53,7 @@ namespace musik { namespace core {
 
     class PluginFactory {
         public:
-
-            static  PluginFactory& Instance() {
-                return sInstance;
-            }
+            static PluginFactory& Instance();
 
         private:
 
@@ -73,8 +70,6 @@ namespace musik { namespace core {
 
             typedef std::vector<IPlugin*> PluginList;
             typedef std::vector<void*> HandleList;
-
-            static PluginFactory sInstance;
 
             PluginList loadedPlugins;
             HandleList loadedDlls;
@@ -101,7 +96,7 @@ namespace musik { namespace core {
                 typedef T* STDCALL(PluginInterfaceCall);
 
                 std::vector<std::shared_ptr<T> > plugins;
-                HandleList& allDlls = PluginFactory::sInstance.loadedDlls;
+                HandleList& allDlls = PluginFactory::Instance().loadedDlls;
 
                 typedef HandleList::iterator Iterator;
                 Iterator currentDll = allDlls.begin();

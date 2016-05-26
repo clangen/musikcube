@@ -38,11 +38,6 @@
 #include "stdafx.h"
 #include "TaglibMetadataReader.h"
 #include "core/sdk/IPlugin.h"
-#ifndef _HAVE_TAGLIB
-#include <id3v2framefactory.h>
-#else
-#include <taglib/mpeg/id3v2/id3v2framefactory.h>
-#endif
 
 #ifdef WIN32
 #define DLLEXPORT __declspec(dllexport)
@@ -60,7 +55,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,DWORD  ul_reason_for_call,LPVOID lpReserv
 
 class TaglibPlugin : public musik::core::IPlugin {
     void Destroy() {
-        delete this; 
+        delete this;
     };
 
     const char* Name() {

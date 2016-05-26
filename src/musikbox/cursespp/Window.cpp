@@ -90,10 +90,10 @@ void Window::RemoveMessage(int messageType) {
 
 void Window::SetParent(IWindow* parent) {
     if (this->parent != parent) {
-        IWindowGroup* group = dynamic_cast<IWindowGroup*>(parent);
+        IWindowGroup* group = dynamic_cast<IWindowGroup*>(this->parent);
 
         if (group) {
-            group->RemoveWindow(shared_from_this());
+            group->RemoveWindow(this->Window::shared_from_this());
         }
 
         this->parent = parent;

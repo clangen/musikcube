@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Daniel Önnerby
+// The following are Copyright ï¿½ 2008, Daniel ï¿½nnerby
 //
 // All rights reserved.
 //
@@ -38,28 +38,38 @@
 #include <core/support/Common.h>
 #include <core/config.h>
 #include <utf8/utf8.h>
+#include <cstdlib>
+#include <iostream>
+#include <mach-o/dyld.h>
 
-std::string musik::core::GetPluginDirectory(){
-    std::string sDirectory(GetApplicationDirectory());
-    sDirectory.append("plugins/");
-    return sDirectory;
+std::string musik::core::GetPluginDirectory() {
+    std::string path(GetApplicationDirectory());
+    path.append("/plugins/");
+    return path;
 }
 
 std::string musik::core::GetApplicationDirectory() {
-    std::string sDirectory;
+    std::string result;
 
     #ifdef WIN32
         wchar_t szPath[2048];
         int iStrLength = GetModuleFileName(NULL, szPath, 2048);
         if(iStrLength != 0 && iStrLength < 2048){
-            sDirectory.assign(GetPath(u16to8(szPath).c_str()));
+            result.assign(GetPath(u16to8(szPath).c_str()));
         }
+    #else
+      // char pathbuf[PATH_MAX + 1];
+      // uint32_t bufsize = sizeof(pathbuf);
+      // _NSGetExecutablePath(pathbuf, &bufsize);
+      // result.assign(pathbuf);
+      // std::cerr << result << std::endl;
+      result = "/Users/clangen/src/musikcube/bin/";
     #endif
 
-    return sDirectory;
+    return result;
 }
 
-std::string musik::core::GetDataDirectory(){
+std::string musik::core::GetDataDirectory() {
     std::string directory;
 
     #ifdef WIN32
@@ -68,21 +78,23 @@ std::string musik::core::GetDataDirectory(){
         GetEnvironmentVariable(_T("APPDATA"), sBuffer, iBufferSize);
         directory.assign(u16to8(sBuffer));
         delete [] sBuffer;
+    #else
+        directory = std::string(std::getenv("HOME"));
     #endif
 
     directory.append("/mC2/");
 
     // Create folder if it does not exist
-    boost::filesystem::path oFolder(directory);
-    if(!boost::filesystem::exists(oFolder)){
-        boost::filesystem::create_directories(oFolder);
+    boost::filesystem::path path(directory);
+    if(!boost::filesystem::exists(path)) {
+        boost::filesystem::create_directories(path);
     }
 
     return directory;
 }
 
 std::string musik::core::GetPath(const std::string &sFile){
-    
+
     std::string sPath;
     int iStrLength;
 
@@ -117,7 +129,3 @@ UINT64 musik::core::Checksum(char *data,unsigned int bytes){
     }
     return sum;
 }
-
-
-
-
