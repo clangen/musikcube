@@ -245,10 +245,18 @@ void Transport::RemoveActive(Player* player) {
 void Transport::OnPlaybackFinished(Player* player) {
     this->RaiseStreamEvent(Transport::StreamFinished, player);
 
-    if (this->nextPlayer) {
-        this->StartWithPlayer(this->nextPlayer);
+    bool startedNext = false;
+
+    {
+        boost::recursive_mutex::scoped_lock lock(this->stateMutex);
+
+        if (this->nextPlayer) {
+            this->StartWithPlayer(this->nextPlayer);
+            startedNext = true;
+        }
     }
-    else {
+
+    if (!startedNext) {
         this->SetPlaybackState(Transport::PlaybackStopped);
     }
 
