@@ -1,33 +1,33 @@
 //////////////////////////////////////////////////////////////////////////////
-// Copyright © 2007, Daniel Önnerby
+// Copyright ï¿½ 2007, Daniel ï¿½nnerby
 //
 // All rights reserved.
 //
-// Redistribution and use in source and binary forms, with or without 
+// Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
 //
 //    * Redistributions of source code must retain the above copyright notice,
 //      this list of conditions and the following disclaimer.
 //
-//    * Redistributions in binary form must reproduce the above copyright 
-//      notice, this list of conditions and the following disclaimer in the 
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
 //      documentation and/or other materials provided with the distribution.
 //
-//    * Neither the name of the author nor the names of other contributors may 
-//      be used to endorse or promote products derived from this software 
-//      without specific prior written permission. 
+//    * Neither the name of the author nor the names of other contributors may
+//      be used to endorse or promote products derived from this software
+//      without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
-// POSSIBILITY OF SUCH DAMAGE. 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
 
@@ -36,10 +36,13 @@
 #include <core/debug.h>
 #include <core/audio/Player.h>
 #include <core/plugin/PluginFactory.h>
+#include <algorithm>
 
 #define MAX_PREBUFFER_QUEUE_COUNT 16
 
 using namespace musik::core::audio;
+using std::min;
+using std::max;
 
 static std::string TAG = "Player";
 
@@ -52,7 +55,7 @@ Player::OutputPtr Player::CreateDefaultOutput() {
     typedef std::vector<OutputPtr> OutputVector;
 
     OutputVector outputs = musik::core::PluginFactory::Instance().QueryInterface<
-        IOutput, musik::core::PluginFactory::DestroyDeleter<IOutput>>("GetAudioOutput");
+        IOutput, musik::core::PluginFactory::DestroyDeleter<IOutput> >("GetAudioOutput");
 
     if (!outputs.empty()) {
         musik::debug::info(TAG, "found an IOutput device!");
@@ -71,7 +74,7 @@ Player::Player(const std::string &url, double volume, OutputPtr output)
 , setPosition(-1) {
     musik::debug::info(TAG, "new instance created");
 
-    /* we allow callers to specify an output device; but if they don't, 
+    /* we allow callers to specify an output device; but if they don't,
     we will create and manage our own. */
     this->output = output ? output : Player::CreateDefaultOutput();
 
@@ -100,7 +103,7 @@ void Player::Stop() {
         this->prebufferQueue.clear();
         this->writeToOutputCondition.notify_all();
     }
-    
+
     if (this->output) {
         this->output->Stop();
     }
@@ -125,7 +128,7 @@ double Player::Position() {
 
 void Player::SetPosition(double seconds) {
     boost::mutex::scoped_lock lock(this->mutex);
-    this->setPosition = max(0, seconds);
+    this->setPosition = std::max(0.0, seconds);
 }
 
 double Player::Volume() {
@@ -346,4 +349,3 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
         }
     }
 }
-

@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Daniel Önnerby
+// The following are Copyright ï¿½ 2008, Daniel ï¿½nnerby
 //
 // All rights reserved.
 //
@@ -74,7 +74,7 @@ namespace musik { namespace core {
             virtual MetadataIteratorRange GetAllValues();
             virtual TrackPtr Copy();
 
-            static bool LibraryTrack::Load(Track *target, db::Connection &db);
+            static bool Load(Track *target, db::Connection &db);
 
         private:
             DBID id;
@@ -95,4 +95,3 @@ namespace musik { namespace core {
     };
 
 } }
-

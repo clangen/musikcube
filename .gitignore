@@ -2,6 +2,10 @@
 **/*.VC.db
 **/*.VC.opendb
 **/*.suo
+**/CMakeCache.txt
+**/CMakeFiles
+**/Makefile
+**/cmake_install.cmake
 bin
 obj
 ipch

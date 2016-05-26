@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Daniel Önnerby
+// The following are Copyright ï¿½ 2008, Daniel ï¿½nnerby
 //
 // All rights reserved.
 //
@@ -69,7 +69,7 @@ namespace musik { namespace core {
                 db::Connection &dbConnection);
 
             bool Save(
-                db::Connection &dbConnection, 
+                db::Connection &dbConnection,
                 std::string libraryDirectory);
 
         private:
@@ -83,13 +83,13 @@ namespace musik { namespace core {
 
                     Track::MetadataMap metadata;
                     char *thumbnailData;
-                    long thumbnailSize;
+                    int thumbnailSize;
             };
 
             MetadataWithThumbnail *internalMetadata;
 
             DBID SaveThumbnail(
-                db::Connection& connection, 
+                db::Connection& connection,
                 const std::string& libraryDirectory);
 
             DBID SaveGenre(db::Connection& connection);
@@ -109,9 +109,9 @@ namespace musik { namespace core {
                 const std::string& junctionTableForeignKeyColumnName);
 
             DBID SaveNormalizedFieldValue(
-                db::Connection& dbConnection, 
-                const std::string& tableName, 
-                const std::string& fieldValue, 
+                db::Connection& dbConnection,
+                const std::string& tableName,
+                const std::string& fieldValue,
                 bool isAggregatedValue,
                 const std::string& relationJunctionTableName = "",
                 const std::string& relationJunctionTableColumn = "");
@@ -120,4 +120,3 @@ namespace musik { namespace core {
     };
 
 } }
-

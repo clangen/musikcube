@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Daniel Önnerby
+// The following are Copyright ï¿½ 2008, Daniel ï¿½nnerby
 //
 // All rights reserved.
 //
@@ -51,7 +51,7 @@ namespace musik { namespace core { namespace io {
             DataStreamFactory();
 
         private:
-            typedef std::vector<std::shared_ptr<IDataStreamFactory>> DataStreamFactoryVector;
+            typedef std::vector<std::shared_ptr<IDataStreamFactory> > DataStreamFactoryVector;
             DataStreamFactoryVector dataStreamFactories;
 
         public:
@@ -60,4 +60,3 @@ namespace musik { namespace core { namespace io {
     };
 
 } } }
-

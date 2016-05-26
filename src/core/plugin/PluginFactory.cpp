@@ -109,7 +109,8 @@ void PluginFactory::LoadPlugins(){
 
                     if ((err = dlerror()) != NULL) {
                         musik::debug::err(
-                            "could not load shared library " + filename + 
+                            "PluginFactory",
+                            "could not load shared library " + filename +
                             " error: " + std::string(err));
                     }
                     else {
@@ -117,8 +118,8 @@ void PluginFactory::LoadPlugins(){
                         *(void **)(&getPluginCall) = dlsym(dll, "GetPlugin");
 
                         if (getPluginCall) {
-                            this->loadedPlugins.push_back(getPluginCall);
-                            this->loadedDLLs.push_back(dll);
+                            this->loadedPlugins.push_back(getPluginCall());
+                            this->loadedDlls.push_back(dll);
                         }
                         else {
                             dlclose(dll);
@@ -132,5 +133,3 @@ void PluginFactory::LoadPlugins(){
     catch(...) {
     }
 }
-
-

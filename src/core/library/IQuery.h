@@ -9,7 +9,7 @@
 #include <core/db/Connection.h>
 
 namespace musik { namespace core {
-    
+
     class IQuery;
     typedef std::shared_ptr<IQuery> QueryPtr;
 
@@ -24,7 +24,7 @@ namespace musik { namespace core {
                 Finished = 4,
             } Status;
 
-            virtual ~IQuery() = 0 { }
+            virtual ~IQuery() { }
 
             virtual bool Run(db::Connection &db) = 0;
             virtual int GetStatus() = 0;

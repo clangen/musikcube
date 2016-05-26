@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Daniel Önnerby
+// The following are Copyright ï¿½ 2008, Daniel ï¿½nnerby
 //
 // All rights reserved.
 //
@@ -148,7 +148,7 @@ bool IndexerTrack::NeedsToBeIndexed(
 
         this->SetValue("filesize", boost::lexical_cast<std::string>(fileSize).c_str());
         this->SetValue("filetime", boost::lexical_cast<std::string>(fileTime).c_str());
-        
+
         db::CachedStatement stmt(
             "SELECT id, filename, filesize, filetime " \
             "FROM tracks t " \
@@ -206,9 +206,9 @@ static DBID writeToTracksTable(
 }
 
 static void removeRelation(
-    db::Connection& connection, 
-    const std::string& field, 
-    DBID trackId) 
+    db::Connection& connection,
+    const std::string& field,
+    DBID trackId)
 {
     std::string query = boost::str(boost::format("DELETE FROM %1% WHERE track_id=?") % field);
     db::CachedStatement stmt(query.c_str(), connection);
@@ -235,23 +235,23 @@ static void removeKnownFields(Track::MetadataMap& metadata) {
 
 DBID IndexerTrack::SaveThumbnail(db::Connection& connection, const std::string& libraryDirectory) {
     DBID thumbnailId = 0;
-    
+
     if (this->internalMetadata->thumbnailData) {
         UINT64 sum = Checksum(this->internalMetadata->thumbnailData, this->internalMetadata->thumbnailSize);
-    
+
         db::CachedStatement thumbs("SELECT id FROM thumbnails WHERE filesize=? AND checksum=?", connection);
         thumbs.BindInt(0, this->internalMetadata->thumbnailSize);
         thumbs.BindInt(1, sum);
-    
+
         if (thumbs.Step() == db::Row) {
             thumbnailId = thumbs.ColumnInt(0); /* thumbnail already exists */
         }
-    
+
         if (thumbnailId == 0) { /* doesn't exist yet, let's insert the record and write the file */
             db::Statement insertThumb("INSERT INTO thumbnails (filesize,checksum) VALUES (?,?)", connection);
             insertThumb.BindInt(0, this->internalMetadata->thumbnailSize);
             insertThumb.BindInt(1, sum);
-    
+
             if (insertThumb.Step() == db::Done) {
                 thumbnailId = connection.LastInsertedId();
 
@@ -290,24 +290,24 @@ void IndexerTrack::ProcessNonStandardMetadata(db::Connection& connection) {
     for ( ; it != unknownFields.end(); ++it){
         DBID keyId = 0;
         std::string key;
-    
+
         /* lookup the ID for the key; insert if it doesn't exist.. */
 
         selectMetaKey.BindText(0, it->first);
-    
+
         if (selectMetaKey.Step() == db::Row) {
             keyId = selectMetaKey.ColumnInt(0);
         }
         else {
             insertMetaKey.BindText(0, it->first);
-            
+
             if (insertMetaKey.Step() == db::Done) {
                 keyId = connection.LastInsertedId();
             }
         }
 
         selectMetaKey.Reset();
-    
+
         if (keyId == 0) {
             continue; /* welp... */
         }
@@ -319,7 +319,7 @@ void IndexerTrack::ProcessNonStandardMetadata(db::Connection& connection) {
 
         selectMetaValue.BindInt(0, keyId);
         selectMetaValue.BindText(1, it->second);
-    
+
         if (selectMetaValue.Step() == db::Row) {
             valueId = selectMetaValue.ColumnInt(0);
         }
@@ -335,7 +335,7 @@ void IndexerTrack::ProcessNonStandardMetadata(db::Connection& connection) {
         }
 
         selectMetaValue.Reset();
-    
+
         /* now that we have a keyId and a valueId, create the relationship */
 
         if (valueId != 0) {

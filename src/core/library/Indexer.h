@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Daniel Önnerby
+// The following are Copyright ï¿½ 2008, Daniel ï¿½nnerby
 //
 // All rights reserved.
 //
@@ -61,7 +61,7 @@ namespace musik { namespace core {
     class Indexer : public IIndexer, public ThreadHelper, private boost::noncopyable {
         public:
             Indexer(
-                const std::string& libraryPath, 
+                const std::string& libraryPath,
                 const std::string& dbFilename);
 
             virtual ~Indexer();
@@ -110,7 +110,7 @@ namespace musik { namespace core {
                     std::string path;
             };
 
-            typedef std::vector<std::shared_ptr<metadata::IMetadataReader>> MetadataReaderList;
+            typedef std::vector<std::shared_ptr<metadata::IMetadataReader> > MetadataReaderList;
 
             std::deque<AddRemoveContext> addRemoveQueue;
 
@@ -119,4 +119,4 @@ namespace musik { namespace core {
 
     typedef std::shared_ptr<Indexer> IndexerPtr;
 
-} } 
+} }

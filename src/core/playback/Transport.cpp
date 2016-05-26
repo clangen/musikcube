@@ -1,33 +1,33 @@
 //////////////////////////////////////////////////////////////////////////////
-// Copyright © 2007, Daniel Önnerby
+// Copyright ï¿½ 2007, Daniel ï¿½nnerby
 //
 // All rights reserved.
 //
-// Redistribution and use in source and binary forms, with or without 
+// Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
 //
 //    * Redistributions of source code must retain the above copyright notice,
 //      this list of conditions and the following disclaimer.
 //
-//    * Redistributions in binary form must reproduce the above copyright 
-//      notice, this list of conditions and the following disclaimer in the 
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
 //      documentation and/or other materials provided with the distribution.
 //
-//    * Neither the name of the author nor the names of other contributors may 
-//      be used to endorse or promote products derived from this software 
-//      without specific prior written permission. 
+//    * Neither the name of the author nor the names of other contributors may
+//      be used to endorse or promote products derived from this software
+//      without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
-// POSSIBILITY OF SUCH DAMAGE. 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
 
@@ -36,8 +36,8 @@
 #include <core/debug.h>
 #include <core/playback/Transport.h>
 #include <core/plugin/PluginFactory.h>
-
-#include <boost/thread/future.hpp>
+#include <algorithm>
+#include <boost/thread.hpp>
 
 using namespace musik::core::audio;
 
@@ -46,6 +46,12 @@ static std::string TAG = "Transport";
 #define RESET_NEXT_PLAYER() \
     delete this->nextPlayer; \
     this->nextPlayer = NULL;
+
+#define DEFER(x, y) \
+  { \
+      boost::thread thread(boost::bind(x, this, y)); \
+      thread.detach(); \
+  }
 
 static void pausePlayer(Player* p) {
     p->Pause();
@@ -60,7 +66,7 @@ static void deletePlayer(Player* p) {
 }
 
 Transport::Transport()
-: volume(1.0) 
+: volume(1.0)
 , state(PlaybackStopped)
 , nextPlayer(NULL) {
     this->output = Player::CreateDefaultOutput();
@@ -128,8 +134,8 @@ void Transport::Stop() {
         std::swap(toDelete, this->active);
     }
 
-    /* do the actual delete outside of the critical section! the players run 
-    in a background thread that will emit a signal on completion, but the 
+    /* do the actual delete outside of the critical section! the players run
+    in a background thread that will emit a signal on completion, but the
     destructor joins(). */
     std::for_each(toDelete.begin(), toDelete.end(), deletePlayer);
     this->active.clear();
@@ -160,7 +166,7 @@ bool Transport::Resume() {
     musik::debug::info(TAG, "resume");
 
     size_t count = 0;
-    
+
     {
         boost::recursive_mutex::scoped_lock lock(this->stateMutex);
         std::for_each(this->active.begin(), this->active.end(), resumePlayer);
@@ -187,7 +193,7 @@ double Transport::Position() {
 
 void Transport::SetPosition(double seconds) {
     boost::recursive_mutex::scoped_lock lock(this->stateMutex);
-    
+
     if (!this->active.empty()) {
         this->active.front()->SetPosition(seconds);
         this->TimeChanged(seconds);
@@ -200,8 +206,8 @@ double Transport::Volume() {
 
 void Transport::SetVolume(double volume) {
     double oldVolume = this->volume;
-    
-    volume = max(0, min(1.0, volume));
+
+    volume = std::max(0.0, std::min(1.0, volume));
 
     this->volume = volume;
 
@@ -260,19 +266,19 @@ void Transport::OnPlaybackFinished(Player* player) {
         this->SetPlaybackState(Transport::PlaybackStopped);
     }
 
-    boost::async(boost::bind(&Transport::RemoveActive, this, player));
+    DEFER(&Transport::RemoveActive, player);
 }
 
 void Transport::OnPlaybackStopped (Player* player) {
     this->RaiseStreamEvent(Transport::StreamStopped, player);
     this->SetPlaybackState(Transport::PlaybackStopped);
-    boost::async(boost::bind(&Transport::RemoveActive, this, player));
+    DEFER(&Transport::RemoveActive, player);
 }
 
 void Transport::OnPlaybackError(Player* player) {
     this->RaiseStreamEvent(Transport::StreamError, player);
     this->SetPlaybackState(Transport::PlaybackStopped);
-    boost::async(boost::bind(&Transport::RemoveActive, this, player));
+    DEFER(&Transport::RemoveActive, player);
 }
 
 void Transport::SetPlaybackState(int state) {

@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Daniel Önnerby
+// The following are Copyright ï¿½ 2008, Daniel ï¿½nnerby
 //
 // All rights reserved.
 //
@@ -51,7 +51,7 @@
 
     typedef unsigned long long UINT64;
     typedef long long __int64;
-    
+
     #define STDCALL(fp) (* fp)() __attribute__((stdcall))
     #define _ASSERT assert
 #endif

@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Daniel Önnerby
+// The following are Copyright ï¿½ 2008, Daniel ï¿½nnerby
 //
 // All rights reserved.
 //
@@ -72,7 +72,7 @@ static std::string normalizePath(const std::string& path) {
     return boost::filesystem::path(path).make_preferred().string();
 }
 
-Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename) 
+Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
 : thread(NULL)
 , status(0)
 , restart(false)
@@ -213,7 +213,7 @@ void Indexer::SynchronizeInternal() {
         this->status = 2;
         this->filesSaved = 0;
     }
-    
+
     for(std::size_t i = 0; i < paths.size(); ++i) {
         std::string path = paths[i];
         this->SyncDirectory(path, path, pathIds[i]);
@@ -235,7 +235,7 @@ void Indexer::SynchronizeInternal() {
     /* cleanup -- remove stale artists, albums, genres, etc */
 
     musik::debug::info(TAG, "cleanup 2/2");
-    
+
     {
         boost::mutex::scoped_lock lock(this->progressMutex);
         this->status = 4;
@@ -367,19 +367,19 @@ void Indexer::ThreadLoop() {
 
             this->SynchronizeInternal();
             this->RunAnalyzers();
-            
+
             {
                 boost::mutex::scoped_lock lock(this->progressMutex);
                 this->status = 0;
             }
-            
+
             this->dbConnection.Close(); /* TODO: raii */
 
             this->SynchronizeEnd();
         } /* end skip */
 
         firstTime = false;
-        
+
         int waitTime = prefs.GetInt("SyncTimeout", 3600); /* sleep before we try again... */
 
         if (waitTime) {
@@ -414,10 +414,10 @@ void Indexer::SyncDelete() {
 
     while(allTracks.Step() == db::Row && !this->Exited() && !this->Restarted()) {
         bool remove = false;
-        std::string file = allTracks.ColumnText(1);
+        std::string fn = allTracks.ColumnText(1);
 
         try {
-            boost::filesystem::path file(file);
+            boost::filesystem::path file(fn);
             if (!boost::filesystem::exists(file)) {
                 remove = true;
             }
@@ -483,12 +483,12 @@ void Indexer::GetPaths(std::vector<std::string>& paths) {
 }
 
 static int optimize(
-    musik::core::db::Connection &connection, 
-    std::string singular, 
-    std::string plural) 
+    musik::core::db::Connection &connection,
+    std::string singular,
+    std::string plural)
 {
     std::string outer = boost::str(
-        boost::format("SELECT id, lower(trim(name)) AS %1% FROM %2% ORDER BY %3%") 
+        boost::format("SELECT id, lower(trim(name)) AS %1% FROM %2% ORDER BY %3%")
         % singular % plural % singular);
 
     db::Statement outerStmt(outer.c_str(), connection);
@@ -629,7 +629,7 @@ void Indexer::RunAnalyzers() {
                         /* decode the stream quickly, passing to all analyzers*/
 
                         audio::BufferPtr buffer;
-                        
+
                         while ((buffer = stream->GetNextProcessedOutputBuffer()) && !runningAnalyzers.empty()) {
                             PluginVector::iterator plugin = runningAnalyzers.begin();
                             while(plugin != runningAnalyzers.end()) {
@@ -670,4 +670,3 @@ void Indexer::RunAnalyzers() {
         getNextTrack.BindInt(0, trackId);
     }
 }
-

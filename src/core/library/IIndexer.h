@@ -12,7 +12,7 @@ namespace musik { namespace core {
             sigslot::signal0<> PathsUpdated;
             sigslot::signal0<> TrackRefreshed;
 
-            virtual ~IIndexer() = 0 { }
+            virtual ~IIndexer() { }
 
             virtual void AddPath(const std::string& path) = 0;
             virtual void RemovePath(const std::string& path) = 0;

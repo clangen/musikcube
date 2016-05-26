@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Daniel Önnerby
+// The following are Copyright ï¿½ 2008, Daniel ï¿½nnerby
 //
 // All rights reserved.
 //
@@ -80,9 +80,9 @@ void NonLibraryTrackHelper::ThreadLoop() {
     /* load all IMetadataReader plugins */
     typedef metadata::IMetadataReader PluginType;
     typedef PluginFactory::DestroyDeleter<PluginType> Deleter;
-    typedef std::vector<std::shared_ptr<metadata::IMetadataReader>> MetadataReaderList;
+    typedef std::vector<std::shared_ptr<metadata::IMetadataReader> > MetadataReaderList;
 
-    MetadataReaderList metadataReaders = 
+    MetadataReaderList metadataReaders =
         PluginFactory::Instance() .QueryInterface<PluginType, Deleter>("GetMetadataReader");
 
     bool moreTracks = true;
@@ -110,7 +110,7 @@ void NonLibraryTrackHelper::ThreadLoop() {
             /* we only support local files. other URIs are ignored */
             if (musik::core::io::DataStreamFactory::IsLocalFileStream(track->URI().c_str())) {
                 std::string url = track->URI();
-                
+
                 std::string::size_type lastDot = url.find_last_of(".");
                 if (lastDot != std::string::npos) {
                     track->SetValue("extension", url.substr(lastDot + 1).c_str());
@@ -133,5 +133,3 @@ void NonLibraryTrackHelper::ThreadLoop() {
         }
     }
 }
-
-
