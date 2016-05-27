@@ -95,8 +95,9 @@ bool CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
 
     AudioQueueBufferRef audioQueueBuffer = NULL;
 
-    result = AudioQueueAllocateBuffer(
-        this->audioQueue, buffer->Bytes(), &audioQueueBuffer);
+    size_t bytes = buffer->Bytes();
+
+    result = AudioQueueAllocateBuffer(this->audioQueue, bytes, &audioQueueBuffer);
 
     if (result != 0) {
         std::cerr << "AudioQueueAllocateBuffer failed: " << result << "\n";
@@ -104,12 +105,12 @@ bool CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     }
 
     audioQueueBuffer->mUserData = (void *) buffer;
-    audioQueueBuffer->mAudioDataByteSize = buffer->Bytes();
+    audioQueueBuffer->mAudioDataByteSize = bytes;
 
     memcpy(
         audioQueueBuffer->mAudioData,
         (void *) buffer->BufferPointer(),
-        buffer->Bytes());
+        bytes);
 
     result = AudioQueueEnqueueBuffer(
         this->audioQueue, audioQueueBuffer, 0, NULL);

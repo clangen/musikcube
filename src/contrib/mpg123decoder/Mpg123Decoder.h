@@ -22,8 +22,8 @@ class Mpg123Decoder : public musik::core::audio::IDecoder {
         mpg123_handle *decoder;
 
         unsigned long cachedLength;
-        long cachedRate;
-        int cachedChannels;
-        long sampleSize;
+        long sampleRate;
+        int channels;
+        int sampleSizeBytes;
         int lastMpg123Status;
 };

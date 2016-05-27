@@ -49,7 +49,7 @@ typedef UINT64 DBTIME;
 #ifdef WIN32
 	#define CopyFloat(dst, src, num) CopyMemory(dst, src, (num) * sizeof(float))
 #else
-	#define CopyFloat(dst, src, num) memmove(dst, src, (num) * sizeof(float))
+	#define CopyFloat(dst, src, num) memmove((void*) dst, (void*)src, (num) * sizeof(float))
 #endif
 
 inline std::wstring u8to16(const std::string& u8) {

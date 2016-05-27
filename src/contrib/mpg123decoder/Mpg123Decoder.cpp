@@ -34,9 +34,12 @@
 #include "Mpg123Decoder.h"
 #include <stdio.h>
 
-#define MP3_IN_BUFFSIZE 4096
-#define MP3_OUT_BUFFSIZE 32768
-#define STREAM_FEED_SIZE 1024
+#define STREAM_FEED_SIZE 2048 * 8
+#define DEBUG 0
+
+#if DEBUG > 0
+#include <iostream>
+#endif
 
 using namespace musik::core::audio;
 using namespace musik::core::io;
@@ -44,12 +47,12 @@ using namespace musik::core::io;
 Mpg123Decoder::Mpg123Decoder()
 : cachedLength(0)
 , decoder(NULL)
-, cachedRate(44100)
-, cachedChannels(2)
+, sampleRate(44100)
+, channels(2)
 , fileStream(NULL)
 , lastMpg123Status(MPG123_NEED_MORE) {
     this->decoder = mpg123_new(NULL, NULL);
-    this->sampleSize = this->cachedChannels * sizeof(float);
+    this->sampleSizeBytes = this->channels * sizeof(float);
 }
 
 Mpg123Decoder::~Mpg123Decoder() {
@@ -66,7 +69,7 @@ void Mpg123Decoder::Destroy() {
 
 double Mpg123Decoder::SetPosition(double second) {
     off_t seekToFileOffset = 0;
-    off_t seekToSampleOffset = second * (double)this->cachedRate;
+    off_t seekToSampleOffset = second * (double)this->sampleRate;
     off_t *indexOffset = 0;
     off_t indexSet = 0;
     size_t indexFill = 0;
@@ -96,27 +99,28 @@ double Mpg123Decoder::SetPosition(double second) {
     return -1;
 }
 
-bool Mpg123Decoder::GetBuffer(IBuffer *buffer){
-    long nofSamplesMax = 1024 * 2;
+bool Mpg123Decoder::GetBuffer(IBuffer *buffer) {
+    buffer->SetChannels(this->channels);
+    buffer->SetSampleRate(this->sampleRate);
+    buffer->SetSamples(STREAM_FEED_SIZE / this->channels);
 
-    buffer->SetChannels(this->cachedChannels);
-    buffer->SetSampleRate(this->cachedRate);
-    buffer->SetSamples(nofSamplesMax);
-
-    unsigned char* currentBuffer = (unsigned char*) (buffer->BufferPointer());
+    unsigned char* targetBuffer = (unsigned char*) (buffer->BufferPointer());
 
     bool done = false;
 
     size_t bytesWritten = 0;
 
     do {
-        int rc = mpg123_read(
+        int readResult = mpg123_read(
           this->decoder,
-          currentBuffer,
-          nofSamplesMax * this->sampleSize,
+          targetBuffer,
+          buffer->Bytes(),
           &bytesWritten);
 
-        switch (rc) {
+        switch (readResult) {
+            case MPG123_OK:
+               break;
+
             case MPG123_DONE:
                 done = true;
                 break;
@@ -131,47 +135,38 @@ bool Mpg123Decoder::GetBuffer(IBuffer *buffer){
                 return false;
                 break;
 
-            case MPG123_NEW_FORMAT:
-                int encoding = 0;
-                int gfCode = mpg123_getformat(
-                    this->decoder,
-                    &this->cachedRate,
-                    &this->cachedChannels,
-                    &encoding);
+            case MPG123_NEW_FORMAT: {
+#if DEBUG > 0
+                    int encoding = 0;
 
-                if (gfCode == MPG123_OK) {
-                    this->sampleSize = this->cachedChannels * sizeof(float);
-
-                    // Format should not change
-                    mpg123_format_none(this->decoder);
-
-                    // Force the encoding to float32
-                    int e = mpg123_format(
+                    mpg123_getformat(
                         this->decoder,
-                        this->cachedRate,
-                        this->cachedChannels,
-                        MPG123_ENC_FLOAT_32);
+                        &this->sampleRate,
+                        &this->channels,
+                        &encoding);
 
-                    buffer->SetChannels(this->cachedChannels);
-                    buffer->SetSampleRate(this->cachedRate);
-                    buffer->SetSamples(nofSamplesMax);
+                    std::cerr << "output format:"
+                        "\n  type: " << encoding <<
+                        "\n  rate " << this->sampleRate <<
+                        "\n  channels " << this->channels << "\n";
+#endif
                 }
                 break;
         }
 
     } while (bytesWritten == 0 && !done);
 
-    buffer->SetSamples( bytesWritten/this->sampleSize );
+    buffer->SetSamples(bytesWritten / this->sampleSizeBytes);
 
-    return bytesWritten > 0;
+    return (bytesWritten > 0);
 }
 
-bool Mpg123Decoder::Feed(){
+bool Mpg123Decoder::Feed() {
     if (this->fileStream) {
         unsigned char buffer[STREAM_FEED_SIZE];
 
         long long bytesRead =
-            this->fileStream->Read(&buffer,STREAM_FEED_SIZE);
+            this->fileStream->Read(&buffer, STREAM_FEED_SIZE);
 
         if (bytesRead) {
             if (mpg123_feed(this->decoder, buffer, bytesRead) == MPG123_OK) {
@@ -188,7 +183,6 @@ bool Mpg123Decoder::Open(IDataStream *fileStream){
         this->fileStream = fileStream;
 
         if (mpg123_open_feed(this->decoder) == MPG123_OK) {
-
             mpg123_param(
                 this->decoder,
                 MPG123_ADD_FLAGS,
@@ -196,6 +190,18 @@ bool Mpg123Decoder::Open(IDataStream *fileStream){
                 0);
 
             mpg123_set_filesize(this->decoder, this->fileStream->Length());
+
+            /* reset output table */
+            mpg123_format_none(this->decoder);
+
+            /* force the output encoding to float32. note that this needs to
+            be done before any data is fed to the decoder! */
+            mpg123_format(
+                this->decoder,
+                this->sampleRate,
+                MPG123_STEREO,
+                MPG123_ENC_FLOAT_32);
+
             return true;
         }
     }

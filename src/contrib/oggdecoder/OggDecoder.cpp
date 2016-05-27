@@ -1,38 +1,40 @@
 //////////////////////////////////////////////////////////////////////////////
-// Copyright © 2007, mC2 team
+// Copyright ï¿½ 2007, mC2 team
 //
 // All rights reserved.
 //
-// Redistribution and use in source and binary forms, with or without 
+// Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
 //
 //    * Redistributions of source code must retain the above copyright notice,
 //      this list of conditions and the following disclaimer.
 //
-//    * Redistributions in binary form must reproduce the above copyright 
-//      notice, this list of conditions and the following disclaimer in the 
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
 //      documentation and/or other materials provided with the distribution.
 //
-//    * Neither the name of the author nor the names of other contributors may 
-//      be used to endorse or promote products derived from this software 
-//      without specific prior written permission. 
+//    * Neither the name of the author nor the names of other contributors may
+//      be used to endorse or promote products derived from this software
+//      without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
-// POSSIBILITY OF SUCH DAMAGE. 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
 
 #include "StdAfx.h"
 #include "OggDecoder.h"
+
+#define OGG_MAX_SAMPLES 1024
 
 OggDecoder::OggDecoder() {
     this->oggCallbacks.read_func = &OggRead;
@@ -116,13 +118,17 @@ double OggDecoder::SetPosition(double second) {
     return -1;
 }
 
-#define OGG_MAX_SAMPLES 1024
+#include <iostream>
 
 bool OggDecoder::GetBuffer(IBuffer *buffer) {
     int bitstream;
     float **pcm;
 
-    unsigned long samplesRead = ov_read_float(&this->oggFile, &pcm, OGG_MAX_SAMPLES, &bitstream);
+    unsigned long samplesRead = ov_read_float(
+        &this->oggFile,
+        &pcm,
+        OGG_MAX_SAMPLES,
+        &bitstream);
 
     if (samplesRead == 0) {
         return false;
@@ -133,15 +139,15 @@ bool OggDecoder::GetBuffer(IBuffer *buffer) {
     buffer->SetSampleRate(info->rate);
     buffer->SetSamples(samplesRead);
 
-    /* 
+    /*
         The musik audio engine expects:
 
-            SPEAKER_FRONT_LEFT 0x1 
-            SPEAKER_FRONT_RIGHT 0x2 
-            SPEAKER_FRONT_CENTER 0x4 
-            SPEAKER_LOW_FREQUENCY 0x8 
-            SPEAKER_BACK_LEFT 0x10 
-            SPEAKER_BACK_RIGHT 0x20 
+            SPEAKER_FRONT_LEFT 0x1
+            SPEAKER_FRONT_RIGHT 0x2
+            SPEAKER_FRONT_CENTER 0x4
+            SPEAKER_LOW_FREQUENCY 0x8
+            SPEAKER_BACK_LEFT 0x10
+            SPEAKER_BACK_RIGHT 0x20
 
         OGG returns:
 
@@ -150,8 +156,8 @@ bool OggDecoder::GetBuffer(IBuffer *buffer) {
             Three channels: the stream is a 1d-surround encoding. channel order: left, center, right
             Four channels: the stream is quadraphonic surround. channel order: front left, front right, rear left, rear right
             Five channels: the stream is five-channel surround. channel order: front left, front center, front right, rear left, rear right
-            Six channels: (used in Dolby Digital/AC3) the stream is 5,1 surround. channel order: front left, front center, front right, rear left, rear right, LFE (the sixth channel is entirely bass). 
-    
+            Six channels: (used in Dolby Digital/AC3) the stream is 5,1 surround. channel order: front left, front center, front right, rear left, rear right, LFE (the sixth channel is entirely bass).
+
         ... so let's re-order when writing to our output buffer ...
     */
 
