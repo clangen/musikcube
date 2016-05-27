@@ -1,0 +1,1070 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+   <FileVersion major="1" minor="6" />
+   <Project>
+      <Option title="musikbox" />
+      <Option makefile_is_custom="1" />
+      <Option compiler="gcc" />
+      <Option virtualFolders="CMake Files\;CMake Files\src\;CMake Files\src\3rdparty\;CMake Files\src\core\;CMake Files\src\musikbox\;CMake Files\src\contrib\;CMake Files\src\contrib\taglib_plugin\;CMake Files\src\contrib\oggdecoder\;CMake Files\src\contrib\mpg123decoder\;CMake Files\src\contrib\coreaudioout\;" />
+      <Build>
+      <Target title="all">
+         <Option working_dir="/Users/clangen/src/musikcube" />
+         <Option type="4" />
+         <MakeCommands>
+            <Build command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/Makefile&quot;  VERBOSE=1 all" />
+            <CompileFile command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="edit_cache">
+         <Option working_dir="/Users/clangen/src/musikcube" />
+         <Option type="4" />
+         <MakeCommands>
+            <Build command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/Makefile&quot;  VERBOSE=1 edit_cache" />
+            <CompileFile command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="rebuild_cache">
+         <Option working_dir="/Users/clangen/src/musikcube" />
+         <Option type="4" />
+         <MakeCommands>
+            <Build command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/Makefile&quot;  VERBOSE=1 rebuild_cache" />
+            <CompileFile command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="sqlite3">
+         <Option output="/Users/clangen/src/musikcube/bin/plugins/libsqlite3.a" prefix_auto="0" extension_auto="0" />
+         <Option working_dir="/Users/clangen/src/musikcube/src/3rdparty" />
+         <Option object_output="./" />
+         <Option type="2" />
+         <Option compiler="gcc" />
+         <Compiler>
+            <Add option="-DHAVE_BOOST" />
+            <Add option="-D_FILE_OFFSET_BITS=64" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../lib/clang/7.3.0/include" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include" />
+            <Add directory="/Library/Frameworks" />
+            <Add directory="/System/Library/Frameworks" />
+            <Add directory="/Users/clangen/src/musikcube/src" />
+            <Add directory="/Users/clangen/src/musikcube/src/3rdparty/include" />
+            <Add directory="/Users/clangen/src/musikcube/src/3rdparty/include/md5" />
+            <Add directory="/Users/clangen/src/musikcube/src/3rdparty/include/sqlite" />
+            <Add directory="/Users/clangen/src/musikcube/src/core" />
+            <Add directory="/Users/clangen/src/musikcube/src/musikbox" />
+            <Add directory="/usr/include" />
+            <Add directory="/usr/local/include" />
+         </Compiler>
+         <MakeCommands>
+            <Build command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/3rdparty/Makefile&quot;  VERBOSE=1 sqlite3" />
+            <CompileFile command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/3rdparty/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/3rdparty/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/3rdparty/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="sqlite3/fast">
+         <Option output="/Users/clangen/src/musikcube/bin/plugins/libsqlite3.a" prefix_auto="0" extension_auto="0" />
+         <Option working_dir="/Users/clangen/src/musikcube/src/3rdparty" />
+         <Option object_output="./" />
+         <Option type="2" />
+         <Option compiler="gcc" />
+         <Compiler>
+            <Add option="-DHAVE_BOOST" />
+            <Add option="-D_FILE_OFFSET_BITS=64" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../lib/clang/7.3.0/include" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include" />
+            <Add directory="/Library/Frameworks" />
+            <Add directory="/System/Library/Frameworks" />
+            <Add directory="/Users/clangen/src/musikcube/src" />
+            <Add directory="/Users/clangen/src/musikcube/src/3rdparty/include" />
+            <Add directory="/Users/clangen/src/musikcube/src/3rdparty/include/md5" />
+            <Add directory="/Users/clangen/src/musikcube/src/3rdparty/include/sqlite" />
+            <Add directory="/Users/clangen/src/musikcube/src/core" />
+            <Add directory="/Users/clangen/src/musikcube/src/musikbox" />
+            <Add directory="/usr/include" />
+            <Add directory="/usr/local/include" />
+         </Compiler>
+         <MakeCommands>
+            <Build command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/3rdparty/Makefile&quot;  VERBOSE=1 sqlite3/fast" />
+            <CompileFile command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/3rdparty/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/3rdparty/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/3rdparty/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="md5">
+         <Option output="/Users/clangen/src/musikcube/bin/plugins/libmd5.a" prefix_auto="0" extension_auto="0" />
+         <Option working_dir="/Users/clangen/src/musikcube/src/3rdparty" />
+         <Option object_output="./" />
+         <Option type="2" />
+         <Option compiler="gcc" />
+         <Compiler>
+            <Add option="-DHAVE_BOOST" />
+            <Add option="-D_FILE_OFFSET_BITS=64" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../lib/clang/7.3.0/include" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include" />
+            <Add directory="/Library/Frameworks" />
+            <Add directory="/System/Library/Frameworks" />
+            <Add directory="/Users/clangen/src/musikcube/src" />
+            <Add directory="/Users/clangen/src/musikcube/src/3rdparty/include" />
+            <Add directory="/Users/clangen/src/musikcube/src/3rdparty/include/md5" />
+            <Add directory="/Users/clangen/src/musikcube/src/3rdparty/include/sqlite" />
+            <Add directory="/Users/clangen/src/musikcube/src/core" />
+            <Add directory="/Users/clangen/src/musikcube/src/musikbox" />
+            <Add directory="/usr/include" />
+            <Add directory="/usr/local/include" />
+         </Compiler>
+         <MakeCommands>
+            <Build command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/3rdparty/Makefile&quot;  VERBOSE=1 md5" />
+            <CompileFile command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/3rdparty/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/3rdparty/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/3rdparty/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="md5/fast">
+         <Option output="/Users/clangen/src/musikcube/bin/plugins/libmd5.a" prefix_auto="0" extension_auto="0" />
+         <Option working_dir="/Users/clangen/src/musikcube/src/3rdparty" />
+         <Option object_output="./" />
+         <Option type="2" />
+         <Option compiler="gcc" />
+         <Compiler>
+            <Add option="-DHAVE_BOOST" />
+            <Add option="-D_FILE_OFFSET_BITS=64" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../lib/clang/7.3.0/include" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include" />
+            <Add directory="/Library/Frameworks" />
+            <Add directory="/System/Library/Frameworks" />
+            <Add directory="/Users/clangen/src/musikcube/src" />
+            <Add directory="/Users/clangen/src/musikcube/src/3rdparty/include" />
+            <Add directory="/Users/clangen/src/musikcube/src/3rdparty/include/md5" />
+            <Add directory="/Users/clangen/src/musikcube/src/3rdparty/include/sqlite" />
+            <Add directory="/Users/clangen/src/musikcube/src/core" />
+            <Add directory="/Users/clangen/src/musikcube/src/musikbox" />
+            <Add directory="/usr/include" />
+            <Add directory="/usr/local/include" />
+         </Compiler>
+         <MakeCommands>
+            <Build command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/3rdparty/Makefile&quot;  VERBOSE=1 md5/fast" />
+            <CompileFile command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/3rdparty/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/3rdparty/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/3rdparty/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="musikcore">
+         <Option output="/Users/clangen/src/musikcube/bin/plugins/libmusikcore.a" prefix_auto="0" extension_auto="0" />
+         <Option working_dir="/Users/clangen/src/musikcube/src/core" />
+         <Option object_output="./" />
+         <Option type="2" />
+         <Option compiler="gcc" />
+         <Compiler>
+            <Add option="-DHAVE_BOOST" />
+            <Add option="-D_FILE_OFFSET_BITS=64" />
+            <Add option="-D_CRT_SECURE_NO_DEPRECATE" />
+            <Add option="-D_DEBUG" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../lib/clang/7.3.0/include" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include" />
+            <Add directory="/Library/Frameworks" />
+            <Add directory="/System/Library/Frameworks" />
+            <Add directory="/Users/clangen/src/musikcube/src" />
+            <Add directory="/Users/clangen/src/musikcube/src/3rdparty/include" />
+            <Add directory="/Users/clangen/src/musikcube/src/core" />
+            <Add directory="/Users/clangen/src/musikcube/src/core/." />
+            <Add directory="/Users/clangen/src/musikcube/src/core/.." />
+            <Add directory="/Users/clangen/src/musikcube/src/core/../3rdparty/include" />
+            <Add directory="/Users/clangen/src/musikcube/src/musikbox" />
+            <Add directory="/usr/include" />
+            <Add directory="/usr/local/include" />
+         </Compiler>
+         <MakeCommands>
+            <Build command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/core/Makefile&quot;  VERBOSE=1 musikcore" />
+            <CompileFile command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/core/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/core/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/core/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="musikcore/fast">
+         <Option output="/Users/clangen/src/musikcube/bin/plugins/libmusikcore.a" prefix_auto="0" extension_auto="0" />
+         <Option working_dir="/Users/clangen/src/musikcube/src/core" />
+         <Option object_output="./" />
+         <Option type="2" />
+         <Option compiler="gcc" />
+         <Compiler>
+            <Add option="-DHAVE_BOOST" />
+            <Add option="-D_FILE_OFFSET_BITS=64" />
+            <Add option="-D_CRT_SECURE_NO_DEPRECATE" />
+            <Add option="-D_DEBUG" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../lib/clang/7.3.0/include" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include" />
+            <Add directory="/Library/Frameworks" />
+            <Add directory="/System/Library/Frameworks" />
+            <Add directory="/Users/clangen/src/musikcube/src" />
+            <Add directory="/Users/clangen/src/musikcube/src/3rdparty/include" />
+            <Add directory="/Users/clangen/src/musikcube/src/core" />
+            <Add directory="/Users/clangen/src/musikcube/src/core/." />
+            <Add directory="/Users/clangen/src/musikcube/src/core/.." />
+            <Add directory="/Users/clangen/src/musikcube/src/core/../3rdparty/include" />
+            <Add directory="/Users/clangen/src/musikcube/src/musikbox" />
+            <Add directory="/usr/include" />
+            <Add directory="/usr/local/include" />
+         </Compiler>
+         <MakeCommands>
+            <Build command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/core/Makefile&quot;  VERBOSE=1 musikcore/fast" />
+            <CompileFile command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/core/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/core/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/core/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="musikbox">
+         <Option output="/Users/clangen/src/musikcube/bin/musikbox" prefix_auto="0" extension_auto="0" />
+         <Option working_dir="/Users/clangen/src/musikcube/bin" />
+         <Option object_output="./" />
+         <Option type="1" />
+         <Option compiler="gcc" />
+         <Compiler>
+            <Add option="-DHAVE_BOOST" />
+            <Add option="-D_FILE_OFFSET_BITS=64" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../lib/clang/7.3.0/include" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include" />
+            <Add directory="/Library/Frameworks" />
+            <Add directory="/System/Library/Frameworks" />
+            <Add directory="/Users/clangen/src/musikcube/src" />
+            <Add directory="/Users/clangen/src/musikcube/src/3rdparty/include" />
+            <Add directory="/Users/clangen/src/musikcube/src/core" />
+            <Add directory="/Users/clangen/src/musikcube/src/musikbox" />
+            <Add directory="/usr/include" />
+            <Add directory="/usr/local/include" />
+         </Compiler>
+         <MakeCommands>
+            <Build command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/musikbox/Makefile&quot;  VERBOSE=1 musikbox" />
+            <CompileFile command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/musikbox/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/musikbox/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/musikbox/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="musikbox/fast">
+         <Option output="/Users/clangen/src/musikcube/bin/musikbox" prefix_auto="0" extension_auto="0" />
+         <Option working_dir="/Users/clangen/src/musikcube/bin" />
+         <Option object_output="./" />
+         <Option type="1" />
+         <Option compiler="gcc" />
+         <Compiler>
+            <Add option="-DHAVE_BOOST" />
+            <Add option="-D_FILE_OFFSET_BITS=64" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../lib/clang/7.3.0/include" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include" />
+            <Add directory="/Library/Frameworks" />
+            <Add directory="/System/Library/Frameworks" />
+            <Add directory="/Users/clangen/src/musikcube/src" />
+            <Add directory="/Users/clangen/src/musikcube/src/3rdparty/include" />
+            <Add directory="/Users/clangen/src/musikcube/src/core" />
+            <Add directory="/Users/clangen/src/musikcube/src/musikbox" />
+            <Add directory="/usr/include" />
+            <Add directory="/usr/local/include" />
+         </Compiler>
+         <MakeCommands>
+            <Build command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/musikbox/Makefile&quot;  VERBOSE=1 musikbox/fast" />
+            <CompileFile command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/musikbox/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/musikbox/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/musikbox/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="taglib_plugin">
+         <Option output="/Users/clangen/src/musikcube/bin/plugins/libtaglib_plugin.dylib" prefix_auto="0" extension_auto="0" />
+         <Option working_dir="/Users/clangen/src/musikcube/src/contrib/taglib_plugin" />
+         <Option object_output="./" />
+         <Option type="3" />
+         <Option compiler="gcc" />
+         <Compiler>
+            <Add option="-DHAVE_BOOST" />
+            <Add option="-D_FILE_OFFSET_BITS=64" />
+            <Add option="-D_DEBUG" />
+            <Add option="-DTAGLIB_NO_CONFIG" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../lib/clang/7.3.0/include" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include" />
+            <Add directory="/Library/Frameworks" />
+            <Add directory="/System/Library/Frameworks" />
+            <Add directory="/Users/clangen/src/musikcube/src" />
+            <Add directory="/Users/clangen/src/musikcube/src/3rdparty/include" />
+            <Add directory="/Users/clangen/src/musikcube/src/core" />
+            <Add directory="/Users/clangen/src/musikcube/src/musikbox" />
+            <Add directory="/usr/include" />
+            <Add directory="/usr/local/include" />
+         </Compiler>
+         <MakeCommands>
+            <Build command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/contrib/taglib_plugin/Makefile&quot;  VERBOSE=1 taglib_plugin" />
+            <CompileFile command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/contrib/taglib_plugin/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/contrib/taglib_plugin/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/contrib/taglib_plugin/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="taglib_plugin/fast">
+         <Option output="/Users/clangen/src/musikcube/bin/plugins/libtaglib_plugin.dylib" prefix_auto="0" extension_auto="0" />
+         <Option working_dir="/Users/clangen/src/musikcube/src/contrib/taglib_plugin" />
+         <Option object_output="./" />
+         <Option type="3" />
+         <Option compiler="gcc" />
+         <Compiler>
+            <Add option="-DHAVE_BOOST" />
+            <Add option="-D_FILE_OFFSET_BITS=64" />
+            <Add option="-D_DEBUG" />
+            <Add option="-DTAGLIB_NO_CONFIG" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../lib/clang/7.3.0/include" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include" />
+            <Add directory="/Library/Frameworks" />
+            <Add directory="/System/Library/Frameworks" />
+            <Add directory="/Users/clangen/src/musikcube/src" />
+            <Add directory="/Users/clangen/src/musikcube/src/3rdparty/include" />
+            <Add directory="/Users/clangen/src/musikcube/src/core" />
+            <Add directory="/Users/clangen/src/musikcube/src/musikbox" />
+            <Add directory="/usr/include" />
+            <Add directory="/usr/local/include" />
+         </Compiler>
+         <MakeCommands>
+            <Build command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/contrib/taglib_plugin/Makefile&quot;  VERBOSE=1 taglib_plugin/fast" />
+            <CompileFile command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/contrib/taglib_plugin/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/contrib/taglib_plugin/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/contrib/taglib_plugin/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="oggdecoder">
+         <Option output="/Users/clangen/src/musikcube/bin/plugins/liboggdecoder.dylib" prefix_auto="0" extension_auto="0" />
+         <Option working_dir="/Users/clangen/src/musikcube/src/contrib/oggdecoder" />
+         <Option object_output="./" />
+         <Option type="3" />
+         <Option compiler="gcc" />
+         <Compiler>
+            <Add option="-DHAVE_BOOST" />
+            <Add option="-D_FILE_OFFSET_BITS=64" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../lib/clang/7.3.0/include" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include" />
+            <Add directory="/Library/Frameworks" />
+            <Add directory="/System/Library/Frameworks" />
+            <Add directory="/Users/clangen/src/musikcube/src" />
+            <Add directory="/Users/clangen/src/musikcube/src/3rdparty/include" />
+            <Add directory="/Users/clangen/src/musikcube/src/core" />
+            <Add directory="/Users/clangen/src/musikcube/src/musikbox" />
+            <Add directory="/usr/include" />
+            <Add directory="/usr/local/include" />
+         </Compiler>
+         <MakeCommands>
+            <Build command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/contrib/oggdecoder/Makefile&quot;  VERBOSE=1 oggdecoder" />
+            <CompileFile command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/contrib/oggdecoder/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/contrib/oggdecoder/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/contrib/oggdecoder/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="oggdecoder/fast">
+         <Option output="/Users/clangen/src/musikcube/bin/plugins/liboggdecoder.dylib" prefix_auto="0" extension_auto="0" />
+         <Option working_dir="/Users/clangen/src/musikcube/src/contrib/oggdecoder" />
+         <Option object_output="./" />
+         <Option type="3" />
+         <Option compiler="gcc" />
+         <Compiler>
+            <Add option="-DHAVE_BOOST" />
+            <Add option="-D_FILE_OFFSET_BITS=64" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../lib/clang/7.3.0/include" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include" />
+            <Add directory="/Library/Frameworks" />
+            <Add directory="/System/Library/Frameworks" />
+            <Add directory="/Users/clangen/src/musikcube/src" />
+            <Add directory="/Users/clangen/src/musikcube/src/3rdparty/include" />
+            <Add directory="/Users/clangen/src/musikcube/src/core" />
+            <Add directory="/Users/clangen/src/musikcube/src/musikbox" />
+            <Add directory="/usr/include" />
+            <Add directory="/usr/local/include" />
+         </Compiler>
+         <MakeCommands>
+            <Build command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/contrib/oggdecoder/Makefile&quot;  VERBOSE=1 oggdecoder/fast" />
+            <CompileFile command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/contrib/oggdecoder/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/contrib/oggdecoder/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/contrib/oggdecoder/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="mpg123decoder">
+         <Option output="/Users/clangen/src/musikcube/bin/plugins/libmpg123decoder.dylib" prefix_auto="0" extension_auto="0" />
+         <Option working_dir="/Users/clangen/src/musikcube/src/contrib/mpg123decoder" />
+         <Option object_output="./" />
+         <Option type="3" />
+         <Option compiler="gcc" />
+         <Compiler>
+            <Add option="-DHAVE_BOOST" />
+            <Add option="-D_FILE_OFFSET_BITS=64" />
+            <Add option="-DXML_STATIC" />
+            <Add option="-D_CRT_SECURE_NO_DEPRECATE" />
+            <Add option="-D_DEBUG" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../lib/clang/7.3.0/include" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include" />
+            <Add directory="/Library/Frameworks" />
+            <Add directory="/System/Library/Frameworks" />
+            <Add directory="/Users/clangen/src/musikcube/src" />
+            <Add directory="/Users/clangen/src/musikcube/src/3rdparty/include" />
+            <Add directory="/Users/clangen/src/musikcube/src/core" />
+            <Add directory="/Users/clangen/src/musikcube/src/musikbox" />
+            <Add directory="/usr/include" />
+            <Add directory="/usr/local/include" />
+         </Compiler>
+         <MakeCommands>
+            <Build command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/contrib/mpg123decoder/Makefile&quot;  VERBOSE=1 mpg123decoder" />
+            <CompileFile command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/contrib/mpg123decoder/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/contrib/mpg123decoder/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/contrib/mpg123decoder/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="mpg123decoder/fast">
+         <Option output="/Users/clangen/src/musikcube/bin/plugins/libmpg123decoder.dylib" prefix_auto="0" extension_auto="0" />
+         <Option working_dir="/Users/clangen/src/musikcube/src/contrib/mpg123decoder" />
+         <Option object_output="./" />
+         <Option type="3" />
+         <Option compiler="gcc" />
+         <Compiler>
+            <Add option="-DHAVE_BOOST" />
+            <Add option="-D_FILE_OFFSET_BITS=64" />
+            <Add option="-DXML_STATIC" />
+            <Add option="-D_CRT_SECURE_NO_DEPRECATE" />
+            <Add option="-D_DEBUG" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../lib/clang/7.3.0/include" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include" />
+            <Add directory="/Library/Frameworks" />
+            <Add directory="/System/Library/Frameworks" />
+            <Add directory="/Users/clangen/src/musikcube/src" />
+            <Add directory="/Users/clangen/src/musikcube/src/3rdparty/include" />
+            <Add directory="/Users/clangen/src/musikcube/src/core" />
+            <Add directory="/Users/clangen/src/musikcube/src/musikbox" />
+            <Add directory="/usr/include" />
+            <Add directory="/usr/local/include" />
+         </Compiler>
+         <MakeCommands>
+            <Build command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/contrib/mpg123decoder/Makefile&quot;  VERBOSE=1 mpg123decoder/fast" />
+            <CompileFile command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/contrib/mpg123decoder/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/contrib/mpg123decoder/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/contrib/mpg123decoder/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="coreaudioout">
+         <Option output="/Users/clangen/src/musikcube/bin/plugins/libcoreaudioout.dylib" prefix_auto="0" extension_auto="0" />
+         <Option working_dir="/Users/clangen/src/musikcube/src/contrib/coreaudioout" />
+         <Option object_output="./" />
+         <Option type="3" />
+         <Option compiler="gcc" />
+         <Compiler>
+            <Add option="-DHAVE_BOOST" />
+            <Add option="-D_FILE_OFFSET_BITS=64" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../lib/clang/7.3.0/include" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include" />
+            <Add directory="/Library/Frameworks" />
+            <Add directory="/System/Library/Frameworks" />
+            <Add directory="/Users/clangen/src/musikcube/src" />
+            <Add directory="/Users/clangen/src/musikcube/src/3rdparty/include" />
+            <Add directory="/Users/clangen/src/musikcube/src/core" />
+            <Add directory="/Users/clangen/src/musikcube/src/musikbox" />
+            <Add directory="/usr/include" />
+            <Add directory="/usr/local/include" />
+         </Compiler>
+         <MakeCommands>
+            <Build command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/contrib/coreaudioout/Makefile&quot;  VERBOSE=1 coreaudioout" />
+            <CompileFile command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/contrib/coreaudioout/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/contrib/coreaudioout/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/contrib/coreaudioout/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="coreaudioout/fast">
+         <Option output="/Users/clangen/src/musikcube/bin/plugins/libcoreaudioout.dylib" prefix_auto="0" extension_auto="0" />
+         <Option working_dir="/Users/clangen/src/musikcube/src/contrib/coreaudioout" />
+         <Option object_output="./" />
+         <Option type="3" />
+         <Option compiler="gcc" />
+         <Compiler>
+            <Add option="-DHAVE_BOOST" />
+            <Add option="-D_FILE_OFFSET_BITS=64" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../lib/clang/7.3.0/include" />
+            <Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include" />
+            <Add directory="/Library/Frameworks" />
+            <Add directory="/System/Library/Frameworks" />
+            <Add directory="/Users/clangen/src/musikcube/src" />
+            <Add directory="/Users/clangen/src/musikcube/src/3rdparty/include" />
+            <Add directory="/Users/clangen/src/musikcube/src/core" />
+            <Add directory="/Users/clangen/src/musikcube/src/musikbox" />
+            <Add directory="/usr/include" />
+            <Add directory="/usr/local/include" />
+         </Compiler>
+         <MakeCommands>
+            <Build command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/contrib/coreaudioout/Makefile&quot;  VERBOSE=1 coreaudioout/fast" />
+            <CompileFile command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/contrib/coreaudioout/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/contrib/coreaudioout/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/make -f &quot;/Users/clangen/src/musikcube/src/contrib/coreaudioout/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      </Build>
+      <Unit filename="/Users/clangen/src/musikcube/src/3rdparty/include/md5/md5.h">
+         <Option target="md5"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/3rdparty/include/sqlite/sqlite3.h">
+         <Option target="sqlite3"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/3rdparty/include/sqlite/sqlite3ext.h">
+         <Option target="sqlite3"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/3rdparty/src/md5/md5.c">
+         <Option target="md5"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/3rdparty/src/sqlite/sqlite3.c">
+         <Option target="sqlite3"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/contrib/coreaudioout/CoreAudioOut.cpp">
+         <Option target="coreaudioout"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/contrib/coreaudioout/CoreAudioOut.h">
+         <Option target="coreaudioout"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/contrib/coreaudioout/coreaudioout_plugin.cpp">
+         <Option target="coreaudioout"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/contrib/mpg123decoder/Mpg123Decoder.cpp">
+         <Option target="mpg123decoder"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/contrib/mpg123decoder/Mpg123Decoder.h">
+         <Option target="mpg123decoder"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/contrib/mpg123decoder/Mpg123DecoderFactory.cpp">
+         <Option target="mpg123decoder"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/contrib/mpg123decoder/Mpg123DecoderFactory.h">
+         <Option target="mpg123decoder"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/contrib/mpg123decoder/mpg123decoder_plugin.cpp">
+         <Option target="mpg123decoder"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/contrib/mpg123decoder/stdafx.cpp">
+         <Option target="mpg123decoder"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/contrib/mpg123decoder/stdafx.h">
+         <Option target="mpg123decoder"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/contrib/oggdecoder/OggDecoder.cpp">
+         <Option target="oggdecoder"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/contrib/oggdecoder/OggDecoder.h">
+         <Option target="oggdecoder"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/contrib/oggdecoder/OggDecoderFactory.cpp">
+         <Option target="oggdecoder"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/contrib/oggdecoder/OggDecoderFactory.h">
+         <Option target="oggdecoder"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/contrib/oggdecoder/oggdecoder_plugin.cpp">
+         <Option target="oggdecoder"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/contrib/oggdecoder/stdafx.cpp">
+         <Option target="oggdecoder"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/contrib/oggdecoder/stdafx.h">
+         <Option target="oggdecoder"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/contrib/taglib_plugin/TaglibMetadataReader.cpp">
+         <Option target="taglib_plugin"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/contrib/taglib_plugin/TaglibMetadataReader.h">
+         <Option target="taglib_plugin"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/contrib/taglib_plugin/stdafx.cpp">
+         <Option target="taglib_plugin"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/contrib/taglib_plugin/stdafx.h">
+         <Option target="taglib_plugin"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/contrib/taglib_plugin/taglib_plugin.cpp">
+         <Option target="taglib_plugin"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/audio/Buffer.cpp">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/audio/Buffer.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/audio/Player.cpp">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/audio/Player.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/audio/Stream.cpp">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/audio/Stream.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/config.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/db/CachedStatement.cpp">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/db/CachedStatement.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/db/Connection.cpp">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/db/Connection.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/db/ScopedTransaction.cpp">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/db/ScopedTransaction.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/db/Statement.cpp">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/db/Statement.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/db/dbconfig.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/debug.cpp">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/debug.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/io/DataStreamFactory.cpp">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/io/DataStreamFactory.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/io/LocalFileStream.cpp">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/io/LocalFileStream.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/library/IIndexer.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/library/ILibrary.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/library/IQuery.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/library/Indexer.cpp">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/library/Indexer.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/library/LibraryFactory.cpp">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/library/LibraryFactory.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/library/LocalLibrary.cpp">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/library/LocalLibrary.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/library/LocalLibraryConstants.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/library/metadata/MetadataKeyValue.cpp">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/library/metadata/MetadataKeyValue.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/library/metadata/MetadataValue.cpp">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/library/metadata/MetadataValue.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/library/query/QueryBase.cpp">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/library/query/QueryBase.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/library/track/IndexerTrack.cpp">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/library/track/IndexerTrack.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/library/track/LibraryTrack.cpp">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/library/track/LibraryTrack.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/library/track/Track.cpp">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/library/track/Track.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/pch.cpp">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/pch.hpp">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/playback/NonLibraryTrackHelper.cpp">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/playback/NonLibraryTrackHelper.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/playback/Transport.cpp">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/playback/Transport.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/plugin/PluginFactory.cpp">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/plugin/PluginFactory.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/sdk/IAnalyzer.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/sdk/IBuffer.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/sdk/IBufferProvider.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/sdk/IDSP.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/sdk/IDataStream.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/sdk/IDataStreamFactory.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/sdk/IDecoder.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/sdk/IDecoderFactory.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/sdk/IMetadataReader.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/sdk/IMetadataWriter.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/sdk/IOutput.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/sdk/IPlugin.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/sdk/config.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/support/Common.cpp">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/support/Common.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/support/Preferences.cpp">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/support/Preferences.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/support/ThreadHelper.cpp">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/support/ThreadHelper.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/support/Version.cpp">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/support/Version.h">
+         <Option target="musikcore"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/Main.cpp">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/app/layout/LibraryLayout.cpp">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/app/layout/LibraryLayout.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/app/layout/MainLayout.cpp">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/app/layout/MainLayout.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/app/query/CategoryListViewQuery.cpp">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/app/query/CategoryListViewQuery.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/app/query/SingleTrackQuery.cpp">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/app/query/SingleTrackQuery.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/app/query/TrackListViewQuery.cpp">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/app/query/TrackListViewQuery.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/app/service/PlaybackService.cpp">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/app/service/PlaybackService.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/app/util/GlobalHotkeys.cpp">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/app/util/GlobalHotkeys.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/app/util/SystemInfo.cpp">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/app/util/SystemInfo.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/app/util/Text.cpp">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/app/util/Text.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/app/window/CategoryListView.cpp">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/app/window/CategoryListView.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/app/window/CommandWindow.cpp">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/app/window/CommandWindow.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/app/window/LogWindow.cpp">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/app/window/LogWindow.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/app/window/OutputWindow.cpp">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/app/window/OutputWindow.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/app/window/ResourcesWindow.cpp">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/app/window/ResourcesWindow.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/app/window/TrackListView.cpp">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/app/window/TrackListView.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/app/window/TransportWindow.cpp">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/app/window/TransportWindow.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/Colors.cpp">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/Colors.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/IDisplayable.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/IInput.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/IKeyHandler.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/ILayout.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/ILayoutStack.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/IMessage.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/IMessageTarget.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/IOrderable.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/IScrollAdapter.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/IScrollable.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/IWindow.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/IWindowGroup.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/LayoutBase.cpp">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/LayoutBase.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/LayoutStack.cpp">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/LayoutStack.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/ListWindow.cpp">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/ListWindow.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/Message.cpp">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/Message.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/MessageQueue.cpp">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/MessageQueue.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/MultiLineEntry.cpp">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/MultiLineEntry.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/Screen.cpp">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/Screen.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/ScrollAdapterBase.cpp">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/ScrollAdapterBase.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/ScrollableWindow.cpp">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/ScrollableWindow.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/SimpleScrollAdapter.cpp">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/SimpleScrollAdapter.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/SingleLineEntry.cpp">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/SingleLineEntry.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/Window.cpp">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/Window.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/WindowLayout.cpp">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/WindowLayout.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/cursespp/curses_config.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/stdafx.cpp">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/stdafx.h">
+         <Option target="musikbox"/>
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/CMakeLists.txt">
+          <Option virtualFolder="CMake Files\" />
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/3rdparty/CMakeLists.txt">
+          <Option virtualFolder="CMake Files\src\3rdparty\" />
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/core/CMakeLists.txt">
+          <Option virtualFolder="CMake Files\src\core\" />
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/musikbox/CMakeLists.txt">
+          <Option virtualFolder="CMake Files\src\musikbox\" />
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/contrib/taglib_plugin/CMakeLists.txt">
+          <Option virtualFolder="CMake Files\src\contrib\taglib_plugin\" />
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/contrib/oggdecoder/CMakeLists.txt">
+          <Option virtualFolder="CMake Files\src\contrib\oggdecoder\" />
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/contrib/mpg123decoder/CMakeLists.txt">
+          <Option virtualFolder="CMake Files\src\contrib\mpg123decoder\" />
+      </Unit>
+      <Unit filename="/Users/clangen/src/musikcube/src/contrib/coreaudioout/CMakeLists.txt">
+          <Option virtualFolder="CMake Files\src\contrib\coreaudioout\" />
+      </Unit>
+   </Project>
+</CodeBlocks_project_file>

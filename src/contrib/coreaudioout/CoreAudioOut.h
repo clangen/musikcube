@@ -31,6 +31,7 @@ class CoreAudioOut : public musik::core::audio::IOutput {
         musik::core::audio::IBufferProvider *bufferProvider;
         AudioStreamBasicDescription audioFormat;
         AudioQueueRef audioQueue;
+        double volume;
         size_t bufferCount;
         boost::thread thread;
         boost::recursive_mutex mutex;

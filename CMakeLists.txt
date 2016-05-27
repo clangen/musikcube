@@ -5,7 +5,6 @@ project(musikbox)
 set (musikbox_VERSION_MAJOR 0)
 set (musikbox_VERSION_MINOR 1)
 
-set (CMAKE_MODULE_PATH ${musikbox_SOURCE_DIR}/modules)
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-fpermissive -g")
 
 set (BOOST_LIBS

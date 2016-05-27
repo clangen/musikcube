@@ -29,6 +29,7 @@ CoreAudioOut::CoreAudioOut() {
     this->bufferProvider = NULL;
     this->quit = false;
     this->bufferCount = 0;
+    this->volume = 1.0f;
 
     this->audioFormat = (AudioStreamBasicDescription) { 0 };
 
@@ -84,6 +85,8 @@ bool CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
         }
 
         result = AudioQueueStart(this->audioQueue, NULL);
+
+        this->SetVolume(volume);
 
         if (result != 0) {
             std::cerr << "AudioQueueStart failed: " << result << "\n";
@@ -152,6 +155,8 @@ void CoreAudioOut::Resume() {
 void CoreAudioOut::SetVolume(double volume) {
     boost::recursive_mutex::scoped_lock lock(this->mutex);
 
+    this->volume = volume;
+
     if (this->audioQueue) {
         OSStatus result = AudioQueueSetParameter(
             this->audioQueue,
@@ -160,7 +165,6 @@ void CoreAudioOut::SetVolume(double volume) {
 
         if (result != 0) {
             std::cerr << "AudioQueueSetParameter(volume) failed: " << result << "\n";
-
         }
     }
 }

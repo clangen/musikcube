@@ -52,18 +52,20 @@ std::string musik::core::GetApplicationDirectory() {
     std::string result;
 
     #ifdef WIN32
-        wchar_t szPath[2048];
-        int iStrLength = GetModuleFileName(NULL, szPath, 2048);
-        if(iStrLength != 0 && iStrLength < 2048){
-            result.assign(GetPath(u16to8(szPath).c_str()));
+        wchar_t widePath[2048];
+        int length = GetModuleFileName(NULL, widePath, 2048);
+        if (length != 0 && length < 2048) {
+            result.assign(GetPath(u16to8(widePath).c_str()));
         }
     #else
-      // char pathbuf[PATH_MAX + 1];
-      // uint32_t bufsize = sizeof(pathbuf);
-      // _NSGetExecutablePath(pathbuf, &bufsize);
-      // result.assign(pathbuf);
-      // std::cerr << result << std::endl;
-      result = "/Users/clangen/src/musikcube/bin/";
+      char pathbuf[PATH_MAX + 1];
+      uint32_t bufsize = sizeof(pathbuf);
+      _NSGetExecutablePath(pathbuf, &bufsize);
+      char *resolved = realpath(pathbuf, NULL);
+      result.assign(resolved);
+      free(resolved);
+      size_t last = result.find_last_of("/");
+      result = result.substr(0, last); /* remove filename component */
     #endif
 
     return result;
@@ -77,37 +79,35 @@ std::string musik::core::GetDataDirectory() {
         wchar_t *sBuffer = new wchar_t[iBufferSize + 2];
         GetEnvironmentVariable(_T("APPDATA"), sBuffer, iBufferSize);
         directory.assign(u16to8(sBuffer));
+        directory.append("/mC2/");
         delete [] sBuffer;
     #else
         directory = std::string(std::getenv("HOME"));
+        directory.append("/.mC2/");
     #endif
 
-    directory.append("/mC2/");
-
-    // Create folder if it does not exist
     boost::filesystem::path path(directory);
-    if(!boost::filesystem::exists(path)) {
+    if (!boost::filesystem::exists(path)) {
         boost::filesystem::create_directories(path);
     }
 
     return directory;
 }
 
-std::string musik::core::GetPath(const std::string &sFile){
-
+std::string musik::core::GetPath(const std::string &sFile) {
     std::string sPath;
-    int iStrLength;
+    int length;
 
 #ifdef WIN32
-    wchar_t szPath[2048];
+    wchar_t widePath[2048];
     wchar_t *szFile = NULL;
 
-    iStrLength = GetFullPathName(u8to16(sFile).c_str(), 2048, szPath, &szFile);
-    if(iStrLength != 0 && iStrLength < 2048) {
-        sPath.assign(u16to8(szPath).c_str());
+    length = GetFullPathName(u8to16(sFile).c_str(), 2048, widePath, &szFile);
+    if(length != 0 && length < 2048) {
+        sPath.assign(u16to8(widePath).c_str());
         if(szFile!=0) {
             std::string sTheFile = u16to8(szFile);
-            sPath.assign(sPath.substr(0,iStrLength-sTheFile.length()));
+            sPath.assign(sPath.substr(0,length-sTheFile.length()));
         }
     }
     else {
@@ -115,17 +115,17 @@ std::string musik::core::GetPath(const std::string &sFile){
     }
  #else	//TODO: check this POSIX GetPath works
     char* szDir;
-    sPath.assign(getcwd((char*)szDir, (size_t) iStrLength));
+    sPath.assign(getcwd((char*)szDir, (size_t) length));
 
  #endif //WIN32
     return sPath;
 }
 
-UINT64 musik::core::Checksum(char *data,unsigned int bytes){
-    UINT64 sum(0);
-    for(unsigned int i(0);i<bytes;++i){
-        char theChar    = *(data+i);
-        sum += (UINT64)theChar;
+UINT64 musik::core::Checksum(char *data,unsigned int bytes) {
+    UINT64 sum = 0;
+    for(unsigned int i = 0; i < bytes; ++i) {
+        char ch = *(data + i);
+        sum += (UINT64) ch;
     }
     return sum;
 }

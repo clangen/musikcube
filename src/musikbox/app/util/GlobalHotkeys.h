@@ -10,12 +10,12 @@ namespace musik {
         class GlobalHotkeys {
             public:
                 GlobalHotkeys(
-                    PlaybackService& playback, 
+                    PlaybackService& playback,
                     musik::core::LibraryPtr library);
 
                 ~GlobalHotkeys(); /* non-virtual; do not use as a base class */
 
-                bool Handle(int64 ch);
+                bool Handle(const std::string& kn);
 
             private:
                 PlaybackService& playback;

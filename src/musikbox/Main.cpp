@@ -163,10 +163,12 @@ int main(int argc, char* argv[])
     musik::debug::init();
     PluginFactory::Instance(); /* initialize */
 
+#ifdef WIN32
     ttytype[0] = 30; /* min height */
     ttytype[1] = 30; /* max height */
     ttytype[2] = 120; /* min width */
     ttytype[3] = 120; /* max width */
+#endif
 
     initscr();
     cbreak();
@@ -222,6 +224,21 @@ int main(int argc, char* argv[])
             if (ch != -1) { /* -1 = idle timeout */
                 std::string kn = keyname((int) ch);
 
+                int64 next = -1; /* used in escape sequences */
+
+#ifndef WIN32
+                    /* convert +ESC to M- sequences */
+                    if (kn == "^[") {
+                        next = getch();
+                        if (next != -1) {
+                            kn = std::string("M-") + std::string(keyname((int) next));
+                        }
+                    }
+#endif
+
+                // std::cerr << "keyname: " << kn << std::endl;
+                // std::cerr << "ch: " << ch << std::endl;
+
                 if (ch == '\t') { /* tab */
                     focusNextInLayout(state);
                 }
@@ -234,7 +251,7 @@ int main(int argc, char* argv[])
                 else if (ch == KEY_F(8)) {
                     changeLayout(state, consoleLayout);
                 }
-                else if (!globalHotkeys.Handle(ch)) {
+                else if (!globalHotkeys.Handle(kn)) {
                     if (state.input) {
                         state.input->WriteChar(ch);
                     }

@@ -14,9 +14,7 @@ GlobalHotkeys::~GlobalHotkeys() {
 
 }
 
-bool GlobalHotkeys::Handle(int64 ch) {
-    std::string kn = keyname((int) ch);
-
+bool GlobalHotkeys::Handle(const std::string& kn) {
     if (kn == "^P") {
         int state = this->transport.GetPlaybackState();
         if (state == Transport::PlaybackPaused) {
@@ -27,28 +25,28 @@ bool GlobalHotkeys::Handle(int64 ch) {
         }
         return true;
     }
-    if (kn == "ALT_I") {
+    if (kn == "ALT_I" || kn == "M-i") {
         this->transport.SetVolume(this->transport.Volume() + 0.05); /* 5% */
         return true;
     }
-    else if (kn == "ALT_K") {
+    else if (kn == "ALT_K" || kn == "M-k") {
         this->transport.SetVolume(this->transport.Volume() - 0.05);
         return true;
     }
-    else if (kn == "ALT_J") {
+    else if (kn == "ALT_J" || kn == "M-j") {
         this->playback.Previous();
         return true;
     }
-    else if (kn == "ALT_L") {
+    else if (kn == "ALT_L" || kn == "M-l") {
         this->playback.Next();
         return true;
     }
-    else if (kn == "ALT_U") {
+    else if (kn == "ALT_U" || kn == "M-u") {
         double time = this->transport.Position();
         this->transport.SetPosition(time - 10.0f);
         return true;
     }
-    else if (kn == "ALT_O") {
+    else if (kn == "ALT_O" || kn == "M-o") {
         double time = this->transport.Position();
         this->transport.SetPosition(time + 10.0f);
         return true;
