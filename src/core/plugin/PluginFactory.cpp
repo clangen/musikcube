@@ -121,7 +121,8 @@ void PluginFactory::LoadPlugins(){
                         dll = dlopen(filename.c_str(), RTLD_LOCAL);
                     }
                     catch (...) {
-                        err = "exception caught loading plugin";
+                        musik::debug::err(TAG, "exception while loading plugin " + filename);
+                        continue;
                     }
 
                     if (err != NULL || (err = dlerror()) != NULL) {

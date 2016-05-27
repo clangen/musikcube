@@ -52,6 +52,10 @@
     typedef unsigned long long UINT64;
     typedef long long __int64;
 
+#ifdef __APPLE__
+    #define STDCALL(fp) (* fp)()
+#else
     #define STDCALL(fp) (* fp)() __attribute__((stdcall))
+#endif
     #define _ASSERT assert
 #endif
