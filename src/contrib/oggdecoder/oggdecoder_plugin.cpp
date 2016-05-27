@@ -40,9 +40,17 @@
 
 #include "OggDecoderFactory.h"
 
+#ifdef WIN32
+#define DLLEXPORT __declspec(dllexport)
+#else
+#define DLLEXPORT
+#endif
+
+#ifdef WIN32
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
     return true;
 }
+#endif
 
 class OggDecoderPlugin : public musik::core::IPlugin {
 public:
@@ -52,10 +60,10 @@ public:
     const char* Author() { return "Björn Olievier, _avatar"; };
 };
 
-extern "C" __declspec(dllexport) musik::core::IPlugin* GetPlugin() {
+extern "C" DLLEXPORT musik::core::IPlugin* GetPlugin() {
     return new OggDecoderPlugin();
 }
 
-extern "C" __declspec(dllexport) IDecoderFactory* GetDecoderFactory() {
+extern "C" DLLEXPORT IDecoderFactory* GetDecoderFactory() {
     return new OggDecoderFactory();
 }

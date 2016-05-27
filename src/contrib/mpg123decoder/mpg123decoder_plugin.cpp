@@ -26,5 +26,5 @@ extern "C" DLLEXPORT musik::core::IPlugin* GetPlugin() {
 }
 
 extern "C" DLLEXPORT musik::core::audio::IDecoderFactory* GetDecoderFactory() {
-	return new Mpg123DecoderFactory();
+    return new Mpg123DecoderFactory();
 }

@@ -24,8 +24,8 @@ add_definitions (-DHAVE_BOOST
 set (BOOST_LINK_LIBS
   ${Boost_LIBRARIES})
 
-#message(STATUS "Libs: " ${BOOST_LINK_LIBS})
-#message(STATUS "Includes: " ${Boost_INCLUDE_DIRS})
+#message(STATUS "boost libs: " ${BOOST_LINK_LIBS})
+#message(STATUS "boost includes: " ${Boost_INCLUDE_DIRS})
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}/Modules)
@@ -55,6 +55,6 @@ add_subdirectory(src/3rdparty)
 add_subdirectory(src/core)
 add_subdirectory(src/musikbox)
 add_subdirectory(src/contrib/taglib_plugin)
-add_subdirectory(src/contrib/mp3decoder)
+add_subdirectory(src/contrib/oggdecoder)
 add_subdirectory(src/contrib/mpg123decoder)
 add_subdirectory(src/contrib/coreaudioout)
