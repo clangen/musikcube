@@ -15,10 +15,10 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 #endif
 
 class Mpg123Plugin : public musik::core::IPlugin {
-    virtual void Destroy() { delete this; };
-    virtual const char* Name() { return "mpg123 decoder"; };
-    virtual const char* Version() { return "0.2"; };
-    virtual const char* Author() { return "Daniel �nnerby, _avatar"; };
+    virtual void Destroy() { delete this; }
+    virtual const char* Name() { return "mpg123 decoder"; }
+    virtual const char* Version() { return "0.2"; }
+    virtual const char* Author() { return "Daniel Önnerby, clangen"; }
 };
 
 extern "C" DLLEXPORT musik::core::IPlugin* GetPlugin() {

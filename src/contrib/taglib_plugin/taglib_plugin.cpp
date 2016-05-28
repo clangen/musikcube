@@ -67,7 +67,7 @@ class TaglibPlugin : public musik::core::IPlugin {
     };
 
     const char* Author() {
-        return "Daniel Önnerby, _avatar";
+        return "Daniel Önnerby, clangen";
     };
 
 };
