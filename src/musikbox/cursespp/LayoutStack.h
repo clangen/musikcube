@@ -28,7 +28,7 @@ namespace cursespp {
             virtual void Hide();
 
             /* IKeyHandler */
-            virtual bool KeyPress(int64 ch);
+            virtual bool KeyPress(const std::string& key);
 
             /* IWindowGroup */
             virtual bool AddWindow(IWindowPtr window);

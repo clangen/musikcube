@@ -87,12 +87,12 @@ void LayoutStack::Hide() {
     }
 }
 
-bool LayoutStack::KeyPress(int64 ch) {
+bool LayoutStack::KeyPress(const std::string& key) {
     if (!this->layouts.size()) {
         return false;
     }
 
-    return this->layouts.front()->KeyPress(ch);
+    return this->layouts.front()->KeyPress(key);
 }
 
 IWindowPtr LayoutStack::FocusNext() {

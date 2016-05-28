@@ -270,13 +270,13 @@ int main(int argc, char* argv[])
                 }
                 else if (!globalHotkeys.Handle(kn)) {
                     if (state.input) {
-                        state.input->WriteChar(ch);
+                        state.input->Write(kn);
                     }
                     /* otherwise, send the unhandled keypress directly to the
                     focused window. if it can't do anything with it, send it to
                     the layout for special processing, if necessary */
-                    else if (!state.keyHandler || !state.keyHandler->KeyPress(ch)) {
-                        state.layout->KeyPress(ch);
+                    else if (!state.keyHandler || !state.keyHandler->KeyPress(kn)) {
+                        state.layout->KeyPress(kn);
                     }
                 }
             }

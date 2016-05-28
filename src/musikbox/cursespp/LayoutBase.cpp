@@ -219,7 +219,7 @@ IWindowPtr LayoutBase::GetFocus() {
     return IWindowPtr();
 }
 
-bool LayoutBase::KeyPress(int64 ch) {
+bool LayoutBase::KeyPress(const std::string& key) {
     return false;
 }
 

@@ -26,7 +26,7 @@ namespace musik {
                 virtual ~TrackListView();
 
                 virtual void ProcessMessage(cursespp::IMessage &message);
-                virtual bool KeyPress(int64 ch);
+                virtual bool KeyPress(const std::string& key);
 
                 void Requery(const std::string& column, DBID id);
 

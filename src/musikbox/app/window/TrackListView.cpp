@@ -52,8 +52,8 @@ void TrackListView::OnQueryCompleted(QueryPtr query) {
     }
 }
 
-bool TrackListView::KeyPress(int64 ch) {
-    if (ch == '\n') { /* return */
+bool TrackListView::KeyPress(const std::string& key) {
+    if (key == "^J") { /* return */
         size_t selected = this->GetSelectedIndex();
         if (this->metadata && this->metadata->size() > selected) {
             playback.Play(*this->metadata, selected);
@@ -61,7 +61,7 @@ bool TrackListView::KeyPress(int64 ch) {
         }
     }
 
-    return ListWindow::KeyPress(ch);
+    return ListWindow::KeyPress(key);
 }
 
 void TrackListView::ProcessMessage(IMessage &message) {

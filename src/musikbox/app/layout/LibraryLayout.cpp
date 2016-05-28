@@ -94,36 +94,34 @@ void LibraryLayout::OnCategoryViewInvalidated(
     this->RequeryTrackList(view);
 }
 
-bool LibraryLayout::KeyPress(int64 ch) {
-    std::string kn = keyname((int)ch);
-
-    if (kn == "ALT_1") {
-        this->categoryList->SetFieldName(constants::Track::ARTIST_ID);
+bool LibraryLayout::KeyPress(const std::string& key) {
+    if (key == "ALT_1") {
+        this->categoryList->SetFieldName(Track::ARTIST_ID);
         return true;
     }
-    else if (kn == "ALT_2") {
-        this->categoryList->SetFieldName(constants::Track::ALBUM_ID);
+    else if (key == "ALT_2") {
+        this->categoryList->SetFieldName(Track::ALBUM_ID);
         return true;
     }
-    else if (kn == "ALT_3") {
-        this->categoryList->SetFieldName(constants::Track::GENRE_ID);
-        return true;    
+    else if (key == "ALT_3") {
+        this->categoryList->SetFieldName(Track::GENRE_ID);
+        return true;
     }
-    else if (kn == "CTL_DOWN") {
+    else if (key == "KEY_F(5)") {
+        this->categoryList->Requery();
+        return true;
+    }
+    else if (key == "CTL_DOWN") {
         this->focused = this->transportView;
         this->transportView->Focus();
     }
-    else if (kn == "CTL_UP") {
+    else if (key == "CTL_UP") {
         if (this->focused) {
             this->focused->Blur();
             this->focused.reset();
         }
     }
-    else if (ch == KEY_END) {
-        this->categoryList->Requery();
-        return true;
-    }
-    else if (ch == ' ') {
+    else if (key == " ") {
         /* copied from GlobalHotkeys. should probably be generalized
         at some point. */
         int state = this->transport.GetPlaybackState();
@@ -135,5 +133,5 @@ bool LibraryLayout::KeyPress(int64 ch) {
         }
     }
 
-    return LayoutBase::KeyPress(ch);
+    return LayoutBase::KeyPress(key);
 }

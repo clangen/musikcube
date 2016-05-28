@@ -16,7 +16,6 @@
 
 #include <boost/algorithm/string.hpp>
 
-#define BUFFER_SIZE 2048
 #define MAX_SIZE 2046
 
 using musik::core::Indexer;
@@ -45,7 +44,6 @@ CommandWindow::CommandWindow(
     this->SetContentColor(BOX_COLOR_WHITE_ON_BLACK);
     this->transport = &transport;
     this->library = library;
-    this->buffer = new char[BUFFER_SIZE];
     this->bufferPosition = 0;
     this->output = &output;
     this->paused = false;
@@ -53,51 +51,51 @@ CommandWindow::CommandWindow(
 }
 
 CommandWindow::~CommandWindow() {
-    delete[] buffer;
 }
 
 void CommandWindow::Show() {
     Window::Show();
     wmove(this->GetContent(), 0, 0);
-    std::string buf(buffer, bufferPosition);
-    wprintw(this->GetContent(), "%s", buf.c_str());
+    wprintw(this->GetContent(), "%s", buffer.c_str());
 }
 
 void CommandWindow::Focus() {
     wmove(this->GetContent(), 0, bufferPosition);
 }
 
-void CommandWindow::WriteChar(int64 ch) {
-    if (bufferPosition >= MAX_SIZE) {
-        return;
+void removeUtf8Char(std::string& value) {
+    std::string::iterator it = value.end();
+    std::string::iterator start = value.begin();
+    if (it != start) {
+        utf8::prior(it, start);
+        value = std::string(value.begin(), it);
     }
+}
 
-    if (ch == '\b' || ch == 127) { /* backspace */
-        wdelch(this->GetContent());
-
-        if (bufferPosition > 0) {
-            --bufferPosition;
-        }
+void CommandWindow::Write(const std::string& key) {
+    if (key == "KEY_BACKSPACE" || key == "^?") { /* backspace */
+        removeUtf8Char(this->buffer);
     }
-    else if (ch == '\n') { /* return */
-        this->buffer[bufferPosition] = 0;
-        std::string cmd(buffer);
+    else if (key == "^J") { /* return */
+        output->WriteLine("> " + this->buffer + "\n", COLOR_PAIR(BOX_COLOR_BLACK_ON_GREY));
 
-        output->WriteLine("> " + cmd + "\n", COLOR_PAIR(BOX_COLOR_BLACK_ON_GREY));
-
-        if (!this->ProcessCommand(cmd)) {
-            if (cmd.size()) {
-                output->WriteLine("illegal command: '" + cmd + "'\n", COLOR_PAIR(BOX_COLOR_RED_ON_GREY));
+        if (!this->ProcessCommand(this->buffer)) {
+            if (this->buffer.size()) {
+                output->WriteLine(
+                    "illegal command: '" +
+                    this->buffer +
+                    "'\n", COLOR_PAIR(BOX_COLOR_RED_ON_GREY));
             }
         }
 
-        wclear(this->GetContent());
-        this->bufferPosition = 0;
+        this->buffer = "";
     }
     else {
-        waddch(this->GetContent(), ch);
-        this->buffer[bufferPosition++] = (char) ch;
+        this->buffer += key;
     }
+
+    this->Clear();
+    wprintw(this->GetContent(), buffer.c_str());
 
     this->Repaint();
 }

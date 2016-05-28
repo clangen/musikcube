@@ -27,16 +27,13 @@ ScrollPos& ScrollableWindow::GetScrollPosition() {
     return this->scrollPosition;
 }
 
-bool ScrollableWindow::KeyPress(int64 ch) {
-    switch (ch) {
-        case KEY_NPAGE: this->PageDown(); return true;
-        case KEY_PPAGE: this->PageUp(); return true;
-        case KEY_DOWN: this->ScrollDown(); return true;
-        case KEY_UP: this->ScrollUp(); return true;
-        case KEY_HOME: this->ScrollToTop(); return true;
-        case KEY_END: this->ScrollToBottom(); return true;
-    }
-
+bool ScrollableWindow::KeyPress(const std::string& key) {
+    if (key == "KEY_NPAGE") { this->PageDown(); return true; }
+    else if (key == "KEY_PPAGE") { this->PageUp(); return true; }
+    else if (key == "KEY_DOWN") { this->ScrollDown(); return true; }
+    else if (key == "KEY_UP") { this->ScrollUp(); return true; }
+    else if (key == "KEY_HOME") { this->ScrollToTop(); return true; }
+    else if (key == "KEY_END") { this->ScrollToBottom(); return true; }
     return false;
 }
 

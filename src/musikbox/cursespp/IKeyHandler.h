@@ -6,6 +6,6 @@ namespace cursespp {
     class IKeyHandler {
         public:
             virtual ~IKeyHandler() { }
-            virtual bool KeyPress(int64 ch) = 0;
+            virtual bool KeyPress(const std::string& key) = 0;
     };
 }

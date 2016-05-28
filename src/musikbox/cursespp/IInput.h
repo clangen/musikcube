@@ -6,6 +6,6 @@ namespace cursespp {
     class IInput {
         public:
             virtual ~IInput() { }
-            virtual void WriteChar(int64 ch) = 0;
+            virtual void Write(const std::string& key) = 0;
     };
 }

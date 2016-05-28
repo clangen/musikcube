@@ -15,7 +15,7 @@ namespace cursespp {
             virtual void Show();
             virtual void SetSize(int width, int height);
 
-            virtual bool KeyPress(int64 ch);
+            virtual bool KeyPress(const std::string& key);
 
             virtual void ScrollToTop();
             virtual void ScrollToBottom();

@@ -25,7 +25,7 @@ namespace musik {
                 virtual void Layout();
                 virtual void Show();
                 virtual cursespp::IWindowPtr GetFocus();
-                virtual bool KeyPress(int64 ch);
+                virtual bool KeyPress(const std::string& key);
 
             private:
                 void InitializeWindows();

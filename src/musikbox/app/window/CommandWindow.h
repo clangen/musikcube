@@ -24,7 +24,7 @@ namespace musik {
 
                 virtual ~CommandWindow();
 
-                virtual void WriteChar(int64 ch);
+                virtual void Write(const std::string& key);
                 virtual void Focus();
                 virtual void Show();
 
@@ -39,7 +39,7 @@ namespace musik {
                 void SetVolume(float volume);
                 void Help();
 
-                char* buffer;
+                std::string buffer;
                 int bufferPosition;
                 OutputWindow* output;
                 musik::core::audio::Transport* transport;
