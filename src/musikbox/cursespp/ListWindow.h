@@ -22,7 +22,9 @@ namespace cursespp {
             virtual void ScrollDown(int delta = 1);
             virtual void PageUp();
             virtual void PageDown();
+
             virtual void Focus();
+            virtual void Blur();
 
             virtual size_t GetSelectedIndex();
 

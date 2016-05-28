@@ -36,11 +36,11 @@ void LogWindow::Update() {
         return;
     }
 
-    int64 attrs = COLOR_PAIR(BOX_COLOR_WHITE_ON_BLACK);
-
     WINDOW* contents = this->GetContent();
 
     for (size_t i = 0; i < pending.size(); i++) {
+        int64 attrs = COLOR_PAIR(BOX_COLOR_WHITE_ON_BLACK);
+
         LogEntry* entry = pending[i];
 
         switch (entry->level) {
