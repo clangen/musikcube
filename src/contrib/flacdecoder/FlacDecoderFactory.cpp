@@ -34,6 +34,7 @@
 #include "stdafx.h"
 #include <cctype>
 #include <algorithm>
+#include <string> 
 
 #include "FlacDecoderFactory.h"
 #include "FlacDecoder.h"
