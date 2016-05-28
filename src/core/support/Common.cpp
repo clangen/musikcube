@@ -40,7 +40,10 @@
 #include <utf8/utf8.h>
 #include <cstdlib>
 #include <iostream>
+
+#ifdef __APPLE__
 #include <mach-o/dyld.h>
+#endif
 
 std::string musik::core::GetPluginDirectory() {
     std::string path(GetApplicationDirectory());

@@ -14,7 +14,7 @@ MultiLineEntry::MultiLineEntry(const std::string& value, int64 attrs) {
 }
 
 size_t MultiLineEntry::GetLineCount() {
-    return std::max(1UL, this->lines.size());
+    return std::max((size_t) 1, this->lines.size());
 }
 
 std::string MultiLineEntry::GetLine(size_t n) {

@@ -20,9 +20,9 @@ namespace musik {
                         }
                         catch (...) {
                              /* invalid encoding, just treat as a single char */
+                            ++it;
                         }
 
-                        ++it;
                         ++c;
                     }
 

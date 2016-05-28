@@ -36,20 +36,37 @@
 
 #include "TaglibMetadataReader.h"
 
-#include <taglib/tlist.h>
-#include <taglib/tfile.h>
-#include <taglib/tag.h>
-#include <taglib/fileref.h>
-#include <taglib/audioproperties.h>
-#include <taglib/mpegfile.h>
-#include <taglib/id3v1tag.h>
-#include <taglib/id3v1genres.h>
-#include <taglib/id3v2tag.h>
-#include <taglib/id3v2header.h>
-#include <taglib/id3v2frame.h>
-#include <taglib/attachedpictureframe.h>
-#include <taglib/commentsframe.h>
-#include <taglib/oggfile.h>
+#ifdef WIN32
+    #include <taglib/toolkit/tlist.h>
+    #include <taglib/toolkit/tfile.h>
+    #include <taglib/tag.h>
+    #include <taglib/fileref.h>
+    #include <taglib/audioproperties.h>
+    #include <taglib/mpeg/mpegfile.h>
+    #include <taglib/mpeg/id3v1/id3v1tag.h>
+    #include <taglib/mpeg/id3v1/id3v1genres.h>
+    #include <taglib/mpeg/id3v2/id3v2tag.h>
+    #include <taglib/mpeg/id3v2/id3v2header.h>
+    #include <taglib/mpeg/id3v2/id3v2frame.h>
+    #include <taglib/mpeg/id3v2/frames/attachedpictureframe.h>
+    #include <taglib/mpeg/id3v2/frames/commentsframe.h>
+    #include <taglib/ogg/oggfile.h>
+#else
+    #include <taglib/tlist.h>
+    #include <taglib/tfile.h>
+    #include <taglib/tag.h>
+    #include <taglib/fileref.h>
+    #include <taglib/audioproperties.h>
+    #include <taglib/mpegfile.h>
+    #include <taglib/id3v1tag.h>
+    #include <taglib/id3v1genres.h>
+    #include <taglib/id3v2tag.h>
+    #include <taglib/id3v2header.h>
+    #include <taglib/id3v2frame.h>
+    #include <taglib/attachedpictureframe.h>
+    #include <taglib/commentsframe.h>
+    #include <taglib/oggfile.h>
+#endif
 
 #include <vector>
 #include <string>

@@ -25,7 +25,7 @@ void ListWindow::ScrollToTop() {
 
 void ListWindow::ScrollToBottom() {
     IScrollAdapter& adapter = this->GetScrollAdapter();
-    this->SetSelectedIndex(std::max(0UL, adapter.GetEntryCount() - 1));
+    this->SetSelectedIndex(std::max((size_t) 0, adapter.GetEntryCount() - 1));
     adapter.DrawPage(this->GetContent(), selectedIndex, &scrollPosition);
     this->Repaint();
 }
