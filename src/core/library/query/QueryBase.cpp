@@ -48,7 +48,8 @@ static boost::atomic<int> nextId(0);
 QueryBase::QueryBase()
 : status(0)
 , options(0)
-, queryId(0) {
+, queryId(0)
+, cancel(false) {
     this->queryId = nextId++;
 }
 
@@ -62,7 +63,11 @@ std::string QueryBase::Name() {
 bool QueryBase::Run(db::Connection &db) {
     this->SetStatus(Running);
     try {
-        if (OnRun(db)) {
+        if (this->IsCanceled()) {
+            this->SetStatus(Canceled);
+            return true;
+        }
+        else if (OnRun(db)) {
             this->SetStatus(Finished);
             return true;
         }

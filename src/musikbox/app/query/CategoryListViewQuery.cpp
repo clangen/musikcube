@@ -15,7 +15,7 @@ using namespace musik::core::db;
 using namespace musik::core::library::constants;
 using namespace musik::box;
 
-#define reset(x) x.reset(new std::vector<std::shared_ptr<Result> >);
+#define RESET_RESULT(x) x.reset(new std::vector<std::shared_ptr<Result> >);
 
 static const std::string ALBUM_QUERY =
     "SELECT DISTINCT albums.id, albums.name "
@@ -47,7 +47,7 @@ static void initFieldToQueryMap() {
 CategoryListViewQuery::CategoryListViewQuery(const std::string& trackField) {
     this->trackField = trackField;
 
-    reset(result);
+    RESET_RESULT(result);
 
     {
         boost::mutex::scoped_lock lock(QUERY_MAP_MUTEX);
@@ -71,7 +71,7 @@ CategoryListViewQuery::ResultList CategoryListViewQuery::GetResult() {
 }
 
 bool CategoryListViewQuery::OnRun(Connection& db) {
-    reset(result);
+    RESET_RESULT(result);
 
     std::string query = FIELD_TO_QUERY_MAP[this->trackField];
     Statement stmt(query.c_str(), db);

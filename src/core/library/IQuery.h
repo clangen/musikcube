@@ -22,6 +22,7 @@ namespace musik { namespace core {
                 Running = 2,
                 Failed = 3,
                 Finished = 4,
+                Canceled = 5
             } Status;
 
             virtual ~IQuery() { }

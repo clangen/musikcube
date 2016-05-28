@@ -34,6 +34,10 @@ CategoryListView::~CategoryListView() {
 }
 
 void CategoryListView::Requery() {
+    if (this->activeQuery) {
+        this->activeQuery->Cancel();
+    }
+
     this->activeQuery.reset(new CategoryListViewQuery(this->fieldName));
     this->library->Enqueue(activeQuery);
 }
@@ -56,7 +60,6 @@ void CategoryListView::SetFieldName(const std::string& fieldName) {
 
         if (this->metadata) {
             this->metadata.reset();
-            //this->OnAdapterChanged();
         }
 
         this->Requery();
@@ -71,10 +74,12 @@ void CategoryListView::OnQueryCompleted(QueryPtr query) {
 
 void CategoryListView::ProcessMessage(IMessage &message) {
     if (message.Type() == WINDOW_MESSAGE_QUERY_COMPLETED) {
-        this->metadata = activeQuery->GetResult();
-        activeQuery.reset();
-        this->OnAdapterChanged();
-        this->OnInvalidated();
+        if (this->activeQuery && this->activeQuery->GetStatus() == IQuery::Finished) {
+            this->metadata = activeQuery->GetResult();
+            activeQuery.reset();
+            this->OnAdapterChanged();
+            this->OnInvalidated();
+        }
     }
 }
 

@@ -57,6 +57,8 @@ namespace musik { namespace core { namespace query {
             virtual int GetStatus();
             virtual int GetId();
             virtual int GetOptions();
+            virtual void Cancel() { this->cancel = true; }
+            virtual bool IsCanceled() { return cancel; }
 
         protected:
             void SetStatus(int status);
@@ -69,6 +71,7 @@ namespace musik { namespace core { namespace query {
             unsigned int status;
             unsigned int queryId;
             unsigned int options;
+            volatile bool cancel;
             boost::mutex stateMutex;
     };
 
