@@ -47,7 +47,7 @@ CommandWindow::CommandWindow(
     this->bufferPosition = 0;
     this->output = &output;
     this->paused = false;
-    this->output->WriteLine("type 'h' or 'help'\n", BOX_COLOR_BLACK_ON_GREY);
+    this->Help();
 }
 
 CommandWindow::~CommandWindow() {
