@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Daniel Önnerby
+// The following are Copyright ï¿½ 2008, Daniel ï¿½nnerby
 //
 // All rights reserved.
 //
@@ -48,9 +48,7 @@ using namespace musik::core::io;
 
 LocalFileStream::LocalFileStream()
 : file(NULL)
-, filesize(-1)
-, fd(NULL)
-, fileStream(NULL) {
+, filesize(-1) {
 }
 
 LocalFileStream::~LocalFileStream() {
@@ -87,10 +85,7 @@ bool LocalFileStream::Open(const char *filename, unsigned int options) {
 #else
         this->file = fopen(filename, "rb");
 #endif
-        this->fd = new boost::iostreams::file_descriptor(file);
-        this->fileStream = new boost::iostreams::stream<boost::iostreams::file_descriptor>(*this->fd);
-        this->fileStream->exceptions(std::ios_base::eofbit | std::ios_base::failbit | std::ios_base::badbit);
-    
+
         if (this->file != NULL) {
             debug::info(TAG, "opened successfully");
             return true;
@@ -106,9 +101,7 @@ bool LocalFileStream::Open(const char *filename, unsigned int options) {
 bool LocalFileStream::Close() {
     if (this->file) {
         if (fclose(this->file) == 0) {
-            this->file  = NULL;
-            delete this->fd;
-            delete this->fileStream;
+            this->file = NULL;
             return true;
         }
     }
@@ -120,38 +113,20 @@ void LocalFileStream::Destroy() {
     delete this;
 }
 
-PositionType LocalFileStream::Read(void* buffer,PositionType readBytes) {
-    try {
-        this->fileStream->read((char*) buffer, readBytes);
-    }
-    catch (std::ios_base::failure){
-        if(!this->fileStream->eof()) {
-            debug::err("LocalFileStream", "file read error");
-            return 0;
-        }
-    }
-
-    return (PositionType) this->fileStream->gcount();
+PositionType LocalFileStream::Read(void* buffer, PositionType readBytes) {
+    return (PositionType) fread(buffer, 1, readBytes, this->file);
 }
 
 bool LocalFileStream::SetPosition(PositionType position) {
-    try {
-        this->fileStream->clear();
-        this->fileStream->seekg(position);
-    }
-    catch (std::ios_base::failure ex) {
-        return false;
-    }
-
-    return true;
+    return fseek(this->file, position, SEEK_SET) == 0;
 }
 
 PositionType LocalFileStream::Position() {
-    return (PositionType) this->fileStream->tellg();
+    return ftell(this->file);
 }
 
 bool LocalFileStream::Eof() {
-    return this->fileStream->eof();
+    return feof(this->file) != 0;
 }
 
 long LocalFileStream::Length() {

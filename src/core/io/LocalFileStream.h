@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Daniel Önnerby
+// The following are Copyright ï¿½ 2008, Daniel ï¿½nnerby
 //
 // All rights reserved.
 //
@@ -68,13 +68,9 @@ class LocalFileStream : public IDataStream {
     private:
         std::string extension;
         FILE *file;
-        boost::iostreams::file_descriptor* fd;
-        boost::iostreams::stream<boost::iostreams::file_descriptor>* fileStream;
         long filesize;
 };
 
 //////////////////////////////////////////////////////////////////////////////
 } } }
 //////////////////////////////////////////////////////////////////////////////
-
-
