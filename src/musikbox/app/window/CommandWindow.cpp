@@ -91,7 +91,11 @@ void CommandWindow::Write(const std::string& key) {
         this->buffer = "";
     }
     else {
-        this->buffer += key;
+        /* one character at a time. if it's more than one character, we're
+        dealing with an escape sequence and should not print it. */
+        if (u8len(key) == 1) {
+            this->buffer += key;
+        }
     }
 
     this->Clear();

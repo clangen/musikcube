@@ -21,6 +21,7 @@ namespace cursespp {
             virtual void SetFrameColor(int64 color) = 0;
             virtual void SetSize(int width, int height) = 0;
             virtual void SetPosition(int x, int y) = 0;
+            virtual void MoveAndResize(int x, int y, int width, int height) = 0;
             virtual int GetWidth() const = 0;
             virtual int GetHeight() const = 0;
             virtual int GetContentHeight() const = 0;

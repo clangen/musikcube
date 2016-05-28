@@ -253,7 +253,7 @@ int main(int argc, char* argv[])
                     kn += (char) getch();
                 }
 
-                //std::cerr << "keyname: " << kn << std::endl;
+                // std::cerr << "keyname: " << kn << std::endl;
                 // std::cerr << "ch: " << ch << std::endl;
 
                 if (ch == '\t') { /* tab */
@@ -261,6 +261,11 @@ int main(int argc, char* argv[])
                 }
                 else if (kn == "^D") { /* ctrl+d quits */
                     quit = true;
+                }
+                else if (kn == "KEY_RESIZE") {
+                    libraryLayout->Layout();
+                    consoleLayout->Layout();
+                    state.layout->Show();
                 }
                 else if (ch == KEY_F(1)) {
                     changeLayout(state, libraryLayout);

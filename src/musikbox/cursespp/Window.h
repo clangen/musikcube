@@ -26,6 +26,7 @@ namespace cursespp {
             virtual void SetFrameColor(int64 color);
             virtual void SetSize(int width, int height);
             virtual void SetPosition(int x, int y);
+            virtual void MoveAndResize(int x, int y, int width, int height);
 
             virtual int GetWidth() const;
             virtual int GetHeight() const;
@@ -56,7 +57,11 @@ namespace cursespp {
             bool IsVisible();
             void Create();
             void Destroy();
+            void Recreate();
             void Clear();
+
+            virtual void OnPositionChanged();
+            virtual void OnSizeChanged();
 
         private:
             IWindow* parent;

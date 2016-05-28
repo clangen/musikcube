@@ -10,7 +10,7 @@
 using namespace musik::core::library::constants;
 
 #define CATEGORY_WIDTH 25
-#define TRANSPORT_HEIGHT 3
+#define TRANSPORT_HEIGHT 2
 #define DEFAULT_CATEGORY constants::Track::ALBUM_ID
 
 using namespace musik::core;
@@ -35,16 +35,28 @@ void LibraryLayout::Layout() {
     this->SetSize(Screen::GetWidth(), Screen::GetHeight());
     this->SetPosition(0, 0);
 
-    this->categoryList->SetPosition(0, 0);
-    this->categoryList->SetSize(CATEGORY_WIDTH, this->GetHeight() - TRANSPORT_HEIGHT);
+    this->categoryList->MoveAndResize(
+        0,
+        0,
+        CATEGORY_WIDTH,
+        this->GetHeight() - TRANSPORT_HEIGHT);
+
     this->categoryList->SetFocusOrder(0);
 
-    this->trackList->SetPosition(CATEGORY_WIDTH, 0);
-    this->trackList->SetSize(this->GetWidth() - CATEGORY_WIDTH, this->GetHeight() - TRANSPORT_HEIGHT);
+    this->trackList->MoveAndResize(
+        CATEGORY_WIDTH,
+        0,
+        this->GetWidth() - CATEGORY_WIDTH,
+        this->GetHeight() - TRANSPORT_HEIGHT);
+
     this->trackList->SetFocusOrder(1);
 
-    this->transportView->SetPosition(1, this->GetHeight() - TRANSPORT_HEIGHT);
-    this->transportView->SetSize(this->GetWidth() - 2, TRANSPORT_HEIGHT);
+    this->transportView->MoveAndResize(
+        1,
+        this->GetHeight() - TRANSPORT_HEIGHT,
+        this->GetWidth() - 2,
+        TRANSPORT_HEIGHT);
+
     this->transportView->Update();
 }
 

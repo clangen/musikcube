@@ -18,8 +18,8 @@ ScrollableWindow::ScrollableWindow(IWindow *parent)
 ScrollableWindow::~ScrollableWindow() {
 }
 
-void ScrollableWindow::SetSize(int width, int height) {
-    Window::SetSize(width, height);
+void ScrollableWindow::OnSizeChanged() {
+    Window::OnSizeChanged();
     GetScrollAdapter().SetDisplaySize(GetContentWidth(), GetContentHeight());
 }
 

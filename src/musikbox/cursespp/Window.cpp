@@ -105,14 +105,62 @@ void Window::SetParent(IWindow* parent) {
     }
 }
 
+void Window::MoveAndResize(int x, int y, int width, int height) {
+    bool sizeChanged = this->width != width || this->height != height;
+    bool positionChanged = this->x != x || this->y != y;
+
+    if (sizeChanged || positionChanged) {
+        this->width = width;
+        this->height = height;
+        this->x = x;
+        this->y = y;
+
+        if (this->frame) {
+            this->Recreate();
+        }
+
+        if (sizeChanged) {
+            this->OnSizeChanged();
+        }
+
+        if (positionChanged) {
+            this->OnPositionChanged();
+        }
+    }
+}
+
 void Window::SetSize(int width, int height) {
-    this->width = width;
-    this->height = height;
+    if (this->width != width || this->height != height) {
+        this->width = width;
+        this->height = height;
+
+        if (this->frame) {
+            this->Recreate();
+        }
+
+        this->OnSizeChanged();
+    }
 }
 
 void Window::SetPosition(int x, int y) {
-    this->x = x;
-    this->y = y;
+    if (this->x != x || this->y != y) {
+        this->x = x;
+        this->y = y;
+
+        if (this->frame) {
+            this->Recreate();
+        }
+
+        this->OnPositionChanged();
+    }
+}
+
+void Window::OnPositionChanged() {
+    /* for subclass use */
+}
+
+void Window::OnSizeChanged() {
+    /* for subclass use */
 }
 
 int Window::GetWidth() const {
@@ -206,6 +254,11 @@ void Window::Show() {
     else {
         this->Create();
     }
+}
+
+void Window::Recreate() {
+    this->Destroy();
+    this->Create();
 }
 
 void Window::Create() {

@@ -32,28 +32,47 @@ MainLayout::~MainLayout() {
 
 void MainLayout::Layout() {
     /* this layout */
-    this->SetSize(Screen::GetWidth(), Screen::GetHeight());
-    this->SetPosition(0, 0);
+    this->MoveAndResize(
+        0,
+        0,
+        Screen::GetWidth(),
+        Screen::GetHeight());
+
     this->SetFrameVisible(false);
 
     /* top left */
-    this->output->SetSize(Screen::GetWidth() / 2, Screen::GetHeight() - 3);
-    this->output->SetPosition(0, 0);
+    this->output->MoveAndResize(
+        0,
+        0,
+        Screen::GetWidth() / 2,
+        Screen::GetHeight() - 3);
+
     this->output->SetFocusOrder(1);
 
     /* bottom left */
-    this->commands->SetSize(Screen::GetWidth() / 2, 3);
-    this->commands->SetPosition(0, Screen::GetHeight() - 3);
+    this->commands->MoveAndResize(
+        0,
+        Screen::GetHeight() - 3,
+        Screen::GetWidth() / 2,
+        3);
+
     this->commands->SetFocusOrder(0);
 
     /* top right */
-    this->logs->SetSize(Screen::GetWidth() / 2, Screen::GetHeight() - 3);
-    this->logs->SetPosition(Screen::GetWidth() / 2, 0);
+    this->logs->MoveAndResize(
+        Screen::GetWidth() / 2,
+        0,
+        Screen::GetWidth() / 2,
+        Screen::GetHeight() - 3);
+
     this->logs->SetFocusOrder(2);
 
     /* bottom right */
-    this->resources->SetSize(Screen::GetWidth() / 2, 3);
-    this->resources->SetPosition(Screen::GetWidth() / 2, Screen::GetHeight() - 3);
+    this->resources->MoveAndResize(
+        Screen::GetWidth() / 2,
+        Screen::GetHeight() - 3,
+        Screen::GetWidth() / 2,
+        3);
 }
 
 void MainLayout::Show() {
