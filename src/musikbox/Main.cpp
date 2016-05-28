@@ -163,8 +163,10 @@ int main(int argc, char* argv[])
     musik::debug::init();
     PluginFactory::Instance(); /* initialize */
 
-#ifdef WIN32
+#ifdef __PDCURSES__
     PDC_set_resize_limits(26, 38, 100, 150);
+    PDC_set_title("musikbox ♫");
+    PDC_set_function_key(FUNCTION_KEY_SHUT_DOWN, 4);
 #endif
 
     initscr();
@@ -175,11 +177,6 @@ int main(int argc, char* argv[])
     use_default_colors();
     refresh();
     curs_set(0);
-
-#ifdef __PDCURSES__
-    PDC_set_title("musikbox ♫");
-    PDC_set_function_key(FUNCTION_KEY_SHUT_DOWN, 4);
-#endif
 
     {
         Colors::Init();
@@ -265,10 +262,10 @@ int main(int argc, char* argv[])
                     consoleLayout->Layout();
                     state.layout->BringToTop();
                 }
-                else if (ch == KEY_F(1)) {
+                else if (ch == KEY_F(2)) {
                     changeLayout(state, libraryLayout);
                 }
-                else if (ch == KEY_F(8)) {
+                else if (ch == KEY_F(1)) {
                     changeLayout(state, consoleLayout);
                 }
                 else if (!globalHotkeys.Handle(kn)) {

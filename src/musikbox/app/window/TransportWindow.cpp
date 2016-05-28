@@ -202,9 +202,12 @@ void TransportWindow::Update() {
     wprintw(c, currentTime.c_str());
     wattroff(c, timerAttrs);
 
-    wprintw(c, " %s %s",
-        timerTrack.c_str(),
-        totalTime.c_str());
+    /* using wprintw() here on large displays (1440p+) will exceed the internal
+    buffer length of 512 characters, so use boost format. */
+    std::string fmt = boost::str(boost::format(
+        " %s %s") % timerTrack % totalTime);
+
+    waddstr(c, fmt.c_str());
 
     this->Repaint();
 }
