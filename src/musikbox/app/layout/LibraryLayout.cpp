@@ -95,16 +95,16 @@ void LibraryLayout::OnCategoryViewInvalidated(
 }
 
 bool LibraryLayout::KeyPress(const std::string& key) {
-    if (key == "ALT_1") {
-        this->categoryList->SetFieldName(Track::ARTIST_ID);
+    if (key == "ALT_1" || key == "M-1") {
+        this->categoryList->SetFieldName(constants::Track::ARTIST_ID);
         return true;
     }
-    else if (key == "ALT_2") {
-        this->categoryList->SetFieldName(Track::ALBUM_ID);
+    else if (key == "ALT_2" || key == "M-2") {
+        this->categoryList->SetFieldName(constants::Track::ALBUM_ID);
         return true;
     }
-    else if (key == "ALT_3") {
-        this->categoryList->SetFieldName(Track::GENRE_ID);
+    else if (key == "ALT_3" || key == "M-3") {
+        this->categoryList->SetFieldName(constants::Track::GENRE_ID);
         return true;
     }
     else if (key == "KEY_F(5)") {
