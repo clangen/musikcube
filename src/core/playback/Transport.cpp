@@ -237,14 +237,23 @@ void Transport::OnPlaybackAlmostEnded(Player* player) {
 }
 
 void Transport::RemoveActive(Player* player) {
-    boost::recursive_mutex::scoped_lock lock(this->stateMutex);
+    bool found = false;
 
-    std::list<Player*>::iterator it =
-        std::find(this->active.begin(), this->active.end(), player);
+    {
+        boost::recursive_mutex::scoped_lock lock(this->stateMutex);
 
-    if (it != this->active.end()) {
-        delete (*it);
-        this->active.erase(it);
+        std::list<Player*>::iterator it =
+            std::find(this->active.begin(), this->active.end(), player);
+
+        if (it != this->active.end()) {
+            this->active.erase(it);
+            found = true;
+        }
+    }
+
+    /* outside of the critical section, otherwise potential deadlock */
+    if (found) {
+        delete player;
     }
 }
 
