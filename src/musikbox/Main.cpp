@@ -265,7 +265,7 @@ int main(int argc, char* argv[])
                 else if (kn == "KEY_RESIZE") {
                     libraryLayout->Layout();
                     consoleLayout->Layout();
-                    state.layout->Show();
+                    state.layout->BringToTop();
                 }
                 else if (ch == KEY_F(1)) {
                     changeLayout(state, libraryLayout);

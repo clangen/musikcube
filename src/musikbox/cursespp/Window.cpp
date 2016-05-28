@@ -312,8 +312,7 @@ void Window::Create() {
         }
     }
 
-    this->isVisible = true;
-    this->Repaint();
+    this->Show();
 }
 
 void Window::Hide() {
