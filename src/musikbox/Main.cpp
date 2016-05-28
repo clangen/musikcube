@@ -164,10 +164,7 @@ int main(int argc, char* argv[])
     PluginFactory::Instance(); /* initialize */
 
 #ifdef WIN32
-    ttytype[0] = 30; /* min height */
-    ttytype[1] = 30; /* max height */
-    ttytype[2] = 120; /* min width */
-    ttytype[3] = 120; /* max width */
+    PDC_set_resize_limits(26, 38, 100, 150);
 #endif
 
     initscr();
@@ -263,6 +260,7 @@ int main(int argc, char* argv[])
                     quit = true;
                 }
                 else if (kn == "KEY_RESIZE") {
+                    resize_term(0, 0);
                     libraryLayout->Layout();
                     consoleLayout->Layout();
                     state.layout->BringToTop();
