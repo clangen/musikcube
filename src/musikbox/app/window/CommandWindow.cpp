@@ -72,8 +72,6 @@ void CommandWindow::WriteChar(int64 ch) {
         return;
     }
 
-    waddch(this->GetContent(), ch);
-
     if (ch == '\b' || ch == 127) { /* backspace */
         wdelch(this->GetContent());
 
@@ -97,6 +95,7 @@ void CommandWindow::WriteChar(int64 ch) {
         this->bufferPosition = 0;
     }
     else {
+        waddch(this->GetContent(), ch);
         this->buffer[bufferPosition++] = (char) ch;
     }
 

@@ -226,17 +226,34 @@ int main(int argc, char* argv[])
 
                 int64 next = -1; /* used in escape sequences */
 
-#ifndef WIN32
-                    /* convert +ESC to M- sequences */
-                    if (kn == "^[") {
-                        next = getch();
-                        if (next != -1) {
-                            kn = std::string("M-") + std::string(keyname((int) next));
-                        }
+                /* convert +ESC to M- sequences */
+                if (kn == "^[") {
+                    next = getch();
+                    if (next != -1) {
+                        kn = std::string("M-") + std::string(keyname((int) next));
                     }
-#endif
+                }
+                /* multi-byte UTF8 character */
+                else if (ch >= 194 && ch <= 223) {
+                    kn = "";
+                    kn += (char) ch;
+                    kn += (char) getch();
+                }
+                else if (ch >= 224 && ch <= 239) {
+                    kn = "";
+                    kn += (char) ch;
+                    kn += (char) getch();
+                    kn += (char) getch();
+                }
+                else if (ch >= 240 && ch <= 244) {
+                    kn = "";
+                    kn += (char) ch;
+                    kn += (char) getch();
+                    kn += (char) getch();
+                    kn += (char) getch();
+                }
 
-                // std::cerr << "keyname: " << kn << std::endl;
+                //std::cerr << "keyname: " << kn << std::endl;
                 // std::cerr << "ch: " << ch << std::endl;
 
                 if (ch == '\t') { /* tab */
