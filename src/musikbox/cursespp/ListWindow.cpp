@@ -8,12 +8,6 @@ typedef IScrollAdapter::ScrollPosition ScrollPos;
 
 size_t ListWindow::NO_SELECTION = (size_t) -1;
 
-#define REDRAW_VISIBLE_PAGE() \
-    GetScrollAdapter().DrawPage( \
-        this->GetContent(), \
-        this->scrollPosition.firstVisibleEntryIndex, \
-        &this->scrollPosition); \
-
 ListWindow::ListWindow(IWindow *parent)
 : ScrollableWindow(parent) {
     this->selectedIndex = (size_t) -1;
@@ -34,16 +28,6 @@ void ListWindow::ScrollToBottom() {
     this->SetSelectedIndex(std::max((size_t) 0, adapter.GetEntryCount() - 1));
     adapter.DrawPage(this->GetContent(), selectedIndex, &scrollPosition);
     this->Repaint();
-}
-
-void ListWindow::Blur() {
-    ScrollableWindow::Blur();
-    REDRAW_VISIBLE_PAGE();
-}
-
-void ListWindow::Focus() {
-    ScrollableWindow::Focus();
-    REDRAW_VISIBLE_PAGE();
 }
 
 void ListWindow::ScrollUp(int delta) {

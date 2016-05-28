@@ -24,6 +24,9 @@ namespace cursespp {
             virtual void PageUp();
             virtual void PageDown();
 
+            virtual void Focus();
+            virtual void Blur();
+
         protected:
             virtual IScrollAdapter& GetScrollAdapter() = 0;
             virtual IScrollAdapter::ScrollPosition& GetScrollPosition();

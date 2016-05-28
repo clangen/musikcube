@@ -11,6 +11,15 @@ using namespace cursespp;
 
 typedef IScrollAdapter::ScrollPosition ScrollPos;
 
+#define REDRAW_VISIBLE_PAGE() \
+    { \
+        ScrollPos& pos = GetScrollPosition(); \
+        GetScrollAdapter().DrawPage( \
+            this->GetContent(), \
+            pos.firstVisibleEntryIndex, \
+            &pos); \
+    } \
+
 ScrollableWindow::ScrollableWindow(IWindow *parent)
 : Window(parent) {
 }
@@ -141,4 +150,14 @@ bool ScrollableWindow::IsLastItemVisible() {
     size_t firstVisible = pos.firstVisibleEntryIndex;
     size_t lastVisible = firstVisible + pos.visibleEntryCount;
     return lastIndex >= firstVisible && lastIndex <= lastVisible;
+}
+
+void ScrollableWindow::Blur() {
+    Window::Blur();
+    REDRAW_VISIBLE_PAGE();
+}
+
+void ScrollableWindow::Focus() {
+    Window::Focus();
+    REDRAW_VISIBLE_PAGE();
 }

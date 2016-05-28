@@ -13,6 +13,7 @@ static bool drawPending = false;
 void Window::WriteToScreen(IInput* input) {
     if (drawPending) {
         drawPending = false;
+
         update_panels();
         doupdate();
 
@@ -25,7 +26,7 @@ void Window::WriteToScreen(IInput* input) {
             Window* inputWindow = dynamic_cast<Window*>(input);
             if (inputWindow) {
                 wmove(inputWindow->GetContent(), 0, input->Length());
-                refresh();
+                wrefresh(inputWindow->GetContent());
             }
         }
     }
