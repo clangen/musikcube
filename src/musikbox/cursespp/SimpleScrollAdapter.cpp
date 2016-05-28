@@ -20,6 +20,10 @@ SimpleScrollAdapter::~SimpleScrollAdapter() {
 
 }
 
+void SimpleScrollAdapter::Clear() {
+    this->entries.clear();
+}
+
 size_t SimpleScrollAdapter::GetEntryCount() {
     return this->entries.size();
 }

@@ -20,6 +20,7 @@ namespace musik {
                 LogWindow(cursespp::IWindow *parent = NULL);
                 virtual ~LogWindow();
 
+                void ClearContents();
                 void Update();
 
             protected:

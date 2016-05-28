@@ -16,7 +16,13 @@ MainLayout::MainLayout(Transport& transport, LibraryPtr library)
     this->logs.reset(new LogWindow(this));
     this->output.reset(new OutputWindow(this));
     this->resources.reset(new ResourcesWindow(this));
-    this->commands.reset(new CommandWindow(this, transport, library, *this->output));
+
+    this->commands.reset(new CommandWindow(
+        this,
+        transport,
+        library,
+        *this->output,
+        *this->logs));
 
     this->AddWindow(this->commands);
     this->AddWindow(this->logs);

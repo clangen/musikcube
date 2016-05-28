@@ -282,7 +282,7 @@ int main(int argc, char* argv[])
             }
 
             ensureFocusIsValid(state);
-            Window::WriteToScreen();
+            Window::WriteToScreen(state.input);
             MessageQueue::Instance().Dispatch();
         }
 

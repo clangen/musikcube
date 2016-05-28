@@ -1,6 +1,7 @@
 #include <stdafx.h>
 #include "Window.h"
 #include "IWindowGroup.h"
+#include "IInput.h"
 #include "Message.h"
 #include "MessageQueue.h"
 
@@ -9,11 +10,24 @@ using namespace cursespp;
 static int NEXT_ID = 0;
 static bool drawPending = false;
 
-void Window::WriteToScreen() {
+void Window::WriteToScreen(IInput* input) {
     if (drawPending) {
         drawPending = false;
         update_panels();
         doupdate();
+
+        /* had problems finding reliable documentation here, but it seems like
+        manually moving the cursor requires a refresh() -- doupdate() is not
+        good enough. further, we allow windows to repaint themselves at will,
+        which may change the cursor position. after each draw cycle, move the
+        cursor back to the focused input. */
+        if (input) {
+            Window* inputWindow = dynamic_cast<Window*>(input);
+            if (inputWindow) {
+                wmove(inputWindow->GetContent(), 0, input->Length());
+                refresh();
+            }
+        }
     }
 }
 

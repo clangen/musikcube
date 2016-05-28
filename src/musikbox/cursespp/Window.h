@@ -4,6 +4,8 @@
 #include "IWindow.h"
 
 namespace cursespp {
+    class IInput;
+
     class Window : public IWindow, public std::enable_shared_from_this<IWindow> {
         public:
             Window(IWindow* parent = NULL);
@@ -48,7 +50,7 @@ namespace cursespp {
             virtual int GetFocusOrder();
             virtual void SetFocusOrder(int order = -1);
 
-            static void WriteToScreen();
+            static void WriteToScreen(IInput* input);
 
         protected:
             IWindow* GetParent() const;

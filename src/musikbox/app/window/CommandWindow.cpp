@@ -35,17 +35,26 @@ bool tostr(T& t, const std::string& s) {
     return !(iss >> t).fail();
 }
 
+inline static void redrawContents(IWindow &window, const std::string& text) {
+    WINDOW* c = window.GetContent();
+    wclear(c);
+    wprintw(c, text.c_str());
+    window.Repaint();
+}
+
 CommandWindow::CommandWindow(
     IWindow *parent,
     Transport& transport,
     LibraryPtr library,
-    OutputWindow& output)
+    OutputWindow& output,
+    LogWindow& logWindow)
 : Window(parent) {
     this->SetContentColor(BOX_COLOR_WHITE_ON_BLACK);
     this->transport = &transport;
     this->library = library;
-    this->bufferPosition = 0;
+    this->bufferLength = 0;
     this->output = &output;
+    this->logWindow = &logWindow;
     this->paused = false;
     this->Help();
 }
@@ -55,12 +64,11 @@ CommandWindow::~CommandWindow() {
 
 void CommandWindow::Show() {
     Window::Show();
-    wmove(this->GetContent(), 0, 0);
-    wprintw(this->GetContent(), "%s", buffer.c_str());
+    redrawContents(*this, buffer);
 }
 
 void CommandWindow::Focus() {
-    wmove(this->GetContent(), 0, bufferPosition);
+
 }
 
 void removeUtf8Char(std::string& value) {
@@ -98,10 +106,9 @@ void CommandWindow::Write(const std::string& key) {
         }
     }
 
-    this->Clear();
-    wprintw(this->GetContent(), buffer.c_str());
+    this->bufferLength = u8len(buffer);
 
-    this->Repaint();
+    redrawContents(*this, buffer);
 }
 
 void CommandWindow::Seek(const std::vector<std::string>& args) {
@@ -137,6 +144,7 @@ void CommandWindow::Help() {
     this->output->WriteLine("  pause: pause/resume", s);
     this->output->WriteLine("  stop: stop all playback", s);
     this->output->WriteLine("  volume: <0 - 100>: set % volume", s);
+    this->output->WriteLine("  clear: clear the log window", s);
     this->output->WriteLine("  seek <seconds>: seek to <seconds> into track", s);
     this->output->WriteLine("  addir <dir>: add a directory to be indexed", s);
     this->output->WriteLine("  rmdir <dir>: remove indexed directory path", s);
@@ -155,6 +163,9 @@ bool CommandWindow::ProcessCommand(const std::string& cmd) {
 
     if (name == "plugins") {
         this->ListPlugins();
+    }
+    else if (name == "clear") {
+        this->logWindow->ClearContents();
     }
     else if (name == "play" || name == "pl" || name == "p") {
         return this->PlayFile(args);

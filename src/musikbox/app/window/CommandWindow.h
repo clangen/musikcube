@@ -6,6 +6,7 @@
 #include <core/playback/Transport.h>
 #include <core/library/LibraryFactory.h>
 #include "OutputWindow.h"
+#include "LogWindow.h"
 
 namespace musik {
     namespace box {
@@ -20,11 +21,14 @@ namespace musik {
                     cursespp::IWindow *parent,
                     musik::core::audio::Transport& transport,
                     musik::core::LibraryPtr library,
-                    OutputWindow& output);
+                    OutputWindow& output,
+                    LogWindow& logWindow);
 
                 virtual ~CommandWindow();
 
                 virtual void Write(const std::string& key);
+                virtual size_t Length() { return this->bufferLength; }
+
                 virtual void Focus();
                 virtual void Show();
 
@@ -40,8 +44,10 @@ namespace musik {
                 void Help();
 
                 std::string buffer;
-                int bufferPosition;
+                size_t bufferLength;
+
                 OutputWindow* output;
+                LogWindow* logWindow;
                 musik::core::audio::Transport* transport;
                 musik::core::LibraryPtr library;
                 bool paused;

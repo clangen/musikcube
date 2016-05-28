@@ -29,6 +29,11 @@ IScrollAdapter& LogWindow::GetScrollAdapter() {
     return (IScrollAdapter&) *this->adapter;
 }
 
+void LogWindow::ClearContents() {
+    this->adapter->Clear();
+    this->OnAdapterChanged();
+}
+
 void LogWindow::Update() {
     boost::mutex::scoped_lock lock(pendingMutex);
 
