@@ -1,8 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////
-//
-// License Agreement:
-//
-// The following are Copyright � 2008, Daniel Önnerby
+// Copyright � 2007, Daniel �nnerby
 //
 // All rights reserved.
 //
@@ -35,33 +32,33 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
+#include <cctype>
+#include <algorithm>
 
-#include <core/sdk/IPlugin.h>
 #include "FlacDecoderFactory.h"
+#include "FLACDecoder.h"
 
-#ifdef WIN32
-#define DLLEXPORT __declspec(dllexport)
-#else
-#define DLLEXPORT
-#endif
+using namespace musik::core::audio;
 
-#ifdef WIN32
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
-    return true;
-}
-#endif
-
-class FlacPlugin : public musik::core::IPlugin {
-    void Destroy() { delete this; };
-    const char* Name() { return "FLAC IDecoder"; }
-    const char* Version() { return "0.2"; }
-    const char* Author() { return "Daniel Önnerby, clangen"; }
-};
-
-extern "C" DLLEXPORT musik::core::IPlugin* GetPlugin() {
-    return new FlacPlugin();
+FlacDecoderFactory::FlacDecoderFactory() {
 }
 
-extern "C" DLLEXPORT musik::core::audio::IDecoderFactory* GetDecoderFactory() {
-    return new FlacDecoderFactory();
+FlacDecoderFactory::~FlacDecoderFactory() {
+}
+
+void FlacDecoderFactory::Destroy() {
+    delete this;
+}
+
+IDecoder* FlacDecoderFactory::CreateDecoder() {
+    return new FlacDecoder();
+}
+
+bool FlacDecoderFactory::CanHandle(const char* type) const {
+    std::string str(type);
+    std::transform(str.begin(), str.end(), str.begin(), tolower);
+
+    return
+        str.find(".flac") != std::string::npos ||
+        str.find("audio/flag") != std::string::npos;
 }

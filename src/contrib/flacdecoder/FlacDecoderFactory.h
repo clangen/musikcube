@@ -1,8 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////
-//
-// License Agreement:
-//
-// The following are Copyright � 2008, Daniel Önnerby
+// Copyright � 2007, Daniel �nnerby
 //
 // All rights reserved.
 //
@@ -34,34 +31,16 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#pragma once
 
-#include <core/sdk/IPlugin.h>
-#include "FlacDecoderFactory.h"
+#include <core/sdk/IDecoderFactory.h>
 
-#ifdef WIN32
-#define DLLEXPORT __declspec(dllexport)
-#else
-#define DLLEXPORT
-#endif
+class FlacDecoderFactory : public musik::core::audio::IDecoderFactory {
+    public:
+        FlacDecoderFactory();
+        virtual ~FlacDecoderFactory();
 
-#ifdef WIN32
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
-    return true;
-}
-#endif
-
-class FlacPlugin : public musik::core::IPlugin {
-    void Destroy() { delete this; };
-    const char* Name() { return "FLAC IDecoder"; }
-    const char* Version() { return "0.2"; }
-    const char* Author() { return "Daniel Önnerby, clangen"; }
+        musik::core::audio::IDecoder* CreateDecoder();
+        void Destroy();
+        bool CanHandle(const char* type) const;
 };
-
-extern "C" DLLEXPORT musik::core::IPlugin* GetPlugin() {
-    return new FlacPlugin();
-}
-
-extern "C" DLLEXPORT musik::core::audio::IDecoderFactory* GetDecoderFactory() {
-    return new FlacDecoderFactory();
-}

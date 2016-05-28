@@ -32,57 +32,75 @@
 //////////////////////////////////////////////////////////////////////////////
 #pragma once
 
-#include <core/audio/IDecoder.h>
+#include <core/sdk/IDecoder.h>
+#include <core/sdk/IDataStream.h>
 #include <FLAC/stream_decoder.h>
 #include <stddef.h>
 
-
 using namespace musik::core::audio;
 
-class FLACDecoder :	public IDecoder
-{
+class FlacDecoder :	public musik::core::audio::IDecoder {
+    public:
+        FlacDecoder();
+        virtual ~FlacDecoder();
 
-public:
-    FLACDecoder();
-    ~FLACDecoder();
+    public:
+        virtual void Destroy();
+        virtual double SetPosition(double seconds);
+        virtual bool GetBuffer(IBuffer *buffer);
+        virtual bool Open(musik::core::io::IDataStream *stream);
 
-public:
-    virtual void    Destroy();
-    virtual double  SetPosition(double seconds,double totalLength);
-    virtual bool    GetBuffer(IBuffer *buffer);
-    virtual bool    Open(musik::core::filestreams::IFileStream *fileStream);
+    private:
+        static FLAC__StreamDecoderReadStatus FlacRead(
+            const FLAC__StreamDecoder *decoder,
+             FLAC__byte buffer[],
+             size_t *bytes,
+             void *clientData);
 
-public:
-    // FLAC callbacks
-    //static size_t   FlacRead(void *buffer, size_t nofParts, size_t partSize, void *datasource);
-    static FLAC__StreamDecoderReadStatus    FlacRead(const FLAC__StreamDecoder *decoder, FLAC__byte buffer[],size_t *bytes,void *clientData);
-    //static int      FlacSeek(void *datasource, FLAC__int64 offset, int whence);
-    static FLAC__StreamDecoderSeekStatus FlacSeek(const FLAC__StreamDecoder *decoder, FLAC__uint64 absolute_byte_offset, void *clientData);
-    //static FLAC__int64     FlacTell(void *datasource);
-    static FLAC__StreamDecoderTellStatus FlacTell(const FLAC__StreamDecoder *decoder, FLAC__uint64 *absolute_byte_offset, void *clientData);
-    //static int      FlacEof(void *datasource);
-    static FLAC__bool FlacEof(const FLAC__StreamDecoder *decoder, void *clientData);
-    //static int      FlacFileSize(void *datasource);
-    static FLAC__StreamDecoderLengthStatus FlacFileSize(const FLAC__StreamDecoder *decoder, FLAC__uint64 *stream_length, void *clientData);
+        static FLAC__StreamDecoderSeekStatus FlacSeek(
+            const FLAC__StreamDecoder *decoder,
+            FLAC__uint64 absolute_byte_offset,
+            void *clientData);
 
+        static FLAC__StreamDecoderTellStatus FlacTell(
+            const FLAC__StreamDecoder *decoder,
+            FLAC__uint64 *absolute_byte_offset,
+            void *clientData);
 
-    static FLAC__StreamDecoderWriteStatus FlacWrite(const FLAC__StreamDecoder *decoder, const FLAC__Frame *frame,const FLAC__int32 *const buffer[], void *clientData);
-    static void FlacMeta(const FLAC__StreamDecoder *decoder, const FLAC__StreamMetadata *metadata, void *clientData);
-    static void FlacError(const FLAC__StreamDecoder *decoder, FLAC__StreamDecoderErrorStatus status, void *clientData);
+        static FLAC__bool FlacEof(
+            const FLAC__StreamDecoder *decoder,
+            void *clientData);
 
+        static FLAC__StreamDecoderLengthStatus FlacFileSize(
+            const FLAC__StreamDecoder *decoder,
+            FLAC__uint64 *stream_length,
+            void *clientData);
 
-protected:
-    musik::core::filestreams::IFileStream *fileStream;
-	FLAC__StreamDecoder *decoder;
+        static FLAC__StreamDecoderWriteStatus FlacWrite(
+            const FLAC__StreamDecoder *decoder,
+            const FLAC__Frame *frame,
+            const FLAC__int32 *const buffer[],
+            void *clientData);
 
-    long channels;
-    long sampleRate;
-    UINT64 totalSamples;
-    int bps;
+        static void FlacMetadata(
+            const FLAC__StreamDecoder *decoder,
+            const FLAC__StreamMetadata *metadata,
+            void *clientData);
 
-    float *outputBuffer;
-    unsigned long outputBufferSize;
+        static void FlacError(
+            const FLAC__StreamDecoder *decoder,
+            FLAC__StreamDecoderErrorStatus status,
+            void *clientData);
 
-//    FLAC__IOCallbacks flacCallbacks;
+    protected:
+        musik::core::io::IDataStream *stream;
+    	FLAC__StreamDecoder *decoder;
 
+        long channels;
+        long sampleRate;
+        UINT64 totalSamples;
+        int bitsPerSample;
+
+        float *outputBuffer;
+        unsigned long outputBufferSize;
 };
