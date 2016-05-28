@@ -2,7 +2,7 @@ set (flacdecoder_SOURCES
   stdafx.cpp
   flacdecoder_plugin.cpp
   FlacDecoderFactory.cpp
-  FLACDecoder.cpp
+  FlacDecoder.cpp
 )
 
 add_definitions(

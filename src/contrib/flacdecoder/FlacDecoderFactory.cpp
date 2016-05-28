@@ -36,7 +36,7 @@
 #include <algorithm>
 
 #include "FlacDecoderFactory.h"
-#include "FLACDecoder.h"
+#include "FlacDecoder.h"
 
 using namespace musik::core::audio;
 

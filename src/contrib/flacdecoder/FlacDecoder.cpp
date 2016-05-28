@@ -35,15 +35,11 @@
 #include "FlacDecoder.h"
 #include <complex>
 
-#ifndef WIN32
-#include <string.h> //needed for mempcpy
-#endif
-
 static inline void copy(float* dst, float* src, size_t count) {
 #ifdef WIN32
-        CopyMemory(dst, src, count * sizeof(float));
+    CopyMemory(dst, src, count * sizeof(float));
 #else
-        memcpy(dst, src, count * sizeof(float));
+    memcpy(dst, src, count * sizeof(float));
 #endif
 }
 
@@ -64,12 +60,11 @@ FlacDecoder::~FlacDecoder() {
         this->decoder = NULL;
     }
 
-    if(this->outputBuffer) {
+    if (this->outputBuffer) {
         delete this->outputBuffer;
         this->outputBuffer = NULL;
     }
 }
-
 
 FLAC__StreamDecoderReadStatus FlacDecoder::FlacRead(
     const FLAC__StreamDecoder *decoder,
@@ -133,7 +128,6 @@ FLAC__StreamDecoderLengthStatus FlacDecoder::FlacFileSize(
 
     return FLAC__STREAM_DECODER_LENGTH_STATUS_OK;
 }
-
 
 bool FlacDecoder::Open(musik::core::io::IDataStream *stream){
     this->stream = stream;
@@ -223,7 +217,6 @@ FLAC__StreamDecoderWriteStatus FlacDecoder::FlacWrite(
     return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
 }
 
-
 void FlacDecoder::Destroy() {
 	delete this;
 }
@@ -244,7 +237,7 @@ bool FlacDecoder::GetBuffer(IBuffer *buffer) {
 
     /* read the next chunk */
     if (FLAC__stream_decoder_process_single(this->decoder)) {
-        if(this->outputBuffer && this->outputBufferSize > 0) {
+        if (this->outputBuffer && this->outputBufferSize > 0) {
             buffer->SetSamples(this->outputBufferSize / this->channels);
             copy(buffer->BufferPointer(), this->outputBuffer, this->outputBufferSize);
             this->outputBufferSize  = 0;
