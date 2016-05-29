@@ -103,4 +103,5 @@ class FlacDecoder :	public musik::core::audio::IDecoder {
 
         float *outputBuffer;
         unsigned long outputBufferSize;
+        unsigned long outputBufferUsed;
 };

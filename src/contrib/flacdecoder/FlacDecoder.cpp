@@ -34,6 +34,7 @@
 #include "stdafx.h"
 #include "FlacDecoder.h"
 #include <complex>
+#include <iostream>
 
 static inline void copy(float* dst, float* src, size_t count) {
 #ifdef WIN32
@@ -46,6 +47,7 @@ static inline void copy(float* dst, float* src, size_t count) {
 FlacDecoder::FlacDecoder()
 : decoder(NULL)
 , outputBufferSize(0)
+, outputBufferUsed(0)
 , outputBuffer(NULL)
 , channels(0)
 , sampleRate(0)
@@ -183,34 +185,26 @@ FLAC__StreamDecoderWriteStatus FlacDecoder::FlacWrite(
     void *clientData)
 {
     FlacDecoder *fdec = (FlacDecoder*) clientData;
-    int sampleCount  = fdec->channels * frame->header.blocksize;
+    int sampleCount = fdec->channels * frame->header.blocksize;
 
     /* initialize the output buffer if it doesn't exist */
-    if (fdec->outputBufferSize == 0) {
+    if (sampleCount > fdec->outputBufferSize) {
         delete fdec->outputBuffer;
         fdec->outputBuffer = NULL;
-        fdec->outputBufferSize = 0;
+        fdec->outputBufferSize = sampleCount;
         fdec->outputBuffer = new float[sampleCount];
-    }
-
-    /* if we already have a buffer with an offset, let's append to it. realloc
-    the buffer so there's enough room */
-    if (fdec->outputBuffer && fdec->outputBufferSize > 0) {
-        float *oldBuffer = fdec->outputBuffer;
-        fdec->outputBuffer = new float[sampleCount + fdec->outputBufferSize];
-        copy(fdec->outputBuffer, oldBuffer, fdec->outputBufferSize);
-        delete oldBuffer;
     }
 
     /* we need to convert the fixed point samples to floating point samples. figure
     out the maximum amplitude of the fixed point samples based on the resolution */
-    float maxAmplitude  = pow(2.0f, (fdec->bitsPerSample - 1));
+    float maxAmplitude = pow(2.0f, (fdec->bitsPerSample - 1));
 
     /* run the conversion */
+    fdec->outputBufferUsed = 0;
 	for (unsigned int i = 0; i < frame->header.blocksize; ++i) {
         for (int j = 0; j < fdec->channels; ++j) {
-            fdec->outputBuffer[fdec->outputBufferSize] = (((float) buffer[j][i]) / maxAmplitude);
-            fdec->outputBufferSize++;
+            fdec->outputBuffer[fdec->outputBufferUsed] = (((float) buffer[j][i]) / maxAmplitude);
+            fdec->outputBufferUsed++;
         }
     }
 
@@ -237,10 +231,10 @@ bool FlacDecoder::GetBuffer(IBuffer *buffer) {
 
     /* read the next chunk */
     if (FLAC__stream_decoder_process_single(this->decoder)) {
-        if (this->outputBuffer && this->outputBufferSize > 0) {
-            buffer->SetSamples(this->outputBufferSize / this->channels);
-            copy(buffer->BufferPointer(), this->outputBuffer, this->outputBufferSize);
-            this->outputBufferSize  = 0;
+        if (this->outputBuffer && this->outputBufferUsed > 0) {
+            buffer->SetSamples(this->outputBufferUsed / this->channels);
+            copy(buffer->BufferPointer(), this->outputBuffer, this->outputBufferUsed);
+            this->outputBufferUsed = 0; /* mark consumed */
             return true;
         }
     }
