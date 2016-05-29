@@ -1,6 +1,7 @@
 #include "stdafx.h"
 
 #include <string>
+#include <algorithm>
 #include "Mpg123DecoderFactory.h"
 #include "Mpg123Decoder.h"
 #include "mpg123.h"
@@ -25,8 +26,9 @@ IDecoder* Mpg123DecoderFactory::CreateDecoder() {
 
 bool Mpg123DecoderFactory::CanHandle(const char* type) const {
   std::string str(type);
+  std::transform(str.begin(), str.end(), str.begin(), tolower);
 
-  if (str.find(".mp3") != std::string::npos ||
+  if (musik::sdk::endsWith(str, ".mp3") ||
       str.find("audio/mpeg3") != std::string::npos ||
       str.find("audio/x-mpeg-3") != std::string::npos ||
       str.find("audio/mp3") != std::string::npos)

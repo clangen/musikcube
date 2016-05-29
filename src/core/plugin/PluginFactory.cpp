@@ -84,6 +84,13 @@ PluginFactory::~PluginFactory(void){
 void PluginFactory::LoadPlugins(){
     boost::mutex::scoped_lock lock(this->mutex);
 
+#ifdef WIN32
+    {
+        std::wstring wpath = u8to16(GetPluginDirectory());
+        SetDllDirectory(wpath.c_str());
+    }
+#endif
+
     std::string pluginDir(GetPluginDirectory());
     boost::filesystem::path dir(pluginDir);
 
@@ -95,7 +102,6 @@ void PluginFactory::LoadPlugins(){
 #ifdef WIN32
                 /* if the file ends with ".dll", we'll try to load it*/
                 if (filename.substr(filename.size() - 4) == ".dll") {
-
                     HMODULE dll = LoadLibrary(u8to16(filename).c_str());
                     if (dll != NULL) {
                         /* every plugin has a "GetPlugin" method. */

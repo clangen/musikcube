@@ -38,8 +38,8 @@
 
 #ifdef WIN32
     #define WIN32_LEAN_AND_MEAN
-    #define WINVER 0x0501
-    #define _WIN32_WINNT 0x0501
+    #define WINVER 0x0502
+    #define _WIN32_WINNT 0x0502
     #define NOMINMAX
 
     #include <windows.h>
@@ -60,3 +60,18 @@
 #endif
     #define _ASSERT assert
 #endif
+
+#include <string>
+
+/* a super small collection of inlined tools that most plugins will
+need to use. these should be header only, and have no dependencies
+other than STL */
+namespace musik {
+    namespace sdk {
+        inline bool endsWith(const std::string& s, const std::string& suffix) {
+            return 
+                s.size() >= suffix.size() && 
+                s.rfind(suffix) == (s.size() - suffix.size());
+        }
+    }
+}

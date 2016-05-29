@@ -56,9 +56,10 @@ IDecoder* Mp3DecoderFactory::CreateDecoder() {
 }
 
 bool Mp3DecoderFactory::CanHandle(const char* source) const {
-    std::string str(source);
+    std::string str(type);
+    std::transform(str.begin(), str.end(), str.begin(), tolower);
 
-    if (str.find(".mp3") != std::string::npos ||
+    if (musik::sdk::endsWith(str, ".mp3") ||
         str.find("audio/mpeg3") != std::string::npos ||
         str.find("audio/x-mpeg-3") != std::string::npos ||
         str.find("audio/mp3") != std::string::npos)

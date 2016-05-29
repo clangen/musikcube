@@ -34,7 +34,7 @@
 #include "WaveOut.h"
 
 #define MAX_VOLUME 0xFFFF
-#define MAX_BUFFERS 32
+#define MAX_BUFFERS 8
 
 static void notifyBufferProcessed(WaveOutBuffer *buffer) {
     /* let the provider know the output device is done with the buffer; the

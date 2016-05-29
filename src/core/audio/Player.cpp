@@ -38,7 +38,7 @@
 #include <core/plugin/PluginFactory.h>
 #include <algorithm>
 
-#define MAX_PREBUFFER_QUEUE_COUNT 16
+#define MAX_PREBUFFER_QUEUE_COUNT 8
 
 using namespace musik::core::audio;
 using std::min;

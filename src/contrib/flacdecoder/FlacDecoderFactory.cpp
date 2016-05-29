@@ -60,6 +60,6 @@ bool FlacDecoderFactory::CanHandle(const char* type) const {
     std::transform(str.begin(), str.end(), str.begin(), tolower);
 
     return
-        str.find(".flac") != std::string::npos ||
+        musik::sdk::endsWith(type, ".flac") ||
         str.find("audio/flag") != std::string::npos;
 }
