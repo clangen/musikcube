@@ -40,6 +40,7 @@
 #include <core/config.h>
 #include <core/support/Common.h>
 #include <core/debug.h>
+#include <iostream>
 
 static const std::string TAG = "PluginFactory";
 static boost::mutex instanceMutex;
@@ -93,7 +94,6 @@ void PluginFactory::LoadPlugins(){
                 std::string filename(file->path().string());
 #ifdef WIN32
                 /* if the file ends with ".dll", we'll try to load it*/
-
                 if (filename.substr(filename.size() - 4) == ".dll") {
 
                     HMODULE dll = LoadLibrary(u8to16(filename).c_str());
@@ -115,7 +115,6 @@ void PluginFactory::LoadPlugins(){
 #elif __APPLE__
                 if (filename.substr(filename.size() - 6) == ".dylib") {
                     void* dll = NULL;
-                    char* err;
 
                     try {
                         dll = dlopen(filename.c_str(), RTLD_LOCAL);
@@ -125,7 +124,9 @@ void PluginFactory::LoadPlugins(){
                         continue;
                     }
 
-                    if (err != NULL || (err = dlerror()) != NULL) {
+                    if (!dll) {
+                        char *err = dlerror();
+
                         musik::debug::err(
                             TAG,
                             "could not load shared library " + filename +
