@@ -27,9 +27,6 @@
     <ClCompile Include="cursespp\Window.cpp">
       <Filter>cursespp</Filter>
     </ClCompile>
-    <ClCompile Include="cursespp\Colors.cpp">
-      <Filter>cursespp</Filter>
-    </ClCompile>
     <ClCompile Include="cursespp\LayoutBase.cpp">
       <Filter>cursespp</Filter>
     </ClCompile>
@@ -92,6 +89,9 @@
     </ClCompile>
     <ClCompile Include="cursespp\MessageQueue.cpp">
       <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\Colors.cpp">
+      <Filter>app</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

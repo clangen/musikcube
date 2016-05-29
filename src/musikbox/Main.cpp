@@ -54,21 +54,25 @@
 #include <core/plugin/PluginFactory.h>
 #include <core/library/LibraryFactory.h>
 
+#include <boost/chrono.hpp>
+
 #ifdef WIN32
 #undef MOUSE_MOVED
 #endif
 
 #ifdef WIN32
     #define IDLE_TIMEOUT_MS 0
+    #define REDRAW_DEBOUNCE_MS 100
 #else
     #define IDLE_TIMEOUT_MS 100
+    #define REDRAW_DEBOUNCE_MS 200
 #endif
-
 
 using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::box;
 using namespace cursespp;
+using namespace boost::chrono;
 
 struct WindowState {
     ILayoutPtr layout;
@@ -110,14 +114,6 @@ static void changeLayout(WindowState& current, ILayoutPtr newLayout) {
         current.layout->Show();
         updateFocusedWindow(current, current.layout->GetFocus());
     }
-
-    if (current.input) {
-        curs_set(1);
-        wtimeout(current.focused->GetContent(), IDLE_TIMEOUT_MS);
-    }
-    else {
-        curs_set(0);
-    }
 }
 
 static void focusNextInLayout(WindowState& current) {
@@ -137,6 +133,47 @@ static void focusNextInLayout(WindowState& current) {
     else {
         curs_set(0);
     }
+}
+
+static inline std::string readKeyPress(int64 ch) {
+    std::string kn = keyname((int)ch);
+
+    /* convert +ESC to M- sequences */
+    if (kn == "^[") {
+        int64 next = getch();
+        if (next != -1) {
+            kn = std::string("M-") + std::string(keyname((int)next));
+        }
+    }
+    /* multi-byte UTF8 character */
+    else if (ch >= 194 && ch <= 223) {
+        kn = "";
+        kn += (char)ch;
+        kn += (char)getch();
+    }
+    else if (ch >= 224 && ch <= 239) {
+        kn = "";
+        kn += (char)ch;
+        kn += (char)getch();
+        kn += (char)getch();
+    }
+    else if (ch >= 240 && ch <= 244) {
+        kn = "";
+        kn += (char)ch;
+        kn += (char)getch();
+        kn += (char)getch();
+        kn += (char)getch();
+    }
+
+    // std::cerr << "keyname: " << kn << std::endl;
+    // std::cerr << "ch: " << ch << std::endl;
+
+    return kn;
+}
+
+static inline int64 now() {
+    return duration_cast<milliseconds>(
+        system_clock::now().time_since_epoch()).count();
 }
 
 #ifdef WIN32
@@ -196,6 +233,7 @@ int main(int argc, char* argv[])
         int64 ch;
         timeout(IDLE_TIMEOUT_MS);
         bool quit = false;
+        int64 resizeAt = 0;
 
         WindowState state;
         state.input = NULL;
@@ -208,47 +246,18 @@ int main(int argc, char* argv[])
             so it can draw a pretty cursor if it wants */
             if (state.input) {
                 WINDOW *c = state.focused->GetContent();
+                wtimeout(state.focused->GetContent(), IDLE_TIMEOUT_MS);
+                curs_set(1);
                 keypad(c, TRUE);
                 ch = wgetch(c);
             }
             else {
                 ch = wgetch(stdscr);
+                curs_set(0);
             }
 
             if (ch != -1) { /* -1 = idle timeout */
-                std::string kn = keyname((int) ch);
-
-                int64 next = -1; /* used in escape sequences */
-
-                /* convert +ESC to M- sequences */
-                if (kn == "^[") {
-                    next = getch();
-                    if (next != -1) {
-                        kn = std::string("M-") + std::string(keyname((int) next));
-                    }
-                }
-                /* multi-byte UTF8 character */
-                else if (ch >= 194 && ch <= 223) {
-                    kn = "";
-                    kn += (char) ch;
-                    kn += (char) getch();
-                }
-                else if (ch >= 224 && ch <= 239) {
-                    kn = "";
-                    kn += (char) ch;
-                    kn += (char) getch();
-                    kn += (char) getch();
-                }
-                else if (ch >= 240 && ch <= 244) {
-                    kn = "";
-                    kn += (char) ch;
-                    kn += (char) getch();
-                    kn += (char) getch();
-                    kn += (char) getch();
-                }
-
-                // std::cerr << "keyname: " << kn << std::endl;
-                // std::cerr << "ch: " << ch << std::endl;
+                std::string kn = readKeyPress((int) ch);
 
                 if (ch == '\t') { /* tab */
                     focusNextInLayout(state);
@@ -257,10 +266,7 @@ int main(int argc, char* argv[])
                     quit = true;
                 }
                 else if (kn == "KEY_RESIZE") {
-                    resize_term(0, 0);
-                    libraryLayout->Layout();
-                    consoleLayout->Layout();
-                    state.layout->BringToTop();
+                    resizeAt = now() + REDRAW_DEBOUNCE_MS;
                 }
                 else if (ch == KEY_F(2)) {
                     changeLayout(state, libraryLayout);
@@ -279,6 +285,17 @@ int main(int argc, char* argv[])
                         state.layout->KeyPress(kn);
                     }
                 }
+            }
+
+            /* this is a bit of a hack, and if we have any more of these we
+            need to generalize. but KEY_RESIZE often gets called dozens of 
+            times, so we debounce the actual resize until its settled. */
+            if (resizeAt && now() > resizeAt) {
+                resize_term(0, 0);
+                libraryLayout->Layout();
+                consoleLayout->Layout();
+                state.layout->BringToTop();
+                resizeAt = 0;
             }
 
             ensureFocusIsValid(state);
