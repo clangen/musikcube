@@ -165,7 +165,8 @@ static inline std::string readKeyPress(int64 ch) {
         kn += (char)getch();
     }
 
-    // std::cerr << "keyname: " << kn << std::endl;
+
+    //std::cerr << "keyname: " << kn << std::endl;
     // std::cerr << "ch: " << ch << std::endl;
 
     return kn;
@@ -207,6 +208,7 @@ int main(int argc, char* argv[])
 #endif
 
     initscr();
+    nonl();
     cbreak();
     noecho();
     keypad(stdscr, TRUE);
@@ -288,7 +290,7 @@ int main(int argc, char* argv[])
             }
 
             /* this is a bit of a hack, and if we have any more of these we
-            need to generalize. but KEY_RESIZE often gets called dozens of 
+            need to generalize. but KEY_RESIZE often gets called dozens of
             times, so we debounce the actual resize until its settled. */
             if (resizeAt && now() > resizeAt) {
                 resize_term(0, 0);

@@ -53,11 +53,7 @@
     typedef unsigned long long UINT64;
     typedef long long __int64;
 
-#ifdef __APPLE__
     #define STDCALL(fp) (* fp)()
-#else
-    #define STDCALL(fp) (* fp)() __attribute__((stdcall))
-#endif
     #define _ASSERT assert
 #endif
 
@@ -69,8 +65,8 @@ other than STL */
 namespace musik {
     namespace sdk {
         inline bool endsWith(const std::string& s, const std::string& suffix) {
-            return 
-                s.size() >= suffix.size() && 
+            return
+                s.size() >= suffix.size() &&
                 s.rfind(suffix) == (s.size() - suffix.size());
         }
     }

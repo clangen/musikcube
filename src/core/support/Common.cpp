@@ -60,15 +60,17 @@ std::string musik::core::GetApplicationDirectory() {
         if (length != 0 && length < 2048) {
             result.assign(GetPath(u16to8(widePath).c_str()));
         }
+    #elif __APPLE__
+        char pathbuf[PATH_MAX + 1];
+        uint32_t bufsize = sizeof(pathbuf);
+        _NSGetExecutablePath(pathbuf, &bufsize);
+        char *resolved = realpath(pathbuf, NULL);
+        result.assign(resolved);
+        free(resolved);
+        size_t last = result.find_last_of("/");
+        result = result.substr(0, last); /* remove filename component */
     #else
-      char pathbuf[PATH_MAX + 1];
-      uint32_t bufsize = sizeof(pathbuf);
-      _NSGetExecutablePath(pathbuf, &bufsize);
-      char *resolved = realpath(pathbuf, NULL);
-      result.assign(resolved);
-      free(resolved);
-      size_t last = result.find_last_of("/");
-      result = result.substr(0, last); /* remove filename component */
+        /* linux */
     #endif
 
     return result;

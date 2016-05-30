@@ -53,7 +53,7 @@ void TrackListView::OnQueryCompleted(QueryPtr query) {
 }
 
 bool TrackListView::KeyPress(const std::string& key) {
-    if (key == "^J") { /* return */
+    if (key == "^M") { /* return */
         size_t selected = this->GetSelectedIndex();
         if (this->metadata && this->metadata->size() > selected) {
             playback.Play(*this->metadata, selected);

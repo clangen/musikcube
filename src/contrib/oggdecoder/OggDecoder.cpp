@@ -31,7 +31,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "OggDecoder.h"
 
 #define OGG_MAX_SAMPLES 1024

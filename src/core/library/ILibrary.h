@@ -5,7 +5,7 @@
 #include <sigslot/sigslot.h>
 
 #include <core/library/IIndexer.h>
-#include <core/Library/IQuery.h>
+#include <core/library/IQuery.h>
 
 namespace musik { namespace core {
 

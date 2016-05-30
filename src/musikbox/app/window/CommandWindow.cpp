@@ -84,7 +84,7 @@ void CommandWindow::Write(const std::string& key) {
     if (key == "^H" || key == "^?") { /* backspace */
         removeUtf8Char(this->buffer);
     }
-    else if (key == "^J") { /* return */
+    else if (key == "^M") { /* return */
         output->WriteLine("> " + this->buffer + "\n", COLOR_PAIR(BOX_COLOR_BLACK_ON_GREY));
 
         if (!this->ProcessCommand(this->buffer)) {

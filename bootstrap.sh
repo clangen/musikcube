@@ -2,6 +2,10 @@
 
 rm CMakeCache.txt
 
+rm -rf build
+rm -rf bin
+
+mkdir -p bin/plugins
 mkdir build
 
 mkdir build/release

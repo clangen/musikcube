@@ -2,7 +2,7 @@
 
 #include <cursespp/Window.h>
 #include <core/playback/Transport.h>
-#include <core/library/Track/Track.h>
+#include <core/library/track/Track.h>
 #include <core/library/ILibrary.h>
 #include <app/query/SingleTrackQuery.h>
 #include <sigslot/sigslot.h>
