@@ -41,8 +41,17 @@
 #include <cstdlib>
 #include <iostream>
 
-#ifdef __APPLE__
-#include <mach-o/dyld.h>
+#include <boost/format.hpp>
+
+#ifdef WIN32
+    /* nothing special for Win32 */
+#elif __APPLE__
+    #include <mach-o/dyld.h>
+#else
+    #include <sys/types.h>
+    #include <unistd.h>
+    #include <sys/stat.h>
+    #include <limits.h>
 #endif
 
 std::string musik::core::GetPluginDirectory() {
@@ -70,7 +79,12 @@ std::string musik::core::GetApplicationDirectory() {
         size_t last = result.find_last_of("/");
         result = result.substr(0, last); /* remove filename component */
     #else
-        /* linux */
+        std::string pathToProc = boost::str(boost::format("/proc/%d/exe") % (int) getpid());
+        char pathbuf[PATH_MAX + 1];
+        readlink(pathToProc.c_str(), pathbuf, PATH_MAX);
+        result.assign(pathbuf);
+        size_t last = result.find_last_of("/");
+        result = result.substr(0, last); /* remove filename component */
     #endif
 
     return result;
@@ -80,12 +94,12 @@ std::string musik::core::GetDataDirectory() {
     std::string directory;
 
     #ifdef WIN32
-        DWORD iBufferSize = GetEnvironmentVariable(_T("APPDATA"), 0, 0);
-        wchar_t *sBuffer = new wchar_t[iBufferSize + 2];
-        GetEnvironmentVariable(_T("APPDATA"), sBuffer, iBufferSize);
-        directory.assign(u16to8(sBuffer));
+        DWORD bufferSize = GetEnvironmentVariable(_T("APPDATA"), 0, 0);
+        wchar_t *buffer = new wchar_t[bufferSize + 2];
+        GetEnvironmentVariable(_T("APPDATA"), buffer, bufferSize);
+        directory.assign(u16to8(buffer));
         directory.append("/mC2/");
-        delete [] sBuffer;
+        delete[] buffer;
     #else
         directory = std::string(std::getenv("HOME"));
         directory.append("/.mC2/");
