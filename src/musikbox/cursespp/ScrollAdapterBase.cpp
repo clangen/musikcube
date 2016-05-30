@@ -78,7 +78,7 @@ void ScrollAdapterBase::DrawPage(WINDOW* window, size_t index, ScrollPosition *r
         result->logicalIndex = 0;
     }
 
-    wclear(window);
+    werase(window);
 
     if (this->height == 0 || this->width == 0 || this->GetEntryCount() == 0) {
         return;

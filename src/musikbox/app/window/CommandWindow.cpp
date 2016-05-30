@@ -37,7 +37,7 @@ bool tostr(T& t, const std::string& s) {
 
 inline static void redrawContents(IWindow &window, const std::string& text) {
     WINDOW* c = window.GetContent();
-    wclear(c);
+    werase(c);
     wprintw(c, text.c_str());
     window.Repaint();
 }

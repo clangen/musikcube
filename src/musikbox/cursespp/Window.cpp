@@ -379,7 +379,7 @@ IWindow* Window::GetParent() const {
 }
 
 void Window::Clear() {
-    wclear(this->content);
+    werase(this->content);
 }
 
 void Window::Repaint() {
