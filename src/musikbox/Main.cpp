@@ -56,6 +56,8 @@
 
 #include <boost/chrono.hpp>
 
+#include <cstdio>
+
 #ifdef WIN32
 #undef MOUSE_MOVED
 #endif
@@ -196,6 +198,12 @@ int main(int argc, char* argv[])
 
 #ifndef WIN32
     setlocale(LC_ALL, "");
+
+    #ifdef DEBUG
+        freopen("/tmp/musikbox.log", "w", stderr);
+    #else
+        freopen("/dev/null", "w", stderr);
+    #endif
 #endif
 
     musik::debug::init();
@@ -266,6 +274,9 @@ int main(int argc, char* argv[])
                 }
                 else if (kn == "^D") { /* ctrl+d quits */
                     quit = true;
+                }
+                else if (kn == "ALT_R" || kn == "M-r") {
+                    Window::Invalidate();
                 }
                 else if (kn == "KEY_RESIZE") {
                     resizeAt = now() + REDRAW_DEBOUNCE_MS;

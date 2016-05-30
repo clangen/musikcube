@@ -32,6 +32,11 @@ void Window::WriteToScreen(IInput* input) {
     }
 }
 
+void Window::Invalidate() {
+    wclear(stdscr);
+    drawPending = true;
+}
+
 Window::Window(IWindow *parent) {
     this->frame = this->content = 0;
     this->framePanel = this->contentPanel = 0;

@@ -51,6 +51,7 @@ namespace cursespp {
             virtual void SetFocusOrder(int order = -1);
 
             static void WriteToScreen(IInput* input);
+            static void Invalidate();
 
         protected:
             IWindow* GetParent() const;
