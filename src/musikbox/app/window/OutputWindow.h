@@ -8,8 +8,10 @@
 namespace musik {
     namespace box {
         class OutputWindow :
-            public cursespp::ScrollableWindow,
-            public std::enable_shared_from_this<OutputWindow>
+            public cursespp::ScrollableWindow
+#if ( __clang_major__==7 && __clang_minor__==3 )
+            , public std::enable_shared_from_this<OutputWindow>
+#endif
         {
             public:
                 OutputWindow(cursespp::IWindow *parent = NULL);

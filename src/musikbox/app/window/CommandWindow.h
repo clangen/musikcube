@@ -13,7 +13,9 @@ namespace musik {
         class CommandWindow :
             public cursespp::Window,
             public cursespp::IInput,
+#if ( __clang_major__==7 && __clang_minor__==3 )
             public std::enable_shared_from_this<CommandWindow>,
+#endif
             public sigslot::has_slots<>
         {
             public:

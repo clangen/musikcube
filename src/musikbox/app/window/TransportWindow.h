@@ -12,7 +12,9 @@ namespace musik {
     namespace box {
         class TransportWindow :
             public cursespp::Window,
+#if ( __clang_major__==7 && __clang_minor__==3 )
             public std::enable_shared_from_this<TransportWindow>,
+#endif
             public sigslot::has_slots<>
         {
             public:

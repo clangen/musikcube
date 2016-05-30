@@ -22,7 +22,9 @@ namespace musik {
     namespace box {
         class CategoryListView :
             public ListWindow,
+#if ( __clang_major__==7 && __clang_minor__==3 )
             public std::enable_shared_from_this<CategoryListView>,
+#endif
             public sigslot::has_slots<>
         {
             public:
