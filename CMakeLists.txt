@@ -39,8 +39,6 @@ set (musikbox_LINK_LIBS
   ${linux_LINK_LIBS}
   ${BOOST_LINK_LIBS}
   dl
-  sqlite3
-  md5
 )
 
 include_directories (
@@ -50,7 +48,6 @@ include_directories (
   "${musikbox_SOURCE_DIR}/src/3rdparty/include"
 )
 
-add_subdirectory(src/3rdparty)
 add_subdirectory(src/core)
 add_subdirectory(src/musikbox)
 add_subdirectory(src/contrib/taglib_plugin)

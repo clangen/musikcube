@@ -26,6 +26,8 @@ set(CORE_SOURCES
   ./support/Preferences.cpp
   ./support/ThreadHelper.cpp
   ./support/Version.cpp
+  ../3rdparty/src/md5/md5.c
+  ../3rdparty/src/sqlite/sqlite3.c
 )
 
 set (CORE_HEADERS
@@ -81,10 +83,11 @@ include_directories(
   .
   ..
   ../3rdparty/include
+  ../3rdparty/include/md5
+  ../3rdparty/include/sqlite
 )
 
 add_definitions(
-  -D_CRT_SECURE_NO_DEPRECATE
   -D_DEBUG
 )
 
