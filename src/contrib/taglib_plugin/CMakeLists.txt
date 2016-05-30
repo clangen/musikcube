@@ -5,7 +5,6 @@ set (taglib_plugin_SOURCES
 )
 
 add_definitions(
-  -D_DEBUG
   -DTAGLIB_NO_CONFIG
 )
 
