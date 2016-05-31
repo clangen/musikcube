@@ -57,6 +57,8 @@ the current hotkeys are generally based around holding the alt/meta key with you
 - `CTRL+p` pause/resume (globally)
 - `CTRL+d` quit 
 
+*important*: on OSX make sure you configure your terminal emulator to treat your left alt key as "+Esc" or "Meta".
+
 # sdk
 
 musikcube is built around its own SDK interfaces. they're still in the process of being cleaned up and slimmed down. you can see what they look like here: https://github.com/clangen/musikcube/tree/master/src/core/sdk
