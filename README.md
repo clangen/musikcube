@@ -8,6 +8,14 @@ an ncurses frontend to musikcube.
 
 musicbox runs and compiles easily on Windows and OSX (and Linux soon).
 
+it looks something like this on windows:
+
+![windows screenshot](/static/screenshots/windows.png?raw=true)
+
+and this on osx:
+
+![osx screenshot](/static/screenshots/osx.png?raw=true)
+
 # compiling
 
 ## windows
@@ -31,4 +39,4 @@ you'll need [homebrew](http://brew.sh/) to install the required dependenies.
 
 # sdk
 
-if you know C++ you can checkout the sdk interfaces here: https://github.com/clangen/musikcube/tree/master/src/core/sdk
+musikcube is built around its SDK interfaces. they're still in the process of being cleaned up and slimmed down. you can see what they look like here: https://github.com/clangen/musikcube/tree/master/src/core/sdk
