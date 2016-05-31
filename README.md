@@ -27,7 +27,7 @@ you'll need [homebrew](http://brew.sh/) to install the required dependenies.
 - `cmake .`
 - `make`
 - `cd bin`
-- `./musikcube`
+- `./musikbox`
 
 # sdk
 
