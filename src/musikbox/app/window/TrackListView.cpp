@@ -18,7 +18,6 @@
 #include <iomanip>
 
 #define WINDOW_MESSAGE_QUERY_COMPLETED 1002
-#define WINDOW_MESSAGE_REPAINT 1003
 
 using namespace musik::core;
 using namespace musik::core::audio;
@@ -36,7 +35,6 @@ TrackListView::TrackListView(PlaybackService& playback, LibraryPtr library)
     this->SetContentColor(BOX_COLOR_WHITE_ON_BLACK);
     this->library = library;
     this->library->QueryCompleted.connect(this, &TrackListView::OnQueryCompleted);
-    this->playback.GetTransport().PlaybackEvent.connect(this, &TrackListView::OnPlaybackEvent);
     this->playback.TrackChanged.connect(this, &TrackListView::OnTrackChanged);
     this->adapter = new Adapter(*this);
 }
@@ -78,21 +76,11 @@ void TrackListView::ProcessMessage(IMessage &message) {
             this->OnAdapterChanged();
         }
     }
-    else if (message.Type() == WINDOW_MESSAGE_REPAINT) {
-        this->OnAdapterChanged();
-    }
 }
 
 void TrackListView::OnTrackChanged(size_t index, musik::core::TrackPtr track) {
     this->playing = track;
-    this->PostMessage(WINDOW_MESSAGE_REPAINT);
-}
-
-void TrackListView::OnPlaybackEvent(int eventType) {
-    if (eventType == Transport::PlaybackStopped) {
-        this->playing.reset();
-        this->PostMessage(WINDOW_MESSAGE_REPAINT);
-    }
+    this->OnAdapterChanged();
 }
 
 IScrollAdapter& TrackListView::GetScrollAdapter() {

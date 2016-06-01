@@ -20,6 +20,7 @@ using namespace musik::box;
 #define URI_AT_INDEX(x) this->playlist.at(x)->URI()
 #define PREVIOUS_GRACE_PERIOD 2.0f
 #define MESSAGE_STREAM_EVENT 1000
+#define MESSAGE_PLAYBACK_EVENT 1001
 
 PlaybackService::PlaybackService(Transport& transport)
 : transport(transport) {
@@ -30,7 +31,7 @@ PlaybackService::PlaybackService(Transport& transport)
 
 void PlaybackService::ProcessMessage(IMessage &message) {
     if (message.Type() == MESSAGE_STREAM_EVENT) {
-        int eventType = message.UserData1();
+        int64 eventType = message.UserData1();
 
         if (eventType == Transport::StreamAlmostDone) {
             if (this->playlist.size() > this->index + 1) {
@@ -47,6 +48,13 @@ void PlaybackService::ProcessMessage(IMessage &message) {
             }
 
             this->TrackChanged(this->index, this->playlist.at(this->index));
+        }
+    }
+    else if (message.Type() == MESSAGE_PLAYBACK_EVENT) {
+        int64 eventType = message.UserData1();
+
+        if (eventType == Transport::PlaybackStopped) {
+            this->TrackChanged(NO_POSITION, TrackPtr());
         }
     }
 }
@@ -106,4 +114,9 @@ TrackPtr PlaybackService::GetTrackAtIndex(size_t index) {
 void PlaybackService::OnStreamEvent(int eventType, std::string uri) {
     cursespp::MessageQueue::Instance().Post(
         cursespp::Message::Create(this, MESSAGE_STREAM_EVENT, eventType, 0));
+}
+
+void PlaybackService::OnPlaybackEvent(int eventType) {
+    cursespp::MessageQueue::Instance().Post(
+        cursespp::Message::Create(this, MESSAGE_PLAYBACK_EVENT, eventType, 0));
 }

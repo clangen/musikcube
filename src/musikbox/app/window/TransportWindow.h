@@ -1,10 +1,8 @@
 #pragma once
 
 #include <cursespp/Window.h>
-#include <core/playback/Transport.h>
 #include <core/library/track/Track.h>
-#include <core/library/ILibrary.h>
-#include <app/query/SingleTrackQuery.h>
+#include <app/service/PlaybackService.h>
 #include <sigslot/sigslot.h>
 #include "OutputWindow.h"
 
@@ -18,11 +16,8 @@ namespace musik {
             public sigslot::has_slots<>
         {
             public:
-                TransportWindow(
-                    musik::core::LibraryPtr library,
-                    musik::core::audio::Transport& transport);
-
-                ~TransportWindow();
+                TransportWindow(musik::box::PlaybackService& playback);
+                virtual ~TransportWindow();
 
                 virtual void ProcessMessage(cursespp::IMessage &message);
 
@@ -33,16 +28,14 @@ namespace musik {
                 void Update();
 
             private:
-                void OnTransportStreamEvent(int eventType, std::string url);
+                void OnPlaybackServiceTrackChanged(size_t index, musik::core::TrackPtr track);
                 void OnTransportVolumeChanged();
                 void OnTransportTimeChanged(double time);
-                void OnQueryCompleted(musik::core::QueryPtr query);
 
                 bool paused, focused;
-                musik::core::LibraryPtr library;
-                musik::core::audio::Transport* transport;
+                musik::core::audio::Transport& transport;
+                musik::box::PlaybackService& playback;
                 musik::core::TrackPtr currentTrack;
-                std::shared_ptr<SingleTrackQuery> trackQuery;
         };
     }
 }

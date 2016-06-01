@@ -262,18 +262,22 @@ void Transport::DeletePlayers(std::list<Player*> players) {
 void Transport::OnPlaybackFinished(Player* player) {
     this->RaiseStreamEvent(Transport::StreamFinished, player);
 
-    bool startedNext = false;
+    bool stopped = false;
 
     {
         boost::recursive_mutex::scoped_lock lock(this->stateMutex);
+
+        bool startedNext = false;
 
         if (this->nextPlayer) {
             this->StartWithPlayer(this->nextPlayer);
             startedNext = true;
         }
+
+        stopped = !startedNext && !this->active.size();
     }
 
-    if (!startedNext) {
+    if (stopped) {
         this->SetPlaybackState(Transport::PlaybackStopped);
     }
 
@@ -282,7 +286,17 @@ void Transport::OnPlaybackFinished(Player* player) {
 
 void Transport::OnPlaybackStopped (Player* player) {
     this->RaiseStreamEvent(Transport::StreamStopped, player);
-    this->SetPlaybackState(Transport::PlaybackStopped);
+    
+    bool stopped = false;
+    {
+        boost::recursive_mutex::scoped_lock lock(this->stateMutex);
+        stopped = !this->active.size();
+    }
+
+    if (stopped) {
+        this->SetPlaybackState(Transport::PlaybackStopped);
+    }
+
     DEFER(&Transport::RemoveActive, player);
 }
 

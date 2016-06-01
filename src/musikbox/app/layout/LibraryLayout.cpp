@@ -69,7 +69,7 @@ void LibraryLayout::Layout() {
 void LibraryLayout::InitializeWindows() {
     this->categoryList.reset(new CategoryListView(this->library, DEFAULT_CATEGORY));
     this->trackList.reset(new TrackListView(this->playback, this->library));
-    this->transportView.reset(new TransportWindow(this->library, this->transport));
+    this->transportView.reset(new TransportWindow(this->playback));
 
     this->AddWindow(this->categoryList);
     this->AddWindow(this->trackList);

@@ -50,7 +50,6 @@ namespace musik {
 
             private:
                 void OnTrackChanged(size_t index, musik::core::TrackPtr track);
-                void OnPlaybackEvent(int eventType);
 
                 std::shared_ptr<TrackListViewQuery> query;
                 std::shared_ptr<std::vector<musik::core::TrackPtr> > metadata;

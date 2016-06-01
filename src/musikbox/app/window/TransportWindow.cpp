@@ -8,20 +8,18 @@
 #include <app/util/Text.h>
 
 #include <core/debug.h>
-#include <core/library/track/LibraryTrack.h>
 #include <core/library/LocalLibraryConstants.h>
-#include <core/playback/NonLibraryTrackHelper.h>
 
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/chrono.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <algorithm>
 
 using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::library;
-using namespace musik::core::query;
 using namespace musik::core::db;
 using namespace musik::box;
 using namespace boost::chrono;
@@ -34,16 +32,16 @@ using namespace cursespp;
     this->RemoveMessage(REFRESH_TRANSPORT_READOUT); \
     this->PostMessage(REFRESH_TRANSPORT_READOUT, 0, 0, x);
 
-TransportWindow::TransportWindow(LibraryPtr library, Transport& transport)
-: Window(NULL) {
+TransportWindow::TransportWindow(musik::box::PlaybackService& playback)
+: Window(NULL)
+, playback(playback)
+, transport(playback.GetTransport())
+{
     this->SetContentColor(BOX_COLOR_WHITE_ON_BLACK);
     this->SetFrameVisible(false);
-    this->library = library;
-    this->library->QueryCompleted.connect(this, &TransportWindow::OnQueryCompleted);
-    this->transport = &transport;
-    this->transport->StreamEvent.connect(this, &TransportWindow::OnTransportStreamEvent);
-    this->transport->VolumeChanged.connect(this, &TransportWindow::OnTransportVolumeChanged);
-    this->transport->TimeChanged.connect(this, &TransportWindow::OnTransportTimeChanged);
+    this->playback.TrackChanged.connect(this, &TransportWindow::OnPlaybackServiceTrackChanged);
+    this->transport.VolumeChanged.connect(this, &TransportWindow::OnTransportVolumeChanged);
+    this->transport.TimeChanged.connect(this, &TransportWindow::OnTransportTimeChanged);
     this->paused = this->focused = false;
 }
 
@@ -64,12 +62,9 @@ void TransportWindow::ProcessMessage(IMessage &message) {
     }
 }
 
-void TransportWindow::OnTransportStreamEvent(int eventType, std::string url) {
-    if (eventType == Transport::StreamPlaying) {
-        this->trackQuery.reset(new SingleTrackQuery(url));
-        this->library->Enqueue(this->trackQuery);
-        DEBOUNCE_REFRESH(0);
-    }
+void TransportWindow::OnPlaybackServiceTrackChanged(size_t index, TrackPtr track) {
+    this->currentTrack = track;
+    DEBOUNCE_REFRESH(0)
 }
 
 void TransportWindow::OnTransportVolumeChanged() {
@@ -78,13 +73,6 @@ void TransportWindow::OnTransportVolumeChanged() {
 
 void TransportWindow::OnTransportTimeChanged(double time) {
     DEBOUNCE_REFRESH(0)
-}
-
-void TransportWindow::OnQueryCompleted(QueryPtr query) {
-    if (query == this->trackQuery && query->GetStatus() == QueryBase::Finished) {
-        this->currentTrack = this->trackQuery->GetResult();
-        DEBOUNCE_REFRESH(0)
-    }
 }
 
 void TransportWindow::Focus() {
@@ -101,7 +89,7 @@ void TransportWindow::Update() {
     this->Clear();
     WINDOW *c = this->GetContent();
 
-    bool paused = (transport->GetPlaybackState() == Transport::PlaybackPaused);
+    bool paused = (transport.GetPlaybackState() == Transport::PlaybackPaused);
 
     int64 gb = COLOR_PAIR(this->focused
         ? BOX_COLOR_RED_ON_BLACK
@@ -110,7 +98,7 @@ void TransportWindow::Update() {
     /* playing SONG TITLE from ALBUM NAME */
     std::string duration = "0";
 
-    if (transport->GetPlaybackState() == Transport::PlaybackStopped) {
+    if (transport.GetPlaybackState() == Transport::PlaybackStopped) {
         wattron(c, gb);
         wprintw(c, "playback is stopped");
         wattroff(c, gb);
@@ -145,7 +133,7 @@ void TransportWindow::Update() {
 
     wprintw(c, "\n");
 
-    int volumePercent = (size_t) round(this->transport->Volume() * 100.0f) - 1;
+    int volumePercent = (size_t) round(this->transport.Volume() * 100.0f) - 1;
     int thumbOffset = std::min(9, (volumePercent * 10) / 100);
 
     std::string volume = "vol ";
@@ -171,9 +159,9 @@ void TransportWindow::Update() {
         }
     }
 
-    transport->Position();
+    transport.Position();
 
-    int secondsCurrent = (int) round(transport->Position());
+    int secondsCurrent = (int) round(transport.Position());
     int secondsTotal = boost::lexical_cast<int>(duration);
 
     std::string currentTime = text::Duration(secondsCurrent);

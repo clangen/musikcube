@@ -35,6 +35,7 @@ namespace musik {
 
             private:
                 void OnStreamEvent(int eventType, std::string uri);
+                void OnPlaybackEvent(int eventType);
 
                 musik::core::audio::Transport& transport;
                 boost::recursive_mutex stateMutex;
