@@ -292,7 +292,7 @@ void Transport::OnPlaybackFinished(Player* player) {
         if (!startedNext) {
             stopped =
                 !this->active.size() ||
-                this->active.size() == 1 && this->active.front() == player;
+                (this->active.size() == 1 && this->active.front() == player);
         }
     }
 
