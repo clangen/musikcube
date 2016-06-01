@@ -14,6 +14,7 @@
 #define BOX_COLOR_GREEN_ON_BLACK 10
 #define BOX_COLOR_BLACK_ON_BLACK 11
 #define BOX_COLOR_RED_ON_GREEN 12
+#define BOX_COLOR_BLACK_ON_YELLOW 13
 
 namespace cursespp {
     class Colors {

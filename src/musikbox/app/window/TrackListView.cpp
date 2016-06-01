@@ -126,12 +126,16 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(size_t index) {
     TrackPtr track = parent.metadata->at(index);
 
     TrackPtr playing = parent.playing;
-    if (!selected &&
-        playing &&
+    if (playing &&
         playing->Id() == track->Id() &&
         playing->LibraryId() == track->LibraryId())
     {
-        attrs = COLOR_PAIR(BOX_COLOR_YELLOW_ON_BLACK);
+        if (selected) {
+            attrs = COLOR_PAIR(BOX_COLOR_BLACK_ON_YELLOW);
+        }
+        else {
+            attrs = COLOR_PAIR(BOX_COLOR_YELLOW_ON_BLACK) | A_BOLD;
+        }
     }
 
     std::string trackNum = track->GetValue(constants::Track::TRACK_NUM);
