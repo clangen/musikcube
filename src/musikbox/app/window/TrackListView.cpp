@@ -18,6 +18,7 @@
 #include <iomanip>
 
 #define WINDOW_MESSAGE_QUERY_COMPLETED 1002
+#define WINDOW_MESSAGE_REPAINT 1003
 
 using namespace musik::core;
 using namespace musik::core::audio;
@@ -35,6 +36,8 @@ TrackListView::TrackListView(PlaybackService& playback, LibraryPtr library)
     this->SetContentColor(BOX_COLOR_WHITE_ON_BLACK);
     this->library = library;
     this->library->QueryCompleted.connect(this, &TrackListView::OnQueryCompleted);
+    this->playback.GetTransport().PlaybackEvent.connect(this, &TrackListView::OnPlaybackEvent);
+    this->playback.TrackChanged.connect(this, &TrackListView::OnTrackChanged);
     this->adapter = new Adapter(*this);
 }
 
@@ -75,6 +78,21 @@ void TrackListView::ProcessMessage(IMessage &message) {
             this->OnAdapterChanged();
         }
     }
+    else if (message.Type() == WINDOW_MESSAGE_REPAINT) {
+        this->OnAdapterChanged();
+    }
+}
+
+void TrackListView::OnTrackChanged(size_t index, musik::core::TrackPtr track) {
+    this->playing = track;
+    this->PostMessage(WINDOW_MESSAGE_REPAINT);
+}
+
+void TrackListView::OnPlaybackEvent(int eventType) {
+    if (eventType == Transport::PlaybackStopped) {
+        this->playing.reset();
+        this->PostMessage(WINDOW_MESSAGE_REPAINT);
+    }
 }
 
 IScrollAdapter& TrackListView::GetScrollAdapter() {
@@ -102,9 +120,20 @@ constants) */
     chars + (str.size() - u8len(str))
 
 IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(size_t index) {
-    int64 attrs = (index == parent.GetSelectedIndex()) ? COLOR_PAIR(BOX_COLOR_BLACK_ON_GREEN) : -1;
+    bool selected = index == parent.GetSelectedIndex();
+    int64 attrs = selected ? COLOR_PAIR(BOX_COLOR_BLACK_ON_GREEN) : -1;
 
     TrackPtr track = parent.metadata->at(index);
+
+    TrackPtr playing = parent.playing;
+    if (!selected &&
+        playing &&
+        playing->Id() == track->Id() &&
+        playing->LibraryId() == track->LibraryId())
+    {
+        attrs = COLOR_PAIR(BOX_COLOR_YELLOW_ON_BLACK);
+    }
+
     std::string trackNum = track->GetValue(constants::Track::TRACK_NUM);
     std::string artist = track->GetValue(constants::Track::ARTIST_ID);
     std::string album = track->GetValue(constants::Track::ALBUM_ID);

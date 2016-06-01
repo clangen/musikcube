@@ -84,6 +84,7 @@ namespace musik { namespace core { namespace audio {
         private:
             void StartWithPlayer(Player* player);
             void RemoveActive(Player* player);
+            void DeletePlayers(std::list<Player*> players);
 
             void RaiseStreamEvent(int type, Player* player);
             void SetPlaybackState(int state);

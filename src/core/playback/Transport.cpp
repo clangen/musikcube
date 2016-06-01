@@ -134,11 +134,9 @@ void Transport::Stop() {
         std::swap(toDelete, this->active);
     }
 
-    /* do the actual delete outside of the critical section! the players run
-    in a background thread that will emit a signal on completion, but the
-    destructor joins(). */
-    std::for_each(toDelete.begin(), toDelete.end(), deletePlayer);
-    this->active.clear();
+    /* delete these in the background to avoid deadlock in some cases
+    where this method is implicitly triggered via Player callback */
+    DEFER(&Transport::DeletePlayers, toDelete);
 
     this->SetPlaybackState(PlaybackStopped);
 }
@@ -257,6 +255,10 @@ void Transport::RemoveActive(Player* player) {
     }
 }
 
+void Transport::DeletePlayers(std::list<Player*> players) {
+    std::for_each(players.begin(), players.end(), deletePlayer);
+}
+
 void Transport::OnPlaybackFinished(Player* player) {
     this->RaiseStreamEvent(Transport::StreamFinished, player);
 
@@ -295,6 +297,7 @@ void Transport::SetPlaybackState(int state) {
 
     {
         boost::recursive_mutex::scoped_lock lock(this->stateMutex);
+        changed = (this->state != state);
         this->state = (PlaybackState) state;
     }
 

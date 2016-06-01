@@ -42,7 +42,7 @@ bool TrackListViewQuery::OnRun(Connection& db) {
     }
 
     std::string query = boost::str(boost::format(
-        "SELECT DISTINCT t.track, t.bpm, t.duration, t.filesize, t.year, t.title, t.filename, t.thumbnail_id, al.name AS album, gn.name AS genre, ar.name AS artist, t.filetime " \
+        "SELECT DISTINCT t.id, t.track, t.bpm, t.duration, t.filesize, t.year, t.title, t.filename, t.thumbnail_id, al.name AS album, gn.name AS genre, ar.name AS artist, t.filetime " \
         "FROM tracks t, paths p, albums al, artists ar, genres gn " \
         "WHERE t.%s=? AND t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id "
         "ORDER BY album, track, artist") % this->column);
@@ -54,26 +54,27 @@ bool TrackListViewQuery::OnRun(Connection& db) {
 
     trackQuery.BindInt(0, this->id);
     while (trackQuery.Step() == Row) {
-        TrackPtr track = TrackPtr(new LibraryTrack(this->id, this->library));
-        std::string album = trackQuery.ColumnText(8);
+        std::string album = trackQuery.ColumnText(9);
+        DBID id = trackQuery.ColumnInt64(0);
 
         if (album != lastAlbum) {
             headers->insert(index);
             lastAlbum = album;
         }
 
-        track->SetValue(Track::TRACK_NUM, trackQuery.ColumnText(0));
-        track->SetValue(Track::BPM, trackQuery.ColumnText(1));
-        track->SetValue(Track::DURATION, trackQuery.ColumnText(2));
-        track->SetValue(Track::FILESIZE, trackQuery.ColumnText(3));
-        track->SetValue(Track::YEAR, trackQuery.ColumnText(4));
-        track->SetValue(Track::TITLE, trackQuery.ColumnText(5));
-        track->SetValue(Track::FILENAME, trackQuery.ColumnText(6));
-        track->SetValue(Track::THUMBNAIL_ID, trackQuery.ColumnText(7));
+        TrackPtr track = TrackPtr(new LibraryTrack(id, this->library));
+        track->SetValue(Track::TRACK_NUM, trackQuery.ColumnText(1));
+        track->SetValue(Track::BPM, trackQuery.ColumnText(2));
+        track->SetValue(Track::DURATION, trackQuery.ColumnText(3));
+        track->SetValue(Track::FILESIZE, trackQuery.ColumnText(4));
+        track->SetValue(Track::YEAR, trackQuery.ColumnText(5));
+        track->SetValue(Track::TITLE, trackQuery.ColumnText(6));
+        track->SetValue(Track::FILENAME, trackQuery.ColumnText(7));
+        track->SetValue(Track::THUMBNAIL_ID, trackQuery.ColumnText(8));
         track->SetValue(Track::ALBUM_ID, album.c_str());
-        track->SetValue(Track::GENRE_ID, trackQuery.ColumnText(9));
-        track->SetValue(Track::ARTIST_ID, trackQuery.ColumnText(10));
-        track->SetValue(Track::FILETIME, trackQuery.ColumnText(11));
+        track->SetValue(Track::GENRE_ID, trackQuery.ColumnText(10));
+        track->SetValue(Track::ARTIST_ID, trackQuery.ColumnText(11));
+        track->SetValue(Track::FILETIME, trackQuery.ColumnText(12));
 
         result->push_back(track);
         ++index;
