@@ -96,6 +96,8 @@ void Transport::Start(const std::string& url) {
 
 void Transport::StartWithPlayer(Player* newPlayer) {
     if (newPlayer) {
+        this->Stop(true); /* suppress the "Stopped" event */
+
         {
             boost::recursive_mutex::scoped_lock lock(this->stateMutex);
 
@@ -123,6 +125,10 @@ void Transport::StartWithPlayer(Player* newPlayer) {
 }
 
 void Transport::Stop() {
+    this->Stop(false);
+}
+
+void Transport::Stop(bool suppressEvent) {
     musik::debug::info(TAG, "stop");
 
     std::list<Player*> toDelete;
@@ -138,7 +144,12 @@ void Transport::Stop() {
     where this method is implicitly triggered via Player callback */
     DEFER(&Transport::DeletePlayers, toDelete);
 
-    this->SetPlaybackState(PlaybackStopped);
+    /* if we know we're starting another track immediately, suppress
+    the stop event. this functionality is not available to the public
+    interface, it's an internal optimization */
+    if (!suppressEvent) {
+        this->SetPlaybackState(PlaybackStopped);
+    }
 }
 
 bool Transport::Pause() {
@@ -274,7 +285,15 @@ void Transport::OnPlaybackFinished(Player* player) {
             startedNext = true;
         }
 
-        stopped = !startedNext && !this->active.size();
+        /* we're considered stopped if we were unable to automatically start
+        the next track, and the number of players is zero... or the number
+        of players is one, and it's the current player. remember, we free
+        players asynchronously. */
+        if (!startedNext) {
+            stopped =
+                !this->active.size() ||
+                this->active.size() == 1 && this->active.front() == player;
+        }
     }
 
     if (stopped) {

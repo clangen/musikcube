@@ -25,6 +25,7 @@ using namespace musik::box;
 PlaybackService::PlaybackService(Transport& transport)
 : transport(transport) {
     transport.StreamEvent.connect(this, &PlaybackService::OnStreamEvent);
+    transport.PlaybackEvent.connect(this, &PlaybackService::OnPlaybackEvent);
     this->index = NO_POSITION;
     this->nextIndex = NO_POSITION;
 }
@@ -97,7 +98,6 @@ void PlaybackService::Play(std::vector<TrackPtr>& tracks, size_t index) {
 }
 
 void PlaybackService::Play(size_t index) {
-    transport.Stop();
     transport.Start(URI_AT_INDEX(index));
     this->nextIndex = NO_POSITION;
     this->index = index;

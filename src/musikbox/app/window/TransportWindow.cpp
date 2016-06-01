@@ -108,7 +108,7 @@ void TransportWindow::Update() {
 
         if (this->currentTrack) {
             title = this->currentTrack->GetValue(constants::Track::TITLE);
-            album = this->currentTrack->GetValue(constants::Track::ALBUM);
+            album = this->currentTrack->GetValue(constants::Track::ALBUM_ID);
             duration = this->currentTrack->GetValue(constants::Track::DURATION);
         }
 
