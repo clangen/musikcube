@@ -150,7 +150,7 @@ void WaveOut::StartWaveOutThread() {
 void WaveOut::StopWaveOutThread() {
     if (this->threadHandle != NULL) {
         PostThreadMessage(this->threadId, WM_QUIT, 0, 0);
-        WaitForSingleObject(this->threadHandle, INFINITE);
+        WaitForSingleObject(this->threadHandle, 5000);
         this->threadHandle = NULL;
         this->threadId = 0;
     }

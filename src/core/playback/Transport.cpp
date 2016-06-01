@@ -96,8 +96,6 @@ void Transport::Start(const std::string& url) {
 
 void Transport::StartWithPlayer(Player* newPlayer) {
     if (newPlayer) {
-        this->Stop(true); /* suppress the "Stopped" event */
-
         {
             boost::recursive_mutex::scoped_lock lock(this->stateMutex);
 
@@ -106,6 +104,7 @@ void Transport::StartWithPlayer(Player* newPlayer) {
             }
 
             this->nextPlayer = NULL;
+            this->Stop(true); /* suppress the "Stopped" event */
 
             newPlayer->PlaybackStarted.connect(this, &Transport::OnPlaybackStarted);
             newPlayer->PlaybackAlmostEnded.connect(this, &Transport::OnPlaybackAlmostEnded);

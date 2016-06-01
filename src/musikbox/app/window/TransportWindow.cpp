@@ -90,15 +90,18 @@ void TransportWindow::Update() {
     WINDOW *c = this->GetContent();
 
     bool paused = (transport.GetPlaybackState() == Transport::PlaybackPaused);
+    bool stopped = (transport.GetPlaybackState() == Transport::PlaybackStopped);
 
-    int64 gb = COLOR_PAIR(this->focused
-        ? BOX_COLOR_RED_ON_BLACK
-        : BOX_COLOR_GREEN_ON_BLACK);
+    int64 gb = COLOR_PAIR(BOX_COLOR_GREEN_ON_BLACK);
+
+    if (focused) {
+        gb = COLOR_PAIR(BOX_COLOR_RED_ON_BLACK);
+    }
 
     /* playing SONG TITLE from ALBUM NAME */
     std::string duration = "0";
 
-    if (transport.GetPlaybackState() == Transport::PlaybackStopped) {
+    if (stopped) {
         wattron(c, gb);
         wprintw(c, "playback is stopped");
         wattroff(c, gb);
