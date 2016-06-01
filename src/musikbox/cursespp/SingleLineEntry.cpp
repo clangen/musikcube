@@ -9,19 +9,11 @@ SingleLineEntry::SingleLineEntry(const std::string& value) {
     this->attrs = -1;
 }
 
-size_t SingleLineEntry::GetIndex() {
-    return this->index;
-}
-
 void SingleLineEntry::SetWidth(size_t width) {
     this->width = width;
 }
 
-void SingleLineEntry::SetIndex(size_t index) {
-    this->index = index;
-}
-
-int64 SingleLineEntry::GetAttrs() {
+int64 SingleLineEntry::GetAttrs(size_t line) {
     return this->attrs;
 }
 
@@ -35,8 +27,4 @@ size_t SingleLineEntry::GetLineCount() {
 
 std::string SingleLineEntry::GetLine(size_t line) {
     return u8substr(this->value, 0, this->width > 0 ? this->width : 0);
-}
-
-std::string SingleLineEntry::GetValue() {
-    return this->value;
 }

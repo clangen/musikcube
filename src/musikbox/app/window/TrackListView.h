@@ -51,6 +51,7 @@ namespace musik {
             private:
                 std::shared_ptr<TrackListViewQuery> query;
                 std::shared_ptr<std::vector<TrackPtr> > metadata;
+                std::shared_ptr<std::set<size_t> > headers;
                 Adapter* adapter;
                 PlaybackService& playback;
                 musik::core::LibraryPtr library;

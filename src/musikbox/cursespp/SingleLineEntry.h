@@ -6,19 +6,17 @@ namespace cursespp {
     class SingleLineEntry : public IScrollAdapter::IEntry {
         public:
             SingleLineEntry(const std::string& value);
+            virtual ~SingleLineEntry() { }
 
-            size_t GetIndex();
-            void SetIndex(size_t index);
-            void SetWidth(size_t width);
+            virtual void SetWidth(size_t width);
+            virtual int64 GetAttrs(size_t line);
+            virtual size_t GetLineCount();
+            virtual std::string GetLine(size_t line);
+
             void SetAttrs(int64 attrs);
-            int64 GetAttrs();
-
-            size_t GetLineCount();
-            std::string GetLine(size_t line);
-            std::string GetValue();
-
+            
         private:
-            size_t index, width;
+            size_t width;
             std::string value;
             int64 attrs;
     };

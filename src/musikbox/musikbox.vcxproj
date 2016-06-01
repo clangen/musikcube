@@ -60,7 +60,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>./;../;../3rdparty/include;../3rdparty/win32_include;../../../boost_1_60_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -89,7 +89,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>./;../;../3rdparty/include;../3rdparty/win32_include;../../../boost_1_60_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -126,6 +126,7 @@
     <ClCompile Include="app\util\Text.cpp" />
     <ClCompile Include="app\window\CategoryListView.cpp" />
     <ClCompile Include="app\window\CommandWindow.cpp" />
+    <ClCompile Include="app\window\EntryWithHeader.cpp" />
     <ClCompile Include="app\window\LogWindow.cpp" />
     <ClCompile Include="app\window\OutputWindow.cpp" />
     <ClCompile Include="app\window\ResourcesWindow.cpp" />
@@ -163,6 +164,7 @@
     <ClInclude Include="app\util\Text.h" />
     <ClInclude Include="app\window\CategoryListView.h" />
     <ClInclude Include="app\window\CommandWindow.h" />
+    <ClInclude Include="app\window\EntryWithHeader.h" />
     <ClInclude Include="app\window\LogWindow.h" />
     <ClInclude Include="app\window\OutputWindow.h" />
     <ClInclude Include="app\window\ResourcesWindow.h" />

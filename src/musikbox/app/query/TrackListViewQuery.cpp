@@ -20,6 +20,7 @@ TrackListViewQuery::TrackListViewQuery(LibraryPtr library, const std::string& co
     this->column = column;
     this->id = id;
     this->result.reset(new std::vector<TrackPtr>());
+    this->headers.reset(new std::set<size_t>());
 }
 
 TrackListViewQuery::~TrackListViewQuery() {
@@ -30,9 +31,14 @@ TrackListViewQuery::Result TrackListViewQuery::GetResult() {
     return this->result;
 }
 
+TrackListViewQuery::Headers TrackListViewQuery::GetHeaders() {
+    return this->headers;
+}
+
 bool TrackListViewQuery::OnRun(Connection& db) {
     if (result) {
         result.reset(new std::vector<TrackPtr>());
+        headers.reset(new std::set<size_t>());
     }
 
     std::string query = boost::str(boost::format(
@@ -41,11 +47,20 @@ bool TrackListViewQuery::OnRun(Connection& db) {
         "WHERE t.%s=? AND t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id "
         "ORDER BY album, track, artist") % this->column);
 
+    std::string lastAlbum;
+    size_t index = 0;
+
     Statement trackQuery(query.c_str(), db);
 
     trackQuery.BindInt(0, this->id);
     while (trackQuery.Step() == Row) {
         TrackPtr track = TrackPtr(new LibraryTrack(this->id, this->library));
+        std::string album = trackQuery.ColumnText(8);
+
+        if (album != lastAlbum) {
+            headers->insert(index);
+            lastAlbum = album;
+        }
 
         track->SetValue(Track::TRACK_NUM, trackQuery.ColumnText(0));
         track->SetValue(Track::BPM, trackQuery.ColumnText(1));
@@ -55,12 +70,13 @@ bool TrackListViewQuery::OnRun(Connection& db) {
         track->SetValue(Track::TITLE, trackQuery.ColumnText(5));
         track->SetValue(Track::FILENAME, trackQuery.ColumnText(6));
         track->SetValue(Track::THUMBNAIL_ID, trackQuery.ColumnText(7));
-        track->SetValue(Track::ALBUM_ID, trackQuery.ColumnText(8));
+        track->SetValue(Track::ALBUM_ID, album.c_str());
         track->SetValue(Track::GENRE_ID, trackQuery.ColumnText(9));
         track->SetValue(Track::ARTIST_ID, trackQuery.ColumnText(10));
         track->SetValue(Track::FILETIME, trackQuery.ColumnText(11));
 
         result->push_back(track);
+        ++index;
     }
 
     return true;

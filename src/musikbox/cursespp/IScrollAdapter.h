@@ -28,10 +28,8 @@ namespace cursespp {
                 virtual ~IEntry() { }
                 virtual size_t GetLineCount() = 0;
                 virtual std::string GetLine(size_t line) = 0;
-                virtual std::string GetValue() = 0;
                 virtual void SetWidth(size_t width) = 0;
-                virtual void SetAttrs(int64 attrs) = 0;
-                virtual int64 GetAttrs() = 0;
+                virtual int64 GetAttrs(size_t line) = 0;
             };
 
             typedef std::shared_ptr<IEntry> EntryPtr;

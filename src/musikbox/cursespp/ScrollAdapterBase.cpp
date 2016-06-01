@@ -101,13 +101,14 @@ void ScrollAdapterBase::DrawPage(WINDOW* window, size_t index, ScrollPosition *r
     for (size_t e = 0; e < visible.size(); e++) {
         EntryPtr entry = visible.at(e);
         size_t count = entry->GetLineCount();
-        int64 attrs = entry->GetAttrs();
-
-        if (attrs != -1) {
-            wattron(window, attrs);
-        }
 
         for (size_t i = 0; i < count && drawnLines < this->height; i++) {
+            int64 attrs = entry->GetAttrs(i);
+
+            if (attrs != -1) {
+                wattron(window, attrs);
+            }
+
             std::string line = entry->GetLine(i);
             size_t len = u8len(line);
 
@@ -123,11 +124,11 @@ void ScrollAdapterBase::DrawPage(WINDOW* window, size_t index, ScrollPosition *r
 
             wprintw(window, "%s", line.c_str());
 
-            ++drawnLines;
-        }
+            if (attrs != -1) {
+                wattroff(window, attrs);
+            }
 
-        if (attrs != -1) {
-            wattroff(window, attrs);
+            ++drawnLines;
         }
     }
 

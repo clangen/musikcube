@@ -9,6 +9,7 @@
 #include <core/library/LocalLibraryConstants.h>
 
 #include <app/util/Text.h>
+#include <app/window/EntryWithHeader.h>
 
 #include <boost/format.hpp>
 #include <boost/format/group.hpp>
@@ -68,6 +69,7 @@ void TrackListView::ProcessMessage(IMessage &message) {
     if (message.Type() == WINDOW_MESSAGE_QUERY_COMPLETED) {
         if (this->query && this->query->GetStatus() == IQuery::Finished) {
             this->metadata = this->query->GetResult();
+            this->headers = this->query->GetHeaders();
             this->query.reset();
             this->SetSelectedIndex(0);
             this->OnAdapterChanged();
@@ -137,9 +139,15 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(size_t index) {
             % group(setw(column3Width), setiosflags(std::ios::left), setfill(' '), artist)
             % group(setw(column4Width), setiosflags(std::ios::left), setfill(' '), album));
 
-    IScrollAdapter::EntryPtr entry(new SingleLineEntry(text));
-
-    entry->SetAttrs(attrs);
-
-    return entry;
+    if (this->parent.headers->find(index) != this->parent.headers->end()) {
+        std::string album = track->GetValue(constants::Track::ALBUM_ID);
+        std::shared_ptr<EntryWithHeader> entry(new EntryWithHeader(album, text));
+        entry->SetAttrs(COLOR_PAIR(BOX_COLOR_GREEN_ON_BLACK), attrs);
+        return entry;
+    }
+    else {
+        std::shared_ptr<SingleLineEntry> entry(new SingleLineEntry(text));
+        entry->SetAttrs(attrs);
+        return entry;
+    }
 }

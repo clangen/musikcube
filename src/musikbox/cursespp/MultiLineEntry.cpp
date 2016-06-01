@@ -21,24 +21,8 @@ std::string MultiLineEntry::GetLine(size_t n) {
     return this->lines.at(n);
 }
 
-std::string MultiLineEntry::GetValue() {
-    return value;
-}
-
-size_t MultiLineEntry::GetIndex() {
-    return this->index;
-}
-
-void MultiLineEntry::SetIndex(size_t index) {
-    this->index = index;
-}
-
-int64 MultiLineEntry::GetAttrs() {
+int64 MultiLineEntry::GetAttrs(size_t line) {
     return this->attrs;
-}
-
-void MultiLineEntry::SetAttrs(int64 attrs) {
-    this->attrs = attrs;
 }
 
 inline static void breakIntoSubLines(

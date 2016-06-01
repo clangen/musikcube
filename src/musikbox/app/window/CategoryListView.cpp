@@ -100,7 +100,7 @@ IScrollAdapter::EntryPtr CategoryListView::Adapter::GetEntry(size_t index) {
     text::Ellipsize(value, this->GetWidth());
 
     int64 attrs = (index == parent.GetSelectedIndex()) ? COLOR_PAIR(BOX_COLOR_BLACK_ON_GREEN) : -1;
-    IScrollAdapter::EntryPtr entry(new SingleLineEntry(value));
+    std::shared_ptr<SingleLineEntry> entry(new SingleLineEntry(value));
     entry->SetAttrs(attrs);
     return entry;
 }

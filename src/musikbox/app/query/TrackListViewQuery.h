@@ -12,6 +12,8 @@ namespace musik {
                 typedef std::shared_ptr<
                     std::vector<musik::core::TrackPtr> > Result;
 
+                typedef std::shared_ptr<std::set<size_t> > Headers;
+
                 TrackListViewQuery(
                     musik::core::LibraryPtr library,
                     const std::string& column, DBID id);
@@ -21,11 +23,13 @@ namespace musik {
                 std::string Name() { return "TrackListViewQuery"; }
 
                 virtual Result GetResult();
+                virtual Headers GetHeaders();
 
             protected:
                 virtual bool OnRun(musik::core::db::Connection &db);
 
                 Result result;
+                Headers headers;
 
             private:
                 musik::core::LibraryPtr library;

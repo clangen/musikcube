@@ -93,6 +93,9 @@
     <ClCompile Include="cursespp\Colors.cpp">
       <Filter>app</Filter>
     </ClCompile>
+    <ClCompile Include="app\window\EntryWithHeader.cpp">
+      <Filter>app\window</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -224,6 +227,9 @@
     </ClInclude>
     <ClInclude Include="cursespp\IMessageTarget.h">
       <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="app\window\EntryWithHeader.h">
+      <Filter>app\window</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

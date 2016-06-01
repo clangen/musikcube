@@ -6,18 +6,16 @@ namespace cursespp {
     class MultiLineEntry : public IScrollAdapter::IEntry {
         public:
             MultiLineEntry(const std::string& value, int64 attrs = -1);
+            virtual ~MultiLineEntry() { }
 
-            size_t GetIndex();
-            void SetIndex(size_t index);
-            size_t GetLineCount();
-            std::string GetLine(size_t line);
-            std::string GetValue();
-            void SetWidth(size_t width);
+            virtual size_t GetLineCount();
+            virtual std::string GetLine(size_t line);
+            virtual void SetWidth(size_t width);
+            virtual int64 GetAttrs(size_t line);
+
             void SetAttrs(int64 attrs);
-            int64 GetAttrs();
 
         private:
-            size_t index;
             std::string value;
             std::vector<std::string> lines;
             size_t charCount;
