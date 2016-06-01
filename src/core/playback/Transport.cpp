@@ -61,6 +61,10 @@ static void resumePlayer(Player* p) {
     p->Resume();
 }
 
+static void stopPlayer(Player* p) {
+    p->Stop();
+}
+
 static void deletePlayer(Player* p) {
     delete p;
 }
@@ -104,7 +108,7 @@ void Transport::StartWithPlayer(Player* newPlayer) {
             }
 
             this->nextPlayer = NULL;
-            this->Stop(true); /* suppress the "Stopped" event */
+            this->Stop(true); /* true = suppress stopped event */
 
             newPlayer->PlaybackStarted.connect(this, &Transport::OnPlaybackStarted);
             newPlayer->PlaybackAlmostEnded.connect(this, &Transport::OnPlaybackAlmostEnded);
@@ -134,13 +138,15 @@ void Transport::Stop(bool suppressEvent) {
 
     {
         boost::recursive_mutex::scoped_lock lock(this->stateMutex);
-
         RESET_NEXT_PLAYER();
         std::swap(toDelete, this->active);
     }
 
     /* delete these in the background to avoid deadlock in some cases
-    where this method is implicitly triggered via Player callback */
+    where this method is implicitly triggered via Player callback. however,
+    it's perfectly safe (and actually required) to stop them immediately to
+    ensure all pending buffers have been flushed. */
+    std::for_each(toDelete.begin(), toDelete.end(), stopPlayer);
     DEFER(&Transport::DeletePlayers, toDelete);
 
     /* if we know we're starting another track immediately, suppress
@@ -304,7 +310,7 @@ void Transport::OnPlaybackFinished(Player* player) {
 
 void Transport::OnPlaybackStopped (Player* player) {
     this->RaiseStreamEvent(Transport::StreamStopped, player);
-    
+
     bool stopped = false;
     {
         boost::recursive_mutex::scoped_lock lock(this->stateMutex);
