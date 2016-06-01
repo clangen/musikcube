@@ -68,6 +68,7 @@ namespace musik { namespace core { namespace audio {
             ~Transport();
 
             void PrepareNextTrack(const std::string& trackUrl);
+
             void Start(const std::string& trackUrl);
             void Stop();
             bool Pause();

@@ -85,8 +85,20 @@ Transport::PlaybackState Transport::GetPlaybackState() {
 }
 
 void Transport::PrepareNextTrack(const std::string& trackUrl) {
-    boost::recursive_mutex::scoped_lock lock(this->stateMutex);
-    this->nextPlayer = new Player(trackUrl, this->volume, this->output);
+    bool startNext = false;
+    {
+        boost::recursive_mutex::scoped_lock lock(this->stateMutex);
+        this->nextPlayer = new Player(trackUrl, this->volume, this->output);
+        startNext = this->state == PlaybackStopped;
+    }
+
+    /* we raise an event when the current stream has almost finished, which
+    allows the calling app to prepare a new track. by the time this preparation
+    is complete, the track may have ended. if we're in the stopped state, start
+    playback of this new track immediately. */
+    if (startNext) {
+        this->StartWithPlayer(this->nextPlayer);
+    }
 }
 
 void Transport::Start(const std::string& url) {
