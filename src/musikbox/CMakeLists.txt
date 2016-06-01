@@ -12,6 +12,7 @@ set (BOX_SRCS
 	./app/util/Text.cpp
 	./app/window/CategoryListView.cpp
 	./app/window/CommandWindow.cpp
+	./app/window/EntryWithHeader.cpp
 	./app/window/LogWindow.cpp
 	./app/window/OutputWindow.cpp
 	./app/window/ResourcesWindow.cpp
