@@ -6,29 +6,51 @@
 
 using namespace musik::core::audio;
 
-void audioCallback(void *customData, AudioQueueRef queue, AudioQueueBufferRef buffer)
-{
+void audioCallback(void *customData, AudioQueueRef queue, AudioQueueBufferRef buffer) {
+    CoreAudioOut* output = (CoreAudioOut *) customData;
+    CoreAudioOut::BufferContext* context = (CoreAudioOut::BufferContext *) buffer->mUserData;
+
     OSStatus result = AudioQueueFreeBuffer(queue, buffer);
 
     if (result != 0) {
         std::cerr << "AudioQueueFreeBuffer failed: " << result << "\n";
     }
 
-    CoreAudioOut* output = (CoreAudioOut *) customData;
-    IBuffer* coreBuffer = (IBuffer *) buffer->mUserData;
-    output->NotifyBufferCompleted(coreBuffer);
+    output->NotifyBufferCompleted(context);
 }
 
-void CoreAudioOut::NotifyBufferCompleted(IBuffer *buffer) {
+size_t countBuffersWithProvider(
+    const std::list<CoreAudioOut::BufferContext*>& buffers,
+    const IBufferProvider* provider)
+{
+    size_t count = 0;
+    auto it = buffers.begin();
+    while (it != buffers.end()) {
+        if ((*it)->provider == provider) {
+            ++count;
+        }
+        ++it;
+    }
+    return count;
+}
+
+void CoreAudioOut::NotifyBufferCompleted(BufferContext *context) {
     boost::recursive_mutex::scoped_lock lock(this->mutex);
-    --bufferCount;
-    this->bufferProvider->OnBufferProcessed(buffer);
+
+    auto it = this->buffers.begin();
+    while (it != this->buffers.end()) {
+        if (*it == context) {
+            this->buffers.erase(it);
+        }
+        ++it;
+    }
+
+    context->provider->OnBufferProcessed(context->buffer);
+    delete context;
 }
 
 CoreAudioOut::CoreAudioOut() {
-    this->bufferProvider = NULL;
     this->quit = false;
-    this->bufferCount = 0;
     this->volume = 1.0f;
 
     this->audioFormat = (AudioStreamBasicDescription) { 0 };
@@ -51,7 +73,7 @@ CoreAudioOut::CoreAudioOut() {
 bool CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     boost::recursive_mutex::scoped_lock lock(this->mutex);
 
-    if (this->bufferCount >= BUFFER_COUNT) {
+    if (countBuffersWithProvider(this->buffers, provider) >= BUFFER_COUNT) {
         /* enough buffers are already in the queue. bail, we'll notify the
         caller when there's more data available */
         return false;
@@ -94,20 +116,22 @@ bool CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
         }
     }
 
-    this->bufferProvider = provider;
-
     AudioQueueBufferRef audioQueueBuffer = NULL;
 
     size_t bytes = buffer->Bytes();
 
     result = AudioQueueAllocateBuffer(this->audioQueue, bytes, &audioQueueBuffer);
 
+    BufferContext* context = new BufferContext();
+    context->provider = provider;
+    context->buffer = buffer;
+
     if (result != 0) {
         std::cerr << "AudioQueueAllocateBuffer failed: " << result << "\n";
         return false;
     }
 
-    audioQueueBuffer->mUserData = (void *) buffer;
+    audioQueueBuffer->mUserData = (void *) context;
     audioQueueBuffer->mAudioDataByteSize = bytes;
 
     memcpy(
@@ -120,10 +144,11 @@ bool CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
 
     if (result != 0) {
         std::cerr << "AudioQueueEnqueueBuffer failed: " << result << "\n";
+        delete context;
         return false;
     }
 
-    ++bufferCount;
+    this->buffers.push_back(context);
 
     return true;
 }

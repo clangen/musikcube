@@ -12,6 +12,11 @@
 
 class CoreAudioOut : public musik::core::audio::IOutput {
     public:
+        struct BufferContext {
+            musik::core::audio::IBuffer *buffer;
+            musik::core::audio::IBufferProvider *provider;
+        };
+
         CoreAudioOut();
         virtual ~CoreAudioOut();
 
@@ -25,14 +30,13 @@ class CoreAudioOut : public musik::core::audio::IOutput {
             musik::core::audio::IBuffer *buffer,
             musik::core::audio::IBufferProvider *provider);
 
-        void NotifyBufferCompleted(musik::core::audio::IBuffer *buffer);
+        void NotifyBufferCompleted(BufferContext *context);
 
     private:
-        musik::core::audio::IBufferProvider *bufferProvider;
         AudioStreamBasicDescription audioFormat;
         AudioQueueRef audioQueue;
         double volume;
-        size_t bufferCount;
+        std::list<BufferContext*> buffers;
         boost::thread thread;
         boost::recursive_mutex mutex;
         bool quit;
