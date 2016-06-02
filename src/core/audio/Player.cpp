@@ -46,11 +46,11 @@ using std::max;
 
 static std::string TAG = "Player";
 
-PlayerPtr Player::Create(const std::string &url, double volume, OutputPtr output) {
-    return PlayerPtr(new Player(url, volume, output));
+PlayerPtr Player::Create(const std::string &url, OutputPtr output) {
+    return PlayerPtr(new Player(url, output));
 }
 
-Player::OutputPtr Player::CreateDefaultOutput() {
+OutputPtr Player::CreateDefaultOutput() {
     /* if no output is specified, find all output plugins, and select the first one. */
     typedef std::vector<OutputPtr> OutputVector;
 
@@ -62,32 +62,36 @@ Player::OutputPtr Player::CreateDefaultOutput() {
         return outputs.front();
     }
 
-    return Player::OutputPtr();
+    return OutputPtr();
 }
 
-
-Player::Player(const std::string &url, double volume, OutputPtr output)
-: volume(volume)
-, state(Player::Precache)
+Player::Player(const std::string &url, OutputPtr output)
+: state(Player::Precache)
 , url(url)
 , currentPosition(0)
+, output(output)
 , setPosition(-1) {
     musik::debug::info(TAG, "new instance created");
 
     /* we allow callers to specify an output device; but if they don't,
     we will create and manage our own. */
-    this->output = output ? output : Player::CreateDefaultOutput();
+    if (!this->output) {
+        throw std::runtime_error("output cannot be null!");
+    }
 
     /* each player instance is driven by a background thread. start it. */
     this->thread.reset(new boost::thread(boost::bind(&Player::ThreadLoop,this)));
 }
 
 Player::~Player() {
-    this->Stop();
-
-    if (this->thread) {
-        this->thread->join();
+    {
+        boost::mutex::scoped_lock lock(this->mutex);
+        this->state = Player::Quit;
+        this->prebufferQueue.clear();
+        this->writeToOutputCondition.notify_all();
     }
+
+    this->thread->join();
 }
 
 void Player::Play() {
@@ -97,28 +101,9 @@ void Player::Play() {
 }
 
 void Player::Stop() {
-    {
-        boost::mutex::scoped_lock lock(this->mutex);
-        this->state = Player::Quit;
-        this->prebufferQueue.clear();
-        this->writeToOutputCondition.notify_all();
-    }
-
-    if (this->output) {
-        this->output->Stop();
-    }
-}
-
-void Player::Pause() {
-    if (this->output) {
-        this->output->Pause();
-    }
-}
-
-void Player::Resume() {
-    if (this->output) {
-        this->output->Resume();
-    }
+    boost::mutex::scoped_lock lock(this->mutex);
+    this->state = Player::Quit;
+    this->writeToOutputCondition.notify_all();
 }
 
 double Player::Position() {
@@ -131,21 +116,6 @@ void Player::SetPosition(double seconds) {
     this->setPosition = std::max(0.0, seconds);
 }
 
-double Player::Volume() {
-    boost::mutex::scoped_lock lock(this->mutex);
-    return this->volume;
-}
-
-void Player::SetVolume(double volume) {
-    boost::mutex::scoped_lock lock(this->mutex);
-
-    this->volume = volume;
-
-    if (this->output) {
-        this->output->SetVolume(this->volume);
-    }
-}
-
 int Player::State() {
     boost::mutex::scoped_lock lock(this->mutex);
     return this->state;
@@ -155,42 +125,35 @@ void Player::ThreadLoop() {
     /* create and open the stream */
     this->stream = Stream::Create();
     if (this->stream->OpenStream(this->url)) {
-        /* ensure the volume is set properly */
-        {
-            boost::mutex::scoped_lock lock(this->mutex);
-            this->output->SetVolume(this->volume);
-        }
-
         /* precache until buffers are full */
         bool keepPrecaching = true;
         while (this->State() == Precache && keepPrecaching) {
             keepPrecaching = this->PreBuffer();
-            boost::thread::yield();
         }
 
         /* wait until we enter the Playing or Quit state; we may still
         be in the Precache state. */
-        {
+        while (this->state == Precache) {
             boost::mutex::scoped_lock lock(this->mutex);
-            while (this->state == Precache) {
-                this->writeToOutputCondition.wait(lock);
-            }
+            this->writeToOutputCondition.wait(lock);
         }
-
-        this->PlaybackStarted(this);
 
         /* we're ready to go.... */
         bool finished = false;
         BufferPtr buffer;
+
+        bool startedPlaying = false;
 
         while (!finished && !this->Exited()) {
             /* see if we've been asked to seek since the last sample was
             played. if we have, clear our output buffer and seek the
             stream. */
             if (this->setPosition != -1) {
-                this->output->Stop();
+                this->output->Stop(); /* flush all buffers */
+                this->output->Resume(); /* start it back up */
 
                 while (this->lockedBuffers.size() > 0) {
+                    boost::mutex::scoped_lock lock(this->mutex);
                     writeToOutputCondition.wait(this->mutex);
                 }
 
@@ -224,6 +187,11 @@ void Player::ThreadLoop() {
             the output device. */
             if (buffer) {
                 if (this->output->Play(buffer.get(), this)) {
+                    if (!startedPlaying) {
+                        startedPlaying = true;
+                        this->PlaybackStarted(this);
+                    }
+
                     /* success! the buffer was accepted by the output.*/
                     boost::mutex::scoped_lock lock(this->mutex);
 
@@ -263,37 +231,18 @@ void Player::ThreadLoop() {
         this->PlaybackError(this);
     }
 
-    bool stopped = false;
+    this->state = Player::Quit;
 
     /* wait until all remaining buffers have been written, set final state... */
     {
         boost::mutex::scoped_lock lock(this->mutex);
 
-        /* if the state is "Quit" that means the user terminated the stream, so no
-        more buffers will be played / recycled from the output device. kill them now.*/
-        if (this->state == Player::Quit) {
-            this->lockedBuffers.clear();
+        while (this->lockedBuffers.size() > 0) {
+            writeToOutputCondition.wait(this->mutex);
         }
-        /* otherwise wait for their completion */
-        else {
-            while (this->lockedBuffers.size() > 0) {
-                writeToOutputCondition.wait(this->mutex);
-            }
-        }
-
-        stopped = (this->state == Player::Quit);
-        this->state = Player::Quit;
     }
 
-    if (stopped) {
-        this->PlaybackStopped(this);
-    }
-    else {
-        this->PlaybackFinished(this);
-    }
-
-    this->output.reset();
-    this->stream.reset();
+    this->PlaybackFinished(this);
 }
 
 void Player::ReleaseAllBuffers() {

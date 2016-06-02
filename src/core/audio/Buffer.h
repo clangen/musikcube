@@ -59,6 +59,7 @@ namespace musik { namespace core { namespace audio {
             virtual void SetSamples(long samples);
             virtual long Bytes() const;
             virtual double Position() const;
+            void SetPosition(double position);
 
             bool Append(BufferPtr appendBuffer);
             void CopyFormat(BufferPtr fromBuffer);
@@ -66,15 +67,11 @@ namespace musik { namespace core { namespace audio {
         private:
             void ResizeBuffer();
 
-        private:
             float *buffer;
             long sampleSize;
             long internalBufferSize;
             long sampleRate;
             int channels;
-
-        protected:
-            friend class Stream;
             double position;
     };
 

@@ -65,6 +65,7 @@ class WaveOut : public IOutput {
         void SetFormat(IBuffer *buffer);
         void StartWaveOutThread();
         void StopWaveOutThread();
+        void ResetWaveOut();
         void ClearBufferQueue();
 
     protected:
@@ -86,6 +87,7 @@ class WaveOut : public IOutput {
         int currentChannels;
         long currentSampleRate;
         double currentVolume;
+        bool playing;
 
         /* a queue of buffers we've recieved from the core Player, and have enqueued
         to the output device. we need to notify the IBufferProvider when they have finished

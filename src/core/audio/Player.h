@@ -49,21 +49,20 @@ namespace musik { namespace core { namespace audio {
     class Player;
     typedef std::shared_ptr<Player> PlayerPtr;
 
+    class Output;
+    typedef std::shared_ptr<IOutput> OutputPtr;
+
     class Player : public IBufferProvider {
         public:
-            typedef std::shared_ptr<IOutput> OutputPtr;
-
             static OutputPtr CreateDefaultOutput();
 
             static PlayerPtr Create(
                 const std::string &url,
-                double volume = 1.0f,
-                OutputPtr output = OutputPtr());
+                OutputPtr output);
 
             Player(
                 const std::string &url,
-                double volume = 1.0f,
-                OutputPtr output = OutputPtr());
+                OutputPtr output);
 
             ~Player();
 
@@ -71,25 +70,18 @@ namespace musik { namespace core { namespace audio {
 
             void Play();
             void Stop();
-            void Pause();
-            void Resume();
 
             double Position();
             void SetPosition(double seconds);
-
-            double Volume();
-            void SetVolume(double volume);
 
             std::string GetUrl() const { return this->url; }
 
             bool Exited();
 
-        public:
             typedef sigslot::signal1<Player*> PlayerEvent;
             PlayerEvent PlaybackStarted;
             PlayerEvent PlaybackAlmostEnded;
             PlayerEvent PlaybackFinished;
-            PlayerEvent PlaybackStopped;
             PlayerEvent PlaybackError;
 
         private:

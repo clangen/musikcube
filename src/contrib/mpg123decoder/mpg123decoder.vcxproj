@@ -104,10 +104,12 @@
     <ClCompile Include="stdafx.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\fmt123.h" />
+    <ClInclude Include="include\mpg123.h" />
+    <ClInclude Include="include\out123.h" />
     <ClInclude Include="Mpg123Decoder.h" />
     <ClInclude Include="Mpg123DecoderFactory.h" />
     <ClInclude Include="mpg123\src\config.h" />
-    <ClInclude Include="mpg123\src\libmpg123\mpg123.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>

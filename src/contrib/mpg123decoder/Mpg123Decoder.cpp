@@ -183,10 +183,10 @@ bool Mpg123Decoder::Open(IDataStream *fileStream){
         this->fileStream = fileStream;
 
         if (mpg123_open_feed(this->decoder) == MPG123_OK) {
-            mpg123_param(
+            int result = mpg123_param(
                 this->decoder,
                 MPG123_ADD_FLAGS,
-                MPG123_FUZZY | MPG123_SEEKBUFFER,
+                MPG123_FUZZY | MPG123_SEEKBUFFER | MPG123_GAPLESS | MPG123_QUIET,
                 0);
 
             mpg123_set_filesize(this->decoder, this->fileStream->Length());

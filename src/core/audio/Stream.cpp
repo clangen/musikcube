@@ -145,7 +145,9 @@ BufferPtr Stream::GetNextBufferFromDecoder() {
     this->decoderSamplePosition += buffer->Samples();
 
     /* calculate the position (seconds) in the buffer */
-    buffer->position = ((double) this->decoderSamplePosition) / ((double) this->decoderSampleRate);
+    buffer->SetPosition(
+        ((double) this->decoderSamplePosition) / 
+        ((double) this->decoderSampleRate));
 
     return buffer;
 }
@@ -175,7 +177,7 @@ BufferPtr Stream::GetNextProcessedOutputBuffer() {
 
             for (Dsps::iterator dsp = this->dsps.begin(); dsp != this->dsps.end(); ++dsp) {
                 oldBuffer->CopyFormat(currentBuffer);
-                oldBuffer->position = currentBuffer->position;
+                currentBuffer->SetPosition(oldBuffer->Position());
 
                 if ((*dsp)->Process(currentBuffer.get(), oldBuffer.get())) {
                     currentBuffer.swap(oldBuffer);

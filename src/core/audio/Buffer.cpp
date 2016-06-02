@@ -114,8 +114,12 @@ long Buffer::Bytes() const {
     return sizeof(float) * this->sampleSize * this->channels;
 }
 
-double Buffer::Position() const { /* position in track. ???? */
+double Buffer::Position() const {
     return this->position;
+}
+
+void Buffer::SetPosition(double position) {
+    this->position = position;
 }
 
 bool Buffer::Append(BufferPtr appendBuffer) {

@@ -34,7 +34,7 @@
 #include "WaveOut.h"
 
 #define MAX_VOLUME 0xFFFF
-#define MAX_BUFFERS 8
+#define MAX_BUFFERS_PER_OUTPUT 8
 
 static void notifyBufferProcessed(WaveOutBuffer *buffer) {
     /* let the provider know the output device is done with the buffer; the
@@ -49,6 +49,7 @@ WaveOut::WaveOut()
 , currentVolume(1.0)
 , threadId(0)
 , threadHandle(NULL)
+, playing(false)
 {
 }
 
@@ -75,20 +76,25 @@ void WaveOut::Destroy() {
         }
     }
 
-    {
-        boost::recursive_mutex::scoped_lock lock1(this->bufferQueueMutex);
-        this->ClearBufferQueue();
-    }
+    this->ClearBufferQueue();
 
     delete this;
 }
 
 void WaveOut::Pause() {
+    boost::recursive_mutex::scoped_lock lock2(this->outputDeviceMutex);
     waveOutPause(this->waveHandle);
+    this->playing = false;
 }
 
 void WaveOut::Resume() {
-    waveOutRestart(this->waveHandle);
+    boost::recursive_mutex::scoped_lock lock2(this->outputDeviceMutex);
+
+    if (!this->playing) {
+        waveOutRestart(this->waveHandle);
+    }
+
+    this->playing = true;
 }
 
 void WaveOut::SetVolume(double volume) {
@@ -102,51 +108,56 @@ void WaveOut::SetVolume(double volume) {
 }
 
 void WaveOut::Stop() {
+    boost::recursive_mutex::scoped_lock lock2(this->outputDeviceMutex);
 
-    {
-        boost::recursive_mutex::scoped_lock lock2(this->outputDeviceMutex);
-
-        if (this->waveHandle != NULL) {
-            waveOutReset(this->waveHandle);
-        }
-    }
-
-    {
-        boost::recursive_mutex::scoped_lock lock1(this->bufferQueueMutex);
-        this->ClearBufferQueue();
+    if (this->waveHandle != NULL) {
+        waveOutReset(this->waveHandle);
     }
 }
 
 void WaveOut::ClearBufferQueue() {
-    boost::recursive_mutex::scoped_lock lock(this->bufferQueueMutex);
+    std::list<WaveOutBufferPtr> remove;
+
+    {
+        boost::recursive_mutex::scoped_lock lock(this->bufferQueueMutex);
+        std::swap(this->queuedBuffers, remove);
+    }
 
     /* notify and free any pending buffers, the Player in the core
     will be waiting for all pending buffers to be processed. */
-    if (this->queuedBuffers.size() > 0) {
-        BufferList::iterator it = this->queuedBuffers.begin();
-        for (; it != this->queuedBuffers.end(); it++) {
+    if (remove.size() > 0) {
+        BufferList::iterator it = remove.begin();
+        for (; it != remove.end(); it++) {
             notifyBufferProcessed((*it).get());
         }
-
-        this->queuedBuffers.clear();
     }
 }
 
 void WaveOut::OnBufferWrittenToOutput(WaveOutBuffer *buffer) {
-    boost::recursive_mutex::scoped_lock lock(this->bufferQueueMutex);
-   
-    /* removed the buffer. it should be at the front of the queue. */
-    BufferList::iterator it = this->queuedBuffers.begin();
-    for( ; it != this->queuedBuffers.end(); it++) {
-        if (it->get() == buffer) {
-            notifyBufferProcessed(buffer);
-            this->queuedBuffers.erase(it);
-            return;
+    WaveOutBufferPtr erased;
+
+    {
+        boost::recursive_mutex::scoped_lock lock(this->bufferQueueMutex);
+
+        /* removed the buffer. it should be at the front of the queue. */
+        BufferList::iterator it = this->queuedBuffers.begin();
+        for (; it != this->queuedBuffers.end(); it++) {
+            if (it->get() == buffer) {
+                erased = *it;
+                this->queuedBuffers.erase(it);
+                break;
+            }
         }
+    }
+
+    if (erased) {
+        notifyBufferProcessed(erased.get());
     }
 }
 
 void WaveOut::StartWaveOutThread() {
+    this->StopWaveOutThread();
+
     this->threadHandle = CreateThread(
         NULL,
         0,
@@ -168,11 +179,9 @@ void WaveOut::StopWaveOutThread() {
 bool WaveOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     boost::recursive_mutex::scoped_lock lock(this->bufferQueueMutex);
 
-    size_t bufferCount = bufferCount = this->queuedBuffers.size();
-
     /* if we have a different format, return false and wait for the pending
     buffers to be written to the output device. */
-    if (bufferCount > 0) {
+    if (!this->queuedBuffers.empty()) {
         bool formatChanged =
             this->currentChannels != buffer->Channels() ||
             this->currentSampleRate != buffer->SampleRate();
@@ -182,7 +191,24 @@ bool WaveOut::Play(IBuffer *buffer, IBufferProvider *provider) {
         }
     }
 
-    if (MAX_BUFFERS > bufferCount) {
+    size_t buffersForOutput = 0;
+    auto it = this->queuedBuffers.begin();
+    while (it != this->queuedBuffers.end()) {
+        if ((*it)->GetBufferProvider() == provider) {
+            ++buffersForOutput;
+        }
+        ++it;
+    }
+
+    if (MAX_BUFFERS_PER_OUTPUT > buffersForOutput) {
+        {
+            boost::recursive_mutex::scoped_lock lock2(this->outputDeviceMutex);
+
+            if (!this->playing) {
+                return false;
+            }
+        }
+
         /* ensure the output device itself (the WAVEOUT) is configured correctly 
         for the new buffer */
         this->SetFormat(buffer);
@@ -211,7 +237,6 @@ void WaveOut::SetFormat(IBuffer *buffer) {
         this->currentSampleRate = buffer->SampleRate();
 
         this->Stop();
-        this->StopWaveOutThread();
         this->StartWaveOutThread();
 
         /* reset, and configure speaker output */

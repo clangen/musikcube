@@ -84,9 +84,10 @@ namespace musik { namespace core { namespace audio {
 
         private:
             void StartWithPlayer(Player* player);
-            void Stop(bool suppressEvent);
+            void Stop(bool stopOutput);
             void RemoveActive(Player* player);
             void DeletePlayers(std::list<Player*> players);
+            void SetNextCanStart(bool nextCanStart);
 
             void RaiseStreamEvent(int type, Player* player);
             void SetPlaybackState(int state);
@@ -94,16 +95,15 @@ namespace musik { namespace core { namespace audio {
             void OnPlaybackStarted(Player* player);
             void OnPlaybackAlmostEnded(Player* player);
             void OnPlaybackFinished(Player* player);
-            void OnPlaybackStopped(Player* player);
             void OnPlaybackError(Player* player);
 
         private:
             double volume;
             PlaybackState state;
-
+            bool nextCanStart;
             boost::recursive_mutex stateMutex;
             Player* nextPlayer;
-            std::shared_ptr<IOutput> output;
+            musik::core::audio::OutputPtr output;
             std::list<Player*> active;
 
     };

@@ -53,14 +53,6 @@ static std::string TAG = "Transport";
       thread.detach(); \
   }
 
-static void pausePlayer(Player* p) {
-    p->Pause();
-}
-
-static void resumePlayer(Player* p) {
-    p->Resume();
-}
-
 static void stopPlayer(Player* p) {
     p->Stop();
 }
@@ -72,7 +64,8 @@ static void deletePlayer(Player* p) {
 Transport::Transport()
 : volume(1.0)
 , state(PlaybackStopped)
-, nextPlayer(NULL) {
+, nextPlayer(NULL)
+, nextCanStart(false) {
     this->output = Player::CreateDefaultOutput();
 }
 
@@ -88,14 +81,10 @@ void Transport::PrepareNextTrack(const std::string& trackUrl) {
     bool startNext = false;
     {
         boost::recursive_mutex::scoped_lock lock(this->stateMutex);
-        this->nextPlayer = new Player(trackUrl, this->volume, this->output);
-        startNext = this->state == PlaybackStopped;
+        this->nextPlayer = new Player(trackUrl, this->output);
+        startNext = this->nextCanStart;
     }
 
-    /* we raise an event when the current stream has almost finished, which
-    allows the calling app to prepare a new track. by the time this preparation
-    is complete, the track may have ended. if we're in the stopped state, start
-    playback of this new track immediately. */
     if (startNext) {
         this->StartWithPlayer(this->nextPlayer);
     }
@@ -104,7 +93,7 @@ void Transport::PrepareNextTrack(const std::string& trackUrl) {
 void Transport::Start(const std::string& url) {
     musik::debug::info(TAG, "we were asked to start the track at " + url);
 
-    Player* newPlayer = new Player(url, this->volume, this->output);
+    Player* newPlayer = new Player(url, this->output);
     musik::debug::info(TAG, "Player created successfully");
 
     this->StartWithPlayer(newPlayer);
@@ -115,23 +104,25 @@ void Transport::StartWithPlayer(Player* newPlayer) {
         {
             boost::recursive_mutex::scoped_lock lock(this->stateMutex);
 
+            bool playingNext = (newPlayer == nextPlayer);
+
             if (newPlayer != nextPlayer) {
                 delete nextPlayer;
             }
 
             this->nextPlayer = NULL;
-            this->Stop(true); /* true = suppress stopped event */
+            this->Stop(playingNext); /* true = suppress stopped event */
+            this->SetNextCanStart(false);
 
             newPlayer->PlaybackStarted.connect(this, &Transport::OnPlaybackStarted);
             newPlayer->PlaybackAlmostEnded.connect(this, &Transport::OnPlaybackAlmostEnded);
             newPlayer->PlaybackFinished.connect(this, &Transport::OnPlaybackFinished);
-            newPlayer->PlaybackStopped.connect(this, &Transport::OnPlaybackStopped);
             newPlayer->PlaybackError.connect(this, &Transport::OnPlaybackError);
 
             musik::debug::info(TAG, "play()");
 
             this->active.push_front(newPlayer);
-            newPlayer->SetVolume(this->volume);
+            this->output->Resume();
             newPlayer->Play();
         }
 
@@ -143,7 +134,7 @@ void Transport::Stop() {
     this->Stop(false);
 }
 
-void Transport::Stop(bool suppressEvent) {
+void Transport::Stop(bool playingNext) {
     musik::debug::info(TAG, "stop");
 
     std::list<Player*> toDelete;
@@ -156,15 +147,20 @@ void Transport::Stop(bool suppressEvent) {
 
     /* delete these in the background to avoid deadlock in some cases
     where this method is implicitly triggered via Player callback. however,
-    it's perfectly safe (and actually required) to stop them immediately to
-    ensure all pending buffers have been flushed. */
+    we should stop them immediately so they stop producing audio. */
     std::for_each(toDelete.begin(), toDelete.end(), stopPlayer);
     DEFER(&Transport::DeletePlayers, toDelete);
+
+    /* stopping the transport will stop any buffers that are currently in
+    flight. this makes the sound end immediately. */
+    if (!playingNext) {
+        this->output->Stop();
+    }
 
     /* if we know we're starting another track immediately, suppress
     the stop event. this functionality is not available to the public
     interface, it's an internal optimization */
-    if (!suppressEvent) {
+    if (!playingNext) {
         this->SetPlaybackState(PlaybackStopped);
     }
 }
@@ -174,9 +170,10 @@ bool Transport::Pause() {
 
     size_t count = 0;
 
+    this->output->Pause();
+
     {
         boost::recursive_mutex::scoped_lock lock(this->stateMutex);
-        std::for_each(this->active.begin(), this->active.end(), pausePlayer);
         count = this->active.size();
     }
 
@@ -191,12 +188,19 @@ bool Transport::Pause() {
 bool Transport::Resume() {
     musik::debug::info(TAG, "resume");
 
+    this->output->Resume();
+
     size_t count = 0;
 
     {
         boost::recursive_mutex::scoped_lock lock(this->stateMutex);
-        std::for_each(this->active.begin(), this->active.end(), resumePlayer);
         count = this->active.size();
+
+        auto it = this->active.begin();
+        while (it != this->active.end()) {
+            (*it)->Play();
+            ++it;
+        }
     }
 
     if (count) {
@@ -241,25 +245,12 @@ void Transport::SetVolume(double volume) {
         this->VolumeChanged();
     }
 
-    musik::debug::info(TAG, boost::str(
-        boost::format("set volume %d%%") % round(volume * 100)));
+    std::string output = boost::str(
+        boost::format("set volume %d%%") % round(volume * 100));
 
-    {
-        boost::recursive_mutex::scoped_lock lock(this->stateMutex);
+    musik::debug::info(TAG, output);
 
-        if (!this->active.empty()) {
-            this->active.front()->SetVolume(volume);
-        }
-    }
-}
-
-void Transport::OnPlaybackStarted(Player* player) {
-    this->RaiseStreamEvent(Transport::StreamPlaying, player);
-    this->SetPlaybackState(Transport::PlaybackPlaying);
-}
-
-void Transport::OnPlaybackAlmostEnded(Player* player) {
-    this->RaiseStreamEvent(Transport::StreamAlmostDone, player);
+    this->output->SetVolume(this->volume);
 }
 
 void Transport::RemoveActive(Player* player) {
@@ -287,7 +278,33 @@ void Transport::DeletePlayers(std::list<Player*> players) {
     std::for_each(players.begin(), players.end(), deletePlayer);
 }
 
+void Transport::SetNextCanStart(bool nextCanStart) {
+    boost::recursive_mutex::scoped_lock lock(this->stateMutex);
+    this->nextCanStart = nextCanStart;
+}
+
+void Transport::OnPlaybackStarted(Player* player) {
+    this->RaiseStreamEvent(Transport::StreamPlaying, player);
+    this->SetPlaybackState(Transport::PlaybackPlaying);
+}
+
+void Transport::OnPlaybackAlmostEnded(Player* player) {
+    this->SetNextCanStart(true);
+    this->RaiseStreamEvent(Transport::StreamAlmostDone, player);
+
+    {
+        boost::recursive_mutex::scoped_lock lock(this->stateMutex);
+
+        /* if another component configured a next player while we were playing,
+        go ahead and get it started now. */
+        if (this->nextPlayer) {
+            this->StartWithPlayer(this->nextPlayer);
+        }
+    }
+}
+
 void Transport::OnPlaybackFinished(Player* player) {
+    this->SetNextCanStart(true);
     this->RaiseStreamEvent(Transport::StreamFinished, player);
 
     bool stopped = false;
@@ -320,23 +337,8 @@ void Transport::OnPlaybackFinished(Player* player) {
     DEFER(&Transport::RemoveActive, player);
 }
 
-void Transport::OnPlaybackStopped (Player* player) {
-    this->RaiseStreamEvent(Transport::StreamStopped, player);
-
-    bool stopped = false;
-    {
-        boost::recursive_mutex::scoped_lock lock(this->stateMutex);
-        stopped = !this->active.size();
-    }
-
-    if (stopped) {
-        this->SetPlaybackState(Transport::PlaybackStopped);
-    }
-
-    DEFER(&Transport::RemoveActive, player);
-}
-
 void Transport::OnPlaybackError(Player* player) {
+    this->SetNextCanStart(true);
     this->RaiseStreamEvent(Transport::StreamError, player);
     this->SetPlaybackState(Transport::PlaybackStopped);
     DEFER(&Transport::RemoveActive, player);
