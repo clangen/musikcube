@@ -1,6 +1,5 @@
 set(CORE_SOURCES
   ./debug.cpp
-  ./pch.cpp
   ./audio/Buffer.cpp
   ./audio/Player.cpp
   ./audio/Stream.cpp

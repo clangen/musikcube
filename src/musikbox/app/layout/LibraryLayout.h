@@ -29,7 +29,6 @@ namespace musik {
                 virtual cursespp::IWindowPtr FocusPrev();
                 virtual cursespp::IWindowPtr GetFocus();
 
-                virtual void OnVisibilityChanged(bool visible);
                 virtual bool KeyPress(const std::string& key);
 
             private:

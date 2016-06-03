@@ -54,7 +54,9 @@ void LibraryLayout::Layout() {
         cx - 2,
         TRANSPORT_HEIGHT);
 
-    this->ShowBrowse();
+    if (!this->visibleLayout) {
+        this->ShowBrowse();
+    }
 }
 
 void LibraryLayout::ChangeMainLayout(std::shared_ptr<cursespp::LayoutBase> newLayout) {
@@ -91,14 +93,6 @@ void LibraryLayout::InitializeWindows() {
     this->AddWindow(this->transportView);
 
     this->Layout();
-}
-
-void LibraryLayout::OnVisibilityChanged(bool visible) {
-    LayoutBase::OnVisibilityChanged(visible);
-
-    if (visible) {
-        this->BringToTop();
-    }
 }
 
 IWindowPtr LibraryLayout::FocusNext() {

@@ -5,7 +5,7 @@ project(musikbox)
 set (musikbox_VERSION_MAJOR 0)
 set (musikbox_VERSION_MINOR 1)
 
-set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-fpermissive -g")
+set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++11 -fpermissive -g")
 
 set (BOOST_LIBS
   system

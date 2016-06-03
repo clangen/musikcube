@@ -113,6 +113,7 @@ static void changeLayout(WindowState& current, ILayoutPtr newLayout) {
         current.layout = newLayout;
         current.layout->Layout();
         current.layout->Show();
+        current.layout->BringToTop();
         updateFocusedWindow(current, current.layout->GetFocus());
     }
 }
