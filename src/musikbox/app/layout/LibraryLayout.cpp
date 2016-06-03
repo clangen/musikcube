@@ -57,25 +57,30 @@ void LibraryLayout::Layout() {
     this->ShowBrowse();
 }
 
-void LibraryLayout::ShowNowPlaying() {
-    if (this->focusedLayout != this->nowPlayingLayout) {
-        this->AddWindow(this->nowPlayingLayout);
-        this->RemoveWindow(this->browseLayout);
-        this->focusedLayout = this->nowPlayingLayout;
-        this->nowPlayingLayout->Layout();
-        this->nowPlayingLayout->Show();
-        this->BringToTop();
+void LibraryLayout::ChangeMainLayout(std::shared_ptr<cursespp::LayoutBase> newLayout) {
+    if (this->visibleLayout != newLayout) {
+        if (this->visibleLayout) {
+           this->RemoveWindow(this->visibleLayout);
+           this->visibleLayout->Hide();
+        }
+
+        this->visibleLayout = newLayout;
+        this->AddWindow(this->visibleLayout);
+        this->visibleLayout->Layout();
+        this->visibleLayout->Show();
+
+        if (this->IsVisible()) {
+            this->BringToTop();
+        }
     }
 }
 
+void LibraryLayout::ShowNowPlaying() {
+    this->ChangeMainLayout(this->nowPlayingLayout);
+}
+
 void LibraryLayout::ShowBrowse() {
-    if (this->focusedLayout != this->browseLayout) {
-        this->RemoveWindow(this->nowPlayingLayout);
-        this->AddWindow(this->browseLayout);
-        this->focusedLayout = this->browseLayout;
-        this->browseLayout->Layout();
-        this->BringToTop();
-    }
+    this->ChangeMainLayout(this->browseLayout);
 }
 
 void LibraryLayout::InitializeWindows() {
@@ -88,33 +93,33 @@ void LibraryLayout::InitializeWindows() {
     this->Layout();
 }
 
-void LibraryLayout::Show() {
-    LayoutBase::Show();
-    this->transportView->Update();
+void LibraryLayout::OnVisibilityChanged(bool visible) {
+    LayoutBase::OnVisibilityChanged(visible);
+
+    if (visible) {
+        this->BringToTop();
+    }
 }
 
 IWindowPtr LibraryLayout::FocusNext() {
-    return this->focusedLayout->FocusNext();
+    return this->visibleLayout->FocusNext();
 }
 
 IWindowPtr LibraryLayout::FocusPrev() {
-    return this->focusedLayout->FocusPrev();
+    return this->visibleLayout->FocusPrev();
 }
 
 IWindowPtr LibraryLayout::GetFocus() {
-    return this->focusedLayout->GetFocus();
+    return this->visibleLayout->GetFocus();
 }
 
 bool LibraryLayout::KeyPress(const std::string& key) {
-    if (key == "^N") {
-        this->ShowNowPlaying();
-        return true;
+    if (key == "^[") { /* escape switches between browse/now playing */
+        (this->visibleLayout == this->nowPlayingLayout)
+            ? this->ShowBrowse() : this->ShowNowPlaying();
     }
-    else if (key == "^[") {
-        this->ShowBrowse();
-        return true;
-    }
-    else if (this->focusedLayout && this->focusedLayout->KeyPress(key)) {
+    /* forward to the visible layout */
+    else if (this->visibleLayout && this->visibleLayout->KeyPress(key)) {
         return true;
     }
     else if (key == " ") {

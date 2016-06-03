@@ -29,13 +29,14 @@ namespace musik {
                 virtual cursespp::IWindowPtr FocusPrev();
                 virtual cursespp::IWindowPtr GetFocus();
 
-                virtual void Show();
+                virtual void OnVisibilityChanged(bool visible);
                 virtual bool KeyPress(const std::string& key);
 
             private:
                 void InitializeWindows();
                 void ShowNowPlaying();
                 void ShowBrowse();
+                void ChangeMainLayout(std::shared_ptr<cursespp::LayoutBase> newLayout);
 
                 PlaybackService& playback;
                 musik::core::audio::Transport& transport;
@@ -43,7 +44,7 @@ namespace musik {
                 std::shared_ptr<BrowseLayout> browseLayout;
                 std::shared_ptr<TransportWindow> transportView;
                 std::shared_ptr<NowPlayingLayout> nowPlayingLayout;
-                cursespp::ILayoutPtr focusedLayout;
+                std::shared_ptr<cursespp::LayoutBase> visibleLayout;
         };
     }
 }

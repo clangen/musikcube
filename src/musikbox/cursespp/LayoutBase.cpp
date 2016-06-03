@@ -125,8 +125,6 @@ bool LayoutBase::RemoveWindow(IWindowPtr window) {
         }
     }
 
-    RemoveFocusable(window);
-
     return false;
 }
 

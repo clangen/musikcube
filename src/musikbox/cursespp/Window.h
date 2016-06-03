@@ -65,6 +65,7 @@ namespace cursespp {
 
             virtual void OnPositionChanged();
             virtual void OnSizeChanged();
+            virtual void OnVisibilityChanged(bool visible);
 
         private:
             IWindow* parent;

@@ -205,14 +205,14 @@ int main(int argc, char* argv[])
     #endif
 #endif
 
-    musik::debug::init();
-    PluginFactory::Instance(); /* initialize */
-
 #ifdef __PDCURSES__
     PDC_set_resize_limits(26, 38, 100, 150);
     PDC_set_title("musikbox ♫");
     PDC_set_function_key(FUNCTION_KEY_SHUT_DOWN, 4);
 #endif
+
+    musik::debug::init();
+    PluginFactory::Instance(); /* initialize */
 
     initscr();
     nonl();

@@ -74,9 +74,12 @@ IWindowPtr BrowseLayout::GetFocus() {
     return this->focused ? this->focused : LayoutBase::GetFocus();
 }
 
-void BrowseLayout::Show() {
-    LayoutBase::Show();
-    this->categoryList->Requery();
+void BrowseLayout::OnVisibilityChanged(bool visible) {
+    LayoutBase::OnVisibilityChanged(visible);
+
+    if (visible) {
+        this->categoryList->Requery();
+    }
 }
 
 void BrowseLayout::RequeryTrackList(ListWindow *view) {

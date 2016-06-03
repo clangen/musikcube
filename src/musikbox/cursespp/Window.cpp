@@ -183,6 +183,10 @@ void Window::OnSizeChanged() {
     /* for subclass use */
 }
 
+void Window::OnVisibilityChanged(bool visible) {
+    /* for subclass use */
+}
+
 int Window::GetWidth() const {
     return this->width;
 }
@@ -261,15 +265,18 @@ void Window::SetFocusOrder(int order) {
 
 void Window::Show() {
     if (this->framePanel) {
-        show_panel(this->framePanel);
+        if (!this->isVisible) {
+            show_panel(this->framePanel);
 
-        if (this->framePanel != this->contentPanel) {
-            show_panel(this->contentPanel);
+            if (this->framePanel != this->contentPanel) {
+                show_panel(this->contentPanel);
+            }
+
+            this->isVisible = true;
+            drawPending = true;
+
+            this->OnVisibilityChanged(true);
         }
-
-        this->isVisible = true;
-        drawPending = true;
-        return;
     }
     else {
         this->Create();
@@ -284,17 +291,23 @@ void Window::Recreate() {
 void Window::Create() {
     /* if we have a parent, place the new window relative to the parent. */
 
-    this->frame = (this->parent == NULL)
-        ? newwin(
-            this->height,
-            this->width,
-            this->y,
-            this->x)
-        : newwin(
-            this->height,
-            this->width,
-            this->parent->GetY() + this->y,
-            this->parent->GetX() + this->x);
+    this->frame = newwin(
+        this->height,
+        this->width,
+        this->y,
+        this->x);
+
+    //this->frame = (this->parent == NULL)
+    //    ? newwin(
+    //        this->height,
+    //        this->width,
+    //        this->y,
+    //        this->x)
+    //    : newwin(
+    //        this->height,
+    //        this->width,
+    //        this->parent->GetY() + this->y,
+    //        this->parent->GetX() + this->x);
 
     this->framePanel = new_panel(this->frame);
 
@@ -337,14 +350,17 @@ void Window::Create() {
 
 void Window::Hide() {
     if (this->frame) {
-        hide_panel(this->framePanel);
+        if (this->isVisible) {
+            hide_panel(this->framePanel);
 
-        if (this->content != this->frame) {
-            hide_panel(this->contentPanel);
+            if (this->content != this->frame) {
+                hide_panel(this->contentPanel);
+            }
+
+            this->isVisible = false;
+            this->OnVisibilityChanged(false);
         }
     }
-
-    this->isVisible = false;
 }
 
 void Window::Destroy() {

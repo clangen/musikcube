@@ -2,11 +2,8 @@
 
 #include <cursespp/Colors.h>
 #include <cursespp/Screen.h>
-
 #include <core/library/LocalLibraryConstants.h>
-
 #include <app/query/NowPlayingTrackListQuery.h>
-
 #include "NowPlayingLayout.h"
 
 using namespace musik::core::library::constants;
@@ -54,9 +51,12 @@ IWindowPtr NowPlayingLayout::GetFocus() {
     return this->trackList;
 }
 
-void NowPlayingLayout::Show() {
-    LayoutBase::Show();
-    this->RequeryTrackList();
+void NowPlayingLayout::OnVisibilityChanged(bool visible) {
+    LayoutBase::OnVisibilityChanged(visible);
+
+    if (visible) {
+        this->RequeryTrackList();   
+    }
 }
 
 void NowPlayingLayout::RequeryTrackList() {

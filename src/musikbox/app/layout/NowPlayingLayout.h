@@ -23,7 +23,7 @@ namespace musik {
                 virtual ~NowPlayingLayout();
 
                 virtual void Layout();
-                virtual void Show();
+                virtual void OnVisibilityChanged(bool visible);
                 virtual cursespp::IWindowPtr GetFocus();
                 virtual bool KeyPress(const std::string& key);
 
