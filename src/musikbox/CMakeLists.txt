@@ -37,52 +37,5 @@ set (BOX_SRCS
 	./cursespp/WindowLayout.cpp
 )
 
-set (BOX_HEADERS
-	./stdafx.h
-	./app/layout/LibraryLayout.h
-	./app/layout/ConsoleLayout.h
-	./app/query/CategoryListViewQuery.h
-	./app/query/SingleTrackQuery.h
-	./app/query/TrackListQueryBase.h
-	./app/service/PlaybackService.h
-	./app/util/GlobalHotkeys.h
-	./app/util/SystemInfo.h
-	./app/util/Text.h
-	./app/window/CategoryListView.h
-	./app/window/CommandWindow.h
-	./app/window/LogWindow.h
-	./app/window/OutputWindow.h
-	./app/window/ResourcesWindow.h
-	./app/window/TrackListView.h
-	./app/window/TransportWindow.h
-	./cursespp/Colors.h
-	./cursespp/curses_config.h
-	./cursespp/IDisplayable.h
-	./cursespp/IInput.h
-	./cursespp/IKeyHandler.h
-	./cursespp/ILayout.h
-	./cursespp/ILayoutStack.h
-	./cursespp/IMessage.h
-	./cursespp/IMessageTarget.h
-	./cursespp/IOrderable.h
-	./cursespp/IScrollable.h
-	./cursespp/IScrollAdapter.h
-	./cursespp/IWindow.h
-	./cursespp/IWindowGroup.h
-	./cursespp/LayoutBase.h
-	./cursespp/LayoutStack.h
-	./cursespp/ListWindow.h
-	./cursespp/Message.h
-	./cursespp/MessageQueue.h
-	./cursespp/MultiLineEntry.h
-	./cursespp/Screen.h
-	./cursespp/ScrollableWindow.h
-	./cursespp/ScrollAdapterBase.h
-	./cursespp/SimpleScrollAdapter.h
-	./cursespp/SingleLineEntry.h
-	./cursespp/Window.h
-	./cursespp/WindowLayout.h
-)
-
-add_executable(musikbox ${BOX_SRCS} ${BOX_HEADERS})
+add_executable(musikbox ${BOX_SRCS})
 target_link_libraries(musikbox ${musikbox_LINK_LIBS} curses panel musikcore)
