@@ -21,6 +21,9 @@ TrackListViewQuery::TrackListViewQuery(LibraryPtr library, const std::string& co
     this->id = id;
     this->result.reset(new std::vector<TrackPtr>());
     this->headers.reset(new std::set<size_t>());
+    this->hash = 0;
+
+    this->GetQueryHash();
 }
 
 TrackListViewQuery::~TrackListViewQuery() {
@@ -35,13 +38,24 @@ TrackListViewQuery::Headers TrackListViewQuery::GetHeaders() {
     return this->headers;
 }
 
+size_t TrackListViewQuery::GetQueryHash() {
+    if (this->hash == 0) {
+        std::string parts = boost::str(
+            boost::format("%s-%s") % this->column % this->id);
+
+        this->hash = std::hash<std::string>()(parts);
+    }
+
+    return this->hash;
+}
+
 bool TrackListViewQuery::OnRun(Connection& db) {
     if (result) {
         result.reset(new std::vector<TrackPtr>());
         headers.reset(new std::set<size_t>());
     }
 
-    std::string query = boost::str(boost::format(
+    this->query = boost::str(boost::format(
         "SELECT DISTINCT t.id, t.track, t.bpm, t.duration, t.filesize, t.year, t.title, t.filename, t.thumbnail_id, al.name AS album, gn.name AS genre, ar.name AS artist, t.filetime " \
         "FROM tracks t, paths p, albums al, artists ar, genres gn " \
         "WHERE t.%s=? AND t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id "
@@ -50,7 +64,7 @@ bool TrackListViewQuery::OnRun(Connection& db) {
     std::string lastAlbum;
     size_t index = 0;
 
-    Statement trackQuery(query.c_str(), db);
+    Statement trackQuery(this->query.c_str(), db);
 
     trackQuery.BindInt(0, this->id);
     while (trackQuery.Step() == Row) {

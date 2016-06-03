@@ -30,6 +30,7 @@ namespace cursespp {
             virtual void OnAdapterChanged();
             virtual void OnSelectionChanged(size_t newIndex, size_t oldIndex);
             virtual void OnInvalidated();
+            virtual void OnSizeChanged();
 
             virtual IScrollAdapter::ScrollPosition& GetScrollPosition();
 

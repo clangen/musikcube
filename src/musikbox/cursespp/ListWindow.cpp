@@ -152,6 +152,15 @@ void ListWindow::OnAdapterChanged() {
     this->Repaint();
 }
 
+void ListWindow::OnSizeChanged() {
+    ScrollableWindow::OnSizeChanged();
+
+    this->GetScrollAdapter().DrawPage(
+        this->GetContent(),
+        this->selectedIndex,
+        &this->GetScrollPosition());
+}
+
 IScrollAdapter::ScrollPosition& ListWindow::GetScrollPosition() {
     return this->scrollPosition;
 }

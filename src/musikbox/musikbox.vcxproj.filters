@@ -231,6 +231,9 @@
     <ClInclude Include="app\window\EntryWithHeader.h">
       <Filter>app\window</Filter>
     </ClInclude>
+    <ClInclude Include="app\query\TrackListQueryBase.h">
+      <Filter>app\query</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="cursespp">

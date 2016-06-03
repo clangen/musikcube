@@ -58,6 +58,8 @@ namespace musik {
                 PlaybackService& playback;
                 musik::core::TrackPtr playing;
                 musik::core::LibraryPtr library;
+
+                size_t lastQueryHash;
         };
     }
 }

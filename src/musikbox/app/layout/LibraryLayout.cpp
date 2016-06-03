@@ -17,7 +17,7 @@ using namespace musik::core::library::constants;
     #define TRANSPORT_HEIGHT 2
 #endif
 
-#define DEFAULT_CATEGORY constants::Track::ALBUM_ID
+#define DEFAULT_CATEGORY constants::Track::ARTIST_ID
 
 using namespace musik::core;
 using namespace musik::core::audio;

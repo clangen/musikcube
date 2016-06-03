@@ -37,6 +37,7 @@ TrackListView::TrackListView(PlaybackService& playback, LibraryPtr library)
     this->library->QueryCompleted.connect(this, &TrackListView::OnQueryCompleted);
     this->playback.TrackChanged.connect(this, &TrackListView::OnTrackChanged);
     this->adapter = new Adapter(*this);
+    this->lastQueryHash = 0;
 }
 
 TrackListView::~TrackListView() {
@@ -71,8 +72,16 @@ void TrackListView::ProcessMessage(IMessage &message) {
         if (this->query && this->query->GetStatus() == IQuery::Finished) {
             this->metadata = this->query->GetResult();
             this->headers = this->query->GetHeaders();
+
+            /* if the query was functionally the same as the last query, don't
+            mess with the selected index */
+            if (this->lastQueryHash != query->GetQueryHash()) {
+                this->SetSelectedIndex(0);
+            }
+
+            this->lastQueryHash = this->query->GetQueryHash();
             this->query.reset();
-            this->SetSelectedIndex(0);
+
             this->OnAdapterChanged();
         }
     }

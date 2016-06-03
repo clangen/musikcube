@@ -156,6 +156,7 @@
     <ClInclude Include="app\layout\LibraryLayout.h" />
     <ClInclude Include="app\layout\MainLayout.h" />
     <ClInclude Include="app\query\CategoryListViewQuery.h" />
+    <ClInclude Include="app\query\TrackListQueryBase.h" />
     <ClInclude Include="app\query\SingleTrackQuery.h" />
     <ClInclude Include="app\query\TrackListViewQuery.h" />
     <ClInclude Include="app\service\PlaybackService.h" />

@@ -140,16 +140,18 @@ void CommandWindow::Help() {
     this->output->WriteLine("  <F1> console view", s);
     this->output->WriteLine("  <F2> library view", s);
     this->output->WriteLine("\n", s);
-    this->output->WriteLine("  play <uri>: play audio at location", s);
+    this->output->WriteLine("  addir <dir>: add a music directory", s);
+    this->output->WriteLine("  rmdir <dir>: remove a music directory", s);
+    this->output->WriteLine("  lsdirs: list scanned directories", s);
+    this->output->WriteLine("  rescan: rescan paths for new metadata", s);
+    this->output->WriteLine("\n", s);
+    this->output->WriteLine("  play <uri>: play audio at <uri>", s);
     this->output->WriteLine("  pause: pause/resume", s);
-    this->output->WriteLine("  stop: stop all playback", s);
+    this->output->WriteLine("  stop: stop and clean up everything", s);
     this->output->WriteLine("  volume: <0 - 100>: set % volume", s);
     this->output->WriteLine("  clear: clear the log window", s);
     this->output->WriteLine("  seek <seconds>: seek to <seconds> into track", s);
-    this->output->WriteLine("  addir <dir>: add a directory to be indexed", s);
-    this->output->WriteLine("  rmdir <dir>: remove indexed directory path", s);
-    this->output->WriteLine("  lsdirs: list scanned directories", s);
-    this->output->WriteLine("  rescan: rescan paths for new metadata", s);
+    this->output->WriteLine("\n", s);
     this->output->WriteLine("  plugins: list loaded plugins", s);
     this->output->WriteLine("\n  <ctrl+d>: quit\n", s);
 }
@@ -254,10 +256,9 @@ void CommandWindow::ListPlugins() const {
     PluginList::iterator it = plugins.begin();
     for (; it != plugins.end(); it++) {
         std::string format =
-            "plugin:\n"
-            "  name: " + std::string((*it)->Name()) + " "
+            "    " + std::string((*it)->Name()) + " "
             "v" + std::string((*it)->Version()) + "\n"
-            "  author: " + std::string((*it)->Author()) + "\n";
+            "    by " + std::string((*it)->Author()) + "\n";
 
         this->output->WriteLine(format, BOX_COLOR_RED_ON_BLUE);
     }

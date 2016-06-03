@@ -29,7 +29,13 @@ ScrollableWindow::~ScrollableWindow() {
 
 void ScrollableWindow::OnSizeChanged() {
     Window::OnSizeChanged();
-    GetScrollAdapter().SetDisplaySize(GetContentWidth(), GetContentHeight());
+
+    IScrollAdapter& adapter = this->GetScrollAdapter();
+    ScrollPos& pos = this->GetScrollPosition();
+    
+    adapter.SetDisplaySize(
+        this->GetContentWidth(), 
+        this->GetContentHeight());
 }
 
 ScrollPos& ScrollableWindow::GetScrollPosition() {
