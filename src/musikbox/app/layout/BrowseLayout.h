@@ -14,7 +14,13 @@
 
 namespace musik {
     namespace box {
-        class BrowseLayout : public cursespp::LayoutBase, public sigslot::has_slots<> {
+        class BrowseLayout :
+            public cursespp::LayoutBase,
+#if (__clang_major__ == 7 && __clang_minor__ == 3)
+            public std::enable_shared_from_this<BrowseLayout>,
+#endif
+            public sigslot::has_slots<>
+        {
             public:
                 BrowseLayout(
                     PlaybackService& playback,
@@ -43,7 +49,6 @@ namespace musik {
                 std::shared_ptr<CategoryListView> categoryList;
                 std::shared_ptr<TrackListView> trackList;
                 cursespp::IWindowPtr focused;
-                cursespp::IWindowPtr parent;
         };
     }
 }

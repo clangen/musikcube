@@ -1,6 +1,7 @@
 set (BOX_SRCS
 	./Main.cpp
 	./stdafx.cpp
+	./app/layout/BrowseLayout.cpp
 	./app/layout/ConsoleLayout.cpp
 	./app/layout/LibraryLayout.cpp
 	./app/layout/NowPlayingLayout.cpp
@@ -39,10 +40,10 @@ set (BOX_SRCS
 set (BOX_HEADERS
 	./stdafx.h
 	./app/layout/LibraryLayout.h
-	./app/layout/MainLayout.h
+	./app/layout/ConsoleLayout.h
 	./app/query/CategoryListViewQuery.h
 	./app/query/SingleTrackQuery.h
-	./app/query/TrackListViewQuery.h
+	./app/query/TrackListQueryBase.h
 	./app/service/PlaybackService.h
 	./app/util/GlobalHotkeys.h
 	./app/util/SystemInfo.h

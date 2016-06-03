@@ -14,7 +14,13 @@
 
 namespace musik {
     namespace box {
-        class NowPlayingLayout : public cursespp::LayoutBase, public sigslot::has_slots<> {
+        class NowPlayingLayout :
+            public cursespp::LayoutBase,
+#if (__clang_major__ == 7 && __clang_minor__ == 3)
+            public std::enable_shared_from_this<NowPlayingLayout>,
+#endif
+            public sigslot::has_slots<>
+        {
             public:
                 NowPlayingLayout(
                     PlaybackService& playback,

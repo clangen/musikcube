@@ -114,7 +114,7 @@ IWindowPtr LibraryLayout::GetFocus() {
 }
 
 bool LibraryLayout::KeyPress(const std::string& key) {
-    if (key == "^[") { /* escape switches between browse/now playing */
+    if (key == "^[" || key == "M-n") { /* escape switches between browse/now playing */
         (this->visibleLayout == this->nowPlayingLayout)
             ? this->ShowBrowse() : this->ShowNowPlaying();
     }

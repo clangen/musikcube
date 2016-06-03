@@ -18,11 +18,10 @@ using namespace musik::box;
 using namespace cursespp;
 
 BrowseLayout::BrowseLayout(
-    PlaybackService& playback, 
+    PlaybackService& playback,
     LibraryPtr library)
 : LayoutBase()
-, playback(playback)
-, parent(parent) {
+, playback(playback) {
     this->library = library;
     this->InitializeWindows();
 }
