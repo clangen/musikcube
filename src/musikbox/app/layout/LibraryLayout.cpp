@@ -40,108 +40,81 @@ LibraryLayout::~LibraryLayout() {
 }
 
 void LibraryLayout::Layout() {
-    this->SetSize(Screen::GetWidth(), Screen::GetHeight());
-    this->SetPosition(0, 0);
+    int x = 0, y = 0;
+    int cx = Screen::GetWidth(), cy = Screen::GetHeight();
 
-    this->categoryList->MoveAndResize(
-        0,
-        0,
-        CATEGORY_WIDTH,
-        this->GetHeight() - TRANSPORT_HEIGHT);
+    this->MoveAndResize(x, y, cx, cy);
 
-    this->categoryList->SetFocusOrder(0);
-
-    this->trackList->MoveAndResize(
-        CATEGORY_WIDTH,
-        0,
-        this->GetWidth() - CATEGORY_WIDTH,
-        this->GetHeight() - TRANSPORT_HEIGHT);
-
-    this->trackList->SetFocusOrder(1);
+    this->browseLayout->MoveAndResize(x, y, cx, cy - TRANSPORT_HEIGHT);
+    this->nowPlayingLayout->MoveAndResize(x, y, cx, cy - TRANSPORT_HEIGHT);
 
     this->transportView->MoveAndResize(
         1,
-        this->GetHeight() - TRANSPORT_HEIGHT,
-        this->GetWidth() - 2,
+        cy - TRANSPORT_HEIGHT,
+        cx - 2,
         TRANSPORT_HEIGHT);
 
-    this->transportView->Update();
+    this->ShowBrowse();
+}
+
+void LibraryLayout::ShowNowPlaying() {
+    if (this->focusedLayout != this->nowPlayingLayout) {
+        this->AddWindow(this->nowPlayingLayout);
+        this->RemoveWindow(this->browseLayout);
+        this->focusedLayout = this->nowPlayingLayout;
+        this->nowPlayingLayout->Layout();
+        this->nowPlayingLayout->Show();
+        this->BringToTop();
+    }
+}
+
+void LibraryLayout::ShowBrowse() {
+    if (this->focusedLayout != this->browseLayout) {
+        this->RemoveWindow(this->nowPlayingLayout);
+        this->AddWindow(this->browseLayout);
+        this->focusedLayout = this->browseLayout;
+        this->browseLayout->Layout();
+        this->BringToTop();
+    }
 }
 
 void LibraryLayout::InitializeWindows() {
-    this->categoryList.reset(new CategoryListView(this->library, DEFAULT_CATEGORY));
-    this->trackList.reset(new TrackListView(this->playback, this->library));
+    this->browseLayout.reset(new BrowseLayout(this->playback, this->library));
+    this->nowPlayingLayout.reset(new NowPlayingLayout(this->playback, this->library));
     this->transportView.reset(new TransportWindow(this->playback));
 
-    this->AddWindow(this->categoryList);
-    this->AddWindow(this->trackList);
     this->AddWindow(this->transportView);
-
-    this->categoryList->SelectionChanged.connect(
-        this, &LibraryLayout::OnCategoryViewSelectionChanged);
-
-    this->categoryList->Invalidated.connect(
-        this, &LibraryLayout::OnCategoryViewInvalidated);
 
     this->Layout();
 }
 
-IWindowPtr LibraryLayout::GetFocus() {
-    return this->focused ? this->focused : LayoutBase::GetFocus();
-}
-
 void LibraryLayout::Show() {
     LayoutBase::Show();
-    this->categoryList->Requery();
+    this->transportView->Update();
 }
 
-void LibraryLayout::RequeryTrackList(ListWindow *view) {
-    if (view == this->categoryList.get()) {
-        DBID selectedId = this->categoryList->GetSelectedId();
-        if (selectedId != -1) {
-            this->trackList->Requery(std::shared_ptr<TrackListQueryBase>(
-                new CategoryTrackListQuery(
-                    this->library,
-                    this->categoryList->GetFieldName(),
-                    selectedId)));
-        }
-    }
+IWindowPtr LibraryLayout::FocusNext() {
+    return this->focusedLayout->FocusNext();
 }
 
-void LibraryLayout::OnCategoryViewSelectionChanged(
-    ListWindow *view, size_t newIndex, size_t oldIndex) {
-    this->RequeryTrackList(view);
+IWindowPtr LibraryLayout::FocusPrev() {
+    return this->focusedLayout->FocusPrev();
 }
 
-void LibraryLayout::OnCategoryViewInvalidated(
-    ListWindow *view, size_t selectedIndex) {
-    this->RequeryTrackList(view);
+IWindowPtr LibraryLayout::GetFocus() {
+    return this->focusedLayout->GetFocus();
 }
 
 bool LibraryLayout::KeyPress(const std::string& key) {
-    if (key == "^M") { /* enter. play the selection */
-        auto tracks = this->trackList->GetTrackList();
-        auto focus = this->GetFocus();
-
-        size_t index = (focus == this->trackList)
-            ? this->trackList->GetSelectedIndex() : 0;
-
-        this->playback.Play(*tracks, index);
-    }
-    else if (key == "ALT_1" || key == "M-1") {
-        this->categoryList->SetFieldName(constants::Track::ARTIST_ID);
+    if (key == "^N") {
+        this->ShowNowPlaying();
         return true;
     }
-    else if (key == "ALT_2" || key == "M-2") {
-        this->categoryList->SetFieldName(constants::Track::ALBUM_ID);
+    else if (key == "^[") {
+        this->ShowBrowse();
         return true;
     }
-    else if (key == "ALT_3" || key == "M-3") {
-        this->categoryList->SetFieldName(constants::Track::GENRE_ID);
-        return true;
-    }
-    else if (key == "KEY_F(5)") {
-        this->categoryList->Requery();
+    else if (this->focusedLayout && this->focusedLayout->KeyPress(key)) {
         return true;
     }
     else if (key == " ") {

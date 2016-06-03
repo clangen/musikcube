@@ -31,16 +31,17 @@ NowPlayingLayout::~NowPlayingLayout() {
 }
 
 void NowPlayingLayout::Layout() {
-    this->SetSize(Screen::GetWidth(), Screen::GetHeight());
-    this->SetPosition(0, 0);
+    size_t cx = this->GetWidth(), cy = this->GetHeight();
 
-    this->trackList->MoveAndResize(
-        0,
-        0,
-        this->GetWidth(),
-        this->GetHeight());
+    if (cx && cy) {
+        this->trackList->MoveAndResize(
+            0,
+            0,
+            this->GetWidth(),
+            this->GetHeight());
 
-    this->trackList->SetFocusOrder(1);
+        this->trackList->SetFocusOrder(1);
+    }
 }
 
 void NowPlayingLayout::InitializeWindows() {
@@ -61,4 +62,13 @@ void NowPlayingLayout::Show() {
 void NowPlayingLayout::RequeryTrackList() {
     this->trackList->Requery(std::shared_ptr<TrackListQueryBase>(
         new NowPlayingTrackListQuery(this->playback)));
+}
+
+bool NowPlayingLayout::KeyPress(const std::string& key) {
+    if (key == "^M") { /* enter. play the selection */
+        this->playback.Play(this->trackList->GetSelectedIndex());
+        return true;
+    }
+
+    return LayoutBase::KeyPress(key);
 }

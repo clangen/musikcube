@@ -2,11 +2,12 @@
 
 #include "ILayout.h"
 #include "ILayoutStack.h"
+#include "LayoutBase.h"
 
 #include <memory>
 
 namespace cursespp {
-    class LayoutStack : public ILayout, public ILayoutStack {
+    class LayoutStack : public LayoutBase, public ILayoutStack {
         public:
             LayoutStack();
             virtual ~LayoutStack();
@@ -41,6 +42,7 @@ namespace cursespp {
             virtual bool Pop(ILayoutPtr layout);
             virtual bool BringToTop(ILayoutPtr layout);
             virtual bool SendToBottom(ILayoutPtr layout);
+            virtual ILayoutPtr Top();
 
         private:
             std::deque<ILayoutPtr> layouts;

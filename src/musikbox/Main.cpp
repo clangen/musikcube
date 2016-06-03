@@ -42,7 +42,6 @@
 
 #include <app/layout/ConsoleLayout.h>
 #include <app/layout/LibraryLayout.h>
-#include <app/layout/NowPlayingLayout.h>
 #include <app/util/GlobalHotkeys.h>
 #include <app/service/PlaybackService.h>
 
@@ -238,7 +237,6 @@ int main(int argc, char* argv[])
         GlobalHotkeys globalHotkeys(playback, library);
 
         ILayoutPtr libraryLayout((ILayout *) new LibraryLayout(playback, library));
-        ILayoutPtr nowPlayingLayout((ILayout *) new NowPlayingLayout(playback, library));
         ILayoutPtr consoleLayout((ILayout *) new ConsoleLayout(tp, library));
 
         int64 ch;
@@ -287,9 +285,6 @@ int main(int argc, char* argv[])
                 }
                 else if (ch == KEY_F(2)) {
                     changeLayout(state, libraryLayout);
-                }
-                else if (ch == KEY_F(3)) {
-                    changeLayout(state, nowPlayingLayout);
                 }
                 else if (!globalHotkeys.Handle(kn)) {
                     if (state.input) {

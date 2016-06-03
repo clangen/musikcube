@@ -11,5 +11,6 @@ namespace cursespp {
             virtual bool Pop(ILayoutPtr layout) = 0;
             virtual bool BringToTop(ILayoutPtr layout) = 0;
             virtual bool SendToBottom(ILayoutPtr layout) = 0;
+            virtual ILayoutPtr Top() = 0;
     };
 }

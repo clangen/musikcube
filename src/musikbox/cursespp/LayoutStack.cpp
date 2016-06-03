@@ -103,6 +103,14 @@ IWindowPtr LayoutStack::FocusNext() {
     return this->layouts.front()->FocusNext();
 }
 
+ILayoutPtr LayoutStack::Top() {
+    if (this->layouts.size()) {
+        return this->layouts.front();
+    }
+
+    return ILayoutPtr();
+}
+
 IWindowPtr LayoutStack::FocusPrev() {
     if (!this->layouts.size()) {
         return IWindowPtr();

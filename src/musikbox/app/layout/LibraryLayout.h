@@ -1,9 +1,10 @@
 #pragma once
 
 #include <cursespp/LayoutBase.h>
+#include <cursespp/LayoutStack.h>
 
-#include <app/window/CategoryListView.h>
-#include <app/window/TrackListView.h>
+#include <app/layout/BrowseLayout.h>
+#include <app/layout/NowPlayingLayout.h>
 #include <app/window/TransportWindow.h>
 #include <app/service/PlaybackService.h>
 
@@ -23,28 +24,26 @@ namespace musik {
                 virtual ~LibraryLayout();
 
                 virtual void Layout();
-                virtual void Show();
+
+                virtual cursespp::IWindowPtr FocusNext();
+                virtual cursespp::IWindowPtr FocusPrev();
                 virtual cursespp::IWindowPtr GetFocus();
+
+                virtual void Show();
                 virtual bool KeyPress(const std::string& key);
 
             private:
                 void InitializeWindows();
-
-                void RequeryTrackList(ListWindow *view);
-
-                void OnCategoryViewSelectionChanged(
-                    ListWindow *view, size_t newIndex, size_t oldIndex);
-
-                void OnCategoryViewInvalidated(
-                    ListWindow *view, size_t selectedIndex);
+                void ShowNowPlaying();
+                void ShowBrowse();
 
                 PlaybackService& playback;
                 musik::core::audio::Transport& transport;
                 musik::core::LibraryPtr library;
-                std::shared_ptr<CategoryListView> categoryList;
-                std::shared_ptr<TrackListView> trackList;
+                std::shared_ptr<BrowseLayout> browseLayout;
                 std::shared_ptr<TransportWindow> transportView;
-                cursespp::IWindowPtr focused;
+                std::shared_ptr<NowPlayingLayout> nowPlayingLayout;
+                cursespp::ILayoutPtr focusedLayout;
         };
     }
 }

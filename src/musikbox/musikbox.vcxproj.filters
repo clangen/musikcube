@@ -102,6 +102,9 @@
     <ClCompile Include="app\layout\NowPlayingLayout.cpp">
       <Filter>app\layout</Filter>
     </ClCompile>
+    <ClCompile Include="app\layout\BrowseLayout.cpp">
+      <Filter>app\layout</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -244,6 +247,9 @@
       <Filter>app\layout</Filter>
     </ClInclude>
     <ClInclude Include="app\layout\NowPlayingLayout.h">
+      <Filter>app\layout</Filter>
+    </ClInclude>
+    <ClInclude Include="app\layout\BrowseLayout.h">
       <Filter>app\layout</Filter>
     </ClInclude>
   </ItemGroup>

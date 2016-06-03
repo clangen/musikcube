@@ -14,13 +14,13 @@
 
 namespace musik {
     namespace box {
-        class NowPlayingLayout : public cursespp::LayoutBase, public sigslot::has_slots<> {
+        class BrowseLayout : public cursespp::LayoutBase, public sigslot::has_slots<> {
             public:
-                NowPlayingLayout(
+                BrowseLayout(
                     PlaybackService& playback,
                     musik::core::LibraryPtr library);
 
-                virtual ~NowPlayingLayout();
+                virtual ~BrowseLayout();
 
                 virtual void Layout();
                 virtual void Show();
@@ -29,11 +29,21 @@ namespace musik {
 
             private:
                 void InitializeWindows();
-                void RequeryTrackList();
+
+                void RequeryTrackList(ListWindow *view);
+
+                void OnCategoryViewSelectionChanged(
+                    ListWindow *view, size_t newIndex, size_t oldIndex);
+
+                void OnCategoryViewInvalidated(
+                    ListWindow *view, size_t selectedIndex);
 
                 PlaybackService& playback;
                 musik::core::LibraryPtr library;
+                std::shared_ptr<CategoryListView> categoryList;
                 std::shared_ptr<TrackListView> trackList;
+                cursespp::IWindowPtr focused;
+                cursespp::IWindowPtr parent;
         };
     }
 }
