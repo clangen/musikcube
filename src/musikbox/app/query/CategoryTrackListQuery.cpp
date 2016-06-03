@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "TrackListViewQuery.h"
+#include "CategoryTrackListQuery.h"
 
 #include <core/library/track/LibraryTrack.h>
 #include <core/library/LocalLibraryConstants.h>
@@ -15,7 +15,7 @@ using namespace musik::core::db;
 using namespace musik::core::library::constants;
 using namespace musik::box;
 
-TrackListViewQuery::TrackListViewQuery(LibraryPtr library, const std::string& column, DBID id) {
+CategoryTrackListQuery::CategoryTrackListQuery(LibraryPtr library, const std::string& column, DBID id) {
     this->library = library;
     this->column = column;
     this->id = id;
@@ -26,19 +26,19 @@ TrackListViewQuery::TrackListViewQuery(LibraryPtr library, const std::string& co
     this->GetQueryHash();
 }
 
-TrackListViewQuery::~TrackListViewQuery() {
+CategoryTrackListQuery::~CategoryTrackListQuery() {
 
 }
 
-TrackListViewQuery::Result TrackListViewQuery::GetResult() {
+CategoryTrackListQuery::Result CategoryTrackListQuery::GetResult() {
     return this->result;
 }
 
-TrackListViewQuery::Headers TrackListViewQuery::GetHeaders() {
+CategoryTrackListQuery::Headers CategoryTrackListQuery::GetHeaders() {
     return this->headers;
 }
 
-size_t TrackListViewQuery::GetQueryHash() {
+size_t CategoryTrackListQuery::GetQueryHash() {
     if (this->hash == 0) {
         std::string parts = boost::str(
             boost::format("%s-%s") % this->column % this->id);
@@ -49,7 +49,7 @@ size_t TrackListViewQuery::GetQueryHash() {
     return this->hash;
 }
 
-bool TrackListViewQuery::OnRun(Connection& db) {
+bool CategoryTrackListQuery::OnRun(Connection& db) {
     if (result) {
         result.reset(new std::vector<TrackPtr>());
         headers.reset(new std::set<size_t>());

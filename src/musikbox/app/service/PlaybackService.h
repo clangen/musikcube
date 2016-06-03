@@ -32,6 +32,7 @@ namespace musik {
                 size_t GetIndex();
 
                 size_t Count() { return this->playlist.size(); }
+                void Copy(std::vector<musik::core::TrackPtr>& target);
 
             private:
                 void OnStreamEvent(int eventType, std::string uri);

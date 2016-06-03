@@ -1,11 +1,13 @@
 set (BOX_SRCS
 	./Main.cpp
 	./stdafx.cpp
+	./app/layout/ConsoleLayout.cpp
 	./app/layout/LibraryLayout.cpp
-	./app/layout/MainLayout.cpp
+	./app/layout/NowPlayingLayout.cpp
 	./app/query/CategoryListViewQuery.cpp
 	./app/query/SingleTrackQuery.cpp
-	./app/query/TrackListViewQuery.cpp
+	./app/query/CategoryTrackListQuery.cpp
+	./app/query/NowPlayingTrackListQuery.cpp
 	./app/service/PlaybackService.cpp
 	./app/util/GlobalHotkeys.cpp
 	./app/util/SystemInfo.cpp

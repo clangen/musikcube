@@ -15,13 +15,13 @@
 
 namespace musik {
     namespace box {
-        class MainLayout : public cursespp::LayoutBase {
+        class ConsoleLayout : public cursespp::LayoutBase {
             public:
-                MainLayout(
+                ConsoleLayout(
                     musik::core::audio::Transport& transport, 
                     musik::core::LibraryPtr library);
 
-                ~MainLayout();
+                ~ConsoleLayout();
 
                 virtual void Layout();
                 virtual void Show();

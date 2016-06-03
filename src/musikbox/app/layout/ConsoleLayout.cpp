@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "MainLayout.h"
+#include "ConsoleLayout.h"
 #include <cursespp/Screen.h>
 #include <cursespp/IMessage.h>
 
@@ -11,7 +11,7 @@ using namespace musik::core::audio;
 using namespace musik::box;
 using namespace cursespp;
 
-MainLayout::MainLayout(Transport& transport, LibraryPtr library)
+ConsoleLayout::ConsoleLayout(Transport& transport, LibraryPtr library)
 : LayoutBase() {
     this->logs.reset(new LogWindow(this));
     this->output.reset(new OutputWindow(this));
@@ -32,11 +32,11 @@ MainLayout::MainLayout(Transport& transport, LibraryPtr library)
     this->PostMessage(MESSAGE_TYPE_UPDATE, 0, 0, UPDATE_INTERVAL_MS);
 }
 
-MainLayout::~MainLayout() {
+ConsoleLayout::~ConsoleLayout() {
 
 }
 
-void MainLayout::Layout() {
+void ConsoleLayout::Layout() {
     /* this layout */
     this->MoveAndResize(
         0,
@@ -81,19 +81,19 @@ void MainLayout::Layout() {
         3);
 }
 
-void MainLayout::Show() {
+void ConsoleLayout::Show() {
     LayoutBase::Show();
     this->UpdateWindows();
 }
 
-void MainLayout::ProcessMessage(IMessage &message) {
+void ConsoleLayout::ProcessMessage(IMessage &message) {
     if (message.Type() == MESSAGE_TYPE_UPDATE) {
         this->UpdateWindows();
         this->PostMessage(MESSAGE_TYPE_UPDATE, 0, 0, UPDATE_INTERVAL_MS);
     }
 }
 
-void MainLayout::UpdateWindows() {
+void ConsoleLayout::UpdateWindows() {
     this->logs->Update();
     this->resources->Update();
 }

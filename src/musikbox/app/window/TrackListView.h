@@ -5,7 +5,7 @@
 #include <cursespp/IKeyHandler.h>
 #include <cursespp/ListWindow.h>
 
-#include <app/query/TrackListViewQuery.h>
+#include <app/query/TrackListQueryBase.h>
 #include <app/service/PlaybackService.h>
 
 #include <core/playback/Transport.h>
@@ -21,6 +21,9 @@ namespace musik {
             public sigslot::has_slots<>
         {
             public:
+                typedef std::shared_ptr<std::vector<musik::core::TrackPtr> > TrackList;
+                typedef std::shared_ptr<std::set<size_t> > Headers;
+
                 TrackListView(
                     PlaybackService& playback,
                     musik::core::LibraryPtr library);
@@ -28,9 +31,9 @@ namespace musik {
                 virtual ~TrackListView();
 
                 virtual void ProcessMessage(cursespp::IMessage &message);
-                virtual bool KeyPress(const std::string& key);
+                TrackList GetTrackList();
 
-                void Requery(const std::string& column, DBID id);
+                void Requery(std::shared_ptr<TrackListQueryBase> query);
 
             protected:
                 virtual cursespp::IScrollAdapter& GetScrollAdapter();
@@ -51,14 +54,13 @@ namespace musik {
             private:
                 void OnTrackChanged(size_t index, musik::core::TrackPtr track);
 
-                std::shared_ptr<TrackListViewQuery> query;
-                std::shared_ptr<std::vector<musik::core::TrackPtr> > metadata;
-                std::shared_ptr<std::set<size_t> > headers;
+                std::shared_ptr<TrackListQueryBase> query;
+                TrackList metadata;
+                Headers headers;
                 Adapter* adapter;
                 PlaybackService& playback;
                 musik::core::TrackPtr playing;
                 musik::core::LibraryPtr library;
-
                 size_t lastQueryHash;
         };
     }

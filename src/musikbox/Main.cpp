@@ -40,9 +40,9 @@
 #include <cursespp/LayoutStack.h>
 #include <cursespp/WindowLayout.h>
 
-#include <app/layout/MainLayout.h>
+#include <app/layout/ConsoleLayout.h>
 #include <app/layout/LibraryLayout.h>
-#include <app/window/OutputWindow.h>
+#include <app/layout/NowPlayingLayout.h>
 #include <app/util/GlobalHotkeys.h>
 #include <app/service/PlaybackService.h>
 
@@ -238,7 +238,8 @@ int main(int argc, char* argv[])
         GlobalHotkeys globalHotkeys(playback, library);
 
         ILayoutPtr libraryLayout((ILayout *) new LibraryLayout(playback, library));
-        ILayoutPtr consoleLayout((ILayout *) new MainLayout(tp, library));
+        ILayoutPtr nowPlayingLayout((ILayout *) new NowPlayingLayout(playback, library));
+        ILayoutPtr consoleLayout((ILayout *) new ConsoleLayout(tp, library));
 
         int64 ch;
         timeout(IDLE_TIMEOUT_MS);
@@ -281,11 +282,14 @@ int main(int argc, char* argv[])
                 else if (kn == "KEY_RESIZE") {
                     resizeAt = now() + REDRAW_DEBOUNCE_MS;
                 }
+                else if (ch == KEY_F(1)) {
+                    changeLayout(state, consoleLayout);
+                }
                 else if (ch == KEY_F(2)) {
                     changeLayout(state, libraryLayout);
                 }
-                else if (ch == KEY_F(1)) {
-                    changeLayout(state, consoleLayout);
+                else if (ch == KEY_F(3)) {
+                    changeLayout(state, nowPlayingLayout);
                 }
                 else if (!globalHotkeys.Handle(kn)) {
                     if (state.input) {

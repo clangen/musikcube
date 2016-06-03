@@ -116,10 +116,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="app\layout\LibraryLayout.cpp" />
-    <ClCompile Include="app\layout\MainLayout.cpp" />
+    <ClCompile Include="app\layout\ConsoleLayout.cpp" />
+    <ClCompile Include="app\layout\NowPlayingLayout.cpp" />
     <ClCompile Include="app\query\CategoryListViewQuery.cpp" />
+    <ClCompile Include="app\query\NowPlayingTrackListQuery.cpp" />
     <ClCompile Include="app\query\SingleTrackQuery.cpp" />
-    <ClCompile Include="app\query\TrackListViewQuery.cpp" />
+    <ClCompile Include="app\query\CategoryTrackListQuery.cpp" />
     <ClCompile Include="app\service\PlaybackService.cpp" />
     <ClCompile Include="app\util\GlobalHotkeys.cpp" />
     <ClCompile Include="app\util\SystemInfo.cpp" />
@@ -154,11 +156,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="app\layout\LibraryLayout.h" />
-    <ClInclude Include="app\layout\MainLayout.h" />
+    <ClInclude Include="app\layout\ConsoleLayout.h" />
+    <ClInclude Include="app\layout\NowPlayingLayout.h" />
     <ClInclude Include="app\query\CategoryListViewQuery.h" />
+    <ClInclude Include="app\query\NowPlayingTrackListQuery.h" />
     <ClInclude Include="app\query\TrackListQueryBase.h" />
     <ClInclude Include="app\query\SingleTrackQuery.h" />
-    <ClInclude Include="app\query\TrackListViewQuery.h" />
+    <ClInclude Include="app\query\CategoryTrackListQuery.h" />
     <ClInclude Include="app\service\PlaybackService.h" />
     <ClInclude Include="app\util\GlobalHotkeys.h" />
     <ClInclude Include="app\util\SystemInfo.h" />

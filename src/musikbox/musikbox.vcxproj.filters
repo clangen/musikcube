@@ -30,14 +30,8 @@
     <ClCompile Include="cursespp\LayoutBase.cpp">
       <Filter>cursespp</Filter>
     </ClCompile>
-    <ClCompile Include="app\layout\MainLayout.cpp">
-      <Filter>app\layout</Filter>
-    </ClCompile>
     <ClCompile Include="app\layout\LibraryLayout.cpp">
       <Filter>app\layout</Filter>
-    </ClCompile>
-    <ClCompile Include="app\query\TrackListViewQuery.cpp">
-      <Filter>app\query</Filter>
     </ClCompile>
     <ClCompile Include="app\query\CategoryListViewQuery.cpp">
       <Filter>app\query</Filter>
@@ -95,6 +89,18 @@
     </ClCompile>
     <ClCompile Include="app\window\EntryWithHeader.cpp">
       <Filter>app\window</Filter>
+    </ClCompile>
+    <ClCompile Include="app\query\CategoryTrackListQuery.cpp">
+      <Filter>app\query</Filter>
+    </ClCompile>
+    <ClCompile Include="app\query\NowPlayingTrackListQuery.cpp">
+      <Filter>app\query</Filter>
+    </ClCompile>
+    <ClCompile Include="app\layout\ConsoleLayout.cpp">
+      <Filter>app\layout</Filter>
+    </ClCompile>
+    <ClCompile Include="app\layout\NowPlayingLayout.cpp">
+      <Filter>app\layout</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -156,16 +162,10 @@
     <ClInclude Include="cursespp\LayoutBase.h">
       <Filter>cursespp</Filter>
     </ClInclude>
-    <ClInclude Include="app\layout\MainLayout.h">
-      <Filter>app\layout</Filter>
-    </ClInclude>
     <ClInclude Include="app\layout\LibraryLayout.h">
       <Filter>app\layout</Filter>
     </ClInclude>
     <ClInclude Include="app\query\CategoryListViewQuery.h">
-      <Filter>app\query</Filter>
-    </ClInclude>
-    <ClInclude Include="app\query\TrackListViewQuery.h">
       <Filter>app\query</Filter>
     </ClInclude>
     <ClInclude Include="app\util\SystemInfo.h">
@@ -233,6 +233,18 @@
     </ClInclude>
     <ClInclude Include="app\query\TrackListQueryBase.h">
       <Filter>app\query</Filter>
+    </ClInclude>
+    <ClInclude Include="app\query\CategoryTrackListQuery.h">
+      <Filter>app\query</Filter>
+    </ClInclude>
+    <ClInclude Include="app\query\NowPlayingTrackListQuery.h">
+      <Filter>app\query</Filter>
+    </ClInclude>
+    <ClInclude Include="app\layout\ConsoleLayout.h">
+      <Filter>app\layout</Filter>
+    </ClInclude>
+    <ClInclude Include="app\layout\NowPlayingLayout.h">
+      <Filter>app\layout</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

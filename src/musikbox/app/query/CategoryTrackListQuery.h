@@ -8,16 +8,16 @@
 
 namespace musik {
     namespace box {
-        class TrackListViewQuery : public TrackListQueryBase {
+        class CategoryTrackListQuery : public TrackListQueryBase {
             public:
-                TrackListViewQuery(
+                CategoryTrackListQuery(
                     musik::core::LibraryPtr library,
                     const std::string& column, 
                     DBID id);
 
-                virtual ~TrackListViewQuery();
+                virtual ~CategoryTrackListQuery();
 
-                virtual std::string Name() { return "TrackListViewQuery"; }
+                virtual std::string Name() { return "CategoryTrackListQuery"; }
 
                 virtual Result GetResult();
                 virtual Headers GetHeaders();

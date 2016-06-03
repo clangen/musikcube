@@ -44,8 +44,8 @@ TrackListView::~TrackListView() {
 
 }
 
-void TrackListView::Requery(const std::string& column, DBID id) {
-    this->query.reset(new TrackListViewQuery(this->library, column, id));
+void TrackListView::Requery(std::shared_ptr<TrackListQueryBase> query) {
+    this->query = query;
     this->library->Enqueue(this->query);
 }
 
@@ -55,16 +55,8 @@ void TrackListView::OnQueryCompleted(QueryPtr query) {
     }
 }
 
-bool TrackListView::KeyPress(const std::string& key) {
-    if (key == "^M") { /* return */
-        size_t selected = this->GetSelectedIndex();
-        if (this->metadata && this->metadata->size() > selected) {
-            playback.Play(*this->metadata, selected);
-            return true;
-        }
-    }
-
-    return ListWindow::KeyPress(key);
+TrackListView::TrackList TrackListView::GetTrackList() {
+    return this->metadata;
 }
 
 void TrackListView::ProcessMessage(IMessage &message) {

@@ -92,9 +92,21 @@ bool PlaybackService::Previous() {
 }
 
 void PlaybackService::Play(std::vector<TrackPtr>& tracks, size_t index) {
-    this->playlist.clear();
-    std::copy(tracks.begin(), tracks.end(), std::back_inserter(this->playlist));
+    /* do the copy outside of the critical section, then swap. */
+    std::vector<TrackPtr> temp;
+    std::copy(tracks.begin(), tracks.end(), std::back_inserter(temp));
+
+    {
+        boost::recursive_mutex::scoped_lock lock(this->stateMutex);
+        std::swap(temp, this->playlist);
+    }
+
     this->Play(index);
+}
+
+void PlaybackService::Copy(std::vector<musik::core::TrackPtr>& target) {
+    boost::recursive_mutex::scoped_lock lock(this->stateMutex);
+    std::copy(this->playlist.begin(), this->playlist.end(), std::back_inserter(target));
 }
 
 void PlaybackService::Play(size_t index) {

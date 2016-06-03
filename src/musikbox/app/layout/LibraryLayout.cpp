@@ -5,6 +5,8 @@
 
 #include <core/library/LocalLibraryConstants.h>
 
+#include <app/query/CategoryTrackListQuery.h>
+
 #include "LibraryLayout.h"
 
 using namespace musik::core::library::constants;
@@ -95,9 +97,13 @@ void LibraryLayout::Show() {
 
 void LibraryLayout::RequeryTrackList(ListWindow *view) {
     if (view == this->categoryList.get()) {
-        DBID id = this->categoryList->GetSelectedId();
-        if (id != -1) {
-            this->trackList->Requery(this->categoryList->GetFieldName(), id);
+        DBID selectedId = this->categoryList->GetSelectedId();
+        if (selectedId != -1) {
+            this->trackList->Requery(std::shared_ptr<TrackListQueryBase>(
+                new CategoryTrackListQuery(
+                    this->library,
+                    this->categoryList->GetFieldName(),
+                    selectedId)));
         }
     }
 }
@@ -113,7 +119,16 @@ void LibraryLayout::OnCategoryViewInvalidated(
 }
 
 bool LibraryLayout::KeyPress(const std::string& key) {
-    if (key == "ALT_1" || key == "M-1") {
+    if (key == "^M") { /* enter. play the selection */
+        auto tracks = this->trackList->GetTrackList();
+        auto focus = this->GetFocus();
+
+        size_t index = (focus == this->trackList)
+            ? this->trackList->GetSelectedIndex() : 0;
+
+        this->playback.Play(*tracks, index);
+    }
+    else if (key == "ALT_1" || key == "M-1") {
         this->categoryList->SetFieldName(constants::Track::ARTIST_ID);
         return true;
     }
@@ -128,16 +143,6 @@ bool LibraryLayout::KeyPress(const std::string& key) {
     else if (key == "KEY_F(5)") {
         this->categoryList->Requery();
         return true;
-    }
-    else if (key == "CTL_DOWN") {
-        this->focused = this->transportView;
-        this->transportView->Focus();
-    }
-    else if (key == "CTL_UP") {
-        if (this->focused) {
-            this->focused->Blur();
-            this->focused.reset();
-        }
     }
     else if (key == " ") {
         /* copied from GlobalHotkeys. should probably be generalized
