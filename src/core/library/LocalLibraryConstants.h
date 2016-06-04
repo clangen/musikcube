@@ -43,6 +43,7 @@ namespace musik { namespace core { namespace library { namespace constants {
         static const char* TABLE_NAME = "tracks";
         static const char* ID = "id";
         static const char* TRACK_NUM = "track";
+        static const char* DISC_NUM = "disc";
         static const char* BPM = "bpm";
         static const char* DURATION = "duration";
         static const char* FILESIZE = "filesize";

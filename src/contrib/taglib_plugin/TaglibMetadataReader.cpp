@@ -51,6 +51,7 @@
     #include <taglib/mpeg/id3v2/frames/attachedpictureframe.h>
     #include <taglib/mpeg/id3v2/frames/commentsframe.h>
     #include <taglib/ogg/oggfile.h>
+    #include <taglib/toolkit/tpropertymap.h>
 #else
     #include <taglib/tlist.h>
     #include <taglib/tfile.h>
@@ -66,6 +67,7 @@
     #include <taglib/attachedpictureframe.h>
     #include <taglib/commentsframe.h>
     #include <taglib/oggfile.h>
+    #include <taglib/tpropertymap.h>
 #endif
 
 #include <vector>
@@ -162,6 +164,14 @@ bool TaglibMetadataReader::GetGenericTag(const char* uri, musik::core::IMetadata
                 this->SetTagValue("year", tag->year(), target);
             }
 
+            TagLib::PropertyMap map = tag->properties();
+            if (map.contains("DISCNUMBER")) {
+                TagLib::StringList value = map["DISCNUMBER"];
+                if (value.size()) {
+                    this->SetTagValue("disc", value[0], target);
+                }
+            }
+
             TagLib::AudioProperties *audio = file.audioProperties();
             this->SetAudioProperties(audio, target);
 
@@ -228,6 +238,7 @@ bool TaglibMetadataReader::GetID3v2Tag(const char* uri, musik::core::IMetadataWr
         this->SetTagValues("language", allTags["TLAN"], track);
         this->SetTagValues("disc", allTags["TPOS"], track);
         this->SetTagValues("lyrics", allTags["USLT"], track);
+        this->SetTagValues("disc", allTags["TPOS"], track);
 
         /* genre. note that multiple genres may be present */
 

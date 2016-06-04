@@ -167,22 +167,23 @@ bool LibraryTrack::Load(Track *target, db::Connection &db) {
         "ORDER BY tm.id", db);
 
     db::Statement trackQuery(
-        "SELECT t.track, t.bpm, t.duration, t.filesize, t.year, t.title, t.filename, t.thumbnail_id, al.name, t.filetime " \
+        "SELECT t.track, t.disc, t.bpm, t.duration, t.filesize, t.year, t.title, t.filename, t.thumbnail_id, al.name, t.filetime " \
         "FROM tracks t, paths p, albums al " \
         "WHERE t.id=? AND t.album_id=al.id", db);
 
     trackQuery.BindInt(0, target->Id());
     if (trackQuery.Step() == db::Row) {
         target->SetValue("track", trackQuery.ColumnText(0));
-        target->SetValue("bpm", trackQuery.ColumnText(1));
-        target->SetValue("duration", trackQuery.ColumnText(2));
-        target->SetValue("filesize", trackQuery.ColumnText(3));
-        target->SetValue("year", trackQuery.ColumnText(4));
-        target->SetValue("title", trackQuery.ColumnText(5));
-        target->SetValue("filename", trackQuery.ColumnText(6));
-        target->SetValue("thumbnail_id", trackQuery.ColumnText(7));
-        target->SetValue("album", trackQuery.ColumnText(8));
-        target->SetValue("filetime", trackQuery.ColumnText(9));
+        target->SetValue("disc", trackQuery.ColumnText(1));
+        target->SetValue("bpm", trackQuery.ColumnText(2));
+        target->SetValue("duration", trackQuery.ColumnText(3));
+        target->SetValue("filesize", trackQuery.ColumnText(4));
+        target->SetValue("year", trackQuery.ColumnText(5));
+        target->SetValue("title", trackQuery.ColumnText(6));
+        target->SetValue("filename", trackQuery.ColumnText(7));
+        target->SetValue("thumbnail_id", trackQuery.ColumnText(8));
+        target->SetValue("album", trackQuery.ColumnText(9));
+        target->SetValue("filetime", trackQuery.ColumnText(10));
 
         genresQuery.BindInt(0, target->Id());
         while (genresQuery.Step() == db::Row) {

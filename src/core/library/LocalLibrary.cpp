@@ -221,6 +221,7 @@ bool LocalLibrary::IsStaticMetaKey(std::string &metakey){
 
     if (staticMetaKeys.empty()) {
         staticMetaKeys.insert("track");
+        staticMetaKeys.insert("disc");
         staticMetaKeys.insert("bpm");
         staticMetaKeys.insert("duration");
         staticMetaKeys.insert("filesize");
@@ -275,6 +276,7 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
     db.Execute("CREATE TABLE IF NOT EXISTS tracks ("
         "id INTEGER PRIMARY KEY AUTOINCREMENT,"
         "track INTEGER DEFAULT 0,"
+        "disc TEXT DEFAULT '1',"
         "bpm REAL DEFAULT 0,"
         "duration INTEGER DEFAULT 0,"
         "filesize INTEGER DEFAULT 0,"

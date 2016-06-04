@@ -179,18 +179,19 @@ static DBID writeToTracksTable(
     IndexerTrack& track)
 {
     db::CachedStatement stmt("INSERT OR REPLACE INTO tracks " \
-        "(id, track, bpm, duration, filesize, year, title, filename, filetime, path_id) " \
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", dbConnection);
+        "(id, track, disc, bpm, duration, filesize, year, title, filename, filetime, path_id) " \
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", dbConnection);
 
     stmt.BindText(1, track.GetValue("track"));
-    stmt.BindText(2, track.GetValue("bpm"));
-    stmt.BindText(3, track.GetValue("duration"));
-    stmt.BindText(4, track.GetValue("filesize"));
-    stmt.BindText(5, track.GetValue("year"));
-    stmt.BindText(6, track.GetValue("title"));
-    stmt.BindText(7, track.GetValue("filename"));
-    stmt.BindText(8, track.GetValue("filetime"));
-    stmt.BindText(9, track.GetValue("path_id"));
+    stmt.BindText(2, track.GetValue("disc"));
+    stmt.BindText(3, track.GetValue("bpm"));
+    stmt.BindText(4, track.GetValue("duration"));
+    stmt.BindText(5, track.GetValue("filesize"));
+    stmt.BindText(6, track.GetValue("year"));
+    stmt.BindText(7, track.GetValue("title"));
+    stmt.BindText(8, track.GetValue("filename"));
+    stmt.BindText(9, track.GetValue("filetime"));
+    stmt.BindText(10, track.GetValue("path_id"));
 
     if (track.Id() != 0) {
         stmt.BindInt(0, track.Id());
@@ -218,6 +219,7 @@ static void removeRelation(
 
 static void removeKnownFields(Track::MetadataMap& metadata) {
     metadata.erase("track");
+    metadata.erase("disc");
     metadata.erase("bpm");
     metadata.erase("duration");
     metadata.erase("year");
