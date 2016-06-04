@@ -105,13 +105,16 @@ void Transport::StartWithPlayer(Player* newPlayer) {
             boost::recursive_mutex::scoped_lock lock(this->stateMutex);
 
             bool playingNext = (newPlayer == nextPlayer);
-
             if (newPlayer != nextPlayer) {
                 delete nextPlayer;
             }
 
             this->nextPlayer = NULL;
-            this->Stop(playingNext); /* true = suppress stopped event */
+
+            /* first argument suppresses the "Stop" event from getting triggered,
+            the second param is used for gapless playback -- we won't stop the output
+            and will allow pending buffers to finish */
+            this->Stop(true, !playingNext);
             this->SetNextCanStart(false);
 
             newPlayer->PlaybackStarted.connect(this, &Transport::OnPlaybackStarted);
@@ -131,10 +134,10 @@ void Transport::StartWithPlayer(Player* newPlayer) {
 }
 
 void Transport::Stop() {
-    this->Stop(false);
+    this->Stop(false, true);
 }
 
-void Transport::Stop(bool playingNext) {
+void Transport::Stop(bool suppressStopEvent, bool stopOutput) {
     musik::debug::info(TAG, "stop");
 
     std::list<Player*> toDelete;
@@ -151,16 +154,17 @@ void Transport::Stop(bool playingNext) {
     std::for_each(toDelete.begin(), toDelete.end(), stopPlayer);
     DEFER(&Transport::DeletePlayers, toDelete);
 
-    /* stopping the transport will stop any buffers that are currently in
-    flight. this makes the sound end immediately. */
-    if (!playingNext) {
+
+    if (stopOutput) {
+        /* stopping the transport will stop any buffers that are currently in
+        flight. this makes the sound end immediately. */
         this->output->Stop();
     }
 
-    /* if we know we're starting another track immediately, suppress
-    the stop event. this functionality is not available to the public
-    interface, it's an internal optimization */
-    if (!playingNext) {
+    if (!suppressStopEvent) {
+        /* if we know we're starting another track immediately, suppress
+        the stop event. this functionality is not available to the public
+        interface, it's an internal optimization */
         this->SetPlaybackState(PlaybackStopped);
     }
 }
