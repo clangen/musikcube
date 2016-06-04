@@ -6,7 +6,6 @@ set (BOX_SRCS
 	./app/layout/LibraryLayout.cpp
 	./app/layout/NowPlayingLayout.cpp
 	./app/query/CategoryListViewQuery.cpp
-	./app/query/SingleTrackQuery.cpp
 	./app/query/CategoryTrackListQuery.cpp
 	./app/query/NowPlayingTrackListQuery.cpp
 	./app/service/PlaybackService.cpp

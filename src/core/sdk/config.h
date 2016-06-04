@@ -45,10 +45,15 @@
     #include <windows.h>
     #include <tchar.h>
 
+    #define sleep_ms(x) Sleep(x)
+
     typedef unsigned __int64 UINT64;
     #define STDCALL(fp) (__stdcall* fp)()
 #else
     #include <cassert>
+    #include <unistd.h>
+
+    #define sleep_ms(x) usleep(x * 1000)
 
     typedef unsigned long long UINT64;
     typedef long long __int64;

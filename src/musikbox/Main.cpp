@@ -46,15 +46,17 @@
 #include <app/service/PlaybackService.h>
 
 #include <boost/locale.hpp>
+#include <boost/thread.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/filesystem/detail/utf8_codecvt_facet.hpp>
+
+#include <thread>
 
 #include <core/plugin/PluginFactory.h>
 #include <core/library/LibraryFactory.h>
 
 #include <boost/chrono.hpp>
-
 #include <cstdio>
 
 #ifdef WIN32
@@ -65,8 +67,8 @@
     #define IDLE_TIMEOUT_MS 0
     #define REDRAW_DEBOUNCE_MS 100
 #else
-    #define IDLE_TIMEOUT_MS 100
-    #define REDRAW_DEBOUNCE_MS 200
+    #define IDLE_TIMEOUT_MS 75
+    #define REDRAW_DEBOUNCE_MS 100
 #endif
 
 using namespace musik::core;
@@ -273,7 +275,10 @@ int main(int argc, char* argv[])
                 curs_set(0);
             }
 
-            if (ch != -1) { /* -1 = idle timeout */
+            if (ch == ERR) {
+                std::this_thread::yield();
+            }
+            else { /* -1 = idle timeout */
                 std::string kn = readKeyPress((int) ch);
 
                 if (ch == '\t') { /* tab */
