@@ -335,7 +335,7 @@ void Transport::OnPlaybackFinished(Player* player) {
     }
 
     if (stopped) {
-        this->SetPlaybackState(Transport::PlaybackStopped);
+        this->Stop();
     }
 
     DEFER(&Transport::RemoveActive, player);
