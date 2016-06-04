@@ -5,6 +5,8 @@
 #include <core/library/LocalLibraryConstants.h>
 #include <core/db/Statement.h>
 
+#include <map>
+
 using musik::core::db::Statement;
 using musik::core::db::Row;
 using musik::core::TrackPtr;
@@ -15,15 +17,26 @@ using namespace musik::core::db;
 using namespace musik::core::library::constants;
 using namespace musik::box;
 
+static std::map<std::string, std::string> FIELD_TO_FOREIGN_KEY =
+    {
+        std::make_pair(Track::ALBUM, Track::ALBUM_ID),
+        std::make_pair(Track::ARTIST, Track::ARTIST_ID),
+        std::make_pair(Track::GENRE, Track::GENRE_ID),
+        std::make_pair(Track::ALBUM_ARTIST, Track::ALBUM_ARTIST_ID)
+    };
+
 CategoryTrackListQuery::CategoryTrackListQuery(LibraryPtr library, const std::string& column, DBID id) {
     this->library = library;
-    this->column = column;
     this->id = id;
     this->result.reset(new std::vector<TrackPtr>());
     this->headers.reset(new std::set<size_t>());
     this->hash = 0;
 
-    this->GetQueryHash();
+    if (FIELD_TO_FOREIGN_KEY.find(column) == FIELD_TO_FOREIGN_KEY.end()) {
+        throw std::runtime_error("invalid input column specified");
+    }
+
+    this->column = FIELD_TO_FOREIGN_KEY[column];
 }
 
 CategoryTrackListQuery::~CategoryTrackListQuery() {
@@ -85,9 +98,9 @@ bool CategoryTrackListQuery::OnRun(Connection& db) {
         track->SetValue(Track::TITLE, trackQuery.ColumnText(6));
         track->SetValue(Track::FILENAME, trackQuery.ColumnText(7));
         track->SetValue(Track::THUMBNAIL_ID, trackQuery.ColumnText(8));
-        track->SetValue(Track::ALBUM_ID, album.c_str());
-        track->SetValue(Track::GENRE_ID, trackQuery.ColumnText(10));
-        track->SetValue(Track::ARTIST_ID, trackQuery.ColumnText(11));
+        track->SetValue(Track::ALBUM, album.c_str());
+        track->SetValue(Track::GENRE, trackQuery.ColumnText(10));
+        track->SetValue(Track::ARTIST, trackQuery.ColumnText(11));
         track->SetValue(Track::FILETIME, trackQuery.ColumnText(12));
 
         result->push_back(track);

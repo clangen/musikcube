@@ -98,14 +98,13 @@ namespace musik { namespace core { namespace audio {
             void OnPlaybackError(Player* player);
 
         private:
-            double volume;
             PlaybackState state;
-            bool nextCanStart;
             boost::recursive_mutex stateMutex;
-            Player* nextPlayer;
             musik::core::audio::OutputPtr output;
             std::list<Player*> active;
-
+            Player* nextPlayer;
+            double volume;
+            bool nextCanStart;
     };
 
 } } }

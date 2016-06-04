@@ -11,15 +11,11 @@
 
 using namespace musik::core::library::constants;
 
-#define CATEGORY_WIDTH 25
-
 #ifdef WIN32
     #define TRANSPORT_HEIGHT 3
 #else
     #define TRANSPORT_HEIGHT 2
 #endif
-
-#define DEFAULT_CATEGORY constants::Track::ARTIST_ID
 
 using namespace musik::core;
 using namespace musik::core::audio;

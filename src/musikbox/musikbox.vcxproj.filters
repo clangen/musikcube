@@ -60,9 +60,6 @@
     <ClCompile Include="app\window\LogWindow.cpp">
       <Filter>app\window</Filter>
     </ClCompile>
-    <ClCompile Include="app\query\SingleTrackQuery.cpp">
-      <Filter>app\query</Filter>
-    </ClCompile>
     <ClCompile Include="app\util\GlobalHotkeys.cpp">
       <Filter>app\util</Filter>
     </ClCompile>
@@ -194,9 +191,6 @@
     </ClInclude>
     <ClInclude Include="app\window\CommandWindow.h">
       <Filter>app\window</Filter>
-    </ClInclude>
-    <ClInclude Include="app\query\SingleTrackQuery.h">
-      <Filter>app\query</Filter>
     </ClInclude>
     <ClInclude Include="app\util\GlobalHotkeys.h">
       <Filter>app\util</Filter>

@@ -136,8 +136,8 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(size_t index) {
     }
 
     std::string trackNum = track->GetValue(constants::Track::TRACK_NUM);
-    std::string artist = track->GetValue(constants::Track::ARTIST_ID);
-    std::string album = track->GetValue(constants::Track::ALBUM_ID);
+    std::string artist = track->GetValue(constants::Track::ARTIST);
+    std::string album = track->GetValue(constants::Track::ALBUM);
     std::string title = track->GetValue(constants::Track::TITLE);
     std::string duration = track->GetValue(constants::Track::DURATION);
 
@@ -170,7 +170,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(size_t index) {
             % group(setw(column4Width), setiosflags(std::ios::left), setfill(' '), album));
 
     if (this->parent.headers->find(index) != this->parent.headers->end()) {
-        std::string album = track->GetValue(constants::Track::ALBUM_ID);
+        std::string album = track->GetValue(constants::Track::ALBUM);
         std::shared_ptr<EntryWithHeader> entry(new EntryWithHeader(album, text));
         entry->SetAttrs(COLOR_PAIR(BOX_COLOR_GREEN_ON_BLACK), attrs);
         return entry;

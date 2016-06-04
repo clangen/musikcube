@@ -39,9 +39,9 @@ static boost::mutex QUERY_MAP_MUTEX;
 static std::map<std::string, std::string> FIELD_TO_QUERY_MAP;
 
 static void initFieldToQueryMap() {
-    FIELD_TO_QUERY_MAP[Track::ALBUM_ID] = ALBUM_QUERY;
-    FIELD_TO_QUERY_MAP[Track::ARTIST_ID] = ARTIST_QUERY;
-    FIELD_TO_QUERY_MAP[Track::GENRE_ID] = GENRE_QUERY;
+    FIELD_TO_QUERY_MAP[Track::ALBUM] = ALBUM_QUERY;
+    FIELD_TO_QUERY_MAP[Track::ARTIST] = ARTIST_QUERY;
+    FIELD_TO_QUERY_MAP[Track::GENRE] = GENRE_QUERY;
 }
 
 CategoryListViewQuery::CategoryListViewQuery(const std::string& trackField) {

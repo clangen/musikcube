@@ -9,7 +9,7 @@
 using namespace musik::core::library::constants;
 
 #define CATEGORY_WIDTH 25
-#define DEFAULT_CATEGORY constants::Track::ARTIST_ID
+#define DEFAULT_CATEGORY constants::Track::ARTIST
 
 using namespace musik::core;
 using namespace musik::core::audio;
@@ -120,15 +120,15 @@ bool BrowseLayout::KeyPress(const std::string& key) {
         return true;
     }
     else if (key == "ALT_1" || key == "M-1") {
-        this->categoryList->SetFieldName(constants::Track::ARTIST_ID);
+        this->categoryList->SetFieldName(constants::Track::ARTIST);
         return true;
     }
     else if (key == "ALT_2" || key == "M-2") {
-        this->categoryList->SetFieldName(constants::Track::ALBUM_ID);
+        this->categoryList->SetFieldName(constants::Track::ALBUM);
         return true;
     }
     else if (key == "ALT_3" || key == "M-3") {
-        this->categoryList->SetFieldName(constants::Track::GENRE_ID);
+        this->categoryList->SetFieldName(constants::Track::GENRE);
         return true;
     }
 

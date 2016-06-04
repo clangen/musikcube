@@ -121,7 +121,6 @@
     <ClCompile Include="app\layout\NowPlayingLayout.cpp" />
     <ClCompile Include="app\query\CategoryListViewQuery.cpp" />
     <ClCompile Include="app\query\NowPlayingTrackListQuery.cpp" />
-    <ClCompile Include="app\query\SingleTrackQuery.cpp" />
     <ClCompile Include="app\query\CategoryTrackListQuery.cpp" />
     <ClCompile Include="app\service\PlaybackService.cpp" />
     <ClCompile Include="app\util\GlobalHotkeys.cpp" />
@@ -163,7 +162,6 @@
     <ClInclude Include="app\query\CategoryListViewQuery.h" />
     <ClInclude Include="app\query\NowPlayingTrackListQuery.h" />
     <ClInclude Include="app\query\TrackListQueryBase.h" />
-    <ClInclude Include="app\query\SingleTrackQuery.h" />
     <ClInclude Include="app\query\CategoryTrackListQuery.h" />
     <ClInclude Include="app\service\PlaybackService.h" />
     <ClInclude Include="app\util\GlobalHotkeys.h" />
