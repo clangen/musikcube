@@ -53,9 +53,16 @@ the current hotkeys are generally based around holding the alt/meta key with you
 - `ALT+u` back 10 seconds
 - `ALT+o` forward 10 seconds
 - `ALT+r` repaint the screen
-- `<SPACE>` pause/resume (only in library view)
 - `CTRL+p` pause/resume (globally)
 - `CTRL+d` quit 
+
+and a couple hotkeys that are specific to the library view: 
+
+- `ALT+n` or `ESC` switch between browse and play queue
+- `ALT+1` browse by artist
+- `ALT+2` browse by album
+- `ALT+3` browse by genre
+- `SPACE` pause/resume
 
 *important*: on OSX make sure you configure your terminal emulator to treat your left alt key as "+Esc" or "Meta".
 
