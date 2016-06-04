@@ -44,7 +44,7 @@ namespace musik { namespace core { namespace io {
 
     class IDataStream {
         public:
-            virtual bool Open(const char *filename, unsigned int options = 0) = 0;
+            virtual bool Open(const char *uri, unsigned int options = 0) = 0;
             virtual bool Close() = 0;
             virtual void Destroy() = 0;
             virtual PositionType Read(void *buffer, PositionType readBytes) = 0;
