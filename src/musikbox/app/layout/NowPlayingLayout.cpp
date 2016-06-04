@@ -43,6 +43,7 @@ void NowPlayingLayout::Layout() {
 
 void NowPlayingLayout::InitializeWindows() {
     this->trackList.reset(new TrackListView(this->playback, this->library));
+    this->trackList->Requeried.connect(this, &NowPlayingLayout::OnTrackListRequeried);
     this->AddWindow(this->trackList);
     this->Layout();
 }
@@ -55,7 +56,18 @@ void NowPlayingLayout::OnVisibilityChanged(bool visible) {
     LayoutBase::OnVisibilityChanged(visible);
 
     if (visible) {
-        this->RequeryTrackList();   
+        this->RequeryTrackList();
+    }
+    else {
+        this->trackList->Clear();
+    }
+}
+
+void NowPlayingLayout::OnTrackListRequeried() {
+    if (playback.Count()) {
+        size_t index = playback.GetIndex();
+        this->trackList->SetSelectedIndex(index);
+        this->trackList->ScrollTo(index);
     }
 }
 

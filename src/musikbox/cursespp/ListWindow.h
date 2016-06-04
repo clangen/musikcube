@@ -22,11 +22,12 @@ namespace cursespp {
             virtual void ScrollDown(int delta = 1);
             virtual void PageUp();
             virtual void PageDown();
+            virtual void ScrollTo(size_t index);
 
             virtual size_t GetSelectedIndex();
+            virtual void SetSelectedIndex(size_t index);
 
         protected:
-            virtual void SetSelectedIndex(size_t index);
             virtual void OnAdapterChanged();
             virtual void OnSelectionChanged(size_t newIndex, size_t oldIndex);
             virtual void OnInvalidated();

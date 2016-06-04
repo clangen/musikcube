@@ -59,6 +59,13 @@ TrackListView::TrackList TrackListView::GetTrackList() {
     return this->metadata;
 }
 
+void TrackListView::Clear() {
+    this->query.reset();
+    this->metadata.reset(new std::vector<TrackPtr>());
+    this->headers.reset(new std::set<size_t>());
+    this->OnAdapterChanged();
+}
+
 void TrackListView::ProcessMessage(IMessage &message) {
     if (message.Type() == WINDOW_MESSAGE_QUERY_COMPLETED) {
         if (this->query && this->query->GetStatus() == IQuery::Finished) {
@@ -74,7 +81,8 @@ void TrackListView::ProcessMessage(IMessage &message) {
             this->lastQueryHash = this->query->GetQueryHash();
             this->query.reset();
 
-            this->OnAdapterChanged();
+            this->OnAdapterChanged(); /* internal handling */
+            this->Requeried(); /* for external handlers */
         }
     }
 }

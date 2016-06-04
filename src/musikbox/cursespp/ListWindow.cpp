@@ -19,15 +19,13 @@ ListWindow::~ListWindow() {
 
 void ListWindow::ScrollToTop() {
     this->SetSelectedIndex(0);
-    this->GetScrollAdapter().DrawPage(this->GetContent(), 0, &scrollPosition);
-    this->Repaint();
+    this->ScrollTo(0);
 }
 
 void ListWindow::ScrollToBottom() {
     IScrollAdapter& adapter = this->GetScrollAdapter();
     this->SetSelectedIndex(std::max((size_t) 0, adapter.GetEntryCount() - 1));
-    adapter.DrawPage(this->GetContent(), selectedIndex, &scrollPosition);
-    this->Repaint();
+    this->ScrollTo(selectedIndex);
 }
 
 void ListWindow::ScrollUp(int delta) {
@@ -49,10 +47,7 @@ void ListWindow::ScrollUp(int delta) {
     drawIndex = std::max(0, drawIndex);
 
     this->SetSelectedIndex(newIndex);
-
-    adapter.DrawPage(this->GetContent(), drawIndex, &this->scrollPosition);
-
-    this->Repaint();
+    this->ScrollTo(drawIndex);
 }
 
 void ListWindow::OnInvalidated() {
@@ -76,10 +71,7 @@ void ListWindow::ScrollDown(int delta) {
     }
 
     this->SetSelectedIndex(newIndex);
-
-    adapter.DrawPage(this->GetContent(), drawIndex, &this->scrollPosition);
-
-    this->Repaint();
+    this->ScrollTo(drawIndex);
 }
 
 void ListWindow::PageUp() {
@@ -93,9 +85,7 @@ void ListWindow::PageUp() {
     target = (target > 0) ? target + 1 : 0;
 
     this->SetSelectedIndex((target == 0) ? 0 : target + 1);
-
-    adapter.DrawPage(this->GetContent(), target, &this->scrollPosition);
-    this->Repaint();
+    this->ScrollTo(target);
 }
 
 void ListWindow::PageDown() {
@@ -108,7 +98,15 @@ void ListWindow::PageDown() {
     size_t lastVisible = spos.firstVisibleEntryIndex + spos.visibleEntryCount - 1;
     this->SetSelectedIndex(std::min(adapter.GetEntryCount() - 1, lastVisible + 1));
 
-    adapter.DrawPage(this->GetContent(), lastVisible, &this->scrollPosition);
+    this->ScrollTo(lastVisible);
+}
+
+void ListWindow::ScrollTo(size_t index) {
+    this->GetScrollAdapter().DrawPage(
+        this->GetContent(),
+        index,
+        &this->GetScrollPosition());
+
     this->Repaint();
 }
 
@@ -144,21 +142,12 @@ void ListWindow::OnAdapterChanged() {
         this->SetSelectedIndex(NO_SELECTION);
     }
 
-    GetScrollAdapter().DrawPage(
-        this->GetContent(),
-        this->scrollPosition.firstVisibleEntryIndex,
-        &this->scrollPosition);
-
-    this->Repaint();
+    this->ScrollTo(this->scrollPosition.firstVisibleEntryIndex);
 }
 
 void ListWindow::OnSizeChanged() {
     ScrollableWindow::OnSizeChanged();
-
-    this->GetScrollAdapter().DrawPage(
-        this->GetContent(),
-        this->selectedIndex,
-        &this->GetScrollPosition());
+    this->ScrollTo(this->selectedIndex);
 }
 
 IScrollAdapter::ScrollPosition& ListWindow::GetScrollPosition() {

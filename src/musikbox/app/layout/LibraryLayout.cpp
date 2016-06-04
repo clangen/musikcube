@@ -46,7 +46,9 @@ void LibraryLayout::Layout() {
     this->MoveAndResize(x, y, cx, cy);
 
     this->browseLayout->MoveAndResize(x, y, cx, cy - TRANSPORT_HEIGHT);
+    this->browseLayout->Layout();
     this->nowPlayingLayout->MoveAndResize(x, y, cx, cy - TRANSPORT_HEIGHT);
+    this->nowPlayingLayout->Layout();
 
     this->transportView->MoveAndResize(
         1,

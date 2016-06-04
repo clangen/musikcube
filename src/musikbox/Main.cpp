@@ -147,6 +147,13 @@ static inline std::string readKeyPress(int64 ch) {
             kn = std::string("M-") + std::string(keyname((int)next));
         }
     }
+#ifdef WIN32
+    /* transform alt->meta for uniform handling */
+    else if (kn.find("ALT_") == 0) {
+        std::transform(kn.begin(), kn.end(), kn.begin(), tolower);
+        kn.replace(0, 4, "M-");
+    }
+#endif
     /* multi-byte UTF8 character */
     else if (ch >= 194 && ch <= 223) {
         kn = "";

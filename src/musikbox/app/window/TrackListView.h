@@ -21,6 +21,8 @@ namespace musik {
             public sigslot::has_slots<>
         {
             public:
+                sigslot::signal0<> Requeried;
+
                 typedef std::shared_ptr<std::vector<musik::core::TrackPtr> > TrackList;
                 typedef std::shared_ptr<std::set<size_t> > Headers;
 
@@ -32,6 +34,7 @@ namespace musik {
 
                 virtual void ProcessMessage(cursespp::IMessage &message);
                 TrackList GetTrackList();
+                void Clear();
 
                 void Requery(std::shared_ptr<TrackListQueryBase> query);
 

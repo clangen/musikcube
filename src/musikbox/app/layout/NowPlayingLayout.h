@@ -34,6 +34,7 @@ namespace musik {
                 virtual bool KeyPress(const std::string& key);
 
             private:
+                void OnTrackListRequeried();
                 void InitializeWindows();
                 void RequeryTrackList();
 
