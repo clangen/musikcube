@@ -44,12 +44,12 @@ CddaDataStreamFactory::~CddaDataStreamFactory() {
 
 }
 
-bool CddaDataStreamFactory::CanReadFile(const char *uri) {
+bool CddaDataStreamFactory::CanRead(const char *uri) {
     std::string extension = PathFindExtension(uri);
     return (extension == ".cda");
 }
 
-IDataStream* CddaDataStreamFactory::OpenFile(const char *uri, unsigned int options) {
+IDataStream* CddaDataStreamFactory::Open(const char *uri, unsigned int options) {
     CddaDataStream* stream = new CddaDataStream();
 
     if (stream->Open(uri, options)) {

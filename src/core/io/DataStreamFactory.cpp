@@ -70,8 +70,8 @@ DataStreamFactory::DataStreamPtr DataStreamFactory::OpenUri(const char *uri) {
 
         /* plugins get the first crack at the uri */
         for( ; it != DataStreamFactory::Instance()->dataStreamFactories.end(); it++) {
-            if ((*it)->CanReadFile(uri)) {
-                IDataStream* dataStream = (*it)->OpenFile(uri);
+            if ((*it)->CanRead(uri)) {
+                IDataStream* dataStream = (*it)->Open(uri);
 
                 if (dataStream) {
                     return DataStreamPtr(dataStream, StreamDeleter());
@@ -100,7 +100,7 @@ bool DataStreamFactory::IsLocalFileStream(const char *uri) {
             DataStreamFactory::Instance()->dataStreamFactories.begin();
 
         for( ; it != DataStreamFactory::Instance()->dataStreamFactories.end(); ++it) {
-            if ((*it)->CanReadFile(uri)) {
+            if ((*it)->CanRead(uri)) {
                 return false;
             }
         }

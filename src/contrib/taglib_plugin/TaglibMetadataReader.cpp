@@ -97,7 +97,7 @@ void TaglibMetadataReader::Destroy() {
     delete this;
 }
 
-bool TaglibMetadataReader::CanReadTag(const char *extension){
+bool TaglibMetadataReader::CanRead(const char *extension){
     if (extension) {
         std::string ext(extension);
         boost::algorithm::to_lower(ext);
@@ -113,7 +113,7 @@ bool TaglibMetadataReader::CanReadTag(const char *extension){
     return false;
 }
 
-bool TaglibMetadataReader::ReadTag(const char* uri, musik::core::IMetadataWriter *track) {
+bool TaglibMetadataReader::Read(const char* uri, musik::core::IMetadataWriter *track) {
     std::string path(uri);
     std::string extension;
 

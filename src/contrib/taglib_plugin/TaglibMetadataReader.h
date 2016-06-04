@@ -61,8 +61,8 @@ class TaglibMetadataReader : public musik::core::metadata::IMetadataReader {
     public:
         TaglibMetadataReader();
         virtual ~TaglibMetadataReader();
-        bool ReadTag(const char *uri, musik::core::IMetadataWriter *target);
-        virtual bool CanReadTag(const char *extension);
+        virtual bool Read(const char *uri, musik::core::IMetadataWriter *target);
+        virtual bool CanRead(const char *extension);
         virtual void Destroy();
 
     private:

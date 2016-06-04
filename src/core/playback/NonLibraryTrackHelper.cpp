@@ -120,8 +120,8 @@ void NonLibraryTrackHelper::ThreadLoop() {
                 typedef MetadataReaderList::iterator Iterator;
                 Iterator it = metadataReaders.begin();
                 while (it != metadataReaders.end()) {
-                    if ((*it)->CanReadTag(track->GetValue("extension").c_str())) {
-                        (*it)->ReadTag(url.c_str(), track.get());
+                    if ((*it)->CanRead(track->GetValue("extension").c_str())) {
+                        (*it)->Read(url.c_str(), track.get());
                         break;
                     }
 

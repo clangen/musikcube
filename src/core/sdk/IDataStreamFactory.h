@@ -42,8 +42,8 @@
 namespace musik { namespace core { namespace io {
     class IDataStreamFactory{
         public:
-            virtual bool CanReadFile(const char *uri) = 0;
-            virtual IDataStream* OpenFile(const char *uri, unsigned int options = 0) = 0;
+            virtual bool CanRead(const char *uri) = 0;
+            virtual IDataStream* Open(const char *uri, unsigned int options = 0) = 0;
             virtual void Destroy() = 0;
     };
 

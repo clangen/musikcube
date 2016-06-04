@@ -48,7 +48,9 @@ void PlaybackService::ProcessMessage(IMessage &message) {
                 this->nextIndex = NO_POSITION;
             }
 
-            this->TrackChanged(this->index, this->playlist.at(this->index));
+            if (this->index != NO_POSITION) {
+                this->TrackChanged(this->index, this->playlist.at(this->index));
+            }
         }
     }
     else if (message.Type() == MESSAGE_PLAYBACK_EVENT) {

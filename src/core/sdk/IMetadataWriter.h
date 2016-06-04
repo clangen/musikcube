@@ -40,10 +40,6 @@
 
 namespace musik { namespace core {
 
-    //////////////////////////////////////////
-    ///\brief
-    ///The virtual base for all tracks
-    //////////////////////////////////////////
     class IMetadataWriter {
         public:
             virtual void SetValue(const char* metakey, const char* value) = 0;

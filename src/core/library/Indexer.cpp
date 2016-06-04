@@ -315,8 +315,8 @@ void Indexer::SyncDirectory(
                     typedef MetadataReaderList::iterator Iterator;
                     Iterator it = this->metadataReaders.begin();
                     while (it != this->metadataReaders.end()) {
-                        if ((*it)->CanReadTag(track.GetValue("extension").c_str())) {
-                            if ((*it)->ReadTag(file->path().string().c_str(), &track)) {
+                        if ((*it)->CanRead(track.GetValue("extension").c_str())) {
+                            if ((*it)->Read(file->path().string().c_str(), &track)) {
                                 saveToDb = true;
                             }
                         }

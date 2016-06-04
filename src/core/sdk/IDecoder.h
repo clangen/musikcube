@@ -41,44 +41,10 @@ namespace musik { namespace core { namespace audio {
 
     class IDecoder {
         public:
-            //////////////////////////////////////////
-            ///\brief
-            ///Destroy the object
-            ///
-            ///The Destroy method is used so that it's guaranteed that the object is
-            ///destroyed inside the right DLL/exe
-            //////////////////////////////////////////
             virtual void Destroy() = 0;
-
-            //////////////////////////////////////////
-            ///\brief
-            ///Set the position in the source (in seconds)
-            ///
-            ///\returns
-            ///The actual position set
-            //////////////////////////////////////////
             virtual double SetPosition(double seconds) = 0;
-
-            //////////////////////////////////////////
-            ///\brief
-            ///Fill the next buffer
-            ///
-            ///\returns
-            ///false is there is nothing left
-            //////////////////////////////////////////
             virtual bool GetBuffer(IBuffer *buffer) = 0;
-
-            //////////////////////////////////////////
-            ///\brief
-            ///Open the stream
-            ///
-            ///\param fileStream
-            ///pointer to the filestream object.
-            ///
-            ///\returns
-            ///True if successfully opened
-            //////////////////////////////////////////
-            virtual bool Open(musik::core::io::IDataStream *fileStream) = 0;
+            virtual bool Open(musik::core::io::IDataStream *stream) = 0;
     };
 
 } } }

@@ -43,8 +43,8 @@ namespace musik { namespace core { namespace metadata {
 
     class IMetadataReader {
         public:
-            virtual bool ReadTag(const char *uri, musik::core::IMetadataWriter *target) = 0;
-            virtual bool CanReadTag(const char *extension) = 0;
+            virtual bool Read(const char *uri, musik::core::IMetadataWriter *target) = 0;
+            virtual bool CanRead(const char *extension) = 0;
             virtual void Destroy() = 0;
     };
 
