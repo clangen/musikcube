@@ -219,7 +219,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="accdecoder_plugin.cpp">
+    <ClCompile Include="aacdecoder_plugin.cpp">
       <Filter>plugin</Filter>
     </ClCompile>
     <ClCompile Include="stdafx.cpp">

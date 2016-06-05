@@ -155,7 +155,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AacDecoderFactory.cpp" />
-    <ClCompile Include="accdecoder_plugin.cpp" />
+    <ClCompile Include="aacdecoder_plugin.cpp" />
     <ClCompile Include="libfaad\bits.c" />
     <ClCompile Include="libfaad\cfft.c" />
     <ClCompile Include="libfaad\common.c" />

@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "AacDecoder.h"
-#include <io.h>
 
 using musik::core::io::IDataStream;
 using musik::core::audio::IBuffer;
@@ -85,16 +84,16 @@ bool AacDecoder::Open(musik::core::io::IDataStream *stream)
     buffer = NULL;
     buffer_size = 0;
     mp4ff_get_decoder_config(decoderFile, audioTrackId, &buffer, &buffer_size);
-    
+
     if (!buffer) {
         return false;
     }
 
     if (NeAACDecInit2(
-        decoder, 
-        buffer, 
-        buffer_size, 
-        &this->sampleRate, 
+        decoder,
+        buffer,
+        buffer_size,
+        &this->sampleRate,
         &this->channelCount) < 0)
     {
         if (buffer) {
@@ -158,11 +157,11 @@ bool AacDecoder::GetBuffer(IBuffer* target) {
 
     /* read the raw data required */
 
-    int rc = 
+    int rc =
         mp4ff_read_sample(
-            decoderFile, 
-            audioTrackId, 
-            decoderSampleId, 
+            decoderFile,
+            audioTrackId,
+            decoderSampleId,
             &encodedData,
             &encodedDataLength);
 
@@ -170,9 +169,9 @@ bool AacDecoder::GetBuffer(IBuffer* target) {
 
     if (rc == 0 || encodedData == NULL) {
         return false;
-    } 
+    }
 
-    sampleBuffer = 
+    sampleBuffer =
         NeAACDecDecode(
             decoder,
             &frameInfo,
@@ -192,7 +191,7 @@ bool AacDecoder::GetBuffer(IBuffer* target) {
     target->SetSampleRate(frameInfo.samplerate);
     target->SetChannels(frameInfo.channels);
     target->SetSamples(frameInfo.samples / frameInfo.channels);
-    
+
     memcpy(
         static_cast<void*>(target->BufferPointer()),
         static_cast<void*>(sampleBuffer),

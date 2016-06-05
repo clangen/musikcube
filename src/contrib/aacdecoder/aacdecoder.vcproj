@@ -606,7 +606,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\accdecoder_plugin.cpp"
+				RelativePath=".\aacdecoder_plugin.cpp"
 				>
 			</File>
 			<File

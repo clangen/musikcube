@@ -51,6 +51,7 @@ include_directories (
 add_subdirectory(src/core)
 add_subdirectory(src/musikbox)
 add_subdirectory(src/contrib/taglib_plugin)
+add_subdirectory(src/contrib/aacdecoder)
 add_subdirectory(src/contrib/oggdecoder)
 add_subdirectory(src/contrib/mpg123decoder)
 add_subdirectory(src/contrib/flacdecoder)
