@@ -56,6 +56,8 @@
 static const std::string TAG = "Indexer";
 
 using namespace musik::core;
+using namespace musik::core::metadata;
+using namespace musik::core::audio;
 
 static std::string normalizeDir(std::string path) {
     path = boost::filesystem::path(path).make_preferred().string();
@@ -169,11 +171,14 @@ void Indexer::RemovePath(const std::string& path) {
 //////////////////////////////////////////
 void Indexer::SynchronizeInternal() {
     /* load all of the metadata (tag) reader plugins */
-    typedef metadata::IMetadataReader PluginType;
-    typedef PluginFactory::DestroyDeleter<PluginType> Deleter;
+    typedef PluginFactory::DestroyDeleter<IMetadataReader> MetadataDeleter;
+    typedef PluginFactory::DestroyDeleter<IDecoderFactory> DecoderDeleter;
 
     this->metadataReaders = PluginFactory::Instance()
-        .QueryInterface<PluginType, Deleter>("GetMetadataReader");
+        .QueryInterface<IMetadataReader, MetadataDeleter>("GetMetadataReader");
+
+    this->audioDecoders = PluginFactory::Instance()
+        .QueryInterface<IDecoderFactory, DecoderDeleter>("GetDecoderFactory");
 
     {
         boost::mutex::scoped_lock lock(this->progressMutex);
@@ -318,10 +323,25 @@ void Indexer::SyncDirectory(
                         if ((*it)->CanRead(track.GetValue("extension").c_str())) {
                             if ((*it)->Read(file->path().string().c_str(), &track)) {
                                 saveToDb = true;
+                                break;
                             }
                         }
-
                         it++;
+                    }
+
+                    /* no tag? well... if a decoder can play it, add it to the database
+                    with the file as the name. */
+                    if (!saveToDb) {
+                        std::string fullPath = file->path().string();
+                        auto it = this->audioDecoders.begin();
+                        while (it != this->audioDecoders.end()) {
+                            if ((*it)->CanHandle(fullPath.c_str())) {
+                                saveToDb = true;
+                                track.SetValue("title", file->path().leaf().string().c_str());
+                                break;
+                            }
+                            ++it;
+                        }
                     }
 
                     /* write it to the db, if read successfully */

@@ -48,8 +48,12 @@ namespace musik {
             }
 
             std::string Duration(std::string& str) {
-                int seconds = boost::lexical_cast<int>(str);
-                return Duration(seconds);
+                if (str.size()) {
+                    int seconds = boost::lexical_cast<int>(str);
+                    return Duration(seconds);
+                }
+
+                return "0:00";
             }
         }
     }

@@ -39,6 +39,7 @@
 #include <core/support/ThreadHelper.h>
 #include <core/db/Connection.h>
 #include <core/sdk/IMetadataReader.h>
+#include <core/sdk/IDecoderFactory.h>
 #include <core/library/IIndexer.h>
 
 #include <sigslot/sigslot.h>
@@ -110,11 +111,16 @@ namespace musik { namespace core {
                     std::string path;
             };
 
-            typedef std::vector<std::shared_ptr<metadata::IMetadataReader> > MetadataReaderList;
+            typedef std::vector<std::shared_ptr<
+                metadata::IMetadataReader> > MetadataReaderList;
+
+            typedef std::vector<std::shared_ptr<
+                musik::core::audio::IDecoderFactory> > DecoderList;
 
             std::deque<AddRemoveContext> addRemoveQueue;
 
             MetadataReaderList metadataReaders;
+            DecoderList audioDecoders;
     };
 
     typedef std::shared_ptr<Indexer> IndexerPtr;
