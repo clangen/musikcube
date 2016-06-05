@@ -35,9 +35,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
-
 #include <core/sdk/IPlugin.h>
-
 #include "OggDecoderFactory.h"
 
 #ifdef WIN32

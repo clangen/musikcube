@@ -33,45 +33,35 @@
 
 #include "stdafx.h"
 
-#include "AACSourceSupplier.h"
-#include "m4aAudioSource.h"
+#include "AacDecoderFactory.h"
+#include "AacDecoder.h"
+#include <algorithm>
 
-#include "boost/algorithm/string.hpp"
-#include "boost/filesystem.hpp"
+using musik::core::audio::IDecoder;
 
-AACSourceSupplier::AACSourceSupplier(void)
-{
+AacDecoderFactory::AacDecoderFactory() {
 }
 
-AACSourceSupplier::~AACSourceSupplier(void)
-{
+AacDecoderFactory::~AacDecoderFactory() {
 }
 
-void AACSourceSupplier::Destroy()
-{
+void AacDecoderFactory::Destroy() {
     delete this;
 }
 
-IAudioSource* AACSourceSupplier::CreateAudioSource()
-{
-    return new M4ADecoder();
+IDecoder* AacDecoderFactory::CreateDecoder() {
+    return new AacDecoder();
 }
 
-bool AACSourceSupplier::CanHandle(const utfchar* source) const
-{
-    using namespace boost::filesystem;
-    using namespace boost::algorithm;
+bool AacDecoderFactory::CanHandle(const char* type) const {
+    std::string str(type);
+    std::transform(str.begin(), str.end(), str.begin(), tolower);
 
-    wpath sourcepath(source);
-
-    if (!is_regular(sourcepath)) 
-        return false;
-
-    if (to_lower_copy(extension(sourcepath)) != _T(".aac") &&
-        to_lower_copy(extension(sourcepath)) != _T(".m4a")  )
-        return false;
-
-    return true;
+    return
+        musik::sdk::endsWith(str, ".aac") ||
+        musik::sdk::endsWith(str, ".m4a") ||
+        str.find("audio/aac") != std::string::npos ||
+        str.find("audio/mp4") != std::string::npos;
 }
 
 

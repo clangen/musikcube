@@ -598,11 +598,11 @@
 			Name="plugin"
 			>
 			<File
-				RelativePath=".\AACSourceSupplier.cpp"
+				RelativePath=".\AacDecoderFactory.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\AACSourceSupplier.h"
+				RelativePath=".\AacDecoderFactory.h"
 				>
 			</File>
 			<File

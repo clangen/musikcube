@@ -256,4 +256,7 @@
       <Filter>src\library</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\contrib\aacdecoder\aacdecoder.vcproj" />
+  </ItemGroup>
 </Project>

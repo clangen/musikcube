@@ -50,6 +50,7 @@
     #include <taglib/mpeg/id3v2/id3v2frame.h>
     #include <taglib/mpeg/id3v2/frames/attachedpictureframe.h>
     #include <taglib/mpeg/id3v2/frames/commentsframe.h>
+    #include <taglib/mp4/mp4file.h>
     #include <taglib/ogg/oggfile.h>
     #include <taglib/toolkit/tpropertymap.h>
 #else
@@ -66,6 +67,7 @@
     #include <taglib/id3v2frame.h>
     #include <taglib/attachedpictureframe.h>
     #include <taglib/commentsframe.h>
+    #include <taglib/mp4file.h>
     #include <taglib/oggfile.h>
     #include <taglib/tpropertymap.h>
 #endif
@@ -105,6 +107,8 @@ bool TaglibMetadataReader::CanRead(const char *extension){
         return
             ext.compare("mp3") == 0 ||
             ext.compare("ogg") == 0 ||
+            ext.compare("aac") == 0 ||
+            ext.compare("m4a") == 0 ||
             ext.compare("flac") == 0 ||
             ext.compare("ape") == 0 ||
             ext.compare("mpc") == 0;

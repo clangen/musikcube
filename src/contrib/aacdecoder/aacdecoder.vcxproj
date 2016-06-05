@@ -14,18 +14,19 @@
     <ProjectGuid>{4993E68D-E97A-4CD2-AC8E-168AE315BAC5}</ProjectGuid>
     <RootNamespace>aacdecoder</RootNamespace>
     <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -38,28 +39,31 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)/bin/$(Configuration)/plugins\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)/obj/$(Configuration)\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)/bin/$(Configuration)/plugins\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)/obj/$(Configuration)\</IntDir>
-    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
-    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
-    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
-    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <_ProjectFileVersion>14.0.25123.0</_ProjectFileVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(SolutionDir)/bin/$(Configuration)/plugins\</OutDir>
+    <IntDir>./obj/$(Configuration)\</IntDir>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules />
+    <CodeAnalysisRuleAssemblies />
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(SolutionDir)/bin/$(Configuration)/plugins\</OutDir>
+    <IntDir>./obj/$(Configuration)\</IntDir>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules />
+    <CodeAnalysisRuleAssemblies />
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../core/audio;../../;../../3rdparty/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./;../../;../../3rdparty/include;./mp4ff;./libfaad;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;AACDECODER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
+      <PrecompiledHeader />
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
@@ -70,11 +74,10 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../../core/audio;../../;../../3rdparty/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./;../../;../../3rdparty/include;./mp4ff;./libfaad;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;AACDECODER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
+      <PrecompiledHeader />
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
@@ -83,18 +86,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="AacDecoderFactory.h" />
     <ClInclude Include="libfaad\analysis.h" />
     <ClInclude Include="libfaad\bits.h" />
     <ClInclude Include="libfaad\cfft.h" />
     <ClInclude Include="libfaad\cfft_tab.h" />
-    <ClInclude Include="libfaad\common.h" />
-    <ClInclude Include="libfaad\decoder.h" />
-    <ClInclude Include="libfaad\drc.h" />
-    <ClInclude Include="drms.h" />
-    <ClInclude Include="drmstables.h" />
-    <ClInclude Include="libfaad\error.h" />
-    <ClInclude Include="libfaad\filtbank.h" />
-    <ClInclude Include="libfaad\fixed.h" />
     <ClInclude Include="libfaad\codebook\hcb.h" />
     <ClInclude Include="libfaad\codebook\hcb_1.h" />
     <ClInclude Include="libfaad\codebook\hcb_10.h" />
@@ -108,6 +104,12 @@
     <ClInclude Include="libfaad\codebook\hcb_8.h" />
     <ClInclude Include="libfaad\codebook\hcb_9.h" />
     <ClInclude Include="libfaad\codebook\hcb_sf.h" />
+    <ClInclude Include="libfaad\common.h" />
+    <ClInclude Include="libfaad\drc.h" />
+    <ClInclude Include="libfaad\drm_dec.h" />
+    <ClInclude Include="libfaad\error.h" />
+    <ClInclude Include="libfaad\filtbank.h" />
+    <ClInclude Include="libfaad\fixed.h" />
     <ClInclude Include="libfaad\huffman.h" />
     <ClInclude Include="libfaad\ic_predict.h" />
     <ClInclude Include="libfaad\iq_table.h" />
@@ -115,14 +117,13 @@
     <ClInclude Include="libfaad\kbd_win.h" />
     <ClInclude Include="libfaad\lt_predict.h" />
     <ClInclude Include="libfaad\mdct.h" />
+    <ClInclude Include="libfaad\mdct_tab.h" />
     <ClInclude Include="libfaad\mp4.h" />
-    <ClInclude Include="mp4ff.h" />
-    <ClInclude Include="mp4ff_int_types.h" />
-    <ClInclude Include="mp4ffint.h" />
     <ClInclude Include="libfaad\ms.h" />
-    <ClInclude Include="neaacdec.h" />
     <ClInclude Include="libfaad\output.h" />
     <ClInclude Include="libfaad\pns.h" />
+    <ClInclude Include="libfaad\ps_dec.h" />
+    <ClInclude Include="libfaad\ps_tables.h" />
     <ClInclude Include="libfaad\pulse.h" />
     <ClInclude Include="libfaad\rvlc.h" />
     <ClInclude Include="libfaad\sbr_dct.h" />
@@ -146,17 +147,21 @@
     <ClInclude Include="libfaad\structs.h" />
     <ClInclude Include="libfaad\syntax.h" />
     <ClInclude Include="libfaad\tns.h" />
-    <ClInclude Include="AACSourceSupplier.h" />
-    <ClInclude Include="m4aAudioSource.h" />
+    <ClInclude Include="AacDecoder.h" />
+    <ClInclude Include="mp4ff\mp4ff.h" />
+    <ClInclude Include="mp4ff\mp4ffint.h" />
+    <ClInclude Include="mp4ff\mp4ff_int_types.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AacDecoderFactory.cpp" />
+    <ClCompile Include="accdecoder_plugin.cpp" />
     <ClCompile Include="libfaad\bits.c" />
     <ClCompile Include="libfaad\cfft.c" />
     <ClCompile Include="libfaad\common.c" />
     <ClCompile Include="libfaad\decoder.c" />
     <ClCompile Include="libfaad\drc.c" />
-    <ClCompile Include="drms.c" />
+    <ClCompile Include="libfaad\drm_dec.c" />
     <ClCompile Include="libfaad\error.c" />
     <ClCompile Include="libfaad\filtbank.c" />
     <ClCompile Include="libfaad\hcr.c" />
@@ -166,15 +171,11 @@
     <ClCompile Include="libfaad\lt_predict.c" />
     <ClCompile Include="libfaad\mdct.c" />
     <ClCompile Include="libfaad\mp4.c" />
-    <ClCompile Include="mp4atom.c" />
-    <ClCompile Include="mp4ff.c" />
-    <ClCompile Include="mp4meta.c" />
-    <ClCompile Include="mp4sample.c" />
-    <ClCompile Include="mp4tagupdate.c" />
-    <ClCompile Include="mp4util.c" />
     <ClCompile Include="libfaad\ms.c" />
     <ClCompile Include="libfaad\output.c" />
     <ClCompile Include="libfaad\pns.c" />
+    <ClCompile Include="libfaad\ps_dec.c" />
+    <ClCompile Include="libfaad\ps_syntax.c" />
     <ClCompile Include="libfaad\pulse.c" />
     <ClCompile Include="libfaad\rvlc.c" />
     <ClCompile Include="libfaad\sbr_dct.c" />
@@ -193,9 +194,13 @@
     <ClCompile Include="libfaad\ssr_ipqf.c" />
     <ClCompile Include="libfaad\syntax.c" />
     <ClCompile Include="libfaad\tns.c" />
-    <ClCompile Include="AACSourceSupplier.cpp" />
-    <ClCompile Include="accdecoder_plugin.cpp" />
-    <ClCompile Include="m4aAudioSource.cpp" />
+    <ClCompile Include="AacDecoder.cpp" />
+    <ClCompile Include="mp4ff\mp4atom.c" />
+    <ClCompile Include="mp4ff\mp4ff.c" />
+    <ClCompile Include="mp4ff\mp4meta.c" />
+    <ClCompile Include="mp4ff\mp4sample.c" />
+    <ClCompile Include="mp4ff\mp4tagupdate.c" />
+    <ClCompile Include="mp4ff\mp4util.c" />
     <ClCompile Include="stdafx.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -36,29 +36,33 @@
 
 #include "stdafx.h"
 
-#include "AACSourceSupplier.h"
-#include <core/IPlugin.h>
+#include "AacDecoderFactory.h"
+#include <core/sdk/IPlugin.h>
 
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
-{
+#ifdef WIN32
+#define DLLEXPORT __declspec(dllexport)
+#else
+#define DLLEXPORT
+#endif
+
+#ifdef WIN32
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
     return true;
 }
+#endif
 
-class AACDecoderPlugin : public musik::core::IPlugin
-{
-    void Destroy() { delete this; };
-
-	const utfchar* Name()       { return TEXT("AAC decoder"); };
-	const utfchar* Version()    { return TEXT("1"); };
-	const utfchar* Author()     { return TEXT("Björn Olievier"); };
+class AacDecoderPlugin : public musik::core::IPlugin {
+    public:
+        virtual void Destroy() { delete this; };
+        virtual const char* Name() { return "AAC IDecoder"; };
+        virtual const char* Version() { return "0.2"; };
+        virtual const char* Author() { return "Björn Olievier, clangen"; };
 };
 
-extern "C" __declspec(dllexport) musik::core::IPlugin* GetPlugin()
-{
-    return new AACDecoderPlugin();
+extern "C" DLLEXPORT musik::core::IPlugin* GetPlugin() {
+    return new AacDecoderPlugin();
 }
 
-extern "C" __declspec(dllexport) IAudioSourceSupplier* CreateAudioSourceSupplier()
-{
-	return new AACSourceSupplier();
+extern "C" DLLEXPORT musik::core::audio::IDecoderFactory* GetDecoderFactory() {
+    return new AacDecoderFactory();
 }

@@ -33,7 +33,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 
-#if 1
+#if 0
 /* MACROS FOR BACKWARDS COMPATIBILITY */
 /* structs */
 #define  NeAACDecHandle						faacDecHandle                 
