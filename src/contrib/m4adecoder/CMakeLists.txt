@@ -1,9 +1,8 @@
-set (aacdecoder_SOURCES
-  aacdecoder_plugin.cpp
-  AacDecoderFactory.cpp
-  AacDecoder.cpp
+set (m4adecoder_SOURCES
+  m4adecoder_plugin.cpp
+  M4aDecoderFactory.cpp
+  M4aDecoder.cpp
   stdafx.cpp
-  drms/drms.c
   mp4ff/mp4atom.c
   mp4ff/mp4ff.c
   mp4ff/mp4meta.c
@@ -17,5 +16,5 @@ include_directories(
   "${CMAKE_CURRENT_SOURCE_DIR}/mp4ff"
 )
 
-add_library(aacdecoder SHARED ${aacdecoder_SOURCES})
-target_link_libraries(aacdecoder ${musikbox_LINK_LIBS} faad)
+add_library(m4adecoder SHARED ${m4adecoder_SOURCES})
+target_link_libraries(m4adecoder ${musikbox_LINK_LIBS} faad)

@@ -20,7 +20,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "flacdecoder", "src\contrib\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mpg123decoder", "src\contrib\mpg123decoder\mpg123decoder.vcxproj", "{04118CC2-DE10-4627-A695-2219428C7D59}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "aacdecoder", "src\contrib\aacdecoder\aacdecoder.vcxproj", "{4993E68D-E97A-4CD2-AC8E-168AE315BAC5}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "m4adecoder", "src\contrib\m4adecoder\m4adecoder.vcxproj", "{4993E68D-E97A-4CD2-AC8E-168AE315BAC5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

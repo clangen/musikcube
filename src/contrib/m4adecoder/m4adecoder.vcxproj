@@ -12,9 +12,10 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{4993E68D-E97A-4CD2-AC8E-168AE315BAC5}</ProjectGuid>
-    <RootNamespace>aacdecoder</RootNamespace>
+    <RootNamespace>m4adecoder</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <ProjectName>m4adecoder</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -59,7 +60,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>./;../../;../../3rdparty/include;./mp4ff;./libfaad;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;AACDECODER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -75,7 +76,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>./;../../;../../3rdparty/include;./mp4ff;./libfaad;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;AACDECODER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader />
       <WarningLevel>Level3</WarningLevel>
@@ -86,7 +87,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="AacDecoderFactory.h" />
+    <ClInclude Include="M4aDecoderFactory.h" />
     <ClInclude Include="libfaad\analysis.h" />
     <ClInclude Include="libfaad\bits.h" />
     <ClInclude Include="libfaad\cfft.h" />
@@ -120,6 +121,7 @@
     <ClInclude Include="libfaad\mdct_tab.h" />
     <ClInclude Include="libfaad\mp4.h" />
     <ClInclude Include="libfaad\ms.h" />
+    <ClInclude Include="libfaad\neaacdec.h" />
     <ClInclude Include="libfaad\output.h" />
     <ClInclude Include="libfaad\pns.h" />
     <ClInclude Include="libfaad\ps_dec.h" />
@@ -147,15 +149,15 @@
     <ClInclude Include="libfaad\structs.h" />
     <ClInclude Include="libfaad\syntax.h" />
     <ClInclude Include="libfaad\tns.h" />
-    <ClInclude Include="AacDecoder.h" />
+    <ClInclude Include="M4aDecoder.h" />
     <ClInclude Include="mp4ff\mp4ff.h" />
     <ClInclude Include="mp4ff\mp4ffint.h" />
     <ClInclude Include="mp4ff\mp4ff_int_types.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AacDecoderFactory.cpp" />
-    <ClCompile Include="aacdecoder_plugin.cpp" />
+    <ClCompile Include="M4aDecoderFactory.cpp" />
+    <ClCompile Include="m4adecoder_plugin.cpp" />
     <ClCompile Include="libfaad\bits.c" />
     <ClCompile Include="libfaad\cfft.c" />
     <ClCompile Include="libfaad\common.c" />
@@ -194,7 +196,7 @@
     <ClCompile Include="libfaad\ssr_ipqf.c" />
     <ClCompile Include="libfaad\syntax.c" />
     <ClCompile Include="libfaad\tns.c" />
-    <ClCompile Include="AacDecoder.cpp" />
+    <ClCompile Include="M4aDecoder.cpp" />
     <ClCompile Include="mp4ff\mp4atom.c" />
     <ClCompile Include="mp4ff\mp4ff.c" />
     <ClCompile Include="mp4ff\mp4meta.c" />

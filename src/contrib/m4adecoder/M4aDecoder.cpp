@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "AacDecoder.h"
+#include "M4aDecoder.h"
 
 using musik::core::io::IDataStream;
 using musik::core::audio::IBuffer;
@@ -41,26 +41,23 @@ static int FindAacTrack(mp4ff_t *infile) {
     return -1;
 }
 
-AacDecoder::AacDecoder() {
+M4aDecoder::M4aDecoder() {
     this->decoder = NULL;
     this->decoderFile = NULL;
     memset(&decoderCallbacks, 0, sizeof(this->decoderCallbacks));
 }
 
-AacDecoder::~AacDecoder() {
+M4aDecoder::~M4aDecoder() {
 }
 
-bool AacDecoder::Open(musik::core::io::IDataStream *stream)
+bool M4aDecoder::Open(musik::core::io::IDataStream *stream)
 {
-    unsigned char* buffer;
-    unsigned int buffer_size;
-    NeAACDecConfigurationPtr config;
-
     decoder = NeAACDecOpen();
     if (!decoder) {
         return false;
     }
 
+    NeAACDecConfigurationPtr config;
     config = NeAACDecGetCurrentConfiguration(decoder);
 
     config->outputFormat = FAAD_FMT_FLOAT;
@@ -73,45 +70,38 @@ bool AacDecoder::Open(musik::core::io::IDataStream *stream)
     decoderCallbacks.user_data = stream;
 
     decoderFile = mp4ff_open_read(&decoderCallbacks);
-    if (!decoderFile) {
-        return false;
-    }
 
-    if ((audioTrackId = FindAacTrack(decoderFile)) < 0) {
-        return false;
-    }
+    if (decoderFile) {
+        if ((audioTrackId = FindAacTrack(decoderFile)) >= 0) {
+            unsigned char* buffer = NULL;
+            unsigned int bufferSize = 0;
 
-    buffer = NULL;
-    buffer_size = 0;
-    mp4ff_get_decoder_config(decoderFile, audioTrackId, &buffer, &buffer_size);
+            mp4ff_get_decoder_config(
+                decoderFile, audioTrackId, &buffer, &bufferSize);
 
-    if (!buffer) {
-        return false;
-    }
+            if (buffer) {
+                if (NeAACDecInit2(
+                    decoder,
+                    buffer,
+                    bufferSize,
+                    &this->sampleRate,
+                    &this->channelCount) >= 0)
+                {
+                    this->totalSamples = mp4ff_num_samples(decoderFile, audioTrackId);
+                    this->decoderSampleId = 0;
+                    free(buffer);
+                    return true;
+                }
 
-    if (NeAACDecInit2(
-        decoder,
-        buffer,
-        buffer_size,
-        &this->sampleRate,
-        &this->channelCount) < 0)
-    {
-        if (buffer) {
-            free(buffer);
+                free(buffer);
+            }
         }
-
-        return false;
     }
 
-    free(buffer);
-
-    this->totalSamples = mp4ff_num_samples(decoderFile, audioTrackId);
-    decoderSampleId = 0;
-
-    return true;
+    return false;
 }
 
-void AacDecoder::Destroy(void)
+void M4aDecoder::Destroy(void)
 {
     mp4ff_close(decoderFile);
 
@@ -123,7 +113,7 @@ void AacDecoder::Destroy(void)
     delete this;
 }
 
-double AacDecoder::SetPosition(double seconds) {
+double M4aDecoder::SetPosition(double seconds) {
     int64_t duration;
     float fms = (float) seconds * 1000;
     int32_t skip_samples = 0;
@@ -136,7 +126,7 @@ double AacDecoder::SetPosition(double seconds) {
     return seconds;
 }
 
-bool AacDecoder::GetBuffer(IBuffer* target) {
+bool M4aDecoder::GetBuffer(IBuffer* target) {
     if (this->decoderSampleId < 0) {
         return false;
     }
@@ -145,8 +135,6 @@ bool AacDecoder::GetBuffer(IBuffer* target) {
     unsigned char* encodedData = NULL;
     unsigned int encodedDataLength = 0;
     NeAACDecFrameInfo frameInfo;
-
-    /* get acces unit from MP4 file */
 
     long duration = mp4ff_get_sample_duration(
         decoderFile, audioTrackId, decoderSampleId);

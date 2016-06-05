@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Björn Olievier
+// The following are Copyright Â© 2008, BjÃ¶rn Olievier
 //
 // All rights reserved.
 //
@@ -36,7 +36,7 @@
 
 #include "stdafx.h"
 
-#include "AacDecoderFactory.h"
+#include "M4aDecoderFactory.h"
 #include <core/sdk/IPlugin.h>
 
 #ifdef WIN32
@@ -54,9 +54,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 class AacDecoderPlugin : public musik::core::IPlugin {
     public:
         virtual void Destroy() { delete this; };
-        virtual const char* Name() { return "AAC IDecoder"; };
+        virtual const char* Name() { return "M4A IDecoder"; };
         virtual const char* Version() { return "0.2"; };
-        virtual const char* Author() { return "Björn Olievier, clangen"; };
+        virtual const char* Author() { return "BjÃ¶rn Olievier, clangen"; };
 };
 
 extern "C" DLLEXPORT musik::core::IPlugin* GetPlugin() {
@@ -64,5 +64,5 @@ extern "C" DLLEXPORT musik::core::IPlugin* GetPlugin() {
 }
 
 extern "C" DLLEXPORT musik::core::audio::IDecoderFactory* GetDecoderFactory() {
-    return new AacDecoderFactory();
+    return new M4aDecoderFactory();
 }

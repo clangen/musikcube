@@ -33,34 +33,32 @@
 
 #include "stdafx.h"
 
-#include "AacDecoderFactory.h"
-#include "AacDecoder.h"
+#include "M4aDecoderFactory.h"
+#include "M4aDecoder.h"
 #include <algorithm>
 
 using musik::core::audio::IDecoder;
 
-AacDecoderFactory::AacDecoderFactory() {
+M4aDecoderFactory::M4aDecoderFactory() {
 }
 
-AacDecoderFactory::~AacDecoderFactory() {
+M4aDecoderFactory::~M4aDecoderFactory() {
 }
 
-void AacDecoderFactory::Destroy() {
+void M4aDecoderFactory::Destroy() {
     delete this;
 }
 
-IDecoder* AacDecoderFactory::CreateDecoder() {
-    return new AacDecoder();
+IDecoder* M4aDecoderFactory::CreateDecoder() {
+    return new M4aDecoder();
 }
 
-bool AacDecoderFactory::CanHandle(const char* type) const {
+bool M4aDecoderFactory::CanHandle(const char* type) const {
     std::string str(type);
     std::transform(str.begin(), str.end(), str.begin(), tolower);
 
     return
-        musik::sdk::endsWith(str, ".aac") ||
         musik::sdk::endsWith(str, ".m4a") ||
-        str.find("audio/aac") != std::string::npos ||
         str.find("audio/mp4") != std::string::npos;
 }
 

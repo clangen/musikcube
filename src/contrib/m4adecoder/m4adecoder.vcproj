@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8,00"
-	Name="aacdecoder"
+	Name="m4adecoder"
 	ProjectGUID="{4993E68D-E97A-4CD2-AC8E-168AE315BAC5}"
-	RootNamespace="aacdecoder"
+	RootNamespace="m4adecoder"
 	Keyword="Win32Proj"
 	>
 	<Platforms>

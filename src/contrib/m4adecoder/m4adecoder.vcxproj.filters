@@ -211,17 +211,17 @@
     <ClInclude Include="libfaad\sine_win.h">
       <Filter>libfaad</Filter>
     </ClInclude>
-    <ClInclude Include="AacDecoderFactory.h">
+    <ClInclude Include="libfaad\neaacdec.h">
+      <Filter>libfaad</Filter>
+    </ClInclude>
+    <ClInclude Include="M4aDecoder.h">
       <Filter>plugin</Filter>
     </ClInclude>
-    <ClInclude Include="AacDecoder.h">
+    <ClInclude Include="M4aDecoderFactory.h">
       <Filter>plugin</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="aacdecoder_plugin.cpp">
-      <Filter>plugin</Filter>
-    </ClCompile>
     <ClCompile Include="stdafx.cpp">
       <Filter>plugin</Filter>
     </ClCompile>
@@ -357,10 +357,13 @@
     <ClCompile Include="libfaad\tns.c">
       <Filter>libfaad</Filter>
     </ClCompile>
-    <ClCompile Include="AacDecoderFactory.cpp">
+    <ClCompile Include="M4aDecoder.cpp">
       <Filter>plugin</Filter>
     </ClCompile>
-    <ClCompile Include="AacDecoder.cpp">
+    <ClCompile Include="M4aDecoderFactory.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="m4adecoder_plugin.cpp">
       <Filter>plugin</Filter>
     </ClCompile>
   </ItemGroup>

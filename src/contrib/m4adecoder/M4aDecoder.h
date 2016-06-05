@@ -1,14 +1,13 @@
 #pragma once
 
 #include <core/sdk/IDecoder.h>
-
 #include <neaacdec.h>
 #include <mp4ff.h>
 
-class AacDecoder : public musik::core::audio::IDecoder {
+class M4aDecoder : public musik::core::audio::IDecoder {
     public:
-        AacDecoder();
-        ~AacDecoder();
+        M4aDecoder();
+        ~M4aDecoder();
 
         virtual void Destroy();
         virtual double SetPosition(double seconds);

@@ -35,10 +35,10 @@
 
 #include <core/sdk/IDecoderFactory.h>
 
-class AacDecoderFactory : public musik::core::audio::IDecoderFactory {
+class M4aDecoderFactory : public musik::core::audio::IDecoderFactory {
     public:     
-        AacDecoderFactory();
-        virtual ~AacDecoderFactory();
+        M4aDecoderFactory();
+        virtual ~M4aDecoderFactory();
 
         musik::core::audio::IDecoder* CreateDecoder();
         void Destroy();
