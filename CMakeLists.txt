@@ -10,13 +10,18 @@ set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++11 -fpermissive -g")
 set (BOOST_LIBS
   system
   date_time
+  chrono
   filesystem
   iostreams
   thread
   regex
 )
 
-find_package(Boost 1.60.0 REQUIRED ${BOOST_LIBS})
+if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+  find_package(Boost 1.58.0 REQUIRED ${BOOST_LIBS})
+else (CMAKE_SYSTEM_NAME MATCHES "Linux")
+  find_package(Boost 1.60.0 REQUIRED ${BOOST_LIBS})
+endif (CMAKE_SYSTEM_NAME MATCHES "Linux")
 
 add_definitions (-DHAVE_BOOST
   -D_FILE_OFFSET_BITS=64)
@@ -39,6 +44,7 @@ set (musikbox_LINK_LIBS
   ${linux_LINK_LIBS}
   ${BOOST_LINK_LIBS}
   dl
+  rt
 )
 
 include_directories (
@@ -55,5 +61,9 @@ add_subdirectory(src/contrib/m4adecoder)
 add_subdirectory(src/contrib/oggdecoder)
 add_subdirectory(src/contrib/mpg123decoder)
 add_subdirectory(src/contrib/flacdecoder)
-#add_subdirectory(src/contrib/coreaudioout)
-add_subdirectory(src/contrib/pulseout)
+
+if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+  add_subdirectory(src/contrib/pulseout)
+else (CMAKE_SYSTEM_NAME MATCHES "Linux")
+  add_subdirectory(src/contrib/coreaudioout)
+endif (CMAKE_SYSTEM_NAME MATCHES "Linux")

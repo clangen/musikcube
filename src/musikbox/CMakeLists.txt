@@ -37,4 +37,9 @@ set (BOX_SRCS
 )
 
 add_executable(musikbox ${BOX_SRCS})
-target_link_libraries(musikbox ${musikbox_LINK_LIBS} curses panel musikcore)
+
+if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+	target_link_libraries(musikbox ${musikbox_LINK_LIBS} ncursesw panelw musikcore)
+else (CMAKE_SYSTEM_NAME MATCHES "Linux")
+	target_link_libraries(musikbox ${musikbox_LINK_LIBS} curses panel musikcore)
+endif (CMAKE_SYSTEM_NAME MATCHES "Linux")

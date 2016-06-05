@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "M4aDecoder.h"
+#include <string.h>
 
 using musik::core::io::IDataStream;
 using musik::core::audio::IBuffer;

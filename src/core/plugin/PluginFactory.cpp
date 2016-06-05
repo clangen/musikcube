@@ -118,12 +118,18 @@ void PluginFactory::LoadPlugins(){
                         }
                     }
                 }
-#elif __APPLE__
+#else
+    #ifdef __APPLE__
                 if (filename.substr(filename.size() - 6) == ".dylib") {
+                    int openFlags = RTLD_LOCAL;
+    #else
+                if (filename.substr(filename.size() - 3) == ".so") {
+                    int openFlags = RTLD_NOW;
+    #endif
                     void* dll = NULL;
 
                     try {
-                        dll = dlopen(filename.c_str(), RTLD_LOCAL);
+                        dll = dlopen(filename.c_str(), openFlags);
                     }
                     catch (...) {
                         musik::debug::err(TAG, "exception while loading plugin " + filename);

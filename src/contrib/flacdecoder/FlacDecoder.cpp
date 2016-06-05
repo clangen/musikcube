@@ -35,6 +35,7 @@
 #include "FlacDecoder.h"
 #include <complex>
 #include <iostream>
+#include <cstring>
 
 static inline void copy(float* dst, float* src, size_t count) {
 #ifdef WIN32
