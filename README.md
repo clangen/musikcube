@@ -29,7 +29,7 @@ and this on osx:
 
 you'll need [homebrew](http://brew.sh/) to install the required dependencies. 
 
-- `brew install cmake boost libogg libvorbis flac mpg123 taglib`
+- `brew install cmake boost libogg libvorbis flac mpg123 faad taglib`
 - `git clone https://github.com/clangen/musikcube.git`
 - `cd musikcube`
 - `cmake .`
