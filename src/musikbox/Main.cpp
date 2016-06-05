@@ -208,7 +208,7 @@ int main(int argc, char* argv[])
 #ifndef WIN32
     setlocale(LC_ALL, "");
 
-    #ifdef DEBUG
+    #if 1 /*DEBUG*/
         freopen("/tmp/musikbox.log", "w", stderr);
     #else
         freopen("/dev/null", "w", stderr);
