@@ -10,11 +10,6 @@
 
 class PulseOut : public musik::core::audio::IOutput {
     public:
-        struct BufferContext {
-            musik::core::audio::IBuffer *buffer;
-            musik::core::audio::IBufferProvider *provider;
-        };
-
         PulseOut();
         virtual ~PulseOut();
 
@@ -28,19 +23,37 @@ class PulseOut : public musik::core::audio::IOutput {
             musik::core::audio::IBuffer *buffer,
             musik::core::audio::IBufferProvider *provider);
 
-        void NotifyBufferCompleted(BufferContext *context);
-
     private:
+        struct BufferContext {
+            PulseOut *output;
+            musik::core::audio::IBuffer *buffer;
+            musik::core::audio::IBufferProvider *provider;
+        };
+
         static void OnPulseContextStateChanged(pa_context *c, void *data);
+        static void OnPulseStreamStateChanged(pa_stream *s, void *data);
+        static void OnPulseStreamSuccessCallback(pa_stream *s, int success, void *data);
+        static void OnPulseBufferPlayed(void *data);
+
+        void ThreadProc();
+
+        void NotifyBufferCompleted(BufferContext *context);
+        bool RemoveBufferFromQueue(BufferContext* context);
+        size_t CountBuffersWithProvider(musik::core::audio::IBufferProvider *provider);
 
         void InitPulse();
+        bool InitPulseEventLoopAndContext();
+        bool InitPulseStream(size_t rate, size_t channels);
+        void DeinitPulseStream();
         void DeinitPulse();
+        void SetPaused(bool paused);
 
         double volume;
-        std::list<BufferContext*> buffers;
+        std::list<std::shared_ptr<BufferContext> > buffers;
         boost::thread thread;
         boost::recursive_mutex mutex;
         pa_threaded_mainloop* pulseMainLoop;
         pa_context* pulseContext;
         pa_stream* pulseStream;
+        pa_sample_spec pulseStreamFormat;
 };
