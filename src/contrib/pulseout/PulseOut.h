@@ -2,7 +2,7 @@
 
 #include <core/sdk/IOutput.h>
 #include <core/sdk/IBufferProvider.h>
-#include <queue>
+#include <deque>
 #include <boost/thread.hpp>
 #include <boost/thread/condition.hpp>
 #include <boost/thread/recursive_mutex.hpp>
@@ -28,6 +28,7 @@ class PulseOut : public musik::core::audio::IOutput {
             PulseOut *output;
             musik::core::audio::IBuffer *buffer;
             musik::core::audio::IBufferProvider *provider;
+            long long endTime;
         };
 
         static void OnPulseContextStateChanged(pa_context *c, void *data);
@@ -35,7 +36,7 @@ class PulseOut : public musik::core::audio::IOutput {
         static void OnPulseStreamSuccessCallback(pa_stream *s, int success, void *data);
         static void OnPulseBufferPlayed(void *data);
 
-        void ThreadProc();
+        void ThreadProc(); /* ugh shoot me */
 
         void NotifyBufferCompleted(BufferContext *context);
         bool RemoveBufferFromQueue(BufferContext* context);
@@ -49,11 +50,12 @@ class PulseOut : public musik::core::audio::IOutput {
         void SetPaused(bool paused);
 
         double volume;
-        std::list<std::shared_ptr<BufferContext> > buffers;
+        std::deque<std::shared_ptr<BufferContext> > buffers;
         boost::thread thread;
         boost::recursive_mutex mutex;
         pa_threaded_mainloop* pulseMainLoop;
         pa_context* pulseContext;
         pa_stream* pulseStream;
         pa_sample_spec pulseStreamFormat;
+        double bufferQueueLength;
 };
