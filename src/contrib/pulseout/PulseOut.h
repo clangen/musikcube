@@ -14,7 +14,7 @@ class PulseOut : public musik::core::audio::IOutput {
             PulseOut *output;
             musik::core::audio::IBuffer *buffer;
             musik::core::audio::IBufferProvider *provider;
-            long long endTime;
+            unsigned long long lastByte;
         };
 
         PulseOut();
@@ -33,10 +33,9 @@ class PulseOut : public musik::core::audio::IOutput {
     private:
         static void OnPulseContextStateChanged(pa_context *c, void *data);
         static void OnPulseStreamStateChanged(pa_stream *s, void *data);
-        static void OnPulseStreamSuccessCallback(pa_stream *s, int success, void *data);
+        static void OnPulseStreamSuccess(pa_stream *s, int success, void *data);
         static void OnPulseBufferPlayed(void *data);
-
-        void ThreadProc(); /* ugh shoot me */
+        static void OnPulseStreamWrite(pa_stream *s, size_t bytes, void *data);
 
         size_t CountBuffersWithProvider(musik::core::audio::IBufferProvider *provider);
 
@@ -55,6 +54,7 @@ class PulseOut : public musik::core::audio::IOutput {
         pa_context* pulseContext;
         pa_stream* pulseStream;
         pa_sample_spec pulseStreamFormat;
-        double bufferQueueLength;
+        unsigned long long bytesWritten;
+        unsigned long long bytesConsumed;
         volatile bool quit;
 };
