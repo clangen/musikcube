@@ -81,7 +81,7 @@ void removeUtf8Char(std::string& value) {
 }
 
 void CommandWindow::Write(const std::string& key) {
-    if (key == "^H" || key == "^?") { /* backspace */
+    if (key == "^H" || key == "^?" || key == "KEY_BACKSPACE") { /* backspace */
         removeUtf8Char(this->buffer);
     }
     else if (key == "^M") { /* return */

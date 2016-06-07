@@ -176,8 +176,7 @@ static inline std::string readKeyPress(int64 ch) {
         kn += (char)getch();
     }
 
-
-    //std::cerr << "keyname: " << kn << std::endl;
+    // std::cerr << "keyname: " << kn << std::endl;
     // std::cerr << "ch: " << ch << std::endl;
 
     return kn;
@@ -293,10 +292,10 @@ int main(int argc, char* argv[])
                 else if (kn == "KEY_RESIZE") {
                     resizeAt = now() + REDRAW_DEBOUNCE_MS;
                 }
-                else if (ch == KEY_F(1)) {
+                else if (ch == KEY_F(1) || kn == "M-q") {
                     changeLayout(state, consoleLayout);
                 }
-                else if (ch == KEY_F(2)) {
+                else if (ch == KEY_F(2) || kn == "M-w") {
                     changeLayout(state, libraryLayout);
                 }
                 else if (!globalHotkeys.Handle(kn)) {
