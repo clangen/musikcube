@@ -5,6 +5,8 @@
 
 using namespace musik::core::audio;
 
+/* a little RAII type that ensures the main loop is locked immediately,
+and automatically unlocked when the instances goes out of scope */
 class MainLoopLock {
     public:
         MainLoopLock(pa_threaded_mainloop* mainLoop) {
@@ -20,7 +22,8 @@ class MainLoopLock {
         pa_threaded_mainloop* mainLoop;
 };
 
-static bool waitForCompletion(pa_operation *op, pa_threaded_mainloop *loop) {
+/* utility method to block waiting for a pa_operation to complete */
+static inline bool waitForCompletion(pa_operation *op, pa_threaded_mainloop *loop) {
     if (op) {
         pa_operation_state_t state;
         while ((state = pa_operation_get_state(op)) == PA_OPERATION_RUNNING) {
@@ -32,6 +35,13 @@ static bool waitForCompletion(pa_operation *op, pa_threaded_mainloop *loop) {
     }
 
     return false;
+}
+
+/* converts the buffer length to micro seconds */
+static inline long long bufferLengthMicroSeconds(IBuffer* buffer) {
+    long long samples = buffer->Samples();
+    long long rate = buffer->SampleRate();
+    return (samples * 1000000) / rate;
 }
 
 size_t PulseOut::CountBuffersWithProvider(IBufferProvider* provider) {
@@ -49,28 +59,6 @@ size_t PulseOut::CountBuffersWithProvider(IBufferProvider* provider) {
     return count;
 }
 
-long long bufferLengthMicroSeconds(IBuffer* buffer) {
-    long long samples = buffer->Samples();
-    long long rate = buffer->SampleRate();
-    return (samples * 1000000) / rate;
-}
-
-bool PulseOut::RemoveBufferFromQueue(BufferContext* context) {
-    boost::recursive_mutex::scoped_lock bufferLock(this->mutex);
-
-    auto it = this->buffers.begin();
-    while (it != this->buffers.end()) {
-        if ((*it).get() == context) {
-            this->buffers.erase(it);
-            this->bufferQueueLength -= bufferLengthMicroSeconds((*it)->buffer);
-            return true;
-        }
-        ++it;
-    }
-
-    return false;
-}
-
 void PulseOut::NotifyBufferCompleted(BufferContext* context) {
     IBufferProvider* provider = context->provider;
     IBuffer* buffer = context->buffer;
@@ -86,12 +74,21 @@ PulseOut::PulseOut() {
     this->pulseStreamFormat.rate = 0;
     this->pulseStreamFormat.channels = 0;
     this->bufferQueueLength = 0.0f;
+    this->quit = false;
 
-    boost::thread th(boost::bind(&PulseOut::ThreadProc, this));
-    th.detach();
+    this->thread.reset(new boost::thread(boost::bind(&PulseOut::ThreadProc, this)));
 
     this->InitPulse();
 }
+
+
+PulseOut::~PulseOut() {
+    this->Stop();
+    this->DeinitPulse();
+    this->quit = true;
+    this->thread->join();
+}
+
 
 bool PulseOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     if (!this->pulseStream ||
@@ -136,12 +133,11 @@ bool PulseOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     MainLoopLock loopLock(this->pulseMainLoop);
 
     int error =
-        pa_stream_write_ext_free(
+        pa_stream_write(
             this->pulseStream,
             static_cast<void*>(buffer->BufferPointer()),
             buffer->Bytes(),
-            &PulseOut::OnPulseBufferPlayed,
-            static_cast<void*>(context.get()),
+            NULL,
             0,
             PA_SEEK_RELATIVE);
 
@@ -158,31 +154,29 @@ bool PulseOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     return !error;
 }
 
-PulseOut::~PulseOut() {
-    this->Stop();
-    this->DeinitPulse();
-}
-
 void PulseOut::ThreadProc() {
+    std::cerr << "PulseOut: timing thread started\n";
+
     pa_usec_t lastTime = -1;
     pa_usec_t now;
 
-    while (true) {
+    while (!this->quit) {
         if (this->pulseStream) {
-            pa_stream_get_time(this->pulseStream, &now);
-            //std::cerr << "PulseOut: time now: " << now << std::endl;
-
             std::list<std::shared_ptr<BufferContext> > toNotify;
+            pa_stream_get_time(this->pulseStream, &now);
 
             {
-                //std::cerr << "PulseOut: lastTime " << lastTime << " now " << now << std::endl;
-
-                /* detect underrun */
-                if (lastTime == now) {
+                /* detect underrun. the playback clock is past the first element in
+                the queue. tweak the now flag so the first buffer gets freed and we can
+                move on to the next set of audio data. */
+                if (!pa_stream_is_corked(this->pulseStream) && (lastTime == now)) {
                     std::cerr << "PulseOut: UNDERRUN!" << std::endl;
                     now = this->buffers.front()->endTime + 1;
                 }
 
+                /* notify all buffers that have finished playback since the last
+                iteration through this loop. note we add them to a temporary list
+                and notify outside of the critical section */
                 boost::recursive_mutex::scoped_lock bufferLock(this->mutex);
                 auto it = this->buffers.begin();
                 while (it != this->buffers.end()) {
@@ -195,15 +189,9 @@ void PulseOut::ThreadProc() {
                         ++it;
                     }
                 }
-
-                if (!toNotify.size() && this->buffers.size()) {
-                    //std::cerr << "PulseOut: TOP TOO FAR AHEAD AT " << this->buffers.front()->endTime << std::endl;
-                }
-                else {
-                    //std::cerr << "PulseOut: we think we have something...?";
-                }
             }
 
+            /* actually notify here */
             auto it = toNotify.begin();
             while (it != toNotify.end()) {
                 this->NotifyBufferCompleted((*it).get());
@@ -215,6 +203,8 @@ void PulseOut::ThreadProc() {
         lastTime = now;
         usleep(50 * 1000);
     }
+
+    std::cerr << "PulseOut: timing thread finished\n";
 }
 
 void PulseOut::Destroy() {
@@ -254,6 +244,7 @@ void PulseOut::Stop() {
         if (this->pulseStream) {
             MainLoopLock loopLock(this->pulseMainLoop);
 
+            /* notify outside of the critical section */
             std::swap(this->buffers, toNotify);
 
             waitForCompletion(
@@ -265,17 +256,13 @@ void PulseOut::Stop() {
         }
     }
 
+    /* all buffers are dead. notify the IBufferProvider */
     auto it = toNotify.begin();
     while (it != toNotify.end()) {
         this->bufferQueueLength -= bufferLengthMicroSeconds((*it)->buffer);
         this->NotifyBufferCompleted((*it).get());
         ++it;
     }
-}
-
-void PulseOut::OnPulseBufferPlayed(void *data) {
-    // BufferContext* context = static_cast<BufferContext*>(data);
-    // context->output->NotifyBufferCompleted(context);
 }
 
 void PulseOut::OnPulseContextStateChanged(pa_context *context, void *data) {

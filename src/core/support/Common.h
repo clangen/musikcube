@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Daniel Önnerby
+// The following are Copyright ï¿½ 2008, Daniel ï¿½nnerby
 //
 // All rights reserved.
 //
@@ -45,6 +45,6 @@ namespace musik { namespace core {
     std::string GetDataDirectory();
     std::string GetPath(const std::string &sFile);
     std::string GetPluginDirectory();
-    UINT64 Checksum(char *data,unsigned int bytes);
+    uint64 Checksum(char *data,unsigned int bytes);
 
 } }

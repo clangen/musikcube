@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////
-// Copyright © 2007, Daniel Önnerby
+// Copyright ï¿½ 2007, Daniel ï¿½nnerby
 //
 // All rights reserved.
 //
@@ -69,7 +69,7 @@ double Stream::SetPosition(double requestedSeconds) {
 
     if (actualSeconds != -1) {
         double rate = (double) this->decoderSampleRate;
-        this->decoderSamplePosition = (UINT64)(actualSeconds * rate);
+        this->decoderSamplePosition = (uint64)(actualSeconds * rate);
     }
 
     return actualSeconds;

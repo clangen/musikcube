@@ -81,6 +81,8 @@ PluginFactory::~PluginFactory(void){
     loadedDlls.clear();
 }
 
+#include <iostream>
+
 void PluginFactory::LoadPlugins(){
     boost::mutex::scoped_lock lock(this->mutex);
 
@@ -132,12 +134,16 @@ void PluginFactory::LoadPlugins(){
                         dll = dlopen(filename.c_str(), openFlags);
                     }
                     catch (...) {
+                        std::cerr << "exception while loading plugin " << filename << std::endl;
+
                         musik::debug::err(TAG, "exception while loading plugin " + filename);
                         continue;
                     }
 
                     if (!dll) {
                         char *err = dlerror();
+
+                        std::cerr << "exception while loading plugin " << filename << " " << err << std::endl;
 
                         musik::debug::err(
                             TAG,

@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////
-// Copyright © 2007, Daniel Önnerby
+// Copyright ï¿½ 2007, Daniel ï¿½nnerby
 //
 // All rights reserved.
 //
@@ -86,7 +86,7 @@ namespace musik { namespace core { namespace audio {
             double maxCacheLength;
             unsigned int options;
             long decoderSampleRate;
-            UINT64 decoderSamplePosition;
+            uint64 decoderSamplePosition;
             std::string uri;
             musik::core::io::DataStreamFactory::DataStreamPtr dataStream;
             BufferList recycledBuffers;

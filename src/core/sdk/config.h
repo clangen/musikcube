@@ -47,7 +47,9 @@
 
     #define sleep_ms(x) Sleep(x)
 
-    typedef unsigned __int64 UINT64;
+    typedef __int64 int64;
+    typedef unsigned __int64 uint64;
+
     #define STDCALL(fp) (__stdcall* fp)()
 #else
     #include <cassert>
@@ -55,8 +57,8 @@
 
     #define sleep_ms(x) usleep(x * 1000)
 
-    typedef unsigned long long UINT64;
-    typedef long long __int64;
+    typedef __uint64_t uint64;
+    typedef __int64_t int64;
 
     #define STDCALL(fp) (* fp)()
     #define _ASSERT assert

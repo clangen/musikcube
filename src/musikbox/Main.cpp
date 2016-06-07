@@ -258,7 +258,7 @@ int main(int argc, char* argv[])
         state.input = NULL;
         state.keyHandler = NULL;
 
-        changeLayout(state, consoleLayout);
+        changeLayout(state, libraryLayout);
 
         while (!quit) {
             /* if the focused item is an IInput, then get characters from it,

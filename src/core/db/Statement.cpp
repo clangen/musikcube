@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Daniel Önnerby
+// The following are Copyright ï¿½ 2008, Daniel ï¿½nnerby
 //
 // All rights reserved.
 //
@@ -132,7 +132,7 @@ void Statement::BindInt(int position,int bindInt){
 ///\param bindInt
 ///Integer to bind
 //////////////////////////////////////////
-void Statement::BindInt(int position, UINT64 bindInt){
+void Statement::BindInt(int position, uint64 bindInt){
     DB_ASSERT(sqlite3_bind_int64(this->stmt, position + 1, bindInt));
 }
 
@@ -235,7 +235,7 @@ int Statement::ColumnInt(int column){
 ///\returns
 ///Column data
 //////////////////////////////////////////
-UINT64 Statement::ColumnInt64(int column){
+uint64 Statement::ColumnInt64(int column){
     return sqlite3_column_int64(this->stmt,column);
 }
 

@@ -42,9 +42,9 @@
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 
-typedef UINT64 DBID;
-typedef UINT64 VERSION;
-typedef UINT64 DBTIME;
+typedef uint64 DBID;
+typedef uint64 VERSION;
+typedef uint64 DBTIME;
 
 #ifdef WIN32
 	#define CopyFloat(dst, src, num) CopyMemory(dst, src, (num) * sizeof(float))

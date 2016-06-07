@@ -137,6 +137,8 @@ bool TaglibMetadataReader::Read(const char* uri, musik::core::IMetadataWriter *t
     return this->GetGenericTag(uri, track);
 }
 
+#include <iostream>
+
 bool TaglibMetadataReader::GetGenericTag(const char* uri, musik::core::IMetadataWriter *target) {
 #ifdef WIN32
     TagLib::FileRef file(utf8to16(uri).c_str());

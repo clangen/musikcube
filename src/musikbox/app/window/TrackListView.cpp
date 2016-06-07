@@ -118,7 +118,9 @@ constants) */
 
 IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(size_t index) {
     bool selected = index == parent.GetSelectedIndex();
-    int64 attrs = selected ? COLOR_PAIR(BOX_COLOR_BLACK_ON_GREEN) : -1;
+    int64 attrs = selected
+        ? COLOR_PAIR(BOX_COLOR_BLACK_ON_GREEN)
+        : -1LL;
 
     TrackPtr track = parent.metadata->at(index);
 

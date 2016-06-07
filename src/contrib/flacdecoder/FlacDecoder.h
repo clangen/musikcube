@@ -98,7 +98,7 @@ class FlacDecoder :	public musik::core::audio::IDecoder {
 
         long channels;
         long sampleRate;
-        UINT64 totalSamples;
+        uint64 totalSamples;
         int bitsPerSample;
 
         float *outputBuffer;

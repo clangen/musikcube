@@ -39,7 +39,6 @@ class PulseOut : public musik::core::audio::IOutput {
         void ThreadProc(); /* ugh shoot me */
 
         void NotifyBufferCompleted(BufferContext *context);
-        bool RemoveBufferFromQueue(BufferContext* context);
         size_t CountBuffersWithProvider(musik::core::audio::IBufferProvider *provider);
 
         void InitPulse();
@@ -51,11 +50,12 @@ class PulseOut : public musik::core::audio::IOutput {
 
         double volume;
         std::deque<std::shared_ptr<BufferContext> > buffers;
-        boost::thread thread;
+        std::unique_ptr<boost::thread> thread;
         boost::recursive_mutex mutex;
         pa_threaded_mainloop* pulseMainLoop;
         pa_context* pulseContext;
         pa_stream* pulseStream;
         pa_sample_spec pulseStreamFormat;
         double bufferQueueLength;
+        volatile bool quit;
 };

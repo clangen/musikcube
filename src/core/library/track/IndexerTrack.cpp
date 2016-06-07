@@ -239,7 +239,7 @@ DBID IndexerTrack::SaveThumbnail(db::Connection& connection, const std::string& 
     DBID thumbnailId = 0;
 
     if (this->internalMetadata->thumbnailData) {
-        UINT64 sum = Checksum(this->internalMetadata->thumbnailData, this->internalMetadata->thumbnailSize);
+        uint64 sum = Checksum(this->internalMetadata->thumbnailData, this->internalMetadata->thumbnailSize);
 
         db::CachedStatement thumbs("SELECT id FROM thumbnails WHERE filesize=? AND checksum=?", connection);
         thumbs.BindInt(0, this->internalMetadata->thumbnailSize);

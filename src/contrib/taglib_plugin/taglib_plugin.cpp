@@ -46,38 +46,23 @@
 #endif
 
 #ifdef WIN32
-BOOL APIENTRY DllMain( HMODULE hModule,DWORD  ul_reason_for_call,LPVOID lpReserved){
-    if(ul_reason_for_call==DLL_PROCESS_DETACH){
-    }
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
     return TRUE;
 }
 #endif
 
 class TaglibPlugin : public musik::core::IPlugin {
-    void Destroy() {
-        delete this;
-    };
-
-    const char* Name() {
-        return "Taglib 1.11 IMetadataReader";
-    };
-
-    const char* Version() {
-        return "0.2";
-    };
-
-    const char* Author() {
-        return "Daniel Önnerby, clangen";
-    };
-
+    public:
+        virtual void Destroy() { delete this; }
+        virtual const char* Name() { return "Taglib 1.11 IMetadataReader"; }
+        virtual const char* Version() { return "0.2"; }
+        virtual const char* Author() { return "Daniel Önnerby, clangen"; }
 };
 
-extern "C" {
-    DLLEXPORT musik::core::metadata::IMetadataReader* GetMetadataReader() {
-        return new TaglibMetadataReader();
-    }
+extern "C" DLLEXPORT musik::core::metadata::IMetadataReader* GetMetadataReader() {
+    return new TaglibMetadataReader();
+}
 
-    DLLEXPORT musik::core::IPlugin* GetPlugin() {
-        return new TaglibPlugin();
-    }
+extern "C" DLLEXPORT musik::core::IPlugin* GetPlugin() {
+    return new TaglibPlugin();
 }
