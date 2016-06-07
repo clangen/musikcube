@@ -137,23 +137,24 @@ void CommandWindow::Help() {
     int64 s = -1;
     this->output->WriteLine("help:\n", s);
     this->output->WriteLine("  <tab> to switch between windows", s);
-    this->output->WriteLine("  <F1> console view", s);
-    this->output->WriteLine("  <F2> library view", s);
-    this->output->WriteLine("\n", s);
+    this->output->WriteLine("  ALT+Q console view", s);
+    this->output->WriteLine("  ALT+W library view", s);
+    this->output->WriteLine("", s);
     this->output->WriteLine("  addir <dir>: add a music directory", s);
     this->output->WriteLine("  rmdir <dir>: remove a music directory", s);
     this->output->WriteLine("  lsdirs: list scanned directories", s);
     this->output->WriteLine("  rescan: rescan paths for new metadata", s);
-    this->output->WriteLine("\n", s);
+    this->output->WriteLine("", s);
     this->output->WriteLine("  play <uri>: play audio at <uri>", s);
     this->output->WriteLine("  pause: pause/resume", s);
     this->output->WriteLine("  stop: stop and clean up everything", s);
     this->output->WriteLine("  volume: <0 - 100>: set % volume", s);
     this->output->WriteLine("  clear: clear the log window", s);
     this->output->WriteLine("  seek <seconds>: seek to <seconds> into track", s);
-    this->output->WriteLine("\n", s);
+    this->output->WriteLine("", s);
     this->output->WriteLine("  plugins: list loaded plugins", s);
-    this->output->WriteLine("\n  <ctrl+d>: quit\n", s);
+    this->output->WriteLine("", s);
+    this->output->WriteLine("  <ctrl+d>: quit\n", s);
 }
 
 bool CommandWindow::ProcessCommand(const std::string& cmd) {

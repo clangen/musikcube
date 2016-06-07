@@ -151,9 +151,12 @@ void Player::ThreadLoop() {
                 this->output->Stop(); /* flush all buffers */
                 this->output->Resume(); /* start it back up */
 
-                while (this->lockedBuffers.size() > 0) {
+                {
                     boost::mutex::scoped_lock lock(this->mutex);
-                    writeToOutputCondition.wait(this->mutex);
+
+                    while (this->lockedBuffers.size() > 0) {
+                        writeToOutputCondition.wait(this->mutex);
+                    }
                 }
 
                 this->stream->SetPosition(this->setPosition);
@@ -267,21 +270,25 @@ bool Player::Exited() {
 
 void Player::OnBufferProcessed(IBuffer *buffer) {
     bool started = false;
-
+    bool found = false;
     {
         boost::mutex::scoped_lock lock(this->mutex);
 
         /* removes the specified buffer from the list of locked buffers, and also
         lets the stream know it can be recycled. */
         BufferList::iterator it = this->lockedBuffers.begin();
-        for ( ; it != this->lockedBuffers.end(); ++it) {
+        while (it != this->lockedBuffers.end() && !found) {
             if (it->get() == buffer) {
+                found = true;
+
                 if (this->stream) {
                     this->stream->OnBufferProcessedByPlayer(*it);
                 }
 
-                this->lockedBuffers.erase(it);
+                it = this->lockedBuffers.erase(it);
 
+                /* this sets the current time in the stream. it does this by grabbing
+                the time at the next buffer in the queue */
                 if (!this->lockedBuffers.empty()) {
                     this->currentPosition = this->lockedBuffers.front()->Position();
                 }
@@ -290,8 +297,9 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
                 accepting new samples. now that a buffer has been processed, we can
                 try to enqueue another sample. the thread loop blocks on this condition */
                 this->writeToOutputCondition.notify_all();
-
-                it = this->lockedBuffers.end(); /* bail out of the loop */
+            }
+            else {
+                ++it;
             }
         }
 
