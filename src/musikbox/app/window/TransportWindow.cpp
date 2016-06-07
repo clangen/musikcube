@@ -167,7 +167,7 @@ void TransportWindow::Update() {
     int secondsCurrent = (int) round(transport.Position());
     int secondsTotal = boost::lexical_cast<int>(duration);
 
-    std::string currentTime = text::Duration(secondsCurrent);
+    std::string currentTime = text::Duration(std::min(secondsCurrent, secondsTotal));
     std::string totalTime = text::Duration(secondsTotal);
 
     size_t timerWidth =

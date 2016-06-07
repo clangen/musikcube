@@ -70,6 +70,7 @@ Player::Player(const std::string &url, OutputPtr output)
 , url(url)
 , currentPosition(0)
 , output(output)
+, notifiedStarted(false)
 , setPosition(-1) {
     musik::debug::info(TAG, "new instance created");
 
@@ -142,8 +143,6 @@ void Player::ThreadLoop() {
         bool finished = false;
         BufferPtr buffer;
 
-        bool startedPlaying = false;
-
         while (!finished && !this->Exited()) {
             /* see if we've been asked to seek since the last sample was
             played. if we have, clear our output buffer and seek the
@@ -187,11 +186,6 @@ void Player::ThreadLoop() {
             the output device. */
             if (buffer) {
                 if (this->output->Play(buffer.get(), this)) {
-                    if (!startedPlaying) {
-                        startedPlaying = true;
-                        this->PlaybackStarted(this);
-                    }
-
                     /* success! the buffer was accepted by the output.*/
                     boost::mutex::scoped_lock lock(this->mutex);
 
@@ -272,29 +266,46 @@ bool Player::Exited() {
 }
 
 void Player::OnBufferProcessed(IBuffer *buffer) {
-    boost::mutex::scoped_lock lock(this->mutex);
+    bool started = false;
 
-    /* removes the specified buffer from the list of locked buffers, and also
-    lets the stream know it can be recycled. */
-    BufferList::iterator it = this->lockedBuffers.begin();
-    for ( ; it != this->lockedBuffers.end(); ++it) {
-        if (it->get() == buffer) {
-            if (this->stream) {
-                this->stream->OnBufferProcessedByPlayer(*it);
+    {
+        boost::mutex::scoped_lock lock(this->mutex);
+
+        /* removes the specified buffer from the list of locked buffers, and also
+        lets the stream know it can be recycled. */
+        BufferList::iterator it = this->lockedBuffers.begin();
+        for ( ; it != this->lockedBuffers.end(); ++it) {
+            if (it->get() == buffer) {
+                if (this->stream) {
+                    this->stream->OnBufferProcessedByPlayer(*it);
+                }
+
+                this->lockedBuffers.erase(it);
+
+                if (!this->lockedBuffers.empty()) {
+                    this->currentPosition = this->lockedBuffers.front()->Position();
+                }
+
+                /* if the output device's internal buffers are full, it will stop
+                accepting new samples. now that a buffer has been processed, we can
+                try to enqueue another sample. the thread loop blocks on this condition */
+                this->writeToOutputCondition.notify_all();
+
+                it = this->lockedBuffers.end(); /* bail out of the loop */
             }
-
-            this->lockedBuffers.erase(it);
-
-            if (!this->lockedBuffers.empty()) {
-                this->currentPosition = this->lockedBuffers.front()->Position();
-            }
-
-            /* if the output device's internal buffers are full, it will stop
-            accepting new samples. now that a buffer has been processed, we can
-            try to enqueue another sample. the thread loop blocks on this condition */
-            this->writeToOutputCondition.notify_all();
-
-            return;
         }
+
+        if (!this->notifiedStarted) {
+            this->notifiedStarted = true;
+            started = true;
+        }
+    }
+
+    /* we notify our listeners that we've started playing only after the first
+    buffer has been consumed. this is because sometimes we precache buffers
+    and send them to the output before they are actually processed by the
+    output device */
+    if (started) {
+        this->PlaybackStarted(this);
     }
 }

@@ -10,6 +10,13 @@
 
 class PulseOut : public musik::core::audio::IOutput {
     public:
+        struct BufferContext {
+            PulseOut *output;
+            musik::core::audio::IBuffer *buffer;
+            musik::core::audio::IBufferProvider *provider;
+            long long endTime;
+        };
+
         PulseOut();
         virtual ~PulseOut();
 
@@ -24,13 +31,6 @@ class PulseOut : public musik::core::audio::IOutput {
             musik::core::audio::IBufferProvider *provider);
 
     private:
-        struct BufferContext {
-            PulseOut *output;
-            musik::core::audio::IBuffer *buffer;
-            musik::core::audio::IBufferProvider *provider;
-            long long endTime;
-        };
-
         static void OnPulseContextStateChanged(pa_context *c, void *data);
         static void OnPulseStreamStateChanged(pa_stream *s, void *data);
         static void OnPulseStreamSuccessCallback(pa_stream *s, int success, void *data);
@@ -38,7 +38,6 @@ class PulseOut : public musik::core::audio::IOutput {
 
         void ThreadProc(); /* ugh shoot me */
 
-        void NotifyBufferCompleted(BufferContext *context);
         size_t CountBuffersWithProvider(musik::core::audio::IBufferProvider *provider);
 
         void InitPulse();

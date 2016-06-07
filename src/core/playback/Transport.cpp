@@ -124,7 +124,7 @@ void Transport::StartWithPlayer(Player* newPlayer) {
 
             musik::debug::info(TAG, "play()");
 
-            this->active.push_front(newPlayer);
+            this->active.push_back(newPlayer);
             this->output->Resume();
             newPlayer->Play();
         }
@@ -140,22 +140,24 @@ void Transport::Stop() {
 void Transport::Stop(bool suppressStopEvent, bool stopOutput) {
     musik::debug::info(TAG, "stop");
 
-    std::list<Player*> toDelete;
-
-    {
-        boost::recursive_mutex::scoped_lock lock(this->stateMutex);
-        RESET_NEXT_PLAYER();
-        std::swap(toDelete, this->active);
-    }
-
-    /* delete these in the background to avoid deadlock in some cases
-    where this method is implicitly triggered via Player callback. however,
-    we should stop them immediately so they stop producing audio. */
-    std::for_each(toDelete.begin(), toDelete.end(), stopPlayer);
-    DEFER(&Transport::DeletePlayers, toDelete);
-
-
+    /* if we stop the output, we kill all of the Players immediately.
+    otherwise, we let them finish naturally; RemoveActive() will take
+    care of disposing of them */
     if (stopOutput) {
+        std::list<Player*> toDelete;
+
+        {
+            boost::recursive_mutex::scoped_lock lock(this->stateMutex);
+            RESET_NEXT_PLAYER();
+            std::swap(toDelete, this->active);
+        }
+
+        /* delete these in the background to avoid deadlock in some cases
+        where this method is implicitly triggered via Player callback. however,
+        we should stop them immediately so they stop producing audio. */
+        std::for_each(toDelete.begin(), toDelete.end(), stopPlayer);
+        DEFER(&Transport::DeletePlayers, toDelete);
+
         /* stopping the transport will stop any buffers that are currently in
         flight. this makes the sound end immediately. */
         this->output->Stop();

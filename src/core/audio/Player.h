@@ -117,6 +117,7 @@ namespace musik { namespace core { namespace audio {
             double currentPosition;
             double setPosition;
             int state;
+            bool notifiedStarted;
     };
 
 } } }

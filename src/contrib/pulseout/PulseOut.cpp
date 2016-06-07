@@ -1,7 +1,7 @@
 #include "PulseOut.h"
 #include <iostream>
 
-#define BUFFER_COUNT 48 /* seems to work well? */
+#define BUFFER_COUNT 32 /* seems to work well? */
 
 using namespace musik::core::audio;
 
@@ -44,22 +44,7 @@ static inline long long bufferLengthMicroSeconds(IBuffer* buffer) {
     return (samples * 1000000) / rate;
 }
 
-size_t PulseOut::CountBuffersWithProvider(IBufferProvider* provider) {
-    boost::recursive_mutex::scoped_lock bufferLock(this->mutex);
-
-    size_t count = 0;
-    auto it = this->buffers.begin();
-    while (it != this->buffers.end()) {
-        if ((*it)->provider == provider) {
-            ++count;
-        }
-        ++it;
-    }
-
-    return count;
-}
-
-void PulseOut::NotifyBufferCompleted(BufferContext* context) {
+static inline void notifyBufferCompleted(PulseOut::BufferContext* context) {
     IBufferProvider* provider = context->provider;
     IBuffer* buffer = context->buffer;
     provider->OnBufferProcessed(buffer);
@@ -89,6 +74,67 @@ PulseOut::~PulseOut() {
     this->thread->join();
 }
 
+
+void PulseOut::Destroy() {
+    delete this;
+}
+
+void PulseOut::Pause() {
+    this->SetPaused(true);
+}
+
+void PulseOut::Resume() {
+    this->SetPaused(false);
+}
+
+void PulseOut::SetVolume(double volume) {
+    this->volume = volume;
+
+    boost::recursive_mutex::scoped_lock bufferLock(this->mutex);
+
+    if (this->pulseStream) {
+        pa_cvolume vol;
+        pa_cvolume_set(&vol, 2, pa_sw_volume_from_linear(volume));
+
+        MainLoopLock loopLock(this->pulseMainLoop);
+        pa_context_set_sink_input_volume(
+            this->pulseContext,
+            pa_stream_get_index(this->pulseStream),
+            &vol,
+            NULL,
+            NULL);
+    }
+}
+
+void PulseOut::Stop() {
+    std::deque<std::shared_ptr<BufferContext> > toNotify;
+
+    {
+        boost::recursive_mutex::scoped_lock bufferLock(this->mutex);
+
+        if (this->pulseStream) {
+            MainLoopLock loopLock(this->pulseMainLoop);
+
+            /* notify outside of the critical section */
+            std::swap(this->buffers, toNotify);
+
+            waitForCompletion(
+                pa_stream_flush(
+                    this->pulseStream,
+                    &PulseOut::OnPulseStreamSuccessCallback,
+                    this),
+                this->pulseMainLoop);
+        }
+    }
+
+    /* all buffers are dead. notify the IBufferProvider */
+    auto it = toNotify.begin();
+    while (it != toNotify.end()) {
+        this->bufferQueueLength -= bufferLengthMicroSeconds((*it)->buffer);
+        notifyBufferCompleted((*it).get());
+        ++it;
+    }
+}
 
 bool PulseOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     if (!this->pulseStream ||
@@ -122,6 +168,7 @@ bool PulseOut::Play(IBuffer *buffer, IBufferProvider *provider) {
 
         long long bufferLength = bufferLengthMicroSeconds(buffer);
         //std::cerr << "PulseOut: bufferLength " << bufferLength << std::endl;
+        
         pa_usec_t currentTime;
         pa_stream_get_time(this->pulseStream, &currentTime);
         context->endTime = bufferLength + currentTime + this->bufferQueueLength;
@@ -143,7 +190,7 @@ bool PulseOut::Play(IBuffer *buffer, IBufferProvider *provider) {
 
     if (error) {
         std::cerr << "PulseOut: FAILED!! this should not happen." << error << std::endl;
-        this->NotifyBufferCompleted(context.get());
+        notifyBufferCompleted(context.get());
     }
     else {
         // std::cerr << "PulseOut: buffer enqueued!" << std::endl;
@@ -194,7 +241,7 @@ void PulseOut::ThreadProc() {
             /* actually notify here */
             auto it = toNotify.begin();
             while (it != toNotify.end()) {
-                this->NotifyBufferCompleted((*it).get());
+                notifyBufferCompleted((*it).get());
                 ++it;
             }
 
@@ -207,18 +254,6 @@ void PulseOut::ThreadProc() {
     std::cerr << "PulseOut: timing thread finished\n";
 }
 
-void PulseOut::Destroy() {
-    delete this;
-}
-
-void PulseOut::Pause() {
-    this->SetPaused(true);
-}
-
-void PulseOut::Resume() {
-    this->SetPaused(false);
-}
-
 void PulseOut::SetPaused(bool paused) {
     if (this->pulseStream) {
         MainLoopLock loopLock(this->pulseMainLoop);
@@ -229,39 +264,6 @@ void PulseOut::SetPaused(bool paused) {
                 &PulseOut::OnPulseStreamSuccessCallback,
                 this),
             this->pulseMainLoop);
-    }
-}
-
-void PulseOut::SetVolume(double volume) {
-}
-
-void PulseOut::Stop() {
-    std::deque<std::shared_ptr<BufferContext> > toNotify;
-
-    {
-        boost::recursive_mutex::scoped_lock bufferLock(this->mutex);
-
-        if (this->pulseStream) {
-            MainLoopLock loopLock(this->pulseMainLoop);
-
-            /* notify outside of the critical section */
-            std::swap(this->buffers, toNotify);
-
-            waitForCompletion(
-                pa_stream_flush(
-                    this->pulseStream,
-                    &PulseOut::OnPulseStreamSuccessCallback,
-                    this),
-                this->pulseMainLoop);
-        }
-    }
-
-    /* all buffers are dead. notify the IBufferProvider */
-    auto it = toNotify.begin();
-    while (it != toNotify.end()) {
-        this->bufferQueueLength -= bufferLengthMicroSeconds((*it)->buffer);
-        this->NotifyBufferCompleted((*it).get());
-        ++it;
     }
 }
 
@@ -423,6 +425,7 @@ bool PulseOut::InitPulseStream(size_t rate, size_t channels) {
     }
 
     if (ready) {
+        this->SetVolume(this->volume);
         this->Resume();
     }
 
@@ -456,4 +459,20 @@ void PulseOut::DeinitPulse() {
         pa_threaded_mainloop_free(this->pulseMainLoop);
         this->pulseMainLoop = NULL;
     }
+}
+
+
+size_t PulseOut::CountBuffersWithProvider(IBufferProvider* provider) {
+    boost::recursive_mutex::scoped_lock bufferLock(this->mutex);
+
+    size_t count = 0;
+    auto it = this->buffers.begin();
+    while (it != this->buffers.end()) {
+        if ((*it)->provider == provider) {
+            ++count;
+        }
+        ++it;
+    }
+
+    return count;
 }
