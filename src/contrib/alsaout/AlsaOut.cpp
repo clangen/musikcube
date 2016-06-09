@@ -47,6 +47,11 @@
 #define CHECK_QUIT() if (this->quit) { return; }
 #define PRINT_ERROR(x) std::cerr << "AlsaOut: error! " << snd_strerror(x) << std::endl;
 
+
+#define WRITE_BUFFER(handle, context, samples) \
+    err = snd_pcm_writei(handle, context->buffer->BufferPointer(), samples); \
+    if (err < 0) { PRINT_ERROR(err); }
+
 using namespace musik::core::audio;
 
 AlsaOut::AlsaOut()
@@ -222,6 +227,7 @@ void AlsaOut::WriteLoop() {
                 size_t samples = next->buffer->Samples();
                 size_t channels = next->buffer->Channels();
 
+
                 float volume = (float) this->volume;
 
                 /* software volume; alsa doesn't support this internally. this is about
@@ -232,17 +238,13 @@ void AlsaOut::WriteLoop() {
                     ++buffer;
                 }
 
-                err = snd_pcm_writei(
-                    this->pcmHandle,
-                    next->buffer->BufferPointer(), 
-                    samples);
+                WRITE_BUFFER(this->pcmHandle, next, samples); /* sets 'err' */
 
-                // if (err < 0) {
-                //     err = snd_pcm_recover(this->pcmHandle, samples, 0);                                
-                // }
-
-                if (err < 0) {
-                    PRINT_ERROR(err);
+                if (err == -EINTR || err == -EPIPE || err == -ESTRPIPE) {
+                    if (!snd_pcm_recover(this->pcmHandle, err, 1)) {
+                        /* try one more time... */
+                        WRITE_BUFFER(this->pcmHandle, next, samples);
+                    }
                 }
 
                 if (err > 0 && err < (int) samples) {
