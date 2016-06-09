@@ -188,7 +188,8 @@ void AlsaOut::Resume() {
 }
 
 void AlsaOut::SetVolume(double volume) {
-
+    LOCK("set volume");
+    this->volume = volume;
 }
 
 void AlsaOut::WriteLoop() {
@@ -219,6 +220,17 @@ void AlsaOut::WriteLoop() {
 
             if (next) {
                 size_t samples = next->buffer->Samples();
+                size_t channels = next->buffer->Channels();
+
+                float volume = (float) this->volume;
+
+                /* software volume; alsa doesn't support this internally. this is about
+                as terrible as an algorithm can be -- it's just a linear ramp. */
+                float *buffer = next->buffer->BufferPointer();
+                for (size_t i = 0; i < samples * channels; i++) {
+                    (*buffer) *= volume;
+                    ++buffer;
+                }
 
                 err = snd_pcm_writei(
                     this->pcmHandle,
