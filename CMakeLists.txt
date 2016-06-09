@@ -62,7 +62,7 @@ add_subdirectory(src/contrib/mpg123decoder)
 add_subdirectory(src/contrib/flacdecoder)
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
-  add_subdirectory(src/contrib/pulseout)
+  add_subdirectory(src/contrib/alsaout)
 else (CMAKE_SYSTEM_NAME MATCHES "Linux")
   add_subdirectory(src/contrib/coreaudioout)
 endif (CMAKE_SYSTEM_NAME MATCHES "Linux")

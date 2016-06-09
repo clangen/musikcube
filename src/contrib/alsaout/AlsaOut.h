@@ -33,71 +33,46 @@
 #pragma once
 
 #include "pch.h"
-#include "AlsaOutBuffer.h"
-/*
+
+
 #include <boost/thread/condition.hpp>
 #include <boost/thread/thread.hpp>
 
-#include <core/audio/IAudioCallback.h>
-#include <core/audio/IAudioOutput.h>
-*/
-#include <core/audio/IOutput.h>
-#include <list>
-#include <boost/shared_ptr.hpp>
+#include <core/sdk/IOutput.h>
 #include <boost/thread/mutex.hpp>
+#include <list>
 
 using namespace musik::core::audio;
 
-class AlsaOut : public IOutput{
+class AlsaOut : public IOutput {
     public:
         AlsaOut();
-        ~AlsaOut();
+        virtual ~AlsaOut();
 
         virtual void Destroy();
-        //virtual void Initialize(IPlayer *player);
         virtual void Pause();
         virtual void Resume();
         virtual void SetVolume(double volume);
-        virtual void ClearBuffers();
-        virtual bool PlayBuffer(IBuffer *buffer,IPlayer *player);
-        virtual void ReleaseBuffers();
+        virtual void Stop();
+
+        virtual bool Play(
+            musik::core::audio::IBuffer *buffer, 
+            musik::core::audio::IBufferProvider *player);
         
-        snd_pcm_t* getWaveHandle();
-
-    public:
-        typedef boost::shared_ptr<AlsaOutBuffer> AlsaOutBufferPtr;
-
-        //static void CALLBACK WaveCallback(HWAVEOUT hWave, UINT msg, DWORD_PTR dwUser, DWORD_PTR dw1, DWORD dw2);
-        void RemoveBuffer(AlsaOutBuffer *buffer);
-
     private:
-        void SetFormat(IBuffer *buffer);
-        char *device;                        /* playback device */
+        void SetFormat(musik::core::audio::IBuffer *buffer);
+        
+        std::string device;
+        snd_output_t* output;
+        snd_pcm_t* pcmHandle;
+        snd_pcm_hw_params_t* hardware;
+        snd_pcm_format_t pcmFormat;
+        snd_pcm_access_t pcmType;
 
-    protected:
-        friend class AlsaOutBuffer;
-
-        //IPlayer *player;
-
-        // Audio stuff
-        snd_output_t *output;
-        snd_pcm_t        *waveHandle;
-        snd_pcm_format_t waveFormat;
-        snd_pcm_access_t waveAccess;
-        snd_pcm_hw_params_t *hw_params;
-
-        // Current format
         int currentChannels;
         long currentSampleRate;
         double currentVolume;
 
-        typedef std::list<AlsaOutBufferPtr> BufferList;
-        BufferList buffers;
-        BufferList removedBuffers;
-        size_t maxBuffers;
-
+        std::list<musik::core::audio::IBuffer*> buffers;
         boost::mutex mutex;
-
-        bool addToRemovedBuffers;
-
 };

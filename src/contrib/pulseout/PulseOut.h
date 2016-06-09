@@ -31,6 +31,13 @@ class PulseOut : public musik::core::audio::IOutput {
             musik::core::audio::IBufferProvider *provider);
 
     private:
+        struct Pulse {
+            pa_threaded_mainloop* loop;
+            pa_stream* stream;
+            pa_context* context;
+            pa_sample_spec format;
+        };
+
         static void OnPulseContextStateChanged(pa_context *c, void *data);
         static void OnPulseStreamStateChanged(pa_stream *s, void *data);
         static void OnPulseStreamSuccess(pa_stream *s, int success, void *data);
@@ -50,10 +57,7 @@ class PulseOut : public musik::core::audio::IOutput {
         std::deque<std::shared_ptr<BufferContext> > buffers;
         std::unique_ptr<boost::thread> thread;
         boost::recursive_mutex mutex;
-        pa_threaded_mainloop* pulseMainLoop;
-        pa_context* pulseContext;
-        pa_stream* pulseStream;
-        pa_sample_spec pulseStreamFormat;
+        Pulse pulse;
         unsigned long long bytesWritten;
         unsigned long long bytesConsumed;
         volatile bool quit;

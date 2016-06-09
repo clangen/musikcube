@@ -45,15 +45,18 @@ static inline void notifyBufferCompleted(PulseOut::BufferContext* context) {
 
 PulseOut::PulseOut() {
     this->volume = 1.0f;
-    this->pulseMainLoop = 0;;
-    this->pulseContext = 0;
-    this->pulseStream = 0;
-    this->pulseStreamFormat.format = PA_SAMPLE_FLOAT32LE;
-    this->pulseStreamFormat.rate = 0;
-    this->pulseStreamFormat.channels = 0;
-    this->quit = false;
+
     this->bytesConsumed = 0;
     this->bytesWritten = 0;
+
+    this->pulse.loop = NULL;
+    this->pulse.context = NULL;
+    this->pulse.stream = NULL;
+    this->pulse.format.format = PA_SAMPLE_FLOAT32LE;
+    this->pulse.format.rate = 0;
+    this->pulse.format.channels = 0;
+
+    this->quit = false;
 
     this->InitPulse();
 }
@@ -82,16 +85,16 @@ void PulseOut::SetVolume(double volume) {
 
     boost::recursive_mutex::scoped_lock bufferLock(this->mutex);
 
-    if (this->pulseStream) {
+    if (this->pulse.stream) {
         pa_cvolume vol;
 
         pa_cvolume_set(&vol, 2, pa_sw_volume_from_linear(volume));
 
-        MainLoopLock loopLock(this->pulseMainLoop);
+        MainLoopLock loopLock(this->pulse.loop);
 
         pa_context_set_sink_input_volume(
-            this->pulseContext,
-            pa_stream_get_index(this->pulseStream),
+            this->pulse.context,
+            pa_stream_get_index(this->pulse.stream),
             &vol,
             NULL,
             NULL);
@@ -105,30 +108,30 @@ void PulseOut::Stop() {
         boost::recursive_mutex::scoped_lock bufferLock(this->mutex);
         std::swap(this->buffers, toNotify);
 
-        if (this->pulseStream) {
+        if (this->pulse.stream) {
             /* unset the callback so we don't try to immediately re-fill
             the buffer. or, worse, deadlock */
             pa_stream_set_write_callback(
-                this->pulseStream, NULL, NULL);
+                this->pulse.stream, NULL, NULL);
 
             pa_operation* flushOp = NULL;
 
             {
-                MainLoopLock loopLock(this->pulseMainLoop);
+                MainLoopLock loopLock(this->pulse.loop);
 
                 flushOp = pa_stream_flush(
-                    this->pulseStream,
+                    this->pulse.stream,
                     &PulseOut::OnPulseStreamSuccess,
                     this);
 
                 if (flushOp) {
-                    waitForCompletion(flushOp, this->pulseMainLoop);
+                    waitForCompletion(flushOp, this->pulse.loop);
                 }
             }
 
             /* reset the callback */
             pa_stream_set_write_callback(
-                this->pulseStream,
+                this->pulse.stream,
                 &PulseOut::OnPulseStreamWrite,
                 this);
         }
@@ -146,11 +149,11 @@ void PulseOut::Stop() {
 }
 
 bool PulseOut::Play(IBuffer *buffer, IBufferProvider *provider) {
-    if (!this->pulseStream ||
-        this->pulseStreamFormat.rate != buffer->SampleRate() ||
-        this->pulseStreamFormat.channels != buffer->Channels())
+    if (!this->pulse.stream ||
+        this->pulse.format.rate != buffer->SampleRate() ||
+        this->pulse.format.channels != buffer->Channels())
     {
-        if (this->pulseStream) {
+        if (this->pulse.stream) {
             std::cerr << "PulseOut: stream switched formats; not handled\n";
             return false;
         }
@@ -178,11 +181,11 @@ bool PulseOut::Play(IBuffer *buffer, IBufferProvider *provider) {
         this->buffers.push_back(context);
     }
 
-    MainLoopLock loopLock(this->pulseMainLoop);
+    MainLoopLock loopLock(this->pulse.loop);
 
     int error =
         pa_stream_write(
-            this->pulseStream,
+            this->pulse.stream,
             static_cast<void*>(buffer->BufferPointer()),
             buffer->Bytes(),
             NULL,
@@ -193,6 +196,10 @@ bool PulseOut::Play(IBuffer *buffer, IBufferProvider *provider) {
         std::cerr << "PulseOut: FAILED!! this should not happen." << error << std::endl;
         notifyBufferCompleted(context.get());
     }
+    else {
+        boost::recursive_mutex::scoped_lock bufferLock(this->mutex);
+        this->bytesWritten += buffer->Bytes();
+    }
 
     return !error;
 }
@@ -200,20 +207,20 @@ bool PulseOut::Play(IBuffer *buffer, IBufferProvider *provider) {
 void PulseOut::SetPaused(bool paused) {
     boost::recursive_mutex::scoped_lock bufferLock(this->mutex);
 
-    if (this->pulseStream) {
+    if (this->pulse.stream) {
         pa_operation* corkOp = NULL;
 
         {
-            MainLoopLock loopLock(this->pulseMainLoop);
+            MainLoopLock loopLock(this->pulse.loop);
             
             corkOp = pa_stream_cork(
-                this->pulseStream,
+                this->pulse.stream,
                 paused ? 1 : 0,
                 &PulseOut::OnPulseStreamSuccess,
                 this);
 
             if (corkOp) {
-                waitForCompletion(corkOp, this->pulseMainLoop);
+                waitForCompletion(corkOp, this->pulse.loop);
             }
         }
     }
@@ -253,6 +260,7 @@ void PulseOut::OnPulseStreamWrite(pa_stream *s, size_t bytes, void *data) {
 
 void PulseOut::OnPulseContextStateChanged(pa_context *context, void *data) {
     PulseOut* out = static_cast<PulseOut*>(data);
+
     const pa_context_state_t state = pa_context_get_state(context);
 
     std::cerr << "PulseOut: context connection state changed: " << state << std::endl;
@@ -261,7 +269,7 @@ void PulseOut::OnPulseContextStateChanged(pa_context *context, void *data) {
         case PA_CONTEXT_READY:
         case PA_CONTEXT_FAILED:
         case PA_CONTEXT_TERMINATED:
-            pa_threaded_mainloop_signal(out->pulseMainLoop, 0);
+            pa_threaded_mainloop_signal(out->pulse.loop, 0);
         default:
             return;
     }
@@ -269,6 +277,7 @@ void PulseOut::OnPulseContextStateChanged(pa_context *context, void *data) {
 
 void PulseOut::OnPulseStreamStateChanged(pa_stream *stream, void *data) {
     PulseOut* out = static_cast<PulseOut*>(data);
+
     const pa_stream_state_t state = pa_stream_get_state(stream);
 
     std::cerr << "PulseOut: stream connection state changed: " << state << std::endl;
@@ -277,7 +286,7 @@ void PulseOut::OnPulseStreamStateChanged(pa_stream *stream, void *data) {
         case PA_STREAM_READY:
         case PA_STREAM_FAILED:
         case PA_STREAM_TERMINATED:
-            pa_threaded_mainloop_signal(out->pulseMainLoop, 0);
+            pa_threaded_mainloop_signal(out->pulse.loop, 0);
         default:
             return;
     }
@@ -285,7 +294,7 @@ void PulseOut::OnPulseStreamStateChanged(pa_stream *stream, void *data) {
 
 void PulseOut::OnPulseStreamSuccess(pa_stream *s, int success, void *data) {
     PulseOut* out = static_cast<PulseOut*>(data);
-    pa_threaded_mainloop_signal(out->pulseMainLoop, 0);
+    pa_threaded_mainloop_signal(out->pulse.loop, 0);
 }
 
 void PulseOut::InitPulse() {
@@ -296,37 +305,39 @@ void PulseOut::InitPulse() {
 
 bool PulseOut::InitPulseEventLoopAndContext() {
     std::cerr << "PulseOut: init...\n";
-    this->pulseMainLoop = pa_threaded_mainloop_new();
-    if (this->pulseMainLoop) {
+
+    this->pulse.loop = pa_threaded_mainloop_new();
+    
+    if (this->pulse.loop) {
         std::cerr << "PulseOut: init ok, starting...\n";
 
-        int error = pa_threaded_mainloop_start(this->pulseMainLoop);
+        int error = pa_threaded_mainloop_start(this->pulse.loop);
         if (error) {
-            pa_threaded_mainloop_free(this->pulseMainLoop);
-            this->pulseMainLoop = NULL;
+            pa_threaded_mainloop_free(this->pulse.loop);
+            this->pulse.loop = NULL;
             return false;
         }
 
         std::cerr << "PulseOut: started ok.\n";
     }
 
-    pa_mainloop_api* api = pa_threaded_mainloop_get_api(this->pulseMainLoop);
+    pa_mainloop_api* api = pa_threaded_mainloop_get_api(this->pulse.loop);
 
-    MainLoopLock loopLock(this->pulseMainLoop);
+    MainLoopLock loopLock(this->pulse.loop);
 
-    this->pulseContext = pa_context_new(api, "musikcube");
+    this->pulse.context = pa_context_new(api, "musikcube");
 
-    if (this->pulseContext) {
+    if (this->pulse.context) {
         std::cerr << "PulseOut: context created";
 
         pa_context_set_state_callback(
-            this->pulseContext,
+            this->pulse.context,
             &PulseOut::OnPulseContextStateChanged,
             this);
 
         int error =
             pa_context_connect(
-                this->pulseContext,
+                this->pulse.context,
                 NULL,
                 PA_CONTEXT_NOFAIL,
                 NULL);
@@ -334,7 +345,7 @@ bool PulseOut::InitPulseEventLoopAndContext() {
         bool connected = false;
         while (!error && !connected) {
             pa_context_state_t state =
-                pa_context_get_state(this->pulseContext);
+                pa_context_get_state(this->pulse.context);
 
             if (state == PA_CONTEXT_READY) {
                 std::cerr << "PulseOut: connected!\n";
@@ -346,7 +357,7 @@ bool PulseOut::InitPulseEventLoopAndContext() {
             }
             else {
                 std::cerr << "PulseOut: waiting for connection...\n";
-                pa_threaded_mainloop_wait(this->pulseMainLoop);
+                pa_threaded_mainloop_wait(this->pulse.loop);
             }
         }
 
@@ -362,29 +373,29 @@ bool PulseOut::InitPulseStream(size_t rate, size_t channels) {
     bool ready = false;
 
     {
-        MainLoopLock loopLock(this->pulseMainLoop);
+        MainLoopLock loopLock(this->pulse.loop);
 
-        this->pulseStreamFormat.rate = rate;
-        this->pulseStreamFormat.channels = channels;
+        this->pulse.format.rate = rate;
+        this->pulse.format.channels = channels;
 
-        this->pulseStream = pa_stream_new(
-            this->pulseContext,
+        this->pulse.stream = pa_stream_new(
+            this->pulse.context,
             "musikcube PulseOut stream",
-            &this->pulseStreamFormat,
+            &this->pulse.format,
             NULL); /* channel mapping */
 
         std::cerr << "PulseOut: creating stream...\n";
 
-        if (this->pulseStream) {
+        if (this->pulse.stream) {
             std::cerr << "PulseOut: stream created.\n";
 
             pa_stream_set_state_callback(
-                this->pulseStream,
+                this->pulse.stream,
                 &PulseOut::OnPulseStreamStateChanged,
                 this);
 
             pa_stream_set_write_callback(
-                this->pulseStream,
+                this->pulse.stream,
                 &PulseOut::OnPulseStreamWrite,
                 this);
 
@@ -395,7 +406,7 @@ bool PulseOut::InitPulseStream(size_t rate, size_t channels) {
             std::cerr << "PulseOut: connecting the stream for playing...\n";
 
             int error = pa_stream_connect_playback(
-                this->pulseStream,
+                this->pulse.stream,
                 NULL, /* device id */
                 NULL, /* buffering attributes */
                 (pa_stream_flags_t) flags, /* additional flags */
@@ -405,8 +416,8 @@ bool PulseOut::InitPulseStream(size_t rate, size_t channels) {
             if (!error) {
                 std::cerr << "PulseOut: connected. waiting for the stream to become ready\n";
 
-                pa_threaded_mainloop_wait(this->pulseMainLoop);
-                ready = pa_stream_get_state(this->pulseStream) == PA_STREAM_READY;
+                pa_threaded_mainloop_wait(this->pulse.loop);
+                ready = pa_stream_get_state(this->pulse.stream) == PA_STREAM_READY;
 
                 std::cerr << (ready ? "PulseOut: stream is ready!" : "stream failed") << std::endl;
             }
@@ -422,31 +433,31 @@ bool PulseOut::InitPulseStream(size_t rate, size_t channels) {
 }
 
 void PulseOut::DeinitPulseStream() {
-    if (this->pulseStream) {
+    if (this->pulse.stream) {
         std::cerr << "PulseOut: freeing stream...\n";
-        MainLoopLock loopLock(this->pulseMainLoop);
-        pa_stream_disconnect(this->pulseStream);
-        pa_stream_unref(this->pulseStream);
-        this->pulseStream = NULL;
+        MainLoopLock loopLock(this->pulse.loop);
+        pa_stream_disconnect(this->pulse.stream);
+        pa_stream_unref(this->pulse.stream);
+        this->pulse.stream = NULL;
     }
 }
 
 void PulseOut::DeinitPulse() {
     this->DeinitPulseStream();
 
-    if (this->pulseContext) {
+    if (this->pulse.context) {
         std::cerr << "PulseOut: freeing context...\n";
-        MainLoopLock loopLock(this->pulseMainLoop);
-        pa_context_disconnect(this->pulseContext);
-        pa_context_unref(this->pulseContext);
-        this->pulseContext = NULL;
+        MainLoopLock loopLock(this->pulse.loop);
+        pa_context_disconnect(this->pulse.context);
+        pa_context_unref(this->pulse.context);
+        this->pulse.context = NULL;
     }
 
-    if (this->pulseMainLoop) {
+    if (this->pulse.loop) {
         std::cerr << "PulseOut: stopping...\n";
-        pa_threaded_mainloop_stop(this->pulseMainLoop);
-        pa_threaded_mainloop_free(this->pulseMainLoop);
-        this->pulseMainLoop = NULL;
+        pa_threaded_mainloop_stop(this->pulse.loop);
+        pa_threaded_mainloop_free(this->pulse.loop);
+        this->pulse.loop = NULL;
     }
 }
 

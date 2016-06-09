@@ -35,37 +35,21 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.h"
-
-#include <core/IPlugin.h>
+#include <core/sdk/IPlugin.h>
+#include <core/sdk/IOutput.h>
 #include "AlsaOut.h"
 
-class AlsaOutPlugin : public musik::core::IPlugin
-{
-    void Destroy() { delete this; };
-
-    const utfchar* Name()       { return TEXT("AlsaOut output plugin"); };
-    const utfchar* Version()    { return TEXT("0.1"); };
-    const utfchar* Author()     { return TEXT("Julian Cromarty"); };
+class AlsaOutPlugin : public musik::core::IPlugin {
+    virtual void Destroy() { delete this; };
+    virtual const char* Name() { return "AlsaOut IOutput plugin"; }
+    virtual const char* Version() { return "0.2"; }
+    virtual const char* Author() { return "Julian Cromarty, clangen"; }
 };
 
-extern "C" {
-	musik::core::IPlugin* GetPlugin()
-	{
-		return new AlsaOutPlugin();
-	}
+extern "C" musik::core::IPlugin* GetPlugin() {
+	return new AlsaOutPlugin();
 }
 
-/*
-extern "C" {
-	musik::core::audio::IAudioOutputSupplier* CreateAudioOutputSupplier()
-	{
-		return new AlsaOutSupplier();
-	}
-}*/
-
-extern "C" {
-	musik::core::audio::IOutput* GetAudioOutput()
-	{
-		return new AlsaOut();
-	}
+extern "C" musik::core::audio::IOutput* GetAudioOutput() {
+	return new AlsaOut();
 }
