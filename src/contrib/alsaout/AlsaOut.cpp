@@ -35,12 +35,14 @@
 
 #define BUFFER_COUNT 8
 #define PCM_ACCESS_TYPE SND_PCM_ACCESS_RW_INTERLEAVED
-#define PCM_FORMAT SND_PCM_FORMAT_S16_LE
+#define PCM_FORMAT SND_PCM_FORMAT_FLOAT_LE
 #define LOCK() boost::recursive_mutex::scoped_lock lock(this->stateMutex);
 #define WAIT() this->threadEvent.wait(lock);
 #define NOTIFY() this->threadEvent.notify_all();
 #define CHECK_QUIT() if (this->quit) { return; }
 #define PRINT_ERROR(x) std::cerr << "AlsaOut: error! " << snd_strerror(x) << std::endl;
+#define BUFFER_TIME_MICROS 10000
+#define PERIOD_TIME_MICROS 25000
 
 using namespace musik::core::audio;
 
@@ -55,7 +57,6 @@ AlsaOut::AlsaOut()
     std::cerr << "AlsaOut::AlsaOut() called" << std::endl;
     this->writeThread.reset(new boost::thread(boost::bind(&AlsaOut::WriteLoop, this)));
 }
-
 
 AlsaOut::~AlsaOut() {
     std::cerr << "AlsaOut: destructor\n";
@@ -77,7 +78,10 @@ AlsaOut::~AlsaOut() {
 }
 
 void AlsaOut::InitDevice() {
-    int err;
+    int err, dir;
+    size_t rate = this->rate;
+    size_t bufferTime = BUFFER_TIME_MICROS;
+    size_t periodTime = PERIOD_TIME_MICROS;
 
     if ((err = snd_pcm_open(&this->pcmHandle, this->device.c_str(), SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
         std::cerr << "AlsaOut: cannot open audio device 'default' :" << snd_strerror(err) << std::endl;
@@ -93,8 +97,8 @@ void AlsaOut::InitDevice() {
         std::cerr << "AlsaOut: cannot initialize hardware parameter structure " << snd_strerror(err) << std::endl;
         goto error;
     }
-    
-    if ((err = snd_pcm_hw_params_set_access (pcmHandle, hardware, PCM_ACCESS_TYPE)) < 0) {
+       
+    if ((err = snd_pcm_hw_params_set_access(pcmHandle, hardware, PCM_ACCESS_TYPE)) < 0) {
         std::cerr << "AlsaOut: cannot set access type " << snd_strerror(err) << std::endl;
         goto error;
     }
@@ -104,7 +108,7 @@ void AlsaOut::InitDevice() {
         goto error;
     }
     
-    if ((err = snd_pcm_hw_params_set_rate_resample(pcmHandle, hardware, this->rate)) < 0) {
+    if ((err = snd_pcm_hw_params_set_rate_near(pcmHandle, hardware, &rate, 0)) < 0) {
         std::cerr << "AlsaOut: cannot set sample rate " << snd_strerror(err) << std::endl;
         goto error;
     }
@@ -114,6 +118,16 @@ void AlsaOut::InitDevice() {
         goto error;
     }
     
+    if ((err = snd_pcm_hw_params_set_buffer_time_near(pcmHandle, hardware, &bufferTime, &dir)) < 0) {
+        std::cerr << "AlsaOut: cannot set buffer time " << snd_strerror(err) << std::endl;
+        goto error;
+    }
+
+    if ((err = snd_pcm_hw_params_set_period_time_near(pcmHandle, hardware, &periodTime, &dir)) < 0) {
+        std::cerr << "AlsaOut: cannot set period time " << snd_strerror(err) << std::endl;
+        goto error;
+    }
+
     if ((err = snd_pcm_hw_params(pcmHandle, hardware)) < 0) {
         std::cerr << "AlsaOut: cannot set parameters " << snd_strerror(err) << std::endl;
         goto error;
@@ -151,12 +165,16 @@ void AlsaOut::Stop() {
 }
 
 void AlsaOut::Pause() {
+    LOCK();
+
     if (this->pcmHandle) {
         snd_pcm_pause(this->pcmHandle, 1);
     }
 }
 
 void AlsaOut::Resume() {
+    LOCK();
+
     if (this->pcmHandle) {
         snd_pcm_pause(this->pcmHandle, 0);       
     }
@@ -190,32 +208,44 @@ void AlsaOut::WriteLoop() {
                 this->buffers.pop_front();
             }
 
+            int err;
+
             if (next) {
                 size_t samples = next->buffer->Samples();
 
-                int err = snd_pcm_writei(
-                    this->pcmHandle, 
-                    next->buffer->BufferPointer(), 
-                    samples);
+                {
+                    LOCK();
 
-                std::cerr << err << std::endl;
+                    err = snd_pcm_writei(
+                        this->pcmHandle,
+                        next->buffer->BufferPointer(), 
+                        samples);
+                }
 
-                 // if (err < 0) {
-                 //     err = snd_pcm_recover(this->pcmHandle, samples, 0);                                
-                 // }
+                // if (err < 0) {
+                //     err = snd_pcm_recover(this->pcmHandle, samples, 0);                                
+                // }
 
-                 if (err < 0) {
+                if (err < 0) {
                     PRINT_ERROR(err);
-                 }
+                }
 
-                 if (err > 0 && err < (int) samples) {
+                if (err > 0 && err < (int) samples) {
                     std::cerr << "AlsaOut: short write. expected=" << samples << ", actual=" << err << std::endl;
-                 }
+                }
 
-                 next->provider->OnBufferProcessed(next->buffer);
+                next->provider->OnBufferProcessed(next->buffer);
             }
         }
     }
+}
+
+static inline bool playable(snd_pcm_t* pcm) {
+    snd_pcm_state_t state = snd_pcm_state(pcm);
+
+    return 
+        state == SND_PCM_STATE_RUNNING || 
+        state == SND_PCM_STATE_PREPARED;
 }
 
 bool AlsaOut::Play(IBuffer *buffer, IBufferProvider* provider) {
@@ -224,7 +254,7 @@ bool AlsaOut::Play(IBuffer *buffer, IBufferProvider* provider) {
     {
         LOCK();
 
-        if (this->buffers.size() >= BUFFER_COUNT) {
+        if (!playable(this->pcmHandle) || this->buffers.size() >= BUFFER_COUNT) {
             return false;
         }
 
@@ -241,6 +271,8 @@ bool AlsaOut::Play(IBuffer *buffer, IBufferProvider* provider) {
 }
 
 void AlsaOut::SetFormat(IBuffer *buffer) {
+    LOCK();
+
     if (this->channels != buffer->Channels() ||
         this->rate != buffer->SampleRate() ||
         this->pcmHandle == NULL)

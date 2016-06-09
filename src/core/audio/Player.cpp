@@ -188,10 +188,10 @@ void Player::ThreadLoop() {
             /* if we have a decoded, processed buffer available. let's try to send it to
             the output device. */
             if (buffer) {
+                boost::mutex::scoped_lock lock(this->mutex);
+
                 if (this->output->Play(buffer.get(), this)) {
                     /* success! the buffer was accepted by the output.*/
-                    boost::mutex::scoped_lock lock(this->mutex);
-
                     /* lock it down so it's not destroyed until the output device lets us
                     know it's done with it. */
                     this->lockedBuffers.push_back(buffer);
@@ -205,7 +205,6 @@ void Player::ThreadLoop() {
                 else {
                     /* the output device queue is full. we should block and wait until
                     the output lets us know that it needs more data */
-                    boost::mutex::scoped_lock lock(this->mutex);
                     writeToOutputCondition.wait(this->mutex);
                 }
             }
@@ -291,6 +290,11 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
                 the time at the next buffer in the queue */
                 if (!this->lockedBuffers.empty()) {
                     this->currentPosition = this->lockedBuffers.front()->Position();
+                }
+                else {
+                    /* if the queue is drained, use the position from the buffer
+                    that was just processed */
+                    this->currentPosition = ((Buffer*) buffer)->Position();
                 }
 
                 /* if the output device's internal buffers are full, it will stop
