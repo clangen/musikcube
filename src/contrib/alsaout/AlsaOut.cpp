@@ -36,13 +36,16 @@
 #define BUFFER_COUNT 8
 #define PCM_ACCESS_TYPE SND_PCM_ACCESS_RW_INTERLEAVED
 #define PCM_FORMAT SND_PCM_FORMAT_FLOAT_LE
-#define LOCK() boost::recursive_mutex::scoped_lock lock(this->stateMutex);
+
+#define LOCK(x) \
+    /*std::f << "locking " << x << "\n";*/ \
+    boost::recursive_mutex::scoped_lock lock(this->stateMutex); \
+    /*std::cerr << "locked " << x << "\n";*/ \
+
 #define WAIT() this->threadEvent.wait(lock);
 #define NOTIFY() this->threadEvent.notify_all();
 #define CHECK_QUIT() if (this->quit) { return; }
 #define PRINT_ERROR(x) std::cerr << "AlsaOut: error! " << snd_strerror(x) << std::endl;
-#define BUFFER_TIME_MICROS 10000
-#define PERIOD_TIME_MICROS 25000
 
 using namespace musik::core::audio;
 
@@ -63,7 +66,7 @@ AlsaOut::~AlsaOut() {
 
     std::cerr << "AlsaOut: waiting for thread...\n";
     {
-        LOCK();
+        LOCK("dtor");
         this->quit = true;
         NOTIFY();
     }
@@ -80,14 +83,12 @@ AlsaOut::~AlsaOut() {
 void AlsaOut::InitDevice() {
     int err, dir;
     size_t rate = this->rate;
-    size_t bufferTime = BUFFER_TIME_MICROS;
-    size_t periodTime = PERIOD_TIME_MICROS;
 
     if ((err = snd_pcm_open(&this->pcmHandle, this->device.c_str(), SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
         std::cerr << "AlsaOut: cannot open audio device 'default' :" << snd_strerror(err) << std::endl;
         goto error;
     }
-    
+
     if ((err = snd_pcm_hw_params_malloc(&hardware)) < 0) {
         std::cerr << "AlsaOut: cannot allocate hardware parameter structure " << snd_strerror(err) << std::endl;
         goto error;
@@ -117,28 +118,20 @@ void AlsaOut::InitDevice() {
         std::cerr << "AlsaOut: cannot set channel count " << snd_strerror(err) << std::endl;
         goto error;
     }
-    
-    if ((err = snd_pcm_hw_params_set_buffer_time_near(pcmHandle, hardware, &bufferTime, &dir)) < 0) {
-        std::cerr << "AlsaOut: cannot set buffer time " << snd_strerror(err) << std::endl;
-        goto error;
-    }
-
-    if ((err = snd_pcm_hw_params_set_period_time_near(pcmHandle, hardware, &periodTime, &dir)) < 0) {
-        std::cerr << "AlsaOut: cannot set period time " << snd_strerror(err) << std::endl;
-        goto error;
-    }
 
     if ((err = snd_pcm_hw_params(pcmHandle, hardware)) < 0) {
         std::cerr << "AlsaOut: cannot set parameters " << snd_strerror(err) << std::endl;
         goto error;
     }
-    
+
     snd_pcm_hw_params_free(hardware);
-    
+
     if ((err = snd_pcm_prepare (pcmHandle)) < 0) {
         std::cerr << "AlsaOut: cannot prepare audio interface for use " << snd_strerror(err) << std::endl;
         goto error;
     }
+
+    snd_pcm_nonblock(pcmHandle, 0);
 
     std::cerr << "AlsaOut: device seems to be prepared for use!\n";
     this->initialized = true;
@@ -158,14 +151,28 @@ void AlsaOut::Destroy() {
 }
 
 void AlsaOut::Stop() {
-    if (this->pcmHandle) {
-        snd_pcm_drop(this->pcmHandle);
-        snd_pcm_reset(this->pcmHandle);
+    std::list<std::shared_ptr<BufferContext> > toNotify;
+
+    {
+        LOCK("stop");
+
+        std::swap(this->buffers, toNotify);
+
+        if (this->pcmHandle) {
+            snd_pcm_drop(this->pcmHandle);
+            snd_pcm_prepare(this->pcmHandle);
+        }
+    }
+
+    auto it = toNotify.begin();
+    while (it != toNotify.end()) {
+        ((*it)->provider)->OnBufferProcessed((*it)->buffer);
+        ++it;
     }
 }
 
 void AlsaOut::Pause() {
-    LOCK();
+    LOCK("pause");
 
     if (this->pcmHandle) {
         snd_pcm_pause(this->pcmHandle, 1);
@@ -173,7 +180,7 @@ void AlsaOut::Pause() {
 }
 
 void AlsaOut::Resume() {
-    LOCK();
+    LOCK("resume");
 
     if (this->pcmHandle) {
         snd_pcm_pause(this->pcmHandle, 0);       
@@ -186,7 +193,7 @@ void AlsaOut::SetVolume(double volume) {
 
 void AlsaOut::WriteLoop() {
     {
-        LOCK();
+        LOCK("thread: init");
         while (!quit && !initialized) {
             WAIT();
         }
@@ -197,7 +204,7 @@ void AlsaOut::WriteLoop() {
             std::shared_ptr<BufferContext> next;
 
             {
-                LOCK();
+                LOCK("thread: waiting for buffer");
                 while (!quit && !this->buffers.size()) {
                     WAIT();
                 }
@@ -213,14 +220,10 @@ void AlsaOut::WriteLoop() {
             if (next) {
                 size_t samples = next->buffer->Samples();
 
-                {
-                    LOCK();
-
-                    err = snd_pcm_writei(
-                        this->pcmHandle,
-                        next->buffer->BufferPointer(), 
-                        samples);
-                }
+                err = snd_pcm_writei(
+                    this->pcmHandle,
+                    next->buffer->BufferPointer(), 
+                    samples);
 
                 // if (err < 0) {
                 //     err = snd_pcm_recover(this->pcmHandle, samples, 0);                                
@@ -252,9 +255,11 @@ bool AlsaOut::Play(IBuffer *buffer, IBufferProvider* provider) {
     this->SetFormat(buffer);
 
     {
-        LOCK();
+        LOCK("play");
 
-        if (!playable(this->pcmHandle) || this->buffers.size() >= BUFFER_COUNT) {
+        if (!playable(this->pcmHandle) || 
+            this->CountBuffersWithProvider(provider) >= BUFFER_COUNT) 
+        {
             return false;
         }
 
@@ -271,7 +276,7 @@ bool AlsaOut::Play(IBuffer *buffer, IBufferProvider* provider) {
 }
 
 void AlsaOut::SetFormat(IBuffer *buffer) {
-    LOCK();
+    LOCK("set format");
 
     if (this->channels != buffer->Channels() ||
         this->rate != buffer->SampleRate() ||
@@ -305,4 +310,19 @@ void AlsaOut::SetFormat(IBuffer *buffer) {
 
         std::cerr << "AlsaOut: device format initialized from buffer\n";
     }
+}
+
+size_t AlsaOut::CountBuffersWithProvider(IBufferProvider* provider) {
+    LOCK("count");
+
+    size_t count = 0;
+    auto it = this->buffers.begin();
+    while (it != this->buffers.end()) {
+        if ((*it)->provider == provider) {
+            ++count;
+        }
+        ++it;
+    }
+
+    return count;
 }

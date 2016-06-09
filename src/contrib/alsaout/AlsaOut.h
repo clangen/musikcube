@@ -66,6 +66,7 @@ class AlsaOut : public IOutput {
             musik::core::audio::IBufferProvider *provider;
         };
 
+        size_t CountBuffersWithProvider(IBufferProvider* provider);
         void SetFormat(musik::core::audio::IBuffer *buffer);
         void InitDevice();
         void WriteLoop();
