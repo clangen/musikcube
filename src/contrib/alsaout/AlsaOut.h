@@ -39,7 +39,8 @@
 #include <boost/thread/thread.hpp>
 
 #include <core/sdk/IOutput.h>
-#include <boost/thread/mutex.hpp>
+#include <boost/thread/recursive_mutex.hpp>
+#include <boost/thread/condition.hpp>
 #include <list>
 
 using namespace musik::core::audio;
@@ -57,22 +58,33 @@ class AlsaOut : public IOutput {
 
         virtual bool Play(
             musik::core::audio::IBuffer *buffer, 
-            musik::core::audio::IBufferProvider *player);
+            musik::core::audio::IBufferProvider *provider);
         
     private:
+        struct BufferContext {
+            musik::core::audio::IBuffer *buffer;
+            musik::core::audio::IBufferProvider *provider;
+        };
+
         void SetFormat(musik::core::audio::IBuffer *buffer);
+        void InitDevice();
+        void WriteLoop();
         
         std::string device;
-        snd_output_t* output;
         snd_pcm_t* pcmHandle;
         snd_pcm_hw_params_t* hardware;
         snd_pcm_format_t pcmFormat;
         snd_pcm_access_t pcmType;
 
-        int currentChannels;
-        long currentSampleRate;
-        double currentVolume;
+        size_t channels;
+        size_t rate;
+        double volume;
+        volatile bool quit, initialized;
 
-        std::list<musik::core::audio::IBuffer*> buffers;
+        std::unique_ptr<boost::thread> writeThread;
+        boost::recursive_mutex stateMutex;
+        boost::condition threadEvent;
+
+        std::list<std::shared_ptr<BufferContext> > buffers;
         boost::mutex mutex;
 };

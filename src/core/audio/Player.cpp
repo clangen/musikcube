@@ -81,7 +81,7 @@ Player::Player(const std::string &url, OutputPtr output)
     }
 
     /* each player instance is driven by a background thread. start it. */
-    this->thread.reset(new boost::thread(boost::bind(&Player::ThreadLoop,this)));
+    this->thread.reset(new boost::thread(boost::bind(&Player::ThreadLoop, this)));
 }
 
 Player::~Player() {
