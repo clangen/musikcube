@@ -54,8 +54,8 @@ the user interface is very new and will change considerably over time.
 the current hotkeys are generally based around holding the alt/meta key with your left thumb, and using the home row with your right hand. 
 
 - `<TAB>` tabs between windows
-- `F1` switch to console view
-- `F2` switch to library view
+- `F1` or `ALT+Q` switch to console view
+- `F2` or `ALT+W` switch to library view
 - `ALT+i` volume up 5%
 - `ALT+k` volume down 5%
 - `ALT+j` previous track
