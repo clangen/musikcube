@@ -47,7 +47,6 @@
 #define CHECK_QUIT() if (this->quit) { return; }
 #define PRINT_ERROR(x) std::cerr << "AlsaOut: error! " << snd_strerror(x) << std::endl;
 
-
 #define WRITE_BUFFER(handle, context, samples) \
     err = snd_pcm_writei(handle, context->buffer->BufferPointer(), samples); \
     if (err < 0) { PRINT_ERROR(err); }
@@ -165,7 +164,11 @@ void AlsaOut::Stop() {
 
         if (this->pcmHandle) {
             snd_pcm_drop(this->pcmHandle);
-            snd_pcm_prepare(this->pcmHandle);
+
+            if (this->pcmHandle) {
+                snd_pcm_close(this->pcmHandle);
+                this->pcmHandle = NULL;
+            }
         }
     }
 
