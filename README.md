@@ -6,7 +6,7 @@ a cross-platform audio engine written in C++.
 
 an ncurses frontend to musikcube.
 
-musicbox compiles and runs easily on Windows and OSX (and Linux soon).
+musicbox compiles and runs easily on Windows, OSX and Linux.
 
 it looks something like this on windows:
 
@@ -30,6 +30,16 @@ and this on osx:
 you'll need [homebrew](http://brew.sh/) to install the required dependencies. 
 
 - `brew install cmake boost libogg libvorbis flac mpg123 faad2 taglib`
+- `git clone https://github.com/clangen/musikcube.git`
+- `cd musikcube`
+- `cmake .`
+- `make`
+- `cd bin`
+- `./musikbox`
+
+## linux
+
+- install the following libraries and their development packages: `cmake boost libogg vorbis flac mpg123 faad2 taglib`
 - `git clone https://github.com/clangen/musikcube.git`
 - `cd musikcube`
 - `cmake .`
