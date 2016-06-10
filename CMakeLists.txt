@@ -5,6 +5,17 @@ project(musikbox)
 set (musikbox_VERSION_MAJOR 0)
 set (musikbox_VERSION_MINOR 1)
 
+include(ExternalProject)
+
+ExternalProject_Add(taglib
+    SOURCE_DIR "${musikbox_SOURCE_DIR}/src/contrib/taglib_plugin/taglib-1.11"
+    BUILD_IN_SOURCE 0
+    DOWNLOAD_COMMAND ""
+    UPDATE_COMMAND ""
+    CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX:PATH=${musikbox_SOURCE_DIR}/src/contrib/taglib_plugin/taglib-1.11/stage/"
+    INSTALL_COMMAND make install
+)
+
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++11 -fpermissive -g")
 
 set (BOOST_LIBS
@@ -38,7 +49,10 @@ SET (CMAKE_BUILD_TYPE DEBUG)
 set (LIBRARY_OUTPUT_PATH ${musikbox_SOURCE_DIR}/bin/plugins)
 set (EXECUTABLE_OUTPUT_PATH ${musikbox_SOURCE_DIR}/bin)
 
-link_directories (${musikbox_SOURCE_DIR}/bin/plugins)
+link_directories (
+  ${musikbox_SOURCE_DIR}/bin/plugins
+  ${musikbox_SOURCE_DIR}/src/contrib/taglib_plugin/taglib-1.11/stage/lib
+)
 
 set (musikbox_LINK_LIBS
   ${linux_LINK_LIBS}
@@ -51,6 +65,7 @@ include_directories (
   "${musikbox_SOURCE_DIR}/src/core"
   "${musikbox_SOURCE_DIR}/src/musikbox"
   "${musikbox_SOURCE_DIR}/src/3rdparty/include"
+  "${musikbox_SOURCE_DIR}/src/contrib/taglib_plugin/taglib-1.11/stage/include"
 )
 
 add_subdirectory(src/core)

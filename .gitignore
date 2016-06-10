@@ -16,3 +16,5 @@ src/square/obj
 src/contrib/oggdecoder/obj
 src/contrib/waveout/obj
 src/contrib/taglib_plugin/obj
+src/contrib/taglib_plugin/taglib-1.11
+taglib-prefix
