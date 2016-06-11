@@ -1,8 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// License Agreement:
-//
-// The following are Copyright © 2008, mC2 team
+// Copyright (c) 2007-2016 musikcube team
 //
 // All rights reserved.
 //

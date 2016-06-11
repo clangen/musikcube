@@ -1,5 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
-// Copyright © 2009, Julian Cromarty
+//
+// Copyright (c) 2007-2016 musikcube team
 //
 // All rights reserved.
 //
@@ -57,9 +58,9 @@ class AlsaOut : public IOutput {
         virtual void Stop();
 
         virtual bool Play(
-            musik::core::audio::IBuffer *buffer, 
+            musik::core::audio::IBuffer *buffer,
             musik::core::audio::IBufferProvider *provider);
-        
+
     private:
         struct BufferContext {
             musik::core::audio::IBuffer *buffer;
@@ -70,7 +71,7 @@ class AlsaOut : public IOutput {
         void SetFormat(musik::core::audio::IBuffer *buffer);
         void InitDevice();
         void WriteLoop();
-        
+
         std::string device;
         snd_pcm_t* pcmHandle;
         snd_pcm_hw_params_t* hardware;

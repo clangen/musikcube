@@ -1,8 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// License Agreement:
-//
-// The following are Copyright © 2008, Daniel Önnerby
+// Copyright (c) 2007-2016 musikcube team
 //
 // All rights reserved.
 //
@@ -36,17 +34,15 @@
 
 #pragma once
 
-
 #ifdef _DEBUG
 #ifdef __MSVC__
-    #define DB_ASSERT(x)        _ASSERT(x==0)
+    #define DB_ASSERT(x) _ASSERT(x==0)
 #else //__MSVC__
-    #define DB_ASSERT(x)        x
+    #define DB_ASSERT(x) x
 #endif//__MSVC
 #else
-    #define DB_ASSERT(x)        x
+    #define DB_ASSERT(x) x
 #endif
-
 
 namespace musik{ namespace core{ namespace db{
 

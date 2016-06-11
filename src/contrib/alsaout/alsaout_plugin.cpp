@@ -1,8 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// License Agreement:
-//
-// The following are Copyright © 2009, Julian Cromarty
+// Copyright (c) 2007-2016 musikcube team
 //
 // All rights reserved.
 //

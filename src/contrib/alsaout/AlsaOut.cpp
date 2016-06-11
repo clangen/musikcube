@@ -1,5 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
-// Copyright  2007, Daniel nnerby
+//
+// Copyright (c) 2007-2016 musikcube team
 //
 // All rights reserved.
 //
@@ -97,27 +98,27 @@ void AlsaOut::InitDevice() {
         std::cerr << "AlsaOut: cannot allocate hardware parameter structure " << snd_strerror(err) << std::endl;
         goto error;
     }
-    
+
     if ((err = snd_pcm_hw_params_any(pcmHandle, hardware)) < 0) {
         std::cerr << "AlsaOut: cannot initialize hardware parameter structure " << snd_strerror(err) << std::endl;
         goto error;
     }
-       
+
     if ((err = snd_pcm_hw_params_set_access(pcmHandle, hardware, PCM_ACCESS_TYPE)) < 0) {
         std::cerr << "AlsaOut: cannot set access type " << snd_strerror(err) << std::endl;
         goto error;
     }
-    
+
     if ((err = snd_pcm_hw_params_set_format(pcmHandle, hardware, PCM_FORMAT)) < 0) {
         std::cerr << "AlsaOut: cannot set sample format " << snd_strerror(err) << std::endl;
         goto error;
     }
-    
+
     if ((err = snd_pcm_hw_params_set_rate_near(pcmHandle, hardware, &rate, 0)) < 0) {
         std::cerr << "AlsaOut: cannot set sample rate " << snd_strerror(err) << std::endl;
         goto error;
     }
-    
+
     if ((err = snd_pcm_hw_params_set_channels(pcmHandle, hardware, this->channels)) < 0) {
         std::cerr << "AlsaOut: cannot set channel count " << snd_strerror(err) << std::endl;
         goto error;
@@ -191,7 +192,7 @@ void AlsaOut::Resume() {
     LOCK("resume");
 
     if (this->pcmHandle) {
-        snd_pcm_pause(this->pcmHandle, 0);       
+        snd_pcm_pause(this->pcmHandle, 0);
     }
 }
 
@@ -217,7 +218,7 @@ void AlsaOut::WriteLoop() {
                 while (!quit && !this->buffers.size()) {
                     WAIT();
                 }
-                
+
                 CHECK_QUIT();
 
                 next = this->buffers.front();
@@ -263,8 +264,8 @@ void AlsaOut::WriteLoop() {
 static inline bool playable(snd_pcm_t* pcm) {
     snd_pcm_state_t state = snd_pcm_state(pcm);
 
-    return 
-        state == SND_PCM_STATE_RUNNING || 
+    return
+        state == SND_PCM_STATE_RUNNING ||
         state == SND_PCM_STATE_PREPARED;
 }
 
@@ -274,8 +275,8 @@ bool AlsaOut::Play(IBuffer *buffer, IBufferProvider* provider) {
     {
         LOCK("play");
 
-        if (!playable(this->pcmHandle) || 
-            this->CountBuffersWithProvider(provider) >= BUFFER_COUNT) 
+        if (!playable(this->pcmHandle) ||
+            this->CountBuffersWithProvider(provider) >= BUFFER_COUNT)
         {
             return false;
         }
@@ -322,7 +323,7 @@ void AlsaOut::SetFormat(IBuffer *buffer) {
             std::cerr << "AlsaOut: set format error: " << snd_strerror(err) << std::endl;
         }
         else {
-            this->SetVolume(this->volume);           
+            this->SetVolume(this->volume);
         }
 
         std::cerr << "AlsaOut: device format initialized from buffer\n";
