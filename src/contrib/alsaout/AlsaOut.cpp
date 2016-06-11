@@ -86,7 +86,7 @@ AlsaOut::~AlsaOut() {
 
 void AlsaOut::InitDevice() {
     int err, dir;
-    size_t rate = this->rate;
+    unsigned int rate = (unsigned int) this->rate;
 
     if ((err = snd_pcm_open(&this->pcmHandle, this->device.c_str(), SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
         std::cerr << "AlsaOut: cannot open audio device 'default' :" << snd_strerror(err) << std::endl;
