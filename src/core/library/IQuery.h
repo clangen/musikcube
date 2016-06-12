@@ -43,14 +43,8 @@
 #include <core/db/Connection.h>
 
 namespace musik { namespace core {
-
-    class IQuery;
-    typedef std::shared_ptr<IQuery> QueryPtr;
-
     class IQuery {
         public:
-            sigslot::signal2<int, QueryPtr> QueryCompleted;
-
             typedef enum {
                 Idle = 1,
                 Running = 2,
@@ -68,4 +62,5 @@ namespace musik { namespace core {
             virtual std::string Name() = 0;
     };
 
+    typedef std::shared_ptr<IQuery> IQueryPtr;
 } }

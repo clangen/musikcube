@@ -63,7 +63,7 @@ namespace musik { namespace core { namespace library {
 
             virtual ~LocalLibrary();
 
-            virtual int Enqueue(QueryPtr query, unsigned int options = 0);
+            virtual int Enqueue(IQueryPtr query, unsigned int options = 0);
             virtual musik::core::IIndexer *Indexer();
             virtual int Id();
             virtual const std::string& Name();
@@ -80,10 +80,10 @@ namespace musik { namespace core { namespace library {
             virtual void Exit();
             bool Exited();
             void ThreadProc();
-            QueryPtr GetNextQuery();
+            IQueryPtr GetNextQuery();
 
         private:
-            typedef std::list<QueryPtr> QueryList;
+            typedef std::list<IQueryPtr> QueryList;
 
             boost::recursive_mutex mutex;
             QueryList queryQueue;

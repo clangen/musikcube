@@ -44,7 +44,7 @@
 #include <core/library/IQuery.h>
 #include <core/library/ILibrary.h>
 
-using musik::core::QueryPtr;
+using musik::core::IQueryPtr;
 using musik::core::LibraryPtr;
 
 using cursespp::IMessage;
@@ -75,7 +75,7 @@ namespace musik {
 
             protected:
                 virtual IScrollAdapter& GetScrollAdapter();
-                void OnQueryCompleted(QueryPtr query);
+                void OnQueryCompleted(IQueryPtr query);
 
                 class Adapter : public ScrollAdapterBase {
                 public:

@@ -126,6 +126,7 @@ int Player::State() {
 void Player::ThreadLoop() {
     /* create and open the stream */
     this->stream = Stream::Create();
+
     if (this->stream->OpenStream(this->url)) {
         /* precache until buffers are full */
         bool keepPrecaching = true;

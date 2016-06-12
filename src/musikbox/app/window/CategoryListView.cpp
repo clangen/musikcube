@@ -100,7 +100,7 @@ void CategoryListView::SetFieldName(const std::string& fieldName) {
     }
 }
 
-void CategoryListView::OnQueryCompleted(QueryPtr query) {
+void CategoryListView::OnQueryCompleted(IQueryPtr query) {
     if (query == this->activeQuery) {
         this->PostMessage(WINDOW_MESSAGE_QUERY_COMPLETED);
     }

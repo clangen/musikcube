@@ -73,7 +73,7 @@ namespace musik {
 
             protected:
                 virtual cursespp::IScrollAdapter& GetScrollAdapter();
-                void OnQueryCompleted(musik::core::QueryPtr query);
+                void OnQueryCompleted(musik::core::IQueryPtr query);
 
                 class Adapter : public cursespp::ScrollAdapterBase {
                     public:

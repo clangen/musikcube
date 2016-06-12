@@ -40,10 +40,6 @@
 
 namespace musik { namespace core {
 
-    //////////////////////////////////////////
-    ///\brief
-    ///A concrete implementation of Track used for indexing and insertion into the database.
-    //////////////////////////////////////////
     class IndexerTrack : public Track {
         public:
             IndexerTrack(DBID id);

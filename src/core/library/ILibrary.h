@@ -47,11 +47,11 @@ namespace musik { namespace core {
 
     class ILibrary {
         public:
-            sigslot::signal1<QueryPtr> QueryCompleted;
+            sigslot::signal1<IQueryPtr> QueryCompleted;
 
             virtual ~ILibrary() { }
 
-            virtual int Enqueue(QueryPtr query, unsigned int options = 0) = 0;
+            virtual int Enqueue(IQueryPtr query, unsigned int options = 0) = 0;
             virtual IIndexer *Indexer() = 0;
             virtual int Id() = 0;
             virtual const std::string& Name() = 0;

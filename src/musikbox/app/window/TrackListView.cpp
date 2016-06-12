@@ -83,7 +83,7 @@ void TrackListView::Requery(std::shared_ptr<TrackListQueryBase> query) {
     this->library->Enqueue(this->query);
 }
 
-void TrackListView::OnQueryCompleted(QueryPtr query) {
+void TrackListView::OnQueryCompleted(IQueryPtr query) {
     if (query == this->query) {
         this->PostMessage(WINDOW_MESSAGE_QUERY_COMPLETED);
     }

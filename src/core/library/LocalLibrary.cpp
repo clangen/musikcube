@@ -134,7 +134,7 @@ std::string LocalLibrary::GetDatabaseFilename() {
     return this->GetLibraryDirectory() + "musik.db";
 }
 
-int LocalLibrary::Enqueue(QueryPtr query, unsigned int options) {
+int LocalLibrary::Enqueue(IQueryPtr query, unsigned int options) {
     boost::recursive_mutex::scoped_lock l(this->mutex);
 
     queryQueue.push_back(query);
@@ -162,19 +162,19 @@ void LocalLibrary::Exit() {
     this->queueCondition.notify_all();
 }
 
-QueryPtr LocalLibrary::GetNextQuery() {
+IQueryPtr LocalLibrary::GetNextQuery() {
     if (queryQueue.size()) {
-        QueryPtr front = queryQueue.front();
+        IQueryPtr front = queryQueue.front();
         queryQueue.pop_front();
         return front;
     }
 
-    return QueryPtr();
+    return IQueryPtr();
 }
 
 void LocalLibrary::ThreadProc() {
     while (!this->Exited()) {
-        QueryPtr query;
+        IQueryPtr query;
 
         {
             boost::recursive_mutex::scoped_lock lock(this->mutex);

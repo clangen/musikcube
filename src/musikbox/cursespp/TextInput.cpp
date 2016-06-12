@@ -74,7 +74,12 @@ void TextInput::Show() {
 }
 
 void TextInput::Write(const std::string& key) {
-    if (key == "^H" || key == "^?" || key == "KEY_BACKSPACE") { /* backspace */
+    if (key == "M-bksp") {
+        this->buffer = "";
+        redrawContents(*this, "");
+        this->TextChanged(this, "");
+    }
+    else if (key == "^H" || key == "^?" || key == "KEY_BACKSPACE") { /* backspace */
         removeUtf8Char(this->buffer);
         this->TextChanged(this, this->buffer);
     }

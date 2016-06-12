@@ -39,16 +39,8 @@
 #include <core/library/LocalLibrary.h>
 #include <core/db/Connection.h>
 
-namespace musik { namespace core { namespace http {
-    class Responder;
-} } }
-
 namespace musik { namespace core {
 
-    //////////////////////////////////////////
-    ///\brief
-    ///A LibraryTrack is a track related to a Library.
-    //////////////////////////////////////////
     class LibraryTrack : public Track {
         public:
             LibraryTrack();
