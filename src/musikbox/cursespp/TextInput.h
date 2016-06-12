@@ -40,7 +40,12 @@
 #include <sigslot/sigslot.h>
 
 namespace cursespp {
-    class TextInput : public cursespp::Window, public cursespp::IInput {
+    class TextInput :
+        public cursespp::Window,
+#if (__clang_major__ == 7 && __clang_minor__ == 3)
+        public std::enable_shared_from_this<TextInput>,
+#endif
+        public cursespp::IInput {
         public:
             sigslot::signal1<TextInput*> EnterPressed;
             sigslot::signal2<TextInput*, std::string> TextChanged;
