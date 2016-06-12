@@ -2,6 +2,7 @@ the musikcube team is:
 
   * Casey Langen
   * Daniel Önnerby
+  * Gunnar Roth
   * Björn Olievier
   * Julian Cromarty
   * André Wösten
