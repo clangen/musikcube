@@ -53,7 +53,7 @@ namespace musik {
 
             private:
                 PlaybackService& playback;
-                musik::core::audio::Transport& transport;
+                musik::core::audio::ITransport& transport;
                 musik::core::LibraryPtr library;
         };
     }

@@ -29,9 +29,6 @@
     <Filter Include="src\library\track">
       <UniqueIdentifier>{a9c7acb5-36af-4bfc-bbf0-b26f2f482d26}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\playback">
-      <UniqueIdentifier>{0e929af8-372d-4326-a4c6-796ec5c709d4}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\plugin">
       <UniqueIdentifier>{928fef19-2739-4485-83ae-1e18892247b0}</UniqueIdentifier>
     </Filter>
@@ -82,9 +79,6 @@
     <ClCompile Include="support\Common.cpp">
       <Filter>src\support</Filter>
     </ClCompile>
-    <ClCompile Include="playback\Transport.cpp">
-      <Filter>src\playback</Filter>
-    </ClCompile>
     <ClCompile Include="library\Indexer.cpp">
       <Filter>src\library</Filter>
     </ClCompile>
@@ -106,9 +100,6 @@
     <ClCompile Include="support\Version.cpp">
       <Filter>src\support</Filter>
     </ClCompile>
-    <ClCompile Include="playback\NonLibraryTrackHelper.cpp">
-      <Filter>src\playback</Filter>
-    </ClCompile>
     <ClCompile Include="library\metadata\MetadataValue.cpp">
       <Filter>src\library\metadata</Filter>
     </ClCompile>
@@ -117,6 +108,12 @@
     </ClCompile>
     <ClCompile Include="library\LocalLibrary.cpp">
       <Filter>src\library</Filter>
+    </ClCompile>
+    <ClCompile Include="support\NonLibraryTrackHelper.cpp">
+      <Filter>src\support</Filter>
+    </ClCompile>
+    <ClCompile Include="audio\GaplessTransport.cpp">
+      <Filter>src\audio</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -192,9 +189,6 @@
     <ClInclude Include="support\ThreadHelper.h">
       <Filter>src\support</Filter>
     </ClInclude>
-    <ClInclude Include="playback\Transport.h">
-      <Filter>src\playback</Filter>
-    </ClInclude>
     <ClInclude Include="library\Indexer.h">
       <Filter>src\library</Filter>
     </ClInclude>
@@ -215,9 +209,6 @@
     </ClInclude>
     <ClInclude Include="support\Version.h">
       <Filter>src\support</Filter>
-    </ClInclude>
-    <ClInclude Include="playback\NonLibraryTrackHelper.h">
-      <Filter>src\playback</Filter>
     </ClInclude>
     <ClInclude Include="library\metadata\MetadataValue.h">
       <Filter>src\library\metadata</Filter>
@@ -254,6 +245,15 @@
     </ClInclude>
     <ClInclude Include="library\LocalLibraryConstants.h">
       <Filter>src\library</Filter>
+    </ClInclude>
+    <ClInclude Include="support\NonLibraryTrackHelper.h">
+      <Filter>src\support</Filter>
+    </ClInclude>
+    <ClInclude Include="audio\ITransport.h">
+      <Filter>src\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="audio\GaplessTransport.h">
+      <Filter>src\audio</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

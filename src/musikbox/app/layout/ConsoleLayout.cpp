@@ -45,7 +45,7 @@ using namespace musik::core::audio;
 using namespace musik::box;
 using namespace cursespp;
 
-ConsoleLayout::ConsoleLayout(Transport& transport, LibraryPtr library)
+ConsoleLayout::ConsoleLayout(ITransport& transport, LibraryPtr library)
 : LayoutBase() {
     this->logs.reset(new LogWindow(this));
     this->output.reset(new OutputWindow(this));

@@ -36,7 +36,7 @@
 #include "GlobalHotkeys.h"
 
 using musik::core::LibraryPtr;
-using musik::core::audio::Transport;
+using musik::core::audio::ITransport;
 using namespace musik::box;
 
 GlobalHotkeys::GlobalHotkeys(PlaybackService& playback, LibraryPtr library)
@@ -52,10 +52,10 @@ GlobalHotkeys::~GlobalHotkeys() {
 bool GlobalHotkeys::Handle(const std::string& kn) {
     if (kn == "^P") {
         int state = this->transport.GetPlaybackState();
-        if (state == Transport::PlaybackPaused) {
+        if (state == ITransport::PlaybackPaused) {
             this->transport.Resume();
         }
-        else if (state == Transport::PlaybackPlaying) {
+        else if (state == ITransport::PlaybackPlaying) {
             this->transport.Pause();
         }
         return true;

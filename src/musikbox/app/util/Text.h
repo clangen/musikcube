@@ -36,8 +36,6 @@
 
 #include "stdafx.h"
 
-#include <core/playback/Transport.h>
-
 namespace musik {
     namespace box {
         namespace text {

@@ -56,6 +56,7 @@
 
 #include <core/plugin/PluginFactory.h>
 #include <core/library/LibraryFactory.h>
+#include <core/audio/GaplessTransport.h>
 
 #include <boost/chrono.hpp>
 #include <cstdio>
@@ -237,7 +238,7 @@ int main(int argc, char* argv[])
     {
         Colors::Init();
 
-        Transport tp;
+        GaplessTransport tp;
         tp.SetVolume(0.75);
 
         PlaybackService playback(tp);

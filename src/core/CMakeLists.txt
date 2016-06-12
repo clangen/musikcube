@@ -3,6 +3,7 @@ set(CORE_SOURCES
   ./audio/Buffer.cpp
   ./audio/Player.cpp
   ./audio/Stream.cpp
+  ./audio/GaplessTransport.cpp
   ./db/CachedStatement.cpp
   ./db/Connection.cpp
   ./db/ScopedTransaction.cpp
@@ -18,10 +19,9 @@ set(CORE_SOURCES
   ./library/track/IndexerTrack.cpp
   ./library/track/LibraryTrack.cpp
   ./library/track/Track.cpp
-  ./playback/NonLibraryTrackHelper.cpp
-  ./playback/Transport.cpp
   ./plugin/PluginFactory.cpp
   ./support/Common.cpp
+  ./support/NonLibraryTrackHelper.cpp
   ./support/Preferences.cpp
   ./support/ThreadHelper.cpp
   ./support/Version.cpp

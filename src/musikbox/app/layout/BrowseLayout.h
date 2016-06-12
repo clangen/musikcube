@@ -41,7 +41,6 @@
 #include <app/window/TransportWindow.h>
 #include <app/service/PlaybackService.h>
 
-#include <core/playback/Transport.h>
 #include <core/library/ILibrary.h>
 
 #include <sigslot/sigslot.h>

@@ -78,7 +78,7 @@ inline static void redrawContents(IWindow &window, const std::string& text) {
 
 CommandWindow::CommandWindow(
     IWindow *parent,
-    Transport& transport,
+    ITransport& transport,
     LibraryPtr library,
     OutputWindow& output,
     LogWindow& logWindow)

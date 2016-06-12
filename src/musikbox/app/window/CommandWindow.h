@@ -37,8 +37,8 @@
 #include <cursespp/curses_config.h>
 #include <cursespp/Window.h>
 #include <cursespp/IInput.h>
-#include <core/playback/Transport.h>
 #include <core/library/LibraryFactory.h>
+#include <core/audio/ITransport.h>
 #include "OutputWindow.h"
 #include "LogWindow.h"
 
@@ -55,7 +55,7 @@ namespace musik {
             public:
                 CommandWindow(
                     cursespp::IWindow *parent,
-                    musik::core::audio::Transport& transport,
+                    musik::core::audio::ITransport& transport,
                     musik::core::LibraryPtr library,
                     OutputWindow& output,
                     LogWindow& logWindow);
@@ -84,7 +84,7 @@ namespace musik {
 
                 OutputWindow* output;
                 LogWindow* logWindow;
-                musik::core::audio::Transport* transport;
+                musik::core::audio::ITransport* transport;
                 musik::core::LibraryPtr library;
                 bool paused;
         };

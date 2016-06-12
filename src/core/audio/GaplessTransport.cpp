@@ -35,7 +35,7 @@
 #include "pch.hpp"
 
 #include <core/debug.h>
-#include <core/playback/Transport.h>
+#include <core/audio/GaplessTransport.h>
 #include <core/plugin/PluginFactory.h>
 #include <algorithm>
 #include <boost/thread.hpp>
@@ -62,7 +62,7 @@ static void deletePlayer(Player* p) {
     delete p;
 }
 
-Transport::Transport()
+GaplessTransport::GaplessTransport()
 : volume(1.0)
 , state(PlaybackStopped)
 , nextPlayer(NULL)
@@ -70,15 +70,15 @@ Transport::Transport()
     this->output = Player::CreateDefaultOutput();
 }
 
-Transport::~Transport() {
+GaplessTransport::~GaplessTransport() {
 }
 
-Transport::PlaybackState Transport::GetPlaybackState() {
+GaplessTransport::PlaybackState GaplessTransport::GetPlaybackState() {
     boost::recursive_mutex::scoped_lock lock(this->stateMutex);
     return this->state;
 }
 
-void Transport::PrepareNextTrack(const std::string& trackUrl) {
+void GaplessTransport::PrepareNextTrack(const std::string& trackUrl) {
     bool startNext = false;
     {
         boost::recursive_mutex::scoped_lock lock(this->stateMutex);
@@ -91,7 +91,7 @@ void Transport::PrepareNextTrack(const std::string& trackUrl) {
     }
 }
 
-void Transport::Start(const std::string& url) {
+void GaplessTransport::Start(const std::string& url) {
     musik::debug::info(TAG, "we were asked to start the track at " + url);
 
     Player* newPlayer = new Player(url, this->output);
@@ -100,7 +100,7 @@ void Transport::Start(const std::string& url) {
     this->StartWithPlayer(newPlayer);
 }
 
-void Transport::StartWithPlayer(Player* newPlayer) {
+void GaplessTransport::StartWithPlayer(Player* newPlayer) {
     if (newPlayer) {
         {
             boost::recursive_mutex::scoped_lock lock(this->stateMutex);
@@ -118,10 +118,10 @@ void Transport::StartWithPlayer(Player* newPlayer) {
             this->Stop(true, !playingNext);
             this->SetNextCanStart(false);
 
-            newPlayer->PlaybackStarted.connect(this, &Transport::OnPlaybackStarted);
-            newPlayer->PlaybackAlmostEnded.connect(this, &Transport::OnPlaybackAlmostEnded);
-            newPlayer->PlaybackFinished.connect(this, &Transport::OnPlaybackFinished);
-            newPlayer->PlaybackError.connect(this, &Transport::OnPlaybackError);
+            newPlayer->PlaybackStarted.connect(this, &GaplessTransport::OnPlaybackStarted);
+            newPlayer->PlaybackAlmostEnded.connect(this, &GaplessTransport::OnPlaybackAlmostEnded);
+            newPlayer->PlaybackFinished.connect(this, &GaplessTransport::OnPlaybackFinished);
+            newPlayer->PlaybackError.connect(this, &GaplessTransport::OnPlaybackError);
 
             musik::debug::info(TAG, "play()");
 
@@ -130,15 +130,15 @@ void Transport::StartWithPlayer(Player* newPlayer) {
             newPlayer->Play();
         }
 
-        this->RaiseStreamEvent(Transport::StreamScheduled, newPlayer);
+        this->RaiseStreamEvent(GaplessTransport::StreamScheduled, newPlayer);
     }
 }
 
-void Transport::Stop() {
+void GaplessTransport::Stop() {
     this->Stop(false, true);
 }
 
-void Transport::Stop(bool suppressStopEvent, bool stopOutput) {
+void GaplessTransport::Stop(bool suppressStopEvent, bool stopOutput) {
     musik::debug::info(TAG, "stop");
 
     /* if we stop the output, we kill all of the Players immediately.
@@ -157,7 +157,7 @@ void Transport::Stop(bool suppressStopEvent, bool stopOutput) {
         where this method is implicitly triggered via Player callback. however,
         we should stop them immediately so they stop producing audio. */
         std::for_each(toDelete.begin(), toDelete.end(), stopPlayer);
-        DEFER(&Transport::DeletePlayers, toDelete);
+        DEFER(&GaplessTransport::DeletePlayers, toDelete);
 
         /* stopping the transport will stop any buffers that are currently in
         flight. this makes the sound end immediately. */
@@ -172,7 +172,7 @@ void Transport::Stop(bool suppressStopEvent, bool stopOutput) {
     }
 }
 
-bool Transport::Pause() {
+bool GaplessTransport::Pause() {
     musik::debug::info(TAG, "pause");
 
     size_t count = 0;
@@ -192,7 +192,7 @@ bool Transport::Pause() {
     return false;
 }
 
-bool Transport::Resume() {
+bool GaplessTransport::Resume() {
     musik::debug::info(TAG, "resume");
 
     this->output->Resume();
@@ -211,14 +211,14 @@ bool Transport::Resume() {
     }
 
     if (count) {
-        this->SetPlaybackState(Transport::PlaybackPlaying);
+        this->SetPlaybackState(GaplessTransport::PlaybackPlaying);
         return true;
     }
 
     return false;
 }
 
-double Transport::Position() {
+double GaplessTransport::Position() {
     boost::recursive_mutex::scoped_lock lock(this->stateMutex);
 
     if (!this->active.empty()) {
@@ -228,7 +228,7 @@ double Transport::Position() {
     return 0;
 }
 
-void Transport::SetPosition(double seconds) {
+void GaplessTransport::SetPosition(double seconds) {
     boost::recursive_mutex::scoped_lock lock(this->stateMutex);
 
     if (!this->active.empty()) {
@@ -237,11 +237,11 @@ void Transport::SetPosition(double seconds) {
     }
 }
 
-double Transport::Volume() {
+double GaplessTransport::Volume() {
     return this->volume;
 }
 
-void Transport::SetVolume(double volume) {
+void GaplessTransport::SetVolume(double volume) {
     double oldVolume = this->volume;
 
     volume = std::max(0.0, std::min(1.0, volume));
@@ -260,7 +260,7 @@ void Transport::SetVolume(double volume) {
     this->output->SetVolume(this->volume);
 }
 
-void Transport::RemoveActive(Player* player) {
+void GaplessTransport::RemoveActive(Player* player) {
     bool found = false;
 
     {
@@ -281,23 +281,23 @@ void Transport::RemoveActive(Player* player) {
     }
 }
 
-void Transport::DeletePlayers(std::list<Player*> players) {
+void GaplessTransport::DeletePlayers(std::list<Player*> players) {
     std::for_each(players.begin(), players.end(), deletePlayer);
 }
 
-void Transport::SetNextCanStart(bool nextCanStart) {
+void GaplessTransport::SetNextCanStart(bool nextCanStart) {
     boost::recursive_mutex::scoped_lock lock(this->stateMutex);
     this->nextCanStart = nextCanStart;
 }
 
-void Transport::OnPlaybackStarted(Player* player) {
-    this->RaiseStreamEvent(Transport::StreamPlaying, player);
-    this->SetPlaybackState(Transport::PlaybackPlaying);
+void GaplessTransport::OnPlaybackStarted(Player* player) {
+    this->RaiseStreamEvent(GaplessTransport::StreamPlaying, player);
+    this->SetPlaybackState(GaplessTransport::PlaybackPlaying);
 }
 
-void Transport::OnPlaybackAlmostEnded(Player* player) {
+void GaplessTransport::OnPlaybackAlmostEnded(Player* player) {
     this->SetNextCanStart(true);
-    this->RaiseStreamEvent(Transport::StreamAlmostDone, player);
+    this->RaiseStreamEvent(GaplessTransport::StreamAlmostDone, player);
 
     {
         boost::recursive_mutex::scoped_lock lock(this->stateMutex);
@@ -310,9 +310,9 @@ void Transport::OnPlaybackAlmostEnded(Player* player) {
     }
 }
 
-void Transport::OnPlaybackFinished(Player* player) {
+void GaplessTransport::OnPlaybackFinished(Player* player) {
     this->SetNextCanStart(true);
-    this->RaiseStreamEvent(Transport::StreamFinished, player);
+    this->RaiseStreamEvent(GaplessTransport::StreamFinished, player);
 
     bool stopped = false;
 
@@ -341,17 +341,17 @@ void Transport::OnPlaybackFinished(Player* player) {
         this->Stop();
     }
 
-    DEFER(&Transport::RemoveActive, player);
+    DEFER(&GaplessTransport::RemoveActive, player);
 }
 
-void Transport::OnPlaybackError(Player* player) {
+void GaplessTransport::OnPlaybackError(Player* player) {
     this->SetNextCanStart(true);
-    this->RaiseStreamEvent(Transport::StreamError, player);
-    this->SetPlaybackState(Transport::PlaybackStopped);
-    DEFER(&Transport::RemoveActive, player);
+    this->RaiseStreamEvent(GaplessTransport::StreamError, player);
+    this->SetPlaybackState(GaplessTransport::PlaybackStopped);
+    DEFER(&GaplessTransport::RemoveActive, player);
 }
 
-void Transport::SetPlaybackState(int state) {
+void GaplessTransport::SetPlaybackState(int state) {
     bool changed = false;
 
     {
@@ -365,6 +365,6 @@ void Transport::SetPlaybackState(int state) {
     }
 }
 
-void Transport::RaiseStreamEvent(int type, Player* player) {
+void GaplessTransport::RaiseStreamEvent(int type, Player* player) {
     this->StreamEvent(type, player->GetUrl());
 }

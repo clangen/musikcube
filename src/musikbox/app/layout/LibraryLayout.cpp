@@ -152,10 +152,10 @@ bool LibraryLayout::KeyPress(const std::string& key) {
         /* copied from GlobalHotkeys. should probably be generalized
         at some point. */
         int state = this->transport.GetPlaybackState();
-        if (state == Transport::PlaybackPaused) {
+        if (state == ITransport::PlaybackPaused) {
             this->transport.Resume();
         }
-        else if (state == Transport::PlaybackPlaying) {
+        else if (state == ITransport::PlaybackPlaying) {
             this->transport.Pause();
         }
     }

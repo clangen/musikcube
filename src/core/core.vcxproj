@@ -84,6 +84,7 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="audio\GaplessTransport.cpp" />
     <ClCompile Include="debug.cpp" />
     <ClCompile Include="io\DataStreamFactory.cpp" />
     <ClCompile Include="io\LocalFileStream.cpp" />
@@ -103,18 +104,19 @@
     <ClCompile Include="db\Connection.cpp" />
     <ClCompile Include="db\ScopedTransaction.cpp" />
     <ClCompile Include="db\Statement.cpp" />
-    <ClCompile Include="playback\NonLibraryTrackHelper.cpp" />
-    <ClCompile Include="playback\Transport.cpp" />
     <ClCompile Include="audio\Buffer.cpp" />
     <ClCompile Include="audio\Player.cpp" />
     <ClCompile Include="audio\Stream.cpp" />
     <ClCompile Include="plugin\PluginFactory.cpp" />
     <ClCompile Include="support\Common.cpp" />
+    <ClCompile Include="support\NonLibraryTrackHelper.cpp" />
     <ClCompile Include="support\Preferences.cpp" />
     <ClCompile Include="support\ThreadHelper.cpp" />
     <ClCompile Include="support\Version.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="audio\GaplessTransport.h" />
+    <ClInclude Include="audio\ITransport.h" />
     <ClInclude Include="debug.h" />
     <ClInclude Include="io\DataStreamFactory.h" />
     <ClInclude Include="io\LocalFileStream.h" />
@@ -132,8 +134,6 @@
     <ClInclude Include="library\track\Track.h" />
     <ClInclude Include="pch.hpp" />
     <ClInclude Include="config.h" />
-    <ClInclude Include="playback\NonLibraryTrackHelper.h" />
-    <ClInclude Include="playback\Transport.h" />
     <ClInclude Include="plugin\PluginFactory.h" />
     <ClInclude Include="sdk\config.h" />
     <ClInclude Include="sdk\IAnalyzer.h" />
@@ -157,6 +157,7 @@
     <ClInclude Include="audio\Player.h" />
     <ClInclude Include="audio\Stream.h" />
     <ClInclude Include="support\Common.h" />
+    <ClInclude Include="support\NonLibraryTrackHelper.h" />
     <ClInclude Include="support\Preferences.h" />
     <ClInclude Include="support\ThreadHelper.h" />
     <ClInclude Include="support\Version.h" />

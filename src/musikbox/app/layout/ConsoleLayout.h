@@ -44,7 +44,7 @@
 
 #include <vector>
 
-#include <core/playback/Transport.h>
+#include <core/audio/ITransport.h>
 #include <boost/shared_ptr.hpp>
 
 namespace musik {
@@ -52,7 +52,7 @@ namespace musik {
         class ConsoleLayout : public cursespp::LayoutBase {
             public:
                 ConsoleLayout(
-                    musik::core::audio::Transport& transport, 
+                    musik::core::audio::ITransport& transport, 
                     musik::core::LibraryPtr library);
 
                 ~ConsoleLayout();

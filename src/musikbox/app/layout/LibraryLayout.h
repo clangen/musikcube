@@ -42,7 +42,6 @@
 #include <app/window/TransportWindow.h>
 #include <app/service/PlaybackService.h>
 
-#include <core/playback/Transport.h>
 #include <core/library/ILibrary.h>
 
 #include <sigslot/sigslot.h>
@@ -72,7 +71,7 @@ namespace musik {
                 void ChangeMainLayout(std::shared_ptr<cursespp::LayoutBase> newLayout);
 
                 PlaybackService& playback;
-                musik::core::audio::Transport& transport;
+                musik::core::audio::ITransport& transport;
                 musik::core::LibraryPtr library;
                 std::shared_ptr<BrowseLayout> browseLayout;
                 std::shared_ptr<TransportWindow> transportView;

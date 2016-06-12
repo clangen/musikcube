@@ -34,7 +34,7 @@
 
 #include "pch.hpp"
 
-#include <core/playback/NonLibraryTrackHelper.h>
+#include "NonLibraryTrackHelper.h"
 #include <boost/bind.hpp>
 #include <core/plugin/PluginFactory.h>
 #include <core/sdk/IMetadataReader.h>

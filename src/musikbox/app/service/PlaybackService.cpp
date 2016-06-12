@@ -38,11 +38,11 @@
 #include <cursespp/MessageQueue.h>
 #include <cursespp/Message.h>
 
-#include <core/playback/Transport.h>
+#include <core/audio/ITransport.h>
 #include <core/library/LocalLibraryConstants.h>
 
 using musik::core::TrackPtr;
-using musik::core::audio::Transport;
+using musik::core::audio::ITransport;
 
 using cursespp::IMessageTarget;
 using cursespp::IMessage;
@@ -56,7 +56,7 @@ using namespace musik::box;
 #define MESSAGE_STREAM_EVENT 1000
 #define MESSAGE_PLAYBACK_EVENT 1001
 
-PlaybackService::PlaybackService(Transport& transport)
+PlaybackService::PlaybackService(ITransport& transport)
 : transport(transport) {
     transport.StreamEvent.connect(this, &PlaybackService::OnStreamEvent);
     transport.PlaybackEvent.connect(this, &PlaybackService::OnPlaybackEvent);
@@ -68,7 +68,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
     if (message.Type() == MESSAGE_STREAM_EVENT) {
         int64 eventType = message.UserData1();
 
-        if (eventType == Transport::StreamAlmostDone) {
+        if (eventType == ITransport::StreamAlmostDone) {
             if (this->playlist.size() > this->index + 1) {
                 if (this->nextIndex != this->index + 1) {
                     this->nextIndex = this->index + 1;
@@ -76,7 +76,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
                 }
             }
         }
-        else if (eventType == Transport::StreamPlaying) {
+        else if (eventType == ITransport::StreamPlaying) {
             if (this->nextIndex != NO_POSITION) {
                 this->index = this->nextIndex;
                 this->nextIndex = NO_POSITION;
@@ -90,14 +90,14 @@ void PlaybackService::ProcessMessage(IMessage &message) {
     else if (message.Type() == MESSAGE_PLAYBACK_EVENT) {
         int64 eventType = message.UserData1();
 
-        if (eventType == Transport::PlaybackStopped) {
+        if (eventType == ITransport::PlaybackStopped) {
             this->TrackChanged(NO_POSITION, TrackPtr());
         }
     }
 }
 
 bool PlaybackService::Next() {
-    if (transport.GetPlaybackState() == Transport::PlaybackStopped) {
+    if (transport.GetPlaybackState() == ITransport::PlaybackStopped) {
         return false;
     }
 
@@ -110,7 +110,7 @@ bool PlaybackService::Next() {
 }
 
 bool PlaybackService::Previous() {
-    if (transport.GetPlaybackState() == Transport::PlaybackStopped) {
+    if (transport.GetPlaybackState() == ITransport::PlaybackStopped) {
         return false;
     }
 

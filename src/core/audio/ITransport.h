@@ -35,16 +35,11 @@
 #pragma once
 
 #include <core/config.h>
-#include <core/audio/Player.h>
-#include <core/sdk/IOutput.h>
-#include <boost/shared_ptr.hpp>
-#include <boost/scoped_ptr.hpp>
 #include <sigslot/sigslot.h>
-#include <boost/thread/recursive_mutex.hpp>
 
 namespace musik { namespace core { namespace audio {
 
-    class Transport : public sigslot::has_slots<> {
+    class ITransport {
         public:
             sigslot::signal2<int, std::string> StreamEvent;
             sigslot::signal1<int> PlaybackEvent;
@@ -66,47 +61,22 @@ namespace musik { namespace core { namespace audio {
                 StreamError = -1
             } StreamEventType;
 
-            Transport();
-            ~Transport();
+            virtual ~ITransport() { }
 
-            void PrepareNextTrack(const std::string& trackUrl);
+            virtual void PrepareNextTrack(const std::string& trackUrl) = 0;
 
-            void Start(const std::string& trackUrl);
-            void Stop();
-            bool Pause();
-            bool Resume();
+            virtual void Start(const std::string& trackUrl) = 0;
+            virtual void Stop() = 0;
+            virtual bool Pause() = 0;
+            virtual bool Resume() = 0;
 
-            double Position();
-            void SetPosition(double seconds);
+            virtual double Position() = 0;
+            virtual void SetPosition(double seconds) = 0;
 
-            double Volume();
-            void SetVolume(double volume);
+            virtual double Volume() = 0;
+            virtual void SetVolume(double volume) = 0;
 
-            PlaybackState GetPlaybackState();
-
-        private:
-            void StartWithPlayer(Player* player);
-            void Stop(bool suppressStopEvent, bool stopOutput);
-            void RemoveActive(Player* player);
-            void DeletePlayers(std::list<Player*> players);
-            void SetNextCanStart(bool nextCanStart);
-
-            void RaiseStreamEvent(int type, Player* player);
-            void SetPlaybackState(int state);
-
-            void OnPlaybackStarted(Player* player);
-            void OnPlaybackAlmostEnded(Player* player);
-            void OnPlaybackFinished(Player* player);
-            void OnPlaybackError(Player* player);
-
-        private:
-            PlaybackState state;
-            boost::recursive_mutex stateMutex;
-            musik::core::audio::OutputPtr output;
-            std::list<Player*> active;
-            Player* nextPlayer;
-            double volume;
-            bool nextCanStart;
+            virtual PlaybackState GetPlaybackState() = 0;
     };
 
 } } }

@@ -67,7 +67,7 @@ namespace musik {
                 void OnTransportTimeChanged(double time);
 
                 bool paused, focused;
-                musik::core::audio::Transport& transport;
+                musik::core::audio::ITransport& transport;
                 musik::box::PlaybackService& playback;
                 musik::core::TrackPtr currentTrack;
         };

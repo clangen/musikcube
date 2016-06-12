@@ -123,8 +123,8 @@ void TransportWindow::Update() {
     this->Clear();
     WINDOW *c = this->GetContent();
 
-    bool paused = (transport.GetPlaybackState() == Transport::PlaybackPaused);
-    bool stopped = (transport.GetPlaybackState() == Transport::PlaybackStopped);
+    bool paused = (transport.GetPlaybackState() == ITransport::PlaybackPaused);
+    bool stopped = (transport.GetPlaybackState() == ITransport::PlaybackStopped);
 
     int64 gb = COLOR_PAIR(BOX_COLOR_GREEN_ON_BLACK);
 

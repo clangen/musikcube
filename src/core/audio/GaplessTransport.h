@@ -34,48 +34,60 @@
 
 #pragma once
 
-#include <sigslot/sigslot.h>
-
-#include <cursespp/IMessageTarget.h>
-
-#include <core/library/track/Track.h>
+#include <core/config.h>
 #include <core/audio/ITransport.h>
-
+#include <core/audio/Player.h>
+#include <core/sdk/IOutput.h>
+#include <boost/shared_ptr.hpp>
+#include <boost/scoped_ptr.hpp>
+#include <sigslot/sigslot.h>
 #include <boost/thread/recursive_mutex.hpp>
 
-namespace musik {
-    namespace box {
-        class PlaybackService : public cursespp::IMessageTarget, public sigslot::has_slots<> {
-            public:
-                sigslot::signal2<size_t, musik::core::TrackPtr> TrackChanged;
+namespace musik { namespace core { namespace audio {
 
-                PlaybackService(musik::core::audio::ITransport& transport);
+    class GaplessTransport : public ITransport, public sigslot::has_slots<> {
+        public:
+            GaplessTransport();
+            virtual ~GaplessTransport();
 
-                virtual bool IsAcceptingMessages() { return true; }
-                virtual void ProcessMessage(cursespp::IMessage &message);
+            virtual void PrepareNextTrack(const std::string& trackUrl);
 
-                musik::core::audio::ITransport& GetTransport() { return this->transport; }
+            virtual void Start(const std::string& trackUrl);
+            virtual void Stop();
+            virtual bool Pause();
+            virtual bool Resume();
 
-                void Play(std::vector<musik::core::TrackPtr>& tracks, size_t index);
-                void Play(size_t index);
-                bool Next();
-                bool Previous();
-                void Stop() { transport.Stop(); }
+            virtual double Position();
+            virtual void SetPosition(double seconds);
 
-                musik::core::TrackPtr GetTrackAtIndex(size_t index);
-                size_t GetIndex();
+            virtual double Volume();
+            virtual void SetVolume(double volume);
 
-                size_t Count() { return this->playlist.size(); }
-                void Copy(std::vector<musik::core::TrackPtr>& target);
+            virtual PlaybackState GetPlaybackState();
 
-            private:
-                void OnStreamEvent(int eventType, std::string uri);
-                void OnPlaybackEvent(int eventType);
+        private:
+            void StartWithPlayer(Player* player);
+            void Stop(bool suppressStopEvent, bool stopOutput);
+            void RemoveActive(Player* player);
+            void DeletePlayers(std::list<Player*> players);
+            void SetNextCanStart(bool nextCanStart);
 
-                musik::core::audio::ITransport& transport;
-                boost::recursive_mutex stateMutex;
-                std::vector<musik::core::TrackPtr> playlist;
-                size_t index, nextIndex;
-        };
-    }
-}
+            void RaiseStreamEvent(int type, Player* player);
+            void SetPlaybackState(int state);
+
+            void OnPlaybackStarted(Player* player);
+            void OnPlaybackAlmostEnded(Player* player);
+            void OnPlaybackFinished(Player* player);
+            void OnPlaybackError(Player* player);
+
+        private:
+            PlaybackState state;
+            boost::recursive_mutex stateMutex;
+            musik::core::audio::OutputPtr output;
+            std::list<Player*> active;
+            Player* nextPlayer;
+            double volume;
+            bool nextCanStart;
+    };
+
+} } }
