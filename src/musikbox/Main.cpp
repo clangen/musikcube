@@ -122,13 +122,7 @@ static void changeLayout(WindowState& current, ILayoutPtr newLayout) {
     }
 }
 
-static void focusNextInLayout(WindowState& current) {
-    if (!current.layout) {
-        return;
-    }
-
-    updateFocusedWindow(current, current.layout->FocusNext());
-
+static void checkDrawCursor(WindowState& current) {
     if (current.input != NULL) {
         curs_set(1);
 
@@ -139,6 +133,24 @@ static void focusNextInLayout(WindowState& current) {
     else {
         curs_set(0);
     }
+}
+
+static void focusNextInLayout(WindowState& current) {
+    if (!current.layout) {
+        return;
+    }
+
+    updateFocusedWindow(current, current.layout->FocusNext());
+    checkDrawCursor(current);
+}
+
+static void focusPrevInLayout(WindowState& current) {
+    if (!current.layout) {
+        return;
+    }
+
+    updateFocusedWindow(current, current.layout->FocusPrev());
+    checkDrawCursor(current);
 }
 
 static inline std::string readKeyPress(int64 ch) {
@@ -284,6 +296,9 @@ int main(int argc, char* argv[])
 
                 if (ch == '\t') { /* tab */
                     focusNextInLayout(state);
+                }
+                else if (kn == "KEY_BTAB") { /* shift-tab */
+                    focusPrevInLayout(state);
                 }
                 else if (kn == "^D") { /* ctrl+d quits */
                     quit = true;

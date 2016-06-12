@@ -236,7 +236,7 @@ IWindowPtr LayoutBase::FocusNext() {
 
 IWindowPtr LayoutBase::FocusPrev() {
     IWindowPtr oldFocus = GetFocus();
-    if (--this->focused <= 0) {
+    if (--this->focused < 0) {
         this->focused = (int) this->focusable.size() - 1;
     }
 
