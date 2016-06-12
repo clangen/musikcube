@@ -113,6 +113,20 @@ void SearchLayout::OnInputChanged(cursespp::TextInput* sender, std::string value
 
 void SearchLayout::OnVisibilityChanged(bool visible) {
     LayoutBase::OnVisibilityChanged(visible);
+
+    if (visible) {
+        if (this->input->Length()) {
+            /* clear, which will trigger a requery */
+            this->input->SetText("");
+        }
+
+        this->SetFocus(this->input);
+    }
+    else {
+        this->albums->Reset();
+        this->artists->Reset();
+        this->genres->Reset();
+    }
 }
 
 bool SearchLayout::KeyPress(const std::string& key) {

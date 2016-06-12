@@ -57,6 +57,7 @@ using cursespp::SingleLineEntry;
 CategoryListView::CategoryListView(LibraryPtr library, const std::string& fieldName)
 : ListWindow(NULL) {
     this->SetContentColor(BOX_COLOR_WHITE_ON_BLACK);
+    this->selectAfterQuery = 0;
     this->library = library;
     this->library->QueryCompleted.connect(this, &CategoryListView::OnQueryCompleted);
     this->fieldName = fieldName;
@@ -67,13 +68,28 @@ CategoryListView::~CategoryListView() {
     delete adapter;
 }
 
-void CategoryListView::Requery(const std::string& filter) {
+void CategoryListView::RequeryWithField(
+    const std::string& fieldName,
+    const std::string& filter, 
+    const DBID selectAfterQuery) 
+{
     if (this->activeQuery) {
         this->activeQuery->Cancel();
     }
 
+    this->fieldName = fieldName;
+    this->selectAfterQuery = selectAfterQuery;
     this->activeQuery.reset(new CategoryListViewQuery(this->fieldName, filter));
     this->library->Enqueue(activeQuery);
+}
+
+void CategoryListView::Requery(const std::string& filter, const DBID selectAfterQuery) {
+    this->RequeryWithField(this->fieldName, filter, selectAfterQuery);
+}
+
+void CategoryListView::Reset() {
+    this->metadata.reset(new std::vector<std::shared_ptr<CategoryListViewQuery::Result> >()); /* ugh */
+    this->OnAdapterChanged();
 }
 
 DBID CategoryListView::GetSelectedId() {
@@ -102,7 +118,12 @@ void CategoryListView::SetFieldName(const std::string& fieldName) {
 
 void CategoryListView::OnQueryCompleted(IQueryPtr query) {
     if (query == this->activeQuery) {
-        this->PostMessage(WINDOW_MESSAGE_QUERY_COMPLETED);
+        int selectIndex = -1;
+        if (this->selectAfterQuery != 0) {
+            selectIndex = this->activeQuery->GetIndexOf(this->selectAfterQuery);
+        }
+
+        this->PostMessage(WINDOW_MESSAGE_QUERY_COMPLETED, selectIndex);
     }
 }
 
@@ -111,6 +132,14 @@ void CategoryListView::ProcessMessage(IMessage &message) {
         if (this->activeQuery && this->activeQuery->GetStatus() == IQuery::Finished) {
             this->metadata = activeQuery->GetResult();
             activeQuery.reset();
+
+            /* UserData1 will be the index of the item we should select. if
+            the value is -1, we won't go out of our way to select anything. */
+            if (message.UserData1() > 0) {
+                this->SetSelectedIndex((int) message.UserData1());
+                this->ScrollTo((int) message.UserData1());
+            }
+
             this->OnAdapterChanged();
             this->OnInvalidated();
         }

@@ -65,7 +65,16 @@ namespace musik {
                 CategoryListView(LibraryPtr library, const std::string& fieldName);
                 virtual ~CategoryListView();
 
-                void Requery(const std::string& filter = "");
+                void RequeryWithField(
+                    const std::string& fieldName,
+                    const std::string& filter = "",
+                    const DBID selectAfterQuery = 0);
+
+                void Requery(
+                    const std::string& filter = "",
+                    const DBID selectAfterQuery = 0);
+
+                void Reset();
 
                 virtual void ProcessMessage(IMessage &message);
 
@@ -92,6 +101,7 @@ namespace musik {
             private:
                 LibraryPtr library;
                 Adapter *adapter;
+                DBID selectAfterQuery;
 
                 std::string fieldName;
                 std::shared_ptr<CategoryListViewQuery> activeQuery;

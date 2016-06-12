@@ -59,6 +59,7 @@ namespace musik {
                 std::string Name() { return "CategoryListViewQuery"; }
 
                 virtual ResultList GetResult();
+                virtual int GetIndexOf(DBID id);
 
             protected:
                 virtual bool OnRun(musik::core::db::Connection &db);

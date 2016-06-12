@@ -62,7 +62,8 @@ inline static void removeUtf8Char(std::string& value) {
 }
 
 TextInput::TextInput()
-: Window() {
+: Window()
+, bufferLength(0) {
 }
 
 TextInput::~TextInput() {

@@ -73,6 +73,9 @@ namespace cursespp {
             virtual size_t GetWindowCount();
             virtual IWindowPtr GetWindowAt(size_t position);
 
+        protected:
+            bool SetFocus(IWindowPtr window);
+
         private:
             void AddFocusable(IWindowPtr window);
             void RemoveFocusable(IWindowPtr window);

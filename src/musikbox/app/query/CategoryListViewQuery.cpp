@@ -128,6 +128,16 @@ CategoryListViewQuery::ResultList CategoryListViewQuery::GetResult() {
     return this->result;
 }
 
+int CategoryListViewQuery::GetIndexOf(DBID id) {
+    auto result = this->GetResult();
+    for (size_t i = 0; i < result->size(); i++) {
+        if (id == (*result)[i]->id) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 bool CategoryListViewQuery::OnRun(Connection& db) {
     RESET_RESULT(result);
 
