@@ -52,6 +52,15 @@
     err = snd_pcm_writei(handle, context->buffer->BufferPointer(), samples); \
     if (err < 0) { PRINT_ERROR(err); }
 
+
+static inline bool playable(snd_pcm_t* pcm) {
+    snd_pcm_state_t state = snd_pcm_state(pcm);
+
+    return
+        state == SND_PCM_STATE_RUNNING ||
+        state == SND_PCM_STATE_PREPARED;
+}
+
 using namespace musik::core::audio;
 
 AlsaOut::AlsaOut()
@@ -77,9 +86,12 @@ AlsaOut::~AlsaOut() {
     }
 
     this->writeThread->join();
+    this->CloseDevice();
+}
 
-    std::cerr << "AlsaOut: closing PCM handle\n";
+void AlsaOut::CloseDevice() {
     if (this->pcmHandle) {
+        std::cerr << "AlsaOut: closing PCM handle\n";
         snd_pcm_close(this->pcmHandle);
         this->pcmHandle = NULL;
     }
@@ -144,11 +156,7 @@ void AlsaOut::InitDevice() {
     return;
 
 error:
-
-    if (this->pcmHandle) {
-        snd_pcm_close(this->pcmHandle);
-        this->pcmHandle = NULL;
-    }
+    this->CloseDevice();
 }
 
 void AlsaOut::Destroy() {
@@ -165,11 +173,7 @@ void AlsaOut::Stop() {
 
         if (this->pcmHandle) {
             snd_pcm_drop(this->pcmHandle);
-
-            if (this->pcmHandle) {
-                snd_pcm_close(this->pcmHandle);
-                this->pcmHandle = NULL;
-            }
+            this->CloseDevice();
         }
     }
 
@@ -261,14 +265,6 @@ void AlsaOut::WriteLoop() {
     }
 }
 
-static inline bool playable(snd_pcm_t* pcm) {
-    snd_pcm_state_t state = snd_pcm_state(pcm);
-
-    return
-        state == SND_PCM_STATE_RUNNING ||
-        state == SND_PCM_STATE_PREPARED;
-}
-
 bool AlsaOut::Play(IBuffer *buffer, IBufferProvider* provider) {
     this->SetFormat(buffer);
 
@@ -303,10 +299,7 @@ void AlsaOut::SetFormat(IBuffer *buffer) {
         this->channels = buffer->Channels();
         this->rate = buffer->SampleRate();
 
-        if (this->pcmHandle) {
-            snd_pcm_close(this->pcmHandle);
-            this->pcmHandle = NULL;
-        }
+        this->CloseDevice();
 
         this->InitDevice();
 

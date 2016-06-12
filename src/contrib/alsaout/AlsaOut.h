@@ -70,6 +70,7 @@ class AlsaOut : public IOutput {
         size_t CountBuffersWithProvider(IBufferProvider* provider);
         void SetFormat(musik::core::audio::IBuffer *buffer);
         void InitDevice();
+        void CloseDevice();
         void WriteLoop();
 
         std::string device;
