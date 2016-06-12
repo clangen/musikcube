@@ -66,6 +66,8 @@ namespace musik {
                 virtual cursespp::IWindowPtr GetFocus();
                 virtual bool KeyPress(const std::string& key);
 
+                void ScrollTo(const std::string& fieldType, DBID fieldId);
+
             private:
                 void InitializeWindows();
 

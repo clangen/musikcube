@@ -66,6 +66,11 @@ namespace musik {
                 virtual bool KeyPress(const std::string& key);
 
             private:
+                void OnSearchResultSelected(
+                    SearchLayout* layout, 
+                    std::string fieldType, 
+                    DBID fieldId);
+
                 void InitializeWindows();
                 void ShowNowPlaying();
                 void ShowBrowse();

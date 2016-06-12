@@ -65,7 +65,7 @@ namespace musik {
                 CategoryListView(LibraryPtr library, const std::string& fieldName);
                 virtual ~CategoryListView();
 
-                void Requery();
+                void Requery(const std::string& filter = "");
 
                 virtual void ProcessMessage(IMessage &message);
 

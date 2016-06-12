@@ -128,13 +128,22 @@ void LibraryLayout::ShowSearch() {
 void LibraryLayout::InitializeWindows() {
     this->browseLayout.reset(new BrowseLayout(this->playback, this->library));
     this->nowPlayingLayout.reset(new NowPlayingLayout(this->playback, this->library));
+
     this->searchLayout.reset(new SearchLayout(this->library));
+    this->searchLayout->SearchResultSelected.connect(this, &LibraryLayout::OnSearchResultSelected);
 
     this->transportView.reset(new TransportWindow(this->playback));
 
     this->AddWindow(this->transportView);
 
     this->Layout();
+}
+
+void LibraryLayout::OnSearchResultSelected(
+    SearchLayout* layout, std::string fieldType, DBID fieldId)
+{
+    this->ShowBrowse();
+    this->browseLayout->ScrollTo(fieldType, fieldId);
 }
 
 IWindowPtr LibraryLayout::FocusNext() {
@@ -150,7 +159,7 @@ IWindowPtr LibraryLayout::GetFocus() {
 }
 
 bool LibraryLayout::KeyPress(const std::string& key) {
-    if (key == "^[" || key == "M-n") { /* escape switches between browse/now playing */
+    if (key == "^[" || key == "M-n") { /* switche between browse/now playing */
         if (this->visibleLayout == this->nowPlayingLayout ||
             this->visibleLayout == this->searchLayout) {
             this->ShowBrowse();
@@ -159,7 +168,7 @@ bool LibraryLayout::KeyPress(const std::string& key) {
             this->ShowNowPlaying();
         }
     }
-    else if (key == "M-f") {
+    else if (key == "M-f") { /* show search */
         this->ShowSearch();
     }
     /* forward to the visible layout */

@@ -67,12 +67,12 @@ CategoryListView::~CategoryListView() {
     delete adapter;
 }
 
-void CategoryListView::Requery() {
+void CategoryListView::Requery(const std::string& filter) {
     if (this->activeQuery) {
         this->activeQuery->Cancel();
     }
 
-    this->activeQuery.reset(new CategoryListViewQuery(this->fieldName));
+    this->activeQuery.reset(new CategoryListViewQuery(this->fieldName, filter));
     this->library->Enqueue(activeQuery);
 }
 

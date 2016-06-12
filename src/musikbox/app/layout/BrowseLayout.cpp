@@ -100,6 +100,10 @@ void BrowseLayout::InitializeWindows() {
     this->Layout();
 }
 
+void BrowseLayout::ScrollTo(const std::string& fieldType, DBID fieldId) {
+    this->categoryList->SetFieldName(fieldType);
+}
+
 IWindowPtr BrowseLayout::GetFocus() {
     return this->focused ? this->focused : LayoutBase::GetFocus();
 }

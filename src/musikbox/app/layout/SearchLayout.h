@@ -56,6 +56,8 @@ namespace musik {
             public sigslot::has_slots<>
         {
             public:
+                sigslot::signal3<SearchLayout*, std::string, DBID> SearchResultSelected;
+
                 SearchLayout(musik::core::LibraryPtr library);
 
                 virtual ~SearchLayout();
@@ -66,6 +68,10 @@ namespace musik {
 
             private:
                 void InitializeWindows();
+
+                void OnInputChanged(
+                    cursespp::TextInput* sender, 
+                    std::string value);
 
                 musik::core::LibraryPtr library;
                 std::shared_ptr<CategoryListView> artists;

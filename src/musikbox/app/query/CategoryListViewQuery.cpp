@@ -51,36 +51,60 @@ using namespace musik::box;
 
 #define RESET_RESULT(x) x.reset(new std::vector<std::shared_ptr<Result> >);
 
-static const std::string ALBUM_QUERY =
+static const std::string REGULAR_ALBUM_QUERY =
     "SELECT DISTINCT albums.id, albums.name "
     "FROM albums, tracks "
     "WHERE albums.id = tracks.album_id "
     "ORDER BY albums.sort_order;";
 
-static const std::string ARTIST_QUERY =
+static const std::string FILTERED_ALBUM_QUERY =
+    "SELECT DISTINCT albums.id, albums.name "
+    "FROM albums, tracks "
+    "WHERE albums.id = tracks.album_id AND LOWER(albums.name) LIKE ? "
+    "ORDER BY albums.sort_order;";
+
+static const std::string REGULAR_ARTIST_QUERY =
     "SELECT DISTINCT artists.id, artists.name "
     "FROM artists, tracks "
     "WHERE artists.id = tracks.visual_artist_id "
     "ORDER BY artists.sort_order;";
 
-static const std::string GENRE_QUERY =
+static const std::string FILTERED_ARTIST_QUERY =
+    "SELECT DISTINCT artists.id, artists.name "
+    "FROM artists, tracks "
+    "WHERE artists.id = tracks.visual_artist_id AND LOWER(artists.name) LIKE ? "
+    "ORDER BY artists.sort_order;";
+
+static const std::string REGULAR_GENRE_QUERY =
     "SELECT DISTINCT genres.id, genres.name "
     "FROM genres, tracks "
     "WHERE genres.id = tracks.visual_genre_id "
     "ORDER BY genres.sort_order;";
 
+static const std::string FILTERED_GENRE_QUERY =
+    "SELECT DISTINCT genres.id, genres.name "
+    "FROM genres, tracks "
+    "WHERE genres.id = tracks.visual_genre_id AND LOWER(genres.name) LIKE ? "
+    "ORDER BY genres.sort_order;";
+
 static boost::mutex QUERY_MAP_MUTEX;
 static std::map<std::string, std::string> FIELD_TO_QUERY_MAP;
+static std::map<std::string, std::string> FILTERED_FIELD_TO_QUERY_MAP;
 
 static void initFieldToQueryMap() {
-    FIELD_TO_QUERY_MAP[Track::ALBUM] = ALBUM_QUERY;
-    FIELD_TO_QUERY_MAP[Track::ARTIST] = ARTIST_QUERY;
-    FIELD_TO_QUERY_MAP[Track::GENRE] = GENRE_QUERY;
+    FIELD_TO_QUERY_MAP[Track::ALBUM] = REGULAR_ALBUM_QUERY;
+    FIELD_TO_QUERY_MAP[Track::ARTIST] = REGULAR_ARTIST_QUERY;
+    FIELD_TO_QUERY_MAP[Track::GENRE] = REGULAR_GENRE_QUERY;
+
+    FILTERED_FIELD_TO_QUERY_MAP[Track::ALBUM] = FILTERED_ALBUM_QUERY;
+    FILTERED_FIELD_TO_QUERY_MAP[Track::ARTIST] = FILTERED_ARTIST_QUERY;
+    FILTERED_FIELD_TO_QUERY_MAP[Track::GENRE] = FILTERED_GENRE_QUERY;
 }
 
-CategoryListViewQuery::CategoryListViewQuery(const std::string& trackField) {
-    this->trackField = trackField;
-
+CategoryListViewQuery::CategoryListViewQuery(
+    const std::string& trackField, const std::string& filter)
+: trackField(trackField)
+, filter(filter) {
     RESET_RESULT(result);
 
     {
@@ -107,8 +131,21 @@ CategoryListViewQuery::ResultList CategoryListViewQuery::GetResult() {
 bool CategoryListViewQuery::OnRun(Connection& db) {
     RESET_RESULT(result);
 
-    std::string query = FIELD_TO_QUERY_MAP[this->trackField];
+    bool filtered = this->filter.size() > 0;
+
+    std::string query = filtered
+        ? FILTERED_FIELD_TO_QUERY_MAP[this->trackField]
+        : FIELD_TO_QUERY_MAP[this->trackField];
+
     Statement stmt(query.c_str(), db);
+
+    if (filtered) {
+        /* transform "FilteR" => "%filter%" */
+        std::string wild = this->filter;
+        std::transform(wild.begin(), wild.end(), wild.begin(), tolower);
+        wild = "%" + wild + "%";
+        stmt.BindText(0, wild);
+    }
 
     while (stmt.Step() == Row) {
         std::shared_ptr<Result> row(new Result());

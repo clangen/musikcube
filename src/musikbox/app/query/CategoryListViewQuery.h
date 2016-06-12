@@ -50,7 +50,10 @@ namespace musik {
                 typedef std::shared_ptr<std::vector<
                     std::shared_ptr<Result> > > ResultList;
 
-                CategoryListViewQuery(const std::string& trackField);
+                CategoryListViewQuery(
+                    const std::string& trackField, 
+                    const std::string& filter = "");
+
                 virtual ~CategoryListViewQuery();
 
                 std::string Name() { return "CategoryListViewQuery"; }
@@ -61,6 +64,7 @@ namespace musik {
                 virtual bool OnRun(musik::core::db::Connection &db);
 
                 std::string trackField;
+                std::string filter;
                 ResultList result;
         };
     }

@@ -85,41 +85,53 @@ void SearchLayout::Layout() {
     this->genres->MoveAndResize(categoryWidth * 2, categoryY, lastCategoryWidth, categoryHeight);
 }
 
+#define CREATE_CATEGORY(view, type, order) \
+    view.reset(new CategoryListView(this->library, type)); \
+    this->AddWindow(view); \
+    view->SetFocusOrder(order); \
+    view->Requery();
+
 void SearchLayout::InitializeWindows() {
     this->input.reset(new cursespp::TextInput());
+    this->input->TextChanged.connect(this, &SearchLayout::OnInputChanged);
     this->input->SetContentColor(BOX_COLOR_WHITE_ON_BLACK);
     this->input->SetFocusOrder(0);
     this->AddWindow(this->input);
 
-    this->albums.reset(new CategoryListView(this->library, constants::Track::ALBUM));
-    this->AddWindow(this->albums);
-    this->albums->SetFocusOrder(1);
+    CREATE_CATEGORY(this->albums, constants::Track::ALBUM, 1);
+    CREATE_CATEGORY(this->artists, constants::Track::ARTIST, 2);
+    CREATE_CATEGORY(this->genres, constants::Track::GENRE, 3);
 
-    this->artists.reset(new CategoryListView(this->library, constants::Track::ARTIST));
-    this->AddWindow(this->artists);
-    this->artists->SetFocusOrder(2);
-
-    this->genres.reset(new CategoryListView(this->library, constants::Track::GENRE));
-    this->AddWindow(this->genres);
-    this->genres->SetFocusOrder(3);
-
-    //this->categoryList->SelectionChanged.connect(
-    //    this, &BrowseLayout::OnCategoryViewSelectionChanged);
-
-    //this->categoryList->Invalidated.connect(
-    //    this, &BrowseLayout::OnCategoryViewInvalidated);
-    
     this->Layout();
+}
+
+void SearchLayout::OnInputChanged(cursespp::TextInput* sender, std::string value) {
+    this->albums->Requery(value);
+    this->artists->Requery(value);
+    this->genres->Requery(value);
 }
 
 void SearchLayout::OnVisibilityChanged(bool visible) {
     LayoutBase::OnVisibilityChanged(visible);
-
-    //if (visible) {
-    //    this->categoryList->Requery();
-    //}
 }
 
 bool SearchLayout::KeyPress(const std::string& key) {
+    IWindowPtr focus = this->GetFocus();
+    CategoryListView* category = dynamic_cast<CategoryListView*>(focus.get());
+
+    if (category) {
+        if (key == "^M") {
+            int index = (int) category->GetSelectedIndex();
+            if (index >= 0) {
+                this->SearchResultSelected(
+                    this, 
+                    category->GetFieldName(),
+                    category->GetSelectedId());
+            }
+
+            return true;
+        }
+    }
+
     return LayoutBase::KeyPress(key);
 }
