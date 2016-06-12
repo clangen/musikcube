@@ -73,7 +73,7 @@ void TextInput::Show() {
     redrawContents(*this, buffer);
 }
 
-void TextInput::Write(const std::string& key) {
+bool TextInput::Write(const std::string& key) {
     if (key == "M-bksp") {
         this->buffer = "";
         redrawContents(*this, "");
@@ -93,10 +93,14 @@ void TextInput::Write(const std::string& key) {
             this->buffer += key;
             this->TextChanged(this, this->buffer);
         }
+        else {
+            return false;
+        }
     }
 
     this->bufferLength = u8len(buffer);
     redrawContents(*this, buffer);
+    return true;
 }
 
 void TextInput::SetText(const std::string& value) {

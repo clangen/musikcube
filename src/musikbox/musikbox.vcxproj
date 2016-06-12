@@ -119,6 +119,7 @@
     <ClCompile Include="app\layout\LibraryLayout.cpp" />
     <ClCompile Include="app\layout\ConsoleLayout.cpp" />
     <ClCompile Include="app\layout\NowPlayingLayout.cpp" />
+    <ClCompile Include="app\layout\SearchLayout.cpp" />
     <ClCompile Include="app\query\CategoryListViewQuery.cpp" />
     <ClCompile Include="app\query\NowPlayingTrackListQuery.cpp" />
     <ClCompile Include="app\query\CategoryTrackListQuery.cpp" />
@@ -159,6 +160,7 @@
     <ClInclude Include="app\layout\LibraryLayout.h" />
     <ClInclude Include="app\layout\ConsoleLayout.h" />
     <ClInclude Include="app\layout\NowPlayingLayout.h" />
+    <ClInclude Include="app\layout\SearchLayout.h" />
     <ClInclude Include="app\query\CategoryListViewQuery.h" />
     <ClInclude Include="app\query\NowPlayingTrackListQuery.h" />
     <ClInclude Include="app\query\TrackListQueryBase.h" />

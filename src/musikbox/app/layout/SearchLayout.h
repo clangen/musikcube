@@ -34,29 +34,44 @@
 
 #pragma once
 
-#include <cursespp/curses_config.h>
-#include <cursespp/Window.h>
-#include <cursespp/IInput.h>
+#include <cursespp/LayoutBase.h>
+#include <cursespp/TextInput.h>
+
+#include <app/window/CategoryListView.h>
+#include <app/window/TrackListView.h>
+#include <app/window/TransportWindow.h>
+#include <app/service/PlaybackService.h>
+
+#include <core/library/ILibrary.h>
+
 #include <sigslot/sigslot.h>
 
-namespace cursespp {
-    class TextInput : public cursespp::Window, public cursespp::IInput {
-        public:
-            sigslot::signal1<TextInput*> EnterPressed;
-            sigslot::signal2<TextInput*, std::string> TextChanged;
+namespace musik {
+    namespace box {
+        class SearchLayout :
+            public cursespp::LayoutBase,
+#if (__clang_major__ == 7 && __clang_minor__ == 3)
+            public std::enable_shared_from_this<SearchLayout>,
+#endif
+            public sigslot::has_slots<>
+        {
+            public:
+                SearchLayout(musik::core::LibraryPtr library);
 
-            TextInput();
-            virtual ~TextInput();
+                virtual ~SearchLayout();
 
-            virtual bool Write(const std::string& key);
-            virtual size_t Length() { return this->bufferLength; }
-            virtual void Show();
+                virtual void Layout();
+                virtual void OnVisibilityChanged(bool visible);
+                virtual bool KeyPress(const std::string& key);
 
-            virtual void SetText(const std::string& value);
-            virtual std::string GetText() { return this->buffer; }
+            private:
+                void InitializeWindows();
 
-        private:
-            std::string buffer;
-            size_t bufferLength;
-    };
+                musik::core::LibraryPtr library;
+                std::shared_ptr<CategoryListView> artists;
+                std::shared_ptr<CategoryListView> albums;
+                std::shared_ptr<CategoryListView> genres;
+                std::shared_ptr<cursespp::TextInput> input;
+        };
+    }
 }

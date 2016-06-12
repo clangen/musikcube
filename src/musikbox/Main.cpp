@@ -316,14 +316,18 @@ int main(int argc, char* argv[])
                     changeLayout(state, libraryLayout);
                 }
                 else if (!globalHotkeys.Handle(kn)) {
+                    bool processed = false;
                     if (state.input) {
-                        state.input->Write(kn);
+                        processed = state.input->Write(kn);
                     }
+
                     /* otherwise, send the unhandled keypress directly to the
                     focused window. if it can't do anything with it, send it to
                     the layout for special processing, if necessary */
-                    else if (!state.keyHandler || !state.keyHandler->KeyPress(kn)) {
-                        state.layout->KeyPress(kn);
+                    if (!processed) {
+                        if (!state.keyHandler || !state.keyHandler->KeyPress(kn)) {
+                            state.layout->KeyPress(kn);
+                        }
                     }
                 }
             }

@@ -75,9 +75,6 @@ void BrowseLayout::Layout() {
 
     this->MoveAndResize(x, y, cx, cy);
 
-    this->SetSize(cx, cy);
-    this->SetPosition(x, y);
-
     this->categoryList->MoveAndResize(x, y, CATEGORY_WIDTH, cy);
 
     this->trackList->MoveAndResize(

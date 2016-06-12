@@ -102,6 +102,9 @@
     <ClCompile Include="cursespp\TextInput.cpp">
       <Filter>cursespp</Filter>
     </ClCompile>
+    <ClCompile Include="app\layout\SearchLayout.cpp">
+      <Filter>app\layout</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -245,6 +248,9 @@
     </ClInclude>
     <ClInclude Include="cursespp\TextInput.h">
       <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="app\layout\SearchLayout.h">
+      <Filter>app\layout</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

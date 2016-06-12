@@ -39,6 +39,7 @@
 
 #include <app/layout/BrowseLayout.h>
 #include <app/layout/NowPlayingLayout.h>
+#include <app/layout/SearchLayout.h>
 #include <app/window/TransportWindow.h>
 #include <app/service/PlaybackService.h>
 
@@ -68,6 +69,7 @@ namespace musik {
                 void InitializeWindows();
                 void ShowNowPlaying();
                 void ShowBrowse();
+                void ShowSearch();
                 void ChangeMainLayout(std::shared_ptr<cursespp::LayoutBase> newLayout);
 
                 PlaybackService& playback;
@@ -76,6 +78,7 @@ namespace musik {
                 std::shared_ptr<BrowseLayout> browseLayout;
                 std::shared_ptr<TransportWindow> transportView;
                 std::shared_ptr<NowPlayingLayout> nowPlayingLayout;
+                std::shared_ptr<SearchLayout> searchLayout;
                 std::shared_ptr<cursespp::LayoutBase> visibleLayout;
         };
     }

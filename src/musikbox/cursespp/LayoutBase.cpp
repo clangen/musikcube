@@ -56,10 +56,10 @@ bool sortByFocusOrder(IWindowPtr a, IWindowPtr b) {
     int orderB = b->GetFocusOrder();
 
     if (orderA == orderB) {
-        return a->GetId() > b->GetId();
+        return a->GetId() < b->GetId();
     }
 
-    return orderA > orderB;
+    return orderA < orderB;
 }
 
 static inline IWindowPtr adjustFocus(IWindowPtr oldFocus, IWindowPtr newFocus) {

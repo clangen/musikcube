@@ -77,8 +77,12 @@ void LibraryLayout::Layout() {
 
     this->browseLayout->MoveAndResize(x, y, cx, cy - TRANSPORT_HEIGHT);
     this->browseLayout->Layout();
+
     this->nowPlayingLayout->MoveAndResize(x, y, cx, cy - TRANSPORT_HEIGHT);
     this->nowPlayingLayout->Layout();
+
+    this->searchLayout->MoveAndResize(x, y, cx, cy - TRANSPORT_HEIGHT);
+    this->searchLayout->Layout();
 
     this->transportView->MoveAndResize(
         1,
@@ -117,9 +121,15 @@ void LibraryLayout::ShowBrowse() {
     this->ChangeMainLayout(this->browseLayout);
 }
 
+void LibraryLayout::ShowSearch() {
+    this->ChangeMainLayout(this->searchLayout);
+}
+
 void LibraryLayout::InitializeWindows() {
     this->browseLayout.reset(new BrowseLayout(this->playback, this->library));
     this->nowPlayingLayout.reset(new NowPlayingLayout(this->playback, this->library));
+    this->searchLayout.reset(new SearchLayout(this->library));
+
     this->transportView.reset(new TransportWindow(this->playback));
 
     this->AddWindow(this->transportView);
@@ -141,8 +151,16 @@ IWindowPtr LibraryLayout::GetFocus() {
 
 bool LibraryLayout::KeyPress(const std::string& key) {
     if (key == "^[" || key == "M-n") { /* escape switches between browse/now playing */
-        (this->visibleLayout == this->nowPlayingLayout)
-            ? this->ShowBrowse() : this->ShowNowPlaying();
+        if (this->visibleLayout == this->nowPlayingLayout ||
+            this->visibleLayout == this->searchLayout) {
+            this->ShowBrowse();
+        }
+        else {
+            this->ShowNowPlaying();
+        }
+    }
+    else if (key == "M-f") {
+        this->ShowSearch();
     }
     /* forward to the visible layout */
     else if (this->visibleLayout && this->visibleLayout->KeyPress(key)) {
