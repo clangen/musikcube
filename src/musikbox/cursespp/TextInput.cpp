@@ -32,57 +32,73 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include <stdafx.h>
 
-#include <cursespp/LayoutBase.h>
-#include <cursespp/TextInput.h>
+#include <cursespp/Screen.h>
+#include <cursespp/Colors.h>
+#include <cursespp/MessageQueue.h>
+#include <cursespp/Message.h>
 
-#include <app/window/LogWindow.h>
-#include <app/window/OutputWindow.h>
-#include <app/window/TransportWindow.h>
-#include <app/window/ResourcesWindow.h>
+#include "TextInput.h"
 
-#include <vector>
+#include <boost/algorithm/string.hpp>
 
-#include <core/audio/ITransport.h>
+using namespace cursespp;
 
-#include <boost/shared_ptr.hpp>
+inline static void redrawContents(IWindow &window, const std::string& text) {
+    WINDOW* c = window.GetContent();
+    werase(c);
+    wprintw(c, text.c_str());
+    window.Repaint();
+}
 
-namespace musik {
-    namespace box {
-        class ConsoleLayout : public cursespp::LayoutBase, public sigslot::has_slots<> {
-            public:
-                ConsoleLayout(
-                    musik::core::audio::ITransport& transport, 
-                    musik::core::LibraryPtr library);
+inline static void removeUtf8Char(std::string& value) {
+    std::string::iterator it = value.end();
+    std::string::iterator start = value.begin();
+    if (it != start) {
+        utf8::prior(it, start);
+        value = std::string(value.begin(), it);
+    }
+}
 
-                ~ConsoleLayout();
+TextInput::TextInput()
+: Window() {
+}
 
-                virtual void Layout();
-                virtual void Show();
-                virtual void ProcessMessage(cursespp::IMessage &message);
+TextInput::~TextInput() {
+}
 
-            private:
-                void UpdateWindows();
+void TextInput::Show() {
+    Window::Show();
+    redrawContents(*this, buffer);
+}
 
-                void OnEnterPressed(cursespp::TextInput* input);
+void TextInput::Write(const std::string& key) {
+    if (key == "^H" || key == "^?" || key == "KEY_BACKSPACE") { /* backspace */
+        removeUtf8Char(this->buffer);
+        this->TextChanged(this, this->buffer);
+    }
+    else if (key == "^M") { /* return */
+        this->EnterPressed(this);
+    }
+    else {
+        /* one character at a time. if it's more than one character, we're
+        dealing with an escape sequence and should not print it. */
+        if (u8len(key) == 1) {
+            this->buffer += key;
+            this->TextChanged(this, this->buffer);
+        }
+    }
 
-                void ListPlugins() const;
-                bool ProcessCommand(const std::string& cmd);
-                bool PlayFile(const std::vector<std::string>& args);
-                void Pause();
-                void Stop();
-                void Seek(const std::vector<std::string>& args);
-                void SetVolume(const std::vector<std::string>& args);
-                void SetVolume(float volume);
-                void Help();
+    this->bufferLength = u8len(buffer);
+    redrawContents(*this, buffer);
+}
 
-                std::shared_ptr<LogWindow> logs;
-                std::shared_ptr<cursespp::TextInput> commands;
-                std::shared_ptr<OutputWindow> output;
-                std::shared_ptr<ResourcesWindow> resources;
-                musik::core::audio::ITransport& transport;
-                musik::core::LibraryPtr library;
-        };
+void TextInput::SetText(const std::string& value) {
+    if (value != this->buffer) {
+        this->buffer = value;
+        this->bufferLength = u8len(buffer);
+        this->TextChanged(this, this->buffer);
+        redrawContents(*this, buffer);
     }
 }

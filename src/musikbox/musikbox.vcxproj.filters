@@ -54,9 +54,6 @@
     <ClCompile Include="app\window\CategoryListView.cpp">
       <Filter>app\window</Filter>
     </ClCompile>
-    <ClCompile Include="app\window\CommandWindow.cpp">
-      <Filter>app\window</Filter>
-    </ClCompile>
     <ClCompile Include="app\window\LogWindow.cpp">
       <Filter>app\window</Filter>
     </ClCompile>
@@ -100,6 +97,9 @@
       <Filter>app\layout</Filter>
     </ClCompile>
     <ClCompile Include="cursespp\Colors.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\TextInput.cpp">
       <Filter>cursespp</Filter>
     </ClCompile>
   </ItemGroup>
@@ -189,9 +189,6 @@
     <ClInclude Include="app\window\CategoryListView.h">
       <Filter>app\window</Filter>
     </ClInclude>
-    <ClInclude Include="app\window\CommandWindow.h">
-      <Filter>app\window</Filter>
-    </ClInclude>
     <ClInclude Include="app\util\GlobalHotkeys.h">
       <Filter>app\util</Filter>
     </ClInclude>
@@ -245,6 +242,9 @@
     </ClInclude>
     <ClInclude Include="app\layout\BrowseLayout.h">
       <Filter>app\layout</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\TextInput.h">
+      <Filter>cursespp</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

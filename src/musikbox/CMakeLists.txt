@@ -13,7 +13,6 @@ set (BOX_SRCS
 	./app/util/SystemInfo.cpp
 	./app/util/Text.cpp
 	./app/window/CategoryListView.cpp
-	./app/window/CommandWindow.cpp
 	./app/window/EntryWithHeader.cpp
 	./app/window/LogWindow.cpp
 	./app/window/OutputWindow.cpp
@@ -32,6 +31,7 @@ set (BOX_SRCS
 	./cursespp/ScrollAdapterBase.cpp
 	./cursespp/SimpleScrollAdapter.cpp
 	./cursespp/SingleLineEntry.cpp
+	./cursespp/TextInput.cpp
 	./cursespp/Window.cpp
 	./cursespp/WindowLayout.cpp
 )

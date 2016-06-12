@@ -127,7 +127,6 @@
     <ClCompile Include="app\util\SystemInfo.cpp" />
     <ClCompile Include="app\util\Text.cpp" />
     <ClCompile Include="app\window\CategoryListView.cpp" />
-    <ClCompile Include="app\window\CommandWindow.cpp" />
     <ClCompile Include="app\window\EntryWithHeader.cpp" />
     <ClCompile Include="app\window\LogWindow.cpp" />
     <ClCompile Include="app\window\OutputWindow.cpp" />
@@ -144,6 +143,7 @@
     <ClCompile Include="cursespp\ScrollAdapterBase.cpp" />
     <ClCompile Include="cursespp\SimpleScrollAdapter.cpp" />
     <ClCompile Include="cursespp\SingleLineEntry.cpp" />
+    <ClCompile Include="cursespp\TextInput.cpp" />
     <ClCompile Include="cursespp\Window.cpp" />
     <ClCompile Include="cursespp\WindowLayout.cpp" />
     <ClCompile Include="cursespp\Message.cpp" />
@@ -168,7 +168,6 @@
     <ClInclude Include="app\util\SystemInfo.h" />
     <ClInclude Include="app\util\Text.h" />
     <ClInclude Include="app\window\CategoryListView.h" />
-    <ClInclude Include="app\window\CommandWindow.h" />
     <ClInclude Include="app\window\EntryWithHeader.h" />
     <ClInclude Include="app\window\LogWindow.h" />
     <ClInclude Include="app\window\OutputWindow.h" />
@@ -198,6 +197,7 @@
     <ClInclude Include="cursespp\ScrollAdapterBase.h" />
     <ClInclude Include="cursespp\SimpleScrollAdapter.h" />
     <ClInclude Include="cursespp\SingleLineEntry.h" />
+    <ClInclude Include="cursespp\TextInput.h" />
     <ClInclude Include="cursespp\Window.h" />
     <ClInclude Include="cursespp\WindowLayout.h" />
     <ClInclude Include="cursespp\Message.h" />

@@ -33,12 +33,25 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
+
 #include "ConsoleLayout.h"
+
 #include <cursespp/Screen.h>
 #include <cursespp/IMessage.h>
 
+#include <core/sdk/IPlugin.h>
+#include <core/plugin/PluginFactory.h>
+
+#include <boost/algorithm/string.hpp>
+
 #define MESSAGE_TYPE_UPDATE 1001
 #define UPDATE_INTERVAL_MS 1000
+
+template <class T>
+bool tostr(T& t, const std::string& s) {
+    std::istringstream iss(s);
+    return !(iss >> t).fail();
+}
 
 using namespace musik::core;
 using namespace musik::core::audio;
@@ -46,22 +59,23 @@ using namespace musik::box;
 using namespace cursespp;
 
 ConsoleLayout::ConsoleLayout(ITransport& transport, LibraryPtr library)
-: LayoutBase() {
+: LayoutBase()
+, transport(transport)
+, library(library) {
     this->logs.reset(new LogWindow(this));
     this->output.reset(new OutputWindow(this));
     this->resources.reset(new ResourcesWindow(this));
-
-    this->commands.reset(new CommandWindow(
-        this,
-        transport,
-        library,
-        *this->output,
-        *this->logs));
+    this->commands.reset(new cursespp::TextInput());
 
     this->AddWindow(this->commands);
     this->AddWindow(this->logs);
     this->AddWindow(this->output);
     this->AddWindow(this->resources);
+
+    this->commands->SetContentColor(BOX_COLOR_WHITE_ON_BLACK);
+    this->commands->EnterPressed.connect(this, &ConsoleLayout::OnEnterPressed);
+
+    this->Help();
 
     this->PostMessage(MESSAGE_TYPE_UPDATE, 0, 0, UPDATE_INTERVAL_MS);
 }
@@ -115,6 +129,22 @@ void ConsoleLayout::Layout() {
         3);
 }
 
+void ConsoleLayout::OnEnterPressed(TextInput *input) {
+    std::string command = this->commands->GetText();
+    this->commands->SetText("");
+
+    output->WriteLine("> " + command + "\n", COLOR_PAIR(BOX_COLOR_BLACK_ON_GREY));
+
+    if (!this->ProcessCommand(command)) {
+        if (command.size()) {
+            output->WriteLine(
+                "illegal command: '" +
+                command +
+                "'\n", COLOR_PAIR(BOX_COLOR_RED_ON_GREY));
+        }
+    }
+}
+
 void ConsoleLayout::Show() {
     LayoutBase::Show();
     this->UpdateWindows();
@@ -130,4 +160,156 @@ void ConsoleLayout::ProcessMessage(IMessage &message) {
 void ConsoleLayout::UpdateWindows() {
     this->logs->Update();
     this->resources->Update();
+}
+
+void ConsoleLayout::Seek(const std::vector<std::string>& args) {
+    if (args.size() > 0) {
+        double newPosition = 0;
+        if (tostr<double>(newPosition, args[0])) {
+            transport.SetPosition(newPosition);
+        }
+    }
+}
+
+void ConsoleLayout::SetVolume(const std::vector<std::string>& args) {
+    if (args.size() > 0) {
+        float newVolume = 0;
+        if (tostr<float>(newVolume, args[0])) {
+            this->SetVolume(newVolume / 100.0f);
+        }
+    }
+}
+
+void ConsoleLayout::SetVolume(float volume) {
+    transport.SetVolume(volume);
+}
+
+void ConsoleLayout::Help() {
+    int64 s = -1;
+    this->output->WriteLine("help:\n", s);
+    this->output->WriteLine("  <tab> to switch between windows", s);
+    this->output->WriteLine("  ALT+Q console view", s);
+    this->output->WriteLine("  ALT+W library view", s);
+    this->output->WriteLine("", s);
+    this->output->WriteLine("  addir <dir>: add a music directory", s);
+    this->output->WriteLine("  rmdir <dir>: remove a music directory", s);
+    this->output->WriteLine("  lsdirs: list scanned directories", s);
+    this->output->WriteLine("  rescan: rescan paths for new metadata", s);
+    this->output->WriteLine("", s);
+    this->output->WriteLine("  play <uri>: play audio at <uri>", s);
+    this->output->WriteLine("  pause: pause/resume", s);
+    this->output->WriteLine("  stop: stop and clean up everything", s);
+    this->output->WriteLine("  volume: <0 - 100>: set % volume", s);
+    this->output->WriteLine("  clear: clear the log window", s);
+    this->output->WriteLine("  seek <seconds>: seek to <seconds> into track", s);
+    this->output->WriteLine("", s);
+    this->output->WriteLine("  plugins: list loaded plugins", s);
+    this->output->WriteLine("", s);
+    this->output->WriteLine("  <ctrl+d>: quit\n", s);
+}
+
+bool ConsoleLayout::ProcessCommand(const std::string& cmd) {
+    std::vector<std::string> args;
+    boost::algorithm::split(args, cmd, boost::is_any_of(" "));
+
+    std::string name = args.size() > 0 ? args[0] : "";
+    args.erase(args.begin());
+
+    if (name == "plugins") {
+        this->ListPlugins();
+    }
+    else if (name == "clear") {
+        this->logs->ClearContents();
+    }
+    else if (name == "play" || name == "pl" || name == "p") {
+        return this->PlayFile(args);
+    }
+    else if (name == "addir") {
+        std::string path = boost::algorithm::join(args, " ");
+        library->Indexer()->AddPath(path);
+    }
+    else if (name == "rmdir") {
+        std::string path = boost::algorithm::join(args, " ");
+        library->Indexer()->RemovePath(path);
+    }
+    else if (name == "lsdirs") {
+        std::vector<std::string> paths;
+        library->Indexer()->GetPaths(paths);
+        this->output->WriteLine("paths:");
+        for (size_t i = 0; i < paths.size(); i++) {
+            this->output->WriteLine("  " + paths.at(i));
+        }
+        this->output->WriteLine("");
+    }
+    else if (name == "rescan" || name == "scan" || name == "index") {
+        library->Indexer()->Synchronize();
+    }
+    else if (name == "h" || name == "help") {
+        this->Help();
+    }
+    else if (cmd == "pa" || cmd == "pause") {
+        this->Pause();
+    }
+    else if (cmd == "s" || cmd =="stop") {
+        this->Stop();
+    }
+    else if (name == "sk" || name == "seek") {
+        this->Seek(args);
+    }
+    else if (name == "plugins") {
+        this->ListPlugins();
+    }
+    else if (name == "v" || name == "volume") {
+        this->SetVolume(args);
+    }
+    else {
+        return false;
+    }
+
+    return true;
+}
+
+bool ConsoleLayout::PlayFile(const std::vector<std::string>& args) {
+    if (args.size() > 0) {
+        std::string filename = boost::algorithm::join(args, " ");
+        transport.Start(filename);
+        return true;
+    }
+
+    return false;
+}
+
+void ConsoleLayout::Pause() {
+    int state = this->transport.GetPlaybackState();
+    if (state == ITransport::PlaybackPaused) {
+        this->transport.Resume();
+    }
+    else if (state == ITransport::PlaybackPlaying) {
+        this->transport.Pause();
+    }
+}
+
+void ConsoleLayout::Stop() {
+    this->transport.Stop();
+}
+
+void ConsoleLayout::ListPlugins() const {
+    using musik::core::IPlugin;
+    using musik::core::PluginFactory;
+
+    typedef std::vector<std::shared_ptr<IPlugin> > PluginList;
+    typedef PluginFactory::NullDeleter<IPlugin> Deleter;
+
+    PluginList plugins = PluginFactory::Instance()
+        .QueryInterface<IPlugin, Deleter>("GetPlugin");
+
+    PluginList::iterator it = plugins.begin();
+    for (; it != plugins.end(); it++) {
+        std::string format =
+            "    " + std::string((*it)->Name()) + " "
+            "v" + std::string((*it)->Version()) + "\n"
+            "    by " + std::string((*it)->Author()) + "\n";
+
+        this->output->WriteLine(format, BOX_COLOR_RED_ON_BLUE);
+    }
 }
