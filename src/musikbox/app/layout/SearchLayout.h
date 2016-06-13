@@ -68,6 +68,7 @@ namespace musik {
 
             private:
                 void InitializeWindows();
+                void Requery(const std::string& value = "");
 
                 void OnInputChanged(
                     cursespp::TextInput* sender, 

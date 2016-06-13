@@ -88,8 +88,7 @@ void SearchLayout::Layout() {
 #define CREATE_CATEGORY(view, type, order) \
     view.reset(new CategoryListView(this->library, type)); \
     this->AddWindow(view); \
-    view->SetFocusOrder(order); \
-    view->Requery();
+    view->SetFocusOrder(order);
 
 void SearchLayout::InitializeWindows() {
     this->input.reset(new cursespp::TextInput());
@@ -105,22 +104,28 @@ void SearchLayout::InitializeWindows() {
     this->Layout();
 }
 
-void SearchLayout::OnInputChanged(cursespp::TextInput* sender, std::string value) {
+void SearchLayout::Requery(const std::string& value) {
     this->albums->Requery(value);
     this->artists->Requery(value);
     this->genres->Requery(value);
+}
+
+void SearchLayout::OnInputChanged(cursespp::TextInput* sender, std::string value) {
+    this->Requery(value);
 }
 
 void SearchLayout::OnVisibilityChanged(bool visible) {
     LayoutBase::OnVisibilityChanged(visible);
 
     if (visible) {
+        this->SetFocus(this->input);
         if (this->input->Length()) {
             /* clear, which will trigger a requery */
             this->input->SetText("");
         }
-
-        this->SetFocus(this->input);
+        else {
+            this->Requery();
+        }
     }
     else {
         this->albums->Reset();
