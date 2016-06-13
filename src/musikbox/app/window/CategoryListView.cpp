@@ -73,6 +73,8 @@ void CategoryListView::RequeryWithField(
     const std::string& filter, 
     const DBID selectAfterQuery) 
 {
+    boost::mutex::scoped_lock lock(this->queryMutex);
+
     if (this->activeQuery) {
         this->activeQuery->Cancel();
     }
@@ -117,10 +119,13 @@ void CategoryListView::SetFieldName(const std::string& fieldName) {
 }
 
 void CategoryListView::OnQueryCompleted(IQueryPtr query) {
-    if (query == this->activeQuery) {
+    boost::mutex::scoped_lock lock(this->queryMutex);
+
+    auto active = this->activeQuery;
+    if (query == active) {
         int selectIndex = -1;
         if (this->selectAfterQuery != 0) {
-            selectIndex = this->activeQuery->GetIndexOf(this->selectAfterQuery);
+            selectIndex = active->GetIndexOf(this->selectAfterQuery);
         }
 
         this->PostMessage(WINDOW_MESSAGE_QUERY_COMPLETED, selectIndex);
@@ -129,15 +134,18 @@ void CategoryListView::OnQueryCompleted(IQueryPtr query) {
 
 void CategoryListView::ProcessMessage(IMessage &message) {
     if (message.Type() == WINDOW_MESSAGE_QUERY_COMPLETED) {
+        boost::mutex::scoped_lock lock(this->queryMutex);
+
         if (this->activeQuery && this->activeQuery->GetStatus() == IQuery::Finished) {
             this->metadata = activeQuery->GetResult();
             activeQuery.reset();
 
             /* UserData1 will be the index of the item we should select. if
             the value is -1, we won't go out of our way to select anything. */
-            if (message.UserData1() > 0) {
-                this->SetSelectedIndex((int) message.UserData1());
-                this->ScrollTo((int) message.UserData1());
+            int selectedIndex = static_cast<int>(message.UserData1());
+            if (selectedIndex >= 0) {
+                this->SetSelectedIndex(selectedIndex);
+                this->ScrollTo(selectedIndex);
             }
 
             this->OnAdapterChanged();

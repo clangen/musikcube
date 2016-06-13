@@ -102,6 +102,7 @@ namespace musik {
                 LibraryPtr library;
                 Adapter *adapter;
                 DBID selectAfterQuery;
+                boost::mutex queryMutex;
 
                 std::string fieldName;
                 std::shared_ptr<CategoryListViewQuery> activeQuery;

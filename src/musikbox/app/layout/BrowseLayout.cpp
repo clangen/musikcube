@@ -61,7 +61,6 @@ BrowseLayout::BrowseLayout(
 }
 
 BrowseLayout::~BrowseLayout() {
-
 }
 
 void BrowseLayout::Layout() {
