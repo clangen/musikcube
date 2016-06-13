@@ -1,98 +1,103 @@
 //////////////////////////////////////////////////////////////////////////////
-// Copyright  2007, Daniel nnerby
+//
+// Copyright (c) 2007-2016 musikcube team
 //
 // All rights reserved.
 //
-// Redistribution and use in source and binary forms, with or without 
+// Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
 //
 //    * Redistributions of source code must retain the above copyright notice,
 //      this list of conditions and the following disclaimer.
 //
-//    * Redistributions in binary form must reproduce the above copyright 
-//      notice, this list of conditions and the following disclaimer in the 
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
 //      documentation and/or other materials provided with the distribution.
 //
-//    * Neither the name of the author nor the names of other contributors may 
-//      be used to endorse or promote products derived from this software 
-//      without specific prior written permission. 
+//    * Neither the name of the author nor the names of other contributors may
+//      be used to endorse or promote products derived from this software
+//      without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
-// POSSIBILITY OF SUCH DAMAGE. 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
 #pragma once
 
 #include "pch.h"
-#include "WaveOutBuffer.h"
-/*
-#include <boost/thread/condition.hpp>
-#include <boost/thread/thread.hpp> 
-
-#include <core/audio/IAudioCallback.h>
-#include <core/audio/IAudioOutput.h>
-*/
-#include <core/audio/IOutput.h>
 #include <list>
+#include <boost/thread/thread.hpp>
 #include <boost/shared_ptr.hpp> 
-#include <boost/thread/mutex.hpp>
+#include <boost/thread/recursive_mutex.hpp>
+#include <boost/thread/condition.hpp>
+#include "WaveOutBuffer.h"
+#include <core/sdk/IOutput.h>
 
 using namespace musik::core::audio;
 
-class WaveOut : public IOutput{
+class WaveOut : public IOutput {
     public:
         WaveOut();
         ~WaveOut();
 
         virtual void Destroy();
-        //virtual void Initialize(IPlayer *player);
         virtual void Pause();
         virtual void Resume();
         virtual void SetVolume(double volume);
-        virtual void ClearBuffers();
-        virtual bool PlayBuffer(IBuffer *buffer,IPlayer *player);
-        virtual void ReleaseBuffers();
+        virtual void Stop();
+        virtual bool Play(IBuffer *buffer, IBufferProvider *provider);
 
     public: 
-        typedef boost::shared_ptr<WaveOutBuffer> WaveOutBufferPtr;
+        typedef std::shared_ptr<WaveOutBuffer> WaveOutBufferPtr;
+        static DWORD WINAPI WaveCallbackThreadProc(LPVOID params);
 
-        static void CALLBACK WaveCallback(HWAVEOUT hWave, UINT msg, DWORD_PTR dwUser, DWORD_PTR dw1, DWORD dw2);
-        void RemoveBuffer(WaveOutBuffer *buffer);
+        void OnBufferWrittenToOutput(WaveOutBuffer *buffer);
 
     private:
         void SetFormat(IBuffer *buffer);
-
+        void StartWaveOutThread();
+        void StopWaveOutThread();
+        void ResetWaveOut();
+        void ClearBufferQueue();
 
     protected:
         friend class WaveOutBuffer;
 
-        //IPlayer *player;
+        /* note we apparently use a std::list<> here, and not std::set<> because
+        when we need to do a lookup we have a WaveOutBuffer*, and not a shared_ptr. 
+        we could fix this up by using boost::enable_shared_from_this */
+        typedef std::list<WaveOutBufferPtr> BufferList;
 
-        // Audio stuff
-        HWAVEOUT        waveHandle;
+        /* instance state relating to output device, including the thread that
+        drives the callback message pump */
+        HWAVEOUT waveHandle;
         WAVEFORMATPCMEX waveFormat;
+        DWORD threadId;
+        HANDLE threadHandle;
 
-        // Current format
+        /* stream information. */
         int currentChannels;
         long currentSampleRate;
         double currentVolume;
+        bool playing;
 
-        typedef std::list<WaveOutBufferPtr> BufferList;
-        BufferList buffers;
-        BufferList removedBuffers;
-        size_t maxBuffers;
+        /* a queue of buffers we've recieved from the core Player, and have enqueued
+        to the output device. we need to notify the IBufferProvider when they have finished
+        playing. */
+        BufferList queuedBuffers;
 
-        boost::mutex mutex;
+        /* used to protect access to the WaveOut and message pump */
+        boost::recursive_mutex outputDeviceMutex;
 
-        bool addToRemovedBuffers;
-
+        /* used to protect access to the queue of buffers that in flight */
+        boost::recursive_mutex bufferQueueMutex;
 };

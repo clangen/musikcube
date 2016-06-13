@@ -1,5 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
-// Copyright  2007, Daniel nnerby
+//
+// Copyright (c) 2007-2016 musikcube team
 //
 // All rights reserved.
 //
@@ -30,328 +31,309 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
+
 #include "AlsaOut.h"
 
-AlsaOut::AlsaOut()
- :waveHandle(NULL)
- ,maxBuffers(32)
- ,currentVolume(1.0)
- ,addToRemovedBuffers(false)
- ,device("default")
- ,output(NULL)
-{
-#ifdef _DEBUG
-	std::cerr << "AlsaOut::AlsaOut() called" << std::endl;
-#endif
-	int err;
-	if ((err = snd_pcm_open (&waveHandle, "default", SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
-		std::cerr << "AlsaOut: cannot open audio device 'default' :" << snd_strerror(err) << std::endl;
-		return;
-	}
-	#ifdef _DEBUG
-	else {
-		std::cerr << "AlsaOut: audio device opened" << std::endl;
-	}
-	#endif
-	
-	if ((err = snd_pcm_hw_params_malloc (&hw_params)) < 0) {
-		std::cerr << "AlsaOut: cannot allocate hardware parameter structure " << snd_strerror(err) << std::endl;
-		exit (1);
-	}
-	#ifdef _DEBUG
-	else {
-		std::cerr << "AlsaOut: audio interface prepared for use" << std::endl;
-	}
-	#endif
-	
-	if ((err = snd_pcm_hw_params_any (waveHandle, hw_params)) < 0) {
-		std::cerr << "AlsaOut: cannot initialize hardware parameter structure " << snd_strerror(err) << std::endl;
-		exit (1);
-	}
-	#ifdef _DEBUG
-	else {
-		std::cerr << "AlsaOut: audio interface prepared for use" << std::endl;
-	}
-	#endif
-	
-	if ((err = snd_pcm_hw_params_set_access (waveHandle, hw_params, SND_PCM_ACCESS_RW_INTERLEAVED)) < 0) {
-		std::cerr << "AlsaOut: cannot set access type " << snd_strerror(err) << std::endl;
-		exit (1);
-	}
-	#ifdef _DEBUG
-	else {
-		std::cerr << "AlsaOut: access type set" << std::endl;
-	}
-	#endif
-	
-	if ((err = snd_pcm_hw_params_set_format (waveHandle, hw_params, SND_PCM_FORMAT_S16_LE)) < 0) {
-		std::cerr << "AlsaOut: cannot set sample format " << snd_strerror(err) << std::endl;
-		exit (1);
-	}
-	#ifdef _DEBUG
-	else {
-		std::cerr << "AlsaOut: sample format set" << std::endl;
-	}
-	#endif
-	
-	if ((err = snd_pcm_hw_params_set_rate_resample (waveHandle, hw_params, 44100)) < 0) {
-		std::cerr << "AlsaOut: cannot set sample rate " << snd_strerror(err) << std::endl;
-		exit (1);
-	}
-	#ifdef _DEBUG
-	else {
-		std::cerr << "AlsaOut: sample rate set" << std::endl;
-	}
-	#endif
-	
-	if ((err = snd_pcm_hw_params_set_channels (waveHandle, hw_params, 2)) < 0) {
-		std::cerr << "AlsaOut: cannot set channel count " << snd_strerror(err) << std::endl;
-		exit (1);
-	}
-	#ifdef _DEBUG
-	else {
-		std::cerr << "AlsaOut: channel count set" << std::endl;
-	}
-	#endif
-	
-	if ((err = snd_pcm_hw_params (waveHandle, hw_params)) < 0) {
-		std::cerr << "AlsaOut: cannot set parameters " << snd_strerror(err) << std::endl;
-		exit (1);
-	}
-	#ifdef _DEBUG
-	else {
-		std::cerr << "AlsaOut: parameters set" << std::endl;
-	}
-	#endif
-	
-	snd_pcm_hw_params_free (hw_params);
-	
-	if ((err = snd_pcm_prepare (waveHandle)) < 0) {
-		std::cerr << "cannot prepare audio interface for use " << snd_strerror(err) << std::endl;
-		exit (1);
-	}
-	#ifdef _DEBUG
-	else {
-		std::cerr << "AlsaOut: audio interface prepared for use" << std::endl;
-	}
-	std::cerr << "waveHandle: " << waveHandle << std::endl;
-	#endif
+#define BUFFER_COUNT 8
+#define PCM_ACCESS_TYPE SND_PCM_ACCESS_RW_INTERLEAVED
+#define PCM_FORMAT SND_PCM_FORMAT_FLOAT_LE
+
+#define LOCK(x) \
+    /*std::f << "locking " << x << "\n";*/ \
+    boost::recursive_mutex::scoped_lock lock(this->stateMutex); \
+    /*std::cerr << "locked " << x << "\n";*/ \
+
+#define WAIT() this->threadEvent.wait(lock);
+#define NOTIFY() this->threadEvent.notify_all();
+#define CHECK_QUIT() if (this->quit) { return; }
+#define PRINT_ERROR(x) std::cerr << "AlsaOut: error! " << snd_strerror(x) << std::endl;
+
+#define WRITE_BUFFER(handle, context, samples) \
+    err = snd_pcm_writei(handle, context->buffer->BufferPointer(), samples); \
+    if (err < 0) { PRINT_ERROR(err); }
+
+
+static inline bool playable(snd_pcm_t* pcm) {
+    snd_pcm_state_t state = snd_pcm_state(pcm);
+
+    return
+        state == SND_PCM_STATE_RUNNING ||
+        state == SND_PCM_STATE_PREPARED;
 }
 
-AlsaOut::~AlsaOut(){
-    this->ClearBuffers();
+using namespace musik::core::audio;
 
-    if(this->waveHandle!=NULL){
-        snd_pcm_close(this->waveHandle);
-        this->waveHandle    = NULL;
+AlsaOut::AlsaOut()
+: pcmHandle(NULL)
+, device("default")
+, channels(2)
+, rate(44100)
+, volume(1.0)
+, quit(false)
+, initialized(false) {
+    std::cerr << "AlsaOut::AlsaOut() called" << std::endl;
+    this->writeThread.reset(new boost::thread(boost::bind(&AlsaOut::WriteLoop, this)));
+}
+
+AlsaOut::~AlsaOut() {
+    std::cerr << "AlsaOut: destructor\n";
+
+    std::cerr << "AlsaOut: waiting for thread...\n";
+    {
+        LOCK("dtor");
+        this->quit = true;
+        NOTIFY();
     }
 
+    this->writeThread->join();
+    this->CloseDevice();
 }
 
-snd_pcm_t* AlsaOut::getWaveHandle() {
-	return this->waveHandle;
+void AlsaOut::CloseDevice() {
+    if (this->pcmHandle) {
+        std::cerr << "AlsaOut: closing PCM handle\n";
+        snd_pcm_close(this->pcmHandle);
+        this->pcmHandle = NULL;
+    }
 }
 
-void AlsaOut::Destroy(){
+void AlsaOut::InitDevice() {
+    int err, dir;
+    unsigned int rate = (unsigned int) this->rate;
+
+    if ((err = snd_pcm_open(&this->pcmHandle, this->device.c_str(), SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
+        std::cerr << "AlsaOut: cannot open audio device 'default' :" << snd_strerror(err) << std::endl;
+        goto error;
+    }
+
+    if ((err = snd_pcm_hw_params_malloc(&hardware)) < 0) {
+        std::cerr << "AlsaOut: cannot allocate hardware parameter structure " << snd_strerror(err) << std::endl;
+        goto error;
+    }
+
+    if ((err = snd_pcm_hw_params_any(pcmHandle, hardware)) < 0) {
+        std::cerr << "AlsaOut: cannot initialize hardware parameter structure " << snd_strerror(err) << std::endl;
+        goto error;
+    }
+
+    if ((err = snd_pcm_hw_params_set_access(pcmHandle, hardware, PCM_ACCESS_TYPE)) < 0) {
+        std::cerr << "AlsaOut: cannot set access type " << snd_strerror(err) << std::endl;
+        goto error;
+    }
+
+    if ((err = snd_pcm_hw_params_set_format(pcmHandle, hardware, PCM_FORMAT)) < 0) {
+        std::cerr << "AlsaOut: cannot set sample format " << snd_strerror(err) << std::endl;
+        goto error;
+    }
+
+    if ((err = snd_pcm_hw_params_set_rate_near(pcmHandle, hardware, &rate, 0)) < 0) {
+        std::cerr << "AlsaOut: cannot set sample rate " << snd_strerror(err) << std::endl;
+        goto error;
+    }
+
+    if ((err = snd_pcm_hw_params_set_channels(pcmHandle, hardware, this->channels)) < 0) {
+        std::cerr << "AlsaOut: cannot set channel count " << snd_strerror(err) << std::endl;
+        goto error;
+    }
+
+    if ((err = snd_pcm_hw_params(pcmHandle, hardware)) < 0) {
+        std::cerr << "AlsaOut: cannot set parameters " << snd_strerror(err) << std::endl;
+        goto error;
+    }
+
+    snd_pcm_hw_params_free(hardware);
+
+    if ((err = snd_pcm_prepare (pcmHandle)) < 0) {
+        std::cerr << "AlsaOut: cannot prepare audio interface for use " << snd_strerror(err) << std::endl;
+        goto error;
+    }
+
+    snd_pcm_nonblock(pcmHandle, 0);
+
+    std::cerr << "AlsaOut: device seems to be prepared for use!\n";
+    this->initialized = true;
+
+    return;
+
+error:
+    this->CloseDevice();
+}
+
+void AlsaOut::Destroy() {
     delete this;
 }
-/*
-void WaveOut::Initialize(IPlayer *player){
-    this->player    = player;
-}
-*/
-void AlsaOut::Pause(){
-    snd_pcm_pause(this->waveHandle, 1);
-}
 
-void AlsaOut::Resume(){
-    snd_pcm_pause(this->waveHandle, 0);
-}
+void AlsaOut::Stop() {
+    std::list<std::shared_ptr<BufferContext> > toNotify;
 
-void AlsaOut::SetVolume(double volume){
-    /*if(this->waveHandle){
-        DWORD newVolume = (DWORD)(volume*65535.0);
-        newVolume   += newVolume*65536;
-
-        waveOutSetVolume(this->waveHandle,newVolume);
-    }
-    this->currentVolume = volume;*/ //TODO: Write alsa SetVolume() function
-}
-
-void AlsaOut::ClearBuffers(){
-	 snd_pcm_drop(this->waveHandle);
-    snd_pcm_reset(this->waveHandle);
-}
-
-void AlsaOut::RemoveBuffer(AlsaOutBuffer *buffer){
-    BufferList clearBuffers;
     {
-        boost::mutex::scoped_lock lock(this->mutex);
-        bool found(false);
-        for(BufferList::iterator buf=this->buffers.begin();buf!=this->buffers.end() && !found;){
-            if(buf->get()==buffer){
-//                if( !(*buf)->ReadyToRelease() ){
-                    this->removedBuffers.push_back(*buf);
-//                }
-                clearBuffers.push_back(*buf);
-                buf=this->buffers.erase(buf);
-                found=true;
-            }else{
-                ++buf;
-            }
-        }
-    }
-}
+        LOCK("stop");
 
-void AlsaOut::ReleaseBuffers(){
-    BufferList clearBuffers;
-    {
-        boost::mutex::scoped_lock lock(this->mutex);
-        for(BufferList::iterator buf=this->removedBuffers.begin();buf!=this->removedBuffers.end();){
-            clearBuffers.push_back(*buf);
-            buf = this->removedBuffers.erase(buf);
+        std::swap(this->buffers, toNotify);
+
+        if (this->pcmHandle) {
+            snd_pcm_drop(this->pcmHandle);
+            this->CloseDevice();
         }
     }
 
+    auto it = toNotify.begin();
+    while (it != toNotify.end()) {
+        ((*it)->provider)->OnBufferProcessed((*it)->buffer);
+        ++it;
+    }
 }
 
-bool AlsaOut::PlayBuffer(IBuffer *buffer,IPlayer *player){
-#ifdef _DEBUG
-	std::cerr << "AlsaOut::PlayBuffer()" << std::endl;
-	std::cerr << "Buffer: " << buffer << std::endl;
-#endif
-    size_t bufferSize  = 0;
+void AlsaOut::Pause() {
+    LOCK("pause");
+
+    if (this->pcmHandle) {
+        snd_pcm_pause(this->pcmHandle, 1);
+    }
+}
+
+void AlsaOut::Resume() {
+    LOCK("resume");
+
+    if (this->pcmHandle) {
+        snd_pcm_pause(this->pcmHandle, 0);
+    }
+}
+
+void AlsaOut::SetVolume(double volume) {
+    LOCK("set volume");
+    this->volume = volume;
+}
+
+void AlsaOut::WriteLoop() {
     {
-        boost::mutex::scoped_lock lock(this->mutex);
-        bufferSize  = this->buffers.size();
-    }
-#ifdef _DEBUG
-	std::cerr << "buffer size: " << bufferSize << std::endl;
-#endif
-
-    // if the format should change, wait for all buffers to be released
-    if(bufferSize>0 && (this->currentChannels!=buffer->Channels() || this->currentSampleRate!=buffer->SampleRate())){
-#ifdef _DEBUG
-	std::cerr << "format changed" << std::endl;
-#endif
-        // Format has changed
-//        this->player->Notify()
-        return false;
+        LOCK("thread: init");
+        while (!quit && !initialized) {
+            WAIT();
+        }
     }
 
+    {
+        while (!quit) {
+            std::shared_ptr<BufferContext> next;
 
-    if(bufferSize<this->maxBuffers){
-        // Start by checking the format
-        this->SetFormat(buffer);
-#ifdef _DEBUG
-	std::cerr << "format set" << std::endl;
-#endif
-
-        // Add to the waveout internal buffers
-        AlsaOutBufferPtr alsaBuffer(new AlsaOutBuffer(this,buffer,player));
-#ifdef _DEBUG
-	std::cerr << "alsaBuffer created" << std::endl;
-#endif
-
-        // Header should now be prepared, lets add to waveout
-        if( alsaBuffer->AddToOutput() ){
-#ifdef _DEBUG
-	std::cerr << "added to internal buffer" << std::endl;
-#endif
-            // Add to the buffer list
             {
-                boost::mutex::scoped_lock lock(this->mutex);
-                this->buffers.push_back(alsaBuffer);
-#ifdef _DEBUG
-	std::cerr << "added to buffer list" << std::endl;
-#endif
+                LOCK("thread: waiting for buffer");
+                while (!quit && !this->buffers.size()) {
+                    WAIT();
+                }
+
+                CHECK_QUIT();
+
+                next = this->buffers.front();
+                this->buffers.pop_front();
             }
-            return true;
+
+            int err;
+
+            if (next) {
+                size_t samples = next->buffer->Samples();
+                size_t channels = next->buffer->Channels();
+
+
+                float volume = (float) this->volume;
+
+                /* software volume; alsa doesn't support this internally. this is about
+                as terrible as an algorithm can be -- it's just a linear ramp. */
+                float *buffer = next->buffer->BufferPointer();
+                for (size_t i = 0; i < samples * channels; i++) {
+                    (*buffer) *= volume;
+                    ++buffer;
+                }
+
+                WRITE_BUFFER(this->pcmHandle, next, samples); /* sets 'err' */
+
+                if (err == -EINTR || err == -EPIPE || err == -ESTRPIPE) {
+                    if (!snd_pcm_recover(this->pcmHandle, err, 1)) {
+                        /* try one more time... */
+                        WRITE_BUFFER(this->pcmHandle, next, samples);
+                    }
+                }
+
+                if (err > 0 && err < (int) samples) {
+                    std::cerr << "AlsaOut: short write. expected=" << samples << ", actual=" << err << std::endl;
+                }
+
+                next->provider->OnBufferProcessed(next->buffer);
+            }
         }
-
     }
-#ifdef _DEBUG
-	std::cerr << "buffer size too big" << std::endl;
-#endif
-
-    return false;
 }
 
-void AlsaOut::SetFormat(IBuffer *buffer){
-    if(this->currentChannels!=buffer->Channels() || this->currentSampleRate!=buffer->SampleRate() ||this->waveHandle==NULL){
-        this->currentChannels   = buffer->Channels();
-        this->currentSampleRate = buffer->SampleRate();
+bool AlsaOut::Play(IBuffer *buffer, IBufferProvider* provider) {
+    this->SetFormat(buffer);
 
-        // Close old waveout
-        if(this->waveHandle!=NULL){
-            snd_pcm_close(this->waveHandle);
-            this->waveHandle    = NULL;
-        }
-/*
-        // Create a new waveFormat
-	    ZeroMemory(&this->waveFormat, sizeof(this->waveFormat));
-        DWORD speakerconfig;
+    {
+        LOCK("play");
 
-        // Set speaker configuration
-        switch(buffer->Channels()){
-            case 1:
-                speakerconfig = KSAUDIO_SPEAKER_MONO;
-                break;
-            case 2:
-                speakerconfig = KSAUDIO_SPEAKER_STEREO;
-                break;
-            case 4:
-                speakerconfig = KSAUDIO_SPEAKER_QUAD;
-                break;
-            case 5:
-                speakerconfig = (SPEAKER_FRONT_LEFT | SPEAKER_FRONT_RIGHT | SPEAKER_FRONT_CENTER | SPEAKER_BACK_LEFT  | SPEAKER_BACK_RIGHT);
-                break;
-            case 6:
-                speakerconfig = KSAUDIO_SPEAKER_5POINT1;
-                break;
-            default:
-                speakerconfig = 0;
+        if (!playable(this->pcmHandle) ||
+            this->CountBuffersWithProvider(provider) >= BUFFER_COUNT)
+        {
+            return false;
         }
 
-        this->waveFormat.Format.cbSize					= 22;
-        this->waveFormat.Format.wFormatTag				= WAVE_FORMAT_EXTENSIBLE;
-        this->waveFormat.Format.nChannels				= (WORD)buffer->Channels();
-        this->waveFormat.Format.nSamplesPerSec			= (DWORD)buffer->SampleRate();
-        this->waveFormat.Format.wBitsPerSample			= 32;
-        this->waveFormat.Format.nBlockAlign			    = (this->waveFormat.Format.wBitsPerSample/8) * this->waveFormat.Format.nChannels;
-        this->waveFormat.Format.nAvgBytesPerSec		    = ((this->waveFormat.Format.wBitsPerSample/8) * this->waveFormat.Format.nChannels) * this->waveFormat.Format.nSamplesPerSec; //Compute using nBlkAlign * nSamp/Sec
+        std::shared_ptr<BufferContext> context(new BufferContext());
+        context->buffer = buffer;
+        context->provider = provider;
 
-        // clangen: wValidBitsPerSample/wReserved/wSamplesPerBlock are a union,
-        // so don't set wReserved or wSamplesPerBlock to 0 after assigning
-        // wValidBitsPerSample. (Vista bug)
-        this->waveFormat.Samples.wValidBitsPerSample	= 32;
-        this->waveFormat.dwChannelMask                  = speakerconfig;
-        this->waveFormat.SubFormat                      = KSDATAFORMAT_SUBTYPE_IEEE_FLOAT;
-        */
-        this->waveFormat						= SND_PCM_FORMAT_FLOAT_LE;
-        this->waveAccess						= SND_PCM_ACCESS_RW_INTERLEAVED;
+        this->buffers.push_back(context);
 
-        int err;
-		//Open the device
-			if ((err = snd_pcm_open(&this->waveHandle, device, SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
-	         printf("Playback open error: %s\n", snd_strerror(err));
-	         return;
-         }
-		//Set simple parameters
-			if (( err = snd_pcm_set_params(
-					this->waveHandle,
-					this->waveFormat,
-					this->waveAccess,
-					this->currentChannels,
-					this->currentSampleRate,
-					1,		//Allow alsa-lib software resampling
-					500000)	//Required overall latency (us) /* 0.5s */
-					) > 0)	{	//If an error...
-						printf("Playback open error: %s\n", snd_strerror(err));
-	               exit(EXIT_FAILURE);
-	            }
-
-        // Set the volume if it's not already set
-        this->SetVolume(this->currentVolume);
+        NOTIFY();
     }
+
+    return true;
+}
+
+void AlsaOut::SetFormat(IBuffer *buffer) {
+    LOCK("set format");
+
+    if (this->channels != buffer->Channels() ||
+        this->rate != buffer->SampleRate() ||
+        this->pcmHandle == NULL)
+    {
+        this->channels = buffer->Channels();
+        this->rate = buffer->SampleRate();
+
+        this->CloseDevice();
+
+        this->InitDevice();
+
+        int err = snd_pcm_set_params(
+            this->pcmHandle,
+            PCM_FORMAT,
+            PCM_ACCESS_TYPE,
+            this->channels,
+            this->rate,
+            1, /* allow resampling */
+            500000); /* 0.5s latency */
+
+        if (err > 0) {
+            std::cerr << "AlsaOut: set format error: " << snd_strerror(err) << std::endl;
+        }
+        else {
+            this->SetVolume(this->volume);
+        }
+
+        std::cerr << "AlsaOut: device format initialized from buffer\n";
+    }
+}
+
+size_t AlsaOut::CountBuffersWithProvider(IBufferProvider* provider) {
+    LOCK("count");
+
+    size_t count = 0;
+    auto it = this->buffers.begin();
+    while (it != this->buffers.end()) {
+        if ((*it)->provider == provider) {
+            ++count;
+        }
+        ++it;
+    }
+
+    return count;
 }

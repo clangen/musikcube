@@ -1,0 +1,211 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{4993E68D-E97A-4CD2-AC8E-168AE315BAC5}</ProjectGuid>
+    <RootNamespace>m4adecoder</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <ProjectName>m4adecoder</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>14.0.25123.0</_ProjectFileVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(SolutionDir)/bin/$(Configuration)/plugins\</OutDir>
+    <IntDir>./obj/$(Configuration)\</IntDir>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules />
+    <CodeAnalysisRuleAssemblies />
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(SolutionDir)/bin/$(Configuration)/plugins\</OutDir>
+    <IntDir>./obj/$(Configuration)\</IntDir>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules />
+    <CodeAnalysisRuleAssemblies />
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>./;../../;../../3rdparty/include;./mp4ff;./libfaad;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader />
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>../../3rdparty/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>./;../../;../../3rdparty/include;./mp4ff;./libfaad;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader />
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>../../3rdparty/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="M4aDecoderFactory.h" />
+    <ClInclude Include="libfaad\analysis.h" />
+    <ClInclude Include="libfaad\bits.h" />
+    <ClInclude Include="libfaad\cfft.h" />
+    <ClInclude Include="libfaad\cfft_tab.h" />
+    <ClInclude Include="libfaad\codebook\hcb.h" />
+    <ClInclude Include="libfaad\codebook\hcb_1.h" />
+    <ClInclude Include="libfaad\codebook\hcb_10.h" />
+    <ClInclude Include="libfaad\codebook\hcb_11.h" />
+    <ClInclude Include="libfaad\codebook\hcb_2.h" />
+    <ClInclude Include="libfaad\codebook\hcb_3.h" />
+    <ClInclude Include="libfaad\codebook\hcb_4.h" />
+    <ClInclude Include="libfaad\codebook\hcb_5.h" />
+    <ClInclude Include="libfaad\codebook\hcb_6.h" />
+    <ClInclude Include="libfaad\codebook\hcb_7.h" />
+    <ClInclude Include="libfaad\codebook\hcb_8.h" />
+    <ClInclude Include="libfaad\codebook\hcb_9.h" />
+    <ClInclude Include="libfaad\codebook\hcb_sf.h" />
+    <ClInclude Include="libfaad\common.h" />
+    <ClInclude Include="libfaad\drc.h" />
+    <ClInclude Include="libfaad\drm_dec.h" />
+    <ClInclude Include="libfaad\error.h" />
+    <ClInclude Include="libfaad\filtbank.h" />
+    <ClInclude Include="libfaad\fixed.h" />
+    <ClInclude Include="libfaad\huffman.h" />
+    <ClInclude Include="libfaad\ic_predict.h" />
+    <ClInclude Include="libfaad\iq_table.h" />
+    <ClInclude Include="libfaad\is.h" />
+    <ClInclude Include="libfaad\kbd_win.h" />
+    <ClInclude Include="libfaad\lt_predict.h" />
+    <ClInclude Include="libfaad\mdct.h" />
+    <ClInclude Include="libfaad\mdct_tab.h" />
+    <ClInclude Include="libfaad\mp4.h" />
+    <ClInclude Include="libfaad\ms.h" />
+    <ClInclude Include="libfaad\neaacdec.h" />
+    <ClInclude Include="libfaad\output.h" />
+    <ClInclude Include="libfaad\pns.h" />
+    <ClInclude Include="libfaad\ps_dec.h" />
+    <ClInclude Include="libfaad\ps_tables.h" />
+    <ClInclude Include="libfaad\pulse.h" />
+    <ClInclude Include="libfaad\rvlc.h" />
+    <ClInclude Include="libfaad\sbr_dct.h" />
+    <ClInclude Include="libfaad\sbr_dec.h" />
+    <ClInclude Include="libfaad\sbr_e_nf.h" />
+    <ClInclude Include="libfaad\sbr_fbt.h" />
+    <ClInclude Include="libfaad\sbr_hfadj.h" />
+    <ClInclude Include="libfaad\sbr_hfgen.h" />
+    <ClInclude Include="libfaad\sbr_huff.h" />
+    <ClInclude Include="libfaad\sbr_noise.h" />
+    <ClInclude Include="libfaad\sbr_qmf.h" />
+    <ClInclude Include="libfaad\sbr_qmf_c.h" />
+    <ClInclude Include="libfaad\sbr_syntax.h" />
+    <ClInclude Include="libfaad\sbr_tf_grid.h" />
+    <ClInclude Include="libfaad\sine_win.h" />
+    <ClInclude Include="libfaad\specrec.h" />
+    <ClInclude Include="libfaad\ssr.h" />
+    <ClInclude Include="libfaad\ssr_fb.h" />
+    <ClInclude Include="libfaad\ssr_ipqf.h" />
+    <ClInclude Include="libfaad\ssr_win.h" />
+    <ClInclude Include="libfaad\structs.h" />
+    <ClInclude Include="libfaad\syntax.h" />
+    <ClInclude Include="libfaad\tns.h" />
+    <ClInclude Include="M4aDecoder.h" />
+    <ClInclude Include="mp4ff\mp4ff.h" />
+    <ClInclude Include="mp4ff\mp4ffint.h" />
+    <ClInclude Include="mp4ff\mp4ff_int_types.h" />
+    <ClInclude Include="stdafx.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="M4aDecoderFactory.cpp" />
+    <ClCompile Include="m4adecoder_plugin.cpp" />
+    <ClCompile Include="libfaad\bits.c" />
+    <ClCompile Include="libfaad\cfft.c" />
+    <ClCompile Include="libfaad\common.c" />
+    <ClCompile Include="libfaad\decoder.c" />
+    <ClCompile Include="libfaad\drc.c" />
+    <ClCompile Include="libfaad\drm_dec.c" />
+    <ClCompile Include="libfaad\error.c" />
+    <ClCompile Include="libfaad\filtbank.c" />
+    <ClCompile Include="libfaad\hcr.c" />
+    <ClCompile Include="libfaad\huffman.c" />
+    <ClCompile Include="libfaad\ic_predict.c" />
+    <ClCompile Include="libfaad\is.c" />
+    <ClCompile Include="libfaad\lt_predict.c" />
+    <ClCompile Include="libfaad\mdct.c" />
+    <ClCompile Include="libfaad\mp4.c" />
+    <ClCompile Include="libfaad\ms.c" />
+    <ClCompile Include="libfaad\output.c" />
+    <ClCompile Include="libfaad\pns.c" />
+    <ClCompile Include="libfaad\ps_dec.c" />
+    <ClCompile Include="libfaad\ps_syntax.c" />
+    <ClCompile Include="libfaad\pulse.c" />
+    <ClCompile Include="libfaad\rvlc.c" />
+    <ClCompile Include="libfaad\sbr_dct.c" />
+    <ClCompile Include="libfaad\sbr_dec.c" />
+    <ClCompile Include="libfaad\sbr_e_nf.c" />
+    <ClCompile Include="libfaad\sbr_fbt.c" />
+    <ClCompile Include="libfaad\sbr_hfadj.c" />
+    <ClCompile Include="libfaad\sbr_hfgen.c" />
+    <ClCompile Include="libfaad\sbr_huff.c" />
+    <ClCompile Include="libfaad\sbr_qmf.c" />
+    <ClCompile Include="libfaad\sbr_syntax.c" />
+    <ClCompile Include="libfaad\sbr_tf_grid.c" />
+    <ClCompile Include="libfaad\specrec.c" />
+    <ClCompile Include="libfaad\ssr.c" />
+    <ClCompile Include="libfaad\ssr_fb.c" />
+    <ClCompile Include="libfaad\ssr_ipqf.c" />
+    <ClCompile Include="libfaad\syntax.c" />
+    <ClCompile Include="libfaad\tns.c" />
+    <ClCompile Include="M4aDecoder.cpp" />
+    <ClCompile Include="mp4ff\mp4atom.c" />
+    <ClCompile Include="mp4ff\mp4ff.c" />
+    <ClCompile Include="mp4ff\mp4meta.c" />
+    <ClCompile Include="mp4ff\mp4sample.c" />
+    <ClCompile Include="mp4ff\mp4tagupdate.c" />
+    <ClCompile Include="mp4ff\mp4util.c" />
+    <ClCompile Include="stdafx.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

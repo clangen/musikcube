@@ -1,8 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// License Agreement:
-//
-// The following are Copyright © 2008, Daniel Önnerby
+// Copyright (c) 2007-2016 musikcube team
 //
 // All rights reserved.
 //
@@ -34,11 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#ifdef WIN32
 #include "pch.hpp"
-#else
-#include <core/pch.hpp>
-#endif
 
 #include <core/db/ScopedTransaction.h>
 #include <core/db/Connection.h>

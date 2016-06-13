@@ -1,116 +1,90 @@
-cmake_minimum_required(VERSION 2.6)
-project( musikCube )
+cmake_minimum_required(VERSION 3.0)
 
-set ( musikCube_VERSION_MAJOR 2)
-set ( musikCube_VERSION_MINOR 0)
+project(musikbox)
 
-set (CMAKE_MODULE_PATH ${musikCube_SOURCE_DIR}/modules)
+set (musikbox_VERSION_MAJOR 0)
+set (musikbox_VERSION_MINOR 1)
 
-set (BOOST_LIBS
-system
-date_time
-filesystem
-iostreams
-thread
-regex
+include(ExternalProject)
+
+ExternalProject_Add(taglib
+    SOURCE_DIR "${musikbox_SOURCE_DIR}/src/contrib/taglib_plugin/taglib-1.11"
+    BUILD_IN_SOURCE 0
+    DOWNLOAD_COMMAND ""
+    UPDATE_COMMAND ""
+    CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX:PATH=${musikbox_SOURCE_DIR}/src/contrib/taglib_plugin/taglib-1.11/stage/"
+    INSTALL_COMMAND make install
 )
 
-include_directories(${musikCube_SOURCE_DIR}/src/3rdparty/lib)
+set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++11 -fpermissive -g")
 
-set (Boost_ADDITIONAL_VERSIONS "1.37.0" )
-if(WIN32 AND NOT UNIX)
-	find_package(Boost 1.42.0 REQUIRED ${BOOST_LIBS} )
-	if (Boost_FOUND)
-		add_definitions (
-			-DHAVE_BOOST
-			)
-		#set (BOOST_LINK_LIBS 
-		#	${Boost_LIBRARIES})
-		include_directories (${Boost_INCLUDE_DIRS})
-		link_directories(${Boost_LIBRARY_DIRS})
-		#message(STATUS "Boost includes: " ${Boost_INCLUDE_DIRS})
-		#message(STATUS "Boost libs: " ${Boost_LIBRARIES})
-	else (Boost_FOUND)
-		set (BOOST_LINK_LIBS
-			boost_system
-			boost_iostreams
-			boost_filesystem
-			boost_thread
-			boost_regex
-			boost_date_time
-			)
-		include_directories ("${musikCube_SOURCE_DIR}/src/3rdparty/boost")
-	endif (Boost_FOUND)
-	#set (VLD_ROOT_DIR ${musikCube_SOURCE_DIR}/src/3rdparty/lib)
-	#set (VLD_INCLUDE_DIR ${musikCube_SOURCE_DIR}/src/3rdparty/include)
-	#find_package(vld REQUIRED)
-	#if (VLD_FOUND)
-	#	message(STATUS "VLD Found")
-	#	link_directories(${VLD_LIBRARIES_DIR})
-	#else (VLD_FOUND)
-	#	message(STATUS "VLD not found")
-	#endif (VLD_FOUND)
-	add_definitions (
-		-DUNICODE
-		-D_UNICODE
-		)
-else(WIN32 AND NOT UNIX)
-	find_package(Boost 1.42.0 REQUIRED ${BOOST_LIBS}) 
-	if(Boost_FOUND)
-		add_definitions (-DHAVE_BOOST
-				-D_FILE_OFFSET_BITS=64)
-		set (BOOST_LINK_LIBS 
-			${Boost_LIBRARIES})
-	#	message(STATUS "Libs: " ${BOOST_LINK_LIBS})
-	#	message(STATUS "Includes: " ${Boost_INCLUDE_DIRS})
-	else(Boost_FOUND)
-		set (BOOST_LINK_LIBS
-			boost_system
-			boost_iostreams
-			boost_filesystem
-			boost_thread
-			boost_regex
-			boost_date_time
-			)
-		include_directories ("${musikCube_SOURCE_DIR}/src/3rdparty/boost")
-	endif(Boost_FOUND)
-	find_package(Qt4 REQUIRED)
-	#add_definitions(${QT_DEFINITIONS})
-	#include_directories(${QT_INCLUDE_DIR})
-	set (linux_LINK_LIBS
-		dl
-		expat
-	)
-	#include_directories( "/usr/include/taglib" )
-	set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}
-		${CMAKE_CURRENT_SOURCE_DIR}/Modules )
-	#include(UseDoxygen)
-	set(DOXYFILE_OUTPUT_DIRECTORY docs)
-endif(WIN32 AND NOT UNIX)
+set (BOOST_LIBS
+  system
+  date_time
+  chrono
+  filesystem
+  iostreams
+  thread
+  regex
+)
+
+if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+  find_package(Boost 1.58.0 REQUIRED ${BOOST_LIBS})
+else (CMAKE_SYSTEM_NAME MATCHES "Linux")
+  find_package(Boost 1.60.0 REQUIRED ${BOOST_LIBS})
+endif (CMAKE_SYSTEM_NAME MATCHES "Linux")
+
+# Need to add following libs to search:
+# ncurses
+# libfaad
+# mpg123
+
+add_definitions (-DHAVE_BOOST
+  -D_FILE_OFFSET_BITS=64)
+set (BOOST_LINK_LIBS
+  ${Boost_LIBRARIES})
+
+#message(STATUS "boost libs: " ${BOOST_LINK_LIBS})
+#message(STATUS "boost includes: " ${Boost_INCLUDE_DIRS})
+
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}
+  ${CMAKE_CURRENT_SOURCE_DIR}/Modules)
 
 SET (CMAKE_BUILD_TYPE DEBUG)
-set (LIBRARY_OUTPUT_PATH ${musikCube_SOURCE_DIR}/bin/plugins)
-set (EXECUTABLE_OUTPUT_PATH ${musikCube_SOURCE_DIR}/bin)
+set (LIBRARY_OUTPUT_PATH ${musikbox_SOURCE_DIR}/bin/plugins)
+set (EXECUTABLE_OUTPUT_PATH ${musikbox_SOURCE_DIR}/bin)
 
-link_directories (${musikCube_SOURCE_DIR}/bin/plugins)
+link_directories (
+  ${musikbox_SOURCE_DIR}/bin/plugins
+  ${musikbox_SOURCE_DIR}/src/contrib/taglib_plugin/taglib-1.11/stage/lib
+)
 
-set (musikCube_LINK_LIBS
-	${linux_LINK_LIBS}
-	${BOOST_LINK_LIBS}
-	sqlite3
-	md5
+set (musikbox_LINK_LIBS
+  ${linux_LINK_LIBS}
+  ${BOOST_LINK_LIBS}
+  dl
+  pthread
+  tinfo
 )
 
 include_directories (
-			"${musikCube_SOURCE_DIR}/src"
-			"${musikCube_SOURCE_DIR}/src/core"
-			"${musikCube_SOURCE_DIR}/src/core/audio"
-			"${musikCube_SOURCE_DIR}/src/3rdparty/include")
+  "${musikbox_SOURCE_DIR}/src"
+  "${musikbox_SOURCE_DIR}/src/core"
+  "${musikbox_SOURCE_DIR}/src/musikbox"
+  "${musikbox_SOURCE_DIR}/src/3rdparty/include"
+  "${musikbox_SOURCE_DIR}/src/contrib/taglib_plugin/taglib-1.11/stage/include"
+)
 
-add_subdirectory(src/3rdparty)
 add_subdirectory(src/core)
-add_subdirectory(src/contrib)
-add_subdirectory(src/win32cpp)
-add_subdirectory(src/server)
-add_subdirectory(src/square)
-#add_subdirectory(src/cube)
+add_subdirectory(src/musikbox)
+add_subdirectory(src/contrib/taglib_plugin)
+add_subdirectory(src/contrib/m4adecoder)
+add_subdirectory(src/contrib/oggdecoder)
+add_subdirectory(src/contrib/mpg123decoder)
+add_subdirectory(src/contrib/flacdecoder)
+
+if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+  add_subdirectory(src/contrib/alsaout)
+else (CMAKE_SYSTEM_NAME MATCHES "Linux")
+  add_subdirectory(src/contrib/coreaudioout)
+endif (CMAKE_SYSTEM_NAME MATCHES "Linux")

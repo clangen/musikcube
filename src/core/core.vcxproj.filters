@@ -1,0 +1,259 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="src\support">
+      <UniqueIdentifier>{6a03fee0-b862-4be2-82df-5ecf9d5a2cf4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\audio">
+      <UniqueIdentifier>{eb06b592-13c8-4826-b196-81f5783a3348}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\sdk">
+      <UniqueIdentifier>{88841a57-b3cc-459c-bfb7-05b8a2baca03}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\db">
+      <UniqueIdentifier>{9c63f496-9ae4-4032-8b1d-b1cdcd09a1d2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\library">
+      <UniqueIdentifier>{90ebbbb9-2451-414e-9b0c-20f40fdadd9f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\library\query">
+      <UniqueIdentifier>{aeae5187-aaff-493a-9d03-4b24dee39b7c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\io">
+      <UniqueIdentifier>{9ddb994d-f85e-41db-932d-87554d2e93e2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\library\track">
+      <UniqueIdentifier>{a9c7acb5-36af-4bfc-bbf0-b26f2f482d26}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\plugin">
+      <UniqueIdentifier>{928fef19-2739-4485-83ae-1e18892247b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\library\metadata">
+      <UniqueIdentifier>{9f9ee41d-111b-4dab-8663-946253eeb46f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="pch.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="db\CachedStatement.cpp">
+      <Filter>src\db</Filter>
+    </ClCompile>
+    <ClCompile Include="db\Connection.cpp">
+      <Filter>src\db</Filter>
+    </ClCompile>
+    <ClCompile Include="db\ScopedTransaction.cpp">
+      <Filter>src\db</Filter>
+    </ClCompile>
+    <ClCompile Include="db\Statement.cpp">
+      <Filter>src\db</Filter>
+    </ClCompile>
+    <ClCompile Include="audio\Buffer.cpp">
+      <Filter>src\audio</Filter>
+    </ClCompile>
+    <ClCompile Include="audio\Player.cpp">
+      <Filter>src\audio</Filter>
+    </ClCompile>
+    <ClCompile Include="audio\Stream.cpp">
+      <Filter>src\audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Library\query\QueryBase.cpp">
+      <Filter>src\library\query</Filter>
+    </ClCompile>
+    <ClCompile Include="io\LocalFileStream.cpp">
+      <Filter>src\io</Filter>
+    </ClCompile>
+    <ClCompile Include="io\DataStreamFactory.cpp">
+      <Filter>src\io</Filter>
+    </ClCompile>
+    <ClCompile Include="support\Preferences.cpp">
+      <Filter>src\support</Filter>
+    </ClCompile>
+    <ClCompile Include="support\ThreadHelper.cpp">
+      <Filter>src\support</Filter>
+    </ClCompile>
+    <ClCompile Include="support\Common.cpp">
+      <Filter>src\support</Filter>
+    </ClCompile>
+    <ClCompile Include="library\Indexer.cpp">
+      <Filter>src\library</Filter>
+    </ClCompile>
+    <ClCompile Include="library\track\IndexerTrack.cpp">
+      <Filter>src\library\track</Filter>
+    </ClCompile>
+    <ClCompile Include="library\track\LibraryTrack.cpp">
+      <Filter>src\library\track</Filter>
+    </ClCompile>
+    <ClCompile Include="library\track\Track.cpp">
+      <Filter>src\library\track</Filter>
+    </ClCompile>
+    <ClCompile Include="library\LibraryFactory.cpp">
+      <Filter>src\library</Filter>
+    </ClCompile>
+    <ClCompile Include="plugin\PluginFactory.cpp">
+      <Filter>src\plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="support\Version.cpp">
+      <Filter>src\support</Filter>
+    </ClCompile>
+    <ClCompile Include="library\metadata\MetadataValue.cpp">
+      <Filter>src\library\metadata</Filter>
+    </ClCompile>
+    <ClCompile Include="debug.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="library\LocalLibrary.cpp">
+      <Filter>src\library</Filter>
+    </ClCompile>
+    <ClCompile Include="support\NonLibraryTrackHelper.cpp">
+      <Filter>src\support</Filter>
+    </ClCompile>
+    <ClCompile Include="audio\GaplessTransport.cpp">
+      <Filter>src\audio</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="db\CachedStatement.h">
+      <Filter>src\db</Filter>
+    </ClInclude>
+    <ClInclude Include="db\Connection.h">
+      <Filter>src\db</Filter>
+    </ClInclude>
+    <ClInclude Include="db\dbconfig.h">
+      <Filter>src\db</Filter>
+    </ClInclude>
+    <ClInclude Include="db\ScopedTransaction.h">
+      <Filter>src\db</Filter>
+    </ClInclude>
+    <ClInclude Include="db\Statement.h">
+      <Filter>src\db</Filter>
+    </ClInclude>
+    <ClInclude Include="audio\Buffer.h">
+      <Filter>src\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="audio\Player.h">
+      <Filter>src\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="audio\Stream.h">
+      <Filter>src\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IDecoder.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IDecoderFactory.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IDSP.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IOutput.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IAnalyzer.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IBuffer.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IDataStream.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IDataStreamFactory.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="Library\query\QueryBase.h">
+      <Filter>src\library\query</Filter>
+    </ClInclude>
+    <ClInclude Include="io\LocalFileStream.h">
+      <Filter>src\io</Filter>
+    </ClInclude>
+    <ClInclude Include="io\DataStreamFactory.h">
+      <Filter>src\io</Filter>
+    </ClInclude>
+    <ClInclude Include="config.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="support\Common.h">
+      <Filter>src\support</Filter>
+    </ClInclude>
+    <ClInclude Include="support\Preferences.h">
+      <Filter>src\support</Filter>
+    </ClInclude>
+    <ClInclude Include="support\ThreadHelper.h">
+      <Filter>src\support</Filter>
+    </ClInclude>
+    <ClInclude Include="library\Indexer.h">
+      <Filter>src\library</Filter>
+    </ClInclude>
+    <ClInclude Include="library\track\IndexerTrack.h">
+      <Filter>src\library\track</Filter>
+    </ClInclude>
+    <ClInclude Include="library\track\LibraryTrack.h">
+      <Filter>src\library\track</Filter>
+    </ClInclude>
+    <ClInclude Include="library\track\Track.h">
+      <Filter>src\library\track</Filter>
+    </ClInclude>
+    <ClInclude Include="library\LibraryFactory.h">
+      <Filter>src\library</Filter>
+    </ClInclude>
+    <ClInclude Include="plugin\PluginFactory.h">
+      <Filter>src\plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="support\Version.h">
+      <Filter>src\support</Filter>
+    </ClInclude>
+    <ClInclude Include="library\metadata\MetadataValue.h">
+      <Filter>src\library\metadata</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\config.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IMetadataReader.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IMetadataWriter.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IPlugin.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IBufferProvider.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="debug.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="library\LocalLibrary.h">
+      <Filter>src\library</Filter>
+    </ClInclude>
+    <ClInclude Include="library\ILibrary.h">
+      <Filter>src\library</Filter>
+    </ClInclude>
+    <ClInclude Include="library\IIndexer.h">
+      <Filter>src\library</Filter>
+    </ClInclude>
+    <ClInclude Include="library\IQuery.h">
+      <Filter>src\library</Filter>
+    </ClInclude>
+    <ClInclude Include="library\LocalLibraryConstants.h">
+      <Filter>src\library</Filter>
+    </ClInclude>
+    <ClInclude Include="support\NonLibraryTrackHelper.h">
+      <Filter>src\support</Filter>
+    </ClInclude>
+    <ClInclude Include="audio\ITransport.h">
+      <Filter>src\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="audio\GaplessTransport.h">
+      <Filter>src\audio</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

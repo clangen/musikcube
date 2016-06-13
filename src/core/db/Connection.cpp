@@ -1,8 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// License Agreement:
-//
-// The following are Copyright © 2008, Daniel Önnerby
+// Copyright (c) 2007-2016 musikcube team
 //
 // All rights reserved.
 //
@@ -34,11 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#ifdef WIN32
 #include "pch.hpp"
-#else
-#include <core/pch.hpp>
-#endif
 
 #include <core/db/Connection.h>
 #include <boost/lexical_cast.hpp>
@@ -86,7 +80,7 @@ Connection::~Connection(){
 ///\returns
 ///Error code returned by SQLite
 //////////////////////////////////////////
-int Connection::Open(const utfchar *database,unsigned int options,unsigned int cache){
+int Connection::Open(const char *database,unsigned int options,unsigned int cache){
 //    sqlite3_enable_shared_cache(1);
 
     int error;
@@ -118,12 +112,11 @@ int Connection::Open(const utfchar *database,unsigned int options,unsigned int c
 ///\returns
 ///Error code returned by SQLite
 //////////////////////////////////////////
-int Connection::Open(const utfstring &database,unsigned int options,unsigned int cache){
-//    sqlite3_enable_shared_cache(1);
-
+int Connection::Open(const std::string &database,unsigned int options,unsigned int cache){
     int error;
-    #ifdef UTF_WIDECHAR
-        error   = sqlite3_open16(database.c_str(),&this->connection);
+    #ifdef WIN32
+        std::wstring wdatabase = u8to16(database);
+        error   = sqlite3_open16(wdatabase.c_str(),&this->connection);
     #else
         error   = sqlite3_open(database.c_str(),&this->connection);
     #endif
@@ -154,7 +147,7 @@ int Connection::Close(){
 
     if(sqlite3_close(this->connection)==SQLITE_OK){
         this->connection    = 0;
-        return musik::core::db::OK;
+        return musik::core::db::Okay;
     }
     return musik::core::db::Error;
 }
@@ -194,7 +187,7 @@ int Connection::Execute(const char* sql){
 
     sqlite3_reset(stmt);
     sqlite3_finalize(stmt);
-    return db::OK;
+    return musik::core::db::Okay;
 }
 
 
@@ -231,7 +224,7 @@ int Connection::Execute(const wchar_t* sql){
 
     sqlite3_reset(stmt);
     sqlite3_finalize(stmt);
-    return db::OK;
+    return musik::core::db::Okay;
 }
 
 void Connection::Analyze(){
@@ -377,16 +370,6 @@ void Connection::Maintenance(bool init){
     }
 }
 
-int Connection::StepStatement(sqlite3_stmt *stmt){
-/*    int waitCount(100);
-    int error(0);
-    do{
-        error   = sqlite3_step(stmt);
-        if(error==SQLITE_LOCKED){
-            boost::thread::yield();
-            waitCount--;
-        }
-    }while(error==SQLITE_LOCKED && waitCount>0);
-*/
+int Connection::StepStatement(sqlite3_stmt *stmt) {
     return sqlite3_step(stmt);
 }
