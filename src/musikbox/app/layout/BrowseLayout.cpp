@@ -100,6 +100,7 @@ void BrowseLayout::InitializeWindows() {
 }
 
 void BrowseLayout::ScrollTo(const std::string& fieldType, DBID fieldId) {
+    this->SetFocus(this->trackList);
     this->categoryList->RequeryWithField(fieldType, "", fieldId);
 }
 
