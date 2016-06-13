@@ -34,6 +34,11 @@ else (CMAKE_SYSTEM_NAME MATCHES "Linux")
   find_package(Boost 1.60.0 REQUIRED ${BOOST_LIBS})
 endif (CMAKE_SYSTEM_NAME MATCHES "Linux")
 
+# Need to add following libs to search:
+# ncurses
+# libfaad
+# mpg123
+
 add_definitions (-DHAVE_BOOST
   -D_FILE_OFFSET_BITS=64)
 set (BOOST_LINK_LIBS
@@ -58,6 +63,8 @@ set (musikbox_LINK_LIBS
   ${linux_LINK_LIBS}
   ${BOOST_LINK_LIBS}
   dl
+  pthread
+  tinfo
 )
 
 include_directories (
