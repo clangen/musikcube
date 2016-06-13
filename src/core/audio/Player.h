@@ -111,7 +111,7 @@ namespace musik { namespace core { namespace audio {
 
             BufferList prebufferQueue;
 
-            boost::mutex mutex;
+            boost::mutex queueMutex, positionMutex;
             boost::condition writeToOutputCondition;
 
             double volume;

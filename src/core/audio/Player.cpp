@@ -87,7 +87,7 @@ Player::Player(const std::string &url, OutputPtr output)
 
 Player::~Player() {
     {
-        boost::mutex::scoped_lock lock(this->mutex);
+        boost::mutex::scoped_lock lock(this->queueMutex);
         this->state = Player::Quit;
         this->prebufferQueue.clear();
         this->writeToOutputCondition.notify_all();
@@ -97,29 +97,29 @@ Player::~Player() {
 }
 
 void Player::Play() {
-    boost::mutex::scoped_lock lock(this->mutex);
+    boost::mutex::scoped_lock lock(this->queueMutex);
     this->state = Player::Playing;
     this->writeToOutputCondition.notify_all();
 }
 
 void Player::Stop() {
-    boost::mutex::scoped_lock lock(this->mutex);
+    boost::mutex::scoped_lock lock(this->queueMutex);
     this->state = Player::Quit;
     this->writeToOutputCondition.notify_all();
 }
 
 double Player::Position() {
-    boost::mutex::scoped_lock lock(this->mutex);
+    boost::mutex::scoped_lock lock(this->positionMutex);
     return this->currentPosition;
 }
 
 void Player::SetPosition(double seconds) {
-    boost::mutex::scoped_lock lock(this->mutex);
+    boost::mutex::scoped_lock lock(this->positionMutex);
     this->setPosition = std::max(0.0, seconds);
 }
 
 int Player::State() {
-    boost::mutex::scoped_lock lock(this->mutex);
+    boost::mutex::scoped_lock lock(this->queueMutex);
     return this->state;
 }
 
@@ -136,9 +136,12 @@ void Player::ThreadLoop() {
 
         /* wait until we enter the Playing or Quit state; we may still
         be in the Precache state. */
-        while (this->state == Precache) {
-            boost::mutex::scoped_lock lock(this->mutex);
-            this->writeToOutputCondition.wait(lock);
+        {
+            boost::mutex::scoped_lock lock(this->queueMutex);
+
+            while (this->state == Precache) {
+                this->writeToOutputCondition.wait(lock);
+            }
         }
 
         /* we're ready to go.... */
@@ -149,23 +152,30 @@ void Player::ThreadLoop() {
             /* see if we've been asked to seek since the last sample was
             played. if we have, clear our output buffer and seek the
             stream. */
-            if (this->setPosition != -1) {
+            double position = -1;
+
+            {
+                boost::mutex::scoped_lock lock(this->positionMutex);
+                position = this->setPosition;
+                this->setPosition = -1;
+            }
+
+            if (position != -1) {
                 this->output->Stop(); /* flush all buffers */
                 this->output->Resume(); /* start it back up */
 
                 {
-                    boost::mutex::scoped_lock lock(this->mutex);
+                    boost::mutex::scoped_lock lock(this->queueMutex);
 
                     while (this->lockedBuffers.size() > 0) {
-                        writeToOutputCondition.wait(this->mutex);
+                        writeToOutputCondition.wait(this->queueMutex);
                     }
                 }
 
-                this->stream->SetPosition(this->setPosition);
+                this->stream->SetPosition(position);
 
                 {
-                    boost::mutex::scoped_lock lock(this->mutex);
-                    this->setPosition = -1;
+                    boost::mutex::scoped_lock lock(this->queueMutex);
                     this->prebufferQueue.clear();
                 }
 
@@ -174,7 +184,7 @@ void Player::ThreadLoop() {
 
             /* let's see if we can find some samples to play */
             if (!buffer) {
-                boost::mutex::scoped_lock lock(this->mutex);
+                boost::mutex::scoped_lock lock(this->queueMutex);
 
                 /* the buffer queue may already have some available if it was prefetched. */
                 if (!this->prebufferQueue.empty()) {
@@ -190,12 +200,11 @@ void Player::ThreadLoop() {
             /* if we have a decoded, processed buffer available. let's try to send it to
             the output device. */
             if (buffer) {
-                boost::mutex::scoped_lock lock(this->mutex);
-
                 if (this->output->Play(buffer.get(), this)) {
                     /* success! the buffer was accepted by the output.*/
                     /* lock it down so it's not destroyed until the output device lets us
                     know it's done with it. */
+                    boost::mutex::scoped_lock lock(this->queueMutex);
                     this->lockedBuffers.push_back(buffer);
 
                     if (this->lockedBuffers.size() == 1) {
@@ -207,7 +216,8 @@ void Player::ThreadLoop() {
                 else {
                     /* the output device queue is full. we should block and wait until
                     the output lets us know that it needs more data */
-                    writeToOutputCondition.wait(this->mutex);
+                    boost::mutex::scoped_lock lock(this->queueMutex);
+                    writeToOutputCondition.wait(this->queueMutex);
                 }
             }
             /* if we're unable to obtain a buffer, it means we're out of data and the
@@ -233,10 +243,10 @@ void Player::ThreadLoop() {
 
     /* wait until all remaining buffers have been written, set final state... */
     {
-        boost::mutex::scoped_lock lock(this->mutex);
+        boost::mutex::scoped_lock lock(this->queueMutex);
 
         while (this->lockedBuffers.size() > 0) {
-            writeToOutputCondition.wait(this->mutex);
+            writeToOutputCondition.wait(this->queueMutex);
         }
     }
 
@@ -244,7 +254,7 @@ void Player::ThreadLoop() {
 }
 
 void Player::ReleaseAllBuffers() {
-    boost::mutex::scoped_lock lock(this->mutex);
+    boost::mutex::scoped_lock lock(this->queueMutex);
     this->lockedBuffers.empty();
 }
 
@@ -254,7 +264,7 @@ bool Player::PreBuffer() {
         BufferPtr newBuffer = this->stream->GetNextProcessedOutputBuffer();
 
         if (newBuffer) {
-            boost::mutex::scoped_lock lock(this->mutex);
+            boost::mutex::scoped_lock lock(this->queueMutex);
             this->prebufferQueue.push_back(newBuffer);
         }
 
@@ -265,7 +275,7 @@ bool Player::PreBuffer() {
 }
 
 bool Player::Exited() {
-    boost::mutex::scoped_lock lock(this->mutex);
+    boost::mutex::scoped_lock lock(this->queueMutex);
     return (this->state == Player::Quit);
 }
 
@@ -273,7 +283,7 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
     bool started = false;
     bool found = false;
     {
-        boost::mutex::scoped_lock lock(this->mutex);
+        boost::mutex::scoped_lock lock(this->queueMutex);
 
         /* removes the specified buffer from the list of locked buffers, and also
         lets the stream know it can be recycled. */
