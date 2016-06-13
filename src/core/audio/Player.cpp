@@ -127,6 +127,8 @@ void Player::ThreadLoop() {
     /* create and open the stream */
     this->stream = Stream::Create();
 
+    BufferPtr buffer;
+
     if (this->stream->OpenStream(this->url)) {
         /* precache until buffers are full */
         bool keepPrecaching = true;
@@ -146,7 +148,6 @@ void Player::ThreadLoop() {
 
         /* we're ready to go.... */
         bool finished = false;
-        BufferPtr buffer;
 
         while (!finished && !this->Exited()) {
             /* see if we've been asked to seek since the last sample was
@@ -166,7 +167,7 @@ void Player::ThreadLoop() {
 
                 /* if we've allocated a buffer, but it hasn't been written
                 to the output yet, unlock it. this is an important step, and if
-                not performed, will result in a deadlock just below while 
+                not performed, will result in a deadlock just below while
                 waiting for all buffers to complete. */
                 if (buffer) {
                     this->OnBufferProcessed(buffer.get());
@@ -251,6 +252,12 @@ void Player::ThreadLoop() {
     }
 
     this->state = Player::Quit;
+
+    /* unlock any remaining buffers... see comment above */
+    if (buffer) {
+        this->OnBufferProcessed(buffer.get());
+        buffer.reset();
+    }
 
     /* wait until all remaining buffers have been written, set final state... */
     {
