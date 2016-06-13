@@ -142,12 +142,16 @@ void BrowseLayout::OnCategoryViewInvalidated(
 bool BrowseLayout::KeyPress(const std::string& key) {
     if (key == "^M") { /* enter. play the selection */
         auto tracks = this->trackList->GetTrackList();
-        auto focus = this->GetFocus();
 
-        size_t index = (focus == this->trackList)
-            ? this->trackList->GetSelectedIndex() : 0;
+        if (tracks && tracks->size()) {
+            auto focus = this->GetFocus();
 
-        this->playback.Play(*tracks, index);
+            size_t index = (focus == this->trackList)
+                ? this->trackList->GetSelectedIndex() : 0;
+
+            this->playback.Play(*tracks, index);
+        }
+
         return true;
     }
     if (key == "KEY_F(5)") {

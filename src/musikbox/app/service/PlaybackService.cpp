@@ -137,7 +137,9 @@ void PlaybackService::Play(std::vector<TrackPtr>& tracks, size_t index) {
         std::swap(temp, this->playlist);
     }
 
-    this->Play(index);
+    if (index <= tracks.size()) {
+        this->Play(index);
+    }
 }
 
 void PlaybackService::Copy(std::vector<musik::core::TrackPtr>& target) {
