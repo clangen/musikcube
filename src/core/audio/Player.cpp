@@ -164,6 +164,15 @@ void Player::ThreadLoop() {
                 this->output->Stop(); /* flush all buffers */
                 this->output->Resume(); /* start it back up */
 
+                /* if we've allocated a buffer, but it hasn't been written
+                to the output yet, unlock it. this is an important step, and if
+                not performed, will result in a deadlock just below while 
+                waiting for all buffers to complete. */
+                if (buffer) {
+                    this->OnBufferProcessed(buffer.get());
+                    buffer.reset();
+                }
+
                 {
                     boost::mutex::scoped_lock lock(this->queueMutex);
 
@@ -178,8 +187,6 @@ void Player::ThreadLoop() {
                     boost::mutex::scoped_lock lock(this->queueMutex);
                     this->prebufferQueue.clear();
                 }
-
-                buffer.reset();
             }
 
             /* let's see if we can find some samples to play */
@@ -195,6 +202,11 @@ void Player::ThreadLoop() {
                 else {
                     buffer = this->stream->GetNextProcessedOutputBuffer();
                 }
+
+                /* lock it down until it's processed */
+                if (buffer) {
+                    this->lockedBuffers.push_back(buffer);
+                }
             }
 
             /* if we have a decoded, processed buffer available. let's try to send it to
@@ -205,7 +217,6 @@ void Player::ThreadLoop() {
                     /* lock it down so it's not destroyed until the output device lets us
                     know it's done with it. */
                     boost::mutex::scoped_lock lock(this->queueMutex);
-                    this->lockedBuffers.push_back(buffer);
 
                     if (this->lockedBuffers.size() == 1) {
                         this->currentPosition = buffer->Position();
