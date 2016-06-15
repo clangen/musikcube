@@ -69,7 +69,7 @@ double CddaDecoder::SetPosition(double seconds) {
 
 bool CddaDecoder::GetBuffer(IBuffer *buffer) {
     int channels = data->GetChannelCount();
-    buffer->SetSamples(CDDA_BUFFER_SIZE / BYTES_PER_RAW_SAMPLE / channels);
+    buffer->SetSamples(CDDA_BUFFER_SIZE / BYTES_PER_RAW_SAMPLE);
     buffer->SetChannels(data->GetChannelCount());
     buffer->SetSampleRate(CDDA_SAMPLE_RATE);
 
@@ -86,7 +86,7 @@ bool CddaDecoder::GetBuffer(IBuffer *buffer) {
             target[x] = (float) t[x] / 16384.0f;
         }
 
-        buffer->SetSamples(count / BYTES_PER_RAW_SAMPLE / channels);
+        buffer->SetSamples(count / BYTES_PER_RAW_SAMPLE);
 
         return true;
     }

@@ -35,7 +35,7 @@
 #include "Mpg123Decoder.h"
 #include <stdio.h>
 
-#define STREAM_FEED_SIZE 2048 * 8
+#define STREAM_FEED_SIZE 2048 * 2
 #define DEBUG 0
 
 #if DEBUG > 0
@@ -53,7 +53,7 @@ Mpg123Decoder::Mpg123Decoder()
 , fileStream(NULL)
 , lastMpg123Status(MPG123_NEED_MORE) {
     this->decoder = mpg123_new(NULL, NULL);
-    this->sampleSizeBytes = this->channels * sizeof(float);
+    this->sampleSizeBytes = sizeof(float);
 }
 
 Mpg123Decoder::~Mpg123Decoder() {
@@ -103,7 +103,7 @@ double Mpg123Decoder::SetPosition(double second) {
 bool Mpg123Decoder::GetBuffer(IBuffer *buffer) {
     buffer->SetChannels(this->channels);
     buffer->SetSampleRate(this->sampleRate);
-    buffer->SetSamples(STREAM_FEED_SIZE / this->channels);
+    buffer->SetSamples(STREAM_FEED_SIZE);
 
     unsigned char* targetBuffer = (unsigned char*) (buffer->BufferPointer());
 

@@ -147,7 +147,8 @@ BufferPtr Stream::GetNextBufferFromDecoder() {
 
     /* calculate the position (seconds) in the buffer */
     buffer->SetPosition(
-        ((double) this->decoderSamplePosition) / 
+        ((double) this->decoderSamplePosition) /
+        ((double) buffer->Channels()) /
         ((double) this->decoderSampleRate));
 
     return buffer;

@@ -60,7 +60,7 @@ using namespace boost::chrono;
 using namespace cursespp;
 
 #define REFRESH_TRANSPORT_READOUT 1001
-#define REFRESH_INTERVAL_MS 1000
+#define REFRESH_INTERVAL_MS 500
 
 #define DEBOUNCE_REFRESH(x) \
     this->RemoveMessage(REFRESH_TRANSPORT_READOUT); \

@@ -138,7 +138,7 @@ bool OggDecoder::GetBuffer(IBuffer *buffer) {
     vorbis_info *info = ov_info(&this->oggFile, -1);
     buffer->SetChannels(info->channels);
     buffer->SetSampleRate(info->rate);
-    buffer->SetSamples(samplesRead);
+    buffer->SetSamples(samplesRead * info->channels);
 
     /*
         The musik audio engine expects:

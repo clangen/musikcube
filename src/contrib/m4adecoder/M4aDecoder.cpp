@@ -213,7 +213,7 @@ bool M4aDecoder::GetBuffer(IBuffer* target) {
 
     target->SetSampleRate(frameInfo.samplerate);
     target->SetChannels(frameInfo.channels);
-    target->SetSamples(frameInfo.samples / frameInfo.channels);
+    target->SetSamples(frameInfo.samples);
 
     memcpy(
         static_cast<void*>(target->BufferPointer()),

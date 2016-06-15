@@ -234,7 +234,7 @@ bool FlacDecoder::GetBuffer(IBuffer *buffer) {
     /* read the next chunk */
     if (FLAC__stream_decoder_process_single(this->decoder)) {
         if (this->outputBuffer && this->outputBufferUsed > 0) {
-            buffer->SetSamples(this->outputBufferUsed / this->channels);
+            buffer->SetSamples(this->outputBufferUsed);
             copy(buffer->BufferPointer(), this->outputBuffer, this->outputBufferUsed);
             this->outputBufferUsed = 0; /* mark consumed */
             return true;

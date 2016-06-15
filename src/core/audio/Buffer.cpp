@@ -81,7 +81,7 @@ float* Buffer::BufferPointer() const {
     return this->buffer;
 }
 
-long Buffer::Samples() const { /* pre-multiplied by channel count */
+long Buffer::Samples() const {
     return this->sampleSize;
 }
 
@@ -98,21 +98,20 @@ void Buffer::CopyFormat(BufferPtr fromBuffer) {
 }
 
 void Buffer::ResizeBuffer() {
-    long requiredBufferSize = this->sampleSize * this->channels;
-    if (requiredBufferSize > this->internalBufferSize) {
+    if (this->sampleSize > this->internalBufferSize) {
         if (this->buffer) {
             delete this->buffer;
             this->buffer = NULL;
         }
 
-        this->buffer = new float[requiredBufferSize];
-        this->internalBufferSize = requiredBufferSize;
+        this->buffer = new float[this->sampleSize];
+        this->internalBufferSize = this->sampleSize;
     }
 }
 
 /* logical bytes; backing store may be be larger */
 long Buffer::Bytes() const {
-    return sizeof(float) * this->sampleSize * this->channels;
+    return sizeof(float) * this->sampleSize;
 }
 
 double Buffer::Position() const {
@@ -128,16 +127,16 @@ bool Buffer::Append(BufferPtr appendBuffer) {
         this->Channels() == appendBuffer->Channels())
     {
         /* number of floats (not bytes) in buffer */
-        long newBufferSize = (this->Samples() + appendBuffer->Samples()) * this->channels;
+        long newBufferSize = (this->Samples() + appendBuffer->Samples());
 
         if (newBufferSize > this->internalBufferSize) { /* resize, then copy, if too small */
             float *newBuffer = new float[newBufferSize];
 
-            CopyFloat(newBuffer, this->buffer, this->sampleSize * this->channels);
+            CopyFloat(newBuffer, this->buffer, this->sampleSize);
 
-            float *dst = &newBuffer[this->sampleSize * this->channels];
+            float *dst = &newBuffer[this->sampleSize];
             float *src = appendBuffer->BufferPointer();
-            long count = appendBuffer->Samples() * this->channels;
+            long count = appendBuffer->Samples();
 
             CopyFloat(dst, src, count);
 
@@ -151,9 +150,9 @@ bool Buffer::Append(BufferPtr appendBuffer) {
             this->internalBufferSize = newBufferSize;
         }
         else { /* append, no resize required */
-            float *dst = &this->buffer[this->sampleSize * this->channels];
+            float *dst = &this->buffer[this->sampleSize];
             float *src = appendBuffer->BufferPointer();
-            long count = appendBuffer->Samples() * this->channels;
+            long count = appendBuffer->Samples();
             CopyFloat(dst, src, count);
 
 #if DEBUG > 0
@@ -161,7 +160,7 @@ bool Buffer::Append(BufferPtr appendBuffer) {
 #endif
         }
 
-        this->sampleSize = newBufferSize / this->channels;
+        this->sampleSize = newBufferSize;
         return true;
     }
 

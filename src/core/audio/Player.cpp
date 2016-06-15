@@ -300,6 +300,7 @@ bool Player::Exited() {
 void Player::OnBufferProcessed(IBuffer *buffer) {
     bool started = false;
     bool found = false;
+   
     {
         boost::mutex::scoped_lock lock(this->queueMutex);
 
@@ -314,17 +315,18 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
                     this->stream->OnBufferProcessedByPlayer(*it);
                 }
 
+                bool isFront = this->lockedBuffers.front() == *it;
                 it = this->lockedBuffers.erase(it);
 
                 /* this sets the current time in the stream. it does this by grabbing
                 the time at the next buffer in the queue */
-                if (!this->lockedBuffers.empty()) {
-                    this->currentPosition = this->lockedBuffers.front()->Position();
+                if (this->lockedBuffers.empty() || isFront) {
+                    this->currentPosition = ((Buffer*)buffer)->Position();
                 }
                 else {
                     /* if the queue is drained, use the position from the buffer
                     that was just processed */
-                    this->currentPosition = ((Buffer*) buffer)->Position();
+                    this->currentPosition = this->lockedBuffers.front()->Position();
                 }
 
                 /* if the output device's internal buffers are full, it will stop

@@ -47,7 +47,7 @@ WaveOutBuffer::WaveOutBuffer(WaveOut *waveOut, IBuffer *buffer, IBufferProvider 
 }
 
 void WaveOutBuffer::Initialize() {
-    this->header.dwBufferLength = this->buffer->Samples() * this->buffer->Channels() * sizeof(float);
+    this->header.dwBufferLength = this->buffer->Samples() * sizeof(float);
     this->header.lpData = (LPSTR) this->buffer->BufferPointer();
 	this->header.dwUser = (DWORD_PTR) this;
 	this->header.dwBytesRecorded = 0;
