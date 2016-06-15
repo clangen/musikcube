@@ -234,29 +234,30 @@ void AlsaOut::WriteLoop() {
             if (next) {
                 size_t samples = next->buffer->Samples();
                 size_t channels = next->buffer->Channels();
-
-
+                size_t samplesPerChannel = samples / channels;
                 float volume = (float) this->volume;
 
                 /* software volume; alsa doesn't support this internally. this is about
-                as terrible as an algorithm can be -- it's just a linear ramp. */
-                float *buffer = next->buffer->BufferPointer();
-                for (size_t i = 0; i < samples * channels; i++) {
-                    (*buffer) *= volume;
-                    ++buffer;
+                as terrible as an algorithm can be -- it's just a linear ramp. */\
+                if (volume != 1.0f) {
+                    float *buffer = next->buffer->BufferPointer();
+                    for (size_t i = 0; i < samples; i++) {
+                        (*buffer) *= volume;
+                        ++buffer;
+                    }
                 }
 
-                WRITE_BUFFER(this->pcmHandle, next, samples); /* sets 'err' */
+                WRITE_BUFFER(this->pcmHandle, next, samplesPerChannel); /* sets 'err' */
 
                 if (err == -EINTR || err == -EPIPE || err == -ESTRPIPE) {
                     if (!snd_pcm_recover(this->pcmHandle, err, 1)) {
                         /* try one more time... */
-                        WRITE_BUFFER(this->pcmHandle, next, samples);
+                        WRITE_BUFFER(this->pcmHandle, next, samplesPerChannel);
                     }
                 }
 
-                if (err > 0 && err < (int) samples) {
-                    std::cerr << "AlsaOut: short write. expected=" << samples << ", actual=" << err << std::endl;
+                if (err > 0 && err < (int) samplesPerChannel) {
+                    std::cerr << "AlsaOut: short write. expected=" << samplesPerChannel << ", actual=" << err << std::endl;
                 }
 
                 next->provider->OnBufferProcessed(next->buffer);
