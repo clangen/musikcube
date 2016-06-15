@@ -84,7 +84,7 @@ void BrowseLayout::Layout() {
 }
 
 void BrowseLayout::InitializeWindows() {
-    this->categoryList.reset(new CategoryListView(this->library, DEFAULT_CATEGORY));
+    this->categoryList.reset(new CategoryListView(this->playback, this->library, DEFAULT_CATEGORY));
     this->trackList.reset(new TrackListView(this->playback, this->library));
 
     this->AddWindow(this->categoryList);

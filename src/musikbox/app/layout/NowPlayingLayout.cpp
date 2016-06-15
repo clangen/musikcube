@@ -101,7 +101,7 @@ void NowPlayingLayout::OnTrackListRequeried() {
     if (playback.Count()) {
         size_t index = playback.GetIndex();
         this->trackList->SetSelectedIndex(index);
-        this->trackList->ScrollTo(index);
+        this->trackList->ScrollTo(index == 0 ? index : index - 1);
     }
 }
 

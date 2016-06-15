@@ -14,9 +14,6 @@
     <Filter Include="src\sdk">
       <UniqueIdentifier>{88841a57-b3cc-459c-bfb7-05b8a2baca03}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\db">
-      <UniqueIdentifier>{9c63f496-9ae4-4032-8b1d-b1cdcd09a1d2}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\library">
       <UniqueIdentifier>{90ebbbb9-2451-414e-9b0c-20f40fdadd9f}</UniqueIdentifier>
     </Filter>
@@ -34,6 +31,9 @@
     </Filter>
     <Filter Include="src\library\metadata">
       <UniqueIdentifier>{9f9ee41d-111b-4dab-8663-946253eeb46f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\db">
+      <UniqueIdentifier>{9c63f496-9ae4-4032-8b1d-b1cdcd09a1d2}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

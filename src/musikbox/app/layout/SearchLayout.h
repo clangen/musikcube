@@ -58,7 +58,9 @@ namespace musik {
             public:
                 sigslot::signal3<SearchLayout*, std::string, DBID> SearchResultSelected;
 
-                SearchLayout(musik::core::LibraryPtr library);
+                SearchLayout(
+                    PlaybackService& playback,
+                    musik::core::LibraryPtr library);
 
                 virtual ~SearchLayout();
 
@@ -67,7 +69,7 @@ namespace musik {
                 virtual bool KeyPress(const std::string& key);
 
             private:
-                void InitializeWindows();
+                void InitializeWindows(PlaybackService& playback);
                 void Requery(const std::string& value = "");
 
                 void OnInputChanged(

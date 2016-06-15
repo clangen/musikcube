@@ -40,6 +40,7 @@
 #include <cursespp/ScrollAdapterBase.h>
 
 #include <app/query/CategoryListViewQuery.h>
+#include <app/service/PlaybackService.h>
 
 #include <core/library/IQuery.h>
 #include <core/library/ILibrary.h>
@@ -62,7 +63,11 @@ namespace musik {
             public sigslot::has_slots<>
         {
             public:
-                CategoryListView(LibraryPtr library, const std::string& fieldName);
+                CategoryListView(
+                    PlaybackService& playback,
+                    LibraryPtr library, 
+                    const std::string& fieldName);
+
                 virtual ~CategoryListView();
 
                 void RequeryWithField(
@@ -99,13 +104,19 @@ namespace musik {
                 };
 
             private:
+                void OnTrackChanged(size_t index, musik::core::TrackPtr track);
+
+                PlaybackService& playback;
                 LibraryPtr library;
                 Adapter *adapter;
-                DBID selectAfterQuery;
+
                 boost::mutex queryMutex;
+                DBID selectAfterQuery;
+                std::shared_ptr<CategoryListViewQuery> activeQuery;
+
+                musik::core::TrackPtr playing;
 
                 std::string fieldName;
-                std::shared_ptr<CategoryListViewQuery> activeQuery;
                 CategoryListViewQuery::ResultList metadata;
         };
     }

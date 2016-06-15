@@ -47,6 +47,7 @@
 #include "CategoryListView.h"
 
 using musik::core::LibraryPtr;
+using musik::core::audio::ITransport;
 using musik::core::IQuery;
 using namespace musik::core::library::constants;
 using namespace musik::box;
@@ -54,14 +55,24 @@ using cursespp::SingleLineEntry;
 
 #define WINDOW_MESSAGE_QUERY_COMPLETED 1002
 
-CategoryListView::CategoryListView(LibraryPtr library, const std::string& fieldName)
-: ListWindow(NULL) {
+CategoryListView::CategoryListView(
+    PlaybackService& playback,
+    LibraryPtr library, 
+    const std::string& fieldName)
+: ListWindow(NULL)
+, playback(playback) {
     this->SetContentColor(BOX_COLOR_WHITE_ON_BLACK);
     this->selectAfterQuery = 0;
     this->library = library;
     this->library->QueryCompleted.connect(this, &CategoryListView::OnQueryCompleted);
     this->fieldName = fieldName;
     this->adapter = new Adapter(*this);
+    this->playback.TrackChanged.connect(this, &CategoryListView::OnTrackChanged);
+
+    size_t index = playback.GetIndex();
+    if (index != (size_t) -1) {
+        this->playing = playback.GetTrackAtIndex(index);
+    }
 }
 
 CategoryListView::~CategoryListView() {
@@ -106,6 +117,11 @@ std::string CategoryListView::GetFieldName() {
     return this->fieldName;
 }
 
+void CategoryListView::OnTrackChanged(size_t index, musik::core::TrackPtr track) {
+    this->playing = track;
+    this->OnAdapterChanged();
+}
+
 void CategoryListView::SetFieldName(const std::string& fieldName) {
     if (this->fieldName != fieldName) {
         this->fieldName = fieldName;
@@ -145,7 +161,10 @@ void CategoryListView::ProcessMessage(IMessage &message) {
             int selectedIndex = static_cast<int>(message.UserData1());
             if (selectedIndex >= 0) {
                 this->SetSelectedIndex(selectedIndex);
-                this->ScrollTo(selectedIndex);
+
+                /* scroll down just a bit more to reveal the item above so
+                there's indication the user can scroll. */
+                this->ScrollTo(selectedIndex == 0 ? selectedIndex : selectedIndex - 1);
             }
 
             this->OnAdapterChanged();
@@ -168,9 +187,26 @@ size_t CategoryListView::Adapter::GetEntryCount() {
 
 IScrollAdapter::EntryPtr CategoryListView::Adapter::GetEntry(size_t index) {
     std::string value = parent.metadata->at(index)->displayValue;
+
+    bool playing = 
+        parent.playing && 
+        parent.playing->GetValue(parent.fieldName.c_str()) == value;
+
+    bool selected = index == parent.GetSelectedIndex();
+
+    int64 attrs = selected ? COLOR_PAIR(BOX_COLOR_BLACK_ON_GREEN) : -1LL;
+
+    if (playing) {
+        if (selected) {
+            attrs = COLOR_PAIR(BOX_COLOR_BLACK_ON_YELLOW);
+        }
+        else {
+            attrs = COLOR_PAIR(BOX_COLOR_YELLOW_ON_BLACK) | A_BOLD;
+        }
+    }
+
     text::Ellipsize(value, this->GetWidth());
 
-    int64 attrs = (index == parent.GetSelectedIndex()) ? COLOR_PAIR(BOX_COLOR_BLACK_ON_GREEN) : -1LL;
     std::shared_ptr<SingleLineEntry> entry(new SingleLineEntry(value));
     entry->SetAttrs(attrs);
     return entry;

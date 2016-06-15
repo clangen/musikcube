@@ -129,7 +129,7 @@ void LibraryLayout::InitializeWindows() {
     this->browseLayout.reset(new BrowseLayout(this->playback, this->library));
     this->nowPlayingLayout.reset(new NowPlayingLayout(this->playback, this->library));
 
-    this->searchLayout.reset(new SearchLayout(this->library));
+    this->searchLayout.reset(new SearchLayout(this->playback, this->library));
     this->searchLayout->SearchResultSelected.connect(this, &LibraryLayout::OnSearchResultSelected);
 
     this->transportView.reset(new TransportWindow(this->playback));

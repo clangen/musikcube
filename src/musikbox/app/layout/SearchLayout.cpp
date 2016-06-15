@@ -50,10 +50,10 @@ using namespace cursespp;
 
 #define SEARCH_HEIGHT 3
 
-SearchLayout::SearchLayout(LibraryPtr library)
+SearchLayout::SearchLayout(PlaybackService& playback, LibraryPtr library)
 : LayoutBase() {
     this->library = library;
-    this->InitializeWindows();
+    this->InitializeWindows(playback);
 }
 
 SearchLayout::~SearchLayout() {
@@ -86,11 +86,11 @@ void SearchLayout::Layout() {
 }
 
 #define CREATE_CATEGORY(view, type, order) \
-    view.reset(new CategoryListView(this->library, type)); \
+    view.reset(new CategoryListView(playback, this->library, type)); \
     this->AddWindow(view); \
     view->SetFocusOrder(order);
 
-void SearchLayout::InitializeWindows() {
+void SearchLayout::InitializeWindows(PlaybackService& playback) {
     this->input.reset(new cursespp::TextInput());
     this->input->TextChanged.connect(this, &SearchLayout::OnInputChanged);
     this->input->SetContentColor(BOX_COLOR_WHITE_ON_BLACK);
