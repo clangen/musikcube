@@ -42,9 +42,11 @@
 namespace cursespp {
     class TextLabel :
 #if (__clang_major__ == 7 && __clang_minor__ == 3)
-        public std::enable_shared_from_this<TextInput>,
-#endif
+        public cursespp::Window,
+        public std::enable_shared_from_this<TextLabel> {
+#else
         public cursespp::Window {
+#endif
     public:
         enum Alignment {
             AlignLeft,
