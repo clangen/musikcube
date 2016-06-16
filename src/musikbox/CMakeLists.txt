@@ -12,7 +12,7 @@ set (BOX_SRCS
 	./app/service/PlaybackService.cpp
 	./app/util/GlobalHotkeys.cpp
 	./app/util/SystemInfo.cpp
-	./app/util/Text.cpp
+	./app/util/Duration.cpp
 	./app/window/CategoryListView.cpp
 	./app/window/EntryWithHeader.cpp
 	./app/window/LogWindow.cpp
@@ -32,7 +32,9 @@ set (BOX_SRCS
 	./cursespp/ScrollAdapterBase.cpp
 	./cursespp/SimpleScrollAdapter.cpp
 	./cursespp/SingleLineEntry.cpp
+	./cursespp/Text.cpp
 	./cursespp/TextInput.cpp
+	./cursespp/TextLabel.cpp
 	./cursespp/Window.cpp
 	./cursespp/WindowLayout.cpp
 )
