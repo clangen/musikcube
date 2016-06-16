@@ -39,7 +39,7 @@
 #include <cursespp/Colors.h>
 #include <cursespp/Message.h>
 
-#include <app/util/Text.h>
+#include <app/util/Duration.h>
 
 #include <core/debug.h>
 #include <core/library/LocalLibraryConstants.h>
@@ -201,8 +201,8 @@ void TransportWindow::Update() {
     int secondsCurrent = (int) round(transport.Position());
     int secondsTotal = boost::lexical_cast<int>(duration);
 
-    std::string currentTime = text::Duration(std::min(secondsCurrent, secondsTotal));
-    std::string totalTime = text::Duration(secondsTotal);
+    std::string currentTime = duration::Duration(std::min(secondsCurrent, secondsTotal));
+    std::string totalTime = duration::Duration(secondsTotal);
 
     size_t timerWidth =
         this->GetContentWidth() -

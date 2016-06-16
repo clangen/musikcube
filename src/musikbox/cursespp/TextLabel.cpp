@@ -32,37 +32,73 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/sdk/IDataStream.h>
+#include <stdafx.h>
 
-#include "ntddcdrm.h"
-#include "devioctl.h"
+#include <cursespp/Screen.h>
+#include <cursespp/Colors.h>
+#include <cursespp/MessageQueue.h>
+#include <cursespp/Message.h>
+#include <cursespp/Text.h>
 
-using namespace musik::core::io;
+#include "TextLabel.h"
 
-class CddaDataStream : public IDataStream {
-    public:
-        CddaDataStream();
-        virtual ~CddaDataStream();
-        virtual void Destroy();
+using namespace cursespp;
 
-        virtual bool Open(const char *filename, unsigned int options = 0);
-        virtual bool Close();
-        virtual PositionType Read(void* buffer, PositionType readBytes);
-        virtual bool SetPosition(PositionType position);
-        virtual PositionType Position();
-        virtual bool Eof();
-        virtual long Length();
-        virtual const char* Type();
+inline static void redrawContents(
+    IWindow &window, 
+    const TextLabel::Alignment alignment,
+    const std::string& text) 
+{
+    WINDOW* c = window.GetContent();
+    werase(c);
 
-        int GetChannelCount();
+    int len = (int) u8len(text);
+    int cx = window.GetContentWidth();
 
-    private:
-        LONGLONG position, length;
-        HANDLE drive;
-        CDROM_TOC toc;
-        UINT firstSector, startSector, stopSector;
-        unsigned long channels;
-        volatile bool closed;
+    if (len > cx) {
+        std::string ellipsized = text;
+        text::Ellipsize(ellipsized, cx);
+        wprintw(c, ellipsized.c_str());
+    }
+    else if (alignment == TextLabel::AlignLeft) {
+        wprintw(c, text.c_str());
+    }
+    else { /* center */
+        int leftPad = 
+            (alignment == TextLabel::AlignRight)
+                ? (cx - len) 
+                : (cx - len) / 2;
 
-        HRESULT Read(PBYTE pbBuffer, DWORD dwBytesToRead, BOOL bAlign, LPDWORD pdwBytesRead);
-};
+        std::string padded;
+        for (int i = 0; i < leftPad; i++) {
+            padded += " ";
+        }
+
+        padded += text;
+        wprintw(c, padded.c_str());
+    }
+
+    window.Repaint();
+}
+
+TextLabel::TextLabel()
+: Window()
+, alignment(AlignLeft) {
+    this->SetFrameVisible(false);
+}
+
+TextLabel::~TextLabel() {
+}
+
+void TextLabel::Show() {
+    Window::Show();
+    redrawContents(*this, this->alignment, this->buffer);
+}
+
+void TextLabel::SetText(const std::string& value, const Alignment alignment) {
+    if (value != this->buffer || alignment != this->alignment) {
+        this->buffer = value;
+        this->alignment = alignment;
+        redrawContents(*this, alignment, buffer);
+    }
+}

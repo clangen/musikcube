@@ -49,6 +49,7 @@ using namespace musik::box;
 using namespace cursespp;
 
 #define SEARCH_HEIGHT 3
+#define LABEL_HEIGHT 1
 
 SearchLayout::SearchLayout(PlaybackService& playback, LibraryPtr library)
 : LayoutBase() {
@@ -75,13 +76,19 @@ void SearchLayout::Layout() {
     size_t inputX = x + ((cx - inputWidth) / 2);
     this->input->MoveAndResize(inputX, 0, cx / 2, SEARCH_HEIGHT);
 
+    size_t labelY = SEARCH_HEIGHT;
     size_t categoryWidth = cx / 3;
-    size_t categoryY = SEARCH_HEIGHT;
+    size_t categoryY = labelY + LABEL_HEIGHT;
     size_t categoryHeight = cy - SEARCH_HEIGHT;
     size_t lastCategoryWidth = cx - (categoryWidth * 2);
 
+    this->albumsLabel->MoveAndResize(0, labelY, categoryWidth, 1);
     this->albums->MoveAndResize(0, categoryY, categoryWidth, categoryHeight);
+
+    this->artistsLabel->MoveAndResize(categoryWidth, labelY, categoryWidth, 1);
     this->artists->MoveAndResize(categoryWidth, categoryY, categoryWidth, categoryHeight);
+    
+    this->genresLabel->MoveAndResize(categoryWidth * 2, labelY, lastCategoryWidth, 1);
     this->genres->MoveAndResize(categoryWidth * 2, categoryY, lastCategoryWidth, categoryHeight);
 }
 
@@ -89,6 +96,11 @@ void SearchLayout::Layout() {
     view.reset(new CategoryListView(playback, this->library, type)); \
     this->AddWindow(view); \
     view->SetFocusOrder(order);
+
+#define CREATE_LABEL(view, text) \
+    view.reset(new cursespp::TextLabel()); \
+    view->SetText(text, cursespp::TextLabel::AlignCenter); \
+    this->AddWindow(view);
 
 void SearchLayout::InitializeWindows(PlaybackService& playback) {
     this->input.reset(new cursespp::TextInput());
@@ -100,6 +112,10 @@ void SearchLayout::InitializeWindows(PlaybackService& playback) {
     CREATE_CATEGORY(this->albums, constants::Track::ALBUM, 1);
     CREATE_CATEGORY(this->artists, constants::Track::ARTIST, 2);
     CREATE_CATEGORY(this->genres, constants::Track::GENRE, 3);
+
+    CREATE_LABEL(this->albumsLabel, "albums");
+    CREATE_LABEL(this->artistsLabel, "artists");
+    CREATE_LABEL(this->genresLabel, "genres");
 
     this->Layout();
 }

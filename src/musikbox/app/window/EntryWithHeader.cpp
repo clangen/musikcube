@@ -35,9 +35,10 @@
 #include <stdafx.h>
 #include "EntryWithHeader.h"
 #include <boost/algorithm/string.hpp>
-#include <app/util/Text.h>
+#include <cursespp/Text.h>
 
 using namespace musik::box;
+using namespace cursespp;
 
 EntryWithHeader::EntryWithHeader(
     const std::string& header, const std::string& value) 
@@ -70,7 +71,7 @@ size_t EntryWithHeader::GetLineCount() {
 std::string EntryWithHeader::GetLine(size_t line) {
     if (line == 0) {
         std::string ellipsized = this->header;
-        musik::box::text::Ellipsize(ellipsized, this->width);
+        text::Ellipsize(ellipsized, this->width);
         return ellipsized;
     }
 

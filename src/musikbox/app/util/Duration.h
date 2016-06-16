@@ -34,57 +34,14 @@
 
 #pragma once
 
-#include <cursespp/LayoutBase.h>
-#include <cursespp/TextInput.h>
-#include <cursespp/TextLabel.h>
-
-#include <app/window/CategoryListView.h>
-#include <app/window/TrackListView.h>
-#include <app/window/TransportWindow.h>
-#include <app/service/PlaybackService.h>
-
-#include <core/library/ILibrary.h>
-
-#include <sigslot/sigslot.h>
+#include "stdafx.h"
 
 namespace musik {
     namespace box {
-        class SearchLayout :
-            public cursespp::LayoutBase,
-#if (__clang_major__ == 7 && __clang_minor__ == 3)
-            public std::enable_shared_from_this<SearchLayout>,
-#endif
-            public sigslot::has_slots<>
-        {
-            public:
-                sigslot::signal3<SearchLayout*, std::string, DBID> SearchResultSelected;
-
-                SearchLayout(
-                    PlaybackService& playback,
-                    musik::core::LibraryPtr library);
-
-                virtual ~SearchLayout();
-
-                virtual void Layout();
-                virtual void OnVisibilityChanged(bool visible);
-                virtual bool KeyPress(const std::string& key);
-
-            private:
-                void InitializeWindows(PlaybackService& playback);
-                void Requery(const std::string& value = "");
-
-                void OnInputChanged(
-                    cursespp::TextInput* sender, 
-                    std::string value);
-
-                musik::core::LibraryPtr library;
-                std::shared_ptr<cursespp::TextLabel> albumsLabel;
-                std::shared_ptr<CategoryListView> albums;
-                std::shared_ptr<cursespp::TextLabel> artistsLabel;
-                std::shared_ptr<CategoryListView> artists;
-                std::shared_ptr<cursespp::TextLabel> genresLabel;
-                std::shared_ptr<CategoryListView> genres;
-                std::shared_ptr<cursespp::TextInput> input;
-        };
+        namespace duration {
+            std::string Duration(std::string& str);
+            std::string Duration(int seconds);
+            std::string Duration(double seconds);
+        }
     }
 }

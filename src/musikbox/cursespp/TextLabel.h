@@ -34,16 +34,37 @@
 
 #pragma once
 
-#include "stdafx.h"
+#include <cursespp/curses_config.h>
+#include <cursespp/Window.h>
+#include <cursespp/IInput.h>
+#include <sigslot/sigslot.h>
 
-namespace musik {
-    namespace box {
-        namespace text {
-            void Truncate(std::string& str, size_t len);
-            void Ellipsize(std::string& str, size_t len);
-            std::string Duration(std::string& str);
-            std::string Duration(int seconds);
-            std::string Duration(double seconds);
-        }
-    }
+namespace cursespp {
+    class TextLabel :
+#if (__clang_major__ == 7 && __clang_minor__ == 3)
+        public std::enable_shared_from_this<TextInput>,
+#endif
+        public cursespp::Window {
+    public:
+        enum Alignment {
+            AlignLeft,
+            AlignCenter,
+            AlignRight
+        };
+
+        TextLabel();
+        virtual ~TextLabel();
+
+        virtual void SetText(
+            const std::string& value,
+            const Alignment alignment = AlignLeft);
+
+        virtual std::string GetText() { return this->buffer; }
+
+        virtual void Show();
+
+    private:
+        std::string buffer;
+        Alignment alignment;
+    };
 }

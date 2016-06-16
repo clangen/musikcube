@@ -124,9 +124,9 @@
     <ClCompile Include="app\query\NowPlayingTrackListQuery.cpp" />
     <ClCompile Include="app\query\CategoryTrackListQuery.cpp" />
     <ClCompile Include="app\service\PlaybackService.cpp" />
+    <ClCompile Include="app\util\Duration.cpp" />
     <ClCompile Include="app\util\GlobalHotkeys.cpp" />
     <ClCompile Include="app\util\SystemInfo.cpp" />
-    <ClCompile Include="app\util\Text.cpp" />
     <ClCompile Include="app\window\CategoryListView.cpp" />
     <ClCompile Include="app\window\EntryWithHeader.cpp" />
     <ClCompile Include="app\window\LogWindow.cpp" />
@@ -144,7 +144,9 @@
     <ClCompile Include="cursespp\ScrollAdapterBase.cpp" />
     <ClCompile Include="cursespp\SimpleScrollAdapter.cpp" />
     <ClCompile Include="cursespp\SingleLineEntry.cpp" />
+    <ClCompile Include="cursespp\Text.cpp" />
     <ClCompile Include="cursespp\TextInput.cpp" />
+    <ClCompile Include="cursespp\TextLabel.cpp" />
     <ClCompile Include="cursespp\Window.cpp" />
     <ClCompile Include="cursespp\WindowLayout.cpp" />
     <ClCompile Include="cursespp\Message.cpp" />
@@ -166,9 +168,9 @@
     <ClInclude Include="app\query\TrackListQueryBase.h" />
     <ClInclude Include="app\query\CategoryTrackListQuery.h" />
     <ClInclude Include="app\service\PlaybackService.h" />
+    <ClInclude Include="app\util\Duration.h" />
     <ClInclude Include="app\util\GlobalHotkeys.h" />
     <ClInclude Include="app\util\SystemInfo.h" />
-    <ClInclude Include="app\util\Text.h" />
     <ClInclude Include="app\window\CategoryListView.h" />
     <ClInclude Include="app\window\EntryWithHeader.h" />
     <ClInclude Include="app\window\LogWindow.h" />
@@ -199,7 +201,9 @@
     <ClInclude Include="cursespp\ScrollAdapterBase.h" />
     <ClInclude Include="cursespp\SimpleScrollAdapter.h" />
     <ClInclude Include="cursespp\SingleLineEntry.h" />
+    <ClInclude Include="cursespp\Text.h" />
     <ClInclude Include="cursespp\TextInput.h" />
+    <ClInclude Include="cursespp\TextLabel.h" />
     <ClInclude Include="cursespp\Window.h" />
     <ClInclude Include="cursespp\WindowLayout.h" />
     <ClInclude Include="cursespp\Message.h" />

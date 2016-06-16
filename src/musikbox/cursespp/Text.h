@@ -32,37 +32,13 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/sdk/IDataStream.h>
+#pragma once
 
-#include "ntddcdrm.h"
-#include "devioctl.h"
+#include "stdafx.h"
 
-using namespace musik::core::io;
-
-class CddaDataStream : public IDataStream {
-    public:
-        CddaDataStream();
-        virtual ~CddaDataStream();
-        virtual void Destroy();
-
-        virtual bool Open(const char *filename, unsigned int options = 0);
-        virtual bool Close();
-        virtual PositionType Read(void* buffer, PositionType readBytes);
-        virtual bool SetPosition(PositionType position);
-        virtual PositionType Position();
-        virtual bool Eof();
-        virtual long Length();
-        virtual const char* Type();
-
-        int GetChannelCount();
-
-    private:
-        LONGLONG position, length;
-        HANDLE drive;
-        CDROM_TOC toc;
-        UINT firstSector, startSector, stopSector;
-        unsigned long channels;
-        volatile bool closed;
-
-        HRESULT Read(PBYTE pbBuffer, DWORD dwBytesToRead, BOOL bAlign, LPDWORD pdwBytesRead);
-};
+namespace cursespp {
+    namespace text {
+        void Truncate(std::string& str, size_t len);
+        void Ellipsize(std::string& str, size_t len);
+    }
+}

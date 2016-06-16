@@ -37,13 +37,14 @@
 #include <cursespp/Colors.h>
 #include <cursespp/SingleLineEntry.h>
 #include <cursespp/IMessage.h>
+#include <cursespp/Text.h>
 
 #include "TrackListView.h"
 
 #include <core/library/LocalLibraryConstants.h>
 
-#include <app/util/Text.h>
 #include <app/window/EntryWithHeader.h>
+#include <app/util/Duration.h>
 
 #include <boost/format.hpp>
 #include <boost/format/group.hpp>
@@ -195,7 +196,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(size_t index) {
     text::Ellipsize(artist, ARTIST_COL_WIDTH);
     text::Ellipsize(album, ALBUM_COL_WIDTH);
     text::Ellipsize(title, column1CharacterCount);
-    duration = text::Duration(duration);
+    duration = duration::Duration(duration);
 
     std::string text = boost::str(
         boost::format("%s   %s   %s   %s   %s")

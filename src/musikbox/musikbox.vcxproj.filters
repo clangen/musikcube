@@ -60,9 +60,6 @@
     <ClCompile Include="app\util\GlobalHotkeys.cpp">
       <Filter>app\util</Filter>
     </ClCompile>
-    <ClCompile Include="app\util\Text.cpp">
-      <Filter>app\util</Filter>
-    </ClCompile>
     <ClCompile Include="cursespp\LayoutStack.cpp">
       <Filter>cursespp</Filter>
     </ClCompile>
@@ -104,6 +101,15 @@
     </ClCompile>
     <ClCompile Include="app\layout\SearchLayout.cpp">
       <Filter>app\layout</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\TextLabel.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\Text.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="app\util\Duration.cpp">
+      <Filter>app\util</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -195,9 +201,6 @@
     <ClInclude Include="app\util\GlobalHotkeys.h">
       <Filter>app\util</Filter>
     </ClInclude>
-    <ClInclude Include="app\util\Text.h">
-      <Filter>app\util</Filter>
-    </ClInclude>
     <ClInclude Include="cursespp\LayoutStack.h">
       <Filter>cursespp</Filter>
     </ClInclude>
@@ -251,6 +254,15 @@
     </ClInclude>
     <ClInclude Include="app\layout\SearchLayout.h">
       <Filter>app\layout</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\TextLabel.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\Text.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="app\util\Duration.h">
+      <Filter>app\util</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
