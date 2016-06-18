@@ -83,7 +83,7 @@ namespace musik { namespace core { namespace library {
             IQueryPtr GetNextQuery();
 
         private:
-            void RunQuery(IQueryPtr query);
+            void RunQuery(IQueryPtr query, bool notify = true);
 
             typedef std::list<IQueryPtr> QueryList;
 

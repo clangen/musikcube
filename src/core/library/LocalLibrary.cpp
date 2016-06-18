@@ -89,30 +89,10 @@ int LocalLibrary::Id() {
     return this->id;
 }
 
-//////////////////////////////////////////
-///\brief
-///Name of the library
-//////////////////////////////////////////
 const std::string& LocalLibrary::Name() {
     return this->name;
 }
 
-//////////////////////////////////////////
-///\brief
-///Get the directory-location of the library where you may store extra files.
-///
-///\returns
-///String with the path
-///
-///The library directory is a directory where you may store
-///the librarys database and other files like thumbnail cache.
-///In a win32 environment this path will be located in the users
-///$APPDATA/mC2/"identifier"/
-///where the identifier is set in the library itself.
-///
-///\remarks
-///If the directory does not exist, this method will create it.
-//////////////////////////////////////////
 std::string LocalLibrary::GetLibraryDirectory() {
     std::string directory(musik::core::GetDataDirectory());
 
@@ -138,7 +118,7 @@ int LocalLibrary::Enqueue(IQueryPtr query, unsigned int options) {
     boost::recursive_mutex::scoped_lock l(this->mutex);
 
     if (options & ILibrary::QuerySynchronous) {
-        this->RunQuery(query);
+        this->RunQuery(query, false); /* false = do not notify via QueryCompleted */
     }
     else {
         queryQueue.push_back(query);
@@ -177,14 +157,17 @@ IQueryPtr LocalLibrary::GetNextQuery() {
     return IQueryPtr();
 }
 
-void LocalLibrary::RunQuery(IQueryPtr query) {
+void LocalLibrary::RunQuery(IQueryPtr query, bool notify) {
     if (query) {
         if (VERBOSE_LOGGING) {
             musik::debug::info(TAG, "query '" + query->Name() + "' running");
         }
 
         query->Run(this->db);
-        this->QueryCompleted(query);
+
+        if (notify) {
+            this->QueryCompleted(query);
+        }
 
         if (VERBOSE_LOGGING) {
             musik::debug::info(TAG, boost::str(boost::format(
