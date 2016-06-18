@@ -105,13 +105,13 @@ bool CategoryTrackListQuery::OnRun(Connection& db) {
     std::string lastAlbum;
     size_t index = 0;
 
-    this->query = boost::str(boost::format(
+    std::string query = boost::str(boost::format(
         "SELECT DISTINCT t.id, al.name " \
         "FROM tracks t, albums al, artists ar, genres gn " \
         "WHERE t.%s=? AND t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id "
         "ORDER BY al.name, disc, track, ar.name") % this->column);
 
-    Statement trackQuery(this->query.c_str(), db);
+    Statement trackQuery(query.c_str(), db);
     trackQuery.BindInt(0, this->id);
 
     while (trackQuery.Step() == Row) {
@@ -122,21 +122,6 @@ bool CategoryTrackListQuery::OnRun(Connection& db) {
             headers->insert(index);
             lastAlbum = album;
         }
-
-        // TrackPtr track = TrackPtr(new LibraryTrack(id, this->library));
-        // track->SetValue(Track::TRACK_NUM, trackQuery.ColumnText(1));
-        // track->SetValue(Track::DISC_NUM, trackQuery.ColumnText(2));
-        // track->SetValue(Track::BPM, trackQuery.ColumnText(3));
-        // track->SetValue(Track::DURATION, trackQuery.ColumnText(4));
-        // track->SetValue(Track::FILESIZE, trackQuery.ColumnText(5));
-        // track->SetValue(Track::YEAR, trackQuery.ColumnText(6));
-        // track->SetValue(Track::TITLE, trackQuery.ColumnText(7));
-        // track->SetValue(Track::FILENAME, trackQuery.ColumnText(8));
-        // track->SetValue(Track::THUMBNAIL_ID, trackQuery.ColumnText(9));
-        // track->SetValue(Track::ALBUM, album.c_str());
-        // track->SetValue(Track::GENRE, trackQuery.ColumnText(11));
-        // track->SetValue(Track::ARTIST, trackQuery.ColumnText(12));
-        // track->SetValue(Track::FILETIME, trackQuery.ColumnText(13));
 
         result->Add(id);
         ++index;

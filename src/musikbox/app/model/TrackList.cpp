@@ -43,7 +43,7 @@
 
 #include <map>
 
-#define MAX_SIZE 60
+#define MAX_SIZE 50
 
 using musik::core::db::Statement;
 using musik::core::db::Row;

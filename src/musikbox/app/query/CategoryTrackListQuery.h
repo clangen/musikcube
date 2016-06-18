@@ -66,7 +66,6 @@ namespace musik {
                 Headers headers;
                 std::string column;
                 DBID id;
-                std::string query;
                 size_t hash;
         };
     }

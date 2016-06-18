@@ -252,6 +252,7 @@ int main(int argc, char* argv[])
 
         LibraryPtr library = LibraryFactory::Libraries().at(0);
         GaplessTransport transport;
+        transport.SetVolume(0.75);
         PlaybackService playback(library, transport);
 
         GlobalHotkeys globalHotkeys(playback, library);

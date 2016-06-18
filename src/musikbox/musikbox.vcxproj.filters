@@ -111,6 +111,9 @@
     <ClCompile Include="app\util\Duration.cpp">
       <Filter>app\util</Filter>
     </ClCompile>
+    <ClCompile Include="app\model\TrackList.cpp">
+      <Filter>app\model</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -264,6 +267,9 @@
     <ClInclude Include="app\util\Duration.h">
       <Filter>app\util</Filter>
     </ClInclude>
+    <ClInclude Include="app\model\TrackList.h">
+      <Filter>app\model</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="cursespp">
@@ -286,6 +292,9 @@
     </Filter>
     <Filter Include="app\service">
       <UniqueIdentifier>{f2315c14-fb1b-4928-ab47-462d1dc65c77}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="app\model">
+      <UniqueIdentifier>{b6720351-dd55-4b14-936a-09df56193c15}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
