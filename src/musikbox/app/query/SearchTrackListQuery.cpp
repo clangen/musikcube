@@ -87,7 +87,7 @@ bool SearchTrackListQuery::OnRun(Connection& db) {
         headers.reset(new std::set<size_t>());
     }
 
-    bool hasFilter = this->filter.size();
+    bool hasFilter = (this->filter.size() > 0);
 
     std::string lastAlbum;
     size_t index = 0;

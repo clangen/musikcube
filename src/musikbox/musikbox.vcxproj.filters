@@ -114,6 +114,15 @@
     <ClCompile Include="app\model\TrackList.cpp">
       <Filter>app\model</Filter>
     </ClCompile>
+    <ClCompile Include="app\util\Playback.cpp">
+      <Filter>app\util</Filter>
+    </ClCompile>
+    <ClCompile Include="app\layout\TrackSearchLayout.cpp">
+      <Filter>app\layout</Filter>
+    </ClCompile>
+    <ClCompile Include="app\query\SearchTrackListQuery.cpp">
+      <Filter>app\query</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -269,6 +278,15 @@
     </ClInclude>
     <ClInclude Include="app\model\TrackList.h">
       <Filter>app\model</Filter>
+    </ClInclude>
+    <ClInclude Include="app\util\Playback.h">
+      <Filter>app\util</Filter>
+    </ClInclude>
+    <ClInclude Include="app\layout\TrackSearchLayout.h">
+      <Filter>app\layout</Filter>
+    </ClInclude>
+    <ClInclude Include="app\query\SearchTrackListQuery.h">
+      <Filter>app\query</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
