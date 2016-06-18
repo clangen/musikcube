@@ -177,10 +177,13 @@ bool LibraryLayout::KeyPress(const std::string& key) {
             this->ShowNowPlaying();
         }
     }
-    else if (key == "M-f") { /* show album/artist/genre search */
+    else if (key == "M-b") {
+        this->ShowBrowse();
+    }
+    else if (key == "M-f") {
         this->ShowSearch();
     }
-    else if (key == "M-t") { /* show track search */
+    else if (key == "M-t") {
         this->ShowTrackSearch();
     }
     /* forward to the visible layout */

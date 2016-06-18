@@ -108,7 +108,16 @@ void TrackSearchLayout::OnVisibilityChanged(bool visible) {
     LayoutBase::OnVisibilityChanged(visible);
 
     if (visible) {
-        this->Requery();
+        this->SetFocus(this->input);
+
+        if (this->input->GetText() == "") {
+            /* already empty, requery directly. */
+            this->Requery();
+        }
+        else {
+            /* triggers an implicit requery */
+            this->input->SetText("");
+        }
     }
     else {
         this->trackList->Clear();
