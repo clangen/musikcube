@@ -42,6 +42,7 @@
 #include <core/library/LocalLibraryConstants.h>
 
 using musik::core::TrackPtr;
+using musik::core::LibraryPtr;
 using musik::core::audio::ITransport;
 
 using cursespp::IMessageTarget;
@@ -51,13 +52,15 @@ using namespace musik::core::library::constants;
 using namespace musik::box;
 
 #define NO_POSITION (size_t) -1
-#define URI_AT_INDEX(x) this->playlist.at(x)->URI()
+#define URI_AT_INDEX(x) this->playlist.Get(x)->URI()
 #define PREVIOUS_GRACE_PERIOD 2.0f
 #define MESSAGE_STREAM_EVENT 1000
 #define MESSAGE_PLAYBACK_EVENT 1001
 
-PlaybackService::PlaybackService(ITransport& transport)
-: transport(transport) {
+PlaybackService::PlaybackService(LibraryPtr library, ITransport& transport)
+: library(library)
+, transport(transport)
+, playlist(library) {
     transport.StreamEvent.connect(this, &PlaybackService::OnStreamEvent);
     transport.PlaybackEvent.connect(this, &PlaybackService::OnPlaybackEvent);
     this->index = NO_POSITION;
@@ -69,7 +72,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         int64 eventType = message.UserData1();
 
         if (eventType == ITransport::StreamAlmostDone) {
-            if (this->playlist.size() > this->index + 1) {
+            if (this->playlist.Count() > this->index + 1) {
                 if (this->nextIndex != this->index + 1) {
                     this->nextIndex = this->index + 1;
                     this->transport.PrepareNextTrack(URI_AT_INDEX(nextIndex));
@@ -83,7 +86,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
             }
 
             if (this->index != NO_POSITION) {
-                this->TrackChanged(this->index, this->playlist.at(this->index));
+                this->TrackChanged(this->index, this->playlist.Get(this->index));
             }
         }
     }
@@ -101,7 +104,7 @@ bool PlaybackService::Next() {
         return false;
     }
 
-    if (this->playlist.size() > index + 1) {
+    if (this->playlist.Count() > index + 1) {
         this->Play(index + 1);
         return true;
     }
@@ -127,24 +130,24 @@ bool PlaybackService::Previous() {
     return false;
 }
 
-void PlaybackService::Play(std::vector<TrackPtr>& tracks, size_t index) {
+void PlaybackService::Play(TrackList& tracks, size_t index) {
     /* do the copy outside of the critical section, then swap. */
-    std::vector<TrackPtr> temp;
-    std::copy(tracks.begin(), tracks.end(), std::back_inserter(temp));
+    TrackList temp(this->library);
+    temp.CopyFrom(tracks);
 
     {
         boost::recursive_mutex::scoped_lock lock(this->stateMutex);
-        std::swap(temp, this->playlist);
+        this->playlist.Swap(temp);
     }
 
-    if (index <= tracks.size()) {
+    if (index <= tracks.Count()) {
         this->Play(index);
     }
 }
 
-void PlaybackService::Copy(std::vector<musik::core::TrackPtr>& target) {
+void PlaybackService::CopyTo(TrackList& target) {
     boost::recursive_mutex::scoped_lock lock(this->stateMutex);
-    std::copy(this->playlist.begin(), this->playlist.end(), std::back_inserter(target));
+    target.CopyFrom(this->playlist);
 }
 
 void PlaybackService::Play(size_t index) {
@@ -158,7 +161,7 @@ size_t PlaybackService::GetIndex() {
 }
 
 TrackPtr PlaybackService::GetTrackAtIndex(size_t index) {
-    return this->playlist.at(index);
+    return this->playlist.Get(index);
 }
 
 void PlaybackService::OnStreamEvent(int eventType, std::string uri) {

@@ -46,10 +46,6 @@ namespace musik { namespace core {
     typedef std::shared_ptr<Track> TrackPtr;
     typedef std::vector<TrackPtr> TrackVector;
 
-    //////////////////////////////////////////
-    ///\brief
-    ///The most basic implementation of a track
-    //////////////////////////////////////////
     class Track : public IMetadataWriter {
         public:
             typedef std::multimap<std::string, std::string> MetadataMap;
@@ -71,4 +67,4 @@ namespace musik { namespace core {
             virtual TrackPtr Copy() = 0;
     };
 
-} } 
+} }

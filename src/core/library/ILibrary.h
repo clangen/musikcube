@@ -49,6 +49,10 @@ namespace musik { namespace core {
         public:
             sigslot::signal1<IQueryPtr> QueryCompleted;
 
+            enum QueryFlag {
+                QuerySynchronous = 1
+            };
+
             virtual ~ILibrary() { }
 
             virtual int Enqueue(IQueryPtr query, unsigned int options = 0) = 0;

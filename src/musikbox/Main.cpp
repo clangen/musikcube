@@ -250,17 +250,14 @@ int main(int argc, char* argv[])
     {
         Colors::Init();
 
-        GaplessTransport tp;
-        tp.SetVolume(0.75);
-
-        PlaybackService playback(tp);
-
         LibraryPtr library = LibraryFactory::Libraries().at(0);
+        GaplessTransport transport;
+        PlaybackService playback(library, transport);
 
         GlobalHotkeys globalHotkeys(playback, library);
 
         ILayoutPtr libraryLayout((ILayout *) new LibraryLayout(playback, library));
-        ILayoutPtr consoleLayout((ILayout *) new ConsoleLayout(tp, library));
+        ILayoutPtr consoleLayout((ILayout *) new ConsoleLayout(transport, library));
 
         int64 ch;
         timeout(IDLE_TIMEOUT_MS);

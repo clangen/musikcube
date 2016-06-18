@@ -34,55 +34,41 @@
 
 #pragma once
 
-#include <sigslot/sigslot.h>
-
-#include <app/model/TrackList.h>
-
-#include <cursespp/IMessageTarget.h>
-
 #include <core/library/track/Track.h>
 #include <core/library/ILibrary.h>
-#include <core/audio/ITransport.h>
 
-#include <boost/thread/recursive_mutex.hpp>
+#include <unordered_map>
+#include <list>
 
 namespace musik {
     namespace box {
-        class PlaybackService : public cursespp::IMessageTarget, public sigslot::has_slots<> {
+        class TrackList {
             public:
-                sigslot::signal2<size_t, musik::core::TrackPtr> TrackChanged;
+                TrackList(musik::core::LibraryPtr library);
+                virtual ~TrackList();
 
-                PlaybackService(
-                    musik::core::LibraryPtr library,
-                    musik::core::audio::ITransport& transport);
-
-                virtual bool IsAcceptingMessages() { return true; }
-                virtual void ProcessMessage(cursespp::IMessage &message);
-
-                musik::core::audio::ITransport& GetTransport() { return this->transport; }
-
-                void Play(TrackList& tracks, size_t index);
-                void Play(size_t index);
-                bool Next();
-                bool Previous();
-                void Stop() { transport.Stop(); }
-
-                void CopyTo(TrackList& target);
-
-                musik::core::TrackPtr GetTrackAtIndex(size_t index);
-                size_t GetIndex();
-
-                size_t Count() { return this->playlist.Count(); }
+                size_t Count();
+                void Add(const DBID& id);
+                musik::core::TrackPtr Get(size_t index);
+                void SetCacheHint(size_t start, size_t count);
+                void ClearCache();
+                void Swap(TrackList& list);
+                void CopyFrom(TrackList& from);
 
             private:
-                void OnStreamEvent(int eventType, std::string uri);
-                void OnPlaybackEvent(int eventType);
+                typedef std::list<DBID> CacheList;
+                typedef std::pair<musik::core::TrackPtr, CacheList::iterator> CacheValue;
+                typedef std::unordered_map<DBID, CacheValue> CacheMap;
 
+                musik::core::TrackPtr GetFromCache(DBID key);
+                void AddToCache(DBID key, musik::core::TrackPtr value);
+
+                std::vector<DBID> ids;
+                CacheList cacheList;
+                CacheMap cacheMap;
+
+                size_t start, count;
                 musik::core::LibraryPtr library;
-                musik::core::audio::ITransport& transport;
-                TrackList playlist;
-                size_t index, nextIndex;
-                boost::recursive_mutex stateMutex;
         };
     }
 }

@@ -49,9 +49,11 @@ using namespace musik::core::db;
 using namespace musik::core::library::constants;
 using namespace musik::box;
 
-NowPlayingTrackListQuery::NowPlayingTrackListQuery(PlaybackService& playback)
-: playback(playback) {
-    this->result.reset(new std::vector<TrackPtr>());
+NowPlayingTrackListQuery::NowPlayingTrackListQuery(
+    LibraryPtr library, PlaybackService& playback)
+: library(library)
+, playback(playback) {
+    this->result.reset(new TrackList(library));
     this->headers.reset(new std::set<size_t>());
     this->hash = 0;
 }
@@ -78,11 +80,11 @@ size_t NowPlayingTrackListQuery::GetQueryHash() {
 
 bool NowPlayingTrackListQuery::OnRun(Connection& db) {
     if (result) {
-        result.reset(new std::vector<TrackPtr>());
+        result.reset(new TrackList(this->library));
         headers.reset(new std::set<size_t>());
     }
 
-    this->playback.Copy(*result);
+    this->playback.CopyTo(*result);
 
     return true;
 }

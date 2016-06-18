@@ -63,15 +63,15 @@ LocalLibrary::LocalLibrary(std::string name,int id)
     Preferences prefs("Library");
 
     this->db.Open(
-        this->GetDatabaseFilename().c_str(), 
-        0, 
-        prefs.GetInt("DatabaseCache", 
+        this->GetDatabaseFilename().c_str(),
+        0,
+        prefs.GetInt("DatabaseCache",
         4096));
 
     LocalLibrary::CreateDatabase(this->db);
 
     this->indexer = new core::Indexer(
-        this->GetLibraryDirectory(), 
+        this->GetLibraryDirectory(),
         this->GetDatabaseFilename());
 
     this->thread = new boost::thread(boost::bind(&LocalLibrary::ThreadProc, this));
@@ -137,11 +137,16 @@ std::string LocalLibrary::GetDatabaseFilename() {
 int LocalLibrary::Enqueue(IQueryPtr query, unsigned int options) {
     boost::recursive_mutex::scoped_lock l(this->mutex);
 
-    queryQueue.push_back(query);
-    queueCondition.notify_all();
+    if (options & ILibrary::QuerySynchronous) {
+        this->RunQuery(query);
+    }
+    else {
+        queryQueue.push_back(query);
+        queueCondition.notify_all();
 
-    if (VERBOSE_LOGGING) {
-        musik::debug::info(TAG, "query '" + query->Name() + "' enqueued");
+        if (VERBOSE_LOGGING) {
+            musik::debug::info(TAG, "query '" + query->Name() + "' enqueued");
+        }
     }
 
     return query->GetId();
@@ -172,6 +177,26 @@ IQueryPtr LocalLibrary::GetNextQuery() {
     return IQueryPtr();
 }
 
+void LocalLibrary::RunQuery(IQueryPtr query) {
+    if (query) {
+        if (VERBOSE_LOGGING) {
+            musik::debug::info(TAG, "query '" + query->Name() + "' running");
+        }
+
+        query->Run(this->db);
+        this->QueryCompleted(query);
+
+        if (VERBOSE_LOGGING) {
+            musik::debug::info(TAG, boost::str(boost::format(
+                "query '%1%' finished with status=%2%")
+                % query->Name()
+                % query->GetStatus()));
+        }
+
+        query.reset();
+    }
+}
+
 void LocalLibrary::ThreadProc() {
     while (!this->Exited()) {
         IQueryPtr query;
@@ -186,23 +211,7 @@ void LocalLibrary::ThreadProc() {
             }
         }
 
-        if (query) {
-            if (VERBOSE_LOGGING) {
-                musik::debug::info(TAG, "query '" + query->Name() + "' running");
-            }
-
-            query->Run(this->db);
-            this->QueryCompleted(query);
-
-            if (VERBOSE_LOGGING) {
-                musik::debug::info(TAG, boost::str(boost::format(
-                    "query '%1%' finished with status=%2%") 
-                    % query->Name() 
-                    % query->GetStatus()));
-            }
-
-            query.reset();
-        }
+        this->RunQuery(query);
     }
 }
 

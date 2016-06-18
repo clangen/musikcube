@@ -44,8 +44,8 @@ namespace musik { namespace core {
     class LibraryTrack : public Track {
         public:
             LibraryTrack();
-            LibraryTrack(DBID id,int libraryId);
-            LibraryTrack(DBID id,musik::core::LibraryPtr library);
+            LibraryTrack(DBID id, int libraryId);
+            LibraryTrack(DBID id, musik::core::LibraryPtr library);
             virtual ~LibraryTrack();
 
             virtual int LibraryId();

@@ -83,6 +83,8 @@ namespace musik { namespace core { namespace library {
             IQueryPtr GetNextQuery();
 
         private:
+            void RunQuery(IQueryPtr query);
+
             typedef std::list<IQueryPtr> QueryList;
 
             boost::recursive_mutex mutex;

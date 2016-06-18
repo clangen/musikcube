@@ -90,13 +90,13 @@ void TrackListView::OnQueryCompleted(IQueryPtr query) {
     }
 }
 
-TrackListView::TrackList TrackListView::GetTrackList() {
+std::shared_ptr<TrackList> TrackListView::GetTrackList() {
     return this->metadata;
 }
 
 void TrackListView::Clear() {
     this->query.reset();
-    this->metadata.reset(new std::vector<TrackPtr>());
+    this->metadata.reset(new TrackList(this->library));
     this->headers.reset(new std::set<size_t>());
     this->OnAdapterChanged();
 }
@@ -136,7 +136,7 @@ TrackListView::Adapter::Adapter(TrackListView &parent)
 }
 
 size_t TrackListView::Adapter::GetEntryCount() {
-    return parent.metadata ? parent.metadata->size() : 0;
+    return parent.metadata ? parent.metadata->Count() : 0;
 }
 
 #define TRACK_COL_WIDTH 3
@@ -153,11 +153,9 @@ constants) */
 
 IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(size_t index) {
     bool selected = index == parent.GetSelectedIndex();
-    int64 attrs = selected
-        ? COLOR_PAIR(BOX_COLOR_BLACK_ON_GREEN)
-        : -1LL;
+    int64 attrs = selected ? COLOR_PAIR(BOX_COLOR_BLACK_ON_GREEN) : -1LL;
 
-    TrackPtr track = parent.metadata->at(index);
+    TrackPtr track = parent.metadata->Get(index);
 
     TrackPtr playing = parent.playing;
     if (playing &&
@@ -217,4 +215,8 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(size_t index) {
         entry->SetAttrs(attrs);
         return entry;
     }
+}
+
+void TrackListView::Adapter::DrawPage(WINDOW* window, size_t index, ScrollPosition *result) {
+    ScrollAdapterBase::DrawPage(window, index, result);
 }

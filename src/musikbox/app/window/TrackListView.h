@@ -56,7 +56,6 @@ namespace musik {
             public:
                 sigslot::signal0<> Requeried;
 
-                typedef std::shared_ptr<std::vector<musik::core::TrackPtr> > TrackList;
                 typedef std::shared_ptr<std::set<size_t> > Headers;
 
                 TrackListView(
@@ -66,7 +65,7 @@ namespace musik {
                 virtual ~TrackListView();
 
                 virtual void ProcessMessage(cursespp::IMessage &message);
-                TrackList GetTrackList();
+                std::shared_ptr<TrackList> GetTrackList();
                 void Clear();
 
                 void Requery(std::shared_ptr<TrackListQueryBase> query);
@@ -82,6 +81,11 @@ namespace musik {
                         virtual size_t GetEntryCount();
                         virtual EntryPtr GetEntry(size_t index);
 
+                        virtual void DrawPage(
+                            WINDOW* window,
+                            size_t index,
+                            ScrollPosition *result = NULL);
+
                     private:
                         TrackListView &parent;
                         IScrollAdapter::ScrollPosition spos;
@@ -91,7 +95,7 @@ namespace musik {
                 void OnTrackChanged(size_t index, musik::core::TrackPtr track);
 
                 std::shared_ptr<TrackListQueryBase> query;
-                TrackList metadata;
+                std::shared_ptr<TrackList> metadata;
                 Headers headers;
                 Adapter* adapter;
                 PlaybackService& playback;

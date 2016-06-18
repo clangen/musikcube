@@ -62,7 +62,7 @@ static std::map<std::string, std::string> FIELD_TO_FOREIGN_KEY =
 CategoryTrackListQuery::CategoryTrackListQuery(LibraryPtr library, const std::string& column, DBID id) {
     this->library = library;
     this->id = id;
-    this->result.reset(new std::vector<TrackPtr>());
+    this->result.reset(new TrackList(library));
     this->headers.reset(new std::set<size_t>());
     this->hash = 0;
 
@@ -98,47 +98,47 @@ size_t CategoryTrackListQuery::GetQueryHash() {
 
 bool CategoryTrackListQuery::OnRun(Connection& db) {
     if (result) {
-        result.reset(new std::vector<TrackPtr>());
+        result.reset(new TrackList(this->library));
         headers.reset(new std::set<size_t>());
     }
-
-    this->query = boost::str(boost::format(
-        "SELECT DISTINCT t.id, t.track, t.disc, t.bpm, t.duration, t.filesize, t.year, t.title, t.filename, t.thumbnail_id, al.name AS album, gn.name AS genre, ar.name AS artist, t.filetime " \
-        "FROM tracks t, paths p, albums al, artists ar, genres gn " \
-        "WHERE t.%s=? AND t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id "
-        "ORDER BY album, disc, track, artist") % this->column);
 
     std::string lastAlbum;
     size_t index = 0;
 
-    Statement trackQuery(this->query.c_str(), db);
+    this->query = boost::str(boost::format(
+        "SELECT DISTINCT t.id, al.name " \
+        "FROM tracks t, albums al, artists ar, genres gn " \
+        "WHERE t.%s=? AND t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id "
+        "ORDER BY al.name, disc, track, ar.name") % this->column);
 
+    Statement trackQuery(this->query.c_str(), db);
     trackQuery.BindInt(0, this->id);
+
     while (trackQuery.Step() == Row) {
-        std::string album = trackQuery.ColumnText(10);
         DBID id = trackQuery.ColumnInt64(0);
+        std::string album = trackQuery.ColumnText(1);
 
         if (album != lastAlbum) {
             headers->insert(index);
             lastAlbum = album;
         }
 
-        TrackPtr track = TrackPtr(new LibraryTrack(id, this->library));
-        track->SetValue(Track::TRACK_NUM, trackQuery.ColumnText(1));
-        track->SetValue(Track::DISC_NUM, trackQuery.ColumnText(2));
-        track->SetValue(Track::BPM, trackQuery.ColumnText(3));
-        track->SetValue(Track::DURATION, trackQuery.ColumnText(4));
-        track->SetValue(Track::FILESIZE, trackQuery.ColumnText(5));
-        track->SetValue(Track::YEAR, trackQuery.ColumnText(6));
-        track->SetValue(Track::TITLE, trackQuery.ColumnText(7));
-        track->SetValue(Track::FILENAME, trackQuery.ColumnText(8));
-        track->SetValue(Track::THUMBNAIL_ID, trackQuery.ColumnText(9));
-        track->SetValue(Track::ALBUM, album.c_str());
-        track->SetValue(Track::GENRE, trackQuery.ColumnText(11));
-        track->SetValue(Track::ARTIST, trackQuery.ColumnText(12));
-        track->SetValue(Track::FILETIME, trackQuery.ColumnText(13));
+        // TrackPtr track = TrackPtr(new LibraryTrack(id, this->library));
+        // track->SetValue(Track::TRACK_NUM, trackQuery.ColumnText(1));
+        // track->SetValue(Track::DISC_NUM, trackQuery.ColumnText(2));
+        // track->SetValue(Track::BPM, trackQuery.ColumnText(3));
+        // track->SetValue(Track::DURATION, trackQuery.ColumnText(4));
+        // track->SetValue(Track::FILESIZE, trackQuery.ColumnText(5));
+        // track->SetValue(Track::YEAR, trackQuery.ColumnText(6));
+        // track->SetValue(Track::TITLE, trackQuery.ColumnText(7));
+        // track->SetValue(Track::FILENAME, trackQuery.ColumnText(8));
+        // track->SetValue(Track::THUMBNAIL_ID, trackQuery.ColumnText(9));
+        // track->SetValue(Track::ALBUM, album.c_str());
+        // track->SetValue(Track::GENRE, trackQuery.ColumnText(11));
+        // track->SetValue(Track::ARTIST, trackQuery.ColumnText(12));
+        // track->SetValue(Track::FILETIME, trackQuery.ColumnText(13));
 
-        result->push_back(track);
+        result->Add(id);
         ++index;
     }
 

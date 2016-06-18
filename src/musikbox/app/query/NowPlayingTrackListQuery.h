@@ -42,7 +42,10 @@ namespace musik {
     namespace box {
         class NowPlayingTrackListQuery : public TrackListQueryBase {
             public:
-                NowPlayingTrackListQuery(PlaybackService& playback);
+                NowPlayingTrackListQuery(
+                    musik::core::LibraryPtr library,
+                    PlaybackService& playback);
+
                 virtual ~NowPlayingTrackListQuery();
 
                 virtual std::string Name() { return "NowPlayingTrackListQuery"; }
@@ -54,6 +57,7 @@ namespace musik {
                 virtual bool OnRun(musik::core::db::Connection &db);
 
             private:
+                musik::core::LibraryPtr library;
                 PlaybackService& playback;
                 Result result;
                 Headers headers;

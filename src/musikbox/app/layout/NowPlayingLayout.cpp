@@ -107,7 +107,7 @@ void NowPlayingLayout::OnTrackListRequeried() {
 
 void NowPlayingLayout::RequeryTrackList() {
     this->trackList->Requery(std::shared_ptr<TrackListQueryBase>(
-        new NowPlayingTrackListQuery(this->playback)));
+        new NowPlayingTrackListQuery(this->library, this->playback)));
 }
 
 bool NowPlayingLayout::KeyPress(const std::string& key) {

@@ -37,15 +37,14 @@
 #include <core/library/query/QueryBase.h>
 #include <core/db/Connection.h>
 #include <core/library/track/Track.h>
+#include <app/model/TrackList.h>
 #include "CategoryListViewQuery.h"
 
 namespace musik {
     namespace box {
         class TrackListQueryBase : public musik::core::query::QueryBase {
             public:
-                typedef std::shared_ptr<
-                    std::vector<musik::core::TrackPtr> > Result;
-
+                typedef std::shared_ptr<TrackList> Result;
                 typedef std::shared_ptr<std::set<size_t> > Headers;
 
                 virtual ~TrackListQueryBase() { };

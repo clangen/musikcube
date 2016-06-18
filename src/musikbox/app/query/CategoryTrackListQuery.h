@@ -46,7 +46,7 @@ namespace musik {
             public:
                 CategoryTrackListQuery(
                     musik::core::LibraryPtr library,
-                    const std::string& column, 
+                    const std::string& column,
                     DBID id);
 
                 virtual ~CategoryTrackListQuery();
