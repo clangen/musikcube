@@ -297,7 +297,6 @@ void GaplessTransport::OnPlaybackStarted(Player* player) {
 
 void GaplessTransport::OnPlaybackAlmostEnded(Player* player) {
     this->SetNextCanStart(true);
-    this->RaiseStreamEvent(GaplessTransport::StreamAlmostDone, player);
 
     {
         boost::recursive_mutex::scoped_lock lock(this->stateMutex);
@@ -308,10 +307,11 @@ void GaplessTransport::OnPlaybackAlmostEnded(Player* player) {
             this->StartWithPlayer(this->nextPlayer);
         }
     }
+
+    this->RaiseStreamEvent(GaplessTransport::StreamAlmostDone, player);
 }
 
 void GaplessTransport::OnPlaybackFinished(Player* player) {
-    this->SetNextCanStart(true);
     this->RaiseStreamEvent(GaplessTransport::StreamFinished, player);
 
     bool stopped = false;
@@ -345,7 +345,6 @@ void GaplessTransport::OnPlaybackFinished(Player* player) {
 }
 
 void GaplessTransport::OnPlaybackError(Player* player) {
-    this->SetNextCanStart(true);
     this->RaiseStreamEvent(GaplessTransport::StreamError, player);
     this->SetPlaybackState(GaplessTransport::PlaybackStopped);
     DEFER(&GaplessTransport::RemoveActive, player);

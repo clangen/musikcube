@@ -77,6 +77,7 @@ namespace musik {
             private:
                 void OnStreamEvent(int eventType, std::string uri);
                 void OnPlaybackEvent(int eventType);
+                void PrepareNextTrack();
 
                 musik::core::LibraryPtr library;
                 musik::core::audio::ITransport& transport;

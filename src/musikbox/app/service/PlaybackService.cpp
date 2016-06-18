@@ -67,19 +67,20 @@ PlaybackService::PlaybackService(LibraryPtr library, ITransport& transport)
     this->nextIndex = NO_POSITION;
 }
 
+void PlaybackService::PrepareNextTrack() {
+    if (this->playlist.Count() > this->index + 1) {
+        if (this->nextIndex != this->index + 1) {
+            this->nextIndex = this->index + 1;
+            this->transport.PrepareNextTrack(URI_AT_INDEX(nextIndex));
+        }
+    }
+}
+
 void PlaybackService::ProcessMessage(IMessage &message) {
     if (message.Type() == MESSAGE_STREAM_EVENT) {
         int64 eventType = message.UserData1();
 
-        if (eventType == ITransport::StreamAlmostDone) {
-            if (this->playlist.Count() > this->index + 1) {
-                if (this->nextIndex != this->index + 1) {
-                    this->nextIndex = this->index + 1;
-                    this->transport.PrepareNextTrack(URI_AT_INDEX(nextIndex));
-                }
-            }
-        }
-        else if (eventType == ITransport::StreamPlaying) {
+        if (eventType == ITransport::StreamPlaying) {
             if (this->nextIndex != NO_POSITION) {
                 this->index = this->nextIndex;
                 this->nextIndex = NO_POSITION;
@@ -88,6 +89,8 @@ void PlaybackService::ProcessMessage(IMessage &message) {
             if (this->index != NO_POSITION) {
                 this->TrackChanged(this->index, this->playlist.Get(this->index));
             }
+
+            this->PrepareNextTrack();
         }
     }
     else if (message.Type() == MESSAGE_PLAYBACK_EVENT) {
