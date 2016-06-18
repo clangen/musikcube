@@ -13,9 +13,10 @@ set (BOX_SRCS
 	./app/query/NowPlayingTrackListQuery.cpp
 	./app/query/SearchTrackListQuery.cpp
 	./app/service/PlaybackService.cpp
-	./app/util/GlobalHotkeys.cpp
-	./app/util/SystemInfo.cpp
 	./app/util/Duration.cpp
+	./app/util/GlobalHotkeys.cpp
+	./app/util/Playback.cpp
+	./app/util/SystemInfo.cpp
 	./app/window/CategoryListView.cpp
 	./app/window/EntryWithHeader.cpp
 	./app/window/LogWindow.cpp

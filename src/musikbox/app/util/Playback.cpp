@@ -32,53 +32,30 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
-#include <cursespp/LayoutBase.h>
-#include <cursespp/TextInput.h>
-
-#include <app/window/TrackListView.h>
-#include <app/service/PlaybackService.h>
-
-#include <core/library/ILibrary.h>
-
-#include <sigslot/sigslot.h>
+#include "stdafx.h"
+#include "Playback.h"
 
 namespace musik {
     namespace box {
-        class TrackSearchLayout :
-            public cursespp::LayoutBase,
-#if (__clang_major__ == 7 && __clang_minor__ == 3)
-            public std::enable_shared_from_this<TrackSearchLayout>,
-#endif
-            public sigslot::has_slots<>
-        {
-            public:
-                TrackSearchLayout(
-                    PlaybackService& playback,
-                    musik::core::LibraryPtr library);
+        namespace playback {
+            void Play(
+                std::shared_ptr<musik::box::TrackListView> trackList,
+                musik::box::PlaybackService& playback,
+                cursespp::IWindowPtr focused)
+            {
+                auto tracks = trackList->GetTrackList();
 
-                virtual ~TrackSearchLayout();
+                if (tracks && tracks->Count()) {
+                    size_t index = (focused.get() == trackList.get())
+                        ? trackList->GetSelectedIndex() : 0;
 
-                virtual void Layout();
-                virtual void OnVisibilityChanged(bool visible);
-                virtual bool KeyPress(const std::string& key);
+                    playback.Play(*tracks, index);
+                }
+            }
 
-            protected:
-                virtual void ProcessMessage(cursespp::IMessage &message);
+            void PauseOrResume() {
 
-            private:
-                void InitializeWindows();
-                void Requery(const std::string& filter = "");
-
-                void OnInputChanged(
-                    cursespp::TextInput* sender,
-                    std::string value);
-
-                PlaybackService& playback;
-                musik::core::LibraryPtr library;
-                std::shared_ptr<TrackListView> trackList;
-                std::shared_ptr<cursespp::TextInput> input;
-        };
+            }
+        }
     }
 }

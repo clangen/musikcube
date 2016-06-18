@@ -37,7 +37,9 @@
 #include <cursespp/Colors.h>
 #include <cursespp/Screen.h>
 #include <core/library/LocalLibraryConstants.h>
-#include <app/query/NowPlayingTrackListQuery.h>
+#include <app/query/SearchTrackListQuery.h>
+#include <app/util/Playback.h>
+
 #include "TrackSearchLayout.h"
 
 using namespace musik::core::library::constants;
@@ -49,6 +51,13 @@ using namespace musik::box;
 using namespace cursespp;
 
 #define SEARCH_HEIGHT 3
+
+#define REQUERY_TRACKLIST 1001
+#define REQUERY_INTERVAL_MS 300
+
+#define DEBOUNCE_REQUERY(x) \
+    this->RemoveMessage(REQUERY_TRACKLIST); \
+    this->PostMessage(REQUERY_TRACKLIST, 0, 0, x);
 
 TrackSearchLayout::TrackSearchLayout(
     PlaybackService& playback,
@@ -83,7 +92,7 @@ void TrackSearchLayout::Layout() {
 
 void TrackSearchLayout::InitializeWindows() {
     this->input.reset(new cursespp::TextInput());
-    //this->input->TextChanged.connect(this, &SearchLayout::OnInputChanged);
+    this->input->TextChanged.connect(this, &TrackSearchLayout::OnInputChanged);
     this->input->SetContentColor(BOX_COLOR_WHITE_ON_BLACK);
     this->input->SetFocusOrder(0);
     this->AddWindow(this->input);
@@ -99,23 +108,35 @@ void TrackSearchLayout::OnVisibilityChanged(bool visible) {
     LayoutBase::OnVisibilityChanged(visible);
 
     if (visible) {
-        this->RequeryTrackList();
+        this->Requery();
     }
     else {
         this->trackList->Clear();
     }
 }
 
-void TrackSearchLayout::RequeryTrackList() {
-    // this->trackList->Requery(std::shared_ptr<TrackListQueryBase>(
-    //     new NowPlayingTrackListQuery(this->library, this->playback)));
+void TrackSearchLayout::Requery(const std::string& filter) {
+    this->trackList->Requery(std::shared_ptr<TrackListQueryBase>(
+        new SearchTrackListQuery(this->library, filter)));
+}
+
+void TrackSearchLayout::ProcessMessage(IMessage &message) {
+    int type = message.Type();
+
+    if (type == REQUERY_TRACKLIST) {
+        this->Requery(this->input->GetText());
+    }
+}
+
+void TrackSearchLayout::OnInputChanged(cursespp::TextInput* sender, std::string value) {
+    DEBOUNCE_REQUERY(REQUERY_INTERVAL_MS);
 }
 
 bool TrackSearchLayout::KeyPress(const std::string& key) {
-    // if (key == "^M") { /* enter. play the selection */
-    //     this->playback.Play(this->trackList->GetSelectedIndex());
-    //     return true;
-    // }
+    if (key == "^M") { /* enter. play the selection */
+        playback::Play(this->trackList, this->playback, this->GetFocus());
+        return true;
+    }
 
     return LayoutBase::KeyPress(key);
 }

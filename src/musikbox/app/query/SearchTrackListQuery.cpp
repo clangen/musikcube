@@ -40,6 +40,7 @@
 #include <core/db/Statement.h>
 
 #include <boost/algorithm/string/case_conv.hpp>
+#include <boost/algorithm/string.hpp>
 
 using musik::core::db::Statement;
 using musik::core::db::Row;
@@ -50,10 +51,15 @@ using musik::core::LibraryPtr;
 using namespace musik::core::db;
 using namespace musik::core::library::constants;
 using namespace musik::box;
+using namespace boost::algorithm;
 
 SearchTrackListQuery::SearchTrackListQuery(LibraryPtr library, const std::string& filter) {
     this->library = library;
-    this->filter = "%" + boost::algorithm::to_lower_copy(filter) + "%";
+
+    if (filter.size()) {
+        this->filter = "%" + trim_copy(to_lower_copy(filter)) + "%";
+    }
+
     this->result.reset(new TrackList(library));
     this->headers.reset(new std::set<size_t>());
     this->hash = 0;
@@ -81,22 +87,38 @@ bool SearchTrackListQuery::OnRun(Connection& db) {
         headers.reset(new std::set<size_t>());
     }
 
+    bool hasFilter = this->filter.size();
+
     std::string lastAlbum;
     size_t index = 0;
 
-    std::string query =
-        "SELECT DISTINCT t.id, al.name " \
-        "FROM tracks t, albums al, artists ar, genres gn " \
-        "WHERE "
-            "(t.title LIKE ? OR al.name LIKE ? OR ar.name LIKE ? OR gn.name LIKE ?) "
-            " AND t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id "
-        "ORDER BY al.name, disc, track, ar.name";
+    std::string query;
+
+    if (hasFilter) {
+        query =
+            "SELECT DISTINCT t.id, al.name "
+            "FROM tracks t, albums al, artists ar, genres gn "
+            "WHERE "
+                "(t.title LIKE ? OR al.name LIKE ? OR ar.name LIKE ? OR gn.name LIKE ?) "
+                " AND t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id "
+            "ORDER BY al.name, disc, track, ar.name";
+    }
+    else {
+        query =
+            "SELECT DISTINCT t.id, al.name "
+            "FROM tracks t, albums al, artists ar, genres gn "
+            "WHERE t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id "
+            "ORDER BY al.name, disc, track, ar.name";
+    }
 
     Statement trackQuery(query.c_str(), db);
-    trackQuery.BindText(0, this->filter);
-    trackQuery.BindText(1, this->filter);
-    trackQuery.BindText(2, this->filter);
-    trackQuery.BindText(3, this->filter);
+
+    if (hasFilter) {
+        trackQuery.BindText(0, this->filter);
+        trackQuery.BindText(1, this->filter);
+        trackQuery.BindText(2, this->filter);
+        trackQuery.BindText(3, this->filter);
+    }
 
     while (trackQuery.Step() == Row) {
         DBID id = trackQuery.ColumnInt64(0);

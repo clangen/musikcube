@@ -38,6 +38,8 @@
 #include <cursespp/Screen.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <app/query/CategoryTrackListQuery.h>
+#include <app/util/Playback.h>
+
 #include "BrowseLayout.h"
 
 using namespace musik::core::library::constants;
@@ -141,17 +143,7 @@ void BrowseLayout::OnCategoryViewInvalidated(
 
 bool BrowseLayout::KeyPress(const std::string& key) {
     if (key == "^M") { /* enter. play the selection */
-        auto tracks = this->trackList->GetTrackList();
-
-        if (tracks && tracks->Count()) {
-            auto focus = this->GetFocus();
-
-            size_t index = (focus == this->trackList)
-                ? this->trackList->GetSelectedIndex() : 0;
-
-            this->playback.Play(*tracks, index);
-        }
-
+        playback::Play(this->trackList, this->playback, this->GetFocus());
         return true;
     }
     if (key == "KEY_F(5)") {

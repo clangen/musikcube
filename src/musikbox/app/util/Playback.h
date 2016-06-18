@@ -34,51 +34,20 @@
 
 #pragma once
 
-#include <cursespp/LayoutBase.h>
-#include <cursespp/TextInput.h>
+#include "stdafx.h"
 
-#include <app/window/TrackListView.h>
 #include <app/service/PlaybackService.h>
-
-#include <core/library/ILibrary.h>
-
-#include <sigslot/sigslot.h>
+#include <app/window/TrackListView.h>
 
 namespace musik {
     namespace box {
-        class TrackSearchLayout :
-            public cursespp::LayoutBase,
-#if (__clang_major__ == 7 && __clang_minor__ == 3)
-            public std::enable_shared_from_this<TrackSearchLayout>,
-#endif
-            public sigslot::has_slots<>
-        {
-            public:
-                TrackSearchLayout(
-                    PlaybackService& playback,
-                    musik::core::LibraryPtr library);
+        namespace playback {
+            void Play(
+                std::shared_ptr<musik::box::TrackListView> trackList,
+                musik::box::PlaybackService& playback,
+                cursespp::IWindowPtr focused);
 
-                virtual ~TrackSearchLayout();
-
-                virtual void Layout();
-                virtual void OnVisibilityChanged(bool visible);
-                virtual bool KeyPress(const std::string& key);
-
-            protected:
-                virtual void ProcessMessage(cursespp::IMessage &message);
-
-            private:
-                void InitializeWindows();
-                void Requery(const std::string& filter = "");
-
-                void OnInputChanged(
-                    cursespp::TextInput* sender,
-                    std::string value);
-
-                PlaybackService& playback;
-                musik::core::LibraryPtr library;
-                std::shared_ptr<TrackListView> trackList;
-                std::shared_ptr<cursespp::TextInput> input;
-        };
+            void PauseOrResume();
+        }
     }
 }
