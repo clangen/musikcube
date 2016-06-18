@@ -6,10 +6,12 @@ set (BOX_SRCS
 	./app/layout/LibraryLayout.cpp
 	./app/layout/NowPlayingLayout.cpp
 	./app/layout/SearchLayout.cpp
+	./app/layout/TrackSearchLayout.cpp
 	./app/model/TrackList.cpp
 	./app/query/CategoryListViewQuery.cpp
 	./app/query/CategoryTrackListQuery.cpp
 	./app/query/NowPlayingTrackListQuery.cpp
+	./app/query/SearchTrackListQuery.cpp
 	./app/service/PlaybackService.cpp
 	./app/util/GlobalHotkeys.cpp
 	./app/util/SystemInfo.cpp

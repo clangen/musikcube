@@ -84,6 +84,9 @@ void LibraryLayout::Layout() {
     this->searchLayout->MoveAndResize(x, y, cx, cy - TRANSPORT_HEIGHT);
     this->searchLayout->Layout();
 
+    this->trackSearch->MoveAndResize(x, y, cx, cy - TRANSPORT_HEIGHT);
+    this->trackSearch->Layout();
+
     this->transportView->MoveAndResize(
         1,
         cy - TRANSPORT_HEIGHT,
@@ -125,12 +128,18 @@ void LibraryLayout::ShowSearch() {
     this->ChangeMainLayout(this->searchLayout);
 }
 
+void LibraryLayout::ShowTrackSearch() {
+    this->ChangeMainLayout(this->trackSearch);
+}
+
 void LibraryLayout::InitializeWindows() {
     this->browseLayout.reset(new BrowseLayout(this->playback, this->library));
     this->nowPlayingLayout.reset(new NowPlayingLayout(this->playback, this->library));
 
     this->searchLayout.reset(new SearchLayout(this->playback, this->library));
     this->searchLayout->SearchResultSelected.connect(this, &LibraryLayout::OnSearchResultSelected);
+
+    this->trackSearch.reset(new TrackSearchLayout(this->playback, this->library));
 
     this->transportView.reset(new TransportWindow(this->playback));
 
@@ -168,8 +177,11 @@ bool LibraryLayout::KeyPress(const std::string& key) {
             this->ShowNowPlaying();
         }
     }
-    else if (key == "M-f") { /* show search */
+    else if (key == "M-f") { /* show album/artist/genre search */
         this->ShowSearch();
+    }
+    else if (key == "M-t") { /* show track search */
+        this->ShowTrackSearch();
     }
     /* forward to the visible layout */
     else if (this->visibleLayout && this->visibleLayout->KeyPress(key)) {

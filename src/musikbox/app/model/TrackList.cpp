@@ -102,9 +102,7 @@ TrackPtr TrackList::Get(size_t index) {
         new TrackMetadataQuery(id, this->library));
 
     this->library->Enqueue(query, ILibrary::QuerySynchronous);
-
     this->AddToCache(id, query->Result());
-
     return query->Result();
 }
 

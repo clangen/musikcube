@@ -34,62 +34,33 @@
 
 #pragma once
 
-#include <cursespp/LayoutBase.h>
-#include <cursespp/LayoutStack.h>
-
-#include <app/layout/BrowseLayout.h>
-#include <app/layout/NowPlayingLayout.h>
-#include <app/layout/SearchLayout.h>
-#include <app/layout/TrackSearchLayout.h>
-#include <app/window/TransportWindow.h>
-#include <app/service/PlaybackService.h>
-
-#include <core/library/ILibrary.h>
-
-#include <sigslot/sigslot.h>
+#include "TrackListQueryBase.h"
 
 namespace musik {
     namespace box {
-        class LibraryLayout : public cursespp::LayoutBase, public sigslot::has_slots<> {
+        class SearchTrackListQuery : public TrackListQueryBase {
             public:
-                LibraryLayout(
-                    PlaybackService& playback,
-                    musik::core::LibraryPtr library);
+                SearchTrackListQuery(
+                    musik::core::LibraryPtr library,
+                    const std::string& filter);
 
-                virtual ~LibraryLayout();
+                virtual ~SearchTrackListQuery();
 
-                virtual void Layout();
+                virtual std::string Name() { return "SearchTrackListQuery"; }
 
-                virtual cursespp::IWindowPtr FocusNext();
-                virtual cursespp::IWindowPtr FocusPrev();
-                virtual cursespp::IWindowPtr GetFocus();
+                virtual Result GetResult();
+                virtual Headers GetHeaders();
+                virtual size_t GetQueryHash();
 
-                virtual bool KeyPress(const std::string& key);
+            protected:
+                virtual bool OnRun(musik::core::db::Connection &db);
 
             private:
-                void OnSearchResultSelected(
-                    SearchLayout* layout,
-                    std::string fieldType,
-                    DBID fieldId);
-
-                void InitializeWindows();
-
-                void ShowNowPlaying();
-                void ShowBrowse();
-                void ShowSearch();
-                void ShowTrackSearch();
-
-                void ChangeMainLayout(std::shared_ptr<cursespp::LayoutBase> newLayout);
-
-                PlaybackService& playback;
-                musik::core::audio::ITransport& transport;
                 musik::core::LibraryPtr library;
-                std::shared_ptr<BrowseLayout> browseLayout;
-                std::shared_ptr<TransportWindow> transportView;
-                std::shared_ptr<NowPlayingLayout> nowPlayingLayout;
-                std::shared_ptr<SearchLayout> searchLayout;
-                std::shared_ptr<TrackSearchLayout> trackSearch;
-                std::shared_ptr<cursespp::LayoutBase> visibleLayout;
+                Result result;
+                Headers headers;
+                std::string filter;
+                size_t hash;
         };
     }
 }
