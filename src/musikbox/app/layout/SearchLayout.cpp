@@ -79,7 +79,7 @@ void SearchLayout::Layout() {
     size_t labelY = SEARCH_HEIGHT;
     size_t categoryWidth = cx / 3;
     size_t categoryY = labelY + LABEL_HEIGHT;
-    size_t categoryHeight = cy - SEARCH_HEIGHT;
+    size_t categoryHeight = cy - SEARCH_HEIGHT - 1;
     size_t lastCategoryWidth = cx - (categoryWidth * 2);
 
     this->albumsLabel->MoveAndResize(0, labelY, categoryWidth, 1);
