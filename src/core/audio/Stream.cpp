@@ -48,6 +48,7 @@ Stream::Stream(unsigned int options)
 : preferedBufferSampleSize(2048)
 , options(options)
 , decoderSampleRate(0)
+, decoderChannels(0)
 , decoderSamplePosition(0)
 {
     if ((this->options & NoDSP) == 0) {
@@ -70,7 +71,9 @@ double Stream::SetPosition(double requestedSeconds) {
 
     if (actualSeconds != -1) {
         double rate = (double) this->decoderSampleRate;
-        this->decoderSamplePosition = (uint64)(actualSeconds * rate);
+
+        this->decoderSamplePosition = 
+            (uint64)(actualSeconds * rate) * this->decoderChannels;
     }
 
     return actualSeconds;
@@ -138,8 +141,9 @@ BufferPtr Stream::GetNextBufferFromDecoder() {
     }
 
     /* remember the sample rate so we can calculate the current time-position */
-    if (!this->decoderSampleRate) {
+    if (!this->decoderSampleRate || !this->decoderChannels) {
         this->decoderSampleRate = buffer->SampleRate();
+        this->decoderChannels = buffer->Channels();
     }
 
     /* offset, in samples */
