@@ -50,7 +50,6 @@ namespace musik {
                 size_t Count();
                 void Add(const DBID& id);
                 musik::core::TrackPtr Get(size_t index);
-                void SetCacheHint(size_t start, size_t count);
                 void ClearCache();
                 void Swap(TrackList& list);
                 void CopyFrom(TrackList& from);
@@ -63,11 +62,11 @@ namespace musik {
                 musik::core::TrackPtr GetFromCache(DBID key);
                 void AddToCache(DBID key, musik::core::TrackPtr value);
 
-                std::vector<DBID> ids;
+                /* lru cache structures */
                 CacheList cacheList;
                 CacheMap cacheMap;
 
-                size_t start, count;
+                std::vector<DBID> ids;
                 musik::core::LibraryPtr library;
         };
     }

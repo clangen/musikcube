@@ -81,11 +81,6 @@ namespace musik {
                         virtual size_t GetEntryCount();
                         virtual EntryPtr GetEntry(size_t index);
 
-                        virtual void DrawPage(
-                            WINDOW* window,
-                            size_t index,
-                            ScrollPosition *result = NULL);
-
                     private:
                         TrackListView &parent;
                         IScrollAdapter::ScrollPosition spos;

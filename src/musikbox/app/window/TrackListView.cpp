@@ -216,7 +216,3 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(size_t index) {
         return entry;
     }
 }
-
-void TrackListView::Adapter::DrawPage(WINDOW* window, size_t index, ScrollPosition *result) {
-    ScrollAdapterBase::DrawPage(window, index, result);
-}

@@ -76,7 +76,6 @@ class TrackMetadataQuery : public QueryBase {
 
 TrackList::TrackList(LibraryPtr library) {
     this->library = library;
-    this->start = this->count = 0;
 }
 
 TrackList::~TrackList() {
@@ -109,10 +108,6 @@ TrackPtr TrackList::Get(size_t index) {
     return query->Result();
 }
 
-void TrackList::Swap(TrackList& tl) {
-    std::swap(tl.ids, this->ids);
-}
-
 void TrackList::CopyFrom(TrackList& from) {
     this->ids.clear();
     this->ClearCache();
@@ -123,18 +118,13 @@ void TrackList::CopyFrom(TrackList& from) {
         std::back_inserter(this->ids));
 }
 
-void TrackList::SetCacheHint(size_t start, size_t count) {
-    if (this->start == start && this->count == count) {
-        return;
-    }
-
-    size_t last = this->start + this->count;
-}
-
 void TrackList::ClearCache() {
     this->cacheList.clear();
     this->cacheMap.clear();
-    this->start = this->count = 0;
+}
+
+void TrackList::Swap(TrackList& tl) {
+    std::swap(tl.ids, this->ids);
 }
 
 TrackPtr TrackList::GetFromCache(DBID key) {
