@@ -39,6 +39,7 @@
 #include <core/sdk/IMetadataReader.h>
 #include <core/sdk/IDecoderFactory.h>
 #include <core/library/IIndexer.h>
+#include <core/support/Preferences.h>
 
 #include <sigslot/sigslot.h>
 
@@ -102,11 +103,9 @@ namespace musik { namespace core {
             int filesIndexed;
             int filesSaved;
 
-
-            class AddRemoveContext {
-                public:
-                    bool add;
-                    std::string path;
+            struct AddRemoveContext {
+                bool add;
+                std::string path;
             };
 
             typedef std::vector<std::shared_ptr<
@@ -119,6 +118,7 @@ namespace musik { namespace core {
 
             MetadataReaderList metadataReaders;
             DecoderList audioDecoders;
+            std::shared_ptr<musik::core::Preferences> prefs;
     };
 
     typedef std::shared_ptr<Indexer> IndexerPtr;

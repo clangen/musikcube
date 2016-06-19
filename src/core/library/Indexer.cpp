@@ -51,6 +51,10 @@
 #include <boost/thread/xtime.hpp>
 #include <boost/bind.hpp>
 
+#define PREFS_SYNC_ON_STARTUP "SyncOnStartup"
+#define PREFS_SYNC_TIMEOUT "SyncTimeout"
+#define PREFS_REMOVE_MISSING_FILES "RemoveMissingFiles"
+
 static const std::string TAG = "Indexer";
 
 using namespace musik::core;
@@ -80,6 +84,7 @@ Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
 , filesSaved(0) {
     this->dbFilename = dbFilename;
     this->libraryPath = libraryPath;
+    this->prefs = Preferences::ForComponent("indexer");
     this->thread = new boost::thread(boost::bind(&Indexer::ThreadLoop, this));
 }
 
@@ -89,7 +94,7 @@ Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
 ///
 ///Exits and joins threads
 //////////////////////////////////////////
-Indexer::~Indexer(){
+Indexer::~Indexer() {
     if (this->thread) {
         this->Exit();
         this->thread->join();
@@ -349,7 +354,7 @@ void Indexer::SyncDirectory(
 
                         this->filesSaved++;
                         if (this->filesSaved % 100 == 0) {
-                            this->TrackRefreshed(); /* no idea... something listens to this. maybe?*/
+                            this->TrackRefreshed(); /* no idea... something listens to this. maybe? */
                         }
                     }
                 }
@@ -376,12 +381,10 @@ void Indexer::ThreadLoop() {
     while (!this->Exited()) {
         this->restart = false;
 
-        auto prefs = Preferences::ForComponent("indexer");
-
-        if(!firstTime || (firstTime && prefs->GetBool("SyncOnStartup", true))) { /* first time through the loop skips this */
+        if(!firstTime || (firstTime && prefs->GetBool(PREFS_SYNC_ON_STARTUP, true))) { /* first time through the loop skips this */
             this->SynchronizeStart();
 
-            this->dbConnection.Open(this->dbFilename.c_str(), 0); /* ensure the db is open*/
+            this->dbConnection.Open(this->dbFilename.c_str(), 0); /* ensure the db is open */
 
             this->SynchronizeInternal();
             this->RunAnalyzers();
@@ -398,7 +401,7 @@ void Indexer::ThreadLoop() {
 
         firstTime = false;
 
-        int waitTime = prefs->GetInt("SyncTimeout", 3600); /* sleep before we try again... */
+        int waitTime = prefs->GetInt(PREFS_SYNC_TIMEOUT, 3600); /* sleep before we try again... */
 
         if (waitTime) {
             boost::xtime waitTimeout;
@@ -424,29 +427,31 @@ void Indexer::SyncDelete() {
 
     /* remove files that are no longer on the filesystem. */
 
-    db::Statement stmtRemove("DELETE FROM tracks WHERE id=?", this->dbConnection);
+    if (prefs->GetBool(PREFS_REMOVE_MISSING_FILES, true)) {
+        db::Statement stmtRemove("DELETE FROM tracks WHERE id=?", this->dbConnection);
 
-    db::Statement allTracks(
-        "SELECT t.id, t.filename "
-        "FROM tracks t ", this->dbConnection);
+        db::Statement allTracks(
+            "SELECT t.id, t.filename "
+            "FROM tracks t ", this->dbConnection);
 
-    while(allTracks.Step() == db::Row && !this->Exited() && !this->Restarted()) {
-        bool remove = false;
-        std::string fn = allTracks.ColumnText(1);
+        while (allTracks.Step() == db::Row && !this->Exited() && !this->Restarted()) {
+            bool remove = false;
+            std::string fn = allTracks.ColumnText(1);
 
-        try {
-            boost::filesystem::path file(fn);
-            if (!boost::filesystem::exists(file)) {
-                remove = true;
+            try {
+                boost::filesystem::path file(fn);
+                if (!boost::filesystem::exists(file)) {
+                    remove = true;
+                }
             }
-        }
-        catch(...) {
-        }
+            catch (...) {
+            }
 
-        if (remove) {
-            stmtRemove.BindInt(0, allTracks.ColumnInt(0));
-            stmtRemove.Step();
-            stmtRemove.Reset();
+            if (remove) {
+                stmtRemove.BindInt(0, allTracks.ColumnInt(0));
+                stmtRemove.Step();
+                stmtRemove.Reset();
+            }
         }
     }
 }
