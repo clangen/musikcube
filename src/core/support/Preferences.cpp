@@ -33,291 +33,152 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
-#include <core/support/Preferences.h>
 
+#include <core/support/Preferences.h>
 #include <core/support/Common.h>
-#include <core/db/CachedStatement.h>
 
 #include <boost/lexical_cast.hpp>
 #include <boost/thread/mutex.hpp>
 
-//////////////////////////////////////////////////////////////////////////////
+#include <unordered_map>
 
+using nlohmann::json;
 using namespace musik::core;
 
-//////////////////////////////////////////////////////////////////////////////
+static std::unordered_map<std::string, std::weak_ptr<Preferences> > cache;
+static boost::mutex cacheMutex;
 
-Preferences::Preferences(const char* nameSpace,const char* library) 
- :nameSpace(nameSpace)
- ,libraryId(0)
-{
-    this->IOPtr = IO::Instance();
-    this->settings  = this->IOPtr->GetNamespace(nameSpace,library,this->libraryId);   
+#define FILENAME(x) musik::core::GetDataDirectory() + "/" + x + ".json"
+
+static FILE* openFile(const std::string& fn, const std::string& mode) {
+#ifdef WIN32
+    std::wstring u16fn = u8to16(fn);
+    std::wstring u16mode = u8to16(mode);
+    return _wfopen(u16fn.c_str(), u16mode.c_str());
+#else
+    return fopen(fn.c_str(), mode.c_str());
+#endif
 }
 
-Preferences::~Preferences(void){
-}
+static std::string fileToString(const std::string& fn) {
+    FILE* f = openFile(fn, "rb");
+    std::string result;
 
-
-bool Preferences::GetBool(const char* key,bool defaultValue){
-    boost::mutex::scoped_lock lock(IO::Instance()->mutex);
-
-    IO::SettingMap::iterator setting = this->settings->find(key);
-    if(setting!=this->settings->end()){
-        return setting->second.Value(defaultValue);
+    if (!f) {
+        return result;
     }
 
-    this->IOPtr->SaveSetting(this->nameSpace.c_str(),this->libraryId,key,defaultValue);
-    return defaultValue;
-}
+    fseek(f, 0, SEEK_END);
+    long len = ftell(f);
+    rewind(f);
 
-int Preferences::GetInt(const char* key,int defaultValue){
-    boost::mutex::scoped_lock lock(IO::Instance()->mutex);
-    IO::SettingMap::iterator setting = this->settings->find(key);
-    if(setting!=this->settings->end()){
-        return setting->second.Value(defaultValue);
+    if (len > 0) {
+        char* bytes = new char[len];
+        fread(static_cast<void*>(bytes), len, 1, f);
+        result.assign(bytes, len);
+        delete[] bytes;
     }
-    this->IOPtr->SaveSetting(this->nameSpace.c_str(),this->libraryId,key,defaultValue);
-    return defaultValue;
+
+    fclose(f);
+
+    return result;
 }
 
-std::string Preferences::GetString(const char* key,const char* defaultValue){
-    boost::mutex::scoped_lock lock(IO::Instance()->mutex);
-    IO::SettingMap::iterator setting = this->settings->find(key);
-    if(setting!=this->settings->end()){
-        return setting->second.Value(std::string(defaultValue));
+static bool stringToFile(const std::string& fn, const std::string& str) {
+    FILE* f = openFile(fn, "wb");
+
+    if (!f) {
+        return false;
     }
-    this->IOPtr->SaveSetting(this->nameSpace.c_str(),this->libraryId,key,std::string(defaultValue));
-    return defaultValue;
+
+    size_t written = fwrite(str.c_str(), str.size(), 1, f);
+    fclose(f);
+    return (written == str.size());
 }
 
-void Preferences::SetBool(const char* key,bool value){
-    boost::mutex::scoped_lock lock(IO::Instance()->mutex);
-    this->IOPtr->SaveSetting(this->nameSpace.c_str(),this->libraryId,key,value);
+std::shared_ptr<Preferences> Preferences::ForComponent(const std::string& c) {
+    boost::mutex::scoped_lock lock(cacheMutex);
+
+    auto it = cache.find(c);
+    if (it != cache.end()) {
+        auto weak = it->second;
+        try {
+            auto shared = weak.lock();
+            if (shared) {
+                return shared;
+            }
+        }
+        catch (...) {
+            /* unable to lock, let's create a new one... */
+        }
+    }
+
+    std::shared_ptr<Preferences> prefs(new Preferences(c));
+    cache[c] = prefs;
+    return prefs;
 }
 
-void Preferences::SetInt(const char* key,int value){
-    boost::mutex::scoped_lock lock(IO::Instance()->mutex);
-    this->IOPtr->SaveSetting(this->nameSpace.c_str(),this->libraryId,key,value);
+Preferences::Preferences(const std::string& component) {
+    this->component = component;
+    this->Load();
 }
 
-void Preferences::SetString(const char* key,const char* value){
-    boost::mutex::scoped_lock lock(IO::Instance()->mutex);
-    this->IOPtr->SaveSetting(this->nameSpace.c_str(),this->libraryId,key,std::string(value));
+Preferences::~Preferences() {
+    this->Save();
 }
 
+#define RETURN_VALUE(defaultValue) \
+    auto it = json.find(key); \
+    if (it == json.end()) { \
+        json[key] = defaultValue; \
+        return defaultValue; \
+    } \
+    return it.value();
 
-
-//////////////////////////////////////////////////////////////////////////////
-
-Preferences::IO::Ptr Preferences::IO::Instance(){
-    static boost::mutex instanceMutex;
-    boost::mutex::scoped_lock oLock(instanceMutex);
-
-    static IO::Ptr sInstance(new Preferences::IO());
-    return sInstance;
-}
-
-Preferences::IO::IO(void){
+bool Preferences::GetBool(const std::string& key, bool defaultValue) {
     boost::mutex::scoped_lock lock(this->mutex);
-    std::string dataDir   = GetDataDirectory();
-    std::string dbFile    = GetDataDirectory() + "settings.db";
-    this->db.Open(dbFile.c_str(),0,128);
-    
-    Preferences::CreateDB(this->db);
-
+    RETURN_VALUE(defaultValue);
 }
 
-void Preferences::IO::SaveSetting(const char* nameSpace,int libraryId,const char *key,Setting setting){
-    int nameSpaceId(0);
-    db::CachedStatement getStmt("SELECT id FROM namespaces WHERE name=? AND library_id=?",this->db);
-    getStmt.BindText(0,nameSpace);
-    getStmt.BindInt(1,libraryId);
-
-    if(getStmt.Step()==db::Row){
-        nameSpaceId = getStmt.ColumnInt(0);
-        db::Statement insertSetting("INSERT OR REPLACE INTO settings (namespace_id,type,the_key,the_value) VALUES (?,?,?,?)",this->db);
-        insertSetting.BindInt(0,nameSpaceId);
-        insertSetting.BindInt(1,setting.type);
-        insertSetting.BindText(2,key);
-        switch(setting.type){
-            case (Setting::Bool):
-                insertSetting.BindInt(3,setting.valueBool?1:0);
-                break;
-            case (Setting::Int):
-                insertSetting.BindInt(3,setting.valueInt);
-                break;
-            case (Setting::Text):
-                insertSetting.BindText(3,setting.valueText);
-                break;
-        }
-        insertSetting.Step();
-
-        (*this->libraryNamespaces[libraryId][nameSpace])[key] = setting;
-    }
-}
-
-Preferences::IO::~IO(void){
-    this->db.Close();
-}
-
-Preferences::Setting::Setting() : type(0){
-}
-
-Preferences::Setting::Setting(bool value) : type(1),valueBool(value){
-}
-
-Preferences::Setting::Setting(int value) : type(2),valueInt(value){
-}
-
-Preferences::Setting::Setting(std::string value) : type(3),valueText(value){
-}
-
-
-Preferences::Setting::Setting(db::Statement &stmt) : 
-    type(stmt.ColumnInt(0)) {
-    switch(type){
-        case Setting::Int:
-            this->valueInt  = stmt.ColumnInt(2);
-            break;
-        case Setting::Bool:
-            this->valueBool = (stmt.ColumnInt(2)>0);
-            break;
-        default:
-            this->valueText.assign(stmt.ColumnText(2));
-    }
-}
-
-bool Preferences::Setting::Value(bool defaultValue){
-    switch(this->type){
-        case Setting::Bool:
-            return this->valueBool;
-            break;
-        case Setting::Int:
-            return this->valueInt>0;
-            break;
-        case Setting::Text:
-            return !this->valueText.empty();
-            break;
-    }
-    return defaultValue;
-}
-
-int Preferences::Setting::Value(int defaultValue){
-    switch(this->type){
-        case Setting::Bool:
-            return this->valueBool?1:0;
-            break;
-        case Setting::Int:
-            return this->valueInt;
-            break;
-        case Setting::Text:
-            try{
-                return boost::lexical_cast<int>(this->valueText);
-            }
-            catch(...){
-            }
-            break;
-    }
-    return defaultValue;
-}
-
-std::string Preferences::Setting::Value(std::string defaultValue){
-    switch(this->type){
-        case Setting::Bool:
-            return this->valueBool ? "1" : "0";
-            break;
-        case Setting::Int:
-            try{
-                return boost::lexical_cast<std::string>(this->valueInt);
-            }
-            catch(...){
-            }
-            break;
-        case Setting::Text:
-            return this->valueText;
-            break;
-    }
-    return defaultValue;
-}
-
-
-
-Preferences::IO::SettingMapPtr Preferences::IO::GetNamespace(const char* nameSpace,const char* library,int &libraryId){
-
+int Preferences::GetInt(const std::string& key, int defaultValue) {
     boost::mutex::scoped_lock lock(this->mutex);
+    RETURN_VALUE(defaultValue);
+}
 
-    if(library!=NULL){
-        db::Statement getLibStmt("SELECT id FROM libraries WHERE name=?",this->db);
-        getLibStmt.BindText(0,library);
-        if(getLibStmt.Step()==db::Row){
-            libraryId   = getLibStmt.ColumnInt(0);
-        }
-    }
+std::string Preferences::GetString(const std::string& key, const std::string& defaultValue) {
+    boost::mutex::scoped_lock lock(this->mutex);
+    RETURN_VALUE(defaultValue);
+}
 
-    // First check if it's in the NamespaceMap
-    NamespaceMap::iterator ns = this->libraryNamespaces[libraryId].find(nameSpace);
-    if(ns!=this->libraryNamespaces[libraryId].end()){
-        // Found namespace, return settings
-        return ns->second;
-    }
+void Preferences::SetBool(const std::string& key, bool value) {
+    boost::mutex::scoped_lock lock(this->mutex);
+    json[key] = value;
+}
 
+void Preferences::SetInt(const std::string& key, int value){
+    boost::mutex::scoped_lock lock(this->mutex);
+    json[key] = value;
+}
 
-    // Not in cache, lets load it from db.
-    int nameSpaceId(0);
-    db::Statement getStmt("SELECT id FROM namespaces WHERE name=? AND library_id=?",this->db);
-    getStmt.BindText(0,nameSpace);
-    getStmt.BindInt(1,libraryId);
+void Preferences::SetString(const std::string& key, const char* value){
+    boost::mutex::scoped_lock lock(this->mutex);
+    json[key] = value;
+}
 
-    SettingMapPtr newSettings( new SettingMap() );
-    this->libraryNamespaces[libraryId][nameSpace] = newSettings;
-
-    if(getStmt.Step()==db::Row){
-        // Namespace exists, load the settings
-        nameSpaceId = getStmt.ColumnInt(0);
-
-        db::Statement selectSettings("SELECT type,the_key,the_value FROM settings WHERE namespace_id=?",this->db);
-        selectSettings.BindInt(0,nameSpaceId);
-        while( selectSettings.Step()==db::Row ){
-            (*newSettings)[selectSettings.ColumnText(1)]  = Setting(selectSettings);
-        }
-
-        return newSettings;
-    }else{
-        // First time namespace is accessed, create it.
-        db::Statement insertNamespace("INSERT INTO namespaces (name,library_id) VALUES (?,?)",this->db);
-        insertNamespace.BindText(0,nameSpace);
-        insertNamespace.BindInt(1,libraryId);
-        insertNamespace.Step();
-        nameSpaceId = this->db.LastInsertedId();
-        return newSettings;
+void Preferences::GetKeys(std::vector<std::string>& target) {
+    auto it = json.begin();
+    for (; it != json.end(); it++) {
+        target.push_back(it.key());
     }
 }
 
-void Preferences::CreateDB(db::Connection &db){
-    db.Execute("CREATE TABLE IF NOT EXISTS namespaces ("
-        "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-        "name TEXT)");
-
-    // Add a library_id relation
-    db.Execute("ALTER TABLE namespaces ADD COLUMN library_id INTEGER DEFAULT 0");
-
-    db.Execute("CREATE TABLE IF NOT EXISTS settings ("
-        "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-        "namespace_id INTEGER DEFAULT 0,"
-        "type INTEGER DEFAULT 0,"
-        "the_key TEXT,"
-        "the_value TEXT)");
-
-    db.Execute("CREATE UNIQUE INDEX IF NOT EXISTS namespace_index ON namespaces (name,library_id)");
-    db.Execute("CREATE UNIQUE INDEX IF NOT EXISTS setting_index ON settings (namespace_id,the_key)");
-
-	// Start by initializing the db
-    db.Execute("CREATE TABLE IF NOT EXISTS libraries ("
-            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-            "name TEXT,"
-            "type INTEGER DEFAULT 0)");
-    db.Execute("CREATE UNIQUE INDEX IF NOT EXISTS library_index ON libraries (name)");
-
+void Preferences::Load() {
+    std::string str = fileToString(FILENAME(this->component));
+    if (str.size()) {
+        this->json = json::parse(str);
+    }
 }
 
+void Preferences::Save() {
+    stringToFile(FILENAME(this->component), this->json.dump(2));
+}

@@ -376,9 +376,9 @@ void Indexer::ThreadLoop() {
     while (!this->Exited()) {
         this->restart = false;
 
-        Preferences prefs("Indexer");
+        auto prefs = Preferences::ForComponent("indexer");
 
-        if(!firstTime || (firstTime && prefs.GetBool("SyncOnStartup", true))) { /* first time through the loop skips this */
+        if(!firstTime || (firstTime && prefs->GetBool("SyncOnStartup", true))) { /* first time through the loop skips this */
             this->SynchronizeStart();
 
             this->dbConnection.Open(this->dbFilename.c_str(), 0); /* ensure the db is open*/
@@ -398,7 +398,7 @@ void Indexer::ThreadLoop() {
 
         firstTime = false;
 
-        int waitTime = prefs.GetInt("SyncTimeout", 3600); /* sleep before we try again... */
+        int waitTime = prefs->GetInt("SyncTimeout", 3600); /* sleep before we try again... */
 
         if (waitTime) {
             boost::xtime waitTimeout;

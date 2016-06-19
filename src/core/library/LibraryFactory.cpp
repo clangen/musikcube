@@ -39,6 +39,8 @@
 #include <core/support/Common.h>
 #include <core/support/Preferences.h>
 
+#define PREFS_COMPONENT "libraries"
+
 using namespace musik::core;
 
 LibraryFactory& LibraryFactory::Instance() { 
@@ -47,59 +49,25 @@ LibraryFactory& LibraryFactory::Instance() {
     return *sInstance; 
 };
 
-
-//////////////////////////////////////////
-///\brief
-///Constructor
-//////////////////////////////////////////
 LibraryFactory::LibraryFactory() {
-    // Connect to the settings.db
-    std::string dataDir = GetDataDirectory();
-    std::string dbFile = GetDataDirectory() + "settings.db";
-    musik::core::db::Connection db;
-    db.Open(dbFile.c_str(), 0, 128);
+    auto prefs = Preferences::ForComponent(PREFS_COMPONENT);
+    std::vector<std::string> libraries;
+    prefs->GetKeys(libraries);
 
-    Preferences::CreateDB(db);
-
-    // Get the libraries
-    db::Statement stmtGetLibs("SELECT id, name, type FROM libraries ORDER BY id", db);
-
-    while(stmtGetLibs.Step() == db::Row) {
-        int id = stmtGetLibs.ColumnInt(0);
-        std::string name = stmtGetLibs.ColumnText(1);
-        int type = stmtGetLibs.ColumnInt(2);
-        this->AddLibrary(id, type, name);
+    for (size_t i = 0; i < libraries.size(); i++) {
+        std::string name = libraries.at(i);
+        int id = prefs->GetInt(name);
+        this->AddLibrary(id, LocalLibrary, name);
     }
 
-    // If there are no libraries, add a LocalLibrary
     if (this->libraries.empty()) {
         this->CreateLibrary("Local Library", LocalLibrary);
     }
-
 }
 
 LibraryFactory::~LibraryFactory() {
 }
 
-//////////////////////////////////////////
-///\brief
-///Add a new library to the LibraryFactory
-///
-///\param name
-///Identifier of library. Need to be a unique name.
-///
-///\param type
-///Type of library. See LibraryFactory::Types
-///
-///\param sendEvent
-///Send the LibrariesUpdated when library has been added?
-///
-///\param startup
-///Start the library when added
-///
-///\returns
-///LibraryPtr of the added library. (NULL pointer on failure)
-//////////////////////////////////////////
 LibraryPtr LibraryFactory::AddLibrary(int id, int type, const std::string& name)
 {
     LibraryPtr library = library::LocalLibrary::Create(name, id);
@@ -117,55 +85,46 @@ void LibraryFactory::Shutdown() {
     Instance().libraries.clear();
 }
 
-//////////////////////////////////////////
-///\brief
-///Create a new Library
-///
-///\param name
-///Identifier of library. Need to be a unique name.
-///
-///\param type
-///Type of library. See LibraryFactory::Types
-///
-///\param startup
-///Start the library when added
-///
-///\returns
-///LibraryPtr of the added library. (NULL pointer on failure)
-//////////////////////////////////////////
 LibraryPtr LibraryFactory::CreateLibrary(const std::string& name, int type) {
-    // Connect to the settings.db
-    std::string dataDir = GetDataDirectory();
-    std::string dbFile = GetDataDirectory() + "settings.db";
-    musik::core::db::Connection db;
-    db.Open(dbFile.c_str(), 0, 128);
+    auto prefs = Preferences::ForComponent(PREFS_COMPONENT);
+    std::vector<std::string> libraries;
+    prefs->GetKeys(libraries);
 
-    db::Statement stmtInsert("INSERT OR FAIL INTO libraries (name,type) VALUES (?,?)", db);
-    stmtInsert.BindText(0, name);
-    stmtInsert.BindInt(1, type);
+    /* ensure the library doesn't already exist, and figure out a 
+    new unique identifier for this one... */
 
-    if (stmtInsert.Step() == db::Done) {
-        return this->AddLibrary(db.LastInsertedId(), type, name);
+    int nextId = 0; /* we start at 1 becuase we always have. */
+    for (size_t i = 0; i < libraries.size(); i++) {
+        std::string n = libraries.at(i);
+        int id = prefs->GetInt(name);
+
+        if (n == name) {
+            throw std::runtime_error("cannot create library! it already exists!");
+        }
+
+        if (id > nextId) {
+            nextId = id;
+        }
     }
 
-    return LibraryPtr();
+    ++nextId; /* unique */
+    prefs->SetInt(name, nextId);
+
+    return this->AddLibrary(nextId, LocalLibrary, name);
 }
 
-//////////////////////////////////////////
-///\brief
-///Get the vector with all current libraries
-//////////////////////////////////////////
-LibraryFactory::LibraryVector& LibraryFactory::Libraries(){
+LibraryFactory::LibraryVector& LibraryFactory::Libraries() {
     return LibraryFactory::Instance().libraries;
 }
 
-LibraryPtr LibraryFactory::GetLibrary(int identifier){
+LibraryPtr LibraryFactory::GetLibrary(int identifier) {
     if (identifier) {
         LibraryMap::iterator lib = this->libraryMap.find(identifier);
         if (lib != this->libraryMap.end()) {
             return lib->second;
         }
     }
+
     return LibraryPtr();
 }
 

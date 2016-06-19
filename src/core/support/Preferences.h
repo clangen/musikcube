@@ -41,91 +41,35 @@
 #include <core/db/Connection.h>
 #include <boost/thread/mutex.hpp>
 
-//////////////////////////////////////////////////////////////////////////////
+#include <json.hpp>
 
-namespace musik{ namespace core{
+namespace musik { namespace core {
 
-//////////////////////////////////////////////////////////////////////////////
+    class Preferences {
+        public:
+            static std::shared_ptr<Preferences> ForComponent(const std::string& c);
 
-class  Preferences{
-    public:
-        Preferences(const char* nameSpace,const char* library=NULL);
-        ~Preferences(void);
+            ~Preferences();
 
-        bool GetBool(const char* key,bool defaultValue);
-        int GetInt(const char* key,int defaultValue);
-        std::string GetString(const char* key,const char* defaultValue);
+            bool GetBool(const std::string& key, bool defaultValue = false);
+            int GetInt(const std::string& key, int defaultValue = 0);
+            std::string GetString(const std::string& key, const std::string& defaultValue = "");
 
-        void SetBool(const char* key,bool value);
-        void SetInt(const char* key,int value);
-        void SetString(const char* key,const char* value);
+            void SetBool(const std::string& key, bool value);
+            void SetInt(const std::string& key, int value);
+            void SetString(const std::string& key, const char* value);
 
-        std::string nameSpace;
-        int libraryId;
+            void GetKeys(std::vector<std::string>& target);
+            void Save();
 
-        static void CreateDB(db::Connection &db);
+        private:
+            Preferences(const std::string& component);
+            void Load();
 
-    private:
+            boost::mutex mutex;
+            nlohmann::json json;
+            std::string component;
+    };
 
-        class Setting{
+} }
 
-            public:
-                Setting();
-                Setting(bool value);
-                Setting(int value);
-                Setting(std::string value);
-                Setting(db::Statement &stmt);
-
-                typedef enum {
-                    Bool=1,
-                    Int=2,
-                    Text=3
-                } Type;
-
-                int type;
-                int valueInt;
-                bool valueBool;
-                std::string valueText;
-
-                bool Value(bool defaultValue);
-                int Value(int defaultValue);
-                std::string Value(std::string defaultValue);
-        };
-    private:
-
-
-        class IO{
-            public:
-                IO(void);
-                ~IO(void);
-
-                typedef std::map<std::string,Setting> SettingMap;
-                typedef std::shared_ptr<SettingMap> SettingMapPtr;
-                typedef std::map<std::string,SettingMapPtr> NamespaceMap;
-                typedef std::map<int,NamespaceMap> LibNamespaceMap;
-                typedef std::shared_ptr<IO> Ptr;
-
-                SettingMapPtr GetNamespace(const char* nameSpace,const char* library,int &libraryId);
-
-                void SaveSetting(const char* nameSpace,int libraryId,const char *key,Setting setting);
-
-                static IO::Ptr Instance();
-
-                boost::mutex mutex;
-
-            private:
-                db::Connection db;
-                LibNamespaceMap libraryNamespaces;
-                
-
-        };
-
-
-        IO::Ptr IOPtr;
-        IO::SettingMapPtr settings;
-
-};
-
-//////////////////////////////////////////////////////////////////////////////
-} } // musik::core
-//////////////////////////////////////////////////////////////////////////////

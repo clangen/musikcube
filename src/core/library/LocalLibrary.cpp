@@ -60,12 +60,12 @@ LocalLibrary::LocalLibrary(std::string name,int id)
 , exit(false) {
     this->identifier = boost::lexical_cast<std::string>(id);
 
-    Preferences prefs("Library");
+    auto prefs = Preferences::ForComponent("library");
 
     this->db.Open(
         this->GetDatabaseFilename().c_str(),
         0,
-        prefs.GetInt("DatabaseCache",
+        prefs->GetInt("DatabaseCache",
         4096));
 
     LocalLibrary::CreateDatabase(this->db);
