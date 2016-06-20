@@ -44,31 +44,27 @@
 #include <cstdio>
 #include <iostream>
 
-//////////////////////////////////////////////////////////////////////////////
-namespace musik{ namespace core{ namespace io{
-//////////////////////////////////////////////////////////////////////////////
+namespace musik { namespace core { namespace io {
 
-class LocalFileStream : public IDataStream {
-    public:
-        LocalFileStream();
-        virtual ~LocalFileStream();
+    class LocalFileStream : public IDataStream {
+        public:
+            LocalFileStream();
+            virtual ~LocalFileStream();
 
-        virtual bool Open(const char *filename,unsigned int options=0);
-        virtual bool Close();
-        virtual void Destroy();
-        virtual PositionType Read(void* buffer,PositionType readBytes);
-        virtual bool SetPosition(PositionType position);
-        virtual PositionType Position();
-        virtual bool Eof();
-        virtual long Length();
-        virtual const char* Type();
+            virtual bool Open(const char *filename, unsigned int options = 0);
+            virtual bool Close();
+            virtual void Destroy();
+            virtual PositionType Read(void* buffer, PositionType readBytes);
+            virtual bool SetPosition(PositionType position);
+            virtual PositionType Position();
+            virtual bool Eof();
+            virtual long Length();
+            virtual const char* Type();
 
-    private:
-        std::string extension;
-        FILE *file;
-        long filesize;
-};
+        private:
+            std::string extension;
+            FILE *file;
+            long filesize;
+    };
 
-//////////////////////////////////////////////////////////////////////////////
 } } }
-//////////////////////////////////////////////////////////////////////////////

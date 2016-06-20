@@ -223,8 +223,14 @@ void Indexer::SynchronizeInternal() {
     }
 
     for(std::size_t i = 0; i < paths.size(); ++i) {
+        this->trackTransaction.reset(new db::ScopedTransaction(this->dbConnection));
         std::string path = paths[i];
         this->SyncDirectory(path, path, pathIds[i]);
+    }
+
+    if (this->trackTransaction) {
+        this->trackTransaction->CommitAndRestart();
+        this->trackTransaction.reset();
     }
 
     /* remove undesired entries from db (files themselves will remain) */
@@ -353,7 +359,11 @@ void Indexer::SyncDirectory(
                         track.Save(this->dbConnection, this->libraryPath);
 
                         this->filesSaved++;
-                        if (this->filesSaved % 100 == 0) {
+                        if (this->filesSaved % 200 == 0) {
+                            if (this->trackTransaction) {
+                                this->trackTransaction->CommitAndRestart();
+                            }
+
                             this->TrackRefreshed(); /* no idea... something listens to this. maybe? */
                         }
                     }

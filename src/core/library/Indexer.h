@@ -119,6 +119,7 @@ namespace musik { namespace core {
             MetadataReaderList metadataReaders;
             DecoderList audioDecoders;
             std::shared_ptr<musik::core::Preferences> prefs;
+            std::shared_ptr<musik::core::db::ScopedTransaction> trackTransaction;
     };
 
     typedef std::shared_ptr<Indexer> IndexerPtr;
