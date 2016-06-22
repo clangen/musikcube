@@ -123,6 +123,9 @@
     <ClCompile Include="app\query\SearchTrackListQuery.cpp">
       <Filter>app\query</Filter>
     </ClCompile>
+    <ClCompile Include="app\layout\IndexerLayout.cpp">
+      <Filter>app\layout</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -287,6 +290,9 @@
     </ClInclude>
     <ClInclude Include="app\query\SearchTrackListQuery.h">
       <Filter>app\query</Filter>
+    </ClInclude>
+    <ClInclude Include="app\layout\IndexerLayout.h">
+      <Filter>app\layout</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

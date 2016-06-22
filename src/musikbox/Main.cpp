@@ -43,6 +43,7 @@
 
 #include <app/layout/ConsoleLayout.h>
 #include <app/layout/LibraryLayout.h>
+#include <app/layout/IndexerLayout.h>
 #include <app/util/GlobalHotkeys.h>
 #include <app/service/PlaybackService.h>
 
@@ -259,6 +260,7 @@ int main(int argc, char* argv[])
 
         ILayoutPtr libraryLayout((ILayout *) new LibraryLayout(playback, library));
         ILayoutPtr consoleLayout((ILayout *) new ConsoleLayout(transport, library));
+        ILayoutPtr indexerLayout((ILayout *) new IndexerLayout(library));
 
         int64 ch;
         timeout(IDLE_TIMEOUT_MS);
@@ -313,6 +315,9 @@ int main(int argc, char* argv[])
                 else if (ch == KEY_F(2) || kn == "M-w") {
                     changeLayout(state, libraryLayout);
                 }
+                else if (kn == "M-s") {
+                    changeLayout(state, indexerLayout);
+                }
                 else if (!globalHotkeys.Handle(kn)) {
                     bool processed = false;
                     if (state.input) {
@@ -337,6 +342,7 @@ int main(int argc, char* argv[])
                 resize_term(0, 0);
                 libraryLayout->Layout();
                 consoleLayout->Layout();
+                indexerLayout->Layout();
                 state.layout->BringToTop();
                 resizeAt = 0;
             }

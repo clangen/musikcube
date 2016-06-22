@@ -34,43 +34,53 @@
 
 #pragma once
 
-#include "curses_config.h"
-#include "Window.h"
-#include "IScrollAdapter.h"
-#include "IScrollable.h"
-#include "IKeyHandler.h"
+#include <cursespp/LayoutBase.h>
+#include <cursespp/ListWindow.h>
+#include <cursespp/TextLabel.h>
+#include <cursespp/SimpleScrollAdapter.h>
 
-namespace cursespp {
-    class ScrollableWindow : public IScrollable, public IKeyHandler, public Window {
-        public:
-            ScrollableWindow(IWindow *parent = NULL);
-            virtual ~ScrollableWindow();
+#include <app/window/TrackListView.h>
+#include <app/service/PlaybackService.h>
 
-            virtual void Show();
-            virtual void OnSizeChanged();
+#include <core/library/ILibrary.h>
 
-            virtual bool KeyPress(const std::string& key);
+#include <sigslot/sigslot.h>
 
-            virtual void ScrollToTop();
-            virtual void ScrollToBottom();
-            virtual void ScrollUp(int delta = 1);
-            virtual void ScrollDown(int delta = 1);
-            virtual void PageUp();
-            virtual void PageDown();
+namespace musik {
+    namespace box {
+        class IndexerLayout :
+            public cursespp::LayoutBase,
+#if (__clang_major__ == 7 && __clang_minor__ == 3)
+            public std::enable_shared_from_this<IndexerLayout>,
+#endif
+            public sigslot::has_slots<>
+        {
+            public:
+                IndexerLayout(
+                    musik::core::LibraryPtr library);
 
-            virtual void Focus();
-            virtual void Blur();
+                virtual ~IndexerLayout();
 
-            virtual void OnAdapterChanged();
+                virtual void Layout();
+                virtual void OnVisibilityChanged(bool visible);
+                virtual bool KeyPress(const std::string& key);
 
-        protected:
-            virtual IScrollAdapter& GetScrollAdapter() = 0;
-            virtual IScrollAdapter::ScrollPosition& GetScrollPosition();
+            protected:
+                virtual void ProcessMessage(cursespp::IMessage &message);
 
-            size_t GetPreviousPageEntryIndex();
-            bool IsLastItemVisible();
+            private:
+                void InitializeWindows();
+                void RefreshAddedPaths();
 
-        private:
-            IScrollAdapter::ScrollPosition scrollPosition;
-    };
+                musik::core::LibraryPtr library;
+
+                std::shared_ptr<cursespp::TextLabel> title;
+                std::shared_ptr<cursespp::TextLabel> browseLabel;
+                std::shared_ptr<cursespp::TextLabel> addedPathsLabel;
+                std::shared_ptr<cursespp::ListWindow> browseList;
+                std::shared_ptr<cursespp::ListWindow> addedPathsList;
+
+                cursespp::SimpleScrollAdapter addedPathsAdapter;
+        };
+    }
 }

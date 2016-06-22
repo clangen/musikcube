@@ -116,6 +116,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="app\layout\BrowseLayout.cpp" />
+    <ClCompile Include="app\layout\IndexerLayout.cpp" />
     <ClCompile Include="app\layout\LibraryLayout.cpp" />
     <ClCompile Include="app\layout\ConsoleLayout.cpp" />
     <ClCompile Include="app\layout\NowPlayingLayout.cpp" />
@@ -163,6 +164,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="app\layout\BrowseLayout.h" />
+    <ClInclude Include="app\layout\IndexerLayout.h" />
     <ClInclude Include="app\layout\LibraryLayout.h" />
     <ClInclude Include="app\layout\ConsoleLayout.h" />
     <ClInclude Include="app\layout\NowPlayingLayout.h" />

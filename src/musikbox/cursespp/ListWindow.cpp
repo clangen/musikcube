@@ -42,9 +42,20 @@ typedef IScrollAdapter::ScrollPosition ScrollPos;
 
 size_t ListWindow::NO_SELECTION = (size_t) -1;
 
-ListWindow::ListWindow(IWindow *parent)
-: ScrollableWindow(parent) {
-    this->selectedIndex = (size_t) -1;
+class EmptyAdapter : public IScrollAdapter {
+    public:
+        virtual void SetDisplaySize(size_t width, size_t height) { }
+        virtual size_t GetEntryCount() { return 0; }
+        virtual EntryPtr GetEntry(size_t index) { return IScrollAdapter::EntryPtr(); }
+        virtual void DrawPage(WINDOW* window, size_t index, ScrollPosition *result = NULL) { }
+};
+
+static EmptyAdapter emptyAdapter;
+
+ListWindow::ListWindow(IScrollAdapter* adapter, IWindow *parent)
+: ScrollableWindow(parent)
+, adapter(adapter) {
+
 }
 
 ListWindow::~ListWindow() {
@@ -54,6 +65,14 @@ ListWindow::~ListWindow() {
 void ListWindow::ScrollToTop() {
     this->SetSelectedIndex(0);
     this->ScrollTo(0);
+}
+
+IScrollAdapter& ListWindow::GetScrollAdapter() {
+    if (this->adapter) {
+        return *this->adapter;
+    }
+
+    return emptyAdapter;
 }
 
 void ListWindow::ScrollToBottom() {
