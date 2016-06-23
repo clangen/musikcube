@@ -81,6 +81,8 @@ void buildDirectoryList(const path& p, std::vector<std::string>& target)
     catch (...) {
         /* todo: log maybe? */
     }
+
+    std::sort(target.begin(), target.end(), std::locale(""));
 }
 
 DirectoryAdapter::DirectoryAdapter() {
