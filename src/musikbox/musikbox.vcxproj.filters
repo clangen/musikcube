@@ -126,6 +126,9 @@
     <ClCompile Include="app\layout\IndexerLayout.cpp">
       <Filter>app\layout</Filter>
     </ClCompile>
+    <ClCompile Include="app\model\DirectoryAdapter.cpp">
+      <Filter>app\model</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -293,6 +296,9 @@
     </ClInclude>
     <ClInclude Include="app\layout\IndexerLayout.h">
       <Filter>app\layout</Filter>
+    </ClInclude>
+    <ClInclude Include="app\model\DirectoryAdapter.h">
+      <Filter>app\model</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

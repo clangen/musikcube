@@ -6,6 +6,7 @@
 **/CMakeFiles
 **/Makefile
 **/cmake_install.cmake
+.vs
 bin
 obj
 ipch

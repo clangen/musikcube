@@ -45,6 +45,21 @@ using namespace musik::box;
 using namespace cursespp;
 using namespace boost::filesystem;
 
+#ifdef WIN32
+void buildDriveList(std::vector<std::string>& target) {
+    target.clear();
+    static char buffer[4096];
+    DWORD result = ::GetLogicalDriveStringsA(4096, buffer);
+    if (result) {
+        char* current = buffer;
+        while (*current) {
+            target.push_back(std::string(current));
+            current += strlen(current) + 1;
+        }
+    }
+}
+#endif
+
 void buildDirectoryList(const path& p, std::vector<std::string>& target)
 {
     target.clear();
@@ -64,7 +79,7 @@ void buildDirectoryList(const path& p, std::vector<std::string>& target)
         }
     }
     catch (...) {
-        /* todo: log */
+        /* todo: log maybe? */
     }
 }
 
@@ -86,6 +101,17 @@ void DirectoryAdapter::Select(size_t index) {
         dir /= this->subdirs[hasParent ? index - 1 : index];
     }
 
+#ifdef WIN32
+    std::string pathstr = this->dir.string();
+    if ((pathstr.size() == 2 && pathstr[1] == ':') ||
+        (pathstr.size() == 3 && pathstr[2] == ':'))
+    {
+        dir = path();
+        buildDriveList(subdirs);
+        return;
+    }
+
+#endif
     buildDirectoryList(dir, subdirs);
 }
 
@@ -112,5 +138,6 @@ IScrollAdapter::EntryPtr DirectoryAdapter::GetEntry(size_t index) {
         }
         --index;
     }
+
     return IScrollAdapter::EntryPtr(new SingleLineEntry(this->subdirs[index]));
 }

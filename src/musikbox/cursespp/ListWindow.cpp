@@ -54,7 +54,8 @@ static EmptyAdapter emptyAdapter;
 
 ListWindow::ListWindow(IScrollAdapter* adapter, IWindow *parent)
 : ScrollableWindow(parent)
-, adapter(adapter) {
+, adapter(adapter)
+, selectedIndex(0) {
 
 }
 

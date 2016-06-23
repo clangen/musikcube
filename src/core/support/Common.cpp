@@ -92,9 +92,9 @@ std::string musik::core::GetHomeDirectory() {
     std::string directory;
 
     #ifdef WIN32
-        DWORD bufferSize = GetEnvironmentVariable(_T("HOMEPATH"), 0, 0);
+        DWORD bufferSize = GetEnvironmentVariable(_T("USERPROFILE"), 0, 0);
         wchar_t *buffer = new wchar_t[bufferSize + 2];
-        GetEnvironmentVariable(_T("HOMEPATH"), buffer, bufferSize);
+        GetEnvironmentVariable(_T("USERPROFILE"), buffer, bufferSize);
         directory.assign(u16to8(buffer));
         delete[] buffer;
     #else
