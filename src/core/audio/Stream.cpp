@@ -45,7 +45,7 @@ using musik::core::PluginFactory;
 static std::string TAG = "Stream";
 
 Stream::Stream(unsigned int options)
-: preferedBufferSampleSize(2048)
+: preferedBufferSampleSize(4096)
 , options(options)
 , decoderSampleRate(0)
 , decoderChannels(0)
