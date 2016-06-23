@@ -76,11 +76,12 @@ DirectoryAdapter::~DirectoryAdapter() {
 }
 
 void DirectoryAdapter::Select(size_t index) {
-    if (dir.has_parent_path() && index == 0) {
+    bool hasParent = dir.has_parent_path();
+    if (hasParent && index == 0) {
         this->dir = this->dir.parent_path();
     }
     else {
-        dir /= this->subdirs[index];
+        dir /= this->subdirs[hasParent ? index - 1 : index];
     }
 
     buildDirectoryList(dir, subdirs);
