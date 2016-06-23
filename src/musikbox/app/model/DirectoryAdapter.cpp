@@ -32,46 +32,71 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "stdafx.h"
 
-#include "curses_config.h"
-#include "IScrollAdapter.h"
-#include <deque>
+#include <cursespp/ScrollAdapterBase.h>
+#include <cursespp/SingleLineEntry.h>
 
-namespace cursespp {
-    class ScrollAdapterBase : public IScrollAdapter {
-        public:
-            typedef std::function<int64(
-                ScrollableWindow*,
-                size_t,
-                size_t,
-                EntryPtr)> ItemDecorator;
+#include "DirectoryAdapter.h"
 
-            ScrollAdapterBase();
-            virtual ~ScrollAdapterBase();
+using namespace musik::box;
+using namespace cursespp;
+using namespace boost::filesystem;
 
-            virtual void SetDisplaySize(size_t width, size_t height);
-            virtual size_t GetLineCount();
+void buildDirectoryList(const path& p, std::vector<std::string>& target)
+{
+    target.clear();
 
-            virtual void DrawPage(
-                ScrollableWindow* window,
-                size_t index,
-                ScrollPosition *result = nullptr);
+    try {
+        directory_iterator end;
+        directory_iterator file(p);
 
-            virtual size_t GetEntryCount() = 0;
-            virtual EntryPtr GetEntry(size_t index) = 0;
+        while (file != end) {
+            if (is_directory(file->status())) {
+                std::string leaf = file->path().leaf().string();
+                if (leaf[0] != '.') {
+                    target.push_back(leaf);
+                }
+            }
+            ++file;
+        }
+    }
+    catch (...) {
+        /* todo: log */
+    }
+}
 
-            virtual void SetItemDecorator(ItemDecorator decorator) { this->decorator = decorator; }
+DirectoryAdapter::DirectoryAdapter() {
+    this->dir = "/Users/clangen";
+    buildDirectoryList(this->dir, this->subdirs);
+}
 
-        protected:
-            void GetVisibleItems(size_t desired, std::deque<EntryPtr>& target, size_t& start);
-            virtual ItemDecorator GetItemDecorator() { return this->decorator; }
+DirectoryAdapter::~DirectoryAdapter() {
 
-            size_t GetWidth() { return this->width; }
-            size_t GetHeight() { return this->height; }
+}
 
-        private:
-            size_t width, height;
-            ItemDecorator decorator;
-    };
+void DirectoryAdapter::Select(size_t index) {
+    if (dir.has_parent_path() && index == 0) {
+        this->dir = this->dir.parent_path();
+    }
+    else {
+        dir /= this->subdirs[index];
+    }
+
+    buildDirectoryList(dir, subdirs);
+}
+
+size_t DirectoryAdapter::GetEntryCount() {
+    size_t count = subdirs.size();
+    return dir.has_parent_path() ? count + 1 : count;
+}
+
+IScrollAdapter::EntryPtr DirectoryAdapter::GetEntry(size_t index) {
+    if (dir.has_parent_path()) {
+        if (index == 0) {
+            return IScrollAdapter::EntryPtr(new SingleLineEntry(".."));
+        }
+        --index;
+    }
+    return IScrollAdapter::EntryPtr(new SingleLineEntry(this->subdirs[index]));
 }

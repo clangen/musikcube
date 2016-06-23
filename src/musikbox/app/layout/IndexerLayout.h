@@ -41,6 +41,7 @@
 
 #include <app/window/TrackListView.h>
 #include <app/service/PlaybackService.h>
+#include <app/model/DirectoryAdapter.h>
 
 #include <core/library/ILibrary.h>
 
@@ -74,6 +75,7 @@ namespace musik {
                 int64 ListItemDecorator(
                     cursespp::ScrollableWindow* w,
                     size_t index,
+                    size_t line,
                     cursespp::IScrollAdapter::EntryPtr entry);
 
                 musik::core::LibraryPtr library;
@@ -85,6 +87,7 @@ namespace musik {
                 std::shared_ptr<cursespp::ListWindow> addedPathsList;
 
                 cursespp::SimpleScrollAdapter addedPathsAdapter;
+                DirectoryAdapter browseAdapter;
         };
     }
 }

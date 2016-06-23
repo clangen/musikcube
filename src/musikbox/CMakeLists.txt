@@ -8,6 +8,7 @@ set (BOX_SRCS
 	./app/layout/NowPlayingLayout.cpp
 	./app/layout/SearchLayout.cpp
 	./app/layout/TrackSearchLayout.cpp
+	./app/model/DirectoryAdapter.cpp
 	./app/model/TrackList.cpp
 	./app/query/CategoryListViewQuery.cpp
 	./app/query/CategoryTrackListQuery.cpp

@@ -34,44 +34,25 @@
 
 #pragma once
 
-#include "curses_config.h"
-#include "IScrollAdapter.h"
-#include <deque>
+#include <cursespp/ScrollAdapterBase.h>
+#include <boost/filesystem.hpp>
+#include <vector>
 
-namespace cursespp {
-    class ScrollAdapterBase : public IScrollAdapter {
-        public:
-            typedef std::function<int64(
-                ScrollableWindow*,
-                size_t,
-                size_t,
-                EntryPtr)> ItemDecorator;
+namespace musik {
+    namespace box {
+        class DirectoryAdapter : public cursespp::ScrollAdapterBase {
+            public:
+                DirectoryAdapter();
+                virtual ~DirectoryAdapter();
 
-            ScrollAdapterBase();
-            virtual ~ScrollAdapterBase();
+                virtual size_t GetEntryCount();
+                virtual EntryPtr GetEntry(size_t index);
 
-            virtual void SetDisplaySize(size_t width, size_t height);
-            virtual size_t GetLineCount();
+                void Select(size_t index);
 
-            virtual void DrawPage(
-                ScrollableWindow* window,
-                size_t index,
-                ScrollPosition *result = nullptr);
-
-            virtual size_t GetEntryCount() = 0;
-            virtual EntryPtr GetEntry(size_t index) = 0;
-
-            virtual void SetItemDecorator(ItemDecorator decorator) { this->decorator = decorator; }
-
-        protected:
-            void GetVisibleItems(size_t desired, std::deque<EntryPtr>& target, size_t& start);
-            virtual ItemDecorator GetItemDecorator() { return this->decorator; }
-
-            size_t GetWidth() { return this->width; }
-            size_t GetHeight() { return this->height; }
-
-        private:
-            size_t width, height;
-            ItemDecorator decorator;
-    };
+            private:
+                boost::filesystem::path dir;
+                std::vector<std::string> subdirs;
+        };
+    }
 }

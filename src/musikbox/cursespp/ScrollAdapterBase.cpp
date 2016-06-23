@@ -143,7 +143,7 @@ void ScrollAdapterBase::DrawPage(ScrollableWindow* scrollable, size_t index, Scr
             int64 attrs = -1;
 
             if (this->decorator) {
-                attrs = this->decorator(scrollable, e, entry);
+                attrs = this->decorator(scrollable, topIndex + e, i, entry);
             }
 
             if (attrs == -1) {

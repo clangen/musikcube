@@ -49,7 +49,14 @@ using namespace musik::box;
 using namespace cursespp;
 using namespace std::placeholders;
 
-#define SEARCH_HEIGHT 3
+#define LABEL_HEIGHT 1
+
+#define TOP(w) w->GetY()
+#define BOTTOM(w) (w->GetY() + w->GetHeight())
+#define LEFT(w) w->GetX()
+#define RIGHT (x) (x->GetX() + w->GetWidth())
+
+typedef IScrollAdapter::EntryPtr EntryPtr;
 
 IndexerLayout::IndexerLayout(musik::core::LibraryPtr library)
 : LayoutBase()
@@ -60,13 +67,6 @@ IndexerLayout::IndexerLayout(musik::core::LibraryPtr library)
 IndexerLayout::~IndexerLayout() {
 
 }
-
-#define LABEL_HEIGHT 1
-
-#define TOP(w) w->GetY()
-#define BOTTOM(w) (w->GetY() + w->GetHeight())
-#define LEFT(w) w->GetX()
-#define RIGHT (x) (x->GetX() + w->GetWidth())
 
 void IndexerLayout::Layout() {
     int x = 0, y = 0;
@@ -91,8 +91,6 @@ void IndexerLayout::Layout() {
     this->addedPathsList->MoveAndResize(rightX, pathListsY, rightWidth, pathsHeight);
 }
 
-typedef IScrollAdapter::EntryPtr EntryPtr;
-
 void IndexerLayout::RefreshAddedPaths() {
     this->addedPathsAdapter.Clear();
 
@@ -105,22 +103,22 @@ void IndexerLayout::RefreshAddedPaths() {
         this->addedPathsAdapter.AddEntry(e);
     }
 
-    ScrollAdapterBase::ItemDecorator decorator =
-        std::bind(&IndexerLayout::ListItemDecorator, this, _1, _2, _3);
-
-    this->addedPathsAdapter.SetItemDecorator(decorator);
     this->addedPathsList->OnAdapterChanged();
 }
 
 int64 IndexerLayout::ListItemDecorator(
-    cursespp::ScrollableWindow* scrollable,
+    ScrollableWindow* scrollable,
     size_t index,
-    cursespp::IScrollAdapter::EntryPtr entry)
+    size_t line,
+    IScrollAdapter::EntryPtr entry)
 {
-    if (scrollable == this->addedPathsList.get()) {
-        if (index == this->addedPathsList->GetSelectedIndex()) {
-            return COLOR_PAIR(BOX_COLOR_BLACK_ON_GREEN);
-        }
+    if (scrollable == this->addedPathsList.get() ||
+        scrollable == this->browseList.get())
+    {
+         ListWindow* lw = static_cast<ListWindow*>(scrollable);
+         if (lw->GetSelectedIndex() == index) {
+             return COLOR_PAIR(BOX_COLOR_BLACK_ON_GREEN);
+         }
     }
     return -1;
 }
@@ -137,21 +135,25 @@ void IndexerLayout::InitializeWindows() {
     this->addedPathsLabel.reset(new TextLabel());
     this->addedPathsLabel->SetText("indexed paths (DEL to remove)", TextLabel::AlignLeft);
 
-    this->addedPathsList.reset(new cursespp::ListWindow(&this->addedPathsAdapter, nullptr));
+    this->addedPathsList.reset(new cursespp::ListWindow(&this->addedPathsAdapter));
     this->addedPathsList->SetContentColor(BOX_COLOR_WHITE_ON_BLACK);
-    this->browseList.reset(new cursespp::ListWindow(nullptr, nullptr));
+    this->browseList.reset(new cursespp::ListWindow(&this->browseAdapter));
     this->browseList->SetContentColor(BOX_COLOR_WHITE_ON_BLACK);
 
     this->addedPathsList->SetFocusOrder(0);
     this->browseList->SetFocusOrder(1);
+
+    ScrollAdapterBase::ItemDecorator decorator =
+        std::bind(&IndexerLayout::ListItemDecorator, this, _1, _2, _3, _4);
+
+    this->addedPathsAdapter.SetItemDecorator(decorator);
+    this->browseAdapter.SetItemDecorator(decorator);
 
     this->AddWindow(this->title);
     this->AddWindow(this->browseLabel);
     this->AddWindow(this->addedPathsLabel);
     this->AddWindow(this->browseList);
     this->AddWindow(this->addedPathsList);
-
-    this->RefreshAddedPaths();
 
     this->Layout();
 }
@@ -160,7 +162,7 @@ void IndexerLayout::OnVisibilityChanged(bool visible) {
     LayoutBase::OnVisibilityChanged(visible);
 
     if (visible) {
-
+        this->RefreshAddedPaths();
     }
 }
 
@@ -168,8 +170,13 @@ void IndexerLayout::ProcessMessage(IMessage &message) {
 }
 
 bool IndexerLayout::KeyPress(const std::string& key) {
-    if (key == "^M") { /* enter. play the selection */
-        return true;
+    if (key == "^M") {
+        if (this->GetFocus() == this->browseList) {
+            this->browseAdapter.Select(this->browseList->GetSelectedIndex());
+            this->browseList->SetSelectedIndex(0);
+            this->browseList->OnAdapterChanged();
+            return true;
+        }
     }
 
     return LayoutBase::KeyPress(key);
