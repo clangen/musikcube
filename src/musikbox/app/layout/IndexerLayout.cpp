@@ -44,15 +44,14 @@
 #include "IndexerLayout.h"
 
 using namespace musik::core::library::constants;
-
 using namespace musik::core;
 using namespace musik::box;
 using namespace cursespp;
+using namespace std::placeholders;
 
 #define SEARCH_HEIGHT 3
 
-IndexerLayout::IndexerLayout(
-    musik::core::LibraryPtr library)
+IndexerLayout::IndexerLayout(musik::core::LibraryPtr library)
 : LayoutBase()
 , library(library) {
     this->InitializeWindows();
@@ -83,7 +82,7 @@ void IndexerLayout::Layout() {
     int leftWidth = cx / 3; /* 1/3 width */
     int rightX = leftWidth;
     int rightWidth = cx - rightX; /* remainder (~2/3) */
-    
+
     this->browseLabel->MoveAndResize(leftX, startY, leftWidth, LABEL_HEIGHT);
     this->addedPathsLabel->MoveAndResize(rightX, startY, rightWidth, LABEL_HEIGHT);
 
@@ -106,7 +105,24 @@ void IndexerLayout::RefreshAddedPaths() {
         this->addedPathsAdapter.AddEntry(e);
     }
 
+    ScrollAdapterBase::ItemDecorator decorator =
+        std::bind(&IndexerLayout::ListItemDecorator, this, _1, _2, _3);
+
+    this->addedPathsAdapter.SetItemDecorator(decorator);
     this->addedPathsList->OnAdapterChanged();
+}
+
+int64 IndexerLayout::ListItemDecorator(
+    cursespp::ScrollableWindow* scrollable,
+    size_t index,
+    cursespp::IScrollAdapter::EntryPtr entry)
+{
+    if (scrollable == this->addedPathsList.get()) {
+        if (index == this->addedPathsList->GetSelectedIndex()) {
+            return COLOR_PAIR(BOX_COLOR_BLACK_ON_GREEN);
+        }
+    }
+    return -1;
 }
 
 void IndexerLayout::InitializeWindows() {
@@ -116,10 +132,10 @@ void IndexerLayout::InitializeWindows() {
     this->title->SetText("settings", TextLabel::AlignCenter);
 
     this->browseLabel.reset(new TextLabel());
-    this->browseLabel->SetText("browse filesystem", TextLabel::AlignLeft);
+    this->browseLabel->SetText("browse (SPACE to add)", TextLabel::AlignLeft);
 
     this->addedPathsLabel.reset(new TextLabel());
-    this->addedPathsLabel->SetText("indexed paths", TextLabel::AlignLeft);
+    this->addedPathsLabel->SetText("indexed paths (DEL to remove)", TextLabel::AlignLeft);
 
     this->addedPathsList.reset(new cursespp::ListWindow(&this->addedPathsAdapter, nullptr));
     this->addedPathsList->SetContentColor(BOX_COLOR_WHITE_ON_BLACK);

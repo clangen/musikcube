@@ -49,7 +49,7 @@ typedef IScrollAdapter::ScrollPosition ScrollPos;
     { \
         ScrollPos& pos = GetScrollPosition(); \
         GetScrollAdapter().DrawPage( \
-            this->GetContent(), \
+            this, \
             pos.firstVisibleEntryIndex, \
             &pos); \
     } \
@@ -66,9 +66,9 @@ void ScrollableWindow::OnSizeChanged() {
 
     IScrollAdapter& adapter = this->GetScrollAdapter();
     ScrollPos& pos = this->GetScrollPosition();
-    
+
     adapter.SetDisplaySize(
-        this->GetContentWidth(), 
+        this->GetContentWidth(),
         this->GetContentHeight());
 }
 
@@ -96,12 +96,7 @@ void ScrollableWindow::OnAdapterChanged() {
     }
     else {
         ScrollPos &pos = this->GetScrollPosition();
-
-        adapter->DrawPage(
-            this->GetContent(),
-            pos.firstVisibleEntryIndex,
-            &pos);
-
+        adapter->DrawPage(this, pos.firstVisibleEntryIndex, &pos);
         this->Repaint();
     }
 }
@@ -112,13 +107,13 @@ void ScrollableWindow::Show() {
 }
 
 void ScrollableWindow::ScrollToTop() {
-    GetScrollAdapter().DrawPage(this->GetContent(), 0, &this->GetScrollPosition());
+    GetScrollAdapter().DrawPage(this, 0, &this->GetScrollPosition());
     this->Repaint();
 }
 
 void ScrollableWindow::ScrollToBottom() {
     GetScrollAdapter().DrawPage(
-        this->GetContent(),
+        this,
         GetScrollAdapter().GetEntryCount(),
         &this->GetScrollPosition());
 
@@ -130,9 +125,7 @@ void ScrollableWindow::ScrollUp(int delta) {
 
     if (pos.firstVisibleEntryIndex > 0) {
         GetScrollAdapter().DrawPage(
-            this->GetContent(),
-            pos.firstVisibleEntryIndex - delta,
-            &pos);
+            this, pos.firstVisibleEntryIndex - delta, &pos);
 
         this->Repaint();
     }
@@ -142,9 +135,7 @@ void ScrollableWindow::ScrollDown(int delta) {
     ScrollPos &pos = this->GetScrollPosition();
 
     GetScrollAdapter().DrawPage(
-        this->GetContent(),
-        pos.firstVisibleEntryIndex + delta,
-        &pos);
+        this, pos.firstVisibleEntryIndex + delta, &pos);
 
     this->Repaint();
 }

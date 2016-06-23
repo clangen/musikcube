@@ -56,8 +56,7 @@ namespace musik {
             public sigslot::has_slots<>
         {
             public:
-                IndexerLayout(
-                    musik::core::LibraryPtr library);
+                IndexerLayout(musik::core::LibraryPtr library);
 
                 virtual ~IndexerLayout();
 
@@ -71,6 +70,11 @@ namespace musik {
             private:
                 void InitializeWindows();
                 void RefreshAddedPaths();
+
+                int64 ListItemDecorator(
+                    cursespp::ScrollableWindow* w,
+                    size_t index,
+                    cursespp::IScrollAdapter::EntryPtr entry);
 
                 musik::core::LibraryPtr library;
 

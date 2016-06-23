@@ -41,23 +41,33 @@
 namespace cursespp {
     class ScrollAdapterBase : public IScrollAdapter {
         public:
+            typedef std::function<int64(ScrollableWindow*, size_t, EntryPtr)> ItemDecorator;
+
             ScrollAdapterBase();
             virtual ~ScrollAdapterBase();
 
             virtual void SetDisplaySize(size_t width, size_t height);
             virtual size_t GetLineCount();
-            virtual void DrawPage(WINDOW* window, size_t index, ScrollPosition *result = NULL);
+
+            virtual void DrawPage(
+                ScrollableWindow* window,
+                size_t index,
+                ScrollPosition *result = nullptr);
 
             virtual size_t GetEntryCount() = 0;
             virtual EntryPtr GetEntry(size_t index) = 0;
 
+            virtual void SetItemDecorator(ItemDecorator decorator) { this->decorator = decorator; }
+
         protected:
             void GetVisibleItems(size_t desired, std::deque<EntryPtr>& target, size_t& start);
+            virtual ItemDecorator GetItemDecorator() { return this->decorator; }
 
             size_t GetWidth() { return this->width; }
             size_t GetHeight() { return this->height; }
 
         private:
             size_t width, height;
+            ItemDecorator decorator;
     };
 }

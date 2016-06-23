@@ -40,7 +40,12 @@
 #include <sigslot/sigslot.h>
 
 namespace cursespp {
-    class ListWindow : public ScrollableWindow {
+    class ListWindow :
+        public ScrollableWindow
+    #if (__clang_major__ == 7 && __clang_minor__ == 3)
+        , public std::enable_shared_from_this<ListWindow>
+    #endif
+     {
         public:
             static size_t NO_SELECTION;
 

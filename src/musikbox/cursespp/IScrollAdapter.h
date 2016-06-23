@@ -37,6 +37,8 @@
 #include <stdafx.h>
 
 namespace cursespp {
+    class ScrollableWindow;
+
     class IScrollAdapter {
         public:
             virtual ~IScrollAdapter() { }
@@ -71,6 +73,6 @@ namespace cursespp {
             virtual void SetDisplaySize(size_t width, size_t height) = 0;
             virtual size_t GetEntryCount() = 0;
             virtual EntryPtr GetEntry(size_t index) = 0;
-            virtual void DrawPage(WINDOW* window, size_t index, ScrollPosition *result = NULL) = 0;
+            virtual void DrawPage(ScrollableWindow* window, size_t index, ScrollPosition *result = NULL) = 0;
     };
 }

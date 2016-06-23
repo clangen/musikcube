@@ -34,6 +34,7 @@
 
 #include <stdafx.h>
 #include "ScrollAdapterBase.h"
+#include "ScrollableWindow.h"
 #include "MultiLineEntry.h"
 
 using namespace cursespp;
@@ -103,7 +104,7 @@ void ScrollAdapterBase::GetVisibleItems(
     start = actual;
 }
 
-void ScrollAdapterBase::DrawPage(WINDOW* window, size_t index, ScrollPosition *result) {
+void ScrollAdapterBase::DrawPage(ScrollableWindow* scrollable, size_t index, ScrollPosition *result) {
     if (result != NULL) {
         result->visibleEntryCount = 0;
         result->firstVisibleEntryIndex = 0;
@@ -111,6 +112,8 @@ void ScrollAdapterBase::DrawPage(WINDOW* window, size_t index, ScrollPosition *r
         result->totalEntries = 0;
         result->logicalIndex = 0;
     }
+
+    WINDOW* window = scrollable->GetContent();
 
     werase(window);
 
@@ -137,7 +140,15 @@ void ScrollAdapterBase::DrawPage(WINDOW* window, size_t index, ScrollPosition *r
         size_t count = entry->GetLineCount();
 
         for (size_t i = 0; i < count && drawnLines < this->height; i++) {
-            int64 attrs = entry->GetAttrs(i);
+            int64 attrs = -1;
+
+            if (this->decorator) {
+                attrs = this->decorator(scrollable, e, entry);
+            }
+
+            if (attrs == -1) {
+                attrs = entry->GetAttrs(i);
+            }
 
             if (attrs != -1) {
                 wattron(window, attrs);

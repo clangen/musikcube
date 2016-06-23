@@ -47,7 +47,7 @@ class EmptyAdapter : public IScrollAdapter {
         virtual void SetDisplaySize(size_t width, size_t height) { }
         virtual size_t GetEntryCount() { return 0; }
         virtual EntryPtr GetEntry(size_t index) { return IScrollAdapter::EntryPtr(); }
-        virtual void DrawPage(WINDOW* window, size_t index, ScrollPosition *result = NULL) { }
+        virtual void DrawPage(ScrollableWindow* window, size_t index, ScrollPosition *result = NULL) { }
 };
 
 static EmptyAdapter emptyAdapter;
@@ -156,9 +156,7 @@ void ListWindow::PageDown() {
 
 void ListWindow::ScrollTo(size_t index) {
     this->GetScrollAdapter().DrawPage(
-        this->GetContent(),
-        index,
-        &this->GetScrollPosition());
+        this, index, &this->GetScrollPosition());
 
     this->Repaint();
 }
