@@ -79,7 +79,6 @@ void IndexerLayout::Layout() {
     this->title->MoveAndResize(0, 0, cx, LABEL_HEIGHT);
 
     int startY = BOTTOM(this->title) + 1;
-    int pathsHeight = cy / 3;
     int leftX = 0;
     int leftWidth = cx / 3; /* 1/3 width */
     int rightX = leftWidth;
@@ -89,6 +88,8 @@ void IndexerLayout::Layout() {
     this->addedPathsLabel->MoveAndResize(rightX, startY, rightWidth, LABEL_HEIGHT);
 
     int pathListsY = BOTTOM(this->browseLabel);
+    int pathsHeight = (cy - pathListsY) / 2;
+
     this->browseList->MoveAndResize(leftX, pathListsY, leftWidth, pathsHeight);
     this->addedPathsList->MoveAndResize(rightX, pathListsY, rightWidth, pathsHeight);
 }
