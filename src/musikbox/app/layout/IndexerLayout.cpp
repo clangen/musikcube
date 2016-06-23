@@ -60,8 +60,10 @@ typedef IScrollAdapter::EntryPtr EntryPtr;
 
 IndexerLayout::IndexerLayout(musik::core::LibraryPtr library)
 : LayoutBase()
-, library(library) {
+, library(library)
+, indexer(library->Indexer()) {
     this->InitializeWindows();
+    this->indexer->PathsUpdated.connect(this, &IndexerLayout::RefreshAddedPaths);
 }
 
 IndexerLayout::~IndexerLayout() {
@@ -95,7 +97,7 @@ void IndexerLayout::RefreshAddedPaths() {
     this->addedPathsAdapter.Clear();
 
     std::vector<std::string> paths;
-    this->library->Indexer()->GetPaths(paths);
+    this->indexer->GetPaths(paths);
 
     for (size_t i = 0; i < paths.size(); i++) {
         auto v = paths.at(i);
@@ -166,15 +168,44 @@ void IndexerLayout::OnVisibilityChanged(bool visible) {
     }
 }
 
-void IndexerLayout::ProcessMessage(IMessage &message) {
+void IndexerLayout::AddSelectedDirectory() {
+    size_t index = this->browseList->GetSelectedIndex();
+    std::string path = this->browseAdapter.GetFullPathAt(index);
+
+    if (path.size()) {
+        this->indexer->AddPath(path);
+    }
+}
+
+void IndexerLayout::RemoveSelectedDirectory() {
+    std::vector<std::string> paths;
+    this->indexer->GetPaths(paths);
+    size_t index = this->addedPathsList->GetSelectedIndex();
+    this->indexer->RemovePath(paths.at(index));
+}
+
+void IndexerLayout::DrillIntoSelectedDirectory() {
+    this->browseAdapter.Select(this->browseList->GetSelectedIndex());
+    this->browseList->SetSelectedIndex(0);
+    this->browseList->OnAdapterChanged();
 }
 
 bool IndexerLayout::KeyPress(const std::string& key) {
     if (key == "^M") {
         if (this->GetFocus() == this->browseList) {
-            this->browseAdapter.Select(this->browseList->GetSelectedIndex());
-            this->browseList->SetSelectedIndex(0);
-            this->browseList->OnAdapterChanged();
+            this->DrillIntoSelectedDirectory();
+            return true;
+        }
+    }
+    else if (key == " ") {
+        if (this->GetFocus() == this->browseList) {
+            this->AddSelectedDirectory();
+            return true;
+        }
+    }
+    else if (key == "^H" || key == "^?" || key == "KEY_BACKSPACE") { /* backspace */
+        if (this->GetFocus() == this->addedPathsList) {
+            this->RemoveSelectedDirectory();
             return true;
         }
     }

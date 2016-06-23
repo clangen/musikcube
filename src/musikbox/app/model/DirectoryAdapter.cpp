@@ -87,6 +87,17 @@ void DirectoryAdapter::Select(size_t index) {
     buildDirectoryList(dir, subdirs);
 }
 
+std::string DirectoryAdapter::GetFullPathAt(size_t index) {
+    bool hasParent = dir.has_parent_path();
+
+    if (hasParent && index == 0) {
+        return "";
+    }
+
+    index = (hasParent ? index - 1 : index);
+    return (dir / this->subdirs[index]).string();
+}
+
 size_t DirectoryAdapter::GetEntryCount() {
     size_t count = subdirs.size();
     return dir.has_parent_path() ? count + 1 : count;

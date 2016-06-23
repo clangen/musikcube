@@ -49,6 +49,7 @@ namespace musik {
                 virtual EntryPtr GetEntry(size_t index);
 
                 void Select(size_t index);
+                std::string GetFullPathAt(size_t index);
 
             private:
                 boost::filesystem::path dir;

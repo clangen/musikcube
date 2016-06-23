@@ -145,7 +145,7 @@ void Indexer::AddPath(const std::string& path) {
         this->addRemoveQueue.push_back(context);
     }
 
-    this->Synchronize();
+    this->Synchronize(true);
 }
 
 //////////////////////////////////////////
@@ -165,7 +165,7 @@ void Indexer::RemovePath(const std::string& path) {
         this->addRemoveQueue.push_back(context);
     }
 
-    this->Synchronize();
+    this->Synchronize(true);
 }
 
 //////////////////////////////////////////
@@ -571,10 +571,6 @@ void Indexer::SyncOptimize() {
     }
 }
 
-//////////////////////////////////////////
-///\brief
-///Method for adding/removing paths in the database
-//////////////////////////////////////////
 void Indexer::ProcessAddRemoveQueue() {
     boost::mutex::scoped_lock lock(this->exitMutex);
 

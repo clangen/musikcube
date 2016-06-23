@@ -65,12 +65,12 @@ namespace musik {
                 virtual void OnVisibilityChanged(bool visible);
                 virtual bool KeyPress(const std::string& key);
 
-            protected:
-                virtual void ProcessMessage(cursespp::IMessage &message);
-
             private:
                 void InitializeWindows();
                 void RefreshAddedPaths();
+                void AddSelectedDirectory();
+                void RemoveSelectedDirectory();
+                void DrillIntoSelectedDirectory();
 
                 int64 ListItemDecorator(
                     cursespp::ScrollableWindow* w,
@@ -79,6 +79,7 @@ namespace musik {
                     cursespp::IScrollAdapter::EntryPtr entry);
 
                 musik::core::LibraryPtr library;
+                musik::core::IIndexer* indexer;
 
                 std::shared_ptr<cursespp::TextLabel> title;
                 std::shared_ptr<cursespp::TextLabel> browseLabel;
