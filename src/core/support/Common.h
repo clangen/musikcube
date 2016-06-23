@@ -39,6 +39,7 @@
 
 namespace musik { namespace core {
 
+    std::string GetHomeDirectory();
     std::string GetApplicationDirectory();
     std::string GetDataDirectory();
     std::string GetPath(const std::string &sFile);

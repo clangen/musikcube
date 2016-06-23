@@ -88,7 +88,7 @@ std::string musik::core::GetApplicationDirectory() {
     return result;
 }
 
-std::string musik::core::GetDataDirectory() {
+std::string musik::core::GetHomeDirectory() {
     std::string directory;
 
     #ifdef WIN32
@@ -96,10 +96,20 @@ std::string musik::core::GetDataDirectory() {
         wchar_t *buffer = new wchar_t[bufferSize + 2];
         GetEnvironmentVariable(_T("APPDATA"), buffer, bufferSize);
         directory.assign(u16to8(buffer));
-        directory.append("/mC2/");
         delete[] buffer;
     #else
         directory = std::string(std::getenv("HOME"));
+    #endif
+
+    return directory;
+}
+
+std::string musik::core::GetDataDirectory() {
+    std::string directory = GetHomeDirectory();
+
+    #ifdef WIN32
+        directory.append("/mC2/");
+    #else
         directory.append("/.mC2/");
     #endif
 

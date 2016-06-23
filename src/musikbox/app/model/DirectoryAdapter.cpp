@@ -34,6 +34,8 @@
 
 #include "stdafx.h"
 
+#include <core/support/Common.h>
+
 #include <cursespp/ScrollAdapterBase.h>
 #include <cursespp/SingleLineEntry.h>
 
@@ -67,7 +69,7 @@ void buildDirectoryList(const path& p, std::vector<std::string>& target)
 }
 
 DirectoryAdapter::DirectoryAdapter() {
-    this->dir = "/Users/clangen";
+    this->dir = musik::core::GetHomeDirectory();
     buildDirectoryList(this->dir, this->subdirs);
 }
 
