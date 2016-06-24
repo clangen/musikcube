@@ -78,6 +78,9 @@ namespace musik {
                 void OnRemoveMissingCheckChanged(
                     cursespp::Checkbox* checkbox, bool checked);
 
+                void OnDotfilesCheckChanged(
+                    cursespp::Checkbox* checkbox, bool checked);
+
                 int64 ListItemDecorator(
                     cursespp::ScrollableWindow* w,
                     size_t index,
@@ -90,6 +93,8 @@ namespace musik {
                 std::shared_ptr<musik::core::Preferences> prefs;
 
                 std::shared_ptr<cursespp::Checkbox> removeCheckbox;
+                std::shared_ptr<cursespp::Checkbox> dotfileCheckbox;
+
                 std::shared_ptr<cursespp::TextLabel> title;
                 std::shared_ptr<cursespp::TextLabel> browseLabel;
                 std::shared_ptr<cursespp::TextLabel> addedPathsLabel;

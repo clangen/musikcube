@@ -60,7 +60,7 @@ void buildDriveList(std::vector<std::string>& target) {
 }
 #endif
 
-void buildDirectoryList(const path& p, std::vector<std::string>& target)
+void buildDirectoryList(const path& p, std::vector<std::string>& target, bool showDotfiles)
 {
     target.clear();
 
@@ -71,7 +71,7 @@ void buildDirectoryList(const path& p, std::vector<std::string>& target)
         while (file != end) {
             if (is_directory(file->status())) {
                 std::string leaf = file->path().leaf().string();
-                if (leaf[0] != '.') {
+                if (showDotfiles || leaf[0] != '.') {
                     target.push_back(leaf);
                 }
             }
@@ -86,8 +86,9 @@ void buildDirectoryList(const path& p, std::vector<std::string>& target)
 }
 
 DirectoryAdapter::DirectoryAdapter() {
+    this->showDotfiles = false;
     this->dir = musik::core::GetHomeDirectory();
-    buildDirectoryList(this->dir, this->subdirs);
+    buildDirectoryList(dir, subdirs, showDotfiles);
 }
 
 DirectoryAdapter::~DirectoryAdapter() {
@@ -114,7 +115,7 @@ void DirectoryAdapter::Select(size_t index) {
     }
 
 #endif
-    buildDirectoryList(dir, subdirs);
+    buildDirectoryList(dir, subdirs, showDotfiles);
 }
 
 std::string DirectoryAdapter::GetFullPathAt(size_t index) {
@@ -131,6 +132,13 @@ std::string DirectoryAdapter::GetFullPathAt(size_t index) {
 size_t DirectoryAdapter::GetEntryCount() {
     size_t count = subdirs.size();
     return dir.has_parent_path() ? count + 1 : count;
+}
+
+void DirectoryAdapter::SetDotfilesVisible(bool visible) {
+    if (showDotfiles != visible) {
+        showDotfiles = visible;
+        buildDirectoryList(dir, subdirs, showDotfiles);
+    }
 }
 
 IScrollAdapter::EntryPtr DirectoryAdapter::GetEntry(size_t index) {

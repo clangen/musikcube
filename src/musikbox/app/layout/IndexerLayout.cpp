@@ -58,6 +58,7 @@ using namespace std::placeholders;
 #define RIGHT (x) (x->GetX() + w->GetWidth())
 
 typedef IScrollAdapter::EntryPtr EntryPtr;
+static bool showDotfiles = false;
 
 IndexerLayout::IndexerLayout(musik::core::LibraryPtr library)
 : LayoutBase()
@@ -74,6 +75,12 @@ IndexerLayout::~IndexerLayout() {
 void IndexerLayout::OnRemoveMissingCheckChanged(cursespp::Checkbox* cb, bool checked) {
     this->prefs->SetBool(INDEXER_PREFS_REMOVE_MISSING_FILES, checked);
     this->prefs->Save();
+}
+
+void IndexerLayout::OnDotfilesCheckChanged(cursespp::Checkbox* cb, bool checked) {
+    showDotfiles = !showDotfiles;
+    this->browseAdapter.SetDotfilesVisible(showDotfiles);
+    this->browseList->OnAdapterChanged();
 }
 
 void IndexerLayout::Layout() {
@@ -99,7 +106,8 @@ void IndexerLayout::Layout() {
     this->browseList->MoveAndResize(leftX, pathListsY, leftWidth, pathsHeight);
     this->addedPathsList->MoveAndResize(rightX, pathListsY, rightWidth, pathsHeight);
 
-    this->removeCheckbox->MoveAndResize(1, BOTTOM(this->browseList), cx - 1, LABEL_HEIGHT);
+    this->dotfileCheckbox->MoveAndResize(1, BOTTOM(this->browseList), cx - 1, LABEL_HEIGHT);
+    this->removeCheckbox->MoveAndResize(1, BOTTOM(this->dotfileCheckbox), cx - 1, LABEL_HEIGHT);
 }
 
 void IndexerLayout::RefreshAddedPaths() {
@@ -163,19 +171,25 @@ void IndexerLayout::InitializeWindows() {
     this->addedPathsAdapter.SetItemDecorator(decorator);
     this->browseAdapter.SetItemDecorator(decorator);
 
+    this->dotfileCheckbox.reset(new cursespp::Checkbox());
+    this->dotfileCheckbox->SetText("show dotfiles in directory browser");
+    this->dotfileCheckbox->CheckChanged.connect(this, &IndexerLayout::OnDotfilesCheckChanged);
+
     this->removeCheckbox.reset(new cursespp::Checkbox());
     this->removeCheckbox->SetText("remove missing files from library");
     this->removeCheckbox->CheckChanged.connect(this, &IndexerLayout::OnRemoveMissingCheckChanged);
 
     this->browseList->SetFocusOrder(0);
     this->addedPathsList->SetFocusOrder(1);
-    this->removeCheckbox->SetFocusOrder(2);
+    this->dotfileCheckbox->SetFocusOrder(2);
+    this->removeCheckbox->SetFocusOrder(3);
 
     this->AddWindow(this->title);
     this->AddWindow(this->browseLabel);
     this->AddWindow(this->addedPathsLabel);
     this->AddWindow(this->browseList);
     this->AddWindow(this->addedPathsList);
+    this->AddWindow(this->dotfileCheckbox);
     this->AddWindow(this->removeCheckbox);
 
     this->Layout();

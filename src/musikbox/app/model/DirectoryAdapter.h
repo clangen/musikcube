@@ -51,9 +51,12 @@ namespace musik {
                 void Select(size_t index);
                 std::string GetFullPathAt(size_t index);
 
+                void SetDotfilesVisible(bool visible);
+
             private:
                 boost::filesystem::path dir;
                 std::vector<std::string> subdirs;
+                bool showDotfiles;
         };
     }
 }
