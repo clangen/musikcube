@@ -144,7 +144,7 @@ void IndexerLayout::InitializeWindows() {
     this->browseLabel->SetText("browse (SPACE to add)", TextLabel::AlignLeft);
 
     this->addedPathsLabel.reset(new TextLabel());
-    this->addedPathsLabel->SetText("indexed paths (DEL to remove)", TextLabel::AlignLeft);
+    this->addedPathsLabel->SetText("indexed paths (BACKSPACE to remove)", TextLabel::AlignLeft);
 
     this->addedPathsList.reset(new cursespp::ListWindow(&this->addedPathsAdapter));
     this->addedPathsList->SetContentColor(BOX_COLOR_WHITE_ON_BLACK);
