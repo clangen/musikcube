@@ -120,14 +120,15 @@ void SearchLayout::InitializeWindows(PlaybackService& playback) {
     this->Layout();
 }
 
-void SearchLayout::Requery(const std::string& value) {
+void SearchLayout::Requery() {
+    const std::string& value = this->input->GetText();
     this->albums->Requery(value);
     this->artists->Requery(value);
     this->genres->Requery(value);
 }
 
 void SearchLayout::OnInputChanged(cursespp::TextInput* sender, std::string value) {
-    this->Requery(value);
+    this->Requery();
 }
 
 void SearchLayout::OnVisibilityChanged(bool visible) {
@@ -135,13 +136,7 @@ void SearchLayout::OnVisibilityChanged(bool visible) {
 
     if (visible) {
         this->SetFocus(this->input);
-        if (this->input->Length()) {
-            /* clear, which will trigger a requery */
-            this->input->SetText("");
-        }
-        else {
-            this->Requery();
-        }
+        this->Requery();
     }
     else {
         this->albums->Reset();

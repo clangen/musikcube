@@ -109,22 +109,15 @@ void TrackSearchLayout::OnVisibilityChanged(bool visible) {
 
     if (visible) {
         this->SetFocus(this->input);
-
-        if (this->input->GetText() == "") {
-            /* already empty, requery directly. */
-            this->Requery();
-        }
-        else {
-            /* triggers an implicit requery */
-            this->input->SetText("");
-        }
+        this->Requery();
     }
     else {
         this->trackList->Clear();
     }
 }
 
-void TrackSearchLayout::Requery(const std::string& filter) {
+void TrackSearchLayout::Requery() {
+    const std::string& filter = this->input->GetText();
     this->trackList->Requery(std::shared_ptr<TrackListQueryBase>(
         new SearchTrackListQuery(this->library, filter)));
 }
@@ -133,7 +126,7 @@ void TrackSearchLayout::ProcessMessage(IMessage &message) {
     int type = message.Type();
 
     if (type == REQUERY_TRACKLIST) {
-        this->Requery(this->input->GetText());
+        this->Requery();
     }
 }
 
