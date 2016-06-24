@@ -51,17 +51,22 @@ you'll need [homebrew](http://brew.sh/) to install the required dependencies.
 
 the current hotkeys are generally based around holding the alt/meta key with your left thumb, and using the home row with your right hand. 
 
-- `<TAB>` tabs between windows
+- `TAB` select next window
+- `SHIFT+TAB` select previous window
+
 - `ALT+~` switch to console view
 - `ALT+a` switch to library view
 - `ALT+s` switch to settings view
+
 - `ALT+i` volume up 5%
 - `ALT+k` volume down 5%
 - `ALT+j` previous track
 - `ALT+l` next track
 - `ALT+u` back 10 seconds
 - `ALT+o` forward 10 seconds
+
 - `ALT+r` repaint the screen
+
 - `CTRL+p` pause/resume (globally)
 - `CTRL+d` quit 
 
