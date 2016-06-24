@@ -140,6 +140,7 @@
     <ClCompile Include="app\window\ResourcesWindow.cpp" />
     <ClCompile Include="app\window\TrackListView.cpp" />
     <ClCompile Include="app\window\TransportWindow.cpp" />
+    <ClCompile Include="cursespp\Checkbox.cpp" />
     <ClCompile Include="cursespp\Colors.cpp" />
     <ClCompile Include="cursespp\LayoutBase.cpp" />
     <ClCompile Include="cursespp\LayoutStack.cpp" />
@@ -190,6 +191,7 @@
     <ClInclude Include="app\window\ResourcesWindow.h" />
     <ClInclude Include="app\window\TrackListView.h" />
     <ClInclude Include="app\window\TransportWindow.h" />
+    <ClInclude Include="cursespp\Checkbox.h" />
     <ClInclude Include="cursespp\Colors.h" />
     <ClInclude Include="cursespp\curses_config.h" />
     <ClInclude Include="cursespp\IDisplayable.h" />

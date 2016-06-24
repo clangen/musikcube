@@ -44,8 +44,8 @@
 
 using namespace cursespp;
 
-#define UNCHECKED std::string("\u2610")
-#define CHECKED std::string("\u2611")
+#define UNCHECKED std::string("☐")
+#define CHECKED std::string("☑")
 
 Checkbox::Checkbox()
 : Window()

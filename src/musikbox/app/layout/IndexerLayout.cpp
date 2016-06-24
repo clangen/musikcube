@@ -90,8 +90,8 @@ void IndexerLayout::Layout() {
     int rightX = leftWidth;
     int rightWidth = cx - rightX; /* remainder (~2/3) */
 
-    this->browseLabel->MoveAndResize(leftX, startY, leftWidth, LABEL_HEIGHT);
-    this->addedPathsLabel->MoveAndResize(rightX, startY, rightWidth, LABEL_HEIGHT);
+    this->browseLabel->MoveAndResize(leftX + 1, startY, leftWidth - 1, LABEL_HEIGHT);
+    this->addedPathsLabel->MoveAndResize(rightX + 1, startY, rightWidth - 1, LABEL_HEIGHT);
 
     int pathListsY = BOTTOM(this->browseLabel);
     int pathsHeight = (cy - pathListsY) / 2;
@@ -99,7 +99,7 @@ void IndexerLayout::Layout() {
     this->browseList->MoveAndResize(leftX, pathListsY, leftWidth, pathsHeight);
     this->addedPathsList->MoveAndResize(rightX, pathListsY, rightWidth, pathsHeight);
 
-    this->removeCheckbox->MoveAndResize(0, BOTTOM(this->browseList), cx, LABEL_HEIGHT);
+    this->removeCheckbox->MoveAndResize(1, BOTTOM(this->browseList), cx - 1, LABEL_HEIGHT);
 }
 
 void IndexerLayout::RefreshAddedPaths() {
@@ -151,9 +151,6 @@ void IndexerLayout::InitializeWindows() {
     this->browseList.reset(new cursespp::ListWindow(&this->browseAdapter));
     this->browseList->SetContentColor(BOX_COLOR_WHITE_ON_BLACK);
 
-    this->addedPathsList->SetFocusOrder(0);
-    this->browseList->SetFocusOrder(1);
-
     ScrollAdapterBase::ItemDecorator decorator =
         std::bind(
             &IndexerLayout::ListItemDecorator,
@@ -169,6 +166,9 @@ void IndexerLayout::InitializeWindows() {
     this->removeCheckbox.reset(new cursespp::Checkbox());
     this->removeCheckbox->SetText("remove missing files from library");
     this->removeCheckbox->CheckChanged.connect(this, &IndexerLayout::OnRemoveMissingCheckChanged);
+
+    this->browseList->SetFocusOrder(0);
+    this->addedPathsList->SetFocusOrder(1);
     this->removeCheckbox->SetFocusOrder(2);
 
     this->AddWindow(this->title);
@@ -191,7 +191,7 @@ void IndexerLayout::OnVisibilityChanged(bool visible) {
 }
 
 void IndexerLayout::LoadPreferences() {
-    this->removeCheckbox->SetChecked(this->prefs->GetBool(INDEXER_PREFS_REMOVE_MISSING_FILES));
+    this->removeCheckbox->SetChecked(this->prefs->GetBool(INDEXER_PREFS_REMOVE_MISSING_FILES, true));
 }
 
 void IndexerLayout::AddSelectedDirectory() {
