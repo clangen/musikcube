@@ -188,8 +188,9 @@ void ConsoleLayout::Help() {
     int64 s = -1;
     this->output->WriteLine("help:\n", s);
     this->output->WriteLine("  <tab> to switch between windows", s);
-    this->output->WriteLine("  ALT+Q console view", s);
-    this->output->WriteLine("  ALT+W library view", s);
+    this->output->WriteLine("  alt+~ console view (this screen)", s);
+    this->output->WriteLine("  alt+a library view", s);
+    this->output->WriteLine("  alt+s settings view", s);
     this->output->WriteLine("", s);
     this->output->WriteLine("  addir <dir>: add a music directory", s);
     this->output->WriteLine("  rmdir <dir>: remove a music directory", s);

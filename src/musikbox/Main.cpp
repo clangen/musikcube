@@ -309,10 +309,10 @@ int main(int argc, char* argv[])
                 else if (kn == "KEY_RESIZE") {
                     resizeAt = now() + REDRAW_DEBOUNCE_MS;
                 }
-                else if (ch == KEY_F(1) || kn == "M-q") {
+                else if (kn == "M-`" || kn == "M-~") {
                     changeLayout(state, consoleLayout);
                 }
-                else if (ch == KEY_F(2) || kn == "M-w") {
+                else if (kn == "M-a") {
                     changeLayout(state, libraryLayout);
                 }
                 else if (kn == "M-s") {
