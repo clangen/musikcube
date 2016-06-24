@@ -49,8 +49,6 @@ you'll need [homebrew](http://brew.sh/) to install the required dependencies.
 
 ## keyboard shortcuts
 
-the user interface is very new and will change considerably over time.
-
 the current hotkeys are generally based around holding the alt/meta key with your left thumb, and using the home row with your right hand. 
 
 - `<TAB>` tabs between windows
