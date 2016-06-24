@@ -51,10 +51,6 @@
 #include <boost/thread/xtime.hpp>
 #include <boost/bind.hpp>
 
-#define PREFS_SYNC_ON_STARTUP "SyncOnStartup"
-#define PREFS_SYNC_TIMEOUT "SyncTimeout"
-#define PREFS_REMOVE_MISSING_FILES "RemoveMissingFiles"
-
 static const std::string TAG = "Indexer";
 
 using namespace musik::core;
@@ -84,7 +80,7 @@ Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
 , filesSaved(0) {
     this->dbFilename = dbFilename;
     this->libraryPath = libraryPath;
-    this->prefs = Preferences::ForComponent("indexer");
+    this->prefs = Preferences::ForComponent(INDEXER_PREFS_COMPONENT);
     this->thread = new boost::thread(boost::bind(&Indexer::ThreadLoop, this));
 }
 
@@ -391,7 +387,7 @@ void Indexer::ThreadLoop() {
     while (!this->Exited()) {
         this->restart = false;
 
-        if(!firstTime || (firstTime && prefs->GetBool(PREFS_SYNC_ON_STARTUP, true))) { /* first time through the loop skips this */
+        if(!firstTime || (firstTime && prefs->GetBool(INDEXER_PREFS_SYNC_ON_STARTUP, true))) { /* first time through the loop skips this */
             this->SynchronizeStart();
 
             this->dbConnection.Open(this->dbFilename.c_str(), 0); /* ensure the db is open */
@@ -411,7 +407,7 @@ void Indexer::ThreadLoop() {
 
         firstTime = false;
 
-        int waitTime = prefs->GetInt(PREFS_SYNC_TIMEOUT, 3600); /* sleep before we try again... */
+        int waitTime = prefs->GetInt(INDEXER_PREFS_SYNC_TIMEOUT, 3600); /* sleep before we try again... */
 
         if (waitTime) {
             boost::xtime waitTimeout;
@@ -437,7 +433,7 @@ void Indexer::SyncDelete() {
 
     /* remove files that are no longer on the filesystem. */
 
-    if (prefs->GetBool(PREFS_REMOVE_MISSING_FILES, true)) {
+    if (prefs->GetBool(INDEXER_PREFS_REMOVE_MISSING_FILES, true)) {
         db::Statement stmtRemove("DELETE FROM tracks WHERE id=?", this->dbConnection);
 
         db::Statement allTracks(

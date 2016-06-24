@@ -34,6 +34,7 @@
 
 #pragma once
 
+#include <cursespp/Checkbox.h>
 #include <cursespp/LayoutBase.h>
 #include <cursespp/ListWindow.h>
 #include <cursespp/TextLabel.h>
@@ -44,6 +45,7 @@
 #include <app/model/DirectoryAdapter.h>
 
 #include <core/library/ILibrary.h>
+#include <core/support/Preferences.h>
 
 #include <sigslot/sigslot.h>
 
@@ -68,9 +70,13 @@ namespace musik {
             private:
                 void InitializeWindows();
                 void RefreshAddedPaths();
+                void LoadPreferences();
                 void AddSelectedDirectory();
                 void RemoveSelectedDirectory();
                 void DrillIntoSelectedDirectory();
+
+                void OnRemoveMissingCheckChanged(
+                    cursespp::Checkbox* checkbox, bool checked);
 
                 int64 ListItemDecorator(
                     cursespp::ScrollableWindow* w,
@@ -81,6 +87,9 @@ namespace musik {
                 musik::core::LibraryPtr library;
                 musik::core::IIndexer* indexer;
 
+                std::shared_ptr<musik::core::Preferences> prefs;
+
+                std::shared_ptr<cursespp::Checkbox> removeCheckbox;
                 std::shared_ptr<cursespp::TextLabel> title;
                 std::shared_ptr<cursespp::TextLabel> browseLabel;
                 std::shared_ptr<cursespp::TextLabel> addedPathsLabel;

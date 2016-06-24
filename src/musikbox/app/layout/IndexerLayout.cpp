@@ -38,6 +38,7 @@
 #include <cursespp/Screen.h>
 #include <cursespp/SingleLineEntry.h>
 
+#include <core/library/Indexer.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <app/query/SearchTrackListQuery.h>
 
@@ -62,12 +63,17 @@ IndexerLayout::IndexerLayout(musik::core::LibraryPtr library)
 : LayoutBase()
 , library(library)
 , indexer(library->Indexer()) {
-    this->InitializeWindows();
+    this->prefs = Preferences::ForComponent(INDEXER_PREFS_COMPONENT);
     this->indexer->PathsUpdated.connect(this, &IndexerLayout::RefreshAddedPaths);
+    this->InitializeWindows();
 }
 
 IndexerLayout::~IndexerLayout() {
+}
 
+void IndexerLayout::OnRemoveMissingCheckChanged(cursespp::Checkbox* cb, bool checked) {
+    this->prefs->SetBool(INDEXER_PREFS_REMOVE_MISSING_FILES, checked);
+    this->prefs->Save();
 }
 
 void IndexerLayout::Layout() {
@@ -92,6 +98,8 @@ void IndexerLayout::Layout() {
 
     this->browseList->MoveAndResize(leftX, pathListsY, leftWidth, pathsHeight);
     this->addedPathsList->MoveAndResize(rightX, pathListsY, rightWidth, pathsHeight);
+
+    this->removeCheckbox->MoveAndResize(0, BOTTOM(this->browseList), cx, LABEL_HEIGHT);
 }
 
 void IndexerLayout::RefreshAddedPaths() {
@@ -147,16 +155,28 @@ void IndexerLayout::InitializeWindows() {
     this->browseList->SetFocusOrder(1);
 
     ScrollAdapterBase::ItemDecorator decorator =
-        std::bind(&IndexerLayout::ListItemDecorator, this, _1, _2, _3, _4);
+        std::bind(
+            &IndexerLayout::ListItemDecorator,
+            this,
+            std::placeholders::_1,
+            std::placeholders::_2,
+            std::placeholders::_3,
+            std::placeholders::_4);
 
     this->addedPathsAdapter.SetItemDecorator(decorator);
     this->browseAdapter.SetItemDecorator(decorator);
+
+    this->removeCheckbox.reset(new cursespp::Checkbox());
+    this->removeCheckbox->SetText("remove missing files from library");
+    this->removeCheckbox->CheckChanged.connect(this, &IndexerLayout::OnRemoveMissingCheckChanged);
+    this->removeCheckbox->SetFocusOrder(2);
 
     this->AddWindow(this->title);
     this->AddWindow(this->browseLabel);
     this->AddWindow(this->addedPathsLabel);
     this->AddWindow(this->browseList);
     this->AddWindow(this->addedPathsList);
+    this->AddWindow(this->removeCheckbox);
 
     this->Layout();
 }
@@ -166,7 +186,12 @@ void IndexerLayout::OnVisibilityChanged(bool visible) {
 
     if (visible) {
         this->RefreshAddedPaths();
+        this->LoadPreferences();
     }
+}
+
+void IndexerLayout::LoadPreferences() {
+    this->removeCheckbox->SetChecked(this->prefs->GetBool(INDEXER_PREFS_REMOVE_MISSING_FILES));
 }
 
 void IndexerLayout::AddSelectedDirectory() {

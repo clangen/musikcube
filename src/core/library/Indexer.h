@@ -48,16 +48,13 @@
 #include <deque>
 #include <vector>
 
+#define INDEXER_PREFS_COMPONENT "indexer"
+#define INDEXER_PREFS_SYNC_ON_STARTUP "SyncOnStartup"
+#define INDEXER_PREFS_SYNC_TIMEOUT "SyncTimeout"
+#define INDEXER_PREFS_REMOVE_MISSING_FILES "RemoveMissingFiles"
+
 namespace musik { namespace core {
 
-    //////////////////////////////////////////
-    ///\brief
-    ///The Indexer is the class that syncronizes musik tracks with the database
-    ///
-    ///The Indexer is often a member of classes like the LocalLibrary
-    ///but can also be used as a standalone class for indexing files.
-    ///All you need to do is create a Indexer object and call Startup()
-    //////////////////////////////////////////
     class Indexer : public IIndexer, public ThreadHelper, private boost::noncopyable {
         public:
             Indexer(

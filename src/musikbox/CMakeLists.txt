@@ -26,6 +26,7 @@ set (BOX_SRCS
 	./app/window/ResourcesWindow.cpp
 	./app/window/TrackListView.cpp
 	./app/window/TransportWindow.cpp
+	./cursespp/Checkbox.cpp
 	./cursespp/Colors.cpp
 	./cursespp/LayoutBase.cpp
 	./cursespp/LayoutStack.cpp
