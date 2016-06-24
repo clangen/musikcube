@@ -56,6 +56,7 @@ the current hotkeys are generally based around holding the alt/meta key with you
 - `<TAB>` tabs between windows
 - `F1` or `ALT+Q` switch to console view
 - `F2` or `ALT+W` switch to library view
+- `ALT+s` switch to settings view
 - `ALT+i` volume up 5%
 - `ALT+k` volume down 5%
 - `ALT+j` previous track
