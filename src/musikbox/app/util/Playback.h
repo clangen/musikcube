@@ -47,7 +47,9 @@ namespace musik {
                 musik::box::PlaybackService& playback,
                 cursespp::IWindowPtr focused);
 
-            void PauseOrResume();
+            void PauseOrResume(musik::core::audio::ITransport& transport);
+
+            void ToggleRepeatMode(PlaybackService& playback);
         }
     }
 }

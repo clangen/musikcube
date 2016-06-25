@@ -40,6 +40,7 @@
 #include <core/library/LocalLibraryConstants.h>
 
 #include <app/query/CategoryTrackListQuery.h>
+#include <app/util/Playback.h>
 
 #include "LibraryLayout.h"
 
@@ -176,30 +177,31 @@ bool LibraryLayout::KeyPress(const std::string& key) {
         else {
             this->ShowNowPlaying();
         }
+        return true;
     }
     else if (key == "M-b") {
         this->ShowBrowse();
+        return true;
     }
     else if (key == "M-f") {
         this->ShowSearch();
+        return true;
     }
     else if (key == "M-t") {
         this->ShowTrackSearch();
+        return true;
+    }
+    else if (key == "M-," || key == "M-comma") {
+        playback::ToggleRepeatMode(this->playback);
+        return true;
     }
     /* forward to the visible layout */
     else if (this->visibleLayout && this->visibleLayout->KeyPress(key)) {
         return true;
     }
     else if (key == " ") {
-        /* copied from GlobalHotkeys. should probably be generalized
-        at some point. */
-        int state = this->transport.GetPlaybackState();
-        if (state == ITransport::PlaybackPaused) {
-            this->transport.Resume();
-        }
-        else if (state == ITransport::PlaybackPlaying) {
-            this->transport.Pause();
-        }
+        playback::PauseOrResume(this->transport);
+        return true;
     }
 
     return LayoutBase::KeyPress(key);

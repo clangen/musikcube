@@ -35,6 +35,8 @@
 #include "stdafx.h"
 #include "Playback.h"
 
+using namespace musik::core::audio;
+
 namespace musik {
     namespace box {
         namespace playback {
@@ -53,8 +55,31 @@ namespace musik {
                 }
             }
 
-            void PauseOrResume() {
+            void PauseOrResume(ITransport& transport) {
+                int state = transport.GetPlaybackState();
+                if (state == ITransport::PlaybackPaused) {
+                    transport.Resume();
+                }
+                else if (state == ITransport::PlaybackPlaying) {
+                    transport.Pause();
+                }
+            }
 
+            void ToggleRepeatMode(PlaybackService& playback) {
+                PlaybackService::RepeatMode mode = playback.GetRepeatMode();
+                switch (mode) {
+                    case PlaybackService::RepeatNone:
+                        playback.SetRepeatMode(PlaybackService::RepeatList);
+                        break;
+
+                    case PlaybackService::RepeatList:
+                        playback.SetRepeatMode(PlaybackService::RepeatTrack);
+                        break;
+
+                    default:
+                        playback.SetRepeatMode(PlaybackService::RepeatNone);
+                        break;
+                }
             }
         }
     }

@@ -51,6 +51,7 @@ namespace musik {
         class PlaybackService : public cursespp::IMessageTarget, public sigslot::has_slots<> {
             public:
                 sigslot::signal2<size_t, musik::core::TrackPtr> TrackChanged;
+                sigslot::signal0<> ModeChanged;
 
                 enum RepeatMode {
                     RepeatNone,

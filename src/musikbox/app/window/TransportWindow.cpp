@@ -185,6 +185,7 @@ TransportWindow::TransportWindow(musik::box::PlaybackService& playback)
     this->SetContentColor(BOX_COLOR_WHITE_ON_BLACK);
     this->SetFrameVisible(false);
     this->playback.TrackChanged.connect(this, &TransportWindow::OnPlaybackServiceTrackChanged);
+    this->playback.ModeChanged.connect(this, &TransportWindow::OnPlaybackModeChanged);
     this->transport.VolumeChanged.connect(this, &TransportWindow::OnTransportVolumeChanged);
     this->transport.TimeChanged.connect(this, &TransportWindow::OnTransportTimeChanged);
     this->paused = this->focused = false;
@@ -210,6 +211,10 @@ void TransportWindow::ProcessMessage(IMessage &message) {
 void TransportWindow::OnPlaybackServiceTrackChanged(size_t index, TrackPtr track) {
     this->currentTrack = track;
     DEBOUNCE_REFRESH(0)
+}
+
+void TransportWindow::OnPlaybackModeChanged() {
+    DEBOUNCE_REFRESH(0);
 }
 
 void TransportWindow::OnTransportVolumeChanged() {
@@ -282,6 +287,26 @@ void TransportWindow::Update() {
 
     wprintw(c, volume.c_str());
 
+    /* repeat mode setup */
+    PlaybackService::RepeatMode mode = this->playback.GetRepeatMode();
+    std::string repeatLabel = " ↻ ";
+    std::string repeatModeLabel;
+    int64 repeatAttrs = -1;
+    switch (mode) {
+        case PlaybackService::RepeatList: 
+            repeatModeLabel = "list"; 
+            repeatAttrs = gb;
+            break;
+        case PlaybackService::RepeatTrack: 
+            repeatModeLabel = "track";
+            repeatAttrs = gb;
+            break;
+        default: 
+            repeatModeLabel = "off"; 
+            repeatAttrs = A_DIM;
+            break;
+    }
+
     /* time slider */
 
     int64 timerAttrs = 0;
@@ -306,6 +331,7 @@ void TransportWindow::Update() {
     size_t timerWidth =
         this->GetContentWidth() -
         u8len(volume) -
+        (u8len(repeatLabel) + u8len(repeatModeLabel)) -
         currentTime.size() -
         totalTime.size() -
         2; /* padding */
@@ -332,6 +358,12 @@ void TransportWindow::Update() {
         " %s %s") % timerTrack % totalTime);
 
     waddstr(c, fmt.c_str());
+
+    /* repeat mode draw */
+    wprintw(c, repeatLabel.c_str());
+    wattron(c, repeatAttrs);
+    wprintw(c, repeatModeLabel.c_str());
+    wattroff(c, repeatAttrs);
 
     this->Repaint();
 }

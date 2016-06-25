@@ -76,23 +76,26 @@ PlaybackService::PlaybackService(LibraryPtr library, ITransport& transport)
 void PlaybackService::PrepareNextTrack() {
     boost::recursive_mutex::scoped_lock lock(this->playlistMutex);
 
-    /* repeat track, just keep playing the same thing over and over */
-    if (this->repeatMode == RepeatTrack) {
-        this->transport.PrepareNextTrack(URI_AT_INDEX(this->index));
-    }
-    else {
-        /* normal case, just move forward */
-        if (this->playlist.Count() > this->index + 1) {
-            if (this->nextIndex != this->index + 1) {
-                this->nextIndex = this->index + 1;
-                this->transport.PrepareNextTrack(URI_AT_INDEX(nextIndex));
-            }
+    if (this->Count() > 0) {
+        /* repeat track, just keep playing the same thing over and over */
+        if (this->repeatMode == RepeatTrack) {
+            this->nextIndex = this->index;
+            this->transport.PrepareNextTrack(URI_AT_INDEX(this->index));
         }
-        /* repeat list case, wrap around to the beginning if necessary */
-        else if (this->repeatMode == RepeatList) {
-            if (this->nextIndex != 0) {
-                this->nextIndex = 0;
-                this->transport.PrepareNextTrack(URI_AT_INDEX(nextIndex));
+        else {
+            /* normal case, just move forward */
+            if (this->playlist.Count() > this->index + 1) {
+                if (this->nextIndex != this->index + 1) {
+                    this->nextIndex = this->index + 1;
+                    this->transport.PrepareNextTrack(URI_AT_INDEX(nextIndex));
+                }
+            }
+            /* repeat list case, wrap around to the beginning if necessary */
+            else if (this->repeatMode == RepeatList) {
+                if (this->nextIndex != 0) {
+                    this->nextIndex = 0;
+                    this->transport.PrepareNextTrack(URI_AT_INDEX(nextIndex));
+                }
             }
         }
     }
@@ -101,6 +104,7 @@ void PlaybackService::PrepareNextTrack() {
 void PlaybackService::SetRepeatMode(RepeatMode mode) {
     if (this->repeatMode != mode) {
         this->repeatMode = mode;
+        this->ModeChanged();
         POST(this, MESSAGE_PREPARE_NEXT_TRACK, 0, 0);
     }
 }

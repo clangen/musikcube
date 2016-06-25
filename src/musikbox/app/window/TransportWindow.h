@@ -63,6 +63,7 @@ namespace musik {
 
             private:
                 void OnPlaybackServiceTrackChanged(size_t index, musik::core::TrackPtr track);
+                void OnPlaybackModeChanged();
                 void OnTransportVolumeChanged();
                 void OnTransportTimeChanged(double time);
 

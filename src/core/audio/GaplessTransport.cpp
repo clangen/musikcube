@@ -82,6 +82,7 @@ void GaplessTransport::PrepareNextTrack(const std::string& trackUrl) {
     bool startNext = false;
     {
         boost::recursive_mutex::scoped_lock lock(this->stateMutex);
+        RESET_NEXT_PLAYER();
         this->nextPlayer = new Player(trackUrl, this->output);
         startNext = this->nextCanStart;
     }
