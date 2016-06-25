@@ -65,6 +65,7 @@ the current hotkeys are generally based around holding the alt/meta key with you
 - `ALT+r` repaint the screen
 - `ALT+,` toggle repeat mode (off/track/list)
 - `CTRL+p` pause/resume (globally)
+- `CTRL+x` stop (unload streams, free resources)
 - `CTRL+d` quit 
 
 and a couple hotkeys that are specific to the library view: 
