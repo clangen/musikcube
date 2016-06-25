@@ -289,7 +289,7 @@ void TransportWindow::Update() {
 
     /* repeat mode setup */
     PlaybackService::RepeatMode mode = this->playback.GetRepeatMode();
-    std::string repeatLabel = " ↻ ";
+    std::string repeatLabel = " ∞ ";
     std::string repeatModeLabel;
     int64 repeatAttrs = -1;
     switch (mode) {
