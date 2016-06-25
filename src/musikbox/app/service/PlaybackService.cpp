@@ -58,9 +58,30 @@ using namespace musik::box;
 #define MESSAGE_PLAYBACK_EVENT 1001
 #define MESSAGE_PREPARE_NEXT_TRACK 1002
 
+class StreamMessage : public cursespp::Message {
+    public:
+        StreamMessage(IMessageTarget* target, int eventType, const std::string& uri)
+        : Message(target, MESSAGE_STREAM_EVENT, eventType, 0) {
+            this->uri = uri;
+        }
+
+        virtual ~StreamMessage() {
+        }
+
+        std::string GetUri() { return this->uri; }
+        int GetEventType() { return (int) this->UserData1(); }
+
+    private:
+        std::string uri;
+};
+
 #define POST(instance, type, user1, user2) \
     cursespp::MessageQueue::Instance().Post( \
         cursespp::Message::Create(instance, type, user1, user2));
+
+#define POST_STREAM_MESSAGE(instance, eventType, uri) \
+    cursespp::MessageQueue::Instance().Post( \
+        cursespp::IMessagePtr(new StreamMessage(instance, eventType, uri)));
 
 PlaybackService::PlaybackService(LibraryPtr library, ITransport& transport)
 : library(library)
@@ -111,12 +132,21 @@ void PlaybackService::SetRepeatMode(RepeatMode mode) {
 
 void PlaybackService::ProcessMessage(IMessage &message) {
     if (message.Type() == MESSAGE_STREAM_EVENT) {
-        int64 eventType = message.UserData1();
+        StreamMessage* streamMessage = static_cast<StreamMessage*>(&message);
+
+        int64 eventType = streamMessage->GetEventType();
 
         if (eventType == ITransport::StreamPlaying) {
             if (this->nextIndex != NO_POSITION) {
-                this->index = this->nextIndex;
-                this->nextIndex = NO_POSITION;
+                /* in most cases when we get here it means that the next track is
+                starting, so we want to update our internal index. however, because
+                things are asynchronous, this may not always be the case, especially if 
+                the tracks are very short, or the user is advancing through songs very
+                quickly. make compare the track URIs before we update internal state. */
+                if (this->GetTrackAtIndex(this->nextIndex)->URI() == streamMessage->GetUri()) {
+                    this->index = this->nextIndex;
+                    this->nextIndex = NO_POSITION;
+                }
             }
 
             if (this->index != NO_POSITION) {
@@ -224,7 +254,7 @@ TrackPtr PlaybackService::GetTrackAtIndex(size_t index) {
 }
 
 void PlaybackService::OnStreamEvent(int eventType, std::string uri) {
-    POST(this, MESSAGE_STREAM_EVENT, eventType, 0);
+    POST_STREAM_MESSAGE(this, eventType, uri);
 }
 
 void PlaybackService::OnPlaybackEvent(int eventType) {

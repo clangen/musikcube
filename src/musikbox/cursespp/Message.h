@@ -38,7 +38,7 @@
 
 namespace cursespp {
     class Message : public IMessage {
-        private:
+        protected:
             Message(
                 IMessageTarget* target,
                 int messageType,
@@ -51,6 +51,9 @@ namespace cursespp {
                 int messageType,
                 int64 data1,
                 int64 data2);
+
+            virtual ~Message() {
+            }
 
             virtual IMessageTarget* Target();
             virtual int Type();
