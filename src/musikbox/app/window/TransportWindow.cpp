@@ -38,6 +38,7 @@
 #include <cursespp/Screen.h>
 #include <cursespp/Colors.h>
 #include <cursespp/Message.h>
+#include <cursespp/Text.h>
 
 #include <app/util/Duration.h>
 
@@ -50,6 +51,7 @@
 #include <boost/lexical_cast.hpp>
 
 #include <algorithm>
+#include <memory>
 
 using namespace musik::core;
 using namespace musik::core::audio;
@@ -65,6 +67,115 @@ using namespace cursespp;
 #define DEBOUNCE_REFRESH(x) \
     this->RemoveMessage(REFRESH_TRANSPORT_READOUT); \
     this->PostMessage(REFRESH_TRANSPORT_READOUT, 0, 0, x);
+
+static std::string playingFormat = "playing $title from $album";
+
+struct Token {
+    enum Type { Normal, Placeholder };
+
+    static std::unique_ptr<Token> New(const std::string& value, Type type) {
+        return std::unique_ptr<Token>(new Token(value, type));
+    }
+
+    Token(const std::string& value, Type type) {
+        this->value = value;
+        this->type = type;
+    }
+
+    std::string value;
+    Type type;
+};
+
+typedef std::unique_ptr<Token> TokenPtr;
+typedef std::vector<TokenPtr> TokenList;
+
+/* tokenizes an input string that has $placeholder values */
+void tokenize(const std::string& format, TokenList& tokens) {
+    tokens.clear();
+    Token::Type type = Token::Normal;
+    size_t i = 0;
+    size_t start = 0;
+    while (i < format.size()) {
+        char c = format[i];
+        if ((type == Token::Placeholder && c == ' ') ||
+            (type == Token::Normal && c == '$')) {
+            /* escape $ with $$ */
+            if (c == '$' && i < format.size() - 1 && format[i + 1] == '$') {
+                i++;
+            }
+            else {
+                if (i > start) {
+                    tokens.push_back(Token::New(format.substr(start, i - start), type));
+                }
+                start = i;
+                type = (c == ' ')  ? Token::Normal : Token::Placeholder;
+            }
+        }
+        ++i;
+    }
+
+    if (i > 0) {
+        tokens.push_back(Token::New(format.substr(start, i - start), type));
+    }
+}
+
+/* writes the colorized formatted string to the specified window. accounts for
+utf8 characters and ellipsizing */
+size_t writePlayingFormat(
+    WINDOW *w,
+    std::string title,
+    std::string album,
+    size_t width)
+{
+    TokenList tokens;
+    tokenize(playingFormat, tokens);
+
+    int64 gb = COLOR_PAIR(BOX_COLOR_GREEN_ON_BLACK);
+    size_t remaining = width;
+
+    auto it = tokens.begin();
+    while (it != tokens.end() && remaining > 0) {
+        Token *token = it->get();
+
+        int64 attr = -1;
+        std::string value;
+
+        if (token->type == Token::Placeholder) {
+            attr = gb;
+            if (token->value == "$title") {
+                value = title;
+            }
+            else if (token->value == "$album") {
+                value = album;
+            }
+        }
+
+        if (!value.size()) {
+            value = token->value;
+        }
+
+        size_t len = u8len(value);
+        if (len > remaining) {
+            text::Ellipsize(value, remaining);
+            len = remaining;
+        }
+
+        if (attr != -1) {
+            wattron(w, attr);
+        }
+
+        wprintw(w, value.c_str());
+
+        if (attr != -1) {
+            wattroff(w, attr);
+        }
+
+        remaining -= len;
+        ++it;
+    }
+
+    return (width - remaining);
+}
 
 TransportWindow::TransportWindow(musik::box::PlaybackService& playback)
 : Window(NULL)
@@ -137,7 +248,7 @@ void TransportWindow::Update() {
 
     if (stopped) {
         wattron(c, gb);
-        wprintw(c, "playback is stopped");
+        wprintw(c, "playback is stopped\n");
         wattroff(c, gb);
     }
     else {
@@ -149,26 +260,18 @@ void TransportWindow::Update() {
             duration = this->currentTrack->GetValue(constants::Track::DURATION);
         }
 
-        title = title.size() ? title : "song title";
-        album = album.size() ? album : "album name";
+        title = title.size() ? title : "[song]";
+        album = album.size() ? album : "[album]";
         duration = duration.size() ? duration : "0";
 
-        wprintw(c, "playing ");
+        size_t written = writePlayingFormat(c, title, album, this->GetContentWidth());
 
-        wattron(c, gb);
-        wprintw(c, title.c_str());
-        wattroff(c, gb);
-
-        wprintw(c, " from ");
-
-        wattron(c, gb);
-        wprintw(c, album.c_str());
-        wattroff(c, gb);
+        if (written < this->GetContentWidth()) {
+            wprintw(c, "\n");
+        }
     }
 
     /* volume slider */
-
-    wprintw(c, "\n");
 
     int volumePercent = (size_t) round(this->transport.Volume() * 100.0f) - 1;
     int thumbOffset = std::min(9, (volumePercent * 10) / 100);
