@@ -56,8 +56,6 @@ namespace musik {
                 virtual void ProcessMessage(cursespp::IMessage &message);
 
                 virtual void Show();
-                virtual void Focus();
-                virtual void Blur();
 
                 void Update();
 
@@ -67,7 +65,7 @@ namespace musik {
                 void OnTransportVolumeChanged();
                 void OnTransportTimeChanged(double time);
 
-                bool paused, focused;
+                bool paused;
                 musik::core::audio::ITransport& transport;
                 musik::box::PlaybackService& playback;
                 musik::core::TrackPtr currentTrack;

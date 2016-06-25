@@ -188,7 +188,7 @@ TransportWindow::TransportWindow(musik::box::PlaybackService& playback)
     this->playback.ModeChanged.connect(this, &TransportWindow::OnPlaybackModeChanged);
     this->transport.VolumeChanged.connect(this, &TransportWindow::OnTransportVolumeChanged);
     this->transport.TimeChanged.connect(this, &TransportWindow::OnTransportTimeChanged);
-    this->paused = this->focused = false;
+    this->paused = false;
 }
 
 TransportWindow::~TransportWindow() {
@@ -225,16 +225,6 @@ void TransportWindow::OnTransportTimeChanged(double time) {
     DEBOUNCE_REFRESH(0)
 }
 
-void TransportWindow::Focus() {
-    this->focused = true;
-    DEBOUNCE_REFRESH(0)
-}
-
-void TransportWindow::Blur() {
-    this->focused = false;
-    DEBOUNCE_REFRESH(0)
-}
-
 void TransportWindow::Update() {
     this->Clear();
     WINDOW *c = this->GetContent();
@@ -248,9 +238,9 @@ void TransportWindow::Update() {
     std::string duration = "0";
 
     if (stopped) {
-        wattron(c, gb);
+        wattron(c, A_DIM);
         wprintw(c, "playback is stopped\n");
-        wattroff(c, gb);
+        wattroff(c, A_DIM);
     }
     else {
         std::string title, album;
@@ -293,16 +283,16 @@ void TransportWindow::Update() {
     std::string repeatModeLabel;
     int64 repeatAttrs = -1;
     switch (mode) {
-        case PlaybackService::RepeatList: 
-            repeatModeLabel = "list"; 
+        case PlaybackService::RepeatList:
+            repeatModeLabel = "list";
             repeatAttrs = gb;
             break;
-        case PlaybackService::RepeatTrack: 
+        case PlaybackService::RepeatTrack:
             repeatModeLabel = "track";
             repeatAttrs = gb;
             break;
-        default: 
-            repeatModeLabel = "off"; 
+        default:
+            repeatModeLabel = "off";
             repeatAttrs = A_DIM;
             break;
     }
