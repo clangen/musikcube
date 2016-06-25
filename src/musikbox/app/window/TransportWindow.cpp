@@ -239,10 +239,6 @@ void TransportWindow::Update() {
 
     int64 gb = COLOR_PAIR(BOX_COLOR_GREEN_ON_BLACK);
 
-    if (focused) {
-        gb = COLOR_PAIR(BOX_COLOR_RED_ON_BLACK);
-    }
-
     /* playing SONG TITLE from ALBUM NAME */
     std::string duration = "0";
 
@@ -266,7 +262,7 @@ void TransportWindow::Update() {
 
         size_t written = writePlayingFormat(c, title, album, this->GetContentWidth());
 
-        if (written < this->GetContentWidth()) {
+        if (written < (size_t) this->GetContentWidth()) {
             wprintw(c, "\n");
         }
     }
