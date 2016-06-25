@@ -56,30 +56,38 @@ bool GlobalHotkeys::Handle(const std::string& kn) {
         playback::PauseOrResume(this->transport);
         return true;
     }
-    if (kn == "ALT_I" || kn == "M-i") {
+    if (kn == "M-i") {
         this->transport.SetVolume(this->transport.Volume() + 0.05); /* 5% */
         return true;
     }
-    else if (kn == "ALT_K" || kn == "M-k") {
+    else if (kn == "M-k") {
         this->transport.SetVolume(this->transport.Volume() - 0.05);
         return true;
     }
-    else if (kn == "ALT_J" || kn == "M-j") {
+    else if (kn == "M-j") {
         this->playback.Previous();
         return true;
     }
-    else if (kn == "ALT_L" || kn == "M-l") {
+    else if (kn == "M-l") {
         this->playback.Next();
         return true;
     }
-    else if (kn == "ALT_U" || kn == "M-u") {
+    else if (kn == "M-u") {
         double time = this->transport.Position();
         this->transport.SetPosition(time - 10.0f);
         return true;
     }
-    else if (kn == "ALT_O" || kn == "M-o") {
+    else if (kn == "M-o") {
         double time = this->transport.Position();
         this->transport.SetPosition(time + 10.0f);
+        return true;
+    }
+    else if (kn == "M-," || kn == "M-comma") {
+        playback::ToggleRepeatMode(this->playback);
+        return true;
+    }
+    else if (kn == "^X") {
+        this->playback.Stop();
         return true;
     }
     else if (kn == "^R") {

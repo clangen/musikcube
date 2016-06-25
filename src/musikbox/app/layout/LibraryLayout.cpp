@@ -191,10 +191,6 @@ bool LibraryLayout::KeyPress(const std::string& key) {
         this->ShowTrackSearch();
         return true;
     }
-    else if (key == "M-," || key == "M-comma") {
-        playback::ToggleRepeatMode(this->playback);
-        return true;
-    }
     /* forward to the visible layout */
     else if (this->visibleLayout && this->visibleLayout->KeyPress(key)) {
         return true;
