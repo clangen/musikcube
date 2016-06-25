@@ -141,7 +141,9 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         }
     }
     else if (message.Type() == MESSAGE_PREPARE_NEXT_TRACK) {
-        this->PrepareNextTrack();
+        if (transport.GetPlaybackState() != ITransport::PlaybackStopped) {
+            this->PrepareNextTrack();
+        }
     }
 }
 
