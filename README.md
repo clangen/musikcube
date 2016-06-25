@@ -63,6 +63,7 @@ the current hotkeys are generally based around holding the alt/meta key with you
 - `ALT+u` back 10 seconds
 - `ALT+o` forward 10 seconds
 - `ALT+r` repaint the screen
+- `ALT+,` toggle repeat mode (off/track/list)
 - `CTRL+p` pause/resume (globally)
 - `CTRL+d` quit 
 
