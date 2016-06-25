@@ -52,6 +52,12 @@ namespace musik {
             public:
                 sigslot::signal2<size_t, musik::core::TrackPtr> TrackChanged;
 
+                enum RepeatMode {
+                    RepeatNone,
+                    RepeatTrack,
+                    RepeatList
+                };
+
                 PlaybackService(
                     musik::core::LibraryPtr library,
                     musik::core::audio::ITransport& transport);
@@ -69,6 +75,9 @@ namespace musik {
 
                 void CopyTo(TrackList& target);
 
+                RepeatMode GetRepeatMode() { return this->repeatMode; }
+                void SetRepeatMode(RepeatMode mode);
+
                 musik::core::TrackPtr GetTrackAtIndex(size_t index);
                 size_t GetIndex();
 
@@ -79,11 +88,13 @@ namespace musik {
                 void OnPlaybackEvent(int eventType);
                 void PrepareNextTrack();
 
+                TrackList playlist;
+                boost::recursive_mutex playlistMutex;
+
                 musik::core::LibraryPtr library;
                 musik::core::audio::ITransport& transport;
-                TrackList playlist;
                 size_t index, nextIndex;
-                boost::recursive_mutex stateMutex;
+                RepeatMode repeatMode;
         };
     }
 }

@@ -56,11 +56,17 @@ using namespace musik::box;
 #define PREVIOUS_GRACE_PERIOD 2.0f
 #define MESSAGE_STREAM_EVENT 1000
 #define MESSAGE_PLAYBACK_EVENT 1001
+#define MESSAGE_PREPARE_NEXT_TRACK 1002
+
+#define POST(instance, type, user1, user2) \
+    cursespp::MessageQueue::Instance().Post( \
+        cursespp::Message::Create(instance, type, user1, user2));
 
 PlaybackService::PlaybackService(LibraryPtr library, ITransport& transport)
 : library(library)
 , transport(transport)
-, playlist(library) {
+, playlist(library)
+, repeatMode(RepeatNone) {
     transport.StreamEvent.connect(this, &PlaybackService::OnStreamEvent);
     transport.PlaybackEvent.connect(this, &PlaybackService::OnPlaybackEvent);
     this->index = NO_POSITION;
@@ -68,11 +74,34 @@ PlaybackService::PlaybackService(LibraryPtr library, ITransport& transport)
 }
 
 void PlaybackService::PrepareNextTrack() {
-    if (this->playlist.Count() > this->index + 1) {
-        if (this->nextIndex != this->index + 1) {
-            this->nextIndex = this->index + 1;
-            this->transport.PrepareNextTrack(URI_AT_INDEX(nextIndex));
+    boost::recursive_mutex::scoped_lock lock(this->playlistMutex);
+
+    /* repeat track, just keep playing the same thing over and over */
+    if (this->repeatMode == RepeatTrack) {
+        this->transport.PrepareNextTrack(URI_AT_INDEX(this->index));
+    }
+    else {
+        /* normal case, just move forward */
+        if (this->playlist.Count() > this->index + 1) {
+            if (this->nextIndex != this->index + 1) {
+                this->nextIndex = this->index + 1;
+                this->transport.PrepareNextTrack(URI_AT_INDEX(nextIndex));
+            }
         }
+        /* repeat list case, wrap around to the beginning if necessary */
+        else if (this->repeatMode == RepeatList) {
+            if (this->nextIndex != 0) {
+                this->nextIndex = 0;
+                this->transport.PrepareNextTrack(URI_AT_INDEX(nextIndex));
+            }
+        }
+    }
+}
+
+void PlaybackService::SetRepeatMode(RepeatMode mode) {
+    if (this->repeatMode != mode) {
+        this->repeatMode = mode;
+        POST(this, MESSAGE_PREPARE_NEXT_TRACK, 0, 0);
     }
 }
 
@@ -87,7 +116,14 @@ void PlaybackService::ProcessMessage(IMessage &message) {
             }
 
             if (this->index != NO_POSITION) {
-                this->TrackChanged(this->index, this->playlist.Get(this->index));
+                TrackPtr track;
+
+                {
+                    boost::recursive_mutex::scoped_lock lock(this->playlistMutex);
+                    track = this->playlist.Get(this->index);
+                }
+
+                this->TrackChanged(this->index, track);
             }
 
             this->PrepareNextTrack();
@@ -100,6 +136,9 @@ void PlaybackService::ProcessMessage(IMessage &message) {
             this->TrackChanged(NO_POSITION, TrackPtr());
         }
     }
+    else if (message.Type() == MESSAGE_PREPARE_NEXT_TRACK) {
+        this->PrepareNextTrack();
+    }
 }
 
 bool PlaybackService::Next() {
@@ -107,8 +146,14 @@ bool PlaybackService::Next() {
         return false;
     }
 
+    boost::recursive_mutex::scoped_lock lock(this->playlistMutex);
+
     if (this->playlist.Count() > index + 1) {
         this->Play(index + 1);
+        return true;
+    }
+    else if (this->repeatMode == RepeatList) {
+        this->Play(0); /* wrap around */
         return true;
     }
 
@@ -129,6 +174,10 @@ bool PlaybackService::Previous() {
         this->Play(index - 1);
         return true;
     }
+    else if (this->repeatMode == RepeatList) {
+        this->Play(this->Count() - 1); /* wrap around */
+        return true;
+    }
 
     return false;
 }
@@ -139,7 +188,7 @@ void PlaybackService::Play(TrackList& tracks, size_t index) {
     temp.CopyFrom(tracks);
 
     {
-        boost::recursive_mutex::scoped_lock lock(this->stateMutex);
+        boost::recursive_mutex::scoped_lock lock(this->playlistMutex);
         this->playlist.Swap(temp);
     }
 
@@ -149,7 +198,7 @@ void PlaybackService::Play(TrackList& tracks, size_t index) {
 }
 
 void PlaybackService::CopyTo(TrackList& target) {
-    boost::recursive_mutex::scoped_lock lock(this->stateMutex);
+    boost::recursive_mutex::scoped_lock lock(this->playlistMutex);
     target.CopyFrom(this->playlist);
 }
 
@@ -164,15 +213,14 @@ size_t PlaybackService::GetIndex() {
 }
 
 TrackPtr PlaybackService::GetTrackAtIndex(size_t index) {
+    boost::recursive_mutex::scoped_lock lock(this->playlistMutex);
     return this->playlist.Get(index);
 }
 
 void PlaybackService::OnStreamEvent(int eventType, std::string uri) {
-    cursespp::MessageQueue::Instance().Post(
-        cursespp::Message::Create(this, MESSAGE_STREAM_EVENT, eventType, 0));
+    POST(this, MESSAGE_STREAM_EVENT, eventType, 0);
 }
 
 void PlaybackService::OnPlaybackEvent(int eventType) {
-    cursespp::MessageQueue::Instance().Post(
-        cursespp::Message::Create(this, MESSAGE_PLAYBACK_EVENT, eventType, 0));
+    POST(this, MESSAGE_PLAYBACK_EVENT, eventType, 0);
 }
