@@ -186,6 +186,7 @@ TransportWindow::TransportWindow(musik::box::PlaybackService& playback)
     this->SetFrameVisible(false);
     this->playback.TrackChanged.connect(this, &TransportWindow::OnPlaybackServiceTrackChanged);
     this->playback.ModeChanged.connect(this, &TransportWindow::OnPlaybackModeChanged);
+    this->playback.Shuffled.connect(this, &TransportWindow::OnPlaybackShuffled);
     this->transport.VolumeChanged.connect(this, &TransportWindow::OnTransportVolumeChanged);
     this->transport.TimeChanged.connect(this, &TransportWindow::OnTransportTimeChanged);
     this->paused = false;
@@ -225,9 +226,17 @@ void TransportWindow::OnTransportTimeChanged(double time) {
     DEBOUNCE_REFRESH(0)
 }
 
+void TransportWindow::OnPlaybackShuffled(bool shuffled) {
+    DEBOUNCE_REFRESH(0);
+}
+
+#define ON(w, a) if (a != -1) { wattron(w, a); }
+#define OFF(w, a) if (a != -1) { wattroff(w, a); }
+
 void TransportWindow::Update() {
     this->Clear();
     WINDOW *c = this->GetContent();
+    size_t cx = (size_t) this->GetContentWidth();
 
     bool paused = (transport.GetPlaybackState() == ITransport::PlaybackPaused);
     bool stopped = (transport.GetPlaybackState() == ITransport::PlaybackStopped);
@@ -237,9 +246,12 @@ void TransportWindow::Update() {
     /* playing SONG TITLE from ALBUM NAME */
     std::string duration = "0";
 
+    std::string shuffleLabel = " shuffle";
+    size_t shuffleLabelLen = u8len(shuffleLabel);
+
     if (stopped) {
         wattron(c, A_DIM);
-        wprintw(c, "playback is stopped\n");
+        wprintw(c, "playback is stopped");
         wattroff(c, A_DIM);
     }
     else {
@@ -255,12 +267,20 @@ void TransportWindow::Update() {
         album = album.size() ? album : "[album]";
         duration = duration.size() ? duration : "0";
 
-        size_t written = writePlayingFormat(c, title, album, this->GetContentWidth());
-
-        if (written < (size_t) this->GetContentWidth()) {
-            wprintw(c, "\n");
-        }
+        writePlayingFormat(
+            c, 
+            title, 
+            album, 
+            cx - shuffleLabelLen);
     }
+    
+    wmove(c, 0, cx - shuffleLabelLen);
+    int64 shuffleAttrs = this->playback.IsShuffled() ? gb : A_DIM;
+    ON(c, shuffleAttrs);
+    wprintw(c, shuffleLabel.c_str());
+    OFF(c, shuffleAttrs);
+
+    wmove(c, 1, 0); /* newline */
 
     /* volume slider */
 

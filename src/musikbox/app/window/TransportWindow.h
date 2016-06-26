@@ -64,6 +64,7 @@ namespace musik {
                 void OnPlaybackModeChanged();
                 void OnTransportVolumeChanged();
                 void OnTransportTimeChanged(double time);
+                void OnPlaybackShuffled(bool shuffled);
 
                 bool paused;
                 musik::core::audio::ITransport& transport;
