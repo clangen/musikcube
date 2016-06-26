@@ -71,10 +71,11 @@ the current hotkeys are generally based around holding the alt/meta key with you
 
 and a couple hotkeys that are specific to the library view: 
 
-- `ALT+n` or `ESC` switch between browse and play queue
+- `ESC` toggle between browse and play queue
 - `ALT+b` show browse view
-- `ALT+f` show category (album/artist/genre) search view
-- `ALT+t` show track search view
+- `ALT+n` show play queue
+- `ALT+f` show album/artist/genre search
+- `ALT+t` show track search
 - `ALT+1` browse by artist
 - `ALT+2` browse by album
 - `ALT+3` browse by genre
