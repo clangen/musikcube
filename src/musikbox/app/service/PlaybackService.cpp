@@ -133,15 +133,32 @@ void PlaybackService::SetRepeatMode(RepeatMode mode) {
 
 void PlaybackService::ToggleShuffle() {
     boost::recursive_mutex::scoped_lock lock(this->playlistMutex);
-    if (this->unshuffled.Count() > 0) {
+
+    /* remember the ID of the playing track -- we're going to need to look
+    it up after the shuffle */
+    DBID id = -1;
+    if (this->index < this->playlist.Count()) {
+        id = this->playlist.GetId(this->index);
+    }
+
+    if (this->unshuffled.Count() > 0) { /* shuffled -> unshuffled */
         this->playlist.Clear();
         this->playlist.Swap(this->unshuffled);
         this->Shuffled(false);
     }
-    else {
+    else { /* unshuffled -> shuffle */
         this->unshuffled.CopyFrom(this->playlist);
         this->playlist.Shuffle();
         this->Shuffled(true);
+    }
+
+    /* find the new playback index and prefetch the next track */
+    if (id != -1) {
+        int index = this->playlist.IndexOf(id);
+        if (index != -1) {
+            this->index = index;
+            POST(this, MESSAGE_PREPARE_NEXT_TRACK, 0, 0);
+        }
     }
 }
 

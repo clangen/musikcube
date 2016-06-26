@@ -50,6 +50,8 @@ namespace musik {
                 size_t Count();
                 void Add(const DBID& id);
                 musik::core::TrackPtr Get(size_t index);
+                DBID GetId(size_t index);
+                int IndexOf(DBID id);
                 void ClearCache();
                 void Clear();
                 void Swap(TrackList& list);

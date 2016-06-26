@@ -106,6 +106,10 @@ TrackPtr TrackList::Get(size_t index) {
     return query->Result();
 }
 
+DBID TrackList::GetId(size_t index) {
+    return this->ids.at(index);
+}
+
 void TrackList::CopyFrom(TrackList& from) {
     this->Clear();
 
@@ -113,6 +117,11 @@ void TrackList::CopyFrom(TrackList& from) {
         from.ids.begin(),
         from.ids.end(),
         std::back_inserter(this->ids));
+}
+
+int TrackList::IndexOf(DBID id) {
+    auto it = std::find(this->ids.begin(), this->ids.end(), id);
+    return (it == this->ids.end()) ? -1 : it - this->ids.begin();
 }
 
 void TrackList::Shuffle() {
