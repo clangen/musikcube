@@ -75,7 +75,7 @@ void TextInput::Show() {
 }
 
 bool TextInput::Write(const std::string& key) {
-    if (key == "M-bksp") {
+    if (key == "M-^H" || key == "M-^?" || key == "M-bksp") {
         this->buffer = "";
         redrawContents(*this, "");
         this->TextChanged(this, "");
