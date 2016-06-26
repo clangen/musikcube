@@ -141,6 +141,9 @@ void PlaybackService::ToggleShuffle() {
         id = this->playlist.GetId(this->index);
     }
 
+    this->playlist.ClearCache();
+    this->unshuffled.ClearCache();
+
     if (this->unshuffled.Count() > 0) { /* shuffled -> unshuffled */
         this->playlist.Clear();
         this->playlist.Swap(this->unshuffled);
