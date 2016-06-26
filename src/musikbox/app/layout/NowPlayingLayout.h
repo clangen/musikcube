@@ -68,6 +68,7 @@ namespace musik {
 
             private:
                 void OnTrackListRequeried();
+                void OnPlaybackShuffled(bool shuffled);
                 void InitializeWindows();
                 void RequeryTrackList();
 

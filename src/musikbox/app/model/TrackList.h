@@ -51,8 +51,10 @@ namespace musik {
                 void Add(const DBID& id);
                 musik::core::TrackPtr Get(size_t index);
                 void ClearCache();
+                void Clear();
                 void Swap(TrackList& list);
                 void CopyFrom(TrackList& from);
+                void Shuffle();
 
             private:
                 typedef std::list<DBID> CacheList;

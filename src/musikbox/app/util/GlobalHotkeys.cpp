@@ -86,6 +86,10 @@ bool GlobalHotkeys::Handle(const std::string& kn) {
         playback::ToggleRepeatMode(this->playback);
         return true;
     }
+    else if (kn == "M-." || kn == "M-period") {
+        this->playback.ToggleShuffle();
+        return true;
+    }
     else if (kn == "^X") {
         this->playback.Stop();
         return true;

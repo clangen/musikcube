@@ -107,13 +107,21 @@ TrackPtr TrackList::Get(size_t index) {
 }
 
 void TrackList::CopyFrom(TrackList& from) {
-    this->ids.clear();
-    this->ClearCache();
+    this->Clear();
 
     std::copy(
         from.ids.begin(),
         from.ids.end(),
         std::back_inserter(this->ids));
+}
+
+void TrackList::Shuffle() {
+    std::random_shuffle(this->ids.begin(), this->ids.end());
+}
+
+void TrackList::Clear() {
+    this->ClearCache();
+    this->ids.clear();
 }
 
 void TrackList::ClearCache() {

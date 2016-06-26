@@ -52,6 +52,7 @@ namespace musik {
             public:
                 sigslot::signal2<size_t, musik::core::TrackPtr> TrackChanged;
                 sigslot::signal0<> ModeChanged;
+                sigslot::signal1<bool> Shuffled;
 
                 enum RepeatMode {
                     RepeatNone,
@@ -79,6 +80,9 @@ namespace musik {
                 RepeatMode GetRepeatMode() { return this->repeatMode; }
                 void SetRepeatMode(RepeatMode mode);
 
+                bool IsShuffled() { return this->unshuffled.Count() > 0; }
+                void ToggleShuffle();
+
                 musik::core::TrackPtr GetTrackAtIndex(size_t index);
                 size_t GetIndex();
 
@@ -90,6 +94,7 @@ namespace musik {
                 void PrepareNextTrack();
 
                 TrackList playlist;
+                TrackList unshuffled;
                 boost::recursive_mutex playlistMutex;
 
                 musik::core::LibraryPtr library;

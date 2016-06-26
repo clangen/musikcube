@@ -55,6 +55,7 @@ NowPlayingLayout::NowPlayingLayout(
 , playback(playback)
 , library(library) {
     this->InitializeWindows();
+    this->playback.Shuffled.connect(this, &NowPlayingLayout::OnPlaybackShuffled);
 }
 
 NowPlayingLayout::~NowPlayingLayout() {
@@ -103,6 +104,10 @@ void NowPlayingLayout::OnTrackListRequeried() {
         this->trackList->SetSelectedIndex(index);
         this->trackList->ScrollTo(index == 0 ? index : index - 1);
     }
+}
+
+void NowPlayingLayout::OnPlaybackShuffled(bool shuffled) {
+    this->RequeryTrackList();
 }
 
 void NowPlayingLayout::RequeryTrackList() {

@@ -64,6 +64,7 @@ the current hotkeys are generally based around holding the alt/meta key with you
 - `ALT+o` forward 10 seconds
 - `ALT+r` repaint the screen
 - `ALT+,` toggle repeat mode (off/track/list)
+- `ALT+.` (un)shuffle play queue
 - `CTRL+p` pause/resume (globally)
 - `CTRL+x` stop (unload streams, free resources)
 - `CTRL+d` quit 

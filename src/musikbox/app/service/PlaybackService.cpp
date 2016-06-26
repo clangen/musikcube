@@ -87,6 +87,7 @@ PlaybackService::PlaybackService(LibraryPtr library, ITransport& transport)
 : library(library)
 , transport(transport)
 , playlist(library)
+, unshuffled(library)
 , repeatMode(RepeatNone) {
     transport.StreamEvent.connect(this, &PlaybackService::OnStreamEvent);
     transport.PlaybackEvent.connect(this, &PlaybackService::OnPlaybackEvent);
@@ -130,6 +131,20 @@ void PlaybackService::SetRepeatMode(RepeatMode mode) {
     }
 }
 
+void PlaybackService::ToggleShuffle() {
+    boost::recursive_mutex::scoped_lock lock(this->playlistMutex);
+    if (this->unshuffled.Count() > 0) {
+        this->playlist.Clear();
+        this->playlist.Swap(this->unshuffled);
+        this->Shuffled(false);
+    }
+    else {
+        this->unshuffled.CopyFrom(this->playlist);
+        this->playlist.Shuffle();
+        this->Shuffled(true);
+    }
+}
+
 void PlaybackService::ProcessMessage(IMessage &message) {
     if (message.Type() == MESSAGE_STREAM_EVENT) {
         StreamMessage* streamMessage = static_cast<StreamMessage*>(&message);
@@ -140,7 +155,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
             if (this->nextIndex != NO_POSITION) {
                 /* in most cases when we get here it means that the next track is
                 starting, so we want to update our internal index. however, because
-                things are asynchronous, this may not always be the case, especially if 
+                things are asynchronous, this may not always be the case, especially if
                 the tracks are very short, or the user is advancing through songs very
                 quickly. make compare the track URIs before we update internal state. */
                 if (this->GetTrackAtIndex(this->nextIndex)->URI() == streamMessage->GetUri()) {
@@ -226,6 +241,7 @@ void PlaybackService::Play(TrackList& tracks, size_t index) {
     {
         boost::recursive_mutex::scoped_lock lock(this->playlistMutex);
         this->playlist.Swap(temp);
+        this->unshuffled.Clear();
     }
 
     if (index <= tracks.Count()) {
