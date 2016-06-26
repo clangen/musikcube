@@ -1,3 +1,6 @@
+#cmake -DCMAKE_BUILD_TYPE=Release .
+#cmake -DCMAKE_BUILD_TYPE=Debug .
+
 cmake_minimum_required(VERSION 3.0)
 
 project(musikbox)
@@ -16,7 +19,9 @@ ExternalProject_Add(taglib
     INSTALL_COMMAND make install
 )
 
-set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++11 -fpermissive -g")
+set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++11 -fpermissive")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
 
 set (BOOST_LIBS
   system
@@ -45,7 +50,7 @@ set (BOOST_LINK_LIBS
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}/Modules)
 
-SET (CMAKE_BUILD_TYPE DEBUG)
+# SET (CMAKE_BUILD_TYPE DEBUG)
 set (LIBRARY_OUTPUT_PATH ${musikbox_SOURCE_DIR}/bin/plugins)
 set (EXECUTABLE_OUTPUT_PATH ${musikbox_SOURCE_DIR}/bin)
 

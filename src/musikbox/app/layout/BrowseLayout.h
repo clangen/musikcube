@@ -71,6 +71,7 @@ namespace musik {
             private:
                 void InitializeWindows();
 
+                void OnIndexerProgress();
                 void RequeryTrackList(ListWindow *view);
 
                 void OnCategoryViewSelectionChanged(

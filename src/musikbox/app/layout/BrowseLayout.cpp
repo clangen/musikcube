@@ -59,6 +59,8 @@ BrowseLayout::BrowseLayout(
 : LayoutBase()
 , playback(playback) {
     this->library = library;
+    this->library->Indexer()->TrackRefreshed.connect(this, &BrowseLayout::OnIndexerProgress);
+    this->library->Indexer()->SynchronizeEnd.connect(this, &BrowseLayout::OnIndexerProgress);
     this->InitializeWindows();
 }
 
@@ -118,6 +120,10 @@ void BrowseLayout::OnVisibilityChanged(bool visible) {
     }
 }
 
+void BrowseLayout::OnIndexerProgress() {
+    this->categoryList->Requery();
+}
+
 void BrowseLayout::RequeryTrackList(ListWindow *view) {
     if (view == this->categoryList.get()) {
         DBID selectedId = this->categoryList->GetSelectedId();
@@ -127,6 +133,9 @@ void BrowseLayout::RequeryTrackList(ListWindow *view) {
                     this->library,
                     this->categoryList->GetFieldName(),
                     selectedId)));
+        }
+        else {
+            this->trackList->Clear();
         }
     }
 }
