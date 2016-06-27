@@ -16,6 +16,10 @@ and this on osx:
 
 ![osx screenshot](/static/screenshots/osx.png?raw=true)
 
+and linux:
+
+![linux screenshot](/static/screenshots/linux.png?raw=true)
+
 # compiling
 
 ## windows
