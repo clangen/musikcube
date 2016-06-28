@@ -67,7 +67,7 @@ using std::setiosflags;
 TrackListView::TrackListView(PlaybackService& playback, LibraryPtr library)
 : ListWindow(NULL)
 , playback(playback) {
-    this->SetContentColor(BOX_COLOR_WHITE_ON_BLACK);
+    this->SetContentColor(CURSESPP_WHITE_ON_TRANSPARENT);
     this->library = library;
     this->library->QueryCompleted.connect(this, &TrackListView::OnQueryCompleted);
     this->playback.TrackChanged.connect(this, &TrackListView::OnTrackChanged);
@@ -111,6 +111,7 @@ void TrackListView::ProcessMessage(IMessage &message) {
             mess with the selected index */
             if (this->lastQueryHash != query->GetQueryHash()) {
                 this->SetSelectedIndex(0);
+                this->ScrollToTop();
             }
 
             this->lastQueryHash = this->query->GetQueryHash();
@@ -153,7 +154,7 @@ constants) */
 
 IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(size_t index) {
     bool selected = index == parent.GetSelectedIndex();
-    int64 attrs = selected ? COLOR_PAIR(BOX_COLOR_BLACK_ON_GREEN) : -1LL;
+    int64 attrs = selected ? COLOR_PAIR(CURSESPP_BLACK_ON_GREEN) : -1LL;
 
     TrackPtr track = parent.metadata->Get(index);
 
@@ -163,10 +164,10 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(size_t index) {
         playing->LibraryId() == track->LibraryId())
     {
         if (selected) {
-            attrs = COLOR_PAIR(BOX_COLOR_BLACK_ON_YELLOW);
+            attrs = COLOR_PAIR(CURSESPP_BLACK_ON_YELLOW);
         }
         else {
-            attrs = COLOR_PAIR(BOX_COLOR_YELLOW_ON_BLACK) | A_BOLD;
+            attrs = COLOR_PAIR(CURSESPP_YELLOW_ON_TRANSPARENT) | A_BOLD;
         }
     }
 
@@ -207,7 +208,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(size_t index) {
     if (this->parent.headers->find(index) != this->parent.headers->end()) {
         std::string album = track->GetValue(constants::Track::ALBUM);
         std::shared_ptr<EntryWithHeader> entry(new EntryWithHeader(album, text));
-        entry->SetAttrs(COLOR_PAIR(BOX_COLOR_GREEN_ON_BLACK), attrs);
+        entry->SetAttrs(COLOR_PAIR(CURSESPP_GREEN_ON_TRANSPARENT), attrs);
         return entry;
     }
     else {

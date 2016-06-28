@@ -105,7 +105,7 @@ void SearchLayout::Layout() {
 void SearchLayout::InitializeWindows(PlaybackService& playback) {
     this->input.reset(new cursespp::TextInput());
     this->input->TextChanged.connect(this, &SearchLayout::OnInputChanged);
-    this->input->SetContentColor(BOX_COLOR_WHITE_ON_BLACK);
+    this->input->SetContentColor(CURSESPP_WHITE_ON_TRANSPARENT);
     this->input->SetFocusOrder(0);
     this->AddWindow(this->input);
 

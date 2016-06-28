@@ -130,7 +130,7 @@ size_t writePlayingFormat(
     TokenList tokens;
     tokenize(playingFormat, tokens);
 
-    int64 gb = COLOR_PAIR(BOX_COLOR_GREEN_ON_BLACK);
+    int64 gb = COLOR_PAIR(CURSESPP_GREEN_ON_TRANSPARENT);
     size_t remaining = width;
 
     auto it = tokens.begin();
@@ -182,7 +182,7 @@ TransportWindow::TransportWindow(musik::box::PlaybackService& playback)
 , playback(playback)
 , transport(playback.GetTransport())
 {
-    this->SetContentColor(BOX_COLOR_WHITE_ON_BLACK);
+    this->SetContentColor(CURSESPP_WHITE_ON_TRANSPARENT);
     this->SetFrameVisible(false);
     this->playback.TrackChanged.connect(this, &TransportWindow::OnPlaybackServiceTrackChanged);
     this->playback.ModeChanged.connect(this, &TransportWindow::OnPlaybackModeChanged);
@@ -241,7 +241,7 @@ void TransportWindow::Update() {
     bool paused = (transport.GetPlaybackState() == ITransport::PlaybackPaused);
     bool stopped = (transport.GetPlaybackState() == ITransport::PlaybackStopped);
 
-    int64 gb = COLOR_PAIR(BOX_COLOR_GREEN_ON_BLACK);
+    int64 gb = COLOR_PAIR(CURSESPP_GREEN_ON_TRANSPARENT);
 
     /* playing SONG TITLE from ALBUM NAME */
     std::string duration = "0";
@@ -326,7 +326,7 @@ void TransportWindow::Update() {
             system_clock::now().time_since_epoch()).count();
 
         if (now % 2 == 0) {
-            timerAttrs = COLOR_PAIR(BOX_COLOR_BLACK_ON_BLACK);
+            timerAttrs = COLOR_PAIR(CURSESPP_BLACK_ON_TRANSPARENT);
         }
     }
 

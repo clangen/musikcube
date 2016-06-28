@@ -47,7 +47,7 @@ typedef IScrollAdapter::IEntry IEntry;
 
 LogWindow::LogWindow(IWindow *parent)
 : ScrollableWindow(parent) {
-    this->SetContentColor(BOX_COLOR_WHITE_ON_BLACK);
+    this->SetContentColor(CURSESPP_WHITE_ON_TRANSPARENT);
 
     this->adapter = new SimpleScrollAdapter();
     this->adapter->SetMaxEntries(500);
@@ -78,18 +78,18 @@ void LogWindow::Update() {
     WINDOW* contents = this->GetContent();
 
     for (size_t i = 0; i < pending.size(); i++) {
-        int64 attrs = COLOR_PAIR(BOX_COLOR_WHITE_ON_BLACK);
+        int64 attrs = COLOR_PAIR(CURSESPP_WHITE_ON_TRANSPARENT);
 
         LogEntry* entry = pending[i];
 
         switch (entry->level) {
             case musik::debug::level_error: {
-                attrs = COLOR_PAIR(BOX_COLOR_RED_ON_BLACK) | A_BOLD;
+                attrs = COLOR_PAIR(CURSESPP_RED_ON_TRANSPARENT) | A_BOLD;
                 break;
             }
 
             case musik::debug::level_warning: {
-                attrs = COLOR_PAIR(BOX_COLOR_YELLOW_ON_BLACK) | A_BOLD;
+                attrs = COLOR_PAIR(CURSESPP_YELLOW_ON_TRANSPARENT) | A_BOLD;
                 break;
             }
         }

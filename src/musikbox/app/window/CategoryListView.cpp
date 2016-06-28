@@ -62,7 +62,7 @@ CategoryListView::CategoryListView(
     const std::string& fieldName)
 : ListWindow(NULL)
 , playback(playback) {
-    this->SetContentColor(BOX_COLOR_WHITE_ON_BLACK);
+    this->SetContentColor(CURSESPP_WHITE_ON_TRANSPARENT);
     this->selectAfterQuery = 0;
     this->library = library;
     this->library->QueryCompleted.connect(this, &CategoryListView::OnQueryCompleted);
@@ -207,14 +207,14 @@ IScrollAdapter::EntryPtr CategoryListView::Adapter::GetEntry(size_t index) {
 
     bool selected = index == parent.GetSelectedIndex();
 
-    int64 attrs = selected ? COLOR_PAIR(BOX_COLOR_BLACK_ON_GREEN) : -1LL;
+    int64 attrs = selected ? COLOR_PAIR(CURSESPP_BLACK_ON_GREEN) : -1LL;
 
     if (playing) {
         if (selected) {
-            attrs = COLOR_PAIR(BOX_COLOR_BLACK_ON_YELLOW);
+            attrs = COLOR_PAIR(CURSESPP_BLACK_ON_YELLOW);
         }
         else {
-            attrs = COLOR_PAIR(BOX_COLOR_YELLOW_ON_BLACK) | A_BOLD;
+            attrs = COLOR_PAIR(CURSESPP_YELLOW_ON_TRANSPARENT) | A_BOLD;
         }
     }
 

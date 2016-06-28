@@ -243,8 +243,6 @@ int main(int argc, char* argv[])
     cbreak();
     noecho();
     keypad(stdscr, TRUE);
-    start_color();
-    use_default_colors();
     refresh();
     curs_set(0);
 
@@ -303,7 +301,7 @@ int main(int argc, char* argv[])
                 else if (kn == "^D") { /* ctrl+d quits */
                     quit = true;
                 }
-                else if (kn == "ALT_R" || kn == "M-r") {
+                else if (kn == "M-r") {
                     Window::Invalidate();
                 }
                 else if (kn == "KEY_RESIZE") {

@@ -159,15 +159,15 @@ bool BrowseLayout::KeyPress(const std::string& key) {
         this->categoryList->Requery();
         return true;
     }
-    else if (key == "ALT_1" || key == "M-1") {
+    else if (key == "M-1") {
         this->categoryList->SetFieldName(constants::Track::ARTIST);
         return true;
     }
-    else if (key == "ALT_2" || key == "M-2") {
+    else if (key == "M-2") {
         this->categoryList->SetFieldName(constants::Track::ALBUM);
         return true;
     }
-    else if (key == "ALT_3" || key == "M-3") {
+    else if (key == "M-3") {
         this->categoryList->SetFieldName(constants::Track::GENRE);
         return true;
     }

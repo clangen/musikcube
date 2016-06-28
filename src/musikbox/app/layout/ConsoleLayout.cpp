@@ -72,7 +72,7 @@ ConsoleLayout::ConsoleLayout(ITransport& transport, LibraryPtr library)
     this->AddWindow(this->output);
     this->AddWindow(this->resources);
 
-    this->commands->SetContentColor(BOX_COLOR_WHITE_ON_BLACK);
+    this->commands->SetContentColor(CURSESPP_WHITE_ON_TRANSPARENT);
     this->commands->EnterPressed.connect(this, &ConsoleLayout::OnEnterPressed);
 
     this->Help();
@@ -133,14 +133,14 @@ void ConsoleLayout::OnEnterPressed(TextInput *input) {
     std::string command = this->commands->GetText();
     this->commands->SetText("");
 
-    output->WriteLine("> " + command + "\n", COLOR_PAIR(BOX_COLOR_BLACK_ON_GREY));
+    output->WriteLine("> " + command + "\n", COLOR_PAIR(CURSESPP_BLACK_ON_GREY));
 
     if (!this->ProcessCommand(command)) {
         if (command.size()) {
             output->WriteLine(
                 "illegal command: '" +
                 command +
-                "'\n", COLOR_PAIR(BOX_COLOR_RED_ON_GREY));
+                "'\n", COLOR_PAIR(CURSESPP_RED_ON_GREY));
         }
     }
 }
@@ -311,6 +311,6 @@ void ConsoleLayout::ListPlugins() const {
             "v" + std::string((*it)->Version()) + "\n"
             "    by " + std::string((*it)->Author()) + "\n";
 
-        this->output->WriteLine(format, BOX_COLOR_RED_ON_BLUE);
+        this->output->WriteLine(format, CURSESPP_RED_ON_BLUE);
     }
 }

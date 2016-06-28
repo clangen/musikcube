@@ -64,12 +64,12 @@ bool sortByFocusOrder(IWindowPtr a, IWindowPtr b) {
 
 static inline IWindowPtr adjustFocus(IWindowPtr oldFocus, IWindowPtr newFocus) {
     if (oldFocus) {
-        oldFocus->SetFrameColor(BOX_COLOR_WHITE_ON_BLACK);
+        oldFocus->SetFrameColor(CURSESPP_WHITE_ON_TRANSPARENT);
         oldFocus->Blur();
     }
 
     if (newFocus) {
-        newFocus->SetFrameColor(BOX_COLOR_RED_ON_BLACK);
+        newFocus->SetFrameColor(CURSESPP_RED_ON_TRANSPARENT);
         newFocus->Focus();
     }
 

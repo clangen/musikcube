@@ -37,21 +37,50 @@
 
 using namespace cursespp;
 
+static int white = COLOR_WHITE;
+static int blue = COLOR_BLUE;
+static int red = COLOR_RED;
+static int yellow = COLOR_YELLOW;
+static int green = COLOR_GREEN;
+static int black = COLOR_BLACK;
+static int background = -1;
+
+#define COLOR_CUSTOM_WHITE 9
+#define COLOR_CUSTOM_BLUE 10
+#define COLOR_CUSTOM_RED 11
+#define COLOR_CUSTOM_YELLOW 12
+#define COLOR_CUSTOM_GREEN 13
+#define COLOR_CUSTOM_BLACK 14
+
 Colors::Colors() {
 }
 
 void Colors::Init() {
-    init_pair(BOX_COLOR_WHITE_ON_BLUE, COLOR_WHITE, COLOR_BLUE);
-    init_pair(BOX_COLOR_RED_ON_BLUE, COLOR_RED, COLOR_BLUE);
-    init_pair(BOX_COLOR_YELLOW_ON_BLUE, COLOR_YELLOW, COLOR_BLUE);
-    init_pair(BOX_COLOR_BLACK_ON_GREY, COLOR_BLACK, COLOR_WHITE);
-    init_pair(BOX_COLOR_BLACK_ON_GREEN, COLOR_BLACK, COLOR_GREEN);
-    init_pair(BOX_COLOR_YELLOW_ON_BLACK, COLOR_YELLOW, -1);
-    init_pair(BOX_COLOR_WHITE_ON_BLACK, COLOR_WHITE, -1);
-    init_pair(BOX_COLOR_RED_ON_BLACK, COLOR_RED, -1);
-    init_pair(BOX_COLOR_RED_ON_GREY, COLOR_RED, COLOR_WHITE);
-    init_pair(BOX_COLOR_GREEN_ON_BLACK, COLOR_GREEN, -1);
-    init_pair(BOX_COLOR_BLACK_ON_BLACK, COLOR_BLACK, -1);
-    init_pair(BOX_COLOR_RED_ON_GREEN, COLOR_RED, COLOR_GREEN);
-    init_pair(BOX_COLOR_BLACK_ON_YELLOW, COLOR_BLACK, COLOR_YELLOW);
+    start_color();
+    use_default_colors();
+
+    /* the default colors are a bit harsh for my taste, so
+    let's use custom colors if the terminal supports it. in
+    the future we'll allow users to configure this via setting */
+    if (COLORS > 8) {
+        init_color(COLOR_CUSTOM_RED, 1000, 431, 392);
+        red = COLOR_CUSTOM_RED;
+
+        init_color(COLOR_CUSTOM_GREEN, 373, 980, 392);
+        green = COLOR_CUSTOM_GREEN;
+    }
+
+    init_pair(CURSESPP_WHITE_ON_BLUE, white, blue);
+    init_pair(CURSESPP_RED_ON_BLUE, red, blue);
+    init_pair(CURSESPP_YELLOW_ON_BLUE, yellow, blue);
+    init_pair(CURSESPP_BLACK_ON_GREY, black, white);
+    init_pair(CURSESPP_BLACK_ON_GREEN, black, green);
+    init_pair(CURSESPP_YELLOW_ON_TRANSPARENT, yellow, background);
+    init_pair(CURSESPP_WHITE_ON_TRANSPARENT, white, background);
+    init_pair(CURSESPP_RED_ON_TRANSPARENT, red, background);
+    init_pair(CURSESPP_RED_ON_GREY, red, white);
+    init_pair(CURSESPP_GREEN_ON_TRANSPARENT, green, background);
+    init_pair(CURSESPP_BLACK_ON_TRANSPARENT, black, background);
+    init_pair(CURSESPP_RED_ON_GREEN, red, green);
+    init_pair(CURSESPP_BLACK_ON_YELLOW, black, yellow);
 }
