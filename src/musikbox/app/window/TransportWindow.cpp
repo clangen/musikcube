@@ -268,12 +268,12 @@ void TransportWindow::Update() {
         duration = duration.size() ? duration : "0";
 
         writePlayingFormat(
-            c, 
-            title, 
-            album, 
+            c,
+            title,
+            album,
             cx - shuffleLabelLen);
     }
-    
+
     wmove(c, 0, cx - shuffleLabelLen);
     int64 shuffleAttrs = this->playback.IsShuffled() ? gb : A_DIM;
     ON(c, shuffleAttrs);
