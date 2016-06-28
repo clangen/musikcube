@@ -45,12 +45,12 @@ static int green = COLOR_GREEN;
 static int black = COLOR_BLACK;
 static int background = -1;
 
-#define COLOR_CUSTOM_WHITE 9
-#define COLOR_CUSTOM_BLUE 10
-#define COLOR_CUSTOM_RED 11
-#define COLOR_CUSTOM_YELLOW 12
-#define COLOR_CUSTOM_GREEN 13
-#define COLOR_CUSTOM_BLACK 14
+#define COLOR_CUSTOM_WHITE 16
+#define COLOR_CUSTOM_BLUE 17
+#define COLOR_CUSTOM_RED 18
+#define COLOR_CUSTOM_YELLOW 19
+#define COLOR_CUSTOM_GREEN 20
+#define COLOR_CUSTOM_BLACK 21
 
 Colors::Colors() {
 }
@@ -68,6 +68,9 @@ void Colors::Init() {
 
         init_color(COLOR_CUSTOM_GREEN, 373, 980, 392);
         green = COLOR_CUSTOM_GREEN;
+
+        init_color(COLOR_CUSTOM_YELLOW, 913, 858, 427);
+        yellow = COLOR_CUSTOM_YELLOW;
     }
 
     init_pair(CURSESPP_WHITE_ON_BLUE, white, blue);
