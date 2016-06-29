@@ -46,7 +46,7 @@ static std::string TAG = "Transport";
 
 #define RESET_NEXT_PLAYER() \
     delete this->nextPlayer; \
-    this->nextPlayer = NULL;
+    this->nextPlayer = nullptr;
 
 #define DEFER(x, y) \
   { \
@@ -65,7 +65,7 @@ static void deletePlayer(Player* p) {
 GaplessTransport::GaplessTransport()
 : volume(1.0)
 , state(PlaybackStopped)
-, nextPlayer(NULL)
+, nextPlayer(nullptr)
 , nextCanStart(false) {
     this->output = Player::CreateDefaultOutput();
 }
@@ -103,43 +103,50 @@ void GaplessTransport::Start(const std::string& url) {
 
 void GaplessTransport::StartWithPlayer(Player* newPlayer) {
     if (newPlayer) {
+        newPlayer->PlaybackStarted.connect(this, &GaplessTransport::OnPlaybackStarted);
+        newPlayer->PlaybackAlmostEnded.connect(this, &GaplessTransport::OnPlaybackAlmostEnded);
+        newPlayer->PlaybackFinished.connect(this, &GaplessTransport::OnPlaybackFinished);
+        newPlayer->PlaybackError.connect(this, &GaplessTransport::OnPlaybackError);
+
+        bool playingNext = false;
+
         {
             boost::recursive_mutex::scoped_lock lock(this->stateMutex);
 
-            bool playingNext = (newPlayer == nextPlayer);
+            playingNext = (newPlayer == nextPlayer);
             if (newPlayer != nextPlayer) {
                 delete nextPlayer;
             }
 
-            this->nextPlayer = NULL;
-
-            /* first argument suppresses the "Stop" event from getting triggered,
-            the second param is used for gapless playback -- we won't stop the output
-            and will allow pending buffers to finish */
-            this->Stop(true, !playingNext);
-            this->SetNextCanStart(false);
-
-            newPlayer->PlaybackStarted.connect(this, &GaplessTransport::OnPlaybackStarted);
-            newPlayer->PlaybackAlmostEnded.connect(this, &GaplessTransport::OnPlaybackAlmostEnded);
-            newPlayer->PlaybackFinished.connect(this, &GaplessTransport::OnPlaybackFinished);
-            newPlayer->PlaybackError.connect(this, &GaplessTransport::OnPlaybackError);
-
-            musik::debug::info(TAG, "play()");
-
+            this->nextPlayer = nullptr;
             this->active.push_back(newPlayer);
-            this->output->Resume();
-            newPlayer->Play();
         }
+
+        /* first argument suppresses the "Stop" event from getting triggered,
+        the second param is used for gapless playback -- we won't stop the output
+        and will allow pending buffers to finish if we're not automatically
+        playing the next track. note we do this outside of critical section so
+        outputs *can* stop buffers immediately, and not to worry about causing a
+        deadlock. */
+        this->StopInternal(true, !playingNext, newPlayer);
+        this->SetNextCanStart(false);
+        this->output->Resume();
+        newPlayer->Play();
+        musik::debug::info(TAG, "play()");
 
         this->RaiseStreamEvent(ITransport::StreamScheduled, newPlayer);
     }
 }
 
 void GaplessTransport::Stop() {
-    this->Stop(false, true);
+    this->StopInternal(false, true);
 }
 
-void GaplessTransport::Stop(bool suppressStopEvent, bool stopOutput) {
+void GaplessTransport::StopInternal(
+    bool suppressStopEvent,
+    bool stopOutput,
+    Player* exclude)
+{
     musik::debug::info(TAG, "stop");
 
     /* if we stop the output, we kill all of the Players immediately.
@@ -151,7 +158,18 @@ void GaplessTransport::Stop(bool suppressStopEvent, bool stopOutput) {
         {
             boost::recursive_mutex::scoped_lock lock(this->stateMutex);
             RESET_NEXT_PLAYER();
-            std::swap(toDelete, this->active);
+
+            /* move all but the excluded player to the toDelete set. */
+            auto it = this->active.begin();
+            while (it != this->active.end()) {
+                if (*it != exclude) {
+                    toDelete.push_back(*it);
+                    it = this->active.erase(it);
+                }
+                else {
+                    ++it;
+                }
+            }
         }
 
         /* delete these in the background to avoid deadlock in some cases

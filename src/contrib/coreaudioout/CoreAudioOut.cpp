@@ -69,14 +69,16 @@ size_t countBuffersWithProvider(
 }
 
 void CoreAudioOut::NotifyBufferCompleted(BufferContext *context) {
-    boost::recursive_mutex::scoped_lock lock(this->mutex);
+    {
+        boost::recursive_mutex::scoped_lock lock(this->mutex);
 
-    auto it = this->buffers.begin();
-    while (it != this->buffers.end()) {
-        if (*it == context) {
-            this->buffers.erase(it);
+        auto it = this->buffers.begin();
+        while (it != this->buffers.end()) {
+            if (*it == context) {
+                this->buffers.erase(it);
+            }
+            ++it;
         }
-        ++it;
     }
 
     context->provider->OnBufferProcessed(context->buffer);

@@ -67,7 +67,12 @@ namespace musik { namespace core { namespace audio {
 
         private:
             void StartWithPlayer(Player* player);
-            void Stop(bool suppressStopEvent, bool stopOutput);
+
+            void StopInternal(
+                bool suppressStopEvent,
+                bool stopOutput,
+                Player* exclude = nullptr);
+
             void RemoveActive(Player* player);
             void DeletePlayers(std::list<Player*> players);
             void SetNextCanStart(bool nextCanStart);
