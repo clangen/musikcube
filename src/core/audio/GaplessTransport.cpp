@@ -73,7 +73,7 @@ GaplessTransport::GaplessTransport()
 GaplessTransport::~GaplessTransport() {
 }
 
-GaplessTransport::PlaybackState GaplessTransport::GetPlaybackState() {
+ITransport::PlaybackState GaplessTransport::GetPlaybackState() {
     boost::recursive_mutex::scoped_lock lock(this->stateMutex);
     return this->state;
 }
@@ -131,7 +131,7 @@ void GaplessTransport::StartWithPlayer(Player* newPlayer) {
             newPlayer->Play();
         }
 
-        this->RaiseStreamEvent(GaplessTransport::StreamScheduled, newPlayer);
+        this->RaiseStreamEvent(ITransport::StreamScheduled, newPlayer);
     }
 }
 
@@ -212,7 +212,7 @@ bool GaplessTransport::Resume() {
     }
 
     if (count) {
-        this->SetPlaybackState(GaplessTransport::PlaybackPlaying);
+        this->SetPlaybackState(ITransport::PlaybackPlaying);
         return true;
     }
 
@@ -292,8 +292,8 @@ void GaplessTransport::SetNextCanStart(bool nextCanStart) {
 }
 
 void GaplessTransport::OnPlaybackStarted(Player* player) {
-    this->RaiseStreamEvent(GaplessTransport::StreamPlaying, player);
-    this->SetPlaybackState(GaplessTransport::PlaybackPlaying);
+    this->RaiseStreamEvent(ITransport::StreamPlaying, player);
+    this->SetPlaybackState(ITransport::PlaybackPlaying);
 }
 
 void GaplessTransport::OnPlaybackAlmostEnded(Player* player) {
@@ -309,11 +309,11 @@ void GaplessTransport::OnPlaybackAlmostEnded(Player* player) {
         }
     }
 
-    this->RaiseStreamEvent(GaplessTransport::StreamAlmostDone, player);
+    this->RaiseStreamEvent(ITransport::StreamAlmostDone, player);
 }
 
 void GaplessTransport::OnPlaybackFinished(Player* player) {
-    this->RaiseStreamEvent(GaplessTransport::StreamFinished, player);
+    this->RaiseStreamEvent(ITransport::StreamFinished, player);
 
     bool stopped = false;
 
@@ -322,7 +322,13 @@ void GaplessTransport::OnPlaybackFinished(Player* player) {
 
         bool startedNext = false;
 
-        if (this->nextPlayer) {
+        size_t count = this->active.size();
+        Player* front = count ? this->active.front() : nullptr;
+        bool playerIsFront = (player == front);
+
+        /* only start the next player if the currently active player is the
+        one that just finished. */
+        if (this->nextPlayer && playerIsFront) {
             this->StartWithPlayer(this->nextPlayer);
             startedNext = true;
         }
@@ -332,9 +338,7 @@ void GaplessTransport::OnPlaybackFinished(Player* player) {
         of players is one, and it's the current player. remember, we free
         players asynchronously. */
         if (!startedNext) {
-            stopped =
-                !this->active.size() ||
-                (this->active.size() == 1 && this->active.front() == player);
+            stopped = !count || (count == 1 && playerIsFront);
         }
     }
 
@@ -346,8 +350,8 @@ void GaplessTransport::OnPlaybackFinished(Player* player) {
 }
 
 void GaplessTransport::OnPlaybackError(Player* player) {
-    this->RaiseStreamEvent(GaplessTransport::StreamError, player);
-    this->SetPlaybackState(GaplessTransport::PlaybackStopped);
+    this->RaiseStreamEvent(ITransport::StreamError, player);
+    this->SetPlaybackState(ITransport::PlaybackStopped);
     DEFER(&GaplessTransport::RemoveActive, player);
 }
 

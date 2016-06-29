@@ -52,6 +52,13 @@ static int background = -1;
 #define COLOR_CUSTOM_GREEN 20
 #define COLOR_CUSTOM_BLACK 21
 
+#define SCALE(x) ((x * 1000) / 255)
+
+static int initColor(int id, int r, int g, int b) {
+    init_color(id, SCALE(r), SCALE(g), SCALE(b));
+    return id;
+}
+
 Colors::Colors() {
 }
 
@@ -63,14 +70,9 @@ void Colors::Init() {
     let's use custom colors if the terminal supports it. in
     the future we'll allow users to configure this via setting */
     if (COLORS > 8) {
-        init_color(COLOR_CUSTOM_RED, 1000, 431, 392);
-        red = COLOR_CUSTOM_RED;
-
-        init_color(COLOR_CUSTOM_GREEN, 373, 980, 392);
-        green = COLOR_CUSTOM_GREEN;
-
-        init_color(COLOR_CUSTOM_YELLOW, 913, 858, 427);
-        yellow = COLOR_CUSTOM_YELLOW;
+        red = initColor(COLOR_CUSTOM_RED, 220, 82, 86);
+        green = initColor(COLOR_CUSTOM_GREEN, 166, 226, 46);
+        yellow = initColor(COLOR_CUSTOM_YELLOW, 230, 220, 116);
     }
 
     init_pair(CURSESPP_WHITE_ON_BLUE, white, blue);

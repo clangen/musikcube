@@ -98,8 +98,11 @@ Player::~Player() {
 
 void Player::Play() {
     boost::mutex::scoped_lock lock(this->queueMutex);
-    this->state = Player::Playing;
-    this->writeToOutputCondition.notify_all();
+
+    if (this->state != Player::Quit) {
+        this->state = Player::Playing;
+        this->writeToOutputCondition.notify_all();
+    }
 }
 
 void Player::Stop() {

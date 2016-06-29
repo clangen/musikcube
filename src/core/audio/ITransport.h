@@ -53,11 +53,11 @@ namespace musik { namespace core { namespace audio {
             } PlaybackState;
 
             typedef enum {
-                StreamScheduled = 0,
-                StreamPlaying = 1,
-                StreamAlmostDone = 4,
-                StreamFinished = 5,
-                StreamStopped = 6,
+                StreamScheduled = 1,
+                StreamPlaying = 2,
+                StreamAlmostDone = 3,
+                StreamFinished = 4,
+                StreamStopped = 5,
                 StreamError = -1
             } StreamEventType;
 
