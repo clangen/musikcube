@@ -62,6 +62,10 @@
 #include <boost/chrono.hpp>
 #include <cstdio>
 
+#ifndef WIN32
+#include <csignal>
+#endif
+
 #ifdef WIN32
 #undef MOUSE_MOVED
 #endif
@@ -79,6 +83,8 @@ using namespace musik::core::audio;
 using namespace musik::box;
 using namespace cursespp;
 using namespace boost::chrono;
+
+static bool disconnected = false;
 
 struct WindowState {
     ILayoutPtr layout;
@@ -202,6 +208,12 @@ static inline int64 now() {
         system_clock::now().time_since_epoch()).count();
 }
 
+#ifndef WIN32
+static void hangupHandler(int signal) {
+    disconnected = true;
+}
+#endif
+
 #ifdef WIN32
 int _main(int argc, _TCHAR* argv[]);
 
@@ -246,6 +258,10 @@ int main(int argc, char* argv[])
     refresh();
     curs_set(0);
 
+#ifndef WIN32
+    std::signal(SIGHUP, hangupHandler);
+#endif
+
     {
         Colors::Init();
 
@@ -271,7 +287,7 @@ int main(int argc, char* argv[])
 
         changeLayout(state, libraryLayout);
 
-        while (!quit) {
+        while (!quit && !disconnected) {
             /* if the focused item is an IInput, then get characters from it,
             so it can draw a pretty cursor if it wants */
             if (state.input) {
