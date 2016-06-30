@@ -190,7 +190,7 @@ TransportWindow::TransportWindow(musik::box::PlaybackService& playback)
     this->transport.VolumeChanged.connect(this, &TransportWindow::OnTransportVolumeChanged);
     this->transport.TimeChanged.connect(this, &TransportWindow::OnTransportTimeChanged);
     this->paused = false;
-    this->lastTime = 0.0f;
+    this->lastTime = -1.0f;
 }
 
 TransportWindow::~TransportWindow() {
@@ -212,7 +212,7 @@ void TransportWindow::ProcessMessage(IMessage &message) {
 
 void TransportWindow::OnPlaybackServiceTrackChanged(size_t index, TrackPtr track) {
     this->currentTrack = track;
-    this->lastTime = 0.0f;
+    this->lastTime = -1.0f;
     DEBOUNCE_REFRESH(0)
 }
 
