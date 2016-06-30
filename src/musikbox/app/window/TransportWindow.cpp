@@ -63,10 +63,16 @@ using namespace cursespp;
 
 #define REFRESH_TRANSPORT_READOUT 1001
 #define REFRESH_INTERVAL_MS 1000
+#define DEFAULT_TIME -1.0f
+#define TIME_SLOP 3.0f
 
 #define DEBOUNCE_REFRESH(x) \
     this->RemoveMessage(REFRESH_TRANSPORT_READOUT); \
     this->PostMessage(REFRESH_TRANSPORT_READOUT, 0, 0, x);
+
+#define DEBOUNCE_REFRESH_AND_SYNC_TIME() \
+    this->lastTime = this->transport.Position(); \
+    DEBOUNCE_REFRESH(0)
 
 static std::string playingFormat = "playing $title from $album";
 
@@ -190,7 +196,7 @@ TransportWindow::TransportWindow(musik::box::PlaybackService& playback)
     this->transport.VolumeChanged.connect(this, &TransportWindow::OnTransportVolumeChanged);
     this->transport.TimeChanged.connect(this, &TransportWindow::OnTransportTimeChanged);
     this->paused = false;
-    this->lastTime = -1.0f;
+    this->lastTime = DEFAULT_TIME;
 }
 
 TransportWindow::~TransportWindow() {
@@ -212,29 +218,28 @@ void TransportWindow::ProcessMessage(IMessage &message) {
 
 void TransportWindow::OnPlaybackServiceTrackChanged(size_t index, TrackPtr track) {
     this->currentTrack = track;
-    this->lastTime = -1.0f;
-    DEBOUNCE_REFRESH(0)
+    this->lastTime = DEFAULT_TIME;
+    DEBOUNCE_REFRESH(0);
 }
 
 void TransportWindow::OnPlaybackModeChanged() {
-    DEBOUNCE_REFRESH(0);
+    DEBOUNCE_REFRESH_AND_SYNC_TIME();
 }
 
 void TransportWindow::OnTransportVolumeChanged() {
-    DEBOUNCE_REFRESH(0)
+    DEBOUNCE_REFRESH_AND_SYNC_TIME();
 }
 
 void TransportWindow::OnTransportTimeChanged(double time) {
-    DEBOUNCE_REFRESH(0)
+    DEBOUNCE_REFRESH_AND_SYNC_TIME();
 }
 
 void TransportWindow::OnPlaybackShuffled(bool shuffled) {
-    DEBOUNCE_REFRESH(0);
+    DEBOUNCE_REFRESH_AND_SYNC_TIME();
 }
 
 #define ON(w, a) if (a != -1) { wattron(w, a); }
 #define OFF(w, a) if (a != -1) { wattroff(w, a); }
-#define TIME_SLOP 3.0f
 
 void TransportWindow::Update() {
     this->Clear();
