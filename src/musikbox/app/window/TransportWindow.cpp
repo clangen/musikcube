@@ -212,6 +212,7 @@ void TransportWindow::ProcessMessage(IMessage &message) {
 
 void TransportWindow::OnPlaybackServiceTrackChanged(size_t index, TrackPtr track) {
     this->currentTrack = track;
+    this->lastTime = 0.0f;
     DEBOUNCE_REFRESH(0)
 }
 
