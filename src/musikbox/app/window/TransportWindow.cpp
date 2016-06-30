@@ -62,7 +62,7 @@ using namespace boost::chrono;
 using namespace cursespp;
 
 #define REFRESH_TRANSPORT_READOUT 1001
-#define REFRESH_INTERVAL_MS 500
+#define REFRESH_INTERVAL_MS 1000
 
 #define DEBOUNCE_REFRESH(x) \
     this->RemoveMessage(REFRESH_TRANSPORT_READOUT); \
@@ -190,6 +190,7 @@ TransportWindow::TransportWindow(musik::box::PlaybackService& playback)
     this->transport.VolumeChanged.connect(this, &TransportWindow::OnTransportVolumeChanged);
     this->transport.TimeChanged.connect(this, &TransportWindow::OnTransportTimeChanged);
     this->paused = false;
+    this->lastTime = 0.0f;
 }
 
 TransportWindow::~TransportWindow() {
@@ -232,6 +233,7 @@ void TransportWindow::OnPlaybackShuffled(bool shuffled) {
 
 #define ON(w, a) if (a != -1) { wattron(w, a); }
 #define OFF(w, a) if (a != -1) { wattroff(w, a); }
+#define TIME_SLOP 3.0f
 
 void TransportWindow::Update() {
     this->Clear();
@@ -243,11 +245,14 @@ void TransportWindow::Update() {
 
     int64 gb = COLOR_PAIR(CURSESPP_GREEN_ON_TRANSPARENT);
 
-    /* playing SONG TITLE from ALBUM NAME */
-    std::string duration = "0";
+    /* prepare the "shuffle" label */
 
     std::string shuffleLabel = " shuffle";
     size_t shuffleLabelLen = u8len(shuffleLabel);
+
+    /* playing SONG TITLE from ALBUM NAME */
+
+    std::string duration = "0";
 
     if (stopped) {
         wattron(c, A_DIM);
@@ -280,7 +285,7 @@ void TransportWindow::Update() {
     wprintw(c, shuffleLabel.c_str());
     OFF(c, shuffleAttrs);
 
-    wmove(c, 1, 0); /* newline */
+    wmove(c, 1, 0); /* move cursor to the second line */
 
     /* volume slider */
 
@@ -298,6 +303,7 @@ void TransportWindow::Update() {
     wprintw(c, volume.c_str());
 
     /* repeat mode setup */
+
     PlaybackService::RepeatMode mode = this->playback.GetRepeatMode();
     std::string repeatLabel = " ∞ ";
     std::string repeatModeLabel;
@@ -332,7 +338,22 @@ void TransportWindow::Update() {
 
     transport.Position();
 
-    int secondsCurrent = (int) round(transport.Position());
+    /* calculating playback time is inexact because it's based on buffers that
+    are sent to the output. here we use a simple smoothing function to hopefully
+    mitigate jumping around. basically: draw the time as one second more than the
+    last time we displayed, unless they are more than a second apart. note this
+    only works if REFRESH_INTERVAL_MS is 1000. */
+    double smoothedTime = this->lastTime += 1.0f;
+    double actualTime = transport.Position();
+
+    if (paused || stopped || fabs(smoothedTime - actualTime) > TIME_SLOP) {
+        smoothedTime = actualTime;
+    }
+
+    this->lastTime = smoothedTime;
+    /* end time smoothing */
+
+    int secondsCurrent = (int) round(smoothedTime);
     int secondsTotal = boost::lexical_cast<int>(duration);
 
     std::string currentTime = duration::Duration(std::min(secondsCurrent, secondsTotal));

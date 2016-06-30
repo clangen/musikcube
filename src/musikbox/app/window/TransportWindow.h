@@ -70,6 +70,7 @@ namespace musik {
                 musik::core::audio::ITransport& transport;
                 musik::box::PlaybackService& playback;
                 musik::core::TrackPtr currentTrack;
+                double lastTime;
         };
     }
 }
