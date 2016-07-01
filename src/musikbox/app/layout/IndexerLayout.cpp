@@ -136,15 +136,13 @@ int64 IndexerLayout::ListItemDecorator(
     {
          ListWindow* lw = static_cast<ListWindow*>(scrollable);
          if (lw->GetSelectedIndex() == index) {
-             return COLOR_PAIR(CURSESPP_BLACK_ON_GREEN);
+             return COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM);
          }
     }
     return -1;
 }
 
 void IndexerLayout::InitializeWindows() {
-    this->SetContentColor(CURSESPP_WHITE_ON_TRANSPARENT);
-
     this->title.reset(new TextLabel());
     this->title->SetText("settings", TextLabel::AlignCenter);
 
@@ -155,9 +153,7 @@ void IndexerLayout::InitializeWindows() {
     this->addedPathsLabel->SetText("indexed paths (BACKSPACE to remove)", TextLabel::AlignLeft);
 
     this->addedPathsList.reset(new cursespp::ListWindow(&this->addedPathsAdapter));
-    this->addedPathsList->SetContentColor(CURSESPP_WHITE_ON_TRANSPARENT);
     this->browseList.reset(new cursespp::ListWindow(&this->browseAdapter));
-    this->browseList->SetContentColor(CURSESPP_WHITE_ON_TRANSPARENT);
 
     ScrollAdapterBase::ItemDecorator decorator =
         std::bind(

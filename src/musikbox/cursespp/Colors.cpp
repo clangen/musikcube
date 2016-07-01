@@ -44,17 +44,19 @@ static int yellow = COLOR_YELLOW;
 static int green = COLOR_GREEN;
 static int black = COLOR_BLACK;
 
-
 #define COLOR_CUSTOM_WHITE 16
 #define COLOR_CUSTOM_BLUE 17
 #define COLOR_CUSTOM_RED 18
 #define COLOR_CUSTOM_YELLOW 19
 #define COLOR_CUSTOM_GREEN 20
 #define COLOR_CUSTOM_BLACK 21
-#define COLOR_SELECTED_LIST_ITEM_BG 22
+#define COLOR_CUSTOM_GREY 22
+#define COLOR_CUSTOM_SELECTED_LIST_ITEM_BG 23
 
+static int foreground = COLOR_WHITE;
 static int background = -1;
 static int selected = -1;
+static int grey = COLOR_WHITE;
 
 #define SCALE(x) ((x * 1000) / 255)
 
@@ -77,21 +79,28 @@ void Colors::Init() {
         red = initColor(COLOR_CUSTOM_RED, 220, 82, 86);
         green = initColor(COLOR_CUSTOM_GREEN, 166, 226, 46);
         yellow = initColor(COLOR_CUSTOM_YELLOW, 230, 220, 116);
-        selected = initColor(COLOR_SELECTED_LIST_ITEM_BG, 66, 66, 56);
+        selected = initColor(COLOR_CUSTOM_SELECTED_LIST_ITEM_BG, 66, 66, 56);
+        grey = initColor(COLOR_CUSTOM_GREY, 128, 128, 128);
     }
 
-    init_pair(CURSESPP_WHITE_ON_BLUE, white, blue);
-    init_pair(CURSESPP_RED_ON_BLUE, red, blue);
-    init_pair(CURSESPP_YELLOW_ON_BLUE, yellow, blue);
-    init_pair(CURSESPP_BLACK_ON_GREY, black, white);
-    init_pair(CURSESPP_BLACK_ON_GREEN, black, green);
-    init_pair(CURSESPP_YELLOW_ON_TRANSPARENT, yellow, background);
-    init_pair(CURSESPP_WHITE_ON_TRANSPARENT, white, background);
-    init_pair(CURSESPP_RED_ON_TRANSPARENT, red, background);
-    init_pair(CURSESPP_RED_ON_GREY, red, white);
-    init_pair(CURSESPP_GREEN_ON_TRANSPARENT, green, background);
     init_pair(CURSESPP_BLACK_ON_TRANSPARENT, black, background);
-    init_pair(CURSESPP_RED_ON_GREEN, red, green);
-    init_pair(CURSESPP_BLACK_ON_YELLOW, black, yellow);
+    init_pair(CURSESPP_RED_ON_BLUE, red, blue);
+    init_pair(CURSESPP_BLACK_ON_GREY, black, white);
+    init_pair(CURSESPP_RED_ON_GREY, red, white);
+
     init_pair(CURSESPP_SELECTED_LIST_ITEM, yellow, selected);
+    init_pair(CURSESPP_HIGHLIGHTED_LIST_ITEM, black, green);
+    init_pair(CURSESPP_HIGHLIGHTED_SELECTED_LIST_ITEM, black, yellow);
+    init_pair(CURSESPP_LIST_ITEM_HEADER, green, background);
+
+    init_pair(CURSESPP_DEFAULT_CONTENT_COLOR, foreground, background);
+    init_pair(CURSESPP_DEFAULT_FRAME_COLOR, foreground, background);
+    init_pair(CURSESPP_FOCUSED_FRAME_COLOR, red, background);
+
+    init_pair(CURSESPP_TEXT_DEFAULT, white, background);
+    init_pair(CURSESPP_TEXT_DISABLED, grey, background);
+    init_pair(CURSESPP_TEXT_FOCUSED, red, background);
+    init_pair(CURSESPP_TEXT_ACTIVE, green, background);
+    init_pair(CURSESPP_TEXT_WARNING, yellow, background);
+    init_pair(CURSESPP_TEXT_ERROR, red, background);
 }

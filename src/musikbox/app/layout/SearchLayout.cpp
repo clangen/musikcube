@@ -105,7 +105,6 @@ void SearchLayout::Layout() {
 void SearchLayout::InitializeWindows(PlaybackService& playback) {
     this->input.reset(new cursespp::TextInput());
     this->input->TextChanged.connect(this, &SearchLayout::OnInputChanged);
-    this->input->SetContentColor(CURSESPP_WHITE_ON_TRANSPARENT);
     this->input->SetFocusOrder(0);
     this->AddWindow(this->input);
 
@@ -128,7 +127,9 @@ void SearchLayout::Requery() {
 }
 
 void SearchLayout::OnInputChanged(cursespp::TextInput* sender, std::string value) {
-    this->Requery();
+    if (this->IsVisible()) {
+        this->Requery();
+    }
 }
 
 void SearchLayout::OnVisibilityChanged(bool visible) {
@@ -139,6 +140,7 @@ void SearchLayout::OnVisibilityChanged(bool visible) {
         this->Requery();
     }
     else {
+        this->input->SetText("");
         this->albums->Reset();
         this->artists->Reset();
         this->genres->Reset();

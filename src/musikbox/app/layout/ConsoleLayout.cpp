@@ -72,7 +72,6 @@ ConsoleLayout::ConsoleLayout(ITransport& transport, LibraryPtr library)
     this->AddWindow(this->output);
     this->AddWindow(this->resources);
 
-    this->commands->SetContentColor(CURSESPP_WHITE_ON_TRANSPARENT);
     this->commands->EnterPressed.connect(this, &ConsoleLayout::OnEnterPressed);
 
     this->Help();

@@ -98,7 +98,7 @@ void Checkbox::Redraw() {
     std::string ellipsized = symbol + " " + this->buffer;
     text::Ellipsize(ellipsized, cx);
 
-    int64 attrs = this->focused ? CURSESPP_RED_ON_TRANSPARENT : -1LL;
+    int64 attrs = this->focused ? CURSESPP_TEXT_FOCUSED : -1LL;
 
     if (attrs != -1) {
         wattron(c, COLOR_PAIR(attrs));

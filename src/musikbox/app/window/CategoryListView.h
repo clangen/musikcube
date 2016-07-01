@@ -86,6 +86,7 @@ namespace musik {
                 DBID GetSelectedId();
                 std::string GetFieldName();
                 void SetFieldName(const std::string& fieldName);
+                void ScrollToPlaying();
 
             protected:
                 virtual IScrollAdapter& GetScrollAdapter();

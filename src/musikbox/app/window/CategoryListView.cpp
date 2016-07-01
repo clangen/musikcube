@@ -62,7 +62,6 @@ CategoryListView::CategoryListView(
     const std::string& fieldName)
 : ListWindow(NULL)
 , playback(playback) {
-    this->SetContentColor(CURSESPP_WHITE_ON_TRANSPARENT);
     this->selectAfterQuery = 0;
     this->library = library;
     this->library->QueryCompleted.connect(this, &CategoryListView::OnQueryCompleted);
@@ -129,9 +128,27 @@ void CategoryListView::SetFieldName(const std::string& fieldName) {
 
         if (this->metadata) {
             this->metadata.reset();
+            this->ScrollToTop();
         }
 
         this->Requery();
+    }
+}
+
+void CategoryListView::ScrollToPlaying() {
+    if (this->playing) {
+        std::string value = this->playing->GetValue(this->fieldName.c_str());
+        if (value.size()) {
+            /* binary search would be better, but need to research if sqlite
+            properly sorts utf8 strings. */
+            for (size_t i = 0; i < this->metadata->size(); i++) {
+                if (this->metadata->at(i)->displayValue == value) {
+                    this->SetSelectedIndex(i);
+                    this->ScrollTo(i);
+                    break;
+                }
+            }
+        }
     }
 }
 
@@ -207,11 +224,11 @@ IScrollAdapter::EntryPtr CategoryListView::Adapter::GetEntry(size_t index) {
 
     bool selected = index == parent.GetSelectedIndex();
 
-    int64 attrs = selected ? COLOR_PAIR(CURSESPP_BLACK_ON_GREEN) : -1LL;
+    int64 attrs = selected ? COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM) : -1LL;
 
     if (playing) {
         if (selected) {
-            attrs = COLOR_PAIR(CURSESPP_BLACK_ON_YELLOW);
+            attrs = COLOR_PAIR(CURSESPP_HIGHLIGHTED_SELECTED_LIST_ITEM);
         }
         else {
             attrs = COLOR_PAIR(CURSESPP_SELECTED_LIST_ITEM) | A_BOLD;

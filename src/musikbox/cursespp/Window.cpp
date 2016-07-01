@@ -38,6 +38,7 @@
 #include "IInput.h"
 #include "Message.h"
 #include "MessageQueue.h"
+#include "Colors.h"
 
 using namespace cursespp;
 
@@ -79,8 +80,8 @@ Window::Window(IWindow *parent) {
     this->width = 0;
     this->x = 0;
     this->y = 0;
-    this->contentColor = -1;
-    this->frameColor = -1;
+    this->contentColor = CURSESPP_DEFAULT_CONTENT_COLOR;
+    this->frameColor = CURSESPP_DEFAULT_FRAME_COLOR;
     this->drawFrame = true;
     this->isVisible = false;
     this->focusOrder = -1;
@@ -254,7 +255,7 @@ int Window::GetY() const {
 }
 
 void Window::SetContentColor(int64 color) {
-    this->contentColor = color;
+    this->contentColor = (color == -1 ? CURSESPP_DEFAULT_CONTENT_COLOR : color);
 
     if (this->contentColor != -1 && this->content) {
         wbkgd(this->frame, COLOR_PAIR(this->frameColor));
@@ -268,7 +269,7 @@ void Window::SetContentColor(int64 color) {
 }
 
 void Window::SetFrameColor(int64 color) {
-    this->frameColor = color;
+    this->frameColor = (color == -1 ? CURSESPP_DEFAULT_FRAME_COLOR : color);
 
     if (this->drawFrame && this->frameColor != -1 && this->frame) {
         wbkgd(this->frame, COLOR_PAIR(this->frameColor));

@@ -171,6 +171,10 @@ bool BrowseLayout::KeyPress(const std::string& key) {
         this->categoryList->SetFieldName(constants::Track::GENRE);
         return true;
     }
+    else if (key == "M-m") {
+        this->categoryList->ScrollToPlaying();
+        return true;
+    }
 
     return LayoutBase::KeyPress(key);
 }

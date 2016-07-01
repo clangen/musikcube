@@ -70,7 +70,6 @@ TrackListView::TrackListView(
     RowFormatter formatter)
 : ListWindow(NULL)
 , playback(playback) {
-    this->SetContentColor(CURSESPP_WHITE_ON_TRANSPARENT);
     this->library = library;
     this->library->QueryCompleted.connect(this, &TrackListView::OnQueryCompleted);
     this->playback.TrackChanged.connect(this, &TrackListView::OnTrackChanged);
@@ -188,7 +187,7 @@ static std::string formatWithoutAlbum(TrackPtr track, size_t width) {
 
 IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(size_t index) {
     bool selected = index == parent.GetSelectedIndex();
-    int64 attrs = selected ? COLOR_PAIR(CURSESPP_BLACK_ON_GREEN) : -1LL;
+    int64 attrs = selected ? COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM) : -1LL;
 
     TrackPtr track = parent.metadata->Get(index);
 
@@ -198,7 +197,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(size_t index) {
         playing->LibraryId() == track->LibraryId())
     {
         if (selected) {
-            attrs = COLOR_PAIR(CURSESPP_BLACK_ON_YELLOW);
+            attrs = COLOR_PAIR(CURSESPP_HIGHLIGHTED_SELECTED_LIST_ITEM);
         }
         else {
             attrs = COLOR_PAIR(CURSESPP_SELECTED_LIST_ITEM) | A_BOLD;
@@ -212,7 +211,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(size_t index) {
     if (this->parent.headers->find(index) != this->parent.headers->end()) {
         std::string album = track->GetValue(constants::Track::ALBUM);
         std::shared_ptr<EntryWithHeader> entry(new EntryWithHeader(album, text));
-        entry->SetAttrs(COLOR_PAIR(CURSESPP_GREEN_ON_TRANSPARENT), attrs);
+        entry->SetAttrs(COLOR_PAIR(CURSESPP_LIST_ITEM_HEADER), attrs);
         return entry;
     }
     else {

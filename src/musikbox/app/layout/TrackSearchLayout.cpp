@@ -93,7 +93,6 @@ void TrackSearchLayout::Layout() {
 void TrackSearchLayout::InitializeWindows() {
     this->input.reset(new cursespp::TextInput());
     this->input->TextChanged.connect(this, &TrackSearchLayout::OnInputChanged);
-    this->input->SetContentColor(CURSESPP_WHITE_ON_TRANSPARENT);
     this->input->SetFocusOrder(0);
     this->AddWindow(this->input);
 
@@ -112,6 +111,7 @@ void TrackSearchLayout::OnVisibilityChanged(bool visible) {
         this->Requery();
     }
     else {
+        this->input->SetText("");
         this->trackList->Clear();
     }
 }
@@ -131,7 +131,9 @@ void TrackSearchLayout::ProcessMessage(IMessage &message) {
 }
 
 void TrackSearchLayout::OnInputChanged(cursespp::TextInput* sender, std::string value) {
-    DEBOUNCE_REQUERY(REQUERY_INTERVAL_MS);
+    if (this->IsVisible()) {
+        DEBOUNCE_REQUERY(REQUERY_INTERVAL_MS);
+    }
 }
 
 bool TrackSearchLayout::KeyPress(const std::string& key) {

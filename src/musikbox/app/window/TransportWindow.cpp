@@ -136,7 +136,7 @@ size_t writePlayingFormat(
     TokenList tokens;
     tokenize(playingFormat, tokens);
 
-    int64 gb = COLOR_PAIR(CURSESPP_GREEN_ON_TRANSPARENT);
+    int64 gb = COLOR_PAIR(CURSESPP_TEXT_ACTIVE);
     size_t remaining = width;
 
     auto it = tokens.begin();
@@ -188,7 +188,6 @@ TransportWindow::TransportWindow(musik::box::PlaybackService& playback)
 , playback(playback)
 , transport(playback.GetTransport())
 {
-    this->SetContentColor(CURSESPP_WHITE_ON_TRANSPARENT);
     this->SetFrameVisible(false);
     this->playback.TrackChanged.connect(this, &TransportWindow::OnPlaybackServiceTrackChanged);
     this->playback.ModeChanged.connect(this, &TransportWindow::OnPlaybackModeChanged);
@@ -249,7 +248,8 @@ void TransportWindow::Update() {
     bool paused = (transport.GetPlaybackState() == ITransport::PlaybackPaused);
     bool stopped = (transport.GetPlaybackState() == ITransport::PlaybackStopped);
 
-    int64 gb = COLOR_PAIR(CURSESPP_GREEN_ON_TRANSPARENT);
+    int64 gb = COLOR_PAIR(CURSESPP_TEXT_ACTIVE);
+    int64 disabled = COLOR_PAIR(CURSESPP_TEXT_DISABLED);
 
     /* prepare the "shuffle" label */
 
@@ -261,9 +261,9 @@ void TransportWindow::Update() {
     std::string duration = "0";
 
     if (stopped) {
-        wattron(c, A_DIM);
+        ON(c, disabled);
         wprintw(c, "playback is stopped");
-        wattroff(c, A_DIM);
+        OFF(c, disabled);
     }
     else {
         std::string title, album;
@@ -286,7 +286,7 @@ void TransportWindow::Update() {
     }
 
     wmove(c, 0, cx - shuffleLabelLen);
-    int64 shuffleAttrs = this->playback.IsShuffled() ? gb : A_DIM;
+    int64 shuffleAttrs = this->playback.IsShuffled() ? gb : disabled;
     ON(c, shuffleAttrs);
     wprintw(c, shuffleLabel.c_str());
     OFF(c, shuffleAttrs);
@@ -325,7 +325,7 @@ void TransportWindow::Update() {
             break;
         default:
             repeatModeLabel = "off";
-            repeatAttrs = A_DIM;
+            repeatAttrs = disabled;
             break;
     }
 
