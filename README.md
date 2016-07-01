@@ -83,6 +83,7 @@ and a couple hotkeys that are specific to the library view:
 - `ALT+1` browse by artist
 - `ALT+2` browse by album
 - `ALT+3` browse by genre
+- `ALT+m` jump to playing artist/album/genre in browse view
 - `SPACE` pause/resume
 
 *important*: on OSX make sure you configure your terminal emulator to treat your left alt key as "+Esc" or "Meta".
