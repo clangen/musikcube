@@ -64,7 +64,10 @@ using std::setw;
 using std::setfill;
 using std::setiosflags;
 
-TrackListView::TrackListView(PlaybackService& playback, LibraryPtr library)
+TrackListView::TrackListView(
+    PlaybackService& playback, 
+    LibraryPtr library,
+    RowFormatter formatter)
 : ListWindow(NULL)
 , playback(playback) {
     this->SetContentColor(CURSESPP_WHITE_ON_TRANSPARENT);
@@ -73,6 +76,7 @@ TrackListView::TrackListView(PlaybackService& playback, LibraryPtr library)
     this->playback.TrackChanged.connect(this, &TrackListView::OnTrackChanged);
     this->adapter = new Adapter(*this);
     this->lastQueryHash = 0;
+    this->formatter = formatter;
 }
 
 TrackListView::~TrackListView() {
@@ -141,8 +145,7 @@ size_t TrackListView::Adapter::GetEntryCount() {
 }
 
 #define TRACK_COL_WIDTH 3
-#define ARTIST_COL_WIDTH 14
-#define ALBUM_COL_WIDTH 14
+#define ARTIST_COL_WIDTH 17
 #define DURATION_COL_WIDTH 5 /* 00:00 */
 
 /* so this part is a bit tricky... we draw multiple columns, but we use
@@ -151,6 +154,37 @@ so we have to manually adjust the widths (i.e. we can't just use simple
 constants) */
 #define DISPLAY_WIDTH(chars, str) \
     chars + (str.size() - u8len(str))
+
+static std::string formatWithoutAlbum(TrackPtr track, size_t width) {
+    std::string trackNum = track->GetValue(constants::Track::TRACK_NUM);
+    std::string artist = track->GetValue(constants::Track::ARTIST);
+    std::string title = track->GetValue(constants::Track::TITLE);
+    std::string duration = track->GetValue(constants::Track::DURATION);
+
+    int column0Width = DISPLAY_WIDTH(TRACK_COL_WIDTH, trackNum);
+    int column2Width = DISPLAY_WIDTH(DURATION_COL_WIDTH, duration);
+    int column3Width = DISPLAY_WIDTH(ARTIST_COL_WIDTH, artist);
+
+    size_t column1CharacterCount =
+        width -
+        column0Width -
+        column2Width -
+        column3Width -
+        (3 * 3); /* 3 = spacing */
+
+    int column1Width = DISPLAY_WIDTH(column1CharacterCount, title);
+
+    text::Ellipsize(artist, ARTIST_COL_WIDTH);
+    text::Ellipsize(title, column1CharacterCount);
+    duration = duration::Duration(duration);
+
+    return boost::str(
+        boost::format("%s   %s   %s   %s")
+        % group(setw(column0Width), setfill(' '), trackNum)
+        % group(setw(column1Width), setiosflags(std::ios::left), setfill(' '), title)
+        % group(setw(column2Width), setiosflags(std::ios::right), setfill(' '), duration)
+        % group(setw(column3Width), setiosflags(std::ios::left), setfill(' '), artist));
+}
 
 IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(size_t index) {
     bool selected = index == parent.GetSelectedIndex();
@@ -171,39 +205,9 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(size_t index) {
         }
     }
 
-    std::string trackNum = track->GetValue(constants::Track::TRACK_NUM);
-    std::string artist = track->GetValue(constants::Track::ARTIST);
-    std::string album = track->GetValue(constants::Track::ALBUM);
-    std::string title = track->GetValue(constants::Track::TITLE);
-    std::string duration = track->GetValue(constants::Track::DURATION);
-
-    int column0Width = DISPLAY_WIDTH(TRACK_COL_WIDTH, trackNum);
-    int column2Width = DISPLAY_WIDTH(DURATION_COL_WIDTH, duration);
-    int column3Width = DISPLAY_WIDTH(ARTIST_COL_WIDTH, artist);
-    int column4Width = DISPLAY_WIDTH(ALBUM_COL_WIDTH, album);
-
-    size_t column1CharacterCount =
-        this->GetWidth() -
-        column0Width -
-        column2Width -
-        column3Width -
-        column4Width -
-        (3 * 4); /* 3 = spacing */
-
-    int column1Width = DISPLAY_WIDTH(column1CharacterCount, title);
-
-    text::Ellipsize(artist, ARTIST_COL_WIDTH);
-    text::Ellipsize(album, ALBUM_COL_WIDTH);
-    text::Ellipsize(title, column1CharacterCount);
-    duration = duration::Duration(duration);
-
-    std::string text = boost::str(
-        boost::format("%s   %s   %s   %s   %s")
-            % group(setw(column0Width), setfill(' '), trackNum)
-            % group(setw(column1Width), setiosflags(std::ios::left), setfill(' '), title)
-            % group(setw(column2Width), setiosflags(std::ios::right), setfill(' '), duration)
-            % group(setw(column3Width), setiosflags(std::ios::left), setfill(' '), artist)
-            % group(setw(column4Width), setiosflags(std::ios::left), setfill(' '), album));
+    std::string text = parent.formatter
+        ? parent.formatter(track, this->GetWidth())
+        : formatWithoutAlbum(track, this->GetWidth());
 
     if (this->parent.headers->find(index) != this->parent.headers->end()) {
         std::string album = track->GetValue(constants::Track::ALBUM);

@@ -36,9 +36,17 @@
 
 #include <cursespp/Colors.h>
 #include <cursespp/Screen.h>
+#include <cursespp/Text.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <app/query/NowPlayingTrackListQuery.h>
+#include <app/util/Duration.h>
 #include "NowPlayingLayout.h"
+
+#include <boost/format.hpp>
+#include <boost/format/group.hpp>
+#include <boost/lexical_cast.hpp>
+
+#include <iomanip>
 
 using namespace musik::core::library::constants;
 
@@ -47,6 +55,13 @@ using namespace musik::core::audio;
 using namespace musik::core::library;
 using namespace musik::box;
 using namespace cursespp;
+
+using boost::io::group;
+using std::setw;
+using std::setfill;
+using std::setiosflags;
+
+static std::string formatWithAlbum(TrackPtr track, size_t width);
 
 NowPlayingLayout::NowPlayingLayout(
     PlaybackService& playback,
@@ -77,7 +92,11 @@ void NowPlayingLayout::Layout() {
 }
 
 void NowPlayingLayout::InitializeWindows() {
-    this->trackList.reset(new TrackListView(this->playback, this->library));
+    this->trackList.reset(new TrackListView(
+        this->playback,
+        this->library,
+        std::bind(formatWithAlbum, std::placeholders::_1, std::placeholders::_2)));
+
     this->trackList->Requeried.connect(this, &NowPlayingLayout::OnTrackListRequeried);
     this->AddWindow(this->trackList);
     this->Layout();
@@ -122,4 +141,49 @@ bool NowPlayingLayout::KeyPress(const std::string& key) {
     }
 
     return LayoutBase::KeyPress(key);
+}
+
+#define TRACK_COL_WIDTH 3
+#define ARTIST_COL_WIDTH 14
+#define ALBUM_COL_WIDTH 14
+#define DURATION_COL_WIDTH 5 /* 00:00 */
+
+/* see TrackListView.cpp for more info */
+#define DISPLAY_WIDTH(chars, str) \
+    chars + (str.size() - u8len(str))
+
+static std::string formatWithAlbum(TrackPtr track, size_t width) {
+    std::string trackNum = track->GetValue(constants::Track::TRACK_NUM);
+    std::string artist = track->GetValue(constants::Track::ARTIST);
+    std::string album = track->GetValue(constants::Track::ALBUM);
+    std::string title = track->GetValue(constants::Track::TITLE);
+    std::string duration = track->GetValue(constants::Track::DURATION);
+
+    int column0Width = DISPLAY_WIDTH(TRACK_COL_WIDTH, trackNum);
+    int column2Width = DISPLAY_WIDTH(DURATION_COL_WIDTH, duration);
+    int column3Width = DISPLAY_WIDTH(ARTIST_COL_WIDTH, artist);
+    int column4Width = DISPLAY_WIDTH(ALBUM_COL_WIDTH, album);
+
+    size_t column1CharacterCount =
+        width -
+        column0Width -
+        column2Width -
+        column3Width -
+        column4Width -
+        (3 * 4); /* 3 = spacing */
+
+    int column1Width = DISPLAY_WIDTH(column1CharacterCount, title);
+
+    text::Ellipsize(artist, ARTIST_COL_WIDTH);
+    text::Ellipsize(album, ALBUM_COL_WIDTH);
+    text::Ellipsize(title, column1CharacterCount);
+    duration = duration::Duration(duration);
+
+    return boost::str(
+        boost::format("%s   %s   %s   %s   %s")
+        % group(setw(column0Width), setfill(' '), trackNum)
+        % group(setw(column1Width), setiosflags(std::ios::left), setfill(' '), title)
+        % group(setw(column2Width), setiosflags(std::ios::right), setfill(' '), duration)
+        % group(setw(column3Width), setiosflags(std::ios::left), setfill(' '), artist)
+        % group(setw(column4Width), setiosflags(std::ios::left), setfill(' '), album));
 }

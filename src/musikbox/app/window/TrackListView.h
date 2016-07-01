@@ -56,11 +56,15 @@ namespace musik {
             public:
                 sigslot::signal0<> Requeried;
 
+                typedef std::function<std::string(
+                    musik::core::TrackPtr, size_t)> RowFormatter;
+
                 typedef std::shared_ptr<std::set<size_t> > Headers;
 
                 TrackListView(
                     PlaybackService& playback,
-                    musik::core::LibraryPtr library);
+                    musik::core::LibraryPtr library,
+                    RowFormatter formatter = RowFormatter());
 
                 virtual ~TrackListView();
 
@@ -97,6 +101,7 @@ namespace musik {
                 musik::core::TrackPtr playing;
                 musik::core::LibraryPtr library;
                 size_t lastQueryHash;
+                RowFormatter formatter;
         };
     }
 }
