@@ -201,7 +201,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(size_t index) {
             attrs = COLOR_PAIR(CURSESPP_BLACK_ON_YELLOW);
         }
         else {
-            attrs = COLOR_PAIR(CURSESPP_YELLOW_ON_TRANSPARENT) | A_BOLD;
+            attrs = COLOR_PAIR(CURSESPP_SELECTED_LIST_ITEM) | A_BOLD;
         }
     }
 

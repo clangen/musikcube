@@ -347,9 +347,9 @@ void TransportWindow::Update() {
     /* calculating playback time is inexact because it's based on buffers that
     are sent to the output. here we use a simple smoothing function to hopefully
     mitigate jumping around. basically: draw the time as one second more than the
-    last time we displayed, unless they are more than a second apart. note this
+    last time we displayed, unless they are more than few seconds apart. note this
     only works if REFRESH_INTERVAL_MS is 1000. */
-    double smoothedTime = this->lastTime += 1.0f;
+    double smoothedTime = this->lastTime += 1.0f; /* 1000 millis */
     double actualTime = transport.Position();
 
     if (paused || stopped || fabs(smoothedTime - actualTime) > TIME_SLOP) {

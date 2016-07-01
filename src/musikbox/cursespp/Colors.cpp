@@ -43,7 +43,7 @@ static int red = COLOR_RED;
 static int yellow = COLOR_YELLOW;
 static int green = COLOR_GREEN;
 static int black = COLOR_BLACK;
-static int background = -1;
+
 
 #define COLOR_CUSTOM_WHITE 16
 #define COLOR_CUSTOM_BLUE 17
@@ -51,6 +51,10 @@ static int background = -1;
 #define COLOR_CUSTOM_YELLOW 19
 #define COLOR_CUSTOM_GREEN 20
 #define COLOR_CUSTOM_BLACK 21
+#define COLOR_SELECTED_LIST_ITEM_BG 22
+
+static int background = -1;
+static int selected = -1;
 
 #define SCALE(x) ((x * 1000) / 255)
 
@@ -73,6 +77,7 @@ void Colors::Init() {
         red = initColor(COLOR_CUSTOM_RED, 220, 82, 86);
         green = initColor(COLOR_CUSTOM_GREEN, 166, 226, 46);
         yellow = initColor(COLOR_CUSTOM_YELLOW, 230, 220, 116);
+        selected = initColor(COLOR_SELECTED_LIST_ITEM_BG, 66, 66, 56);
     }
 
     init_pair(CURSESPP_WHITE_ON_BLUE, white, blue);
@@ -88,4 +93,5 @@ void Colors::Init() {
     init_pair(CURSESPP_BLACK_ON_TRANSPARENT, black, background);
     init_pair(CURSESPP_RED_ON_GREEN, red, green);
     init_pair(CURSESPP_BLACK_ON_YELLOW, black, yellow);
+    init_pair(CURSESPP_SELECTED_LIST_ITEM, yellow, selected);
 }

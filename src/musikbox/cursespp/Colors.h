@@ -49,6 +49,7 @@
 #define CURSESPP_BLACK_ON_TRANSPARENT 11
 #define CURSESPP_RED_ON_GREEN 12
 #define CURSESPP_BLACK_ON_YELLOW 13
+#define CURSESPP_SELECTED_LIST_ITEM 14
 
 namespace cursespp {
     class Colors {
