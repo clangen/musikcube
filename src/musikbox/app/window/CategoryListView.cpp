@@ -152,6 +152,15 @@ void CategoryListView::ScrollToPlaying() {
     }
 }
 
+bool CategoryListView::KeyPress(const std::string& key) {
+    if (key == "M-m") {
+        this->ScrollToPlaying();
+        return true;
+    }
+
+    return ListWindow::KeyPress(key);
+}
+
 void CategoryListView::OnQueryCompleted(IQueryPtr query) {
     boost::mutex::scoped_lock lock(this->queryMutex);
 

@@ -104,6 +104,19 @@ void TrackListView::Clear() {
     this->OnAdapterChanged();
 }
 
+void TrackListView::ScrollToPlaying() {
+    if (this->playing) {
+        DBID id = this->playing->Id();
+        for (size_t i = 0; i < this->metadata->Count(); i++) {
+            if (this->metadata->GetId(i) == id) {
+                this->SetSelectedIndex(i);
+                this->ScrollTo(i);
+                break;
+            }
+        }
+    }
+}
+
 void TrackListView::ProcessMessage(IMessage &message) {
     if (message.Type() == WINDOW_MESSAGE_QUERY_COMPLETED) {
         if (this->query && this->query->GetStatus() == IQuery::Finished) {
@@ -124,6 +137,15 @@ void TrackListView::ProcessMessage(IMessage &message) {
             this->Requeried(); /* for external handlers */
         }
     }
+}
+
+bool TrackListView::KeyPress(const std::string& key) {
+    if (key == "M-m") {
+        this->ScrollToPlaying();
+        return true;
+    }
+
+    return ListWindow::KeyPress(key);
 }
 
 void TrackListView::OnTrackChanged(size_t index, musik::core::TrackPtr track) {

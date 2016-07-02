@@ -69,6 +69,8 @@ namespace musik {
                 virtual ~TrackListView();
 
                 virtual void ProcessMessage(cursespp::IMessage &message);
+                virtual bool KeyPress(const std::string& key);
+
                 std::shared_ptr<TrackList> GetTrackList();
                 void Clear();
 
@@ -92,6 +94,7 @@ namespace musik {
 
             private:
                 void OnTrackChanged(size_t index, musik::core::TrackPtr track);
+                void ScrollToPlaying();
 
                 std::shared_ptr<TrackListQueryBase> query;
                 std::shared_ptr<TrackList> metadata;

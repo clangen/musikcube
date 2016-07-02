@@ -79,6 +79,8 @@ namespace musik {
                     const std::string& filter = "",
                     const DBID selectAfterQuery = 0);
 
+                virtual bool KeyPress(const std::string& key);
+
                 void Reset();
 
                 virtual void ProcessMessage(IMessage &message);
@@ -86,7 +88,6 @@ namespace musik {
                 DBID GetSelectedId();
                 std::string GetFieldName();
                 void SetFieldName(const std::string& fieldName);
-                void ScrollToPlaying();
 
             protected:
                 virtual IScrollAdapter& GetScrollAdapter();
@@ -106,6 +107,7 @@ namespace musik {
 
             private:
                 void OnTrackChanged(size_t index, musik::core::TrackPtr track);
+                void ScrollToPlaying();
 
                 PlaybackService& playback;
                 LibraryPtr library;
