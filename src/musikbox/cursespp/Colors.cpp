@@ -98,11 +98,6 @@ void Colors::Init() {
         grey = initColor(COLOR_CUSTOM_GREY, 128, 128, 128);
     }
 
-    init_pair(CURSESPP_BLACK_ON_TRANSPARENT, black, background);
-    init_pair(CURSESPP_RED_ON_BLUE, red, blue);
-    init_pair(CURSESPP_BLACK_ON_GREY, black, white);
-    init_pair(CURSESPP_RED_ON_GREY, red, white);
-
     init_pair(CURSESPP_SELECTED_LIST_ITEM, yellow, selected);
     init_pair(CURSESPP_HIGHLIGHTED_LIST_ITEM, black, green);
     init_pair(CURSESPP_HIGHLIGHTED_SELECTED_LIST_ITEM, black, yellow);
@@ -118,4 +113,5 @@ void Colors::Init() {
     init_pair(CURSESPP_TEXT_ACTIVE, green, background);
     init_pair(CURSESPP_TEXT_WARNING, yellow, background);
     init_pair(CURSESPP_TEXT_ERROR, red, background);
+    init_pair(CURSESPP_TEXT_HIDDEN, black, background);
 }

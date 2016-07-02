@@ -82,12 +82,12 @@ void LogWindow::Update() {
 
         switch (entry->level) {
             case musik::debug::level_error: {
-                attrs = COLOR_PAIR(CURSESPP_TEXT_ERROR) | A_BOLD;
+                attrs = COLOR_PAIR(CURSESPP_TEXT_ERROR);
                 break;
             }
 
             case musik::debug::level_warning: {
-                attrs = COLOR_PAIR(CURSESPP_TEXT_WARNING) | A_BOLD;
+                attrs = COLOR_PAIR(CURSESPP_TEXT_WARNING);
                 break;
             }
         }

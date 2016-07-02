@@ -132,14 +132,14 @@ void ConsoleLayout::OnEnterPressed(TextInput *input) {
     std::string command = this->commands->GetText();
     this->commands->SetText("");
 
-    output->WriteLine("> " + command + "\n", COLOR_PAIR(CURSESPP_BLACK_ON_GREY));
+    output->WriteLine("> " + command + "\n", COLOR_PAIR(CURSESPP_TEXT_DEFAULT));
 
     if (!this->ProcessCommand(command)) {
         if (command.size()) {
             output->WriteLine(
                 "illegal command: '" +
                 command +
-                "'\n", COLOR_PAIR(CURSESPP_RED_ON_GREY));
+                "'\n", COLOR_PAIR(CURSESPP_TEXT_ERROR));
         }
     }
 }
@@ -212,6 +212,18 @@ bool ConsoleLayout::ProcessCommand(const std::string& cmd) {
     std::vector<std::string> args;
     boost::algorithm::split(args, cmd, boost::is_any_of(" "));
 
+    auto it = args.begin();
+    while (it != args.end()) {
+        std::string trimmed = boost::algorithm::trim_copy(*it);
+        if (trimmed.size()) {
+            *it = trimmed;
+            ++it;
+        }
+        else {
+            it = args.erase(it);
+        }
+    }
+
     std::string name = args.size() > 0 ? args[0] : "";
     args.erase(args.begin());
 
@@ -247,10 +259,10 @@ bool ConsoleLayout::ProcessCommand(const std::string& cmd) {
     else if (name == "h" || name == "help") {
         this->Help();
     }
-    else if (cmd == "pa" || cmd == "pause") {
+    else if (name == "pa" || name == "pause") {
         this->Pause();
     }
-    else if (cmd == "s" || cmd =="stop") {
+    else if (name == "s" || name =="stop") {
         this->Stop();
     }
     else if (name == "sk" || name == "seek") {
@@ -310,6 +322,6 @@ void ConsoleLayout::ListPlugins() const {
             "v" + std::string((*it)->Version()) + "\n"
             "    by " + std::string((*it)->Author()) + "\n";
 
-        this->output->WriteLine(format, CURSESPP_RED_ON_BLUE);
+        this->output->WriteLine(format, COLOR_PAIR(CURSESPP_TEXT_DEFAULT));
     }
 }

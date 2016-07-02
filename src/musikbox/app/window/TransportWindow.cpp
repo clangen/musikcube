@@ -338,7 +338,7 @@ void TransportWindow::Update() {
             system_clock::now().time_since_epoch()).count();
 
         if (now % 2 == 0) {
-            timerAttrs = COLOR_PAIR(CURSESPP_BLACK_ON_TRANSPARENT);
+            timerAttrs = COLOR_PAIR(CURSESPP_TEXT_HIDDEN);
         }
     }
 
