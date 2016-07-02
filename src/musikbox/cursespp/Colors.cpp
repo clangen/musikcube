@@ -65,6 +65,21 @@ static int initColor(int id, int r, int g, int b) {
     return id;
 }
 
+/* some terminals report custom colors are supported, and also
+don't error when calling init_color(), but don't actually work. */
+static bool customColorsSupported() {
+    if (COLORS <= 8) {
+        return false;
+    }
+
+#ifdef WIN32
+    return true;
+#else
+    std::string term = std::string(std::getenv("TERM_PROGRAM"));
+    return term != "Apple_Terminal";
+#endif
+}
+
 Colors::Colors() {
 }
 
@@ -75,7 +90,7 @@ void Colors::Init() {
     /* the default colors are a bit harsh for my taste, so
     let's use custom colors if the terminal supports it. in
     the future we'll allow users to configure this via setting */
-    if (COLORS > 8) {
+    if (customColorsSupported()) {
         red = initColor(COLOR_CUSTOM_RED, 220, 82, 86);
         green = initColor(COLOR_CUSTOM_GREEN, 166, 226, 46);
         yellow = initColor(COLOR_CUSTOM_YELLOW, 230, 220, 116);
