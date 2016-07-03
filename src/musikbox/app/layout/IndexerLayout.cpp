@@ -144,13 +144,13 @@ int64 IndexerLayout::ListItemDecorator(
 
 void IndexerLayout::InitializeWindows() {
     this->title.reset(new TextLabel());
-    this->title->SetText("settings", TextLabel::AlignCenter);
+    this->title->SetText("settings", text::AlignCenter);
 
     this->browseLabel.reset(new TextLabel());
-    this->browseLabel->SetText("browse (SPACE to add)", TextLabel::AlignLeft);
+    this->browseLabel->SetText("browse (SPACE to add)", text::AlignLeft);
 
     this->addedPathsLabel.reset(new TextLabel());
-    this->addedPathsLabel->SetText("indexed paths (BACKSPACE to remove)", TextLabel::AlignLeft);
+    this->addedPathsLabel->SetText("indexed paths (BACKSPACE to remove)", text::AlignLeft);
 
     this->addedPathsList.reset(new cursespp::ListWindow(&this->addedPathsAdapter));
     this->browseList.reset(new cursespp::ListWindow(&this->browseAdapter));

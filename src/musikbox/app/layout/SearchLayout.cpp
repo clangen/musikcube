@@ -36,6 +36,7 @@
 
 #include <cursespp/Colors.h>
 #include <cursespp/Screen.h>
+#include <cursespp/Text.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <app/query/CategoryTrackListQuery.h>
 #include "SearchLayout.h"
@@ -97,9 +98,9 @@ void SearchLayout::Layout() {
     this->AddWindow(view); \
     view->SetFocusOrder(order);
 
-#define CREATE_LABEL(view, text) \
+#define CREATE_LABEL(view, value) \
     view.reset(new cursespp::TextLabel()); \
-    view->SetText(text, cursespp::TextLabel::AlignCenter); \
+    view->SetText(value, cursespp::text::AlignCenter); \
     this->AddWindow(view);
 
 void SearchLayout::InitializeWindows(PlaybackService& playback) {

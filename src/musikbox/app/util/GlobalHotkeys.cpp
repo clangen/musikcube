@@ -56,7 +56,7 @@ bool GlobalHotkeys::Handle(const std::string& kn) {
         playback::PauseOrResume(this->transport);
         return true;
     }
-    if (kn == "M-i") {
+    else if (kn == "M-i") {
         this->transport.SetVolume(this->transport.Volume() + 0.05); /* 5% */
         return true;
     }

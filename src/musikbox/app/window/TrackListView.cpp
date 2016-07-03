@@ -169,42 +169,37 @@ size_t TrackListView::Adapter::GetEntryCount() {
 #define ARTIST_COL_WIDTH 17
 #define DURATION_COL_WIDTH 5 /* 00:00 */
 
-/* so this part is a bit tricky... we draw multiple columns, but we use
-standard std::setw() stuff, which is not aware of multi-byte characters.
-so we have to manually adjust the widths (i.e. we can't just use simple
-constants) */
-#define DISPLAY_WIDTH(chars, str) \
-    chars + (str.size() - u8len(str))
-
 static std::string formatWithoutAlbum(TrackPtr track, size_t width) {
-    std::string trackNum = track->GetValue(constants::Track::TRACK_NUM);
-    std::string artist = track->GetValue(constants::Track::ARTIST);
-    std::string title = track->GetValue(constants::Track::TITLE);
-    std::string duration = track->GetValue(constants::Track::DURATION);
+    std::string trackNum = text::Align(
+        track->GetValue(constants::Track::TRACK_NUM), 
+        text::AlignLeft, 
+        TRACK_COL_WIDTH);
 
-    int column0Width = DISPLAY_WIDTH(TRACK_COL_WIDTH, trackNum);
-    int column2Width = DISPLAY_WIDTH(DURATION_COL_WIDTH, duration);
-    int column3Width = DISPLAY_WIDTH(ARTIST_COL_WIDTH, artist);
+    std::string duration = text::Align(
+        duration::Duration(track->GetValue(constants::Track::DURATION)),
+        text::AlignRight,
+        DURATION_COL_WIDTH);
 
-    size_t column1CharacterCount =
+    std::string artist = text::Align(
+        track->GetValue(constants::Track::ARTIST),
+        text::AlignLeft, 
+        ARTIST_COL_WIDTH);
+
+    size_t titleWidth =
         width -
-        column0Width -
-        column2Width -
-        column3Width -
+        TRACK_COL_WIDTH -
+        DURATION_COL_WIDTH -
+        ARTIST_COL_WIDTH -
         (3 * 3); /* 3 = spacing */
 
-    int column1Width = DISPLAY_WIDTH(column1CharacterCount, title);
-
-    text::Ellipsize(artist, ARTIST_COL_WIDTH);
-    text::Ellipsize(title, column1CharacterCount);
-    duration = duration::Duration(duration);
+    std::string title = text::Align(
+        track->GetValue(constants::Track::TITLE),
+        text::AlignLeft,
+        titleWidth);
 
     return boost::str(
         boost::format("%s   %s   %s   %s")
-        % group(setw(column0Width), setfill(' '), trackNum)
-        % group(setw(column1Width), setiosflags(std::ios::left), setfill(' '), title)
-        % group(setw(column2Width), setiosflags(std::ios::right), setfill(' '), duration)
-        % group(setw(column3Width), setiosflags(std::ios::left), setfill(' '), artist));
+        % trackNum % title % duration % artist);
 }
 
 IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(size_t index) {

@@ -148,42 +148,41 @@ bool NowPlayingLayout::KeyPress(const std::string& key) {
 #define ALBUM_COL_WIDTH 14
 #define DURATION_COL_WIDTH 5 /* 00:00 */
 
-/* see TrackListView.cpp for more info */
-#define DISPLAY_WIDTH(chars, str) \
-    chars + (str.size() - u8len(str))
-
 static std::string formatWithAlbum(TrackPtr track, size_t width) {
-    std::string trackNum = track->GetValue(constants::Track::TRACK_NUM);
-    std::string artist = track->GetValue(constants::Track::ARTIST);
-    std::string album = track->GetValue(constants::Track::ALBUM);
-    std::string title = track->GetValue(constants::Track::TITLE);
-    std::string duration = track->GetValue(constants::Track::DURATION);
+    std::string trackNum = text::Align(
+        track->GetValue(constants::Track::TRACK_NUM),
+        text::AlignLeft,
+        TRACK_COL_WIDTH);
 
-    int column0Width = DISPLAY_WIDTH(TRACK_COL_WIDTH, trackNum);
-    int column2Width = DISPLAY_WIDTH(DURATION_COL_WIDTH, duration);
-    int column3Width = DISPLAY_WIDTH(ARTIST_COL_WIDTH, artist);
-    int column4Width = DISPLAY_WIDTH(ALBUM_COL_WIDTH, album);
+    std::string duration = text::Align(
+        duration::Duration(track->GetValue(constants::Track::DURATION)),
+        text::AlignRight,
+        DURATION_COL_WIDTH);
 
-    size_t column1CharacterCount =
+    std::string album = text::Align(
+        track->GetValue(constants::Track::ALBUM),
+        text::AlignLeft,
+        ALBUM_COL_WIDTH);
+
+    std::string artist = text::Align(
+        track->GetValue(constants::Track::ARTIST),
+        text::AlignLeft,
+        ARTIST_COL_WIDTH);
+
+    size_t titleWidth =
         width -
-        column0Width -
-        column2Width -
-        column3Width -
-        column4Width -
-        (3 * 4); /* 3 = spacing */
+        TRACK_COL_WIDTH -
+        DURATION_COL_WIDTH -
+        ALBUM_COL_WIDTH -
+        ARTIST_COL_WIDTH -
+        (4 * 3); /* 3 = spacing */
 
-    int column1Width = DISPLAY_WIDTH(column1CharacterCount, title);
-
-    text::Ellipsize(artist, ARTIST_COL_WIDTH);
-    text::Ellipsize(album, ALBUM_COL_WIDTH);
-    text::Ellipsize(title, column1CharacterCount);
-    duration = duration::Duration(duration);
+    std::string title = text::Align(
+        track->GetValue(constants::Track::TITLE),
+        text::AlignLeft,
+        titleWidth);
 
     return boost::str(
         boost::format("%s   %s   %s   %s   %s")
-        % group(setw(column0Width), setfill(' '), trackNum)
-        % group(setw(column1Width), setiosflags(std::ios::left), setfill(' '), title)
-        % group(setw(column2Width), setiosflags(std::ios::right), setfill(' '), duration)
-        % group(setw(column3Width), setiosflags(std::ios::left), setfill(' '), artist)
-        % group(setw(column4Width), setiosflags(std::ios::left), setfill(' '), album));
+        % trackNum % title % duration % album % artist);
 }

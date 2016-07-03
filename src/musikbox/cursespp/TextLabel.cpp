@@ -46,44 +46,22 @@ using namespace cursespp;
 
 inline static void redrawContents(
     IWindow &window, 
-    const TextLabel::Alignment alignment,
+    const text::TextAlign alignment,
     const std::string& text) 
 {
+    std::string aligned = text::Align(
+        text, alignment, window.GetContentWidth());
+
     WINDOW* c = window.GetContent();
     werase(c);
-
-    int len = (int) u8len(text);
-    int cx = window.GetContentWidth();
-
-    if (len > cx) {
-        std::string ellipsized = text;
-        text::Ellipsize(ellipsized, cx);
-        wprintw(c, ellipsized.c_str());
-    }
-    else if (alignment == TextLabel::AlignLeft) {
-        wprintw(c, text.c_str());
-    }
-    else { /* center */
-        int leftPad = 
-            (alignment == TextLabel::AlignRight)
-                ? (cx - len) 
-                : (cx - len) / 2;
-
-        std::string padded;
-        for (int i = 0; i < leftPad; i++) {
-            padded += " ";
-        }
-
-        padded += text;
-        wprintw(c, padded.c_str());
-    }
+    wprintw(c, aligned.c_str());
 
     window.Repaint();
 }
 
 TextLabel::TextLabel()
 : Window()
-, alignment(AlignLeft) {
+, alignment(text::AlignLeft) {
     this->SetFrameVisible(false);
 }
 
@@ -95,7 +73,7 @@ void TextLabel::Show() {
     redrawContents(*this, this->alignment, this->buffer);
 }
 
-void TextLabel::SetText(const std::string& value, const Alignment alignment) {
+void TextLabel::SetText(const std::string& value, const text::TextAlign alignment) {
     if (value != this->buffer || alignment != this->alignment) {
         this->buffer = value;
         this->alignment = alignment;

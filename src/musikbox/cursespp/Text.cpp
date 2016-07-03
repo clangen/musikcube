@@ -37,6 +37,8 @@
 
 #include <boost/lexical_cast.hpp>
 
+#define PAD(str, count) for (size_t i = 0; i < count; i++) { str += " "; }
+
 namespace cursespp {
     namespace text {
         void Truncate(std::string& str, size_t len) {
@@ -67,6 +69,35 @@ namespace cursespp {
             if (u8len(str) > len) {
                 Truncate(str, len - 2);
                 str += "..";
+            }
+        }
+
+        std::string Align(const std::string& str, TextAlign align, size_t cx) {
+            size_t len = u8len(str);
+
+            if (len > cx) {
+                std::string ellipsized = str;
+                Ellipsize(ellipsized, cx);
+                return ellipsized;
+            }
+            else if (align == AlignLeft) {
+                size_t pad = cx - len;
+                std::string left = str;
+                PAD(left, pad);
+                return left;
+            }
+            else {
+                size_t leftPad = (align == AlignRight)
+                    ? (cx - len)
+                    : (cx - len) / 2;
+
+                size_t rightPad = cx - (leftPad + len);
+
+                std::string padded;
+                PAD(padded, leftPad);
+                padded += str;
+                PAD(padded, rightPad);
+                return padded;
             }
         }
     }

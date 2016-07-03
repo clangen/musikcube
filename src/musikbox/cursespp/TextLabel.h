@@ -37,6 +37,7 @@
 #include <cursespp/curses_config.h>
 #include <cursespp/Window.h>
 #include <cursespp/IInput.h>
+#include <cursespp/Text.h>
 #include <sigslot/sigslot.h>
 
 namespace cursespp {
@@ -48,18 +49,12 @@ namespace cursespp {
         public cursespp::Window {
 #endif
     public:
-        enum Alignment {
-            AlignLeft,
-            AlignCenter,
-            AlignRight
-        };
-
         TextLabel();
         virtual ~TextLabel();
 
         virtual void SetText(
             const std::string& value,
-            const Alignment alignment = AlignLeft);
+            const text::TextAlign alignment = text::AlignLeft);
 
         virtual std::string GetText() { return this->buffer; }
 
@@ -67,6 +62,6 @@ namespace cursespp {
 
     private:
         std::string buffer;
-        Alignment alignment;
+        text::TextAlign alignment;
     };
 }
