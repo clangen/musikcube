@@ -24,6 +24,7 @@ set (BOX_SRCS
 	./app/window/LogWindow.cpp
 	./app/window/OutputWindow.cpp
 	./app/window/ResourcesWindow.cpp
+	./app/window/ShortcutsWindow.cpp
 	./app/window/TrackListView.cpp
 	./app/window/TransportWindow.cpp
 	./cursespp/Checkbox.cpp

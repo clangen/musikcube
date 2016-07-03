@@ -90,10 +90,9 @@ void IndexerLayout::Layout() {
     this->SetFrameVisible(false);
     this->MoveAndResize(x, y, cx, cy);
 
-    this->title->MoveAndResize(0, 0, cx, LABEL_HEIGHT);
     this->shortcuts->MoveAndResize(0, cy - 1, cx, LABEL_HEIGHT);
 
-    int startY = BOTTOM(this->title) + 1;
+    int startY = 0;
     int leftX = 0;
     int leftWidth = cx / 3; /* 1/3 width */
     int rightX = leftWidth;
@@ -145,9 +144,6 @@ int64 IndexerLayout::ListItemDecorator(
 }
 
 void IndexerLayout::InitializeWindows() {
-    this->title.reset(new TextLabel());
-    this->title->SetText("settings", text::AlignCenter);
-
     this->browseLabel.reset(new TextLabel());
     this->browseLabel->SetText("browse (SPACE to add)", text::AlignLeft);
 
@@ -187,7 +183,6 @@ void IndexerLayout::InitializeWindows() {
     this->shortcuts->AddShortcut("ALT+`", "console");
     this->shortcuts->AddShortcut("CTRL+d", "quit");
 
-    this->AddWindow(this->title);
     this->AddWindow(this->browseLabel);
     this->AddWindow(this->addedPathsLabel);
     this->AddWindow(this->browseList);
