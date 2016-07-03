@@ -67,10 +67,16 @@ ConsoleLayout::ConsoleLayout(ITransport& transport, LibraryPtr library)
     this->resources.reset(new ResourcesWindow(this));
     this->commands.reset(new cursespp::TextInput());
 
+    this->shortcuts.reset(new ShortcutsWindow());
+    this->shortcuts->AddShortcut("ALT+s", "settings");
+    this->shortcuts->AddShortcut("ALT+a", "library");
+    this->shortcuts->AddShortcut("CTRL+d", "quit");
+
     this->AddWindow(this->commands);
     this->AddWindow(this->logs);
     this->AddWindow(this->output);
     this->AddWindow(this->resources);
+    this->AddWindow(this->shortcuts);
 
     this->commands->EnterPressed.connect(this, &ConsoleLayout::OnEnterPressed);
 
@@ -84,48 +90,30 @@ ConsoleLayout::~ConsoleLayout() {
 }
 
 void ConsoleLayout::Layout() {
-    /* this layout */
-    this->MoveAndResize(
-        0,
-        0,
-        Screen::GetWidth(),
-        Screen::GetHeight());
+    int cx = (int) Screen::GetWidth();
+    int cy = (int) Screen::GetHeight();
 
+    /* this layout */
+    this->MoveAndResize(0, 0, cx, cy);
     this->SetFrameVisible(false);
 
-    /* top left */
-    this->output->MoveAndResize(
-        0,
-        0,
-        Screen::GetWidth() / 2,
-        Screen::GetHeight() - 3);
+    /* shortcuts at the bottom */
+    this->shortcuts->MoveAndResize(0, cy - 1, cx, 1);
 
+    /* top left */
+    this->output->MoveAndResize(0, 0, cx / 2, cy - 4);
     this->output->SetFocusOrder(1);
 
     /* bottom left */
-    this->commands->MoveAndResize(
-        0,
-        Screen::GetHeight() - 3,
-        Screen::GetWidth() / 2,
-        3);
-
+    this->commands->MoveAndResize(0, cy - 4, cx / 2, 3);
     this->commands->SetFocusOrder(0);
 
     /* top right */
-    this->logs->MoveAndResize(
-        Screen::GetWidth() / 2,
-        0,
-        Screen::GetWidth() / 2,
-        Screen::GetHeight() - 3);
-
+    this->logs->MoveAndResize(cx / 2, 0, cx / 2, cy - 4);
     this->logs->SetFocusOrder(2);
 
     /* bottom right */
-    this->resources->MoveAndResize(
-        Screen::GetWidth() / 2,
-        Screen::GetHeight() - 3,
-        Screen::GetWidth() / 2,
-        3);
+    this->resources->MoveAndResize(cx / 2, cy - 4, cx / 2, 3);
 }
 
 void ConsoleLayout::OnEnterPressed(TextInput *input) {

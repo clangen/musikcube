@@ -42,6 +42,7 @@
 #include <app/layout/SearchLayout.h>
 #include <app/layout/TrackSearchLayout.h>
 #include <app/window/TransportWindow.h>
+#include <app/window/ShortcutsWindow.h>
 #include <app/service/PlaybackService.h>
 
 #include <core/library/ILibrary.h>
@@ -90,6 +91,7 @@ namespace musik {
                 std::shared_ptr<SearchLayout> searchLayout;
                 std::shared_ptr<TrackSearchLayout> trackSearch;
                 std::shared_ptr<cursespp::LayoutBase> visibleLayout;
+                std::shared_ptr<ShortcutsWindow> shortcuts;
         };
     }
 }

@@ -175,12 +175,14 @@ static std::string formatWithoutAlbum(TrackPtr track, size_t width) {
         text::AlignLeft, 
         ARTIST_COL_WIDTH);
 
-    size_t titleWidth =
+    int titleWidth =
         width -
         TRACK_COL_WIDTH -
         DURATION_COL_WIDTH -
         ARTIST_COL_WIDTH -
         (3 * 3); /* 3 = spacing */
+
+    titleWidth = std::max(0, titleWidth);
 
     std::string title = text::Align(
         track->GetValue(constants::Track::TITLE),

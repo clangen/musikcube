@@ -91,7 +91,7 @@ void IndexerLayout::Layout() {
     this->MoveAndResize(x, y, cx, cy);
 
     this->title->MoveAndResize(0, 0, cx, LABEL_HEIGHT);
-    this->shortcuts->MoveAndResize(1, cy - 1, cx - 2, LABEL_HEIGHT);
+    this->shortcuts->MoveAndResize(0, cy - 1, cx, LABEL_HEIGHT);
 
     int startY = BOTTOM(this->title) + 1;
     int leftX = 0;
@@ -183,8 +183,9 @@ void IndexerLayout::InitializeWindows() {
     this->removeCheckbox->SetFocusOrder(3);
 
     this->shortcuts.reset(new ShortcutsWindow());
-    this->shortcuts->AddShortcut("M-`", "console");
-    this->shortcuts->AddShortcut("M-a", "console");
+    this->shortcuts->AddShortcut("ALT+a", "library");
+    this->shortcuts->AddShortcut("ALT+`", "console");
+    this->shortcuts->AddShortcut("CTRL+d", "quit");
 
     this->AddWindow(this->title);
     this->AddWindow(this->browseLabel);

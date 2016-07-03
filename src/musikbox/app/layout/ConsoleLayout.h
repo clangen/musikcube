@@ -41,6 +41,7 @@
 #include <app/window/OutputWindow.h>
 #include <app/window/TransportWindow.h>
 #include <app/window/ResourcesWindow.h>
+#include <app/window/ShortcutsWindow.h>
 
 #include <vector>
 
@@ -81,6 +82,7 @@ namespace musik {
                 std::shared_ptr<cursespp::TextInput> commands;
                 std::shared_ptr<OutputWindow> output;
                 std::shared_ptr<ResourcesWindow> resources;
+                std::shared_ptr<ShortcutsWindow> shortcuts;
                 musik::core::audio::ITransport& transport;
                 musik::core::LibraryPtr library;
         };

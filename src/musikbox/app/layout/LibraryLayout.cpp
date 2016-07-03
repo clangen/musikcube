@@ -46,11 +46,8 @@
 
 using namespace musik::core::library::constants;
 
-#ifdef WIN32
-    #define TRANSPORT_HEIGHT 3
-#else
-    #define TRANSPORT_HEIGHT 2
-#endif
+#define TRANSPORT_HEIGHT 3
+#define SHORTCUTS_HEIGHT 1
 
 using namespace musik::core;
 using namespace musik::core::audio;
@@ -76,21 +73,25 @@ void LibraryLayout::Layout() {
 
     this->MoveAndResize(x, y, cx, cy);
 
-    this->browseLayout->MoveAndResize(x, y, cx, cy - TRANSPORT_HEIGHT);
+    int mainHeight = cy - TRANSPORT_HEIGHT - SHORTCUTS_HEIGHT;
+
+    this->browseLayout->MoveAndResize(x, y, cx, mainHeight);
     this->browseLayout->Layout();
 
-    this->nowPlayingLayout->MoveAndResize(x, y, cx, cy - TRANSPORT_HEIGHT);
+    this->nowPlayingLayout->MoveAndResize(x, y, cx, mainHeight);
     this->nowPlayingLayout->Layout();
 
-    this->searchLayout->MoveAndResize(x, y, cx, cy - TRANSPORT_HEIGHT);
+    this->searchLayout->MoveAndResize(x, y, cx, mainHeight);
     this->searchLayout->Layout();
 
-    this->trackSearch->MoveAndResize(x, y, cx, cy - TRANSPORT_HEIGHT);
+    this->trackSearch->MoveAndResize(x, y, cx, mainHeight);
     this->trackSearch->Layout();
+
+    this->shortcuts->MoveAndResize(0, cy - 1, cx, 1);
 
     this->transportView->MoveAndResize(
         1,
-        cy - TRANSPORT_HEIGHT,
+        mainHeight,
         cx - 2,
         TRANSPORT_HEIGHT);
 
@@ -144,7 +145,15 @@ void LibraryLayout::InitializeWindows() {
 
     this->transportView.reset(new TransportWindow(this->playback));
 
+    this->shortcuts.reset(new ShortcutsWindow());
+    this->shortcuts->AddShortcut("ALT+b", "browse");
+    this->shortcuts->AddShortcut("ALT+f", "filter");
+    this->shortcuts->AddShortcut("ALT+t", "tracks");
+    this->shortcuts->AddShortcut("ALT+n", "playing");
+    this->shortcuts->AddShortcut("ALT+s", "settings");
+
     this->AddWindow(this->transportView);
+    this->AddWindow(this->shortcuts);
 
     this->Layout();
 }

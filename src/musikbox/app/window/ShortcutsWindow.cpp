@@ -64,25 +64,29 @@ void ShortcutsWindow::Show() {
 
 void ShortcutsWindow::Redraw() {
     std::string value;
-    
-    int64 active = COLOR_PAIR(CURSESPP_TEXT_ACTIVE);
+
+    int64 active = COLOR_PAIR(CURSESPP_HIGHLIGHTED_SELECTED_LIST_ITEM);
     int64 separator = COLOR_PAIR(CURSESPP_TEXT_SEPARATOR);
 
     WINDOW* c = this->GetContent();
     werase(c);
+    wbkgd(c, COLOR_PAIR(CURSESPP_SELECTED_LIST_ITEM));
 
     for (size_t i = 0; i < this->entries.size(); i++) {
         auto e = this->entries[i];
+
+        wprintw(c, " ");
+
         wattron(c, active);
-        wprintw(c, e->key.c_str());
+        wprintw(c, " %s ", e->key.c_str());
         wattroff(c, active);
 
-        wprintw(c, " %s", e->description.c_str());
+        wprintw(c, " %s ", e->description.c_str());
 
-        if (i != this->entries.size() - 1) {
-            wattron(c, separator);
-            wprintw(c, " ▪ ");
-            wattroff(c, separator);
-        }
+        //if (i != this->entries.size() - 1) {
+        //    //wattron(c, separator);
+        //    wprintw(c, " ▪ ");
+        //    //wattroff(c, separator);
+        //}
     }
 }
