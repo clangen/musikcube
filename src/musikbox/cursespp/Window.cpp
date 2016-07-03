@@ -436,6 +436,23 @@ IWindow* Window::GetParent() const {
 
 void Window::Clear() {
     werase(this->content);
+    wmove(this->content, 0, 0);
+
+    if (this->content == this->frame) {
+        if (this->contentColor != -1) {
+            wbkgd(this->frame, COLOR_PAIR(this->contentColor));
+        }
+        else {
+            wbkgd(this->frame, COLOR_PAIR(this->frameColor));
+        }
+    }
+    else {
+        wbkgd(this->frame, COLOR_PAIR(this->frameColor));
+
+        if (this->content != this->frame) {
+            wbkgd(this->content, COLOR_PAIR(this->contentColor));
+        }
+    }
 }
 
 void Window::Repaint() {

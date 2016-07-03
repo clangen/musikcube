@@ -115,6 +115,27 @@ void LibraryLayout::ChangeMainLayout(std::shared_ptr<cursespp::LayoutBase> newLa
         if (this->IsVisible()) {
             this->BringToTop();
         }
+
+        this->OnLayoutChanged();
+    }
+}
+
+void LibraryLayout::OnLayoutChanged() {
+    this->UpdateShortcutsWindow();
+}
+
+void LibraryLayout::UpdateShortcutsWindow() {
+    if (this->visibleLayout == this->browseLayout) {
+        this->shortcuts->SetActive("ALT+b");
+    }
+    else if (this->visibleLayout == nowPlayingLayout) {
+        this->shortcuts->SetActive("ALT+p");
+    }
+    else if (this->visibleLayout == searchLayout) {
+        this->shortcuts->SetActive("ALT+f");
+    }
+    else if (this->visibleLayout == trackSearch) {
+        this->shortcuts->SetActive("ALT+t");
     }
 }
 
@@ -151,6 +172,7 @@ void LibraryLayout::InitializeWindows() {
     this->shortcuts->AddShortcut("ALT+t", "tracks");
     this->shortcuts->AddShortcut("ALT+p", "play queue");
     this->shortcuts->AddShortcut("ALT+s", "settings");
+    this->UpdateShortcutsWindow();
 
     this->AddWindow(this->transportView);
     this->AddWindow(this->shortcuts);

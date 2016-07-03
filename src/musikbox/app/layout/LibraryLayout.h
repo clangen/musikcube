@@ -81,6 +81,8 @@ namespace musik {
                 void ShowTrackSearch();
 
                 void ChangeMainLayout(std::shared_ptr<cursespp::LayoutBase> newLayout);
+                void OnLayoutChanged();
+                void UpdateShortcutsWindow();
 
                 PlaybackService& playback;
                 musik::core::audio::ITransport& transport;

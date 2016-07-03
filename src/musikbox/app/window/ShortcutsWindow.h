@@ -49,13 +49,17 @@ namespace musik {
                 virtual ~ShortcutsWindow();
 
                 void AddShortcut(
-                    const std::string& key, 
+                    const std::string& key,
                     const std::string& description);
 
-                virtual void Show();
+                void SetActive(const std::string& key) {
+                    this->activeKey = key;
+                    this->Repaint();
+                }
+
+                virtual void Repaint();
 
             private:
-                void Redraw();
 
                 struct Entry {
                     Entry(const std::string& key, const std::string& desc) {
@@ -70,6 +74,7 @@ namespace musik {
                 typedef std::vector<std::shared_ptr<Entry> > EntryList;
 
                 EntryList entries;
+                std::string activeKey;
         };
     }
 }

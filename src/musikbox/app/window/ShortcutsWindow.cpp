@@ -44,6 +44,7 @@ using namespace musik::box;
 ShortcutsWindow::ShortcutsWindow()
 : Window(nullptr) {
     this->SetFrameVisible(false);
+    this->SetContentColor(CURSESPP_SELECTED_LIST_ITEM);
 }
 
 ShortcutsWindow::~ShortcutsWindow() {
@@ -55,37 +56,30 @@ void ShortcutsWindow::AddShortcut(
 {
     this->entries.push_back(
         std::shared_ptr<Entry>(new Entry(key, description)));
+
+    this->Repaint();
 }
 
-void ShortcutsWindow::Show() {
-    Window::Show();
-    this->Redraw();
-}
+void ShortcutsWindow::Repaint() {
+    Window::Repaint();
 
-void ShortcutsWindow::Redraw() {
-    std::string value;
+    this->Clear();
 
-    int64 active = COLOR_PAIR(CURSESPP_HIGHLIGHTED_SELECTED_LIST_ITEM);
+    int64 normalAttrs = COLOR_PAIR(CURSESPP_HIGHLIGHTED_SELECTED_LIST_ITEM);
+    int64 activeAttrs = COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM);
 
     WINDOW* c = this->GetContent();
-    werase(c);
-    wbkgd(c, COLOR_PAIR(CURSESPP_SELECTED_LIST_ITEM));
 
     for (size_t i = 0; i < this->entries.size(); i++) {
         auto e = this->entries[i];
+        int64 keyAttrs = (e->key == this->activeKey) ? activeAttrs : normalAttrs;
 
         wprintw(c, " ");
 
-        wattron(c, active);
+        wattron(c, keyAttrs);
         wprintw(c, " %s ", e->key.c_str());
-        wattroff(c, active);
+        wattroff(c, keyAttrs);
 
         wprintw(c, " %s ", e->description.c_str());
-
-        //if (i != this->entries.size() - 1) {
-        //    //wattron(c, separator);
-        //    wprintw(c, " ▪ ");
-        //    //wattroff(c, separator);
-        //}
     }
 }
