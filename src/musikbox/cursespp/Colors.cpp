@@ -77,7 +77,11 @@ static bool customColorsSupported() {
 #ifdef WIN32
     return true;
 #else
-    std::string term = std::string(std::getenv("TERM_PROGRAM"));
+    const char* termEnv = std::getenv("TERM_PROGRAM");
+    std::string term;
+    if (termEnv && strlen(termEnv)) {
+        term = std::string(termEnv);
+    }
     return term != "Apple_Terminal";
 #endif
 }
