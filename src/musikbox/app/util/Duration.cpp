@@ -49,7 +49,7 @@ namespace musik {
                 return Duration((int) round(seconds));
             }
 
-            std::string Duration(std::string& str) {
+            std::string Duration(const std::string& str) {
                 if (str.size()) {
                     int seconds = boost::lexical_cast<int>(str);
                     return Duration(seconds);

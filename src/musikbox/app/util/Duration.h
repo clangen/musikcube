@@ -39,7 +39,7 @@
 namespace musik {
     namespace box {
         namespace duration {
-            std::string Duration(std::string& str);
+            std::string Duration(const std::string& str);
             std::string Duration(int seconds);
             std::string Duration(double seconds);
         }
