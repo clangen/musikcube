@@ -149,7 +149,7 @@ void LibraryLayout::InitializeWindows() {
     this->shortcuts->AddShortcut("ALT+b", "browse");
     this->shortcuts->AddShortcut("ALT+f", "filter");
     this->shortcuts->AddShortcut("ALT+t", "tracks");
-    this->shortcuts->AddShortcut("ALT+n", "playing");
+    this->shortcuts->AddShortcut("ALT+p", "play queue");
     this->shortcuts->AddShortcut("ALT+s", "settings");
 
     this->AddWindow(this->transportView);
@@ -188,7 +188,7 @@ bool LibraryLayout::KeyPress(const std::string& key) {
         }
         return true;
     }
-    else if (key == "M-n") {
+    else if (key == "M-p") {
         this->ShowNowPlaying();
         return true;
     }

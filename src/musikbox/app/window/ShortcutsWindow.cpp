@@ -66,7 +66,6 @@ void ShortcutsWindow::Redraw() {
     std::string value;
 
     int64 active = COLOR_PAIR(CURSESPP_HIGHLIGHTED_SELECTED_LIST_ITEM);
-    int64 separator = COLOR_PAIR(CURSESPP_TEXT_SEPARATOR);
 
     WINDOW* c = this->GetContent();
     werase(c);
