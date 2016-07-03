@@ -33,13 +33,12 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
+#include "TrackListView.h"
 
 #include <cursespp/Colors.h>
 #include <cursespp/SingleLineEntry.h>
 #include <cursespp/IMessage.h>
 #include <cursespp/Text.h>
-
-#include "TrackListView.h"
 
 #include <core/library/LocalLibraryConstants.h>
 
@@ -47,10 +46,6 @@
 #include <app/util/Duration.h>
 
 #include <boost/format.hpp>
-#include <boost/format/group.hpp>
-#include <boost/lexical_cast.hpp>
-
-#include <iomanip>
 
 #define WINDOW_MESSAGE_QUERY_COMPLETED 1002
 
@@ -59,11 +54,6 @@ using namespace musik::core::audio;
 using namespace musik::core::library;
 using namespace musik::box;
 using namespace cursespp;
-using boost::io::group;
-using std::setw;
-using std::setfill;
-using std::setiosflags;
-
 TrackListView::TrackListView(
     PlaybackService& playback, 
     LibraryPtr library,

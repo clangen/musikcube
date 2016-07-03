@@ -32,34 +32,57 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "stdafx.h"
+#include "ShortcutsWindow.h"
 
-#include "curses_config.h"
+#include <cursespp/Colors.h>
+#include <cursespp/Text.h>
 
-#define CURSESPP_SELECTED_LIST_ITEM 1
-#define CURSESPP_HIGHLIGHTED_LIST_ITEM 2
-#define CURSESPP_HIGHLIGHTED_SELECTED_LIST_ITEM 3
-#define CURSESPP_LIST_ITEM_HEADER 4
+using namespace cursespp;
+using namespace musik::box;
 
-#define CURSESPP_DEFAULT_CONTENT_COLOR 5
-#define CURSESPP_DEFAULT_FRAME_COLOR 6
-#define CURSESPP_FOCUSED_FRAME_COLOR 7
+ShortcutsWindow::ShortcutsWindow()
+: Window(nullptr) {
+    this->SetFrameVisible(false);
+}
 
-#define CURSESPP_TEXT_DEFAULT 8
-#define CURSESPP_TEXT_DISABLED 9
-#define CURSESPP_TEXT_FOCUSED 10
-#define CURSESPP_TEXT_ACTIVE 11
-#define CURSESPP_TEXT_WARNING 12
-#define CURSESPP_TEXT_ERROR 13
-#define CURSESPP_TEXT_HIDDEN 14
-#define CURSESPP_TEXT_SEPARATOR 15
+ShortcutsWindow::~ShortcutsWindow() {
+}
 
-namespace cursespp {
-    class Colors {
-        private:
-            Colors();
+void ShortcutsWindow::AddShortcut(
+    const std::string& key,
+    const std::string& description)
+{
+    this->entries.push_back(
+        std::shared_ptr<Entry>(new Entry(key, description)));
+}
 
-        public:
-            static void Init();
-    };
+void ShortcutsWindow::Show() {
+    Window::Show();
+    this->Redraw();
+}
+
+void ShortcutsWindow::Redraw() {
+    std::string value;
+    
+    int64 active = COLOR_PAIR(CURSESPP_TEXT_ACTIVE);
+    int64 separator = COLOR_PAIR(CURSESPP_TEXT_SEPARATOR);
+
+    WINDOW* c = this->GetContent();
+    werase(c);
+
+    for (size_t i = 0; i < this->entries.size(); i++) {
+        auto e = this->entries[i];
+        wattron(c, active);
+        wprintw(c, e->key.c_str());
+        wattroff(c, active);
+
+        wprintw(c, " %s", e->description.c_str());
+
+        if (i != this->entries.size() - 1) {
+            wattron(c, separator);
+            wprintw(c, " ▪ ");
+            wattroff(c, separator);
+        }
+    }
 }

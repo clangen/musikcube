@@ -41,6 +41,7 @@
 #include <cursespp/SimpleScrollAdapter.h>
 
 #include <app/window/TrackListView.h>
+#include <app/window/ShortcutsWindow.h>
 #include <app/service/PlaybackService.h>
 #include <app/model/DirectoryAdapter.h>
 
@@ -100,6 +101,8 @@ namespace musik {
                 std::shared_ptr<cursespp::TextLabel> addedPathsLabel;
                 std::shared_ptr<cursespp::ListWindow> browseList;
                 std::shared_ptr<cursespp::ListWindow> addedPathsList;
+
+                std::shared_ptr<ShortcutsWindow> shortcuts;
 
                 cursespp::SimpleScrollAdapter addedPathsAdapter;
                 DirectoryAdapter browseAdapter;

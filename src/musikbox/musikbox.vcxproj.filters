@@ -132,6 +132,9 @@
     <ClCompile Include="cursespp\Checkbox.cpp">
       <Filter>cursespp</Filter>
     </ClCompile>
+    <ClCompile Include="app\window\ShortcutsWindow.cpp">
+      <Filter>app\window</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -305,6 +308,9 @@
     </ClInclude>
     <ClInclude Include="cursespp\Checkbox.h">
       <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="app\window\ShortcutsWindow.h">
+      <Filter>app\window</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -43,6 +43,7 @@ static int red = COLOR_RED;
 static int yellow = COLOR_YELLOW;
 static int green = COLOR_GREEN;
 static int black = COLOR_BLACK;
+static int orange = COLOR_YELLOW;
 
 #define COLOR_CUSTOM_WHITE 16
 #define COLOR_CUSTOM_BLUE 17
@@ -52,6 +53,7 @@ static int black = COLOR_BLACK;
 #define COLOR_CUSTOM_BLACK 21
 #define COLOR_CUSTOM_GREY 22
 #define COLOR_CUSTOM_SELECTED_LIST_ITEM_BG 23
+#define COLOR_CUSTOM_ORANGE 24
 
 static int foreground = COLOR_WHITE;
 static int background = -1;
@@ -96,6 +98,7 @@ void Colors::Init() {
         yellow = initColor(COLOR_CUSTOM_YELLOW, 230, 220, 116);
         selected = initColor(COLOR_CUSTOM_SELECTED_LIST_ITEM_BG, 66, 66, 56);
         grey = initColor(COLOR_CUSTOM_GREY, 128, 128, 128);
+        orange = initColor(COLOR_CUSTOM_ORANGE, 255, 150, 32);
     }
 
     init_pair(CURSESPP_SELECTED_LIST_ITEM, yellow, selected);
@@ -114,4 +117,5 @@ void Colors::Init() {
     init_pair(CURSESPP_TEXT_WARNING, yellow, background);
     init_pair(CURSESPP_TEXT_ERROR, red, background);
     init_pair(CURSESPP_TEXT_HIDDEN, black, background);
+    init_pair(CURSESPP_TEXT_SEPARATOR, orange, background);
 }

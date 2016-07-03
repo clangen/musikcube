@@ -43,10 +43,6 @@
 #include "NowPlayingLayout.h"
 
 #include <boost/format.hpp>
-#include <boost/format/group.hpp>
-#include <boost/lexical_cast.hpp>
-
-#include <iomanip>
 
 using namespace musik::core::library::constants;
 
@@ -55,11 +51,6 @@ using namespace musik::core::audio;
 using namespace musik::core::library;
 using namespace musik::box;
 using namespace cursespp;
-
-using boost::io::group;
-using std::setw;
-using std::setfill;
-using std::setiosflags;
 
 static std::string formatWithAlbum(TrackPtr track, size_t width);
 

@@ -86,10 +86,12 @@ void IndexerLayout::OnDotfilesCheckChanged(cursespp::Checkbox* cb, bool checked)
 void IndexerLayout::Layout() {
     int x = 0, y = 0;
     int cx = Screen::GetWidth(), cy = Screen::GetHeight();
+
     this->SetFrameVisible(false);
     this->MoveAndResize(x, y, cx, cy);
 
     this->title->MoveAndResize(0, 0, cx, LABEL_HEIGHT);
+    this->shortcuts->MoveAndResize(1, cy - 1, cx - 2, LABEL_HEIGHT);
 
     int startY = BOTTOM(this->title) + 1;
     int leftX = 0;
@@ -180,6 +182,10 @@ void IndexerLayout::InitializeWindows() {
     this->dotfileCheckbox->SetFocusOrder(2);
     this->removeCheckbox->SetFocusOrder(3);
 
+    this->shortcuts.reset(new ShortcutsWindow());
+    this->shortcuts->AddShortcut("M-`", "console");
+    this->shortcuts->AddShortcut("M-a", "console");
+
     this->AddWindow(this->title);
     this->AddWindow(this->browseLabel);
     this->AddWindow(this->addedPathsLabel);
@@ -187,6 +193,7 @@ void IndexerLayout::InitializeWindows() {
     this->AddWindow(this->addedPathsList);
     this->AddWindow(this->dotfileCheckbox);
     this->AddWindow(this->removeCheckbox);
+    this->AddWindow(this->shortcuts);
 
     this->Layout();
 }

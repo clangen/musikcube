@@ -138,6 +138,7 @@
     <ClCompile Include="app\window\LogWindow.cpp" />
     <ClCompile Include="app\window\OutputWindow.cpp" />
     <ClCompile Include="app\window\ResourcesWindow.cpp" />
+    <ClCompile Include="app\window\ShortcutsWindow.cpp" />
     <ClCompile Include="app\window\TrackListView.cpp" />
     <ClCompile Include="app\window\TransportWindow.cpp" />
     <ClCompile Include="cursespp\Checkbox.cpp" />
@@ -189,6 +190,7 @@
     <ClInclude Include="app\window\LogWindow.h" />
     <ClInclude Include="app\window\OutputWindow.h" />
     <ClInclude Include="app\window\ResourcesWindow.h" />
+    <ClInclude Include="app\window\ShortcutsWindow.h" />
     <ClInclude Include="app\window\TrackListView.h" />
     <ClInclude Include="app\window\TransportWindow.h" />
     <ClInclude Include="cursespp\Checkbox.h" />

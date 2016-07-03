@@ -34,32 +34,42 @@
 
 #pragma once
 
-#include "curses_config.h"
+#include <cursespp/Window.h>
 
-#define CURSESPP_SELECTED_LIST_ITEM 1
-#define CURSESPP_HIGHLIGHTED_LIST_ITEM 2
-#define CURSESPP_HIGHLIGHTED_SELECTED_LIST_ITEM 3
-#define CURSESPP_LIST_ITEM_HEADER 4
+namespace musik {
+    namespace box {
+        class ShortcutsWindow :
+            public cursespp::Window
+#if (__clang_major__ == 7 && __clang_minor__ == 3)
+            , public std::enable_shared_from_this<ShortcutsWindow>
+#endif
+        {
+            public:
+                ShortcutsWindow();
+                virtual ~ShortcutsWindow();
 
-#define CURSESPP_DEFAULT_CONTENT_COLOR 5
-#define CURSESPP_DEFAULT_FRAME_COLOR 6
-#define CURSESPP_FOCUSED_FRAME_COLOR 7
+                void AddShortcut(
+                    const std::string& key, 
+                    const std::string& description);
 
-#define CURSESPP_TEXT_DEFAULT 8
-#define CURSESPP_TEXT_DISABLED 9
-#define CURSESPP_TEXT_FOCUSED 10
-#define CURSESPP_TEXT_ACTIVE 11
-#define CURSESPP_TEXT_WARNING 12
-#define CURSESPP_TEXT_ERROR 13
-#define CURSESPP_TEXT_HIDDEN 14
-#define CURSESPP_TEXT_SEPARATOR 15
+                virtual void Show();
 
-namespace cursespp {
-    class Colors {
-        private:
-            Colors();
+            private:
+                void Redraw();
 
-        public:
-            static void Init();
-    };
+                struct Entry {
+                    Entry(const std::string& key, const std::string& desc) {
+                        this->key = key;
+                        this->description = desc;
+                    }
+
+                    std::string key;
+                    std::string description;
+                };
+
+                typedef std::vector<std::shared_ptr<Entry> > EntryList;
+
+                EntryList entries;
+        };
+    }
 }
