@@ -100,7 +100,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="db\CachedStatement.cpp" />
     <ClCompile Include="db\Connection.cpp" />
     <ClCompile Include="db\ScopedTransaction.cpp" />
     <ClCompile Include="db\Statement.cpp" />
@@ -148,7 +147,6 @@
     <ClInclude Include="sdk\IBufferProvider.h" />
     <ClInclude Include="sdk\IPlugin.h" />
     <ClInclude Include="sdk\IMetadataWriter.h" />
-    <ClInclude Include="db\CachedStatement.h" />
     <ClInclude Include="db\Connection.h" />
     <ClInclude Include="db\dbconfig.h" />
     <ClInclude Include="db\ScopedTransaction.h" />

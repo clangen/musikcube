@@ -4,7 +4,6 @@ set(CORE_SOURCES
   ./audio/Player.cpp
   ./audio/Stream.cpp
   ./audio/GaplessTransport.cpp
-  ./db/CachedStatement.cpp
   ./db/Connection.cpp
   ./db/ScopedTransaction.cpp
   ./db/Statement.cpp

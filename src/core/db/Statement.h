@@ -48,8 +48,6 @@ struct sqlite3_stmt;
 namespace musik{ namespace core{ namespace db{
 
     class Connection;
-    class  CachedStatement;
-
 
     //////////////////////////////////////////
     ///\brief
@@ -87,9 +85,5 @@ namespace musik{ namespace core{ namespace db{
             Statement(Connection &connection);
 
     };
-
-
 } } }
-
-#include <core/db/CachedStatement.h>
 

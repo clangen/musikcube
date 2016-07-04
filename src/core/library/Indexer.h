@@ -45,6 +45,7 @@
 
 #include <boost/thread/thread.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/asio/io_service.hpp>
 
 #include <deque>
 #include <vector>
@@ -88,7 +89,7 @@ namespace musik { namespace core {
                 DBID pathId);
 
             void ReadMetadataFromFile(
-                const boost::filesystem::directory_iterator path,
+                const boost::filesystem::path& path,
                 const std::string& pathId);
 
             db::Connection dbConnection;
@@ -102,8 +103,8 @@ namespace musik { namespace core {
             boost::thread *thread;
             boost::mutex progressMutex;
 
-            int filesIndexed;
-            int filesSaved;
+            size_t filesIndexed;
+            size_t filesSaved;
 
             struct AddRemoveContext {
                 bool add;

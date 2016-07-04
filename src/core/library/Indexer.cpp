@@ -52,10 +52,13 @@
 #include <boost/bind.hpp>
 
 static const std::string TAG = "Indexer";
+static const int MAX_THREADS = 8;
 
 using namespace musik::core;
 using namespace musik::core::metadata;
 using namespace musik::core::audio;
+
+using Thread = std::unique_ptr<boost::thread>;
 
 static std::string normalizeDir(std::string path) {
     path = boost::filesystem::path(path).make_preferred().string();
@@ -84,12 +87,6 @@ Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
     this->thread = new boost::thread(boost::bind(&Indexer::ThreadLoop, this));
 }
 
-//////////////////////////////////////////
-///\brief
-///Destructor
-///
-///Exits and joins threads
-//////////////////////////////////////////
 Indexer::~Indexer() {
     if (this->thread) {
         this->Exit();
@@ -99,38 +96,17 @@ Indexer::~Indexer() {
     }
 }
 
-//////////////////////////////////////////
-///\brief
-///Restart the sync
-///
-///\param bNewRestart
-///Should if be restarted or not
-//////////////////////////////////////////
 void Indexer::Synchronize(bool restart) {
     boost::mutex::scoped_lock lock(this->exitMutex);
     this->restart = restart;
     this->Notify();
 }
 
-//////////////////////////////////////////
-///\brief
-///Should the sync be restarted?
-//////////////////////////////////////////
 bool Indexer::Restarted() {
     boost::mutex::scoped_lock lock(this->exitMutex);
     return this->restart;
 }
 
-//////////////////////////////////////////
-///\brief
-///Add a new path to the Indexer.
-///
-///\param sPath
-///Path to add
-///
-///\remarks
-///If the path already exists it will not be added.
-//////////////////////////////////////////
 void Indexer::AddPath(const std::string& path) {
     Indexer::AddRemoveContext context;
     context.add = true;
@@ -144,13 +120,6 @@ void Indexer::AddPath(const std::string& path) {
     this->Synchronize(true);
 }
 
-//////////////////////////////////////////
-///\brief
-///Remove a path from the Indexer
-///
-///\param sPath
-///Path to remove
-//////////////////////////////////////////
 void Indexer::RemovePath(const std::string& path) {
     Indexer::AddRemoveContext context;
     context.add = false;
@@ -164,10 +133,6 @@ void Indexer::RemovePath(const std::string& path) {
     this->Synchronize(true);
 }
 
-//////////////////////////////////////////
-///\brief
-///Main method for doing the synchronization.
-//////////////////////////////////////////
 void Indexer::SynchronizeInternal() {
     /* load all of the metadata (tag) reader plugins */
     typedef PluginFactory::DestroyDeleter<IMetadataReader> MetadataDeleter;
@@ -252,7 +217,7 @@ void Indexer::SynchronizeInternal() {
     }
 
 
-    if(!this->Restarted() && !this->Exited()){
+    if (!this->Restarted() && !this->Exited()){
         this->SyncCleanup();
     }
 
@@ -265,7 +230,7 @@ void Indexer::SynchronizeInternal() {
        this->status = 5;
     }
 
-    if(!this->Restarted() && !this->Exited()){
+    if (!this->Restarted() && !this->Exited()){
         this->SyncOptimize();
     }
 
@@ -282,13 +247,13 @@ void Indexer::SynchronizeInternal() {
 }
 
 void Indexer::ReadMetadataFromFile(
-    const boost::filesystem::directory_iterator file,
+    const boost::filesystem::path& file,
     const std::string& pathId)
 {
     musik::core::IndexerTrack track(0);
 
     /* get cached filesize, parts, size, etc */
-    if (!track.NeedsToBeIndexed(file->path(), this->dbConnection)) {
+    if (!track.NeedsToBeIndexed(file, this->dbConnection)) {
         return;
     }
 
@@ -299,7 +264,7 @@ void Indexer::ReadMetadataFromFile(
     Iterator it = this->metadataReaders.begin();
     while (it != this->metadataReaders.end()) {
         if ((*it)->CanRead(track.GetValue("extension").c_str())) {
-            if ((*it)->Read(file->path().string().c_str(), &track)) {
+            if ((*it)->Read(file.string().c_str(), &track)) {
                 saveToDb = true;
                 break;
             }
@@ -310,12 +275,12 @@ void Indexer::ReadMetadataFromFile(
     /* no tag? well... if a decoder can play it, add it to the database
     with the file as the name. */
     if (!saveToDb) {
-        std::string fullPath = file->path().string();
+        std::string fullPath = file.string();
         auto it = this->audioDecoders.begin();
         while (it != this->audioDecoders.end()) {
             if ((*it)->CanHandle(fullPath.c_str())) {
                 saveToDb = true;
-                track.SetValue("title", file->path().leaf().string().c_str());
+                track.SetValue("title", file.leaf().string().c_str());
                 break;
             }
             ++it;
@@ -326,15 +291,30 @@ void Indexer::ReadMetadataFromFile(
     if (saveToDb) {
         track.SetValue("path_id", pathId.c_str());
         track.Save(this->dbConnection, this->libraryPath);
+    }
+}
 
-        this->filesSaved++;
-        if (this->filesSaved % 200 == 0) {
-            if (this->trackTransaction) {
-                this->trackTransaction->CommitAndRestart();
-            }
+static inline void joinAndNotify(
+    std::vector<Thread>& threads,
+    std::shared_ptr<musik::core::db::ScopedTransaction> transaction,
+    sigslot::signal0<>& event, 
+    size_t& total)
+{
+    total += threads.size();
 
-            this->TrackRefreshed();
+    for (size_t i = 0; i < threads.size(); i++) {
+        threads.at(i)->join(); 
+    }
+
+    threads.clear();
+
+    if (total > 200) {
+        if (transaction) {
+            transaction->CommitAndRestart();
         }
+
+        event();
+        total = 0;
     }
 }
 
@@ -362,21 +342,47 @@ void Indexer::SyncDirectory(
         boost::filesystem::directory_iterator file(path);
 
         std::string pathIdStr = boost::lexical_cast<std::string>(pathId);
+        std::vector<Thread> threads;
+
+        #define WAIT_FOR_ACTIVE() \
+            joinAndNotify( \
+                threads, \
+                this->trackTransaction, \
+                this->TrackRefreshed, \
+                this->filesSaved);
 
         for( ; file != end && !this->Exited() && !this->Restarted(); file++) {
+            /* we do things in batches of 5. wait for this batch to
+            finish, then we'll spin up some more... */
+            if (threads.size() >= MAX_THREADS) {
+                WAIT_FOR_ACTIVE();
+            }
+
             if (is_directory(file->status())) {
                 /* recursion here */
                 musik::debug::info(TAG, "scanning " + file->path().string());
+                WAIT_FOR_ACTIVE();
                 this->SyncDirectory(syncRoot, file->path().string(), pathId);
             }
             else {
                 ++this->filesIndexed;
-                this->ReadMetadataFromFile(file, pathIdStr);
+
+                threads.push_back(Thread(new boost::thread(
+                    boost::bind(
+                        &Indexer::ReadMetadataFromFile, 
+                        this, 
+                        file->path(), 
+                        pathIdStr))));
             }
         }
+
+        /* there may be a few left... */
+        WAIT_FOR_ACTIVE();
     }
     catch(...) {
     }
+
+    #undef WAIT_FOR_ACTIVE()
 }
 
 void Indexer::ThreadLoop() {

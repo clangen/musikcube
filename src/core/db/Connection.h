@@ -76,20 +76,12 @@ namespace musik{ namespace core{ namespace db{
 
             void Initialize(unsigned int cache);
 
-            typedef std::map<std::string,sqlite3_stmt*> StatementCache;
-            StatementCache cachedStatements;
-
             friend class Statement;
-            friend class CachedStatement;
             friend class ScopedTransaction;
-
-            sqlite3_stmt *GetCachedStatement(const char* sql);
-            void ReturnCachedStatement(const char* sql,sqlite3_stmt *stmt);
-
+            
             int StepStatement(sqlite3_stmt *stmt);
 
-            int transactionCounter;            
-
+            int transactionCounter;
             sqlite3 *connection;
 
             boost::mutex mutex;

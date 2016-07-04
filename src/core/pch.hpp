@@ -41,5 +41,4 @@
 
     #include <core/db/Connection.h>
     #include <core/db/Statement.h>
-    #include <core/db/CachedStatement.h>
 #endif

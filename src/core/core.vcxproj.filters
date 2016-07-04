@@ -40,9 +40,6 @@
     <ClCompile Include="pch.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="db\CachedStatement.cpp">
-      <Filter>src\db</Filter>
-    </ClCompile>
     <ClCompile Include="db\Connection.cpp">
       <Filter>src\db</Filter>
     </ClCompile>
@@ -119,9 +116,6 @@
   <ItemGroup>
     <ClInclude Include="pch.hpp">
       <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="db\CachedStatement.h">
-      <Filter>src\db</Filter>
     </ClInclude>
     <ClInclude Include="db\Connection.h">
       <Filter>src\db</Filter>

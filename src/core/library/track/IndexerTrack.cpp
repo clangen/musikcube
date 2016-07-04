@@ -43,6 +43,7 @@
 #include <core/io/DataStreamFactory.h>
 
 #include <boost/lexical_cast.hpp>
+#include <boost/thread.hpp>
 
 using namespace musik::core;
 
@@ -55,6 +56,8 @@ using namespace musik::core;
 #define ARTISTS_TABLE_NAME "artists"
 #define ARTIST_TRACK_JUNCTION_TABLE_NAME "track_artists"
 #define ARTIST_TRACK_FOREIGN_KEY "artist_id"
+
+static boost::mutex trackWriteLock;
 
 IndexerTrack::IndexerTrack(DBID id)
 : internalMetadata(new IndexerTrack::MetadataWithThumbnail())
@@ -147,7 +150,7 @@ bool IndexerTrack::NeedsToBeIndexed(
         this->SetValue("filesize", boost::lexical_cast<std::string>(fileSize).c_str());
         this->SetValue("filetime", boost::lexical_cast<std::string>(fileTime).c_str());
 
-        db::CachedStatement stmt(
+        db::Statement stmt(
             "SELECT id, filename, filesize, filetime " \
             "FROM tracks t " \
             "WHERE filename=?", dbConnection);
@@ -176,7 +179,7 @@ static DBID writeToTracksTable(
     db::Connection &dbConnection,
     IndexerTrack& track)
 {
-    db::CachedStatement stmt("INSERT OR REPLACE INTO tracks " \
+    db::Statement stmt("INSERT OR REPLACE INTO tracks " \
         "(id, track, disc, bpm, duration, filesize, year, title, filename, filetime, path_id) " \
         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", dbConnection);
 
@@ -210,7 +213,7 @@ static void removeRelation(
     DBID trackId)
 {
     std::string query = boost::str(boost::format("DELETE FROM %1% WHERE track_id=?") % field);
-    db::CachedStatement stmt(query.c_str(), connection);
+    db::Statement stmt(query.c_str(), connection);
     stmt.BindInt(0, trackId);
     stmt.Step();
 }
@@ -239,7 +242,7 @@ DBID IndexerTrack::SaveThumbnail(db::Connection& connection, const std::string& 
     if (this->internalMetadata->thumbnailData) {
         uint64 sum = Checksum(this->internalMetadata->thumbnailData, this->internalMetadata->thumbnailSize);
 
-        db::CachedStatement thumbs("SELECT id FROM thumbnails WHERE filesize=? AND checksum=?", connection);
+        db::Statement thumbs("SELECT id FROM thumbnails WHERE filesize=? AND checksum=?", connection);
         thumbs.BindInt(0, this->internalMetadata->thumbnailSize);
         thumbs.BindInt(1, sum);
 
@@ -280,11 +283,11 @@ void IndexerTrack::ProcessNonStandardMetadata(db::Connection& connection) {
     MetadataMap unknownFields(this->internalMetadata->metadata);
     removeKnownFields(unknownFields);
 
-    db::CachedStatement selectMetaKey("SELECT id FROM meta_keys WHERE name=?", connection);
-    db::CachedStatement selectMetaValue("SELECT id FROM meta_values WHERE meta_key_id=? AND content=?", connection);
-    db::CachedStatement insertMetaValue("INSERT INTO meta_values (meta_key_id,content) VALUES (?,?)", connection);
-    db::CachedStatement insertTrackMeta("INSERT INTO track_meta (track_id,meta_value_id) VALUES (?,?)", connection);
-    db::CachedStatement insertMetaKey("INSERT INTO meta_keys (name) VALUES (?)", connection);
+    db::Statement selectMetaKey("SELECT id FROM meta_keys WHERE name=?", connection);
+    db::Statement selectMetaValue("SELECT id FROM meta_values WHERE meta_key_id=? AND content=?", connection);
+    db::Statement insertMetaValue("INSERT INTO meta_values (meta_key_id,content) VALUES (?,?)", connection);
+    db::Statement insertTrackMeta("INSERT INTO track_meta (track_id,meta_value_id) VALUES (?,?)", connection);
+    db::Statement insertMetaKey("INSERT INTO meta_keys (name) VALUES (?)", connection);
 
     MetadataMap::const_iterator it = unknownFields.begin();
     for ( ; it != unknownFields.end(); ++it){
@@ -357,7 +360,7 @@ DBID IndexerTrack::SaveSingleValueField(
     std::string selectQuery = boost::str(boost::format(
         "SELECT id FROM %1% WHERE name=?") % fieldTableName);
 
-    db::CachedStatement stmt(selectQuery.c_str(), dbConnection);
+    db::Statement stmt(selectQuery.c_str(), dbConnection);
     std::string value = this->GetValue(trackMetadataKeyName.c_str());
 
     stmt.BindText(0, value);
@@ -450,7 +453,7 @@ DBID IndexerTrack::SaveArtist(db::Connection& dbConnection) {
 }
 
 bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirectory) {
-    db::ScopedTransaction transaction(dbConnection);
+    boost::mutex::scoped_lock lock(trackWriteLock);
 
     if (this->GetValue("album_artist") == "") {
         this->SetValue("album_artist", this->GetValue("artist").c_str());
@@ -477,7 +480,7 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
     /* update all of the track foreign keys */
 
     {
-        db::CachedStatement stmt(
+        db::Statement stmt(
             "UPDATE tracks " \
             "SET album_id=?, visual_genre_id=?, visual_artist_id=?, album_artist_id=?, thumbnail_id=? " \
             "WHERE id=?", dbConnection);
@@ -510,7 +513,7 @@ DBID IndexerTrack::SaveNormalizedFieldValue(
 
     {
         std::string query = boost::str(boost::format("SELECT id FROM %1% WHERE name=?") % tableName);
-        db::CachedStatement stmt(query.c_str(), dbConnection);
+        db::Statement stmt(query.c_str(), dbConnection);
         stmt.BindText(0, fieldValue);
 
         if (stmt.Step() == db::Row) {
@@ -524,7 +527,7 @@ DBID IndexerTrack::SaveNormalizedFieldValue(
         std::string query = boost::str(boost::format(
             "INSERT INTO %1% (name, aggregated) VALUES (?, ?)") % tableName);
 
-        db::CachedStatement stmt(query.c_str(), dbConnection);
+        db::Statement stmt(query.c_str(), dbConnection);
         stmt.BindText(0, fieldValue);
         stmt.BindInt(1, isAggregatedValue ? 1 : 0);
 
