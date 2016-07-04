@@ -54,6 +54,7 @@
 #define INDEXER_PREFS_SYNC_ON_STARTUP "SyncOnStartup"
 #define INDEXER_PREFS_SYNC_TIMEOUT "SyncTimeout"
 #define INDEXER_PREFS_REMOVE_MISSING_FILES "RemoveMissingFiles"
+#define INDEXER_PREFS_MAX_TAG_READ_THREADS "MaxTagReadThreads"
 
 namespace musik { namespace core {
 
@@ -123,6 +124,7 @@ namespace musik { namespace core {
             DecoderList audioDecoders;
             std::shared_ptr<musik::core::Preferences> prefs;
             std::shared_ptr<musik::core::db::ScopedTransaction> trackTransaction;
+            int maxReadThreads;
     };
 
     typedef std::shared_ptr<Indexer> IndexerPtr;

@@ -52,7 +52,7 @@
 #include <boost/bind.hpp>
 
 static const std::string TAG = "Indexer";
-static const int MAX_THREADS = 8;
+static const int MAX_THREADS = 10;
 
 using namespace musik::core;
 using namespace musik::core::metadata;
@@ -80,11 +80,13 @@ Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
 , status(0)
 , restart(false)
 , filesIndexed(0)
-, filesSaved(0) {
+, filesSaved(0)
+, maxReadThreads(MAX_THREADS) {
     this->dbFilename = dbFilename;
     this->libraryPath = libraryPath;
     this->prefs = Preferences::ForComponent(INDEXER_PREFS_COMPONENT);
     this->thread = new boost::thread(boost::bind(&Indexer::ThreadLoop, this));
+    this->maxReadThreads = this->prefs->GetInt(INDEXER_PREFS_MAX_TAG_READ_THREADS, MAX_THREADS);
 }
 
 Indexer::~Indexer() {
@@ -354,7 +356,7 @@ void Indexer::SyncDirectory(
         for( ; file != end && !this->Exited() && !this->Restarted(); file++) {
             /* we do things in batches of 5. wait for this batch to
             finish, then we'll spin up some more... */
-            if (threads.size() >= MAX_THREADS) {
+            if (threads.size() >= this->maxReadThreads) {
                 WAIT_FOR_ACTIVE();
             }
 
