@@ -209,7 +209,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(size_t index) {
             attrs = COLOR_PAIR(CURSESPP_HIGHLIGHTED_SELECTED_LIST_ITEM);
         }
         else {
-            attrs = COLOR_PAIR(CURSESPP_SELECTED_LIST_ITEM) | A_BOLD;
+            attrs = COLOR_PAIR(CURSESPP_SELECTED_LIST_ITEM);
         }
     }
 
