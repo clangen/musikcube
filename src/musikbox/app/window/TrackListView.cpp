@@ -54,6 +54,9 @@ using namespace musik::core::audio;
 using namespace musik::core::library;
 using namespace musik::box;
 using namespace cursespp;
+
+static IScrollAdapter::EntryPtr MISSING_ENTRY = IScrollAdapter::EntryPtr();
+
 TrackListView::TrackListView(
     PlaybackService& playback, 
     LibraryPtr library,
@@ -66,6 +69,12 @@ TrackListView::TrackListView(
     this->adapter = new Adapter(*this);
     this->lastQueryHash = 0;
     this->formatter = formatter;
+
+    if (!MISSING_ENTRY) {
+        auto e = std::shared_ptr<SingleLineEntry>(new SingleLineEntry("track missing"));
+        e->SetAttrs(COLOR_PAIR(CURSESPP_TEXT_ERROR));
+        MISSING_ENTRY = e;
+    }
 }
 
 TrackListView::~TrackListView() {
@@ -199,6 +208,10 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(size_t index) {
     int64 attrs = selected ? COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM) : -1LL;
 
     TrackPtr track = parent.metadata->Get(index);
+
+    if (!track) {
+        return MISSING_ENTRY;
+    }
 
     TrackPtr playing = parent.playing;
     if (playing &&
