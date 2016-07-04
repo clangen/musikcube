@@ -382,7 +382,7 @@ void Indexer::SyncDirectory(
     catch(...) {
     }
 
-    #undef WAIT_FOR_ACTIVE()
+    #undef WAIT_FOR_ACTIVE
 }
 
 void Indexer::ThreadLoop() {

@@ -39,39 +39,24 @@
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 
-namespace musik{ namespace core{ namespace db{
+namespace musik { namespace core { namespace db {
 
-    // Forward declare
     class Connection;
 
-    //////////////////////////////////////////
-    ///\brief
-    ///ScopedTransaction is used to make transactions easier
-    ///
-    ///Usage like this:
-    ///\code
-    ///{
-    ///     musik::code::db::ScopedTransaction transactionScope(db)
-    ///     //everything in this scope is included in the transation
-    ///}
-    ///\endcode
-    ///
-    ///\remarks
-    ///Nested transations are partially supported. First scope is the one deciding when transaction is commited.
-    //////////////////////////////////////////
-    class  ScopedTransaction : boost::noncopyable{
+    class ScopedTransaction : boost::noncopyable {
         public: 
             ScopedTransaction(Connection &connection);
             ~ScopedTransaction();
+
             void Cancel();
             void CommitAndRestart();
+
         private:
-            Connection *connection;
-
-            bool canceled;
-
             inline void Begin();
             inline void End();
+
+            Connection *connection;
+            bool canceled;
     };
 
 } } }
