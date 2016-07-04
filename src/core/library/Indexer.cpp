@@ -281,6 +281,63 @@ void Indexer::SynchronizeInternal() {
     musik::debug::info(TAG, "done!");
 }
 
+void Indexer::ReadMetadataFromFile(
+    const boost::filesystem::directory_iterator file,
+    const std::string& pathId)
+{
+    musik::core::IndexerTrack track(0);
+
+    /* get cached filesize, parts, size, etc */
+    if (!track.NeedsToBeIndexed(file->path(), this->dbConnection)) {
+        return;
+    }
+
+    bool saveToDb = false;
+
+    /* read the tag from the plugin */
+    typedef MetadataReaderList::iterator Iterator;
+    Iterator it = this->metadataReaders.begin();
+    while (it != this->metadataReaders.end()) {
+        if ((*it)->CanRead(track.GetValue("extension").c_str())) {
+            if ((*it)->Read(file->path().string().c_str(), &track)) {
+                saveToDb = true;
+                break;
+            }
+        }
+        it++;
+    }
+
+    /* no tag? well... if a decoder can play it, add it to the database
+    with the file as the name. */
+    if (!saveToDb) {
+        std::string fullPath = file->path().string();
+        auto it = this->audioDecoders.begin();
+        while (it != this->audioDecoders.end()) {
+            if ((*it)->CanHandle(fullPath.c_str())) {
+                saveToDb = true;
+                track.SetValue("title", file->path().leaf().string().c_str());
+                break;
+            }
+            ++it;
+        }
+    }
+
+    /* write it to the db, if read successfully */
+    if (saveToDb) {
+        track.SetValue("path_id", pathId.c_str());
+        track.Save(this->dbConnection, this->libraryPath);
+
+        this->filesSaved++;
+        if (this->filesSaved % 200 == 0) {
+            if (this->trackTransaction) {
+                this->trackTransaction->CommitAndRestart();
+            }
+
+            this->TrackRefreshed();
+        }
+    }
+}
+
 void Indexer::SyncDirectory(
     const std::string &syncRoot,
     const std::string &currentPath,
@@ -314,56 +371,7 @@ void Indexer::SyncDirectory(
             }
             else {
                 ++this->filesIndexed;
-
-                musik::core::IndexerTrack track(0);
-
-                /* get cached filesize, parts, size, etc */
-                if (track.NeedsToBeIndexed(file->path(), this->dbConnection)) {
-                    bool saveToDb = false;
-
-                    /* read the tag from the plugin */
-                    typedef MetadataReaderList::iterator Iterator;
-                    Iterator it = this->metadataReaders.begin();
-                    while (it != this->metadataReaders.end()) {
-                        if ((*it)->CanRead(track.GetValue("extension").c_str())) {
-                            if ((*it)->Read(file->path().string().c_str(), &track)) {
-                                saveToDb = true;
-                                break;
-                            }
-                        }
-                        it++;
-                    }
-
-                    /* no tag? well... if a decoder can play it, add it to the database
-                    with the file as the name. */
-                    if (!saveToDb) {
-                        std::string fullPath = file->path().string();
-                        auto it = this->audioDecoders.begin();
-                        while (it != this->audioDecoders.end()) {
-                            if ((*it)->CanHandle(fullPath.c_str())) {
-                                saveToDb = true;
-                                track.SetValue("title", file->path().leaf().string().c_str());
-                                break;
-                            }
-                            ++it;
-                        }
-                    }
-
-                    /* write it to the db, if read successfully */
-                    if (saveToDb) {
-                        track.SetValue("path_id", pathIdStr.c_str());
-                        track.Save(this->dbConnection, this->libraryPath);
-
-                        this->filesSaved++;
-                        if (this->filesSaved % 200 == 0) {
-                            if (this->trackTransaction) {
-                                this->trackTransaction->CommitAndRestart();
-                            }
-
-                            this->TrackRefreshed(); /* no idea... something listens to this. maybe? */
-                        }
-                    }
-                }
+                this->ReadMetadataFromFile(file, pathIdStr);
             }
         }
     }
@@ -371,10 +379,6 @@ void Indexer::SyncDirectory(
     }
 }
 
-//////////////////////////////////////////
-///\brief
-///Main loop the thread is running in.
-//////////////////////////////////////////
 void Indexer::ThreadLoop() {
     boost::filesystem::path thumbPath(this->libraryPath + "thumbs/");
 
@@ -645,13 +649,13 @@ void Indexer::RunAnalyzers() {
                 }
             }
 
-            if(!runningAnalyzers.empty()) {
+            if (!runningAnalyzers.empty()) {
                 audio::StreamPtr stream = audio::Stream::Create(audio::Stream::NoDSP);
 
                 if (stream) {
                     if (stream->OpenStream(track.URI())) {
 
-                        /* decode the stream quickly, passing to all analyzers*/
+                        /* decode the stream quickly, passing to all analyzers */
 
                         audio::BufferPtr buffer;
 
@@ -668,11 +672,12 @@ void Indexer::RunAnalyzers() {
                         }
 
                         /* done with track decoding and analysis, let the plugins know */
+
                         int successPlugins = 0;
                         PluginVector::iterator plugin = analyzers.begin();
 
-                        for( ; plugin != analyzers.end(); ++plugin){
-                            if((*plugin)->End(&track)){
+                        for ( ; plugin != analyzers.end(); ++plugin) {
+                            if ((*plugin)->End(&track)) {
                                 successPlugins++;
                             }
                         }
@@ -680,7 +685,7 @@ void Indexer::RunAnalyzers() {
                         /* the analyzers can write metadata back to the DB, so if any of them
                         completed successfully, then save the track. */
 
-                        if(successPlugins>0) {
+                        if (successPlugins>0) {
                             track.Save(this->dbConnection, this->libraryPath);
                         }
                     }

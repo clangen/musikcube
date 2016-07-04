@@ -44,6 +44,7 @@
 #include <sigslot/sigslot.h>
 
 #include <boost/thread/thread.hpp>
+#include <boost/filesystem.hpp>
 
 #include <deque>
 #include <vector>
@@ -85,6 +86,10 @@ namespace musik { namespace core {
                 const std::string& syncRoot,
                 const std::string& currentPath,
                 DBID pathId);
+
+            void ReadMetadataFromFile(
+                const boost::filesystem::directory_iterator path,
+                const std::string& pathId);
 
             db::Connection dbConnection;
 
