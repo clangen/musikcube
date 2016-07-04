@@ -36,7 +36,7 @@
 
 #include <iostream>
 
-#define BUFFER_COUNT 8
+#define BUFFER_COUNT 16
 
 using namespace musik::core::audio;
 
