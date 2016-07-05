@@ -35,10 +35,15 @@
 #pragma once
 
 #include <string>
+#include <wchar.h>
 #include <core/sdk/config.h>
 #include <utf8/utf8.h>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
+
+#ifdef WIN32
+#include <wcwidth.h>
+#endif
 
 typedef uint64 DBID;
 typedef uint64 VERSION;
@@ -64,7 +69,11 @@ inline std::string u16to8(const std::wstring& u16) {
 
 static inline size_t u8cols(const std::string& str) {
     std::wstring wstr = u8to16(str);
+#ifdef WIN32
+    return (size_t)std::max(0, mk_wcswidth(wstr.c_str(), wstr.size()));
+#else
     return (size_t) std::max(0, wcswidth(wstr.c_str(), wstr.size()));
+#endif
 }
 
 inline static size_t u8len(const std::string& str) {

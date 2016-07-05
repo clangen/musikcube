@@ -171,7 +171,7 @@ size_t TrackListView::Adapter::GetEntryCount() {
 static std::string formatWithoutAlbum(TrackPtr track, size_t width) {
     std::string trackNum = text::Align(
         track->GetValue(constants::Track::TRACK_NUM), 
-        text::AlignLeft, 
+        text::AlignRight, 
         TRACK_COL_WIDTH);
 
     std::string duration = text::Align(
@@ -197,6 +197,11 @@ static std::string formatWithoutAlbum(TrackPtr track, size_t width) {
         track->GetValue(constants::Track::TITLE),
         text::AlignLeft,
         titleWidth);
+
+    if (title.find("Ragat") != std::string::npos) {
+        int n = 10;
+        n++;
+    }
 
     return boost::str(
         boost::format("%s   %s   %s   %s")

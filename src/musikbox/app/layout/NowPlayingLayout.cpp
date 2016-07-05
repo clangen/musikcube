@@ -142,7 +142,7 @@ bool NowPlayingLayout::KeyPress(const std::string& key) {
 static std::string formatWithAlbum(TrackPtr track, size_t width) {
     std::string trackNum = text::Align(
         track->GetValue(constants::Track::TRACK_NUM),
-        text::AlignLeft,
+        text::AlignRight,
         TRACK_COL_WIDTH);
 
     std::string duration = text::Align(
