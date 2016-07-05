@@ -41,12 +41,12 @@
 
 namespace cursespp {
     namespace text {
-        void Truncate(std::string& str, size_t len) {
+        std::string Truncate(const std::string& str, size_t len) {
             /* not a simple substr anymore, gotta deal with multi-byte
             characters... */
-            if (u8len(str) > len) {
-                std::string::iterator it = str.begin();
-                std::string::iterator end = str.end();
+            if (u8cols(str) > len) {
+                auto it = str.begin();
+                auto end = str.end();
 
                 size_t c = 0;
                 while (c < len && it != str.end()) {
@@ -61,24 +61,25 @@ namespace cursespp {
                     ++c;
                 }
 
-                str = std::string(str.begin(), it);
+                return std::string(str.begin(), it);
             }
+
+            return str;
         }
 
-        void Ellipsize(std::string& str, size_t len) {
-            if (u8len(str) > len) {
-                Truncate(str, len - 2);
-                str += "..";
+        std::string Ellipsize(const std::string& str, size_t len) {
+            if (u8cols(str) > len) {
+                return Truncate(str, len - 2) + "..";
             }
+
+            return str;
         }
 
         std::string Align(const std::string& str, TextAlign align, size_t cx) {
-            size_t len = u8len(str);
+            size_t len = u8cols(str);
 
             if (len > cx) {
-                std::string ellipsized = str;
-                Ellipsize(ellipsized, cx);
-                return ellipsized;
+                return Ellipsize(str, cx);
             }
             else if (align == AlignLeft) {
                 size_t pad = cx - len;

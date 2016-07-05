@@ -62,6 +62,11 @@ inline std::string u16to8(const std::wstring& u16) {
     return result;
 }
 
+static inline size_t u8cols(const std::string& str) {
+    std::wstring wstr = u8to16(str);
+    return (size_t) std::max(0, wcswidth(wstr.c_str(), str.size()));
+}
+
 inline static size_t u8len(const std::string& str) {
     try {
         return utf8::distance(str.begin(), str.end());

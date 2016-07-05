@@ -64,7 +64,7 @@ inline static void breakIntoSubLines(
     size_t width,
     std::vector<std::string>& output)
 {
-    size_t len = u8len(line);
+    size_t len = u8cols(line);
     size_t count = (int)ceil((float)len / (float)width);
 
     /* easy case: the line fits on a single line! */
@@ -91,7 +91,7 @@ inline static void breakIntoSubLines(
         std::vector<std::string> sanitizedWords;
         for (size_t i = 0; i < words.size(); i++) {
             std::string word = words.at(i);
-            size_t len = u8len(word);
+            size_t len = u8cols(word);
 
             /* this word is fine, it'll easily fit on its own line of necessary */
 
@@ -136,7 +136,7 @@ inline static void breakIntoSubLines(
 
         for (size_t i = 0; i < sanitizedWords.size(); i++) {
             std::string word = sanitizedWords.at(i);
-            size_t wordLength = u8len(word);
+            size_t wordLength = u8cols(word);
             size_t extra = (i != 0);
 
             /* we have enough space for this new word. accumulate it. */

@@ -58,7 +58,7 @@ using namespace cursespp;
 
 CategoryListView::CategoryListView(
     PlaybackService& playback,
-    LibraryPtr library, 
+    LibraryPtr library,
     const std::string& fieldName)
 : ListWindow(NULL)
 , playback(playback) {
@@ -81,8 +81,8 @@ CategoryListView::~CategoryListView() {
 
 void CategoryListView::RequeryWithField(
     const std::string& fieldName,
-    const std::string& filter, 
-    const DBID selectAfterQuery) 
+    const std::string& filter,
+    const DBID selectAfterQuery)
 {
     boost::mutex::scoped_lock lock(this->queryMutex);
 
@@ -173,7 +173,7 @@ void CategoryListView::OnQueryCompleted(IQueryPtr query) {
 
         this->PostMessage(
             WINDOW_MESSAGE_QUERY_COMPLETED,
-            selectIndex, 
+            selectIndex,
             query->GetId());
     }
 }
@@ -187,7 +187,7 @@ void CategoryListView::ProcessMessage(IMessage &message) {
         only want to react to the most recent result set. */
         DBID queryId = static_cast<DBID>(message.UserData2());
 
-        if (this->activeQuery && 
+        if (this->activeQuery &&
             this->activeQuery->GetId() == queryId &&
             this->activeQuery->GetStatus() == IQuery::Finished)
         {
@@ -227,8 +227,8 @@ size_t CategoryListView::Adapter::GetEntryCount() {
 IScrollAdapter::EntryPtr CategoryListView::Adapter::GetEntry(size_t index) {
     std::string value = parent.metadata->at(index)->displayValue;
 
-    bool playing = 
-        parent.playing && 
+    bool playing =
+        parent.playing &&
         parent.playing->GetValue(parent.fieldName.c_str()) == value;
 
     bool selected = index == parent.GetSelectedIndex();
@@ -244,7 +244,7 @@ IScrollAdapter::EntryPtr CategoryListView::Adapter::GetEntry(size_t index) {
         }
     }
 
-    text::Ellipsize(value, this->GetWidth());
+    value = text::Ellipsize(value, this->GetWidth());
 
     std::shared_ptr<SingleLineEntry> entry(new SingleLineEntry(value));
     entry->SetAttrs(attrs);

@@ -160,9 +160,9 @@ size_t writePlayingFormat(
             value = token->value;
         }
 
-        size_t len = u8len(value);
+        size_t len = u8cols(value);
         if (len > remaining) {
-            text::Ellipsize(value, remaining);
+            value = text::Ellipsize(value, remaining);
             len = remaining;
         }
 
@@ -254,7 +254,7 @@ void TransportWindow::Update() {
     /* prepare the "shuffle" label */
 
     std::string shuffleLabel = " shuffle";
-    size_t shuffleLabelLen = u8len(shuffleLabel);
+    size_t shuffleLabelLen = u8cols(shuffleLabel);
 
     /* playing SONG TITLE from ALBUM NAME */
 
@@ -367,8 +367,8 @@ void TransportWindow::Update() {
 
     size_t timerWidth =
         this->GetContentWidth() -
-        u8len(volume) -
-        (u8len(repeatLabel) + u8len(repeatModeLabel)) -
+        u8cols(volume) -
+        (u8cols(repeatLabel) + u8cols(repeatModeLabel)) -
         currentTime.size() -
         totalTime.size() -
         2; /* padding */

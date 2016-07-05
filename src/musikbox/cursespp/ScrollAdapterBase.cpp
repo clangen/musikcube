@@ -155,7 +155,7 @@ void ScrollAdapterBase::DrawPage(ScrollableWindow* scrollable, size_t index, Scr
             }
 
             std::string line = entry->GetLine(i);
-            size_t len = u8len(line);
+            size_t len = u8cols(line);
 
             /* pad with empty spaces to the end of the line. this allows us to
             do highlight rows. this should probably be configurable. */

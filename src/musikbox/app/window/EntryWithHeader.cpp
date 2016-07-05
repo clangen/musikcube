@@ -41,7 +41,7 @@ using namespace musik::box;
 using namespace cursespp;
 
 EntryWithHeader::EntryWithHeader(
-    const std::string& header, const std::string& value) 
+    const std::string& header, const std::string& value)
 {
     this->header = header;
     this->value = value;
@@ -70,9 +70,7 @@ size_t EntryWithHeader::GetLineCount() {
 
 std::string EntryWithHeader::GetLine(size_t line) {
     if (line == 0) {
-        std::string ellipsized = this->header;
-        text::Ellipsize(ellipsized, this->width);
-        return ellipsized;
+        return text::Ellipsize(this->header, this->width);
     }
 
     return TRUNCATE(this->value, this->width);
