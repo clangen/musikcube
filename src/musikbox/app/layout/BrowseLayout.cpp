@@ -44,8 +44,8 @@
 
 using namespace musik::core::library::constants;
 
-#define CATEGORY_WIDTH 25
 #define DEFAULT_CATEGORY constants::Track::ARTIST
+static size_t MAX_CATEGORY_WIDTH = 40;
 
 using namespace musik::core;
 using namespace musik::core::audio;
@@ -78,10 +78,12 @@ void BrowseLayout::Layout() {
 
     this->MoveAndResize(x, y, cx, cy);
 
-    this->categoryList->MoveAndResize(x, y, CATEGORY_WIDTH, cy);
+    size_t categoryWidth = std::min(MAX_CATEGORY_WIDTH, cx / 4);
+
+    this->categoryList->MoveAndResize(x, y, categoryWidth, cy);
 
     this->trackList->MoveAndResize(
-        x + CATEGORY_WIDTH, y, cx - CATEGORY_WIDTH, cy);
+        x + categoryWidth, y, cx - categoryWidth, cy);
 
     this->categoryList->SetFocusOrder(0);
     this->trackList->SetFocusOrder(1);
