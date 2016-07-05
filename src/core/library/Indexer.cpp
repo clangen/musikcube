@@ -293,6 +293,7 @@ void Indexer::ReadMetadataFromFile(
     if (saveToDb) {
         track.SetValue("path_id", pathId.c_str());
         track.Save(this->dbConnection, this->libraryPath);
+        this->filesSaved++;
     }
 }
 
@@ -300,23 +301,21 @@ static inline void joinAndNotify(
     std::vector<Thread>& threads,
     std::shared_ptr<musik::core::db::ScopedTransaction> transaction,
     sigslot::signal0<>& event, 
-    size_t& total)
+    std::atomic<size_t>& saved)
 {
-    total += threads.size();
-
     for (size_t i = 0; i < threads.size(); i++) {
         threads.at(i)->join(); 
     }
 
     threads.clear();
 
-    if (total > 200) {
+    if (saved.load() > 200) {
         if (transaction) {
             transaction->CommitAndRestart();
         }
 
         event();
-        total = 0;
+        saved.store(0);
     }
 }
 

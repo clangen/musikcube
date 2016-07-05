@@ -49,6 +49,7 @@
 
 #include <deque>
 #include <vector>
+#include <atomic>
 
 #define INDEXER_PREFS_COMPONENT "indexer"
 #define INDEXER_PREFS_SYNC_ON_STARTUP "SyncOnStartup"
@@ -105,7 +106,7 @@ namespace musik { namespace core {
             boost::mutex progressMutex;
 
             size_t filesIndexed;
-            size_t filesSaved;
+            std::atomic<size_t> filesSaved;
 
             struct AddRemoveContext {
                 bool add;
@@ -124,7 +125,7 @@ namespace musik { namespace core {
             DecoderList audioDecoders;
             std::shared_ptr<musik::core::Preferences> prefs;
             std::shared_ptr<musik::core::db::ScopedTransaction> trackTransaction;
-            int maxReadThreads;
+            size_t maxReadThreads;
     };
 
     typedef std::shared_ptr<Indexer> IndexerPtr;
