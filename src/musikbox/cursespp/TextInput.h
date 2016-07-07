@@ -67,7 +67,7 @@ namespace cursespp {
             virtual std::string GetText() { return this->buffer; }
 
         private:
-            bool MoveCursor(int delta);
+            bool OffsetPosition(int delta);
 
             std::string buffer;
             int position;

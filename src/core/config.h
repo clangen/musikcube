@@ -87,6 +87,10 @@ inline static size_t u8len(const std::string& str) {
 
 /* get the (raw) character index of the "nth" logical/display character */
 inline static size_t u8offset(const std::string& str, int n) {
+    if (str.size() == 0) {
+        return std::string::npos;
+    }
+
     std::string::const_iterator it = str.begin();
 
     int count = 0;
@@ -95,7 +99,7 @@ inline static size_t u8offset(const std::string& str, int n) {
         ++count;
     }
 
-    return (size_t) count;
+    return (size_t) (it - str.begin());
 }
 
 inline static std::string u8substr(const std::string& in, int offset, int len) {

@@ -65,7 +65,7 @@ inline static bool removeUtf8Char(std::string& value, size_t position) {
     }
     else {
         size_t offset = u8offset(value, position - 1);
-        if (offset >= 0) {
+        if (offset != std::string::npos) {
             size_t end = u8offset(value, position);
             value.erase(offset, end - offset);
             return true;
@@ -94,7 +94,9 @@ size_t TextInput::Length() {
 }
 
 size_t TextInput::Position() {
-    return this->position;
+    /* note we return the COLUMN offset, not the physical or logical
+    character offset! */
+    return u8cols(u8substr(this->buffer, 0, this->position));
 }
 
 bool TextInput::Write(const std::string& key) {
@@ -116,7 +118,9 @@ bool TextInput::Write(const std::string& key) {
         /* one character at a time. if it's more than one character, we're
         dealing with an escape sequence and should not print it. */
         if (u8len(key) == 1) {
-            this->buffer.insert(u8offset(this->buffer, this->position), key);
+            size_t offset = u8offset(this->buffer, this->position);
+            offset = (offset == std::string::npos) ? 0 : offset;
+            this->buffer.insert(offset, key);
             this->TextChanged(this, this->buffer);
             ++this->position;
         }
@@ -132,10 +136,10 @@ bool TextInput::Write(const std::string& key) {
 
 bool TextInput::KeyPress(const std::string& key) {
     if (key == "KEY_LEFT") {
-        return this->MoveCursor(-1);
+        return this->OffsetPosition(-1);
     }
     else if (key == "KEY_RIGHT") {
-        return this->MoveCursor(1);
+        return this->OffsetPosition(1);
     }
     else if (key == "KEY_HOME") {
         this->position = 0;
@@ -159,7 +163,7 @@ bool TextInput::KeyPress(const std::string& key) {
     return false;
 }
 
-bool TextInput::MoveCursor(int delta) {
+bool TextInput::OffsetPosition(int delta) {
     int actual = this->position + delta;
     actual = std::max(0, std::min((int) this->bufferLength, actual));
 
