@@ -203,5 +203,6 @@ void ListWindow::OnSizeChanged() {
 }
 
 IScrollAdapter::ScrollPosition& ListWindow::GetScrollPosition() {
+    this->scrollPosition.logicalIndex = this->GetSelectedIndex(); /* hack */
     return this->scrollPosition;
 }

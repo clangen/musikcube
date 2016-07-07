@@ -155,6 +155,12 @@ bool TrackSearchLayout::KeyPress(const std::string& key) {
         this->FocusNext();
         return true;
     }
+    else if (key == "KEY_UP") {
+        if (this->GetFocus() == this->trackList) {
+            this->SetFocus(this->input);
+            return true;
+        }
+    }
 
     return LayoutBase::KeyPress(key);
 }

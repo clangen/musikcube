@@ -52,6 +52,11 @@ using namespace cursespp;
 #define SEARCH_HEIGHT 3
 #define LABEL_HEIGHT 1
 
+#define IS_CATEGORY(x) \
+    x == this->albums || \
+    x == this->artists || \
+    x == this->genres
+
 SearchLayout::SearchLayout(PlaybackService& playback, LibraryPtr library)
 : LayoutBase() {
     this->library = library;
@@ -173,6 +178,12 @@ bool SearchLayout::KeyPress(const std::string& key) {
     if (key == "KEY_DOWN") {
         this->FocusNext();
         return true;
+    }
+    else if (key == "KEY_UP") {
+        if (IS_CATEGORY(this->GetFocus())) {
+            this->SetFocus(this->input);
+            return true;
+        }
     }
 
     return LayoutBase::KeyPress(key);
