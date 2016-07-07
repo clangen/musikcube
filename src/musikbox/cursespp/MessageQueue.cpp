@@ -70,13 +70,8 @@ void MessageQueue::Dispatch() {
             EnqueuedMessage *m = (*it);
 
             if (now >= m->time) {
-                if (m->message.get()->Target()->IsAcceptingMessages()) {
-                    toDispatch.push_back(m);
-                    it = this->queue.erase(it);
-                }
-                else {
-                    it++;
-                }
+                toDispatch.push_back(m);
+                it = this->queue.erase(it);
             }
             else {
                 done = true;

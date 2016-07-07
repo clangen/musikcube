@@ -127,6 +127,10 @@ void SearchLayout::Requery() {
     this->genres->Requery(value);
 }
 
+void SearchLayout::FocusInput() {
+    this->SetFocus(this->input);
+}
+
 void SearchLayout::OnInputChanged(cursespp::TextInput* sender, std::string value) {
     if (this->IsVisible()) {
         this->Requery();
@@ -164,6 +168,11 @@ bool SearchLayout::KeyPress(const std::string& key) {
 
             return true;
         }
+    }
+
+    if (key == "KEY_DOWN") {
+        this->FocusNext();
+        return true;
     }
 
     return LayoutBase::KeyPress(key);

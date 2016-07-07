@@ -64,6 +64,8 @@ namespace musik {
                 virtual void OnVisibilityChanged(bool visible);
                 virtual bool KeyPress(const std::string& key);
 
+                void FocusInput();
+
             protected:
                 virtual void ProcessMessage(cursespp::IMessage &message);
 
@@ -74,6 +76,8 @@ namespace musik {
                 void OnInputChanged(
                     cursespp::TextInput* sender,
                     std::string value);
+
+                void OnEnterPressed(cursespp::TextInput* sender);
 
                 PlaybackService& playback;
                 musik::core::LibraryPtr library;

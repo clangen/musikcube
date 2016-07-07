@@ -101,10 +101,6 @@ void Window::ProcessMessage(IMessage &message) {
 
 }
 
-bool Window::IsAcceptingMessages() {
-    return true;
-}
-
 bool Window::IsVisible() {
     return this->isVisible;
 }

@@ -69,7 +69,6 @@ TrackSearchLayout::TrackSearchLayout(
 }
 
 TrackSearchLayout::~TrackSearchLayout() {
-
 }
 
 void TrackSearchLayout::Layout() {
@@ -93,6 +92,7 @@ void TrackSearchLayout::Layout() {
 void TrackSearchLayout::InitializeWindows() {
     this->input.reset(new cursespp::TextInput());
     this->input->TextChanged.connect(this, &TrackSearchLayout::OnInputChanged);
+    this->input->EnterPressed.connect(this, &TrackSearchLayout::OnEnterPressed);
     this->input->SetFocusOrder(0);
     this->AddWindow(this->input);
 
@@ -116,6 +116,10 @@ void TrackSearchLayout::OnVisibilityChanged(bool visible) {
     }
 }
 
+void TrackSearchLayout::FocusInput() {
+    this->SetFocus(this->input);
+}
+
 void TrackSearchLayout::Requery() {
     const std::string& filter = this->input->GetText();
     this->trackList->Requery(std::shared_ptr<TrackListQueryBase>(
@@ -136,9 +140,19 @@ void TrackSearchLayout::OnInputChanged(cursespp::TextInput* sender, std::string 
     }
 }
 
+void TrackSearchLayout::OnEnterPressed(cursespp::TextInput* sender) {
+    if (this->trackList->GetTrackList()->Count()) {
+        playback::Play(this->trackList, this->playback, this->GetFocus());
+    }
+}
+
 bool TrackSearchLayout::KeyPress(const std::string& key) {
     if (key == "^M") { /* enter. play the selection */
         playback::Play(this->trackList, this->playback, this->GetFocus());
+        return true;
+    }
+    else if (key == "KEY_DOWN") {
+        this->FocusNext();
         return true;
     }
 

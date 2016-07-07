@@ -148,11 +148,15 @@ void LibraryLayout::ShowBrowse() {
 }
 
 void LibraryLayout::ShowSearch() {
-    this->ChangeMainLayout(this->searchLayout);
+    this->visibleLayout == this->searchLayout
+        ? this->searchLayout->FocusInput()
+        : this->ChangeMainLayout(this->searchLayout);
 }
 
 void LibraryLayout::ShowTrackSearch() {
-    this->ChangeMainLayout(this->trackSearch);
+    this->visibleLayout == this->trackSearch
+        ? this->trackSearch->FocusInput()
+        : this->ChangeMainLayout(this->trackSearch);
 }
 
 void LibraryLayout::InitializeWindows() {
@@ -224,6 +228,14 @@ bool LibraryLayout::KeyPress(const std::string& key) {
     }
     else if (key == "M-t") {
         this->ShowTrackSearch();
+        return true;
+    }
+    else if (key == "KEY_LEFT") {
+        this->FocusPrev();
+        return true;
+    }
+    else if (key == "KEY_RIGHT") {
+        this->FocusNext();
         return true;
     }
     /* forward to the visible layout */

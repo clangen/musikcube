@@ -76,7 +76,6 @@ namespace cursespp {
             virtual void SendToBottom();
 
             virtual void ProcessMessage(IMessage &message);
-            virtual bool IsAcceptingMessages();
 
             virtual WINDOW* GetFrame() const;
             virtual WINDOW* GetContent() const;

@@ -69,6 +69,8 @@ namespace musik {
                 virtual void OnVisibilityChanged(bool visible);
                 virtual bool KeyPress(const std::string& key);
 
+                void FocusInput();
+
             private:
                 void InitializeWindows(PlaybackService& playback);
                 void Requery();
