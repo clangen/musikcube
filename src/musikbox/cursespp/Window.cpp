@@ -60,7 +60,7 @@ void Window::WriteToScreen(IInput* input) {
         if (input) {
             Window* inputWindow = dynamic_cast<Window*>(input);
             if (inputWindow) {
-                wmove(inputWindow->GetContent(), 0, input->Length());
+                wmove(inputWindow->GetContent(), 0, input->Position());
                 wrefresh(inputWindow->GetContent());
             }
         }

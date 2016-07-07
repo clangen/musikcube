@@ -37,11 +37,13 @@
 #include <cursespp/curses_config.h>
 #include <cursespp/Window.h>
 #include <cursespp/IInput.h>
+#include <cursespp/IKeyHandler.h>
 #include <sigslot/sigslot.h>
 
 namespace cursespp {
     class TextInput :
         public cursespp::Window,
+        public cursespp::IKeyHandler,
 #if (__clang_major__ == 7 && __clang_minor__ == 3)
         public std::enable_shared_from_this<TextInput>,
 #endif
@@ -53,15 +55,22 @@ namespace cursespp {
             TextInput();
             virtual ~TextInput();
 
-            virtual bool Write(const std::string& key);
-            virtual size_t Length() { return this->bufferLength; }
             virtual void Show();
+
+            virtual bool Write(const std::string& key);
+            virtual size_t Length();
+            virtual size_t Position();
+
+            virtual bool KeyPress(const std::string& key);
 
             virtual void SetText(const std::string& value);
             virtual std::string GetText() { return this->buffer; }
 
         private:
+            bool MoveCursor(int delta);
+
             std::string buffer;
+            int position;
             size_t bufferLength;
     };
 }

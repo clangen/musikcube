@@ -52,18 +52,33 @@ inline static void redrawContents(IWindow &window, const std::string& text) {
     window.Repaint();
 }
 
-inline static void removeUtf8Char(std::string& value) {
-    std::string::iterator it = value.end();
-    std::string::iterator start = value.begin();
-    if (it != start) {
-        utf8::prior(it, start);
-        value = std::string(value.begin(), it);
+inline static bool removeUtf8Char(std::string& value, size_t position) {
+    /* optimize the normal case, at the end... */
+    if (position >= value.size()) {
+        std::string::iterator it = value.end();
+        std::string::iterator start = value.begin();
+        if (it != start) {
+            utf8::prior(it, start);
+            value = std::string(value.begin(), it);
+            return true;
+        }
     }
+    else {
+        size_t offset = u8offset(value, position - 1);
+        if (offset >= 0) {
+            size_t end = u8offset(value, position);
+            value.erase(offset, end - offset);
+            return true;
+        }
+    }
+
+    return false;
 }
 
 TextInput::TextInput()
 : Window()
-, bufferLength(0) {
+, bufferLength(0)
+, position(0) {
 }
 
 TextInput::~TextInput() {
@@ -74,15 +89,25 @@ void TextInput::Show() {
     redrawContents(*this, buffer);
 }
 
+size_t TextInput::Length() {
+    return this->bufferLength;
+}
+
+size_t TextInput::Position() {
+    return this->position;
+}
+
 bool TextInput::Write(const std::string& key) {
     if (key == "M-^H" || key == "M-^?" || key == "M-bksp" || key == "M-KEY_BACKSPACE") {
-        this->buffer = "";
-        redrawContents(*this, "");
-        this->TextChanged(this, "");
+        this->SetText("");
     }
     else if (key == "^H" || key == "^?" || key == "KEY_BACKSPACE") { /* backspace */
-        removeUtf8Char(this->buffer);
-        this->TextChanged(this, this->buffer);
+        if (this->position > 0) {
+            if (removeUtf8Char(this->buffer, this->position)) {
+                this->position = std::max(0, this->position - 1);
+                this->TextChanged(this, this->buffer);
+            }
+        }
     }
     else if (key == "^M") { /* return */
         this->EnterPressed(this);
@@ -91,8 +116,9 @@ bool TextInput::Write(const std::string& key) {
         /* one character at a time. if it's more than one character, we're
         dealing with an escape sequence and should not print it. */
         if (u8len(key) == 1) {
-            this->buffer += key;
+            this->buffer.insert(u8offset(this->buffer, this->position), key);
             this->TextChanged(this, this->buffer);
+            ++this->position;
         }
         else {
             return false;
@@ -104,10 +130,53 @@ bool TextInput::Write(const std::string& key) {
     return true;
 }
 
+bool TextInput::KeyPress(const std::string& key) {
+    if (key == "KEY_LEFT") {
+        return this->MoveCursor(-1);
+    }
+    else if (key == "KEY_RIGHT") {
+        return this->MoveCursor(1);
+    }
+    else if (key == "KEY_HOME") {
+        this->position = 0;
+        redrawContents(*this, buffer);
+        return true;
+    }
+    else if (key == "KEY_END") {
+        this->position = this->bufferLength;
+        redrawContents(*this, buffer);
+        return true;
+    }
+    else if (key == "KEY_DC") {
+        if (this->bufferLength > this->position) {
+            removeUtf8Char(this->buffer, this->position + 1);
+            this->bufferLength = u8len(buffer);
+            redrawContents(*this, buffer);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool TextInput::MoveCursor(int delta) {
+    int actual = this->position + delta;
+    actual = std::max(0, std::min((int) this->bufferLength, actual));
+
+    if (this->position != actual) {
+        this->position = actual;
+        redrawContents(*this, buffer);
+        return true; /* moved */
+    }
+
+    return false; /* didn't move */
+}
+
 void TextInput::SetText(const std::string& value) {
     if (value != this->buffer) {
         this->buffer = value;
         this->bufferLength = u8len(buffer);
+        this->position = 0;
         this->TextChanged(this, this->buffer);
         redrawContents(*this, buffer);
     }
