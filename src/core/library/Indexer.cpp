@@ -51,6 +51,8 @@
 #include <boost/thread/xtime.hpp>
 #include <boost/bind.hpp>
 
+#define MULTI_THREADED_INDEXER 0
+
 static const std::string TAG = "Indexer";
 static const int MAX_THREADS = 10;
 
@@ -297,6 +299,7 @@ void Indexer::ReadMetadataFromFile(
     }
 }
 
+#if MULTI_THREADED_INDEXER
 static inline void joinAndNotify(
     std::vector<Thread>& threads,
     std::shared_ptr<musik::core::db::ScopedTransaction> transaction,
@@ -318,6 +321,7 @@ static inline void joinAndNotify(
         saved.store(0);
     }
 }
+#endif
 
 void Indexer::SyncDirectory(
     const std::string &syncRoot,
@@ -345,40 +349,60 @@ void Indexer::SyncDirectory(
         std::string pathIdStr = boost::lexical_cast<std::string>(pathId);
         std::vector<Thread> threads;
 
+#if MULTI_THREADED_INDEXER
         #define WAIT_FOR_ACTIVE() \
             joinAndNotify( \
                 threads, \
                 this->trackTransaction, \
                 this->TrackRefreshed, \
                 this->filesSaved);
+#endif
 
         for( ; file != end && !this->Exited() && !this->Restarted(); file++) {
+#if MULTI_THREADED_INDEXER
             /* we do things in batches of 5. wait for this batch to
             finish, then we'll spin up some more... */
             if (threads.size() >= this->maxReadThreads) {
                 WAIT_FOR_ACTIVE();
             }
-
+#endif
             if (is_directory(file->status())) {
                 /* recursion here */
                 musik::debug::info(TAG, "scanning " + file->path().string());
+#if MULTI_THREADED_INDEXER
                 WAIT_FOR_ACTIVE();
+#endif
                 this->SyncDirectory(syncRoot, file->path().string(), pathId);
             }
             else {
                 ++this->filesIndexed;
 
+#if MULTI_THREADED_INDEXER
                 threads.push_back(Thread(new boost::thread(
                     boost::bind(
                         &Indexer::ReadMetadataFromFile, 
                         this, 
                         file->path(), 
                         pathIdStr))));
+#else
+                this->ReadMetadataFromFile(file->path(), pathIdStr);
+
+                if (this->filesSaved.load() > 200) {
+                    if (this->trackTransaction) {
+                        this->trackTransaction->CommitAndRestart();
+                    }
+
+                    this->TrackRefreshed();
+                    this->filesSaved.store(0);
+                }
+#endif  
             }
         }
 
+#if MULTI_THREADED_INDEXER
         /* there may be a few left... */
         WAIT_FOR_ACTIVE();
+#endif
     }
     catch(...) {
     }
