@@ -7,9 +7,11 @@
 **/Makefile
 **/cmake_install.cmake
 .vs
+.vscode
 bin
 obj
 ipch
+build
 src/3rdparty/bin
 src/3rdparty/obj
 src/core/obj
