@@ -176,8 +176,10 @@ bool SearchLayout::KeyPress(const std::string& key) {
     }
 
     if (key == "KEY_DOWN") {
-        this->FocusNext();
-        return true;
+        if (this->GetFocus() == this->input) {
+            this->FocusNext();
+            return true;
+        }
     }
     else if (key == "KEY_UP") {
         if (IS_CATEGORY(this->GetFocus())) {
