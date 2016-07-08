@@ -93,10 +93,26 @@ struct WindowState {
     IKeyHandler* keyHandler;
 };
 
+static void checkDrawCursor(WindowState& current) {
+    if (current.input != NULL) {
+        curs_set(1);
+
+        if (current.focused) {
+            wtimeout(current.focused->GetContent(), IDLE_TIMEOUT_MS);
+        }
+    }
+    else {
+        curs_set(0);
+    }
+}
+
 static void updateFocusedWindow(WindowState& current, IWindowPtr window) {
-    current.focused = window;
-    current.input = dynamic_cast<IInput*>(window.get());
-    current.keyHandler = dynamic_cast<IKeyHandler*>(window.get());
+    if (current.focused != window) {
+        current.focused = window;
+        current.input = dynamic_cast<IInput*>(window.get());
+        current.keyHandler = dynamic_cast<IKeyHandler*>(window.get());
+        checkDrawCursor(current);
+    }
 }
 
 static void ensureFocusIsValid(WindowState& current) {
@@ -129,26 +145,12 @@ static void changeLayout(WindowState& current, ILayoutPtr newLayout) {
     }
 }
 
-static void checkDrawCursor(WindowState& current) {
-    if (current.input != NULL) {
-        curs_set(1);
-
-        if (current.focused) {
-            wtimeout(current.focused->GetContent(), IDLE_TIMEOUT_MS);
-        }
-    }
-    else {
-        curs_set(0);
-    }
-}
-
 static void focusNextInLayout(WindowState& current) {
     if (!current.layout) {
         return;
     }
 
     updateFocusedWindow(current, current.layout->FocusNext());
-    checkDrawCursor(current);
 }
 
 static void focusPrevInLayout(WindowState& current) {
@@ -157,7 +159,6 @@ static void focusPrevInLayout(WindowState& current) {
     }
 
     updateFocusedWindow(current, current.layout->FocusPrev());
-    checkDrawCursor(current);
 }
 
 static inline std::string readKeyPress(int64 ch) {
