@@ -83,25 +83,28 @@ void ListWindow::ScrollToBottom() {
 }
 
 void ListWindow::ScrollUp(int delta) {
-    ScrollPos spos = this->GetScrollPosition();
     IScrollAdapter& adapter = this->GetScrollAdapter();
 
-    size_t first = spos.firstVisibleEntryIndex;
-    size_t last = first + spos.visibleEntryCount;
-    int drawIndex = first;
+    if (adapter.GetEntryCount() > 0) {
+        ScrollPos spos = this->GetScrollPosition();
 
-    int minIndex = 0;
-    int newIndex = this->selectedIndex - delta;
-    newIndex = std::max(newIndex, minIndex);
+        size_t first = spos.firstVisibleEntryIndex;
+        size_t last = first + spos.visibleEntryCount;
+        int drawIndex = first;
 
-    if (newIndex < (int) first + 1) {
-        drawIndex = newIndex - 1;
+        int minIndex = 0;
+        int newIndex = this->selectedIndex - delta;
+        newIndex = std::max(newIndex, minIndex);
+
+        if (newIndex < (int)first + 1) {
+            drawIndex = newIndex - 1;
+        }
+
+        drawIndex = std::max(0, drawIndex);
+
+        this->SetSelectedIndex(newIndex);
+        this->ScrollTo(drawIndex);
     }
-
-    drawIndex = std::max(0, drawIndex);
-
-    this->SetSelectedIndex(newIndex);
-    this->ScrollTo(drawIndex);
 }
 
 void ListWindow::OnInvalidated() {
@@ -109,23 +112,26 @@ void ListWindow::OnInvalidated() {
 }
 
 void ListWindow::ScrollDown(int delta) {
-    ScrollPos spos = this->GetScrollPosition();
     IScrollAdapter& adapter = this->GetScrollAdapter();
 
-    size_t first = spos.firstVisibleEntryIndex;
-    size_t last = first + spos.visibleEntryCount;
-    size_t drawIndex = first;
+    if (adapter.GetEntryCount() > 0) {
+        ScrollPos spos = this->GetScrollPosition();
 
-    size_t maxIndex = adapter.GetEntryCount() - 1;
-    size_t newIndex = this->selectedIndex + delta;
-    newIndex = std::min(newIndex, maxIndex);
+        size_t first = spos.firstVisibleEntryIndex;
+        size_t last = first + spos.visibleEntryCount;
+        size_t drawIndex = first;
 
-    if (newIndex >= last - 1) {
-        drawIndex = drawIndex + delta;
+        size_t maxIndex = adapter.GetEntryCount() - 1;
+        size_t newIndex = this->selectedIndex + delta;
+        newIndex = std::min(newIndex, maxIndex);
+
+        if (newIndex >= last - 1) {
+            drawIndex = drawIndex + delta;
+        }
+
+        this->SetSelectedIndex(newIndex);
+        this->ScrollTo(drawIndex);
     }
-
-    this->SetSelectedIndex(newIndex);
-    this->ScrollTo(drawIndex);
 }
 
 void ListWindow::PageUp() {

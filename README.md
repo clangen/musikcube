@@ -1,6 +1,6 @@
 # musikcube
 
-a cross-platform audio engine written in C++.
+a cross-platform audio engine and metadata indexer written in C++.
 
 # musikbox
 

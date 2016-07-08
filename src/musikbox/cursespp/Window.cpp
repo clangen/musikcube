@@ -395,8 +395,6 @@ void Window::Hide() {
 }
 
 void Window::Destroy() {
-    this->Hide();
-
     if (this->frame) {
         del_panel(this->framePanel);
         delwin(this->frame);

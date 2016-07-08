@@ -46,6 +46,7 @@
 #include <boost/thread/thread.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/asio/io_service.hpp>
+#include <boost/interprocess/sync/interprocess_semaphore.hpp>
 
 #include <deque>
 #include <vector>
@@ -53,7 +54,7 @@
 
 #define INDEXER_PREFS_COMPONENT "indexer"
 #define INDEXER_PREFS_SYNC_ON_STARTUP "SyncOnStartup"
-#define INDEXER_PREFS_SYNC_TIMEOUT "SyncTimeout"
+#define INDEXER_PREFS_AUTO_SYNC_MILLIS "AutoSyncIntervalMillis"
 #define INDEXER_PREFS_REMOVE_MISSING_FILES "RemoveMissingFiles"
 #define INDEXER_PREFS_MAX_TAG_READ_THREADS "MaxTagReadThreads"
 
@@ -83,9 +84,10 @@ namespace musik { namespace core {
             void SyncOptimize();
             void RunAnalyzers();
 
-            void SynchronizeInternal();
+            void SynchronizeInternal(boost::asio::io_service* io);
 
             void SyncDirectory(
+                boost::asio::io_service* io,
                 const std::string& syncRoot,
                 const std::string& currentPath,
                 DBID pathId);
@@ -125,7 +127,7 @@ namespace musik { namespace core {
             DecoderList audioDecoders;
             std::shared_ptr<musik::core::Preferences> prefs;
             std::shared_ptr<musik::core::db::ScopedTransaction> trackTransaction;
-            size_t maxReadThreads;
+            boost::interprocess::interprocess_semaphore readSemaphore;
     };
 
     typedef std::shared_ptr<Indexer> IndexerPtr;
