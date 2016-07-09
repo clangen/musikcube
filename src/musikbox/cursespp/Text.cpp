@@ -35,6 +35,7 @@
 #include "stdafx.h"
 #include "Text.h"
 
+#include <unordered_map>
 #include <boost/lexical_cast.hpp>
 
 #define PAD(str, count) for (size_t i = 0; i < count; i++) { str += " "; }
@@ -100,6 +101,26 @@ namespace cursespp {
                 PAD(padded, rightPad);
                 return padded;
             }
+        }
+    }
+
+    namespace key {
+       static std::unordered_map<std::string, std::string> KEY_MAPPING = {
+            { "M-bquote",   "M-`" },
+            { "^@",         "M-`" },
+            { "M-comma",    "M-," },
+            { "M-stop",     "M-." },
+            { "^H",         "KEY_BACKSPACE" },
+            { "^?",         "KEY_BACKSPACE" },
+            { "M-^H",       "M-KEY_BACKSPACE" },
+            { "M-^?",       "M-KEY_BACKSPACE" },
+            { "M-bksp",     "M-KEY_BACKSPACE" },
+            { "^M",         "KEY_ENTER" }
+        };
+
+        std::string Normalize(const std::string& kn) {
+            auto it = KEY_MAPPING.find(kn);
+            return (it != KEY_MAPPING.end()) ? it->second : kn;
         }
     }
 }

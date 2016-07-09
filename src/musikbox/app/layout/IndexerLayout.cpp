@@ -230,7 +230,7 @@ void IndexerLayout::DrillIntoSelectedDirectory() {
 }
 
 bool IndexerLayout::KeyPress(const std::string& key) {
-    if (key == "^M") {
+    if (key == "KEY_ENTER") {
         if (this->GetFocus() == this->browseList) {
             this->DrillIntoSelectedDirectory();
             return true;
@@ -242,7 +242,7 @@ bool IndexerLayout::KeyPress(const std::string& key) {
             return true;
         }
     }
-    else if (key == "^H" || key == "^?" || key == "KEY_BACKSPACE") { /* backspace */
+    else if (key == "KEY_BACKSPACE") { /* backspace */
         if (this->GetFocus() == this->addedPathsList) {
             this->RemoveSelectedDirectory();
             return true;

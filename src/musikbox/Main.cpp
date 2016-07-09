@@ -181,22 +181,24 @@ static inline std::string readKeyPress(int64 ch) {
     /* multi-byte UTF8 character */
     else if (ch >= 194 && ch <= 223) {
         kn = "";
-        kn += (char)ch;
-        kn += (char)getch();
+        kn += (char) ch;
+        kn += (char) getch();
     }
     else if (ch >= 224 && ch <= 239) {
         kn = "";
-        kn += (char)ch;
-        kn += (char)getch();
-        kn += (char)getch();
+        kn += (char) ch;
+        kn += (char) getch();
+        kn += (char) getch();
     }
     else if (ch >= 240 && ch <= 244) {
         kn = "";
-        kn += (char)ch;
-        kn += (char)getch();
-        kn += (char)getch();
-        kn += (char)getch();
+        kn += (char) ch;
+        kn += (char) getch();
+        kn += (char) getch();
+        kn += (char) getch();
     }
+
+    kn = key::Normalize(kn);
 
     // std::cerr << "keyname: " << kn << std::endl;
     // std::cerr << "ch: " << ch << std::endl;
@@ -244,7 +246,6 @@ int main(int argc, char* argv[])
 
 #ifdef __PDCURSES__
     PDC_set_resize_limits(12, 60, 60, 250);
-    PDC_set_title("musikbox ♫");
     PDC_set_function_key(FUNCTION_KEY_SHUT_DOWN, 4);
 #endif
 
@@ -324,7 +325,7 @@ int main(int argc, char* argv[])
                 else if (kn == "KEY_RESIZE") {
                     resizeAt = now() + REDRAW_DEBOUNCE_MS;
                 }
-                else if (kn == "M-`" || kn == "M-~" || kn == "M-bquote" || kn == "^@") {
+                else if (kn == "M-`" || kn == "M-~") {
                     changeLayout(state, consoleLayout);
                 }
                 else if (kn == "M-a") {

@@ -82,11 +82,11 @@ bool GlobalHotkeys::Handle(const std::string& kn) {
         this->transport.SetPosition(time + 10.0f);
         return true;
     }
-    else if (kn == "M-," || kn == "M-comma") {
+    else if (kn == "M-,") {
         playback::ToggleRepeatMode(this->playback);
         return true;
     }
-    else if (kn == "M-." || kn == "M-stop") {
+    else if (kn == "M-.") {
         this->playback.ToggleShuffle();
         return true;
     }

@@ -126,7 +126,7 @@ void NowPlayingLayout::RequeryTrackList() {
 }
 
 bool NowPlayingLayout::KeyPress(const std::string& key) {
-    if (key == "^M") { /* enter. play the selection */
+    if (key == "KEY_ENTER") {
         this->playback.Play(this->trackList->GetSelectedIndex());
         return true;
     }

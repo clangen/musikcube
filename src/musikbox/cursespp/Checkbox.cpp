@@ -113,7 +113,7 @@ void Checkbox::Redraw() {
 }
 
 bool Checkbox::KeyPress(const std::string& key) {
-    if (key == " " || key == "^M") {
+    if (key == " " || key == "KEY_ENTER") {
         this->SetChecked(!this->checked);
         return true;
     }

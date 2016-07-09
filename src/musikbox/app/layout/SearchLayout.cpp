@@ -162,7 +162,7 @@ bool SearchLayout::KeyPress(const std::string& key) {
     CategoryListView* category = dynamic_cast<CategoryListView*>(focus.get());
 
     if (category) {
-        if (key == "^M") {
+        if (key == "KEY_ENTER") {
             int index = (int) category->GetSelectedIndex();
             if (index >= 0) {
                 this->SearchResultSelected(

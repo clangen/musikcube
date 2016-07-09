@@ -153,7 +153,7 @@ void BrowseLayout::OnCategoryViewInvalidated(
 }
 
 bool BrowseLayout::KeyPress(const std::string& key) {
-    if (key == "^M") { /* enter. play the selection */
+    if (key == "KEY_ENTER") {
         playback::Play(this->trackList, this->playback, this->GetFocus());
         return true;
     }

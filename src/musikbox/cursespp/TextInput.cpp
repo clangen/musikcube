@@ -100,33 +100,17 @@ size_t TextInput::Position() {
 }
 
 bool TextInput::Write(const std::string& key) {
-    if (key == "M-^H" || key == "M-^?" || key == "M-bksp" || key == "M-KEY_BACKSPACE") {
-        this->SetText("");
-    }
-    else if (key == "^H" || key == "^?" || key == "KEY_BACKSPACE") { /* backspace */
-        if (this->position > 0) {
-            if (removeUtf8Char(this->buffer, this->position)) {
-                this->position = std::max(0, this->position - 1);
-                this->TextChanged(this, this->buffer);
-            }
-        }
-    }
-    else if (key == "^M") { /* return */
-        this->EnterPressed(this);
+    /* one character at a time. if it's more than one character, we're
+    dealing with an escape sequence and should not print it. */
+    if (u8len(key) == 1) {
+        size_t offset = u8offset(this->buffer, this->position);
+        offset = (offset == std::string::npos) ? 0 : offset;
+        this->buffer.insert(offset, key);
+        this->TextChanged(this, this->buffer);
+        ++this->position;
     }
     else {
-        /* one character at a time. if it's more than one character, we're
-        dealing with an escape sequence and should not print it. */
-        if (u8len(key) == 1) {
-            size_t offset = u8offset(this->buffer, this->position);
-            offset = (offset == std::string::npos) ? 0 : offset;
-            this->buffer.insert(offset, key);
-            this->TextChanged(this, this->buffer);
-            ++this->position;
-        }
-        else {
-            return false;
-        }
+        return false;
     }
 
     this->bufferLength = u8len(buffer);
@@ -135,7 +119,25 @@ bool TextInput::Write(const std::string& key) {
 }
 
 bool TextInput::KeyPress(const std::string& key) {
-    if (key == "KEY_LEFT") {
+    if (key == "M-KEY_BACKSPACE") {
+        this->SetText("");
+        return true;
+    }
+    else if (key == "KEY_BACKSPACE") {
+        if (this->position > 0) {
+            if (removeUtf8Char(this->buffer, this->position)) {
+                redrawContents(*this, buffer);
+                this->position = std::max(0, this->position - 1);
+                this->TextChanged(this, this->buffer);
+            }
+        }
+        return true;
+    }
+    else if (key == "KEY_ENTER") {
+        this->EnterPressed(this);
+        return true;
+    }
+    else if (key == "KEY_LEFT") {
         return this->OffsetPosition(-1);
     }
     else if (key == "KEY_RIGHT") {
@@ -152,7 +154,7 @@ bool TextInput::KeyPress(const std::string& key) {
         return true;
     }
     else if (key == "KEY_DC") {
-        if (this->bufferLength > this->position) {
+        if ((int) this->bufferLength > this->position) {
             removeUtf8Char(this->buffer, this->position + 1);
             this->bufferLength = u8len(buffer);
             redrawContents(*this, buffer);

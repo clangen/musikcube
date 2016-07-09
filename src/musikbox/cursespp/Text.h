@@ -47,4 +47,8 @@ namespace cursespp {
         std::string Ellipsize(const std::string& str, size_t len);
         std::string Align(const std::string& str, TextAlign align, size_t len);
     }
+
+    namespace key {
+        std::string Normalize(const std::string& keyname);
+    }
 }
