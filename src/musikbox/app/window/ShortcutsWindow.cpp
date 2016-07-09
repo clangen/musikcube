@@ -38,6 +38,8 @@
 #include <cursespp/Colors.h>
 #include <cursespp/Text.h>
 
+#include <boost/algorithm/string.hpp>
+
 using namespace cursespp;
 using namespace musik::box;
 
@@ -58,6 +60,25 @@ void ShortcutsWindow::AddShortcut(
         std::shared_ptr<Entry>(new Entry(key, description)));
 
     this->Repaint();
+}
+
+/* fix up the shortcut to be OS-friendly. on Windows we'll display
+ALT+x and CTRL+x, on *NIX we'll use M-x and ^x". */
+static std::string normalizeKey(std::string kn) {
+#ifndef WIN32 
+    if (kn.find("ALT+") == 0) {
+        std::transform(kn.begin(), kn.end(), kn.begin(), tolower);
+        kn.replace(0, 4, "M-");
+        return kn;
+    }
+    else if (kn.find("CTRL+") == 0) {
+        std::transform(kn.begin(), kn.end(), kn.begin(), tolower);
+        kn.replace(0, 5, "^");
+        boost::to_upper(kn);
+        return kn;
+    }
+#endif
+    return kn;
 }
 
 void ShortcutsWindow::Repaint() {
@@ -82,7 +103,7 @@ void ShortcutsWindow::Repaint() {
             continue;
         }
 
-        std::string key = " " + e->key + " ";
+        std::string key = " " + normalizeKey(e->key) + " ";
         std::string value = " " + e->description + " ";
 
         size_t len = u8cols(key);
