@@ -70,16 +70,45 @@ void ShortcutsWindow::Repaint() {
 
     WINDOW* c = this->GetContent();
 
-    for (size_t i = 0; i < this->entries.size(); i++) {
+    size_t remaining = this->GetContentWidth();
+    for (size_t i = 0; i < this->entries.size() && remaining > 0; i++) {
         auto e = this->entries[i];
         int64 keyAttrs = (e->key == this->activeKey) ? activeAttrs : normalAttrs;
 
         wprintw(c, " ");
+        --remaining;
+
+        if (remaining == 0) {
+            continue;
+        }
+
+        std::string key = " " + e->key + " ";
+        std::string value = " " + e->description + " ";
+
+        size_t len = u8cols(key);
+        if (len > remaining) {
+            key = text::Ellipsize(key, remaining);
+            len = remaining;
+        }
 
         wattron(c, keyAttrs);
-        wprintw(c, " %s ", e->key.c_str());
+        wprintw(c, key.c_str());
         wattroff(c, keyAttrs);
 
-        wprintw(c, " %s ", e->description.c_str());
+        remaining -= len;
+
+        if (remaining == 0) {
+            continue;
+        }
+
+        len = u8cols(value);
+        if (len > remaining) {
+            value = text::Ellipsize(value, remaining);
+            len = remaining;
+        }
+
+        wprintw(c, value.c_str());
+
+        remaining -= len;
     }
 }
