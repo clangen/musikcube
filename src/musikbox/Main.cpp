@@ -203,16 +203,14 @@ int main(int argc, char* argv[])
     #else
         freopen("/dev/null", "w", stderr);
     #endif
+
+    std::signal(SIGWINCH, resizeHandler);
+    std::signal(SIGHUP, hangupHandler);
 #endif
 
 #ifdef __PDCURSES__
     PDC_set_resize_limits(12, 60, 60, 250);
     PDC_set_function_key(FUNCTION_KEY_SHUT_DOWN, 4);
-#endif
-
-#ifndef WIN32
-    std::signal(SIGWINCH, resizeHandler);
-    std::signal(SIGHUP, hangupHandler);
 #endif
 
     musik::debug::init();
