@@ -122,5 +122,50 @@ namespace cursespp {
             auto it = KEY_MAPPING.find(kn);
             return (it != KEY_MAPPING.end()) ? it->second : kn;
         }
+
+        std::string Read(int64 ch) {
+            std::string kn = keyname((int)ch);
+
+            /* convert +ESC to M- sequences */
+            if (kn == "^[") {
+                int64 next = getch();
+                if (next != -1) {
+                    kn = std::string("M-") + std::string(keyname((int)next));
+                }
+            }
+        #ifdef WIN32
+            /* transform alt->meta for uniform handling */
+            else if (kn.find("ALT_") == 0) {
+                std::transform(kn.begin(), kn.end(), kn.begin(), tolower);
+                kn.replace(0, 4, "M-");
+            }
+        #endif
+            /* multi-byte UTF8 character */
+            else if (ch >= 194 && ch <= 223) {
+                kn = "";
+                kn += (char) ch;
+                kn += (char) getch();
+            }
+            else if (ch >= 224 && ch <= 239) {
+                kn = "";
+                kn += (char) ch;
+                kn += (char) getch();
+                kn += (char) getch();
+            }
+            else if (ch >= 240 && ch <= 244) {
+                kn = "";
+                kn += (char) ch;
+                kn += (char) getch();
+                kn += (char) getch();
+                kn += (char) getch();
+            }
+
+            kn = Normalize(kn);
+
+            // std::cerr << "keyname: " << kn << std::endl;
+            // std::cerr << "ch: " << ch << std::endl;
+
+            return kn;
+        }
     }
 }

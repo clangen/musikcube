@@ -85,6 +85,7 @@ using namespace cursespp;
 using namespace boost::chrono;
 
 static bool disconnected = false;
+static int64 resizeAt = 0;
 
 struct WindowState {
     ILayoutPtr layout;
@@ -161,51 +162,6 @@ static void focusPrevInLayout(WindowState& current) {
     updateFocusedWindow(current, current.layout->FocusPrev());
 }
 
-static inline std::string readKeyPress(int64 ch) {
-    std::string kn = keyname((int)ch);
-
-    /* convert +ESC to M- sequences */
-    if (kn == "^[") {
-        int64 next = getch();
-        if (next != -1) {
-            kn = std::string("M-") + std::string(keyname((int)next));
-        }
-    }
-#ifdef WIN32
-    /* transform alt->meta for uniform handling */
-    else if (kn.find("ALT_") == 0) {
-        std::transform(kn.begin(), kn.end(), kn.begin(), tolower);
-        kn.replace(0, 4, "M-");
-    }
-#endif
-    /* multi-byte UTF8 character */
-    else if (ch >= 194 && ch <= 223) {
-        kn = "";
-        kn += (char) ch;
-        kn += (char) getch();
-    }
-    else if (ch >= 224 && ch <= 239) {
-        kn = "";
-        kn += (char) ch;
-        kn += (char) getch();
-        kn += (char) getch();
-    }
-    else if (ch >= 240 && ch <= 244) {
-        kn = "";
-        kn += (char) ch;
-        kn += (char) getch();
-        kn += (char) getch();
-        kn += (char) getch();
-    }
-
-    kn = key::Normalize(kn);
-
-    // std::cerr << "keyname: " << kn << std::endl;
-    // std::cerr << "ch: " << ch << std::endl;
-
-    return kn;
-}
-
 static inline int64 now() {
     return duration_cast<milliseconds>(
         system_clock::now().time_since_epoch()).count();
@@ -214,6 +170,11 @@ static inline int64 now() {
 #ifndef WIN32
 static void hangupHandler(int signal) {
     disconnected = true;
+}
+
+static void resizeHandler(int signal) {
+    endwin(); /* required in *nix because? */
+    resizeAt = now() + REDRAW_DEBOUNCE_MS;
 }
 #endif
 
@@ -249,6 +210,11 @@ int main(int argc, char* argv[])
     PDC_set_function_key(FUNCTION_KEY_SHUT_DOWN, 4);
 #endif
 
+#ifndef WIN32
+    std::signal(SIGWINCH, resizeHandler);
+    std::signal(SIGHUP, hangupHandler);
+#endif
+
     musik::debug::init();
     PluginFactory::Instance(); /* initialize */
 
@@ -259,10 +225,6 @@ int main(int argc, char* argv[])
     keypad(stdscr, TRUE);
     refresh();
     curs_set(0);
-
-#ifndef WIN32
-    std::signal(SIGHUP, hangupHandler);
-#endif
 
     {
         Colors::Init();
@@ -281,7 +243,6 @@ int main(int argc, char* argv[])
         int64 ch;
         timeout(IDLE_TIMEOUT_MS);
         bool quit = false;
-        int64 resizeAt = 0;
 
         WindowState state;
         state.input = NULL;
@@ -308,7 +269,7 @@ int main(int argc, char* argv[])
                 std::this_thread::yield();
             }
             else { /* -1 = idle timeout */
-                std::string kn = readKeyPress((int) ch);
+                std::string kn = key::Read((int) ch);
 
                 if (ch == '\t') { /* tab */
                     focusNextInLayout(state);
@@ -351,9 +312,8 @@ int main(int argc, char* argv[])
                 }
             }
 
-            /* this is a bit of a hack, and if we have any more of these we
-            need to generalize. but KEY_RESIZE often gets called dozens of
-            times, so we debounce the actual resize until its settled. */
+            /* KEY_RESIZE often gets called dozens of times, so we debounce the
+            actual resize until its settled. */
             if (resizeAt && now() > resizeAt) {
                 resize_term(0, 0);
                 Window::Invalidate();
