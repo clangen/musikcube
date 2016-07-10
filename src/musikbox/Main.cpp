@@ -356,6 +356,7 @@ int main(int argc, char* argv[])
             times, so we debounce the actual resize until its settled. */
             if (resizeAt && now() > resizeAt) {
                 resize_term(0, 0);
+                Window::Invalidate();
                 libraryLayout->Layout();
                 consoleLayout->Layout();
                 indexerLayout->Layout();
