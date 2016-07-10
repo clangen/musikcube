@@ -126,16 +126,16 @@ void LibraryLayout::OnLayoutChanged() {
 
 void LibraryLayout::UpdateShortcutsWindow() {
     if (this->visibleLayout == this->browseLayout) {
-        this->shortcuts->SetActive("ALT+b");
+        this->shortcuts->SetActive("M-b");
     }
     else if (this->visibleLayout == nowPlayingLayout) {
-        this->shortcuts->SetActive("ALT+p");
+        this->shortcuts->SetActive("M-p");
     }
     else if (this->visibleLayout == searchLayout) {
-        this->shortcuts->SetActive("ALT+f");
+        this->shortcuts->SetActive("M-f");
     }
     else if (this->visibleLayout == trackSearch) {
-        this->shortcuts->SetActive("ALT+t");
+        this->shortcuts->SetActive("M-t");
     }
 }
 
@@ -171,12 +171,12 @@ void LibraryLayout::InitializeWindows() {
     this->transportView.reset(new TransportWindow(this->playback));
 
     this->shortcuts.reset(new ShortcutsWindow());
-    this->shortcuts->AddShortcut("ALT+b", "browse");
-    this->shortcuts->AddShortcut("ALT+f", "filter");
-    this->shortcuts->AddShortcut("ALT+t", "tracks");
-    this->shortcuts->AddShortcut("ALT+p", "play queue");
-    this->shortcuts->AddShortcut("ALT+s", "settings");
-    this->shortcuts->AddShortcut("CTRL+d", "quit");
+    this->shortcuts->AddShortcut("M-b", "browse");
+    this->shortcuts->AddShortcut("M-f", "filter");
+    this->shortcuts->AddShortcut("M-t", "tracks");
+    this->shortcuts->AddShortcut("M-p", "play queue");
+    this->shortcuts->AddShortcut("M-s", "settings");
+    this->shortcuts->AddShortcut("^D", "quit");
     this->UpdateShortcutsWindow();
 
     this->AddWindow(this->transportView);

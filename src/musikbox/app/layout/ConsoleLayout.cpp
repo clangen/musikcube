@@ -68,9 +68,9 @@ ConsoleLayout::ConsoleLayout(ITransport& transport, LibraryPtr library)
     this->commands.reset(new cursespp::TextInput());
 
     this->shortcuts.reset(new ShortcutsWindow());
-    this->shortcuts->AddShortcut("ALT+a", "library");
-    this->shortcuts->AddShortcut("ALT+s", "settings");
-    this->shortcuts->AddShortcut("CTRL+d", "quit");
+    this->shortcuts->AddShortcut("M-a", "library");
+    this->shortcuts->AddShortcut("M-s", "settings");
+    this->shortcuts->AddShortcut("^D", "quit");
 
     this->AddWindow(this->commands);
     this->AddWindow(this->logs);

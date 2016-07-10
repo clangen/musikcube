@@ -179,9 +179,9 @@ void IndexerLayout::InitializeWindows() {
     this->removeCheckbox->SetFocusOrder(3);
 
     this->shortcuts.reset(new ShortcutsWindow());
-    this->shortcuts->AddShortcut("ALT+a", "library");
-    this->shortcuts->AddShortcut("ALT+`", "console");
-    this->shortcuts->AddShortcut("CTRL+d", "quit");
+    this->shortcuts->AddShortcut("M-a", "library");
+    this->shortcuts->AddShortcut("M-`", "console");
+    this->shortcuts->AddShortcut("^D", "quit");
 
     this->AddWindow(this->browseLabel);
     this->AddWindow(this->addedPathsLabel);
