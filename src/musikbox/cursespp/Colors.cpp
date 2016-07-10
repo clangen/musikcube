@@ -93,10 +93,12 @@ void Colors::Init() {
     start_color();
     use_default_colors();
 
+    bool hasCustomColors = customColorsSupported();
+
     /* the default colors are a bit harsh for my taste, so
     let's use custom colors if the terminal supports it. in
     the future we'll allow users to configure this via setting */
-    if (customColorsSupported()) {
+    if (hasCustomColors) {
         red = initColor(COLOR_CUSTOM_RED, 220, 82, 86);
         green = initColor(COLOR_CUSTOM_GREEN, 166, 226, 46);
         yellow = initColor(COLOR_CUSTOM_YELLOW, 230, 220, 116);
@@ -122,4 +124,8 @@ void Colors::Init() {
     init_pair(CURSESPP_TEXT_ERROR, red, background);
     init_pair(CURSESPP_TEXT_HIDDEN, black, background);
     init_pair(CURSESPP_TEXT_SEPARATOR, orange, background);
+
+    init_pair(CURSESPP_BUTTON_NORMAL, black, yellow);
+    init_pair(CURSESPP_BUTTON_NEGATIVE, yellow, red);
+    init_pair(CURSESPP_BUTTON_HIGHLIGHTED, black, green);
 }

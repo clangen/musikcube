@@ -54,6 +54,10 @@
 #define CURSESPP_TEXT_HIDDEN 14
 #define CURSESPP_TEXT_SEPARATOR 15
 
+#define CURSESPP_BUTTON_NORMAL 16
+#define CURSESPP_BUTTON_NEGATIVE 17
+#define CURSESPP_BUTTON_HIGHLIGHTED 18
+
 namespace cursespp {
     class Colors {
         private:

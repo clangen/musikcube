@@ -54,10 +54,11 @@ ShortcutsWindow::~ShortcutsWindow() {
 
 void ShortcutsWindow::AddShortcut(
     const std::string& key,
-    const std::string& description)
+    const std::string& description,
+    int64 attrs)
 {
     this->entries.push_back(
-        std::shared_ptr<Entry>(new Entry(key, description)));
+        std::shared_ptr<Entry>(new Entry(key, description, attrs)));
 
     this->Repaint();
 }
@@ -86,15 +87,17 @@ void ShortcutsWindow::Repaint() {
 
     this->Clear();
 
-    int64 normalAttrs = COLOR_PAIR(CURSESPP_HIGHLIGHTED_SELECTED_LIST_ITEM);
-    int64 activeAttrs = COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM);
+    int64 normalAttrs = COLOR_PAIR(CURSESPP_BUTTON_NORMAL);
+    int64 activeAttrs = COLOR_PAIR(CURSESPP_BUTTON_HIGHLIGHTED);
 
     WINDOW* c = this->GetContent();
 
     size_t remaining = this->GetContentWidth();
     for (size_t i = 0; i < this->entries.size() && remaining > 0; i++) {
         auto e = this->entries[i];
-        int64 keyAttrs = (e->key == this->activeKey) ? activeAttrs : normalAttrs;
+
+        int64 keyAttrs = (e->attrs == -1) ? normalAttrs : COLOR_PAIR(e->attrs);
+        keyAttrs = (e->key == this->activeKey) ? activeAttrs : keyAttrs;
 
         wprintw(c, " ");
         --remaining;

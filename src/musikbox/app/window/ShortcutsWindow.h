@@ -50,7 +50,8 @@ namespace musik {
 
                 void AddShortcut(
                     const std::string& key,
-                    const std::string& description);
+                    const std::string& description,
+                    int64 attrs = -1);
 
                 void SetActive(const std::string& key) {
                     this->activeKey = key;
@@ -62,13 +63,15 @@ namespace musik {
             private:
 
                 struct Entry {
-                    Entry(const std::string& key, const std::string& desc) {
+                    Entry(const std::string& key, const std::string& desc, int64 attrs = -1) {
                         this->key = key;
                         this->description = desc;
+                        this->attrs = attrs;
                     }
 
                     std::string key;
                     std::string description;
+                    int64 attrs;
                 };
 
                 typedef std::vector<std::shared_ptr<Entry> > EntryList;

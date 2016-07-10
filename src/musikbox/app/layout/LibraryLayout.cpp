@@ -176,6 +176,7 @@ void LibraryLayout::InitializeWindows() {
     this->shortcuts->AddShortcut("ALT+t", "tracks");
     this->shortcuts->AddShortcut("ALT+p", "play queue");
     this->shortcuts->AddShortcut("ALT+s", "settings");
+    this->shortcuts->AddShortcut("CTRL+d", "quit");
     this->UpdateShortcutsWindow();
 
     this->AddWindow(this->transportView);
