@@ -64,6 +64,8 @@ namespace musik {
                     musik::core::LibraryPtr library,
                     musik::core::audio::ITransport& transport);
 
+                ~PlaybackService();
+
                 virtual void ProcessMessage(cursespp::IMessage &message);
 
                 musik::core::audio::ITransport& GetTransport() { return this->transport; }

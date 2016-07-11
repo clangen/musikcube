@@ -141,6 +141,7 @@
     <ClCompile Include="app\window\ShortcutsWindow.cpp" />
     <ClCompile Include="app\window\TrackListView.cpp" />
     <ClCompile Include="app\window\TransportWindow.cpp" />
+    <ClCompile Include="cursespp\App.cpp" />
     <ClCompile Include="cursespp\Checkbox.cpp" />
     <ClCompile Include="cursespp\Colors.cpp" />
     <ClCompile Include="cursespp\LayoutBase.cpp" />
@@ -193,6 +194,7 @@
     <ClInclude Include="app\window\ShortcutsWindow.h" />
     <ClInclude Include="app\window\TrackListView.h" />
     <ClInclude Include="app\window\TransportWindow.h" />
+    <ClInclude Include="cursespp\App.h" />
     <ClInclude Include="cursespp\Checkbox.h" />
     <ClInclude Include="cursespp\Colors.h" />
     <ClInclude Include="cursespp\curses_config.h" />

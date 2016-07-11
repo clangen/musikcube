@@ -95,6 +95,10 @@ PlaybackService::PlaybackService(LibraryPtr library, ITransport& transport)
     this->nextIndex = NO_POSITION;
 }
 
+PlaybackService::~PlaybackService() {
+    this->Stop();
+}
+
 void PlaybackService::PrepareNextTrack() {
     boost::recursive_mutex::scoped_lock lock(this->playlistMutex);
 

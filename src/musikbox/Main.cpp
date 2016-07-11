@@ -34,12 +34,7 @@
 
 #include "stdafx.h"
 
-#include <cursespp/Colors.h>
-#include <cursespp/IInput.h>
-#include <cursespp/IKeyHandler.h>
-#include <cursespp/MessageQueue.h>
-#include <cursespp/LayoutStack.h>
-#include <cursespp/WindowLayout.h>
+#include <cursespp/App.h>
 
 #include <app/layout/ConsoleLayout.h>
 #include <app/layout/LibraryLayout.h>
@@ -47,136 +42,19 @@
 #include <app/util/GlobalHotkeys.h>
 #include <app/service/PlaybackService.h>
 
-#include <boost/locale.hpp>
-#include <boost/thread.hpp>
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem/fstream.hpp>
-#include <boost/filesystem/detail/utf8_codecvt_facet.hpp>
-
-#include <thread>
-
-#include <core/plugin/PluginFactory.h>
 #include <core/library/LibraryFactory.h>
 #include <core/audio/GaplessTransport.h>
 
-#include <boost/chrono.hpp>
 #include <cstdio>
-
-#ifndef WIN32
-#include <csignal>
-#endif
 
 #ifdef WIN32
 #undef MOUSE_MOVED
-#endif
-
-#ifdef WIN32
-    #define IDLE_TIMEOUT_MS 0
-    #define REDRAW_DEBOUNCE_MS 100
-#else
-    #define IDLE_TIMEOUT_MS 75
-    #define REDRAW_DEBOUNCE_MS 100
 #endif
 
 using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::box;
 using namespace cursespp;
-using namespace boost::chrono;
-
-static bool disconnected = false;
-static int64 resizeAt = 0;
-
-struct WindowState {
-    ILayoutPtr layout;
-    IWindowPtr focused;
-    IInput* input;
-    IKeyHandler* keyHandler;
-};
-
-static void checkDrawCursor(WindowState& current) {
-    if (current.input != NULL) {
-        curs_set(1);
-
-        if (current.focused) {
-            wtimeout(current.focused->GetContent(), IDLE_TIMEOUT_MS);
-        }
-    }
-    else {
-        curs_set(0);
-    }
-}
-
-static void updateFocusedWindow(WindowState& current, IWindowPtr window) {
-    if (current.focused != window) {
-        current.focused = window;
-        current.input = dynamic_cast<IInput*>(window.get());
-        current.keyHandler = dynamic_cast<IKeyHandler*>(window.get());
-        checkDrawCursor(current);
-    }
-}
-
-static void ensureFocusIsValid(WindowState& current) {
-    if (current.layout && current.layout->GetFocus() != current.focused) {
-        updateFocusedWindow(current, current.layout->GetFocus());
-    }
-}
-
-static void changeLayout(WindowState& current, ILayoutPtr newLayout) {
-    if (current.layout == newLayout) {
-        return;
-    }
-
-    if (current.input && current.focused) {
-        /* the current input is about to lose focus. reset the timeout */
-        wtimeout(current.focused->GetContent(), 0);
-    }
-
-    if (current.layout) {
-        current.layout->Hide();
-        current.layout.reset();
-    }
-
-    if (newLayout) {
-        current.layout = newLayout;
-        current.layout->Layout();
-        current.layout->Show();
-        current.layout->BringToTop();
-        updateFocusedWindow(current, current.layout->GetFocus());
-    }
-}
-
-static void focusNextInLayout(WindowState& current) {
-    if (!current.layout) {
-        return;
-    }
-
-    updateFocusedWindow(current, current.layout->FocusNext());
-}
-
-static void focusPrevInLayout(WindowState& current) {
-    if (!current.layout) {
-        return;
-    }
-
-    updateFocusedWindow(current, current.layout->FocusPrev());
-}
-
-static inline int64 now() {
-    return duration_cast<milliseconds>(
-        system_clock::now().time_since_epoch()).count();
-}
-
-#ifndef WIN32
-static void hangupHandler(int signal) {
-    disconnected = true;
-}
-
-static void resizeHandler(int signal) {
-    endwin(); /* required in *nix because? */
-    resizeAt = now() + REDRAW_DEBOUNCE_MS;
-}
-#endif
 
 #ifdef WIN32
 int _main(int argc, _TCHAR* argv[]);
@@ -190,145 +68,54 @@ int _main(int argc, _TCHAR* argv[])
 int main(int argc, char* argv[])
 #endif
 {
-    /* the following allows boost::filesystem to use utf8 on Windows */
-    std::locale locale = std::locale();
-    std::locale utf8Locale(locale, new boost::filesystem::detail::utf8_codecvt_facet);
-    boost::filesystem::path::imbue(utf8Locale);
-
 #ifndef WIN32
-    setlocale(LC_ALL, "");
-
     #if 1 /*DEBUG*/
         freopen("/tmp/musikbox.log", "w", stderr);
     #else
         freopen("/dev/null", "w", stderr);
     #endif
-
-    std::signal(SIGWINCH, resizeHandler);
-    std::signal(SIGHUP, hangupHandler);
-#endif
-
-#ifdef __PDCURSES__
-    PDC_set_resize_limits(12, 60, 60, 250);
-    PDC_set_default_size(26, 100);
-    PDC_set_function_key(FUNCTION_KEY_SHUT_DOWN, 4);
 #endif
 
     musik::debug::init();
-    PluginFactory::Instance(); /* initialize */
 
-    initscr();
-    nonl();
-    cbreak();
-    noecho();
-    keypad(stdscr, TRUE);
-    refresh();
-    curs_set(0);
+    LibraryPtr library = LibraryFactory::Libraries().at(0);
+
+    GaplessTransport transport;
+    PlaybackService playback(library, transport);
+
+    GlobalHotkeys globalHotkeys(playback, library);
 
     {
-        Colors::Init();
+        App app("musikbox"); /* inits curses; needs to happen before layout creation */
 
-        LibraryPtr library = LibraryFactory::Libraries().at(0);
-        GaplessTransport transport;
-        transport.SetVolume(0.75);
-        PlaybackService playback(library, transport);
+        ILayoutPtr libraryLayout(new LibraryLayout(playback, library));
+        ILayoutPtr consoleLayout(new ConsoleLayout(transport, library));
+        ILayoutPtr indexerLayout(new IndexerLayout(library));
 
-        GlobalHotkeys globalHotkeys(playback, library);
-
-        ILayoutPtr libraryLayout((ILayout *) new LibraryLayout(playback, library));
-        ILayoutPtr consoleLayout((ILayout *) new ConsoleLayout(transport, library));
-        ILayoutPtr indexerLayout((ILayout *) new IndexerLayout(library));
-
-        int64 ch;
-        timeout(IDLE_TIMEOUT_MS);
-        bool quit = false;
-
-        WindowState state;
-        state.input = NULL;
-        state.keyHandler = NULL;
-
-        changeLayout(state, libraryLayout);
-
-        while (!quit && !disconnected) {
-            /* if the focused item is an IInput, then get characters from it,
-            so it can draw a pretty cursor if it wants */
-            if (state.input) {
-                WINDOW *c = state.focused->GetContent();
-                wtimeout(state.focused->GetContent(), IDLE_TIMEOUT_MS);
-                curs_set(1);
-                keypad(c, TRUE);
-                ch = wgetch(c);
+        app.SetKeyHandler([&](const std::string& kn) {
+            if (kn == "M-`" || kn == "M-~") {
+                app.ChangeLayout(consoleLayout);
+                return true;
             }
-            else {
-                ch = wgetch(stdscr);
-                curs_set(0);
+            else if (kn == "M-a") {
+                app.ChangeLayout(libraryLayout);
+                return true;
+            }
+            else if (kn == "M-s") {
+                app.ChangeLayout(indexerLayout);
+                return true;
             }
 
-            if (ch == ERR) {
-                std::this_thread::yield();
-            }
-            else { /* -1 = idle timeout */
-                std::string kn = key::Read((int) ch);
+            return globalHotkeys.Handle(kn);
+        });
 
-                if (ch == '\t') { /* tab */
-                    focusNextInLayout(state);
-                }
-                else if (kn == "KEY_BTAB") { /* shift-tab */
-                    focusPrevInLayout(state);
-                }
-                else if (kn == "^D") { /* ctrl+d quits */
-                    quit = true;
-                }
-                else if (kn == "M-r") {
-                    Window::Invalidate();
-                }
-                else if (kn == "KEY_RESIZE") {
-                    resizeAt = now() + REDRAW_DEBOUNCE_MS;
-                }
-                else if (kn == "M-`" || kn == "M-~") {
-                    changeLayout(state, consoleLayout);
-                }
-                else if (kn == "M-a") {
-                    changeLayout(state, libraryLayout);
-                }
-                else if (kn == "M-s") {
-                    changeLayout(state, indexerLayout);
-                }
-                else if (!globalHotkeys.Handle(kn)) {
-                    bool processed = false;
-                    if (state.input) {
-                        processed = state.input->Write(kn);
-                    }
+        app.SetResizedHandler([&]() {
+            libraryLayout->Layout();
+            consoleLayout->Layout();
+            indexerLayout->Layout();
+        });
 
-                    /* otherwise, send the unhandled keypress directly to the
-                    focused window. if it can't do anything with it, send it to
-                    the layout for special processing, if necessary */
-                    if (!processed) {
-                        if (!state.keyHandler || !state.keyHandler->KeyPress(kn)) {
-                            state.layout->KeyPress(kn);
-                        }
-                    }
-                }
-            }
-
-            /* KEY_RESIZE often gets called dozens of times, so we debounce the
-            actual resize until its settled. */
-            if (resizeAt && now() > resizeAt) {
-                resize_term(0, 0);
-                Window::Invalidate();
-                libraryLayout->Layout();
-                consoleLayout->Layout();
-                indexerLayout->Layout();
-                state.layout->BringToTop();
-                resizeAt = 0;
-            }
-
-            ensureFocusIsValid(state);
-            Window::WriteToScreen(state.input);
-            MessageQueue::Instance().Dispatch();
-        }
-
-        playback.Stop();
+        app.Run(libraryLayout);
     }
 
     endwin();

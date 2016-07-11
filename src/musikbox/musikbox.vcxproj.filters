@@ -135,6 +135,9 @@
     <ClCompile Include="app\window\ShortcutsWindow.cpp">
       <Filter>app\window</Filter>
     </ClCompile>
+    <ClCompile Include="cursespp\App.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -311,6 +314,9 @@
     </ClInclude>
     <ClInclude Include="app\window\ShortcutsWindow.h">
       <Filter>app\window</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\App.h">
+      <Filter>cursespp</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
