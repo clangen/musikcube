@@ -210,6 +210,7 @@ int main(int argc, char* argv[])
 
 #ifdef __PDCURSES__
     PDC_set_resize_limits(12, 60, 60, 250);
+    PDC_set_default_size(26, 100);
     PDC_set_function_key(FUNCTION_KEY_SHUT_DOWN, 4);
 #endif
 
