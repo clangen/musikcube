@@ -77,7 +77,7 @@ static void hangupHandler(int signal) {
 
 static void resizeHandler(int signal) {
     endwin(); /* required in *nix because? */
-    resizeAt = now() + REDRAW_DEBOUNCE_MS;
+    resizeAt = App::Now() + REDRAW_DEBOUNCE_MS;
 }
 #endif
 

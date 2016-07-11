@@ -88,9 +88,9 @@ int main(int argc, char* argv[])
     {
         App app("musikbox"); /* inits curses; needs to happen before layout creation */
 
-        ILayoutPtr libraryLayout(new LibraryLayout(playback, library));
-        ILayoutPtr consoleLayout(new ConsoleLayout(transport, library));
-        ILayoutPtr indexerLayout(new IndexerLayout(library));
+        ILayoutPtr libraryLayout((ILayout *) new LibraryLayout(playback, library));
+        ILayoutPtr consoleLayout((ILayout *) new ConsoleLayout(transport, library));
+        ILayoutPtr indexerLayout((ILayout *) new IndexerLayout(library));
 
         app.SetKeyHandler([&](const std::string& kn) {
             if (kn == "M-`" || kn == "M-~") {
