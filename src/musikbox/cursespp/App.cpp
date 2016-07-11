@@ -198,7 +198,6 @@ void App::Run(ILayoutPtr layout) {
     timeout(IDLE_TIMEOUT_MS);
     bool quit = false;
 
-    WindowState state;
     state.input = NULL;
     state.keyHandler = NULL;
 
