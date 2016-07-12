@@ -114,7 +114,7 @@ int main(int argc, char* argv[])
             return globalHotkeys.Handle(kn);
         });
 
-        app.SetResizedHandler([&]() {
+        app.SetResizeHandler([&]() {
             libraryLayout->Layout();
             consoleLayout->Layout();
             indexerLayout->Layout();

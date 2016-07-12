@@ -65,8 +65,6 @@
 using namespace cursespp;
 using namespace boost::chrono;
 
-using WindowState = App::WindowState;
-
 static bool disconnected = false;
 static int64 resizeAt = 0;
 
@@ -75,79 +73,11 @@ static void hangupHandler(int signal) {
     disconnected = true;
 }
 
-static void resizeHandler(int signal) {
+static void resizedHandler(int signal) {
     endwin(); /* required in *nix because? */
     resizeAt = App::Now() + REDRAW_DEBOUNCE_MS;
 }
 #endif
-
-static void checkDrawCursor(WindowState& current) {
-    if (current.input != NULL) {
-        curs_set(1);
-
-        if (current.focused) {
-            wtimeout(current.focused->GetContent(), IDLE_TIMEOUT_MS);
-        }
-    }
-    else {
-        curs_set(0);
-    }
-}
-
-static void updateFocusedWindow(WindowState& current, IWindowPtr window) {
-    if (current.focused != window) {
-        current.focused = window;
-        current.input = dynamic_cast<IInput*>(window.get());
-        current.keyHandler = dynamic_cast<IKeyHandler*>(window.get());
-        checkDrawCursor(current);
-    }
-}
-
-static void ensureFocusIsValid(WindowState& current) {
-    if (current.layout && current.layout->GetFocus() != current.focused) {
-        updateFocusedWindow(current, current.layout->GetFocus());
-    }
-}
-
-static void changeLayout(WindowState& current, ILayoutPtr newLayout) {
-    if (current.layout == newLayout) {
-        return;
-    }
-
-    if (current.input && current.focused) {
-        /* the current input is about to lose focus. reset the timeout */
-        wtimeout(current.focused->GetContent(), 0);
-    }
-
-    if (current.layout) {
-        current.layout->Hide();
-        current.layout.reset();
-    }
-
-    if (newLayout) {
-        current.layout = newLayout;
-        current.layout->Layout();
-        current.layout->Show();
-        current.layout->BringToTop();
-        updateFocusedWindow(current, current.layout->GetFocus());
-    }
-}
-
-static void focusNextInLayout(WindowState& current) {
-    if (!current.layout) {
-        return;
-    }
-
-    updateFocusedWindow(current, current.layout->FocusNext());
-}
-
-static void focusPrevInLayout(WindowState& current) {
-    if (!current.layout) {
-        return;
-    }
-
-    updateFocusedWindow(current, current.layout->FocusPrev());
-}
 
 App::App(const std::string& title) {
     /* the following allows boost::filesystem to use utf8 on Windows */
@@ -157,7 +87,7 @@ App::App(const std::string& title) {
 
 #ifndef WIN32
     setlocale(LC_ALL, "");
-    std::signal(SIGWINCH, resizeHandler);
+    std::signal(SIGWINCH, resizedHandler);
     std::signal(SIGHUP, hangupHandler);
 #endif
 
@@ -187,8 +117,8 @@ void App::SetKeyHandler(MainKeyHandler handler) {
     this->keyHandler = handler;
 }
 
-void App::SetResizedHandler(ResizedHandler handler) {
-    this->resizedHandler = handler;
+void App::SetResizeHandler(ResizeHandler handler) {
+    this->resizeHandler = handler;
 }
 
 void App::Run(ILayoutPtr layout) {
@@ -196,17 +126,17 @@ void App::Run(ILayoutPtr layout) {
     timeout(IDLE_TIMEOUT_MS);
     bool quit = false;
 
-    state.input = NULL;
-    state.keyHandler = NULL;
+    this->state.input = nullptr;
+    this->state.keyHandler = nullptr;
 
-    changeLayout(state, layout);
+    this->ChangeLayout(layout);
 
     while (!quit && !disconnected) {
         /* if the focused item is an IInput, then get characters from it,
         so it can draw a pretty cursor if it wants */
-        if (state.input) {
-            WINDOW *c = state.focused->GetContent();
-            wtimeout(state.focused->GetContent(), IDLE_TIMEOUT_MS);
+        if (this->state.input) {
+            WINDOW *c = this->state.focused->GetContent();
+            wtimeout(this->state.focused->GetContent(), IDLE_TIMEOUT_MS);
             curs_set(1);
             keypad(c, TRUE);
             ch = wgetch(c);
@@ -220,13 +150,13 @@ void App::Run(ILayoutPtr layout) {
             std::this_thread::yield();
         }
         else {
-            std::string kn = key::Read((int)ch);
+            std::string kn = key::Read((int) ch);
 
             if (ch == '\t') { /* tab */
-                focusNextInLayout(state);
+                this->FocusNextInLayout();
             }
             else if (kn == "KEY_BTAB") { /* shift-tab */
-                focusPrevInLayout(state);
+                this->FocusPrevInLayout();
             }
             else if (kn == "^D") { /* ctrl+d quits */
                 quit = true;
@@ -239,16 +169,16 @@ void App::Run(ILayoutPtr layout) {
             }
             else if (!keyHandler || !keyHandler(kn)) {
                 bool processed = false;
-                if (state.input) {
-                    processed = state.input->Write(kn);
+                if (this->state.input) {
+                    processed = this->state.input->Write(kn);
                 }
 
                 /* otherwise, send the unhandled keypress directly to the
                 focused window. if it can't do anything with it, send it to
                 the layout for special processing, if necessary */
                 if (!processed) {
-                    if (!state.keyHandler || !state.keyHandler->KeyPress(kn)) {
-                        state.layout->KeyPress(kn);
+                    if (!this->state.keyHandler || !this->state.keyHandler->KeyPress(kn)) {
+                        this->state.layout->KeyPress(kn);
                     }
                 }
             }
@@ -260,22 +190,86 @@ void App::Run(ILayoutPtr layout) {
             resize_term(0, 0);
             Window::Invalidate();
             
-            if (this->resizedHandler) {
-                this->resizedHandler();
+            if (this->resizeHandler) {
+                this->resizeHandler();
             }
 
-            state.layout->BringToTop();
+            this->state.layout->BringToTop();
             resizeAt = 0;
         }
 
-        ensureFocusIsValid(state);
-        Window::WriteToScreen(state.input);
+        this->EnsureFocusIsValid();
+        Window::WriteToScreen(this->state.input);
         MessageQueue::Instance().Dispatch();
     }
 }
 
-void App::ChangeLayout(ILayoutPtr layout) {
-    changeLayout(state, layout);
+void App::CheckDrawCursor() {
+    if (this->state.input != NULL) {
+        curs_set(1);
+
+        if (this->state.focused) {
+            wtimeout(this->state.focused->GetContent(), IDLE_TIMEOUT_MS);
+        }
+    }
+    else {
+        curs_set(0);
+    }
+}
+
+void App::UpdateFocusedWindow(IWindowPtr window) {
+    if (this->state.focused != window) {
+        this->state.focused = window;
+        this->state.input = dynamic_cast<IInput*>(window.get());
+        this->state.keyHandler = dynamic_cast<IKeyHandler*>(window.get());
+        this->CheckDrawCursor();
+    }
+}
+
+void App::EnsureFocusIsValid() {
+    if (this->state.layout && this->state.layout->GetFocus() != this->state.focused) {
+        this->UpdateFocusedWindow(this->state.layout->GetFocus());
+    }
+}
+
+void App::ChangeLayout(ILayoutPtr newLayout) {
+    if (this->state.layout == newLayout) {
+        return;
+    }
+
+    if (this->state.input && this->state.focused) {
+        /* the current input is about to lose focus. reset the timeout */
+        wtimeout(this->state.focused->GetContent(), 0);
+    }
+
+    if (this->state.layout) {
+        this->state.layout->Hide();
+        this->state.layout.reset();
+    }
+
+    if (newLayout) {
+        this->state.layout = newLayout;
+        this->state.layout->Layout();
+        this->state.layout->Show();
+        this->state.layout->BringToTop();
+        this->UpdateFocusedWindow(this->state.layout->GetFocus());
+    }
+}
+
+void App::FocusNextInLayout() {
+    if (!this->state.layout) {
+        return;
+    }
+
+    this->UpdateFocusedWindow(this->state.layout->FocusNext());
+}
+
+void App::FocusPrevInLayout() {
+    if (!this->state.layout) {
+        return;
+    }
+
+    this->UpdateFocusedWindow(this->state.layout->FocusPrev());
 }
 
 int64 App::Now() {

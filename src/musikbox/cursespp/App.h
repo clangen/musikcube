@@ -41,20 +41,20 @@
 namespace cursespp {
     class App {
         public:
-            typedef std::function<bool(
-                const std::string&)> MainKeyHandler;
-
-            typedef std::function<void()> ResizedHandler;
+            using MainKeyHandler = std::function<bool(const std::string&)>;
+            using ResizeHandler = std::function<void()>;
 
             App(const std::string& title);
             ~App(); /* do not subclass */
 
             void SetKeyHandler(MainKeyHandler handler);
-            void SetResizedHandler(ResizedHandler handler);
+            void SetResizeHandler(ResizeHandler handler);
 
             void Run(ILayoutPtr layout);
             void ChangeLayout(ILayoutPtr layout);
             static int64 Now();
+
+        private:
 
             struct WindowState {
                 ILayoutPtr layout;
@@ -63,10 +63,14 @@ namespace cursespp {
                 IKeyHandler* keyHandler;
             };
 
-        private:
+            void CheckDrawCursor();
+            void UpdateFocusedWindow(IWindowPtr window);
+            void EnsureFocusIsValid();
+            void FocusNextInLayout();
+            void FocusPrevInLayout();
 
             WindowState state;
             MainKeyHandler keyHandler;
-            ResizedHandler resizedHandler;
+            ResizeHandler resizeHandler;
     };
 }
