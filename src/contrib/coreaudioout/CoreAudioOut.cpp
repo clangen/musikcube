@@ -72,10 +72,12 @@ void CoreAudioOut::NotifyBufferCompleted(BufferContext *context) {
     {
         boost::recursive_mutex::scoped_lock lock(this->mutex);
 
+        bool found = false;
         auto it = this->buffers.begin();
-        while (it != this->buffers.end()) {
+        while (!found && it != this->buffers.end()) {
             if (*it == context) {
                 this->buffers.erase(it);
+                found = true;
             }
             ++it;
         }
