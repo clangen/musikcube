@@ -10,15 +10,15 @@ musicbox compiles and runs easily on Windows, OSX and Linux.
 
 it looks something like this on windows:
 
-![windows screenshot](/static/screenshots/windows.png?raw=true)
+![windows screenshot](https://raw.githubusercontent.com/clangen/musikcube-static/master/screenshots/windows.png)
 
 and this on osx:
 
-![osx screenshot](/static/screenshots/osx.png?raw=true)
+![osx screenshot](https://raw.githubusercontent.com/clangen/musikcube-static/master/screenshots/osx.png)
 
 and linux:
 
-![linux screenshot](/static/screenshots/linux.png?raw=true)
+![linux screenshot](https://raw.githubusercontent.com/clangen/musikcube-static/master/screenshots/linux.png)
 
 # compiling
 
