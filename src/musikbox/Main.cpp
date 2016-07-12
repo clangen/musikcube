@@ -76,6 +76,11 @@ int main(int argc, char* argv[])
     #endif
 #endif
 
+#ifdef __PDCURSES__
+    PDC_set_resize_limits(12, 60, 60, 250);
+    resize_term(26, 100); /* must be before app init */
+#endif
+
     musik::debug::init();
 
     LibraryPtr library = LibraryFactory::Libraries().at(0);
@@ -86,7 +91,7 @@ int main(int argc, char* argv[])
     GlobalHotkeys globalHotkeys(playback, library);
 
     {
-        App app("musikbox"); /* inits curses; needs to happen before layout creation */
+        App app("musikbox"); /* must be before layout creation */
 
         ILayoutPtr libraryLayout((ILayout *) new LibraryLayout(playback, library));
         ILayoutPtr consoleLayout((ILayout *) new ConsoleLayout(transport, library));
@@ -120,7 +125,7 @@ int main(int argc, char* argv[])
 
     endwin();
 
-    musik::core::LibraryFactory::Instance().Shutdown();
+    LibraryFactory::Instance().Shutdown();
     musik::debug::deinit();
 
     return 0;

@@ -162,8 +162,6 @@ App::App(const std::string& title) {
 #endif
 
 #ifdef __PDCURSES__
-    PDC_set_resize_limits(12, 60, 60, 250);
-    PDC_set_default_size(26, 100);
     PDC_set_function_key(FUNCTION_KEY_SHUT_DOWN, 4);
 #endif
 
@@ -221,7 +219,7 @@ void App::Run(ILayoutPtr layout) {
         if (ch == ERR) {
             std::this_thread::yield();
         }
-        else { /* -1 = idle timeout */
+        else {
             std::string kn = key::Read((int)ch);
 
             if (ch == '\t') { /* tab */
