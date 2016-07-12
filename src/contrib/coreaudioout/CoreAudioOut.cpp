@@ -79,7 +79,9 @@ void CoreAudioOut::NotifyBufferCompleted(BufferContext *context) {
                 this->buffers.erase(it);
                 found = true;
             }
-            ++it;
+            else {
+                ++it;
+            }
         }
     }
 
