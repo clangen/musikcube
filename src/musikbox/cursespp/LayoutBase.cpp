@@ -263,6 +263,15 @@ IWindowPtr LayoutBase::GetFocus() {
 }
 
 bool LayoutBase::KeyPress(const std::string& key) {
+    if (key == "KEY_LEFT" || key == "KEY_UP") {
+        this->FocusPrev();
+        return true;
+    }
+    else if (key == "KEY_RIGHT" || key == "KEY_DOWN") {
+        this->FocusNext();
+        return true;
+    }
+
     return false;
 }
 

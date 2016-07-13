@@ -230,14 +230,6 @@ bool LibraryLayout::KeyPress(const std::string& key) {
         this->ShowTrackSearch();
         return true;
     }
-    else if (key == "KEY_LEFT") {
-        this->FocusPrev();
-        return true;
-    }
-    else if (key == "KEY_RIGHT") {
-        this->FocusNext();
-        return true;
-    }
     /* forward to the visible layout */
     else if (this->visibleLayout && this->visibleLayout->KeyPress(key)) {
         return true;
