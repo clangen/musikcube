@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
     musik::debug::init();
 
     LibraryPtr library = LibraryFactory::Libraries().at(0);
-
+    
     GaplessTransport transport;
     PlaybackService playback(library, transport);
 

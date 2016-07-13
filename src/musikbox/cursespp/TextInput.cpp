@@ -135,6 +135,7 @@ bool TextInput::KeyPress(const std::string& key) {
     else if (key == "KEY_BACKSPACE") {
         if (this->position > 0) {
             if (removeUtf8Char(this->buffer, this->position)) {
+                --this->bufferLength;
                 redrawContents(*this, buffer);
                 this->position = std::max(0, this->position - 1);
                 this->TextChanged(this, this->buffer);
