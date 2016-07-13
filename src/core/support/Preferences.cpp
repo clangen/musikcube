@@ -96,10 +96,17 @@ static bool stringToFile(const std::string& fn, const std::string& str) {
     return (written == str.size());
 }
 
-std::shared_ptr<Preferences> Preferences::ForComponent(const std::string& c) {
+#define CACHE_KEY(name, mode) \
+    boost::str(boost::format("%s-%s") % name % mode)
+
+std::shared_ptr<Preferences> Preferences::ForComponent(
+    const std::string& c, Preferences::Mode mode) 
+{
     boost::mutex::scoped_lock lock(cacheMutex);
 
-    auto it = cache.find(c);
+    std::string key = CACHE_KEY(c, mode);
+
+    auto it = cache.find(key);
     if (it != cache.end()) {
         auto weak = it->second;
         try {
@@ -113,18 +120,21 @@ std::shared_ptr<Preferences> Preferences::ForComponent(const std::string& c) {
         }
     }
 
-    std::shared_ptr<Preferences> prefs(new Preferences(c));
-    cache[c] = prefs;
+    std::shared_ptr<Preferences> prefs(new Preferences(c, mode));
+    cache[key] = prefs;
     return prefs;
 }
 
-Preferences::Preferences(const std::string& component) {
+Preferences::Preferences(const std::string& component, Mode mode) {
+    this->mode = mode;
     this->component = component;
     this->Load();
 }
 
 Preferences::~Preferences() {
-    this->Save();
+    if (this->mode == ModeAutoSave) {
+        this->Save();
+    }
 }
 
 #define RETURN_VALUE(defaultValue) \
@@ -180,5 +190,9 @@ void Preferences::Load() {
 }
 
 void Preferences::Save() {
+    if (this->mode == ModeReadOnly) {
+        throw std::runtime_error("cannot save a ModeReadOnly Preference!");
+    }
+
     stringToFile(FILENAME(this->component), this->json.dump(2));
 }

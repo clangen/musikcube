@@ -131,6 +131,7 @@
     <ClCompile Include="app\service\PlaybackService.cpp" />
     <ClCompile Include="app\util\Duration.cpp" />
     <ClCompile Include="app\util\GlobalHotkeys.cpp" />
+    <ClCompile Include="app\util\Hotkeys.cpp" />
     <ClCompile Include="app\util\Playback.cpp" />
     <ClCompile Include="app\util\SystemInfo.cpp" />
     <ClCompile Include="app\window\CategoryListView.cpp" />
@@ -184,6 +185,7 @@
     <ClInclude Include="app\service\PlaybackService.h" />
     <ClInclude Include="app\util\Duration.h" />
     <ClInclude Include="app\util\GlobalHotkeys.h" />
+    <ClInclude Include="app\util\Hotkeys.h" />
     <ClInclude Include="app\util\Playback.h" />
     <ClInclude Include="app\util\SystemInfo.h" />
     <ClInclude Include="app\window\CategoryListView.h" />

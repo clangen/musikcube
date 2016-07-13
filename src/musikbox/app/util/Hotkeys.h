@@ -34,50 +34,37 @@
 
 #pragma once
 
-#include <boost/shared_ptr.hpp>
-#include <vector>
+#include "stdafx.h"
 
-#include <core/config.h>
-#include <core/db/Connection.h>
-#include <boost/thread/mutex.hpp>
+#include <app/service/PlaybackService.h>
+#include <core/library/ILibrary.h>
 
-#include <json.hpp>
+namespace musik {
+    namespace box {
+        class Hotkeys {
+            public:
+                enum Id {
+                    /* navigation */
+                    // TODO
 
-namespace musik { namespace core {
+                    /* playback */
+                    TogglePause,
+                    Next,
+                    Previous,
+                    VolumeUp,
+                    VolumeDown,
+                    SeekForward,
+                    SeekBack,
+                    ToggleRepeat,
+                    ToggleShuffle,
+                    Stop,
 
-    class Preferences {
-        public:
-            enum Mode {
-                ModeReadOnly,
-                ModeReadWrite,
-                ModeAutoSave
-            };
+                    /* indexer */
+                    RescanMetadata
+                };
 
-            static std::shared_ptr<Preferences> 
-                ForComponent(const std::string& c, Mode mode = ModeAutoSave);
-
-            ~Preferences();
-
-            bool GetBool(const std::string& key, bool defaultValue = false);
-            int GetInt(const std::string& key, int defaultValue = 0);
-            std::string GetString(const std::string& key, const std::string& defaultValue = "");
-
-            void SetBool(const std::string& key, bool value);
-            void SetInt(const std::string& key, int value);
-            void SetString(const std::string& key, const char* value);
-
-            void GetKeys(std::vector<std::string>& target);
-            void Save();
-
-        private:
-            Preferences(const std::string& component, Mode mode);
-            void Load();
-
-            boost::mutex mutex;
-            nlohmann::json json;
-            std::string component;
-            Mode mode;
-    };
-
-} }
-
+                Hotkeys();
+                bool Is(Id id, const std::string& kn);
+        };
+    }
+}
