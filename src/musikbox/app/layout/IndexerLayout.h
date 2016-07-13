@@ -38,6 +38,7 @@
 #include <cursespp/LayoutBase.h>
 #include <cursespp/ListWindow.h>
 #include <cursespp/TextLabel.h>
+#include <cursespp/TextInput.h>
 #include <cursespp/SimpleScrollAdapter.h>
 
 #include <app/window/TrackListView.h>
@@ -100,6 +101,9 @@ namespace musik {
                 std::shared_ptr<cursespp::TextLabel> addedPathsLabel;
                 std::shared_ptr<cursespp::ListWindow> browseList;
                 std::shared_ptr<cursespp::ListWindow> addedPathsList;
+
+                std::shared_ptr<cursespp::TextLabel> hotkeyLabel;
+                std::shared_ptr<cursespp::TextInput> hotkeyInput;
 
                 std::shared_ptr<ShortcutsWindow> shortcuts;
 

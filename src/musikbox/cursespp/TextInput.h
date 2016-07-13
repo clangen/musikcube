@@ -52,7 +52,7 @@ namespace cursespp {
             sigslot::signal1<TextInput*> EnterPressed;
             sigslot::signal2<TextInput*, std::string> TextChanged;
 
-            TextInput();
+            TextInput(InputMode inputMode = IInput::InputNormal);
             virtual ~TextInput();
 
             virtual void Show();
@@ -60,6 +60,12 @@ namespace cursespp {
             virtual bool Write(const std::string& key);
             virtual size_t Length();
             virtual size_t Position();
+
+            virtual void SetInputMode(InputMode inputMode) { 
+                this->inputMode = inputMode;
+            };
+
+            virtual InputMode GetInputMode() { return this->inputMode; }
 
             virtual bool KeyPress(const std::string& key);
 
@@ -72,5 +78,6 @@ namespace cursespp {
             std::string buffer;
             int position;
             size_t bufferLength;
+            InputMode inputMode;
     };
 }

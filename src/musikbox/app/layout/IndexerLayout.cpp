@@ -51,11 +51,13 @@ using namespace cursespp;
 using namespace std::placeholders;
 
 #define LABEL_HEIGHT 1
+#define INPUT_HEIGHT 3
+#define HOTKEY_INPUT_WIDTH 20
 
 #define TOP(w) w->GetY()
 #define BOTTOM(w) (w->GetY() + w->GetHeight())
 #define LEFT(w) w->GetX()
-#define RIGHT (x) (x->GetX() + w->GetWidth())
+#define RIGHT(w) (w->GetX() + w->GetWidth())
 
 typedef IScrollAdapter::EntryPtr EntryPtr;
 static bool showDotfiles = false;
@@ -109,6 +111,18 @@ void IndexerLayout::Layout() {
 
     this->dotfileCheckbox->MoveAndResize(1, BOTTOM(this->browseList), cx - 1, LABEL_HEIGHT);
     this->removeCheckbox->MoveAndResize(1, BOTTOM(this->dotfileCheckbox), cx - 1, LABEL_HEIGHT);
+
+    this->hotkeyLabel->MoveAndResize(
+        1, 
+        BOTTOM(this->removeCheckbox) + 2, 
+        this->hotkeyLabel->Length(),
+        LABEL_HEIGHT);
+
+    this->hotkeyInput->MoveAndResize(
+        RIGHT(this->hotkeyLabel),
+        BOTTOM(this->removeCheckbox) + 1,
+        HOTKEY_INPUT_WIDTH,
+        INPUT_HEIGHT);
 }
 
 void IndexerLayout::RefreshAddedPaths() {
@@ -173,15 +187,20 @@ void IndexerLayout::InitializeWindows() {
     this->removeCheckbox->SetText("remove missing files from library");
     this->removeCheckbox->CheckChanged.connect(this, &IndexerLayout::OnRemoveMissingCheckChanged);
 
-    this->browseList->SetFocusOrder(0);
-    this->addedPathsList->SetFocusOrder(1);
-    this->dotfileCheckbox->SetFocusOrder(2);
-    this->removeCheckbox->SetFocusOrder(3);
-
     this->shortcuts.reset(new ShortcutsWindow());
     this->shortcuts->AddShortcut("M-a", "library");
     this->shortcuts->AddShortcut("M-`", "console");
     this->shortcuts->AddShortcut("^D", "quit");
+
+    this->hotkeyLabel.reset(new TextLabel());
+    this->hotkeyLabel->SetText("hotkey tester: ");
+    this->hotkeyInput.reset(new TextInput(IInput::InputRaw));
+
+    this->browseList->SetFocusOrder(0);
+    this->addedPathsList->SetFocusOrder(1);
+    this->dotfileCheckbox->SetFocusOrder(2);
+    this->removeCheckbox->SetFocusOrder(3);
+    this->hotkeyInput->SetFocusOrder(4);
 
     this->AddWindow(this->browseLabel);
     this->AddWindow(this->addedPathsLabel);
@@ -190,6 +209,8 @@ void IndexerLayout::InitializeWindows() {
     this->AddWindow(this->dotfileCheckbox);
     this->AddWindow(this->removeCheckbox);
     this->AddWindow(this->shortcuts);
+    this->AddWindow(this->hotkeyLabel);
+    this->AddWindow(this->hotkeyInput);
 
     this->Layout();
 }

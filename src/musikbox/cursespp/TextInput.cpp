@@ -75,10 +75,11 @@ inline static bool removeUtf8Char(std::string& value, size_t position) {
     return false;
 }
 
-TextInput::TextInput()
+TextInput::TextInput(IInput::InputMode inputMode)
 : Window()
 , bufferLength(0)
-, position(0) {
+, position(0)
+, inputMode(inputMode) {
 }
 
 TextInput::~TextInput() {
@@ -101,21 +102,29 @@ size_t TextInput::Position() {
 
 bool TextInput::Write(const std::string& key) {
     /* one character at a time. if it's more than one character, we're
-    dealing with an escape sequence and should not print it. */
-    if (u8len(key) == 1) {
-        size_t offset = u8offset(this->buffer, this->position);
-        offset = (offset == std::string::npos) ? 0 : offset;
-        this->buffer.insert(offset, key);
+    dealing with an escape sequence and should not print it unless
+    the input mode allows for modifiers */
+    int len = u8len(key);
+    if (len == 1 || (len > 1 && this->inputMode == InputRaw)) {
+        if (this->inputMode == InputRaw) {
+            this->buffer = key;
+            this->bufferLength = len;            
+            this->position = len;
+        }
+        else {
+            size_t offset = u8offset(this->buffer, this->position);
+            offset = (offset == std::string::npos) ? 0 : offset;
+            this->buffer.insert(offset, key);
+            this->bufferLength = u8len(buffer);
+            this->position += len;
+        }
+
         this->TextChanged(this, this->buffer);
-        ++this->position;
-    }
-    else {
-        return false;
+        redrawContents(*this, buffer);
+        return true;
     }
 
-    this->bufferLength = u8len(buffer);
-    redrawContents(*this, buffer);
-    return true;
+    return false;
 }
 
 bool TextInput::KeyPress(const std::string& key) {

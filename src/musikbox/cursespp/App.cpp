@@ -167,6 +167,11 @@ void App::Run(ILayoutPtr layout) {
             else if (kn == "KEY_RESIZE") {
                 resizeAt = App::Now() + REDRAW_DEBOUNCE_MS;
             }
+            else if (this->state.input &&
+                     this->state.input->GetInputMode() == IInput::InputRaw) 
+            {
+                this->state.input->Write(kn);
+            }
             else if (!keyHandler || !keyHandler(kn)) {
                 bool processed = false;
                 if (this->state.input) {
