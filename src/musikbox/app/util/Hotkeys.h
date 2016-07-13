@@ -45,7 +45,13 @@ namespace musik {
             public:
                 enum Id {
                     /* navigation */
-                    // TODO
+                    NavigateLibrary,
+                    NavigateLibraryBrowse,
+                    NavigateLibraryFilter,
+                    NavigateLibraryTracks,
+                    NavigateLibraryPlayQueue,
+                    NavigateSettings,
+                    NavigateConsole,
 
                     /* playback */
                     TogglePause,
@@ -63,8 +69,11 @@ namespace musik {
                     RescanMetadata
                 };
 
+                static bool Is(Id id, const std::string& kn);
+                static std::string Get(Id id);
+
+            private:
                 Hotkeys();
-                bool Is(Id id, const std::string& kn);
         };
     }
 }

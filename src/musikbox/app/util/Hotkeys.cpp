@@ -46,21 +46,38 @@ using Id = Hotkeys::Id;
 
 /* map from internal ID to user-friendly JSON key name */
 static std::unordered_map<std::string, Id> NAME_TO_ID = {
-    { "toggle_pause", Id::TogglePause },
-    { "next", Id::Next },
-    { "previous", Id::Previous },
-    { "volume_up", Id::VolumeUp },
-    { "volume_down", Id::VolumeDown },
-    { "seek_forward", Id::SeekForward },
-    { "seek_back", Id::SeekBack },
-    { "toggle_repeat", Id::ToggleRepeat },
-    { "toggle_shuffle", Id::ToggleShuffle },
-    { "stop", Id::Stop },
-    { "rescan_metadata", Id::RescanMetadata }
+    { "navigate_library", Id::NavigateLibrary },
+    { "navigate_library_browse", Id::NavigateLibraryBrowse },
+    { "navigate_library_filter", Id::NavigateLibraryFilter },
+    { "navigate_library_tracks", Id::NavigateLibraryTracks },
+    { "navigate_library_play_queue", Id::NavigateLibraryPlayQueue },
+    { "navigate_settings", Id::NavigateSettings },
+    { "navigate_console", Id::NavigateConsole },
+
+    { "playback_toggle_pause", Id::TogglePause },
+    { "playback_next", Id::Next },
+    { "playback_previous", Id::Previous },
+    { "playback_volume_up", Id::VolumeUp },
+    { "playback_volume_down", Id::VolumeDown },
+    { "playback_seek_forward", Id::SeekForward },
+    { "playback_seek_back", Id::SeekBack },
+    { "playback_toggle_repeat", Id::ToggleRepeat },
+    { "playback_toggle_shuffle", Id::ToggleShuffle },
+    { "playback_stop", Id::Stop },
+
+    { "metadata_rescan", Id::RescanMetadata }
 };
 
 /* default hotkeys */
 static std::unordered_map<Id, std::string> ID_TO_DEFAULT = {
+    { Id::NavigateLibrary, "M-a" },
+    { Id::NavigateLibraryBrowse, "M-b" },
+    { Id::NavigateLibraryFilter, "M-f" },
+    { Id::NavigateLibraryTracks, "M-t" },
+    { Id::NavigateLibraryPlayQueue, "M-n" },
+    { Id::NavigateSettings, "M-s" },
+    { Id::NavigateConsole, "M-`" },
+
     { Id::TogglePause, "^P" },
     { Id::Next, "M-l" },
     { Id::Previous, "M-j" },
@@ -71,6 +88,7 @@ static std::unordered_map<Id, std::string> ID_TO_DEFAULT = {
     { Id::ToggleRepeat, "M-," },
     { Id::ToggleShuffle, "M-." },
     { Id::Stop, "^X" },
+
     { Id::RescanMetadata, "^R"}
 };
 
@@ -132,4 +150,22 @@ bool Hotkeys::Is(Id id, const std::string& kn) {
     }
     
     return false;
+}
+
+std::string Hotkeys::Get(Id id) {
+    if (!prefs) {
+        loadPreferences();
+    }
+
+    auto custom = customIdToKey.find(id);
+    if (custom != customIdToKey.end()) {
+        return custom->second;
+    }
+
+    auto it = ID_TO_DEFAULT.find(id);
+    if (it != ID_TO_DEFAULT.end()) {
+        return it->second;
+    }
+
+    return "";
 }

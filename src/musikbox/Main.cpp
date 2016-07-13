@@ -40,6 +40,7 @@
 #include <app/layout/LibraryLayout.h>
 #include <app/layout/IndexerLayout.h>
 #include <app/util/GlobalHotkeys.h>
+#include <app/util/Hotkeys.h>
 #include <app/service/PlaybackService.h>
 
 #include <core/library/LibraryFactory.h>
@@ -98,15 +99,15 @@ int main(int argc, char* argv[])
         ILayoutPtr indexerLayout((ILayout *) new IndexerLayout(library));
 
         app.SetKeyHandler([&](const std::string& kn) {
-            if (kn == "M-`" || kn == "M-~") {
+            if (Hotkeys::Is(Hotkeys::NavigateConsole, kn)) {
                 app.ChangeLayout(consoleLayout);
                 return true;
             }
-            else if (kn == "M-a") {
+            else if (Hotkeys::Is(Hotkeys::NavigateLibrary, kn)) {
                 app.ChangeLayout(libraryLayout);
                 return true;
             }
-            else if (kn == "M-s") {
+            else if (Hotkeys::Is(Hotkeys::NavigateSettings, kn)) {
                 app.ChangeLayout(indexerLayout);
                 return true;
             }

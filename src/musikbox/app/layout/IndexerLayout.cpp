@@ -40,7 +40,9 @@
 
 #include <core/library/Indexer.h>
 #include <core/library/LocalLibraryConstants.h>
+
 #include <app/query/SearchTrackListQuery.h>
+#include <app/util/Hotkeys.h>
 
 #include "IndexerLayout.h"
 
@@ -188,8 +190,8 @@ void IndexerLayout::InitializeWindows() {
     this->removeCheckbox->CheckChanged.connect(this, &IndexerLayout::OnRemoveMissingCheckChanged);
 
     this->shortcuts.reset(new ShortcutsWindow());
-    this->shortcuts->AddShortcut("M-a", "library");
-    this->shortcuts->AddShortcut("M-`", "console");
+    this->shortcuts->AddShortcut(Hotkeys::NavigateLibrary, "library");
+    this->shortcuts->AddShortcut(Hotkeys::NavigateConsole, "console");
     this->shortcuts->AddShortcut("^D", "quit");
 
     this->hotkeyLabel.reset(new TextLabel());

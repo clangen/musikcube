@@ -106,6 +106,7 @@ namespace cursespp {
 
     namespace key {
        static std::unordered_map<std::string, std::string> KEY_MAPPING = {
+            { "M-~",        "M-`" },
             { "M-bquote",   "M-`" },
             { "^@",         "M-`" },
             { "M-comma",    "M-," },

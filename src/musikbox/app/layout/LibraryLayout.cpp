@@ -126,16 +126,16 @@ void LibraryLayout::OnLayoutChanged() {
 
 void LibraryLayout::UpdateShortcutsWindow() {
     if (this->visibleLayout == this->browseLayout) {
-        this->shortcuts->SetActive("M-b");
+        this->shortcuts->SetActive(Hotkeys::NavigateLibraryBrowse);
     }
     else if (this->visibleLayout == nowPlayingLayout) {
-        this->shortcuts->SetActive("M-p");
+        this->shortcuts->SetActive(Hotkeys::NavigateLibraryPlayQueue);
     }
     else if (this->visibleLayout == searchLayout) {
-        this->shortcuts->SetActive("M-f");
+        this->shortcuts->SetActive(Hotkeys::NavigateLibraryFilter);
     }
     else if (this->visibleLayout == trackSearch) {
-        this->shortcuts->SetActive("M-t");
+        this->shortcuts->SetActive(Hotkeys::NavigateLibraryTracks);
     }
 }
 
@@ -171,11 +171,11 @@ void LibraryLayout::InitializeWindows() {
     this->transportView.reset(new TransportWindow(this->playback));
 
     this->shortcuts.reset(new ShortcutsWindow());
-    this->shortcuts->AddShortcut("M-b", "browse");
-    this->shortcuts->AddShortcut("M-f", "filter");
-    this->shortcuts->AddShortcut("M-t", "tracks");
-    this->shortcuts->AddShortcut("M-p", "play queue");
-    this->shortcuts->AddShortcut("M-s", "settings");
+    this->shortcuts->AddShortcut(Hotkeys::NavigateLibraryBrowse, "browse");
+    this->shortcuts->AddShortcut(Hotkeys::NavigateLibraryFilter, "filter");
+    this->shortcuts->AddShortcut(Hotkeys::NavigateLibraryTracks, "tracks");
+    this->shortcuts->AddShortcut(Hotkeys::NavigateLibraryPlayQueue, "play queue");
+    this->shortcuts->AddShortcut(Hotkeys::NavigateSettings, "settings");
     this->shortcuts->AddShortcut("^D", "quit");
     this->UpdateShortcutsWindow();
 
@@ -214,19 +214,19 @@ bool LibraryLayout::KeyPress(const std::string& key) {
         }
         return true;
     }
-    else if (key == "M-p") {
+    else if (Hotkeys::Is(Hotkeys::NavigateLibraryPlayQueue, key)) {
         this->ShowNowPlaying();
         return true;
     }
-    else if (key == "M-b") {
+    else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowse, key)) {
         this->ShowBrowse();
         return true;
     }
-    else if (key == "M-f") {
+    else if (Hotkeys::Is(Hotkeys::NavigateLibraryFilter, key)) {
         this->ShowSearch();
         return true;
     }
-    else if (key == "M-t") {
+    else if (Hotkeys::Is(Hotkeys::NavigateLibraryTracks, key)) {
         this->ShowTrackSearch();
         return true;
     }
@@ -242,7 +242,7 @@ bool LibraryLayout::KeyPress(const std::string& key) {
     else if (this->visibleLayout && this->visibleLayout->KeyPress(key)) {
         return true;
     }
-    else if (key == " ") {
+    else if (key == " " || key == "M- ") {
         playback::PauseOrResume(this->transport);
         return true;
     }

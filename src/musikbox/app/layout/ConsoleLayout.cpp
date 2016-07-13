@@ -42,6 +42,8 @@
 #include <core/sdk/IPlugin.h>
 #include <core/plugin/PluginFactory.h>
 
+#include <app/util/Hotkeys.h>
+
 #include <boost/algorithm/string.hpp>
 
 #define MESSAGE_TYPE_UPDATE 1001
@@ -68,8 +70,8 @@ ConsoleLayout::ConsoleLayout(ITransport& transport, LibraryPtr library)
     this->commands.reset(new cursespp::TextInput());
 
     this->shortcuts.reset(new ShortcutsWindow());
-    this->shortcuts->AddShortcut("M-a", "library");
-    this->shortcuts->AddShortcut("M-s", "settings");
+    this->shortcuts->AddShortcut(Hotkeys::NavigateLibrary, "library");
+    this->shortcuts->AddShortcut(Hotkeys::NavigateSettings, "settings");
     this->shortcuts->AddShortcut("^D", "quit");
 
     this->AddWindow(this->commands);

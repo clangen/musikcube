@@ -63,6 +63,23 @@ void ShortcutsWindow::AddShortcut(
     this->Repaint();
 }
 
+void ShortcutsWindow::AddShortcut(
+    Hotkeys::Id id,
+    const std::string& description,
+    int64 attrs)
+{
+    this->AddShortcut(Hotkeys::Get(id), description, attrs);
+}
+
+void ShortcutsWindow::SetActive(const std::string& key) {
+    this->activeKey = key;
+    this->Repaint();
+}
+
+void ShortcutsWindow::SetActive(Hotkeys::Id id) {
+    this->SetActive(Hotkeys::Get(id));
+}
+
 void ShortcutsWindow::Repaint() {
     Window::Repaint();
 

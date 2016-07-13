@@ -35,6 +35,7 @@
 #pragma once
 
 #include <cursespp/Window.h>
+#include <app/util/Hotkeys.h>
 
 namespace musik {
     namespace box {
@@ -53,10 +54,13 @@ namespace musik {
                     const std::string& description,
                     int64 attrs = -1);
 
-                void SetActive(const std::string& key) {
-                    this->activeKey = key;
-                    this->Repaint();
-                }
+                void AddShortcut(
+                    Hotkeys::Id id,
+                    const std::string& description,
+                    int64 attrs = -1);
+
+                void SetActive(const std::string& key);
+                void SetActive(Hotkeys::Id id);
 
                 virtual void Repaint();
 

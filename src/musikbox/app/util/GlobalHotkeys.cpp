@@ -41,8 +41,6 @@ using musik::core::LibraryPtr;
 using musik::core::audio::ITransport;
 using namespace musik::box;
 
-Hotkeys hotkeys;
-
 GlobalHotkeys::GlobalHotkeys(PlaybackService& playback, LibraryPtr library)
 : playback(playback)
 , transport(playback.GetTransport()) {
@@ -54,49 +52,49 @@ GlobalHotkeys::~GlobalHotkeys() {
 }
 
 bool GlobalHotkeys::Handle(const std::string& kn) {
-    if (hotkeys.Is(Hotkeys::TogglePause, kn)) {
+    if (Hotkeys::Is(Hotkeys::TogglePause, kn)) {
         playback::PauseOrResume(this->transport);
         return true;
     }
-    else if (hotkeys.Is(Hotkeys::VolumeUp, kn)) {
+    else if (Hotkeys::Is(Hotkeys::VolumeUp, kn)) {
         this->transport.SetVolume(this->transport.Volume() + 0.05);
         return true;
     }
-    else if (hotkeys.Is(Hotkeys::VolumeDown, kn)) {
+    else if (Hotkeys::Is(Hotkeys::VolumeDown, kn)) {
         this->transport.SetVolume(this->transport.Volume() - 0.05);
         return true;
     }
-    else if (hotkeys.Is(Hotkeys::Previous, kn)) {
+    else if (Hotkeys::Is(Hotkeys::Previous, kn)) {
         this->playback.Previous();
         return true;
     }
-    else if (hotkeys.Is(Hotkeys::Next, kn)) {
+    else if (Hotkeys::Is(Hotkeys::Next, kn)) {
         this->playback.Next();
         return true;
     }
-    else if (hotkeys.Is(Hotkeys::SeekBack, kn)) {
+    else if (Hotkeys::Is(Hotkeys::SeekBack, kn)) {
         double time = this->transport.Position();
         this->transport.SetPosition(time - 10.0f);
         return true;
     }
-    else if (hotkeys.Is(Hotkeys::SeekForward, kn)) {
+    else if (Hotkeys::Is(Hotkeys::SeekForward, kn)) {
         double time = this->transport.Position();
         this->transport.SetPosition(time + 10.0f);
         return true;
     }
-    else if (hotkeys.Is(Hotkeys::ToggleRepeat, kn)) {
+    else if (Hotkeys::Is(Hotkeys::ToggleRepeat, kn)) {
         playback::ToggleRepeatMode(this->playback);
         return true;
     }
-    else if (hotkeys.Is(Hotkeys::ToggleShuffle, kn)) {
+    else if (Hotkeys::Is(Hotkeys::ToggleShuffle, kn)) {
         this->playback.ToggleShuffle();
         return true;
     }
-    else if (hotkeys.Is(Hotkeys::Stop, kn)) {
+    else if (Hotkeys::Is(Hotkeys::Stop, kn)) {
         this->playback.Stop();
         return true;
     }
-    else if (hotkeys.Is(Hotkeys::RescanMetadata, kn)) {
+    else if (Hotkeys::Is(Hotkeys::RescanMetadata, kn)) {
         library->Indexer()->Synchronize(true);
         return true;
     }
