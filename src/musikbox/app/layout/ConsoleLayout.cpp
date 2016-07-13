@@ -214,6 +214,10 @@ bool ConsoleLayout::ProcessCommand(const std::string& cmd) {
         }
     }
 
+    if (args.size() == 0) {
+        return true;
+    }
+
     std::string name = args.size() > 0 ? args[0] : "";
     args.erase(args.begin());
 
