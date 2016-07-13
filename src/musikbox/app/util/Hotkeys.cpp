@@ -44,6 +44,14 @@ using namespace musik::core;
 
 using Id = Hotkeys::Id;
 
+/* sigh: http://stackoverflow.com/a/24847480 */
+struct EnumHasher {
+    template <typename T>
+    std::size_t operator()(T t) const {
+        return static_cast<std::size_t>(t);
+    }
+};
+
 /* map from internal ID to user-friendly JSON key name */
 static std::unordered_map<std::string, Id> NAME_TO_ID = {
     { "navigate_library", Id::NavigateLibrary },
@@ -69,7 +77,7 @@ static std::unordered_map<std::string, Id> NAME_TO_ID = {
 };
 
 /* default hotkeys */
-static std::unordered_map<Id, std::string> ID_TO_DEFAULT = {
+static std::unordered_map<Id, std::string, EnumHasher> ID_TO_DEFAULT = {
     { Id::NavigateLibrary, "M-a" },
     { Id::NavigateLibraryBrowse, "M-b" },
     { Id::NavigateLibraryFilter, "M-f" },
@@ -94,7 +102,7 @@ static std::unordered_map<Id, std::string> ID_TO_DEFAULT = {
 
 /* custom keys */
 static std::unordered_set<std::string> customKeys;
-static std::unordered_map<Id, std::string> customIdToKey;
+static std::unordered_map<Id, std::string, EnumHasher> customIdToKey;
 
 /* preferences file */
 static std::shared_ptr<Preferences> prefs;
@@ -148,7 +156,7 @@ bool Hotkeys::Is(Id id, const std::string& kn) {
             return true;
         }
     }
-    
+
     return false;
 }
 
