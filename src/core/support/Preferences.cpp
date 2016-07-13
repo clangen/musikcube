@@ -165,12 +165,12 @@ void Preferences::SetBool(const std::string& key, bool value) {
     json[key] = value;
 }
 
-void Preferences::SetInt(const std::string& key, int value){
+void Preferences::SetInt(const std::string& key, int value) {
     boost::mutex::scoped_lock lock(this->mutex);
     json[key] = value;
 }
 
-void Preferences::SetString(const std::string& key, const char* value){
+void Preferences::SetString(const std::string& key, const char* value) {
     boost::mutex::scoped_lock lock(this->mutex);
     json[key] = value;
 }
@@ -185,7 +185,13 @@ void Preferences::GetKeys(std::vector<std::string>& target) {
 void Preferences::Load() {
     std::string str = fileToString(FILENAME(this->component));
     if (str.size()) {
-        this->json = json::parse(str);
+        try {
+            this->json = json::parse(str);
+        }
+        catch (...) {
+            std::cerr << "error loading " << this->component << ".json";
+            this->json = json::parse("{ }");
+        }
     }
 }
 
