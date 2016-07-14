@@ -33,11 +33,7 @@ set (BOOST_LIBS
   regex
 )
 
-if (CMAKE_SYSTEM_NAME MATCHES "Linux")
-  find_package(Boost 1.58.0 REQUIRED ${BOOST_LIBS})
-else (CMAKE_SYSTEM_NAME MATCHES "Linux")
-  find_package(Boost 1.60.0 REQUIRED ${BOOST_LIBS})
-endif (CMAKE_SYSTEM_NAME MATCHES "Linux")
+find_package(Boost 1.55.0 REQUIRED ${BOOST_LIBS})
 
 add_definitions (-DHAVE_BOOST
   -D_FILE_OFFSET_BITS=64)
