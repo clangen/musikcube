@@ -170,9 +170,22 @@ size_t writePlayingFormat(
         }
 
         size_t len = u8cols(value);
+        bool ellipsized = false;
+
         if (len > remaining) {
+            std::string original = value;
             value = text::Ellipsize(value, remaining);
+            ellipsized = (value != original);
             len = remaining;
+        }
+
+        /* if we're not at the last token, but there's not enough space
+        to show the next token, ellipsize now and bail out of the loop */        
+        if (remaining - len < 3) {
+            if (!ellipsized) {
+                value = text::Ellipsize(value, remaining - 3);
+                len = remaining;
+            }
         }
 
         ON(w, attr);
