@@ -107,8 +107,18 @@ static std::unordered_map<Id, std::string, EnumHasher> customIdToKey;
 /* preferences file */
 static std::shared_ptr<Preferences> prefs;
 
+static void savePreferences() {
+    for (const std::pair<std::string, Id>& pair : NAME_TO_ID) {
+        prefs->SetString(
+            pair.first.c_str(),
+            Hotkeys::Get(pair.second).c_str());
+    }
+
+    prefs->Save();
+}
+
 static void loadPreferences() {
-    prefs = Preferences::ForComponent("hotkeys", Preferences::ModeReadOnly);
+    prefs = Preferences::ForComponent("hotkeys", Preferences::ModeReadWrite);
 
     try {
         /* load all of the custom key mappings into customKeys and 
@@ -125,6 +135,10 @@ static void loadPreferences() {
                 }
             }
         }
+
+        /* write back to disk; this way any new hotkey defaults are picked
+        up and saved so the user can edit them easily. */
+        savePreferences();
     }
     catch (...) {
         std::cerr << "failed to load hotkeys.json! default hotkeys selected.";
