@@ -74,7 +74,11 @@ using namespace cursespp;
     this->lastTime = this->transport.Position(); \
     DEBOUNCE_REFRESH(0)
 
-static std::string playingFormat = "playing $title from $album";
+
+#define ON(w, a) if (a != -1) { wattron(w, a); }
+#define OFF(w, a) if (a != -1) { wattroff(w, a); }
+
+static std::string playingFormat = "playing $title by $artist from $album";
 
 struct Token {
     enum Type { Normal, Placeholder };
@@ -131,11 +135,13 @@ size_t writePlayingFormat(
     WINDOW *w,
     std::string title,
     std::string album,
+    std::string artist,
     size_t width)
 {
     TokenList tokens;
     tokenize(playingFormat, tokens);
 
+    int64 dim = COLOR_PAIR(CURSESPP_TEXT_DISABLED);
     int64 gb = COLOR_PAIR(CURSESPP_TEXT_ACTIVE);
     size_t remaining = width;
 
@@ -143,7 +149,7 @@ size_t writePlayingFormat(
     while (it != tokens.end() && remaining > 0) {
         Token *token = it->get();
 
-        int64 attr = -1;
+        int64 attr = dim;
         std::string value;
 
         if (token->type == Token::Placeholder) {
@@ -154,6 +160,9 @@ size_t writePlayingFormat(
             else if (token->value == "$album") {
                 value = album;
             }
+            else if (token->value == "$artist") {
+                value = artist;
+            }
         }
 
         if (!value.size()) {
@@ -161,20 +170,27 @@ size_t writePlayingFormat(
         }
 
         size_t len = u8cols(value);
+        bool ellipsized = false;
+
         if (len > remaining) {
+            std::string original = value;
             value = text::Ellipsize(value, remaining);
+            ellipsized = (value != original);
             len = remaining;
         }
 
-        if (attr != -1) {
-            wattron(w, attr);
+        /* if we're not at the last token, but there's not enough space
+        to show the next token, ellipsize now and bail out of the loop */        
+        if (remaining - len < 3) {
+            if (!ellipsized) {
+                value = text::Ellipsize(value, remaining - 3);
+                len = remaining;
+            }
         }
 
+        ON(w, attr);
         wprintw(w, value.c_str());
-
-        if (attr != -1) {
-            wattroff(w, attr);
-        }
+        OFF(w, attr);
 
         remaining -= len;
         ++it;
@@ -237,9 +253,6 @@ void TransportWindow::OnPlaybackShuffled(bool shuffled) {
     DEBOUNCE_REFRESH_AND_SYNC_TIME();
 }
 
-#define ON(w, a) if (a != -1) { wattron(w, a); }
-#define OFF(w, a) if (a != -1) { wattroff(w, a); }
-
 void TransportWindow::Update() {
     this->Clear();
     WINDOW *c = this->GetContent();
@@ -266,22 +279,25 @@ void TransportWindow::Update() {
         OFF(c, disabled);
     }
     else {
-        std::string title, album;
+        std::string title, album, artist;
 
         if (this->currentTrack) {
             title = this->currentTrack->GetValue(constants::Track::TITLE);
             album = this->currentTrack->GetValue(constants::Track::ALBUM);
+            artist = this->currentTrack->GetValue(constants::Track::ARTIST);
             duration = this->currentTrack->GetValue(constants::Track::DURATION);
         }
 
         title = title.size() ? title : "[song]";
         album = album.size() ? album : "[album]";
+        artist = artist.size() ? artist : "[artist]";
         duration = duration.size() ? duration : "0";
 
         writePlayingFormat(
             c,
             title,
             album,
+            artist,
             cx - shuffleLabelLen);
     }
 
