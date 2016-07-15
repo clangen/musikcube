@@ -43,6 +43,7 @@
 #include <core/library/LocalLibraryConstants.h>
 
 #include <app/query/CategoryListViewQuery.h>
+#include <app/util/Hotkeys.h>
 
 #include "CategoryListView.h"
 
@@ -153,7 +154,7 @@ void CategoryListView::ScrollToPlaying() {
 }
 
 bool CategoryListView::KeyPress(const std::string& key) {
-    if (key == "M-m") {
+    if (Hotkeys::Is(Hotkeys::NavigateJumpToPlaying, key)) {
         this->ScrollToPlaying();
         return true;
     }

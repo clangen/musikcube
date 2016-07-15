@@ -56,11 +56,15 @@ struct EnumHasher {
 static std::unordered_map<std::string, Id> NAME_TO_ID = {
     { "navigate_library", Id::NavigateLibrary },
     { "navigate_library_browse", Id::NavigateLibraryBrowse },
+    { "navigate_library_browse_artists", Id::NavigateLibraryBrowseArtists },
+    { "navigate_library_browse_albums", Id::NavigateLibraryBrowseAlbums },
+    { "navigate_library_browse_genres", Id::NavigateLibraryBrowseGenres },
     { "navigate_library_filter", Id::NavigateLibraryFilter },
     { "navigate_library_tracks", Id::NavigateLibraryTracks },
     { "navigate_library_play_queue", Id::NavigateLibraryPlayQueue },
     { "navigate_settings", Id::NavigateSettings },
     { "navigate_console", Id::NavigateConsole },
+    { "navigate_jump_to_playing", Id::NavigateJumpToPlaying },
 
     { "playback_toggle_pause", Id::TogglePause },
     { "playback_next", Id::Next },
@@ -73,6 +77,8 @@ static std::unordered_map<std::string, Id> NAME_TO_ID = {
     { "playback_toggle_shuffle", Id::ToggleShuffle },
     { "playback_stop", Id::Stop },
 
+    { "view_refresh", Id::ViewRefresh },
+
     { "metadata_rescan", Id::RescanMetadata }
 };
 
@@ -80,11 +86,15 @@ static std::unordered_map<std::string, Id> NAME_TO_ID = {
 static std::unordered_map<Id, std::string, EnumHasher> ID_TO_DEFAULT = {
     { Id::NavigateLibrary, "M-a" },
     { Id::NavigateLibraryBrowse, "M-b" },
+    { Id::NavigateLibraryBrowseArtists, "M-1" },
+    { Id::NavigateLibraryBrowseAlbums, "M-2" },
+    { Id::NavigateLibraryBrowseGenres, "M-3" },
     { Id::NavigateLibraryFilter, "M-f" },
     { Id::NavigateLibraryTracks, "M-t" },
     { Id::NavigateLibraryPlayQueue, "M-n" },
     { Id::NavigateSettings, "M-s" },
     { Id::NavigateConsole, "M-`" },
+    { Id::NavigateJumpToPlaying, "M-m" },
 
     { Id::TogglePause, "^P" },
     { Id::Next, "M-l" },
@@ -96,6 +106,8 @@ static std::unordered_map<Id, std::string, EnumHasher> ID_TO_DEFAULT = {
     { Id::ToggleRepeat, "M-," },
     { Id::ToggleShuffle, "M-." },
     { Id::Stop, "^X" },
+
+    { Id::ViewRefresh, "KEY_F(5)" },
 
     { Id::RescanMetadata, "^R"}
 };

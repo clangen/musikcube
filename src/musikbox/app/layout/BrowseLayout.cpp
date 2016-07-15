@@ -38,6 +38,7 @@
 #include <cursespp/Screen.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <app/query/CategoryTrackListQuery.h>
+#include <app/util/Hotkeys.h>
 #include <app/util/Playback.h>
 
 #include "BrowseLayout.h"
@@ -157,19 +158,19 @@ bool BrowseLayout::KeyPress(const std::string& key) {
         playback::Play(this->trackList, this->playback, this->GetFocus());
         return true;
     }
-    if (key == "KEY_F(5)") {
+    else if (Hotkeys::Is(Hotkeys::ViewRefresh, key)) {
         this->categoryList->Requery();
         return true;
     }
-    else if (key == "M-1") {
+    else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseArtists, key)) {
         this->categoryList->SetFieldName(constants::Track::ARTIST);
         return true;
     }
-    else if (key == "M-2") {
+    else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseAlbums, key)) {
         this->categoryList->SetFieldName(constants::Track::ALBUM);
         return true;
     }
-    else if (key == "M-3") {
+    else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseGenres, key)) {
         this->categoryList->SetFieldName(constants::Track::GENRE);
         return true;
     }

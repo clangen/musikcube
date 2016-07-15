@@ -47,11 +47,18 @@ namespace musik {
                     /* navigation */
                     NavigateLibrary,
                     NavigateLibraryBrowse,
+                    NavigateLibraryBrowseArtists,
+                    NavigateLibraryBrowseAlbums,
+                    NavigateLibraryBrowseGenres,
                     NavigateLibraryFilter,
                     NavigateLibraryTracks,
                     NavigateLibraryPlayQueue,
                     NavigateSettings,
                     NavigateConsole,
+                    NavigateJumpToPlaying,
+
+                    /* views, generic */
+                    ViewRefresh,
 
                     /* playback */
                     TogglePause,

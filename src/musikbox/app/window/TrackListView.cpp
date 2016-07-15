@@ -42,8 +42,9 @@
 
 #include <core/library/LocalLibraryConstants.h>
 
-#include <app/window/EntryWithHeader.h>
+#include <app/util/Hotkeys.h>
 #include <app/util/Duration.h>
+#include <app/window/EntryWithHeader.h>
 
 #include <boost/format.hpp>
 
@@ -139,7 +140,7 @@ void TrackListView::ProcessMessage(IMessage &message) {
 }
 
 bool TrackListView::KeyPress(const std::string& key) {
-    if (key == "M-m") {
+    if (Hotkeys::Is(Hotkeys::NavigateJumpToPlaying, key)) {
         this->ScrollToPlaying();
         return true;
     }
