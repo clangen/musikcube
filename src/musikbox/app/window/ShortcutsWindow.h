@@ -59,12 +59,18 @@ namespace musik {
                     const std::string& description,
                     int64 attrs = -1);
 
+                void RemoveAll();
+
                 void SetActive(const std::string& key);
                 void SetActive(Hotkeys::Id id);
 
                 virtual void Repaint();
 
+            protected:
+                virtual void OnFocusChanged(bool focused);
+
             private:
+                void UpdateContentColor();
 
                 struct Entry {
                     Entry(const std::string& key, const std::string& desc, int64 attrs = -1) {

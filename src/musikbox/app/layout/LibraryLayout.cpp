@@ -47,7 +47,11 @@
 using namespace musik::core::library::constants;
 
 #define TRANSPORT_HEIGHT 3
-#define SHORTCUTS_HEIGHT 1
+
+
+#define SHOULD_REFOCUS(target) \
+    (this->visibleLayout == target) && \
+    (this->shortcuts && !this->shortcuts->IsFocused())
 
 using namespace musik::core;
 using namespace musik::core::audio;
@@ -68,12 +72,10 @@ LibraryLayout::~LibraryLayout() {
 }
 
 void LibraryLayout::Layout() {
-    int x = 0, y = 0;
-    int cx = Screen::GetWidth(), cy = Screen::GetHeight();
+    int x = this->GetX(), y = this->GetY();
+    int cx = this->GetWidth(), cy = this->GetHeight();
 
-    this->MoveAndResize(x, y, cx, cy);
-
-    int mainHeight = cy - TRANSPORT_HEIGHT - SHORTCUTS_HEIGHT;
+    int mainHeight = cy - TRANSPORT_HEIGHT;
 
     this->browseLayout->MoveAndResize(x, y, cx, mainHeight);
     this->browseLayout->Layout();
@@ -86,8 +88,6 @@ void LibraryLayout::Layout() {
 
     this->trackSearch->MoveAndResize(x, y, cx, mainHeight);
     this->trackSearch->Layout();
-
-    this->shortcuts->MoveAndResize(0, cy - 1, cx, 1);
 
     this->transportView->MoveAndResize(
         1,
@@ -124,21 +124,6 @@ void LibraryLayout::OnLayoutChanged() {
     this->UpdateShortcutsWindow();
 }
 
-void LibraryLayout::UpdateShortcutsWindow() {
-    if (this->visibleLayout == this->browseLayout) {
-        this->shortcuts->SetActive(Hotkeys::NavigateLibraryBrowse);
-    }
-    else if (this->visibleLayout == nowPlayingLayout) {
-        this->shortcuts->SetActive(Hotkeys::NavigateLibraryPlayQueue);
-    }
-    else if (this->visibleLayout == searchLayout) {
-        this->shortcuts->SetActive(Hotkeys::NavigateLibraryFilter);
-    }
-    else if (this->visibleLayout == trackSearch) {
-        this->shortcuts->SetActive(Hotkeys::NavigateLibraryTracks);
-    }
-}
-
 void LibraryLayout::ShowNowPlaying() {
     this->ChangeMainLayout(this->nowPlayingLayout);
 }
@@ -148,13 +133,13 @@ void LibraryLayout::ShowBrowse() {
 }
 
 void LibraryLayout::ShowSearch() {
-    this->visibleLayout == this->searchLayout
+    SHOULD_REFOCUS(this->searchLayout)
         ? this->searchLayout->FocusInput()
         : this->ChangeMainLayout(this->searchLayout);
 }
 
 void LibraryLayout::ShowTrackSearch() {
-    this->visibleLayout == this->trackSearch
+    SHOULD_REFOCUS(this->trackSearch)
         ? this->trackSearch->FocusInput()
         : this->ChangeMainLayout(this->trackSearch);
 }
@@ -170,19 +155,42 @@ void LibraryLayout::InitializeWindows() {
 
     this->transportView.reset(new TransportWindow(this->playback));
 
-    this->shortcuts.reset(new ShortcutsWindow());
-    this->shortcuts->AddShortcut(Hotkeys::NavigateLibraryBrowse, "browse");
-    this->shortcuts->AddShortcut(Hotkeys::NavigateLibraryFilter, "filter");
-    this->shortcuts->AddShortcut(Hotkeys::NavigateLibraryTracks, "tracks");
-    this->shortcuts->AddShortcut(Hotkeys::NavigateLibraryPlayQueue, "play queue");
-    this->shortcuts->AddShortcut(Hotkeys::NavigateSettings, "settings");
-    this->shortcuts->AddShortcut("^D", "quit");
-    this->UpdateShortcutsWindow();
-
     this->AddWindow(this->transportView);
-    this->AddWindow(this->shortcuts);
+}
 
-    this->Layout();
+void LibraryLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
+    this->shortcuts = shortcuts;
+
+    if (this->shortcuts) {
+        this->shortcuts->AddShortcut(Hotkeys::NavigateLibraryBrowse, "browse");
+        this->shortcuts->AddShortcut(Hotkeys::NavigateLibraryFilter, "filter");
+        this->shortcuts->AddShortcut(Hotkeys::NavigateLibraryTracks, "tracks");
+        this->shortcuts->AddShortcut(Hotkeys::NavigateLibraryPlayQueue, "play queue");
+        this->shortcuts->AddShortcut(Hotkeys::NavigateSettings, "settings");
+        this->shortcuts->AddShortcut("^D", "quit");
+        this->UpdateShortcutsWindow();
+    }
+}
+
+void LibraryLayout::UpdateShortcutsWindow() {
+    if (this->shortcuts) {
+        if (this->shortcuts->IsFocused() && this->visibleLayout) {
+            this->visibleLayout->SetFocus(IWindowPtr());
+        }
+
+        if (this->visibleLayout == this->browseLayout) {
+            this->shortcuts->SetActive(Hotkeys::NavigateLibraryBrowse);
+        }
+        else if (this->visibleLayout == nowPlayingLayout) {
+            this->shortcuts->SetActive(Hotkeys::NavigateLibraryPlayQueue);
+        }
+        else if (this->visibleLayout == searchLayout) {
+            this->shortcuts->SetActive(Hotkeys::NavigateLibraryFilter);
+        }
+        else if (this->visibleLayout == trackSearch) {
+            this->shortcuts->SetActive(Hotkeys::NavigateLibraryTracks);
+        }
+    }
 }
 
 void LibraryLayout::OnSearchResultSelected(
@@ -202,6 +210,10 @@ IWindowPtr LibraryLayout::FocusPrev() {
 
 IWindowPtr LibraryLayout::GetFocus() {
     return this->visibleLayout->GetFocus();
+}
+
+bool LibraryLayout::SetFocus(cursespp::IWindowPtr window) {
+    return this->visibleLayout->SetFocus(window);
 }
 
 bool LibraryLayout::KeyPress(const std::string& key) {

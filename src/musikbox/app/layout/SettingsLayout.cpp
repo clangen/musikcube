@@ -44,7 +44,7 @@
 #include <app/query/SearchTrackListQuery.h>
 #include <app/util/Hotkeys.h>
 
-#include "IndexerLayout.h"
+#include "SettingsLayout.h"
 
 using namespace musik::core::library::constants;
 using namespace musik::core;
@@ -64,37 +64,37 @@ using namespace std::placeholders;
 typedef IScrollAdapter::EntryPtr EntryPtr;
 static bool showDotfiles = false;
 
-IndexerLayout::IndexerLayout(musik::core::LibraryPtr library)
+SettingsLayout::SettingsLayout(musik::core::LibraryPtr library)
 : LayoutBase()
 , library(library)
 , indexer(library->Indexer()) {
-    this->prefs = Preferences::ForComponent(INDEXER_PREFS_COMPONENT);
-    this->indexer->PathsUpdated.connect(this, &IndexerLayout::RefreshAddedPaths);
+    this->prefs = Preferences::ForComponent(GENERAL_PREFS_COMPONENT);
+    this->indexer->PathsUpdated.connect(this, &SettingsLayout::RefreshAddedPaths);
     this->InitializeWindows();
 }
 
-IndexerLayout::~IndexerLayout() {
+SettingsLayout::~SettingsLayout() {
 }
 
-void IndexerLayout::OnRemoveMissingCheckChanged(cursespp::Checkbox* cb, bool checked) {
+void SettingsLayout::OnRemoveMissingCheckChanged(cursespp::Checkbox* cb, bool checked) {
     this->prefs->SetBool(INDEXER_PREFS_REMOVE_MISSING_FILES, checked);
     this->prefs->Save();
 }
 
-void IndexerLayout::OnDotfilesCheckChanged(cursespp::Checkbox* cb, bool checked) {
+void SettingsLayout::OnFocusShortcutsCheckChanged(cursespp::Checkbox* cb, bool checked) {
+    this->prefs->SetBool(GENERAL_PREFS_FOCUS_SHORTCUTS, checked);
+    this->prefs->Save();
+}
+
+void SettingsLayout::OnDotfilesCheckChanged(cursespp::Checkbox* cb, bool checked) {
     showDotfiles = !showDotfiles;
     this->browseAdapter.SetDotfilesVisible(showDotfiles);
     this->browseList->OnAdapterChanged();
 }
 
-void IndexerLayout::Layout() {
-    int x = 0, y = 0;
-    int cx = Screen::GetWidth(), cy = Screen::GetHeight();
-
-    this->SetFrameVisible(false);
-    this->MoveAndResize(x, y, cx, cy);
-
-    this->shortcuts->MoveAndResize(0, cy - 1, cx, LABEL_HEIGHT);
+void SettingsLayout::Layout() {
+    int x = this->GetX(), y = this->GetY();
+    int cx = this->GetWidth(), cy = this->GetHeight();
 
     int startY = 0;
     int leftX = 0;
@@ -113,21 +113,22 @@ void IndexerLayout::Layout() {
 
     this->dotfileCheckbox->MoveAndResize(1, BOTTOM(this->browseList), cx - 1, LABEL_HEIGHT);
     this->removeCheckbox->MoveAndResize(1, BOTTOM(this->dotfileCheckbox), cx - 1, LABEL_HEIGHT);
+    this->focusShortcuts->MoveAndResize(1, BOTTOM(this->removeCheckbox), cx - 1, LABEL_HEIGHT);
 
     this->hotkeyLabel->MoveAndResize(
-        1, 
-        BOTTOM(this->removeCheckbox) + 2, 
+        1,
+        BOTTOM(this->focusShortcuts) + 2,
         this->hotkeyLabel->Length(),
         LABEL_HEIGHT);
 
     this->hotkeyInput->MoveAndResize(
         RIGHT(this->hotkeyLabel),
-        BOTTOM(this->removeCheckbox) + 1,
+        BOTTOM(this->focusShortcuts) + 1,
         HOTKEY_INPUT_WIDTH,
         INPUT_HEIGHT);
 }
 
-void IndexerLayout::RefreshAddedPaths() {
+void SettingsLayout::RefreshAddedPaths() {
     this->addedPathsAdapter.Clear();
 
     std::vector<std::string> paths;
@@ -142,7 +143,7 @@ void IndexerLayout::RefreshAddedPaths() {
     this->addedPathsList->OnAdapterChanged();
 }
 
-int64 IndexerLayout::ListItemDecorator(
+int64 SettingsLayout::ListItemDecorator(
     ScrollableWindow* scrollable,
     size_t index,
     size_t line,
@@ -159,7 +160,9 @@ int64 IndexerLayout::ListItemDecorator(
     return -1;
 }
 
-void IndexerLayout::InitializeWindows() {
+void SettingsLayout::InitializeWindows() {
+    this->SetFrameVisible(false);
+
     this->browseLabel.reset(new TextLabel());
     this->browseLabel->SetText("browse (SPACE to add)", text::AlignLeft);
 
@@ -171,7 +174,7 @@ void IndexerLayout::InitializeWindows() {
 
     ScrollAdapterBase::ItemDecorator decorator =
         std::bind(
-            &IndexerLayout::ListItemDecorator,
+            &SettingsLayout::ListItemDecorator,
             this,
             std::placeholders::_1,
             std::placeholders::_2,
@@ -183,16 +186,15 @@ void IndexerLayout::InitializeWindows() {
 
     this->dotfileCheckbox.reset(new cursespp::Checkbox());
     this->dotfileCheckbox->SetText("show dotfiles in directory browser");
-    this->dotfileCheckbox->CheckChanged.connect(this, &IndexerLayout::OnDotfilesCheckChanged);
+    this->dotfileCheckbox->CheckChanged.connect(this, &SettingsLayout::OnDotfilesCheckChanged);
 
     this->removeCheckbox.reset(new cursespp::Checkbox());
     this->removeCheckbox->SetText("remove missing files from library");
-    this->removeCheckbox->CheckChanged.connect(this, &IndexerLayout::OnRemoveMissingCheckChanged);
+    this->removeCheckbox->CheckChanged.connect(this, &SettingsLayout::OnRemoveMissingCheckChanged);
 
-    this->shortcuts.reset(new ShortcutsWindow());
-    this->shortcuts->AddShortcut(Hotkeys::NavigateLibrary, "library");
-    this->shortcuts->AddShortcut(Hotkeys::NavigateConsole, "console");
-    this->shortcuts->AddShortcut("^D", "quit");
+    this->focusShortcuts.reset(new cursespp::Checkbox());
+    this->focusShortcuts->SetText("esc key focuses the shortcuts bar");
+    this->focusShortcuts->CheckChanged.connect(this, &SettingsLayout::OnFocusShortcutsCheckChanged);
 
     this->hotkeyLabel.reset(new TextLabel());
     this->hotkeyLabel->SetText("hotkey tester: ");
@@ -202,7 +204,8 @@ void IndexerLayout::InitializeWindows() {
     this->addedPathsList->SetFocusOrder(1);
     this->dotfileCheckbox->SetFocusOrder(2);
     this->removeCheckbox->SetFocusOrder(3);
-    this->hotkeyInput->SetFocusOrder(4);
+    this->focusShortcuts->SetFocusOrder(4);
+    this->hotkeyInput->SetFocusOrder(5);
 
     this->AddWindow(this->browseLabel);
     this->AddWindow(this->addedPathsLabel);
@@ -210,14 +213,20 @@ void IndexerLayout::InitializeWindows() {
     this->AddWindow(this->addedPathsList);
     this->AddWindow(this->dotfileCheckbox);
     this->AddWindow(this->removeCheckbox);
-    this->AddWindow(this->shortcuts);
+    this->AddWindow(this->focusShortcuts);
     this->AddWindow(this->hotkeyLabel);
     this->AddWindow(this->hotkeyInput);
-
-    this->Layout();
 }
 
-void IndexerLayout::OnVisibilityChanged(bool visible) {
+void SettingsLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
+    if (shortcuts) {
+        shortcuts->AddShortcut(Hotkeys::NavigateLibrary, "library");
+        shortcuts->AddShortcut(Hotkeys::NavigateConsole, "console");
+        shortcuts->AddShortcut("^D", "quit");
+    }
+}
+
+void SettingsLayout::OnVisibilityChanged(bool visible) {
     LayoutBase::OnVisibilityChanged(visible);
 
     if (visible) {
@@ -226,11 +235,12 @@ void IndexerLayout::OnVisibilityChanged(bool visible) {
     }
 }
 
-void IndexerLayout::LoadPreferences() {
+void SettingsLayout::LoadPreferences() {
     this->removeCheckbox->SetChecked(this->prefs->GetBool(INDEXER_PREFS_REMOVE_MISSING_FILES, true));
+    this->focusShortcuts->SetChecked(this->prefs->GetBool(GENERAL_PREFS_FOCUS_SHORTCUTS));
 }
 
-void IndexerLayout::AddSelectedDirectory() {
+void SettingsLayout::AddSelectedDirectory() {
     size_t index = this->browseList->GetSelectedIndex();
     std::string path = this->browseAdapter.GetFullPathAt(index);
 
@@ -239,20 +249,20 @@ void IndexerLayout::AddSelectedDirectory() {
     }
 }
 
-void IndexerLayout::RemoveSelectedDirectory() {
+void SettingsLayout::RemoveSelectedDirectory() {
     std::vector<std::string> paths;
     this->indexer->GetPaths(paths);
     size_t index = this->addedPathsList->GetSelectedIndex();
     this->indexer->RemovePath(paths.at(index));
 }
 
-void IndexerLayout::DrillIntoSelectedDirectory() {
+void SettingsLayout::DrillIntoSelectedDirectory() {
     this->browseAdapter.Select(this->browseList->GetSelectedIndex());
     this->browseList->SetSelectedIndex(0);
     this->browseList->OnAdapterChanged();
 }
 
-bool IndexerLayout::KeyPress(const std::string& key) {
+bool SettingsLayout::KeyPress(const std::string& key) {
     if (key == "KEY_ENTER") {
         if (this->GetFocus() == this->browseList) {
             this->DrillIntoSelectedDirectory();

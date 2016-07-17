@@ -123,9 +123,6 @@
     <ClCompile Include="app\query\SearchTrackListQuery.cpp">
       <Filter>app\query</Filter>
     </ClCompile>
-    <ClCompile Include="app\layout\IndexerLayout.cpp">
-      <Filter>app\layout</Filter>
-    </ClCompile>
     <ClCompile Include="app\model\DirectoryAdapter.cpp">
       <Filter>app\model</Filter>
     </ClCompile>
@@ -140,6 +137,12 @@
     </ClCompile>
     <ClCompile Include="app\util\Hotkeys.cpp">
       <Filter>app\util</Filter>
+    </ClCompile>
+    <ClCompile Include="app\layout\MainLayout.cpp">
+      <Filter>app\layout</Filter>
+    </ClCompile>
+    <ClCompile Include="app\layout\SettingsLayout.cpp">
+      <Filter>app\layout</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -306,9 +309,6 @@
     <ClInclude Include="app\query\SearchTrackListQuery.h">
       <Filter>app\query</Filter>
     </ClInclude>
-    <ClInclude Include="app\layout\IndexerLayout.h">
-      <Filter>app\layout</Filter>
-    </ClInclude>
     <ClInclude Include="app\model\DirectoryAdapter.h">
       <Filter>app\model</Filter>
     </ClInclude>
@@ -323,6 +323,15 @@
     </ClInclude>
     <ClInclude Include="app\util\Hotkeys.h">
       <Filter>app\util</Filter>
+    </ClInclude>
+    <ClInclude Include="app\layout\MainLayout.h">
+      <Filter>app\layout</Filter>
+    </ClInclude>
+    <ClInclude Include="app\layout\SettingsLayout.h">
+      <Filter>app\layout</Filter>
+    </ClInclude>
+    <ClInclude Include="app\layout\ITopLevelLayout.h">
+      <Filter>app\layout</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

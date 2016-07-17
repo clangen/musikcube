@@ -37,61 +37,45 @@
 #include <cursespp/LayoutBase.h>
 #include <cursespp/TextInput.h>
 
-#include <app/window/LogWindow.h>
-#include <app/window/OutputWindow.h>
-#include <app/window/TransportWindow.h>
-#include <app/window/ResourcesWindow.h>
+#include <core/support/Preferences.h>
+
 #include <app/window/ShortcutsWindow.h>
-
-#include <vector>
-
-#include <core/audio/ITransport.h>
-
-#include <boost/shared_ptr.hpp>
 
 #include "ITopLevelLayout.h"
 
+#include <sigslot/sigslot.h>
+
 namespace musik {
     namespace box {
-        class ConsoleLayout :
+        class MainLayout :
             public cursespp::LayoutBase,
-            public ITopLevelLayout,
+#if (__clang_major__ == 7 && __clang_minor__ == 3)
+            public std::enable_shared_from_this<MainLayout>,
+#endif
             public sigslot::has_slots<>
         {
             public:
-                ConsoleLayout(
-                    musik::core::audio::ITransport& transport,
-                    musik::core::LibraryPtr library);
-
-                ~ConsoleLayout();
+                MainLayout();
+                virtual ~MainLayout();
 
                 virtual void Layout();
-                virtual void ProcessMessage(cursespp::IMessage &message);
-                virtual void OnVisibilityChanged(bool visible);
+                virtual bool KeyPress(const std::string& key);
 
-                void SetShortcutsWindow(ShortcutsWindow* shortcuts);
+                virtual cursespp::IWindowPtr GetFocus();
+                virtual cursespp::IWindowPtr FocusNext();
+                virtual cursespp::IWindowPtr FocusPrev();
+
+                void SetMainLayout(std::shared_ptr<cursespp::LayoutBase> layout);
 
             private:
-                void UpdateWindows();
+                void Initialize();
 
-                void OnEnterPressed(cursespp::TextInput* input);
-
-                void ListPlugins() const;
-                bool ProcessCommand(const std::string& cmd);
-                bool PlayFile(const std::vector<std::string>& args);
-                void Pause();
-                void Stop();
-                void Seek(const std::vector<std::string>& args);
-                void SetVolume(const std::vector<std::string>& args);
-                void SetVolume(float volume);
-                void Help();
-
-                std::shared_ptr<LogWindow> logs;
-                std::shared_ptr<cursespp::TextInput> commands;
-                std::shared_ptr<OutputWindow> output;
-                std::shared_ptr<ResourcesWindow> resources;
-                musik::core::audio::ITransport& transport;
-                musik::core::LibraryPtr library;
+                std::shared_ptr<musik::core::Preferences> prefs;
+                std::shared_ptr<ShortcutsWindow> shortcuts;
+                std::shared_ptr<cursespp::LayoutBase> layout;
+                cursespp::IWindowPtr lastFocus;
+                ITopLevelLayout* topLevelLayout;
+                bool shortcutsFocused;
         };
     }
 }

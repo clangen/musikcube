@@ -51,23 +51,30 @@
 
 #include <sigslot/sigslot.h>
 
+#include "ITopLevelLayout.h"
+
+#define GENERAL_PREFS_FOCUS_SHORTCUTS "EscFocusesShortcuts"
+
 namespace musik {
     namespace box {
-        class IndexerLayout :
+        class SettingsLayout :
+            public ITopLevelLayout,
             public cursespp::LayoutBase,
 #if (__clang_major__ == 7 && __clang_minor__ == 3)
-            public std::enable_shared_from_this<IndexerLayout>,
+            public std::enable_shared_from_this<SettingsLayout>,
 #endif
             public sigslot::has_slots<>
         {
             public:
-                IndexerLayout(musik::core::LibraryPtr library);
+                SettingsLayout(musik::core::LibraryPtr library);
 
-                virtual ~IndexerLayout();
+                virtual ~SettingsLayout();
 
                 virtual void Layout();
                 virtual void OnVisibilityChanged(bool visible);
                 virtual bool KeyPress(const std::string& key);
+
+                virtual void SetShortcutsWindow(ShortcutsWindow* w);
 
             private:
                 void InitializeWindows();
@@ -83,6 +90,9 @@ namespace musik {
                 void OnDotfilesCheckChanged(
                     cursespp::Checkbox* checkbox, bool checked);
 
+                void OnFocusShortcutsCheckChanged(
+                    cursespp::Checkbox* checkbox, bool checked);
+
                 int64 ListItemDecorator(
                     cursespp::ScrollableWindow* w,
                     size_t index,
@@ -96,6 +106,7 @@ namespace musik {
 
                 std::shared_ptr<cursespp::Checkbox> removeCheckbox;
                 std::shared_ptr<cursespp::Checkbox> dotfileCheckbox;
+                std::shared_ptr<cursespp::Checkbox> focusShortcuts;
 
                 std::shared_ptr<cursespp::TextLabel> browseLabel;
                 std::shared_ptr<cursespp::TextLabel> addedPathsLabel;
@@ -104,8 +115,6 @@ namespace musik {
 
                 std::shared_ptr<cursespp::TextLabel> hotkeyLabel;
                 std::shared_ptr<cursespp::TextInput> hotkeyInput;
-
-                std::shared_ptr<ShortcutsWindow> shortcuts;
 
                 cursespp::SimpleScrollAdapter addedPathsAdapter;
                 DirectoryAdapter browseAdapter;

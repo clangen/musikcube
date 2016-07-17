@@ -58,6 +58,9 @@
 #define CURSESPP_BUTTON_NEGATIVE 17
 #define CURSESPP_BUTTON_HIGHLIGHTED 18
 
+#define CURSESPP_SHORTCUT_ROW_NORMAL 19
+#define CURSESPP_SHORTCUT_ROW_FOCUSED 20
+
 namespace cursespp {
     class Colors {
         private:

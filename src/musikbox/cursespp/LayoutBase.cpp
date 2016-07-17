@@ -226,11 +226,18 @@ IWindowPtr LayoutBase::GetWindowAt(size_t position) {
 }
 
 bool LayoutBase::SetFocus(IWindowPtr focus) {
-    for (size_t i = 0; i < this->focusable.size(); i++) {
-        if (this->focusable[i] == focus) {
-            adjustFocus(GetFocus(), focus);
-            this->focused = i;
-            return true;
+    if (!focus) {
+        adjustFocus(GetFocus(), focus);
+        this->focused = -1;
+        return true;
+    }
+    else {
+        for (size_t i = 0; i < this->focusable.size(); i++) {
+            if (this->focusable[i] == focus) {
+                adjustFocus(GetFocus(), focus);
+                this->focused = i;
+                return true;
+            }
         }
     }
     return false;

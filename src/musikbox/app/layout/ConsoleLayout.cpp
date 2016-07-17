@@ -64,27 +64,25 @@ ConsoleLayout::ConsoleLayout(ITransport& transport, LibraryPtr library)
 : LayoutBase()
 , transport(transport)
 , library(library) {
+    this->SetFrameVisible(false);
+
     this->logs.reset(new LogWindow(this));
     this->output.reset(new OutputWindow(this));
     this->resources.reset(new ResourcesWindow(this));
     this->commands.reset(new cursespp::TextInput());
 
-    this->shortcuts.reset(new ShortcutsWindow());
-    this->shortcuts->AddShortcut(Hotkeys::NavigateLibrary, "library");
-    this->shortcuts->AddShortcut(Hotkeys::NavigateSettings, "settings");
-    this->shortcuts->AddShortcut("^D", "quit");
+    this->commands->SetFocusOrder(0);
+    this->output->SetFocusOrder(1);
+    this->logs->SetFocusOrder(2);
 
     this->AddWindow(this->commands);
     this->AddWindow(this->logs);
     this->AddWindow(this->output);
     this->AddWindow(this->resources);
-    this->AddWindow(this->shortcuts);
 
     this->commands->EnterPressed.connect(this, &ConsoleLayout::OnEnterPressed);
 
     this->Help();
-
-    this->PostMessage(MESSAGE_TYPE_UPDATE, 0, 0, UPDATE_INTERVAL_MS);
 }
 
 ConsoleLayout::~ConsoleLayout() {
@@ -92,30 +90,30 @@ ConsoleLayout::~ConsoleLayout() {
 }
 
 void ConsoleLayout::Layout() {
-    int cx = (int) Screen::GetWidth();
-    int cy = (int) Screen::GetHeight();
-
-    /* this layout */
-    this->MoveAndResize(0, 0, cx, cy);
-    this->SetFrameVisible(false);
-
-    /* shortcuts at the bottom */
-    this->shortcuts->MoveAndResize(0, cy - 1, cx, 1);
+    int cx = this->GetWidth();
+    int cy = this->GetHeight();
+    int x = this->GetX();
+    int y = this->GetY();
 
     /* top left */
-    this->output->MoveAndResize(0, 0, cx / 2, cy - 4);
-    this->output->SetFocusOrder(1);
+    this->output->MoveAndResize(x, y, cx / 2, cy - 3);
 
     /* bottom left */
-    this->commands->MoveAndResize(0, cy - 4, cx / 2, 3);
-    this->commands->SetFocusOrder(0);
+    this->commands->MoveAndResize(x, cy - 3, cx / 2, 3);
 
     /* top right */
-    this->logs->MoveAndResize(cx / 2, 0, cx / 2, cy - 4);
-    this->logs->SetFocusOrder(2);
+    this->logs->MoveAndResize(cx / 2, 0, cx / 2, cy - 3);
 
     /* bottom right */
-    this->resources->MoveAndResize(cx / 2, cy - 4, cx / 2, 3);
+    this->resources->MoveAndResize(cx / 2, cy - 3, cx / 2, 3);
+}
+
+void ConsoleLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
+    if (shortcuts) {
+        shortcuts->AddShortcut(Hotkeys::NavigateLibrary, "library");
+        shortcuts->AddShortcut(Hotkeys::NavigateSettings, "settings");
+        shortcuts->AddShortcut("^D", "quit");
+    }
 }
 
 void ConsoleLayout::OnEnterPressed(TextInput *input) {
@@ -134,9 +132,17 @@ void ConsoleLayout::OnEnterPressed(TextInput *input) {
     }
 }
 
-void ConsoleLayout::Show() {
-    LayoutBase::Show();
-    this->UpdateWindows();
+void ConsoleLayout::OnVisibilityChanged(bool visible) {
+    LayoutBase::OnVisibilityChanged(visible);
+
+    if (visible) {
+        this->UpdateWindows();
+        this->RemoveMessage(MESSAGE_TYPE_UPDATE);
+        this->PostMessage(MESSAGE_TYPE_UPDATE, 0, 0, UPDATE_INTERVAL_MS);
+    }
+    else {
+        this->RemoveMessage(MESSAGE_TYPE_UPDATE);
+    }
 }
 
 void ConsoleLayout::ProcessMessage(IMessage &message) {

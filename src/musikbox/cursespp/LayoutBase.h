@@ -41,7 +41,13 @@
 #include <vector>
 
 namespace cursespp {
-    class LayoutBase : public Window, public ILayout {
+    class LayoutBase : 
+        public Window,
+#if (__clang_major__ == 7 && __clang_minor__ == 3)
+        public std::enable_shared_from_this<LayoutBase>,
+#endif
+        public ILayout
+    {
         public:
             LayoutBase(IWindow* parent = NULL);
             virtual ~LayoutBase();
@@ -59,6 +65,7 @@ namespace cursespp {
             virtual IWindowPtr FocusNext();
             virtual IWindowPtr FocusPrev();
             virtual IWindowPtr GetFocus();
+            virtual bool SetFocus(IWindowPtr window);
             virtual ILayoutStack* GetLayoutStack();
             virtual void SetLayoutStack(ILayoutStack* stack);
 
@@ -72,9 +79,6 @@ namespace cursespp {
             virtual bool RemoveWindow(IWindowPtr window);
             virtual size_t GetWindowCount();
             virtual IWindowPtr GetWindowAt(size_t position);
-
-        protected:
-            bool SetFocus(IWindowPtr window);
 
         private:
             void AddFocusable(IWindowPtr window);

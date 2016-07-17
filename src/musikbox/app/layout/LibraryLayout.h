@@ -49,9 +49,15 @@
 
 #include <sigslot/sigslot.h>
 
+#include "ITopLevelLayout.h"
+
 namespace musik {
     namespace box {
-        class LibraryLayout : public cursespp::LayoutBase, public sigslot::has_slots<> {
+        class LibraryLayout :
+            public cursespp::LayoutBase,
+            public ITopLevelLayout,
+            public sigslot::has_slots<>
+        {
             public:
                 LibraryLayout(
                     PlaybackService& playback,
@@ -64,6 +70,9 @@ namespace musik {
                 virtual cursespp::IWindowPtr FocusNext();
                 virtual cursespp::IWindowPtr FocusPrev();
                 virtual cursespp::IWindowPtr GetFocus();
+                virtual bool SetFocus(cursespp::IWindowPtr window);
+
+                virtual void SetShortcutsWindow(ShortcutsWindow* w);
 
                 virtual bool KeyPress(const std::string& key);
 
@@ -93,7 +102,7 @@ namespace musik {
                 std::shared_ptr<SearchLayout> searchLayout;
                 std::shared_ptr<TrackSearchLayout> trackSearch;
                 std::shared_ptr<cursespp::LayoutBase> visibleLayout;
-                std::shared_ptr<ShortcutsWindow> shortcuts;
+                ShortcutsWindow* shortcuts;
         };
     }
 }

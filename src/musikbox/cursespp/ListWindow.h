@@ -71,7 +71,7 @@ namespace cursespp {
         protected:
             virtual void OnSelectionChanged(size_t newIndex, size_t oldIndex);
             virtual void OnInvalidated();
-            virtual void OnSizeChanged();
+            virtual void OnDimensionsChanged();
 
             virtual IScrollAdapter& GetScrollAdapter();
             virtual IScrollAdapter::ScrollPosition& GetScrollPosition();

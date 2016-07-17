@@ -46,7 +46,7 @@ using namespace musik::box;
 ShortcutsWindow::ShortcutsWindow()
 : Window(nullptr) {
     this->SetFrameVisible(false);
-    this->SetContentColor(CURSESPP_SELECTED_LIST_ITEM);
+    this->UpdateContentColor();
 }
 
 ShortcutsWindow::~ShortcutsWindow() {
@@ -71,13 +71,29 @@ void ShortcutsWindow::AddShortcut(
     this->AddShortcut(Hotkeys::Get(id), description, attrs);
 }
 
+void ShortcutsWindow::RemoveAll() {
+    this->entries.clear();
+    this->Repaint();
+}
+
 void ShortcutsWindow::SetActive(const std::string& key) {
     this->activeKey = key;
     this->Repaint();
 }
 
+void ShortcutsWindow::OnFocusChanged(bool focused) {
+    this->UpdateContentColor();
+    this->Repaint();
+}
+
 void ShortcutsWindow::SetActive(Hotkeys::Id id) {
     this->SetActive(Hotkeys::Get(id));
+}
+
+void ShortcutsWindow::UpdateContentColor() {
+    this->SetContentColor(this->IsFocused()
+        ? CURSESPP_SHORTCUT_ROW_FOCUSED
+        : CURSESPP_SHORTCUT_ROW_NORMAL);
 }
 
 void ShortcutsWindow::Repaint() {

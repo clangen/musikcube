@@ -3,8 +3,9 @@ set (BOX_SRCS
 	./stdafx.cpp
 	./app/layout/BrowseLayout.cpp
 	./app/layout/ConsoleLayout.cpp
-	./app/layout/IndexerLayout.cpp
+	./app/layout/SettingsLayout.cpp
 	./app/layout/LibraryLayout.cpp
+	./app/layout/MainLayout.cpp
 	./app/layout/NowPlayingLayout.cpp
 	./app/layout/SearchLayout.cpp
 	./app/layout/TrackSearchLayout.cpp

@@ -48,6 +48,7 @@ namespace cursespp {
             virtual IWindowPtr FocusNext() = 0;
             virtual IWindowPtr FocusPrev() = 0;
             virtual IWindowPtr GetFocus() = 0;
+            virtual bool SetFocus(IWindowPtr window) = 0;
             virtual ILayoutStack* GetLayoutStack() = 0;
             virtual void SetLayoutStack(ILayoutStack* stack) = 0;
             virtual void Layout() = 0;

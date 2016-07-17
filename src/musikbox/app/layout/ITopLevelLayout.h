@@ -34,64 +34,14 @@
 
 #pragma once
 
-#include <cursespp/LayoutBase.h>
-#include <cursespp/TextInput.h>
-
-#include <app/window/LogWindow.h>
-#include <app/window/OutputWindow.h>
-#include <app/window/TransportWindow.h>
-#include <app/window/ResourcesWindow.h>
 #include <app/window/ShortcutsWindow.h>
-
-#include <vector>
-
-#include <core/audio/ITransport.h>
-
-#include <boost/shared_ptr.hpp>
-
-#include "ITopLevelLayout.h"
 
 namespace musik {
     namespace box {
-        class ConsoleLayout :
-            public cursespp::LayoutBase,
-            public ITopLevelLayout,
-            public sigslot::has_slots<>
-        {
+        class ITopLevelLayout {
             public:
-                ConsoleLayout(
-                    musik::core::audio::ITransport& transport,
-                    musik::core::LibraryPtr library);
-
-                ~ConsoleLayout();
-
-                virtual void Layout();
-                virtual void ProcessMessage(cursespp::IMessage &message);
-                virtual void OnVisibilityChanged(bool visible);
-
-                void SetShortcutsWindow(ShortcutsWindow* shortcuts);
-
-            private:
-                void UpdateWindows();
-
-                void OnEnterPressed(cursespp::TextInput* input);
-
-                void ListPlugins() const;
-                bool ProcessCommand(const std::string& cmd);
-                bool PlayFile(const std::vector<std::string>& args);
-                void Pause();
-                void Stop();
-                void Seek(const std::vector<std::string>& args);
-                void SetVolume(const std::vector<std::string>& args);
-                void SetVolume(float volume);
-                void Help();
-
-                std::shared_ptr<LogWindow> logs;
-                std::shared_ptr<cursespp::TextInput> commands;
-                std::shared_ptr<OutputWindow> output;
-                std::shared_ptr<ResourcesWindow> resources;
-                musik::core::audio::ITransport& transport;
-                musik::core::LibraryPtr library;
+                virtual ~ITopLevelLayout() { }
+                virtual void SetShortcutsWindow(ShortcutsWindow* w) = 0;
         };
     }
 }

@@ -52,7 +52,7 @@
 #include <vector>
 #include <atomic>
 
-#define INDEXER_PREFS_COMPONENT "indexer"
+#define GENERAL_PREFS_COMPONENT "settings"
 #define INDEXER_PREFS_SYNC_ON_STARTUP "SyncOnStartup"
 #define INDEXER_PREFS_AUTO_SYNC_MILLIS "AutoSyncIntervalMillis"
 #define INDEXER_PREFS_REMOVE_MISSING_FILES "RemoveMissingFiles"

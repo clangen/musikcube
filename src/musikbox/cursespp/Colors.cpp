@@ -105,6 +105,7 @@ void Colors::Init() {
         selected = initColor(COLOR_CUSTOM_SELECTED_LIST_ITEM_BG, 66, 66, 56);
         grey = initColor(COLOR_CUSTOM_GREY, 128, 128, 128);
         orange = initColor(COLOR_CUSTOM_ORANGE, 255, 150, 32);
+        blue = initColor(COLOR_CUSTOM_BLUE, 102, 217, 238);
     }
 
     init_pair(CURSESPP_SELECTED_LIST_ITEM, yellow, selected);
@@ -126,6 +127,9 @@ void Colors::Init() {
     init_pair(CURSESPP_TEXT_SEPARATOR, orange, background);
 
     init_pair(CURSESPP_BUTTON_NORMAL, black, yellow);
-    init_pair(CURSESPP_BUTTON_NEGATIVE, yellow, red);
+    init_pair(CURSESPP_BUTTON_NEGATIVE, white, red);
     init_pair(CURSESPP_BUTTON_HIGHLIGHTED, black, green);
+
+    init_pair(CURSESPP_SHORTCUT_ROW_NORMAL, yellow, selected);
+    init_pair(CURSESPP_SHORTCUT_ROW_FOCUSED, white, red);
 }

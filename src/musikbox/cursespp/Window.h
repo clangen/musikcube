@@ -83,6 +83,9 @@ namespace cursespp {
             virtual int GetFocusOrder();
             virtual void SetFocusOrder(int order = -1);
 
+            virtual bool IsVisible();
+            virtual bool IsFocused();
+
             static void WriteToScreen(IInput* input);
             static void Invalidate();
 
@@ -90,15 +93,14 @@ namespace cursespp {
             IWindow* GetParent() const;
             void PostMessage(int messageType, int64 user1 = 0, int64 user2 = 0, int64 delay = 0);
             void RemoveMessage(int messageType);
-            bool IsVisible();
             void Create();
             void Destroy();
             void Recreate();
             void Clear();
 
-            virtual void OnPositionChanged();
-            virtual void OnSizeChanged();
+            virtual void OnDimensionsChanged();
             virtual void OnVisibilityChanged(bool visible);
+            virtual void OnFocusChanged(bool focused);
 
         private:
             IWindow* parent;
@@ -107,7 +109,7 @@ namespace cursespp {
             PANEL* contentPanel;
             WINDOW* content;
             bool drawFrame;
-            bool isVisible;
+            bool isVisible, isFocused;
             int focusOrder;
             int id;
             int64 contentColor, frameColor;

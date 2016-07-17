@@ -66,6 +66,9 @@ using namespace cursespp;
 #define DEFAULT_TIME -1.0f
 #define TIME_SLOP 3.0f
 
+#define MIN_WIDTH 20
+#define MIN_HEIGHT 2
+
 #define DEBOUNCE_REFRESH(x) \
     this->RemoveMessage(REFRESH_TRANSPORT_READOUT); \
     this->PostMessage(REFRESH_TRANSPORT_READOUT, 0, 0, x);
@@ -255,9 +258,14 @@ void TransportWindow::OnPlaybackShuffled(bool shuffled) {
 
 void TransportWindow::Update() {
     this->Clear();
-    WINDOW *c = this->GetContent();
+
     size_t cx = (size_t) this->GetContentWidth();
 
+    if (cx < MIN_WIDTH || this->GetContentHeight() < MIN_HEIGHT) {
+        return;
+    }
+
+    WINDOW *c = this->GetContent();
     bool paused = (transport.GetPlaybackState() == ITransport::PlaybackPaused);
     bool stopped = (transport.GetPlaybackState() == ITransport::PlaybackStopped);
 
@@ -381,7 +389,7 @@ void TransportWindow::Update() {
     std::string currentTime = duration::Duration(std::min(secondsCurrent, secondsTotal));
     std::string totalTime = duration::Duration(secondsTotal);
 
-    size_t timerWidth =
+    int timerWidth =
         this->GetContentWidth() -
         u8cols(volume) -
         (u8cols(repeatLabel) + u8cols(repeatModeLabel)) -
@@ -392,12 +400,12 @@ void TransportWindow::Update() {
     thumbOffset = 0;
 
     if (secondsTotal) {
-        size_t progress = (secondsCurrent * 100) / secondsTotal;
+        int progress = (secondsCurrent * 100) / secondsTotal;
         thumbOffset = std::min(timerWidth - 1, (progress * timerWidth) / 100);
     }
 
     std::string timerTrack = "";
-    for (size_t i = 0; i < timerWidth; i++) {
+    for (int i = 0; i < timerWidth; i++) {
         timerTrack += (i == thumbOffset) ? "■" : "─";
     }
 

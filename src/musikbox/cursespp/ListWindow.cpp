@@ -203,8 +203,8 @@ void ListWindow::OnAdapterChanged() {
     this->ScrollTo(this->scrollPosition.firstVisibleEntryIndex);
 }
 
-void ListWindow::OnSizeChanged() {
-    ScrollableWindow::OnSizeChanged();
+void ListWindow::OnDimensionsChanged() {
+    ScrollableWindow::OnDimensionsChanged();
     this->ScrollTo(this->selectedIndex);
 }
 

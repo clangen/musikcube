@@ -67,6 +67,8 @@ namespace cursespp {
             virtual void SetFocusOrder(int order = -1) = 0;
             virtual WINDOW* GetFrame() const = 0;
             virtual WINDOW* GetContent() const = 0;
+            virtual bool IsVisible() = 0;
+            virtual bool IsFocused() = 0;
     };
 
     typedef std::shared_ptr<IWindow> IWindowPtr;

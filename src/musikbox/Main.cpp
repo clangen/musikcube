@@ -38,7 +38,8 @@
 
 #include <app/layout/ConsoleLayout.h>
 #include <app/layout/LibraryLayout.h>
-#include <app/layout/IndexerLayout.h>
+#include <app/layout/SettingsLayout.h>
+#include <app/layout/MainLayout.h>
 #include <app/util/GlobalHotkeys.h>
 #include <app/util/Hotkeys.h>
 #include <app/service/PlaybackService.h>
@@ -85,7 +86,7 @@ int main(int argc, char* argv[])
     musik::debug::init();
 
     LibraryPtr library = LibraryFactory::Libraries().at(0);
-    
+
     GaplessTransport transport;
     PlaybackService playback(library, transport);
 
@@ -94,21 +95,28 @@ int main(int argc, char* argv[])
     {
         App app("musikbox"); /* must be before layout creation */
 
-        ILayoutPtr libraryLayout((ILayout *) new LibraryLayout(playback, library));
-        ILayoutPtr consoleLayout((ILayout *) new ConsoleLayout(transport, library));
-        ILayoutPtr indexerLayout((ILayout *) new IndexerLayout(library));
+        using Layout = std::shared_ptr<LayoutBase>;
+        using Main = std::shared_ptr<MainLayout>;
+
+        Layout libraryLayout(new LibraryLayout(playback, library));
+        Layout consoleLayout(new ConsoleLayout(transport, library));
+        Layout settingsLayout(new SettingsLayout(library));
+
+        Main mainLayout(new MainLayout());
+        mainLayout->Layout();
+        mainLayout->SetMainLayout(libraryLayout);
 
         app.SetKeyHandler([&](const std::string& kn) {
             if (Hotkeys::Is(Hotkeys::NavigateConsole, kn)) {
-                app.ChangeLayout(consoleLayout);
+                mainLayout->SetMainLayout(consoleLayout);
                 return true;
             }
             else if (Hotkeys::Is(Hotkeys::NavigateLibrary, kn)) {
-                app.ChangeLayout(libraryLayout);
+                mainLayout->SetMainLayout(libraryLayout);
                 return true;
             }
             else if (Hotkeys::Is(Hotkeys::NavigateSettings, kn)) {
-                app.ChangeLayout(indexerLayout);
+                mainLayout->SetMainLayout(settingsLayout);
                 return true;
             }
 
@@ -116,12 +124,10 @@ int main(int argc, char* argv[])
         });
 
         app.SetResizeHandler([&]() {
-            libraryLayout->Layout();
-            consoleLayout->Layout();
-            indexerLayout->Layout();
+            mainLayout->Layout();
         });
 
-        app.Run(libraryLayout);
+        app.Run(mainLayout);
     }
 
     endwin();

@@ -47,7 +47,7 @@ namespace cursespp {
             virtual ~ScrollableWindow();
 
             virtual void Show();
-            virtual void OnSizeChanged();
+            virtual void OnDimensionsChanged();
 
             virtual bool KeyPress(const std::string& key);
 

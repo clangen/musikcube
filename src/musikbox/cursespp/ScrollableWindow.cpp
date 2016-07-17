@@ -63,8 +63,8 @@ ScrollableWindow::ScrollableWindow(IWindow *parent)
 ScrollableWindow::~ScrollableWindow() {
 }
 
-void ScrollableWindow::OnSizeChanged() {
-    Window::OnSizeChanged();
+void ScrollableWindow::OnDimensionsChanged() {
+    Window::OnDimensionsChanged();
 
     IScrollAdapter& adapter = this->GetScrollAdapter();
     ScrollPos& pos = this->GetScrollPosition();
