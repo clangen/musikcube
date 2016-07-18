@@ -40,6 +40,7 @@ using namespace cursespp;
 static int white = COLOR_WHITE;
 static int blue = COLOR_BLUE;
 static int red = COLOR_RED;
+static int darkRed = COLOR_RED;
 static int yellow = COLOR_YELLOW;
 static int green = COLOR_GREEN;
 static int black = COLOR_BLACK;
@@ -54,6 +55,7 @@ static int orange = COLOR_YELLOW;
 #define COLOR_CUSTOM_GREY 22
 #define COLOR_CUSTOM_SELECTED_LIST_ITEM_BG 23
 #define COLOR_CUSTOM_ORANGE 24
+#define COLOR_CUSTOM_DARK_RED 25
 
 static int foreground = COLOR_WHITE;
 static int background = -1;
@@ -100,6 +102,7 @@ void Colors::Init() {
     the future we'll allow users to configure this via setting */
     if (hasCustomColors) {
         red = initColor(COLOR_CUSTOM_RED, 220, 82, 86);
+        darkRed = initColor(COLOR_CUSTOM_DARK_RED, 175, 66, 71);
         green = initColor(COLOR_CUSTOM_GREEN, 166, 226, 46);
         yellow = initColor(COLOR_CUSTOM_YELLOW, 230, 220, 116);
         selected = initColor(COLOR_CUSTOM_SELECTED_LIST_ITEM_BG, 66, 66, 56);
@@ -133,5 +136,5 @@ void Colors::Init() {
     init_pair(CURSESPP_BUTTON_HIGHLIGHTED, black, green);
 
     init_pair(CURSESPP_SHORTCUT_ROW_NORMAL, yellow, selected);
-    init_pair(CURSESPP_SHORTCUT_ROW_FOCUSED, white, red);
+    init_pair(CURSESPP_SHORTCUT_ROW_FOCUSED, white, darkRed);
 }
