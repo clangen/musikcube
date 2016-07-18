@@ -59,8 +59,8 @@ using namespace musik::core::audio;
 using namespace musik::box;
 using namespace cursespp;
 
-#define MIN_WIDTH 60
-#define MIN_HEIGHT 14
+#define MIN_WIDTH 22
+#define MIN_HEIGHT 11
 
 #ifdef WIN32
 int _main(int argc, _TCHAR* argv[]);
@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
         app.SetResizeHandler([&]() {
             int cx = Screen::GetWidth();
             int cy = Screen::GetHeight();
-            if (cx <= MIN_WIDTH || cy <= MIN_HEIGHT) {
+            if (cx < MIN_WIDTH || cy < MIN_HEIGHT) {
                 Window::Freeze();
             }
             else {
