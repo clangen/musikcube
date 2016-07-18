@@ -183,8 +183,8 @@ size_t writePlayingFormat(
         }
 
         /* if we're not at the last token, but there's not enough space
-        to show the next token, ellipsize now and bail out of the loop */        
-        if (remaining - len < 3) {
+        to show the next token, ellipsize now and bail out of the loop */
+        if (remaining - len < 3 && it + 1 != tokens.end()) {
             if (!ellipsized) {
                 value = text::Ellipsize(value, remaining - 3);
                 len = remaining;
