@@ -115,6 +115,7 @@ App::App(const std::string& title) {
 }
 
 App::~App() {
+    endwin();
 }
 
 void App::SetKeyHandler(MainKeyHandler handler) {
@@ -136,9 +137,8 @@ void App::Run(ILayoutPtr layout) {
     this->ChangeLayout(layout);
 
     while (!quit && !disconnected) {
-        /* if the focused item is an IInput, then get characters from it,
-        so it can draw a pretty cursor if it wants */
         if (this->state.input) {
+            /* if the focused window is an input, allow it to draw a cursor */
             WINDOW *c = this->state.focused->GetContent();
             wtimeout(this->state.focused->GetContent(), IDLE_TIMEOUT_MS);
             curs_set(1);
@@ -146,6 +146,7 @@ void App::Run(ILayoutPtr layout) {
             ch = wgetch(c);
         }
         else {
+            /* otherwise, no cursor */
             ch = wgetch(stdscr);
             curs_set(0);
         }

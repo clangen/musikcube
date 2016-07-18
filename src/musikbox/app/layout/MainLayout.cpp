@@ -128,38 +128,42 @@ void MainLayout::SetMainLayout(std::shared_ptr<cursespp::LayoutBase> layout) {
 }
 
 bool MainLayout::KeyPress(const std::string& key) {
-    if (key == "^[" && prefs->GetBool(GENERAL_PREFS_FOCUS_SHORTCUTS)) {
-        this->shortcutsFocused = !this->shortcutsFocused;
+    if (prefs->GetBool(GENERAL_PREFS_FOCUS_SHORTCUTS)) {
+        if (key == "^["  ||
+            (key == "KEY_UP" && this->shortcutsFocused))
+        {
+            this->shortcutsFocused = !this->shortcutsFocused;
 
-        if (this->shortcutsFocused) {
-            this->shortcuts->Focus();
+            if (this->shortcutsFocused) {
+                this->shortcuts->Focus();
 
-            if (this->layout) {
-                this->lastFocus = this->layout->GetFocus();
-                this->layout->SetFocus(IWindowPtr());
-            }
-        }
-        else {
-            this->shortcuts->Blur();
-
-            if (this->layout) {
-                bool refocused = false;
-                if (this->lastFocus) {
-                    refocused = this->layout->SetFocus(this->lastFocus);
-                    this->lastFocus.reset();
-                }
-
-                if (!refocused) {
-                    this->layout->FocusNext();
+                if (this->layout) {
+                    this->lastFocus = this->layout->GetFocus();
+                    this->layout->SetFocus(IWindowPtr());
                 }
             }
+            else {
+                this->shortcuts->Blur();
+
+                if (this->layout) {
+                    bool refocused = false;
+                    if (this->lastFocus) {
+                        refocused = this->layout->SetFocus(this->lastFocus);
+                        this->lastFocus.reset();
+                    }
+
+                    if (!refocused) {
+                        this->layout->FocusNext();
+                    }
+                }
+            }
+
+            this->shortcutsFocused
+                ? this->shortcuts->Focus()
+                : this->shortcuts->Blur();
+
+            return true;
         }
-
-        this->shortcutsFocused
-            ? this->shortcuts->Focus()
-            : this->shortcuts->Blur();
-
-        return true;
     }
 
     if (this->shortcutsFocused) {
