@@ -44,9 +44,10 @@ using namespace cursespp;
 
 static int NEXT_ID = 0;
 static bool drawPending = false;
+static bool freeze = false;
 
 void Window::WriteToScreen(IInput* input) {
-    if (drawPending) {
+    if (drawPending && !freeze) {
         drawPending = false;
 
         update_panels();
@@ -70,6 +71,20 @@ void Window::WriteToScreen(IInput* input) {
 void Window::Invalidate() {
     wclear(stdscr);
     drawPending = true;
+}
+
+void Window::Freeze() {
+    if (!freeze) {
+        freeze = true;
+        Window::Invalidate();
+    }
+}
+
+void Window::Unfreeze() {
+    if (freeze) {
+        freeze = false;
+        Window::Invalidate();
+    }
 }
 
 Window::Window(IWindow *parent) {

@@ -35,6 +35,7 @@
 #include "stdafx.h"
 
 #include <cursespp/App.h>
+#include <cursespp/Screen.h>
 
 #include <app/layout/ConsoleLayout.h>
 #include <app/layout/LibraryLayout.h>
@@ -58,6 +59,9 @@ using namespace musik::core::audio;
 using namespace musik::box;
 using namespace cursespp;
 
+#define MIN_WIDTH 60
+#define MIN_HEIGHT 14
+
 #ifdef WIN32
 int _main(int argc, _TCHAR* argv[]);
 
@@ -79,7 +83,7 @@ int main(int argc, char* argv[])
 #endif
 
 #ifdef __PDCURSES__
-    PDC_set_resize_limits(12, 60, 60, 250);
+    PDC_set_resize_limits(MIN_HEIGHT, MIN_WIDTH, 60, 250);
     resize_term(26, 100); /* must be before app init */
 #endif
 
@@ -124,7 +128,15 @@ int main(int argc, char* argv[])
         });
 
         app.SetResizeHandler([&]() {
-            mainLayout->Layout();
+            int cx = Screen::GetWidth();
+            int cy = Screen::GetHeight();
+            if (cx <= MIN_WIDTH || cy <= MIN_HEIGHT) {
+                Window::Freeze();
+            }
+            else {
+                Window::Unfreeze();
+                mainLayout->Layout();
+            }
         });
 
         app.Run(mainLayout);

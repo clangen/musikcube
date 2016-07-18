@@ -173,7 +173,10 @@ void App::Run(ILayoutPtr layout) {
                 resizeAt = App::Now() + REDRAW_DEBOUNCE_MS;
             }
             /* order: focused input, global key handler, then layout. */
-            else if (!this->state.input || !this->state.input->Write(kn)) {
+            else if (!this->state.input ||
+                !this->state.focused->IsVisible() ||
+                !this->state.input->Write(kn))
+            {
                 if (!keyHandler || !keyHandler(kn)) {
                     if (!this->state.keyHandler || !this->state.keyHandler->KeyPress(kn)) {
                         this->state.layout->KeyPress(kn);

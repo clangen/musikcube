@@ -88,6 +88,8 @@ namespace cursespp {
 
             static void WriteToScreen(IInput* input);
             static void Invalidate();
+            static void Freeze();
+            static void Unfreeze();
 
         protected:
             IWindow* GetParent() const;

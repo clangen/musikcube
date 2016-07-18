@@ -113,17 +113,19 @@ void MainLayout::SetMainLayout(std::shared_ptr<cursespp::LayoutBase> layout) {
         }
 
         this->layout = layout;
-        this->topLevelLayout = dynamic_cast<ITopLevelLayout*>(layout.get());
-
         this->shortcuts->RemoveAll();
-        if (this->topLevelLayout) {
-            this->topLevelLayout->SetShortcutsWindow(this->shortcuts.get());
-        }
 
-        this->AddWindow(layout);
-        this->layout->SetFocusOrder(0);
-        this->Show();
-        this->Layout();
+        if (this->layout) {
+            this->topLevelLayout = dynamic_cast<ITopLevelLayout*>(layout.get());
+            if (this->topLevelLayout) {
+                this->topLevelLayout->SetShortcutsWindow(this->shortcuts.get());
+            }
+
+            this->AddWindow(layout);
+            this->layout->SetFocusOrder(0);
+            this->Show();
+            this->Layout();
+        }
     }
 }
 
