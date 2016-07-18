@@ -106,7 +106,7 @@ void Colors::Init() {
         grey = initColor(COLOR_CUSTOM_GREY, 128, 128, 128);
         orange = initColor(COLOR_CUSTOM_ORANGE, 255, 150, 32);
         blue = initColor(COLOR_CUSTOM_BLUE, 102, 217, 238);
-        white = initColor(COLOR_CUSTOM_WHITE, 240, 240, 240);
+        white = initColor(COLOR_CUSTOM_WHITE, 230, 230, 230);
         foreground = COLOR_CUSTOM_WHITE;
     }
 
