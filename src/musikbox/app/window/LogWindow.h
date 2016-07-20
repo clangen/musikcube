@@ -57,12 +57,16 @@ namespace musik {
                 virtual ~LogWindow();
 
                 void ClearContents();
-                void Update();
+
+                virtual void ProcessMessage(cursespp::IMessage &message);
+                virtual void OnVisibilityChanged(bool visible);
 
             protected:
                 virtual cursespp::IScrollAdapter& GetScrollAdapter();
 
             private:
+                void Update();
+
                 void OnLogged(
                     musik::debug::log_level level,
                     std::string tag,

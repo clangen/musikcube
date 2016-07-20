@@ -21,12 +21,10 @@ set (BOX_SRCS
 	./app/util/GlobalHotkeys.cpp
 	./app/util/Playback.cpp
 	./app/util/PreferenceKeys.cpp
-	./app/util/SystemInfo.cpp
 	./app/window/CategoryListView.cpp
 	./app/window/EntryWithHeader.cpp
 	./app/window/LogWindow.cpp
 	./app/window/OutputWindow.cpp
-	./app/window/ResourcesWindow.cpp
 	./app/window/ShortcutsWindow.cpp
 	./app/window/TrackListView.cpp
 	./app/window/TransportWindow.cpp

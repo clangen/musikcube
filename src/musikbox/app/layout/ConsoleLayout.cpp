@@ -46,9 +46,6 @@
 
 #include <boost/algorithm/string.hpp>
 
-#define MESSAGE_TYPE_UPDATE 1001
-#define UPDATE_INTERVAL_MS 1000
-
 template <class T>
 bool tostr(T& t, const std::string& s) {
     std::istringstream iss(s);
@@ -68,7 +65,6 @@ ConsoleLayout::ConsoleLayout(ITransport& transport, LibraryPtr library)
 
     this->logs.reset(new LogWindow(this));
     this->output.reset(new OutputWindow(this));
-    this->resources.reset(new ResourcesWindow(this));
     this->commands.reset(new cursespp::TextInput());
 
     this->commands->SetFocusOrder(0);
@@ -78,7 +74,6 @@ ConsoleLayout::ConsoleLayout(ITransport& transport, LibraryPtr library)
     this->AddWindow(this->commands);
     this->AddWindow(this->logs);
     this->AddWindow(this->output);
-    this->AddWindow(this->resources);
 
     this->commands->EnterPressed.connect(this, &ConsoleLayout::OnEnterPressed);
 
@@ -101,11 +96,8 @@ void ConsoleLayout::Layout() {
     /* bottom left */
     this->commands->MoveAndResize(x, cy - 3, cx / 2, 3);
 
-    /* top right */
-    this->logs->MoveAndResize(cx / 2, 0, cx / 2, cy - 3);
-
-    /* bottom right */
-    this->resources->MoveAndResize(cx / 2, cy - 3, cx / 2, 3);
+    /* right */
+    this->logs->MoveAndResize(cx / 2, 0, cx / 2, cy);
 }
 
 void ConsoleLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
@@ -134,30 +126,6 @@ void ConsoleLayout::OnEnterPressed(TextInput *input) {
     }
 }
 
-void ConsoleLayout::OnVisibilityChanged(bool visible) {
-    LayoutBase::OnVisibilityChanged(visible);
-
-    if (visible) {
-        this->UpdateWindows();
-        this->RemoveMessage(MESSAGE_TYPE_UPDATE);
-        this->PostMessage(MESSAGE_TYPE_UPDATE, 0, 0, UPDATE_INTERVAL_MS);
-    }
-    else {
-        this->RemoveMessage(MESSAGE_TYPE_UPDATE);
-    }
-}
-
-void ConsoleLayout::ProcessMessage(IMessage &message) {
-    if (message.Type() == MESSAGE_TYPE_UPDATE) {
-        this->UpdateWindows();
-        this->PostMessage(MESSAGE_TYPE_UPDATE, 0, 0, UPDATE_INTERVAL_MS);
-    }
-}
-
-void ConsoleLayout::UpdateWindows() {
-    this->logs->Update();
-    this->resources->Update();
-}
 
 void ConsoleLayout::Seek(const std::vector<std::string>& args) {
     if (args.size() > 0) {

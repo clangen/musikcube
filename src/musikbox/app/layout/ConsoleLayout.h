@@ -40,7 +40,6 @@
 #include <app/window/LogWindow.h>
 #include <app/window/OutputWindow.h>
 #include <app/window/TransportWindow.h>
-#include <app/window/ResourcesWindow.h>
 #include <app/window/ShortcutsWindow.h>
 
 #include <vector>
@@ -66,14 +65,9 @@ namespace musik {
                 ~ConsoleLayout();
 
                 virtual void Layout();
-                virtual void ProcessMessage(cursespp::IMessage &message);
-                virtual void OnVisibilityChanged(bool visible);
-
-                void SetShortcutsWindow(ShortcutsWindow* shortcuts);
+                virtual void SetShortcutsWindow(ShortcutsWindow* shortcuts);
 
             private:
-                void UpdateWindows();
-
                 void OnEnterPressed(cursespp::TextInput* input);
 
                 void ListPlugins() const;
@@ -89,7 +83,6 @@ namespace musik {
                 std::shared_ptr<LogWindow> logs;
                 std::shared_ptr<cursespp::TextInput> commands;
                 std::shared_ptr<OutputWindow> output;
-                std::shared_ptr<ResourcesWindow> resources;
                 musik::core::audio::ITransport& transport;
                 musik::core::LibraryPtr library;
         };

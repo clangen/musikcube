@@ -45,6 +45,12 @@ using namespace cursespp;
 
 typedef IScrollAdapter::IEntry IEntry;
 
+#define REFRESH 1000
+
+#define DEBOUNCE_REFRESH() \
+    this->RemoveMessage(REFRESH); \
+    this->PostMessage(REFRESH, 0, 0, 250);
+
 LogWindow::LogWindow(IWindow *parent)
 : ScrollableWindow(parent) {
     this->adapter = new SimpleScrollAdapter();
@@ -66,14 +72,29 @@ void LogWindow::ClearContents() {
     this->OnAdapterChanged();
 }
 
+void LogWindow::ProcessMessage(IMessage &message) {
+    if (message.Type() == REFRESH) {
+        this->Update();
+    }
+    else {
+        ScrollableWindow::ProcessMessage(message);
+    }
+}
+
+void LogWindow::OnVisibilityChanged(bool visible) {
+    ScrollableWindow::OnVisibilityChanged(visible);
+
+    if (visible) {
+        DEBOUNCE_REFRESH();
+    }
+}
+
 void LogWindow::Update() {
     boost::mutex::scoped_lock lock(pendingMutex);
 
     if (!pending.size()) {
         return;
     }
-
-    WINDOW* contents = this->GetContent();
 
     for (size_t i = 0; i < pending.size(); i++) {
         int64 attrs = COLOR_PAIR(CURSESPP_TEXT_DEFAULT);
@@ -116,4 +137,6 @@ void LogWindow::OnLogged( /* from a background thread */
     entry->tag = tag;
     entry->message = message;
     pending.push_back(entry);
+
+    DEBOUNCE_REFRESH();
 }
