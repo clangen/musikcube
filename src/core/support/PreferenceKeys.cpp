@@ -32,6 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+#include "pch.hpp"
 #include "PreferenceKeys.h"
 
 namespace musik { namespace core { namespace prefs {

@@ -134,6 +134,7 @@
     <ClCompile Include="app\util\GlobalHotkeys.cpp" />
     <ClCompile Include="app\util\Hotkeys.cpp" />
     <ClCompile Include="app\util\Playback.cpp" />
+    <ClCompile Include="app\util\PreferenceKeys.cpp" />
     <ClCompile Include="app\util\SystemInfo.cpp" />
     <ClCompile Include="app\window\CategoryListView.cpp" />
     <ClCompile Include="app\window\EntryWithHeader.cpp" />
@@ -190,6 +191,7 @@
     <ClInclude Include="app\util\GlobalHotkeys.h" />
     <ClInclude Include="app\util\Hotkeys.h" />
     <ClInclude Include="app\util\Playback.h" />
+    <ClInclude Include="app\util\PreferenceKeys.h" />
     <ClInclude Include="app\util\SystemInfo.h" />
     <ClInclude Include="app\window\CategoryListView.h" />
     <ClInclude Include="app\window\EntryWithHeader.h" />

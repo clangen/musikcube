@@ -112,6 +112,9 @@
     <ClCompile Include="audio\GaplessTransport.cpp">
       <Filter>src\audio</Filter>
     </ClCompile>
+    <ClCompile Include="support\PreferenceKeys.cpp">
+      <Filter>src\support</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -248,6 +251,9 @@
     </ClInclude>
     <ClInclude Include="audio\GaplessTransport.h">
       <Filter>src\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="support\PreferenceKeys.h">
+      <Filter>src\support</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

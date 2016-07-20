@@ -144,6 +144,9 @@
     <ClCompile Include="app\layout\SettingsLayout.cpp">
       <Filter>app\layout</Filter>
     </ClCompile>
+    <ClCompile Include="app\util\PreferenceKeys.cpp">
+      <Filter>app\util</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -332,6 +335,9 @@
     </ClInclude>
     <ClInclude Include="app\layout\ITopLevelLayout.h">
       <Filter>app\layout</Filter>
+    </ClInclude>
+    <ClInclude Include="app\util\PreferenceKeys.h">
+      <Filter>app\util</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
