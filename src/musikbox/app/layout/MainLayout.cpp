@@ -36,9 +36,12 @@
 
 #include <cursespp/Screen.h>
 
+#include <app/util/PreferenceKeys.h>
+
 #include "SettingsLayout.h"
 #include "MainLayout.h"
 
+using namespace musik;
 using namespace musik::box;
 using namespace musik::core;
 using namespace cursespp;
@@ -130,7 +133,7 @@ void MainLayout::SetMainLayout(std::shared_ptr<cursespp::LayoutBase> layout) {
 }
 
 bool MainLayout::KeyPress(const std::string& key) {
-    if (prefs->GetBool(GENERAL_PREFS_FOCUS_SHORTCUTS)) {
+    if (prefs->GetBool(box::prefs::keys::EscFocusesShortcuts)) {
         if (key == "^["  ||
             (key == "KEY_UP" && this->shortcutsFocused))
         {

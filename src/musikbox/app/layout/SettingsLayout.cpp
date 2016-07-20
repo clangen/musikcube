@@ -40,12 +40,15 @@
 
 #include <core/library/Indexer.h>
 #include <core/library/LocalLibraryConstants.h>
+#include <core/support/PreferenceKeys.h>
 
 #include <app/query/SearchTrackListQuery.h>
 #include <app/util/Hotkeys.h>
+#include <app/util/PreferenceKeys.h>
 
 #include "SettingsLayout.h"
 
+using namespace musik;
 using namespace musik::core::library::constants;
 using namespace musik::core;
 using namespace musik::box;
@@ -61,14 +64,20 @@ using namespace std::placeholders;
 #define LEFT(w) w->GetX()
 #define RIGHT(w) (w->GetX() + w->GetWidth())
 
-typedef IScrollAdapter::EntryPtr EntryPtr;
+#define CREATE_CHECKBOX(checkbox, caption) \
+    checkbox.reset(new cursespp::Checkbox()); \
+    checkbox->SetText(caption); \
+    checkbox->CheckChanged.connect(this, &SettingsLayout::OnCheckboxChanged);
+
+using EntryPtr = IScrollAdapter::EntryPtr;
+
 static bool showDotfiles = false;
 
 SettingsLayout::SettingsLayout(musik::core::LibraryPtr library)
 : LayoutBase()
 , library(library)
 , indexer(library->Indexer()) {
-    this->prefs = Preferences::ForComponent(GENERAL_PREFS_COMPONENT);
+    this->prefs = Preferences::ForComponent(core::prefs::components::Settings);
     this->indexer->PathsUpdated.connect(this, &SettingsLayout::RefreshAddedPaths);
     this->InitializeWindows();
 }
@@ -76,20 +85,24 @@ SettingsLayout::SettingsLayout(musik::core::LibraryPtr library)
 SettingsLayout::~SettingsLayout() {
 }
 
-void SettingsLayout::OnRemoveMissingCheckChanged(cursespp::Checkbox* cb, bool checked) {
-    this->prefs->SetBool(INDEXER_PREFS_REMOVE_MISSING_FILES, checked);
-    this->prefs->Save();
-}
-
-void SettingsLayout::OnFocusShortcutsCheckChanged(cursespp::Checkbox* cb, bool checked) {
-    this->prefs->SetBool(GENERAL_PREFS_FOCUS_SHORTCUTS, checked);
-    this->prefs->Save();
-}
-
-void SettingsLayout::OnDotfilesCheckChanged(cursespp::Checkbox* cb, bool checked) {
-    showDotfiles = !showDotfiles;
-    this->browseAdapter.SetDotfilesVisible(showDotfiles);
-    this->browseList->OnAdapterChanged();
+void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
+    if (cb == removeCheckbox.get()) {
+        this->prefs->SetBool(core::prefs::keys::RemoveMissingFiles, checked);
+        this->prefs->Save();
+    }
+    else if (cb == dotfileCheckbox.get()) {
+        showDotfiles = !showDotfiles;
+        this->browseAdapter.SetDotfilesVisible(showDotfiles);
+        this->browseList->OnAdapterChanged();
+    }
+    else if (cb == focusShortcutsCheckbox.get()) {
+        this->prefs->SetBool(box::prefs::keys::EscFocusesShortcuts, checked);
+        this->prefs->Save();
+    }
+    else if (cb == customColorsCheckbox.get()) {
+        this->prefs->SetBool(box::prefs::keys::DisableCustomColors, checked);
+        this->prefs->Save();
+    }
 }
 
 void SettingsLayout::Layout() {
@@ -113,17 +126,18 @@ void SettingsLayout::Layout() {
 
     this->dotfileCheckbox->MoveAndResize(1, BOTTOM(this->browseList), cx - 1, LABEL_HEIGHT);
     this->removeCheckbox->MoveAndResize(1, BOTTOM(this->dotfileCheckbox), cx - 1, LABEL_HEIGHT);
-    this->focusShortcuts->MoveAndResize(1, BOTTOM(this->removeCheckbox), cx - 1, LABEL_HEIGHT);
+    this->focusShortcutsCheckbox->MoveAndResize(1, BOTTOM(this->removeCheckbox), cx - 1, LABEL_HEIGHT);
+    this->customColorsCheckbox->MoveAndResize(1, BOTTOM(this->focusShortcutsCheckbox), cx - 1, LABEL_HEIGHT);
 
     this->hotkeyLabel->MoveAndResize(
         1,
-        BOTTOM(this->focusShortcuts) + 2,
+        BOTTOM(this->customColorsCheckbox) + 2,
         this->hotkeyLabel->Length(),
         LABEL_HEIGHT);
 
     this->hotkeyInput->MoveAndResize(
         RIGHT(this->hotkeyLabel),
-        BOTTOM(this->focusShortcuts) + 1,
+        BOTTOM(this->customColorsCheckbox) + 1,
         HOTKEY_INPUT_WIDTH,
         INPUT_HEIGHT);
 }
@@ -184,17 +198,10 @@ void SettingsLayout::InitializeWindows() {
     this->addedPathsAdapter.SetItemDecorator(decorator);
     this->browseAdapter.SetItemDecorator(decorator);
 
-    this->dotfileCheckbox.reset(new cursespp::Checkbox());
-    this->dotfileCheckbox->SetText("show dotfiles in directory browser");
-    this->dotfileCheckbox->CheckChanged.connect(this, &SettingsLayout::OnDotfilesCheckChanged);
-
-    this->removeCheckbox.reset(new cursespp::Checkbox());
-    this->removeCheckbox->SetText("remove missing files from library");
-    this->removeCheckbox->CheckChanged.connect(this, &SettingsLayout::OnRemoveMissingCheckChanged);
-
-    this->focusShortcuts.reset(new cursespp::Checkbox());
-    this->focusShortcuts->SetText("esc key focuses the shortcuts bar");
-    this->focusShortcuts->CheckChanged.connect(this, &SettingsLayout::OnFocusShortcutsCheckChanged);
+    CREATE_CHECKBOX(this->dotfileCheckbox, "show dotfiles in directory browser");
+    CREATE_CHECKBOX(this->removeCheckbox, "remove missing files from library");
+    CREATE_CHECKBOX(this->focusShortcutsCheckbox, "esc key focuses shortcuts bar");
+    CREATE_CHECKBOX(this->customColorsCheckbox, "disable custom colors (requires restart)");
 
     this->hotkeyLabel.reset(new TextLabel());
     this->hotkeyLabel->SetText("hotkey tester: ");
@@ -204,8 +211,9 @@ void SettingsLayout::InitializeWindows() {
     this->addedPathsList->SetFocusOrder(1);
     this->dotfileCheckbox->SetFocusOrder(2);
     this->removeCheckbox->SetFocusOrder(3);
-    this->focusShortcuts->SetFocusOrder(4);
-    this->hotkeyInput->SetFocusOrder(5);
+    this->focusShortcutsCheckbox->SetFocusOrder(4);
+    this->customColorsCheckbox->SetFocusOrder(5);
+    this->hotkeyInput->SetFocusOrder(6);
 
     this->AddWindow(this->browseLabel);
     this->AddWindow(this->addedPathsLabel);
@@ -213,16 +221,19 @@ void SettingsLayout::InitializeWindows() {
     this->AddWindow(this->addedPathsList);
     this->AddWindow(this->dotfileCheckbox);
     this->AddWindow(this->removeCheckbox);
-    this->AddWindow(this->focusShortcuts);
+    this->AddWindow(this->focusShortcutsCheckbox);
+    this->AddWindow(this->customColorsCheckbox);
     this->AddWindow(this->hotkeyLabel);
     this->AddWindow(this->hotkeyInput);
 }
 
 void SettingsLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
     if (shortcuts) {
+        shortcuts->AddShortcut(Hotkeys::NavigateSettings, "settings");
         shortcuts->AddShortcut(Hotkeys::NavigateLibrary, "library");
         shortcuts->AddShortcut(Hotkeys::NavigateConsole, "console");
         shortcuts->AddShortcut("^D", "quit");
+        shortcuts->SetActive(Hotkeys::NavigateSettings);
     }
 }
 
@@ -236,8 +247,9 @@ void SettingsLayout::OnVisibilityChanged(bool visible) {
 }
 
 void SettingsLayout::LoadPreferences() {
-    this->removeCheckbox->SetChecked(this->prefs->GetBool(INDEXER_PREFS_REMOVE_MISSING_FILES, true));
-    this->focusShortcuts->SetChecked(this->prefs->GetBool(GENERAL_PREFS_FOCUS_SHORTCUTS));
+    this->removeCheckbox->SetChecked(this->prefs->GetBool(core::prefs::keys::RemoveMissingFiles, true));
+    this->focusShortcutsCheckbox->SetChecked(this->prefs->GetBool(box::prefs::keys::EscFocusesShortcuts));
+    this->customColorsCheckbox->SetChecked(this->prefs->GetBool(box::prefs::keys::DisableCustomColors));
 }
 
 void SettingsLayout::AddSelectedDirectory() {

@@ -34,39 +34,14 @@
 
 #pragma once
 
-#include "curses_config.h"
+#include <string>
 
-#define CURSESPP_SELECTED_LIST_ITEM 1
-#define CURSESPP_HIGHLIGHTED_LIST_ITEM 2
-#define CURSESPP_HIGHLIGHTED_SELECTED_LIST_ITEM 3
-#define CURSESPP_LIST_ITEM_HEADER 4
+namespace musik { namespace box { namespace prefs {
 
-#define CURSESPP_DEFAULT_CONTENT_COLOR 5
-#define CURSESPP_DEFAULT_FRAME_COLOR 6
-#define CURSESPP_FOCUSED_FRAME_COLOR 7
+    namespace keys {
+        extern const std::string DisableCustomColors;
+        extern const std::string EscFocusesShortcuts;
+    }
 
-#define CURSESPP_TEXT_DEFAULT 8
-#define CURSESPP_TEXT_DISABLED 9
-#define CURSESPP_TEXT_FOCUSED 10
-#define CURSESPP_TEXT_ACTIVE 11
-#define CURSESPP_TEXT_WARNING 12
-#define CURSESPP_TEXT_ERROR 13
-#define CURSESPP_TEXT_HIDDEN 14
-#define CURSESPP_TEXT_SEPARATOR 15
+} } }
 
-#define CURSESPP_BUTTON_NORMAL 16
-#define CURSESPP_BUTTON_NEGATIVE 17
-#define CURSESPP_BUTTON_HIGHLIGHTED 18
-
-#define CURSESPP_SHORTCUT_ROW_NORMAL 19
-#define CURSESPP_SHORTCUT_ROW_FOCUSED 20
-
-namespace cursespp {
-    class Colors {
-        private:
-            Colors();
-
-        public:
-            static void Init(bool disableCustomColors = false);
-    };
-}

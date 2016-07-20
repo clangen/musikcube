@@ -22,6 +22,7 @@ set(CORE_SOURCES
   ./support/Common.cpp
   ./support/NonLibraryTrackHelper.cpp
   ./support/Preferences.cpp
+  ./support/PreferenceKeys.cpp
   ./support/ThreadHelper.cpp
   ./support/Version.cpp
   ../3rdparty/src/md5/md5.c

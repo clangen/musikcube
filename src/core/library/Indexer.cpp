@@ -45,6 +45,7 @@
 #include <core/db/Statement.h>
 #include <core/plugin/PluginFactory.h>
 #include <core/support/Preferences.h>
+#include <core/support/PreferenceKeys.h>
 #include <core/sdk/IAnalyzer.h>
 #include <core/audio/Stream.h>
 
@@ -83,8 +84,8 @@ Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
 , restart(false)
 , filesIndexed(0)
 , filesSaved(0)
-, prefs(Preferences::ForComponent(GENERAL_PREFS_COMPONENT))
-, readSemaphore(prefs->GetInt(INDEXER_PREFS_MAX_TAG_READ_THREADS, MAX_THREADS)) {
+, prefs(Preferences::ForComponent(prefs::components::Settings))
+, readSemaphore(prefs->GetInt(prefs::keys::MaxTagReadThreads, MAX_THREADS)) {
     this->dbFilename = dbFilename;
     this->libraryPath = libraryPath;
     this->thread = new boost::thread(boost::bind(&Indexer::ThreadLoop, this));
@@ -377,7 +378,7 @@ void Indexer::ThreadLoop() {
     while (!this->Exited()) {
         this->restart = false;
 
-        if(!firstTime || (firstTime && prefs->GetBool(INDEXER_PREFS_SYNC_ON_STARTUP, true))) { /* first time through the loop skips this */
+        if(!firstTime || (firstTime && prefs->GetBool(prefs::keys::SyncOnStartup, true))) { /* first time through the loop skips this */
             this->SynchronizeStart();
 
             this->dbConnection.Open(this->dbFilename.c_str(), 0); /* ensure the db is open */
@@ -388,7 +389,7 @@ void Indexer::ThreadLoop() {
             boost::asio::io_service::work work(io);
 
             /* initialize the thread pool -- we'll use this to index tracks in parallel. */
-            int threadCount = prefs->GetInt(INDEXER_PREFS_MAX_TAG_READ_THREADS, MAX_THREADS);
+            int threadCount = prefs->GetInt(prefs::keys::MaxTagReadThreads, MAX_THREADS);
             for (int i = 0; i < threadCount; i++) {
                 threadPool.create_thread(boost::bind(&boost::asio::io_service::run, &io));
             }
@@ -418,7 +419,7 @@ void Indexer::ThreadLoop() {
         firstTime = false;
 
         /* sleep before we try again; disabled by default */
-        int waitTime = prefs->GetInt(INDEXER_PREFS_AUTO_SYNC_MILLIS, 0);
+        int waitTime = prefs->GetInt(prefs::keys::AutoSyncIntervalMillis, 0);
 
         if (waitTime > 0) {
             boost::xtime waitTimeout;
@@ -444,7 +445,7 @@ void Indexer::SyncDelete() {
 
     /* remove files that are no longer on the filesystem. */
 
-    if (prefs->GetBool(INDEXER_PREFS_REMOVE_MISSING_FILES, true)) {
+    if (prefs->GetBool(prefs::keys::RemoveMissingFiles, true)) {
         db::Statement stmtRemove("DELETE FROM tracks WHERE id=?", this->dbConnection);
 
         db::Statement allTracks(

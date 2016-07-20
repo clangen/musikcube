@@ -146,6 +146,7 @@ Preferences::~Preferences() {
     return it.value();
 
 bool Preferences::GetBool(const std::string& key, bool defaultValue) {
+    const char* p = key.c_str();
     boost::mutex::scoped_lock lock(this->mutex);
     RETURN_VALUE(defaultValue);
 }

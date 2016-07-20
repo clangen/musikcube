@@ -52,12 +52,6 @@
 #include <vector>
 #include <atomic>
 
-#define GENERAL_PREFS_COMPONENT "settings"
-#define INDEXER_PREFS_SYNC_ON_STARTUP "SyncOnStartup"
-#define INDEXER_PREFS_AUTO_SYNC_MILLIS "AutoSyncIntervalMillis"
-#define INDEXER_PREFS_REMOVE_MISSING_FILES "RemoveMissingFiles"
-#define INDEXER_PREFS_MAX_TAG_READ_THREADS "MaxTagReadThreads"
-
 namespace musik { namespace core {
 
     class Indexer : public IIndexer, public ThreadHelper, private boost::noncopyable {

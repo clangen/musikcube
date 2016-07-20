@@ -38,8 +38,7 @@
 #include <core/db/Connection.h>
 #include <core/support/Common.h>
 #include <core/support/Preferences.h>
-
-#define PREFS_COMPONENT "libraries"
+#include <core/support/PreferenceKeys.h>
 
 using namespace musik::core;
 
@@ -50,7 +49,7 @@ LibraryFactory& LibraryFactory::Instance() {
 };
 
 LibraryFactory::LibraryFactory() {
-    auto prefs = Preferences::ForComponent(PREFS_COMPONENT);
+    auto prefs = Preferences::ForComponent(prefs::components::Libraries);
     std::vector<std::string> libraries;
     prefs->GetKeys(libraries);
 
@@ -86,7 +85,7 @@ void LibraryFactory::Shutdown() {
 }
 
 LibraryPtr LibraryFactory::CreateLibrary(const std::string& name, int type) {
-    auto prefs = Preferences::ForComponent(PREFS_COMPONENT);
+    auto prefs = Preferences::ForComponent(prefs::components::Libraries);
     std::vector<std::string> libraries;
     prefs->GetKeys(libraries);
 

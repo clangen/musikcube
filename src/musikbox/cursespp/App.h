@@ -49,6 +49,7 @@ namespace cursespp {
 
             void SetKeyHandler(MainKeyHandler handler);
             void SetResizeHandler(ResizeHandler handler);
+            void SetCustomColorsDisabled(bool disable);
 
             void Run(ILayoutPtr layout);
             void ChangeLayout(ILayoutPtr layout);
@@ -72,5 +73,6 @@ namespace cursespp {
             WindowState state;
             MainKeyHandler keyHandler;
             ResizeHandler resizeHandler;
+            bool disableCustomColors;
     };
 }

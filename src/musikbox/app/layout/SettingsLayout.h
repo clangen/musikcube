@@ -53,8 +53,6 @@
 
 #include "ITopLevelLayout.h"
 
-#define GENERAL_PREFS_FOCUS_SHORTCUTS "EscFocusesShortcuts"
-
 namespace musik {
     namespace box {
         class SettingsLayout :
@@ -84,13 +82,7 @@ namespace musik {
                 void RemoveSelectedDirectory();
                 void DrillIntoSelectedDirectory();
 
-                void OnRemoveMissingCheckChanged(
-                    cursespp::Checkbox* checkbox, bool checked);
-
-                void OnDotfilesCheckChanged(
-                    cursespp::Checkbox* checkbox, bool checked);
-
-                void OnFocusShortcutsCheckChanged(
+                void OnCheckboxChanged(
                     cursespp::Checkbox* checkbox, bool checked);
 
                 int64 ListItemDecorator(
@@ -106,7 +98,8 @@ namespace musik {
 
                 std::shared_ptr<cursespp::Checkbox> removeCheckbox;
                 std::shared_ptr<cursespp::Checkbox> dotfileCheckbox;
-                std::shared_ptr<cursespp::Checkbox> focusShortcuts;
+                std::shared_ptr<cursespp::Checkbox> focusShortcutsCheckbox;
+                std::shared_ptr<cursespp::Checkbox> customColorsCheckbox;
 
                 std::shared_ptr<cursespp::TextLabel> browseLabel;
                 std::shared_ptr<cursespp::TextLabel> addedPathsLabel;

@@ -43,10 +43,12 @@
 #include <app/layout/MainLayout.h>
 #include <app/util/GlobalHotkeys.h>
 #include <app/util/Hotkeys.h>
+#include <app/util/PreferenceKeys.h>
 #include <app/service/PlaybackService.h>
 
 #include <core/library/LibraryFactory.h>
 #include <core/audio/GaplessTransport.h>
+#include <core/support/PreferenceKeys.h>
 
 #include <cstdio>
 
@@ -89,6 +91,9 @@ int main(int argc, char* argv[])
 
     musik::debug::init();
 
+    auto prefs = Preferences::ForComponent(
+        musik::core::prefs::components::Settings);
+
     LibraryPtr library = LibraryFactory::Libraries().at(0);
 
     GaplessTransport transport;
@@ -98,6 +103,9 @@ int main(int argc, char* argv[])
 
     {
         App app("musikbox"); /* must be before layout creation */
+
+        app.SetCustomColorsDisabled(prefs->GetBool(
+            musik::box::prefs::keys::DisableCustomColors.c_str(), false));
 
         using Layout = std::shared_ptr<LayoutBase>;
         using Main = std::shared_ptr<MainLayout>;

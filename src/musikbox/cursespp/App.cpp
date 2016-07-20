@@ -110,8 +110,6 @@ App::App(const std::string& title) {
 #ifdef __PDCURSES__
     PDC_set_title(title.c_str());
 #endif
-
-    Colors::Init();
 }
 
 App::~App() {
@@ -126,7 +124,13 @@ void App::SetResizeHandler(ResizeHandler handler) {
     this->resizeHandler = handler;
 }
 
+void App::SetCustomColorsDisabled(bool disabled) {
+    this->disableCustomColors = disabled;
+}
+
 void App::Run(ILayoutPtr layout) {
+    Colors::Init(this->disableCustomColors);
+
     int64 ch;
     timeout(IDLE_TIMEOUT_MS);
     bool quit = false;

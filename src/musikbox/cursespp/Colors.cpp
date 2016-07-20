@@ -91,11 +91,11 @@ static bool customColorsSupported() {
 Colors::Colors() {
 }
 
-void Colors::Init() {
+void Colors::Init(bool disableCustomColors) {
     start_color();
     use_default_colors();
 
-    bool hasCustomColors = customColorsSupported();
+    bool hasCustomColors = !disableCustomColors && customColorsSupported();
 
     /* the default colors are a bit harsh for my taste, so
     let's use custom colors if the terminal supports it. in

@@ -110,9 +110,11 @@ void ConsoleLayout::Layout() {
 
 void ConsoleLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
     if (shortcuts) {
+        shortcuts->AddShortcut(Hotkeys::NavigateConsole, "console");
         shortcuts->AddShortcut(Hotkeys::NavigateLibrary, "library");
         shortcuts->AddShortcut(Hotkeys::NavigateSettings, "settings");
         shortcuts->AddShortcut("^D", "quit");
+        shortcuts->SetActive(Hotkeys::NavigateConsole);
     }
 }
 
