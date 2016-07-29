@@ -39,19 +39,19 @@
 #include <boost/thread/thread.hpp>
 #include <sqlite/sqlite3.h>
 
-using namespace musik::core::db;
+static boost::mutex globalMutex;
 
-boost::mutex Connection::globalMutex;
+using namespace musik::core::db;
 
 Connection::Connection()
 : connection(nullptr)
 , transactionCounter(0) {
-    this->Maintenance(true);
+    this->UpdateReferenceCount(true);
 }
 
 Connection::~Connection(){
     this->Close();
-    this->Maintenance(false);
+    this->UpdateReferenceCount(false);
 }
 
 //////////////////////////////////////////
@@ -209,9 +209,8 @@ int Connection::Execute(const wchar_t* sql) {
     return musik::core::db::Okay;
 }
 
-void Connection::Analyze(){
-    boost::mutex::scoped_lock lock(Connection::globalMutex);
-//    this->Execute("ANALYZE");
+void Connection::Checkpoint() {
+    sqlite3_wal_checkpoint(this->connection, nullptr);
 }
 
 //////////////////////////////////////////
@@ -237,56 +236,52 @@ int Connection::LastInsertedId(){
 ///
 ///This will set all the initial PRAGMAS
 //////////////////////////////////////////
-void Connection::Initialize(unsigned int cache){
+void Connection::Initialize(unsigned int cache) {
 //    sqlite3_enable_shared_cache(1);
-    sqlite3_busy_timeout(this->connection,10000);
+    sqlite3_busy_timeout(this->connection, 10000);
 
-    sqlite3_exec(this->connection,"PRAGMA synchronous=OFF",NULL,NULL,NULL);         // Not a critical DB. Sync set to OFF
-    sqlite3_exec(this->connection,"PRAGMA page_size=4096",NULL,NULL,NULL);          // According to windows standard page size
-    sqlite3_exec(this->connection,"PRAGMA auto_vacuum=0",NULL,NULL,NULL);           // No autovaccum.
+    sqlite3_exec(this->connection, "PRAGMA synchronous=OFF", NULL, NULL, NULL);	    // Not a critical DB. Sync set to OFF
+    sqlite3_exec(this->connection, "PRAGMA page_size=4096", NULL, NULL, NULL);	    // According to windows standard page size
+    sqlite3_exec(this->connection, "PRAGMA auto_vacuum=0", NULL, NULL, NULL);	    // No autovaccum.
+    sqlite3_exec(this->connection, "PRAGMA auto_vacuum=0", NULL, NULL, NULL);	    // No autovaccum.
+    sqlite3_exec(this->connection, "PRAGMA journal_mode=WAL", NULL, NULL, NULL);    // Allow reading while writing (write-ahead-logging)
 
-    if(cache!=0){
+    if (cache != 0) {
         // Divide by 4 to since the page_size is 4096
         // Total cache is the same as page_size*cache_size
-        cache   = cache/4;
-
+        cache = cache / 4;
         std::string cacheSize("PRAGMA cache_size=" + boost::lexical_cast<std::string>(cache));
-        sqlite3_exec(this->connection,cacheSize.c_str(),NULL,NULL,NULL);                // size * 1.5kb = 6Mb cache
+        sqlite3_exec(this->connection,cacheSize.c_str(), NULL, NULL, NULL); // size * 1.5kb = 6Mb cache
     }
 
-
-    sqlite3_exec(this->connection,"PRAGMA case_sensitive_like=0",NULL,NULL,NULL);   // More speed if case insensitive
-    sqlite3_exec(this->connection,"PRAGMA count_changes=0",NULL,NULL,NULL);         // If set it counts changes on SQL UPDATE. More speed when not.
-    sqlite3_exec(this->connection,"PRAGMA legacy_file_format=OFF",NULL,NULL,NULL);  // No reason to be backwards compatible :)
-    sqlite3_exec(this->connection,"PRAGMA temp_store=MEMORY",NULL,NULL,NULL);       // MEMORY, not file. More speed.
-
+    sqlite3_exec(this->connection, "PRAGMA case_sensitive_like=0", NULL, NULL, NULL);   // More speed if case insensitive
+    sqlite3_exec(this->connection, "PRAGMA count_changes=0", NULL, NULL, NULL);         // If set it counts changes on SQL UPDATE. More speed when not.
+    sqlite3_exec(this->connection, "PRAGMA legacy_file_format=OFF", NULL, NULL, NULL);  // No reason to be backwards compatible :)
+    sqlite3_exec(this->connection, "PRAGMA temp_store=MEMORY", NULL, NULL, NULL);       // MEMORY, not file. More speed.
 }
 
-//////////////////////////////////////////
-///\brief
-///Interrupts the current running statement(s)
-//////////////////////////////////////////
 void Connection::Interrupt(){
     boost::mutex::scoped_lock lock(this->mutex);
     sqlite3_interrupt(this->connection);
 }
 
-void Connection::Maintenance(bool init){
+void Connection::UpdateReferenceCount(bool init) {
+    boost::mutex::scoped_lock lock(globalMutex);
 
-    // Need to be locked throuout all Connections
-    boost::mutex::scoped_lock lock(Connection::globalMutex);
+    static int count = 0;
 
-    static int counter(0);
-
-    if(init){
-        if(counter==0){
+    if (init) {
+        if (count == 0) {
             sqlite3_initialize();
         }
-        ++counter;
-    }else{
-        --counter;
-        if(counter==0){
+
+        ++count;
+    }
+    else {
+        --count;
+        if (count <= 0){
             sqlite3_shutdown();
+            count = 0;
         }
     }
 }

@@ -374,6 +374,4 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
     db.Execute("CREATE INDEX IF NOT EXISTS metavalues_index1 ON meta_values (meta_key_id)");
 
     db.Execute("CREATE INDEX IF NOT EXISTS playlist_index ON playlist_tracks (playlist_id,sort_order)");
-
-    db.Analyze();
 }

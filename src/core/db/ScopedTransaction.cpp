@@ -59,8 +59,11 @@ void ScopedTransaction::CommitAndRestart() {
 }
 
 void ScopedTransaction::Begin(){
+    /* we use an IMMEDIATE transaction because we have write-ahead-logging
+    enabled on this instance, this generally results in faster queries
+    and also allows reads while writing */
     if (this->connection->transactionCounter == 0) {
-        this->connection->Execute("BEGIN TRANSACTION");
+        this->connection->Execute("BEGIN IMMEDIATE TRANSACTION");
     }
 
     ++this->connection->transactionCounter;
@@ -75,6 +78,7 @@ void ScopedTransaction::End() {
         }
         else {
             this->connection->Execute("COMMIT TRANSACTION");
+            this->connection->Checkpoint();
         }
     }
 }

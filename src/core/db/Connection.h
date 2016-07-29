@@ -43,54 +43,38 @@
 #include <boost/utility.hpp>
 #include <boost/thread/mutex.hpp>
 
-//////////////////////////////////////////
-// Forward declare
 struct sqlite3;
 struct sqlite3_stmt;
-//////////////////////////////////////////
 
+namespace musik { namespace core { namespace db {
 
-namespace musik{ namespace core{ namespace db{
-
-    //////////////////////////////////////////
-    ///\brief
-    ///Database Wrapper
-    ///
-    ///A Connection to the database
-    //////////////////////////////////////////
-    class Connection : boost::noncopyable{
+    class Connection : boost::noncopyable {
         public: 
             Connection();
             ~Connection();
-            int Open(const char *database,unsigned int options=0,unsigned int cache=0);
-            int Open(const std::string &database,unsigned int options=0,unsigned int cache=0);
+
+            int Open(const char *database, unsigned int options = 0, unsigned int cache = 0);
+            int Open(const std::string &database, unsigned int options = 0, unsigned int cache = 0);
             int Close();
             int Execute(const char* sql);
             int Execute(const wchar_t* sql);
             int LastInsertedId();
 
             void Interrupt();
-            void Analyze();
+            void Checkpoint();
 
         private:
-
             void Initialize(unsigned int cache);
+            void UpdateReferenceCount(bool init);
+            int StepStatement(sqlite3_stmt *stmt);
 
             friend class Statement;
             friend class ScopedTransaction;
             
-            int StepStatement(sqlite3_stmt *stmt);
-
             int transactionCounter;
             sqlite3 *connection;
-
             boost::mutex mutex;
-            static boost::mutex globalMutex;
-
-            void Maintenance(bool init);
-
     };
-
 
 } } }
 

@@ -53,9 +53,11 @@
 #include <boost/bind.hpp>
 
 #define MULTI_THREADED_INDEXER 1
+#define STRESS_TEST_DB 0
 
 static const std::string TAG = "Indexer";
 static const int MAX_THREADS = 10;
+static const int NOTIFY_INTERVAL = 2000;
 
 using namespace musik::core;
 using namespace musik::core::metadata;
@@ -293,6 +295,26 @@ void Indexer::ReadMetadataFromFile(
             track.SetValue("path_id", pathId.c_str());
             track.Save(this->dbConnection, this->libraryPath);
             this->filesSaved++;
+
+#ifdef STRESS_TEST_DB
+            #define INC(track, key, x) \
+                { \
+                    std::string val = track.GetValue(key); \
+                    val += (char) ('a' + x); \
+                    track.ClearValue(key); \
+                    track.SetValue(key, val.c_str()); \
+                }
+
+            for (int i = 0; i < 10; i++) {
+                track.SetId(0);
+                INC(track, "title", i);
+                INC(track, "artist", i);
+                INC(track, "album_artist", i);
+                INC(track, "album", i);
+                track.Save(this->dbConnection, this->libraryPath);
+                this->filesSaved++;
+            }
+#endif
         }
     }
 
@@ -329,7 +351,7 @@ void Indexer::SyncDirectory(
         std::vector<Thread> threads;
 
         for( ; file != end && !this->Exited() && !this->Restarted(); file++) {
-            if (this->filesSaved.load() > 200) {
+            if (this->filesSaved.load() > NOTIFY_INTERVAL) {
                 if (this->trackTransaction) {
                     this->trackTransaction->CommitAndRestart();
                 }
