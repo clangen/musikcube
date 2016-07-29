@@ -135,7 +135,8 @@ void MainLayout::SetMainLayout(std::shared_ptr<cursespp::LayoutBase> layout) {
 bool MainLayout::KeyPress(const std::string& key) {
     if (prefs->GetBool(box::prefs::keys::EscFocusesShortcuts)) {
         if (key == "^["  ||
-            (key == "KEY_UP" && this->shortcutsFocused))
+           (key == "KEY_ENTER" && this->shortcutsFocused) ||
+           (key == "KEY_UP" && this->shortcutsFocused))
         {
             this->shortcutsFocused = !this->shortcutsFocused;
 
