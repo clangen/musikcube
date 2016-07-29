@@ -69,6 +69,7 @@ namespace musik {
 
             private:
                 void Initialize();
+                cursespp::IWindowPtr BlurShortcuts();
 
                 std::shared_ptr<musik::core::Preferences> prefs;
                 std::shared_ptr<ShortcutsWindow> shortcuts;
