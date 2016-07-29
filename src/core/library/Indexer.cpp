@@ -296,7 +296,7 @@ void Indexer::ReadMetadataFromFile(
             track.Save(this->dbConnection, this->libraryPath);
             this->filesSaved++;
 
-#ifdef STRESS_TEST_DB
+#if STRESS_TEST_DB != 0
             #define INC(track, key, x) \
                 { \
                     std::string val = track.GetValue(key); \
