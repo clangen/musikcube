@@ -57,7 +57,7 @@
 
 static const std::string TAG = "Indexer";
 static const int MAX_THREADS = 10;
-static const int NOTIFY_INTERVAL = 2000;
+static const int NOTIFY_INTERVAL = 300;
 
 using namespace musik::core;
 using namespace musik::core::metadata;
