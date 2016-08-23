@@ -53,37 +53,38 @@ you'll need [homebrew](http://brew.sh/) to install the required dependencies.
 
 ## keyboard shortcuts
 
-the current hotkeys are generally based around holding the alt/meta key with your left thumb, and using the home row with your right hand. 
+the hotkeys listed below can generally be used at any time; however, if an input field is focused some may not work. you can enter command mode by pressing `ESC`, which will highlight the bottom command bar and accept all hotkeys. command mode may be deactivated by pressing `ESC` again.
+
+you may also change hotkeys by editing `~/.mC2/hotkeys.json` and restarting the app. a hotkey tester is provided in the settings screen.
 
 - `TAB` select next window
 - `SHIFT+TAB` select previous window
-- `ALT+~` switch to console view
-- `ALT+a` switch to library view
-- `ALT+s` switch to settings view
-- `ALT+i` volume up 5%
-- `ALT+k` volume down 5%
-- `ALT+j` previous track
-- `ALT+l` next track
-- `ALT+u` back 10 seconds
-- `ALT+o` forward 10 seconds
-- `ALT+r` repaint the screen
-- `ALT+,` toggle repeat mode (off/track/list)
-- `ALT+.` (un)shuffle play queue
+- `~` switch to console view
+- `a` switch to library view
+- `s` switch to settings view
+- `i` volume up 5%
+- `k` volume down 5%
+- `j` previous track
+- `l` next track
+- `u` back 10 seconds
+- `o` forward 10 seconds
+- `r` repaint the screen
+- `,` toggle repeat mode (off/track/list)
+- `.` (un)shuffle play queue
 - `CTRL+p` pause/resume (globally)
 - `CTRL+x` stop (unload streams, free resources)
 - `CTRL+d` quit 
 
 and a couple hotkeys that are specific to the library view: 
 
-- `ESC` toggle between browse and play queue
-- `ALT+b` show browse view
-- `ALT+n` show play queue
-- `ALT+f` show album/artist/genre search
-- `ALT+t` show track search
-- `ALT+1` browse by artist
-- `ALT+2` browse by album
-- `ALT+3` browse by genre
-- `ALT+m` jump to playing artist/album/genre in browse view
+- `b` show browse view
+- `n` show play queue
+- `f` show album/artist/genre search
+- `t` show track search
+- `1` browse by artist
+- `2` browse by album
+- `3` browse by genre
+- `m` jump to playing artist/album/genre in browse view
 - `SPACE` pause/resume
 
 *important*: on OSX make sure you configure your terminal emulator to treat your left alt key as "+Esc" or "Meta".

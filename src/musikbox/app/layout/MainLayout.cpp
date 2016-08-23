@@ -152,7 +152,7 @@ cursespp::IWindowPtr MainLayout::BlurShortcuts() {
 }
 
 bool MainLayout::KeyPress(const std::string& key) {
-    if (prefs->GetBool(box::prefs::keys::EscFocusesShortcuts)) {
+    if (prefs->GetBool(box::prefs::keys::EscFocusesShortcuts, true)) {
         if (key == "^["  ||
            (key == "KEY_ENTER" && this->shortcutsFocused) ||
            (key == "KEY_UP" && this->shortcutsFocused))

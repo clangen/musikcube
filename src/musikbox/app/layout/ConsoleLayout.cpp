@@ -43,8 +43,10 @@
 #include <core/plugin/PluginFactory.h>
 
 #include <app/util/Hotkeys.h>
+#include <app/util/Version.h>
 
 #include <boost/algorithm/string.hpp>
+#include <boost/format.hpp>
 
 template <class T>
 bool tostr(T& t, const std::string& s) {
@@ -151,6 +153,7 @@ void ConsoleLayout::SetVolume(float volume) {
 
 void ConsoleLayout::Help() {
     int64 s = -1;
+
     this->output->WriteLine("help:\n", s);
     this->output->WriteLine("  <tab> to switch between windows", s);
     this->output->WriteLine("", s);
@@ -167,6 +170,8 @@ void ConsoleLayout::Help() {
     this->output->WriteLine("  seek <seconds>: seek to <seconds> into track", s);
     this->output->WriteLine("", s);
     this->output->WriteLine("  plugins: list loaded plugins", s);
+    this->output->WriteLine("", s);
+    this->output->WriteLine("  version: show musikbox app version", s);
     this->output->WriteLine("", s);
     this->output->WriteLine("  <ctrl+d>: quit\n", s);
 }
@@ -199,6 +204,10 @@ bool ConsoleLayout::ProcessCommand(const std::string& cmd) {
     }
     else if (name == "clear") {
         this->logs->ClearContents();
+    }
+    else if (name == "version") {
+        const std::string v = boost::str(boost::format("build v%s") % VERSION);
+        this->output->WriteLine(v, -1);
     }
     else if (name == "play" || name == "pl" || name == "p") {
         return this->PlayFile(args);

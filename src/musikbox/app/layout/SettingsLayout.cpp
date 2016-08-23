@@ -248,7 +248,7 @@ void SettingsLayout::OnVisibilityChanged(bool visible) {
 
 void SettingsLayout::LoadPreferences() {
     this->removeCheckbox->SetChecked(this->prefs->GetBool(core::prefs::keys::RemoveMissingFiles, true));
-    this->focusShortcutsCheckbox->SetChecked(this->prefs->GetBool(box::prefs::keys::EscFocusesShortcuts));
+    this->focusShortcutsCheckbox->SetChecked(this->prefs->GetBool(box::prefs::keys::EscFocusesShortcuts, true));
     this->customColorsCheckbox->SetChecked(this->prefs->GetBool(box::prefs::keys::DisableCustomColors));
 }
 
