@@ -116,7 +116,12 @@ int main(int argc, char* argv[])
 
         Main mainLayout(new MainLayout());
         mainLayout->Layout();
-        mainLayout->SetMainLayout(libraryLayout);
+
+        std::vector<std::string> paths;
+        library->Indexer()->GetPaths(paths);
+
+        mainLayout->SetMainLayout(paths.size() > 0
+            ? libraryLayout : settingsLayout);
 
         app.SetKeyHandler([&](const std::string& kn) {
             if (Hotkeys::Is(Hotkeys::NavigateConsole, kn)) {
@@ -149,8 +154,6 @@ int main(int argc, char* argv[])
 
         app.Run(mainLayout);
     }
-
-    endwin();
 
     LibraryFactory::Instance().Shutdown();
     musik::debug::deinit();
