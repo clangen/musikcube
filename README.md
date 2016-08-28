@@ -37,8 +37,8 @@ you'll need [homebrew](http://brew.sh/) to install the required dependencies.
 
 warning: this is experimental, but should work. if it does not, please file a ticket and/or follow the manual instructions below.
 
-- `brew tap clangen/musikcube`
-- `brew install musikcube`
+- `brew tap clangen/musikbox`
+- `brew install musikbox`
 - `musikbox`
 
 ### manual
