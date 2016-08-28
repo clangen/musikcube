@@ -33,6 +33,16 @@ and linux:
 
 you'll need [homebrew](http://brew.sh/) to install the required dependencies. 
 
+### automatic
+
+warning: this is experimental, but should work. if it does not, please file a ticket and/or follow the manual instructions below.
+
+- `brew tap clangen/musikcube`
+- `brew install musikcube`
+- `musikbox`
+
+### manual
+
 - `brew install cmake boost libogg libvorbis flac mpg123 faad2`
 - `git clone https://github.com/clangen/musikcube.git`
 - `cd musikcube`
@@ -48,8 +58,8 @@ you'll need [homebrew](http://brew.sh/) to install the required dependencies.
 - `cd musikcube`
 - `cmake .`
 - `make`
-- `cd bin`
-- `./musikbox`
+- `sudo make install`
+- `musikbox`
 
 ## keyboard shortcuts
 
