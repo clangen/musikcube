@@ -80,5 +80,46 @@ add_subdirectory(src/contrib/flacdecoder)
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
   add_subdirectory(src/contrib/alsaout)
 else (CMAKE_SYSTEM_NAME MATCHES "Linux")
+  # macos
   add_subdirectory(src/contrib/coreaudioout)
 endif (CMAKE_SYSTEM_NAME MATCHES "Linux")
+
+# install the binary
+install(
+  FILES bin/musikbox DESTINATION share/musikcube
+  PERMISSIONS
+    OWNER_EXECUTE OWNER_READ OWNER_WRITE
+    GROUP_EXECUTE GROUP_READ GROUP_WRITE
+    WORLD_EXECUTE WORLD_READ
+)
+
+# install the plugins
+if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+  # linux
+  install(
+    FILES
+      bin/plugins/libalsaout.so
+      bin/plugins/libflacdecoder.so
+      bin/plugins/libm4adecoder.so
+      bin/plugins/libmpg123decoder.so
+      bin/plugins/liboggdecoder.so
+      bin/plugins/libtaglibreader.so
+    DESTINATION share/musikcube/plugins
+  )
+else (CMAKE_SYSTEM_NAME MATCHES "Linux")
+  # macos
+  install(
+    FILES
+      bin/plugins/libcoreaudioout.dylib
+      bin/plugins/libflacdecoder.dylib
+      bin/plugins/libm4adecoder.dylib
+      bin/plugins/libmpg123decoder.dylib
+      bin/plugins/liboggdecoder.dylib
+      bin/plugins/libtaglibreader.dylib
+    DESTINATION share/musikcube/plugins
+  )
+endif (CMAKE_SYSTEM_NAME MATCHES "Linux")
+
+# symlink the binary
+install(CODE "EXECUTE_PROCESS (COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/bin/)")
+install(CODE "EXECUTE_PROCESS (COMMAND ln -sf ${CMAKE_INSTALL_PREFIX}/share/musikcube/musikbox ${CMAKE_INSTALL_PREFIX}/bin/)")
