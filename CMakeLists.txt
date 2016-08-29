@@ -77,6 +77,8 @@ add_subdirectory(src/contrib/oggdecoder)
 add_subdirectory(src/contrib/mpg123decoder)
 add_subdirectory(src/contrib/flacdecoder)
 
+add_dependencies(taglibreader taglib)
+
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
   add_subdirectory(src/contrib/alsaout)
 else (CMAKE_SYSTEM_NAME MATCHES "Linux")
