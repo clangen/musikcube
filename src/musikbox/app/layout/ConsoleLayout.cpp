@@ -206,7 +206,7 @@ bool ConsoleLayout::ProcessCommand(const std::string& cmd) {
         this->logs->ClearContents();
     }
     else if (name == "version") {
-        const std::string v = boost::str(boost::format("build v%s") % VERSION);
+        const std::string v = boost::str(boost::format("v%s") % VERSION);
         this->output->WriteLine(v, -1);
     }
     else if (name == "play" || name == "pl" || name == "p") {

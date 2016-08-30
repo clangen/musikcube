@@ -1,3 +1,3 @@
 #pragma once
 
-#define VERSION "0.1.2" /* todo: autogen */
+#define VERSION "0.1.3" /* todo: autogen */
