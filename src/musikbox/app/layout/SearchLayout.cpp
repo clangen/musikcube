@@ -100,6 +100,7 @@ void SearchLayout::Layout() {
 
 #define CREATE_CATEGORY(view, type, order) \
     view.reset(new CategoryListView(playback, this->library, type)); \
+    view->SetAllowArrowKeyPropagation(); \
     this->AddWindow(view); \
     view->SetFocusOrder(order);
 

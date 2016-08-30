@@ -57,7 +57,8 @@ typedef IScrollAdapter::ScrollPosition ScrollPos;
     } \
 
 ScrollableWindow::ScrollableWindow(IWindow *parent)
-: Window(parent) {
+: Window(parent)
+, allowArrowKeyPropagation(false) {
 }
 
 ScrollableWindow::~ScrollableWindow() {
@@ -78,6 +79,10 @@ ScrollPos& ScrollableWindow::GetScrollPosition() {
     return this->scrollPosition;
 }
 
+void ScrollableWindow::SetAllowArrowKeyPropagation(bool allow) {
+    this->allowArrowKeyPropagation = allow;
+}
+
 bool ScrollableWindow::KeyPress(const std::string& key) {
     /* note we allow KEY_DOWN and KEY_UP to continue to propagate if
     the logical (selected) index doesn't actually change -- i.e. the
@@ -90,13 +95,13 @@ bool ScrollableWindow::KeyPress(const std::string& key) {
         const size_t before = this->GetScrollPosition().logicalIndex;
         this->ScrollDown();
         const size_t after = this->GetScrollPosition().logicalIndex;
-        return (before != after);
+        return !this->allowArrowKeyPropagation || (before != after);
     }
     else if (key == "KEY_UP") { 
         const size_t before = this->GetScrollPosition().logicalIndex;
         this->ScrollUp();
         const size_t after = this->GetScrollPosition().logicalIndex;
-        return (before != after);
+        return !this->allowArrowKeyPropagation || (before != after);
     }
     else if (key == "KEY_HOME") { this->ScrollToTop(); return true; }
     else if (key == "KEY_END") { this->ScrollToBottom(); return true; }

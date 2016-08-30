@@ -63,6 +63,8 @@ namespace cursespp {
 
             virtual void OnAdapterChanged();
 
+            void SetAllowArrowKeyPropagation(bool allow = true);
+
         protected:
             virtual IScrollAdapter& GetScrollAdapter() = 0;
             virtual IScrollAdapter::ScrollPosition& GetScrollPosition();
@@ -72,5 +74,6 @@ namespace cursespp {
 
         private:
             IScrollAdapter::ScrollPosition scrollPosition;
+            bool allowArrowKeyPropagation;
     };
 }

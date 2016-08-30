@@ -98,6 +98,7 @@ void TrackSearchLayout::InitializeWindows() {
 
     this->trackList.reset(new TrackListView(this->playback, this->library));
     this->trackList->SetFocusOrder(1);
+    this->trackList->SetAllowArrowKeyPropagation();
     this->AddWindow(this->trackList);
 
     this->Layout();
