@@ -46,25 +46,27 @@ static int NEXT_ID = 0;
 static bool drawPending = false;
 static bool freeze = false;
 
+static inline void DrawCursor(IInput* input) {
+    if (input) {
+        Window* inputWindow = dynamic_cast<Window*>(input);
+        if (inputWindow) {
+            WINDOW* content = inputWindow->GetContent();
+            curs_set(1);
+            wtimeout(content, IDLE_TIMEOUT_MS);
+            wmove(content, 0, input->Position());
+        }
+    }
+    else {
+        curs_set(0);
+    }
+}
+
 void Window::WriteToScreen(IInput* input) {
     if (drawPending && !freeze) {
         drawPending = false;
-
         update_panels();
         doupdate();
-
-        /* had problems finding reliable documentation here, but it seems like
-        manually moving the cursor requires a refresh() -- doupdate() is not
-        good enough. further, we allow windows to repaint themselves at will,
-        which may change the cursor position. after each draw cycle, move the
-        cursor back to the focused input. */
-        if (input) {
-            Window* inputWindow = dynamic_cast<Window*>(input);
-            if (inputWindow) {
-                wmove(inputWindow->GetContent(), 0, input->Position());
-                wrefresh(inputWindow->GetContent());
-            }
-        }
+        DrawCursor(input);
     }
 }
 

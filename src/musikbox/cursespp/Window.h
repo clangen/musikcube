@@ -37,6 +37,14 @@
 #include "curses_config.h"
 #include "IWindow.h"
 
+#ifdef WIN32
+#define IDLE_TIMEOUT_MS 0
+#define REDRAW_DEBOUNCE_MS 100
+#else
+#define IDLE_TIMEOUT_MS 75
+#define REDRAW_DEBOUNCE_MS 100
+#endif
+
 namespace cursespp {
     class IInput;
 

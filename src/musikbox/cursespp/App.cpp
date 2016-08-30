@@ -54,14 +54,6 @@
 #include <csignal>
 #endif
 
-#ifdef WIN32
-#define IDLE_TIMEOUT_MS 0
-#define REDRAW_DEBOUNCE_MS 100
-#else
-#define IDLE_TIMEOUT_MS 75
-#define REDRAW_DEBOUNCE_MS 100
-#endif
-
 using namespace cursespp;
 using namespace boost::chrono;
 
@@ -144,15 +136,12 @@ void App::Run(ILayoutPtr layout) {
         if (this->state.input) {
             /* if the focused window is an input, allow it to draw a cursor */
             WINDOW *c = this->state.focused->GetContent();
-            wtimeout(this->state.focused->GetContent(), IDLE_TIMEOUT_MS);
-            curs_set(1);
             keypad(c, TRUE);
             ch = wgetch(c);
         }
         else {
             /* otherwise, no cursor */
             ch = wgetch(stdscr);
-            curs_set(0);
         }
 
         if (ch == ERR) {
@@ -209,25 +198,11 @@ void App::Run(ILayoutPtr layout) {
     }
 }
 
-void App::CheckDrawCursor() {
-    if (this->state.input != NULL) {
-        curs_set(1);
-
-        if (this->state.focused) {
-            wtimeout(this->state.focused->GetContent(), IDLE_TIMEOUT_MS);
-        }
-    }
-    else {
-        curs_set(0);
-    }
-}
-
 void App::UpdateFocusedWindow(IWindowPtr window) {
     if (this->state.focused != window) {
         this->state.focused = window;
         this->state.input = dynamic_cast<IInput*>(window.get());
         this->state.keyHandler = dynamic_cast<IKeyHandler*>(window.get());
-        this->CheckDrawCursor();
     }
 }
 
