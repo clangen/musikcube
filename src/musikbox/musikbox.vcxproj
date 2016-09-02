@@ -148,7 +148,7 @@
     <ClCompile Include="cursespp\LayoutBase.cpp" />
     <ClCompile Include="cursespp\ListWindow.cpp" />
     <ClCompile Include="cursespp\MultiLineEntry.cpp" />
-    <ClCompile Include="cursespp\Overlays.cpp" />
+    <ClCompile Include="cursespp\OverlayStack.cpp" />
     <ClCompile Include="cursespp\Screen.cpp" />
     <ClCompile Include="cursespp\ScrollableWindow.cpp" />
     <ClCompile Include="cursespp\ScrollAdapterBase.cpp" />
@@ -218,7 +218,7 @@
     <ClInclude Include="cursespp\ListWindow.h" />
     <ClInclude Include="cursespp\MultiLineEntry.h" />
     <ClInclude Include="cursespp\OverlayBase.h" />
-    <ClInclude Include="cursespp\Overlays.h" />
+    <ClInclude Include="cursespp\OverlayStack.h" />
     <ClInclude Include="cursespp\Screen.h" />
     <ClInclude Include="cursespp\ScrollableWindow.h" />
     <ClInclude Include="cursespp\ScrollAdapterBase.h" />

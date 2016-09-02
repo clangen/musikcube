@@ -36,25 +36,25 @@
 
 #include "IOverlay.h"
 #include "LayoutBase.h"
-#include "Overlays.h"
+#include "OverlayStack.h"
 
 namespace cursespp {
     class OverlayBase : public LayoutBase, public IOverlay {
         public:
             virtual ~OverlayBase() {
-                this->overlays = nullptr;
+                this->stack = nullptr;
             }
 
-            virtual void SetOverlays(Overlays* overlays) {
-                this->overlays = overlays;
+            virtual void SetOverlayStack(OverlayStack* stack) {
+                this->stack = stack;
             }
 
         protected:
-            Overlays* GetOverlays() {
-                return this->overlays;
+            OverlayStack* GetOverlayStack() {
+                return this->stack;
             }
 
         private:
-            Overlays* overlays;
+            OverlayStack* stack;
     };
 }

@@ -58,7 +58,7 @@
 using namespace cursespp;
 using namespace boost::chrono;
 
-static Overlays overlays;
+static OverlayStack overlays;
 static bool disconnected = false;
 static int64 resizeAt = 0;
 
@@ -247,7 +247,7 @@ void App::EnsureFocusIsValid() {
     }
 }
 
-Overlays& App::Overlays() {
+OverlayStack& App::Overlays() {
     return overlays;
 }
 

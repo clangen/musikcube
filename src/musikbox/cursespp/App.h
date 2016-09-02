@@ -37,7 +37,7 @@
 #include "ILayout.h"
 #include "IInput.h"
 #include "IKeyHandler.h"
-#include "Overlays.h"
+#include "OverlayStack.h"
 
 namespace cursespp {
     class App {
@@ -58,7 +58,7 @@ namespace cursespp {
             void ChangeLayout(ILayoutPtr layout);
 
             static int64 Now();
-            static Overlays& Overlays();
+            static OverlayStack& Overlays();
 
         private:
 

@@ -32,21 +32,65 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include <stdafx.h>
+#include "OverlayStack.h"
+#include "DialogOverlay.h"
+#include "Colors.h"
+#include "Screen.h"
 
-#include "ILayout.h"
+using namespace cursespp;
 
-namespace cursespp {
-    class Overlays {
-        public:
-            Overlays();
+static ILayoutPtr none;
 
-            ILayoutPtr Top();
-            void Push(ILayoutPtr layout);
-            void Remove(ILayoutPtr layout);
-            void Remove(ILayout* layout);
+OverlayStack::OverlayStack() {
+}
 
-        private:
-            std::vector<ILayoutPtr> stack;
-    };
+ILayoutPtr OverlayStack::Top() {
+    return this->stack.size() ? this->stack[0] : none;
+}
+
+inline void setOverlayStack(ILayoutPtr layout, OverlayStack* instance) {
+    IOverlay* overlay = dynamic_cast<IOverlay*>(layout.get());
+    if (overlay) {
+        overlay->SetOverlayStack(instance);
+    }
+}
+
+void OverlayStack::Push(ILayoutPtr layout) {
+    setOverlayStack(layout, this);
+
+    auto it = std::find(
+        this->stack.begin(),
+        this->stack.end(), layout);
+
+    if (it != this->stack.end()) {
+        this->stack.erase(it); /* remove; we'll promote to the top */
+    }
+
+    this->stack.insert(this->stack.begin(), layout);
+}
+
+void OverlayStack::Remove(ILayoutPtr layout) {
+    auto it = std::find(
+        this->stack.begin(),
+        this->stack.end(), layout);
+
+    if (it != this->stack.end()) {
+        setOverlayStack(*it, nullptr);
+        this->stack.erase(it);
+    }
+}
+
+void OverlayStack::Remove(ILayout* layout) {
+    auto it = std::find_if(
+        this->stack.begin(),
+        this->stack.end(),
+        [layout] (ILayoutPtr layoutPtr) {
+            return layoutPtr.get() == layout;
+        });
+
+    if (it != this->stack.end()) {
+        setOverlayStack(*it, nullptr);
+        this->stack.erase(it);
+    }
 }

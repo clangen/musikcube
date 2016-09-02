@@ -35,11 +35,11 @@
 #pragma once
 
 namespace cursespp {
-    class Overlays;
+    class OverlayStack;
 
     class IOverlay {
         public:
             virtual ~IOverlay() { }
-            virtual void SetOverlays(Overlays* overlays) = 0;
+            virtual void SetOverlayStack(OverlayStack* stack) = 0;
     };
 }

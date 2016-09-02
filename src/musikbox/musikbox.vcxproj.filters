@@ -54,9 +54,6 @@
     <ClCompile Include="app\util\GlobalHotkeys.cpp">
       <Filter>app\util</Filter>
     </ClCompile>
-    <ClCompile Include="cursespp\LayoutStack.cpp">
-      <Filter>cursespp</Filter>
-    </ClCompile>
     <ClCompile Include="cursespp\WindowLayout.cpp">
       <Filter>cursespp</Filter>
     </ClCompile>
@@ -141,7 +138,7 @@
     <ClCompile Include="cursespp\ShortcutsWindow.cpp">
       <Filter>cursespp</Filter>
     </ClCompile>
-    <ClCompile Include="cursespp\Overlays.cpp">
+    <ClCompile Include="cursespp\OverlayStack.cpp">
       <Filter>cursespp</Filter>
     </ClCompile>
     <ClCompile Include="cursespp\DialogOverlay.cpp">
@@ -230,9 +227,6 @@
     </ClInclude>
     <ClInclude Include="app\util\GlobalHotkeys.h">
       <Filter>app\util</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\LayoutStack.h">
-      <Filter>cursespp</Filter>
     </ClInclude>
     <ClInclude Include="cursespp\IOrderable.h">
       <Filter>cursespp</Filter>
@@ -336,7 +330,7 @@
     <ClInclude Include="cursespp\IOverlay.h">
       <Filter>cursespp</Filter>
     </ClInclude>
-    <ClInclude Include="cursespp\Overlays.h">
+    <ClInclude Include="cursespp\OverlayStack.h">
       <Filter>cursespp</Filter>
     </ClInclude>
     <ClInclude Include="cursespp\OverlayBase.h">

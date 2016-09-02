@@ -124,7 +124,7 @@ bool DialogOverlay::KeyPress(const std::string& key) {
         }
 
         if (this->autoDismiss) {
-            Overlays* overlays = this->GetOverlays();
+            OverlayStack* overlays = this->GetOverlayStack();
             if (overlays) {
                 overlays->Remove(this);
             }
