@@ -34,14 +34,16 @@
 
 #pragma once
 
-#include <app/window/ShortcutsWindow.h>
+#include <cursespp/ShortcutsWindow.h>
 
 namespace musik {
     namespace box {
         class ITopLevelLayout {
             public:
                 virtual ~ITopLevelLayout() { }
-                virtual void SetShortcutsWindow(ShortcutsWindow* w) = 0;
+
+                virtual void SetShortcutsWindow(
+                    cursespp::ShortcutsWindow* w) = 0;
         };
     }
 }

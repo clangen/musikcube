@@ -229,11 +229,11 @@ void SettingsLayout::InitializeWindows() {
 
 void SettingsLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
     if (shortcuts) {
-        shortcuts->AddShortcut(Hotkeys::NavigateSettings, "settings");
-        shortcuts->AddShortcut(Hotkeys::NavigateLibrary, "library");
-        shortcuts->AddShortcut(Hotkeys::NavigateConsole, "console");
+        shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateSettings), "settings");
+        shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateLibrary), "library");
+        shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateConsole), "console");
         shortcuts->AddShortcut("^D", "quit");
-        shortcuts->SetActive(Hotkeys::NavigateSettings);
+        shortcuts->SetActive(Hotkeys::Get(Hotkeys::NavigateSettings));
     }
 }
 

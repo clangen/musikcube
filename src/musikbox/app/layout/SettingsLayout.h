@@ -37,12 +37,12 @@
 #include <cursespp/Checkbox.h>
 #include <cursespp/LayoutBase.h>
 #include <cursespp/ListWindow.h>
+#include <cursespp/ShortcutsWindow.h>
+#include <cursespp/SimpleScrollAdapter.h>
 #include <cursespp/TextLabel.h>
 #include <cursespp/TextInput.h>
-#include <cursespp/SimpleScrollAdapter.h>
 
 #include <app/window/TrackListView.h>
-#include <app/window/ShortcutsWindow.h>
 #include <app/service/PlaybackService.h>
 #include <app/model/DirectoryAdapter.h>
 
@@ -72,7 +72,8 @@ namespace musik {
                 virtual void OnVisibilityChanged(bool visible);
                 virtual bool KeyPress(const std::string& key);
 
-                virtual void SetShortcutsWindow(ShortcutsWindow* w);
+                virtual void SetShortcutsWindow(
+                    cursespp::ShortcutsWindow* w);
 
             private:
                 void InitializeWindows();

@@ -40,6 +40,7 @@
 #include <core/library/LocalLibraryConstants.h>
 
 #include <app/query/CategoryTrackListQuery.h>
+#include <app/util/Hotkeys.h>
 #include <app/util/Playback.h>
 
 #include "LibraryLayout.h"
@@ -162,11 +163,11 @@ void LibraryLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
     this->shortcuts = shortcuts;
 
     if (this->shortcuts) {
-        this->shortcuts->AddShortcut(Hotkeys::NavigateLibraryBrowse, "browse");
-        this->shortcuts->AddShortcut(Hotkeys::NavigateLibraryFilter, "filter");
-        this->shortcuts->AddShortcut(Hotkeys::NavigateLibraryTracks, "tracks");
-        this->shortcuts->AddShortcut(Hotkeys::NavigateLibraryPlayQueue, "play queue");
-        this->shortcuts->AddShortcut(Hotkeys::NavigateSettings, "settings");
+        this->shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateLibraryBrowse), "browse");
+        this->shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateLibraryFilter), "filter");
+        this->shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateLibraryTracks), "tracks");
+        this->shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateLibraryPlayQueue), "play queue");
+        this->shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateSettings), "settings");
         this->shortcuts->AddShortcut("^D", "quit");
         this->UpdateShortcutsWindow();
     }
@@ -179,16 +180,16 @@ void LibraryLayout::UpdateShortcutsWindow() {
         }
 
         if (this->visibleLayout == this->browseLayout) {
-            this->shortcuts->SetActive(Hotkeys::NavigateLibraryBrowse);
+            this->shortcuts->SetActive(Hotkeys::Get(Hotkeys::NavigateLibraryBrowse));
         }
         else if (this->visibleLayout == nowPlayingLayout) {
-            this->shortcuts->SetActive(Hotkeys::NavigateLibraryPlayQueue);
+            this->shortcuts->SetActive(Hotkeys::Get(Hotkeys::NavigateLibraryPlayQueue));
         }
         else if (this->visibleLayout == searchLayout) {
-            this->shortcuts->SetActive(Hotkeys::NavigateLibraryFilter);
+            this->shortcuts->SetActive(Hotkeys::Get(Hotkeys::NavigateLibraryFilter));
         }
         else if (this->visibleLayout == trackSearch) {
-            this->shortcuts->SetActive(Hotkeys::NavigateLibraryTracks);
+            this->shortcuts->SetActive(Hotkeys::Get(Hotkeys::NavigateLibraryTracks));
         }
     }
 }

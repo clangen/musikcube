@@ -25,7 +25,6 @@ set (BOX_SRCS
 	./app/window/EntryWithHeader.cpp
 	./app/window/LogWindow.cpp
 	./app/window/OutputWindow.cpp
-	./app/window/ShortcutsWindow.cpp
 	./app/window/TrackListView.cpp
 	./app/window/TransportWindow.cpp
 	./cursespp/App.cpp
@@ -39,6 +38,7 @@ set (BOX_SRCS
 	./cursespp/MessageQueue.cpp
 	./cursespp/MultiLineEntry.cpp
 	./cursespp/Overlays.cpp
+	./cursespp/ShortcutsWindow.cpp
 	./cursespp/Screen.cpp
 	./cursespp/ScrollableWindow.cpp
 	./cursespp/ScrollAdapterBase.cpp

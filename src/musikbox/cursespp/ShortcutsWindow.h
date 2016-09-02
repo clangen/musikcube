@@ -35,59 +35,50 @@
 #pragma once
 
 #include <cursespp/Window.h>
-#include <app/util/Hotkeys.h>
 
-namespace musik {
-    namespace box {
-        class ShortcutsWindow :
-            public cursespp::Window
+namespace cursespp {
+    class ShortcutsWindow :
+        public cursespp::Window
 #if (__clang_major__ == 7 && __clang_minor__ == 3)
-            , public std::enable_shared_from_this<ShortcutsWindow>
+        , public std::enable_shared_from_this<ShortcutsWindow>
 #endif
-        {
-            public:
-                ShortcutsWindow();
-                virtual ~ShortcutsWindow();
+    {
+        public:
+            ShortcutsWindow();
+            virtual ~ShortcutsWindow();
 
-                void AddShortcut(
-                    const std::string& key,
-                    const std::string& description,
-                    int64 attrs = -1);
+            void AddShortcut(
+                const std::string& key,
+                const std::string& description,
+                int64 attrs = -1);
 
-                void AddShortcut(
-                    Hotkeys::Id id,
-                    const std::string& description,
-                    int64 attrs = -1);
+            void RemoveAll();
 
-                void RemoveAll();
+            void SetActive(const std::string& key);
 
-                void SetActive(const std::string& key);
-                void SetActive(Hotkeys::Id id);
+            virtual void Repaint();
 
-                virtual void Repaint();
+        protected:
+            virtual void OnFocusChanged(bool focused);
 
-            protected:
-                virtual void OnFocusChanged(bool focused);
+        private:
+            void UpdateContentColor();
 
-            private:
-                void UpdateContentColor();
+            struct Entry {
+                Entry(const std::string& key, const std::string& desc, int64 attrs = -1) {
+                    this->key = key;
+                    this->description = desc;
+                    this->attrs = attrs;
+                }
 
-                struct Entry {
-                    Entry(const std::string& key, const std::string& desc, int64 attrs = -1) {
-                        this->key = key;
-                        this->description = desc;
-                        this->attrs = attrs;
-                    }
+                std::string key;
+                std::string description;
+                int64 attrs;
+            };
 
-                    std::string key;
-                    std::string description;
-                    int64 attrs;
-                };
+            typedef std::vector<std::shared_ptr<Entry> > EntryList;
 
-                typedef std::vector<std::shared_ptr<Entry> > EntryList;
-
-                EntryList entries;
-                std::string activeKey;
-        };
-    }
+            EntryList entries;
+            std::string activeKey;
+    };
 }

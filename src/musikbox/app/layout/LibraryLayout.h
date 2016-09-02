@@ -36,13 +36,13 @@
 
 #include <cursespp/LayoutBase.h>
 #include <cursespp/LayoutStack.h>
+#include <cursespp/ShortcutsWindow.h>
 
 #include <app/layout/BrowseLayout.h>
 #include <app/layout/NowPlayingLayout.h>
 #include <app/layout/SearchLayout.h>
 #include <app/layout/TrackSearchLayout.h>
 #include <app/window/TransportWindow.h>
-#include <app/window/ShortcutsWindow.h>
 #include <app/service/PlaybackService.h>
 
 #include <core/library/ILibrary.h>
@@ -72,7 +72,8 @@ namespace musik {
                 virtual cursespp::IWindowPtr GetFocus();
                 virtual bool SetFocus(cursespp::IWindowPtr window);
 
-                virtual void SetShortcutsWindow(ShortcutsWindow* w);
+                virtual void SetShortcutsWindow(
+                    cursespp::ShortcutsWindow* w);
 
                 virtual bool KeyPress(const std::string& key);
 
@@ -102,7 +103,7 @@ namespace musik {
                 std::shared_ptr<SearchLayout> searchLayout;
                 std::shared_ptr<TrackSearchLayout> trackSearch;
                 std::shared_ptr<cursespp::LayoutBase> visibleLayout;
-                ShortcutsWindow* shortcuts;
+                cursespp::ShortcutsWindow* shortcuts;
         };
     }
 }

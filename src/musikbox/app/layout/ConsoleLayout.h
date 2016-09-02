@@ -36,11 +36,11 @@
 
 #include <cursespp/LayoutBase.h>
 #include <cursespp/TextInput.h>
+#include <cursespp/ShortcutsWindow.h>
 
 #include <app/window/LogWindow.h>
 #include <app/window/OutputWindow.h>
 #include <app/window/TransportWindow.h>
-#include <app/window/ShortcutsWindow.h>
 
 #include <vector>
 
@@ -65,7 +65,9 @@ namespace musik {
                 ~ConsoleLayout();
 
                 virtual void Layout();
-                virtual void SetShortcutsWindow(ShortcutsWindow* shortcuts);
+
+                virtual void SetShortcutsWindow(
+                    cursespp::ShortcutsWindow* shortcuts);
 
             private:
                 void OnEnterPressed(cursespp::TextInput* input);

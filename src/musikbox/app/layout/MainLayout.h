@@ -36,10 +36,9 @@
 
 #include <cursespp/LayoutBase.h>
 #include <cursespp/TextInput.h>
+#include <cursespp/ShortcutsWindow.h>
 
 #include <core/support/Preferences.h>
-
-#include <app/window/ShortcutsWindow.h>
 
 #include "ITopLevelLayout.h"
 
@@ -72,7 +71,7 @@ namespace musik {
                 cursespp::IWindowPtr BlurShortcuts();
 
                 std::shared_ptr<musik::core::Preferences> prefs;
-                std::shared_ptr<ShortcutsWindow> shortcuts;
+                std::shared_ptr<cursespp::ShortcutsWindow> shortcuts;
                 std::shared_ptr<cursespp::LayoutBase> layout;
                 cursespp::IWindowPtr lastFocus;
                 ITopLevelLayout* topLevelLayout;

@@ -33,15 +33,14 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
-#include "ShortcutsWindow.h"
 
-#include <cursespp/Colors.h>
-#include <cursespp/Text.h>
+#include "ShortcutsWindow.h"
+#include "Colors.h"
+#include "Text.h"
 
 #include <boost/algorithm/string.hpp>
 
 using namespace cursespp;
-using namespace musik::box;
 
 ShortcutsWindow::ShortcutsWindow()
 : Window(nullptr) {
@@ -63,14 +62,6 @@ void ShortcutsWindow::AddShortcut(
     this->Repaint();
 }
 
-void ShortcutsWindow::AddShortcut(
-    Hotkeys::Id id,
-    const std::string& description,
-    int64 attrs)
-{
-    this->AddShortcut(Hotkeys::Get(id), description, attrs);
-}
-
 void ShortcutsWindow::RemoveAll() {
     this->entries.clear();
     this->Repaint();
@@ -84,10 +75,6 @@ void ShortcutsWindow::SetActive(const std::string& key) {
 void ShortcutsWindow::OnFocusChanged(bool focused) {
     this->UpdateContentColor();
     this->Repaint();
-}
-
-void ShortcutsWindow::SetActive(Hotkeys::Id id) {
-    this->SetActive(Hotkeys::Get(id));
 }
 
 void ShortcutsWindow::UpdateContentColor() {
