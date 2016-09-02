@@ -34,7 +34,6 @@
 
 #include <stdafx.h>
 #include "LayoutBase.h"
-#include "LayoutStack.h"
 #include "Colors.h"
 
 using namespace cursespp;
@@ -79,7 +78,6 @@ static inline IWindowPtr adjustFocus(IWindowPtr oldFocus, IWindowPtr newFocus) {
 LayoutBase::LayoutBase(IWindow* parent)
 : Window(parent) {
     this->focused = -1;
-    this->layoutStack = 0;
     this->SetFrameVisible(false);
 }
 
@@ -280,12 +278,4 @@ bool LayoutBase::KeyPress(const std::string& key) {
     }
 
     return false;
-}
-
-ILayoutStack* LayoutBase::GetLayoutStack() {
-    return this->layoutStack;
-}
-
-void LayoutBase::SetLayoutStack(ILayoutStack* stack) {
-    this->layoutStack = stack;
 }

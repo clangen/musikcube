@@ -35,7 +35,6 @@
 #pragma once
 
 #include <cursespp/LayoutBase.h>
-#include <cursespp/LayoutStack.h>
 #include <cursespp/ShortcutsWindow.h>
 
 #include <app/layout/BrowseLayout.h>

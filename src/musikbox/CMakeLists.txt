@@ -32,7 +32,6 @@ set (BOX_SRCS
 	./cursespp/Colors.cpp
 	./cursespp/DialogOverlay.cpp
 	./cursespp/LayoutBase.cpp
-	./cursespp/LayoutStack.cpp
 	./cursespp/ListWindow.cpp
 	./cursespp/Message.cpp
 	./cursespp/MessageQueue.cpp

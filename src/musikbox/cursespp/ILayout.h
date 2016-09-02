@@ -40,8 +40,6 @@
 #include <memory>
 
 namespace cursespp {
-    class ILayoutStack;
-
     class ILayout : public IWindowGroup, public IKeyHandler, public IOrderable, public IDisplayable {
         public:
             virtual ~ILayout() { }
@@ -49,8 +47,6 @@ namespace cursespp {
             virtual IWindowPtr FocusPrev() = 0;
             virtual IWindowPtr GetFocus() = 0;
             virtual bool SetFocus(IWindowPtr window) = 0;
-            virtual ILayoutStack* GetLayoutStack() = 0;
-            virtual void SetLayoutStack(ILayoutStack* stack) = 0;
             virtual void Layout() = 0;
     };
 

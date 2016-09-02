@@ -146,7 +146,6 @@
     <ClCompile Include="cursespp\Colors.cpp" />
     <ClCompile Include="cursespp\DialogOverlay.cpp" />
     <ClCompile Include="cursespp\LayoutBase.cpp" />
-    <ClCompile Include="cursespp\LayoutStack.cpp" />
     <ClCompile Include="cursespp\ListWindow.cpp" />
     <ClCompile Include="cursespp\MultiLineEntry.cpp" />
     <ClCompile Include="cursespp\Overlays.cpp" />
@@ -207,11 +206,9 @@
     <ClInclude Include="cursespp\IInput.h" />
     <ClInclude Include="cursespp\IKeyHandler.h" />
     <ClInclude Include="cursespp\ILayout.h" />
-    <ClInclude Include="cursespp\ILayoutStack.h" />
     <ClInclude Include="cursespp\IMessageTarget.h" />
     <ClInclude Include="cursespp\IOrderable.h" />
     <ClInclude Include="cursespp\IOverlay.h" />
-    <ClInclude Include="cursespp\LayoutStack.h" />
     <ClInclude Include="cursespp\IScrollable.h" />
     <ClInclude Include="cursespp\IScrollAdapter.h" />
     <ClInclude Include="cursespp\IWindow.h" />

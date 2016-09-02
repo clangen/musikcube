@@ -34,32 +34,30 @@
 
 #include <stdafx.h>
 #include "WindowLayout.h"
-#include "LayoutStack.h"
 
 using namespace cursespp;
 
 WindowLayout::WindowLayout(IWindowPtr window) {
     this->window = window;
-    this->stack = 0;
 }
 
 WindowLayout::~WindowLayout() {
 }
 
 bool WindowLayout::AddWindow(IWindowPtr window) {
-    throw std::runtime_error("AddWindow() not supported in LayoutStack. Use Push()");
+    throw std::runtime_error("AddWindow() not supported in WindowLayout. Use Push()");
 }
 
 bool WindowLayout::RemoveWindow(IWindowPtr window) {
-    throw std::runtime_error("RemoveWindow() not supported in LayoutStack. Use Push()");
+    throw std::runtime_error("RemoveWindow() not supported in WindowLayout. Use Push()");
 }
 
 size_t WindowLayout::GetWindowCount() {
-    throw std::runtime_error("GetWindowCount() not supported in LayoutStack.");
+    throw std::runtime_error("GetWindowCount() not supported in WindowLayout.");
 }
 
 IWindowPtr WindowLayout::GetWindowAt(size_t position) {
-    throw std::runtime_error("GetWindowAt() not supported in LayoutStack.");
+    throw std::runtime_error("GetWindowAt() not supported in WindowLayout.");
 }
 
 void WindowLayout::Show() {
@@ -71,9 +69,6 @@ void WindowLayout::Hide() {
 }
 
 bool WindowLayout::KeyPress(int64 ch) {
-    if (ch == 27 && this->GetLayoutStack()) {
-        this->GetLayoutStack()->Pop(shared_from_this());
-    }
     return false;
 }
 
@@ -95,12 +90,4 @@ void WindowLayout::BringToTop() {
 
 void WindowLayout::SendToBottom() {
     this->window->SendToBottom();
-}
-
-ILayoutStack* WindowLayout::GetLayoutStack() {
-    return this->stack;
-}
-
-void WindowLayout::SetLayoutStack(ILayoutStack* stack) {
-    this->stack = stack;
 }

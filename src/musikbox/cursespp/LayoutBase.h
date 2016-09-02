@@ -35,7 +35,6 @@
 #pragma once
 
 #include "ILayout.h"
-#include "ILayoutStack.h"
 #include "Window.h"
 
 #include <vector>
@@ -66,8 +65,6 @@ namespace cursespp {
             virtual IWindowPtr FocusPrev();
             virtual IWindowPtr GetFocus();
             virtual bool SetFocus(IWindowPtr window);
-            virtual ILayoutStack* GetLayoutStack();
-            virtual void SetLayoutStack(ILayoutStack* stack);
 
             virtual void Layout() = 0;
 
@@ -86,7 +83,6 @@ namespace cursespp {
             void SortFocusables();
             void IndexFocusables();
 
-            ILayoutStack* layoutStack;
             std::vector<IWindowPtr> children;
             std::vector<IWindowPtr> focusable;
             int focused;

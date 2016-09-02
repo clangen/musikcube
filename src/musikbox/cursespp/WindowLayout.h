@@ -46,8 +46,6 @@ namespace cursespp {
             virtual IWindowPtr FocusNext();
             virtual IWindowPtr FocusPrev();
             virtual IWindowPtr GetFocus();
-            virtual ILayoutStack* GetLayoutStack();
-            virtual void SetLayoutStack(ILayoutStack* stack);
             virtual void Layout() { }
 
             /* IOrderable */
@@ -68,7 +66,6 @@ namespace cursespp {
             virtual IWindowPtr GetWindowAt(size_t position);
 
         private:
-            ILayoutStack* stack;
             IWindowPtr window;
     };
 }
