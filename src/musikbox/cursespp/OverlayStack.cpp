@@ -94,3 +94,7 @@ void OverlayStack::Remove(ILayout* layout) {
         this->stack.erase(it);
     }
 }
+
+void OverlayStack::Clear() {
+    this->stack.clear();
+}

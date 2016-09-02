@@ -230,6 +230,8 @@ void App::Run(ILayoutPtr layout) {
 
         MessageQueue::Instance().Dispatch();
     }
+
+    overlays.Clear();
 }
 
 void App::UpdateFocusedWindow(IWindowPtr window) {

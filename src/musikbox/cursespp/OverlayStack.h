@@ -46,6 +46,10 @@ namespace cursespp {
             void Remove(ILayoutPtr layout);
             void Remove(ILayout* layout);
 
+        protected:
+            friend class App;
+            void Clear(); /* don't want this exposed to the public */
+
         private:
             std::vector<ILayoutPtr> stack;
     };
