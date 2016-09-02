@@ -48,9 +48,13 @@ DialogOverlay::DialogOverlay() {
     this->SetContentColor(CURSESPP_OVERLAY_BACKGROUND);
 
     this->width = this->height = 0;
+    this->autoDismiss = true;
 
     this->shortcuts.reset(new ShortcutsWindow());
     this->AddWindow(this->shortcuts);
+}
+
+DialogOverlay::~DialogOverlay() {
 }
 
 void DialogOverlay::Layout() {
@@ -90,6 +94,11 @@ DialogOverlay& DialogOverlay::SetMessage(const std::string& message) {
     return *this;
 }
 
+DialogOverlay& DialogOverlay::SetAutoDismiss(bool dismiss) {
+    this->autoDismiss = dismiss;
+    return *this;
+}
+
 DialogOverlay& DialogOverlay::AddButton(
     const std::string& rawKey,
     const std::string& key,
@@ -108,6 +117,14 @@ bool DialogOverlay::KeyPress(const std::string& key) {
 
     if (cb) {
         cb(key);
+
+        if (this->autoDismiss) {
+            Overlays* overlays = this->GetOverlays();
+            if (overlays) {
+                overlays->Remove(this);
+            }
+        }
+
         return true;
     }
 

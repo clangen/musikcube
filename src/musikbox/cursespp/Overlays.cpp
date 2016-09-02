@@ -41,9 +41,9 @@ using namespace cursespp;
 
 static ILayoutPtr none;
 
-std::shared_ptr<DialogOverlay> temp;
-
 Overlays::Overlays() {
+    std::shared_ptr<DialogOverlay> temp;
+
     temp.reset(new DialogOverlay());
 
     temp->SetTitle("musikbox")
@@ -54,7 +54,7 @@ Overlays::Overlays() {
         "ENTER",
         "ok",
         [this](std::string kn) {
-            this->Remove(temp);
+
         });
 
     temp->AddButton(
@@ -72,15 +72,39 @@ ILayoutPtr Overlays::Top() {
     return this->stack.size() ? this->stack[0] : none;
 }
 
-void Overlays::Push(ILayoutPtr overlay) {
-    this->stack.insert(this->stack.begin(), overlay);
+inline void setOverlays(ILayoutPtr layout, Overlays* instance) {
+    IOverlay* overlay = dynamic_cast<IOverlay*>(layout.get());
+    if (overlay) {
+        overlay->SetOverlays(instance);
+    }
 }
 
-void Overlays::Remove(ILayoutPtr overlay) {
+void Overlays::Push(ILayoutPtr layout) {
+    setOverlays(layout, this);
+    this->stack.insert(this->stack.begin(), layout);
+}
+
+void Overlays::Remove(ILayoutPtr layout) {
     auto it = std::find(
-        this->stack.begin(), this->stack.end(), overlay);
+        this->stack.begin(),
+        this->stack.end(), layout);
 
     if (it != this->stack.end()) {
         this->stack.erase(it);
+        setOverlays(*it, nullptr);
+    }
+}
+
+void Overlays::Remove(ILayout* layout) {
+    auto it = std::find_if(
+        this->stack.begin(),
+        this->stack.end(),
+        [layout] (ILayoutPtr layoutPtr) {
+            return layoutPtr.get() == layout;
+        });
+
+    if (it != this->stack.end()) {
+        this->stack.erase(it);
+        setOverlays(*it, nullptr);
     }
 }

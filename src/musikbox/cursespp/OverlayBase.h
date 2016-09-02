@@ -34,54 +34,27 @@
 
 #pragma once
 
-#include "OverlayBase.h"
-#include "TextLabel.h"
-#include "ShortcutsWindow.h"
-
-#include <vector>
-#include <map>
+#include "IOverlay.h"
+#include "LayoutBase.h"
+#include "Overlays.h"
 
 namespace cursespp {
-    class DialogOverlay :
-        public OverlayBase
-#if (__clang_major__ == 7 && __clang_minor__ == 3)
-        , public std::enable_shared_from_this<DialogOverlay>
-#endif
-    {
+    class OverlayBase : public LayoutBase, public IOverlay {
         public:
-            using ButtonCallback = std::function<void(std::string key)>;
+            virtual ~OverlayBase() {
+                this->overlays = nullptr;
+            }
 
-            DialogOverlay();
-            virtual ~DialogOverlay();
-
-            DialogOverlay& SetTitle(const std::string& title);
-            DialogOverlay& SetMessage(const std::string& message);
-
-            DialogOverlay& AddButton(
-                const std::string& rawKey,
-                const std::string& key,
-                const std::string& caption,
-                ButtonCallback callback);
-
-            DialogOverlay& SetAutoDismiss(bool dismiss = true);
-
-            virtual void Layout();
-            virtual bool KeyPress(const std::string& key);
+            virtual void SetOverlays(Overlays* overlays) {
+                this->overlays = overlays;
+            }
 
         protected:
-            virtual void OnVisibilityChanged(bool visible);
+            Overlays* GetOverlays() {
+                return this->overlays;
+            }
 
         private:
-            void Redraw();
-            void RecalculateSize();
-
-            std::string title;
-            std::string message;
-            std::vector<std::string> messageLines;
-            std::shared_ptr<ShortcutsWindow> shortcuts;
-            int width, height;
-            bool autoDismiss;
-
-            std::map<std::string, ButtonCallback> buttons;
+            Overlays* overlays;
     };
 }

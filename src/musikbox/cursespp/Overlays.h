@@ -40,9 +40,11 @@ namespace cursespp {
     class Overlays {
         public:
             Overlays();
+
             ILayoutPtr Top();
-            void Push(ILayoutPtr overlay);
-            void Remove(ILayoutPtr overlay);
+            void Push(ILayoutPtr layout);
+            void Remove(ILayoutPtr layout);
+            void Remove(ILayout* layout);
 
         private:
             std::vector<ILayoutPtr> stack;

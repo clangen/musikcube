@@ -34,54 +34,12 @@
 
 #pragma once
 
-#include "OverlayBase.h"
-#include "TextLabel.h"
-#include "ShortcutsWindow.h"
-
-#include <vector>
-#include <map>
-
 namespace cursespp {
-    class DialogOverlay :
-        public OverlayBase
-#if (__clang_major__ == 7 && __clang_minor__ == 3)
-        , public std::enable_shared_from_this<DialogOverlay>
-#endif
-    {
+    class Overlays;
+
+    class IOverlay {
         public:
-            using ButtonCallback = std::function<void(std::string key)>;
-
-            DialogOverlay();
-            virtual ~DialogOverlay();
-
-            DialogOverlay& SetTitle(const std::string& title);
-            DialogOverlay& SetMessage(const std::string& message);
-
-            DialogOverlay& AddButton(
-                const std::string& rawKey,
-                const std::string& key,
-                const std::string& caption,
-                ButtonCallback callback);
-
-            DialogOverlay& SetAutoDismiss(bool dismiss = true);
-
-            virtual void Layout();
-            virtual bool KeyPress(const std::string& key);
-
-        protected:
-            virtual void OnVisibilityChanged(bool visible);
-
-        private:
-            void Redraw();
-            void RecalculateSize();
-
-            std::string title;
-            std::string message;
-            std::vector<std::string> messageLines;
-            std::shared_ptr<ShortcutsWindow> shortcuts;
-            int width, height;
-            bool autoDismiss;
-
-            std::map<std::string, ButtonCallback> buttons;
+            virtual ~IOverlay() { }
+            virtual void SetOverlays(Overlays* overlays) = 0;
     };
 }
