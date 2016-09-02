@@ -34,7 +34,8 @@
 
 #pragma once
 
-#include <cursespp/Window.h>
+#include "Window.h"
+#include "Text.h"
 
 namespace cursespp {
     class ShortcutsWindow :
@@ -46,6 +47,8 @@ namespace cursespp {
         public:
             ShortcutsWindow();
             virtual ~ShortcutsWindow();
+
+            void SetAlignment(text::TextAlign alignment);
 
             void AddShortcut(
                 const std::string& key,
@@ -63,6 +66,7 @@ namespace cursespp {
 
         private:
             void UpdateContentColor();
+            size_t CalculateLeftPadding();
 
             struct Entry {
                 Entry(const std::string& key, const std::string& desc, int64 attrs = -1) {
@@ -80,5 +84,6 @@ namespace cursespp {
 
             EntryList entries;
             std::string activeKey;
+            text::TextAlign alignment;
     };
 }

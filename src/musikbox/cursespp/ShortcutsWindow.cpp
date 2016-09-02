@@ -43,12 +43,18 @@
 using namespace cursespp;
 
 ShortcutsWindow::ShortcutsWindow()
-: Window(nullptr) {
+: Window(nullptr)
+, alignment(text::AlignCenter) {
     this->SetFrameVisible(false);
     this->UpdateContentColor();
 }
 
 ShortcutsWindow::~ShortcutsWindow() {
+}
+
+void ShortcutsWindow::SetAlignment(text::TextAlign align) {
+    this->alignment = align;
+    this->Repaint();
 }
 
 void ShortcutsWindow::AddShortcut(
@@ -83,6 +89,29 @@ void ShortcutsWindow::UpdateContentColor() {
         : CURSESPP_SHORTCUT_ROW_NORMAL);
 }
 
+size_t ShortcutsWindow::CalculateLeftPadding() {
+    if (this->alignment = text::AlignLeft) {
+        return 0;
+    }
+
+    int padding = this->GetContentWidth();
+
+    for (size_t i = 0; i < this->entries.size(); i++) {
+        auto e = this->entries[i];
+        padding -= u8cols(e->key) + u8cols(e->description) + 5;
+    }
+
+    if (padding < 0) {
+        return 0;
+    }
+
+    if (this->alignment == text::AlignRight) {
+        return padding;
+    }
+
+    return (padding / 2); /* text::AlignCenter */
+}
+
 void ShortcutsWindow::Repaint() {
     Window::Repaint();
 
@@ -92,6 +121,9 @@ void ShortcutsWindow::Repaint() {
     int64 activeAttrs = COLOR_PAIR(CURSESPP_BUTTON_HIGHLIGHTED);
 
     WINDOW* c = this->GetContent();
+
+    size_t leftPadding = this->CalculateLeftPadding();
+    wmove(c, 0, leftPadding);
 
     size_t remaining = this->GetContentWidth();
     for (size_t i = 0; i < this->entries.size() && remaining > 0; i++) {
