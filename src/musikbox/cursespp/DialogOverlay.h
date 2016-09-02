@@ -36,7 +36,10 @@
 
 #include "LayoutBase.h"
 #include "TextLabel.h"
+#include "ShortcutsWindow.h"
+
 #include <vector>
+#include <map>
 
 namespace cursespp {
     class DialogOverlay :
@@ -44,11 +47,21 @@ namespace cursespp {
         public std::enable_shared_from_this<DialogOverlay>
     {
         public:
+            using ButtonCallback = std::function<void(std::string key)>;
+
             DialogOverlay();
-            virtual void Layout();
 
             DialogOverlay& SetTitle(const std::string& title);
             DialogOverlay& SetMessage(const std::string& message);
+
+            DialogOverlay& AddButton(
+                const std::string& rawKey,
+                const std::string& key,
+                const std::string& caption,
+                ButtonCallback callback);
+
+            virtual void Layout();
+            virtual bool KeyPress(const std::string& key);
 
         protected:
             virtual void OnVisibilityChanged(bool visible);
@@ -60,6 +73,9 @@ namespace cursespp {
             std::string title;
             std::string message;
             std::vector<std::string> messageLines;
+            std::shared_ptr<ShortcutsWindow> shortcuts;
             int width, height;
+
+            std::map<std::string, ButtonCallback> buttons;
     };
 }

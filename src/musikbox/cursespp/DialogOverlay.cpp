@@ -43,25 +43,40 @@ using namespace cursespp;
 #define VERTICAL_PADDING 2
 
 DialogOverlay::DialogOverlay() {
+    this->SetFrameVisible(true);
+    this->SetFrameColor(CURSESPP_OVERLAY_FRAME);
     this->SetContentColor(CURSESPP_OVERLAY_BACKGROUND);
+
     this->width = this->height = 0;
+
+    this->shortcuts.reset(new ShortcutsWindow());
+    this->AddWindow(this->shortcuts);
 }
 
-void DialogOverlay::Layout() { 
+void DialogOverlay::Layout() {
     this->RecalculateSize();
 
-    this->MoveAndResize(
-        HORIZONTAL_PADDING, 
-        VERTICAL_PADDING, 
-        this->width,
-        this->height);
+    if (this->width > 0 && this->height > 0) {
+        this->MoveAndResize(
+            HORIZONTAL_PADDING,
+            VERTICAL_PADDING,
+            this->width,
+            this->height + 2);
 
-    this->Redraw();
+        this->shortcuts->MoveAndResize(
+            HORIZONTAL_PADDING + 1,
+            VERTICAL_PADDING + this->height,
+            this->GetContentWidth(),
+            1);
+
+        this->Redraw();
+    }
 }
 
 DialogOverlay& DialogOverlay::SetTitle(const std::string& title) {
     this->title = title;
     this->RecalculateSize();
+    this->Layout();
     this->Repaint();
     return *this;
 }
@@ -70,8 +85,33 @@ DialogOverlay& DialogOverlay::SetMessage(const std::string& message) {
     this->message = message;
     this->width = 0; /* implicitly triggers a new BreakLines() */
     this->RecalculateSize();
+    this->Layout();
     this->Repaint();
     return *this;
+}
+
+DialogOverlay& DialogOverlay::AddButton(
+    const std::string& rawKey,
+    const std::string& key,
+    const std::string& caption,
+    ButtonCallback callback)
+{
+    this->shortcuts->AddShortcut(key, caption);
+    this->buttons[rawKey] = callback;
+    this->Layout();
+    this->Repaint();
+    return *this;
+}
+
+bool DialogOverlay::KeyPress(const std::string& key) {
+    ButtonCallback cb = this->buttons[key];
+
+    if (cb) {
+        cb(key);
+        return true;
+    }
+
+    return LayoutBase::KeyPress(key);
 }
 
 void DialogOverlay::OnVisibilityChanged(bool visible) {
@@ -82,24 +122,29 @@ void DialogOverlay::OnVisibilityChanged(bool visible) {
 
 void DialogOverlay::RecalculateSize() {
     int lastWidth = this->width;
+
     this->width = std::max(0, Screen::GetWidth() - (HORIZONTAL_PADDING * 2));
-    
+
     if (lastWidth != this->width) {
         /* the "-2" is for left and right padding */
         messageLines = text::BreakLines(this->message, this->width - 2);
     }
 
-    this->height = 1; /* top padding */
+    this->height = 0; /* top padding */
     this->height += (this->title.size()) ? 2 : 0;
     this->height += (this->messageLines.size()) ? messageLines.size() + 1 : 0;
     this->height += 1; /* shortcuts */
 }
 
 void DialogOverlay::Redraw() {
+    if (this->width <= 0 || this->height <= 0) {
+        return;
+    }
+
     WINDOW* c = this->GetContent();
 
     const int currentX = 1;
-    int currentY = 1;
+    int currentY = 0;
 
     if (this->title.size()) {
         wmove(c, currentY, currentX);

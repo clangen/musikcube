@@ -256,10 +256,11 @@ void App::CheckShowOverlay() {
 
         this->state.overlay = top;
 
-        if (top) {
-            top->Layout();
-            top->Show();
-            top->BringToTop();
+        ILayoutPtr newTopLayout = this->state.ActiveLayout();
+        if (newTopLayout) {
+            newTopLayout->Layout();
+            newTopLayout->Show();
+            newTopLayout->BringToTop();
         }
     }
 }

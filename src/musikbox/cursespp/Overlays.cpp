@@ -45,11 +45,42 @@ std::shared_ptr<DialogOverlay> temp;
 
 Overlays::Overlays() {
     temp.reset(new DialogOverlay());
+
     temp->SetTitle("musikbox")
         .SetMessage("welcome to musikbox! welcome to musikbox! welcome to musikbox! welcome to musikbox!\n\ntesting line breaks");
+
+    temp->AddButton(
+        "KEY_ENTER",
+        "ENTER",
+        "ok",
+        [this](std::string kn) {
+            this->Remove(temp);
+        });
+
+    temp->AddButton(
+        "^[",
+        "ESC",
+        "cancel",
+        [this](std::string kn) {
+
+        });
+
+    this->Push(temp);
 }
 
 ILayoutPtr Overlays::Top() {
-    // return temp;
-    return none;
+    return this->stack.size() ? this->stack[0] : none;
+}
+
+void Overlays::Push(ILayoutPtr overlay) {
+    this->stack.insert(this->stack.begin(), overlay);
+}
+
+void Overlays::Remove(ILayoutPtr overlay) {
+    auto it = std::find(
+        this->stack.begin(), this->stack.end(), overlay);
+
+    if (it != this->stack.end()) {
+        this->stack.erase(it);
+    }
 }
