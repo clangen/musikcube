@@ -61,7 +61,7 @@ namespace cursespp {
                 const std::string& rawKey,
                 const std::string& key,
                 const std::string& caption,
-                ButtonCallback callback);
+                ButtonCallback callback = ButtonCallback());
 
             DialogOverlay& SetAutoDismiss(bool dismiss = true);
 

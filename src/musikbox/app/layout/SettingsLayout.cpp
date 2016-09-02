@@ -34,7 +34,9 @@
 
 #include "stdafx.h"
 
+#include <cursespp/App.h>
 #include <cursespp/Colors.h>
+#include <cursespp/DialogOverlay.h>
 #include <cursespp/Screen.h>
 #include <cursespp/SingleLineEntry.h>
 
@@ -243,6 +245,29 @@ void SettingsLayout::OnVisibilityChanged(bool visible) {
     if (visible) {
         this->RefreshAddedPaths();
         this->LoadPreferences();
+        this->CheckShowFirstRunDialog();
+    }
+}
+
+void SettingsLayout::CheckShowFirstRunDialog() {
+    if (!this->prefs->GetBool(box::prefs::keys::FirstRunSettingsDisplayed)) {
+        std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
+
+        dialog->SetTitle("welcome to musikbox!")
+            .SetMessage("you need to add some directories that contain music files, "
+                "then switch to the library view by pressing 'a' to start listening!\n\n"
+                "for verbose system information, press '`' to enter the console view.\n\n"
+                "select 'ok' to get started.");
+
+        dialog->AddButton(
+            "KEY_ENTER",
+            "ENTER",
+            "ok",
+            [this](std::string key) {
+                this->prefs->SetBool(box::prefs::keys::FirstRunSettingsDisplayed, true);
+            });
+
+        App::Overlays().Push(dialog);
     }
 }
 

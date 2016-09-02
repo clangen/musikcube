@@ -82,6 +82,7 @@ namespace musik {
                 void AddSelectedDirectory();
                 void RemoveSelectedDirectory();
                 void DrillIntoSelectedDirectory();
+                void CheckShowFirstRunDialog();
 
                 void OnCheckboxChanged(
                     cursespp::Checkbox* checkbox, bool checked);

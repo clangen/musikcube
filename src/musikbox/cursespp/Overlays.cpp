@@ -42,30 +42,6 @@ using namespace cursespp;
 static ILayoutPtr none;
 
 Overlays::Overlays() {
-    std::shared_ptr<DialogOverlay> temp;
-
-    temp.reset(new DialogOverlay());
-
-    temp->SetTitle("musikbox")
-        .SetMessage("welcome to musikbox! welcome to musikbox! welcome to musikbox! welcome to musikbox!\n\ntesting line breaks");
-
-    temp->AddButton(
-        "KEY_ENTER",
-        "ENTER",
-        "ok",
-        [this](std::string kn) {
-
-        });
-
-    temp->AddButton(
-        "^[",
-        "ESC",
-        "cancel",
-        [this](std::string kn) {
-
-        });
-
-    this->Push(temp);
 }
 
 ILayoutPtr Overlays::Top() {
@@ -81,6 +57,15 @@ inline void setOverlays(ILayoutPtr layout, Overlays* instance) {
 
 void Overlays::Push(ILayoutPtr layout) {
     setOverlays(layout, this);
+
+    auto it = std::find(
+        this->stack.begin(),
+        this->stack.end(), layout);
+
+    if (it != this->stack.end()) {
+        this->stack.erase(it); /* remove; we'll promote to the top */
+    }
+
     this->stack.insert(this->stack.begin(), layout);
 }
 

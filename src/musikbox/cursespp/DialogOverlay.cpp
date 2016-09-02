@@ -113,10 +113,14 @@ DialogOverlay& DialogOverlay::AddButton(
 }
 
 bool DialogOverlay::KeyPress(const std::string& key) {
-    ButtonCallback cb = this->buttons[key];
+    auto it = this->buttons.find(key);
 
-    if (cb) {
-        cb(key);
+    if (it != this->buttons.end()) {
+        ButtonCallback cb = it->second;
+
+        if (cb) {
+            cb(key);
+        }
 
         if (this->autoDismiss) {
             Overlays* overlays = this->GetOverlays();

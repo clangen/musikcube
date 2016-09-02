@@ -56,7 +56,9 @@ namespace cursespp {
 
             void Run(ILayoutPtr layout);
             void ChangeLayout(ILayoutPtr layout);
+
             static int64 Now();
+            static Overlays& Overlays();
 
         private:
 
@@ -83,7 +85,6 @@ namespace cursespp {
             void OnResized();
 
             WindowState state;
-            Overlays overlays;
             MainKeyHandler keyHandler;
             ResizeHandler resizeHandler;
             bool disableCustomColors;
