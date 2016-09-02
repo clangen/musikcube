@@ -41,6 +41,8 @@
 
 using namespace cursespp;
 
+static ILayoutPtr none;
+
 class OverlayLayout :
     public LayoutBase,
     public std::enable_shared_from_this<OverlayLayout>
@@ -58,6 +60,6 @@ Overlays::Overlays() {
 }
 
 ILayoutPtr Overlays::Top() {
-    //return temp;
-    return ILayoutPtr();
+    // return temp;
+    return none;
 }
