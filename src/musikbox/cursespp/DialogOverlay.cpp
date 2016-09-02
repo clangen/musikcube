@@ -52,6 +52,7 @@ DialogOverlay::DialogOverlay() {
     this->autoDismiss = true;
 
     this->shortcuts.reset(new ShortcutsWindow());
+    this->shortcuts->SetAlignment(text::AlignRight);
     this->AddWindow(this->shortcuts);
 }
 

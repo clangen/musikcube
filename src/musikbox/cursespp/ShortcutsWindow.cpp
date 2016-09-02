@@ -90,7 +90,7 @@ void ShortcutsWindow::UpdateContentColor() {
 }
 
 size_t ShortcutsWindow::CalculateLeftPadding() {
-    if (this->alignment = text::AlignLeft) {
+    if (this->alignment == text::AlignLeft) {
         return 0;
     }
 
