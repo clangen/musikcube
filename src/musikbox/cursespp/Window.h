@@ -94,6 +94,8 @@ namespace cursespp {
             virtual bool IsVisible();
             virtual bool IsFocused();
 
+            bool HasBadBounds() { return this->badBounds; }
+
             static void WriteToScreen(IInput* input);
             static void Invalidate();
             static void Freeze();
@@ -108,6 +110,8 @@ namespace cursespp {
             void Recreate();
             void Clear();
 
+            bool CheckForBoundsError();
+
             virtual void OnDimensionsChanged();
             virtual void OnVisibilityChanged(bool visible);
             virtual void OnFocusChanged(bool focused);
@@ -118,6 +122,7 @@ namespace cursespp {
             WINDOW* frame;
             PANEL* contentPanel;
             WINDOW* content;
+            bool badBounds;
             bool drawFrame;
             bool isVisible, isFocused;
             int focusOrder;

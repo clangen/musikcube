@@ -39,12 +39,15 @@
 #include "Message.h"
 #include "MessageQueue.h"
 #include "Colors.h"
+#include "Screen.h"
 
 using namespace cursespp;
 
 static int NEXT_ID = 0;
 static bool drawPending = false;
 static bool freeze = false;
+
+#define ENABLE_BOUNDS_CHECK 1
 
 static inline void DrawCursor(IInput* input) {
     if (input) {
@@ -103,6 +106,7 @@ Window::Window(IWindow *parent) {
     this->isVisible = this->isFocused = false;
     this->focusOrder = -1;
     this->id = NEXT_ID++;
+    this->badBounds = false;
 }
 
 Window::~Window() {
@@ -312,7 +316,10 @@ void Window::SetFocusOrder(int order) {
 }
 
 void Window::Show() {
-    if (this->framePanel) {
+    if (this->badBounds) {
+        return;
+    }
+    else if (!this->badBounds && this->framePanel) {
         if (!this->isVisible) {
             show_panel(this->framePanel);
 
@@ -336,26 +343,66 @@ void Window::Recreate() {
     this->Create();
 }
 
+bool Window::CheckForBoundsError() {
+    if (this->parent && ((Window *)this->parent)->HasBadBounds()) {
+        return true;
+    }
+
+    int screenCy = Screen::GetHeight();
+    int screenCx = Screen::GetWidth();
+
+    int cx = this->GetWidth();
+    int cy = this->GetHeight();
+
+    if (cx > screenCx || cy > screenCy) {
+        return true;
+    }
+
+    if (!this->parent) {
+        return false;
+    }
+
+    int parentTop = parent->GetY();
+    int parentBottom = parentTop + parent->GetHeight();
+    int parentLeft = parent->GetX();
+    int parentRight = parentLeft + parent->GetWidth();
+
+    int top = this->GetY();
+    int left = this->GetX();
+    int bottom = top + cy;
+    int right = left + cx;
+
+    if (top < parentTop || bottom > parentBottom ||
+        left < parentLeft || right > parentRight)
+    {
+        return true;
+    }
+
+    return false;
+}
+
 void Window::Create() {
-    /* if we have a parent, place the new window relative to the parent. */
+    /* see if the window is valid within the screen, and within it's parent.
+    if not, draw it as a single cell red block. */
+
+#if ENABLE_BOUNDS_CHECK > 0
+    this->badBounds = this->CheckForBoundsError();
+
+    if (this->badBounds) {
+        this->frame = this->content = newwin(1, 1, 0, 0);
+        wbkgd(this->frame, COLOR_PAIR(CURSESPP_BUTTON_NEGATIVE));
+        this->framePanel = new_panel(this->frame);
+        return;
+    }
+#endif
+
+    /* else we have valid bounds */
 
     this->frame = newwin(
         this->height,
         this->width,
         this->y,
         this->x);
-
-    //this->frame = (this->parent == NULL)
-    //    ? newwin(
-    //        this->height,
-    //        this->width,
-    //        this->y,
-    //        this->x)
-    //    : newwin(
-    //        this->height,
-    //        this->width,
-    //        this->parent->GetY() + this->y,
-    //        this->parent->GetX() + this->x);
 
     this->framePanel = new_panel(this->frame);
 

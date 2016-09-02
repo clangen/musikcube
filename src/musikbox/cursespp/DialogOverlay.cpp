@@ -156,6 +156,23 @@ void DialogOverlay::RecalculateSize() {
     this->height += (this->title.size()) ? 2 : 0;
     this->height += (this->messageLines.size()) ? messageLines.size() + 1 : 0;
     this->height += 1; /* shortcuts */
+
+    /* ensure the overlay doesn't exceed the height of the screen,
+    or things may get crashy. normally this will be done for us automatically
+    in Window, but because we're free-floating we need to do it manually here. */
+    int top = this->GetY();
+    int bottom = top + this->height + VERTICAL_PADDING;
+    int screenHeight = Screen::GetHeight();
+    if (bottom > screenHeight) {
+        this->height = screenHeight - top - VERTICAL_PADDING;
+    }
+
+    int left = this->GetX();
+    int right = left + this->width + HORIZONTAL_PADDING;
+    int screenWidth = Screen::GetWidth();
+    if (right > screenWidth) {
+        this->width = screenWidth - left - HORIZONTAL_PADDING;
+    }
 }
 
 void DialogOverlay::Redraw() {
