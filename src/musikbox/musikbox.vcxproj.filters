@@ -36,13 +36,7 @@
     <ClCompile Include="app\query\CategoryListViewQuery.cpp">
       <Filter>app\query</Filter>
     </ClCompile>
-    <ClCompile Include="app\util\SystemInfo.cpp">
-      <Filter>app\util</Filter>
-    </ClCompile>
     <ClCompile Include="app\window\OutputWindow.cpp">
-      <Filter>app\window</Filter>
-    </ClCompile>
-    <ClCompile Include="app\window\ResourcesWindow.cpp">
       <Filter>app\window</Filter>
     </ClCompile>
     <ClCompile Include="app\window\TrackListView.cpp">
@@ -129,9 +123,6 @@
     <ClCompile Include="cursespp\Checkbox.cpp">
       <Filter>cursespp</Filter>
     </ClCompile>
-    <ClCompile Include="app\window\ShortcutsWindow.cpp">
-      <Filter>app\window</Filter>
-    </ClCompile>
     <ClCompile Include="cursespp\App.cpp">
       <Filter>cursespp</Filter>
     </ClCompile>
@@ -146,6 +137,15 @@
     </ClCompile>
     <ClCompile Include="app\util\PreferenceKeys.cpp">
       <Filter>app\util</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\ShortcutsWindow.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\Overlays.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\DialogOverlay.cpp">
+      <Filter>cursespp</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -213,16 +213,10 @@
     <ClInclude Include="app\query\CategoryListViewQuery.h">
       <Filter>app\query</Filter>
     </ClInclude>
-    <ClInclude Include="app\util\SystemInfo.h">
-      <Filter>app\util</Filter>
-    </ClInclude>
     <ClInclude Include="app\window\LogWindow.h">
       <Filter>app\window</Filter>
     </ClInclude>
     <ClInclude Include="app\window\OutputWindow.h">
-      <Filter>app\window</Filter>
-    </ClInclude>
-    <ClInclude Include="app\window\ResourcesWindow.h">
       <Filter>app\window</Filter>
     </ClInclude>
     <ClInclude Include="app\window\TrackListView.h">
@@ -318,9 +312,6 @@
     <ClInclude Include="cursespp\Checkbox.h">
       <Filter>cursespp</Filter>
     </ClInclude>
-    <ClInclude Include="app\window\ShortcutsWindow.h">
-      <Filter>app\window</Filter>
-    </ClInclude>
     <ClInclude Include="cursespp\App.h">
       <Filter>cursespp</Filter>
     </ClInclude>
@@ -338,6 +329,21 @@
     </ClInclude>
     <ClInclude Include="app\util\PreferenceKeys.h">
       <Filter>app\util</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\ShortcutsWindow.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\IOverlay.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\Overlays.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\OverlayBase.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\DialogOverlay.h">
+      <Filter>cursespp</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

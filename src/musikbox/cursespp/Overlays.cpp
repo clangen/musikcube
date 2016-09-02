@@ -32,6 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+#include <stdafx.h>
 #include "Overlays.h"
 #include "DialogOverlay.h"
 #include "Colors.h"
@@ -75,8 +76,8 @@ void Overlays::Remove(ILayoutPtr layout) {
         this->stack.end(), layout);
 
     if (it != this->stack.end()) {
-        this->stack.erase(it);
         setOverlays(*it, nullptr);
+        this->stack.erase(it);
     }
 }
 
@@ -89,7 +90,7 @@ void Overlays::Remove(ILayout* layout) {
         });
 
     if (it != this->stack.end()) {
-        this->stack.erase(it);
         setOverlays(*it, nullptr);
+        this->stack.erase(it);
     }
 }
