@@ -35,58 +35,11 @@
 #pragma once
 
 #include "ILayout.h"
-#include "IInput.h"
-#include "IKeyHandler.h"
-#include "Overlays.h"
 
 namespace cursespp {
-    class App {
+    class Overlays {
         public:
-            using MainKeyHandler = std::function<bool(const std::string&)>;
-            using ResizeHandler = std::function<void()>;
-
-            App(const std::string& title);
-            ~App(); /* do not subclass */
-
-            void SetKeyHandler(MainKeyHandler handler);
-            void SetResizeHandler(ResizeHandler handler);
-            void SetCustomColorsDisabled(bool disable);
-            void SetMinimumSize(int width, int height);
-            bool IsOverlayVisible() { return this->state.overlay != nullptr; }
-
-            void Run(ILayoutPtr layout);
-            void ChangeLayout(ILayoutPtr layout);
-            static int64 Now();
-
-        private:
-
-            struct WindowState {
-                ILayoutPtr overlay;
-                ILayoutPtr layout;
-                IWindowPtr focused;
-                IInput* input;
-                IKeyHandler* keyHandler;
-
-                inline ILayoutPtr ActiveLayout() {
-                    /* if there's a visible overlay, it's always the current
-                    layout and will consume all key events */
-                    return overlay ? overlay : layout;
-                }
-            };
-
-            void CheckDrawCursor();
-            void UpdateFocusedWindow(IWindowPtr window);
-            void EnsureFocusIsValid();
-            void CheckShowOverlay();
-            void FocusNextInLayout();
-            void FocusPrevInLayout();
-            void OnResized();
-
-            WindowState state;
-            Overlays overlays;
-            MainKeyHandler keyHandler;
-            ResizeHandler resizeHandler;
-            bool disableCustomColors;
-            int minWidth, minHeight;
+            Overlays();
+            ILayoutPtr Top();
     };
 }

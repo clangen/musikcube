@@ -137,4 +137,6 @@ void Colors::Init(bool disableCustomColors) {
 
     init_pair(CURSESPP_SHORTCUT_ROW_NORMAL, yellow, selected);
     init_pair(CURSESPP_SHORTCUT_ROW_FOCUSED, white, darkRed);
+
+    init_pair(CURSESPP_OVERLAY_BACKGROUND, white, selected);
 }

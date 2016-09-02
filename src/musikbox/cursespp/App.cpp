@@ -41,6 +41,7 @@
 #include "Window.h"
 #include "MessageQueue.h"
 #include "Text.h"
+#include "Screen.h"
 
 #include <boost/locale.hpp>
 #include <boost/filesystem/path.hpp>
@@ -76,6 +77,8 @@ App::App(const std::string& title) {
     std::locale locale = std::locale();
     std::locale utf8Locale(locale, new boost::filesystem::detail::utf8_codecvt_facet);
     boost::filesystem::path::imbue(utf8Locale);
+
+    this->minWidth = this->minHeight = 0;
 
 #ifndef WIN32
     setlocale(LC_ALL, "");
@@ -118,6 +121,32 @@ void App::SetResizeHandler(ResizeHandler handler) {
 
 void App::SetCustomColorsDisabled(bool disabled) {
     this->disableCustomColors = disabled;
+}
+
+void App::SetMinimumSize(int minWidth, int minHeight) {
+    this->minWidth = std::max(0, minWidth);
+    this->minHeight = std::max(0, minHeight);
+}
+
+void App::OnResized() {
+    int cx = Screen::GetWidth();
+    int cy = Screen::GetHeight();
+    if (cx < this->minWidth || cy < this->minHeight) {
+        Window::Freeze();
+    }
+    else {
+        Window::Unfreeze();
+
+        if (this->state.layout) {
+            this->state.layout->Layout();
+            this->state.layout->BringToTop();
+        }
+
+        if (this->state.overlay) {
+            this->state.overlay->Layout();
+            this->state.overlay->BringToTop();
+        }
+    }
 }
 
 void App::Run(ILayoutPtr layout) {
@@ -172,7 +201,7 @@ void App::Run(ILayoutPtr layout) {
             {
                 if (!keyHandler || !keyHandler(kn)) {
                     if (!this->state.keyHandler || !this->state.keyHandler->KeyPress(kn)) {
-                        this->state.layout->KeyPress(kn);
+                        this->state.ActiveLayout()->KeyPress(kn);
                     }
                 }
             }
@@ -188,12 +217,16 @@ void App::Run(ILayoutPtr layout) {
                 this->resizeHandler();
             }
 
-            this->state.layout->BringToTop();
+            this->OnResized();
+
             resizeAt = 0;
         }
 
+        this->CheckShowOverlay();
         this->EnsureFocusIsValid();
+
         Window::WriteToScreen(this->state.input);
+
         MessageQueue::Instance().Dispatch();
     }
 }
@@ -207,8 +240,30 @@ void App::UpdateFocusedWindow(IWindowPtr window) {
 }
 
 void App::EnsureFocusIsValid() {
-    if (this->state.layout && this->state.layout->GetFocus() != this->state.focused) {
-        this->UpdateFocusedWindow(this->state.layout->GetFocus());
+    ILayoutPtr layout = this->state.ActiveLayout();
+    if (layout && layout->GetFocus() != this->state.focused) {
+        this->UpdateFocusedWindow(this->state.ActiveLayout()->GetFocus());
+    }
+}
+
+void App::CheckShowOverlay() {
+    ILayoutPtr top = this->overlays.Top();
+
+    if (top != this->state.overlay) {
+        if (this->state.overlay) {
+            this->state.overlay->Hide();
+        }
+
+        this->state.overlay = top;
+
+        if (top) {
+            top->Layout();
+            top->Show();
+        }
+    }
+
+    if (top) {
+        top->BringToTop();
     }
 }
 
@@ -232,24 +287,29 @@ void App::ChangeLayout(ILayoutPtr newLayout) {
         this->state.layout->Layout();
         this->state.layout->Show();
         this->state.layout->BringToTop();
-        this->UpdateFocusedWindow(this->state.layout->GetFocus());
+
+        if (!this->state.overlay) {
+            this->UpdateFocusedWindow(this->state.layout->GetFocus());
+        }
     }
+
+    this->CheckShowOverlay();
 }
 
 void App::FocusNextInLayout() {
-    if (!this->state.layout) {
+    if (!this->state.ActiveLayout()) {
         return;
     }
 
-    this->UpdateFocusedWindow(this->state.layout->FocusNext());
+    this->UpdateFocusedWindow(this->state.ActiveLayout()->FocusNext());
 }
 
 void App::FocusPrevInLayout() {
-    if (!this->state.layout) {
+    if (!this->state.ActiveLayout()) {
         return;
     }
 
-    this->UpdateFocusedWindow(this->state.layout->FocusPrev());
+    this->UpdateFocusedWindow(this->state.ActiveLayout()->FocusPrev());
 }
 
 int64 App::Now() {

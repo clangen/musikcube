@@ -107,6 +107,8 @@ int main(int argc, char* argv[])
         app.SetCustomColorsDisabled(prefs->GetBool(
             musik::box::prefs::keys::DisableCustomColors.c_str(), false));
 
+        app.SetMinimumSize(MIN_WIDTH, MIN_HEIGHT);
+
         using Layout = std::shared_ptr<LayoutBase>;
         using Main = std::shared_ptr<MainLayout>;
 
@@ -124,7 +126,10 @@ int main(int argc, char* argv[])
             ? libraryLayout : settingsLayout);
 
         app.SetKeyHandler([&](const std::string& kn) {
-            if (Hotkeys::Is(Hotkeys::NavigateConsole, kn)) {
+            if (app.IsOverlayVisible()) {
+                return false;
+            }
+            else if (Hotkeys::Is(Hotkeys::NavigateConsole, kn)) {
                 mainLayout->SetMainLayout(consoleLayout);
                 return true;
             }
@@ -138,18 +143,6 @@ int main(int argc, char* argv[])
             }
 
             return globalHotkeys.Handle(kn);
-        });
-
-        app.SetResizeHandler([&]() {
-            int cx = Screen::GetWidth();
-            int cy = Screen::GetHeight();
-            if (cx < MIN_WIDTH || cy < MIN_HEIGHT) {
-                Window::Freeze();
-            }
-            else {
-                Window::Unfreeze();
-                mainLayout->Layout();
-            }
         });
 
         app.Run(mainLayout);

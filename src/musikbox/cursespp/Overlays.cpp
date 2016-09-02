@@ -32,43 +32,32 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "Overlays.h"
+#include "LayoutBase.h"
+#include "Colors.h"
+#include "Screen.h"
 
-#include "curses_config.h"
+#include <iostream>
 
-#define CURSESPP_SELECTED_LIST_ITEM 1
-#define CURSESPP_HIGHLIGHTED_LIST_ITEM 2
-#define CURSESPP_HIGHLIGHTED_SELECTED_LIST_ITEM 3
-#define CURSESPP_LIST_ITEM_HEADER 4
+using namespace cursespp;
 
-#define CURSESPP_DEFAULT_CONTENT_COLOR 5
-#define CURSESPP_DEFAULT_FRAME_COLOR 6
-#define CURSESPP_FOCUSED_FRAME_COLOR 7
+class OverlayLayout :
+    public LayoutBase,
+    public std::enable_shared_from_this<OverlayLayout>
+{
+    virtual void Layout() { 
+        this->MoveAndResize(2, 0, Screen::GetWidth() - 4, 8);
+    }
+};
 
-#define CURSESPP_TEXT_DEFAULT 8
-#define CURSESPP_TEXT_DISABLED 9
-#define CURSESPP_TEXT_FOCUSED 10
-#define CURSESPP_TEXT_ACTIVE 11
-#define CURSESPP_TEXT_WARNING 12
-#define CURSESPP_TEXT_ERROR 13
-#define CURSESPP_TEXT_HIDDEN 14
-#define CURSESPP_TEXT_SEPARATOR 15
+std::shared_ptr<LayoutBase> temp;
 
-#define CURSESPP_BUTTON_NORMAL 16
-#define CURSESPP_BUTTON_NEGATIVE 17
-#define CURSESPP_BUTTON_HIGHLIGHTED 18
+Overlays::Overlays() {
+    temp.reset(new OverlayLayout());
+    temp->SetContentColor(CURSESPP_OVERLAY_BACKGROUND);
+}
 
-#define CURSESPP_SHORTCUT_ROW_NORMAL 19
-#define CURSESPP_SHORTCUT_ROW_FOCUSED 20
-
-#define CURSESPP_OVERLAY_BACKGROUND 21
-
-namespace cursespp {
-    class Colors {
-        private:
-            Colors();
-
-        public:
-            static void Init(bool disableCustomColors = false);
-    };
+ILayoutPtr Overlays::Top() {
+    //return temp;
+    return ILayoutPtr();
 }
