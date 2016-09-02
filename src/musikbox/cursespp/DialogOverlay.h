@@ -32,24 +32,34 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "Overlays.h"
-#include "DialogOverlay.h"
-#include "Colors.h"
-#include "Screen.h"
+#pragma once
 
-using namespace cursespp;
+#include "LayoutBase.h"
+#include "TextLabel.h"
+#include <vector>
 
-static ILayoutPtr none;
+namespace cursespp {
+    class DialogOverlay :
+        public LayoutBase,
+        public std::enable_shared_from_this<DialogOverlay>
+    {
+        public:
+            DialogOverlay();
+            virtual void Layout();
 
-std::shared_ptr<DialogOverlay> temp;
+            DialogOverlay& SetTitle(const std::string& title);
+            DialogOverlay& SetMessage(const std::string& message);
 
-Overlays::Overlays() {
-    temp.reset(new DialogOverlay());
-    temp->SetTitle("musikbox")
-        .SetMessage("welcome to musikbox! welcome to musikbox! welcome to musikbox! welcome to musikbox!\n\ntesting line breaks");
-}
+        protected:
+            virtual void OnVisibilityChanged(bool visible);
 
-ILayoutPtr Overlays::Top() {
-    // return temp;
-    return none;
+        private:
+            void Redraw();
+            void RecalculateSize();
+
+            std::string title;
+            std::string message;
+            std::vector<std::string> messageLines;
+            int width, height;
+    };
 }

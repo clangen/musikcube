@@ -232,11 +232,14 @@ namespace cursespp {
 
         std::vector<std::string> BreakLines(const std::string& line, size_t width) {
             std::vector<std::string> result;
-            std::vector<std::string> split;
 
-            boost::algorithm::split(split, line, boost::is_any_of("\n"));
-            for (size_t i = 0; i < split.size(); i++) {
-                privateBreakLines(split.at(i), width, result);
+            if (width > 0) {
+                std::vector<std::string> split;
+                boost::algorithm::split(split, line, boost::is_any_of("\n"));
+
+                for (size_t i = 0; i < split.size(); i++) {
+                    privateBreakLines(split.at(i), width, result);
+                }
             }
 
             return result;

@@ -259,11 +259,8 @@ void App::CheckShowOverlay() {
         if (top) {
             top->Layout();
             top->Show();
+            top->BringToTop();
         }
-    }
-
-    if (top) {
-        top->BringToTop();
     }
 }
 
