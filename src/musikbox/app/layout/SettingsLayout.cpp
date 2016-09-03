@@ -48,6 +48,8 @@
 #include <app/util/Hotkeys.h>
 #include <app/util/PreferenceKeys.h>
 
+#include <boost/format.hpp>
+
 #include "SettingsLayout.h"
 
 using namespace musik;
@@ -254,10 +256,15 @@ void SettingsLayout::CheckShowFirstRunDialog() {
         std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
 
         dialog->SetTitle("welcome to musikbox!")
-            .SetMessage("you need to add some directories that contain music files, "
-                "then switch to the library view by pressing 'a' to start listening!\n\n"
-                "for verbose system information, press '`' to enter the console view.\n\n"
-                "select 'ok' to get started.");
+            .SetMessage(boost::str(boost::format(
+                "add some directories that contain music files, "
+                "then press '%s' to show the library view and start listening!\n\n"
+                "for troubleshooting, press '%s' to enter the console view.\n\n"
+                "other keyboard shorcuts are displayed in the command bar at the "
+                "bottom of the screen. toggle command mode by pressing 'ESC'.\n\n"
+                "select 'ok' to get started.") 
+                    % Hotkeys::Get(Hotkeys::NavigateLibrary) 
+                    % Hotkeys::Get(Hotkeys::NavigateConsole)));
 
         dialog->AddButton(
             "KEY_ENTER",
