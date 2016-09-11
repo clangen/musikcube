@@ -83,6 +83,7 @@ namespace musik {
                 class Adapter : public cursespp::ScrollAdapterBase {
                     public:
                         Adapter(TrackListView &parent);
+                        virtual ~Adapter() { }
 
                         virtual size_t GetEntryCount();
                         virtual EntryPtr GetEntry(size_t index);

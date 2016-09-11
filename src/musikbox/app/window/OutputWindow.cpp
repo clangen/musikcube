@@ -53,7 +53,8 @@ OutputWindow::OutputWindow(IWindow *parent)
 }
 
 OutputWindow::~OutputWindow() {
-
+    delete this->adapter;
+    this->adapter = nullptr;
 }
 
 IScrollAdapter& OutputWindow::GetScrollAdapter() {

@@ -59,10 +59,10 @@ using namespace cursespp;
 static IScrollAdapter::EntryPtr MISSING_ENTRY = IScrollAdapter::EntryPtr();
 
 TrackListView::TrackListView(
-    PlaybackService& playback, 
+    PlaybackService& playback,
     LibraryPtr library,
     RowFormatter formatter)
-: ListWindow(NULL)
+: ListWindow(nullptr)
 , playback(playback) {
     this->library = library;
     this->library->QueryCompleted.connect(this, &TrackListView::OnQueryCompleted);
@@ -79,7 +79,8 @@ TrackListView::TrackListView(
 }
 
 TrackListView::~TrackListView() {
-
+    delete this->adapter;
+    this->adapter = nullptr;
 }
 
 void TrackListView::Requery(std::shared_ptr<TrackListQueryBase> query) {
@@ -171,8 +172,8 @@ size_t TrackListView::Adapter::GetEntryCount() {
 
 static std::string formatWithoutAlbum(TrackPtr track, size_t width) {
     std::string trackNum = text::Align(
-        track->GetValue(constants::Track::TRACK_NUM), 
-        text::AlignRight, 
+        track->GetValue(constants::Track::TRACK_NUM),
+        text::AlignRight,
         TRACK_COL_WIDTH);
 
     std::string duration = text::Align(
@@ -182,7 +183,7 @@ static std::string formatWithoutAlbum(TrackPtr track, size_t width) {
 
     std::string artist = text::Align(
         track->GetValue(constants::Track::ARTIST),
-        text::AlignLeft, 
+        text::AlignLeft,
         ARTIST_COL_WIDTH);
 
     int titleWidth =
@@ -198,11 +199,6 @@ static std::string formatWithoutAlbum(TrackPtr track, size_t width) {
         track->GetValue(constants::Track::TITLE),
         text::AlignLeft,
         titleWidth);
-
-    if (title.find("Ragat") != std::string::npos) {
-        int n = 10;
-        n++;
-    }
 
     return boost::str(
         boost::format("%s   %s   %s   %s")
