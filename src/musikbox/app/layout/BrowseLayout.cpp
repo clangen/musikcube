@@ -174,6 +174,10 @@ bool BrowseLayout::KeyPress(const std::string& key) {
         this->categoryList->SetFieldName(constants::Track::GENRE);
         return true;
     }
+    else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseAlbumArtists, key)) {
+        this->categoryList->SetFieldName(constants::Track::ALBUM_ARTIST);
+        return true;
+    }
 
     return LayoutBase::KeyPress(key);
 }

@@ -65,7 +65,7 @@ namespace musik {
             public:
                 CategoryListView(
                     PlaybackService& playback,
-                    LibraryPtr library, 
+                    LibraryPtr library,
                     const std::string& fieldName);
 
                 virtual ~CategoryListView();

@@ -59,6 +59,7 @@ static std::unordered_map<std::string, Id> NAME_TO_ID = {
     { "navigate_library_browse_artists", Id::NavigateLibraryBrowseArtists },
     { "navigate_library_browse_albums", Id::NavigateLibraryBrowseAlbums },
     { "navigate_library_browse_genres", Id::NavigateLibraryBrowseGenres },
+    { "navigate_library_album_artists", Id::NavigateLibraryBrowseAlbumArtists },
     { "navigate_library_filter", Id::NavigateLibraryFilter },
     { "navigate_library_tracks", Id::NavigateLibraryTracks },
     { "navigate_library_play_queue", Id::NavigateLibraryPlayQueue },
@@ -89,6 +90,7 @@ static std::unordered_map<Id, std::string, EnumHasher> ID_TO_DEFAULT = {
     { Id::NavigateLibraryBrowseArtists, "1" },
     { Id::NavigateLibraryBrowseAlbums, "2" },
     { Id::NavigateLibraryBrowseGenres, "3" },
+    { Id::NavigateLibraryBrowseAlbumArtists, "4" },
     { Id::NavigateLibraryFilter, "f" },
     { Id::NavigateLibraryTracks, "t" },
     { Id::NavigateLibraryPlayQueue, "n" },
@@ -133,7 +135,7 @@ static void loadPreferences() {
     prefs = Preferences::ForComponent("hotkeys", Preferences::ModeReadWrite);
 
     try {
-        /* load all of the custom key mappings into customKeys and 
+        /* load all of the custom key mappings into customKeys and
         customIdToKey structures for quick lookup. */
         if (prefs) {
             customKeys.clear();

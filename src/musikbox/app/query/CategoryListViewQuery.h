@@ -51,7 +51,7 @@ namespace musik {
                     std::shared_ptr<Result> > > ResultList;
 
                 CategoryListViewQuery(
-                    const std::string& trackField, 
+                    const std::string& trackField,
                     const std::string& filter = "");
 
                 virtual ~CategoryListViewQuery();

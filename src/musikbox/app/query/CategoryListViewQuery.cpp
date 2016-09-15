@@ -75,6 +75,18 @@ static const std::string FILTERED_ARTIST_QUERY =
     "WHERE artists.id = tracks.visual_artist_id AND LOWER(artists.name) LIKE ? "
     "ORDER BY artists.sort_order;";
 
+static const std::string REGULAR_ALBUM_ARTIST_QUERY =
+    "SELECT DISTINCT artists.id, artists.name "
+    "FROM artists, tracks "
+    "WHERE artists.id = tracks.album_artist_id "
+    "ORDER BY artists.sort_order;";
+
+static const std::string FILTERED_ALBUM_ARTIST_QUERY =
+    "SELECT DISTINCT artists.id, artists.name "
+    "FROM artists, tracks "
+    "WHERE artists.id = tracks.album_artist_id AND LOWER(artists.name) LIKE ? "
+    "ORDER BY artists.sort_order;";
+
 static const std::string REGULAR_GENRE_QUERY =
     "SELECT DISTINCT genres.id, genres.name "
     "FROM genres, tracks "
@@ -94,10 +106,12 @@ static std::map<std::string, std::string> FILTERED_FIELD_TO_QUERY_MAP;
 static void initFieldToQueryMap() {
     FIELD_TO_QUERY_MAP[Track::ALBUM] = REGULAR_ALBUM_QUERY;
     FIELD_TO_QUERY_MAP[Track::ARTIST] = REGULAR_ARTIST_QUERY;
+    FIELD_TO_QUERY_MAP[Track::ALBUM_ARTIST] = REGULAR_ALBUM_ARTIST_QUERY;
     FIELD_TO_QUERY_MAP[Track::GENRE] = REGULAR_GENRE_QUERY;
 
     FILTERED_FIELD_TO_QUERY_MAP[Track::ALBUM] = FILTERED_ALBUM_QUERY;
     FILTERED_FIELD_TO_QUERY_MAP[Track::ARTIST] = FILTERED_ARTIST_QUERY;
+    FILTERED_FIELD_TO_QUERY_MAP[Track::ALBUM_ARTIST] = FILTERED_ALBUM_ARTIST_QUERY;
     FILTERED_FIELD_TO_QUERY_MAP[Track::GENRE] = FILTERED_GENRE_QUERY;
 }
 

@@ -71,7 +71,7 @@ namespace musik { namespace core { namespace library { namespace constants {
         static const char* AGGREGATED = "aggregated";
         static const char* SORT_ORDER = "sort_order";
     }
-    
+
     namespace TrackGenres {
         static const char* TABLE_NAME = "track_genres";
         static const char* ID = "id";
@@ -136,7 +136,7 @@ namespace musik { namespace core { namespace library { namespace constants {
         static const char* FILESIZE = "filesize";
         static const char* CHECKSUM = "checksum";
     }
-    
+
     namespace Playlists {
         static const char* TABLE_NAME = "playlists";
         static const char* ID = "id";
