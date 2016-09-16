@@ -44,7 +44,6 @@
 #include <json.hpp>
 
 namespace musik { namespace core {
-
     class Preferences {
         public:
             enum Mode {
@@ -53,7 +52,7 @@ namespace musik { namespace core {
                 ModeAutoSave
             };
 
-            static std::shared_ptr<Preferences> 
+            static std::shared_ptr<Preferences>
                 ForComponent(const std::string& c, Mode mode = ModeAutoSave);
 
             ~Preferences();

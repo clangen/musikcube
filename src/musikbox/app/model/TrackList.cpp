@@ -181,9 +181,9 @@ TrackMetadataQuery::TrackMetadataQuery(DBID trackId, LibraryPtr library) {
 
 bool TrackMetadataQuery::OnRun(Connection& db) {
     static const std::string query =
-        "SELECT DISTINCT t.id, t.track, t.disc, t.bpm, t.duration, t.filesize, t.year, t.title, t.filename, t.thumbnail_id, al.name AS album, gn.name AS genre, ar.name AS artist, t.filetime "
-        "FROM tracks t, paths p, albums al, artists ar, genres gn "
-        "WHERE t.id=? AND t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id ";
+        "SELECT DISTINCT t.id, t.track, t.disc, t.bpm, t.duration, t.filesize, t.year, t.title, t.filename, t.thumbnail_id, al.name AS album, alar.name AS album_artist, gn.name AS genre, ar.name AS artist, t.filetime "
+        "FROM tracks t, paths p, albums al, artists alar, artists ar, genres gn "
+        "WHERE t.id=? AND t.album_id=al.id AND t.album_artist_id=alar.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id ";
 
     Statement trackQuery(query.c_str(), db);
     trackQuery.BindInt(0, this->trackId);
@@ -201,9 +201,10 @@ bool TrackMetadataQuery::OnRun(Connection& db) {
         track->SetValue(Track::FILENAME, trackQuery.ColumnText(8));
         track->SetValue(Track::THUMBNAIL_ID, trackQuery.ColumnText(9));
         track->SetValue(Track::ALBUM, trackQuery.ColumnText(10));
-        track->SetValue(Track::GENRE, trackQuery.ColumnText(11));
-        track->SetValue(Track::ARTIST, trackQuery.ColumnText(12));
-        track->SetValue(Track::FILETIME, trackQuery.ColumnText(13));
+        track->SetValue(Track::ALBUM_ARTIST, trackQuery.ColumnText(11));
+        track->SetValue(Track::GENRE, trackQuery.ColumnText(12));
+        track->SetValue(Track::ARTIST, trackQuery.ColumnText(13));
+        track->SetValue(Track::FILETIME, trackQuery.ColumnText(14));
 
         this->result = track;
         return true;

@@ -255,24 +255,24 @@ void SettingsLayout::CheckShowFirstRunDialog() {
     if (!this->prefs->GetBool(box::prefs::keys::FirstRunSettingsDisplayed)) {
         std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
 
-        dialog->SetTitle("welcome to musikbox!")
+        (*dialog)
+            .SetTitle("welcome to musikbox!")
             .SetMessage(boost::str(boost::format(
                 "add some directories that contain music files, "
                 "then press '%s' to show the library view and start listening!\n\n"
                 "for troubleshooting, press '%s' to enter the console view.\n\n"
                 "other keyboard shorcuts are displayed in the command bar at the "
                 "bottom of the screen. toggle command mode by pressing 'ESC'.\n\n"
-                "select 'ok' to get started.") 
-                    % Hotkeys::Get(Hotkeys::NavigateLibrary) 
-                    % Hotkeys::Get(Hotkeys::NavigateConsole)));
-
-        dialog->AddButton(
-            "KEY_ENTER",
-            "ENTER",
-            "ok",
-            [this](std::string key) {
-                this->prefs->SetBool(box::prefs::keys::FirstRunSettingsDisplayed, true);
-            });
+                "select 'ok' to get started.")
+                    % Hotkeys::Get(Hotkeys::NavigateLibrary)
+                    % Hotkeys::Get(Hotkeys::NavigateConsole)))
+            .AddButton(
+                "KEY_ENTER",
+                "ENTER",
+                "ok",
+                [this](std::string key) {
+                    this->prefs->SetBool(box::prefs::keys::FirstRunSettingsDisplayed, true);
+                });
 
         App::Overlays().Push(dialog);
     }
