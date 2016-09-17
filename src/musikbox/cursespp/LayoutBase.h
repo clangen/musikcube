@@ -40,7 +40,7 @@
 #include <vector>
 
 namespace cursespp {
-    class LayoutBase : 
+    class LayoutBase :
         public Window,
 #if (__clang_major__ == 7 && __clang_minor__ == 3)
         public std::enable_shared_from_this<LayoutBase>,
@@ -63,8 +63,21 @@ namespace cursespp {
             /* ILayout */
             virtual IWindowPtr FocusNext();
             virtual IWindowPtr FocusPrev();
+
             virtual IWindowPtr GetFocus();
             virtual bool SetFocus(IWindowPtr window);
+
+            virtual int GetFocusIndex();
+            virtual void SetFocusIndex(int index);
+
+            virtual int GetFocusableCount();
+            virtual IWindowPtr GetFocusableAt(int index);
+
+            virtual FocusMode GetFocusMode() const;
+            virtual void SetFocusMode(FocusMode mode);
+
+            virtual IWindowPtr FocusFirst();
+            virtual IWindowPtr FocusLast();
 
             virtual void Layout() = 0;
 
@@ -86,5 +99,6 @@ namespace cursespp {
             std::vector<IWindowPtr> children;
             std::vector<IWindowPtr> focusable;
             int focused;
+            FocusMode focusMode;
     };
 }

@@ -47,7 +47,6 @@ set (BOX_SRCS
 	./cursespp/TextInput.cpp
 	./cursespp/TextLabel.cpp
 	./cursespp/Window.cpp
-	./cursespp/WindowLayout.cpp
 )
 
 add_executable(musikbox ${BOX_SRCS})

@@ -52,6 +52,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <deque>
 
 using namespace musik::core;
 using namespace musik::core::audio;
@@ -69,14 +70,9 @@ using namespace cursespp;
 #define MIN_WIDTH 20
 #define MIN_HEIGHT 2
 
-#define DEBOUNCE_REFRESH(x) \
+#define DEBOUNCE_REFRESH(mode, delay) \
     this->RemoveMessage(REFRESH_TRANSPORT_READOUT); \
-    this->PostMessage(REFRESH_TRANSPORT_READOUT, 0, 0, x);
-
-#define DEBOUNCE_REFRESH_AND_SYNC_TIME() \
-    this->lastTime = this->transport.Position(); \
-    DEBOUNCE_REFRESH(0)
-
+    this->PostMessage(REFRESH_TRANSPORT_READOUT, (int64) mode, 0, delay);
 
 #define ON(w, a) if (a != -1) { wattron(w, a); }
 #define OFF(w, a) if (a != -1) { wattroff(w, a); }
@@ -203,9 +199,10 @@ size_t writePlayingFormat(
 }
 
 TransportWindow::TransportWindow(musik::box::PlaybackService& playback)
-: Window(NULL)
+: Window(nullptr)
 , playback(playback)
 , transport(playback.GetTransport())
+, focus(FocusNone)
 {
     this->SetFrameVisible(false);
     this->playback.TrackChanged.connect(this, &TransportWindow::OnPlaybackServiceTrackChanged);
@@ -220,43 +217,93 @@ TransportWindow::TransportWindow(musik::box::PlaybackService& playback)
 TransportWindow::~TransportWindow() {
 }
 
+void TransportWindow::SetFocus(FocusTarget target) {
+    if (target != this->focus) {
+        auto last = this->focus;
+        this->focus = target;
+
+        if (this->focus == FocusNone) {
+            this->lastFocus = last;
+            this->Blur();
+        }
+        else {
+            this->Focus();
+        }
+
+        DEBOUNCE_REFRESH(TimeSync, 0);
+    }
+}
+
+TransportWindow::FocusTarget TransportWindow::GetFocus() const {
+    return this->focus;
+}
+
 void TransportWindow::Show() {
     Window::Show();
     this->Update();
+}
+
+bool TransportWindow::FocusNext() {
+    this->SetFocus((FocusTarget)(((int) this->focus + 1) % 3));
+    return (this->focus != FocusNone);
+}
+
+bool TransportWindow::FocusPrev() {
+    this->SetFocus((FocusTarget)(((int) this->focus - 1) % 3));
+    return (this->focus != FocusNone);
+}
+
+void TransportWindow::FocusFirst() {
+    this->SetFocus(FocusVolume);
+}
+
+void TransportWindow::FocusLast() {
+    this->SetFocus(FocusTime);
+}
+
+void TransportWindow::RestoreFocus() {
+    this->Focus();
+    this->SetFocus(this->lastFocus);
+}
+
+void TransportWindow::OnFocusChanged(bool focused) {
+    if (!focused) {
+        this->SetFocus(FocusNone);
+    }
 }
 
 void TransportWindow::ProcessMessage(IMessage &message) {
     int type = message.Type();
 
     if (type == REFRESH_TRANSPORT_READOUT) {
-        this->Update();
-        DEBOUNCE_REFRESH(REFRESH_INTERVAL_MS)
+        this->Update((TimeMode) message.UserData1());
+        DEBOUNCE_REFRESH(TimeSmooth, REFRESH_INTERVAL_MS)
     }
 }
 
 void TransportWindow::OnPlaybackServiceTrackChanged(size_t index, TrackPtr track) {
     this->currentTrack = track;
     this->lastTime = DEFAULT_TIME;
-    DEBOUNCE_REFRESH(0);
+    DEBOUNCE_REFRESH(TimeSync, 0);
 }
 
 void TransportWindow::OnPlaybackModeChanged() {
-    DEBOUNCE_REFRESH_AND_SYNC_TIME();
+    DEBOUNCE_REFRESH(TimeSync, 0);
 }
 
 void TransportWindow::OnTransportVolumeChanged() {
-    DEBOUNCE_REFRESH_AND_SYNC_TIME();
+    DEBOUNCE_REFRESH(TimeSync, 0);
 }
 
 void TransportWindow::OnTransportTimeChanged(double time) {
-    DEBOUNCE_REFRESH_AND_SYNC_TIME();
+    DEBOUNCE_REFRESH(TimeSmooth, 0);
 }
 
 void TransportWindow::OnPlaybackShuffled(bool shuffled) {
-    DEBOUNCE_REFRESH_AND_SYNC_TIME();
+    DEBOUNCE_REFRESH(TimeSync, 0);
 }
 
-void TransportWindow::Update() {
+void TransportWindow::Update(TimeMode timeMode) {
     this->Clear();
 
     size_t cx = (size_t) this->GetContentWidth();
@@ -271,6 +318,12 @@ void TransportWindow::Update() {
 
     int64 gb = COLOR_PAIR(CURSESPP_TEXT_ACTIVE);
     int64 disabled = COLOR_PAIR(CURSESPP_TEXT_DISABLED);
+
+    int64 volumeAttrs = (this->focus == FocusVolume)
+        ? COLOR_PAIR(CURSESPP_TEXT_FOCUSED) : -1;
+
+    int64 timerAttrs = (this->focus == FocusTime)
+        ? COLOR_PAIR(CURSESPP_TEXT_FOCUSED) : -1;
 
     /* prepare the "shuffle" label */
 
@@ -330,7 +383,9 @@ void TransportWindow::Update() {
 
     volume += "  ";
 
+    ON(c, volumeAttrs);
     wprintw(c, volume.c_str());
+    OFF(c, volumeAttrs);
 
     /* repeat mode setup */
 
@@ -355,35 +410,42 @@ void TransportWindow::Update() {
 
     /* time slider */
 
-    int64 timerAttrs = 0;
+    int64 currentTimeAttrs = timerAttrs;
 
     if (paused) { /* blink the track if paused */
         int64 now = duration_cast<seconds>(
             system_clock::now().time_since_epoch()).count();
 
         if (now % 2 == 0) {
-            timerAttrs = COLOR_PAIR(CURSESPP_TEXT_HIDDEN);
+            currentTimeAttrs = COLOR_PAIR(CURSESPP_TEXT_HIDDEN);
         }
     }
-
-    transport.Position();
 
     /* calculating playback time is inexact because it's based on buffers that
     are sent to the output. here we use a simple smoothing function to hopefully
     mitigate jumping around. basically: draw the time as one second more than the
     last time we displayed, unless they are more than few seconds apart. note this
     only works if REFRESH_INTERVAL_MS is 1000. */
-    double smoothedTime = this->lastTime += 1.0f; /* 1000 millis */
-    double actualTime = transport.Position();
+    int secondsCurrent = (int) round(this->lastTime); /* mode == TimeLast */
 
-    if (paused || stopped || fabs(smoothedTime - actualTime) > TIME_SLOP) {
-        smoothedTime = actualTime;
+    if (timeMode == TimeSmooth) {
+        double smoothedTime = this->lastTime += 1.0f; /* 1000 millis */
+        double actualTime = transport.Position();
+
+        if (paused || stopped || fabs(smoothedTime - actualTime) > TIME_SLOP) {
+            smoothedTime = actualTime;
+        }
+
+        this->lastTime = smoothedTime;
+        /* end time smoothing */
+
+        secondsCurrent = (int) round(smoothedTime);
+    }
+    else if (timeMode == TimeSync) {
+        this->lastTime = transport.Position();
+        secondsCurrent = (int) round(this->lastTime);
     }
 
-    this->lastTime = smoothedTime;
-    /* end time smoothing */
-
-    int secondsCurrent = (int) round(smoothedTime);
     int secondsTotal = boost::lexical_cast<int>(duration);
 
     std::string currentTime = duration::Duration(std::min(secondsCurrent, secondsTotal));
@@ -409,9 +471,11 @@ void TransportWindow::Update() {
         timerTrack += (i == thumbOffset) ? "■" : "─";
     }
 
-    wattron(c, timerAttrs); /* blink if paused */
+    ON(c, currentTimeAttrs); /* blink if paused */
     wprintw(c, currentTime.c_str());
-    wattroff(c, timerAttrs);
+    OFF(c, currentTimeAttrs);
+
+    ON(c, timerAttrs);
 
     /* using wprintw() here on large displays (1440p+) will exceed the internal
     buffer length of 512 characters, so use boost format. */
@@ -420,11 +484,13 @@ void TransportWindow::Update() {
 
     waddstr(c, fmt.c_str());
 
+    OFF(c, timerAttrs);
+
     /* repeat mode draw */
     wprintw(c, repeatLabel.c_str());
-    wattron(c, repeatAttrs);
+    ON(c, repeatAttrs);
     wprintw(c, repeatModeLabel.c_str());
-    wattroff(c, repeatAttrs);
+    OFF(c, repeatAttrs);
 
     this->Repaint();
 }

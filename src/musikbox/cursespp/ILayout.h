@@ -42,11 +42,27 @@
 namespace cursespp {
     class ILayout : public IWindowGroup, public IKeyHandler, public IOrderable, public IDisplayable {
         public:
+            enum FocusMode {
+                FocusModeCircular = 0,
+                FocusModeTerminating = 1
+            };
+
             virtual ~ILayout() { }
             virtual IWindowPtr FocusNext() = 0;
             virtual IWindowPtr FocusPrev() = 0;
+
             virtual IWindowPtr GetFocus() = 0;
+            virtual int GetFocusIndex() = 0;
+
             virtual bool SetFocus(IWindowPtr window) = 0;
+            virtual void SetFocusIndex(int index) = 0;
+
+            virtual int GetFocusableCount() = 0;
+            virtual IWindowPtr GetFocusableAt(int index) = 0;
+
+            virtual FocusMode GetFocusMode() const = 0;
+            virtual void SetFocusMode(FocusMode mode) = 0;
+
             virtual void Layout() = 0;
     };
 

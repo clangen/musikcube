@@ -49,7 +49,6 @@ using namespace musik::core::library::constants;
 
 #define TRANSPORT_HEIGHT 3
 
-
 #define SHOULD_REFOCUS(target) \
     (this->visibleLayout == target) && \
     (this->shortcuts && !this->shortcuts->IsFocused())
@@ -69,7 +68,6 @@ LibraryLayout::LibraryLayout(PlaybackService& playback, LibraryPtr library)
 }
 
 LibraryLayout::~LibraryLayout() {
-
 }
 
 void LibraryLayout::Layout() {
@@ -103,6 +101,8 @@ void LibraryLayout::Layout() {
 
 void LibraryLayout::ChangeMainLayout(std::shared_ptr<cursespp::LayoutBase> newLayout) {
     if (this->visibleLayout != newLayout) {
+        this->transportView->SetFocus(TransportWindow::FocusNone);
+
         if (this->visibleLayout) {
            this->RemoveWindow(this->visibleLayout);
            this->visibleLayout->Hide();
@@ -112,6 +112,11 @@ void LibraryLayout::ChangeMainLayout(std::shared_ptr<cursespp::LayoutBase> newLa
         this->AddWindow(this->visibleLayout);
         this->visibleLayout->Layout();
         this->visibleLayout->Show();
+
+        /* ask the visible layout to terminate focusing, not do it
+        in a circular fashion. when we hit the end, we'll focus
+        the transport! see FocusNext() and FocusPrev(). */
+        this->visibleLayout->SetFocusMode(ILayout::FocusModeTerminating);
 
         if (this->IsVisible()) {
             this->BringToTop();
@@ -201,19 +206,67 @@ void LibraryLayout::OnSearchResultSelected(
     this->browseLayout->ScrollTo(fieldType, fieldId);
 }
 
+IWindowPtr LibraryLayout::FocusTransportNext() {
+    if (this->transportView->FocusNext()) {
+        return this->transportView;
+    }
+
+    this->transportView->SetFocus(TransportWindow::FocusNone);
+    return this->visibleLayout->FocusFirst();
+}
+
+IWindowPtr LibraryLayout::FocusTransportPrev() {
+    if (this->transportView->FocusPrev()) {
+        return this->transportView;
+    }
+
+    this->transportView->SetFocus(TransportWindow::FocusNone);
+    return this->visibleLayout->FocusLast();
+}
+
 IWindowPtr LibraryLayout::FocusNext() {
-    return this->visibleLayout->FocusNext();
+    if (this->transportView->IsFocused()) {
+        return this->FocusTransportNext();
+    }
+
+    IWindowPtr focus = this->visibleLayout->FocusNext();
+
+    /* no next focus? kick over to the transport */
+    if (!focus) {
+        this->transportView->FocusFirst();
+        focus = this->transportView;
+    }
+
+    return focus;
 }
 
 IWindowPtr LibraryLayout::FocusPrev() {
-    return this->visibleLayout->FocusPrev();
+    if (this->transportView->IsFocused()) {
+        return this->FocusTransportPrev();
+    }
+
+    IWindowPtr focus = this->visibleLayout->FocusPrev();
+
+    if (!focus) {
+        this->transportView->FocusLast();
+        focus = this->transportView;
+    }
+
+    return focus;
 }
 
 IWindowPtr LibraryLayout::GetFocus() {
-    return this->visibleLayout->GetFocus();
+    return this->transportView->IsFocused()
+        ? this->transportView
+        : this->visibleLayout->GetFocus();
 }
 
 bool LibraryLayout::SetFocus(cursespp::IWindowPtr window) {
+    if (window == this->transportView) {
+        this->transportView->RestoreFocus();
+        return true;
+    }
+
     return this->visibleLayout->SetFocus(window);
 }
 

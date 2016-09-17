@@ -50,16 +50,36 @@ namespace musik {
             public sigslot::has_slots<>
         {
             public:
+                enum FocusTarget {
+                    FocusNone = 0,
+                    FocusVolume = 1,
+                    FocusTime = 2
+                };
+
                 TransportWindow(musik::box::PlaybackService& playback);
                 virtual ~TransportWindow();
 
                 virtual void ProcessMessage(cursespp::IMessage &message);
-
                 virtual void Show();
+                virtual void OnFocusChanged(bool focused);
 
-                void Update();
+                void SetFocus(FocusTarget target);
+                FocusTarget GetFocus() const;
+                bool FocusNext();
+                bool FocusPrev();
+                void FocusFirst();
+                void FocusLast();
+                void RestoreFocus();
 
             private:
+                enum TimeMode {
+                    TimeLast = 0,
+                    TimeSmooth = 1,
+                    TimeSync = 2
+                };
+
+                void Update(TimeMode mode = TimeSmooth);
+
                 void OnPlaybackServiceTrackChanged(size_t index, musik::core::TrackPtr track);
                 void OnPlaybackModeChanged();
                 void OnTransportVolumeChanged();
@@ -70,6 +90,7 @@ namespace musik {
                 musik::core::audio::ITransport& transport;
                 musik::box::PlaybackService& playback;
                 musik::core::TrackPtr currentTrack;
+                FocusTarget focus, lastFocus;
                 double lastTime;
         };
     }

@@ -54,9 +54,6 @@
     <ClCompile Include="app\util\GlobalHotkeys.cpp">
       <Filter>app\util</Filter>
     </ClCompile>
-    <ClCompile Include="cursespp\WindowLayout.cpp">
-      <Filter>cursespp</Filter>
-    </ClCompile>
     <ClCompile Include="app\service\PlaybackService.cpp">
       <Filter>app\service</Filter>
     </ClCompile>
@@ -229,9 +226,6 @@
       <Filter>app\util</Filter>
     </ClInclude>
     <ClInclude Include="cursespp\IOrderable.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\WindowLayout.h">
       <Filter>cursespp</Filter>
     </ClInclude>
     <ClInclude Include="cursespp\ILayoutStack.h">

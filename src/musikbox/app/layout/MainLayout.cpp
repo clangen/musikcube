@@ -108,8 +108,9 @@ void MainLayout::SetMainLayout(std::shared_ptr<cursespp::LayoutBase> layout) {
 
             this->RemoveWindow(this->layout);
             this->layout->Hide();
-            this->lastFocus.reset();
         }
+
+        this->lastFocus.reset();
 
         if (this->topLevelLayout) {
             this->topLevelLayout->SetShortcutsWindow(nullptr);
@@ -151,6 +152,22 @@ cursespp::IWindowPtr MainLayout::BlurShortcuts() {
     return this->layout ? this->layout->GetFocus() : IWindowPtr();
 }
 
+void MainLayout::FocusShortcuts() {
+    this->shortcuts->Focus();
+
+    if (this->layout) {
+        this->lastFocus = this->layout->GetFocus();
+
+        if (this->lastFocus) {
+            this->lastFocus->Blur();
+        }
+
+        this->layout->SetFocus(IWindowPtr());
+    }
+
+    this->shortcuts->Focus();
+}
+
 bool MainLayout::KeyPress(const std::string& key) {
     if (prefs->GetBool(box::prefs::keys::EscFocusesShortcuts, true)) {
         if (key == "^["  ||
@@ -160,20 +177,11 @@ bool MainLayout::KeyPress(const std::string& key) {
             this->shortcutsFocused = !this->shortcutsFocused;
 
             if (this->shortcutsFocused) {
-                this->shortcuts->Focus();
-
-                if (this->layout) {
-                    this->lastFocus = this->layout->GetFocus();
-                    this->layout->SetFocus(IWindowPtr());
-                }
+                this->FocusShortcuts();
             }
             else {
                 this->BlurShortcuts();
             }
-
-            this->shortcutsFocused
-                ? this->shortcuts->Focus()
-                : this->shortcuts->Blur();
 
             return true;
         }

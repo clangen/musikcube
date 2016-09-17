@@ -33,10 +33,14 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <climits>
 #include "LayoutBase.h"
 #include "Colors.h"
 
 using namespace cursespp;
+
+static const int AUTO_FOCUS = -1;
+static const int NO_FOCUS = -2;
 
 template <typename T> static int find(std::vector<T>& haystack, T& needle) {
     int i = 0;
@@ -76,8 +80,9 @@ static inline IWindowPtr adjustFocus(IWindowPtr oldFocus, IWindowPtr newFocus) {
 }
 
 LayoutBase::LayoutBase(IWindow* parent)
-: Window(parent) {
-    this->focused = -1;
+: Window(parent)
+, focusMode(FocusModeCircular) {
+    this->focused = AUTO_FOCUS;
     this->SetFrameVisible(false);
 }
 
@@ -199,7 +204,7 @@ void LayoutBase::SortFocusables() {
         this->focused = find(this->focusable, focusedWindow);
     }
 
-    if (focused == -1 && this->focusable.size() > 0) {
+    if (focused == AUTO_FOCUS && this->focusable.size() > 0) {
         this->focused = 0;
         adjustFocus(IWindowPtr(), this->focusable[this->focused]);
     }
@@ -226,7 +231,7 @@ IWindowPtr LayoutBase::GetWindowAt(size_t position) {
 bool LayoutBase::SetFocus(IWindowPtr focus) {
     if (!focus) {
         adjustFocus(GetFocus(), focus);
-        this->focused = -1;
+        this->focused = AUTO_FOCUS;
         return true;
     }
     else {
@@ -243,8 +248,19 @@ bool LayoutBase::SetFocus(IWindowPtr focus) {
 
 IWindowPtr LayoutBase::FocusNext() {
     IWindowPtr oldFocus = GetFocus();
-    if (++this->focused >= (int) this->focusable.size()) {
-        this->focused = 0;
+    if (this->focused == NO_FOCUS && this->focusMode == FocusModeTerminating) {
+        /* nothing. we're already terminated. */
+    }
+    else if (this->focused + 1 >= AUTO_FOCUS) {
+        ++this->focused;
+        if (this->focused >= (int) this->focusable.size()) {
+            if (this->focusMode == FocusModeCircular) {
+                this->focused = 0;
+            }
+            else {
+                this->focused = NO_FOCUS;
+            }
+        }
     }
 
     return adjustFocus(oldFocus, GetFocus());
@@ -252,10 +268,28 @@ IWindowPtr LayoutBase::FocusNext() {
 
 IWindowPtr LayoutBase::FocusPrev() {
     IWindowPtr oldFocus = GetFocus();
-    if (--this->focused < 0) {
-        this->focused = (int) this->focusable.size() - 1;
+    --this->focused;
+    if (this->focused < 0) {
+        if (this->focusMode == FocusModeCircular) {
+            this->focused = (int) this->focusable.size() - 1;
+        }
+        else {
+            this->focused = NO_FOCUS;
+        }
     }
 
+    return adjustFocus(oldFocus, GetFocus());
+}
+
+IWindowPtr LayoutBase::FocusFirst() {
+    IWindowPtr oldFocus = GetFocus();
+    this->focused = 0;
+    return adjustFocus(oldFocus, GetFocus());
+}
+
+IWindowPtr LayoutBase::FocusLast() {
+    IWindowPtr oldFocus = GetFocus();
+    this->focused = (int) this->focusable.size() - 1;
     return adjustFocus(oldFocus, GetFocus());
 }
 
@@ -265,6 +299,34 @@ IWindowPtr LayoutBase::GetFocus() {
     }
 
     return IWindowPtr();
+}
+
+int LayoutBase::GetFocusIndex() {
+    return this->focused;
+}
+
+void LayoutBase::SetFocusIndex(int index) {
+    if (this->focused != index) {
+        IWindowPtr oldFocus = GetFocus();
+        this->focused = index;
+        adjustFocus(oldFocus, GetFocus());
+    }
+}
+
+int LayoutBase::GetFocusableCount() {
+    return this->focusable.size();
+}
+
+IWindowPtr LayoutBase::GetFocusableAt(int index) {
+    return this->focusable.at(index);
+}
+
+ILayout::FocusMode LayoutBase::GetFocusMode() const {
+    return this->focusMode;
+}
+
+void LayoutBase::SetFocusMode(FocusMode mode) {
+    this->focusMode = mode;
 }
 
 bool LayoutBase::KeyPress(const std::string& key) {

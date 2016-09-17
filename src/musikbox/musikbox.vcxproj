@@ -159,7 +159,6 @@
     <ClCompile Include="cursespp\TextInput.cpp" />
     <ClCompile Include="cursespp\TextLabel.cpp" />
     <ClCompile Include="cursespp\Window.cpp" />
-    <ClCompile Include="cursespp\WindowLayout.cpp" />
     <ClCompile Include="cursespp\Message.cpp" />
     <ClCompile Include="cursespp\MessageQueue.cpp" />
     <ClCompile Include="Main.cpp" />
@@ -229,7 +228,6 @@
     <ClInclude Include="cursespp\TextInput.h" />
     <ClInclude Include="cursespp\TextLabel.h" />
     <ClInclude Include="cursespp\Window.h" />
-    <ClInclude Include="cursespp\WindowLayout.h" />
     <ClInclude Include="cursespp\Message.h" />
     <ClInclude Include="cursespp\MessageQueue.h" />
     <ClInclude Include="stdafx.h" />
