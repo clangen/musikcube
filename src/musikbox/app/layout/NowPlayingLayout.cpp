@@ -93,10 +93,6 @@ void NowPlayingLayout::InitializeWindows() {
     this->Layout();
 }
 
-IWindowPtr NowPlayingLayout::GetFocus() {
-    return this->trackList;
-}
-
 void NowPlayingLayout::OnVisibilityChanged(bool visible) {
     LayoutBase::OnVisibilityChanged(visible);
 
