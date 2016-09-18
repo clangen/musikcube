@@ -41,6 +41,7 @@
 #include <cursespp/Text.h>
 
 #include <app/util/Duration.h>
+#include <app/util/Playback.h>
 
 #include <core/debug.h>
 #include <core/library/LocalLibraryConstants.h>
@@ -130,7 +131,7 @@ void tokenize(const std::string& format, TokenList& tokens) {
 
 /* writes the colorized formatted string to the specified window. accounts for
 utf8 characters and ellipsizing */
-size_t writePlayingFormat(
+static size_t writePlayingFormat(
     WINDOW *w,
     std::string title,
     std::string album,
@@ -198,12 +199,19 @@ size_t writePlayingFormat(
     return (width - remaining);
 }
 
+static inline bool inc(const std::string& kn) {
+    return (kn == "KEY_UP" || kn == "KEY_RIGHT");
+}
+
+static inline bool dec(const std::string& kn) {
+    return (kn == "KEY_DOWN" || kn == "KEY_LEFT");
+}
+
 TransportWindow::TransportWindow(musik::box::PlaybackService& playback)
 : Window(nullptr)
 , playback(playback)
 , transport(playback.GetTransport())
-, focus(FocusNone)
-{
+, focus(FocusNone) {
     this->SetFrameVisible(false);
     this->playback.TrackChanged.connect(this, &TransportWindow::OnPlaybackServiceTrackChanged);
     this->playback.ModeChanged.connect(this, &TransportWindow::OnPlaybackModeChanged);
@@ -241,6 +249,31 @@ TransportWindow::FocusTarget TransportWindow::GetFocus() const {
 void TransportWindow::Show() {
     Window::Show();
     this->Update();
+}
+
+bool TransportWindow::KeyPress(const std::string& kn) {
+    if (this->focus == FocusVolume) {
+        if (inc(kn)) {
+            playback::VolumeUp(this->transport);
+            return true;
+        }
+        else if (dec(kn)) {
+            playback::VolumeDown(this->transport);
+            return true;
+        }
+    }
+    else if (this->focus == FocusTime) {
+        if (inc(kn)) {
+            playback::SeekForward(this->transport);
+            return true;
+        }
+        else if (dec(kn)) {
+            playback::SeekBack(this->transport);
+            return true;
+        }
+    }
+
+    return false;
 }
 
 bool TransportWindow::FocusNext() {

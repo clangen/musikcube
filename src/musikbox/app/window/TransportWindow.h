@@ -35,6 +35,7 @@
 #pragma once
 
 #include <cursespp/Window.h>
+#include <cursespp/IKeyHandler.h>
 #include <core/library/track/Track.h>
 #include <app/service/PlaybackService.h>
 #include <sigslot/sigslot.h>
@@ -44,6 +45,7 @@ namespace musik {
     namespace box {
         class TransportWindow :
             public cursespp::Window,
+            public cursespp::IKeyHandler,
 #if (__clang_major__ == 7 && __clang_minor__ == 3)
             public std::enable_shared_from_this<TransportWindow>,
 #endif
@@ -62,6 +64,7 @@ namespace musik {
                 virtual void ProcessMessage(cursespp::IMessage &message);
                 virtual void Show();
                 virtual void OnFocusChanged(bool focused);
+                virtual bool KeyPress(const std::string& key);
 
                 void SetFocus(FocusTarget target);
                 FocusTarget GetFocus() const;

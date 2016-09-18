@@ -57,11 +57,11 @@ bool GlobalHotkeys::Handle(const std::string& kn) {
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::VolumeUp, kn)) {
-        this->transport.SetVolume(this->transport.Volume() + 0.05);
+        playback::VolumeUp(this->transport);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::VolumeDown, kn)) {
-        this->transport.SetVolume(this->transport.Volume() - 0.05);
+        playback::VolumeDown(this->transport);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::Previous, kn)) {
@@ -73,13 +73,11 @@ bool GlobalHotkeys::Handle(const std::string& kn) {
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::SeekBack, kn)) {
-        double time = this->transport.Position();
-        this->transport.SetPosition(time - 10.0f);
+        playback::SeekBack(this->transport);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::SeekForward, kn)) {
-        double time = this->transport.Position();
-        this->transport.SetPosition(time + 10.0f);
+        playback::SeekForward(this->transport);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::ToggleRepeat, kn)) {

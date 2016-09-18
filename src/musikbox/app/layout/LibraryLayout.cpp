@@ -256,9 +256,20 @@ IWindowPtr LibraryLayout::FocusPrev() {
 }
 
 IWindowPtr LibraryLayout::GetFocus() {
-    return this->transportView->IsFocused()
-        ? this->transportView
-        : this->visibleLayout->GetFocus();
+    if (this->transportView->IsFocused()) {
+        return this->transportView;
+    }
+
+    /* if nothing in the visible layout is focused, go
+    ahead and focus the transport so the user has something
+    to interact with. */
+    IWindowPtr focused = this->visibleLayout->GetFocus();
+    if (!focused) {
+        this->transportView->FocusFirst();
+        return this->transportView;
+    }
+
+    return focused;
 }
 
 bool LibraryLayout::SetFocus(cursespp::IWindowPtr window) {

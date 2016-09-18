@@ -47,6 +47,11 @@ namespace musik {
                 musik::box::PlaybackService& playback,
                 cursespp::IWindowPtr focused);
 
+            void VolumeUp(musik::core::audio::ITransport& transport);
+            void VolumeDown(musik::core::audio::ITransport& transport);
+            void SeekForward(musik::core::audio::ITransport& transport);
+            void SeekBack(musik::core::audio::ITransport& transport);
+
             void PauseOrResume(musik::core::audio::ITransport& transport);
 
             void ToggleRepeatMode(PlaybackService& playback);
