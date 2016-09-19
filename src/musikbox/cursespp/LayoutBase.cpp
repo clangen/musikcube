@@ -247,38 +247,61 @@ bool LayoutBase::SetFocus(IWindowPtr focus) {
 }
 
 IWindowPtr LayoutBase::FocusNext() {
+    sigslot::signal1<FocusDirection>* notify = nullptr;
+
     IWindowPtr oldFocus = GetFocus();
     if (this->focused == NO_FOCUS && this->focusMode == FocusModeTerminating) {
         /* nothing. we're already terminated. */
+        notify = &FocusTerminated;
     }
     else if (this->focused + 1 >= AUTO_FOCUS) {
         ++this->focused;
         if (this->focused >= (int) this->focusable.size()) {
             if (this->focusMode == FocusModeCircular) {
                 this->focused = 0;
+                notify = &FocusWrapped;
             }
             else {
                 this->focused = NO_FOCUS;
+                notify = &FocusTerminated;
             }
         }
     }
 
-    return adjustFocus(oldFocus, GetFocus());
+    IWindowPtr newFocus = GetFocus();
+    adjustFocus(oldFocus, newFocus);
+
+    if (notify) {
+        (*notify)(FocusForward);
+    }
+
+    return newFocus;
 }
 
 IWindowPtr LayoutBase::FocusPrev() {
+    sigslot::signal1<FocusDirection>* notify = nullptr;
+
     IWindowPtr oldFocus = GetFocus();
     --this->focused;
     if (this->focused < 0) {
         if (this->focusMode == FocusModeCircular) {
             this->focused = (int) this->focusable.size() - 1;
+            notify = &FocusWrapped;
         }
         else {
             this->focused = NO_FOCUS;
+            notify = &FocusTerminated;
         }
     }
 
-    return adjustFocus(oldFocus, GetFocus());
+    IWindowPtr newFocus = GetFocus();
+    adjustFocus(oldFocus, newFocus);
+
+    if (notify) {
+        (*notify)(FocusBackward);
+    }
+
+    return newFocus;
 }
 
 IWindowPtr LayoutBase::FocusFirst() {

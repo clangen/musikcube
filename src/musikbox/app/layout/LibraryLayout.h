@@ -82,6 +82,9 @@ namespace musik {
                     std::string fieldType,
                     DBID fieldId);
 
+                void OnMainLayoutFocusTerminated(
+                    LayoutBase::FocusDirection direction);
+
                 void InitializeWindows();
 
                 void ShowNowPlaying();

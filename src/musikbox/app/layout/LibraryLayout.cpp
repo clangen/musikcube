@@ -105,10 +105,15 @@ void LibraryLayout::ChangeMainLayout(std::shared_ptr<cursespp::LayoutBase> newLa
 
         if (this->visibleLayout) {
            this->RemoveWindow(this->visibleLayout);
+           this->visibleLayout->FocusTerminated.disconnect(this);
            this->visibleLayout->Hide();
         }
 
         this->visibleLayout = newLayout;
+
+        this->visibleLayout->FocusTerminated.connect(
+            this, &LibraryLayout::OnMainLayoutFocusTerminated);
+
         this->AddWindow(this->visibleLayout);
         this->visibleLayout->Layout();
         this->visibleLayout->Show();
@@ -229,15 +234,7 @@ IWindowPtr LibraryLayout::FocusNext() {
         return this->FocusTransportNext();
     }
 
-    IWindowPtr focus = this->visibleLayout->FocusNext();
-
-    /* no next focus? kick over to the transport */
-    if (!focus) {
-        this->transportView->FocusFirst();
-        focus = this->transportView;
-    }
-
-    return focus;
+    return this->visibleLayout->FocusNext();
 }
 
 IWindowPtr LibraryLayout::FocusPrev() {
@@ -245,14 +242,18 @@ IWindowPtr LibraryLayout::FocusPrev() {
         return this->FocusTransportPrev();
     }
 
-    IWindowPtr focus = this->visibleLayout->FocusPrev();
+    return this->visibleLayout->FocusPrev();
+}
 
-    if (!focus) {
-        this->transportView->FocusLast();
-        focus = this->transportView;
+void LibraryLayout::OnMainLayoutFocusTerminated(
+    LayoutBase::FocusDirection direction)
+{
+    if (direction == LayoutBase::FocusForward) {
+        this->transportView->FocusFirst();
     }
-
-    return focus;
+    else {
+        this->transportView->FocusLast();
+    }
 }
 
 IWindowPtr LibraryLayout::GetFocus() {
@@ -260,16 +261,7 @@ IWindowPtr LibraryLayout::GetFocus() {
         return this->transportView;
     }
 
-    /* if nothing in the visible layout is focused, go
-    ahead and focus the transport so the user has something
-    to interact with. */
-    IWindowPtr focused = this->visibleLayout->GetFocus();
-    if (!focused) {
-        this->transportView->FocusFirst();
-        return this->transportView;
-    }
-
-    return focused;
+    return this->visibleLayout->GetFocus();
 }
 
 bool LibraryLayout::SetFocus(cursespp::IWindowPtr window) {

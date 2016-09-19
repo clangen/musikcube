@@ -37,6 +37,7 @@
 #include "ILayout.h"
 #include "Window.h"
 
+#include <sigslot/sigslot.h>
 #include <vector>
 
 namespace cursespp {
@@ -48,6 +49,14 @@ namespace cursespp {
         public ILayout
     {
         public:
+            enum FocusDirection {
+                FocusForward,
+                FocusBackward
+            };
+
+            sigslot::signal1<FocusDirection> FocusTerminated;
+            sigslot::signal1<FocusDirection> FocusWrapped;
+
             LayoutBase(IWindow* parent = NULL);
             virtual ~LayoutBase();
 
