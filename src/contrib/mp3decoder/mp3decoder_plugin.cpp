@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Björn Olievier
+// The following are Copyright Â© 2008, BjÃ¶rn Olievier
 //
 // All rights reserved.
 //
@@ -35,31 +35,34 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
+#include <core/sdk/IPlugin.h>
+#include <core/sdk/IDecoder.h>
+#include "Mp3DecoderFactory.h"
 
-#include "core/IPlugin.h"
+#ifdef WIN32
+#define DLLEXPORT __declspec(dllexport)
+#else
+#define DLLEXPORT
+#endif
 
-#include "MP3SourceSupplier.h"
-
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
-{
+#ifdef WIN32
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
     return true;
 }
+#endif
 
 class MP3DecoderPlugin : public musik::core::IPlugin
 {
-    void Destroy() { delete this; };
-
-	const utfchar* Name()       { return TEXT("MP3 decoder"); };
-	const utfchar* Version()    { return TEXT("1"); };
-	const utfchar* Author()     { return TEXT("Björn Olievier"); };
+    void Destroy() { delete this; }
+    const char* Name() { return "MP3 IDecoder"; };
+    const char* Version() { return "0.2"; };
+    const char* Author() { return "BjÃ¶rn Olievier, clangen"; };
 };
 
-extern "C" __declspec(dllexport) musik::core::IPlugin* GetPlugin()
-{
+extern "C" DLLEXPORT musik::core::IPlugin* GetPlugin() {
     return new MP3DecoderPlugin();
 }
 
-extern "C" __declspec(dllexport) IAudioSourceSupplier* CreateAudioSourceSupplier()
-{
-	return new MP3SourceSupplier();
+extern "C" DLLEXPORT IDecoderFactory* GetDecoderFactory() {
+	return new Mp3DecoderFactory();
 }

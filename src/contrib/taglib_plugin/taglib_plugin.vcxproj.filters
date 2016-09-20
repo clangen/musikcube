@@ -1,0 +1,679 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="plugin">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="taglib-1.11">
+      <UniqueIdentifier>{0cd98004-4fac-4cf9-a2d0-5ab57d97b209}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib_plugin.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\audioproperties.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\fileref.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\tag.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\tagunion.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\tagutils.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\ape\apefile.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\ape\apefooter.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\ape\apeitem.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\ape\apeproperties.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\ape\apetag.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\asf\asfattribute.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\asf\asffile.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\asf\asfpicture.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\asf\asfproperties.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\asf\asftag.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\flac\flacfile.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\flac\flacmetadatablock.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\flac\flacpicture.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\flac\flacproperties.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\flac\flacunknownmetadatablock.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\it\itfile.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\it\itproperties.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mod\modfile.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mod\modfilebase.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mod\modproperties.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mod\modtag.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mp4\mp4atom.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mp4\mp4coverart.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mp4\mp4file.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mp4\mp4item.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mp4\mp4properties.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mp4\mp4tag.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mpc\mpcfile.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mpc\mpcproperties.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v1\id3v1genres.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v1\id3v1tag.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\attachedpictureframe.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\chapterframe.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\commentsframe.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\eventtimingcodesframe.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\generalencapsulatedobjectframe.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\ownershipframe.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\podcastframe.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\popularimeterframe.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\privateframe.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\relativevolumeframe.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\synchronizedlyricsframe.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\tableofcontentsframe.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\textidentificationframe.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\uniquefileidentifierframe.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\unknownframe.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\unsynchronizedlyricsframe.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\urllinkframe.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\id3v2extendedheader.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\id3v2footer.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\id3v2frame.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\id3v2framefactory.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\id3v2header.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\id3v2synchdata.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\id3v2tag.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mpeg\mpegfile.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mpeg\mpegheader.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mpeg\mpegproperties.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\mpeg\xingheader.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\ogg\flac\oggflacfile.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\ogg\oggfile.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\ogg\oggpage.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\ogg\oggpageheader.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\ogg\opus\opusfile.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\ogg\opus\opusproperties.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\ogg\speex\speexfile.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\ogg\speex\speexproperties.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\ogg\vorbis\vorbisfile.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\ogg\vorbis\vorbisproperties.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\ogg\xiphcomment.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\riff\aiff\aifffile.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\riff\aiff\aiffproperties.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\riff\rifffile.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\riff\wav\infotag.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\riff\wav\wavfile.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\riff\wav\wavproperties.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\s3m\s3mfile.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\s3m\s3mproperties.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\toolkit\tbytevector.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\toolkit\tbytevectorlist.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\toolkit\tbytevectorstream.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\toolkit\tdebug.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\toolkit\tdebuglistener.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\toolkit\tfile.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\toolkit\tfilestream.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\toolkit\tiostream.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\toolkit\tpropertymap.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\toolkit\trefcounter.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\toolkit\tstring.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\toolkit\tstringlist.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\toolkit\tzlib.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\toolkit\unicode.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\trueaudio\trueaudiofile.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\trueaudio\trueaudioproperties.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\wavpack\wavpackfile.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\wavpack\wavpackproperties.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\xm\xmfile.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="taglib-1.11\taglib\xm\xmproperties.cpp">
+      <Filter>taglib-1.11</Filter>
+    </ClCompile>
+    <ClCompile Include="TaglibMetadataReader.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\audioproperties.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\fileref.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\tag.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\taglib_export.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\tagunion.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\tagutils.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\ape\apefile.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\ape\apefooter.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\ape\apeitem.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\ape\apeproperties.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\ape\apetag.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\asf\asfattribute.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\asf\asffile.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\asf\asfpicture.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\asf\asfproperties.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\asf\asftag.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\asf\asfutils.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\flac\flacfile.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\flac\flacmetadatablock.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\flac\flacpicture.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\flac\flacproperties.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\flac\flacunknownmetadatablock.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\it\itfile.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\it\itproperties.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mod\modfile.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mod\modfilebase.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mod\modfileprivate.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mod\modproperties.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mod\modtag.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mp4\mp4atom.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mp4\mp4coverart.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mp4\mp4file.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mp4\mp4item.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mp4\mp4properties.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mp4\mp4tag.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mpc\mpcfile.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mpc\mpcproperties.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v1\id3v1genres.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v1\id3v1tag.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\attachedpictureframe.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\chapterframe.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\commentsframe.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\eventtimingcodesframe.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\generalencapsulatedobjectframe.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\ownershipframe.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\podcastframe.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\popularimeterframe.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\privateframe.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\relativevolumeframe.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\synchronizedlyricsframe.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\tableofcontentsframe.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\textidentificationframe.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\uniquefileidentifierframe.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\unknownframe.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\unsynchronizedlyricsframe.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\urllinkframe.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\id3v2extendedheader.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\id3v2footer.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\id3v2frame.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\id3v2framefactory.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\id3v2header.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\id3v2synchdata.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\id3v2tag.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mpeg\mpegfile.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mpeg\mpegheader.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mpeg\mpegproperties.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mpeg\mpegutils.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\mpeg\xingheader.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\ogg\flac\oggflacfile.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\ogg\oggfile.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\ogg\oggpage.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\ogg\oggpageheader.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\ogg\opus\opusfile.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\ogg\opus\opusproperties.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\ogg\speex\speexfile.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\ogg\speex\speexproperties.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\ogg\vorbis\vorbisfile.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\ogg\vorbis\vorbisproperties.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\ogg\xiphcomment.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\riff\aiff\aifffile.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\riff\aiff\aiffproperties.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\riff\rifffile.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\riff\riffutils.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\riff\wav\infotag.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\riff\wav\wavfile.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\riff\wav\wavproperties.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\s3m\s3mfile.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\s3m\s3mproperties.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\toolkit\taglib.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\toolkit\tbytevector.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\toolkit\tbytevectorlist.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\toolkit\tbytevectorstream.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\toolkit\tdebug.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\toolkit\tdebuglistener.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\toolkit\tfile.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\toolkit\tfilestream.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\toolkit\tiostream.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\toolkit\tlist.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\toolkit\tmap.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\toolkit\tpropertymap.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\toolkit\trefcounter.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\toolkit\tstring.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\toolkit\tstringlist.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\toolkit\tutils.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\toolkit\tzlib.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\toolkit\unicode.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\trueaudio\trueaudiofile.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\trueaudio\trueaudioproperties.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\wavpack\wavpackfile.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\wavpack\wavpackproperties.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\xm\xmfile.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\taglib\xm\xmproperties.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="taglib-1.11\config.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
+    <ClInclude Include="TaglibMetadataReader.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

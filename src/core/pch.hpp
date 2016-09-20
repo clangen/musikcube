@@ -1,8 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// License Agreement:
-//
-// The following are Copyright © 2008, Daniel Önnerby
+// Copyright (c) 2007-2016 musikcube team
 //
 // All rights reserved.
 //
@@ -34,18 +32,13 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-// Precompiled headers
-#pragma once
+#ifdef WIN32
+    #include <core/config.h>
 
-//#pragma warning (disable : 4996 4018 4482)
+    #include <sigslot/sigslot.h>
+    #include <boost/shared_ptr.hpp>
+    #include <boost/iostreams/stream.hpp>
 
-#include <core/config.h>
-
-#include <sigslot/sigslot.h>
-#include <boost/shared_ptr.hpp>
-#include <boost/iostreams/stream.hpp>
-
-#include <core/db/Connection.h>
-#include <core/db/Statement.h>
-#include <core/db/CachedStatement.h>
-
+    #include <core/db/Connection.h>
+    #include <core/db/Statement.h>
+#endif

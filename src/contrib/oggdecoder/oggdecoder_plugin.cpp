@@ -1,8 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// License Agreement:
-//
-// The following are Copyright © 2008, Björn Olievier
+// Copyright (c) 2007-2016 musikcube team
 //
 // All rights reserved.
 //
@@ -35,31 +33,33 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
+#include <core/sdk/IPlugin.h>
+#include "OggDecoderFactory.h"
 
-#include <core/IPlugin.h>
+#ifdef WIN32
+#define DLLEXPORT __declspec(dllexport)
+#else
+#define DLLEXPORT
+#endif
 
-#include "OggSourceSupplier.h"
-
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
-{
+#ifdef WIN32
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
     return true;
 }
+#endif
 
-class OggDecoderPlugin : public musik::core::IPlugin
-{
+class OggDecoderPlugin : public musik::core::IPlugin {
+public:
     void Destroy() { delete this; };
-
-    const utfchar* Name()       { return TEXT("Ogg decoder"); };
-    const utfchar* Version()    { return TEXT("1"); };
-    const utfchar* Author()     { return TEXT("Björn Olievier"); };
+    const char* Name() { return "Ogg IDecoder"; };
+    const char* Version() { return "0.2"; };
+    const char* Author() { return "BjÃ¶rn Olievier, clangen"; };
 };
 
-extern "C" __declspec(dllexport) musik::core::IPlugin* GetPlugin()
-{
+extern "C" DLLEXPORT musik::core::IPlugin* GetPlugin() {
     return new OggDecoderPlugin();
 }
 
-extern "C" __declspec(dllexport) IDecoderFactory* GetDecoderFactory()
-{
-    return new OggSourceSupplier();
+extern "C" DLLEXPORT IDecoderFactory* GetDecoderFactory() {
+    return new OggDecoderFactory();
 }

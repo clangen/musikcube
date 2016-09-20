@@ -1,0 +1,363 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="stdafx.cpp" />
+    <ClCompile Include="cursespp\ListWindow.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\MultiLineEntry.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\Screen.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\ScrollableWindow.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\ScrollAdapterBase.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\SimpleScrollAdapter.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\SingleLineEntry.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\Window.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\LayoutBase.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="app\layout\LibraryLayout.cpp">
+      <Filter>app\layout</Filter>
+    </ClCompile>
+    <ClCompile Include="app\query\CategoryListViewQuery.cpp">
+      <Filter>app\query</Filter>
+    </ClCompile>
+    <ClCompile Include="app\window\OutputWindow.cpp">
+      <Filter>app\window</Filter>
+    </ClCompile>
+    <ClCompile Include="app\window\TrackListView.cpp">
+      <Filter>app\window</Filter>
+    </ClCompile>
+    <ClCompile Include="app\window\TransportWindow.cpp">
+      <Filter>app\window</Filter>
+    </ClCompile>
+    <ClCompile Include="app\window\CategoryListView.cpp">
+      <Filter>app\window</Filter>
+    </ClCompile>
+    <ClCompile Include="app\window\LogWindow.cpp">
+      <Filter>app\window</Filter>
+    </ClCompile>
+    <ClCompile Include="app\util\GlobalHotkeys.cpp">
+      <Filter>app\util</Filter>
+    </ClCompile>
+    <ClCompile Include="app\service\PlaybackService.cpp">
+      <Filter>app\service</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\Message.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\MessageQueue.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="app\window\EntryWithHeader.cpp">
+      <Filter>app\window</Filter>
+    </ClCompile>
+    <ClCompile Include="app\query\CategoryTrackListQuery.cpp">
+      <Filter>app\query</Filter>
+    </ClCompile>
+    <ClCompile Include="app\query\NowPlayingTrackListQuery.cpp">
+      <Filter>app\query</Filter>
+    </ClCompile>
+    <ClCompile Include="app\layout\ConsoleLayout.cpp">
+      <Filter>app\layout</Filter>
+    </ClCompile>
+    <ClCompile Include="app\layout\NowPlayingLayout.cpp">
+      <Filter>app\layout</Filter>
+    </ClCompile>
+    <ClCompile Include="app\layout\BrowseLayout.cpp">
+      <Filter>app\layout</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\Colors.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\TextInput.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="app\layout\SearchLayout.cpp">
+      <Filter>app\layout</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\TextLabel.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\Text.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="app\util\Duration.cpp">
+      <Filter>app\util</Filter>
+    </ClCompile>
+    <ClCompile Include="app\model\TrackList.cpp">
+      <Filter>app\model</Filter>
+    </ClCompile>
+    <ClCompile Include="app\util\Playback.cpp">
+      <Filter>app\util</Filter>
+    </ClCompile>
+    <ClCompile Include="app\layout\TrackSearchLayout.cpp">
+      <Filter>app\layout</Filter>
+    </ClCompile>
+    <ClCompile Include="app\query\SearchTrackListQuery.cpp">
+      <Filter>app\query</Filter>
+    </ClCompile>
+    <ClCompile Include="app\model\DirectoryAdapter.cpp">
+      <Filter>app\model</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\Checkbox.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\App.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="app\util\Hotkeys.cpp">
+      <Filter>app\util</Filter>
+    </ClCompile>
+    <ClCompile Include="app\layout\MainLayout.cpp">
+      <Filter>app\layout</Filter>
+    </ClCompile>
+    <ClCompile Include="app\layout\SettingsLayout.cpp">
+      <Filter>app\layout</Filter>
+    </ClCompile>
+    <ClCompile Include="app\util\PreferenceKeys.cpp">
+      <Filter>app\util</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\ShortcutsWindow.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\OverlayStack.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\DialogOverlay.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="cursespp\ListWindow.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\MultiLineEntry.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\Screen.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\ScrollableWindow.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\ScrollAdapterBase.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\SimpleScrollAdapter.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\SingleLineEntry.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\Window.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\Colors.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\curses_config.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\IDisplayable.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\IInput.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\IKeyHandler.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\ILayout.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\IScrollable.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\IScrollAdapter.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\IWindow.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\IWindowGroup.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\LayoutBase.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="app\layout\LibraryLayout.h">
+      <Filter>app\layout</Filter>
+    </ClInclude>
+    <ClInclude Include="app\query\CategoryListViewQuery.h">
+      <Filter>app\query</Filter>
+    </ClInclude>
+    <ClInclude Include="app\window\LogWindow.h">
+      <Filter>app\window</Filter>
+    </ClInclude>
+    <ClInclude Include="app\window\OutputWindow.h">
+      <Filter>app\window</Filter>
+    </ClInclude>
+    <ClInclude Include="app\window\TrackListView.h">
+      <Filter>app\window</Filter>
+    </ClInclude>
+    <ClInclude Include="app\window\TransportWindow.h">
+      <Filter>app\window</Filter>
+    </ClInclude>
+    <ClInclude Include="app\window\CategoryListView.h">
+      <Filter>app\window</Filter>
+    </ClInclude>
+    <ClInclude Include="app\util\GlobalHotkeys.h">
+      <Filter>app\util</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\IOrderable.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\ILayoutStack.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="app\service\PlaybackService.h">
+      <Filter>app\service</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\IMessage.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\Message.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\MessageQueue.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\IMessageTarget.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="app\window\EntryWithHeader.h">
+      <Filter>app\window</Filter>
+    </ClInclude>
+    <ClInclude Include="app\query\TrackListQueryBase.h">
+      <Filter>app\query</Filter>
+    </ClInclude>
+    <ClInclude Include="app\query\CategoryTrackListQuery.h">
+      <Filter>app\query</Filter>
+    </ClInclude>
+    <ClInclude Include="app\query\NowPlayingTrackListQuery.h">
+      <Filter>app\query</Filter>
+    </ClInclude>
+    <ClInclude Include="app\layout\ConsoleLayout.h">
+      <Filter>app\layout</Filter>
+    </ClInclude>
+    <ClInclude Include="app\layout\NowPlayingLayout.h">
+      <Filter>app\layout</Filter>
+    </ClInclude>
+    <ClInclude Include="app\layout\BrowseLayout.h">
+      <Filter>app\layout</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\TextInput.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="app\layout\SearchLayout.h">
+      <Filter>app\layout</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\TextLabel.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\Text.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="app\util\Duration.h">
+      <Filter>app\util</Filter>
+    </ClInclude>
+    <ClInclude Include="app\model\TrackList.h">
+      <Filter>app\model</Filter>
+    </ClInclude>
+    <ClInclude Include="app\util\Playback.h">
+      <Filter>app\util</Filter>
+    </ClInclude>
+    <ClInclude Include="app\layout\TrackSearchLayout.h">
+      <Filter>app\layout</Filter>
+    </ClInclude>
+    <ClInclude Include="app\query\SearchTrackListQuery.h">
+      <Filter>app\query</Filter>
+    </ClInclude>
+    <ClInclude Include="app\model\DirectoryAdapter.h">
+      <Filter>app\model</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\Checkbox.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\App.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="app\util\Hotkeys.h">
+      <Filter>app\util</Filter>
+    </ClInclude>
+    <ClInclude Include="app\layout\MainLayout.h">
+      <Filter>app\layout</Filter>
+    </ClInclude>
+    <ClInclude Include="app\layout\SettingsLayout.h">
+      <Filter>app\layout</Filter>
+    </ClInclude>
+    <ClInclude Include="app\layout\ITopLevelLayout.h">
+      <Filter>app\layout</Filter>
+    </ClInclude>
+    <ClInclude Include="app\util\PreferenceKeys.h">
+      <Filter>app\util</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\ShortcutsWindow.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\IOverlay.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\OverlayStack.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\OverlayBase.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\DialogOverlay.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="cursespp">
+      <UniqueIdentifier>{04a2cf62-168c-4f1b-ac33-a55f7cbecff0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="app">
+      <UniqueIdentifier>{26da8545-6d30-4bcf-8246-8d596051ac44}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="app\window">
+      <UniqueIdentifier>{26e5a2dc-1762-435f-83be-4fbca7be43bf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="app\layout">
+      <UniqueIdentifier>{2e94c5cc-9ae5-475f-a714-3af205ca2ea8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="app\util">
+      <UniqueIdentifier>{629374d5-c682-472d-85a3-1f7fa29c3e04}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="app\query">
+      <UniqueIdentifier>{5c751253-4250-4a81-8b5f-ca6244954d64}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="app\service">
+      <UniqueIdentifier>{f2315c14-fb1b-4928-ab47-462d1dc65c77}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="app\model">
+      <UniqueIdentifier>{b6720351-dd55-4b14-936a-09df56193c15}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

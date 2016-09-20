@@ -1,8 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// License Agreement:
-//
-// The following are Copyright © 2008, Daniel Önnerby
+// Copyright (c) 2007-2016 musikcube team
 //
 // All rights reserved.
 //
@@ -50,8 +48,6 @@ struct sqlite3_stmt;
 namespace musik{ namespace core{ namespace db{
 
     class Connection;
-    class  CachedStatement;
-
 
     //////////////////////////////////////////
     ///\brief
@@ -64,22 +60,20 @@ namespace musik{ namespace core{ namespace db{
             void Reset();
             int Step();
 
-            void BindInt(int position,int bindInt);
-            void BindInt64(int position,UINT64 bindInt);
-            void BindText(int position,const char* bindText);
-            void BindText(int position,const std::string &bindText);
-            void BindTextW(int position,const wchar_t* bindText);
-            void BindTextW(int position,const std::wstring &bindText);
-            void BindTextUTF(int position,const utfchar* bindText);
-            void BindTextUTF(int position,const utfstring &bindText);
+            void BindInt(int position, int bindInt);
+            void BindInt(int position, uint64 bindInt);
+            void BindText(int position, const char* bindText);
+            void BindText(int position, const std::string &bindText);
+            void BindTextW(int position, const wchar_t* bindText);
+            void BindTextW(int position, const std::wstring &bindText);
 
             int ColumnInt(int column);
-            UINT64 ColumnInt64(int column);
+            uint64 ColumnInt64(int column);
             const char* ColumnText(int column);
             const wchar_t* ColumnTextW(int column);
-            const utfchar* ColumnTextUTF(int column);
 
             void UnBindAll();
+
         private:
             friend class Connection;
 
@@ -91,9 +85,5 @@ namespace musik{ namespace core{ namespace db{
             Statement(Connection &connection);
 
     };
-
-
 } } }
-
-#include <core/db/CachedStatement.h>
 

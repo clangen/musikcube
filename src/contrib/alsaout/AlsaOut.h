@@ -1,5 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
-// Copyright © 2009, Julian Cromarty
+//
+// Copyright (c) 2007-2016 musikcube team
 //
 // All rights reserved.
 //
@@ -33,71 +34,60 @@
 #pragma once
 
 #include "pch.h"
-#include "AlsaOutBuffer.h"
-/*
+
+
 #include <boost/thread/condition.hpp>
 #include <boost/thread/thread.hpp>
 
-#include <core/audio/IAudioCallback.h>
-#include <core/audio/IAudioOutput.h>
-*/
-#include <core/audio/IOutput.h>
+#include <core/sdk/IOutput.h>
+#include <boost/thread/recursive_mutex.hpp>
+#include <boost/thread/condition.hpp>
 #include <list>
-#include <boost/shared_ptr.hpp>
-#include <boost/thread/mutex.hpp>
 
 using namespace musik::core::audio;
 
-class AlsaOut : public IOutput{
+class AlsaOut : public IOutput {
     public:
         AlsaOut();
-        ~AlsaOut();
+        virtual ~AlsaOut();
 
         virtual void Destroy();
-        //virtual void Initialize(IPlayer *player);
         virtual void Pause();
         virtual void Resume();
         virtual void SetVolume(double volume);
-        virtual void ClearBuffers();
-        virtual bool PlayBuffer(IBuffer *buffer,IPlayer *player);
-        virtual void ReleaseBuffers();
-        
-        snd_pcm_t* getWaveHandle();
+        virtual void Stop();
 
-    public:
-        typedef boost::shared_ptr<AlsaOutBuffer> AlsaOutBufferPtr;
-
-        //static void CALLBACK WaveCallback(HWAVEOUT hWave, UINT msg, DWORD_PTR dwUser, DWORD_PTR dw1, DWORD dw2);
-        void RemoveBuffer(AlsaOutBuffer *buffer);
+        virtual bool Play(
+            musik::core::audio::IBuffer *buffer,
+            musik::core::audio::IBufferProvider *provider);
 
     private:
-        void SetFormat(IBuffer *buffer);
-        char *device;                        /* playback device */
+        struct BufferContext {
+            musik::core::audio::IBuffer *buffer;
+            musik::core::audio::IBufferProvider *provider;
+        };
 
-    protected:
-        friend class AlsaOutBuffer;
+        size_t CountBuffersWithProvider(IBufferProvider* provider);
+        void SetFormat(musik::core::audio::IBuffer *buffer);
+        void InitDevice();
+        void CloseDevice();
+        void WriteLoop();
 
-        //IPlayer *player;
+        std::string device;
+        snd_pcm_t* pcmHandle;
+        snd_pcm_hw_params_t* hardware;
+        snd_pcm_format_t pcmFormat;
+        snd_pcm_access_t pcmType;
 
-        // Audio stuff
-        snd_output_t *output;
-        snd_pcm_t        *waveHandle;
-        snd_pcm_format_t waveFormat;
-        snd_pcm_access_t waveAccess;
-        snd_pcm_hw_params_t *hw_params;
+        size_t channels;
+        size_t rate;
+        double volume;
+        volatile bool quit, initialized;
 
-        // Current format
-        int currentChannels;
-        long currentSampleRate;
-        double currentVolume;
+        std::unique_ptr<boost::thread> writeThread;
+        boost::recursive_mutex stateMutex;
+        boost::condition threadEvent;
 
-        typedef std::list<AlsaOutBufferPtr> BufferList;
-        BufferList buffers;
-        BufferList removedBuffers;
-        size_t maxBuffers;
-
+        std::list<std::shared_ptr<BufferContext> > buffers;
         boost::mutex mutex;
-
-        bool addToRemovedBuffers;
-
 };

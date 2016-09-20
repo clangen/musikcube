@@ -1,8 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// License Agreement:
-//
-// The following are Copyright © 2008, Daniel Önnerby
+// Copyright (c) 2007-2016 musikcube team
 //
 // All rights reserved.
 //
@@ -34,41 +32,27 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#ifdef WIN32
 #include "pch.hpp"
-#else
-#include <core/pch.hpp>
-#endif
 
 #include <core/db/Connection.h>
 #include <boost/lexical_cast.hpp>
 #include <boost/thread/thread.hpp>
 #include <sqlite/sqlite3.h>
 
+static boost::mutex globalMutex;
+
 using namespace musik::core::db;
 
-boost::mutex Connection::globalMutex;
-
-//////////////////////////////////////////
-///\brief
-///Constructor
-//////////////////////////////////////////
-Connection::Connection() : connection(NULL),transactionCounter(0) {
-    this->Maintenance(true);
+Connection::Connection()
+: connection(nullptr)
+, transactionCounter(0) {
+    this->UpdateReferenceCount(true);
 }
 
-
-//////////////////////////////////////////
-///\brief
-///Destructor
-///
-///Will automatically close the connection if it's not closed before
-//////////////////////////////////////////
 Connection::~Connection(){
     this->Close();
-    this->Maintenance(false);
+    this->UpdateReferenceCount(false);
 }
-
 
 //////////////////////////////////////////
 ///\brief
@@ -86,19 +70,19 @@ Connection::~Connection(){
 ///\returns
 ///Error code returned by SQLite
 //////////////////////////////////////////
-int Connection::Open(const utfchar *database,unsigned int options,unsigned int cache){
-//    sqlite3_enable_shared_cache(1);
-
+int Connection::Open(const char *database, unsigned int options, unsigned int cache) {
     int error;
-    #ifdef UTF_WIDECHAR
-        error   = sqlite3_open16(database,&this->connection);
-    #else
-        error   = sqlite3_open(database,&this->connection);
-    #endif
 
-    if(error==SQLITE_OK){
+#ifdef UTF_WIDECHAR
+    error = sqlite3_open16(database,&this->connection);
+#else
+    error = sqlite3_open(database,&this->connection);
+#endif
+
+    if (error==SQLITE_OK) {
         this->Initialize(cache);
     }
+
     return error;
 }
 
@@ -118,23 +102,21 @@ int Connection::Open(const utfchar *database,unsigned int options,unsigned int c
 ///\returns
 ///Error code returned by SQLite
 //////////////////////////////////////////
-int Connection::Open(const utfstring &database,unsigned int options,unsigned int cache){
-//    sqlite3_enable_shared_cache(1);
-
+int Connection::Open(const std::string &database,unsigned int options,unsigned int cache){
     int error;
-    #ifdef UTF_WIDECHAR
-        error   = sqlite3_open16(database.c_str(),&this->connection);
+    #ifdef WIN32
+        std::wstring wdatabase = u8to16(database);
+        error = sqlite3_open16(wdatabase.c_str(),&this->connection);
     #else
-        error   = sqlite3_open(database.c_str(),&this->connection);
+        error = sqlite3_open(database.c_str(),&this->connection);
     #endif
 
-    if(error==SQLITE_OK){
+    if (error==SQLITE_OK) {
         this->Initialize(cache);
     }
+
     return error;
 }
-
-
 
 //////////////////////////////////////////
 ///\brief
@@ -143,22 +125,14 @@ int Connection::Open(const utfstring &database,unsigned int options,unsigned int
 ///\returns
 ///Errorcode ( musik::core::db::ReturnCode )
 //////////////////////////////////////////
-int Connection::Close(){
-
-    // Clear the cache
-    for(StatementCache::iterator stmt=this->cachedStatements.begin();stmt!=this->cachedStatements.end();++stmt){
-        sqlite3_finalize(stmt->second);
+int Connection::Close() {
+    if (sqlite3_close(this->connection) == SQLITE_OK) {
+        this->connection = 0;
+        return musik::core::db::Okay;
     }
-    this->cachedStatements.clear();
 
-
-    if(sqlite3_close(this->connection)==SQLITE_OK){
-        this->connection    = 0;
-        return musik::core::db::OK;
-    }
     return musik::core::db::Error;
 }
-
 
 //////////////////////////////////////////
 ///\brief
@@ -173,7 +147,7 @@ int Connection::Close(){
 ///\see
 ///musik::core::db::ReturnCode
 //////////////////////////////////////////
-int Connection::Execute(const char* sql){
+int Connection::Execute(const char* sql) {
     sqlite3_stmt *stmt  = NULL;
 
     // Prepaire seems to give errors when interrupted
@@ -194,7 +168,8 @@ int Connection::Execute(const char* sql){
 
     sqlite3_reset(stmt);
     sqlite3_finalize(stmt);
-    return db::OK;
+
+    return musik::core::db::Okay;
 }
 
 
@@ -211,7 +186,7 @@ int Connection::Execute(const char* sql){
 ///\see
 ///musik::core::db::ReturnCode
 //////////////////////////////////////////
-int Connection::Execute(const wchar_t* sql){
+int Connection::Execute(const wchar_t* sql) {
     sqlite3_stmt *stmt  = NULL;
     {
         boost::mutex::scoped_lock lock(this->mutex);
@@ -223,7 +198,7 @@ int Connection::Execute(const wchar_t* sql){
     }
 
     // Execute the statement
-    int error   = this->StepStatement(stmt);
+    int error = this->StepStatement(stmt);
     if(error!=SQLITE_OK && error!=SQLITE_DONE){
         sqlite3_finalize(stmt);
         return db::Error;
@@ -231,14 +206,12 @@ int Connection::Execute(const wchar_t* sql){
 
     sqlite3_reset(stmt);
     sqlite3_finalize(stmt);
-    return db::OK;
+    return musik::core::db::Okay;
 }
 
-void Connection::Analyze(){
-    boost::mutex::scoped_lock lock(Connection::globalMutex);
-//    this->Execute("ANALYZE");
+void Connection::Checkpoint() {
+    sqlite3_wal_checkpoint(this->connection, nullptr);
 }
-
 
 //////////////////////////////////////////
 ///\brief
@@ -251,9 +224,8 @@ void Connection::Analyze(){
 ///http://www.sqlite.org/c3ref/last_insert_rowid.html
 //////////////////////////////////////////
 int Connection::LastInsertedId(){
-    return (int)sqlite3_last_insert_rowid(this->connection);
+    return (int) sqlite3_last_insert_rowid(this->connection);
 }
-
 
 //////////////////////////////////////////
 ///\brief
@@ -264,129 +236,56 @@ int Connection::LastInsertedId(){
 ///
 ///This will set all the initial PRAGMAS
 //////////////////////////////////////////
-void Connection::Initialize(unsigned int cache){
+void Connection::Initialize(unsigned int cache) {
 //    sqlite3_enable_shared_cache(1);
-    sqlite3_busy_timeout(this->connection,10000);
+    sqlite3_busy_timeout(this->connection, 10000);
 
-    sqlite3_exec(this->connection,"PRAGMA synchronous=OFF",NULL,NULL,NULL);         // Not a critical DB. Sync set to OFF
-    sqlite3_exec(this->connection,"PRAGMA page_size=4096",NULL,NULL,NULL);          // According to windows standard page size
-    sqlite3_exec(this->connection,"PRAGMA auto_vacuum=0",NULL,NULL,NULL);           // No autovaccum.
+    sqlite3_exec(this->connection, "PRAGMA synchronous=OFF", NULL, NULL, NULL);	    // Not a critical DB. Sync set to OFF
+    sqlite3_exec(this->connection, "PRAGMA page_size=4096", NULL, NULL, NULL);	    // According to windows standard page size
+    sqlite3_exec(this->connection, "PRAGMA auto_vacuum=0", NULL, NULL, NULL);	    // No autovaccum.
+    sqlite3_exec(this->connection, "PRAGMA auto_vacuum=0", NULL, NULL, NULL);	    // No autovaccum.
+    sqlite3_exec(this->connection, "PRAGMA journal_mode=WAL", NULL, NULL, NULL);    // Allow reading while writing (write-ahead-logging)
 
-    if(cache!=0){
+    if (cache != 0) {
         // Divide by 4 to since the page_size is 4096
         // Total cache is the same as page_size*cache_size
-        cache   = cache/4;
-
+        cache = cache / 4;
         std::string cacheSize("PRAGMA cache_size=" + boost::lexical_cast<std::string>(cache));
-        sqlite3_exec(this->connection,cacheSize.c_str(),NULL,NULL,NULL);                // size * 1.5kb = 6Mb cache
+        sqlite3_exec(this->connection,cacheSize.c_str(), NULL, NULL, NULL); // size * 1.5kb = 6Mb cache
     }
 
-
-    sqlite3_exec(this->connection,"PRAGMA case_sensitive_like=0",NULL,NULL,NULL);   // More speed if case insensitive
-    sqlite3_exec(this->connection,"PRAGMA count_changes=0",NULL,NULL,NULL);         // If set it counts changes on SQL UPDATE. More speed when not.
-    sqlite3_exec(this->connection,"PRAGMA legacy_file_format=OFF",NULL,NULL,NULL);  // No reason to be backwards compatible :)
-    sqlite3_exec(this->connection,"PRAGMA temp_store=MEMORY",NULL,NULL,NULL);       // MEMORY, not file. More speed.
-
+    sqlite3_exec(this->connection, "PRAGMA case_sensitive_like=0", NULL, NULL, NULL);   // More speed if case insensitive
+    sqlite3_exec(this->connection, "PRAGMA count_changes=0", NULL, NULL, NULL);         // If set it counts changes on SQL UPDATE. More speed when not.
+    sqlite3_exec(this->connection, "PRAGMA legacy_file_format=OFF", NULL, NULL, NULL);  // No reason to be backwards compatible :)
+    sqlite3_exec(this->connection, "PRAGMA temp_store=MEMORY", NULL, NULL, NULL);       // MEMORY, not file. More speed.
 }
 
-
-//////////////////////////////////////////
-///\brief
-///Internal method used by the CachedStatement to locate if a statement already exists
-///
-///\param sql
-///SQL to check for
-///
-///\returns
-///The cached or newly created statement
-///
-///\see
-///musik::core::db::CachedStatment
-//////////////////////////////////////////
-sqlite3_stmt *Connection::GetCachedStatement(const char* sql){
-    sqlite3_stmt *newStmt(NULL);
-
-    StatementCache::iterator stmt   = this->cachedStatements.find(sql);
-    if(stmt==this->cachedStatements.end()){
-
-        boost::mutex::scoped_lock lock(this->mutex);
-
-        int err = sqlite3_prepare_v2(this->connection,sql,-1,&newStmt,NULL);
-        if(err!=SQLITE_OK){
-            return NULL;
-        }
-        return newStmt;
-    }
-
-    newStmt = stmt->second;
-    this->cachedStatements.erase(stmt);
-    return newStmt;
-}
-
-
-//////////////////////////////////////////
-///\brief
-///Used by CachedStatement when destructed to return it's statement.
-///
-///\param sql
-///SQL string
-///
-///\param stmt
-///Statement to return
-///
-///\see
-///musik::core::db::CachedStatment
-//////////////////////////////////////////
-void Connection::ReturnCachedStatement(const char* sql,sqlite3_stmt *stmt){
-    StatementCache::iterator cacheStmt   = this->cachedStatements.find(sql);
-    if(cacheStmt==this->cachedStatements.end()){
-        // Insert the stmt in cache
-        this->cachedStatements[sql] = stmt;
-    }else{
-        // Stmt already exists. Finalize it
-        DB_ASSERT(sqlite3_finalize(stmt));
-    }
-}
-
-//////////////////////////////////////////
-///\brief
-///Interrupts the current running statement(s)
-//////////////////////////////////////////
 void Connection::Interrupt(){
     boost::mutex::scoped_lock lock(this->mutex);
     sqlite3_interrupt(this->connection);
 }
 
-void Connection::Maintenance(bool init){
+void Connection::UpdateReferenceCount(bool init) {
+    boost::mutex::scoped_lock lock(globalMutex);
 
-    // Need to be locked throuout all Connections
-    boost::mutex::scoped_lock lock(Connection::globalMutex);
+    static int count = 0;
 
-    static int counter(0);
-
-    if(init){
-        if(counter==0){
+    if (init) {
+        if (count == 0) {
             sqlite3_initialize();
         }
-        ++counter;
-    }else{
-        --counter;
-        if(counter==0){
+
+        ++count;
+    }
+    else {
+        --count;
+        if (count <= 0){
             sqlite3_shutdown();
+            count = 0;
         }
     }
 }
 
-int Connection::StepStatement(sqlite3_stmt *stmt){
-/*    int waitCount(100);
-    int error(0);
-    do{
-        error   = sqlite3_step(stmt);
-        if(error==SQLITE_LOCKED){
-            boost::thread::yield();
-            waitCount--;
-        }
-    }while(error==SQLITE_LOCKED && waitCount>0);
-*/
+int Connection::StepStatement(sqlite3_stmt *stmt) {
     return sqlite3_step(stmt);
 }

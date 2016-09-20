@@ -1,8 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// License Agreement:
-//
-// The following are Copyright © 2008, Daniel Önnerby
+// Copyright (c) 2007-2016 musikcube team
 //
 // All rights reserved.
 //
@@ -36,119 +34,83 @@
 
 #pragma once
 
-//////////////////////////////////////////////////////////////////////////////
+#include <string>
+#include <wchar.h>
+#include <core/sdk/config.h>
+#include <utf8/utf8.h>
+#include <boost/filesystem.hpp>
+#include <boost/format.hpp>
 
 #ifdef WIN32
-
-    #define WIN32_LEAN_AND_MEAN
-    #define WINVER 0x0501
-    #define _WIN32_WINNT 0x0501
-    #include <windows.h>
-    #include <tchar.h>
-
-	//#include "musik_dll_exports.h"
-
-    typedef unsigned __int64 UINT64;
-
-    #define STDCALL(fp) (__stdcall* fp)()
-
-#else
-    #include <cassert>
-
-    typedef unsigned long long UINT64;
-    typedef long long __int64;		//TODO: Is this necessary?
-
-    #define STDCALL(fp) (* fp)() __attribute__((stdcall))
-    #define _ASSERT assert
-	#define TEXT(s) s		//There's no TEXT() on linux. This makes the current uses of it compile for me... Jooles
-
-#endif  // WIN32
-
-////////////////////////////////
-
-typedef unsigned int DBINT;
-typedef UINT64 VERSION;
-typedef unsigned int DBTIME;
-
-////////////////////////////////
-
-#include <string>
-
-#ifdef _MSC_VER
-
-    //////////////////////////////////////////
-    ///\brief
-    /// Some methods need to know if the utfchar is a wide char.
-    /// We define UTF_WIDECHAR for this
-    //////////////////////////////////////////
-    #define UTF_WIDECHAR
-
-    //////////////////////////////////////////
-    ///\brief
-    ///The UTF macro is the text macro when writing texts in the code that
-    ///should be utf encoded.
-    ///
-    ///\remarks
-    ///We thought that the _T was a little bit too microsoft specific.
-    //////////////////////////////////////////
-    #define UTF(x)  _T(x)
-
-    //////////////////////////////////////////
-    ///\brief
-    ///utfchar is either a char or a utfchar depending on system.
-    //////////////////////////////////////////
-    typedef wchar_t utfchar;
-
-    //////////////////////////////////////////
-    ///\brief
-    ///utfstringstream is the stringstream for utfchar & utfstring
-    //////////////////////////////////////////
-    namespace std
-    {
-        typedef wstringstream   utfstringstream;
-        typedef wostringstream  utfostringstream;
-        typedef wistringstream  utfistringstream;
-    }
-
-#else
-    #undef UTF_WIDECHAR
-
-    //////////////////////////////////////////
-    ///\brief
-    ///utfchar is either a char or a utfchar depending on system.
-    //////////////////////////////////////////
-    typedef char utfchar;
-
-    //////////////////////////////////////////
-    ///\brief
-    ///The UTF macro is the text macro when writing texts in the code that
-    ///should be utf encoded.
-    ///
-    ///\remarks
-    ///We thought that the _T was a little bit too microsoft specific.
-    //////////////////////////////////////////
-    #define UTF(x)  x
-
-    //////////////////////////////////////////
-    ///\brief
-    ///utfstringstream is the stringstream for utfchar & utfstring
-    //////////////////////////////////////////
-    namespace std
-    {
-        typedef stringstream   utfstringstream;
-        typedef ostringstream  utfostringstream;
-        typedef istringstream  utfistringstream;
-    }
-
+#include <wcwidth.h>
 #endif
 
-typedef std::basic_string<utfchar> utfstring;
+typedef uint64 DBID;
+typedef uint64 VERSION;
+typedef uint64 DBTIME;
 
-//////////////////////////////////////////////////////////////////////////////
 #ifdef WIN32
 	#define CopyFloat(dst, src, num) CopyMemory(dst, src, (num) * sizeof(float))
 #else
-	#define CopyFloat(dst, src, num) memmove(dst, src, (num) * sizeof(float))
+	#define CopyFloat(dst, src, num) memmove((void*) dst, (void*)src, (num) * sizeof(float))
 #endif
 
-//////////////////////////////////////////////////////////////////////////////
+inline std::wstring u8to16(const std::string& u8) {
+    std::wstring result;
+    utf8::utf8to16(u8.begin(), u8.end(), std::back_inserter(result));
+    return result;
+}
+
+inline std::string u16to8(const std::wstring& u16) {
+    std::string result;
+    utf8::utf16to8(u16.begin(), u16.end(), std::back_inserter(result));
+    return result;
+}
+
+static inline size_t u8cols(const std::string& str) {
+    std::wstring wstr = u8to16(str);
+#ifdef WIN32
+    return (size_t)std::max(0, mk_wcswidth(wstr.c_str(), wstr.size()));
+#else
+    return (size_t) std::max(0, wcswidth(wstr.c_str(), wstr.size()));
+#endif
+}
+
+inline static size_t u8len(const std::string& str) {
+    try {
+        return utf8::distance(str.begin(), str.end());
+    }
+    catch (...) {
+        return str.length();
+    }
+}
+
+/* get the (raw) character index of the "nth" logical/display character */
+inline static size_t u8offset(const std::string& str, int n) {
+    if (str.size() == 0) {
+        return std::string::npos;
+    }
+
+    std::string::const_iterator it = str.begin();
+
+    int count = 0;
+    while (count < n && it != str.end()) {
+        utf8::unchecked::next(it);
+        ++count;
+    }
+
+    return (size_t) (it - str.begin());
+}
+
+inline static std::string u8substr(const std::string& in, int offset, int len) {
+    std::string::const_iterator begin = in.begin() + offset;
+    std::string::const_iterator it = begin;
+
+    int count = 0;
+    while (count < len && it != in.end()) {
+        utf8::unchecked::next(it);
+        ++count;
+    }
+
+    return std::string(begin, it);
+}

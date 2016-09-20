@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+    <Filter Include="plugin">
+      <UniqueIdentifier>{25ee4e18-20e5-4c49-a9e3-578acf41d396}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="Mpg123DecoderFactory.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="Mpg123Decoder.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="mpg123decoder_plugin.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="mpg123\src\config.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="Mpg123DecoderFactory.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="Mpg123Decoder.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mpg123.h" />
+    <ClInclude Include="include\out123.h" />
+    <ClInclude Include="include\fmt123.h" />
+  </ItemGroup>
+</Project>

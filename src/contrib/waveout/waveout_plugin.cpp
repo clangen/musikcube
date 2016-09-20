@@ -1,8 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// License Agreement:
-//
-// The following are Copyright � 2008, Bj�rn Olievier
+// Copyright (c) 2007-2016 musikcube team
 //
 // All rights reserved.
 //
@@ -36,35 +34,24 @@
 
 #include "pch.h"
 
-#include <core/IPlugin.h>
+#include <core/sdk/IPlugin.h>
 #include "WaveOut.h"
 
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
-{
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
     return true;
 }
 
-class WaveOutPlugin : public musik::core::IPlugin
-{
+class WaveOutPlugin : public musik::core::IPlugin {
     void Destroy() { delete this; };
-
-    const utfchar* Name()       { return UTF("WaveOut output plugin"); };
-    const utfchar* Version()    { return UTF("1"); };
-    const utfchar* Author()     { return UTF("Bj�rn Olievier"); };
+    const char* Name() { return "WaveOut IOutput"; };
+    const char* Version() { return "0.2"; };
+    const char* Author() { return "Björn Olievier, clangen"; };
 };
 
-extern "C" __declspec(dllexport) musik::core::IPlugin* GetPlugin()
-{
+extern "C" __declspec(dllexport) musik::core::IPlugin* GetPlugin() {
     return new WaveOutPlugin();
 }
 
-/*
-extern "C" __declspec(dllexport) musik::core::audio::IAudioOutputSupplier* CreateAudioOutputSupplier()
-{
-    return new WaveOutSupplier();
-}*/
-
-extern "C" __declspec(dllexport) musik::core::audio::IOutput* GetAudioOutput()
-{
+extern "C" __declspec(dllexport) musik::core::audio::IOutput* GetAudioOutput() {
     return new WaveOut();
 }

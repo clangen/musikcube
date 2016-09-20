@@ -1,0 +1,248 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>musikbox</ProjectName>
+    <ProjectGuid>{C7102EB1-7311-4B36-A7FF-89DD7F077FF9}</ProjectGuid>
+    <RootNamespace>musikbox</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <UseOfAtl>false</UseOfAtl>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)/bin/$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">./obj/$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)/bin/$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">./obj/$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>./;../;../3rdparty/include;../3rdparty/win32_include;../../../boost_1_60_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>../3rdparty/lib;../../../boost_1_60_0/lib32-msvc-14.0;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <ImportLibrary>../../bin/$(Configuration)/mC2.lib</ImportLibrary>
+      <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalDependencies>pdcursesd.lib;pdh.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+    </Link>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>./;../;../3rdparty/include;../3rdparty/win32_include;../../../boost_1_60_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>../3rdparty/lib;../../../boost_1_60_0/lib32-msvc-14.0;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>
+      </OptimizeReferences>
+      <EnableCOMDATFolding>
+      </EnableCOMDATFolding>
+      <ImportLibrary>
+      </ImportLibrary>
+      <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalDependencies>pdcurses.lib;pdh.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ImageHasSafeExceptionHandlers>true</ImageHasSafeExceptionHandlers>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="app\layout\BrowseLayout.cpp" />
+    <ClCompile Include="app\layout\LibraryLayout.cpp" />
+    <ClCompile Include="app\layout\ConsoleLayout.cpp" />
+    <ClCompile Include="app\layout\NowPlayingLayout.cpp" />
+    <ClCompile Include="app\layout\SearchLayout.cpp" />
+    <ClCompile Include="app\layout\MainLayout.cpp" />
+    <ClCompile Include="app\layout\SettingsLayout.cpp" />
+    <ClCompile Include="app\layout\TrackSearchLayout.cpp" />
+    <ClCompile Include="app\model\DirectoryAdapter.cpp" />
+    <ClCompile Include="app\model\TrackList.cpp" />
+    <ClCompile Include="app\query\CategoryListViewQuery.cpp" />
+    <ClCompile Include="app\query\NowPlayingTrackListQuery.cpp" />
+    <ClCompile Include="app\query\CategoryTrackListQuery.cpp" />
+    <ClCompile Include="app\query\SearchTrackListQuery.cpp" />
+    <ClCompile Include="app\service\PlaybackService.cpp" />
+    <ClCompile Include="app\util\Duration.cpp" />
+    <ClCompile Include="app\util\GlobalHotkeys.cpp" />
+    <ClCompile Include="app\util\Hotkeys.cpp" />
+    <ClCompile Include="app\util\Playback.cpp" />
+    <ClCompile Include="app\util\PreferenceKeys.cpp" />
+    <ClCompile Include="app\window\CategoryListView.cpp" />
+    <ClCompile Include="app\window\EntryWithHeader.cpp" />
+    <ClCompile Include="app\window\LogWindow.cpp" />
+    <ClCompile Include="app\window\OutputWindow.cpp" />
+    <ClCompile Include="app\window\TrackListView.cpp" />
+    <ClCompile Include="app\window\TransportWindow.cpp" />
+    <ClCompile Include="cursespp\App.cpp" />
+    <ClCompile Include="cursespp\Checkbox.cpp" />
+    <ClCompile Include="cursespp\Colors.cpp" />
+    <ClCompile Include="cursespp\DialogOverlay.cpp" />
+    <ClCompile Include="cursespp\LayoutBase.cpp" />
+    <ClCompile Include="cursespp\ListWindow.cpp" />
+    <ClCompile Include="cursespp\MultiLineEntry.cpp" />
+    <ClCompile Include="cursespp\OverlayStack.cpp" />
+    <ClCompile Include="cursespp\Screen.cpp" />
+    <ClCompile Include="cursespp\ScrollableWindow.cpp" />
+    <ClCompile Include="cursespp\ScrollAdapterBase.cpp" />
+    <ClCompile Include="cursespp\ShortcutsWindow.cpp" />
+    <ClCompile Include="cursespp\SimpleScrollAdapter.cpp" />
+    <ClCompile Include="cursespp\SingleLineEntry.cpp" />
+    <ClCompile Include="cursespp\Text.cpp" />
+    <ClCompile Include="cursespp\TextInput.cpp" />
+    <ClCompile Include="cursespp\TextLabel.cpp" />
+    <ClCompile Include="cursespp\Window.cpp" />
+    <ClCompile Include="cursespp\Message.cpp" />
+    <ClCompile Include="cursespp\MessageQueue.cpp" />
+    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="stdafx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="app\layout\BrowseLayout.h" />
+    <ClInclude Include="app\layout\ITopLevelLayout.h" />
+    <ClInclude Include="app\layout\LibraryLayout.h" />
+    <ClInclude Include="app\layout\ConsoleLayout.h" />
+    <ClInclude Include="app\layout\NowPlayingLayout.h" />
+    <ClInclude Include="app\layout\SearchLayout.h" />
+    <ClInclude Include="app\layout\MainLayout.h" />
+    <ClInclude Include="app\layout\SettingsLayout.h" />
+    <ClInclude Include="app\layout\TrackSearchLayout.h" />
+    <ClInclude Include="app\model\DirectoryAdapter.h" />
+    <ClInclude Include="app\model\TrackList.h" />
+    <ClInclude Include="app\query\CategoryListViewQuery.h" />
+    <ClInclude Include="app\query\NowPlayingTrackListQuery.h" />
+    <ClInclude Include="app\query\SearchTrackListQuery.h" />
+    <ClInclude Include="app\query\TrackListQueryBase.h" />
+    <ClInclude Include="app\query\CategoryTrackListQuery.h" />
+    <ClInclude Include="app\service\PlaybackService.h" />
+    <ClInclude Include="app\util\Duration.h" />
+    <ClInclude Include="app\util\GlobalHotkeys.h" />
+    <ClInclude Include="app\util\Hotkeys.h" />
+    <ClInclude Include="app\util\Playback.h" />
+    <ClInclude Include="app\util\PreferenceKeys.h" />
+    <ClInclude Include="app\window\CategoryListView.h" />
+    <ClInclude Include="app\window\EntryWithHeader.h" />
+    <ClInclude Include="app\window\LogWindow.h" />
+    <ClInclude Include="app\window\OutputWindow.h" />
+    <ClInclude Include="app\window\TrackListView.h" />
+    <ClInclude Include="app\window\TransportWindow.h" />
+    <ClInclude Include="cursespp\App.h" />
+    <ClInclude Include="cursespp\Checkbox.h" />
+    <ClInclude Include="cursespp\Colors.h" />
+    <ClInclude Include="cursespp\curses_config.h" />
+    <ClInclude Include="cursespp\DialogOverlay.h" />
+    <ClInclude Include="cursespp\IDisplayable.h" />
+    <ClInclude Include="cursespp\IInput.h" />
+    <ClInclude Include="cursespp\IKeyHandler.h" />
+    <ClInclude Include="cursespp\ILayout.h" />
+    <ClInclude Include="cursespp\IMessageTarget.h" />
+    <ClInclude Include="cursespp\IOrderable.h" />
+    <ClInclude Include="cursespp\IOverlay.h" />
+    <ClInclude Include="cursespp\IScrollable.h" />
+    <ClInclude Include="cursespp\IScrollAdapter.h" />
+    <ClInclude Include="cursespp\IWindow.h" />
+    <ClInclude Include="cursespp\IWindowGroup.h" />
+    <ClInclude Include="cursespp\IMessage.h" />
+    <ClInclude Include="cursespp\LayoutBase.h" />
+    <ClInclude Include="cursespp\ListWindow.h" />
+    <ClInclude Include="cursespp\MultiLineEntry.h" />
+    <ClInclude Include="cursespp\OverlayBase.h" />
+    <ClInclude Include="cursespp\OverlayStack.h" />
+    <ClInclude Include="cursespp\Screen.h" />
+    <ClInclude Include="cursespp\ScrollableWindow.h" />
+    <ClInclude Include="cursespp\ScrollAdapterBase.h" />
+    <ClInclude Include="cursespp\ShortcutsWindow.h" />
+    <ClInclude Include="cursespp\SimpleScrollAdapter.h" />
+    <ClInclude Include="cursespp\SingleLineEntry.h" />
+    <ClInclude Include="cursespp\Text.h" />
+    <ClInclude Include="cursespp\TextInput.h" />
+    <ClInclude Include="cursespp\TextLabel.h" />
+    <ClInclude Include="cursespp\Window.h" />
+    <ClInclude Include="cursespp\Message.h" />
+    <ClInclude Include="cursespp\MessageQueue.h" />
+    <ClInclude Include="stdafx.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\3rdparty\3rdparty.vcxproj">
+      <Project>{b2165720-b4b2-4f4b-8888-8c390c3cb4db}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\core\core.vcxproj">
+      <Project>{b2165720-b4b2-4f4b-9634-8c390c3cb4db}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

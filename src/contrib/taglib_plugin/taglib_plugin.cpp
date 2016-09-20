@@ -1,8 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// License Agreement:
-//
-// The following are Copyright � 2008, Daniel �nnerby
+// Copyright (c) 2007-2016 musikcube team
 //
 // All rights reserved.
 //
@@ -34,15 +32,9 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-
 #include "stdafx.h"
-#include "TagReaderTaglib.h"
-#include "core/IPlugin.h"
-#ifndef _HAVE_TAGLIB
-#include <id3v2framefactory.h>
-#else
-#include <taglib/mpeg/id3v2/id3v2framefactory.h>
-#endif
+#include "TaglibMetadataReader.h"
+#include "core/sdk/IPlugin.h"
 
 #ifdef WIN32
 #define DLLEXPORT __declspec(dllexport)
@@ -50,54 +42,24 @@
 #define DLLEXPORT
 #endif
 
-
-//////////////////////////////////////////
-///\brief
-///Class for fixing leaking TagLib::ID3v2::FrameFactory without changing TagLib code.
-//////////////////////////////////////////
-class TaglibBugFix : TagLib::ID3v2::FrameFactory{
-    public:
-        ~TaglibBugFix(){
-
-        };
-};
-
 #ifdef WIN32
-BOOL APIENTRY DllMain( HMODULE hModule,DWORD  ul_reason_for_call,LPVOID lpReserved){
-    if(ul_reason_for_call==DLL_PROCESS_DETACH){
-        TaglibBugFix *ff    = (TaglibBugFix*)TagLib::ID3v2::FrameFactory::instance();
-        delete ff;
-    }
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
     return TRUE;
 }
-#endif //WIN32
+#endif
 
-//TagReaderTaglib tagreader;
-
-class TaglibPlugin : public musik::core::IPlugin
-{
-    void Destroy() { delete this; };
-
-	const utfchar* Name(){
-		return UTF("Taglib 1.5 plugin");
-	};
-
-	const utfchar* Version(){
-		return UTF("0.1");
-	};
-
-	const utfchar* Author(){
-		return UTF("Daniel �nnerby");
-	};
-
+class TaglibPlugin : public musik::core::IPlugin {
+    public:
+        virtual void Destroy() { delete this; }
+        virtual const char* Name() { return "Taglib 1.11 IMetadataReader"; }
+        virtual const char* Version() { return "0.2"; }
+        virtual const char* Author() { return "Daniel Önnerby, clangen"; }
 };
 
-extern "C"{
-	DLLEXPORT musik::core::Plugin::IMetaDataReader* GetMetaDataReader(){
-		return new TagReaderTaglib();
-	}
+extern "C" DLLEXPORT musik::core::metadata::IMetadataReader* GetMetadataReader() {
+    return new TaglibMetadataReader();
+}
 
-	DLLEXPORT musik::core::IPlugin* GetPlugin(){
-		return new TaglibPlugin();
-	}
+extern "C" DLLEXPORT musik::core::IPlugin* GetPlugin() {
+    return new TaglibPlugin();
 }

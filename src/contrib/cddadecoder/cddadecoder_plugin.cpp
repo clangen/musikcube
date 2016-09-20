@@ -1,8 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// License Agreement:
-//
-// The following are Copyright © 2008, Björn Olievier
+// Copyright (c) 2007-2016 musikcube team
 //
 // All rights reserved.
 //
@@ -36,29 +34,29 @@
 
 #include "stdafx.h"
 
-#include "CDDASourceSupplier.h"
-#include <core/IPlugin.h>
+#include "CddaDecoderFactory.h"
+#include "CddaDataStreamFactory.h"
+#include <core/sdk/IPlugin.h>
 
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
-{
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
     return true;
 }
 
-class CDDADecoderPlugin : public musik::core::IPlugin
-{
+class CddaDecoderPlugin : public musik::core::IPlugin {
     void Destroy() { delete this; };
-
-	const utfchar* Name()       { return TEXT("CDDA decoder"); };
-	const utfchar* Version()    { return TEXT("1"); };
-	const utfchar* Author()     { return TEXT("Björn Olievier"); };
+    const char* Name() { return "CD Audio (CDDA) IDecoder"; };
+    const char* Version() { return "0.2"; };
+    const char* Author() { return "BjÃ¶rn Olievier, clangen"; };
 };
 
-extern "C" __declspec(dllexport) musik::core::IPlugin* GetPlugin()
-{
-    return new CDDADecoderPlugin();
+extern "C" __declspec(dllexport) musik::core::IPlugin* GetPlugin() {
+    return new CddaDecoderPlugin();
 }
 
-extern "C" __declspec(dllexport) IAudioSourceSupplier* CreateAudioSourceSupplier()
-{
-	return new CDDASourceSupplier();
+extern "C" __declspec(dllexport) IDecoderFactory* GetDecoderFactory() {
+    return new CddaDecoderFactory();
+}
+
+extern "C" __declspec(dllexport) IDataStreamFactory* GetDataStreamFactory() {
+    return new CddaDataStreamFactory();
 }

@@ -1,8 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// License Agreement:
-//
-// The following are Copyright � 2008, Daniel �nnerby
+// Copyright (c) 2007-2016 musikcube team
 //
 // All rights reserved.
 //
@@ -36,48 +34,32 @@
 
 #include "stdafx.h"
 
-#include <core/IPlugin.h>
-
-#include "FLACSourceSupplier.h"
+#include <core/sdk/IPlugin.h>
+#include "FlacDecoderFactory.h"
 
 #ifdef WIN32
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
-{
+#define DLLEXPORT __declspec(dllexport)
+#else
+#define DLLEXPORT
+#endif
+
+#ifdef WIN32
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
     return true;
 }
-#endif //WIN32
+#endif
 
-class FLACDecoderPlugin : public musik::core::IPlugin
-{
+class FlacPlugin : public musik::core::IPlugin {
     void Destroy() { delete this; };
-
-    const utfchar* Name()       { return UTF("FLAC decoder"); };
-    const utfchar* Version()    { return UTF("1"); };
-    const utfchar* Author()     { return UTF("Daniel �nnerby"); };
+    const char* Name() { return "FLAC IDecoder"; }
+    const char* Version() { return "0.2"; }
+    const char* Author() { return "Daniel Önnerby, clangen"; }
 };
 
-#ifdef WIN32
-extern "C" __declspec(dllexport)
-#else //WIN32
-extern "C"	{
-#endif //WIN32
-musik::core::IPlugin* GetPlugin()
-{
-    return new FLACDecoderPlugin();
+extern "C" DLLEXPORT musik::core::IPlugin* GetPlugin() {
+    return new FlacPlugin();
 }
-#ifndef WIN32
-}
-#endif
 
-#ifdef WIN32
-extern "C" __declspec(dllexport)
-#else //WIN32
-extern "C"	{
-#endif //WIN32
-IDecoderFactory* GetDecoderFactory()
-{
-    return new FLACSourceSupplier();
+extern "C" DLLEXPORT musik::core::audio::IDecoderFactory* GetDecoderFactory() {
+    return new FlacDecoderFactory();
 }
-#ifndef WIN32
-}
-#endif

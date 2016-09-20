@@ -1,8 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// License Agreement:
-//
-// The following are Copyright © 2008, Daniel Önnerby
+// Copyright (c) 2007-2016 musikcube team
 //
 // All rights reserved.
 //
@@ -45,62 +43,38 @@
 #include <boost/utility.hpp>
 #include <boost/thread/mutex.hpp>
 
-//////////////////////////////////////////
-// Forward declare
 struct sqlite3;
 struct sqlite3_stmt;
-//////////////////////////////////////////
 
+namespace musik { namespace core { namespace db {
 
-namespace musik{ namespace core{ namespace db{
-
-    //////////////////////////////////////////
-    ///\brief
-    ///Database Wrapper
-    ///
-    ///A Connection to the database
-    //////////////////////////////////////////
-    class Connection : boost::noncopyable{
+    class Connection : boost::noncopyable {
         public: 
             Connection();
             ~Connection();
-            int Open(const utfchar *database,unsigned int options=0,unsigned int cache=0);
-            int Open(const utfstring &database,unsigned int options=0,unsigned int cache=0);
+
+            int Open(const char *database, unsigned int options = 0, unsigned int cache = 0);
+            int Open(const std::string &database, unsigned int options = 0, unsigned int cache = 0);
             int Close();
             int Execute(const char* sql);
             int Execute(const wchar_t* sql);
             int LastInsertedId();
 
             void Interrupt();
-            void Analyze();
+            void Checkpoint();
 
         private:
-
             void Initialize(unsigned int cache);
-
-            typedef std::map<std::string,sqlite3_stmt*> StatementCache;
-            StatementCache cachedStatements;
-
-            friend class Statement;
-            friend class CachedStatement;
-            friend class ScopedTransaction;
-
-            sqlite3_stmt *GetCachedStatement(const char* sql);
-            void ReturnCachedStatement(const char* sql,sqlite3_stmt *stmt);
-
+            void UpdateReferenceCount(bool init);
             int StepStatement(sqlite3_stmt *stmt);
 
-            int transactionCounter;            
-
+            friend class Statement;
+            friend class ScopedTransaction;
+            
+            int transactionCounter;
             sqlite3 *connection;
-
             boost::mutex mutex;
-            static boost::mutex globalMutex;
-
-            void Maintenance(bool init);
-
     };
-
 
 } } }
 
