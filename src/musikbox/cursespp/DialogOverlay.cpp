@@ -149,7 +149,9 @@ void DialogOverlay::RecalculateSize() {
     this->width = std::max(0, Screen::GetWidth() - (HORIZONTAL_PADDING * 2));
 
     if (lastWidth != this->width) {
-        messageLines = text::BreakLines(this->message, this->width - 3);
+        /* 4 here: 2 for the frame padding (left/right), then two for the
+        inner content padding so things aren't bunched up (left/right) */
+        messageLines = text::BreakLines(this->message, this->width - 4);
     }
 
     this->height = 0; /* top padding */

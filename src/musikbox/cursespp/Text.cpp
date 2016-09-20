@@ -190,7 +190,7 @@ namespace cursespp {
 
                     /* we have enough space for this new word. accumulate it. */
 
-                    if (accumLength + extra + wordLength < width) {
+                    if (accumLength + extra + wordLength <= width) {
                         if (extra) {
                             accum += " ";
                         }
