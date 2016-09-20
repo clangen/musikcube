@@ -79,8 +79,8 @@ you may also change hotkeys by editing `~/.mC2/hotkeys.json` and restarting the 
 - `u` back 10 seconds
 - `o` forward 10 seconds
 - `r` repaint the screen
-- `,` toggle repeat mode (off/track/list)
-- `.` (un)shuffle play queue
+- `.` toggle repeat mode (off/track/list)
+- `,` (un)shuffle play queue
 - `CTRL+p` pause/resume (globally)
 - `CTRL+x` stop (unload streams, free resources)
 - `CTRL+d` quit 

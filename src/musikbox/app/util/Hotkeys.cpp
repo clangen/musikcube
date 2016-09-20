@@ -105,8 +105,8 @@ static std::unordered_map<Id, std::string, EnumHasher> ID_TO_DEFAULT = {
     { Id::VolumeDown, "k" },
     { Id::SeekForward, "o" },
     { Id::SeekBack, "u" },
-    { Id::ToggleRepeat, "," },
-    { Id::ToggleShuffle, "." },
+    { Id::ToggleRepeat, "." },
+    { Id::ToggleShuffle, "," },
     { Id::Stop, "^X" },
 
     { Id::ViewRefresh, "KEY_F(5)" },
