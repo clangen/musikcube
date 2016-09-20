@@ -87,19 +87,22 @@ ConsoleLayout::~ConsoleLayout() {
 }
 
 void ConsoleLayout::Layout() {
-    int cx = this->GetWidth();
-    int cy = this->GetHeight();
-    int x = this->GetX();
-    int y = this->GetY();
+    const int cx = this->GetWidth();
+    const int cy = this->GetHeight();
+    const int x = this->GetX();
+    const int y = this->GetY();
+
+    const int leftCx = cx / 2;
+    const int rightCx = cx - leftCx;
 
     /* top left */
-    this->output->MoveAndResize(x, y, cx / 2, cy - 3);
+    this->output->MoveAndResize(x, y, leftCx, cy - 3);
 
     /* bottom left */
-    this->commands->MoveAndResize(x, cy - 3, cx / 2, 3);
+    this->commands->MoveAndResize(x, cy - 3, leftCx, 3);
 
     /* right */
-    this->logs->MoveAndResize(cx / 2, 0, cx / 2, cy);
+    this->logs->MoveAndResize(cx / 2, 0, rightCx, cy);
 }
 
 void ConsoleLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
