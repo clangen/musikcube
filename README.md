@@ -4,7 +4,7 @@ a cross-platform audio engine and player written in C++.
 
 # musikbox
 
-an ncurses frontend to musikcube.
+an curses frontend to musikcube.
 
 musicbox compiles and runs easily on Windows, OSX and Linux.
 
