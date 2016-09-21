@@ -69,6 +69,12 @@ include_directories (
   "${musikbox_SOURCE_DIR}/src/contrib/taglib_plugin/taglib-1.11/stage/include"
 )
 
+# "/usr/local" doesn't seem to be included by default on macOS 10.12+
+if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
+link_directories ("/usr/local/lib")
+include_directories("/usr/local/include")
+endif (CMAKE_SYSTEM_NAME MATCHES "Darwin")
+
 add_subdirectory(src/core)
 add_subdirectory(src/musikbox)
 add_subdirectory(src/contrib/taglib_plugin)
