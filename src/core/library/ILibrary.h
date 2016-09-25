@@ -42,9 +42,6 @@
 
 namespace musik { namespace core {
 
-    class ILibrary;
-    typedef std::shared_ptr<ILibrary> LibraryPtr;
-
     class ILibrary {
         public:
             sigslot::signal1<IQueryPtr> QueryCompleted;
@@ -60,5 +57,7 @@ namespace musik { namespace core {
             virtual int Id() = 0;
             virtual const std::string& Name() = 0;
     };
+
+    typedef std::shared_ptr<ILibrary> LibraryPtr;
 
 } }

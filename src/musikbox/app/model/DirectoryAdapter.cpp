@@ -60,7 +60,10 @@ void buildDriveList(std::vector<std::string>& target) {
 }
 #endif
 
-void buildDirectoryList(const path& p, std::vector<std::string>& target, bool showDotfiles)
+void buildDirectoryList(
+    const path& p,
+    std::vector<std::string>& target,
+    bool showDotfiles)
 {
     target.clear();
 
@@ -115,6 +118,7 @@ void DirectoryAdapter::Select(size_t index) {
     }
 
 #endif
+
     buildDirectoryList(dir, subdirs, showDotfiles);
 }
 

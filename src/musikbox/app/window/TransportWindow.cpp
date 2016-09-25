@@ -414,7 +414,10 @@ void TransportWindow::Update(TimeMode timeMode) {
         volume += (i == thumbOffset) ? "■" : "─";
     }
 
-    volume += "  ";
+    volume += boost::str(boost::format(
+        " %d") % (int) std::round(this->transport.Volume() * 100));
+
+    volume += "%%  ";
 
     ON(c, volumeAttrs);
     wprintw(c, volume.c_str());
