@@ -310,7 +310,10 @@ void TransportWindow::ProcessMessage(IMessage &message) {
 
     if (type == REFRESH_TRANSPORT_READOUT) {
         this->Update((TimeMode) message.UserData1());
-        DEBOUNCE_REFRESH(TimeSmooth, REFRESH_INTERVAL_MS)
+
+        if (transport.GetPlaybackState() != ITransport::PlaybackStopped) {
+            DEBOUNCE_REFRESH(TimeSmooth, REFRESH_INTERVAL_MS)
+        }
     }
 }
 
@@ -401,8 +404,6 @@ void TransportWindow::Update(TimeMode timeMode) {
     wprintw(c, shuffleLabel.c_str());
     OFF(c, shuffleAttrs);
 
-    wmove(c, 1, 0); /* move cursor to the second line */
-
     /* volume slider */
 
     int volumePercent = (size_t) round(this->transport.Volume() * 100.0f) - 1;
@@ -418,10 +419,6 @@ void TransportWindow::Update(TimeMode timeMode) {
         " %d") % (int) std::round(this->transport.Volume() * 100));
 
     volume += "%%  ";
-
-    ON(c, volumeAttrs);
-    wprintw(c, volume.c_str());
-    OFF(c, volumeAttrs);
 
     /* repeat mode setup */
 
@@ -484,46 +481,52 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     int secondsTotal = boost::lexical_cast<int>(duration);
 
-    std::string currentTime = duration::Duration(std::min(secondsCurrent, secondsTotal));
-    std::string totalTime = duration::Duration(secondsTotal);
+    const std::string currentTime = duration::Duration(std::min(secondsCurrent, secondsTotal));
+    const std::string totalTime = duration::Duration(secondsTotal);
 
-    int timerWidth =
+    int bottomRowControlsWidth =
+        u8cols(volume) - 1 + /* -1 for escaped percent sign */
+        u8cols(currentTime) + 1 + /* +1 for space padding */
+        /* timer track with thumb */
+        1 + u8cols(totalTime) + /* +1 for space padding */
+        u8cols(repeatLabel) +
+        u8cols(repeatModeLabel);
+
+    int timerTrackWidth =
         this->GetContentWidth() -
-        u8cols(volume) -
-        (u8cols(repeatLabel) + u8cols(repeatModeLabel)) -
-        currentTime.size() -
-        totalTime.size() -
-        2; /* padding */
+        bottomRowControlsWidth;
 
     thumbOffset = 0;
 
     if (secondsTotal) {
         int progress = (secondsCurrent * 100) / secondsTotal;
-        thumbOffset = std::min(timerWidth - 1, (progress * timerWidth) / 100);
+        thumbOffset = std::min(timerTrackWidth - 1, (progress * timerTrackWidth) / 100);
     }
 
     std::string timerTrack = "";
-    for (int i = 0; i < timerWidth; i++) {
+    for (int i = 0; i < timerTrackWidth; i++) {
         timerTrack += (i == thumbOffset) ? "■" : "─";
     }
 
+    /* draw second row */
+
+    wmove(c, 1, 0); /* move cursor to the second line */
+
+    ON(c, volumeAttrs);
+    wprintw(c, volume.c_str());
+    OFF(c, volumeAttrs);
+
     ON(c, currentTimeAttrs); /* blink if paused */
-    wprintw(c, currentTime.c_str());
+    wprintw(c, "%s ", currentTime.c_str());
     OFF(c, currentTimeAttrs);
 
     ON(c, timerAttrs);
-
-    /* using wprintw() here on large displays (1440p+) will exceed the internal
-    buffer length of 512 characters, so use boost format. */
-    std::string fmt = boost::str(boost::format(
-        " %s %s") % timerTrack % totalTime);
-
-    waddstr(c, fmt.c_str());
-
+    waddstr(c, timerTrack.c_str()); /* may be a very long string */
+    wprintw(c, " %s", totalTime.c_str());
     OFF(c, timerAttrs);
 
-    /* repeat mode draw */
     wprintw(c, repeatLabel.c_str());
+
     ON(c, repeatAttrs);
     wprintw(c, repeatModeLabel.c_str());
     OFF(c, repeatAttrs);
