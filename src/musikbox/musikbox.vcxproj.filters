@@ -228,9 +228,6 @@
     <ClInclude Include="cursespp\IOrderable.h">
       <Filter>cursespp</Filter>
     </ClInclude>
-    <ClInclude Include="cursespp\ILayoutStack.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
     <ClInclude Include="app\service\PlaybackService.h">
       <Filter>app\service</Filter>
     </ClInclude>
@@ -332,6 +329,9 @@
     </ClInclude>
     <ClInclude Include="cursespp\DialogOverlay.h">
       <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="app\util\Version.h">
+      <Filter>app\util</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
