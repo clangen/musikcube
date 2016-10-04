@@ -127,12 +127,13 @@ void TrackListView::ScrollToPlaying() {
         DBID id = this->playing->Id();
         for (size_t i = 0; i < this->metadata->Count(); i++) {
             if (this->metadata->GetId(i) == id) {
+                this->SetSelectedIndex(i);
+
                 auto pos = this->GetScrollPosition();
                 size_t first = pos.firstVisibleEntryIndex;
                 size_t last = first + pos.visibleEntryCount;
                 if (i < first || i > last) {
                     /* only scroll if the playing track is not visible. */
-                    this->SetSelectedIndex(i);
                     this->ScrollTo(i);
                 }
                 break;

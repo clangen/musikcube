@@ -176,6 +176,12 @@ void ListWindow::SetSelectedIndex(size_t index) {
     if (this->selectedIndex != index) {
         size_t prev = this->selectedIndex;
         this->selectedIndex = index;
+
+        this->GetScrollAdapter().DrawPage(
+            this, index, &this->GetScrollPosition());
+
+        this->Repaint();
+
         this->OnSelectionChanged(index, prev); /* internal */
         this->SelectionChanged(this, index, prev); /* external */
     }
