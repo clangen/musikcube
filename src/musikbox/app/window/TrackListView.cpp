@@ -123,7 +123,7 @@ void TrackListView::Clear() {
 }
 
 void TrackListView::ScrollToPlaying() {
-    if (this->playing) {
+    if (this->playing && this->metadata) {
         DBID id = this->playing->Id();
         for (size_t i = 0; i < this->metadata->Count(); i++) {
             if (this->metadata->GetId(i) == id) {
