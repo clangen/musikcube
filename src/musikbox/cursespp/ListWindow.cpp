@@ -178,7 +178,9 @@ void ListWindow::SetSelectedIndex(size_t index) {
         this->selectedIndex = index;
 
         this->GetScrollAdapter().DrawPage(
-            this, index, &this->GetScrollPosition());
+            this,
+            this->scrollPosition.firstVisibleEntryIndex,
+            &this->GetScrollPosition());
 
         this->Repaint();
 

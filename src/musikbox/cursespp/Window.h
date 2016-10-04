@@ -103,8 +103,11 @@ namespace cursespp {
 
         protected:
             IWindow* GetParent() const;
+
             void PostMessage(int messageType, int64 user1 = 0, int64 user2 = 0, int64 delay = 0);
+            void DebounceMessage(int messageType, int64 user1 = 0, int64 user2 = 0, int64 delay = 0);
             void RemoveMessage(int messageType);
+
             void Create();
             void Destroy();
             void Recreate();

@@ -49,6 +49,7 @@
 #include <boost/format.hpp>
 
 #define WINDOW_MESSAGE_QUERY_COMPLETED 1002
+#define WINDOW_MESSAGE_SCROLL_TO_PLAYING 1003
 
 using namespace musik::core;
 using namespace musik::core::audio;
@@ -61,7 +62,7 @@ using namespace boost::chrono;
 /* if the user hasn't changed the selected index in 30 seconds
 we assume he's not paying attention, and will automatically scroll
 the view to the next track if it's invisible. */
-static const milliseconds AUTO_SCROLL_COOLDOWN = milliseconds(30000LL);
+static const milliseconds AUTO_SCROLL_COOLDOWN = milliseconds(60000LL);
 
 static inline milliseconds now() {
     return duration_cast<milliseconds>(system_clock::now().time_since_epoch());
@@ -106,11 +107,6 @@ void TrackListView::OnQueryCompleted(IQueryPtr query) {
     }
 }
 
-void TrackListView::OnSelectionChanged(size_t newIndex, size_t oldIndex) {
-    ListWindow::OnSelectionChanged(newIndex, oldIndex);
-    this->lastChanged = now();
-}
-
 std::shared_ptr<TrackList> TrackListView::GetTrackList() {
     return this->metadata;
 }
@@ -132,8 +128,7 @@ void TrackListView::ScrollToPlaying() {
                 auto pos = this->GetScrollPosition();
                 size_t first = pos.firstVisibleEntryIndex;
                 size_t last = first + pos.visibleEntryCount;
-                if (i < first || i > last) {
-                    /* only scroll if the playing track is not visible. */
+                if (i < first || i >= last) {
                     this->ScrollTo(i);
                 }
                 break;
@@ -162,22 +157,38 @@ void TrackListView::ProcessMessage(IMessage &message) {
             this->Requeried(); /* for external handlers */
         }
     }
+    else if (message.Type() == WINDOW_MESSAGE_SCROLL_TO_PLAYING) {
+        this->ScrollToPlaying();
+    }
 }
 
 bool TrackListView::KeyPress(const std::string& key) {
+    bool handled = false;
+
     if (Hotkeys::Is(Hotkeys::NavigateJumpToPlaying, key)) {
         this->ScrollToPlaying();
-        return true;
+        handled = true;
     }
 
-    return ListWindow::KeyPress(key);
+    handled = ListWindow::KeyPress(key);
+
+    if (handled) {
+        this->lastChanged = now();
+
+        this->DebounceMessage(
+            WINDOW_MESSAGE_SCROLL_TO_PLAYING,
+            0, 0, AUTO_SCROLL_COOLDOWN.count());
+    }
+
+    return handled;
 }
 
 void TrackListView::OnTrackChanged(size_t index, musik::core::TrackPtr track) {
     this->playing = track;
     this->OnAdapterChanged();
 
-    if (now() - lastChanged >= AUTO_SCROLL_COOLDOWN) {
+    if (now() - lastChanged >= AUTO_SCROLL_COOLDOWN)
+    {
         this->ScrollToPlaying();
     }
 }

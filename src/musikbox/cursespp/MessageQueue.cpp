@@ -138,6 +138,11 @@ void MessageQueue::Post(IMessagePtr message, int64 delayMs) {
     this->queue.insert(curr, m);
 }
 
+void MessageQueue::Debounce(IMessagePtr message, int delayMs) {
+    Remove(message->Target(), message->Type());
+    Post(message, delayMs);
+}
+
 void MessageQueue::Dispatch(IMessagePtr message) {
     message->Target()->ProcessMessage(*message);
 }

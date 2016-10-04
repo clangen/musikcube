@@ -160,6 +160,16 @@ void Window::PostMessage(int messageType, int64 user1, int64 user2, int64 delay)
         delay);
 }
 
+void Window::DebounceMessage(int messageType, int64 user1, int64 user2, int64 delay) {
+    MessageQueue::Instance().Debounce(
+        Message::Create(
+            this,
+            messageType,
+            user1,
+            user2),
+        delay);
+}
+
 void Window::RemoveMessage(int messageType) {
     MessageQueue::Instance().Remove(this, messageType);
 }

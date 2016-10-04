@@ -79,7 +79,6 @@ namespace musik {
             protected:
                 virtual cursespp::IScrollAdapter& GetScrollAdapter();
                 void OnQueryCompleted(musik::core::IQueryPtr query);
-                void OnSelectionChanged(size_t newIndex, size_t oldIndex);
 
                 class Adapter : public cursespp::ScrollAdapterBase {
                     public:
