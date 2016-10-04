@@ -56,6 +56,17 @@ using namespace musik::core::library;
 using namespace musik::box;
 using namespace cursespp;
 
+using namespace boost::chrono;
+
+/* if the user hasn't changed the selected index in 30 seconds
+we assume he's not paying attention, and will automatically scroll
+the view to the next track if it's invisible. */
+static const milliseconds AUTO_SCROLL_COOLDOWN = milliseconds(30000LL);
+
+static inline milliseconds now() {
+    return duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+}
+
 static IScrollAdapter::EntryPtr MISSING_ENTRY = IScrollAdapter::EntryPtr();
 
 TrackListView::TrackListView(
@@ -69,6 +80,7 @@ TrackListView::TrackListView(
     this->playback.TrackChanged.connect(this, &TrackListView::OnTrackChanged);
     this->adapter = new Adapter(*this);
     this->lastQueryHash = 0;
+    this->lastChanged = now();
     this->formatter = formatter;
 
     if (!MISSING_ENTRY) {
@@ -94,6 +106,11 @@ void TrackListView::OnQueryCompleted(IQueryPtr query) {
     }
 }
 
+void TrackListView::OnSelectionChanged(size_t newIndex, size_t oldIndex) {
+    ListWindow::OnSelectionChanged(newIndex, oldIndex);
+    this->lastChanged = now();
+}
+
 std::shared_ptr<TrackList> TrackListView::GetTrackList() {
     return this->metadata;
 }
@@ -110,8 +127,14 @@ void TrackListView::ScrollToPlaying() {
         DBID id = this->playing->Id();
         for (size_t i = 0; i < this->metadata->Count(); i++) {
             if (this->metadata->GetId(i) == id) {
-                this->SetSelectedIndex(i);
-                this->ScrollTo(i);
+                auto pos = this->GetScrollPosition();
+                size_t first = pos.firstVisibleEntryIndex;
+                size_t last = first + pos.visibleEntryCount;
+                if (i < first || i > last) {
+                    /* only scroll if the playing track is not visible. */
+                    this->SetSelectedIndex(i);
+                    this->ScrollTo(i);
+                }
                 break;
             }
         }
@@ -152,6 +175,10 @@ bool TrackListView::KeyPress(const std::string& key) {
 void TrackListView::OnTrackChanged(size_t index, musik::core::TrackPtr track) {
     this->playing = track;
     this->OnAdapterChanged();
+
+    if (now() - lastChanged >= AUTO_SCROLL_COOLDOWN) {
+        this->ScrollToPlaying();
+    }
 }
 
 IScrollAdapter& TrackListView::GetScrollAdapter() {
@@ -177,7 +204,7 @@ static std::string formatWithoutAlbum(TrackPtr track, size_t width) {
         TRACK_COL_WIDTH);
 
     std::string duration = text::Align(
-        duration::Duration(track->GetValue(constants::Track::DURATION)),
+        musik::box::duration::Duration(track->GetValue(constants::Track::DURATION)),
         text::AlignRight,
         DURATION_COL_WIDTH);
 

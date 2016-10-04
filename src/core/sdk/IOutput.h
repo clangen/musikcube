@@ -42,7 +42,7 @@
 namespace musik { namespace core { namespace audio {
 
     class IOutput {
-        public:    
+        public:
             virtual void Destroy() = 0;
             virtual void Pause() = 0;
             virtual void Resume() = 0;
