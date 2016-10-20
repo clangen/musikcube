@@ -34,7 +34,6 @@
 
 #pragma once
 
-#include <core/support/ThreadHelper.h>
 #include <core/db/Connection.h>
 #include <core/sdk/IMetadataReader.h>
 #include <core/sdk/IDecoderFactory.h>
@@ -44,6 +43,7 @@
 #include <sigslot/sigslot.h>
 
 #include <boost/thread/thread.hpp>
+#include <boost/thread/condition.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/asio/io_service.hpp>
 #include <boost/interprocess/sync/interprocess_semaphore.hpp>
@@ -54,7 +54,7 @@
 
 namespace musik { namespace core {
 
-    class Indexer : public IIndexer, public ThreadHelper, private boost::noncopyable {
+    class Indexer : public IIndexer, private boost::noncopyable {
         public:
             Indexer(
                 const std::string& libraryPath,
@@ -70,6 +70,11 @@ namespace musik { namespace core {
         private:
             void ThreadLoop();
 
+            bool Exited();
+            void NotificationWait();
+            void NotificationTimedWait(const boost::xtime &oTime);
+            void Notify();
+
             bool Restarted();
 
             void SyncDelete();
@@ -77,7 +82,6 @@ namespace musik { namespace core {
             void ProcessAddRemoveQueue();
             void SyncOptimize();
             void RunAnalyzers();
-
             void SynchronizeInternal(boost::asio::io_service* io);
 
             void SyncDirectory(
@@ -95,13 +99,13 @@ namespace musik { namespace core {
             std::string libraryPath;
             std::string dbFilename;
 
-            int status;
             bool restart;
+            bool exit;
+
+            boost::mutex stateMutex;
+            boost::condition waitCondition;
 
             boost::thread *thread;
-            boost::mutex progressMutex;
-
-            size_t filesIndexed;
             std::atomic<size_t> filesSaved;
 
             struct AddRemoveContext {

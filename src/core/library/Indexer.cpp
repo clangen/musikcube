@@ -57,7 +57,7 @@
 
 static const std::string TAG = "Indexer";
 static const int MAX_THREADS = 10;
-static const int NOTIFY_INTERVAL = 300;
+static const size_t NOTIFY_INTERVAL = 300;
 
 using namespace musik::core;
 using namespace musik::core::metadata;
@@ -82,9 +82,7 @@ static std::string normalizePath(const std::string& path) {
 
 Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
 : thread(nullptr)
-, status(0)
 , restart(false)
-, filesIndexed(0)
 , filesSaved(0)
 , prefs(Preferences::ForComponent(prefs::components::Settings))
 , readSemaphore(prefs->GetInt(prefs::keys::MaxTagReadThreads, MAX_THREADS)) {
@@ -95,7 +93,11 @@ Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
 
 Indexer::~Indexer() {
     if (this->thread) {
-        this->Exit();
+        {
+            boost::mutex::scoped_lock lock(this->stateMutex);
+            this->exit = true;
+        }
+
         this->thread->join();
         delete this->thread;
         this->thread = nullptr;
@@ -103,14 +105,9 @@ Indexer::~Indexer() {
 }
 
 void Indexer::Synchronize(bool restart) {
-    boost::mutex::scoped_lock lock(this->exitMutex);
+    boost::mutex::scoped_lock lock(this->stateMutex);
     this->restart = restart;
     this->Notify();
-}
-
-bool Indexer::Restarted() {
-    boost::mutex::scoped_lock lock(this->exitMutex);
-    return this->restart;
 }
 
 void Indexer::AddPath(const std::string& path) {
@@ -119,7 +116,7 @@ void Indexer::AddPath(const std::string& path) {
     context.path = normalizeDir(path);
 
     {
-        boost::mutex::scoped_lock lock(this->exitMutex);
+        boost::mutex::scoped_lock lock(this->stateMutex);
         this->addRemoveQueue.push_back(context);
     }
 
@@ -132,7 +129,7 @@ void Indexer::RemovePath(const std::string& path) {
     context.path = normalizeDir(path);
 
     {
-        boost::mutex::scoped_lock lock(this->exitMutex);
+        boost::mutex::scoped_lock lock(this->stateMutex);
         this->addRemoveQueue.push_back(context);
     }
 
@@ -149,11 +146,6 @@ void Indexer::SynchronizeInternal(boost::asio::io_service* io) {
 
     this->audioDecoders = PluginFactory::Instance()
         .QueryInterface<IDecoderFactory, DecoderDeleter>("GetDecoderFactory");
-
-    {
-        boost::mutex::scoped_lock lock(this->progressMutex);
-        this->filesIndexed = 0;
-    }
 
     this->ProcessAddRemoveQueue();
 
@@ -182,12 +174,7 @@ void Indexer::SynchronizeInternal(boost::asio::io_service* io) {
     }
 
     /* add new files  */
-
-    {
-        boost::mutex::scoped_lock lock(this->progressMutex);
-        this->status = 2;
-        this->filesSaved = 0;
-    }
+    this->filesSaved = 0;
 
     for(std::size_t i = 0; i < paths.size(); ++i) {
         this->trackTransaction.reset(new db::ScopedTransaction(this->dbConnection));
@@ -204,11 +191,6 @@ void Indexer::SynchronizeInternal(boost::asio::io_service* io) {
 
     musik::debug::info(TAG, "cleanup 1/2");
 
-    {
-        boost::mutex::scoped_lock lock(this->progressMutex);
-        this->status = 3;
-    }
-
     if (!this->Restarted() && !this->Exited()) {
         this->SyncDelete();
     }
@@ -216,12 +198,6 @@ void Indexer::SynchronizeInternal(boost::asio::io_service* io) {
     /* cleanup -- remove stale artists, albums, genres, etc */
 
     musik::debug::info(TAG, "cleanup 2/2");
-
-    {
-        boost::mutex::scoped_lock lock(this->progressMutex);
-        this->status = 4;
-    }
-
 
     if (!this->Restarted() && !this->Exited()){
         this->SyncCleanup();
@@ -231,11 +207,6 @@ void Indexer::SynchronizeInternal(boost::asio::io_service* io) {
 
     musik::debug::info(TAG, "optimizing");
 
-    {
-       boost::mutex::scoped_lock lock(this->progressMutex);
-       this->status = 5;
-    }
-
     if (!this->Restarted() && !this->Exited()){
         this->SyncOptimize();
     }
@@ -243,11 +214,6 @@ void Indexer::SynchronizeInternal(boost::asio::io_service* io) {
     /* unload reader DLLs*/
 
     this->metadataReaders.clear();
-
-    {
-        boost::mutex::scoped_lock lock(this->progressMutex);
-        this->status = 0;
-    }
 
     musik::debug::info(TAG, "done!");
 }
@@ -351,13 +317,13 @@ void Indexer::SyncDirectory(
         std::vector<Thread> threads;
 
         for( ; file != end && !this->Exited() && !this->Restarted(); file++) {
-            if (this->filesSaved.load() > NOTIFY_INTERVAL) {
+            if (this->filesSaved > NOTIFY_INTERVAL) {
                 if (this->trackTransaction) {
                     this->trackTransaction->CommitAndRestart();
                 }
 
                 this->TrackRefreshed();
-                this->filesSaved.store(0);
+                this->filesSaved = 0;
             }
             if (is_directory(file->status())) {
                 /* recursion here */
@@ -365,8 +331,6 @@ void Indexer::SyncDirectory(
                 this->SyncDirectory(io, syncRoot, file->path().string(), pathId);
             }
             else {
-                ++this->filesIndexed;
-
                 if (io) {
                     this->readSemaphore.wait();
 
@@ -400,7 +364,7 @@ void Indexer::ThreadLoop() {
     while (!this->Exited()) {
         this->restart = false;
 
-        if(!firstTime || (firstTime && prefs->GetBool(prefs::keys::SyncOnStartup, true))) { /* first time through the loop skips this */
+        if(!firstTime || (firstTime && prefs->GetBool(prefs::keys::SyncOnStartup, false))) { /* first time through the loop skips this */
             this->SynchronizeStart();
 
             this->dbConnection.Open(this->dbFilename.c_str(), 0); /* ensure the db is open */
@@ -427,12 +391,6 @@ void Indexer::ThreadLoop() {
 #endif
 
             this->RunAnalyzers();
-
-            {
-                boost::mutex::scoped_lock lock(this->progressMutex);
-                this->status = 0;
-            }
-
             this->dbConnection.Close(); /* TODO: raii */
 
             this->SynchronizeEnd();
@@ -573,10 +531,6 @@ static int optimize(
     return count;
 }
 
-//////////////////////////////////////////
-///\brief
-///Optimizes and fixing sorting and indexes
-//////////////////////////////////////////
 void Indexer::SyncOptimize() {
     DBID count = 0, id = 0;
 
@@ -602,7 +556,7 @@ void Indexer::SyncOptimize() {
 }
 
 void Indexer::ProcessAddRemoveQueue() {
-    boost::mutex::scoped_lock lock(this->exitMutex);
+    boost::mutex::scoped_lock lock(this->stateMutex);
 
     while (!this->addRemoveQueue.empty()) {
         AddRemoveContext context = this->addRemoveQueue.front();
@@ -642,13 +596,6 @@ void Indexer::RunAnalyzers() {
 
     if (analyzers.empty()) {
         return;
-    }
-
-    /* initialize status */
-
-    {
-        boost::mutex::scoped_lock lock(this->progressMutex);
-        this->status = 6;
     }
 
     /* for each track... */
@@ -729,4 +676,33 @@ void Indexer::RunAnalyzers() {
 
         getNextTrack.BindInt(0, trackId);
     }
+}
+
+
+bool Indexer::Restarted() {
+    boost::mutex::scoped_lock lock(this->stateMutex);
+    return this->restart;
+}
+
+bool Indexer::Exited() {
+    boost::mutex::scoped_lock lock(this->stateMutex);
+    return this->exit;
+}
+
+void Indexer::NotificationWait() {
+    boost::mutex::scoped_lock lock(this->stateMutex);
+    if (!this->exit) {
+        this->waitCondition.wait(lock);
+    }
+}
+
+void Indexer::NotificationTimedWait(const boost::xtime &time) {
+    boost::mutex::scoped_lock lock(this->stateMutex);
+    if (!this->exit) {
+        this->waitCondition.timed_wait(lock, time);
+    }
+}
+
+void Indexer::Notify() {
+    this->waitCondition.notify_all();
 }

@@ -70,9 +70,6 @@
     <ClCompile Include="support\Preferences.cpp">
       <Filter>src\support</Filter>
     </ClCompile>
-    <ClCompile Include="support\ThreadHelper.cpp">
-      <Filter>src\support</Filter>
-    </ClCompile>
     <ClCompile Include="support\Common.cpp">
       <Filter>src\support</Filter>
     </ClCompile>
@@ -181,9 +178,6 @@
       <Filter>src\support</Filter>
     </ClInclude>
     <ClInclude Include="support\Preferences.h">
-      <Filter>src\support</Filter>
-    </ClInclude>
-    <ClInclude Include="support\ThreadHelper.h">
       <Filter>src\support</Filter>
     </ClInclude>
     <ClInclude Include="library\Indexer.h">
