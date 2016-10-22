@@ -98,6 +98,7 @@ Indexer::~Indexer() {
             this->exit = true;
         }
 
+        this->waitCondition.notify_all();
         this->thread->join();
         delete this->thread;
         this->thread = nullptr;
@@ -107,7 +108,7 @@ Indexer::~Indexer() {
 void Indexer::Synchronize(bool restart) {
     boost::mutex::scoped_lock lock(this->stateMutex);
     this->restart = restart;
-    this->Notify();
+    this->waitCondition.notify_all();
 }
 
 void Indexer::AddPath(const std::string& path) {
@@ -407,12 +408,12 @@ void Indexer::ThreadLoop() {
             waitTimeout.sec += waitTime;
 
             if (!this->Restarted()) {
-                this->NotificationTimedWait(waitTimeout);
+                this->Wait(waitTimeout);
             }
         }
         else {
             if (!this->Restarted()) {
-                this->NotificationWait(); /* zzz */
+                this->Wait(); /* zzz */
             }
         }
     }
@@ -689,20 +690,16 @@ bool Indexer::Exited() {
     return this->exit;
 }
 
-void Indexer::NotificationWait() {
+void Indexer::Wait() {
     boost::mutex::scoped_lock lock(this->stateMutex);
     if (!this->exit) {
         this->waitCondition.wait(lock);
     }
 }
 
-void Indexer::NotificationTimedWait(const boost::xtime &time) {
+void Indexer::Wait(const boost::xtime &time) {
     boost::mutex::scoped_lock lock(this->stateMutex);
     if (!this->exit) {
         this->waitCondition.timed_wait(lock, time);
     }
-}
-
-void Indexer::Notify() {
-    this->waitCondition.notify_all();
 }

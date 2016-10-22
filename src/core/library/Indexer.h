@@ -71,9 +71,8 @@ namespace musik { namespace core {
             void ThreadLoop();
 
             bool Exited();
-            void NotificationWait();
-            void NotificationTimedWait(const boost::xtime &oTime);
-            void Notify();
+            void Wait();
+            void Wait(const boost::xtime &oTime);
 
             bool Restarted();
 
