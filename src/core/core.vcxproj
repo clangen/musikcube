@@ -85,6 +85,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="audio\GaplessTransport.cpp" />
+    <ClCompile Include="audio\Visualizer.cpp" />
     <ClCompile Include="debug.cpp" />
     <ClCompile Include="io\DataStreamFactory.cpp" />
     <ClCompile Include="io\LocalFileStream.cpp" />
@@ -116,6 +117,7 @@
   <ItemGroup>
     <ClInclude Include="audio\GaplessTransport.h" />
     <ClInclude Include="audio\ITransport.h" />
+    <ClInclude Include="audio\Visualizer.h" />
     <ClInclude Include="debug.h" />
     <ClInclude Include="io\DataStreamFactory.h" />
     <ClInclude Include="io\LocalFileStream.h" />
@@ -145,6 +147,7 @@
     <ClInclude Include="sdk\IMetadataReader.h" />
     <ClInclude Include="sdk\IOutput.h" />
     <ClInclude Include="sdk\IBufferProvider.h" />
+    <ClInclude Include="sdk\IPcmVisualizer.h" />
     <ClInclude Include="sdk\IPlugin.h" />
     <ClInclude Include="sdk\IMetadataWriter.h" />
     <ClInclude Include="db\Connection.h" />
@@ -154,6 +157,7 @@
     <ClInclude Include="audio\Buffer.h" />
     <ClInclude Include="audio\Player.h" />
     <ClInclude Include="audio\Stream.h" />
+    <ClInclude Include="sdk\ISpectrumVisualizer.h" />
     <ClInclude Include="support\Common.h" />
     <ClInclude Include="support\NonLibraryTrackHelper.h" />
     <ClInclude Include="support\PreferenceKeys.h" />

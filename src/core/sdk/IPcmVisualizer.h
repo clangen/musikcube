@@ -34,14 +34,15 @@
 
 #pragma once
 
-#include <core/sdk/IDecoderFactory.h>
+#include "IBuffer.h"
 
-class M4aDecoderFactory : public musik::core::audio::IDecoderFactory {
-    public:
-        M4aDecoderFactory();
-        virtual ~M4aDecoderFactory();
+namespace musik { namespace core { namespace audio {
 
-        musik::core::audio::IDecoder* CreateDecoder();
-        void Destroy();
-        bool CanHandle(const char* source) const;
-};
+    class IPcmVisualizer {
+        public:
+            virtual void Destroy() = 0;
+            virtual void Write(musik::core::audio::IBuffer *target) = 0;
+    };
+
+} } }
+

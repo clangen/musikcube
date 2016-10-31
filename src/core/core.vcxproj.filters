@@ -112,6 +112,9 @@
     <ClCompile Include="support\PreferenceKeys.cpp">
       <Filter>src\support</Filter>
     </ClCompile>
+    <ClCompile Include="audio\Visualizer.cpp">
+      <Filter>src\audio</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -248,6 +251,15 @@
     </ClInclude>
     <ClInclude Include="support\PreferenceKeys.h">
       <Filter>src\support</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IPcmVisualizer.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\ISpectrumVisualizer.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="audio\Visualizer.h">
+      <Filter>src\audio</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

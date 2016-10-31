@@ -36,6 +36,7 @@
 
 #include <core/debug.h>
 #include <core/audio/Player.h>
+#include <core/audio/Visualizer.h>
 #include <core/plugin/PluginFactory.h>
 #include <algorithm>
 
@@ -47,7 +48,6 @@ using std::min;
 using std::max;
 
 static std::string TAG = "Player";
-static float fft[FFT_N];
 
 PlayerPtr Player::Create(const std::string &url, OutputPtr output) {
     return PlayerPtr(new Player(url, output));
@@ -77,6 +77,8 @@ Player::Player(const std::string &url, OutputPtr output)
 , setPosition(-1) {
     musik::debug::info(TAG, "new instance created");
 
+    this->spectrum = new float[FFT_N];
+
     /* we allow callers to specify an output device; but if they don't,
     we will create and manage our own. */
     if (!this->output) {
@@ -96,6 +98,9 @@ Player::~Player() {
     }
 
     this->thread->join();
+
+    delete[] this->spectrum;
+    this->spectrum = nullptr;
 }
 
 void Player::Play() {
@@ -306,7 +311,13 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
     bool started = false;
     bool found = false;
 
-    buffer->Fft(fft, FFT_N);
+    if (vis::SpectrumVisualizer()) {
+        buffer->Fft(this->spectrum, FFT_N);
+        vis::SpectrumVisualizer()->Write(this->spectrum, FFT_N);
+    }
+    else if (vis::PcmVisualizer()) {
+        vis::PcmVisualizer()->Write(buffer);
+    }
 
     {
         boost::mutex::scoped_lock lock(this->queueMutex);

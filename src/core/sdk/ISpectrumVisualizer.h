@@ -34,14 +34,17 @@
 
 #pragma once
 
-#include <core/sdk/IDecoderFactory.h>
+#include "config.h"
+#include "IMetadataWriter.h"
+#include "IBuffer.h"
 
-class M4aDecoderFactory : public musik::core::audio::IDecoderFactory {
+namespace musik { namespace core { namespace audio {
+
+    class ISpectrumVisualizer {
     public:
-        M4aDecoderFactory();
-        virtual ~M4aDecoderFactory();
+        virtual void Destroy() = 0;
+        virtual bool Write(float *spectrum, int size) = 0;
+    };
 
-        musik::core::audio::IDecoder* CreateDecoder();
-        void Destroy();
-        bool CanHandle(const char* source) const;
-};
+} } }
+

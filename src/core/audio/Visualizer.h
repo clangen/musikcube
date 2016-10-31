@@ -34,14 +34,13 @@
 
 #pragma once
 
-#include <core/sdk/IDecoderFactory.h>
+#include <core/config.h>
+#include <sdk/ISpectrumVisualizer.h>
+#include <sdk/IPcmVisualizer.h>
 
-class M4aDecoderFactory : public musik::core::audio::IDecoderFactory {
-    public:
-        M4aDecoderFactory();
-        virtual ~M4aDecoderFactory();
+namespace musik { namespace core { namespace audio { namespace vis {
 
-        musik::core::audio::IDecoder* CreateDecoder();
-        void Destroy();
-        bool CanHandle(const char* source) const;
-};
+    ISpectrumVisualizer* SpectrumVisualizer();
+    IPcmVisualizer* PcmVisualizer();
+
+} } } }
