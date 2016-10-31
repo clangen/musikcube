@@ -40,12 +40,14 @@
 #include <algorithm>
 
 #define MAX_PREBUFFER_QUEUE_COUNT 8
+#define FFT_N 512
 
 using namespace musik::core::audio;
 using std::min;
 using std::max;
 
 static std::string TAG = "Player";
+static float fft[FFT_N];
 
 PlayerPtr Player::Create(const std::string &url, OutputPtr output) {
     return PlayerPtr(new Player(url, output));
@@ -303,7 +305,9 @@ bool Player::Exited() {
 void Player::OnBufferProcessed(IBuffer *buffer) {
     bool started = false;
     bool found = false;
-   
+
+    buffer->Fft(fft, FFT_N);
+
     {
         boost::mutex::scoped_lock lock(this->queueMutex);
 

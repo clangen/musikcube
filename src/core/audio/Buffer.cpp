@@ -35,6 +35,7 @@
 #include "pch.hpp"
 
 #include <core/audio/Buffer.h>
+#include <fftw3.h>
 
 #define DEBUG 0
 
@@ -45,11 +46,13 @@
 using namespace musik::core::audio;
 
 Buffer::Buffer(void)
- :buffer(NULL)
- ,sampleSize(0)
- ,internalBufferSize(0)
- ,sampleRate(44100)
- ,channels(2) {
+: buffer(nullptr)
+, sampleSize(0)
+, internalBufferSize(0)
+, sampleRate(44100)
+, channels(2)
+, fft(nullptr) {
+
 }
 
 Buffer::~Buffer() {
@@ -161,6 +164,46 @@ bool Buffer::Append(BufferPtr appendBuffer) {
         }
 
         this->sampleSize = newBufferSize;
+        return true;
+    }
+
+    return false;
+}
+
+static inline int closestPowerOfTwo(int x) {
+    /* http://stackoverflow.com/a/2681094 */
+    x = x | (x >> 1);
+    x = x | (x >> 2);
+    x = x | (x >> 4);
+    x = x | (x >> 8);
+    x = x | (x >> 16);
+    return x - (x >> 1);
+}
+
+static inline bool isPowerOfTwo(unsigned int x) {
+    return ((x != 0) && ((x & (~x + 1)) == x));
+}
+
+bool Buffer::Fft(float* buffer, int size) {
+    if (buffer && size > 0 && this->sampleSize > size && isPowerOfTwo(size)) {
+        int n = closestPowerOfTwo(this->sampleSize);
+
+        fftwf_complex *out = (fftwf_complex*) fftw_malloc(sizeof(fftwf_complex) * n);
+        fftwf_plan plan = fftwf_plan_dft_r2c_1d(n, this->buffer, out, FFTW_MEASURE);
+        fftwf_execute(plan);
+        fftwf_destroy_plan(plan);
+
+        int w = 0; /* write offset */
+        int c = n / size; /* bins to average */
+        for (int i = 0; i < n; i+=c) {
+            float sum = 0.0f;
+            for (int j = 0; j < c; j++) {
+                sum += out[1][i + j];
+            }
+            buffer[w++] = sum / c;
+        }
+
+        fftwf_free(out);
         return true;
     }
 

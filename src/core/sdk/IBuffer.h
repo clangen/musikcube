@@ -40,14 +40,15 @@ namespace musik { namespace core { namespace audio {
 
     class IBuffer {
         public:
-            virtual long SampleRate() const = 0; 
-            virtual void SetSampleRate(long sampleRate) = 0; 
-            virtual int Channels() const = 0; 
-            virtual void SetChannels(int channels) = 0; 
-            virtual float* BufferPointer() const = 0; 
+            virtual long SampleRate() const = 0;
+            virtual void SetSampleRate(long sampleRate) = 0;
+            virtual int Channels() const = 0;
+            virtual void SetChannels(int channels) = 0;
+            virtual float* BufferPointer() const = 0;
             virtual long Samples() const = 0;
-            virtual void SetSamples(long samples) = 0; 
+            virtual void SetSamples(long samples) = 0;
             virtual long Bytes() const = 0;
+            virtual bool Fft(float* buffer, int size) = 0;
     };
 
 } } }

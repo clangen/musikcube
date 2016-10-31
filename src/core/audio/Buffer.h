@@ -62,6 +62,7 @@ namespace musik { namespace core { namespace audio {
             virtual long Bytes() const;
             virtual double Position() const;
             void SetPosition(double position);
+            virtual bool Fft(float* buffer, int size);
 
             bool Append(BufferPtr appendBuffer);
             void CopyFormat(BufferPtr fromBuffer);
@@ -75,6 +76,7 @@ namespace musik { namespace core { namespace audio {
             long sampleRate;
             int channels;
             double position;
+            float* fft;
     };
 
 } } }
