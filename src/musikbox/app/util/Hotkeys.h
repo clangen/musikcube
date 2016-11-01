@@ -58,8 +58,9 @@ namespace musik {
                     NavigateConsole,
                     NavigateJumpToPlaying,
 
-                    /* views, generic */
+                    /* views */
                     ViewRefresh,
+                    ToggleVisualizer,
 
                     /* playback */
                     TogglePause,

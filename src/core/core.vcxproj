@@ -158,6 +158,7 @@
     <ClInclude Include="audio\Player.h" />
     <ClInclude Include="audio\Stream.h" />
     <ClInclude Include="sdk\ISpectrumVisualizer.h" />
+    <ClInclude Include="sdk\IVisualizer.h" />
     <ClInclude Include="support\Common.h" />
     <ClInclude Include="support\NonLibraryTrackHelper.h" />
     <ClInclude Include="support\PreferenceKeys.h" />

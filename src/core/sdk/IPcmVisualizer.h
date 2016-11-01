@@ -35,10 +35,11 @@
 #pragma once
 
 #include "IBuffer.h"
+#include "IVisualizer.h"
 
 namespace musik { namespace core { namespace audio {
 
-    class IPcmVisualizer {
+    class IPcmVisualizer : public IVisualizer {
         public:
             virtual void Destroy() = 0;
             virtual void Write(musik::core::audio::IBuffer *target) = 0;

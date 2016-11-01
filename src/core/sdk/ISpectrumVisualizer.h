@@ -34,13 +34,12 @@
 
 #pragma once
 
-#include "config.h"
-#include "IMetadataWriter.h"
 #include "IBuffer.h"
+#include "IVisualizer.h"
 
 namespace musik { namespace core { namespace audio {
 
-    class ISpectrumVisualizer {
+    class ISpectrumVisualizer : public IVisualizer {
     public:
         virtual void Destroy() = 0;
         virtual bool Write(float *spectrum, int size) = 0;

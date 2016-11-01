@@ -36,9 +36,11 @@
 #include "GlobalHotkeys.h"
 #include "Hotkeys.h"
 #include <app/util/Playback.h>
+#include <core/audio/Visualizer.h>
 
 using musik::core::LibraryPtr;
 using musik::core::audio::ITransport;
+using namespace musik::core::audio;
 using namespace musik::box;
 
 GlobalHotkeys::GlobalHotkeys(PlaybackService& playback, LibraryPtr library)
@@ -94,6 +96,10 @@ bool GlobalHotkeys::Handle(const std::string& kn) {
     }
     else if (Hotkeys::Is(Hotkeys::RescanMetadata, kn)) {
         library->Indexer()->Synchronize(true);
+        return true;
+    }
+    else if (Hotkeys::Is(Hotkeys::ToggleVisualizer, kn)) {
+        vis::ToggleSelectedVisualizer();
         return true;
     }
 

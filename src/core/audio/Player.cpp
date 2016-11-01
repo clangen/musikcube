@@ -307,17 +307,24 @@ bool Player::Exited() {
     return (this->state == Player::Quit);
 }
 
+static inline void writeToVisualizer(IBuffer *buffer, float *spectrum) {
+    ISpectrumVisualizer* specVis = vis::SpectrumVisualizer();
+    IPcmVisualizer* pcmVis = vis::PcmVisualizer();
+
+    if (specVis && specVis->Visible()) {
+        buffer->Fft(spectrum, FFT_N);
+        vis::SpectrumVisualizer()->Write(spectrum, FFT_N);
+    }
+    else if (pcmVis && pcmVis->Visible()) {
+        vis::PcmVisualizer()->Write(buffer);
+    }
+}
+
 void Player::OnBufferProcessed(IBuffer *buffer) {
     bool started = false;
     bool found = false;
 
-    if (vis::SpectrumVisualizer()) {
-        buffer->Fft(this->spectrum, FFT_N);
-        vis::SpectrumVisualizer()->Write(this->spectrum, FFT_N);
-    }
-    else if (vis::PcmVisualizer()) {
-        vis::PcmVisualizer()->Write(buffer);
-    }
+    writeToVisualizer(buffer, this->spectrum);
 
     {
         boost::mutex::scoped_lock lock(this->queueMutex);

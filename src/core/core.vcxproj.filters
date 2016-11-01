@@ -261,5 +261,8 @@
     <ClInclude Include="audio\Visualizer.h">
       <Filter>src\audio</Filter>
     </ClInclude>
+    <ClInclude Include="sdk\IVisualizer.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -34,15 +34,14 @@
 
 #pragma once
 
-#include <core/config.h>
-#include <core/sdk/ISpectrumVisualizer.h>
-#include <core/sdk/IPcmVisualizer.h>
+namespace musik { namespace core { namespace audio {
 
-namespace musik { namespace core { namespace audio { namespace vis {
+    class IVisualizer {
+        public:
+            virtual void Show() = 0;
+            virtual void Hide() = 0;
+            virtual bool Visible() = 0;
+    };
 
-    ISpectrumVisualizer* SpectrumVisualizer();
-    IPcmVisualizer* PcmVisualizer();
-    IVisualizer* SelectedVisualizer();
-    void ToggleSelectedVisualizer();
+} } }
 
-} } } }

@@ -91,6 +91,24 @@ namespace musik {
 
                     return nullptr;
                 }
+
+                IVisualizer* SelectedVisualizer() {
+                    IVisualizer* vis = SpectrumVisualizer();
+                    return vis ? vis : PcmVisualizer();
+                }
+
+                void ToggleSelectedVisualizer() {
+                    IVisualizer* vis = SelectedVisualizer();
+
+                    if (vis) {
+                        if (vis->Visible()) {
+                            vis->Hide();
+                        }
+                        else {
+                            vis->Show();
+                        }
+                    }
+                }
             }
         }
     }

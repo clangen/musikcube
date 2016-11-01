@@ -80,6 +80,8 @@ static std::unordered_map<std::string, Id> NAME_TO_ID = {
 
     { "view_refresh", Id::ViewRefresh },
 
+    { "toggle_visualizer", Id::ToggleVisualizer },
+
     { "metadata_rescan", Id::RescanMetadata }
 };
 
@@ -110,6 +112,8 @@ static std::unordered_map<Id, std::string, EnumHasher> ID_TO_DEFAULT = {
     { Id::Stop, "^X" },
 
     { Id::ViewRefresh, "KEY_F(5)" },
+
+    { Id::ToggleVisualizer, "M-v" },
 
     { Id::RescanMetadata, "^R"}
 };
