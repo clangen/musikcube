@@ -236,9 +236,13 @@ namespace utf8
         while (start != end) {
             uint32_t cp = utf8::next(start, end);
             if (cp > 0xffff) { //make a surrogate pair
-                *result++ = static_cast<uint16_t>((cp >> 10)   + internal::LEAD_OFFSET);
+                *result++ = static_cast<uint16_t>((cp >> 10) + internal::LEAD_OFFSET);
                 *result++ = static_cast<uint16_t>((cp & 0x3ff) + internal::TRAIL_SURROGATE_MIN);
             }
+            /* clangen added this check -- wcwidth barfs on these particular
+            control characters, so let's represent them as a question mark. */
+            else if (cp < 32 || (cp >= 0x7f && cp < 0xa0))
+                *result++ = static_cast<uint16_t>('?');
             else
                 *result++ = static_cast<uint16_t>(cp);
         }

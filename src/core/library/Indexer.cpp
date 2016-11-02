@@ -52,7 +52,7 @@
 #include <boost/thread/xtime.hpp>
 #include <boost/bind.hpp>
 
-#define MULTI_THREADED_INDEXER 0
+#define MULTI_THREADED_INDEXER 1
 #define STRESS_TEST_DB 0
 
 static const std::string TAG = "Indexer";

@@ -70,10 +70,11 @@ inline std::string u16to8(const std::wstring& u16) {
 static inline size_t u8cols(const std::string& str) {
     std::wstring wstr = u8to16(str);
 #ifdef WIN32
-    return (size_t)std::max(0, mk_wcswidth(wstr.c_str(), wstr.size()));
+    int result = std::max(0, mk_wcswidth(wstr.c_str(), wstr.size()));
 #else
-    return (size_t) std::max(0, wcswidth(wstr.c_str(), wstr.size()));
+    int result = std::max(0, wcswidth(wstr.c_str(), wstr.size()));
 #endif
+    return (result > 0) ? result : str.size();
 }
 
 inline static size_t u8len(const std::string& str) {
