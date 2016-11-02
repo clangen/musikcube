@@ -52,7 +52,7 @@
 #include <boost/thread/xtime.hpp>
 #include <boost/bind.hpp>
 
-#define MULTI_THREADED_INDEXER 1
+#define MULTI_THREADED_INDEXER 0
 #define STRESS_TEST_DB 0
 
 static const std::string TAG = "Indexer";
@@ -233,12 +233,19 @@ void Indexer::ReadMetadataFromFile(
         typedef MetadataReaderList::iterator Iterator;
         Iterator it = this->metadataReaders.begin();
         while (it != this->metadataReaders.end()) {
-            if ((*it)->CanRead(track.GetValue("extension").c_str())) {
-                if ((*it)->Read(file.string().c_str(), &track)) {
-                    saveToDb = true;
-                    break;
+            try {
+                if ((*it)->CanRead(track.GetValue("extension").c_str())) {
+                    if ((*it)->Read(file.string().c_str(), &track)) {
+                        saveToDb = true;
+                        break;
+                    }
                 }
             }
+            catch (...) {
+                /* sometimes people have files with crazy tags that cause the
+                tag reader to throw fits. not a lot we can do. just move on. */
+            }
+
             it++;
         }
 
