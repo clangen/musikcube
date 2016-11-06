@@ -85,6 +85,7 @@ App::App(const std::string& title) {
     setlocale(LC_ALL, "");
     std::signal(SIGWINCH, resizedHandler);
     std::signal(SIGHUP, hangupHandler);
+    std::signal(SIGPIPE, SIG_IGN);
 #endif
 
 #ifdef __PDCURSES__
