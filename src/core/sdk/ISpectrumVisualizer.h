@@ -42,7 +42,7 @@ namespace musik { namespace core { namespace audio {
     class ISpectrumVisualizer : public IVisualizer {
     public:
         virtual void Destroy() = 0;
-        virtual bool Write(float *spectrum, int size) = 0;
+        virtual void Write(float *spectrum, int size) = 0;
     };
 
 } } }
