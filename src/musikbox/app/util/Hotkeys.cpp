@@ -113,7 +113,7 @@ static std::unordered_map<Id, std::string, EnumHasher> ID_TO_DEFAULT = {
 
     { Id::ViewRefresh, "KEY_F(5)" },
 
-    { Id::ToggleVisualizer, "M-v" },
+    { Id::ToggleVisualizer, "v" },
 
     { Id::RescanMetadata, "^R"}
 };
