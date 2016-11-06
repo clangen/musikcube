@@ -51,7 +51,7 @@ you'll need [homebrew](http://brew.sh/) to install the required dependencies.
 
 ## linux
 
-- install the following libraries and their development packages: `cmake boost libogg vorbis flac mpg123 faad2 ncurses zlib asound`
+- install the following libraries and their development packages: `cmake boost libogg libfftw3 vorbis flac mpg123 faad2 ncurses zlib asound`
 - `git clone https://github.com/clangen/musikcube.git`
 - `cd musikcube`
 - `cmake .`
