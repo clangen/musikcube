@@ -41,15 +41,35 @@
 #include <cursespp/App.h>
 #include <cursespp/SimpleScrollAdapter.h>
 #include <cursespp/ListOverlay.h>
+#include <cursespp/DialogOverlay.h>
 
 using namespace musik::box;
 using namespace musik::core::audio;
 using namespace cursespp;
 
+static void showNoVisualizersMessage() {
+    std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
+
+    (*dialog)
+        .SetTitle("musikbox")
+        .SetMessage("no visualizers found!")
+        .AddButton(
+            "KEY_ENTER",
+            "ENTER",
+            "ok");
+
+    App::Overlays().Push(dialog);
+}
+
 VisualizerOverlay::VisualizerOverlay() {
 }
 
 void VisualizerOverlay::Show() {
+    if (!vis::VisualizerCount()) {
+        showNoVisualizersMessage();
+        return;
+    }
+
     using Adapter = cursespp::SimpleScrollAdapter;
     using ListOverlay = cursespp::ListOverlay;
 
