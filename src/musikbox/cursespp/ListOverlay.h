@@ -68,6 +68,7 @@ namespace cursespp {
             void RecalculateSize();
 
             std::string title;
+            int x, y;
             int width, height;
             IScrollAdapterPtr adapter;
             std::shared_ptr<ListWindow> listWindow;

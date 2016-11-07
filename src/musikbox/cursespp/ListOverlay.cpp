@@ -40,8 +40,9 @@
 
 using namespace cursespp;
 
-#define HORIZONTAL_PADDING 4
 #define VERTICAL_PADDING 2
+#define DEFAULT_WIDTH 22
+#define MAX_HEIGHT 12
 
 #define DISMISS() \
     OverlayStack* overlays = this->GetOverlayStack(); \
@@ -57,6 +58,7 @@ ListOverlay::ListOverlay() {
     this->width = this->height = 0;
 
     this->listWindow.reset(new ListWindow());
+    this->listWindow->SetContentColor(CURSESPP_OVERLAY_BACKGROUND);
     this->listWindow->SetFrameVisible(false);
     this->listWindow->SetFocusOrder(0);
     this->AddWindow(this->listWindow);
@@ -70,17 +72,21 @@ void ListOverlay::Layout() {
 
     if (this->width > 0 && this->height > 0) {
         this->MoveAndResize(
-            HORIZONTAL_PADDING,
-            VERTICAL_PADDING,
+            this->x,
+            this->y,
             this->width,
             this->height);
 
-        int y = VERTICAL_PADDING + 3; /* below the border + title */
-        int cy = this->height - 4; /* top and bottom padding + title */
+        int listY = this->y + 3; /* below the border + title */
+        int listHeight = this->height - 4; /* top and bottom padding + title */
 
         this->listWindow->MoveAndResize(
-            HORIZONTAL_PADDING + 1, y,
-            this->GetContentWidth(), cy);
+            this->x + 2,
+            listY,
+            this->GetContentWidth() - 2,
+            listHeight);
+
+        this->Redraw();
     }
 }
 
@@ -132,40 +138,17 @@ void ListOverlay::OnVisibilityChanged(bool visible) {
 }
 
 void ListOverlay::RecalculateSize() {
-    this->width = 20;
-    this->height = 10;
+    this->width = DEFAULT_WIDTH;
+    this->height = 4; /* top frame + text + space + bottom frame */
 
-    //int lastWidth = this->width;
+    if (this->adapter) {
+        this->height = std::min(
+            (int) MAX_HEIGHT, 
+            (int) (4 + this->adapter->GetEntryCount()));
+    }
 
-    //this->width = std::max(0, Screen::GetWidth() - (HORIZONTAL_PADDING * 2));
-
-    //if (lastWidth != this->width) {
-    //    /* 4 here: 2 for the frame padding (left/right), then two for the
-    //    inner content padding so things aren't bunched up (left/right) */
-    //    messageLines = text::BreakLines(this->message, this->width - 4);
-    //}
-
-    //this->height = 0; /* top padding */
-    //this->height += (this->title.size()) ? 2 : 0;
-    //this->height += (this->messageLines.size()) ? messageLines.size() + 1 : 0;
-    //this->height += 1; /* shortcuts */
-
-    ///* ensure the overlay doesn't exceed the height of the screen,
-    //or things may get crashy. normally this will be done for us automatically
-    //in Window, but because we're free-floating we need to do it manually here. */
-    //int top = this->GetY();
-    //int bottom = top + this->height + VERTICAL_PADDING;
-    //int screenHeight = Screen::GetHeight();
-    //if (bottom > screenHeight) {
-    //    this->height = screenHeight - top - VERTICAL_PADDING;
-    //}
-
-    //int left = this->GetX();
-    //int right = left + this->width + HORIZONTAL_PADDING;
-    //int screenWidth = Screen::GetWidth();
-    //if (right > screenWidth) {
-    //    this->width = screenWidth - left - HORIZONTAL_PADDING;
-    //}
+    this->y = VERTICAL_PADDING;
+    this->x = (Screen::GetWidth() / 2) - (this->width / 2);
 }
 
 void ListOverlay::Redraw() {

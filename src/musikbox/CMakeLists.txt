@@ -16,6 +16,7 @@ set (BOX_SRCS
 	./app/query/NowPlayingTrackListQuery.cpp
 	./app/query/SearchTrackListQuery.cpp
 	./app/service/PlaybackService.cpp
+	./app/overlay/VisualizerOverlay.cpp
 	./app/util/Duration.cpp
 	./app/util/Hotkeys.cpp
 	./app/util/GlobalHotkeys.cpp
@@ -32,6 +33,7 @@ set (BOX_SRCS
 	./cursespp/Colors.cpp
 	./cursespp/DialogOverlay.cpp
 	./cursespp/LayoutBase.cpp
+	./cursespp/ListOverlay.cpp
 	./cursespp/ListWindow.cpp
 	./cursespp/Message.cpp
 	./cursespp/MessageQueue.cpp
