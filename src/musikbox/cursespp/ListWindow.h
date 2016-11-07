@@ -70,13 +70,15 @@ namespace cursespp {
 
             virtual void OnAdapterChanged();
 
+            virtual const IScrollAdapter::ScrollPosition& GetScrollPosition();
+
         protected:
             virtual void OnSelectionChanged(size_t newIndex, size_t oldIndex);
             virtual void OnInvalidated();
             virtual void OnDimensionsChanged();
 
             virtual IScrollAdapter& GetScrollAdapter();
-            virtual IScrollAdapter::ScrollPosition& GetScrollPosition();
+            virtual IScrollAdapter::ScrollPosition& GetMutableScrollPosition();
 
         private:
             IScrollAdapter* adapter;

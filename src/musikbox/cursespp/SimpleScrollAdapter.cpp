@@ -77,7 +77,7 @@ EntryPtr SimpleScrollAdapter::GetEntry(cursespp::ScrollableWindow* window, size_
     auto entry = this->entries.at(index);
 
     SingleLineEntry* styleable = static_cast<SingleLineEntry*>(entry.get());
-    styleable->SetAttrs(COLOR_PAIR(CURSESPP_TEXT_DEFAULT));
+    styleable->SetAttrs(-1LL);
 
     if (window && this->selectable) {
         if (index == window->GetScrollPosition().logicalIndex) {

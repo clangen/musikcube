@@ -77,6 +77,8 @@ void VisualizerOverlay::Show() {
 
     for (size_t i = 0; i < vis::VisualizerCount(); i++) {
         adapter->AddEntry(vis::GetVisualizer(i)->Name());
+        adapter->AddEntry(vis::GetVisualizer(i)->Name());
+        adapter->AddEntry(vis::GetVisualizer(i)->Name());
     }
 
     adapter->SetSelectable(true);
@@ -86,7 +88,7 @@ void VisualizerOverlay::Show() {
     dialog->SetAdapter(adapter)
         .SetTitle("visualizers")
         .SetItemSelectedCallback(
-            [&](cursespp::IScrollAdapterPtr adapter, size_t index) {
+            [](cursespp::IScrollAdapterPtr adapter, size_t index) {
                 vis::SetSelectedVisualizer(vis::GetVisualizer(index));
                 vis::SelectedVisualizer()->Show();
             });

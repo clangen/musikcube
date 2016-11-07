@@ -65,7 +65,7 @@ namespace cursespp {
 
             void SetAllowArrowKeyPropagation(bool allow = true);
 
-            const IScrollAdapter::ScrollPosition& GetScrollPosition() const;
+            virtual const IScrollAdapter::ScrollPosition& GetScrollPosition();
 
         protected:
             virtual IScrollAdapter& GetScrollAdapter() = 0;

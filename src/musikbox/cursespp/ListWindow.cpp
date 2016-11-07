@@ -170,7 +170,7 @@ void ListWindow::PageDown() {
 
 void ListWindow::ScrollTo(size_t index) {
     this->GetScrollAdapter().DrawPage(
-        this, index, &this->GetScrollPosition());
+        this, index, &this->GetMutableScrollPosition());
 
     this->Repaint();
 }
@@ -187,7 +187,7 @@ void ListWindow::SetSelectedIndex(size_t index) {
         this->GetScrollAdapter().DrawPage(
             this,
             this->scrollPosition.firstVisibleEntryIndex,
-            &this->GetScrollPosition());
+            &this->GetMutableScrollPosition());
 
         this->Repaint();
 
@@ -223,7 +223,11 @@ void ListWindow::OnDimensionsChanged() {
     this->ScrollTo(this->selectedIndex);
 }
 
-IScrollAdapter::ScrollPosition& ListWindow::GetScrollPosition() {
+IScrollAdapter::ScrollPosition& ListWindow::GetMutableScrollPosition() {
     this->scrollPosition.logicalIndex = this->GetSelectedIndex(); /* hack */
     return this->scrollPosition;
+}
+
+const IScrollAdapter::ScrollPosition& ListWindow::GetScrollPosition() {
+    return this->GetMutableScrollPosition();
 }

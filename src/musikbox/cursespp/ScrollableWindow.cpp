@@ -78,7 +78,7 @@ ScrollPos& ScrollableWindow::GetMutableScrollPosition() {
     return this->scrollPosition;
 }
 
-const ScrollPos& ScrollableWindow::GetScrollPosition() const {
+const ScrollPos& ScrollableWindow::GetScrollPosition() {
     return this->scrollPosition;
 }
 

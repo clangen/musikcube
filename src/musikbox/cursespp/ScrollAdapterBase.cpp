@@ -67,7 +67,10 @@ size_t ScrollAdapterBase::GetLineCount() {
 }
 
 void ScrollAdapterBase::GetVisibleItems(
-    size_t desired, std::deque<EntryPtr>& target, size_t& start)
+    cursespp::ScrollableWindow* window,
+    size_t desired,
+    std::deque<EntryPtr>&
+    target, size_t& start)
 {
     size_t actual = desired;
 
@@ -79,7 +82,7 @@ void ScrollAdapterBase::GetVisibleItems(
     /* forward search first... */
     int end = (int) GetEntryCount();
     for (int i = (int) desired; i < end && totalHeight > 0; i++) {
-        EntryPtr entry = this->GetEntry(DUMMY_SCROLLABLE_WINDOW, i);
+        EntryPtr entry = this->GetEntry(window, i);
         entry->SetWidth(this->width);
         totalHeight -= entry->GetLineCount();
         target.push_back(entry);
@@ -92,7 +95,7 @@ void ScrollAdapterBase::GetVisibleItems(
         totalHeight = this->height;
         int i = GetEntryCount() - 1;
         while (i >= 0 && totalHeight >= 0) {
-            EntryPtr entry = this->GetEntry(DUMMY_SCROLLABLE_WINDOW, i);
+            EntryPtr entry = this->GetEntry(window, i);
             entry->SetWidth(this->width);
 
             int lines = entry->GetLineCount();
@@ -138,7 +141,7 @@ void ScrollAdapterBase::DrawPage(ScrollableWindow* scrollable, size_t index, Scr
 
     std::deque<EntryPtr> visible;
     size_t topIndex; /* calculated by GetVisibleItems */
-    GetVisibleItems(index, visible, topIndex);
+    GetVisibleItems(scrollable, index, visible, topIndex);
 
     size_t drawnLines = 0;
 

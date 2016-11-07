@@ -64,7 +64,12 @@ namespace cursespp {
             virtual void SetItemDecorator(ItemDecorator decorator) { this->decorator = decorator; }
 
         protected:
-            void GetVisibleItems(size_t desired, std::deque<EntryPtr>& target, size_t& start);
+            void GetVisibleItems(
+                cursespp::ScrollableWindow* window,
+                size_t desired,
+                std::deque<EntryPtr>& target,
+                size_t& start);
+
             virtual ItemDecorator GetItemDecorator() { return this->decorator; }
 
             size_t GetWidth() { return this->width; }
