@@ -35,7 +35,10 @@
 #include "stdafx.h"
 #include "GlobalHotkeys.h"
 #include "Hotkeys.h"
+
+#include <app/overlay/VisualizerOverlay.h>
 #include <app/util/Playback.h>
+
 #include <core/audio/Visualizer.h>
 
 using musik::core::LibraryPtr;
@@ -99,7 +102,13 @@ bool GlobalHotkeys::Handle(const std::string& kn) {
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::ToggleVisualizer, kn)) {
-        vis::ToggleSelectedVisualizer();
+        std::shared_ptr<IVisualizer> selected = vis::SelectedVisualizer();
+        if (selected && selected->Visible()) {
+            selected->Hide();
+        }
+        else {
+            VisualizerOverlay::Show();
+        }
         return true;
     }
 

@@ -32,8 +32,6 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
 #include "pch.hpp"
 #include "Visualizer.h"
 #include <core/plugin/PluginFactory.h>
@@ -45,6 +43,10 @@ using namespace musik::core::audio;
 static std::vector<std::shared_ptr<ISpectrumVisualizer> > spectrumVisualizers;
 static std::vector<std::shared_ptr<IPcmVisualizer> > pcmVisualizers;
 static std::atomic<bool> initialized;
+
+static std::shared_ptr<IVisualizer> selectedVisualizer;
+static ISpectrumVisualizer* spectrumVisualizer = nullptr;
+static IPcmVisualizer* pcmVisualizer = nullptr;
 
 namespace musik {
     namespace core {
@@ -69,45 +71,37 @@ namespace musik {
                 }
 
                 ISpectrumVisualizer* SpectrumVisualizer() {
-                    if (!initialized) {
-                        init();
-                    }
-
-                    if (spectrumVisualizers.size()) {
-                        return spectrumVisualizers[0].get();
-                    }
-
-                    return nullptr;
+                    return spectrumVisualizer;
                 }
 
                 IPcmVisualizer* PcmVisualizer() {
+                    return pcmVisualizer;
+                }
+
+                std::shared_ptr<IVisualizer> GetVisualizer(size_t index) {
+                    if (index < pcmVisualizers.size()) {
+                        return pcmVisualizers.at(index);
+                    }
+
+                    return spectrumVisualizers.at(index - pcmVisualizers.size());
+                }
+
+                size_t VisualizerCount() {
                     if (!initialized) {
                         init();
                     }
 
-                    if (pcmVisualizers.size()) {
-                        return pcmVisualizers[0].get();
-                    }
-
-                    return nullptr;
+                    return pcmVisualizers.size() + spectrumVisualizers.size();
                 }
 
-                IVisualizer* SelectedVisualizer() {
-                    IVisualizer* vis = SpectrumVisualizer();
-                    return vis ? vis : PcmVisualizer();
+                void SetSelectedVisualizer(std::shared_ptr<IVisualizer> visualizer) {
+                    selectedVisualizer = visualizer;
+                    pcmVisualizer = dynamic_cast<IPcmVisualizer*>(visualizer.get());
+                    spectrumVisualizer = dynamic_cast<ISpectrumVisualizer*>(visualizer.get());
                 }
 
-                void ToggleSelectedVisualizer() {
-                    IVisualizer* vis = SelectedVisualizer();
-
-                    if (vis) {
-                        if (vis->Visible()) {
-                            vis->Hide();
-                        }
-                        else {
-                            vis->Show();
-                        }
-                    }
+                std::shared_ptr<IVisualizer> SelectedVisualizer() {
+                    return selectedVisualizer;
                 }
             }
         }

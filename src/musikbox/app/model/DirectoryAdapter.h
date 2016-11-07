@@ -46,7 +46,7 @@ namespace musik {
                 virtual ~DirectoryAdapter();
 
                 virtual size_t GetEntryCount();
-                virtual EntryPtr GetEntry(size_t index);
+                virtual EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index);
 
                 void Select(size_t index);
                 std::string GetFullPathAt(size_t index);

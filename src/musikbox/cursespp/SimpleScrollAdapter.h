@@ -49,7 +49,10 @@ namespace cursespp {
             virtual void Clear();
 
             virtual size_t GetEntryCount();
-            virtual EntryPtr GetEntry(size_t index);
+            virtual EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index);
+
+            void SetSelectable(bool selectable);
+            void AddEntry(const std::string& entry);
 
         private:
             typedef std::deque<EntryPtr> EntryList; /* TODO: this is O(n) lookup */
@@ -57,5 +60,6 @@ namespace cursespp {
 
             EntryList entries;
             size_t maxEntries;
+            bool selectable;
     };
 }

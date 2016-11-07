@@ -86,7 +86,7 @@ namespace musik {
                         virtual ~Adapter() { }
 
                         virtual size_t GetEntryCount();
-                        virtual EntryPtr GetEntry(size_t index);
+                        virtual EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index);
 
                     private:
                         TrackListView &parent;

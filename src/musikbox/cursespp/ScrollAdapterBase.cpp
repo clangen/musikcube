@@ -36,10 +36,17 @@
 #include "ScrollAdapterBase.h"
 #include "ScrollableWindow.h"
 #include "MultiLineEntry.h"
+#include "ListWindow.h"
 
 using namespace cursespp;
 
 typedef IScrollAdapter::EntryPtr EntryPtr;
+
+/* used for some calculations. it's ok to let this leak. if it's
+a static instance var we will have non-deterministic behavior when
+the instance is destructed, because the global message queue may
+be torn down as well */
+static ListWindow* DUMMY_SCROLLABLE_WINDOW = new ListWindow();
 
 ScrollAdapterBase::ScrollAdapterBase() {
     this->height = 0;
@@ -72,7 +79,7 @@ void ScrollAdapterBase::GetVisibleItems(
     /* forward search first... */
     int end = (int) GetEntryCount();
     for (int i = (int) desired; i < end && totalHeight > 0; i++) {
-        EntryPtr entry = this->GetEntry(i);
+        EntryPtr entry = this->GetEntry(DUMMY_SCROLLABLE_WINDOW, i);
         entry->SetWidth(this->width);
         totalHeight -= entry->GetLineCount();
         target.push_back(entry);
@@ -85,7 +92,7 @@ void ScrollAdapterBase::GetVisibleItems(
         totalHeight = this->height;
         int i = GetEntryCount() - 1;
         while (i >= 0 && totalHeight >= 0) {
-            EntryPtr entry = this->GetEntry(i);
+            EntryPtr entry = this->GetEntry(DUMMY_SCROLLABLE_WINDOW, i);
             entry->SetWidth(this->width);
 
             int lines = entry->GetLineCount();

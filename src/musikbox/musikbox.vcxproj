@@ -127,6 +127,7 @@
     <ClCompile Include="app\layout\TrackSearchLayout.cpp" />
     <ClCompile Include="app\model\DirectoryAdapter.cpp" />
     <ClCompile Include="app\model\TrackList.cpp" />
+    <ClCompile Include="app\overlay\VisualizerOverlay.cpp" />
     <ClCompile Include="app\query\CategoryListViewQuery.cpp" />
     <ClCompile Include="app\query\NowPlayingTrackListQuery.cpp" />
     <ClCompile Include="app\query\CategoryTrackListQuery.cpp" />
@@ -148,6 +149,7 @@
     <ClCompile Include="cursespp\Colors.cpp" />
     <ClCompile Include="cursespp\DialogOverlay.cpp" />
     <ClCompile Include="cursespp\LayoutBase.cpp" />
+    <ClCompile Include="cursespp\ListOverlay.cpp" />
     <ClCompile Include="cursespp\ListWindow.cpp" />
     <ClCompile Include="cursespp\MultiLineEntry.cpp" />
     <ClCompile Include="cursespp\OverlayStack.cpp" />
@@ -181,6 +183,7 @@
     <ClInclude Include="app\layout\TrackSearchLayout.h" />
     <ClInclude Include="app\model\DirectoryAdapter.h" />
     <ClInclude Include="app\model\TrackList.h" />
+    <ClInclude Include="app\overlay\VisualizerOverlay.h" />
     <ClInclude Include="app\query\CategoryListViewQuery.h" />
     <ClInclude Include="app\query\NowPlayingTrackListQuery.h" />
     <ClInclude Include="app\query\SearchTrackListQuery.h" />
@@ -217,6 +220,7 @@
     <ClInclude Include="cursespp\IWindowGroup.h" />
     <ClInclude Include="cursespp\IMessage.h" />
     <ClInclude Include="cursespp\LayoutBase.h" />
+    <ClInclude Include="cursespp\ListOverlay.h" />
     <ClInclude Include="cursespp\ListWindow.h" />
     <ClInclude Include="cursespp\MultiLineEntry.h" />
     <ClInclude Include="cursespp\OverlayBase.h" />

@@ -40,10 +40,10 @@
 namespace musik { namespace core { namespace audio {
 
     class  IDecoderFactory{
-        public: 
+        public:
             virtual IDecoder* CreateDecoder() = 0;
             virtual void Destroy() = 0;
             virtual bool CanHandle(const char* type) const = 0;
     };
 
-} } } 
+} } }

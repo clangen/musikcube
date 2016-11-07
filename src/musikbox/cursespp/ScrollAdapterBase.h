@@ -59,7 +59,7 @@ namespace cursespp {
                 ScrollPosition *result = nullptr);
 
             virtual size_t GetEntryCount() = 0;
-            virtual EntryPtr GetEntry(size_t index) = 0;
+            virtual EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index) = 0;
 
             virtual void SetItemDecorator(ItemDecorator decorator) { this->decorator = decorator; }
 

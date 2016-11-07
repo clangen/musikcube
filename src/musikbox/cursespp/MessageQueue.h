@@ -47,7 +47,7 @@ namespace cursespp {
 
             void Post(IMessagePtr message, int64 delayMs = 0);
             void Remove(IMessageTarget *target, int type = -1);
-            void Debounce(IMessagePtr message, int delayMs = 0);
+            void Debounce(IMessagePtr message, int64 delayMs = 0);
 
             void Dispatch();
 

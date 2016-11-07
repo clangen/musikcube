@@ -37,6 +37,8 @@
 #include "SimpleScrollAdapter.h"
 #include "SingleLineEntry.h"
 #include "MultiLineEntry.h"
+#include "ScrollableWindow.h"
+#include "Colors.h"
 #include <boost/algorithm/string.hpp>
 #include <utf8/utf8/unchecked.h>
 
@@ -48,10 +50,15 @@ typedef IScrollAdapter::EntryPtr EntryPtr;
 
 SimpleScrollAdapter::SimpleScrollAdapter() {
     this->maxEntries = MAX_ENTRY_COUNT;
+    this->selectable = false;
 }
 
 SimpleScrollAdapter::~SimpleScrollAdapter() {
 
+}
+
+void SimpleScrollAdapter::SetSelectable(bool selectable) {
+    this->selectable = selectable;
 }
 
 void SimpleScrollAdapter::Clear() {
@@ -66,8 +73,19 @@ void SimpleScrollAdapter::SetMaxEntries(size_t maxEntries) {
     this->maxEntries = maxEntries;
 }
 
-EntryPtr SimpleScrollAdapter::GetEntry(size_t index) {
-    return this->entries.at(index);
+EntryPtr SimpleScrollAdapter::GetEntry(cursespp::ScrollableWindow* window, size_t index) {
+    auto entry = this->entries.at(index);
+
+    SingleLineEntry* styleable = static_cast<SingleLineEntry*>(entry.get());
+    styleable->SetAttrs(COLOR_PAIR(CURSESPP_TEXT_DEFAULT));
+
+    if (window && this->selectable) {
+        if (index == window->GetScrollPosition().logicalIndex) {
+            styleable->SetAttrs(COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM));
+        }
+    }
+
+    return entry;
 }
 
 void SimpleScrollAdapter::AddEntry(std::shared_ptr<IEntry> entry) {
@@ -77,4 +95,9 @@ void SimpleScrollAdapter::AddEntry(std::shared_ptr<IEntry> entry) {
     while (entries.size() > this->maxEntries) {
         entries.pop_front();
     }
+}
+
+void SimpleScrollAdapter::AddEntry(const std::string& value) {
+    EntryPtr entry(new SingleLineEntry(value));
+    this->AddEntry(entry);
 }

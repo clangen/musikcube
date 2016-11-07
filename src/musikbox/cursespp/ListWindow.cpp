@@ -46,7 +46,7 @@ class EmptyAdapter : public IScrollAdapter {
     public:
         virtual void SetDisplaySize(size_t width, size_t height) { }
         virtual size_t GetEntryCount() { return 0; }
-        virtual EntryPtr GetEntry(size_t index) { return IScrollAdapter::EntryPtr(); }
+        virtual EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index) { return IScrollAdapter::EntryPtr(); }
         virtual void DrawPage(ScrollableWindow* window, size_t index, ScrollPosition *result = NULL) { }
 };
 
@@ -61,6 +61,13 @@ ListWindow::ListWindow(IScrollAdapter* adapter, IWindow *parent)
 
 ListWindow::~ListWindow() {
 
+}
+
+void ListWindow::SetAdapter(IScrollAdapter* adapter) {
+    if (adapter != this->adapter) {
+        this->adapter = adapter;
+        this->ScrollToTop();
+    }
 }
 
 void ListWindow::ScrollToTop() {

@@ -34,47 +34,43 @@
 
 #pragma once
 
-#include <stdafx.h>
+#include "OverlayBase.h"
+#include "ListWindow.h"
+
+#include <vector>
+#include <map>
 
 namespace cursespp {
-    class ScrollableWindow;
-
-    class IScrollAdapter {
+    class ListOverlay :
+        public OverlayBase
+#if (__clang_major__ == 7 && __clang_minor__ == 3)
+        , public std::enable_shared_from_this<ListOverlay>
+#endif
+    {
         public:
-            virtual ~IScrollAdapter() { }
+            using ItemSelectedCallback = std::function<void(IScrollAdapterPtr adapter, size_t index)>;
 
-            struct ScrollPosition {
-                ScrollPosition() {
-                    firstVisibleEntryIndex = 0;
-                    visibleEntryCount = 0;
-                    lineCount = 0;
-                    logicalIndex = 0;
-                    totalEntries = 0;
-                }
+            ListOverlay();
+            virtual ~ListOverlay();
 
-                size_t firstVisibleEntryIndex;
-                size_t visibleEntryCount;
-                size_t lineCount;
-                size_t totalEntries;
-                size_t logicalIndex;
-            };
+            ListOverlay& SetTitle(const std::string& title);
+            ListOverlay& SetAdapter(IScrollAdapterPtr adapter);
+            ListOverlay& SetItemSelectedCallback(ItemSelectedCallback cb);
 
-            class IEntry {
-            public:
-                virtual ~IEntry() { }
-                virtual size_t GetLineCount() = 0;
-                virtual std::string GetLine(size_t line) = 0;
-                virtual void SetWidth(size_t width) = 0;
-                virtual int64 GetAttrs(size_t line) = 0;
-            };
+            virtual void Layout();
+            virtual bool KeyPress(const std::string& key);
 
-            typedef std::shared_ptr<IEntry> EntryPtr;
+        protected:
+            virtual void OnVisibilityChanged(bool visible);
 
-            virtual void SetDisplaySize(size_t width, size_t height) = 0;
-            virtual size_t GetEntryCount() = 0;
-            virtual EntryPtr GetEntry(ScrollableWindow* window, size_t index) = 0;
-            virtual void DrawPage(ScrollableWindow* window, size_t index, ScrollPosition *result = NULL) = 0;
+        private:
+            void Redraw();
+            void RecalculateSize();
+
+            std::string title;
+            int width, height;
+            IScrollAdapterPtr adapter;
+            std::shared_ptr<ListWindow> listWindow;
+            ItemSelectedCallback itemSelectedCallback;
     };
-
-    typedef std::shared_ptr<IScrollAdapter> IScrollAdapterPtr;
 }

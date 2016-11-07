@@ -98,7 +98,7 @@ namespace musik {
                     Adapter(CategoryListView &parent);
 
                     virtual size_t GetEntryCount();
-                    virtual EntryPtr GetEntry(size_t index);
+                    virtual EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index);
 
                 private:
                     CategoryListView &parent;

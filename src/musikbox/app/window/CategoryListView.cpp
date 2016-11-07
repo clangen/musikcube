@@ -225,7 +225,7 @@ size_t CategoryListView::Adapter::GetEntryCount() {
     return parent.metadata ? parent.metadata->size() : 0;
 }
 
-IScrollAdapter::EntryPtr CategoryListView::Adapter::GetEntry(size_t index) {
+IScrollAdapter::EntryPtr CategoryListView::Adapter::GetEntry(cursespp::ScrollableWindow* window, size_t index) {
     std::string value = parent.metadata->at(index)->displayValue;
 
     bool playing =

@@ -141,6 +141,12 @@
     <ClCompile Include="cursespp\DialogOverlay.cpp">
       <Filter>cursespp</Filter>
     </ClCompile>
+    <ClCompile Include="cursespp\ListOverlay.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="app\overlay\VisualizerOverlay.cpp">
+      <Filter>app\overlay</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -333,6 +339,12 @@
     <ClInclude Include="app\util\Version.h">
       <Filter>app\util</Filter>
     </ClInclude>
+    <ClInclude Include="cursespp\ListOverlay.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="app\overlay\VisualizerOverlay.h">
+      <Filter>app\overlay</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="cursespp">
@@ -358,6 +370,9 @@
     </Filter>
     <Filter Include="app\model">
       <UniqueIdentifier>{b6720351-dd55-4b14-936a-09df56193c15}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="app\overlay">
+      <UniqueIdentifier>{a84f242d-d70b-49e9-975e-63fc73954a2b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

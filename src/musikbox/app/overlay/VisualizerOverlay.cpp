@@ -32,49 +32,44 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "stdafx.h"
 
-#include <stdafx.h>
+#include "VisualizerOverlay.h"
 
-namespace cursespp {
-    class ScrollableWindow;
+#include <core/audio/Visualizer.h>
 
-    class IScrollAdapter {
-        public:
-            virtual ~IScrollAdapter() { }
+#include <cursespp/App.h>
+#include <cursespp/SimpleScrollAdapter.h>
+#include <cursespp/ListOverlay.h>
 
-            struct ScrollPosition {
-                ScrollPosition() {
-                    firstVisibleEntryIndex = 0;
-                    visibleEntryCount = 0;
-                    lineCount = 0;
-                    logicalIndex = 0;
-                    totalEntries = 0;
-                }
+using namespace musik::box;
+using namespace musik::core::audio;
+using namespace cursespp;
 
-                size_t firstVisibleEntryIndex;
-                size_t visibleEntryCount;
-                size_t lineCount;
-                size_t totalEntries;
-                size_t logicalIndex;
-            };
+VisualizerOverlay::VisualizerOverlay() {
+}
 
-            class IEntry {
-            public:
-                virtual ~IEntry() { }
-                virtual size_t GetLineCount() = 0;
-                virtual std::string GetLine(size_t line) = 0;
-                virtual void SetWidth(size_t width) = 0;
-                virtual int64 GetAttrs(size_t line) = 0;
-            };
+void VisualizerOverlay::Show() {
+    using Adapter = cursespp::SimpleScrollAdapter;
+    using ListOverlay = cursespp::ListOverlay;
 
-            typedef std::shared_ptr<IEntry> EntryPtr;
+    std::shared_ptr<Adapter> adapter(new Adapter());
 
-            virtual void SetDisplaySize(size_t width, size_t height) = 0;
-            virtual size_t GetEntryCount() = 0;
-            virtual EntryPtr GetEntry(ScrollableWindow* window, size_t index) = 0;
-            virtual void DrawPage(ScrollableWindow* window, size_t index, ScrollPosition *result = NULL) = 0;
-    };
+    for (size_t i = 0; i < vis::VisualizerCount(); i++) {
+        adapter->AddEntry(vis::GetVisualizer(i)->Name());
+    }
 
-    typedef std::shared_ptr<IScrollAdapter> IScrollAdapterPtr;
+    adapter->SetSelectable(true);
+
+    std::shared_ptr<ListOverlay> dialog(new ListOverlay());
+
+    dialog->SetAdapter(adapter)
+        .SetTitle("visualizers")
+        .SetItemSelectedCallback(
+            [&](cursespp::IScrollAdapterPtr adapter, size_t index) {
+                vis::SetSelectedVisualizer(vis::GetVisualizer(index));
+                vis::SelectedVisualizer()->Show();
+            });
+
+    cursespp::App::Overlays().Push(dialog);
 }

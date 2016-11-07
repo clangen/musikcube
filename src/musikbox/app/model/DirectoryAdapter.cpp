@@ -145,7 +145,7 @@ void DirectoryAdapter::SetDotfilesVisible(bool visible) {
     }
 }
 
-IScrollAdapter::EntryPtr DirectoryAdapter::GetEntry(size_t index) {
+IScrollAdapter::EntryPtr DirectoryAdapter::GetEntry(cursespp::ScrollableWindow* window, size_t index) {
     if (dir.has_parent_path()) {
         if (index == 0) {
             return IScrollAdapter::EntryPtr(new SingleLineEntry(".."));

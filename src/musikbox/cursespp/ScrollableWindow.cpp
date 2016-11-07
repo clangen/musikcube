@@ -49,7 +49,7 @@ typedef IScrollAdapter::ScrollPosition ScrollPos;
 
 #define REDRAW_VISIBLE_PAGE() \
     { \
-        ScrollPos& pos = GetScrollPosition(); \
+        ScrollPos& pos = GetMutableScrollPosition(); \
         GetScrollAdapter().DrawPage( \
             this, \
             pos.firstVisibleEntryIndex, \
@@ -68,14 +68,17 @@ void ScrollableWindow::OnDimensionsChanged() {
     Window::OnDimensionsChanged();
 
     IScrollAdapter& adapter = this->GetScrollAdapter();
-    ScrollPos& pos = this->GetScrollPosition();
 
     adapter.SetDisplaySize(
         this->GetContentWidth(),
         this->GetContentHeight());
 }
 
-ScrollPos& ScrollableWindow::GetScrollPosition() {
+ScrollPos& ScrollableWindow::GetMutableScrollPosition() {
+    return this->scrollPosition;
+}
+
+const ScrollPos& ScrollableWindow::GetScrollPosition() const {
     return this->scrollPosition;
 }
 
@@ -91,13 +94,13 @@ bool ScrollableWindow::KeyPress(const std::string& key) {
 
     if (key == "KEY_NPAGE") { this->PageDown(); return true; }
     else if (key == "KEY_PPAGE") { this->PageUp(); return true; }
-    else if (key == "KEY_DOWN") { 
+    else if (key == "KEY_DOWN") {
         const size_t before = this->GetScrollPosition().logicalIndex;
         this->ScrollDown();
         const size_t after = this->GetScrollPosition().logicalIndex;
         return !this->allowArrowKeyPropagation || (before != after);
     }
-    else if (key == "KEY_UP") { 
+    else if (key == "KEY_UP") {
         const size_t before = this->GetScrollPosition().logicalIndex;
         this->ScrollUp();
         const size_t after = this->GetScrollPosition().logicalIndex;
@@ -117,7 +120,7 @@ void ScrollableWindow::OnAdapterChanged() {
         this->ScrollToBottom();
     }
     else {
-        ScrollPos &pos = this->GetScrollPosition();
+        ScrollPos &pos = this->GetMutableScrollPosition();
         adapter->DrawPage(this, pos.firstVisibleEntryIndex, &pos);
         this->Repaint();
     }
@@ -129,7 +132,7 @@ void ScrollableWindow::Show() {
 }
 
 void ScrollableWindow::ScrollToTop() {
-    GetScrollAdapter().DrawPage(this, 0, &this->GetScrollPosition());
+    GetScrollAdapter().DrawPage(this, 0, &this->GetMutableScrollPosition());
     this->Repaint();
 }
 
@@ -137,13 +140,13 @@ void ScrollableWindow::ScrollToBottom() {
     GetScrollAdapter().DrawPage(
         this,
         GetScrollAdapter().GetEntryCount(),
-        &this->GetScrollPosition());
+        &this->GetMutableScrollPosition());
 
     this->Repaint();
 }
 
 void ScrollableWindow::ScrollUp(int delta) {
-    ScrollPos &pos = this->GetScrollPosition();
+    ScrollPos &pos = this->GetMutableScrollPosition();
 
     if (pos.firstVisibleEntryIndex > 0) {
         GetScrollAdapter().DrawPage(
@@ -154,7 +157,7 @@ void ScrollableWindow::ScrollUp(int delta) {
 }
 
 void ScrollableWindow::ScrollDown(int delta) {
-    ScrollPos &pos = this->GetScrollPosition();
+    ScrollPos &pos = this->GetMutableScrollPosition();
 
     GetScrollAdapter().DrawPage(
         this, pos.firstVisibleEntryIndex + delta, &pos);
@@ -169,7 +172,7 @@ size_t ScrollableWindow::GetPreviousPageEntryIndex() {
 
     int i = this->GetScrollPosition().firstVisibleEntryIndex;
     while (i >= 0) {
-        IScrollAdapter::EntryPtr entry = adapter->GetEntry(i);
+        IScrollAdapter::EntryPtr entry = adapter->GetEntry(this, i);
         entry->SetWidth(width);
 
         int count = entry->GetLineCount();
@@ -195,7 +198,7 @@ void ScrollableWindow::PageDown() {
 }
 
 bool ScrollableWindow::IsLastItemVisible() {
-    ScrollPos &pos = this->GetScrollPosition();
+    ScrollPos &pos = this->GetMutableScrollPosition();
 
     size_t lastIndex = pos.totalEntries;
     lastIndex = (lastIndex == 0) ? lastIndex : lastIndex - 1;

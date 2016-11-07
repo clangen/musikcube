@@ -34,9 +34,11 @@
 
 #pragma once
 
+#include "IPlugin.h"
+
 namespace musik { namespace core { namespace audio {
 
-    class IVisualizer {
+    class IVisualizer : public IPlugin {
         public:
             virtual void Show() = 0;
             virtual void Hide() = 0;

@@ -65,9 +65,11 @@ namespace cursespp {
 
             void SetAllowArrowKeyPropagation(bool allow = true);
 
+            const IScrollAdapter::ScrollPosition& GetScrollPosition() const;
+
         protected:
             virtual IScrollAdapter& GetScrollAdapter() = 0;
-            virtual IScrollAdapter::ScrollPosition& GetScrollPosition();
+            virtual IScrollAdapter::ScrollPosition& GetMutableScrollPosition();
 
             size_t GetPreviousPageEntryIndex();
             bool IsLastItemVisible();

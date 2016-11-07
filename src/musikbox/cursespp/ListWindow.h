@@ -66,6 +66,8 @@ namespace cursespp {
             virtual size_t GetSelectedIndex();
             virtual void SetSelectedIndex(size_t index);
 
+            virtual void SetAdapter(IScrollAdapter* adapter);
+
             virtual void OnAdapterChanged();
 
         protected:

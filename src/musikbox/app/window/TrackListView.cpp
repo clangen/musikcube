@@ -244,7 +244,7 @@ static std::string formatWithoutAlbum(TrackPtr track, size_t width) {
         % trackNum % title % duration % artist);
 }
 
-IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(size_t index) {
+IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWindow* window, size_t index) {
     bool selected = index == parent.GetSelectedIndex();
     int64 attrs = selected ? COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM) : -1LL;
 
