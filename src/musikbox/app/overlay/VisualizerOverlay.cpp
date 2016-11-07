@@ -77,8 +77,6 @@ void VisualizerOverlay::Show() {
 
     for (size_t i = 0; i < vis::VisualizerCount(); i++) {
         adapter->AddEntry(vis::GetVisualizer(i)->Name());
-        adapter->AddEntry(vis::GetVisualizer(i)->Name());
-        adapter->AddEntry(vis::GetVisualizer(i)->Name());
     }
 
     adapter->SetSelectable(true);
