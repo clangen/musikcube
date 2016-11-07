@@ -143,9 +143,13 @@ void ListOverlay::RecalculateSize() {
 
     if (this->adapter) {
         this->height = std::min(
-            (int) MAX_HEIGHT, 
+            (int) MAX_HEIGHT,
             (int) (4 + this->adapter->GetEntryCount()));
     }
+
+    /* constrain to app bounds */
+    this->height = std::max(0, std::min(Screen::GetHeight() - 4, this->height));
+    this->width = std::max(0, std::min(Screen::GetWidth(), this->width));
 
     this->y = VERTICAL_PADDING;
     this->x = (Screen::GetWidth() / 2) - (this->width / 2);
