@@ -130,6 +130,13 @@ else (CMAKE_SYSTEM_NAME MATCHES "Linux")
   )
 endif (CMAKE_SYSTEM_NAME MATCHES "Linux")
 
+file(GLOB sdk_headers "src/core/sdk/*.h")
+
+install(
+    FILES ${sdk_headers}
+    DESTINATION include/musikcube/core/sdk
+)
+
 # symlink the binary
 install(CODE "EXECUTE_PROCESS (COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/bin/)")
 install(CODE "EXECUTE_PROCESS (COMMAND ln -sf ${CMAKE_INSTALL_PREFIX}/share/musikcube/musikbox ${CMAKE_INSTALL_PREFIX}/bin/)")
