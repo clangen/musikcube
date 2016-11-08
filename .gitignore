@@ -16,9 +16,9 @@ build
 src/3rdparty/bin
 src/3rdparty/obj
 src/core/obj
-src/square/obj
 src/contrib/oggdecoder/obj
 src/contrib/waveout/obj
 src/contrib/taglib_plugin/obj
 src/contrib/taglib_plugin/taglib-1.11
+src/musikbox/musikbox.in
 taglib-prefix

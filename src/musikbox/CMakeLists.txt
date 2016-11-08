@@ -51,6 +51,14 @@ set (BOX_SRCS
 	./cursespp/Window.cpp
 )
 
+set(musikbox_INSTALL_DIR ${HOMEBREW_PREFIX})
+
+if (NOT DEFINED musikbox_INSTALL_DIR)
+	set(musikbox_INSTALL_DIR ${CMAKE_INSTALL_PREFIX})
+endif()
+
+configure_file("musikbox.in" "musikbox" @ONLY)
+
 add_executable(musikbox ${BOX_SRCS})
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")

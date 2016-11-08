@@ -73,8 +73,8 @@ include_directories (
 
 # "/usr/local" doesn't seem to be included by default on macOS 10.12+
 if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
-link_directories ("/usr/local/lib")
-include_directories("/usr/local/include")
+  link_directories ("/usr/local/lib")
+  include_directories("/usr/local/include")
 endif (CMAKE_SYSTEM_NAME MATCHES "Darwin")
 
 add_subdirectory(src/core)
@@ -137,6 +137,12 @@ install(
     DESTINATION include/musikcube/core/sdk
 )
 
-# symlink the binary
-install(CODE "EXECUTE_PROCESS (COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/bin/)")
-install(CODE "EXECUTE_PROCESS (COMMAND ln -sf ${CMAKE_INSTALL_PREFIX}/share/musikcube/musikbox ${CMAKE_INSTALL_PREFIX}/bin/)")
+# shell script that starts the app.
+install(
+  FILES src/musikbox/musikbox
+  DESTINATION bin/
+  PERMISSIONS
+    OWNER_EXECUTE OWNER_READ OWNER_WRITE
+    GROUP_EXECUTE GROUP_READ GROUP_WRITE
+    WORLD_EXECUTE WORLD_READ
+)
