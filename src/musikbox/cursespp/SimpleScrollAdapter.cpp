@@ -76,12 +76,15 @@ void SimpleScrollAdapter::SetMaxEntries(size_t maxEntries) {
 EntryPtr SimpleScrollAdapter::GetEntry(cursespp::ScrollableWindow* window, size_t index) {
     auto entry = this->entries.at(index);
 
-    SingleLineEntry* styleable = static_cast<SingleLineEntry*>(entry.get());
-    styleable->SetAttrs(-1LL);
+    /* this is pretty damned gross, but super convenient. */
+    if (window && selectable) {
+        SingleLineEntry* single = dynamic_cast<SingleLineEntry*>(entry.get());
+        if (single) {
+            single->SetAttrs(-1LL);
 
-    if (window && this->selectable) {
-        if (index == window->GetScrollPosition().logicalIndex) {
-            styleable->SetAttrs(COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM));
+            if (index == window->GetScrollPosition().logicalIndex) {
+                single->SetAttrs(COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM));
+            }
         }
     }
 

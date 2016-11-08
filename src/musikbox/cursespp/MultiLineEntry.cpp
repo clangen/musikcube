@@ -58,7 +58,7 @@ int64 MultiLineEntry::GetAttrs(size_t line) {
 }
 
 void MultiLineEntry::SetWidth(size_t width) {
-    if (this->width != width) {
+    if (this->width != width && width > 0) {
         this->width = width;
         this->lines = text::BreakLines(this->value, this->width);
     }
