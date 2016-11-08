@@ -20,5 +20,5 @@ src/contrib/oggdecoder/obj
 src/contrib/waveout/obj
 src/contrib/taglib_plugin/obj
 src/contrib/taglib_plugin/taglib-1.11
-src/musikbox/musikbox.in
+src/musikbox/musikbox
 taglib-prefix
