@@ -76,6 +76,7 @@ you may also change hotkeys by editing `~/.mC2/hotkeys.json` and restarting the 
 - `l` next track
 - `u` back 10 seconds
 - `o` forward 10 seconds
+- `v` show / hide visualizer
 - `r` repaint the screen
 - `.` toggle repeat mode (off/track/list)
 - `,` (un)shuffle play queue
