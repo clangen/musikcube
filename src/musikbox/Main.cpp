@@ -49,6 +49,7 @@
 #include <core/library/LibraryFactory.h>
 #include <core/audio/GaplessTransport.h>
 #include <core/support/PreferenceKeys.h>
+#include <core/audio/Visualizer.h>
 
 #include <cstdio>
 
@@ -147,6 +148,8 @@ int main(int argc, char* argv[])
 
         app.Run(mainLayout);
     }
+
+    musik::core::audio::vis::HideSelectedVisualizer();
 
     LibraryFactory::Instance().Shutdown();
     musik::debug::deinit();

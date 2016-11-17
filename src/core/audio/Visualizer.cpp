@@ -37,37 +37,68 @@
 #include <core/plugin/PluginFactory.h>
 
 #include <atomic>
+#include <algorithm>
 
 using namespace musik::core::audio;
 
-static std::vector<std::shared_ptr<ISpectrumVisualizer> > spectrumVisualizers;
-static std::vector<std::shared_ptr<IPcmVisualizer> > pcmVisualizers;
+static std::vector<std::shared_ptr<IVisualizer > > visualizers;
 static std::atomic<bool> initialized;
 
 static std::shared_ptr<IVisualizer> selectedVisualizer;
 static ISpectrumVisualizer* spectrumVisualizer = nullptr;
 static IPcmVisualizer* pcmVisualizer = nullptr;
 
+#define LOWER(x) std::transform(x.begin(), x.end(), x.begin(), tolower);
+
 namespace musik {
     namespace core {
         namespace audio {
             namespace vis {
                 static void init() {
-                    {
-                        typedef PluginFactory::DestroyDeleter<ISpectrumVisualizer> Deleter;
+                    /* spectrum visualizers */
+                    typedef PluginFactory::DestroyDeleter<ISpectrumVisualizer> SpectrumDeleter;
+                    std::vector<std::shared_ptr<ISpectrumVisualizer> > spectrum;
 
-                        spectrumVisualizers = PluginFactory::Instance()
-                            .QueryInterface<ISpectrumVisualizer, Deleter>("GetSpectrumVisualizer");
+                    spectrum = PluginFactory::Instance()
+                        .QueryInterface<ISpectrumVisualizer, SpectrumDeleter>("GetSpectrumVisualizer");
+
+                    for (auto it = spectrum.begin(); it != spectrum.end(); it++) {
+                        visualizers.push_back(*it);
                     }
 
-                    {
-                        typedef PluginFactory::DestroyDeleter<IPcmVisualizer> Deleter;
+                    /* pcm visualizers */
+                    typedef PluginFactory::DestroyDeleter<IPcmVisualizer> PcmDeleter;
+                    std::vector<std::shared_ptr<IPcmVisualizer> > pcm;
 
-                        pcmVisualizers = PluginFactory::Instance()
-                            .QueryInterface<IPcmVisualizer, Deleter>("GetPcmVisualizer");
+                    pcm = PluginFactory::Instance()
+                        .QueryInterface<IPcmVisualizer, PcmDeleter>("GetPcmVisualizer");
+
+                    for (auto it = pcm.begin(); it != pcm.end(); it++) {
+                        visualizers.push_back(*it);
                     }
+
+                    /* sort 'em by name */
+                    using V = std::shared_ptr<IVisualizer>;
+
+                    std::sort(
+                        visualizers.begin(),
+                        visualizers.end(),
+                        [](V left, V right) -> bool {
+                            std::string l = left->Name();
+                            LOWER(l);
+                            std::string r = right->Name();
+                            LOWER(r);
+                            return l < r;
+                        });
 
                     initialized = true;
+                }
+
+                void HideSelectedVisualizer() {
+                    if (selectedVisualizer) {
+                        selectedVisualizer->Hide();
+                        SetSelectedVisualizer(std::shared_ptr<IVisualizer>());
+                    }
                 }
 
                 ISpectrumVisualizer* SpectrumVisualizer() {
@@ -79,11 +110,7 @@ namespace musik {
                 }
 
                 std::shared_ptr<IVisualizer> GetVisualizer(size_t index) {
-                    if (index < pcmVisualizers.size()) {
-                        return pcmVisualizers.at(index);
-                    }
-
-                    return spectrumVisualizers.at(index - pcmVisualizers.size());
+                    return visualizers.at(index);
                 }
 
                 size_t VisualizerCount() {
@@ -91,7 +118,7 @@ namespace musik {
                         init();
                     }
 
-                    return pcmVisualizers.size() + spectrumVisualizers.size();
+                    return visualizers.size();
                 }
 
                 void SetSelectedVisualizer(std::shared_ptr<IVisualizer> visualizer) {

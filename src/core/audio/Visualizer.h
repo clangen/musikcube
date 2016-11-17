@@ -47,5 +47,6 @@ namespace musik { namespace core { namespace audio { namespace vis {
     size_t VisualizerCount();
     void SetSelectedVisualizer(std::shared_ptr<IVisualizer> visualizer);
     std::shared_ptr<IVisualizer> SelectedVisualizer();
+    void HideSelectedVisualizer();
 
 } } } }
