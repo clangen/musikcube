@@ -36,7 +36,7 @@
 
 #include "config.h"
 
-namespace musik { namespace core {
+namespace musik { namespace core { namespace sdk {
 
     class IPlaybackService {
         public:
@@ -53,13 +53,18 @@ namespace musik { namespace core {
 
             virtual RepeatMode GetRepeatMode() = 0;
             virtual void SetRepeatMode(RepeatMode mode) = 0;
+            virtual void ToggleRepeatMode() = 0;
 
             virtual bool IsShuffled() = 0;
             virtual void ToggleShuffle() = 0;
+            virtual void PauseOrResume() = 0;
+
+            virtual double GetVolume() = 0;
+            virtual void SetVolume(double volume) = 0;
 
             virtual size_t GetIndex() = 0;
             virtual size_t Count() = 0;
     };
 
-} }
+} } }
 

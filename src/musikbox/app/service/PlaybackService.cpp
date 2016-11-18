@@ -35,11 +35,14 @@
 #include <stdafx.h>
 #include "PlaybackService.h"
 
+#include <app/util/Playback.h>
+
 #include <cursespp/MessageQueue.h>
 #include <cursespp/Message.h>
 
 #include <core/audio/ITransport.h>
 #include <core/library/LocalLibraryConstants.h>
+#include <core/plugin/PluginFactory.h>
 
 using musik::core::TrackPtr;
 using musik::core::LibraryPtr;
@@ -49,6 +52,8 @@ using cursespp::IMessageTarget;
 using cursespp::IMessage;
 
 using namespace musik::core::library::constants;
+using namespace musik::core;
+using namespace musik::core::sdk;
 using namespace musik::box;
 
 #define NO_POSITION (size_t) -1
@@ -93,10 +98,29 @@ PlaybackService::PlaybackService(LibraryPtr library, ITransport& transport)
     transport.PlaybackEvent.connect(this, &PlaybackService::OnPlaybackEvent);
     this->index = NO_POSITION;
     this->nextIndex = NO_POSITION;
+    this->InitRemotes();
 }
 
 PlaybackService::~PlaybackService() {
     this->Stop();
+    this->ResetRemotes();
+}
+
+void PlaybackService::InitRemotes() {
+    typedef PluginFactory::DestroyDeleter<IPlaybackRemote> Deleter;
+
+    this->remotes = PluginFactory::Instance()
+        .QueryInterface<IPlaybackRemote, Deleter>("GetPlaybackRemote");
+
+    for (auto it = remotes.begin(); it != remotes.end(); it++) {
+        (*it)->SetPlaybackService(this);
+    }
+}
+
+void PlaybackService::ResetRemotes() {
+    for (auto it = remotes.begin(); it != remotes.end(); it++) {
+        (*it)->SetPlaybackService(nullptr);
+    }
 }
 
 void PlaybackService::PrepareNextTrack() {
@@ -196,7 +220,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
                     track = this->playlist.Get(this->index);
                 }
 
-                this->TrackChanged(this->index, track);
+                this->OnTrackChanged(this->index, track);
             }
 
             this->PrepareNextTrack();
@@ -206,12 +230,22 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         int64 eventType = message.UserData1();
 
         if (eventType == ITransport::PlaybackStopped) {
-            this->TrackChanged(NO_POSITION, TrackPtr());
+            this->OnTrackChanged(NO_POSITION, TrackPtr());
         }
     }
     else if (message.Type() == MESSAGE_PREPARE_NEXT_TRACK) {
         if (transport.GetPlaybackState() != ITransport::PlaybackStopped) {
             this->PrepareNextTrack();
+        }
+    }
+}
+
+void PlaybackService::OnTrackChanged(size_t pos, TrackPtr track) {
+    this->TrackChanged(this->index, track);
+
+    if (track) {
+        for (auto it = remotes.begin(); it != remotes.end(); it++) {
+            (*it)->OnTrackChanged(track.get());
         }
     }
 }
@@ -267,6 +301,10 @@ size_t PlaybackService::Count() {
     return this->playlist.Count();
 }
 
+void PlaybackService::ToggleRepeatMode() {
+    playback::ToggleRepeatMode(*this);
+}
+
 void PlaybackService::Play(TrackList& tracks, size_t index) {
     /* do the copy outside of the critical section, then swap. */
     TrackList temp(this->library);
@@ -296,6 +334,25 @@ void PlaybackService::Play(size_t index) {
 
 size_t PlaybackService::GetIndex() {
     return this->index;
+}
+
+double PlaybackService::GetVolume() {
+    return transport.Volume();
+}
+
+void PlaybackService::PauseOrResume() {
+    if (transport.GetPlaybackState() == ITransport::PlaybackStopped) {
+        if (this->Count()) {
+            this->Play(0);
+        }
+    }
+    else {
+        playback::PauseOrResume(this->transport);
+    }
+}
+
+void PlaybackService::SetVolume(double vol) {
+    transport.SetVolume(vol);
 }
 
 TrackPtr PlaybackService::GetTrackAtIndex(size_t index) {

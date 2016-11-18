@@ -38,7 +38,7 @@
 #include "IPlaybackService.h"
 #include "ITrack.h"
 
-namespace musik { namespace core {
+namespace musik { namespace core { namespace sdk {
 
     class IPlaybackRemote {
         public:
@@ -47,5 +47,5 @@ namespace musik { namespace core {
             virtual void OnTrackChanged(ITrack* track) = 0;
     };
 
-} }
+} } }
 

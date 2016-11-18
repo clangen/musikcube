@@ -41,6 +41,7 @@
 #include <cursespp/IMessageTarget.h>
 
 #include <core/sdk/IPlaybackService.h>
+#include <core/sdk/IPlaybackRemote.h>
 #include <core/library/track/Track.h>
 #include <core/library/ILibrary.h>
 #include <core/audio/ITransport.h>
@@ -50,7 +51,7 @@
 namespace musik {
     namespace box {
         class PlaybackService :
-            public musik::core::IPlaybackService,
+            public musik::core::sdk::IPlaybackService,
             public cursespp::IMessageTarget,
             public sigslot::has_slots<>
         {
@@ -75,10 +76,14 @@ namespace musik {
                 virtual void Stop() { transport.Stop(); }
                 virtual RepeatMode GetRepeatMode() { return this->repeatMode; }
                 virtual void SetRepeatMode(RepeatMode mode);
+                virtual void ToggleRepeatMode();
                 virtual bool IsShuffled();
                 virtual void ToggleShuffle();
                 virtual size_t GetIndex();
                 virtual size_t Count();
+                virtual double GetVolume();
+                virtual void SetVolume(double vol);
+                virtual void PauseOrResume();
 
                 /* app-specific implementation */
                 musik::core::audio::ITransport& GetTransport() { return this->transport; }
@@ -89,11 +94,16 @@ namespace musik {
             private:
                 void OnStreamEvent(int eventType, std::string uri);
                 void OnPlaybackEvent(int eventType);
+                void OnTrackChanged(size_t pos, musik::core::TrackPtr track);
                 void PrepareNextTrack();
+                void InitRemotes();
+                void ResetRemotes();
 
                 TrackList playlist;
                 TrackList unshuffled;
                 boost::recursive_mutex playlistMutex;
+
+                std::vector<std::shared_ptr<musik::core::sdk::IPlaybackRemote > > remotes;
 
                 musik::core::LibraryPtr library;
                 musik::core::audio::ITransport& transport;
