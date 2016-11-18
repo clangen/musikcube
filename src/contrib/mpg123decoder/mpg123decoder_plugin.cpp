@@ -51,7 +51,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 class Mpg123Plugin : public musik::core::sdk::IPlugin {
     virtual void Destroy() { delete this; }
     virtual const char* Name() { return "mpg123 IDecoder"; }
-    virtual const char* Version() { return "0.2"; }
+    virtual const char* Version() { return "0.3"; }
     virtual const char* Author() { return "Daniel Önnerby, clangen"; }
 };
 

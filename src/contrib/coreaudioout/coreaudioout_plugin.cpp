@@ -48,17 +48,17 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 }
 #endif
 
-class CoreAudioOutPlugin : public musik::core::IPlugin {
+class CoreAudioOutPlugin : public musik::core::sdk::IPlugin {
     void Destroy() { delete this; };
     const char* Name() { return "CoreAudio IOutput"; };
-    const char* Version() { return "0.1"; };
+    const char* Version() { return "0.2"; };
     const char* Author() { return "clangen"; };
 };
 
-extern "C" DLLEXPORT musik::core::IPlugin* GetPlugin() {
+extern "C" DLLEXPORT musik::core::sdk::IPlugin* GetPlugin() {
     return new CoreAudioOutPlugin;
 }
 
-extern "C" DLLEXPORT musik::core::audio::IOutput* GetAudioOutput() {
+extern "C" DLLEXPORT musik::core::sdk::IOutput* GetAudioOutput() {
     return new CoreAudioOut();
 }

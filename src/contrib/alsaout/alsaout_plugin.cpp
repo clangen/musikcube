@@ -37,17 +37,17 @@
 #include <core/sdk/IOutput.h>
 #include "AlsaOut.h"
 
-class AlsaOutPlugin : public musik::core::IPlugin {
+class AlsaOutPlugin : public musik::core::sdk::IPlugin {
     virtual void Destroy() { delete this; };
     virtual const char* Name() { return "AlsaOut IOutput plugin"; }
-    virtual const char* Version() { return "0.2"; }
+    virtual const char* Version() { return "0.3"; }
     virtual const char* Author() { return "Julian Cromarty, clangen"; }
 };
 
-extern "C" musik::core::IPlugin* GetPlugin() {
+extern "C" musik::core::sdk::IPlugin* GetPlugin() {
 	return new AlsaOutPlugin();
 }
 
-extern "C" musik::core::audio::IOutput* GetAudioOutput() {
+extern "C" musik::core::sdk::IOutput* GetAudioOutput() {
 	return new AlsaOut();
 }

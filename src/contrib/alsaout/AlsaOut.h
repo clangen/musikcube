@@ -44,8 +44,6 @@
 #include <boost/thread/condition.hpp>
 #include <list>
 
-using namespace musik::core::audio;
-
 class AlsaOut : public IOutput {
     public:
         AlsaOut();
@@ -58,17 +56,17 @@ class AlsaOut : public IOutput {
         virtual void Stop();
 
         virtual bool Play(
-            musik::core::audio::IBuffer *buffer,
-            musik::core::audio::IBufferProvider *provider);
+            musik::core::sdk::IBuffer *buffer,
+            musik::core::sdk::IBufferProvider *provider);
 
     private:
         struct BufferContext {
-            musik::core::audio::IBuffer *buffer;
-            musik::core::audio::IBufferProvider *provider;
+            musik::core::sdk::IBuffer *buffer;
+            musik::core::sdk::IBufferProvider *provider;
         };
 
-        size_t CountBuffersWithProvider(IBufferProvider* provider);
-        void SetFormat(musik::core::audio::IBuffer *buffer);
+        size_t CountBuffersWithProvider(musik::core::sdk::IBufferProvider* provider);
+        void SetFormat(musik::core::sdk::IBuffer *buffer);
         void InitDevice();
         void CloseDevice();
         void WriteLoop();

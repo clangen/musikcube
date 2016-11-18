@@ -61,7 +61,7 @@ static inline bool playable(snd_pcm_t* pcm) {
         state == SND_PCM_STATE_PREPARED;
 }
 
-using namespace musik::core::audio;
+using namespace musik::core::sdk;
 
 AlsaOut::AlsaOut()
 : pcmHandle(NULL)

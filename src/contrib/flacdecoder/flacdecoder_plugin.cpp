@@ -52,7 +52,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 class FlacPlugin : public musik::core::sdk::IPlugin {
     void Destroy() { delete this; };
     const char* Name() { return "FLAC IDecoder"; }
-    const char* Version() { return "0.2"; }
+    const char* Version() { return "0.3"; }
     const char* Author() { return "Daniel Önnerby, clangen"; }
 };
 

@@ -44,11 +44,11 @@
 #include <CoreAudio/CoreAudioTypes.h>
 #include <CoreFoundation/CFRunLoop.h>
 
-class CoreAudioOut : public musik::core::audio::IOutput {
+class CoreAudioOut : public musik::core::sdk::IOutput {
     public:
         struct BufferContext {
-            musik::core::audio::IBuffer *buffer;
-            musik::core::audio::IBufferProvider *provider;
+            musik::core::sdk::IBuffer *buffer;
+            musik::core::sdk::IBufferProvider *provider;
         };
 
         CoreAudioOut();
@@ -61,8 +61,8 @@ class CoreAudioOut : public musik::core::audio::IOutput {
         virtual void Stop();
 
         virtual bool Play(
-            musik::core::audio::IBuffer *buffer,
-            musik::core::audio::IBufferProvider *provider);
+            musik::core::sdk::IBuffer *buffer,
+            musik::core::sdk::IBufferProvider *provider);
 
         void NotifyBufferCompleted(BufferContext *context);
 

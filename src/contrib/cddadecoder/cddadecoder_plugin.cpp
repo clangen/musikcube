@@ -45,7 +45,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 class CddaDecoderPlugin : public musik::core::sdk::IPlugin {
     void Destroy() { delete this; };
     const char* Name() { return "CD Audio (CDDA) IDecoder"; };
-    const char* Version() { return "0.2"; };
+    const char* Version() { return "0.3"; };
     const char* Author() { return "Björn Olievier, clangen"; };
 };
 

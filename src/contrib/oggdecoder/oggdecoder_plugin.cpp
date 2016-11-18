@@ -52,7 +52,7 @@ class OggDecoderPlugin : public musik::core::sdk::IPlugin {
 public:
     void Destroy() { delete this; };
     const char* Name() { return "Ogg IDecoder"; };
-    const char* Version() { return "0.2"; };
+    const char* Version() { return "0.3"; };
     const char* Author() { return "Björn Olievier, clangen"; };
 };
 

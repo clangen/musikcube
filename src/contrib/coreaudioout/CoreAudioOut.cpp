@@ -38,7 +38,7 @@
 
 #define BUFFER_COUNT 16
 
-using namespace musik::core::audio;
+using namespace musik::core::sdk;
 
 void audioCallback(void *customData, AudioQueueRef queue, AudioQueueBufferRef buffer) {
     CoreAudioOut* output = (CoreAudioOut *) customData;
