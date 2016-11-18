@@ -37,7 +37,7 @@
 #include "ntddcdrm.h"
 #include "devioctl.h"
 
-using namespace musik::core::io;
+using namespace musik::core::sdk;
 
 class CddaDataStream : public IDataStream {
     public:

@@ -51,6 +51,10 @@ namespace musik { namespace core { namespace audio {
     typedef std::shared_ptr<Stream> StreamPtr;
 
     class Stream {
+        using IDSP = musik::core::sdk::IDSP;
+        using IDecoder = musik::core::sdk::IDecoder;
+        using IDecoderFactory = musik::core::sdk::IDecoderFactory;
+
         public:
             static StreamPtr Create(unsigned int options=0);
 

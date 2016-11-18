@@ -37,7 +37,7 @@
 #include "config.h"
 #include "IDecoder.h"
 
-namespace musik { namespace core { namespace audio {
+namespace musik { namespace core { namespace sdk {
 
     class  IDecoderFactory{
         public:

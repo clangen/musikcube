@@ -113,10 +113,10 @@ namespace musik { namespace core {
             };
 
             typedef std::vector<std::shared_ptr<
-                metadata::IMetadataReader> > MetadataReaderList;
+                musik::core::sdk::IMetadataReader> > MetadataReaderList;
 
             typedef std::vector<std::shared_ptr<
-                musik::core::audio::IDecoderFactory> > DecoderList;
+                musik::core::sdk::IDecoderFactory> > DecoderList;
 
             std::deque<AddRemoveContext> addRemoveQueue;
 

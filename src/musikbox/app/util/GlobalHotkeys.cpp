@@ -44,6 +44,7 @@
 using musik::core::LibraryPtr;
 using musik::core::audio::ITransport;
 using namespace musik::core::audio;
+using namespace musik::core::sdk;
 using namespace musik::box;
 
 GlobalHotkeys::GlobalHotkeys(PlaybackService& playback, LibraryPtr library)

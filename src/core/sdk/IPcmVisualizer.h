@@ -37,12 +37,12 @@
 #include "IBuffer.h"
 #include "IVisualizer.h"
 
-namespace musik { namespace core { namespace audio {
+namespace musik { namespace core { namespace sdk {
 
     class IPcmVisualizer : public IVisualizer {
         public:
             virtual void Destroy() = 0;
-            virtual void Write(musik::core::audio::IBuffer *target) = 0;
+            virtual void Write(IBuffer *target) = 0;
     };
 
 } } }

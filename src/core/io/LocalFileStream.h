@@ -46,8 +46,10 @@
 
 namespace musik { namespace core { namespace io {
 
-    class LocalFileStream : public IDataStream {
+    class LocalFileStream : public musik::core::sdk::IDataStream{
         public:
+            using PositionType = musik::core::sdk::PositionType;
+
             LocalFileStream();
             virtual ~LocalFileStream();
 

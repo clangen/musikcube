@@ -36,7 +36,7 @@
 
 #include <core/sdk/IDecoderFactory.h>
 
-using namespace musik::core::audio;
+using namespace musik::core::sdk;
 
 class CddaDecoderFactory : public IDecoderFactory {
 public:

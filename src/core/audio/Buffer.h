@@ -44,7 +44,7 @@ namespace musik { namespace core { namespace audio {
     class  Stream;
     typedef std::shared_ptr<Buffer> BufferPtr;
 
-    class Buffer : public IBuffer {
+    class Buffer : public musik::core::sdk::IBuffer {
         private:
             Buffer();
 

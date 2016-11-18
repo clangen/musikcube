@@ -44,6 +44,8 @@
 #define FFT_N 512
 
 using namespace musik::core::audio;
+using namespace musik::core::sdk;
+
 using std::min;
 using std::max;
 

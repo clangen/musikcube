@@ -40,6 +40,7 @@
 #include <algorithm>
 
 using namespace musik::core::audio;
+using namespace musik::core::sdk;
 
 static std::vector<std::shared_ptr<IVisualizer > > visualizers;
 static std::atomic<bool> initialized;

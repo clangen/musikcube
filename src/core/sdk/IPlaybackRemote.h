@@ -35,14 +35,17 @@
 #pragma once
 
 #include "config.h"
+#include "IPlaybackService.h"
+#include "ITrack.h"
 
-namespace musik { namespace core { namespace sdk {
+namespace musik { namespace core {
 
-    class IMetadataWriter {
+    class IPlaybackRemote {
         public:
-            virtual void SetValue(const char* metakey, const char* value) = 0;
-            virtual void ClearValue(const char* metakey) = 0;
-            virtual void SetThumbnail(const char *data, long size) = 0; /* should be SetBlob with a key */
+            virtual void Destroy() = 0;
+            virtual void SetPlaybackService(IPlaybackService* playback) = 0;
+            virtual void OnTrackChanged(ITrack* track) = 0;
     };
 
-} } }
+} }
+

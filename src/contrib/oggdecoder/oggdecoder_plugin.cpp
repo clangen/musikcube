@@ -48,7 +48,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 }
 #endif
 
-class OggDecoderPlugin : public musik::core::IPlugin {
+class OggDecoderPlugin : public musik::core::sdk::IPlugin {
 public:
     void Destroy() { delete this; };
     const char* Name() { return "Ogg IDecoder"; };
@@ -56,7 +56,7 @@ public:
     const char* Author() { return "Björn Olievier, clangen"; };
 };
 
-extern "C" DLLEXPORT musik::core::IPlugin* GetPlugin() {
+extern "C" DLLEXPORT musik::core::sdk::IPlugin* GetPlugin() {
     return new OggDecoderPlugin();
 }
 

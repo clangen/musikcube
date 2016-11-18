@@ -38,14 +38,14 @@
 #include "IDataStream.h"
 #include "IBuffer.h"
 
-namespace musik { namespace core { namespace audio {
+namespace musik { namespace core { namespace sdk {
 
     class IDecoder {
         public:
             virtual void Destroy() = 0;
             virtual double SetPosition(double seconds) = 0;
             virtual bool GetBuffer(IBuffer *buffer) = 0;
-            virtual bool Open(musik::core::io::IDataStream *stream) = 0;
+            virtual bool Open(musik::core::sdk::IDataStream *stream) = 0;
     };
 
 } } }

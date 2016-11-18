@@ -42,8 +42,7 @@
 #include <iostream>
 #endif
 
-using namespace musik::core::audio;
-using namespace musik::core::io;
+using namespace musik::core::sdk;
 
 Mpg123Decoder::Mpg123Decoder()
 : cachedLength(0)

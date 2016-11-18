@@ -35,12 +35,12 @@
 #include "stdafx.h"
 #include <cctype>
 #include <algorithm>
-#include <string> 
+#include <string>
 
 #include "FlacDecoderFactory.h"
 #include "FlacDecoder.h"
 
-using namespace musik::core::audio;
+using namespace musik::core::sdk;
 
 FlacDecoderFactory::FlacDecoderFactory() {
 }

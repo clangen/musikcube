@@ -285,7 +285,7 @@ void ConsoleLayout::Stop() {
 }
 
 void ConsoleLayout::ListPlugins() const {
-    using musik::core::IPlugin;
+    using musik::core::sdk::IPlugin;
     using musik::core::PluginFactory;
 
     typedef std::vector<std::shared_ptr<IPlugin> > PluginList;

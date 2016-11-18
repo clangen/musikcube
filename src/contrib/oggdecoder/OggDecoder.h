@@ -38,20 +38,20 @@
 #include "vorbis/codec.h"
 #include "vorbis/vorbisfile.h"
 
-using namespace musik::core::audio;
+using namespace musik::core::sdk;
 
 class OggDecoder : public IDecoder
 {
 
-public: 
+public:
     OggDecoder();
     ~OggDecoder();
 
-public: 
+public:
     virtual void Destroy();
     virtual double SetPosition(double second);
     virtual bool GetBuffer(IBuffer *buffer);
-    virtual bool Open(musik::core::io::IDataStream *fileStream);
+    virtual bool Open(musik::core::sdk::IDataStream *fileStream);
 
 public:
     /* libvorbis callbacks */
@@ -60,8 +60,8 @@ public:
     static long OggTell(void *datasource);
     static int OggClose(void *datasource);
 
-protected: 
-    musik::core::io::IDataStream *fileStream;
+protected:
+    musik::core::sdk::IDataStream *fileStream;
     OggVorbis_File oggFile;
     ov_callbacks oggCallbacks;
 };

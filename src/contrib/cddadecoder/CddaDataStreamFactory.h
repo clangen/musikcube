@@ -34,7 +34,7 @@
 
 #include <core/sdk/IDataStreamFactory.h>
 
-using namespace musik::core::io;
+using namespace musik::core::sdk;
 
 class CddaDataStreamFactory : public IDataStreamFactory {
 public:

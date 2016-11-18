@@ -36,12 +36,12 @@
 
 #include <core/sdk/IDecoderFactory.h>
 
-class FlacDecoderFactory : public musik::core::audio::IDecoderFactory {
+class FlacDecoderFactory : public musik::core::sdk::IDecoderFactory {
     public:
         FlacDecoderFactory();
         virtual ~FlacDecoderFactory();
 
-        musik::core::audio::IDecoder* CreateDecoder();
+        musik::core::sdk::IDecoder* CreateDecoder();
         void Destroy();
         bool CanHandle(const char* type) const;
 };

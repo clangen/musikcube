@@ -36,13 +36,13 @@
 #include "pch.h"
 #include <list>
 #include <boost/thread/thread.hpp>
-#include <boost/shared_ptr.hpp> 
+#include <boost/shared_ptr.hpp>
 #include <boost/thread/recursive_mutex.hpp>
 #include <boost/thread/condition.hpp>
 #include "WaveOutBuffer.h"
 #include <core/sdk/IOutput.h>
 
-using namespace musik::core::audio;
+using namespace musik::core::sdk;
 
 class WaveOut : public IOutput {
     public:
@@ -56,7 +56,7 @@ class WaveOut : public IOutput {
         virtual void Stop();
         virtual bool Play(IBuffer *buffer, IBufferProvider *provider);
 
-    public: 
+    public:
         typedef std::shared_ptr<WaveOutBuffer> WaveOutBufferPtr;
         static DWORD WINAPI WaveCallbackThreadProc(LPVOID params);
 
@@ -73,7 +73,7 @@ class WaveOut : public IOutput {
         friend class WaveOutBuffer;
 
         /* note we apparently use a std::list<> here, and not std::set<> because
-        when we need to do a lookup we have a WaveOutBuffer*, and not a shared_ptr. 
+        when we need to do a lookup we have a WaveOutBuffer*, and not a shared_ptr.
         we could fix this up by using boost::enable_shared_from_this */
         typedef std::list<WaveOutBufferPtr> BufferList;
 

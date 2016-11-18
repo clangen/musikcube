@@ -42,14 +42,14 @@ namespace musik { namespace core { namespace io {
 
     class DataStreamFactory {
         public:
-            typedef std::shared_ptr<IDataStream> DataStreamPtr;
+            typedef std::shared_ptr<musik::core::sdk::IDataStream> DataStreamPtr;
 
         private:
             DataStreamFactory();
             static DataStreamFactory* Instance();
 
         private:
-            typedef std::vector<std::shared_ptr<IDataStreamFactory> > DataStreamFactoryVector;
+            typedef std::vector<std::shared_ptr<musik::core::sdk::IDataStreamFactory> > DataStreamFactoryVector;
             DataStreamFactoryVector dataStreamFactories;
 
         public:

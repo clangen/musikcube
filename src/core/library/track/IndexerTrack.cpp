@@ -36,6 +36,7 @@
 
 #include <core/library/track/IndexerTrack.h>
 
+#include <core/sdk/config.h>
 #include <core/support/Common.h>
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>
@@ -105,8 +106,16 @@ void IndexerTrack::SetThumbnail(const char *data,long size) {
     memcpy(this->internalMetadata->thumbnailData, data, size);
 }
 
-std::string IndexerTrack::URI() {
+std::string IndexerTrack::Uri() {
     return this->GetValue("filename");
+}
+
+int IndexerTrack::GetValue(const char* key, char* dst, int size) {
+    return musik::sdk::copyString(this->GetValue(key), dst, size);
+}
+
+int IndexerTrack::Uri(char* dst, int size) {
+    return musik::sdk::copyString(this->Uri(), dst, size);
 }
 
 Track::MetadataIteratorRange IndexerTrack::GetValues(const char* metakey) {

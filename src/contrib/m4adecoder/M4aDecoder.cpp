@@ -36,8 +36,8 @@
 #include "M4aDecoder.h"
 #include <string.h>
 
-using musik::core::io::IDataStream;
-using musik::core::audio::IBuffer;
+using musik::core::sdk::IDataStream;
+using musik::core::sdk::IBuffer;
 
 static uint32_t streamReadCallback(void *userData, void *buffer, uint32_t length) {
     IDataStream *stream = static_cast<IDataStream*>(userData);
@@ -85,7 +85,7 @@ M4aDecoder::M4aDecoder() {
 M4aDecoder::~M4aDecoder() {
 }
 
-bool M4aDecoder::Open(musik::core::io::IDataStream *stream)
+bool M4aDecoder::Open(musik::core::sdk::IDataStream *stream)
 {
     decoder = NeAACDecOpen();
     if (!decoder) {

@@ -46,7 +46,7 @@
 
 class WaveOut;
 
-using namespace musik::core::audio;
+using namespace musik::core::sdk;
 
 class WaveOutBuffer
 {

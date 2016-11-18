@@ -39,7 +39,7 @@
 #include "IBuffer.h"
 #include "IBufferProvider.h"
 
-namespace musik { namespace core { namespace audio {
+namespace musik { namespace core { namespace sdk {
 
     class IOutput {
         public:

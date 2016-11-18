@@ -38,15 +38,15 @@
 #include <neaacdec.h>
 #include <mp4ff.h>
 
-class M4aDecoder : public musik::core::audio::IDecoder {
+class M4aDecoder : public musik::core::sdk::IDecoder {
     public:
         M4aDecoder();
         ~M4aDecoder();
 
         virtual void Destroy();
         virtual double SetPosition(double seconds);
-        virtual bool GetBuffer(musik::core::audio::IBuffer *buffer);
-        virtual bool Open(musik::core::io::IDataStream *stream);
+        virtual bool GetBuffer(musik::core::sdk::IBuffer *buffer);
+        virtual bool Open(musik::core::sdk::IDataStream *stream);
 
     private:
         NeAACDecHandle decoder;

@@ -40,7 +40,7 @@
 #include "Mpg123Decoder.h"
 #include "mpg123.h"
 
-using namespace musik::core::audio;
+using namespace musik::core::sdk;
 
 Mpg123DecoderFactory::Mpg123DecoderFactory() {
     mpg123_init();

@@ -38,11 +38,11 @@
 
 namespace musik { namespace core { namespace sdk {
 
-    class IMetadataWriter {
+    class ITrack {
         public:
-            virtual void SetValue(const char* metakey, const char* value) = 0;
-            virtual void ClearValue(const char* metakey) = 0;
-            virtual void SetThumbnail(const char *data, long size) = 0; /* should be SetBlob with a key */
+            virtual int GetValue(const char* key, char* dst, int size) = 0;
+            virtual int Uri(char* dst, int size) = 0;
     };
 
 } } }
+

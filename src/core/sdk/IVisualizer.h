@@ -36,7 +36,7 @@
 
 #include "IPlugin.h"
 
-namespace musik { namespace core { namespace audio {
+namespace musik { namespace core { namespace sdk {
 
     class IVisualizer : public IPlugin {
         public:

@@ -38,14 +38,14 @@
 #include "IMetadataWriter.h"
 #include "IBuffer.h"
 
-namespace musik { namespace core { namespace audio {
+namespace musik { namespace core { namespace sdk {
 
     class  IAnalyzer {
         public:
             virtual void Destroy() = 0;
-            virtual bool Start(musik::core::IMetadataWriter *target) = 0;
-            virtual bool Analyze(musik::core::IMetadataWriter *target, IBuffer *buffer) = 0;
-            virtual bool End(musik::core::IMetadataWriter *target) = 0;
+            virtual bool Start(musik::core::sdk::IMetadataWriter *target) = 0;
+            virtual bool Analyze(musik::core::sdk::IMetadataWriter *target, IBuffer *buffer) = 0;
+            virtual bool End(musik::core::sdk::IMetadataWriter *target) = 0;
     };
 
 } } }

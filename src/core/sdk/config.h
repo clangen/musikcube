@@ -74,5 +74,15 @@ namespace musik {
                 s.size() >= suffix.size() &&
                 s.rfind(suffix) == (s.size() - suffix.size());
         }
+
+        static inline size_t copyString(const std::string& src, char* dst, size_t size) {
+            size_t len = src.size() + 1; /* space for the null terminator */
+            if (dst) {
+                size_t copied = src.copy(dst, size - 1);
+                dst[copied] = '\0';
+                return copied + 1;
+            }
+            return len;
+        }
     }
 }

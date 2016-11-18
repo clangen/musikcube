@@ -55,51 +55,51 @@
 #include <set>
 #include <core/sdk/IMetadataReader.h>
 
-class TaglibMetadataReader : public musik::core::metadata::IMetadataReader {
+class TaglibMetadataReader : public musik::core::sdk::IMetadataReader {
     public:
         TaglibMetadataReader();
         virtual ~TaglibMetadataReader();
-        virtual bool Read(const char *uri, musik::core::IMetadataWriter *target);
+        virtual bool Read(const char *uri, musik::core::sdk::IMetadataWriter *target);
         virtual bool CanRead(const char *extension);
         virtual void Destroy();
 
     private:
         void SetTagValue(
             const char* key,
-            const char* string,musik::core::IMetadataWriter *target);
+            const char* string,musik::core::sdk::IMetadataWriter *target);
 
         void SetTagValue(
             const char* key,
             const TagLib::String tagString,
-            musik::core::IMetadataWriter *target);
+            musik::core::sdk::IMetadataWriter *target);
 
         void SetTagValue(
             const char* key,
-            const int tagInt,musik::core::IMetadataWriter *target);
+            const int tagInt,musik::core::sdk::IMetadataWriter *target);
 
         void SetTagValues(const char* key,
             const TagLib::ID3v2::FrameList &frame,
-            musik::core::IMetadataWriter *target);
+            musik::core::sdk::IMetadataWriter *target);
 
         void SetAudioProperties(
             TagLib::AudioProperties *audioProperties,
-            musik::core::IMetadataWriter *target);
+            musik::core::sdk::IMetadataWriter *target);
 
         void SetSlashSeparatedValues(
             const char* key,
             const TagLib::ID3v2::FrameList &frame,
-            musik::core::IMetadataWriter *target);
+            musik::core::sdk::IMetadataWriter *target);
 
         void SetSlashSeparatedValues(
             const char* key,
             TagLib::String tagString,
-            musik::core::IMetadataWriter *target);
+            musik::core::sdk::IMetadataWriter *target);
 
         bool GetID3v2Tag(
             const char* uri,
-            musik::core::IMetadataWriter *target);
+            musik::core::sdk::IMetadataWriter *target);
 
         bool GetGenericTag(
             const char* uri,
-            musik::core::IMetadataWriter *target);
+            musik::core::sdk::IMetadataWriter *target);
 };

@@ -94,7 +94,7 @@ int OggDecoder::OggClose(void *datasource) {
 OggDecoder::~OggDecoder() {
 }
 
-bool OggDecoder::Open(musik::core::io::IDataStream *fileStream) {
+bool OggDecoder::Open(musik::core::sdk::IDataStream *fileStream) {
     this->fileStream = fileStream;
 
     if (ov_open_callbacks(this, &this->oggFile, NULL, 0, this->oggCallbacks) != 0) {

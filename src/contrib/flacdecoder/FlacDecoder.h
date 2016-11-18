@@ -39,9 +39,9 @@
 #include <FLAC/stream_decoder.h>
 #include <stddef.h>
 
-using namespace musik::core::audio;
+using namespace musik::core::sdk;
 
-class FlacDecoder :	public musik::core::audio::IDecoder {
+class FlacDecoder :	public musik::core::sdk::IDecoder {
     public:
         FlacDecoder();
         virtual ~FlacDecoder();
@@ -50,7 +50,7 @@ class FlacDecoder :	public musik::core::audio::IDecoder {
         virtual void Destroy();
         virtual double SetPosition(double seconds);
         virtual bool GetBuffer(IBuffer *buffer);
-        virtual bool Open(musik::core::io::IDataStream *stream);
+        virtual bool Open(musik::core::sdk::IDataStream *stream);
 
     private:
         static FLAC__StreamDecoderReadStatus FlacRead(
@@ -95,8 +95,8 @@ class FlacDecoder :	public musik::core::audio::IDecoder {
             void *clientData);
 
     protected:
-        musik::core::io::IDataStream *stream;
-    	FLAC__StreamDecoder *decoder;
+        musik::core::sdk::IDataStream *stream;
+        FLAC__StreamDecoder *decoder;
 
         long channels;
         long sampleRate;

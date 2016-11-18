@@ -60,7 +60,7 @@ static const int MAX_THREADS = 10;
 static const size_t NOTIFY_INTERVAL = 300;
 
 using namespace musik::core;
-using namespace musik::core::metadata;
+using namespace musik::core::sdk;
 using namespace musik::core::audio;
 
 using Thread = std::unique_ptr<boost::thread>;
@@ -592,7 +592,7 @@ void Indexer::ProcessAddRemoveQueue() {
 }
 
 void Indexer::RunAnalyzers() {
-    typedef audio::IAnalyzer PluginType;
+    typedef sdk::IAnalyzer PluginType;
     typedef PluginFactory::DestroyDeleter<PluginType> Deleter;
     typedef std::shared_ptr<PluginType> PluginPtr;
     typedef std::vector<PluginPtr> PluginVector;
@@ -638,7 +638,7 @@ void Indexer::RunAnalyzers() {
                 audio::StreamPtr stream = audio::Stream::Create(audio::Stream::NoDSP);
 
                 if (stream) {
-                    if (stream->OpenStream(track.URI())) {
+                    if (stream->OpenStream(track.Uri())) {
 
                         /* decode the stream quickly, passing to all analyzers */
 

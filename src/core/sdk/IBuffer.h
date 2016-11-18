@@ -36,7 +36,7 @@
 
 #include "config.h"
 
-namespace musik { namespace core { namespace audio {
+namespace musik { namespace core { namespace sdk {
 
     class IBuffer {
         public:

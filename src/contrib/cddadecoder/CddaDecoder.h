@@ -40,8 +40,7 @@
 #include "ntddcdrm.h"
 #include "devioctl.h"
 
-using namespace musik::core::audio;
-using namespace musik::core::io;
+using namespace musik::core::sdk;
 
 class CddaDecoder : public IDecoder
 {

@@ -34,52 +34,32 @@
 
 #pragma once
 
-#include <core/config.h>
-#include <core/library/track/Track.h>
-#include <boost/scoped_ptr.hpp>
-#include <boost/weak_ptr.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/thread.hpp>
-#include <sigslot/sigslot.h>
-#include <list>
+#include "config.h"
 
-//////////////////////////////////////////////////////////////////////////////
+namespace musik { namespace core {
 
-namespace musik{ namespace core{
+    class IPlaybackService {
+        public:
+            enum RepeatMode {
+                RepeatNone,
+                RepeatTrack,
+                RepeatList
+            };
 
-//////////////////////////////////////////////////////////////////////////////
+            virtual void Play(size_t index) = 0;
+            virtual bool Next() = 0;
+            virtual bool Previous() = 0;
+            virtual void Stop() = 0;
 
-class NonLibraryTrackHelper{
-    public:
-        static NonLibraryTrackHelper& Instance();
+            virtual RepeatMode GetRepeatMode() = 0;
+            virtual void SetRepeatMode(RepeatMode mode) = 0;
 
-        void ReadTrack(musik::core::TrackPtr track);
+            virtual bool IsShuffled() = 0;
+            virtual void ToggleShuffle() = 0;
 
-        typedef sigslot::signal1<musik::core::TrackPtr> TrackMetadataUpdatedEvent;
-        TrackMetadataUpdatedEvent TrackMetadataUpdated;
+            virtual size_t GetIndex() = 0;
+            virtual size_t Count() = 0;
+    };
 
-    private:
-        static NonLibraryTrackHelper sInstance;
-
-        NonLibraryTrackHelper();
-        ~NonLibraryTrackHelper();
-
-        void ThreadLoop();
-
-    private:
-        boost::mutex mutex;
-        bool threadIsRunning;
-
-        typedef std::weak_ptr<musik::core::Track> TrackWeakPtr;
-        std::list<TrackWeakPtr> tracksToRead;
-
-        typedef boost::scoped_ptr<boost::thread> ThreadPtr;
-        ThreadPtr helperThread;
-};
-
-
-//////////////////////////////////////////////////////////////////////////////
-} } // musik::core
-//////////////////////////////////////////////////////////////////////////////
-
+} }
 

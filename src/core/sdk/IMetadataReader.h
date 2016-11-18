@@ -37,11 +37,11 @@
 #include "config.h"
 #include "IMetadataWriter.h"
 
-namespace musik { namespace core { namespace metadata {
+namespace musik { namespace core { namespace sdk {
 
     class IMetadataReader {
         public:
-            virtual bool Read(const char *uri, musik::core::IMetadataWriter *target) = 0;
+            virtual bool Read(const char *uri, musik::core::sdk::IMetadataWriter *target) = 0;
             virtual bool CanRead(const char *extension) = 0;
             virtual void Destroy() = 0;
     };

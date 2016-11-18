@@ -51,9 +51,9 @@ namespace musik { namespace core { namespace audio {
     typedef std::shared_ptr<Player> PlayerPtr;
 
     class Output;
-    typedef std::shared_ptr<IOutput> OutputPtr;
+    typedef std::shared_ptr<musik::core::sdk::IOutput> OutputPtr;
 
-    class Player : public IBufferProvider {
+    class Player : public musik::core::sdk::IBufferProvider {
         public:
             static OutputPtr CreateDefaultOutput();
 
@@ -67,7 +67,7 @@ namespace musik { namespace core { namespace audio {
 
             ~Player();
 
-            virtual void OnBufferProcessed(IBuffer *buffer);
+            virtual void OnBufferProcessed(musik::core::sdk::IBuffer *buffer);
 
             void Play();
             void Stop();

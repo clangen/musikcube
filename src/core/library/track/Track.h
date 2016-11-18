@@ -36,6 +36,7 @@
 
 #include <core/sdk/IMetadataWriter.h>
 #include <core/library/ILibrary.h>
+#include <core/sdk/ITrack.h>
 #include <boost/shared_ptr.hpp>
 #include <vector>
 #include <map>
@@ -46,7 +47,10 @@ namespace musik { namespace core {
     typedef std::shared_ptr<Track> TrackPtr;
     typedef std::vector<TrackPtr> TrackVector;
 
-    class Track : public IMetadataWriter {
+    class Track :
+        public musik::core::sdk::IMetadataWriter,
+        public musik::core::sdk::ITrack
+    {
         public:
             typedef std::multimap<std::string, std::string> MetadataMap;
             typedef std::pair<MetadataMap::iterator, MetadataMap::iterator> MetadataIteratorRange;
@@ -60,7 +64,7 @@ namespace musik { namespace core {
             virtual int LibraryId();
 
             virtual std::string GetValue(const char* metakey) = 0;
-            virtual std::string URI() = 0;
+            virtual std::string Uri() = 0;
 
             virtual MetadataIteratorRange GetValues(const char* metakey) = 0;
             virtual MetadataIteratorRange GetAllValues() = 0;

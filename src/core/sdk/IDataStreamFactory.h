@@ -37,7 +37,7 @@
 #include "config.h"
 #include "IDataStream.h"
 
-namespace musik { namespace core { namespace io {
+namespace musik { namespace core { namespace sdk {
     class IDataStreamFactory{
         public:
             virtual bool CanRead(const char *uri) = 0;

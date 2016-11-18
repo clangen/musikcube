@@ -36,12 +36,12 @@
 
 #include <core/sdk/IDecoderFactory.h>
 
-class M4aDecoderFactory : public musik::core::audio::IDecoderFactory {
+class M4aDecoderFactory : public musik::core::sdk::IDecoderFactory {
     public:
         M4aDecoderFactory();
         virtual ~M4aDecoderFactory();
 
-        musik::core::audio::IDecoder* CreateDecoder();
+        musik::core::sdk::IDecoder* CreateDecoder();
         void Destroy();
         bool CanHandle(const char* source) const;
 };

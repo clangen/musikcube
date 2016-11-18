@@ -49,7 +49,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 }
 #endif
 
-class AacDecoderPlugin : public musik::core::IPlugin {
+class AacDecoderPlugin : public musik::core::sdk::IPlugin {
     public:
         virtual void Destroy() { delete this; };
         virtual const char* Name() { return "M4A IDecoder"; };
@@ -57,10 +57,10 @@ class AacDecoderPlugin : public musik::core::IPlugin {
         virtual const char* Author() { return "Björn Olievier, clangen"; };
 };
 
-extern "C" DLLEXPORT musik::core::IPlugin* GetPlugin() {
+extern "C" DLLEXPORT musik::core::sdk::IPlugin* GetPlugin() {
     return new AacDecoderPlugin();
 }
 
-extern "C" DLLEXPORT musik::core::audio::IDecoderFactory* GetDecoderFactory() {
+extern "C" DLLEXPORT musik::core::sdk::IDecoderFactory* GetDecoderFactory() {
     return new M4aDecoderFactory();
 }

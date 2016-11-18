@@ -38,7 +38,7 @@
 #include "M4aDecoder.h"
 #include <algorithm>
 
-using musik::core::audio::IDecoder;
+using musik::core::sdk::IDecoder;
 
 M4aDecoderFactory::M4aDecoderFactory() {
 }

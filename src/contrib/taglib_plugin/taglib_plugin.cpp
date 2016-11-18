@@ -48,7 +48,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 }
 #endif
 
-class TaglibPlugin : public musik::core::IPlugin {
+class TaglibPlugin : public musik::core::sdk::IPlugin {
     public:
         virtual void Destroy() { delete this; }
         virtual const char* Name() { return "Taglib 1.11 IMetadataReader"; }
@@ -56,10 +56,10 @@ class TaglibPlugin : public musik::core::IPlugin {
         virtual const char* Author() { return "Daniel Önnerby, clangen"; }
 };
 
-extern "C" DLLEXPORT musik::core::metadata::IMetadataReader* GetMetadataReader() {
+extern "C" DLLEXPORT musik::core::sdk::IMetadataReader* GetMetadataReader() {
     return new TaglibMetadataReader();
 }
 
-extern "C" DLLEXPORT musik::core::IPlugin* GetPlugin() {
+extern "C" DLLEXPORT musik::core::sdk::IPlugin* GetPlugin() {
     return new TaglibPlugin();
 }

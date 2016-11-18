@@ -103,9 +103,6 @@
     <ClCompile Include="library\LocalLibrary.cpp">
       <Filter>src\library</Filter>
     </ClCompile>
-    <ClCompile Include="support\NonLibraryTrackHelper.cpp">
-      <Filter>src\support</Filter>
-    </ClCompile>
     <ClCompile Include="audio\GaplessTransport.cpp">
       <Filter>src\audio</Filter>
     </ClCompile>
@@ -240,9 +237,6 @@
     <ClInclude Include="library\LocalLibraryConstants.h">
       <Filter>src\library</Filter>
     </ClInclude>
-    <ClInclude Include="support\NonLibraryTrackHelper.h">
-      <Filter>src\support</Filter>
-    </ClInclude>
     <ClInclude Include="audio\ITransport.h">
       <Filter>src\audio</Filter>
     </ClInclude>
@@ -262,6 +256,15 @@
       <Filter>src\audio</Filter>
     </ClInclude>
     <ClInclude Include="sdk\IVisualizer.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IPlaybackRemote.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IPlaybackService.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\ITrack.h">
       <Filter>src\sdk</Filter>
     </ClInclude>
   </ItemGroup>

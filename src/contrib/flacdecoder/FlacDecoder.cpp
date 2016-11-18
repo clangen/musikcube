@@ -133,7 +133,7 @@ FLAC__StreamDecoderLengthStatus FlacDecoder::FlacFileSize(
     return FLAC__STREAM_DECODER_LENGTH_STATUS_OK;
 }
 
-bool FlacDecoder::Open(musik::core::io::IDataStream *stream){
+bool FlacDecoder::Open(musik::core::sdk::IDataStream *stream){
     this->stream = stream;
 
 	FLAC__StreamDecoderInitStatus init_status =

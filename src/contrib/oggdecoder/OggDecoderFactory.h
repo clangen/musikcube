@@ -36,14 +36,14 @@
 
 #include <core/sdk/IDecoderFactory.h>
 
-using namespace musik::core::audio;
+using namespace musik::core::sdk;
 
 class OggDecoderFactory : public IDecoderFactory {
 public:
     OggDecoderFactory();
-	~OggDecoderFactory();
+    ~OggDecoderFactory();
 
-	IDecoder* CreateDecoder();
-	void Destroy();
-	bool CanHandle(const char* type) const;
+    IDecoder* CreateDecoder();
+    void Destroy();
+    bool CanHandle(const char* type) const;
 };

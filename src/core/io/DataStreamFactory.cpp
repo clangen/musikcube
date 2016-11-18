@@ -40,6 +40,7 @@
 #include <core/io/LocalFileStream.h>
 
 using namespace musik::core::io;
+using namespace musik::core::sdk;
 
 DataStreamFactory::DataStreamFactory() {
     typedef IDataStreamFactory PluginType;

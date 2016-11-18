@@ -46,7 +46,7 @@ namespace cursespp {
 
         std::string Ellipsize(const std::string& str, size_t len);
         std::string Align(const std::string& str, TextAlign align, size_t len);
-        std::vector<std::string> BreakLines(const std::string& line, size_t width); 
+        std::vector<std::string> BreakLines(const std::string& line, size_t width);
     }
 
     namespace key {

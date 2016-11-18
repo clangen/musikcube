@@ -61,12 +61,12 @@ namespace musik { namespace core {
 
         private:
 #ifdef WIN32
-            typedef musik::core::IPlugin* STDCALL(CallGetPlugin);
+            typedef musik::core::sdk::IPlugin* STDCALL(CallGetPlugin);
 #else
-            typedef musik::core::IPlugin* (*CallGetPlugin)();
+            typedef musik::core::sdk::IPlugin* (*CallGetPlugin)();
 #endif
 
-            typedef std::vector<IPlugin*> PluginList;
+            typedef std::vector<musik::core::sdk::IPlugin*> PluginList;
             typedef std::vector<void*> HandleList;
 
             PluginList loadedPlugins;

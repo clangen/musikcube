@@ -37,7 +37,7 @@
 #include "config.h"
 #include "IBuffer.h"
 
-namespace musik { namespace core { namespace audio {
+namespace musik { namespace core { namespace sdk {
 
     class IBufferProvider {
         public:

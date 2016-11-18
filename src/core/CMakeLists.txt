@@ -21,7 +21,6 @@ set(CORE_SOURCES
   ./library/track/Track.cpp
   ./plugin/PluginFactory.cpp
   ./support/Common.cpp
-  ./support/NonLibraryTrackHelper.cpp
   ./support/Preferences.cpp
   ./support/PreferenceKeys.cpp
   ./support/Version.cpp

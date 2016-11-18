@@ -37,7 +37,7 @@
 #include "IBuffer.h"
 #include "IVisualizer.h"
 
-namespace musik { namespace core { namespace audio {
+namespace musik { namespace core { namespace sdk {
 
     class ISpectrumVisualizer : public IVisualizer {
     public:

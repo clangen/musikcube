@@ -36,7 +36,7 @@
 
 #include "config.h"
 
-namespace musik { namespace core {
+namespace musik { namespace core { namespace sdk {
 
     class IPlugin {
         public:
@@ -46,5 +46,5 @@ namespace musik { namespace core {
             virtual const char* Author() = 0;
     };
 
-} }
+} } }
 

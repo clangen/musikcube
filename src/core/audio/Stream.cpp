@@ -40,6 +40,7 @@
 #include <core/plugin/PluginFactory.h>
 
 using namespace musik::core::audio;
+using namespace musik::core::sdk;
 using musik::core::PluginFactory;
 
 static std::string TAG = "Stream";

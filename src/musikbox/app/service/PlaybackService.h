@@ -40,6 +40,7 @@
 
 #include <cursespp/IMessageTarget.h>
 
+#include <core/sdk/IPlaybackService.h>
 #include <core/library/track/Track.h>
 #include <core/library/ILibrary.h>
 #include <core/audio/ITransport.h>
@@ -48,17 +49,15 @@
 
 namespace musik {
     namespace box {
-        class PlaybackService : public cursespp::IMessageTarget, public sigslot::has_slots<> {
+        class PlaybackService :
+            public musik::core::IPlaybackService,
+            public cursespp::IMessageTarget,
+            public sigslot::has_slots<>
+        {
             public:
                 sigslot::signal2<size_t, musik::core::TrackPtr> TrackChanged;
                 sigslot::signal0<> ModeChanged;
                 sigslot::signal1<bool> Shuffled;
-
-                enum RepeatMode {
-                    RepeatNone,
-                    RepeatTrack,
-                    RepeatList
-                };
 
                 PlaybackService(
                     musik::core::LibraryPtr library,
@@ -66,28 +65,26 @@ namespace musik {
 
                 ~PlaybackService();
 
+                /* IMessageTarget */
                 virtual void ProcessMessage(cursespp::IMessage &message);
 
+                /* IPlaybackService */
+                virtual void Play(size_t index);
+                virtual bool Next();
+                virtual bool Previous();
+                virtual void Stop() { transport.Stop(); }
+                virtual RepeatMode GetRepeatMode() { return this->repeatMode; }
+                virtual void SetRepeatMode(RepeatMode mode);
+                virtual bool IsShuffled();
+                virtual void ToggleShuffle();
+                virtual size_t GetIndex();
+                virtual size_t Count();
+
+                /* app-specific implementation */
                 musik::core::audio::ITransport& GetTransport() { return this->transport; }
-
                 void Play(TrackList& tracks, size_t index);
-                void Play(size_t index);
-                bool Next();
-                bool Previous();
-                void Stop() { transport.Stop(); }
-
                 void CopyTo(TrackList& target);
-
-                RepeatMode GetRepeatMode() { return this->repeatMode; }
-                void SetRepeatMode(RepeatMode mode);
-
-                bool IsShuffled() { return this->unshuffled.Count() > 0; }
-                void ToggleShuffle();
-
                 musik::core::TrackPtr GetTrackAtIndex(size_t index);
-                size_t GetIndex();
-
-                size_t Count() { return this->playlist.Count(); }
 
             private:
                 void OnStreamEvent(int eventType, std::string uri);

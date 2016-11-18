@@ -48,17 +48,17 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 }
 #endif
 
-class Mpg123Plugin : public musik::core::IPlugin {
+class Mpg123Plugin : public musik::core::sdk::IPlugin {
     virtual void Destroy() { delete this; }
     virtual const char* Name() { return "mpg123 IDecoder"; }
     virtual const char* Version() { return "0.2"; }
     virtual const char* Author() { return "Daniel Önnerby, clangen"; }
 };
 
-extern "C" DLLEXPORT musik::core::IPlugin* GetPlugin() {
+extern "C" DLLEXPORT musik::core::sdk::IPlugin* GetPlugin() {
     return new Mpg123Plugin();
 }
 
-extern "C" DLLEXPORT musik::core::audio::IDecoderFactory* GetDecoderFactory() {
+extern "C" DLLEXPORT musik::core::sdk::IDecoderFactory* GetDecoderFactory() {
     return new Mpg123DecoderFactory();
 }

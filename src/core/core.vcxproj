@@ -109,7 +109,6 @@
     <ClCompile Include="audio\Stream.cpp" />
     <ClCompile Include="plugin\PluginFactory.cpp" />
     <ClCompile Include="support\Common.cpp" />
-    <ClCompile Include="support\NonLibraryTrackHelper.cpp" />
     <ClCompile Include="support\PreferenceKeys.cpp" />
     <ClCompile Include="support\Preferences.cpp" />
     <ClCompile Include="support\Version.cpp" />
@@ -148,6 +147,8 @@
     <ClInclude Include="sdk\IOutput.h" />
     <ClInclude Include="sdk\IBufferProvider.h" />
     <ClInclude Include="sdk\IPcmVisualizer.h" />
+    <ClInclude Include="sdk\IPlaybackRemote.h" />
+    <ClInclude Include="sdk\IPlaybackService.h" />
     <ClInclude Include="sdk\IPlugin.h" />
     <ClInclude Include="sdk\IMetadataWriter.h" />
     <ClInclude Include="db\Connection.h" />
@@ -158,9 +159,9 @@
     <ClInclude Include="audio\Player.h" />
     <ClInclude Include="audio\Stream.h" />
     <ClInclude Include="sdk\ISpectrumVisualizer.h" />
+    <ClInclude Include="sdk\ITrack.h" />
     <ClInclude Include="sdk\IVisualizer.h" />
     <ClInclude Include="support\Common.h" />
-    <ClInclude Include="support\NonLibraryTrackHelper.h" />
     <ClInclude Include="support\PreferenceKeys.h" />
     <ClInclude Include="support\Preferences.h" />
     <ClInclude Include="support\Version.h" />

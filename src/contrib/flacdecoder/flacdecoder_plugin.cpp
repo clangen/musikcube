@@ -49,17 +49,17 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 }
 #endif
 
-class FlacPlugin : public musik::core::IPlugin {
+class FlacPlugin : public musik::core::sdk::IPlugin {
     void Destroy() { delete this; };
     const char* Name() { return "FLAC IDecoder"; }
     const char* Version() { return "0.2"; }
     const char* Author() { return "Daniel Önnerby, clangen"; }
 };
 
-extern "C" DLLEXPORT musik::core::IPlugin* GetPlugin() {
+extern "C" DLLEXPORT musik::core::sdk::IPlugin* GetPlugin() {
     return new FlacPlugin();
 }
 
-extern "C" DLLEXPORT musik::core::audio::IDecoderFactory* GetDecoderFactory() {
+extern "C" DLLEXPORT musik::core::sdk::IDecoderFactory* GetDecoderFactory() {
     return new FlacDecoderFactory();
 }

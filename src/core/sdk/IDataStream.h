@@ -36,7 +36,7 @@
 
 #include "config.h"
 
-namespace musik { namespace core { namespace io {
+namespace musik { namespace core { namespace sdk {
 
     typedef long PositionType;
 

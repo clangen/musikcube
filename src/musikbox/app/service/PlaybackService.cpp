@@ -52,7 +52,7 @@ using namespace musik::core::library::constants;
 using namespace musik::box;
 
 #define NO_POSITION (size_t) -1
-#define URI_AT_INDEX(x) this->playlist.Get(x)->URI()
+#define URI_AT_INDEX(x) this->playlist.Get(x)->Uri()
 #define PREVIOUS_GRACE_PERIOD 2.0f
 #define MESSAGE_STREAM_EVENT 1000
 #define MESSAGE_PLAYBACK_EVENT 1001
@@ -182,7 +182,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
                 things are asynchronous, this may not always be the case, especially if
                 the tracks are very short, or the user is advancing through songs very
                 quickly. make compare the track URIs before we update internal state. */
-                if (this->GetTrackAtIndex(this->nextIndex)->URI() == streamMessage->GetUri()) {
+                if (this->GetTrackAtIndex(this->nextIndex)->Uri() == streamMessage->GetUri()) {
                     this->index = this->nextIndex;
                     this->nextIndex = NO_POSITION;
                 }
@@ -255,6 +255,16 @@ bool PlaybackService::Previous() {
     }
 
     return false;
+}
+
+bool PlaybackService::IsShuffled() {
+    boost::recursive_mutex::scoped_lock lock(this->playlistMutex);
+    return this->unshuffled.Count() > 0;
+}
+
+size_t PlaybackService::Count() {
+    boost::recursive_mutex::scoped_lock lock(this->playlistMutex);
+    return this->playlist.Count();
 }
 
 void PlaybackService::Play(TrackList& tracks, size_t index) {

@@ -43,6 +43,7 @@
 static const std::string TAG = "LocalFileStream";
 
 using namespace musik::core::io;
+using namespace musik::core::sdk;
 
 LocalFileStream::LocalFileStream()
 : file(NULL)
