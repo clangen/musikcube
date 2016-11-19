@@ -43,12 +43,6 @@
 #include "Text.h"
 #include "Screen.h"
 
-#include <boost/locale.hpp>
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem/fstream.hpp>
-#include <boost/filesystem/detail/utf8_codecvt_facet.hpp>
-#include <boost/chrono.hpp>
-
 #include <thread>
 
 #ifndef WIN32
@@ -56,7 +50,7 @@
 #endif
 
 using namespace cursespp;
-using namespace boost::chrono;
+using namespace std::chrono;
 
 static OverlayStack overlays;
 static bool disconnected = false;
@@ -74,11 +68,6 @@ static void resizedHandler(int signal) {
 #endif
 
 App::App(const std::string& title) {
-    /* the following allows boost::filesystem to use utf8 on Windows */
-    std::locale locale = std::locale();
-    std::locale utf8Locale(locale, new boost::filesystem::detail::utf8_codecvt_facet);
-    boost::filesystem::path::imbue(utf8Locale);
-
     this->minWidth = this->minHeight = 0;
 
 #ifndef WIN32

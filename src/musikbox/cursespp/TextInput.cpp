@@ -34,14 +34,11 @@
 
 #include <stdafx.h>
 
-#include <cursespp/Screen.h>
-#include <cursespp/Colors.h>
-#include <cursespp/MessageQueue.h>
-#include <cursespp/Message.h>
-
+#include "Screen.h"
+#include "Colors.h"
+#include "MessageQueue.h"
+#include "Message.h"
 #include "TextInput.h"
-
-#include <boost/algorithm/string.hpp>
 
 using namespace cursespp;
 
@@ -108,7 +105,7 @@ bool TextInput::Write(const std::string& key) {
     if (len == 1 || (len > 1 && this->inputMode == InputRaw)) {
         if (this->inputMode == InputRaw) {
             this->buffer = key;
-            this->bufferLength = len;            
+            this->bufferLength = len;
             this->position = len;
         }
         else {

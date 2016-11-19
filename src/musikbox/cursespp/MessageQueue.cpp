@@ -36,8 +36,10 @@
 #include <algorithm>
 #include "MessageQueue.h"
 
-using namespace boost::chrono;
+using namespace std::chrono;
 using namespace cursespp;
+
+using LockT = std::unique_lock<std::recursive_mutex>;
 
 MessageQueue MessageQueue::instance;
 
@@ -53,11 +55,11 @@ void MessageQueue::Dispatch() {
     milliseconds now = duration_cast<milliseconds>(
         system_clock::now().time_since_epoch());
 
-    typedef std::list<EnqueuedMessage*>::iterator Iterator;
+    using Iterator = std::list<EnqueuedMessage*>::iterator;
     std::list<EnqueuedMessage*> toDispatch;
 
     {
-        boost::recursive_mutex::scoped_lock lock(this->queueMutex);
+        LockT lock(this->queueMutex);
 
         Iterator it = this->queue.begin();
 
@@ -90,7 +92,7 @@ void MessageQueue::Dispatch() {
 }
 
 void MessageQueue::Remove(IMessageTarget *target, int type) {
-    boost::recursive_mutex::scoped_lock lock(this->queueMutex);
+    LockT lock(this->queueMutex);
 
     std::list<EnqueuedMessage*>::iterator it = this->queue.begin();
     while (it != this->queue.end()) {
@@ -109,7 +111,7 @@ void MessageQueue::Remove(IMessageTarget *target, int type) {
 }
 
 void MessageQueue::Post(IMessagePtr message, int64 delayMs) {
-    boost::recursive_mutex::scoped_lock lock(this->queueMutex);
+    LockT lock(this->queueMutex);
 
     delayMs = std::max((int64) 0, delayMs);
 

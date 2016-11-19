@@ -37,8 +37,8 @@
 #include "IMessage.h"
 #include "IMessageTarget.h"
 
-#include <boost/thread/recursive_mutex.hpp>
-#include <boost/chrono.hpp>
+#include <mutex>
+#include <chrono>
 
 namespace cursespp {
     class MessageQueue {
@@ -56,10 +56,10 @@ namespace cursespp {
 
             struct EnqueuedMessage {
                 IMessagePtr message;
-                boost::chrono::milliseconds time;
+                std::chrono::milliseconds time;
             };
 
-            boost::recursive_mutex queueMutex;
+            std::recursive_mutex queueMutex;
             std::list<EnqueuedMessage*> queue;
 
             MessageQueue();

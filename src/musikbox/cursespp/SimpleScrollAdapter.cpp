@@ -39,7 +39,6 @@
 #include "MultiLineEntry.h"
 #include "ScrollableWindow.h"
 #include "Colors.h"
-#include <boost/algorithm/string.hpp>
 #include <utf8/utf8/unchecked.h>
 
 using namespace cursespp;

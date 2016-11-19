@@ -34,6 +34,8 @@
 
 #include "stdafx.h"
 
+#include <cstdio>
+
 #include <cursespp/App.h>
 #include <cursespp/Screen.h>
 
@@ -51,7 +53,11 @@
 #include <core/support/PreferenceKeys.h>
 #include <core/audio/Visualizer.h>
 
-#include <cstdio>
+#include <boost/locale.hpp>
+#include <boost/filesystem/path.hpp>
+#include <boost/filesystem/fstream.hpp>
+#include <boost/filesystem/detail/utf8_codecvt_facet.hpp>
+#include <boost/chrono.hpp>
 
 #ifdef WIN32
 #undef MOUSE_MOVED
@@ -77,6 +83,11 @@ int _main(int argc, _TCHAR* argv[])
 int main(int argc, char* argv[])
 #endif
 {
+    /* the following allows boost::filesystem to use utf8 on Windows */
+    std::locale locale = std::locale();
+    std::locale utf8Locale(locale, new boost::filesystem::detail::utf8_codecvt_facet);
+    boost::filesystem::path::imbue(utf8Locale);
+
 #ifndef WIN32
     #if 1 /*DEBUG*/
         freopen("/tmp/musikbox.log", "w", stderr);

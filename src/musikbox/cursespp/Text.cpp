@@ -40,9 +40,6 @@
 #include <unordered_map>
 #include <algorithm>
 
-#include <boost/lexical_cast.hpp>
-#include <boost/algorithm/string.hpp>
-
 #define PAD(str, count) for (size_t i = 0; i < count; i++) { str += " "; }
 
 namespace cursespp {
@@ -108,6 +105,33 @@ namespace cursespp {
             }
         }
 
+        /* not rocket science, but stolen from http://stackoverflow.com/a/1493195 */
+        std::vector<std::string> Split(const std::string& str, const std::string& delimiters, bool trimEmpty) {
+            using ContainerT = std::vector<std::string>;
+            ContainerT tokens;
+            std::string::size_type pos, lastPos = 0, length = str.length();
+
+            using value_type = typename ContainerT::value_type;
+            using size_type = typename ContainerT::size_type;
+
+            while (lastPos < length + 1) {
+                pos = str.find_first_of(delimiters, lastPos);
+                if (pos == std::string::npos) {
+                    pos = length;
+                }
+
+                if (pos != lastPos || !trimEmpty) {
+                    tokens.push_back(value_type(
+                        str.data() + lastPos,
+                        (size_type) pos - lastPos));
+                }
+
+                lastPos = pos + 1;
+            }
+
+            return tokens;
+        }
+
         inline void privateBreakLines(
             const std::string& line,
             size_t width,
@@ -128,8 +152,7 @@ namespace cursespp {
             else {
                 /* split by whitespace */
 
-                std::vector<std::string> words;
-                boost::algorithm::split(words, line, boost::is_any_of(" \t\v\f\r"));
+                std::vector<std::string> words = Split(line, " \t\v\f\r");
 
                 /* this isn't super efficient, but let's find all words that are greater
                 than the width and break them into more sublines... it's possible to
@@ -234,8 +257,7 @@ namespace cursespp {
             std::vector<std::string> result;
 
             if (width > 0) {
-                std::vector<std::string> split;
-                boost::algorithm::split(split, line, boost::is_any_of("\n"));
+                std::vector<std::string> split = Split(line, "\n");
 
                 for (size_t i = 0; i < split.size(); i++) {
                     privateBreakLines(split.at(i), width, result);

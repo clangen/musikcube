@@ -34,7 +34,6 @@
 
 #include <stdafx.h>
 #include "SingleLineEntry.h"
-#include <boost/algorithm/string.hpp>
 
 using namespace cursespp;
 

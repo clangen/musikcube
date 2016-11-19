@@ -38,8 +38,6 @@
 #include "Colors.h"
 #include "Text.h"
 
-#include <boost/algorithm/string.hpp>
-
 using namespace cursespp;
 
 ShortcutsWindow::ShortcutsWindow()
