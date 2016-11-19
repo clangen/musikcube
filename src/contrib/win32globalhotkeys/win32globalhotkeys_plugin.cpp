@@ -43,7 +43,7 @@ static HHOOK hook = NULL;
 
 LRESULT CALLBACK ShellProc(int code, WPARAM wParam, LPARAM lParam) {
     if (code == HC_ACTION && playback) {
-        if (wParam == WM_KEYDOWN) {
+        if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN) {
             PKBDLLHOOKSTRUCT p = (PKBDLLHOOKSTRUCT)lParam;
             switch (p->vkCode) {
                 case VK_MEDIA_NEXT_TRACK:
@@ -58,6 +58,34 @@ LRESULT CALLBACK ShellProc(int code, WPARAM wParam, LPARAM lParam) {
                 case VK_MEDIA_STOP:
                     playback->Stop();
                     return 0;
+            }
+
+            bool ctrl = GetAsyncKeyState(VK_RCONTROL) & 0x8000;
+            bool alt = GetAsyncKeyState(VK_RMENU) & 0x8000;
+            //bool win = GetAsyncKeyState(VK_LWIN) & 0x8000;
+
+            if (ctrl && alt) {
+                switch (p->vkCode) {
+                    case 'I':
+                    case 'i':
+                        playback->SetVolume(playback->GetVolume() + 0.05);
+                        return 1;
+
+                    case 'K':
+                    case 'k':
+                        playback->SetVolume(playback->GetVolume() - 0.05);
+                        return 1;
+
+                    case 'L':
+                    case 'l':
+                        playback->Next();
+                        return 1;
+
+                    case 'J':
+                    case 'j':
+                        playback->Previous();
+                        return 1;
+                }
             }
         }
     }
