@@ -42,20 +42,23 @@ musik::core::sdk::IPlaybackService* playback;
 static HHOOK hook = NULL;
 
 LRESULT CALLBACK ShellProc(int code, WPARAM wParam, LPARAM lParam) {
-    if (code == HSHELL_APPCOMMAND && playback) {
-        switch (GET_APPCOMMAND_LPARAM(lParam)) {
-        case APPCOMMAND_MEDIA_NEXTTRACK:
-            playback->Next();
-            return 0;
-        case APPCOMMAND_MEDIA_PLAY_PAUSE:
-            playback->PauseOrResume();
-            return 0;
-        case APPCOMMAND_MEDIA_PREVIOUSTRACK:
-            playback->Previous();
-            return 0;
-        case APPCOMMAND_MEDIA_STOP:
-            playback->Stop();
-            return 0;
+    if (code == HC_ACTION && playback) {
+        if (wParam == WM_KEYDOWN) {
+            PKBDLLHOOKSTRUCT p = (PKBDLLHOOKSTRUCT)lParam;
+            switch (p->vkCode) {
+                case VK_MEDIA_NEXT_TRACK:
+                    playback->Next();
+                    return 0;
+                case VK_MEDIA_PLAY_PAUSE:
+                    playback->PauseOrResume();
+                    return 0;
+                case VK_MEDIA_PREV_TRACK:
+                    playback->Previous();
+                    return 0;
+                case VK_MEDIA_STOP:
+                    playback->Stop();
+                    return 0;
+            }
         }
     }
 
@@ -65,7 +68,7 @@ LRESULT CALLBACK ShellProc(int code, WPARAM wParam, LPARAM lParam) {
 BOOL APIENTRY DllMain(HMODULE module, DWORD reason, LPVOID reserved) {
     switch (reason) {
         case DLL_PROCESS_ATTACH:
-            hook = SetWindowsHookEx(WH_SHELL, (HOOKPROC) ShellProc, module, 0L);
+            hook = SetWindowsHookEx(WH_KEYBOARD_LL, (HOOKPROC) ShellProc, module, 0L);
             break;
 
         case DLL_PROCESS_DETACH:
