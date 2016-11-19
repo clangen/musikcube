@@ -88,28 +88,31 @@ void Checkbox::Blur() {
 }
 
 void Checkbox::Redraw() {
-    WINDOW* c = this->GetContent();
-    werase(c);
-
-    int len = (int) u8cols(this->buffer);
     int cx = this->GetContentWidth();
 
-    std::string symbol = (this->checked ? CHECKED : UNCHECKED);
-    std::string ellipsized = text::Ellipsize(symbol + " " + this->buffer, cx);
+    if (cx > 0) {
+        WINDOW* c = this->GetContent();
+        werase(c);
 
-    int64 attrs = this->focused ? CURSESPP_TEXT_FOCUSED : -1LL;
+        int len = (int)u8cols(this->buffer);
 
-    if (attrs != -1) {
-        wattron(c, COLOR_PAIR(attrs));
+        std::string symbol = (this->checked ? CHECKED : UNCHECKED);
+        std::string ellipsized = text::Ellipsize(symbol + " " + this->buffer, cx);
+
+        int64 attrs = this->focused ? CURSESPP_TEXT_FOCUSED : -1LL;
+
+        if (attrs != -1) {
+            wattron(c, COLOR_PAIR(attrs));
+        }
+
+        wprintw(c, ellipsized.c_str());
+
+        if (attrs != -1) {
+            wattroff(c, COLOR_PAIR(attrs));
+        }
+
+        this->Repaint();
     }
-
-    wprintw(c, ellipsized.c_str());
-
-    if (attrs != -1) {
-        wattroff(c, COLOR_PAIR(attrs));
-    }
-
-    this->Repaint();
 }
 
 bool Checkbox::KeyPress(const std::string& key) {
