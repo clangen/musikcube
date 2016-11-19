@@ -44,7 +44,7 @@
 #include <boost/thread/condition.hpp>
 #include <list>
 
-class AlsaOut : public IOutput {
+class AlsaOut : public musik::core::sdk::IOutput {
     public:
         AlsaOut();
         virtual ~AlsaOut();
