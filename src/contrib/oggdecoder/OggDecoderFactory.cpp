@@ -34,6 +34,7 @@
 
 #include "stdafx.h"
 #include <cctype>
+#include <algorithm>
 #include "OggDecoderFactory.h"
 #include "OggDecoder.h"
 

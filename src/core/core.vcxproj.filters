@@ -267,5 +267,8 @@
     <ClInclude Include="sdk\ITrack.h">
       <Filter>src\sdk</Filter>
     </ClInclude>
+    <ClInclude Include="utfutil.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
