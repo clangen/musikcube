@@ -72,6 +72,7 @@ you may also change hotkeys by editing `~/.mC2/hotkeys.json` and restarting the 
 - `s` switch to settings view
 - `i` volume up 5%
 - `k` volume down 5%
+- `m` toggle volume mute
 - `j` previous track
 - `l` next track
 - `u` back 10 seconds
@@ -93,7 +94,7 @@ and a couple hotkeys that are specific to the library view:
 - `1` browse by artist
 - `2` browse by album
 - `3` browse by genre
-- `m` jump to playing artist/album/genre in browse view
+- `x` jump to playing artist/album/genre in browse view
 - `SPACE` pause/resume
 
 *important*: on OSX make sure you configure your terminal emulator to treat your left alt key as "+Esc" or "Meta".
