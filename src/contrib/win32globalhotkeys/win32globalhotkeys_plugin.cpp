@@ -66,29 +66,46 @@ LRESULT CALLBACK ShellProc(int code, WPARAM wParam, LPARAM lParam) {
 
             if (ctrl && alt) {
                 switch (p->vkCode) {
-                    case 'I':
-                    case 'i':
-                        playback->SetVolume(playback->GetVolume() + 0.05);
+                    case VK_F1:
+                        playback->PauseOrResume();
                         return 1;
 
-                    case 'K':
-                    case 'k':
-                        playback->SetVolume(playback->GetVolume() - 0.05);
+                    case VK_F2:
+                        playback->Stop();
                         return 1;
 
-                    case 'L':
-                    case 'l':
-                        playback->Next();
-                        return 1;
-
+                    case VK_F3:
                     case 'J':
                     case 'j':
                         playback->Previous();
                         return 1;
 
+                    case VK_F4:
+                    case 'L':
+                    case 'l':
+                        playback->Next();
+                        return 1;
+
+                    case VK_F5:
                     case 'M':
                     case 'm':
                         playback->ToggleMute();
+                        return 1;
+
+                    case VK_F6:
+                        playback->ToggleShuffle();
+                        return 0;
+
+                    case VK_F7:
+                    case 'K':
+                    case 'k':
+                        playback->SetVolume(playback->GetVolume() - 0.05);
+                        return 1;
+
+                    case VK_F8:
+                    case 'I':
+                    case 'i':
+                        playback->SetVolume(playback->GetVolume() + 0.05);
                         return 1;
                 }
             }
