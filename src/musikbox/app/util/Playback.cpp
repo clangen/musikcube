@@ -34,8 +34,10 @@
 
 #include "stdafx.h"
 #include "Playback.h"
+#include <core/sdk/constants.h>
 
 using namespace musik::core::audio;
+using namespace musik::core::sdk;
 
 namespace musik {
     namespace box {
@@ -57,10 +59,10 @@ namespace musik {
 
             void PauseOrResume(ITransport& transport) {
                 int state = transport.GetPlaybackState();
-                if (state == ITransport::PlaybackPaused) {
+                if (state == PlaybackPaused) {
                     transport.Resume();
                 }
-                else if (state == ITransport::PlaybackPlaying) {
+                else if (state == PlaybackPlaying) {
                     transport.Pause();
                 }
             }

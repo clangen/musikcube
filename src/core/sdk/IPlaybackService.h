@@ -35,25 +35,22 @@
 #pragma once
 
 #include "config.h"
+#include "constants.h"
 
 namespace musik { namespace core { namespace sdk {
 
     class IPlaybackService {
         public:
-            enum RepeatMode {
-                RepeatNone,
-                RepeatTrack,
-                RepeatList
-            };
-
             virtual void Play(size_t index) = 0;
             virtual bool Next() = 0;
             virtual bool Previous() = 0;
             virtual void Stop() = 0;
 
-            virtual RepeatMode GetRepeatMode() = 0;
-            virtual void SetRepeatMode(RepeatMode mode) = 0;
+            virtual musik::core::sdk::RepeatMode GetRepeatMode() = 0;
+            virtual void SetRepeatMode(musik::core::sdk::RepeatMode mode) = 0;
             virtual void ToggleRepeatMode() = 0;
+
+            virtual musik::core::sdk::PlaybackState GetPlaybackState() = 0;
 
             virtual bool IsShuffled() = 0;
             virtual void ToggleShuffle() = 0;

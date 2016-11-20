@@ -59,6 +59,7 @@ using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::library;
 using namespace musik::core::db;
+using namespace musik::core::sdk;
 using namespace musik::box;
 using namespace boost::chrono;
 using namespace cursespp;
@@ -315,7 +316,7 @@ void TransportWindow::ProcessMessage(IMessage &message) {
     if (type == REFRESH_TRANSPORT_READOUT) {
         this->Update((TimeMode) message.UserData1());
 
-        if (transport.GetPlaybackState() != ITransport::PlaybackStopped) {
+        if (transport.GetPlaybackState() != PlaybackStopped) {
             DEBOUNCE_REFRESH(TimeSmooth, REFRESH_INTERVAL_MS)
         }
     }
@@ -353,8 +354,8 @@ void TransportWindow::Update(TimeMode timeMode) {
     }
 
     WINDOW *c = this->GetContent();
-    bool paused = (transport.GetPlaybackState() == ITransport::PlaybackPaused);
-    bool stopped = (transport.GetPlaybackState() == ITransport::PlaybackStopped);
+    bool paused = (transport.GetPlaybackState() == PlaybackPaused);
+    bool stopped = (transport.GetPlaybackState() == PlaybackStopped);
     bool muted = transport.IsMuted();
 
     int64 gb = COLOR_PAIR(CURSESPP_TEXT_ACTIVE);
@@ -439,16 +440,16 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     /* repeat mode setup */
 
-    PlaybackService::RepeatMode mode = this->playback.GetRepeatMode();
+    RepeatMode mode = this->playback.GetRepeatMode();
     std::string repeatLabel = " ∞ ";
     std::string repeatModeLabel;
     int64 repeatAttrs = -1;
     switch (mode) {
-        case PlaybackService::RepeatList:
+        case RepeatList:
             repeatModeLabel = "list";
             repeatAttrs = gb;
             break;
-        case PlaybackService::RepeatTrack:
+        case RepeatTrack:
             repeatModeLabel = "track";
             repeatAttrs = gb;
             break;

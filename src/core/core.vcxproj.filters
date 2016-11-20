@@ -270,5 +270,8 @@
     <ClInclude Include="utfutil.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="sdk\constants.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

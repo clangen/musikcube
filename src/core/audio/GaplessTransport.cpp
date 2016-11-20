@@ -41,6 +41,7 @@
 #include <boost/thread.hpp>
 
 using namespace musik::core::audio;
+using namespace musik::core::sdk;
 
 static std::string TAG = "Transport";
 
@@ -74,7 +75,7 @@ GaplessTransport::GaplessTransport()
 GaplessTransport::~GaplessTransport() {
 }
 
-ITransport::PlaybackState GaplessTransport::GetPlaybackState() {
+PlaybackState GaplessTransport::GetPlaybackState() {
     boost::recursive_mutex::scoped_lock lock(this->stateMutex);
     return this->state;
 }
@@ -135,7 +136,7 @@ void GaplessTransport::StartWithPlayer(Player* newPlayer) {
         newPlayer->Play();
         musik::debug::info(TAG, "play()");
 
-        this->RaiseStreamEvent(ITransport::StreamScheduled, newPlayer);
+        this->RaiseStreamEvent(StreamScheduled, newPlayer);
     }
 }
 
@@ -231,7 +232,7 @@ bool GaplessTransport::Resume() {
     }
 
     if (count) {
-        this->SetPlaybackState(ITransport::PlaybackPlaying);
+        this->SetPlaybackState(PlaybackPlaying);
         return true;
     }
 
@@ -323,8 +324,8 @@ void GaplessTransport::SetNextCanStart(bool nextCanStart) {
 }
 
 void GaplessTransport::OnPlaybackStarted(Player* player) {
-    this->RaiseStreamEvent(ITransport::StreamPlaying, player);
-    this->SetPlaybackState(ITransport::PlaybackPlaying);
+    this->RaiseStreamEvent(StreamPlaying, player);
+    this->SetPlaybackState(PlaybackPlaying);
 }
 
 void GaplessTransport::OnPlaybackAlmostEnded(Player* player) {
@@ -340,11 +341,11 @@ void GaplessTransport::OnPlaybackAlmostEnded(Player* player) {
         }
     }
 
-    this->RaiseStreamEvent(ITransport::StreamAlmostDone, player);
+    this->RaiseStreamEvent(StreamAlmostDone, player);
 }
 
 void GaplessTransport::OnPlaybackFinished(Player* player) {
-    this->RaiseStreamEvent(ITransport::StreamFinished, player);
+    this->RaiseStreamEvent(StreamFinished, player);
 
     bool stopped = false;
 
@@ -381,8 +382,8 @@ void GaplessTransport::OnPlaybackFinished(Player* player) {
 }
 
 void GaplessTransport::OnPlaybackError(Player* player) {
-    this->RaiseStreamEvent(ITransport::StreamError, player);
-    this->SetPlaybackState(ITransport::PlaybackStopped);
+    this->RaiseStreamEvent(StreamError, player);
+    this->SetPlaybackState(PlaybackStopped);
     DEFER(&GaplessTransport::RemoveActive, player);
 }
 

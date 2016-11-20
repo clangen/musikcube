@@ -38,10 +38,13 @@
 #include <core/audio/ITransport.h>
 #include <core/audio/Player.h>
 #include <core/sdk/IOutput.h>
+#include <core/sdk/constants.h>
+
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
-#include <sigslot/sigslot.h>
 #include <boost/thread/recursive_mutex.hpp>
+
+#include <sigslot/sigslot.h>
 
 namespace musik { namespace core { namespace audio {
 
@@ -66,7 +69,7 @@ namespace musik { namespace core { namespace audio {
             virtual bool IsMuted();
             virtual void SetMuted(bool muted);
 
-            virtual PlaybackState GetPlaybackState();
+            virtual musik::core::sdk::PlaybackState GetPlaybackState();
 
         private:
             void StartWithPlayer(Player* player);
@@ -89,7 +92,7 @@ namespace musik { namespace core { namespace audio {
             void OnPlaybackError(Player* player);
 
         private:
-            PlaybackState state;
+            musik::core::sdk::PlaybackState state;
             boost::recursive_mutex stateMutex;
             musik::core::audio::OutputPtr output;
             std::list<Player*> active;

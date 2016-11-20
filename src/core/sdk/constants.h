@@ -34,38 +34,27 @@
 
 #pragma once
 
-#include <core/config.h>
-#include <core/sdk/constants.h>
-#include <sigslot/sigslot.h>
+namespace musik {
+    namespace core {
+        namespace sdk {
+            enum PlaybackState {
+                PlaybackStopped,
+                PlaybackPaused,
+                PlaybackPlaying
+            };
 
-namespace musik { namespace core { namespace audio {
+            enum StreamEventType {
+                StreamScheduled = 1,
+                StreamPlaying = 2,
+                StreamAlmostDone = 3,
+                StreamFinished = 4,
+                StreamStopped = 5,
+                StreamError = -1
+            };
 
-    class ITransport {
-        public:
-            sigslot::signal2<int, std::string> StreamEvent;
-            sigslot::signal1<int> PlaybackEvent;
-            sigslot::signal0<> VolumeChanged;
-            sigslot::signal1<double> TimeChanged;
-
-            virtual ~ITransport() { }
-
-            virtual void PrepareNextTrack(const std::string& trackUrl) = 0;
-
-            virtual void Start(const std::string& trackUrl) = 0;
-            virtual void Stop() = 0;
-            virtual bool Pause() = 0;
-            virtual bool Resume() = 0;
-
-            virtual double Position() = 0;
-            virtual void SetPosition(double seconds) = 0;
-
-            virtual double Volume() = 0;
-            virtual void SetVolume(double volume) = 0;
-
-            virtual bool IsMuted() = 0;
-            virtual void SetMuted(bool muted) = 0;
-
-            virtual musik::core::sdk::PlaybackState GetPlaybackState() = 0;
-    };
-
+            enum RepeatMode {
+                RepeatNone,
+                RepeatTrack,
+                RepeatList
+            };
 } } }

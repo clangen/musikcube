@@ -201,7 +201,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
 
         int64 eventType = streamMessage->GetEventType();
 
-        if (eventType == ITransport::StreamPlaying) {
+        if (eventType == StreamPlaying) {
             if (this->nextIndex != NO_POSITION) {
                 /* in most cases when we get here it means that the next track is
                 starting, so we want to update our internal index. however, because
@@ -231,12 +231,12 @@ void PlaybackService::ProcessMessage(IMessage &message) {
     else if (message.Type() == MESSAGE_PLAYBACK_EVENT) {
         int64 eventType = message.UserData1();
 
-        if (eventType == ITransport::PlaybackStopped) {
+        if (eventType == PlaybackStopped) {
             this->OnTrackChanged(NO_POSITION, TrackPtr());
         }
     }
     else if (message.Type() == MESSAGE_PREPARE_NEXT_TRACK) {
-        if (transport.GetPlaybackState() != ITransport::PlaybackStopped) {
+        if (transport.GetPlaybackState() != PlaybackStopped) {
             this->PrepareNextTrack();
         }
     }
@@ -251,7 +251,7 @@ void PlaybackService::OnTrackChanged(size_t pos, TrackPtr track) {
 }
 
 bool PlaybackService::Next() {
-    if (transport.GetPlaybackState() == ITransport::PlaybackStopped) {
+    if (transport.GetPlaybackState() == PlaybackStopped) {
         return false;
     }
 
@@ -270,7 +270,7 @@ bool PlaybackService::Next() {
 }
 
 bool PlaybackService::Previous() {
-    if (transport.GetPlaybackState() == ITransport::PlaybackStopped) {
+    if (transport.GetPlaybackState() == PlaybackStopped) {
         return false;
     }
 
@@ -302,20 +302,24 @@ size_t PlaybackService::Count() {
 }
 
 void PlaybackService::ToggleRepeatMode() {
-    PlaybackService::RepeatMode mode = GetRepeatMode();
+    RepeatMode mode = GetRepeatMode();
     switch (mode) {
-    case PlaybackService::RepeatNone:
-        SetRepeatMode(PlaybackService::RepeatList);
+    case RepeatNone:
+        SetRepeatMode(RepeatList);
         break;
 
-    case PlaybackService::RepeatList:
-        SetRepeatMode(PlaybackService::RepeatTrack);
+    case RepeatList:
+        SetRepeatMode(RepeatTrack);
         break;
 
     default:
-        SetRepeatMode(PlaybackService::RepeatNone);
+        SetRepeatMode(RepeatNone);
         break;
     }
+}
+
+PlaybackState PlaybackService::GetPlaybackState() {
+    return transport.GetPlaybackState();
 }
 
 void PlaybackService::Play(TrackList& tracks, size_t index) {
@@ -354,7 +358,7 @@ double PlaybackService::GetVolume() {
 }
 
 void PlaybackService::PauseOrResume() {
-    if (transport.GetPlaybackState() == ITransport::PlaybackStopped) {
+    if (transport.GetPlaybackState() == PlaybackStopped) {
         if (this->Count()) {
             this->Play(0);
         }

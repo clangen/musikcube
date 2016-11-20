@@ -74,9 +74,10 @@ namespace musik {
                 virtual bool Next();
                 virtual bool Previous();
                 virtual void Stop() { transport.Stop(); }
-                virtual RepeatMode GetRepeatMode() { return this->repeatMode; }
-                virtual void SetRepeatMode(RepeatMode mode);
+                virtual musik::core::sdk::RepeatMode GetRepeatMode() { return this->repeatMode; }
+                virtual void SetRepeatMode(musik::core::sdk::RepeatMode mode);
                 virtual void ToggleRepeatMode();
+                virtual musik::core::sdk::PlaybackState GetPlaybackState();
                 virtual bool IsShuffled();
                 virtual void ToggleShuffle();
                 virtual size_t GetIndex();
@@ -113,7 +114,7 @@ namespace musik {
                 musik::core::LibraryPtr library;
                 musik::core::audio::ITransport& transport;
                 size_t index, nextIndex;
-                RepeatMode repeatMode;
+                musik::core::sdk::RepeatMode repeatMode;
         };
     }
 }

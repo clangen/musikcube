@@ -56,6 +56,7 @@ bool tostr(T& t, const std::string& s) {
 
 using namespace musik::core;
 using namespace musik::core::audio;
+using namespace musik::core::sdk;
 using namespace musik::box;
 using namespace cursespp;
 
@@ -272,10 +273,10 @@ bool ConsoleLayout::PlayFile(const std::vector<std::string>& args) {
 
 void ConsoleLayout::Pause() {
     int state = this->transport.GetPlaybackState();
-    if (state == ITransport::PlaybackPaused) {
+    if (state == PlaybackPaused) {
         this->transport.Resume();
     }
-    else if (state == ITransport::PlaybackPlaying) {
+    else if (state == PlaybackPlaying) {
         this->transport.Pause();
     }
 }
