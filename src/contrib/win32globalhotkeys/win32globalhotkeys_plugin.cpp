@@ -88,7 +88,7 @@ LRESULT CALLBACK ShellProc(int code, WPARAM wParam, LPARAM lParam) {
 
                     case 'M':
                     case 'm':
-                        playback->Previous();
+                        playback->ToggleMute();
                         return 1;
                 }
             }
