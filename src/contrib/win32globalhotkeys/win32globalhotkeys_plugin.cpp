@@ -87,26 +87,26 @@ LRESULT CALLBACK ShellProc(int code, WPARAM wParam, LPARAM lParam) {
                         return 1;
 
                     case VK_F5:
-                    case 'M':
-                    case 'm':
-                        playback->ToggleMute();
-                        return 1;
-
-                    case VK_F6:
-                        playback->ToggleShuffle();
-                        return 0;
-
-                    case VK_F7:
                     case 'K':
                     case 'k':
                         playback->SetVolume(playback->GetVolume() - 0.05);
                         return 1;
 
-                    case VK_F8:
+                    case VK_F6:
                     case 'I':
                     case 'i':
                         playback->SetVolume(playback->GetVolume() + 0.05);
                         return 1;
+
+                    case VK_F7:
+                    case 'M':
+                    case 'm':
+                        playback->ToggleMute();
+                        return 1;
+
+                    case VK_F8:
+                        playback->ToggleShuffle();
+                        return 0;
                 }
             }
         }
