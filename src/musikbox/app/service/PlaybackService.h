@@ -86,6 +86,9 @@ namespace musik {
                 virtual void PauseOrResume();
                 virtual bool IsMuted();
                 virtual void ToggleMute();
+                virtual double GetPosition();
+                virtual void SetPosition(double seconds);
+                virtual double GetDuration();
 
                 /* app-specific implementation */
                 musik::core::audio::ITransport& GetTransport() { return this->transport; }

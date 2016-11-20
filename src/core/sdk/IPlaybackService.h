@@ -62,6 +62,10 @@ namespace musik { namespace core { namespace sdk {
             virtual double GetVolume() = 0;
             virtual void SetVolume(double volume) = 0;
 
+            virtual double GetPosition() = 0;
+            virtual void SetPosition(double seconds) = 0;
+            virtual double GetDuration() = 0;
+
             virtual bool IsMuted() = 0;
             virtual void ToggleMute() = 0;
 

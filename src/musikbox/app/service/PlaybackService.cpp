@@ -44,6 +44,8 @@
 #include <core/library/LocalLibraryConstants.h>
 #include <core/plugin/PluginFactory.h>
 
+#include <boost/lexical_cast.hpp>
+
 using musik::core::TrackPtr;
 using musik::core::LibraryPtr;
 using musik::core::audio::ITransport;
@@ -51,7 +53,7 @@ using musik::core::audio::ITransport;
 using cursespp::IMessageTarget;
 using cursespp::IMessage;
 
-using namespace musik::core::library::constants;
+using namespace musik::core::library;
 using namespace musik::core;
 using namespace musik::core::sdk;
 using namespace musik::box;
@@ -243,10 +245,8 @@ void PlaybackService::ProcessMessage(IMessage &message) {
 void PlaybackService::OnTrackChanged(size_t pos, TrackPtr track) {
     this->TrackChanged(this->index, track);
 
-    if (track) {
-        for (auto it = remotes.begin(); it != remotes.end(); it++) {
-            (*it)->OnTrackChanged(track.get());
-        }
+    for (auto it = remotes.begin(); it != remotes.end(); it++) {
+        (*it)->OnTrackChanged(track.get());
     }
 }
 
@@ -374,6 +374,34 @@ void PlaybackService::ToggleMute() {
 
 void PlaybackService::SetVolume(double vol) {
     transport.SetVolume(vol);
+}
+
+double PlaybackService::GetPosition() {
+    return transport.Position();
+}
+
+void PlaybackService::SetPosition(double seconds) {
+    transport.SetPosition(seconds);
+}
+
+double PlaybackService::GetDuration() {
+    TrackPtr track;
+
+    {
+        boost::recursive_mutex::scoped_lock lock(this->playlistMutex);
+
+        size_t index = this->index;
+        if (index < this->playlist.Count()) {
+            track = this->playlist.Get(index);
+        }
+    }
+
+    if (track) {
+        return boost::lexical_cast<double>(
+            track->GetValue(constants::Track::DURATION));
+    }
+
+    return 0.0f;
 }
 
 TrackPtr PlaybackService::GetTrackAtIndex(size_t index) {
