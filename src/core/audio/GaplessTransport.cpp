@@ -66,7 +66,8 @@ GaplessTransport::GaplessTransport()
 : volume(1.0)
 , state(PlaybackStopped)
 , nextPlayer(nullptr)
-, nextCanStart(false) {
+, nextCanStart(false)
+, muted(false) {
     this->output = Player::CreateDefaultOutput();
 }
 
@@ -253,6 +254,18 @@ void GaplessTransport::SetPosition(double seconds) {
     if (!this->active.empty()) {
         this->active.front()->SetPosition(seconds);
         this->TimeChanged(seconds);
+    }
+}
+
+bool GaplessTransport::IsMuted() {
+    return this->muted;
+}
+
+void GaplessTransport::SetMuted(bool muted) {
+    if (this->muted != muted) {
+        this->muted = muted;
+        this->output->SetVolume(muted ? 0.0f : this->volume);
+        this->VolumeChanged();
     }
 }
 

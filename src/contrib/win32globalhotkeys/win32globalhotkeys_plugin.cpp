@@ -85,6 +85,11 @@ LRESULT CALLBACK ShellProc(int code, WPARAM wParam, LPARAM lParam) {
                     case 'j':
                         playback->Previous();
                         return 1;
+
+                    case 'M':
+                    case 'm':
+                        playback->Previous();
+                        return 1;
                 }
             }
         }

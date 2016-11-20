@@ -63,6 +63,9 @@ namespace musik { namespace core { namespace audio {
             virtual double Volume();
             virtual void SetVolume(double volume);
 
+            virtual bool IsMuted();
+            virtual void SetMuted(bool muted);
+
             virtual PlaybackState GetPlaybackState();
 
         private:
@@ -93,6 +96,7 @@ namespace musik { namespace core { namespace audio {
             Player* nextPlayer;
             double volume;
             bool nextCanStart;
+            bool muted;
     };
 
 } } }

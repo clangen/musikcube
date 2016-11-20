@@ -58,7 +58,11 @@ GlobalHotkeys::~GlobalHotkeys() {
 }
 
 bool GlobalHotkeys::Handle(const std::string& kn) {
-    if (Hotkeys::Is(Hotkeys::TogglePause, kn)) {
+    if (Hotkeys::Is(Hotkeys::ToggleMute, kn)) {
+        this->playback.ToggleMute();
+        return true;
+    }
+    else if (Hotkeys::Is(Hotkeys::TogglePause, kn)) {
         playback::PauseOrResume(this->transport);
         return true;
     }
@@ -87,7 +91,7 @@ bool GlobalHotkeys::Handle(const std::string& kn) {
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::ToggleRepeat, kn)) {
-        playback::ToggleRepeatMode(this->playback);
+        this->playback.ToggleRepeatMode();
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::ToggleShuffle, kn)) {

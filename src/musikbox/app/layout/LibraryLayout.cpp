@@ -211,27 +211,14 @@ void LibraryLayout::OnSearchResultSelected(
     this->browseLayout->ScrollTo(fieldType, fieldId);
 }
 
-IWindowPtr LibraryLayout::FocusTransportNext() {
-    if (this->transportView->FocusNext()) {
-        return this->transportView;
-    }
-
-    this->transportView->SetFocus(TransportWindow::FocusNone);
-    return this->visibleLayout->FocusFirst();
-}
-
-IWindowPtr LibraryLayout::FocusTransportPrev() {
-    if (this->transportView->FocusPrev()) {
-        return this->transportView;
-    }
-
-    this->transportView->SetFocus(TransportWindow::FocusNone);
-    return this->visibleLayout->FocusLast();
-}
-
 IWindowPtr LibraryLayout::FocusNext() {
     if (this->transportView->IsFocused()) {
-        return this->FocusTransportNext();
+        if (this->transportView->FocusNext()) {
+            return this->transportView;
+        }
+
+        this->transportView->Blur();
+        return this->visibleLayout->FocusFirst();
     }
 
     return this->visibleLayout->FocusNext();
@@ -239,7 +226,12 @@ IWindowPtr LibraryLayout::FocusNext() {
 
 IWindowPtr LibraryLayout::FocusPrev() {
     if (this->transportView->IsFocused()) {
-        return this->FocusTransportPrev();
+        if (this->transportView->FocusPrev()) {
+            return this->transportView;
+        }
+
+        this->transportView->Blur();
+        return this->visibleLayout->FocusLast();
     }
 
     return this->visibleLayout->FocusPrev();
@@ -297,6 +289,16 @@ bool LibraryLayout::KeyPress(const std::string& key) {
     }
     else if (Hotkeys::Is(Hotkeys::NavigateLibraryTracks, key)) {
         this->ShowTrackSearch();
+        return true;
+    }
+    else if (this->GetFocus() == this->transportView && key == "KEY_UP") {
+        this->transportView->Blur();
+        this->visibleLayout->FocusLast();
+        return true;
+    }
+    else if (this->GetFocus() == this->transportView && key == "KEY_DOWN") {
+        this->transportView->Blur();
+        this->visibleLayout->FocusFirst();
         return true;
     }
     /* forward to the visible layout */

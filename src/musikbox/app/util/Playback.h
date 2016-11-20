@@ -53,8 +53,6 @@ namespace musik {
             void SeekBack(musik::core::audio::ITransport& transport);
 
             void PauseOrResume(musik::core::audio::ITransport& transport);
-
-            void ToggleRepeatMode(PlaybackService& playback);
         }
     }
 }

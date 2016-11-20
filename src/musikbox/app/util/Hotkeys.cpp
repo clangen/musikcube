@@ -67,6 +67,7 @@ static std::unordered_map<std::string, Id> NAME_TO_ID = {
     { "navigate_console", Id::NavigateConsole },
     { "navigate_jump_to_playing", Id::NavigateJumpToPlaying },
 
+    { "playback_toggle_mute", Id::ToggleMute },
     { "playback_toggle_pause", Id::TogglePause },
     { "playback_next", Id::Next },
     { "playback_previous", Id::Previous },
@@ -98,8 +99,9 @@ static std::unordered_map<Id, std::string, EnumHasher> ID_TO_DEFAULT = {
     { Id::NavigateLibraryPlayQueue, "n" },
     { Id::NavigateSettings, "s" },
     { Id::NavigateConsole, "`" },
-    { Id::NavigateJumpToPlaying, "m" },
+    { Id::NavigateJumpToPlaying, "x" },
 
+    { Id::ToggleMute, "m" },
     { Id::TogglePause, "^P" },
     { Id::Next, "l" },
     { Id::Previous, "j" },

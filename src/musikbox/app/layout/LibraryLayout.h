@@ -96,9 +96,6 @@ namespace musik {
                 void OnLayoutChanged();
                 void UpdateShortcutsWindow();
 
-                cursespp::IWindowPtr FocusTransportNext();
-                cursespp::IWindowPtr FocusTransportPrev();
-
                 PlaybackService& playback;
                 musik::core::audio::ITransport& transport;
                 musik::core::LibraryPtr library;

@@ -302,7 +302,20 @@ size_t PlaybackService::Count() {
 }
 
 void PlaybackService::ToggleRepeatMode() {
-    playback::ToggleRepeatMode(*this);
+    PlaybackService::RepeatMode mode = GetRepeatMode();
+    switch (mode) {
+    case PlaybackService::RepeatNone:
+        SetRepeatMode(PlaybackService::RepeatList);
+        break;
+
+    case PlaybackService::RepeatList:
+        SetRepeatMode(PlaybackService::RepeatTrack);
+        break;
+
+    default:
+        SetRepeatMode(PlaybackService::RepeatNone);
+        break;
+    }
 }
 
 void PlaybackService::Play(TrackList& tracks, size_t index) {
@@ -349,6 +362,14 @@ void PlaybackService::PauseOrResume() {
     else {
         playback::PauseOrResume(this->transport);
     }
+}
+
+bool PlaybackService::IsMuted() {
+    return transport.IsMuted();
+}
+
+void PlaybackService::ToggleMute() {
+    transport.SetMuted(!transport.IsMuted());
 }
 
 void PlaybackService::SetVolume(double vol) {

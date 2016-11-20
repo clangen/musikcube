@@ -200,11 +200,11 @@ static size_t writePlayingFormat(
 }
 
 static inline bool inc(const std::string& kn) {
-    return (kn == "KEY_UP" || kn == "KEY_RIGHT");
+    return (/*kn == "KEY_UP" ||*/ kn == "KEY_RIGHT");
 }
 
 static inline bool dec(const std::string& kn) {
-    return (kn == "KEY_DOWN" || kn == "KEY_LEFT");
+    return (/*kn == "KEY_DOWN" ||*/ kn == "KEY_LEFT");
 }
 
 TransportWindow::TransportWindow(musik::box::PlaybackService& playback)
@@ -259,6 +259,10 @@ bool TransportWindow::KeyPress(const std::string& kn) {
         }
         else if (dec(kn)) {
             playback::VolumeDown(this->transport);
+            return true;
+        }
+        else if (kn == "KEY_ENTER") {
+            transport.SetMuted(!transport.IsMuted());
             return true;
         }
     }
@@ -351,12 +355,18 @@ void TransportWindow::Update(TimeMode timeMode) {
     WINDOW *c = this->GetContent();
     bool paused = (transport.GetPlaybackState() == ITransport::PlaybackPaused);
     bool stopped = (transport.GetPlaybackState() == ITransport::PlaybackStopped);
+    bool muted = transport.IsMuted();
 
     int64 gb = COLOR_PAIR(CURSESPP_TEXT_ACTIVE);
     int64 disabled = COLOR_PAIR(CURSESPP_TEXT_DISABLED);
 
-    int64 volumeAttrs = (this->focus == FocusVolume)
-        ? COLOR_PAIR(CURSESPP_TEXT_FOCUSED) : -1;
+    int64 volumeAttrs = -1;
+    if (this->focus == FocusVolume) {
+        volumeAttrs = COLOR_PAIR(CURSESPP_TEXT_FOCUSED);
+    }
+    else if (muted) {
+        volumeAttrs = gb;
+    }
 
     int64 timerAttrs = (this->focus == FocusTime)
         ? COLOR_PAIR(CURSESPP_TEXT_FOCUSED) : -1;
@@ -409,16 +419,23 @@ void TransportWindow::Update(TimeMode timeMode) {
     int volumePercent = (size_t) round(this->transport.Volume() * 100.0f) - 1;
     int thumbOffset = std::min(9, (volumePercent * 10) / 100);
 
-    std::string volume = "vol ";
+    std::string volume;
 
-    for (int i = 0; i < 10; i++) {
-        volume += (i == thumbOffset) ? "■" : "─";
+    if (muted) {
+        volume = "muted  ";
     }
+    else {
+        volume = "vol ";
 
-    volume += boost::str(boost::format(
-        " %d") % (int) std::round(this->transport.Volume() * 100));
+        for (int i = 0; i < 10; i++) {
+            volume += (i == thumbOffset) ? "■" : "─";
+        }
 
-    volume += "%%  ";
+        volume += boost::str(boost::format(
+            " %d") % (int)std::round(this->transport.Volume() * 100));
+
+        volume += "%%  ";
+    }
 
     /* repeat mode setup */
 
@@ -485,7 +502,7 @@ void TransportWindow::Update(TimeMode timeMode) {
     const std::string totalTime = duration::Duration(secondsTotal);
 
     int bottomRowControlsWidth =
-        u8cols(volume) - 1 + /* -1 for escaped percent sign */
+        u8cols(volume) - (muted ? 0 : 1) + /* -1 for escaped percent sign when not muted */
         u8cols(currentTime) + 1 + /* +1 for space padding */
         /* timer track with thumb */
         1 + u8cols(totalTime) + /* +1 for space padding */

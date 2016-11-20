@@ -65,23 +65,6 @@ namespace musik {
                 }
             }
 
-            void ToggleRepeatMode(PlaybackService& playback) {
-                PlaybackService::RepeatMode mode = playback.GetRepeatMode();
-                switch (mode) {
-                case PlaybackService::RepeatNone:
-                    playback.SetRepeatMode(PlaybackService::RepeatList);
-                    break;
-
-                case PlaybackService::RepeatList:
-                    playback.SetRepeatMode(PlaybackService::RepeatTrack);
-                    break;
-
-                default:
-                    playback.SetRepeatMode(PlaybackService::RepeatNone);
-                    break;
-                }
-            }
-
             void VolumeUp(ITransport& transport) {
                 transport.SetVolume(transport.Volume() + 0.05);
             }

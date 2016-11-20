@@ -63,6 +63,7 @@ namespace musik {
                     ToggleVisualizer,
 
                     /* playback */
+                    ToggleMute,
                     TogglePause,
                     Next,
                     Previous,
