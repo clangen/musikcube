@@ -237,7 +237,7 @@ static std::string formatWithoutAlbum(TrackPtr track, size_t width) {
     std::string title = text::Align(
         track->GetValue(constants::Track::TITLE),
         text::AlignLeft,
-        titleWidth);
+        (int) titleWidth);
 
     return boost::str(
         boost::format("%s   %s   %s   %s")
