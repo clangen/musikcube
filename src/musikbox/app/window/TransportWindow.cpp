@@ -374,7 +374,7 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     /* prepare the "shuffle" label */
 
-    std::string shuffleLabel = " shuffle";
+    std::string shuffleLabel = "  shuffle";
     size_t shuffleLabelLen = u8cols(shuffleLabel);
 
     /* playing SONG TITLE from ALBUM NAME */
@@ -441,20 +441,19 @@ void TransportWindow::Update(TimeMode timeMode) {
     /* repeat mode setup */
 
     RepeatMode mode = this->playback.GetRepeatMode();
-    std::string repeatLabel = " ∞ ";
-    std::string repeatModeLabel;
+    std::string repeatModeLabel = "  repeat ";
     int64 repeatAttrs = -1;
     switch (mode) {
         case RepeatList:
-            repeatModeLabel = "list";
+            repeatModeLabel += "list";
             repeatAttrs = gb;
             break;
         case RepeatTrack:
-            repeatModeLabel = "track";
+            repeatModeLabel += "track";
             repeatAttrs = gb;
             break;
         default:
-            repeatModeLabel = "off";
+            repeatModeLabel += "off";
             repeatAttrs = disabled;
             break;
     }
@@ -507,7 +506,6 @@ void TransportWindow::Update(TimeMode timeMode) {
         u8cols(currentTime) + 1 + /* +1 for space padding */
         /* timer track with thumb */
         1 + u8cols(totalTime) + /* +1 for space padding */
-        u8cols(repeatLabel) +
         u8cols(repeatModeLabel);
 
     int timerTrackWidth =
@@ -542,8 +540,6 @@ void TransportWindow::Update(TimeMode timeMode) {
     waddstr(c, timerTrack.c_str()); /* may be a very long string */
     wprintw(c, " %s", totalTime.c_str());
     OFF(c, timerAttrs);
-
-    wprintw(c, repeatLabel.c_str());
 
     ON(c, repeatAttrs);
     wprintw(c, repeatModeLabel.c_str());
