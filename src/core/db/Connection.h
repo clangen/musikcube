@@ -35,7 +35,6 @@
 #pragma once
 
 #include <core/config.h>
-#include <core/db/dbconfig.h>
 #include <core/db/Statement.h>
 #include <core/db/ScopedTransaction.h>
 
@@ -47,6 +46,13 @@ struct sqlite3;
 struct sqlite3_stmt;
 
 namespace musik { namespace core { namespace db {
+
+    typedef enum {
+        Okay = 0,
+        Row = 100,
+        Done = 101,
+        Error = 1
+    } ReturnCode;
 
     class Connection : boost::noncopyable {
         public: 

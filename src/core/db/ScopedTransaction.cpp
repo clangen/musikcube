@@ -58,7 +58,7 @@ void ScopedTransaction::CommitAndRestart() {
     this->Begin();
 }
 
-void ScopedTransaction::Begin(){
+void ScopedTransaction::Begin() {
     /* we use an IMMEDIATE transaction because we have write-ahead-logging
     enabled on this instance, this generally results in faster queries
     and also allows reads while writing */
@@ -81,4 +81,6 @@ void ScopedTransaction::End() {
             this->connection->Checkpoint();
         }
     }
+
+    this->canceled = false;
 }

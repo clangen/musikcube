@@ -123,9 +123,6 @@
     <ClInclude Include="db\Connection.h">
       <Filter>src\db</Filter>
     </ClInclude>
-    <ClInclude Include="db\dbconfig.h">
-      <Filter>src\db</Filter>
-    </ClInclude>
     <ClInclude Include="db\ScopedTransaction.h">
       <Filter>src\db</Filter>
     </ClInclude>

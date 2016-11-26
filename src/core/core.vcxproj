@@ -155,7 +155,6 @@
     <ClInclude Include="sdk\IPlugin.h" />
     <ClInclude Include="sdk\IMetadataWriter.h" />
     <ClInclude Include="db\Connection.h" />
-    <ClInclude Include="db\dbconfig.h" />
     <ClInclude Include="db\ScopedTransaction.h" />
     <ClInclude Include="db\Statement.h" />
     <ClInclude Include="audio\Buffer.h" />

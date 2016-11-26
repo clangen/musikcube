@@ -40,229 +40,97 @@
 
 using namespace musik::core::db;
 
-//////////////////////////////////////////
-///\brief
-///Constructor
-///
-///\param sql
-///SQL to be precomiled
-///
-///\param connection
-///database Connection
-//////////////////////////////////////////
-Statement::Statement(const char* sql,Connection &connection) 
+Statement::Statement(const char* sql, Connection &connection) 
 : connection(&connection)
-, stmt(NULL)
-{
+, stmt(nullptr) {
     boost::mutex::scoped_lock lock(connection.mutex);
 
     int err = sqlite3_prepare_v2(
-        this->connection->connection, sql, -1, &this->stmt, NULL);
+        this->connection->connection, sql, -1, &this->stmt, nullptr);
 
     if (err!=SQLITE_OK) {
         return;
     }
 }
 
-//////////////////////////////////////////
-///\brief
-///Constructor used by the CachedStatement
-//////////////////////////////////////////
-Statement::Statement(Connection &connection) : connection(&connection),stmt(NULL) {
+Statement::Statement(Connection &connection) 
+: connection(&connection)
+, stmt(nullptr) {
 }
 
-//////////////////////////////////////////
-///\brief
-///Destructor that will finalize the statement
-//////////////////////////////////////////
-Statement::~Statement(){
-    int err=sqlite3_finalize(this->stmt);
+Statement::~Statement() {
+    int err = sqlite3_finalize(this->stmt);
 }
 
-//////////////////////////////////////////
-///\brief
-///Reset a statment to be able to re-execute it later
-//////////////////////////////////////////
-void Statement::Reset(){
-    int err    = sqlite3_reset(this->stmt);
+void Statement::Reset() {
+    int err = sqlite3_reset(this->stmt);
 }
 
-//////////////////////////////////////////
-///\brief
-///Unbinds all previously binded parameters 
-//////////////////////////////////////////
-void Statement::UnBindAll(){
-    DB_ASSERT(sqlite3_clear_bindings(this->stmt));
+void Statement::UnbindAll() {
+    sqlite3_clear_bindings(this->stmt);
 }
 
-//////////////////////////////////////////
-///\brief
-///Execute/Step through the statment
-///
-///\returns
-///musik::core::db::ReturnCode
-//////////////////////////////////////////
-int Statement::Step(){
+int Statement::Step() {
     return this->connection->StepStatement(this->stmt);
 }
 
-//////////////////////////////////////////
-///\brief
-///Bind a integer to a statment parameter
-///
-///\param position
-///Position of the parameter (0 is the first)
-///
-///\param bindInt
-///Integer to bind
-//////////////////////////////////////////
-void Statement::BindInt(int position,int bindInt){
-    DB_ASSERT(sqlite3_bind_int(this->stmt, position + 1, bindInt));
+void Statement::BindInt(int position,int bindInt) {
+    sqlite3_bind_int(this->stmt, position + 1, bindInt);
 }
 
-//////////////////////////////////////////
-///\brief
-///Bind a 64bit integer to a statment parameter
-///
-///\param position
-///Position of the parameter (0 is the first)
-///
-///\param bindInt
-///Integer to bind
-//////////////////////////////////////////
-void Statement::BindInt(int position, uint64 bindInt){
-    DB_ASSERT(sqlite3_bind_int64(this->stmt, position + 1, bindInt));
+void Statement::BindInt(int position, uint64 bindInt) {
+    sqlite3_bind_int64(this->stmt, position + 1, bindInt);
 }
 
-//////////////////////////////////////////
-///\brief
-///Bind a text to a statment parameter
-///
-///\param position
-///Position of the parameter (0 is the first)
-///
-///\param bindText
-///Text to bind
-//////////////////////////////////////////
 void Statement::BindText(int position, const char* bindText) {
-    DB_ASSERT(sqlite3_bind_text(
+    sqlite3_bind_text(
         this->stmt, 
         position + 1,
         bindText, 
         -1, 
-        SQLITE_STATIC));
+        SQLITE_STATIC);
 }
 
-//////////////////////////////////////////
-///\brief
-///Bind a text to a statment parameter
-///
-///\param position
-///Position of the parameter (0 is the first)
-///
-///\param bindText
-///Text to bind
-//////////////////////////////////////////
 void Statement::BindText(int position ,const std::string &bindText) {
-    DB_ASSERT(sqlite3_bind_text(
+    sqlite3_bind_text(
         this->stmt, position + 1, 
         bindText.c_str(), 
         -1, 
-        SQLITE_TRANSIENT));
+        SQLITE_TRANSIENT);
 }
 
-//////////////////////////////////////////
-///\brief
-///Bind a text to a statment parameter
-///
-///\param position
-///Position of the parameter (0 is the first)
-///
-///\param bindText
-///Text to bind
-//////////////////////////////////////////
 void Statement::BindTextW(int position,const wchar_t* bindText){
-    DB_ASSERT(sqlite3_bind_text16(
+    sqlite3_bind_text16(
         this->stmt,
         position + 1,
         bindText, 
         -1,
-        SQLITE_STATIC));
+        SQLITE_STATIC);
 }
 
-//////////////////////////////////////////
-///\brief
-///Bind a text to a statment parameter
-///
-///\param position
-///Position of the parameter (0 is the first)
-///
-///\param bindText
-///Text to bind
-//////////////////////////////////////////
 void Statement::BindTextW(int position,const std::wstring &bindText){
-    DB_ASSERT(sqlite3_bind_text16(
+    sqlite3_bind_text16(
         this->stmt,
         position + 1,
         bindText.c_str(),
         -1,
-        SQLITE_TRANSIENT));
+        SQLITE_TRANSIENT);
 }
 
-//////////////////////////////////////////
-///\brief
-///Get the results of a column if Step() return a musik::core::db::Row
-///
-///\param column
-///Column to get (0 is the first)
-///
-///\returns
-///Column data
-//////////////////////////////////////////
-int Statement::ColumnInt(int column){
-    return sqlite3_column_int(this->stmt,column);
+int Statement::ColumnInt(int column) {
+    return sqlite3_column_int(this->stmt, column);
 }
 
-//////////////////////////////////////////
-///\brief
-///Get the results of a column if Step() return a musik::core::db::Row
-///
-///\param column
-///Column to get (0 is the first)
-///
-///\returns
-///Column data
-//////////////////////////////////////////
-uint64 Statement::ColumnInt64(int column){
-    return sqlite3_column_int64(this->stmt,column);
+uint64 Statement::ColumnInt64(int column) {
+    return sqlite3_column_int64(this->stmt, column);
 }
 
-//////////////////////////////////////////
-///\brief
-///Get the results of a column if Step() return a musik::core::db::Row
-///
-///\param column
-///Column to get (0 is the first)
-///
-///\returns
-///Column data
-//////////////////////////////////////////
-const char* Statement::ColumnText(int column){
+const char* Statement::ColumnText(int column) {
     const char* text = (char*) sqlite3_column_text(this->stmt, column);
     return text ? text : "";
 }
 
-//////////////////////////////////////////
-///\brief
-///Get the results of a column if Step() return a musik::core::db::Row
-///
-///\param column
-///Column to get (0 is the first)
-///
-///\returns
-///Column data
-//////////////////////////////////////////
-const wchar_t* Statement::ColumnTextW(int column){
-    const wchar_t* text = (wchar_t*) sqlite3_column_text16(this->stmt,column);
+const wchar_t* Statement::ColumnTextW(int column) {
+    const wchar_t* text = (wchar_t*) sqlite3_column_text16(this->stmt, column);
     return text ? text : L"";
 }

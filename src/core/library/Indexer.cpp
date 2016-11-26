@@ -620,7 +620,7 @@ void Indexer::RunAnalyzers() {
         trackId = getNextTrack.ColumnInt(0);
 
         getNextTrack.Reset();
-        getNextTrack.UnBindAll();
+        getNextTrack.UnbindAll();
 
         IndexerTrack track(trackId);
 

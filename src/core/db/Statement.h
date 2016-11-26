@@ -45,18 +45,15 @@ struct sqlite3_stmt;
 //////////////////////////////////////////
 
 
-namespace musik{ namespace core{ namespace db{
+namespace musik { namespace core { namespace db {
 
     class Connection;
 
-    //////////////////////////////////////////
-    ///\brief
-    ///Class for precompiling SQL statements
-    //////////////////////////////////////////
-    class  Statement : boost::noncopyable{
+    class Statement : boost::noncopyable {
         public: 
             Statement(const char* sql,Connection &connection);
             virtual ~Statement();
+
             void Reset();
             int Step();
 
@@ -72,7 +69,7 @@ namespace musik{ namespace core{ namespace db{
             const char* ColumnText(int column);
             const wchar_t* ColumnTextW(int column);
 
-            void UnBindAll();
+            void UnbindAll();
 
         private:
             friend class Connection;
