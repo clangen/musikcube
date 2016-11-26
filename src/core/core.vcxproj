@@ -112,7 +112,6 @@
     <ClCompile Include="support\Common.cpp" />
     <ClCompile Include="support\PreferenceKeys.cpp" />
     <ClCompile Include="support\Preferences.cpp" />
-    <ClCompile Include="support\Version.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="audio\GaplessTransport.h" />
@@ -167,7 +166,6 @@
     <ClInclude Include="support\Common.h" />
     <ClInclude Include="support\PreferenceKeys.h" />
     <ClInclude Include="support\Preferences.h" />
-    <ClInclude Include="support\Version.h" />
     <ClInclude Include="utfutil.h" />
   </ItemGroup>
   <ItemGroup>

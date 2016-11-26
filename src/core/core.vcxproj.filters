@@ -91,9 +91,6 @@
     <ClCompile Include="plugin\PluginFactory.cpp">
       <Filter>src\plugin</Filter>
     </ClCompile>
-    <ClCompile Include="support\Version.cpp">
-      <Filter>src\support</Filter>
-    </ClCompile>
     <ClCompile Include="library\metadata\MetadataValue.cpp">
       <Filter>src\library\metadata</Filter>
     </ClCompile>
@@ -197,9 +194,6 @@
     </ClInclude>
     <ClInclude Include="plugin\PluginFactory.h">
       <Filter>src\plugin</Filter>
-    </ClInclude>
-    <ClInclude Include="support\Version.h">
-      <Filter>src\support</Filter>
     </ClInclude>
     <ClInclude Include="library\metadata\MetadataValue.h">
       <Filter>src\library\metadata</Filter>

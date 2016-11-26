@@ -24,7 +24,6 @@ set(CORE_SOURCES
   ./support/Common.cpp
   ./support/Preferences.cpp
   ./support/PreferenceKeys.cpp
-  ./support/Version.cpp
   ../3rdparty/src/md5/md5.c
   ../3rdparty/src/sqlite/sqlite3.c
 )
