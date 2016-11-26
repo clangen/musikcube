@@ -19,6 +19,7 @@ set(CORE_SOURCES
   ./library/track/IndexerTrack.cpp
   ./library/track/LibraryTrack.cpp
   ./library/track/Track.cpp
+  ./library/track/RetainedTrack.cpp
   ./plugin/PluginFactory.cpp
   ./support/Common.cpp
   ./support/Preferences.cpp

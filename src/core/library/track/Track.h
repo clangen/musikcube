@@ -66,6 +66,9 @@ namespace musik { namespace core {
             virtual std::string GetValue(const char* metakey) = 0;
             virtual std::string Uri() = 0;
 
+            virtual int GetValue(const char* key, char* dst, int size) = 0;
+            virtual int Uri(char* dst, int size) = 0;
+
             virtual MetadataIteratorRange GetValues(const char* metakey) = 0;
             virtual MetadataIteratorRange GetAllValues() = 0;
             virtual TrackPtr Copy() = 0;

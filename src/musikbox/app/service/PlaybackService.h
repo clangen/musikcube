@@ -90,6 +90,7 @@ namespace musik {
                 virtual double GetPosition();
                 virtual void SetPosition(double seconds);
                 virtual double GetDuration();
+                virtual musik::core::sdk::IRetainedTrack* GetTrack(size_t index);
 
                 /* app-specific implementation */
                 musik::core::audio::ITransport& GetTransport() { return this->transport; }
@@ -101,6 +102,7 @@ namespace musik {
                 void OnStreamEvent(int eventType, std::string uri);
                 void OnPlaybackEvent(int eventType);
                 void OnTrackChanged(size_t pos, musik::core::TrackPtr track);
+                void OnVolumeChanged();
                 void PrepareNextTrack();
                 void InitRemotes();
                 void ResetRemotes();

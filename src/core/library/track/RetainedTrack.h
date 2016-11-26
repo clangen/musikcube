@@ -32,46 +32,25 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include <core/sdk/IRetainedTrack.h>
+#include "Track.h"
+#include <atomic>
 
-#include "config.h"
-#include "constants.h"
-#include "IRetainedTrack.h"
+namespace musik { namespace core {
 
-namespace musik { namespace core { namespace sdk {
-
-    class IPlaybackService {
+    class RetainedTrack : public musik::core::sdk::IRetainedTrack {
         public:
-            virtual void Play(size_t index) = 0;
-            virtual bool Next() = 0;
-            virtual bool Previous() = 0;
-            virtual void Stop() = 0;
+            RetainedTrack(TrackPtr track);
+            virtual ~RetainedTrack();
 
-            virtual musik::core::sdk::RepeatMode GetRepeatMode() = 0;
-            virtual void SetRepeatMode(musik::core::sdk::RepeatMode mode) = 0;
-            virtual void ToggleRepeatMode() = 0;
+            virtual void Release();
+            virtual int GetValue(const char* key, char* dst, int size);
+            virtual int Uri(char* dst, int size);
 
-            virtual musik::core::sdk::PlaybackState GetPlaybackState() = 0;
-
-            virtual bool IsShuffled() = 0;
-            virtual void ToggleShuffle() = 0;
-            virtual void PauseOrResume() = 0;
-
-            virtual double GetVolume() = 0;
-            virtual void SetVolume(double volume) = 0;
-
-            virtual double GetPosition() = 0;
-            virtual void SetPosition(double seconds) = 0;
-            virtual double GetDuration() = 0;
-
-            virtual bool IsMuted() = 0;
-            virtual void ToggleMute() = 0;
-
-            virtual size_t GetIndex() = 0;
-            virtual size_t Count() = 0;
-
-            virtual IRetainedTrack* GetTrack(size_t index) = 0;
+        private:
+            std::atomic<int> count;
+            TrackPtr track;
     };
 
-} } }
+} }
 

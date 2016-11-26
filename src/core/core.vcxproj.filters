@@ -112,6 +112,9 @@
     <ClCompile Include="audio\Visualizer.cpp">
       <Filter>src\audio</Filter>
     </ClCompile>
+    <ClCompile Include="library\track\RetainedTrack.cpp">
+      <Filter>src\library\track</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -272,6 +275,12 @@
     </ClInclude>
     <ClInclude Include="sdk\constants.h">
       <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IRetainedTrack.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="library\track\RetainedTrack.h">
+      <Filter>src\library\track</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

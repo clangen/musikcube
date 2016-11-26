@@ -42,6 +42,7 @@
 
 #include <core/audio/ITransport.h>
 #include <core/library/LocalLibraryConstants.h>
+#include <core/library/track/RetainedTrack.h>
 #include <core/plugin/PluginFactory.h>
 
 #include <boost/lexical_cast.hpp>
@@ -59,11 +60,16 @@ using namespace musik::core::sdk;
 using namespace musik::box;
 
 #define NO_POSITION (size_t) -1
+
 #define URI_AT_INDEX(x) this->playlist.Get(x)->Uri()
+
 #define PREVIOUS_GRACE_PERIOD 2.0f
+
 #define MESSAGE_STREAM_EVENT 1000
 #define MESSAGE_PLAYBACK_EVENT 1001
 #define MESSAGE_PREPARE_NEXT_TRACK 1002
+#define MESSAGE_VOLUME_CHANGED 1003
+#define MESSAGE_MODE_CHANGED 1004
 
 class StreamMessage : public cursespp::Message {
     public:
@@ -98,6 +104,7 @@ PlaybackService::PlaybackService(LibraryPtr library, ITransport& transport)
 , repeatMode(RepeatNone) {
     transport.StreamEvent.connect(this, &PlaybackService::OnStreamEvent);
     transport.PlaybackEvent.connect(this, &PlaybackService::OnPlaybackEvent);
+    transport.VolumeChanged.connect(this, &PlaybackService::OnVolumeChanged);
     this->index = NO_POSITION;
     this->nextIndex = NO_POSITION;
     this->InitRemotes();
@@ -158,6 +165,7 @@ void PlaybackService::SetRepeatMode(RepeatMode mode) {
         this->repeatMode = mode;
         this->ModeChanged();
         POST(this, MESSAGE_PREPARE_NEXT_TRACK, 0, 0);
+        POST(this, MESSAGE_MODE_CHANGED, 0, 0);
     }
 }
 
@@ -196,7 +204,8 @@ void PlaybackService::ToggleShuffle() {
 }
 
 void PlaybackService::ProcessMessage(IMessage &message) {
-    if (message.Type() == MESSAGE_STREAM_EVENT) {
+    int type = message.Type();
+    if (type == MESSAGE_STREAM_EVENT) {
         StreamMessage* streamMessage = static_cast<StreamMessage*>(&message);
 
         int64 eventType = streamMessage->GetEventType();
@@ -228,16 +237,33 @@ void PlaybackService::ProcessMessage(IMessage &message) {
             this->PrepareNextTrack();
         }
     }
-    else if (message.Type() == MESSAGE_PLAYBACK_EVENT) {
+    else if (type == MESSAGE_PLAYBACK_EVENT) {
         int64 eventType = message.UserData1();
 
         if (eventType == PlaybackStopped) {
             this->OnTrackChanged(NO_POSITION, TrackPtr());
         }
+
+        for (auto it = remotes.begin(); it != remotes.end(); it++) {
+            (*it)->OnPlaybackStateChanged((PlaybackState) eventType);
+        }
     }
-    else if (message.Type() == MESSAGE_PREPARE_NEXT_TRACK) {
+    else if (type == MESSAGE_PREPARE_NEXT_TRACK) {
         if (transport.GetPlaybackState() != PlaybackStopped) {
             this->PrepareNextTrack();
+        }
+    }
+    else if (type == MESSAGE_VOLUME_CHANGED) {
+        double volume = transport.Volume();
+        for (auto it = remotes.begin(); it != remotes.end(); it++) {
+            (*it)->OnVolumeChanged(volume);
+        }
+    }
+    else if (type == MESSAGE_MODE_CHANGED) {
+        RepeatMode mode = this->repeatMode;
+        bool shuffled = this->IsShuffled();
+        for (auto it = remotes.begin(); it != remotes.end(); it++) {
+            (*it)->OnModeChanged(repeatMode, shuffled);
         }
     }
 }
@@ -408,6 +434,16 @@ double PlaybackService::GetDuration() {
     return 0.0f;
 }
 
+IRetainedTrack* PlaybackService::GetTrack(size_t index) {
+    boost::recursive_mutex::scoped_lock lock(this->playlistMutex);
+
+    if (index >= 0 && index < this->playlist.Count()) {
+        return new RetainedTrack(this->playlist.Get(index));
+    }
+
+    return nullptr;
+}
+
 TrackPtr PlaybackService::GetTrackAtIndex(size_t index) {
     boost::recursive_mutex::scoped_lock lock(this->playlistMutex);
     return this->playlist.Get(index);
@@ -419,4 +455,8 @@ void PlaybackService::OnStreamEvent(int eventType, std::string uri) {
 
 void PlaybackService::OnPlaybackEvent(int eventType) {
     POST(this, MESSAGE_PLAYBACK_EVENT, eventType, 0);
+}
+
+void PlaybackService::OnVolumeChanged() {
+    POST(this, MESSAGE_VOLUME_CHANGED, 0, 0);
 }

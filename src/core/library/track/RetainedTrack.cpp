@@ -34,44 +34,31 @@
 
 #pragma once
 
-#include "config.h"
-#include "constants.h"
-#include "IRetainedTrack.h"
+#include "pch.hpp"
+#include "RetainedTrack.h"
 
-namespace musik { namespace core { namespace sdk {
+using namespace musik::core;
 
-    class IPlaybackService {
-        public:
-            virtual void Play(size_t index) = 0;
-            virtual bool Next() = 0;
-            virtual bool Previous() = 0;
-            virtual void Stop() = 0;
+RetainedTrack::RetainedTrack(TrackPtr track) {
+    this->count = 1;
+    this->track = track;
+}
 
-            virtual musik::core::sdk::RepeatMode GetRepeatMode() = 0;
-            virtual void SetRepeatMode(musik::core::sdk::RepeatMode mode) = 0;
-            virtual void ToggleRepeatMode() = 0;
+RetainedTrack::~RetainedTrack() {
+}
 
-            virtual musik::core::sdk::PlaybackState GetPlaybackState() = 0;
+void RetainedTrack::Release() {
+    if (this->count > 0) {
+        this->count = 0;
+        this->track.reset();
+        delete this;
+    }
+}
 
-            virtual bool IsShuffled() = 0;
-            virtual void ToggleShuffle() = 0;
-            virtual void PauseOrResume() = 0;
+int RetainedTrack::GetValue(const char* key, char* dst, int size) {
+    return track->GetValue(key, dst, size);
+}
 
-            virtual double GetVolume() = 0;
-            virtual void SetVolume(double volume) = 0;
-
-            virtual double GetPosition() = 0;
-            virtual void SetPosition(double seconds) = 0;
-            virtual double GetDuration() = 0;
-
-            virtual bool IsMuted() = 0;
-            virtual void ToggleMute() = 0;
-
-            virtual size_t GetIndex() = 0;
-            virtual size_t Count() = 0;
-
-            virtual IRetainedTrack* GetTrack(size_t index) = 0;
-    };
-
-} } }
-
+int RetainedTrack::Uri(char* dst, int size) {
+    return track->Uri(dst, size);
+}
