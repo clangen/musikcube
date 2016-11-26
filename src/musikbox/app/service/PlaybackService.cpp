@@ -437,7 +437,9 @@ double PlaybackService::GetDuration() {
 IRetainedTrack* PlaybackService::GetTrack(size_t index) {
     boost::recursive_mutex::scoped_lock lock(this->playlistMutex);
 
-    if (index >= 0 && index < this->playlist.Count()) {
+    const size_t count = this->playlist.Count();
+
+    if (count && index >= 0 && index < this->playlist.Count()) {
         return new RetainedTrack(this->playlist.Get(index));
     }
 
