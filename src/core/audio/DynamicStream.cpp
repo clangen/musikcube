@@ -35,7 +35,7 @@
 #include "pch.hpp"
 
 #include <core/debug.h>
-#include <core/audio/Stream.h>
+#include <core/audio/DynamicStream.h>
 #include <core/sdk/IDecoderFactory.h>
 #include <core/plugin/PluginFactory.h>
 
@@ -43,14 +43,14 @@ using namespace musik::core::audio;
 using namespace musik::core::sdk;
 using musik::core::PluginFactory;
 
-static std::string TAG = "Stream";
+static std::string TAG = "DynamicStream";
 
-Stream::Stream(unsigned int options)
-: preferedBufferSampleSize(4096)
-, options(options)
-, decoderSampleRate(0)
-, decoderChannels(0)
-, decoderSamplePosition(0)
+DynamicStream::DynamicStream(unsigned int options)
+    : preferedBufferSampleSize(4096)
+    , options(options)
+    , decoderSampleRate(0)
+    , decoderChannels(0)
+    , decoderSamplePosition(0)
 {
     if ((this->options & NoDSP) == 0) {
         typedef PluginFactory::DestroyDeleter<IDSP> Deleter;
@@ -60,14 +60,14 @@ Stream::Stream(unsigned int options)
     this->LoadDecoderPlugins();
 }
 
-Stream::~Stream() {
+DynamicStream::~DynamicStream() {
 }
 
-StreamPtr Stream::Create(unsigned int options) {
-    return StreamPtr(new Stream(options));
+StreamPtr DynamicStream::Create(unsigned int options) {
+    return StreamPtr(new DynamicStream(options));
 }
 
-double Stream::SetPosition(double requestedSeconds) {
+double DynamicStream::SetPosition(double requestedSeconds) {
     double actualSeconds = this->decoder->SetPosition(requestedSeconds);
 
     if (actualSeconds != -1) {
@@ -80,7 +80,7 @@ double Stream::SetPosition(double requestedSeconds) {
     return actualSeconds;
 }
 
-bool Stream::OpenStream(std::string uri) {
+bool DynamicStream::OpenStream(std::string uri) {
     musik::debug::info(TAG, "opening " + uri);
 
     /* use our file stream abstraction to open the data at the
@@ -97,9 +97,9 @@ bool Stream::OpenStream(std::string uri) {
     DecoderFactoryList::iterator end = this->decoderFactories.end();
     DecoderFactoryPtr decoderFactory;
 
-    for ( ; factories != end && !decoderFactory; ++factories) {
+    for (; factories != end && !decoderFactory; ++factories) {
         if ((*factories)->CanHandle(this->dataStream->Type())) {
-            decoderFactory  = (*factories);
+            decoderFactory = (*factories);
         }
     }
 
@@ -130,11 +130,11 @@ bool Stream::OpenStream(std::string uri) {
     return true;
 }
 
-void Stream::OnBufferProcessedByPlayer(BufferPtr buffer) {
+void DynamicStream::OnBufferProcessedByPlayer(BufferPtr buffer) {
     this->RecycleBuffer(buffer);
 }
 
-BufferPtr Stream::GetNextBufferFromDecoder() {
+BufferPtr DynamicStream::GetNextBufferFromDecoder() {
     /* get a spare buffer, then ask the decoder for some data */
     BufferPtr buffer = this->GetEmptyBuffer();
     if (!this->decoder->GetBuffer(buffer.get())) {
@@ -153,13 +153,13 @@ BufferPtr Stream::GetNextBufferFromDecoder() {
     /* calculate the position (seconds) in the buffer */
     buffer->SetPosition(
         ((double) this->decoderSamplePosition) /
-        ((double) buffer->Channels()) /
+        ((double)buffer->Channels()) /
         ((double) this->decoderSampleRate));
 
     return buffer;
 }
 
-BufferPtr Stream::GetNextProcessedOutputBuffer() {
+BufferPtr DynamicStream::GetNextProcessedOutputBuffer() {
     /* ask the decoder for the next buffer */
     BufferPtr currentBuffer = this->GetNextBufferFromDecoder();
 
@@ -200,7 +200,7 @@ BufferPtr Stream::GetNextProcessedOutputBuffer() {
 
 /* returns a previously used buffer, if one is available. otherwise, a
 new one will be allocated. */
-BufferPtr Stream::GetEmptyBuffer() {
+BufferPtr DynamicStream::GetEmptyBuffer() {
     BufferPtr buffer;
     if (!this->recycledBuffers.empty()) {
         buffer = this->recycledBuffers.front();
@@ -214,24 +214,11 @@ BufferPtr Stream::GetEmptyBuffer() {
 }
 
 /* marks a used buffer as recycled so it can be re-used later. */
-void Stream::RecycleBuffer(BufferPtr oldBuffer) {
+void DynamicStream::RecycleBuffer(BufferPtr oldBuffer) {
     this->recycledBuffers.push_back(oldBuffer);
 }
 
-double Stream::DecoderProgress() {
-    if (this->dataStream) {
-        long fileSize = this->dataStream->Length();
-        long filePosition = this->dataStream->Position();
-
-        if (fileSize && filePosition) {
-            return ((double) filePosition) / ((double) fileSize);
-        }
-    }
-
-    return 0;
-}
-
-void Stream::LoadDecoderPlugins() {
+void DynamicStream::LoadDecoderPlugins() {
     PluginFactory::DestroyDeleter<IDecoderFactory> typedef Deleter;
 
     this->decoderFactories = PluginFactory::Instance()

@@ -84,6 +84,7 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="audio\DynamicStream.cpp" />
     <ClCompile Include="audio\GaplessTransport.cpp" />
     <ClCompile Include="audio\Visualizer.cpp" />
     <ClCompile Include="debug.cpp" />
@@ -107,14 +108,16 @@
     <ClCompile Include="db\Statement.cpp" />
     <ClCompile Include="audio\Buffer.cpp" />
     <ClCompile Include="audio\Player.cpp" />
-    <ClCompile Include="audio\Stream.cpp" />
+    <ClCompile Include="audio\FixedSizeStream.cpp" />
     <ClCompile Include="plugin\PluginFactory.cpp" />
     <ClCompile Include="support\Common.cpp" />
     <ClCompile Include="support\PreferenceKeys.cpp" />
     <ClCompile Include="support\Preferences.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="audio\DynamicStream.h" />
     <ClInclude Include="audio\GaplessTransport.h" />
+    <ClInclude Include="audio\IStream.h" />
     <ClInclude Include="audio\ITransport.h" />
     <ClInclude Include="audio\Visualizer.h" />
     <ClInclude Include="debug.h" />
@@ -158,7 +161,7 @@
     <ClInclude Include="db\Statement.h" />
     <ClInclude Include="audio\Buffer.h" />
     <ClInclude Include="audio\Player.h" />
-    <ClInclude Include="audio\Stream.h" />
+    <ClInclude Include="audio\FixedSizeStream.h" />
     <ClInclude Include="sdk\IRetainedTrack.h" />
     <ClInclude Include="sdk\ISpectrumVisualizer.h" />
     <ClInclude Include="sdk\ITrack.h" />

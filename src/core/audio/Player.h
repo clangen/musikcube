@@ -35,7 +35,7 @@
 #pragma once
 
 #include <core/config.h>
-#include <core/audio/Stream.h>
+#include <core/audio/IStream.h>
 #include <core/sdk/IOutput.h>
 #include <core/sdk/IBufferProvider.h>
 #include <boost/shared_ptr.hpp>

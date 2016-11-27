@@ -78,11 +78,12 @@
       <SubSystem>Windows</SubSystem>
       <ImportLibrary>../../bin/$(Configuration)/mC2.lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalDependencies>pdcursesd.lib;pdh.lib;psapi.lib;libfftw3-3.lib;libfftw3f-3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>pdcursesd.lib;pdh.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y $(SolutionDir)src\3rdparty\win32_bin\*.dll $(OutDir)</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -109,11 +110,12 @@
       <ImportLibrary>
       </ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalDependencies>pdcurses.lib;pdh.lib;psapi.lib;libfftw3-3.lib;libfftw3f-3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>pdcurses.lib;pdh.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>true</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y $(SolutionDir)src\3rdparty\win32_bin\*.dll $(OutDir)</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

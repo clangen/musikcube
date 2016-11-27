@@ -55,9 +55,6 @@
     <ClCompile Include="audio\Player.cpp">
       <Filter>src\audio</Filter>
     </ClCompile>
-    <ClCompile Include="audio\Stream.cpp">
-      <Filter>src\audio</Filter>
-    </ClCompile>
     <ClCompile Include="Library\query\QueryBase.cpp">
       <Filter>src\library\query</Filter>
     </ClCompile>
@@ -112,6 +109,12 @@
     <ClCompile Include="library\track\RetainedTrack.cpp">
       <Filter>src\library\track</Filter>
     </ClCompile>
+    <ClCompile Include="audio\FixedSizeStream.cpp">
+      <Filter>src\audio</Filter>
+    </ClCompile>
+    <ClCompile Include="audio\DynamicStream.cpp">
+      <Filter>src\audio</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -130,9 +133,6 @@
       <Filter>src\audio</Filter>
     </ClInclude>
     <ClInclude Include="audio\Player.h">
-      <Filter>src\audio</Filter>
-    </ClInclude>
-    <ClInclude Include="audio\Stream.h">
       <Filter>src\audio</Filter>
     </ClInclude>
     <ClInclude Include="sdk\IDecoder.h">
@@ -272,6 +272,15 @@
     </ClInclude>
     <ClInclude Include="library\track\RetainedTrack.h">
       <Filter>src\library\track</Filter>
+    </ClInclude>
+    <ClInclude Include="audio\IStream.h">
+      <Filter>src\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="audio\FixedSizeStream.h">
+      <Filter>src\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="audio\DynamicStream.h">
+      <Filter>src\audio</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

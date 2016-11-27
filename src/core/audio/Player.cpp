@@ -36,6 +36,8 @@
 
 #include <core/debug.h>
 #include <core/audio/Player.h>
+#include <core/audio/FixedSizeStream.h>
+#include <core/audio/DynamicStream.h>
 #include <core/audio/Visualizer.h>
 #include <core/plugin/PluginFactory.h>
 #include <algorithm>
@@ -137,7 +139,7 @@ int Player::State() {
 
 void Player::ThreadLoop() {
     /* create and open the stream */
-    this->stream = Stream::Create();
+    this->stream = DynamicStream::Create();
 
     BufferPtr buffer;
 
@@ -314,8 +316,9 @@ static inline void writeToVisualizer(IBuffer *buffer, float *spectrum) {
     IPcmVisualizer* pcmVis = vis::PcmVisualizer();
 
     if (specVis && specVis->Visible()) {
-        buffer->Fft(spectrum, FFT_N);
-        vis::SpectrumVisualizer()->Write(spectrum, FFT_N);
+        if (buffer->Fft(spectrum, FFT_N)) {
+            vis::SpectrumVisualizer()->Write(spectrum, FFT_N);
+        }
     }
     else if (pcmVis && pcmVis->Visible()) {
         vis::PcmVisualizer()->Write(buffer);

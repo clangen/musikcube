@@ -37,6 +37,7 @@
 #include <core/config.h>
 #include <core/io/DataStreamFactory.h>
 #include <core/audio/Buffer.h>
+#include <core/audio/IStream.h>
 #include <core/sdk/IDecoder.h>
 #include <core/sdk/IDSP.h>
 #include <core/sdk/IDecoderFactory.h>
@@ -46,33 +47,27 @@
 
 namespace musik { namespace core { namespace audio {
 
-    class Stream;
-    class Player;
-    typedef std::shared_ptr<Stream> StreamPtr;
-
-    class Stream {
+    class FixedSizeStream : public IStream {
         using IDSP = musik::core::sdk::IDSP;
         using IDecoder = musik::core::sdk::IDecoder;
         using IDecoderFactory = musik::core::sdk::IDecoderFactory;
 
         public:
-            static StreamPtr Create(unsigned int options=0);
-
-            typedef enum {
-                NoDSP = 1
-            } Options;
+            static StreamPtr Create(
+                int samplesPerChannel = 512,
+                int bufferCount = 32,
+                unsigned int options = 0);
 
         private:
-            Stream(unsigned int options);
+            FixedSizeStream(int samplesPerChannel, int bufferCount, unsigned int options);
 
         public:
-            ~Stream();
+            virtual ~FixedSizeStream();
 
-            BufferPtr GetNextProcessedOutputBuffer();
-            void OnBufferProcessedByPlayer(BufferPtr buffer);
-            double SetPosition(double seconds);
-            bool OpenStream(std::string uri);
-            double DecoderProgress();
+            virtual BufferPtr GetNextProcessedOutputBuffer();
+            virtual void OnBufferProcessedByPlayer(BufferPtr buffer);
+            virtual double SetPosition(double seconds);
+            virtual bool OpenStream(std::string uri);
 
         private:
             void RecycleBuffer(BufferPtr oldBuffer);
@@ -87,15 +82,20 @@ namespace musik { namespace core { namespace audio {
             typedef std::shared_ptr<IDSP> DspPtr;
             typedef std::vector<DspPtr> Dsps;
 
-            long preferedBufferSampleSize;
-            double maxCacheLength;
-            unsigned int options;
             long decoderSampleRate;
             long decoderChannels;
             uint64 decoderSamplePosition;
             std::string uri;
             musik::core::io::DataStreamFactory::DataStreamPtr dataStream;
+
             BufferList recycledBuffers;
+            BufferList filledBuffers;
+            BufferPtr currentBuffer;
+            BufferPtr dspBuffer;
+
+            unsigned int options;
+            int samplesPerChannel;
+            int bufferCount;
 
             DecoderFactoryList decoderFactories;
             DecoderPtr decoder;
