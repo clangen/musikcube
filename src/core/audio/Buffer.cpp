@@ -61,7 +61,7 @@ Buffer::Buffer(void)
 }
 
 Buffer::~Buffer() {
-    delete this->buffer;
+    delete[] this->buffer;
 }
 
 BufferPtr Buffer::Create() {
@@ -106,8 +106,8 @@ void Buffer::CopyFormat(BufferPtr fromBuffer) {
 void Buffer::ResizeBuffer() {
     if (this->sampleSize > this->internalBufferSize) {
         if (this->buffer) {
-            delete this->buffer;
-            this->buffer = NULL;
+            delete[] this->buffer;
+            this->buffer = nullptr;
         }
 
         this->buffer = new float[this->sampleSize];
@@ -132,7 +132,7 @@ void Buffer::Copy(float* buffer, long samples) {
     if (samples > this->internalBufferSize) {
         float *newBuffer = new float[samples];
         CopyFloat(newBuffer, buffer, samples);
-        delete this->buffer;
+        delete[] this->buffer;
         this->buffer = newBuffer;
         this->internalBufferSize = samples;
     }
@@ -143,45 +143,36 @@ void Buffer::Copy(float* buffer, long samples) {
     this->sampleSize = samples;
 }
 
+void Buffer::Append(float* src, long samples) {
+    /* number of floats (not bytes) in buffer */
+    long newBufferSize = (this->Samples() + samples);
+
+    if (newBufferSize > this->internalBufferSize) { /* resize, then copy, if too small */
+        float *newBuffer = new float[newBufferSize];
+
+        CopyFloat(newBuffer, this->buffer, this->sampleSize);
+        float *dst = &newBuffer[this->sampleSize];
+        CopyFloat(dst, src, samples);
+
+        delete[] this->buffer;
+
+        this->buffer = newBuffer;
+        this->internalBufferSize = newBufferSize;
+    }
+    else { /* append, no resize required */
+        float *dst = &this->buffer[this->sampleSize];
+        CopyFloat(dst, src, samples);
+        this->internalBufferSize += samples;
+    }
+
+    this->sampleSize = newBufferSize;
+}
+
 bool Buffer::Append(BufferPtr appendBuffer) {
     if (this->SampleRate() == appendBuffer->SampleRate() &&
         this->Channels() == appendBuffer->Channels())
     {
-        /* number of floats (not bytes) in buffer */
-        long newBufferSize = (this->Samples() + appendBuffer->Samples());
-
-        if (newBufferSize > this->internalBufferSize) { /* resize, then copy, if too small */
-            float *newBuffer = new float[newBufferSize];
-
-            CopyFloat(newBuffer, this->buffer, this->sampleSize);
-
-            float *dst = &newBuffer[this->sampleSize];
-            float *src = appendBuffer->BufferPointer();
-            long count = appendBuffer->Samples();
-
-            CopyFloat(dst, src, count);
-
-            delete this->buffer;
-
-#if DEBUG > 0
-            std::cerr << "resized with realloc old: " << this->internalBufferSize << " new: " << newBufferSize << "\n";
-#endif
-
-            this->buffer = newBuffer;
-            this->internalBufferSize = newBufferSize;
-        }
-        else { /* append, no resize required */
-            float *dst = &this->buffer[this->sampleSize];
-            float *src = appendBuffer->BufferPointer();
-            long count = appendBuffer->Samples();
-            CopyFloat(dst, src, count);
-
-#if DEBUG > 0
-            std::cerr << "appended " << count << " floats to existing buffer, logical bytes=" << newBufferSize << "\n";
-#endif
-        }
-
-        this->sampleSize = newBufferSize;
+        this->Append(appendBuffer->BufferPointer(), appendBuffer->Samples());
         return true;
     }
 

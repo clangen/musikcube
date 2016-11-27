@@ -71,7 +71,7 @@ namespace musik { namespace core { namespace audio {
 
         private:
             void RecycleBuffer(BufferPtr oldBuffer);
-            BufferPtr GetNextBufferFromDecoder();
+            bool GetNextBufferFromDecoder();
             BufferPtr GetEmptyBuffer();
             void LoadDecoderPlugins();
 
@@ -90,8 +90,10 @@ namespace musik { namespace core { namespace audio {
 
             BufferList recycledBuffers;
             BufferList filledBuffers;
-            BufferPtr currentBuffer;
+            BufferPtr decoderBuffer;
             BufferPtr dspBuffer;
+
+            BufferPtr remainder;
 
             unsigned int options;
             int samplesPerChannel;

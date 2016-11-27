@@ -139,7 +139,7 @@ int Player::State() {
 
 void Player::ThreadLoop() {
     /* create and open the stream */
-    this->stream = DynamicStream::Create();
+    this->stream = FixedSizeStream::Create();
 
     BufferPtr buffer;
 

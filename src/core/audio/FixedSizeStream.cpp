@@ -45,6 +45,16 @@ using musik::core::PluginFactory;
 
 static std::string TAG = "FixedSizeStream";
 
+#define SET_OFFSET(target, offset) \
+    target->SetPosition( \
+        ((double) this->decoderSamplePosition + offset) / \
+        ((double) target->Channels()) / \
+        ((double) this->decoderSampleRate)); 
+
+#define COPY_BUFFER(target, current, count, offset) \
+    target->Copy(&current->BufferPointer()[offset], count); \
+    SET_OFFSET(target, offset) \
+
 FixedSizeStream::FixedSizeStream(int samplesPerChannel, int bufferCount, unsigned int options)
 : options(options)
 , samplesPerChannel(samplesPerChannel)
@@ -52,12 +62,16 @@ FixedSizeStream::FixedSizeStream(int samplesPerChannel, int bufferCount, unsigne
 , decoderSampleRate(0)
 , decoderChannels(0)
 , decoderSamplePosition(0)
-, currentBuffer(Buffer::Create())
+, decoderBuffer(Buffer::Create())
 , dspBuffer(Buffer::Create())
 {
     if ((this->options & NoDSP) == 0) {
         typedef PluginFactory::DestroyDeleter<IDSP> Deleter;
         this->dsps = PluginFactory::Instance().QueryInterface<IDSP, Deleter>("GetDSP");
+    }
+
+    for (int i = 0; i < bufferCount; i++) {
+        this->recycledBuffers.push_back(Buffer::Create());
     }
 
     this->LoadDecoderPlugins();
@@ -78,6 +92,10 @@ double FixedSizeStream::SetPosition(double requestedSeconds) {
 
         this->decoderSamplePosition =
             (uint64)(actualSeconds * rate) * this->decoderChannels;
+
+        this->recycledBuffers.splice(
+            this->recycledBuffers.begin(), 
+            this->filledBuffers);
     }
 
     return actualSeconds;
@@ -137,12 +155,12 @@ void FixedSizeStream::OnBufferProcessedByPlayer(BufferPtr buffer) {
     this->RecycleBuffer(buffer);
 }
 
-BufferPtr FixedSizeStream::GetNextBufferFromDecoder() {
-    BufferPtr buffer = this->currentBuffer;
+bool FixedSizeStream::GetNextBufferFromDecoder() {
+    BufferPtr buffer = this->decoderBuffer;
 
     /* get a spare buffer, then ask the decoder for some data */
     if (!this->decoder->GetBuffer(buffer.get())) {
-        return BufferPtr();
+        return false;
     }
 
     /* remember the sample rate so we can calculate the current time-position */
@@ -160,7 +178,7 @@ BufferPtr FixedSizeStream::GetNextBufferFromDecoder() {
         ((double) buffer->Channels()) /
         ((double) this->decoderSampleRate));
 
-    return buffer;
+    return true;
 }
 
 inline BufferPtr FixedSizeStream::GetEmptyBuffer() {
@@ -172,53 +190,67 @@ inline BufferPtr FixedSizeStream::GetEmptyBuffer() {
     }
     else {
         target = Buffer::Create();
-        target->CopyFormat(this->currentBuffer);
+        target->CopyFormat(this->decoderBuffer);
     }
 
     return target;
 }
 
-#define COPY_BUFFER(target, current, count, offset) \
-    target->Copy(&current->BufferPointer()[offset], count); \
-    target->SetPosition( \
-        ((double) this->decoderSamplePosition + offset) / \
-        ((double) current->Channels()) / \
-        ((double) this->decoderSampleRate)); \
-    this->filledBuffers.push_back(target);
-
 BufferPtr FixedSizeStream::GetNextProcessedOutputBuffer() {
     BufferPtr currentBuffer;
-    
+
     /* ensure we have at least BUFFER_COUNT buffers, and that at least half of them
     are filled with data! */
-    while (this->filledBuffers.size() < (this->bufferCount / 2) || 
-        this->filledBuffers.size() + this->recycledBuffers.size() < this->bufferCount)
-    {
+    while (this->filledBuffers.size() < (this->bufferCount / 2)) {
         /* ask the decoder for the next buffer */
-        currentBuffer = this->GetNextBufferFromDecoder();
-
-        if (!currentBuffer) {
-            break; /* important... bust out of the loop when we're done! */
+        if (!GetNextBufferFromDecoder()) {
+            break;
         }
 
-        /* break the buffer into 512 sample per channel buffers. this will
-        help us ensure visualizer data is uniform. note that the last buffer
-        may not be exactly 512 -- that should be fine, generally. */
-        BufferPtr target;
+        currentBuffer = this->decoderBuffer;
 
         int floatsPerBuffer = this->samplesPerChannel * currentBuffer->Channels();
-        int buffers = currentBuffer->Samples() / floatsPerBuffer;
+
+        BufferPtr target;
         int offset = 0;
 
-        for (int i = 0; i < buffers; i++) {
+        /* if we have a partial / remainder buffer hanging out from the last time
+        through, let's fill it up with the head of the new buffer. */
+        if (remainder) {
+            long desired = floatsPerBuffer - remainder->Samples();
+            long actual = std::min(currentBuffer->Samples(), desired);
+
+            remainder->Append(currentBuffer->BufferPointer(), actual);
+            SET_OFFSET(remainder, 0);
+
+            if (remainder->Samples() == floatsPerBuffer) {
+                /* normal case: we were able to fill it; add it to the list of
+                filled buffers and continue to fill some more... */
+                this->filledBuffers.push_back(remainder);
+                offset += actual;
+                remainder.reset();
+            }
+            else {
+                continue; /* already consumed all of the decoder buffer. go back
+                to the top of the loop to get some more data. */
+            }
+        }
+
+        /* now that the remainder is taken care of, break the rest of the data
+        into uniform chunks */
+
+        int buffersToFill = (currentBuffer->Samples() - offset) / floatsPerBuffer;
+
+        for (int i = 0; i < buffersToFill; i++) {
             target = this->GetEmptyBuffer();
             COPY_BUFFER(target, currentBuffer, floatsPerBuffer, offset);
+            this->filledBuffers.push_back(target);
             offset += floatsPerBuffer;
         }
 
-        if (offset < this->currentBuffer->Samples()) {
-            target = this->GetEmptyBuffer();
-            COPY_BUFFER(target, currentBuffer, this->currentBuffer->Samples() - offset, offset);
+        if (offset < currentBuffer->Samples()) {
+            remainder = this->GetEmptyBuffer();
+            COPY_BUFFER(remainder, currentBuffer, currentBuffer->Samples() - offset, offset);
         }
     }
 
@@ -239,6 +271,13 @@ BufferPtr FixedSizeStream::GetNextProcessedOutputBuffer() {
         }
 
         return currentBuffer;
+    }
+
+    /* final remainder */
+    if (remainder) {
+        BufferPtr result = remainder;
+        remainder.reset();
+        return result;
     }
 
     return BufferPtr();
