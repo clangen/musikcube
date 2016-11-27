@@ -59,8 +59,6 @@ set (musikbox_LINK_LIBS
   ${linux_LINK_LIBS}
   ${BOOST_LINK_LIBS}
   dl
-  fftw3
-  fftw3f
 )
 
 include_directories (

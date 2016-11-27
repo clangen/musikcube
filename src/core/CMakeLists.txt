@@ -27,6 +27,7 @@ set(CORE_SOURCES
   ./support/PreferenceKeys.cpp
   ../3rdparty/src/md5/md5.c
   ../3rdparty/src/sqlite/sqlite3.c
+  ../3rdparty/src/fft.cpp
 )
 
 include_directories(

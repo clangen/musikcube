@@ -195,14 +195,14 @@ bool Buffer::Fft(float* buffer, int size) {
 
     int count = this->sampleSize / FFT_BUFFER_SIZE;
 
-    /* de-interlace the audio first */
-    float* deinterlaced = new float[FFT_BUFFER_SIZE * count];
+    /* de-interleave the audio first */
+    float* deinterleaved = new float[FFT_BUFFER_SIZE * count];
     for (int i = 0; i < count * FFT_BUFFER_SIZE; i++) {
         const int to = ((i % this->channels) * FFT_BUFFER_SIZE) + (i / count);
-        deinterlaced[to] = this->buffer[i];
+        deinterleaved[to] = this->buffer[i];
     }
     
-    /* if there's more than one set of interlaced data then 
+    /* if there's more than one set of interleaved data then
     allocate a scratch buffer. we'll use this for averaging
     the result */
     float* scratch = nullptr;
@@ -216,7 +216,7 @@ bool Buffer::Fft(float* buffer, int size) {
     fft_perform(this->buffer, buffer, state);
     
     for (int i = 1; i < count; i++) {
-        fft_perform(&deinterlaced[i * FFT_BUFFER_SIZE], scratch, state);
+        fft_perform(&deinterleaved[i * FFT_BUFFER_SIZE], scratch, state);
 
         /* average with the previous read */
         for (int j = 0; j < FFT_BUFFER_SIZE; j++) {
@@ -224,7 +224,7 @@ bool Buffer::Fft(float* buffer, int size) {
         }
     }
 
-    delete[] deinterlaced;
+    delete[] deinterleaved;
     delete[] scratch;
 
     fft_close(state);
