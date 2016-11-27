@@ -25,6 +25,9 @@
     <ClCompile Include="src\wcwidth.c">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\fft.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\sqlite\sqlite3.h">
@@ -40,6 +43,9 @@
       <Filter>src\md5</Filter>
     </ClInclude>
     <ClInclude Include="include\wcwidth.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="include\fft.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

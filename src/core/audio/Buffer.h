@@ -50,7 +50,8 @@ namespace musik { namespace core { namespace audio {
 
         public:
             static BufferPtr Create();
-            ~Buffer();
+
+            virtual ~Buffer();
 
             virtual long SampleRate() const;
             virtual void SetSampleRate(long sampleRate);
@@ -61,9 +62,10 @@ namespace musik { namespace core { namespace audio {
             virtual void SetSamples(long samples);
             virtual long Bytes() const;
             virtual double Position() const;
-            void SetPosition(double position);
             virtual bool Fft(float* buffer, int size);
 
+            void SetPosition(double position);
+            void Copy(float* buffer, long samples);
             bool Append(BufferPtr appendBuffer);
             void CopyFormat(BufferPtr fromBuffer);
 
@@ -76,7 +78,6 @@ namespace musik { namespace core { namespace audio {
             long sampleRate;
             int channels;
             double position;
-            float* fft;
     };
 
 } } }

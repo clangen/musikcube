@@ -35,7 +35,7 @@
 #include "pch.hpp"
 
 #include <core/audio/Buffer.h>
-#include <fftw3.h>
+#include <fft.h>
 
 #define DEBUG 0
 
@@ -56,8 +56,7 @@ Buffer::Buffer(void)
 , sampleSize(0)
 , internalBufferSize(0)
 , sampleRate(44100)
-, channels(2)
-, fft(nullptr) {
+, channels(2) {
 
 }
 
@@ -100,10 +99,8 @@ void Buffer::SetSamples(long samples) {
 }
 
 void Buffer::CopyFormat(BufferPtr fromBuffer) {
-    this->sampleSize = fromBuffer->Samples();
     this->channels = fromBuffer->Channels();
     this->sampleRate = fromBuffer->SampleRate();
-    this->ResizeBuffer();
 }
 
 void Buffer::ResizeBuffer() {
@@ -129,6 +126,21 @@ double Buffer::Position() const {
 
 void Buffer::SetPosition(double position) {
     this->position = position;
+}
+
+void Buffer::Copy(float* buffer, long samples) {
+    if (samples > this->internalBufferSize) {
+        float *newBuffer = new float[samples];
+        CopyFloat(newBuffer, buffer, samples);
+        delete this->buffer;
+        this->buffer = newBuffer;
+        this->internalBufferSize = samples;
+    }
+    else {
+        CopyFloat(this->buffer, buffer, samples);
+    }
+
+    this->sampleSize = samples;
 }
 
 bool Buffer::Append(BufferPtr appendBuffer) {
@@ -176,42 +188,46 @@ bool Buffer::Append(BufferPtr appendBuffer) {
     return false;
 }
 
-static inline int closestPowerOfTwo(int x) {
-    /* http://stackoverflow.com/a/2681094 */
-    x = x | (x >> 1);
-    x = x | (x >> 2);
-    x = x | (x >> 4);
-    x = x | (x >> 8);
-    x = x | (x >> 16);
-    return x - (x >> 1);
-}
-
-static inline bool isPowerOfTwo(unsigned int x) {
-    return ((x != 0) && ((x & (~x + 1)) == x));
-}
-
 bool Buffer::Fft(float* buffer, int size) {
-    if (buffer && size > 0 && this->sampleSize > size && isPowerOfTwo(size)) {
-        int n = closestPowerOfTwo(this->sampleSize);
-
-        fftwf_complex *out = (fftwf_complex*) fftw_malloc(sizeof(fftwf_complex) * n);
-        fftwf_plan plan = fftwf_plan_dft_r2c_1d(n, this->buffer, out, FFTW_MEASURE);
-        fftwf_execute(plan);
-        fftwf_destroy_plan(plan);
-
-        int w = 0; /* write offset */
-        int c = n / size; /* bins to average */
-        for (int i = 0; i < n; i+=c) {
-            float sum = 0.0f;
-            for (int j = 0; j < c; j++) {
-                sum += out[1][i + j];
-            }
-            buffer[w++] = sum / c;
-        }
-
-        fftwf_free(out);
-        return true;
+    if (this->sampleSize < FFT_BUFFER_SIZE || size != FFT_BUFFER_SIZE) {
+        return false;
     }
 
-    return false;
+    int count = this->sampleSize / FFT_BUFFER_SIZE;
+
+    /* de-interlace the audio first */
+    float* deinterlaced = new float[FFT_BUFFER_SIZE * count];
+    for (int i = 0; i < count * FFT_BUFFER_SIZE; i++) {
+        const int to = ((i % this->channels) * FFT_BUFFER_SIZE) + (i / count);
+        deinterlaced[to] = this->buffer[i];
+    }
+    
+    /* if there's more than one set of interlaced data then 
+    allocate a scratch buffer. we'll use this for averaging
+    the result */
+    float* scratch = nullptr;
+    if (count > 1) {
+        scratch = new float[FFT_BUFFER_SIZE];
+    }
+
+    fft_state* state = visual_fft_init();
+
+    /* first FFT will go directly to the output buffer */
+    fft_perform(this->buffer, buffer, state);
+    
+    for (int i = 1; i < count; i++) {
+        fft_perform(&deinterlaced[i * FFT_BUFFER_SIZE], scratch, state);
+
+        /* average with the previous read */
+        for (int j = 0; j < FFT_BUFFER_SIZE; j++) {
+            buffer[j] = (scratch[j] + buffer[j]) / 2;
+        }
+    }
+
+    delete[] deinterlaced;
+    delete[] scratch;
+
+    fft_close(state);
+
+    return true;
 }
