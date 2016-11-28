@@ -84,6 +84,7 @@ Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
 : thread(nullptr)
 , restart(false)
 , filesSaved(0)
+, exit(false)
 , prefs(Preferences::ForComponent(prefs::components::Settings))
 , readSemaphore(prefs->GetInt(prefs::keys::MaxTagReadThreads, MAX_THREADS)) {
     this->dbFilename = dbFilename;

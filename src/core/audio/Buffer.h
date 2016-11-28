@@ -67,7 +67,6 @@ namespace musik { namespace core { namespace audio {
             void SetPosition(double position);
             void Copy(float* buffer, long samples);
             void Append(float* buffer, long samples);
-            bool Append(BufferPtr appendBuffer);
             void CopyFormat(BufferPtr fromBuffer);
 
         private:

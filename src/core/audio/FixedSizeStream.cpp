@@ -52,7 +52,7 @@ static std::string TAG = "FixedSizeStream";
         ((double) this->decoderSampleRate)); 
 
 #define COPY_BUFFER(target, current, count, offset) \
-    target->Copy(&current->BufferPointer()[offset], count); \
+    target->Copy(current->BufferPointer() + offset, count); \
     SET_OFFSET(target, offset) \
 
 FixedSizeStream::FixedSizeStream(int samplesPerChannel, int bufferCount, unsigned int options)

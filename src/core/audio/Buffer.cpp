@@ -57,7 +57,6 @@ Buffer::Buffer(void)
 , internalBufferSize(0)
 , sampleRate(44100)
 , channels(2) {
-
 }
 
 Buffer::~Buffer() {
@@ -105,11 +104,7 @@ void Buffer::CopyFormat(BufferPtr fromBuffer) {
 
 void Buffer::ResizeBuffer() {
     if (this->sampleSize > this->internalBufferSize) {
-        if (this->buffer) {
-            delete[] this->buffer;
-            this->buffer = nullptr;
-        }
-
+        delete[] this->buffer;
         this->buffer = new float[this->sampleSize];
         this->internalBufferSize = this->sampleSize;
     }
@@ -145,42 +140,31 @@ void Buffer::Copy(float* buffer, long samples) {
 
 void Buffer::Append(float* src, long samples) {
     /* number of floats (not bytes) in buffer */
-    long newBufferSize = (this->Samples() + samples);
+    long newBufferSize = this->sampleSize + samples;
 
-    if (newBufferSize > this->internalBufferSize) { /* resize, then copy, if too small */
+    if (newBufferSize > this->internalBufferSize) {
+        /* resize, then copy, if too small */
         float *newBuffer = new float[newBufferSize];
 
         CopyFloat(newBuffer, this->buffer, this->sampleSize);
-        float *dst = &newBuffer[this->sampleSize];
-        CopyFloat(dst, src, samples);
+        CopyFloat(newBuffer + this->sampleSize, src, samples);
 
         delete[] this->buffer;
 
         this->buffer = newBuffer;
         this->internalBufferSize = newBufferSize;
     }
-    else { /* append, no resize required */
-        float *dst = &this->buffer[this->sampleSize];
-        CopyFloat(dst, src, samples);
+    else {
+        /* append, no resize required */
+        CopyFloat(this->buffer + this->sampleSize, src, samples);
         this->internalBufferSize += samples;
     }
 
     this->sampleSize = newBufferSize;
 }
 
-bool Buffer::Append(BufferPtr appendBuffer) {
-    if (this->SampleRate() == appendBuffer->SampleRate() &&
-        this->Channels() == appendBuffer->Channels())
-    {
-        this->Append(appendBuffer->BufferPointer(), appendBuffer->Samples());
-        return true;
-    }
-
-    return false;
-}
-
 bool Buffer::Fft(float* buffer, int size) {
-    if (this->sampleSize < FFT_BUFFER_SIZE || size != FFT_BUFFER_SIZE) {
+    if (this->sampleSize / this->channels < FFT_BUFFER_SIZE || size != FFT_BUFFER_SIZE) {
         return false;
     }
 
@@ -188,8 +172,9 @@ bool Buffer::Fft(float* buffer, int size) {
 
     /* de-interleave the audio first */
     float* deinterleaved = new float[FFT_BUFFER_SIZE * count];
+    int to;
     for (int i = 0; i < count * FFT_BUFFER_SIZE; i++) {
-        const int to = ((i % this->channels) * FFT_BUFFER_SIZE) + (i / count);
+        to = ((i % this->channels) * FFT_BUFFER_SIZE) + (i / count);
         deinterleaved[to] = this->buffer[i];
     }
     
@@ -207,7 +192,7 @@ bool Buffer::Fft(float* buffer, int size) {
     fft_perform(this->buffer, buffer, state);
     
     for (int i = 1; i < count; i++) {
-        fft_perform(&deinterleaved[i * FFT_BUFFER_SIZE], scratch, state);
+        fft_perform(deinterleaved + (i * FFT_BUFFER_SIZE), scratch, state);
 
         /* average with the previous read */
         for (int j = 0; j < FFT_BUFFER_SIZE; j++) {

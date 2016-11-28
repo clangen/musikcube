@@ -46,12 +46,11 @@ using musik::core::PluginFactory;
 static std::string TAG = "DynamicStream";
 
 DynamicStream::DynamicStream(unsigned int options)
-    : preferedBufferSampleSize(4096)
-    , options(options)
-    , decoderSampleRate(0)
-    , decoderChannels(0)
-    , decoderSamplePosition(0)
-{
+: preferedBufferSampleSize(4096)
+, options(options)
+, decoderSampleRate(0)
+, decoderChannels(0)
+, decoderSamplePosition(0) {
     if ((this->options & NoDSP) == 0) {
         typedef PluginFactory::DestroyDeleter<IDSP> Deleter;
         this->dsps = PluginFactory::Instance().QueryInterface<IDSP, Deleter>("GetDSP");
@@ -164,13 +163,18 @@ BufferPtr DynamicStream::GetNextProcessedOutputBuffer() {
     BufferPtr currentBuffer = this->GetNextBufferFromDecoder();
 
     if (currentBuffer) {
+        void * f = &free;
+
         /* try to fill the buffer to its optimal size; if the decoder didn't return
         a full buffer, ask it for some more data. */
         bool moreBuffers = true;
         while (currentBuffer->Samples() < this->preferedBufferSampleSize && moreBuffers) {
             BufferPtr bufferToAppend = this->GetNextBufferFromDecoder();
             if (bufferToAppend) {
-                currentBuffer->Append(bufferToAppend);
+                currentBuffer->Append(
+                    bufferToAppend->BufferPointer(),
+                    bufferToAppend->Samples());
+
                 this->RecycleBuffer(bufferToAppend);
             }
             else {
@@ -184,7 +188,7 @@ BufferPtr DynamicStream::GetNextProcessedOutputBuffer() {
 
             for (Dsps::iterator dsp = this->dsps.begin(); dsp != this->dsps.end(); ++dsp) {
                 oldBuffer->CopyFormat(currentBuffer);
-                currentBuffer->SetPosition(oldBuffer->Position());
+                oldBuffer->SetPosition(currentBuffer->Position());
 
                 if ((*dsp)->Process(currentBuffer.get(), oldBuffer.get())) {
                     currentBuffer.swap(oldBuffer);

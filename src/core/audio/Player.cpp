@@ -138,8 +138,12 @@ int Player::State() {
 }
 
 void Player::ThreadLoop() {
-    /* create and open the stream */
-    this->stream = FixedSizeStream::Create();
+    /* fixed size streams are better for visualizations because they provide
+    consistent buffer sizes. dynamic streams are more efficient otherwise 
+    because we don't need to worry about manually chunking data, we can just
+    send audio data to the output straight from the decoder. */
+    this->stream = vis::SelectedVisualizer()
+        ? FixedSizeStream::Create() : DynamicStream::Create();
 
     BufferPtr buffer;
 
