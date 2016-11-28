@@ -46,7 +46,7 @@
 #ifdef WIN32
     #define CopyFloat(dst, src, num) CopyMemory(dst, src, (num) * sizeof(float))
 #else
-    #define CopyFloat(dst, src, num) memmove((void*) dst, (void*)src, (num) * sizeof(float))
+    #define CopyFloat(dst, src, num) memmove((float*) dst, (float*)src, (num) * sizeof(float))
 #endif
 
 using namespace musik::core::audio;
