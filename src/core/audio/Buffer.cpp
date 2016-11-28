@@ -167,8 +167,10 @@ void Buffer::Append(float* src, long samples) {
     this->sampleSize = newBufferSize;
 }
 
-bool Buffer::Fft(float* buffer, int size) {
-    if (this->sampleSize / this->channels < FFT_BUFFER_SIZE || size != FFT_BUFFER_SIZE) {
+bool Buffer::Fft(float* output, int outputSize) {
+    if (this->sampleSize / this->channels < FFT_BUFFER_SIZE ||
+        outputSize != FFT_BUFFER_SIZE / 2)
+    {
         return false;
     }
 
@@ -176,9 +178,9 @@ bool Buffer::Fft(float* buffer, int size) {
 
     /* de-interleave the audio first */
     float* deinterleaved = new float[FFT_BUFFER_SIZE * count];
-    int to;
+
     for (int i = 0; i < count * FFT_BUFFER_SIZE; i++) {
-        to = ((i % this->channels) * FFT_BUFFER_SIZE) + (i / count);
+        const int to = ((i % this->channels) * FFT_BUFFER_SIZE) + (i / count);
         deinterleaved[to] = this->buffer[i];
     }
 
@@ -187,20 +189,20 @@ bool Buffer::Fft(float* buffer, int size) {
     the result */
     float* scratch = nullptr;
     if (count > 1) {
-        scratch = new float[FFT_BUFFER_SIZE];
+        scratch = new float[outputSize];
     }
 
     fft_state* state = visual_fft_init();
 
     /* first FFT will go directly to the output buffer */
-    fft_perform(this->buffer, buffer, state);
+    fft_perform(this->buffer, output, state);
 
     for (int i = 1; i < count; i++) {
         fft_perform(deinterleaved + (i * FFT_BUFFER_SIZE), scratch, state);
 
         /* average with the previous read */
-        for (int j = 0; j < FFT_BUFFER_SIZE; j++) {
-            buffer[j] = (scratch[j] + buffer[j]) / 2;
+        for (int j = 0; j < outputSize; j++) {
+            output[j] = (scratch[j] + output[j]) / 2;
         }
     }
 
