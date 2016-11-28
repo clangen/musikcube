@@ -124,7 +124,7 @@ static void fft_prepare( const sound_sample *input, float * re, float * im,
     /* Get input, in reverse bit order */
     for(i = 0; i < FFT_BUFFER_SIZE; i++)
     {
-        *p_real++ = input[bitReverse[i]] * MAX_SIGNED_SHORT;
+        *p_real++ = (input[bitReverse[i]] * MAX_SIGNED_SHORT * 2) - MAX_SIGNED_SHORT;
         *p_imag++ = 0;
     }
 }

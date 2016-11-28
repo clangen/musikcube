@@ -54,8 +54,8 @@ namespace musik { namespace core { namespace audio {
 
         public:
             static StreamPtr Create(
-                int samplesPerChannel = 512,
-                int bufferCount = 32,
+                int samplesPerChannel = 1024,
+                int bufferCount = 16,
                 unsigned int options = 0);
 
         private:

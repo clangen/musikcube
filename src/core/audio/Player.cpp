@@ -34,6 +34,7 @@
 
 #include "pch.hpp"
 
+#include <fft.h>
 #include <core/debug.h>
 #include <core/audio/Player.h>
 #include <core/audio/Stream.h>
@@ -42,7 +43,7 @@
 #include <algorithm>
 
 #define MAX_PREBUFFER_QUEUE_COUNT 8
-#define FFT_N 512
+#define FFT_OUTPUT_SIZE (FFT_BUFFER_SIZE / 2)
 
 using namespace musik::core::audio;
 using namespace musik::core::sdk;
@@ -80,7 +81,7 @@ Player::Player(const std::string &url, OutputPtr output)
 , setPosition(-1) {
     musik::debug::info(TAG, "new instance created");
 
-    this->spectrum = new float[FFT_N];
+    this->spectrum = new float[FFT_OUTPUT_SIZE];
 
     /* we allow callers to specify an output device; but if they don't,
     we will create and manage our own. */
@@ -318,8 +319,8 @@ static inline void writeToVisualizer(IBuffer *buffer, float *spectrum) {
     IPcmVisualizer* pcmVis = vis::PcmVisualizer();
 
     if (specVis && specVis->Visible()) {
-        if (buffer->Fft(spectrum, FFT_N)) {
-            vis::SpectrumVisualizer()->Write(spectrum, FFT_N);
+        if (buffer->Fft(spectrum, FFT_OUTPUT_SIZE)) {
+            vis::SpectrumVisualizer()->Write(spectrum, FFT_OUTPUT_SIZE);
         }
     }
     else if (pcmVis && pcmVis->Visible()) {
