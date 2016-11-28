@@ -81,6 +81,8 @@ Player::Player(const std::string &url, OutputPtr output)
 , setPosition(-1) {
     musik::debug::info(TAG, "new instance created");
 
+    fft.Init(FFT_BUFFER_SIZE, FFT_OUTPUT_SIZE);
+
     this->spectrum = new float[FFT_OUTPUT_SIZE];
 
     /* we allow callers to specify an output device; but if they don't,
@@ -314,12 +316,62 @@ bool Player::Exited() {
     return (this->state == Player::Quit);
 }
 
-static inline void writeToVisualizer(IBuffer *buffer, float *spectrum) {
+static inline bool performFft(IBuffer* buffer, FFT& fft, float* output, int outputSize) {
+    long samples = buffer->Samples();
+    int channels = buffer->Channels();
+
+    if (samples / channels < FFT_BUFFER_SIZE ||
+        outputSize != FFT_BUFFER_SIZE / 2)
+    {
+        return false;
+    }
+
+    float* input = buffer->BufferPointer();
+
+    int count = samples / FFT_BUFFER_SIZE;
+
+    /* de-interleave the audio first */
+    float* deinterleaved = new float[FFT_BUFFER_SIZE * count];
+
+    for (int i = 0; i < count * FFT_BUFFER_SIZE; i++) {
+        const int to = ((i % channels) * FFT_BUFFER_SIZE) + (i / count);
+        deinterleaved[to] = input[i];
+    }
+
+    /* if there's more than one set of interleaved data then
+    allocate a scratch buffer. we'll use this for averaging
+    the result */
+    float* scratch = nullptr;
+    if (count > 1) {
+        scratch = new float[outputSize];
+    }
+
+    fft.Init(FFT_BUFFER_SIZE, outputSize);
+
+    /* first FFT will go directly to the output buffer */
+    fft.TimeToFrequencyDomain(input, output);
+
+    for (int i = 1; i < count; i++) {
+        fft.TimeToFrequencyDomain(deinterleaved + (i * FFT_BUFFER_SIZE), scratch);
+
+        /* average with the previous read */
+        for (int j = 0; j < outputSize; j++) {
+            output[j] = (scratch[j] + output[j]) / 2;
+        }
+    }
+
+    delete[] deinterleaved;
+    delete[] scratch;
+
+    return true;
+}
+
+static inline void writeToVisualizer(IBuffer *buffer, FFT& fft, float *spectrum) {
     ISpectrumVisualizer* specVis = vis::SpectrumVisualizer();
     IPcmVisualizer* pcmVis = vis::PcmVisualizer();
 
     if (specVis && specVis->Visible()) {
-        if (buffer->Fft(spectrum, FFT_OUTPUT_SIZE)) {
+        if (performFft(buffer, fft, spectrum, FFT_OUTPUT_SIZE)) {
             vis::SpectrumVisualizer()->Write(spectrum, FFT_OUTPUT_SIZE);
         }
     }
@@ -332,7 +384,7 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
     bool started = false;
     bool found = false;
 
-    writeToVisualizer(buffer, this->spectrum);
+    writeToVisualizer(buffer, this->fft, this->spectrum);
 
     {
         boost::mutex::scoped_lock lock(this->queueMutex);

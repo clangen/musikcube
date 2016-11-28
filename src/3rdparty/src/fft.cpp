@@ -1,211 +1,295 @@
-/*****************************************************************************
- * fft.c: Iterative implementation of a FFT
- *****************************************************************************
- * $Id$
- *
- * Mainly taken from XMMS's code
- *
- * Authors: Richard Boulton <richard@tartarus.org>
- *          Ralph Loader <suckfish@ihug.co.nz>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
- *****************************************************************************/
+/*
+LICENSE
+-------
+Copyright 2005-2013 Nullsoft, Inc.
+All rights reserved.
 
-#include <stdlib.h>
-#include <fft.h>
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+
+* Neither the name of Nullsoft nor the names of its contributors may be used to
+endorse or promote products derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
 
 #include <math.h>
-#ifndef PI
- #ifdef M_PI
-  #define PI M_PI
- #else
-  #define PI            3.14159265358979323846  /* pi */
- #endif
-#endif
+#include <memory.h>
+#include <fft.h>
 
-#define MAX_SIGNED_SHORT 32767
+#define PI 3.141592653589793238462643383279502884197169399f
 
-/******************************************************************************
- * Local prototypes
- *****************************************************************************/
-static void fft_prepare(const sound_sample *input, float * re, float * im,
-                        const unsigned int *bitReverse);
-static void fft_calculate(float * re, float * im,
-                          const float *costable, const float *sintable );
-static void fft_output(const float *re, const float *im, float *output);
-static int reverseBits(unsigned int initial);
+#define SafeDeleteArray(x) { if (x) { delete [] x; x = 0; } }
 
-/*****************************************************************************
- * These functions are the ones called externally
- *****************************************************************************/
+FFT::FFT() {
+    NFREQ = 0;
+    envelope = 0;
+    equalize = 0;
+    bitrevtable = 0;
+    cossintable = 0;
+    temp1 = 0;
+    temp2 = 0;
+}
 
-/*
- * Initialisation routine - sets up tables and space to work in.
- * Returns a pointer to internal state, to be used when performing calls.
- * On error, returns NULL.
- * The pointer should be freed when it is finished with, by fft_close().
- */
-extern fft_state *visual_fft_init(void)
+FFT::~FFT() {
+    CleanUp();
+}
+
+void FFT::Init(int samplesIn, int samplesOut, int equalize, float envelopePower) {
+    // samples_in: # of waveform samples you'll feed into the FFT
+    // samples_out: # of frequency samples you want out; MUST BE A POWER OF 2.
+    // bEqualize: set to 1 if you want the magnitude of the basses and trebles
+    //   to be roughly equalized; 0 to leave them untouched.
+    // envelope_power: set to -1 to disable the envelope; otherwise, specify
+    //   the envelope power you want here.  See InitEnvelopeTable for more info.
+
+    CleanUp();
+
+    this->samplesIn = samplesIn;
+    NFREQ = samplesOut * 2;
+
+    InitBitRevTable();
+    InitCosSinTable();
+
+    if (envelopePower > 0) {
+        InitEnvelopeTable(envelopePower);
+    }
+
+    if (equalize) {
+        InitEqualizeTable();
+    }
+
+    temp1 = new float[NFREQ];
+    temp2 = new float[NFREQ];
+}
+
+void FFT::CleanUp() {
+    SafeDeleteArray(envelope);
+    SafeDeleteArray(equalize);
+    SafeDeleteArray(bitrevtable);
+    SafeDeleteArray(cossintable);
+    SafeDeleteArray(temp1);
+    SafeDeleteArray(temp2);
+}
+
+void FFT::InitEqualizeTable() {
+    int i;
+    float scaling = -0.02f;
+    float inv_half_nfreq = 1.0f / (float)(NFREQ / 2);
+
+    equalize = new float[NFREQ / 2];
+
+    for (i = 0; i < NFREQ / 2; i++) {
+        equalize[i] = scaling * logf((float)(NFREQ / 2 - i) * inv_half_nfreq);
+    }
+}
+
+void FFT::InitEnvelopeTable(float power)
 {
-    fft_state *p_state;
-    unsigned int i;
+    // this precomputation is for multiplying the waveform sample
+    // by a bell-curve-shaped envelope, so we don't see the ugly
+    // frequency response (oscillations) of a square filter.
 
-    p_state = (fft_state*) malloc( sizeof(*p_state) );
-    if(! p_state )
-        return NULL;
+    // a power of 1.0 will compute the FFT with exactly one convolution.
+    // a power of 2.0 is like doing it twice; the resulting frequency
+    //   output will be smoothed out and the peaks will be "fatter".
+    // a power of 0.5 is closer to not using an envelope, and you start
+    //   to get the frequency response of the square filter as 'power'
+    //   approaches zero; the peaks get tighter and more precise, but
+    //   you also see small oscillations around their bases.
 
-    for(i = 0; i < FFT_BUFFER_SIZE; i++)
-    {
-        p_state->bitReverse[i] = reverseBits(i);
+    int i;
+    float mult = 1.0f / (float) this->samplesIn * 6.2831853f;
+
+    envelope = new float[this->samplesIn];
+
+    if (power == 1.0f) {
+        for (i = 0; i < this->samplesIn; i++) {
+            envelope[i] = 0.5f + 0.5f*sinf(i * mult - 1.5707963268f);
+        }
     }
-    for(i = 0; i < FFT_BUFFER_SIZE / 2; i++)
-    {
-        float j = 2 * PI * i / FFT_BUFFER_SIZE;
-        p_state->costable[i] = cos(j);
-        p_state->sintable[i] = sin(j);
-    }
-
-    return p_state;
-}
-
-/*
- * Do all the steps of the FFT, taking as input sound data (as described in
- * sound.h) and returning the intensities of each frequency as floats in the
- * range 0 to ((FFT_BUFFER_SIZE / 2) * 32768) ^ 2
- *
- * The input array is assumed to have FFT_BUFFER_SIZE elements,
- * and the output array is assumed to have (FFT_BUFFER_SIZE / 2 + 1) elements.
- * state is a (non-NULL) pointer returned by visual_fft_init.
- */
-extern void fft_perform(const sound_sample *input, float *output, fft_state *state) {
-    /* Convert data from sound format to be ready for FFT */
-    fft_prepare(input, state->real, state->imag, state->bitReverse );
-
-    /* Do the actual FFT */
-    fft_calculate(state->real, state->imag, state->costable, state->sintable);
-
-    /* Convert the FFT output into intensities */
-    fft_output(state->real, state->imag, output);
-}
-
-/*
- * Free the state.
- */
-extern void fft_close(fft_state *state) {
-    free( state );
-}
-
-/*****************************************************************************
- * These functions are called from the other ones
- *****************************************************************************/
-
-/*
- * Prepare data to perform an FFT on
- */
-static void fft_prepare( const sound_sample *input, float * re, float * im,
-                         const unsigned int *bitReverse ) {
-    unsigned int i;
-    float *p_real = re;
-    float *p_imag = im;
-    short v;
-
-    /* Get input, in reverse bit order */
-    for(i = 0; i < FFT_BUFFER_SIZE; i++)
-    {
-        *p_real++ = (input[bitReverse[i]] * MAX_SIGNED_SHORT * 2) - MAX_SIGNED_SHORT;
-        *p_imag++ = 0;
+    else {
+        for (i = 0; i < this->samplesIn; i++) {
+            envelope[i] = powf(0.5f + 0.5f * sinf(i * mult - 1.5707963268f), power);
+        }
     }
 }
 
-/*
- * Take result of an FFT and calculate the intensities of each frequency
- * Note: only produces half as many data points as the input had.
- */
-static void fft_output(const float * re, const float * im, float *output)
-{
-    float *p_output = output;
-    const float *p_real   = re;
-    const float *p_imag   = im;
-    float *p_end    = output + (FFT_BUFFER_SIZE / 2) - 1;
+void FFT::InitBitRevTable() {
+    int i, j, m, temp;
+    bitrevtable = new int[NFREQ];
 
-    while(p_output <= p_end)
-    {
-        *p_output = (*p_real * *p_real) + (*p_imag * *p_imag);
-        p_output++; p_real++; p_imag++;
+    for (i = 0; i < NFREQ; i++) {
+        bitrevtable[i] = i;
     }
 
-    /* Do divisions to keep the constant and highest frequency terms in scale
-     * with the other terms. */
-    *output /= 4;
-    *p_end /= 4;
+    for (i = 0, j = 0; i < NFREQ; i++) {
+        if (j > i) {
+            temp = bitrevtable[i];
+            bitrevtable[i] = bitrevtable[j];
+            bitrevtable[j] = temp;
+        }
+
+        m = NFREQ >> 1;
+
+        while (m >= 1 && j >= m) {
+            j -= m;
+            m >>= 1;
+        }
+
+        j += m;
+    }
 }
 
+void FFT::InitCosSinTable() {
+    int i, dftsize, tabsize;
+    float theta;
 
-/*
- * Actually perform the FFT
- */
-static void fft_calculate(float * re, float * im, const float *costable, const float *sintable )
-{
-    unsigned int i, j, k;
-    unsigned int exchanges;
-    float fact_real, fact_imag;
-    float tmp_real, tmp_imag;
-    unsigned int factfact;
+    dftsize = 2;
+    tabsize = 0;
+    while (dftsize <= NFREQ) {
+        tabsize++;
+        dftsize <<= 1;
+    }
 
-    /* Set up some variables to reduce calculation in the loops */
-    exchanges = 1;
-    factfact = FFT_BUFFER_SIZE / 2;
+    cossintable = new float[tabsize][2];
 
-    /* Loop through the divide and conquer steps */
-    for(i = FFT_BUFFER_SIZE_LOG; i != 0; i--) {
-        /* In this step, we have 2 ^ (i - 1) exchange groups, each with
-         * 2 ^ (FFT_BUFFER_SIZE_LOG - i) exchanges
-         */
-        /* Loop through the exchanges in a group */
-        for(j = 0; j != exchanges; j++) {
-            /* Work out factor for this exchange
-             * factor ^ (exchanges) = -1
-             * So, real = cos(j * PI / exchanges),
-             *     imag = sin(j * PI / exchanges)
-             */
-            fact_real = costable[j * factfact];
-            fact_imag = sintable[j * factfact];
+    dftsize = 2;
+    i = 0;
+    while (dftsize <= NFREQ) {
+        theta = (float)(-2.0f*PI / (float)dftsize);
+        cossintable[i][0] = (float)cosf(theta);
+        cossintable[i][1] = (float)sinf(theta);
+        i++;
+        dftsize <<= 1;
+    }
+}
 
-            /* Loop through all the exchange groups */
-            for(k = j; k < FFT_BUFFER_SIZE; k += exchanges << 1) {
-                int k1 = k + exchanges;
-                tmp_real = fact_real * re[k1] - fact_imag * im[k1];
-                tmp_imag = fact_real * im[k1] + fact_imag * re[k1];
-                re[k1] = re[k] - tmp_real;
-                im[k1] = im[k] - tmp_imag;
-                re[k]  += tmp_real;
-                im[k]  += tmp_imag;
+void FFT::TimeToFrequencyDomain(float *in, float *out) {
+    // Converts time-domain samples from in_wavedata[]
+    //   into frequency-domain samples in out_spectraldata[].
+    // The array lengths are the two parameters to Init().
+
+    // The last sample of the output data will represent the frequency
+    //   that is 1/4th of the input sampling rate.  For example,
+    //   if the input wave data is sampled at 44,100 Hz, then the last
+    //   sample of the spectral data output will represent the frequency
+    //   11,025 Hz.  The first sample will be 0 Hz; the frequencies of
+    //   the rest of the samples vary linearly in between.
+    // Note that since human hearing is limited to the range 200 - 20,000
+    //   Hz.  200 is a low bass hum; 20,000 is an ear-piercing high shriek.
+    // Each time the frequency doubles, that sounds like going up an octave.
+    //   That means that the difference between 200 and 300 Hz is FAR more
+    //   than the difference between 5000 and 5100, for example!
+    // So, when trying to analyze bass, you'll want to look at (probably)
+    //   the 200-800 Hz range; whereas for treble, you'll want the 1,400 -
+    //   11,025 Hz range.
+    // If you want to get 3 bands, try it this way:
+    //   a) 11,025 / 200 = 55.125
+    //   b) to get the number of octaves between 200 and 11,025 Hz, solve for n:
+    //          2^n = 55.125
+    //          n = log 55.125 / log 2
+    //          n = 5.785
+    //   c) so each band should represent 5.785/3 = 1.928 octaves; the ranges are:
+    //          1) 200 - 200*2^1.928                    or  200  - 761   Hz
+    //          2) 200*2^1.928 - 200*2^(1.928*2)        or  761  - 2897  Hz
+    //          3) 200*2^(1.928*2) - 200*2^(1.928*3)    or  2897 - 11025 Hz
+
+    // A simple sine-wave-based envelope is convolved with the waveform
+    //   data before doing the FFT, to emeliorate the bad frequency response
+    //   of a square (i.e. nonexistent) filter.
+
+    // You might want to slightly damp (blur) the input if your signal isn't
+    //   of a very high quality, to reduce high-frequency noise that would
+    //   otherwise show up in the output.
+
+    int j, m, i, dftsize, hdftsize, t;
+    float wr, wi, wpi, wpr, wtemp, tempr, tempi;
+
+    if (!bitrevtable) return;
+    if (!temp1) return;
+    if (!temp2) return;
+    if (!cossintable) return;
+
+    // 1. set up input to the fft
+    if (envelope) {
+        for (i = 0; i<NFREQ; i++) {
+            int idx = bitrevtable[i];
+            if (idx < this->samplesIn) {
+                temp1[i] = in[idx] * envelope[idx];
+            }
+            else {
+                temp1[i] = 0;
             }
         }
-        exchanges <<= 1;
-        factfact >>= 1;
     }
-}
+    else {
+        for (i = 0; i<NFREQ; i++) {
+            int idx = bitrevtable[i];
+            if (idx < this->samplesIn) {
+                temp1[i] = in[idx];// * envelope[idx];
+            }
+            else {
+                temp1[i] = 0;
+            }
+        }
+    }
+    memset(temp2, 0, sizeof(float) * NFREQ);
 
-static int reverseBits(unsigned int initial)
-{
-    unsigned int reversed = 0, loop;
-    for(loop = 0; loop < FFT_BUFFER_SIZE_LOG; loop++) {
-        reversed <<= 1;
-        reversed += (initial & 1);
-        initial >>= 1;
+    // 2. perform FFT
+    float *real = temp1;
+    float *imag = temp2;
+    dftsize = 2;
+    t = 0;
+    while (dftsize <= NFREQ) {
+        wpr = cossintable[t][0];
+        wpi = cossintable[t][1];
+        wr = 1.0f;
+        wi = 0.0f;
+        hdftsize = dftsize >> 1;
+
+        for (m = 0; m < hdftsize; m += 1) {
+            for (i = m; i < NFREQ; i += dftsize) {
+                j = i + hdftsize;
+                tempr = wr*real[j] - wi*imag[j];
+                tempi = wr*imag[j] + wi*real[j];
+                real[j] = real[i] - tempr;
+                imag[j] = imag[i] - tempi;
+                real[i] += tempr;
+                imag[i] += tempi;
+            }
+
+            wr = (wtemp = wr)*wpr - wi*wpi;
+            wi = wi*wpr + wtemp*wpi;
+        }
+
+        dftsize <<= 1;
+        t++;
     }
-    return reversed;
+
+    // 3. take the magnitude & equalize it (on a log10 scale) for output
+    if (equalize) {
+        for (i = 0; i < NFREQ / 2; i++) {
+            out[i] = equalize[i] * sqrtf(temp1[i] * temp1[i] + temp2[i] * temp2[i]);
+        }
+    }
+    else {
+        for (i = 0; i < NFREQ / 2; i++) {
+            out[i] = sqrtf(temp1[i] * temp1[i] + temp2[i] * temp2[i]);
+        }
+    }
 }

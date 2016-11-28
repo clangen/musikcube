@@ -64,7 +64,6 @@ namespace musik { namespace core { namespace audio {
             virtual void SetSamples(long samples);
             virtual long Bytes() const;
             virtual double Position() const;
-            virtual bool Fft(float* buffer, int size);
 
             void SetPosition(double position);
             void Copy(float* buffer, long samples);

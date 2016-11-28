@@ -1,53 +1,60 @@
-/*****************************************************************************
-* fft.h: Headers for iterative implementation of a FFT
-*****************************************************************************
-* $Id$
-*
-* Mainly taken from XMMS's code
-*
-* Authors: Richard Boulton <richard@tartarus.org>
-*
-* This program is free software; you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation; either version 2 of the License, or
-* (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software
-* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
-*****************************************************************************/
+/*
+LICENSE
+-------
+Copyright 2005-2013 Nullsoft, Inc.
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+
+* Neither the name of Nullsoft nor the names of its contributors may be used to
+endorse or promote products derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
 
 #pragma once
 
-#define FFT_BUFFER_SIZE_LOG 9
-#define FFT_BUFFER_SIZE (1 << FFT_BUFFER_SIZE_LOG)
+#define FFT_BUFFER_SIZE 512
 
-extern "C" {
-    /* sound sample - should be an signed 16 bit value */
-    typedef float sound_sample;
+class FFT {
+    public:
+        FFT();
 
-    struct _struct_fft_state {
-        /* Temporary data stores to perform FFT in. */
-        float real[FFT_BUFFER_SIZE];
-        float imag[FFT_BUFFER_SIZE];
+        ~FFT();
+        void Init(int samplesIn, int samplesOut, int equalize = 1, float envelopePower = 1.0f);
+        void TimeToFrequencyDomain(float *in, float *out);
 
-        /* */
-        unsigned int bitReverse[FFT_BUFFER_SIZE];
+    private:
+        void CleanUp();
 
-        /* The next two tables could be made to use less space in memory, since they
-        * overlap hugely, but hey. */
-        float sintable[FFT_BUFFER_SIZE / 2];
-        float costable[FFT_BUFFER_SIZE / 2];
-    };
+        int ready;
+        int samplesIn;
+        int NFREQ;
 
-    /* FFT prototypes */
-    typedef struct _struct_fft_state fft_state;
-    fft_state *visual_fft_init(void);
-    void fft_perform(const sound_sample *input, float *output, fft_state *state);
-    void fft_close(fft_state *state);
-}
+        void InitEnvelopeTable(float power);
+        void InitEqualizeTable();
+        void InitBitRevTable();
+        void InitCosSinTable();
+
+        int *bitrevtable;
+        float *envelope;
+        float *equalize;
+        float *temp1;
+        float *temp2;
+        float(*cossintable)[2];
+};

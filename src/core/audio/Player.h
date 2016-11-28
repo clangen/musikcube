@@ -34,6 +34,7 @@
 
 #pragma once
 
+#include <fft.h>
 #include <core/config.h>
 #include <core/audio/IStream.h>
 #include <core/sdk/IOutput.h>
@@ -120,6 +121,8 @@ namespace musik { namespace core { namespace audio {
             int state;
             bool notifiedStarted;
             float* spectrum;
+
+            FFT fft;
     };
 
 } } }
