@@ -27,6 +27,7 @@
     <ClInclude Include="stdafx.h">
       <Filter>plugin</Filter>
     </ClInclude>
+    <ClInclude Include="mpg123\src\config.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Mpg123DecoderFactory.h">
       <Filter>plugin</Filter>

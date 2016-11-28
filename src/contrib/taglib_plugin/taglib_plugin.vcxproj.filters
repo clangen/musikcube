@@ -669,6 +669,9 @@
     <ClInclude Include="taglib-1.11\taglib\xm\xmproperties.h">
       <Filter>taglib-1.11</Filter>
     </ClInclude>
+    <ClInclude Include="taglib-1.11\config.h">
+      <Filter>taglib-1.11</Filter>
+    </ClInclude>
     <ClInclude Include="TaglibMetadataReader.h">
       <Filter>plugin</Filter>
     </ClInclude>
