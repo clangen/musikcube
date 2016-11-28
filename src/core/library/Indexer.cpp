@@ -47,7 +47,7 @@
 #include <core/support/Preferences.h>
 #include <core/support/PreferenceKeys.h>
 #include <core/sdk/IAnalyzer.h>
-#include <core/audio/DynamicStream.h>
+#include <core/audio/Stream.h>
 
 #include <boost/thread/xtime.hpp>
 #include <boost/bind.hpp>
@@ -636,7 +636,7 @@ void Indexer::RunAnalyzers() {
             }
 
             if (!runningAnalyzers.empty()) {
-                audio::StreamPtr stream = audio::DynamicStream::Create(audio::IStream::NoDSP);
+                audio::StreamPtr stream = audio::Stream::Create(audio::IStream::NoDSP);
 
                 if (stream) {
                     if (stream->OpenStream(track.Uri())) {

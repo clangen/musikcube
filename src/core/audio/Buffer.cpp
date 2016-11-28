@@ -51,20 +51,21 @@
 
 using namespace musik::core::audio;
 
-Buffer::Buffer(void)
+Buffer::Buffer(Flags flags)
 : buffer(nullptr)
 , sampleSize(0)
 , internalBufferSize(0)
 , sampleRate(44100)
-, channels(2) {
+, channels(2)
+, flags(flags) {
 }
 
 Buffer::~Buffer() {
     delete[] this->buffer;
 }
 
-BufferPtr Buffer::Create() {
-    return BufferPtr(new Buffer());
+BufferPtr Buffer::Create(Flags flags) {
+    return BufferPtr(new Buffer(flags));
 }
 
 long Buffer::SampleRate() const { /* hertz */
@@ -81,7 +82,6 @@ int Buffer::Channels() const {
 
 void Buffer::SetChannels(int channels) {
     this->channels = channels;
-    this->ResizeBuffer();
 }
 
 float* Buffer::BufferPointer() const {
@@ -104,6 +104,10 @@ void Buffer::CopyFormat(BufferPtr fromBuffer) {
 
 void Buffer::ResizeBuffer() {
     if (this->sampleSize > this->internalBufferSize) {
+        if (flags & ImmutableSize && this->internalBufferSize > 0) {
+            throw std::runtime_error("buffer cannot be resized");
+        }
+
         delete[] this->buffer;
         this->buffer = new float[this->sampleSize];
         this->internalBufferSize = this->sampleSize;
@@ -177,7 +181,7 @@ bool Buffer::Fft(float* buffer, int size) {
         to = ((i % this->channels) * FFT_BUFFER_SIZE) + (i / count);
         deinterleaved[to] = this->buffer[i];
     }
-    
+
     /* if there's more than one set of interleaved data then
     allocate a scratch buffer. we'll use this for averaging
     the result */
@@ -190,7 +194,7 @@ bool Buffer::Fft(float* buffer, int size) {
 
     /* first FFT will go directly to the output buffer */
     fft_perform(this->buffer, buffer, state);
-    
+
     for (int i = 1; i < count; i++) {
         fft_perform(deinterleaved + (i * FFT_BUFFER_SIZE), scratch, state);
 

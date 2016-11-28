@@ -45,11 +45,13 @@ namespace musik { namespace core { namespace audio {
     typedef std::shared_ptr<Buffer> BufferPtr;
 
     class Buffer : public musik::core::sdk::IBuffer {
-        private:
-            Buffer();
-
         public:
-            static BufferPtr Create();
+            enum Flags {
+                NoFlags = 0,
+                ImmutableSize = 1
+            };
+
+            static BufferPtr Create(Flags flags = NoFlags);
 
             virtual ~Buffer();
 
@@ -70,6 +72,8 @@ namespace musik { namespace core { namespace audio {
             void CopyFormat(BufferPtr fromBuffer);
 
         private:
+            Buffer(Flags flags);
+
             void ResizeBuffer();
 
             float *buffer;
@@ -78,6 +82,7 @@ namespace musik { namespace core { namespace audio {
             long sampleRate;
             int channels;
             double position;
+            Flags flags;
     };
 
 } } }

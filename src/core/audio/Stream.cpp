@@ -34,7 +34,7 @@
 
 #include "pch.hpp"
 
-#include "FixedSizeStream.h"
+#include "Stream.h"
 #include <core/debug.h>
 #include <core/sdk/IDecoderFactory.h>
 #include <core/plugin/PluginFactory.h>
@@ -43,28 +43,25 @@ using namespace musik::core::audio;
 using namespace musik::core::sdk;
 using musik::core::PluginFactory;
 
-static std::string TAG = "FixedSizeStream";
+static std::string TAG = "Stream";
 
 #define SET_OFFSET(target, offset) \
     target->SetPosition( \
         ((double) this->decoderSamplePosition + offset) / \
         ((double) target->Channels()) / \
-        ((double) this->decoderSampleRate)); 
+        ((double) this->decoderSampleRate));
 
 #define COPY_BUFFER(target, current, count, offset) \
     target->Copy(current->BufferPointer() + offset, count); \
     SET_OFFSET(target, offset) \
 
-FixedSizeStream::FixedSizeStream(int samplesPerChannel, int bufferCount, unsigned int options)
+Stream::Stream(int samplesPerChannel, int bufferCount, unsigned int options)
 : options(options)
 , samplesPerChannel(samplesPerChannel)
 , bufferCount(bufferCount)
 , decoderSampleRate(0)
 , decoderChannels(0)
-, decoderSamplePosition(0)
-, decoderBuffer(Buffer::Create())
-, dspBuffer(Buffer::Create())
-{
+, decoderSamplePosition(0) {
     if ((this->options & NoDSP) == 0) {
         typedef PluginFactory::DestroyDeleter<IDSP> Deleter;
         this->dsps = PluginFactory::Instance().QueryInterface<IDSP, Deleter>("GetDSP");
@@ -75,16 +72,28 @@ FixedSizeStream::FixedSizeStream(int samplesPerChannel, int bufferCount, unsigne
     }
 
     this->LoadDecoderPlugins();
+    this->dspBuffer = Buffer::Create();
+
+    /* note that the decoder buffer needs to have a pre-allocated, non-resizable buffer
+    in Windows due to the way heap allocations work cross-DLL. in theory this is a
+    surmountable problem, in practice we get heap corruption. the buffer is enough for
+    8 channels worth of 2048 samples, which should be more than reasonable. */
+#ifdef WIN32
+    this->decoderBuffer = Buffer::Create(Buffer::ImmutableSize);
+    this->decoderBuffer->SetSamples(2048 * 8);
+#else
+    this->decoderBuffer = Buffer::Create();
+#endif
 }
 
-FixedSizeStream::~FixedSizeStream() {
+Stream::~Stream() {
 }
 
-StreamPtr FixedSizeStream::Create(int samplesPerChannel, int bufferCount, unsigned int options) {
-    return StreamPtr(new FixedSizeStream(samplesPerChannel, bufferCount, options));
+StreamPtr Stream::Create(int samplesPerChannel, int bufferCount, unsigned int options) {
+    return StreamPtr(new Stream(samplesPerChannel, bufferCount, options));
 }
 
-double FixedSizeStream::SetPosition(double requestedSeconds) {
+double Stream::SetPosition(double requestedSeconds) {
     double actualSeconds = this->decoder->SetPosition(requestedSeconds);
 
     if (actualSeconds != -1) {
@@ -94,14 +103,14 @@ double FixedSizeStream::SetPosition(double requestedSeconds) {
             (uint64)(actualSeconds * rate) * this->decoderChannels;
 
         this->recycledBuffers.splice(
-            this->recycledBuffers.begin(), 
+            this->recycledBuffers.begin(),
             this->filledBuffers);
     }
 
     return actualSeconds;
 }
 
-bool FixedSizeStream::OpenStream(std::string uri) {
+bool Stream::OpenStream(std::string uri) {
     musik::debug::info(TAG, "opening " + uri);
 
     /* use our file stream abstraction to open the data at the
@@ -151,11 +160,11 @@ bool FixedSizeStream::OpenStream(std::string uri) {
     return true;
 }
 
-void FixedSizeStream::OnBufferProcessedByPlayer(BufferPtr buffer) {
+void Stream::OnBufferProcessedByPlayer(BufferPtr buffer) {
     this->RecycleBuffer(buffer);
 }
 
-bool FixedSizeStream::GetNextBufferFromDecoder() {
+bool Stream::GetNextBufferFromDecoder() {
     BufferPtr buffer = this->decoderBuffer;
 
     /* get a spare buffer, then ask the decoder for some data */
@@ -181,9 +190,9 @@ bool FixedSizeStream::GetNextBufferFromDecoder() {
     return true;
 }
 
-inline BufferPtr FixedSizeStream::GetEmptyBuffer() {
+inline BufferPtr Stream::GetEmptyBuffer() {
     BufferPtr target;
-    
+
     if (recycledBuffers.size()) {
         target = recycledBuffers.back();
         recycledBuffers.pop_back();
@@ -196,7 +205,7 @@ inline BufferPtr FixedSizeStream::GetEmptyBuffer() {
     return target;
 }
 
-BufferPtr FixedSizeStream::GetNextProcessedOutputBuffer() {
+BufferPtr Stream::GetNextProcessedOutputBuffer() {
     BufferPtr currentBuffer;
 
     /* ensure we have at least BUFFER_COUNT buffers, and that at least half of them
@@ -284,11 +293,11 @@ BufferPtr FixedSizeStream::GetNextProcessedOutputBuffer() {
 }
 
 /* marks a used buffer as recycled so it can be re-used later. */
-void FixedSizeStream::RecycleBuffer(BufferPtr oldBuffer) {
+void Stream::RecycleBuffer(BufferPtr oldBuffer) {
     this->recycledBuffers.push_back(oldBuffer);
 }
 
-void FixedSizeStream::LoadDecoderPlugins() {
+void Stream::LoadDecoderPlugins() {
     PluginFactory::DestroyDeleter<IDecoderFactory> typedef Deleter;
 
     this->decoderFactories = PluginFactory::Instance()

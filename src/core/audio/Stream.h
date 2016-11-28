@@ -47,7 +47,7 @@
 
 namespace musik { namespace core { namespace audio {
 
-    class FixedSizeStream : public IStream {
+    class Stream : public IStream {
         using IDSP = musik::core::sdk::IDSP;
         using IDecoder = musik::core::sdk::IDecoder;
         using IDecoderFactory = musik::core::sdk::IDecoderFactory;
@@ -59,10 +59,10 @@ namespace musik { namespace core { namespace audio {
                 unsigned int options = 0);
 
         private:
-            FixedSizeStream(int samplesPerChannel, int bufferCount, unsigned int options);
+            Stream(int samplesPerChannel, int bufferCount, unsigned int options);
 
         public:
-            virtual ~FixedSizeStream();
+            virtual ~Stream();
 
             virtual BufferPtr GetNextProcessedOutputBuffer();
             virtual void OnBufferProcessedByPlayer(BufferPtr buffer);

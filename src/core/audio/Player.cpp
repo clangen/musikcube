@@ -36,8 +36,7 @@
 
 #include <core/debug.h>
 #include <core/audio/Player.h>
-#include <core/audio/FixedSizeStream.h>
-#include <core/audio/DynamicStream.h>
+#include <core/audio/Stream.h>
 #include <core/audio/Visualizer.h>
 #include <core/plugin/PluginFactory.h>
 #include <algorithm>
@@ -139,11 +138,10 @@ int Player::State() {
 
 void Player::ThreadLoop() {
     /* fixed size streams are better for visualizations because they provide
-    consistent buffer sizes. dynamic streams are more efficient otherwise 
+    consistent buffer sizes. dynamic streams are more efficient otherwise
     because we don't need to worry about manually chunking data, we can just
     send audio data to the output straight from the decoder. */
-    this->stream = vis::SelectedVisualizer()
-        ? FixedSizeStream::Create() : DynamicStream::Create();
+    this->stream = Stream::Create();
 
     BufferPtr buffer;
 

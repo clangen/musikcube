@@ -3,8 +3,7 @@ set(CORE_SOURCES
   ./audio/Buffer.cpp
   ./audio/Player.cpp
   ./audio/GaplessTransport.cpp
-  ./audio/DynamicStream.cpp
-  ./audio/FixedSizeStream.cpp
+  ./audio/Stream.cpp
   ./audio/Visualizer.cpp
   ./db/Connection.cpp
   ./db/ScopedTransaction.cpp

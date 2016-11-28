@@ -109,10 +109,7 @@
     <ClCompile Include="library\track\RetainedTrack.cpp">
       <Filter>src\library\track</Filter>
     </ClCompile>
-    <ClCompile Include="audio\FixedSizeStream.cpp">
-      <Filter>src\audio</Filter>
-    </ClCompile>
-    <ClCompile Include="audio\DynamicStream.cpp">
+    <ClCompile Include="audio\Stream.cpp">
       <Filter>src\audio</Filter>
     </ClCompile>
   </ItemGroup>
@@ -276,10 +273,7 @@
     <ClInclude Include="audio\IStream.h">
       <Filter>src\audio</Filter>
     </ClInclude>
-    <ClInclude Include="audio\FixedSizeStream.h">
-      <Filter>src\audio</Filter>
-    </ClInclude>
-    <ClInclude Include="audio\DynamicStream.h">
+    <ClInclude Include="audio\Stream.h">
       <Filter>src\audio</Filter>
     </ClInclude>
   </ItemGroup>
