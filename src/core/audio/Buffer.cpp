@@ -35,7 +35,6 @@
 #include "pch.hpp"
 
 #include <core/audio/Buffer.h>
-#include <fft.h>
 
 #define DEBUG 0
 
@@ -161,7 +160,6 @@ void Buffer::Append(float* src, long samples) {
     else {
         /* append, no resize required */
         CopyFloat(this->buffer + this->sampleSize, src, samples);
-        this->internalBufferSize += samples;
     }
 
     this->sampleSize = newBufferSize;

@@ -34,7 +34,7 @@
 
 #include "pch.hpp"
 
-#include <fft.h>
+#include <kiss_fft.h>
 #include <core/debug.h>
 #include <core/audio/Player.h>
 #include <core/audio/Stream.h>
@@ -43,7 +43,7 @@
 #include <algorithm>
 
 #define MAX_PREBUFFER_QUEUE_COUNT 8
-#define FFT_OUTPUT_SIZE (FFT_BUFFER_SIZE / 2)
+#define FFT_BUFFER_SIZE 512
 
 using namespace musik::core::audio;
 using namespace musik::core::sdk;
@@ -52,6 +52,48 @@ using std::min;
 using std::max;
 
 static std::string TAG = "Player";
+
+namespace musik {
+    namespace core {
+        namespace audio {
+            struct FftContext {
+                FftContext() {
+                    samples = 0;
+                    cfg = nullptr;
+                    deinterleaved = nullptr;
+                    scratch = nullptr;
+                }
+
+                ~FftContext() {
+                    Reset();
+                }
+
+                void Reset() {
+                    kiss_fft_free(cfg);
+                    delete[] deinterleaved;
+                    delete[] scratch;
+                    cfg = NULL;
+                    deinterleaved = scratch = nullptr;
+                }
+
+                void Init(int samples) {
+                    if (!cfg || samples != this->samples) {
+                        Reset();
+                        cfg = kiss_fft_alloc(FFT_BUFFER_SIZE, false, 0, 0);
+                        deinterleaved = new kiss_fft_cpx[samples];
+                        scratch = new kiss_fft_cpx[FFT_BUFFER_SIZE];
+                        this->samples = samples;
+                    }
+                }
+
+                int samples;
+                kiss_fft_cfg cfg;
+                kiss_fft_cpx* deinterleaved;
+                kiss_fft_cpx* scratch;
+            };
+        }
+    }
+}
 
 PlayerPtr Player::Create(const std::string &url, OutputPtr output) {
     return PlayerPtr(new Player(url, output));
@@ -78,12 +120,11 @@ Player::Player(const std::string &url, OutputPtr output)
 , currentPosition(0)
 , output(output)
 , notifiedStarted(false)
-, setPosition(-1) {
+, setPosition(-1)
+, fftContext(nullptr) {
     musik::debug::info(TAG, "new instance created");
 
-    fft.Init(FFT_BUFFER_SIZE, FFT_OUTPUT_SIZE);
-
-    this->spectrum = new float[FFT_OUTPUT_SIZE];
+    this->spectrum = new float[FFT_BUFFER_SIZE];
 
     /* we allow callers to specify an output device; but if they don't,
     we will create and manage our own. */
@@ -107,6 +148,8 @@ Player::~Player() {
 
     delete[] this->spectrum;
     this->spectrum = nullptr;
+
+    delete fftContext;
 }
 
 void Player::Play() {
@@ -316,75 +359,79 @@ bool Player::Exited() {
     return (this->state == Player::Quit);
 }
 
-static inline bool performFft(IBuffer* buffer, FFT& fft, float* output, int outputSize) {
+#include <Windows.h>
+
+static inline bool performFft(IBuffer* buffer, FftContext* fft, float* output, int outputSize) {
+    LARGE_INTEGER start, end, freq;
+    QueryPerformanceFrequency(&freq);
+    QueryPerformanceCounter(&start);
+
     long samples = buffer->Samples();
     int channels = buffer->Channels();
+    long samplesPerChannel = samples / channels;
 
-    if (samples / channels < FFT_BUFFER_SIZE ||
-        outputSize != FFT_BUFFER_SIZE / 2)
+    if (samplesPerChannel < FFT_BUFFER_SIZE ||
+        outputSize != FFT_BUFFER_SIZE)
     {
         return false;
     }
 
     float* input = buffer->BufferPointer();
 
-    int count = samples / FFT_BUFFER_SIZE;
+    fft->Init(samples);
 
-    /* de-interleave the audio first */
-    float* deinterleaved = new float[FFT_BUFFER_SIZE * count];
-
-    for (int i = 0; i < count * FFT_BUFFER_SIZE; i++) {
-        const int to = ((i % channels) * FFT_BUFFER_SIZE) + (i / count);
-        deinterleaved[to] = input[i];
+    for (int i = 0; i < samples; i++) {
+        const int to = ((i % channels) * samplesPerChannel) + (i / channels);
+        fft->deinterleaved[i].r = input[i];
+        fft->deinterleaved[i].i = 0;
     }
 
-    /* if there's more than one set of interleaved data then
-    allocate a scratch buffer. we'll use this for averaging
-    the result */
-    float* scratch = nullptr;
-    if (count > 1) {
-        scratch = new float[outputSize];
-    }
+    /* the frequency bands seem offset about 1/4 of the buffer */
+    const int rotate = FFT_BUFFER_SIZE / 4;
 
-    fft.Init(FFT_BUFFER_SIZE, outputSize);
+    int offset = 0;
+    int iterations = samples / FFT_BUFFER_SIZE;
+    for (int i = 0; i < iterations; i++) {
+        kiss_fft(fft->cfg, &fft->deinterleaved[offset], fft->scratch);
 
-    /* first FFT will go directly to the output buffer */
-    fft.TimeToFrequencyDomain(input, output);
-
-    for (int i = 1; i < count; i++) {
-        fft.TimeToFrequencyDomain(deinterleaved + (i * FFT_BUFFER_SIZE), scratch);
-
-        /* average with the previous read */
-        for (int j = 0; j < outputSize; j++) {
-            output[j] = (scratch[j] + output[j]) / 2;
+        for (int z = 0; z < outputSize; z++) {
+            /* convert to decibels */
+            double db = (fft->scratch[z].r * fft->scratch[z].r + fft->scratch[z].i + fft->scratch[z].i);
+            output[(z + rotate) % FFT_BUFFER_SIZE] = (db < 1 ? 0 : 20 * log(db)) / iterations;
         }
+
+        offset += FFT_BUFFER_SIZE;
     }
 
-    delete[] deinterleaved;
-    delete[] scratch;
+    QueryPerformanceCounter(&end);
+    double interval = static_cast<double>(end.QuadPart - start.QuadPart) / freq.QuadPart;
 
     return true;
-}
-
-static inline void writeToVisualizer(IBuffer *buffer, FFT& fft, float *spectrum) {
-    ISpectrumVisualizer* specVis = vis::SpectrumVisualizer();
-    IPcmVisualizer* pcmVis = vis::PcmVisualizer();
-
-    if (specVis && specVis->Visible()) {
-        if (performFft(buffer, fft, spectrum, FFT_OUTPUT_SIZE)) {
-            vis::SpectrumVisualizer()->Write(spectrum, FFT_OUTPUT_SIZE);
-        }
-    }
-    else if (pcmVis && pcmVis->Visible()) {
-        vis::PcmVisualizer()->Write(buffer);
-    }
 }
 
 void Player::OnBufferProcessed(IBuffer *buffer) {
     bool started = false;
     bool found = false;
 
-    writeToVisualizer(buffer, this->fft, this->spectrum);
+    /* process visualizer data, and write to the selected plugin, if applicable */
+
+    ISpectrumVisualizer* specVis = vis::SpectrumVisualizer();
+    IPcmVisualizer* pcmVis = vis::PcmVisualizer();
+
+    if (specVis && specVis->Visible()) {
+        if (!fftContext) {
+            fftContext = new FftContext();
+        }
+
+        if (performFft(buffer, fftContext, spectrum, FFT_BUFFER_SIZE)) {
+            vis::SpectrumVisualizer()->Write(spectrum, FFT_BUFFER_SIZE);
+        }
+    }
+    else if (pcmVis && pcmVis->Visible()) {
+        vis::PcmVisualizer()->Write(buffer);
+    }
+
+    /* free the buffer */
 
     {
         boost::mutex::scoped_lock lock(this->queueMutex);

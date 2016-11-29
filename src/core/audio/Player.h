@@ -34,7 +34,6 @@
 
 #pragma once
 
-#include <fft.h>
 #include <core/config.h>
 #include <core/audio/IStream.h>
 #include <core/sdk/IOutput.h>
@@ -53,6 +52,8 @@ namespace musik { namespace core { namespace audio {
 
     class Output;
     typedef std::shared_ptr<musik::core::sdk::IOutput> OutputPtr;
+
+    struct FftContext;
 
     class Player : public musik::core::sdk::IBufferProvider {
         public:
@@ -122,7 +123,7 @@ namespace musik { namespace core { namespace audio {
             bool notifiedStarted;
             float* spectrum;
 
-            FFT fft;
+            FftContext* fftContext;
     };
 
 } } }

@@ -25,7 +25,7 @@
     <ClCompile Include="src\wcwidth.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\fft.cpp">
+    <ClCompile Include="include\kiss_fft.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
@@ -45,7 +45,10 @@
     <ClInclude Include="include\wcwidth.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="include\fft.h">
+    <ClInclude Include="include\_kiss_fft_guts.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="include\kiss_fft.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

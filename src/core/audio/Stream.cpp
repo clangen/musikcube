@@ -257,6 +257,7 @@ BufferPtr Stream::GetNextProcessedOutputBuffer() {
             offset += floatsPerBuffer;
         }
 
+        /* any remainder will be sent to the output next time through the loop*/
         if (offset < currentBuffer->Samples()) {
             remainder = this->GetEmptyBuffer();
             COPY_BUFFER(remainder, currentBuffer, currentBuffer->Samples() - offset, offset);
