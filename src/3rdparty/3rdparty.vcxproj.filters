@@ -25,7 +25,7 @@
     <ClCompile Include="src\wcwidth.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="include\kiss_fft.c">
+    <ClCompile Include="src\kiss_fft.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

@@ -84,7 +84,7 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="include\kiss_fft.c" />
+    <ClCompile Include="src\kiss_fft.c" />
     <ClCompile Include="src\sqlite\sqlite3.c">
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level1</WarningLevel>
     </ClCompile>
