@@ -359,13 +359,7 @@ bool Player::Exited() {
     return (this->state == Player::Quit);
 }
 
-#include <Windows.h>
-
 static inline bool performFft(IBuffer* buffer, FftContext* fft, float* output, int outputSize) {
-    LARGE_INTEGER start, end, freq;
-    QueryPerformanceFrequency(&freq);
-    QueryPerformanceCounter(&start);
-
     long samples = buffer->Samples();
     int channels = buffer->Channels();
     long samplesPerChannel = samples / channels;
@@ -402,9 +396,6 @@ static inline bool performFft(IBuffer* buffer, FftContext* fft, float* output, i
 
         offset += FFT_BUFFER_SIZE;
     }
-
-    QueryPerformanceCounter(&end);
-    double interval = static_cast<double>(end.QuadPart - start.QuadPart) / freq.QuadPart;
 
     return true;
 }
