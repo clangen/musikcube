@@ -28,6 +28,9 @@
     <ClCompile Include="src\kiss_fft.c">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\kiss_fftr.c">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\sqlite\sqlite3.h">
@@ -49,6 +52,9 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="include\kiss_fft.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="include\kiss_fftr.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

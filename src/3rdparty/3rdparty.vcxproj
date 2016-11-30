@@ -85,6 +85,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\kiss_fft.c" />
+    <ClCompile Include="src\kiss_fftr.c" />
     <ClCompile Include="src\sqlite\sqlite3.c">
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level1</WarningLevel>
     </ClCompile>
@@ -93,6 +94,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\kiss_fft.h" />
+    <ClInclude Include="include\kiss_fftr.h" />
     <ClInclude Include="include\sqlite\sqlite3.h" />
     <ClInclude Include="include\sqlite\sqlite3ext.h" />
     <ClInclude Include="include\sigslot\sigslot.h" />

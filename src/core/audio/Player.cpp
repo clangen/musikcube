@@ -34,16 +34,18 @@
 
 #include "pch.hpp"
 
-#include <kiss_fft.h>
+#include <kiss_fftr.h>
 #include <core/debug.h>
 #include <core/audio/Player.h>
 #include <core/audio/Stream.h>
 #include <core/audio/Visualizer.h>
 #include <core/plugin/PluginFactory.h>
 #include <algorithm>
+#include <math.h>
 
 #define MAX_PREBUFFER_QUEUE_COUNT 8
-#define FFT_BUFFER_SIZE 512
+#define FFT_N 512
+#define PI 3.14159265358979323846
 
 using namespace musik::core::audio;
 using namespace musik::core::sdk;
@@ -52,6 +54,7 @@ using std::min;
 using std::max;
 
 static std::string TAG = "Player";
+static float* hammingWindow = nullptr;
 
 namespace musik {
     namespace core {
@@ -69,26 +72,27 @@ namespace musik {
                 }
 
                 void Reset() {
-                    kiss_fft_free(cfg);
+                    kiss_fftr_free(cfg);
                     delete[] deinterleaved;
                     delete[] scratch;
-                    cfg = NULL;
-                    deinterleaved = scratch = nullptr;
+                    cfg = nullptr;
+                    deinterleaved = nullptr;
+                    scratch = nullptr;
                 }
 
                 void Init(int samples) {
                     if (!cfg || samples != this->samples) {
                         Reset();
-                        cfg = kiss_fft_alloc(FFT_BUFFER_SIZE, false, 0, 0);
-                        deinterleaved = new kiss_fft_cpx[samples];
-                        scratch = new kiss_fft_cpx[FFT_BUFFER_SIZE];
+                        cfg = kiss_fftr_alloc(FFT_N, false, 0, 0);
+                        deinterleaved = new float[samples];
+                        scratch = new kiss_fft_cpx[(FFT_N / 2) + 1];
                         this->samples = samples;
                     }
                 }
 
                 int samples;
-                kiss_fft_cfg cfg;
-                kiss_fft_cpx* deinterleaved;
+                kiss_fftr_cfg cfg;
+                float* deinterleaved;
                 kiss_fft_cpx* scratch;
             };
         }
@@ -124,7 +128,7 @@ Player::Player(const std::string &url, OutputPtr output)
 , fftContext(nullptr) {
     musik::debug::info(TAG, "new instance created");
 
-    this->spectrum = new float[FFT_BUFFER_SIZE];
+    this->spectrum = new float[FFT_N / 2];
 
     /* we allow callers to specify an output device; but if they don't,
     we will create and manage our own. */
@@ -359,16 +363,29 @@ bool Player::Exited() {
     return (this->state == Player::Quit);
 }
 
+static inline void initHammingWindow() {
+    delete hammingWindow;
+    hammingWindow = new float[FFT_N];
+
+    for (int i = 0; i < FFT_N; i++) {
+        hammingWindow[i] = 0.54f - 0.46f * (float) cos((2 * PI * i) / (FFT_N - 1));
+    }
+}
+
 static inline bool performFft(IBuffer* buffer, FftContext* fft, float* output, int outputSize) {
     long samples = buffer->Samples();
     int channels = buffer->Channels();
     long samplesPerChannel = samples / channels;
 
-    if (samplesPerChannel < FFT_BUFFER_SIZE ||
-        outputSize != FFT_BUFFER_SIZE)
-    {
+    if (samplesPerChannel < FFT_N || outputSize != FFT_N / 2) {
         return false;
     }
+
+    if (!hammingWindow) {
+        initHammingWindow();
+    }
+
+    memset(output, 0, outputSize * sizeof(float));
 
     float* input = buffer->BufferPointer();
 
@@ -376,25 +393,25 @@ static inline bool performFft(IBuffer* buffer, FftContext* fft, float* output, i
 
     for (int i = 0; i < samples; i++) {
         const int to = ((i % channels) * samplesPerChannel) + (i / channels);
-        fft->deinterleaved[i].r = input[i];
-        fft->deinterleaved[i].i = 0;
+        fft->deinterleaved[to] = input[i];
     }
 
-    /* the frequency bands seem offset about 1/4 of the buffer */
-    const int rotate = FFT_BUFFER_SIZE / 4;
+    for (int i = 0; i < samples; i++) {
+        fft->deinterleaved[i] *= hammingWindow[i % FFT_N];
+    }
 
     int offset = 0;
-    int iterations = samples / FFT_BUFFER_SIZE;
+    int iterations = samples / FFT_N;
     for (int i = 0; i < iterations; i++) {
-        kiss_fft(fft->cfg, &fft->deinterleaved[offset], fft->scratch);
+        kiss_fftr(fft->cfg, fft->deinterleaved + offset, fft->scratch);
 
         for (int z = 0; z < outputSize; z++) {
             /* convert to decibels */
             double db = (fft->scratch[z].r * fft->scratch[z].r + fft->scratch[z].i + fft->scratch[z].i);
-            output[(z + rotate) % FFT_BUFFER_SIZE] = (db < 1 ? 0 : 20 * log(db)) / iterations;
+            output[z] += (db < 1 ? 0 : 20 * log10(db)) / iterations; /* frequencies over all channels */
         }
 
-        offset += FFT_BUFFER_SIZE;
+        offset += FFT_N;
     }
 
     return true;
@@ -414,8 +431,8 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
             fftContext = new FftContext();
         }
 
-        if (performFft(buffer, fftContext, spectrum, FFT_BUFFER_SIZE)) {
-            vis::SpectrumVisualizer()->Write(spectrum, FFT_BUFFER_SIZE);
+        if (performFft(buffer, fftContext, spectrum, FFT_N / 2)) {
+            vis::SpectrumVisualizer()->Write(spectrum, FFT_N / 2);
         }
     }
     else if (pcmVis && pcmVis->Visible()) {
