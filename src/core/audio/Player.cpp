@@ -186,10 +186,7 @@ int Player::State() {
 
 namespace musik { namespace core { namespace audio {
     void playerThreadLoop(Player* player) {
-        /* fixed size streams are better for visualizations because they provide
-        consistent buffer sizes. dynamic streams are more efficient otherwise
-        because we don't need to worry about manually chunking data, we can just
-        send audio data to the output straight from the decoder. */
+
         player->stream = Stream::Create();
 
         BufferPtr buffer;
@@ -340,7 +337,7 @@ namespace musik { namespace core { namespace audio {
 } } }
 
 void Player::ReleaseAllBuffers() {
-            std::unique_lock<std::mutex> lock(this->queueMutex);
+    std::unique_lock<std::mutex> lock(this->queueMutex);
     this->lockedBuffers.empty();
 }
 
@@ -350,7 +347,7 @@ bool Player::PreBuffer() {
         BufferPtr newBuffer = this->stream->GetNextProcessedOutputBuffer();
 
         if (newBuffer) {
-                    std::unique_lock<std::mutex> lock(this->queueMutex);
+            std::unique_lock<std::mutex> lock(this->queueMutex);
             this->prebufferQueue.push_back(newBuffer);
         }
 
@@ -361,7 +358,7 @@ bool Player::PreBuffer() {
 }
 
 bool Player::Exited() {
-            std::unique_lock<std::mutex> lock(this->queueMutex);
+    std::unique_lock<std::mutex> lock(this->queueMutex);
     return (this->state == Player::Quit);
 }
 
@@ -440,7 +437,7 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
     /* free the buffer */
 
     {
-                std::unique_lock<std::mutex> lock(this->queueMutex);
+        std::unique_lock<std::mutex> lock(this->queueMutex);
 
         /* removes the specified buffer from the list of locked buffers, and also
         lets the stream know it can be recycled. */

@@ -17,9 +17,7 @@
 #define MILLIS_PER_FRAME (1000LL / MAX_FPS)
 #define WINDOW_CLASS_NAME L"GdiVis-musikcube"
 #define DEFAULT_WIDTH 550
-#define DEFAULT_HEIGHT 120
-#define TEXTURE_WIDTH 90
-#define TEXTURE_HEIGHT 80
+#define DEFAULT_HEIGHT 100
 
 using namespace std::chrono;
 
@@ -28,8 +26,6 @@ static std::atomic<bool> thread(false);
 static std::mutex pcmMutex, threadMutex;
 static std::condition_variable threadCondition;
 static HINSTANCE instance;
-static HBITMAP texture = nullptr;
-static COLORREF *textureBits = nullptr;
 static HBRUSH fg = CreateSolidBrush(RGB(255, 0, 0));
 static COLORREF bg = RGB(24, 24, 24);
 
@@ -53,15 +49,10 @@ static void renderFrame(HWND hwnd) {
 
         win32cpp::MemoryDC memDc(hdc, ps.rcPaint);
 
-        for (int n = 0; n < TEXTURE_WIDTH * TEXTURE_HEIGHT - 1; n++) {
-            textureBits[n] = bg;
-        }
-
         RECT rect;
-
         int barHeight;
         const int barWidth = 7;
-        const int barY = 100;
+        const int barY = DEFAULT_HEIGHT - 15;
 
         int x = 20;
         int n = spectrumSize / 4;
@@ -163,22 +154,6 @@ static void threadProc() {
         return;
     }
 
-    BITMAPINFO bminfo;
-    ZeroMemory(&bminfo, sizeof(BITMAPINFO));
-    bminfo.bmiHeader.biWidth = TEXTURE_WIDTH;
-    bminfo.bmiHeader.biHeight = TEXTURE_HEIGHT;
-    bminfo.bmiHeader.biPlanes = 1;
-    bminfo.bmiHeader.biBitCount = 32;
-    bminfo.bmiHeader.biCompression = BI_RGB;
-    bminfo.bmiHeader.biXPelsPerMeter = 0;
-    bminfo.bmiHeader.biYPelsPerMeter = 0;
-    bminfo.bmiHeader.biClrUsed = 0;
-    bminfo.bmiHeader.biClrImportant = 0;
-    bminfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-    bminfo.bmiHeader.biSizeImage = TEXTURE_WIDTH * TEXTURE_HEIGHT * 4;
-
-    texture = CreateDIBSection(NULL, &bminfo, DIB_RGB_COLORS, (void **)&textureBits, NULL, NULL);
-
     ShowWindow(hwnd, SW_SHOW);
 
     MSG msg;
@@ -205,10 +180,6 @@ static void threadProc() {
             }
         }
     }
-
-    DeleteObject(texture);
-    texture = nullptr;
-    textureBits = nullptr;
 
     thread.store(false);
 

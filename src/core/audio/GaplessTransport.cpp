@@ -168,7 +168,7 @@ void GaplessTransport::StopInternal(
             LockT lock(this->stateMutex);
             RESET_NEXT_PLAYER(this);
 
-            /* move all but the excluded player to the toDelete set. */
+            /* destroy all but specified player */
             auto it = this->active.begin();
             while (it != this->active.end()) {
                 if (*it != exclude) {
