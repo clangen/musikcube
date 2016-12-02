@@ -60,6 +60,8 @@ static float* hammingWindow = nullptr;
 namespace musik {
     namespace core {
         namespace audio {
+            static void playerThreadLoop(Player* player);
+
             struct FftContext {
                 FftContext() {
                     samples = 0;
@@ -184,157 +186,154 @@ int Player::State() {
     return this->state;
 }
 
-namespace musik { namespace core { namespace audio {
-    void playerThreadLoop(Player* player) {
+static void musik::core::audio::playerThreadLoop(Player* player) {
+    player->stream = Stream::Create();
 
-        player->stream = Stream::Create();
+    BufferPtr buffer;
 
-        BufferPtr buffer;
-
-        if (player->stream->OpenStream(player->url)) {
-            /* precache until buffers are full */
-            bool keepPrecaching = true;
-            while (player->State() == Player::Precache && keepPrecaching) {
-                keepPrecaching = player->PreBuffer();
-            }
-
-            /* wait until we enter the Playing or Quit state; we may still
-            be in the Precache state. */
-            {
-                std::unique_lock<std::mutex> lock(player->queueMutex);
-
-                while (player->state == Player::Precache) {
-                    player->writeToOutputCondition.wait(lock);
-                }
-            }
-
-            /* we're ready to go.... */
-            bool finished = false;
-
-            while (!finished && !player->Exited()) {
-                /* see if we've been asked to seek since the last sample was
-                played. if we have, clear our output buffer and seek the
-                stream. */
-                double position = -1;
-
-                {
-                    std::unique_lock<std::mutex> lock(player->positionMutex);
-                    position = player->setPosition;
-                    player->setPosition = -1;
-                }
-
-                if (position != -1) {
-                    player->output->Stop(); /* flush all buffers */
-                    player->output->Resume(); /* start it back up */
-
-                    /* if we've allocated a buffer, but it hasn't been written
-                    to the output yet, unlock it. this is an important step, and if
-                    not performed, will result in a deadlock just below while
-                    waiting for all buffers to complete. */
-                    if (buffer) {
-                        player->OnBufferProcessed(buffer.get());
-                        buffer.reset();
-                    }
-
-                    {
-                        std::unique_lock<std::mutex> lock(player->queueMutex);
-
-                        while (player->lockedBuffers.size() > 0) {
-                            player->writeToOutputCondition.wait(lock);
-                        }
-                    }
-
-                    player->stream->SetPosition(position);
-
-                    {
-                        std::unique_lock<std::mutex> lock(player->queueMutex);
-                        player->prebufferQueue.clear();
-                    }
-                }
-
-                /* let's see if we can find some samples to play */
-                if (!buffer) {
-                    std::unique_lock<std::mutex> lock(player->queueMutex);
-
-                    /* the buffer queue may already have some available if it was prefetched. */
-                    if (!player->prebufferQueue.empty()) {
-                        buffer = player->prebufferQueue.front();
-                        player->prebufferQueue.pop_front();
-                    }
-                    /* otherwise, we need to grab a buffer from the stream and add it to the queue */
-                    else {
-                        buffer = player->stream->GetNextProcessedOutputBuffer();
-                    }
-
-                    /* lock it down until it's processed */
-                    if (buffer) {
-                        player->lockedBuffers.push_back(buffer);
-                    }
-                }
-
-                /* if we have a decoded, processed buffer available. let's try to send it to
-                the output device. */
-                if (buffer) {
-                    if (player->output->Play(buffer.get(), player)) {
-                        /* success! the buffer was accepted by the output.*/
-                        /* lock it down so it's not destroyed until the output device lets us
-                        know it's done with it. */
-                        std::unique_lock<std::mutex> lock(player->queueMutex);
-
-                        if (player->lockedBuffers.size() == 1) {
-                            player->currentPosition = buffer->Position();
-                        }
-
-                        buffer.reset(); /* important! we're done with this one locally. */
-                    }
-                    else {
-                        /* the output device queue is full. we should block and wait until
-                        the output lets us know that it needs more data */
-                        std::unique_lock<std::mutex> lock(player->queueMutex);
-                        player->writeToOutputCondition.wait(lock);
-                    }
-                }
-                /* if we're unable to obtain a buffer, it means we're out of data and the
-                player is finished. terminate the thread. */
-                else {
-                    finished = true;
-                }
-            }
-
-            /* if the Quit flag isn't set, that means the stream has ended "naturally", i.e.
-            it wasn't stopped by the user. raise the "almost ended" flag. */
-            if (!player->Exited()) {
-                player->PlaybackAlmostEnded(player);
-            }
+    if (player->stream->OpenStream(player->url)) {
+        /* precache until buffers are full */
+        bool keepPrecaching = true;
+        while (player->State() == Player::Precache && keepPrecaching) {
+            keepPrecaching = player->PreBuffer();
         }
 
-        /* if the stream failed to open... */
-        else {
-            player->PlaybackError(player);
-        }
-
-        player->state = Player::Quit;
-
-        /* unlock any remaining buffers... see comment above */
-        if (buffer) {
-            player->OnBufferProcessed(buffer.get());
-            buffer.reset();
-        }
-
-        /* wait until all remaining buffers have been written, set final state... */
+        /* wait until we enter the Playing or Quit state; we may still
+        be in the Precache state. */
         {
             std::unique_lock<std::mutex> lock(player->queueMutex);
 
-            while (player->lockedBuffers.size() > 0) {
+            while (player->state == Player::Precache) {
                 player->writeToOutputCondition.wait(lock);
             }
         }
 
-        player->PlaybackFinished(player);
+        /* we're ready to go.... */
+        bool finished = false;
 
-        delete player;
+        while (!finished && !player->Exited()) {
+            /* see if we've been asked to seek since the last sample was
+            played. if we have, clear our output buffer and seek the
+            stream. */
+            double position = -1;
+
+            {
+                std::unique_lock<std::mutex> lock(player->positionMutex);
+                position = player->setPosition;
+                player->setPosition = -1;
+            }
+
+            if (position != -1) {
+                player->output->Stop(); /* flush all buffers */
+                player->output->Resume(); /* start it back up */
+
+                /* if we've allocated a buffer, but it hasn't been written
+                to the output yet, unlock it. this is an important step, and if
+                not performed, will result in a deadlock just below while
+                waiting for all buffers to complete. */
+                if (buffer) {
+                    player->OnBufferProcessed(buffer.get());
+                    buffer.reset();
+                }
+
+                {
+                    std::unique_lock<std::mutex> lock(player->queueMutex);
+
+                    while (player->lockedBuffers.size() > 0) {
+                        player->writeToOutputCondition.wait(lock);
+                    }
+                }
+
+                player->stream->SetPosition(position);
+
+                {
+                    std::unique_lock<std::mutex> lock(player->queueMutex);
+                    player->prebufferQueue.clear();
+                }
+            }
+
+            /* let's see if we can find some samples to play */
+            if (!buffer) {
+                std::unique_lock<std::mutex> lock(player->queueMutex);
+
+                /* the buffer queue may already have some available if it was prefetched. */
+                if (!player->prebufferQueue.empty()) {
+                    buffer = player->prebufferQueue.front();
+                    player->prebufferQueue.pop_front();
+                }
+                /* otherwise, we need to grab a buffer from the stream and add it to the queue */
+                else {
+                    buffer = player->stream->GetNextProcessedOutputBuffer();
+                }
+
+                /* lock it down until it's processed */
+                if (buffer) {
+                    player->lockedBuffers.push_back(buffer);
+                }
+            }
+
+            /* if we have a decoded, processed buffer available. let's try to send it to
+            the output device. */
+            if (buffer) {
+                if (player->output->Play(buffer.get(), player)) {
+                    /* success! the buffer was accepted by the output.*/
+                    /* lock it down so it's not destroyed until the output device lets us
+                    know it's done with it. */
+                    std::unique_lock<std::mutex> lock(player->queueMutex);
+
+                    if (player->lockedBuffers.size() == 1) {
+                        player->currentPosition = buffer->Position();
+                    }
+
+                    buffer.reset(); /* important! we're done with this one locally. */
+                }
+                else {
+                    /* the output device queue is full. we should block and wait until
+                    the output lets us know that it needs more data */
+                    std::unique_lock<std::mutex> lock(player->queueMutex);
+                    player->writeToOutputCondition.wait(lock);
+                }
+            }
+            /* if we're unable to obtain a buffer, it means we're out of data and the
+            player is finished. terminate the thread. */
+            else {
+                finished = true;
+            }
+        }
+
+        /* if the Quit flag isn't set, that means the stream has ended "naturally", i.e.
+        it wasn't stopped by the user. raise the "almost ended" flag. */
+        if (!player->Exited()) {
+            player->PlaybackAlmostEnded(player);
+        }
     }
-} } }
+
+    /* if the stream failed to open... */
+    else {
+        player->PlaybackError(player);
+    }
+
+    player->state = Player::Quit;
+
+    /* unlock any remaining buffers... see comment above */
+    if (buffer) {
+        player->OnBufferProcessed(buffer.get());
+        buffer.reset();
+    }
+
+    /* wait until all remaining buffers have been written, set final state... */
+    {
+        std::unique_lock<std::mutex> lock(player->queueMutex);
+
+        while (player->lockedBuffers.size() > 0) {
+            player->writeToOutputCondition.wait(lock);
+        }
+    }
+
+    player->PlaybackFinished(player);
+
+    delete player;
+}
 
 void Player::ReleaseAllBuffers() {
     std::unique_lock<std::mutex> lock(this->queueMutex);
