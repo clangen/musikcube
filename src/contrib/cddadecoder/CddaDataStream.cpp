@@ -36,16 +36,16 @@
 #include "CddaDataStream.h"
 #include <string>
 #include <set>
-#include <boost/thread/mutex.hpp>
+#include <mutex>
 
 #define RAW_SECTOR_SIZE 2352
 #define MSF2UINT(hgs) ((hgs[1]*4500) + (hgs[2]*75) + (hgs[3]))
 
 static CddaDataStream* active = NULL;
-static boost::mutex activeMutex;
+static std::mutex activeMutex;
 
 static void setActive(CddaDataStream* stream) {
-    boost::mutex::scoped_lock lock(activeMutex);
+    std::unique_lock<std::mutex> lock(activeMutex);
 
     if (active != NULL) {
         active->Close();
@@ -56,7 +56,7 @@ static void setActive(CddaDataStream* stream) {
 }
 
 static void resetIfActive(CddaDataStream* stream) {
-    boost::mutex::scoped_lock lock(activeMutex);
+    std::unique_lock<std::mutex> lock(activeMutex);
 
     if (stream == active) {
         active = NULL;
