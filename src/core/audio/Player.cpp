@@ -60,7 +60,7 @@ static float* hammingWindow = nullptr;
 namespace musik {
     namespace core {
         namespace audio {
-            static void playerThreadLoop(Player* player);
+            void playerThreadLoop(Player* player);
 
             struct FftContext {
                 FftContext() {
@@ -186,7 +186,7 @@ int Player::State() {
     return this->state;
 }
 
-static void musik::core::audio::playerThreadLoop(Player* player) {
+void musik::core::audio::playerThreadLoop(Player* player) {
     player->stream = Stream::Create();
 
     BufferPtr buffer;
