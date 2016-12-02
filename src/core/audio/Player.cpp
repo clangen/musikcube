@@ -138,7 +138,7 @@ Player::Player(const std::string &url, OutputPtr output)
     }
 
     /* each player instance is driven by a background thread. start it. */
-    this->thread.reset(new boost::thread(boost::bind(&musik::core::audio::playerThreadLoop, this)));
+    this->thread.reset(new std::thread(std::bind(&musik::core::audio::playerThreadLoop, this)));
 }
 
 Player::~Player() {
@@ -147,7 +147,7 @@ Player::~Player() {
 }
 
 void Player::Play() {
-    boost::mutex::scoped_lock lock(this->queueMutex);
+    std::unique_lock<std::mutex> lock(this->queueMutex);
 
     if (this->state != Player::Quit) {
         this->state = Player::Playing;
@@ -157,29 +157,30 @@ void Player::Play() {
 
 void Player::Destroy() {
     {
-        boost::mutex::scoped_lock lock(this->queueMutex);
+        std::unique_lock<std::mutex> lock(this->queueMutex);
 
-        if (this->state == Player::Quit) {
+        if (this->state == Player::Quit && !this->thread) {
             return; /* already terminated (or terminating) */
         }
 
         this->state = Player::Quit;
         this->writeToOutputCondition.notify_all();
+        this->thread->detach();
     }
 }
 
 double Player::Position() {
-    boost::mutex::scoped_lock lock(this->positionMutex);
+    std::unique_lock<std::mutex> lock(this->positionMutex);
     return this->currentPosition;
 }
 
 void Player::SetPosition(double seconds) {
-    boost::mutex::scoped_lock lock(this->positionMutex);
+    std::unique_lock<std::mutex> lock(this->positionMutex);
     this->setPosition = std::max(0.0, seconds);
 }
 
 int Player::State() {
-    boost::mutex::scoped_lock lock(this->queueMutex);
+    std::unique_lock<std::mutex> lock(this->queueMutex);
     return this->state;
 }
 
@@ -203,7 +204,7 @@ namespace musik { namespace core { namespace audio {
             /* wait until we enter the Playing or Quit state; we may still
             be in the Precache state. */
             {
-                boost::mutex::scoped_lock lock(player->queueMutex);
+                std::unique_lock<std::mutex> lock(player->queueMutex);
 
                 while (player->state == Player::Precache) {
                     player->writeToOutputCondition.wait(lock);
@@ -220,7 +221,7 @@ namespace musik { namespace core { namespace audio {
                 double position = -1;
 
                 {
-                    boost::mutex::scoped_lock lock(player->positionMutex);
+                    std::unique_lock<std::mutex> lock(player->positionMutex);
                     position = player->setPosition;
                     player->setPosition = -1;
                 }
@@ -239,24 +240,24 @@ namespace musik { namespace core { namespace audio {
                     }
 
                     {
-                        boost::mutex::scoped_lock lock(player->queueMutex);
+                        std::unique_lock<std::mutex> lock(player->queueMutex);
 
                         while (player->lockedBuffers.size() > 0) {
-                            player->writeToOutputCondition.wait(player->queueMutex);
+                            player->writeToOutputCondition.wait(lock);
                         }
                     }
 
                     player->stream->SetPosition(position);
 
                     {
-                        boost::mutex::scoped_lock lock(player->queueMutex);
+                        std::unique_lock<std::mutex> lock(player->queueMutex);
                         player->prebufferQueue.clear();
                     }
                 }
 
                 /* let's see if we can find some samples to play */
                 if (!buffer) {
-                    boost::mutex::scoped_lock lock(player->queueMutex);
+                    std::unique_lock<std::mutex> lock(player->queueMutex);
 
                     /* the buffer queue may already have some available if it was prefetched. */
                     if (!player->prebufferQueue.empty()) {
@@ -281,7 +282,7 @@ namespace musik { namespace core { namespace audio {
                         /* success! the buffer was accepted by the output.*/
                         /* lock it down so it's not destroyed until the output device lets us
                         know it's done with it. */
-                        boost::mutex::scoped_lock lock(player->queueMutex);
+                        std::unique_lock<std::mutex> lock(player->queueMutex);
 
                         if (player->lockedBuffers.size() == 1) {
                             player->currentPosition = buffer->Position();
@@ -292,8 +293,8 @@ namespace musik { namespace core { namespace audio {
                     else {
                         /* the output device queue is full. we should block and wait until
                         the output lets us know that it needs more data */
-                        boost::mutex::scoped_lock lock(player->queueMutex);
-                        player->writeToOutputCondition.wait(player->queueMutex);
+                        std::unique_lock<std::mutex> lock(player->queueMutex);
+                        player->writeToOutputCondition.wait(lock);
                     }
                 }
                 /* if we're unable to obtain a buffer, it means we're out of data and the
@@ -325,10 +326,10 @@ namespace musik { namespace core { namespace audio {
 
         /* wait until all remaining buffers have been written, set final state... */
         {
-            boost::mutex::scoped_lock lock(player->queueMutex);
+            std::unique_lock<std::mutex> lock(player->queueMutex);
 
             while (player->lockedBuffers.size() > 0) {
-                player->writeToOutputCondition.wait(player->queueMutex);
+                player->writeToOutputCondition.wait(lock);
             }
         }
 
@@ -339,7 +340,7 @@ namespace musik { namespace core { namespace audio {
 } } }
 
 void Player::ReleaseAllBuffers() {
-    boost::mutex::scoped_lock lock(this->queueMutex);
+            std::unique_lock<std::mutex> lock(this->queueMutex);
     this->lockedBuffers.empty();
 }
 
@@ -349,7 +350,7 @@ bool Player::PreBuffer() {
         BufferPtr newBuffer = this->stream->GetNextProcessedOutputBuffer();
 
         if (newBuffer) {
-            boost::mutex::scoped_lock lock(this->queueMutex);
+                    std::unique_lock<std::mutex> lock(this->queueMutex);
             this->prebufferQueue.push_back(newBuffer);
         }
 
@@ -360,7 +361,7 @@ bool Player::PreBuffer() {
 }
 
 bool Player::Exited() {
-    boost::mutex::scoped_lock lock(this->queueMutex);
+            std::unique_lock<std::mutex> lock(this->queueMutex);
     return (this->state == Player::Quit);
 }
 
@@ -439,7 +440,7 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
     /* free the buffer */
 
     {
-        boost::mutex::scoped_lock lock(this->queueMutex);
+                std::unique_lock<std::mutex> lock(this->queueMutex);
 
         /* removes the specified buffer from the list of locked buffers, and also
         lets the stream know it can be recycled. */

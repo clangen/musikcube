@@ -38,12 +38,12 @@
 #include <core/audio/IStream.h>
 #include <core/sdk/IOutput.h>
 #include <core/sdk/IBufferProvider.h>
-#include <boost/shared_ptr.hpp>
-#include <boost/scoped_ptr.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/thread.hpp>
-#include <boost/thread/condition.hpp>
+
 #include <sigslot/sigslot.h>
+
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
 namespace musik { namespace core { namespace audio {
 
@@ -92,7 +92,7 @@ namespace musik { namespace core { namespace audio {
 
             virtual ~Player();
 
-            typedef boost::scoped_ptr<boost::thread> ThreadPtr;
+            typedef std::shared_ptr<std::thread> ThreadPtr;
             typedef std::list<BufferPtr> BufferList;
             typedef std::set<BufferPtr> BufferSet;
 
@@ -111,8 +111,8 @@ namespace musik { namespace core { namespace audio {
 
             BufferList prebufferQueue;
 
-            boost::mutex queueMutex, positionMutex;
-            boost::condition writeToOutputCondition;
+            std::mutex queueMutex, positionMutex;
+            std::condition_variable writeToOutputCondition;
 
             double volume;
             double currentPosition;
