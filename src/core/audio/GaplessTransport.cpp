@@ -45,23 +45,18 @@ using namespace musik::core::sdk;
 
 static std::string TAG = "Transport";
 
-#define RESET_NEXT_PLAYER() \
-    delete this->nextPlayer; \
-    this->nextPlayer = nullptr;
+#define DISCONNECT_AND_DESTROY_PLAYER(instance, player) \
+    if (player) { \
+        player->PlaybackAlmostEnded.disconnect(instance); \
+        player->PlaybackError.disconnect(instance); \
+        player->PlaybackFinished.disconnect(instance); \
+        player->PlaybackStarted.disconnect(instance); \
+        player->Destroy(); \
+    }
 
-#define DEFER(x, y) \
-  { \
-      boost::thread thread(boost::bind(x, this, y)); \
-      thread.detach(); \
-  }
-
-static void stopPlayer(Player* p) {
-    p->Stop();
-}
-
-static void deletePlayer(Player* p) {
-    delete p;
-}
+#define RESET_NEXT_PLAYER(instance) \
+    DISCONNECT_AND_DESTROY_PLAYER(instance, this->nextPlayer); \
+    instance->nextPlayer = nullptr;
 
 GaplessTransport::GaplessTransport()
 : volume(1.0)
@@ -73,19 +68,31 @@ GaplessTransport::GaplessTransport()
 }
 
 GaplessTransport::~GaplessTransport() {
+    this->disconnect_all();
+
+    PlayerList players;
+
+    {
+        LockT lock(this->stateMutex);
+        std::swap(this->active, players);
+    }
+
+    for (auto it = players.begin(); it != players.end(); it++) {
+        DISCONNECT_AND_DESTROY_PLAYER(this, (*it));
+    }
 }
 
 PlaybackState GaplessTransport::GetPlaybackState() {
-    boost::recursive_mutex::scoped_lock lock(this->stateMutex);
+    LockT lock(this->stateMutex);
     return this->state;
 }
 
 void GaplessTransport::PrepareNextTrack(const std::string& trackUrl) {
     bool startNext = false;
     {
-        boost::recursive_mutex::scoped_lock lock(this->stateMutex);
-        RESET_NEXT_PLAYER();
-        this->nextPlayer = new Player(trackUrl, this->output);
+        LockT lock(this->stateMutex);
+        RESET_NEXT_PLAYER(this);
+        this->nextPlayer = Player::Create(trackUrl, this->output);
         startNext = this->nextCanStart;
     }
 
@@ -97,7 +104,7 @@ void GaplessTransport::PrepareNextTrack(const std::string& trackUrl) {
 void GaplessTransport::Start(const std::string& url) {
     musik::debug::info(TAG, "we were asked to start the track at " + url);
 
-    Player* newPlayer = new Player(url, this->output);
+    Player* newPlayer = Player::Create(url, this->output);
     musik::debug::info(TAG, "Player created successfully");
 
     this->StartWithPlayer(newPlayer);
@@ -113,11 +120,11 @@ void GaplessTransport::StartWithPlayer(Player* newPlayer) {
         bool playingNext = false;
 
         {
-            boost::recursive_mutex::scoped_lock lock(this->stateMutex);
+            LockT lock(this->stateMutex);
 
             playingNext = (newPlayer == nextPlayer);
-            if (newPlayer != nextPlayer) {
-                delete nextPlayer;
+            if (nextPlayer != nullptr && newPlayer != nextPlayer) {
+                DISCONNECT_AND_DESTROY_PLAYER(this, this->nextPlayer);
             }
 
             this->nextPlayer = nullptr;
@@ -158,14 +165,14 @@ void GaplessTransport::StopInternal(
         std::list<Player*> toDelete;
 
         {
-            boost::recursive_mutex::scoped_lock lock(this->stateMutex);
-            RESET_NEXT_PLAYER();
+            LockT lock(this->stateMutex);
+            RESET_NEXT_PLAYER(this);
 
             /* move all but the excluded player to the toDelete set. */
             auto it = this->active.begin();
             while (it != this->active.end()) {
                 if (*it != exclude) {
-                    toDelete.push_back(*it);
+                    DISCONNECT_AND_DESTROY_PLAYER(this, (*it));
                     it = this->active.erase(it);
                 }
                 else {
@@ -173,12 +180,6 @@ void GaplessTransport::StopInternal(
                 }
             }
         }
-
-        /* delete these in the background to avoid deadlock in some cases
-        where this method is implicitly triggered via Player callback. however,
-        we should stop them immediately so they stop producing audio. */
-        std::for_each(toDelete.begin(), toDelete.end(), stopPlayer);
-        DEFER(&GaplessTransport::DeletePlayers, toDelete);
 
         /* stopping the transport will stop any buffers that are currently in
         flight. this makes the sound end immediately. */
@@ -201,7 +202,7 @@ bool GaplessTransport::Pause() {
     this->output->Pause();
 
     {
-        boost::recursive_mutex::scoped_lock lock(this->stateMutex);
+        LockT lock(this->stateMutex);
         count = this->active.size();
     }
 
@@ -221,7 +222,7 @@ bool GaplessTransport::Resume() {
     size_t count = 0;
 
     {
-        boost::recursive_mutex::scoped_lock lock(this->stateMutex);
+        LockT lock(this->stateMutex);
         count = this->active.size();
 
         auto it = this->active.begin();
@@ -240,7 +241,7 @@ bool GaplessTransport::Resume() {
 }
 
 double GaplessTransport::Position() {
-    boost::recursive_mutex::scoped_lock lock(this->stateMutex);
+    LockT lock(this->stateMutex);
 
     if (!this->active.empty()) {
         return this->active.front()->Position();
@@ -250,7 +251,7 @@ double GaplessTransport::Position() {
 }
 
 void GaplessTransport::SetPosition(double seconds) {
-    boost::recursive_mutex::scoped_lock lock(this->stateMutex);
+    LockT lock(this->stateMutex);
 
     if (!this->active.empty()) {
         this->active.front()->SetPosition(seconds);
@@ -293,11 +294,11 @@ void GaplessTransport::SetVolume(double volume) {
     this->output->SetVolume(this->volume);
 }
 
-void GaplessTransport::RemoveActive(Player* player) {
+void GaplessTransport::RemoveFromActive(Player* player) {
     bool found = false;
 
     {
-        boost::recursive_mutex::scoped_lock lock(this->stateMutex);
+        LockT lock(this->stateMutex);
 
         std::list<Player*>::iterator it =
             std::find(this->active.begin(), this->active.end(), player);
@@ -310,16 +311,12 @@ void GaplessTransport::RemoveActive(Player* player) {
 
     /* outside of the critical section, otherwise potential deadlock */
     if (found) {
-        delete player;
+        DISCONNECT_AND_DESTROY_PLAYER(this, player);
     }
 }
 
-void GaplessTransport::DeletePlayers(std::list<Player*> players) {
-    std::for_each(players.begin(), players.end(), deletePlayer);
-}
-
 void GaplessTransport::SetNextCanStart(bool nextCanStart) {
-    boost::recursive_mutex::scoped_lock lock(this->stateMutex);
+    LockT lock(this->stateMutex);
     this->nextCanStart = nextCanStart;
 }
 
@@ -332,7 +329,7 @@ void GaplessTransport::OnPlaybackAlmostEnded(Player* player) {
     this->SetNextCanStart(true);
 
     {
-        boost::recursive_mutex::scoped_lock lock(this->stateMutex);
+        LockT lock(this->stateMutex);
 
         /* if another component configured a next player while we were playing,
         go ahead and get it started now. */
@@ -350,7 +347,7 @@ void GaplessTransport::OnPlaybackFinished(Player* player) {
     bool stopped = false;
 
     {
-        boost::recursive_mutex::scoped_lock lock(this->stateMutex);
+        LockT lock(this->stateMutex);
 
         bool startedNext = false;
 
@@ -378,20 +375,20 @@ void GaplessTransport::OnPlaybackFinished(Player* player) {
         this->Stop();
     }
 
-    DEFER(&GaplessTransport::RemoveActive, player);
+    this->RemoveFromActive(player);
 }
 
 void GaplessTransport::OnPlaybackError(Player* player) {
     this->RaiseStreamEvent(StreamError, player);
     this->SetPlaybackState(PlaybackStopped);
-    DEFER(&GaplessTransport::RemoveActive, player);
+    this->RemoveFromActive(player);
 }
 
 void GaplessTransport::SetPlaybackState(int state) {
     bool changed = false;
 
     {
-        boost::recursive_mutex::scoped_lock lock(this->stateMutex);
+        LockT lock(this->stateMutex);
         changed = (this->state != state);
         this->state = (PlaybackState) state;
     }

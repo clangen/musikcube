@@ -47,9 +47,6 @@
 
 namespace musik { namespace core { namespace audio {
 
-    class Player;
-    typedef std::shared_ptr<Player> PlayerPtr;
-
     class Output;
     typedef std::shared_ptr<musik::core::sdk::IOutput> OutputPtr;
 
@@ -59,20 +56,14 @@ namespace musik { namespace core { namespace audio {
         public:
             static OutputPtr CreateDefaultOutput();
 
-            static PlayerPtr Create(
+            static Player* Create(
                 const std::string &url,
                 OutputPtr output);
-
-            Player(
-                const std::string &url,
-                OutputPtr output);
-
-            ~Player();
 
             virtual void OnBufferProcessed(musik::core::sdk::IBuffer *buffer);
 
             void Play();
-            void Stop();
+            void Destroy();
 
             double Position();
             void SetPosition(double seconds);
@@ -88,12 +79,19 @@ namespace musik { namespace core { namespace audio {
             PlayerEvent PlaybackError;
 
         private:
-            void ThreadLoop();
             bool PreBuffer();
             int State();
             void ReleaseAllBuffers();
 
         private:
+            friend void playerThreadLoop(Player* player);
+
+            Player(
+                const std::string &url,
+                OutputPtr output);
+
+            virtual ~Player();
+
             typedef boost::scoped_ptr<boost::thread> ThreadPtr;
             typedef std::list<BufferPtr> BufferList;
             typedef std::set<BufferPtr> BufferSet;

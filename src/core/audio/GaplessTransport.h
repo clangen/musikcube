@@ -40,9 +40,8 @@
 #include <core/sdk/IOutput.h>
 #include <core/sdk/constants.h>
 
-#include <boost/shared_ptr.hpp>
-#include <boost/scoped_ptr.hpp>
-#include <boost/thread/recursive_mutex.hpp>
+#include <thread>
+#include <mutex>
 
 #include <sigslot/sigslot.h>
 
@@ -72,6 +71,9 @@ namespace musik { namespace core { namespace audio {
             virtual musik::core::sdk::PlaybackState GetPlaybackState();
 
         private:
+            using LockT = std::unique_lock<std::recursive_mutex>;
+            using PlayerList = std::list<Player*>;
+
             void StartWithPlayer(Player* player);
 
             void StopInternal(
@@ -79,9 +81,9 @@ namespace musik { namespace core { namespace audio {
                 bool stopOutput,
                 Player* exclude = nullptr);
 
-            void RemoveActive(Player* player);
-            void DeletePlayers(std::list<Player*> players);
             void SetNextCanStart(bool nextCanStart);
+
+            void RemoveFromActive(Player* player);
 
             void RaiseStreamEvent(int type, Player* player);
             void SetPlaybackState(int state);
@@ -91,11 +93,10 @@ namespace musik { namespace core { namespace audio {
             void OnPlaybackFinished(Player* player);
             void OnPlaybackError(Player* player);
 
-        private:
             musik::core::sdk::PlaybackState state;
-            boost::recursive_mutex stateMutex;
+            std::recursive_mutex stateMutex;
             musik::core::audio::OutputPtr output;
-            std::list<Player*> active;
+            PlayerList active;
             Player* nextPlayer;
             double volume;
             bool nextCanStart;

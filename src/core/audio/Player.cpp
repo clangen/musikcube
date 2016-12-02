@@ -42,6 +42,7 @@
 #include <core/plugin/PluginFactory.h>
 #include <algorithm>
 #include <math.h>
+#include <future>
 
 #define MAX_PREBUFFER_QUEUE_COUNT 8
 #define FFT_N 512
@@ -99,8 +100,8 @@ namespace musik {
     }
 }
 
-PlayerPtr Player::Create(const std::string &url, OutputPtr output) {
-    return PlayerPtr(new Player(url, output));
+Player* Player::Create(const std::string &url, OutputPtr output) {
+    return new Player(url, output);
 }
 
 OutputPtr Player::CreateDefaultOutput() {
@@ -137,22 +138,11 @@ Player::Player(const std::string &url, OutputPtr output)
     }
 
     /* each player instance is driven by a background thread. start it. */
-    this->thread.reset(new boost::thread(boost::bind(&Player::ThreadLoop, this)));
+    this->thread.reset(new boost::thread(boost::bind(&musik::core::audio::playerThreadLoop, this)));
 }
 
 Player::~Player() {
-    {
-        boost::mutex::scoped_lock lock(this->queueMutex);
-        this->state = Player::Quit;
-        this->prebufferQueue.clear();
-        this->writeToOutputCondition.notify_all();
-    }
-
-    this->thread->join();
-
     delete[] this->spectrum;
-    this->spectrum = nullptr;
-
     delete fftContext;
 }
 
@@ -165,10 +155,17 @@ void Player::Play() {
     }
 }
 
-void Player::Stop() {
-    boost::mutex::scoped_lock lock(this->queueMutex);
-    this->state = Player::Quit;
-    this->writeToOutputCondition.notify_all();
+void Player::Destroy() {
+    {
+        boost::mutex::scoped_lock lock(this->queueMutex);
+
+        if (this->state == Player::Quit) {
+            return; /* already terminated (or terminating) */
+        }
+
+        this->state = Player::Quit;
+        this->writeToOutputCondition.notify_all();
+    }
 }
 
 double Player::Position() {
@@ -186,156 +183,160 @@ int Player::State() {
     return this->state;
 }
 
-void Player::ThreadLoop() {
-    /* fixed size streams are better for visualizations because they provide
-    consistent buffer sizes. dynamic streams are more efficient otherwise
-    because we don't need to worry about manually chunking data, we can just
-    send audio data to the output straight from the decoder. */
-    this->stream = Stream::Create();
+namespace musik { namespace core { namespace audio {
+    void playerThreadLoop(Player* player) {
+        /* fixed size streams are better for visualizations because they provide
+        consistent buffer sizes. dynamic streams are more efficient otherwise
+        because we don't need to worry about manually chunking data, we can just
+        send audio data to the output straight from the decoder. */
+        player->stream = Stream::Create();
 
-    BufferPtr buffer;
+        BufferPtr buffer;
 
-    if (this->stream->OpenStream(this->url)) {
-        /* precache until buffers are full */
-        bool keepPrecaching = true;
-        while (this->State() == Precache && keepPrecaching) {
-            keepPrecaching = this->PreBuffer();
-        }
-
-        /* wait until we enter the Playing or Quit state; we may still
-        be in the Precache state. */
-        {
-            boost::mutex::scoped_lock lock(this->queueMutex);
-
-            while (this->state == Precache) {
-                this->writeToOutputCondition.wait(lock);
+        if (player->stream->OpenStream(player->url)) {
+            /* precache until buffers are full */
+            bool keepPrecaching = true;
+            while (player->State() == Player::Precache && keepPrecaching) {
+                keepPrecaching = player->PreBuffer();
             }
-        }
 
-        /* we're ready to go.... */
-        bool finished = false;
-
-        while (!finished && !this->Exited()) {
-            /* see if we've been asked to seek since the last sample was
-            played. if we have, clear our output buffer and seek the
-            stream. */
-            double position = -1;
-
+            /* wait until we enter the Playing or Quit state; we may still
+            be in the Precache state. */
             {
-                boost::mutex::scoped_lock lock(this->positionMutex);
-                position = this->setPosition;
-                this->setPosition = -1;
+                boost::mutex::scoped_lock lock(player->queueMutex);
+
+                while (player->state == Player::Precache) {
+                    player->writeToOutputCondition.wait(lock);
+                }
             }
 
-            if (position != -1) {
-                this->output->Stop(); /* flush all buffers */
-                this->output->Resume(); /* start it back up */
+            /* we're ready to go.... */
+            bool finished = false;
 
-                /* if we've allocated a buffer, but it hasn't been written
-                to the output yet, unlock it. this is an important step, and if
-                not performed, will result in a deadlock just below while
-                waiting for all buffers to complete. */
-                if (buffer) {
-                    this->OnBufferProcessed(buffer.get());
-                    buffer.reset();
-                }
+            while (!finished && !player->Exited()) {
+                /* see if we've been asked to seek since the last sample was
+                played. if we have, clear our output buffer and seek the
+                stream. */
+                double position = -1;
 
                 {
-                    boost::mutex::scoped_lock lock(this->queueMutex);
+                    boost::mutex::scoped_lock lock(player->positionMutex);
+                    position = player->setPosition;
+                    player->setPosition = -1;
+                }
 
-                    while (this->lockedBuffers.size() > 0) {
-                        writeToOutputCondition.wait(this->queueMutex);
+                if (position != -1) {
+                    player->output->Stop(); /* flush all buffers */
+                    player->output->Resume(); /* start it back up */
+
+                    /* if we've allocated a buffer, but it hasn't been written
+                    to the output yet, unlock it. this is an important step, and if
+                    not performed, will result in a deadlock just below while
+                    waiting for all buffers to complete. */
+                    if (buffer) {
+                        player->OnBufferProcessed(buffer.get());
+                        buffer.reset();
+                    }
+
+                    {
+                        boost::mutex::scoped_lock lock(player->queueMutex);
+
+                        while (player->lockedBuffers.size() > 0) {
+                            player->writeToOutputCondition.wait(player->queueMutex);
+                        }
+                    }
+
+                    player->stream->SetPosition(position);
+
+                    {
+                        boost::mutex::scoped_lock lock(player->queueMutex);
+                        player->prebufferQueue.clear();
                     }
                 }
 
-                this->stream->SetPosition(position);
+                /* let's see if we can find some samples to play */
+                if (!buffer) {
+                    boost::mutex::scoped_lock lock(player->queueMutex);
 
-                {
-                    boost::mutex::scoped_lock lock(this->queueMutex);
-                    this->prebufferQueue.clear();
-                }
-            }
-
-            /* let's see if we can find some samples to play */
-            if (!buffer) {
-                boost::mutex::scoped_lock lock(this->queueMutex);
-
-                /* the buffer queue may already have some available if it was prefetched. */
-                if (!this->prebufferQueue.empty()) {
-                    buffer = this->prebufferQueue.front();
-                    this->prebufferQueue.pop_front();
-                }
-                /* otherwise, we need to grab a buffer from the stream and add it to the queue */
-                else {
-                    buffer = this->stream->GetNextProcessedOutputBuffer();
-                }
-
-                /* lock it down until it's processed */
-                if (buffer) {
-                    this->lockedBuffers.push_back(buffer);
-                }
-            }
-
-            /* if we have a decoded, processed buffer available. let's try to send it to
-            the output device. */
-            if (buffer) {
-                if (this->output->Play(buffer.get(), this)) {
-                    /* success! the buffer was accepted by the output.*/
-                    /* lock it down so it's not destroyed until the output device lets us
-                    know it's done with it. */
-                    boost::mutex::scoped_lock lock(this->queueMutex);
-
-                    if (this->lockedBuffers.size() == 1) {
-                        this->currentPosition = buffer->Position();
+                    /* the buffer queue may already have some available if it was prefetched. */
+                    if (!player->prebufferQueue.empty()) {
+                        buffer = player->prebufferQueue.front();
+                        player->prebufferQueue.pop_front();
+                    }
+                    /* otherwise, we need to grab a buffer from the stream and add it to the queue */
+                    else {
+                        buffer = player->stream->GetNextProcessedOutputBuffer();
                     }
 
-                    buffer.reset(); /* important! we're done with this one locally. */
+                    /* lock it down until it's processed */
+                    if (buffer) {
+                        player->lockedBuffers.push_back(buffer);
+                    }
                 }
+
+                /* if we have a decoded, processed buffer available. let's try to send it to
+                the output device. */
+                if (buffer) {
+                    if (player->output->Play(buffer.get(), player)) {
+                        /* success! the buffer was accepted by the output.*/
+                        /* lock it down so it's not destroyed until the output device lets us
+                        know it's done with it. */
+                        boost::mutex::scoped_lock lock(player->queueMutex);
+
+                        if (player->lockedBuffers.size() == 1) {
+                            player->currentPosition = buffer->Position();
+                        }
+
+                        buffer.reset(); /* important! we're done with this one locally. */
+                    }
+                    else {
+                        /* the output device queue is full. we should block and wait until
+                        the output lets us know that it needs more data */
+                        boost::mutex::scoped_lock lock(player->queueMutex);
+                        player->writeToOutputCondition.wait(player->queueMutex);
+                    }
+                }
+                /* if we're unable to obtain a buffer, it means we're out of data and the
+                player is finished. terminate the thread. */
                 else {
-                    /* the output device queue is full. we should block and wait until
-                    the output lets us know that it needs more data */
-                    boost::mutex::scoped_lock lock(this->queueMutex);
-                    writeToOutputCondition.wait(this->queueMutex);
+                    finished = true;
                 }
             }
-            /* if we're unable to obtain a buffer, it means we're out of data and the
-            player is finished. terminate the thread. */
-            else {
-                finished = true;
+
+            /* if the Quit flag isn't set, that means the stream has ended "naturally", i.e.
+            it wasn't stopped by the user. raise the "almost ended" flag. */
+            if (!player->Exited()) {
+                player->PlaybackAlmostEnded(player);
             }
         }
 
-        /* if the Quit flag isn't set, that means the stream has ended "naturally", i.e.
-        it wasn't stopped by the user. raise the "almost ended" flag. */
-        if (!this->Exited()) {
-            this->PlaybackAlmostEnded(this);
+        /* if the stream failed to open... */
+        else {
+            player->PlaybackError(player);
         }
-    }
 
-    /* if the stream failed to open... */
-    else {
-        this->PlaybackError(this);
-    }
+        player->state = Player::Quit;
 
-    this->state = Player::Quit;
-
-    /* unlock any remaining buffers... see comment above */
-    if (buffer) {
-        this->OnBufferProcessed(buffer.get());
-        buffer.reset();
-    }
-
-    /* wait until all remaining buffers have been written, set final state... */
-    {
-        boost::mutex::scoped_lock lock(this->queueMutex);
-
-        while (this->lockedBuffers.size() > 0) {
-            writeToOutputCondition.wait(this->queueMutex);
+        /* unlock any remaining buffers... see comment above */
+        if (buffer) {
+            player->OnBufferProcessed(buffer.get());
+            buffer.reset();
         }
-    }
 
-    this->PlaybackFinished(this);
-}
+        /* wait until all remaining buffers have been written, set final state... */
+        {
+            boost::mutex::scoped_lock lock(player->queueMutex);
+
+            while (player->lockedBuffers.size() > 0) {
+                player->writeToOutputCondition.wait(player->queueMutex);
+            }
+        }
+
+        player->PlaybackFinished(player);
+
+        delete player;
+    }
+} } }
 
 void Player::ReleaseAllBuffers() {
     boost::mutex::scoped_lock lock(this->queueMutex);
@@ -393,11 +394,7 @@ static inline bool performFft(IBuffer* buffer, FftContext* fft, float* output, i
 
     for (int i = 0; i < samples; i++) {
         const int to = ((i % channels) * samplesPerChannel) + (i / channels);
-        fft->deinterleaved[to] = input[i];
-    }
-
-    for (int i = 0; i < samples; i++) {
-        fft->deinterleaved[i] *= hammingWindow[i % FFT_N];
+        fft->deinterleaved[to] = input[i] * hammingWindow[to % FFT_N];
     }
 
     int offset = 0;
@@ -408,7 +405,7 @@ static inline bool performFft(IBuffer* buffer, FftContext* fft, float* output, i
         for (int z = 0; z < outputSize; z++) {
             /* convert to decibels */
             double db = (fft->scratch[z].r * fft->scratch[z].r + fft->scratch[z].i + fft->scratch[z].i);
-            output[z] += (db < 1 ? 0 : 20 * log10(db)) / iterations; /* frequencies over all channels */
+            output[z] += (db < 1 ? 0 : 20 * (float) log10(db)) / iterations; /* frequencies over all channels */
         }
 
         offset += FFT_N;
