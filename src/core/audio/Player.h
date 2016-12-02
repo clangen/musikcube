@@ -54,11 +54,20 @@ namespace musik { namespace core { namespace audio {
 
     class Player : public musik::core::sdk::IBufferProvider {
         public:
+            class PlayerEventListener {
+                public:
+                    virtual void OnPlaybackStarted(Player *player) = 0;
+                    virtual void OnPlaybackAlmostEnded(Player *player) = 0;
+                    virtual void OnPlaybackFinished(Player *player) = 0;
+                    virtual void OnPlaybackError(Player *player) = 0;
+            };
+
             static OutputPtr CreateDefaultOutput();
 
             static Player* Create(
                 const std::string &url,
-                OutputPtr output);
+                OutputPtr output,
+                PlayerEventListener *listener);
 
             virtual void OnBufferProcessed(musik::core::sdk::IBuffer *buffer);
 
@@ -72,12 +81,6 @@ namespace musik { namespace core { namespace audio {
 
             bool Exited();
 
-            typedef sigslot::signal1<Player*> PlayerEvent;
-            PlayerEvent PlaybackStarted;
-            PlayerEvent PlaybackAlmostEnded;
-            PlayerEvent PlaybackFinished;
-            PlayerEvent PlaybackError;
-
         private:
             bool PreBuffer();
             int State();
@@ -88,7 +91,8 @@ namespace musik { namespace core { namespace audio {
 
             Player(
                 const std::string &url,
-                OutputPtr output);
+                OutputPtr output,
+                PlayerEventListener *listener);
 
             virtual ~Player();
 
@@ -106,6 +110,7 @@ namespace musik { namespace core { namespace audio {
             StreamPtr stream;
             ThreadPtr thread;
             BufferList lockedBuffers;
+            PlayerEventListener* listener;
 
             std::string url;
 

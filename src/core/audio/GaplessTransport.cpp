@@ -45,18 +45,11 @@ using namespace musik::core::sdk;
 
 static std::string TAG = "Transport";
 
-#define DISCONNECT_AND_DESTROY_PLAYER(instance, player) \
-    if (player) { \
-        player->PlaybackAlmostEnded.disconnect(instance); \
-        player->PlaybackError.disconnect(instance); \
-        player->PlaybackFinished.disconnect(instance); \
-        player->PlaybackStarted.disconnect(instance); \
-        player->Destroy(); \
-    }
-
 #define RESET_NEXT_PLAYER(instance) \
-    DISCONNECT_AND_DESTROY_PLAYER(instance, this->nextPlayer); \
-    instance->nextPlayer = nullptr;
+    if (instance->nextPlayer) { \
+        instance->nextPlayer->Destroy(); \
+        instance->nextPlayer = nullptr; \
+    }
 
 GaplessTransport::GaplessTransport()
 : volume(1.0)
@@ -78,7 +71,7 @@ GaplessTransport::~GaplessTransport() {
     }
 
     for (auto it = players.begin(); it != players.end(); it++) {
-        DISCONNECT_AND_DESTROY_PLAYER(this, (*it));
+        (*it)->Destroy();
     }
 }
 
@@ -92,7 +85,7 @@ void GaplessTransport::PrepareNextTrack(const std::string& trackUrl) {
     {
         LockT lock(this->stateMutex);
         RESET_NEXT_PLAYER(this);
-        this->nextPlayer = Player::Create(trackUrl, this->output);
+        this->nextPlayer = Player::Create(trackUrl, this->output, this);
         startNext = this->nextCanStart;
     }
 
@@ -104,7 +97,7 @@ void GaplessTransport::PrepareNextTrack(const std::string& trackUrl) {
 void GaplessTransport::Start(const std::string& url) {
     musik::debug::info(TAG, "we were asked to start the track at " + url);
 
-    Player* newPlayer = Player::Create(url, this->output);
+    Player* newPlayer = Player::Create(url, this->output, this);
     musik::debug::info(TAG, "Player created successfully");
 
     this->StartWithPlayer(newPlayer);
@@ -112,11 +105,6 @@ void GaplessTransport::Start(const std::string& url) {
 
 void GaplessTransport::StartWithPlayer(Player* newPlayer) {
     if (newPlayer) {
-        newPlayer->PlaybackStarted.connect(this, &GaplessTransport::OnPlaybackStarted);
-        newPlayer->PlaybackAlmostEnded.connect(this, &GaplessTransport::OnPlaybackAlmostEnded);
-        newPlayer->PlaybackFinished.connect(this, &GaplessTransport::OnPlaybackFinished);
-        newPlayer->PlaybackError.connect(this, &GaplessTransport::OnPlaybackError);
-
         bool playingNext = false;
 
         {
@@ -124,7 +112,7 @@ void GaplessTransport::StartWithPlayer(Player* newPlayer) {
 
             playingNext = (newPlayer == nextPlayer);
             if (nextPlayer != nullptr && newPlayer != nextPlayer) {
-                DISCONNECT_AND_DESTROY_PLAYER(this, this->nextPlayer);
+                this->nextPlayer->Destroy();
             }
 
             this->nextPlayer = nullptr;
@@ -172,7 +160,7 @@ void GaplessTransport::StopInternal(
             auto it = this->active.begin();
             while (it != this->active.end()) {
                 if (*it != exclude) {
-                    DISCONNECT_AND_DESTROY_PLAYER(this, (*it));
+                    (*it)->Destroy();
                     it = this->active.erase(it);
                 }
                 else {
@@ -311,7 +299,7 @@ void GaplessTransport::RemoveFromActive(Player* player) {
 
     /* outside of the critical section, otherwise potential deadlock */
     if (found) {
-        DISCONNECT_AND_DESTROY_PLAYER(this, player);
+        player->Destroy();
     }
 }
 

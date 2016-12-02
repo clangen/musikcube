@@ -36,7 +36,7 @@
 
 #include <iostream>
 
-#define BUFFER_COUNT 16
+#define BUFFER_COUNT 32
 
 using namespace musik::core::sdk;
 

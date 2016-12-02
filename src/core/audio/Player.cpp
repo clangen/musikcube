@@ -102,8 +102,8 @@ namespace musik {
     }
 }
 
-Player* Player::Create(const std::string &url, OutputPtr output) {
-    return new Player(url, output);
+Player* Player::Create(const std::string &url, OutputPtr output, PlayerEventListener *listener) {
+    return new Player(url, output, listener);
 }
 
 OutputPtr Player::CreateDefaultOutput() {
@@ -121,14 +121,15 @@ OutputPtr Player::CreateDefaultOutput() {
     return OutputPtr();
 }
 
-Player::Player(const std::string &url, OutputPtr output)
+Player::Player(const std::string &url, OutputPtr output, PlayerEventListener *listener)
 : state(Player::Precache)
 , url(url)
 , currentPosition(0)
 , output(output)
 , notifiedStarted(false)
 , setPosition(-1)
-, fftContext(nullptr) {
+, fftContext(nullptr)
+, listener(listener) {
     musik::debug::info(TAG, "new instance created");
 
     this->spectrum = new float[FFT_N / 2];
@@ -288,10 +289,13 @@ void musik::core::audio::playerThreadLoop(Player* player) {
                     buffer.reset(); /* important! we're done with this one locally. */
                 }
                 else {
-                    /* the output device queue is full. we should block and wait until
-                    the output lets us know that it needs more data */
+                    /* the output device queue is probably full. we should block and wait until
+                    the output lets us know that it needs more data. if we are starved for
+                    more than a second, try to push the buffer into the output again. this
+                    may happen if the sound driver has some sort of transient problem and
+                    is temporarily unable to process the bufer (ALSA, i'm looking at you) */
                     std::unique_lock<std::mutex> lock(player->queueMutex);
-                    player->writeToOutputCondition.wait(lock);
+                    player->writeToOutputCondition.wait_for(lock, std::chrono::milliseconds(1000));
                 }
             }
             /* if we're unable to obtain a buffer, it means we're out of data and the
@@ -303,17 +307,17 @@ void musik::core::audio::playerThreadLoop(Player* player) {
 
         /* if the Quit flag isn't set, that means the stream has ended "naturally", i.e.
         it wasn't stopped by the user. raise the "almost ended" flag. */
-        if (!player->Exited()) {
-            player->PlaybackAlmostEnded(player);
+        if (!player->Exited() && player->listener) {
+            player->listener->OnPlaybackAlmostEnded(player);
         }
     }
 
     /* if the stream failed to open... */
     else {
-        player->PlaybackError(player);
+        if (!player->Exited() && player->listener) {
+            player->listener->OnPlaybackError(player);
+        }
     }
-
-    player->state = Player::Quit;
 
     /* unlock any remaining buffers... see comment above */
     if (buffer) {
@@ -330,7 +334,11 @@ void musik::core::audio::playerThreadLoop(Player* player) {
         }
     }
 
-    player->PlaybackFinished(player);
+    if (!player->Exited() && player->listener) {
+        player->listener->OnPlaybackFinished(player);
+    }
+
+    player->state = Player::Quit;
 
     delete player;
 }
@@ -484,6 +492,8 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
     and send them to the output before they are actually processed by the
     output device */
     if (started) {
-        this->PlaybackStarted(this);
+        if (!this->Exited() && this->listener) {
+            this->listener->OnPlaybackStarted(this);
+        }
     }
 }

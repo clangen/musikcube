@@ -34,7 +34,7 @@
 
 #include "AlsaOut.h"
 
-#define BUFFER_COUNT 8
+#define BUFFER_COUNT 32
 #define PCM_ACCESS_TYPE SND_PCM_ACCESS_RW_INTERLEAVED
 #define PCM_FORMAT SND_PCM_FORMAT_FLOAT_LE
 
@@ -56,9 +56,14 @@
 static inline bool playable(snd_pcm_t* pcm) {
     snd_pcm_state_t state = snd_pcm_state(pcm);
 
-    return
-        state == SND_PCM_STATE_RUNNING ||
-        state == SND_PCM_STATE_PREPARED;
+    if (state == SND_PCM_STATE_RUNNING ||
+        state == SND_PCM_STATE_PREPARED)
+    {
+        return true;
+    }
+
+    std::cerr << "AlsaOut: invalid device state: " << (int) state << "\n";
+    return false;
 }
 
 using namespace musik::core::sdk;
@@ -238,7 +243,7 @@ void AlsaOut::WriteLoop() {
                 float volume = (float) this->volume;
 
                 /* software volume; alsa doesn't support this internally. this is about
-                as terrible as an algorithm can be -- it's just a linear ramp. */\
+                as terrible as an algorithm can be -- it's just a linear ramp. */
                 if (volume != 1.0f) {
                     float *buffer = next->buffer->BufferPointer();
                     for (size_t i = 0; i < samples; i++) {
@@ -272,10 +277,12 @@ bool AlsaOut::Play(IBuffer *buffer, IBufferProvider* provider) {
     {
         LOCK("play");
 
-        if (!playable(this->pcmHandle) ||
-            this->CountBuffersWithProvider(provider) >= BUFFER_COUNT)
-        {
+        if (this->CountBuffersWithProvider(provider) >= BUFFER_COUNT) {
             return false;
+        }
+
+        if (!playable(this->pcmHandle)) {
+            std::cerr << "AlsaOut: sanity check -- stream not playable. adding buffer to queue anyway\n";
         }
 
         std::shared_ptr<BufferContext> context(new BufferContext());
