@@ -478,7 +478,7 @@ void TransportWindow::Update(TimeMode timeMode) {
     only works if REFRESH_INTERVAL_MS is 1000. */
     int secondsCurrent = (int) round(this->lastTime); /* mode == TimeLast */
 
-    if (false && timeMode == TimeSmooth) {
+    if (timeMode == TimeSmooth) {
         double smoothedTime = this->lastTime += 1.0f; /* 1000 millis */
         double actualTime = transport.Position();
 
@@ -491,7 +491,7 @@ void TransportWindow::Update(TimeMode timeMode) {
 
         secondsCurrent = (int) round(smoothedTime);
     }
-    else if (true || timeMode == TimeSync) {
+    else if (timeMode == TimeSync) {
         this->lastTime = transport.Position();
         secondsCurrent = (int) round(this->lastTime);
     }
