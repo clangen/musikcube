@@ -35,13 +35,11 @@
 #include "pch.hpp"
 
 #include "Stream.h"
+#include "Streams.h"
 #include <core/debug.h>
-#include <core/sdk/IDecoderFactory.h>
-#include <core/plugin/PluginFactory.h>
 
 using namespace musik::core::audio;
 using namespace musik::core::sdk;
-using musik::core::PluginFactory;
 
 static std::string TAG = "Stream";
 
@@ -63,15 +61,13 @@ Stream::Stream(int samplesPerChannel, int bufferCount, unsigned int options)
 , decoderChannels(0)
 , decoderSamplePosition(0) {
     if ((this->options & NoDSP) == 0) {
-        typedef PluginFactory::DestroyDeleter<IDSP> Deleter;
-        this->dsps = PluginFactory::Instance().QueryInterface<IDSP, Deleter>("GetDSP");
+        streams::GetDspPlugins();
     }
 
     for (int i = 0; i < bufferCount; i++) {
         this->recycledBuffers.push_back(Buffer::Create());
     }
 
-    this->LoadDecoderPlugins();
     this->dspBuffer = Buffer::Create();
 
     /* note that the decoder buffer needs to have a pre-allocated, non-resizable buffer
@@ -122,42 +118,8 @@ bool Stream::OpenStream(std::string uri) {
         return false;
     }
 
-    /* find a DecoderFactory we can use for this type of data*/
-    DecoderFactoryList::iterator factories = this->decoderFactories.begin();
-    DecoderFactoryList::iterator end = this->decoderFactories.end();
-    DecoderFactoryPtr decoderFactory;
-
-    for ( ; factories != end && !decoderFactory; ++factories) {
-        if ((*factories)->CanHandle(this->dataStream->Type())) {
-            decoderFactory  = (*factories);
-        }
-    }
-
-    if (!decoderFactory) {
-        /* nothing can decode this type of file */
-        musik::debug::err(TAG, "nothing could open " + uri);
-        return false;
-    }
-
-    IDecoder *decoder = decoderFactory->CreateDecoder();
-    if (!decoder) {
-        /* shouldn't ever happen, the factory said it can handle this file */
-        return false;
-    }
-
-    /* ask the decoder to open the data stream. if it returns true we're
-    good to start pulling data out of it! */
-    typedef PluginFactory::DestroyDeleter<IDecoder> Deleter;
-
-    this->decoder.reset(decoder, Deleter());
-    if (!this->decoder->Open(this->dataStream.get())) {
-        musik::debug::err(TAG, "open ok, but decode failed " + uri);
-        return false;
-    }
-
-    musik::debug::info(TAG, "about ready to play: " + uri);
-
-    return true;
+    this->decoder = streams::GetDecoderForDataStream(this->dataStream);
+    return !!this->decoder;
 }
 
 void Stream::OnBufferProcessedByPlayer(BufferPtr buffer) {
@@ -172,13 +134,8 @@ bool Stream::GetNextBufferFromDecoder() {
         return false;
     }
 
-    /* remember the sample rate so we can calculate the current time-position */
-    if (!this->decoderSampleRate || !this->decoderChannels) {
-        this->decoderSampleRate = buffer->SampleRate();
-        this->decoderChannels = buffer->Channels();
-    }
-
-    /* offset, in samples */
+    this->decoderSampleRate = buffer->SampleRate();
+    this->decoderChannels = buffer->Channels();
     this->decoderSamplePosition += buffer->Samples();
 
     /* calculate the position (seconds) in the buffer */
@@ -296,11 +253,4 @@ BufferPtr Stream::GetNextProcessedOutputBuffer() {
 /* marks a used buffer as recycled so it can be re-used later. */
 void Stream::RecycleBuffer(BufferPtr oldBuffer) {
     this->recycledBuffers.push_back(oldBuffer);
-}
-
-void Stream::LoadDecoderPlugins() {
-    PluginFactory::DestroyDeleter<IDecoderFactory> typedef Deleter;
-
-    this->decoderFactories = PluginFactory::Instance()
-        .QueryInterface<IDecoderFactory, Deleter>("GetDecoderFactory");
 }

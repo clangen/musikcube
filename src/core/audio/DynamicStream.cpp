@@ -38,6 +38,7 @@
 #include <core/audio/DynamicStream.h>
 #include <core/sdk/IDecoderFactory.h>
 #include <core/plugin/PluginFactory.h>
+#include <core/audio/Streams.h>
 
 using namespace musik::core::audio;
 using namespace musik::core::sdk;
@@ -53,10 +54,8 @@ DynamicStream::DynamicStream(unsigned int options)
 , decoderSamplePosition(0) {
     if ((this->options & NoDSP) == 0) {
         typedef PluginFactory::DestroyDeleter<IDSP> Deleter;
-        this->dsps = PluginFactory::Instance().QueryInterface<IDSP, Deleter>("GetDSP");
+        this->dsps = streams::GetDspPlugins();
     }
-
-    this->LoadDecoderPlugins();
 }
 
 DynamicStream::~DynamicStream() {
@@ -91,42 +90,8 @@ bool DynamicStream::OpenStream(std::string uri) {
         return false;
     }
 
-    /* find a DecoderFactory we can use for this type of data*/
-    DecoderFactoryList::iterator factories = this->decoderFactories.begin();
-    DecoderFactoryList::iterator end = this->decoderFactories.end();
-    DecoderFactoryPtr decoderFactory;
-
-    for (; factories != end && !decoderFactory; ++factories) {
-        if ((*factories)->CanHandle(this->dataStream->Type())) {
-            decoderFactory = (*factories);
-        }
-    }
-
-    if (!decoderFactory) {
-        /* nothing can decode this type of file */
-        musik::debug::err(TAG, "nothing could open " + uri);
-        return false;
-    }
-
-    IDecoder *decoder = decoderFactory->CreateDecoder();
-    if (!decoder) {
-        /* shouldn't ever happen, the factory said it can handle this file */
-        return false;
-    }
-
-    /* ask the decoder to open the data stream. if it returns true we're
-    good to start pulling data out of it! */
-    typedef PluginFactory::DestroyDeleter<IDecoder> Deleter;
-
-    this->decoder.reset(decoder, Deleter());
-    if (!this->decoder->Open(this->dataStream.get())) {
-        musik::debug::err(TAG, "open ok, but decode failed " + uri);
-        return false;
-    }
-
-    musik::debug::info(TAG, "about ready to play: " + uri);
-
-    return true;
+    this->decoder = streams::GetDecoderForDataStream(this->dataStream);
+    return !!this->decoder;
 }
 
 void DynamicStream::OnBufferProcessedByPlayer(BufferPtr buffer) {
@@ -140,13 +105,8 @@ BufferPtr DynamicStream::GetNextBufferFromDecoder() {
         return BufferPtr(); /* return NULL */
     }
 
-    /* remember the sample rate so we can calculate the current time-position */
-    if (!this->decoderSampleRate || !this->decoderChannels) {
-        this->decoderSampleRate = buffer->SampleRate();
-        this->decoderChannels = buffer->Channels();
-    }
-
-    /* offset, in samples */
+    this->decoderSampleRate = buffer->SampleRate();
+    this->decoderChannels = buffer->Channels();
     this->decoderSamplePosition += buffer->Samples();
 
     /* calculate the position (seconds) in the buffer */
@@ -163,8 +123,6 @@ BufferPtr DynamicStream::GetNextProcessedOutputBuffer() {
     BufferPtr currentBuffer = this->GetNextBufferFromDecoder();
 
     if (currentBuffer) {
-        void * f = &free;
-
         /* try to fill the buffer to its optimal size; if the decoder didn't return
         a full buffer, ask it for some more data. */
         bool moreBuffers = true;
@@ -220,11 +178,4 @@ BufferPtr DynamicStream::GetEmptyBuffer() {
 /* marks a used buffer as recycled so it can be re-used later. */
 void DynamicStream::RecycleBuffer(BufferPtr oldBuffer) {
     this->recycledBuffers.push_back(oldBuffer);
-}
-
-void DynamicStream::LoadDecoderPlugins() {
-    PluginFactory::DestroyDeleter<IDecoderFactory> typedef Deleter;
-
-    this->decoderFactories = PluginFactory::Instance()
-        .QueryInterface<IDecoderFactory, Deleter>("GetDecoderFactory");
 }

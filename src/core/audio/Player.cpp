@@ -36,10 +36,12 @@
 
 #include <kiss_fftr.h>
 #include <core/debug.h>
-#include <core/audio/Player.h>
+#include <core/audio/DynamicStream.h>
 #include <core/audio/Stream.h>
+#include <core/audio/Player.h>
 #include <core/audio/Visualizer.h>
 #include <core/plugin/PluginFactory.h>
+
 #include <algorithm>
 #include <math.h>
 #include <future>
@@ -189,6 +191,7 @@ int Player::State() {
 
 void musik::core::audio::playerThreadLoop(Player* player) {
     player->stream = Stream::Create();
+    // player->stream = DynamicStream::Create();
 
     BufferPtr buffer;
 

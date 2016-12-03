@@ -36,54 +36,20 @@
 
 #include <core/config.h>
 #include <core/io/DataStreamFactory.h>
-#include <core/audio/Buffer.h>
-#include <core/audio/IStream.h>
 #include <core/sdk/IDecoder.h>
 #include <core/sdk/IDSP.h>
+#include <core/sdk/IDecoderFactory.h>
 
-#include <boost/shared_ptr.hpp>
-#include <list>
+#include <memory>
+#include <vector>
 
 namespace musik { namespace core { namespace audio {
 
-    class DynamicStream : public IStream {
-        using IDSP = musik::core::sdk::IDSP;
-        using IDecoder = musik::core::sdk::IDecoder;
+    namespace streams {
+        std::shared_ptr<musik::core::sdk::IDecoder>
+            GetDecoderForDataStream(musik::core::io::DataStreamFactory::DataStreamPtr dataStream);
 
-        public:
-            virtual ~DynamicStream();
-
-            BufferPtr GetNextProcessedOutputBuffer();
-            void OnBufferProcessedByPlayer(BufferPtr buffer);
-            double SetPosition(double seconds);
-            bool OpenStream(std::string uri);
-
-            static StreamPtr Create(unsigned int options = 0);
-
-        private:
-            DynamicStream(unsigned int options);
-
-        private:
-            void RecycleBuffer(BufferPtr oldBuffer);
-            BufferPtr GetNextBufferFromDecoder();
-            BufferPtr GetEmptyBuffer();
-
-            typedef std::list<BufferPtr> BufferList;
-            typedef std::shared_ptr<IDecoder> DecoderPtr;
-            typedef std::shared_ptr<IDSP> DspPtr;
-            typedef std::vector<DspPtr> Dsps;
-
-            long preferedBufferSampleSize;
-            unsigned int options;
-            long decoderSampleRate;
-            long decoderChannels;
-            uint64 decoderSamplePosition;
-            std::string uri;
-            musik::core::io::DataStreamFactory::DataStreamPtr dataStream;
-            BufferList recycledBuffers;
-
-            DecoderPtr decoder;
-            Dsps dsps;
+        std::vector<std::shared_ptr<musik::core::sdk::IDSP > > GetDspPlugins();
     };
 
 } } }

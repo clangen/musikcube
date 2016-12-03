@@ -1,9 +1,11 @@
 set(CORE_SOURCES
   ./debug.cpp
   ./audio/Buffer.cpp
-  ./audio/Player.cpp
+  ./audio/DynamicStream.cpp
   ./audio/GaplessTransport.cpp
+  ./audio/Player.cpp
   ./audio/Stream.cpp
+  ./audio/Streams.cpp
   ./audio/Visualizer.cpp
   ./db/Connection.cpp
   ./db/ScopedTransaction.cpp

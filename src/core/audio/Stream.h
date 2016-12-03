@@ -40,7 +40,6 @@
 #include <core/audio/IStream.h>
 #include <core/sdk/IDecoder.h>
 #include <core/sdk/IDSP.h>
-#include <core/sdk/IDecoderFactory.h>
 
 #include <boost/shared_ptr.hpp>
 #include <list>
@@ -50,7 +49,6 @@ namespace musik { namespace core { namespace audio {
     class Stream : public IStream {
         using IDSP = musik::core::sdk::IDSP;
         using IDecoder = musik::core::sdk::IDecoder;
-        using IDecoderFactory = musik::core::sdk::IDecoderFactory;
 
         public:
             static StreamPtr Create(
@@ -73,11 +71,8 @@ namespace musik { namespace core { namespace audio {
             void RecycleBuffer(BufferPtr oldBuffer);
             bool GetNextBufferFromDecoder();
             BufferPtr GetEmptyBuffer();
-            void LoadDecoderPlugins();
 
             typedef std::list<BufferPtr> BufferList;
-            typedef std::shared_ptr<IDecoderFactory> DecoderFactoryPtr;
-            typedef std::vector<DecoderFactoryPtr> DecoderFactoryList;
             typedef std::shared_ptr<IDecoder> DecoderPtr;
             typedef std::shared_ptr<IDSP> DspPtr;
             typedef std::vector<DspPtr> Dsps;
@@ -99,7 +94,6 @@ namespace musik { namespace core { namespace audio {
             int samplesPerChannel;
             int bufferCount;
 
-            DecoderFactoryList decoderFactories;
             DecoderPtr decoder;
             Dsps dsps;
     };

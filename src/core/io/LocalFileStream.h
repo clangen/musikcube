@@ -62,9 +62,11 @@ namespace musik { namespace core { namespace io {
             virtual bool Eof();
             virtual long Length();
             virtual const char* Type();
+            virtual const char* Uri();
 
         private:
             std::string extension;
+            std::string uri;
             FILE *file;
             long filesize;
     };

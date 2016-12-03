@@ -51,6 +51,7 @@ namespace musik { namespace core { namespace sdk {
             virtual bool Eof() = 0;
             virtual long Length() = 0;
             virtual const char* Type() = 0;
+            virtual const char* Uri() = 0;
     };
 
 } } }

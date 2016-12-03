@@ -61,25 +61,25 @@ LocalFileStream::~LocalFileStream() {
 
 bool LocalFileStream::Open(const char *filename, unsigned int options) {
     try {
-        std::string fn(filename);
+        this->uri = filename;
         debug::info(TAG, "opening file: " + std::string(filename));
 
         boost::filesystem::path file(filename);
 
         if (!boost::filesystem::exists(file)) {
-            debug::err(TAG, "open failed " + fn);
+            debug::err(TAG, "open failed " + this->uri);
             return false;
         }
 
         if (!boost::filesystem::is_regular(file)) {
-            debug::err(TAG, "not a regular file" + fn);
+            debug::err(TAG, "not a regular file" + this->uri);
             return false;
         }
 
         this->filesize = (long)boost::filesystem::file_size(file);
         this->extension = file.extension().string();
 #ifdef WIN32
-        std::wstring u16fn = u8to16(fn);
+        std::wstring u16fn = u8to16(this->uri);
         this->file = _wfopen(u16fn.c_str(), L"rb");
 #else
         this->file = fopen(filename, "rb");
@@ -134,4 +134,8 @@ long LocalFileStream::Length() {
 
 const char* LocalFileStream::Type() {
     return this->extension.c_str();
+}
+
+const char* LocalFileStream::Uri() {
+    return this->uri.c_str();
 }
