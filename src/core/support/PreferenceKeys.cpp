@@ -39,11 +39,14 @@ namespace musik { namespace core { namespace prefs {
 
     const std::string components::Settings = "settings";
     const std::string components::Libraries = "libraries";
+    const std::string components::Playback = "playback";
 
     const std::string keys::AutoSyncIntervalMillis = "AutoSyncIntervalMillis";
     const std::string keys::MaxTagReadThreads = "MaxTagReadThreads";
     const std::string keys::RemoveMissingFiles = "RemoveMissingFiles";
     const std::string keys::SyncOnStartup = "SyncOnStartup";
+    const std::string keys::Volume = "Volume";
+    const std::string keys::RepeatMode = "RepeatMode";
 
 } } }
 

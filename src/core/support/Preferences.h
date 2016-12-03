@@ -59,10 +59,12 @@ namespace musik { namespace core {
 
             bool GetBool(const std::string& key, bool defaultValue = false);
             int GetInt(const std::string& key, int defaultValue = 0);
+            double GetDouble(const std::string& key, double defaultValue = 0.0f);
             std::string GetString(const std::string& key, const std::string& defaultValue = "");
 
             void SetBool(const std::string& key, bool value);
             void SetInt(const std::string& key, int value);
+            void SetDouble(const std::string& key, double value);
             void SetString(const std::string& key, const char* value);
 
             void GetKeys(std::vector<std::string>& target);

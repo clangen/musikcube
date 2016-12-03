@@ -100,7 +100,7 @@ static bool stringToFile(const std::string& fn, const std::string& str) {
     boost::str(boost::format("%s-%s") % name % mode)
 
 std::shared_ptr<Preferences> Preferences::ForComponent(
-    const std::string& c, Preferences::Mode mode) 
+    const std::string& c, Preferences::Mode mode)
 {
     boost::mutex::scoped_lock lock(cacheMutex);
 
@@ -156,6 +156,11 @@ int Preferences::GetInt(const std::string& key, int defaultValue) {
     RETURN_VALUE(defaultValue);
 }
 
+double Preferences::GetDouble(const std::string& key, double defaultValue) {
+    boost::mutex::scoped_lock lock(this->mutex);
+    RETURN_VALUE(defaultValue);
+}
+
 std::string Preferences::GetString(const std::string& key, const std::string& defaultValue) {
     boost::mutex::scoped_lock lock(this->mutex);
     RETURN_VALUE(defaultValue);
@@ -167,6 +172,11 @@ void Preferences::SetBool(const std::string& key, bool value) {
 }
 
 void Preferences::SetInt(const std::string& key, int value) {
+    boost::mutex::scoped_lock lock(this->mutex);
+    json[key] = value;
+}
+
+void Preferences::SetDouble(const std::string& key, double value) {
     boost::mutex::scoped_lock lock(this->mutex);
     json[key] = value;
 }

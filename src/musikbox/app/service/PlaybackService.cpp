@@ -44,6 +44,7 @@
 #include <core/library/LocalLibraryConstants.h>
 #include <core/library/track/RetainedTrack.h>
 #include <core/plugin/PluginFactory.h>
+#include <core/support/PreferenceKeys.h>
 
 #include <boost/lexical_cast.hpp>
 
@@ -56,6 +57,7 @@ using cursespp::IMessage;
 
 using namespace musik::core::library;
 using namespace musik::core;
+using namespace musik::core::prefs;
 using namespace musik::core::sdk;
 using namespace musik::box;
 
@@ -96,15 +98,39 @@ class StreamMessage : public cursespp::Message {
     cursespp::MessageQueue::Instance().Post( \
         cursespp::IMessagePtr(new StreamMessage(instance, eventType, uri)));
 
+static inline void loadPreferences(
+    ITransport& transport,
+    IPlaybackService& playback,
+    std::shared_ptr<Preferences> prefs)
+{
+    double volume = prefs->GetDouble(keys::Volume, 1.0f);
+    volume = std::max(0.0f, std::min(1.0f, (float)volume));
+    transport.SetVolume(volume);
+
+    int repeatMode = prefs->GetInt(keys::RepeatMode, RepeatNone);
+    repeatMode = (repeatMode > RepeatList || repeatMode < RepeatNone) ? RepeatNone : repeatMode;
+    playback.SetRepeatMode((RepeatMode) repeatMode);
+}
+
+static inline void savePreferences(
+    IPlaybackService& playback,
+    std::shared_ptr<Preferences> prefs)
+{
+    prefs->SetDouble(keys::Volume, playback.GetVolume());
+    prefs->SetInt(keys::RepeatMode, playback.GetRepeatMode());
+}
+
 PlaybackService::PlaybackService(LibraryPtr library, ITransport& transport)
 : library(library)
 , transport(transport)
 , playlist(library)
 , unshuffled(library)
-, repeatMode(RepeatNone) {
+, repeatMode(RepeatNone)
+, prefs(Preferences::ForComponent(components::Playback)) {
     transport.StreamEvent.connect(this, &PlaybackService::OnStreamEvent);
     transport.PlaybackEvent.connect(this, &PlaybackService::OnPlaybackEvent);
     transport.VolumeChanged.connect(this, &PlaybackService::OnVolumeChanged);
+    loadPreferences(this->transport, *this, prefs);
     this->index = NO_POSITION;
     this->nextIndex = NO_POSITION;
     this->InitRemotes();
@@ -113,6 +139,7 @@ PlaybackService::PlaybackService(LibraryPtr library, ITransport& transport)
 PlaybackService::~PlaybackService() {
     this->Stop();
     this->ResetRemotes();
+    savePreferences(*this, prefs);
 }
 
 void PlaybackService::InitRemotes() {

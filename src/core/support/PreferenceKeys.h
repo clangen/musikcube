@@ -41,6 +41,7 @@ namespace musik { namespace core { namespace prefs {
     namespace components {
         extern const std::string Settings;
         extern const std::string Libraries;
+        extern const std::string Playback;
     }
 
     namespace keys {
@@ -48,6 +49,8 @@ namespace musik { namespace core { namespace prefs {
         extern const std::string MaxTagReadThreads;
         extern const std::string RemoveMissingFiles;
         extern const std::string SyncOnStartup;
+        extern const std::string Volume;
+        extern const std::string RepeatMode;
     }
 
 } } }

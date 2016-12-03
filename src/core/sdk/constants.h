@@ -53,8 +53,8 @@ namespace musik {
             };
 
             enum RepeatMode {
-                RepeatNone,
-                RepeatTrack,
-                RepeatList
+                RepeatNone = 0,
+                RepeatTrack = 1,
+                RepeatList = 2
             };
 } } }

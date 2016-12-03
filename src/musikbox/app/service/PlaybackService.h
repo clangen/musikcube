@@ -45,6 +45,7 @@
 #include <core/library/track/Track.h>
 #include <core/library/ILibrary.h>
 #include <core/audio/ITransport.h>
+#include <core/support/Preferences.h>
 
 #include <boost/thread/recursive_mutex.hpp>
 
@@ -112,6 +113,7 @@ namespace musik {
                 boost::recursive_mutex playlistMutex;
 
                 std::vector<std::shared_ptr<musik::core::sdk::IPlaybackRemote > > remotes;
+                std::shared_ptr<musik::core::Preferences> prefs;
 
                 musik::core::LibraryPtr library;
                 musik::core::audio::ITransport& transport;
