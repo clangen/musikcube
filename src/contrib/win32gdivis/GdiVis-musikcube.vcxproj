@@ -95,7 +95,10 @@
       <SubSystem>Windows</SubSystem>
       <OutputFile>$(SolutionDir)bin\release\win32gdivis.dll</OutputFile>
       <AdditionalLibraryDirectories>$(SolutionDir)bin\release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>LIBCMT.LIB;version.lib;winmm.lib;Imm32.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreAllDefaultLibraries>
+      </IgnoreAllDefaultLibraries>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
       <Command>xcopy $(TargetPath) $(SolutionDir)\bin\release\plugins\ /Y

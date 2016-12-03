@@ -92,6 +92,7 @@
       <AdditionalLibraryDirectories>./bin;../../3rdparty/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /Y $(ProjectDir)bin\*.dll $(OutDir)</Command>
