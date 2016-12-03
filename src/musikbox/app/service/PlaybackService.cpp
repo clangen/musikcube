@@ -466,7 +466,7 @@ IRetainedTrack* PlaybackService::GetTrack(size_t index) {
 
     const size_t count = this->playlist.Count();
 
-    if (count && index >= 0 && index < this->playlist.Count()) {
+    if (count && index < this->playlist.Count()) {
         return new RetainedTrack(this->playlist.Get(index));
     }
 
