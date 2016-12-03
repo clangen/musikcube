@@ -84,7 +84,9 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="audio\DynamicStream.cpp" />
     <ClCompile Include="audio\GaplessTransport.cpp" />
+    <ClCompile Include="audio\Streams.cpp" />
     <ClCompile Include="audio\Visualizer.cpp" />
     <ClCompile Include="debug.cpp" />
     <ClCompile Include="io\DataStreamFactory.cpp" />
@@ -114,9 +116,11 @@
     <ClCompile Include="support\Preferences.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="audio\DynamicStream.h" />
     <ClInclude Include="audio\GaplessTransport.h" />
     <ClInclude Include="audio\IStream.h" />
     <ClInclude Include="audio\ITransport.h" />
+    <ClInclude Include="audio\Streams.h" />
     <ClInclude Include="audio\Visualizer.h" />
     <ClInclude Include="debug.h" />
     <ClInclude Include="io\DataStreamFactory.h" />

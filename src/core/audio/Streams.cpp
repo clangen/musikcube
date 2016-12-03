@@ -47,9 +47,6 @@ using namespace musik::core::sdk;
 using musik::core::PluginFactory;
 
 using DataStreamPtr = musik::core::io::DataStreamFactory::DataStreamPtr;
-using IDSP = musik::core::sdk::IDSP;
-using IDecoder = musik::core::sdk::IDecoder;
-using IDecoderFactory = musik::core::sdk::IDecoderFactory;
 using DecoderFactoryList = std::vector<std::shared_ptr<IDecoderFactory > >;
 using DspList = std::vector<std::shared_ptr<IDSP > >;
 

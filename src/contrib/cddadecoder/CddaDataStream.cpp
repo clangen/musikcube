@@ -160,6 +160,8 @@ bool CddaDataStream::Open(const char *uri, unsigned int options) {
 
     setActive(this);
 
+    this->uri = uri;
+
     return true;
 }
 
@@ -212,6 +214,10 @@ long CddaDataStream::Length() {
 
 const char* CddaDataStream::Type() {
     return "cda";
+}
+
+const char* CddaDataStream::Uri() {
+    return uri.c_str();
 }
 
 HRESULT CddaDataStream::Read(PBYTE pbBuffer, DWORD dwBytesToRead, BOOL bAlign, LPDWORD pdwBytesRead) {

@@ -46,7 +46,6 @@ static void renderFrame(HWND hwnd) {
     }
 
     if (::spectrumOut && ::spectrumSize) {
-
         win32cpp::MemoryDC memDc(hdc, ps.rcPaint);
 
         RECT rect;
@@ -108,7 +107,6 @@ static void threadProc() {
     _CrtSetBreakAlloc(60);
 #endif
 
-    // Register the windows class
     WNDCLASSW wndClass;
     wndClass.style = CS_DBLCLKS;
     wndClass.lpfnWndProc = staticWndProc;
@@ -135,7 +133,6 @@ static void threadProc() {
     SetRect(&rc, 0, 0, windowWidth, windowHeight);
     AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, false);
 
-    // Create the render window
     HWND hwnd = CreateWindow(
         WINDOW_CLASS_NAME,
         L"GdiVis-musikcube",
@@ -189,94 +186,82 @@ static void threadProc() {
     }
 }
 
-#ifdef COMPILE_AS_EXE
-    int main(int argc, char *argv[]) {
-        SetProjectMDataDirectory(util::getModuleDirectory());
-
-#ifndef WIN32
-        std::thread background(pipeReadProc);
-        background.detach();
-#endif
-
-        quit.store(false);
-        thread.store(true);
-        windowProc();
-
-        return 0;
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved) {
+    if (reason == DLL_PROCESS_ATTACH) {
+        instance = hModule;
     }
-#else
-    #ifdef WIN32
-        BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved) {
-            instance = hModule;
-            return true;
+    else if (reason == DLL_PROCESS_DETACH) {
+        std::unique_lock<std::mutex> lock(pcmMutex);
+        delete ::spectrumIn;
+        delete ::spectrumOut;
+        ::spectrumIn = nullptr;
+        ::spectrumOut == nullptr;
+    }
+    return true;
+}
+
+class Visualizer : public musik::core::sdk::ISpectrumVisualizer {
+    public:
+        virtual const char* Name() {
+            return "GdiVis";
+        };
+
+        virtual const char* Version() {
+            return "0.1.0";
+        };
+
+        virtual const char* Author() {
+            return "clangen";
+        };
+
+        virtual void Destroy() {
+            this->Hide();
+            delete this;
         }
-    #endif
-#endif
 
-#ifdef WIN32
-    class Visualizer : public musik::core::sdk::ISpectrumVisualizer {
-        public:
-            virtual const char* Name() {
-                return "GdiVis";
-            };
+        virtual void Write(float *spectrum, int size) {
+            std::unique_lock<std::mutex> lock(pcmMutex);
 
-            virtual const char* Version() {
-                return "0.1.0";
-            };
-
-            virtual const char* Author() {
-                return "clangen";
-            };
-
-            virtual void Destroy() {
-                this->Hide();
-                delete this;
+            if (::spectrumSize != size) {
+                delete ::spectrumIn;
+                delete ::spectrumOut;
+                ::spectrumSize = size;
+                ::spectrumIn = new float[size];
+                ::spectrumOut = new float[size];
             }
 
-            virtual void Write(float *spectrum, int size) {
-                std::unique_lock<std::mutex> lock(pcmMutex);
+            memcpy(::spectrumIn, spectrum, size * sizeof(float));
+        }
 
-                if (::spectrumSize != size) {
-                    delete ::spectrumIn;
-                    delete ::spectrumOut;
-                    ::spectrumSize = size;
-                    ::spectrumIn = new float[size];
-                    ::spectrumOut = new float[size];
-                }
-
-                memcpy(::spectrumIn, spectrum, size * sizeof(float));
+        virtual void Show() {
+            if (!Visible()) {
+                quit.store(false);
+                thread.store(true);
+                std::thread background(threadProc);
+                background.detach();
             }
+        }
 
-            virtual void Show() {
-                if (!Visible()) {
-                    quit.store(false);
-                    thread.store(true);
-                    std::thread background(threadProc);
-                    background.detach();
+        virtual void Hide() {
+            if (Visible()) {
+                quit.store(true);
+
+                while (thread.load()) {
+                    std::unique_lock<std::mutex> lock(threadMutex);
+                    threadCondition.wait(lock);
                 }
             }
+        }
 
-            virtual void Hide() {
-                if (Visible()) {
-                    quit.store(true);
+        virtual bool Visible() {
+            return thread.load();
+        }
+};
 
-                    while (thread.load()) {
-                        std::unique_lock<std::mutex> lock(threadMutex);
-                        threadCondition.wait(lock);
-                    }
-                }
-            }
+extern "C" DLL_EXPORT musik::core::sdk::IPlugin* GetPlugin() {
+    return new Visualizer();
+}
 
-            virtual bool Visible() {
-                return thread.load();
-            }
-    };
-
-    extern "C" DLL_EXPORT musik::core::sdk::IPlugin* GetPlugin() {
-        return new Visualizer();
-    }
-
-    extern "C" DLL_EXPORT musik::core::sdk::ISpectrumVisualizer* GetSpectrumVisualizer() {
-        return new Visualizer();
-    }
-#endif
+extern "C" DLL_EXPORT musik::core::sdk::ISpectrumVisualizer* GetSpectrumVisualizer() {
+    return new Visualizer();
+}

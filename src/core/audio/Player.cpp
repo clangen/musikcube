@@ -190,8 +190,8 @@ int Player::State() {
 }
 
 void musik::core::audio::playerThreadLoop(Player* player) {
-    player->stream = Stream::Create();
-    // player->stream = DynamicStream::Create();
+    player->stream = vis::SelectedVisualizer()
+        ? Stream::Create() : DynamicStream::Create();
 
     BufferPtr buffer;
 

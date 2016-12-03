@@ -69,17 +69,7 @@ Stream::Stream(int samplesPerChannel, int bufferCount, unsigned int options)
     }
 
     this->dspBuffer = Buffer::Create();
-
-    /* note that the decoder buffer needs to have a pre-allocated, non-resizable buffer
-    in Windows due to the way heap allocations work cross-DLL. in theory this is a
-    surmountable problem, in practice we get heap corruption. the buffer is enough for
-    8 channels worth of 2048 samples, which should be more than reasonable. */
-#ifdef WIN32
-    this->decoderBuffer = Buffer::Create(Buffer::ImmutableSize);
-    this->decoderBuffer->SetSamples(2048 * 8);
-#else
     this->decoderBuffer = Buffer::Create();
-#endif
 }
 
 Stream::~Stream() {
@@ -167,7 +157,7 @@ BufferPtr Stream::GetNextProcessedOutputBuffer() {
 
     /* ensure we have at least BUFFER_COUNT buffers, and that at least half of them
     are filled with data! */
-    while (this->filledBuffers.size() < (this->bufferCount / 2)) {
+    while ((int) this->filledBuffers.size() < (this->bufferCount / 2)) {
         /* ask the decoder for the next buffer */
         if (!GetNextBufferFromDecoder()) {
             break;

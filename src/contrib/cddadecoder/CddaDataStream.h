@@ -53,10 +53,12 @@ class CddaDataStream : public IDataStream {
         virtual bool Eof();
         virtual long Length();
         virtual const char* Type();
+        virtual const char* Uri();
 
         int GetChannelCount();
 
     private:
+        std::string uri;
         LONGLONG position, length;
         HANDLE drive;
         CDROM_TOC toc;
