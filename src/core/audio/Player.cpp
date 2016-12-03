@@ -190,7 +190,12 @@ int Player::State() {
 }
 
 void musik::core::audio::playerThreadLoop(Player* player) {
-    player->stream = vis::SelectedVisualizer()
+    /* if there's no visualizer active we'll use a DynamicStream, which allows
+    buffer sizes to vary. this type of stream is more CPU friendly because
+    we won't have to memcpy a bunch of audio data around. */
+    auto visualizer = vis::SelectedVisualizer();
+
+    player->stream = (visualizer && visualizer->Visible())
         ? Stream::Create() : DynamicStream::Create();
 
     BufferPtr buffer;
