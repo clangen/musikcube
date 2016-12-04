@@ -55,7 +55,7 @@ namespace musik { namespace core { namespace audio {
             so, by default, let's allocate 64 buffers worth of contiguous
             memory. if we need more buffers they will be allocated dynamically */
             static StreamPtr Create(
-                int samplesPerChannel = 1024,
+                int samplesPerChannel = 2048,
                 int bufferCount = 48,
                 unsigned int options = 0);
 
