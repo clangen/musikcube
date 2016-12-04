@@ -54,6 +54,10 @@
 
 
 static inline bool playable(snd_pcm_t* pcm) {
+    if (!pcm) {
+        return false;
+    }
+
     snd_pcm_state_t state = snd_pcm_state(pcm);
 
     if (state == SND_PCM_STATE_RUNNING ||
@@ -225,7 +229,7 @@ void AlsaOut::WriteLoop() {
 
             {
                 LOCK("thread: waiting for buffer");
-                while (!quit && !this->buffers.size()) {
+                while (!quit && (!playable(this->pcmHandle) || !this->buffers.size())) {
                     WAIT();
                 }
 
