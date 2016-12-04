@@ -59,13 +59,30 @@ Buffer::Buffer(Flags flags)
 , flags(flags) {
 }
 
+Buffer::Buffer(float* buffer, int samples)
+: buffer(buffer)
+, sampleSize(samples)
+, internalBufferSize(samples)
+, sampleRate(44100)
+, channels(2)
+, flags(ImmutableSize | NoDelete) {
+}
+
+
 Buffer::~Buffer() {
-    delete[] this->buffer;
+    if ((flags & NoDelete) == 0) {
+        delete[] this->buffer;
+    }
 }
 
 BufferPtr Buffer::Create(Flags flags) {
     return BufferPtr(new Buffer(flags));
 }
+
+BufferPtr Buffer::Create(float* buffer, int samples) {
+    return BufferPtr(new Buffer(buffer, samples));
+}
+
 
 long Buffer::SampleRate() const { /* hertz */
     return this->sampleRate;

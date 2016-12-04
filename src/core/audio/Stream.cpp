@@ -59,13 +59,10 @@ Stream::Stream(int samplesPerChannel, int bufferCount, unsigned int options)
 , bufferCount(bufferCount)
 , decoderSampleRate(0)
 , decoderChannels(0)
-, decoderSamplePosition(0) {
+, decoderSamplePosition(0)
+, rawBuffer(nullptr) {
     if ((this->options & NoDSP) == 0) {
         streams::GetDspPlugins();
-    }
-
-    for (int i = 0; i < bufferCount; i++) {
-        this->recycledBuffers.push_back(Buffer::Create());
     }
 
     this->dspBuffer = Buffer::Create();
@@ -73,6 +70,7 @@ Stream::Stream(int samplesPerChannel, int bufferCount, unsigned int options)
 }
 
 Stream::~Stream() {
+    delete[] rawBuffer;
 }
 
 StreamPtr Stream::Create(int samplesPerChannel, int bufferCount, unsigned int options) {
@@ -88,9 +86,14 @@ double Stream::SetPosition(double requestedSeconds) {
         this->decoderSamplePosition =
             (uint64)(actualSeconds * rate) * this->decoderChannels;
 
-        this->recycledBuffers.splice(
-            this->recycledBuffers.begin(),
-            this->filledBuffers);
+        /* move all the filled buffers back to the recycled queue */
+        auto it = this->filledBuffers.begin();
+        while (it != this->filledBuffers.end()) {
+            this->recycledBuffers.push_back(*it);
+            ++it;
+        }
+
+        this->filledBuffers.clear();
     }
 
     return actualSeconds;
@@ -124,8 +127,22 @@ bool Stream::GetNextBufferFromDecoder() {
         return false;
     }
 
-    this->decoderSampleRate = buffer->SampleRate();
-    this->decoderChannels = buffer->Channels();
+    /* ensure our internal state is initialized. */
+    if (!rawBuffer) {
+        this->decoderSampleRate = buffer->SampleRate();
+        this->decoderChannels = buffer->Channels();
+
+        int samplesPerBuffer = samplesPerChannel * decoderChannels;
+        rawBuffer = new float[bufferCount * samplesPerBuffer];
+        int offset = 0;
+        for (int i = 0; i < bufferCount; i++) {
+            this->recycledBuffers.push_back(
+                Buffer::Create(rawBuffer + offset, samplesPerBuffer));
+
+            offset += samplesPerBuffer;
+        }
+    }
+
     this->decoderSamplePosition += buffer->Samples();
 
     /* calculate the position (seconds) in the buffer */
@@ -141,10 +158,13 @@ inline BufferPtr Stream::GetEmptyBuffer() {
     BufferPtr target;
 
     if (recycledBuffers.size()) {
-        target = recycledBuffers.back();
-        recycledBuffers.pop_back();
+        target = recycledBuffers.front();
+        recycledBuffers.pop_front();
     }
     else {
+        /* if we've calculated our buffer sizes correctly based on what
+        the output device expects, we should never hit this case. but
+        if something goes awry and we need more space to store samples */
         target = Buffer::Create();
         target->CopyFormat(this->decoderBuffer);
     }
@@ -155,9 +175,9 @@ inline BufferPtr Stream::GetEmptyBuffer() {
 BufferPtr Stream::GetNextProcessedOutputBuffer() {
     BufferPtr currentBuffer;
 
-    /* ensure we have at least BUFFER_COUNT buffers, and that at least half of them
-    are filled with data! */
-    while ((int) this->filledBuffers.size() < (this->bufferCount / 2)) {
+    /* ensure we have at least BUFFER_COUNT buffers, and that at least a quarter
+    of them are filled with data! */
+    while ((int) this->filledBuffers.size() < (this->bufferCount / 4)) {
         /* ask the decoder for the next buffer */
         if (!GetNextBufferFromDecoder()) {
             break;

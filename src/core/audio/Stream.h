@@ -51,9 +51,12 @@ namespace musik { namespace core { namespace audio {
         using IDecoder = musik::core::sdk::IDecoder;
 
         public:
+            /* note that most output devices buffer 16-32 samples internally,
+            so, by default, let's allocate 64 buffers worth of contiguous
+            memory. if we need more buffers they will be allocated dynamically */
             static StreamPtr Create(
                 int samplesPerChannel = 1024,
-                int bufferCount = 16,
+                int bufferCount = 48,
                 unsigned int options = 0);
 
         private:
@@ -72,7 +75,7 @@ namespace musik { namespace core { namespace audio {
             bool GetNextBufferFromDecoder();
             BufferPtr GetEmptyBuffer();
 
-            typedef std::list<BufferPtr> BufferList;
+            typedef std::deque<BufferPtr> BufferList;
             typedef std::shared_ptr<IDecoder> DecoderPtr;
             typedef std::shared_ptr<IDSP> DspPtr;
             typedef std::vector<DspPtr> Dsps;
@@ -93,6 +96,8 @@ namespace musik { namespace core { namespace audio {
             unsigned int options;
             int samplesPerChannel;
             int bufferCount;
+
+            float* rawBuffer;
 
             DecoderPtr decoder;
             Dsps dsps;

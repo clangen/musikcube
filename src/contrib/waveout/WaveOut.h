@@ -34,11 +34,9 @@
 #pragma once
 
 #include "pch.h"
-#include <list>
-#include <boost/thread/thread.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/thread/recursive_mutex.hpp>
-#include <boost/thread/condition.hpp>
+#include <deque>
+#include <memory>
+#include <mutex>
 #include "WaveOutBuffer.h"
 #include <core/sdk/IOutput.h>
 
@@ -46,6 +44,8 @@ using namespace musik::core::sdk;
 
 class WaveOut : public IOutput {
     public:
+        typedef std::shared_ptr<WaveOutBuffer> WaveOutBufferPtr;
+
         WaveOut();
         ~WaveOut();
 
@@ -56,26 +56,25 @@ class WaveOut : public IOutput {
         virtual void Stop();
         virtual bool Play(IBuffer *buffer, IBufferProvider *provider);
 
-    public:
-        typedef std::shared_ptr<WaveOutBuffer> WaveOutBufferPtr;
-        static DWORD WINAPI WaveCallbackThreadProc(LPVOID params);
-
         void OnBufferWrittenToOutput(WaveOutBuffer *buffer);
 
+        static DWORD WINAPI WaveCallbackThreadProc(LPVOID params);
+
     private:
+        friend class WaveOutBuffer;
+
         void SetFormat(IBuffer *buffer);
         void StartWaveOutThread();
         void StopWaveOutThread();
-        void ResetWaveOut();
         void ClearBufferQueue();
+        void NotifyBufferProcessed(WaveOutBufferPtr buffer);
 
-    protected:
-        friend class WaveOutBuffer;
+        WaveOutBufferPtr GetEmptyBuffer();
 
         /* note we apparently use a std::list<> here, and not std::set<> because
         when we need to do a lookup we have a WaveOutBuffer*, and not a shared_ptr.
         we could fix this up by using boost::enable_shared_from_this */
-        typedef std::list<WaveOutBufferPtr> BufferList;
+        typedef std::deque<WaveOutBufferPtr> BufferList;
 
         /* instance state relating to output device, including the thread that
         drives the callback message pump */
@@ -94,10 +93,11 @@ class WaveOut : public IOutput {
         to the output device. we need to notify the IBufferProvider when they have finished
         playing. */
         BufferList queuedBuffers;
+        BufferList freeBuffers;
 
         /* used to protect access to the WaveOut and message pump */
-        boost::recursive_mutex outputDeviceMutex;
+        std::recursive_mutex outputDeviceMutex;
 
         /* used to protect access to the queue of buffers that in flight */
-        boost::recursive_mutex bufferQueueMutex;
+        std::recursive_mutex bufferQueueMutex;
 };

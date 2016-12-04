@@ -112,9 +112,6 @@
     <ClCompile Include="audio\Stream.cpp">
       <Filter>src\audio</Filter>
     </ClCompile>
-    <ClCompile Include="audio\DynamicStream.cpp">
-      <Filter>src\audio</Filter>
-    </ClCompile>
     <ClCompile Include="audio\Streams.cpp">
       <Filter>src\audio</Filter>
     </ClCompile>
@@ -280,9 +277,6 @@
       <Filter>src\audio</Filter>
     </ClInclude>
     <ClInclude Include="audio\Stream.h">
-      <Filter>src\audio</Filter>
-    </ClInclude>
-    <ClInclude Include="audio\DynamicStream.h">
       <Filter>src\audio</Filter>
     </ClInclude>
     <ClInclude Include="audio\Streams.h">

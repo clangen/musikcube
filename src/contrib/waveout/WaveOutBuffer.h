@@ -42,31 +42,29 @@
 	#include <alsa/asoundlib.h>
 #endif
 
-//////////////////////////////////////////////////////////////////////////////
-
 class WaveOut;
 
 using namespace musik::core::sdk;
 
-class WaveOutBuffer
-{
-public:
-    WaveOutBuffer(WaveOut *waveOut, IBuffer *buffer, IBufferProvider *provider);
-    ~WaveOutBuffer();
+class WaveOutBuffer {
+    public:
+        WaveOutBuffer(WaveOut *waveOut);
+        ~WaveOutBuffer();
 
-    void Destroy();
-    bool WriteToOutput();
-    IBufferProvider* GetBufferProvider() const;
-    IBuffer* GetWrappedBuffer() const;
+        void Set(IBuffer *buffer, IBufferProvider *provider);
+        void Reset();
 
-private:
-    void Initialize();
+        bool WriteToOutput();
 
-    WaveOut *waveOut;
-    IBuffer *buffer;
-    IBufferProvider *provider;
-    WAVEHDR header;
-    bool destroyed;
+        IBufferProvider* GetBufferProvider() const;
+        IBuffer* GetWrappedBuffer() const;
+
+    private:
+        void Initialize();
+
+        WaveOut *waveOut;
+        IBuffer *buffer;
+        IBufferProvider *provider;
+        WAVEHDR header;
+        bool reset;
 };
-
-//////////////////////////////////////////////////////////////////////////////

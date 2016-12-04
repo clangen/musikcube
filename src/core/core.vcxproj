@@ -84,7 +84,6 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="audio\DynamicStream.cpp" />
     <ClCompile Include="audio\GaplessTransport.cpp" />
     <ClCompile Include="audio\Streams.cpp" />
     <ClCompile Include="audio\Visualizer.cpp" />
@@ -116,7 +115,6 @@
     <ClCompile Include="support\Preferences.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="audio\DynamicStream.h" />
     <ClInclude Include="audio\GaplessTransport.h" />
     <ClInclude Include="audio\IStream.h" />
     <ClInclude Include="audio\ITransport.h" />

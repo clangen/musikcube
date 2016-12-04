@@ -48,10 +48,12 @@ namespace musik { namespace core { namespace audio {
         public:
             enum Flags {
                 NoFlags = 0,
-                ImmutableSize = 1
+                ImmutableSize = 1,
+                NoDelete = 2
             };
 
             static BufferPtr Create(Flags flags = NoFlags);
+            static BufferPtr Create(float* buffer, int samples);
 
             virtual ~Buffer();
 
@@ -72,6 +74,7 @@ namespace musik { namespace core { namespace audio {
 
         private:
             Buffer(Flags flags);
+            Buffer(float* buffer, int samples);
 
             void ResizeBuffer();
 
@@ -81,7 +84,7 @@ namespace musik { namespace core { namespace audio {
             long sampleRate;
             int channels;
             double position;
-            Flags flags;
+            int flags;
     };
 
 } } }

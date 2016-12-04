@@ -36,7 +36,6 @@
 
 #include <kiss_fftr.h>
 #include <core/debug.h>
-#include <core/audio/DynamicStream.h>
 #include <core/audio/Stream.h>
 #include <core/audio/Player.h>
 #include <core/audio/Visualizer.h>
@@ -190,13 +189,7 @@ int Player::State() {
 }
 
 void musik::core::audio::playerThreadLoop(Player* player) {
-    /* if there's no visualizer active we'll use a DynamicStream, which allows
-    buffer sizes to vary. this type of stream is more CPU friendly because
-    we won't have to memcpy a bunch of audio data around. */
-    auto visualizer = vis::SelectedVisualizer();
-
-    player->stream = (visualizer && visualizer->Visible())
-        ? Stream::Create() : DynamicStream::Create();
+    player->stream = Stream::Create();
 
     BufferPtr buffer;
 

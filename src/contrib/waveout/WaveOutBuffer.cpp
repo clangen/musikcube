@@ -37,24 +37,30 @@
 
 #include <iostream>
 
-WaveOutBuffer::WaveOutBuffer(WaveOut *waveOut, IBuffer *buffer, IBufferProvider *provider)
-: waveOut(waveOut) 
-, buffer(buffer)
-, provider(provider)
-, destroyed(false)
-{
-    this->Initialize();
+WaveOutBuffer::WaveOutBuffer(WaveOut *waveOut)
+: waveOut(waveOut)
+, buffer(nullptr)
+, provider(nullptr)
+, reset(false) {
+    this->header.dwUser = (DWORD_PTR) this;
+    this->header.dwBytesRecorded = 0;
+    this->header.dwFlags = 0;
+    this->header.dwLoops = 0;
+    this->header.lpNext = 0;
+    this->header.reserved = 0;
 }
 
 void WaveOutBuffer::Initialize() {
+}
+
+void WaveOutBuffer::Set(IBuffer *buffer, IBufferProvider *provider) {
+    this->Reset();
+
+    this->buffer = buffer;
+    this->provider = provider;
+
     this->header.dwBufferLength = this->buffer->Samples() * sizeof(float);
     this->header.lpData = (LPSTR) this->buffer->BufferPointer();
-	this->header.dwUser = (DWORD_PTR) this;
-	this->header.dwBytesRecorded = 0;
-	this->header.dwFlags = 0;
-	this->header.dwLoops = 0;
-    this->header.lpNext = NULL;
-    this->header.reserved = NULL;
 
     MMRESULT result = waveOutPrepareHeader(this->waveOut->waveHandle, &this->header, sizeof(WAVEHDR));
     if (result != MMSYSERR_NOERROR) {
@@ -62,14 +68,16 @@ void WaveOutBuffer::Initialize() {
     }
 }
 
-void WaveOutBuffer::Destroy() {
-    if (!this->destroyed) {
+void WaveOutBuffer::Reset() {
+    if (!this->reset) {
         if (this->waveOut->waveHandle && this->header.dwFlags & WHDR_PREPARED) {
             waveOutUnprepareHeader(this->waveOut->waveHandle, &this->header, sizeof(WAVEHDR));
             this->header.dwFlags = WHDR_DONE;
         }
 
-        this->destroyed = true;
+        this->buffer = nullptr;
+        this->provider = nullptr;
+        this->reset = true;
     }
 }
 
@@ -82,12 +90,12 @@ IBuffer* WaveOutBuffer::GetWrappedBuffer() const {
 }
 
 WaveOutBuffer::~WaveOutBuffer() {
-    this->Destroy();
+    this->Reset();
 }
 
 bool WaveOutBuffer::WriteToOutput() {
     MMRESULT result = waveOutWrite(this->waveOut->waveHandle, &this->header, sizeof(WAVEHDR));
-    
+
     if (result == MMSYSERR_NOERROR) {
         return true;
     }
