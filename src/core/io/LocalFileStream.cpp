@@ -39,6 +39,8 @@
 #include <core/config.h>
 #include <core/support/Common.h>
 #include <core/config.h>
+#include <cstdio>
+#include <iostream>
 
 static const std::string TAG = "LocalFileStream";
 

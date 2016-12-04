@@ -34,15 +34,8 @@
 
 #pragma once
 
-#include <boost/shared_ptr.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <boost/iostreams/stream_buffer.hpp>
-#include <boost/iostreams/device/file_descriptor.hpp>
-
 #include <core/config.h>
 #include <core/sdk/IDataStream.h>
-#include <cstdio>
-#include <iostream>
 
 namespace musik { namespace core { namespace io {
 
