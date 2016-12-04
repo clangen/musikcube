@@ -202,6 +202,7 @@ void AlsaOut::Resume() {
 
     if (this->pcmHandle) {
         snd_pcm_pause(this->pcmHandle, 0);
+        NOTIFY();
     }
 }
 
@@ -281,17 +282,18 @@ bool AlsaOut::Play(IBuffer *buffer, IBufferProvider* provider) {
             return false;
         }
 
-        if (!playable(this->pcmHandle)) {
-            std::cerr << "AlsaOut: sanity check -- stream not playable. adding buffer to queue anyway\n";
-        }
-
         std::shared_ptr<BufferContext> context(new BufferContext());
         context->buffer = buffer;
         context->provider = provider;
 
         this->buffers.push_back(context);
 
-        NOTIFY();
+        if (!playable(this->pcmHandle)) {
+            std::cerr << "AlsaOut: sanity check -- stream not playable. adding buffer to queue anyway\n";
+        }
+        else {
+            NOTIFY();
+        }
     }
 
     return true;
