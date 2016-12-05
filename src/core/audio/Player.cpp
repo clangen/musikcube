@@ -175,7 +175,7 @@ void Player::Destroy() {
 
 double Player::Position() {
     std::unique_lock<std::mutex> lock(this->positionMutex);
-    return this->currentPosition;
+    return std::max(0.0, round(this->currentPosition - this->output->Latency()));
 }
 
 void Player::SetPosition(double seconds) {

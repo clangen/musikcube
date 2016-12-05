@@ -38,6 +38,7 @@
 #include <deque>
 #include <memory>
 #include <mutex>
+#include <atomic>
 
 #include <mmdeviceapi.h>
 #include <Audioclient.h>
@@ -57,33 +58,30 @@ class WasapiOut : public IOutput {
         virtual void SetVolume(double volume);
         virtual void Stop();
         virtual bool Play(IBuffer *buffer, IBufferProvider *provider);
+        virtual double Latency();
 
     private:
         enum State {
-            Stopped,
-            Playing,
-            Paused
-        };
-
-        struct BufferContext {
-            IBuffer *buffer;
-            IBufferProvider *provider;
+            StateStopped,
+            StatePlaying,
+            StatePaused
         };
 
         bool Configure(IBuffer *buffer);
         void Reset();
 
+        void EventThread();
+
         IMMDeviceEnumerator *enumerator;
         IMMDevice *device;
         IAudioClient *audioClient;
+        IAudioClock *audioClock;
         IAudioRenderClient *renderClient;
         ISimpleAudioVolume *simpleAudioVolume;
+        UINT32 outputBufferFrames;
+        std::atomic<State> state;
         WAVEFORMATEXTENSIBLE waveFormat;
-        UINT32 outputBufferSize;
-        UINT64 totalSamplesWritten;
-        State state;
 
-        std::recursive_mutex bufferQueueMutex;
         std::recursive_mutex stateMutex;
-        std::deque<std::shared_ptr<BufferContext>> pendingQueue;
+        INT64 latency;
 };

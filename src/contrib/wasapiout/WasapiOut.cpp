@@ -38,7 +38,10 @@
 #include <chrono>
 #include <thread>
 
-#define MAX_BUFFERS_PER_OUTPUT 32
+#define MAX_BUFFERS_PER_OUTPUT 16
+
+#define BUFFER_TO_TIME(b) \
+    (UINT64) round(((UINT64) buffer->Samples() * 10000000LL) / (UINT64) buffer->SampleRate());
 
 /* NOTE! device init and deinit logic was stolen and modified from
 QMMP's WASABI output plugin! http://qmmp.ylsoftware.com/ */
@@ -55,9 +58,11 @@ WasapiOut::WasapiOut()
 , audioClient(nullptr)
 , renderClient(nullptr)
 , simpleAudioVolume(nullptr)
-, outputBufferSize(0)
-, state(Stopped) {
-    memset(&waveFormat, 0, sizeof(WAVEFORMATEXTENSIBLE));
+, audioClock(nullptr)
+, outputBufferFrames(0)
+, state(StateStopped)
+, latency(0) {
+    ZeroMemory(&waveFormat, sizeof(WAVEFORMATEXTENSIBLE));
 }
 
 WasapiOut::~WasapiOut() {
@@ -69,19 +74,21 @@ void WasapiOut::Destroy() {
 }
 
 void WasapiOut::Pause() {
+    this->state = StatePaused;
+
     Lock lock(this->stateMutex);
 
     if (this->audioClient) {
-        this->state = Paused;
         this->audioClient->Stop();
     }
 }
 
 void WasapiOut::Resume() {
+    this->state = StatePlaying;
+
     Lock lock(this->stateMutex);
 
     if (this->audioClient) {
-        this->state = Playing;
         this->audioClient->Start();
     }
 }
@@ -91,31 +98,17 @@ void WasapiOut::SetVolume(double volume) {
 
     if (this->simpleAudioVolume) {
         simpleAudioVolume->SetMasterVolume((float) volume, 0);
+        simpleAudioVolume->SetMute(false, 0);
     }
 }
 
 void WasapiOut::Stop() {
-    {
-        Lock lock(this->stateMutex);
+    Lock lock(this->stateMutex);
 
-        if (this->audioClient) {
-            this->audioClient->Stop();
-            this->audioClient->Reset();
-            this->audioClient->Start();
-        }
-    }
-
-    std::deque<std::shared_ptr<BufferContext>> toRelease;
-
-    {
-        Lock lock(this->bufferQueueMutex);
-        std::swap(this->pendingQueue, toRelease);
-    }
-
-    auto it = toRelease.begin();
-    while (it != toRelease.end()) {
-        (*it)->provider->OnBufferProcessed((*it)->buffer);
-        ++it;
+    if (this->audioClient) {
+        this->audioClient->Stop();
+        this->audioClient->Reset();
+        this->audioClient->Start();
     }
 }
 
@@ -128,26 +121,24 @@ bool WasapiOut::Play(IBuffer *buffer, IBufferProvider *provider) {
             return false;
         }
 
-        this->state = Playing;
-
-        UINT32 availableFrames;
+        UINT32 availableFrames = 0;
         UINT32 frameOffset = 0;
-        UINT32 samples = (UINT32)buffer->Samples();
-        UINT32 framesToWrite = samples / (UINT32)buffer->Channels();
+        UINT32 samples = (UINT32) buffer->Samples();
+        UINT32 framesToWrite = samples / (UINT32) buffer->Channels();
         int channels = buffer->Channels();
 
         do {
             this->audioClient->GetCurrentPadding(&frameOffset);
-            availableFrames = (this->outputBufferSize - frameOffset);
+            availableFrames = (this->outputBufferFrames - frameOffset);
 
             if (availableFrames < framesToWrite) {
                 UINT32 delta = framesToWrite - availableFrames;
-                REFERENCE_TIME sleepTime = (delta * 1000 * 1000) / buffer->SampleRate();
+                REFERENCE_TIME sleepTime = (delta * 1000 * 1000 * 10) / buffer->SampleRate();
                 std::this_thread::sleep_for(std::chrono::microseconds(sleepTime));
             }
-        } while (this->state == Playing && availableFrames < framesToWrite);
+        } while (this->state == StatePlaying && availableFrames < framesToWrite);
 
-        if (state != Playing) {
+        if (state != StatePlaying) {
             return false;
         }
 
@@ -164,20 +155,7 @@ bool WasapiOut::Play(IBuffer *buffer, IBufferProvider *provider) {
         }
     }
 
-    {
-        Lock lock(this->bufferQueueMutex);
-
-        std::shared_ptr<BufferContext> context(new BufferContext());
-        context->buffer = buffer;
-        context->provider = provider;
-        pendingQueue.push_back(context);
-
-        if (pendingQueue.size() >= MAX_BUFFERS_PER_OUTPUT) {
-            context = pendingQueue.front();
-            pendingQueue.pop_front();
-            context->provider->OnBufferProcessed(context->buffer);
-        }
-    }
+    provider->OnBufferProcessed(buffer);
 
     return true;
 }
@@ -208,6 +186,17 @@ void WasapiOut::Reset() {
         this->simpleAudioVolume->Release();
         this->simpleAudioVolume = nullptr;
     }
+
+    if (this->audioClock) {
+        this->audioClock->Release();
+        this->audioClock = nullptr;
+    }
+
+    ZeroMemory(&waveFormat, sizeof(WAVEFORMATEXTENSIBLE));
+}
+
+double WasapiOut::Latency() {
+    return (double) latency / 1000;
 }
 
 bool WasapiOut::Configure(IBuffer *buffer) {
@@ -284,7 +273,7 @@ bool WasapiOut::Configure(IBuffer *buffer) {
         std::cerr << "WasapiOut: format is not supported, using converter\n";
     }
 
-    long totalMillis = (long) round((buffer->Samples() * 1000) / buffer->SampleRate()) * MAX_BUFFERS_PER_OUTPUT;
+    long totalMillis = (long) round((buffer->Samples() / buffer->Channels() * 1000) / buffer->SampleRate()) * MAX_BUFFERS_PER_OUTPUT;
     REFERENCE_TIME hundredNanos = totalMillis * 1000 * 10;
 
     if ((result = this->audioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, streamFlags, hundredNanos, 0, (WAVEFORMATEX *) &wf, NULL)) != S_OK) {
@@ -292,10 +281,12 @@ bool WasapiOut::Configure(IBuffer *buffer) {
         return false;
     }
 
-    if ((result = this->audioClient->GetBufferSize(&this->outputBufferSize)) != S_OK) {
+    if ((result = this->audioClient->GetBufferSize(&this->outputBufferFrames)) != S_OK) {
         std::cerr << "WasapiOut: IAudioClient::GetBufferSize failed, error code = " << result << "\n";
         return false;
     }
+
+    this->latency = (outputBufferFrames * 1000) / buffer->SampleRate();
 
     if ((result = this->audioClient->GetService(__uuidof(IAudioRenderClient), (void**) &this->renderClient)) != S_OK) {
         std::cerr << "WasapiOut: IAudioClient::GetService failed, error code = " << result << "\n";
@@ -307,10 +298,17 @@ bool WasapiOut::Configure(IBuffer *buffer) {
         return false;
     }
 
+    if ((result = this->audioClient->GetService(__uuidof(IAudioClock), (void**) &this->audioClock)) != S_OK) {
+        std::cerr << "WasapiOut: IAudioClient::GetService failed, error code = " << result << "\n";
+        return false;
+    }
+
     if ((result = this->audioClient->Start()) != S_OK) {
         std::cerr << "WasapiOut: IAudioClient::Start failed, error code = " << result << "\n";
         return false;
     }
+
+    this->state = StatePlaying;
 
     return true;
 }

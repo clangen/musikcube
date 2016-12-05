@@ -49,6 +49,7 @@ namespace musik { namespace core { namespace sdk {
             virtual void SetVolume(double volume) = 0;
             virtual void Stop() = 0;
             virtual bool Play(IBuffer *buffer, IBufferProvider *provider) = 0;
+            virtual double Latency() = 0;
     };
 
 } } }
