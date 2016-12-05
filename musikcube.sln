@@ -6,6 +6,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "musikbox", "src\musikbox\mu
 	ProjectSection(ProjectDependencies) = postProject
 		{68AA481E-3CCE-440F-8CCE-69F1B371C89D} = {68AA481E-3CCE-440F-8CCE-69F1B371C89D}
 		{3E30064E-B9C4-4690-8AC2-2C694176A319} = {3E30064E-B9C4-4690-8AC2-2C694176A319}
+		{EBD2E652-AA1B-4B8B-8D03-CCECB9BF3304} = {EBD2E652-AA1B-4B8B-8D03-CCECB9BF3304}
 		{54764854-5A73-4329-9BAD-9AF22C72D9E2} = {54764854-5A73-4329-9BAD-9AF22C72D9E2}
 		{465EF178-91C1-4068-BE1D-F9616ECCB6DE} = {465EF178-91C1-4068-BE1D-F9616ECCB6DE}
 		{4F10C17A-8AF7-4FAC-A4E2-087AE6E8F9D8} = {4F10C17A-8AF7-4FAC-A4E2-087AE6E8F9D8}
@@ -36,6 +37,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "win32globalhotkeys", "src\contrib\win32globalhotkeys\win32globalhotkeys.vcxproj", "{3E30064E-B9C4-4690-8AC2-2C694176A319}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "win32gdivis", "src\contrib\win32gdivis\GdiVis-musikcube.vcxproj", "{68AA481E-3CCE-440F-8CCE-69F1B371C89D}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wasapiout", "src\contrib\wasapiout\wasapiout.vcxproj", "{EBD2E652-AA1B-4B8B-8D03-CCECB9BF3304}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -91,6 +94,10 @@ Global
 		{68AA481E-3CCE-440F-8CCE-69F1B371C89D}.Debug|Win32.Build.0 = Debug|Win32
 		{68AA481E-3CCE-440F-8CCE-69F1B371C89D}.Release|Win32.ActiveCfg = Release|Win32
 		{68AA481E-3CCE-440F-8CCE-69F1B371C89D}.Release|Win32.Build.0 = Release|Win32
+		{EBD2E652-AA1B-4B8B-8D03-CCECB9BF3304}.Debug|Win32.ActiveCfg = Debug|Win32
+		{EBD2E652-AA1B-4B8B-8D03-CCECB9BF3304}.Debug|Win32.Build.0 = Debug|Win32
+		{EBD2E652-AA1B-4B8B-8D03-CCECB9BF3304}.Release|Win32.ActiveCfg = Release|Win32
+		{EBD2E652-AA1B-4B8B-8D03-CCECB9BF3304}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
