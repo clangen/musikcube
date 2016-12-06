@@ -140,9 +140,9 @@ void PulseOut::SetVolume(double volume) {
     std::cerr << "PulseOut: volume\n";
 
     Lock lock(this->stateMutex);
+    this->volume = volume;
     if (this->audioConnection) {
-        this->volume = volume;
-        int normalized =  (int) round((double) PA_VOLUME_NORM * volume);
+        int normalized = (int) round((double) PA_VOLUME_NORM * volume);
         pa_blocking_set_volume(this->audioConnection, normalized, 0);
     }
 }
