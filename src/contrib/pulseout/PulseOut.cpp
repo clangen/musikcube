@@ -55,10 +55,10 @@ PulseOut::~PulseOut() {
 }
 
 void PulseOut::CloseDevice() {
-    std::cerr << "PulseOut: closing device\n";
-
     Lock lock(this->stateMutex);
     if (this->audioConnection) {
+        std::cerr << "PulseOut: closing device\n";
+
         int error = 0;
         pa_blocking_flush(this->audioConnection, &error);
         pa_blocking_free(this->audioConnection);
@@ -69,7 +69,6 @@ void PulseOut::CloseDevice() {
 }
 
 void PulseOut::OpenDevice(musik::core::sdk::IBuffer* buffer) {
-    
     if (!this->audioConnection ||
         this->rate != buffer->SampleRate() ||
         this->channels != buffer->Channels())
@@ -108,8 +107,6 @@ void PulseOut::Destroy() {
 }
 
 void PulseOut::Stop() {
-    std::cerr << "PulseOut: stop\n";
-
     Lock lock(this->stateMutex);
     if (this->audioConnection) {
         pa_blocking_flush(this->audioConnection, 0);
@@ -118,8 +115,6 @@ void PulseOut::Stop() {
 }
 
 void PulseOut::Pause() {
-    std::cerr << "PulseOut: pause\n";
-
     Lock lock(this->stateMutex);
     if (this->audioConnection) {
         pa_blocking_flush(this->audioConnection, 0);
@@ -128,8 +123,6 @@ void PulseOut::Pause() {
 }
 
 void PulseOut::Resume() {
-    std::cerr << "PulseOut: resume\n";
-    
     Lock lock(this->stateMutex);
     if (this->audioConnection) {
         this->state = StatePlaying;
@@ -137,8 +130,6 @@ void PulseOut::Resume() {
 }
 
 void PulseOut::SetVolume(double volume) {
-    std::cerr << "PulseOut: volume\n";
-
     Lock lock(this->stateMutex);
     this->volume = volume;
     if (this->audioConnection) {
