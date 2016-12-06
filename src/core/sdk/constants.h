@@ -57,4 +57,17 @@ namespace musik {
                 RepeatTrack = 1,
                 RepeatList = 2
             };
+
+            enum ChannelOrder {
+                ChannelNone = 0,
+                ChannelFrontLeft = 1,
+                ChannelFrontRight = 2,
+                ChannelFrontCenter = 4,
+                ChannelLowFrequency = 8,
+                ChannelBackLeft = 16,
+                ChannelBackRight = 32,
+                ChannelBackCenter = 64,
+                ChannelSideLeft = 128,
+                ChannelSideRight = 256
+            };
 } } }
