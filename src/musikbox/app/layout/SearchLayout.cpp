@@ -93,7 +93,7 @@ void SearchLayout::Layout() {
 
     this->artistsLabel->MoveAndResize(categoryWidth, labelY, categoryWidth, 1);
     this->artists->MoveAndResize(categoryWidth, categoryY, categoryWidth, categoryHeight);
-    
+
     this->genresLabel->MoveAndResize(categoryWidth * 2, labelY, lastCategoryWidth, 1);
     this->genres->MoveAndResize(categoryWidth * 2, categoryY, lastCategoryWidth, categoryHeight);
 }
@@ -167,7 +167,7 @@ bool SearchLayout::KeyPress(const std::string& key) {
             int index = (int) category->GetSelectedIndex();
             if (index >= 0) {
                 this->SearchResultSelected(
-                    this, 
+                    this,
                     category->GetFieldName(),
                     category->GetSelectedId());
             }

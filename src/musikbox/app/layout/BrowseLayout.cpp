@@ -44,21 +44,35 @@
 #include "BrowseLayout.h"
 
 using namespace musik::core::library::constants;
-
-#define DEFAULT_CATEGORY constants::Track::ARTIST
-#define DEFAULT_CATEGORY_NAME "artists"
-
-#define SET_CATEGORY(key, name) \
-    this->categoryList->SetFieldName(key); \
-    this->categoryTitle->SetText(name, text::AlignCenter);
-
-static size_t MAX_CATEGORY_WIDTH = 40;
-
 using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::library;
 using namespace musik::box;
 using namespace cursespp;
+
+static size_t MAX_CATEGORY_WIDTH = 40;
+
+#define DEFAULT_CATEGORY constants::Track::ARTIST
+#define DEFAULT_CATEGORY_NAME FIELD_TO_TITLE[DEFAULT_CATEGORY]
+
+static std::map <std::string, std::string> FIELD_TO_TITLE{
+    std::make_pair(constants::Track::ARTIST, "artists"),
+    std::make_pair(constants::Track::ALBUM, "albums"),
+    std::make_pair(constants::Track::GENRE, "genres"),
+    std::make_pair(constants::Track::ALBUM_ARTIST, "album artists")
+};
+
+#define CATEGORY_TITLE(key) \
+    FIELD_TO_TITLE.find(key) == FIELD_TO_TITLE.end() ? "category" : FIELD_TO_TITLE[key]
+
+#define SET_CATEGORY(key) { \
+    std::string title = CATEGORY_TITLE(key); \
+    this->categoryList->SetFieldName(key); \
+    this->categoryTitle->SetText(title, text::AlignCenter); \
+}
+
+#define SET_CATEGORY_TITLE(key) \
+    this->categoryTitle->SetText(CATEGORY_TITLE(key), text::AlignCenter);
 
 BrowseLayout::BrowseLayout(
     PlaybackService& playback,
@@ -140,6 +154,7 @@ void BrowseLayout::InitializeWindows() {
 void BrowseLayout::ScrollTo(const std::string& fieldType, DBID fieldId) {
     this->SetFocus(this->trackList);
     this->categoryList->RequeryWithField(fieldType, "", fieldId);
+    SET_CATEGORY_TITLE(fieldType);
 }
 
 IWindowPtr BrowseLayout::GetFocus() {
@@ -195,19 +210,19 @@ bool BrowseLayout::KeyPress(const std::string& key) {
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseArtists, key)) {
-        SET_CATEGORY(constants::Track::ARTIST, "artists");
+        SET_CATEGORY(constants::Track::ARTIST);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseAlbums, key)) {
-        SET_CATEGORY(constants::Track::ALBUM, "albums");
+        SET_CATEGORY(constants::Track::ALBUM);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseGenres, key)) {
-        SET_CATEGORY(constants::Track::GENRE, "genres");
+        SET_CATEGORY(constants::Track::GENRE);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseAlbumArtists, key)) {
-        SET_CATEGORY(constants::Track::ALBUM_ARTIST, "album artists");
+        SET_CATEGORY(constants::Track::ALBUM_ARTIST);
         return true;
     }
 
