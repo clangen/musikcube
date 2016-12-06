@@ -53,29 +53,29 @@ TextLabel::TextLabel()
 TextLabel::~TextLabel() {
 }
 
-void TextLabel::Redraw()
-{
-    std::string aligned = text::Align(
-        this->buffer, alignment, this->GetContentWidth());
+void TextLabel::Redraw() {
+    if (this->IsVisible() && this->GetParent()) {
+        std::string aligned = text::Align(
+            this->buffer, alignment, this->GetContentWidth());
 
-    WINDOW* c = this->GetContent();
-    werase(c);
+        WINDOW* c = this->GetContent();
+        werase(c);
 
-    int64 attrs = this->IsFocused() ? CURSESPP_TEXT_FOCUSED : -1LL;
+        int64 attrs = this->IsFocused() ? CURSESPP_TEXT_FOCUSED : -1LL;
 
-    if (attrs != -1) {
-        wattron(c, COLOR_PAIR(attrs));
+        if (attrs != -1) {
+            wattron(c, COLOR_PAIR(attrs));
+        }
+
+        wprintw(c, aligned.c_str());
+
+        if (attrs != -1) {
+            wattroff(c, COLOR_PAIR(attrs));
+        }
+
+        this->Repaint();
     }
-
-    wprintw(c, aligned.c_str());
-
-    if (attrs != -1) {
-        wattroff(c, COLOR_PAIR(attrs));
-    }
-
-    this->Repaint();
 }
-
 
 void TextLabel::Show() {
     Window::Show();

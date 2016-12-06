@@ -79,7 +79,7 @@ using namespace std::placeholders;
 
 using EntryPtr = IScrollAdapter::EntryPtr;
 
-static const std::string arrow = "\xe2\x96\xbc";
+static const std::string arrow = "\xe2\x96\xb6";
 static bool showDotfiles = false;
 
 SettingsLayout::SettingsLayout(
@@ -138,7 +138,7 @@ void SettingsLayout::Layout() {
     int x = this->GetX(), y = this->GetY();
     int cx = this->GetWidth(), cy = this->GetHeight();
 
-    int startY = 0;
+    int startY = 1;
     int leftX = 0;
     int leftWidth = cx / 3; /* 1/3 width */
     int rightX = leftWidth;
@@ -153,7 +153,7 @@ void SettingsLayout::Layout() {
     this->browseList->MoveAndResize(leftX, pathListsY, leftWidth, pathsHeight);
     this->addedPathsList->MoveAndResize(rightX, pathListsY, rightWidth, pathsHeight);
 
-    this->outputDropdown->MoveAndResize(1, BOTTOM(this->browseList), cx - 1, LABEL_HEIGHT);
+    this->outputDropdown->MoveAndResize(1, BOTTOM(this->browseList) + 1, cx - 1, LABEL_HEIGHT);
 
     this->dotfileCheckbox->MoveAndResize(1, BOTTOM(this->outputDropdown) + 1, cx - 1, LABEL_HEIGHT);
     this->removeCheckbox->MoveAndResize(1, BOTTOM(this->dotfileCheckbox), cx - 1, LABEL_HEIGHT);
@@ -209,10 +209,10 @@ void SettingsLayout::InitializeWindows() {
     this->SetFrameVisible(false);
 
     this->browseLabel.reset(new TextLabel());
-    this->browseLabel->SetText("browse (SPACE to add)", text::AlignLeft);
+    this->browseLabel->SetText("browse (SPACE to add)", text::AlignCenter);
 
     this->addedPathsLabel.reset(new TextLabel());
-    this->addedPathsLabel->SetText("indexed paths (BACKSPACE to remove)", text::AlignLeft);
+    this->addedPathsLabel->SetText("indexed paths (BACKSPACE to remove)", text::AlignCenter);
 
     this->addedPathsList.reset(new cursespp::ListWindow(&this->addedPathsAdapter));
     this->browseList.reset(new cursespp::ListWindow(&this->browseAdapter));
@@ -277,6 +277,7 @@ void SettingsLayout::OnVisibilityChanged(bool visible) {
     LayoutBase::OnVisibilityChanged(visible);
 
     if (visible) {
+        this->FocusFirst();
         this->RefreshAddedPaths();
         this->LoadPreferences();
         this->CheckShowFirstRunDialog();

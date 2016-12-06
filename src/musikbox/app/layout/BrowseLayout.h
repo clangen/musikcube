@@ -35,6 +35,7 @@
 #pragma once
 
 #include <cursespp/LayoutBase.h>
+#include <cursespp/TextLabel.h>
 
 #include <app/window/CategoryListView.h>
 #include <app/window/TrackListView.h>
@@ -84,6 +85,8 @@ namespace musik {
                 musik::core::LibraryPtr library;
                 std::shared_ptr<CategoryListView> categoryList;
                 std::shared_ptr<TrackListView> trackList;
+                std::shared_ptr<cursespp::TextLabel> categoryTitle;
+                std::shared_ptr<cursespp::TextLabel> tracksTitle;
                 cursespp::IWindowPtr focused;
         };
     }

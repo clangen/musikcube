@@ -46,6 +46,12 @@
 using namespace musik::core::library::constants;
 
 #define DEFAULT_CATEGORY constants::Track::ARTIST
+#define DEFAULT_CATEGORY_NAME "artists"
+
+#define SET_CATEGORY(key, name) \
+    this->categoryList->SetFieldName(key); \
+    this->categoryTitle->SetText(name, text::AlignCenter);
+
 static size_t MAX_CATEGORY_WIDTH = 40;
 
 using namespace musik::core;
@@ -69,6 +75,10 @@ BrowseLayout::~BrowseLayout() {
 }
 
 void BrowseLayout::Layout() {
+    if (!this->IsVisible()) {
+        return;
+    }
+
     size_t cx = this->GetWidth(), cy = this->GetHeight();
 
     if (cx == 0 || cy == 0) {
@@ -76,22 +86,43 @@ void BrowseLayout::Layout() {
     }
 
     size_t x = this->GetX(), y = this->GetY();
+    size_t categoryWidth = std::min(MAX_CATEGORY_WIDTH, cx / 4);
 
     this->MoveAndResize(x, y, cx, cy);
 
-    size_t categoryWidth = std::min(MAX_CATEGORY_WIDTH, cx / 4);
+    if (Screen::GetHeight() > 26) {
+        y += 1;
+        cy -= 2;
+
+        this->AddWindow(this->categoryTitle);
+        this->AddWindow(this->tracksTitle);
+        this->categoryTitle->Show();
+        this->tracksTitle->Show();
+        this->categoryTitle->MoveAndResize(x, y, categoryWidth, 1);
+        this->tracksTitle->MoveAndResize(x + categoryWidth, y, cx - categoryWidth, 1);
+        ++y;
+    }
+    else {
+        this->RemoveWindow(this->categoryTitle);
+        this->RemoveWindow(this->tracksTitle);
+        this->categoryTitle->Hide();
+        this->tracksTitle->Hide();
+    }
 
     this->categoryList->MoveAndResize(x, y, categoryWidth, cy);
-
-    this->trackList->MoveAndResize(
-        x + categoryWidth, y, cx - categoryWidth, cy);
+    this->trackList->MoveAndResize(x + categoryWidth, y, cx - categoryWidth, cy);
 
     this->categoryList->SetFocusOrder(0);
     this->trackList->SetFocusOrder(1);
 }
 
 void BrowseLayout::InitializeWindows() {
+    this->categoryTitle.reset(new TextLabel());
+    this->categoryTitle->SetText(DEFAULT_CATEGORY_NAME, text::AlignCenter);
     this->categoryList.reset(new CategoryListView(this->playback, this->library, DEFAULT_CATEGORY));
+
+    this->tracksTitle.reset(new TextLabel());
+    this->tracksTitle->SetText("tracks", text::AlignCenter);
     this->trackList.reset(new TrackListView(this->playback, this->library));
 
     this->AddWindow(this->categoryList);
@@ -119,6 +150,7 @@ void BrowseLayout::OnVisibilityChanged(bool visible) {
     LayoutBase::OnVisibilityChanged(visible);
 
     if (visible) {
+        this->Layout();
         this->categoryList->Requery();
     }
 }
@@ -163,19 +195,19 @@ bool BrowseLayout::KeyPress(const std::string& key) {
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseArtists, key)) {
-        this->categoryList->SetFieldName(constants::Track::ARTIST);
+        SET_CATEGORY(constants::Track::ARTIST, "artists");
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseAlbums, key)) {
-        this->categoryList->SetFieldName(constants::Track::ALBUM);
+        SET_CATEGORY(constants::Track::ALBUM, "albums");
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseGenres, key)) {
-        this->categoryList->SetFieldName(constants::Track::GENRE);
+        SET_CATEGORY(constants::Track::GENRE, "genres");
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseAlbumArtists, key)) {
-        this->categoryList->SetFieldName(constants::Track::ALBUM_ARTIST);
+        SET_CATEGORY(constants::Track::ALBUM_ARTIST, "album artists");
         return true;
     }
 
