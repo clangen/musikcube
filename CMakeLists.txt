@@ -87,6 +87,7 @@ add_dependencies(taglibreader taglib)
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
   add_subdirectory(src/contrib/alsaout)
+  add_subdirectory(src/contrib/pulseout)
 else (CMAKE_SYSTEM_NAME MATCHES "Linux")
   # macos
   add_subdirectory(src/contrib/coreaudioout)
@@ -107,6 +108,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
   install(
     FILES
       bin/plugins/libalsaout.so
+      bin/plugins/libpulseout.so
       bin/plugins/libflacdecoder.so
       bin/plugins/libm4adecoder.so
       bin/plugins/libmpg123decoder.so
