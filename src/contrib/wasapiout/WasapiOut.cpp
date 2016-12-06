@@ -61,7 +61,8 @@ WasapiOut::WasapiOut()
 , audioClock(nullptr)
 , outputBufferFrames(0)
 , state(StateStopped)
-, latency(0) {
+, latency(0)
+, volume(1.0f) {
     ZeroMemory(&waveFormat, sizeof(WAVEFORMATEXTENSIBLE));
 }
 
@@ -96,6 +97,7 @@ void WasapiOut::Resume() {
 void WasapiOut::SetVolume(double volume) {
     Lock lock(this->stateMutex);
 
+    this->volume = volume;
     if (this->simpleAudioVolume) {
         simpleAudioVolume->SetMasterVolume((float) volume, 0);
         simpleAudioVolume->SetMute(false, 0);
@@ -309,6 +311,7 @@ bool WasapiOut::Configure(IBuffer *buffer) {
     }
 
     this->state = StatePlaying;
+    this->SetVolume(this->volume);
 
     return true;
 }

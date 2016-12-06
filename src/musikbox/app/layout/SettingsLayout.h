@@ -64,7 +64,9 @@ namespace musik {
             public sigslot::has_slots<>
         {
             public:
-                SettingsLayout(musik::core::LibraryPtr library);
+                SettingsLayout(
+                    musik::core::LibraryPtr library,
+                    musik::core::audio::ITransport& transport);
 
                 virtual ~SettingsLayout();
 
@@ -87,6 +89,8 @@ namespace musik {
                 void OnCheckboxChanged(
                     cursespp::Checkbox* checkbox, bool checked);
 
+                void OnOutputDropdownActivated(cursespp::TextLabel* label);
+
                 int64 ListItemDecorator(
                     cursespp::ScrollableWindow* w,
                     size_t index,
@@ -95,8 +99,12 @@ namespace musik {
 
                 musik::core::LibraryPtr library;
                 musik::core::IIndexer* indexer;
+                musik::core::audio::ITransport& transport;
 
-                std::shared_ptr<musik::core::Preferences> prefs;
+                std::shared_ptr<musik::core::Preferences> libraryPrefs;
+                std::shared_ptr<musik::core::Preferences> playbackPrefs;
+
+                std::shared_ptr<cursespp::TextLabel> outputDropdown;
 
                 std::shared_ptr<cursespp::Checkbox> removeCheckbox;
                 std::shared_ptr<cursespp::Checkbox> dotfileCheckbox;

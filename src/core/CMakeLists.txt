@@ -2,6 +2,7 @@ set(CORE_SOURCES
   ./debug.cpp
   ./audio/Buffer.cpp
   ./audio/GaplessTransport.cpp
+  ./audio/Outputs.cpp
   ./audio/Player.cpp
   ./audio/Stream.cpp
   ./audio/Streams.cpp

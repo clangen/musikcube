@@ -49,7 +49,13 @@ class WaveOut : public IOutput {
         WaveOut();
         ~WaveOut();
 
+        /* IPlugin */
+        const char* Name() { return "WaveOut IOutput"; };
+        const char* Version() { return "0.4"; };
+        const char* Author() { return "Bj\xC3\xB6rn Olievier, clangen"; };
         virtual void Destroy();
+
+        /* IOutput */
         virtual void Pause();
         virtual void Resume();
         virtual void SetVolume(double volume);

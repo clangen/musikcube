@@ -44,21 +44,6 @@
 
 using namespace cursespp;
 
-inline static void redrawContents(
-    IWindow &window, 
-    const text::TextAlign alignment,
-    const std::string& text) 
-{
-    std::string aligned = text::Align(
-        text, alignment, window.GetContentWidth());
-
-    WINDOW* c = window.GetContent();
-    werase(c);
-    wprintw(c, aligned.c_str());
-
-    window.Repaint();
-}
-
 TextLabel::TextLabel()
 : Window()
 , alignment(text::AlignLeft) {
@@ -68,15 +53,54 @@ TextLabel::TextLabel()
 TextLabel::~TextLabel() {
 }
 
+void TextLabel::Redraw()
+{
+    std::string aligned = text::Align(
+        this->buffer, alignment, this->GetContentWidth());
+
+    WINDOW* c = this->GetContent();
+    werase(c);
+
+    int64 attrs = this->IsFocused() ? CURSESPP_TEXT_FOCUSED : -1LL;
+
+    if (attrs != -1) {
+        wattron(c, COLOR_PAIR(attrs));
+    }
+
+    wprintw(c, aligned.c_str());
+
+    if (attrs != -1) {
+        wattroff(c, COLOR_PAIR(attrs));
+    }
+
+    this->Repaint();
+}
+
+
 void TextLabel::Show() {
     Window::Show();
-    redrawContents(*this, this->alignment, this->buffer);
+    this->Redraw();
+}
+
+void TextLabel::OnFocusChanged(bool focused) {
+    this->Redraw();
 }
 
 void TextLabel::SetText(const std::string& value, const text::TextAlign alignment) {
     if (value != this->buffer || alignment != this->alignment) {
         this->buffer = value;
         this->alignment = alignment;
-        redrawContents(*this, alignment, buffer);
+        this->Redraw();
     }
+}
+
+bool TextLabel::KeyPress(const std::string& key) {
+    if (this->IsFocused()) {
+        if (key == " " || key == "KEY_ENTER") {
+            this->Activated(this);
+            return true;
+        }
+    }
+
+    return false;
 }

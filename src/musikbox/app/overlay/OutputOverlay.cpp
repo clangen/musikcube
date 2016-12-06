@@ -31,64 +31,73 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
-#pragma once
 
-#include "pch.h"
+#include "stdafx.h"
 
-#include <deque>
-#include <memory>
-#include <mutex>
-#include <atomic>
+#include "OutputOverlay.h"
 
-#include <mmdeviceapi.h>
-#include <Audioclient.h>
+#include <core/audio/Outputs.h>
 
-#include <core/sdk/IOutput.h>
+#include <cursespp/App.h>
+#include <cursespp/SimpleScrollAdapter.h>
+#include <cursespp/ListOverlay.h>
+#include <cursespp/DialogOverlay.h>
+#include <vector>
 
+using namespace musik::box;
+using namespace musik::core::audio;
 using namespace musik::core::sdk;
+using namespace cursespp;
 
-class WasapiOut : public IOutput {
-    public:
-        WasapiOut();
-        ~WasapiOut();
+static std::vector<std::shared_ptr<IOutput> > plugins;
 
-        /* IPlugin */
-        const char* Name() { return "Wasapi IOutput"; };
-        const char* Version() { return "0.1"; };
-        const char* Author() { return "clangen"; };
-        virtual void Destroy();
+static void showNoOutputPluginsMessage() {
+    std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
 
-        /* IOutput */
-        virtual void Pause();
-        virtual void Resume();
-        virtual void SetVolume(double volume);
-        virtual void Stop();
-        virtual bool Play(IBuffer *buffer, IBufferProvider *provider);
-        virtual double Latency();
+    (*dialog)
+        .SetTitle("musikbox")
+        .SetMessage("no output plugins found!")
+        .AddButton(
+            "KEY_ENTER",
+            "ENTER",
+            "ok");
 
-    private:
-        enum State {
-            StateStopped,
-            StatePlaying,
-            StatePaused
-        };
+    App::Overlays().Push(dialog);
+}
 
-        bool Configure(IBuffer *buffer);
-        void Reset();
+OutputOverlay::OutputOverlay() {
+}
 
-        void EventThread();
+void OutputOverlay::Show(std::function<void()> callback) {
+    plugins = outputs::GetAllOutputs();
 
-        IMMDeviceEnumerator *enumerator;
-        IMMDevice *device;
-        IAudioClient *audioClient;
-        IAudioClock *audioClock;
-        IAudioRenderClient *renderClient;
-        ISimpleAudioVolume *simpleAudioVolume;
-        UINT32 outputBufferFrames;
-        std::atomic<State> state;
-        WAVEFORMATEXTENSIBLE waveFormat;
-        double volume;
+    if (!plugins.size()) {
+        showNoOutputPluginsMessage();
+        return;
+    }
 
-        std::recursive_mutex stateMutex;
-        INT64 latency;
-};
+    using Adapter = cursespp::SimpleScrollAdapter;
+    using ListOverlay = cursespp::ListOverlay;
+
+    std::shared_ptr<Adapter> adapter(new Adapter());
+
+    for (size_t i = 0; i < plugins.size(); i++) {
+        adapter->AddEntry(plugins[i]->Name());
+    }
+
+    adapter->SetSelectable(true);
+
+    std::shared_ptr<ListOverlay> dialog(new ListOverlay());
+
+    dialog->SetAdapter(adapter)
+        .SetTitle("output plugins")
+        .SetItemSelectedCallback(
+            [callback](cursespp::IScrollAdapterPtr adapter, size_t index) {
+                outputs::SelectOutput(plugins[index]);
+                if (callback) {
+                    callback();
+                }
+            });
+
+    cursespp::App::Overlays().Push(dialog);
+}

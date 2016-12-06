@@ -65,6 +65,8 @@ namespace musik { namespace core { namespace audio {
             virtual bool IsMuted() = 0;
             virtual void SetMuted(bool muted) = 0;
 
+            virtual void ReloadOutput() = 0;
+
             virtual musik::core::sdk::PlaybackState GetPlaybackState() = 0;
     };
 

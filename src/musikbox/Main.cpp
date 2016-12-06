@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
 
         Layout libraryLayout(new LibraryLayout(playback, library));
         Layout consoleLayout(new ConsoleLayout(transport, library));
-        Layout settingsLayout(new SettingsLayout(library));
+        Layout settingsLayout(new SettingsLayout(library, playback.GetTransport()));
 
         Main mainLayout(new MainLayout());
         mainLayout->Layout();

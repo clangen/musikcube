@@ -41,15 +41,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
     return true;
 }
 
-class WaveOutPlugin : public musik::core::sdk::IPlugin {
-    void Destroy() { delete this; };
-    const char* Name() { return "WaveOut IOutput"; };
-    const char* Version() { return "0.3"; };
-    const char* Author() { return "Björn Olievier, clangen"; };
-};
-
 extern "C" __declspec(dllexport) musik::core::sdk::IPlugin* GetPlugin() {
-    return new WaveOutPlugin();
+    return new WaveOut();
 }
 
 extern "C" __declspec(dllexport) musik::core::sdk::IOutput* GetAudioOutput() {

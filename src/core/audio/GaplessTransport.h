@@ -68,6 +68,8 @@ namespace musik { namespace core { namespace audio {
             virtual bool IsMuted();
             virtual void SetMuted(bool muted);
 
+            virtual void ReloadOutput();
+
             virtual musik::core::sdk::PlaybackState GetPlaybackState();
 
         private:
@@ -95,7 +97,7 @@ namespace musik { namespace core { namespace audio {
 
             musik::core::sdk::PlaybackState state;
             std::recursive_mutex stateMutex;
-            musik::core::audio::OutputPtr output;
+            std::shared_ptr<musik::core::sdk::IOutput> output;
             PlayerList active;
             Player* nextPlayer;
             double volume;

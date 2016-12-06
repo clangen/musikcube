@@ -41,15 +41,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
     return true;
 }
 
-class WasapiOutPlugin : public musik::core::sdk::IPlugin {
-    void Destroy() { delete this; };
-    const char* Name() { return "WASAPI IOutput"; };
-    const char* Version() { return "0.1"; };
-    const char* Author() { return "clangen"; };
-};
-
 extern "C" __declspec(dllexport) musik::core::sdk::IPlugin* GetPlugin() {
-    return new WasapiOutPlugin();
+    return new WasapiOut();
 }
 
 extern "C" __declspec(dllexport) musik::core::sdk::IOutput* GetAudioOutput() {

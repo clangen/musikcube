@@ -43,18 +43,22 @@
 #include <core/library/Indexer.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <core/support/PreferenceKeys.h>
+#include <core/audio/Outputs.h>
 
 #include <app/query/SearchTrackListQuery.h>
 #include <app/util/Hotkeys.h>
 #include <app/util/PreferenceKeys.h>
+#include <app/overlay/OutputOverlay.h>
 
 #include <boost/format.hpp>
 
 #include "SettingsLayout.h"
 
 using namespace musik;
-using namespace musik::core::library::constants;
 using namespace musik::core;
+using namespace musik::core::audio;
+using namespace musik::core::library::constants;
+using namespace musik::core::sdk;
 using namespace musik::box;
 using namespace cursespp;
 using namespace std::placeholders;
@@ -75,13 +79,17 @@ using namespace std::placeholders;
 
 using EntryPtr = IScrollAdapter::EntryPtr;
 
+static const std::string arrow = "\xe2\x96\xbc";
 static bool showDotfiles = false;
 
-SettingsLayout::SettingsLayout(musik::core::LibraryPtr library)
+SettingsLayout::SettingsLayout(
+    musik::core::LibraryPtr library,
+    musik::core::audio::ITransport& transport)
 : LayoutBase()
 , library(library)
-, indexer(library->Indexer()) {
-    this->prefs = Preferences::ForComponent(core::prefs::components::Settings);
+, indexer(library->Indexer())
+, transport(transport) {
+    this->libraryPrefs = Preferences::ForComponent(core::prefs::components::Settings);
     this->indexer->PathsUpdated.connect(this, &SettingsLayout::RefreshAddedPaths);
     this->InitializeWindows();
 }
@@ -91,8 +99,8 @@ SettingsLayout::~SettingsLayout() {
 
 void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
     if (cb == removeCheckbox.get()) {
-        this->prefs->SetBool(core::prefs::keys::RemoveMissingFiles, checked);
-        this->prefs->Save();
+        this->libraryPrefs->SetBool(core::prefs::keys::RemoveMissingFiles, checked);
+        this->libraryPrefs->Save();
     }
     else if (cb == dotfileCheckbox.get()) {
         showDotfiles = !showDotfiles;
@@ -100,13 +108,30 @@ void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
         this->browseList->OnAdapterChanged();
     }
     else if (cb == focusShortcutsCheckbox.get()) {
-        this->prefs->SetBool(box::prefs::keys::EscFocusesShortcuts, checked);
-        this->prefs->Save();
+        this->libraryPrefs->SetBool(box::prefs::keys::EscFocusesShortcuts, checked);
+        this->libraryPrefs->Save();
     }
     else if (cb == customColorsCheckbox.get()) {
-        this->prefs->SetBool(box::prefs::keys::DisableCustomColors, checked);
-        this->prefs->Save();
+        this->libraryPrefs->SetBool(box::prefs::keys::DisableCustomColors, checked);
+        this->libraryPrefs->Save();
     }
+}
+
+void SettingsLayout::OnOutputDropdownActivated(cursespp::TextLabel* label) {
+    std::string currentName;
+    std::shared_ptr<IOutput> currentPlugin = outputs::SelectedOutput();
+    currentName = currentPlugin ? currentPlugin->Name() : currentName;
+
+    OutputOverlay::Show([this, currentName] {
+        std::string newName;
+        std::shared_ptr<IOutput> newPlugin = outputs::SelectedOutput();
+        newName = newPlugin ? newPlugin->Name() : newName;
+
+        if (currentName != newName) {
+            this->LoadPreferences();
+            this->transport.ReloadOutput();
+        }
+    });
 }
 
 void SettingsLayout::Layout() {
@@ -128,7 +153,9 @@ void SettingsLayout::Layout() {
     this->browseList->MoveAndResize(leftX, pathListsY, leftWidth, pathsHeight);
     this->addedPathsList->MoveAndResize(rightX, pathListsY, rightWidth, pathsHeight);
 
-    this->dotfileCheckbox->MoveAndResize(1, BOTTOM(this->browseList), cx - 1, LABEL_HEIGHT);
+    this->outputDropdown->MoveAndResize(1, BOTTOM(this->browseList), cx - 1, LABEL_HEIGHT);
+
+    this->dotfileCheckbox->MoveAndResize(1, BOTTOM(this->outputDropdown) + 1, cx - 1, LABEL_HEIGHT);
     this->removeCheckbox->MoveAndResize(1, BOTTOM(this->dotfileCheckbox), cx - 1, LABEL_HEIGHT);
     this->focusShortcutsCheckbox->MoveAndResize(1, BOTTOM(this->removeCheckbox), cx - 1, LABEL_HEIGHT);
     this->customColorsCheckbox->MoveAndResize(1, BOTTOM(this->focusShortcutsCheckbox), cx - 1, LABEL_HEIGHT);
@@ -202,6 +229,9 @@ void SettingsLayout::InitializeWindows() {
     this->addedPathsAdapter.SetItemDecorator(decorator);
     this->browseAdapter.SetItemDecorator(decorator);
 
+    this->outputDropdown.reset(new TextLabel());
+    this->outputDropdown->Activated.connect(this, &SettingsLayout::OnOutputDropdownActivated);
+
     CREATE_CHECKBOX(this->dotfileCheckbox, "show dotfiles in directory browser");
     CREATE_CHECKBOX(this->removeCheckbox, "remove missing files from library");
     CREATE_CHECKBOX(this->focusShortcutsCheckbox, "esc key focuses shortcuts bar");
@@ -213,16 +243,18 @@ void SettingsLayout::InitializeWindows() {
 
     this->browseList->SetFocusOrder(0);
     this->addedPathsList->SetFocusOrder(1);
-    this->dotfileCheckbox->SetFocusOrder(2);
-    this->removeCheckbox->SetFocusOrder(3);
-    this->focusShortcutsCheckbox->SetFocusOrder(4);
-    this->customColorsCheckbox->SetFocusOrder(5);
-    this->hotkeyInput->SetFocusOrder(6);
+    this->outputDropdown->SetFocusOrder(2);
+    this->dotfileCheckbox->SetFocusOrder(3);
+    this->removeCheckbox->SetFocusOrder(4);
+    this->focusShortcutsCheckbox->SetFocusOrder(5);
+    this->customColorsCheckbox->SetFocusOrder(6);
+    this->hotkeyInput->SetFocusOrder(7);
 
     this->AddWindow(this->browseLabel);
     this->AddWindow(this->addedPathsLabel);
     this->AddWindow(this->browseList);
     this->AddWindow(this->addedPathsList);
+    this->AddWindow(this->outputDropdown);
     this->AddWindow(this->dotfileCheckbox);
     this->AddWindow(this->removeCheckbox);
     this->AddWindow(this->focusShortcutsCheckbox);
@@ -252,7 +284,7 @@ void SettingsLayout::OnVisibilityChanged(bool visible) {
 }
 
 void SettingsLayout::CheckShowFirstRunDialog() {
-    if (!this->prefs->GetBool(box::prefs::keys::FirstRunSettingsDisplayed)) {
+    if (!this->libraryPrefs->GetBool(box::prefs::keys::FirstRunSettingsDisplayed)) {
         std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
 
         (*dialog)
@@ -271,7 +303,7 @@ void SettingsLayout::CheckShowFirstRunDialog() {
                 "ENTER",
                 "ok",
                 [this](std::string key) {
-                    this->prefs->SetBool(box::prefs::keys::FirstRunSettingsDisplayed, true);
+                    this->libraryPrefs->SetBool(box::prefs::keys::FirstRunSettingsDisplayed, true);
                 });
 
         App::Overlays().Push(dialog);
@@ -279,9 +311,14 @@ void SettingsLayout::CheckShowFirstRunDialog() {
 }
 
 void SettingsLayout::LoadPreferences() {
-    this->removeCheckbox->SetChecked(this->prefs->GetBool(core::prefs::keys::RemoveMissingFiles, true));
-    this->focusShortcutsCheckbox->SetChecked(this->prefs->GetBool(box::prefs::keys::EscFocusesShortcuts, true));
-    this->customColorsCheckbox->SetChecked(this->prefs->GetBool(box::prefs::keys::DisableCustomColors));
+    this->removeCheckbox->SetChecked(this->libraryPrefs->GetBool(core::prefs::keys::RemoveMissingFiles, true));
+    this->focusShortcutsCheckbox->SetChecked(this->libraryPrefs->GetBool(box::prefs::keys::EscFocusesShortcuts, true));
+    this->customColorsCheckbox->SetChecked(this->libraryPrefs->GetBool(box::prefs::keys::DisableCustomColors));
+
+    std::shared_ptr<IOutput> output = outputs::SelectedOutput();
+    if (output) {
+        this->outputDropdown->SetText(arrow + " output device: " + output->Name());
+    }
 }
 
 void SettingsLayout::AddSelectedDirectory() {

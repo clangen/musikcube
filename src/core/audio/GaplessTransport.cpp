@@ -37,6 +37,7 @@
 #include <core/debug.h>
 #include <core/audio/GaplessTransport.h>
 #include <core/plugin/PluginFactory.h>
+#include <core/audio/Outputs.h>
 #include <algorithm>
 #include <boost/thread.hpp>
 
@@ -57,7 +58,7 @@ GaplessTransport::GaplessTransport()
 , nextPlayer(nullptr)
 , nextCanStart(false)
 , muted(false) {
-    this->output = Player::CreateDefaultOutput();
+    this->output = outputs::SelectedOutput();
 }
 
 GaplessTransport::~GaplessTransport() {
@@ -133,6 +134,12 @@ void GaplessTransport::StartWithPlayer(Player* newPlayer) {
 
         this->RaiseStreamEvent(StreamScheduled, newPlayer);
     }
+}
+
+void GaplessTransport::ReloadOutput() {
+    this->Stop();
+    this->output = outputs::SelectedOutput();
+    this->output->SetVolume(volume);
 }
 
 void GaplessTransport::Stop() {

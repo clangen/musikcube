@@ -42,21 +42,8 @@
 #define DLLEXPORT
 #endif
 
-#ifdef WIN32
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
-    return true;
-}
-#endif
-
-class CoreAudioOutPlugin : public musik::core::sdk::IPlugin {
-    void Destroy() { delete this; };
-    const char* Name() { return "CoreAudio IOutput"; };
-    const char* Version() { return "0.2"; };
-    const char* Author() { return "clangen"; };
-};
-
 extern "C" DLLEXPORT musik::core::sdk::IPlugin* GetPlugin() {
-    return new CoreAudioOutPlugin;
+    return new CoreAudioOut();
 }
 
 extern "C" DLLEXPORT musik::core::sdk::IOutput* GetAudioOutput() {

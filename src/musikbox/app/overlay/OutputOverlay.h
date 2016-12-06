@@ -31,64 +31,19 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
+
 #pragma once
 
-#include "pch.h"
+#include <functional>
 
-#include <deque>
-#include <memory>
-#include <mutex>
-#include <atomic>
+namespace musik {
+    namespace box {
+        class OutputOverlay {
+            public:
+                static void Show(std::function<void()> callback);
 
-#include <mmdeviceapi.h>
-#include <Audioclient.h>
-
-#include <core/sdk/IOutput.h>
-
-using namespace musik::core::sdk;
-
-class WasapiOut : public IOutput {
-    public:
-        WasapiOut();
-        ~WasapiOut();
-
-        /* IPlugin */
-        const char* Name() { return "Wasapi IOutput"; };
-        const char* Version() { return "0.1"; };
-        const char* Author() { return "clangen"; };
-        virtual void Destroy();
-
-        /* IOutput */
-        virtual void Pause();
-        virtual void Resume();
-        virtual void SetVolume(double volume);
-        virtual void Stop();
-        virtual bool Play(IBuffer *buffer, IBufferProvider *provider);
-        virtual double Latency();
-
-    private:
-        enum State {
-            StateStopped,
-            StatePlaying,
-            StatePaused
+            private:
+                OutputOverlay();
         };
-
-        bool Configure(IBuffer *buffer);
-        void Reset();
-
-        void EventThread();
-
-        IMMDeviceEnumerator *enumerator;
-        IMMDevice *device;
-        IAudioClient *audioClient;
-        IAudioClock *audioClock;
-        IAudioRenderClient *renderClient;
-        ISimpleAudioVolume *simpleAudioVolume;
-        UINT32 outputBufferFrames;
-        std::atomic<State> state;
-        WAVEFORMATEXTENSIBLE waveFormat;
-        double volume;
-
-        std::recursive_mutex stateMutex;
-        INT64 latency;
-};
+    }
+}

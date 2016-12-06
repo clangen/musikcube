@@ -44,6 +44,13 @@ class PulseOut : public musik::core::sdk::IOutput {
         PulseOut();
         virtual ~PulseOut();
 
+        /* IPlugin */
+        virtual void Destroy() { delete this; };
+        virtual const char* Name() { return "PulseAudio IOutput plugin"; }
+        virtual const char* Version() { return "0.1"; }
+        virtual const char* Author() { return "clangen"; }
+
+        /* IOutput */
         virtual void Destroy();
         virtual void Pause();
         virtual void Resume();

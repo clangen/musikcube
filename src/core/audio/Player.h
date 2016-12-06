@@ -47,9 +47,6 @@
 
 namespace musik { namespace core { namespace audio {
 
-    class Output;
-    typedef std::shared_ptr<musik::core::sdk::IOutput> OutputPtr;
-
     struct FftContext;
 
     class Player : public musik::core::sdk::IBufferProvider {
@@ -62,11 +59,9 @@ namespace musik { namespace core { namespace audio {
                     virtual void OnPlaybackError(Player *player) = 0;
             };
 
-            static OutputPtr CreateDefaultOutput();
-
             static Player* Create(
                 const std::string &url,
-                OutputPtr output,
+                std::shared_ptr<musik::core::sdk::IOutput> output,
                 PlayerEventListener *listener);
 
             virtual void OnBufferProcessed(musik::core::sdk::IBuffer *buffer);
@@ -91,7 +86,7 @@ namespace musik { namespace core { namespace audio {
 
             Player(
                 const std::string &url,
-                OutputPtr output,
+                std::shared_ptr<musik::core::sdk::IOutput> output,
                 PlayerEventListener *listener);
 
             virtual ~Player();
@@ -106,7 +101,7 @@ namespace musik { namespace core { namespace audio {
                 Quit = 2
             } States;
 
-            OutputPtr output;
+            std::shared_ptr<musik::core::sdk::IOutput> output;
             StreamPtr stream;
             ThreadPtr thread;
             BufferList lockedBuffers;

@@ -31,64 +31,16 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
+
 #pragma once
 
-#include "pch.h"
-
-#include <deque>
-#include <memory>
-#include <mutex>
-#include <atomic>
-
-#include <mmdeviceapi.h>
-#include <Audioclient.h>
-
+#include <core/config.h>
 #include <core/sdk/IOutput.h>
 
-using namespace musik::core::sdk;
+namespace musik { namespace core { namespace audio { namespace outputs {
 
-class WasapiOut : public IOutput {
-    public:
-        WasapiOut();
-        ~WasapiOut();
+    std::vector<std::shared_ptr<musik::core::sdk::IOutput> > GetAllOutputs();
+    void SelectOutput(std::shared_ptr<musik::core::sdk::IOutput> output);
+    std::shared_ptr<musik::core::sdk::IOutput> SelectedOutput();
 
-        /* IPlugin */
-        const char* Name() { return "Wasapi IOutput"; };
-        const char* Version() { return "0.1"; };
-        const char* Author() { return "clangen"; };
-        virtual void Destroy();
-
-        /* IOutput */
-        virtual void Pause();
-        virtual void Resume();
-        virtual void SetVolume(double volume);
-        virtual void Stop();
-        virtual bool Play(IBuffer *buffer, IBufferProvider *provider);
-        virtual double Latency();
-
-    private:
-        enum State {
-            StateStopped,
-            StatePlaying,
-            StatePaused
-        };
-
-        bool Configure(IBuffer *buffer);
-        void Reset();
-
-        void EventThread();
-
-        IMMDeviceEnumerator *enumerator;
-        IMMDevice *device;
-        IAudioClient *audioClient;
-        IAudioClock *audioClock;
-        IAudioRenderClient *renderClient;
-        ISimpleAudioVolume *simpleAudioVolume;
-        UINT32 outputBufferFrames;
-        std::atomic<State> state;
-        WAVEFORMATEXTENSIBLE waveFormat;
-        double volume;
-
-        std::recursive_mutex stateMutex;
-        INT64 latency;
-};
+} } } }

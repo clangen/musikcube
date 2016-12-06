@@ -49,6 +49,12 @@ class AlsaOut : public musik::core::sdk::IOutput {
         AlsaOut();
         virtual ~AlsaOut();
 
+        /* IPlugin */
+        virtual const char* Name() { return "AlsaOut IOutput"; }
+        virtual const char* Version() { return "0.3"; }
+        virtual const char* Author() { return "Julian Cromarty, clangen"; }
+
+        /* IOutput */
         virtual void Destroy();
         virtual void Pause();
         virtual void Resume();

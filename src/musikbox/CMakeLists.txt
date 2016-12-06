@@ -16,6 +16,7 @@ set (BOX_SRCS
 	./app/query/NowPlayingTrackListQuery.cpp
 	./app/query/SearchTrackListQuery.cpp
 	./app/service/PlaybackService.cpp
+	./app/overlay/OutputOverlay.cpp
 	./app/overlay/VisualizerOverlay.cpp
 	./app/util/Duration.cpp
 	./app/util/Hotkeys.cpp

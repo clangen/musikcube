@@ -147,6 +147,9 @@
     <ClCompile Include="app\overlay\VisualizerOverlay.cpp">
       <Filter>app\overlay</Filter>
     </ClCompile>
+    <ClCompile Include="app\overlay\OutputOverlay.cpp">
+      <Filter>app\overlay</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -343,6 +346,9 @@
       <Filter>cursespp</Filter>
     </ClInclude>
     <ClInclude Include="app\overlay\VisualizerOverlay.h">
+      <Filter>app\overlay</Filter>
+    </ClInclude>
+    <ClInclude Include="app\overlay\OutputOverlay.h">
       <Filter>app\overlay</Filter>
     </ClInclude>
   </ItemGroup>

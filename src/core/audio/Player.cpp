@@ -103,26 +103,11 @@ namespace musik {
     }
 }
 
-Player* Player::Create(const std::string &url, OutputPtr output, PlayerEventListener *listener) {
+Player* Player::Create(const std::string &url, std::shared_ptr<IOutput> output, PlayerEventListener *listener) {
     return new Player(url, output, listener);
 }
 
-OutputPtr Player::CreateDefaultOutput() {
-    /* if no output is specified, find all output plugins, and select the first one. */
-    typedef std::vector<OutputPtr> OutputVector;
-
-    OutputVector outputs = musik::core::PluginFactory::Instance().QueryInterface<
-        IOutput, musik::core::PluginFactory::DestroyDeleter<IOutput> >("GetAudioOutput");
-
-    if (!outputs.empty()) {
-        musik::debug::info(TAG, "found an IOutput device!");
-        return outputs.front();
-    }
-
-    return OutputPtr();
-}
-
-Player::Player(const std::string &url, OutputPtr output, PlayerEventListener *listener)
+Player::Player(const std::string &url, std::shared_ptr<IOutput> output, PlayerEventListener *listener)
 : state(Player::Precache)
 , url(url)
 , currentPosition(0)

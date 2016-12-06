@@ -35,15 +35,15 @@
 #pragma once
 
 #include "config.h"
+#include "IPlugin.h"
 #include "IDataStream.h"
 #include "IBuffer.h"
 #include "IBufferProvider.h"
 
 namespace musik { namespace core { namespace sdk {
 
-    class IOutput {
+    class IOutput : public IPlugin {
         public:
-            virtual void Destroy() = 0;
             virtual void Pause() = 0;
             virtual void Resume() = 0;
             virtual void SetVolume(double volume) = 0;

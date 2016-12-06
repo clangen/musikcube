@@ -37,15 +37,8 @@
 #include <core/sdk/IOutput.h>
 #include "PulseOut.h"
 
-class PulseOutPlugin : public musik::core::sdk::IPlugin {
-    virtual void Destroy() { delete this; };
-    virtual const char* Name() { return "PulseAudio IOutput plugin"; }
-    virtual const char* Version() { return "0.1"; }
-    virtual const char* Author() { return "clangen"; }
-};
-
 extern "C" musik::core::sdk::IPlugin* GetPlugin() {
-    return new PulseOutPlugin();
+    return new PulseOut();
 }
 
 extern "C" musik::core::sdk::IOutput* GetAudioOutput() {

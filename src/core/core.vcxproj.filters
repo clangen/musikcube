@@ -115,6 +115,9 @@
     <ClCompile Include="audio\Streams.cpp">
       <Filter>src\audio</Filter>
     </ClCompile>
+    <ClCompile Include="audio\Outputs.cpp">
+      <Filter>src\audio</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -280,6 +283,9 @@
       <Filter>src\audio</Filter>
     </ClInclude>
     <ClInclude Include="audio\Streams.h">
+      <Filter>src\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="audio\Outputs.h">
       <Filter>src\audio</Filter>
     </ClInclude>
   </ItemGroup>

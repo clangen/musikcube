@@ -47,6 +47,7 @@ namespace musik { namespace core { namespace prefs {
     const std::string keys::SyncOnStartup = "SyncOnStartup";
     const std::string keys::Volume = "Volume";
     const std::string keys::RepeatMode = "RepeatMode";
+    const std::string keys::OutputPlugin = "OutputPlugin";
 
 } } }
 

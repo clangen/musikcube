@@ -37,6 +37,7 @@
 #include <cursespp/curses_config.h>
 #include <cursespp/Window.h>
 #include <cursespp/IInput.h>
+#include <cursespp/IKeyHandler.h>
 #include <cursespp/Text.h>
 #include <sigslot/sigslot.h>
 
@@ -44,11 +45,15 @@ namespace cursespp {
     class TextLabel :
 #if (__clang_major__ == 7 && __clang_minor__ == 3)
         public cursespp::Window,
+        public cursespp::IKeyHandler,
         public std::enable_shared_from_this<TextLabel> {
 #else
-        public cursespp::Window {
+        public cursespp::Window,
+        public cursespp::IKeyHandler {
 #endif
     public:
+        sigslot::signal1<TextLabel*> Activated;
+
         TextLabel();
         virtual ~TextLabel();
 
@@ -61,7 +66,14 @@ namespace cursespp {
 
         virtual void Show();
 
+        virtual bool KeyPress(const std::string& key);
+
+    protected:
+        virtual void OnFocusChanged(bool focused);
+
     private:
+        void Redraw();
+
         std::string buffer;
         text::TextAlign alignment;
     };
