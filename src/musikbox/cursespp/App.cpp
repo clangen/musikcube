@@ -200,8 +200,9 @@ void App::Run(ILayoutPtr layout) {
 
         /* KEY_RESIZE often gets called dozens of times, so we debounce the
         actual resize until its settled. */
-        if (resizeAt /*&& App::Now() > resizeAt*/) {
+        if (resizeAt && App::Now() > resizeAt) {
             resize_term(0, 0);
+
             Window::InvalidateScreen();
 
             if (this->resizeHandler) {
