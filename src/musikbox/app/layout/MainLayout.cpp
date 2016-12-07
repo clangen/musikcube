@@ -62,6 +62,7 @@ void MainLayout::Layout() {
     this->MoveAndResize(0, 0, cx, cy);
 
     if (this->layout) {
+        this->layout->Show();
         this->layout->MoveAndResize(0, 0, cx, cy - 1);
         this->layout->Layout();
 
@@ -125,9 +126,8 @@ void MainLayout::SetMainLayout(std::shared_ptr<cursespp::LayoutBase> layout) {
                 this->topLevelLayout->SetShortcutsWindow(this->shortcuts.get());
             }
 
-            this->AddWindow(layout);
+            this->AddWindow(this->layout);
             this->layout->SetFocusOrder(0);
-            this->Show();
             this->Layout();
         }
     }

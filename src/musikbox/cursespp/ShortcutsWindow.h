@@ -57,10 +57,10 @@ namespace cursespp {
 
             void RemoveAll();
             void SetActive(const std::string& key);
-            virtual void Redraw();
 
         protected:
             virtual void OnFocusChanged(bool focused);
+            virtual void OnRedraw();
 
         private:
             void UpdateContentColor();

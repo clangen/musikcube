@@ -110,7 +110,7 @@ size_t ShortcutsWindow::CalculateLeftPadding() {
     return (padding / 2); /* text::AlignCenter */
 }
 
-void ShortcutsWindow::Redraw() {
+void ShortcutsWindow::OnRedraw() {
     this->Clear();
 
     int64 normalAttrs = COLOR_PAIR(CURSESPP_BUTTON_NORMAL);
@@ -164,6 +164,4 @@ void ShortcutsWindow::Redraw() {
 
         remaining -= len;
     }
-
-    this->Invalidate();
 }

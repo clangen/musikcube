@@ -103,7 +103,8 @@ Window::Window(IWindow *parent) {
     this->contentColor = CURSESPP_DEFAULT_CONTENT_COLOR;
     this->frameColor = CURSESPP_DEFAULT_FRAME_COLOR;
     this->drawFrame = true;
-    this->isVisible = this->isFocused = false;
+    this->isVisible = false;
+    this->isFocused = false;
     this->focusOrder = -1;
     this->id = NEXT_ID++;
     this->badBounds = false;
@@ -201,7 +202,7 @@ void Window::MoveAndResize(int x, int y, int width, int height) {
         this->x = x;
         this->y = y;
 
-        if (this->frame) {
+        if (this->frame || this->isVisible) {
             this->Recreate();
         }
 
@@ -257,6 +258,10 @@ void Window::Redraw() {
     if (this->IsVisible()) {
         if (this->parent && !this->parent->IsVisible()) {
             return;
+        }
+
+        if (!this->frame) {
+            this->Create();
         }
 
         this->OnRedraw();
@@ -341,15 +346,24 @@ void Window::SetFocusOrder(int order) {
 }
 
 void Window::Show(bool redraw) {
-    if (this->badBounds) {
-        return;
-    }
-
     if (parent && !parent->IsVisible()) {
+        /* remember that someone tried to make us visible, but don't do
+        anything because we could corrupt the display */
+        this->isVisible = true;
         return;
     }
 
-    else if (!this->badBounds && this->framePanel) {
+    if (this->badBounds) {
+        if (!this->CheckForBoundsError()) {
+            this->Recreate();
+            this->badBounds = false;
+        }
+
+        this->isVisible = true;
+        return;
+    }
+
+    if (this->framePanel) {
         if (!this->isVisible) {
             show_panel(this->framePanel);
 
@@ -377,8 +391,19 @@ void Window::Recreate() {
     this->Create();
 }
 
+void Window::OnParentVisibilityChanged(bool visible) {
+    if (!visible && this->isVisible && this->framePanel) {
+        this->Destroy();
+        this->OnVisibilityChanged(false);
+    }
+    else if (visible && this->isVisible && !this->framePanel) {
+        this->Recreate();
+        this->OnVisibilityChanged(true);
+    }
+}
+
 bool Window::CheckForBoundsError() {
-    if (this->parent && ((Window *)this->parent)->HasBadBounds()) {
+    if (this->parent && ((Window *)this->parent)->CheckForBoundsError()) {
         return true;
     }
 
@@ -387,6 +412,10 @@ bool Window::CheckForBoundsError() {
 
     int cx = this->GetWidth();
     int cy = this->GetHeight();
+
+    if (cx <= 0 || cy <= 0) {
+        return true;
+    }
 
     if (cx > screenCx || cy > screenCy) {
         return true;
@@ -419,16 +448,17 @@ void Window::Create() {
     /* see if the window is valid within the screen, and within it's parent.
     if not, draw it as a single cell red block. */
 
-#if ENABLE_BOUNDS_CHECK > 0
+    bool hadBadBounds = this->badBounds;
     this->badBounds = this->CheckForBoundsError();
 
     if (this->badBounds) {
-        this->frame = this->content = newwin(1, 1, 0, 0);
-        wbkgd(this->frame, COLOR_PAIR(CURSESPP_BUTTON_NEGATIVE));
-        this->framePanel = new_panel(this->frame);
+        //this->frame = this->content = newwin(1, 1, 0, 0);
+        //wbkgd(this->frame, COLOR_PAIR(CURSESPP_BUTTON_NEGATIVE));
+        //this->framePanel = new_panel(this->frame);
+        //return;
+        this->Destroy();
         return;
     }
-#endif
 
     /* else we have valid bounds */
 
@@ -475,6 +505,10 @@ void Window::Create() {
     }
 
     this->Show();
+
+    if (hadBadBounds && this->isVisible) {
+        this->OnVisibilityChanged(true);
+    }
 }
 
 void Window::Hide() {
@@ -489,6 +523,9 @@ void Window::Hide() {
             this->isVisible = false;
             this->OnVisibilityChanged(false);
         }
+    }
+    else {
+        this->isVisible = false;
     }
 }
 

@@ -90,23 +90,36 @@ LayoutBase::~LayoutBase() {
 
 }
 
+void LayoutBase::OnVisibilityChanged(bool visible) {
+    if (visible) {
+        for (size_t i = 0; i < this->children.size(); i++) {
+            this->children.at(i)->OnParentVisibilityChanged(true);
+        }
+
+        this->IndexFocusables();
+        this->SortFocusables();
+    }
+    else {
+        for (size_t i = 0; i < this->children.size(); i++) {
+            this->children.at(i)->OnParentVisibilityChanged(false);
+        }
+    }
+}
+
 void LayoutBase::Show(bool redraw) {
     Window::Show(redraw);
-
-    for (size_t i = 0; i < this->children.size(); i++) {
-        this->children.at(i)->Show(redraw);
-    }
-
-    this->IndexFocusables();
-    this->SortFocusables();
 }
 
 void LayoutBase::Hide() {
-    for (size_t i = 0; i < this->children.size(); i++) {
-        this->children.at(i)->Hide();
-    }
-
     Window::Hide();
+}
+
+void LayoutBase::OnParentVisibilityChanged(bool visible) {
+    Window::OnParentVisibilityChanged(visible);
+
+    for (size_t i = 0; i < this->children.size(); i++) {
+        this->children.at(i)->OnParentVisibilityChanged(visible);
+    }
 }
 
 void LayoutBase::BringToTop() {
@@ -153,6 +166,7 @@ bool LayoutBase::AddWindow(IWindowPtr window) {
 
     this->children.push_back(window);
     AddFocusable(window);
+    window->Show();
 
     return true;
 }
@@ -163,6 +177,7 @@ bool LayoutBase::RemoveWindow(IWindowPtr window) {
     std::vector<IWindowPtr>::iterator it = this->children.begin();
     for ( ; it != this->children.end(); it++) {
         if (*it == window) {
+            (*it)->Hide();
             this->children.erase(it);
             return true;
         }

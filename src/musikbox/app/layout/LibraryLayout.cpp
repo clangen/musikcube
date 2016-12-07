@@ -76,18 +76,6 @@ void LibraryLayout::Layout() {
 
     int mainHeight = cy - TRANSPORT_HEIGHT;
 
-    this->browseLayout->MoveAndResize(x, y, cx, mainHeight);
-    this->browseLayout->Layout();
-
-    this->nowPlayingLayout->MoveAndResize(x, y, cx, mainHeight);
-    this->nowPlayingLayout->Layout();
-
-    this->searchLayout->MoveAndResize(x, y, cx, mainHeight);
-    this->searchLayout->Layout();
-
-    this->trackSearch->MoveAndResize(x, y, cx, mainHeight);
-    this->trackSearch->Layout();
-
     this->transportView->MoveAndResize(
         1,
         mainHeight,
@@ -96,6 +84,11 @@ void LibraryLayout::Layout() {
 
     if (!this->visibleLayout) {
         this->ShowBrowse();
+    }
+    else {
+        this->visibleLayout->MoveAndResize(x, y, cx, mainHeight);
+        this->visibleLayout->Show();
+        this->visibleLayout->Layout();
     }
 }
 
@@ -115,8 +108,7 @@ void LibraryLayout::ChangeMainLayout(std::shared_ptr<cursespp::LayoutBase> newLa
             this, &LibraryLayout::OnMainLayoutFocusTerminated);
 
         this->AddWindow(this->visibleLayout);
-        this->visibleLayout->Layout();
-        this->visibleLayout->Show();
+        this->Layout();
 
         /* ask the visible layout to terminate focusing, not do it
         in a circular fashion. when we hit the end, we'll focus

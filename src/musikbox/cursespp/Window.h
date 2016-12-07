@@ -66,7 +66,6 @@ namespace cursespp {
             virtual void Focus();
             virtual void Blur();
 
-
             virtual void SetContentColor(int64 color);
             virtual void SetFrameColor(int64 color);
             virtual void SetSize(int width, int height);
@@ -94,6 +93,8 @@ namespace cursespp {
 
             virtual bool IsVisible();
             virtual bool IsFocused();
+
+            virtual void OnParentVisibilityChanged(bool visible);
 
             bool HasBadBounds() { return this->badBounds; }
 

@@ -65,6 +65,7 @@ namespace cursespp {
             virtual void Hide();
             virtual void Invalidate();
             virtual void Redraw();
+            virtual void OnParentVisibilityChanged(bool visible);
 
             /* IOrderable */
             virtual void BringToTop();
@@ -100,11 +101,15 @@ namespace cursespp {
             virtual size_t GetWindowCount();
             virtual IWindowPtr GetWindowAt(size_t position);
 
+        protected:
+            virtual void OnVisibilityChanged(bool visible);
+
         private:
             void AddFocusable(IWindowPtr window);
             void RemoveFocusable(IWindowPtr window);
             void SortFocusables();
             void IndexFocusables();
+
 
             std::vector<IWindowPtr> children;
             std::vector<IWindowPtr> focusable;
