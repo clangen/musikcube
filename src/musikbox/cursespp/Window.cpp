@@ -217,7 +217,7 @@ void Window::SetSize(int width, int height) {
         this->width = width;
         this->height = height;
 
-        if (this->frame) {
+        if (this->frame || this->isVisible) {
             this->Recreate();
         }
 
@@ -230,7 +230,7 @@ void Window::SetPosition(int x, int y) {
         this->x = x;
         this->y = y;
 
-        if (this->frame) {
+        if (this->frame || this->isVisible) {
             this->Recreate();
         }
 
@@ -447,17 +447,15 @@ bool Window::CheckForBoundsError() {
 }
 
 void Window::Create() {
-    /* see if the window is valid within the screen, and within it's parent.
-    if not, draw it as a single cell red block. */
+    assert(this->frame == nullptr);
+    assert(this->content == nullptr);
+    assert(this->framePanel == nullptr);
+    assert(this->contentPanel == nullptr);
 
     bool hadBadBounds = this->badBounds;
     this->badBounds = this->CheckForBoundsError();
 
     if (this->badBounds) {
-        //this->frame = this->content = newwin(1, 1, 0, 0);
-        //wbkgd(this->frame, COLOR_PAIR(CURSESPP_BUTTON_NEGATIVE));
-        //this->framePanel = new_panel(this->frame);
-        //return;
         this->Destroy();
         return;
     }
