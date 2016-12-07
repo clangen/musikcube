@@ -153,9 +153,8 @@ void SettingsLayout::OnLayout() {
     this->browseList->MoveAndResize(leftX, pathListsY, leftWidth, pathsHeight);
     this->addedPathsList->MoveAndResize(rightX, pathListsY, rightWidth, pathsHeight);
 
-    this->outputDropdown->MoveAndResize(1, BOTTOM(this->browseList) + 1, cx - 1, LABEL_HEIGHT);
-
-    this->dotfileCheckbox->MoveAndResize(1, BOTTOM(this->outputDropdown) + 1, cx - 1, LABEL_HEIGHT);
+    this->outputDropdown->MoveAndResize(1, BOTTOM(this->browseList), cx - 1, LABEL_HEIGHT);
+    this->dotfileCheckbox->MoveAndResize(1, BOTTOM(this->outputDropdown), cx - 1, LABEL_HEIGHT);
     this->removeCheckbox->MoveAndResize(1, BOTTOM(this->dotfileCheckbox), cx - 1, LABEL_HEIGHT);
     this->focusShortcutsCheckbox->MoveAndResize(1, BOTTOM(this->removeCheckbox), cx - 1, LABEL_HEIGHT);
     this->customColorsCheckbox->MoveAndResize(1, BOTTOM(this->focusShortcutsCheckbox), cx - 1, LABEL_HEIGHT);
