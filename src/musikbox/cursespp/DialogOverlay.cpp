@@ -83,7 +83,7 @@ DialogOverlay& DialogOverlay::SetTitle(const std::string& title) {
     this->title = title;
     this->RecalculateSize();
     this->Layout();
-    this->Repaint();
+    this->Invalidate();
     return *this;
 }
 
@@ -92,7 +92,7 @@ DialogOverlay& DialogOverlay::SetMessage(const std::string& message) {
     this->width = 0; /* implicitly triggers a new BreakLines() */
     this->RecalculateSize();
     this->Layout();
-    this->Repaint();
+    this->Invalidate();
     return *this;
 }
 
@@ -110,7 +110,7 @@ DialogOverlay& DialogOverlay::AddButton(
     this->shortcuts->AddShortcut(key, caption);
     this->buttons[rawKey] = callback;
     this->Layout();
-    this->Repaint();
+    this->Invalidate();
     return *this;
 }
 

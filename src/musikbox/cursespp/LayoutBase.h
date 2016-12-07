@@ -63,7 +63,8 @@ namespace cursespp {
             /* IWindow */
             virtual void Show();
             virtual void Hide();
-            virtual void Repaint();
+            virtual void Invalidate();
+            virtual void Redraw();
 
             /* IOrderable */
             virtual void BringToTop();

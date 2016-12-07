@@ -94,7 +94,7 @@ ListOverlay& ListOverlay::SetTitle(const std::string& title) {
     this->title = title;
     this->RecalculateSize();
     this->Layout();
-    this->Repaint();
+    this->Invalidate();
     return *this;
 }
 

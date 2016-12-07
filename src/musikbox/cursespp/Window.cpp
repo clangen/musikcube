@@ -73,7 +73,7 @@ void Window::WriteToScreen(IInput* input) {
     }
 }
 
-void Window::Invalidate() {
+void Window::InvalidateScreen() {
     wclear(stdscr);
     drawPending = true;
 }
@@ -81,14 +81,14 @@ void Window::Invalidate() {
 void Window::Freeze() {
     if (!freeze) {
         freeze = true;
-        Window::Invalidate();
+        Window::InvalidateScreen();
     }
 }
 
 void Window::Unfreeze() {
     if (freeze) {
         freeze = false;
-        Window::Invalidate();
+        Window::InvalidateScreen();
     }
 }
 
@@ -238,7 +238,7 @@ void Window::SetPosition(int x, int y) {
 }
 
 void Window::OnDimensionsChanged() {
-    this->Repaint();
+    this->Invalidate();
 }
 
 void Window::OnVisibilityChanged(bool visible) {
@@ -291,7 +291,7 @@ void Window::SetContentColor(int64 color) {
             wbkgd(this->content, COLOR_PAIR(this->contentColor));
         }
 
-        this->Repaint();
+        this->Invalidate();
     }
 }
 
@@ -305,7 +305,7 @@ void Window::SetFrameColor(int64 color) {
             wbkgd(this->content, COLOR_PAIR(this->contentColor));
         }
 
-        this->Repaint();
+        this->Invalidate();
     }
 }
 
@@ -523,7 +523,7 @@ void Window::Clear() {
     }
 }
 
-void Window::Repaint() {
+void Window::Invalidate() {
     if (this->isVisible) {
         if (this->frame) {
             drawPending = true;

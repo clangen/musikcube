@@ -111,7 +111,7 @@ void Checkbox::Redraw() {
             wattroff(c, COLOR_PAIR(attrs));
         }
 
-        this->Repaint();
+        this->Invalidate();
     }
 }
 

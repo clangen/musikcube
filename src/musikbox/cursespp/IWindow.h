@@ -45,7 +45,8 @@ namespace cursespp {
     class IWindow : public IOrderable, public IDisplayable, public IMessageTarget {
         public:
             virtual ~IWindow() { }
-            virtual void Repaint() = 0;
+            virtual void Invalidate() = 0;
+            virtual void Redraw() = 0;
             virtual void SetParent(IWindow* parent) = 0;
             virtual void Show() = 0;
             virtual void Hide() = 0;

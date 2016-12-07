@@ -42,13 +42,6 @@
 
 using namespace cursespp;
 
-inline static void redrawContents(IWindow &window, const std::string& text) {
-    WINDOW* c = window.GetContent();
-    werase(c);
-    wprintw(c, text.c_str());
-    window.Repaint();
-}
-
 inline static bool removeUtf8Char(std::string& value, size_t position) {
     /* optimize the normal case, at the end... */
     if (position >= value.size()) {
@@ -84,7 +77,14 @@ TextInput::~TextInput() {
 
 void TextInput::Show() {
     Window::Show();
-    redrawContents(*this, buffer);
+    this->Redraw();
+}
+
+void TextInput::Redraw() {
+    WINDOW* c = this->GetContent();
+    werase(c);
+    wprintw(c, buffer.c_str());
+    this->Invalidate();
 }
 
 size_t TextInput::Length() {
@@ -117,7 +117,7 @@ bool TextInput::Write(const std::string& key) {
         }
 
         this->TextChanged(this, this->buffer);
-        redrawContents(*this, buffer);
+        this->Redraw();
         return true;
     }
 
@@ -133,7 +133,7 @@ bool TextInput::KeyPress(const std::string& key) {
         if (this->position > 0) {
             if (removeUtf8Char(this->buffer, this->position)) {
                 --this->bufferLength;
-                redrawContents(*this, buffer);
+                this->Redraw();
                 this->position = std::max(0, this->position - 1);
                 this->TextChanged(this, this->buffer);
             }
@@ -152,19 +152,20 @@ bool TextInput::KeyPress(const std::string& key) {
     }
     else if (key == "KEY_HOME") {
         this->position = 0;
-        redrawContents(*this, buffer);
+        this->Redraw();
         return true;
     }
     else if (key == "KEY_END") {
         this->position = this->bufferLength;
-        redrawContents(*this, buffer);
+        this->Redraw();
         return true;
     }
     else if (key == "KEY_DC") {
         if ((int) this->bufferLength > this->position) {
             removeUtf8Char(this->buffer, this->position + 1);
             this->bufferLength = u8len(buffer);
-            redrawContents(*this, buffer);
+            this->Redraw();
+
             return true;
         }
     }
@@ -178,7 +179,7 @@ bool TextInput::OffsetPosition(int delta) {
 
     if (this->position != actual) {
         this->position = actual;
-        redrawContents(*this, buffer);
+        this->Redraw();
         return true; /* moved */
     }
 
@@ -191,6 +192,6 @@ void TextInput::SetText(const std::string& value) {
         this->bufferLength = u8len(buffer);
         this->position = 0;
         this->TextChanged(this, this->buffer);
-        redrawContents(*this, buffer);
+        this->Redraw();
     }
 }

@@ -65,6 +65,7 @@ namespace cursespp {
         virtual size_t Length() { return u8cols(this->buffer); }
 
         virtual void Show();
+        virtual void Redraw();
 
         virtual bool KeyPress(const std::string& key);
 
@@ -72,7 +73,6 @@ namespace cursespp {
         virtual void OnFocusChanged(bool focused);
 
     private:
-        void Redraw();
 
         std::string buffer;
         text::TextAlign alignment;

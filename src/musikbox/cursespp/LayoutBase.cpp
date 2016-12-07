@@ -116,7 +116,7 @@ void LayoutBase::BringToTop() {
         this->children.at(i)->BringToTop();
     }
 
-    this->Repaint();
+    this->Invalidate();
 }
 
 void LayoutBase::SendToBottom() {
@@ -127,14 +127,20 @@ void LayoutBase::SendToBottom() {
     Window::SendToBottom();
 }
 
-void LayoutBase::Repaint() {
+void LayoutBase::Invalidate() {
     /* repaint bottom up. start with ourselves, then our children,
     recursively. */
 
-    Window::Repaint();
+    Window::Invalidate();
 
     for (size_t i = 0; i < this->children.size(); i++) {
-        this->children.at(i)->Repaint();
+        this->children.at(i)->Invalidate();
+    }
+}
+
+void LayoutBase::Redraw() {
+    for (size_t i = 0; i < this->children.size(); i++) {
+        this->children.at(i)->Redraw();
     }
 }
 

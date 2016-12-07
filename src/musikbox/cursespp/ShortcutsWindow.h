@@ -56,10 +56,8 @@ namespace cursespp {
                 int64 attrs = -1);
 
             void RemoveAll();
-
             void SetActive(const std::string& key);
-
-            virtual void Repaint();
+            virtual void Redraw();
 
         protected:
             virtual void OnFocusChanged(bool focused);

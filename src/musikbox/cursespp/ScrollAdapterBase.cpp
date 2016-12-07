@@ -42,12 +42,6 @@ using namespace cursespp;
 
 typedef IScrollAdapter::EntryPtr EntryPtr;
 
-/* used for some calculations. it's ok to let this leak. if it's
-a static instance var we will have non-deterministic behavior when
-the instance is destructed, because the global message queue may
-be torn down as well */
-static ListWindow* DUMMY_SCROLLABLE_WINDOW = new ListWindow();
-
 ScrollAdapterBase::ScrollAdapterBase() {
     this->height = 0;
     this->width = 0;

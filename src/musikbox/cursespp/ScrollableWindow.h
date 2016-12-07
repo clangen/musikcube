@@ -62,6 +62,7 @@ namespace cursespp {
             virtual void Blur();
 
             virtual void OnAdapterChanged();
+            virtual void Redraw();
 
             void SetAllowArrowKeyPropagation(bool allow = true);
 

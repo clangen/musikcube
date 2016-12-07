@@ -344,6 +344,10 @@ void TransportWindow::OnPlaybackShuffled(bool shuffled) {
     DEBOUNCE_REFRESH(TimeSync, 0);
 }
 
+void TransportWindow::Redraw() {
+    this->Update();
+}
+
 void TransportWindow::Update(TimeMode timeMode) {
     this->Clear();
 
@@ -545,5 +549,5 @@ void TransportWindow::Update(TimeMode timeMode) {
     wprintw(c, repeatModeLabel.c_str());
     OFF(c, repeatAttrs);
 
-    this->Repaint();
+    this->Invalidate();
 }

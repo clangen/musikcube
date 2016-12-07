@@ -111,6 +111,13 @@ bool ScrollableWindow::KeyPress(const std::string& key) {
     return false;
 }
 
+void ScrollableWindow::Redraw() {
+    IScrollAdapter *adapter = &GetScrollAdapter();
+    ScrollPos &pos = this->GetMutableScrollPosition();
+    adapter->DrawPage(this, pos.firstVisibleEntryIndex, &pos);
+    this->Invalidate();
+}
+
 void ScrollableWindow::OnAdapterChanged() {
     IScrollAdapter *adapter = &GetScrollAdapter();
 
@@ -122,7 +129,7 @@ void ScrollableWindow::OnAdapterChanged() {
     else {
         ScrollPos &pos = this->GetMutableScrollPosition();
         adapter->DrawPage(this, pos.firstVisibleEntryIndex, &pos);
-        this->Repaint();
+        this->Invalidate();
     }
 }
 
@@ -133,7 +140,7 @@ void ScrollableWindow::Show() {
 
 void ScrollableWindow::ScrollToTop() {
     GetScrollAdapter().DrawPage(this, 0, &this->GetMutableScrollPosition());
-    this->Repaint();
+    this->Invalidate();
 }
 
 void ScrollableWindow::ScrollToBottom() {
@@ -142,7 +149,7 @@ void ScrollableWindow::ScrollToBottom() {
         GetScrollAdapter().GetEntryCount(),
         &this->GetMutableScrollPosition());
 
-    this->Repaint();
+    this->Invalidate();
 }
 
 void ScrollableWindow::ScrollUp(int delta) {
@@ -152,7 +159,7 @@ void ScrollableWindow::ScrollUp(int delta) {
         GetScrollAdapter().DrawPage(
             this, pos.firstVisibleEntryIndex - delta, &pos);
 
-        this->Repaint();
+        this->Invalidate();
     }
 }
 
@@ -162,7 +169,7 @@ void ScrollableWindow::ScrollDown(int delta) {
     GetScrollAdapter().DrawPage(
         this, pos.firstVisibleEntryIndex + delta, &pos);
 
-    this->Repaint();
+    this->Invalidate();
 }
 
 size_t ScrollableWindow::GetPreviousPageEntryIndex() {

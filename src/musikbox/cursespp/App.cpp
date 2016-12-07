@@ -180,7 +180,7 @@ void App::Run(ILayoutPtr layout) {
                 quit = true;
             }
             else if (kn == "M-r") {
-                Window::Invalidate();
+                Window::InvalidateScreen();
             }
             else if (kn == "KEY_RESIZE") {
                 resizeAt = App::Now() + REDRAW_DEBOUNCE_MS;
@@ -202,7 +202,7 @@ void App::Run(ILayoutPtr layout) {
         actual resize until its settled. */
         if (resizeAt && App::Now() > resizeAt) {
             resize_term(0, 0);
-            Window::Invalidate();
+            Window::InvalidateScreen();
 
             if (this->resizeHandler) {
                 this->resizeHandler();

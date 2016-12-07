@@ -73,7 +73,7 @@ void TextLabel::Redraw() {
             wattroff(c, COLOR_PAIR(attrs));
         }
 
-        this->Repaint();
+        this->Invalidate();
     }
 }
 

@@ -56,12 +56,13 @@ namespace cursespp {
             virtual ~TextInput();
 
             virtual void Show();
+            virtual void Redraw();
 
             virtual bool Write(const std::string& key);
             virtual size_t Length();
             virtual size_t Position();
 
-            virtual void SetInputMode(InputMode inputMode) { 
+            virtual void SetInputMode(InputMode inputMode) {
                 this->inputMode = inputMode;
             };
 

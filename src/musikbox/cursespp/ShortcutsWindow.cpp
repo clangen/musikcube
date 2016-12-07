@@ -52,7 +52,7 @@ ShortcutsWindow::~ShortcutsWindow() {
 
 void ShortcutsWindow::SetAlignment(text::TextAlign align) {
     this->alignment = align;
-    this->Repaint();
+    this->Redraw();
 }
 
 void ShortcutsWindow::AddShortcut(
@@ -63,22 +63,22 @@ void ShortcutsWindow::AddShortcut(
     this->entries.push_back(
         std::shared_ptr<Entry>(new Entry(key, description, attrs)));
 
-    this->Repaint();
+    this->Redraw();
 }
 
 void ShortcutsWindow::RemoveAll() {
     this->entries.clear();
-    this->Repaint();
+    this->Redraw();
 }
 
 void ShortcutsWindow::SetActive(const std::string& key) {
     this->activeKey = key;
-    this->Repaint();
+    this->Redraw();
 }
 
 void ShortcutsWindow::OnFocusChanged(bool focused) {
     this->UpdateContentColor();
-    this->Repaint();
+    this->Redraw();
 }
 
 void ShortcutsWindow::UpdateContentColor() {
@@ -110,9 +110,7 @@ size_t ShortcutsWindow::CalculateLeftPadding() {
     return (padding / 2); /* text::AlignCenter */
 }
 
-void ShortcutsWindow::Repaint() {
-    Window::Repaint();
-
+void ShortcutsWindow::Redraw() {
     this->Clear();
 
     int64 normalAttrs = COLOR_PAIR(CURSESPP_BUTTON_NORMAL);
@@ -166,4 +164,6 @@ void ShortcutsWindow::Repaint() {
 
         remaining -= len;
     }
+
+    this->Invalidate();
 }

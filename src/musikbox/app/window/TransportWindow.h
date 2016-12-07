@@ -65,6 +65,7 @@ namespace musik {
                 virtual void Show();
                 virtual void OnFocusChanged(bool focused);
                 virtual bool KeyPress(const std::string& key);
+                virtual void Redraw();
 
                 void SetFocus(FocusTarget target);
                 FocusTarget GetFocus() const;

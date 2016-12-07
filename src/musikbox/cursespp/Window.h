@@ -58,7 +58,7 @@ namespace cursespp {
             virtual void Show();
             virtual void Hide();
 
-            virtual void Repaint();
+            virtual void Invalidate();
 
             void SetFrameVisible(bool enabled);
             bool IsFrameVisible();
@@ -97,7 +97,7 @@ namespace cursespp {
             bool HasBadBounds() { return this->badBounds; }
 
             static void WriteToScreen(IInput* input);
-            static void Invalidate();
+            static void InvalidateScreen();
             static void Freeze();
             static void Unfreeze();
 

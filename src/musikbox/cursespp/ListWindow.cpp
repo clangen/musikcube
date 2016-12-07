@@ -172,7 +172,7 @@ void ListWindow::ScrollTo(size_t index) {
     this->GetScrollAdapter().DrawPage(
         this, index, &this->GetMutableScrollPosition());
 
-    this->Repaint();
+    this->Invalidate();
 }
 
 void ListWindow::OnSelectionChanged(size_t newIndex, size_t oldIndex) {
@@ -189,7 +189,7 @@ void ListWindow::SetSelectedIndex(size_t index) {
             this->scrollPosition.firstVisibleEntryIndex,
             &this->GetMutableScrollPosition());
 
-        this->Repaint();
+        this->Invalidate();
 
         this->OnSelectionChanged(index, prev); /* internal */
         this->SelectionChanged(this, index, prev); /* external */
