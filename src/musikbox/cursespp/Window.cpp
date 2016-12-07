@@ -264,8 +264,10 @@ void Window::Redraw() {
             this->Create();
         }
 
-        this->OnRedraw();
-        this->Invalidate();
+        if (this->frame) {
+            this->OnRedraw();
+            this->Invalidate();
+        }
     }
 }
 
@@ -514,12 +516,7 @@ void Window::Create() {
 void Window::Hide() {
     if (this->frame) {
         if (this->isVisible) {
-            hide_panel(this->framePanel);
-
-            if (this->content != this->frame) {
-                hide_panel(this->contentPanel);
-            }
-
+            this->Destroy();
             this->isVisible = false;
             this->OnVisibilityChanged(false);
         }

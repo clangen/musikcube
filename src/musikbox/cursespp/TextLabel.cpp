@@ -66,7 +66,7 @@ void TextLabel::OnRedraw() {
         wattron(c, COLOR_PAIR(attrs));
     }
 
-    wprintw(c, aligned.c_str());
+    waddstr(c, aligned.c_str());
 
     if (attrs != -1) {
         wattroff(c, COLOR_PAIR(attrs));

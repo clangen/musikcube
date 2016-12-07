@@ -78,7 +78,7 @@ TextInput::~TextInput() {
 void TextInput::OnRedraw() {
     WINDOW* c = this->GetContent();
     werase(c);
-    wprintw(c, buffer.c_str());
+    waddstr(c, buffer.c_str());
 }
 
 size_t TextInput::Length() {
