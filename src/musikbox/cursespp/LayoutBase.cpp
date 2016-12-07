@@ -90,11 +90,11 @@ LayoutBase::~LayoutBase() {
 
 }
 
-void LayoutBase::Show() {
-    Window::Show();
+void LayoutBase::Show(bool redraw) {
+    Window::Show(redraw);
 
     for (size_t i = 0; i < this->children.size(); i++) {
-        this->children.at(i)->Show();
+        this->children.at(i)->Show(redraw);
     }
 
     this->IndexFocusables();

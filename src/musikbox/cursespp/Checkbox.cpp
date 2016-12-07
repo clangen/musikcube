@@ -57,11 +57,6 @@ Checkbox::Checkbox()
 Checkbox::~Checkbox() {
 }
 
-void Checkbox::Show() {
-    Window::Show();
-    this->Redraw();
-}
-
 void Checkbox::SetText(const std::string& value) {
     if (value != this->buffer) {
         this->buffer = value;
@@ -87,7 +82,7 @@ void Checkbox::Blur() {
     this->Redraw();
 }
 
-void Checkbox::Redraw() {
+void Checkbox::OnRedraw() {
     int cx = this->GetContentWidth();
 
     if (cx > 0) {
@@ -110,8 +105,6 @@ void Checkbox::Redraw() {
         if (attrs != -1) {
             wattroff(c, COLOR_PAIR(attrs));
         }
-
-        this->Invalidate();
     }
 }
 

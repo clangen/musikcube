@@ -249,6 +249,21 @@ void Window::OnFocusChanged(bool focused) {
     /* for subclass use */
 }
 
+void Window::OnRedraw() {
+    /* for subclass use */
+}
+
+void Window::Redraw() {
+    if (this->IsVisible()) {
+        if (this->parent && !this->parent->IsVisible()) {
+            return;
+        }
+
+        this->OnRedraw();
+        this->Invalidate();
+    }
+}
+
 int Window::GetWidth() const {
     return this->width;
 }
@@ -325,10 +340,15 @@ void Window::SetFocusOrder(int order) {
     this->focusOrder = order;
 }
 
-void Window::Show() {
+void Window::Show(bool redraw) {
     if (this->badBounds) {
         return;
     }
+
+    if (parent && !parent->IsVisible()) {
+        return;
+    }
+
     else if (!this->badBounds && this->framePanel) {
         if (!this->isVisible) {
             show_panel(this->framePanel);
@@ -345,6 +365,10 @@ void Window::Show() {
     }
     else {
         this->Create();
+    }
+
+    if (redraw) {
+        this->Redraw();
     }
 }
 

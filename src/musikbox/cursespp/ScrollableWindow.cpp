@@ -133,8 +133,8 @@ void ScrollableWindow::OnAdapterChanged() {
     }
 }
 
-void ScrollableWindow::Show() {
-    Window::Show();
+void ScrollableWindow::Show(bool redraw) {
+    Window::Show(false);
     this->OnAdapterChanged();
 }
 

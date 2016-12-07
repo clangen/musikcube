@@ -247,11 +247,6 @@ TransportWindow::FocusTarget TransportWindow::GetFocus() const {
     return this->focus;
 }
 
-void TransportWindow::Show() {
-    Window::Show();
-    this->Update();
-}
-
 bool TransportWindow::KeyPress(const std::string& kn) {
     if (this->focus == FocusVolume) {
         if (inc(kn)) {
@@ -344,7 +339,7 @@ void TransportWindow::OnPlaybackShuffled(bool shuffled) {
     DEBOUNCE_REFRESH(TimeSync, 0);
 }
 
-void TransportWindow::Redraw() {
+void TransportWindow::OnRedraw() {
     this->Update();
 }
 

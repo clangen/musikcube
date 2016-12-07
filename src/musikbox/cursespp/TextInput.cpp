@@ -75,16 +75,10 @@ TextInput::TextInput(IInput::InputMode inputMode)
 TextInput::~TextInput() {
 }
 
-void TextInput::Show() {
-    Window::Show();
-    this->Redraw();
-}
-
-void TextInput::Redraw() {
+void TextInput::OnRedraw() {
     WINDOW* c = this->GetContent();
     werase(c);
     wprintw(c, buffer.c_str());
-    this->Invalidate();
 }
 
 size_t TextInput::Length() {

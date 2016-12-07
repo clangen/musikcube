@@ -38,7 +38,7 @@ namespace cursespp {
     class IDisplayable {
         public:
             virtual ~IDisplayable() { }
-            virtual void Show() = 0;
+            virtual void Show(bool redraw = true) = 0;
             virtual void Hide() = 0;
     };
 }

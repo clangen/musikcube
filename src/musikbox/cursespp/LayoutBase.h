@@ -61,7 +61,7 @@ namespace cursespp {
             virtual ~LayoutBase();
 
             /* IWindow */
-            virtual void Show();
+            virtual void Show(bool redraw = true);
             virtual void Hide();
             virtual void Invalidate();
             virtual void Redraw();

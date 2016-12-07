@@ -62,10 +62,9 @@ namespace musik {
                 virtual ~TransportWindow();
 
                 virtual void ProcessMessage(cursespp::IMessage &message);
-                virtual void Show();
                 virtual void OnFocusChanged(bool focused);
+                virtual void OnRedraw();
                 virtual bool KeyPress(const std::string& key);
-                virtual void Redraw();
 
                 void SetFocus(FocusTarget target);
                 FocusTarget GetFocus() const;

@@ -55,9 +55,9 @@ namespace cursespp {
 
             virtual void SetParent(IWindow* parent);
 
-            virtual void Show();
+            virtual void Show(bool redraw = true);
             virtual void Hide();
-
+            virtual void Redraw();
             virtual void Invalidate();
 
             void SetFrameVisible(bool enabled);
@@ -65,6 +65,7 @@ namespace cursespp {
 
             virtual void Focus();
             virtual void Blur();
+
 
             virtual void SetContentColor(int64 color);
             virtual void SetFrameColor(int64 color);
@@ -118,6 +119,7 @@ namespace cursespp {
             virtual void OnDimensionsChanged();
             virtual void OnVisibilityChanged(bool visible);
             virtual void OnFocusChanged(bool focused);
+            virtual void OnRedraw();
 
         private:
             IWindow* parent;

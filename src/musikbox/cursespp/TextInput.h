@@ -55,8 +55,7 @@ namespace cursespp {
             TextInput(InputMode inputMode = IInput::InputNormal);
             virtual ~TextInput();
 
-            virtual void Show();
-            virtual void Redraw();
+            virtual void OnRedraw();
 
             virtual bool Write(const std::string& key);
             virtual size_t Length();

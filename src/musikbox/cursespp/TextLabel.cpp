@@ -53,7 +53,7 @@ TextLabel::TextLabel()
 TextLabel::~TextLabel() {
 }
 
-void TextLabel::Redraw() {
+void TextLabel::OnRedraw() {
     if (this->IsVisible() && this->GetParent()) {
         std::string aligned = text::Align(
             this->buffer, alignment, this->GetContentWidth());
@@ -75,11 +75,6 @@ void TextLabel::Redraw() {
 
         this->Invalidate();
     }
-}
-
-void TextLabel::Show() {
-    Window::Show();
-    this->Redraw();
 }
 
 void TextLabel::OnFocusChanged(bool focused) {

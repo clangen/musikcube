@@ -48,8 +48,6 @@ namespace cursespp {
             virtual void Invalidate() = 0;
             virtual void Redraw() = 0;
             virtual void SetParent(IWindow* parent) = 0;
-            virtual void Show() = 0;
-            virtual void Hide() = 0;
             virtual void Focus() = 0;
             virtual void Blur() = 0;
             virtual void SetContentColor(int64 color) = 0;
