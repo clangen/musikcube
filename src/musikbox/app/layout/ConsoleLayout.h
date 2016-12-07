@@ -64,10 +64,11 @@ namespace musik {
 
                 ~ConsoleLayout();
 
-                virtual void Layout();
-
                 virtual void SetShortcutsWindow(
                     cursespp::ShortcutsWindow* shortcuts);
+
+            protected:
+                virtual void OnLayout();
 
             private:
                 void OnEnterPressed(cursespp::TextInput* input);

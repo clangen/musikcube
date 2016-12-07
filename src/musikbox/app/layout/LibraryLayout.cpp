@@ -70,7 +70,7 @@ LibraryLayout::LibraryLayout(PlaybackService& playback, LibraryPtr library)
 LibraryLayout::~LibraryLayout() {
 }
 
-void LibraryLayout::Layout() {
+void LibraryLayout::OnLayout() {
     int x = this->GetX(), y = this->GetY();
     int cx = this->GetWidth(), cy = this->GetHeight();
 
@@ -88,7 +88,6 @@ void LibraryLayout::Layout() {
     else {
         this->visibleLayout->MoveAndResize(x, y, cx, mainHeight);
         this->visibleLayout->Show();
-        this->visibleLayout->Layout();
     }
 }
 

@@ -87,7 +87,7 @@ ConsoleLayout::~ConsoleLayout() {
 
 }
 
-void ConsoleLayout::Layout() {
+void ConsoleLayout::OnLayout() {
     const int cx = this->GetWidth();
     const int cy = this->GetHeight();
     const int x = this->GetX();

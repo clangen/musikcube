@@ -52,6 +52,9 @@ MainLayout::MainLayout()
 , LayoutBase() {
     this->Initialize();
     this->prefs = Preferences::ForComponent("settings");
+
+    size_t cx = Screen::GetWidth(), cy = Screen::GetHeight();
+    this->MoveAndResize(0, 0, cx, cy);
 }
 
 MainLayout::~MainLayout() {
@@ -62,9 +65,8 @@ void MainLayout::Layout() {
     this->MoveAndResize(0, 0, cx, cy);
 
     if (this->layout) {
-        this->layout->Show();
         this->layout->MoveAndResize(0, 0, cx, cy - 1);
-        this->layout->Layout();
+        this->layout->Show();
 
         if (this->shortcutsFocused) {
             this->layout->SetFocus(IWindowPtr());

@@ -71,22 +71,19 @@ TrackSearchLayout::TrackSearchLayout(
 TrackSearchLayout::~TrackSearchLayout() {
 }
 
-void TrackSearchLayout::Layout() {
+void TrackSearchLayout::OnLayout() {
     size_t cx = this->GetWidth(), cy = this->GetHeight();
+    int x = this->GetX(), y = this->GetY();
 
-    if (cx && cy) {
-        int x = this->GetX(), y = this->GetY();
+    size_t inputWidth = cx / 2;
+    size_t inputX = x + ((cx - inputWidth) / 2);
+    this->input->MoveAndResize(inputX, y, cx / 2, SEARCH_HEIGHT);
 
-        size_t inputWidth = cx / 2;
-        size_t inputX = x + ((cx - inputWidth) / 2);
-        this->input->MoveAndResize(inputX, y, cx / 2, SEARCH_HEIGHT);
-
-        this->trackList->MoveAndResize(
-            x,
-            y + SEARCH_HEIGHT,
-            this->GetWidth(),
-            this->GetHeight() - SEARCH_HEIGHT);
-    }
+    this->trackList->MoveAndResize(
+        x,
+        y + SEARCH_HEIGHT,
+        this->GetWidth(),
+        this->GetHeight() - SEARCH_HEIGHT);
 }
 
 void TrackSearchLayout::InitializeWindows() {
@@ -100,8 +97,6 @@ void TrackSearchLayout::InitializeWindows() {
     this->trackList->SetFocusOrder(1);
     this->trackList->SetAllowArrowKeyPropagation();
     this->AddWindow(this->trackList);
-
-    this->Layout();
 }
 
 void TrackSearchLayout::OnVisibilityChanged(bool visible) {

@@ -64,8 +64,6 @@ namespace musik {
 
                 virtual ~LibraryLayout();
 
-                virtual void Layout();
-
                 virtual cursespp::IWindowPtr FocusNext();
                 virtual cursespp::IWindowPtr FocusPrev();
                 virtual cursespp::IWindowPtr GetFocus();
@@ -75,6 +73,9 @@ namespace musik {
                     cursespp::ShortcutsWindow* w);
 
                 virtual bool KeyPress(const std::string& key);
+
+            protected:
+                virtual void OnLayout();
 
             private:
                 void OnSearchResultSelected(

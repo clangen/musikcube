@@ -67,16 +67,9 @@ SearchLayout::~SearchLayout() {
 
 }
 
-void SearchLayout::Layout() {
+void SearchLayout::OnLayout() {
     size_t cx = this->GetWidth(), cy = this->GetHeight();
-
-    if (cx == 0 || cy == 0) {
-        return;
-    }
-
     size_t x = this->GetX(), y = this->GetY();
-
-    this->MoveAndResize(x, y, cx, cy);
 
     size_t inputWidth = cx / 2;
     size_t inputX = x + ((cx - inputWidth) / 2);
@@ -122,8 +115,6 @@ void SearchLayout::InitializeWindows(PlaybackService& playback) {
     CREATE_LABEL(this->albumsLabel, "albums");
     CREATE_LABEL(this->artistsLabel, "artists");
     CREATE_LABEL(this->genresLabel, "genres");
-
-    this->Layout();
 }
 
 void SearchLayout::Requery() {

@@ -60,7 +60,6 @@ namespace musik {
 
                 virtual ~TrackSearchLayout();
 
-                virtual void Layout();
                 virtual void OnVisibilityChanged(bool visible);
                 virtual bool KeyPress(const std::string& key);
 
@@ -68,6 +67,7 @@ namespace musik {
 
             protected:
                 virtual void ProcessMessage(cursespp::IMessage &message);
+                virtual void OnLayout();
 
             private:
                 void InitializeWindows();

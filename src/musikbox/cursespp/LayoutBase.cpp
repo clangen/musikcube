@@ -108,10 +108,21 @@ void LayoutBase::OnVisibilityChanged(bool visible) {
 
 void LayoutBase::Show(bool redraw) {
     Window::Show(redraw);
+    this->Layout();
 }
 
 void LayoutBase::Hide() {
     Window::Hide();
+}
+
+void LayoutBase::Layout() {
+    if (this->IsVisible() && !this->CheckForBoundsError()) {
+        this->OnLayout();
+    }
+}
+
+void LayoutBase::OnLayout() {
+    /* most layouts will want to perform layout logic here... */
 }
 
 void LayoutBase::OnParentVisibilityChanged(bool visible) {

@@ -70,12 +70,14 @@ namespace musik {
 
                 virtual ~SettingsLayout();
 
-                virtual void Layout();
                 virtual void OnVisibilityChanged(bool visible);
                 virtual bool KeyPress(const std::string& key);
 
                 virtual void SetShortcutsWindow(
                     cursespp::ShortcutsWindow* w);
+
+            protected:
+                virtual void OnLayout();
 
             private:
                 void InitializeWindows();

@@ -88,21 +88,11 @@ BrowseLayout::BrowseLayout(
 BrowseLayout::~BrowseLayout() {
 }
 
-void BrowseLayout::Layout() {
-    if (!this->IsVisible()) {
-        return;
-    }
-
+void BrowseLayout::OnLayout() {
     size_t cx = this->GetWidth(), cy = this->GetHeight();
-
-    if (cx == 0 || cy == 0) {
-        return;
-    }
 
     size_t x = this->GetX(), y = this->GetY();
     size_t categoryWidth = std::min(MAX_CATEGORY_WIDTH, cx / 4);
-
-    this->MoveAndResize(x, y, cx, cy);
 
     if (Screen::GetHeight() > 26) {
         y += 1;
@@ -148,8 +138,6 @@ void BrowseLayout::InitializeWindows() {
 
     this->categoryList->Invalidated.connect(
         this, &BrowseLayout::OnCategoryViewInvalidated);
-
-    this->Layout();
 }
 
 void BrowseLayout::ScrollTo(const std::string& fieldType, DBID fieldId) {

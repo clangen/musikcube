@@ -90,7 +90,7 @@ namespace cursespp {
             virtual IWindowPtr FocusFirst();
             virtual IWindowPtr FocusLast();
 
-            virtual void Layout() = 0;
+            virtual void Layout();
 
             /* IKeyHandler */
             virtual bool KeyPress(const std::string& key);
@@ -103,6 +103,7 @@ namespace cursespp {
 
         protected:
             virtual void OnVisibilityChanged(bool visible);
+            virtual void OnLayout();
 
         private:
             void AddFocusable(IWindowPtr window);

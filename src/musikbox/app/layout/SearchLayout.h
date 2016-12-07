@@ -65,18 +65,20 @@ namespace musik {
 
                 virtual ~SearchLayout();
 
-                virtual void Layout();
                 virtual void OnVisibilityChanged(bool visible);
                 virtual bool KeyPress(const std::string& key);
 
                 void FocusInput();
+
+            protected:
+                virtual void OnLayout();
 
             private:
                 void InitializeWindows(PlaybackService& playback);
                 void Requery();
 
                 void OnInputChanged(
-                    cursespp::TextInput* sender, 
+                    cursespp::TextInput* sender,
                     std::string value);
 
                 musik::core::LibraryPtr library;

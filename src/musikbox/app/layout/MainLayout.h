@@ -57,8 +57,8 @@ namespace musik {
                 MainLayout();
                 virtual ~MainLayout();
 
-                virtual void Layout();
                 virtual bool KeyPress(const std::string& key);
+                virtual void Layout();
 
                 virtual cursespp::IWindowPtr GetFocus();
                 virtual cursespp::IWindowPtr FocusNext();

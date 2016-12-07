@@ -134,7 +134,7 @@ void SettingsLayout::OnOutputDropdownActivated(cursespp::TextLabel* label) {
     });
 }
 
-void SettingsLayout::Layout() {
+void SettingsLayout::OnLayout() {
     int x = this->GetX(), y = this->GetY();
     int cx = this->GetWidth(), cy = this->GetHeight();
 

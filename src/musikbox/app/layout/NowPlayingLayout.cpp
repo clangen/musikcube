@@ -68,18 +68,14 @@ NowPlayingLayout::~NowPlayingLayout() {
 
 }
 
-void NowPlayingLayout::Layout() {
-    size_t cx = this->GetWidth(), cy = this->GetHeight();
+void NowPlayingLayout::OnLayout() {
+    this->trackList->MoveAndResize(
+        0,
+        0,
+        this->GetWidth(),
+        this->GetHeight());
 
-    if (cx && cy) {
-        this->trackList->MoveAndResize(
-            0,
-            0,
-            this->GetWidth(),
-            this->GetHeight());
-
-        this->trackList->SetFocusOrder(1);
-    }
+    this->trackList->SetFocusOrder(1);
 }
 
 void NowPlayingLayout::InitializeWindows() {
@@ -90,7 +86,6 @@ void NowPlayingLayout::InitializeWindows() {
 
     this->trackList->Requeried.connect(this, &NowPlayingLayout::OnTrackListRequeried);
     this->AddWindow(this->trackList);
-    this->Layout();
 }
 
 void NowPlayingLayout::OnVisibilityChanged(bool visible) {

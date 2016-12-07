@@ -61,7 +61,6 @@ namespace cursespp {
             static OverlayStack& Overlays();
 
         private:
-
             struct WindowState {
                 ILayoutPtr overlay;
                 ILayoutPtr layout;
@@ -76,7 +75,6 @@ namespace cursespp {
                 }
             };
 
-            void CheckDrawCursor();
             void UpdateFocusedWindow(IWindowPtr window);
             void EnsureFocusIsValid();
             void CheckShowOverlay();

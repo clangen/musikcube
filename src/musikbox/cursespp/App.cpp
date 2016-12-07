@@ -200,7 +200,7 @@ void App::Run(ILayoutPtr layout) {
 
         /* KEY_RESIZE often gets called dozens of times, so we debounce the
         actual resize until its settled. */
-        if (resizeAt && App::Now() > resizeAt) {
+        if (resizeAt /*&& App::Now() > resizeAt*/) {
             resize_term(0, 0);
             Window::InvalidateScreen();
 
@@ -279,7 +279,6 @@ void App::ChangeLayout(ILayoutPtr newLayout) {
 
     if (newLayout) {
         this->state.layout = newLayout;
-        this->state.layout->Layout();
         this->state.layout->Show();
         this->state.layout->BringToTop();
 

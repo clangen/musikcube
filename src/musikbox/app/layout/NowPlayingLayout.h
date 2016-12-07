@@ -61,9 +61,11 @@ namespace musik {
 
                 virtual ~NowPlayingLayout();
 
-                virtual void Layout();
                 virtual void OnVisibilityChanged(bool visible);
                 virtual bool KeyPress(const std::string& key);
+
+            protected:
+                virtual void OnLayout();
 
             private:
                 void OnTrackListRequeried();

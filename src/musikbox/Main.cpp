@@ -129,7 +129,6 @@ int main(int argc, char* argv[])
         Layout settingsLayout(new SettingsLayout(library, playback.GetTransport()));
 
         Main mainLayout(new MainLayout());
-        mainLayout->Layout();
 
         std::vector<std::string> paths;
         library->Indexer()->GetPaths(paths);

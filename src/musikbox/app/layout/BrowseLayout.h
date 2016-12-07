@@ -62,12 +62,14 @@ namespace musik {
 
                 virtual ~BrowseLayout();
 
-                virtual void Layout();
                 virtual void OnVisibilityChanged(bool visible);
                 virtual cursespp::IWindowPtr GetFocus();
                 virtual bool KeyPress(const std::string& key);
 
                 void ScrollTo(const std::string& fieldType, DBID fieldId);
+
+            protected:
+                virtual void OnLayout();
 
             private:
                 void InitializeWindows();
