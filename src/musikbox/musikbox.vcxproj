@@ -220,6 +220,7 @@
     <ClInclude Include="cursespp\IOverlay.h" />
     <ClInclude Include="cursespp\IScrollable.h" />
     <ClInclude Include="cursespp\IScrollAdapter.h" />
+    <ClInclude Include="cursespp\IViewRoot.h" />
     <ClInclude Include="cursespp\IWindow.h" />
     <ClInclude Include="cursespp\IWindowGroup.h" />
     <ClInclude Include="cursespp\IMessage.h" />

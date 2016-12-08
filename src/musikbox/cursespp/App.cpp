@@ -129,6 +129,10 @@ void App::OnResized() {
         Window::Unfreeze();
 
         if (this->state.layout) {
+            if (this->state.viewRoot) {
+                this->state.viewRoot->ResizeToViewport();
+            }
+
             this->state.layout->Layout();
             this->state.layout->BringToTop();
         }
@@ -280,6 +284,12 @@ void App::ChangeLayout(ILayoutPtr newLayout) {
 
     if (newLayout) {
         this->state.layout = newLayout;
+        this->state.viewRoot = dynamic_cast<IViewRoot*>(this->state.layout.get());
+
+        if (this->state.viewRoot) {
+            this->state.viewRoot->ResizeToViewport();
+        }
+
         this->state.layout->Show();
         this->state.layout->BringToTop();
 

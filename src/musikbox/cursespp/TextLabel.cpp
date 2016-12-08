@@ -81,10 +81,6 @@ void TextLabel::OnRedraw() {
     }
 }
 
-void TextLabel::OnFocusChanged(bool focused) {
-    this->Redraw();
-}
-
 void TextLabel::SetText(const std::string& value, const text::TextAlign alignment) {
     if (value != this->buffer || alignment != this->alignment) {
         this->buffer = value;

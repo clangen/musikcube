@@ -105,6 +105,7 @@ Window::Window(IWindow *parent) {
     this->drawFrame = true;
     this->isVisible = false;
     this->isFocused = false;
+    this->isDirty = true;
     this->focusOrder = -1;
     this->id = NEXT_ID++;
     this->badBounds = false;
@@ -192,6 +193,19 @@ void Window::SetParent(IWindow* parent) {
     }
 }
 
+void Window::RecreateForUpdatedDimensions() {
+    bool hasFrame = !!this->frame;
+    if (hasFrame || this->isVisible) {
+        this->Recreate();
+
+        if (!hasFrame) {
+            this->OnVisibilityChanged(true);
+        }
+    }
+
+    this->OnDimensionsChanged();
+}
+
 void Window::MoveAndResize(int x, int y, int width, int height) {
     bool sizeChanged = this->width != width || this->height != height;
     bool positionChanged = this->x != x || this->y != y;
@@ -201,14 +215,7 @@ void Window::MoveAndResize(int x, int y, int width, int height) {
         this->height = height;
         this->x = x;
         this->y = y;
-
-        if (this->frame || this->isVisible) {
-            this->Recreate();
-        }
-
-        if (sizeChanged || positionChanged) {
-            this->OnDimensionsChanged();
-        }
+        this->RecreateForUpdatedDimensions();
     }
 }
 
@@ -216,12 +223,7 @@ void Window::SetSize(int width, int height) {
     if (this->width != width || this->height != height) {
         this->width = width;
         this->height = height;
-
-        if (this->frame || this->isVisible) {
-            this->Recreate();
-        }
-
-        this->OnDimensionsChanged();
+        this->RecreateForUpdatedDimensions();
     }
 }
 
@@ -229,12 +231,7 @@ void Window::SetPosition(int x, int y) {
     if (this->x != x || this->y != y) {
         this->x = x;
         this->y = y;
-
-        if (this->frame || this->isVisible) {
-            this->Recreate();
-        }
-
-        this->OnDimensionsChanged();
+        this->RecreateForUpdatedDimensions();
     }
 }
 
@@ -255,6 +252,8 @@ void Window::OnRedraw() {
 }
 
 void Window::Redraw() {
+    this->isDirty = true;
+
     if (this->IsVisible()) {
         if (this->parent && !this->parent->IsVisible()) {
             return;
@@ -267,6 +266,8 @@ void Window::Redraw() {
         if (this->frame) {
             this->OnRedraw();
             this->Invalidate();
+            this->isDirty = false;
+            return;
         }
     }
 }
@@ -347,7 +348,7 @@ void Window::SetFocusOrder(int order) {
     this->focusOrder = order;
 }
 
-void Window::Show(bool redraw) {
+void Window::Show() {
     if (parent && !parent->IsVisible()) {
         /* remember that someone tried to make us visible, but don't do
         anything because we could corrupt the display */
@@ -383,7 +384,7 @@ void Window::Show(bool redraw) {
         this->Create();
     }
 
-    if (redraw) {
+    if (this->isDirty) {
         this->Redraw();
     }
 }
@@ -537,6 +538,7 @@ void Window::Destroy() {
 
     this->framePanel = this->contentPanel = 0;
     this->content = this->frame = 0;
+    this->isDirty = true;
 }
 
 void Window::SetFrameVisible(bool enabled) {
@@ -590,13 +592,17 @@ void Window::Invalidate() {
 void Window::Focus() {
     if (!this->isFocused) {
         this->isFocused = true;
+        this->isDirty = true;
         this->OnFocusChanged(true);
+        this->Redraw();
     }
 }
 
 void Window::Blur() {
     if (this->isFocused) {
         this->isFocused = false;
+        this->isDirty = true;
         this->OnFocusChanged(false);
+        this->Redraw();
     }
 }

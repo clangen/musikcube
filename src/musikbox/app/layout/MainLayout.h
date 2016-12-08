@@ -37,7 +37,7 @@
 #include <cursespp/LayoutBase.h>
 #include <cursespp/TextInput.h>
 #include <cursespp/ShortcutsWindow.h>
-
+#include <cursespp/IViewRoot.h>
 #include <core/support/Preferences.h>
 
 #include "ITopLevelLayout.h"
@@ -48,6 +48,7 @@ namespace musik {
     namespace box {
         class MainLayout :
             public cursespp::LayoutBase,
+            public cursespp::IViewRoot,
 #if (__clang_major__ == 7 && __clang_minor__ == 3)
             public std::enable_shared_from_this<MainLayout>,
 #endif
@@ -58,11 +59,13 @@ namespace musik {
                 virtual ~MainLayout();
 
                 virtual bool KeyPress(const std::string& key);
-                virtual void Layout();
+                virtual void OnLayout();
 
                 virtual cursespp::IWindowPtr GetFocus();
                 virtual cursespp::IWindowPtr FocusNext();
                 virtual cursespp::IWindowPtr FocusPrev();
+
+                virtual void ResizeToViewport();
 
                 void SetMainLayout(std::shared_ptr<cursespp::LayoutBase> layout);
 

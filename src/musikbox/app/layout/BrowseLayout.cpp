@@ -90,8 +90,8 @@ BrowseLayout::~BrowseLayout() {
 
 void BrowseLayout::OnLayout() {
     size_t cx = this->GetWidth(), cy = this->GetHeight();
-
     size_t x = this->GetX(), y = this->GetY();
+
     size_t categoryWidth = std::min(MAX_CATEGORY_WIDTH, cx / 4);
 
     if (Screen::GetHeight() > 26) {

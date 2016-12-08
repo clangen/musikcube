@@ -53,7 +53,7 @@ DialogOverlay::DialogOverlay() {
 
     this->shortcuts.reset(new ShortcutsWindow());
     this->shortcuts->SetAlignment(text::AlignRight);
-    this->AddWindow(this->shortcuts);
+    this->LayoutBase::AddWindow(this->shortcuts);
 }
 
 DialogOverlay::~DialogOverlay() {

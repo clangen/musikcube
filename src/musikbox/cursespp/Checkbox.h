@@ -58,14 +58,12 @@ namespace cursespp {
         virtual void SetChecked(bool checked);
         virtual std::string GetText() { return this->buffer; }
         virtual bool IsChecked() { return this->checked; }
-        virtual void Focus();
-        virtual void Blur();
         virtual bool KeyPress(const std::string& key);
         virtual void OnRedraw();
 
     private:
 
         std::string buffer;
-        bool checked, focused;
+        bool checked;
     };
 }

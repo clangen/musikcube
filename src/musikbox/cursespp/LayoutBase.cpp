@@ -106,8 +106,8 @@ void LayoutBase::OnVisibilityChanged(bool visible) {
     }
 }
 
-void LayoutBase::Show(bool redraw) {
-    Window::Show(redraw);
+void LayoutBase::Show() {
+    Window::Show();
     this->Layout();
 }
 
@@ -159,12 +159,6 @@ void LayoutBase::Invalidate() {
 
     for (size_t i = 0; i < this->children.size(); i++) {
         this->children.at(i)->Invalidate();
-    }
-}
-
-void LayoutBase::Redraw() {
-    for (size_t i = 0; i < this->children.size(); i++) {
-        this->children.at(i)->Redraw();
     }
 }
 

@@ -55,7 +55,7 @@ namespace cursespp {
 
             virtual void SetParent(IWindow* parent);
 
-            virtual void Show(bool redraw = true);
+            virtual void Show();
             virtual void Hide();
             virtual void Redraw();
             virtual void Invalidate();
@@ -114,6 +114,7 @@ namespace cursespp {
             void Destroy();
             void Recreate();
             void Clear();
+            void RecreateForUpdatedDimensions();
 
             bool CheckForBoundsError();
             int64 GetContentColor() { return this->contentColor; }
@@ -132,7 +133,7 @@ namespace cursespp {
             WINDOW* content;
             bool badBounds;
             bool drawFrame;
-            bool isVisible, isFocused;
+            bool isVisible, isFocused, isDirty;
             int focusOrder;
             int id;
             int64 contentColor, frameColor;

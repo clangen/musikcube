@@ -60,9 +60,12 @@ MainLayout::MainLayout()
 MainLayout::~MainLayout() {
 }
 
-void MainLayout::Layout() {
+void MainLayout::ResizeToViewport() {
+    this->MoveAndResize(0, 0, Screen::GetWidth(), Screen::GetHeight());
+}
+
+void MainLayout::OnLayout() {
     size_t cx = Screen::GetWidth(), cy = Screen::GetHeight();
-    this->MoveAndResize(0, 0, cx, cy);
 
     if (this->layout) {
         this->layout->MoveAndResize(0, 0, cx, cy - 1);

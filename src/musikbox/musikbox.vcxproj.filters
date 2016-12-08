@@ -351,6 +351,9 @@
     <ClInclude Include="app\overlay\OutputOverlay.h">
       <Filter>app\overlay</Filter>
     </ClInclude>
+    <ClInclude Include="cursespp\IViewRoot.h">
+      <Filter>cursespp</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="cursespp">

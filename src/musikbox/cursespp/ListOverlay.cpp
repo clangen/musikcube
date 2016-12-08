@@ -61,7 +61,7 @@ ListOverlay::ListOverlay() {
     this->listWindow->SetContentColor(CURSESPP_OVERLAY_BACKGROUND);
     this->listWindow->SetFrameVisible(false);
     this->listWindow->SetFocusOrder(0);
-    this->AddWindow(this->listWindow);
+    this->LayoutBase::AddWindow(this->listWindow);
 }
 
 ListOverlay::~ListOverlay() {
@@ -132,7 +132,7 @@ bool ListOverlay::KeyPress(const std::string& key) {
 
 void ListOverlay::OnVisibilityChanged(bool visible) {
     if (visible) {
-        this->SetFocus(this->listWindow);
+        this->LayoutBase::SetFocus(this->listWindow);
         this->Redraw();
     }
 }

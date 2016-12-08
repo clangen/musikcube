@@ -32,75 +32,13 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <stdafx.h>
+#pragma once
 
-#include <cursespp/Screen.h>
-#include <cursespp/Colors.h>
-#include <cursespp/MessageQueue.h>
-#include <cursespp/Message.h>
-#include <cursespp/Text.h>
+#include <memory>
 
-#include "Checkbox.h"
-
-using namespace cursespp;
-
-#define UNCHECKED std::string("□")
-#define CHECKED std::string("✓")
-
-Checkbox::Checkbox()
-: Window()
-, checked(false) {
-    this->SetFrameVisible(false);
-}
-
-Checkbox::~Checkbox() {
-}
-
-void Checkbox::SetText(const std::string& value) {
-    if (value != this->buffer) {
-        this->buffer = value;
-        this->Redraw();
-    }
-}
-
-void Checkbox::SetChecked(bool checked) {
-    if (checked != this->checked) {
-        this->checked = checked;
-        this->Redraw();
-        this->CheckChanged(this, checked);
-    }
-}
-
-void Checkbox::OnRedraw() {
-    int cx = this->GetContentWidth();
-
-    if (cx > 0) {
-        WINDOW* c = this->GetContent();
-        werase(c);
-
-        int len = (int)u8cols(this->buffer);
-
-        std::string symbol = (this->checked ? CHECKED : UNCHECKED);
-        std::string ellipsized = text::Ellipsize(symbol + " " + this->buffer, cx);
-
-        int64 attrs = this->IsFocused() ? CURSESPP_TEXT_FOCUSED : -1LL;
-
-        if (attrs != -1) {
-            wattron(c, COLOR_PAIR(attrs));
-        }
-
-        wprintw(c, ellipsized.c_str());
-
-        if (attrs != -1) {
-            wattroff(c, COLOR_PAIR(attrs));
-        }
-    }
-}
-
-bool Checkbox::KeyPress(const std::string& key) {
-    if (key == " " || key == "KEY_ENTER") {
-        this->SetChecked(!this->checked);
-        return true;
-    }
-    return false;
+namespace cursespp {
+    class IViewRoot {
+        public:
+            virtual void ResizeToViewport() = 0;
+    };
 }

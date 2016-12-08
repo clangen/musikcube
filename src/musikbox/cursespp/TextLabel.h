@@ -68,11 +68,7 @@ namespace cursespp {
 
         virtual bool KeyPress(const std::string& key);
 
-    protected:
-        virtual void OnFocusChanged(bool focused);
-
     private:
-
         std::string buffer;
         text::TextAlign alignment;
     };

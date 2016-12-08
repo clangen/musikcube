@@ -61,10 +61,9 @@ namespace cursespp {
             virtual ~LayoutBase();
 
             /* IWindow */
-            virtual void Show(bool redraw = true);
+            virtual void Show();
             virtual void Hide();
             virtual void Invalidate();
-            virtual void Redraw();
             virtual void OnParentVisibilityChanged(bool visible);
 
             /* IOrderable */
@@ -110,7 +109,6 @@ namespace cursespp {
             void RemoveFocusable(IWindowPtr window);
             void SortFocusables();
             void IndexFocusables();
-
 
             std::vector<IWindowPtr> children;
             std::vector<IWindowPtr> focusable;

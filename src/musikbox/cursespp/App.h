@@ -34,6 +34,7 @@
 
 #pragma once
 
+#include "IViewRoot.h"
 #include "ILayout.h"
 #include "IInput.h"
 #include "IKeyHandler.h"
@@ -65,6 +66,7 @@ namespace cursespp {
                 ILayoutPtr overlay;
                 ILayoutPtr layout;
                 IWindowPtr focused;
+                IViewRoot* viewRoot;
                 IInput* input;
                 IKeyHandler* keyHandler;
 

@@ -62,6 +62,7 @@ using namespace cursespp;
 LibraryLayout::LibraryLayout(PlaybackService& playback, LibraryPtr library)
 : LayoutBase()
 , playback(playback)
+, shortcuts(nullptr)
 , transport(playback.GetTransport()) {
     this->library = library;
     this->InitializeWindows();
@@ -82,10 +83,7 @@ void LibraryLayout::OnLayout() {
         cx - 2,
         TRANSPORT_HEIGHT);
 
-    if (!this->visibleLayout) {
-        this->ShowBrowse();
-    }
-    else {
+    if (this->visibleLayout) {
         this->visibleLayout->MoveAndResize(x, y, cx, mainHeight);
         this->visibleLayout->Show();
     }
@@ -158,6 +156,7 @@ void LibraryLayout::InitializeWindows() {
     this->transportView.reset(new TransportWindow(this->playback));
 
     this->AddWindow(this->transportView);
+    this->ShowBrowse();
 }
 
 void LibraryLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
