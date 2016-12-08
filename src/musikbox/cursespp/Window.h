@@ -116,6 +116,8 @@ namespace cursespp {
             void Clear();
 
             bool CheckForBoundsError();
+            int64 GetContentColor() { return this->contentColor; }
+            int64 GetFrameColor() { return this->frameColor; }
 
             virtual void OnDimensionsChanged();
             virtual void OnVisibilityChanged(bool visible);

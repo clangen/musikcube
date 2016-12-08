@@ -58,14 +58,22 @@ void TextLabel::OnRedraw() {
         this->buffer, alignment, this->GetContentWidth());
 
     WINDOW* c = this->GetContent();
-    werase(c);
 
-    int64 attrs = this->IsFocused() ? CURSESPP_TEXT_FOCUSED : -1LL;
+    int64 attrs = this->GetContentColor();
+    if (attrs != -1) {
+        wbkgd(c, COLOR_PAIR(attrs));
+    }
+    else {
+        werase(c);
+    }
+
+    attrs = this->IsFocused() ? CURSESPP_TEXT_FOCUSED : -1LL;
 
     if (attrs != -1) {
         wattron(c, COLOR_PAIR(attrs));
     }
 
+    wmove(c, 0, 0);
     waddstr(c, aligned.c_str());
 
     if (attrs != -1) {

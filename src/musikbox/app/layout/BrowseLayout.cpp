@@ -95,8 +95,7 @@ void BrowseLayout::OnLayout() {
     size_t categoryWidth = std::min(MAX_CATEGORY_WIDTH, cx / 4);
 
     if (Screen::GetHeight() > 26) {
-        y += 1;
-        cy -= 2;
+        cy -= 1;
 
         this->categoryTitle->MoveAndResize(x, y, categoryWidth, 1);
         this->categoryTitle->Show();
@@ -122,10 +121,12 @@ void BrowseLayout::InitializeWindows() {
     this->categoryTitle.reset(new TextLabel());
     this->categoryTitle->SetText(DEFAULT_CATEGORY_NAME, text::AlignCenter);
     this->categoryTitle->Hide();
+    this->categoryTitle->SetContentColor(CURSESPP_SHORTCUT_ROW_NORMAL);
     this->categoryList.reset(new CategoryListView(this->playback, this->library, DEFAULT_CATEGORY));
 
     this->tracksTitle.reset(new TextLabel());
     this->tracksTitle->SetText("tracks", text::AlignCenter);
+    this->tracksTitle->SetContentColor(CURSESPP_SHORTCUT_ROW_NORMAL);
     this->trackList.reset(new TrackListView(this->playback, this->library));
 
     this->AddWindow(this->categoryTitle);
