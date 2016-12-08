@@ -100,7 +100,6 @@ void SearchLayout::OnLayout() {
 #define CREATE_LABEL(view, value) \
     view.reset(new cursespp::TextLabel()); \
     view->SetText(value, cursespp::text::AlignCenter); \
-    view->SetContentColor(CURSESPP_SHORTCUT_ROW_NORMAL); \
     this->AddWindow(view);
 
 void SearchLayout::InitializeWindows(PlaybackService& playback) {

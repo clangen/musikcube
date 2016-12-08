@@ -51,6 +51,7 @@ using namespace musik::box;
 using namespace cursespp;
 
 static size_t MAX_CATEGORY_WIDTH = 40;
+static int MIN_LIST_TITLE_HEIGHT = 26;
 
 #define DEFAULT_CATEGORY constants::Track::ARTIST
 #define DEFAULT_CATEGORY_NAME FIELD_TO_TITLE[DEFAULT_CATEGORY]
@@ -94,8 +95,8 @@ void BrowseLayout::OnLayout() {
 
     size_t categoryWidth = std::min(MAX_CATEGORY_WIDTH, cx / 4);
 
-    if (Screen::GetHeight() > 26) {
-        cy -= 1;
+    if (Screen::GetHeight() > MIN_LIST_TITLE_HEIGHT) {
+        ++y;
 
         this->categoryTitle->MoveAndResize(x, y, categoryWidth, 1);
         this->categoryTitle->Show();
@@ -104,6 +105,7 @@ void BrowseLayout::OnLayout() {
         this->tracksTitle->Show();
 
         ++y;
+        cy -= 2;
     }
     else {
         this->categoryTitle->Hide();
@@ -121,12 +123,10 @@ void BrowseLayout::InitializeWindows() {
     this->categoryTitle.reset(new TextLabel());
     this->categoryTitle->SetText(DEFAULT_CATEGORY_NAME, text::AlignCenter);
     this->categoryTitle->Hide();
-    this->categoryTitle->SetContentColor(CURSESPP_SHORTCUT_ROW_NORMAL);
     this->categoryList.reset(new CategoryListView(this->playback, this->library, DEFAULT_CATEGORY));
 
     this->tracksTitle.reset(new TextLabel());
     this->tracksTitle->SetText("tracks", text::AlignCenter);
-    this->tracksTitle->SetContentColor(CURSESPP_SHORTCUT_ROW_NORMAL);
     this->trackList.reset(new TrackListView(this->playback, this->library));
 
     this->AddWindow(this->categoryTitle);
