@@ -118,6 +118,39 @@ void ListWindow::OnInvalidated() {
     this->Invalidated(this, this->GetSelectedIndex());
 }
 
+bool ListWindow::IsSelectedItemCompletelyVisible() {
+    IScrollAdapter& adapter = this->GetScrollAdapter();
+    ScrollPos spos = this->GetScrollPosition();
+
+    size_t first = spos.firstVisibleEntryIndex;
+    size_t last = first + spos.visibleEntryCount - 1;
+
+    if (last <= spos.logicalIndex) {
+        /* get the height of all the visible items combined. */
+        int sum = 0;
+        for (size_t i = first; i <= spos.logicalIndex; i++) {
+            sum += adapter.GetEntry(this, i)->GetLineCount();
+        }
+
+        int delta = this->GetContentHeight() - sum;
+
+        /* special case -- the last item in the adapter is selected
+        and the heights match exactly -- we're at the end! */
+        if (delta == 0 && last == adapter.GetEntryCount() - 1) {
+            return true;
+        }
+
+        /* compare the visible height to the actual content
+        height. if the visible items are taller, and th selected
+        item is the last one, it means it's partially obscured. */
+        if (delta <= 0) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 void ListWindow::ScrollDown(int delta) {
     IScrollAdapter& adapter = this->GetScrollAdapter();
 
@@ -137,7 +170,16 @@ void ListWindow::ScrollDown(int delta) {
         }
 
         this->SetSelectedIndex(newIndex);
+
         this->ScrollTo(drawIndex);
+
+        /* when scrolling down it's possible for the last item to be
+        the selection, and partially obscured. if we hit this case, we
+        just continue scrolling until the selected item is completely
+        visible to the user. */
+        while (!IsSelectedItemCompletelyVisible()) {
+            this->ScrollTo(++drawIndex);
+        }
     }
 }
 

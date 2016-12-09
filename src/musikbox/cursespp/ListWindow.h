@@ -81,6 +81,8 @@ namespace cursespp {
             virtual IScrollAdapter::ScrollPosition& GetMutableScrollPosition();
 
         private:
+            virtual bool IsSelectedItemCompletelyVisible();
+
             IScrollAdapter* adapter;
             IScrollAdapter::ScrollPosition scrollPosition;
             size_t selectedIndex;
