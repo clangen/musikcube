@@ -70,6 +70,7 @@ void MainLayout::OnLayout() {
     if (this->layout) {
         this->layout->MoveAndResize(0, 0, cx, cy - 1);
         this->layout->Show();
+        this->layout->BringToTop();
 
         if (this->shortcutsFocused) {
             this->layout->SetFocus(IWindowPtr());

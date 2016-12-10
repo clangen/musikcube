@@ -395,12 +395,21 @@ void Window::Recreate() {
 }
 
 void Window::OnParentVisibilityChanged(bool visible) {
-    if (!visible && this->isVisible && this->framePanel) {
-        this->Destroy();
+    if (!visible && this->isVisible) {
+        if (this->framePanel) {
+            this->Destroy();
+        }
+
         this->OnVisibilityChanged(false);
     }
-    else if (visible && this->isVisible && !this->framePanel) {
-        this->Recreate();
+    else if (visible && this->isVisible) {
+        if (this->framePanel) {
+            this->Redraw();
+        }
+        else {
+            this->Recreate();
+        }
+
         this->OnVisibilityChanged(true);
     }
 }

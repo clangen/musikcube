@@ -113,7 +113,7 @@ void LibraryLayout::ChangeMainLayout(std::shared_ptr<cursespp::LayoutBase> newLa
         this->visibleLayout->SetFocusMode(ILayout::FocusModeTerminating);
 
         if (this->IsVisible()) {
-            this->BringToTop();
+            this->visibleLayout->BringToTop();
         }
 
         this->OnLayoutChanged();
