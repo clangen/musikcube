@@ -70,6 +70,8 @@ namespace musik { namespace core {
                 db::Connection &dbConnection,
                 std::string libraryDirectory);
 
+            static void ResetIdCache();
+
         private:
             DBID id;
 

@@ -46,6 +46,8 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/thread.hpp>
 
+#include <unordered_map>
+
 using namespace musik::core;
 
 #define GENRE_TRACK_COLUMN_NAME "genre"
@@ -59,6 +61,11 @@ using namespace musik::core;
 #define ARTIST_TRACK_FOREIGN_KEY "artist_id"
 
 static boost::mutex trackWriteLock;
+static std::unordered_map<std::string, int64> metadataIdCache;
+
+void IndexerTrack::ResetIdCache() {
+    metadataIdCache.clear();
+}
 
 IndexerTrack::IndexerTrack(DBID id)
 : internalMetadata(new IndexerTrack::MetadataWithThumbnail())
@@ -304,21 +311,25 @@ void IndexerTrack::ProcessNonStandardMetadata(db::Connection& connection) {
         std::string key;
 
         /* lookup the ID for the key; insert if it doesn't exist.. */
-
-        selectMetaKey.BindText(0, it->first);
-
-        if (selectMetaKey.Step() == db::Row) {
-            keyId = selectMetaKey.ColumnInt(0);
+        if (metadataIdCache.find("metaKey-" + it->first) != metadataIdCache.end()) {
+            keyId = metadataIdCache["metaKey-" + it->first];
         }
         else {
-            insertMetaKey.BindText(0, it->first);
-
-            if (insertMetaKey.Step() == db::Done) {
-                keyId = connection.LastInsertedId();
+            selectMetaKey.BindText(0, it->first);
+            if (selectMetaKey.Step() == db::Row) {
+                keyId = selectMetaKey.ColumnInt(0);
             }
-        }
+            else {
+                insertMetaKey.BindText(0, it->first);
 
-        selectMetaKey.Reset();
+                if (insertMetaKey.Step() == db::Done) {
+                    keyId = connection.LastInsertedId();
+                }
+            }
+
+            metadataIdCache["metaKey-" + it->first] = keyId;
+            selectMetaKey.Reset();
+        }
 
         if (keyId == 0) {
             continue; /* welp... */
@@ -329,24 +340,30 @@ void IndexerTrack::ProcessNonStandardMetadata(db::Connection& connection) {
 
         DBID valueId = 0;
 
-        selectMetaValue.BindInt(0, keyId);
-        selectMetaValue.BindText(1, it->second);
-
-        if (selectMetaValue.Step() == db::Row) {
-            valueId = selectMetaValue.ColumnInt(0);
+        if (metadataIdCache.find("metaValue-" + it->second) != metadataIdCache.end()) {
+            valueId = metadataIdCache["metaValue-" + it->second];
         }
         else {
-            insertMetaValue.BindInt(0, keyId);
-            insertMetaValue.BindText(1, it->second);
+            selectMetaValue.BindInt(0, keyId);
+            selectMetaValue.BindText(1, it->second);
 
-            if (insertMetaValue.Step() == db::Done) {
-                valueId = connection.LastInsertedId();
+            if (selectMetaValue.Step() == db::Row) {
+                valueId = selectMetaValue.ColumnInt(0);
+            }
+            else {
+                insertMetaValue.BindInt(0, keyId);
+                insertMetaValue.BindText(1, it->second);
+
+                if (insertMetaValue.Step() == db::Done) {
+                    valueId = connection.LastInsertedId();
+                }
+
+                insertMetaValue.Reset();
             }
 
-            insertMetaValue.Reset();
+            metadataIdCache["metaValue-" + it->second] = valueId;
+            selectMetaValue.Reset();
         }
-
-        selectMetaValue.Reset();
 
         /* now that we have a keyId and a valueId, create the relationship */
 
@@ -372,21 +389,27 @@ DBID IndexerTrack::SaveSingleValueField(
     db::Statement stmt(selectQuery.c_str(), dbConnection);
     std::string value = this->GetValue(trackMetadataKeyName.c_str());
 
-    stmt.BindText(0, value);
-
-    if (stmt.Step() == db::Row) {
-        id = stmt.ColumnInt(0);
+    if (metadataIdCache.find(fieldTableName + "-" + value) != metadataIdCache.end()) {
+        id = metadataIdCache[fieldTableName + "-" + value];
     }
     else {
-        std::string insertStatement = boost::str(boost::format(
-            "INSERT INTO %1% (name) VALUES (?)") % fieldTableName);
-
-        db::Statement insertValue(insertStatement.c_str(), dbConnection);
-        insertValue.BindText(0, value);
-
-        if (insertValue.Step() == db::Done) {
-            id = dbConnection.LastInsertedId();
+        stmt.BindText(0, value);
+        if (stmt.Step() == db::Row) {
+            id = stmt.ColumnInt(0);
         }
+        else {
+            std::string insertStatement = boost::str(boost::format(
+                "INSERT INTO %1% (name) VALUES (?)") % fieldTableName);
+
+            db::Statement insertValue(insertStatement.c_str(), dbConnection);
+            insertValue.BindText(0, value);
+
+            if (insertValue.Step() == db::Done) {
+                id = dbConnection.LastInsertedId();
+            }
+        }
+
+        metadataIdCache[fieldTableName + "-" + value] = id;
     }
 
     return id;
@@ -521,12 +544,18 @@ DBID IndexerTrack::SaveNormalizedFieldValue(
     /* find by value */
 
     {
-        std::string query = boost::str(boost::format("SELECT id FROM %1% WHERE name=?") % tableName);
-        db::Statement stmt(query.c_str(), dbConnection);
-        stmt.BindText(0, fieldValue);
+        if (metadataIdCache.find(tableName + "-" + fieldValue) != metadataIdCache.end()) {
+            fieldId = metadataIdCache[tableName + "-" + fieldValue];
+        }
+        else {
+            std::string query = boost::str(boost::format("SELECT id FROM %1% WHERE name=?") % tableName);
+            db::Statement stmt(query.c_str(), dbConnection);
+            stmt.BindText(0, fieldValue);
 
-        if (stmt.Step() == db::Row) {
-            fieldId = stmt.ColumnInt(0);
+            if (stmt.Step() == db::Row) {
+                fieldId = stmt.ColumnInt(0);
+                metadataIdCache[tableName + "-" + fieldValue] = fieldId;
+            }
         }
     }
 

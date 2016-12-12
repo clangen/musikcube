@@ -76,6 +76,7 @@ namespace musik { namespace core {
 
             bool Restarted();
 
+            void FinalizeSync();
             void SyncDelete();
             void SyncCleanup();
             void ProcessAddRemoveQueue();

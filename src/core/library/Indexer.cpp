@@ -56,7 +56,7 @@
 #define STRESS_TEST_DB 0
 
 static const std::string TAG = "Indexer";
-static const int MAX_THREADS = 10;
+static const int MAX_THREADS = 4;
 static const size_t NOTIFY_INTERVAL = 300;
 
 using namespace musik::core;
@@ -188,9 +188,11 @@ void Indexer::SynchronizeInternal(boost::asio::io_service* io) {
         this->trackTransaction->CommitAndRestart();
         this->trackTransaction.reset();
     }
+}
 
+
+void Indexer::FinalizeSync() {
     /* remove undesired entries from db (files themselves will remain) */
-
     musik::debug::info(TAG, "cleanup 1/2");
 
     if (!this->Restarted() && !this->Exited()) {
@@ -198,26 +200,25 @@ void Indexer::SynchronizeInternal(boost::asio::io_service* io) {
     }
 
     /* cleanup -- remove stale artists, albums, genres, etc */
-
     musik::debug::info(TAG, "cleanup 2/2");
 
-    if (!this->Restarted() && !this->Exited()){
+    if (!this->Restarted() && !this->Exited()) {
         this->SyncCleanup();
     }
 
-    /* optimize */
-
+    /* optimize and sort */
     musik::debug::info(TAG, "optimizing");
 
-    if (!this->Restarted() && !this->Exited()){
+    if (!this->Restarted() && !this->Exited()) {
         this->SyncOptimize();
     }
 
     /* unload reader DLLs*/
-
     this->metadataReaders.clear();
 
-    musik::debug::info(TAG, "done!");
+    this->RunAnalyzers();
+
+    IndexerTrack::ResetIdCache();
 }
 
 void Indexer::ReadMetadataFromFile(
@@ -280,7 +281,7 @@ void Indexer::ReadMetadataFromFile(
                     track.SetValue(key, val.c_str()); \
                 }
 
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < 20; i++) {
                 track.SetId(0);
                 INC(track, "title", i);
                 INC(track, "artist", i);
@@ -399,10 +400,10 @@ void Indexer::ThreadLoop() {
             this->SynchronizeInternal(nullptr);
 #endif
 
-            this->RunAnalyzers();
+            this->FinalizeSync();
             this->dbConnection.Close(); /* TODO: raii */
-
             this->SynchronizeEnd();
+            musik::debug::info(TAG, "done!");
         } /* end skip */
 
         firstTime = false;
