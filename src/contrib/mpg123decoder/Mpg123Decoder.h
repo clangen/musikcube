@@ -37,10 +37,6 @@
 #include <core/sdk/IDecoder.h>
 #include <core/sdk/IDataStream.h>
 
-#ifdef _MSC_VER /* ehh */
-typedef long ssize_t;
-#endif
-
 #include <mpg123.h>
 
 class Mpg123Decoder : public musik::core::sdk::IDecoder {

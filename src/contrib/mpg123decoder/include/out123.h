@@ -31,6 +31,7 @@
  */
 #define OUT123_API_VERSION 1
 
+#ifndef MPG123_EXPORT
 /** Defines needed for MS Visual Studio(tm) DLL builds.
  * Every public function must be prefixed with MPG123_EXPORT. When building 
  * the DLL ensure to define BUILD_MPG123_DLL. This makes the function accessible
@@ -48,6 +49,7 @@
 #else
 /* Nothing on normal/UNIX builds */
 #define MPG123_EXPORT
+#endif
 #endif
 #endif
 
@@ -118,7 +120,7 @@ enum out123_flags
 	OUT123_HEADPHONES       = 0x01 /**< output to headphones (if supported) */
 ,	OUT123_INTERNAL_SPEAKER = 0x02 /**< output to speaker (if supported) */
 ,	OUT123_LINE_OUT         = 0x04 /**< output to line out (if supported) */
-,	OUT123_QUIET               = 0x08 /**< no printouts to stdandard error */
+,	OUT123_QUIET               = 0x08 /**< no printouts to standard error */
 ,	OUT123_KEEP_PLAYING        = 0x10 /**<
  *  When this is set (default), playback continues in a loop when the device
  *  does not consume all given data at once. This happens when encountering
@@ -182,6 +184,7 @@ enum out123_error
 ,	OUT123_ARG_ERROR /**< some bad function arguments supplied */
 ,	OUT123_BAD_PARAM /**< unknown parameter code */
 ,	OUT123_SET_RO_PARAM /**< attempt to set read-only parameter */
+,	OUT123_BAD_HANDLE /**< bad handle pointer (NULL, usually) */
 ,	OUT123_ERRCOUNT /**< placeholder for shaping arrays */
 };
 
@@ -194,6 +197,8 @@ MPG123_EXPORT
 const char* out123_strerror(out123_handle *ao);
 
 /** Get the plain errcode intead of a string.
+ * Note that this used to return OUT123_ERR instead of
+ * OUT123_BAD_HANDLE in case of ao==NULL before mpg123-1.23.5 .
  * \param ao handle
  * \return error code recorded in handle or OUT123_BAD_HANDLE
  */
@@ -573,8 +578,6 @@ int out123_getformat( out123_handle *ao
 #ifdef __cplusplus
 }
 #endif
-
-#undef MPG123_EXPORT
 
 #endif
 
