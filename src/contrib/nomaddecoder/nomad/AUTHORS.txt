@@ -1,0 +1,69 @@
+Maintainers
+-----------
+Gregory Petrosyan <gregory.petrosyan@gmail.com>
+Jason Woofenden <jason@jasonwoof.com>
+
+Original Author
+---------------
+Timo Hirvonen <tihirvon@gmail.com>
+
+NOTE: This list is not complete.  Especially small changes/bug fixes may
+      not be listed here.  See the git repository for full list of
+      contributors.
+
+Credits
+-------
+original help window code and mad.charset option by Sergey Kuleshov
+<svyatogor@gentoo.org>
+
+artist/album mode idea and "display artist/album as a tree instead of two
+windows" idea from divxero <divxero@gmx.net>
+
+play queue idea and other misc ideas from Martin Stubenschrott
+<stubenschrott@gmx.net>
+
+original RPM spec file by Eugene Vlasov <eugene@ikz.ru>
+
+Claes Nästen <pekdon@gmail.com>
+  :seek command
+  --volume option for cmus-remote
+
+Frank Terbeck <ft@bewatermyfriend.org>
+  dynamic keybindings patch
+
+alex <pukpuk@gmx.de>
+  Sun output plugin
+  Tremor support for vorbis plugin
+  NetBSD and OpenBSD port
+  Various bug fixes
+
+Chun-Yu Shei <cshei@cs.indiana.edu>
+  mpc plugin
+  gapless MP3 playback
+
+Johannes Weißl <jargon@molb.org>
+  ao plugin
+
+Gregory Petrosyan <gregory.petrosyan@gmail.com>
+  PulseAudio output plugin
+
+Philipp 'ph3-der-loewe' Schafft <lion@lion.leolix.org>
+  RoarAudio output plugin
+
+Jason Woofenden <jason@jasonwoof.com>
+  Tutorial
+  cmus-unofficial patch-commiter
+
+Niko Efthymiou <nefthy-cmus@nefthy.de>
+  Jack plugin
+
+Tuncer Ayaz <tuncer.ayaz@gmail.com>
+  Opus input plugin
+
+Boris Timofeev <mashin87@gmail.com>
+  vtx plugin
+
+Yue Wang <yuleopen@gmail.com>
+  CoreAudio plugin
+
+Google Inc.

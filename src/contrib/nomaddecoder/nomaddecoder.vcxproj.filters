@@ -1,0 +1,160 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+    <Filter Include="plugin">
+      <UniqueIdentifier>{25ee4e18-20e5-4c49-a9e3-578acf41d396}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="mad">
+      <UniqueIdentifier>{b92eb37a-8187-41b6-bce6-1dd9d93daa4b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="mad\src">
+      <UniqueIdentifier>{5bb892e2-3800-48a7-bcb7-e9860bb1c8a5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="mad\include">
+      <UniqueIdentifier>{20c1661c-8a05-4de7-a011-4186bce595f3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="mad\data">
+      <UniqueIdentifier>{421fb97e-9b76-4d64-85ad-0c071f3abc1c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="nomad">
+      <UniqueIdentifier>{cfef04d2-2490-4387-bd23-8d37ae4b8644}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="NomadDecoderFactory.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="NomadDecoder.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="nomaddecoder_plugin.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="mad\bit.c">
+      <Filter>mad\src</Filter>
+    </ClCompile>
+    <ClCompile Include="mad\decoder.c">
+      <Filter>mad\src</Filter>
+    </ClCompile>
+    <ClCompile Include="mad\fixed.c">
+      <Filter>mad\src</Filter>
+    </ClCompile>
+    <ClCompile Include="mad\frame.c">
+      <Filter>mad\src</Filter>
+    </ClCompile>
+    <ClCompile Include="mad\huffman.c">
+      <Filter>mad\src</Filter>
+    </ClCompile>
+    <ClCompile Include="mad\layer3.c">
+      <Filter>mad\src</Filter>
+    </ClCompile>
+    <ClCompile Include="mad\layer12.c">
+      <Filter>mad\src</Filter>
+    </ClCompile>
+    <ClCompile Include="mad\stream.c">
+      <Filter>mad\src</Filter>
+    </ClCompile>
+    <ClCompile Include="mad\synth.c">
+      <Filter>mad\src</Filter>
+    </ClCompile>
+    <ClCompile Include="mad\timer.c">
+      <Filter>mad\src</Filter>
+    </ClCompile>
+    <ClCompile Include="mad\version.c">
+      <Filter>mad\src</Filter>
+    </ClCompile>
+    <ClCompile Include="nomad\nomad.c">
+      <Filter>nomad</Filter>
+    </ClCompile>
+    <ClCompile Include="nomad\misc.c">
+      <Filter>nomad</Filter>
+    </ClCompile>
+    <ClCompile Include="nomad\id3.c">
+      <Filter>nomad</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="NomadDecoderFactory.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="NomadDecoder.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="mad\bit.h">
+      <Filter>mad\include</Filter>
+    </ClInclude>
+    <ClInclude Include="mad\decoder.h">
+      <Filter>mad\include</Filter>
+    </ClInclude>
+    <ClInclude Include="mad\fixed.h">
+      <Filter>mad\include</Filter>
+    </ClInclude>
+    <ClInclude Include="mad\frame.h">
+      <Filter>mad\include</Filter>
+    </ClInclude>
+    <ClInclude Include="mad\huffman.h">
+      <Filter>mad\include</Filter>
+    </ClInclude>
+    <ClInclude Include="mad\layer3.h">
+      <Filter>mad\include</Filter>
+    </ClInclude>
+    <ClInclude Include="mad\layer12.h">
+      <Filter>mad\include</Filter>
+    </ClInclude>
+    <ClInclude Include="mad\mad.h">
+      <Filter>mad\include</Filter>
+    </ClInclude>
+    <ClInclude Include="mad\stream.h">
+      <Filter>mad\include</Filter>
+    </ClInclude>
+    <ClInclude Include="mad\synth.h">
+      <Filter>mad\include</Filter>
+    </ClInclude>
+    <ClInclude Include="mad\timer.h">
+      <Filter>mad\include</Filter>
+    </ClInclude>
+    <ClInclude Include="mad\version.h">
+      <Filter>mad\include</Filter>
+    </ClInclude>
+    <ClInclude Include="mad\global.h">
+      <Filter>mad\include</Filter>
+    </ClInclude>
+    <ClInclude Include="nomad\nomad.h">
+      <Filter>nomad</Filter>
+    </ClInclude>
+    <ClInclude Include="nomad\misc.h">
+      <Filter>nomad</Filter>
+    </ClInclude>
+    <ClInclude Include="nomad\id3.h">
+      <Filter>nomad</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="mad\D.dat">
+      <Filter>mad\data</Filter>
+    </None>
+    <None Include="mad\imdct_s.dat">
+      <Filter>mad\data</Filter>
+    </None>
+    <None Include="mad\qc_table.dat">
+      <Filter>mad\data</Filter>
+    </None>
+    <None Include="mad\rq_table.dat">
+      <Filter>mad\data</Filter>
+    </None>
+    <None Include="mad\sf_table.dat">
+      <Filter>mad\data</Filter>
+    </None>
+  </ItemGroup>
+</Project>
