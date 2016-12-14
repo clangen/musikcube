@@ -38,6 +38,7 @@
 
 #ifndef WIN32
 #include <unistd.h>
+#include <limits.h>
 #endif
 
 #define INPUT_BUFFER_SIZE	(5 * 8192)
@@ -730,7 +731,7 @@ next_frame:
             buffer[j++] = (sample >> 8) & 0xff;
         }
         else { /* SAMPLE_FORMAT_32_BIT_FLOAT */
-            ((float*)buffer)[j++] = ((float) sample / (float) SHRT_MIN) + 0.5f;
+            ((float*) buffer)[j++] = ((float) sample / (float) SHRT_MIN) + 0.5f;
         }
 
 		if (nomad->info.channels == 2) {
@@ -741,7 +742,7 @@ next_frame:
                 buffer[j++] = (sample >> 8) & 0xff;
             }
             else { /* SAMPLE_FORMAT_32_BIT_FLOAT */
-                ((float*)buffer)[j++] = ((float)sample / (float)SHRT_MIN) + 0.5f;
+                ((float*) buffer)[j++] = ((float) sample / (float) SHRT_MIN) + 0.5f;
             }
 		}
 	}

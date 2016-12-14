@@ -20,9 +20,13 @@ set (nomaddecoder_SOURCES
 )
 
 include_directories (
-  "${nomaddecoder_SOURCE_DIR}/mad"
-  "${nomaddecoder_SOURCE_DIR}/nomad"
+  "${CMAKE_CURRENT_SOURCE_DIR}/mad"
+  "${CMAKE_CURRENT_SOURCE_DIR}/nomad"
 )
+
+add_definitions(-DFPM_DEFAULT)
+add_definitions(-DASO_ZEROCHECK)
+add_definitions(-DHAVE_CONFIG_H)
 
 add_library(nomaddecoder SHARED ${nomaddecoder_SOURCES})
 
