@@ -53,6 +53,8 @@
 #define xnew(type, n)			(type *)xmalloc(sizeof(type) * (n))
 #define xrenew(type, mem, n)	(type *)xrealloc(mem, sizeof(type) * (n))
 
+static const float FLOAT_32_SCALE = 1.0 / 32768.0;
+
 static inline void * xrealloc(void *ptr, size_t size)
 {
     return realloc(ptr, size);
@@ -731,7 +733,7 @@ next_frame:
             buffer[j++] = (sample >> 8) & 0xff;
         }
         else { /* SAMPLE_FORMAT_32_BIT_FLOAT */
-            ((float*) buffer)[j++] = ((float) sample / (float) SHRT_MIN) + 0.5f;
+            ((float*)buffer)[j++] = (float)sample * FLOAT_32_SCALE;
         }
 
 		if (nomad->info.channels == 2) {
@@ -742,7 +744,7 @@ next_frame:
                 buffer[j++] = (sample >> 8) & 0xff;
             }
             else { /* SAMPLE_FORMAT_32_BIT_FLOAT */
-                ((float*) buffer)[j++] = ((float) sample / (float) SHRT_MIN) + 0.5f;
+                ((float*) buffer)[j++] = (float)sample * FLOAT_32_SCALE;
             }
 		}
 	}
