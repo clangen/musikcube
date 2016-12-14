@@ -36,7 +36,7 @@
 
 using namespace musik::core::sdk;
 
-#define DEFAULT_READ_SAMPLE_SIZE 2304
+#define DEFAULT_READ_SAMPLE_SIZE 2304 * 4
 
 static ssize_t nomadRead(void *datasource, void *buffer, size_t count) {
     IDataStream *stream = static_cast<IDataStream*>(datasource);
@@ -65,7 +65,7 @@ static int nomadClose(void *datasource) {
 }
 
 NomadDecoder::NomadDecoder() {
-    this->nomad = nullptr;
+    this->nomadContext = nullptr;
     this->callbacks.read = &nomadRead;
     this->callbacks.lseek = &nomadSeek;
     this->callbacks.close = &nomadClose;
@@ -75,20 +75,20 @@ NomadDecoder::~NomadDecoder() {
 }
 
 void NomadDecoder::Destroy() {
-    nomad_close(this->nomad);
-    this->nomad = nullptr;
+    nomad_close(this->nomadContext);
+    this->nomadContext = nullptr;
     delete this;
 }
 
 double NomadDecoder::SetPosition(double seconds) {
-    return !nomad_time_seek(this->nomad, seconds) ? seconds : -1;
+    return !nomad_time_seek(this->nomadContext, seconds) ? seconds : -1;
 }
 
 bool NomadDecoder::GetBuffer(IBuffer *buffer) {
     buffer->SetSamples(DEFAULT_READ_SAMPLE_SIZE);
 
     int read = nomad_read(
-        this->nomad,
+        this->nomadContext,
         (char *)buffer->BufferPointer(),
         DEFAULT_READ_SAMPLE_SIZE,
         SAMPLE_FORMAT_32_BIT_FLOAT);
@@ -99,6 +99,6 @@ bool NomadDecoder::GetBuffer(IBuffer *buffer) {
 }
 
 bool NomadDecoder::Open(IDataStream *stream) {
-    int result = nomad_open_callbacks(&this->nomad, stream, &this->callbacks);
+    int result = nomad_open_callbacks(&this->nomadContext, stream, &this->callbacks);
     return result ? false : true;
 }

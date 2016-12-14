@@ -53,5 +53,5 @@ class NomadDecoder : public musik::core::sdk::IDecoder {
 
     private:
         nomad_callbacks callbacks;
-        nomad *nomad;
+        nomad *nomadContext;
 };
