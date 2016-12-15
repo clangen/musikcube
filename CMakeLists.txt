@@ -111,7 +111,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
       bin/plugins/libpulseout.so
       bin/plugins/libflacdecoder.so
       bin/plugins/libm4adecoder.so
-      bin/plugins/libmpg123decoder.so
+      bin/plugins/libnomaddecoder.so
       bin/plugins/liboggdecoder.so
       bin/plugins/libtaglibreader.so
     DESTINATION share/musikcube/plugins
@@ -123,7 +123,7 @@ else (CMAKE_SYSTEM_NAME MATCHES "Linux")
       bin/plugins/libcoreaudioout.dylib
       bin/plugins/libflacdecoder.dylib
       bin/plugins/libm4adecoder.dylib
-      bin/plugins/libmpg123decoder.dylib
+      bin/plugins/libnomaddecoder.dylib
       bin/plugins/liboggdecoder.dylib
       bin/plugins/libtaglibreader.dylib
     DESTINATION share/musikcube/plugins
