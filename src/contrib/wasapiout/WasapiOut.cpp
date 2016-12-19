@@ -198,7 +198,7 @@ void WasapiOut::Reset() {
 }
 
 double WasapiOut::Latency() {
-    return (double) latency / 1000;
+    return this->latency;
 }
 
 bool WasapiOut::Configure(IBuffer *buffer) {
@@ -237,7 +237,6 @@ bool WasapiOut::Configure(IBuffer *buffer) {
     }
 
     DWORD speakerConfig = 0;
-
     switch (buffer->Channels()) {
         case 1:
             speakerConfig = KSAUDIO_SPEAKER_MONO;
@@ -288,7 +287,7 @@ bool WasapiOut::Configure(IBuffer *buffer) {
         return false;
     }
 
-    this->latency = (outputBufferFrames * 1000) / buffer->SampleRate();
+    this->latency = (float) outputBufferFrames / (float) buffer->SampleRate();
 
     if ((result = this->audioClient->GetService(__uuidof(IAudioRenderClient), (void**) &this->renderClient)) != S_OK) {
         std::cerr << "WasapiOut: IAudioClient::GetService failed, error code = " << result << "\n";

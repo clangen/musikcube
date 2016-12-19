@@ -41,7 +41,7 @@
 using namespace cursespp;
 
 #define VERTICAL_PADDING 2
-#define DEFAULT_WIDTH 22
+#define DEFAULT_WIDTH 26
 #define MAX_HEIGHT 12
 
 #define DISMISS() \

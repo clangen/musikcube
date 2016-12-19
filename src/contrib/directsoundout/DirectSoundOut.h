@@ -40,20 +40,20 @@
 #include <mutex>
 #include <atomic>
 
-#include <mmdeviceapi.h>
-#include <Audioclient.h>
+#include <mmreg.h>
+#include <dsound.h>
 
 #include <core/sdk/IOutput.h>
 
 using namespace musik::core::sdk;
 
-class WasapiOut : public IOutput {
+class DirectSoundOut : public IOutput {
     public:
-        WasapiOut();
-        ~WasapiOut();
+        DirectSoundOut();
+        ~DirectSoundOut();
 
         /* IPlugin */
-        const char* Name() { return "Wasapi IOutput"; };
+        const char* Name() { return "DirectSound IOutput"; };
         const char* Version() { return "0.1"; };
         const char* Author() { return "clangen"; };
         virtual void Destroy();
@@ -75,16 +75,18 @@ class WasapiOut : public IOutput {
 
         bool Configure(IBuffer *buffer);
         void Reset();
+        void ResetBuffers();
 
-        IMMDeviceEnumerator *enumerator;
-        IMMDevice *device;
-        IAudioClient *audioClient;
-        IAudioClock *audioClock;
-        IAudioRenderClient *renderClient;
-        ISimpleAudioVolume *simpleAudioVolume;
-        UINT32 outputBufferFrames;
-        std::atomic<State> state;
+        State state;
+
         WAVEFORMATEXTENSIBLE waveFormat;
+        IDirectSound8 *outputContext;
+        IDirectSoundBuffer *primaryBuffer;
+        IDirectSoundBuffer8 *secondaryBuffer;
+        DWORD bufferSize;
+        DWORD writeOffset;
+        int rate;
+        int channels;
         double volume;
         double latency;
         std::recursive_mutex stateMutex;

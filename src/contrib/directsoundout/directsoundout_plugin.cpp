@@ -31,61 +31,20 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
-#pragma once
 
 #include "pch.h"
 
-#include <deque>
-#include <memory>
-#include <mutex>
-#include <atomic>
+#include <core/sdk/IPlugin.h>
+#include "DirectSoundOut.h"
 
-#include <mmdeviceapi.h>
-#include <Audioclient.h>
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
+    return true;
+}
 
-#include <core/sdk/IOutput.h>
+extern "C" __declspec(dllexport) musik::core::sdk::IPlugin* GetPlugin() {
+    return new DirectSoundOut();
+}
 
-using namespace musik::core::sdk;
-
-class WasapiOut : public IOutput {
-    public:
-        WasapiOut();
-        ~WasapiOut();
-
-        /* IPlugin */
-        const char* Name() { return "Wasapi IOutput"; };
-        const char* Version() { return "0.1"; };
-        const char* Author() { return "clangen"; };
-        virtual void Destroy();
-
-        /* IOutput */
-        virtual void Pause();
-        virtual void Resume();
-        virtual void SetVolume(double volume);
-        virtual void Stop();
-        virtual bool Play(IBuffer *buffer, IBufferProvider *provider);
-        virtual double Latency();
-
-    private:
-        enum State {
-            StateStopped,
-            StatePlaying,
-            StatePaused
-        };
-
-        bool Configure(IBuffer *buffer);
-        void Reset();
-
-        IMMDeviceEnumerator *enumerator;
-        IMMDevice *device;
-        IAudioClient *audioClient;
-        IAudioClock *audioClock;
-        IAudioRenderClient *renderClient;
-        ISimpleAudioVolume *simpleAudioVolume;
-        UINT32 outputBufferFrames;
-        std::atomic<State> state;
-        WAVEFORMATEXTENSIBLE waveFormat;
-        double volume;
-        double latency;
-        std::recursive_mutex stateMutex;
-};
+extern "C" __declspec(dllexport) musik::core::sdk::IOutput* GetAudioOutput() {
+    return new DirectSoundOut();
+}
