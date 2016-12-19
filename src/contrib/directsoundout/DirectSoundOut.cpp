@@ -128,7 +128,10 @@ void DirectSoundOut::SetVolume(double volume) {
 
     if (this->state != StateStopped) {
         if (this->secondaryBuffer) {
-            double db = 20 * log(this->volume) * 100;
+            double db = (volume < 0.0001f)
+                ? DSBVOLUME_MIN
+                : log(this->volume) * 434.294482f;
+
             this->secondaryBuffer->SetVolume((LONG) db);
         }
     }
