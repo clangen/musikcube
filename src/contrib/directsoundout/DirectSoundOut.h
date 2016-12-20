@@ -77,7 +77,7 @@ class DirectSoundOut : public IOutput {
         void Reset();
         void ResetBuffers();
 
-        State state;
+        std::atomic<State> state;
 
         WAVEFORMATEXTENSIBLE waveFormat;
         IDirectSound8 *outputContext;
