@@ -45,6 +45,20 @@ MessageQueue::MessageQueue() {
 
 }
 
+void MessageQueue::WaitAndDispatch() {
+    LockT lock(this->queueMutex);
+
+    if (this->queue.size()) {
+        auto next = system_clock::now().time_since_epoch() - this->queue.front()->time;
+        waitForDispatch.wait_for(lock, next);
+    }
+    else {
+        waitForDispatch.wait(lock);
+    }
+
+    this->Dispatch();
+}
+
 void MessageQueue::Dispatch() {
     milliseconds now = duration_cast<milliseconds>(
         system_clock::now().time_since_epoch());
@@ -131,7 +145,13 @@ void MessageQueue::Post(IMessagePtr message, int64 delayMs) {
         }
     }
 
+    bool first = (curr == this->queue.begin());
+
     this->queue.insert(curr, m);
+
+    if (first) {
+        this->waitForDispatch.notify_all();
+    }
 }
 
 void MessageQueue::Debounce(IMessagePtr message, int64 delayMs) {

@@ -38,6 +38,7 @@
 #include "IMessageTarget.h"
 
 #include <mutex>
+#include <condition_variable>
 #include <chrono>
 
 namespace cursespp {
@@ -49,6 +50,7 @@ namespace cursespp {
             void Remove(IMessageTarget *target, int type = -1);
             void Debounce(IMessagePtr message, int64 delayMs = 0);
 
+            void WaitAndDispatch();
             void Dispatch();
 
         private:
@@ -59,6 +61,7 @@ namespace cursespp {
 
             std::recursive_mutex queueMutex;
             std::list<EnqueuedMessage*> queue;
+            std::condition_variable_any waitForDispatch;
 
             void Dispatch(IMessagePtr message);
     };
