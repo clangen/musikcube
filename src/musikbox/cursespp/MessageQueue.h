@@ -43,7 +43,7 @@
 namespace cursespp {
     class MessageQueue {
         public:
-            static MessageQueue& Instance();
+            MessageQueue();
 
             void Post(IMessagePtr message, int64 delayMs = 0);
             void Remove(IMessageTarget *target, int type = -1);
@@ -52,8 +52,6 @@ namespace cursespp {
             void Dispatch();
 
         private:
-            static MessageQueue instance;
-
             struct EnqueuedMessage {
                 IMessagePtr message;
                 std::chrono::milliseconds time;
@@ -62,7 +60,6 @@ namespace cursespp {
             std::recursive_mutex queueMutex;
             std::list<EnqueuedMessage*> queue;
 
-            MessageQueue();
             void Dispatch(IMessagePtr message);
     };
 }

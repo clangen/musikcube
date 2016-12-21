@@ -222,8 +222,7 @@ void App::Run(ILayoutPtr layout) {
         this->EnsureFocusIsValid();
 
         Window::WriteToScreen(this->state.input);
-
-        MessageQueue::Instance().Dispatch();
+        Window::MessageQueue().Dispatch();
     }
 
     overlays.Clear();

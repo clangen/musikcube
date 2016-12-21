@@ -36,6 +36,7 @@
 
 #include "curses_config.h"
 #include "IWindow.h"
+#include "MessageQueue.h"
 
 #ifdef WIN32
 #define IDLE_TIMEOUT_MS 0
@@ -102,6 +103,7 @@ namespace cursespp {
             static void InvalidateScreen();
             static void Freeze();
             static void Unfreeze();
+            static MessageQueue& MessageQueue();
 
         protected:
             IWindow* GetParent() const;

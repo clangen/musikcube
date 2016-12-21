@@ -37,7 +37,6 @@
 #include "IWindowGroup.h"
 #include "IInput.h"
 #include "Message.h"
-#include "MessageQueue.h"
 #include "Colors.h"
 #include "Screen.h"
 
@@ -46,6 +45,7 @@ using namespace cursespp;
 static int NEXT_ID = 0;
 static bool drawPending = false;
 static bool freeze = false;
+static MessageQueue messageQueue;
 
 #define ENABLE_BOUNDS_CHECK 1
 
@@ -92,6 +92,10 @@ void Window::Unfreeze() {
     }
 }
 
+MessageQueue& Window::MessageQueue() {
+    return messageQueue;
+}
+
 Window::Window(IWindow *parent) {
     this->frame = this->content = 0;
     this->framePanel = this->contentPanel = 0;
@@ -112,7 +116,7 @@ Window::Window(IWindow *parent) {
 }
 
 Window::~Window() {
-    MessageQueue::Instance().Remove(this);
+    messageQueue.Remove(this);
     this->Destroy();
 }
 
@@ -153,7 +157,7 @@ void Window::SendToBottom() {
 }
 
 void Window::PostMessage(int messageType, int64 user1, int64 user2, int64 delay) {
-    MessageQueue::Instance().Post(
+    messageQueue.Post(
         Message::Create(
             this,
             messageType,
@@ -163,7 +167,7 @@ void Window::PostMessage(int messageType, int64 user1, int64 user2, int64 delay)
 }
 
 void Window::DebounceMessage(int messageType, int64 user1, int64 user2, int64 delay) {
-    MessageQueue::Instance().Debounce(
+    messageQueue.Debounce(
         Message::Create(
             this,
             messageType,
@@ -173,7 +177,7 @@ void Window::DebounceMessage(int messageType, int64 user1, int64 user2, int64 de
 }
 
 void Window::RemoveMessage(int messageType) {
-    MessageQueue::Instance().Remove(this, messageType);
+    messageQueue.Remove(this, messageType);
 }
 
 void Window::SetParent(IWindow* parent) {

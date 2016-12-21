@@ -41,14 +41,8 @@ using namespace cursespp;
 
 using LockT = std::unique_lock<std::recursive_mutex>;
 
-MessageQueue MessageQueue::instance;
-
 MessageQueue::MessageQueue() {
 
-}
-
-MessageQueue& MessageQueue::Instance() {
-    return MessageQueue::instance;
 }
 
 void MessageQueue::Dispatch() {

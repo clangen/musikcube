@@ -91,11 +91,11 @@ class StreamMessage : public cursespp::Message {
 };
 
 #define POST(instance, type, user1, user2) \
-    cursespp::MessageQueue::Instance().Post( \
+    cursespp::Window::MessageQueue().Post( \
         cursespp::Message::Create(instance, type, user1, user2));
 
 #define POST_STREAM_MESSAGE(instance, eventType, uri) \
-    cursespp::MessageQueue::Instance().Post( \
+    cursespp::Window::MessageQueue().Post( \
         cursespp::IMessagePtr(new StreamMessage(instance, eventType, uri)));
 
 static inline void loadPreferences(
