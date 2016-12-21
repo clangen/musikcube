@@ -74,7 +74,6 @@ namespace musik { namespace core { namespace audio {
 
         private:
             using LockT = std::unique_lock<std::recursive_mutex>;
-            using PlayerList = std::list<Player*>;
 
             void StartWithPlayer(Player* player);
 
@@ -98,7 +97,7 @@ namespace musik { namespace core { namespace audio {
             musik::core::sdk::PlaybackState state;
             std::recursive_mutex stateMutex;
             std::shared_ptr<musik::core::sdk::IOutput> output;
-            PlayerList active;
+            Player* activePlayer;
             Player* nextPlayer;
             double volume;
             bool nextCanStart;

@@ -52,9 +52,16 @@ static std::string TAG = "Transport";
         instance->nextPlayer = nullptr; \
     }
 
+#define RESET_ACTIVE_PLAYER(instance) \
+    if (instance->activePlayer) { \
+        instance->activePlayer->Destroy(); \
+        instance->activePlayer = nullptr; \
+    }
+
 GaplessTransport::GaplessTransport()
 : volume(1.0)
 , state(PlaybackStopped)
+, activePlayer(nullptr)
 , nextPlayer(nullptr)
 , nextCanStart(false)
 , muted(false) {
@@ -64,16 +71,10 @@ GaplessTransport::GaplessTransport()
 GaplessTransport::~GaplessTransport() {
     this->disconnect_all();
 
-    PlayerList players;
+    LockT lock(this->stateMutex);
 
-    {
-        LockT lock(this->stateMutex);
-        std::swap(this->active, players);
-    }
-
-    for (auto it = players.begin(); it != players.end(); it++) {
-        (*it)->Destroy();
-    }
+    RESET_NEXT_PLAYER(this);
+    RESET_ACTIVE_PLAYER(this);
 }
 
 PlaybackState GaplessTransport::GetPlaybackState() {
@@ -116,8 +117,10 @@ void GaplessTransport::StartWithPlayer(Player* newPlayer) {
                 this->nextPlayer->Destroy();
             }
 
+            RESET_ACTIVE_PLAYER(this);
+
             this->nextPlayer = nullptr;
-            this->active.push_back(newPlayer);
+            this->activePlayer = newPlayer;
         }
 
         /* first argument suppresses the "Stop" event from getting triggered,
@@ -161,18 +164,12 @@ void GaplessTransport::StopInternal(
 
         {
             LockT lock(this->stateMutex);
+
             RESET_NEXT_PLAYER(this);
 
-            /* destroy all but specified player */
-            auto it = this->active.begin();
-            while (it != this->active.end()) {
-                if (*it != exclude) {
-                    (*it)->Destroy();
-                    it = this->active.erase(it);
-                }
-                else {
-                    ++it;
-                }
+            if (this->activePlayer && this->activePlayer != exclude) {
+                this->activePlayer->Destroy();
+                this->activePlayer = nullptr;
             }
         }
 
@@ -192,16 +189,9 @@ void GaplessTransport::StopInternal(
 bool GaplessTransport::Pause() {
     musik::debug::info(TAG, "pause");
 
-    size_t count = 0;
-
     this->output->Pause();
 
-    {
-        LockT lock(this->stateMutex);
-        count = this->active.size();
-    }
-
-    if (count) {
+    if (this->activePlayer) {
         this->SetPlaybackState(PlaybackPaused);
         return true;
     }
@@ -214,20 +204,15 @@ bool GaplessTransport::Resume() {
 
     this->output->Resume();
 
-    size_t count = 0;
-
     {
         LockT lock(this->stateMutex);
-        count = this->active.size();
 
-        auto it = this->active.begin();
-        while (it != this->active.end()) {
-            (*it)->Play();
-            ++it;
+        if (this->activePlayer) {
+            this->activePlayer->Play();
         }
     }
 
-    if (count) {
+    if (this->activePlayer) {
         this->SetPlaybackState(PlaybackPlaying);
         return true;
     }
@@ -238,18 +223,23 @@ bool GaplessTransport::Resume() {
 double GaplessTransport::Position() {
     LockT lock(this->stateMutex);
 
-    if (!this->active.empty()) {
-        return this->active.front()->Position();
+    if (this->activePlayer) {
+        return this->activePlayer->Position();
     }
 
     return 0;
 }
 
 void GaplessTransport::SetPosition(double seconds) {
-    LockT lock(this->stateMutex);
+    {
+        LockT lock(this->stateMutex);
 
-    if (!this->active.empty()) {
-        this->active.front()->SetPosition(seconds);
+        if (this->activePlayer) {
+            this->activePlayer->SetPosition(seconds);
+        }
+    }
+
+    if (this->activePlayer) {
         this->TimeChanged(seconds);
     }
 }
@@ -290,24 +280,16 @@ void GaplessTransport::SetVolume(double volume) {
 }
 
 void GaplessTransport::RemoveFromActive(Player* player) {
-    bool found = false;
-
     {
         LockT lock(this->stateMutex);
 
-        std::list<Player*>::iterator it =
-            std::find(this->active.begin(), this->active.end(), player);
-
-        if (it != this->active.end()) {
-            this->active.erase(it);
-            found = true;
+        if (player == this->activePlayer) {
+            RESET_ACTIVE_PLAYER(this);
+            return;
         }
     }
 
-    /* outside of the critical section, otherwise potential deadlock */
-    if (found) {
-        player->Destroy();
-    }
+    player->Destroy();
 }
 
 void GaplessTransport::SetNextCanStart(bool nextCanStart) {
@@ -345,24 +327,17 @@ void GaplessTransport::OnPlaybackFinished(Player* player) {
         LockT lock(this->stateMutex);
 
         bool startedNext = false;
-
-        size_t count = this->active.size();
-        Player* front = count ? this->active.front() : nullptr;
-        bool playerIsFront = (player == front);
+        bool playerIsActive = (player == this->activePlayer);
 
         /* only start the next player if the currently active player is the
         one that just finished. */
-        if (this->nextPlayer && playerIsFront) {
+        if (playerIsActive && this->nextPlayer) {
             this->StartWithPlayer(this->nextPlayer);
             startedNext = true;
         }
 
-        /* we're considered stopped if we were unable to automatically start
-        the next track, and the number of players is zero... or the number
-        of players is one, and it's the current player. remember, we free
-        players asynchronously. */
         if (!startedNext) {
-            stopped = !count || (count == 1 && playerIsFront);
+            stopped = playerIsActive;
         }
     }
 
