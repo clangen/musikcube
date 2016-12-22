@@ -37,6 +37,7 @@
 #include "IMessage.h"
 #include "IMessageTarget.h"
 
+#include <list>
 #include <mutex>
 #include <condition_variable>
 #include <chrono>

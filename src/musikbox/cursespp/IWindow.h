@@ -42,8 +42,6 @@
 #include <core/runtime/IMessageTarget.h>
 
 namespace cursespp {
-    class musik::core::runtime::IMessage;
-
     class IWindow :
         public IOrderable,
         public IDisplayable,

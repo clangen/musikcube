@@ -36,8 +36,6 @@ set (BOX_SRCS
 	./cursespp/LayoutBase.cpp
 	./cursespp/ListOverlay.cpp
 	./cursespp/ListWindow.cpp
-	./cursespp/Message.cpp
-	./cursespp/MessageQueue.cpp
 	./cursespp/MultiLineEntry.cpp
 	./cursespp/OverlayStack.cpp
 	./cursespp/ShortcutsWindow.cpp

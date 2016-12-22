@@ -23,6 +23,8 @@ set(CORE_SOURCES
   ./library/track/Track.cpp
   ./library/track/RetainedTrack.cpp
   ./plugin/PluginFactory.cpp
+	./runtime/Message.cpp
+	./runtime/MessageQueue.cpp
   ./support/Common.cpp
   ./support/Preferences.cpp
   ./support/PreferenceKeys.cpp
