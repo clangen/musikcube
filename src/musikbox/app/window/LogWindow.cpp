@@ -72,7 +72,7 @@ void LogWindow::ClearContents() {
     this->OnAdapterChanged();
 }
 
-void LogWindow::ProcessMessage(IMessage &message) {
+void LogWindow::ProcessMessage(musik::core::runtime::IMessage &message) {
     if (message.Type() == REFRESH) {
         this->Update();
     }

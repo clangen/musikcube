@@ -39,7 +39,6 @@
 #include "ILayout.h"
 #include "IInput.h"
 #include "Window.h"
-#include "MessageQueue.h"
 #include "Text.h"
 #include "Screen.h"
 

@@ -36,7 +36,8 @@
 
 #include "curses_config.h"
 #include "IWindow.h"
-#include "MessageQueue.h"
+
+#include <core/runtime/MessageQueue.h>
 
 #ifdef WIN32
 #define IDLE_TIMEOUT_MS 0
@@ -84,7 +85,7 @@ namespace cursespp {
             virtual void BringToTop();
             virtual void SendToBottom();
 
-            virtual void ProcessMessage(IMessage &message);
+            virtual void ProcessMessage(musik::core::runtime::IMessage &message);
 
             virtual WINDOW* GetFrame() const;
             virtual WINDOW* GetContent() const;
@@ -103,7 +104,8 @@ namespace cursespp {
             static void InvalidateScreen();
             static void Freeze();
             static void Unfreeze();
-            static MessageQueue& MessageQueue();
+
+            static musik::core::runtime::MessageQueue& MessageQueue();
 
         protected:
             IWindow* GetParent() const;

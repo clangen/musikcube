@@ -37,9 +37,9 @@
 
 #include <cursespp/SingleLineEntry.h>
 #include <cursespp/MultiLineEntry.h>
-#include <cursespp/IMessage.h>
 #include <cursespp/Text.h>
 
+#include <core/runtime/IMessage.h>
 #include <core/library/LocalLibraryConstants.h>
 
 #include <app/query/CategoryListViewQuery.h>
@@ -47,12 +47,11 @@
 
 #include "CategoryListView.h"
 
-using musik::core::LibraryPtr;
-using musik::core::audio::ITransport;
-using musik::core::IQuery;
+using namespace musik::core;
+using namespace musik::core::audio;
 using namespace musik::core::library::constants;
+using namespace musik::core::runtime;
 using namespace musik::box;
-
 using namespace cursespp;
 
 #define WINDOW_MESSAGE_QUERY_COMPLETED 1002
@@ -162,7 +161,7 @@ bool CategoryListView::KeyPress(const std::string& key) {
     return ListWindow::KeyPress(key);
 }
 
-void CategoryListView::OnQueryCompleted(IQueryPtr query) {
+void CategoryListView::OnQueryCompleted(musik::core::IQueryPtr query) {
     boost::mutex::scoped_lock lock(this->queryMutex);
 
     auto active = this->activeQuery;

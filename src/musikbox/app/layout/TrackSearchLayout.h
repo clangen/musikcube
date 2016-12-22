@@ -66,7 +66,7 @@ namespace musik {
                 void FocusInput();
 
             protected:
-                virtual void ProcessMessage(cursespp::IMessage &message);
+                virtual void ProcessMessage(musik::core::runtime::IMessage &message);
                 virtual void OnLayout();
 
             private:

@@ -35,6 +35,9 @@
     <Filter Include="src\db">
       <UniqueIdentifier>{9c63f496-9ae4-4032-8b1d-b1cdcd09a1d2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\runtime">
+      <UniqueIdentifier>{e22e7d2d-a548-4344-bb6e-8463bc1a7157}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -117,6 +120,12 @@
     </ClCompile>
     <ClCompile Include="audio\Outputs.cpp">
       <Filter>src\audio</Filter>
+    </ClCompile>
+    <ClCompile Include="runtime\Message.cpp">
+      <Filter>src\runtime</Filter>
+    </ClCompile>
+    <ClCompile Include="runtime\MessageQueue.cpp">
+      <Filter>src\runtime</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -287,6 +296,18 @@
     </ClInclude>
     <ClInclude Include="audio\Outputs.h">
       <Filter>src\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="runtime\Message.h">
+      <Filter>src\runtime</Filter>
+    </ClInclude>
+    <ClInclude Include="runtime\MessageQueue.h">
+      <Filter>src\runtime</Filter>
+    </ClInclude>
+    <ClInclude Include="runtime\IMessage.h">
+      <Filter>src\runtime</Filter>
+    </ClInclude>
+    <ClInclude Include="runtime\IMessageTarget.h">
+      <Filter>src\runtime</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

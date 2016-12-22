@@ -42,6 +42,7 @@
 #include <app/query/TrackListQueryBase.h>
 #include <app/service/PlaybackService.h>
 
+#include <core/runtime/IMessage.h>
 #include <core/library/ILibrary.h>
 
 namespace musik {
@@ -68,7 +69,7 @@ namespace musik {
 
                 virtual ~TrackListView();
 
-                virtual void ProcessMessage(cursespp::IMessage &message);
+                virtual void ProcessMessage(musik::core::runtime::IMessage &message);
                 virtual bool KeyPress(const std::string& key);
 
                 std::shared_ptr<TrackList> GetTrackList();

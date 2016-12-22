@@ -75,13 +75,13 @@ namespace musik {
                 void InitializeWindows();
 
                 void OnIndexerProgress();
-                void RequeryTrackList(ListWindow *view);
+                void RequeryTrackList(cursespp::ListWindow *view);
 
                 void OnCategoryViewSelectionChanged(
-                    ListWindow *view, size_t newIndex, size_t oldIndex);
+                    cursespp::ListWindow *view, size_t newIndex, size_t oldIndex);
 
                 void OnCategoryViewInvalidated(
-                    ListWindow *view, size_t selectedIndex);
+                    cursespp::ListWindow *view, size_t selectedIndex);
 
                 PlaybackService& playback;
                 musik::core::LibraryPtr library;

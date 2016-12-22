@@ -166,8 +166,6 @@
     <ClCompile Include="cursespp\TextInput.cpp" />
     <ClCompile Include="cursespp\TextLabel.cpp" />
     <ClCompile Include="cursespp\Window.cpp" />
-    <ClCompile Include="cursespp\Message.cpp" />
-    <ClCompile Include="cursespp\MessageQueue.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -215,7 +213,6 @@
     <ClInclude Include="cursespp\IInput.h" />
     <ClInclude Include="cursespp\IKeyHandler.h" />
     <ClInclude Include="cursespp\ILayout.h" />
-    <ClInclude Include="cursespp\IMessageTarget.h" />
     <ClInclude Include="cursespp\IOrderable.h" />
     <ClInclude Include="cursespp\IOverlay.h" />
     <ClInclude Include="cursespp\IScrollable.h" />
@@ -223,7 +220,6 @@
     <ClInclude Include="cursespp\IViewRoot.h" />
     <ClInclude Include="cursespp\IWindow.h" />
     <ClInclude Include="cursespp\IWindowGroup.h" />
-    <ClInclude Include="cursespp\IMessage.h" />
     <ClInclude Include="cursespp\LayoutBase.h" />
     <ClInclude Include="cursespp\ListOverlay.h" />
     <ClInclude Include="cursespp\ListWindow.h" />
@@ -240,8 +236,6 @@
     <ClInclude Include="cursespp\TextInput.h" />
     <ClInclude Include="cursespp\TextLabel.h" />
     <ClInclude Include="cursespp\Window.h" />
-    <ClInclude Include="cursespp\Message.h" />
-    <ClInclude Include="cursespp\MessageQueue.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>

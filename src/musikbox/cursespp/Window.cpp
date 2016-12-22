@@ -36,15 +36,18 @@
 #include "Window.h"
 #include "IWindowGroup.h"
 #include "IInput.h"
-#include "Message.h"
 #include "Colors.h"
 #include "Screen.h"
 
+#include <core/runtime/Message.h>
+
 using namespace cursespp;
+using namespace musik::core::runtime;
 
 static int NEXT_ID = 0;
 static bool drawPending = false;
 static bool freeze = false;
+
 static MessageQueue messageQueue;
 
 #define ENABLE_BOUNDS_CHECK 1
@@ -124,7 +127,7 @@ int Window::GetId() const {
     return this->id;
 }
 
-void Window::ProcessMessage(IMessage &message) {
+void Window::ProcessMessage(musik::core::runtime::IMessage &message) {
 
 }
 

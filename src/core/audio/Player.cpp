@@ -294,14 +294,14 @@ void musik::core::audio::playerThreadLoop(Player* player) {
         /* if the Quit flag isn't set, that means the stream has ended "naturally", i.e.
         it wasn't stopped by the user. raise the "almost ended" flag. */
         if (!player->Exited() && player->listener) {
-            player->listener->OnPlaybackAlmostEnded(player);
+            player->listener->OnPlayerAlmostEnded(player);
         }
     }
 
     /* if the stream failed to open... */
     else {
         if (!player->Exited() && player->listener) {
-            player->listener->OnPlaybackError(player);
+            player->listener->OnPlayerError(player);
         }
     }
 
@@ -321,10 +321,14 @@ void musik::core::audio::playerThreadLoop(Player* player) {
     }
 
     if (!player->Exited() && player->listener) {
-        player->listener->OnPlaybackFinished(player);
+        player->listener->OnPlayerFinished(player);
     }
 
     player->state = Player::Quit;
+
+    if (player->listener) {
+        player->listener->OnPlayerDestroying(player);
+    }
 
     delete player;
 }
@@ -479,7 +483,7 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
     output device */
     if (started) {
         if (!this->Exited() && this->listener) {
-            this->listener->OnPlaybackStarted(this);
+            this->listener->OnPlayerStarted(this);
         }
     }
 }

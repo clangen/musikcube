@@ -38,14 +38,13 @@
 
 #include <app/model/TrackList.h>
 
-#include <cursespp/IMessageTarget.h>
-
 #include <core/sdk/IPlaybackService.h>
 #include <core/sdk/IPlaybackRemote.h>
 #include <core/library/track/Track.h>
 #include <core/library/ILibrary.h>
 #include <core/audio/ITransport.h>
 #include <core/support/Preferences.h>
+#include <core/runtime/IMessageTarget.h>
 
 #include <boost/thread/recursive_mutex.hpp>
 
@@ -53,7 +52,7 @@ namespace musik {
     namespace box {
         class PlaybackService :
             public musik::core::sdk::IPlaybackService,
-            public cursespp::IMessageTarget,
+            public musik::core::runtime::IMessageTarget,
             public sigslot::has_slots<>
         {
             public:
@@ -68,7 +67,7 @@ namespace musik {
                 ~PlaybackService();
 
                 /* IMessageTarget */
-                virtual void ProcessMessage(cursespp::IMessage &message);
+                virtual void ProcessMessage(musik::core::runtime::IMessage &message);
 
                 /* IPlaybackService */
                 virtual void Play(size_t index);

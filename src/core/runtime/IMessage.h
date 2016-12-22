@@ -34,35 +34,22 @@
 
 #pragma once
 
-#include "IMessage.h"
+#include <core/sdk/config.h>
+#include <memory>
 
-namespace cursespp {
-    class Message : public IMessage {
-        protected:
-            Message(
-                IMessageTarget* target,
-                int messageType,
-                int64 data1,
-                int64 data2);
+namespace musik { namespace core { namespace runtime {
 
+    class IMessageTarget;
+
+    class IMessage {
         public:
-            static IMessagePtr Create(
-                IMessageTarget* target,
-                int messageType,
-                int64 data1,
-                int64 data2);
-
-            virtual ~Message() {
-            }
-
-            virtual IMessageTarget* Target();
-            virtual int Type();
-            virtual int64 UserData1();
-            virtual int64 UserData2();
-
-        private:
-            IMessageTarget* target;
-            int messageType;
-            int64 data1, data2;
+            virtual ~IMessage() { }
+            virtual IMessageTarget* Target() = 0;
+            virtual int Type() = 0;
+            virtual int64 UserData1() = 0;
+            virtual int64 UserData2() = 0;
     };
-}
+
+    typedef std::shared_ptr<IMessage> IMessagePtr;
+
+} } }

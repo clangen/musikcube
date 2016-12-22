@@ -36,8 +36,6 @@
 
 #include <cursespp/Screen.h>
 #include <cursespp/Colors.h>
-#include <cursespp/MessageQueue.h>
-#include <cursespp/Message.h>
 #include <cursespp/Text.h>
 
 #include "Checkbox.h"

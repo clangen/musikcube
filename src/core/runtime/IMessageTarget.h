@@ -35,34 +35,11 @@
 #pragma once
 
 #include "IMessage.h"
-#include "IMessageTarget.h"
 
-#include <mutex>
-#include <condition_variable>
-#include <chrono>
-
-namespace cursespp {
-    class MessageQueue {
+namespace musik { namespace core { namespace runtime {
+    class IMessageTarget {
         public:
-            MessageQueue();
-
-            void Post(IMessagePtr message, int64 delayMs = 0);
-            void Remove(IMessageTarget *target, int type = -1);
-            void Debounce(IMessagePtr message, int64 delayMs = 0);
-
-            void WaitAndDispatch();
-            void Dispatch();
-
-        private:
-            struct EnqueuedMessage {
-                IMessagePtr message;
-                std::chrono::milliseconds time;
-            };
-
-            std::recursive_mutex queueMutex;
-            std::list<EnqueuedMessage*> queue;
-            std::condition_variable_any waitForDispatch;
-
-            void Dispatch(IMessagePtr message);
+            virtual ~IMessageTarget() { }
+            virtual void ProcessMessage(IMessage &message) = 0;
     };
-}
+} } }

@@ -32,44 +32,37 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <stdafx.h>
-#include "Message.h"
+#pragma once
 
-using namespace cursespp;
+#include "IMessage.h"
+#include "IMessageTarget.h"
 
-IMessagePtr Message::Create(
-    IMessageTarget* target,
-    int messageType,
-    int64 data1,
-    int64 data2)
-{
-    return IMessagePtr(new Message(target, messageType, data1, data2));
-}
+#include <mutex>
+#include <condition_variable>
+#include <chrono>
 
-Message::Message(
-    IMessageTarget* target,
-    int messageType,
-    int64 data1,
-    int64 data2)
-{
-    this->target = target;
-    this->messageType = messageType;
-    this->data1 = data1;
-    this->data2 = data2;
-}
+namespace musik { namespace core { namespace runtime {
+    class MessageQueue {
+        public:
+            MessageQueue();
 
-IMessageTarget* Message::Target() {
-    return this->target;
-}
+            void Post(IMessagePtr message, int64 delayMs = 0);
+            void Remove(IMessageTarget *target, int type = -1);
+            void Debounce(IMessagePtr message, int64 delayMs = 0);
 
-int Message::Type() {
-    return this->messageType;
-}
+            void WaitAndDispatch();
+            void Dispatch();
 
-int64 Message::UserData1() {
-    return this->data1;
-}
+        private:
+            struct EnqueuedMessage {
+                IMessagePtr message;
+                std::chrono::milliseconds time;
+            };
 
-int64 Message::UserData2() {
-    return this->data2;
-}
+            std::recursive_mutex queueMutex;
+            std::list<EnqueuedMessage*> queue;
+            std::condition_variable_any waitForDispatch;
+
+            void Dispatch(IMessagePtr message);
+    };
+} } }

@@ -48,6 +48,8 @@ using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::library;
 using namespace musik::box;
+using namespace musik::core::runtime;
+
 using namespace cursespp;
 
 #define SEARCH_HEIGHT 3

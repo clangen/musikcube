@@ -84,15 +84,14 @@ namespace musik { namespace core { namespace audio {
 
             void SetNextCanStart(bool nextCanStart);
 
-            void RemoveFromActive(Player* player);
-
             void RaiseStreamEvent(int type, Player* player);
             void SetPlaybackState(int state);
 
-            virtual void OnPlaybackStarted(Player* player);
-            virtual void OnPlaybackAlmostEnded(Player* player);
-            virtual void OnPlaybackFinished(Player* player);
-            virtual void OnPlaybackError(Player* player);
+            virtual void OnPlayerStarted(Player* player);
+            virtual void OnPlayerAlmostEnded(Player* player);
+            virtual void OnPlayerFinished(Player* player);
+            virtual void OnPlayerError(Player* player);
+            virtual void OnPlayerDestroying(Player* player);
 
             musik::core::sdk::PlaybackState state;
             std::recursive_mutex stateMutex;

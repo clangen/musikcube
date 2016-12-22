@@ -44,19 +44,12 @@
 
 #include <core/library/IQuery.h>
 #include <core/library/ILibrary.h>
-
-using musik::core::IQueryPtr;
-using musik::core::LibraryPtr;
-
-using cursespp::IMessage;
-using cursespp::ListWindow;
-using cursespp::IScrollAdapter;
-using cursespp::ScrollAdapterBase;
+#include <core/runtime/IMessage.h>
 
 namespace musik {
     namespace box {
         class CategoryListView :
-            public ListWindow,
+            public cursespp::ListWindow,
 #if (__clang_major__ == 7 && __clang_minor__ == 3)
             public std::enable_shared_from_this<CategoryListView>,
 #endif
@@ -65,7 +58,7 @@ namespace musik {
             public:
                 CategoryListView(
                     PlaybackService& playback,
-                    LibraryPtr library,
+                    musik::core::LibraryPtr library,
                     const std::string& fieldName);
 
                 virtual ~CategoryListView();
@@ -83,26 +76,28 @@ namespace musik {
 
                 void Reset();
 
-                virtual void ProcessMessage(IMessage &message);
+                virtual void ProcessMessage(musik::core::runtime::IMessage &message);
 
                 DBID GetSelectedId();
                 std::string GetFieldName();
                 void SetFieldName(const std::string& fieldName);
 
             protected:
-                virtual IScrollAdapter& GetScrollAdapter();
-                void OnQueryCompleted(IQueryPtr query);
+                virtual cursespp::IScrollAdapter& GetScrollAdapter();
+                void OnQueryCompleted(musik::core::IQueryPtr query);
 
-                class Adapter : public ScrollAdapterBase {
+                class Adapter : public cursespp::ScrollAdapterBase {
                 public:
                     Adapter(CategoryListView &parent);
 
                     virtual size_t GetEntryCount();
-                    virtual EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index);
+
+                    virtual cursespp::IScrollAdapter::EntryPtr
+                        GetEntry(cursespp::ScrollableWindow* window, size_t index);
 
                 private:
                     CategoryListView &parent;
-                    IScrollAdapter::ScrollPosition spos;
+                    cursespp::IScrollAdapter::ScrollPosition spos;
                 };
 
             private:
@@ -110,16 +105,16 @@ namespace musik {
                 void ScrollToPlaying();
 
                 PlaybackService& playback;
-                LibraryPtr library;
                 Adapter *adapter;
 
                 boost::mutex queryMutex;
-                DBID selectAfterQuery;
                 std::shared_ptr<CategoryListViewQuery> activeQuery;
 
+                musik::core::LibraryPtr library;
                 musik::core::TrackPtr playing;
 
                 std::string fieldName;
+                DBID selectAfterQuery;
                 CategoryListViewQuery::ResultList metadata;
         };
     }

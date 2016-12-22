@@ -37,7 +37,6 @@
 
 #include <cursespp/Colors.h>
 #include <cursespp/SingleLineEntry.h>
-#include <cursespp/IMessage.h>
 #include <cursespp/Text.h>
 
 #include <core/library/LocalLibraryConstants.h>
@@ -54,6 +53,7 @@
 using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::library;
+using namespace musik::core::runtime;
 using namespace musik::box;
 using namespace cursespp;
 

@@ -32,12 +32,13 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <stdafx.h>
-#include <algorithm>
+#include "pch.hpp"
 #include "MessageQueue.h"
 
+#include <algorithm>
+
 using namespace std::chrono;
-using namespace cursespp;
+using namespace musik::core::runtime;
 
 using LockT = std::unique_lock<std::recursive_mutex>;
 

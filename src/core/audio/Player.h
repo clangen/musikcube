@@ -51,12 +51,12 @@ namespace musik { namespace core { namespace audio {
 
     class Player : public musik::core::sdk::IBufferProvider {
         public:
-            class PlayerEventListener {
-                public:
-                    virtual void OnPlaybackStarted(Player *player) = 0;
-                    virtual void OnPlaybackAlmostEnded(Player *player) = 0;
-                    virtual void OnPlaybackFinished(Player *player) = 0;
-                    virtual void OnPlaybackError(Player *player) = 0;
+            struct PlayerEventListener {
+                virtual void OnPlayerStarted(Player *player) = 0;
+                virtual void OnPlayerAlmostEnded(Player *player) = 0;
+                virtual void OnPlayerFinished(Player *player) = 0;
+                virtual void OnPlayerError(Player *player) = 0;
+                virtual void OnPlayerDestroying(Player *player) = 0;
             };
 
             static Player* Create(

@@ -37,12 +37,18 @@
 #include "curses_config.h"
 #include "IDisplayable.h"
 #include "IOrderable.h"
-#include "IMessageTarget.h"
+
+#include <core/runtime/IMessage.h>
+#include <core/runtime/IMessageTarget.h>
 
 namespace cursespp {
-    class IMessage;
+    class musik::core::runtime::IMessage;
 
-    class IWindow : public IOrderable, public IDisplayable, public IMessageTarget {
+    class IWindow :
+        public IOrderable,
+        public IDisplayable,
+        public musik::core::runtime::IMessageTarget
+    {
         public:
             virtual ~IWindow() { }
             virtual void Invalidate() = 0;

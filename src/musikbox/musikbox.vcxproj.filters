@@ -57,12 +57,6 @@
     <ClCompile Include="app\service\PlaybackService.cpp">
       <Filter>app\service</Filter>
     </ClCompile>
-    <ClCompile Include="cursespp\Message.cpp">
-      <Filter>cursespp</Filter>
-    </ClCompile>
-    <ClCompile Include="cursespp\MessageQueue.cpp">
-      <Filter>cursespp</Filter>
-    </ClCompile>
     <ClCompile Include="app\window\EntryWithHeader.cpp">
       <Filter>app\window</Filter>
     </ClCompile>
@@ -239,18 +233,6 @@
     </ClInclude>
     <ClInclude Include="app\service\PlaybackService.h">
       <Filter>app\service</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\IMessage.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\Message.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\MessageQueue.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\IMessageTarget.h">
-      <Filter>cursespp</Filter>
     </ClInclude>
     <ClInclude Include="app\window\EntryWithHeader.h">
       <Filter>app\window</Filter>

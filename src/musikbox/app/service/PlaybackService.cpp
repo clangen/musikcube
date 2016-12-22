@@ -37,13 +37,12 @@
 
 #include <app/util/Playback.h>
 
-#include <cursespp/MessageQueue.h>
-#include <cursespp/Message.h>
-
 #include <core/audio/ITransport.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <core/library/track/RetainedTrack.h>
 #include <core/plugin/PluginFactory.h>
+#include <core/runtime/MessageQueue.h>
+#include <core/runtime/Message.h>
 #include <core/support/PreferenceKeys.h>
 
 #include <boost/lexical_cast.hpp>
@@ -52,13 +51,11 @@ using musik::core::TrackPtr;
 using musik::core::LibraryPtr;
 using musik::core::audio::ITransport;
 
-using cursespp::IMessageTarget;
-using cursespp::IMessage;
-
 using namespace musik::core::library;
 using namespace musik::core;
 using namespace musik::core::prefs;
 using namespace musik::core::sdk;
+using namespace musik::core::runtime;
 using namespace musik::box;
 
 #define NO_POSITION (size_t) -1
@@ -73,7 +70,7 @@ using namespace musik::box;
 #define MESSAGE_VOLUME_CHANGED 1003
 #define MESSAGE_MODE_CHANGED 1004
 
-class StreamMessage : public cursespp::Message {
+class StreamMessage : public Message {
     public:
         StreamMessage(IMessageTarget* target, int eventType, const std::string& uri)
         : Message(target, MESSAGE_STREAM_EVENT, eventType, 0) {
@@ -92,11 +89,11 @@ class StreamMessage : public cursespp::Message {
 
 #define POST(instance, type, user1, user2) \
     cursespp::Window::MessageQueue().Post( \
-        cursespp::Message::Create(instance, type, user1, user2));
+        musik::core::runtime::Message::Create(instance, type, user1, user2));
 
 #define POST_STREAM_MESSAGE(instance, eventType, uri) \
     cursespp::Window::MessageQueue().Post( \
-        cursespp::IMessagePtr(new StreamMessage(instance, eventType, uri)));
+        musik::core::runtime::IMessagePtr(new StreamMessage(instance, eventType, uri)));
 
 static inline void loadPreferences(
     ITransport& transport,

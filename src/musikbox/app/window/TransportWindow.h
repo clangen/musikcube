@@ -37,6 +37,7 @@
 #include <cursespp/Window.h>
 #include <cursespp/IKeyHandler.h>
 #include <core/library/track/Track.h>
+#include <core/runtime/IMessage.h>
 #include <app/service/PlaybackService.h>
 #include <sigslot/sigslot.h>
 #include "OutputWindow.h"
@@ -61,7 +62,7 @@ namespace musik {
                 TransportWindow(musik::box::PlaybackService& playback);
                 virtual ~TransportWindow();
 
-                virtual void ProcessMessage(cursespp::IMessage &message);
+                virtual void ProcessMessage(musik::core::runtime::IMessage &message);
                 virtual void OnFocusChanged(bool focused);
                 virtual void OnRedraw();
                 virtual bool KeyPress(const std::string& key);

@@ -37,6 +37,7 @@
 #include <sigslot/sigslot.h>
 
 #include <core/debug.h>
+#include <core/runtime/IMessage.h>
 
 #include <boost/thread/mutex.hpp>
 
@@ -58,7 +59,7 @@ namespace musik {
 
                 void ClearContents();
 
-                virtual void ProcessMessage(cursespp::IMessage &message);
+                virtual void ProcessMessage(musik::core::runtime::IMessage &message);
                 virtual void OnVisibilityChanged(bool visible);
 
             protected:

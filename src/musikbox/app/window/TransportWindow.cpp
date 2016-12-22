@@ -37,7 +37,6 @@
 
 #include <cursespp/Screen.h>
 #include <cursespp/Colors.h>
-#include <cursespp/Message.h>
 #include <cursespp/Text.h>
 
 #include <app/util/Duration.h>
@@ -45,6 +44,7 @@
 
 #include <core/debug.h>
 #include <core/library/LocalLibraryConstants.h>
+#include <core/runtime/Message.h>
 
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
@@ -60,6 +60,7 @@ using namespace musik::core::audio;
 using namespace musik::core::library;
 using namespace musik::core::db;
 using namespace musik::core::sdk;
+using namespace musik::core::runtime;
 using namespace musik::box;
 using namespace boost::chrono;
 using namespace cursespp;

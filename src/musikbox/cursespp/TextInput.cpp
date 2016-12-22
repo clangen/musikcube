@@ -36,8 +36,6 @@
 
 #include "Screen.h"
 #include "Colors.h"
-#include "MessageQueue.h"
-#include "Message.h"
 #include "TextInput.h"
 
 using namespace cursespp;

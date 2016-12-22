@@ -37,7 +37,6 @@
 #include "ConsoleLayout.h"
 
 #include <cursespp/Screen.h>
-#include <cursespp/IMessage.h>
 
 #include <core/sdk/IPlugin.h>
 #include <core/plugin/PluginFactory.h>
