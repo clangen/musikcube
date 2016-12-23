@@ -200,6 +200,10 @@ bool CddaDataStream::SetPosition(PositionType position) {
     return true;
 }
 
+bool CddaDataStream::Seekable() {
+    return true;
+}
+
 PositionType CddaDataStream::Position() {
     return (PositionType) this->position;
 }

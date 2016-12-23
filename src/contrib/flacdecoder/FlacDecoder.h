@@ -50,6 +50,7 @@ class FlacDecoder :	public musik::core::sdk::IDecoder {
         virtual void Destroy();
         virtual double SetPosition(double seconds);
         virtual bool GetBuffer(IBuffer *buffer);
+        virtual double GetDuration();
         virtual bool Open(musik::core::sdk::IDataStream *stream);
 
     private:
@@ -102,6 +103,7 @@ class FlacDecoder :	public musik::core::sdk::IDecoder {
         long sampleRate;
         uint64 totalSamples;
         int bitsPerSample;
+        double duration;
 
         float *outputBuffer;
         unsigned long outputBufferSize;

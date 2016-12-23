@@ -54,6 +54,7 @@ namespace musik { namespace core { namespace io {
             virtual PositionType Position();
             virtual bool Eof();
             virtual long Length();
+            virtual bool Seekable();
             virtual const char* Type();
             virtual const char* Uri();
 

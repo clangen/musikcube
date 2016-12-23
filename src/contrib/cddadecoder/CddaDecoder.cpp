@@ -40,7 +40,8 @@
 #define BYTES_PER_RAW_SAMPLE 2
 
 CddaDecoder::CddaDecoder() {
-    this->data = NULL;
+    this->duration = -1.0f;
+    this->data = nullptr;
     this->buffer = new BYTE[CDDA_BUFFER_SIZE];
 }
 
@@ -54,6 +55,7 @@ void CddaDecoder::Destroy() {
 
 bool CddaDecoder::Open(IDataStream* data) {
     this->data = (CddaDataStream *) data;
+    this->duration = (double)(data->Length() / sizeof(int)) / 44100.0f;
     return (data != NULL);
 }
 
@@ -65,6 +67,10 @@ double CddaDecoder::SetPosition(double seconds) {
     }
 
     return -1;
+}
+
+double CddaDecoder::GetDuration() {
+    return this->duration;
 }
 
 bool CddaDecoder::GetBuffer(IBuffer *buffer) {

@@ -141,6 +141,10 @@ void DirectSoundOut::SetVolume(double volume) {
     }
 }
 
+double DirectSoundOut::GetVolume() {
+    return this->volume;
+}
+
 void DirectSoundOut::Stop() {
     Lock lock(this->stateMutex);
     this->ResetBuffers();

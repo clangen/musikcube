@@ -104,6 +104,10 @@ void WasapiOut::SetVolume(double volume) {
     }
 }
 
+double WasapiOut::GetVolume() {
+    return this->volume;
+}
+
 void WasapiOut::Stop() {
     Lock lock(this->stateMutex);
 

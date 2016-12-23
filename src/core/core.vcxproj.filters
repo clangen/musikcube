@@ -127,6 +127,12 @@
     <ClCompile Include="runtime\MessageQueue.cpp">
       <Filter>src\runtime</Filter>
     </ClCompile>
+    <ClCompile Include="audio\CrossfadeTransport.cpp">
+      <Filter>src\audio</Filter>
+    </ClCompile>
+    <ClCompile Include="audio\Crossfader.cpp">
+      <Filter>src\audio</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -308,6 +314,12 @@
     </ClInclude>
     <ClInclude Include="runtime\IMessageTarget.h">
       <Filter>src\runtime</Filter>
+    </ClInclude>
+    <ClInclude Include="audio\CrossfadeTransport.h">
+      <Filter>src\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="audio\Crossfader.h">
+      <Filter>src\audio</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

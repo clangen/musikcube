@@ -61,6 +61,10 @@ LocalFileStream::~LocalFileStream() {
     }
 }
 
+bool LocalFileStream::Seekable() {
+    return true;
+}
+
 bool LocalFileStream::Open(const char *filename, unsigned int options) {
     try {
         this->uri = filename;

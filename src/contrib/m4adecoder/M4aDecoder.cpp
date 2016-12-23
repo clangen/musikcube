@@ -77,9 +77,10 @@ static int FindAacTrack(mp4ff_t *infile) {
 }
 
 M4aDecoder::M4aDecoder() {
-    this->decoder = NULL;
-    this->decoderFile = NULL;
+    this->decoder = nullptr;
+    this->decoderFile = nullptr;
     memset(&decoderCallbacks, 0, sizeof(this->decoderCallbacks));
+    this->duration = -1.0f;
 }
 
 M4aDecoder::~M4aDecoder() {
@@ -113,6 +114,16 @@ bool M4aDecoder::Open(musik::core::sdk::IDataStream *stream) {
             mp4ff_get_decoder_config(
                 decoderFile, audioTrackId, &buffer, &bufferSize);
 
+            const float scale =
+                (float) mp4ff_time_scale(decoderFile, audioTrackId);
+
+            const float duration =
+                (float) mp4ff_get_track_duration(decoderFile, audioTrackId);
+
+            if (scale > 0 && duration > 0) {
+                this->duration = duration / scale;
+            }
+
             if (buffer) {
                 if (NeAACDecInit2(
                     decoder,
@@ -135,8 +146,7 @@ bool M4aDecoder::Open(musik::core::sdk::IDataStream *stream) {
     return false;
 }
 
-void M4aDecoder::Destroy(void)
-{
+void M4aDecoder::Destroy() {
     mp4ff_close(decoderFile);
 
     if (decoder) {
@@ -158,6 +168,10 @@ double M4aDecoder::SetPosition(double seconds) {
         decoderFile, audioTrackId, duration, &skip_samples);
 
     return seconds;
+}
+
+double M4aDecoder::GetDuration() {
+    return this->duration;
 }
 
 bool M4aDecoder::GetBuffer(IBuffer* target) {

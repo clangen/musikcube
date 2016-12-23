@@ -62,6 +62,7 @@ class WasapiOut : public IOutput {
         virtual void Pause();
         virtual void Resume();
         virtual void SetVolume(double volume);
+        virtual double GetVolume();
         virtual void Stop();
         virtual bool Play(IBuffer *buffer, IBufferProvider *provider);
         virtual double Latency();

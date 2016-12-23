@@ -57,6 +57,7 @@ namespace musik { namespace core { namespace audio {
                 virtual void OnPlayerFinished(Player *player) = 0;
                 virtual void OnPlayerError(Player *player) = 0;
                 virtual void OnPlayerDestroying(Player *player) = 0;
+                virtual void OnPlayerMixPoint(Player *player, int id, double time) = 0;
             };
 
             static Player* Create(
@@ -69,8 +70,11 @@ namespace musik { namespace core { namespace audio {
             void Play();
             void Destroy();
 
-            double Position();
+            double GetPosition();
             void SetPosition(double seconds);
+            double GetDuration();
+
+            void AddMixPoint(int id, double time);
 
             std::string GetUrl() const { return this->url; }
 
@@ -82,6 +86,19 @@ namespace musik { namespace core { namespace audio {
             void ReleaseAllBuffers();
 
         private:
+            struct MixPoint {
+                MixPoint(int id, double time) {
+                    this->id = id;
+                    this->time = time;
+                }
+
+                int id;
+                double time;
+            };
+
+            using MixPointPtr = std::shared_ptr<MixPoint>;
+            using MixPointList = std::list<MixPointPtr>;
+
             friend void playerThreadLoop(Player* player);
 
             Player(
@@ -106,6 +123,9 @@ namespace musik { namespace core { namespace audio {
             ThreadPtr thread;
             BufferList lockedBuffers;
             PlayerEventListener* listener;
+
+            MixPointList pendingMixPoints;
+            MixPointList processedMixPoints;
 
             std::string url;
 

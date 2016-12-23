@@ -46,6 +46,7 @@ class M4aDecoder : public musik::core::sdk::IDecoder {
         virtual void Destroy();
         virtual double SetPosition(double seconds);
         virtual bool GetBuffer(musik::core::sdk::IBuffer *buffer);
+        virtual double GetDuration();
         virtual bool Open(musik::core::sdk::IDataStream *stream);
 
     private:
@@ -57,4 +58,5 @@ class M4aDecoder : public musik::core::sdk::IDecoder {
         unsigned long sampleRate;
         unsigned char channelCount;
         long decoderSampleId;
+        double duration;
 };

@@ -49,9 +49,13 @@ class NomadDecoder : public musik::core::sdk::IDecoder {
         virtual bool Open(musik::core::sdk::IDataStream *dataStream);
         virtual double SetPosition(double seconds);
         virtual bool GetBuffer(musik::core::sdk::IBuffer *buffer);
+        virtual double GetDuration();
         virtual void Destroy();
 
     private:
+        size_t GetId3v2HeaderLength(musik::core::sdk::IDataStream *stream);
+
+        double duration;
         nomad_callbacks callbacks;
         nomad *nomadContext;
 };

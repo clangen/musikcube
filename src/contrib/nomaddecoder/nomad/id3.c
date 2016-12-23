@@ -30,7 +30,6 @@ enum {
 	ID3_ENCODING_UTF_16     = 0x01,
 	ID3_ENCODING_UTF_16_BE  = 0x02,
 	ID3_ENCODING_UTF_8      = 0x03,
-
 	ID3_ENCODING_MAX        = 0x03
 };
 

@@ -62,6 +62,8 @@ namespace musik { namespace core { namespace audio {
             virtual double Volume() = 0;
             virtual void SetVolume(double volume) = 0;
 
+            virtual double GetDuration() = 0;
+
             virtual bool IsMuted() = 0;
             virtual void SetMuted(bool muted) = 0;
 

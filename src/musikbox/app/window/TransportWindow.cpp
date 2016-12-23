@@ -379,7 +379,7 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     /* playing SONG TITLE from ALBUM NAME */
 
-    std::string duration = "0";
+    int secondsTotal = 0;
 
     if (stopped) {
         ON(c, disabled);
@@ -387,19 +387,28 @@ void TransportWindow::Update(TimeMode timeMode) {
         OFF(c, disabled);
     }
     else {
+        secondsTotal = transport.GetDuration();
+
         std::string title, album, artist;
 
         if (this->currentTrack) {
             title = this->currentTrack->GetValue(constants::Track::TITLE);
             album = this->currentTrack->GetValue(constants::Track::ALBUM);
             artist = this->currentTrack->GetValue(constants::Track::ARTIST);
-            duration = this->currentTrack->GetValue(constants::Track::DURATION);
+
+            if (secondsTotal <= 0) {
+                std::string duration =
+                    this->currentTrack->GetValue(constants::Track::DURATION);
+
+                if (duration.size()) {
+                    secondsTotal = boost::lexical_cast<int>(duration);
+                }
+            }
         }
 
         title = title.size() ? title : "[song]";
         album = album.size() ? album : "[album]";
         artist = artist.size() ? artist : "[artist]";
-        duration = duration.size() ? duration : "0";
 
         writePlayingFormat(
             c,
@@ -495,8 +504,6 @@ void TransportWindow::Update(TimeMode timeMode) {
         this->lastTime = transport.Position();
         secondsCurrent = (int) round(this->lastTime);
     }
-
-    int secondsTotal = boost::lexical_cast<int>(duration);
 
     const std::string currentTime = duration::Duration(std::min(secondsCurrent, secondsTotal));
     const std::string totalTime = duration::Duration(secondsTotal);

@@ -54,7 +54,8 @@ FlacDecoder::FlacDecoder()
 , channels(0)
 , sampleRate(0)
 , bitsPerSample(0)
-, totalSamples(0) {
+, totalSamples(0)
+, duration(-1.0f) {
     this->decoder = FLAC__stream_decoder_new();
 }
 
@@ -177,6 +178,7 @@ void FlacDecoder::FlacMetadata(
         fdec->sampleRate = metadata->data.stream_info.sample_rate;
         fdec->channels = metadata->data.stream_info.channels;
         fdec->bitsPerSample = metadata->data.stream_info.bits_per_sample;
+        fdec->duration = (double)fdec->totalSamples / fdec->sampleRate;
     }
 }
 
@@ -225,6 +227,10 @@ double FlacDecoder::SetPosition(double seconds) {
     }
 
     return -1;
+}
+
+double FlacDecoder::GetDuration() {
+    return this->duration;
 }
 
 bool FlacDecoder::GetBuffer(IBuffer *buffer) {

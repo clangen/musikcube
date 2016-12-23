@@ -158,14 +158,29 @@ void Player::Destroy() {
     }
 }
 
-double Player::Position() {
+double Player::GetPosition() {
     std::unique_lock<std::mutex> lock(this->positionMutex);
     return std::max(0.0, round(this->currentPosition - this->output->Latency()));
 }
 
+double Player::GetDuration() {
+    return this->stream ? this->stream->GetDuration() : -1.0f;
+}
+
 void Player::SetPosition(double seconds) {
-    std::unique_lock<std::mutex> lock(this->positionMutex);
+    std::unique_lock<std::mutex> positionLock(this->positionMutex);
     this->setPosition = std::max(0.0, seconds);
+
+    /* reset our mix points on seek! that way we'll notify again if necessary */
+    std::unique_lock<std::mutex> queueLock(this->queueMutex);
+    this->pendingMixPoints.splice(
+        this->pendingMixPoints.begin(),
+        this->processedMixPoints);
+}
+
+void Player::AddMixPoint(int id, double time) {
+    std::unique_lock<std::mutex> queueLock(this->queueMutex);
+    this->pendingMixPoints.push_back(std::make_shared<MixPoint>(id, time));
 }
 
 int Player::State() {
@@ -431,6 +446,8 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
         vis::PcmVisualizer()->Write(buffer);
     }
 
+    MixPointList mixPointsHit;
+
     /* free the buffer */
 
     {
@@ -461,6 +478,23 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
                     this->currentPosition = this->lockedBuffers.front()->Position();
                 }
 
+                /* did we hit any pending mixpoints? if so add them to our set and
+                move them to the processed set. we'll notify once out of the
+                critical section. */
+                if (this->pendingMixPoints.size() > 0) {
+                    double adjustedPosition = this->GetPosition();
+
+                    auto it = this->pendingMixPoints.begin();
+                    while (it != this->pendingMixPoints.end()) {
+                        if (adjustedPosition >= (*it)->time) {
+                            mixPointsHit.push_back(*it);
+                            this->processedMixPoints.push_back(*it);
+                            it = this->pendingMixPoints.erase(it);
+                        }
+                        ++it;
+                    }
+                }
+
                 /* if the output device's internal buffers are full, it will stop
                 accepting new samples. now that a buffer has been processed, we can
                 try to enqueue another sample. the thread loop blocks on this condition */
@@ -477,13 +511,19 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
         }
     }
 
-    /* we notify our listeners that we've started playing only after the first
-    buffer has been consumed. this is because sometimes we precache buffers
-    and send them to the output before they are actually processed by the
-    output device */
-    if (started) {
-        if (!this->Exited() && this->listener) {
+
+    if (!this->Exited() && this->listener) {
+        /* we notify our listeners that we've started playing only after the first
+        buffer has been consumed. this is because sometimes we precache buffers
+        and send them to the output before they are actually processed by the
+        output device */
+        if (started) {
             this->listener->OnPlayerStarted(this);
+        }
+
+        auto it = mixPointsHit.begin();
+        while (it != mixPointsHit.end()) {
+            this->listener->OnPlayerMixPoint(this, (*it)->id, (*it)->time);
         }
     }
 }

@@ -44,7 +44,7 @@
 using namespace musik::core::audio;
 using namespace musik::core::sdk;
 
-static std::string TAG = "Transport";
+static std::string TAG = "GaplessTransport";
 
 #define RESET_NEXT_PLAYER(instance) \
     if (instance->nextPlayer) { \
@@ -160,8 +160,6 @@ void GaplessTransport::StopInternal(
     otherwise, we let them finish naturally; RemoveActive() will take
     care of disposing of them */
     if (stopOutput) {
-        std::list<Player*> toDelete;
-
         {
             LockT lock(this->stateMutex);
 
@@ -224,7 +222,7 @@ double GaplessTransport::Position() {
     LockT lock(this->stateMutex);
 
     if (this->activePlayer) {
-        return this->activePlayer->Position();
+        return this->activePlayer->GetPosition();
     }
 
     return 0;
@@ -242,6 +240,11 @@ void GaplessTransport::SetPosition(double seconds) {
     if (this->activePlayer) {
         this->TimeChanged(seconds);
     }
+}
+
+double GaplessTransport::GetDuration() {
+    LockT lock(this->stateMutex);
+    return this->activePlayer ? this->activePlayer->GetDuration() : -1.0f;
 }
 
 bool GaplessTransport::IsMuted() {
@@ -345,6 +348,10 @@ void GaplessTransport::OnPlayerDestroying(Player *player) {
         RESET_ACTIVE_PLAYER(this);
         return;
     }
+}
+
+void GaplessTransport::OnPlayerMixPoint(Player* player, int id, double time) {
+    /* we don't have any mixpoints. */
 }
 
 void GaplessTransport::SetPlaybackState(int state) {

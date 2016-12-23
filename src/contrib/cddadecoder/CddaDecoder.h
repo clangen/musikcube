@@ -53,9 +53,11 @@ public:
     bool Open(IDataStream* data);
     void Destroy();
     double SetPosition(double seconds);
+    double GetDuration();
     bool GetBuffer(IBuffer *buffer);
 
 private:
     CddaDataStream* data;
+    double duration;
     BYTE* buffer;
 };

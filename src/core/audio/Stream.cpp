@@ -99,6 +99,10 @@ double Stream::SetPosition(double requestedSeconds) {
     return actualSeconds;
 }
 
+double Stream::GetDuration() {
+    return this->decoder ? this->decoder->GetDuration() : -1.0f;
+}
+
 bool Stream::OpenStream(std::string uri) {
     musik::debug::info(TAG, "opening " + uri);
 

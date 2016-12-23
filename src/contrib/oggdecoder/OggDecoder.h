@@ -40,28 +40,26 @@
 
 using namespace musik::core::sdk;
 
-class OggDecoder : public IDecoder
-{
+class OggDecoder : public IDecoder {
+    public:
+        OggDecoder();
+        virtual ~OggDecoder();
 
-public:
-    OggDecoder();
-    ~OggDecoder();
+        virtual void Destroy();
+        virtual double SetPosition(double second);
+        virtual bool GetBuffer(IBuffer *buffer);
+        virtual double GetDuration();
+        virtual bool Open(musik::core::sdk::IDataStream *fileStream);
 
-public:
-    virtual void Destroy();
-    virtual double SetPosition(double second);
-    virtual bool GetBuffer(IBuffer *buffer);
-    virtual bool Open(musik::core::sdk::IDataStream *fileStream);
+        /* libvorbis callbacks */
+        static size_t OggRead(void *buffer, size_t nofParts, size_t partSize, void *datasource);
+        static int OggSeek(void *datasource, ogg_int64_t offset, int whence);
+        static long OggTell(void *datasource);
+        static int OggClose(void *datasource);
 
-public:
-    /* libvorbis callbacks */
-    static size_t OggRead(void *buffer, size_t nofParts, size_t partSize, void *datasource);
-    static int OggSeek(void *datasource, ogg_int64_t offset, int whence);
-    static long OggTell(void *datasource);
-    static int OggClose(void *datasource);
-
-protected:
-    musik::core::sdk::IDataStream *fileStream;
-    OggVorbis_File oggFile;
-    ov_callbacks oggCallbacks;
+    private:
+        musik::core::sdk::IDataStream *fileStream;
+        OggVorbis_File oggFile;
+        ov_callbacks oggCallbacks;
+        double duration;
 };

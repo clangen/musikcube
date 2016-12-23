@@ -115,6 +115,10 @@ void WaveOut::SetVolume(double volume) {
     this->currentVolume = volume;
 }
 
+double WaveOut::GetVolume() {
+    return this->currentVolume;
+}
+
 void WaveOut::Stop() {
     LockT lock(this->outputDeviceMutex);
 

@@ -55,6 +55,7 @@ namespace musik { namespace core { namespace audio {
             virtual BufferPtr GetNextProcessedOutputBuffer() = 0;
             virtual void OnBufferProcessedByPlayer(BufferPtr buffer) = 0;
             virtual double SetPosition(double seconds) = 0;
+            virtual double GetDuration() = 0;
             virtual bool OpenStream(std::string uri) = 0;
     };
 

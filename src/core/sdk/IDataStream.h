@@ -48,6 +48,7 @@ namespace musik { namespace core { namespace sdk {
             virtual PositionType Read(void *buffer, PositionType readBytes) = 0;
             virtual bool SetPosition(PositionType position) = 0;
             virtual PositionType Position() = 0;
+            virtual bool Seekable() = 0;
             virtual bool Eof() = 0;
             virtual long Length() = 0;
             virtual const char* Type() = 0;

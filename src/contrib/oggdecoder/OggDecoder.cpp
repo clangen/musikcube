@@ -38,6 +38,7 @@
 #define OGG_MAX_SAMPLES 1024
 
 OggDecoder::OggDecoder() {
+    this->duration = -1.0f;
     this->oggCallbacks.read_func = &OggRead;
     this->oggCallbacks.seek_func = &OggSeek;
     this->oggCallbacks.tell_func = &OggTell;
@@ -101,6 +102,8 @@ bool OggDecoder::Open(musik::core::sdk::IDataStream *fileStream) {
         return false;
     }
 
+    this->duration = ov_time_total(&this->oggFile, -1);
+
     return true;
 }
 
@@ -119,7 +122,9 @@ double OggDecoder::SetPosition(double second) {
     return -1;
 }
 
-#include <iostream>
+double OggDecoder::GetDuration() {
+    return this->duration;
+}
 
 bool OggDecoder::GetBuffer(IBuffer *buffer) {
     int bitstream;

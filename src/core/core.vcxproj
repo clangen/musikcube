@@ -84,6 +84,8 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="audio\Crossfader.cpp" />
+    <ClCompile Include="audio\CrossfadeTransport.cpp" />
     <ClCompile Include="audio\GaplessTransport.cpp" />
     <ClCompile Include="audio\Outputs.cpp" />
     <ClCompile Include="audio\Streams.cpp" />
@@ -118,6 +120,8 @@
     <ClCompile Include="support\Preferences.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="audio\Crossfader.h" />
+    <ClInclude Include="audio\CrossfadeTransport.h" />
     <ClInclude Include="audio\GaplessTransport.h" />
     <ClInclude Include="audio\IStream.h" />
     <ClInclude Include="audio\ITransport.h" />

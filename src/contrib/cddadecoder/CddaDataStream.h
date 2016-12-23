@@ -52,6 +52,7 @@ class CddaDataStream : public IDataStream {
         virtual PositionType Position();
         virtual bool Eof();
         virtual long Length();
+        virtual bool Seekable();
         virtual const char* Type();
         virtual const char* Uri();
 
