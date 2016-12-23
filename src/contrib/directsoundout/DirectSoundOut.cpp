@@ -155,6 +155,10 @@ bool DirectSoundOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     {
         Lock lock(this->stateMutex);
 
+        if (this->state == StatePaused) {
+            return false;
+        }
+
         if (!this->Configure(buffer)) {
             this->Reset();
             return false;

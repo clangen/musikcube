@@ -144,6 +144,10 @@ bool PulseOut::Play(IBuffer *buffer, IBufferProvider* provider) {
     {
         Lock lock(this->stateMutex);
 
+        if (this->state == StatePaused) {
+            return false;
+        }
+
         this->OpenDevice(buffer);
 
         if (!this->audioConnection || this->state != StatePlaying) {

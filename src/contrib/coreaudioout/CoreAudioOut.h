@@ -81,4 +81,5 @@ class CoreAudioOut : public musik::core::sdk::IOutput {
         boost::thread thread;
         boost::recursive_mutex mutex;
         bool quit;
+        bool paused;
 };

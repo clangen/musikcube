@@ -91,6 +91,7 @@ void CoreAudioOut::NotifyBufferCompleted(BufferContext *context) {
 
 CoreAudioOut::CoreAudioOut() {
     this->quit = false;
+    this->paused = false;
     this->volume = 1.0f;
 
     this->audioFormat = (AudioStreamBasicDescription) { 0 };
@@ -112,6 +113,10 @@ CoreAudioOut::CoreAudioOut() {
 
 bool CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     boost::recursive_mutex::scoped_lock lock(this->mutex);
+
+    if (this->paused) {
+        return false;
+    }
 
     if (countBuffersWithProvider(this->buffers, provider) >= BUFFER_COUNT) {
         /* enough buffers are already in the queue. bail, we'll notify the
@@ -206,6 +211,7 @@ void CoreAudioOut::Pause() {
 
     if (this->audioQueue) {
         AudioQueuePause(this->audioQueue);
+        this->paused = true;
     }
 }
 
@@ -214,6 +220,7 @@ void CoreAudioOut::Resume() {
 
     if (this->audioQueue) {
         AudioQueueStart(this->audioQueue, NULL);
+        this->paused = false;
     }
 }
 

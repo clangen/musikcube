@@ -87,7 +87,7 @@ class AlsaOut : public musik::core::sdk::IOutput {
         size_t channels;
         size_t rate;
         double volume;
-        volatile bool quit, initialized;
+        volatile bool quit, paused, initialized;
 
         std::unique_ptr<boost::thread> writeThread;
         boost::recursive_mutex stateMutex;

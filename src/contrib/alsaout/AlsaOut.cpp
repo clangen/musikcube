@@ -79,6 +79,7 @@ AlsaOut::AlsaOut()
 , rate(44100)
 , volume(1.0)
 , quit(false)
+, paused(false)
 , initialized(false) {
     std::cerr << "AlsaOut::AlsaOut() called" << std::endl;
     this->writeThread.reset(new boost::thread(boost::bind(&AlsaOut::WriteLoop, this)));
@@ -198,6 +199,7 @@ void AlsaOut::Pause() {
 
     if (this->pcmHandle) {
         snd_pcm_pause(this->pcmHandle, 1);
+        this->paused = true;
     }
 }
 
@@ -206,6 +208,7 @@ void AlsaOut::Resume() {
 
     if (this->pcmHandle) {
         snd_pcm_pause(this->pcmHandle, 0);
+        this->paused = false;
         NOTIFY();
     }
 }
@@ -281,6 +284,10 @@ bool AlsaOut::Play(IBuffer *buffer, IBufferProvider* provider) {
 
     {
         LOCK("play");
+
+        if (this->paused) {
+            return false;
+        }
 
         if (this->CountBuffersWithProvider(provider) >= BUFFER_COUNT) {
             return false;
