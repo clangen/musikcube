@@ -40,21 +40,28 @@
 using namespace std::chrono;
 using namespace musik::core::runtime;
 
-using LockT = std::unique_lock<std::recursive_mutex>;
+using LockT = std::unique_lock<std::mutex>;
 
 MessageQueue::MessageQueue() {
 
 }
 
 void MessageQueue::WaitAndDispatch() {
-    LockT lock(this->queueMutex);
+    {
+        LockT lock(this->queueMutex);
 
-    if (this->queue.size()) {
-        auto next = system_clock::now().time_since_epoch() - this->queue.front()->time;
-        waitForDispatch.wait_for(lock, next);
-    }
-    else {
-        waitForDispatch.wait(lock);
+        if (this->queue.size()) {
+            auto waitTime =
+                this->queue.front()->time -
+                system_clock::now().time_since_epoch();
+
+            if (waitTime.count() > 0) {
+                waitForDispatch.wait_for(lock, waitTime);
+            }
+       }
+        else {
+            waitForDispatch.wait(lock);
+        }
     }
 
     this->Dispatch();

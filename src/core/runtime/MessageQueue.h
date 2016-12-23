@@ -60,7 +60,7 @@ namespace musik { namespace core { namespace runtime {
                 std::chrono::milliseconds time;
             };
 
-            std::recursive_mutex queueMutex;
+            std::mutex queueMutex;
             std::list<EnqueuedMessage*> queue;
             std::condition_variable_any waitForDispatch;
 

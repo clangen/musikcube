@@ -491,14 +491,11 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
                             this->processedMixPoints.push_back(*it);
                             it = this->pendingMixPoints.erase(it);
                         }
-                        ++it;
+                        else {
+                            ++it;
+                        }
                     }
                 }
-
-                /* if the output device's internal buffers are full, it will stop
-                accepting new samples. now that a buffer has been processed, we can
-                try to enqueue another sample. the thread loop blocks on this condition */
-                this->writeToOutputCondition.notify_all();
             }
             else {
                 ++it;
@@ -524,6 +521,12 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
         auto it = mixPointsHit.begin();
         while (it != mixPointsHit.end()) {
             this->listener->OnPlayerMixPoint(this, (*it)->id, (*it)->time);
+            ++it;
         }
     }
+
+    /* if the output device's internal buffers are full, it will stop
+    accepting new samples. now that a buffer has been processed, we can
+    try to enqueue another sample. the thread loop blocks on this condition */
+    this->writeToOutputCondition.notify_all();
 }
