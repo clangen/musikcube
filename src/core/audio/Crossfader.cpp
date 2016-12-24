@@ -54,7 +54,7 @@ using namespace musik::core::runtime;
         this, MESSAGE_TICK, 0, 0), TICK_TIME_MILLIS)
 
 #define LOCK(x) \
-    std::unique_lock<std::mutex> lock(x);
+    std::unique_lock<std::recursive_mutex> lock(x);
 
 #define MESSAGE_QUIT 0
 #define MESSAGE_TICK 1
@@ -82,15 +82,8 @@ void Crossfader::Fade(
 {
     LOCK(this->contextListLock);
 
-    bool exists = std::any_of(
-        this->contextList.begin(),
-        this->contextList.end(),
-        [player](FadeContextPtr context) {
-            return (context->player == player);
-        });
-
     /* don't add the same player more than once! */
-    if (!exists) {
+    if (!this->Contains(player)) {
         std::shared_ptr<FadeContext> context = std::make_shared<FadeContext>();
         context->output = output;
         context->player = player;
@@ -133,26 +126,45 @@ void Crossfader::Stop() {
 }
 
 void Crossfader::OnPlayerDestroyed(Player* player) {
-    LOCK(this->contextListLock);
+    if (player) {
+        LOCK(this->contextListLock);
 
-    std::for_each(
-        this->contextList.begin(),
-        this->contextList.end(),
-        [player](FadeContextPtr context) {
-            if (context->player == player) {
-                context->player = nullptr;
-            }
-        });
+        std::for_each(
+            this->contextList.begin(),
+            this->contextList.end(),
+                [player](FadeContextPtr context) {
+                if (context->player == player) {
+                    context->player = nullptr;
+                }
+            });
+    }
 }
 
 void Crossfader::Cancel(Player* player, Direction direction) {
+    if (player) {
+        LOCK(this->contextListLock);
+
+        this->contextList.remove_if(
+            [player, direction](FadeContextPtr context) {
+                return
+                    context->player == player &&
+                    context->direction == direction;
+            });
+    }
+}
+
+bool Crossfader::Contains(Player* player) {
+    if (!player) {
+        return false;
+    }
+
     LOCK(this->contextListLock);
 
-    this->contextList.remove_if(
-        [player, direction](FadeContextPtr context) {
-            return
-                context->player == player &&
-                context->direction == direction;
+    return std::any_of(
+        this->contextList.begin(),
+        this->contextList.end(),
+            [player](FadeContextPtr context) {
+            return player == context->player;
         });
 }
 
@@ -206,23 +218,28 @@ void Crossfader::ProcessMessage(IMessage &message) {
                 if (fade->ticksCounted < fade->ticksTotal) {
                     ++fade->ticksCounted;
 
-                    double percent =
-                        (float)fade->ticksCounted /
-                        (float)fade->ticksTotal;
-
-                    if (fade->direction == FadeOut) {
-                        percent = (1.0f - percent);
+                    if (this->transport.IsMuted()) {
+                        fade->output->SetVolume(0.0);
                     }
+                    else {
+                        double percent =
+                            (float)fade->ticksCounted /
+                            (float)fade->ticksTotal;
 
-                    double outputVolume = globalVolume * percent;
+                        if (fade->direction == FadeOut) {
+                            percent = (1.0f - percent);
+                        }
 
-#if 0
-                    std::string dir = (fade->direction == FadeIn) ? "in" : "out";
-                    std::string dbg = boost::str(boost::format("%s %f\n") % dir % outputVolume);
-                    OutputDebugStringA(dbg.c_str());
-#endif
+                        double outputVolume = globalVolume * percent;
 
-                    fade->output->SetVolume(outputVolume);
+    #if 0
+                        std::string dir = (fade->direction == FadeIn) ? "in" : "out";
+                        std::string dbg = boost::str(boost::format("%s %f\n") % dir % outputVolume);
+                        OutputDebugStringA(dbg.c_str());
+    #endif
+
+                        fade->output->SetVolume(outputVolume);
+                    }
                 }
 
                 if (fade->ticksCounted >= fade->ticksTotal) {

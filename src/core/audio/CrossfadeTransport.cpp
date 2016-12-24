@@ -40,7 +40,7 @@
 #include <core/audio/Outputs.h>
 #include <algorithm>
 
-#define CROSSFADE_DURATION_MS 1250
+#define CROSSFADE_DURATION_MS 3000
 #define END_OF_TRACK_MIXPOINT 1001
 
 using namespace musik::core::audio;
@@ -168,11 +168,22 @@ bool CrossfadeTransport::IsMuted() {
 void CrossfadeTransport::SetMuted(bool muted) {
     if (this->muted != muted) {
         this->muted = muted;
-        this->active.SetVolume(muted ? 0.0f : this->volume);
-        this->next.SetVolume(muted ? 0.0f : this->volume);
 
-        if (muted) { // TODO FIXME
-            this->crossfader.Reset();
+        /* unconditionally set the volume to zero when we mute. */
+        if (muted) {
+            this->active.SetVolume(0.0f);
+            this->next.SetVolume(0.0f);
+        }
+        /* if we're no longer muted, and the streams aren't currently
+        in the crossfader, set their volume appropriately. */
+        else {
+            if (!crossfader.Contains(this->active.player)) {
+                this->active.SetVolume(this->volume);
+            }
+
+            if (!crossfader.Contains(this->next.player)) {
+                this->next.SetVolume(this->volume);
+            }
         }
 
         this->VolumeChanged();

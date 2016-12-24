@@ -69,6 +69,7 @@ namespace musik { namespace core { namespace audio {
 
             void OnPlayerDestroyed(Player* player);
             void Cancel(Player* player, Direction direction);
+            bool Contains(Player* player);
 
             void Reset();
             void Pause();
@@ -88,7 +89,7 @@ namespace musik { namespace core { namespace audio {
 
             using FadeContextPtr = std::shared_ptr<FadeContext>;
 
-            std::mutex contextListLock;
+            std::recursive_mutex contextListLock;
             std::unique_ptr<std::thread> thread;
             musik::core::runtime::MessageQueue messageQueue;
             std::list<FadeContextPtr> contextList;
