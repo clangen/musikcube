@@ -159,6 +159,8 @@ bool CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
             std::cerr << "AudioQueueStart failed: " << result << "\n";
             return false;
         }
+
+        this->Resume();
     }
 
     AudioQueueBufferRef audioQueueBuffer = nullptr;
@@ -220,8 +222,9 @@ void CoreAudioOut::Resume() {
 
     if (this->audioQueue) {
         AudioQueueStart(this->audioQueue, nullptr);
-        this->state = StatePlaying;
     }
+
+    this->state = StatePlaying;
 }
 
 void CoreAudioOut::SetVolume(double volume) {
@@ -255,7 +258,7 @@ void CoreAudioOut::Stop() {
         boost::recursive_mutex::scoped_lock lock(this->mutex);
         queue = this->audioQueue;
         this->audioQueue = nullptr;
-        this->state = STateStopped;
+        this->state = StateStopped;
     }
 
     if (queue) {
