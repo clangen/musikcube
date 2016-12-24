@@ -107,9 +107,10 @@ void MessageQueue::Dispatch() {
     }
 }
 
-void MessageQueue::Remove(IMessageTarget *target, int type) {
+int MessageQueue::Remove(IMessageTarget *target, int type) {
     LockT lock(this->queueMutex);
 
+    int count = 0;
     std::list<EnqueuedMessage*>::iterator it = this->queue.begin();
     while (it != this->queue.end()) {
         IMessagePtr current = (*it)->message;
@@ -118,12 +119,32 @@ void MessageQueue::Remove(IMessageTarget *target, int type) {
             if (type == -1 || type == current->Type()) {
                 delete (*it);
                 it = this->queue.erase(it);
+                ++count;
                 continue;
             }
         }
 
         ++it;
     }
+    return count;
+}
+
+bool MessageQueue::Contains(IMessageTarget *target, int type) {
+    LockT lock(this->queueMutex);
+
+    std::list<EnqueuedMessage*>::iterator it = this->queue.begin();
+    while (it != this->queue.end()) {
+        IMessagePtr current = (*it)->message;
+
+        if (current->Target() == target) {
+            if (type == -1 || type == current->Type()) {
+                return true;
+            }
+        }
+
+        ++it;
+    }
+    return false;
 }
 
 void MessageQueue::Post(IMessagePtr message, int64 delayMs) {

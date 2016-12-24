@@ -48,7 +48,8 @@ namespace musik { namespace core { namespace runtime {
             MessageQueue();
 
             void Post(IMessagePtr message, int64 delayMs = 0);
-            void Remove(IMessageTarget *target, int type = -1);
+            int Remove(IMessageTarget *target, int type = -1);
+            bool Contains(IMessageTarget *target, int type = -1);
             void Debounce(IMessagePtr message, int64 delayMs = 0);
 
             void WaitAndDispatch();
