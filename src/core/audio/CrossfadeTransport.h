@@ -89,30 +89,26 @@ namespace musik { namespace core { namespace audio {
             using MessageQueue = musik::core::runtime::MessageQueue;
 
             struct PlayerContext {
-                PlayerContext();
+                PlayerContext(Crossfader& crossfader);
+
+                void Reset();
 
                 void Reset(
-                    Crossfader& crossfader,
-                    Crossfader::Cut cut);
-
-                void Reset(
-                    Crossfader& crossfader,
-                    Crossfader::Cut cut,
                     const std::string& url,
                     Player::PlayerEventListener* listener);
 
-                void Play(Crossfader& crossfader);
+                void TransferTo(PlayerContext& context);
+
+                void Stop();
+                void Play();
+                void Pause();
+                void Resume();
+                void SetVolume(double volume);
 
                 Output output;
                 Player *player;
+                Crossfader& crossfader;
             };
-
-            void Restart();
-
-            void StopInternal(
-                bool suppressStopEvent,
-                bool stopOutput,
-                Player* exclude = nullptr);
 
             void SetNextCanStart(bool nextCanStart);
 
@@ -128,9 +124,9 @@ namespace musik { namespace core { namespace audio {
 
             musik::core::sdk::PlaybackState state;
             std::recursive_mutex stateMutex;
-            PlayerContext activePlayer;
-            PlayerContext nextPlayer;
             Crossfader crossfader;
+            PlayerContext active;
+            PlayerContext next;
             double volume;
             bool nextCanStart;
             bool muted;

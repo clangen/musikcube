@@ -54,7 +54,6 @@ namespace musik { namespace core { namespace audio {
     {
         public:
             enum Direction { FadeIn, FadeOut };
-            enum Cut { HardCut, SoftCut };
 
             Crossfader(ITransport& transport);
             virtual ~Crossfader();
@@ -66,12 +65,12 @@ namespace musik { namespace core { namespace audio {
                 Player* player,
                 std::shared_ptr<musik::core::sdk::IOutput> output,
                 Direction direction,
-                float targetPercent,
                 long durationMs);
 
             void Reset();
-
-            bool Remove(Player* player, Cut cut = SoftCut);
+            void Pause();
+            void Resume();
+            void Stop();
 
         private:
             void ThreadLoop();
@@ -80,17 +79,15 @@ namespace musik { namespace core { namespace audio {
                 std::shared_ptr<musik::core::sdk::IOutput> output;
                 Player* player;
                 Direction direction;
-                long durationMs;
                 long ticksCounted;
                 long ticksTotal;
-                float targetPercent;
             };
 
             std::mutex contextListLock;
             std::unique_ptr<std::thread> thread;
             musik::core::runtime::MessageQueue messageQueue;
             std::list<std::shared_ptr<FadeContext>> contextList;
-            std::atomic<bool> quit;
+            std::atomic<bool> quit, paused;
             ITransport& transport;
     };
 

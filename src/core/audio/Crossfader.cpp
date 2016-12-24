@@ -42,7 +42,8 @@ using namespace musik::core::audio;
 using namespace musik::core::sdk;
 using namespace musik::core::runtime;
 
-#define TICK_TIME_MILLIS 100
+#define TICKS_PER_SECOND 10
+#define TICK_TIME_MILLIS (1000 / TICKS_PER_SECOND)
 
 #define ENQUEUE_TICK() \
     this->messageQueue.Post(Message::Create( \
@@ -57,6 +58,7 @@ using namespace musik::core::runtime;
 Crossfader::Crossfader(ITransport& transport)
 : transport(transport) {
     this->quit = false;
+    this->paused = false;
 
     this->thread = std::make_unique<std::thread>(
         std::bind(&Crossfader::ThreadLoop, this));
@@ -72,19 +74,16 @@ void Crossfader::Fade(
     Player* player,
     std::shared_ptr<IOutput> output,
     Direction direction,
-    float targetPercent,
     long durationMs)
 {
     LOCK(this->contextListLock);
 
     std::shared_ptr<FadeContext> context = std::make_shared<FadeContext>();
-    context->targetPercent = targetPercent;
     context->output = output;
     context->player = player;
-    context->durationMs = durationMs;
     context->direction = direction;
     context->ticksCounted = 0;
-    context->ticksTotal = context->durationMs / TICK_TIME_MILLIS;
+    context->ticksTotal = (durationMs / TICK_TIME_MILLIS);
     contextList.push_back(context);
 
     if (contextList.size() == 1) {
@@ -92,50 +91,59 @@ void Crossfader::Fade(
     }
 }
 
+void Crossfader::Stop() {
+    LOCK(this->contextListLock);
+
+    auto it = this->contextList.begin();
+    while (it != this->contextList.end()) {
+        if ((*it)->player) {
+            (*it)->player->Destroy();
+        }
+
+        (*it)->output->Stop();
+        ++it;
+    }
+
+    this->contextList.clear();
+}
+
+void Crossfader::Pause() {
+    LOCK(this->contextListLock);
+
+    this->paused = true;
+
+    std::for_each(
+        this->contextList.begin(),
+        this->contextList.end(),
+        [](auto it) {
+            it->output->Pause();
+        });
+
+    this->messageQueue.Remove(this, MESSAGE_TICK);
+}
+
+void Crossfader::Resume() {
+    LOCK(this->contextListLock);
+
+    this->paused = false;
+
+    std::for_each(
+        this->contextList.begin(),
+        this->contextList.end(),
+        [](auto it) {
+            it->output->Resume();
+        });
+
+    this->messageQueue.Post(
+        Message::Create(this, MESSAGE_TICK, 0, 0), 0);
+}
+
 void Crossfader::Reset() {
     LOCK(this->contextListLock);
     this->contextList.clear();
 }
 
-bool Crossfader::Remove(Player* player, Cut cut) {
-    LOCK(this->contextListLock);
-
-    bool found = false;
-
-    if (cut == SoftCut) {
-        std::for_each(
-            this->contextList.begin(),
-            this->contextList.end(),
-            [player, &found](auto item) {
-                /* don't worry about the player! it'll get cleaned up
-                automatically. just worry about fading the output's volume
-                to nothing. */
-                if (item->player == player) {
-                    item->direction = FadeOut;
-                    item->player = nullptr;
-                    found = true;
-                }
-            });
-    }
-    else {
-        std::remove_if(
-            this->contextList.begin(),
-            this->contextList.end(),
-            [player, &found](auto item) {
-                /* hard cut stops the output and destroys the player
-                immediately! */
-                if (item->player == player) {
-                    item->player->Destroy();
-                    item->output->Stop();
-                    found = true;
-                }
-
-                return item->player == player;
-            });
-    }
-
-    return found;
-}
+#include <boost/format.hpp>
 
 void Crossfader::ProcessMessage(IMessage &message) {
     switch (message.Type()) {
@@ -147,27 +155,37 @@ void Crossfader::ProcessMessage(IMessage &message) {
 
             while (it != this->contextList.end()) {
                 auto fade = *it;
+                ++fade->ticksCounted;
 
-                float percent =
+                double percent =
                     (float) fade->ticksCounted /
                     (float) fade->ticksTotal;
 
-                fade->output->SetVolume(globalVolume * percent);
-                ++fade->ticksCounted;
+                if (fade->direction == FadeOut) {
+                    percent = (1.0f - percent);
+                }
+
+                float outputVolume = globalVolume * percent;
+
+#if 1
+                    std::string dir = (fade->direction == FadeIn) ? "in" : "out";
+                    std::string dbg = boost::str(boost::format("%s %f\n") % dir % outputVolume);
+                    OutputDebugStringA(dbg.c_str());
+#endif
+
+                fade->output->SetVolume(outputVolume);
 
                 if (fade->ticksCounted >= fade->ticksTotal) {
-                    /* contract: if we're fading the player out, we are responsible for
-                    destroying it. if it gets destroyed before we get here, the reference
-                    here will be null. */
-                    if (fade->direction == FadeOut && fade->player) {
-                        fade->player->Destroy();
+                    if (fade->direction == FadeOut) {
+                        (*it)->player->Destroy();
+                        (*it)->output->Stop();
                     }
 
                     it = this->contextList.erase(it);
-                    continue;
                 }
-
-                ++it;
+                else {
+                    ++it;
+                }
             }
 
             if (this->contextList.size()) {
