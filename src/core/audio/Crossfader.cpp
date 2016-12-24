@@ -165,7 +165,7 @@ void Crossfader::ProcessMessage(IMessage &message) {
                     percent = (1.0f - percent);
                 }
 
-                float outputVolume = globalVolume * percent;
+                double outputVolume = globalVolume * percent;
 
 #if 0
                 std::string dir = (fade->direction == FadeIn) ? "in" : "out";

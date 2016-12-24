@@ -387,7 +387,7 @@ void TransportWindow::Update(TimeMode timeMode) {
         OFF(c, disabled);
     }
     else {
-        secondsTotal = transport.GetDuration();
+        secondsTotal = (int) transport.GetDuration();
 
         std::string title, album, artist;
 

@@ -150,6 +150,7 @@ void Player::Destroy() {
             return; /* already terminated (or terminating) */
         }
 
+        this->listener = nullptr;
         this->state = Player::Quit;
         this->writeToOutputCondition.notify_all();
         this->thread->detach();
