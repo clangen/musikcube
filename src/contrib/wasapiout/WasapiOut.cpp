@@ -58,6 +58,7 @@ WasapiOut::WasapiOut()
 , audioClient(nullptr)
 , renderClient(nullptr)
 , simpleAudioVolume(nullptr)
+, audioStreamVolume(nullptr)
 , audioClock(nullptr)
 , outputBufferFrames(0)
 , state(StateStopped)
@@ -109,7 +110,8 @@ void WasapiOut::SetVolume(double volume) {
             this->audioStreamVolume->GetChannelCount(&count);
 
             for (UINT32 i = 0; i < count; i++) {
-                this->audioStreamVolume->SetChannelVolume(i, this->volume);
+                this->audioStreamVolume
+                    ->SetChannelVolume(i, (float) this->volume);
             }
         }
     }
@@ -206,6 +208,11 @@ void WasapiOut::Reset() {
     if (this->simpleAudioVolume) {
         this->simpleAudioVolume->Release();
         this->simpleAudioVolume = nullptr;
+    }
+
+    if (this->audioStreamVolume) {
+        this->audioStreamVolume->Release();
+        this->audioStreamVolume = nullptr;
     }
 
     if (this->audioClock) {

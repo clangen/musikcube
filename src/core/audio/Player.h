@@ -52,6 +52,7 @@ namespace musik { namespace core { namespace audio {
     class Player : public musik::core::sdk::IBufferProvider {
         public:
             struct PlayerEventListener {
+                virtual void OnPlayerPrepared(Player *player) = 0;
                 virtual void OnPlayerStarted(Player *player) = 0;
                 virtual void OnPlayerAlmostEnded(Player *player) = 0;
                 virtual void OnPlayerFinished(Player *player) = 0;
@@ -130,6 +131,7 @@ namespace musik { namespace core { namespace audio {
 
             BufferList prebufferQueue;
 
+            /* granular mutexes for better performance */
             std::mutex queueMutex, positionMutex;
             std::condition_variable writeToOutputCondition;
 

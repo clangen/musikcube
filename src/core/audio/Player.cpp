@@ -150,7 +150,6 @@ void Player::Destroy() {
             return; /* already terminated (or terminating) */
         }
 
-        this->listener = nullptr;
         this->state = Player::Quit;
         this->writeToOutputCondition.notify_all();
         this->thread->detach();
@@ -195,6 +194,10 @@ void musik::core::audio::playerThreadLoop(Player* player) {
     BufferPtr buffer;
 
     if (player->stream->OpenStream(player->url)) {
+        if (player->listener) {
+            player->listener->OnPlayerPrepared(player);
+        }
+
         /* precache until buffers are full */
         bool keepPrecaching = true;
         while (player->State() == Player::Precache && keepPrecaching) {
@@ -511,20 +514,23 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
         }
     }
 
+    /* check up front so we don't have to acquire the mutex if
+    we don't need to. */
+    if (started || mixPointsHit.size()) {
+        if (!this->Exited() && this->listener) {
+            /* we notify our listeners that we've started playing only after the first
+            buffer has been consumed. this is because sometimes we precache buffers
+            and send them to the output before they are actually processed by the
+            output device */
+            if (started) {
+                this->listener->OnPlayerStarted(this);
+            }
 
-    if (!this->Exited() && this->listener) {
-        /* we notify our listeners that we've started playing only after the first
-        buffer has been consumed. this is because sometimes we precache buffers
-        and send them to the output before they are actually processed by the
-        output device */
-        if (started) {
-            this->listener->OnPlayerStarted(this);
-        }
-
-        auto it = mixPointsHit.begin();
-        while (it != mixPointsHit.end()) {
-            this->listener->OnPlayerMixPoint(this, (*it)->id, (*it)->time);
-            ++it;
+            auto it = mixPointsHit.begin();
+            while (it != mixPointsHit.end()) {
+                this->listener->OnPlayerMixPoint(this, (*it)->id, (*it)->time);
+                ++it;
+            }
         }
     }
 

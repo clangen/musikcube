@@ -93,6 +93,7 @@ namespace musik { namespace core { namespace audio {
             void RaiseStreamEvent(int type, Player* player);
             void SetPlaybackState(int state);
 
+            virtual void OnPlayerPrepared(Player* player);
             virtual void OnPlayerStarted(Player* player);
             virtual void OnPlayerAlmostEnded(Player* player);
             virtual void OnPlayerFinished(Player* player);

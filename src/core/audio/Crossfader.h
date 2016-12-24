@@ -67,6 +67,9 @@ namespace musik { namespace core { namespace audio {
                 Direction direction,
                 long durationMs);
 
+            void OnPlayerDestroyed(Player* player);
+            void Cancel(Player* player, Direction direction);
+
             void Reset();
             void Pause();
             void Resume();

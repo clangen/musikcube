@@ -99,12 +99,14 @@ namespace musik { namespace core { namespace audio {
 
                 void TransferTo(PlayerContext& context);
 
+                void Start(double transportVolume);
                 void Stop();
-                void Play();
                 void Pause();
                 void Resume();
                 void SetVolume(double volume);
 
+                bool started;
+                bool canFade;
                 Output output;
                 Player *player;
                 Crossfader& crossfader;
@@ -115,6 +117,7 @@ namespace musik { namespace core { namespace audio {
             void RaiseStreamEvent(int type, Player* player);
             void SetPlaybackState(int state);
 
+            virtual void OnPlayerPrepared(Player* player);
             virtual void OnPlayerStarted(Player* player);
             virtual void OnPlayerAlmostEnded(Player* player);
             virtual void OnPlayerFinished(Player* player);
