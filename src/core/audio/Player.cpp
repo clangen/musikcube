@@ -120,14 +120,12 @@ Player::Player(const std::string &url, std::shared_ptr<IOutput> output, PlayerEv
 
     this->spectrum = new float[FFT_N / 2];
 
-    /* we allow callers to specify an output device; but if they don't,
-    we will create and manage our own. */
     if (!this->output) {
         throw std::runtime_error("output cannot be null!");
     }
 
     /* each player instance is driven by a background thread. start it. */
-    this->thread.reset(new std::thread(std::bind(&musik::core::audio::playerThreadLoop, this)));
+    this->thread = new std::thread(std::bind(&musik::core::audio::playerThreadLoop, this));
 }
 
 Player::~Player() {
@@ -155,6 +153,8 @@ void Player::Destroy() {
         this->state = Player::Quit;
         this->writeToOutputCondition.notify_all();
         this->thread->detach();
+        delete this->thread;
+        this->thread = nullptr;
     }
 }
 
@@ -344,6 +344,8 @@ void musik::core::audio::playerThreadLoop(Player* player) {
     if (player->listener) {
         player->listener->OnPlayerDestroying(player);
     }
+
+    player->Destroy();
 
     delete player;
 }

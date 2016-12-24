@@ -108,7 +108,6 @@ namespace musik { namespace core { namespace audio {
 
             virtual ~Player();
 
-            typedef std::shared_ptr<std::thread> ThreadPtr;
             typedef std::list<BufferPtr> BufferList;
             typedef std::set<BufferPtr> BufferSet;
 
@@ -120,7 +119,7 @@ namespace musik { namespace core { namespace audio {
 
             std::shared_ptr<musik::core::sdk::IOutput> output;
             StreamPtr stream;
-            ThreadPtr thread;
+            std::thread* thread;
             BufferList lockedBuffers;
             PlayerEventListener* listener;
 
