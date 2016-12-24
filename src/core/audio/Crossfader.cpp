@@ -60,8 +60,8 @@ Crossfader::Crossfader(ITransport& transport)
     this->quit = false;
     this->paused = false;
 
-    this->thread = std::make_unique<std::thread>(
-        std::bind(&Crossfader::ThreadLoop, this));
+    this->thread.reset(new std::thread(
+        std::bind(&Crossfader::ThreadLoop, this)));
 }
 
 Crossfader::~Crossfader() {
@@ -115,8 +115,8 @@ void Crossfader::Pause() {
     std::for_each(
         this->contextList.begin(),
         this->contextList.end(),
-        [](auto it) {
-            it->output->Pause();
+        [](FadeContextPtr context) {
+            context->output->Pause();
         });
 
     this->messageQueue.Remove(this, MESSAGE_TICK);
@@ -130,8 +130,8 @@ void Crossfader::Resume() {
     std::for_each(
         this->contextList.begin(),
         this->contextList.end(),
-        [](auto it) {
-            it->output->Resume();
+        [](FadeContextPtr context) {
+            context->output->Resume();
         });
 
     this->messageQueue.Post(
@@ -167,10 +167,10 @@ void Crossfader::ProcessMessage(IMessage &message) {
 
                 float outputVolume = globalVolume * percent;
 
-#if 1
-                    std::string dir = (fade->direction == FadeIn) ? "in" : "out";
-                    std::string dbg = boost::str(boost::format("%s %f\n") % dir % outputVolume);
-                    OutputDebugStringA(dbg.c_str());
+#if 0
+                std::string dir = (fade->direction == FadeIn) ? "in" : "out";
+                std::string dbg = boost::str(boost::format("%s %f\n") % dir % outputVolume);
+                OutputDebugStringA(dbg.c_str());
 #endif
 
                 fade->output->SetVolume(outputVolume);

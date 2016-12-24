@@ -64,6 +64,7 @@ class CoreAudioOut : public musik::core::sdk::IOutput {
         virtual void Pause();
         virtual void Resume();
         virtual void SetVolume(double volume);
+        virtual double GetVolume();
         virtual void Stop();
         virtual double Latency() { return 0.0; }
 

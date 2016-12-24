@@ -336,7 +336,7 @@ void CrossfadeTransport::PlayerContext::Reset(
 void CrossfadeTransport::PlayerContext::TransferTo(PlayerContext& to) {
     to.player = player;
     to.output = output;
-    this->player = player;
+    this->player = nullptr;
     this->output.reset();
 }
 

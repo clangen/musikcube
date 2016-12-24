@@ -83,10 +83,12 @@ namespace musik { namespace core { namespace audio {
                 long ticksTotal;
             };
 
+            using FadeContextPtr = std::shared_ptr<FadeContext>;
+
             std::mutex contextListLock;
             std::unique_ptr<std::thread> thread;
             musik::core::runtime::MessageQueue messageQueue;
-            std::list<std::shared_ptr<FadeContext>> contextList;
+            std::list<FadeContextPtr> contextList;
             std::atomic<bool> quit, paused;
             ITransport& transport;
     };

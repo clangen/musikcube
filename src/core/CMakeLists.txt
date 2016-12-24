@@ -1,6 +1,8 @@
 set(CORE_SOURCES
   ./debug.cpp
   ./audio/Buffer.cpp
+  ./audio/Crossfader.cpp
+  ./audio/CrossfadeTransport.cpp
   ./audio/GaplessTransport.cpp
   ./audio/Outputs.cpp
   ./audio/Player.cpp

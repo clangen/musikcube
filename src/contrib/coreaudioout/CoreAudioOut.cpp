@@ -241,6 +241,10 @@ void CoreAudioOut::SetVolume(double volume) {
     }
 }
 
+double CoreAudioOut::GetVolume() {
+    return this->volume;
+}
+
 void CoreAudioOut::Stop() {
     AudioQueueRef queue = NULL;
 
