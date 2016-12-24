@@ -83,6 +83,7 @@ class WasapiOut : public IOutput {
         IAudioClock *audioClock;
         IAudioRenderClient *renderClient;
         ISimpleAudioVolume *simpleAudioVolume;
+        IAudioStreamVolume *audioStreamVolume;
         UINT32 outputBufferFrames;
         std::atomic<State> state;
         WAVEFORMATEXTENSIBLE waveFormat;

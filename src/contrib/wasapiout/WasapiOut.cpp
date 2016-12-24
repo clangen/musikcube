@@ -99,8 +99,19 @@ void WasapiOut::SetVolume(double volume) {
 
     this->volume = volume;
     if (this->simpleAudioVolume) {
-        simpleAudioVolume->SetMasterVolume((float) volume, 0);
+        /* master volume is always 1.0 for mixing purposes */
+        simpleAudioVolume->SetMasterVolume(1.0f, 0);
         simpleAudioVolume->SetMute(false, 0);
+
+        /* volume for this particular output's stream */
+        if (this->audioStreamVolume) {
+            UINT32 count = 0;
+            this->audioStreamVolume->GetChannelCount(&count);
+
+            for (UINT32 i = 0; i < count; i++) {
+                this->audioStreamVolume->SetChannelVolume(i, this->volume);
+            }
+        }
     }
 }
 
@@ -303,6 +314,11 @@ bool WasapiOut::Configure(IBuffer *buffer) {
     }
 
     if ((result = this->audioClient->GetService(__uuidof(ISimpleAudioVolume), (void**) &this->simpleAudioVolume)) != S_OK) {
+        std::cerr << "WasapiOut: IAudioClient::GetService failed, error code = " << result << "\n";
+        return false;
+    }
+
+    if ((result = this->audioClient->GetService(__uuidof(IAudioStreamVolume), (void**) &this->audioStreamVolume)) != S_OK) {
         std::cerr << "WasapiOut: IAudioClient::GetService failed, error code = " << result << "\n";
         return false;
     }

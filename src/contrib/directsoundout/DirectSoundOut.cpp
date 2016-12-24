@@ -308,9 +308,18 @@ bool DirectSoundOut::Configure(IBuffer *buffer) {
         bufferInfo.dwBufferBytes = 0;
         bufferInfo.lpwfxFormat = nullptr;
 
-        result = this->outputContext->CreateSoundBuffer(&bufferInfo, &this->primaryBuffer, nullptr);
+        result = this->outputContext->CreateSoundBuffer(
+            &bufferInfo, &this->primaryBuffer, nullptr);
+
         if (result != DS_OK) {
-            return false;
+            /* try again with software mixing... */
+            bufferInfo.dwFlags = DSBCAPS_PRIMARYBUFFER | DSBCAPS_CTRLVOLUME;
+            result = this->outputContext->CreateSoundBuffer(
+                &bufferInfo, &this->primaryBuffer, nullptr);
+
+            if (result != DS_OK) {
+                return false;
+            }
         }
     }
 
