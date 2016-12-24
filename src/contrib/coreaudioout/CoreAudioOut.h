@@ -75,6 +75,12 @@ class CoreAudioOut : public musik::core::sdk::IOutput {
         void NotifyBufferCompleted(BufferContext *context);
 
     private:
+        enum State {
+            StateStopped,
+            StatePaused,
+            StatePlaying
+        };
+
         AudioStreamBasicDescription audioFormat;
         AudioQueueRef audioQueue;
         double volume;
@@ -82,5 +88,5 @@ class CoreAudioOut : public musik::core::sdk::IOutput {
         boost::thread thread;
         boost::recursive_mutex mutex;
         bool quit;
-        bool paused;
+        State state;
 };

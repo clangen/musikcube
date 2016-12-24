@@ -91,7 +91,7 @@ void CoreAudioOut::NotifyBufferCompleted(BufferContext *context) {
 
 CoreAudioOut::CoreAudioOut() {
     this->quit = false;
-    this->paused = false;
+    this->state = StateStopped;
     this->volume = 1.0f;
 
     this->audioFormat = (AudioStreamBasicDescription) { 0 };
@@ -108,13 +108,13 @@ CoreAudioOut::CoreAudioOut() {
     this->audioFormat.mBytesPerFrame = -1;
     this->audioFormat.mBytesPerPacket = -1;
 
-    this->audioQueue = NULL;
+    this->audioQueue = nullptr;
 }
 
 bool CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     boost::recursive_mutex::scoped_lock lock(this->mutex);
 
-    if (this->paused) {
+    if (this->state != StatePlaying) {
         return false;
     }
 
@@ -128,7 +128,7 @@ bool CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
 
     if (buffer->SampleRate() != this->audioFormat.mSampleRate ||
         buffer->Channels() != this->audioFormat.mChannelsPerFrame ||
-        this->audioQueue == NULL)
+        this->audioQueue == nullptr)
     {
         this->audioFormat.mSampleRate = buffer->SampleRate();
         this->audioFormat.mChannelsPerFrame = buffer->Channels();
@@ -141,7 +141,7 @@ bool CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
             &this->audioFormat,
             audioCallback,
             this,
-            NULL,
+            nullptr,
             kCFRunLoopCommonModes,
             0,
             &this->audioQueue);
@@ -151,7 +151,7 @@ bool CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
             return false;
         }
 
-        result = AudioQueueStart(this->audioQueue, NULL);
+        result = AudioQueueStart(this->audioQueue, nullptr);
 
         this->SetVolume(volume);
 
@@ -161,7 +161,7 @@ bool CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
         }
     }
 
-    AudioQueueBufferRef audioQueueBuffer = NULL;
+    AudioQueueBufferRef audioQueueBuffer = nullptr;
 
     size_t bytes = buffer->Bytes();
 
@@ -185,7 +185,7 @@ bool CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
         bytes);
 
     result = AudioQueueEnqueueBuffer(
-        this->audioQueue, audioQueueBuffer, 0, NULL);
+        this->audioQueue, audioQueueBuffer, 0, nullptr);
 
     if (result != 0) {
         std::cerr << "AudioQueueEnqueueBuffer failed: " << result << "\n";
@@ -211,7 +211,7 @@ void CoreAudioOut::Pause() {
 
     if (this->audioQueue) {
         AudioQueuePause(this->audioQueue);
-        this->paused = true;
+        this->state = StatePaused;
     }
 }
 
@@ -219,8 +219,8 @@ void CoreAudioOut::Resume() {
     boost::recursive_mutex::scoped_lock lock(this->mutex);
 
     if (this->audioQueue) {
-        AudioQueueStart(this->audioQueue, NULL);
-        this->paused = false;
+        AudioQueueStart(this->audioQueue, nullptr);
+        this->state = StatePlaying;
     }
 }
 
@@ -246,7 +246,7 @@ double CoreAudioOut::GetVolume() {
 }
 
 void CoreAudioOut::Stop() {
-    AudioQueueRef queue = NULL;
+    AudioQueueRef queue = nullptr;
 
     {
         /* AudioQueueStop/AudioQueueDispose will trigger the callback, which
@@ -254,7 +254,8 @@ void CoreAudioOut::Stop() {
         cache the queue and reset outside of the critical section */
         boost::recursive_mutex::scoped_lock lock(this->mutex);
         queue = this->audioQueue;
-        this->audioQueue = NULL;
+        this->audioQueue = nullptr;
+        this->state = STateStopped;
     }
 
     if (queue) {
