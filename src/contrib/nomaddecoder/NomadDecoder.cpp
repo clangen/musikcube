@@ -34,6 +34,7 @@
 
 #include "NomadDecoder.h"
 #include <vector>
+#include <cstring>
 
 using namespace musik::core::sdk;
 

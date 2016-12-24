@@ -35,7 +35,6 @@
 
 #include "pch.h"
 
-
 #include <boost/thread/condition.hpp>
 #include <boost/thread/thread.hpp>
 
@@ -59,6 +58,7 @@ class AlsaOut : public musik::core::sdk::IOutput {
         virtual void Pause();
         virtual void Resume();
         virtual void SetVolume(double volume);
+        virtual double GetVolume();
         virtual void Stop();
         virtual double Latency() { return 0.0; }
 

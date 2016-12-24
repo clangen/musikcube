@@ -39,7 +39,7 @@
 #define PCM_FORMAT SND_PCM_FORMAT_FLOAT_LE
 
 #define LOCK(x) \
-    /*std::f << "locking " << x << "\n";*/ \
+    /*std::cerr << "locking " << x << "\n";*/ \
     boost::recursive_mutex::scoped_lock lock(this->stateMutex); \
     /*std::cerr << "locked " << x << "\n";*/ \
 
@@ -88,15 +88,19 @@ AlsaOut::AlsaOut()
 AlsaOut::~AlsaOut() {
     std::cerr << "AlsaOut: destructor\n";
 
-    std::cerr << "AlsaOut: waiting for thread...\n";
     {
         LOCK("dtor");
         this->quit = true;
         NOTIFY();
     }
 
+    std::cerr << "AlsaOut: joining...\n";
     this->writeThread->join();
+
+    std::cerr << "AlsaOut: closing device...\n";
     this->CloseDevice();
+
+    std::cerr << "AlsaOut: destroyed.\n";
 }
 
 void AlsaOut::CloseDevice() {
@@ -218,6 +222,10 @@ void AlsaOut::SetVolume(double volume) {
     this->volume = volume;
 }
 
+double AlsaOut::GetVolume() {
+    return this->volume;
+}
+
 void AlsaOut::WriteLoop() {
     {
         LOCK("thread: init");
@@ -277,6 +285,8 @@ void AlsaOut::WriteLoop() {
             }
         }
     }
+
+    std::cerr << "AlsaOut: thread finished\n";
 }
 
 bool AlsaOut::Play(IBuffer *buffer, IBufferProvider* provider) {

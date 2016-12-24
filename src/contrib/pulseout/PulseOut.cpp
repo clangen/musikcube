@@ -138,6 +138,10 @@ void PulseOut::SetVolume(double volume) {
     }
 }
 
+double PulseOut::GetVolume() {
+    return this->volume;
+}
+
 bool PulseOut::Play(IBuffer *buffer, IBufferProvider* provider) {
     int error = 0;
 
