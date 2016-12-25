@@ -269,12 +269,28 @@ void CrossfadeTransport::OnPlayerError(Player* player) {
 }
 
 void CrossfadeTransport::OnPlayerMixPoint(Player* player, int id, double time) {
-    if (id == END_OF_TRACK_MIXPOINT) {
-        if (player == active.player) {
-            active.Reset(); /* fades out automatically */
-            next.TransferTo(active);
-            active.Start(this->volume);
+    bool stopped = false;
+
+    {
+        Lock lock(this->stateMutex);
+
+        if (id == END_OF_TRACK_MIXPOINT) {
+            if (player == active.player) {
+                active.Reset(); /* fades out automatically */
+                next.TransferTo(active);
+
+                if (!active.IsEmpty()) {
+                    active.Start(this->volume);
+                }
+                else {
+                    stopped = true;
+                }
+            }
         }
+    }
+
+    if (stopped) {
+        this->SetPlaybackState(PlaybackStopped);
     }
 }
 
@@ -335,9 +351,6 @@ void CrossfadeTransport::PlayerContext::Reset(
                 Crossfader::FadeOut,
                 CROSSFADE_DURATION_MS);
         }
-        else {
-            this->player->Destroy();
-        }
     }
 
     this->canFade = this->started = false;
@@ -348,6 +361,8 @@ void CrossfadeTransport::PlayerContext::Reset(
 void CrossfadeTransport::PlayerContext::TransferTo(PlayerContext& to) {
     to.player = player;
     to.output = output;
+    to.canFade = canFade;
+    to.started = started;
 
     /* don't call Reset() here! it'll trigger a fade. */
     this->canFade = false;
