@@ -68,6 +68,7 @@ namespace musik { namespace core { namespace audio {
 
             virtual void OnBufferProcessed(musik::core::sdk::IBuffer *buffer);
 
+            void Detach(PlayerEventListener *listner);
             void Play();
             void Destroy();
 
@@ -133,6 +134,7 @@ namespace musik { namespace core { namespace audio {
 
             /* granular mutexes for better performance */
             std::mutex queueMutex, positionMutex;
+            std::recursive_mutex listenerMutex;
             std::condition_variable writeToOutputCondition;
 
             double volume;

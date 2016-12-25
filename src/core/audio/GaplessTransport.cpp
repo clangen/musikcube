@@ -48,12 +48,14 @@ static std::string TAG = "GaplessTransport";
 
 #define RESET_NEXT_PLAYER(instance) \
     if (instance->nextPlayer) { \
+        instance->nextPlayer->Detach(instance); \
         instance->nextPlayer->Destroy(); \
         instance->nextPlayer = nullptr; \
     }
 
 #define RESET_ACTIVE_PLAYER(instance) \
     if (instance->activePlayer) { \
+        instance->activePlayer->Detach(instance); \
         instance->activePlayer->Destroy(); \
         instance->activePlayer = nullptr; \
     }

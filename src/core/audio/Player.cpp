@@ -158,6 +158,13 @@ void Player::Destroy() {
     }
 }
 
+void Player::Detach(PlayerEventListener* listener) {
+    std::unique_lock<std::recursive_mutex> lock(this->listenerMutex);
+    if (this->listener = listener) {
+        this->listener = nullptr;
+    }
+}
+
 double Player::GetPosition() {
     std::unique_lock<std::mutex> lock(this->positionMutex);
     return std::max(0.0, round(this->currentPosition - this->output->Latency()));
@@ -194,8 +201,11 @@ void musik::core::audio::playerThreadLoop(Player* player) {
     BufferPtr buffer;
 
     if (player->stream->OpenStream(player->url)) {
-        if (player->listener) {
-            player->listener->OnPlayerPrepared(player);
+        {
+            std::unique_lock<std::recursive_mutex> lock(player->listenerMutex);
+            if (player->listener) {
+                player->listener->OnPlayerPrepared(player);
+            }
         }
 
         /* precache until buffers are full */
@@ -208,7 +218,6 @@ void musik::core::audio::playerThreadLoop(Player* player) {
         be in the Precache state. */
         {
             std::unique_lock<std::mutex> lock(player->queueMutex);
-
             while (player->state == Player::Precache) {
                 player->writeToOutputCondition.wait(lock);
             }
@@ -244,7 +253,6 @@ void musik::core::audio::playerThreadLoop(Player* player) {
 
                 {
                     std::unique_lock<std::mutex> lock(player->queueMutex);
-
                     while (player->lockedBuffers.size() > 0) {
                         player->writeToOutputCondition.wait(lock);
                     }
@@ -312,15 +320,21 @@ void musik::core::audio::playerThreadLoop(Player* player) {
 
         /* if the Quit flag isn't set, that means the stream has ended "naturally", i.e.
         it wasn't stopped by the user. raise the "almost ended" flag. */
-        if (!player->Exited() && player->listener) {
-            player->listener->OnPlayerAlmostEnded(player);
+        {
+            std::unique_lock<std::recursive_mutex> lock(player->listenerMutex);
+            if (!player->Exited() && player->listener) {
+                player->listener->OnPlayerAlmostEnded(player);
+            }
         }
     }
 
     /* if the stream failed to open... */
     else {
-        if (!player->Exited() && player->listener) {
-            player->listener->OnPlayerError(player);
+        {
+            std::unique_lock<std::recursive_mutex> lock(player->listenerMutex);
+            if (!player->Exited() && player->listener) {
+                player->listener->OnPlayerError(player);
+            }
         }
     }
 
@@ -333,20 +347,25 @@ void musik::core::audio::playerThreadLoop(Player* player) {
     /* wait until all remaining buffers have been written, set final state... */
     {
         std::unique_lock<std::mutex> lock(player->queueMutex);
-
         while (player->lockedBuffers.size() > 0) {
             player->writeToOutputCondition.wait(lock);
         }
     }
 
-    if (!player->Exited() && player->listener) {
-        player->listener->OnPlayerFinished(player);
+    {
+        std::unique_lock<std::recursive_mutex> lock(player->listenerMutex);
+        if (!player->Exited() && player->listener) {
+            player->listener->OnPlayerFinished(player);
+        }
     }
 
     player->state = Player::Quit;
 
-    if (player->listener) {
-        player->listener->OnPlayerDestroying(player);
+    {
+        std::unique_lock<std::recursive_mutex> lock(player->listenerMutex);
+        if (player->listener) {
+            player->listener->OnPlayerDestroying(player);
+        }
     }
 
     player->Destroy();
@@ -517,6 +536,8 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
     /* check up front so we don't have to acquire the mutex if
     we don't need to. */
     if (started || mixPointsHit.size()) {
+        std::unique_lock<std::recursive_mutex> lock(this->listenerMutex);
+
         if (!this->Exited() && this->listener) {
             /* we notify our listeners that we've started playing only after the first
             buffer has been consumed. this is because sometimes we precache buffers
