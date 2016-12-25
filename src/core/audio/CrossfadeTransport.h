@@ -89,7 +89,9 @@ namespace musik { namespace core { namespace audio {
             using MessageQueue = musik::core::runtime::MessageQueue;
 
             struct PlayerContext {
-                PlayerContext(Crossfader& crossfader);
+                PlayerContext(
+                    CrossfadeTransport& transport,
+                    Crossfader& crossfader);
 
                 void Reset();
 
@@ -109,6 +111,7 @@ namespace musik { namespace core { namespace audio {
                 bool canFade;
                 Output output;
                 Player *player;
+                CrossfadeTransport& transport;
                 Crossfader& crossfader;
             };
 

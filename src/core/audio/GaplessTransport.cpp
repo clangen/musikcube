@@ -71,10 +71,7 @@ GaplessTransport::GaplessTransport()
 }
 
 GaplessTransport::~GaplessTransport() {
-    this->disconnect_all();
-
     LockT lock(this->stateMutex);
-
     RESET_NEXT_PLAYER(this);
     RESET_ACTIVE_PLAYER(this);
 }
@@ -115,7 +112,7 @@ void GaplessTransport::StartWithPlayer(Player* newPlayer) {
             LockT lock(this->stateMutex);
 
             playingNext = (newPlayer == nextPlayer);
-            if (nextPlayer != nullptr && newPlayer != nextPlayer) {
+            if (newPlayer != nextPlayer) {
                 RESET_NEXT_PLAYER(this);
             }
 
@@ -167,7 +164,7 @@ void GaplessTransport::StopInternal(
 
             RESET_NEXT_PLAYER(this);
 
-            if (this->activePlayer && this->activePlayer != exclude) {
+            if (this->activePlayer != exclude) {
                 RESET_ACTIVE_PLAYER(this);
             }
         }

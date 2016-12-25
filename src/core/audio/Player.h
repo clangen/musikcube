@@ -68,7 +68,7 @@ namespace musik { namespace core { namespace audio {
 
             virtual void OnBufferProcessed(musik::core::sdk::IBuffer *buffer);
 
-            void Detach(PlayerEventListener *listner);
+            void Detach(PlayerEventListener *listener);
             void Play();
             void Destroy();
 

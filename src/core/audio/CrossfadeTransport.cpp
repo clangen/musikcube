@@ -40,7 +40,7 @@
 #include <core/audio/Outputs.h>
 #include <algorithm>
 
-#define CROSSFADE_DURATION_MS 3000
+#define CROSSFADE_DURATION_MS 1500
 #define END_OF_TRACK_MIXPOINT 1001
 
 using namespace musik::core::audio;
@@ -54,13 +54,12 @@ CrossfadeTransport::CrossfadeTransport()
 , nextCanStart(false)
 , muted(false)
 , crossfader(*this)
-, active(crossfader)
-, next(crossfader) {
+, active(*this, crossfader)
+, next(*this, crossfader) {
 
 }
 
 CrossfadeTransport::~CrossfadeTransport() {
-    this->disconnect_all();
     this->Stop();
 }
 
@@ -322,8 +321,11 @@ void CrossfadeTransport::RaiseStreamEvent(int type, Player* player) {
     this->StreamEvent(type, player->GetUrl());
 }
 
-CrossfadeTransport::PlayerContext::PlayerContext(Crossfader& crossfader)
-: crossfader(crossfader)
+CrossfadeTransport::PlayerContext::PlayerContext(
+    CrossfadeTransport& transport,
+    Crossfader& crossfader)
+: transport(transport)
+, crossfader(crossfader)
 , player(nullptr)
 , canFade(false) {
 }
@@ -337,6 +339,8 @@ void CrossfadeTransport::PlayerContext::Reset(
     Player::PlayerEventListener* listener)
 {
     if (this->player && this->output) {
+        this->player->Detach(&this->transport);
+
         if (this->started && this->canFade) {
             crossfader.Cancel(
                 this->player,
@@ -391,6 +395,7 @@ void CrossfadeTransport::PlayerContext::Start(double transportVolume) {
 void CrossfadeTransport::PlayerContext::Stop() {
     if (this->output && this->player) {
         this->output->Stop();
+        this->player->Detach(&this->transport);
         this->player->Destroy();
     }
 
