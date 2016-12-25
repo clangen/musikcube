@@ -379,6 +379,9 @@ void musik::core::audio::playerThreadLoop(Player* player) {
         }
     }
 
+    /* buffers have been written, wait for the output to play them all */
+    player->output->Drain();
+
     {
         std::unique_lock<std::recursive_mutex> lock(player->listenerMutex);
         if (!player->Exited()) {

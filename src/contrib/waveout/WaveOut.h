@@ -63,6 +63,7 @@ class WaveOut : public IOutput {
         virtual void Stop();
         virtual bool Play(IBuffer *buffer, IBufferProvider *provider);
         virtual double Latency() { return 0.0; }
+        virtual void Drain() { }
 
         void OnBufferWrittenToOutput(WaveOutBuffer *buffer);
 

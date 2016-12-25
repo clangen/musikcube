@@ -57,6 +57,7 @@ class PulseOut : public musik::core::sdk::IOutput {
         virtual double GetVolume();
         virtual void Stop();
         virtual double Latency();
+        virtual void Drain();
 
         virtual bool Play(
             musik::core::sdk::IBuffer *buffer,

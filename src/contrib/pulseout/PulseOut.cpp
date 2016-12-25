@@ -68,6 +68,14 @@ void PulseOut::CloseDevice() {
     }
 }
 
+void PulseOut::Drain() {
+    Lock lock(this->stateMutex);
+
+    if (this->state != StateStopped && this->audioConnection) {
+        pa_blocking_drain(this->audioConnection);
+    }
+}
+
 void PulseOut::OpenDevice(musik::core::sdk::IBuffer* buffer) {
     if (!this->audioConnection ||
         this->rate != buffer->SampleRate() ||

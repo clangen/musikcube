@@ -162,7 +162,7 @@ void AlsaOut::InitDevice() {
         goto error;
     }
 
-    snd_pcm_nonblock(pcmHandle, 0);
+    snd_pcm_nonblock(pcmHandle, 0); /* operate in blocking mode for simplicity */
 
     std::cerr << "AlsaOut: device seems to be prepared for use!\n";
     this->initialized = true;
@@ -318,6 +318,14 @@ bool AlsaOut::Play(IBuffer *buffer, IBufferProvider* provider) {
     }
 
     return true;
+}
+
+void AlsaOut::Drain() {
+    LOCK("drain");
+
+    if (this->pcmHandle) {
+        snd_pcm_drain(this->pcmHandle);
+    }
 }
 
 void AlsaOut::SetFormat(IBuffer *buffer) {

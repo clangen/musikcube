@@ -66,6 +66,7 @@ class DirectSoundOut : public IOutput {
         virtual void Stop();
         virtual bool Play(IBuffer *buffer, IBufferProvider *provider);
         virtual double Latency();
+        virtual void Drain();
 
     private:
         enum State {
@@ -77,6 +78,7 @@ class DirectSoundOut : public IOutput {
         bool Configure(IBuffer *buffer);
         void Reset();
         void ResetBuffers();
+        void Drain(IDirectSoundBuffer *buffer);
 
         std::atomic<State> state;
 

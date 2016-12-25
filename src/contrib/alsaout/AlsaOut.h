@@ -61,6 +61,7 @@ class AlsaOut : public musik::core::sdk::IOutput {
         virtual double GetVolume();
         virtual void Stop();
         virtual double Latency() { return 0.0; }
+        virtual void Drain();
 
         virtual bool Play(
             musik::core::sdk::IBuffer *buffer,

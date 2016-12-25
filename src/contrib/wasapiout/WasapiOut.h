@@ -66,6 +66,7 @@ class WasapiOut : public IOutput {
         virtual void Stop();
         virtual bool Play(IBuffer *buffer, IBufferProvider *provider);
         virtual double Latency();
+        virtual void Drain();
 
     private:
         enum State {
@@ -89,5 +90,6 @@ class WasapiOut : public IOutput {
         WAVEFORMATEXTENSIBLE waveFormat;
         double volume;
         double latency;
+        int rate;
         std::recursive_mutex stateMutex;
 };

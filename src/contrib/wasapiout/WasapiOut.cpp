@@ -122,12 +122,50 @@ double WasapiOut::GetVolume() {
 }
 
 void WasapiOut::Stop() {
+    this->state = StateStopped;
+
     Lock lock(this->stateMutex);
 
     if (this->audioClient) {
         this->audioClient->Stop();
         this->audioClient->Reset();
         this->audioClient->Start();
+    }
+}
+
+void WasapiOut::Drain() {
+    UINT32 rate = waveFormat.Format.nSamplesPerSec;
+    REFERENCE_TIME sleepTime = 0;
+    UINT32 availableFrames = 0;
+    UINT32 frameOffset = 0;
+    bool bail = false;
+
+    while (this->state != StateStopped && !bail) {
+        {
+            Lock lock(this->stateMutex);
+
+            if (this->audioClient && rate > 0) {
+                this->audioClient->GetCurrentPadding(&frameOffset);
+                availableFrames = (this->outputBufferFrames - frameOffset);
+
+                if (availableFrames < this->outputBufferFrames) {
+                    UINT32 pending = this->outputBufferFrames - availableFrames;
+                    REFERENCE_TIME sleepTime = (pending * 1000 * 1000 * 10) / rate;
+                }
+
+                if (sleepTime <= 0) {
+                    bail = true;
+                }
+            }
+            else {
+                bail = true;
+            }
+        }
+
+        if (sleepTime > 0) {
+            std::this_thread::sleep_for(
+                std::chrono::microseconds(sleepTime));
+        }
     }
 }
 

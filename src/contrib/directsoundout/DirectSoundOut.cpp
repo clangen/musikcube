@@ -49,7 +49,7 @@
 using Lock = std::unique_lock<std::recursive_mutex>;
 
 inline DWORD getAvailableBytes(
-    IDirectSoundBuffer8 *secondaryBuffer,
+    IDirectSoundBuffer *secondaryBuffer,
     DWORD writeOffset,
     DWORD bufferSize)
 {
@@ -225,6 +225,31 @@ bool DirectSoundOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     provider->OnBufferProcessed(buffer);
 
     return true;
+}
+
+void DirectSoundOut::Drain() {
+    int channels = this->channels;
+    int rate = this->rate;
+    int bufferSize = this->bufferSize;
+
+    if (!channels || !rate || !bufferSize) {
+        return;
+    }
+
+    int samples = bufferSize / sizeof(float) / channels;
+    int sleepMs = ((long long)(samples * 1000) / rate) + 1;
+    Sleep(sleepMs);
+
+    /* not sure of a better way to ensure the final buffer is
+    flushed other than to use this heuristic: given the buffer
+    size in seconds, sleep for 50 milliseconds at a time while
+    it's still playing. */
+    while (this->state != StateStopped && sleepMs > 0) {
+        Sleep(50);
+        if (this->state == StatePlaying) {
+            sleepMs -= 50;
+        }
+    }
 }
 
 void DirectSoundOut::Reset() {

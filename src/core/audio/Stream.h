@@ -51,8 +51,8 @@ namespace musik { namespace core { namespace audio {
         using IDecoder = musik::core::sdk::IDecoder;
 
         public:
-            /* note that most output devices buffer 16-32 samples internally,
-            so, by default, let's allocate 64 buffers worth of contiguous
+            /* note that most output devices manage 16-32 buffers internally,
+            so, by default, let's allocate 48 buffers worth of contiguous
             memory. if we need more buffers they will be allocated dynamically */
             static StreamPtr Create(
                 int samplesPerChannel = 2048,
