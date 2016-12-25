@@ -160,7 +160,7 @@ void Player::Destroy() {
 
 void Player::Detach(PlayerEventListener* listener) {
     std::unique_lock<std::recursive_mutex> lock(this->listenerMutex);
-    if (this->listener = listener) {
+    if (this->listener == listener) {
         this->listener = nullptr;
     }
 }
