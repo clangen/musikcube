@@ -41,6 +41,41 @@
 #include <chrono>
 #include <thread>
 
+class DrainBuffer :
+    public musik::core::sdk::IBuffer,
+    public musik::core::sdk::IBufferProvider
+{
+    public:
+        DrainBuffer() {
+            this->buffer = nullptr;
+            this->channels = this->samples = this->rate = 0;
+        }
+
+        virtual ~DrainBuffer() {
+            delete[] buffer;
+        }
+
+        void Init() {
+            delete[] buffer;
+            this->buffer = new float[this->samples];
+            memset(this->buffer, 0, this->Bytes());
+        }
+
+        virtual long SampleRate() const { return this->rate; }
+        virtual void SetSampleRate(long sampleRate) { this->rate = sampleRate; }
+        virtual int Channels() const { return this->channels; }
+        virtual void SetChannels(int channels) { this->channels = channels; }
+        virtual float* BufferPointer() const { return this->buffer; }
+        virtual long Samples() const { return this->samples; }
+        virtual void SetSamples(long samples) { this->samples = samples; }
+        virtual long Bytes() const { return this->samples * sizeof(float); }
+        virtual void OnBufferProcessed(IBuffer *buffer) { }
+
+    private:
+        int channels, samples, rate;
+        float *buffer;
+};
+
 #define MAX_BUFFERS_PER_OUTPUT 8
 
 #define BUFFER_SIZE_BYTES_PER_CHANNEL \
@@ -228,6 +263,8 @@ bool DirectSoundOut::Play(IBuffer *buffer, IBufferProvider *provider) {
 }
 
 void DirectSoundOut::Drain() {
+    static const int drainCount = 4;
+
     int channels = this->channels;
     int rate = this->rate;
     int bufferSize = this->bufferSize;
@@ -236,22 +273,24 @@ void DirectSoundOut::Drain() {
         return;
     }
 
-    int sleepMs = 0;
+    int totalSamples = bufferSize / sizeof(float) / channels;
 
-    if (this->state != StateStopped) {
-        Lock lock(this->stateMutex);
+    DrainBuffer buffer;
+    buffer.SetChannels(channels);
+    buffer.SetSampleRate(rate);
+    buffer.SetSamples(totalSamples / drainCount);
+    buffer.Init();
 
-        if (this->secondaryBuffer) {
-            int pendingBytes = this->bufferSize - getAvailableBytes(
-                this->secondaryBuffer, this->writeOffset, this->bufferSize);
-
-            int samples = pendingBytes / sizeof(float) / channels;
-            sleepMs = ((long long)(samples * 1000) / rate);
+    /* fill the rest of the buffer with silence to ensure all
+    real samples get played! */
+    int count = drainCount + 1;
+    while (count > 0 && this->state != StateStopped) {
+        if (!this->Play(&buffer, &buffer)) {
+            Sleep(250); /* eh */
         }
-    }
-
-    if (sleepMs > 0) {
-        Sleep(sleepMs);
+        else {
+            --count;
+        }
     }
 
     this->Stop();
