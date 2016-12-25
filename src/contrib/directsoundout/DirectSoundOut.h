@@ -78,7 +78,6 @@ class DirectSoundOut : public IOutput {
         bool Configure(IBuffer *buffer);
         void Reset();
         void ResetBuffers();
-        void Drain(IDirectSoundBuffer *buffer);
 
         std::atomic<State> state;
 

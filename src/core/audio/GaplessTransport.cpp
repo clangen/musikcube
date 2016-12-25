@@ -163,7 +163,6 @@ void GaplessTransport::StopInternal(
             LockT lock(this->stateMutex);
 
             RESET_NEXT_PLAYER(this);
-
             if (this->activePlayer != exclude) {
                 RESET_ACTIVE_PLAYER(this);
             }
@@ -329,8 +328,17 @@ void GaplessTransport::OnPlayerFinished(Player* player) {
         }
     }
 
+    /* note we could also call this->Stop() here, but it will shut down the
+    output and drain any pending buffers. this is a bit of extra overhead
+    that isn't necessary. */
     if (stopped) {
-        this->Stop();
+        {
+            LockT lock(this->stateMutex);
+            RESET_NEXT_PLAYER(this);
+            RESET_ACTIVE_PLAYER(this);
+        }
+
+        this->SetPlaybackState(PlaybackStopped);
     }
 }
 

@@ -130,7 +130,7 @@ void DirectSoundOut::SetVolume(double volume) {
         if (this->secondaryBuffer) {
             double db = (volume < 0.0001f)
                 ? DSBVOLUME_MIN
-                : log10f(this->volume) * 6000.f;
+                : (float) log10f(this->volume) * 6000.f;
 
             if (db > DSBVOLUME_MAX) {
                 db = DSBVOLUME_MAX;
@@ -236,20 +236,25 @@ void DirectSoundOut::Drain() {
         return;
     }
 
-    int samples = bufferSize / sizeof(float) / channels;
-    int sleepMs = ((long long)(samples * 1000) / rate) + 1;
-    Sleep(sleepMs);
+    int sleepMs = 0;
 
-    /* not sure of a better way to ensure the final buffer is
-    flushed other than to use this heuristic: given the buffer
-    size in seconds, sleep for 50 milliseconds at a time while
-    it's still playing. */
-    while (this->state != StateStopped && sleepMs > 0) {
-        Sleep(50);
-        if (this->state == StatePlaying) {
-            sleepMs -= 50;
+    if (this->state != StateStopped) {
+        Lock lock(this->stateMutex);
+
+        if (this->secondaryBuffer) {
+            int pendingBytes = this->bufferSize - getAvailableBytes(
+                this->secondaryBuffer, this->writeOffset, this->bufferSize);
+
+            int samples = pendingBytes / sizeof(float) / channels;
+            sleepMs = ((long long)(samples * 1000) / rate);
         }
     }
+
+    if (sleepMs > 0) {
+        Sleep(sleepMs);
+    }
+
+    this->Stop();
 }
 
 void DirectSoundOut::Reset() {
@@ -295,6 +300,8 @@ bool DirectSoundOut::Configure(IBuffer *buffer) {
     {
         return true;
     }
+
+    this->Stop();
 
     HRESULT result;
 
