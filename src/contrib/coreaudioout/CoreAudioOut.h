@@ -56,7 +56,7 @@ class CoreAudioOut : public musik::core::sdk::IOutput {
 
         /* IPlugin */
         const char* Name() { return "CoreAudio IOutput"; };
-        const char* Version() { return "0.2"; };
+        const char* Version() { return "0.3"; };
         const char* Author() { return "clangen"; };
 
         /* IOutput */

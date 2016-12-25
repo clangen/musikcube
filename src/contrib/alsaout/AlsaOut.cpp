@@ -324,7 +324,9 @@ void AlsaOut::Drain() {
     LOCK("drain");
 
     if (this->pcmHandle) {
+        std::cerr << "draining...\n";
         snd_pcm_drain(this->pcmHandle);
+        std::cerr << "drained\n";
     }
 }
 

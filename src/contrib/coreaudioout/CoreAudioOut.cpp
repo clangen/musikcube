@@ -212,7 +212,9 @@ void CoreAudioOut::Drain() {
     boost::recursive_mutex::scoped_lock lock(this->mutex);
 
     if (this->state != StateStopped && this->audioQueue) {
+        std::cerr << "draining...\n";
         AudioQueueFlush(this->audioQueue);
+        std::cerr << "drained.\n";
     }
 }
 

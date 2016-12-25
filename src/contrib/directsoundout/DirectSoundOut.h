@@ -54,7 +54,7 @@ class DirectSoundOut : public IOutput {
 
         /* IPlugin */
         const char* Name() { return "DirectSound IOutput"; };
-        const char* Version() { return "0.1"; };
+        const char* Version() { return "0.2"; };
         const char* Author() { return "clangen"; };
         virtual void Destroy();
 

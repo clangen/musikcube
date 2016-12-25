@@ -45,8 +45,8 @@ class PulseOut : public musik::core::sdk::IOutput {
         virtual ~PulseOut();
 
         /* IPlugin */
-        virtual const char* Name() { return "PulseAudio IOutput plugin"; }
-        virtual const char* Version() { return "0.1"; }
+        virtual const char* Name() { return "PulseAudio IOutput"; }
+        virtual const char* Version() { return "0.3"; }
         virtual const char* Author() { return "clangen"; }
 
         /* IOutput */

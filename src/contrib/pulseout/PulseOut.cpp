@@ -72,7 +72,9 @@ void PulseOut::Drain() {
     Lock lock(this->stateMutex);
 
     if (this->state != StateStopped && this->audioConnection) {
-        pa_blocking_drain(this->audioConnection);
+        std::cerr << "draining...\n";
+        pa_blocking_drain(this->audioConnection, 0);
+        std::cerr << "drained...\n";
     }
 }
 
