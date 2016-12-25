@@ -83,7 +83,7 @@ void Crossfader::Fade(
     LOCK(this->contextListLock);
 
     /* don't add the same player more than once! */
-    if (!this->Contains(player)) {
+    if (player && output && !this->Contains(player)) {
         std::shared_ptr<FadeContext> context = std::make_shared<FadeContext>();
         context->output = output;
         context->player = player;
@@ -91,6 +91,8 @@ void Crossfader::Fade(
         context->ticksCounted = 0;
         context->ticksTotal = (durationMs / TICK_TIME_MILLIS);
         contextList.push_back(context);
+
+        player->Attach(this);
 
         /* for performance reasons we don't allow more than a couple
         simultaneous fades. mark extraneous ones as done so they are
@@ -112,31 +114,29 @@ void Crossfader::Fade(
 void Crossfader::Stop() {
     LOCK(this->contextListLock);
 
-    auto it = this->contextList.begin();
-    while (it != this->contextList.end()) {
-        if ((*it)->player) {
-            (*it)->player->Destroy();
+    for (FadeContextPtr context : this->contextList) {
+        if (context->player) {
+            context->player->Detach(this);
+            context->player->Destroy();
         }
-
-        (*it)->output->Stop();
-        ++it;
+        context->output->Stop();
     }
 
     this->contextList.clear();
 }
 
-void Crossfader::OnPlayerDestroyed(Player* player) {
+void Crossfader::OnPlayerDestroying(Player* player) {
     if (player) {
         LOCK(this->contextListLock);
 
-        std::for_each(
-            this->contextList.begin(),
-            this->contextList.end(),
-                [player](FadeContextPtr context) {
-                if (context->player == player) {
-                    context->player = nullptr;
-                }
-            });
+        /* the player is destroying, but there may still be buffers
+        playing in the output. forget the player so we don't double
+        destroy it. */
+        for (FadeContextPtr context : this->contextList) {
+            if (context->player == player) {
+                context->player = nullptr;
+            }
+        }
     }
 }
 
@@ -145,10 +145,16 @@ void Crossfader::Cancel(Player* player, Direction direction) {
         LOCK(this->contextListLock);
 
         this->contextList.remove_if(
-            [player, direction](FadeContextPtr context) {
-                return
+            [player, direction, this](FadeContextPtr context) {
+                bool remove =
                     context->player == player &&
                     context->direction == direction;
+
+                if (remove && context->player) {
+                    context->player->Detach(this);
+                }
+
+                return remove;
             });
     }
 }
@@ -173,12 +179,9 @@ void Crossfader::Pause() {
 
     this->paused = true;
 
-    std::for_each(
-        this->contextList.begin(),
-        this->contextList.end(),
-        [](FadeContextPtr context) {
-            context->output->Pause();
-        });
+    for (FadeContextPtr context : this->contextList) {
+        context->output->Pause();
+    }
 
     this->messageQueue.Remove(this, MESSAGE_TICK);
 }
@@ -188,20 +191,12 @@ void Crossfader::Resume() {
 
     this->paused = false;
 
-    std::for_each(
-        this->contextList.begin(),
-        this->contextList.end(),
-        [](FadeContextPtr context) {
-            context->output->Resume();
-        });
+    for (FadeContextPtr context : this->contextList) {
+        context->output->Resume();
+    }
 
     this->messageQueue.Post(
         Message::Create(this, MESSAGE_TICK, 0, 0), 0);
-}
-
-void Crossfader::Reset() {
-    LOCK(this->contextListLock);
-    this->contextList.clear();
 }
 
 void Crossfader::ProcessMessage(IMessage &message) {
@@ -242,9 +237,20 @@ void Crossfader::ProcessMessage(IMessage &message) {
                     }
                 }
 
+                /* if the fade has finished... */
                 if (fade->ticksCounted >= fade->ticksTotal) {
+                    auto player = (*it)->player;
+
+                    /* we're done with this player now! detach ourself */
+                    if (player) {
+                        (*it)->player->Detach(this);
+                    }
+
                     if (fade->direction == FadeOut) {
-                        if ((*it)->player) {
+                        /* if we're fading the player out, we get to destroy
+                        it. go ahead and do that now. awkward but efficient,
+                        and it works. */
+                        if (player) {
                             (*it)->player->Destroy();
                         }
 
@@ -260,6 +266,9 @@ void Crossfader::ProcessMessage(IMessage &message) {
 
             if (this->contextList.size()) {
                 ENQUEUE_TICK();
+            }
+            else {
+                this->Emptied();
             }
         }
         break;

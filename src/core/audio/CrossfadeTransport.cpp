@@ -51,12 +51,12 @@ static std::string TAG = "CrossfadeTransport";
 CrossfadeTransport::CrossfadeTransport()
 : volume(1.0)
 , state(PlaybackStopped)
-, nextCanStart(false)
 , muted(false)
 , crossfader(*this)
 , active(*this, crossfader)
 , next(*this, crossfader) {
-
+    this->crossfader.Emptied.connect(
+        this, &CrossfadeTransport::OnCrossfaderEmptied);
 }
 
 CrossfadeTransport::~CrossfadeTransport() {
@@ -210,11 +210,6 @@ void CrossfadeTransport::SetVolume(double volume) {
     }
 }
 
-void CrossfadeTransport::SetNextCanStart(bool nextCanStart) {
-    //LockT lock(this->stateMutex);
-    //this->nextCanStart = nextCanStart;
-}
-
 void CrossfadeTransport::OnPlayerPrepared(Player* player) {
     {
         Lock lock(this->stateMutex);
@@ -252,12 +247,6 @@ void CrossfadeTransport::OnPlayerStarted(Player* player) {
     this->SetPlaybackState(PlaybackPlaying);
 }
 
-void CrossfadeTransport::OnPlayerAlmostEnded(Player* player) {
-    /* we don't need to do anything here. we'll handle starting
-    the next track in OnPlayerFinished() or OnPlayerMixpoint(),
-    whichever is applicable for the current stream. */
-}
-
 void CrossfadeTransport::OnPlayerFinished(Player* player) {
     this->RaiseStreamEvent(StreamFinished, player);
 
@@ -279,20 +268,6 @@ void CrossfadeTransport::OnPlayerError(Player* player) {
     this->Stop();
 }
 
-void CrossfadeTransport::OnPlayerDestroying(Player *player) {
-    Lock lock(this->stateMutex);
-
-    crossfader.OnPlayerDestroyed(player);
-
-    if (active.player == player) {
-        active.Reset();
-    }
-
-    if (next.player == player) {
-        next.Reset();
-    }
-}
-
 void CrossfadeTransport::OnPlayerMixPoint(Player* player, int id, double time) {
     if (id == END_OF_TRACK_MIXPOINT) {
         if (player == active.player) {
@@ -300,6 +275,14 @@ void CrossfadeTransport::OnPlayerMixPoint(Player* player, int id, double time) {
             next.TransferTo(active);
             active.Start(this->volume);
         }
+    }
+}
+
+void CrossfadeTransport::OnCrossfaderEmptied() {
+    Lock lock(this->stateMutex);
+
+    if (this->active.IsEmpty() && this->next.IsEmpty()) {
+        this->Stop();
     }
 }
 
@@ -336,7 +319,7 @@ void CrossfadeTransport::PlayerContext::Reset() {
 
 void CrossfadeTransport::PlayerContext::Reset(
     const std::string& url,
-    Player::PlayerEventListener* listener)
+    Player::EventListener* listener)
 {
     if (this->player && this->output) {
         this->player->Detach(&this->transport);
@@ -420,4 +403,8 @@ void CrossfadeTransport::PlayerContext::SetVolume(double volume) {
     if (this->output) {
         this->output->SetVolume(volume);
     }
+}
+
+bool CrossfadeTransport::PlayerContext::IsEmpty() {
+    return !this->player && !this->output;
 }

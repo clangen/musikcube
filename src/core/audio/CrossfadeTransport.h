@@ -51,7 +51,7 @@ namespace musik { namespace core { namespace audio {
 
     class CrossfadeTransport :
         public ITransport,
-        private Player::PlayerEventListener,
+        private Player::EventListener,
         public sigslot::has_slots<>
     {
         public:
@@ -97,7 +97,7 @@ namespace musik { namespace core { namespace audio {
 
                 void Reset(
                     const std::string& url,
-                    Player::PlayerEventListener* listener);
+                    Player::EventListener* listener);
 
                 void TransferTo(PlayerContext& context);
 
@@ -106,6 +106,7 @@ namespace musik { namespace core { namespace audio {
                 void Pause();
                 void Resume();
                 void SetVolume(double volume);
+                bool IsEmpty();
 
                 bool started;
                 bool canFade;
@@ -115,17 +116,15 @@ namespace musik { namespace core { namespace audio {
                 Crossfader& crossfader;
             };
 
-            void SetNextCanStart(bool nextCanStart);
-
             void RaiseStreamEvent(int type, Player* player);
             void SetPlaybackState(int state);
 
+            void OnCrossfaderEmptied();
+
             virtual void OnPlayerPrepared(Player* player);
             virtual void OnPlayerStarted(Player* player);
-            virtual void OnPlayerAlmostEnded(Player* player);
             virtual void OnPlayerFinished(Player* player);
             virtual void OnPlayerError(Player* player);
-            virtual void OnPlayerDestroying(Player* player);
             virtual void OnPlayerMixPoint(Player* player, int id, double time);
 
             musik::core::sdk::PlaybackState state;
@@ -134,7 +133,6 @@ namespace musik { namespace core { namespace audio {
             PlayerContext active;
             PlayerContext next;
             double volume;
-            bool nextCanStart;
             bool muted;
     };
 

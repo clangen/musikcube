@@ -348,14 +348,6 @@ void GaplessTransport::OnPlayerDestroying(Player *player) {
     }
 }
 
-void GaplessTransport::OnPlayerMixPoint(Player* player, int id, double time) {
-    /* we don't have any mixpoints. */
-}
-
-void GaplessTransport::OnPlayerPrepared(Player* player) {
-    /* nothing to do here... */
-}
-
 void GaplessTransport::SetPlaybackState(int state) {
     bool changed = false;
 

@@ -50,16 +50,16 @@
 namespace musik { namespace core { namespace audio {
 
     class Crossfader:
-        public musik::core::runtime::IMessageTarget
+        private musik::core::runtime::IMessageTarget,
+        private Player::EventListener
     {
         public:
             enum Direction { FadeIn, FadeOut };
 
+            sigslot::signal0<> Emptied;
+
             Crossfader(ITransport& transport);
             virtual ~Crossfader();
-
-            virtual void ProcessMessage(
-                musik::core::runtime::IMessage &message);
 
             void Fade(
                 Player* player,
@@ -67,17 +67,19 @@ namespace musik { namespace core { namespace audio {
                 Direction direction,
                 long durationMs);
 
-            void OnPlayerDestroyed(Player* player);
             void Cancel(Player* player, Direction direction);
             bool Contains(Player* player);
-
-            void Reset();
             void Pause();
             void Resume();
             void Stop();
 
         private:
             void ThreadLoop();
+
+            virtual void ProcessMessage(
+                musik::core::runtime::IMessage &message);
+
+            virtual void OnPlayerDestroying(musik::core::audio::Player* player);
 
             struct FadeContext {
                 std::shared_ptr<musik::core::sdk::IOutput> output;

@@ -51,24 +51,26 @@ namespace musik { namespace core { namespace audio {
 
     class Player : public musik::core::sdk::IBufferProvider {
         public:
-            struct PlayerEventListener {
-                virtual void OnPlayerPrepared(Player *player) = 0;
-                virtual void OnPlayerStarted(Player *player) = 0;
-                virtual void OnPlayerAlmostEnded(Player *player) = 0;
-                virtual void OnPlayerFinished(Player *player) = 0;
-                virtual void OnPlayerError(Player *player) = 0;
-                virtual void OnPlayerDestroying(Player *player) = 0;
-                virtual void OnPlayerMixPoint(Player *player, int id, double time) = 0;
+            struct EventListener {
+                virtual void OnPlayerPrepared(Player *player) { }
+                virtual void OnPlayerStarted(Player *player) { }
+                virtual void OnPlayerAlmostEnded(Player *player) { }
+                virtual void OnPlayerFinished(Player *player) { }
+                virtual void OnPlayerError(Player *player) { }
+                virtual void OnPlayerDestroying(Player *player) { }
+                virtual void OnPlayerMixPoint(Player *player, int id, double time) { }
             };
 
             static Player* Create(
                 const std::string &url,
                 std::shared_ptr<musik::core::sdk::IOutput> output,
-                PlayerEventListener *listener);
+                EventListener *listener);
 
             virtual void OnBufferProcessed(musik::core::sdk::IBuffer *buffer);
 
-            void Detach(PlayerEventListener *listener);
+            void Detach(EventListener *listener);
+            void Attach(EventListener *listener);
+
             void Play();
             void Destroy();
 
@@ -80,14 +82,21 @@ namespace musik { namespace core { namespace audio {
 
             std::string GetUrl() const { return this->url; }
 
-            bool Exited();
-
         private:
+            friend void playerThreadLoop(Player* player);
+
+            Player(
+                const std::string &url,
+                std::shared_ptr<musik::core::sdk::IOutput> output,
+                EventListener *listener);
+
+            virtual ~Player();
+
+            bool Exited();
             bool PreBuffer();
             int State();
             void ReleaseAllBuffers();
 
-        private:
             struct MixPoint {
                 MixPoint(int id, double time) {
                     this->id = id;
@@ -100,18 +109,9 @@ namespace musik { namespace core { namespace audio {
 
             using MixPointPtr = std::shared_ptr<MixPoint>;
             using MixPointList = std::list<MixPointPtr>;
-
-            friend void playerThreadLoop(Player* player);
-
-            Player(
-                const std::string &url,
-                std::shared_ptr<musik::core::sdk::IOutput> output,
-                PlayerEventListener *listener);
-
-            virtual ~Player();
-
-            typedef std::list<BufferPtr> BufferList;
-            typedef std::set<BufferPtr> BufferSet;
+            using BufferList = std::list<BufferPtr>;
+            using ListenerList = std::list<EventListener*>;
+            using OutputPtr = std::shared_ptr<musik::core::sdk::IOutput>;
 
             typedef enum {
                 Precache = 0,
@@ -119,18 +119,17 @@ namespace musik { namespace core { namespace audio {
                 Quit = 2
             } States;
 
-            std::shared_ptr<musik::core::sdk::IOutput> output;
-            StreamPtr stream;
             std::thread* thread;
-            BufferList lockedBuffers;
-            PlayerEventListener* listener;
 
+            OutputPtr output;
+            StreamPtr stream;
+            ListenerList listeners;
             MixPointList pendingMixPoints;
             MixPointList processedMixPoints;
+            BufferList lockedBuffers;
+            BufferList prebufferQueue;
 
             std::string url;
-
-            BufferList prebufferQueue;
 
             /* granular mutexes for better performance */
             std::mutex queueMutex, positionMutex;

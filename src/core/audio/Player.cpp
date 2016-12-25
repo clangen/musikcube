@@ -58,6 +58,9 @@ using std::max;
 static std::string TAG = "Player";
 static float* hammingWindow = nullptr;
 
+using Listener = Player::EventListener;
+using ListenerList = std::list<Listener*>;
+
 namespace musik {
     namespace core {
         namespace audio {
@@ -103,25 +106,35 @@ namespace musik {
     }
 }
 
-Player* Player::Create(const std::string &url, std::shared_ptr<IOutput> output, PlayerEventListener *listener) {
+Player* Player::Create(
+    const std::string &url,
+    std::shared_ptr<IOutput> output,
+    EventListener *listener)
+{
     return new Player(url, output, listener);
 }
 
-Player::Player(const std::string &url, std::shared_ptr<IOutput> output, PlayerEventListener *listener)
+Player::Player(
+    const std::string &url,
+    std::shared_ptr<IOutput> output,
+    EventListener *listener)
 : state(Player::Precache)
 , url(url)
 , currentPosition(0)
 , output(output)
 , notifiedStarted(false)
 , setPosition(-1)
-, fftContext(nullptr)
-, listener(listener) {
+, fftContext(nullptr) {
     musik::debug::info(TAG, "new instance created");
 
     this->spectrum = new float[FFT_N / 2];
 
     if (!this->output) {
         throw std::runtime_error("output cannot be null!");
+    }
+
+    if (listener) {
+        listeners.push_back(listener);
     }
 
     /* each player instance is driven by a background thread. start it. */
@@ -158,10 +171,20 @@ void Player::Destroy() {
     }
 }
 
-void Player::Detach(PlayerEventListener* listener) {
-    std::unique_lock<std::recursive_mutex> lock(this->listenerMutex);
-    if (this->listener == listener) {
-        this->listener = nullptr;
+void Player::Detach(EventListener* listener) {
+    if (listener) {
+        std::unique_lock<std::recursive_mutex> lock(this->listenerMutex);
+        this->listeners.remove_if([listener](EventListener *compare) {
+            return (listener == compare);
+        });
+    }
+}
+
+void Player::Attach(EventListener* listener) {
+    if (listener) {
+        std::unique_lock<std::recursive_mutex> lock(this->listenerMutex);
+        this->Detach(listener);
+        this->listeners.push_back(listener);
     }
 }
 
@@ -203,8 +226,8 @@ void musik::core::audio::playerThreadLoop(Player* player) {
     if (player->stream->OpenStream(player->url)) {
         {
             std::unique_lock<std::recursive_mutex> lock(player->listenerMutex);
-            if (player->listener) {
-                player->listener->OnPlayerPrepared(player);
+            for (Listener* l : ListenerList(player->listeners)) {
+                l->OnPlayerPrepared(player);
             }
         }
 
@@ -322,8 +345,10 @@ void musik::core::audio::playerThreadLoop(Player* player) {
         it wasn't stopped by the user. raise the "almost ended" flag. */
         {
             std::unique_lock<std::recursive_mutex> lock(player->listenerMutex);
-            if (!player->Exited() && player->listener) {
-                player->listener->OnPlayerAlmostEnded(player);
+            if (!player->Exited()) {
+                for (Listener* l : ListenerList(player->listeners)) {
+                    l->OnPlayerAlmostEnded(player);
+                }
             }
         }
     }
@@ -332,8 +357,10 @@ void musik::core::audio::playerThreadLoop(Player* player) {
     else {
         {
             std::unique_lock<std::recursive_mutex> lock(player->listenerMutex);
-            if (!player->Exited() && player->listener) {
-                player->listener->OnPlayerError(player);
+            if (!player->Exited()) {
+                for (Listener* l : ListenerList(player->listeners)) {
+                    l->OnPlayerError(player);
+                }
             }
         }
     }
@@ -354,8 +381,10 @@ void musik::core::audio::playerThreadLoop(Player* player) {
 
     {
         std::unique_lock<std::recursive_mutex> lock(player->listenerMutex);
-        if (!player->Exited() && player->listener) {
-            player->listener->OnPlayerFinished(player);
+        if (!player->Exited()) {
+            for (Listener* l : ListenerList(player->listeners)) {
+                l->OnPlayerFinished(player);
+            }
         }
     }
 
@@ -363,8 +392,8 @@ void musik::core::audio::playerThreadLoop(Player* player) {
 
     {
         std::unique_lock<std::recursive_mutex> lock(player->listenerMutex);
-        if (player->listener) {
-            player->listener->OnPlayerDestroying(player);
+        for (Listener* l : ListenerList(player->listeners)) {
+            l->OnPlayerDestroying(player);
         }
     }
 
@@ -538,19 +567,21 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
     if (started || mixPointsHit.size()) {
         std::unique_lock<std::recursive_mutex> lock(this->listenerMutex);
 
-        if (!this->Exited() && this->listener) {
-            /* we notify our listeners that we've started playing only after the first
-            buffer has been consumed. this is because sometimes we precache buffers
-            and send them to the output before they are actually processed by the
-            output device */
-            if (started) {
-                this->listener->OnPlayerStarted(this);
-            }
+        if (!this->Exited() && this->listeners.size()) {
+            for (Listener* l : ListenerList(this->listeners)) {
+                /* we notify our listeners that we've started playing only after the first
+                buffer has been consumed. this is because sometimes we precache buffers
+                and send them to the output before they are actually processed by the
+                output device */
+                if (started) {
+                    l->OnPlayerStarted(this);
+                }
 
-            auto it = mixPointsHit.begin();
-            while (it != mixPointsHit.end()) {
-                this->listener->OnPlayerMixPoint(this, (*it)->id, (*it)->time);
-                ++it;
+                auto it = mixPointsHit.begin();
+                while (it != mixPointsHit.end()) {
+                    l->OnPlayerMixPoint(this, (*it)->id, (*it)->time);
+                    ++it;
+                }
             }
         }
     }

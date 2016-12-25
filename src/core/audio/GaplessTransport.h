@@ -49,7 +49,7 @@ namespace musik { namespace core { namespace audio {
 
     class GaplessTransport :
         public ITransport,
-        private Player::PlayerEventListener,
+        private Player::EventListener,
         public sigslot::has_slots<>
     {
         public:
@@ -93,13 +93,11 @@ namespace musik { namespace core { namespace audio {
             void RaiseStreamEvent(int type, Player* player);
             void SetPlaybackState(int state);
 
-            virtual void OnPlayerPrepared(Player* player);
             virtual void OnPlayerStarted(Player* player);
             virtual void OnPlayerAlmostEnded(Player* player);
             virtual void OnPlayerFinished(Player* player);
             virtual void OnPlayerError(Player* player);
             virtual void OnPlayerDestroying(Player* player);
-            virtual void OnPlayerMixPoint(Player* player, int id, double time);
 
             musik::core::sdk::PlaybackState state;
             std::recursive_mutex stateMutex;
