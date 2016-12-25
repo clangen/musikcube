@@ -116,7 +116,7 @@ void GaplessTransport::StartWithPlayer(Player* newPlayer) {
 
             playingNext = (newPlayer == nextPlayer);
             if (nextPlayer != nullptr && newPlayer != nextPlayer) {
-                this->nextPlayer->Destroy();
+                RESET_NEXT_PLAYER(this);
             }
 
             RESET_ACTIVE_PLAYER(this);
@@ -168,8 +168,7 @@ void GaplessTransport::StopInternal(
             RESET_NEXT_PLAYER(this);
 
             if (this->activePlayer && this->activePlayer != exclude) {
-                this->activePlayer->Destroy();
-                this->activePlayer = nullptr;
+                RESET_ACTIVE_PLAYER(this);
             }
         }
 
