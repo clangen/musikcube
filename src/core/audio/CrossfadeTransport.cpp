@@ -295,9 +295,16 @@ void CrossfadeTransport::OnPlayerMixPoint(Player* player, int id, double time) {
 }
 
 void CrossfadeTransport::OnCrossfaderEmptied() {
-    Lock lock(this->stateMutex);
+    bool stopped = false;
 
-    if (this->active.IsEmpty() && this->next.IsEmpty()) {
+    {
+        Lock lock(this->stateMutex);
+        if (this->active.IsEmpty() && this->next.IsEmpty()) {
+            stopped = true;
+        }
+    }
+
+    if (stopped) {
         this->Stop();
     }
 }

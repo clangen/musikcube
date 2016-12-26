@@ -44,6 +44,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <atomic>
 
 namespace musik { namespace core { namespace audio {
 
@@ -92,11 +93,6 @@ namespace musik { namespace core { namespace audio {
 
             virtual ~Player();
 
-            bool Exited();
-            bool PreBuffer();
-            int State();
-            void ReleaseAllBuffers();
-
             struct MixPoint {
                 MixPoint(int id, double time) {
                     this->id = id;
@@ -119,6 +115,12 @@ namespace musik { namespace core { namespace audio {
                 Quit = 2
             } States;
 
+            bool Exited();
+            bool PreBuffer();
+            int State();
+            void ReleaseAllBuffers();
+            ListenerList Listeners();
+
             std::thread* thread;
 
             OutputPtr output;
@@ -132,13 +134,12 @@ namespace musik { namespace core { namespace audio {
             std::string url;
 
             /* granular mutexes for better performance */
-            std::mutex queueMutex, positionMutex;
-            std::recursive_mutex listenerMutex;
+            std::mutex queueMutex, listenerMutex;
             std::condition_variable writeToOutputCondition;
 
             double volume;
-            double currentPosition;
-            double setPosition;
+            std::atomic<double> currentPosition;
+            std::atomic<double> setPosition;
             int state;
             bool notifiedStarted;
             float* spectrum;

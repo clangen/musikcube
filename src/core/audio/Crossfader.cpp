@@ -214,72 +214,81 @@ void Crossfader::Resume() {
 void Crossfader::ProcessMessage(IMessage &message) {
     switch (message.Type()) {
         case MESSAGE_TICK: {
-            LOCK(this->contextListLock);
+            bool emptied = false;
 
-            auto it = this->contextList.begin();
-            auto globalVolume = this->transport.Volume();
+            {
+                LOCK(this->contextListLock);
 
-            while (it != this->contextList.end()) {
-                auto fade = *it;
+                auto it = this->contextList.begin();
+                auto globalVolume = this->transport.Volume();
 
-                if (fade->ticksCounted < fade->ticksTotal) {
-                    ++fade->ticksCounted;
+                while (it != this->contextList.end()) {
+                    auto fade = *it;
 
-                    if (this->transport.IsMuted()) {
-                        fade->output->SetVolume(0.0);
+                    if (fade->ticksCounted < fade->ticksTotal) {
+                        ++fade->ticksCounted;
+
+                        if (this->transport.IsMuted()) {
+                            fade->output->SetVolume(0.0);
+                        }
+                        else {
+                            double percent =
+                                (float)fade->ticksCounted /
+                                (float)fade->ticksTotal;
+
+                            if (fade->direction == FadeOut) {
+                                percent = (1.0f - percent);
+                            }
+
+                            double outputVolume = globalVolume * percent;
+
+        #if 0
+                            std::string dir = (fade->direction == FadeIn) ? "in" : "out";
+                            std::string dbg = boost::str(boost::format("%s %f\n") % dir % outputVolume);
+                            OutputDebugStringA(dbg.c_str());
+        #endif
+
+                            fade->output->SetVolume(outputVolume);
+                        }
                     }
-                    else {
-                        double percent =
-                            (float)fade->ticksCounted /
-                            (float)fade->ticksTotal;
+
+                    /* if the fade has finished... */
+                    if (fade->ticksCounted >= fade->ticksTotal) {
+                        auto player = (*it)->player;
+
+                        /* we're done with this player now! detach ourself */
+                        if (player) {
+                            (*it)->player->Detach(this);
+                        }
 
                         if (fade->direction == FadeOut) {
-                            percent = (1.0f - percent);
+                            /* if we're fading the player out, we get to destroy
+                            it. go ahead and do that now. awkward but efficient,
+                            and it works. */
+                            if (player) {
+                                (*it)->player->Destroy();
+                            }
+
+                            (*it)->output->Stop();
                         }
 
-                        double outputVolume = globalVolume * percent;
-
-    #if 0
-                        std::string dir = (fade->direction == FadeIn) ? "in" : "out";
-                        std::string dbg = boost::str(boost::format("%s %f\n") % dir % outputVolume);
-                        OutputDebugStringA(dbg.c_str());
-    #endif
-
-                        fade->output->SetVolume(outputVolume);
+                        it = this->contextList.erase(it);
+                    }
+                    else {
+                        ++it;
                     }
                 }
 
-                /* if the fade has finished... */
-                if (fade->ticksCounted >= fade->ticksTotal) {
-                    auto player = (*it)->player;
-
-                    /* we're done with this player now! detach ourself */
-                    if (player) {
-                        (*it)->player->Detach(this);
-                    }
-
-                    if (fade->direction == FadeOut) {
-                        /* if we're fading the player out, we get to destroy
-                        it. go ahead and do that now. awkward but efficient,
-                        and it works. */
-                        if (player) {
-                            (*it)->player->Destroy();
-                        }
-
-                        (*it)->output->Stop();
-                    }
-
-                    it = this->contextList.erase(it);
+                if (this->contextList.size()) {
+                    ENQUEUE_TICK();
                 }
                 else {
-                    ++it;
+                    emptied = true;
                 }
-            }
+            } /* end critical section */
 
-            if (this->contextList.size()) {
-                ENQUEUE_TICK();
-            }
-            else {
+            /* notify outside of the critical section! */
+            if (emptied) {
                 this->Emptied();
                 this->drainCondition.notify_all();
             }

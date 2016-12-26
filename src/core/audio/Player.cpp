@@ -173,7 +173,7 @@ void Player::Destroy() {
 
 void Player::Detach(EventListener* listener) {
     if (listener) {
-        std::unique_lock<std::recursive_mutex> lock(this->listenerMutex);
+        std::unique_lock<std::mutex> lock(this->listenerMutex);
         this->listeners.remove_if([listener](EventListener *compare) {
             return (listener == compare);
         });
@@ -181,16 +181,21 @@ void Player::Detach(EventListener* listener) {
 }
 
 void Player::Attach(EventListener* listener) {
+    this->Detach(listener);
+
     if (listener) {
-        std::unique_lock<std::recursive_mutex> lock(this->listenerMutex);
-        this->Detach(listener);
+        std::unique_lock<std::mutex> lock(this->listenerMutex);
         this->listeners.push_back(listener);
     }
 }
 
+ListenerList Player::Listeners() {
+    std::unique_lock<std::mutex> lock(this->listenerMutex);
+    return ListenerList(this->listeners);
+}
+
 double Player::GetPosition() {
-    std::unique_lock<std::mutex> lock(this->positionMutex);
-    return std::max(0.0, round(this->currentPosition - this->output->Latency()));
+    return std::max(0.0, round(this->currentPosition.load() - this->output->Latency()));
 }
 
 double Player::GetDuration() {
@@ -198,11 +203,11 @@ double Player::GetDuration() {
 }
 
 void Player::SetPosition(double seconds) {
-    std::unique_lock<std::mutex> positionLock(this->positionMutex);
-    this->setPosition = std::max(0.0, seconds);
+    this->setPosition.store(std::max(0.0, seconds));
 
     /* reset our mix points on seek! that way we'll notify again if necessary */
     std::unique_lock<std::mutex> queueLock(this->queueMutex);
+
     this->pendingMixPoints.splice(
         this->pendingMixPoints.begin(),
         this->processedMixPoints);
@@ -224,11 +229,8 @@ void musik::core::audio::playerThreadLoop(Player* player) {
     BufferPtr buffer;
 
     if (player->stream->OpenStream(player->url)) {
-        {
-            std::unique_lock<std::recursive_mutex> lock(player->listenerMutex);
-            for (Listener* l : ListenerList(player->listeners)) {
-                l->OnPlayerPrepared(player);
-            }
+        for (Listener* l : player->Listeners()) {
+            l->OnPlayerPrepared(player);
         }
 
         /* precache until buffers are full */
@@ -253,13 +255,7 @@ void musik::core::audio::playerThreadLoop(Player* player) {
             /* see if we've been asked to seek since the last sample was
             played. if we have, clear our output buffer and seek the
             stream. */
-            double position = -1;
-
-            {
-                std::unique_lock<std::mutex> lock(player->positionMutex);
-                position = player->setPosition;
-                player->setPosition = -1;
-            }
+            double position = player->setPosition.exchange(-1.0);
 
             if (position != -1) {
                 player->output->Stop(); /* flush all buffers */
@@ -319,7 +315,7 @@ void musik::core::audio::playerThreadLoop(Player* player) {
                     std::unique_lock<std::mutex> lock(player->queueMutex);
 
                     if (player->lockedBuffers.size() == 1) {
-                        player->currentPosition = buffer->Position();
+                        player->currentPosition.store(buffer->Position());
                     }
 
                     buffer.reset(); /* important! we're done with this one locally. */
@@ -343,24 +339,18 @@ void musik::core::audio::playerThreadLoop(Player* player) {
 
         /* if the Quit flag isn't set, that means the stream has ended "naturally", i.e.
         it wasn't stopped by the user. raise the "almost ended" flag. */
-        {
-            std::unique_lock<std::recursive_mutex> lock(player->listenerMutex);
-            if (!player->Exited()) {
-                for (Listener* l : ListenerList(player->listeners)) {
-                    l->OnPlayerAlmostEnded(player);
-                }
+        if (!player->Exited()) {
+            for (Listener* l : player->Listeners()) {
+                l->OnPlayerAlmostEnded(player);
             }
         }
     }
 
     /* if the stream failed to open... */
     else {
-        {
-            std::unique_lock<std::recursive_mutex> lock(player->listenerMutex);
-            if (!player->Exited()) {
-                for (Listener* l : ListenerList(player->listeners)) {
-                    l->OnPlayerError(player);
-                }
+        if (!player->Exited()) {
+            for (Listener* l : player->Listeners()) {
+                l->OnPlayerError(player);
             }
         }
     }
@@ -382,22 +372,16 @@ void musik::core::audio::playerThreadLoop(Player* player) {
     /* buffers have been written, wait for the output to play them all */
     player->output->Drain();
 
-    {
-        std::unique_lock<std::recursive_mutex> lock(player->listenerMutex);
-        if (!player->Exited()) {
-            for (Listener* l : ListenerList(player->listeners)) {
-                l->OnPlayerFinished(player);
-            }
+    if (!player->Exited()) {
+        for (Listener* l : player->Listeners()) {
+            l->OnPlayerFinished(player);
         }
     }
 
     player->state = Player::Quit;
 
-    {
-        std::unique_lock<std::recursive_mutex> lock(player->listenerMutex);
-        for (Listener* l : ListenerList(player->listeners)) {
-            l->OnPlayerDestroying(player);
-        }
+    for (Listener* l : player->Listeners()) {
+        l->OnPlayerDestroying(player);
     }
 
     player->Destroy();
@@ -527,12 +511,12 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
                 /* this sets the current time in the stream. it does this by grabbing
                 the time at the next buffer in the queue */
                 if (this->lockedBuffers.empty() || isFront) {
-                    this->currentPosition = ((Buffer*)buffer)->Position();
+                    this->currentPosition.store(((Buffer*)buffer)->Position());
                 }
                 else {
                     /* if the queue is drained, use the position from the buffer
                     that was just processed */
-                    this->currentPosition = this->lockedBuffers.front()->Position();
+                    this->currentPosition.store(this->lockedBuffers.front()->Position());
                 }
 
                 /* did we hit any pending mixpoints? if so add them to our set and
@@ -568,10 +552,9 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
     /* check up front so we don't have to acquire the mutex if
     we don't need to. */
     if (started || mixPointsHit.size()) {
-        std::unique_lock<std::recursive_mutex> lock(this->listenerMutex);
-
-        if (!this->Exited() && this->listeners.size()) {
-            for (Listener* l : ListenerList(this->listeners)) {
+        ListenerList listeners = this->Listeners();
+        if (!this->Exited() && listeners.size()) {
+            for (Listener* l : ListenerList(listeners)) {
                 /* we notify our listeners that we've started playing only after the first
                 buffer has been consumed. this is because sometimes we precache buffers
                 and send them to the output before they are actually processed by the
