@@ -43,7 +43,7 @@ using namespace musik::core::audio;
 using namespace musik::core::sdk;
 using namespace musik::core::runtime;
 
-#define TICKS_PER_SECOND 10
+#define TICKS_PER_SECOND 30
 #define TICK_TIME_MILLIS (1000 / TICKS_PER_SECOND)
 #define MAX_FADES 3
 
