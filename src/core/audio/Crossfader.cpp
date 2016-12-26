@@ -39,8 +39,6 @@
 
 #include <algorithm>
 
-#include <boost/format.hpp>
-
 using namespace musik::core::audio;
 using namespace musik::core::sdk;
 using namespace musik::core::runtime;
@@ -241,13 +239,6 @@ void Crossfader::ProcessMessage(IMessage &message) {
                             }
 
                             double outputVolume = globalVolume * percent;
-
-        #if 0
-                            std::string dir = (fade->direction == FadeIn) ? "in" : "out";
-                            std::string dbg = boost::str(boost::format("%s %f\n") % dir % outputVolume);
-                            OutputDebugStringA(dbg.c_str());
-        #endif
-
                             fade->output->SetVolume(outputVolume);
                         }
                     }
@@ -269,7 +260,15 @@ void Crossfader::ProcessMessage(IMessage &message) {
                                 (*it)->player->Destroy();
                             }
 
-                            (*it)->output->Stop();
+                            /* wait for the output to finish playing what it has
+                            buffered -- but do it in the background because it's
+                            a blocking call. */
+                            auto output = (*it)->output;
+                            std::thread drainThread([output]() {
+                                output->Drain();
+                                output->Stop();
+                            });
+                            drainThread.detach();
                         }
 
                         it = this->contextList.erase(it);
