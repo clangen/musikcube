@@ -50,6 +50,7 @@
 
 #include <core/library/LibraryFactory.h>
 #include <core/audio/GaplessTransport.h>
+#include <core/audio/CrossfadeTransport.h>
 #include <core/support/PreferenceKeys.h>
 #include <core/audio/Visualizer.h>
 
@@ -60,6 +61,7 @@
 #include <boost/chrono.hpp>
 
 #ifdef WIN32
+#include <app/util/Win32Util.h>
 #undef MOUSE_MOVED
 #endif
 
@@ -108,7 +110,8 @@ int main(int argc, char* argv[])
 
     LibraryPtr library = LibraryFactory::Libraries().at(0);
 
-    GaplessTransport transport;
+    //GaplessTransport transport;
+    CrossfadeTransport transport;
     PlaybackService playback(library, transport);
 
     GlobalHotkeys globalHotkeys(playback, library);
@@ -157,6 +160,10 @@ int main(int argc, char* argv[])
         });
 
         app.Run(mainLayout);
+
+#ifdef WIN32
+        musik::box::win32::HideMainWindow();
+#endif
     }
 
     musik::core::audio::vis::HideSelectedVisualizer();

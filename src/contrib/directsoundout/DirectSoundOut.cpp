@@ -165,7 +165,7 @@ void DirectSoundOut::SetVolume(double volume) {
         if (this->secondaryBuffer) {
             double db = (volume < 0.0001f)
                 ? DSBVOLUME_MIN
-                : (float) log10f(this->volume) * 6000.f;
+                : log10(this->volume) * 6000.f;
 
             if (db > DSBVOLUME_MAX) {
                 db = DSBVOLUME_MAX;
@@ -264,6 +264,7 @@ bool DirectSoundOut::Play(IBuffer *buffer, IBufferProvider *provider) {
 
 void DirectSoundOut::Drain() {
     static const int drainCount = 4;
+    static const int bufferResendDelayMs = 50;
 
     int channels = this->channels;
     int rate = this->rate;
@@ -286,7 +287,7 @@ void DirectSoundOut::Drain() {
     int count = drainCount + 1;
     while (count > 0 && this->state != StateStopped) {
         if (!this->Play(&buffer, &buffer)) {
-            Sleep(250); /* eh */
+            Sleep(bufferResendDelayMs); /* eh */
         }
         else {
             --count;

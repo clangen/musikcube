@@ -144,6 +144,9 @@
     <ClCompile Include="app\overlay\OutputOverlay.cpp">
       <Filter>app\overlay</Filter>
     </ClCompile>
+    <ClCompile Include="app\util\Win32Util.cpp">
+      <Filter>app\util</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -335,6 +338,9 @@
     </ClInclude>
     <ClInclude Include="cursespp\IViewRoot.h">
       <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="app\util\Win32Util.h">
+      <Filter>app\util</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -141,6 +141,7 @@
     <ClCompile Include="app\util\Hotkeys.cpp" />
     <ClCompile Include="app\util\Playback.cpp" />
     <ClCompile Include="app\util\PreferenceKeys.cpp" />
+    <ClCompile Include="app\util\Win32Util.cpp" />
     <ClCompile Include="app\window\CategoryListView.cpp" />
     <ClCompile Include="app\window\EntryWithHeader.cpp" />
     <ClCompile Include="app\window\LogWindow.cpp" />
@@ -198,6 +199,7 @@
     <ClInclude Include="app\util\Playback.h" />
     <ClInclude Include="app\util\PreferenceKeys.h" />
     <ClInclude Include="app\util\Version.h" />
+    <ClInclude Include="app\util\Win32Util.h" />
     <ClInclude Include="app\window\CategoryListView.h" />
     <ClInclude Include="app\window\EntryWithHeader.h" />
     <ClInclude Include="app\window\LogWindow.h" />
