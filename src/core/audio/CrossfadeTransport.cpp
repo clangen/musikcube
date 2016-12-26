@@ -61,6 +61,7 @@ CrossfadeTransport::CrossfadeTransport()
 
 CrossfadeTransport::~CrossfadeTransport() {
     this->Stop();
+    this->crossfader.Drain();
 }
 
 PlaybackState CrossfadeTransport::GetPlaybackState() {
@@ -93,9 +94,8 @@ void CrossfadeTransport::ReloadOutput() {
 void CrossfadeTransport::Stop() {
     {
         Lock lock(this->stateMutex);
-        this->crossfader.Stop();
-        this->active.Stop();
-        this->next.Stop();
+        this->active.Reset();
+        this->next.Reset();
     }
 
     this->SetPlaybackState(PlaybackStopped);

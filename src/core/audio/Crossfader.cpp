@@ -125,6 +125,18 @@ void Crossfader::Stop() {
     this->contextList.clear();
 }
 
+void Crossfader::Drain() {
+    LOCK(this->contextListLock);
+
+    if (this->contextList.size()) {
+        for (FadeContextPtr context : this->contextList) {
+            context->direction = FadeOut;
+        }
+
+        this->drainCondition.wait(lock);
+    }
+}
+
 void Crossfader::OnPlayerDestroying(Player* player) {
     if (player) {
         LOCK(this->contextListLock);
@@ -269,6 +281,7 @@ void Crossfader::ProcessMessage(IMessage &message) {
             }
             else {
                 this->Emptied();
+                this->drainCondition.notify_all();
             }
         }
         break;

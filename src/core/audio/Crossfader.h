@@ -72,6 +72,7 @@ namespace musik { namespace core { namespace audio {
             void Pause();
             void Resume();
             void Stop();
+            void Drain();
 
         private:
             void ThreadLoop();
@@ -96,6 +97,7 @@ namespace musik { namespace core { namespace audio {
             musik::core::runtime::MessageQueue messageQueue;
             std::list<FadeContextPtr> contextList;
             std::atomic<bool> quit, paused;
+            std::condition_variable_any drainCondition;
             ITransport& transport;
     };
 
