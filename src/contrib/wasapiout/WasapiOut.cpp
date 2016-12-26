@@ -149,6 +149,12 @@ void WasapiOut::Drain() {
 }
 
 bool WasapiOut::Play(IBuffer *buffer, IBufferProvider *provider) {
+    IAudioRenderClient *renderClient = nullptr;
+    IAudioClient *audioClient = nullptr;
+
+    /* reduce lock contention by snagging the references to the
+    COM interfaces we care about and calling AddRef(), then operating
+    on the local copies. */
     {
         Lock lock(this->stateMutex);
 
@@ -161,27 +167,31 @@ bool WasapiOut::Play(IBuffer *buffer, IBufferProvider *provider) {
             return false;
         }
 
-        UINT32 availableFrames = 0;
-        UINT32 frameOffset = 0;
-        UINT32 samples = (UINT32) buffer->Samples();
-        UINT32 framesToWrite = samples / (UINT32) buffer->Channels();
-        int channels = buffer->Channels();
+        renderClient = this->renderClient;
+        renderClient->AddRef();
 
-        do {
-            this->audioClient->GetCurrentPadding(&frameOffset);
-            availableFrames = (this->outputBufferFrames - frameOffset);
+        audioClient = this->audioClient;
+        audioClient->AddRef();
+    }
 
-            if (availableFrames < framesToWrite) {
-                UINT32 delta = framesToWrite - availableFrames;
-                REFERENCE_TIME sleepTime = (delta * 1000 * 1000 * 10) / buffer->SampleRate();
-                std::this_thread::sleep_for(std::chrono::microseconds(sleepTime));
-            }
-        } while (this->state == StatePlaying && availableFrames < framesToWrite);
+    UINT32 availableFrames = 0;
+    UINT32 frameOffset = 0;
+    UINT32 samples = (UINT32) buffer->Samples();
+    UINT32 framesToWrite = samples / (UINT32) buffer->Channels();
+    int channels = buffer->Channels();
 
-        if (state != StatePlaying) {
-            return false;
+    do {
+        audioClient->GetCurrentPadding(&frameOffset);
+        availableFrames = (this->outputBufferFrames - frameOffset);
+
+        if (availableFrames < framesToWrite) {
+            UINT32 delta = framesToWrite - availableFrames;
+            REFERENCE_TIME sleepTime = (delta * 1000 * 1000 * 10) / buffer->SampleRate();
+            std::this_thread::sleep_for(std::chrono::microseconds(sleepTime));
         }
+    } while (this->state == StatePlaying && availableFrames < framesToWrite);
 
+    if (state == StatePlaying) {
         if (availableFrames >= framesToWrite) {
             BYTE *data = 0;
             HRESULT result = this->renderClient->GetBuffer(framesToWrite, &data);
@@ -191,9 +201,12 @@ bool WasapiOut::Play(IBuffer *buffer, IBufferProvider *provider) {
             }
 
             memcpy(data, buffer->BufferPointer(), sizeof(float) * samples);
-            this->renderClient->ReleaseBuffer(framesToWrite, 0);
+            renderClient->ReleaseBuffer(framesToWrite, 0);
         }
     }
+
+    renderClient->Release();
+    audioClient->Release();
 
     provider->OnBufferProcessed(buffer);
 

@@ -38,10 +38,12 @@
 #include <core/runtime/Message.h>
 
 #include <algorithm>
+#include <chrono>
 
 using namespace musik::core::audio;
 using namespace musik::core::sdk;
 using namespace musik::core::runtime;
+using namespace std::chrono;
 
 #define TICKS_PER_SECOND 30
 #define TICK_TIME_MILLIS (1000 / TICKS_PER_SECOND)
@@ -50,6 +52,10 @@ using namespace musik::core::runtime;
 #define ENQUEUE_TICK() \
     this->messageQueue.Post(Message::Create( \
         this, MESSAGE_TICK, 0, 0), TICK_TIME_MILLIS)
+
+#define ENQUEUE_ADJUSTED_TICK(delay) \
+    this->messageQueue.Post(Message::Create( \
+        this, MESSAGE_TICK, 0, 0), delay > 0 ? delay : 0)
 
 #define LOCK(x) \
     std::unique_lock<std::recursive_mutex> lock(x);
@@ -214,6 +220,8 @@ void Crossfader::ProcessMessage(IMessage &message) {
         case MESSAGE_TICK: {
             bool emptied = false;
 
+            auto start = system_clock::now().time_since_epoch();
+
             {
                 LOCK(this->contextListLock);
 
@@ -278,18 +286,18 @@ void Crossfader::ProcessMessage(IMessage &message) {
                     }
                 }
 
-                if (this->contextList.size()) {
-                    ENQUEUE_TICK();
-                }
-                else {
-                    emptied = true;
-                }
+                emptied = (this->contextList.size() == 0);
             } /* end critical section */
 
             /* notify outside of the critical section! */
             if (emptied) {
                 this->Emptied();
                 this->drainCondition.notify_all();
+            }
+            else {
+                auto end = system_clock::now().time_since_epoch();
+                int64 duration = duration_cast<milliseconds>(end - start).count();
+                ENQUEUE_ADJUSTED_TICK(TICK_TIME_MILLIS - duration);
             }
         }
         break;
