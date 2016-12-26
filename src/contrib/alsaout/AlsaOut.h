@@ -60,7 +60,7 @@ class AlsaOut : public musik::core::sdk::IOutput {
         virtual void SetVolume(double volume);
         virtual double GetVolume();
         virtual void Stop();
-        virtual double Latency() { return 0.0; }
+        virtual double Latency();
         virtual void Drain();
 
         virtual bool Play(
@@ -88,6 +88,7 @@ class AlsaOut : public musik::core::sdk::IOutput {
         size_t channels;
         size_t rate;
         double volume;
+        double latency;
         volatile bool quit, paused, initialized;
 
         std::unique_ptr<boost::thread> writeThread;

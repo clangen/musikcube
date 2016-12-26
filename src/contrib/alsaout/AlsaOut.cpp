@@ -73,13 +73,14 @@ static inline bool playable(snd_pcm_t* pcm) {
 using namespace musik::core::sdk;
 
 AlsaOut::AlsaOut()
-: pcmHandle(NULL)
+: pcmHandle(nullptr)
 , device("default")
 , channels(2)
 , rate(44100)
 , volume(1.0)
 , quit(false)
 , paused(false)
+, latency(0)
 , initialized(false) {
     std::cerr << "AlsaOut::AlsaOut() called" << std::endl;
     this->writeThread.reset(new boost::thread(boost::bind(&AlsaOut::WriteLoop, this)));
@@ -107,7 +108,8 @@ void AlsaOut::CloseDevice() {
     if (this->pcmHandle) {
         std::cerr << "AlsaOut: closing PCM handle\n";
         snd_pcm_close(this->pcmHandle);
-        this->pcmHandle = NULL;
+        this->pcmHandle = nullptr;
+        this->latency = 0.0;
     }
 }
 
@@ -175,6 +177,25 @@ error:
 
 void AlsaOut::Destroy() {
     delete this;
+}
+
+double AlsaOut::Latency() {
+    if (latency <= 0.0f) {
+        LOCK("latency_calc");
+
+        if (this->pcmHandle && this->rate && this->channels) {
+            snd_pcm_uframes_t bufferSize = 0, periodSize = 0;
+            snd_pcm_get_params(this->pcmHandle, &bufferSize, &periodSize);
+
+            if (bufferSize) {
+                this->latency = 
+                (double) bufferSize /
+                (double) (this->rate * this->channels * sizeof(float));
+            }
+        }
+    }
+
+    return this->latency;
 }
 
 void AlsaOut::Stop() {
@@ -260,6 +281,7 @@ void AlsaOut::WriteLoop() {
 
                 /* software volume; alsa doesn't support this internally. this is about
                 as terrible as an algorithm can be -- it's just a linear ramp. */
+                //std::cerr << "volume=" << volume << std::endl;
                 if (volume != 1.0f) {
                     float *buffer = next->buffer->BufferPointer();
                     for (size_t i = 0; i < samples; i++) {
@@ -335,7 +357,7 @@ void AlsaOut::SetFormat(IBuffer *buffer) {
 
     if (this->channels != buffer->Channels() ||
         this->rate != buffer->SampleRate() ||
-        this->pcmHandle == NULL)
+        this->pcmHandle == nullptr)
     {
         this->channels = buffer->Channels();
         this->rate = buffer->SampleRate();

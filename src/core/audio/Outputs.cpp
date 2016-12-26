@@ -54,7 +54,7 @@ static const std::string defaultOutput = "Wasapi IOutput";
 #elif defined(__APPLE__)
 static const std::string defaultOutput = "CoreAudio IOutput";
 #else
-static const std::string defaultOutput = "Alsa IOutput";
+static const std::string defaultOutput = "PulseAudio IOutput";
 #endif
 
 #define LOWER(x) std::transform(x.begin(), x.end(), x.begin(), tolower);
