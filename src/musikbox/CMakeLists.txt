@@ -1,6 +1,7 @@
 set (BOX_SRCS
 	./Main.cpp
 	./stdafx.cpp
+	./app/audio/MasterTransport.cpp
 	./app/layout/BrowseLayout.cpp
 	./app/layout/ConsoleLayout.cpp
 	./app/layout/SettingsLayout.cpp
