@@ -174,11 +174,13 @@ bool WasapiOut::Play(IBuffer *buffer, IBufferProvider *provider) {
         audioClient->AddRef();
     }
 
+    HRESULT result;
     UINT32 availableFrames = 0;
     UINT32 frameOffset = 0;
     UINT32 samples = (UINT32) buffer->Samples();
     UINT32 framesToWrite = samples / (UINT32) buffer->Channels();
     int channels = buffer->Channels();
+    bool bufferWitten = false;
 
     do {
         audioClient->GetCurrentPadding(&frameOffset);
@@ -194,23 +196,24 @@ bool WasapiOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     if (state == StatePlaying) {
         if (availableFrames >= framesToWrite) {
             BYTE *data = 0;
-            HRESULT result = this->renderClient->GetBuffer(framesToWrite, &data);
 
-            if (result != S_OK) {
-                return false;
+            result = this->renderClient->GetBuffer(framesToWrite, &data);
+            if (result == S_OK) {
+                memcpy(data, buffer->BufferPointer(), sizeof(float) * samples);
+                renderClient->ReleaseBuffer(framesToWrite, 0);
+                bufferWitten = true;
             }
-
-            memcpy(data, buffer->BufferPointer(), sizeof(float) * samples);
-            renderClient->ReleaseBuffer(framesToWrite, 0);
         }
     }
 
     renderClient->Release();
     audioClient->Release();
 
-    provider->OnBufferProcessed(buffer);
+    if (bufferWitten) {
+        provider->OnBufferProcessed(buffer);
+    }
 
-    return true;
+    return bufferWitten;
 }
 
 void WasapiOut::Reset() {

@@ -418,6 +418,10 @@ void CrossfadeTransport::PlayerContext::Pause() {
 void CrossfadeTransport::PlayerContext::Resume() {
     if (this->output) {
         this->output->Resume();
+
+        if (this->player) {
+            this->player->Play();
+        }
     }
 }
 
