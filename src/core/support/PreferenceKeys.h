@@ -52,6 +52,7 @@ namespace musik { namespace core { namespace prefs {
         extern const std::string Volume;
         extern const std::string RepeatMode;
         extern const std::string OutputPlugin;
+        extern const std::string Transport;
     }
 
 } } }

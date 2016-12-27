@@ -362,7 +362,7 @@ void CrossfadeTransport::PlayerContext::Reset(
 
     this->canFade = this->started = false;
     this->output = url.size() ? outputs::SelectedOutput() : nullptr;
-    this->player = url.size() ? Player::Create(url, this->output, listener) : nullptr;
+    this->player = url.size() ? Player::Create(url, this->output, Player::Drain, listener) : nullptr;
 }
 
 void CrossfadeTransport::PlayerContext::TransferTo(PlayerContext& to) {

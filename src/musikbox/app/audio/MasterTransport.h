@@ -32,23 +32,55 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.hpp"
-#include "PreferenceKeys.h"
+#pragma once
 
-namespace musik { namespace core { namespace prefs {
+#include <core/audio/ITransport.h>
+#include <core/support/Preferences.h>
 
-    const std::string components::Settings = "settings";
-    const std::string components::Libraries = "libraries";
-    const std::string components::Playback = "playback";
+namespace musik { namespace box { namespace audio {
+    class MasterTransport :
+        public sigslot::has_slots<>,
+        public musik::core::audio::ITransport
+    {
+        public:
+            enum Type { Gapless, Crossfade };
 
-    const std::string keys::AutoSyncIntervalMillis = "AutoSyncIntervalMillis";
-    const std::string keys::MaxTagReadThreads = "MaxTagReadThreads";
-    const std::string keys::RemoveMissingFiles = "RemoveMissingFiles";
-    const std::string keys::SyncOnStartup = "SyncOnStartup";
-    const std::string keys::Volume = "Volume";
-    const std::string keys::RepeatMode = "RepeatMode";
-    const std::string keys::OutputPlugin = "OutputPlugin";
-    const std::string keys::Transport = "Transport";
+            MasterTransport();
+            virtual ~MasterTransport();
 
+            virtual void PrepareNextTrack(const std::string& trackUrl);
+
+            virtual void Start(const std::string& trackUrl);
+            virtual void Stop();
+            virtual bool Pause();
+            virtual bool Resume();
+
+            virtual double Position();
+            virtual void SetPosition(double seconds);
+
+            virtual double Volume();
+            virtual void SetVolume(double volume);
+
+            virtual double GetDuration();
+
+            virtual bool IsMuted();
+            virtual void SetMuted(bool muted);
+
+            virtual void ReloadOutput();
+
+            virtual musik::core::sdk::PlaybackState GetPlaybackState();
+
+            void SwitchTo(Type type);
+            Type GetType();
+
+        private:
+            void OnStreamEvent(int type, std::string url);
+            void OnPlaybackEvent(int type);
+            void OnVolumeChanged();
+            void OnTimeChanged(double time);
+
+            std::shared_ptr<musik::core::audio::ITransport> transport;
+            std::shared_ptr<musik::core::Preferences> prefs;
+            Type type;
+    };
 } } }
-

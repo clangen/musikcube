@@ -60,6 +60,7 @@ using namespace musik::core::audio;
 using namespace musik::core::library::constants;
 using namespace musik::core::sdk;
 using namespace musik::box;
+using namespace musik::box::audio;
 using namespace cursespp;
 using namespace std::placeholders;
 
@@ -84,7 +85,7 @@ static bool showDotfiles = false;
 
 SettingsLayout::SettingsLayout(
     musik::core::LibraryPtr library,
-    musik::core::audio::ITransport& transport)
+    musik::box::audio::MasterTransport& transport)
 : LayoutBase()
 , library(library)
 , indexer(library->Indexer())
@@ -134,6 +135,17 @@ void SettingsLayout::OnOutputDropdownActivated(cursespp::TextLabel* label) {
     });
 }
 
+void SettingsLayout::OnTransportDropdownActivate(cursespp::TextLabel* label) {
+    if (this->transport.GetType() == MasterTransport::Crossfade) {
+        this->transport.SwitchTo(MasterTransport::Gapless);
+    }
+    else {
+        this->transport.SwitchTo(MasterTransport::Crossfade);
+    }
+
+    this->LoadPreferences();
+}
+
 void SettingsLayout::OnLayout() {
     int x = this->GetX(), y = this->GetY();
     int cx = this->GetWidth(), cy = this->GetHeight();
@@ -154,7 +166,8 @@ void SettingsLayout::OnLayout() {
     this->addedPathsList->MoveAndResize(rightX, pathListsY, rightWidth, pathsHeight);
 
     this->outputDropdown->MoveAndResize(1, BOTTOM(this->browseList), cx - 1, LABEL_HEIGHT);
-    this->dotfileCheckbox->MoveAndResize(1, BOTTOM(this->outputDropdown), cx - 1, LABEL_HEIGHT);
+    this->transportDropdown->MoveAndResize(1, BOTTOM(this->outputDropdown), cx - 1, LABEL_HEIGHT);
+    this->dotfileCheckbox->MoveAndResize(1, BOTTOM(this->transportDropdown), cx - 1, LABEL_HEIGHT);
     this->removeCheckbox->MoveAndResize(1, BOTTOM(this->dotfileCheckbox), cx - 1, LABEL_HEIGHT);
     this->focusShortcutsCheckbox->MoveAndResize(1, BOTTOM(this->removeCheckbox), cx - 1, LABEL_HEIGHT);
     this->customColorsCheckbox->MoveAndResize(1, BOTTOM(this->focusShortcutsCheckbox), cx - 1, LABEL_HEIGHT);
@@ -231,6 +244,9 @@ void SettingsLayout::InitializeWindows() {
     this->outputDropdown.reset(new TextLabel());
     this->outputDropdown->Activated.connect(this, &SettingsLayout::OnOutputDropdownActivated);
 
+    this->transportDropdown.reset(new TextLabel());
+    this->transportDropdown->Activated.connect(this, &SettingsLayout::OnTransportDropdownActivate);
+
     CREATE_CHECKBOX(this->dotfileCheckbox, "show dotfiles in directory browser");
     CREATE_CHECKBOX(this->removeCheckbox, "remove missing files from library");
     CREATE_CHECKBOX(this->focusShortcutsCheckbox, "esc key focuses shortcuts bar");
@@ -243,17 +259,19 @@ void SettingsLayout::InitializeWindows() {
     this->browseList->SetFocusOrder(0);
     this->addedPathsList->SetFocusOrder(1);
     this->outputDropdown->SetFocusOrder(2);
-    this->dotfileCheckbox->SetFocusOrder(3);
-    this->removeCheckbox->SetFocusOrder(4);
-    this->focusShortcutsCheckbox->SetFocusOrder(5);
-    this->customColorsCheckbox->SetFocusOrder(6);
-    this->hotkeyInput->SetFocusOrder(7);
+    this->transportDropdown->SetFocusOrder(4);
+    this->dotfileCheckbox->SetFocusOrder(5);
+    this->removeCheckbox->SetFocusOrder(6);
+    this->focusShortcutsCheckbox->SetFocusOrder(7);
+    this->customColorsCheckbox->SetFocusOrder(8);
+    this->hotkeyInput->SetFocusOrder(9);
 
     this->AddWindow(this->browseLabel);
     this->AddWindow(this->addedPathsLabel);
     this->AddWindow(this->browseList);
     this->AddWindow(this->addedPathsList);
     this->AddWindow(this->outputDropdown);
+    this->AddWindow(this->transportDropdown);
     this->AddWindow(this->dotfileCheckbox);
     this->AddWindow(this->removeCheckbox);
     this->AddWindow(this->focusShortcutsCheckbox);
@@ -319,6 +337,13 @@ void SettingsLayout::LoadPreferences() {
     if (output) {
         this->outputDropdown->SetText(arrow + " output device: " + output->Name());
     }
+
+    std::string transportName =
+        this->transport.GetType() == MasterTransport::Gapless
+            ? "gapless"
+            : "crossfade";
+
+    this->transportDropdown->SetText(arrow + " playback transport: " + transportName);
 }
 
 void SettingsLayout::AddSelectedDirectory() {

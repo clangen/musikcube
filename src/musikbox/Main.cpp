@@ -47,10 +47,9 @@
 #include <app/util/Hotkeys.h>
 #include <app/util/PreferenceKeys.h>
 #include <app/service/PlaybackService.h>
+#include <app/audio/MasterTransport.h>
 
 #include <core/library/LibraryFactory.h>
-#include <core/audio/GaplessTransport.h>
-#include <core/audio/CrossfadeTransport.h>
 #include <core/support/PreferenceKeys.h>
 #include <core/audio/Visualizer.h>
 
@@ -65,6 +64,7 @@
 #undef MOUSE_MOVED
 #endif
 
+using namespace musik::box::audio;
 using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::box;
@@ -110,8 +110,7 @@ int main(int argc, char* argv[])
 
     LibraryPtr library = LibraryFactory::Libraries().at(0);
 
-    //GaplessTransport transport;
-    CrossfadeTransport transport;
+    MasterTransport transport;
     PlaybackService playback(library, transport);
 
     GlobalHotkeys globalHotkeys(playback, library);
@@ -129,7 +128,7 @@ int main(int argc, char* argv[])
 
         Layout libraryLayout(new LibraryLayout(playback, library));
         Layout consoleLayout(new ConsoleLayout(transport, library));
-        Layout settingsLayout(new SettingsLayout(library, playback.GetTransport()));
+        Layout settingsLayout(new SettingsLayout(library, transport));
 
         Main mainLayout(new MainLayout());
 

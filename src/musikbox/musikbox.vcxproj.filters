@@ -147,6 +147,9 @@
     <ClCompile Include="app\util\Win32Util.cpp">
       <Filter>app\util</Filter>
     </ClCompile>
+    <ClCompile Include="app\audio\MasterTransport.cpp">
+      <Filter>app\audio</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -342,6 +345,9 @@
     <ClInclude Include="app\util\Win32Util.h">
       <Filter>app\util</Filter>
     </ClInclude>
+    <ClInclude Include="app\audio\MasterTransport.h">
+      <Filter>app\audio</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="cursespp">
@@ -370,6 +376,9 @@
     </Filter>
     <Filter Include="app\overlay">
       <UniqueIdentifier>{a84f242d-d70b-49e9-975e-63fc73954a2b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="app\audio">
+      <UniqueIdentifier>{b1b3ddc5-b30f-4668-8267-c32cdf3e4da0}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

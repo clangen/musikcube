@@ -45,6 +45,7 @@
 #include <app/window/TrackListView.h>
 #include <app/service/PlaybackService.h>
 #include <app/model/DirectoryAdapter.h>
+#include <app/audio/MasterTransport.h>
 
 #include <core/library/ILibrary.h>
 #include <core/support/Preferences.h>
@@ -66,7 +67,7 @@ namespace musik {
             public:
                 SettingsLayout(
                     musik::core::LibraryPtr library,
-                    musik::core::audio::ITransport& transport);
+                    musik::box::audio::MasterTransport& transport);
 
                 virtual ~SettingsLayout();
 
@@ -92,6 +93,7 @@ namespace musik {
                     cursespp::Checkbox* checkbox, bool checked);
 
                 void OnOutputDropdownActivated(cursespp::TextLabel* label);
+                void OnTransportDropdownActivate(cursespp::TextLabel* label);
 
                 int64 ListItemDecorator(
                     cursespp::ScrollableWindow* w,
@@ -101,12 +103,13 @@ namespace musik {
 
                 musik::core::LibraryPtr library;
                 musik::core::IIndexer* indexer;
-                musik::core::audio::ITransport& transport;
+                musik::box::audio::MasterTransport& transport;
 
                 std::shared_ptr<musik::core::Preferences> libraryPrefs;
                 std::shared_ptr<musik::core::Preferences> playbackPrefs;
 
                 std::shared_ptr<cursespp::TextLabel> outputDropdown;
+                std::shared_ptr<cursespp::TextLabel> transportDropdown;
 
                 std::shared_ptr<cursespp::Checkbox> removeCheckbox;
                 std::shared_ptr<cursespp::Checkbox> dotfileCheckbox;

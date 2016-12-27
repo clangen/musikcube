@@ -86,7 +86,7 @@ void GaplessTransport::PrepareNextTrack(const std::string& trackUrl) {
     {
         LockT lock(this->stateMutex);
         RESET_NEXT_PLAYER(this);
-        this->nextPlayer = Player::Create(trackUrl, this->output, this);
+        this->nextPlayer = Player::Create(trackUrl, this->output, Player::NoDrain, this);
         startNext = this->nextCanStart;
     }
 
@@ -98,7 +98,7 @@ void GaplessTransport::PrepareNextTrack(const std::string& trackUrl) {
 void GaplessTransport::Start(const std::string& url) {
     musik::debug::info(TAG, "we were asked to start the track at " + url);
 
-    Player* newPlayer = Player::Create(url, this->output, this);
+    Player* newPlayer = Player::Create(url, this->output, Player::NoDrain, this);
     musik::debug::info(TAG, "Player created successfully");
 
     this->StartWithPlayer(newPlayer);

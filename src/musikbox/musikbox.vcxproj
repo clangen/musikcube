@@ -119,6 +119,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="app\audio\MasterTransport.cpp" />
     <ClCompile Include="app\layout\BrowseLayout.cpp" />
     <ClCompile Include="app\layout\LibraryLayout.cpp" />
     <ClCompile Include="app\layout\ConsoleLayout.cpp" />
@@ -174,6 +175,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="app\audio\MasterTransport.h" />
     <ClInclude Include="app\layout\BrowseLayout.h" />
     <ClInclude Include="app\layout\ITopLevelLayout.h" />
     <ClInclude Include="app\layout\LibraryLayout.h" />
