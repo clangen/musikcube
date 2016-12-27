@@ -52,7 +52,7 @@ namespace musik { namespace core { namespace audio {
 
     class Player : public musik::core::sdk::IBufferProvider {
         public:
-            enum FinishMode { Drain, NoDrain };
+            enum DestroyMode { Drain, NoDrain };
 
             struct EventListener {
                 virtual void OnPlayerPrepared(Player *player) { }
@@ -67,7 +67,7 @@ namespace musik { namespace core { namespace audio {
             static Player* Create(
                 const std::string &url,
                 std::shared_ptr<musik::core::sdk::IOutput> output,
-                FinishMode finishMode,
+                DestroyMode destroyMode,
                 EventListener *listener);
 
             virtual void OnBufferProcessed(musik::core::sdk::IBuffer *buffer);
@@ -77,6 +77,7 @@ namespace musik { namespace core { namespace audio {
 
             void Play();
             void Destroy();
+            void Destroy(DestroyMode mode);
 
             double GetPosition();
             void SetPosition(double seconds);
@@ -92,7 +93,7 @@ namespace musik { namespace core { namespace audio {
             Player(
                 const std::string &url,
                 std::shared_ptr<musik::core::sdk::IOutput> output,
-                FinishMode finishMode,
+                DestroyMode finishMode,
                 EventListener *listener);
 
             virtual ~Player();
@@ -148,7 +149,7 @@ namespace musik { namespace core { namespace audio {
             bool notifiedStarted;
             float* spectrum;
             uint64 samplesWritten;
-            FinishMode finishMode;
+            DestroyMode destroyMode;
 
             FftContext* fftContext;
     };

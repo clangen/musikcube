@@ -109,16 +109,16 @@ namespace musik {
 Player* Player::Create(
     const std::string &url,
     std::shared_ptr<IOutput> output,
-    FinishMode finishMode,
+    DestroyMode destroyMode,
     EventListener *listener)
 {
-    return new Player(url, output, finishMode, listener);
+    return new Player(url, output, destroyMode, listener);
 }
 
 Player::Player(
     const std::string &url,
     std::shared_ptr<IOutput> output,
-    FinishMode finishMode,
+    DestroyMode destroyMode,
     EventListener *listener)
 : state(Player::Precache)
 , url(url)
@@ -126,7 +126,7 @@ Player::Player(
 , output(output)
 , notifiedStarted(false)
 , setPosition(-1)
-, finishMode(finishMode)
+, destroyMode(destroyMode)
 , fftContext(nullptr) {
     musik::debug::info(TAG, "new instance created");
 
@@ -172,6 +172,11 @@ void Player::Destroy() {
         delete this->thread;
         this->thread = nullptr;
     }
+}
+
+void Player::Destroy(DestroyMode mode) {
+    this->destroyMode = mode;
+    this->Destroy();
 }
 
 void Player::Detach(EventListener* listener) {
@@ -373,7 +378,7 @@ void musik::core::audio::playerThreadLoop(Player* player) {
     }
 
     /* buffers have been written, wait for the output to play them all */
-    if (player->finishMode == Player::Drain) {
+    if (player->destroyMode == Player::Drain) {
         player->output->Drain();
     }
 

@@ -358,6 +358,11 @@ void CrossfadeTransport::PlayerContext::Reset(
                 Crossfader::FadeOut,
                 CROSSFADE_DURATION_MS);
         }
+        else {
+            /* if we're being started with a new URL and we can't fade,
+            drain the current instance! */
+            player->Destroy(url.size() ? Player::NoDrain : Player::Drain);
+        }
     }
 
     this->canFade = this->started = false;
