@@ -211,7 +211,8 @@ bool DirectSoundOut::Play(IBuffer *buffer, IBufferProvider *provider) {
 
     /* note we ALWAYS allow this loop to run once, even if we're paused,
     just to keep the buffer as full as possible. note that waits are
-    disabled if not playing! */
+    disabled if not playing! also note we do this outside of the critical
+    section to minimize lock contention */
     bool bail = false;
     do {
         availableBytes = getAvailableBytes(
@@ -229,47 +230,46 @@ bool DirectSoundOut::Play(IBuffer *buffer, IBufferProvider *provider) {
         }
     } while (!bail);
 
-    if (availableBytes >= bufferBytes) {
-        if (this->state != StatePlaying) {
-            int n = 10;
-            ++n;
-        }
+    {
+        Lock lock(this->stateMutex);
 
-        HRESULT result =
-            outputBuffer->Lock(
-                writeOffset,
-                bufferBytes,
-                (void **)&dst1, &size1,
-                (void **)&dst2, &size2,
-                0);
+        if (this->state != StateStopped && availableBytes >= bufferBytes) {
+            HRESULT result =
+                outputBuffer->Lock(
+                    writeOffset,
+                    bufferBytes,
+                    (void **)&dst1, &size1,
+                    (void **)&dst2, &size2,
+                    0);
 
-        if (result == DSERR_BUFFERLOST) {
-            outputBuffer->Restore();
+            if (result == DSERR_BUFFERLOST) {
+                outputBuffer->Restore();
 
-            result = this->secondaryBuffer->Lock(
-                writeOffset,
-                bufferBytes,
-                (void **)&dst1, &size1,
-                (void **)&dst2, &size2,
-                0);
-        }
-
-        if (result == DS_OK) {
-            char* bufferPointer = (char *)buffer->BufferPointer();
-
-            memcpy(dst1, bufferPointer, size1);
-            if (size2 > 0) {
-                memcpy(dst2, bufferPointer + size1, size2);
+                result = outputBuffer->Lock(
+                    writeOffset,
+                    bufferBytes,
+                    (void **)&dst1, &size1,
+                    (void **)&dst2, &size2,
+                    0);
             }
 
-            writeOffset += bufferBytes;
-            writeOffset %= this->bufferSize;
+            if (result == DS_OK) {
+                char* bufferPointer = (char *)buffer->BufferPointer();
 
-            outputBuffer->Unlock((void *)dst1, size1, (void *)dst2, size2);
-            outputBuffer->Release();
+                memcpy(dst1, bufferPointer, size1);
+                if (size2 > 0) {
+                    memcpy(dst2, bufferPointer + size1, size2);
+                }
 
-            provider->OnBufferProcessed(buffer);
-            return true;
+                writeOffset += bufferBytes;
+                writeOffset %= this->bufferSize;
+
+                outputBuffer->Unlock((void *)dst1, size1, (void *)dst2, size2);
+                outputBuffer->Release();
+
+                provider->OnBufferProcessed(buffer);
+                return true;
+            }
         }
     }
 
