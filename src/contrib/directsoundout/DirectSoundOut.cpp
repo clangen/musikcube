@@ -308,8 +308,6 @@ void DirectSoundOut::Drain() {
             --count;
         }
     }
-
-    this->Stop();
 }
 
 void DirectSoundOut::Reset() {
