@@ -62,6 +62,8 @@ void MasterTransport::SwitchTo(Type type) {
         this->type = type;
         this->prefs->SetInt(keys::Transport, (int) this->type);
 
+        double volume = this->transport ? this->transport->Volume() : -1;
+
         switch (this->type) {
             case Gapless:
                 this->transport.reset(new GaplessTransport());
@@ -70,6 +72,10 @@ void MasterTransport::SwitchTo(Type type) {
             case Crossfade:
                 this->transport.reset(new CrossfadeTransport());
                 break;
+        }
+
+        if (volume > 0) {
+            this->transport->SetVolume(volume);
         }
 
         this->transport->PlaybackEvent.connect(
