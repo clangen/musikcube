@@ -38,12 +38,13 @@
 
 namespace musik {
     namespace box {
-        class OutputOverlay {
+        class PlaybackOverlays {
             public:
-                static void Show(std::function<void()> callback);
+                static void ShowOutputOverlay(std::function<void()> callback);
+                static void ShowTransportOverlay(std::function<void(int)> callback);
 
             private:
-                OutputOverlay();
+                PlaybackOverlays();
         };
     }
 }

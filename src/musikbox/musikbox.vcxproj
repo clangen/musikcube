@@ -130,7 +130,7 @@
     <ClCompile Include="app\layout\TrackSearchLayout.cpp" />
     <ClCompile Include="app\model\DirectoryAdapter.cpp" />
     <ClCompile Include="app\model\TrackList.cpp" />
-    <ClCompile Include="app\overlay\OutputOverlay.cpp" />
+    <ClCompile Include="app\overlay\PlaybackOverlays.cpp" />
     <ClCompile Include="app\overlay\VisualizerOverlay.cpp" />
     <ClCompile Include="app\query\CategoryListViewQuery.cpp" />
     <ClCompile Include="app\query\NowPlayingTrackListQuery.cpp" />
@@ -187,7 +187,7 @@
     <ClInclude Include="app\layout\TrackSearchLayout.h" />
     <ClInclude Include="app\model\DirectoryAdapter.h" />
     <ClInclude Include="app\model\TrackList.h" />
-    <ClInclude Include="app\overlay\OutputOverlay.h" />
+    <ClInclude Include="app\overlay\PlaybackOverlays.h" />
     <ClInclude Include="app\overlay\VisualizerOverlay.h" />
     <ClInclude Include="app\query\CategoryListViewQuery.h" />
     <ClInclude Include="app\query\NowPlayingTrackListQuery.h" />

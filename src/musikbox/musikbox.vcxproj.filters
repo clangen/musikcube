@@ -141,7 +141,7 @@
     <ClCompile Include="app\overlay\VisualizerOverlay.cpp">
       <Filter>app\overlay</Filter>
     </ClCompile>
-    <ClCompile Include="app\overlay\OutputOverlay.cpp">
+    <ClCompile Include="app\overlay\PlaybackOverlays.cpp">
       <Filter>app\overlay</Filter>
     </ClCompile>
     <ClCompile Include="app\util\Win32Util.cpp">
@@ -336,7 +336,7 @@
     <ClInclude Include="app\overlay\VisualizerOverlay.h">
       <Filter>app\overlay</Filter>
     </ClInclude>
-    <ClInclude Include="app\overlay\OutputOverlay.h">
+    <ClInclude Include="app\overlay\PlaybackOverlays.h">
       <Filter>app\overlay</Filter>
     </ClInclude>
     <ClInclude Include="cursespp\IViewRoot.h">

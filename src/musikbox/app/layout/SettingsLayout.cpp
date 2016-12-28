@@ -48,7 +48,7 @@
 #include <app/query/SearchTrackListQuery.h>
 #include <app/util/Hotkeys.h>
 #include <app/util/PreferenceKeys.h>
-#include <app/overlay/OutputOverlay.h>
+#include <app/overlay/PlaybackOverlays.h>
 
 #include <boost/format.hpp>
 
@@ -123,7 +123,7 @@ void SettingsLayout::OnOutputDropdownActivated(cursespp::TextLabel* label) {
     std::shared_ptr<IOutput> currentPlugin = outputs::SelectedOutput();
     currentName = currentPlugin ? currentPlugin->Name() : currentName;
 
-    OutputOverlay::Show([this, currentName] {
+    PlaybackOverlays::ShowOutputOverlay([this, currentName] {
         std::string newName;
         std::shared_ptr<IOutput> newPlugin = outputs::SelectedOutput();
         newName = newPlugin ? newPlugin->Name() : newName;
@@ -136,14 +136,14 @@ void SettingsLayout::OnOutputDropdownActivated(cursespp::TextLabel* label) {
 }
 
 void SettingsLayout::OnTransportDropdownActivate(cursespp::TextLabel* label) {
-    if (this->transport.GetType() == MasterTransport::Crossfade) {
-        this->transport.SwitchTo(MasterTransport::Gapless);
-    }
-    else {
-        this->transport.SwitchTo(MasterTransport::Crossfade);
-    }
+    const MasterTransport::Type current = this->transport.GetType();
 
-    this->LoadPreferences();
+    PlaybackOverlays::ShowTransportOverlay([this, current](int selected) {
+        if (selected != current) {
+            this->transport.SwitchTo((MasterTransport::Type) selected);
+            this->LoadPreferences();
+        }
+    });
 }
 
 void SettingsLayout::OnLayout() {
@@ -346,7 +346,7 @@ void SettingsLayout::LoadPreferences() {
             ? "gapless"
             : "crossfade";
 
-    this->transportDropdown->SetText(arrow + " playback transport: " + transportName);
+    this->transportDropdown->SetText(arrow + " playback mode: " + transportName);
 }
 
 void SettingsLayout::AddSelectedDirectory() {

@@ -34,7 +34,7 @@
 
 #include "stdafx.h"
 
-#include "OutputOverlay.h"
+#include "PlaybackOverlays.h"
 
 #include <core/audio/Outputs.h>
 
@@ -42,14 +42,19 @@
 #include <cursespp/SimpleScrollAdapter.h>
 #include <cursespp/ListOverlay.h>
 #include <cursespp/DialogOverlay.h>
+
+#include <app/audio/MasterTransport.h>
+
 #include <vector>
 
 using namespace musik::box;
+using namespace musik::box::audio;
 using namespace musik::core::audio;
 using namespace musik::core::sdk;
 using namespace cursespp;
 
 static std::vector<std::shared_ptr<IOutput> > plugins;
+static std::set<std::string> invalidCrossfadeOutputs = { "WaveOut IOutput" };
 
 static void showNoOutputPluginsMessage() {
     std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
@@ -65,10 +70,24 @@ static void showNoOutputPluginsMessage() {
     App::Overlays().Push(dialog);
 }
 
-OutputOverlay::OutputOverlay() {
+static void showOutputCannotCrossfadeMessage(const std::string& outputName) {
+    std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
+
+    (*dialog)
+        .SetTitle("musikbox")
+        .SetMessage("the selected output driver (" + outputName + ") doesn't currently support crossfading.")
+        .AddButton(
+            "KEY_ENTER",
+            "ENTER",
+            "ok");
+
+    App::Overlays().Push(dialog);
 }
 
-void OutputOverlay::Show(std::function<void()> callback) {
+PlaybackOverlays::PlaybackOverlays() {
+}
+
+void PlaybackOverlays::ShowOutputOverlay(std::function<void()> callback) {
     plugins = outputs::GetAllOutputs();
 
     if (!plugins.size()) {
@@ -80,7 +99,6 @@ void OutputOverlay::Show(std::function<void()> callback) {
     using ListOverlay = cursespp::ListOverlay;
 
     std::shared_ptr<Adapter> adapter(new Adapter());
-
     for (size_t i = 0; i < plugins.size(); i++) {
         adapter->AddEntry(plugins[i]->Name());
     }
@@ -96,6 +114,40 @@ void OutputOverlay::Show(std::function<void()> callback) {
                 outputs::SelectOutput(plugins[index]);
                 if (callback) {
                     callback();
+                }
+            });
+
+    cursespp::App::Overlays().Push(dialog);
+}
+
+void PlaybackOverlays::ShowTransportOverlay(std::function<void(int)> callback) {
+    using Adapter = cursespp::SimpleScrollAdapter;
+    using ListOverlay = cursespp::ListOverlay;
+
+    std::shared_ptr<Adapter> adapter(new Adapter());
+    adapter->AddEntry("gapless");
+    adapter->AddEntry("crossfade");
+    adapter->SetSelectable(true);
+
+    std::shared_ptr<ListOverlay> dialog(new ListOverlay());
+
+    dialog->SetAdapter(adapter)
+        .SetTitle("playback transport")
+        .SetItemSelectedCallback(
+            [callback](cursespp::IScrollAdapterPtr adapter, size_t index) {
+                int result = (index == 0)
+                    ? MasterTransport::Gapless
+                    : MasterTransport::Crossfade;
+
+                std::string output = outputs::SelectedOutput()->Name();
+
+                if (result == MasterTransport::Crossfade &&
+                    invalidCrossfadeOutputs.find(output) != invalidCrossfadeOutputs.end())
+                {
+                    showOutputCannotCrossfadeMessage(output);
+                }
+                else if (callback) {
+                    callback(result);
                 }
             });
 
