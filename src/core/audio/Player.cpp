@@ -40,6 +40,7 @@
 #include <core/audio/Player.h>
 #include <core/audio/Visualizer.h>
 #include <core/plugin/PluginFactory.h>
+#include <core/sdk/constants.h>
 
 #include <algorithm>
 #include <math.h>
@@ -316,7 +317,12 @@ void musik::core::audio::playerThreadLoop(Player* player) {
             /* if we have a decoded, processed buffer available. let's try to send it to
             the output device. */
             if (buffer) {
-                if (player->output->Play(buffer.get(), player)) {
+                /* if this result is negative it's an error code defined by the sdk's
+                OutputPlay enum. if it's a positive number it's the number of milliseconds
+                we should wait until automatically trying to play the buffer again. */
+                int playResult = player->output->Play(buffer.get(), player);
+
+                if (playResult == OutputBufferWritten) {
                     /* success! the buffer was accepted by the output.*/
                     /* lock it down so it's not destroyed until the output device lets us
                     know it's done with it. */
@@ -334,8 +340,9 @@ void musik::core::audio::playerThreadLoop(Player* player) {
                     more than a second, try to push the buffer into the output again. this
                     may happen if the sound driver has some sort of transient problem and
                     is temporarily unable to process the bufer (ALSA, i'm looking at you) */
+                    int sleepMs = (playResult > 0) ? playResult : 1000;
                     std::unique_lock<std::mutex> lock(player->queueMutex);
-                    player->writeToOutputCondition.wait_for(lock, std::chrono::milliseconds(1000));
+                    player->writeToOutputCondition.wait_for(lock, std::chrono::milliseconds(sleepMs));
                 }
             }
             /* if we're unable to obtain a buffer, it means we're out of data and the

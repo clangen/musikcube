@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "AlsaOut.h"
+#include <core/sdk/constants.h>
 
 #define BUFFER_COUNT 32
 #define PCM_ACCESS_TYPE SND_PCM_ACCESS_RW_INTERLEAVED
@@ -311,18 +312,18 @@ void AlsaOut::WriteLoop() {
     std::cerr << "AlsaOut: thread finished\n";
 }
 
-bool AlsaOut::Play(IBuffer *buffer, IBufferProvider* provider) {
+int AlsaOut::Play(IBuffer *buffer, IBufferProvider* provider) {
     this->SetFormat(buffer);
 
     {
         LOCK("play");
 
         if (this->paused) {
-            return false;
+            return OutputInvalidState;
         }
 
         if (this->CountBuffersWithProvider(provider) >= BUFFER_COUNT) {
-            return false;
+            return OutputBufferFull;
         }
 
         std::shared_ptr<BufferContext> context(new BufferContext());
@@ -339,7 +340,7 @@ bool AlsaOut::Play(IBuffer *buffer, IBufferProvider* provider) {
         }
     }
 
-    return true;
+    return OutputBufferWritten;
 }
 
 void AlsaOut::Drain() {

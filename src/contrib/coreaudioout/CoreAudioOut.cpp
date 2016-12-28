@@ -33,7 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "CoreAudioOut.h"
-
+#include <core/sdk/constants.h>
 #include <iostream>
 
 #define BUFFER_COUNT 32
@@ -111,17 +111,17 @@ CoreAudioOut::CoreAudioOut() {
     this->audioQueue = nullptr;
 }
 
-bool CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
+int CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     boost::recursive_mutex::scoped_lock lock(this->mutex);
 
     if (this->state != StatePlaying) {
-        return false;
+        return OutputInvalidState;
     }
 
     if (countBuffersWithProvider(this->buffers, provider) >= BUFFER_COUNT) {
         /* enough buffers are already in the queue. bail, we'll notify the
         caller when there's more data available */
-        return false;
+        return OutputBufferFull;
     }
 
     OSStatus result;
@@ -148,7 +148,7 @@ bool CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
 
         if (result != 0) {
             std::cerr << "AudioQueueNewOutput failed: " << result << "\n";
-            return false;
+            return OutputInvalidState;
         }
 
         result = AudioQueueStart(this->audioQueue, nullptr);
@@ -157,7 +157,7 @@ bool CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
 
         if (result != 0) {
             std::cerr << "AudioQueueStart failed: " << result << "\n";
-            return false;
+            return OutputInvalidState;
         }
 
         this->Resume();
@@ -175,7 +175,7 @@ bool CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
 
     if (result != 0) {
         std::cerr << "AudioQueueAllocateBuffer failed: " << result << "\n";
-        return false;
+        return OutputInvalidState;
     }
 
     audioQueueBuffer->mUserData = (void *) context;
@@ -192,12 +192,12 @@ bool CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     if (result != 0) {
         std::cerr << "AudioQueueEnqueueBuffer failed: " << result << "\n";
         delete context;
-        return false;
+        return OutputInvalidState;
     }
 
     this->buffers.push_back(context);
 
-    return true;
+    return OutputBufferWritten;
 }
 
 CoreAudioOut::~CoreAudioOut() {

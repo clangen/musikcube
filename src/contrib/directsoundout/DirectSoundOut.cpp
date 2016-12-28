@@ -34,6 +34,8 @@
 
 #include "DirectSoundOut.h"
 
+#include <core/sdk/constants.h>
+
 #include <ks.h>
 #include <ksmedia.h>
 
@@ -77,6 +79,7 @@ class DrainBuffer :
 };
 
 #define MAX_BUFFERS_PER_OUTPUT 8
+#define READ_CURSOR_INITIAL_OFFSET 128
 
 #define BUFFER_SIZE_BYTES_PER_CHANNEL \
     (2048 * sizeof(float) * MAX_BUFFERS_PER_OUTPUT)
@@ -93,10 +96,6 @@ inline DWORD getAvailableBytes(
     secondaryBuffer->GetCurrentPosition(&readOffset, &writeCursor);
 
     if (writeOffset == readOffset) {
-        if (readOffset == writeCursor && writeCursor == writeOffset) {
-            return bufferSize;
-        }
-
         return 0;
     }
 
@@ -183,25 +182,16 @@ void DirectSoundOut::Stop() {
     this->state = StateStopped;
 }
 
-bool DirectSoundOut::Play(IBuffer *buffer, IBufferProvider *provider) {
-    IDirectSoundBuffer8 *outputBuffer = nullptr;
+int DirectSoundOut::Play(IBuffer *buffer, IBufferProvider *provider) {
+    Lock lock(this->stateMutex);
 
-    {
-        Lock lock(this->stateMutex);
+    if (this->state == StateStopped) {
+        return OutputFormatError;
+    }
 
-        if (this->state == StateStopped) {
-            return false;
-        }
-
-        if (!this->Configure(buffer)) {
-            this->Reset();
-            return false;
-        }
-
-        /* reduce lock contention: cache a reference to the buffer here,
-        just in case someone comes along and release it */
-        outputBuffer = this->secondaryBuffer;
-        outputBuffer->AddRef();
+    if (!this->Configure(buffer)) {
+        this->Reset();
+        return OutputInvalidState;
     }
 
     unsigned char *dst1 = nullptr, *dst2 = nullptr;
@@ -209,72 +199,56 @@ bool DirectSoundOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     DWORD availableBytes = 0;
     DWORD bufferBytes = buffer->Bytes();
 
-    /* note we ALWAYS allow this loop to run once, even if we're paused,
-    just to keep the buffer as full as possible. note that waits are
-    disabled if not playing! also note we do this outside of the critical
-    section to minimize lock contention */
-    bool bail = false;
-    do {
-        availableBytes = getAvailableBytes(
-            outputBuffer,
-            this->writeOffset,
-            this->bufferSize);
+    availableBytes = getAvailableBytes(
+        this->secondaryBuffer,
+        this->writeOffset,
+        this->bufferSize);
 
-        if (bufferBytes > availableBytes && this->state == StatePlaying) {
-            int samples = (bufferBytes - availableBytes) / sizeof(float) / channels;
-            int sleepMs = ((long long)(samples * 1000) / rate) + 1;
-            Sleep(sleepMs);
-        }
-        else {
-            bail = true;
-        }
-    } while (!bail);
-
-    {
-        Lock lock(this->stateMutex);
-
-        if (this->state != StateStopped && availableBytes >= bufferBytes) {
-            HRESULT result =
-                outputBuffer->Lock(
-                    writeOffset,
-                    bufferBytes,
-                    (void **)&dst1, &size1,
-                    (void **)&dst2, &size2,
-                    0);
-
-            if (result == DSERR_BUFFERLOST) {
-                outputBuffer->Restore();
-
-                result = outputBuffer->Lock(
-                    writeOffset,
-                    bufferBytes,
-                    (void **)&dst1, &size1,
-                    (void **)&dst2, &size2,
-                    0);
-            }
-
-            if (result == DS_OK) {
-                char* bufferPointer = (char *)buffer->BufferPointer();
-
-                memcpy(dst1, bufferPointer, size1);
-                if (size2 > 0) {
-                    memcpy(dst2, bufferPointer + size1, size2);
-                }
-
-                writeOffset += bufferBytes;
-                writeOffset %= this->bufferSize;
-
-                outputBuffer->Unlock((void *)dst1, size1, (void *)dst2, size2);
-                outputBuffer->Release();
-
-                provider->OnBufferProcessed(buffer);
-                return true;
-            }
-        }
+    if (bufferBytes > availableBytes && this->state == StatePlaying) {
+        int samples = (bufferBytes - availableBytes) / sizeof(float) / channels;
+        int sleepMs = ((long long)(samples * 1000) / rate) + 1;
+        return sleepMs; /* we'll be called back in sleepMs seconds. */
     }
 
-    outputBuffer->Release();
-    return false;
+    assert(availableBytes >= bufferBytes);
+
+    HRESULT result =
+        this->secondaryBuffer->Lock(
+            writeOffset,
+            bufferBytes,
+            (void **)&dst1, &size1,
+            (void **)&dst2, &size2,
+            0);
+
+    if (result == DSERR_BUFFERLOST) {
+        this->secondaryBuffer->Restore();
+
+        result = this->secondaryBuffer->Lock(
+            writeOffset,
+            bufferBytes,
+            (void **)&dst1, &size1,
+            (void **)&dst2, &size2,
+            0);
+    }
+
+    if (result == DS_OK) {
+        char* bufferPointer = (char *)buffer->BufferPointer();
+
+        memcpy(dst1, bufferPointer, size1);
+        if (size2 > 0) {
+            memcpy(dst2, bufferPointer + size1, size2);
+        }
+
+        writeOffset += bufferBytes;
+        writeOffset %= this->bufferSize;
+
+        this->secondaryBuffer->Unlock((void *)dst1, size1, (void *)dst2, size2);
+
+        provider->OnBufferProcessed(buffer);
+        return OutputBufferWritten;
+    }
+
+    return OutputBufferFull;
 }
 
 void DirectSoundOut::Drain() {
@@ -497,6 +471,10 @@ bool DirectSoundOut::Configure(IBuffer *buffer) {
 
     this->secondaryBuffer->SetCurrentPosition(0);
     this->secondaryBuffer->Play(0, 0, DSBPLAY_LOOPING);
+
+    /* set an initial offset so the read pointer doesn't equal
+    the write pointer -- that way we know the buffer is not full! */
+    this->secondaryBuffer->SetCurrentPosition(READ_CURSOR_INITIAL_OFFSET);
 
     int samples = this->bufferSize / sizeof(float) / channels;
     this->latency = (float)samples / (float)rate;

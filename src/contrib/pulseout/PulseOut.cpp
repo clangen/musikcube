@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "PulseOut.h"
+#include <core/sdk/constants.h>
 #include <pulse/volume.h>
 #include <math.h>
 
@@ -152,20 +153,20 @@ double PulseOut::GetVolume() {
     return this->volume;
 }
 
-bool PulseOut::Play(IBuffer *buffer, IBufferProvider* provider) {
+int PulseOut::Play(IBuffer *buffer, IBufferProvider* provider) {
     int error = 0;
 
     {
         Lock lock(this->stateMutex);
 
         if (this->state == StatePaused) {
-            return false;
+            return OutputInvalidState;
         }
 
         this->OpenDevice(buffer);
 
         if (!this->audioConnection || this->state != StatePlaying) {
-            return false;
+            return OutputInvalidState;
         }
 
         pa_blocking_write(
@@ -176,7 +177,7 @@ bool PulseOut::Play(IBuffer *buffer, IBufferProvider* provider) {
     }
 
     provider->OnBufferProcessed(buffer);
-    return true;
+    return OutputBufferWritten;
 }
 
 double PulseOut::Latency() {

@@ -58,6 +58,13 @@ namespace musik {
                 RepeatList = 2
             };
 
+            enum OutputPlay {
+                OutputFormatError = -3,
+                OutputInvalidState = -2,
+                OutputBufferFull = -1,
+                OutputBufferWritten = 0
+            };
+
             enum ChannelOrder {
                 ChannelNone = 0,
                 ChannelFrontLeft = 1,

@@ -69,7 +69,7 @@ class CoreAudioOut : public musik::core::sdk::IOutput {
         virtual double Latency() { return 0.0; }
         virtual void Drain();
 
-        virtual bool Play(
+        virtual int Play(
             musik::core::sdk::IBuffer *buffer,
             musik::core::sdk::IBufferProvider *provider);
 

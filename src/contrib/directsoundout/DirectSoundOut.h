@@ -64,7 +64,7 @@ class DirectSoundOut : public IOutput {
         virtual void SetVolume(double volume);
         virtual double GetVolume();
         virtual void Stop();
-        virtual bool Play(IBuffer *buffer, IBufferProvider *provider);
+        virtual int Play(IBuffer *buffer, IBufferProvider *provider);
         virtual double Latency();
         virtual void Drain();
 

@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "WaveOut.h"
+#include <core/sdk/constants.h>
 
 #define MAX_VOLUME 0xFFFF
 #define MAX_BUFFERS_PER_OUTPUT 32
@@ -201,7 +202,7 @@ WaveOut::WaveOutBufferPtr WaveOut::GetEmptyBuffer() {
     }
 }
 
-bool WaveOut::Play(IBuffer *buffer, IBufferProvider *provider) {
+int WaveOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     LockT lock(this->bufferQueueMutex);
 
     /* if we have a different format, return false and wait for the pending
@@ -212,7 +213,7 @@ bool WaveOut::Play(IBuffer *buffer, IBufferProvider *provider) {
             this->currentSampleRate != buffer->SampleRate();
 
         if (formatChanged) {
-            return false;
+            return OutputFormatError;
         }
     }
 
@@ -230,7 +231,7 @@ bool WaveOut::Play(IBuffer *buffer, IBufferProvider *provider) {
             LockT lock2(this->outputDeviceMutex);
 
             if (!this->playing) {
-                return false;
+                return OutputInvalidState;
             }
         }
 
@@ -245,11 +246,11 @@ bool WaveOut::Play(IBuffer *buffer, IBufferProvider *provider) {
 
         if (waveBuffer->WriteToOutput()) {
             this->queuedBuffers.push_back(waveBuffer);
-            return true;
+            return OutputBufferWritten;
         }
     }
 
-    return false;
+    return OutputBufferFull;
 }
 
 void WaveOut::SetFormat(IBuffer *buffer) {
