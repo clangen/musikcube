@@ -123,27 +123,31 @@ void SettingsLayout::OnOutputDropdownActivated(cursespp::TextLabel* label) {
     std::shared_ptr<IOutput> currentPlugin = outputs::SelectedOutput();
     currentName = currentPlugin ? currentPlugin->Name() : currentName;
 
-    PlaybackOverlays::ShowOutputOverlay([this, currentName] {
-        std::string newName;
-        std::shared_ptr<IOutput> newPlugin = outputs::SelectedOutput();
-        newName = newPlugin ? newPlugin->Name() : newName;
+    PlaybackOverlays::ShowOutputOverlay(
+        this->transport.GetType(),
+        [this, currentName] {
+            std::string newName;
+            std::shared_ptr<IOutput> newPlugin = outputs::SelectedOutput();
+            newName = newPlugin ? newPlugin->Name() : newName;
 
-        if (currentName != newName) {
-            this->LoadPreferences();
-            this->transport.ReloadOutput();
-        }
-    });
+            if (currentName != newName) {
+                this->LoadPreferences();
+                this->transport.ReloadOutput();
+            }
+        });
 }
 
 void SettingsLayout::OnTransportDropdownActivate(cursespp::TextLabel* label) {
     const MasterTransport::Type current = this->transport.GetType();
 
-    PlaybackOverlays::ShowTransportOverlay([this, current](int selected) {
-        if (selected != current) {
-            this->transport.SwitchTo((MasterTransport::Type) selected);
-            this->LoadPreferences();
-        }
-    });
+    PlaybackOverlays::ShowTransportOverlay(
+        this->transport.GetType(),
+        [this, current](int selected) {
+            if (selected != current) {
+                this->transport.SwitchTo((MasterTransport::Type) selected);
+                this->LoadPreferences();
+            }
+        });
 }
 
 void SettingsLayout::OnLayout() {

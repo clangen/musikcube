@@ -43,8 +43,6 @@
 #include <cursespp/ListOverlay.h>
 #include <cursespp/DialogOverlay.h>
 
-#include <app/audio/MasterTransport.h>
-
 #include <vector>
 
 using namespace musik::box;
@@ -87,7 +85,10 @@ static void showOutputCannotCrossfadeMessage(const std::string& outputName) {
 PlaybackOverlays::PlaybackOverlays() {
 }
 
-void PlaybackOverlays::ShowOutputOverlay(std::function<void()> callback) {
+void PlaybackOverlays::ShowOutputOverlay(
+    MasterTransport::Type transportType,
+    std::function<void()> callback)
+{
     plugins = outputs::GetAllOutputs();
 
     if (!plugins.size()) {
@@ -98,9 +99,17 @@ void PlaybackOverlays::ShowOutputOverlay(std::function<void()> callback) {
     using Adapter = cursespp::SimpleScrollAdapter;
     using ListOverlay = cursespp::ListOverlay;
 
+    std::string currentOutput = outputs::SelectedOutput()->Name();
+    size_t selectedIndex = 0;
+
     std::shared_ptr<Adapter> adapter(new Adapter());
     for (size_t i = 0; i < plugins.size(); i++) {
-        adapter->AddEntry(plugins[i]->Name());
+        const std::string name = plugins[i]->Name();
+        adapter->AddEntry(name);
+
+        if (name == currentOutput) {
+            selectedIndex = i;
+        }
     }
 
     adapter->SetSelectable(true);
@@ -109,9 +118,20 @@ void PlaybackOverlays::ShowOutputOverlay(std::function<void()> callback) {
 
     dialog->SetAdapter(adapter)
         .SetTitle("output plugins")
+        .SetSelectedIndex(selectedIndex)
         .SetItemSelectedCallback(
-            [callback](cursespp::IScrollAdapterPtr adapter, size_t index) {
+            [callback, transportType](cursespp::IScrollAdapterPtr adapter, size_t index) {
+
+                if (transportType == MasterTransport::Crossfade) {
+                    std::string output = outputs::GetAllOutputs().at(index)->Name();
+                    if (invalidCrossfadeOutputs.find(output) != invalidCrossfadeOutputs.end()) {
+                        showOutputCannotCrossfadeMessage(output);
+                        return;
+                    }
+                }
+
                 outputs::SelectOutput(plugins[index]);
+
                 if (callback) {
                     callback();
                 }
@@ -120,7 +140,10 @@ void PlaybackOverlays::ShowOutputOverlay(std::function<void()> callback) {
     cursespp::App::Overlays().Push(dialog);
 }
 
-void PlaybackOverlays::ShowTransportOverlay(std::function<void(int)> callback) {
+void PlaybackOverlays::ShowTransportOverlay(
+    MasterTransport::Type transportType,
+    std::function<void(int)> callback)
+{
     using Adapter = cursespp::SimpleScrollAdapter;
     using ListOverlay = cursespp::ListOverlay;
 
@@ -129,10 +152,13 @@ void PlaybackOverlays::ShowTransportOverlay(std::function<void(int)> callback) {
     adapter->AddEntry("crossfade");
     adapter->SetSelectable(true);
 
+    size_t selectedIndex = (transportType == MasterTransport::Gapless) ? 0 : 1;
+
     std::shared_ptr<ListOverlay> dialog(new ListOverlay());
 
     dialog->SetAdapter(adapter)
         .SetTitle("playback transport")
+        .SetSelectedIndex(selectedIndex)
         .SetItemSelectedCallback(
             [callback](cursespp::IScrollAdapterPtr adapter, size_t index) {
                 int result = (index == 0)
