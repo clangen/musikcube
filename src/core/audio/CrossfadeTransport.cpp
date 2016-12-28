@@ -91,6 +91,17 @@ void CrossfadeTransport::ReloadOutput() {
     this->Stop();
 }
 
+void CrossfadeTransport::StopImmediately() {
+    /* like stop, but will not fade out. */
+    {
+        Lock lock(this->stateMutex);
+        this->active.Stop();
+        this->next.Stop();
+    }
+
+    this->SetPlaybackState(PlaybackStopped);
+}
+
 void CrossfadeTransport::Stop() {
     {
         Lock lock(this->stateMutex);

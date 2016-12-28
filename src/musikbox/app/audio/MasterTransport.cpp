@@ -66,6 +66,14 @@ void MasterTransport::SwitchTo(Type type) {
 
         switch (this->type) {
             case Gapless:
+                if (this->transport) {
+                    /* hacky -- we know it's a crossfade transport, stop it
+                    immediately without fading out so we don't block the UI
+                    for a second or so. */
+                    static_cast<CrossfadeTransport*>
+                        (this->transport.get())->StopImmediately();
+                }
+
                 this->transport.reset(new GaplessTransport());
                 break;
 

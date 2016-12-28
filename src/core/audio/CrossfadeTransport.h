@@ -58,6 +58,8 @@ namespace musik { namespace core { namespace audio {
             CrossfadeTransport();
             virtual ~CrossfadeTransport();
 
+            void StopImmediately();
+
             virtual void PrepareNextTrack(const std::string& trackUrl);
 
             virtual void Start(const std::string& trackUrl);
