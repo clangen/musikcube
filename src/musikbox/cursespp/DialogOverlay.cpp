@@ -137,12 +137,6 @@ bool DialogOverlay::KeyPress(const std::string& key) {
     return LayoutBase::KeyPress(key);
 }
 
-void DialogOverlay::OnVisibilityChanged(bool visible) {
-    if (visible) {
-        this->Redraw();
-    }
-}
-
 void DialogOverlay::RecalculateSize() {
     int lastWidth = this->width;
 

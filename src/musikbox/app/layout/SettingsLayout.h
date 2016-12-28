@@ -41,6 +41,7 @@
 #include <cursespp/SimpleScrollAdapter.h>
 #include <cursespp/TextLabel.h>
 #include <cursespp/TextInput.h>
+#include <cursespp/DialogOverlay.h>
 
 #include <app/window/TrackListView.h>
 #include <app/service/PlaybackService.h>
@@ -123,6 +124,8 @@ namespace musik {
 
                 std::shared_ptr<cursespp::TextLabel> hotkeyLabel;
                 std::shared_ptr<cursespp::TextInput> hotkeyInput;
+
+                std::shared_ptr<cursespp::DialogOverlay> firstRunDialog;
 
                 cursespp::SimpleScrollAdapter addedPathsAdapter;
                 DirectoryAdapter browseAdapter;

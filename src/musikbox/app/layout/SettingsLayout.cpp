@@ -303,28 +303,31 @@ void SettingsLayout::OnVisibilityChanged(bool visible) {
 
 void SettingsLayout::CheckShowFirstRunDialog() {
     if (!this->libraryPrefs->GetBool(box::prefs::keys::FirstRunSettingsDisplayed)) {
-        std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
+        if (!this->firstRunDialog) {
+            this->firstRunDialog.reset(new DialogOverlay());
 
-        (*dialog)
-            .SetTitle("welcome to musikbox!")
-            .SetMessage(boost::str(boost::format(
-                "add some directories that contain music files, "
-                "then press '%s' to show the library view and start listening!\n\n"
-                "for troubleshooting, press '%s' to enter the console view.\n\n"
-                "other keyboard shorcuts are displayed in the command bar at the "
-                "bottom of the screen. toggle command mode by pressing 'ESC'.\n\n"
-                "select 'ok' to get started.")
+            (*this->firstRunDialog)
+                .SetTitle("welcome to musikbox!")
+                .SetMessage(boost::str(boost::format(
+                    "add some directories that contain music files, "
+                    "then press '%s' to show the library view and start listening!\n\n"
+                    "for troubleshooting, press '%s' to enter the console view.\n\n"
+                    "other keyboard shorcuts are displayed in the command bar at the "
+                    "bottom of the screen. toggle command mode by pressing 'ESC'.\n\n"
+                    "select 'ok' to get started.")
                     % Hotkeys::Get(Hotkeys::NavigateLibrary)
                     % Hotkeys::Get(Hotkeys::NavigateConsole)))
-            .AddButton(
-                "KEY_ENTER",
-                "ENTER",
-                "ok",
-                [this](std::string key) {
-                    this->libraryPrefs->SetBool(box::prefs::keys::FirstRunSettingsDisplayed, true);
-                });
+                .AddButton(
+                    "KEY_ENTER",
+                    "ENTER",
+                    "ok",
+                    [this](std::string key) {
+                this->libraryPrefs->SetBool(box::prefs::keys::FirstRunSettingsDisplayed, true);
+                this->firstRunDialog.reset();
+            });
 
-        App::Overlays().Push(dialog);
+            App::Overlays().Push(this->firstRunDialog);
+        }
     }
 }
 

@@ -68,9 +68,6 @@ namespace cursespp {
             virtual void Layout();
             virtual bool KeyPress(const std::string& key);
 
-        protected:
-            virtual void OnVisibilityChanged(bool visible);
-
         private:
             void Redraw();
             void RecalculateSize();
