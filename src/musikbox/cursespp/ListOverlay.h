@@ -56,6 +56,7 @@ namespace cursespp {
             ListOverlay& SetTitle(const std::string& title);
             ListOverlay& SetAdapter(IScrollAdapterPtr adapter);
             ListOverlay& SetItemSelectedCallback(ItemSelectedCallback cb);
+            ListOverlay& SetSelectedIndex(size_t index);
 
             virtual void Layout();
             virtual bool KeyPress(const std::string& key);

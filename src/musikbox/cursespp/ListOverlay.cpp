@@ -107,6 +107,11 @@ ListOverlay& ListOverlay::SetAdapter(IScrollAdapterPtr adapter) {
     return *this;
 }
 
+ListOverlay& ListOverlay::SetSelectedIndex(size_t index) {
+    this->listWindow->SetSelectedIndex(index);
+    return *this;
+}
+
 ListOverlay& ListOverlay::SetItemSelectedCallback(ItemSelectedCallback cb) {
     this->itemSelectedCallback = cb;
     return *this;
