@@ -103,6 +103,7 @@ namespace musik { namespace core { namespace audio {
 
                 void Start(double transportVolume);
                 void Stop();
+                void StopIf(Player* player);
                 void Pause();
                 void Resume();
                 void SetVolume(double volume);

@@ -250,16 +250,23 @@ void CrossfadeTransport::OnPlayerStarted(Player* player) {
 void CrossfadeTransport::OnPlayerFinished(Player* player) {
     this->RaiseStreamEvent(StreamFinished, player);
 
-    /* we only need to handle this event if `canFade` is set to
-    false. otherwise it was taken care of in OnPlayerMixPoint() */
-    if (player == active.player && !active.canFade) {
-        if (next.player && next.output) {
-            next.TransferTo(active);
-            active.Start(this->volume);
-        }
-        else {
-            this->Stop();
-        }
+    Lock lock(this->stateMutex);
+
+    /* in normal situations OnPlayerMixPoint will deal with the stream switch over,
+    but it will not if (1) the stream is too short and there is no mixpoint, or (2)
+    the decoder reports an incorrect track duration so the mixpoint is never hit. in
+    these cases we need to switch things over manually. if OnPlayerMixPoint is called,
+    the Player will be Detach()'d so this callback will never fire. if we get called
+    we need to take action! */
+    this->active.StopIf(player);
+    this->next.StopIf(player);
+
+    if (next.player && next.output) {
+        next.TransferTo(active);
+        active.Start(this->volume);
+    }
+    else {
+        this->Stop();
     }
 }
 
@@ -334,6 +341,12 @@ CrossfadeTransport::PlayerContext::PlayerContext(
 , crossfader(crossfader)
 , player(nullptr)
 , canFade(false) {
+}
+
+void CrossfadeTransport::PlayerContext::StopIf(Player* player) {
+    if (player == this->player) {
+        this->Stop();
+    }
 }
 
 void CrossfadeTransport::PlayerContext::Reset() {
