@@ -38,14 +38,12 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
+#include <algorithm>
 
 #define MAX_BUFFERS_PER_OUTPUT 16
 
-#define BUFFER_TO_TIME(b) \
-    (UINT64) round(((UINT64) buffer->Samples() * 10000000LL) / (UINT64) buffer->SampleRate());
-
 /* NOTE! device init and deinit logic was stolen and modified from
-QMMP's WASABI output plugin! http://qmmp.ylsoftware.com/ */
+QMMP's WASAPI output plugin! http://qmmp.ylsoftware.com/ */
 
 #ifndef AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM
 #define AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM 0x80000000
@@ -64,7 +62,8 @@ WasapiOut::WasapiOut()
 , outputBufferFrames(0)
 , state(StateStopped)
 , latency(0)
-, volume(1.0f) {
+, volume(1.0f)
+, minWaitTimeMs(0) {
     ZeroMemory(&waveFormat, sizeof(WAVEFORMATEXTENSIBLE));
 }
 
@@ -167,15 +166,18 @@ int WasapiOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     UINT32 samples = (UINT32)buffer->Samples();
     UINT32 framesToWrite = samples / (UINT32)buffer->Channels();
     int channels = buffer->Channels();
-    bool bufferWitten = false;
 
     this->audioClient->GetCurrentPadding(&frameOffset);
     availableFrames = (this->outputBufferFrames - frameOffset);
 
     if (availableFrames < framesToWrite) {
         UINT32 delta = framesToWrite - availableFrames;
-        int sleepTimeMs = (delta * 1000 * 10) / buffer->SampleRate();
-        return sleepTimeMs;
+        int sleepTimeMs = (delta * 1000) / buffer->SampleRate();
+
+        /* sleep at least minWaitTimeMs millis! our buffer is full,
+        so we can afford to wait for ~10% of it to deplete to
+        ease the CPU load a bit. */
+        return std::max(minWaitTimeMs, sleepTimeMs);
     }
 
     if (availableFrames >= framesToWrite) {
@@ -184,13 +186,9 @@ int WasapiOut::Play(IBuffer *buffer, IBufferProvider *provider) {
         if (result == S_OK) {
             memcpy(data, buffer->BufferPointer(), sizeof(float) * samples);
             this->renderClient->ReleaseBuffer(framesToWrite, 0);
-            bufferWitten = true;
+            provider->OnBufferProcessed(buffer);
+            return OutputBufferWritten;
         }
-    }
-
-    if (bufferWitten) {
-        provider->OnBufferProcessed(buffer);
-        return OutputBufferWritten;
     }
 
     return OutputBufferFull;
@@ -327,6 +325,7 @@ bool WasapiOut::Configure(IBuffer *buffer) {
     }
 
     this->latency = (float) outputBufferFrames / (float) buffer->SampleRate();
+    this->minWaitTimeMs = (int)((this->latency * 1000.0) * 0.25);
 
     if ((result = this->audioClient->GetService(__uuidof(IAudioRenderClient), (void**) &this->renderClient)) != S_OK) {
         std::cerr << "WasapiOut: IAudioClient::GetService failed, error code = " << result << "\n";

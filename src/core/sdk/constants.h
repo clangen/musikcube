@@ -59,10 +59,10 @@ namespace musik {
             };
 
             enum OutputPlay {
-                OutputFormatError = -3,
-                OutputInvalidState = -2,
-                OutputBufferFull = -1,
-                OutputBufferWritten = 0
+                OutputFormatError = -4,
+                OutputInvalidState = -3,
+                OutputBufferFull = -2,
+                OutputBufferWritten = -1
             };
 
             enum ChannelOrder {

@@ -78,7 +78,7 @@ class DrainBuffer :
         float *buffer;
 };
 
-#define MAX_BUFFERS_PER_OUTPUT 8
+#define MAX_BUFFERS_PER_OUTPUT 16
 #define READ_CURSOR_INITIAL_OFFSET 128
 
 #define BUFFER_SIZE_BYTES_PER_CHANNEL \
@@ -120,6 +120,8 @@ DirectSoundOut::DirectSoundOut()
 , latency(0)
 , rate(0)
 , channels(0)
+, minWaitTimeMs(0)
+, firstBufferWritten(false)
 , volume(1.0f) {
     ZeroMemory(&waveFormat, sizeof(WAVEFORMATEXTENSIBLE));
 }
@@ -199,18 +201,26 @@ int DirectSoundOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     DWORD availableBytes = 0;
     DWORD bufferBytes = buffer->Bytes();
 
-    availableBytes = getAvailableBytes(
-        this->secondaryBuffer,
-        this->writeOffset,
-        this->bufferSize);
+    /* annoyingly, playback starts with the read and write pointer both
+    at 0, which means we don't know if the buffer is full or empty. if
+    we treat it as full (safe case) it delays playback for the duration
+    of the buffer size (until the cursor wraps around). so we have to
+    record whether or not we've read the first buffer or not. if anyone
+    knows a better way to do this please let me know! */
+    if (this->firstBufferWritten) {
+        availableBytes = getAvailableBytes(
+            this->secondaryBuffer,
+            this->writeOffset,
+            this->bufferSize);
 
-    if (bufferBytes > availableBytes && this->state == StatePlaying) {
-        int samples = (bufferBytes - availableBytes) / sizeof(float) / channels;
-        int sleepMs = ((long long)(samples * 1000) / rate) + 1;
-        return sleepMs; /* we'll be called back in sleepMs seconds. */
+        if (bufferBytes > availableBytes && this->state == StatePlaying) {
+            int samples = (bufferBytes - availableBytes) / sizeof(float) / channels;
+            int sleepMs = ((long long)(samples * 1000) / rate) + 1;
+            return std::max(minWaitTimeMs, sleepMs); /* we'll be called back in sleepMs seconds. */
+        }
+
+        assert(availableBytes >= bufferBytes);
     }
-
-    assert(availableBytes >= bufferBytes);
 
     HRESULT result =
         this->secondaryBuffer->Lock(
@@ -243,6 +253,7 @@ int DirectSoundOut::Play(IBuffer *buffer, IBufferProvider *provider) {
         writeOffset %= this->bufferSize;
 
         this->secondaryBuffer->Unlock((void *)dst1, size1, (void *)dst2, size2);
+        this->firstBufferWritten = true;
 
         provider->OnBufferProcessed(buffer);
         return OutputBufferWritten;
@@ -298,6 +309,7 @@ void DirectSoundOut::ResetBuffers() {
 
     this->bufferSize = 0;
     this->writeOffset = 0;
+    this->firstBufferWritten = false;
 
     if (this->secondaryBuffer) {
         this->secondaryBuffer->Stop();
@@ -472,12 +484,9 @@ bool DirectSoundOut::Configure(IBuffer *buffer) {
     this->secondaryBuffer->SetCurrentPosition(0);
     this->secondaryBuffer->Play(0, 0, DSBPLAY_LOOPING);
 
-    /* set an initial offset so the read pointer doesn't equal
-    the write pointer -- that way we know the buffer is not full! */
-    this->secondaryBuffer->SetCurrentPosition(READ_CURSOR_INITIAL_OFFSET);
-
     int samples = this->bufferSize / sizeof(float) / channels;
     this->latency = (float)samples / (float)rate;
+    minWaitTimeMs = (int) (this->latency * 1000.0) * 0.25;
 
     this->state = StatePlaying;
     this->SetVolume(this->volume);

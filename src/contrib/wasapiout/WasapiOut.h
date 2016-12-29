@@ -91,5 +91,6 @@ class WasapiOut : public IOutput {
         double volume;
         double latency;
         int rate;
+        int minWaitTimeMs;
         std::recursive_mutex stateMutex;
 };

@@ -340,7 +340,7 @@ void musik::core::audio::playerThreadLoop(Player* player) {
                     more than a second, try to push the buffer into the output again. this
                     may happen if the sound driver has some sort of transient problem and
                     is temporarily unable to process the bufer (ALSA, i'm looking at you) */
-                    int sleepMs = (playResult > 0) ? playResult : 1000;
+                    int sleepMs = (playResult >= 0) ? playResult : 1000;
                     std::unique_lock<std::mutex> lock(player->queueMutex);
                     player->writeToOutputCondition.wait_for(lock, std::chrono::milliseconds(sleepMs));
                 }

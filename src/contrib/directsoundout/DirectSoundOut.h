@@ -91,5 +91,7 @@ class DirectSoundOut : public IOutput {
         int channels;
         double volume;
         double latency;
+        int minWaitTimeMs;
+        bool firstBufferWritten;
         std::recursive_mutex stateMutex;
 };
