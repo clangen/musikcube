@@ -1,0 +1,128 @@
+0.7.0
+
+a big release with lots of changes to low-level machinery.
+
+user-facing:
+
+* added a new "crossfade" playback mode that can be used instead of "gapless". 
+  users can change this functionality in the settings view.
+* fixed audio artifacts in WasapiOut and DirectSoundOut when pausing and 
+  resuming playback multiple times very quickly.
+* fixed a really bad bug where dialogs could not be easily dismissed in some
+  cases. this included the first-run dialog! yikes.
+
+low-level:
+
+* added Latency() and Drain() methods to the IOutput interface
+* reduced CPU load in some output plugins by being less aggressive about keeping
+  the output buffers 100% full all the time. 75%+ fill rate should be
+  sufficient.
+* generalized MessageQueue and moved it out of app, and into core so it can be
+  reused for other functionality (e.g. crossfading)
+* added support for "mix points" in Player -- get a callback as soon as a 
+  specific playback position is hit!
+* fixed DirectSoundOut to fall back to software mixing if hardware mixing is
+  unavailable
+* fixed DirectSoundOut to start playback immediately, instead of sometimes 
+  requiring the buffer to be completely full
+
+--------------------------------------------------------------------------------
+
+0.6.2
+
+* added a DirectSound output plugin for the win32 build.
+
+--------------------------------------------------------------------------------
+
+0.6.1
+
+* replaced mpg123 decoder with MAD. gapless playback for a much wider variety of
+  mp3s!
+* optimized indexing process by maintaining an in-memory database id cache. uses
+  a bit more memory (temporarily, during indexing) but improves indexing speed.
+
+--------------------------------------------------------------------------------
+
+0.6.0
+
+* added the ability to have multiple output plugins, and the ability switch
+  between them in settings
+* added a new default output plugin for win32 (WASAPI) and linux (PulseAudio)
+* changed a bunch of low-level ui code to substantially reduce layout passes and
+  redraws
+* made a few small changes to the main ui, including basic listview headers if
+  the window grows large enough
+
+--------------------------------------------------------------------------------
+
+0.5.0
+
+user-facing:
+
+* remember volume and repeat settings across app launches
+* improved visualizer quality
+* reduced download size by a couple megabytes
+
+low-level:
+
+* optimized Stream and Player communication. more direct, less locking. no more 
+  weird deferred cleanup
+* removed fftw3 dependency in favor of kiss_fft. much smaller download now
+* added a proper windowing algorithm to audio samples before they are handed to 
+  the fft process
+* fixed audio de-interleaving issue which lead to funky fft results in some 
+  cases
+* included a new spectrum visualizer sample called GdiVis (win32 only for now)
+* overhauled some parts of the audio engine to ensure buffer size is consistent
+  during playback. this makes visualization quality better, and should make it
+  easier to integrate with things like JACK and PulseAudio.
+
+--------------------------------------------------------------------------------
+
+0.4.1
+
+* fixed the transport readout to be more legible
+* fixed a crash in NowPlayingLayout when the window became too small
+* improved the IPlaybackService and IPlaybackRemote interfaces, and introduced a
+  new IRetainedTrack type.
+* upgraded build environment to visual studio 2017
+
+--------------------------------------------------------------------------------
+
+0.4.0
+
+* updated transport focus behavior to be less confusing -- it was previously too
+  easy to accidentally focus the transport.
+* added mute functionality. focus the volume control and press enter or just
+  press m while browsing your library.
+* added new IPlaybackRemote and IPlaybackService sdk interfaces to support 
+  writing plugins that can control playback and be notified of playback events.
+
+--------------------------------------------------------------------------------
+
+0.3.5
+
+* various small visualizer-related fixes.
+
+--------------------------------------------------------------------------------
+
+0.3.4
+
+* visualizer support! press v to show the picker! a couple samples (Milkdrop2 
+  and projectM) are included below. unzip these to your musikbox\plugins 
+  directory.
+* fixed a nasty unicode conversion bug.
+* various other small fixes
+
+--------------------------------------------------------------------------------
+
+0.2.2
+
+* small improvements to the transport view, including the display of the volume 
+  percentage next to the volume slider.
+
+--------------------------------------------------------------------------------
+
+0.2.1
+
+* initial "public" release
