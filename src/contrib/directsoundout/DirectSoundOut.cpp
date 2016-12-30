@@ -120,7 +120,6 @@ DirectSoundOut::DirectSoundOut()
 , latency(0)
 , rate(0)
 , channels(0)
-, minWaitTimeMs(0)
 , firstBufferWritten(false)
 , volume(1.0f) {
     ZeroMemory(&waveFormat, sizeof(WAVEFORMATEXTENSIBLE));
@@ -215,8 +214,7 @@ int DirectSoundOut::Play(IBuffer *buffer, IBufferProvider *provider) {
 
         if (bufferBytes > availableBytes && this->state == StatePlaying) {
             int samples = (bufferBytes - availableBytes) / sizeof(float) / channels;
-            int sleepMs = ((long long)(samples * 1000) / rate) + 1;
-            return std::max(minWaitTimeMs, sleepMs); /* we'll be called back in sleepMs seconds. */
+            return ((long long)(samples * 1000) / rate) + 1;
         }
 
         assert(availableBytes >= bufferBytes);
@@ -486,7 +484,6 @@ bool DirectSoundOut::Configure(IBuffer *buffer) {
 
     int samples = this->bufferSize / sizeof(float) / channels;
     this->latency = (float)samples / (float)rate;
-    minWaitTimeMs = (int) (this->latency * 1000.0) * 0.25;
 
     this->state = StatePlaying;
     this->SetVolume(this->volume);

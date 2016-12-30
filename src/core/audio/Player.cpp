@@ -340,7 +340,17 @@ void musik::core::audio::playerThreadLoop(Player* player) {
                     more than a second, try to push the buffer into the output again. this
                     may happen if the sound driver has some sort of transient problem and
                     is temporarily unable to process the bufer (ALSA, i'm looking at you) */
-                    int sleepMs = (playResult >= 0) ? playResult : 1000;
+                    int sleepMs = playResult;
+
+                    /* if we were asked to sleep, that means the output's buffer is full, so
+                    we'll ease load on the CPU a bit by introducing an artifical delay --
+                    about 25% of the buffer size. however, we won't do this if visualizer is
+                    open becuase it makes things a bit jerky. */
+                    auto visualizer = vis::SelectedVisualizer();
+                    if (playResult >= 0 && (!visualizer || !visualizer->Visible())) {
+                        sleepMs = std::max((int)(player->output->Latency() * 250), sleepMs);
+                    }
+
                     std::unique_lock<std::mutex> lock(player->queueMutex);
                     player->writeToOutputCondition.wait_for(lock, std::chrono::milliseconds(sleepMs));
                 }

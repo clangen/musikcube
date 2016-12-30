@@ -62,8 +62,7 @@ WasapiOut::WasapiOut()
 , outputBufferFrames(0)
 , state(StateStopped)
 , latency(0)
-, volume(1.0f)
-, minWaitTimeMs(0) {
+, volume(1.0f) {
     ZeroMemory(&waveFormat, sizeof(WAVEFORMATEXTENSIBLE));
 }
 
@@ -172,12 +171,7 @@ int WasapiOut::Play(IBuffer *buffer, IBufferProvider *provider) {
 
     if (availableFrames < framesToWrite) {
         UINT32 delta = framesToWrite - availableFrames;
-        int sleepTimeMs = (delta * 1000) / buffer->SampleRate();
-
-        /* sleep at least minWaitTimeMs millis! our buffer is full,
-        so we can afford to wait for ~10% of it to deplete to
-        ease the CPU load a bit. */
-        return std::max(minWaitTimeMs, sleepTimeMs);
+        return (delta * 1000) / buffer->SampleRate();
     }
 
     if (availableFrames >= framesToWrite) {
@@ -325,7 +319,6 @@ bool WasapiOut::Configure(IBuffer *buffer) {
     }
 
     this->latency = (float) outputBufferFrames / (float) buffer->SampleRate();
-    this->minWaitTimeMs = (int)((this->latency * 1000.0) * 0.25);
 
     if ((result = this->audioClient->GetService(__uuidof(IAudioRenderClient), (void**) &this->renderClient)) != S_OK) {
         std::cerr << "WasapiOut: IAudioClient::GetService failed, error code = " << result << "\n";
