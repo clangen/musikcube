@@ -335,24 +335,30 @@ void musik::core::audio::playerThreadLoop(Player* player) {
                     buffer.reset(); /* important! we're done with this one locally. */
                 }
                 else {
-                    /* the output device queue is probably full. we should block and wait until
-                    the output lets us know that it needs more data. if we are starved for
-                    more than a second, try to push the buffer into the output again. this
-                    may happen if the sound driver has some sort of transient problem and
-                    is temporarily unable to process the bufer (ALSA, i'm looking at you) */
-                    int sleepMs = playResult;
+                    /* if the buffer was unable to be processed, we'll try again after
+                    sleepMs milliseconds */
+                    int sleepMs = 1000;
 
-                    /* if we were asked to sleep, that means the output's buffer is full, so
-                    we'll ease load on the CPU a bit by introducing an artifical delay --
-                    about 25% of the buffer size. however, we won't do this if visualizer is
-                    open becuase it makes things a bit jerky. */
-                    auto visualizer = vis::SelectedVisualizer();
-                    if (playResult >= 0 && (!visualizer || !visualizer->Visible())) {
-                        sleepMs = std::max((int)(player->output->Latency() * 250), sleepMs);
+                    /* if the playResult value >= 0, that means the output requested a
+                    specific callback time because its internal buffer is full. */
+                    if (playResult >= 0) {
+                        /* if there is no visualizer active, we can introduce an
+                        artifical delay of 25% of the buffer size to ease CPU load */
+                        auto visualizer = vis::SelectedVisualizer();
+                        if (!visualizer || !visualizer->Visible()) {
+                            sleepMs = std::max(
+                                (int)(player->output->Latency() * 250.0),
+                                playResult);
+                        }
+                        else {
+                            sleepMs = playResult;
+                        }
                     }
 
                     std::unique_lock<std::mutex> lock(player->queueMutex);
-                    player->writeToOutputCondition.wait_for(lock, std::chrono::milliseconds(sleepMs));
+
+                    player->writeToOutputCondition.wait_for(
+                        lock, std::chrono::milliseconds(sleepMs));
                 }
             }
             /* if we're unable to obtain a buffer, it means we're out of data and the
