@@ -43,18 +43,16 @@ namespace musik { namespace core { namespace io {
     class DataStreamFactory {
         public:
             typedef std::shared_ptr<musik::core::sdk::IDataStream> DataStreamPtr;
-
-        private:
-            DataStreamFactory();
-            static DataStreamFactory* Instance();
+            static DataStreamPtr OpenUri(const char *uri);
+            static bool IsLocalFileStream(const char *uri);
 
         private:
             typedef std::vector<std::shared_ptr<musik::core::sdk::IDataStreamFactory> > DataStreamFactoryVector;
-            DataStreamFactoryVector dataStreamFactories;
 
-        public:
-            static DataStreamPtr OpenUri(const char *uri);
-            static bool IsLocalFileStream(const char *uri);
+            DataStreamFactory();
+            static DataStreamFactory* Instance();
+
+            DataStreamFactoryVector dataStreamFactories;
     };
 
 } } }

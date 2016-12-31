@@ -62,7 +62,7 @@ PluginFactory::PluginFactory() {
     this->LoadPlugins();
 }
 
-PluginFactory::~PluginFactory(void){
+PluginFactory::~PluginFactory() {
     for (size_t i = 0; i < this->loadedPlugins.size(); i++) {
         this->loadedPlugins[i]->Destroy();
     }
@@ -79,7 +79,7 @@ PluginFactory::~PluginFactory(void){
     loadedDlls.clear();
 }
 
-void PluginFactory::LoadPlugins(){
+void PluginFactory::LoadPlugins() {
     boost::mutex::scoped_lock lock(this->mutex);
 
 #ifdef WIN32

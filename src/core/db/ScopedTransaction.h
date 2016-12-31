@@ -44,7 +44,7 @@ namespace musik { namespace core { namespace db {
     class Connection;
 
     class ScopedTransaction : boost::noncopyable {
-        public: 
+        public:
             ScopedTransaction(Connection &connection);
             ~ScopedTransaction();
 

@@ -80,8 +80,18 @@ void CrossfadeTransport::Start(const std::string& url) {
 
         musik::debug::info(TAG, "trying to play " + url);
 
-        this->next.Stop();
-        this->active.Reset(url, this);
+        /* in many cases (e.g. the user is skipping through tracks,
+        the requested track may already be queued up. use it, if it is */
+        if (this->next.player && this->next.player->GetUrl() == url) {
+            this->active.Reset();
+            this->next.TransferTo(this->active);
+            this->active.Start(this->volume);
+        }
+        else {
+            this->active.Reset(url, this);
+            this->next.Stop();
+        }
+
     }
 
     this->RaiseStreamEvent(StreamScheduled, this->active.player);

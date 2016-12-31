@@ -39,18 +39,14 @@
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 
-//////////////////////////////////////////
-// Forward declare
 struct sqlite3_stmt;
-//////////////////////////////////////////
-
 
 namespace musik { namespace core { namespace db {
 
     class Connection;
 
     class Statement : boost::noncopyable {
-        public: 
+        public:
             Statement(const char* sql,Connection &connection);
             virtual ~Statement();
 
@@ -74,13 +70,11 @@ namespace musik { namespace core { namespace db {
         private:
             friend class Connection;
 
-            sqlite3_stmt *stmt;
-            Connection *connection;
-
-        private:
-            friend class CachedStatement;
             Statement(Connection &connection);
 
+            sqlite3_stmt *stmt;
+            Connection *connection;
     };
+
 } } }
 

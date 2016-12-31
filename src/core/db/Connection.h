@@ -55,7 +55,7 @@ namespace musik { namespace core { namespace db {
     } ReturnCode;
 
     class Connection : boost::noncopyable {
-        public: 
+        public:
             Connection();
             ~Connection();
 
@@ -76,7 +76,7 @@ namespace musik { namespace core { namespace db {
 
             friend class Statement;
             friend class ScopedTransaction;
-            
+
             int transactionCounter;
             sqlite3 *connection;
             boost::mutex mutex;

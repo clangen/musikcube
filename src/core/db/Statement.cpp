@@ -40,7 +40,7 @@
 
 using namespace musik::core::db;
 
-Statement::Statement(const char* sql, Connection &connection) 
+Statement::Statement(const char* sql, Connection &connection)
 : connection(&connection)
 , stmt(nullptr) {
     boost::mutex::scoped_lock lock(connection.mutex);
@@ -53,7 +53,7 @@ Statement::Statement(const char* sql, Connection &connection)
     }
 }
 
-Statement::Statement(Connection &connection) 
+Statement::Statement(Connection &connection)
 : connection(&connection)
 , stmt(nullptr) {
 }
@@ -84,18 +84,18 @@ void Statement::BindInt(int position, uint64 bindInt) {
 
 void Statement::BindText(int position, const char* bindText) {
     sqlite3_bind_text(
-        this->stmt, 
+        this->stmt,
         position + 1,
-        bindText, 
-        -1, 
+        bindText,
+        -1,
         SQLITE_STATIC);
 }
 
 void Statement::BindText(int position ,const std::string &bindText) {
     sqlite3_bind_text(
-        this->stmt, position + 1, 
-        bindText.c_str(), 
-        -1, 
+        this->stmt, position + 1,
+        bindText.c_str(),
+        -1,
         SQLITE_TRANSIENT);
 }
 
@@ -103,7 +103,7 @@ void Statement::BindTextW(int position,const wchar_t* bindText){
     sqlite3_bind_text16(
         this->stmt,
         position + 1,
-        bindText, 
+        bindText,
         -1,
         SQLITE_STATIC);
 }
