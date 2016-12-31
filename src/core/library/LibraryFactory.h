@@ -40,9 +40,9 @@
 #include <map>
 #include <vector>
 
-namespace musik{ namespace core{
+namespace musik { namespace core {
 
-    class  LibraryFactory{
+    class LibraryFactory {
         public:
             typedef std::vector<LibraryPtr> LibraryVector;
             typedef std::map<int, LibraryPtr> LibraryMap;
@@ -72,4 +72,4 @@ namespace musik{ namespace core{
             LibraryMap libraryMap;
     };
 
-} } 
+} }

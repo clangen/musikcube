@@ -38,7 +38,7 @@
 
 namespace musik { namespace core { namespace sdk {
 
-    class  IDSP {
+    class IDSP {
         public:
             virtual void Destroy() = 0;
             virtual bool Process(const IBuffer *input, IBuffer *ouput) = 0;

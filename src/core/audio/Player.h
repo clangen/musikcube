@@ -133,8 +133,11 @@ namespace musik { namespace core { namespace audio {
             ListenerList listeners;
             MixPointList pendingMixPoints;
             MixPointList processedMixPoints;
+            MixPointList mixPointsHitTemp; /* so we don't have to keep alloc'ing it */
             BufferList lockedBuffers;
             BufferList prebufferQueue;
+
+            void UpdateNextMixPointTime();
 
             std::string url;
 
@@ -143,6 +146,7 @@ namespace musik { namespace core { namespace audio {
             std::condition_variable writeToOutputCondition;
 
             double volume;
+            double nextMixPoint;
             std::atomic<double> currentPosition;
             std::atomic<double> setPosition;
             int state;

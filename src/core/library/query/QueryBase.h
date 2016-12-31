@@ -50,7 +50,7 @@ namespace musik { namespace core { namespace query {
         public:
             QueryBase();
             virtual ~QueryBase();
-            
+
             virtual bool Run(db::Connection &db);
             virtual int GetStatus();
             virtual int GetId();

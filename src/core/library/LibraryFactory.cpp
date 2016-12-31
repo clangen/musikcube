@@ -42,10 +42,10 @@
 
 using namespace musik::core;
 
-LibraryFactory& LibraryFactory::Instance() { 
+LibraryFactory& LibraryFactory::Instance() {
     typedef std::shared_ptr<LibraryFactory> InstanceType;
     static InstanceType sInstance(new LibraryFactory());
-    return *sInstance; 
+    return *sInstance;
 };
 
 LibraryFactory::LibraryFactory() {
@@ -70,7 +70,7 @@ LibraryFactory::~LibraryFactory() {
 LibraryPtr LibraryFactory::AddLibrary(int id, int type, const std::string& name)
 {
     LibraryPtr library = library::LocalLibrary::Create(name, id);
-    
+
     if (library) {
         this->libraries.push_back(library);
         this->libraryMap[id] = library;
@@ -89,7 +89,7 @@ LibraryPtr LibraryFactory::CreateLibrary(const std::string& name, int type) {
     std::vector<std::string> libraries;
     prefs->GetKeys(libraries);
 
-    /* ensure the library doesn't already exist, and figure out a 
+    /* ensure the library doesn't already exist, and figure out a
     new unique identifier for this one... */
 
     int nextId = 0; /* we start at 1 becuase we always have. */

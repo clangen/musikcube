@@ -127,6 +127,7 @@ Player::Player(
 , output(output)
 , notifiedStarted(false)
 , setPosition(-1)
+, nextMixPoint(-1.0)
 , destroyMode(destroyMode)
 , fftContext(nullptr) {
     musik::debug::info(TAG, "new instance created");
@@ -204,7 +205,8 @@ ListenerList Player::Listeners() {
 }
 
 double Player::GetPosition() {
-    return std::max(0.0, round(this->currentPosition.load() - this->output->Latency()));
+    const double latency = this->output ? this->output->Latency() : 0.0;
+    return std::max(0.0, round(this->currentPosition.load() - latency));
 }
 
 double Player::GetDuration() {
@@ -220,16 +222,34 @@ void Player::SetPosition(double seconds) {
     this->pendingMixPoints.splice(
         this->pendingMixPoints.begin(),
         this->processedMixPoints);
+
+    this->UpdateNextMixPointTime();
 }
 
 void Player::AddMixPoint(int id, double time) {
     std::unique_lock<std::mutex> queueLock(this->queueMutex);
     this->pendingMixPoints.push_back(std::make_shared<MixPoint>(id, time));
+    this->UpdateNextMixPointTime();
 }
 
 int Player::State() {
     std::unique_lock<std::mutex> lock(this->queueMutex);
     return this->state;
+}
+
+void Player::UpdateNextMixPointTime() {
+    const double position = this->GetPosition();
+
+    double next = -1.0;
+    for (MixPointPtr mp : this->pendingMixPoints) {
+        if (mp->time >= position) {
+            if (mp->time < next || next == -1.0) {
+                next = mp->time;
+            }
+        }
+    }
+
+    this->nextMixPoint = next;
 }
 
 void musik::core::audio::playerThreadLoop(Player* player) {
@@ -520,8 +540,6 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
         vis::PcmVisualizer()->Write(buffer);
     }
 
-    MixPointList mixPointsHit;
-
     /* free the buffer */
 
     {
@@ -555,19 +573,24 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
                 /* did we hit any pending mixpoints? if so add them to our set and
                 move them to the processed set. we'll notify once out of the
                 critical section. */
-                if (this->pendingMixPoints.size() > 0) {
-                    double adjustedPosition = this->GetPosition();
-
+                double adjustedPosition = this->GetPosition();
+                if (adjustedPosition >= this->nextMixPoint) {
                     auto it = this->pendingMixPoints.begin();
                     while (it != this->pendingMixPoints.end()) {
                         if (adjustedPosition >= (*it)->time) {
-                            mixPointsHit.push_back(*it);
+                            this->mixPointsHitTemp.push_back(*it);
                             this->processedMixPoints.push_back(*it);
                             it = this->pendingMixPoints.erase(it);
                         }
                         else {
                             ++it;
                         }
+                    }
+
+                    /* kind of awkward to recalc the next mixpoint here, but we
+                    already have the queue mutex acquired. */
+                    if (this->mixPointsHitTemp.size()) {
+                        this->UpdateNextMixPointTime();
                     }
                 }
             }
@@ -584,7 +607,7 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
 
     /* check up front so we don't have to acquire the mutex if
     we don't need to. */
-    if (started || mixPointsHit.size()) {
+    if (started || this->mixPointsHitTemp.size()) {
         ListenerList listeners = this->Listeners();
         if (!this->Exited() && listeners.size()) {
             for (Listener* l : ListenerList(listeners)) {
@@ -596,13 +619,13 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
                     l->OnPlayerStarted(this);
                 }
 
-                auto it = mixPointsHit.begin();
-                while (it != mixPointsHit.end()) {
-                    l->OnPlayerMixPoint(this, (*it)->id, (*it)->time);
-                    ++it;
+                for (MixPointPtr mp : this->mixPointsHitTemp) {
+                    l->OnPlayerMixPoint(this, mp->id, mp->time);
                 }
             }
         }
+
+        this->mixPointsHitTemp.clear();
     }
 
     /* if the output device's internal buffers are full, it will stop
