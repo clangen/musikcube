@@ -39,11 +39,11 @@
 using namespace musik::core::sdk;
 
 class OggDecoderFactory : public IDecoderFactory {
-public:
-    OggDecoderFactory();
-    ~OggDecoderFactory();
+    public:
+        OggDecoderFactory();
+        virtual ~OggDecoderFactory();
 
-    IDecoder* CreateDecoder();
-    void Destroy();
-    bool CanHandle(const char* type) const;
+        virtual IDecoder* CreateDecoder();
+        virtual void Destroy();
+        virtual bool CanHandle(const char* type) const;
 };

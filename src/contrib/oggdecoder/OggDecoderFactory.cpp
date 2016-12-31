@@ -34,9 +34,16 @@
 
 #include "stdafx.h"
 #include <cctype>
+#include <string>
 #include <algorithm>
 #include "OggDecoderFactory.h"
 #include "OggDecoder.h"
+
+inline bool endsWith(const std::string& s, const std::string& suffix) {
+    return
+        s.size() >= suffix.size() &&
+        s.rfind(suffix) == (s.size() - suffix.size());
+}
 
 OggDecoderFactory::OggDecoderFactory() {
 }
@@ -57,8 +64,8 @@ bool OggDecoderFactory::CanHandle(const char* type) const {
     std::transform(str.begin(), str.end(), str.begin(), tolower);
 
     return
-        musik::sdk::endsWith(str, ".ogg") ||
-        musik::sdk::endsWith(str, ".oga") ||
+        endsWith(str, ".ogg") ||
+        endsWith(str, ".oga") ||
         str.find("audio/ogg") != std::string::npos ||
         str.find("audio/vorbis") != std::string::npos;
 }

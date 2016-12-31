@@ -34,13 +34,9 @@
 
 #pragma once
 
+#include "pch.h"
 #include <core/sdk/IBuffer.h>
 #include <core/sdk/IBufferProvider.h>
-#ifdef WIN32
-	#include "Mmsystem.h"
-#else
-	#include <alsa/asoundlib.h>
-#endif
 
 class WaveOut;
 

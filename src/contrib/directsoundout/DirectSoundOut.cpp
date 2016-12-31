@@ -36,9 +36,7 @@
 
 #include <core/sdk/constants.h>
 
-#include <ks.h>
-#include <ksmedia.h>
-
+#include <cassert>
 #include <iostream>
 #include <chrono>
 #include <thread>

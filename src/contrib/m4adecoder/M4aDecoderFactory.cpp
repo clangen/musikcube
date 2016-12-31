@@ -37,8 +37,15 @@
 #include "M4aDecoderFactory.h"
 #include "M4aDecoder.h"
 #include <algorithm>
+#include <string>
 
 using musik::core::sdk::IDecoder;
+
+inline bool endsWith(const std::string& s, const std::string& suffix) {
+    return
+        s.size() >= suffix.size() &&
+        s.rfind(suffix) == (s.size() - suffix.size());
+}
 
 M4aDecoderFactory::M4aDecoderFactory() {
 }
@@ -59,7 +66,7 @@ bool M4aDecoderFactory::CanHandle(const char* type) const {
     std::transform(str.begin(), str.end(), str.begin(), tolower);
 
     return
-        musik::sdk::endsWith(str, ".m4a") ||
+        endsWith(str, ".m4a") ||
         str.find("audio/mp4") != std::string::npos;
 }
 

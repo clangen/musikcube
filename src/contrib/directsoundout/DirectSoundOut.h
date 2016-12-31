@@ -40,7 +40,11 @@
 #include <mutex>
 #include <atomic>
 
-#include <mmreg.h>
+#include <Windows.h>
+#include <Mmsystem.h>
+#include <Mmreg.h>
+#include <KS.h>
+#include <Ksmedia.h>
 #include <dsound.h>
 
 #include <core/sdk/IOutput.h>

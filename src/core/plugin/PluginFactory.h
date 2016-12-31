@@ -43,8 +43,11 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/thread/mutex.hpp>
 
-#ifndef WIN32
+#ifdef WIN32
+    #define STDCALL(fp) (__stdcall* fp)()
+#else
     #include <dlfcn.h>
+    #define STDCALL(fp) (* fp)()
 #endif
 
 namespace musik { namespace core {
@@ -52,28 +55,6 @@ namespace musik { namespace core {
     class PluginFactory {
         public:
             static PluginFactory& Instance();
-
-        private:
-
-            PluginFactory();
-            ~PluginFactory();
-            void LoadPlugins();
-
-        private:
-#ifdef WIN32
-            typedef musik::core::sdk::IPlugin* STDCALL(CallGetPlugin);
-#else
-            typedef musik::core::sdk::IPlugin* (*CallGetPlugin)();
-#endif
-
-            typedef std::vector<musik::core::sdk::IPlugin*> PluginList;
-            typedef std::vector<void*> HandleList;
-
-            PluginList loadedPlugins;
-            HandleList loadedDlls;
-            boost::mutex mutex;
-
-        public:
 
             template <typename T>
             class  DestroyDeleter {
@@ -100,11 +81,11 @@ namespace musik { namespace core {
                 Iterator currentDll = allDlls.begin();
                 while (currentDll != allDlls.end()) {
                     PluginInterfaceCall funcPtr =
-#ifdef WIN32
+    #ifdef WIN32
                         (PluginInterfaceCall) GetProcAddress((HMODULE)(*currentDll), functionName);
-#else
+    #else
                         (PluginInterfaceCall) dlsym(*currentDll, functionName);
-#endif
+    #endif
                     if (funcPtr) {
                         T* result = funcPtr();
 
@@ -118,5 +99,25 @@ namespace musik { namespace core {
 
                 return plugins;
             }
+
+        private:
+
+            PluginFactory();
+            ~PluginFactory();
+
+            void LoadPlugins();
+
+    #ifdef WIN32
+            typedef musik::core::sdk::IPlugin* STDCALL(CallGetPlugin);
+    #else
+            typedef musik::core::sdk::IPlugin* (*CallGetPlugin)();
+    #endif
+
+            typedef std::vector<musik::core::sdk::IPlugin*> PluginList;
+            typedef std::vector<void*> HandleList;
+
+            PluginList loadedPlugins;
+            HandleList loadedDlls;
+            boost::mutex mutex;
     };
 } }

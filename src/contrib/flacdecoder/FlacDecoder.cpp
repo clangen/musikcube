@@ -38,14 +38,6 @@
 #include <iostream>
 #include <cstring>
 
-static inline void copy(float* dst, float* src, size_t count) {
-#ifdef WIN32
-    CopyMemory(dst, src, count * sizeof(float));
-#else
-    memcpy(dst, src, count * sizeof(float));
-#endif
-}
-
 FlacDecoder::FlacDecoder()
 : decoder(NULL)
 , outputBufferSize(0)
@@ -189,7 +181,7 @@ FLAC__StreamDecoderWriteStatus FlacDecoder::FlacWrite(
     void *clientData)
 {
     FlacDecoder *fdec = (FlacDecoder*) clientData;
-    int sampleCount = fdec->channels * frame->header.blocksize;
+    unsigned sampleCount = (unsigned) fdec->channels * frame->header.blocksize;
 
     /* initialize the output buffer if it doesn't exist */
     if (sampleCount > fdec->outputBufferSize) {
@@ -241,7 +233,7 @@ bool FlacDecoder::GetBuffer(IBuffer *buffer) {
     if (FLAC__stream_decoder_process_single(this->decoder)) {
         if (this->outputBuffer && this->outputBufferUsed > 0) {
             buffer->SetSamples(this->outputBufferUsed);
-            copy(buffer->BufferPointer(), this->outputBuffer, this->outputBufferUsed);
+            memcpy(buffer->BufferPointer(), this->outputBuffer, this->outputBufferUsed);
             this->outputBufferUsed = 0; /* mark consumed */
             return true;
         }

@@ -25,12 +25,11 @@ set(CORE_SOURCES
   ./library/track/Track.cpp
   ./library/track/RetainedTrack.cpp
   ./plugin/PluginFactory.cpp
-	./runtime/Message.cpp
-	./runtime/MessageQueue.cpp
+  ./runtime/Message.cpp
+  ./runtime/MessageQueue.cpp
   ./support/Common.cpp
   ./support/Preferences.cpp
   ./support/PreferenceKeys.cpp
-  ../3rdparty/src/md5/md5.c
   ../3rdparty/src/sqlite/sqlite3.c
   ../3rdparty/src/kiss_fft.c
   ../3rdparty/src/kiss_fftr.c

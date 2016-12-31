@@ -32,21 +32,15 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-// Precompiled headers
 #pragma once
 
-#include <core/config.h>
+#define WIN32_LEAN_AND_MEAN
+#define WINVER 0x0502
+#define _WIN32_WINNT 0x0502
+#define NOMINMAX
 
-#ifdef WIN32 
-	#include <mmsystem.h>
-	#include <mmreg.h>
-	#include <ks.h>
-	#include <ksmedia.h>
-
-	//#include "vld/vld.h"
-
-#else
-
-	#include <alsa/asoundlib.h>
-
-#endif //WIN32
+#include <windows.h>
+#include <Mmsystem.h>
+#include <Mmreg.h>
+#include <KS.h>
+#include <Ksmedia.h>

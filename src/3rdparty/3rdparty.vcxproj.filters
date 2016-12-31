@@ -11,16 +11,10 @@
     <Filter Include="src\sigslot">
       <UniqueIdentifier>{57af24a7-d581-4aac-94af-fb79332228ab}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\md5">
-      <UniqueIdentifier>{d5daddec-d920-4412-a600-3e0998d7dfe9}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\sqlite\sqlite3.c">
       <Filter>src\sqlite</Filter>
-    </ClCompile>
-    <ClCompile Include="src\md5\md5.c">
-      <Filter>src\md5</Filter>
     </ClCompile>
     <ClCompile Include="src\wcwidth.c">
       <Filter>src</Filter>
@@ -41,9 +35,6 @@
     </ClInclude>
     <ClInclude Include="include\sigslot\sigslot.h">
       <Filter>src\sigslot</Filter>
-    </ClInclude>
-    <ClInclude Include="include\md5\md5.h">
-      <Filter>src\md5</Filter>
     </ClInclude>
     <ClInclude Include="include\wcwidth.h">
       <Filter>src</Filter>

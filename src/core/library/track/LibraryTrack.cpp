@@ -37,7 +37,6 @@
 #include <core/library/track/LibraryTrack.h>
 #include <core/library/LibraryFactory.h>
 
-#include <core/sdk/config.h>
 #include <core/support/Common.h>
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>
@@ -98,11 +97,11 @@ std::string LibraryTrack::Uri() {
 }
 
 int LibraryTrack::GetValue(const char* key, char* dst, int size) {
-    return musik::sdk::copyString(this->GetValue(key), dst, size);
+    return CopyString(this->GetValue(key), dst, size);
 }
 
 int LibraryTrack::Uri(char* dst, int size) {
-    return musik::sdk::copyString(this->Uri(), dst, size);
+    return CopyString(this->Uri(), dst, size);
 }
 
 Track::MetadataIteratorRange LibraryTrack::GetValues(const char* metakey) {

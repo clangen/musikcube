@@ -42,6 +42,12 @@
 
 using namespace musik::core::sdk;
 
+inline bool endsWith(const std::string& s, const std::string& suffix) {
+    return
+        s.size() >= suffix.size() &&
+        s.rfind(suffix) == (s.size() - suffix.size());
+}
+
 FlacDecoderFactory::FlacDecoderFactory() {
 }
 
@@ -61,6 +67,6 @@ bool FlacDecoderFactory::CanHandle(const char* type) const {
     std::transform(str.begin(), str.end(), str.begin(), tolower);
 
     return
-        musik::sdk::endsWith(type, ".flac") ||
+        endsWith(type, ".flac") ||
         str.find("audio/flag") != std::string::npos;
 }

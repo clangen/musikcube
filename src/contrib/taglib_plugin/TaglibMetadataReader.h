@@ -53,6 +53,7 @@
 #endif
 
 #include <set>
+
 #include <core/sdk/IMetadataReader.h>
 
 class TaglibMetadataReader : public musik::core::sdk::IMetadataReader {

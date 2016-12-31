@@ -195,7 +195,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved) {
         delete ::spectrumIn;
         delete ::spectrumOut;
         ::spectrumIn = nullptr;
-        ::spectrumOut == nullptr;
+        ::spectrumOut = nullptr;
     }
     return true;
 }

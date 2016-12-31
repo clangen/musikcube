@@ -36,7 +36,6 @@
 
 #include <core/library/track/IndexerTrack.h>
 
-#include <core/sdk/config.h>
 #include <core/support/Common.h>
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>
@@ -118,11 +117,11 @@ std::string IndexerTrack::Uri() {
 }
 
 int IndexerTrack::GetValue(const char* key, char* dst, int size) {
-    return musik::sdk::copyString(this->GetValue(key), dst, size);
+    return CopyString(this->GetValue(key), dst, size);
 }
 
 int IndexerTrack::Uri(char* dst, int size) {
-    return musik::sdk::copyString(this->Uri(), dst, size);
+    return CopyString(this->Uri(), dst, size);
 }
 
 Track::MetadataIteratorRange IndexerTrack::GetValues(const char* metakey) {
@@ -282,7 +281,7 @@ DBID IndexerTrack::SaveThumbnail(db::Connection& connection, const std::string& 
 
 #ifdef WIN32
                 std::wstring wfilename = u8to16(filename);
-                FILE *thumbFile = _wfopen(wfilename.c_str(), _T("wb"));
+                FILE *thumbFile = _wfopen(wfilename.c_str(), L"wb");
 #else
                 FILE *thumbFile = fopen(filename.c_str(), "wb");
 #endif

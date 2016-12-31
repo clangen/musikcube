@@ -37,15 +37,15 @@
 #include "NomadDecoderFactory.h"
 
 #ifdef WIN32
-#define DLLEXPORT __declspec(dllexport)
+    #define DLLEXPORT __declspec(dllexport)
 #else
-#define DLLEXPORT
+    #define DLLEXPORT
 #endif
 
 #ifdef WIN32
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
-    return true;
-}
+    BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
+        return true;
+    }
 #endif
 
 class NomadPlugin : public musik::core::sdk::IPlugin {

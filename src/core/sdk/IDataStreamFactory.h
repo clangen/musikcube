@@ -34,7 +34,6 @@
 
 #pragma once
 
-#include "config.h"
 #include "IDataStream.h"
 
 namespace musik { namespace core { namespace sdk {

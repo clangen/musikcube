@@ -34,7 +34,6 @@
 
 #pragma once
 
-#include "sdk/config.h"
 #include "utfutil.h"
 
 #include <memory>
@@ -42,6 +41,20 @@
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
 
+#ifdef WIN32
+    #define WIN32_LEAN_AND_MEAN
+    #define WINVER 0x0502
+    #define _WIN32_WINNT 0x0502
+    #define NOMINMAX
+
+    typedef __int64 int64;
+    typedef unsigned __int64 uint64;
+
+    #include <windows.h>
+#else
+    typedef __uint64_t uint64;
+    typedef __int64_t int64;
+#endif
+
 typedef uint64 DBID;
-typedef uint64 VERSION;
 typedef uint64 DBTIME;

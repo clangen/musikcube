@@ -34,7 +34,6 @@
 
 #pragma once
 
-#include "config.h"
 #include "IPlugin.h"
 #include "IDataStream.h"
 #include "IBuffer.h"

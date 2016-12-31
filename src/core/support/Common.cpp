@@ -90,9 +90,9 @@ std::string musik::core::GetHomeDirectory() {
     std::string directory;
 
     #ifdef WIN32
-        DWORD bufferSize = GetEnvironmentVariable(_T("USERPROFILE"), 0, 0);
+        DWORD bufferSize = GetEnvironmentVariable(L"USERPROFILE", 0, 0);
         wchar_t *buffer = new wchar_t[bufferSize + 2];
-        GetEnvironmentVariable(_T("USERPROFILE"), buffer, bufferSize);
+        GetEnvironmentVariable(L"USERPROFILE", buffer, bufferSize);
         directory.assign(u16to8(buffer));
         delete[] buffer;
     #else
@@ -106,9 +106,9 @@ std::string musik::core::GetDataDirectory() {
     std::string directory;
 
     #ifdef WIN32
-        DWORD bufferSize = GetEnvironmentVariable(_T("APPDATA"), 0, 0);
+        DWORD bufferSize = GetEnvironmentVariable(L"APPDATA", 0, 0);
         wchar_t *buffer = new wchar_t[bufferSize + 2];
-        GetEnvironmentVariable(_T("APPDATA"), buffer, bufferSize);
+        GetEnvironmentVariable(L"APPDATA", buffer, bufferSize);
         directory.assign(u16to8(buffer));
         directory.append("/mC2/");
         delete[] buffer;
@@ -159,4 +159,14 @@ uint64 musik::core::Checksum(char *data,unsigned int bytes) {
         sum += (uint64) ch;
     }
     return sum;
+}
+
+size_t musik::core::CopyString(const std::string& src, char* dst, size_t size) {
+    size_t len = src.size() + 1; /* space for the null terminator */
+    if (dst) {
+        size_t copied = src.copy(dst, size - 1);
+        dst[copied] = '\0';
+        return copied + 1;
+    }
+    return len;
 }

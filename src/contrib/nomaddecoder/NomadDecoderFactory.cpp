@@ -41,6 +41,12 @@
 
 using namespace musik::core::sdk;
 
+inline bool endsWith(const std::string& s, const std::string& suffix) {
+    return
+        s.size() >= suffix.size() &&
+        s.rfind(suffix) == (s.size() - suffix.size());
+}
+
 NomadDecoderFactory::NomadDecoderFactory() {
 }
 
@@ -59,7 +65,7 @@ bool NomadDecoderFactory::CanHandle(const char* type) const {
   std::string str(type);
   std::transform(str.begin(), str.end(), str.begin(), tolower);
 
-  if (musik::sdk::endsWith(str, ".mp3") ||
+  if (endsWith(str, ".mp3") ||
       str.find("audio/mpeg3") != std::string::npos ||
       str.find("audio/x-mpeg-3") != std::string::npos ||
       str.find("audio/mp3") != std::string::npos)

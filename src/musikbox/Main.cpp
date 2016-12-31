@@ -60,8 +60,8 @@
 #include <boost/chrono.hpp>
 
 #ifdef WIN32
-#include <app/util/Win32Util.h>
-#undef MOUSE_MOVED
+    #include <app/util/Win32Util.h>
+    #undef MOUSE_MOVED
 #endif
 
 using namespace musik::box::audio;
@@ -74,13 +74,13 @@ using namespace cursespp;
 #define MIN_HEIGHT 12
 
 #ifdef WIN32
-int _main(int argc, _TCHAR* argv[]);
+int _main(int argc, wchar_t* argv[]);
 
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow) {
     _main(0, 0);
 }
 
-int _main(int argc, _TCHAR* argv[])
+int _main(int argc, wchar_t* argv[])
 #else
 int main(int argc, char* argv[])
 #endif

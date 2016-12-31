@@ -36,6 +36,7 @@
 
 #include "ntddcdrm.h"
 #include "devioctl.h"
+#include <string>
 
 using namespace musik::core::sdk;
 

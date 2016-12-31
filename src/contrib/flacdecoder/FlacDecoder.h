@@ -95,13 +95,13 @@ class FlacDecoder :	public musik::core::sdk::IDecoder {
             FLAC__StreamDecoderErrorStatus status,
             void *clientData);
 
-    protected:
+    private:
         musik::core::sdk::IDataStream *stream;
         FLAC__StreamDecoder *decoder;
 
         long channels;
         long sampleRate;
-        uint64 totalSamples;
+        unsigned long long totalSamples;
         int bitsPerSample;
         double duration;
 

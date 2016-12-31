@@ -32,9 +32,9 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+#include "pch.h"
 #include "WaveOutBuffer.h"
 #include "WaveOut.h"
-
 #include <iostream>
 
 WaveOutBuffer::WaveOutBuffer(WaveOut *waveOut)

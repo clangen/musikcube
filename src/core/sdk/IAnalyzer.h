@@ -34,7 +34,6 @@
 
 #pragma once
 
-#include "config.h"
 #include "IMetadataWriter.h"
 #include "IBuffer.h"
 

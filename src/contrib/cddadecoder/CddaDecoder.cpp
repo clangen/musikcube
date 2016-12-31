@@ -62,7 +62,7 @@ bool CddaDecoder::Open(IDataStream* data) {
 double CddaDecoder::SetPosition(double seconds) {
     LONGLONG bytesPerSecond = (CDDA_SAMPLE_RATE * data->GetChannelCount() * sizeof(short));
     LONGLONG offset = (LONGLONG)((float)bytesPerSecond * seconds);
-    if (this->data->SetPosition(offset)) {
+    if (this->data->SetPosition((PositionType) offset)) {
         return seconds;
     }
 

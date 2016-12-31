@@ -34,8 +34,6 @@
 
 #pragma once
 
-#include "config.h"
-
 namespace musik { namespace core { namespace sdk {
 
     class IMetadataWriter {

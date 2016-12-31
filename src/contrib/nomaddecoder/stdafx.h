@@ -34,9 +34,13 @@
 
 #pragma once
 
-#include <core/sdk/config.h>
 #include <math.h>
 
 #ifdef WIN32
-#include <shlwapi.h>
+    #define WIN32_LEAN_AND_MEAN
+    #define WINVER 0x0502
+    #define _WIN32_WINNT 0x0502
+    #define NOMINMAX
+    #include <Windows.h>
+    #include <shlwapi.h>
 #endif

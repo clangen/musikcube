@@ -151,7 +151,6 @@
     <ClInclude Include="runtime\IMessageTarget.h" />
     <ClInclude Include="runtime\Message.h" />
     <ClInclude Include="runtime\MessageQueue.h" />
-    <ClInclude Include="sdk\config.h" />
     <ClInclude Include="sdk\constants.h" />
     <ClInclude Include="sdk\IAnalyzer.h" />
     <ClInclude Include="sdk\IBuffer.h" />
