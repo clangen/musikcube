@@ -72,7 +72,6 @@ void MessageQueue::Dispatch() {
         system_clock::now().time_since_epoch());
 
     using Iterator = std::list<EnqueuedMessage*>::iterator;
-    std::list<EnqueuedMessage*> toDispatch;
 
     {
         LockT lock(this->queueMutex);
@@ -88,7 +87,7 @@ void MessageQueue::Dispatch() {
             EnqueuedMessage *m = (*it);
 
             if (now >= m->time) {
-                toDispatch.push_back(m);
+                this->dispatch.push_back(m);
                 it = this->queue.erase(it);
             }
             else {
@@ -99,12 +98,14 @@ void MessageQueue::Dispatch() {
 
     /* dispatch outside of the critical section */
 
-    Iterator it = toDispatch.begin();
-    while (it != toDispatch.end()) {
+    Iterator it = this->dispatch.begin();
+    while (it != this->dispatch.end()) {
         this->Dispatch((*it)->message);
         delete *it;
         it++;
     }
+
+    this->dispatch.clear();
 }
 
 int MessageQueue::Remove(IMessageTarget *target, int type) {

@@ -35,7 +35,7 @@
 #include "AlsaOut.h"
 #include <core/sdk/constants.h>
 
-#define BUFFER_COUNT 32
+#define BUFFER_COUNT 16
 #define PCM_ACCESS_TYPE SND_PCM_ACCESS_RW_INTERLEAVED
 #define PCM_FORMAT SND_PCM_FORMAT_FLOAT_LE
 

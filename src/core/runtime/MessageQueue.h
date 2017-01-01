@@ -63,6 +63,7 @@ namespace musik { namespace core { namespace runtime {
 
             std::mutex queueMutex;
             std::list<EnqueuedMessage*> queue;
+            std::list<EnqueuedMessage*> dispatch;
             std::condition_variable_any waitForDispatch;
 
             void Dispatch(IMessagePtr message);

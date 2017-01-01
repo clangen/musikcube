@@ -37,7 +37,7 @@
 #include <core/sdk/constants.h>
 
 #define MAX_VOLUME 0xFFFF
-#define MAX_BUFFERS_PER_OUTPUT 32
+#define MAX_BUFFERS_PER_OUTPUT 16
 
 using LockT = std::unique_lock<std::recursive_mutex>;
 
