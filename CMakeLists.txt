@@ -4,7 +4,6 @@
 cmake_minimum_required(VERSION 3.0)
 
 project(musikbox)
-
 set (musikbox_VERSION_MAJOR 0)
 set (musikbox_VERSION_MINOR 1)
 
@@ -25,12 +24,8 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
 
 set (BOOST_LIBS
   system
-  date_time
-  chrono
   filesystem
-  iostreams
   thread
-  regex
 )
 
 find_package(Boost 1.55.0 REQUIRED ${BOOST_LIBS})
