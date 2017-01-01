@@ -36,6 +36,7 @@
 #include "M4aDecoder.h"
 #include <cstring>
 #include <string>
+#include <stdlib.h>
 
 using musik::core::sdk::IDataStream;
 using musik::core::sdk::IBuffer;
