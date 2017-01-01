@@ -36,7 +36,7 @@
 #include <core/sdk/constants.h>
 #include <iostream>
 
-#define BUFFER_COUNT 16
+#define BUFFER_COUNT 24 
 
 using namespace musik::core::sdk;
 
