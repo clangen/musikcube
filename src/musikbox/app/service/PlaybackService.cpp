@@ -157,7 +157,7 @@ void PlaybackService::ResetRemotes() {
 }
 
 void PlaybackService::PrepareNextTrack() {
-    boost::recursive_mutex::scoped_lock lock(this->playlistMutex);
+    std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
 
     if (this->Count() > 0) {
         /* repeat track, just keep playing the same thing over and over */
@@ -194,7 +194,7 @@ void PlaybackService::SetRepeatMode(RepeatMode mode) {
 }
 
 void PlaybackService::ToggleShuffle() {
-    boost::recursive_mutex::scoped_lock lock(this->playlistMutex);
+    std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
 
     /* remember the ID of the playing track -- we're going to need to look
     it up after the shuffle */
@@ -251,7 +251,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
                 TrackPtr track;
 
                 {
-                    boost::recursive_mutex::scoped_lock lock(this->playlistMutex);
+                    std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
                     track = this->playlist.Get(this->index);
                 }
 
@@ -305,7 +305,7 @@ bool PlaybackService::Next() {
         return false;
     }
 
-    boost::recursive_mutex::scoped_lock lock(this->playlistMutex);
+    std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
 
     if (this->playlist.Count() > index + 1) {
         this->Play(index + 1);
@@ -342,12 +342,12 @@ bool PlaybackService::Previous() {
 }
 
 bool PlaybackService::IsShuffled() {
-    boost::recursive_mutex::scoped_lock lock(this->playlistMutex);
+    std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
     return this->unshuffled.Count() > 0;
 }
 
 size_t PlaybackService::Count() {
-    boost::recursive_mutex::scoped_lock lock(this->playlistMutex);
+    std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
     return this->playlist.Count();
 }
 
@@ -378,7 +378,7 @@ void PlaybackService::Play(TrackList& tracks, size_t index) {
     temp.CopyFrom(tracks);
 
     {
-        boost::recursive_mutex::scoped_lock lock(this->playlistMutex);
+        std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
         this->playlist.Swap(temp);
         this->unshuffled.Clear();
     }
@@ -389,7 +389,7 @@ void PlaybackService::Play(TrackList& tracks, size_t index) {
 }
 
 void PlaybackService::CopyTo(TrackList& target) {
-    boost::recursive_mutex::scoped_lock lock(this->playlistMutex);
+    std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
     target.CopyFrom(this->playlist);
 }
 
@@ -442,7 +442,7 @@ double PlaybackService::GetDuration() {
     TrackPtr track;
 
     {
-        boost::recursive_mutex::scoped_lock lock(this->playlistMutex);
+        std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
 
         size_t index = this->index;
         if (index < this->playlist.Count()) {
@@ -459,7 +459,7 @@ double PlaybackService::GetDuration() {
 }
 
 IRetainedTrack* PlaybackService::GetTrack(size_t index) {
-    boost::recursive_mutex::scoped_lock lock(this->playlistMutex);
+    std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
 
     const size_t count = this->playlist.Count();
 
@@ -471,7 +471,7 @@ IRetainedTrack* PlaybackService::GetTrack(size_t index) {
 }
 
 TrackPtr PlaybackService::GetTrackAtIndex(size_t index) {
-    boost::recursive_mutex::scoped_lock lock(this->playlistMutex);
+    std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
     return this->playlist.Get(index);
 }
 

@@ -46,7 +46,7 @@
 #include <core/support/Preferences.h>
 #include <core/runtime/IMessageTarget.h>
 
-#include <boost/thread/recursive_mutex.hpp>
+#include <mutex>
 
 namespace musik {
     namespace box {
@@ -109,7 +109,7 @@ namespace musik {
 
                 TrackList playlist;
                 TrackList unshuffled;
-                boost::recursive_mutex playlistMutex;
+                std::recursive_mutex playlistMutex;
 
                 std::vector<std::shared_ptr<musik::core::sdk::IPlaybackRemote > > remotes;
                 std::shared_ptr<musik::core::Preferences> prefs;

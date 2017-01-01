@@ -46,8 +46,6 @@
 
 #include <core/audio/ITransport.h>
 
-#include <boost/shared_ptr.hpp>
-
 #include "ITopLevelLayout.h"
 
 namespace musik {
