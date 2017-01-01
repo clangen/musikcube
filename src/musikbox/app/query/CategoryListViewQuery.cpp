@@ -38,8 +38,7 @@
 #include <core/library/LocalLibraryConstants.h>
 #include <core/db/Statement.h>
 
-#include <boost/thread/mutex.hpp>
-
+#include <mutex>
 #include <map>
 
 using musik::core::db::Statement;
@@ -99,7 +98,7 @@ static const std::string FILTERED_GENRE_QUERY =
     "WHERE genres.id = tracks.visual_genre_id AND LOWER(genres.name) LIKE ? "
     "ORDER BY genres.sort_order;";
 
-static boost::mutex QUERY_MAP_MUTEX;
+static std::mutex QUERY_MAP_MUTEX;
 static std::map<std::string, std::string> FIELD_TO_QUERY_MAP;
 static std::map<std::string, std::string> FILTERED_FIELD_TO_QUERY_MAP;
 
@@ -122,7 +121,7 @@ CategoryListViewQuery::CategoryListViewQuery(
     RESET_RESULT(result);
 
     {
-        boost::mutex::scoped_lock lock(QUERY_MAP_MUTEX);
+        std::unique_lock<std::mutex> lock(QUERY_MAP_MUTEX);
 
         if (!FIELD_TO_QUERY_MAP.size()) {
             initFieldToQueryMap();

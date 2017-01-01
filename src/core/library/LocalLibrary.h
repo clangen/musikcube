@@ -45,9 +45,10 @@
 #include <core/library/IIndexer.h>
 #include <core/library/IQuery.h>
 
-#include <boost/thread/thread.hpp>
-#include <boost/thread/condition.hpp>
-#include <boost/thread/recursive_mutex.hpp>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+
 #include <boost/utility.hpp>
 #include <sigslot/sigslot.h>
 #include <string>
@@ -87,7 +88,6 @@ namespace musik { namespace core { namespace library {
 
             typedef std::list<IQueryPtr> QueryList;
 
-            boost::recursive_mutex mutex;
             QueryList queryQueue;
 
             std::string identifier;
@@ -95,10 +95,9 @@ namespace musik { namespace core { namespace library {
             std::string name;
             bool exit;
 
-            boost::thread* thread;
-
-            boost::thread_group threads;
-            boost::condition queueCondition;
+            std::thread* thread;
+            std::condition_variable_any queueCondition;
+            std::recursive_mutex mutex;
 
             core::IIndexer *indexer;
             core::db::Connection db;

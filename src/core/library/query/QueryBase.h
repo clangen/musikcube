@@ -36,9 +36,8 @@
 
 #include <core/config.h>
 #include <sigslot/sigslot.h>
-#include <boost/shared_ptr.hpp>
-#include <boost/thread/mutex.hpp>
 #include <core/library/IQuery.h>
+#include <mutex>
 
 namespace musik { namespace core { namespace query {
 
@@ -70,7 +69,7 @@ namespace musik { namespace core { namespace query {
             unsigned int queryId;
             unsigned int options;
             volatile bool cancel;
-            boost::mutex stateMutex;
+            std::mutex stateMutex;
     };
 
 } } }

@@ -36,10 +36,9 @@
 
 #include <core/db/Connection.h>
 #include <boost/lexical_cast.hpp>
-#include <boost/thread/thread.hpp>
 #include <sqlite/sqlite3.h>
 
-static boost::mutex globalMutex;
+static std::mutex globalMutex;
 
 using namespace musik::core::db;
 
@@ -101,7 +100,7 @@ int Connection::Execute(const char* sql) {
 
     /* prepare seems to give errors when interrupted */
     {
-        boost::mutex::scoped_lock lock(this->mutex);
+        std::unique_lock<std::mutex> lock(this->mutex);
 
         if (sqlite3_prepare_v2(this->connection, sql, -1, &stmt, nullptr) != SQLITE_OK) {
             sqlite3_finalize(stmt);
@@ -125,7 +124,7 @@ int Connection::Execute(const wchar_t* sql) {
     sqlite3_stmt *stmt  = nullptr;
 
     {
-        boost::mutex::scoped_lock lock(this->mutex);
+        std::unique_lock<std::mutex> lock(this->mutex);
 
         int err = sqlite3_prepare16_v2(this->connection, sql, -1, &stmt, nullptr);
 
@@ -178,12 +177,12 @@ void Connection::Initialize(unsigned int cache) {
 }
 
 void Connection::Interrupt() {
-    boost::mutex::scoped_lock lock(this->mutex);
+    std::unique_lock<std::mutex> lock(this->mutex);
     sqlite3_interrupt(this->connection);
 }
 
 void Connection::UpdateReferenceCount(bool init) {
-    boost::mutex::scoped_lock lock(globalMutex);
+    std::unique_lock<std::mutex> lock(this->mutex);
 
     static int count = 0;
 

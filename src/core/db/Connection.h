@@ -39,8 +39,9 @@
 #include <core/db/ScopedTransaction.h>
 
 #include <map>
+#include <mutex>
+
 #include <boost/utility.hpp>
-#include <boost/thread/mutex.hpp>
 
 struct sqlite3;
 struct sqlite3_stmt;
@@ -79,7 +80,7 @@ namespace musik { namespace core { namespace db {
 
             int transactionCounter;
             sqlite3 *connection;
-            boost::mutex mutex;
+            std::mutex mutex;
     };
 
 } } }

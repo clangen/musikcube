@@ -46,6 +46,8 @@
 #include <core/library/ILibrary.h>
 #include <core/runtime/IMessage.h>
 
+#include <mutex>
+
 namespace musik {
     namespace box {
         class CategoryListView :
@@ -107,7 +109,7 @@ namespace musik {
                 PlaybackService& playback;
                 Adapter *adapter;
 
-                boost::mutex queryMutex;
+                std::mutex queryMutex;
                 std::shared_ptr<CategoryListViewQuery> activeQuery;
 
                 musik::core::LibraryPtr library;

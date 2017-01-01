@@ -41,12 +41,12 @@
 #include <iostream>
 
 static const std::string TAG = "PluginFactory";
-static boost::mutex instanceMutex;
+static std::mutex instanceMutex;
 
 using namespace musik::core;
 
 PluginFactory& PluginFactory:: Instance() {
-    boost::mutex::scoped_lock lock(instanceMutex);
+    std::unique_lock<std::mutex> lock(instanceMutex);
 
     static PluginFactory* instance = NULL;
 
@@ -80,8 +80,6 @@ PluginFactory::~PluginFactory() {
 }
 
 void PluginFactory::LoadPlugins() {
-    boost::mutex::scoped_lock lock(this->mutex);
-
 #ifdef WIN32
     {
         std::wstring wpath = u8to16(GetPluginDirectory());

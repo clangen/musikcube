@@ -43,7 +43,6 @@
 #include <core/io/DataStreamFactory.h>
 
 #include <boost/lexical_cast.hpp>
-#include <boost/thread.hpp>
 
 #include <unordered_map>
 
@@ -59,7 +58,7 @@ using namespace musik::core;
 #define ARTIST_TRACK_JUNCTION_TABLE_NAME "track_artists"
 #define ARTIST_TRACK_FOREIGN_KEY "artist_id"
 
-static boost::mutex trackWriteLock;
+static std::mutex trackWriteLock;
 static std::unordered_map<std::string, int64> metadataIdCache;
 
 void IndexerTrack::ResetIdCache() {
@@ -484,7 +483,7 @@ DBID IndexerTrack::SaveArtist(db::Connection& dbConnection) {
 }
 
 bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirectory) {
-    boost::mutex::scoped_lock lock(trackWriteLock);
+    std::unique_lock<std::mutex> lock(trackWriteLock);
 
     if (this->GetValue("album_artist") == "") {
         this->SetValue("album_artist", this->GetValue("artist").c_str());

@@ -36,12 +36,12 @@
 
 #include <core/library/query/QueryBase.h>
 #include <core/library/LocalLibrary.h>
-#include <boost/atomic.hpp>
+#include <atomic>
 
 using namespace musik::core;
 using namespace musik::core::query;
 
-static boost::atomic<int> nextId(0);
+static std::atomic<int> nextId(0);
 
 QueryBase::QueryBase()
 : status(0)
@@ -78,26 +78,26 @@ bool QueryBase::Run(db::Connection &db) {
 }
 
 int QueryBase::GetStatus() {
-    boost::mutex::scoped_lock lock(this->stateMutex);
+    std::unique_lock<std::mutex> lock(this->stateMutex);
     return this->status;
 }
 
 void QueryBase::SetStatus(int status) {
-    boost::mutex::scoped_lock lock(this->stateMutex);
+    std::unique_lock<std::mutex> lock(this->stateMutex);
     this->status = status;
 }
 
 int QueryBase::GetId() {
-    boost::mutex::scoped_lock lock(this->stateMutex);
+    std::unique_lock<std::mutex> lock(this->stateMutex);
     return this->queryId;
 }
 
 int QueryBase::GetOptions() {
-    boost::mutex::scoped_lock lock(this->stateMutex);
+    std::unique_lock<std::mutex> lock(this->stateMutex);
     return this->options;
 }
 
 void QueryBase::SetOptions(int options) {
-    boost::mutex::scoped_lock lock(this->stateMutex);
+    std::unique_lock<std::mutex> lock(this->stateMutex);
     this->options = options;
 }

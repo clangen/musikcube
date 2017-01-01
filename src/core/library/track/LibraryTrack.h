@@ -38,6 +38,7 @@
 #include <core/library/track/Track.h>
 #include <core/library/LocalLibrary.h>
 #include <core/db/Connection.h>
+#include <mutex>
 
 namespace musik { namespace core {
 
@@ -80,7 +81,7 @@ namespace musik { namespace core {
                 Track::MetadataMap metadata;
                 char *thumbnailData;
                 long thumbnailSize;
-                boost::mutex mutex;
+                std::mutex mutex;
                 musik::core::LibraryPtr library;
             };
 

@@ -34,12 +34,12 @@
 
 #pragma once
 
+#include <mutex>
+
 #include <sigslot/sigslot.h>
 
 #include <core/debug.h>
 #include <core/runtime/IMessage.h>
-
-#include <boost/thread/mutex.hpp>
 
 #include <cursespp/ScrollableWindow.h>
 #include <cursespp/SimpleScrollAdapter.h>
@@ -79,7 +79,7 @@ namespace musik {
                     std::string message;
                 };
 
-                boost::mutex pendingMutex;
+                std::mutex pendingMutex;
                 std::vector<LogEntry*> pending;
                 cursespp::SimpleScrollAdapter* adapter;
         };

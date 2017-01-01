@@ -34,12 +34,12 @@
 
 #pragma once
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <vector>
+#include <mutex>
 
 #include <core/config.h>
 #include <core/db/Connection.h>
-#include <boost/thread/mutex.hpp>
 
 #include <json.hpp>
 
@@ -74,7 +74,7 @@ namespace musik { namespace core {
             Preferences(const std::string& component, Mode mode);
             void Load();
 
-            boost::mutex mutex;
+            std::mutex mutex;
             nlohmann::json json;
             std::string component;
             Mode mode;

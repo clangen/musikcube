@@ -90,7 +90,7 @@ void LogWindow::OnVisibilityChanged(bool visible) {
 }
 
 void LogWindow::Update() {
-    boost::mutex::scoped_lock lock(pendingMutex);
+    std::unique_lock<std::mutex> lock(pendingMutex);
 
     if (!pending.size()) {
         return;
@@ -130,7 +130,7 @@ void LogWindow::OnLogged( /* from a background thread */
     std::string tag,
     std::string message)
 {
-    boost::mutex::scoped_lock lock(pendingMutex);
+    std::unique_lock<std::mutex> lock(pendingMutex);
 
     LogEntry *entry = new LogEntry();
     entry->level = level;

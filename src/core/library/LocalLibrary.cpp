@@ -74,13 +74,12 @@ LocalLibrary::LocalLibrary(std::string name,int id)
         this->GetLibraryDirectory(),
         this->GetDatabaseFilename());
 
-    this->thread = new boost::thread(boost::bind(&LocalLibrary::ThreadProc, this));
+    this->thread = new std::thread(std::bind(&LocalLibrary::ThreadProc, this));
 }
 
 LocalLibrary::~LocalLibrary() {
     this->Exit();
     this->thread->join();
-    this->threads.join_all();
     delete this->thread;
     delete this->indexer;
 }
@@ -115,7 +114,7 @@ std::string LocalLibrary::GetDatabaseFilename() {
 }
 
 int LocalLibrary::Enqueue(IQueryPtr query, unsigned int options) {
-    boost::recursive_mutex::scoped_lock l(this->mutex);
+    std::unique_lock<std::recursive_mutex> lock(this->mutex);
 
     if (options & ILibrary::QuerySynchronous) {
         this->RunQuery(query, false); /* false = do not notify via QueryCompleted */
@@ -133,13 +132,13 @@ int LocalLibrary::Enqueue(IQueryPtr query, unsigned int options) {
 }
 
 bool LocalLibrary::Exited() {
-    boost::recursive_mutex::scoped_lock lock(this->mutex);
+    std::unique_lock<std::recursive_mutex> lock(this->mutex);
     return this->exit;
 }
 
 void LocalLibrary::Exit() {
     {
-        boost::recursive_mutex::scoped_lock lock(this->mutex);
+        std::unique_lock<std::recursive_mutex> lock(this->mutex);
         this->exit = true;
     }
 
@@ -185,7 +184,7 @@ void LocalLibrary::ThreadProc() {
         IQueryPtr query;
 
         {
-            boost::recursive_mutex::scoped_lock lock(this->mutex);
+            std::unique_lock<std::recursive_mutex> lock(this->mutex);
             query = GetNextQuery();
 
             while (!query && !this->Exited()) {
@@ -202,10 +201,6 @@ musik::core::IIndexer* LocalLibrary::Indexer() {
     return this->indexer;
 }
 
-//////////////////////////////////////////
-///\brief
-///Helper method to determin what metakeys are "static"
-//////////////////////////////////////////
 bool LocalLibrary::IsStaticMetaKey(std::string &metakey){
     static std::set<std::string> staticMetaKeys;
 
@@ -224,10 +219,6 @@ bool LocalLibrary::IsStaticMetaKey(std::string &metakey){
     return staticMetaKeys.find(metakey) != staticMetaKeys.end();
 }
 
-//////////////////////////////////////////
-///\brief
-///Helper method to determine what metakeys that have a special many to one relation
-//////////////////////////////////////////
 bool LocalLibrary::IsSpecialMTOMetaKey(std::string &metakey){
     static std::set<std::string> specialMTOMetaKeys;
 
@@ -240,10 +231,6 @@ bool LocalLibrary::IsSpecialMTOMetaKey(std::string &metakey){
     return specialMTOMetaKeys.find(metakey)!=specialMTOMetaKeys.end();
 }
 
-//////////////////////////////////////////
-///\brief
-///Helper method to determine what metakeys that have a special many to meny relation
-//////////////////////////////////////////
 bool LocalLibrary::IsSpecialMTMMetaKey(std::string &metakey) {
     static std::set<std::string> specialMTMMetaKeys;
 
@@ -255,12 +242,6 @@ bool LocalLibrary::IsSpecialMTMMetaKey(std::string &metakey) {
     return specialMTMMetaKeys.find(metakey) != specialMTMMetaKeys.end();
 }
 
-//////////////////////////////////////////
-///\brief
-///Create all tables, indexes, etc in the database.
-///
-///This will assume that the database has been initialized.
-//////////////////////////////////////////
 void LocalLibrary::CreateDatabase(db::Connection &db){
     // Create the tracks-table
     db.Execute("CREATE TABLE IF NOT EXISTS tracks ("

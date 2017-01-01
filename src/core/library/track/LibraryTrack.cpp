@@ -42,9 +42,6 @@
 #include <core/db/Statement.h>
 #include <core/library/LocalLibrary.h>
 
-#include <boost/lexical_cast.hpp>
-#include <boost/thread/mutex.hpp>
-
 using namespace musik::core;
 
 LibraryTrack::LibraryTrack()
@@ -66,7 +63,7 @@ LibraryTrack::~LibraryTrack() {
 }
 
 std::string LibraryTrack::GetValue(const char* metakey) {
-    boost::mutex::scoped_lock lock(this->data.mutex);
+    std::unique_lock<std::mutex> lock(this->data.mutex);
     MetadataMap::iterator metavalue = this->data.metadata.find(metakey);
     if (metavalue != this->data.metadata.end()) {
         return metavalue->second;
@@ -75,12 +72,12 @@ std::string LibraryTrack::GetValue(const char* metakey) {
 }
 
 void LibraryTrack::SetValue(const char* metakey, const char* value) {
-    boost::mutex::scoped_lock lock(this->data.mutex);
+    std::unique_lock<std::mutex> lock(this->data.mutex);
     this->data.metadata.insert(std::pair<std::string, std::string>(metakey,value));
 }
 
 void LibraryTrack::ClearValue(const char* metakey) {
-    boost::mutex::scoped_lock lock(this->data.mutex);
+    std::unique_lock<std::mutex> lock(this->data.mutex);
     this->data.metadata.erase(metakey);
 }
 
@@ -105,7 +102,7 @@ int LibraryTrack::Uri(char* dst, int size) {
 }
 
 Track::MetadataIteratorRange LibraryTrack::GetValues(const char* metakey) {
-    boost::mutex::scoped_lock lock(this->data.mutex);
+    std::unique_lock<std::mutex> lock(this->data.mutex);
     return this->data.metadata.equal_range(metakey);
 }
 

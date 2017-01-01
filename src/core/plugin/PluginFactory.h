@@ -40,8 +40,8 @@
 #include <vector>
 #include <iostream>
 #include <string>
-#include <boost/shared_ptr.hpp>
-#include <boost/thread/mutex.hpp>
+#include <memory>
+#include <mutex>
 
 #ifdef WIN32
     #define STDCALL(fp) (__stdcall* fp)()
@@ -70,7 +70,7 @@ namespace musik { namespace core {
             };
 
             template <class T, class D> std::vector<std::shared_ptr<T> > QueryInterface(const char* functionName) {
-                boost::mutex::scoped_lock lock(this->mutex);
+                std::unique_lock<std::mutex> lock(this->mutex);
 
                 typedef T* STDCALL(PluginInterfaceCall);
 
@@ -118,6 +118,6 @@ namespace musik { namespace core {
 
             PluginList loadedPlugins;
             HandleList loadedDlls;
-            boost::mutex mutex;
+            std::mutex mutex;
     };
 } }

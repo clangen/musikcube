@@ -84,7 +84,7 @@ void CategoryListView::RequeryWithField(
     const std::string& filter,
     const DBID selectAfterQuery)
 {
-    boost::mutex::scoped_lock lock(this->queryMutex);
+    std::unique_lock<std::mutex> lock(this->queryMutex);
 
     if (this->activeQuery) {
         this->activeQuery->Cancel();
@@ -162,7 +162,7 @@ bool CategoryListView::KeyPress(const std::string& key) {
 }
 
 void CategoryListView::OnQueryCompleted(musik::core::IQueryPtr query) {
-    boost::mutex::scoped_lock lock(this->queryMutex);
+    std::unique_lock<std::mutex> lock(this->queryMutex);
 
     auto active = this->activeQuery;
     if (query == active) {
@@ -180,7 +180,7 @@ void CategoryListView::OnQueryCompleted(musik::core::IQueryPtr query) {
 
 void CategoryListView::ProcessMessage(IMessage &message) {
     if (message.Type() == WINDOW_MESSAGE_QUERY_COMPLETED) {
-        boost::mutex::scoped_lock lock(this->queryMutex);
+        std::unique_lock<std::mutex> lock(this->queryMutex);
 
         /* UserData2 contains the ID of the query that dispatched this message.
         it's possible another query started after the message was sent, and we

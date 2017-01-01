@@ -38,8 +38,9 @@
 
 #include <string>
 #include <queue>
-#include <boost/thread.hpp>
-#include <boost/shared_ptr.hpp>
+#include <thread>
+#include <condition_variable>
+#include <memory>
 
 using namespace musik;
 
@@ -69,8 +70,8 @@ namespace musik {
 
     private:
         std::queue<log_entry*> queue_;
-        boost::condition_variable wait_for_next_item_condition_;
-        boost::mutex queue_mutex_;
+        std::condition_variable wait_for_next_item_condition_;
+        std::mutex queue_mutex_;
         volatile bool active_;
 
     public:
@@ -79,7 +80,7 @@ namespace musik {
         }
 
         log_entry* pop_top() {
-            boost::mutex::scoped_lock lock(queue_mutex_);
+            std::unique_lock<std::mutex> lock(queue_mutex_);
             while ((queue_.size() == 0) && (active_ == true)) {
                 wait_for_next_item_condition_.wait(lock);
             }
@@ -94,7 +95,7 @@ namespace musik {
         }
 
         bool push(log_entry* f) {
-            boost::mutex::scoped_lock lock(queue_mutex_);
+            std::unique_lock<std::mutex> lock(queue_mutex_);
 
             if (active_) {
                 bool was_empty = (queue_.size() == 0);
@@ -111,7 +112,7 @@ namespace musik {
         }
 
         void stop() {
-            boost::mutex::scoped_lock lock(queue_mutex_);
+            std::unique_lock<std::mutex> lock(queue_mutex_);
             active_ = false;
 
             while (queue_.size() > 0) {
@@ -125,9 +126,9 @@ namespace musik {
     };
 } // namespace autom8
 
-static boost::thread* thread_ = NULL;
+static std::thread* thread_ = NULL;
 static log_queue* queue_ = NULL;
-static boost::recursive_mutex system_mutex_;
+static std::recursive_mutex system_mutex_;
 static volatile bool cancel_ = true;
 
 static void thread_proc() {
@@ -146,7 +147,7 @@ static void thread_proc() {
 }
 
 void debug::init() {
-    boost::recursive_mutex::scoped_lock lock(system_mutex_);
+    std::unique_lock<std::recursive_mutex> lock(system_mutex_);
 
     if (queue_ || thread_) {
         return;
@@ -156,11 +157,11 @@ void debug::init() {
 
     cancel_ = false;
     queue_ = new log_queue();
-    thread_ = new boost::thread(boost::bind(&thread_proc));
+    thread_ = new std::thread(std::bind(&thread_proc));
 }
 
 void debug::deinit() {
-    boost::recursive_mutex::scoped_lock lock(system_mutex_);
+    std::unique_lock<std::recursive_mutex> lock(system_mutex_);
 
     cancel_ = true;
 
@@ -192,7 +193,7 @@ void debug::err(const std::string& tag, const std::string& string) {
 }
 
 void debug::log(log_level level, const std::string& tag, const std::string& string) {
-    boost::recursive_mutex::scoped_lock lock(system_mutex_);
+    std::unique_lock<std::recursive_mutex> lock(system_mutex_);
 
     if (queue_) {
         queue_->push(new log_queue::log_entry(level, tag, string));

@@ -38,7 +38,6 @@
 #include <core/support/Common.h>
 
 #include <boost/lexical_cast.hpp>
-#include <boost/thread/mutex.hpp>
 
 #include <unordered_map>
 
@@ -46,7 +45,7 @@ using nlohmann::json;
 using namespace musik::core;
 
 static std::unordered_map<std::string, std::weak_ptr<Preferences> > cache;
-static boost::mutex cacheMutex;
+static std::mutex cacheMutex;
 
 #define FILENAME(x) musik::core::GetDataDirectory() + "/" + x + ".json"
 
@@ -102,7 +101,7 @@ static bool stringToFile(const std::string& fn, const std::string& str) {
 std::shared_ptr<Preferences> Preferences::ForComponent(
     const std::string& c, Preferences::Mode mode)
 {
-    boost::mutex::scoped_lock lock(cacheMutex);
+    std::unique_lock<std::mutex> lock(cacheMutex);
 
     std::string key = CACHE_KEY(c, mode);
 
@@ -147,42 +146,42 @@ Preferences::~Preferences() {
 
 bool Preferences::GetBool(const std::string& key, bool defaultValue) {
     const char* p = key.c_str();
-    boost::mutex::scoped_lock lock(this->mutex);
+    std::unique_lock<std::mutex> lock(this->mutex);
     RETURN_VALUE(defaultValue);
 }
 
 int Preferences::GetInt(const std::string& key, int defaultValue) {
-    boost::mutex::scoped_lock lock(this->mutex);
+    std::unique_lock<std::mutex> lock(this->mutex);
     RETURN_VALUE(defaultValue);
 }
 
 double Preferences::GetDouble(const std::string& key, double defaultValue) {
-    boost::mutex::scoped_lock lock(this->mutex);
+    std::unique_lock<std::mutex> lock(this->mutex);
     RETURN_VALUE(defaultValue);
 }
 
 std::string Preferences::GetString(const std::string& key, const std::string& defaultValue) {
-    boost::mutex::scoped_lock lock(this->mutex);
+    std::unique_lock<std::mutex> lock(this->mutex);
     RETURN_VALUE(defaultValue);
 }
 
 void Preferences::SetBool(const std::string& key, bool value) {
-    boost::mutex::scoped_lock lock(this->mutex);
+    std::unique_lock<std::mutex> lock(this->mutex);
     json[key] = value;
 }
 
 void Preferences::SetInt(const std::string& key, int value) {
-    boost::mutex::scoped_lock lock(this->mutex);
+    std::unique_lock<std::mutex> lock(this->mutex);
     json[key] = value;
 }
 
 void Preferences::SetDouble(const std::string& key, double value) {
-    boost::mutex::scoped_lock lock(this->mutex);
+    std::unique_lock<std::mutex> lock(this->mutex);
     json[key] = value;
 }
 
 void Preferences::SetString(const std::string& key, const char* value) {
-    boost::mutex::scoped_lock lock(this->mutex);
+    std::unique_lock<std::mutex> lock(this->mutex);
     json[key] = value;
 }
 
