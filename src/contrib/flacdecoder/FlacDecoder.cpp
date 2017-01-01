@@ -233,7 +233,7 @@ bool FlacDecoder::GetBuffer(IBuffer *buffer) {
     if (FLAC__stream_decoder_process_single(this->decoder)) {
         if (this->outputBuffer && this->outputBufferUsed > 0) {
             buffer->SetSamples(this->outputBufferUsed);
-            memcpy(buffer->BufferPointer(), this->outputBuffer, this->outputBufferUsed);
+            memcpy(buffer->BufferPointer(), this->outputBuffer, this->outputBufferUsed * sizeof(float));
             this->outputBufferUsed = 0; /* mark consumed */
             return true;
         }
