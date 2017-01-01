@@ -57,7 +57,7 @@ using namespace musik::core::runtime;
 using namespace musik::box;
 using namespace cursespp;
 
-using namespace boost::chrono;
+using namespace std::chrono;
 
 /* if the user hasn't changed the selected index in 30 seconds
 we assume he's not paying attention, and will automatically scroll

@@ -57,7 +57,6 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/filesystem/detail/utf8_codecvt_facet.hpp>
-#include <boost/chrono.hpp>
 
 #ifdef WIN32
     #include <app/util/Win32Util.h>

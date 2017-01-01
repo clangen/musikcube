@@ -141,6 +141,7 @@ void TrackSearchLayout::OnInputChanged(cursespp::TextInput* sender, std::string 
 void TrackSearchLayout::OnEnterPressed(cursespp::TextInput* sender) {
     if (this->trackList->GetTrackList()->Count()) {
         playback::Play(this->trackList, this->playback, this->GetFocus());
+        this->SetFocus(this->trackList);
     }
 }
 

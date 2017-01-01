@@ -107,7 +107,7 @@ namespace musik {
                 musik::core::LibraryPtr library;
                 size_t lastQueryHash;
                 RowFormatter formatter;
-                boost::chrono::milliseconds lastChanged;
+                std::chrono::milliseconds lastChanged;
         };
     }
 }

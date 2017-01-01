@@ -105,7 +105,9 @@ void SearchLayout::OnLayout() {
 void SearchLayout::InitializeWindows(PlaybackService& playback) {
     this->input.reset(new cursespp::TextInput());
     this->input->TextChanged.connect(this, &SearchLayout::OnInputChanged);
+    this->input->EnterPressed.connect(this, &SearchLayout::OnEnterPressed);
     this->input->SetFocusOrder(0);
+
     this->AddWindow(this->input);
 
     CREATE_CATEGORY(this->albums, constants::Track::ALBUM, 1);
@@ -132,6 +134,10 @@ void SearchLayout::OnInputChanged(cursespp::TextInput* sender, std::string value
     if (this->IsVisible()) {
         this->Requery();
     }
+}
+
+void SearchLayout::OnEnterPressed(cursespp::TextInput* sender) {
+    this->SetFocus(this->albums);
 }
 
 void SearchLayout::OnVisibilityChanged(bool visible) {

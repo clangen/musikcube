@@ -77,6 +77,8 @@ namespace musik {
                 void InitializeWindows(PlaybackService& playback);
                 void Requery();
 
+                void OnEnterPressed(cursespp::TextInput* sender);
+
                 void OnInputChanged(
                     cursespp::TextInput* sender,
                     std::string value);

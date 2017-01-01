@@ -48,12 +48,12 @@
 
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/chrono.hpp>
 #include <boost/lexical_cast.hpp>
 
 #include <algorithm>
 #include <memory>
 #include <deque>
+#include <chrono>
 
 using namespace musik::core;
 using namespace musik::core::audio;
@@ -62,7 +62,7 @@ using namespace musik::core::db;
 using namespace musik::core::sdk;
 using namespace musik::core::runtime;
 using namespace musik::box;
-using namespace boost::chrono;
+using namespace std::chrono;
 using namespace cursespp;
 
 #define REFRESH_TRANSPORT_READOUT 1001
