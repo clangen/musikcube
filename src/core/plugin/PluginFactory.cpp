@@ -164,6 +164,7 @@ void PluginFactory::LoadPlugins() {
                             }
                             else {
                                 dlclose(dll);
+                            }
                         }
                         else {
                             dlclose(dll);

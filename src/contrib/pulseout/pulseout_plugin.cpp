@@ -33,12 +33,24 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.h"
+
+#include <core/sdk/constants.h>
 #include <core/sdk/IPlugin.h>
 #include <core/sdk/IOutput.h>
+
 #include "PulseOut.h"
 
+class PulsePlugin : public musik::core::sdk::IPlugin {
+    public:
+        virtual void Destroy() { delete this; }
+        virtual const char* Name() { return "PulseAudio IOutput"; }
+        virtual const char* Version() { return "0.3"; }
+        virtual const char* Author() { return "clangen"; }
+        virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
+};
+
 extern "C" musik::core::sdk::IPlugin* GetPlugin() {
-    return new PulseOut();
+    return new PulsePlugin();
 }
 
 extern "C" musik::core::sdk::IOutput* GetAudioOutput() {
