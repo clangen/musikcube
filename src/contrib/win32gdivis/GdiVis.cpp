@@ -7,6 +7,7 @@
 
 #include <shlwapi.h>
 
+#include <core/sdk/constants.h>
 #include <core/sdk/ISpectrumVisualizer.h>
 #include <core/sdk/IPlugin.h>
 
@@ -200,18 +201,19 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved) {
     return true;
 }
 
+class VisualizerPlugin : public musik::core::sdk::IPlugin {
+    public:
+        virtual void Destroy() { delete this; }
+        virtual const char* Name() { return "GdiVis"; };
+        virtual const char* Version() { return "0.1.0"; };
+        virtual const char* Author() { return "clangen"; };
+        int SdkVersion() { return musik::core::sdk::SdkVersion; }
+};
+
 class Visualizer : public musik::core::sdk::ISpectrumVisualizer {
     public:
         virtual const char* Name() {
             return "GdiVis";
-        };
-
-        virtual const char* Version() {
-            return "0.1.0";
-        };
-
-        virtual const char* Author() {
-            return "clangen";
         };
 
         virtual void Destroy() {
@@ -259,7 +261,7 @@ class Visualizer : public musik::core::sdk::ISpectrumVisualizer {
 };
 
 extern "C" DLL_EXPORT musik::core::sdk::IPlugin* GetPlugin() {
-    return new Visualizer();
+    return new VisualizerPlugin();
 }
 
 extern "C" DLL_EXPORT musik::core::sdk::ISpectrumVisualizer* GetSpectrumVisualizer() {

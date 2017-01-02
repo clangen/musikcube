@@ -53,9 +53,7 @@ class WasapiOut : public IOutput {
         ~WasapiOut();
 
         /* IPlugin */
-        const char* Name() { return "Wasapi IOutput"; };
-        const char* Version() { return "0.2"; };
-        const char* Author() { return "clangen"; };
+        virtual const char* Name() { return "WASAPI"; };
         virtual void Destroy();
 
         /* IOutput */

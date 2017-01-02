@@ -36,6 +36,8 @@
 
 #include "CddaDecoderFactory.h"
 #include "CddaDataStreamFactory.h"
+
+#include <core/sdk/constants.h>
 #include <core/sdk/IPlugin.h>
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
@@ -43,10 +45,11 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 }
 
 class CddaDecoderPlugin : public musik::core::sdk::IPlugin {
-    void Destroy() { delete this; };
-    const char* Name() { return "CD Audio (CDDA) IDecoder"; };
-    const char* Version() { return "0.3"; };
-    const char* Author() { return "Björn Olievier, clangen"; };
+    virtual void Destroy() { delete this; };
+    virtual const char* Name() { return "CD Audio IDecoder, IDataStream"; }
+    virtual const char* Version() { return "0.3"; }
+    virtual const char* Author() { return "Björn Olievier, clangen"; }
+    virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
 };
 
 extern "C" __declspec(dllexport) musik::core::sdk::IPlugin* GetPlugin() {

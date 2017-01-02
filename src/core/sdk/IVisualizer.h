@@ -38,11 +38,13 @@
 
 namespace musik { namespace core { namespace sdk {
 
-    class IVisualizer : public IPlugin {
+    class IVisualizer {
         public:
+            virtual void Destroy() = 0;
             virtual void Show() = 0;
             virtual void Hide() = 0;
             virtual bool Visible() = 0;
+            virtual const char* Name() = 0;
     };
 
 } } }

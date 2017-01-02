@@ -50,9 +50,7 @@ class WaveOut : public IOutput {
         ~WaveOut();
 
         /* IPlugin */
-        const char* Name() { return "WaveOut IOutput"; };
-        const char* Version() { return "0.5"; };
-        const char* Author() { return "Bj\xC3\xB6rn Olievier, clangen"; };
+        virtual const char* Name() { return "WaveOut"; };
         virtual void Destroy();
 
         /* IOutput */

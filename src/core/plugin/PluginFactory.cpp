@@ -34,6 +34,7 @@
 
 #include "pch.hpp"
 
+#include <core/sdk/constants.h>
 #include <core/plugin/PluginFactory.h>
 #include <core/config.h>
 #include <core/support/Common.h>
@@ -104,9 +105,15 @@ void PluginFactory::LoadPlugins() {
                         CallGetPlugin getPluginCall = (CallGetPlugin) GetProcAddress(dll, "GetPlugin");
 
                         if (getPluginCall) {
-                            /* exists? add it! */
-                            this->loadedPlugins.push_back(getPluginCall());
-                            this->loadedDlls.push_back(dll);
+                            /* exists? check the version, and add it! */
+                            auto plugin = getPluginCall();
+                            if (plugin->SdkVersion() == musik::core::sdk::SdkVersion) {
+                                this->loadedPlugins.push_back(plugin);
+                                this->loadedDlls.push_back(dll);
+                            }
+                            else {
+                                FreeLibrary(dll);
+                            }
                         }
                         else {
                             /* otherwise, free nad move on */
@@ -149,9 +156,14 @@ void PluginFactory::LoadPlugins() {
                         *(void **)(&getPluginCall) = dlsym(dll, "GetPlugin");
 
                         if (getPluginCall) {
-                            musik::debug::info(TAG, "loaded: " + filename);
-                            this->loadedPlugins.push_back(getPluginCall());
-                            this->loadedDlls.push_back(dll);
+                            auto plugin = getPluginCall();
+                            if (plugin->SdkVersion() == musik::core::sdk::SdkVersion) {
+                                musik::debug::info(TAG, "loaded: " + filename);
+                                this->loadedPlugins.push_back(getPluginCall());
+                                this->loadedDlls.push_back(dll);
+                            }
+                            else {
+                                dlclose(dll);
                         }
                         else {
                             dlclose(dll);

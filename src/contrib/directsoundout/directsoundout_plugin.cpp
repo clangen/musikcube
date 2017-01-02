@@ -34,15 +34,26 @@
 
 #include "pch.h"
 
+#include <core/sdk/constants.h>
 #include <core/sdk/IPlugin.h>
+
 #include "DirectSoundOut.h"
+
+class DirectSoundPlugin : public musik::core::sdk::IPlugin {
+    public:
+        virtual void Destroy() { delete this; }
+        virtual const char* Name() { return "DirectSound IOutput"; };
+        virtual const char* Version() { return "0.2"; };
+        virtual const char* Author() { return "clangen"; };
+        virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
+};
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
     return true;
 }
 
 extern "C" __declspec(dllexport) musik::core::sdk::IPlugin* GetPlugin() {
-    return new DirectSoundOut();
+    return new DirectSoundPlugin();
 }
 
 extern "C" __declspec(dllexport) musik::core::sdk::IOutput* GetAudioOutput() {

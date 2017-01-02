@@ -34,6 +34,7 @@
 
 #include "pch.h"
 
+#include <core/sdk/constants.h>
 #include <core/sdk/IPlugin.h>
 #include <core/sdk/IPlaybackRemote.h>
 
@@ -60,8 +61,8 @@ LRESULT CALLBACK ShellProc(int code, WPARAM wParam, LPARAM lParam) {
                     return 0;
             }
 
-            bool ctrl = GetAsyncKeyState(VK_RCONTROL) & 0x8000;
-            bool alt = GetAsyncKeyState(VK_RMENU) & 0x8000;
+            bool ctrl = (bool) GetAsyncKeyState(VK_RCONTROL) & 0x8000;
+            bool alt = (bool) GetAsyncKeyState(VK_RMENU) & 0x8000;
             //bool win = GetAsyncKeyState(VK_LWIN) & 0x8000;
 
             if (ctrl && alt) {
@@ -134,19 +135,23 @@ class MMShellHook:
     public musik::core::sdk::IPlugin,
     public musik::core::sdk::IPlaybackRemote {
         public:
-            void Destroy() {
+            virtual void Destroy() {
             }
 
-            const char* Name() {
+            virtual const char* Name() {
                 return "win32globalhotkeys";
             }
 
-            const char* Version() {
-                return "0.1";
+            virtual const char* Version() {
+                return "0.2.0";
             }
 
-            const char* Author() {
+            virtual const char* Author() {
                 return "clangen";
+            }
+
+            virtual int SdkVersion() {
+                return musik::core::sdk::SdkVersion;
             }
 
             virtual void SetPlaybackService(musik::core::sdk::IPlaybackService* playback) {

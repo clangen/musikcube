@@ -127,7 +127,7 @@ bool Stream::OpenStream(std::string uri) {
 }
 
 void Stream::OnBufferProcessedByPlayer(BufferPtr buffer) {
-    this->RecycleBuffer(buffer);
+    this->recycledBuffers.push_back(buffer);
 }
 
 bool Stream::GetNextBufferFromDecoder() {
@@ -285,9 +285,4 @@ void Stream::ApplyDsp(BufferPtr buffer) {
             }
         }
     }
-}
-
-/* marks a used buffer as recycled so it can be re-used later. */
-void Stream::RecycleBuffer(BufferPtr oldBuffer) {
-    this->recycledBuffers.push_back(oldBuffer);
 }

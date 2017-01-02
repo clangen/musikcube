@@ -33,7 +33,10 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
+
+#include <core/sdk/constants.h>
 #include <core/sdk/IPlugin.h>
+
 #include "NomadDecoderFactory.h"
 
 #ifdef WIN32
@@ -53,6 +56,7 @@ class NomadPlugin : public musik::core::sdk::IPlugin {
     virtual const char* Name() { return "nomad IDecoder"; }
     virtual const char* Version() { return "0.1"; }
     virtual const char* Author() { return "clangen"; }
+    virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
 };
 
 extern "C" DLLEXPORT musik::core::sdk::IPlugin* GetPlugin() {

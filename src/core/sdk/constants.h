@@ -77,4 +77,6 @@ namespace musik {
                 ChannelSideLeft = 128,
                 ChannelSideRight = 256
             };
+
+            static const int SdkVersion = 1;
 } } }

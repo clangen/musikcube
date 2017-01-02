@@ -33,15 +33,25 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.h"
+#include <core/sdk/constants.h>
 #include <core/sdk/IPlugin.h>
 #include "WaveOut.h"
+
+class WaveOutPlugin : public musik::core::sdk::IPlugin {
+    public:
+        virtual void Destroy() { delete this; }
+        virtual const char* Name() { return "WaveOut IOutput"; };
+        virtual const char* Version() { return "0.5"; };
+        virtual const char* Author() { return "Bj\xC3\xB6rn Olievier, clangen"; };
+        virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
+};
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
     return true;
 }
 
 extern "C" __declspec(dllexport) musik::core::sdk::IPlugin* GetPlugin() {
-    return new WaveOut();
+    return new WaveOutPlugin();
 }
 
 extern "C" __declspec(dllexport) musik::core::sdk::IOutput* GetAudioOutput() {

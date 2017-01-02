@@ -297,8 +297,8 @@ void ConsoleLayout::ListPlugins() const {
     PluginList::iterator it = plugins.begin();
     for (; it != plugins.end(); it++) {
         std::string format =
-            "    " + std::string((*it)->Name()) + " "
-            "v" + std::string((*it)->Version()) + "\n"
+            "    " + std::string((*it)->Name()) + "\n"
+            "    version: " + std::string((*it)->Version()) + "\n"
             "    by " + std::string((*it)->Author()) + "\n";
 
         this->output->WriteLine(format, COLOR_PAIR(CURSESPP_TEXT_DEFAULT));

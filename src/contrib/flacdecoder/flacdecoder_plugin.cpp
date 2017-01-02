@@ -34,7 +34,9 @@
 
 #include "stdafx.h"
 
+#include <core/sdk/constants.h>
 #include <core/sdk/IPlugin.h>
+
 #include "FlacDecoderFactory.h"
 
 #ifdef WIN32
@@ -50,10 +52,12 @@
 #endif
 
 class FlacPlugin : public musik::core::sdk::IPlugin {
-    void Destroy() { delete this; };
-    const char* Name() { return "FLAC IDecoder"; }
-    const char* Version() { return "0.3"; }
-    const char* Author() { return "Daniel Önnerby, clangen"; }
+    public:
+        virtual void Destroy() { delete this; };
+        virtual const char* Name() { return "FLAC IDecoder"; }
+        virtual const char* Version() { return "0.3"; }
+        virtual const char* Author() { return "Daniel Önnerby, clangen"; }
+        virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
 };
 
 extern "C" DLLEXPORT musik::core::sdk::IPlugin* GetPlugin() {

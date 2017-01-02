@@ -41,8 +41,9 @@
 
 namespace musik { namespace core { namespace sdk {
 
-    class IOutput : public IPlugin {
+    class IOutput {
         public:
+            virtual void Destroy() = 0;
             virtual void Pause() = 0;
             virtual void Resume() = 0;
             virtual void SetVolume(double volume) = 0;
@@ -51,6 +52,7 @@ namespace musik { namespace core { namespace sdk {
             virtual int Play(IBuffer *buffer, IBufferProvider *provider) = 0;
             virtual void Drain() = 0;
             virtual double Latency() = 0;
+            virtual const char* Name() = 0;
     };
 
 } } }
