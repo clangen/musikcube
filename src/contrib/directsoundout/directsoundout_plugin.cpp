@@ -43,7 +43,7 @@ class DirectSoundPlugin : public musik::core::sdk::IPlugin {
     public:
         virtual void Destroy() { delete this; }
         virtual const char* Name() { return "DirectSound IOutput"; };
-        virtual const char* Version() { return "0.2"; };
+        virtual const char* Version() { return "0.3.0"; };
         virtual const char* Author() { return "clangen"; };
         virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
 };

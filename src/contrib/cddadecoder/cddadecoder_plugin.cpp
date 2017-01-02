@@ -47,7 +47,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 class CddaDecoderPlugin : public musik::core::sdk::IPlugin {
     virtual void Destroy() { delete this; };
     virtual const char* Name() { return "CD Audio IDecoder, IDataStream"; }
-    virtual const char* Version() { return "0.3"; }
+    virtual const char* Version() { return "0.4.0"; }
     virtual const char* Author() { return "Björn Olievier, clangen"; }
     virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
 };

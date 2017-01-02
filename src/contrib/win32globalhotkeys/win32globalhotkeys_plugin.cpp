@@ -143,7 +143,7 @@ class MMShellHook:
             }
 
             virtual const char* Version() {
-                return "0.2.0";
+                return "0.3.0";
             }
 
             virtual const char* Author() {

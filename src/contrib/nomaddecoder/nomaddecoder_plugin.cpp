@@ -54,7 +54,7 @@
 class NomadPlugin : public musik::core::sdk::IPlugin {
     virtual void Destroy() { delete this; }
     virtual const char* Name() { return "nomad IDecoder"; }
-    virtual const char* Version() { return "0.1"; }
+    virtual const char* Version() { return "0.2.0"; }
     virtual const char* Author() { return "clangen"; }
     virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
 };

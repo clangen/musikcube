@@ -205,7 +205,7 @@ class VisualizerPlugin : public musik::core::sdk::IPlugin {
     public:
         virtual void Destroy() { delete this; }
         virtual const char* Name() { return "GdiVis"; };
-        virtual const char* Version() { return "0.1.0"; };
+        virtual const char* Version() { return "0.2.0"; };
         virtual const char* Author() { return "clangen"; };
         int SdkVersion() { return musik::core::sdk::SdkVersion; }
 };
