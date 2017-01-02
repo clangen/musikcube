@@ -40,7 +40,7 @@
 
 #include "AlsaOut.h"
 
-class PulsePlugin : public musik::core::sdk::IPlugin {
+class AlsaPlugin : public musik::core::sdk::IPlugin {
     public:
         virtual void Destroy() { delete this; }
         virtual const char* Name() { return "AlsaOut IOutput"; }
@@ -50,7 +50,7 @@ class PulsePlugin : public musik::core::sdk::IPlugin {
 };
 
 extern "C" musik::core::sdk::IPlugin* GetPlugin() {
-	return new AlsaOut();
+	return new AlsaPlugin();
 }
 
 extern "C" musik::core::sdk::IOutput* GetAudioOutput() {
