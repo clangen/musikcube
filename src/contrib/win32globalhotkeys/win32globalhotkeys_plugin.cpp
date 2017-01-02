@@ -61,8 +61,8 @@ LRESULT CALLBACK ShellProc(int code, WPARAM wParam, LPARAM lParam) {
                     return 0;
             }
 
-            bool ctrl = (bool) GetAsyncKeyState(VK_RCONTROL) & 0x8000;
-            bool alt = (bool) GetAsyncKeyState(VK_RMENU) & 0x8000;
+            short ctrl = GetAsyncKeyState(VK_RCONTROL) & 0x8000;
+            short alt = GetAsyncKeyState(VK_RMENU) & 0x8000;
             //bool win = GetAsyncKeyState(VK_LWIN) & 0x8000;
 
             if (ctrl && alt) {
