@@ -250,6 +250,10 @@ bool ConsoleLayout::ProcessCommand(const std::string& cmd) {
     else if (name == "plugins") {
         this->ListPlugins();
     }
+    else if (name == "sdk") {
+        this->output->WriteLine("    sdk/api revision: " +
+            std::to_string(musik::core::sdk::SdkVersion));
+    }
     else if (name == "v" || name == "volume") {
         this->SetVolume(args);
     }
