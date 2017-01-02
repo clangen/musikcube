@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////////////////
+﻿//////////////////////////////////////////////////////////////////////////////
 //
 // Copyright (c) 2007-2016 musikcube team
 //
@@ -80,7 +80,7 @@ using namespace std::placeholders;
 
 using EntryPtr = IScrollAdapter::EntryPtr;
 
-static const std::string arrow = "\xe2\x96\xb6";
+static const std::string arrow = "\xe2\x96\xba";
 static bool showDotfiles = false;
 
 SettingsLayout::SettingsLayout(
