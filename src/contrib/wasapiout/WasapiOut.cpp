@@ -51,6 +51,83 @@ QMMP's WASAPI output plugin! http://qmmp.ylsoftware.com/ */
 
 using Lock = std::unique_lock<std::recursive_mutex>;
 
+class NotificationClient : public IMMNotificationClient {
+    public:
+        NotificationClient(WasapiOut* owner)
+        : count(1)
+        , owner(owner)
+        , enumerator(nullptr) {
+        }
+
+        ~NotificationClient() {
+            if (this->enumerator) {
+                this->enumerator->Release();
+                this->enumerator = nullptr;
+            }
+        }
+
+        /* IUnknown methods -- AddRef, Release, and QueryInterface */
+
+        ULONG STDMETHODCALLTYPE AddRef() {
+            return InterlockedIncrement(&this->count);
+        }
+
+        ULONG STDMETHODCALLTYPE Release() {
+            ULONG newCount = InterlockedDecrement(&this->count);
+            if (0 == newCount) {
+                delete this;
+            }
+            return newCount;
+        }
+
+        HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, VOID **ppvInterface) {
+            if (IID_IUnknown == riid) {
+                this->AddRef();
+                *ppvInterface = (IUnknown*)this;
+            }
+            else if (__uuidof(IMMNotificationClient) == riid) {
+                this->AddRef();
+                *ppvInterface = (IMMNotificationClient*)this;
+            }
+            else {
+                *ppvInterface = nullptr;
+                return E_NOINTERFACE;
+            }
+            return S_OK;
+        }
+
+        /* Callback methods for device-event notifications. */
+
+        HRESULT STDMETHODCALLTYPE OnDefaultDeviceChanged(
+            EDataFlow flow, ERole role,
+            LPCWSTR pwstrDeviceId)
+        {
+            owner->OnDeviceChanged();
+            return S_OK;
+        }
+
+        HRESULT STDMETHODCALLTYPE OnDeviceAdded(LPCWSTR pwstrDeviceId) {
+            return S_OK;
+        }
+
+        HRESULT STDMETHODCALLTYPE OnDeviceRemoved(LPCWSTR pwstrDeviceId) {
+            return S_OK;
+        }
+
+        HRESULT STDMETHODCALLTYPE OnDeviceStateChanged(LPCWSTR pwstrDeviceId, DWORD dwNewState) {
+            return S_OK;
+        }
+
+        HRESULT STDMETHODCALLTYPE OnPropertyValueChanged(LPCWSTR pwstrDeviceId, const PROPERTYKEY key){
+            return S_OK;
+        }
+
+    private:
+        LONG count;
+        IMMDeviceEnumerator *enumerator;
+        WasapiOut* owner;
+};
+
 WasapiOut::WasapiOut()
 : enumerator(nullptr)
 , device(nullptr)
@@ -59,9 +136,11 @@ WasapiOut::WasapiOut()
 , simpleAudioVolume(nullptr)
 , audioStreamVolume(nullptr)
 , audioClock(nullptr)
+, notificationClient(nullptr)
 , outputBufferFrames(0)
 , state(StateStopped)
 , latency(0)
+, deviceChanged(false)
 , volume(1.0f) {
     ZeroMemory(&waveFormat, sizeof(WAVEFORMATEXTENSIBLE));
 }
@@ -154,6 +233,11 @@ int WasapiOut::Play(IBuffer *buffer, IBufferProvider *provider) {
         return OutputInvalidState;
     }
 
+    if (this->deviceChanged) {
+        this->Reset();
+        this->deviceChanged = false;
+    }
+
     if (!this->Configure(buffer)) {
         this->Reset();
         return OutputFormatError;
@@ -196,6 +280,12 @@ void WasapiOut::Reset() {
     }
 
     if (this->enumerator) {
+        if (this->notificationClient) {
+            this->enumerator->UnregisterEndpointNotificationCallback(this->notificationClient);
+            this->notificationClient->Release();
+            this->notificationClient = nullptr;
+        }
+
         this->enumerator->Release();
         this->enumerator = nullptr;
     }
@@ -246,17 +336,20 @@ bool WasapiOut::Configure(IBuffer *buffer) {
             (void**) &this->enumerator);
 
         if (result != S_OK) {
-            std::cerr << "WasapiOut: CoCreateInstance failed, error code = " << result << "\n";
             return false;
         }
 
         if ((result = this->enumerator->GetDefaultAudioEndpoint(eRender, eConsole, &this->device)) != S_OK) {
-            std::cerr << "WasapiOut: IMMDeviceEnumerator::GetDefaultAudioEndpoint failed, error code = " << result << "\n";
+            return false;
+        }
+
+        this->notificationClient = new NotificationClient(this);
+
+        if ((result = this->enumerator->RegisterEndpointNotificationCallback(this->notificationClient)) != S_OK) {
             return false;
         }
 
         if ((result = this->device->Activate(__uuidof(IAudioClient), CLSCTX_ALL, NULL, (void**) &this->audioClient)) != S_OK) {
-            std::cerr << "WasapiOut: IMMDevice::Activate failed, error code = " << result << "\n";
             return false;
         }
     }
@@ -302,46 +395,38 @@ bool WasapiOut::Configure(IBuffer *buffer) {
 
     if (this->audioClient->IsFormatSupported(AUDCLNT_SHAREMODE_SHARED, (WAVEFORMATEX *) &wf, 0) != S_OK) {
         streamFlags |= AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM;
-        std::cerr << "WasapiOut: format is not supported, using converter\n";
     }
 
     long totalMillis = (long) round((buffer->Samples() / buffer->Channels() * 1000) / buffer->SampleRate()) * MAX_BUFFERS_PER_OUTPUT;
     REFERENCE_TIME hundredNanos = totalMillis * 1000 * 10;
 
     if ((result = this->audioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, streamFlags, hundredNanos, 0, (WAVEFORMATEX *) &wf, NULL)) != S_OK) {
-        std::cerr << "WasapiOut: IAudioClient::Initialize failed, error code = " << result << "\n";
         return false;
     }
 
     if ((result = this->audioClient->GetBufferSize(&this->outputBufferFrames)) != S_OK) {
-        std::cerr << "WasapiOut: IAudioClient::GetBufferSize failed, error code = " << result << "\n";
         return false;
     }
 
     this->latency = (float) outputBufferFrames / (float) buffer->SampleRate();
 
     if ((result = this->audioClient->GetService(__uuidof(IAudioRenderClient), (void**) &this->renderClient)) != S_OK) {
-        std::cerr << "WasapiOut: IAudioClient::GetService failed, error code = " << result << "\n";
         return false;
     }
 
     if ((result = this->audioClient->GetService(__uuidof(ISimpleAudioVolume), (void**) &this->simpleAudioVolume)) != S_OK) {
-        std::cerr << "WasapiOut: IAudioClient::GetService failed, error code = " << result << "\n";
         return false;
     }
 
     if ((result = this->audioClient->GetService(__uuidof(IAudioStreamVolume), (void**) &this->audioStreamVolume)) != S_OK) {
-        std::cerr << "WasapiOut: IAudioClient::GetService failed, error code = " << result << "\n";
         return false;
     }
 
     if ((result = this->audioClient->GetService(__uuidof(IAudioClock), (void**) &this->audioClock)) != S_OK) {
-        std::cerr << "WasapiOut: IAudioClient::GetService failed, error code = " << result << "\n";
         return false;
     }
 
     if ((result = this->audioClient->Start()) != S_OK) {
-        std::cerr << "WasapiOut: IAudioClient::Start failed, error code = " << result << "\n";
         return false;
     }
 

@@ -47,6 +47,8 @@
 
 using namespace musik::core::sdk;
 
+class NotificationClient;
+
 class WasapiOut : public IOutput {
     public:
         WasapiOut();
@@ -66,6 +68,8 @@ class WasapiOut : public IOutput {
         virtual double Latency();
         virtual void Drain();
 
+        void OnDeviceChanged() { this->deviceChanged = true; }
+
     private:
         enum State {
             StateStopped,
@@ -83,11 +87,13 @@ class WasapiOut : public IOutput {
         IAudioRenderClient *renderClient;
         ISimpleAudioVolume *simpleAudioVolume;
         IAudioStreamVolume *audioStreamVolume;
+        NotificationClient *notificationClient;
         UINT32 outputBufferFrames;
         std::atomic<State> state;
         WAVEFORMATEXTENSIBLE waveFormat;
         double volume;
         double latency;
         int rate;
+        bool deviceChanged;
         std::recursive_mutex stateMutex;
 };
