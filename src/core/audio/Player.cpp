@@ -121,7 +121,7 @@ Player::Player(
     std::shared_ptr<IOutput> output,
     DestroyMode destroyMode,
     EventListener *listener)
-: state(Player::Precache)
+: state(Player::Idle)
 , url(url)
 , currentPosition(0)
 , output(output)
@@ -262,17 +262,10 @@ void musik::core::audio::playerThreadLoop(Player* player) {
             l->OnPlayerPrepared(player);
         }
 
-        /* precache until buffers are full */
-        bool keepPrecaching = true;
-        while (player->State() == Player::Precache && keepPrecaching) {
-            keepPrecaching = player->PreBuffer();
-        }
-
-        /* wait until we enter the Playing or Quit state; we may still
-        be in the Precache state. */
+        /* wait until we enter the Playing or Quit state */
         {
             std::unique_lock<std::mutex> lock(player->queueMutex);
-            while (player->state == Player::Precache) {
+            while (player->state == Player::Idle) {
                 player->writeToOutputCondition.wait(lock);
             }
         }
@@ -307,26 +300,13 @@ void musik::core::audio::playerThreadLoop(Player* player) {
                 }
 
                 player->stream->SetPosition(position);
-
-                {
-                    std::unique_lock<std::mutex> lock(player->queueMutex);
-                    player->prebufferQueue.clear();
-                }
             }
 
             /* let's see if we can find some samples to play */
             if (!buffer) {
                 std::unique_lock<std::mutex> lock(player->queueMutex);
 
-                /* the buffer queue may already have some available if it was prefetched. */
-                if (!player->prebufferQueue.empty()) {
-                    buffer = player->prebufferQueue.front();
-                    player->prebufferQueue.pop_front();
-                }
-                /* otherwise, we need to grab a buffer from the stream and add it to the queue */
-                else {
-                    buffer = player->stream->GetNextProcessedOutputBuffer();
-                }
+                buffer = player->stream->GetNextProcessedOutputBuffer();
 
                 /* lock it down until it's processed */
                 if (buffer) {
@@ -445,22 +425,6 @@ void musik::core::audio::playerThreadLoop(Player* player) {
 void Player::ReleaseAllBuffers() {
     std::unique_lock<std::mutex> lock(this->queueMutex);
     this->lockedBuffers.empty();
-}
-
-bool Player::PreBuffer() {
-    /* don't prebuffer if the buffer is already full */
-    if (this->prebufferQueue.size() < MAX_PREBUFFER_QUEUE_COUNT) {
-        BufferPtr newBuffer = this->stream->GetNextProcessedOutputBuffer();
-
-        if (newBuffer) {
-            std::unique_lock<std::mutex> lock(this->queueMutex);
-            this->prebufferQueue.push_back(newBuffer);
-        }
-
-        return true;
-    }
-
-    return false;
 }
 
 bool Player::Exited() {

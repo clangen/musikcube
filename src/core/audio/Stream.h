@@ -75,6 +75,8 @@ namespace musik { namespace core { namespace audio {
             void RecycleBuffer(BufferPtr oldBuffer);
             bool GetNextBufferFromDecoder();
             BufferPtr GetEmptyBuffer();
+            void ApplyDsp(BufferPtr buffer);
+            void RefillInternalBuffers();
 
             typedef std::deque<BufferPtr> BufferList;
             typedef std::shared_ptr<IDecoder> DecoderPtr;
@@ -97,6 +99,7 @@ namespace musik { namespace core { namespace audio {
             unsigned int options;
             int samplesPerChannel;
             int bufferCount;
+            bool done;
 
             float* rawBuffer;
 

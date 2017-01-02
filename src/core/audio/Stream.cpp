@@ -60,6 +60,7 @@ Stream::Stream(int samplesPerChannel, int bufferCount, unsigned int options)
 , decoderSampleRate(0)
 , decoderChannels(0)
 , decoderSamplePosition(0)
+, done(false)
 , rawBuffer(nullptr) {
     if ((this->options & NoDSP) == 0) {
         streams::GetDspPlugins();
@@ -116,7 +117,13 @@ bool Stream::OpenStream(std::string uri) {
     }
 
     this->decoder = streams::GetDecoderForDataStream(this->dataStream);
-    return !!this->decoder;
+
+    if (this->decoder) {
+        this->RefillInternalBuffers();
+        return true;
+    }
+
+    return false;
 }
 
 void Stream::OnBufferProcessedByPlayer(BufferPtr buffer) {
@@ -126,22 +133,22 @@ void Stream::OnBufferProcessedByPlayer(BufferPtr buffer) {
 bool Stream::GetNextBufferFromDecoder() {
     BufferPtr buffer = this->decoderBuffer;
 
-    /* get a spare buffer, then ask the decoder for some data */
+    /* ask the decoder for some data */
     if (!this->decoder->GetBuffer(buffer.get())) {
         return false;
     }
 
     /* ensure our internal state is initialized. */
-    if (!rawBuffer) {
+    if (!this->rawBuffer) {
         this->decoderSampleRate = buffer->SampleRate();
         this->decoderChannels = buffer->Channels();
 
         int samplesPerBuffer = samplesPerChannel * decoderChannels;
-        rawBuffer = new float[bufferCount * samplesPerBuffer];
+        this->rawBuffer = new float[bufferCount * samplesPerBuffer];
         int offset = 0;
         for (int i = 0; i < bufferCount; i++) {
             this->recycledBuffers.push_back(
-                Buffer::Create(rawBuffer + offset, samplesPerBuffer));
+                Buffer::Create(this->rawBuffer + offset, samplesPerBuffer));
 
             offset += samplesPerBuffer;
         }
@@ -179,15 +186,46 @@ inline BufferPtr Stream::GetEmptyBuffer() {
 BufferPtr Stream::GetNextProcessedOutputBuffer() {
     BufferPtr currentBuffer;
 
+    /* if the buffer fill rate falls below 50%, go ahead
+    and refill it... */
+    if (!this->done && this->filledBuffers.size() < this->bufferCount / 2) {
+        this->RefillInternalBuffers();
+    }
+
+    if (this->filledBuffers.size()) {
+        currentBuffer = this->filledBuffers.front();
+        this->filledBuffers.pop_front();
+        this->ApplyDsp(currentBuffer);
+        return currentBuffer;
+    }
+
+    /* final remainder */
+    if (remainder) {
+        BufferPtr finalBuffer = remainder;
+        remainder.reset();
+        this->ApplyDsp(finalBuffer);
+        return finalBuffer;
+    }
+
+    /* stream is done. */
+    return BufferPtr();
+}
+
+void Stream::RefillInternalBuffers() {
+    int count = this->bufferCount - this->filledBuffers.size();
+
     /* ensure we have at least BUFFER_COUNT buffers, and that at least a quarter
     of them are filled with data! */
-    while ((int) this->filledBuffers.size() < (this->bufferCount / 4)) {
+    while (!this->done && count > 0) {
+        --count;
+
         /* ask the decoder for the next buffer */
         if (!GetNextBufferFromDecoder()) {
+            this->done = true;
             break;
         }
 
-        currentBuffer = this->decoderBuffer;
+        BufferPtr currentBuffer = this->decoderBuffer;
 
         int floatsPerBuffer = this->samplesPerChannel * currentBuffer->Channels();
 
@@ -212,7 +250,7 @@ BufferPtr Stream::GetNextProcessedOutputBuffer() {
             }
             else {
                 continue; /* already consumed all of the decoder buffer. go back
-                to the top of the loop to get some more data. */
+                          to the top of the loop to get some more data. */
             }
         }
 
@@ -234,34 +272,19 @@ BufferPtr Stream::GetNextProcessedOutputBuffer() {
             COPY_BUFFER(remainder, currentBuffer, currentBuffer->Samples() - offset, offset);
         }
     }
+}
 
-    if (this->filledBuffers.size()) {
-        currentBuffer = this->filledBuffers.front();
-        this->filledBuffers.pop_front();
+void Stream::ApplyDsp(BufferPtr buffer) {
+    if (this->dsps.size() > 0) {
+        for (Dsps::iterator dsp = this->dsps.begin(); dsp != this->dsps.end(); ++dsp) {
+            dspBuffer->CopyFormat(buffer);
+            dspBuffer->SetPosition(buffer->Position());
 
-        /* let DSP plugins process the buffer */
-        if (this->dsps.size() > 0) {
-            for (Dsps::iterator dsp = this->dsps.begin(); dsp != this->dsps.end(); ++dsp) {
-                dspBuffer->CopyFormat(currentBuffer);
-                dspBuffer->SetPosition(currentBuffer->Position());
-
-                if ((*dsp)->Process(currentBuffer.get(), dspBuffer.get())) {
-                    currentBuffer.swap(dspBuffer);
-                }
+            if ((*dsp)->Process(buffer.get(), dspBuffer.get())) {
+                buffer.swap(dspBuffer);
             }
         }
-
-        return currentBuffer;
     }
-
-    /* final remainder */
-    if (remainder) {
-        BufferPtr result = remainder;
-        remainder.reset();
-        return result;
-    }
-
-    return BufferPtr();
 }
 
 /* marks a used buffer as recycled so it can be re-used later. */

@@ -115,13 +115,12 @@ namespace musik { namespace core { namespace audio {
             using OutputPtr = std::shared_ptr<musik::core::sdk::IOutput>;
 
             typedef enum {
-                Precache = 0,
+                Idle = 0,
                 Playing = 1,
                 Quit = 2
             } States;
 
             bool Exited();
-            bool PreBuffer();
             int State();
             void ReleaseAllBuffers();
             ListenerList Listeners();
@@ -135,7 +134,6 @@ namespace musik { namespace core { namespace audio {
             MixPointList processedMixPoints;
             MixPointList mixPointsHitTemp; /* so we don't have to keep alloc'ing it */
             BufferList lockedBuffers;
-            BufferList prebufferQueue;
 
             void UpdateNextMixPointTime();
 
