@@ -184,16 +184,10 @@ inline BufferPtr Stream::GetEmptyBuffer() {
 }
 
 BufferPtr Stream::GetNextProcessedOutputBuffer() {
-    BufferPtr currentBuffer;
-
-    /* if the buffer fill rate falls below 50%, go ahead
-    and refill it... */
-    if (!this->done && this->filledBuffers.size() < this->bufferCount / 2) {
-        this->RefillInternalBuffers();
-    }
+    this->RefillInternalBuffers();
 
     if (this->filledBuffers.size()) {
-        currentBuffer = this->filledBuffers.front();
+        BufferPtr currentBuffer = this->filledBuffers.front();
         this->filledBuffers.pop_front();
         this->ApplyDsp(currentBuffer);
         return currentBuffer;
@@ -250,7 +244,7 @@ void Stream::RefillInternalBuffers() {
             }
             else {
                 continue; /* already consumed all of the decoder buffer. go back
-                          to the top of the loop to get some more data. */
+                    to the top of the loop to get some more data. */
             }
         }
 

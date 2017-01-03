@@ -72,7 +72,6 @@ namespace musik { namespace core { namespace audio {
             virtual bool OpenStream(std::string uri);
 
         private:
-            void RecycleBuffer(BufferPtr oldBuffer);
             bool GetNextBufferFromDecoder();
             BufferPtr GetEmptyBuffer();
             void ApplyDsp(BufferPtr buffer);

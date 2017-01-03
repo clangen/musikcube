@@ -110,7 +110,7 @@ namespace musik { namespace core { namespace audio {
 
             using MixPointPtr = std::shared_ptr<MixPoint>;
             using MixPointList = std::list<MixPointPtr>;
-            using BufferList = std::list<BufferPtr>;
+            using BufferList = std::deque<BufferPtr>;
             using ListenerList = std::list<EventListener*>;
             using OutputPtr = std::shared_ptr<musik::core::sdk::IOutput>;
 
