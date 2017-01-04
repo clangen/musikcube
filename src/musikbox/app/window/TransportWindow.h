@@ -44,6 +44,8 @@
 
 namespace musik {
     namespace box {
+        struct TransportDisplayCache;
+
         class TransportWindow :
             public cursespp::Window,
             public cursespp::IKeyHandler,
@@ -95,6 +97,7 @@ namespace musik {
                 musik::box::PlaybackService& playback;
                 musik::core::TrackPtr currentTrack;
                 FocusTarget focus, lastFocus;
+                std::unique_ptr<TransportDisplayCache> displayCache;
                 double lastTime;
         };
     }

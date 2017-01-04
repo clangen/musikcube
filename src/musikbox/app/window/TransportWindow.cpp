@@ -54,6 +54,7 @@
 #include <memory>
 #include <deque>
 #include <chrono>
+#include <map>
 
 using namespace musik::core;
 using namespace musik::core::audio;
@@ -131,13 +132,74 @@ void tokenize(const std::string& format, TokenList& tokens) {
     }
 }
 
+/* a really boring class that contains a cache of currently playing
+information so we don't have to look it up every time we update the
+view (every second) */
+struct musik::box::TransportDisplayCache {
+    TrackPtr track;
+    std::string title, album, artist, totalTime;
+    int secondsTotal;
+    int titleCols, albumCols, artistCols, totalTimeCols;
+    std::map<std::string, size_t> stringToColumns;
+
+    void Reset() {
+        track.reset();
+        title = album = artist = "";
+        titleCols = albumCols = artistCols;
+        secondsTotal = 0;
+        totalTime = "0:00";
+        totalTimeCols = 4;
+    }
+
+    size_t Columns(const std::string& str) {
+        auto it = stringToColumns.find(str);
+        if (it == stringToColumns.end()) {
+            stringToColumns[str] = u8cols(str);
+        }
+        return stringToColumns[str];
+    }
+
+    void Update(ITransport& transport, TrackPtr track) {
+        if (this->track != track) {
+            this->Reset();
+
+            this->track = track;
+
+            if (this->track) {
+                title = this->track->GetValue(constants::Track::TITLE);
+                title = title.size() ? title : "[song]";
+                titleCols = u8cols(title);
+
+                album = this->track->GetValue(constants::Track::ALBUM);
+                album = album.size() ? album : "[album]";
+                albumCols = u8cols(album);
+
+                artist = this->track->GetValue(constants::Track::ARTIST);
+                artist = artist.size() ? artist : "[artist]";
+                artistCols = u8cols(artist);
+
+                secondsTotal = (int)transport.GetDuration();
+                if (secondsTotal <= 0) {
+                    std::string duration =
+                        this->track->GetValue(constants::Track::DURATION);
+
+                    if (duration.size()) {
+                        secondsTotal = boost::lexical_cast<int>(duration);
+                    }
+                }
+
+                totalTime = musik::box::duration::Duration(secondsTotal);
+                totalTimeCols = u8cols(totalTime);
+            }
+        }
+    }
+};
+
 /* writes the colorized formatted string to the specified window. accounts for
 utf8 characters and ellipsizing */
 static size_t writePlayingFormat(
     WINDOW *w,
-    std::string title,
-    std::string album,
-    std::string artist,
+    TransportDisplayCache& displayCache,
     size_t width)
 {
     TokenList tokens;
@@ -153,40 +215,44 @@ static size_t writePlayingFormat(
 
         int64 attr = dim;
         std::string value;
+        size_t cols;
 
         if (token->type == Token::Placeholder) {
             attr = gb;
             if (token->value == "$title") {
-                value = title;
+                value = displayCache.title;
+                cols = displayCache.titleCols;
             }
             else if (token->value == "$album") {
-                value = album;
+                value = displayCache.album;
+                cols = displayCache.albumCols;
             }
             else if (token->value == "$artist") {
-                value = artist;
+                value = displayCache.artist;
+                cols = displayCache.artistCols;
             }
         }
 
         if (!value.size()) {
             value = token->value;
+            cols = displayCache.Columns(value);
         }
 
-        size_t len = u8cols(value);
         bool ellipsized = false;
 
-        if (len > remaining) {
+        if (cols > remaining) {
             std::string original = value;
             value = text::Ellipsize(value, remaining);
             ellipsized = (value != original);
-            len = remaining;
+            cols = remaining;
         }
 
         /* if we're not at the last token, but there's not enough space
         to show the next token, ellipsize now and bail out of the loop */
-        if (remaining - len < 3 && it + 1 != tokens.end()) {
+        if (remaining - cols < 3 && it + 1 != tokens.end()) {
             if (!ellipsized) {
                 value = text::Ellipsize(value, remaining - 3);
-                len = remaining;
+                cols = remaining;
             }
         }
 
@@ -194,7 +260,7 @@ static size_t writePlayingFormat(
         wprintw(w, value.c_str());
         OFF(w, attr);
 
-        remaining -= len;
+        remaining -= cols;
         ++it;
     }
 
@@ -211,6 +277,7 @@ static inline bool dec(const std::string& kn) {
 
 TransportWindow::TransportWindow(musik::box::PlaybackService& playback)
 : Window(nullptr)
+, displayCache(new TransportDisplayCache())
 , playback(playback)
 , transport(playback.GetTransport())
 , focus(FocusNone) {
@@ -375,47 +442,19 @@ void TransportWindow::Update(TimeMode timeMode) {
     /* prepare the "shuffle" label */
 
     std::string shuffleLabel = "  shuffle";
-    size_t shuffleLabelLen = u8cols(shuffleLabel);
+    size_t shuffleLabelLen = displayCache->Columns(shuffleLabel);
 
     /* playing SONG TITLE from ALBUM NAME */
-
-    int secondsTotal = 0;
 
     if (stopped) {
         ON(c, disabled);
         wprintw(c, "playback is stopped");
+        displayCache->Reset();
         OFF(c, disabled);
     }
     else {
-        secondsTotal = (int) transport.GetDuration();
-
-        std::string title, album, artist;
-
-        if (this->currentTrack) {
-            title = this->currentTrack->GetValue(constants::Track::TITLE);
-            album = this->currentTrack->GetValue(constants::Track::ALBUM);
-            artist = this->currentTrack->GetValue(constants::Track::ARTIST);
-
-            if (secondsTotal <= 0) {
-                std::string duration =
-                    this->currentTrack->GetValue(constants::Track::DURATION);
-
-                if (duration.size()) {
-                    secondsTotal = boost::lexical_cast<int>(duration);
-                }
-            }
-        }
-
-        title = title.size() ? title : "[song]";
-        album = album.size() ? album : "[album]";
-        artist = artist.size() ? artist : "[artist]";
-
-        writePlayingFormat(
-            c,
-            title,
-            album,
-            artist,
-            cx - shuffleLabelLen);
+        displayCache->Update(transport, this->currentTrack);
+        writePlayingFormat(c, *this->displayCache, cx - shuffleLabelLen);
     }
 
     wmove(c, 0, cx - shuffleLabelLen);
@@ -505,15 +544,15 @@ void TransportWindow::Update(TimeMode timeMode) {
         secondsCurrent = (int) round(this->lastTime);
     }
 
-    const std::string currentTime = duration::Duration(std::min(secondsCurrent, secondsTotal));
-    const std::string totalTime = duration::Duration(secondsTotal);
+    const std::string currentTime = duration::Duration(
+        std::min(secondsCurrent, displayCache->secondsTotal));
 
     int bottomRowControlsWidth =
-        u8cols(volume) - (muted ? 0 : 1) + /* -1 for escaped percent sign when not muted */
+        displayCache->Columns(volume) - (muted ? 0 : 1) + /* -1 for escaped percent sign when not muted */
         u8cols(currentTime) + 1 + /* +1 for space padding */
         /* timer track with thumb */
-        1 + u8cols(totalTime) + /* +1 for space padding */
-        u8cols(repeatModeLabel);
+        1 + displayCache->totalTimeCols + /* +1 for space padding */
+        displayCache->Columns(repeatModeLabel);
 
     int timerTrackWidth =
         this->GetContentWidth() -
@@ -521,8 +560,8 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     thumbOffset = 0;
 
-    if (secondsTotal) {
-        int progress = (secondsCurrent * 100) / secondsTotal;
+    if (displayCache->secondsTotal) {
+        int progress = (secondsCurrent * 100) / displayCache->secondsTotal;
         thumbOffset = std::min(timerTrackWidth - 1, (progress * timerTrackWidth) / 100);
     }
 
@@ -545,7 +584,7 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     ON(c, timerAttrs);
     waddstr(c, timerTrack.c_str()); /* may be a very long string */
-    wprintw(c, " %s", totalTime.c_str());
+    wprintw(c, " %s", displayCache->totalTime.c_str());
     OFF(c, timerAttrs);
 
     ON(c, repeatAttrs);
