@@ -333,7 +333,7 @@ void TransportWindow::OnTransportVolumeChanged() {
 }
 
 void TransportWindow::OnTransportTimeChanged(double time) {
-    DEBOUNCE_REFRESH(TimeSmooth, 0);
+    DEBOUNCE_REFRESH(TimeSync, 0);
 }
 
 void TransportWindow::OnPlaybackShuffled(bool shuffled) {

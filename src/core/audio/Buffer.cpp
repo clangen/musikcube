@@ -75,15 +75,6 @@ Buffer::~Buffer() {
     }
 }
 
-BufferPtr Buffer::Create(Flags flags) {
-    return BufferPtr(new Buffer(flags));
-}
-
-BufferPtr Buffer::Create(float* buffer, int samples) {
-    return BufferPtr(new Buffer(buffer, samples));
-}
-
-
 long Buffer::SampleRate() const { /* hertz */
     return this->sampleRate;
 }
@@ -113,7 +104,7 @@ void Buffer::SetSamples(long samples) {
     this->ResizeBuffer();
 }
 
-void Buffer::CopyFormat(BufferPtr fromBuffer) {
+void Buffer::CopyFormat(Buffer* fromBuffer) {
     this->channels = fromBuffer->Channels();
     this->sampleRate = fromBuffer->SampleRate();
 }

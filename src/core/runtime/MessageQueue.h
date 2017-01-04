@@ -65,6 +65,7 @@ namespace musik { namespace core { namespace runtime {
             std::list<EnqueuedMessage*> queue;
             std::list<EnqueuedMessage*> dispatch;
             std::condition_variable_any waitForDispatch;
+            int64 nextMessageTime;
 
             void Dispatch(IMessagePtr message);
     };

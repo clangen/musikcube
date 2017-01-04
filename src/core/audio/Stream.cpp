@@ -61,17 +61,26 @@ Stream::Stream(int samplesPerChannel, int bufferCount, unsigned int options)
 , decoderChannels(0)
 , decoderSamplePosition(0)
 , done(false)
+, remainder(nullptr)
 , rawBuffer(nullptr) {
     if ((this->options & NoDSP) == 0) {
         streams::GetDspPlugins();
     }
 
-    this->dspBuffer = Buffer::Create();
-    this->decoderBuffer = Buffer::Create();
+    this->decoderBuffer = new Buffer();
 }
 
 Stream::~Stream() {
     delete[] rawBuffer;
+    delete this->decoderBuffer;
+
+    for (Buffer* buffer : this->recycledBuffers) {
+        delete buffer;
+    }
+
+    for (Buffer* buffer : this->filledBuffers) {
+        delete buffer;
+    }
 }
 
 StreamPtr Stream::Create(int samplesPerChannel, int bufferCount, unsigned int options) {
@@ -126,15 +135,15 @@ bool Stream::OpenStream(std::string uri) {
     return false;
 }
 
-void Stream::OnBufferProcessedByPlayer(BufferPtr buffer) {
+void Stream::OnBufferProcessedByPlayer(Buffer* buffer) {
     this->recycledBuffers.push_back(buffer);
 }
 
 bool Stream::GetNextBufferFromDecoder() {
-    BufferPtr buffer = this->decoderBuffer;
+    Buffer* buffer = this->decoderBuffer;
 
     /* ask the decoder for some data */
-    if (!this->decoder->GetBuffer(buffer.get())) {
+    if (!this->decoder->GetBuffer(buffer)) {
         return false;
     }
 
@@ -148,7 +157,7 @@ bool Stream::GetNextBufferFromDecoder() {
         int offset = 0;
         for (int i = 0; i < bufferCount; i++) {
             this->recycledBuffers.push_back(
-                Buffer::Create(this->rawBuffer + offset, samplesPerBuffer));
+                new Buffer(this->rawBuffer + offset, samplesPerBuffer));
 
             offset += samplesPerBuffer;
         }
@@ -165,8 +174,8 @@ bool Stream::GetNextBufferFromDecoder() {
     return true;
 }
 
-inline BufferPtr Stream::GetEmptyBuffer() {
-    BufferPtr target;
+inline Buffer* Stream::GetEmptyBuffer() {
+    Buffer* target;
 
     if (recycledBuffers.size()) {
         target = recycledBuffers.front();
@@ -176,40 +185,39 @@ inline BufferPtr Stream::GetEmptyBuffer() {
         /* if we've calculated our buffer sizes correctly based on what
         the output device expects, we should never hit this case. but
         if something goes awry and we need more space to store samples */
-        target = Buffer::Create();
+        target = new Buffer();
         target->CopyFormat(this->decoderBuffer);
     }
 
     return target;
 }
 
-BufferPtr Stream::GetNextProcessedOutputBuffer() {
+Buffer* Stream::GetNextProcessedOutputBuffer() {
     this->RefillInternalBuffers();
 
+    /* in the normal case we have buffers available in the filled queue. */
     if (this->filledBuffers.size()) {
-        BufferPtr currentBuffer = this->filledBuffers.front();
+        Buffer* currentBuffer = this->filledBuffers.front();
         this->filledBuffers.pop_front();
         this->ApplyDsp(currentBuffer);
         return currentBuffer;
     }
 
-    /* final remainder */
+    /* if there's nothing left in the queue, we're almost done. there may
+    be a partial buffer still hanging around from the last decoder read */
     if (remainder) {
-        BufferPtr finalBuffer = remainder;
-        remainder.reset();
+        Buffer* finalBuffer = remainder;
+        remainder = nullptr;
         this->ApplyDsp(finalBuffer);
         return finalBuffer;
     }
 
-    /* stream is done. */
-    return BufferPtr();
+    return nullptr; /* stream is done. */
 }
 
 void Stream::RefillInternalBuffers() {
     int count = this->bufferCount - this->filledBuffers.size();
 
-    /* ensure we have at least BUFFER_COUNT buffers, and that at least a quarter
-    of them are filled with data! */
     while (!this->done && count > 0) {
         --count;
 
@@ -219,11 +227,11 @@ void Stream::RefillInternalBuffers() {
             break;
         }
 
-        BufferPtr currentBuffer = this->decoderBuffer;
+        Buffer* currentBuffer = this->decoderBuffer;
 
         int floatsPerBuffer = this->samplesPerChannel * currentBuffer->Channels();
 
-        BufferPtr target;
+        Buffer* target;
         int offset = 0;
 
         /* if we have a partial / remainder buffer hanging out from the last time
@@ -240,7 +248,7 @@ void Stream::RefillInternalBuffers() {
                 filled buffers and continue to fill some more... */
                 this->filledBuffers.push_back(remainder);
                 offset += actual;
-                remainder.reset();
+                remainder = nullptr;
             }
             else {
                 continue; /* already consumed all of the decoder buffer. go back
@@ -268,15 +276,10 @@ void Stream::RefillInternalBuffers() {
     }
 }
 
-void Stream::ApplyDsp(BufferPtr buffer) {
+void Stream::ApplyDsp(Buffer* buffer) {
     if (this->dsps.size() > 0) {
-        for (Dsps::iterator dsp = this->dsps.begin(); dsp != this->dsps.end(); ++dsp) {
-            dspBuffer->CopyFormat(buffer);
-            dspBuffer->SetPosition(buffer->Position());
-
-            if ((*dsp)->Process(buffer.get(), dspBuffer.get())) {
-                buffer.swap(dspBuffer);
-            }
+        for (std::shared_ptr<IDSP> dsp : this->dsps) {
+            dsp->Process(buffer);
         }
     }
 }

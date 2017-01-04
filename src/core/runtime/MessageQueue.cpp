@@ -43,7 +43,7 @@ using namespace musik::core::runtime;
 using LockT = std::unique_lock<std::mutex>;
 
 MessageQueue::MessageQueue() {
-
+    this->nextMessageTime = -1;
 }
 
 void MessageQueue::WaitAndDispatch() {
@@ -76,6 +76,12 @@ void MessageQueue::Dispatch() {
     {
         LockT lock(this->queueMutex);
 
+        if (this->nextMessageTime > now.count() || this->nextMessageTime < 0) {
+            return; /* short circuit before any iteration. */
+        }
+
+        this->nextMessageTime = -1;
+
         Iterator it = this->queue.begin();
 
         bool done = false;
@@ -106,6 +112,10 @@ void MessageQueue::Dispatch() {
     }
 
     this->dispatch.clear();
+
+    if (this->queue.size()) {
+        this->nextMessageTime = (*this->queue.begin())->time.count();
+    }
 }
 
 int MessageQueue::Remove(IMessageTarget *target, int type) {
@@ -127,6 +137,11 @@ int MessageQueue::Remove(IMessageTarget *target, int type) {
 
         ++it;
     }
+
+    if (this->queue.size()) {
+        this->nextMessageTime = (*this->queue.begin())->time.count();
+    }
+
     return count;
 }
 
@@ -178,6 +193,10 @@ void MessageQueue::Post(IMessagePtr message, int64 delayMs) {
     bool first = (curr == this->queue.begin());
 
     this->queue.insert(curr, m);
+
+    if (this->queue.size()) {
+        this->nextMessageTime = (*this->queue.begin())->time.count();
+    }
 
     if (first) {
         this->waitForDispatch.notify_all();

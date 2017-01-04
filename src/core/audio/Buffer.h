@@ -40,9 +40,8 @@
 
 namespace musik { namespace core { namespace audio {
 
-    class  Buffer;
-    class  Stream;
-    typedef std::shared_ptr<Buffer> BufferPtr;
+    class Buffer;
+    class Stream;
 
     class Buffer : public musik::core::sdk::IBuffer {
         public:
@@ -52,8 +51,8 @@ namespace musik { namespace core { namespace audio {
                 NoDelete = 2
             };
 
-            static BufferPtr Create(Flags flags = NoFlags);
-            static BufferPtr Create(float* buffer, int samples);
+            Buffer(Flags flags = NoFlags);
+            Buffer(float* buffer, int samples);
 
             virtual ~Buffer();
 
@@ -70,12 +69,9 @@ namespace musik { namespace core { namespace audio {
             void SetPosition(double position);
             void Copy(float* buffer, long samples);
             void Append(float* buffer, long samples);
-            void CopyFormat(BufferPtr fromBuffer);
+            void CopyFormat(Buffer* fromBuffer);
 
         private:
-            Buffer(Flags flags);
-            Buffer(float* buffer, int samples);
-
             void ResizeBuffer();
 
             float *buffer;

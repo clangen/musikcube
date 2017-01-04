@@ -126,8 +126,9 @@ Player::Player(
 , currentPosition(0)
 , output(output)
 , notifiedStarted(false)
-, setPosition(-1)
+, seekToPosition(-1)
 , nextMixPoint(-1.0)
+, pendingBufferCount(0)
 , destroyMode(destroyMode)
 , fftContext(nullptr) {
     musik::debug::info(TAG, "new instance created");
@@ -205,6 +206,13 @@ ListenerList Player::Listeners() {
 }
 
 double Player::GetPosition() {
+    double seek = this->seekToPosition.load();
+    double current = this->currentPosition.load();
+    const double latency = this->output ? this->output->Latency() : 0.0;
+    return std::max(0.0, round((seek >= 0 ? seek : current) - latency));
+}
+
+double Player::GetPositionInternal() {
     const double latency = this->output ? this->output->Latency() : 0.0;
     return std::max(0.0, round(this->currentPosition.load() - latency));
 }
@@ -214,10 +222,15 @@ double Player::GetDuration() {
 }
 
 void Player::SetPosition(double seconds) {
-    this->setPosition.store(std::max(0.0, seconds));
+    std::unique_lock<std::mutex> queueLock(this->queueMutex);
+
+    if (this->stream) {
+        seconds = std::min(this->stream->GetDuration(), seconds);
+    }
+
+    this->seekToPosition.store(std::max(0.0, seconds));
 
     /* reset our mix points on seek! that way we'll notify again if necessary */
-    std::unique_lock<std::mutex> queueLock(this->queueMutex);
 
     this->pendingMixPoints.splice(
         this->pendingMixPoints.begin(),
@@ -238,7 +251,7 @@ int Player::State() {
 }
 
 void Player::UpdateNextMixPointTime() {
-    const double position = this->GetPosition();
+    const double position = this->GetPositionInternal();
 
     double next = -1.0;
     for (MixPointPtr mp : this->pendingMixPoints) {
@@ -255,7 +268,7 @@ void Player::UpdateNextMixPointTime() {
 void musik::core::audio::playerThreadLoop(Player* player) {
     player->stream = Stream::Create();
 
-    BufferPtr buffer;
+    Buffer* buffer = nullptr;
 
     if (player->stream->OpenStream(player->url)) {
         for (Listener* l : player->Listeners()) {
@@ -277,9 +290,9 @@ void musik::core::audio::playerThreadLoop(Player* player) {
             /* see if we've been asked to seek since the last sample was
             played. if we have, clear our output buffer and seek the
             stream. */
-            double position = player->setPosition.exchange(-1.0);
+            double seek = player->seekToPosition.load();
 
-            if (position != -1) {
+            if (seek != -1.0) {
                 player->output->Stop(); /* flush all buffers */
                 player->output->Resume(); /* start it back up */
 
@@ -288,18 +301,21 @@ void musik::core::audio::playerThreadLoop(Player* player) {
                 not performed, will result in a deadlock just below while
                 waiting for all buffers to complete. */
                 if (buffer) {
-                    player->OnBufferProcessed(buffer.get());
-                    buffer.reset();
+                    player->OnBufferProcessed(buffer);
+                    buffer = nullptr;
                 }
+
+                player->currentPosition.store(seek);
 
                 {
                     std::unique_lock<std::mutex> lock(player->queueMutex);
-                    while (player->lockedBuffers.size() > 0) {
+                    while (player->pendingBufferCount > 0) {
                         player->writeToOutputCondition.wait(lock);
                     }
                 }
 
-                player->stream->SetPosition(position);
+                player->stream->SetPosition(seek);
+                player->seekToPosition.exchange(-1.0);
             }
 
             /* let's see if we can find some samples to play */
@@ -310,7 +326,7 @@ void musik::core::audio::playerThreadLoop(Player* player) {
 
                 /* lock it down until it's processed */
                 if (buffer) {
-                    player->lockedBuffers.push_back(buffer);
+                    ++player->pendingBufferCount;
                 }
             }
 
@@ -320,24 +336,15 @@ void musik::core::audio::playerThreadLoop(Player* player) {
                 /* if this result is negative it's an error code defined by the sdk's
                 OutputPlay enum. if it's a positive number it's the number of milliseconds
                 we should wait until automatically trying to play the buffer again. */
-                int playResult = player->output->Play(buffer.get(), player);
+                int playResult = player->output->Play(buffer, player);
 
                 if (playResult == OutputBufferWritten) {
-                    /* success! the buffer was accepted by the output.*/
-                    /* lock it down so it's not destroyed until the output device lets us
-                    know it's done with it. */
-                    std::unique_lock<std::mutex> lock(player->queueMutex);
-
-                    if (player->lockedBuffers.size() == 1) {
-                        player->currentPosition.store(buffer->Position());
-                    }
-
-                    buffer.reset(); /* important! we're done with this one locally. */
+                    buffer = nullptr; /* reset so we pick up a new one next iteration */
                 }
                 else {
                     /* if the buffer was unable to be processed, we'll try again after
                     sleepMs milliseconds */
-                    int sleepMs = 1000;
+                    int sleepMs = 1000; /* default */
 
                     /* if the playResult value >= 0, that means the output requested a
                     specific callback time because its internal buffer is full. */
@@ -386,16 +393,16 @@ void musik::core::audio::playerThreadLoop(Player* player) {
         }
     }
 
-    /* unlock any remaining buffers... see comment above */
+    /* if non-null, it was never accepted by the output. release it now. */
     if (buffer) {
-        player->OnBufferProcessed(buffer.get());
-        buffer.reset();
+        player->OnBufferProcessed(buffer);
+        buffer = nullptr;
     }
 
     /* wait until all remaining buffers have been written, set final state... */
     {
         std::unique_lock<std::mutex> lock(player->queueMutex);
-        while (player->lockedBuffers.size() > 0) {
+        while (player->pendingBufferCount > 0) {
             player->writeToOutputCondition.wait(lock);
         }
     }
@@ -420,11 +427,6 @@ void musik::core::audio::playerThreadLoop(Player* player) {
     player->Destroy();
 
     delete player;
-}
-
-void Player::ReleaseAllBuffers() {
-    std::unique_lock<std::mutex> lock(this->queueMutex);
-    this->lockedBuffers.empty();
 }
 
 bool Player::Exited() {
@@ -504,62 +506,44 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
         vis::PcmVisualizer()->Write(buffer);
     }
 
-    /* free the buffer */
+    /* release the buffer back to the stream, find mixpoints */
 
     {
         std::unique_lock<std::mutex> lock(this->queueMutex);
 
         /* removes the specified buffer from the list of locked buffers, and also
         lets the stream know it can be recycled. */
-        BufferList::iterator it = this->lockedBuffers.begin();
-        while (it != this->lockedBuffers.end() && !found) {
-            if (it->get() == buffer) {
-                found = true;
+        --pendingBufferCount;
 
-                if (this->stream) {
-                    this->stream->OnBufferProcessedByPlayer(*it);
-                }
+        /* if we're seeking this value will be non-negative, so we shouldn't touch
+        the current time. */
+        if (this->seekToPosition.load() == -1) {
+            this->stream->OnBufferProcessedByPlayer((Buffer*)buffer);
+        }
 
-                bool isFront = this->lockedBuffers.front() == *it;
-                it = this->lockedBuffers.erase(it);
+        this->currentPosition.store(((Buffer*)buffer)->Position());
 
-                /* this sets the current time in the stream. it does this by grabbing
-                the time at the next buffer in the queue */
-                if (this->lockedBuffers.empty() || isFront) {
-                    this->currentPosition.store(((Buffer*)buffer)->Position());
+        /* did we hit any pending mixpoints? if so add them to our set and
+        move them to the processed set. we'll notify once out of the
+        critical section. */
+        double adjustedPosition = this->GetPositionInternal();
+        if (adjustedPosition >= this->nextMixPoint) {
+            auto it = this->pendingMixPoints.begin();
+            while (it != this->pendingMixPoints.end()) {
+                if (adjustedPosition >= (*it)->time) {
+                    this->mixPointsHitTemp.push_back(*it);
+                    this->processedMixPoints.push_back(*it);
+                    it = this->pendingMixPoints.erase(it);
                 }
                 else {
-                    /* if the queue is drained, use the position from the buffer
-                    that was just processed */
-                    this->currentPosition.store(this->lockedBuffers.front()->Position());
-                }
-
-                /* did we hit any pending mixpoints? if so add them to our set and
-                move them to the processed set. we'll notify once out of the
-                critical section. */
-                double adjustedPosition = this->GetPosition();
-                if (adjustedPosition >= this->nextMixPoint) {
-                    auto it = this->pendingMixPoints.begin();
-                    while (it != this->pendingMixPoints.end()) {
-                        if (adjustedPosition >= (*it)->time) {
-                            this->mixPointsHitTemp.push_back(*it);
-                            this->processedMixPoints.push_back(*it);
-                            it = this->pendingMixPoints.erase(it);
-                        }
-                        else {
-                            ++it;
-                        }
-                    }
-
-                    /* kind of awkward to recalc the next mixpoint here, but we
-                    already have the queue mutex acquired. */
-                    if (this->mixPointsHitTemp.size()) {
-                        this->UpdateNextMixPointTime();
-                    }
+                    ++it;
                 }
             }
-            else {
-                ++it;
+
+            /* kind of awkward to recalc the next mixpoint here, but we
+            already have the queue mutex acquired. */
+            if (this->mixPointsHitTemp.size()) {
+                this->UpdateNextMixPointTime();
             }
         }
 

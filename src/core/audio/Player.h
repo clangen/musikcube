@@ -90,6 +90,8 @@ namespace musik { namespace core { namespace audio {
         private:
             friend void playerThreadLoop(Player* player);
 
+            double GetPositionInternal();
+
             Player(
                 const std::string &url,
                 std::shared_ptr<musik::core::sdk::IOutput> output,
@@ -110,7 +112,6 @@ namespace musik { namespace core { namespace audio {
 
             using MixPointPtr = std::shared_ptr<MixPoint>;
             using MixPointList = std::list<MixPointPtr>;
-            using BufferList = std::deque<BufferPtr>;
             using ListenerList = std::list<EventListener*>;
             using OutputPtr = std::shared_ptr<musik::core::sdk::IOutput>;
 
@@ -122,7 +123,6 @@ namespace musik { namespace core { namespace audio {
 
             bool Exited();
             int State();
-            void ReleaseAllBuffers();
             ListenerList Listeners();
 
             std::thread* thread;
@@ -133,7 +133,6 @@ namespace musik { namespace core { namespace audio {
             MixPointList pendingMixPoints;
             MixPointList processedMixPoints;
             MixPointList mixPointsHitTemp; /* so we don't have to keep alloc'ing it */
-            BufferList lockedBuffers;
 
             void UpdateNextMixPointTime();
 
@@ -146,12 +145,13 @@ namespace musik { namespace core { namespace audio {
             double volume;
             double nextMixPoint;
             std::atomic<double> currentPosition;
-            std::atomic<double> setPosition;
+            std::atomic<double> seekToPosition;
             int state;
             bool notifiedStarted;
             float* spectrum;
             uint64 samplesWritten;
             DestroyMode destroyMode;
+            int pendingBufferCount;
 
             FftContext* fftContext;
     };

@@ -644,12 +644,12 @@ void Indexer::RunAnalyzers() {
 
                         /* decode the stream quickly, passing to all analyzers */
 
-                        audio::BufferPtr buffer;
+                        audio::Buffer* buffer;
 
                         while ((buffer = stream->GetNextProcessedOutputBuffer()) && !runningAnalyzers.empty()) {
                             PluginVector::iterator plugin = runningAnalyzers.begin();
                             while(plugin != runningAnalyzers.end()) {
-                                if ((*plugin)->Analyze(&track, buffer.get())) {
+                                if ((*plugin)->Analyze(&track, buffer)) {
                                     ++plugin;
                                 }
                                 else {
