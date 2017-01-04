@@ -56,7 +56,7 @@ namespace musik { namespace core { namespace audio {
             memory. if we need more buffers they will be allocated dynamically */
             static StreamPtr Create(
                 int samplesPerChannel = 2048,
-                int bufferCount = 32,
+                int bufferCount = 128,
                 unsigned int options = 0);
 
         private:
@@ -72,6 +72,8 @@ namespace musik { namespace core { namespace audio {
             virtual bool OpenStream(std::string uri);
 
         private:
+            enum Flags { FlagNone = 0, FlagFilling = 1 };
+
             bool GetNextBufferFromDecoder();
             Buffer* GetEmptyBuffer();
             void ApplyDsp(Buffer* buffer);
@@ -96,6 +98,7 @@ namespace musik { namespace core { namespace audio {
             unsigned int options;
             int samplesPerChannel;
             int bufferCount;
+            int flags;
             bool done;
 
             float* rawBuffer;

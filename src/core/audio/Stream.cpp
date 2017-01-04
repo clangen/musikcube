@@ -61,6 +61,7 @@ Stream::Stream(int samplesPerChannel, int bufferCount, unsigned int options)
 , decoderChannels(0)
 , decoderSamplePosition(0)
 , done(false)
+, flags(FlagNone)
 , remainder(nullptr)
 , rawBuffer(nullptr) {
     if ((this->options & NoDSP) == 0) {
@@ -216,7 +217,23 @@ Buffer* Stream::GetNextProcessedOutputBuffer() {
 }
 
 void Stream::RefillInternalBuffers() {
-    int count = this->bufferCount - this->filledBuffers.size();
+    int recycled = this->recycledBuffers.size();
+    int count = 0;
+
+    if (!this->rawBuffer) { /* not initialized */
+        this->flags |= FlagFilling;
+        recycled = this->bufferCount;
+    }
+    else if (recycled > (this->bufferCount * 2) / 3) { /* dwindling */
+        this->flags |= FlagFilling;
+    }
+
+    if ((this->flags & FlagFilling) > 0) {
+        count = std::min(recycled, this->bufferCount / 5);
+        if (count <= 1) {
+            this->flags &= ~FlagFilling; /* full again */
+        }
+    }
 
     while (!this->done && count > 0) {
         --count;
