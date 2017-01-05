@@ -441,6 +441,12 @@ void PlaybackService::SetPosition(double seconds) {
 double PlaybackService::GetDuration() {
     TrackPtr track;
 
+    double duration = this->transport.GetDuration();
+
+    if (duration > 0) {
+        return duration;
+    }
+
     {
         std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
 

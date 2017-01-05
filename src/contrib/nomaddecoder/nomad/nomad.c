@@ -53,7 +53,8 @@
 #define xnew(type, n)			(type *)xmalloc(sizeof(type) * (n))
 #define xrenew(type, mem, n)	(type *)xrealloc(mem, sizeof(type) * (n))
 
-static const float FLOAT_32_SCALE = 1.0 / 32768.0;
+# define mad_f_tofloat(x) \
+    ((float) ((x) / (float) (1L << MAD_F_FRACBITS)))
 
 static inline void * xrealloc(void *ptr, size_t size)
 {
@@ -727,24 +728,23 @@ next_frame:
 #endif
 			return j;
 		}
-		sample = scale(nomad->synth.pcm.samples[0][i]);
         if (format == SAMPLE_FORMAT_16_BIT_PCM) {
+            sample = scale(nomad->synth.pcm.samples[0][i]);
             buffer[j++] = (sample >> 0) & 0xff;
             buffer[j++] = (sample >> 8) & 0xff;
         }
         else { /* SAMPLE_FORMAT_32_BIT_FLOAT */
-            ((float*)buffer)[j++] = (float)sample * FLOAT_32_SCALE;
+            ((float*)buffer)[j++] = mad_f_tofloat(nomad->synth.pcm.samples[0][i]);
         }
 
 		if (nomad->info.channels == 2) {
-			sample = scale(nomad->synth.pcm.samples[1][i]);
-
             if (format == SAMPLE_FORMAT_16_BIT_PCM) {
+                sample = scale(nomad->synth.pcm.samples[1][i]);
                 buffer[j++] = (sample >> 0) & 0xff;
                 buffer[j++] = (sample >> 8) & 0xff;
             }
             else { /* SAMPLE_FORMAT_32_BIT_FLOAT */
-                ((float*) buffer)[j++] = (float)sample * FLOAT_32_SCALE;
+                ((float*) buffer)[j++] = mad_f_tofloat(nomad->synth.pcm.samples[1][i]);
             }
 		}
 	}
