@@ -225,8 +225,9 @@ void Stream::RefillInternalBuffers() {
     }
     else {
         /* fill another chunk -- most of the time for file-based
-        streams this will only be a single buffer. */
-        count = std::min(recycled, this->bufferCount / 4);
+        streams this will only be a single buffer. note the - 1
+        part is to leave space for any potential remainder. */
+        count = std::min(recycled - 1, this->bufferCount / 4);
     }
 
     while (!this->done && count > 0) {
