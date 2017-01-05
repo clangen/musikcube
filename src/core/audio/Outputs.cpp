@@ -50,11 +50,11 @@ using Output = std::shared_ptr<IOutput>;
 using OutputList = std::vector<Output>;
 
 #if defined(WIN32)
-static const std::string defaultOutput = "Wasapi IOutput";
+static const std::string defaultOutput = "WASAPI";
 #elif defined(__APPLE__)
-static const std::string defaultOutput = "CoreAudio IOutput";
+static const std::string defaultOutput = "CoreAudio";
 #else
-static const std::string defaultOutput = "PulseAudio IOutput";
+static const std::string defaultOutput = "PulseAudio";
 #endif
 
 #define LOWER(x) std::transform(x.begin(), x.end(), x.begin(), tolower);
