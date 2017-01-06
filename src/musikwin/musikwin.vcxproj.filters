@@ -1,0 +1,263 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="win32cpp">
+      <UniqueIdentifier>{01f8691c-a7bb-4dd7-822e-0747f9f1631c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="musikwin">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="win32cpp\Button.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\CheckBox.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\Color.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\ComboBox.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\Config.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\Container.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\DeviceContext.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\EditView.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\Exception.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\FolderBrowseDialog.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\Font.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\Frame.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\GroupBox.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\ILayout.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\ImageList.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\Label.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\LinearLayout.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\ListView.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\Locale.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\MemoryDC.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\Menu.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\Panel.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\ProgressBar.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\RadioButton.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\RedrawLock.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\Splitter.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\TabView.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\Timer.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\TopLevelWindow.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\Trackbar.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\TrayIconManager.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\Types.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\Utility.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\VirtualWindow.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\Win32Config.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\win32cpp.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\Win32Exception.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\Window.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\WindowGeometry.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\WindowPadding.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\Application.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="win32cpp\ApplicationThread.hpp">
+      <Filter>win32cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="win32cpp\CheckBox.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\Color.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\ComboBox.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\Config.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\Container.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\DeviceContext.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\EditView.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\Exception.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\FolderBrowseDialog.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\Font.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\Frame.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\GroupBox.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\ImageList.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\Label.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\LinearLayout.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\ListView.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\Locale.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\MemoryDC.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\Menu.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\Panel.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\ProgressBar.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\RadioButton.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\RedrawLock.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\Splitter.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\TabView.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\Timer.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\TopLevelWindow.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\Trackbar.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\TrayIconManager.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\Utility.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\VirtualWindow.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\Window.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\WindowGeometry.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\Application.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\ApplicationThread.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="win32cpp\Button.cpp">
+      <Filter>win32cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="Main.cpp">
+      <Filter>musikwin</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="win32cpp\win32cpp.sln">
+      <Filter>win32cpp</Filter>
+    </None>
+    <None Include="win32cpp\win32cpp.vcproj">
+      <Filter>win32cpp</Filter>
+    </None>
+  </ItemGroup>
+</Project>

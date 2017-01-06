@@ -70,6 +70,7 @@ static inline bool isVisible() {
     if (hwnd) {
         return !IsIconic(hwnd);
     }
+    return true;
 #else
     return true;
 #endif
@@ -196,10 +197,7 @@ void App::Run(ILayoutPtr layout) {
             ch = wgetch(stdscr);
         }
 
-        if (ch == ERR) {
-            std::this_thread::yield();
-        }
-        else {
+        if (ch != ERR) {
             std::string kn = key::Read((int) ch);
 
             if (ch == '\t') { /* tab */
