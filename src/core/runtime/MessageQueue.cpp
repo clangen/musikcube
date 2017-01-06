@@ -67,6 +67,10 @@ void MessageQueue::WaitAndDispatch() {
     this->Dispatch();
 }
 
+MessageQueue::~MessageQueue() {
+
+}
+
 void MessageQueue::Dispatch() {
     milliseconds now = duration_cast<milliseconds>(
         system_clock::now().time_since_epoch());

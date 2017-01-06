@@ -88,11 +88,11 @@ class StreamMessage : public Message {
 };
 
 #define POST(instance, type, user1, user2) \
-    cursespp::Window::MessageQueue().Post( \
+    this->messageQueue.Post( \
         musik::core::runtime::Message::Create(instance, type, user1, user2));
 
 #define POST_STREAM_MESSAGE(instance, eventType, uri) \
-    cursespp::Window::MessageQueue().Post( \
+    this->messageQueue.Post( \
         musik::core::runtime::IMessagePtr(new StreamMessage(instance, eventType, uri)));
 
 static inline void loadPreferences(
@@ -117,12 +117,16 @@ static inline void savePreferences(
     prefs->SetInt(keys::RepeatMode, playback.GetRepeatMode());
 }
 
-PlaybackService::PlaybackService(LibraryPtr library, ITransport& transport)
+PlaybackService::PlaybackService(
+    IMessageQueue& messageQueue,
+    LibraryPtr library,
+    ITransport& transport)
 : library(library)
 , transport(transport)
 , playlist(library)
 , unshuffled(library)
 , repeatMode(RepeatNone)
+, messageQueue(messageQueue)
 , prefs(Preferences::ForComponent(components::Playback)) {
     transport.StreamEvent.connect(this, &PlaybackService::OnStreamEvent);
     transport.PlaybackEvent.connect(this, &PlaybackService::OnPlaybackEvent);

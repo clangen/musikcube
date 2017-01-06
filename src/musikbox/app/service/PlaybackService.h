@@ -44,7 +44,7 @@
 #include <core/library/ILibrary.h>
 #include <core/audio/ITransport.h>
 #include <core/support/Preferences.h>
-#include <core/runtime/IMessageTarget.h>
+#include <core/runtime/IMessageQueue.h>
 
 #include <mutex>
 
@@ -61,6 +61,7 @@ namespace musik {
                 sigslot::signal1<bool> Shuffled;
 
                 PlaybackService(
+                    musik::core::runtime::IMessageQueue& messageQueue,
                     musik::core::LibraryPtr library,
                     musik::core::audio::ITransport& transport);
 
@@ -118,6 +119,8 @@ namespace musik {
                 musik::core::audio::ITransport& transport;
                 size_t index, nextIndex;
                 musik::core::sdk::RepeatMode repeatMode;
+
+                musik::core::runtime::IMessageQueue& messageQueue;
         };
     }
 }

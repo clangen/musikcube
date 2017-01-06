@@ -110,7 +110,7 @@ int main(int argc, char* argv[])
     LibraryPtr library = LibraryFactory::Libraries().at(0);
 
     MasterTransport transport;
-    PlaybackService playback(library, transport);
+    PlaybackService playback(Window::MessageQueue(), library, transport);
 
     GlobalHotkeys globalHotkeys(playback, library);
 

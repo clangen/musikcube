@@ -40,6 +40,7 @@
 #include "Screen.h"
 
 #include <core/runtime/Message.h>
+#include <core/runtime/MessageQueue.h>
 
 using namespace cursespp;
 using namespace musik::core::runtime;
@@ -95,7 +96,7 @@ void Window::Unfreeze() {
     }
 }
 
-MessageQueue& Window::MessageQueue() {
+IMessageQueue& Window::MessageQueue() {
     return messageQueue;
 }
 

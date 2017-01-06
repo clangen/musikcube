@@ -37,7 +37,7 @@
 #include "curses_config.h"
 #include "IWindow.h"
 
-#include <core/runtime/MessageQueue.h>
+#include <core/runtime/IMessageQueue.h>
 
 #ifdef WIN32
 #define IDLE_TIMEOUT_MS 0
@@ -105,7 +105,7 @@ namespace cursespp {
             static void Freeze();
             static void Unfreeze();
 
-            static musik::core::runtime::MessageQueue& MessageQueue();
+            static musik::core::runtime::IMessageQueue& MessageQueue();
 
         protected:
             IWindow* GetParent() const;

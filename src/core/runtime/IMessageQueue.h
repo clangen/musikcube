@@ -34,39 +34,22 @@
 
 #pragma once
 
-#include "IMessageQueue.h"
+#include "IMessage.h"
+#include "IMessageTarget.h"
 
-#include <list>
-#include <mutex>
-#include <condition_variable>
-#include <chrono>
-#include <atomic>
-
-namespace musik { namespace core { namespace runtime {
-    class MessageQueue : public IMessageQueue {
-        public:
-            MessageQueue();
-            virtual ~MessageQueue();
-
-            virtual void Post(IMessagePtr message, int64 delayMs = 0);
-            virtual int Remove(IMessageTarget *target, int type = -1);
-            virtual bool Contains(IMessageTarget *target, int type = -1);
-            virtual void Debounce(IMessagePtr message, int64 delayMs = 0);
-            virtual void WaitAndDispatch();
-            virtual void Dispatch();
-
-        private:
-            struct EnqueuedMessage {
-                IMessagePtr message;
-                std::chrono::milliseconds time;
+namespace musik {
+    namespace core {
+        namespace runtime {
+            class IMessageQueue {
+                public:
+                    virtual ~IMessageQueue() { }
+                    virtual void Post(IMessagePtr message, int64 delayMs = 0) = 0;
+                    virtual int Remove(IMessageTarget *target, int type = -1) = 0;
+                    virtual bool Contains(IMessageTarget *target, int type = -1) = 0;
+                    virtual void Debounce(IMessagePtr message, int64 delayMs = 0) = 0;
+                    virtual void WaitAndDispatch() = 0;
+                    virtual void Dispatch() = 0;
             };
-
-            std::mutex queueMutex;
-            std::list<EnqueuedMessage*> queue;
-            std::list<EnqueuedMessage*> dispatch;
-            std::condition_variable_any waitForDispatch;
-            std::atomic<int64> nextMessageTime;
-
-            void Dispatch(IMessagePtr message);
-    };
-} } }
+        }
+    }
+}

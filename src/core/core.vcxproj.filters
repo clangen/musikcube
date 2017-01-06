@@ -318,5 +318,8 @@
     <ClInclude Include="audio\Crossfader.h">
       <Filter>src\audio</Filter>
     </ClInclude>
+    <ClInclude Include="runtime\IMessageQueue.h">
+      <Filter>src\runtime</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
