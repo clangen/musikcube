@@ -71,7 +71,7 @@ static inline bool isVisible() {
         return !IsIconic(hwnd);
     }
 #else
-    return false;
+    return true;
 #endif
 }
 
