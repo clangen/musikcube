@@ -79,6 +79,11 @@ namespace musik {
                     ShowWindow(mainWindow, SW_HIDE);
                 }
             }
+
+            HWND GetMainWindow() {
+                findMainWindow();
+                return mainWindow;
+            }
         }
     }
 }

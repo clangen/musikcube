@@ -44,9 +44,15 @@
 
 #include <thread>
 
+#ifdef WIN32
+#include <app/util/Win32Util.h>
+#endif
+
 #ifndef WIN32
 #include <csignal>
 #endif
+
+#define HIDDEN_IDLE_TIMEOUT_MS 500
 
 using namespace cursespp;
 using namespace std::chrono;
@@ -54,6 +60,20 @@ using namespace std::chrono;
 static OverlayStack overlays;
 static bool disconnected = false;
 static int64 resizeAt = 0;
+
+static inline bool isVisible() {
+#ifdef WIN32
+    static HWND hwnd = nullptr;
+    if (!hwnd) {
+        hwnd = musik::box::win32::GetMainWindow();
+    }
+    if (hwnd) {
+        return !IsIconic(hwnd);
+    }
+#else
+    return false;
+#endif
+}
 
 #ifndef WIN32
 static void hangupHandler(int signal) {
@@ -147,8 +167,11 @@ void App::Run(ILayoutPtr layout) {
     Colors::Init(this->disableCustomColors);
 
     int64 ch;
-    timeout(IDLE_TIMEOUT_MS);
+
     bool quit = false;
+
+    bool wasVisible = true;
+    bool visible = true;
 
     this->state.input = nullptr;
     this->state.keyHandler = nullptr;
@@ -156,6 +179,12 @@ void App::Run(ILayoutPtr layout) {
     this->ChangeLayout(layout);
 
     while (!quit && !disconnected) {
+        visible = isVisible();
+
+        timeout(visible
+            ? IDLE_TIMEOUT_MS
+            : HIDDEN_IDLE_TIMEOUT_MS);
+
         if (this->state.input) {
             /* if the focused window is an input, allow it to draw a cursor */
             WINDOW *c = this->state.focused->GetContent();
@@ -217,11 +246,15 @@ void App::Run(ILayoutPtr layout) {
             resizeAt = 0;
         }
 
-        this->CheckShowOverlay();
-        this->EnsureFocusIsValid();
+        if (visible || !visible && wasVisible) {
+            this->CheckShowOverlay();
+            this->EnsureFocusIsValid();
+            Window::WriteToScreen(this->state.input);
+        }
 
-        Window::WriteToScreen(this->state.input);
         Window::MessageQueue().Dispatch();
+
+        wasVisible = visible;
     }
 
     overlays.Clear();
@@ -272,7 +305,9 @@ void App::ChangeLayout(ILayoutPtr newLayout) {
 
     if (this->state.input && this->state.focused) {
         /* the current input is about to lose focus. reset the timeout */
-        wtimeout(this->state.focused->GetContent(), 0);
+        wtimeout(
+            this->state.focused->GetContent(),
+            isVisible() ? 0 : HIDDEN_IDLE_TIMEOUT_MS);
     }
 
     if (this->state.layout) {

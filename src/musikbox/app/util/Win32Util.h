@@ -43,6 +43,7 @@ namespace musik {
         namespace win32 {
             void ShowMainWindow();
             void HideMainWindow();
+            HWND GetMainWindow();
         }
     }
 }
