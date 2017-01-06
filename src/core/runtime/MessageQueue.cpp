@@ -43,7 +43,7 @@ using namespace musik::core::runtime;
 using LockT = std::unique_lock<std::mutex>;
 
 MessageQueue::MessageQueue() {
-    this->nextMessageTime = -1;
+    this->nextMessageTime.store(1);
 }
 
 void MessageQueue::WaitAndDispatch() {
@@ -71,16 +71,18 @@ void MessageQueue::Dispatch() {
     milliseconds now = duration_cast<milliseconds>(
         system_clock::now().time_since_epoch());
 
+    int64 nextTime = nextMessageTime.load();
+
+    if (nextTime > now.count() || nextTime < 0) {
+        return; /* short circuit before any iteration. */
+    }
+
     using Iterator = std::list<EnqueuedMessage*>::iterator;
 
     {
         LockT lock(this->queueMutex);
 
-        if (this->nextMessageTime > now.count() || this->nextMessageTime < 0) {
-            return; /* short circuit before any iteration. */
-        }
-
-        this->nextMessageTime = -1;
+        this->nextMessageTime.store(-1);
 
         Iterator it = this->queue.begin();
 
@@ -114,7 +116,7 @@ void MessageQueue::Dispatch() {
     this->dispatch.clear();
 
     if (this->queue.size()) {
-        this->nextMessageTime = (*this->queue.begin())->time.count();
+        this->nextMessageTime.store((*this->queue.begin())->time.count());
     }
 }
 
@@ -139,7 +141,7 @@ int MessageQueue::Remove(IMessageTarget *target, int type) {
     }
 
     if (this->queue.size()) {
-        this->nextMessageTime = (*this->queue.begin())->time.count();
+        this->nextMessageTime.store((*this->queue.begin())->time.count());
     }
 
     return count;
@@ -195,7 +197,7 @@ void MessageQueue::Post(IMessagePtr message, int64 delayMs) {
     this->queue.insert(curr, m);
 
     if (this->queue.size()) {
-        this->nextMessageTime = (*this->queue.begin())->time.count();
+        this->nextMessageTime.store((*this->queue.begin())->time.count());
     }
 
     if (first) {

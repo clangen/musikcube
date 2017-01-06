@@ -41,6 +41,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <chrono>
+#include <atomic>
 
 namespace musik { namespace core { namespace runtime {
     class MessageQueue {
@@ -65,7 +66,7 @@ namespace musik { namespace core { namespace runtime {
             std::list<EnqueuedMessage*> queue;
             std::list<EnqueuedMessage*> dispatch;
             std::condition_variable_any waitForDispatch;
-            int64 nextMessageTime;
+            std::atomic<int64> nextMessageTime;
 
             void Dispatch(IMessagePtr message);
     };
