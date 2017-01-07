@@ -8,31 +8,31 @@
 //
 // All rights reserved.
 //
-// Redistribution and use in source and binary forms, with or without 
+// Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
 //
 //    * Redistributions of source code must retain the above copyright notice,
 //      this list of conditions and the following disclaimer.
 //
-//    * Redistributions in binary form must reproduce the above copyright 
-//      notice, this list of conditions and the following disclaimer in the 
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
 //      documentation and/or other materials provided with the distribution.
 //
-//    * Neither the name of the author nor the names of other contributors may 
-//      be used to endorse or promote products derived from this software 
-//      without specific prior written permission. 
+//    * Neither the name of the author nor the names of other contributors may
+//      be used to endorse or promote products derived from this software
+//      without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
-// POSSIBILITY OF SUCH DAMAGE. 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
 
@@ -64,7 +64,7 @@ TrayIconManager::TrayIconManager()
 TrayIconManager::~TrayIconManager()
 {
     // iterate through list and delete icons
-    for(IconList::iterator i = TrayIconManager::iconList.begin(); i != TrayIconManager::iconList.end(); ++i) {  
+    for(IconList::iterator i = TrayIconManager::iconList.begin(); i != TrayIconManager::iconList.end(); ++i) {
         ::Shell_NotifyIcon(NIM_DELETE, &i->second);
     }
 }
@@ -109,7 +109,7 @@ bool TrayIconManager::DeleteIcon(UINT uid)
 ///
 ///\param timeout
 ///Time to show the balloon in seconds. There are special restrictions defined
-///by the Windows-API. Look here: 
+///by the Windows-API. Look here:
 ///http://msdn.microsoft.com/en-us/library/bb773352(VS.85).aspx
 ///
 ///\param text
@@ -122,10 +122,10 @@ bool TrayIconManager::ShowBalloon(UINT uid, const uistring& title, const uistrin
         TrayIconManager::iconList[uid].uFlags |= NIF_INFO;
         TrayIconManager::iconList[uid].uTimeout = timeout * 1000;
         TrayIconManager::iconList[uid].dwInfoFlags = icon;
-       
+
         ::wcsncpy_s(TrayIconManager::iconList[uid].szInfoTitle, 64, title.c_str(), 64);
         ::wcsncpy_s(TrayIconManager::iconList[uid].szInfo, 256, text.c_str(), 256);
-        
+
         return (::Shell_NotifyIcon(NIM_MODIFY, &TrayIconManager::iconList[uid]) != 0);
     }
 
@@ -192,7 +192,7 @@ bool TrayIconManager::SetPopupMenu(UINT uid, MenuRef menu)
     if(menu) {
         TrayIconManager::menuList[uid] = menu;
         return true;
-    } 
+    }
 
     return false;
 }
@@ -217,7 +217,7 @@ LRESULT TrayIconManager::WindowProc(HWND window, UINT message, WPARAM wParam, LP
 {
     if(TrayIconManager::menuList.find(message - WM_W32CPP_SYSTRAY) != TrayIconManager::menuList.end()) {
         UINT uid = message - WM_W32CPP_SYSTRAY;
-        
+
         switch(LOWORD(lParam)) {
         case WM_RBUTTONDOWN:
             {
@@ -255,7 +255,7 @@ LRESULT TrayIconManager::WindowProc(HWND window, UINT message, WPARAM wParam, LP
     // handle minimize to tray
     if(message == WM_SIZE && wParam == SIZE_MINIMIZED) {
         // iterate through list with icon options and look, if the assigned icon/window pair wants that
-        for(IconList::iterator i = TrayIconManager::iconList.begin(); i != TrayIconManager::iconList.end(); ++i) {  
+        for(IconList::iterator i = TrayIconManager::iconList.begin(); i != TrayIconManager::iconList.end(); ++i) {
             // look if there is a corresponding window
             if(i->second.hWnd == window) {
                 if(TrayIconManager::optionsList[i->second.uID] & TrayIconManager::MINIMIZE_TO_TRAY) {
@@ -322,12 +322,12 @@ int TrayIconManager::AddIcon(Window* window, HICON icon, const uistring& tooltip
     if(!::Shell_NotifyIcon(NIM_ADD, &nid)) {
         return -1;
     }
-    
+
     nid.uVersion = NOTIFYICON_VERSION;
     if(!::Shell_NotifyIcon(NIM_SETVERSION, &nid)) {
         return -1;
     }
-    
+
     // add to icon list
     TrayIconManager::iconList[uid] = nid;
 

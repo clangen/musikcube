@@ -8,31 +8,31 @@
 //
 // All rights reserved.
 //
-// Redistribution and use in source and binary forms, with or without 
+// Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
 //
 //    * Redistributions of source code must retain the above copyright notice,
 //      this list of conditions and the following disclaimer.
 //
-//    * Redistributions in binary form must reproduce the above copyright 
-//      notice, this list of conditions and the following disclaimer in the 
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
 //      documentation and/or other materials provided with the distribution.
 //
-//    * Neither the name of the author nor the names of other contributors may 
-//      be used to endorse or promote products derived from this software 
-//      without specific prior written permission. 
+//    * Neither the name of the author nor the names of other contributors may
+//      be used to endorse or promote products derived from this software
+//      without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
-// POSSIBILITY OF SUCH DAMAGE. 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
 
@@ -174,16 +174,16 @@ LRESULT     TopLevelWindow::WindowProc(UINT message, WPARAM wParam, LPARAM lPara
             // Close handler is used together with ShowModal
             // According to http://msdn.microsoft.com/en-us/library/ms646291.aspx
             // we need to do:
-            // "A window must be enabled before it can be activated. For example, 
-            //  if an application is displaying a modeless dialog box and has disabled 
-            //  its main window, the application must enable the main window before 
-            //  destroying the dialog box. Otherwise, another window will receive the 
+            // "A window must be enabled before it can be activated. For example,
+            //  if an application is displaying a modeless dialog box and has disabled
+            //  its main window, the application must enable the main window before
+            //  destroying the dialog box. Otherwise, another window will receive the
             //  keyboard focus and be activated."
             if(this->parentWindow) {
-                this->parentWindow->Enable(true);   
+                this->parentWindow->Enable(true);
                 SetForegroundWindow(this->parentWindow->Handle());
                 BringWindowToTop(this->parentWindow->Handle());
-                
+
                 this->parentWindow = NULL;
             }
 
@@ -233,7 +233,7 @@ void        TopLevelWindow::OnRequestFocusNext()
 }
 
 void        TopLevelWindow::OnRequestFocusPrev()
-{   
+{
     bool focusChildSuccess = false;
 
     // if we're on the first focused item, jump to the last.
@@ -289,7 +289,7 @@ void        TopLevelWindow::ShowModal(TopLevelWindow* parent)
     if (parent)
     {
         parent->modalChild = this;
-        
+
         // Disable keyboard/mouse input on the parent window,
         // this also means it gets deactivated (NOT in foreground)
         parent->Enable(false);
@@ -340,7 +340,7 @@ void        TopLevelWindow::ShowModal(TopLevelWindow* parent)
         // TODO: log me
     }
 
-    if (parent) 
+    if (parent)
     {
         parent->modalChild = NULL;
     }

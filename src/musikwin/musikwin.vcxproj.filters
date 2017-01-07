@@ -4,9 +4,12 @@
     <Filter Include="win32cpp">
       <UniqueIdentifier>{01f8691c-a7bb-4dd7-822e-0747f9f1631c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="musikwin">
+    <Filter Include="app">
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="app\view">
+      <UniqueIdentifier>{94c9ba27-fe20-4cf8-ab88-c592d44a291e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -137,6 +140,9 @@
       <Filter>win32cpp</Filter>
     </ClInclude>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="app\view\MainWindow.h">
+      <Filter>app\view</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="win32cpp\CheckBox.cpp">
@@ -249,7 +255,10 @@
     </ClCompile>
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="Main.cpp">
-      <Filter>musikwin</Filter>
+      <Filter>app</Filter>
+    </ClCompile>
+    <ClCompile Include="app\view\MainWindow.cpp">
+      <Filter>app\view</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

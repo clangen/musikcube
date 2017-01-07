@@ -161,6 +161,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="app\view\MainWindow.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="win32cpp\Application.hpp" />
     <ClInclude Include="win32cpp\ApplicationThread.hpp" />
@@ -206,6 +207,7 @@
     <ClInclude Include="win32cpp\WindowPadding.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="app\view\MainWindow.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="win32cpp\Application.cpp" />

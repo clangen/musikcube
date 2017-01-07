@@ -1,10 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// License Agreement:
-//
-// The following are Copyright © 2007, Casey Langen
-//
-// Sources and Binaries of: win32cpp
+// Copyright (c) 2007-2016 musikcube team
 //
 // All rights reserved.
 //
@@ -38,16 +34,22 @@
 
 #pragma once
 
-//////////////////////////////////////////////////////////////////////////////
+#include <win32cpp/TopLevelWindow.hpp>
+#include <core/runtime/IMessageQueue.h>
 
-#define _WIN32_WINNT 0x0501
-#define _WIN32_IE 0x0500
+namespace musik { namespace win {
+    class MainWindow : public win32cpp::TopLevelWindow {
+        private:
+            class Win32MessageQueue;
 
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
+        public:
+            MainWindow(const win32cpp::uichar* windowTitle);
+            virtual ~MainWindow();
 
-#include <windows.h>
-#include <windowsx.h>
-#include <commctrl.h>
-#include <shellapi.h>
-#include <memory>
+            virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+            musik::core::runtime::IMessageQueue& Queue();
+
+        private:
+            Win32MessageQueue* queue;
+    };
+} }
