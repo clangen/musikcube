@@ -10,10 +10,6 @@ set (BOX_SRCS
 	./app/layout/SearchLayout.cpp
 	./app/layout/TrackSearchLayout.cpp
 	./app/model/DirectoryAdapter.cpp
-	./app/query/CategoryListViewQuery.cpp
-	./app/query/CategoryTrackListQuery.cpp
-	./app/query/NowPlayingTrackListQuery.cpp
-	./app/query/SearchTrackListQuery.cpp
 	./app/overlay/PlaybackOverlays.cpp
 	./app/overlay/VisualizerOverlay.cpp
 	./app/util/Hotkeys.cpp
