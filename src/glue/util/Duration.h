@@ -34,6 +34,8 @@
 
 #pragma once
 
+#include <string>
+
 namespace musik { namespace glue { namespace duration {
 
     std::string Duration(const std::string& str);

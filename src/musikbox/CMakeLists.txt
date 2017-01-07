@@ -1,7 +1,6 @@
 set (BOX_SRCS
 	./Main.cpp
 	./stdafx.cpp
-	./app/audio/MasterTransport.cpp
 	./app/layout/BrowseLayout.cpp
 	./app/layout/ConsoleLayout.cpp
 	./app/layout/SettingsLayout.cpp
@@ -11,19 +10,16 @@ set (BOX_SRCS
 	./app/layout/SearchLayout.cpp
 	./app/layout/TrackSearchLayout.cpp
 	./app/model/DirectoryAdapter.cpp
-	./app/model/TrackList.cpp
 	./app/query/CategoryListViewQuery.cpp
 	./app/query/CategoryTrackListQuery.cpp
 	./app/query/NowPlayingTrackListQuery.cpp
 	./app/query/SearchTrackListQuery.cpp
-	./app/service/PlaybackService.cpp
 	./app/overlay/PlaybackOverlays.cpp
 	./app/overlay/VisualizerOverlay.cpp
-	./app/util/Duration.cpp
 	./app/util/Hotkeys.cpp
 	./app/util/GlobalHotkeys.cpp
-	./app/util/Playback.cpp
 	./app/util/PreferenceKeys.cpp
+	./app/util/Playback.cpp
 	./app/window/CategoryListView.cpp
 	./app/window/EntryWithHeader.cpp
 	./app/window/LogWindow.cpp
@@ -62,7 +58,7 @@ configure_file("musikbox.in" "musikbox" @ONLY)
 add_executable(musikbox ${BOX_SRCS})
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
-	target_link_libraries(musikbox ${musikbox_LINK_LIBS} ncursesw panelw musikcore)
+	target_link_libraries(musikbox ${musikbox_LINK_LIBS} ncursesw panelw musikcore musikglue)
 else (CMAKE_SYSTEM_NAME MATCHES "Linux")
-	target_link_libraries(musikbox ${musikbox_LINK_LIBS} curses panel musikcore)
+	target_link_libraries(musikbox ${musikbox_LINK_LIBS} curses panel musikcore musikglue)
 endif (CMAKE_SYSTEM_NAME MATCHES "Linux")

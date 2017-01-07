@@ -244,7 +244,7 @@ void App::Run(ILayoutPtr layout) {
             resizeAt = 0;
         }
 
-        if (visible || !visible && wasVisible) {
+        if (visible || (!visible && wasVisible)) {
             this->CheckShowOverlay();
             this->EnsureFocusIsValid();
             Window::WriteToScreen(this->state.input);
