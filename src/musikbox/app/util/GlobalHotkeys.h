@@ -36,7 +36,7 @@
 
 #include "stdafx.h"
 
-#include <glue/audio/PlaybackService.h>
+#include <core/audio/PlaybackService.h>
 #include <core/library/ILibrary.h>
 
 namespace musik {
@@ -44,7 +44,7 @@ namespace musik {
         class GlobalHotkeys {
             public:
                 GlobalHotkeys(
-                    musik::glue::audio::PlaybackService& playback,
+                    musik::core::audio::PlaybackService& playback,
                     musik::core::LibraryPtr library);
 
                 ~GlobalHotkeys(); /* non-virtual; do not use as a base class */
@@ -52,7 +52,7 @@ namespace musik {
                 bool Handle(const std::string& kn);
 
             private:
-                musik::glue::audio::PlaybackService& playback;
+                musik::core::audio::PlaybackService& playback;
                 musik::core::audio::ITransport& transport;
                 musik::core::LibraryPtr library;
         };

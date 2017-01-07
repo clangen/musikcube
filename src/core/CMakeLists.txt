@@ -5,6 +5,7 @@ set(CORE_SOURCES
   ./audio/CrossfadeTransport.cpp
   ./audio/GaplessTransport.cpp
   ./audio/Outputs.cpp
+  ./audio/PlaybackService.cpp
   ./audio/Player.cpp
   ./audio/Stream.cpp
   ./audio/Streams.cpp
@@ -23,6 +24,7 @@ set(CORE_SOURCES
   ./library/track/IndexerTrack.cpp
   ./library/track/LibraryTrack.cpp
   ./library/track/Track.cpp
+  ./library/track/TrackList.cpp
   ./library/track/RetainedTrack.cpp
   ./plugin/PluginFactory.cpp
   ./runtime/Message.cpp

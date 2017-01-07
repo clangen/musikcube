@@ -38,7 +38,7 @@
 #include <cursespp/Screen.h>
 #include <cursespp/Text.h>
 #include <core/library/LocalLibraryConstants.h>
-#include <app/query/NowPlayingTrackListQuery.h>
+#include <glue/query/NowPlayingTrackListQuery.h>
 #include <glue/util/Duration.h>
 #include "NowPlayingLayout.h"
 
@@ -56,7 +56,7 @@ using namespace cursespp;
 static std::string formatWithAlbum(TrackPtr track, size_t width);
 
 NowPlayingLayout::NowPlayingLayout(
-    musik::glue::audio::PlaybackService& playback,
+    musik::core::audio::PlaybackService& playback,
     musik::core::LibraryPtr library)
 : LayoutBase()
 , playback(playback)

@@ -35,33 +35,22 @@
 #pragma once
 
 #include <core/library/query/QueryBase.h>
-#include "TrackListQueryBase.h"
-#include <glue/audio/PlaybackService.h>
+#include <core/db/Connection.h>
+#include <core/library/track/Track.h>
+#include <core/library/track/TrackList.h>
 
 namespace musik {
-    namespace box {
-        class NowPlayingTrackListQuery : public TrackListQueryBase {
+    namespace glue {
+        class TrackListQueryBase : public musik::core::query::QueryBase {
             public:
-                NowPlayingTrackListQuery(
-                    musik::core::LibraryPtr library,
-                    musik::glue::audio::PlaybackService& playback);
+                typedef std::shared_ptr<musik::core::TrackList> Result;
+                typedef std::shared_ptr<std::set<size_t> > Headers;
 
-                virtual ~NowPlayingTrackListQuery();
-
-                virtual std::string Name() { return "NowPlayingTrackListQuery"; }
-                virtual Result GetResult();
-                virtual Headers GetHeaders();
-                virtual size_t GetQueryHash();
-
-            protected:
-                virtual bool OnRun(musik::core::db::Connection &db);
-
-            private:
-                musik::core::LibraryPtr library;
-                musik::glue::audio::PlaybackService& playback;
-                Result result;
-                Headers headers;
-                size_t hash;
+                virtual ~TrackListQueryBase() { };
+                virtual std::string Name() = 0;
+                virtual Result GetResult() = 0;
+                virtual Headers GetHeaders() = 0;
+                virtual size_t GetQueryHash() = 0;
         };
     }
 }

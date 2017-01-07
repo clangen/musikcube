@@ -32,46 +32,59 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "pch.hpp"
+#include "NowPlayingTrackListQuery.h"
 
-#include <core/library/track/Track.h>
-#include <core/library/ILibrary.h>
+#include <core/library/track/LibraryTrack.h>
+#include <core/library/LocalLibraryConstants.h>
+#include <core/db/Statement.h>
 
-#include <unordered_map>
-#include <list>
+using musik::core::db::Statement;
+using musik::core::db::Row;
+using musik::core::TrackPtr;
+using musik::core::LibraryTrack;
+using musik::core::LibraryPtr;
 
-namespace musik {
-    namespace glue {
-        class TrackList {
-            public:
-                TrackList(musik::core::LibraryPtr library);
-                virtual ~TrackList();
+using namespace musik::core::db;
+using namespace musik::core::library::constants;
+using namespace musik::glue;
 
-                size_t Count();
-                void Add(const DBID& id);
-                musik::core::TrackPtr Get(size_t index);
-                DBID GetId(size_t index);
-                int IndexOf(DBID id);
-                void ClearCache();
-                void Clear();
-                void Swap(TrackList& list);
-                void CopyFrom(TrackList& from);
-                void Shuffle();
+NowPlayingTrackListQuery::NowPlayingTrackListQuery(
+    LibraryPtr library, musik::core::audio::PlaybackService& playback)
+: library(library)
+, playback(playback) {
+    this->result.reset(new musik::core::TrackList(library));
+    this->headers.reset(new std::set<size_t>());
+    this->hash = 0;
+}
 
-            private:
-                typedef std::list<DBID> CacheList;
-                typedef std::pair<musik::core::TrackPtr, CacheList::iterator> CacheValue;
-                typedef std::unordered_map<DBID, CacheValue> CacheMap;
+NowPlayingTrackListQuery::~NowPlayingTrackListQuery() {
 
-                musik::core::TrackPtr GetFromCache(DBID key);
-                void AddToCache(DBID key, musik::core::TrackPtr value);
+}
 
-                /* lru cache structures */
-                CacheList cacheList;
-                CacheMap cacheMap;
+NowPlayingTrackListQuery::Result NowPlayingTrackListQuery::GetResult() {
+    return this->result;
+}
 
-                std::vector<DBID> ids;
-                musik::core::LibraryPtr library;
-        };
+NowPlayingTrackListQuery::Headers NowPlayingTrackListQuery::GetHeaders() {
+    return this->headers;
+}
+
+size_t NowPlayingTrackListQuery::GetQueryHash() {
+    if (this->hash == 0) {
+        this->hash = std::hash<std::string>()(this->Name());
     }
+
+    return this->hash;
+}
+
+bool NowPlayingTrackListQuery::OnRun(Connection& db) {
+    if (result) {
+        result.reset(new musik::core::TrackList(this->library));
+        headers.reset(new std::set<size_t>());
+    }
+
+    this->playback.CopyTo(*result);
+
+    return true;
 }

@@ -32,8 +32,8 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
-#include "CategoryListViewQuery.h"
+#include "pch.hpp"
+#include "CategoryListQuery.h"
 
 #include <core/library/LocalLibraryConstants.h>
 #include <core/db/Statement.h>
@@ -46,7 +46,7 @@ using musik::core::db::Row;
 
 using namespace musik::core::db;
 using namespace musik::core::library::constants;
-using namespace musik::box;
+using namespace musik::glue;
 
 #define RESET_RESULT(x) x.reset(new std::vector<std::shared_ptr<Result> >);
 
@@ -114,7 +114,7 @@ static void initFieldToQueryMap() {
     FILTERED_FIELD_TO_QUERY_MAP[Track::GENRE] = FILTERED_GENRE_QUERY;
 }
 
-CategoryListViewQuery::CategoryListViewQuery(
+CategoryListQuery::CategoryListQuery(
     const std::string& trackField, const std::string& filter)
 : trackField(trackField)
 , filter(filter) {
@@ -133,15 +133,15 @@ CategoryListViewQuery::CategoryListViewQuery(
     }
 }
 
-CategoryListViewQuery::~CategoryListViewQuery() {
+CategoryListQuery::~CategoryListQuery() {
 
 }
 
-CategoryListViewQuery::ResultList CategoryListViewQuery::GetResult() {
+CategoryListQuery::ResultList CategoryListQuery::GetResult() {
     return this->result;
 }
 
-int CategoryListViewQuery::GetIndexOf(DBID id) {
+int CategoryListQuery::GetIndexOf(DBID id) {
     auto result = this->GetResult();
     for (size_t i = 0; i < result->size(); i++) {
         if (id == (*result)[i]->id) {
@@ -151,7 +151,7 @@ int CategoryListViewQuery::GetIndexOf(DBID id) {
     return -1;
 }
 
-bool CategoryListViewQuery::OnRun(Connection& db) {
+bool CategoryListQuery::OnRun(Connection& db) {
     RESET_RESULT(result);
 
     bool filtered = this->filter.size() > 0;

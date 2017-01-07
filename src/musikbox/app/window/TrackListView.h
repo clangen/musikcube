@@ -39,8 +39,8 @@
 #include <cursespp/IKeyHandler.h>
 #include <cursespp/ListWindow.h>
 
-#include <app/query/TrackListQueryBase.h>
-#include <glue/audio/PlaybackService.h>
+#include <glue/query/TrackListQueryBase.h>
+#include <core/audio/PlaybackService.h>
 
 #include <core/runtime/IMessage.h>
 #include <core/library/ILibrary.h>
@@ -62,8 +62,10 @@ namespace musik {
 
                 typedef std::shared_ptr<std::set<size_t> > Headers;
 
+                typedef musik::glue::TrackListQueryBase TrackListQueryBase;
+
                 TrackListView(
-                    musik::glue::audio::PlaybackService& playback,
+                    musik::core::audio::PlaybackService& playback,
                     musik::core::LibraryPtr library,
                     RowFormatter formatter = RowFormatter());
 
@@ -72,7 +74,7 @@ namespace musik {
                 virtual void ProcessMessage(musik::core::runtime::IMessage &message);
                 virtual bool KeyPress(const std::string& key);
 
-                std::shared_ptr<musik::glue::TrackList> GetTrackList();
+                std::shared_ptr<musik::core::TrackList> GetTrackList();
                 void Clear();
 
                 void Requery(std::shared_ptr<TrackListQueryBase> query);
@@ -99,10 +101,10 @@ namespace musik {
                 void ScrollToPlaying();
 
                 std::shared_ptr<TrackListQueryBase> query;
-                std::shared_ptr<musik::glue::TrackList> metadata;
+                std::shared_ptr<musik::core::TrackList> metadata;
                 Headers headers;
                 Adapter* adapter;
-                musik::glue::audio::PlaybackService& playback;
+                musik::core::audio::PlaybackService& playback;
                 musik::core::TrackPtr playing;
                 musik::core::LibraryPtr library;
                 size_t lastQueryHash;

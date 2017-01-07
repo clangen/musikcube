@@ -45,18 +45,10 @@
 
 #define MAX_SIZE 50
 
-using musik::core::db::Statement;
-using musik::core::db::Row;
-using musik::core::TrackPtr;
-using musik::core::LibraryTrack;
-using musik::core::LibraryPtr;
-using musik::core::ILibrary;
-
+using namespace musik::core;
 using namespace musik::core::db;
 using namespace musik::core::query;
-using namespace musik::core::library::constants;
-
-using namespace musik::glue;
+using namespace musik::core::library;
 
 class TrackMetadataQuery : public QueryBase {
     public:
@@ -192,20 +184,20 @@ bool TrackMetadataQuery::OnRun(Connection& db) {
     if (trackQuery.Step() == Row) {
         DBID id = trackQuery.ColumnInt64(0);
         TrackPtr track = TrackPtr(new LibraryTrack(id, this->library));
-        track->SetValue(Track::TRACK_NUM, trackQuery.ColumnText(1));
-        track->SetValue(Track::DISC_NUM, trackQuery.ColumnText(2));
-        track->SetValue(Track::BPM, trackQuery.ColumnText(3));
-        track->SetValue(Track::DURATION, trackQuery.ColumnText(4));
-        track->SetValue(Track::FILESIZE, trackQuery.ColumnText(5));
-        track->SetValue(Track::YEAR, trackQuery.ColumnText(6));
-        track->SetValue(Track::TITLE, trackQuery.ColumnText(7));
-        track->SetValue(Track::FILENAME, trackQuery.ColumnText(8));
-        track->SetValue(Track::THUMBNAIL_ID, trackQuery.ColumnText(9));
-        track->SetValue(Track::ALBUM, trackQuery.ColumnText(10));
-        track->SetValue(Track::ALBUM_ARTIST, trackQuery.ColumnText(11));
-        track->SetValue(Track::GENRE, trackQuery.ColumnText(12));
-        track->SetValue(Track::ARTIST, trackQuery.ColumnText(13));
-        track->SetValue(Track::FILETIME, trackQuery.ColumnText(14));
+        track->SetValue(constants::Track::TRACK_NUM, trackQuery.ColumnText(1));
+        track->SetValue(constants::Track::DISC_NUM, trackQuery.ColumnText(2));
+        track->SetValue(constants::Track::BPM, trackQuery.ColumnText(3));
+        track->SetValue(constants::Track::DURATION, trackQuery.ColumnText(4));
+        track->SetValue(constants::Track::FILESIZE, trackQuery.ColumnText(5));
+        track->SetValue(constants::Track::YEAR, trackQuery.ColumnText(6));
+        track->SetValue(constants::Track::TITLE, trackQuery.ColumnText(7));
+        track->SetValue(constants::Track::FILENAME, trackQuery.ColumnText(8));
+        track->SetValue(constants::Track::THUMBNAIL_ID, trackQuery.ColumnText(9));
+        track->SetValue(constants::Track::ALBUM, trackQuery.ColumnText(10));
+        track->SetValue(constants::Track::ALBUM_ARTIST, trackQuery.ColumnText(11));
+        track->SetValue(constants::Track::GENRE, trackQuery.ColumnText(12));
+        track->SetValue(constants::Track::ARTIST, trackQuery.ColumnText(13));
+        track->SetValue(constants::Track::FILETIME, trackQuery.ColumnText(14));
 
         this->result = track;
         return true;

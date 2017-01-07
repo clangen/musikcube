@@ -49,7 +49,7 @@ using namespace musik::core::audio;
 using namespace musik::core::sdk;
 using namespace musik::box;
 
-GlobalHotkeys::GlobalHotkeys(musik::glue::audio::PlaybackService& playback, LibraryPtr library)
+GlobalHotkeys::GlobalHotkeys(musik::core::audio::PlaybackService& playback, LibraryPtr library)
 : playback(playback)
 , transport(playback.GetTransport()) {
     this->library = library;

@@ -39,7 +39,7 @@
 #include <app/window/CategoryListView.h>
 #include <app/window/TrackListView.h>
 #include <app/window/TransportWindow.h>
-#include <glue/audio/PlaybackService.h>
+#include <core/audio/PlaybackService.h>
 
 #include <core/library/ILibrary.h>
 
@@ -56,7 +56,7 @@ namespace musik {
         {
             public:
                 NowPlayingLayout(
-                    musik::glue::audio::PlaybackService& playback,
+                    musik::core::audio::PlaybackService& playback,
                     musik::core::LibraryPtr library);
 
                 virtual ~NowPlayingLayout();
@@ -73,7 +73,7 @@ namespace musik {
                 void InitializeWindows();
                 void RequeryTrackList();
 
-                musik::glue::audio::PlaybackService& playback;
+                musik::core::audio::PlaybackService& playback;
                 musik::core::LibraryPtr library;
                 std::shared_ptr<TrackListView> trackList;
         };

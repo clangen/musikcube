@@ -89,6 +89,7 @@
     <ClCompile Include="audio\CrossfadeTransport.cpp" />
     <ClCompile Include="audio\GaplessTransport.cpp" />
     <ClCompile Include="audio\Outputs.cpp" />
+    <ClCompile Include="audio\PlaybackService.cpp" />
     <ClCompile Include="audio\Streams.cpp" />
     <ClCompile Include="audio\Visualizer.cpp" />
     <ClCompile Include="debug.cpp" />
@@ -103,6 +104,7 @@
     <ClCompile Include="library\track\LibraryTrack.cpp" />
     <ClCompile Include="library\track\RetainedTrack.cpp" />
     <ClCompile Include="library\track\Track.cpp" />
+    <ClCompile Include="library\track\TrackList.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -127,6 +129,7 @@
     <ClInclude Include="audio\IStream.h" />
     <ClInclude Include="audio\ITransport.h" />
     <ClInclude Include="audio\Outputs.h" />
+    <ClInclude Include="audio\PlaybackService.h" />
     <ClInclude Include="audio\Streams.h" />
     <ClInclude Include="audio\Visualizer.h" />
     <ClInclude Include="debug.h" />
@@ -145,6 +148,7 @@
     <ClInclude Include="library\track\LibraryTrack.h" />
     <ClInclude Include="library\track\RetainedTrack.h" />
     <ClInclude Include="library\track\Track.h" />
+    <ClInclude Include="library\track\TrackList.h" />
     <ClInclude Include="pch.hpp" />
     <ClInclude Include="config.h" />
     <ClInclude Include="plugin\PluginFactory.h" />

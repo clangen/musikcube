@@ -133,10 +133,6 @@
     <ClCompile Include="app\model\DirectoryAdapter.cpp" />
     <ClCompile Include="app\overlay\PlaybackOverlays.cpp" />
     <ClCompile Include="app\overlay\VisualizerOverlay.cpp" />
-    <ClCompile Include="app\query\CategoryListViewQuery.cpp" />
-    <ClCompile Include="app\query\NowPlayingTrackListQuery.cpp" />
-    <ClCompile Include="app\query\CategoryTrackListQuery.cpp" />
-    <ClCompile Include="app\query\SearchTrackListQuery.cpp" />
     <ClCompile Include="app\util\GlobalHotkeys.cpp" />
     <ClCompile Include="app\util\Hotkeys.cpp" />
     <ClCompile Include="app\util\Playback.cpp" />
@@ -186,11 +182,6 @@
     <ClInclude Include="app\model\DirectoryAdapter.h" />
     <ClInclude Include="app\overlay\PlaybackOverlays.h" />
     <ClInclude Include="app\overlay\VisualizerOverlay.h" />
-    <ClInclude Include="app\query\CategoryListViewQuery.h" />
-    <ClInclude Include="app\query\NowPlayingTrackListQuery.h" />
-    <ClInclude Include="app\query\SearchTrackListQuery.h" />
-    <ClInclude Include="app\query\TrackListQueryBase.h" />
-    <ClInclude Include="app\query\CategoryTrackListQuery.h" />
     <ClInclude Include="app\util\GlobalHotkeys.h" />
     <ClInclude Include="app\util\Hotkeys.h" />
     <ClInclude Include="app\util\Playback.h" />

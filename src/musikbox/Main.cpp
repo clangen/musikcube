@@ -46,7 +46,7 @@
 #include <app/util/GlobalHotkeys.h>
 #include <app/util/Hotkeys.h>
 #include <app/util/PreferenceKeys.h>
-#include <glue/audio/PlaybackService.h>
+#include <core/audio/PlaybackService.h>
 
 #include <glue/audio/MasterTransport.h>
 

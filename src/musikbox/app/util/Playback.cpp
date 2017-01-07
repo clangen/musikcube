@@ -44,7 +44,7 @@ namespace musik {
         namespace playback {
             void Play(
                 std::shared_ptr<musik::box::TrackListView> trackList,
-                musik::glue::audio::PlaybackService& playback,
+                musik::core::audio::PlaybackService& playback,
                 cursespp::IWindowPtr focused)
             {
                 auto tracks = trackList->GetTrackList();

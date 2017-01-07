@@ -39,7 +39,6 @@
 
 #include <core/library/LocalLibraryConstants.h>
 
-#include <app/query/CategoryTrackListQuery.h>
 #include <app/util/Hotkeys.h>
 #include <glue/util/Playback.h>
 
@@ -60,7 +59,7 @@ using namespace musik::box;
 using namespace musik::core::runtime;
 using namespace cursespp;
 
-LibraryLayout::LibraryLayout(musik::glue::audio::PlaybackService& playback, LibraryPtr library)
+LibraryLayout::LibraryLayout(musik::core::audio::PlaybackService& playback, LibraryPtr library)
 : LayoutBase()
 , playback(playback)
 , shortcuts(nullptr)

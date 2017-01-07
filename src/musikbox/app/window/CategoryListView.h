@@ -39,9 +39,9 @@
 #include <cursespp/ListWindow.h>
 #include <cursespp/ScrollAdapterBase.h>
 
-#include <app/query/CategoryListViewQuery.h>
-#include <glue/audio/PlaybackService.h>
+#include <glue/query/CategoryListQuery.h>
 
+#include <core/audio/PlaybackService.h>
 #include <core/library/IQuery.h>
 #include <core/library/ILibrary.h>
 #include <core/runtime/IMessage.h>
@@ -59,7 +59,7 @@ namespace musik {
         {
             public:
                 CategoryListView(
-                    musik::glue::audio::PlaybackService& playback,
+                    musik::core::audio::PlaybackService& playback,
                     musik::core::LibraryPtr library,
                     const std::string& fieldName);
 
@@ -106,18 +106,18 @@ namespace musik {
                 void OnTrackChanged(size_t index, musik::core::TrackPtr track);
                 void ScrollToPlaying();
 
-                musik::glue::audio::PlaybackService& playback;
+                musik::core::audio::PlaybackService& playback;
                 Adapter *adapter;
 
                 std::mutex queryMutex;
-                std::shared_ptr<CategoryListViewQuery> activeQuery;
+                std::shared_ptr<musik::glue::CategoryListQuery> activeQuery;
 
                 musik::core::LibraryPtr library;
                 musik::core::TrackPtr playing;
 
                 std::string fieldName;
                 DBID selectAfterQuery;
-                CategoryListViewQuery::ResultList metadata;
+                musik::glue::CategoryListQuery::ResultList metadata;
         };
     }
 }

@@ -133,6 +133,12 @@
     <ClCompile Include="audio\Crossfader.cpp">
       <Filter>src\audio</Filter>
     </ClCompile>
+    <ClCompile Include="audio\PlaybackService.cpp">
+      <Filter>src\audio</Filter>
+    </ClCompile>
+    <ClCompile Include="library\track\TrackList.cpp">
+      <Filter>src\library\track</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -320,6 +326,12 @@
     </ClInclude>
     <ClInclude Include="runtime\IMessageQueue.h">
       <Filter>src\runtime</Filter>
+    </ClInclude>
+    <ClInclude Include="audio\PlaybackService.h">
+      <Filter>src\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="library\track\TrackList.h">
+      <Filter>src\library\track</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

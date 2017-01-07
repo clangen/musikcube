@@ -38,7 +38,7 @@
 #include <cursespp/TextInput.h>
 
 #include <app/window/TrackListView.h>
-#include <glue/audio/PlaybackService.h>
+#include <core/audio/PlaybackService.h>
 
 #include <core/library/ILibrary.h>
 
@@ -55,7 +55,7 @@ namespace musik {
         {
             public:
                 TrackSearchLayout(
-                    musik::glue::audio::PlaybackService& playback,
+                    musik::core::audio::PlaybackService& playback,
                     musik::core::LibraryPtr library);
 
                 virtual ~TrackSearchLayout();
@@ -79,7 +79,7 @@ namespace musik {
 
                 void OnEnterPressed(cursespp::TextInput* sender);
 
-                musik::glue::audio::PlaybackService& playback;
+                musik::core::audio::PlaybackService& playback;
                 musik::core::LibraryPtr library;
                 std::shared_ptr<TrackListView> trackList;
                 std::shared_ptr<cursespp::TextInput> input;

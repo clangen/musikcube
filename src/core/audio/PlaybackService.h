@@ -36,11 +36,10 @@
 
 #include <sigslot/sigslot.h>
 
-#include <glue/model/TrackList.h>
-
 #include <core/sdk/IPlaybackService.h>
 #include <core/sdk/IPlaybackRemote.h>
 #include <core/library/track/Track.h>
+#include <core/library/track/TrackList.h>
 #include <core/library/ILibrary.h>
 #include <core/audio/ITransport.h>
 #include <core/support/Preferences.h>
@@ -48,7 +47,8 @@
 
 #include <mutex>
 
-namespace musik { namespace glue { namespace audio {
+namespace musik { namespace core { namespace audio {
+
     class PlaybackService :
         public musik::core::sdk::IPlaybackService,
         public musik::core::runtime::IMessageTarget,
@@ -94,8 +94,8 @@ namespace musik { namespace glue { namespace audio {
 
             /* app-specific implementation */
             musik::core::audio::ITransport& GetTransport() { return this->transport; }
-            void Play(musik::glue::TrackList& tracks, size_t index);
-            void CopyTo(musik::glue::TrackList& target);
+            void Play(musik::core::TrackList& tracks, size_t index);
+            void CopyTo(musik::core::TrackList& target);
             musik::core::TrackPtr GetTrackAtIndex(size_t index);
 
         private:
@@ -107,8 +107,8 @@ namespace musik { namespace glue { namespace audio {
             void InitRemotes();
             void ResetRemotes();
 
-            musik::glue::TrackList playlist;
-            musik::glue::TrackList unshuffled;
+            musik::core::TrackList playlist;
+            musik::core::TrackList unshuffled;
             std::recursive_mutex playlistMutex;
 
             std::vector<std::shared_ptr<musik::core::sdk::IPlaybackRemote > > remotes;
@@ -121,4 +121,5 @@ namespace musik { namespace glue { namespace audio {
 
             musik::core::runtime::IMessageQueue& messageQueue;
     };
+
 } } }

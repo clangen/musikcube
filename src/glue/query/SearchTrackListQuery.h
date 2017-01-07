@@ -37,7 +37,7 @@
 #include "TrackListQueryBase.h"
 
 namespace musik {
-    namespace box {
+    namespace glue {
         class SearchTrackListQuery : public TrackListQueryBase {
             public:
                 SearchTrackListQuery(

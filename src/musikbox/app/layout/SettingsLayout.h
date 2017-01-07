@@ -44,7 +44,7 @@
 #include <cursespp/DialogOverlay.h>
 
 #include <app/window/TrackListView.h>
-#include <glue/audio/PlaybackService.h>
+#include <core/audio/PlaybackService.h>
 #include <app/model/DirectoryAdapter.h>
 
 #include <glue/audio/MasterTransport.h>

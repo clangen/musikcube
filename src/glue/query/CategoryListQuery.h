@@ -36,22 +36,37 @@
 
 #include <core/library/query/QueryBase.h>
 #include <core/db/Connection.h>
-#include <core/library/track/Track.h>
-#include <glue/model/TrackList.h>
-#include "CategoryListViewQuery.h"
+#include <memory>
 
 namespace musik {
-    namespace box {
-        class TrackListQueryBase : public musik::core::query::QueryBase {
+    namespace glue {
+        class CategoryListQuery : public musik::core::query::QueryBase {
             public:
-                typedef std::shared_ptr<musik::glue::TrackList> Result;
-                typedef std::shared_ptr<std::set<size_t> > Headers;
+                struct Result {
+                    std::string displayValue;
+                    DBID id;
+                };
 
-                virtual ~TrackListQueryBase() { };
-                virtual std::string Name() = 0;
-                virtual Result GetResult() = 0;
-                virtual Headers GetHeaders() = 0;
-                virtual size_t GetQueryHash() = 0;
+                typedef std::shared_ptr<std::vector<
+                    std::shared_ptr<Result> > > ResultList;
+
+                CategoryListQuery(
+                    const std::string& trackField,
+                    const std::string& filter = "");
+
+                virtual ~CategoryListQuery();
+
+                std::string Name() { return "CategoryListQuery"; }
+
+                virtual ResultList GetResult();
+                virtual int GetIndexOf(DBID id);
+
+            protected:
+                virtual bool OnRun(musik::core::db::Connection &db);
+
+                std::string trackField;
+                std::string filter;
+                ResultList result;
         };
     }
 }

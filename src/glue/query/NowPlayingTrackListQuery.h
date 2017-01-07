@@ -32,59 +32,37 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
-#include "NowPlayingTrackListQuery.h"
+#pragma once
 
-#include <core/library/track/LibraryTrack.h>
-#include <core/library/LocalLibraryConstants.h>
-#include <core/db/Statement.h>
+#include <core/library/query/QueryBase.h>
+#include <core/audio/PlaybackService.h>
 
-using musik::core::db::Statement;
-using musik::core::db::Row;
-using musik::core::TrackPtr;
-using musik::core::LibraryTrack;
-using musik::core::LibraryPtr;
+#include "TrackListQueryBase.h"
 
-using namespace musik::core::db;
-using namespace musik::core::library::constants;
-using namespace musik::box;
+namespace musik {
+    namespace glue {
+        class NowPlayingTrackListQuery : public TrackListQueryBase {
+            public:
+                NowPlayingTrackListQuery(
+                    musik::core::LibraryPtr library,
+                    musik::core::audio::PlaybackService& playback);
 
-NowPlayingTrackListQuery::NowPlayingTrackListQuery(
-    LibraryPtr library, musik::glue::audio::PlaybackService& playback)
-: library(library)
-, playback(playback) {
-    this->result.reset(new musik::glue::TrackList(library));
-    this->headers.reset(new std::set<size_t>());
-    this->hash = 0;
-}
+                virtual ~NowPlayingTrackListQuery();
 
-NowPlayingTrackListQuery::~NowPlayingTrackListQuery() {
+                virtual std::string Name() { return "NowPlayingTrackListQuery"; }
+                virtual Result GetResult();
+                virtual Headers GetHeaders();
+                virtual size_t GetQueryHash();
 
-}
+            protected:
+                virtual bool OnRun(musik::core::db::Connection &db);
 
-NowPlayingTrackListQuery::Result NowPlayingTrackListQuery::GetResult() {
-    return this->result;
-}
-
-NowPlayingTrackListQuery::Headers NowPlayingTrackListQuery::GetHeaders() {
-    return this->headers;
-}
-
-size_t NowPlayingTrackListQuery::GetQueryHash() {
-    if (this->hash == 0) {
-        this->hash = std::hash<std::string>()(this->Name());
+            private:
+                musik::core::LibraryPtr library;
+                musik::core::audio::PlaybackService& playback;
+                Result result;
+                Headers headers;
+                size_t hash;
+        };
     }
-
-    return this->hash;
-}
-
-bool NowPlayingTrackListQuery::OnRun(Connection& db) {
-    if (result) {
-        result.reset(new musik::glue::TrackList(this->library));
-        headers.reset(new std::set<size_t>());
-    }
-
-    this->playback.CopyTo(*result);
-
-    return true;
 }

@@ -276,7 +276,7 @@ static inline bool dec(const std::string& kn) {
     return (/*kn == "KEY_DOWN" ||*/ kn == "KEY_LEFT");
 }
 
-TransportWindow::TransportWindow(musik::glue::audio::PlaybackService& playback)
+TransportWindow::TransportWindow(musik::core::audio::PlaybackService& playback)
 : Window(nullptr)
 , displayCache(new TransportDisplayCache())
 , playback(playback)

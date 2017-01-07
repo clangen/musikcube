@@ -34,39 +34,42 @@
 
 #pragma once
 
-#include <core/library/query/QueryBase.h>
-#include <core/db/Connection.h>
-#include <memory>
+#include <core/library/track/Track.h>
+#include <core/library/ILibrary.h>
 
-namespace musik {
-    namespace box {
-        class CategoryListViewQuery : public musik::core::query::QueryBase {
-            public:
-                struct Result {
-                    std::string displayValue;
-                    DBID id;
-                };
+#include <unordered_map>
+#include <list>
 
-                typedef std::shared_ptr<std::vector<
-                    std::shared_ptr<Result> > > ResultList;
+namespace musik { namespace core {
+    class TrackList {
+        public:
+            TrackList(LibraryPtr library);
+            virtual ~TrackList();
 
-                CategoryListViewQuery(
-                    const std::string& trackField,
-                    const std::string& filter = "");
+            size_t Count();
+            void Add(const DBID& id);
+            TrackPtr Get(size_t index);
+            DBID GetId(size_t index);
+            int IndexOf(DBID id);
+            void ClearCache();
+            void Clear();
+            void Swap(TrackList& list);
+            void CopyFrom(TrackList& from);
+            void Shuffle();
 
-                virtual ~CategoryListViewQuery();
+        private:
+            typedef std::list<DBID> CacheList;
+            typedef std::pair<TrackPtr, CacheList::iterator> CacheValue;
+            typedef std::unordered_map<DBID, CacheValue> CacheMap;
 
-                std::string Name() { return "CategoryListViewQuery"; }
+            TrackPtr GetFromCache(DBID key);
+            void AddToCache(DBID key, TrackPtr value);
 
-                virtual ResultList GetResult();
-                virtual int GetIndexOf(DBID id);
+            /* lru cache structures */
+            CacheList cacheList;
+            CacheMap cacheMap;
 
-            protected:
-                virtual bool OnRun(musik::core::db::Connection &db);
-
-                std::string trackField;
-                std::string filter;
-                ResultList result;
-        };
-    }
-}
+            std::vector<DBID> ids;
+            LibraryPtr library;
+    };
+} }

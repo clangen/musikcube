@@ -45,7 +45,6 @@
 #include <core/support/PreferenceKeys.h>
 #include <core/audio/Outputs.h>
 
-#include <app/query/SearchTrackListQuery.h>
 #include <app/util/Hotkeys.h>
 #include <app/util/PreferenceKeys.h>
 #include <app/overlay/PlaybackOverlays.h>

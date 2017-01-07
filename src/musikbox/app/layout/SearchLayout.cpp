@@ -38,7 +38,6 @@
 #include <cursespp/Screen.h>
 #include <cursespp/Text.h>
 #include <core/library/LocalLibraryConstants.h>
-#include <app/query/CategoryTrackListQuery.h>
 #include "SearchLayout.h"
 
 using namespace musik::core::library::constants;
@@ -57,7 +56,7 @@ using namespace cursespp;
     x == this->artists || \
     x == this->genres
 
-SearchLayout::SearchLayout(musik::glue::audio::PlaybackService& playback, LibraryPtr library)
+SearchLayout::SearchLayout(musik::core::audio::PlaybackService& playback, LibraryPtr library)
 : LayoutBase() {
     this->library = library;
     this->InitializeWindows(playback);
@@ -102,7 +101,7 @@ void SearchLayout::OnLayout() {
     view->SetText(value, cursespp::text::AlignCenter); \
     this->AddWindow(view);
 
-void SearchLayout::InitializeWindows(musik::glue::audio::PlaybackService& playback) {
+void SearchLayout::InitializeWindows(musik::core::audio::PlaybackService& playback) {
     this->input.reset(new cursespp::TextInput());
     this->input->TextChanged.connect(this, &SearchLayout::OnInputChanged);
     this->input->EnterPressed.connect(this, &SearchLayout::OnEnterPressed);

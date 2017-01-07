@@ -34,14 +34,14 @@
 
 #pragma once
 
-#include <core/library/query/QueryBase.h>
 #include <core/db/Connection.h>
 #include <core/library/track/Track.h>
+#include <core/library/query/QueryBase.h>
 
 #include "TrackListQueryBase.h"
 
 namespace musik {
-    namespace box {
+    namespace glue {
         class CategoryTrackListQuery : public TrackListQueryBase {
             public:
                 CategoryTrackListQuery(

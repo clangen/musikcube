@@ -37,19 +37,18 @@
 #include <cursespp/Colors.h>
 #include <cursespp/Screen.h>
 #include <core/library/LocalLibraryConstants.h>
-#include <app/query/SearchTrackListQuery.h>
+#include <glue/query/SearchTrackListQuery.h>
 #include <app/util/Playback.h>
 
 #include "TrackSearchLayout.h"
 
-using namespace musik::core::library::constants;
-
 using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::library;
-using namespace musik::box;
+using namespace musik::core::library::constants;
 using namespace musik::core::runtime;
-
+using namespace musik::box;
+using namespace musik::glue;
 using namespace cursespp;
 
 #define SEARCH_HEIGHT 3
@@ -62,7 +61,7 @@ using namespace cursespp;
     this->PostMessage(REQUERY_TRACKLIST, 0, 0, x);
 
 TrackSearchLayout::TrackSearchLayout(
-    musik::glue::audio::PlaybackService& playback,
+    musik::core::audio::PlaybackService& playback,
     musik::core::LibraryPtr library)
 : LayoutBase()
 , playback(playback)

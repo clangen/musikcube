@@ -36,8 +36,6 @@
 
 #include "PlaybackService.h"
 
-#include <glue/util/Playback.h>
-
 #include <core/audio/ITransport.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <core/library/track/RetainedTrack.h>
@@ -57,8 +55,7 @@ using namespace musik::core;
 using namespace musik::core::prefs;
 using namespace musik::core::sdk;
 using namespace musik::core::runtime;
-using namespace musik::glue;
-using namespace musik::glue::audio;
+using namespace musik::core::audio;
 
 #define NO_POSITION (size_t) -1
 
@@ -414,13 +411,17 @@ double PlaybackService::GetVolume() {
 }
 
 void PlaybackService::PauseOrResume() {
-    if (transport.GetPlaybackState() == PlaybackStopped) {
+    int state = transport.GetPlaybackState();
+    if (state == PlaybackStopped) {
         if (this->Count()) {
             this->Play(0);
         }
     }
-    else {
-        playback::PauseOrResume(this->transport);
+    else if (state == PlaybackPaused) {
+        transport.Resume();
+    }
+    else if (state == PlaybackPlaying) {
+        transport.Pause();
     }
 }
 

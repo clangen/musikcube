@@ -42,7 +42,7 @@
 #include <app/layout/SearchLayout.h>
 #include <app/layout/TrackSearchLayout.h>
 #include <app/window/TransportWindow.h>
-#include <glue/audio/PlaybackService.h>
+#include <core/audio/PlaybackService.h>
 
 #include <core/library/ILibrary.h>
 
@@ -59,7 +59,7 @@ namespace musik {
         {
             public:
                 LibraryLayout(
-                    musik::glue::audio::PlaybackService& playback,
+                    musik::core::audio::PlaybackService& playback,
                     musik::core::LibraryPtr library);
 
                 virtual ~LibraryLayout();
@@ -97,7 +97,7 @@ namespace musik {
                 void OnLayoutChanged();
                 void UpdateShortcutsWindow();
 
-                musik::glue::audio::PlaybackService& playback;
+                musik::core::audio::PlaybackService& playback;
                 musik::core::audio::ITransport& transport;
                 musik::core::LibraryPtr library;
                 std::shared_ptr<BrowseLayout> browseLayout;

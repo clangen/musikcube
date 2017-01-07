@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include "pch.hpp"
 #include "SearchTrackListQuery.h"
 
 #include <core/library/track/LibraryTrack.h>
@@ -50,7 +50,7 @@ using musik::core::LibraryPtr;
 
 using namespace musik::core::db;
 using namespace musik::core::library::constants;
-using namespace musik::box;
+using namespace musik::glue;
 using namespace boost::algorithm;
 
 SearchTrackListQuery::SearchTrackListQuery(LibraryPtr library, const std::string& filter) {
@@ -60,7 +60,7 @@ SearchTrackListQuery::SearchTrackListQuery(LibraryPtr library, const std::string
         this->filter = "%" + trim_copy(to_lower_copy(filter)) + "%";
     }
 
-    this->result.reset(new musik::glue::TrackList(library));
+    this->result.reset(new musik::core::TrackList(library));
     this->headers.reset(new std::set<size_t>());
     this->hash = 0;
 }
@@ -83,7 +83,7 @@ size_t SearchTrackListQuery::GetQueryHash() {
 
 bool SearchTrackListQuery::OnRun(Connection& db) {
     if (result) {
-        result.reset(new musik::glue::TrackList(this->library));
+        result.reset(new musik::core::TrackList(this->library));
         headers.reset(new std::set<size_t>());
     }
 

@@ -37,7 +37,7 @@
 #include <cursespp/Colors.h>
 #include <cursespp/Screen.h>
 #include <core/library/LocalLibraryConstants.h>
-#include <app/query/CategoryTrackListQuery.h>
+#include <glue/query/CategoryTrackListQuery.h>
 #include <app/util/Hotkeys.h>
 #include <app/util/Playback.h>
 
@@ -76,7 +76,7 @@ static std::map <std::string, std::string> FIELD_TO_TITLE{
     this->categoryTitle->SetText(CATEGORY_TITLE(key), text::AlignCenter);
 
 BrowseLayout::BrowseLayout(
-    musik::glue::audio::PlaybackService& playback,
+    musik::core::audio::PlaybackService& playback,
     LibraryPtr library)
 : LayoutBase()
 , playback(playback) {
@@ -167,8 +167,8 @@ void BrowseLayout::RequeryTrackList(ListWindow *view) {
     if (view == this->categoryList.get()) {
         DBID selectedId = this->categoryList->GetSelectedId();
         if (selectedId != -1) {
-            this->trackList->Requery(std::shared_ptr<TrackListQueryBase>(
-                new CategoryTrackListQuery(
+            this->trackList->Requery(std::shared_ptr<musik::glue::TrackListQueryBase>(
+                new musik::glue::CategoryTrackListQuery(
                     this->library,
                     this->categoryList->GetFieldName(),
                     selectedId)));

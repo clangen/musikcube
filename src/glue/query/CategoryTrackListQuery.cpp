@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include "pch.hpp"
 #include "CategoryTrackListQuery.h"
 
 #include <core/library/track/LibraryTrack.h>
@@ -49,7 +49,7 @@ using musik::core::LibraryPtr;
 
 using namespace musik::core::db;
 using namespace musik::core::library::constants;
-using namespace musik::box;
+using namespace musik::glue;
 
 static std::map<std::string, std::string> FIELD_TO_FOREIGN_KEY =
     {
@@ -62,7 +62,7 @@ static std::map<std::string, std::string> FIELD_TO_FOREIGN_KEY =
 CategoryTrackListQuery::CategoryTrackListQuery(LibraryPtr library, const std::string& column, DBID id) {
     this->library = library;
     this->id = id;
-    this->result.reset(new musik::glue::TrackList(library));
+    this->result.reset(new musik::core::TrackList(library));
     this->headers.reset(new std::set<size_t>());
     this->hash = 0;
 
@@ -98,7 +98,7 @@ size_t CategoryTrackListQuery::GetQueryHash() {
 
 bool CategoryTrackListQuery::OnRun(Connection& db) {
     if (result) {
-        result.reset(new musik::glue::TrackList(this->library));
+        result.reset(new musik::core::TrackList(this->library));
         headers.reset(new std::set<size_t>());
     }
 

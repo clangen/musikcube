@@ -57,7 +57,6 @@ using namespace musik::core::library;
 using namespace musik::core::runtime;
 using namespace musik::box;
 using namespace musik::glue;
-using namespace musik::glue::audio;
 using namespace cursespp;
 
 using namespace std::chrono;

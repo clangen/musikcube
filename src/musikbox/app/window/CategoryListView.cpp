@@ -42,7 +42,6 @@
 #include <core/runtime/IMessage.h>
 #include <core/library/LocalLibraryConstants.h>
 
-#include <app/query/CategoryListViewQuery.h>
 #include <app/util/Hotkeys.h>
 
 #include "CategoryListView.h"
@@ -52,12 +51,13 @@ using namespace musik::core::audio;
 using namespace musik::core::library::constants;
 using namespace musik::core::runtime;
 using namespace musik::box;
+using namespace musik::glue;
 using namespace cursespp;
 
 #define WINDOW_MESSAGE_QUERY_COMPLETED 1002
 
 CategoryListView::CategoryListView(
-    musik::glue::audio::PlaybackService& playback,
+    musik::core::audio::PlaybackService& playback,
     LibraryPtr library,
     const std::string& fieldName)
 : ListWindow(NULL)
@@ -92,7 +92,7 @@ void CategoryListView::RequeryWithField(
 
     this->fieldName = fieldName;
     this->selectAfterQuery = selectAfterQuery;
-    this->activeQuery.reset(new CategoryListViewQuery(this->fieldName, filter));
+    this->activeQuery.reset(new CategoryListQuery(this->fieldName, filter));
     this->library->Enqueue(activeQuery);
 }
 
@@ -101,7 +101,7 @@ void CategoryListView::Requery(const std::string& filter, const DBID selectAfter
 }
 
 void CategoryListView::Reset() {
-    this->metadata.reset(new std::vector<std::shared_ptr<CategoryListViewQuery::Result> >()); /* ugh */
+    this->metadata.reset(new std::vector<std::shared_ptr<CategoryListQuery::Result> >()); /* ugh */
     this->OnAdapterChanged();
 }
 
