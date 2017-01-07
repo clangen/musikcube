@@ -11,6 +11,9 @@
     <Filter Include="app\view">
       <UniqueIdentifier>{94c9ba27-fe20-4cf8-ab88-c592d44a291e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="app\controller">
+      <UniqueIdentifier>{5fd5f17a-985c-482e-bd21-b5a7d3246060}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="win32cpp\Button.hpp">
@@ -143,6 +146,9 @@
     <ClInclude Include="app\view\MainWindow.h">
       <Filter>app\view</Filter>
     </ClInclude>
+    <ClInclude Include="app\controller\MainController.h">
+      <Filter>app\controller</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="win32cpp\CheckBox.cpp">
@@ -259,6 +265,9 @@
     </ClCompile>
     <ClCompile Include="app\view\MainWindow.cpp">
       <Filter>app\view</Filter>
+    </ClCompile>
+    <ClCompile Include="app\controller\MainController.cpp">
+      <Filter>app\controller</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

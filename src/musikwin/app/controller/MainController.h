@@ -32,51 +32,33 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-/* required to take advantage of system theming */
-#pragma comment(linker,"\"/manifestdependency:type='win32' \
-name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
-processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
-
-#include <pch.h>
-
-#include <win32cpp/Application.hpp>
-
-#include <core/library/LibraryFactory.h>
-#include <core/audio/PlaybackService.h>
-#include <core/audio/Visualizer.h>
-
-#include <glue/audio/MasterTransport.h>
+#pragma once
 
 #include <app/view/MainWindow.h>
-#include <app/controller/MainController.h>
+#include <core/runtime/IMessageQueue.h>
+#include <core/audio/PlaybackService.h>
+#include <core/library/ILibrary.h>
+#include <win32cpp/ListView.hpp>
 
-#include <chrono>
+namespace musik { namespace win {
+    class MainController : public sigslot::has_slots<> {
+        public:
+            MainController(
+                MainWindow& mainWindow,
+                musik::core::audio::PlaybackService& playback,
+                musik::core::LibraryPtr library);
 
-using namespace musik::core;
-using namespace musik::core::audio;
-using namespace musik::glue;
-using namespace musik::glue::audio;
-using namespace musik::win;
-using namespace win32cpp;
+            virtual ~MainController();
 
-int APIENTRY _tWinMain(HINSTANCE instance, HINSTANCE previousInstance, LPTSTR commandLine, int showCommand) {
-    Application::Initialize(instance, previousInstance, commandLine, showCommand);
-    Application& app = Application::Instance();
+        private:
+            void OnMainWindowResized(win32cpp::Window* window, win32cpp::Size size);
+            void Layout();
 
-    MainWindow mainWindow(_TT("musikwin").c_str());
-    mainWindow.Initialize();
-    mainWindow.Resize(640, 400);
-    mainWindow.MoveTo(200, 200);
+            MainWindow& mainWindow;
+            musik::core::audio::PlaybackService& playback;
+            musik::core::LibraryPtr library;
 
-    LibraryPtr library = LibraryFactory::Libraries().at(0);
-    MasterTransport transport;
-    PlaybackService playback(mainWindow.Queue(), library, transport);
-
-    MainController mainController(mainWindow, playback, library);
-
-    app.Run(mainWindow);
-
-    LibraryFactory::Instance().Shutdown();
-
-    return 0;
-}
+            win32cpp::ListView* categoryList;
+            win32cpp::ListView* trackList;
+    };
+} }
