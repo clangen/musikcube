@@ -46,8 +46,9 @@
 #include <app/util/GlobalHotkeys.h>
 #include <app/util/Hotkeys.h>
 #include <app/util/PreferenceKeys.h>
-#include <app/service/PlaybackService.h>
-#include <app/audio/MasterTransport.h>
+#include <glue/audio/PlaybackService.h>
+
+#include <glue/audio/MasterTransport.h>
 
 #include <core/library/LibraryFactory.h>
 #include <core/support/PreferenceKeys.h>
@@ -63,7 +64,8 @@
     #undef MOUSE_MOVED
 #endif
 
-using namespace musik::box::audio;
+using namespace musik::glue;
+using namespace musik::glue::audio;
 using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::box;

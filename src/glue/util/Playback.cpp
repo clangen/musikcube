@@ -32,16 +32,41 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "pch.hpp"
+#include "Playback.h"
+#include <core/sdk/constants.h>
 
-#include "stdafx.h"
+using namespace musik::core::audio;
+using namespace musik::core::sdk;
 
 namespace musik {
-    namespace box {
-        namespace duration {
-            std::string Duration(const std::string& str);
-            std::string Duration(int seconds);
-            std::string Duration(double seconds);
+    namespace glue {
+        namespace playback {
+            void PauseOrResume(ITransport& transport) {
+                int state = transport.GetPlaybackState();
+                if (state == PlaybackPaused) {
+                    transport.Resume();
+                }
+                else if (state == PlaybackPlaying) {
+                    transport.Pause();
+                }
+            }
+
+            void VolumeUp(ITransport& transport) {
+                transport.SetVolume(transport.Volume() + 0.05);
+            }
+
+            void VolumeDown(ITransport& transport) {
+                transport.SetVolume(transport.Volume() - 0.05);
+            }
+
+            void SeekForward(ITransport& transport) {
+                transport.SetPosition(transport.Position() + 10.0f);
+            }
+
+            void SeekBack(ITransport& transport) {
+                transport.SetPosition(transport.Position() - 10.0f);
+            }
         }
     }
 }

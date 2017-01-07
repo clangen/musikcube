@@ -34,53 +34,44 @@
 
 #pragma once
 
-#include <core/audio/ITransport.h>
-#include <core/support/Preferences.h>
+#include <core/library/track/Track.h>
+#include <core/library/ILibrary.h>
 
-namespace musik { namespace box { namespace audio {
-    class MasterTransport :
-        public sigslot::has_slots<>,
-        public musik::core::audio::ITransport
-    {
-        public:
-            enum Type { Gapless, Crossfade };
+#include <unordered_map>
+#include <list>
 
-            MasterTransport();
-            virtual ~MasterTransport();
+namespace musik {
+    namespace glue {
+        class TrackList {
+            public:
+                TrackList(musik::core::LibraryPtr library);
+                virtual ~TrackList();
 
-            virtual void PrepareNextTrack(const std::string& trackUrl);
+                size_t Count();
+                void Add(const DBID& id);
+                musik::core::TrackPtr Get(size_t index);
+                DBID GetId(size_t index);
+                int IndexOf(DBID id);
+                void ClearCache();
+                void Clear();
+                void Swap(TrackList& list);
+                void CopyFrom(TrackList& from);
+                void Shuffle();
 
-            virtual void Start(const std::string& trackUrl);
-            virtual void Stop();
-            virtual bool Pause();
-            virtual bool Resume();
+            private:
+                typedef std::list<DBID> CacheList;
+                typedef std::pair<musik::core::TrackPtr, CacheList::iterator> CacheValue;
+                typedef std::unordered_map<DBID, CacheValue> CacheMap;
 
-            virtual double Position();
-            virtual void SetPosition(double seconds);
+                musik::core::TrackPtr GetFromCache(DBID key);
+                void AddToCache(DBID key, musik::core::TrackPtr value);
 
-            virtual double Volume();
-            virtual void SetVolume(double volume);
+                /* lru cache structures */
+                CacheList cacheList;
+                CacheMap cacheMap;
 
-            virtual double GetDuration();
-
-            virtual bool IsMuted();
-            virtual void SetMuted(bool muted);
-
-            virtual void ReloadOutput();
-
-            virtual musik::core::sdk::PlaybackState GetPlaybackState();
-
-            void SwitchTo(Type type);
-            Type GetType();
-
-        private:
-            void OnStreamEvent(int type, std::string url);
-            void OnPlaybackEvent(int type);
-            void OnVolumeChanged();
-            void OnTimeChanged(double time);
-
-            std::shared_ptr<musik::core::audio::ITransport> transport;
-            std::shared_ptr<musik::core::Preferences> prefs;
-            Type type;
-    };
-} } }
+                std::vector<DBID> ids;
+                musik::core::LibraryPtr library;
+        };
+    }
+}

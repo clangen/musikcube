@@ -36,7 +36,7 @@
 
 #include "stdafx.h"
 
-#include <app/service/PlaybackService.h>
+#include <glue/audio/PlaybackService.h>
 #include <app/window/TrackListView.h>
 
 namespace musik {
@@ -44,15 +44,8 @@ namespace musik {
         namespace playback {
             void Play(
                 std::shared_ptr<musik::box::TrackListView> trackList,
-                musik::box::PlaybackService& playback,
+                musik::glue::audio::PlaybackService& playback,
                 cursespp::IWindowPtr focused);
-
-            void VolumeUp(musik::core::audio::ITransport& transport);
-            void VolumeDown(musik::core::audio::ITransport& transport);
-            void SeekForward(musik::core::audio::ITransport& transport);
-            void SeekBack(musik::core::audio::ITransport& transport);
-
-            void PauseOrResume(musik::core::audio::ITransport& transport);
         }
     }
 }

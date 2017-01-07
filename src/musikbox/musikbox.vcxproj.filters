@@ -54,9 +54,6 @@
     <ClCompile Include="app\util\GlobalHotkeys.cpp">
       <Filter>app\util</Filter>
     </ClCompile>
-    <ClCompile Include="app\service\PlaybackService.cpp">
-      <Filter>app\service</Filter>
-    </ClCompile>
     <ClCompile Include="app\window\EntryWithHeader.cpp">
       <Filter>app\window</Filter>
     </ClCompile>
@@ -89,12 +86,6 @@
     </ClCompile>
     <ClCompile Include="cursespp\Text.cpp">
       <Filter>cursespp</Filter>
-    </ClCompile>
-    <ClCompile Include="app\util\Duration.cpp">
-      <Filter>app\util</Filter>
-    </ClCompile>
-    <ClCompile Include="app\model\TrackList.cpp">
-      <Filter>app\model</Filter>
     </ClCompile>
     <ClCompile Include="app\util\Playback.cpp">
       <Filter>app\util</Filter>
@@ -146,9 +137,6 @@
     </ClCompile>
     <ClCompile Include="app\util\Win32Util.cpp">
       <Filter>app\util</Filter>
-    </ClCompile>
-    <ClCompile Include="app\audio\MasterTransport.cpp">
-      <Filter>app\audio</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -237,9 +225,6 @@
     <ClInclude Include="cursespp\IOrderable.h">
       <Filter>cursespp</Filter>
     </ClInclude>
-    <ClInclude Include="app\service\PlaybackService.h">
-      <Filter>app\service</Filter>
-    </ClInclude>
     <ClInclude Include="app\window\EntryWithHeader.h">
       <Filter>app\window</Filter>
     </ClInclude>
@@ -272,12 +257,6 @@
     </ClInclude>
     <ClInclude Include="cursespp\Text.h">
       <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="app\util\Duration.h">
-      <Filter>app\util</Filter>
-    </ClInclude>
-    <ClInclude Include="app\model\TrackList.h">
-      <Filter>app\model</Filter>
     </ClInclude>
     <ClInclude Include="app\util\Playback.h">
       <Filter>app\util</Filter>
@@ -345,9 +324,6 @@
     <ClInclude Include="app\util\Win32Util.h">
       <Filter>app\util</Filter>
     </ClInclude>
-    <ClInclude Include="app\audio\MasterTransport.h">
-      <Filter>app\audio</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="cursespp">
@@ -368,17 +344,11 @@
     <Filter Include="app\query">
       <UniqueIdentifier>{5c751253-4250-4a81-8b5f-ca6244954d64}</UniqueIdentifier>
     </Filter>
-    <Filter Include="app\service">
-      <UniqueIdentifier>{f2315c14-fb1b-4928-ab47-462d1dc65c77}</UniqueIdentifier>
-    </Filter>
     <Filter Include="app\model">
       <UniqueIdentifier>{b6720351-dd55-4b14-936a-09df56193c15}</UniqueIdentifier>
     </Filter>
     <Filter Include="app\overlay">
       <UniqueIdentifier>{a84f242d-d70b-49e9-975e-63fc73954a2b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="app\audio">
-      <UniqueIdentifier>{b1b3ddc5-b30f-4668-8267-c32cdf3e4da0}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

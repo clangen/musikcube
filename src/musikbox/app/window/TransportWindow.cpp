@@ -39,8 +39,8 @@
 #include <cursespp/Colors.h>
 #include <cursespp/Text.h>
 
-#include <app/util/Duration.h>
-#include <app/util/Playback.h>
+#include <glue/util/Duration.h>
+#include <glue/util/Playback.h>
 
 #include <core/debug.h>
 #include <core/library/LocalLibraryConstants.h>
@@ -63,6 +63,7 @@ using namespace musik::core::db;
 using namespace musik::core::sdk;
 using namespace musik::core::runtime;
 using namespace musik::box;
+using namespace musik::glue;
 using namespace std::chrono;
 using namespace cursespp;
 
@@ -188,7 +189,7 @@ struct musik::box::TransportDisplayCache {
                     }
                 }
 
-                totalTime = musik::box::duration::Duration(secondsTotal);
+                totalTime = musik::glue::duration::Duration(secondsTotal);
                 totalTimeCols = u8cols(totalTime);
             }
         }
@@ -275,7 +276,7 @@ static inline bool dec(const std::string& kn) {
     return (/*kn == "KEY_DOWN" ||*/ kn == "KEY_LEFT");
 }
 
-TransportWindow::TransportWindow(musik::box::PlaybackService& playback)
+TransportWindow::TransportWindow(musik::glue::audio::PlaybackService& playback)
 : Window(nullptr)
 , displayCache(new TransportDisplayCache())
 , playback(playback)
@@ -544,7 +545,7 @@ void TransportWindow::Update(TimeMode timeMode) {
         secondsCurrent = (int) round(this->lastTime);
     }
 
-    const std::string currentTime = duration::Duration(
+    const std::string currentTime = musik::glue::duration::Duration(
         std::min(secondsCurrent, displayCache->secondsTotal));
 
     int bottomRowControlsWidth =

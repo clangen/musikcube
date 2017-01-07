@@ -32,36 +32,4 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
-#include <core/library/query/QueryBase.h>
-#include "TrackListQueryBase.h"
-#include <glue/audio/PlaybackService.h>
-
-namespace musik {
-    namespace box {
-        class NowPlayingTrackListQuery : public TrackListQueryBase {
-            public:
-                NowPlayingTrackListQuery(
-                    musik::core::LibraryPtr library,
-                    musik::glue::audio::PlaybackService& playback);
-
-                virtual ~NowPlayingTrackListQuery();
-
-                virtual std::string Name() { return "NowPlayingTrackListQuery"; }
-                virtual Result GetResult();
-                virtual Headers GetHeaders();
-                virtual size_t GetQueryHash();
-
-            protected:
-                virtual bool OnRun(musik::core::db::Connection &db);
-
-            private:
-                musik::core::LibraryPtr library;
-                musik::glue::audio::PlaybackService& playback;
-                Result result;
-                Headers headers;
-                size_t hash;
-        };
-    }
-}
+#include "pch.hpp"

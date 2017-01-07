@@ -41,7 +41,7 @@
 
 #include <app/query/CategoryTrackListQuery.h>
 #include <app/util/Hotkeys.h>
-#include <app/util/Playback.h>
+#include <glue/util/Playback.h>
 
 #include "LibraryLayout.h"
 
@@ -60,7 +60,7 @@ using namespace musik::box;
 using namespace musik::core::runtime;
 using namespace cursespp;
 
-LibraryLayout::LibraryLayout(PlaybackService& playback, LibraryPtr library)
+LibraryLayout::LibraryLayout(musik::glue::audio::PlaybackService& playback, LibraryPtr library)
 : LayoutBase()
 , playback(playback)
 , shortcuts(nullptr)
@@ -297,7 +297,7 @@ bool LibraryLayout::KeyPress(const std::string& key) {
         return true;
     }
     else if (key == " " || key == "M- ") {
-        playback::PauseOrResume(this->transport);
+        musik::glue::playback::PauseOrResume(this->transport);
         return true;
     }
 

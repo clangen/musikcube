@@ -40,7 +40,7 @@
 #include <app/window/CategoryListView.h>
 #include <app/window/TrackListView.h>
 #include <app/window/TransportWindow.h>
-#include <app/service/PlaybackService.h>
+#include <glue/audio/PlaybackService.h>
 
 #include <core/library/ILibrary.h>
 
@@ -57,7 +57,7 @@ namespace musik {
         {
             public:
                 BrowseLayout(
-                    PlaybackService& playback,
+                    musik::glue::audio::PlaybackService& playback,
                     musik::core::LibraryPtr library);
 
                 virtual ~BrowseLayout();
@@ -83,7 +83,7 @@ namespace musik {
                 void OnCategoryViewInvalidated(
                     cursespp::ListWindow *view, size_t selectedIndex);
 
-                PlaybackService& playback;
+                musik::glue::audio::PlaybackService& playback;
                 musik::core::LibraryPtr library;
                 std::shared_ptr<CategoryListView> categoryList;
                 std::shared_ptr<TrackListView> trackList;

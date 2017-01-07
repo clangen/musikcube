@@ -32,46 +32,31 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "pch.hpp"
+#include "Duration.h"
+#include <boost/lexical_cast.hpp>
 
-#include <core/library/track/Track.h>
-#include <core/library/ILibrary.h>
+namespace musik { namespace glue { namespace duration {
 
-#include <unordered_map>
-#include <list>
-
-namespace musik {
-    namespace box {
-        class TrackList {
-            public:
-                TrackList(musik::core::LibraryPtr library);
-                virtual ~TrackList();
-
-                size_t Count();
-                void Add(const DBID& id);
-                musik::core::TrackPtr Get(size_t index);
-                DBID GetId(size_t index);
-                int IndexOf(DBID id);
-                void ClearCache();
-                void Clear();
-                void Swap(TrackList& list);
-                void CopyFrom(TrackList& from);
-                void Shuffle();
-
-            private:
-                typedef std::list<DBID> CacheList;
-                typedef std::pair<musik::core::TrackPtr, CacheList::iterator> CacheValue;
-                typedef std::unordered_map<DBID, CacheValue> CacheMap;
-
-                musik::core::TrackPtr GetFromCache(DBID key);
-                void AddToCache(DBID key, musik::core::TrackPtr value);
-
-                /* lru cache structures */
-                CacheList cacheList;
-                CacheMap cacheMap;
-
-                std::vector<DBID> ids;
-                musik::core::LibraryPtr library;
-        };
+    std::string Duration(int seconds) {
+        int mins = (seconds / 60);
+        int secs = seconds - (mins * 60);
+        char buffer[12];
+        snprintf(buffer, sizeof(buffer), "%d:%02d", mins, secs);
+        return std::string(buffer);
     }
-}
+
+    std::string Duration(double seconds) {
+        return Duration((int) round(seconds));
+    }
+
+    std::string Duration(const std::string& str) {
+        if (str.size()) {
+            int seconds = boost::lexical_cast<int>(str);
+            return Duration(seconds);
+        }
+
+        return "0:00";
+    }
+
+} } }

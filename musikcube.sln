@@ -60,6 +60,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "musikwin", "src\musikwin\mu
 		{7CD00EC4-D090-48BE-9388-FA4857AC332C} = {7CD00EC4-D090-48BE-9388-FA4857AC332C}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "glue", "src\glue\glue.vcxproj", "{01869283-4CC3-4DA4-A06C-3DF6A0DE98CC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -160,6 +162,12 @@ Global
 		{C0039E74-6E03-4FEE-8701-74CA6B90B380}.Release|Win32.Build.0 = Release|Win32
 		{C0039E74-6E03-4FEE-8701-74CA6B90B380}.Release|x64.ActiveCfg = Release|x64
 		{C0039E74-6E03-4FEE-8701-74CA6B90B380}.Release|x64.Build.0 = Release|x64
+		{01869283-4CC3-4DA4-A06C-3DF6A0DE98CC}.Debug|Win32.ActiveCfg = Debug|Win32
+		{01869283-4CC3-4DA4-A06C-3DF6A0DE98CC}.Debug|Win32.Build.0 = Debug|Win32
+		{01869283-4CC3-4DA4-A06C-3DF6A0DE98CC}.Debug|x64.ActiveCfg = Debug|Win32
+		{01869283-4CC3-4DA4-A06C-3DF6A0DE98CC}.Release|Win32.ActiveCfg = Release|Win32
+		{01869283-4CC3-4DA4-A06C-3DF6A0DE98CC}.Release|Win32.Build.0 = Release|Win32
+		{01869283-4CC3-4DA4-A06C-3DF6A0DE98CC}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

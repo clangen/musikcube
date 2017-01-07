@@ -35,18 +35,18 @@
 #pragma once
 
 #include <functional>
-#include <app/audio/MasterTransport.h>
+#include <glue/audio/MasterTransport.h>
 
 namespace musik {
     namespace box {
         class PlaybackOverlays {
             public:
                 static void ShowOutputOverlay(
-                    musik::box::audio::MasterTransport::Type transportType,
+                    musik::glue::audio::MasterTransport::Type transportType,
                     std::function<void()> callback);
 
                 static void ShowTransportOverlay(
-                    musik::box::audio::MasterTransport::Type transportType,
+                    musik::glue::audio::MasterTransport::Type transportType,
                     std::function<void(int)> callback);
 
             private:

@@ -122,7 +122,6 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="app\audio\MasterTransport.cpp" />
     <ClCompile Include="app\layout\BrowseLayout.cpp" />
     <ClCompile Include="app\layout\LibraryLayout.cpp" />
     <ClCompile Include="app\layout\ConsoleLayout.cpp" />
@@ -132,15 +131,12 @@
     <ClCompile Include="app\layout\SettingsLayout.cpp" />
     <ClCompile Include="app\layout\TrackSearchLayout.cpp" />
     <ClCompile Include="app\model\DirectoryAdapter.cpp" />
-    <ClCompile Include="app\model\TrackList.cpp" />
     <ClCompile Include="app\overlay\PlaybackOverlays.cpp" />
     <ClCompile Include="app\overlay\VisualizerOverlay.cpp" />
     <ClCompile Include="app\query\CategoryListViewQuery.cpp" />
     <ClCompile Include="app\query\NowPlayingTrackListQuery.cpp" />
     <ClCompile Include="app\query\CategoryTrackListQuery.cpp" />
     <ClCompile Include="app\query\SearchTrackListQuery.cpp" />
-    <ClCompile Include="app\service\PlaybackService.cpp" />
-    <ClCompile Include="app\util\Duration.cpp" />
     <ClCompile Include="app\util\GlobalHotkeys.cpp" />
     <ClCompile Include="app\util\Hotkeys.cpp" />
     <ClCompile Include="app\util\Playback.cpp" />
@@ -178,7 +174,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="app\audio\MasterTransport.h" />
     <ClInclude Include="app\layout\BrowseLayout.h" />
     <ClInclude Include="app\layout\ITopLevelLayout.h" />
     <ClInclude Include="app\layout\LibraryLayout.h" />
@@ -189,7 +184,6 @@
     <ClInclude Include="app\layout\SettingsLayout.h" />
     <ClInclude Include="app\layout\TrackSearchLayout.h" />
     <ClInclude Include="app\model\DirectoryAdapter.h" />
-    <ClInclude Include="app\model\TrackList.h" />
     <ClInclude Include="app\overlay\PlaybackOverlays.h" />
     <ClInclude Include="app\overlay\VisualizerOverlay.h" />
     <ClInclude Include="app\query\CategoryListViewQuery.h" />
@@ -197,8 +191,6 @@
     <ClInclude Include="app\query\SearchTrackListQuery.h" />
     <ClInclude Include="app\query\TrackListQueryBase.h" />
     <ClInclude Include="app\query\CategoryTrackListQuery.h" />
-    <ClInclude Include="app\service\PlaybackService.h" />
-    <ClInclude Include="app\util\Duration.h" />
     <ClInclude Include="app\util\GlobalHotkeys.h" />
     <ClInclude Include="app\util\Hotkeys.h" />
     <ClInclude Include="app\util\Playback.h" />
@@ -253,6 +245,9 @@
     <ProjectReference Include="..\core\core.vcxproj">
       <Project>{b2165720-b4b2-4f4b-9634-8c390c3cb4db}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\glue\glue.vcxproj">
+      <Project>{01869283-4cc3-4da4-a06c-3df6a0de98cc}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

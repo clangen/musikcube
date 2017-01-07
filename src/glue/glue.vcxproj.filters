@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{43832bfe-7403-43a4-8a7a-6f0c3aaf69f4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\audio">
+      <UniqueIdentifier>{df549fdf-a398-4ade-94b5-89aca3719470}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\model">
+      <UniqueIdentifier>{7fd41124-442f-4e74-82a9-470f68b65cd0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\util">
+      <UniqueIdentifier>{bbbddc84-ecce-43e4-baa1-c93978765231}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="audio\MasterTransport.h">
+      <Filter>src\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="audio\PlaybackService.h">
+      <Filter>src\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="model\TrackList.h">
+      <Filter>src\model</Filter>
+    </ClInclude>
+    <ClInclude Include="util\Playback.h">
+      <Filter>src\util</Filter>
+    </ClInclude>
+    <ClInclude Include="util\Duration.h">
+      <Filter>src\util</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="pch.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="audio\MasterTransport.cpp">
+      <Filter>src\audio</Filter>
+    </ClCompile>
+    <ClCompile Include="audio\PlaybackService.cpp">
+      <Filter>src\audio</Filter>
+    </ClCompile>
+    <ClCompile Include="model\TrackList.cpp">
+      <Filter>src\model</Filter>
+    </ClCompile>
+    <ClCompile Include="util\Playback.cpp">
+      <Filter>src\util</Filter>
+    </ClCompile>
+    <ClCompile Include="util\Duration.cpp">
+      <Filter>src\util</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

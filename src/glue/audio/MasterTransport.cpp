@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <stdafx.h>
+#include <pch.hpp>
 
 #include "MasterTransport.h"
 
@@ -41,11 +41,12 @@
 #include <core/support/Preferences.h>
 #include <core/support/PreferenceKeys.h>
 
-using namespace musik::box::audio;
 using namespace musik::core::audio;
 using namespace musik::core;
 using namespace musik::core::prefs;
 using namespace musik::core::sdk;
+
+using namespace musik::glue::audio;
 
 MasterTransport::MasterTransport()
 : prefs(Preferences::ForComponent(components::Playback)) {

@@ -57,7 +57,7 @@ using namespace cursespp;
 #define WINDOW_MESSAGE_QUERY_COMPLETED 1002
 
 CategoryListView::CategoryListView(
-    PlaybackService& playback,
+    musik::glue::audio::PlaybackService& playback,
     LibraryPtr library,
     const std::string& fieldName)
 : ListWindow(NULL)

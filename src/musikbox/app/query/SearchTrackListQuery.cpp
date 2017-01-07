@@ -60,7 +60,7 @@ SearchTrackListQuery::SearchTrackListQuery(LibraryPtr library, const std::string
         this->filter = "%" + trim_copy(to_lower_copy(filter)) + "%";
     }
 
-    this->result.reset(new TrackList(library));
+    this->result.reset(new musik::glue::TrackList(library));
     this->headers.reset(new std::set<size_t>());
     this->hash = 0;
 }
@@ -83,7 +83,7 @@ size_t SearchTrackListQuery::GetQueryHash() {
 
 bool SearchTrackListQuery::OnRun(Connection& db) {
     if (result) {
-        result.reset(new TrackList(this->library));
+        result.reset(new musik::glue::TrackList(this->library));
         headers.reset(new std::set<size_t>());
     }
 

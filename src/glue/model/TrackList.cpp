@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include "pch.hpp"
 #include "TrackList.h"
 
 #include <core/library/query/QueryBase.h>
@@ -55,7 +55,8 @@ using musik::core::ILibrary;
 using namespace musik::core::db;
 using namespace musik::core::query;
 using namespace musik::core::library::constants;
-using namespace musik::box;
+
+using namespace musik::glue;
 
 class TrackMetadataQuery : public QueryBase {
     public:

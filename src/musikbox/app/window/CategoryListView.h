@@ -40,7 +40,7 @@
 #include <cursespp/ScrollAdapterBase.h>
 
 #include <app/query/CategoryListViewQuery.h>
-#include <app/service/PlaybackService.h>
+#include <glue/audio/PlaybackService.h>
 
 #include <core/library/IQuery.h>
 #include <core/library/ILibrary.h>
@@ -59,7 +59,7 @@ namespace musik {
         {
             public:
                 CategoryListView(
-                    PlaybackService& playback,
+                    musik::glue::audio::PlaybackService& playback,
                     musik::core::LibraryPtr library,
                     const std::string& fieldName);
 
@@ -106,7 +106,7 @@ namespace musik {
                 void OnTrackChanged(size_t index, musik::core::TrackPtr track);
                 void ScrollToPlaying();
 
-                PlaybackService& playback;
+                musik::glue::audio::PlaybackService& playback;
                 Adapter *adapter;
 
                 std::mutex queryMutex;

@@ -44,9 +44,10 @@
 #include <cursespp/DialogOverlay.h>
 
 #include <app/window/TrackListView.h>
-#include <app/service/PlaybackService.h>
+#include <glue/audio/PlaybackService.h>
 #include <app/model/DirectoryAdapter.h>
-#include <app/audio/MasterTransport.h>
+
+#include <glue/audio/MasterTransport.h>
 
 #include <core/library/ILibrary.h>
 #include <core/support/Preferences.h>
@@ -68,7 +69,7 @@ namespace musik {
             public:
                 SettingsLayout(
                     musik::core::LibraryPtr library,
-                    musik::box::audio::MasterTransport& transport);
+                    musik::glue::audio::MasterTransport& transport);
 
                 virtual ~SettingsLayout();
 
@@ -104,7 +105,7 @@ namespace musik {
 
                 musik::core::LibraryPtr library;
                 musik::core::IIndexer* indexer;
-                musik::box::audio::MasterTransport& transport;
+                musik::glue::audio::MasterTransport& transport;
 
                 std::shared_ptr<musik::core::Preferences> libraryPrefs;
                 std::shared_ptr<musik::core::Preferences> playbackPrefs;

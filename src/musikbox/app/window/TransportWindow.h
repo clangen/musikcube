@@ -38,7 +38,7 @@
 #include <cursespp/IKeyHandler.h>
 #include <core/library/track/Track.h>
 #include <core/runtime/IMessage.h>
-#include <app/service/PlaybackService.h>
+#include <glue/audio/PlaybackService.h>
 #include <sigslot/sigslot.h>
 #include "OutputWindow.h"
 
@@ -61,7 +61,7 @@ namespace musik {
                     FocusTime = 2
                 };
 
-                TransportWindow(musik::box::PlaybackService& playback);
+                TransportWindow(musik::glue::audio::PlaybackService& playback);
                 virtual ~TransportWindow();
 
                 virtual void ProcessMessage(musik::core::runtime::IMessage &message);
@@ -94,7 +94,7 @@ namespace musik {
 
                 bool paused;
                 musik::core::audio::ITransport& transport;
-                musik::box::PlaybackService& playback;
+                musik::glue::audio::PlaybackService& playback;
                 musik::core::TrackPtr currentTrack;
                 FocusTarget focus, lastFocus;
                 std::unique_ptr<TransportDisplayCache> displayCache;

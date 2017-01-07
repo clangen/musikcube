@@ -62,7 +62,7 @@ static std::map<std::string, std::string> FIELD_TO_FOREIGN_KEY =
 CategoryTrackListQuery::CategoryTrackListQuery(LibraryPtr library, const std::string& column, DBID id) {
     this->library = library;
     this->id = id;
-    this->result.reset(new TrackList(library));
+    this->result.reset(new musik::glue::TrackList(library));
     this->headers.reset(new std::set<size_t>());
     this->hash = 0;
 
@@ -98,7 +98,7 @@ size_t CategoryTrackListQuery::GetQueryHash() {
 
 bool CategoryTrackListQuery::OnRun(Connection& db) {
     if (result) {
-        result.reset(new TrackList(this->library));
+        result.reset(new musik::glue::TrackList(this->library));
         headers.reset(new std::set<size_t>());
     }
 

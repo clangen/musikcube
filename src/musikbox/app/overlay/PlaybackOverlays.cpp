@@ -46,7 +46,7 @@
 #include <vector>
 
 using namespace musik::box;
-using namespace musik::box::audio;
+using namespace musik::glue::audio;
 using namespace musik::core::audio;
 using namespace musik::core::sdk;
 using namespace cursespp;

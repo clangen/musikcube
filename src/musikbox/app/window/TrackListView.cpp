@@ -41,8 +41,9 @@
 
 #include <core/library/LocalLibraryConstants.h>
 
+#include <glue/util/Duration.h>
+
 #include <app/util/Hotkeys.h>
-#include <app/util/Duration.h>
 #include <app/window/EntryWithHeader.h>
 
 #include <boost/format.hpp>
@@ -55,6 +56,8 @@ using namespace musik::core::audio;
 using namespace musik::core::library;
 using namespace musik::core::runtime;
 using namespace musik::box;
+using namespace musik::glue;
+using namespace musik::glue::audio;
 using namespace cursespp;
 
 using namespace std::chrono;
@@ -216,7 +219,7 @@ static std::string formatWithoutAlbum(TrackPtr track, size_t width) {
         TRACK_COL_WIDTH);
 
     std::string duration = text::Align(
-        musik::box::duration::Duration(track->GetValue(constants::Track::DURATION)),
+        musik::glue::duration::Duration(track->GetValue(constants::Track::DURATION)),
         text::AlignRight,
         DURATION_COL_WIDTH);
 

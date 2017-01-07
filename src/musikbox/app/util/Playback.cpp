@@ -44,7 +44,7 @@ namespace musik {
         namespace playback {
             void Play(
                 std::shared_ptr<musik::box::TrackListView> trackList,
-                musik::box::PlaybackService& playback,
+                musik::glue::audio::PlaybackService& playback,
                 cursespp::IWindowPtr focused)
             {
                 auto tracks = trackList->GetTrackList();
@@ -55,32 +55,6 @@ namespace musik {
 
                     playback.Play(*tracks, index);
                 }
-            }
-
-            void PauseOrResume(ITransport& transport) {
-                int state = transport.GetPlaybackState();
-                if (state == PlaybackPaused) {
-                    transport.Resume();
-                }
-                else if (state == PlaybackPlaying) {
-                    transport.Pause();
-                }
-            }
-
-            void VolumeUp(ITransport& transport) {
-                transport.SetVolume(transport.Volume() + 0.05);
-            }
-
-            void VolumeDown(ITransport& transport) {
-                transport.SetVolume(transport.Volume() - 0.05);
-            }
-
-            void SeekForward(ITransport& transport) {
-                transport.SetPosition(transport.Position() + 10.0f);
-            }
-
-            void SeekBack(ITransport& transport) {
-                transport.SetPosition(transport.Position() - 10.0f);
             }
         }
     }

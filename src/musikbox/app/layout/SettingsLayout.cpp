@@ -60,7 +60,7 @@ using namespace musik::core::audio;
 using namespace musik::core::library::constants;
 using namespace musik::core::sdk;
 using namespace musik::box;
-using namespace musik::box::audio;
+using namespace musik::glue::audio;
 using namespace cursespp;
 using namespace std::placeholders;
 
@@ -85,7 +85,7 @@ static bool showDotfiles = false;
 
 SettingsLayout::SettingsLayout(
     musik::core::LibraryPtr library,
-    musik::box::audio::MasterTransport& transport)
+    musik::glue::audio::MasterTransport& transport)
 : LayoutBase()
 , library(library)
 , indexer(library->Indexer())

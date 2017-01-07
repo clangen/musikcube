@@ -4,15 +4,15 @@
 #include <win32cpp/TopLevelWindow.hpp>
 
 #include <core/library/LibraryFactory.h>
-#include <core/audio/GaplessTransport.h>
+#include <glue/audio/MasterTransport.h>
 
 using namespace musik::core;
-using namespace musik::core::audio;
+using namespace musik::glue::audio;
 using namespace win32cpp;
 
 int APIENTRY _tWinMain(HINSTANCE instance, HINSTANCE previousInstance, LPTSTR commandLine, int showCommand) {
     LibraryPtr library = LibraryFactory::Libraries().at(0);
-    GaplessTransport transport;
+    MasterTransport transport;
 
     transport.Start("c:\\test.ogg");
 

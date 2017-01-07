@@ -32,10 +32,11 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <stdafx.h>
+#include <pch.hpp>
+
 #include "PlaybackService.h"
 
-#include <app/util/Playback.h>
+#include <glue/util/Playback.h>
 
 #include <core/audio/ITransport.h>
 #include <core/library/LocalLibraryConstants.h>
@@ -56,7 +57,8 @@ using namespace musik::core;
 using namespace musik::core::prefs;
 using namespace musik::core::sdk;
 using namespace musik::core::runtime;
-using namespace musik::box;
+using namespace musik::glue;
+using namespace musik::glue::audio;
 
 #define NO_POSITION (size_t) -1
 

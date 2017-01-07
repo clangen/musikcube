@@ -71,6 +71,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
 endif (CMAKE_SYSTEM_NAME MATCHES "Darwin")
 
 add_subdirectory(src/core)
+add_subdirectory(src/glue)
 add_subdirectory(src/musikbox)
 add_subdirectory(src/contrib/taglib_plugin)
 add_subdirectory(src/contrib/m4adecoder)

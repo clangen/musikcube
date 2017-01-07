@@ -256,6 +256,9 @@
     <ProjectReference Include="..\core\core.vcxproj">
       <Project>{b2165720-b4b2-4f4b-9634-8c390c3cb4db}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\glue\glue.vcxproj">
+      <Project>{01869283-4cc3-4da4-a06c-3df6a0de98cc}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

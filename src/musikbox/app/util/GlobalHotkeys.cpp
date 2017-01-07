@@ -41,13 +41,15 @@
 
 #include <core/audio/Visualizer.h>
 
+#include <glue/util/Playback.h>
+
 using musik::core::LibraryPtr;
 using musik::core::audio::ITransport;
 using namespace musik::core::audio;
 using namespace musik::core::sdk;
 using namespace musik::box;
 
-GlobalHotkeys::GlobalHotkeys(PlaybackService& playback, LibraryPtr library)
+GlobalHotkeys::GlobalHotkeys(musik::glue::audio::PlaybackService& playback, LibraryPtr library)
 : playback(playback)
 , transport(playback.GetTransport()) {
     this->library = library;
@@ -63,15 +65,15 @@ bool GlobalHotkeys::Handle(const std::string& kn) {
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::TogglePause, kn)) {
-        playback::PauseOrResume(this->transport);
+        musik::glue::playback::PauseOrResume(this->transport);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::VolumeUp, kn)) {
-        playback::VolumeUp(this->transport);
+        musik::glue::playback::VolumeUp(this->transport);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::VolumeDown, kn)) {
-        playback::VolumeDown(this->transport);
+        musik::glue::playback::VolumeDown(this->transport);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::Previous, kn)) {
@@ -83,11 +85,11 @@ bool GlobalHotkeys::Handle(const std::string& kn) {
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::SeekBack, kn)) {
-        playback::SeekBack(this->transport);
+        musik::glue::playback::SeekBack(this->transport);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::SeekForward, kn)) {
-        playback::SeekForward(this->transport);
+        musik::glue::playback::SeekForward(this->transport);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::ToggleRepeat, kn)) {

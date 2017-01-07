@@ -76,7 +76,7 @@ static std::map <std::string, std::string> FIELD_TO_TITLE{
     this->categoryTitle->SetText(CATEGORY_TITLE(key), text::AlignCenter);
 
 BrowseLayout::BrowseLayout(
-    PlaybackService& playback,
+    musik::glue::audio::PlaybackService& playback,
     LibraryPtr library)
 : LayoutBase()
 , playback(playback) {

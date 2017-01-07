@@ -50,10 +50,10 @@ using namespace musik::core::library::constants;
 using namespace musik::box;
 
 NowPlayingTrackListQuery::NowPlayingTrackListQuery(
-    LibraryPtr library, PlaybackService& playback)
+    LibraryPtr library, musik::glue::audio::PlaybackService& playback)
 : library(library)
 , playback(playback) {
-    this->result.reset(new TrackList(library));
+    this->result.reset(new musik::glue::TrackList(library));
     this->headers.reset(new std::set<size_t>());
     this->hash = 0;
 }
@@ -80,7 +80,7 @@ size_t NowPlayingTrackListQuery::GetQueryHash() {
 
 bool NowPlayingTrackListQuery::OnRun(Connection& db) {
     if (result) {
-        result.reset(new TrackList(this->library));
+        result.reset(new musik::glue::TrackList(this->library));
         headers.reset(new std::set<size_t>());
     }
 

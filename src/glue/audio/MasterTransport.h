@@ -32,33 +32,55 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
-#include "Duration.h"
-#include <boost/lexical_cast.hpp>
+#pragma once
 
-namespace musik {
-    namespace box {
-        namespace duration {
-            std::string Duration(int seconds) {
-                int mins = (seconds / 60);
-                int secs = seconds - (mins * 60);
-                char buffer[12];
-                snprintf(buffer, sizeof(buffer), "%d:%02d", mins, secs);
-                return std::string(buffer);
-            }
+#include <core/audio/ITransport.h>
+#include <core/support/Preferences.h>
 
-            std::string Duration(double seconds) {
-                return Duration((int) round(seconds));
-            }
+namespace musik { namespace glue { namespace audio {
+    class MasterTransport :
+        public sigslot::has_slots<>,
+        public musik::core::audio::ITransport
+    {
+        public:
+            enum Type { Gapless, Crossfade };
 
-            std::string Duration(const std::string& str) {
-                if (str.size()) {
-                    int seconds = boost::lexical_cast<int>(str);
-                    return Duration(seconds);
-                }
+            MasterTransport();
+            virtual ~MasterTransport();
 
-                return "0:00";
-            }
-        }
-    }
-}
+            virtual void PrepareNextTrack(const std::string& trackUrl);
+
+            virtual void Start(const std::string& trackUrl);
+            virtual void Stop();
+            virtual bool Pause();
+            virtual bool Resume();
+
+            virtual double Position();
+            virtual void SetPosition(double seconds);
+
+            virtual double Volume();
+            virtual void SetVolume(double volume);
+
+            virtual double GetDuration();
+
+            virtual bool IsMuted();
+            virtual void SetMuted(bool muted);
+
+            virtual void ReloadOutput();
+
+            virtual musik::core::sdk::PlaybackState GetPlaybackState();
+
+            void SwitchTo(Type type);
+            Type GetType();
+
+        private:
+            void OnStreamEvent(int type, std::string url);
+            void OnPlaybackEvent(int type);
+            void OnVolumeChanged();
+            void OnTimeChanged(double time);
+
+            std::shared_ptr<musik::core::audio::ITransport> transport;
+            std::shared_ptr<musik::core::Preferences> prefs;
+            Type type;
+    };
+} } }

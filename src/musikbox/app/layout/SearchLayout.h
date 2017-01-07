@@ -41,7 +41,7 @@
 #include <app/window/CategoryListView.h>
 #include <app/window/TrackListView.h>
 #include <app/window/TransportWindow.h>
-#include <app/service/PlaybackService.h>
+#include <glue/audio/PlaybackService.h>
 
 #include <core/library/ILibrary.h>
 
@@ -60,7 +60,7 @@ namespace musik {
                 sigslot::signal3<SearchLayout*, std::string, DBID> SearchResultSelected;
 
                 SearchLayout(
-                    PlaybackService& playback,
+                    musik::glue::audio::PlaybackService& playback,
                     musik::core::LibraryPtr library);
 
                 virtual ~SearchLayout();
@@ -74,7 +74,7 @@ namespace musik {
                 virtual void OnLayout();
 
             private:
-                void InitializeWindows(PlaybackService& playback);
+                void InitializeWindows(musik::glue::audio::PlaybackService& playback);
                 void Requery();
 
                 void OnEnterPressed(cursespp::TextInput* sender);

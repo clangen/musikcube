@@ -36,7 +36,6 @@
 
 #include "stdafx.h"
 
-#include <app/service/PlaybackService.h>
 #include <core/library/ILibrary.h>
 
 namespace musik {

@@ -62,7 +62,7 @@ using namespace cursespp;
     this->PostMessage(REQUERY_TRACKLIST, 0, 0, x);
 
 TrackSearchLayout::TrackSearchLayout(
-    PlaybackService& playback,
+    musik::glue::audio::PlaybackService& playback,
     musik::core::LibraryPtr library)
 : LayoutBase()
 , playback(playback)

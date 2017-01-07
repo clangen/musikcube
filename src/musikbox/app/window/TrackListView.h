@@ -40,7 +40,7 @@
 #include <cursespp/ListWindow.h>
 
 #include <app/query/TrackListQueryBase.h>
-#include <app/service/PlaybackService.h>
+#include <glue/audio/PlaybackService.h>
 
 #include <core/runtime/IMessage.h>
 #include <core/library/ILibrary.h>
@@ -63,7 +63,7 @@ namespace musik {
                 typedef std::shared_ptr<std::set<size_t> > Headers;
 
                 TrackListView(
-                    PlaybackService& playback,
+                    musik::glue::audio::PlaybackService& playback,
                     musik::core::LibraryPtr library,
                     RowFormatter formatter = RowFormatter());
 
@@ -72,7 +72,7 @@ namespace musik {
                 virtual void ProcessMessage(musik::core::runtime::IMessage &message);
                 virtual bool KeyPress(const std::string& key);
 
-                std::shared_ptr<TrackList> GetTrackList();
+                std::shared_ptr<musik::glue::TrackList> GetTrackList();
                 void Clear();
 
                 void Requery(std::shared_ptr<TrackListQueryBase> query);
@@ -99,10 +99,10 @@ namespace musik {
                 void ScrollToPlaying();
 
                 std::shared_ptr<TrackListQueryBase> query;
-                std::shared_ptr<TrackList> metadata;
+                std::shared_ptr<musik::glue::TrackList> metadata;
                 Headers headers;
                 Adapter* adapter;
-                PlaybackService& playback;
+                musik::glue::audio::PlaybackService& playback;
                 musik::core::TrackPtr playing;
                 musik::core::LibraryPtr library;
                 size_t lastQueryHash;
