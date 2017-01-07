@@ -55,6 +55,11 @@ namespace musik { namespace core { namespace runtime {
             virtual void WaitAndDispatch();
             virtual void Dispatch();
 
+        protected:
+            int64 GetNextMessageTime() {
+                return nextMessageTime.load();
+            }
+
         private:
             struct EnqueuedMessage {
                 IMessagePtr message;
