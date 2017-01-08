@@ -67,7 +67,8 @@ using namespace musik::core::audio;
 #define MESSAGE_PLAYBACK_EVENT 1001
 #define MESSAGE_PREPARE_NEXT_TRACK 1002
 #define MESSAGE_VOLUME_CHANGED 1003
-#define MESSAGE_MODE_CHANGED 1004
+#define MESSAGE_TIME_CHANGED 1004
+#define MESSAGE_MODE_CHANGED 1005
 
 class StreamMessage : public Message {
     public:
@@ -130,6 +131,7 @@ PlaybackService::PlaybackService(
     transport.StreamEvent.connect(this, &PlaybackService::OnStreamEvent);
     transport.PlaybackEvent.connect(this, &PlaybackService::OnPlaybackEvent);
     transport.VolumeChanged.connect(this, &PlaybackService::OnVolumeChanged);
+    transport.TimeChanged.connect(this, &PlaybackService::OnTimeChanged);
     loadPreferences(this->transport, *this, prefs);
     this->index = NO_POSITION;
     this->nextIndex = NO_POSITION;
@@ -274,6 +276,8 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         for (auto it = remotes.begin(); it != remotes.end(); it++) {
             (*it)->OnPlaybackStateChanged((PlaybackState) eventType);
         }
+
+        this->PlaybackEvent(eventType);
     }
     else if (type == MESSAGE_PREPARE_NEXT_TRACK) {
         if (transport.GetPlaybackState() != PlaybackStopped) {
@@ -285,6 +289,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         for (auto it = remotes.begin(); it != remotes.end(); it++) {
             (*it)->OnVolumeChanged(volume);
         }
+        this->VolumeChanged();
     }
     else if (type == MESSAGE_MODE_CHANGED) {
         RepeatMode mode = this->repeatMode;
@@ -292,6 +297,9 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         for (auto it = remotes.begin(); it != remotes.end(); it++) {
             (*it)->OnModeChanged(repeatMode, shuffled);
         }
+    }
+    else if (type == MESSAGE_TIME_CHANGED) {
+        this->TimeChanged(transport.Position());
     }
 }
 
@@ -498,4 +506,8 @@ void PlaybackService::OnPlaybackEvent(int eventType) {
 
 void PlaybackService::OnVolumeChanged() {
     POST(this, MESSAGE_VOLUME_CHANGED, 0, 0);
+}
+
+void PlaybackService::OnTimeChanged(double time) {
+    POST(this, MESSAGE_TIME_CHANGED, 0, 0);
 }

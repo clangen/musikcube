@@ -55,9 +55,16 @@ namespace musik { namespace core { namespace audio {
         public sigslot::has_slots<>
     {
         public:
+            /* our unique events */
             sigslot::signal2<size_t, musik::core::TrackPtr> TrackChanged;
             sigslot::signal0<> ModeChanged;
             sigslot::signal1<bool> Shuffled;
+
+            /* copied from Transport, but will be automatically called on the
+            specified MessageQueue's thread! */
+            sigslot::signal1<int> PlaybackEvent;
+            sigslot::signal0<> VolumeChanged;
+            sigslot::signal1<double> TimeChanged;
 
             PlaybackService(
                 musik::core::runtime::IMessageQueue& messageQueue,
@@ -103,6 +110,7 @@ namespace musik { namespace core { namespace audio {
             void OnPlaybackEvent(int eventType);
             void OnTrackChanged(size_t pos, musik::core::TrackPtr track);
             void OnVolumeChanged();
+            void OnTimeChanged(double time);
             void PrepareNextTrack();
             void InitRemotes();
             void ResetRemotes();

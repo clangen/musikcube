@@ -149,7 +149,6 @@ namespace musik { namespace core { namespace audio {
             int state;
             bool notifiedStarted;
             float* spectrum;
-            uint64 samplesWritten;
             DestroyMode destroyMode;
             int pendingBufferCount;
 
