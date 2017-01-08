@@ -55,7 +55,11 @@
 
 namespace musik { namespace core { namespace library {
 
-    class LocalLibrary : public ILibrary, boost::noncopyable {
+    class LocalLibrary :
+        public ILibrary,
+        public musik::core::runtime::IMessageTarget,
+        boost::noncopyable
+    {
         protected:
             LocalLibrary(std::string name, int id);
 
@@ -64,10 +68,15 @@ namespace musik { namespace core { namespace library {
 
             virtual ~LocalLibrary();
 
+            /* ILibrary */
             virtual int Enqueue(IQueryPtr query, unsigned int options = 0);
             virtual musik::core::IIndexer *Indexer();
             virtual int Id();
             virtual const std::string& Name();
+            virtual void SetMessageQueue(musik::core::runtime::IMessageQueue& queue);
+
+            /* IMessageTarget */
+            virtual void ProcessMessage(musik::core::runtime::IMessage &message);
 
             std::string GetLibraryDirectory();
             std::string GetDatabaseFilename();
@@ -89,6 +98,8 @@ namespace musik { namespace core { namespace library {
             typedef std::list<IQueryPtr> QueryList;
 
             QueryList queryQueue;
+
+            musik::core::runtime::IMessageQueue* messageQueue;
 
             std::string identifier;
             int id;

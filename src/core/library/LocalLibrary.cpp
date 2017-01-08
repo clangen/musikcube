@@ -40,14 +40,33 @@
 #include <core/support/Common.h>
 #include <core/support/Preferences.h>
 #include <core/library/Indexer.h>
+#include <core/runtime/Message.h>
 #include <core/debug.h>
 
 static const std::string TAG = "LocalLibrary";
 
 using namespace musik::core;
 using namespace musik::core::library;
+using namespace musik::core::runtime;
 
 #define VERBOSE_LOGGING 0
+#define MESSAGE_QUERY_COMPLETED 5000
+
+class QueryCompletedMessage : public Message {
+    public:
+        QueryCompletedMessage(IMessageTarget* target, IQueryPtr query)
+        : Message(target, MESSAGE_QUERY_COMPLETED, 0, 0) {
+            this->query = query;
+        }
+
+        virtual ~QueryCompletedMessage() {
+        }
+
+        IQueryPtr GetQuery() { return this->query; }
+
+    private:
+        IQueryPtr query;
+};
 
 LibraryPtr LocalLibrary::Create(std::string name, int id) {
     LibraryPtr lib(new LocalLibrary(name, id));
@@ -57,7 +76,8 @@ LibraryPtr LocalLibrary::Create(std::string name, int id) {
 LocalLibrary::LocalLibrary(std::string name,int id)
 : name(name)
 , id(id)
-, exit(false) {
+, exit(false)
+, messageQueue(nullptr) {
     this->identifier = boost::lexical_cast<std::string>(id);
 
     auto prefs = Preferences::ForComponent("library");
@@ -165,7 +185,14 @@ void LocalLibrary::RunQuery(IQueryPtr query, bool notify) {
         query->Run(this->db);
 
         if (notify) {
-            this->QueryCompleted(query);
+            if (this->messageQueue) {
+                this->messageQueue->Post(
+                    std::shared_ptr<QueryCompletedMessage>(
+                        new QueryCompletedMessage(this, query)));
+            }
+            else {
+                this->QueryCompleted(query);
+            }
         }
 
         if (VERBOSE_LOGGING) {
@@ -194,6 +221,16 @@ void LocalLibrary::ThreadProc() {
         }
 
         this->RunQuery(query);
+    }
+}
+
+void LocalLibrary::SetMessageQueue(musik::core::runtime::IMessageQueue& queue) {
+    this->messageQueue = &queue;
+}
+
+void LocalLibrary::ProcessMessage(musik::core::runtime::IMessage &message) {
+    if (message.Type() == MESSAGE_QUERY_COMPLETED) {
+        this->QueryCompleted(static_cast<QueryCompletedMessage*>(&message)->GetQuery());
     }
 }
 

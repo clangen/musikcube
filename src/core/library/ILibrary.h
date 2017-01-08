@@ -39,6 +39,7 @@
 
 #include <core/library/IIndexer.h>
 #include <core/library/IQuery.h>
+#include <core/runtime/IMessageQueue.h>
 
 namespace musik { namespace core {
 
@@ -56,6 +57,7 @@ namespace musik { namespace core {
             virtual IIndexer *Indexer() = 0;
             virtual int Id() = 0;
             virtual const std::string& Name() = 0;
+            virtual void SetMessageQueue(musik::core::runtime::IMessageQueue& queue) = 0;
     };
 
     typedef std::shared_ptr<ILibrary> LibraryPtr;
