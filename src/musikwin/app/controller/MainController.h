@@ -35,13 +35,21 @@
 #pragma once
 
 #include <app/view/MainWindow.h>
+
 #include <core/runtime/IMessageQueue.h>
 #include <core/audio/PlaybackService.h>
 #include <core/library/ILibrary.h>
+
+#include <glue/query/TrackListQueryBase.h>
+
+#include <win32cpp/EditView.hpp>
 #include <win32cpp/ListView.hpp>
 
 namespace musik { namespace win {
-    class MainController : public sigslot::has_slots<> {
+    class MainController :
+        public sigslot::has_slots<>,
+        public musik::core::runtime::IMessageTarget
+    {
         public:
             MainController(
                 MainWindow& mainWindow,
@@ -50,15 +58,30 @@ namespace musik { namespace win {
 
             virtual ~MainController();
 
+            virtual void ProcessMessage(musik::core::runtime::IMessage &message);
+
         private:
+            class TrackListModel;
+
             void OnMainWindowResized(win32cpp::Window* window, win32cpp::Size size);
+            void OnTrackListRowActivated(win32cpp::ListView* list, int index);
+            void OnLibraryQueryCompleted(musik::core::IQueryPtr query);
+            void OnSearchEditChanged(win32cpp::EditView* editView);
+
             void Layout();
 
-            MainWindow& mainWindow;
             musik::core::audio::PlaybackService& playback;
             musik::core::LibraryPtr library;
 
-            win32cpp::ListView* categoryList;
-            win32cpp::ListView* trackList;
+            MainWindow& mainWindow;
+
+            std::shared_ptr<musik::glue::TrackListQueryBase> trackListQuery;
+            std::shared_ptr<TrackListModel> trackListModel;
+            std::shared_ptr<musik::core::TrackList> trackList;
+
+            win32cpp::ListView* trackListView;
+            win32cpp::EditView* editView;
+
+            bool trackListDirty;
     };
 } }

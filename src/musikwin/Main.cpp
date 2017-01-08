@@ -69,6 +69,8 @@ int APIENTRY _tWinMain(HINSTANCE instance, HINSTANCE previousInstance, LPTSTR co
     mainWindow.MoveTo(200, 200);
 
     LibraryPtr library = LibraryFactory::Libraries().at(0);
+    library->SetMessageQueue(mainWindow.Queue());
+
     MasterTransport transport;
     PlaybackService playback(mainWindow.Queue(), library, transport);
 

@@ -44,6 +44,7 @@
 #include <win32cpp/Window.hpp>
 #include <win32cpp/Win32Exception.hpp>
 #include <win32cpp/Color.hpp>
+#include <win32cpp/Font.hpp>
 
 #include <boost/format.hpp>
 
@@ -363,6 +364,9 @@ public: // constructors
     ///\param value The value to render
     ///\param alignment The alignment to use
     /*ctor*/        TextCellRenderer(const T& value, TextAlignment alignment = TextAlignLeft);
+    /*ctor*/        TextCellRenderer(TextAlignment aligntment = TextAlignLeft);
+    void            SetFont(FontRef font);
+    void            Set(const T& value, TextAlignment aligntment = TextAlignLeft);
 
 public: // methods
     void    Render(const ListView& listView, RenderParams& renderParams);
@@ -370,14 +374,33 @@ public: // methods
 protected: // instance data
     uistring textValue;
     TextAlignment alignment;
+    FontRef font;
 };
 
 template <typename T>
 /*ctor*/    ListView::TextCellRenderer<T>::TextCellRenderer(const T& value, TextAlignment alignment)
-: alignment(alignment)
+{
+    this->Set(value, alignment);
+}
+
+template <typename T>
+/*ctor*/    ListView::TextCellRenderer<T>::TextCellRenderer(TextAlignment alignment)
+{
+    this->alignment = alignment;
+}
+
+template <typename T>
+void        ListView::TextCellRenderer<T>::Set(const T& value, TextAlignment alignment)
 {
     typedef boost::basic_format<uichar> format;
     this->textValue = (format(_T("%1%")) % value).str();
+    this->alignment = alignment;
+}
+
+template <typename T>
+void        ListView::TextCellRenderer<T>::SetFont(FontRef font)
+{
+    this->font = font;
 }
 
 template <typename T>
@@ -390,13 +413,18 @@ void        ListView::TextCellRenderer<T>::Render(const ListView& listView, Rend
     ::SecureZeroMemory(&drawTextParams, sizeof(DRAWTEXTPARAMS));
     drawTextParams.cbSize = sizeof(DRAWTEXTPARAMS);
     drawTextParams.iLeftMargin = 6;
-    //
+
     int bufferSize = (int) this->textValue.size() + 4;  // DrawTextEx may add up to 4 additional characters
     std::unique_ptr<uichar> buffer(new uichar[bufferSize]);
     ::wcsncpy_s(buffer.get(), bufferSize, this->textValue.c_str(), this->textValue.size());
-    //
+
     RECT drawRect = renderParams.rect;
-    //
+    HGDIOBJ old = nullptr;
+
+    if (font) {
+        old = ::SelectObject(renderParams.hdc, font->GetHFONT());
+    }
+
     ::DrawTextEx(
         renderParams.hdc,
         buffer.get(),
@@ -404,6 +432,10 @@ void        ListView::TextCellRenderer<T>::Render(const ListView& listView, Rend
         &drawRect,
         this->alignment | DT_END_ELLIPSIS | DT_VCENTER | DT_SINGLELINE,
         &drawTextParams);
+
+    if (font) {
+        ::SelectObject(renderParams.hdc, old);
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////////
