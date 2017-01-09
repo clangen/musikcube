@@ -111,7 +111,6 @@ LRESULT MainWindow::WindowProc(UINT message, WPARAM wParam, LPARAM lParam) {
             this->queue->Dispatch();
             this->queue->Reset();
             this->queue->ScheduleNext();
-
             return 0L;
         }
     }
@@ -120,10 +119,7 @@ LRESULT MainWindow::WindowProc(UINT message, WPARAM wParam, LPARAM lParam) {
             this->queue = new Win32MessageQueue(this->Handle());
         }
 
-        if (this->queue) {
-            this->queue->ScheduleNext();
-        }
-
+        this->queue->ScheduleNext();
         return 0L;
     }
 

@@ -57,6 +57,7 @@ static ColumnRef sTitleColumn = ListView::Column::Create(_T("title"), 250);
 static ColumnRef sDurationColumn = ListView::Column::Create(_T("time"), 50, TextAlignment::TextAlignRight);
 static ColumnRef sAlbumColumn = ListView::Column::Create(_T("album"));
 static ColumnRef sArtistColumn = ListView::Column::Create(_T("artist"));
+static ColumnRef sEndColumn = ListView::Column::Create(_T(""), 35);
 
 #define EDIT_VIEW_HEIGHT 22
 #define UPDATE_SEARCH_MESSAGE 1001
@@ -148,6 +149,8 @@ MainController::MainController(
 , playback(playback)
 , library(library)
 , trackListDirty(true) {
+
+    playback.PlaybackEvent.connect(this, &MainController::OnPlaybackStateChanged);
     library->QueryCompleted.connect(this, &MainController::OnLibraryQueryCompleted);
 
     this->trackListQuery.reset(new SearchTrackListQuery(library, ""));
@@ -157,12 +160,23 @@ MainController::MainController(
     this->editView->Changed.connect(this, &MainController::OnSearchEditChanged);
 
     this->trackListView = this->mainWindow.AddChild(new ListView());
+    this->trackListView->EnableStripedBackground(true);
     this->trackListView->RowActivated.connect(this, &MainController::OnTrackListRowActivated);
     this->trackListView->AddColumn(sNumberColumn);
     this->trackListView->AddColumn(sTitleColumn);
     this->trackListView->AddColumn(sAlbumColumn);
     this->trackListView->AddColumn(sArtistColumn);
     this->trackListView->AddColumn(sDurationColumn);
+    this->trackListView->AddColumn(sEndColumn);
+
+    this->prevButton = this->mainWindow.AddChild(new Button(_T("prev")));
+    this->prevButton->Pressed.connect(this, &MainController::OnTransportButtonClicked);
+
+    this->pauseButton = this->mainWindow.AddChild(new Button(_T("play")));
+    this->pauseButton->Pressed.connect(this, &MainController::OnTransportButtonClicked);
+
+    this->nextButton = this->mainWindow.AddChild(new Button(_T("next")));
+    this->nextButton->Pressed.connect(this, &MainController::OnTransportButtonClicked);
 
     this->trackListModel = TrackListModel::Create(this->playback);
     this->trackListView->SetModel(this->trackListModel);
@@ -175,6 +189,8 @@ MainController::MainController(
 MainController::~MainController() {
 }
 
+#define /*button width */ BW(x) x->WindowSize().width;
+
 void MainController::Layout() {
     auto size = this->mainWindow.ClientSize();
     if (size.height > 0) {
@@ -186,9 +202,21 @@ void MainController::Layout() {
         this->editView->MoveTo(editX, padding);
         this->editView->Resize(editCx, EDIT_VIEW_HEIGHT);
 
+        int buttonCy = this->prevButton->WindowSize().height;
+        int buttonY = size.height - buttonCy - padding;
+        int transportCy = padding + buttonCy + padding;
+        int buttonX = padding;
+
+        this->prevButton->MoveTo(buttonX, buttonY);
+        buttonX += padding + BW(this->prevButton);
+        this->pauseButton->MoveTo(buttonX, buttonY);
+        buttonX += padding + BW(this->pauseButton);
+        this->nextButton->MoveTo(buttonX, buttonY);
+        buttonX += padding + BW(this->nextButton);
+
         int listY = padding + EDIT_VIEW_HEIGHT + padding;
         int tracksCx = size.width;
-        int listCy = size.height - listY;
+        int listCy = size.height - listY - transportCy;
 
         this->trackListView->MoveTo(0, listY);
         this->trackListView->Resize(tracksCx, listCy);
@@ -233,3 +261,37 @@ void MainController::OnSearchEditChanged(win32cpp::EditView* editView) {
         queue.Debounce(Message::Create(this, UPDATE_SEARCH_MESSAGE, 0, 0), UPDATE_SEARCH_DEBOUNCE_MS);
     }
 }
+
+void MainController::OnTransportButtonClicked(win32cpp::Button* button) {
+    if (button == this->prevButton) {
+        playback.Previous();
+    }
+    else if (button == this->pauseButton) {
+        if (playback.GetPlaybackState() == musik::core::sdk::PlaybackStopped) {
+            std::vector<int> selected = this->trackListView->SelectedRows();
+            if (selected.size()) {
+                this->OnTrackListRowActivated(this->trackListView, selected[0]);
+            }
+        }
+        else {
+            playback.PauseOrResume();
+        }
+    }
+    else if (button == this->nextButton) {
+        playback.Next();
+    }
+}
+
+void MainController::OnPlaybackStateChanged(int state) {
+    if (this->pauseButton) {
+        switch (state) {
+            case musik::core::sdk::PlaybackPaused:
+                this->pauseButton->SetCaption(_T("resume")); break;
+            case musik::core::sdk::PlaybackPlaying:
+                this->pauseButton->SetCaption(_T("pause")); break;
+        }
+
+        this->Layout();
+    }
+}
+

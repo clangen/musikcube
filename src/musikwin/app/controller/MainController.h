@@ -43,6 +43,7 @@
 #include <glue/query/TrackListQueryBase.h>
 
 #include <win32cpp/EditView.hpp>
+#include <win32cpp/Button.hpp>
 #include <win32cpp/ListView.hpp>
 
 namespace musik { namespace win {
@@ -67,6 +68,8 @@ namespace musik { namespace win {
             void OnTrackListRowActivated(win32cpp::ListView* list, int index);
             void OnLibraryQueryCompleted(musik::core::IQueryPtr query);
             void OnSearchEditChanged(win32cpp::EditView* editView);
+            void OnTransportButtonClicked(win32cpp::Button* button);
+            void OnPlaybackStateChanged(int state);
 
             void Layout();
 
@@ -81,6 +84,9 @@ namespace musik { namespace win {
 
             win32cpp::ListView* trackListView;
             win32cpp::EditView* editView;
+            win32cpp::Button* prevButton;
+            win32cpp::Button* nextButton;
+            win32cpp::Button* pauseButton;
 
             bool trackListDirty;
     };
