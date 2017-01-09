@@ -78,8 +78,6 @@ namespace musik {
 
                 void Reset();
 
-                virtual void ProcessMessage(musik::core::runtime::IMessage &message);
-
                 DBID GetSelectedId();
                 std::string GetFieldName();
                 void SetFieldName(const std::string& fieldName);
@@ -109,7 +107,6 @@ namespace musik {
                 musik::core::audio::PlaybackService& playback;
                 Adapter *adapter;
 
-                std::mutex queryMutex;
                 std::shared_ptr<musik::glue::CategoryListQuery> activeQuery;
 
                 musik::core::LibraryPtr library;

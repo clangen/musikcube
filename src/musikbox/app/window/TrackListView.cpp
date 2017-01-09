@@ -48,7 +48,6 @@
 
 #include <boost/format.hpp>
 
-#define WINDOW_MESSAGE_QUERY_COMPLETED 1002
 #define WINDOW_MESSAGE_SCROLL_TO_PLAYING 1003
 
 using namespace musik::core;
@@ -105,7 +104,23 @@ void TrackListView::Requery(std::shared_ptr<TrackListQueryBase> query) {
 
 void TrackListView::OnQueryCompleted(IQueryPtr query) {
     if (query == this->query) {
-        this->PostMessage(WINDOW_MESSAGE_QUERY_COMPLETED);
+        if (this->query->GetStatus() == IQuery::Finished) {
+            this->metadata = this->query->GetResult();
+            this->headers = this->query->GetHeaders();
+
+            /* if the query was functionally the same as the last query, don't
+            mess with the selected index */
+            if (this->lastQueryHash != this->query->GetQueryHash()) {
+                this->SetSelectedIndex(0);
+                this->ScrollToTop();
+            }
+
+            this->lastQueryHash = this->query->GetQueryHash();
+            this->query.reset();
+
+            this->OnAdapterChanged(); /* internal handling */
+            this->Requeried(); /* for external handlers */
+        }
     }
 }
 
@@ -140,26 +155,7 @@ void TrackListView::ScrollToPlaying() {
 }
 
 void TrackListView::ProcessMessage(IMessage &message) {
-    if (message.Type() == WINDOW_MESSAGE_QUERY_COMPLETED) {
-        if (this->query && this->query->GetStatus() == IQuery::Finished) {
-            this->metadata = this->query->GetResult();
-            this->headers = this->query->GetHeaders();
-
-            /* if the query was functionally the same as the last query, don't
-            mess with the selected index */
-            if (this->lastQueryHash != query->GetQueryHash()) {
-                this->SetSelectedIndex(0);
-                this->ScrollToTop();
-            }
-
-            this->lastQueryHash = this->query->GetQueryHash();
-            this->query.reset();
-
-            this->OnAdapterChanged(); /* internal handling */
-            this->Requeried(); /* for external handlers */
-        }
-    }
-    else if (message.Type() == WINDOW_MESSAGE_SCROLL_TO_PLAYING) {
+    if (message.Type() == WINDOW_MESSAGE_SCROLL_TO_PLAYING) {
         this->ScrollToPlaying();
     }
 }

@@ -110,6 +110,7 @@ int main(int argc, char* argv[])
         musik::core::prefs::components::Settings);
 
     LibraryPtr library = LibraryFactory::Libraries().at(0);
+    library->SetMessageQueue(Window::MessageQueue());
 
     MasterTransport transport;
     PlaybackService playback(Window::MessageQueue(), library, transport);

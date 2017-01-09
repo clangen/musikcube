@@ -286,7 +286,7 @@ TransportWindow::TransportWindow(musik::core::audio::PlaybackService& playback)
     this->playback.TrackChanged.connect(this, &TransportWindow::OnPlaybackServiceTrackChanged);
     this->playback.ModeChanged.connect(this, &TransportWindow::OnPlaybackModeChanged);
     this->playback.Shuffled.connect(this, &TransportWindow::OnPlaybackShuffled);
-    this->transport.VolumeChanged.connect(this, &TransportWindow::OnTransportVolumeChanged);
+    this->playback.VolumeChanged.connect(this, &TransportWindow::OnTransportVolumeChanged);
     this->transport.TimeChanged.connect(this, &TransportWindow::OnTransportTimeChanged);
     this->paused = false;
     this->lastTime = DEFAULT_TIME;

@@ -54,8 +54,6 @@ using namespace musik::box;
 using namespace musik::glue;
 using namespace cursespp;
 
-#define WINDOW_MESSAGE_QUERY_COMPLETED 1002
-
 CategoryListView::CategoryListView(
     musik::core::audio::PlaybackService& playback,
     LibraryPtr library,
@@ -84,8 +82,6 @@ void CategoryListView::RequeryWithField(
     const std::string& filter,
     const DBID selectAfterQuery)
 {
-    std::unique_lock<std::mutex> lock(this->queryMutex);
-
     if (this->activeQuery) {
         this->activeQuery->Cancel();
     }
@@ -162,41 +158,19 @@ bool CategoryListView::KeyPress(const std::string& key) {
 }
 
 void CategoryListView::OnQueryCompleted(musik::core::IQueryPtr query) {
-    std::unique_lock<std::mutex> lock(this->queryMutex);
-
     auto active = this->activeQuery;
     if (query == active) {
-        int selectIndex = -1;
+        int selectedIndex = -1;
         if (this->selectAfterQuery != 0) {
-            selectIndex = active->GetIndexOf(this->selectAfterQuery);
+            selectedIndex = active->GetIndexOf(this->selectAfterQuery);
         }
 
-        this->PostMessage(
-            WINDOW_MESSAGE_QUERY_COMPLETED,
-            selectIndex,
-            query->GetId());
-    }
-}
-
-void CategoryListView::ProcessMessage(IMessage &message) {
-    if (message.Type() == WINDOW_MESSAGE_QUERY_COMPLETED) {
-        std::unique_lock<std::mutex> lock(this->queryMutex);
-
-        /* UserData2 contains the ID of the query that dispatched this message.
-        it's possible another query started after the message was sent, and we
-        only want to react to the most recent result set. */
-        DBID queryId = static_cast<DBID>(message.UserData2());
-
         if (this->activeQuery &&
-            this->activeQuery->GetId() == queryId &&
+            this->activeQuery->GetId() == query->GetId() &&
             this->activeQuery->GetStatus() == IQuery::Finished)
         {
             this->metadata = activeQuery->GetResult();
             activeQuery.reset();
-
-            /* UserData1 will be the index of the item we should select. if
-            the value is -1, we won't go out of our way to select anything. */
-            int selectedIndex = static_cast<int>(message.UserData1());
 
             if (selectedIndex >= 0) {
                 this->SetSelectedIndex(selectedIndex);
