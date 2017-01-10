@@ -15,4 +15,4 @@ include_directories(
 )
 
 add_library(musikglue STATIC ${GLUE_SOURCES})
-target_link_libraries(musikglue ${musikbox_LINK_LIBS})
+target_link_libraries(musikglue ${musikbox_LINK_LIBS} musikcore)
