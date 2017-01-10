@@ -41,7 +41,14 @@
 #include "IKeyHandler.h"
 
 namespace cursespp {
-    class ScrollableWindow : public IScrollable, public IKeyHandler, public Window {
+    class ScrollableWindow :
+        public IScrollable,
+        public IKeyHandler,
+    #if (__clang_major__ == 7 && __clang_minor__ == 3)
+        public std::enable_shared_from_this<ScrollableWindow>,
+    #endif
+        public Window
+    {
         public:
             ScrollableWindow(
                 std::shared_ptr<IScrollAdapter> adapter,
