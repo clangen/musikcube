@@ -47,6 +47,16 @@ static const size_t INVALID_INDEX = (size_t) -1;
 
 typedef IScrollAdapter::ScrollPosition ScrollPos;
 
+class EmptyAdapter : public IScrollAdapter {
+public:
+    virtual void SetDisplaySize(size_t width, size_t height) { }
+    virtual size_t GetEntryCount() { return 0; }
+    virtual EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index) { return IScrollAdapter::EntryPtr(); }
+    virtual void DrawPage(ScrollableWindow* window, size_t index, ScrollPosition *result = NULL) { }
+};
+
+static EmptyAdapter emptyAdapter;
+
 #define REDRAW_VISIBLE_PAGE() \
     { \
         ScrollPos& pos = GetMutableScrollPosition(); \
@@ -56,12 +66,32 @@ typedef IScrollAdapter::ScrollPosition ScrollPos;
             &pos); \
     } \
 
-ScrollableWindow::ScrollableWindow(IWindow *parent)
+ScrollableWindow::ScrollableWindow(std::shared_ptr<IScrollAdapter> adapter, IWindow *parent)
 : Window(parent)
+, adapter(adapter)
 , allowArrowKeyPropagation(false) {
 }
 
+ScrollableWindow::ScrollableWindow(IWindow *parent)
+: ScrollableWindow(std::shared_ptr<IScrollAdapter>(), parent) {
+}
+
 ScrollableWindow::~ScrollableWindow() {
+}
+
+void ScrollableWindow::SetAdapter(std::shared_ptr<IScrollAdapter> adapter) {
+    if (adapter != this->adapter) {
+        this->adapter = adapter;
+        this->ScrollToTop();
+    }
+}
+
+IScrollAdapter& ScrollableWindow::GetScrollAdapter() {
+    if (this->adapter) {
+        return *this->adapter;
+    }
+
+    return emptyAdapter;
 }
 
 void ScrollableWindow::OnDimensionsChanged() {

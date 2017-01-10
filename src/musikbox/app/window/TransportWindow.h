@@ -40,7 +40,6 @@
 #include <core/runtime/IMessage.h>
 #include <core/audio/PlaybackService.h>
 #include <sigslot/sigslot.h>
-#include "OutputWindow.h"
 
 namespace musik {
     namespace box {

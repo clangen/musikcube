@@ -101,7 +101,7 @@ ListOverlay& ListOverlay::SetTitle(const std::string& title) {
 ListOverlay& ListOverlay::SetAdapter(IScrollAdapterPtr adapter) {
     if (this->adapter != adapter) {
         this->adapter = adapter;
-        this->listWindow->SetAdapter(adapter.get());
+        this->listWindow->SetAdapter(adapter);
     }
 
     return *this;

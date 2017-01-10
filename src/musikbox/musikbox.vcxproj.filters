@@ -33,9 +33,6 @@
     <ClCompile Include="app\layout\LibraryLayout.cpp">
       <Filter>app\layout</Filter>
     </ClCompile>
-    <ClCompile Include="app\window\OutputWindow.cpp">
-      <Filter>app\window</Filter>
-    </ClCompile>
     <ClCompile Include="app\window\TrackListView.cpp">
       <Filter>app\window</Filter>
     </ClCompile>
@@ -190,9 +187,6 @@
       <Filter>app\layout</Filter>
     </ClInclude>
     <ClInclude Include="app\window\LogWindow.h">
-      <Filter>app\window</Filter>
-    </ClInclude>
-    <ClInclude Include="app\window\OutputWindow.h">
       <Filter>app\window</Filter>
     </ClInclude>
     <ClInclude Include="app\window\TrackListView.h">

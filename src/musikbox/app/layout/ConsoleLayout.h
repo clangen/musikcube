@@ -37,9 +37,9 @@
 #include <cursespp/LayoutBase.h>
 #include <cursespp/TextInput.h>
 #include <cursespp/ShortcutsWindow.h>
+#include <cursespp/ScrollableWindow.h>
 
 #include <app/window/LogWindow.h>
-#include <app/window/OutputWindow.h>
 #include <app/window/TransportWindow.h>
 
 #include <vector>
@@ -71,7 +71,7 @@ namespace musik {
             private:
                 void OnEnterPressed(cursespp::TextInput* input);
 
-                void ListPlugins() const;
+                void ListPlugins();
                 bool ProcessCommand(const std::string& cmd);
                 bool PlayFile(const std::vector<std::string>& args);
                 void Pause();
@@ -81,9 +81,12 @@ namespace musik {
                 void SetVolume(float volume);
                 void Help();
 
+                void WriteOutput(const std::string& str, int64 attrs = -1);
+
                 std::shared_ptr<LogWindow> logs;
                 std::shared_ptr<cursespp::TextInput> commands;
-                std::shared_ptr<OutputWindow> output;
+                std::shared_ptr<cursespp::ScrollableWindow> output;
+                std::shared_ptr<cursespp::SimpleScrollAdapter> outputAdapter;
                 musik::core::audio::ITransport& transport;
                 musik::core::LibraryPtr library;
         };

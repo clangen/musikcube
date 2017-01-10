@@ -52,7 +52,7 @@ typedef IScrollAdapter::IEntry IEntry;
     this->PostMessage(REFRESH, 0, 0, 250);
 
 LogWindow::LogWindow(IWindow *parent)
-: ScrollableWindow(parent) {
+: ScrollableWindow(nullptr, parent) {
     this->adapter = new SimpleScrollAdapter();
     this->adapter->SetMaxEntries(500);
 

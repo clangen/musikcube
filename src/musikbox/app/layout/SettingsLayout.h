@@ -128,8 +128,8 @@ namespace musik {
 
                 std::shared_ptr<cursespp::DialogOverlay> firstRunDialog;
 
-                cursespp::SimpleScrollAdapter addedPathsAdapter;
-                DirectoryAdapter browseAdapter;
+                std::shared_ptr<cursespp::SimpleScrollAdapter> addedPathsAdapter;
+                std::shared_ptr<DirectoryAdapter> browseAdapter;
         };
     }
 }

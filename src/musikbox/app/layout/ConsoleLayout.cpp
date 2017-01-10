@@ -37,6 +37,8 @@
 #include "ConsoleLayout.h"
 
 #include <cursespp/Screen.h>
+#include <cursespp/MultiLineEntry.h>
+#include <cursespp/Colors.h>
 
 #include <core/sdk/IPlugin.h>
 #include <core/plugin/PluginFactory.h>
@@ -59,14 +61,19 @@ using namespace musik::core::sdk;
 using namespace musik::box;
 using namespace cursespp;
 
+typedef IScrollAdapter::EntryPtr EntryPtr;
+
 ConsoleLayout::ConsoleLayout(ITransport& transport, LibraryPtr library)
 : LayoutBase()
 , transport(transport)
 , library(library) {
     this->SetFrameVisible(false);
 
+    this->outputAdapter.reset(new SimpleScrollAdapter());
+    this->outputAdapter->SetMaxEntries(500);
+
     this->logs.reset(new LogWindow(this));
-    this->output.reset(new OutputWindow(this));
+    this->output.reset(new ScrollableWindow(this->outputAdapter, this));
     this->commands.reset(new cursespp::TextInput());
 
     this->commands->SetFocusOrder(0);
@@ -115,15 +122,20 @@ void ConsoleLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
     }
 }
 
+void ConsoleLayout::WriteOutput(const std::string& str, int64 attrs) {
+    this->outputAdapter->AddEntry(EntryPtr(new MultiLineEntry(str, attrs)));
+    this->output->OnAdapterChanged();
+}
+
 void ConsoleLayout::OnEnterPressed(TextInput *input) {
     std::string command = this->commands->GetText();
     this->commands->SetText("");
 
-    output->WriteLine("> " + command + "\n", COLOR_PAIR(CURSESPP_TEXT_DEFAULT));
+    this->WriteOutput("> " + command + "\n", COLOR_PAIR(CURSESPP_TEXT_DEFAULT));
 
     if (!this->ProcessCommand(command)) {
         if (command.size()) {
-            output->WriteLine(
+            this->WriteOutput(
                 "illegal command: '" +
                 command +
                 "'\n", COLOR_PAIR(CURSESPP_TEXT_ERROR));
@@ -157,26 +169,26 @@ void ConsoleLayout::SetVolume(float volume) {
 void ConsoleLayout::Help() {
     int64 s = -1;
 
-    this->output->WriteLine("help:\n", s);
-    this->output->WriteLine("  <tab> to switch between windows", s);
-    this->output->WriteLine("", s);
-    this->output->WriteLine("  addir <dir>: add a music directory", s);
-    this->output->WriteLine("  rmdir <dir>: remove a music directory", s);
-    this->output->WriteLine("  lsdirs: list scanned directories", s);
-    this->output->WriteLine("  rescan: rescan paths for new metadata", s);
-    this->output->WriteLine("", s);
-    this->output->WriteLine("  play <uri>: play audio at <uri>", s);
-    this->output->WriteLine("  pause: pause/resume", s);
-    this->output->WriteLine("  stop: stop and clean up everything", s);
-    this->output->WriteLine("  volume: <0 - 100>: set % volume", s);
-    this->output->WriteLine("  clear: clear the log window", s);
-    this->output->WriteLine("  seek <seconds>: seek to <seconds> into track", s);
-    this->output->WriteLine("", s);
-    this->output->WriteLine("  plugins: list loaded plugins", s);
-    this->output->WriteLine("", s);
-    this->output->WriteLine("  version: show musikbox app version", s);
-    this->output->WriteLine("", s);
-    this->output->WriteLine("  <ctrl+d>: quit\n", s);
+    this->WriteOutput("help:\n", s);
+    this->WriteOutput("  <tab> to switch between windows", s);
+    this->WriteOutput("", s);
+    this->WriteOutput("  addir <dir>: add a music directory", s);
+    this->WriteOutput("  rmdir <dir>: remove a music directory", s);
+    this->WriteOutput("  lsdirs: list scanned directories", s);
+    this->WriteOutput("  rescan: rescan paths for new metadata", s);
+    this->WriteOutput("", s);
+    this->WriteOutput("  play <uri>: play audio at <uri>", s);
+    this->WriteOutput("  pause: pause/resume", s);
+    this->WriteOutput("  stop: stop and clean up everything", s);
+    this->WriteOutput("  volume: <0 - 100>: set % volume", s);
+    this->WriteOutput("  clear: clear the log window", s);
+    this->WriteOutput("  seek <seconds>: seek to <seconds> into track", s);
+    this->WriteOutput("", s);
+    this->WriteOutput("  plugins: list loaded plugins", s);
+    this->WriteOutput("", s);
+    this->WriteOutput("  version: show musikbox app version", s);
+    this->WriteOutput("", s);
+    this->WriteOutput("  <ctrl+d>: quit\n", s);
 }
 
 bool ConsoleLayout::ProcessCommand(const std::string& cmd) {
@@ -210,7 +222,7 @@ bool ConsoleLayout::ProcessCommand(const std::string& cmd) {
     }
     else if (name == "version") {
         const std::string v = boost::str(boost::format("v%s") % VERSION);
-        this->output->WriteLine(v, -1);
+        this->WriteOutput(v, -1);
     }
     else if (name == "play" || name == "pl" || name == "p") {
         return this->PlayFile(args);
@@ -226,11 +238,11 @@ bool ConsoleLayout::ProcessCommand(const std::string& cmd) {
     else if (name == "lsdirs") {
         std::vector<std::string> paths;
         library->Indexer()->GetPaths(paths);
-        this->output->WriteLine("paths:");
+        this->WriteOutput("paths:");
         for (size_t i = 0; i < paths.size(); i++) {
-            this->output->WriteLine("  " + paths.at(i));
+            this->WriteOutput("  " + paths.at(i));
         }
-        this->output->WriteLine("");
+        this->WriteOutput("");
     }
     else if (name == "rescan" || name == "scan" || name == "index") {
         library->Indexer()->Synchronize();
@@ -251,7 +263,7 @@ bool ConsoleLayout::ProcessCommand(const std::string& cmd) {
         this->ListPlugins();
     }
     else if (name == "sdk") {
-        this->output->WriteLine("    sdk/api revision: " +
+        this->WriteOutput("    sdk/api revision: " +
             std::to_string(musik::core::sdk::SdkVersion));
     }
     else if (name == "v" || name == "volume") {
@@ -288,7 +300,7 @@ void ConsoleLayout::Stop() {
     this->transport.Stop();
 }
 
-void ConsoleLayout::ListPlugins() const {
+void ConsoleLayout::ListPlugins() {
     using musik::core::sdk::IPlugin;
     using musik::core::PluginFactory;
 
@@ -305,6 +317,6 @@ void ConsoleLayout::ListPlugins() const {
             "    version: " + std::string((*it)->Version()) + "\n"
             "    by " + std::string((*it)->Author()) + "\n";
 
-        this->output->WriteLine(format, COLOR_PAIR(CURSESPP_TEXT_DEFAULT));
+        this->WriteOutput(format, COLOR_PAIR(CURSESPP_TEXT_DEFAULT));
     }
 }

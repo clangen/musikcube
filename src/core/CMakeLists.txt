@@ -18,8 +18,6 @@ set(CORE_SOURCES
   ./library/Indexer.cpp
   ./library/LibraryFactory.cpp
   ./library/LocalLibrary.cpp
-  ./library/metadata/MetadataKeyValue.cpp
-  ./library/metadata/MetadataValue.cpp
   ./library/query/QueryBase.cpp
   ./library/track/IndexerTrack.cpp
   ./library/track/LibraryTrack.cpp

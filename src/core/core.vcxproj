@@ -98,7 +98,6 @@
     <ClCompile Include="library\Indexer.cpp" />
     <ClCompile Include="library\LocalLibrary.cpp" />
     <ClCompile Include="library\LibraryFactory.cpp" />
-    <ClCompile Include="library\metadata\MetadataValue.cpp" />
     <ClCompile Include="Library\query\QueryBase.cpp" />
     <ClCompile Include="library\track\IndexerTrack.cpp" />
     <ClCompile Include="library\track\LibraryTrack.cpp" />
@@ -142,7 +141,6 @@
     <ClInclude Include="library\LocalLibrary.h" />
     <ClInclude Include="library\LibraryFactory.h" />
     <ClInclude Include="library\LocalLibraryConstants.h" />
-    <ClInclude Include="library\metadata\MetadataValue.h" />
     <ClInclude Include="Library\query\QueryBase.h" />
     <ClInclude Include="library\track\IndexerTrack.h" />
     <ClInclude Include="library\track\LibraryTrack.h" />

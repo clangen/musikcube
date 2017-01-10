@@ -277,7 +277,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
             (*it)->OnPlaybackStateChanged((PlaybackState) eventType);
         }
 
-        this->PlaybackEvent(eventType);
+        this->PlaybackEvent((PlaybackState) eventType);
     }
     else if (type == MESSAGE_PREPARE_NEXT_TRACK) {
         if (transport.GetPlaybackState() != PlaybackStopped) {

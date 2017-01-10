@@ -19,7 +19,6 @@ set (BOX_SRCS
 	./app/window/CategoryListView.cpp
 	./app/window/EntryWithHeader.cpp
 	./app/window/LogWindow.cpp
-	./app/window/OutputWindow.cpp
 	./app/window/TrackListView.cpp
 	./app/window/TransportWindow.cpp
 	./cursespp/App.cpp

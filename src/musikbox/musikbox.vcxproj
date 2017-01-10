@@ -141,7 +141,6 @@
     <ClCompile Include="app\window\CategoryListView.cpp" />
     <ClCompile Include="app\window\EntryWithHeader.cpp" />
     <ClCompile Include="app\window\LogWindow.cpp" />
-    <ClCompile Include="app\window\OutputWindow.cpp" />
     <ClCompile Include="app\window\TrackListView.cpp" />
     <ClCompile Include="app\window\TransportWindow.cpp" />
     <ClCompile Include="cursespp\App.cpp" />
@@ -191,7 +190,6 @@
     <ClInclude Include="app\window\CategoryListView.h" />
     <ClInclude Include="app\window\EntryWithHeader.h" />
     <ClInclude Include="app\window\LogWindow.h" />
-    <ClInclude Include="app\window\OutputWindow.h" />
     <ClInclude Include="app\window\TrackListView.h" />
     <ClInclude Include="app\window\TransportWindow.h" />
     <ClInclude Include="cursespp\App.h" />

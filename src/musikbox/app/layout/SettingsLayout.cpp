@@ -91,6 +91,8 @@ SettingsLayout::SettingsLayout(
 , transport(transport) {
     this->libraryPrefs = Preferences::ForComponent(core::prefs::components::Settings);
     this->indexer->PathsUpdated.connect(this, &SettingsLayout::RefreshAddedPaths);
+    this->browseAdapter.reset(new DirectoryAdapter());
+    this->addedPathsAdapter.reset(new SimpleScrollAdapter());
     this->InitializeWindows();
 }
 
@@ -104,7 +106,7 @@ void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
     }
     else if (cb == dotfileCheckbox.get()) {
         showDotfiles = !showDotfiles;
-        this->browseAdapter.SetDotfilesVisible(showDotfiles);
+        this->browseAdapter->SetDotfilesVisible(showDotfiles);
         this->browseList->OnAdapterChanged();
     }
     else if (cb == focusShortcutsCheckbox.get()) {
@@ -189,7 +191,7 @@ void SettingsLayout::OnLayout() {
 }
 
 void SettingsLayout::RefreshAddedPaths() {
-    this->addedPathsAdapter.Clear();
+    this->addedPathsAdapter->Clear();
 
     std::vector<std::string> paths;
     this->indexer->GetPaths(paths);
@@ -197,7 +199,7 @@ void SettingsLayout::RefreshAddedPaths() {
     for (size_t i = 0; i < paths.size(); i++) {
         auto v = paths.at(i);
         auto e = EntryPtr(new SingleLineEntry(v));
-        this->addedPathsAdapter.AddEntry(e);
+        this->addedPathsAdapter->AddEntry(e);
     }
 
     this->addedPathsList->OnAdapterChanged();
@@ -229,8 +231,8 @@ void SettingsLayout::InitializeWindows() {
     this->addedPathsLabel.reset(new TextLabel());
     this->addedPathsLabel->SetText("indexed paths (BACKSPACE to remove)", text::AlignCenter);
 
-    this->addedPathsList.reset(new cursespp::ListWindow(&this->addedPathsAdapter));
-    this->browseList.reset(new cursespp::ListWindow(&this->browseAdapter));
+    this->addedPathsList.reset(new cursespp::ListWindow(this->addedPathsAdapter));
+    this->browseList.reset(new cursespp::ListWindow(this->browseAdapter));
 
     ScrollAdapterBase::ItemDecorator decorator =
         std::bind(
@@ -241,8 +243,8 @@ void SettingsLayout::InitializeWindows() {
             std::placeholders::_3,
             std::placeholders::_4);
 
-    this->addedPathsAdapter.SetItemDecorator(decorator);
-    this->browseAdapter.SetItemDecorator(decorator);
+    this->addedPathsAdapter->SetItemDecorator(decorator);
+    this->browseAdapter->SetItemDecorator(decorator);
 
     this->outputDropdown.reset(new TextLabel());
     this->outputDropdown->Activated.connect(this, &SettingsLayout::OnOutputDropdownActivated);
@@ -354,7 +356,7 @@ void SettingsLayout::LoadPreferences() {
 
 void SettingsLayout::AddSelectedDirectory() {
     size_t index = this->browseList->GetSelectedIndex();
-    std::string path = this->browseAdapter.GetFullPathAt(index);
+    std::string path = this->browseAdapter->GetFullPathAt(index);
 
     if (path.size()) {
         this->indexer->AddPath(path);
@@ -369,7 +371,7 @@ void SettingsLayout::RemoveSelectedDirectory() {
 }
 
 void SettingsLayout::DrillIntoSelectedDirectory() {
-    this->browseAdapter.Select(this->browseList->GetSelectedIndex());
+    this->browseAdapter->Select(this->browseList->GetSelectedIndex());
     this->browseList->SetSelectedIndex(0);
     this->browseList->OnAdapterChanged();
 }

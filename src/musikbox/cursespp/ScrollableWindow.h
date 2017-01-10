@@ -43,8 +43,15 @@
 namespace cursespp {
     class ScrollableWindow : public IScrollable, public IKeyHandler, public Window {
         public:
-            ScrollableWindow(IWindow *parent = NULL);
+            ScrollableWindow(
+                std::shared_ptr<IScrollAdapter> adapter,
+                IWindow *parent = nullptr);
+
+            ScrollableWindow(IWindow *parent = nullptr);
+
             virtual ~ScrollableWindow();
+
+            virtual void SetAdapter(std::shared_ptr<IScrollAdapter> adapter);
 
             virtual void Show();
             virtual void OnDimensionsChanged();
@@ -69,13 +76,14 @@ namespace cursespp {
             virtual const IScrollAdapter::ScrollPosition& GetScrollPosition();
 
         protected:
-            virtual IScrollAdapter& GetScrollAdapter() = 0;
+            virtual IScrollAdapter& GetScrollAdapter();
             virtual IScrollAdapter::ScrollPosition& GetMutableScrollPosition();
 
             size_t GetPreviousPageEntryIndex();
             bool IsLastItemVisible();
 
         private:
+            std::shared_ptr<IScrollAdapter> adapter;
             IScrollAdapter::ScrollPosition scrollPosition;
             bool allowArrowKeyPropagation;
     };

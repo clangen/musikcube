@@ -42,20 +42,14 @@ typedef IScrollAdapter::ScrollPosition ScrollPos;
 
 size_t ListWindow::NO_SELECTION = (size_t) -1;
 
-class EmptyAdapter : public IScrollAdapter {
-    public:
-        virtual void SetDisplaySize(size_t width, size_t height) { }
-        virtual size_t GetEntryCount() { return 0; }
-        virtual EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index) { return IScrollAdapter::EntryPtr(); }
-        virtual void DrawPage(ScrollableWindow* window, size_t index, ScrollPosition *result = NULL) { }
-};
-
-static EmptyAdapter emptyAdapter;
-
-ListWindow::ListWindow(IScrollAdapter* adapter, IWindow *parent)
-: ScrollableWindow(parent)
-, adapter(adapter)
+ListWindow::ListWindow(std::shared_ptr<IScrollAdapter> adapter, IWindow *parent)
+: ScrollableWindow(adapter, parent)
 , selectedIndex(0) {
+
+}
+
+ListWindow::ListWindow(IWindow *parent)
+: ListWindow(std::shared_ptr<IScrollAdapter>(), parent) {
 
 }
 
@@ -63,24 +57,9 @@ ListWindow::~ListWindow() {
 
 }
 
-void ListWindow::SetAdapter(IScrollAdapter* adapter) {
-    if (adapter != this->adapter) {
-        this->adapter = adapter;
-        this->ScrollToTop();
-    }
-}
-
 void ListWindow::ScrollToTop() {
     this->SetSelectedIndex(0);
     this->ScrollTo(0);
-}
-
-IScrollAdapter& ListWindow::GetScrollAdapter() {
-    if (this->adapter) {
-        return *this->adapter;
-    }
-
-    return emptyAdapter;
 }
 
 void ListWindow::ScrollToBottom() {

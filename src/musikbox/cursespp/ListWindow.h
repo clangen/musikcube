@@ -52,7 +52,9 @@ namespace cursespp {
             sigslot::signal3<ListWindow*, size_t, size_t> SelectionChanged;
             sigslot::signal2<ListWindow*, size_t> Invalidated;
 
-            ListWindow(IScrollAdapter* adapter = nullptr, IWindow *parent = nullptr);
+            ListWindow(std::shared_ptr<IScrollAdapter> adapter, IWindow *parent = nullptr);
+            ListWindow(IWindow *parent = nullptr);
+
             virtual ~ListWindow();
 
             virtual void ScrollToTop();
@@ -66,8 +68,6 @@ namespace cursespp {
             virtual size_t GetSelectedIndex();
             virtual void SetSelectedIndex(size_t index);
 
-            virtual void SetAdapter(IScrollAdapter* adapter);
-
             virtual void OnAdapterChanged();
 
             virtual const IScrollAdapter::ScrollPosition& GetScrollPosition();
@@ -77,13 +77,11 @@ namespace cursespp {
             virtual void OnInvalidated();
             virtual void OnDimensionsChanged();
 
-            virtual IScrollAdapter& GetScrollAdapter();
             virtual IScrollAdapter::ScrollPosition& GetMutableScrollPosition();
 
         private:
             virtual bool IsSelectedItemCompletelyVisible();
 
-            IScrollAdapter* adapter;
             IScrollAdapter::ScrollPosition scrollPosition;
             size_t selectedIndex;
     };

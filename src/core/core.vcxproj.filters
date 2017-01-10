@@ -29,9 +29,6 @@
     <Filter Include="src\plugin">
       <UniqueIdentifier>{928fef19-2739-4485-83ae-1e18892247b0}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\library\metadata">
-      <UniqueIdentifier>{9f9ee41d-111b-4dab-8663-946253eeb46f}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\db">
       <UniqueIdentifier>{9c63f496-9ae4-4032-8b1d-b1cdcd09a1d2}</UniqueIdentifier>
     </Filter>
@@ -90,9 +87,6 @@
     </ClCompile>
     <ClCompile Include="plugin\PluginFactory.cpp">
       <Filter>src\plugin</Filter>
-    </ClCompile>
-    <ClCompile Include="library\metadata\MetadataValue.cpp">
-      <Filter>src\library\metadata</Filter>
     </ClCompile>
     <ClCompile Include="debug.cpp">
       <Filter>src</Filter>
@@ -218,9 +212,6 @@
     </ClInclude>
     <ClInclude Include="plugin\PluginFactory.h">
       <Filter>src\plugin</Filter>
-    </ClInclude>
-    <ClInclude Include="library\metadata\MetadataValue.h">
-      <Filter>src\library\metadata</Filter>
     </ClInclude>
     <ClInclude Include="sdk\IMetadataReader.h">
       <Filter>src\sdk</Filter>
