@@ -236,6 +236,7 @@ int WasapiOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     if (this->deviceChanged) {
         this->Reset();
         this->deviceChanged = false;
+        return OutputFormatError;
     }
 
     if (!this->Configure(buffer)) {
@@ -273,33 +274,6 @@ int WasapiOut::Play(IBuffer *buffer, IBufferProvider *provider) {
 }
 
 void WasapiOut::Reset() {
-    if (this->audioClient) {
-        this->audioClient->Stop();
-        this->audioClient->Release();
-        this->audioClient = nullptr;
-    }
-
-    if (this->enumerator) {
-        if (this->notificationClient) {
-            this->enumerator->UnregisterEndpointNotificationCallback(this->notificationClient);
-            this->notificationClient->Release();
-            this->notificationClient = nullptr;
-        }
-
-        this->enumerator->Release();
-        this->enumerator = nullptr;
-    }
-
-    if (this->device) {
-        this->device->Release();
-        this->device = 0;
-    }
-
-    if (this->renderClient) {
-        this->renderClient->Release();
-        this->renderClient = nullptr;
-    }
-
     if (this->simpleAudioVolume) {
         this->simpleAudioVolume->Release();
         this->simpleAudioVolume = nullptr;
@@ -313,6 +287,33 @@ void WasapiOut::Reset() {
     if (this->audioClock) {
         this->audioClock->Release();
         this->audioClock = nullptr;
+    }
+
+    if (this->renderClient) {
+        this->renderClient->Release();
+        this->renderClient = nullptr;
+    }
+
+    if (this->audioClient) {
+        this->audioClient->Stop();
+        this->audioClient->Release();
+        this->audioClient = nullptr;
+    }
+
+    if (this->device) {
+        this->device->Release();
+        this->device = 0;
+    }
+
+    if (this->enumerator) {
+        if (this->notificationClient) {
+            this->enumerator->UnregisterEndpointNotificationCallback(this->notificationClient);
+            this->notificationClient->Release();
+            this->notificationClient = nullptr;
+        }
+
+        this->enumerator->Release();
+        this->enumerator = nullptr;
     }
 
     ZeroMemory(&waveFormat, sizeof(WAVEFORMATEXTENSIBLE));
