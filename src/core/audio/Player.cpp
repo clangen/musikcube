@@ -514,14 +514,13 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
         /* removes the specified buffer from the list of locked buffers, and also
         lets the stream know it can be recycled. */
         --pendingBufferCount;
+        this->stream->OnBufferProcessedByPlayer((Buffer*)buffer);
 
         /* if we're seeking this value will be non-negative, so we shouldn't touch
         the current time. */
         if (this->seekToPosition.load() == -1) {
-            this->stream->OnBufferProcessedByPlayer((Buffer*)buffer);
+            this->currentPosition.store(((Buffer*)buffer)->Position());
         }
-
-        this->currentPosition.store(((Buffer*)buffer)->Position());
 
         /* did we hit any pending mixpoints? if so add them to our set and
         move them to the processed set. we'll notify once out of the
