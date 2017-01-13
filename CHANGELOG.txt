@@ -1,3 +1,48 @@
+0.7.2
+
+mostly performance and architecture changes:
+
+* created new 'src/glue' package that contains code that can be optionally
+  included and reused by other applications, but is too high-level for
+  src/core
+* cpu reduction and code simplification in 'Stream' and 'Player'
+* cpu reduction in 'MessageQueue'
+* reduced locking in 'Player' and 'MessageQueue'
+* tweaked music library interface to optionally deliver results to a specified
+  'IMessageQueue'
+* moved 'PlaybackService' and 'TrackList' into 'core'
+* optimized floating point sample scaling in the 'nomad' mp3 decoder
+* reduced cpu overhead when redrawing the transport view
+* added bare-bones, 'proof of concept' win32 application that includes 'core'
+  and 'glue' to present a very basic music player in just a few lines of code.
+
+bug fixes:
+
+* fixed default output plugin selection logic
+* fixed a crash in WASAPI stream routing
+
+--------------------------------------------------------------------------------
+
+0.7.1
+
+user-facing:
+
+* fixed the flac decoder. oops.
+* changed focus behavior in search view -- pressing return in the edit field 
+  will now focus the tracklist after starting playback
+* added sdk and plugin versioning. the plugin loader will only load plugins
+  with a supported version.
+
+low-level
+
+* removed pre-buffering code from Player, let Stream worry about that
+* moved from boost to std for most threading (boost still used in the indexer)
+* removed some unused boost dependencies from CMakeLists.txt
+* various small optimizations to help reduce CPU overhead in MessageQueue and
+  Player.
+
+--------------------------------------------------------------------------------
+
 0.7.0
 
 a big release with lots of changes to low-level machinery.
