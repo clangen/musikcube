@@ -38,6 +38,12 @@
 #include <core/sdk/IPlugin.h>
 #include "NullOut.h"
 
+#ifdef WIN32
+    #define DLLEXPORT __declspec(dllexport)
+#else
+    #define DLLEXPORT
+#endif
+
 class NullPlugin : public musik::core::sdk::IPlugin {
     public:
         virtual void Destroy() { delete this; }
@@ -53,10 +59,10 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 }
 #endif
 
-extern "C" __declspec(dllexport) musik::core::sdk::IPlugin* GetPlugin() {
+extern "C" DLLEXPORT musik::core::sdk::IPlugin* GetPlugin() {
     return new NullPlugin();
 }
 
-extern "C" __declspec(dllexport) musik::core::sdk::IOutput* GetAudioOutput() {
+extern "C" DLLEXPORT musik::core::sdk::IOutput* GetAudioOutput() {
     return new NullOut();
 }
