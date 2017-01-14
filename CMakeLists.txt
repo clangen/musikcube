@@ -106,6 +106,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     FILES
       bin/plugins/libalsaout.so
       bin/plugins/libpulseout.so
+      bin/plugins/libnullout.so
       bin/plugins/libflacdecoder.so
       bin/plugins/libm4adecoder.so
       bin/plugins/libnomaddecoder.so
@@ -118,6 +119,7 @@ else (CMAKE_SYSTEM_NAME MATCHES "Linux")
   install(
     FILES
       bin/plugins/libcoreaudioout.dylib
+      bin/plugins/libnullout.dylib
       bin/plugins/libflacdecoder.dylib
       bin/plugins/libm4adecoder.dylib
       bin/plugins/libnomaddecoder.dylib
