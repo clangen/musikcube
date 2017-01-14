@@ -15,6 +15,8 @@ mostly performance and architecture changes:
 * reduced cpu overhead when redrawing the transport view
 * added bare-bones, 'proof of concept' win32 application that includes 'core'
   and 'glue' to present a very basic music player in just a few lines of code.
+* added a NullOut, an output plugin that doesn't write to the sound card. useful
+  for development and testing purposes.
 
 bug fixes:
 
