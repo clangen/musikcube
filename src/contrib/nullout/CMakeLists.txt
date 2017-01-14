@@ -3,5 +3,5 @@ set (nullout_SOURCES
   NullOut.cpp
 )
 
-add_library(nullout SHARED ${alsaout_SOURCES})
+add_library(nullout SHARED ${nullout_SOURCES})
 target_link_libraries(nullout ${musikbox_LINK_LIBS})
