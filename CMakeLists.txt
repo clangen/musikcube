@@ -78,6 +78,7 @@ add_subdirectory(src/contrib/m4adecoder)
 add_subdirectory(src/contrib/oggdecoder)
 add_subdirectory(src/contrib/nomaddecoder)
 add_subdirectory(src/contrib/flacdecoder)
+add_subdirectory(src/contrib/nullout)
 
 add_dependencies(taglibreader taglib)
 
