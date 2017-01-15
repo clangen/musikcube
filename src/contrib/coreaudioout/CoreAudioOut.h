@@ -36,10 +36,8 @@
 
 #include <core/sdk/IOutput.h>
 #include <core/sdk/IBufferProvider.h>
-#include <queue>
-#include <boost/thread.hpp>
-#include <boost/thread/condition.hpp>
-#include <boost/thread/recursive_mutex.hpp>
+#include <deque>
+#include <mutex>
 #include <AudioToolbox/AudioQueue.h>
 #include <CoreAudio/CoreAudioTypes.h>
 #include <CoreFoundation/CFRunLoop.h>
@@ -83,9 +81,8 @@ class CoreAudioOut : public musik::core::sdk::IOutput {
         AudioStreamBasicDescription audioFormat;
         AudioQueueRef audioQueue;
         double volume;
-        std::list<BufferContext*> buffers;
-        boost::thread thread;
-        boost::recursive_mutex mutex;
+        std::deque<BufferContext*> buffers;
+        std::recursive_mutex mutex;
         bool quit;
         State state;
 };

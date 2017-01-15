@@ -53,24 +53,9 @@ void audioCallback(void *customData, AudioQueueRef queue, AudioQueueBufferRef bu
     output->NotifyBufferCompleted(context);
 }
 
-size_t countBuffersWithProvider(
-    const std::list<CoreAudioOut::BufferContext*>& buffers,
-    const IBufferProvider* provider)
-{
-    size_t count = 0;
-    auto it = buffers.begin();
-    while (it != buffers.end()) {
-        if ((*it)->provider == provider) {
-            ++count;
-        }
-        ++it;
-    }
-    return count;
-}
-
 void CoreAudioOut::NotifyBufferCompleted(BufferContext *context) {
     {
-        boost::recursive_mutex::scoped_lock lock(this->mutex);
+        std::unique_lock<std::recursive_mutex> lock(this->mutex);
 
         bool found = false;
         auto it = this->buffers.begin();
@@ -112,13 +97,13 @@ CoreAudioOut::CoreAudioOut() {
 }
 
 int CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
-    boost::recursive_mutex::scoped_lock lock(this->mutex);
+    std::unique_lock<std::recursive_mutex> lock(this->mutex);
 
     if (this->state != StatePlaying) {
         return OutputInvalidState;
     }
 
-    if (countBuffersWithProvider(this->buffers, provider) >= BUFFER_COUNT) {
+    if (this->buffers.size() >= BUFFER_COUNT) {
         /* enough buffers are already in the queue. bail, we'll notify the
         caller when there's more data available */
         return OutputBufferFull;
@@ -209,7 +194,7 @@ void CoreAudioOut::Destroy() {
 }
 
 void CoreAudioOut::Drain() {
-    boost::recursive_mutex::scoped_lock lock(this->mutex);
+    std::unique_lock<std::recursive_mutex> lock(this->mutex);
 
     if (this->state != StateStopped && this->audioQueue) {
         std::cerr << "CoreAudioOut: draining...\n";
@@ -219,7 +204,7 @@ void CoreAudioOut::Drain() {
 }
 
 void CoreAudioOut::Pause() {
-    boost::recursive_mutex::scoped_lock lock(this->mutex);
+    std::unique_lock<std::recursive_mutex> lock(this->mutex);
 
     if (this->audioQueue) {
         AudioQueuePause(this->audioQueue);
@@ -228,7 +213,7 @@ void CoreAudioOut::Pause() {
 }
 
 void CoreAudioOut::Resume() {
-    boost::recursive_mutex::scoped_lock lock(this->mutex);
+    std::unique_lock<std::recursive_mutex> lock(this->mutex);
 
     if (this->audioQueue) {
         AudioQueueStart(this->audioQueue, nullptr);
@@ -238,7 +223,7 @@ void CoreAudioOut::Resume() {
 }
 
 void CoreAudioOut::SetVolume(double volume) {
-    boost::recursive_mutex::scoped_lock lock(this->mutex);
+    std::unique_lock<std::recursive_mutex> lock(this->mutex);
 
     this->volume = volume;
 
@@ -265,7 +250,7 @@ void CoreAudioOut::Stop() {
         /* AudioQueueStop/AudioQueueDispose will trigger the callback, which
         will try to dispose of the samples on a separate thread and deadlock.
         cache the queue and reset outside of the critical section */
-        boost::recursive_mutex::scoped_lock lock(this->mutex);
+        std::unique_lock<std::recursive_mutex> lock(this->mutex);
         queue = this->audioQueue;
         this->audioQueue = nullptr;
         this->state = StateStopped;
