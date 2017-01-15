@@ -57,16 +57,8 @@ void CoreAudioOut::NotifyBufferCompleted(BufferContext *context) {
     {
         std::unique_lock<std::recursive_mutex> lock(this->mutex);
 
-        bool found = false;
-        auto it = this->buffers.begin();
-        while (!found && it != this->buffers.end()) {
-            if (*it == context) {
-                this->buffers.erase(it);
-                found = true;
-            }
-            else {
-                ++it;
-            }
+        if (bufferCount > 0) {
+            --bufferCount;
         }
     }
 
@@ -94,6 +86,7 @@ CoreAudioOut::CoreAudioOut() {
     this->audioFormat.mBytesPerPacket = -1;
 
     this->audioQueue = nullptr;
+    this->bufferCount = 0;
 }
 
 int CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
@@ -103,7 +96,7 @@ int CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
         return OutputInvalidState;
     }
 
-    if (this->buffers.size() >= BUFFER_COUNT) {
+    if (this->bufferCount >= BUFFER_COUNT) {
         /* enough buffers are already in the queue. bail, we'll notify the
         caller when there's more data available */
         return OutputBufferFull;
@@ -180,7 +173,7 @@ int CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
         return OutputInvalidState;
     }
 
-    this->buffers.push_back(context);
+    ++bufferCount;
 
     return OutputBufferWritten;
 }
@@ -254,6 +247,7 @@ void CoreAudioOut::Stop() {
         queue = this->audioQueue;
         this->audioQueue = nullptr;
         this->state = StateStopped;
+        this->bufferCount = 0;
     }
 
     if (queue) {

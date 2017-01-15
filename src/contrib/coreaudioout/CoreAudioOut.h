@@ -81,7 +81,7 @@ class CoreAudioOut : public musik::core::sdk::IOutput {
         AudioStreamBasicDescription audioFormat;
         AudioQueueRef audioQueue;
         double volume;
-        std::deque<BufferContext*> buffers;
+        int bufferCount;
         std::recursive_mutex mutex;
         bool quit;
         State state;
