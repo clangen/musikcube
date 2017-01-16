@@ -39,5 +39,13 @@
 #undef MOUSE_MOVED
 #endif
 
-#include <curses.h>
-#include <panel.h>
+#ifdef WIN32
+    #include <curses.h>
+    #include <panel.h>
+#elif defined __APPLE__
+    #include <curses.h>
+    #include <panel.h>
+#else
+    #include <ncursesw/curses.h>
+    #include <ncursesw/panel.h>
+#endif

@@ -79,8 +79,8 @@ using namespace cursespp;
     this->RemoveMessage(REFRESH_TRANSPORT_READOUT); \
     this->PostMessage(REFRESH_TRANSPORT_READOUT, (int64) mode, 0, delay);
 
-#define ON(w, a) if (a != -1) { wattron(w, a); }
-#define OFF(w, a) if (a != -1) { wattroff(w, a); }
+#define ON(w, a) if (a != -1LL) { wattron(w, a); }
+#define OFF(w, a) if (a != -1LL) { wattroff(w, a); }
 
 static std::string playingFormat = "playing $title by $artist from $album";
 
@@ -429,7 +429,7 @@ void TransportWindow::Update(TimeMode timeMode) {
     int64 gb = COLOR_PAIR(CURSESPP_TEXT_ACTIVE);
     int64 disabled = COLOR_PAIR(CURSESPP_TEXT_DISABLED);
 
-    int64 volumeAttrs = -1;
+    int64 volumeAttrs = -1LL;
     if (this->focus == FocusVolume) {
         volumeAttrs = COLOR_PAIR(CURSESPP_TEXT_FOCUSED);
     }
@@ -438,7 +438,7 @@ void TransportWindow::Update(TimeMode timeMode) {
     }
 
     int64 timerAttrs = (this->focus == FocusTime)
-        ? COLOR_PAIR(CURSESPP_TEXT_FOCUSED) : -1;
+        ? COLOR_PAIR(CURSESPP_TEXT_FOCUSED) : -1LL;
 
     /* prepare the "shuffle" label */
 
@@ -491,7 +491,7 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     RepeatMode mode = this->playback.GetRepeatMode();
     std::string repeatModeLabel = "  repeat ";
-    int64 repeatAttrs = -1;
+    int64 repeatAttrs = -1LL;
     switch (mode) {
         case RepeatList:
             repeatModeLabel += "list";
