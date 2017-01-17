@@ -37,15 +37,8 @@
 
 using namespace cursespp;
 
-static int white = COLOR_WHITE;
-static int blue = COLOR_BLUE;
-static int red = COLOR_RED;
-static int darkRed = COLOR_RED;
-static int yellow = COLOR_YELLOW;
-static int green = COLOR_GREEN;
-static int black = COLOR_BLACK;
-static int orange = COLOR_YELLOW;
-
+/* if the terminal supports custom colors, these are the palette
+indicies we'll use to store them */
 #define COLOR_CUSTOM_WHITE 16
 #define COLOR_CUSTOM_BLUE 17
 #define COLOR_CUSTOM_RED 18
@@ -57,6 +50,27 @@ static int orange = COLOR_YELLOW;
 #define COLOR_CUSTOM_ORANGE 24
 #define COLOR_CUSTOM_DARK_RED 25
 
+/* if we can't set custom colors, but we have the full 256 color
+palette, use ones that most closely match our desired colors */
+#define COLOR_256_GREEN 148
+#define COLOR_256_RED 167
+#define COLOR_256_DARK_RED 160
+#define COLOR_256_YELLOW 185
+#define COLOR_256_MEDIUM_GRAY 240
+#define COLOR_256_ORANGE 208 
+#define COLOR_256_BLUE 123 
+#define COLOR_256_OFFWHITE 251
+
+/* vars that hold our actual color definitions. these may change
+later during init if the terminal supports > 8 colors */
+static int white = COLOR_WHITE;
+static int blue = COLOR_BLUE;
+static int red = COLOR_RED;
+static int darkRed = COLOR_RED;
+static int yellow = COLOR_YELLOW;
+static int green = COLOR_GREEN;
+static int black = COLOR_BLACK;
+static int orange = COLOR_YELLOW;
 static int foreground = COLOR_WHITE;
 static int background = -1;
 static int selected = -1;
@@ -101,16 +115,30 @@ void Colors::Init(bool disableCustomColors) {
     let's use custom colors if the terminal supports it. in
     the future we'll allow users to configure this via setting */
     if (hasCustomColors) {
-        red = initColor(COLOR_CUSTOM_RED, 220, 82, 86);
-        darkRed = initColor(COLOR_CUSTOM_DARK_RED, 175, 66, 71);
-        green = initColor(COLOR_CUSTOM_GREEN, 166, 226, 46);
-        yellow = initColor(COLOR_CUSTOM_YELLOW, 230, 220, 116);
-        selected = initColor(COLOR_CUSTOM_SELECTED_LIST_ITEM_BG, 66, 66, 56);
-        grey = initColor(COLOR_CUSTOM_GREY, 128, 128, 128);
-        orange = initColor(COLOR_CUSTOM_ORANGE, 255, 150, 32);
-        blue = initColor(COLOR_CUSTOM_BLUE, 102, 217, 238);
-        white = initColor(COLOR_CUSTOM_WHITE, 230, 230, 230);
-        foreground = COLOR_CUSTOM_WHITE;
+        if (can_change_color()) {
+            red = initColor(COLOR_CUSTOM_RED, 220, 82, 86);
+            darkRed = initColor(COLOR_CUSTOM_DARK_RED, 175, 66, 71);
+            green = initColor(COLOR_CUSTOM_GREEN, 166, 226, 46);
+            yellow = initColor(COLOR_CUSTOM_YELLOW, 230, 220, 116);
+            selected = initColor(COLOR_CUSTOM_SELECTED_LIST_ITEM_BG, 66, 66, 56);
+            grey = initColor(COLOR_CUSTOM_GREY, 128, 128, 128);
+            orange = initColor(COLOR_CUSTOM_ORANGE, 255, 150, 32);
+            blue = initColor(COLOR_CUSTOM_BLUE, 102, 217, 238);
+            white = initColor(COLOR_CUSTOM_WHITE, 230, 230, 230);
+            foreground = COLOR_CUSTOM_WHITE;
+        }
+        else {
+            green = COLOR_256_GREEN;
+            red = COLOR_256_RED;
+            darkRed = COLOR_256_DARK_RED;
+            yellow = COLOR_256_YELLOW;
+            selected = COLOR_256_MEDIUM_GRAY;
+            grey = COLOR_256_MEDIUM_GRAY;
+            orange = COLOR_256_ORANGE; 
+            blue = COLOR_256_BLUE;
+            white = COLOR_256_OFFWHITE;
+            foreground = COLOR_256_OFFWHITE; 
+        }
     }
 
     init_pair(CURSESPP_SELECTED_LIST_ITEM, yellow, selected);
