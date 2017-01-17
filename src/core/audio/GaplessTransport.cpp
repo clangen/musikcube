@@ -39,7 +39,6 @@
 #include <core/plugin/PluginFactory.h>
 #include <core/audio/Outputs.h>
 #include <algorithm>
-#include <boost/thread.hpp>
 
 using namespace musik::core::audio;
 using namespace musik::core::sdk;
@@ -270,17 +269,12 @@ void GaplessTransport::SetVolume(double volume) {
     volume = std::max(0.0, std::min(1.0, volume));
 
     this->volume = volume;
-
+    this->output->SetVolume(this->volume);
+    
     if (oldVolume != this->volume) {
+        this->SetMuted(false);
         this->VolumeChanged();
     }
-
-    std::string output = boost::str(
-        boost::format("set volume %d%%") % round(volume * 100));
-
-    musik::debug::info(TAG, output);
-
-    this->output->SetVolume(this->volume);
 }
 
 void GaplessTransport::SetNextCanStart(bool nextCanStart) {

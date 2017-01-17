@@ -216,18 +216,18 @@ double CrossfadeTransport::Volume() {
 
 void CrossfadeTransport::SetVolume(double volume) {
     double oldVolume = this->volume;
-
     volume = std::max(0.0, std::min(1.0, volume));
-
-    this->volume = volume;
-    if (oldVolume != this->volume) {
-        this->VolumeChanged();
-    }
 
     {
         Lock lock(this->stateMutex);
+        this->volume = volume;
         active.SetVolume(volume);
         next.SetVolume(volume);
+    }
+    
+    if (oldVolume != this->volume) {
+        this->SetMuted(false);
+        this->VolumeChanged();
     }
 }
 
