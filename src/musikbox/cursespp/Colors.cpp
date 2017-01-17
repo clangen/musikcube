@@ -57,8 +57,8 @@ palette, use ones that most closely match our desired colors */
 #define COLOR_256_DARK_RED 160
 #define COLOR_256_YELLOW 185
 #define COLOR_256_MEDIUM_GRAY 240
-#define COLOR_256_ORANGE 208 
-#define COLOR_256_BLUE 123 
+#define COLOR_256_ORANGE 208
+#define COLOR_256_BLUE 123
 #define COLOR_256_OFFWHITE 251
 
 /* vars that hold our actual color definitions. these may change
@@ -85,20 +85,19 @@ static int initColor(int id, int r, int g, int b) {
 
 /* some terminals report custom colors are supported, and also
 don't error when calling init_color(), but don't actually work. */
-static bool customColorsSupported() {
-    if (COLORS <= 8) {
-        return false;
-    }
-
-#ifdef WIN32
-    return true;
-#else
+static bool canChangeColors() {
+#ifdef __APPLE__
     const char* termEnv = std::getenv("TERM_PROGRAM");
     std::string term;
     if (termEnv && strlen(termEnv)) {
         term = std::string(termEnv);
+        if (term == "Apple_Terminal") {
+            return false;
+        }
     }
-    return term != "Apple_Terminal";
+    return can_change_color();
+#else
+    return can_change_color();
 #endif
 }
 
@@ -109,13 +108,11 @@ void Colors::Init(bool disableCustomColors) {
     start_color();
     use_default_colors();
 
-    bool hasCustomColors = !disableCustomColors && customColorsSupported();
-
     /* the default colors are a bit harsh for my taste, so
     let's use custom colors if the terminal supports it. in
     the future we'll allow users to configure this via setting */
-    if (hasCustomColors) {
-        if (can_change_color()) {
+    if (!disableCustomColors && COLORS > 8) {
+        if (canChangeColors()) {
             red = initColor(COLOR_CUSTOM_RED, 220, 82, 86);
             darkRed = initColor(COLOR_CUSTOM_DARK_RED, 175, 66, 71);
             green = initColor(COLOR_CUSTOM_GREEN, 166, 226, 46);
@@ -127,17 +124,17 @@ void Colors::Init(bool disableCustomColors) {
             white = initColor(COLOR_CUSTOM_WHITE, 230, 230, 230);
             foreground = COLOR_CUSTOM_WHITE;
         }
-        else {
+        else if (COLORS >= 256) {
             green = COLOR_256_GREEN;
             red = COLOR_256_RED;
             darkRed = COLOR_256_DARK_RED;
             yellow = COLOR_256_YELLOW;
             selected = COLOR_256_MEDIUM_GRAY;
             grey = COLOR_256_MEDIUM_GRAY;
-            orange = COLOR_256_ORANGE; 
+            orange = COLOR_256_ORANGE;
             blue = COLOR_256_BLUE;
             white = COLOR_256_OFFWHITE;
-            foreground = COLOR_256_OFFWHITE; 
+            foreground = COLOR_256_OFFWHITE;
         }
     }
 
