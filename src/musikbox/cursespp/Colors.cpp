@@ -54,7 +54,7 @@ indicies we'll use to store them */
 palette, use ones that most closely match our desired colors */
 #define COLOR_256_GREEN 148
 #define COLOR_256_RED 167
-#define COLOR_256_DARK_RED 160
+#define COLOR_256_DARK_RED 131
 #define COLOR_256_YELLOW 185
 #define COLOR_256_MEDIUM_GRAY 240
 #define COLOR_256_ORANGE 208
