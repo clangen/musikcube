@@ -52,9 +52,7 @@ MainLayout::MainLayout()
 , LayoutBase() {
     this->Initialize();
     this->prefs = Preferences::ForComponent("settings");
-
-    size_t cx = Screen::GetWidth(), cy = Screen::GetHeight();
-    this->MoveAndResize(0, 0, cx, cy);
+    this->ResizeToViewport();
 }
 
 MainLayout::~MainLayout() {

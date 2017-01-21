@@ -441,27 +441,32 @@ bool Window::CheckForBoundsError() {
         return true;
     }
 
+    if (this->drawFrame && (cx < 3 || cy < 3)) {
+        /* if a frame is visible, the minimum x and y dimensions are
+        2 cells -- the left+right (and top+bottom) border, plus the
+        content area (at least 1 cell) */
+        return true;
+    }
+
     if (!this->parent) {
         return false;
     }
 
-    int parentTop = parent->GetY();
-    int parentBottom = parentTop + parent->GetHeight();
-    int parentLeft = parent->GetX();
-    int parentRight = parentLeft + parent->GetWidth();
-
-    int top = this->GetY();
-    int left = this->GetX();
-    int bottom = top + cy;
-    int right = left + cx;
-
-    if (top < parentTop || bottom > parentBottom ||
-        left < parentLeft || right > parentRight)
+    if (this->width > this->parent->GetContentWidth() ||
+        this->height > this->parent->GetContentHeight())
     {
         return true;
     }
 
     return false;
+}
+
+int Window::GetAbsoluteX() const {
+    return this->parent ? (this->x + parent->GetAbsoluteX()) : this->x;
+}
+
+int Window::GetAbsoluteY() const {
+    return this->parent ? (this->y + parent->GetAbsoluteY()) : this->y;
 }
 
 void Window::Create() {
@@ -478,54 +483,77 @@ void Window::Create() {
         return;
     }
 
-    /* else we have valid bounds */
+    /* else we have valid bounds. this->x and this->y are specified in
+    relative space; find their absolute offset based on our parent. */
+
+    int absoluteXOffset = 0;
+    int absoluteYOffset = 0;
+
+    if (this->parent) {
+        absoluteXOffset = this->parent->GetAbsoluteX();
+        absoluteYOffset = this->parent->GetAbsoluteY();
+
+        if (parent->IsFrameVisible()) {
+            absoluteXOffset += 1;
+            absoluteYOffset += 1;
+        }
+    }
 
     this->frame = newwin(
         this->height,
         this->width,
-        this->y,
-        this->x);
+        absoluteYOffset + this->y,
+        absoluteXOffset + this->x);
 
-    this->framePanel = new_panel(this->frame);
+    if (this->frame) { /* can fail if the screen size is too small. */
+        this->framePanel = new_panel(this->frame);
 
-    /* if we were asked not to draw a frame, we'll set the frame equal to
-    the content view, and use the content views colors*/
+        /* if we were asked not to draw a frame, we'll set the frame equal to
+        the content view, and use the content views colors*/
 
-    if (!this->drawFrame) {
-        this->content = this->frame;
+        if (!this->drawFrame) {
+            this->content = this->frame;
 
-        if (this->contentColor != -1) {
-            wbkgd(this->frame, COLOR_PAIR(this->contentColor));
-        }
-    }
-
-    /* otherwise we'll draw a box around the frame, and create a content
-    sub-window inside */
-
-    else {
-        box(this->frame, 0, 0);
-
-        this->content = newwin(
-            this->height - 2,
-            this->width - 2,
-            this->GetY() + 1,
-            this->GetX() + 1);
-
-        this->contentPanel = new_panel(this->content);
-
-        if (this->frameColor != -1) {
-            wbkgd(this->frame, COLOR_PAIR(this->frameColor));
+            if (this->contentColor != -1) {
+                wbkgd(this->frame, COLOR_PAIR(this->contentColor));
+            }
         }
 
-        if (this->contentColor != -1) {
-            wbkgd(this->content, COLOR_PAIR(this->contentColor));
+        /* otherwise we'll draw a box around the frame, and create a content
+        sub-window inside */
+
+        else {
+            box(this->frame, 0, 0);
+
+            this->content = newwin(
+                this->height - 2,
+                this->width - 2,
+                this->GetY() + 1,
+                this->GetX() + 1);
+
+            if (!this->content) {
+                /* should never happen. if there's enough room for this->frame,
+                there's enough room for this->content */
+                this->Destroy();
+                return;
+            }
+
+            this->contentPanel = new_panel(this->content);
+
+            if (this->frameColor != -1) {
+                wbkgd(this->frame, COLOR_PAIR(this->frameColor));
+            }
+
+            if (this->contentColor != -1) {
+                wbkgd(this->content, COLOR_PAIR(this->contentColor));
+            }
         }
-    }
 
-    this->Show();
+        this->Show();
 
-    if (hadBadBounds && this->isVisible) {
-        this->OnVisibilityChanged(true);
+        if (hadBadBounds && this->isVisible) {
+            this->OnVisibilityChanged(true);
+        }
     }
 }
 

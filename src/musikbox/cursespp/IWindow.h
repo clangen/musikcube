@@ -56,6 +56,8 @@ namespace cursespp {
             virtual void Blur() = 0;
             virtual void SetContentColor(int64 color) = 0;
             virtual void SetFrameColor(int64 color) = 0;
+            virtual void SetFrameVisible(bool visible) = 0;
+            virtual bool IsFrameVisible() = 0;
             virtual void SetSize(int width, int height) = 0;
             virtual void SetPosition(int x, int y) = 0;
             virtual void MoveAndResize(int x, int y, int width, int height) = 0;
@@ -65,6 +67,8 @@ namespace cursespp {
             virtual int GetContentWidth() const = 0;
             virtual int GetX() const = 0;
             virtual int GetY() const = 0;
+            virtual int GetAbsoluteX() const = 0;
+            virtual int GetAbsoluteY() const = 0;
             virtual int GetId() const = 0;
             virtual int GetFocusOrder() = 0;
             virtual void SetFocusOrder(int order = -1) = 0;

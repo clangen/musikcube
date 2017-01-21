@@ -62,8 +62,8 @@ namespace cursespp {
             virtual void Redraw();
             virtual void Invalidate();
 
-            void SetFrameVisible(bool enabled);
-            bool IsFrameVisible();
+            virtual void SetFrameVisible(bool visible);
+            virtual bool IsFrameVisible();
 
             virtual void Focus();
             virtual void Blur();
@@ -80,6 +80,8 @@ namespace cursespp {
             virtual int GetContentWidth() const;
             virtual int GetX() const;
             virtual int GetY() const;
+            virtual int GetAbsoluteX() const;
+            virtual int GetAbsoluteY() const;
             virtual int GetId() const;
 
             virtual void BringToTop();

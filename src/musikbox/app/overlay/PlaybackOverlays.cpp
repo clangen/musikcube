@@ -52,7 +52,7 @@ using namespace musik::core::sdk;
 using namespace cursespp;
 
 static std::vector<std::shared_ptr<IOutput> > plugins;
-static std::set<std::string> invalidCrossfadeOutputs = { "WaveOut IOutput" };
+static std::set<std::string> invalidCrossfadeOutputs = { "WaveOut" };
 
 static void showNoOutputPluginsMessage() {
     std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());

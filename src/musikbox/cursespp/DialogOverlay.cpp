@@ -70,8 +70,8 @@ void DialogOverlay::Layout() {
             this->height + 2);
 
         this->shortcuts->MoveAndResize(
-            HORIZONTAL_PADDING + 1,
-            VERTICAL_PADDING + this->height,
+            0,
+            this->height - 1,
             this->GetContentWidth(),
             1);
 

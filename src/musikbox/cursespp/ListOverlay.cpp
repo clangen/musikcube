@@ -61,7 +61,7 @@ ListOverlay::ListOverlay() {
     this->listWindow->SetContentColor(CURSESPP_OVERLAY_BACKGROUND);
     this->listWindow->SetFrameVisible(false);
     this->listWindow->SetFocusOrder(0);
-    this->LayoutBase::AddWindow(this->listWindow);
+    this->AddWindow(this->listWindow);
 }
 
 ListOverlay::~ListOverlay() {
@@ -77,14 +77,11 @@ void ListOverlay::Layout() {
             this->width,
             this->height);
 
-        int listY = this->y + 3; /* below the border + title */
-        int listHeight = this->height - 4; /* top and bottom padding + title */
-
         this->listWindow->MoveAndResize(
-            this->x + 2,
-            listY,
+            1, /* one pixel padding L and R */
+            2, /* below the title, plus an extra space */
             this->GetContentWidth() - 2,
-            listHeight);
+            this->height - 4); /* top and bottom padding + title */
 
         this->Redraw();
     }
