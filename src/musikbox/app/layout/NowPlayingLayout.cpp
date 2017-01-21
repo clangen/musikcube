@@ -42,6 +42,7 @@
 #include <glue/util/Duration.h>
 #include "NowPlayingLayout.h"
 
+#include <set>
 #include <boost/format.hpp>
 
 using namespace musik::core::library::constants;
@@ -53,6 +54,8 @@ using namespace musik::box;
 using namespace musik::glue;
 using namespace cursespp;
 
+static std::set<std::string> EDIT_KEYS = { "M-up", "M-down", "KEY_BACKSPACE", "KEY_DC" };
+
 static std::string formatWithAlbum(TrackPtr track, size_t width);
 
 NowPlayingLayout::NowPlayingLayout(
@@ -60,7 +63,8 @@ NowPlayingLayout::NowPlayingLayout(
     musik::core::LibraryPtr library)
 : LayoutBase()
 , playback(playback)
-, library(library) {
+, library(library)
+, reselectIndex(-1) {
     this->InitializeWindows();
     this->playback.Shuffled.connect(this, &NowPlayingLayout::OnPlaybackShuffled);
 }
@@ -102,10 +106,24 @@ void NowPlayingLayout::OnVisibilityChanged(bool visible) {
 
 void NowPlayingLayout::OnTrackListRequeried() {
     if (playback.Count()) {
-        size_t index = playback.GetIndex();
-        this->trackList->SetSelectedIndex(index);
-        this->trackList->ScrollTo(index == 0 ? index : index - 1);
+        if (this->reselectIndex == -1) {
+            size_t index = playback.GetIndex();
+            this->trackList->SetSelectedIndex(index);
+            this->trackList->ScrollTo(index == 0 ? index : index - 1);
+        }
+        else {
+            this->trackList->SetSelectedIndex((int) this->reselectIndex);
+            auto pos = this->trackList->GetScrollPosition();
+            int first = (int) pos.firstVisibleEntryIndex;
+            int last = (int) first + pos.visibleEntryCount;
+            int index = (int) this->reselectIndex;
+            if (index < first || index >= last) {
+                this->trackList->ScrollTo(this->reselectIndex);
+            }
+        }
     }
+
+    this->reselectIndex = -1;
 }
 
 void NowPlayingLayout::OnPlaybackShuffled(bool shuffled) {
@@ -122,8 +140,44 @@ bool NowPlayingLayout::KeyPress(const std::string& key) {
         this->playback.Play(this->trackList->GetSelectedIndex());
         return true;
     }
+    else if (ProcessEditOperation(key)) {
+        return true;
+    }
 
     return LayoutBase::KeyPress(key);
+}
+
+bool NowPlayingLayout::ProcessEditOperation(const std::string& key) {
+    if (EDIT_KEYS.find(key) != EDIT_KEYS.end()) {
+        if (!playback.IsShuffled()) {
+            PlaybackService::Editor editor = this->playback.Edit();
+            size_t selected = this->trackList->GetSelectedIndex();
+
+            if (key == "M-up") {
+                if (selected > 0) {
+                    size_t to = selected - 1;
+                    editor.Tracks().Move(selected, to);
+                    this->reselectIndex = (int)to;
+                }
+            }
+            else if (key == "M-down") {
+                if (selected < this->playback.Count() - 2) {
+                    size_t to = selected + 1;
+                    editor.Tracks().Move(selected, to);
+                    this->reselectIndex = (int)to;
+                }
+            }
+            else if (key == "KEY_BACKSPACE" || key == "KEY_DC") {
+                editor.Tracks().Delete(selected);
+                this->reselectIndex = (int)selected;
+            }
+
+            this->RequeryTrackList();
+            return true;
+        }
+    }
+
+    return false;
 }
 
 #define TRACK_COL_WIDTH 3

@@ -105,6 +105,33 @@ namespace musik { namespace core { namespace audio {
             void CopyTo(musik::core::TrackList& target);
             musik::core::TrackPtr GetTrackAtIndex(size_t index);
 
+            /* required to make changes to the playlist. this little data structure
+            privately owns a lock to the internal data structure and will release
+            that lock when it's destructed. */
+            class Editor {
+                public:
+                    using TrackListEditor = musik::core::sdk::ITrackListEditor;
+
+                    Editor(Editor&& other);
+                    ~Editor();
+
+                    TrackListEditor& Tracks();
+
+                private:
+                    friend class PlaybackService;
+                    using Mutex = std::recursive_mutex;
+                    using Lock = std::unique_lock<Mutex>;
+                    using Queue = musik::core::runtime::IMessageQueue;
+
+                    Editor(TrackListEditor& tracks, Queue& queue, Mutex& mutex);
+
+                    TrackListEditor& tracks;
+                    Queue& queue;
+                    Lock lock;
+            };
+
+            Editor Edit();
+
         private:
             void OnStreamEvent(int eventType, std::string uri);
             void OnPlaybackEvent(int eventType);

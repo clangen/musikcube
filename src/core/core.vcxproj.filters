@@ -324,5 +324,8 @@
     <ClInclude Include="library\track\TrackList.h">
       <Filter>src\library\track</Filter>
     </ClInclude>
+    <ClInclude Include="sdk\ITrackListEditor.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

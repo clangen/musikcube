@@ -34,50 +34,22 @@
 
 #pragma once
 
-#include <cursespp/LayoutBase.h>
-
-#include <app/window/CategoryListView.h>
-#include <app/window/TrackListView.h>
-#include <app/window/TransportWindow.h>
-#include <core/audio/PlaybackService.h>
-
-#include <core/library/ILibrary.h>
-
-#include <sigslot/sigslot.h>
-
 namespace musik {
-    namespace box {
-        class NowPlayingLayout :
-            public cursespp::LayoutBase,
-#if (__clang_major__ == 7 && __clang_minor__ == 3)
-            public std::enable_shared_from_this<NowPlayingLayout>,
-#endif
-            public sigslot::has_slots<>
-        {
+    namespace core {
+        namespace sdk {
+
+            class ITrackListEditor {
             public:
-                NowPlayingLayout(
-                    musik::core::audio::PlaybackService& playback,
-                    musik::core::LibraryPtr library);
+                virtual void Insert(unsigned long long id, size_t index) = 0;
+                virtual void Swap(size_t index1, size_t index2) = 0;
+                virtual void Move(size_t from, size_t to) = 0;
+                virtual void Delete(size_t index) = 0;
+                virtual void Add(const unsigned long long id) = 0;
+                virtual void Clear() = 0;
+                virtual void Shuffle() = 0;
+            };
 
-                virtual ~NowPlayingLayout();
-
-                virtual void OnVisibilityChanged(bool visible);
-                virtual bool KeyPress(const std::string& key);
-
-            protected:
-                virtual void OnLayout();
-
-            private:
-                void OnTrackListRequeried();
-                void OnPlaybackShuffled(bool shuffled);
-                void InitializeWindows();
-                void RequeryTrackList();
-                bool ProcessEditOperation(const std::string& key);
-
-                musik::core::audio::PlaybackService& playback;
-                musik::core::LibraryPtr library;
-                std::shared_ptr<TrackListView> trackList;
-                int reselectIndex; /* gross... */
-        };
+        }
     }
 }
+

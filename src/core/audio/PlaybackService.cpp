@@ -46,16 +46,17 @@
 
 #include <boost/lexical_cast.hpp>
 
-using musik::core::TrackPtr;
-using musik::core::LibraryPtr;
-using musik::core::audio::ITransport;
-
 using namespace musik::core::library;
 using namespace musik::core;
 using namespace musik::core::prefs;
 using namespace musik::core::sdk;
 using namespace musik::core::runtime;
 using namespace musik::core::audio;
+
+using musik::core::TrackPtr;
+using musik::core::LibraryPtr;
+using musik::core::audio::ITransport;
+using Editor = PlaybackService::Editor;
 
 #define NO_POSITION (size_t) -1
 
@@ -496,6 +497,13 @@ TrackPtr PlaybackService::GetTrackAtIndex(size_t index) {
     return this->playlist.Get(index);
 }
 
+Editor PlaybackService::Edit() {
+    return Editor(
+        this->playlist,
+        this->messageQueue,
+        this->playlistMutex);
+}
+
 void PlaybackService::OnStreamEvent(int eventType, std::string uri) {
     POST_STREAM_MESSAGE(this, eventType, uri);
 }
@@ -510,4 +518,27 @@ void PlaybackService::OnVolumeChanged() {
 
 void PlaybackService::OnTimeChanged(double time) {
     POST(this, MESSAGE_TIME_CHANGED, 0, 0);
+}
+
+/* our Editor interface */
+
+PlaybackService::Editor::Editor(TrackListEditor& tracks, Queue& queue, Mutex& mutex)
+: tracks(tracks)
+, queue(queue)
+, lock(mutex) {
+
+}
+
+PlaybackService::Editor::Editor(Editor&& other)
+: tracks(other.tracks)
+, queue(other.queue) {
+    std::swap(this->lock, other.lock);
+}
+
+PlaybackService::Editor::~Editor() {
+    /* implicitly unlocks the mutex */
+}
+
+musik::core::sdk::ITrackListEditor& PlaybackService::Editor::Tracks() {
+    return this->tracks;
 }

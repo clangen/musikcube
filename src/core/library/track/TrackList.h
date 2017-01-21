@@ -36,26 +36,33 @@
 
 #include <core/library/track/Track.h>
 #include <core/library/ILibrary.h>
+#include <core/sdk/ITrackListEditor.h>
 
 #include <unordered_map>
 #include <list>
 
 namespace musik { namespace core {
-    class TrackList {
+    class TrackList : public musik::core::sdk::ITrackListEditor {
         public:
             TrackList(LibraryPtr library);
             virtual ~TrackList();
 
             size_t Count();
-            void Add(const DBID& id);
             TrackPtr Get(size_t index);
             DBID GetId(size_t index);
             int IndexOf(DBID id);
+
             void ClearCache();
-            void Clear();
             void Swap(TrackList& list);
             void CopyFrom(TrackList& from);
-            void Shuffle();
+
+            virtual void Add(const DBID id);
+            virtual void Clear();
+            virtual void Insert(unsigned long long id, size_t index);
+            virtual void Swap(size_t index1, size_t index2);
+            virtual void Move(size_t from, size_t to);
+            virtual void Delete(size_t index);
+            virtual void Shuffle();
 
         private:
             typedef std::list<DBID> CacheList;
