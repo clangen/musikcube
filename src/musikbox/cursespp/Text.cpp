@@ -270,22 +270,24 @@ namespace cursespp {
 
     namespace key {
        static std::unordered_map<std::string, std::string> KEY_MAPPING = {
-            { "M-~",        "M-`" },
-            { "M-bquote",   "M-`" },
-            { "^@",         "M-`" },
-            { "M-comma",    "M-," },
-            { "M-stop",     "M-." },
-            { "^H",         "KEY_BACKSPACE" },
-            { "^?",         "KEY_BACKSPACE" },
-            { "M-^H",       "M-KEY_BACKSPACE" },
-            { "M-^?",       "M-KEY_BACKSPACE" },
-            { "M-bksp",     "M-KEY_BACKSPACE" },
-            { "^M",         "KEY_ENTER" },
-            { "M-^M",       "M-enter" },
-            { "kUP3",       "M-up" },
-            { "kDN3",       "M-down" },
-            { "kUP5",       "CTL_UP" },
-            { "kDN5",       "CTL_DOWN" }
+            { "M-~",         "M-`" },
+            { "M-bquote",    "M-`" },
+            { "^@",          "M-`" },
+            { "M-comma",     "M-," },
+            { "M-stop",      "M-." },
+            { "^H",          "KEY_BACKSPACE" },
+            { "^?",          "KEY_BACKSPACE" },
+            { "M-^H",        "M-KEY_BACKSPACE" },
+            { "M-^?",        "M-KEY_BACKSPACE" },
+            { "M-bksp",      "M-KEY_BACKSPACE" },
+            { "^M",          "KEY_ENTER" },
+            { "M-^M",        "M-enter" },
+            { "kUP3",        "M-up" },
+            { "kDN3",        "M-down" },
+            { "M-KEY_UP",    "M-up" },
+            { "M-KEY_DOWN",  "M-down" },
+            { "kUP5",        "CTL_UP" },
+            { "kDN5",        "CTL_DOWN" }
        };
 
         std::string Normalize(const std::string& kn) {
