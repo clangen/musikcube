@@ -55,13 +55,13 @@ namespace musik { namespace core {
             /* ITrackList */
             virtual size_t Count();
             virtual musik::core::sdk::IRetainedTrack* GetRetainedTrack(size_t index);
-            virtual DBID GetId(size_t index);
-            virtual int IndexOf(DBID id);
+            virtual unsigned long long GetId(size_t index);
+            virtual int IndexOf(unsigned long long id);
 
             /* ITrackListEditor */
-            virtual void Add(const DBID id);
+            virtual void Add(const unsigned long long id);
             virtual void Clear();
-            virtual bool Insert(DBID id, size_t index);
+            virtual bool Insert(unsigned long long id, size_t index);
             virtual bool Swap(size_t index1, size_t index2);
             virtual bool Move(size_t from, size_t to);
             virtual bool Delete(size_t index);

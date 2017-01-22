@@ -82,11 +82,11 @@ size_t TrackList::Count() {
     return ids.size();
 }
 
-void TrackList::Add(const DBID id) {
+void TrackList::Add(const unsigned long long id) {
     this->ids.push_back(id);
 }
 
-bool TrackList::Insert(DBID id, size_t index) {
+bool TrackList::Insert(unsigned long long id, size_t index) {
     if (index < (int) this->ids.size()) {
         this->ids.insert(this->ids.begin() + index, id);
         return true;
@@ -145,7 +145,7 @@ IRetainedTrack* TrackList::GetRetainedTrack(size_t index) {
     return new RetainedTrack(this->Get(index));
 }
 
-DBID TrackList::GetId(size_t index) {
+unsigned long long TrackList::GetId(size_t index) {
     return this->ids.at(index);
 }
 
@@ -158,7 +158,7 @@ void TrackList::CopyFrom(TrackList& from) {
         std::back_inserter(this->ids));
 }
 
-int TrackList::IndexOf(DBID id) {
+int TrackList::IndexOf(unsigned long long id) {
     auto it = std::find(this->ids.begin(), this->ids.end(), id);
     return (it == this->ids.end()) ? -1 : it - this->ids.begin();
 }
