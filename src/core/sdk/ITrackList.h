@@ -34,6 +34,7 @@
 
 #pragma once
 
+#include <stddef.h>
 #include "IRetainedTrack.h"
 
 namespace musik {
