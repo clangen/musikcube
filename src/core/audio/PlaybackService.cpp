@@ -194,7 +194,7 @@ void PlaybackService::SetRepeatMode(RepeatMode mode) {
     if (this->repeatMode != mode) {
         this->repeatMode = mode;
         this->ModeChanged();
-        POST(this, MESSAGE_PREPARE_NEXT_TRACK, 0, 0);
+        POST(this, MESSAGE_PREPARE_NEXT_TRACK, NO_POSITION, 0);
         POST(this, MESSAGE_MODE_CHANGED, 0, 0);
     }
 }
@@ -228,7 +228,7 @@ void PlaybackService::ToggleShuffle() {
         int index = this->playlist.IndexOf(id);
         if (index != -1) {
             this->index = index;
-            POST(this, MESSAGE_PREPARE_NEXT_TRACK, 0, 0);
+            POST(this, MESSAGE_PREPARE_NEXT_TRACK, NO_POSITION, 0);
         }
     }
 }
@@ -282,6 +282,12 @@ void PlaybackService::ProcessMessage(IMessage &message) {
     }
     else if (type == MESSAGE_PREPARE_NEXT_TRACK) {
         if (transport.GetPlaybackState() != PlaybackStopped) {
+            size_t updatedIndex = (size_t)message.UserData1();
+            if (updatedIndex != NO_POSITION) {
+                this->index = updatedIndex;
+                this->nextIndex = NO_POSITION; /* force recalc */
+            }
+
             this->PrepareNextTrack();
         }
     }
@@ -499,6 +505,7 @@ TrackPtr PlaybackService::GetTrackAtIndex(size_t index) {
 
 Editor PlaybackService::Edit() {
     return Editor(
+        *this,
         this->playlist,
         this->messageQueue,
         this->playlistMutex);
@@ -520,25 +527,102 @@ void PlaybackService::OnTimeChanged(double time) {
     POST(this, MESSAGE_TIME_CHANGED, 0, 0);
 }
 
-/* our Editor interface */
+/* our Editor interface. we proxy all of the ITrackListEditor methods so we
+can track and maintain our currently playing index as tracks move around
+in the backing store. lots of annoying book keeping. */
 
-PlaybackService::Editor::Editor(TrackListEditor& tracks, Queue& queue, Mutex& mutex)
-: tracks(tracks)
+PlaybackService::Editor::Editor(
+    PlaybackService& playback,
+    TrackListEditor& tracks,
+    Queue& queue,
+    Mutex& mutex)
+: playback(playback)
+, tracks(tracks)
 , queue(queue)
 , lock(mutex) {
-
+    this->playIndex = playback.GetIndex();
 }
 
 PlaybackService::Editor::Editor(Editor&& other)
-: tracks(other.tracks)
-, queue(other.queue) {
+: playback(other.playback)
+, tracks(other.tracks)
+, queue(other.queue)
+, playIndex(other.playIndex) {
     std::swap(this->lock, other.lock);
 }
 
 PlaybackService::Editor::~Editor() {
-    /* implicitly unlocks the mutex */
+    /* we've been tracking the playback index through edit operations. let's
+    update it here. */
+    if (this->playIndex != this->playback.GetIndex()) {
+        this->queue.Post(Message::Create(
+            &this->playback, MESSAGE_PREPARE_NEXT_TRACK, this->playIndex, 0
+        ));
+    }
+
+    /* implicitly unlocks the mutex when this block exists */
 }
 
-musik::core::sdk::ITrackListEditor& PlaybackService::Editor::Tracks() {
-    return this->tracks;
+bool PlaybackService::Editor::Insert(unsigned long long id, size_t index) {
+    if (this->tracks.Insert(id, index)) {
+        if (index == this->playIndex) {
+            ++this->playIndex;
+        }
+        return true;
+    }
+    return false;
+}
+
+bool PlaybackService::Editor::Swap(size_t index1, size_t index2) {
+    if (this->tracks.Swap(index1, index2)) {
+        if (index1 == this->playIndex) {
+            this->playIndex = index2;
+        }
+        else if (index2 == this->playIndex) {
+            this->playIndex = index1;
+        }
+        return true;
+    }
+    return false;
+}
+
+bool PlaybackService::Editor::Move(size_t from, size_t to) {
+    if (this->tracks.Move(from, to)) {
+        if (from == this->playIndex) {
+            this->playIndex = to;
+        }
+        else if (to == this->playIndex) {
+            this->playIndex += (from > to) ? 1 : -1;
+        }
+        return true;
+    }
+    return false;
+}
+
+bool PlaybackService::Editor::Delete(size_t index) {
+    if (this->tracks.Delete(index)) {
+        if (this->playback.Count() == 0) {
+            this->playIndex = NO_POSITION;
+        }
+        if (index == this->playIndex) {
+            this->playIndex = 0;
+        }
+        else if (index < this->playIndex) {
+            --this->playIndex;
+        }
+        return true;
+    }
+    return false;
+}
+
+void PlaybackService::Editor::Add(const unsigned long long id) {
+    this->tracks.Add(id);
+}
+
+void PlaybackService::Editor::Clear() {
+    throw std::runtime_error("PlaybackService::Editor::Clear unsupported");
+}
+
+void PlaybackService::Editor::Shuffle() {
+    throw std::runtime_error("PlaybackService::Editor::Shuffle unsupported");
 }

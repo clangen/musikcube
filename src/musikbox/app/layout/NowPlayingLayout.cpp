@@ -156,19 +156,19 @@ bool NowPlayingLayout::ProcessEditOperation(const std::string& key) {
             if (key == "M-up") {
                 if (selected > 0) {
                     size_t to = selected - 1;
-                    editor.Tracks().Move(selected, to);
+                    editor.Move(selected, to);
                     this->reselectIndex = (int)to;
                 }
             }
             else if (key == "M-down") {
-                if (selected < this->playback.Count() - 2) {
+                if (selected < this->playback.Count() - 1) {
                     size_t to = selected + 1;
-                    editor.Tracks().Move(selected, to);
+                    editor.Move(selected, to);
                     this->reselectIndex = (int)to;
                 }
             }
             else if (key == "KEY_BACKSPACE" || key == "KEY_DC") {
-                editor.Tracks().Delete(selected);
+                editor.Delete(selected);
                 this->reselectIndex = (int)selected;
             }
 

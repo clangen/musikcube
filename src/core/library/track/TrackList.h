@@ -47,21 +47,24 @@ namespace musik { namespace core {
             TrackList(LibraryPtr library);
             virtual ~TrackList();
 
-            size_t Count();
-            TrackPtr Get(size_t index);
+            /* implementation specific */
             DBID GetId(size_t index);
             int IndexOf(DBID id);
-
             void ClearCache();
             void Swap(TrackList& list);
             void CopyFrom(TrackList& from);
 
+            /* ITrackList */
+            size_t Count();
+            TrackPtr Get(size_t index);
+
+            /* ITrackListEditor */
             virtual void Add(const DBID id);
             virtual void Clear();
-            virtual void Insert(unsigned long long id, size_t index);
-            virtual void Swap(size_t index1, size_t index2);
-            virtual void Move(size_t from, size_t to);
-            virtual void Delete(size_t index);
+            virtual bool Insert(unsigned long long id, size_t index);
+            virtual bool Swap(size_t index1, size_t index2);
+            virtual bool Move(size_t from, size_t to);
+            virtual bool Delete(size_t index);
             virtual void Shuffle();
 
         private:

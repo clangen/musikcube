@@ -83,35 +83,42 @@ void TrackList::Add(const DBID id) {
     this->ids.push_back(id);
 }
 
-void TrackList::Insert(DBID id, size_t index) {
+bool TrackList::Insert(DBID id, size_t index) {
     if (index < (int) this->ids.size()) {
         this->ids.insert(this->ids.begin() + index, id);
+        return true;
     }
+    return false;
 }
 
-void TrackList::Swap(size_t index1, size_t index2) {
+bool TrackList::Swap(size_t index1, size_t index2) {
     auto size = this->ids.size();
     if (index1 < size && index2 < size) {
         auto temp = this->ids[index1];
         this->ids[index1] = this->ids[index2];
         this->ids[index2] = temp;
+        return true;
     }
+    return false;
 }
 
-void TrackList::Move(size_t from, size_t to) {
+bool TrackList::Move(size_t from, size_t to) {
     auto size = this->ids.size();
     if (from < size && to < size && from != to) {
         auto temp = this->ids[from];
-        //to = (from > to) ? to - 1 : to;
         this->ids.erase(this->ids.begin() + from);
         this->ids.insert(this->ids.begin() + to, temp);
+        return true;
     }
+    return false;
 }
 
-void TrackList::Delete(size_t index) {
+bool TrackList::Delete(size_t index) {
     if (index < (int) this->ids.size()) {
         this->ids.erase(this->ids.begin() + index);
+        return true;
     }
+    return false;
 }
 
 TrackPtr TrackList::Get(size_t index) {

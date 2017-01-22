@@ -108,14 +108,21 @@ namespace musik { namespace core { namespace audio {
             /* required to make changes to the playlist. this little data structure
             privately owns a lock to the internal data structure and will release
             that lock when it's destructed. */
-            class Editor {
+            class Editor : public musik::core::sdk::ITrackListEditor {
                 public:
                     using TrackListEditor = musik::core::sdk::ITrackListEditor;
 
                     Editor(Editor&& other);
                     ~Editor();
 
-                    TrackListEditor& Tracks();
+                    /* ITrackListEditor */
+                    virtual bool Insert(unsigned long long id, size_t index);
+                    virtual bool Swap(size_t index1, size_t index2);
+                    virtual bool Move(size_t from, size_t to);
+                    virtual bool Delete(size_t index);
+                    virtual void Add(const unsigned long long id);
+                    virtual void Clear();
+                    virtual void Shuffle();
 
                 private:
                     friend class PlaybackService;
@@ -123,11 +130,17 @@ namespace musik { namespace core { namespace audio {
                     using Lock = std::unique_lock<Mutex>;
                     using Queue = musik::core::runtime::IMessageQueue;
 
-                    Editor(TrackListEditor& tracks, Queue& queue, Mutex& mutex);
+                    Editor(
+                        PlaybackService& playback,
+                        TrackListEditor& tracks,
+                        Queue& queue,
+                        Mutex& mutex);
 
+                    PlaybackService& playback;
                     TrackListEditor& tracks;
                     Queue& queue;
                     Lock lock;
+                    size_t playIndex;
             };
 
             Editor Edit();
