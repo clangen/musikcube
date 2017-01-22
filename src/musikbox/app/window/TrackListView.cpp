@@ -139,6 +139,10 @@ TrackPtr TrackListView::Get(size_t index) {
     return this->metadata->Get(index);
 }
 
+size_t TrackListView::Count() {
+    return this->metadata ? this->metadata->Count() : 0;
+}
+
 void TrackListView::ScrollToPlaying() {
     if (this->playing && this->metadata) {
         DBID id = this->playing->Id();

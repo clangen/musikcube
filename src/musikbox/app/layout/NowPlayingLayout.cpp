@@ -138,7 +138,8 @@ void NowPlayingLayout::OnTrackListRequeried() {
 
         /* if after a bunch of monkeying around there's still nothing
         selected, but we have contents, let's just select the first item */
-        if (this->trackList->GetSelectedIndex() == (size_t)-1) {
+        auto sel = this->trackList->GetSelectedIndex();
+        if (sel == (size_t)-1 || sel >= this->trackList->Count()) {
             this->trackList->SetSelectedIndex(0);
             this->trackList->ScrollTo(0);
         }

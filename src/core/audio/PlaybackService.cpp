@@ -197,6 +197,10 @@ void PlaybackService::PrepareNextTrack() {
                     this->transport.PrepareNextTrack(URI_AT_INDEX(nextIndex));
                 }
             }
+            else {
+                /* nothing to prepare if we get here. */
+                this->transport.PrepareNextTrack("");
+            }
         }
     }
 }
@@ -258,6 +262,12 @@ void PlaybackService::ProcessMessage(IMessage &message) {
                 things are asynchronous, this may not always be the case, especially if
                 the tracks are very short, or the user is advancing through songs very
                 quickly. make compare the track URIs before we update internal state. */
+                if (this->nextIndex >= this->Count()) {
+                    this->nextIndex = NO_POSITION;
+                    this->transport.PrepareNextTrack("");
+                    return;
+                }
+
                 if (this->GetTrackAtIndex(this->nextIndex)->Uri() == streamMessage->GetUri()) {
                     this->index = this->nextIndex;
                     this->nextIndex = NO_POSITION;
@@ -552,6 +562,7 @@ PlaybackService::Editor::Editor(
 , queue(queue)
 , lock(mutex) {
     this->playIndex = playback.GetIndex();
+    this->reloadNext = false;
 }
 
 PlaybackService::Editor::Editor(Editor&& other)
@@ -560,6 +571,7 @@ PlaybackService::Editor::Editor(Editor&& other)
 , queue(other.queue)
 , playIndex(other.playIndex) {
     std::swap(this->lock, other.lock);
+    this->reloadNext = other.reloadNext;
 }
 
 PlaybackService::Editor::~Editor() {
@@ -567,8 +579,11 @@ PlaybackService::Editor::~Editor() {
     update it here. */
     if (this->playIndex != this->playback.GetIndex()) {
         this->queue.Post(Message::Create(
-            &this->playback, MESSAGE_PREPARE_NEXT_TRACK, this->playIndex, 0
-        ));
+            &this->playback, MESSAGE_PREPARE_NEXT_TRACK, this->playIndex, 0));
+    }
+    else if (this->reloadNext) {
+        this->queue.Post(Message::Create(
+            &this->playback, MESSAGE_PREPARE_NEXT_TRACK, 0, 0));
     }
 
     /* implicitly unlocks the mutex when this block exists */
@@ -617,6 +632,9 @@ bool PlaybackService::Editor::Delete(size_t index) {
         }
         if (index == this->playIndex) {
             this->playIndex = START_OVER;
+        }
+        else if (index == this->playIndex + 1) {
+            this->reloadNext = true; /* ugh... */
         }
         else if (index < this->playIndex) {
             --this->playIndex;

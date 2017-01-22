@@ -85,9 +85,13 @@ void GaplessTransport::PrepareNextTrack(const std::string& trackUrl) {
     bool startNext = false;
     {
         LockT lock(this->stateMutex);
+
         RESET_NEXT_PLAYER(this);
-        this->nextPlayer = Player::Create(trackUrl, this->output, Player::NoDrain, this);
-        startNext = this->nextCanStart;
+
+        if (trackUrl.size()) {
+            this->nextPlayer = Player::Create(trackUrl, this->output, Player::NoDrain, this);
+            startNext = this->nextCanStart;
+        }
     }
 
     if (startNext) {
@@ -334,8 +338,13 @@ void GaplessTransport::OnPlayerFinished(Player* player) {
 }
 
 void GaplessTransport::OnPlayerError(Player* player) {
-    this->RaiseStreamEvent(StreamError, player);
-    this->SetPlaybackState(PlaybackStopped);
+    if (player == this->activePlayer) {
+        this->RaiseStreamEvent(StreamError, player);
+        this->SetPlaybackState(PlaybackStopped);
+    }
+    else if (player == this->nextPlayer) {
+        RESET_NEXT_PLAYER(this);
+    }
 }
 
 void GaplessTransport::OnPlayerDestroying(Player *player) {

@@ -78,6 +78,7 @@ namespace musik {
 
                 void Clear();
                 musik::core::TrackPtr Get(size_t index);
+                size_t Count();
 
                 void Requery(std::shared_ptr<TrackListQueryBase> query);
 
