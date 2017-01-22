@@ -67,6 +67,10 @@ static std::unordered_map<std::string, Id> NAME_TO_ID = {
     { "navigate_console", Id::NavigateConsole },
     { "navigate_jump_to_playing", Id::NavigateJumpToPlaying },
 
+    { "play_queue_move_up", Id::PlayQueueMoveUp },
+    { "play_queue_move_up", Id::PlayQueueMoveDown },
+    { "play_queue_delete", Id::PlayQueueDelete },
+
     { "playback_toggle_mute", Id::ToggleMute },
     { "playback_toggle_pause", Id::TogglePause },
     { "playback_next", Id::Next },
@@ -83,7 +87,9 @@ static std::unordered_map<std::string, Id> NAME_TO_ID = {
 
     { "toggle_visualizer", Id::ToggleVisualizer },
 
-    { "metadata_rescan", Id::RescanMetadata }
+    { "metadata_rescan", Id::RescanMetadata },
+
+    { "context_menu", Id::ContextMenu }
 };
 
 /* default hotkeys */
@@ -101,6 +107,18 @@ static std::unordered_map<Id, std::string, EnumHasher> ID_TO_DEFAULT = {
     { Id::NavigateConsole, "`" },
     { Id::NavigateJumpToPlaying, "x" },
 
+#ifdef __APPLE__
+    /* M-up, M-down don't seem to work on iTerm2, and the delete
+    key doesn't exist on most macbooks. ugly special mappings here. */
+    { Id::PlayQueueMoveUp, "CTL_UP" },
+    { Id::PlayQueueMoveDown, "CTL_DOWN" },
+    { Id::PlayQueueDelete, "KEY_BACKSPACE" },
+#else
+    { Id::PlayQueueMoveUp, "M-up" },
+    { Id::PlayQueueMoveDown, "M-down" },
+    { Id::PlayQueueDelete, "KEY_DC" },
+#endif
+
     { Id::ToggleMute, "m" },
     { Id::TogglePause, "^P" },
     { Id::Next, "l" },
@@ -117,7 +135,9 @@ static std::unordered_map<Id, std::string, EnumHasher> ID_TO_DEFAULT = {
 
     { Id::ToggleVisualizer, "v" },
 
-    { Id::RescanMetadata, "^R"}
+    { Id::RescanMetadata, "^R"},
+
+    { Id::ContextMenu, "M-enter" }
 };
 
 /* custom keys */

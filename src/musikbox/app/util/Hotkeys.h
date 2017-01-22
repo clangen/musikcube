@@ -74,8 +74,16 @@ namespace musik {
                     ToggleShuffle,
                     Stop,
 
+                    /* play queue */
+                    PlayQueueMoveUp,
+                    PlayQueueMoveDown,
+                    PlayQueueDelete,
+
                     /* indexer */
-                    RescanMetadata
+                    RescanMetadata,
+
+                    /* general */
+                    ContextMenu
                 };
 
                 static bool Is(Id id, const std::string& kn);

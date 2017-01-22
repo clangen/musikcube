@@ -195,7 +195,7 @@ bool BrowseLayout::KeyPress(const std::string& key) {
         playback::Play(this->trackList, this->playback, this->GetFocus());
         return true;
     }
-    else if (key == "M-enter") {
+    else if (Hotkeys::Is(Hotkeys::ContextMenu, key)) {
         if (this->GetFocus() == this->trackList) {
             PlayQueueOverlays::ShowAddTrackOverlay(this->playback, *this->trackList);
             return true;

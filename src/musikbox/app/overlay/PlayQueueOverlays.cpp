@@ -117,7 +117,8 @@ void PlayQueueOverlays::ShowAddCategoryOverlay(
         .SetTitle("add to play queue")
         .SetSelectedIndex(0)
         .SetItemSelectedCallback(
-            [&playback, library, fieldColumn, fieldId](cursespp::IScrollAdapterPtr adapter, size_t index) {
+            [&playback, library, fieldColumn, fieldId]
+            (cursespp::IScrollAdapterPtr adapter, size_t index) {
                 std::shared_ptr<CategoryTrackListQuery>
                     query(new CategoryTrackListQuery(
                         library,

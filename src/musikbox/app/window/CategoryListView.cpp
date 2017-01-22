@@ -150,7 +150,7 @@ void CategoryListView::ScrollToPlaying() {
 }
 
 bool CategoryListView::KeyPress(const std::string& key) {
-    if (key == "M-enter") {
+    if (Hotkeys::Is(Hotkeys::ContextMenu, key)) {
         DBID id = this->GetSelectedId();
         if (id != -1) {
             PlayQueueOverlays::ShowAddCategoryOverlay(

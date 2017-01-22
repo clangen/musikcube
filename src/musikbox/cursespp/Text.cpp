@@ -280,8 +280,13 @@ namespace cursespp {
             { "M-^H",       "M-KEY_BACKSPACE" },
             { "M-^?",       "M-KEY_BACKSPACE" },
             { "M-bksp",     "M-KEY_BACKSPACE" },
-            { "^M",         "KEY_ENTER" }
-        };
+            { "^M",         "KEY_ENTER" },
+            { "M-^M",       "M-enter" },
+            { "kUP3",       "M-up" },
+            { "kDN3",       "M-down" },
+            { "kUP5",       "CTL_UP" },
+            { "kDN5",       "CTL_DOWN" }
+       };
 
         std::string Normalize(const std::string& kn) {
             auto it = KEY_MAPPING.find(kn);

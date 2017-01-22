@@ -38,6 +38,7 @@
 #include <cursespp/Screen.h>
 #include <cursespp/Text.h>
 #include <core/library/LocalLibraryConstants.h>
+#include <app/util/Hotkeys.h>
 #include <glue/query/NowPlayingTrackListQuery.h>
 #include <glue/util/Duration.h>
 #include "NowPlayingLayout.h"
@@ -54,7 +55,7 @@ using namespace musik::box;
 using namespace musik::glue;
 using namespace cursespp;
 
-static std::set<std::string> EDIT_KEYS = { "M-up", "M-down", "KEY_BACKSPACE", "KEY_DC" };
+static std::set<std::string> EDIT_KEYS;
 
 static std::string formatWithAlbum(TrackPtr track, size_t width);
 
@@ -67,6 +68,12 @@ NowPlayingLayout::NowPlayingLayout(
 , reselectIndex(-1) {
     this->InitializeWindows();
     this->playback.Shuffled.connect(this, &NowPlayingLayout::OnPlaybackShuffled);
+
+    EDIT_KEYS = {
+        Hotkeys::Get(Hotkeys::PlayQueueMoveUp),
+        Hotkeys::Get(Hotkeys::PlayQueueMoveDown),
+        Hotkeys::Get(Hotkeys::PlayQueueDelete)
+    };
 }
 
 NowPlayingLayout::~NowPlayingLayout() {
@@ -118,7 +125,7 @@ void NowPlayingLayout::OnTrackListRequeried() {
                 this->trackList->ScrollTo(index == 0 ? index : index - 1);
             }
         }
-        else {
+        else { /* requeried due to edit, so reselect... */
             this->trackList->SetSelectedIndex((int) this->reselectIndex);
             auto pos = this->trackList->GetScrollPosition();
             int first = (int) pos.firstVisibleEntryIndex;
@@ -160,21 +167,21 @@ bool NowPlayingLayout::ProcessEditOperation(const std::string& key) {
             PlaybackService::Editor editor = this->playback.Edit();
             size_t selected = this->trackList->GetSelectedIndex();
 
-            if (key == "M-up") {
+            if (Hotkeys::Is(Hotkeys::PlayQueueMoveUp, key)) {
                 if (selected > 0) {
                     size_t to = selected - 1;
                     editor.Move(selected, to);
                     this->reselectIndex = (int)to;
                 }
             }
-            else if (key == "M-down") {
+            else if (Hotkeys::Is(Hotkeys::PlayQueueMoveDown, key)) {
                 if (selected < this->playback.Count() - 1) {
                     size_t to = selected + 1;
                     editor.Move(selected, to);
                     this->reselectIndex = (int)to;
                 }
             }
-            else if (key == "KEY_BACKSPACE" || key == "KEY_DC") {
+            else if (Hotkeys::Is(Hotkeys::PlayQueueDelete, key)) {
                 editor.Delete(selected);
                 this->reselectIndex = (int)selected;
             }
