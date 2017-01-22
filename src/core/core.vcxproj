@@ -180,6 +180,7 @@
     <ClInclude Include="sdk\IRetainedTrack.h" />
     <ClInclude Include="sdk\ISpectrumVisualizer.h" />
     <ClInclude Include="sdk\ITrack.h" />
+    <ClInclude Include="sdk\ITrackList.h" />
     <ClInclude Include="sdk\ITrackListEditor.h" />
     <ClInclude Include="sdk\IVisualizer.h" />
     <ClInclude Include="support\Common.h" />

@@ -38,6 +38,7 @@
 #include <core/library/query/QueryBase.h>
 #include <core/library/track/LibraryTrack.h>
 #include <core/library/LocalLibraryConstants.h>
+#include <core/library/track/RetainedTrack.h>
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>
 
@@ -49,6 +50,8 @@ using namespace musik::core;
 using namespace musik::core::db;
 using namespace musik::core::query;
 using namespace musik::core::library;
+
+using namespace musik::core::sdk;
 
 class TrackMetadataQuery : public QueryBase {
     public:
@@ -135,6 +138,10 @@ TrackPtr TrackList::Get(size_t index) {
     this->library->Enqueue(query, ILibrary::QuerySynchronous);
     this->AddToCache(id, query->Result());
     return query->Result();
+}
+
+IRetainedTrack* TrackList::GetRetainedTrack(size_t index) {
+    return new RetainedTrack(this->Get(index));
 }
 
 DBID TrackList::GetId(size_t index) {

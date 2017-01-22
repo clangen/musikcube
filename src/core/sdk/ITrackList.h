@@ -34,58 +34,21 @@
 
 #pragma once
 
-#include <core/sdk/ITrackList.h>
-#include <core/sdk/ITrackListEditor.h>
+#include "IRetainedTrack.h"
 
-#include <core/library/track/Track.h>
-#include <core/library/ILibrary.h>
+namespace musik {
+    namespace core {
+        namespace sdk {
 
-#include <unordered_map>
-#include <list>
+            class ITrackList {
+                public:
+                    virtual size_t Count() = 0;
+                    virtual IRetainedTrack* GetRetainedTrack(size_t index) = 0;
+                    virtual unsigned long long GetId(size_t index) = 0;
+                    virtual int IndexOf(unsigned long long id) = 0;
+            };
 
-namespace musik { namespace core {
-    class TrackList :
-        public musik::core::sdk::ITrackList,
-        public musik::core::sdk::ITrackListEditor
-    {
-        public:
-            TrackList(LibraryPtr library);
-            virtual ~TrackList();
+        }
+    }
+}
 
-            /* ITrackList */
-            virtual size_t Count();
-            virtual musik::core::sdk::IRetainedTrack* GetRetainedTrack(size_t index);
-            virtual DBID GetId(size_t index);
-            virtual int IndexOf(DBID id);
-
-            /* ITrackListEditor */
-            virtual void Add(const DBID id);
-            virtual void Clear();
-            virtual bool Insert(DBID id, size_t index);
-            virtual bool Swap(size_t index1, size_t index2);
-            virtual bool Move(size_t from, size_t to);
-            virtual bool Delete(size_t index);
-            virtual void Shuffle();
-
-            /* implementation specific */
-            TrackPtr Get(size_t index);
-            void ClearCache();
-            void Swap(TrackList& list);
-            void CopyFrom(TrackList& from);
-
-        private:
-            typedef std::list<DBID> CacheList;
-            typedef std::pair<TrackPtr, CacheList::iterator> CacheValue;
-            typedef std::unordered_map<DBID, CacheValue> CacheMap;
-
-            TrackPtr GetFromCache(DBID key);
-            void AddToCache(DBID key, TrackPtr value);
-
-            /* lru cache structures */
-            CacheList cacheList;
-            CacheMap cacheMap;
-
-            std::vector<DBID> ids;
-            LibraryPtr library;
-    };
-} }
