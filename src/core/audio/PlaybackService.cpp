@@ -59,6 +59,7 @@ using musik::core::audio::ITransport;
 using Editor = PlaybackService::Editor;
 
 #define NO_POSITION (size_t) -1
+#define START_OVER (size_t) -2
 
 #define URI_AT_INDEX(x) this->playlist.Get(x)->Uri()
 
@@ -172,8 +173,18 @@ void PlaybackService::PrepareNextTrack() {
             this->transport.PrepareNextTrack(URI_AT_INDEX(this->index));
         }
         else {
+            /* annoying and confusing special case -- the user edited the
+            playlist and deleted the currently playing item. let's start
+            again from the top... */
+            if (this->index == START_OVER) {
+                if (this->playlist.Count() > 0) {
+                    this->index = NO_POSITION;
+                    this->nextIndex = 0;
+                    this->transport.PrepareNextTrack(URI_AT_INDEX(nextIndex));
+                }
+            }
             /* normal case, just move forward */
-            if (this->playlist.Count() > this->index + 1) {
+            else if (this->playlist.Count() > this->index + 1) {
                 if (this->nextIndex != this->index + 1) {
                     this->nextIndex = this->index + 1;
                     this->transport.PrepareNextTrack(URI_AT_INDEX(nextIndex));
@@ -605,7 +616,7 @@ bool PlaybackService::Editor::Delete(size_t index) {
             this->playIndex = NO_POSITION;
         }
         if (index == this->playIndex) {
-            this->playIndex = 0;
+            this->playIndex = START_OVER;
         }
         else if (index < this->playIndex) {
             --this->playIndex;
