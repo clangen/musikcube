@@ -202,6 +202,13 @@ void ListWindow::OnSelectionChanged(size_t newIndex, size_t oldIndex) {
 
 void ListWindow::SetSelectedIndex(size_t index) {
     if (this->selectedIndex != index) {
+        if (index > this->GetScrollAdapter().GetEntryCount() &&
+            index != NO_SELECTION)
+        {
+            this->selectedIndex = NO_SELECTION;
+            return;
+        }
+
         size_t prev = this->selectedIndex;
         this->selectedIndex = index;
 
@@ -228,8 +235,13 @@ void ListWindow::OnAdapterChanged() {
 
     /* update initial state... */
     if (selectedIndex == NO_SELECTION) {
-        if (adapter->GetEntryCount()) {
+        if (count) {
             this->SetSelectedIndex(0);
+        }
+    }
+    else if (count && selectedIndex >= count) {
+        if (count) {
+            this->SetSelectedIndex(count - 1);
         }
     }
     else if (count == 0) {

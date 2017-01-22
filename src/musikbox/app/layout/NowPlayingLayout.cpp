@@ -126,6 +126,7 @@ void NowPlayingLayout::OnTrackListRequeried() {
             }
         }
         else { /* requeried due to edit, so reselect... */
+            this->reselectIndex = std::min((int) this->trackList->Count() - 1, this->reselectIndex);
             this->trackList->SetSelectedIndex((int) this->reselectIndex);
             auto pos = this->trackList->GetScrollPosition();
             int first = (int) pos.firstVisibleEntryIndex;
