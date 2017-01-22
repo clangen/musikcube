@@ -135,6 +135,13 @@ void NowPlayingLayout::OnTrackListRequeried() {
                 this->trackList->ScrollTo(this->reselectIndex);
             }
         }
+
+        /* if after a bunch of monkeying around there's still nothing
+        selected, but we have contents, let's just select the first item */
+        if (this->trackList->GetSelectedIndex() == (size_t)-1) {
+            this->trackList->SetSelectedIndex(0);
+            this->trackList->ScrollTo(0);
+        }
     }
 
     this->reselectIndex = -1;
@@ -151,8 +158,11 @@ void NowPlayingLayout::RequeryTrackList() {
 
 bool NowPlayingLayout::KeyPress(const std::string& key) {
     if (key == "KEY_ENTER") {
-        this->playback.Play(this->trackList->GetSelectedIndex());
-        return true;
+        size_t index = this->trackList->GetSelectedIndex();
+        if (index != (size_t)-1) {
+            this->playback.Play(index);
+            return true;
+        }
     }
     else if (ProcessEditOperation(key)) {
         return true;
