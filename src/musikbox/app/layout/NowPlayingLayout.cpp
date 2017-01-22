@@ -108,7 +108,7 @@ void NowPlayingLayout::OnTrackListRequeried() {
     if (playback.Count()) {
         if (this->reselectIndex == -1) {
             size_t index = playback.GetIndex();
-            this->trackList->SetSelectedIndex(index);
+            this->trackList->SetSelectedIndex(index == (size_t) -1 ? 0 : index);
             this->trackList->ScrollTo(index == 0 ? index : index - 1);
         }
         else {
@@ -120,6 +120,10 @@ void NowPlayingLayout::OnTrackListRequeried() {
             if (index < first || index >= last) {
                 this->trackList->ScrollTo(this->reselectIndex);
             }
+        }
+
+        if (this->trackList->GetSelectedIndex() == (size_t)-1) {
+            this->trackList->SetSelectedIndex(0);
         }
     }
 

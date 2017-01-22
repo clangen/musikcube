@@ -39,6 +39,7 @@
 #include <core/library/LocalLibraryConstants.h>
 #include <glue/query/SearchTrackListQuery.h>
 #include <app/util/Playback.h>
+#include <app/overlay/PlayQueueOverlays.h>
 
 #include "TrackSearchLayout.h"
 
@@ -148,6 +149,9 @@ bool TrackSearchLayout::KeyPress(const std::string& key) {
     if (key == "KEY_ENTER") {
         playback::Play(this->trackList, this->playback, this->GetFocus());
         return true;
+    }
+    else if (key == "M-enter") {
+        PlayQueueOverlays::ShowAddTrackOverlay(this->playback, *this->trackList);
     }
     else if (key == "KEY_DOWN") {
         if (this->GetFocus() == this->input) {

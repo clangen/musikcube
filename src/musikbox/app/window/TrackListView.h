@@ -75,7 +75,9 @@ namespace musik {
                 virtual bool KeyPress(const std::string& key);
 
                 std::shared_ptr<musik::core::TrackList> GetTrackList();
+
                 void Clear();
+                musik::core::TrackPtr Get(size_t index);
 
                 void Requery(std::shared_ptr<TrackListQueryBase> query);
 

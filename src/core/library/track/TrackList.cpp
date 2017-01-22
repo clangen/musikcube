@@ -91,7 +91,8 @@ bool TrackList::Insert(DBID id, size_t index) {
         this->ids.insert(this->ids.begin() + index, id);
         return true;
     }
-    return false;
+    this->ids.push_back(id);
+    return true;
 }
 
 bool TrackList::Swap(size_t index1, size_t index2) {

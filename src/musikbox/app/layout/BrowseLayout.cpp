@@ -40,6 +40,7 @@
 #include <glue/query/CategoryTrackListQuery.h>
 #include <app/util/Hotkeys.h>
 #include <app/util/Playback.h>
+#include <app/overlay/PlayQueueOverlays.h>
 
 #include "BrowseLayout.h"
 
@@ -193,6 +194,12 @@ bool BrowseLayout::KeyPress(const std::string& key) {
     if (key == "KEY_ENTER") {
         playback::Play(this->trackList, this->playback, this->GetFocus());
         return true;
+    }
+    else if (key == "M-enter") {
+        if (this->GetFocus() == this->trackList) {
+            PlayQueueOverlays::ShowAddTrackOverlay(this->playback, *this->trackList);
+            return true;
+        }
     }
     else if (Hotkeys::Is(Hotkeys::ViewRefresh, key)) {
         this->categoryList->Requery();

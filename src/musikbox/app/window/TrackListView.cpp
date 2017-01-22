@@ -135,6 +135,10 @@ void TrackListView::Clear() {
     this->OnAdapterChanged();
 }
 
+TrackPtr TrackListView::Get(size_t index) {
+    return this->metadata->Get(index);
+}
+
 void TrackListView::ScrollToPlaying() {
     if (this->playing && this->metadata) {
         DBID id = this->playing->Id();

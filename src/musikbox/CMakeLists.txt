@@ -11,6 +11,7 @@ set (BOX_SRCS
 	./app/layout/TrackSearchLayout.cpp
 	./app/model/DirectoryAdapter.cpp
 	./app/overlay/PlaybackOverlays.cpp
+	./app/overlay/PlayQueueOverlays.cpp
 	./app/overlay/VisualizerOverlay.cpp
 	./app/util/Hotkeys.cpp
 	./app/util/GlobalHotkeys.cpp
