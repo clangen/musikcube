@@ -43,6 +43,7 @@
 #include <core/library/LocalLibraryConstants.h>
 
 #include <app/util/Hotkeys.h>
+#include <app/overlay/PlayQueueOverlays.h>
 
 #include "CategoryListView.h"
 
@@ -149,7 +150,18 @@ void CategoryListView::ScrollToPlaying() {
 }
 
 bool CategoryListView::KeyPress(const std::string& key) {
-    if (Hotkeys::Is(Hotkeys::NavigateJumpToPlaying, key)) {
+    if (key == "M-enter") {
+        DBID id = this->GetSelectedId();
+        if (id != -1) {
+            PlayQueueOverlays::ShowAddCategoryOverlay(
+                this->playback,
+                this->library,
+                this->fieldName,
+                id);
+            return true;
+        }
+    }
+    else if (Hotkeys::Is(Hotkeys::NavigateJumpToPlaying, key)) {
         this->ScrollToPlaying();
         return true;
     }

@@ -46,6 +46,12 @@ namespace musik {
                     musik::core::audio::PlaybackService& playback,
                     musik::box::TrackListView& trackList);
 
+                static void ShowAddCategoryOverlay(
+                    musik::core::audio::PlaybackService& playback,
+                    musik::core::LibraryPtr library,
+                    const std::string& fieldColumn,
+                    DBID fieldId);
+
             private:
                 PlayQueueOverlays();
         };

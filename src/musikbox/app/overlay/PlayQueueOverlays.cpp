@@ -38,23 +38,36 @@
 
 #include <core/audio/Visualizer.h>
 
+#include <glue/query/CategoryTrackListQuery.h>
+
 #include <cursespp/App.h>
 #include <cursespp/SimpleScrollAdapter.h>
 #include <cursespp/ListOverlay.h>
 #include <cursespp/DialogOverlay.h>
 
 using namespace musik::box;
-using namespace musik::core;
 using namespace musik::core::audio;
+using namespace musik::core;
+using namespace musik::glue;
 using namespace cursespp;
 
 using Adapter = cursespp::SimpleScrollAdapter;
 
-PlayQueueOverlays::PlayQueueOverlays() {
-
+static inline std::shared_ptr<Adapter> createAdapter() {
+    std::shared_ptr<Adapter> adapter(new Adapter());
+    adapter->AddEntry("add to end");
+    adapter->AddEntry("add as next");
+    adapter->SetSelectable(true);
+    return adapter;
 }
 
-void PlayQueueOverlays::ShowAddTrackOverlay(PlaybackService& playback, TrackListView& trackList) {
+PlayQueueOverlays::PlayQueueOverlays() {
+}
+
+void PlayQueueOverlays::ShowAddTrackOverlay(
+    PlaybackService& playback,
+    TrackListView& trackList)
+{
     size_t selectedIndex = trackList.GetSelectedIndex();
 
     if (selectedIndex == (size_t)-1) {
@@ -63,10 +76,7 @@ void PlayQueueOverlays::ShowAddTrackOverlay(PlaybackService& playback, TrackList
 
     DBID trackId = trackList.Get(selectedIndex)->Id();
 
-    std::shared_ptr<Adapter> adapter(new Adapter());
-    adapter->AddEntry("add to end");
-    adapter->AddEntry("add as next");
-    adapter->SetSelectable(true);
+    auto adapter = createAdapter();
 
     std::shared_ptr<ListOverlay> dialog(new ListOverlay());
 
@@ -86,6 +96,50 @@ void PlayQueueOverlays::ShowAddTrackOverlay(PlaybackService& playback, TrackList
                     }
                     else {
                         editor.Insert(trackId, position + 1);
+                    }
+                }
+            });
+
+    cursespp::App::Overlays().Push(dialog);
+}
+
+void PlayQueueOverlays::ShowAddCategoryOverlay(
+    musik::core::audio::PlaybackService& playback,
+    musik::core::LibraryPtr library,
+    const std::string& fieldColumn,
+    DBID fieldId)
+{
+    auto adapter = createAdapter();
+
+    std::shared_ptr<ListOverlay> dialog(new ListOverlay());
+
+    dialog->SetAdapter(adapter)
+        .SetTitle("add to play queue")
+        .SetSelectedIndex(0)
+        .SetItemSelectedCallback(
+            [&playback, library, fieldColumn, fieldId](cursespp::IScrollAdapterPtr adapter, size_t index) {
+                std::shared_ptr<CategoryTrackListQuery>
+                    query(new CategoryTrackListQuery(
+                        library,
+                        fieldColumn,
+                        fieldId));
+
+                library->Enqueue(query, ILibrary::QuerySynchronous);
+
+                if (query->GetStatus() == IQuery::Finished) {
+                    auto editor = playback.Edit();
+                    auto tracks = query->GetResult();
+                    size_t position = playback.GetIndex();
+
+                    if (index == 0 || position == (size_t)-1) { /* end */
+                        for (size_t i = 0; i < tracks->Count(); i++) {
+                            editor.Add(tracks->GetId(i));
+                        }
+                    }
+                    else { /* after next */
+                        for (size_t i = 0; i < tracks->Count(); i++) {
+                            editor.Insert(tracks->GetId(i), position + 1 + i);
+                        }
                     }
                 }
             });
