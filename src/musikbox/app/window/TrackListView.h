@@ -60,14 +60,19 @@ namespace musik {
                 typedef std::function<std::string(
                     musik::core::TrackPtr, size_t)> RowFormatter;
 
+                typedef std::function<int64(
+                    musik::core::TrackPtr, size_t)> RowDecorator;
+
                 typedef std::shared_ptr<std::set<size_t> > Headers;
 
                 typedef musik::glue::TrackListQueryBase TrackListQueryBase;
 
+
                 TrackListView(
                     musik::core::audio::PlaybackService& playback,
                     musik::core::LibraryPtr library,
-                    RowFormatter formatter = RowFormatter());
+                    RowFormatter formatter = RowFormatter(),
+                    RowDecorator decorator = RowDecorator());
 
                 virtual ~TrackListView();
 
@@ -112,6 +117,7 @@ namespace musik {
                 musik::core::LibraryPtr library;
                 size_t lastQueryHash;
                 RowFormatter formatter;
+                RowDecorator decorator;
                 std::chrono::milliseconds lastChanged;
         };
     }

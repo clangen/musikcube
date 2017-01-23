@@ -74,7 +74,8 @@ static IScrollAdapter::EntryPtr MISSING_ENTRY = IScrollAdapter::EntryPtr();
 TrackListView::TrackListView(
     PlaybackService& playback,
     LibraryPtr library,
-    RowFormatter formatter)
+    RowFormatter formatter,
+    RowDecorator decorator)
 : ListWindow(nullptr)
 , playback(playback) {
     this->library = library;
@@ -84,6 +85,7 @@ TrackListView::TrackListView(
     this->lastQueryHash = 0;
     this->lastChanged = now();
     this->formatter = formatter;
+    this->decorator = decorator;
 
     if (!MISSING_ENTRY) {
         auto e = std::shared_ptr<SingleLineEntry>(new SingleLineEntry("track missing"));
@@ -251,25 +253,32 @@ static std::string formatWithoutAlbum(TrackPtr track, size_t width) {
 }
 
 IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWindow* window, size_t index) {
-    bool selected = index == parent.GetSelectedIndex();
-    int64 attrs = selected ? COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM) : -1LL;
-
     TrackPtr track = parent.metadata->Get(index);
 
     if (!track) {
         return MISSING_ENTRY;
     }
 
-    TrackPtr playing = parent.playing;
-    if (playing &&
-        playing->Id() == track->Id() &&
-        playing->LibraryId() == track->LibraryId())
-    {
-        if (selected) {
-            attrs = COLOR_PAIR(CURSESPP_HIGHLIGHTED_SELECTED_LIST_ITEM);
-        }
-        else {
-            attrs = COLOR_PAIR(CURSESPP_SELECTED_LIST_ITEM);
+    int64 attrs = -1LL;
+
+    if (parent.decorator) {
+        attrs = parent.decorator(track, index);
+    }
+    else {
+        bool selected = index == parent.GetSelectedIndex();
+        attrs = selected ? COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM) : -1LL;
+
+        TrackPtr playing = parent.playing;
+        if (playing &&
+            playing->Id() == track->Id() &&
+            playing->LibraryId() == track->LibraryId())
+        {
+            if (selected) {
+                attrs = COLOR_PAIR(CURSESPP_HIGHLIGHTED_SELECTED_LIST_ITEM);
+            }
+            else {
+                attrs = COLOR_PAIR(CURSESPP_SELECTED_LIST_ITEM);
+            }
         }
     }
 

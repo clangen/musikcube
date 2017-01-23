@@ -73,6 +73,7 @@ namespace musik {
                 void InitializeWindows();
                 void RequeryTrackList();
                 bool ProcessEditOperation(const std::string& key);
+                int64 RowDecorator(musik::core::TrackPtr track, size_t index);
 
                 musik::core::audio::PlaybackService& playback;
                 musik::core::LibraryPtr library;

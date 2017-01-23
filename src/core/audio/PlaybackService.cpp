@@ -521,6 +521,11 @@ IRetainedTrack* PlaybackService::GetTrack(size_t index) {
 
 TrackPtr PlaybackService::GetTrackAtIndex(size_t index) {
     std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
+
+    if (index >= this->playlist.Count()) {
+        return TrackPtr();
+    }
+
     return this->playlist.Get(index);
 }
 

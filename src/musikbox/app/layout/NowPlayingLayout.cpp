@@ -80,6 +80,30 @@ NowPlayingLayout::~NowPlayingLayout() {
 
 }
 
+int64 NowPlayingLayout::RowDecorator(musik::core::TrackPtr track, size_t index) {
+    bool selected = index == trackList->GetSelectedIndex();
+    int64 attrs = selected ? COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM) : -1LL;
+    size_t playingIndex = playback.GetIndex();
+
+    if (index == playingIndex) {
+        TrackPtr playing = playback.GetTrackAtIndex(playingIndex);
+
+        if (playing &&
+            playing->Id() == track->Id() &&
+            playing->LibraryId() == track->LibraryId())
+        {
+            if (selected) {
+                attrs = COLOR_PAIR(CURSESPP_HIGHLIGHTED_SELECTED_LIST_ITEM);
+            }
+            else {
+                attrs = COLOR_PAIR(CURSESPP_SELECTED_LIST_ITEM);
+            }
+        }
+    }
+
+    return attrs;
+}
+
 void NowPlayingLayout::OnLayout() {
     this->trackList->MoveAndResize(
         0,
@@ -94,7 +118,8 @@ void NowPlayingLayout::InitializeWindows() {
     this->trackList.reset(new TrackListView(
         this->playback,
         this->library,
-        std::bind(formatWithAlbum, std::placeholders::_1, std::placeholders::_2)));
+        std::bind(formatWithAlbum, std::placeholders::_1, std::placeholders::_2),
+        std::bind(&NowPlayingLayout::RowDecorator, this, std::placeholders::_1, std::placeholders::_2)));
 
     this->trackList->Requeried.connect(this, &NowPlayingLayout::OnTrackListRequeried);
     this->AddWindow(this->trackList);
