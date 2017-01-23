@@ -356,18 +356,24 @@ void SettingsLayout::LoadPreferences() {
 
 void SettingsLayout::AddSelectedDirectory() {
     size_t index = this->browseList->GetSelectedIndex();
-    std::string path = this->browseAdapter->GetFullPathAt(index);
 
-    if (path.size()) {
-        this->indexer->AddPath(path);
+    if (index != (size_t) -1) {
+        std::string path = this->browseAdapter->GetFullPathAt(index);
+
+        if (path.size()) {
+            this->indexer->AddPath(path);
+        }
     }
 }
 
 void SettingsLayout::RemoveSelectedDirectory() {
     std::vector<std::string> paths;
     this->indexer->GetPaths(paths);
+    
     size_t index = this->addedPathsList->GetSelectedIndex();
-    this->indexer->RemovePath(paths.at(index));
+    if (index > (size_t) -1) {
+        this->indexer->RemovePath(paths.at(index));
+    }
 }
 
 void SettingsLayout::DrillIntoSelectedDirectory() {
