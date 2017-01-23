@@ -141,7 +141,7 @@ namespace musik { namespace core { namespace audio {
                     Queue& queue;
                     Lock lock;
                     size_t playIndex;
-                    bool reloadNext;
+                    bool nextTrackInvalidated;
             };
 
             Editor Edit();

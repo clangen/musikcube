@@ -550,7 +550,10 @@ void PlaybackService::OnTimeChanged(double time) {
 
 /* our Editor interface. we proxy all of the ITrackListEditor methods so we
 can track and maintain our currently playing index as tracks move around
-in the backing store. lots of annoying book keeping. */
+in the backing store. lots of annoying book keeping. we have to do it this
+way because it's possible to have the same item in the playlist multiple
+times -- otherwise we could just cache the ID and then look it up when we
+have finished all operations. */
 
 PlaybackService::Editor::Editor(
     PlaybackService& playback,
@@ -562,7 +565,7 @@ PlaybackService::Editor::Editor(
 , queue(queue)
 , lock(mutex) {
     this->playIndex = playback.GetIndex();
-    this->reloadNext = false;
+    this->nextTrackInvalidated = false;
 }
 
 PlaybackService::Editor::Editor(Editor&& other)
@@ -571,19 +574,23 @@ PlaybackService::Editor::Editor(Editor&& other)
 , queue(other.queue)
 , playIndex(other.playIndex) {
     std::swap(this->lock, other.lock);
-    this->reloadNext = other.reloadNext;
+
+    /* we may never actually edit the playing track, but instead, edit the
+    track that's up next. if that happens, we need to reload the next track.
+    we COULD do this unconditionally, but it requires I/O, so it's best to
+    avoid if possible. */
+    this->nextTrackInvalidated = other.nextTrackInvalidated;
 }
 
 PlaybackService::Editor::~Editor() {
     /* we've been tracking the playback index through edit operations. let's
     update it here. */
-    if (this->playIndex != this->playback.GetIndex()) {
+    if (this->playIndex != this->playback.GetIndex() || this->nextTrackInvalidated) {
+        /* make sure the play index we're requesting is in bounds */
+        this->playIndex = std::min(this->playback.Count() - 1, this->playIndex);
+
         this->queue.Post(Message::Create(
             &this->playback, MESSAGE_PREPARE_NEXT_TRACK, this->playIndex, 0));
-    }
-    else if (this->reloadNext) {
-        this->queue.Post(Message::Create(
-            &this->playback, MESSAGE_PREPARE_NEXT_TRACK, 0, 0));
     }
 
     /* implicitly unlocks the mutex when this block exists */
@@ -594,6 +601,11 @@ bool PlaybackService::Editor::Insert(unsigned long long id, size_t index) {
         if (index == this->playIndex) {
             ++this->playIndex;
         }
+
+        if (index == this->playIndex + 1) {
+            this->nextTrackInvalidated = true;
+        }
+
         return true;
     }
     return false;
@@ -603,10 +615,13 @@ bool PlaybackService::Editor::Swap(size_t index1, size_t index2) {
     if (this->tracks.Swap(index1, index2)) {
         if (index1 == this->playIndex) {
             this->playIndex = index2;
+            this->nextTrackInvalidated = true;
         }
         else if (index2 == this->playIndex) {
             this->playIndex = index1;
+            this->nextTrackInvalidated = true;
         }
+
         return true;
     }
     return false;
@@ -620,6 +635,11 @@ bool PlaybackService::Editor::Move(size_t from, size_t to) {
         else if (to == this->playIndex) {
             this->playIndex += (from > to) ? 1 : -1;
         }
+
+        if (to == this->playIndex + 1) {
+            this->nextTrackInvalidated = true;
+        }
+
         return true;
     }
     return false;
@@ -634,7 +654,7 @@ bool PlaybackService::Editor::Delete(size_t index) {
             this->playIndex = START_OVER;
         }
         else if (index == this->playIndex + 1) {
-            this->reloadNext = true; /* ugh... */
+            this->nextTrackInvalidated = true;
         }
         else if (index < this->playIndex) {
             --this->playIndex;
@@ -646,6 +666,10 @@ bool PlaybackService::Editor::Delete(size_t index) {
 
 void PlaybackService::Editor::Add(const unsigned long long id) {
     this->tracks.Add(id);
+
+    if (this->playback.Count() - 1 == this->playIndex + 1) {
+        this->nextTrackInvalidated = true;
+    }
 }
 
 void PlaybackService::Editor::Clear() {
