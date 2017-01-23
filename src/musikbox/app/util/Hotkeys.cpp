@@ -68,7 +68,7 @@ static std::unordered_map<std::string, Id> NAME_TO_ID = {
     { "navigate_jump_to_playing", Id::NavigateJumpToPlaying },
 
     { "play_queue_move_up", Id::PlayQueueMoveUp },
-    { "play_queue_move_up", Id::PlayQueueMoveDown },
+    { "play_queue_move_down", Id::PlayQueueMoveDown },
     { "play_queue_delete", Id::PlayQueueDelete },
 
     { "playback_toggle_mute", Id::ToggleMute },
