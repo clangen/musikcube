@@ -1,3 +1,23 @@
+0.8.0
+
+* added official support for Raspberry Pi running Raspbian!
+* added better color fallback for non-mutable 256 termianl color palettes
+* added the ability to enqueue selected tracks, albums, artists, or other
+  resources to the play queue by pressing ALT+ENTER.
+* added the ability to delete (BACKSPACE on mac, DEL on win32/linux) and reorder
+  (ALT+UP/ALT+DOWN win32/mac, CTRL+UP/CTRL+DOWN linux ) selected items in the
+  play queue.
+* fixed cursespp child view coordinates to be relative to their parents
+
+--------------------------------------------------------------------------------
+
+0.7.3
+
+reduce CPU usage during playback in macOS CoreAudioOut
+include the null output plugin in macOS and Linux builds.
+
+--------------------------------------------------------------------------------
+
 0.7.2
 
 mostly performance and architecture changes:
