@@ -37,23 +37,26 @@
 #include "PlayQueueOverlays.h"
 
 #include <core/audio/Visualizer.h>
+#include <core/library/LocalLibraryConstants.h>
 
 #include <glue/query/CategoryTrackListQuery.h>
+#include <glue/query/CategoryListQuery.h>
 
 #include <cursespp/App.h>
 #include <cursespp/SimpleScrollAdapter.h>
 #include <cursespp/ListOverlay.h>
 #include <cursespp/DialogOverlay.h>
 
-using namespace musik::box;
-using namespace musik::core::audio;
 using namespace musik::core;
+using namespace musik::core::audio;
+using namespace musik::core::library::constants;
 using namespace musik::glue;
+using namespace musik::box;
 using namespace cursespp;
 
 using Adapter = cursespp::SimpleScrollAdapter;
 
-static inline std::shared_ptr<Adapter> createAdapter() {
+static std::shared_ptr<Adapter> createAddToAdapter() {
     std::shared_ptr<Adapter> adapter(new Adapter());
     adapter->AddEntry("add to end");
     adapter->AddEntry("add as next");
@@ -76,7 +79,7 @@ void PlayQueueOverlays::ShowAddTrackOverlay(
 
     DBID trackId = trackList.Get(selectedIndex)->Id();
 
-    auto adapter = createAdapter();
+    auto adapter = createAddToAdapter();
 
     std::shared_ptr<ListOverlay> dialog(new ListOverlay());
 
@@ -109,7 +112,7 @@ void PlayQueueOverlays::ShowAddCategoryOverlay(
     const std::string& fieldColumn,
     DBID fieldId)
 {
-    auto adapter = createAdapter();
+    auto adapter = createAddToAdapter();
 
     std::shared_ptr<ListOverlay> dialog(new ListOverlay());
 
@@ -143,6 +146,43 @@ void PlayQueueOverlays::ShowAddCategoryOverlay(
                         }
                     }
                 }
+            });
+
+    cursespp::App::Overlays().Push(dialog);
+}
+
+void PlayQueueOverlays::ShowLoadPlaylistOverlay(
+    musik::core::audio::PlaybackService& playback,
+    musik::core::ILibraryPtr library)
+{
+    std::shared_ptr<CategoryListQuery> query(
+        new CategoryListQuery(Playlists::TABLE_NAME, ""));
+
+    library->Enqueue(query, ILibrary::QuerySynchronous);
+    if (query->GetStatus() != IQuery::Finished) {
+        return;
+    }
+
+    auto result = query->GetResult();
+
+    std::shared_ptr<Adapter> adapter(new Adapter());
+    adapter->SetSelectable(true);
+
+    auto it = result->begin();
+    while (it != result->end()) {
+        adapter->AddEntry((*it)->displayValue);
+        ++it;
+    }
+
+    std::shared_ptr<ListOverlay> dialog(new ListOverlay());
+
+    dialog->SetAdapter(adapter)
+        .SetTitle("load playlist")
+        .SetSelectedIndex(0)
+        .SetItemSelectedCallback(
+            [&playback, library, &result]
+            (cursespp::IScrollAdapterPtr adapter, size_t index) {
+
             });
 
     cursespp::App::Overlays().Push(dialog);

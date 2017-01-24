@@ -52,6 +52,10 @@ namespace musik {
                     const std::string& fieldColumn,
                     DBID fieldId);
 
+                static void ShowLoadPlaylistOverlay(
+                    musik::core::audio::PlaybackService& playback,
+                    musik::core::ILibraryPtr library);
+
             private:
                 PlayQueueOverlays();
         };

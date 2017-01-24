@@ -39,6 +39,7 @@
 #include <cursespp/Text.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <app/util/Hotkeys.h>
+#include <app/overlay/PlayQueueOverlays.h>
 #include <glue/query/NowPlayingTrackListQuery.h>
 #include <glue/util/Duration.h>
 #include "NowPlayingLayout.h"
@@ -190,6 +191,10 @@ bool NowPlayingLayout::KeyPress(const std::string& key) {
             this->playback.Play(index);
             return true;
         }
+    }
+    else if (key == "M-l") {
+        PlayQueueOverlays::ShowLoadPlaylistOverlay(this->playback, this->library);
+        return true;
     }
     else if (ProcessEditOperation(key)) {
         return true;

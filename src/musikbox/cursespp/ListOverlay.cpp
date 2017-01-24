@@ -55,7 +55,7 @@ ListOverlay::ListOverlay() {
     this->SetFrameColor(CURSESPP_OVERLAY_FRAME);
     this->SetContentColor(CURSESPP_OVERLAY_BACKGROUND);
 
-    this->width = this->height = 0;
+    this->width = this->height = this->setWidth = 0;
 
     this->listWindow.reset(new ListWindow());
     this->listWindow->SetContentColor(CURSESPP_OVERLAY_BACKGROUND);
@@ -92,6 +92,16 @@ ListOverlay& ListOverlay::SetTitle(const std::string& title) {
     this->RecalculateSize();
     this->Layout();
     this->Invalidate();
+    return *this;
+}
+
+ListOverlay& ListOverlay::SetWidth(int width) {
+    this->setWidth = width;
+
+    if (this->IsVisible()) {
+        this->Layout();
+    }
+
     return *this;
 }
 
@@ -140,7 +150,7 @@ void ListOverlay::OnVisibilityChanged(bool visible) {
 }
 
 void ListOverlay::RecalculateSize() {
-    this->width = DEFAULT_WIDTH;
+    this->width = this->setWidth > 0 ? this->setWidth : DEFAULT_WIDTH;
     this->height = 4; /* top frame + text + space + bottom frame */
 
     if (this->adapter) {
