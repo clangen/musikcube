@@ -44,7 +44,7 @@ namespace musik {
         class NowPlayingTrackListQuery : public TrackListQueryBase {
             public:
                 NowPlayingTrackListQuery(
-                    musik::core::LibraryPtr library,
+                    musik::core::ILibraryPtr library,
                     musik::core::audio::PlaybackService& playback);
 
                 virtual ~NowPlayingTrackListQuery();
@@ -58,7 +58,7 @@ namespace musik {
                 virtual bool OnRun(musik::core::db::Connection &db);
 
             private:
-                musik::core::LibraryPtr library;
+                musik::core::ILibraryPtr library;
                 musik::core::audio::PlaybackService& playback;
                 Result result;
                 Headers headers;

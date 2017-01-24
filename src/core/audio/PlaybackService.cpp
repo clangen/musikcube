@@ -54,7 +54,7 @@ using namespace musik::core::runtime;
 using namespace musik::core::audio;
 
 using musik::core::TrackPtr;
-using musik::core::LibraryPtr;
+using musik::core::ILibraryPtr;
 using musik::core::audio::ITransport;
 using Editor = PlaybackService::Editor;
 
@@ -121,7 +121,7 @@ static inline void savePreferences(
 
 PlaybackService::PlaybackService(
     IMessageQueue& messageQueue,
-    LibraryPtr library,
+    ILibraryPtr library,
     ITransport& transport)
 : library(library)
 , transport(transport)

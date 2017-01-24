@@ -68,7 +68,7 @@ namespace musik { namespace core { namespace audio {
 
             PlaybackService(
                 musik::core::runtime::IMessageQueue& messageQueue,
-                musik::core::LibraryPtr library,
+                musik::core::ILibraryPtr library,
                 musik::core::audio::ITransport& transport);
 
             ~PlaybackService();
@@ -163,7 +163,7 @@ namespace musik { namespace core { namespace audio {
             std::vector<std::shared_ptr<musik::core::sdk::IPlaybackRemote > > remotes;
             std::shared_ptr<musik::core::Preferences> prefs;
 
-            musik::core::LibraryPtr library;
+            musik::core::ILibraryPtr library;
             musik::core::audio::ITransport& transport;
             size_t index, nextIndex;
             musik::core::sdk::RepeatMode repeatMode;

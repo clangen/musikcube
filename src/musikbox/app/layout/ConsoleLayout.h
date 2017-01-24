@@ -61,7 +61,7 @@ namespace musik {
             public:
                 ConsoleLayout(
                     musik::core::audio::ITransport& transport,
-                    musik::core::LibraryPtr library);
+                    musik::core::ILibraryPtr library);
 
                 ~ConsoleLayout();
 
@@ -91,7 +91,7 @@ namespace musik {
                 std::shared_ptr<cursespp::ScrollableWindow> output;
                 std::shared_ptr<cursespp::SimpleScrollAdapter> outputAdapter;
                 musik::core::audio::ITransport& transport;
-                musik::core::LibraryPtr library;
+                musik::core::ILibraryPtr library;
         };
     }
 }

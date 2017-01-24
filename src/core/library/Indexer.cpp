@@ -637,7 +637,7 @@ void Indexer::RunAnalyzers() {
             }
 
             if (!runningAnalyzers.empty()) {
-                audio::StreamPtr stream = audio::Stream::Create(audio::IStream::NoDSP);
+                audio::IStreamPtr stream = audio::Stream::Create(audio::IStream::NoDSP);
 
                 if (stream) {
                     if (stream->OpenStream(track.Uri())) {

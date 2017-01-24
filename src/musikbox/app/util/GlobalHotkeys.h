@@ -45,7 +45,7 @@ namespace musik {
             public:
                 GlobalHotkeys(
                     musik::core::audio::PlaybackService& playback,
-                    musik::core::LibraryPtr library);
+                    musik::core::ILibraryPtr library);
 
                 ~GlobalHotkeys(); /* non-virtual; do not use as a base class */
 
@@ -54,7 +54,7 @@ namespace musik {
             private:
                 musik::core::audio::PlaybackService& playback;
                 musik::core::audio::ITransport& transport;
-                musik::core::LibraryPtr library;
+                musik::core::ILibraryPtr library;
         };
     }
 }

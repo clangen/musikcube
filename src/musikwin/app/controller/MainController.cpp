@@ -144,7 +144,7 @@ class MainController::TrackListModel : public ListView::Model, public sigslot::h
 MainController::MainController(
     MainWindow& mainWindow,
     PlaybackService& playback,
-    LibraryPtr library)
+    ILibraryPtr library)
 : mainWindow(mainWindow)
 , playback(playback)
 , library(library)

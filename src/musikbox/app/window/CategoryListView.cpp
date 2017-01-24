@@ -57,7 +57,7 @@ using namespace cursespp;
 
 CategoryListView::CategoryListView(
     musik::core::audio::PlaybackService& playback,
-    LibraryPtr library,
+    ILibraryPtr library,
     const std::string& fieldName)
 : ListWindow(NULL)
 , playback(playback) {

@@ -46,14 +46,14 @@ using musik::core::db::Statement;
 using musik::core::db::Row;
 using musik::core::TrackPtr;
 using musik::core::LibraryTrack;
-using musik::core::LibraryPtr;
+using musik::core::ILibraryPtr;
 
 using namespace musik::core::db;
 using namespace musik::core::library::constants;
 using namespace musik::glue;
 using namespace boost::algorithm;
 
-SearchTrackListQuery::SearchTrackListQuery(LibraryPtr library, const std::string& filter) {
+SearchTrackListQuery::SearchTrackListQuery(ILibraryPtr library, const std::string& filter) {
     this->library = library;
 
     if (filter.size()) {

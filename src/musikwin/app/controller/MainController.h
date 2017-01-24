@@ -55,7 +55,7 @@ namespace musik { namespace win {
             MainController(
                 MainWindow& mainWindow,
                 musik::core::audio::PlaybackService& playback,
-                musik::core::LibraryPtr library);
+                musik::core::ILibraryPtr library);
 
             virtual ~MainController();
 
@@ -74,7 +74,7 @@ namespace musik { namespace win {
             void Layout();
 
             musik::core::audio::PlaybackService& playback;
-            musik::core::LibraryPtr library;
+            musik::core::ILibraryPtr library;
 
             MainWindow& mainWindow;
 

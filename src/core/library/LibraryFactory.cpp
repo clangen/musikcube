@@ -67,9 +67,9 @@ LibraryFactory::LibraryFactory() {
 LibraryFactory::~LibraryFactory() {
 }
 
-LibraryPtr LibraryFactory::AddLibrary(int id, int type, const std::string& name)
+ILibraryPtr LibraryFactory::AddLibrary(int id, int type, const std::string& name)
 {
-    LibraryPtr library = library::LocalLibrary::Create(name, id);
+    ILibraryPtr library = library::LocalLibrary::Create(name, id);
 
     if (library) {
         this->libraries.push_back(library);
@@ -84,7 +84,7 @@ void LibraryFactory::Shutdown() {
     Instance().libraries.clear();
 }
 
-LibraryPtr LibraryFactory::CreateLibrary(const std::string& name, int type) {
+ILibraryPtr LibraryFactory::CreateLibrary(const std::string& name, int type) {
     auto prefs = Preferences::ForComponent(prefs::components::Libraries);
     std::vector<std::string> libraries;
     prefs->GetKeys(libraries);
@@ -116,7 +116,7 @@ LibraryFactory::LibraryVector& LibraryFactory::Libraries() {
     return LibraryFactory::Instance().libraries;
 }
 
-LibraryPtr LibraryFactory::GetLibrary(int identifier) {
+ILibraryPtr LibraryFactory::GetLibrary(int identifier) {
     if (identifier) {
         LibraryMap::iterator lib = this->libraryMap.find(identifier);
         if (lib != this->libraryMap.end()) {
@@ -124,6 +124,6 @@ LibraryPtr LibraryFactory::GetLibrary(int identifier) {
         }
     }
 
-    return LibraryPtr();
+    return ILibraryPtr();
 }
 

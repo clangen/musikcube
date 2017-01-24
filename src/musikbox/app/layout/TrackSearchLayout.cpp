@@ -64,7 +64,7 @@ using namespace cursespp;
 
 TrackSearchLayout::TrackSearchLayout(
     musik::core::audio::PlaybackService& playback,
-    musik::core::LibraryPtr library)
+    musik::core::ILibraryPtr library)
 : LayoutBase()
 , playback(playback)
 , library(library) {

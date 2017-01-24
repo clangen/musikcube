@@ -64,7 +64,7 @@ namespace musik { namespace core { namespace library {
             LocalLibrary(std::string name, int id);
 
         public:
-            static LibraryPtr Create(std::string name, int id);
+            static ILibraryPtr Create(std::string name, int id);
 
             virtual ~LocalLibrary();
 

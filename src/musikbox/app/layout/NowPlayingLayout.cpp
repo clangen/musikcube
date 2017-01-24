@@ -61,7 +61,7 @@ static std::string formatWithAlbum(TrackPtr track, size_t width);
 
 NowPlayingLayout::NowPlayingLayout(
     musik::core::audio::PlaybackService& playback,
-    musik::core::LibraryPtr library)
+    musik::core::ILibraryPtr library)
 : LayoutBase()
 , playback(playback)
 , library(library)

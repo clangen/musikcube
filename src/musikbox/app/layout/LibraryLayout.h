@@ -60,7 +60,7 @@ namespace musik {
             public:
                 LibraryLayout(
                     musik::core::audio::PlaybackService& playback,
-                    musik::core::LibraryPtr library);
+                    musik::core::ILibraryPtr library);
 
                 virtual ~LibraryLayout();
 
@@ -99,7 +99,7 @@ namespace musik {
 
                 musik::core::audio::PlaybackService& playback;
                 musik::core::audio::ITransport& transport;
-                musik::core::LibraryPtr library;
+                musik::core::ILibraryPtr library;
                 std::shared_ptr<BrowseLayout> browseLayout;
                 std::shared_ptr<TransportWindow> transportView;
                 std::shared_ptr<NowPlayingLayout> nowPlayingLayout;

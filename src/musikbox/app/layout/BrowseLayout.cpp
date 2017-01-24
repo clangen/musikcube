@@ -78,7 +78,7 @@ static std::map <std::string, std::string> FIELD_TO_TITLE{
 
 BrowseLayout::BrowseLayout(
     musik::core::audio::PlaybackService& playback,
-    LibraryPtr library)
+    ILibraryPtr library)
 : LayoutBase()
 , playback(playback) {
     this->library = library;

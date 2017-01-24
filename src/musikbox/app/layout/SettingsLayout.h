@@ -68,7 +68,7 @@ namespace musik {
         {
             public:
                 SettingsLayout(
-                    musik::core::LibraryPtr library,
+                    musik::core::ILibraryPtr library,
                     musik::glue::audio::MasterTransport& transport);
 
                 virtual ~SettingsLayout();
@@ -103,7 +103,7 @@ namespace musik {
                     size_t line,
                     cursespp::IScrollAdapter::EntryPtr entry);
 
-                musik::core::LibraryPtr library;
+                musik::core::ILibraryPtr library;
                 musik::core::IIndexer* indexer;
                 musik::glue::audio::MasterTransport& transport;
 

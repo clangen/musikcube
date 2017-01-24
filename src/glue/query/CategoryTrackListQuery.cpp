@@ -45,7 +45,7 @@ using musik::core::db::Statement;
 using musik::core::db::Row;
 using musik::core::TrackPtr;
 using musik::core::LibraryTrack;
-using musik::core::LibraryPtr;
+using musik::core::ILibraryPtr;
 
 using namespace musik::core::db;
 using namespace musik::core::library::constants;
@@ -59,7 +59,7 @@ static std::map<std::string, std::string> FIELD_TO_FOREIGN_KEY =
         std::make_pair(Track::ALBUM_ARTIST, Track::ALBUM_ARTIST_ID)
     };
 
-CategoryTrackListQuery::CategoryTrackListQuery(LibraryPtr library, const std::string& column, DBID id) {
+CategoryTrackListQuery::CategoryTrackListQuery(ILibraryPtr library, const std::string& column, DBID id) {
     this->library = library;
     this->id = id;
     this->result.reset(new musik::core::TrackList(library));

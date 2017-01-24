@@ -68,7 +68,7 @@ int APIENTRY _tWinMain(HINSTANCE instance, HINSTANCE previousInstance, LPTSTR co
     mainWindow.Resize(640, 400);
     mainWindow.MoveTo(200, 200);
 
-    LibraryPtr library = LibraryFactory::Libraries().at(0);
+    ILibraryPtr library = LibraryFactory::Libraries().at(0);
     library->SetMessageQueue(mainWindow.Queue());
 
     MasterTransport transport;

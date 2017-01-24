@@ -73,7 +73,7 @@ static IScrollAdapter::EntryPtr MISSING_ENTRY = IScrollAdapter::EntryPtr();
 
 TrackListView::TrackListView(
     PlaybackService& playback,
-    LibraryPtr library,
+    ILibraryPtr library,
     RowFormatter formatter,
     RowDecorator decorator)
 : ListWindow(nullptr)

@@ -83,7 +83,7 @@ static const std::string arrow = "\xe2\x96\xba";
 static bool showDotfiles = false;
 
 SettingsLayout::SettingsLayout(
-    musik::core::LibraryPtr library,
+    musik::core::ILibraryPtr library,
     musik::glue::audio::MasterTransport& transport)
 : LayoutBase()
 , library(library)

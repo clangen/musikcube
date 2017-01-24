@@ -44,8 +44,8 @@ namespace musik { namespace core {
 
     class LibraryFactory {
         public:
-            typedef std::vector<LibraryPtr> LibraryVector;
-            typedef std::map<int, LibraryPtr> LibraryMap;
+            typedef std::vector<ILibraryPtr> LibraryVector;
+            typedef std::map<int, ILibraryPtr> LibraryMap;
             typedef sigslot::signal0<> LibrariesUpdatedEvent;
 
             enum LibraryType {
@@ -57,16 +57,16 @@ namespace musik { namespace core {
             static LibraryFactory& Instance();
             static LibraryVector& Libraries();
 
-            LibraryPtr CreateLibrary(const std::string& name, int type);
+            ILibraryPtr CreateLibrary(const std::string& name, int type);
             void Shutdown();
 
-            LibraryPtr GetLibrary(int identifier);
+            ILibraryPtr GetLibrary(int identifier);
             LibrariesUpdatedEvent LibrariesUpdated;
 
         private:
             LibraryFactory();
 
-            LibraryPtr AddLibrary(int id, int type, const std::string& name);
+            ILibraryPtr AddLibrary(int id, int type, const std::string& name);
 
             LibraryVector libraries;
             LibraryMap libraryMap;

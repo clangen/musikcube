@@ -60,7 +60,7 @@ namespace musik { namespace core {
             virtual DBID Id();
             virtual void SetId(DBID id) = 0;
 
-            virtual musik::core::LibraryPtr Library();
+            virtual musik::core::ILibraryPtr Library();
             virtual int LibraryId();
 
             virtual std::string GetValue(const char* metakey) = 0;

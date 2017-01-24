@@ -56,7 +56,7 @@ using namespace cursespp;
     x == this->artists || \
     x == this->genres
 
-SearchLayout::SearchLayout(musik::core::audio::PlaybackService& playback, LibraryPtr library)
+SearchLayout::SearchLayout(musik::core::audio::PlaybackService& playback, ILibraryPtr library)
 : LayoutBase() {
     this->library = library;
     this->InitializeWindows(playback);

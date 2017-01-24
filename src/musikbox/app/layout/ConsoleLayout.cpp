@@ -63,7 +63,7 @@ using namespace cursespp;
 
 typedef IScrollAdapter::EntryPtr EntryPtr;
 
-ConsoleLayout::ConsoleLayout(ITransport& transport, LibraryPtr library)
+ConsoleLayout::ConsoleLayout(ITransport& transport, ILibraryPtr library)
 : LayoutBase()
 , transport(transport)
 , library(library) {

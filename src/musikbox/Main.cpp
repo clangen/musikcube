@@ -109,7 +109,7 @@ int main(int argc, char* argv[])
     auto prefs = Preferences::ForComponent(
         musik::core::prefs::components::Settings);
 
-    LibraryPtr library = LibraryFactory::Libraries().at(0);
+    ILibraryPtr library = LibraryFactory::Libraries().at(0);
     library->SetMessageQueue(Window::MessageQueue());
 
     MasterTransport transport;

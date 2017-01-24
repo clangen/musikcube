@@ -51,7 +51,7 @@ namespace musik { namespace core { namespace audio {
         using IDecoder = musik::core::sdk::IDecoder;
 
         public:
-            static StreamPtr Create(
+            static IStreamPtr Create(
                 int samplesPerChannel = 2048,
                 int bufferCount = 48,
                 unsigned int options = 0);

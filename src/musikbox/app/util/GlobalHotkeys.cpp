@@ -43,13 +43,13 @@
 
 #include <glue/util/Playback.h>
 
-using musik::core::LibraryPtr;
+using musik::core::ILibraryPtr;
 using musik::core::audio::ITransport;
 using namespace musik::core::audio;
 using namespace musik::core::sdk;
 using namespace musik::box;
 
-GlobalHotkeys::GlobalHotkeys(musik::core::audio::PlaybackService& playback, LibraryPtr library)
+GlobalHotkeys::GlobalHotkeys(musik::core::audio::PlaybackService& playback, ILibraryPtr library)
 : playback(playback)
 , transport(playback.GetTransport()) {
     this->library = library;

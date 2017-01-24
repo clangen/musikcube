@@ -43,14 +43,14 @@ using musik::core::db::Statement;
 using musik::core::db::Row;
 using musik::core::TrackPtr;
 using musik::core::LibraryTrack;
-using musik::core::LibraryPtr;
+using musik::core::ILibraryPtr;
 
 using namespace musik::core::db;
 using namespace musik::core::library::constants;
 using namespace musik::glue;
 
 NowPlayingTrackListQuery::NowPlayingTrackListQuery(
-    LibraryPtr library, musik::core::audio::PlaybackService& playback)
+    ILibraryPtr library, musik::core::audio::PlaybackService& playback)
 : library(library)
 , playback(playback) {
     this->result.reset(new musik::core::TrackList(library));

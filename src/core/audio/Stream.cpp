@@ -83,8 +83,8 @@ Stream::~Stream() {
     }
 }
 
-StreamPtr Stream::Create(int samplesPerChannel, int bufferCount, unsigned int options) {
-    return StreamPtr(new Stream(samplesPerChannel, bufferCount, options));
+IStreamPtr Stream::Create(int samplesPerChannel, int bufferCount, unsigned int options) {
+    return IStreamPtr(new Stream(samplesPerChannel, bufferCount, options));
 }
 
 double Stream::SetPosition(double requestedSeconds) {

@@ -46,8 +46,8 @@ DBID Track::Id() {
     return 0;
 }
 
-LibraryPtr Track::Library() {
-    static LibraryPtr nullLibrary;
+ILibraryPtr Track::Library() {
+    static ILibraryPtr nullLibrary;
     return nullLibrary;
 }
 

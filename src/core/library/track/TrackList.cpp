@@ -55,7 +55,7 @@ using namespace musik::core::sdk;
 
 class TrackMetadataQuery : public QueryBase {
     public:
-        TrackMetadataQuery(DBID trackId, LibraryPtr library);
+        TrackMetadataQuery(DBID trackId, ILibraryPtr library);
         virtual ~TrackMetadataQuery() { }
 
         TrackPtr Result() { return this->result; }
@@ -66,11 +66,11 @@ class TrackMetadataQuery : public QueryBase {
 
     private:
         DBID trackId;
-        LibraryPtr library;
+        ILibraryPtr library;
         TrackPtr result;
 };
 
-TrackList::TrackList(LibraryPtr library) {
+TrackList::TrackList(ILibraryPtr library) {
     this->library = library;
 }
 
@@ -213,7 +213,7 @@ void TrackList::AddToCache(DBID key, TrackPtr value) {
     }
 }
 
-TrackMetadataQuery::TrackMetadataQuery(DBID trackId, LibraryPtr library) {
+TrackMetadataQuery::TrackMetadataQuery(DBID trackId, ILibraryPtr library) {
     this->trackId = trackId;
     this->library = library;
 }

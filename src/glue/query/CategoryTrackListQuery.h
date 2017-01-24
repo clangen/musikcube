@@ -45,7 +45,7 @@ namespace musik {
         class CategoryTrackListQuery : public TrackListQueryBase {
             public:
                 CategoryTrackListQuery(
-                    musik::core::LibraryPtr library,
+                    musik::core::ILibraryPtr library,
                     const std::string& column,
                     DBID id);
 
@@ -61,7 +61,7 @@ namespace musik {
                 virtual bool OnRun(musik::core::db::Connection &db);
 
             private:
-                musik::core::LibraryPtr library;
+                musik::core::ILibraryPtr library;
                 Result result;
                 Headers headers;
                 std::string column;

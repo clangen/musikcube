@@ -68,8 +68,8 @@ class QueryCompletedMessage : public Message {
         IQueryPtr query;
 };
 
-LibraryPtr LocalLibrary::Create(std::string name, int id) {
-    LibraryPtr lib(new LocalLibrary(name, id));
+ILibraryPtr LocalLibrary::Create(std::string name, int id) {
+    ILibraryPtr lib(new LocalLibrary(name, id));
     return lib;
 }
 

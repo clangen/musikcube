@@ -56,7 +56,7 @@ namespace musik {
             public:
                 TrackSearchLayout(
                     musik::core::audio::PlaybackService& playback,
-                    musik::core::LibraryPtr library);
+                    musik::core::ILibraryPtr library);
 
                 virtual ~TrackSearchLayout();
 
@@ -80,7 +80,7 @@ namespace musik {
                 void OnEnterPressed(cursespp::TextInput* sender);
 
                 musik::core::audio::PlaybackService& playback;
-                musik::core::LibraryPtr library;
+                musik::core::ILibraryPtr library;
                 std::shared_ptr<TrackListView> trackList;
                 std::shared_ptr<cursespp::TextInput> input;
         };

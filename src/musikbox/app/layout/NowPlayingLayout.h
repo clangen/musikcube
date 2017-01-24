@@ -57,7 +57,7 @@ namespace musik {
             public:
                 NowPlayingLayout(
                     musik::core::audio::PlaybackService& playback,
-                    musik::core::LibraryPtr library);
+                    musik::core::ILibraryPtr library);
 
                 virtual ~NowPlayingLayout();
 
@@ -76,7 +76,7 @@ namespace musik {
                 int64 RowDecorator(musik::core::TrackPtr track, size_t index);
 
                 musik::core::audio::PlaybackService& playback;
-                musik::core::LibraryPtr library;
+                musik::core::ILibraryPtr library;
                 std::shared_ptr<TrackListView> trackList;
                 int reselectIndex; /* gross... */
         };

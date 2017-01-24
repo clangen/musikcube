@@ -60,7 +60,7 @@ namespace musik {
             public:
                 CategoryListView(
                     musik::core::audio::PlaybackService& playback,
-                    musik::core::LibraryPtr library,
+                    musik::core::ILibraryPtr library,
                     const std::string& fieldName);
 
                 virtual ~CategoryListView();
@@ -109,7 +109,7 @@ namespace musik {
 
                 std::shared_ptr<musik::glue::CategoryListQuery> activeQuery;
 
-                musik::core::LibraryPtr library;
+                musik::core::ILibraryPtr library;
                 musik::core::TrackPtr playing;
 
                 std::string fieldName;

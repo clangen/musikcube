@@ -54,7 +54,7 @@ LibraryTrack::LibraryTrack(DBID id, int libraryId)
 , libraryId(libraryId) {
 }
 
-LibraryTrack::LibraryTrack(DBID id, musik::core::LibraryPtr library)
+LibraryTrack::LibraryTrack(DBID id, musik::core::ILibraryPtr library)
 : id(id)
 , libraryId(library->Id()) {
 }

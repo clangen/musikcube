@@ -128,7 +128,7 @@ namespace musik { namespace core { namespace audio {
             std::thread* thread;
 
             OutputPtr output;
-            StreamPtr stream;
+            IStreamPtr stream;
             ListenerList listeners;
             MixPointList pendingMixPoints;
             MixPointList processedMixPoints;

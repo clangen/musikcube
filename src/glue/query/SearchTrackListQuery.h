@@ -41,7 +41,7 @@ namespace musik {
         class SearchTrackListQuery : public TrackListQueryBase {
             public:
                 SearchTrackListQuery(
-                    musik::core::LibraryPtr library,
+                    musik::core::ILibraryPtr library,
                     const std::string& filter);
 
                 virtual ~SearchTrackListQuery();
@@ -56,7 +56,7 @@ namespace musik {
                 virtual bool OnRun(musik::core::db::Connection &db);
 
             private:
-                musik::core::LibraryPtr library;
+                musik::core::ILibraryPtr library;
                 Result result;
                 Headers headers;
                 std::string filter;

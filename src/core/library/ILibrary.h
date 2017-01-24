@@ -60,6 +60,6 @@ namespace musik { namespace core {
             virtual void SetMessageQueue(musik::core::runtime::IMessageQueue& queue) = 0;
     };
 
-    typedef std::shared_ptr<ILibrary> LibraryPtr;
+    typedef std::shared_ptr<ILibrary> ILibraryPtr;
 
 } }

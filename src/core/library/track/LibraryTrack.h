@@ -46,7 +46,7 @@ namespace musik { namespace core {
         public:
             LibraryTrack();
             LibraryTrack(DBID id, int libraryId);
-            LibraryTrack(DBID id, musik::core::LibraryPtr library);
+            LibraryTrack(DBID id, musik::core::ILibraryPtr library);
             virtual ~LibraryTrack();
 
             virtual int LibraryId();
@@ -82,7 +82,7 @@ namespace musik { namespace core {
                 char *thumbnailData;
                 long thumbnailSize;
                 std::mutex mutex;
-                musik::core::LibraryPtr library;
+                musik::core::ILibraryPtr library;
             };
 
             LibraryData data;

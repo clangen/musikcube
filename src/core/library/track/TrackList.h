@@ -49,7 +49,7 @@ namespace musik { namespace core {
         public musik::core::sdk::ITrackListEditor
     {
         public:
-            TrackList(LibraryPtr library);
+            TrackList(ILibraryPtr library);
             virtual ~TrackList();
 
             /* ITrackList */
@@ -86,6 +86,6 @@ namespace musik { namespace core {
             CacheMap cacheMap;
 
             std::vector<DBID> ids;
-            LibraryPtr library;
+            ILibraryPtr library;
     };
 } }

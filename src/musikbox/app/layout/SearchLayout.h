@@ -61,7 +61,7 @@ namespace musik {
 
                 SearchLayout(
                     musik::core::audio::PlaybackService& playback,
-                    musik::core::LibraryPtr library);
+                    musik::core::ILibraryPtr library);
 
                 virtual ~SearchLayout();
 
@@ -83,7 +83,7 @@ namespace musik {
                     cursespp::TextInput* sender,
                     std::string value);
 
-                musik::core::LibraryPtr library;
+                musik::core::ILibraryPtr library;
                 std::shared_ptr<cursespp::TextLabel> albumsLabel;
                 std::shared_ptr<CategoryListView> albums;
                 std::shared_ptr<cursespp::TextLabel> artistsLabel;

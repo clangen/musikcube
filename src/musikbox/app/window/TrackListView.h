@@ -70,7 +70,7 @@ namespace musik {
 
                 TrackListView(
                     musik::core::audio::PlaybackService& playback,
-                    musik::core::LibraryPtr library,
+                    musik::core::ILibraryPtr library,
                     RowFormatter formatter = RowFormatter(),
                     RowDecorator decorator = RowDecorator());
 
@@ -114,7 +114,7 @@ namespace musik {
                 Adapter* adapter;
                 musik::core::audio::PlaybackService& playback;
                 musik::core::TrackPtr playing;
-                musik::core::LibraryPtr library;
+                musik::core::ILibraryPtr library;
                 size_t lastQueryHash;
                 RowFormatter formatter;
                 RowDecorator decorator;

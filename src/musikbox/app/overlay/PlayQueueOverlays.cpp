@@ -105,7 +105,7 @@ void PlayQueueOverlays::ShowAddTrackOverlay(
 
 void PlayQueueOverlays::ShowAddCategoryOverlay(
     musik::core::audio::PlaybackService& playback,
-    musik::core::LibraryPtr library,
+    musik::core::ILibraryPtr library,
     const std::string& fieldColumn,
     DBID fieldId)
 {

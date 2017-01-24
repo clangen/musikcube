@@ -58,7 +58,7 @@ namespace musik {
             public:
                 BrowseLayout(
                     musik::core::audio::PlaybackService& playback,
-                    musik::core::LibraryPtr library);
+                    musik::core::ILibraryPtr library);
 
                 virtual ~BrowseLayout();
 
@@ -84,7 +84,7 @@ namespace musik {
                     cursespp::ListWindow *view, size_t selectedIndex);
 
                 musik::core::audio::PlaybackService& playback;
-                musik::core::LibraryPtr library;
+                musik::core::ILibraryPtr library;
                 std::shared_ptr<CategoryListView> categoryList;
                 std::shared_ptr<TrackListView> trackList;
                 std::shared_ptr<cursespp::TextLabel> categoryTitle;

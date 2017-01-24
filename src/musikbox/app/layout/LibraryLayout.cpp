@@ -59,7 +59,7 @@ using namespace musik::box;
 using namespace musik::core::runtime;
 using namespace cursespp;
 
-LibraryLayout::LibraryLayout(musik::core::audio::PlaybackService& playback, LibraryPtr library)
+LibraryLayout::LibraryLayout(musik::core::audio::PlaybackService& playback, ILibraryPtr library)
 : LayoutBase()
 , playback(playback)
 , shortcuts(nullptr)
