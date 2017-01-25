@@ -41,6 +41,7 @@
 
 #include <glue/query/CategoryTrackListQuery.h>
 #include <glue/query/CategoryListQuery.h>
+#include <glue/query/GetPlaylistQuery.h>
 
 #include <cursespp/App.h>
 #include <cursespp/SimpleScrollAdapter.h>
@@ -153,7 +154,8 @@ void PlayQueueOverlays::ShowAddCategoryOverlay(
 
 void PlayQueueOverlays::ShowLoadPlaylistOverlay(
     musik::core::audio::PlaybackService& playback,
-    musik::core::ILibraryPtr library)
+    musik::core::ILibraryPtr library,
+    TrackListQueryCallback callback)
 {
     std::shared_ptr<CategoryListQuery> query(
         new CategoryListQuery(Playlists::TABLE_NAME, ""));
@@ -180,9 +182,14 @@ void PlayQueueOverlays::ShowLoadPlaylistOverlay(
         .SetTitle("load playlist")
         .SetSelectedIndex(0)
         .SetItemSelectedCallback(
-            [&playback, library, &result]
+            [&playback, library, result, callback]
             (cursespp::IScrollAdapterPtr adapter, size_t index) {
+                if (callback) {
+                    DBID playlistId = (*result)[index]->id;
 
+                    callback(std::shared_ptr<GetPlaylistQuery>(
+                        new GetPlaylistQuery(library, playlistId)));
+                }
             });
 
     cursespp::App::Overlays().Push(dialog);

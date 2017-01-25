@@ -34,35 +34,37 @@
 
 #pragma once
 
-#include <core/audio/PlaybackService.h>
-#include <core/library/ILibrary.h>
-#include <glue/query/TrackListQueryBase.h>
-#include <app/window/TrackListView.h>
+#include <core/db/Connection.h>
+#include <core/library/track/Track.h>
+#include <core/library/query/QueryBase.h>
+
+#include "TrackListQueryBase.h"
 
 namespace musik {
-    namespace box {
-        class PlayQueueOverlays {
+    namespace glue {
+        class GetPlaylistQuery : public TrackListQueryBase {
             public:
-                using TrackListQueryCallback =
-                    std::function<void(std::shared_ptr<musik::glue::TrackListQueryBase>)>;
-
-                static void ShowAddTrackOverlay(
-                    musik::core::audio::PlaybackService& playback,
-                    musik::box::TrackListView& trackList);
-
-                static void ShowAddCategoryOverlay(
-                    musik::core::audio::PlaybackService& playback,
+                GetPlaylistQuery(
                     musik::core::ILibraryPtr library,
-                    const std::string& fieldColumn,
-                    DBID fieldId);
+                    DBID playlistId);
 
-                static void ShowLoadPlaylistOverlay(
-                    musik::core::audio::PlaybackService& playback,
-                    musik::core::ILibraryPtr library,
-                    TrackListQueryCallback callback);
+                virtual ~GetPlaylistQuery();
+
+                virtual std::string Name() { return "GetPlaylistQuery"; }
+
+                virtual Result GetResult();
+                virtual Headers GetHeaders();
+                virtual size_t GetQueryHash();
+
+            protected:
+                virtual bool OnRun(musik::core::db::Connection &db);
 
             private:
-                PlayQueueOverlays();
+                musik::core::ILibraryPtr library;
+                Result result;
+                Headers headers;
+                DBID playlistId;
+                size_t hash;
         };
     }
 }

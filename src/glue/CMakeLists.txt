@@ -1,5 +1,6 @@
 set(GLUE_SOURCES
   ./audio/MasterTransport.cpp
+  ./query/GetPlaylistQuery.cpp
   ./query/CategoryListQuery.cpp
   ./query/CategoryTrackListQuery.cpp
   ./query/NowPlayingTrackListQuery.cpp

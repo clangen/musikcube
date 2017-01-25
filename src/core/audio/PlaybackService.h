@@ -103,6 +103,7 @@ namespace musik { namespace core { namespace audio {
             musik::core::audio::ITransport& GetTransport() { return this->transport; }
             void Play(musik::core::TrackList& tracks, size_t index);
             void CopyTo(musik::core::TrackList& target);
+            void CopyFrom(musik::core::TrackList& source);
             musik::core::TrackPtr GetTrackAtIndex(size_t index);
 
             /* required to make changes to the playlist. this little data structure

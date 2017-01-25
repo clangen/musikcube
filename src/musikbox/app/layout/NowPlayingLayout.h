@@ -68,17 +68,21 @@ namespace musik {
                 virtual void OnLayout();
 
             private:
-                void OnTrackListRequeried();
-                void OnPlaybackShuffled(bool shuffled);
                 void InitializeWindows();
                 void RequeryTrackList();
                 bool ProcessEditOperation(const std::string& key);
+
+                /* callbacks */
+                void OnTrackListRequeried(musik::glue::TrackListQueryBase* query);
+                void OnPlaybackShuffled(bool shuffled);
                 int64 RowDecorator(musik::core::TrackPtr track, size_t index);
+                void OnPlaylistQueryStart(std::shared_ptr<musik::glue::TrackListQueryBase> query);
 
                 musik::core::audio::PlaybackService& playback;
                 musik::core::ILibraryPtr library;
-                std::shared_ptr<TrackListView> trackList;
+                std::shared_ptr<TrackListView> trackListView;
                 int reselectIndex; /* gross... */
+                int lastPlaylistId;
         };
     }
 }

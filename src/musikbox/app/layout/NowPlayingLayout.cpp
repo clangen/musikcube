@@ -82,7 +82,7 @@ NowPlayingLayout::~NowPlayingLayout() {
 }
 
 int64 NowPlayingLayout::RowDecorator(musik::core::TrackPtr track, size_t index) {
-    bool selected = index == trackList->GetSelectedIndex();
+    bool selected = index == trackListView->GetSelectedIndex();
     int64 attrs = selected ? COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM) : -1LL;
     size_t playingIndex = playback.GetIndex();
 
@@ -106,24 +106,24 @@ int64 NowPlayingLayout::RowDecorator(musik::core::TrackPtr track, size_t index) 
 }
 
 void NowPlayingLayout::OnLayout() {
-    this->trackList->MoveAndResize(
+    this->trackListView->MoveAndResize(
         0,
         0,
         this->GetWidth(),
         this->GetHeight());
 
-    this->trackList->SetFocusOrder(1);
+    this->trackListView->SetFocusOrder(1);
 }
 
 void NowPlayingLayout::InitializeWindows() {
-    this->trackList.reset(new TrackListView(
+    this->trackListView.reset(new TrackListView(
         this->playback,
         this->library,
         std::bind(formatWithAlbum, std::placeholders::_1, std::placeholders::_2),
         std::bind(&NowPlayingLayout::RowDecorator, this, std::placeholders::_1, std::placeholders::_2)));
 
-    this->trackList->Requeried.connect(this, &NowPlayingLayout::OnTrackListRequeried);
-    this->AddWindow(this->trackList);
+    this->trackListView->Requeried.connect(this, &NowPlayingLayout::OnTrackListRequeried);
+    this->AddWindow(this->trackListView);
 }
 
 void NowPlayingLayout::OnVisibilityChanged(bool visible) {
@@ -133,42 +133,47 @@ void NowPlayingLayout::OnVisibilityChanged(bool visible) {
         this->RequeryTrackList();
     }
     else {
-        this->trackList->Clear();
+        this->trackListView->Clear();
     }
 }
 
-void NowPlayingLayout::OnTrackListRequeried() {
+void NowPlayingLayout::OnTrackListRequeried(musik::glue::TrackListQueryBase* query) {
+    if (query && query->GetId() == this->lastPlaylistId) {
+        this->playback.CopyFrom(*query->GetResult());
+        this->lastPlaylistId = -1;
+    }
+
     if (playback.Count()) {
         if (this->reselectIndex == -1) {
             size_t index = playback.GetIndex();
 
             if (index == (size_t)-1) { /* not playing? */
-                this->trackList->SetSelectedIndex(0);
-                this->trackList->ScrollTo(0);
+                this->trackListView->SetSelectedIndex(0);
+                this->trackListView->ScrollTo(0);
             }
             else { /* playing... */
-                this->trackList->SetSelectedIndex(index);
-                this->trackList->ScrollTo(index == 0 ? index : index - 1);
+                this->trackListView->SetSelectedIndex(index);
+                this->trackListView->ScrollTo(index == 0 ? index : index - 1);
             }
         }
         else { /* requeried due to edit, so reselect... */
-            this->reselectIndex = std::min((int) this->trackList->Count() - 1, this->reselectIndex);
-            this->trackList->SetSelectedIndex((int) this->reselectIndex);
-            auto pos = this->trackList->GetScrollPosition();
+            this->reselectIndex = std::min((int) this->trackListView->Count() - 1, this->reselectIndex);
+            this->trackListView->SetSelectedIndex((int) this->reselectIndex);
+            auto pos = this->trackListView->GetScrollPosition();
             int first = (int) pos.firstVisibleEntryIndex;
             int last = (int) first + pos.visibleEntryCount;
             int index = (int) this->reselectIndex;
             if (index < first || index >= last) {
-                this->trackList->ScrollTo(this->reselectIndex);
+                this->trackListView->ScrollTo(this->reselectIndex);
             }
         }
 
         /* if after a bunch of monkeying around there's still nothing
         selected, but we have contents, let's just select the first item */
-        auto sel = this->trackList->GetSelectedIndex();
-        if (sel == (size_t)-1 || sel >= this->trackList->Count()) {
-            this->trackList->SetSelectedIndex(0);
-            this->trackList->ScrollTo(0);
+        auto sel = this->trackListView->GetSelectedIndex();
+        if (sel == (size_t)-1 || sel >= this->trackListView->Count()) {
+            this->trackListView->SetSelectedIndex(0);
+            this->trackListView->ScrollTo(0);
         }
     }
 
@@ -180,20 +185,28 @@ void NowPlayingLayout::OnPlaybackShuffled(bool shuffled) {
 }
 
 void NowPlayingLayout::RequeryTrackList() {
-    this->trackList->Requery(std::shared_ptr<TrackListQueryBase>(
+    this->trackListView->Requery(std::shared_ptr<TrackListQueryBase>(
         new NowPlayingTrackListQuery(this->library, this->playback)));
+}
+
+void NowPlayingLayout::OnPlaylistQueryStart(std::shared_ptr<musik::glue::TrackListQueryBase> query) {
+    this->lastPlaylistId = query->GetId();
+    this->trackListView->Requery(query);
 }
 
 bool NowPlayingLayout::KeyPress(const std::string& key) {
     if (key == "KEY_ENTER") {
-        size_t index = this->trackList->GetSelectedIndex();
+        size_t index = this->trackListView->GetSelectedIndex();
         if (index != (size_t)-1) {
             this->playback.Play(index);
             return true;
         }
     }
     else if (key == "M-l") {
-        PlayQueueOverlays::ShowLoadPlaylistOverlay(this->playback, this->library);
+        PlayQueueOverlays::ShowLoadPlaylistOverlay(
+            this->playback,
+            this->library,
+            std::bind(&NowPlayingLayout::OnPlaylistQueryStart, this, std::placeholders::_1));
         return true;
     }
     else if (ProcessEditOperation(key)) {
@@ -207,7 +220,7 @@ bool NowPlayingLayout::ProcessEditOperation(const std::string& key) {
     if (EDIT_KEYS.find(key) != EDIT_KEYS.end()) {
         if (!playback.IsShuffled()) {
             PlaybackService::Editor editor = this->playback.Edit();
-            size_t selected = this->trackList->GetSelectedIndex();
+            size_t selected = this->trackListView->GetSelectedIndex();
 
             if (Hotkeys::Is(Hotkeys::PlayQueueMoveUp, key)) {
                 if (selected > 0) {

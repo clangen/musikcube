@@ -118,10 +118,11 @@ void TrackListView::OnQueryCompleted(IQueryPtr query) {
             }
 
             this->lastQueryHash = this->query->GetQueryHash();
-            this->query.reset();
 
             this->OnAdapterChanged(); /* internal handling */
-            this->Requeried(); /* for external handlers */
+            this->Requeried(this->query.get()); /* for external handlers */
+
+            this->query.reset();
         }
     }
 }

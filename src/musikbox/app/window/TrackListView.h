@@ -55,7 +55,7 @@ namespace musik {
             public sigslot::has_slots<>
         {
             public:
-                sigslot::signal0<> Requeried;
+                sigslot::signal1<musik::glue::TrackListQueryBase*> Requeried;
 
                 typedef std::function<std::string(
                     musik::core::TrackPtr, size_t)> RowFormatter;

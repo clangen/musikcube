@@ -432,6 +432,11 @@ void PlaybackService::CopyTo(TrackList& target) {
     target.CopyFrom(this->playlist);
 }
 
+void PlaybackService::CopyFrom(TrackList& source) {
+    std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
+    this->playlist.CopyFrom(source);
+}
+
 void PlaybackService::Play(size_t index) {
     transport.Start(URI_AT_INDEX(index));
     this->nextIndex = NO_POSITION;

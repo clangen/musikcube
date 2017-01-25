@@ -32,37 +32,65 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "pch.hpp"
+#include "GetPlaylistQuery.h"
 
-#include <core/audio/PlaybackService.h>
-#include <core/library/ILibrary.h>
-#include <glue/query/TrackListQueryBase.h>
-#include <app/window/TrackListView.h>
+#include <core/library/track/LibraryTrack.h>
+#include <core/library/LocalLibraryConstants.h>
+#include <core/db/Statement.h>
 
-namespace musik {
-    namespace box {
-        class PlayQueueOverlays {
-            public:
-                using TrackListQueryCallback =
-                    std::function<void(std::shared_ptr<musik::glue::TrackListQueryBase>)>;
+using musik::core::db::Statement;
+using musik::core::db::Row;
+using musik::core::TrackPtr;
+using musik::core::LibraryTrack;
+using musik::core::ILibraryPtr;
 
-                static void ShowAddTrackOverlay(
-                    musik::core::audio::PlaybackService& playback,
-                    musik::box::TrackListView& trackList);
+using namespace musik::core::db;
+using namespace musik::core::library::constants;
+using namespace musik::glue;
 
-                static void ShowAddCategoryOverlay(
-                    musik::core::audio::PlaybackService& playback,
-                    musik::core::ILibraryPtr library,
-                    const std::string& fieldColumn,
-                    DBID fieldId);
+GetPlaylistQuery::GetPlaylistQuery(ILibraryPtr library, DBID playlistId) {
+    this->library = library;
+    this->playlistId = playlistId;
+    this->result.reset(new musik::core::TrackList(library));
+    this->headers.reset(new std::set<size_t>());
+    this->hash = std::hash<DBID>()(this->playlistId);
+}
 
-                static void ShowLoadPlaylistOverlay(
-                    musik::core::audio::PlaybackService& playback,
-                    musik::core::ILibraryPtr library,
-                    TrackListQueryCallback callback);
+GetPlaylistQuery::~GetPlaylistQuery() {
 
-            private:
-                PlayQueueOverlays();
-        };
+}
+
+GetPlaylistQuery::Result GetPlaylistQuery::GetResult() {
+    return this->result;
+}
+
+GetPlaylistQuery::Headers GetPlaylistQuery::GetHeaders() {
+    return this->headers;
+}
+
+size_t GetPlaylistQuery::GetQueryHash() {
+    return this->hash;
+}
+
+bool GetPlaylistQuery::OnRun(Connection& db) {
+    if (result) {
+        result.reset(new musik::core::TrackList(this->library));
+        headers.reset(new std::set<size_t>());
     }
+
+    std::string query =
+        "SELECT DISTINCT track_id " \
+        "FROM playlist_tracks " \
+        "WHERE playlist_id=? "
+        "ORDER BY sort_order;";
+
+    Statement trackQuery(query.c_str(), db);
+    trackQuery.BindInt(0, this->playlistId);
+
+    while (trackQuery.Step() == Row) {
+        result->Add(trackQuery.ColumnInt64(0));
+    }
+
+    return true;
 }
