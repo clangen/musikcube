@@ -528,8 +528,8 @@ void Window::Create() {
             this->content = newwin(
                 this->height - 2,
                 this->width - 2,
-                this->GetY() + 1,
-                this->GetX() + 1);
+                absoluteYOffset + this->y + 1,
+                absoluteXOffset + this->x + 1);
 
             if (!this->content) {
                 /* should never happen. if there's enough room for this->frame,

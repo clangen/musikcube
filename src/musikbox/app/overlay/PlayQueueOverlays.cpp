@@ -123,6 +123,10 @@ void PlayQueueOverlays::ShowAddCategoryOverlay(
         .SetItemSelectedCallback(
             [&playback, library, fieldColumn, fieldId]
             (cursespp::IScrollAdapterPtr adapter, size_t index) {
+                if (index == (size_t)-1) {
+                    return;
+                }
+
                 std::shared_ptr<CategoryTrackListQuery>
                     query(new CategoryTrackListQuery(
                         library,
@@ -184,7 +188,7 @@ void PlayQueueOverlays::ShowLoadPlaylistOverlay(
         .SetItemSelectedCallback(
             [&playback, library, result, callback]
             (cursespp::IScrollAdapterPtr adapter, size_t index) {
-                if (callback) {
+                if (index != (size_t) -1 && callback) {
                     DBID playlistId = (*result)[index]->id;
 
                     callback(std::shared_ptr<GetPlaylistQuery>(

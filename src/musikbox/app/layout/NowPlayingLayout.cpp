@@ -214,7 +214,6 @@ bool NowPlayingLayout::KeyPress(const std::string& key) {
         return true;
     }
     else if (key == "M-s") {
-        PlayQueueOverlays::ShowSavePlaylistOverlay(this->playback, this->library);
     }
     else if (ProcessEditOperation(key)) {
         return true;

@@ -225,6 +225,10 @@ void ListWindow::SetSelectedIndex(size_t index) {
 }
 
 size_t ListWindow::GetSelectedIndex() {
+    if (this->selectedIndex >= this->GetScrollAdapter().GetEntryCount()) {
+        return NO_SELECTION;
+    }
+
     return this->selectedIndex;
 }
 
