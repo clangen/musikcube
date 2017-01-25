@@ -26,6 +26,7 @@ set (BOX_SRCS
 	./cursespp/Checkbox.cpp
 	./cursespp/Colors.cpp
 	./cursespp/DialogOverlay.cpp
+    ./cursespp/InputOverlay.cpp
 	./cursespp/LayoutBase.cpp
 	./cursespp/ListOverlay.cpp
 	./cursespp/ListWindow.cpp

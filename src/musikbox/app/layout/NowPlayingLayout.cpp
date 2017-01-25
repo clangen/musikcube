@@ -66,7 +66,8 @@ NowPlayingLayout::NowPlayingLayout(
 : LayoutBase()
 , playback(playback)
 , library(library)
-, reselectIndex(-1) {
+, reselectIndex(-1)
+, lastPlaylistId(-1) {
     this->InitializeWindows();
     this->playback.Shuffled.connect(this, &NowPlayingLayout::OnPlaybackShuffled);
 
@@ -138,6 +139,9 @@ void NowPlayingLayout::OnVisibilityChanged(bool visible) {
 }
 
 void NowPlayingLayout::OnTrackListRequeried(musik::glue::TrackListQueryBase* query) {
+    /* if the requery just finished for a regular playlist, we need to
+    make sure we load it into the PlaybackService. generally we just read
+    FROM the playback service */
     if (query && query->GetId() == this->lastPlaylistId) {
         this->playback.CopyFrom(*query->GetResult());
         this->lastPlaylistId = -1;
@@ -208,6 +212,9 @@ bool NowPlayingLayout::KeyPress(const std::string& key) {
             this->library,
             std::bind(&NowPlayingLayout::OnPlaylistQueryStart, this, std::placeholders::_1));
         return true;
+    }
+    else if (key == "M-s") {
+        PlayQueueOverlays::ShowSavePlaylistOverlay(this->playback, this->library);
     }
     else if (ProcessEditOperation(key)) {
         return true;

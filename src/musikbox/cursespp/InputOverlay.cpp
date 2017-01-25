@@ -33,7 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
-#include "ListOverlay.h"
+#include "InputOverlay.h"
 #include "Colors.h"
 #include "Screen.h"
 #include "Text.h"
@@ -50,24 +50,24 @@ using namespace cursespp;
         overlays->Remove(this); \
     }
 
-ListOverlay::ListOverlay() {
+InputOverlay::InputOverlay() {
     this->SetFrameVisible(true);
     this->SetFrameColor(CURSESPP_OVERLAY_FRAME);
     this->SetContentColor(CURSESPP_OVERLAY_BACKGROUND);
 
     this->width = this->height = this->setWidth = 0;
 
-    this->listWindow.reset(new ListWindow());
-    this->listWindow->SetContentColor(CURSESPP_OVERLAY_BACKGROUND);
-    this->listWindow->SetFrameVisible(false);
-    this->listWindow->SetFocusOrder(0);
-    this->AddWindow(this->listWindow);
+    this->textInput.reset(new TextInput());
+    this->textInput->SetFocusOrder(0);
+    this->textInput->SetFrameColor(CURSESPP_OVERLAY_FRAME);
+    this->textInput->SetContentColor(CURSESPP_OVERLAY_BACKGROUND);
+    this->AddWindow(this->textInput);
 }
 
-ListOverlay::~ListOverlay() {
+InputOverlay::~InputOverlay() {
 }
 
-void ListOverlay::Layout() {
+void InputOverlay::Layout() {
     this->RecalculateSize();
 
     if (this->width > 0 && this->height > 0) {
@@ -77,17 +77,17 @@ void ListOverlay::Layout() {
             this->width,
             this->height);
 
-        this->listWindow->MoveAndResize(
+        this->textInput->MoveAndResize(
             1, /* one pixel padding L and R */
             2, /* below the title, plus an extra space */
             this->GetContentWidth() - 2,
-            this->height - 4); /* top and bottom padding + title */
+            3); /* top and bottom border plus text */
 
         this->Redraw();
     }
 }
 
-ListOverlay& ListOverlay::SetTitle(const std::string& title) {
+InputOverlay& InputOverlay::SetTitle(const std::string& title) {
     this->title = title;
     this->RecalculateSize();
     this->Layout();
@@ -95,7 +95,13 @@ ListOverlay& ListOverlay::SetTitle(const std::string& title) {
     return *this;
 }
 
-ListOverlay& ListOverlay::SetWidth(int width) {
+InputOverlay& InputOverlay::SetText(const std::string& text) {
+    this->title = title;
+    this->textInput->SetText(text);
+    return *this;
+}
+
+InputOverlay& InputOverlay::SetWidth(int width) {
     this->setWidth = width;
 
     if (this->IsVisible()) {
@@ -105,73 +111,21 @@ ListOverlay& ListOverlay::SetWidth(int width) {
     return *this;
 }
 
-ListOverlay& ListOverlay::SetAdapter(IScrollAdapterPtr adapter) {
-    if (this->adapter != adapter) {
-        this->adapter = adapter;
-        this->listWindow->SetAdapter(adapter);
-    }
-
+InputOverlay& InputOverlay::SetInputAcceptedCallback(InputAcceptedCallback cb) {
+    this->inputAcceptedCallback = cb;
     return *this;
 }
 
-ListOverlay& ListOverlay::SetSelectedIndex(size_t index) {
-    this->listWindow->SetSelectedIndex(index);
-    return *this;
-}
-
-ListOverlay& ListOverlay::SetItemSelectedCallback(ItemSelectedCallback cb) {
-    this->itemSelectedCallback = cb;
-    return *this;
-}
-
-ListOverlay& ListOverlay::SetDeleteKeyCallback(DeleteKeyCallback cb) {
-    this->deleteKeyCallback = cb;
-    return *this;
-}
-
-bool ListOverlay::KeyPress(const std::string& key) {
-    if (key == "^[") { /* esc closes */
-        DISMISS();
-        return true;
-    }
-    else if (key == "KEY_ENTER") {
-        if (itemSelectedCallback) {
-            itemSelectedCallback(
-                this->adapter,
-                listWindow->GetSelectedIndex());
-        }
-        DISMISS();
-        return true;
-    }
-    else if (key == "KEY_BACKSPACE" || key == "KEY_DC") {
-        if (deleteKeyCallback) {
-            deleteKeyCallback(
-                this->adapter,
-                listWindow->GetSelectedIndex());
-
-            return true;
-        }
-    }
-
-    return LayoutBase::KeyPress(key);
-}
-
-void ListOverlay::OnVisibilityChanged(bool visible) {
+void InputOverlay::OnVisibilityChanged(bool visible) {
     if (visible) {
-        this->LayoutBase::SetFocus(this->listWindow);
+        this->SetFocus(this->textInput);
         this->Redraw();
     }
 }
 
-void ListOverlay::RecalculateSize() {
+void InputOverlay::RecalculateSize() {
     this->width = this->setWidth > 0 ? this->setWidth : DEFAULT_WIDTH;
-    this->height = 4; /* top frame + text + space + bottom frame */
-
-    if (this->adapter) {
-        this->height = std::min(
-            (int) MAX_HEIGHT,
-            (int) (4 + this->adapter->GetEntryCount()));
-    }
+    this->height = 1 + 1 + 1 + 3 + 1; /* top frame + text + space + text input + bottom frame */
 
     /* constrain to app bounds */
     this->height = std::max(0, std::min(Screen::GetHeight() - 4, this->height));
@@ -181,21 +135,17 @@ void ListOverlay::RecalculateSize() {
     this->x = (Screen::GetWidth() / 2) - (this->width / 2);
 }
 
-void ListOverlay::Redraw() {
+void InputOverlay::Redraw() {
     if (this->width <= 0 || this->height <= 0) {
         return;
     }
 
     WINDOW* c = this->GetContent();
 
-    const int currentX = 1;
-    int currentY = 0;
-
     if (this->title.size()) {
-        wmove(c, currentY, currentX);
+        wmove(c, 0, 1);
         wattron(c, A_BOLD);
         wprintw(c, text::Ellipsize(this->title, this->width - 4).c_str());
         wattroff(c, A_BOLD);
-        currentY += 2;
     }
 }

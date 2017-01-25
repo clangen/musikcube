@@ -35,34 +35,27 @@
 #pragma once
 
 #include "OverlayBase.h"
-#include "ListWindow.h"
-
-#include <vector>
-#include <map>
+#include "TextInput.h"
 
 namespace cursespp {
-    class ListOverlay :
+    class InputOverlay :
         public OverlayBase
 #if (__clang_major__ == 7 && __clang_minor__ == 3)
-        , public std::enable_shared_from_this<ListOverlay>
+        , public std::enable_shared_from_this<InputOverlay>
 #endif
     {
         public:
-            using ItemSelectedCallback = std::function<void(IScrollAdapterPtr adapter, size_t index)>;
-            using DeleteKeyCallback = std::function<void(IScrollAdapterPtr adapter, size_t index)>;
+            using InputAcceptedCallback = std::function<void(const std::string&)>;
 
-            ListOverlay();
-            virtual ~ListOverlay();
+            InputOverlay();
+            virtual ~InputOverlay();
 
-            ListOverlay& SetTitle(const std::string& title);
-            ListOverlay& SetAdapter(IScrollAdapterPtr adapter);
-            ListOverlay& SetItemSelectedCallback(ItemSelectedCallback cb);
-            ListOverlay& SetDeleteKeyCallback(DeleteKeyCallback cb);
-            ListOverlay& SetSelectedIndex(size_t index);
-            ListOverlay& SetWidth(int width);
+            InputOverlay& SetTitle(const std::string& title);
+            InputOverlay& SetText(const std::string& text);
+            InputOverlay& SetInputAcceptedCallback(InputAcceptedCallback cb);
+            InputOverlay& SetWidth(int width);
 
             virtual void Layout();
-            virtual bool KeyPress(const std::string& key);
 
         protected:
             virtual void OnVisibilityChanged(bool visible);
@@ -71,13 +64,11 @@ namespace cursespp {
             void Redraw();
             void RecalculateSize();
 
-            std::string title;
+            std::string title, text;
             int x, y;
             int width, height;
             int setWidth;
-            IScrollAdapterPtr adapter;
-            std::shared_ptr<ListWindow> listWindow;
-            ItemSelectedCallback itemSelectedCallback;
-            DeleteKeyCallback deleteKeyCallback;
+            std::shared_ptr<TextInput> textInput;
+            InputAcceptedCallback inputAcceptedCallback;
     };
 }
