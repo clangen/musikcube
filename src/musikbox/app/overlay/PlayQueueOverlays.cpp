@@ -47,6 +47,7 @@
 #include <cursespp/SimpleScrollAdapter.h>
 #include <cursespp/ListOverlay.h>
 #include <cursespp/DialogOverlay.h>
+#include <cursespp/InputOverlay.h>
 
 using namespace musik::core;
 using namespace musik::core::audio;
@@ -195,6 +196,19 @@ void PlayQueueOverlays::ShowLoadPlaylistOverlay(
                         new GetPlaylistQuery(library, playlistId)));
                 }
             });
+
+    cursespp::App::Overlays().Push(dialog);
+}
+
+void PlayQueueOverlays::ShowSavePlaylistOverlay(
+    musik::core::audio::PlaybackService& playback,
+    musik::core::ILibraryPtr library)
+{
+    std::shared_ptr<InputOverlay> dialog(new InputOverlay());
+
+    dialog->SetTitle("playlist name")
+        .SetWidth(36)
+        .SetText("");
 
     cursespp::App::Overlays().Push(dialog);
 }

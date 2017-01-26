@@ -44,7 +44,8 @@ ShortcutsWindow::ShortcutsWindow()
 : Window(nullptr)
 , alignment(text::AlignCenter) {
     this->SetFrameVisible(false);
-    this->UpdateContentColor();
+    this->SetFocusedContentColor(CURSESPP_SHORTCUT_ROW_FOCUSED);
+    this->SetContentColor(CURSESPP_SHORTCUT_ROW_NORMAL);
 }
 
 ShortcutsWindow::~ShortcutsWindow() {
@@ -74,17 +75,6 @@ void ShortcutsWindow::RemoveAll() {
 void ShortcutsWindow::SetActive(const std::string& key) {
     this->activeKey = key;
     this->Redraw();
-}
-
-void ShortcutsWindow::OnFocusChanged(bool focused) {
-    this->UpdateContentColor();
-    this->Redraw();
-}
-
-void ShortcutsWindow::UpdateContentColor() {
-    this->SetContentColor(this->IsFocused()
-        ? CURSESPP_SHORTCUT_ROW_FOCUSED
-        : CURSESPP_SHORTCUT_ROW_NORMAL);
 }
 
 size_t ShortcutsWindow::CalculateLeftPadding() {

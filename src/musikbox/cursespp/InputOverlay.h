@@ -39,7 +39,8 @@
 
 namespace cursespp {
     class InputOverlay :
-        public OverlayBase
+        public OverlayBase,
+        public sigslot::has_slots<>
 #if (__clang_major__ == 7 && __clang_minor__ == 3)
         , public std::enable_shared_from_this<InputOverlay>
 #endif
@@ -56,9 +57,11 @@ namespace cursespp {
             InputOverlay& SetWidth(int width);
 
             virtual void Layout();
+            virtual bool KeyPress(const std::string& key);
 
         protected:
             virtual void OnVisibilityChanged(bool visible);
+            virtual void OnInputEnterPressed(TextInput* input);
 
         private:
             void Redraw();

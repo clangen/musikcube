@@ -61,6 +61,10 @@ namespace musik {
                     musik::core::ILibraryPtr library,
                     TrackListQueryCallback callback);
 
+                static void ShowSavePlaylistOverlay(
+                    musik::core::audio::PlaybackService& playback,
+                    musik::core::ILibraryPtr library);
+
             private:
                 PlayQueueOverlays();
         };

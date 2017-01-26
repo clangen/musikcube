@@ -54,6 +54,12 @@ namespace cursespp {
                 return this->stack;
             }
 
+            void Dismiss() {
+                if (this->stack) {
+                    stack->Remove(this);
+                }
+            }
+
         private:
             OverlayStack* stack;
     };

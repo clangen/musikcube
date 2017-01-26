@@ -61,6 +61,9 @@ InputOverlay::InputOverlay() {
     this->textInput->SetFocusOrder(0);
     this->textInput->SetFrameColor(CURSESPP_OVERLAY_FRAME);
     this->textInput->SetContentColor(CURSESPP_OVERLAY_BACKGROUND);
+    this->textInput->SetFocusedFrameColor(CURSESPP_OVERLAY_INPUT_FRAME);
+    this->textInput->SetFocusedContentColor(CURSESPP_OVERLAY_BACKGROUND);
+    this->textInput->EnterPressed.connect(this, &InputOverlay::OnInputEnterPressed);
     this->AddWindow(this->textInput);
 }
 
@@ -109,6 +112,25 @@ InputOverlay& InputOverlay::SetWidth(int width) {
     }
 
     return *this;
+}
+
+bool InputOverlay::KeyPress(const std::string& key) {
+    if (key == "^[") { /* esc closes */
+        this->Dismiss();
+        return true;
+    }
+
+    return LayoutBase::KeyPress(key);
+}
+
+void InputOverlay::OnInputEnterPressed(TextInput* input) {
+    if (input->GetText().size()) {
+        if (inputAcceptedCallback) {
+            inputAcceptedCallback(input->GetText());
+        }
+
+        this->Dismiss();
+    }
 }
 
 InputOverlay& InputOverlay::SetInputAcceptedCallback(InputAcceptedCallback cb) {

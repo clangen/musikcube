@@ -260,16 +260,27 @@ void App::Run(ILayoutPtr layout) {
 
 void App::UpdateFocusedWindow(IWindowPtr window) {
     if (this->state.focused != window) {
+        if (this->state.focused) {
+            this->state.focused->Blur();
+        }
+
         this->state.focused = window;
         this->state.input = dynamic_cast<IInput*>(window.get());
         this->state.keyHandler = dynamic_cast<IKeyHandler*>(window.get());
+
+        if (this->state.focused) {
+            this->state.focused->Focus();
+        }
     }
 }
 
 void App::EnsureFocusIsValid() {
     ILayoutPtr layout = this->state.ActiveLayout();
-    if (layout && layout->GetFocus() != this->state.focused) {
-        this->UpdateFocusedWindow(this->state.ActiveLayout()->GetFocus());
+    if (layout) {
+        IWindowPtr focused = layout->GetFocus();
+        if (focused != this->state.focused) {
+            this->UpdateFocusedWindow(focused);
+        }
     }
 }
 

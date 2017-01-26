@@ -44,12 +44,6 @@ using namespace cursespp;
 #define DEFAULT_WIDTH 26
 #define MAX_HEIGHT 12
 
-#define DISMISS() \
-    OverlayStack* overlays = this->GetOverlayStack(); \
-    if (overlays) { \
-        overlays->Remove(this); \
-    }
-
 ListOverlay::ListOverlay() {
     this->SetFrameVisible(true);
     this->SetFrameColor(CURSESPP_OVERLAY_FRAME);
@@ -59,6 +53,7 @@ ListOverlay::ListOverlay() {
 
     this->listWindow.reset(new ListWindow());
     this->listWindow->SetContentColor(CURSESPP_OVERLAY_BACKGROUND);
+    this->listWindow->SetFocusedContentColor(CURSESPP_OVERLAY_BACKGROUND);
     this->listWindow->SetFrameVisible(false);
     this->listWindow->SetFocusOrder(0);
     this->AddWindow(this->listWindow);
@@ -131,7 +126,7 @@ ListOverlay& ListOverlay::SetDeleteKeyCallback(DeleteKeyCallback cb) {
 
 bool ListOverlay::KeyPress(const std::string& key) {
     if (key == "^[") { /* esc closes */
-        DISMISS();
+        this->Dismiss();
         return true;
     }
     else if (key == "KEY_ENTER") {
@@ -140,7 +135,7 @@ bool ListOverlay::KeyPress(const std::string& key) {
                 this->adapter,
                 listWindow->GetSelectedIndex());
         }
-        DISMISS();
+        this->Dismiss();
         return true;
     }
     else if (key == "KEY_BACKSPACE" || key == "KEY_DC") {

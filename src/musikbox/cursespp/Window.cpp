@@ -110,6 +110,8 @@ Window::Window(IWindow *parent) {
     this->y = 0;
     this->contentColor = CURSESPP_DEFAULT_CONTENT_COLOR;
     this->frameColor = CURSESPP_DEFAULT_FRAME_COLOR;
+    this->focusedContentColor = CURSESPP_DEFAULT_CONTENT_COLOR;
+    this->focusedFrameColor = CURSESPP_FOCUSED_FRAME_COLOR;
     this->drawFrame = true;
     this->isVisible = false;
     this->isFocused = false;
@@ -187,10 +189,6 @@ void Window::RemoveMessage(int messageType) {
 void Window::SetParent(IWindow* parent) {
     if (this->parent != parent) {
         IWindowGroup* group = dynamic_cast<IWindowGroup*>(this->parent);
-
-        if (group) {
-            group->RemoveWindow(this->Window::shared_from_this());
-        }
 
         this->parent = parent;
 
@@ -313,31 +311,37 @@ int Window::GetY() const {
 }
 
 void Window::SetContentColor(int64 color) {
-    this->contentColor = (color == -1 ? CURSESPP_DEFAULT_CONTENT_COLOR : color);
+    this->contentColor = (color == -1LL ? CURSESPP_DEFAULT_CONTENT_COLOR : color);
+    this->RepaintBackground();
+}
 
-    if (this->contentColor != -1 && this->content) {
-        wbkgd(this->frame, COLOR_PAIR(this->frameColor));
-
-        if (this->content != this->frame) {
-            wbkgd(this->content, COLOR_PAIR(this->contentColor));
-        }
-
-        this->Invalidate();
-    }
+void Window::SetFocusedContentColor(int64 color) {
+    this->focusedContentColor = (color == -1LL) ? CURSESPP_DEFAULT_CONTENT_COLOR : color;
+    this->RepaintBackground();
 }
 
 void Window::SetFrameColor(int64 color) {
-    this->frameColor = (color == -1 ? CURSESPP_DEFAULT_FRAME_COLOR : color);
+    this->frameColor = (color == -1LL ? CURSESPP_DEFAULT_FRAME_COLOR : color);
+    this->RepaintBackground();
+}
 
-    if (this->drawFrame && this->frameColor != -1 && this->frame) {
-        wbkgd(this->frame, COLOR_PAIR(this->frameColor));
+void Window::SetFocusedFrameColor(int64 color) {
+    this->focusedFrameColor = (color == -1LL) ? CURSESPP_FOCUSED_FRAME_COLOR : color;
+    this->RepaintBackground();
+}
 
-        if (this->content != this->frame) {
-            wbkgd(this->content, COLOR_PAIR(this->contentColor));
-        }
-
-        this->Invalidate();
+void Window::RepaintBackground() {
+    if (this->drawFrame && this->frameColor != -1LL && this->frame && this->content != this->frame) {
+        wbkgd(this->frame, COLOR_PAIR(IsFocused()
+            ? this->focusedFrameColor : this->frameColor));
     }
+
+    if (this->content) {
+        wbkgd(this->content, COLOR_PAIR(IsFocused()
+            ? this->focusedContentColor : this->contentColor));
+    }
+
+    this->Invalidate();
 }
 
 WINDOW* Window::GetContent() const {
@@ -609,20 +613,16 @@ void Window::Clear() {
     werase(this->content);
     wmove(this->content, 0, 0);
 
+    bool focused = this->IsFocused();
+    int64 contentColor = isFocused ? this->focusedContentColor : this->contentColor;
+    int64 frameColor = isFocused ? this->focusedFrameColor : this->frameColor;
+
     if (this->content == this->frame) {
-        if (this->contentColor != -1) {
-            wbkgd(this->frame, COLOR_PAIR(this->contentColor));
-        }
-        else {
-            wbkgd(this->frame, COLOR_PAIR(this->frameColor));
-        }
+        wbkgd(this->frame, COLOR_PAIR(contentColor));
     }
     else {
-        wbkgd(this->frame, COLOR_PAIR(this->frameColor));
-
-        if (this->content != this->frame) {
-            wbkgd(this->content, COLOR_PAIR(this->contentColor));
-        }
+        wbkgd(this->frame, COLOR_PAIR(frameColor));
+        wbkgd(this->content, COLOR_PAIR(contentColor));
     }
 }
 
@@ -639,6 +639,7 @@ void Window::Focus() {
         this->isFocused = true;
         this->isDirty = true;
         this->OnFocusChanged(true);
+        this->RepaintBackground();
         this->Redraw();
     }
 }
@@ -648,6 +649,7 @@ void Window::Blur() {
         this->isFocused = false;
         this->isDirty = true;
         this->OnFocusChanged(false);
+        this->RepaintBackground();
         this->Redraw();
     }
 }

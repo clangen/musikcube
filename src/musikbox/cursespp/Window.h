@@ -70,6 +70,14 @@ namespace cursespp {
 
             virtual void SetContentColor(int64 color);
             virtual void SetFrameColor(int64 color);
+            virtual void SetFocusedContentColor(int64 color);
+            virtual void SetFocusedFrameColor(int64 color);
+
+            virtual int64 GetContentColor() { return this->contentColor; }
+            virtual int64 GetFrameColor() { return this->frameColor; }
+            virtual int64 GetFocusedContentColor() { return this->focusedContentColor; }
+            virtual int64 GetFocusedFrameColor() { return this->focusedFrameColor; }
+
             virtual void SetSize(int width, int height);
             virtual void SetPosition(int x, int y);
             virtual void MoveAndResize(int x, int y, int width, int height);
@@ -120,11 +128,10 @@ namespace cursespp {
             void Destroy();
             void Recreate();
             void Clear();
+            void RepaintBackground();
             void RecreateForUpdatedDimensions();
 
             bool CheckForBoundsError();
-            int64 GetContentColor() { return this->contentColor; }
-            int64 GetFrameColor() { return this->frameColor; }
 
             virtual void OnDimensionsChanged();
             virtual void OnVisibilityChanged(bool visible);
@@ -143,6 +150,7 @@ namespace cursespp {
             int focusOrder;
             int id;
             int64 contentColor, frameColor;
+            int64 focusedContentColor, focusedFrameColor;
             int width, height, x, y;
     };
 }

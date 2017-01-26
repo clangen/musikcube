@@ -56,6 +56,12 @@ namespace cursespp {
             virtual void Blur() = 0;
             virtual void SetContentColor(int64 color) = 0;
             virtual void SetFrameColor(int64 color) = 0;
+            virtual void SetFocusedFrameColor(int64 color) = 0;
+            virtual void SetFocusedContentColor(int64 color) = 0;
+            virtual int64 GetContentColor() = 0;
+            virtual int64 GetFrameColor() = 0;
+            virtual int64 GetFocusedContentColor() = 0;
+            virtual int64 GetFocusedFrameColor() = 0;
             virtual void SetFrameVisible(bool visible) = 0;
             virtual bool IsFrameVisible() = 0;
             virtual void SetSize(int width, int height) = 0;

@@ -67,12 +67,10 @@ bool sortByFocusOrder(IWindowPtr a, IWindowPtr b) {
 
 static inline IWindowPtr adjustFocus(IWindowPtr oldFocus, IWindowPtr newFocus) {
     if (oldFocus) {
-        oldFocus->SetFrameColor(CURSESPP_DEFAULT_FRAME_COLOR);
         oldFocus->Blur();
     }
 
     if (newFocus) {
-        newFocus->SetFrameColor(CURSESPP_FOCUSED_FRAME_COLOR);
         newFocus->Focus();
     }
 
@@ -87,21 +85,23 @@ LayoutBase::LayoutBase(IWindow* parent)
 }
 
 LayoutBase::~LayoutBase() {
-
+    for (IWindowPtr window : this->children) {
+        window->SetParent(nullptr);
+    }
 }
 
 void LayoutBase::OnVisibilityChanged(bool visible) {
     if (visible) {
-        for (size_t i = 0; i < this->children.size(); i++) {
-            this->children.at(i)->OnParentVisibilityChanged(true);
+        for (IWindowPtr window : this->children) {
+            window->OnParentVisibilityChanged(true);
         }
 
         this->IndexFocusables();
         this->SortFocusables();
     }
     else {
-        for (size_t i = 0; i < this->children.size(); i++) {
-            this->children.at(i)->OnParentVisibilityChanged(false);
+        for (IWindowPtr window : this->children) {
+            window->OnParentVisibilityChanged(false);
         }
     }
 }
@@ -128,24 +128,24 @@ void LayoutBase::OnLayout() {
 void LayoutBase::OnParentVisibilityChanged(bool visible) {
     Window::OnParentVisibilityChanged(visible);
 
-    for (size_t i = 0; i < this->children.size(); i++) {
-        this->children.at(i)->OnParentVisibilityChanged(visible);
+    for (IWindowPtr window : this->children) {
+        window->OnParentVisibilityChanged(visible);
     }
 }
 
 void LayoutBase::BringToTop() {
     Window::BringToTop();
 
-    for (size_t i = 0; i < this->children.size(); i++) {
-        this->children.at(i)->BringToTop();
+    for (IWindowPtr window : this->children) {
+        window->BringToTop();
     }
 
     this->Invalidate();
 }
 
 void LayoutBase::SendToBottom() {
-    for (size_t i = 0; i < this->children.size(); i++) {
-        this->children.at(i)->SendToBottom();
+    for (IWindowPtr window : this->children) {
+        window->SendToBottom();
     }
 
     Window::SendToBottom();
@@ -157,12 +157,16 @@ void LayoutBase::Invalidate() {
 
     Window::Invalidate();
 
-    for (size_t i = 0; i < this->children.size(); i++) {
-        this->children.at(i)->Invalidate();
+    for (IWindowPtr window : this->children) {
+        window->Invalidate();
     }
 }
 
 bool LayoutBase::AddWindow(IWindowPtr window) {
+    if (!window) {
+        throw std::runtime_error("asdf");
+    }
+
     if (find(this->children, window) >= 0) {
         return true;
     }
@@ -206,8 +210,8 @@ void LayoutBase::IndexFocusables() {
     }
 
     this->focusable.clear();
-    for (size_t i = 0; i < this->children.size(); i++) {
-        AddFocusable(this->children.at(i));
+    for (IWindowPtr window : this->children) {
+        AddFocusable(window);
     }
 
     if (focusedWindow) {

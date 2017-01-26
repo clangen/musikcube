@@ -59,11 +59,9 @@ namespace cursespp {
             void SetActive(const std::string& key);
 
         protected:
-            virtual void OnFocusChanged(bool focused);
             virtual void OnRedraw();
 
         private:
-            void UpdateContentColor();
             size_t CalculateLeftPadding();
 
             struct Entry {

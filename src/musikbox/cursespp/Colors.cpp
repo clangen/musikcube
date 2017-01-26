@@ -165,4 +165,5 @@ void Colors::Init(bool disableCustomColors) {
 
     init_pair(CURSESPP_OVERLAY_FRAME, blue, selected);
     init_pair(CURSESPP_OVERLAY_BACKGROUND, white, selected);
+    init_pair(CURSESPP_OVERLAY_INPUT_FRAME, red, selected);
 }
