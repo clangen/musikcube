@@ -4,6 +4,7 @@ set(GLUE_SOURCES
   ./query/CategoryListQuery.cpp
   ./query/CategoryTrackListQuery.cpp
   ./query/NowPlayingTrackListQuery.cpp
+  ./query/SavePlaylistQuery.cpp
   ./query/SearchTrackListQuery.cpp
   ./util/Duration.cpp
   ./util/Playback.cpp

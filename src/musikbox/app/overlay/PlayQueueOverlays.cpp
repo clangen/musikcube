@@ -42,6 +42,7 @@
 #include <glue/query/CategoryTrackListQuery.h>
 #include <glue/query/CategoryListQuery.h>
 #include <glue/query/GetPlaylistQuery.h>
+#include <glue/query/SavePlaylistQuery.h>
 
 #include <cursespp/App.h>
 #include <cursespp/SimpleScrollAdapter.h>
@@ -208,7 +209,19 @@ void PlayQueueOverlays::ShowSavePlaylistOverlay(
 
     dialog->SetTitle("playlist name")
         .SetWidth(36)
-        .SetText("");
+        .SetText("")
+        .SetInputAcceptedCallback(
+            [&playback, library](const std::string& name) {
+                if (name.size()) {
+                    std::shared_ptr<TrackList> tracks(new TrackList(library));
+                    playback.CopyTo(*tracks);
+
+                    std::shared_ptr<SavePlaylistQuery>
+                        saveQuery(new SavePlaylistQuery(name, tracks));
+
+                    library->Enqueue(saveQuery);
+                }
+            });
 
     cursespp::App::Overlays().Push(dialog);
 }
