@@ -260,14 +260,17 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
         return MISSING_ENTRY;
     }
 
-    int64 attrs = -1LL;
+    int64 attrs = CURSESPP_DEFAULT_COLOR;
 
     if (parent.decorator) {
         attrs = parent.decorator(track, index);
     }
     else {
         bool selected = index == parent.GetSelectedIndex();
-        attrs = selected ? COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM) : -1LL;
+
+        attrs = selected
+            ? COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM)
+            : CURSESPP_DEFAULT_COLOR;
 
         TrackPtr playing = parent.playing;
         if (playing &&

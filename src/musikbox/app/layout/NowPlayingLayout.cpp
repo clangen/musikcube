@@ -84,7 +84,11 @@ NowPlayingLayout::~NowPlayingLayout() {
 
 int64 NowPlayingLayout::RowDecorator(musik::core::TrackPtr track, size_t index) {
     bool selected = index == trackListView->GetSelectedIndex();
-    int64 attrs = selected ? COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM) : -1LL;
+
+    int64 attrs = selected
+        ? COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM)
+        : CURSESPP_DEFAULT_COLOR;
+
     size_t playingIndex = playback.GetIndex();
 
     if (index == playingIndex) {
@@ -151,7 +155,7 @@ void NowPlayingLayout::OnTrackListRequeried(musik::glue::TrackListQueryBase* que
         if (this->reselectIndex == -1) {
             size_t index = playback.GetIndex();
 
-            if (index == (size_t)-1) { /* not playing? */
+            if (index == ListWindow::NO_SELECTION) { /* not playing? */
                 this->trackListView->SetSelectedIndex(0);
                 this->trackListView->ScrollTo(0);
             }
@@ -175,7 +179,7 @@ void NowPlayingLayout::OnTrackListRequeried(musik::glue::TrackListQueryBase* que
         /* if after a bunch of monkeying around there's still nothing
         selected, but we have contents, let's just select the first item */
         auto sel = this->trackListView->GetSelectedIndex();
-        if (sel == (size_t)-1 || sel >= this->trackListView->Count()) {
+        if (sel == ListWindow::NO_SELECTION || sel >= this->trackListView->Count()) {
             this->trackListView->SetSelectedIndex(0);
             this->trackListView->ScrollTo(0);
         }
@@ -201,7 +205,7 @@ void NowPlayingLayout::OnPlaylistQueryStart(std::shared_ptr<musik::glue::TrackLi
 bool NowPlayingLayout::KeyPress(const std::string& key) {
     if (key == "KEY_ENTER") {
         size_t index = this->trackListView->GetSelectedIndex();
-        if (index != (size_t)-1) {
+        if (index != ListWindow::NO_SELECTION) {
             this->playback.Play(index);
             return true;
         }

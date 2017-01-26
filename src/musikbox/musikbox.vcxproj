@@ -148,6 +148,7 @@
     <ClCompile Include="cursespp\Checkbox.cpp" />
     <ClCompile Include="cursespp\Colors.cpp" />
     <ClCompile Include="cursespp\DialogOverlay.cpp" />
+    <ClCompile Include="cursespp\InputOverlay.cpp" />
     <ClCompile Include="cursespp\LayoutBase.cpp" />
     <ClCompile Include="cursespp\ListOverlay.cpp" />
     <ClCompile Include="cursespp\ListWindow.cpp" />
@@ -203,6 +204,7 @@
     <ClInclude Include="cursespp\IInput.h" />
     <ClInclude Include="cursespp\IKeyHandler.h" />
     <ClInclude Include="cursespp\ILayout.h" />
+    <ClInclude Include="cursespp\InputOverlay.h" />
     <ClInclude Include="cursespp\IOrderable.h" />
     <ClInclude Include="cursespp\IOverlay.h" />
     <ClInclude Include="cursespp\IScrollable.h" />

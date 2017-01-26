@@ -97,7 +97,7 @@ static bool canChangeColors() {
     }
     return can_change_color();
 #else
-    return can_change_color();
+    return !!can_change_color();
 #endif
 }
 

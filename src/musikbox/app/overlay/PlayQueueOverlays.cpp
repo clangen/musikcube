@@ -75,7 +75,7 @@ void PlayQueueOverlays::ShowAddTrackOverlay(
 {
     size_t selectedIndex = trackList.GetSelectedIndex();
 
-    if (selectedIndex == (size_t)-1) {
+    if (selectedIndex == ListWindow::NO_SELECTION) {
         return;
     }
 
@@ -96,7 +96,7 @@ void PlayQueueOverlays::ShowAddTrackOverlay(
                 }
                 else { /* next */
                     size_t position = playback.GetIndex();
-                    if (position == (size_t)-1) {
+                    if (position == ListWindow::NO_SELECTION) {
                         editor.Add(trackId);
                     }
                     else {
@@ -124,7 +124,7 @@ void PlayQueueOverlays::ShowAddCategoryOverlay(
         .SetItemSelectedCallback(
             [&playback, library, fieldColumn, fieldId]
             (cursespp::IScrollAdapterPtr adapter, size_t index) {
-                if (index == (size_t)-1) {
+                if (index == ListWindow::NO_SELECTION) {
                     return;
                 }
 
@@ -141,7 +141,7 @@ void PlayQueueOverlays::ShowAddCategoryOverlay(
                     auto tracks = query->GetResult();
                     size_t position = playback.GetIndex();
 
-                    if (index == 0 || position == (size_t)-1) { /* end */
+                    if (index == 0 || position == ListWindow::NO_SELECTION) { /* end */
                         for (size_t i = 0; i < tracks->Count(); i++) {
                             editor.Add(tracks->GetId(i));
                         }
@@ -189,7 +189,7 @@ void PlayQueueOverlays::ShowLoadPlaylistOverlay(
         .SetItemSelectedCallback(
             [&playback, library, result, callback]
             (cursespp::IScrollAdapterPtr adapter, size_t index) {
-                if (index != (size_t) -1 && callback) {
+                if (index != ListWindow::NO_SELECTION && callback) {
                     DBID playlistId = (*result)[index]->id;
 
                     callback(std::shared_ptr<GetPlaylistQuery>(

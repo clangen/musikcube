@@ -65,7 +65,7 @@ void TextLabel::OnRedraw() {
         werase(c);
     }
 
-    attrs = this->IsFocused() ? CURSESPP_TEXT_FOCUSED : -1LL;
+    attrs = this->IsFocused() ? CURSESPP_TEXT_FOCUSED : CURSESPP_DEFAULT_COLOR;
 
     if (attrs != -1) {
         wattron(c, COLOR_PAIR(attrs));

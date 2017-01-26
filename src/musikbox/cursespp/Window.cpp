@@ -311,27 +311,39 @@ int Window::GetY() const {
 }
 
 void Window::SetContentColor(int64 color) {
-    this->contentColor = (color == -1LL ? CURSESPP_DEFAULT_CONTENT_COLOR : color);
+    this->contentColor = (color == CURSESPP_DEFAULT_COLOR)
+        ? CURSESPP_DEFAULT_CONTENT_COLOR : color;
+
     this->RepaintBackground();
 }
 
 void Window::SetFocusedContentColor(int64 color) {
-    this->focusedContentColor = (color == -1LL) ? CURSESPP_DEFAULT_CONTENT_COLOR : color;
+    this->focusedContentColor = (color == CURSESPP_DEFAULT_COLOR)
+        ? CURSESPP_DEFAULT_CONTENT_COLOR : color;
+
     this->RepaintBackground();
 }
 
 void Window::SetFrameColor(int64 color) {
-    this->frameColor = (color == -1LL ? CURSESPP_DEFAULT_FRAME_COLOR : color);
+    this->frameColor = (color == CURSESPP_DEFAULT_COLOR)
+        ? CURSESPP_DEFAULT_FRAME_COLOR : color;
+
     this->RepaintBackground();
 }
 
 void Window::SetFocusedFrameColor(int64 color) {
-    this->focusedFrameColor = (color == -1LL) ? CURSESPP_FOCUSED_FRAME_COLOR : color;
+    this->focusedFrameColor = (color == CURSESPP_DEFAULT_COLOR)
+        ? CURSESPP_FOCUSED_FRAME_COLOR : color;
+
     this->RepaintBackground();
 }
 
 void Window::RepaintBackground() {
-    if (this->drawFrame && this->frameColor != -1LL && this->frame && this->content != this->frame) {
+    if (this->drawFrame &&
+        this->frameColor != CURSESPP_DEFAULT_COLOR &&
+        this->frame &&
+        this->content != this->frame)
+    {
         wbkgd(this->frame, COLOR_PAIR(IsFocused()
             ? this->focusedFrameColor : this->frameColor));
     }

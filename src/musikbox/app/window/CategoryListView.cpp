@@ -69,7 +69,7 @@ CategoryListView::CategoryListView(
     this->playback.TrackChanged.connect(this, &CategoryListView::OnTrackChanged);
 
     size_t index = playback.GetIndex();
-    if (index != (size_t) -1) {
+    if (index != ListWindow::NO_SELECTION) {
         this->playing = playback.GetTrackAtIndex(index);
     }
 }
@@ -219,7 +219,9 @@ IScrollAdapter::EntryPtr CategoryListView::Adapter::GetEntry(cursespp::Scrollabl
 
     bool selected = index == parent.GetSelectedIndex();
 
-    int64 attrs = selected ? COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM) : -1LL;
+    int64 attrs = selected
+        ? COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM)
+        : CURSESPP_DEFAULT_COLOR;
 
     if (playing) {
         if (selected) {

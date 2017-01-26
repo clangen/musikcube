@@ -126,6 +126,9 @@
     <ClCompile Include="app\overlay\PlayQueueOverlays.cpp">
       <Filter>app\overlay</Filter>
     </ClCompile>
+    <ClCompile Include="cursespp\InputOverlay.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -296,6 +299,9 @@
     </ClInclude>
     <ClInclude Include="app\overlay\PlayQueueOverlays.h">
       <Filter>app\overlay</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\InputOverlay.h">
+      <Filter>cursespp</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
