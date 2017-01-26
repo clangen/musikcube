@@ -98,6 +98,7 @@ namespace musik { namespace core { namespace audio {
             virtual void SetPosition(double seconds);
             virtual double GetDuration();
             virtual musik::core::sdk::IRetainedTrack* GetTrack(size_t index);
+            virtual musik::core::sdk::IRetainedTrack* GetPlayingTrack();
 
             /* app-specific implementation */
             musik::core::audio::ITransport& GetTransport() { return this->transport; }
@@ -105,6 +106,7 @@ namespace musik { namespace core { namespace audio {
             void CopyTo(musik::core::TrackList& target);
             void CopyFrom(musik::core::TrackList& source);
             musik::core::TrackPtr GetTrackAtIndex(size_t index);
+            musik::core::TrackPtr GetPlaying();
 
             /* required to make changes to the playlist. this little data structure
             privately owns a lock to the internal data structure and will release
@@ -163,6 +165,7 @@ namespace musik { namespace core { namespace audio {
 
             std::vector<std::shared_ptr<musik::core::sdk::IPlaybackRemote > > remotes;
             std::shared_ptr<musik::core::Preferences> prefs;
+            musik::core::TrackPtr playingTrack;
 
             musik::core::ILibraryPtr library;
             musik::core::audio::ITransport& transport;

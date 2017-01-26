@@ -70,6 +70,7 @@ namespace musik { namespace core { namespace sdk {
             virtual size_t Count() = 0;
 
             virtual IRetainedTrack* GetTrack(size_t index) = 0;
+            virtual IRetainedTrack* GetPlayingTrack() = 0; /* sdk v2 */
     };
 
 } } }

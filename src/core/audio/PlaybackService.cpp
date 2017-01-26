@@ -332,6 +332,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
 }
 
 void PlaybackService::OnTrackChanged(size_t pos, TrackPtr track) {
+    this->playingTrack = track;
     this->TrackChanged(this->index, track);
 
     for (auto it = remotes.begin(); it != remotes.end(); it++) {
@@ -434,7 +435,15 @@ void PlaybackService::CopyTo(TrackList& target) {
 
 void PlaybackService::CopyFrom(TrackList& source) {
     std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
+    
     this->playlist.CopyFrom(source);
+    this->index = NO_POSITION;
+    this->nextIndex = NO_POSITION;
+
+    if (this->playingTrack) {
+        this->index = playlist.IndexOf(this->playingTrack->Id());
+        POST(this, MESSAGE_PREPARE_NEXT_TRACK, NO_POSITION, 0);
+    }
 }
 
 void PlaybackService::Play(size_t index) {
@@ -522,6 +531,21 @@ IRetainedTrack* PlaybackService::GetTrack(size_t index) {
     }
 
     return nullptr;
+}
+
+IRetainedTrack* PlaybackService::GetPlayingTrack() {
+    std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
+
+    if (this->playingTrack) {
+        return new RetainedTrack(this->playingTrack);
+    }
+
+    return nullptr;
+}
+
+TrackPtr PlaybackService::GetPlaying() {
+    std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
+    return this->playingTrack;
 }
 
 TrackPtr PlaybackService::GetTrackAtIndex(size_t index) {
