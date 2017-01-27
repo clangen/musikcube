@@ -38,7 +38,6 @@
 namespace musik { namespace box { namespace prefs {
 
     const std::string keys::DisableCustomColors = "DisableCustomColors";
-    const std::string keys::EscFocusesShortcuts = "EscFocusesShortcuts";
     const std::string keys::FirstRunSettingsDisplayed = "FirstRunSettingsDisplayed";
 
 } } }

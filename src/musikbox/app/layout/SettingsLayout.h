@@ -115,7 +115,6 @@ namespace musik {
 
                 std::shared_ptr<cursespp::Checkbox> removeCheckbox;
                 std::shared_ptr<cursespp::Checkbox> dotfileCheckbox;
-                std::shared_ptr<cursespp::Checkbox> focusShortcutsCheckbox;
                 std::shared_ptr<cursespp::Checkbox> customColorsCheckbox;
 
                 std::shared_ptr<cursespp::TextLabel> browseLabel;

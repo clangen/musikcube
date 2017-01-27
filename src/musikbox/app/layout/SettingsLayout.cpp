@@ -109,10 +109,6 @@ void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
         this->browseAdapter->SetDotfilesVisible(showDotfiles);
         this->browseList->OnAdapterChanged();
     }
-    else if (cb == focusShortcutsCheckbox.get()) {
-        this->libraryPrefs->SetBool(box::prefs::keys::EscFocusesShortcuts, checked);
-        this->libraryPrefs->Save();
-    }
     else if (cb == customColorsCheckbox.get()) {
         this->libraryPrefs->SetBool(box::prefs::keys::DisableCustomColors, checked);
         this->libraryPrefs->Save();
@@ -174,8 +170,7 @@ void SettingsLayout::OnLayout() {
     this->transportDropdown->MoveAndResize(1, BOTTOM(this->outputDropdown), cx - 1, LABEL_HEIGHT);
     this->dotfileCheckbox->MoveAndResize(1, BOTTOM(this->transportDropdown), cx - 1, LABEL_HEIGHT);
     this->removeCheckbox->MoveAndResize(1, BOTTOM(this->dotfileCheckbox), cx - 1, LABEL_HEIGHT);
-    this->focusShortcutsCheckbox->MoveAndResize(1, BOTTOM(this->removeCheckbox), cx - 1, LABEL_HEIGHT);
-    this->customColorsCheckbox->MoveAndResize(1, BOTTOM(this->focusShortcutsCheckbox), cx - 1, LABEL_HEIGHT);
+    this->customColorsCheckbox->MoveAndResize(1, BOTTOM(this->dotfileCheckbox), cx - 1, LABEL_HEIGHT);
 
     this->hotkeyLabel->MoveAndResize(
         1,
@@ -254,7 +249,6 @@ void SettingsLayout::InitializeWindows() {
 
     CREATE_CHECKBOX(this->dotfileCheckbox, "show dotfiles in directory browser");
     CREATE_CHECKBOX(this->removeCheckbox, "remove missing files from library");
-    CREATE_CHECKBOX(this->focusShortcutsCheckbox, "esc key focuses shortcuts bar");
     CREATE_CHECKBOX(this->customColorsCheckbox, "disable custom colors (requires restart)");
 
     this->hotkeyLabel.reset(new TextLabel());
@@ -267,7 +261,6 @@ void SettingsLayout::InitializeWindows() {
     this->transportDropdown->SetFocusOrder(4);
     this->dotfileCheckbox->SetFocusOrder(5);
     this->removeCheckbox->SetFocusOrder(6);
-    this->focusShortcutsCheckbox->SetFocusOrder(7);
     this->customColorsCheckbox->SetFocusOrder(8);
     this->hotkeyInput->SetFocusOrder(9);
 
@@ -279,7 +272,6 @@ void SettingsLayout::InitializeWindows() {
     this->AddWindow(this->transportDropdown);
     this->AddWindow(this->dotfileCheckbox);
     this->AddWindow(this->removeCheckbox);
-    this->AddWindow(this->focusShortcutsCheckbox);
     this->AddWindow(this->customColorsCheckbox);
     this->AddWindow(this->hotkeyLabel);
     this->AddWindow(this->hotkeyInput);
@@ -327,9 +319,9 @@ void SettingsLayout::CheckShowFirstRunDialog() {
                     "ENTER",
                     "ok",
                     [this](std::string key) {
-                this->libraryPrefs->SetBool(box::prefs::keys::FirstRunSettingsDisplayed, true);
-                this->firstRunDialog.reset();
-            });
+                        this->libraryPrefs->SetBool(box::prefs::keys::FirstRunSettingsDisplayed, true);
+                        this->firstRunDialog.reset();
+                    });
 
             App::Overlays().Push(this->firstRunDialog);
         }
@@ -338,7 +330,6 @@ void SettingsLayout::CheckShowFirstRunDialog() {
 
 void SettingsLayout::LoadPreferences() {
     this->removeCheckbox->SetChecked(this->libraryPrefs->GetBool(core::prefs::keys::RemoveMissingFiles, true));
-    this->focusShortcutsCheckbox->SetChecked(this->libraryPrefs->GetBool(box::prefs::keys::EscFocusesShortcuts, true));
     this->customColorsCheckbox->SetChecked(this->libraryPrefs->GetBool(box::prefs::keys::DisableCustomColors));
 
     std::shared_ptr<IOutput> output = outputs::SelectedOutput();

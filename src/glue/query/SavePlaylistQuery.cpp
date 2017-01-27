@@ -151,13 +151,9 @@ bool SavePlaylistQuery::CreatePlaylist(musik::core::db::Connection &db) {
 }
 
 bool SavePlaylistQuery::RenamePlaylist(musik::core::db::Connection &db) {
-    ScopedTransaction transaction(db);
-
-    /* delete existing tracks, we'll replace 'em */
     Statement renamePlaylist(RENAME_PLAYLIST_QUERY.c_str(), db);
     renamePlaylist.BindText(0, this->playlistName);
     renamePlaylist.BindInt(1, this->playlistId);
-
     return (renamePlaylist.Step() != db::Error);
 }
 

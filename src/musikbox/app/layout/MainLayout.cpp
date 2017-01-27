@@ -173,22 +173,20 @@ void MainLayout::FocusShortcuts() {
 }
 
 bool MainLayout::KeyPress(const std::string& key) {
-    if (prefs->GetBool(box::prefs::keys::EscFocusesShortcuts, true)) {
-        if (key == "^["  ||
-           (key == "KEY_ENTER" && this->shortcutsFocused) ||
-           (key == "KEY_UP" && this->shortcutsFocused))
-        {
-            this->shortcutsFocused = !this->shortcutsFocused;
+    if (key == "^["  ||
+        (key == "KEY_ENTER" && this->shortcutsFocused) ||
+        (key == "KEY_UP" && this->shortcutsFocused))
+    {
+        this->shortcutsFocused = !this->shortcutsFocused;
 
-            if (this->shortcutsFocused) {
-                this->FocusShortcuts();
-            }
-            else {
-                this->BlurShortcuts();
-            }
-
-            return true;
+        if (this->shortcutsFocused) {
+            this->FocusShortcuts();
         }
+        else {
+            this->BlurShortcuts();
+        }
+
+        return true;
     }
 
     if (this->shortcutsFocused) {
