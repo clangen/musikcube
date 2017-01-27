@@ -43,8 +43,7 @@ namespace musik {
     namespace box {
         class PlayQueueOverlays {
             public:
-                using TrackListQueryCallback =
-                    std::function<void(std::shared_ptr<musik::glue::TrackListQueryBase>)>;
+                using PlaylistSelectedCallback = std::function<void(DBID)>;
 
                 static void ShowAddTrackOverlay(
                     musik::core::audio::PlaybackService& playback,
@@ -59,7 +58,7 @@ namespace musik {
                 static void ShowLoadPlaylistOverlay(
                     musik::core::audio::PlaybackService& playback,
                     musik::core::ILibraryPtr library,
-                    TrackListQueryCallback callback);
+                    PlaylistSelectedCallback callback);
 
                 static void ShowSavePlaylistOverlay(
                     musik::core::audio::PlaybackService& playback,

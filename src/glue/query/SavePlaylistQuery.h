@@ -43,8 +43,12 @@ namespace musik {
     namespace glue {
         class SavePlaylistQuery : public musik::core::query::QueryBase {
             public:
-                SavePlaylistQuery(
+                static std::shared_ptr<SavePlaylistQuery> Save(
                     const std::string& playlistName,
+                    std::shared_ptr<musik::core::TrackList> tracks);
+
+                static std::shared_ptr<SavePlaylistQuery> Replace(
+                    const DBID playlistId,
                     std::shared_ptr<musik::core::TrackList> tracks);
 
                 virtual std::string Name() { return "SavePlaylistQuery"; }
@@ -54,7 +58,21 @@ namespace musik {
             protected:
                 virtual bool OnRun(musik::core::db::Connection &db);
 
+            private:
+                SavePlaylistQuery(
+                    const std::string& playlistName,
+                    std::shared_ptr<musik::core::TrackList> tracks);
+
+                SavePlaylistQuery(
+                    DBID playlistId,
+                    std::shared_ptr<musik::core::TrackList> tracks);
+
+                bool CreatePlaylist(musik::core::db::Connection &db);
+                bool ReplacePlaylist(musik::core::db::Connection &db);
+                bool AddTracksToPlaylist(musik::core::db::Connection &db, DBID playlistId);
+
                 std::string playlistName;
+                DBID playlistId;
                 std::shared_ptr<musik::core::TrackList> tracks;
         };
     }

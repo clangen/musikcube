@@ -41,6 +41,7 @@
 #include <app/util/Hotkeys.h>
 #include <app/overlay/PlayQueueOverlays.h>
 #include <glue/query/NowPlayingTrackListQuery.h>
+#include <glue/query/GetPlaylistQuery.h>
 #include <glue/util/Duration.h>
 #include "NowPlayingLayout.h"
 
@@ -67,7 +68,7 @@ NowPlayingLayout::NowPlayingLayout(
 , playback(playback)
 , library(library)
 , reselectIndex(-1)
-, lastPlaylistId(-1) {
+, lastPlaylistQueryId(-1) {
     this->InitializeWindows();
     this->playback.Shuffled.connect(this, &NowPlayingLayout::OnPlaybackShuffled);
 
@@ -146,9 +147,9 @@ void NowPlayingLayout::OnTrackListRequeried(musik::glue::TrackListQueryBase* que
     /* if the requery just finished for a regular playlist, we need to
     make sure we load it into the PlaybackService. generally we just read
     FROM the playback service */
-    if (query && query->GetId() == this->lastPlaylistId) {
+    if (query && query->GetId() == this->lastPlaylistQueryId) {
         this->playback.CopyFrom(*query->GetResult());
-        this->lastPlaylistId = -1;
+        this->lastPlaylistQueryId = -1;
     }
 
     if (playback.Count()) {
@@ -197,8 +198,11 @@ void NowPlayingLayout::RequeryTrackList() {
         new NowPlayingTrackListQuery(this->library, this->playback)));
 }
 
-void NowPlayingLayout::OnPlaylistQueryStart(std::shared_ptr<musik::glue::TrackListQueryBase> query) {
-    this->lastPlaylistId = query->GetId();
+void NowPlayingLayout::OnPlaylistSelected(DBID playlistId) {
+    auto query = std::shared_ptr<GetPlaylistQuery>(
+        new GetPlaylistQuery(library, playlistId));
+
+    this->lastPlaylistQueryId = query->GetId();
     this->trackListView->Requery(query);
 }
 
@@ -214,7 +218,7 @@ bool NowPlayingLayout::KeyPress(const std::string& key) {
         PlayQueueOverlays::ShowLoadPlaylistOverlay(
             this->playback,
             this->library,
-            std::bind(&NowPlayingLayout::OnPlaylistQueryStart, this, std::placeholders::_1));
+            std::bind(&NowPlayingLayout::OnPlaylistSelected, this, std::placeholders::_1));
         return true;
     }
     else if (key == "M-s") {

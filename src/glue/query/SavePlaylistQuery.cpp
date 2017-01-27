@@ -48,19 +48,66 @@ static std::string CREATE_PLAYLIST_QUERY =
 static std::string INSERT_PLAYLIST_TRACK_QUERY =
     "INSERT INTO playlist_tracks (track_id, playlist_id, sort_order) VALUES (?, ?, ?);";
 
+static std::string DELETE_PLAYLIST_TRACKS_QUERY =
+    "DELETE FROM playlist_tracks WHERE playlist_id=?;";
+
+std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Save(
+    const std::string& playlistName,
+    std::shared_ptr<musik::core::TrackList> tracks)
+{
+    return std::shared_ptr<SavePlaylistQuery>(
+        new SavePlaylistQuery(playlistName, tracks));
+}
+
+std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Replace(
+    const DBID playlistId,
+    std::shared_ptr<musik::core::TrackList> tracks)
+{
+    return std::shared_ptr<SavePlaylistQuery>(
+        new SavePlaylistQuery(playlistId, tracks));
+}
+
 SavePlaylistQuery::SavePlaylistQuery(
     const std::string& playlistName,
     std::shared_ptr<musik::core::TrackList> tracks)
 {
+    this->playlistId = -1;
     this->playlistName = playlistName;
     this->tracks = tracks;
 }
 
-SavePlaylistQuery::~SavePlaylistQuery() {
-
+SavePlaylistQuery::SavePlaylistQuery(
+    DBID playlistId,
+    std::shared_ptr<musik::core::TrackList> tracks)
+{
+    this->playlistId = playlistId;
+    this->tracks = tracks;
 }
 
-bool SavePlaylistQuery::OnRun(musik::core::db::Connection &db) {
+SavePlaylistQuery::~SavePlaylistQuery() {
+}
+
+bool SavePlaylistQuery::AddTracksToPlaylist(musik::core::db::Connection &db, DBID playlistId) {
+    Statement insertTrack(INSERT_PLAYLIST_TRACK_QUERY.c_str(), db);
+
+    TrackPtr track;
+    TrackList& tracks = *this->tracks;
+    for (size_t i = 0; i < tracks.Count(); i++) {
+        track = tracks.Get(i);
+        insertTrack.Reset();
+        insertTrack.BindInt(0, track->Id());
+        insertTrack.BindInt(1, playlistId);
+        insertTrack.BindInt(2, (int) i);
+
+        if (insertTrack.Step() == db::Error) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool SavePlaylistQuery::CreatePlaylist(musik::core::db::Connection &db) {
     ScopedTransaction transaction(db);
 
     /* create playlist */
@@ -75,21 +122,39 @@ bool SavePlaylistQuery::OnRun(musik::core::db::Connection &db) {
     DBID playlistId = db.LastInsertedId();
 
     /* add tracks to playlist */
-    Statement insertTrack(INSERT_PLAYLIST_TRACK_QUERY.c_str(), db);
-    TrackList& tracks = *this->tracks;
-    TrackPtr track;
-    for (size_t i = 0; i < tracks.Count(); i++) {
-        track = tracks.Get(i);
-        insertTrack.Reset();
-        insertTrack.BindInt(0, track->Id());
-        insertTrack.BindInt(1, playlistId);
-        insertTrack.BindInt(2, (int) i);
-
-        if (insertTrack.Step() == db::Error) {
-            transaction.Cancel();
-            return false;
-        }
+    if (!this->AddTracksToPlaylist(db, playlistId)) {
+        transaction.Cancel();
+        return false;
     }
 
     return true;
+}
+
+bool SavePlaylistQuery::ReplacePlaylist(musik::core::db::Connection &db) {
+    ScopedTransaction transaction(db);
+
+    /* delete existing tracks, we'll replace 'em */
+    Statement createPlaylist(DELETE_PLAYLIST_TRACKS_QUERY.c_str(), db);
+    createPlaylist.BindInt(0, this->playlistId);
+
+    if (createPlaylist.Step() == db::Error) {
+        transaction.Cancel();
+        return false;
+    }
+
+    /* add tracks to playlist */
+    if (!this->AddTracksToPlaylist(db, playlistId)) {
+        transaction.Cancel();
+        return false;
+    }
+
+    return true;
+}
+
+bool SavePlaylistQuery::OnRun(musik::core::db::Connection &db) {
+    if (playlistId != -1) {
+        return this->ReplacePlaylist(db);
+    }
+
+    return this->CreatePlaylist(db);
 }

@@ -67,6 +67,44 @@ static std::shared_ptr<Adapter> createAddToAdapter() {
     return adapter;
 }
 
+static std::shared_ptr<CategoryListQuery> queryPlaylists(musik::core::ILibraryPtr library) {
+    std::shared_ptr<CategoryListQuery> query(
+        new CategoryListQuery(Playlists::TABLE_NAME, ""));
+
+    library->Enqueue(query, ILibrary::QuerySynchronous);
+    if (query->GetStatus() != IQuery::Finished) {
+        query.reset();
+        return query;
+    }
+
+    return query;
+}
+
+static void addPlaylistsToAdapter(
+    std::shared_ptr<Adapter> adapter, CategoryListQuery::ResultList result)
+{
+    auto it = result->begin();
+    while (it != result->end()) {
+        adapter->AddEntry((*it)->displayValue);
+        ++it;
+    }
+}
+
+static void showPlaylistListOverlay(
+        const std::string& title,
+        std::shared_ptr<Adapter> adapter,
+        ListOverlay::ItemSelectedCallback callback)
+{
+    std::shared_ptr<ListOverlay> dialog(new ListOverlay());
+
+    dialog->SetAdapter(adapter)
+        .SetTitle(title)
+        .SetSelectedIndex(0)
+        .SetItemSelectedCallback(callback);
+
+    cursespp::App::Overlays().Push(dialog);
+}
+
 PlayQueueOverlays::PlayQueueOverlays() {
 }
 
@@ -161,40 +199,40 @@ void PlayQueueOverlays::ShowAddCategoryOverlay(
 void PlayQueueOverlays::ShowLoadPlaylistOverlay(
     musik::core::audio::PlaybackService& playback,
     musik::core::ILibraryPtr library,
-    TrackListQueryCallback callback)
+    PlaylistSelectedCallback callback)
 {
-    std::shared_ptr<CategoryListQuery> query(
-        new CategoryListQuery(Playlists::TABLE_NAME, ""));
-
-    library->Enqueue(query, ILibrary::QuerySynchronous);
-    if (query->GetStatus() != IQuery::Finished) {
-        return;
-    }
-
+    std::shared_ptr<CategoryListQuery> query = queryPlaylists(library);
     auto result = query->GetResult();
 
     std::shared_ptr<Adapter> adapter(new Adapter());
     adapter->SetSelectable(true);
+    addPlaylistsToAdapter(adapter, result);
 
-    auto it = result->begin();
-    while (it != result->end()) {
-        adapter->AddEntry((*it)->displayValue);
-        ++it;
-    }
+    showPlaylistListOverlay(
+        "load playlist",
+        adapter,
+        [library, result, callback]
+        (cursespp::IScrollAdapterPtr adapter, size_t index) {
+            if (index != ListWindow::NO_SELECTION && callback) {
+                DBID playlistId = (*result)[index]->id;
+                callback(playlistId);
+            }
+        });
+}
 
-    std::shared_ptr<ListOverlay> dialog(new ListOverlay());
+static void createNewPlaylist(
+    std::shared_ptr<TrackList> tracks,
+    musik::core::ILibraryPtr library)
+{
+    std::shared_ptr<InputOverlay> dialog(new InputOverlay());
 
-    dialog->SetAdapter(adapter)
-        .SetTitle("load playlist")
-        .SetSelectedIndex(0)
-        .SetItemSelectedCallback(
-            [&playback, library, result, callback]
-            (cursespp::IScrollAdapterPtr adapter, size_t index) {
-                if (index != ListWindow::NO_SELECTION && callback) {
-                    DBID playlistId = (*result)[index]->id;
-
-                    callback(std::shared_ptr<GetPlaylistQuery>(
-                        new GetPlaylistQuery(library, playlistId)));
+    dialog->SetTitle("playlist name")
+        .SetWidth(36)
+        .SetText("")
+        .SetInputAcceptedCallback(
+            [tracks, library](const std::string& name) {
+                if (name.size()) {
+                    library->Enqueue(SavePlaylistQuery::Save(name, tracks));
                 }
             });
 
@@ -205,23 +243,29 @@ void PlayQueueOverlays::ShowSavePlaylistOverlay(
     musik::core::audio::PlaybackService& playback,
     musik::core::ILibraryPtr library)
 {
-    std::shared_ptr<InputOverlay> dialog(new InputOverlay());
+    std::shared_ptr<CategoryListQuery> query = queryPlaylists(library);
+    auto result = query->GetResult();
 
-    dialog->SetTitle("playlist name")
-        .SetWidth(36)
-        .SetText("")
-        .SetInputAcceptedCallback(
-            [&playback, library](const std::string& name) {
-                if (name.size()) {
-                    std::shared_ptr<TrackList> tracks(new TrackList(library));
-                    playback.CopyTo(*tracks);
+    std::shared_ptr<Adapter> adapter(new Adapter());
+    adapter->SetSelectable(true);
+    adapter->AddEntry("new...");
+    addPlaylistsToAdapter(adapter, result);
 
-                    std::shared_ptr<SavePlaylistQuery>
-                        saveQuery(new SavePlaylistQuery(name, tracks));
+    showPlaylistListOverlay(
+        "save playlist",
+        adapter,
+        [&playback, library, result]
+        (cursespp::IScrollAdapterPtr adapter, size_t index) {
+            std::shared_ptr<TrackList> tracks(new TrackList(library));
+            playback.CopyTo(*tracks);
 
-                    library->Enqueue(saveQuery);
-                }
-            });
-
-    cursespp::App::Overlays().Push(dialog);
+            if (index == 0) { /* create new */
+                createNewPlaylist(tracks, library);
+            }
+            else { /* replace existing */
+                --index;
+                DBID playlistId = (*result)[index]->id;
+                library->Enqueue(SavePlaylistQuery::Replace(playlistId, tracks));
+            }
+        });
 }
