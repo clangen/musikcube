@@ -209,9 +209,6 @@ void App::Run(ILayoutPtr layout) {
             else if (kn == "^D") { /* ctrl+d quits */
                 quit = true;
             }
-            else if (kn == "M-r") {
-                Window::InvalidateScreen();
-            }
             else if (kn == "KEY_RESIZE") {
                 resizeAt = App::Now() + REDRAW_DEBOUNCE_MS;
             }

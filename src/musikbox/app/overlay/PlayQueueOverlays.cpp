@@ -50,6 +50,8 @@
 #include <cursespp/DialogOverlay.h>
 #include <cursespp/InputOverlay.h>
 
+#define DEFAULT_OVERLAY_WIDTH 30
+
 using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::library::constants;
@@ -99,6 +101,7 @@ static void showPlaylistListOverlay(
 
     dialog->SetAdapter(adapter)
         .SetTitle(title)
+        .SetWidth(DEFAULT_OVERLAY_WIDTH)
         .SetSelectedIndex(0)
         .SetItemSelectedCallback(callback);
 
@@ -127,6 +130,7 @@ void PlayQueueOverlays::ShowAddTrackOverlay(
     dialog->SetAdapter(adapter)
         .SetTitle("add to play queue")
         .SetSelectedIndex(0)
+        .SetWidth(DEFAULT_OVERLAY_WIDTH)
         .SetItemSelectedCallback(
             [trackId, &playback](cursespp::IScrollAdapterPtr adapter, size_t index) {
                 auto editor = playback.Edit();
@@ -160,6 +164,7 @@ void PlayQueueOverlays::ShowAddCategoryOverlay(
     dialog->SetAdapter(adapter)
         .SetTitle("add to play queue")
         .SetSelectedIndex(0)
+        .SetWidth(DEFAULT_OVERLAY_WIDTH)
         .SetItemSelectedCallback(
             [&playback, library, fieldColumn, fieldId]
             (cursespp::IScrollAdapterPtr adapter, size_t index) {
@@ -227,7 +232,7 @@ static void createNewPlaylist(
     std::shared_ptr<InputOverlay> dialog(new InputOverlay());
 
     dialog->SetTitle("playlist name")
-        .SetWidth(36)
+        .SetWidth(DEFAULT_OVERLAY_WIDTH)
         .SetText("")
         .SetInputAcceptedCallback(
             [tracks, library](const std::string& name) {
@@ -268,4 +273,48 @@ void PlayQueueOverlays::ShowSavePlaylistOverlay(
                 library->Enqueue(SavePlaylistQuery::Replace(playlistId, tracks));
             }
         });
+}
+
+static void renamePlaylist(
+    musik::core::ILibraryPtr library,
+    const DBID playlistId,
+    const std::string& oldName)
+{
+    std::shared_ptr<InputOverlay> dialog(new InputOverlay());
+
+    dialog->SetTitle("new playlist name")
+        .SetWidth(DEFAULT_OVERLAY_WIDTH)
+        .SetText(oldName)
+        .SetInputAcceptedCallback(
+            [library, playlistId](const std::string& name) {
+                if (name.size()) {
+                    library->Enqueue(SavePlaylistQuery::Rename(playlistId, name));
+                }
+            });
+
+    cursespp::App::Overlays().Push(dialog);
+}
+
+void PlayQueueOverlays::ShowRenamePlaylistOverlay(musik::core::ILibraryPtr library) {
+    std::shared_ptr<CategoryListQuery> query = queryPlaylists(library);
+    auto result = query->GetResult();
+
+    std::shared_ptr<Adapter> adapter(new Adapter());
+    adapter->SetSelectable(true);
+    addPlaylistsToAdapter(adapter, result);
+
+    showPlaylistListOverlay(
+        "rename playlist",
+        adapter,
+        [library, result](cursespp::IScrollAdapterPtr adapter, size_t index) {
+            if (index != ListWindow::NO_SELECTION) {
+                DBID playlistId = (*result)[index]->id;
+                std::string playlistName = (*result)[index]->displayValue;
+                renamePlaylist(library, playlistId, playlistName);
+            }
+        });
+}
+
+void PlayQueueOverlays::ShowDeletePlaylistOverlay(musik::core::ILibraryPtr library) {
+    /* stubbed */
 }

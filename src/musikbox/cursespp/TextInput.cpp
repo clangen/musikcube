@@ -182,7 +182,7 @@ void TextInput::SetText(const std::string& value) {
     if (value != this->buffer) {
         this->buffer = value;
         this->bufferLength = u8len(buffer);
-        this->position = 0;
+        this->position = this->bufferLength;
         this->TextChanged(this, this->buffer);
         this->Redraw();
     }

@@ -51,6 +51,9 @@ static std::string INSERT_PLAYLIST_TRACK_QUERY =
 static std::string DELETE_PLAYLIST_TRACKS_QUERY =
     "DELETE FROM playlist_tracks WHERE playlist_id=?;";
 
+static std::string RENAME_PLAYLIST_QUERY =
+    "UPDATE playlists SET name=? WHERE id=?";
+
 std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Save(
     const std::string& playlistName,
     std::shared_ptr<musik::core::TrackList> tracks)
@@ -67,6 +70,14 @@ std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Replace(
         new SavePlaylistQuery(playlistId, tracks));
 }
 
+std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Rename(
+    const DBID playlistId,
+    const std::string& playlistName)
+{
+    return std::shared_ptr<SavePlaylistQuery>(
+        new SavePlaylistQuery(playlistId, playlistName));
+}
+
 SavePlaylistQuery::SavePlaylistQuery(
     const std::string& playlistName,
     std::shared_ptr<musik::core::TrackList> tracks)
@@ -77,11 +88,19 @@ SavePlaylistQuery::SavePlaylistQuery(
 }
 
 SavePlaylistQuery::SavePlaylistQuery(
-    DBID playlistId,
+    const DBID playlistId,
     std::shared_ptr<musik::core::TrackList> tracks)
 {
     this->playlistId = playlistId;
     this->tracks = tracks;
+}
+
+SavePlaylistQuery::SavePlaylistQuery(
+    const DBID playlistId,
+    const std::string& playlistName)
+{
+    this->playlistId = playlistId;
+    this->playlistName = playlistName;
 }
 
 SavePlaylistQuery::~SavePlaylistQuery() {
@@ -130,6 +149,17 @@ bool SavePlaylistQuery::CreatePlaylist(musik::core::db::Connection &db) {
     return true;
 }
 
+bool SavePlaylistQuery::RenamePlaylist(musik::core::db::Connection &db) {
+    ScopedTransaction transaction(db);
+
+    /* delete existing tracks, we'll replace 'em */
+    Statement renamePlaylist(RENAME_PLAYLIST_QUERY.c_str(), db);
+    renamePlaylist.BindText(0, this->playlistName);
+    renamePlaylist.BindInt(1, this->playlistId);
+
+    return (renamePlaylist.Step() != db::Error);
+}
+
 bool SavePlaylistQuery::ReplacePlaylist(musik::core::db::Connection &db) {
     ScopedTransaction transaction(db);
 
@@ -152,7 +182,10 @@ bool SavePlaylistQuery::ReplacePlaylist(musik::core::db::Connection &db) {
 }
 
 bool SavePlaylistQuery::OnRun(musik::core::db::Connection &db) {
-    if (playlistId != -1) {
+    if (playlistName.size() && playlistId != 0) {
+        return this->RenamePlaylist(db);
+    }
+    else if (playlistId != -1) {
         return this->ReplacePlaylist(db);
     }
 

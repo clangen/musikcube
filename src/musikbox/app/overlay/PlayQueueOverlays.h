@@ -64,6 +64,12 @@ namespace musik {
                     musik::core::audio::PlaybackService& playback,
                     musik::core::ILibraryPtr library);
 
+                static void ShowRenamePlaylistOverlay(
+                    musik::core::ILibraryPtr library);
+
+                static void ShowDeletePlaylistOverlay(
+                    musik::core::ILibraryPtr library);
+
             private:
                 PlayQueueOverlays();
         };
