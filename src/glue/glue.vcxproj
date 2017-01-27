@@ -95,6 +95,7 @@
     <ClInclude Include="pch.hpp" />
     <ClInclude Include="query\CategoryListQuery.h" />
     <ClInclude Include="query\CategoryTrackListQuery.h" />
+    <ClInclude Include="query\DeletePlaylistQuery.h" />
     <ClInclude Include="query\GetPlaylistQuery.h" />
     <ClInclude Include="query\NowPlayingTrackListQuery.h" />
     <ClInclude Include="query\SavePlaylistQuery.h" />
@@ -111,6 +112,7 @@
     </ClCompile>
     <ClCompile Include="query\CategoryListQuery.cpp" />
     <ClCompile Include="query\CategoryTrackListQuery.cpp" />
+    <ClCompile Include="query\DeletePlaylistQuery.cpp" />
     <ClCompile Include="query\GetPlaylistQuery.cpp" />
     <ClCompile Include="query\NowPlayingTrackListQuery.cpp" />
     <ClCompile Include="query\SavePlaylistQuery.cpp" />

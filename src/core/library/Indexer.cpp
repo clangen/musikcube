@@ -213,6 +213,9 @@ void Indexer::FinalizeSync() {
         this->SyncOptimize();
     }
 
+    /* notify observers */
+    this->TrackRefreshed();
+
     /* unload reader DLLs*/
     this->metadataReaders.clear();
 
@@ -474,29 +477,28 @@ void Indexer::SyncDelete() {
 ///<SyncDelete>
 //////////////////////////////////////////
 void Indexer::SyncCleanup() {
-    // Remove old artists
+    /* remove old artists */
     this->dbConnection.Execute("DELETE FROM track_artists WHERE track_id NOT IN (SELECT id FROM tracks)");
     this->dbConnection.Execute("DELETE FROM artists WHERE id NOT IN (SELECT DISTINCT(visual_artist_id) FROM tracks) AND id NOT IN (SELECT DISTINCT(album_artist_id) FROM tracks) AND id NOT IN (SELECT DISTINCT(artist_id) FROM track_artists)");
 
-    // Remove old genres
+    /* remove old genres */
     this->dbConnection.Execute("DELETE FROM track_genres WHERE track_id NOT IN (SELECT id FROM tracks)");
     this->dbConnection.Execute("DELETE FROM genres WHERE id NOT IN (SELECT DISTINCT(visual_genre_id) FROM tracks) AND id NOT IN (SELECT DISTINCT(genre_id) FROM track_genres)");
 
-    // Remove old albums
+    /* remove old albums */
     this->dbConnection.Execute("DELETE FROM albums WHERE id NOT IN (SELECT DISTINCT(album_id) FROM tracks)");
 
-    // Remove metadata
+    /* orphaned metadata */
     this->dbConnection.Execute("DELETE FROM track_meta WHERE track_id NOT IN (SELECT id FROM tracks)");
     this->dbConnection.Execute("DELETE FROM meta_values WHERE id NOT IN (SELECT DISTINCT(meta_value_id) FROM track_meta)");
     this->dbConnection.Execute("DELETE FROM meta_keys WHERE id NOT IN (SELECT DISTINCT(meta_key_id) FROM meta_values)");
 
-    // ANALYZE
+    /* orphaned playlist tracks */
+    this->dbConnection.Execute("DELETE FROM playlist_tracks WHERE track_id NOT IN (SELECT id FROM tracks)");
+
+    /* optimize and shrink */
     this->dbConnection.Execute("ANALYZE");
-
-    // Vacuum to remove unwanted space
     this->dbConnection.Execute("VACUUM");
-
-    this->TrackRefreshed();
 }
 
 //////////////////////////////////////////

@@ -61,8 +61,6 @@ using Editor = PlaybackService::Editor;
 #define NO_POSITION (size_t) -1
 #define START_OVER (size_t) -2
 
-#define URI_AT_INDEX(x) this->playlist.Get(x)->Uri()
-
 #define PREVIOUS_GRACE_PERIOD 2.0f
 
 #define MESSAGE_STREAM_EVENT 1000
@@ -170,7 +168,7 @@ void PlaybackService::PrepareNextTrack() {
         /* repeat track, just keep playing the same thing over and over */
         if (this->repeatMode == RepeatTrack) {
             this->nextIndex = this->index;
-            this->transport.PrepareNextTrack(URI_AT_INDEX(this->index));
+            this->transport.PrepareNextTrack(this->UriAtIndex(this->index));
         }
         else {
             /* annoying and confusing special case -- the user edited the
@@ -180,21 +178,21 @@ void PlaybackService::PrepareNextTrack() {
                 if (this->playlist.Count() > 0) {
                     this->index = NO_POSITION;
                     this->nextIndex = 0;
-                    this->transport.PrepareNextTrack(URI_AT_INDEX(nextIndex));
+                    this->transport.PrepareNextTrack(this->UriAtIndex(nextIndex));
                 }
             }
             /* normal case, just move forward */
             else if (this->playlist.Count() > this->index + 1) {
                 if (this->nextIndex != this->index + 1) {
                     this->nextIndex = this->index + 1;
-                    this->transport.PrepareNextTrack(URI_AT_INDEX(nextIndex));
+                    this->transport.PrepareNextTrack(this->UriAtIndex(nextIndex));
                 }
             }
             /* repeat list case, wrap around to the beginning if necessary */
             else if (this->repeatMode == RepeatList) {
                 if (this->nextIndex != 0) {
                     this->nextIndex = 0;
-                    this->transport.PrepareNextTrack(URI_AT_INDEX(nextIndex));
+                    this->transport.PrepareNextTrack(this->UriAtIndex(nextIndex));
                 }
             }
             else {
@@ -435,7 +433,7 @@ void PlaybackService::CopyTo(TrackList& target) {
 
 void PlaybackService::CopyFrom(TrackList& source) {
     std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
-    
+
     this->playlist.CopyFrom(source);
     this->index = NO_POSITION;
     this->nextIndex = NO_POSITION;
@@ -447,9 +445,13 @@ void PlaybackService::CopyFrom(TrackList& source) {
 }
 
 void PlaybackService::Play(size_t index) {
-    transport.Start(URI_AT_INDEX(index));
-    this->nextIndex = NO_POSITION;
-    this->index = index;
+    std::string uri = this->UriAtIndex(index);
+
+    if (uri.size()) {
+        transport.Start(this->UriAtIndex(index));
+        this->nextIndex = NO_POSITION;
+        this->index = index;
+    }
 }
 
 size_t PlaybackService::GetIndex() {
@@ -712,4 +714,12 @@ void PlaybackService::Editor::Clear() {
 
 void PlaybackService::Editor::Shuffle() {
     throw std::runtime_error("PlaybackService::Editor::Shuffle unsupported");
+}
+
+std::string PlaybackService::UriAtIndex(size_t index) {
+    auto track = this->playlist.Get(index);
+    if (track) {
+        return track->Uri();
+    }
+    return "";
 }

@@ -32,6 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+#include "pch.hpp"
 #include "DeletePlaylistQuery.h"
 
 #include <core/db/ScopedTransaction.h>
