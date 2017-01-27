@@ -62,7 +62,8 @@ namespace musik {
 
                 static void ShowSavePlaylistOverlay(
                     musik::core::audio::PlaybackService& playback,
-                    musik::core::ILibraryPtr library);
+                    musik::core::ILibraryPtr library,
+                    DBID selectedPlaylistId = -1);
 
                 static void ShowRenamePlaylistOverlay(
                     musik::core::ILibraryPtr library);

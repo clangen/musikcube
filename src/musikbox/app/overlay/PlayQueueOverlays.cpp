@@ -96,14 +96,15 @@ static void addPlaylistsToAdapter(
 static void showPlaylistListOverlay(
         const std::string& title,
         std::shared_ptr<Adapter> adapter,
-        ListOverlay::ItemSelectedCallback callback)
+        ListOverlay::ItemSelectedCallback callback,
+        size_t selectedIndex = 0)
 {
     std::shared_ptr<ListOverlay> dialog(new ListOverlay());
 
     dialog->SetAdapter(adapter)
         .SetTitle(title)
         .SetWidth(DEFAULT_OVERLAY_WIDTH)
-        .SetSelectedIndex(0)
+        .SetSelectedIndex(selectedIndex)
         .SetItemSelectedCallback(callback);
 
     cursespp::App::Overlays().Push(dialog);
@@ -190,6 +191,17 @@ static void confirmDeletePlaylist(
                 library->Enqueue(std::shared_ptr<DeletePlaylistQuery>(
                     new DeletePlaylistQuery(playlistId)));
             });
+
+    App::Overlays().Push(dialog);
+}
+
+static void showNoPlaylistsDialog() {
+    std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
+
+    (*dialog)
+        .SetTitle("musikbox")
+        .SetMessage("you haven't saved any playlists!")
+        .AddButton("KEY_ENTER", "ENTER", "ok");
 
     App::Overlays().Push(dialog);
 }
@@ -295,6 +307,11 @@ void PlayQueueOverlays::ShowLoadPlaylistOverlay(
     std::shared_ptr<CategoryListQuery> query = queryPlaylists(library);
     auto result = query->GetResult();
 
+    if (!result->size()) {
+        showNoPlaylistsDialog();
+        return;
+    }
+
     std::shared_ptr<Adapter> adapter(new Adapter());
     adapter->SetSelectable(true);
     addPlaylistsToAdapter(adapter, result);
@@ -313,7 +330,8 @@ void PlayQueueOverlays::ShowLoadPlaylistOverlay(
 
 void PlayQueueOverlays::ShowSavePlaylistOverlay(
     musik::core::audio::PlaybackService& playback,
-    musik::core::ILibraryPtr library)
+    musik::core::ILibraryPtr library,
+    DBID selectedPlaylistId)
 {
     std::shared_ptr<CategoryListQuery> query = queryPlaylists(library);
     auto result = query->GetResult();
@@ -322,6 +340,18 @@ void PlayQueueOverlays::ShowSavePlaylistOverlay(
     adapter->SetSelectable(true);
     adapter->AddEntry("new...");
     addPlaylistsToAdapter(adapter, result);
+
+    /* the caller can specify a playlistId that we should try to
+    select by default. if they did, try to find it */
+    size_t selectedIndex = 0;
+    if (selectedPlaylistId != -1) {
+        for (size_t i = 0; i < result->size(); i++) {
+            if (result->at(i)->id == selectedPlaylistId) {
+                selectedIndex = i + 1; /* offset "new..." */
+                break;
+            }
+        }
+    }
 
     showPlaylistListOverlay(
         "save playlist",
@@ -340,12 +370,18 @@ void PlayQueueOverlays::ShowSavePlaylistOverlay(
                 std::string playlistName = (*result)[index]->displayValue;
                 confirmOverwritePlaylist(library, playlistName, playlistId, tracks);
             }
-        });
+        },
+        selectedIndex);
 }
 
 void PlayQueueOverlays::ShowRenamePlaylistOverlay(musik::core::ILibraryPtr library) {
     std::shared_ptr<CategoryListQuery> query = queryPlaylists(library);
     auto result = query->GetResult();
+
+    if (!result->size()) {
+        showNoPlaylistsDialog();
+        return;
+    }
 
     std::shared_ptr<Adapter> adapter(new Adapter());
     adapter->SetSelectable(true);
@@ -366,6 +402,11 @@ void PlayQueueOverlays::ShowRenamePlaylistOverlay(musik::core::ILibraryPtr libra
 void PlayQueueOverlays::ShowDeletePlaylistOverlay(musik::core::ILibraryPtr library) {
     std::shared_ptr<CategoryListQuery> query = queryPlaylists(library);
     auto result = query->GetResult();
+
+    if (!result->size()) {
+        showNoPlaylistsDialog();
+        return;
+    }
 
     std::shared_ptr<Adapter> adapter(new Adapter());
     adapter->SetSelectable(true);
