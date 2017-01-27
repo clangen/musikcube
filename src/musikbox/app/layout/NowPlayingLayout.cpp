@@ -229,7 +229,7 @@ bool NowPlayingLayout::KeyPress(const std::string& key) {
         PlayQueueOverlays::ShowRenamePlaylistOverlay(this->library);
         return true;
     }
-    else if (key == "M-d") {
+    else if (key == "M-x") {
         PlayQueueOverlays::ShowDeletePlaylistOverlay(this->library);
         return true;
     }

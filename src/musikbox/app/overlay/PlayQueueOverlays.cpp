@@ -43,6 +43,7 @@
 #include <glue/query/CategoryListQuery.h>
 #include <glue/query/GetPlaylistQuery.h>
 #include <glue/query/SavePlaylistQuery.h>
+#include <glue/query/DeletePlaylistQuery.h>
 
 #include <cursespp/App.h>
 #include <cursespp/SimpleScrollAdapter.h>
@@ -106,6 +107,91 @@ static void showPlaylistListOverlay(
         .SetItemSelectedCallback(callback);
 
     cursespp::App::Overlays().Push(dialog);
+}
+
+static void confirmOverwritePlaylist(
+    musik::core::ILibraryPtr library,
+    const std::string& playlistName,
+    const DBID playlistId,
+    std::shared_ptr<TrackList> tracks)
+{
+    std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
+
+    (*dialog)
+        .SetTitle("musikbox")
+        .SetMessage("are you sure you want to overwrite the playlist '" + playlistName + "'?")
+        .AddButton("^[", "ESC", "no")
+        .AddButton(
+            "KEY_ENTER",
+            "ENTER",
+            "yes",
+            [library, playlistId, tracks](const std::string& str) {
+                library->Enqueue(SavePlaylistQuery::Replace(playlistId, tracks));
+            });
+
+    App::Overlays().Push(dialog);
+}
+
+static void createNewPlaylist(
+    std::shared_ptr<TrackList> tracks,
+    musik::core::ILibraryPtr library)
+{
+    std::shared_ptr<InputOverlay> dialog(new InputOverlay());
+
+    dialog->SetTitle("playlist name")
+        .SetWidth(DEFAULT_OVERLAY_WIDTH)
+        .SetText("")
+        .SetInputAcceptedCallback(
+            [tracks, library](const std::string& name) {
+                if (name.size()) {
+                    library->Enqueue(SavePlaylistQuery::Save(name, tracks));
+                }
+            });
+
+    cursespp::App::Overlays().Push(dialog);
+}
+
+static void renamePlaylist(
+    musik::core::ILibraryPtr library,
+    const DBID playlistId,
+    const std::string& oldName)
+{
+    std::shared_ptr<InputOverlay> dialog(new InputOverlay());
+
+    dialog->SetTitle("new playlist name")
+        .SetWidth(DEFAULT_OVERLAY_WIDTH)
+        .SetText(oldName)
+        .SetInputAcceptedCallback(
+            [library, playlistId](const std::string& name) {
+                if (name.size()) {
+                    library->Enqueue(SavePlaylistQuery::Rename(playlistId, name));
+                }
+            });
+
+    cursespp::App::Overlays().Push(dialog);
+}
+
+static void confirmDeletePlaylist(
+    musik::core::ILibraryPtr library,
+    const std::string& playlistName,
+    const DBID playlistId)
+{
+    std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
+
+    (*dialog)
+        .SetTitle("musikbox")
+        .SetMessage("are you sure you want to delete '" + playlistName + "'?")
+        .AddButton("^[", "ESC", "no")
+        .AddButton(
+            "KEY_ENTER",
+            "ENTER",
+            "yes",
+            [library, playlistId](const std::string& str) {
+                library->Enqueue(std::shared_ptr<DeletePlaylistQuery>(
+                    new DeletePlaylistQuery(playlistId)));
+            });
+
+    App::Overlays().Push(dialog);
 }
 
 PlayQueueOverlays::PlayQueueOverlays() {
@@ -225,48 +311,6 @@ void PlayQueueOverlays::ShowLoadPlaylistOverlay(
         });
 }
 
-static void createNewPlaylist(
-    std::shared_ptr<TrackList> tracks,
-    musik::core::ILibraryPtr library)
-{
-    std::shared_ptr<InputOverlay> dialog(new InputOverlay());
-
-    dialog->SetTitle("playlist name")
-        .SetWidth(DEFAULT_OVERLAY_WIDTH)
-        .SetText("")
-        .SetInputAcceptedCallback(
-            [tracks, library](const std::string& name) {
-                if (name.size()) {
-                    library->Enqueue(SavePlaylistQuery::Save(name, tracks));
-                }
-            });
-
-    cursespp::App::Overlays().Push(dialog);
-}
-
-static void confirmOverwritePlaylist(
-    musik::core::ILibraryPtr library,
-    const std::string& playlistName,
-    const DBID playlistId,
-    std::shared_ptr<TrackList> tracks)
-{
-    std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
-
-    (*dialog)
-        .SetTitle("musikbox")
-        .SetMessage("are you sure you want to overwrite the playlist '" + playlistName + "'?")
-        .AddButton("^[", "ESC", "no")
-        .AddButton(
-            "KEY_ENTER",
-            "ENTER",
-            "yes",
-            [library, playlistId, tracks](const std::string& str) {
-                library->Enqueue(SavePlaylistQuery::Replace(playlistId, tracks));
-            });
-
-    App::Overlays().Push(dialog);
-}
-
 void PlayQueueOverlays::ShowSavePlaylistOverlay(
     musik::core::audio::PlaybackService& playback,
     musik::core::ILibraryPtr library)
@@ -299,26 +343,6 @@ void PlayQueueOverlays::ShowSavePlaylistOverlay(
         });
 }
 
-static void renamePlaylist(
-    musik::core::ILibraryPtr library,
-    const DBID playlistId,
-    const std::string& oldName)
-{
-    std::shared_ptr<InputOverlay> dialog(new InputOverlay());
-
-    dialog->SetTitle("new playlist name")
-        .SetWidth(DEFAULT_OVERLAY_WIDTH)
-        .SetText(oldName)
-        .SetInputAcceptedCallback(
-            [library, playlistId](const std::string& name) {
-                if (name.size()) {
-                    library->Enqueue(SavePlaylistQuery::Rename(playlistId, name));
-                }
-            });
-
-    cursespp::App::Overlays().Push(dialog);
-}
-
 void PlayQueueOverlays::ShowRenamePlaylistOverlay(musik::core::ILibraryPtr library) {
     std::shared_ptr<CategoryListQuery> query = queryPlaylists(library);
     auto result = query->GetResult();
@@ -340,5 +364,22 @@ void PlayQueueOverlays::ShowRenamePlaylistOverlay(musik::core::ILibraryPtr libra
 }
 
 void PlayQueueOverlays::ShowDeletePlaylistOverlay(musik::core::ILibraryPtr library) {
-    /* stubbed */
+    std::shared_ptr<CategoryListQuery> query = queryPlaylists(library);
+    auto result = query->GetResult();
+
+    std::shared_ptr<Adapter> adapter(new Adapter());
+    adapter->SetSelectable(true);
+    addPlaylistsToAdapter(adapter, result);
+
+    showPlaylistListOverlay(
+        "delete playlist",
+        adapter,
+        [library, result]
+        (cursespp::IScrollAdapterPtr adapter, size_t index) {
+            if (index != ListWindow::NO_SELECTION) {
+                DBID playlistId = (*result)[index]->id;
+                std::string playlistName = (*result)[index]->displayValue;
+                confirmDeletePlaylist(library, playlistName, playlistId);
+            }
+        });
 }

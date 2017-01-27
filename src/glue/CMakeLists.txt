@@ -3,6 +3,7 @@ set(GLUE_SOURCES
   ./query/GetPlaylistQuery.cpp
   ./query/CategoryListQuery.cpp
   ./query/CategoryTrackListQuery.cpp
+  ./query/DeletePlaylistQuery.cpp
   ./query/NowPlayingTrackListQuery.cpp
   ./query/SavePlaylistQuery.cpp
   ./query/SearchTrackListQuery.cpp
