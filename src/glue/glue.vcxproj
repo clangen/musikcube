@@ -97,6 +97,7 @@
     <ClInclude Include="query\CategoryTrackListQuery.h" />
     <ClInclude Include="query\GetPlaylistQuery.h" />
     <ClInclude Include="query\NowPlayingTrackListQuery.h" />
+    <ClInclude Include="query\SavePlaylistQuery.h" />
     <ClInclude Include="query\SearchTrackListQuery.h" />
     <ClInclude Include="query\TrackListQueryBase.h" />
     <ClInclude Include="util\Duration.h" />
@@ -112,6 +113,7 @@
     <ClCompile Include="query\CategoryTrackListQuery.cpp" />
     <ClCompile Include="query\GetPlaylistQuery.cpp" />
     <ClCompile Include="query\NowPlayingTrackListQuery.cpp" />
+    <ClCompile Include="query\SavePlaylistQuery.cpp" />
     <ClCompile Include="query\SearchTrackListQuery.cpp" />
     <ClCompile Include="util\Duration.cpp" />
     <ClCompile Include="util\Playback.cpp" />

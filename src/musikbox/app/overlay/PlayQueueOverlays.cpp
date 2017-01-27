@@ -244,6 +244,29 @@ static void createNewPlaylist(
     cursespp::App::Overlays().Push(dialog);
 }
 
+static void confirmOverwritePlaylist(
+    musik::core::ILibraryPtr library,
+    const std::string& playlistName,
+    const DBID playlistId,
+    std::shared_ptr<TrackList> tracks)
+{
+    std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
+
+    (*dialog)
+        .SetTitle("musikbox")
+        .SetMessage("are you sure you want to overwrite the playlist '" + playlistName + "'?")
+        .AddButton("^[", "ESC", "no")
+        .AddButton(
+            "KEY_ENTER",
+            "ENTER",
+            "yes",
+            [library, playlistId, tracks](const std::string& str) {
+                library->Enqueue(SavePlaylistQuery::Replace(playlistId, tracks));
+            });
+
+    App::Overlays().Push(dialog);
+}
+
 void PlayQueueOverlays::ShowSavePlaylistOverlay(
     musik::core::audio::PlaybackService& playback,
     musik::core::ILibraryPtr library)
@@ -270,7 +293,8 @@ void PlayQueueOverlays::ShowSavePlaylistOverlay(
             else { /* replace existing */
                 --index;
                 DBID playlistId = (*result)[index]->id;
-                library->Enqueue(SavePlaylistQuery::Replace(playlistId, tracks));
+                std::string playlistName = (*result)[index]->displayValue;
+                confirmOverwritePlaylist(library, playlistName, playlistId, tracks);
             }
         });
 }

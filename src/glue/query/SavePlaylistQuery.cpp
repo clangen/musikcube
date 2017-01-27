@@ -32,6 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+#include "pch.hpp"
 #include "SavePlaylistQuery.h"
 
 #include <core/db/ScopedTransaction.h>
@@ -182,7 +183,7 @@ bool SavePlaylistQuery::ReplacePlaylist(musik::core::db::Connection &db) {
 }
 
 bool SavePlaylistQuery::OnRun(musik::core::db::Connection &db) {
-    if (playlistName.size() && playlistId != 0) {
+    if (playlistName.size() && playlistId != -1) {
         return this->RenamePlaylist(db);
     }
     else if (playlistId != -1) {

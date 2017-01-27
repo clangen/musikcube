@@ -45,6 +45,9 @@
     <ClInclude Include="query\GetPlaylistQuery.h">
       <Filter>src\query</Filter>
     </ClInclude>
+    <ClInclude Include="query\SavePlaylistQuery.h">
+      <Filter>src\query</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -72,6 +75,9 @@
       <Filter>src\query</Filter>
     </ClCompile>
     <ClCompile Include="query\GetPlaylistQuery.cpp">
+      <Filter>src\query</Filter>
+    </ClCompile>
+    <ClCompile Include="query\SavePlaylistQuery.cpp">
       <Filter>src\query</Filter>
     </ClCompile>
   </ItemGroup>
