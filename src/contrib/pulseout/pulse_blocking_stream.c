@@ -515,7 +515,7 @@ int pa_blocking_set_volume(pa_blocking *p, int volume, int *rerror) {
 
     CHECK_VALIDITY_RETURN_ANY(rerror, p->direction == PA_STREAM_PLAYBACK, PA_ERR_BADSTATE, -1);
     CHECK_VALIDITY_RETURN_ANY(rerror, volume >= 0, PA_ERR_INVALID, -1);
-    CHECK_VALIDITY_RETURN_ANY(rerror, volume <= 65535, PA_ERR_INVALID, -1);
+    CHECK_VALIDITY_RETURN_ANY(rerror, volume <= 65536, PA_ERR_INVALID, -1);
 
     pa_threaded_mainloop_lock(p->mainloop);
     CHECK_DEAD_GOTO(p, rerror, unlock_and_fail);

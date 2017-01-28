@@ -46,6 +46,7 @@ PulseOut::PulseOut() {
     this->audioConnection = nullptr;
     this->state = StateStopped;
     this->volume = 1.0f;
+    this->volumeUpdated = false;
     this->channels = 0;
     this->rate = 0;
 }
@@ -142,10 +143,14 @@ void PulseOut::Resume() {
 
 void PulseOut::SetVolume(double volume) {
     Lock lock(this->stateMutex);
+    if (volume > 1.0) { volume = 1.0; }
+    if (volume < 0) { volume = 0; }
     this->volume = volume;
+    this->volumeUpdated = false;
     if (this->audioConnection) {
         int normalized = (int) round((double) PA_VOLUME_NORM * volume);
-        pa_blocking_set_volume(this->audioConnection, normalized, 0);
+        this->volumeUpdated = pa_blocking_set_volume(this->audioConnection, normalized, 0) == 0;
+        std::cerr << "PulseOut: volumeUpdated = " << this->volumeUpdated << "\n";
     }
 }
 
@@ -167,6 +172,10 @@ int PulseOut::Play(IBuffer *buffer, IBufferProvider* provider) {
 
         if (!this->audioConnection || this->state != StatePlaying) {
             return OutputInvalidState;
+        }
+
+        if (!this->volumeUpdated) {
+            this->SetVolume(this->volume);
         }
 
         pa_blocking_write(
