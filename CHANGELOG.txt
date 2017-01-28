@@ -17,6 +17,8 @@ user-facing:
   resources to the play queue by pressing ALT+ENTER.
 * fixed a crash when trying to play a track that has been removed from the
   database
+* fixed (maybe) an impossible-to-reproduce bug in PulseAudio where the output
+  volume was not getting properly initialized
 * removed "esc focuses shortcut bar" setting. no longer useful.
 
 low-level:
