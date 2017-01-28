@@ -522,6 +522,18 @@ void Window::Create() {
         absoluteXOffset + this->x);
 
     if (this->frame) { /* can fail if the screen size is too small. */
+        /* resolve our current colors colors */
+
+        bool focused = this->IsFocused();
+
+        int64 currentFrameColor = focused
+            ? this->focusedFrameColor : this->frameColor;
+
+        int64 currentContentColor = focused
+            ? this->focusedContentColor : this->contentColor;
+
+        /* create the corresponding panel. required for z-ordering. */
+
         this->framePanel = new_panel(this->frame);
 
         /* if we were asked not to draw a frame, we'll set the frame equal to
@@ -530,8 +542,8 @@ void Window::Create() {
         if (!this->drawFrame) {
             this->content = this->frame;
 
-            if (this->contentColor != -1) {
-                wbkgd(this->frame, COLOR_PAIR(this->contentColor));
+            if (currentContentColor != CURSESPP_DEFAULT_COLOR) {
+                wbkgd(this->frame, COLOR_PAIR(currentContentColor));
             }
         }
 
@@ -556,12 +568,12 @@ void Window::Create() {
 
             this->contentPanel = new_panel(this->content);
 
-            if (this->frameColor != -1) {
-                wbkgd(this->frame, COLOR_PAIR(this->frameColor));
+            if (currentFrameColor != CURSESPP_DEFAULT_COLOR) {
+                wbkgd(this->frame, COLOR_PAIR(currentFrameColor));
             }
 
-            if (this->contentColor != -1) {
-                wbkgd(this->content, COLOR_PAIR(this->contentColor));
+            if (currentContentColor != CURSESPP_DEFAULT_COLOR) {
+                wbkgd(this->content, COLOR_PAIR(currentContentColor));
             }
         }
 
