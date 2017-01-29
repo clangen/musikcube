@@ -78,6 +78,10 @@ namespace musik {
                     PlayQueueMoveUp,
                     PlayQueueMoveDown,
                     PlayQueueDelete,
+                    PlayQueuePlaylistLoad,
+                    PlayQueuePlaylistSave,
+                    PlayQueuePlaylistRename,
+                    PlayQueuePlaylistDelete,
 
                     /* indexer */
                     RescanMetadata,

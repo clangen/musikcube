@@ -214,22 +214,22 @@ bool NowPlayingLayout::KeyPress(const std::string& key) {
             return true;
         }
     }
-    else if (key == "M-l") {
+    else if (Hotkeys::Is(Hotkeys::PlayQueuePlaylistLoad, key)) {
         PlayQueueOverlays::ShowLoadPlaylistOverlay(
             this->playback,
             this->library,
             std::bind(&NowPlayingLayout::OnPlaylistSelected, this, std::placeholders::_1));
         return true;
     }
-    else if (key == "M-s") {
+    else if (Hotkeys::Is(Hotkeys::PlayQueuePlaylistSave, key)) {
         PlayQueueOverlays::ShowSavePlaylistOverlay(this->playback, this->library);
         return true;
     }
-    else if (key == "M-r") {
+    else if (Hotkeys::Is(Hotkeys::PlayQueuePlaylistRename, key)) {
         PlayQueueOverlays::ShowRenamePlaylistOverlay(this->library);
         return true;
     }
-    else if (key == "M-x") {
+    else if (Hotkeys::Is(Hotkeys::PlayQueuePlaylistDelete, key)) {
         PlayQueueOverlays::ShowDeletePlaylistOverlay(this->library);
         return true;
     }
