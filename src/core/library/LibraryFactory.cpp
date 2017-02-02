@@ -81,6 +81,10 @@ ILibraryPtr LibraryFactory::AddLibrary(int id, int type, const std::string& name
 }
 
 void LibraryFactory::Shutdown() {
+    for (ILibraryPtr library : this->libraries) {
+        library->Close();
+    }
+
     Instance().libraries.clear();
 }
 

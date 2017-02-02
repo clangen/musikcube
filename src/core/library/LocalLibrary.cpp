@@ -98,10 +98,7 @@ LocalLibrary::LocalLibrary(std::string name,int id)
 }
 
 LocalLibrary::~LocalLibrary() {
-    this->Exit();
-    this->thread->join();
-    delete this->thread;
-    delete this->indexer;
+    this->Close();
 }
 
 int LocalLibrary::Id() {
@@ -110,6 +107,32 @@ int LocalLibrary::Id() {
 
 const std::string& LocalLibrary::Name() {
     return this->name;
+}
+
+void LocalLibrary::Close() {
+    std::thread* thread = nullptr;
+
+    {
+        std::unique_lock<std::mutex> lock(this->mutex);
+
+        if (this->indexer) {
+            delete this->indexer;
+            this->indexer = nullptr;
+        }
+
+        if (this->thread) {
+            thread = this->thread;
+            this->thread = nullptr;
+            this->exit = true;
+            this->queryQueue.clear();
+            this->Exit();
+        }
+    }
+
+    if (thread) {
+        thread->join();
+        delete thread;
+    }
 }
 
 std::string LocalLibrary::GetLibraryDirectory() {
@@ -134,7 +157,11 @@ std::string LocalLibrary::GetDatabaseFilename() {
 }
 
 int LocalLibrary::Enqueue(IQueryPtr query, unsigned int options) {
-    std::unique_lock<std::recursive_mutex> lock(this->mutex);
+    std::unique_lock<std::mutex> lock(this->mutex);
+
+    if (this->exit) { /* closed */
+        return -1;
+    }
 
     if (options & ILibrary::QuerySynchronous) {
         this->RunQuery(query, false); /* false = do not notify via QueryCompleted */
@@ -152,18 +179,32 @@ int LocalLibrary::Enqueue(IQueryPtr query, unsigned int options) {
 }
 
 bool LocalLibrary::Exited() {
-    std::unique_lock<std::recursive_mutex> lock(this->mutex);
     return this->exit;
 }
 
 void LocalLibrary::Exit() {
-    {
-        std::unique_lock<std::recursive_mutex> lock(this->mutex);
-        this->exit = true;
-    }
-
-    /* kick sleeping threads back to the top of the loop */
+    this->exit = true;
     this->queueCondition.notify_all();
+}
+
+void LocalLibrary::ThreadProc() {
+    IQueryPtr query;
+
+    while (true) {
+        std::unique_lock<std::mutex> lock(this->mutex);
+
+        if (query = GetNextQuery()) {
+            this->RunQuery(query);
+        }
+
+        if (!this->queryQueue.size() && !this->Exited()) {
+            this->queueCondition.wait(lock);
+        }
+
+        if (this->Exited()) {
+            return;
+        }
+    }
 }
 
 IQueryPtr LocalLibrary::GetNextQuery() {
@@ -203,24 +244,6 @@ void LocalLibrary::RunQuery(IQueryPtr query, bool notify) {
         }
 
         query.reset();
-    }
-}
-
-void LocalLibrary::ThreadProc() {
-    while (!this->Exited()) {
-        IQueryPtr query;
-
-        {
-            std::unique_lock<std::recursive_mutex> lock(this->mutex);
-            query = GetNextQuery();
-
-            while (!query && !this->Exited()) {
-                this->queueCondition.wait(lock);
-                query = GetNextQuery();
-            }
-        }
-
-        this->RunQuery(query);
     }
 }
 

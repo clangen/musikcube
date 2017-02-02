@@ -74,6 +74,7 @@ namespace musik { namespace core { namespace library {
             virtual int Id();
             virtual const std::string& Name();
             virtual void SetMessageQueue(musik::core::runtime::IMessageQueue& queue);
+            virtual void Close();
 
             /* IMessageTarget */
             virtual void ProcessMessage(musik::core::runtime::IMessage &message);
@@ -107,8 +108,8 @@ namespace musik { namespace core { namespace library {
             bool exit;
 
             std::thread* thread;
-            std::condition_variable_any queueCondition;
-            std::recursive_mutex mutex;
+            std::condition_variable queueCondition;
+            std::mutex mutex;
 
             core::IIndexer *indexer;
             core::db::Connection db;

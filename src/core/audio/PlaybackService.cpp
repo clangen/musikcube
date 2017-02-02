@@ -206,7 +206,6 @@ void PlaybackService::PrepareNextTrack() {
 void PlaybackService::SetRepeatMode(RepeatMode mode) {
     if (this->repeatMode != mode) {
         this->repeatMode = mode;
-        this->ModeChanged();
         POST(this, MESSAGE_PREPARE_NEXT_TRACK, NO_POSITION, 0);
         POST(this, MESSAGE_MODE_CHANGED, 0, 0);
     }
@@ -244,6 +243,8 @@ void PlaybackService::ToggleShuffle() {
             POST(this, MESSAGE_PREPARE_NEXT_TRACK, NO_POSITION, 0);
         }
     }
+
+    POST(this, MESSAGE_MODE_CHANGED, 0, 0);
 }
 
 void PlaybackService::ProcessMessage(IMessage &message) {
@@ -323,6 +324,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         for (auto it = remotes.begin(); it != remotes.end(); it++) {
             (*it)->OnModeChanged(repeatMode, shuffled);
         }
+        this->ModeChanged();
     }
     else if (type == MESSAGE_TIME_CHANGED) {
         this->TimeChanged(transport.Position());
