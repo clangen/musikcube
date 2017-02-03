@@ -193,7 +193,7 @@ void LocalLibrary::ThreadProc() {
     while (true) {
         std::unique_lock<std::mutex> lock(this->mutex);
 
-        if (query = GetNextQuery()) {
+        if ((query = GetNextQuery())) {
             this->RunQuery(query);
         }
 
