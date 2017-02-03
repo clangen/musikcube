@@ -220,7 +220,7 @@ TrackMetadataQuery::TrackMetadataQuery(DBID trackId, ILibraryPtr library) {
 
 bool TrackMetadataQuery::OnRun(Connection& db) {
     static const std::string query =
-        "SELECT DISTINCT t.id, t.track, t.disc, t.bpm, t.duration, t.filesize, t.year, t.title, t.filename, t.thumbnail_id, al.name AS album, alar.name AS album_artist, gn.name AS genre, ar.name AS artist, t.filetime "
+        "SELECT DISTINCT t.id, t.track, t.disc, t.bpm, t.duration, t.filesize, t.year, t.title, t.filename, t.thumbnail_id, al.name AS album, alar.name AS album_artist, gn.name AS genre, ar.name AS artist, t.filetime, t.visual_genre_id, t.visual_artist_id, t.album_artist_id, t.album_id "
         "FROM tracks t, paths p, albums al, artists alar, artists ar, genres gn "
         "WHERE t.id=? AND t.album_id=al.id AND t.album_artist_id=alar.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id ";
 
@@ -244,6 +244,10 @@ bool TrackMetadataQuery::OnRun(Connection& db) {
         track->SetValue(constants::Track::GENRE, trackQuery.ColumnText(12));
         track->SetValue(constants::Track::ARTIST, trackQuery.ColumnText(13));
         track->SetValue(constants::Track::FILETIME, trackQuery.ColumnText(14));
+        track->SetValue(constants::Track::GENRE_ID, trackQuery.ColumnText(15));
+        track->SetValue(constants::Track::ARTIST_ID, trackQuery.ColumnText(16));
+        track->SetValue(constants::Track::ALBUM_ARTIST_ID, trackQuery.ColumnText(17));
+        track->SetValue(constants::Track::ALBUM_ID, trackQuery.ColumnText(18));
 
         this->result = track;
         return true;
