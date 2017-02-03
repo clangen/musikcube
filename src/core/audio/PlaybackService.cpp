@@ -255,32 +255,35 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         int64 eventType = streamMessage->GetEventType();
 
         if (eventType == StreamPlaying) {
-            if (this->nextIndex != NO_POSITION) {
-                /* in most cases when we get here it means that the next track is
-                starting, so we want to update our internal index. however, because
-                things are asynchronous, this may not always be the case, especially if
-                the tracks are very short, or the user is advancing through songs very
-                quickly. make compare the track URIs before we update internal state. */
-                if (this->nextIndex >= this->Count()) {
-                    this->nextIndex = NO_POSITION;
-                    this->transport.PrepareNextTrack("");
-                    return;
+            TrackPtr track;
+
+            {
+                std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
+
+                if (this->nextIndex != NO_POSITION) {
+                    /* in most cases when we get here it means that the next track is
+                    starting, so we want to update our internal index. however, because
+                    things are asynchronous, this may not always be the case, especially if
+                    the tracks are very short, or the user is advancing through songs very
+                    quickly. make compare the track URIs before we update internal state. */
+                    if (this->nextIndex >= this->Count()) {
+                        this->nextIndex = NO_POSITION;
+                        this->transport.PrepareNextTrack("");
+                        return;
+                    }
+
+                    if (this->GetTrackAtIndex(this->nextIndex)->Uri() == streamMessage->GetUri()) {
+                        this->index = this->nextIndex;
+                        this->nextIndex = NO_POSITION;
+                    }
                 }
 
-                if (this->GetTrackAtIndex(this->nextIndex)->Uri() == streamMessage->GetUri()) {
-                    this->index = this->nextIndex;
-                    this->nextIndex = NO_POSITION;
+                if (this->index != NO_POSITION) {
+                    track = this->playlist.Get(this->index);
                 }
             }
 
-            if (this->index != NO_POSITION) {
-                TrackPtr track;
-
-                {
-                    std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
-                    track = this->playlist.Get(this->index);
-                }
-
+            if (track) {
                 this->OnTrackChanged(this->index, track);
             }
 
@@ -364,6 +367,8 @@ bool PlaybackService::Previous() {
         return false;
     }
 
+    std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
+    
     if (transport.Position() > PREVIOUS_GRACE_PERIOD) {
         this->Play(index);
         return true;
