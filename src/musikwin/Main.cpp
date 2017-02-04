@@ -43,6 +43,7 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 #include <core/library/LibraryFactory.h>
 #include <core/audio/PlaybackService.h>
+#include <core/support/Preferences.h>
 #include <core/audio/Visualizer.h>
 
 #include <glue/audio/MasterTransport.h>
@@ -60,6 +61,8 @@ using namespace musik::win;
 using namespace win32cpp;
 
 int APIENTRY _tWinMain(HINSTANCE instance, HINSTANCE previousInstance, LPTSTR commandLine, int showCommand) {
+    Preferences::LoadPluginPreferences();
+
     Application::Initialize(instance, previousInstance, commandLine, showCommand);
     Application& app = Application::Instance();
 
@@ -78,6 +81,7 @@ int APIENTRY _tWinMain(HINSTANCE instance, HINSTANCE previousInstance, LPTSTR co
 
     app.Run(mainWindow);
 
+    Preferences::SavePluginPreferences();
     LibraryFactory::Instance().Shutdown();
 
     return 0;
