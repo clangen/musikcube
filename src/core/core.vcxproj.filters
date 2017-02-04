@@ -330,5 +330,8 @@
     <ClInclude Include="sdk\ITrackList.h">
       <Filter>src\sdk</Filter>
     </ClInclude>
+    <ClInclude Include="sdk\IPreferences.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

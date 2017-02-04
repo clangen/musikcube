@@ -36,16 +36,19 @@
 
 #include <core/support/Preferences.h>
 #include <core/support/Common.h>
-
-#include <boost/lexical_cast.hpp>
+#include <core/plugin/PluginFactory.h>
 
 #include <unordered_map>
 
 using nlohmann::json;
 using namespace musik::core;
 
-static std::unordered_map<std::string, std::weak_ptr<Preferences> > cache;
+static std::unordered_map<std::string, std::weak_ptr<Preferences> > componentCache;
+static std::unordered_map<std::string, std::shared_ptr<Preferences> > pluginCache;
 static std::mutex cacheMutex;
+
+#define CACHE_KEY(name, mode) \
+    boost::str(boost::format("%s-%s") % name % mode)
 
 #define FILENAME(x) musik::core::GetDataDirectory() + "/" + x + ".json"
 
@@ -95,8 +98,29 @@ static bool stringToFile(const std::string& fn, const std::string& str) {
     return (written == str.size());
 }
 
-#define CACHE_KEY(name, mode) \
-    boost::str(boost::format("%s-%s") % name % mode)
+void Preferences::LoadPluginPreferences() {
+    typedef void(*SetPreferencesPlugin)(musik::core::sdk::IPreferences*);
+
+    PluginFactory::Instance().QueryFunction<SetPreferencesPlugin>(
+        "SetPreferences",
+        [](musik::core::sdk::IPlugin* plugin, SetPreferencesPlugin func) {
+            std::string name = plugin->Name();
+            name.erase(std::remove_if(name.begin(), name.end(), ::isspace), name.end());
+            std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+            name = "plugin_" + name; /* filename = nowhitespace(tolower(name)).json */
+
+            if (pluginCache.find(name) == pluginCache.end()) {
+                pluginCache[name] = std::shared_ptr<Preferences>(
+                    new Preferences(name, Preferences::ModeAutoSave));
+            }
+
+            func(pluginCache[name].get());
+        });
+}
+
+void Preferences::SavePluginPreferences() {
+    pluginCache.clear(); /* dtors will save */
+}
 
 std::shared_ptr<Preferences> Preferences::ForComponent(
     const std::string& c, Preferences::Mode mode)
@@ -105,8 +129,8 @@ std::shared_ptr<Preferences> Preferences::ForComponent(
 
     std::string key = CACHE_KEY(c, mode);
 
-    auto it = cache.find(key);
-    if (it != cache.end()) {
+    auto it = componentCache.find(key);
+    if (it != componentCache.end()) {
         auto weak = it->second;
         try {
             auto shared = weak.lock();
@@ -120,7 +144,7 @@ std::shared_ptr<Preferences> Preferences::ForComponent(
     }
 
     std::shared_ptr<Preferences> prefs(new Preferences(c, mode));
-    cache[key] = prefs;
+    componentCache[key] = prefs;
     return prefs;
 }
 
@@ -211,4 +235,39 @@ void Preferences::Save() {
     }
 
     stringToFile(FILENAME(this->component), this->json.dump(2));
+}
+
+/* SDK IPreferences interface */
+
+bool Preferences::GetBool(const char* key, bool defaultValue) {
+    return this->GetBool(std::string(key), defaultValue);
+}
+
+int Preferences::GetInt(const char* key, int defaultValue) {
+    return this->GetInt(std::string(key), defaultValue);
+}
+
+double Preferences::GetDouble(const char* key, double defaultValue) {
+    return this->GetDouble(std::string(key), defaultValue);
+}
+
+int Preferences::GetString(const char* key, char* dst, size_t size, const char* defaultValue) {
+    std::string value = this->GetString(std::string(key), defaultValue);
+    return CopyString(value, dst, size);
+}
+
+void Preferences::SetBool(const char* key, bool value) {
+    this->SetBool(std::string(key), value);
+}
+
+void Preferences::SetInt(const char* key, int value) {
+    this->SetInt(std::string(key), value);
+}
+
+void Preferences::SetDouble(const char* key, double value) {
+    this->SetDouble(std::string(key), value);
+}
+
+void Preferences::SetString(const char* key, const char* value) {
+    this->SetString(std::string(key), value);
 }

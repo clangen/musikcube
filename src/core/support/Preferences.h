@@ -40,11 +40,12 @@
 
 #include <core/config.h>
 #include <core/db/Connection.h>
+#include <core/sdk/IPreferences.h>
 
 #include <json.hpp>
 
 namespace musik { namespace core {
-    class Preferences {
+    class Preferences : public musik::core::sdk::IPreferences {
         public:
             enum Mode {
                 ModeReadOnly,
@@ -52,20 +53,35 @@ namespace musik { namespace core {
                 ModeAutoSave
             };
 
+            static void LoadPluginPreferences();
+            static void SavePluginPreferences();
+
             static std::shared_ptr<Preferences>
                 ForComponent(const std::string& c, Mode mode = ModeAutoSave);
 
             ~Preferences();
 
-            bool GetBool(const std::string& key, bool defaultValue = false);
-            int GetInt(const std::string& key, int defaultValue = 0);
-            double GetDouble(const std::string& key, double defaultValue = 0.0f);
-            std::string GetString(const std::string& key, const std::string& defaultValue = "");
+            /* IPreferences (for plugin use) */
+            virtual bool GetBool(const char* key, bool defaultValue = false);
+            virtual int GetInt(const char* key, int defaultValue = 0);
+            virtual double GetDouble(const char* key, double defaultValue = 0.0f);
+            virtual int GetString(const char* key, char* dst, size_t size, const char* defaultValue = "");
 
-            void SetBool(const std::string& key, bool value);
-            void SetInt(const std::string& key, int value);
-            void SetDouble(const std::string& key, double value);
-            void SetString(const std::string& key, const char* value);
+            virtual void SetBool(const char* key, bool value);
+            virtual void SetInt(const char* key, int value);
+            virtual void SetDouble(const char* key, double value);
+            virtual void SetString(const char* key, const char* value);
+
+            /* easier interface for internal use */
+            virtual bool GetBool(const std::string& key, bool defaultValue = false);
+            virtual int GetInt(const std::string& key, int defaultValue = 0);
+            virtual double GetDouble(const std::string& key, double defaultValue = 0.0f);
+            virtual std::string GetString(const std::string& key, const std::string& defaultValue = "");
+
+            virtual void SetBool(const std::string& key, bool value);
+            virtual void SetInt(const std::string& key, int value);
+            virtual void SetDouble(const std::string& key, double value);
+            virtual void SetString(const std::string& key, const char* value);
 
             void GetKeys(std::vector<std::string>& target);
             void Save();

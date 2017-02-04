@@ -26,6 +26,7 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -177,6 +178,7 @@
     <ClInclude Include="audio\Buffer.h" />
     <ClInclude Include="audio\Player.h" />
     <ClInclude Include="audio\Stream.h" />
+    <ClInclude Include="sdk\IPreferences.h" />
     <ClInclude Include="sdk\IRetainedTrack.h" />
     <ClInclude Include="sdk\ISpectrumVisualizer.h" />
     <ClInclude Include="sdk\ITrack.h" />

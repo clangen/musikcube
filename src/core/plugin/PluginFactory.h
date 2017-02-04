@@ -100,6 +100,27 @@ namespace musik { namespace core {
                 return plugins;
             }
 
+            template <class T> void QueryFunction(
+                const char* functionName,
+                std::function<void(musik::core::sdk::IPlugin*, T)> handler)
+            {
+                std::unique_lock<std::mutex> lock(this->mutex);
+
+                for (size_t i = 0; i < loadedDlls.size(); i++) {
+                    void* currentDll = loadedDlls[i];
+
+                    T funcPtr =
+#ifdef WIN32
+                        (T) GetProcAddress((HMODULE)(currentDll), functionName);
+#else
+                        (T) dlsym(currentDll, functionName);
+#endif
+                    if (funcPtr) {
+                        handler(loadedPlugins[i], funcPtr);
+                    }
+                }
+            }
+
         private:
 
             PluginFactory();

@@ -106,6 +106,8 @@ int main(int argc, char* argv[])
 
     musik::debug::init();
 
+    Preferences::LoadPluginPreferences();
+
     auto prefs = Preferences::ForComponent(
         musik::core::prefs::components::Settings);
 
@@ -170,6 +172,8 @@ int main(int argc, char* argv[])
     musik::core::audio::vis::HideSelectedVisualizer();
 
     LibraryFactory::Instance().Shutdown();
+    Preferences::SavePluginPreferences();
+
     musik::debug::deinit();
 
     return 0;
