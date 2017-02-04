@@ -36,13 +36,29 @@
 
 #include <core/library/query/QueryBase.h>
 #include <core/db/Connection.h>
+#include <core/sdk/IMetadataValueList.h>
+#include <core/support/Common.h>
 #include <memory>
 
 namespace musik {
     namespace glue {
         class CategoryListQuery : public musik::core::query::QueryBase {
             public:
-                struct Result {
+                /* note we implement the SDK's IMetadataValue interface so
+                we can return data to plugins! */
+                struct Result : public musik::core::sdk::IMetadataValue {
+                    virtual unsigned long long GetId() {
+                        return this->id;
+                    }
+
+                    virtual const char* GetValue() {
+                        return this->displayValue.c_str();
+                    }
+
+                    virtual int GetValue(char* dst, size_t size) {
+                        return musik::core::CopyString(this->displayValue, dst, size);
+                    }
+
                     std::string displayValue;
                     DBID id;
                 };
@@ -60,6 +76,8 @@ namespace musik {
 
                 virtual ResultList GetResult();
                 virtual int GetIndexOf(DBID id);
+
+                musik::core::sdk::IMetadataValueList* GetSdkResult();
 
             protected:
                 virtual bool OnRun(musik::core::db::Connection &db);

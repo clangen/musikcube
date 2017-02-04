@@ -165,6 +165,8 @@
     <ClInclude Include="sdk\IDataStream.h" />
     <ClInclude Include="sdk\IDataStreamFactory.h" />
     <ClInclude Include="sdk\IMetadataReader.h" />
+    <ClInclude Include="sdk\IMetadataValue.h" />
+    <ClInclude Include="sdk\IMetadataValueList.h" />
     <ClInclude Include="sdk\IOutput.h" />
     <ClInclude Include="sdk\IBufferProvider.h" />
     <ClInclude Include="sdk\IPcmVisualizer.h" />

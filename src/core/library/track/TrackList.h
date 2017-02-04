@@ -53,6 +53,7 @@ namespace musik { namespace core {
             virtual ~TrackList();
 
             /* ITrackList */
+            virtual void Release() { /* no delete this! not used directly by SDK. */ }
             virtual size_t Count();
             virtual musik::core::sdk::IRetainedTrack* GetRetainedTrack(size_t index);
             virtual unsigned long long GetId(size_t index);

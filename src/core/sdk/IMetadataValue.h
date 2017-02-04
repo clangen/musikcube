@@ -35,22 +35,15 @@
 #pragma once
 
 #include <stddef.h>
-#include "IRetainedTrack.h"
 
-namespace musik {
-    namespace core {
-        namespace sdk {
+namespace musik { namespace core { namespace sdk {
 
-            class ITrackList {
-                public:
-                    virtual void Release() = 0;
-                    virtual size_t Count() = 0;
-                    virtual IRetainedTrack* GetRetainedTrack(size_t index) = 0;
-                    virtual unsigned long long GetId(size_t index) = 0;
-                    virtual int IndexOf(unsigned long long id) = 0;
-            };
+    class IMetadataValue {
+        public:
+            virtual unsigned long long GetId() = 0;
+            virtual const char* GetValue() = 0;
+            virtual int GetValue(char* dst, size_t size) = 0;
+    };
 
-        }
-    }
-}
+} } }
 

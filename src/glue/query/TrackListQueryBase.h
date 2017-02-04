@@ -51,6 +51,41 @@ namespace musik {
                 virtual Result GetResult() = 0;
                 virtual Headers GetHeaders() = 0;
                 virtual size_t GetQueryHash() = 0;
+
+                virtual musik::core::sdk::ITrackList* GetSdkResult() {
+                    return new WrappedTrackList(GetResult());
+                }
+
+            private:
+                class WrappedTrackList : public musik::core::sdk::ITrackList {
+                    public:
+                        WrappedTrackList(Result wrapped) {
+                            this->wrapped = wrapped;
+                        }
+
+                        virtual void Release() {
+                            delete this;
+                        }
+
+                        virtual size_t Count() {
+                            return this->wrapped->Count();
+                        }
+
+                        virtual musik::core::sdk::IRetainedTrack* GetRetainedTrack(size_t index) {
+                            return this->wrapped->GetRetainedTrack(index);
+                        }
+
+                        virtual unsigned long long GetId(size_t index) {
+                            return this->wrapped->GetId(index);
+                        }
+
+                        virtual int IndexOf(unsigned long long id) {
+                            return this->wrapped->IndexOf(id);
+                        }
+
+                    private:
+                        Result wrapped;
+                };
         };
     }
 }
