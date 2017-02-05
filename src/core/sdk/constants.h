@@ -78,5 +78,35 @@ namespace musik {
                 ChannelSideRight = 256
             };
 
+            namespace category {
+                static const char* Album = "album";
+                static const char* Artist = "artist";
+                static const char* AlbumArtist = "album_artist";
+                static const char* Genre = "genre";
+                static const char* Playlist = "playlists";
+            }
+
+            namespace track {
+                static const char* Id = "id";
+                static const char* TrackNum = "track";
+                static const char* DiscNum = "disc";
+                static const char* Bpm = "bpm";
+                static const char* Duration = "duration";
+                static const char* Filesize = "filesize";
+                static const char* Year = "year";
+                static const char* Title = "title";
+                static const char* Filename = "filename";
+                static const char* ThumbnailId = "thumbnail_id";
+                static const char* Album = "album";
+                static const char* AlbumArtist = "album_artist";
+                static const char* Genre = "genre";
+                static const char* Artist = "artist";
+                static const char* Filetime = "filetime";
+                static const char* GenreId = "visual_genre_id";
+                static const char* ArtistId = "visual_artist_id";
+                static const char* AlbumArtistId = "album_artist_id";
+                static const char* AlbumId = "album_id";
+            }
+
             static const int SdkVersion = 3;
 } } }

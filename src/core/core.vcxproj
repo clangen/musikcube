@@ -99,6 +99,7 @@
     <ClCompile Include="library\Indexer.cpp" />
     <ClCompile Include="library\LocalLibrary.cpp" />
     <ClCompile Include="library\LibraryFactory.cpp" />
+    <ClCompile Include="library\LocalSimpleDataProvider.cpp" />
     <ClCompile Include="library\query\local\CategoryListQuery.cpp" />
     <ClCompile Include="library\query\local\CategoryTrackListQuery.cpp" />
     <ClCompile Include="library\query\local\DeletePlaylistQuery.cpp" />
@@ -122,6 +123,7 @@
     <ClCompile Include="audio\Player.cpp" />
     <ClCompile Include="audio\Stream.cpp" />
     <ClCompile Include="plugin\PluginFactory.cpp" />
+    <ClCompile Include="plugin\Plugins.cpp" />
     <ClCompile Include="runtime\Message.cpp" />
     <ClCompile Include="runtime\MessageQueue.cpp" />
     <ClCompile Include="support\Common.cpp" />
@@ -148,6 +150,7 @@
     <ClInclude Include="library\LocalLibrary.h" />
     <ClInclude Include="library\LibraryFactory.h" />
     <ClInclude Include="library\LocalLibraryConstants.h" />
+    <ClInclude Include="library\LocalSimpleDataProvider.h" />
     <ClInclude Include="library\query\local\CategoryListQuery.h" />
     <ClInclude Include="library\query\local\CategoryTrackListQuery.h" />
     <ClInclude Include="library\query\local\DeletePlaylistQuery.h" />
@@ -165,6 +168,7 @@
     <ClInclude Include="pch.hpp" />
     <ClInclude Include="config.h" />
     <ClInclude Include="plugin\PluginFactory.h" />
+    <ClInclude Include="plugin\Plugins.h" />
     <ClInclude Include="runtime\IMessage.h" />
     <ClInclude Include="runtime\IMessageQueue.h" />
     <ClInclude Include="runtime\IMessageTarget.h" />
@@ -196,6 +200,7 @@
     <ClInclude Include="audio\Stream.h" />
     <ClInclude Include="sdk\IPreferences.h" />
     <ClInclude Include="sdk\IRetainedTrack.h" />
+    <ClInclude Include="sdk\ISimpleDataProvider.h" />
     <ClInclude Include="sdk\ISpectrumVisualizer.h" />
     <ClInclude Include="sdk\ITrack.h" />
     <ClInclude Include="sdk\ITrackList.h" />

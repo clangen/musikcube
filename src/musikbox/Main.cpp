@@ -51,6 +51,7 @@
 #include <glue/audio/MasterTransport.h>
 
 #include <core/library/LibraryFactory.h>
+#include <core/plugin/Plugins.h>
 #include <core/support/PreferenceKeys.h>
 #include <core/audio/Visualizer.h>
 
@@ -68,6 +69,7 @@ using namespace musik::glue;
 using namespace musik::glue::audio;
 using namespace musik::core;
 using namespace musik::core::audio;
+using namespace musik::core::db::local;
 using namespace musik::box;
 using namespace cursespp;
 
@@ -106,11 +108,6 @@ int main(int argc, char* argv[])
 
     musik::debug::init();
 
-    Preferences::LoadPluginPreferences();
-
-    auto prefs = Preferences::ForComponent(
-        musik::core::prefs::components::Settings);
-
     ILibraryPtr library = LibraryFactory::Libraries().at(0);
     library->SetMessageQueue(Window::MessageQueue());
 
@@ -119,8 +116,13 @@ int main(int argc, char* argv[])
 
     GlobalHotkeys globalHotkeys(playback, library);
 
+    musik::core::plugin::InstallDependencies(library);
+
     {
         App app("musikbox"); /* must be before layout creation */
+
+        auto prefs = Preferences::ForComponent(
+            musik::core::prefs::components::Settings);
 
         app.SetCustomColorsDisabled(prefs->GetBool(
             musik::box::prefs::keys::DisableCustomColors.c_str(), false));
@@ -170,9 +172,9 @@ int main(int argc, char* argv[])
     }
 
     musik::core::audio::vis::HideSelectedVisualizer();
+    musik::core::plugin::UninstallDependencies();
 
     LibraryFactory::Instance().Shutdown();
-    Preferences::SavePluginPreferences();
 
     musik::debug::deinit();
 

@@ -158,33 +158,31 @@ std::string LocalLibrary::GetDatabaseFilename() {
     return this->GetLibraryDirectory() + "musik.db";
 }
 
-int LocalLibrary::Enqueue(LocalQueryPtr query, unsigned int options) {
-    std::unique_lock<std::mutex> lock(this->mutex);
-
-    if (this->exit) { /* closed */
-        return -1;
-    }
-
-    if (options & ILibrary::QuerySynchronous) {
-        this->RunQuery(query, false); /* false = do not notify via QueryCompleted */
-    }
-    else {
-        queryQueue.push_back(query);
-        queueCondition.notify_all();
-
-        if (VERBOSE_LOGGING) {
-            musik::debug::info(TAG, "query '" + query->Name() + "' enqueued");
-        }
-    }
-
-    return query->GetId();
-}
-
 int LocalLibrary::Enqueue(IQueryPtr query, unsigned int options) {
-    LocalQueryPtr casted = std::dynamic_pointer_cast<LocalQuery>(query);
-    if (casted) {
-        return this->Enqueue(casted, options);
+    LocalQueryPtr localQuery = std::dynamic_pointer_cast<LocalQuery>(query);
+
+    if (localQuery) {
+        std::unique_lock<std::mutex> lock(this->mutex);
+
+        if (this->exit) { /* closed */
+            return -1;
+        }
+
+        if (options & ILibrary::QuerySynchronous) {
+            this->RunQuery(localQuery, false); /* false = do not notify via QueryCompleted */
+        }
+        else {
+            queryQueue.push_back(localQuery);
+            queueCondition.notify_all();
+
+            if (VERBOSE_LOGGING) {
+                musik::debug::info(TAG, "query '" + localQuery->Name() + "' enqueued");
+            }
+        }
+
+        return localQuery->GetId();
     }
+
     return -1;
 }
 

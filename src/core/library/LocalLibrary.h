@@ -59,6 +59,7 @@ namespace musik { namespace core { namespace library {
     class LocalLibrary :
         public ILibrary,
         public musik::core::runtime::IMessageTarget,
+        public std::enable_shared_from_this<LocalLibrary>,
         boost::noncopyable
     {
         public:
@@ -71,7 +72,6 @@ namespace musik { namespace core { namespace library {
             virtual ~LocalLibrary();
 
             /* ILibrary */
-            virtual int Enqueue(LocalQueryPtr query, unsigned int options = 0);
             virtual int Enqueue(IQueryPtr query, unsigned int options = 0);
 
             virtual musik::core::IIndexer *Indexer();
@@ -83,19 +83,18 @@ namespace musik { namespace core { namespace library {
             /* IMessageTarget */
             virtual void ProcessMessage(musik::core::runtime::IMessage &message);
 
+            /* implementation specific */
             std::string GetLibraryDirectory();
             std::string GetDatabaseFilename();
-
             static void CreateDatabase(db::Connection &db);
-
-        protected:
-            virtual void Exit();
 
         private:
             typedef std::list<LocalQueryPtr> QueryList;
 
             LocalLibrary(std::string name, int id); /* ctor */
+
             void RunQuery(LocalQueryPtr query, bool notify = true);
+            virtual void Exit();
             bool Exited();
             void ThreadProc();
             LocalQueryPtr GetNextQuery();

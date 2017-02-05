@@ -18,6 +18,7 @@ set(CORE_SOURCES
   ./library/Indexer.cpp
   ./library/LibraryFactory.cpp
   ./library/LocalLibrary.cpp
+  ./library/LocalSimpleDataProvider.cpp
   ./library/query/local/GetPlaylistQuery.cpp
   ./library/query/local/CategoryListQuery.cpp
   ./library/query/local/CategoryTrackListQuery.cpp
@@ -31,6 +32,7 @@ set(CORE_SOURCES
   ./library/track/TrackList.cpp
   ./library/track/RetainedTrack.cpp
   ./plugin/PluginFactory.cpp
+  ./plugin/Plugins.cpp
   ./runtime/Message.cpp
   ./runtime/MessageQueue.cpp
   ./support/Common.cpp
