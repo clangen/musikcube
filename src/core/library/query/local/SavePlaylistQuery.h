@@ -34,39 +34,55 @@
 
 #pragma once
 
-#include <core/db/Connection.h>
-#include <core/library/track/Track.h>
 #include <core/library/query/QueryBase.h>
+#include <core/library/track/TrackList.h>
+#include <core/db/Connection.h>
+#include <memory>
 
-#include "TrackListQueryBase.h"
+namespace musik { namespace core { namespace db { namespace local {
 
-namespace musik {
-    namespace glue {
-        class CategoryTrackListQuery : public TrackListQueryBase {
-            public:
-                CategoryTrackListQuery(
-                    musik::core::ILibraryPtr library,
-                    const std::string& column,
-                    DBID id);
+    class SavePlaylistQuery : public musik::core::db::QueryBase<musik::core::db::Connection> {
+        public:
+            static std::shared_ptr<SavePlaylistQuery> Save(
+                const std::string& playlistName,
+                std::shared_ptr<musik::core::TrackList> tracks);
 
-                virtual ~CategoryTrackListQuery();
+            static std::shared_ptr<SavePlaylistQuery> Replace(
+                const DBID playlistId,
+                std::shared_ptr<musik::core::TrackList> tracks);
 
-                virtual std::string Name() { return "CategoryTrackListQuery"; }
+            static std::shared_ptr<SavePlaylistQuery> Rename(
+                const DBID playlistId,
+                const std::string& playlistName);
 
-                virtual Result GetResult();
-                virtual Headers GetHeaders();
-                virtual size_t GetQueryHash();
+            virtual std::string Name() { return "SavePlaylistQuery"; }
 
-            protected:
-                virtual bool OnRun(musik::core::db::Connection &db);
+            virtual ~SavePlaylistQuery();
 
-            private:
-                musik::core::ILibraryPtr library;
-                Result result;
-                Headers headers;
-                std::string column;
-                DBID id;
-                size_t hash;
-        };
-    }
-}
+        protected:
+            virtual bool OnRun(musik::core::db::Connection &db);
+
+        private:
+            SavePlaylistQuery(
+                const std::string& playlistName,
+                std::shared_ptr<musik::core::TrackList> tracks);
+
+            SavePlaylistQuery(
+                const DBID playlistId,
+                std::shared_ptr<musik::core::TrackList> tracks);
+
+            SavePlaylistQuery(
+                const DBID playlistId,
+                const std::string& newName);
+
+            bool CreatePlaylist(musik::core::db::Connection &db);
+            bool RenamePlaylist(musik::core::db::Connection &db);
+            bool ReplacePlaylist(musik::core::db::Connection &db);
+            bool AddTracksToPlaylist(musik::core::db::Connection &db, DBID playlistId);
+
+            std::string playlistName;
+            DBID playlistId;
+            std::shared_ptr<musik::core::TrackList> tracks;
+    };
+
+} } } }

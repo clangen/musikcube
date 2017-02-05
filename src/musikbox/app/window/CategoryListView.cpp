@@ -49,10 +49,11 @@
 
 using namespace musik::core;
 using namespace musik::core::audio;
+using namespace musik::core::db;
+using namespace musik::core::db::local;
 using namespace musik::core::library::constants;
 using namespace musik::core::runtime;
 using namespace musik::box;
-using namespace musik::glue;
 using namespace cursespp;
 
 CategoryListView::CategoryListView(
@@ -169,9 +170,9 @@ bool CategoryListView::KeyPress(const std::string& key) {
     return ListWindow::KeyPress(key);
 }
 
-void CategoryListView::OnQueryCompleted(musik::core::IQueryPtr query) {
+void CategoryListView::OnQueryCompleted(IQuery* query) {
     auto active = this->activeQuery;
-    if (query == active) {
+    if (active && query == active.get()) {
         int selectedIndex = -1;
         if (this->selectAfterQuery != 0) {
             selectedIndex = active->GetIndexOf(this->selectAfterQuery);

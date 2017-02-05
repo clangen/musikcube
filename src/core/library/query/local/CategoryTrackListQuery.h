@@ -40,31 +40,33 @@
 
 #include "TrackListQueryBase.h"
 
-namespace musik {
-    namespace glue {
-        class GetPlaylistQuery : public TrackListQueryBase {
-            public:
-                GetPlaylistQuery(
-                    musik::core::ILibraryPtr library,
-                    DBID playlistId);
+namespace musik { namespace core { namespace db { namespace local {
 
-                virtual ~GetPlaylistQuery();
+    class CategoryTrackListQuery : public TrackListQueryBase {
+        public:
+            CategoryTrackListQuery(
+                musik::core::ILibraryPtr library,
+                const std::string& column,
+                DBID id);
 
-                virtual std::string Name() { return "GetPlaylistQuery"; }
+            virtual ~CategoryTrackListQuery();
 
-                virtual Result GetResult();
-                virtual Headers GetHeaders();
-                virtual size_t GetQueryHash();
+            virtual std::string Name() { return "CategoryTrackListQuery"; }
 
-            protected:
-                virtual bool OnRun(musik::core::db::Connection &db);
+            virtual Result GetResult();
+            virtual Headers GetHeaders();
+            virtual size_t GetQueryHash();
 
-            private:
-                musik::core::ILibraryPtr library;
-                Result result;
-                Headers headers;
-                DBID playlistId;
-                size_t hash;
-        };
-    }
-}
+        protected:
+            virtual bool OnRun(musik::core::db::Connection &db);
+
+        private:
+            musik::core::ILibraryPtr library;
+            Result result;
+            Headers headers;
+            std::string column;
+            DBID id;
+            size_t hash;
+    };
+
+} } } }

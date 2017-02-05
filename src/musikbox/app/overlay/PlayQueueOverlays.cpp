@@ -39,11 +39,11 @@
 #include <core/audio/Visualizer.h>
 #include <core/library/LocalLibraryConstants.h>
 
-#include <glue/query/CategoryTrackListQuery.h>
-#include <glue/query/CategoryListQuery.h>
-#include <glue/query/GetPlaylistQuery.h>
-#include <glue/query/SavePlaylistQuery.h>
-#include <glue/query/DeletePlaylistQuery.h>
+#include <core/library/query/local/CategoryTrackListQuery.h>
+#include <core/library/query/local/CategoryListQuery.h>
+#include <core/library/query/local/GetPlaylistQuery.h>
+#include <core/library/query/local/SavePlaylistQuery.h>
+#include <core/library/query/local/DeletePlaylistQuery.h>
 
 #include <cursespp/App.h>
 #include <cursespp/SimpleScrollAdapter.h>
@@ -55,8 +55,9 @@
 
 using namespace musik::core;
 using namespace musik::core::audio;
+using namespace musik::core::db;
+using namespace musik::core::db::local;
 using namespace musik::core::library::constants;
-using namespace musik::glue;
 using namespace musik::box;
 using namespace cursespp;
 

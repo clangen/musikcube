@@ -35,54 +35,56 @@
 #pragma once
 
 #include <core/library/query/QueryBase.h>
-#include <core/library/track/TrackList.h>
 #include <core/db/Connection.h>
+#include <core/sdk/IMetadataValueList.h>
+#include <core/support/Common.h>
 #include <memory>
 
-namespace musik {
-    namespace glue {
-        class SavePlaylistQuery : public musik::core::query::QueryBase {
-            public:
-                static std::shared_ptr<SavePlaylistQuery> Save(
-                    const std::string& playlistName,
-                    std::shared_ptr<musik::core::TrackList> tracks);
+namespace musik { namespace core { namespace db { namespace local {
 
-                static std::shared_ptr<SavePlaylistQuery> Replace(
-                    const DBID playlistId,
-                    std::shared_ptr<musik::core::TrackList> tracks);
+    class CategoryListQuery : public musik::core::db::QueryBase<musik::core::db::Connection> {
+        public:
+            /* note we implement the SDK's IMetadataValue interface so
+            we can return data to plugins! */
+            struct Result : public musik::core::sdk::IMetadataValue {
+                virtual unsigned long long GetId() {
+                    return this->id;
+                }
 
-                static std::shared_ptr<SavePlaylistQuery> Rename(
-                    const DBID playlistId,
-                    const std::string& playlistName);
+                virtual const char* GetValue() {
+                    return this->displayValue.c_str();
+                }
 
-                virtual std::string Name() { return "SavePlaylistQuery"; }
+                virtual int GetValue(char* dst, size_t size) {
+                    return musik::core::CopyString(this->displayValue, dst, size);
+                }
 
-                virtual ~SavePlaylistQuery();
+                std::string displayValue;
+                DBID id;
+            };
 
-            protected:
-                virtual bool OnRun(musik::core::db::Connection &db);
+            typedef std::shared_ptr<std::vector<
+                std::shared_ptr<Result> > > ResultList;
 
-            private:
-                SavePlaylistQuery(
-                    const std::string& playlistName,
-                    std::shared_ptr<musik::core::TrackList> tracks);
+            CategoryListQuery(
+                const std::string& trackField,
+                const std::string& filter = "");
 
-                SavePlaylistQuery(
-                    const DBID playlistId,
-                    std::shared_ptr<musik::core::TrackList> tracks);
+            virtual ~CategoryListQuery();
 
-                SavePlaylistQuery(
-                    const DBID playlistId,
-                    const std::string& newName);
+            std::string Name() { return "CategoryListQuery"; }
 
-                bool CreatePlaylist(musik::core::db::Connection &db);
-                bool RenamePlaylist(musik::core::db::Connection &db);
-                bool ReplacePlaylist(musik::core::db::Connection &db);
-                bool AddTracksToPlaylist(musik::core::db::Connection &db, DBID playlistId);
+            virtual ResultList GetResult();
+            virtual int GetIndexOf(DBID id);
 
-                std::string playlistName;
-                DBID playlistId;
-                std::shared_ptr<musik::core::TrackList> tracks;
-        };
-    }
-}
+            musik::core::sdk::IMetadataValueList* GetSdkResult();
+
+        protected:
+            virtual bool OnRun(musik::core::db::Connection &db);
+
+            std::string trackField;
+            std::string filter;
+            ResultList result;
+    };
+
+} } } }

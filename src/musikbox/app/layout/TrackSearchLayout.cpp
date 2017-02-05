@@ -37,7 +37,7 @@
 #include <cursespp/Colors.h>
 #include <cursespp/Screen.h>
 #include <core/library/LocalLibraryConstants.h>
-#include <glue/query/SearchTrackListQuery.h>
+#include <core/library/query/local/SearchTrackListQuery.h>
 #include <app/util/Playback.h>
 #include <app/util/Hotkeys.h>
 #include <app/overlay/PlayQueueOverlays.h>
@@ -46,11 +46,11 @@
 
 using namespace musik::core;
 using namespace musik::core::audio;
+using namespace musik::core::db::local;
 using namespace musik::core::library;
 using namespace musik::core::library::constants;
 using namespace musik::core::runtime;
 using namespace musik::box;
-using namespace musik::glue;
 using namespace cursespp;
 
 #define SEARCH_HEIGHT 3

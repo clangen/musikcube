@@ -18,7 +18,13 @@ set(CORE_SOURCES
   ./library/Indexer.cpp
   ./library/LibraryFactory.cpp
   ./library/LocalLibrary.cpp
-  ./library/query/QueryBase.cpp
+  ./library/query/local/GetPlaylistQuery.cpp
+  ./library/query/local/CategoryListQuery.cpp
+  ./library/query/local/CategoryTrackListQuery.cpp
+  ./library/query/local/DeletePlaylistQuery.cpp
+  ./library/query/local/NowPlayingTrackListQuery.cpp
+  ./library/query/local/SavePlaylistQuery.cpp
+  ./library/query/local/SearchTrackListQuery.cpp
   ./library/track/IndexerTrack.cpp
   ./library/track/LibraryTrack.cpp
   ./library/track/Track.cpp

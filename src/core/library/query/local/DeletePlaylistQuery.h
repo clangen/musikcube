@@ -32,72 +32,25 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.hpp"
+#pragma once
 
 #include <core/library/query/QueryBase.h>
-#include <core/library/LocalLibrary.h>
-#include <atomic>
+#include <core/db/Connection.h>
 
-using namespace musik::core;
-using namespace musik::core::query;
+namespace musik { namespace core { namespace db { namespace local {
 
-static std::atomic<int> nextId(0);
+    class DeletePlaylistQuery : public musik::core::db::QueryBase<musik::core::db::Connection> {
+        public:
+            DeletePlaylistQuery(const DBID playlistId);
+            virtual ~DeletePlaylistQuery();
 
-QueryBase::QueryBase()
-: status(0)
-, options(0)
-, queryId(0)
-, cancel(false) {
-    this->queryId = nextId++;
-}
+            virtual std::string Name() { return "DeletePlaylistQuery"; }
 
-QueryBase::~QueryBase() {
-}
+        protected:
+            virtual bool OnRun(musik::core::db::Connection &db);
 
-std::string QueryBase::Name() {
-    return "QueryBase";
-}
+        private:
+            DBID playlistId;
+    };
 
-bool QueryBase::Run(db::Connection &db) {
-    this->SetStatus(Running);
-    try {
-        if (this->IsCanceled()) {
-            this->SetStatus(Canceled);
-            return true;
-        }
-        else if (OnRun(db)) {
-            this->SetStatus(Finished);
-            return true;
-        }
-    }
-    catch (...) {
-    }
-
-    this->SetStatus(Failed);
-    return false;
-}
-
-int QueryBase::GetStatus() {
-    std::unique_lock<std::mutex> lock(this->stateMutex);
-    return this->status;
-}
-
-void QueryBase::SetStatus(int status) {
-    std::unique_lock<std::mutex> lock(this->stateMutex);
-    this->status = status;
-}
-
-int QueryBase::GetId() {
-    std::unique_lock<std::mutex> lock(this->stateMutex);
-    return this->queryId;
-}
-
-int QueryBase::GetOptions() {
-    std::unique_lock<std::mutex> lock(this->stateMutex);
-    return this->options;
-}
-
-void QueryBase::SetOptions(int options) {
-    std::unique_lock<std::mutex> lock(this->stateMutex);
-    this->options = options;
-}
+} } } }

@@ -47,7 +47,7 @@ using musik::core::ILibraryPtr;
 
 using namespace musik::core::db;
 using namespace musik::core::library::constants;
-using namespace musik::glue;
+using namespace musik::core::db::local;
 
 GetPlaylistQuery::GetPlaylistQuery(ILibraryPtr library, DBID playlistId) {
     this->library = library;

@@ -52,6 +52,7 @@
 
 using namespace musik::core;
 using namespace musik::core::audio;
+using namespace musik::core::db;
 using namespace musik::core::library;
 using namespace musik::core::runtime;
 using namespace musik::box;
@@ -104,8 +105,8 @@ void TrackListView::Requery(std::shared_ptr<TrackListQueryBase> query) {
     this->library->Enqueue(this->query);
 }
 
-void TrackListView::OnQueryCompleted(IQueryPtr query) {
-    if (query == this->query) {
+void TrackListView::OnQueryCompleted(IQuery* query) {
+    if (this->query && query == this->query.get()) {
         if (this->query->GetStatus() == IQuery::Finished) {
             this->metadata = this->query->GetResult();
             this->headers = this->query->GetHeaders();

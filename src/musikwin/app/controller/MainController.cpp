@@ -35,15 +35,17 @@
 #include "MainController.h"
 #include <core/library/LocalLibraryConstants.h>
 #include <core/runtime/Message.h>
-#include <glue/query/SearchTrackListQuery.h>
+#include <core/library/query/local/SearchTrackListQuery.h>
 #include <glue/util/Playback.h>
 #include <glue/util/Duration.h>
 
 using namespace musik::win;
 using namespace musik::core;
+using namespace musik::core::db;
 using namespace musik::core::audio;
 using namespace musik::core::runtime;
 using namespace musik::glue;
+using namespace musik::core::db::local;
 using namespace musik::core::library;
 using namespace win32cpp;
 
@@ -247,10 +249,10 @@ void MainController::ProcessMessage(musik::core::runtime::IMessage &message) {
     }
 }
 
-void MainController::OnLibraryQueryCompleted(IQueryPtr query) {
-    if (this->trackListQuery.get() == query.get()) {
+void MainController::OnLibraryQueryCompleted(IQuery* query) {
+    if (this->trackListQuery.get() == query) {
         this->trackListDirty = true;
-        this->trackList = ((TrackListQueryBase *)query.get())->GetResult();
+        this->trackList = ((TrackListQueryBase *) query)->GetResult();
         this->trackListModel->SetTrackList(this->trackList);
     }
 }

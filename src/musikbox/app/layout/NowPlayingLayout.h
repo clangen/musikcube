@@ -73,7 +73,7 @@ namespace musik {
                 bool ProcessEditOperation(const std::string& key);
 
                 /* callbacks */
-                void OnTrackListRequeried(musik::glue::TrackListQueryBase* query);
+                void OnTrackListRequeried(musik::core::db::local::TrackListQueryBase* query);
                 void OnPlaybackShuffled(bool shuffled);
                 int64 RowDecorator(musik::core::TrackPtr track, size_t index);
                 void OnPlaylistSelected(DBID playlistId);

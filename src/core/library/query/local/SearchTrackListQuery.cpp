@@ -33,11 +33,14 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
-#include "NowPlayingTrackListQuery.h"
+#include "SearchTrackListQuery.h"
 
 #include <core/library/track/LibraryTrack.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <core/db/Statement.h>
+
+#include <boost/algorithm/string/case_conv.hpp>
+#include <boost/algorithm/string.hpp>
 
 using musik::core::db::Statement;
 using musik::core::db::Row;
@@ -47,44 +50,88 @@ using musik::core::ILibraryPtr;
 
 using namespace musik::core::db;
 using namespace musik::core::library::constants;
-using namespace musik::glue;
+using namespace musik::core::db::local;
+using namespace boost::algorithm;
 
-NowPlayingTrackListQuery::NowPlayingTrackListQuery(
-    ILibraryPtr library, musik::core::audio::PlaybackService& playback)
-: library(library)
-, playback(playback) {
+SearchTrackListQuery::SearchTrackListQuery(ILibraryPtr library, const std::string& filter) {
+    this->library = library;
+
+    if (filter.size()) {
+        this->filter = "%" + trim_copy(to_lower_copy(filter)) + "%";
+    }
+
     this->result.reset(new musik::core::TrackList(library));
     this->headers.reset(new std::set<size_t>());
     this->hash = 0;
 }
 
-NowPlayingTrackListQuery::~NowPlayingTrackListQuery() {
-
+SearchTrackListQuery::~SearchTrackListQuery() {
 }
 
-NowPlayingTrackListQuery::Result NowPlayingTrackListQuery::GetResult() {
+SearchTrackListQuery::Result SearchTrackListQuery::GetResult() {
     return this->result;
 }
 
-NowPlayingTrackListQuery::Headers NowPlayingTrackListQuery::GetHeaders() {
+SearchTrackListQuery::Headers SearchTrackListQuery::GetHeaders() {
     return this->headers;
 }
 
-size_t NowPlayingTrackListQuery::GetQueryHash() {
-    if (this->hash == 0) {
-        this->hash = std::hash<std::string>()(this->Name());
-    }
-
+size_t SearchTrackListQuery::GetQueryHash() {
+    this->hash = std::hash<std::string>()(this->filter);
     return this->hash;
 }
 
-bool NowPlayingTrackListQuery::OnRun(Connection& db) {
+bool SearchTrackListQuery::OnRun(Connection& db) {
     if (result) {
         result.reset(new musik::core::TrackList(this->library));
         headers.reset(new std::set<size_t>());
     }
 
-    this->playback.CopyTo(*result);
+    bool hasFilter = (this->filter.size() > 0);
+
+    std::string lastAlbum;
+    size_t index = 0;
+
+    std::string query;
+
+    if (hasFilter) {
+        query =
+            "SELECT DISTINCT t.id, al.name "
+            "FROM tracks t, albums al, artists ar, genres gn "
+            "WHERE "
+                "(t.title LIKE ? OR al.name LIKE ? OR ar.name LIKE ? OR gn.name LIKE ?) "
+                " AND t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id "
+            "ORDER BY al.name, disc, track, ar.name";
+    }
+    else {
+        query =
+            "SELECT DISTINCT t.id, al.name "
+            "FROM tracks t, albums al, artists ar, genres gn "
+            "WHERE t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id "
+            "ORDER BY al.name, disc, track, ar.name";
+    }
+
+    Statement trackQuery(query.c_str(), db);
+
+    if (hasFilter) {
+        trackQuery.BindText(0, this->filter);
+        trackQuery.BindText(1, this->filter);
+        trackQuery.BindText(2, this->filter);
+        trackQuery.BindText(3, this->filter);
+    }
+
+    while (trackQuery.Step() == Row) {
+        DBID id = trackQuery.ColumnInt64(0);
+        std::string album = trackQuery.ColumnText(1);
+
+        if (album != lastAlbum) {
+            headers->insert(index);
+            lastAlbum = album;
+        }
+
+        result->Add(id);
+        ++index;
+    }
 
     return true;
 }

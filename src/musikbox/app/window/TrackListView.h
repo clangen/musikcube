@@ -39,7 +39,7 @@
 #include <cursespp/IKeyHandler.h>
 #include <cursespp/ListWindow.h>
 
-#include <glue/query/TrackListQueryBase.h>
+#include <core/library/query/local/TrackListQueryBase.h>
 #include <core/audio/PlaybackService.h>
 
 #include <core/runtime/IMessage.h>
@@ -55,7 +55,7 @@ namespace musik {
             public sigslot::has_slots<>
         {
             public:
-                sigslot::signal1<musik::glue::TrackListQueryBase*> Requeried;
+                sigslot::signal1<musik::core::db::local::TrackListQueryBase*> Requeried;
 
                 typedef std::function<std::string(
                     musik::core::TrackPtr, size_t)> RowFormatter;
@@ -65,8 +65,7 @@ namespace musik {
 
                 typedef std::shared_ptr<std::set<size_t> > Headers;
 
-                typedef musik::glue::TrackListQueryBase TrackListQueryBase;
-
+                typedef musik::core::db::local::TrackListQueryBase TrackListQueryBase;
 
                 TrackListView(
                     musik::core::audio::PlaybackService& playback,
@@ -89,7 +88,7 @@ namespace musik {
 
             protected:
                 virtual cursespp::IScrollAdapter& GetScrollAdapter();
-                void OnQueryCompleted(musik::core::IQueryPtr query);
+                void OnQueryCompleted(musik::core::db::IQuery* query);
 
                 class Adapter : public cursespp::ScrollAdapterBase {
                     public:

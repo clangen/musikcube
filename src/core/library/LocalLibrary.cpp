@@ -52,8 +52,12 @@ using namespace musik::core::runtime;
 #define VERBOSE_LOGGING 0
 #define MESSAGE_QUERY_COMPLETED 5000
 
+using QueryT = musik::core::db::QueryBase<musik::core::db::Connection>;
+
 class QueryCompletedMessage : public Message {
     public:
+        using IQueryPtr = std::shared_ptr<musik::core::db::IQuery>;
+
         QueryCompletedMessage(IMessageTarget* target, IQueryPtr query)
         : Message(target, MESSAGE_QUERY_COMPLETED, 0, 0) {
             this->query = query;
@@ -156,7 +160,7 @@ std::string LocalLibrary::GetDatabaseFilename() {
     return this->GetLibraryDirectory() + "musik.db";
 }
 
-int LocalLibrary::Enqueue(IQueryPtr query, unsigned int options) {
+int LocalLibrary::Enqueue(LocalQueryPtr query, unsigned int options) {
     std::unique_lock<std::mutex> lock(this->mutex);
 
     if (this->exit) { /* closed */
@@ -178,6 +182,14 @@ int LocalLibrary::Enqueue(IQueryPtr query, unsigned int options) {
     return query->GetId();
 }
 
+int LocalLibrary::Enqueue(IQueryPtr query, unsigned int options) {
+    LocalQueryPtr casted = std::dynamic_pointer_cast<LocalQuery>(query);
+    if (casted) {
+        return this->Enqueue(casted, options);
+    }
+    return -1;
+}
+
 bool LocalLibrary::Exited() {
     return this->exit;
 }
@@ -188,7 +200,7 @@ void LocalLibrary::Exit() {
 }
 
 void LocalLibrary::ThreadProc() {
-    IQueryPtr query;
+    LocalQueryPtr query;
 
     while (true) {
         std::unique_lock<std::mutex> lock(this->mutex);
@@ -207,17 +219,17 @@ void LocalLibrary::ThreadProc() {
     }
 }
 
-IQueryPtr LocalLibrary::GetNextQuery() {
+LocalLibrary::LocalQueryPtr LocalLibrary::GetNextQuery() {
     if (queryQueue.size()) {
-        IQueryPtr front = queryQueue.front();
+        LocalQueryPtr front = queryQueue.front();
         queryQueue.pop_front();
         return front;
     }
 
-    return IQueryPtr();
+    return LocalQueryPtr();
 }
 
-void LocalLibrary::RunQuery(IQueryPtr query, bool notify) {
+void LocalLibrary::RunQuery(LocalQueryPtr query, bool notify) {
     if (query) {
         if (VERBOSE_LOGGING) {
             musik::debug::info(TAG, "query '" + query->Name() + "' running");
@@ -232,7 +244,7 @@ void LocalLibrary::RunQuery(IQueryPtr query, bool notify) {
                         new QueryCompletedMessage(this, query)));
             }
             else {
-                this->QueryCompleted(query);
+                this->QueryCompleted(query.get());
             }
         }
 
@@ -253,53 +265,12 @@ void LocalLibrary::SetMessageQueue(musik::core::runtime::IMessageQueue& queue) {
 
 void LocalLibrary::ProcessMessage(musik::core::runtime::IMessage &message) {
     if (message.Type() == MESSAGE_QUERY_COMPLETED) {
-        this->QueryCompleted(static_cast<QueryCompletedMessage*>(&message)->GetQuery());
+        this->QueryCompleted(static_cast<QueryCompletedMessage*>(&message)->GetQuery().get());
     }
 }
 
 musik::core::IIndexer* LocalLibrary::Indexer() {
     return this->indexer;
-}
-
-bool LocalLibrary::IsStaticMetaKey(std::string &metakey){
-    static std::set<std::string> staticMetaKeys;
-
-    if (staticMetaKeys.empty()) {
-        staticMetaKeys.insert("track");
-        staticMetaKeys.insert("disc");
-        staticMetaKeys.insert("bpm");
-        staticMetaKeys.insert("duration");
-        staticMetaKeys.insert("filesize");
-        staticMetaKeys.insert("year");
-        staticMetaKeys.insert("title");
-        staticMetaKeys.insert("filename");
-        staticMetaKeys.insert("filetime");
-    }
-
-    return staticMetaKeys.find(metakey) != staticMetaKeys.end();
-}
-
-bool LocalLibrary::IsSpecialMTOMetaKey(std::string &metakey){
-    static std::set<std::string> specialMTOMetaKeys;
-
-    if (specialMTOMetaKeys.empty()) {
-        specialMTOMetaKeys.insert("album");
-        specialMTOMetaKeys.insert("visual_genre");
-        specialMTOMetaKeys.insert("visual_artist");
-    }
-
-    return specialMTOMetaKeys.find(metakey)!=specialMTOMetaKeys.end();
-}
-
-bool LocalLibrary::IsSpecialMTMMetaKey(std::string &metakey) {
-    static std::set<std::string> specialMTMMetaKeys;
-
-    if (specialMTMMetaKeys.empty()) {
-        specialMTMMetaKeys.insert("artist");
-        specialMTMMetaKeys.insert("genre");
-    }
-
-    return specialMTMMetaKeys.find(metakey) != specialMTMMetaKeys.end();
 }
 
 void LocalLibrary::CreateDatabase(db::Connection &db){

@@ -40,7 +40,7 @@
 #include <core/audio/PlaybackService.h>
 #include <core/library/ILibrary.h>
 
-#include <glue/query/TrackListQueryBase.h>
+#include <core/library/query/local/TrackListQueryBase.h>
 
 #include <win32cpp/EditView.hpp>
 #include <win32cpp/Button.hpp>
@@ -66,7 +66,7 @@ namespace musik { namespace win {
 
             void OnMainWindowResized(win32cpp::Window* window, win32cpp::Size size);
             void OnTrackListRowActivated(win32cpp::ListView* list, int index);
-            void OnLibraryQueryCompleted(musik::core::IQueryPtr query);
+            void OnLibraryQueryCompleted(musik::core::db::IQuery* query);
             void OnSearchEditChanged(win32cpp::EditView* editView);
             void OnTransportButtonClicked(win32cpp::Button* button);
             void OnPlaybackStateChanged(int state);
@@ -78,7 +78,7 @@ namespace musik { namespace win {
 
             MainWindow& mainWindow;
 
-            std::shared_ptr<musik::glue::TrackListQueryBase> trackListQuery;
+            std::shared_ptr<musik::core::db::local::TrackListQueryBase> trackListQuery;
             std::shared_ptr<TrackListModel> trackListModel;
             std::shared_ptr<musik::core::TrackList> trackList;
 

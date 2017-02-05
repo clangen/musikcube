@@ -46,7 +46,7 @@ using musik::core::db::Row;
 
 using namespace musik::core::db;
 using namespace musik::core::library::constants;
-using namespace musik::glue;
+using namespace musik::core::db::local;
 
 #define RESET_RESULT(x) x.reset(new std::vector<std::shared_ptr<Result> >);
 

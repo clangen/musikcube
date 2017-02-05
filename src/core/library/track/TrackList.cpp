@@ -48,12 +48,11 @@
 
 using namespace musik::core;
 using namespace musik::core::db;
-using namespace musik::core::query;
 using namespace musik::core::library;
 
 using namespace musik::core::sdk;
 
-class TrackMetadataQuery : public QueryBase {
+class TrackMetadataQuery : public QueryBase<musik::core::db::Connection> {
     public:
         TrackMetadataQuery(DBID trackId, ILibraryPtr library);
         virtual ~TrackMetadataQuery() { }

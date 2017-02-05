@@ -36,55 +36,56 @@
 
 #include <core/library/query/QueryBase.h>
 #include <core/db/Connection.h>
-#include <core/sdk/IMetadataValueList.h>
-#include <core/support/Common.h>
-#include <memory>
+#include <core/library/track/Track.h>
+#include <core/library/track/TrackList.h>
 
-namespace musik {
-    namespace glue {
-        class CategoryListQuery : public musik::core::query::QueryBase {
-            public:
-                /* note we implement the SDK's IMetadataValue interface so
-                we can return data to plugins! */
-                struct Result : public musik::core::sdk::IMetadataValue {
-                    virtual unsigned long long GetId() {
-                        return this->id;
+namespace musik { namespace core { namespace db { namespace local {
+
+    class TrackListQueryBase : public musik::core::db::QueryBase<musik::core::db::Connection> {
+        public:
+            typedef std::shared_ptr<musik::core::TrackList> Result;
+            typedef std::shared_ptr<std::set<size_t> > Headers;
+
+            virtual ~TrackListQueryBase() { };
+            virtual std::string Name() = 0;
+            virtual Result GetResult() = 0;
+            virtual Headers GetHeaders() = 0;
+            virtual size_t GetQueryHash() = 0;
+
+            virtual musik::core::sdk::ITrackList* GetSdkResult() {
+                return new WrappedTrackList(GetResult());
+            }
+
+        private:
+            class WrappedTrackList : public musik::core::sdk::ITrackList {
+                public:
+                    WrappedTrackList(Result wrapped) {
+                        this->wrapped = wrapped;
                     }
 
-                    virtual const char* GetValue() {
-                        return this->displayValue.c_str();
+                    virtual void Release() {
+                        delete this;
                     }
 
-                    virtual int GetValue(char* dst, size_t size) {
-                        return musik::core::CopyString(this->displayValue, dst, size);
+                    virtual size_t Count() {
+                        return this->wrapped->Count();
                     }
 
-                    std::string displayValue;
-                    DBID id;
-                };
+                    virtual musik::core::sdk::IRetainedTrack* GetRetainedTrack(size_t index) {
+                        return this->wrapped->GetRetainedTrack(index);
+                    }
 
-                typedef std::shared_ptr<std::vector<
-                    std::shared_ptr<Result> > > ResultList;
+                    virtual unsigned long long GetId(size_t index) {
+                        return this->wrapped->GetId(index);
+                    }
 
-                CategoryListQuery(
-                    const std::string& trackField,
-                    const std::string& filter = "");
+                    virtual int IndexOf(unsigned long long id) {
+                        return this->wrapped->IndexOf(id);
+                    }
 
-                virtual ~CategoryListQuery();
+                private:
+                    Result wrapped;
+            };
+    };
 
-                std::string Name() { return "CategoryListQuery"; }
-
-                virtual ResultList GetResult();
-                virtual int GetIndexOf(DBID id);
-
-                musik::core::sdk::IMetadataValueList* GetSdkResult();
-
-            protected:
-                virtual bool OnRun(musik::core::db::Connection &db);
-
-                std::string trackField;
-                std::string filter;
-                ResultList result;
-        };
-    }
-}
+} } } }

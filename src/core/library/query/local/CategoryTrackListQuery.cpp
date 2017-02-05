@@ -33,14 +33,13 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
-#include "SearchTrackListQuery.h"
+#include "CategoryTrackListQuery.h"
 
 #include <core/library/track/LibraryTrack.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <core/db/Statement.h>
 
-#include <boost/algorithm/string/case_conv.hpp>
-#include <boost/algorithm/string.hpp>
+#include <map>
 
 using musik::core::db::Statement;
 using musik::core::db::Row;
@@ -49,76 +48,71 @@ using musik::core::LibraryTrack;
 using musik::core::ILibraryPtr;
 
 using namespace musik::core::db;
+using namespace musik::core::db::local;
 using namespace musik::core::library::constants;
-using namespace musik::glue;
-using namespace boost::algorithm;
 
-SearchTrackListQuery::SearchTrackListQuery(ILibraryPtr library, const std::string& filter) {
+static std::map<std::string, std::string> FIELD_TO_FOREIGN_KEY =
+    {
+        std::make_pair(Track::ALBUM, Track::ALBUM_ID),
+        std::make_pair(Track::ARTIST, Track::ARTIST_ID),
+        std::make_pair(Track::GENRE, Track::GENRE_ID),
+        std::make_pair(Track::ALBUM_ARTIST, Track::ALBUM_ARTIST_ID)
+    };
+
+CategoryTrackListQuery::CategoryTrackListQuery(ILibraryPtr library, const std::string& column, DBID id) {
     this->library = library;
-
-    if (filter.size()) {
-        this->filter = "%" + trim_copy(to_lower_copy(filter)) + "%";
-    }
-
+    this->id = id;
     this->result.reset(new musik::core::TrackList(library));
     this->headers.reset(new std::set<size_t>());
     this->hash = 0;
+
+    if (FIELD_TO_FOREIGN_KEY.find(column) == FIELD_TO_FOREIGN_KEY.end()) {
+        throw std::runtime_error("invalid input column specified");
+    }
+
+    this->column = FIELD_TO_FOREIGN_KEY[column];
 }
 
-SearchTrackListQuery::~SearchTrackListQuery() {
+CategoryTrackListQuery::~CategoryTrackListQuery() {
+
 }
 
-SearchTrackListQuery::Result SearchTrackListQuery::GetResult() {
+CategoryTrackListQuery::Result CategoryTrackListQuery::GetResult() {
     return this->result;
 }
 
-SearchTrackListQuery::Headers SearchTrackListQuery::GetHeaders() {
+CategoryTrackListQuery::Headers CategoryTrackListQuery::GetHeaders() {
     return this->headers;
 }
 
-size_t SearchTrackListQuery::GetQueryHash() {
-    this->hash = std::hash<std::string>()(this->filter);
+size_t CategoryTrackListQuery::GetQueryHash() {
+    if (this->hash == 0) {
+        std::string parts = boost::str(
+            boost::format("%s-%s") % this->column % this->id);
+
+        this->hash = std::hash<std::string>()(parts);
+    }
+
     return this->hash;
 }
 
-bool SearchTrackListQuery::OnRun(Connection& db) {
+bool CategoryTrackListQuery::OnRun(Connection& db) {
     if (result) {
         result.reset(new musik::core::TrackList(this->library));
         headers.reset(new std::set<size_t>());
     }
 
-    bool hasFilter = (this->filter.size() > 0);
-
     std::string lastAlbum;
     size_t index = 0;
 
-    std::string query;
-
-    if (hasFilter) {
-        query =
-            "SELECT DISTINCT t.id, al.name "
-            "FROM tracks t, albums al, artists ar, genres gn "
-            "WHERE "
-                "(t.title LIKE ? OR al.name LIKE ? OR ar.name LIKE ? OR gn.name LIKE ?) "
-                " AND t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id "
-            "ORDER BY al.name, disc, track, ar.name";
-    }
-    else {
-        query =
-            "SELECT DISTINCT t.id, al.name "
-            "FROM tracks t, albums al, artists ar, genres gn "
-            "WHERE t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id "
-            "ORDER BY al.name, disc, track, ar.name";
-    }
+    std::string query = boost::str(boost::format(
+        "SELECT DISTINCT t.id, al.name " \
+        "FROM tracks t, albums al, artists ar, genres gn " \
+        "WHERE t.%s=? AND t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id "
+        "ORDER BY al.name, disc, track, ar.name") % this->column);
 
     Statement trackQuery(query.c_str(), db);
-
-    if (hasFilter) {
-        trackQuery.BindText(0, this->filter);
-        trackQuery.BindText(1, this->filter);
-        trackQuery.BindText(2, this->filter);
-        trackQuery.BindText(3, this->filter);
-    }
+    trackQuery.BindInt(0, this->id);
 
     while (trackQuery.Step() == Row) {
         DBID id = trackQuery.ColumnInt64(0);

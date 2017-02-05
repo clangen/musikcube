@@ -44,6 +44,7 @@
 #include <core/library/ILibrary.h>
 #include <core/library/IIndexer.h>
 #include <core/library/IQuery.h>
+#include <core/library/query/QueryBase.h>
 
 #include <thread>
 #include <mutex>
@@ -60,16 +61,19 @@ namespace musik { namespace core { namespace library {
         public musik::core::runtime::IMessageTarget,
         boost::noncopyable
     {
-        protected:
-            LocalLibrary(std::string name, int id);
-
         public:
+            using IQueryPtr = std::shared_ptr<musik::core::db::IQuery>;
+            using LocalQuery = musik::core::db::QueryBase<musik::core::db::Connection>;
+            using LocalQueryPtr = std::shared_ptr<LocalQuery>;
+
             static ILibraryPtr Create(std::string name, int id);
 
             virtual ~LocalLibrary();
 
             /* ILibrary */
+            virtual int Enqueue(LocalQueryPtr query, unsigned int options = 0);
             virtual int Enqueue(IQueryPtr query, unsigned int options = 0);
+
             virtual musik::core::IIndexer *Indexer();
             virtual int Id();
             virtual const std::string& Name();
@@ -82,21 +86,19 @@ namespace musik { namespace core { namespace library {
             std::string GetLibraryDirectory();
             std::string GetDatabaseFilename();
 
-            static bool IsStaticMetaKey(std::string &metakey);
-            static bool IsSpecialMTOMetaKey(std::string &metakey);
-            static bool IsSpecialMTMMetaKey(std::string &metakey);
             static void CreateDatabase(db::Connection &db);
 
         protected:
             virtual void Exit();
-            bool Exited();
-            void ThreadProc();
-            IQueryPtr GetNextQuery();
 
         private:
-            void RunQuery(IQueryPtr query, bool notify = true);
+            typedef std::list<LocalQueryPtr> QueryList;
 
-            typedef std::list<IQueryPtr> QueryList;
+            LocalLibrary(std::string name, int id); /* ctor */
+            void RunQuery(LocalQueryPtr query, bool notify = true);
+            bool Exited();
+            void ThreadProc();
+            LocalQueryPtr GetNextQuery();
 
             QueryList queryQueue;
 

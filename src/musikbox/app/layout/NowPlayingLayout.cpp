@@ -40,8 +40,8 @@
 #include <core/library/LocalLibraryConstants.h>
 #include <app/util/Hotkeys.h>
 #include <app/overlay/PlayQueueOverlays.h>
-#include <glue/query/NowPlayingTrackListQuery.h>
-#include <glue/query/GetPlaylistQuery.h>
+#include <core/library/query/local/NowPlayingTrackListQuery.h>
+#include <core/library/query/local/GetPlaylistQuery.h>
 #include <glue/util/Duration.h>
 #include "NowPlayingLayout.h"
 
@@ -54,6 +54,7 @@ using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::library;
 using namespace musik::box;
+using namespace musik::core::db::local;
 using namespace musik::glue;
 using namespace cursespp;
 
@@ -143,7 +144,7 @@ void NowPlayingLayout::OnVisibilityChanged(bool visible) {
     }
 }
 
-void NowPlayingLayout::OnTrackListRequeried(musik::glue::TrackListQueryBase* query) {
+void NowPlayingLayout::OnTrackListRequeried(musik::core::db::local::TrackListQueryBase* query) {
     /* if the requery just finished for a regular playlist, we need to
     make sure we load it into the PlaybackService. generally we just read
     FROM the playback service */

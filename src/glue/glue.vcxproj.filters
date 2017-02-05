@@ -10,9 +10,6 @@
     <Filter Include="src\util">
       <UniqueIdentifier>{bbbddc84-ecce-43e4-baa1-c93978765231}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\query">
-      <UniqueIdentifier>{5aa81b51-6987-497b-9a22-1c68171652b4}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -27,30 +24,6 @@
     <ClInclude Include="util\Duration.h">
       <Filter>src\util</Filter>
     </ClInclude>
-    <ClInclude Include="query\CategoryTrackListQuery.h">
-      <Filter>src\query</Filter>
-    </ClInclude>
-    <ClInclude Include="query\NowPlayingTrackListQuery.h">
-      <Filter>src\query</Filter>
-    </ClInclude>
-    <ClInclude Include="query\SearchTrackListQuery.h">
-      <Filter>src\query</Filter>
-    </ClInclude>
-    <ClInclude Include="query\TrackListQueryBase.h">
-      <Filter>src\query</Filter>
-    </ClInclude>
-    <ClInclude Include="query\CategoryListQuery.h">
-      <Filter>src\query</Filter>
-    </ClInclude>
-    <ClInclude Include="query\GetPlaylistQuery.h">
-      <Filter>src\query</Filter>
-    </ClInclude>
-    <ClInclude Include="query\SavePlaylistQuery.h">
-      <Filter>src\query</Filter>
-    </ClInclude>
-    <ClInclude Include="query\DeletePlaylistQuery.h">
-      <Filter>src\query</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -64,27 +37,6 @@
     </ClCompile>
     <ClCompile Include="util\Duration.cpp">
       <Filter>src\util</Filter>
-    </ClCompile>
-    <ClCompile Include="query\CategoryTrackListQuery.cpp">
-      <Filter>src\query</Filter>
-    </ClCompile>
-    <ClCompile Include="query\NowPlayingTrackListQuery.cpp">
-      <Filter>src\query</Filter>
-    </ClCompile>
-    <ClCompile Include="query\SearchTrackListQuery.cpp">
-      <Filter>src\query</Filter>
-    </ClCompile>
-    <ClCompile Include="query\CategoryListQuery.cpp">
-      <Filter>src\query</Filter>
-    </ClCompile>
-    <ClCompile Include="query\GetPlaylistQuery.cpp">
-      <Filter>src\query</Filter>
-    </ClCompile>
-    <ClCompile Include="query\SavePlaylistQuery.cpp">
-      <Filter>src\query</Filter>
-    </ClCompile>
-    <ClCompile Include="query\DeletePlaylistQuery.cpp">
-      <Filter>src\query</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

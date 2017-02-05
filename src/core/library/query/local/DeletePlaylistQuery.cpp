@@ -32,37 +32,49 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "pch.hpp"
+#include "DeletePlaylistQuery.h"
 
-#include <core/library/query/QueryBase.h>
-#include <core/audio/PlaybackService.h>
+#include <core/db/ScopedTransaction.h>
+#include <core/db/Statement.h>
 
-#include "TrackListQueryBase.h"
+using namespace musik::core;
+using namespace musik::core::db;
+using namespace musik::core::db::local;
 
-namespace musik {
-    namespace glue {
-        class NowPlayingTrackListQuery : public TrackListQueryBase {
-            public:
-                NowPlayingTrackListQuery(
-                    musik::core::ILibraryPtr library,
-                    musik::core::audio::PlaybackService& playback);
+static std::string DELETE_PLAYLIST_TRACKS_QUERY =
+    "DELETE FROM playlist_tracks WHERE playlist_id=?;";
 
-                virtual ~NowPlayingTrackListQuery();
+static std::string DELETE_PLAYLIST_QUERY =
+    "DELETE FROM playlists WHERE id=?;";
 
-                virtual std::string Name() { return "NowPlayingTrackListQuery"; }
-                virtual Result GetResult();
-                virtual Headers GetHeaders();
-                virtual size_t GetQueryHash();
+DeletePlaylistQuery::DeletePlaylistQuery(const DBID playlistId) {
+    this->playlistId = playlistId;
+}
 
-            protected:
-                virtual bool OnRun(musik::core::db::Connection &db);
+DeletePlaylistQuery::~DeletePlaylistQuery() {
+}
 
-            private:
-                musik::core::ILibraryPtr library;
-                musik::core::audio::PlaybackService& playback;
-                Result result;
-                Headers headers;
-                size_t hash;
-        };
+bool DeletePlaylistQuery::OnRun(musik::core::db::Connection &db) {
+    ScopedTransaction transaction(db);
+
+    /* create playlist */
+    Statement deleteTracks(DELETE_PLAYLIST_TRACKS_QUERY.c_str(), db);
+    deleteTracks.BindInt(0, this->playlistId);
+
+    if (deleteTracks.Step() == db::Error) {
+        transaction.Cancel();
+        return false;
     }
+
+    /* add tracks to playlist */
+    Statement deletePlaylist(DELETE_PLAYLIST_QUERY.c_str(), db);
+    deletePlaylist.BindInt(0, this->playlistId);
+
+    if (deletePlaylist.Step() == db::Error) {
+        transaction.Cancel();
+        return false;
+    }
+
+    return true;
 }

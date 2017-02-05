@@ -34,33 +34,37 @@
 
 #pragma once
 
+#include <core/db/Connection.h>
+#include <core/library/track/Track.h>
+#include <core/library/query/QueryBase.h>
+
 #include "TrackListQueryBase.h"
 
-namespace musik {
-    namespace glue {
-        class SearchTrackListQuery : public TrackListQueryBase {
-            public:
-                SearchTrackListQuery(
-                    musik::core::ILibraryPtr library,
-                    const std::string& filter);
+namespace musik { namespace core { namespace db { namespace local {
 
-                virtual ~SearchTrackListQuery();
+    class GetPlaylistQuery : public TrackListQueryBase {
+        public:
+            GetPlaylistQuery(
+                musik::core::ILibraryPtr library,
+                DBID playlistId);
 
-                virtual std::string Name() { return "SearchTrackListQuery"; }
+            virtual ~GetPlaylistQuery();
 
-                virtual Result GetResult();
-                virtual Headers GetHeaders();
-                virtual size_t GetQueryHash();
+            virtual std::string Name() { return "GetPlaylistQuery"; }
 
-            protected:
-                virtual bool OnRun(musik::core::db::Connection &db);
+            virtual Result GetResult();
+            virtual Headers GetHeaders();
+            virtual size_t GetQueryHash();
 
-            private:
-                musik::core::ILibraryPtr library;
-                Result result;
-                Headers headers;
-                std::string filter;
-                size_t hash;
-        };
-    }
-}
+        protected:
+            virtual bool OnRun(musik::core::db::Connection &db);
+
+        private:
+            musik::core::ILibraryPtr library;
+            Result result;
+            Headers headers;
+            DBID playlistId;
+            size_t hash;
+    };
+
+} } } }

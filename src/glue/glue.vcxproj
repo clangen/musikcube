@@ -94,14 +94,6 @@
   <ItemGroup>
     <ClInclude Include="audio\MasterTransport.h" />
     <ClInclude Include="pch.hpp" />
-    <ClInclude Include="query\CategoryListQuery.h" />
-    <ClInclude Include="query\CategoryTrackListQuery.h" />
-    <ClInclude Include="query\DeletePlaylistQuery.h" />
-    <ClInclude Include="query\GetPlaylistQuery.h" />
-    <ClInclude Include="query\NowPlayingTrackListQuery.h" />
-    <ClInclude Include="query\SavePlaylistQuery.h" />
-    <ClInclude Include="query\SearchTrackListQuery.h" />
-    <ClInclude Include="query\TrackListQueryBase.h" />
     <ClInclude Include="util\Duration.h" />
     <ClInclude Include="util\Playback.h" />
   </ItemGroup>
@@ -111,13 +103,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="query\CategoryListQuery.cpp" />
-    <ClCompile Include="query\CategoryTrackListQuery.cpp" />
-    <ClCompile Include="query\DeletePlaylistQuery.cpp" />
-    <ClCompile Include="query\GetPlaylistQuery.cpp" />
-    <ClCompile Include="query\NowPlayingTrackListQuery.cpp" />
-    <ClCompile Include="query\SavePlaylistQuery.cpp" />
-    <ClCompile Include="query\SearchTrackListQuery.cpp" />
     <ClCompile Include="util\Duration.cpp" />
     <ClCompile Include="util\Playback.cpp" />
   </ItemGroup>

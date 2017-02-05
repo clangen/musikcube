@@ -34,32 +34,35 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
-#include <sigslot/sigslot.h>
+#include <core/library/query/QueryBase.h>
+#include <core/audio/PlaybackService.h>
 
-#include <boost/shared_ptr.hpp>
-#include <core/library/IIndexer.h>
-#include <core/db/Connection.h>
+#include "TrackListQueryBase.h"
 
-namespace musik { namespace core { namespace db {
+namespace musik { namespace core { namespace db { namespace local {
 
-    class IQuery {
+    class NowPlayingTrackListQuery : public TrackListQueryBase {
         public:
-            typedef enum {
-                Idle = 1,
-                Running = 2,
-                Failed = 3,
-                Finished = 4,
-                Canceled = 5
-            } Status;
+            NowPlayingTrackListQuery(
+                musik::core::ILibraryPtr library,
+                musik::core::audio::PlaybackService& playback);
 
-            virtual ~IQuery() { }
+            virtual ~NowPlayingTrackListQuery();
 
-            virtual int GetStatus() = 0;
-            virtual int GetId() = 0;
-            virtual int GetOptions() = 0;
-            virtual std::string Name() = 0;
+            virtual std::string Name() { return "NowPlayingTrackListQuery"; }
+            virtual Result GetResult();
+            virtual Headers GetHeaders();
+            virtual size_t GetQueryHash();
+
+        protected:
+            virtual bool OnRun(musik::core::db::Connection &db);
+
+        private:
+            musik::core::ILibraryPtr library;
+            musik::core::audio::PlaybackService& playback;
+            Result result;
+            Headers headers;
+            size_t hash;
     };
 
-} } }
+} } } }

@@ -35,34 +35,70 @@
 #pragma once
 
 #include <core/config.h>
-#include <sigslot/sigslot.h>
 #include <core/library/IQuery.h>
+
+#include <sigslot/sigslot.h>
+
 #include <mutex>
+#include <atomic>
 
-namespace musik { namespace core { namespace query {
+namespace musik { namespace core { namespace db {
 
-    typedef enum {
-        Prioritize = 1
-    } Options;
-
+    template <typename ConnectionT>
     class QueryBase : public IQuery, public sigslot::has_slots<> {
         public:
             QueryBase();
             virtual ~QueryBase();
 
-            virtual bool Run(db::Connection &db);
-            virtual int GetStatus();
-            virtual int GetId();
-            virtual int GetOptions();
+            bool Run(ConnectionT &db) {
+                this->SetStatus(Running);
+                try {
+                    if (this->IsCanceled()) {
+                        this->SetStatus(Canceled);
+                        return true;
+                    }
+                    else if (OnRun(db)) {
+                        this->SetStatus(Finished);
+                        return true;
+                    }
+                }
+                catch (...) {
+                }
+
+                this->SetStatus(Failed);
+                return false;
+            }
+
+            virtual int GetStatus() {
+                std::unique_lock<std::mutex> lock(this->stateMutex);
+                return this->status;
+            }
+
+            virtual int GetId() {
+                return this->queryId;
+            }
+
+            virtual int GetOptions() {
+                std::unique_lock<std::mutex> lock(this->stateMutex);
+                return this->options;
+            }
+
             virtual void Cancel() { this->cancel = true; }
             virtual bool IsCanceled() { return cancel; }
+            virtual std::string Name() = 0;
 
         protected:
-            void SetStatus(int status);
-            void SetOptions(int options);
+            void SetStatus(int status) {
+                std::unique_lock<std::mutex> lock(this->stateMutex);
+                this->status = status;
+            }
 
-            virtual bool OnRun(db::Connection &db) = 0;
-            virtual std::string Name() = 0;
+            void SetOptions(int options) {
+                std::unique_lock<std::mutex> lock(this->stateMutex);
+                this->options = options;
+            }
+
+            virtual bool OnRun(ConnectionT& db) = 0;
 
         private:
             unsigned int status;
@@ -70,6 +106,24 @@ namespace musik { namespace core { namespace query {
             unsigned int options;
             volatile bool cancel;
             std::mutex stateMutex;
+
+            static std::atomic<int> nextId;
     };
+
+    template <typename ConnectionT>
+    std::atomic<int> QueryBase<ConnectionT>::nextId = 0;
+
+    template <typename ConnectionT>
+    QueryBase<ConnectionT>::QueryBase()
+    : status(0)
+    , options(0)
+    , queryId(0)
+    , cancel(false) {
+        this->queryId = nextId++;
+    }
+
+    template <typename ConnectionT>
+    QueryBase<ConnectionT>::~QueryBase() {
+    }
 
 } } }

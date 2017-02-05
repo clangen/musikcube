@@ -39,9 +39,8 @@
 #include <core/db/Statement.h>
 
 using namespace musik::core;
-using namespace musik::core::query;
 using namespace musik::core::db;
-using namespace musik::glue;
+using namespace musik::core::db::local;
 
 static std::string CREATE_PLAYLIST_QUERY =
     "INSERT INTO playlists (name) VALUES (?);";

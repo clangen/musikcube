@@ -37,7 +37,7 @@
 #include <cursespp/Colors.h>
 #include <cursespp/Screen.h>
 #include <core/library/LocalLibraryConstants.h>
-#include <glue/query/CategoryTrackListQuery.h>
+#include <core/library/query/local/CategoryTrackListQuery.h>
 #include <app/util/Hotkeys.h>
 #include <app/util/Playback.h>
 #include <app/overlay/PlayQueueOverlays.h>
@@ -47,6 +47,7 @@
 using namespace musik::core::library::constants;
 using namespace musik::core;
 using namespace musik::core::audio;
+using namespace musik::core::db::local;
 using namespace musik::core::library;
 using namespace musik::box;
 using namespace cursespp;
@@ -168,8 +169,8 @@ void BrowseLayout::RequeryTrackList(ListWindow *view) {
     if (view == this->categoryList.get()) {
         DBID selectedId = this->categoryList->GetSelectedId();
         if (selectedId != -1) {
-            this->trackList->Requery(std::shared_ptr<musik::glue::TrackListQueryBase>(
-                new musik::glue::CategoryTrackListQuery(
+            this->trackList->Requery(std::shared_ptr<TrackListQueryBase>(
+                new CategoryTrackListQuery(
                     this->library,
                     this->categoryList->GetFieldName(),
                     selectedId)));
