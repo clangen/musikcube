@@ -156,7 +156,7 @@
     <ClInclude Include="library\query\local\SavePlaylistQuery.h" />
     <ClInclude Include="library\query\local\SearchTrackListQuery.h" />
     <ClInclude Include="library\query\local\TrackListQueryBase.h" />
-    <ClInclude Include="Library\query\QueryBase.h" />
+    <ClInclude Include="Library\query\local\LocalQueryBase.h" />
     <ClInclude Include="library\track\IndexerTrack.h" />
     <ClInclude Include="library\track\LibraryTrack.h" />
     <ClInclude Include="library\track\RetainedTrack.h" />

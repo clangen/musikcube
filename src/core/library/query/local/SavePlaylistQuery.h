@@ -34,14 +34,14 @@
 
 #pragma once
 
-#include <core/library/query/QueryBase.h>
+#include <core/library/query/local/LocalQueryBase.h>
 #include <core/library/track/TrackList.h>
 #include <core/db/Connection.h>
 #include <memory>
 
 namespace musik { namespace core { namespace db { namespace local {
 
-    class SavePlaylistQuery : public musik::core::db::QueryBase<musik::core::db::Connection> {
+    class SavePlaylistQuery : public musik::core::db::LocalQueryBase {
         public:
             static std::shared_ptr<SavePlaylistQuery> Save(
                 const std::string& playlistName,

@@ -36,7 +36,7 @@
 
 #include <core/library/LocalLibrary.h>
 #include <core/config.h>
-#include <core/library/query/QueryBase.h>
+#include <core/library/query/local/LocalQueryBase.h>
 #include <core/support/Common.h>
 #include <core/support/Preferences.h>
 #include <core/library/Indexer.h>
@@ -51,8 +51,6 @@ using namespace musik::core::runtime;
 
 #define VERBOSE_LOGGING 0
 #define MESSAGE_QUERY_COMPLETED 5000
-
-using QueryT = musik::core::db::QueryBase<musik::core::db::Connection>;
 
 class QueryCompletedMessage : public Message {
     public:

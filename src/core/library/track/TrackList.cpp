@@ -35,7 +35,7 @@
 #include "pch.hpp"
 #include "TrackList.h"
 
-#include <core/library/query/QueryBase.h>
+#include <core/library/query/local/LocalQueryBase.h>
 #include <core/library/track/LibraryTrack.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <core/library/track/RetainedTrack.h>
@@ -52,7 +52,7 @@ using namespace musik::core::library;
 
 using namespace musik::core::sdk;
 
-class TrackMetadataQuery : public QueryBase<musik::core::db::Connection> {
+class TrackMetadataQuery : public LocalQueryBase {
     public:
         TrackMetadataQuery(DBID trackId, ILibraryPtr library);
         virtual ~TrackMetadataQuery() { }

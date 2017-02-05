@@ -44,7 +44,7 @@
 #include <core/library/ILibrary.h>
 #include <core/library/IIndexer.h>
 #include <core/library/IQuery.h>
-#include <core/library/query/QueryBase.h>
+#include <core/library/query/local/LocalQueryBase.h>
 
 #include <thread>
 #include <mutex>
@@ -63,7 +63,7 @@ namespace musik { namespace core { namespace library {
     {
         public:
             using IQueryPtr = std::shared_ptr<musik::core::db::IQuery>;
-            using LocalQuery = musik::core::db::QueryBase<musik::core::db::Connection>;
+            using LocalQuery = musik::core::db::LocalQueryBase;
             using LocalQueryPtr = std::shared_ptr<LocalQuery>;
 
             static ILibraryPtr Create(std::string name, int id);

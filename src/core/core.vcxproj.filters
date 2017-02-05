@@ -198,7 +198,7 @@
     <ClInclude Include="sdk\IDataStreamFactory.h">
       <Filter>src\sdk</Filter>
     </ClInclude>
-    <ClInclude Include="Library\query\QueryBase.h">
+    <ClInclude Include="Library\query\local\LocalQueryBase.h">
       <Filter>src\library\query</Filter>
     </ClInclude>
     <ClInclude Include="io\LocalFileStream.h">

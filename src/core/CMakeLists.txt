@@ -49,9 +49,5 @@ include_directories(
   ../3rdparty/include/sqlite
 )
 
-add_definitions(
-  -D_DEBUG
-)
-
 add_library(musikcore STATIC ${CORE_SOURCES})
 target_link_libraries(musikcore ${musikbox_LINK_LIBS})

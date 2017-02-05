@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <core/library/query/QueryBase.h>
+#include <core/library/query/local/LocalQueryBase.h>
 #include <core/db/Connection.h>
 #include <core/sdk/IMetadataValueList.h>
 #include <core/support/Common.h>
@@ -42,7 +42,7 @@
 
 namespace musik { namespace core { namespace db { namespace local {
 
-    class CategoryListQuery : public musik::core::db::QueryBase<musik::core::db::Connection> {
+    class CategoryListQuery : public musik::core::db::LocalQueryBase {
         public:
             /* note we implement the SDK's IMetadataValue interface so
             we can return data to plugins! */

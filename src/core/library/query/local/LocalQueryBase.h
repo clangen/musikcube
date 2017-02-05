@@ -36,6 +36,7 @@
 
 #include <core/config.h>
 #include <core/library/IQuery.h>
+#include <core/db/Connection.h>
 
 #include <sigslot/sigslot.h>
 
@@ -44,13 +45,19 @@
 
 namespace musik { namespace core { namespace db {
 
-    template <typename ConnectionT>
-    class QueryBase : public IQuery, public sigslot::has_slots<> {
+    class LocalQueryBase : public IQuery, public sigslot::has_slots<> {
         public:
-            QueryBase();
-            virtual ~QueryBase();
+            LocalQueryBase()
+            : status(0)
+            , options(0)
+            , queryId(nextId())
+            , cancel(false) {
+            }
 
-            bool Run(ConnectionT &db) {
+            virtual ~LocalQueryBase() {
+            }
+
+            bool Run(musik::core::db::Connection &db) {
                 this->SetStatus(Running);
                 try {
                     if (this->IsCanceled()) {
@@ -83,8 +90,14 @@ namespace musik { namespace core { namespace db {
                 return this->options;
             }
 
-            virtual void Cancel() { this->cancel = true; }
-            virtual bool IsCanceled() { return cancel; }
+            virtual void Cancel() {
+                this->cancel = true;
+            }
+
+            virtual bool IsCanceled() {
+                return cancel;
+            }
+
             virtual std::string Name() = 0;
 
         protected:
@@ -98,32 +111,19 @@ namespace musik { namespace core { namespace db {
                 this->options = options;
             }
 
-            virtual bool OnRun(ConnectionT& db) = 0;
+            virtual bool OnRun(musik::core::db::Connection& db) = 0;
 
         private:
+            static int nextId() {
+                static std::atomic<int> next(0);
+                return ++next;
+            }
+
             unsigned int status;
             unsigned int queryId;
             unsigned int options;
             volatile bool cancel;
             std::mutex stateMutex;
-
-            static std::atomic<int> nextId;
     };
-
-    template <typename ConnectionT>
-    std::atomic<int> QueryBase<ConnectionT>::nextId = 0;
-
-    template <typename ConnectionT>
-    QueryBase<ConnectionT>::QueryBase()
-    : status(0)
-    , options(0)
-    , queryId(0)
-    , cancel(false) {
-        this->queryId = nextId++;
-    }
-
-    template <typename ConnectionT>
-    QueryBase<ConnectionT>::~QueryBase() {
-    }
 
 } } }

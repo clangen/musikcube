@@ -34,12 +34,12 @@
 
 #pragma once
 
-#include <core/library/query/QueryBase.h>
+#include <core/library/query/local/LocalQueryBase.h>
 #include <core/db/Connection.h>
 
 namespace musik { namespace core { namespace db { namespace local {
 
-    class DeletePlaylistQuery : public musik::core::db::QueryBase<musik::core::db::Connection> {
+    class DeletePlaylistQuery : public musik::core::db::LocalQueryBase {
         public:
             DeletePlaylistQuery(const DBID playlistId);
             virtual ~DeletePlaylistQuery();
