@@ -114,7 +114,7 @@ Track::MetadataIteratorRange LibraryTrack::GetAllValues() {
     return Track::MetadataIteratorRange();
 }
 
-DBID LibraryTrack::Id() {
+unsigned long long LibraryTrack::GetId() {
     return this->id;
 }
 
@@ -129,7 +129,7 @@ TrackPtr LibraryTrack::Copy() {
 bool LibraryTrack::Load(Track *target, db::Connection &db) {
     /* if no ID is specified, see if we can look one up by filename
     in the current database. */
-    if (target->Id() == 0) {
+    if (target->GetId() == 0) {
         std::string path = target->GetValue("filename");
 
         if (!path.size()) {
@@ -174,7 +174,7 @@ bool LibraryTrack::Load(Track *target, db::Connection &db) {
         "FROM tracks t, paths p, albums al " \
         "WHERE t.id=? AND t.album_id=al.id", db);
 
-    trackQuery.BindInt(0, target->Id());
+    trackQuery.BindInt(0, target->GetId());
     if (trackQuery.Step() == db::Row) {
         target->SetValue("track", trackQuery.ColumnText(0));
         target->SetValue("disc", trackQuery.ColumnText(1));
@@ -192,17 +192,17 @@ bool LibraryTrack::Load(Track *target, db::Connection &db) {
         target->SetValue("album_artist_id", trackQuery.ColumnText(13));
         target->SetValue("album_id", trackQuery.ColumnText(14));
 
-        genresQuery.BindInt(0, target->Id());
+        genresQuery.BindInt(0, target->GetId());
         while (genresQuery.Step() == db::Row) {
             target->SetValue("genre", genresQuery.ColumnText(0));
         }
 
-        artistsQuery.BindInt(0, target->Id());
+        artistsQuery.BindInt(0, target->GetId());
         while (artistsQuery.Step() == db::Row) {
             target->SetValue("artist", artistsQuery.ColumnText(0));
         }
 
-        allMetadataQuery.BindInt(0, target->Id());
+        allMetadataQuery.BindInt(0, target->GetId());
         while (allMetadataQuery.Step() == db::Row) {
             target->SetValue(allMetadataQuery.ColumnText(1), allMetadataQuery.ColumnText(0));
         }

@@ -59,7 +59,7 @@ namespace musik { namespace core {
             virtual MetadataIteratorRange GetAllValues();
             virtual TrackPtr Copy();
 
-            virtual DBID Id();
+            virtual unsigned long long GetId();
             virtual void SetId(DBID id) { this->id = id; }
 
             bool NeedsToBeIndexed(

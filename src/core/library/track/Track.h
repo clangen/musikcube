@@ -57,7 +57,7 @@ namespace musik { namespace core {
 
             virtual ~Track();
 
-            virtual DBID Id();
+            virtual unsigned long long GetId();
             virtual void SetId(DBID id) = 0;
 
             virtual musik::core::ILibraryPtr Library();

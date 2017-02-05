@@ -42,7 +42,7 @@ using namespace musik::core;
 Track::~Track() {
 }
 
-DBID Track::Id() {
+unsigned long long Track::GetId() {
     return 0;
 }
 

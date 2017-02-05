@@ -149,7 +149,7 @@ size_t TrackListView::Count() {
 
 void TrackListView::ScrollToPlaying() {
     if (this->playing && this->metadata) {
-        DBID id = this->playing->Id();
+        DBID id = this->playing->GetId();
         for (size_t i = 0; i < this->metadata->Count(); i++) {
             if (this->metadata->GetId(i) == id) {
                 this->SetSelectedIndex(i);
@@ -275,7 +275,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
 
         TrackPtr playing = parent.playing;
         if (playing &&
-            playing->Id() == track->Id() &&
+            playing->GetId() == track->GetId() &&
             playing->LibraryId() == track->LibraryId())
         {
             if (selected) {

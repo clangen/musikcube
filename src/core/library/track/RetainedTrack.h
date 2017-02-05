@@ -43,6 +43,7 @@ namespace musik { namespace core {
             RetainedTrack(TrackPtr track);
             virtual ~RetainedTrack();
 
+            virtual unsigned long long GetId();
             virtual void Release();
             virtual int GetValue(const char* key, char* dst, int size);
             virtual int Uri(char* dst, int size);

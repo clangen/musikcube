@@ -114,7 +114,7 @@ bool SavePlaylistQuery::AddTracksToPlaylist(musik::core::db::Connection &db, DBI
     for (size_t i = 0; i < tracks.Count(); i++) {
         track = tracks.Get(i);
         insertTrack.Reset();
-        insertTrack.BindInt(0, track->Id());
+        insertTrack.BindInt(0, track->GetId());
         insertTrack.BindInt(1, playlistId);
         insertTrack.BindInt(2, (int) i);
 

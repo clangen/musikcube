@@ -51,7 +51,7 @@ namespace musik { namespace core {
 
             virtual int LibraryId();
 
-            virtual DBID Id();
+            virtual unsigned long long GetId();
             virtual void SetId(DBID id) { this->id = id; }
 
             virtual void SetValue(const char* metakey, const char* value);

@@ -38,6 +38,7 @@ namespace musik { namespace core { namespace sdk {
 
     class ITrack {
         public:
+            virtual unsigned long long GetId() = 0;
             virtual int GetValue(const char* key, char* dst, int size) = 0;
             virtual int Uri(char* dst, int size) = 0;
     };

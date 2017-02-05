@@ -141,7 +141,7 @@ Track::MetadataIteratorRange IndexerTrack::GetAllValues() {
     return Track::MetadataIteratorRange();
 }
 
-DBID IndexerTrack::Id() {
+unsigned long long IndexerTrack::GetId() {
     return this->id;
 }
 
@@ -208,17 +208,17 @@ static DBID writeToTracksTable(
     stmt.BindText(9, track.GetValue("filetime"));
     stmt.BindText(10, track.GetValue("path_id"));
 
-    if (track.Id() != 0) {
-        stmt.BindInt(0, track.Id());
+    if (track.GetId() != 0) {
+        stmt.BindInt(0, track.GetId());
     }
 
     if (stmt.Step() == db::Done) {
-        if (track.Id() == 0) {
+        if (track.GetId() == 0) {
             return dbConnection.LastInsertedId();
         }
     }
 
-    return track.Id();
+    return track.GetId();
 }
 
 static void removeRelation(

@@ -60,3 +60,7 @@ int RetainedTrack::GetValue(const char* key, char* dst, int size) {
 int RetainedTrack::Uri(char* dst, int size) {
     return track->Uri(dst, size);
 }
+
+unsigned long long RetainedTrack::GetId() {
+    return track->GetId();
+}

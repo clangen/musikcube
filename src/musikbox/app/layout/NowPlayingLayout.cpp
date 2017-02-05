@@ -97,7 +97,7 @@ int64 NowPlayingLayout::RowDecorator(musik::core::TrackPtr track, size_t index) 
         TrackPtr playing = playback.GetPlaying();
 
         if (playing &&
-            playing->Id() == track->Id() &&
+            playing->GetId() == track->GetId() &&
             playing->LibraryId() == track->LibraryId())
         {
             if (selected) {

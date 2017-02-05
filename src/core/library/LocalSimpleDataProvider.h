@@ -48,8 +48,15 @@ namespace musik { namespace core { namespace db { namespace local {
             virtual musik::core::sdk::ITrackList*
                 QueryTracks(const char* query = "");
 
+            virtual musik::core::sdk::ITrackList*
+                QueryTracksByCategory(
+                    const char* categoryType,
+                    unsigned long long selectedId);
+
             virtual musik::core::sdk::IMetadataValueList*
-                QueryCategory(const char* type, const char* filter = "");
+                QueryCategory(
+                    const char* type,
+                    const char* filter = "");
 
         private:
             musik::core::ILibraryPtr library;

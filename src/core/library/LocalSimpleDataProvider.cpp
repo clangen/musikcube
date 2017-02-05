@@ -32,14 +32,13 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
 #include "pch.hpp"
 #include "LocalSimpleDataProvider.h"
 
 #include <core/debug.h>
 
 #include <core/library/query/local/SearchTrackListQuery.h>
+#include <core/library/query/local/CategoryTrackListQuery.h>
 #include <core/library/query/local/CategoryListQuery.h>
 
 #define TAG "LocalSimpleDataProvider"
@@ -71,6 +70,26 @@ ITrackList* LocalSimpleDataProvider::QueryTracks(const char* query) {
     }
     catch (...) {
         musik::debug::err(TAG, "QueryTracks failed");
+    }
+
+    return nullptr;
+}
+
+ITrackList* LocalSimpleDataProvider::QueryTracksByCategory(
+    const char* categoryType, unsigned long long selectedId)
+{
+    try {
+        std::shared_ptr<CategoryTrackListQuery> search(
+            new CategoryTrackListQuery(this->library, categoryType, selectedId));
+
+        this->library->Enqueue(search, ILibrary::QuerySynchronous);
+
+        if (search->GetStatus() == IQuery::Finished) {
+            return search->GetSdkResult();
+        }
+    }
+    catch (...) {
+        musik::debug::err(TAG, "QueryTracksByCategory failed");
     }
 
     return nullptr;

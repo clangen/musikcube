@@ -368,7 +368,7 @@ bool PlaybackService::Previous() {
     }
 
     std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
-    
+
     if (transport.Position() > PREVIOUS_GRACE_PERIOD) {
         this->Play(index);
         return true;
@@ -446,7 +446,7 @@ void PlaybackService::CopyFrom(TrackList& source) {
     this->nextIndex = NO_POSITION;
 
     if (this->playingTrack) {
-        this->index = playlist.IndexOf(this->playingTrack->Id());
+        this->index = playlist.IndexOf(this->playingTrack->GetId());
         POST(this, MESSAGE_PREPARE_NEXT_TRACK, NO_POSITION, 0);
     }
 }

@@ -99,7 +99,7 @@ class MainController::TrackListModel : public ListView::Model, public sigslot::h
             if (track) {
                 TextCellRendererRef renderer = this->normal;
 
-                if (playing && playing->Id() == track->Id()) {
+                if (playing && playing->GetId() == track->GetId()) {
                     renderer = this->bold;
                 }
 

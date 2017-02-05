@@ -220,7 +220,7 @@ void PlayQueueOverlays::ShowAddTrackOverlay(
         return;
     }
 
-    DBID trackId = trackList.Get(selectedIndex)->Id();
+    DBID trackId = trackList.Get(selectedIndex)->GetId();
 
     auto adapter = createAddToAdapter();
 
