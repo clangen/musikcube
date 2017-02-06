@@ -61,9 +61,9 @@ using namespace cursespp;
 
 using namespace std::chrono;
 
-/* if the user hasn't changed the selected index in 30 seconds
+/* if the user hasn't changed the selected index in 60 seconds
 we assume he's not paying attention, and will automatically scroll
-the view to the next track if it's invisible. */
+the view to the playing track if it's invisible. */
 static const milliseconds AUTO_SCROLL_COOLDOWN = milliseconds(60000LL);
 
 static inline milliseconds now() {

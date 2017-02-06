@@ -99,8 +99,11 @@ namespace musik { namespace core { namespace audio {
             virtual double GetDuration();
             virtual musik::core::sdk::IRetainedTrack* GetTrack(size_t index);
             virtual musik::core::sdk::IRetainedTrack* GetPlayingTrack();
+            virtual void CopyFrom(musik::core::sdk::ITrackList* source);
+            virtual void Play(musik::core::sdk::ITrackList* source, size_t index);
 
-            /* app-specific implementation */
+            /* app-specific implementation. similar to some SDK methods, but use
+            concrete data types with known optimizations */
             musik::core::audio::ITransport& GetTransport() { return this->transport; }
             void Play(musik::core::TrackList& tracks, size_t index);
             void CopyTo(musik::core::TrackList& target);

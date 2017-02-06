@@ -36,11 +36,13 @@
 
 #include "constants.h"
 #include "IRetainedTrack.h"
+#include "ITrackList.h"
 
 namespace musik { namespace core { namespace sdk {
 
     class IPlaybackService {
         public:
+            /* sdk v1 */
             virtual void Play(size_t index) = 0;
             virtual bool Next() = 0;
             virtual bool Previous() = 0;
@@ -70,7 +72,13 @@ namespace musik { namespace core { namespace sdk {
             virtual size_t Count() = 0;
 
             virtual IRetainedTrack* GetTrack(size_t index) = 0;
-            virtual IRetainedTrack* GetPlayingTrack() = 0; /* sdk v2 */
+
+            /* sdk v2 */
+            virtual IRetainedTrack* GetPlayingTrack() = 0;
+
+            /* sdk v3*/
+            virtual void CopyFrom(ITrackList* trackList) = 0;
+            virtual void Play(ITrackList* source, size_t index) = 0;
     };
 
 } } }

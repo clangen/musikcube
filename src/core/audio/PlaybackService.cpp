@@ -433,6 +433,29 @@ void PlaybackService::Play(TrackList& tracks, size_t index) {
     }
 }
 
+void PlaybackService::Play(musik::core::sdk::ITrackList* source, size_t index) {
+    if (source) {
+        /* see if we have a TrackList -- if we do we can optimize the copy */
+        TrackList* sourceTrackList = dynamic_cast<TrackList*>(source);
+
+        if (sourceTrackList) {
+            this->Play(*sourceTrackList, index);
+            return;
+        }
+
+        /* otherwise use slower impl to be compatible with SDK */
+        {
+            std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
+            this->CopyFrom(source);
+            this->unshuffled.Clear();
+        }
+
+        if (index <= source->Count()) {
+            this->Play(index);
+        }
+    }
+}
+
 void PlaybackService::CopyTo(TrackList& target) {
     std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
     target.CopyFrom(this->playlist);
@@ -448,6 +471,34 @@ void PlaybackService::CopyFrom(TrackList& source) {
     if (this->playingTrack) {
         this->index = playlist.IndexOf(this->playingTrack->GetId());
         POST(this, MESSAGE_PREPARE_NEXT_TRACK, NO_POSITION, 0);
+    }
+}
+
+void PlaybackService::CopyFrom(musik::core::sdk::ITrackList* source) {
+    if (source) {
+        /* see if we have a TrackList -- if we do we can optimize the copy */
+        TrackList* sourceTrackList = dynamic_cast<TrackList*>(source);
+
+        if (sourceTrackList) {
+            this->CopyFrom(*sourceTrackList);
+            return;
+        }
+
+        /* otherwise we gotta do it one at a time */
+        std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
+
+        this->playlist.Clear();
+        for (size_t i = 0; i < source->Count(); i++) {
+            this->playlist.Add(source->GetId(i));
+        }
+
+        this->index = NO_POSITION;
+        this->nextIndex = NO_POSITION;
+
+        if (this->playingTrack) {
+            this->index = playlist.IndexOf(this->playingTrack->GetId());
+            POST(this, MESSAGE_PREPARE_NEXT_TRACK, NO_POSITION, 0);
+        }
     }
 }
 
