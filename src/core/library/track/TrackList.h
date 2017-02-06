@@ -44,23 +44,32 @@
 #include <list>
 
 namespace musik { namespace core {
+
+    /* <ugh> */
+    class TrackList_ITrackList : public musik::core::sdk::ITrackList {
+        public: virtual void Release() { /* not used by the SDK */ }
+    };
+
+    class TrackList_ITrackListEditor : public musik::core::sdk::ITrackListEditor {
+        public: virtual void Release() { /* not used by the SDK */ }
+    };
+    /* </ugh> */
+
     class TrackList :
-        public musik::core::sdk::ITrackList,
-        public musik::core::sdk::ITrackListEditor
+        public TrackList_ITrackList,
+        public TrackList_ITrackListEditor
     {
         public:
             TrackList(ILibraryPtr library);
             virtual ~TrackList();
 
             /* ITrackList */
-            virtual void ITrackList::Release() { /* not used by the SDK. */ }
             virtual size_t Count();
             virtual musik::core::sdk::IRetainedTrack* GetRetainedTrack(size_t index);
             virtual unsigned long long GetId(size_t index);
             virtual int IndexOf(unsigned long long id);
 
             /* ITrackListEditor */
-            virtual void ITrackListEditor::Release() { /* not used by the SDK. */ }
             virtual void Add(const unsigned long long id);
             virtual bool Insert(unsigned long long id, size_t index);
             virtual bool Swap(size_t index1, size_t index2);

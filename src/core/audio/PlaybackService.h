@@ -101,7 +101,7 @@ namespace musik { namespace core { namespace audio {
             virtual musik::core::sdk::IRetainedTrack* GetPlayingTrack();
             virtual void CopyFrom(musik::core::sdk::ITrackList* source);
             virtual void Play(musik::core::sdk::ITrackList* source, size_t index);
-            virtual musik::core::sdk::ITrackListEditor* PlaybackService::EditPlaylist();
+            virtual musik::core::sdk::ITrackListEditor* EditPlaylist();
 
             /* app-specific implementation. similar to some SDK methods, but use
             concrete data types with known optimizations */
