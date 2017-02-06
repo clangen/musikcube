@@ -37,6 +37,7 @@
 #include "constants.h"
 #include "IRetainedTrack.h"
 #include "ITrackList.h"
+#include "ITrackListEditor.h"
 
 namespace musik { namespace core { namespace sdk {
 
@@ -79,6 +80,7 @@ namespace musik { namespace core { namespace sdk {
             /* sdk v3*/
             virtual void CopyFrom(ITrackList* trackList) = 0;
             virtual void Play(ITrackList* source, size_t index) = 0;
+            virtual ITrackListEditor* EditPlaylist() = 0;
     };
 
 } } }

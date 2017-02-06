@@ -53,19 +53,20 @@ namespace musik { namespace core {
             virtual ~TrackList();
 
             /* ITrackList */
-            virtual void Release() { /* no delete this! not used directly by SDK. */ }
+            virtual void ITrackList::Release() { /* not used by the SDK. */ }
             virtual size_t Count();
             virtual musik::core::sdk::IRetainedTrack* GetRetainedTrack(size_t index);
             virtual unsigned long long GetId(size_t index);
             virtual int IndexOf(unsigned long long id);
 
             /* ITrackListEditor */
+            virtual void ITrackListEditor::Release() { /* not used by the SDK. */ }
             virtual void Add(const unsigned long long id);
-            virtual void Clear();
             virtual bool Insert(unsigned long long id, size_t index);
             virtual bool Swap(size_t index1, size_t index2);
             virtual bool Move(size_t from, size_t to);
             virtual bool Delete(size_t index);
+            virtual void Clear();
             virtual void Shuffle();
 
             /* implementation specific */
@@ -73,6 +74,7 @@ namespace musik { namespace core {
             void ClearCache();
             void Swap(TrackList& list);
             void CopyFrom(TrackList& from);
+
 
         private:
             typedef std::list<DBID> CacheList;

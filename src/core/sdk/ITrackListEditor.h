@@ -49,6 +49,7 @@ namespace musik {
                     virtual void Add(const unsigned long long id) = 0;
                     virtual void Clear() = 0;
                     virtual void Shuffle() = 0;
+                    virtual void Release() = 0;
             };
 
         }

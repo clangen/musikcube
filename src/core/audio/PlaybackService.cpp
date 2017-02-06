@@ -626,6 +626,32 @@ Editor PlaybackService::Edit() {
         this->playlistMutex);
 }
 
+ITrackListEditor* PlaybackService::EditPlaylist() {
+    /* the internal implementation of this class has a stubbed
+    Release() method to avoid programmer error. if the SDK is
+    requesting an Editor we need to actually release resources. */
+    class SdkTrackListEditor : public PlaybackService::Editor {
+        public:
+            SdkTrackListEditor(
+                PlaybackService& playback,
+                TrackListEditor& tracks,
+                Queue& queue,
+                Mutex& mutex)
+            : PlaybackService::Editor(playback, tracks, queue, mutex) {
+            }
+
+            virtual void Release() {
+                delete this;
+            }
+    };
+
+    return new SdkTrackListEditor(
+        *this,
+        this->playlist,
+        this->messageQueue,
+        this->playlistMutex);
+}
+
 void PlaybackService::OnStreamEvent(int eventType, std::string uri) {
     POST_STREAM_MESSAGE(this, eventType, uri);
 }
@@ -767,11 +793,27 @@ void PlaybackService::Editor::Add(const unsigned long long id) {
 }
 
 void PlaybackService::Editor::Clear() {
-    throw std::runtime_error("PlaybackService::Editor::Clear unsupported");
+    playback.playlist.Clear();
+    playback.unshuffled.Clear();
+    this->playIndex = -1;
+    this->nextTrackInvalidated = true;
 }
 
 void PlaybackService::Editor::Shuffle() {
-    throw std::runtime_error("PlaybackService::Editor::Shuffle unsupported");
+    /* inefficient -- we can do it faster with a bit more logic. if
+    this ever becomes a problem we can speed it up. */
+    if (playback.IsShuffled()) {
+        playback.ToggleShuffle(); /* off */
+    }
+
+    playback.ToggleShuffle(); /* on */
+    this->playIndex = playback.GetIndex();
+    this->nextTrackInvalidated = true;
+
+}
+
+void PlaybackService::Editor::Release() {
+    /* nothing! */
 }
 
 std::string PlaybackService::UriAtIndex(size_t index) {
