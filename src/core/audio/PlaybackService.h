@@ -59,6 +59,7 @@ namespace musik { namespace core { namespace audio {
             sigslot::signal2<size_t, musik::core::TrackPtr> TrackChanged;
             sigslot::signal0<> ModeChanged;
             sigslot::signal1<bool> Shuffled;
+            sigslot::signal0<> QueueEdited;
 
             /* copied from Transport, but will be automatically called on the
             specified MessageQueue's thread! */
@@ -150,6 +151,7 @@ namespace musik { namespace core { namespace audio {
                     Lock lock;
                     size_t playIndex;
                     bool nextTrackInvalidated;
+                    bool edited;
             };
 
             Editor Edit();

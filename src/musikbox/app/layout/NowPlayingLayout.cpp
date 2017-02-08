@@ -71,7 +71,9 @@ NowPlayingLayout::NowPlayingLayout(
 , reselectIndex(-1)
 , lastPlaylistQueryId(-1) {
     this->InitializeWindows();
+
     this->playback.Shuffled.connect(this, &NowPlayingLayout::OnPlaybackShuffled);
+    this->playback.QueueEdited.connect(this, &NowPlayingLayout::RequeryTrackList);
 
     EDIT_KEYS = {
         Hotkeys::Get(Hotkeys::PlayQueueMoveUp),
@@ -246,6 +248,7 @@ bool NowPlayingLayout::ProcessEditOperation(const std::string& key) {
         if (!playback.IsShuffled()) {
             PlaybackService::Editor editor = this->playback.Edit();
             size_t selected = this->trackListView->GetSelectedIndex();
+            this->reselectIndex = (int)selected;
 
             if (Hotkeys::Is(Hotkeys::PlayQueueMoveUp, key)) {
                 if (selected > 0) {
@@ -265,8 +268,6 @@ bool NowPlayingLayout::ProcessEditOperation(const std::string& key) {
                 editor.Delete(selected);
                 this->reselectIndex = (int)selected;
             }
-
-            this->RequeryTrackList();
             return true;
         }
     }

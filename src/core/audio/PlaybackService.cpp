@@ -69,6 +69,7 @@ using Editor = PlaybackService::Editor;
 #define MESSAGE_VOLUME_CHANGED 1003
 #define MESSAGE_TIME_CHANGED 1004
 #define MESSAGE_MODE_CHANGED 1005
+#define MESSAGE_NOTIFY_EDITED 1006
 
 class StreamMessage : public Message {
     public:
@@ -306,8 +307,9 @@ void PlaybackService::ProcessMessage(IMessage &message) {
     else if (type == MESSAGE_PREPARE_NEXT_TRACK) {
         if (transport.GetPlaybackState() != PlaybackStopped) {
             size_t updatedIndex = (size_t)message.UserData1();
+
+            this->index = updatedIndex;
             if (updatedIndex != NO_POSITION) {
-                this->index = updatedIndex;
                 this->nextIndex = NO_POSITION; /* force recalc */
             }
 
@@ -331,6 +333,9 @@ void PlaybackService::ProcessMessage(IMessage &message) {
     }
     else if (type == MESSAGE_TIME_CHANGED) {
         this->TimeChanged(transport.Position());
+    }
+    else if (type == MESSAGE_NOTIFY_EDITED) {
+        this->QueueEdited();
     }
 }
 
@@ -683,7 +688,8 @@ PlaybackService::Editor::Editor(
 : playback(playback)
 , tracks(tracks)
 , queue(queue)
-, lock(mutex) {
+, lock(mutex)
+, edited(false) {
     this->playIndex = playback.GetIndex();
     this->nextTrackInvalidated = false;
 }
@@ -692,7 +698,8 @@ PlaybackService::Editor::Editor(Editor&& other)
 : playback(other.playback)
 , tracks(other.tracks)
 , queue(other.queue)
-, playIndex(other.playIndex) {
+, playIndex(other.playIndex)
+, edited(false) {
     std::swap(this->lock, other.lock);
 
     /* we may never actually edit the playing track, but instead, edit the
@@ -703,21 +710,28 @@ PlaybackService::Editor::Editor(Editor&& other)
 }
 
 PlaybackService::Editor::~Editor() {
-    /* we've been tracking the playback index through edit operations. let's
-    update it here. */
-    if (this->playIndex != this->playback.GetIndex() || this->nextTrackInvalidated) {
-        /* make sure the play index we're requesting is in bounds */
-        this->playIndex = std::min(this->playback.Count() - 1, this->playIndex);
+    if (this->edited) {
+        /* we've been tracking the playback index through edit operations. let's
+        update it here. */
+            /* make sure the play index we're requesting is in bounds */
+        if (this->playIndex != this->playback.GetIndex() || this->nextTrackInvalidated) {
+            if (this->playback.Count() > 0 && this->playIndex != NO_POSITION) {
+                this->playIndex = std::min(this->playback.Count() - 1, this->playIndex);
+            }
 
-        this->queue.Post(Message::Create(
-            &this->playback, MESSAGE_PREPARE_NEXT_TRACK, this->playIndex, 0));
+            this->queue.Post(Message::Create(
+                &this->playback, MESSAGE_PREPARE_NEXT_TRACK, this->playIndex, 0));
+        }
+
+        this->playback.messageQueue.Post(Message::Create(
+            &this->playback, MESSAGE_NOTIFY_EDITED, 0, 0));
     }
 
     /* implicitly unlocks the mutex when this block exists */
 }
 
 bool PlaybackService::Editor::Insert(unsigned long long id, size_t index) {
-    if (this->tracks.Insert(id, index)) {
+    if ((this->edited = this->tracks.Insert(id, index))) {
         if (index == this->playIndex) {
             ++this->playIndex;
         }
@@ -732,7 +746,7 @@ bool PlaybackService::Editor::Insert(unsigned long long id, size_t index) {
 }
 
 bool PlaybackService::Editor::Swap(size_t index1, size_t index2) {
-    if (this->tracks.Swap(index1, index2)) {
+    if ((this->edited = this->tracks.Swap(index1, index2))) {
         if (index1 == this->playIndex) {
             this->playIndex = index2;
             this->nextTrackInvalidated = true;
@@ -748,7 +762,7 @@ bool PlaybackService::Editor::Swap(size_t index1, size_t index2) {
 }
 
 bool PlaybackService::Editor::Move(size_t from, size_t to) {
-    if (this->tracks.Move(from, to)) {
+    if ((this->edited = this->tracks.Move(from, to))) {
         if (from == this->playIndex) {
             this->playIndex = to;
         }
@@ -766,7 +780,7 @@ bool PlaybackService::Editor::Move(size_t from, size_t to) {
 }
 
 bool PlaybackService::Editor::Delete(size_t index) {
-    if (this->tracks.Delete(index)) {
+    if ((this->edited = this->tracks.Delete(index))) {
         if (this->playback.Count() == 0) {
             this->playIndex = NO_POSITION;
         }
@@ -790,6 +804,8 @@ void PlaybackService::Editor::Add(const unsigned long long id) {
     if (this->playback.Count() - 1 == this->playIndex + 1) {
         this->nextTrackInvalidated = true;
     }
+
+    this->edited = true;
 }
 
 void PlaybackService::Editor::Clear() {
@@ -797,6 +813,7 @@ void PlaybackService::Editor::Clear() {
     playback.unshuffled.Clear();
     this->playIndex = -1;
     this->nextTrackInvalidated = true;
+    this->edited = true;
 }
 
 void PlaybackService::Editor::Shuffle() {
@@ -809,7 +826,7 @@ void PlaybackService::Editor::Shuffle() {
     playback.ToggleShuffle(); /* on */
     this->playIndex = playback.GetIndex();
     this->nextTrackInvalidated = true;
-
+    this->edited = true;
 }
 
 void PlaybackService::Editor::Release() {
