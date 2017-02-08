@@ -167,6 +167,7 @@ namespace musik { namespace core { namespace audio {
             void OnTrackChanged(size_t pos, musik::core::TrackPtr track);
             void OnVolumeChanged();
             void OnTimeChanged(double time);
+            void NotifyRemotesModeChanged();
             void PrepareNextTrack();
             void InitRemotes();
             void ResetRemotes();

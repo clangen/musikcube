@@ -326,14 +326,11 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         this->VolumeChanged();
     }
     else if (type == MESSAGE_MODE_CHANGED) {
-        RepeatMode mode = this->repeatMode;
-        bool shuffled = this->IsShuffled();
-        for (auto it = remotes.begin(); it != remotes.end(); it++) {
-            (*it)->OnModeChanged(repeatMode, shuffled);
-        }
+        this->NotifyRemotesModeChanged();
         this->ModeChanged();
     }
     else if (type == MESSAGE_SHUFFLED) {
+        this->NotifyRemotesModeChanged();
         this->Shuffled(!!message.UserData1());
     }
     else if (type == MESSAGE_TIME_CHANGED) {
@@ -341,6 +338,14 @@ void PlaybackService::ProcessMessage(IMessage &message) {
     }
     else if (type == MESSAGE_NOTIFY_EDITED) {
         this->QueueEdited();
+    }
+}
+
+void PlaybackService::NotifyRemotesModeChanged() {
+    RepeatMode mode = this->repeatMode;
+    bool shuffled = this->IsShuffled();
+    for (auto it = remotes.begin(); it != remotes.end(); it++) {
+        (*it)->OnModeChanged(repeatMode, shuffled);
     }
 }
 
