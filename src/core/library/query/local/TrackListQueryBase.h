@@ -67,20 +67,24 @@ namespace musik { namespace core { namespace db { namespace local {
                         delete this;
                     }
 
-                    virtual size_t Count() {
+                    virtual size_t Count() const {
                         return this->wrapped->Count();
                     }
 
-                    virtual musik::core::sdk::IRetainedTrack* GetRetainedTrack(size_t index) {
+                    virtual musik::core::sdk::IRetainedTrack* GetRetainedTrack(size_t index) const {
                         return this->wrapped->GetRetainedTrack(index);
                     }
 
-                    virtual unsigned long long GetId(size_t index) {
+                    virtual unsigned long long GetId(size_t index) const {
                         return this->wrapped->GetId(index);
                     }
 
-                    virtual int IndexOf(unsigned long long id) {
+                    virtual int IndexOf(unsigned long long id) const {
                         return this->wrapped->IndexOf(id);
+                    }
+
+                    virtual musik::core::sdk::ITrack* GetTrack(size_t index) const {
+                        return this->wrapped->GetTrack(index);
                     }
 
                 private:

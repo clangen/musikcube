@@ -78,7 +78,8 @@ namespace musik {
                 virtual void ProcessMessage(musik::core::runtime::IMessage &message);
                 virtual bool KeyPress(const std::string& key);
 
-                std::shared_ptr<musik::core::TrackList> GetTrackList();
+                std::shared_ptr<const musik::core::TrackList> GetTrackList();
+                void SetTrackList(std::shared_ptr<const musik::core::TrackList> trackList);
 
                 void Clear();
                 musik::core::TrackPtr Get(size_t index);
@@ -108,7 +109,7 @@ namespace musik {
                 void ScrollToPlaying();
 
                 std::shared_ptr<TrackListQueryBase> query;
-                std::shared_ptr<musik::core::TrackList> metadata;
+                std::shared_ptr<const musik::core::TrackList> metadata;
                 Headers headers;
                 Adapter* adapter;
                 musik::core::audio::PlaybackService& playback;

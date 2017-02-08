@@ -68,11 +68,9 @@ NowPlayingLayout::NowPlayingLayout(
 : LayoutBase()
 , playback(playback)
 , library(library)
-, reselectIndex(-1)
 , lastPlaylistQueryId(-1) {
     this->InitializeWindows();
 
-    this->playback.Shuffled.connect(this, &NowPlayingLayout::OnPlaybackShuffled);
     this->playback.QueueEdited.connect(this, &NowPlayingLayout::RequeryTrackList);
 
     EDIT_KEYS = {
@@ -147,15 +145,17 @@ void NowPlayingLayout::OnVisibilityChanged(bool visible) {
 }
 
 void NowPlayingLayout::OnTrackListRequeried(musik::core::db::local::TrackListQueryBase* query) {
-    /* if the requery just finished for a regular playlist, we need to
-    make sure we load it into the PlaybackService. generally we just read
-    FROM the playback service */
+    /* in most cases we pull the TrackList directly from the PlaybackService.
+    however, some user operations cause the TrackList to be loaded from
+    the database, e.g. loading regular playlists. in these cases, copy
+    the tracks TO the PlaybackService, then refresh! */
     if (query && query->GetId() == this->lastPlaylistQueryId) {
         this->playback.CopyFrom(*query->GetResult());
         this->lastPlaylistQueryId = -1;
     }
 
     if (playback.Count()) {
+        /* regular logic (i.e, no edit operation) */
         if (this->reselectIndex == -1) {
             size_t index = playback.GetIndex();
 
@@ -168,16 +168,22 @@ void NowPlayingLayout::OnTrackListRequeried(musik::core::db::local::TrackListQue
                 this->trackListView->ScrollTo(index == 0 ? index : index - 1);
             }
         }
-        else { /* requeried due to edit, so reselect... */
+        /* user just finished an edit. this is a bit of a hack; we're notified
+        of the edit completion asynchronously, so before we complete the edit
+        we stash the index we need to re-select. */
+        else {
+            /* ensure the correct index is selected, and that it's properly
+            scrolled into view */
             this->reselectIndex = std::min((int) this->trackListView->Count() - 1, this->reselectIndex);
-            this->trackListView->SetSelectedIndex((int) this->reselectIndex);
+            this->trackListView->SetSelectedIndex((size_t)this->reselectIndex);
             auto pos = this->trackListView->GetScrollPosition();
-            int first = (int) pos.firstVisibleEntryIndex;
-            int last = (int) first + pos.visibleEntryCount;
-            int index = (int) this->reselectIndex;
+            int first = (int)pos.firstVisibleEntryIndex;
+            int last = (int)first + pos.visibleEntryCount;
+            int index = (int)this->reselectIndex;
             if (index < first || index >= last) {
-                this->trackListView->ScrollTo(this->reselectIndex);
+                this->trackListView->ScrollTo((size_t)this->reselectIndex);
             }
+            this->reselectIndex = -1;
         }
 
         /* if after a bunch of monkeying around there's still nothing
@@ -188,17 +194,14 @@ void NowPlayingLayout::OnTrackListRequeried(musik::core::db::local::TrackListQue
             this->trackListView->ScrollTo(0);
         }
     }
-
-    this->reselectIndex = -1;
-}
-
-void NowPlayingLayout::OnPlaybackShuffled(bool shuffled) {
-    this->RequeryTrackList();
+    else {
+        this->trackListView->ScrollTo(0);
+    }
 }
 
 void NowPlayingLayout::RequeryTrackList() {
-    this->trackListView->Requery(std::shared_ptr<TrackListQueryBase>(
-        new NowPlayingTrackListQuery(this->library, this->playback)));
+    this->trackListView->SetTrackList(this->playback.GetTrackList());
+    this->OnTrackListRequeried(nullptr);
 }
 
 void NowPlayingLayout::OnPlaylistSelected(DBID playlistId) {
@@ -246,28 +249,31 @@ bool NowPlayingLayout::KeyPress(const std::string& key) {
 bool NowPlayingLayout::ProcessEditOperation(const std::string& key) {
     if (EDIT_KEYS.find(key) != EDIT_KEYS.end()) {
         if (!playback.IsShuffled()) {
-            PlaybackService::Editor editor = this->playback.Edit();
             size_t selected = this->trackListView->GetSelectedIndex();
-            this->reselectIndex = (int)selected;
+            this->reselectIndex = -1;
 
-            if (Hotkeys::Is(Hotkeys::PlayQueueMoveUp, key)) {
-                if (selected > 0) {
-                    size_t to = selected - 1;
-                    editor.Move(selected, to);
-                    this->reselectIndex = (int)to;
+            {
+                PlaybackService::Editor editor = this->playback.Edit();
+                if (Hotkeys::Is(Hotkeys::PlayQueueMoveUp, key)) {
+                    if (selected > 0) {
+                        size_t to = selected - 1;
+                        editor.Move(selected, to);
+                        reselectIndex = (int)to;
+                    }
+                }
+                else if (Hotkeys::Is(Hotkeys::PlayQueueMoveDown, key)) {
+                    if (selected < this->playback.Count() - 1) {
+                        size_t to = selected + 1;
+                        editor.Move(selected, to);
+                        reselectIndex = (int)to;
+                    }
+                }
+                else if (Hotkeys::Is(Hotkeys::PlayQueueDelete, key)) {
+                    editor.Delete(selected);
+                    reselectIndex = (int)selected;
                 }
             }
-            else if (Hotkeys::Is(Hotkeys::PlayQueueMoveDown, key)) {
-                if (selected < this->playback.Count() - 1) {
-                    size_t to = selected + 1;
-                    editor.Move(selected, to);
-                    this->reselectIndex = (int)to;
-                }
-            }
-            else if (Hotkeys::Is(Hotkeys::PlayQueueDelete, key)) {
-                editor.Delete(selected);
-                this->reselectIndex = (int)selected;
-            }
+
             return true;
         }
     }

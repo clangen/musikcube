@@ -78,8 +78,8 @@ namespace musik { namespace core { namespace sdk {
             virtual IRetainedTrack* GetPlayingTrack() = 0;
 
             /* sdk v3*/
-            virtual void CopyFrom(ITrackList* trackList) = 0;
-            virtual void Play(ITrackList* source, size_t index) = 0;
+            virtual void CopyFrom(const ITrackList* trackList) = 0;
+            virtual void Play(const ITrackList* source, size_t index) = 0;
             virtual ITrackListEditor* EditPlaylist() = 0;
     };
 

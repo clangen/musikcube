@@ -55,6 +55,7 @@ using namespace musik::core::audio;
 using namespace musik::core::db;
 using namespace musik::core::library;
 using namespace musik::core::runtime;
+using namespace musik::core::sdk;
 using namespace musik::box;
 using namespace musik::glue;
 using namespace cursespp;
@@ -128,8 +129,20 @@ void TrackListView::OnQueryCompleted(IQuery* query) {
     }
 }
 
-std::shared_ptr<TrackList> TrackListView::GetTrackList() {
+std::shared_ptr<const TrackList> TrackListView::GetTrackList() {
     return this->metadata;
+}
+
+void TrackListView::SetTrackList(std::shared_ptr<const TrackList> trackList) {
+    if (this->metadata != trackList) {
+        this->metadata = trackList;
+        this->SetSelectedIndex(0);
+        this->ScrollToTop();
+        this->OnAdapterChanged();
+    }
+    else {
+        this->OnAdapterChanged();
+    }
 }
 
 void TrackListView::Clear() {
@@ -291,7 +304,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
         ? parent.formatter(track, this->GetWidth())
         : formatWithoutAlbum(track, this->GetWidth());
 
-    if (this->parent.headers->find(index) != this->parent.headers->end()) {
+    if (this->parent.headers && this->parent.headers->find(index) != this->parent.headers->end()) {
         std::string album = track->GetValue(constants::Track::ALBUM);
         std::shared_ptr<EntryWithHeader> entry(new EntryWithHeader(album, text));
         entry->SetAttrs(COLOR_PAIR(CURSESPP_LIST_ITEM_HEADER), attrs);

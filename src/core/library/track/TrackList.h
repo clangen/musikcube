@@ -64,10 +64,11 @@ namespace musik { namespace core {
             virtual ~TrackList();
 
             /* ITrackList */
-            virtual size_t Count();
-            virtual musik::core::sdk::IRetainedTrack* GetRetainedTrack(size_t index);
-            virtual unsigned long long GetId(size_t index);
-            virtual int IndexOf(unsigned long long id);
+            virtual size_t Count() const;
+            virtual musik::core::sdk::IRetainedTrack* GetRetainedTrack(size_t index) const;
+            virtual unsigned long long GetId(size_t index) const;
+            virtual int IndexOf(unsigned long long id) const;
+            virtual musik::core::sdk::ITrack* GetTrack(size_t index) const;
 
             /* ITrackListEditor */
             virtual void Add(const unsigned long long id);
@@ -79,23 +80,22 @@ namespace musik { namespace core {
             virtual void Shuffle();
 
             /* implementation specific */
-            TrackPtr Get(size_t index);
+            TrackPtr Get(size_t index) const;
             void ClearCache();
             void Swap(TrackList& list);
-            void CopyFrom(TrackList& from);
-
+            void CopyFrom(const TrackList& from);
 
         private:
             typedef std::list<DBID> CacheList;
             typedef std::pair<TrackPtr, CacheList::iterator> CacheValue;
             typedef std::unordered_map<DBID, CacheValue> CacheMap;
 
-            TrackPtr GetFromCache(DBID key);
-            void AddToCache(DBID key, TrackPtr value);
+            TrackPtr GetFromCache(DBID key) const;
+            void AddToCache(DBID key, TrackPtr value) const;
 
             /* lru cache structures */
-            CacheList cacheList;
-            CacheMap cacheMap;
+            mutable CacheList cacheList;
+            mutable CacheMap cacheMap;
 
             std::vector<DBID> ids;
             ILibraryPtr library;

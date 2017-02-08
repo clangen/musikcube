@@ -74,14 +74,13 @@ namespace musik {
 
                 /* callbacks */
                 void OnTrackListRequeried(musik::core::db::local::TrackListQueryBase* query);
-                void OnPlaybackShuffled(bool shuffled);
                 int64 RowDecorator(musik::core::TrackPtr track, size_t index);
                 void OnPlaylistSelected(DBID playlistId);
 
                 musik::core::audio::PlaybackService& playback;
                 musik::core::ILibraryPtr library;
                 std::shared_ptr<TrackListView> trackListView;
-                int reselectIndex; /* gross... */
+                int reselectIndex; /* sigh... */
                 int lastPlaylistQueryId;
         };
     }

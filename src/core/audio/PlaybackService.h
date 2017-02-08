@@ -100,18 +100,23 @@ namespace musik { namespace core { namespace audio {
             virtual double GetDuration();
             virtual musik::core::sdk::IRetainedTrack* GetTrack(size_t index);
             virtual musik::core::sdk::IRetainedTrack* GetPlayingTrack();
-            virtual void CopyFrom(musik::core::sdk::ITrackList* source);
-            virtual void Play(musik::core::sdk::ITrackList* source, size_t index);
+            virtual void CopyFrom(const musik::core::sdk::ITrackList* source);
+            virtual void Play(const musik::core::sdk::ITrackList* source, size_t index);
             virtual musik::core::sdk::ITrackListEditor* EditPlaylist();
 
             /* app-specific implementation. similar to some SDK methods, but use
             concrete data types with known optimizations */
             musik::core::audio::ITransport& GetTransport() { return this->transport; }
-            void Play(musik::core::TrackList& tracks, size_t index);
+            void Play(const musik::core::TrackList& tracks, size_t index);
             void CopyTo(musik::core::TrackList& target);
-            void CopyFrom(musik::core::TrackList& source);
+            void CopyFrom(const musik::core::TrackList& source);
             musik::core::TrackPtr GetTrackAtIndex(size_t index);
             musik::core::TrackPtr GetPlaying();
+
+            std::shared_ptr<const musik::core::TrackList> GetTrackList() {
+                return std::shared_ptr<const musik::core::TrackList>(
+                    &this->playlist, [](const musik::core::TrackList*) {});
+            }
 
             /* required to make changes to the playlist. this little data structure
             privately owns a lock to the internal data structure and will release

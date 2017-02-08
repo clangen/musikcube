@@ -69,7 +69,8 @@ using Editor = PlaybackService::Editor;
 #define MESSAGE_VOLUME_CHANGED 1003
 #define MESSAGE_TIME_CHANGED 1004
 #define MESSAGE_MODE_CHANGED 1005
-#define MESSAGE_NOTIFY_EDITED 1006
+#define MESSAGE_SHUFFLED 1006
+#define MESSAGE_NOTIFY_EDITED 1007
 
 class StreamMessage : public Message {
     public:
@@ -224,16 +225,16 @@ void PlaybackService::ToggleShuffle() {
 
     this->playlist.ClearCache();
     this->unshuffled.ClearCache();
+    bool shuffled = false;
 
     if (this->unshuffled.Count() > 0) { /* shuffled -> unshuffled */
         this->playlist.Clear();
         this->playlist.Swap(this->unshuffled);
-        this->Shuffled(false);
     }
     else { /* unshuffled -> shuffle */
         this->unshuffled.CopyFrom(this->playlist);
         this->playlist.Shuffle();
-        this->Shuffled(true);
+        shuffled = true;
     }
 
     /* find the new playback index and prefetch the next track */
@@ -245,7 +246,8 @@ void PlaybackService::ToggleShuffle() {
         }
     }
 
-    POST(this, MESSAGE_MODE_CHANGED, 0, 0);
+    POST(this, MESSAGE_SHUFFLED, shuffled ? 1 : 0, 0);
+    POST(this, MESSAGE_NOTIFY_EDITED, 0, 0);
 }
 
 void PlaybackService::ProcessMessage(IMessage &message) {
@@ -308,8 +310,8 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         if (transport.GetPlaybackState() != PlaybackStopped) {
             size_t updatedIndex = (size_t)message.UserData1();
 
-            this->index = updatedIndex;
             if (updatedIndex != NO_POSITION) {
+                this->index = updatedIndex;
                 this->nextIndex = NO_POSITION; /* force recalc */
             }
 
@@ -330,6 +332,9 @@ void PlaybackService::ProcessMessage(IMessage &message) {
             (*it)->OnModeChanged(repeatMode, shuffled);
         }
         this->ModeChanged();
+    }
+    else if (type == MESSAGE_SHUFFLED) {
+        this->Shuffled(!!message.UserData1());
     }
     else if (type == MESSAGE_TIME_CHANGED) {
         this->TimeChanged(transport.Position());
@@ -422,7 +427,7 @@ PlaybackState PlaybackService::GetPlaybackState() {
     return transport.GetPlaybackState();
 }
 
-void PlaybackService::Play(TrackList& tracks, size_t index) {
+void PlaybackService::Play(const TrackList& tracks, size_t index) {
     /* do the copy outside of the critical section, then swap. */
     TrackList temp(this->library);
     temp.CopyFrom(tracks);
@@ -438,10 +443,10 @@ void PlaybackService::Play(TrackList& tracks, size_t index) {
     }
 }
 
-void PlaybackService::Play(musik::core::sdk::ITrackList* source, size_t index) {
+void PlaybackService::Play(const musik::core::sdk::ITrackList* source, size_t index) {
     if (source) {
         /* see if we have a TrackList -- if we do we can optimize the copy */
-        TrackList* sourceTrackList = dynamic_cast<TrackList*>(source);
+        const TrackList* sourceTrackList = dynamic_cast<const TrackList*>(source);
 
         if (sourceTrackList) {
             this->Play(*sourceTrackList, index);
@@ -466,7 +471,7 @@ void PlaybackService::CopyTo(TrackList& target) {
     target.CopyFrom(this->playlist);
 }
 
-void PlaybackService::CopyFrom(TrackList& source) {
+void PlaybackService::CopyFrom(const TrackList& source) {
     std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
 
     this->playlist.CopyFrom(source);
@@ -475,14 +480,16 @@ void PlaybackService::CopyFrom(TrackList& source) {
 
     if (this->playingTrack) {
         this->index = playlist.IndexOf(this->playingTrack->GetId());
-        POST(this, MESSAGE_PREPARE_NEXT_TRACK, NO_POSITION, 0);
+        POST(this, MESSAGE_PREPARE_NEXT_TRACK, this->index, 0);
     }
+
+    POST(this, MESSAGE_NOTIFY_EDITED, NO_POSITION, 0);
 }
 
-void PlaybackService::CopyFrom(musik::core::sdk::ITrackList* source) {
+void PlaybackService::CopyFrom(const musik::core::sdk::ITrackList* source) {
     if (source) {
         /* see if we have a TrackList -- if we do we can optimize the copy */
-        TrackList* sourceTrackList = dynamic_cast<TrackList*>(source);
+        const TrackList* sourceTrackList = dynamic_cast<const TrackList*>(source);
 
         if (sourceTrackList) {
             this->CopyFrom(*sourceTrackList);
@@ -504,6 +511,8 @@ void PlaybackService::CopyFrom(musik::core::sdk::ITrackList* source) {
             this->index = playlist.IndexOf(this->playingTrack->GetId());
             POST(this, MESSAGE_PREPARE_NEXT_TRACK, NO_POSITION, 0);
         }
+
+        POST(this, MESSAGE_NOTIFY_EDITED, NO_POSITION, 0);
     }
 }
 

@@ -43,11 +43,15 @@ namespace musik {
 
             class ITrackList {
                 public:
+                    /* sdk v1 */
                     virtual void Release() = 0;
-                    virtual size_t Count() = 0;
-                    virtual IRetainedTrack* GetRetainedTrack(size_t index) = 0;
-                    virtual unsigned long long GetId(size_t index) = 0;
-                    virtual int IndexOf(unsigned long long id) = 0;
+                    virtual size_t Count() const = 0;
+                    virtual IRetainedTrack* GetRetainedTrack(size_t index) const = 0;
+                    virtual unsigned long long GetId(size_t index) const = 0;
+                    virtual int IndexOf(unsigned long long id) const = 0;
+
+                    /* sdk v3 */
+                    virtual ITrack* GetTrack(size_t index) const = 0;
             };
 
         }

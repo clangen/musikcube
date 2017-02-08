@@ -77,7 +77,7 @@ TrackList::~TrackList() {
 
 }
 
-size_t TrackList::Count() {
+size_t TrackList::Count() const {
     return ids.size();
 }
 
@@ -124,7 +124,7 @@ bool TrackList::Delete(size_t index) {
     return false;
 }
 
-TrackPtr TrackList::Get(size_t index) {
+TrackPtr TrackList::Get(size_t index) const {
     auto id = this->ids.at(index);
     auto cached = this->GetFromCache(id);
 
@@ -140,15 +140,19 @@ TrackPtr TrackList::Get(size_t index) {
     return query->Result();
 }
 
-IRetainedTrack* TrackList::GetRetainedTrack(size_t index) {
+IRetainedTrack* TrackList::GetRetainedTrack(size_t index) const {
     return new RetainedTrack(this->Get(index));
 }
 
-unsigned long long TrackList::GetId(size_t index) {
+ITrack* TrackList::GetTrack(size_t index) const {
+    return this->Get(index).get();
+}
+
+unsigned long long TrackList::GetId(size_t index) const {
     return this->ids.at(index);
 }
 
-void TrackList::CopyFrom(TrackList& from) {
+void TrackList::CopyFrom(const TrackList& from) {
     this->Clear();
 
     std::copy(
@@ -157,7 +161,7 @@ void TrackList::CopyFrom(TrackList& from) {
         std::back_inserter(this->ids));
 }
 
-int TrackList::IndexOf(unsigned long long id) {
+int TrackList::IndexOf(unsigned long long id) const {
     auto it = std::find(this->ids.begin(), this->ids.end(), id);
     return (it == this->ids.end()) ? -1 : it - this->ids.begin();
 }
@@ -180,7 +184,7 @@ void TrackList::Swap(TrackList& tl) {
     std::swap(tl.ids, this->ids);
 }
 
-TrackPtr TrackList::GetFromCache(DBID key) {
+TrackPtr TrackList::GetFromCache(DBID key) const {
     auto it = this->cacheMap.find(key);
     if (it != this->cacheMap.end()) {
         this->cacheList.splice( /* promote to front */
@@ -194,7 +198,7 @@ TrackPtr TrackList::GetFromCache(DBID key) {
     return TrackPtr();
 }
 
-void TrackList::AddToCache(DBID key, TrackPtr value) {
+void TrackList::AddToCache(DBID key, TrackPtr value) const {
     auto it = this->cacheMap.find(key);
     if (it != this->cacheMap.end()) {
         cacheList.erase(it->second.second);
