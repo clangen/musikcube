@@ -36,6 +36,7 @@
 
 #include <core/sdk/constants.h>
 #include <core/sdk/IPlugin.h>
+#include <core/sdk/IPreferences.h>
 #include "WasapiOut.h"
 
 class WasapiPlugin : public musik::core::sdk::IPlugin {
@@ -58,3 +59,5 @@ extern "C" __declspec(dllexport) musik::core::sdk::IPlugin* GetPlugin() {
 extern "C" __declspec(dllexport) musik::core::sdk::IOutput* GetAudioOutput() {
     return new WasapiOut();
 }
+
+extern "C" __declspec(dllexport) void SetPreferences(musik::core::sdk::IPreferences* prefs);
