@@ -34,13 +34,13 @@
 
 #pragma once
 
-#include "IMetadataWriter.h"
+#include "ITrackWriter.h"
 
 namespace musik { namespace core { namespace sdk {
 
     class IMetadataReader {
         public:
-            virtual bool Read(const char *uri, musik::core::sdk::IMetadataWriter *target) = 0;
+            virtual bool Read(const char *uri, musik::core::sdk::ITrackWriter *target) = 0;
             virtual bool CanRead(const char *extension) = 0;
             virtual void Destroy() = 0;
     };

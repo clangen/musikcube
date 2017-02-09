@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <core/sdk/IMetadataWriter.h>
+#include <core/sdk/ITrackWriter.h>
 #include <core/library/ILibrary.h>
 #include <core/sdk/ITrack.h>
 #include <boost/shared_ptr.hpp>
@@ -48,7 +48,7 @@ namespace musik { namespace core {
     typedef std::vector<TrackPtr> TrackVector;
 
     class Track :
-        public musik::core::sdk::IMetadataWriter,
+        public musik::core::sdk::ITrackWriter,
         public musik::core::sdk::ITrack
     {
         public:

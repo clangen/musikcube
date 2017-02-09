@@ -37,9 +37,10 @@
 
 #include <core/debug.h>
 
-#include <core/library/query/local/SearchTrackListQuery.h>
-#include <core/library/query/local/CategoryTrackListQuery.h>
+#include <core/library/query/local/AlbumListQuery.h>
 #include <core/library/query/local/CategoryListQuery.h>
+#include <core/library/query/local/CategoryTrackListQuery.h>
+#include <core/library/query/local/SearchTrackListQuery.h>
 
 #define TAG "LocalSimpleDataProvider"
 
@@ -108,6 +109,24 @@ IMetadataValueList* LocalSimpleDataProvider::QueryCategory(const char* type, con
     }
     catch (...) {
         musik::debug::err(TAG, "QueryCategory failed");
+    }
+
+    return nullptr;
+}
+
+IMetadataMapList* LocalSimpleDataProvider::QueryAlbums(const char* filter) {
+    try {
+        std::shared_ptr<AlbumListQuery> search(
+            new AlbumListQuery(std::string(filter ? filter : "")));
+
+        this->library->Enqueue(search, ILibrary::QuerySynchronous);
+
+        if (search->GetStatus() == IQuery::Finished) {
+            return search->GetSdkResult();
+        }
+    }
+    catch (...) {
+        musik::debug::err(TAG, "QueryAlbums failed");
     }
 
     return nullptr;

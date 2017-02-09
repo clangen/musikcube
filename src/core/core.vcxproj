@@ -100,6 +100,9 @@
     <ClCompile Include="library\LocalLibrary.cpp" />
     <ClCompile Include="library\LibraryFactory.cpp" />
     <ClCompile Include="library\LocalSimpleDataProvider.cpp" />
+    <ClCompile Include="library\metadata\MetadataMap.cpp" />
+    <ClCompile Include="library\metadata\MetadataMapList.cpp" />
+    <ClCompile Include="library\query\local\AlbumListQuery.cpp" />
     <ClCompile Include="library\query\local\CategoryListQuery.cpp" />
     <ClCompile Include="library\query\local\CategoryTrackListQuery.cpp" />
     <ClCompile Include="library\query\local\DeletePlaylistQuery.cpp" />
@@ -151,6 +154,9 @@
     <ClInclude Include="library\LibraryFactory.h" />
     <ClInclude Include="library\LocalLibraryConstants.h" />
     <ClInclude Include="library\LocalSimpleDataProvider.h" />
+    <ClInclude Include="library\metadata\MetadataMap.h" />
+    <ClInclude Include="library\metadata\MetadataMapList.h" />
+    <ClInclude Include="library\query\local\AlbumListQuery.h" />
     <ClInclude Include="library\query\local\CategoryListQuery.h" />
     <ClInclude Include="library\query\local\CategoryTrackListQuery.h" />
     <ClInclude Include="library\query\local\DeletePlaylistQuery.h" />
@@ -182,6 +188,8 @@
     <ClInclude Include="sdk\IDSP.h" />
     <ClInclude Include="sdk\IDataStream.h" />
     <ClInclude Include="sdk\IDataStreamFactory.h" />
+    <ClInclude Include="sdk\IMetadataMap.h" />
+    <ClInclude Include="sdk\IMetadataMapList.h" />
     <ClInclude Include="sdk\IMetadataReader.h" />
     <ClInclude Include="sdk\IMetadataValue.h" />
     <ClInclude Include="sdk\IMetadataValueList.h" />
@@ -191,7 +199,6 @@
     <ClInclude Include="sdk\IPlaybackRemote.h" />
     <ClInclude Include="sdk\IPlaybackService.h" />
     <ClInclude Include="sdk\IPlugin.h" />
-    <ClInclude Include="sdk\IMetadataWriter.h" />
     <ClInclude Include="db\Connection.h" />
     <ClInclude Include="db\ScopedTransaction.h" />
     <ClInclude Include="db\Statement.h" />
@@ -205,6 +212,7 @@
     <ClInclude Include="sdk\ITrack.h" />
     <ClInclude Include="sdk\ITrackList.h" />
     <ClInclude Include="sdk\ITrackListEditor.h" />
+    <ClInclude Include="sdk\ITrackWriter.h" />
     <ClInclude Include="sdk\IVisualizer.h" />
     <ClInclude Include="support\Common.h" />
     <ClInclude Include="support\PreferenceKeys.h" />

@@ -34,13 +34,40 @@
 
 #pragma once
 
-namespace musik { namespace core { namespace sdk {
+#include <core/sdk/IMetadataMap.h>
+#include <unordered_map>
 
-    class IMetadataWriter {
+namespace musik { namespace core {
+
+    class MetadataMap :
+        public musik::core::sdk::IMetadataMap,
+        public std::enable_shared_from_this<MetadataMap>
+    {
         public:
-            virtual void SetValue(const char* metakey, const char* value) = 0;
-            virtual void ClearValue(const char* metakey) = 0;
-            virtual void SetThumbnail(const char *data, long size) = 0; /* should be SetBlob with a key */
+            MetadataMap(
+                unsigned long long id,
+                const std::string& description,
+                const std::string& type);
+
+            virtual ~MetadataMap();
+
+            /* IMetadataMap */
+            virtual void Release();
+            virtual unsigned long long GetId();
+            virtual int GetValue(const char* key, char* dst, int size);
+            virtual const char* GetDescription();
+            virtual const char* GetType();
+
+            /* implementation specific */
+            void SetValue(const char* key, const std::string& value);
+            musik::core::sdk::IMetadataMap* GetSdkValue();
+
+        private:
+            unsigned long long id;
+            std::string type, description;
+            std::map<std::string, std::string> metadata;
     };
 
-} } }
+    using MetadataMapPtr = std::shared_ptr<MetadataMap>;
+
+} }

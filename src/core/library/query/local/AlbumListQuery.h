@@ -34,35 +34,29 @@
 
 #pragma once
 
-#include <core/library/ILibrary.h>
-#include <core/sdk/ISimpleDataProvider.h>
+#include <core/library/query/local/LocalQueryBase.h>
+#include <core/library/metadata/MetadataMapList.h>
+#include <core/db/Connection.h>
 
 namespace musik { namespace core { namespace db { namespace local {
 
-    class LocalSimpleDataProvider : public musik::core::sdk::ISimpleDataProvider {
+    class AlbumListQuery : public musik::core::db::LocalQueryBase {
         public:
-            LocalSimpleDataProvider(musik::core::ILibraryPtr library);
+            AlbumListQuery(
+                const std::string& filter = "");
 
-            virtual ~LocalSimpleDataProvider();
+            virtual ~AlbumListQuery();
 
-            virtual musik::core::sdk::ITrackList*
-                QueryTracks(const char* query = "");
+            std::string Name() { return "AlbumListQuery"; }
 
-            virtual musik::core::sdk::ITrackList*
-                QueryTracksByCategory(
-                    const char* categoryType,
-                    unsigned long long selectedId);
+            musik::core::MetadataMapListPtr GetResult();
+            musik::core::sdk::IMetadataMapList* GetSdkResult();
 
-            virtual musik::core::sdk::IMetadataValueList*
-                QueryCategory(
-                    const char* type,
-                    const char* filter = "");
+        protected:
+            virtual bool OnRun(musik::core::db::Connection &db);
 
-            virtual musik::core::sdk::IMetadataMapList*
-                QueryAlbums(const char* filter = "");
-
-        private:
-            musik::core::ILibraryPtr library;
+            std::string filter;
+            musik::core::MetadataMapListPtr result;
     };
 
 } } } }

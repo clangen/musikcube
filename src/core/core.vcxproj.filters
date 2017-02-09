@@ -38,6 +38,9 @@
     <Filter Include="src\library\query\local">
       <UniqueIdentifier>{73173bbc-5951-460f-814d-25d1b71bf362}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\library\metadata">
+      <UniqueIdentifier>{f3766aee-efaf-49ed-b030-67290c5c2f31}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -160,6 +163,15 @@
     <ClCompile Include="plugin\Plugins.cpp">
       <Filter>src\plugin</Filter>
     </ClCompile>
+    <ClCompile Include="library\metadata\MetadataMap.cpp">
+      <Filter>src\library\metadata</Filter>
+    </ClCompile>
+    <ClCompile Include="library\metadata\MetadataMapList.cpp">
+      <Filter>src\library\metadata</Filter>
+    </ClCompile>
+    <ClCompile Include="library\query\local\AlbumListQuery.cpp">
+      <Filter>src\library\query\local</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -238,9 +250,6 @@
       <Filter>src\plugin</Filter>
     </ClInclude>
     <ClInclude Include="sdk\IMetadataReader.h">
-      <Filter>src\sdk</Filter>
-    </ClInclude>
-    <ClInclude Include="sdk\IMetadataWriter.h">
       <Filter>src\sdk</Filter>
     </ClInclude>
     <ClInclude Include="sdk\IPlugin.h">
@@ -398,6 +407,24 @@
     </ClInclude>
     <ClInclude Include="plugin\Plugins.h">
       <Filter>src\plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IMetadataMapList.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IMetadataMap.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\ITrackWriter.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="library\metadata\MetadataMapList.h">
+      <Filter>src\library\metadata</Filter>
+    </ClInclude>
+    <ClInclude Include="library\metadata\MetadataMap.h">
+      <Filter>src\library\metadata</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\local\AlbumListQuery.h">
+      <Filter>src\library\query\local</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

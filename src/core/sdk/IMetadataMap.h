@@ -34,35 +34,16 @@
 
 #pragma once
 
-#include <core/library/ILibrary.h>
-#include <core/sdk/ISimpleDataProvider.h>
+namespace musik { namespace core { namespace sdk {
 
-namespace musik { namespace core { namespace db { namespace local {
-
-    class LocalSimpleDataProvider : public musik::core::sdk::ISimpleDataProvider {
+    class IMetadataMap {
         public:
-            LocalSimpleDataProvider(musik::core::ILibraryPtr library);
-
-            virtual ~LocalSimpleDataProvider();
-
-            virtual musik::core::sdk::ITrackList*
-                QueryTracks(const char* query = "");
-
-            virtual musik::core::sdk::ITrackList*
-                QueryTracksByCategory(
-                    const char* categoryType,
-                    unsigned long long selectedId);
-
-            virtual musik::core::sdk::IMetadataValueList*
-                QueryCategory(
-                    const char* type,
-                    const char* filter = "");
-
-            virtual musik::core::sdk::IMetadataMapList*
-                QueryAlbums(const char* filter = "");
-
-        private:
-            musik::core::ILibraryPtr library;
+            virtual void Release() = 0;
+            virtual unsigned long long GetId() = 0;
+            virtual int GetValue(const char* key, char* dst, int size) = 0;
+            virtual const char* GetDescription() = 0;
+            virtual const char* GetType() = 0;
     };
 
-} } } }
+} } }
+

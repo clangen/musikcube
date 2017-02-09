@@ -36,6 +36,7 @@
 
 #include "ITrackList.h"
 #include "IMetadataValueList.h"
+#include "IMetadataMapList.h"
 
 namespace musik { namespace core { namespace sdk {
 
@@ -51,6 +52,8 @@ namespace musik { namespace core { namespace sdk {
             virtual IMetadataValueList* QueryCategory(
                 const char* type,
                 const char* filter = "") = 0;
+
+            virtual IMetadataMapList* QueryAlbums(const char* filter = "") = 0;
     };
 
 } } }

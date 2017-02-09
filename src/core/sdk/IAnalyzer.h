@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include "IMetadataWriter.h"
+#include "ITrackWriter.h"
 #include "IBuffer.h"
 
 namespace musik { namespace core { namespace sdk {
@@ -42,9 +42,9 @@ namespace musik { namespace core { namespace sdk {
     class  IAnalyzer {
         public:
             virtual void Destroy() = 0;
-            virtual bool Start(musik::core::sdk::IMetadataWriter *target) = 0;
-            virtual bool Analyze(musik::core::sdk::IMetadataWriter *target, IBuffer *buffer) = 0;
-            virtual bool End(musik::core::sdk::IMetadataWriter *target) = 0;
+            virtual bool Start(musik::core::sdk::ITrackWriter *target) = 0;
+            virtual bool Analyze(musik::core::sdk::ITrackWriter *target, IBuffer *buffer) = 0;
+            virtual bool End(musik::core::sdk::ITrackWriter *target) = 0;
     };
 
 } } }

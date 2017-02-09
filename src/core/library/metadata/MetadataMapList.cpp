@@ -32,37 +32,49 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "pch.hpp"
+#include "MetadataMapList.h"
 
-#include <core/library/ILibrary.h>
-#include <core/sdk/ISimpleDataProvider.h>
+using namespace musik::core;
+using namespace musik::core::db;
+using namespace musik::core::sdk;
 
-namespace musik { namespace core { namespace db { namespace local {
+struct SdkWrapper : public IMetadataMapList {
+    MetadataMapListPtr wrapped;
+    SdkWrapper(MetadataMapListPtr wrapped) { this->wrapped = wrapped; }
+    virtual void Release() { this->wrapped.reset(); }
+    virtual size_t Count() const { return this->wrapped->Count(); }
+    virtual IMetadataMap* GetMetadata(size_t index) const { return this->wrapped->GetMetadata(index); }
+};
 
-    class LocalSimpleDataProvider : public musik::core::sdk::ISimpleDataProvider {
-        public:
-            LocalSimpleDataProvider(musik::core::ILibraryPtr library);
+MetadataMapList::MetadataMapList() {
 
-            virtual ~LocalSimpleDataProvider();
+}
 
-            virtual musik::core::sdk::ITrackList*
-                QueryTracks(const char* query = "");
+MetadataMapList::~MetadataMapList() {
 
-            virtual musik::core::sdk::ITrackList*
-                QueryTracksByCategory(
-                    const char* categoryType,
-                    unsigned long long selectedId);
+}
 
-            virtual musik::core::sdk::IMetadataValueList*
-                QueryCategory(
-                    const char* type,
-                    const char* filter = "");
+void MetadataMapList::Release() {
+    /* nothing. wrapper helps with cleanup. */
+}
 
-            virtual musik::core::sdk::IMetadataMapList*
-                QueryAlbums(const char* filter = "");
+size_t MetadataMapList::Count() const {
+    return this->entries.size();
+}
 
-        private:
-            musik::core::ILibraryPtr library;
-    };
+IMetadataMap* MetadataMapList::GetMetadata(size_t index) const {
+    return this->entries.at(index)->GetSdkValue();
+}
 
-} } } }
+void MetadataMapList::Add(MetadataMapPtr entry) {
+    this->entries.push_back(entry);
+}
+
+MetadataMapPtr MetadataMapList::Get(size_t index) {
+    return this->entries.at(index);
+}
+
+IMetadataMapList* MetadataMapList::GetSdkValue() {
+    return new SdkWrapper(shared_from_this());
+}

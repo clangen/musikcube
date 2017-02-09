@@ -115,7 +115,7 @@ bool TaglibMetadataReader::CanRead(const char *extension){
     return false;
 }
 
-bool TaglibMetadataReader::Read(const char* uri, musik::core::sdk::IMetadataWriter *track) {
+bool TaglibMetadataReader::Read(const char* uri, musik::core::sdk::ITrackWriter *track) {
     std::string path(uri);
     std::string extension;
 
@@ -137,7 +137,7 @@ bool TaglibMetadataReader::Read(const char* uri, musik::core::sdk::IMetadataWrit
 
 #include <iostream>
 
-bool TaglibMetadataReader::GetGenericTag(const char* uri, musik::core::sdk::IMetadataWriter *target) {
+bool TaglibMetadataReader::GetGenericTag(const char* uri, musik::core::sdk::ITrackWriter *target) {
 #ifdef WIN32
     TagLib::FileRef file(utf8to16(uri).c_str());
 #else
@@ -186,7 +186,7 @@ bool TaglibMetadataReader::GetGenericTag(const char* uri, musik::core::sdk::IMet
     return false;
 }
 
-bool TaglibMetadataReader::GetID3v2Tag(const char* uri, musik::core::sdk::IMetadataWriter *track) {
+bool TaglibMetadataReader::GetID3v2Tag(const char* uri, musik::core::sdk::ITrackWriter *track) {
     TagLib::ID3v2::FrameFactory::instance()->setDefaultTextEncoding(TagLib::String::UTF8);
 
 #ifdef WIN32
@@ -356,7 +356,7 @@ bool TaglibMetadataReader::GetID3v2Tag(const char* uri, musik::core::sdk::IMetad
 void TaglibMetadataReader::SetTagValue(
     const char* key,
     const TagLib::String tagString,
-    musik::core::sdk::IMetadataWriter *track)
+    musik::core::sdk::ITrackWriter *track)
 {
     std::string value(tagString.to8Bit(true));
     track->SetValue(key, value.c_str());
@@ -365,7 +365,7 @@ void TaglibMetadataReader::SetTagValue(
 void TaglibMetadataReader::SetTagValue(
     const char* key,
     const char* string,
-    musik::core::sdk::IMetadataWriter *track)
+    musik::core::sdk::ITrackWriter *track)
 {
     std::string temp(string);
     track->SetValue(key, temp.c_str());
@@ -374,7 +374,7 @@ void TaglibMetadataReader::SetTagValue(
 void TaglibMetadataReader::SetTagValue(
     const char* key,
     const int tagInt,
-    musik::core::sdk::IMetadataWriter *target)
+    musik::core::sdk::ITrackWriter *target)
 {
     std::string temp = boost::str(boost::format("%1%") % tagInt);
     target->SetValue(key, temp.c_str());
@@ -383,7 +383,7 @@ void TaglibMetadataReader::SetTagValue(
 void TaglibMetadataReader::SetTagValues(
     const char* key,
     const TagLib::ID3v2::FrameList &frame,
-    musik::core::sdk::IMetadataWriter *target)
+    musik::core::sdk::ITrackWriter *target)
 {
     if (!frame.isEmpty()) {
         TagLib::ID3v2::FrameList::ConstIterator value = frame.begin();
@@ -401,7 +401,7 @@ void TaglibMetadataReader::SetTagValues(
 void TaglibMetadataReader::SetSlashSeparatedValues(
     const char* key,
     TagLib::String tagString,
-    musik::core::sdk::IMetadataWriter *track)
+    musik::core::sdk::ITrackWriter *track)
 {
     if(!tagString.isEmpty()) {
         std::string value(tagString.to8Bit(true));
@@ -419,7 +419,7 @@ void TaglibMetadataReader::SetSlashSeparatedValues(
 void TaglibMetadataReader::SetSlashSeparatedValues(
     const char* key,
     const TagLib::ID3v2::FrameList &frame,
-    musik::core::sdk::IMetadataWriter *track)
+    musik::core::sdk::ITrackWriter *track)
 {
     if(!frame.isEmpty()) {
         TagLib::ID3v2::FrameList::ConstIterator value = frame.begin();
@@ -432,7 +432,7 @@ void TaglibMetadataReader::SetSlashSeparatedValues(
 
 void TaglibMetadataReader::SetAudioProperties(
     TagLib::AudioProperties *audioProperties,
-    musik::core::sdk::IMetadataWriter *track)
+    musik::core::sdk::ITrackWriter *track)
 {
     /* FIXME: it's overkill to bring boost in just to convert ints to strings */
 

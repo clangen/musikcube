@@ -34,35 +34,13 @@
 
 #pragma once
 
-#include <core/library/ILibrary.h>
-#include <core/sdk/ISimpleDataProvider.h>
+namespace musik { namespace core { namespace sdk {
 
-namespace musik { namespace core { namespace db { namespace local {
-
-    class LocalSimpleDataProvider : public musik::core::sdk::ISimpleDataProvider {
+    class ITrackWriter {
         public:
-            LocalSimpleDataProvider(musik::core::ILibraryPtr library);
-
-            virtual ~LocalSimpleDataProvider();
-
-            virtual musik::core::sdk::ITrackList*
-                QueryTracks(const char* query = "");
-
-            virtual musik::core::sdk::ITrackList*
-                QueryTracksByCategory(
-                    const char* categoryType,
-                    unsigned long long selectedId);
-
-            virtual musik::core::sdk::IMetadataValueList*
-                QueryCategory(
-                    const char* type,
-                    const char* filter = "");
-
-            virtual musik::core::sdk::IMetadataMapList*
-                QueryAlbums(const char* filter = "");
-
-        private:
-            musik::core::ILibraryPtr library;
+            virtual void SetValue(const char* metakey, const char* value) = 0;
+            virtual void ClearValue(const char* metakey) = 0;
+            virtual void SetThumbnail(const char *data, long size) = 0; /* should be SetBlob with a key */
     };
 
-} } } }
+} } }
