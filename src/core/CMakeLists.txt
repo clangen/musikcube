@@ -19,6 +19,7 @@ set(CORE_SOURCES
   ./library/LibraryFactory.cpp
   ./library/LocalLibrary.cpp
   ./library/LocalSimpleDataProvider.cpp
+  ./library/query/local/AlbumListQuery.cpp
   ./library/query/local/GetPlaylistQuery.cpp
   ./library/query/local/CategoryListQuery.cpp
   ./library/query/local/CategoryTrackListQuery.cpp
@@ -26,6 +27,8 @@ set(CORE_SOURCES
   ./library/query/local/NowPlayingTrackListQuery.cpp
   ./library/query/local/SavePlaylistQuery.cpp
   ./library/query/local/SearchTrackListQuery.cpp
+  ./library/metadata/MetadataMap.cpp
+  ./library/metadata/MetadataMapList.cpp
   ./library/track/IndexerTrack.cpp
   ./library/track/LibraryTrack.cpp
   ./library/track/Track.cpp

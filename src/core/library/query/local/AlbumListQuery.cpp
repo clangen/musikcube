@@ -91,7 +91,7 @@ bool AlbumListQuery::OnRun(Connection& db) {
 
     bool filtered = this->filter.size() > 0;
 
-    std::string query = "SELECT " + COLUMNS + " FROM " + TABLES + " WHERE ";
+    std::string query = "SELECT DISTINCT " + COLUMNS + " FROM " + TABLES + " WHERE ";
     query += filtered ? FILTER_PREDICATE : "";
     query += GENERAL_PREDICATE + " ORDER BY " + ORDER + ";";
 

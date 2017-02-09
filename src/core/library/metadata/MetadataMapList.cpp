@@ -39,13 +39,16 @@ using namespace musik::core;
 using namespace musik::core::db;
 using namespace musik::core::sdk;
 
-struct SdkWrapper : public IMetadataMapList {
-    MetadataMapListPtr wrapped;
-    SdkWrapper(MetadataMapListPtr wrapped) { this->wrapped = wrapped; }
-    virtual void Release() { this->wrapped.reset(); }
-    virtual size_t Count() const { return this->wrapped->Count(); }
-    virtual IMetadataMap* GetMetadata(size_t index) const { return this->wrapped->GetMetadata(index); }
-};
+namespace {
+    class SdkWrapper : public IMetadataMapList {
+        public:
+            SdkWrapper(MetadataMapListPtr wrapped) { this->wrapped = wrapped; }
+            virtual void Release() { this->wrapped.reset(); }
+            virtual size_t Count() const { return this->wrapped->Count(); }
+            virtual IMetadataMap* GetMetadata(size_t index) const { return this->wrapped->GetMetadata(index); }
+            MetadataMapListPtr wrapped;
+    };
+}
 
 MetadataMapList::MetadataMapList() {
 

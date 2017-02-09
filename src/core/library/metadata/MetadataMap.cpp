@@ -46,19 +46,22 @@ using namespace musik::core::db;
 using namespace musik::core::library;
 using namespace musik::core::sdk;
 
-/* a wrapper around a shared pointer to a MetadataMap. we
-can pass this to a plugin and it will keep the instance
-around until it's released, even if the containing list is
-released. */
-struct SdkWrapper : public IMetadataMap {
-    MetadataMapPtr wrapped;
-    SdkWrapper(MetadataMapPtr wrapped) { this->wrapped = wrapped; };
-    virtual void Release() { this->wrapped.reset(); }
-    virtual unsigned long long GetId() { return this->wrapped->GetId(); }
-    virtual int GetValue(const char* key, char* dst, int size) { return this->wrapped->GetValue(key, dst, size); }
-    virtual const char* GetDescription() { return this->wrapped->GetDescription(); }
-    virtual const char* GetType() { return this->wrapped->GetType(); }
-};
+namespace {
+    /* a wrapper around a shared pointer to a MetadataMap. we
+    can pass this to a plugin and it will keep the instance
+    around until it's released, even if the containing list is
+    released. */
+    class SdkWrapper : public IMetadataMap {
+        public:
+            SdkWrapper(MetadataMapPtr wrapped) { this->wrapped = wrapped; };
+            virtual void Release() { this->wrapped.reset(); }
+            virtual unsigned long long GetId() { return this->wrapped->GetId(); }
+            virtual int GetValue(const char* key, char* dst, int size) { return this->wrapped->GetValue(key, dst, size); }
+            virtual const char* GetDescription() { return this->wrapped->GetDescription(); }
+            virtual const char* GetType() { return this->wrapped->GetType(); }
+            MetadataMapPtr wrapped;
+    };
+}
 
 MetadataMap::MetadataMap(
     unsigned long long id,
