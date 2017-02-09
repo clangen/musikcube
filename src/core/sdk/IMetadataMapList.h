@@ -35,6 +35,7 @@
 #pragma once
 
 #include "IMetadataMap.h"
+#include <stddef.h>
 
 namespace musik { namespace core { namespace sdk {
 

@@ -35,6 +35,7 @@
 #pragma once
 
 #include <core/sdk/IMetadataMap.h>
+#include <string>
 #include <unordered_map>
 
 namespace musik { namespace core {
@@ -65,7 +66,7 @@ namespace musik { namespace core {
         private:
             unsigned long long id;
             std::string type, description;
-            std::map<std::string, std::string> metadata;
+            std::unordered_map<std::string, std::string> metadata;
     };
 
     using MetadataMapPtr = std::shared_ptr<MetadataMap>;

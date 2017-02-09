@@ -36,7 +36,6 @@
 #include "MetadataMapList.h"
 
 using namespace musik::core;
-using namespace musik::core::db;
 using namespace musik::core::sdk;
 
 namespace {
