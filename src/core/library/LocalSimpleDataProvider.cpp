@@ -58,10 +58,14 @@ LocalSimpleDataProvider::~LocalSimpleDataProvider() {
 
 }
 
-ITrackList* LocalSimpleDataProvider::QueryTracks(const char* query) {
+ITrackList* LocalSimpleDataProvider::QueryTracks(const char* query, int limit, int offset) {
     try {
         std::shared_ptr<SearchTrackListQuery> search(
             new SearchTrackListQuery(this->library, std::string(query ? query : "")));
+
+        if (limit >= 0) {
+            search->SetLimitAndOffset(limit, offset);
+        }
 
         this->library->Enqueue(search, ILibrary::QuerySynchronous);
 
@@ -77,11 +81,15 @@ ITrackList* LocalSimpleDataProvider::QueryTracks(const char* query) {
 }
 
 ITrackList* LocalSimpleDataProvider::QueryTracksByCategory(
-    const char* categoryType, unsigned long long selectedId)
+    const char* categoryType, unsigned long long selectedId, int limit, int offset)
 {
     try {
         std::shared_ptr<CategoryTrackListQuery> search(
             new CategoryTrackListQuery(this->library, categoryType, selectedId));
+
+        if (limit >= 0) {
+            search->SetLimitAndOffset(limit, offset);
+        }
 
         this->library->Enqueue(search, ILibrary::QuerySynchronous);
 

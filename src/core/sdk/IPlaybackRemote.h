@@ -47,6 +47,7 @@ namespace musik { namespace core { namespace sdk {
             virtual void OnPlaybackStateChanged(PlaybackState state) = 0;
             virtual void OnVolumeChanged(double volume) = 0;
             virtual void OnModeChanged(RepeatMode repeatMode, bool shuffled) = 0;
+            virtual void OnPlayQueueChanged() = 0;
     };
 
 } } }

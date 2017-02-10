@@ -43,11 +43,15 @@ namespace musik { namespace core { namespace sdk {
     class ISimpleDataProvider {
         public:
             virtual ITrackList* QueryTracks(
-                const char* query = nullptr) = 0;
+                const char* query = nullptr,
+                int limit = -1,
+                int offset = 0) = 0;
 
             virtual ITrackList* QueryTracksByCategory(
                 const char* categoryType,
-                unsigned long long selectedId) = 0;
+                unsigned long long selectedId,
+                int limit = -1,
+                int offset = 0) = 0;
 
             virtual IMetadataValueList* QueryCategory(
                 const char* type,

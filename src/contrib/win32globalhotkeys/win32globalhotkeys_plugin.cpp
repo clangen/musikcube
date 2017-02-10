@@ -173,6 +173,10 @@ class MMShellHook:
             virtual void OnModeChanged(musik::core::sdk::RepeatMode repeatMode, bool shuffled) {
 
             }
+
+            virtual void OnPlayQueueChanged() {
+
+            }
 };
 
 static MMShellHook plugin;

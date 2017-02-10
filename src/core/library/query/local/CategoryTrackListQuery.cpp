@@ -109,7 +109,7 @@ bool CategoryTrackListQuery::OnRun(Connection& db) {
         "SELECT DISTINCT t.id, al.name " \
         "FROM tracks t, albums al, artists ar, genres gn " \
         "WHERE t.%s=? AND t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id "
-        "ORDER BY al.name, disc, track, ar.name") % this->column);
+        "ORDER BY al.name, disc, track, ar.name %s") % this->column % this->GetLimitAndOffset());
 
     Statement trackQuery(query.c_str(), db);
     trackQuery.BindInt(0, this->id);

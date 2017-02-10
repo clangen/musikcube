@@ -101,15 +101,17 @@ bool SearchTrackListQuery::OnRun(Connection& db) {
             "WHERE "
                 "(t.title LIKE ? OR al.name LIKE ? OR ar.name LIKE ? OR gn.name LIKE ?) "
                 " AND t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id "
-            "ORDER BY al.name, disc, track, ar.name";
+            "ORDER BY al.name, disc, track, ar.name ";
     }
     else {
         query =
             "SELECT DISTINCT t.id, al.name "
             "FROM tracks t, albums al, artists ar, genres gn "
             "WHERE t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id "
-            "ORDER BY al.name, disc, track, ar.name";
+            "ORDER BY al.name, disc, track, ar.name ";
     }
+
+    query += this->GetLimitAndOffset();
 
     Statement trackQuery(query.c_str(), db);
 

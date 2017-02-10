@@ -46,12 +46,17 @@ namespace musik { namespace core { namespace db { namespace local {
             virtual ~LocalSimpleDataProvider();
 
             virtual musik::core::sdk::ITrackList*
-                QueryTracks(const char* query = "");
+                QueryTracks(
+                    const char* query = "",
+                    int limit = -1,
+                    int offset = 0);
 
             virtual musik::core::sdk::ITrackList*
                 QueryTracksByCategory(
                     const char* categoryType,
-                    unsigned long long selectedId);
+                    unsigned long long selectedId,
+                    int limit = -1,
+                    int offset = 0);
 
             virtual musik::core::sdk::IMetadataValueList*
                 QueryCategory(

@@ -38,6 +38,7 @@
 #include <core/db/Connection.h>
 #include <core/library/track/Track.h>
 #include <core/library/track/TrackList.h>
+#include <boost/format.hpp>
 
 namespace musik { namespace core { namespace db { namespace local {
 
@@ -46,17 +47,38 @@ namespace musik { namespace core { namespace db { namespace local {
             typedef std::shared_ptr<musik::core::TrackList> Result;
             typedef std::shared_ptr<std::set<size_t> > Headers;
 
+            TrackListQueryBase() {
+                this->limit = -1;
+                this->offset = 0;
+            }
+
             virtual ~TrackListQueryBase() { };
             virtual std::string Name() = 0;
             virtual Result GetResult() = 0;
             virtual Headers GetHeaders() = 0;
             virtual size_t GetQueryHash() = 0;
 
+            virtual void SetLimitAndOffset(int limit, int offset = 0) {
+                this->limit = limit;
+                this->offset = offset;
+            }
+
             virtual musik::core::sdk::ITrackList* GetSdkResult() {
                 return new WrappedTrackList(GetResult());
             }
 
+        protected:
+            std::string GetLimitAndOffset() {
+                if (this->limit > 0 && this->offset >= 0) {
+                    return boost::str(boost::format("LIMIT %d OFFSET %d")
+                        % this->limit % this->offset);
+                }
+                return "";
+            }
+
         private:
+            int limit, offset;
+
             class WrappedTrackList : public musik::core::sdk::ITrackList {
                 public:
                     WrappedTrackList(Result wrapped) {

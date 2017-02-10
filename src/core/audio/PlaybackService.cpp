@@ -71,6 +71,7 @@ using Editor = PlaybackService::Editor;
 #define MESSAGE_MODE_CHANGED 1005
 #define MESSAGE_SHUFFLED 1006
 #define MESSAGE_NOTIFY_EDITED 1007
+#define MESSAGE_NOTIFY_RESET 1008
 
 class StreamMessage : public Message {
     public:
@@ -336,7 +337,13 @@ void PlaybackService::ProcessMessage(IMessage &message) {
     else if (type == MESSAGE_TIME_CHANGED) {
         this->TimeChanged(transport.Position());
     }
-    else if (type == MESSAGE_NOTIFY_EDITED) {
+    else if (type == MESSAGE_NOTIFY_EDITED ||
+             type == MESSAGE_NOTIFY_RESET)
+    {
+        for (auto it = remotes.begin(); it != remotes.end(); it++) {
+            (*it)->OnPlayQueueChanged();
+        }
+
         this->QueueEdited();
     }
 }
@@ -446,6 +453,8 @@ void PlaybackService::Play(const TrackList& tracks, size_t index) {
     if (index <= tracks.Count()) {
         this->Play(index);
     }
+
+    POST(this, MESSAGE_NOTIFY_RESET, 0, 0);
 }
 
 void PlaybackService::Play(const musik::core::sdk::ITrackList* source, size_t index) {
@@ -468,6 +477,8 @@ void PlaybackService::Play(const musik::core::sdk::ITrackList* source, size_t in
         if (index <= source->Count()) {
             this->Play(index);
         }
+
+        POST(this, MESSAGE_NOTIFY_RESET, 0, 0);
     }
 }
 
