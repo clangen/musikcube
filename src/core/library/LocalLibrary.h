@@ -94,8 +94,6 @@ namespace musik { namespace core { namespace library {
             LocalLibrary(std::string name, int id); /* ctor */
 
             void RunQuery(LocalQueryPtr query, bool notify = true);
-            virtual void Exit();
-            bool Exited();
             void ThreadProc();
             LocalQueryPtr GetNextQuery();
 
@@ -106,11 +104,11 @@ namespace musik { namespace core { namespace library {
             std::string identifier;
             int id;
             std::string name;
-            bool exit;
 
             std::thread* thread;
             std::condition_variable queueCondition;
             std::mutex mutex;
+            std::atomic<bool> exit;
 
             core::IIndexer *indexer;
             core::db::Connection db;

@@ -125,13 +125,13 @@ void LocalLibrary::Close() {
         if (this->thread) {
             thread = this->thread;
             this->thread = nullptr;
-            this->exit = true;
             this->queryQueue.clear();
-            this->Exit();
+            this->exit = true;
         }
     }
 
     if (thread) {
+        this->queueCondition.notify_all();
         thread->join();
         delete thread;
     }
@@ -186,42 +186,30 @@ int LocalLibrary::Enqueue(IQueryPtr query, unsigned int options) {
     return -1;
 }
 
-bool LocalLibrary::Exited() {
-    return this->exit;
-}
-
-void LocalLibrary::Exit() {
-    this->exit = true;
-    this->queueCondition.notify_all();
-}
-
-void LocalLibrary::ThreadProc() {
-    LocalQueryPtr query;
-
-    while (true) {
-        if ((query = GetNextQuery())) {
-            this->RunQuery(query);
-        }
-
-        if (!this->queryQueue.size() && !this->Exited()) {
-            std::unique_lock<std::mutex> lock(this->mutex);
-            this->queueCondition.wait(lock);
-        }
-
-        if (this->Exited()) {
-            return;
-        }
-    }
-}
 
 LocalLibrary::LocalQueryPtr LocalLibrary::GetNextQuery() {
-    if (queryQueue.size()) {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    while (!this->queryQueue.size() && !this->exit) {
+        this->queueCondition.wait(lock);
+    }
+
+    if (this->exit) {
+        return LocalQueryPtr();
+    }
+    else {
         LocalQueryPtr front = queryQueue.front();
         queryQueue.pop_front();
         return front;
     }
+}
 
-    return LocalQueryPtr();
+void LocalLibrary::ThreadProc() {
+    while (!this->exit) {
+        LocalQueryPtr query = GetNextQuery();
+        if (query) {
+            this->RunQuery(query);
+        }
+    }
 }
 
 void LocalLibrary::RunQuery(LocalQueryPtr query, bool notify) {
