@@ -59,6 +59,11 @@ namespace musik { namespace core { namespace sdk {
                 const char* filter = "") = 0;
 
             virtual IMetadataMapList* QueryAlbums(const char* filter = "") = 0;
+
+            virtual IMetadataMapList* QueryAlbums(
+                const char* categoryIdName,
+                unsigned long long categoryIdValue,
+                const char* filter = "") = 0;
     };
 
 } } }

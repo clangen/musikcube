@@ -67,6 +67,11 @@ namespace musik { namespace core { namespace db { namespace local {
             virtual musik::core::sdk::IMetadataMapList*
                 QueryAlbums(const char* filter = "");
 
+            virtual musik::core::sdk::IMetadataMapList* QueryAlbums(
+                const char* categoryIdName,
+                unsigned long long categoryIdValue,
+                const char* filter = "");
+
         private:
             musik::core::ILibraryPtr library;
     };

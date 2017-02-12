@@ -47,6 +47,13 @@ using namespace musik::core::db::local;
 using namespace musik::core::library::constants;
 using namespace musik::core::sdk;
 
+static std::map<std::string, std::string> FIELD_TO_FOREIGN_KEY = {
+    std::make_pair(Track::ALBUM, Track::ALBUM_ID),
+    std::make_pair(Track::ARTIST, Track::ARTIST_ID),
+    std::make_pair(Track::GENRE, Track::GENRE_ID),
+    std::make_pair(Track::ALBUM_ARTIST, Track::ALBUM_ARTIST_ID)
+};
+
 #define RESET_RESULT(x) x.reset(new MetadataMapList())
 
 static const std::string COLUMNS =
@@ -63,7 +70,10 @@ static const std::string TABLES =
     "albums, tracks, artists ";
 
 static const std::string FILTER_PREDICATE =
-    "LOWER(album) like ? AND ";
+    " LOWER(album) like ? AND ";
+
+static const std::string CATEGORY_PREDICATE =
+    " tracks.%s=? AND ";
 
 static const std::string GENERAL_PREDICATE =
     "albums.id = tracks.album_id AND "
@@ -73,7 +83,18 @@ static const std::string ORDER =
     "albums.name asc ";
 
 AlbumListQuery::AlbumListQuery(const std::string& filter)
-: filter(filter) {
+: filter(filter)
+, fieldIdValue(-1) {
+    RESET_RESULT(result);
+}
+
+AlbumListQuery::AlbumListQuery(
+    const std::string& fieldIdName,
+    unsigned long long fieldIdValue,
+    const std::string& filter)
+: filter(filter)
+, fieldIdValue(fieldIdValue) {
+    this->fieldIdName = FIELD_TO_FOREIGN_KEY[fieldIdName];
     RESET_RESULT(result);
 }
 
@@ -93,19 +114,35 @@ bool AlbumListQuery::OnRun(Connection& db) {
     RESET_RESULT(result);
 
     bool filtered = this->filter.size() > 0;
+    bool category = fieldIdName.size() && fieldIdValue != -1;
 
     std::string query = "SELECT DISTINCT " + COLUMNS + " FROM " + TABLES + " WHERE ";
     query += filtered ? FILTER_PREDICATE : "";
+
+    if (category) {
+        query += boost::str(boost::format(CATEGORY_PREDICATE) % fieldIdName);
+    }
+
     query += GENERAL_PREDICATE + " ORDER BY " + ORDER + ";";
 
     Statement stmt(query.c_str(), db);
+
+    if (filtered) {
+
+    }
+
+    int bindIndex = 0;
 
     if (filtered) {
         /* transform "FilteR" => "%filter%" */
         std::string wild = this->filter;
         std::transform(wild.begin(), wild.end(), wild.begin(), tolower);
         wild = "%" + wild + "%";
-        stmt.BindText(0, wild);
+        stmt.BindText(bindIndex++, wild);
+    }
+
+    if (category) {
+        stmt.BindInt(bindIndex, this->fieldIdValue);
     }
 
     while (stmt.Step() == Row) {

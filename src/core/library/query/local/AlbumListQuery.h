@@ -43,6 +43,11 @@ namespace musik { namespace core { namespace db { namespace local {
     class AlbumListQuery : public musik::core::db::LocalQueryBase {
         public:
             AlbumListQuery(
+                const std::string& fieldIdName,
+                unsigned long long fieldIdValue,
+                const std::string& filter = "");
+
+            AlbumListQuery(
                 const std::string& filter = "");
 
             virtual ~AlbumListQuery();
@@ -56,6 +61,8 @@ namespace musik { namespace core { namespace db { namespace local {
             virtual bool OnRun(musik::core::db::Connection &db);
 
             std::string filter;
+            std::string fieldIdName;
+            unsigned long long fieldIdValue;
             musik::core::MetadataMapListPtr result;
     };
 

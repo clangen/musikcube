@@ -126,10 +126,16 @@ IMetadataValueList* LocalSimpleDataProvider::QueryCategory(const char* type, con
     return nullptr;
 }
 
-IMetadataMapList* LocalSimpleDataProvider::QueryAlbums(const char* filter) {
+IMetadataMapList* LocalSimpleDataProvider::QueryAlbums(
+    const char* categoryIdName,
+    unsigned long long categoryIdValue,
+    const char* filter)
+{
     try {
-        std::shared_ptr<AlbumListQuery> search(
-            new AlbumListQuery(std::string(filter ? filter : "")));
+        std::shared_ptr<AlbumListQuery> search(new AlbumListQuery(
+            std::string(categoryIdName ? categoryIdName : ""),
+            categoryIdValue,
+            std::string(filter ? filter : "")));
 
         this->library->Enqueue(search, ILibrary::QuerySynchronous);
 
@@ -142,4 +148,8 @@ IMetadataMapList* LocalSimpleDataProvider::QueryAlbums(const char* filter) {
     }
 
     return nullptr;
+}
+
+IMetadataMapList* LocalSimpleDataProvider::QueryAlbums(const char* filter) {
+    return this->QueryAlbums(nullptr, -1, filter);
 }
