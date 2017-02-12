@@ -50,6 +50,7 @@ namespace musik { namespace core { namespace sdk {
             virtual ITrackList* QueryTracksByCategory(
                 const char* categoryType,
                 unsigned long long selectedId,
+                const char* filter = "",
                 int limit = -1,
                 int offset = 0) = 0;
 

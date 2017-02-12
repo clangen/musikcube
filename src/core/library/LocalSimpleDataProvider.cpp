@@ -81,11 +81,15 @@ ITrackList* LocalSimpleDataProvider::QueryTracks(const char* query, int limit, i
 }
 
 ITrackList* LocalSimpleDataProvider::QueryTracksByCategory(
-    const char* categoryType, unsigned long long selectedId, int limit, int offset)
+    const char* categoryType,
+    unsigned long long selectedId,
+    const char* filter,
+    int limit,
+    int offset)
 {
     try {
         std::shared_ptr<CategoryTrackListQuery> search(
-            new CategoryTrackListQuery(this->library, categoryType, selectedId));
+            new CategoryTrackListQuery(this->library, categoryType, selectedId, filter));
 
         if (limit >= 0) {
             search->SetLimitAndOffset(limit, offset);

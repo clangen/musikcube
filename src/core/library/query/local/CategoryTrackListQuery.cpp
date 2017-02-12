@@ -39,6 +39,9 @@
 #include <core/library/LocalLibraryConstants.h>
 #include <core/db/Statement.h>
 
+#include <boost/algorithm/string/case_conv.hpp>
+#include <boost/algorithm/string.hpp>
+
 #include <map>
 
 using musik::core::db::Statement;
@@ -50,6 +53,7 @@ using musik::core::ILibraryPtr;
 using namespace musik::core::db;
 using namespace musik::core::db::local;
 using namespace musik::core::library::constants;
+using namespace boost::algorithm;
 
 static std::map<std::string, std::string> FIELD_TO_FOREIGN_KEY =
     {
@@ -59,12 +63,21 @@ static std::map<std::string, std::string> FIELD_TO_FOREIGN_KEY =
         std::make_pair(Track::ALBUM_ARTIST, Track::ALBUM_ARTIST_ID)
     };
 
-CategoryTrackListQuery::CategoryTrackListQuery(ILibraryPtr library, const std::string& column, DBID id) {
+CategoryTrackListQuery::CategoryTrackListQuery(
+    ILibraryPtr library,
+    const std::string& column,
+    DBID id,
+    const std::string& filter)
+{
     this->library = library;
     this->id = id;
     this->result.reset(new musik::core::TrackList(library));
     this->headers.reset(new std::set<size_t>());
     this->hash = 0;
+
+    if (filter.size()) {
+        this->filter = "%" + trim_copy(to_lower_copy(filter)) + "%";
+    }
 
     if (FIELD_TO_FOREIGN_KEY.find(column) == FIELD_TO_FOREIGN_KEY.end()) {
         throw std::runtime_error("invalid input column specified");
@@ -105,14 +118,31 @@ bool CategoryTrackListQuery::OnRun(Connection& db) {
     std::string lastAlbum;
     size_t index = 0;
 
-    std::string query = boost::str(boost::format(
-        "SELECT DISTINCT t.id, al.name " \
-        "FROM tracks t, albums al, artists ar, genres gn " \
-        "WHERE t.%s=? AND t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id "
-        "ORDER BY al.name, disc, track, ar.name %s") % this->column % this->GetLimitAndOffset());
+    std::string query =
+        "SELECT DISTINCT t.id, al.name "
+        "FROM tracks t, albums al, artists ar, genres gn "
+        "WHERE t.%s=? AND t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id ";
+
+    if (this->filter.size()) {
+        query += " AND (t.title LIKE ? OR al.name LIKE ? OR ar.name LIKE ? OR gn.name LIKE ?) ";
+    }
+
+    query += "ORDER BY al.name, disc, track, ar.name %s";
+
+    query = boost::str(boost::format(query) % this->column % this->GetLimitAndOffset());
 
     Statement trackQuery(query.c_str(), db);
-    trackQuery.BindInt(0, this->id);
+
+    if (this->filter.size()) {
+        trackQuery.BindInt(0, this->id);
+        trackQuery.BindText(1, this->filter);
+        trackQuery.BindText(2, this->filter);
+        trackQuery.BindText(3, this->filter);
+        trackQuery.BindText(4, this->filter);
+    }
+    else {
+        trackQuery.BindInt(0, this->id);
+    }
 
     while (trackQuery.Step() == Row) {
         DBID id = trackQuery.ColumnInt64(0);

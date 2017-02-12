@@ -47,7 +47,8 @@ namespace musik { namespace core { namespace db { namespace local {
             CategoryTrackListQuery(
                 musik::core::ILibraryPtr library,
                 const std::string& column,
-                DBID id);
+                DBID id,
+                const std::string& filter = "");
 
             virtual ~CategoryTrackListQuery();
 
@@ -67,6 +68,7 @@ namespace musik { namespace core { namespace db { namespace local {
             std::string column;
             DBID id;
             size_t hash;
+            std::string filter;
     };
 
 } } } }
