@@ -70,7 +70,7 @@ static const std::string TABLES =
     "albums, tracks, artists ";
 
 static const std::string FILTER_PREDICATE =
-    " LOWER(album) like ? AND ";
+    " (LOWER(album) like ? OR LOWER(album_artist) like ?) AND ";
 
 static const std::string CATEGORY_PREDICATE =
     " tracks.%s=? AND ";
@@ -127,10 +127,6 @@ bool AlbumListQuery::OnRun(Connection& db) {
 
     Statement stmt(query.c_str(), db);
 
-    if (filtered) {
-
-    }
-
     int bindIndex = 0;
 
     if (filtered) {
@@ -138,6 +134,7 @@ bool AlbumListQuery::OnRun(Connection& db) {
         std::string wild = this->filter;
         std::transform(wild.begin(), wild.end(), wild.begin(), tolower);
         wild = "%" + wild + "%";
+        stmt.BindText(bindIndex++, wild);
         stmt.BindText(bindIndex++, wild);
     }
 
