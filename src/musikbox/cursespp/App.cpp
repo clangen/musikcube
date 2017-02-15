@@ -52,29 +52,12 @@
 #include <csignal>
 #endif
 
-#define HIDDEN_IDLE_TIMEOUT_MS 500
-
 using namespace cursespp;
 using namespace std::chrono;
 
 static OverlayStack overlays;
 static bool disconnected = false;
 static int64 resizeAt = 0;
-
-static inline bool isVisible() {
-#ifdef WIN32
-    static HWND hwnd = nullptr;
-    if (!hwnd) {
-        hwnd = musik::box::win32::GetMainWindow();
-    }
-    if (hwnd) {
-        return !IsIconic(hwnd);
-    }
-    return true;
-#else
-    return true;
-#endif
-}
 
 #ifndef WIN32
 static void hangupHandler(int signal) {
@@ -180,11 +163,7 @@ void App::Run(ILayoutPtr layout) {
     this->ChangeLayout(layout);
 
     while (!quit && !disconnected) {
-        visible = isVisible();
-
-        timeout(visible
-            ? IDLE_TIMEOUT_MS
-            : HIDDEN_IDLE_TIMEOUT_MS);
+        timeout(IDLE_TIMEOUT_MS);
 
         if (this->state.input) {
             /* if the focused window is an input, allow it to draw a cursor */
@@ -310,10 +289,7 @@ void App::ChangeLayout(ILayoutPtr newLayout) {
     }
 
     if (this->state.input && this->state.focused) {
-        /* the current input is about to lose focus. reset the timeout */
-        wtimeout(
-            this->state.focused->GetContent(),
-            isVisible() ? 0 : HIDDEN_IDLE_TIMEOUT_MS);
+        wtimeout(this->state.focused->GetContent(), IDLE_TIMEOUT_MS);
     }
 
     if (this->state.layout) {
