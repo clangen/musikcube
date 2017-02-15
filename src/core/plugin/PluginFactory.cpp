@@ -53,7 +53,7 @@ typedef musik::core::sdk::IPlugin* STDCALL(CallGetPlugin);
 static void closeNativeHandle(void* dll) { FreeLibrary((HMODULE)dll); }
 #else
 typedef musik::core::sdk::IPlugin* (*CallGetPlugin)();
-static void closeNativeHandle(void* dll) { dclose(dll); }
+static void closeNativeHandle(void* dll) { dlclose(dll); }
 #endif
 
 PluginFactory& PluginFactory::Instance() {

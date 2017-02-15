@@ -71,7 +71,7 @@ namespace musik { namespace core {
             };
 
             template <class T, class D> void QueryInterface(
-                const char* functionName,
+                const std::string& functionName,
                 std::function<void(std::shared_ptr<T>, const std::string&)> handler)
             {
                 std::unique_lock<std::mutex> lock(this->mutex);
@@ -82,9 +82,9 @@ namespace musik { namespace core {
                     if (functionName == "GetPlugin" || prefs->GetBool(descriptor->key.c_str(), true)) { /* enabled */
                         PluginInterfaceCall funcPtr =
 #ifdef WIN32
-                        (PluginInterfaceCall) GetProcAddress((HMODULE)(descriptor->nativeHandle), functionName);
+                            (PluginInterfaceCall) GetProcAddress((HMODULE)(descriptor->nativeHandle), functionName.c_str());
 #else
-                            (PluginInterfaceCall)dlsym(descriptor->nativeHandle, functionName);
+                            (PluginInterfaceCall)dlsym(descriptor->nativeHandle, functionName.c_str());
 #endif
                         if (funcPtr) {
                             T* result = funcPtr();
@@ -97,7 +97,7 @@ namespace musik { namespace core {
                 }
             }
 
-            template <class T, class D> std::vector<std::shared_ptr<T> > QueryInterface(const char* functionName) {
+            template <class T, class D> std::vector<std::shared_ptr<T> > QueryInterface(const std::string& functionName) {
                 std::vector<std::shared_ptr<T> > plugins;
 
                 QueryInterface<T, D>(
@@ -110,7 +110,7 @@ namespace musik { namespace core {
             }
 
             template <class T> void QueryFunction(
-                const char* functionName,
+                const std::string& functionName,
                 std::function<void(musik::core::sdk::IPlugin*, T)> handler)
             {
                 std::unique_lock<std::mutex> lock(this->mutex);
@@ -119,9 +119,9 @@ namespace musik { namespace core {
                     if (prefs->GetBool(descriptor->key.c_str(), true)) { /* if enabled by prefs */
                         T funcPtr =
 #ifdef WIN32
-                            (T) GetProcAddress((HMODULE)(descriptor->nativeHandle), functionName);
+                            (T) GetProcAddress((HMODULE)(descriptor->nativeHandle), functionName.c_str());
 #else
-                            (T)dlsym(descriptor->nativeHandle, functionName);
+                            (T)dlsym(descriptor->nativeHandle, functionName.c_str());
 #endif
                         if (funcPtr) {
                             handler(descriptor->plugin, funcPtr);
