@@ -807,10 +807,16 @@ class PlaybackRemote : public IPlaybackRemote {
 
         void ThreadProc() {
             try {
-                wss.get_alog().set_ostream(&std::cerr);
-                wss.get_elog().set_ostream(&std::cerr);
-                wss.set_access_channels(websocketpp::log::alevel::all);
-                wss.clear_access_channels(websocketpp::log::alevel::frame_payload);
+                if (preferences->GetBool("debug")) {
+                    wss.get_alog().set_ostream(&std::cerr);
+                    wss.get_elog().set_ostream(&std::cerr);
+                    wss.set_access_channels(websocketpp::log::alevel::all);
+                    wss.clear_access_channels(websocketpp::log::alevel::frame_payload);
+                }
+                else {
+                    wss.set_access_channels(websocketpp::log::alevel::none);
+                    wss.clear_access_channels(websocketpp::log::alevel::none);
+                }
 
                 wss.init_asio();
                 wss.set_message_handler(std::bind(&PlaybackRemote::OnMessage, this, &wss, ::_1, ::_2));
