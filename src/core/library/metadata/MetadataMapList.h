@@ -37,6 +37,7 @@
 #include <core/sdk/IMetadataMapList.h>
 #include "MetadataMap.h"
 #include <vector>
+#include <memory>
 
 namespace musik { namespace core {
 
