@@ -40,6 +40,7 @@ namespace musik { namespace core { namespace prefs {
     const std::string components::Settings = "settings";
     const std::string components::Libraries = "libraries";
     const std::string components::Playback = "playback";
+    const std::string components::Plugins = "plugins";
 
     const std::string keys::AutoSyncIntervalMillis = "AutoSyncIntervalMillis";
     const std::string keys::MaxTagReadThreads = "MaxTagReadThreads";

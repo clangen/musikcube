@@ -120,7 +120,7 @@ void PlaybackOverlays::ShowOutputOverlay(
         .SetTitle("output plugins")
         .SetSelectedIndex(selectedIndex)
         .SetItemSelectedCallback(
-            [callback, transportType](cursespp::IScrollAdapterPtr adapter, size_t index) {
+            [callback, transportType](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
 
                 if (transportType == MasterTransport::Crossfade) {
                     std::string output = outputs::GetAllOutputs().at(index)->Name();
@@ -160,7 +160,7 @@ void PlaybackOverlays::ShowTransportOverlay(
         .SetTitle("playback transport")
         .SetSelectedIndex(selectedIndex)
         .SetItemSelectedCallback(
-            [callback](cursespp::IScrollAdapterPtr adapter, size_t index) {
+            [callback](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
                 int result = (index == 0)
                     ? MasterTransport::Gapless
                     : MasterTransport::Crossfade;

@@ -231,7 +231,7 @@ void PlayQueueOverlays::ShowAddTrackOverlay(
         .SetSelectedIndex(0)
         .SetWidth(DEFAULT_OVERLAY_WIDTH)
         .SetItemSelectedCallback(
-            [trackId, &playback](cursespp::IScrollAdapterPtr adapter, size_t index) {
+            [trackId, &playback](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
                 auto editor = playback.Edit();
                 if (index == 0) { /* end */
                     editor.Add(trackId);
@@ -266,7 +266,7 @@ void PlayQueueOverlays::ShowAddCategoryOverlay(
         .SetWidth(DEFAULT_OVERLAY_WIDTH)
         .SetItemSelectedCallback(
             [&playback, library, fieldColumn, fieldId]
-            (cursespp::IScrollAdapterPtr adapter, size_t index) {
+            (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
                 if (index == ListWindow::NO_SELECTION) {
                     return;
                 }
@@ -321,7 +321,7 @@ void PlayQueueOverlays::ShowLoadPlaylistOverlay(
         "load playlist",
         adapter,
         [library, result, callback]
-        (cursespp::IScrollAdapterPtr adapter, size_t index) {
+        (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
             if (index != ListWindow::NO_SELECTION && callback) {
                 DBID playlistId = (*result)[index]->id;
                 callback(playlistId);
@@ -358,7 +358,7 @@ void PlayQueueOverlays::ShowSavePlaylistOverlay(
         "save playlist",
         adapter,
         [&playback, library, result]
-        (cursespp::IScrollAdapterPtr adapter, size_t index) {
+        (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
             std::shared_ptr<TrackList> tracks(new TrackList(library));
             playback.CopyTo(*tracks);
 
@@ -391,7 +391,7 @@ void PlayQueueOverlays::ShowRenamePlaylistOverlay(musik::core::ILibraryPtr libra
     showPlaylistListOverlay(
         "rename playlist",
         adapter,
-        [library, result](cursespp::IScrollAdapterPtr adapter, size_t index) {
+        [library, result](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
             if (index != ListWindow::NO_SELECTION) {
                 DBID playlistId = (*result)[index]->id;
                 std::string playlistName = (*result)[index]->displayValue;
@@ -417,7 +417,7 @@ void PlayQueueOverlays::ShowDeletePlaylistOverlay(musik::core::ILibraryPtr libra
         "delete playlist",
         adapter,
         [library, result]
-        (cursespp::IScrollAdapterPtr adapter, size_t index) {
+        (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
             if (index != ListWindow::NO_SELECTION) {
                 DBID playlistId = (*result)[index]->id;
                 std::string playlistName = (*result)[index]->displayValue;

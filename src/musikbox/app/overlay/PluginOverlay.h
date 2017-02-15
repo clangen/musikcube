@@ -34,55 +34,14 @@
 
 #pragma once
 
-#include "OverlayBase.h"
-#include "ListWindow.h"
+namespace musik {
+    namespace box {
+        class PluginOverlay {
+            public:
+                static void Show();
 
-#include <vector>
-#include <map>
-
-namespace cursespp {
-    class ListOverlay :
-        public OverlayBase
-#if (__clang_major__ == 7 && __clang_minor__ == 3)
-        , public std::enable_shared_from_this<ListOverlay>
-#endif
-    {
-        public:
-            using ItemSelectedCallback = std::function<void(ListOverlay* sender, IScrollAdapterPtr adapter, size_t index)>;
-            using DeleteKeyCallback = std::function<void(ListOverlay* sender, IScrollAdapterPtr adapter, size_t index)>;
-
-            ListOverlay();
-            virtual ~ListOverlay();
-
-            ListOverlay& SetTitle(const std::string& title);
-            ListOverlay& SetAdapter(IScrollAdapterPtr adapter);
-            ListOverlay& SetItemSelectedCallback(ItemSelectedCallback cb);
-            ListOverlay& SetDeleteKeyCallback(DeleteKeyCallback cb);
-            ListOverlay& SetSelectedIndex(size_t index);
-            ListOverlay& SetWidth(int width);
-            ListOverlay& SetWidthPercent(int percent);
-            ListOverlay& SetAutoDismiss(bool autoDismiss);
-
-            virtual void Layout();
-            virtual bool KeyPress(const std::string& key);
-
-            void RefreshAdapter();
-
-        protected:
-            virtual void OnVisibilityChanged(bool visible);
-
-        private:
-            void Redraw();
-            void RecalculateSize();
-
-            std::string title;
-            int x, y;
-            int width, height;
-            int setWidth, setWidthPercent;
-            bool autoDismiss;
-            IScrollAdapterPtr adapter;
-            std::shared_ptr<ListWindow> listWindow;
-            ItemSelectedCallback itemSelectedCallback;
-            DeleteKeyCallback deleteKeyCallback;
-    };
+            private:
+                PluginOverlay();
+        };
+    }
 }

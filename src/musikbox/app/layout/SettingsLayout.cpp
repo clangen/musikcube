@@ -48,6 +48,7 @@
 #include <app/util/Hotkeys.h>
 #include <app/util/PreferenceKeys.h>
 #include <app/overlay/PlaybackOverlays.h>
+#include <app/overlay/PluginOverlay.h>
 
 #include <boost/format.hpp>
 
@@ -147,6 +148,10 @@ void SettingsLayout::OnTransportDropdownActivate(cursespp::TextLabel* label) {
         });
 }
 
+void SettingsLayout::OnPluginsDropdownActivate(cursespp::TextLabel* label) {
+    PluginOverlay::Show();
+}
+
 void SettingsLayout::OnLayout() {
     int x = this->GetX(), y = this->GetY();
     int cx = this->GetWidth(), cy = this->GetHeight();
@@ -166,23 +171,16 @@ void SettingsLayout::OnLayout() {
     this->browseList->MoveAndResize(leftX, pathListsY, leftWidth, pathsHeight);
     this->addedPathsList->MoveAndResize(rightX, pathListsY, rightWidth, pathsHeight);
 
-    this->outputDropdown->MoveAndResize(1, BOTTOM(this->browseList), cx - 1, LABEL_HEIGHT);
-    this->transportDropdown->MoveAndResize(1, BOTTOM(this->outputDropdown), cx - 1, LABEL_HEIGHT);
-    this->dotfileCheckbox->MoveAndResize(1, BOTTOM(this->transportDropdown), cx - 1, LABEL_HEIGHT);
-    this->removeCheckbox->MoveAndResize(1, BOTTOM(this->dotfileCheckbox), cx - 1, LABEL_HEIGHT);
-    this->customColorsCheckbox->MoveAndResize(1, BOTTOM(this->dotfileCheckbox), cx - 1, LABEL_HEIGHT);
+    y = BOTTOM(this->browseList);
+    this->outputDropdown->MoveAndResize(1, y++, cx - 1, LABEL_HEIGHT);
+    this->transportDropdown->MoveAndResize(1, y++, cx - 1, LABEL_HEIGHT);
+    this->pluginsDropdown->MoveAndResize(1, y++, cx - 1, LABEL_HEIGHT);
+    this->dotfileCheckbox->MoveAndResize(1, y++, cx - 1, LABEL_HEIGHT);
+    this->removeCheckbox->MoveAndResize(1, y++, cx - 1, LABEL_HEIGHT);
+    this->customColorsCheckbox->MoveAndResize(1, y++, cx - 1, LABEL_HEIGHT);
 
-    this->hotkeyLabel->MoveAndResize(
-        1,
-        BOTTOM(this->customColorsCheckbox) + 2,
-        this->hotkeyLabel->Length(),
-        LABEL_HEIGHT);
-
-    this->hotkeyInput->MoveAndResize(
-        RIGHT(this->hotkeyLabel),
-        BOTTOM(this->customColorsCheckbox) + 1,
-        HOTKEY_INPUT_WIDTH,
-        INPUT_HEIGHT);
+    this->hotkeyLabel->MoveAndResize(1, y + 1, this->hotkeyLabel->Length(), LABEL_HEIGHT);
+    this->hotkeyInput->MoveAndResize(RIGHT(this->hotkeyLabel), y, HOTKEY_INPUT_WIDTH, INPUT_HEIGHT);
 }
 
 void SettingsLayout::RefreshAddedPaths() {
@@ -247,6 +245,10 @@ void SettingsLayout::InitializeWindows() {
     this->transportDropdown.reset(new TextLabel());
     this->transportDropdown->Activated.connect(this, &SettingsLayout::OnTransportDropdownActivate);
 
+    this->pluginsDropdown.reset(new TextLabel());
+    this->pluginsDropdown->SetText(arrow + " enable/disable plugins");
+    this->pluginsDropdown->Activated.connect(this, &SettingsLayout::OnPluginsDropdownActivate);
+
     CREATE_CHECKBOX(this->dotfileCheckbox, "show dotfiles in directory browser");
     CREATE_CHECKBOX(this->removeCheckbox, "remove missing files from library");
     CREATE_CHECKBOX(this->customColorsCheckbox, "disable custom colors (requires restart)");
@@ -258,11 +260,12 @@ void SettingsLayout::InitializeWindows() {
     this->browseList->SetFocusOrder(0);
     this->addedPathsList->SetFocusOrder(1);
     this->outputDropdown->SetFocusOrder(2);
-    this->transportDropdown->SetFocusOrder(4);
+    this->transportDropdown->SetFocusOrder(3);
+    this->pluginsDropdown->SetFocusOrder(4);
     this->dotfileCheckbox->SetFocusOrder(5);
     this->removeCheckbox->SetFocusOrder(6);
-    this->customColorsCheckbox->SetFocusOrder(8);
-    this->hotkeyInput->SetFocusOrder(9);
+    this->customColorsCheckbox->SetFocusOrder(7);
+    this->hotkeyInput->SetFocusOrder(8);
 
     this->AddWindow(this->browseLabel);
     this->AddWindow(this->addedPathsLabel);
@@ -270,6 +273,7 @@ void SettingsLayout::InitializeWindows() {
     this->AddWindow(this->addedPathsList);
     this->AddWindow(this->outputDropdown);
     this->AddWindow(this->transportDropdown);
+    this->AddWindow(this->pluginsDropdown);
     this->AddWindow(this->dotfileCheckbox);
     this->AddWindow(this->removeCheckbox);
     this->AddWindow(this->customColorsCheckbox);

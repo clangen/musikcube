@@ -40,7 +40,8 @@
 
 musik::core::sdk::IPlaybackService* playback;
 
-static HHOOK hook = NULL;
+static HHOOK hook = nullptr;
+static HMODULE module = nullptr;
 
 LRESULT CALLBACK ShellProc(int code, WPARAM wParam, LPARAM lParam) {
     if (code == HC_ACTION && playback) {
@@ -116,15 +117,28 @@ LRESULT CALLBACK ShellProc(int code, WPARAM wParam, LPARAM lParam) {
     return CallNextHookEx(nullptr, code, wParam, lParam);
 }
 
+void installHook() {
+    if (!::hook) {
+        hook = SetWindowsHookEx(WH_KEYBOARD_LL, (HOOKPROC)ShellProc, module, 0L);
+    }
+}
+
+void removeHook() {
+    if (::hook) {
+        UnhookWindowsHookEx(::hook);
+        ::hook = nullptr;
+    }
+}
+
 BOOL APIENTRY DllMain(HMODULE module, DWORD reason, LPVOID reserved) {
     switch (reason) {
         case DLL_PROCESS_ATTACH:
-            hook = SetWindowsHookEx(WH_KEYBOARD_LL, (HOOKPROC) ShellProc, module, 0L);
+            ::module = module;
             break;
 
         case DLL_PROCESS_DETACH:
-            UnhookWindowsHookEx(hook);
-            hook = nullptr;
+            ::module = nullptr;
+            removeHook();
             break;
     }
 
@@ -156,6 +170,12 @@ class MMShellHook:
 
             virtual void SetPlaybackService(musik::core::sdk::IPlaybackService* playback) {
                 ::playback = playback;
+                if (playback) {
+                    installHook();
+                }
+                else {
+                    removeHook();
+                }
             }
 
             virtual void OnTrackChanged(musik::core::sdk::ITrack* track) {

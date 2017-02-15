@@ -42,6 +42,7 @@ namespace musik { namespace core { namespace prefs {
         extern const std::string Settings;
         extern const std::string Libraries;
         extern const std::string Playback;
+        extern const std::string Plugins;
     }
 
     namespace keys {

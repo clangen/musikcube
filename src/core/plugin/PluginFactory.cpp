@@ -36,8 +36,10 @@
 
 #include <core/sdk/constants.h>
 #include <core/plugin/PluginFactory.h>
-#include <core/config.h>
+#include <core/support/Preferences.h>
+#include <core/support/PreferenceKeys.h>
 #include <core/support/Common.h>
+#include <core/config.h>
 #include <core/debug.h>
 #include <iostream>
 
@@ -46,7 +48,15 @@ static std::mutex instanceMutex;
 
 using namespace musik::core;
 
-PluginFactory& PluginFactory:: Instance() {
+#ifdef WIN32
+typedef musik::core::sdk::IPlugin* STDCALL(CallGetPlugin);
+static void closeNativeHandle(void* dll) { FreeLibrary((HMODULE)dll); }
+#else
+typedef musik::core::sdk::IPlugin* (*CallGetPlugin)();
+static void closeNativeHandle(void* dll) { dclose(dll); }
+#endif
+
+PluginFactory& PluginFactory::Instance() {
     std::unique_lock<std::mutex> lock(instanceMutex);
 
     static PluginFactory* instance = NULL;
@@ -59,25 +69,17 @@ PluginFactory& PluginFactory:: Instance() {
 }
 
 PluginFactory::PluginFactory() {
+    this->prefs = Preferences::ForComponent(prefs::components::Plugins);
     musik::debug::info(TAG, "loading plugins");
     this->LoadPlugins();
 }
 
 PluginFactory::~PluginFactory() {
-    for (size_t i = 0; i < this->loadedPlugins.size(); i++) {
-        this->loadedPlugins[i]->Destroy();
+    for (std::shared_ptr<Descriptor> plugin : this->plugins) {
+        plugin->plugin->Destroy();
+        closeNativeHandle(plugin->nativeHandle);
     }
-
-    std::vector<void*>::iterator dll = this->loadedDlls.begin();
-    for( ; dll != this->loadedDlls.end(); dll++) {
-        #ifdef WIN32
-            FreeLibrary((HMODULE) (*dll));
-        #else
-            dlclose(*dll);
-        #endif
-    }
-
-    loadedDlls.clear();
+    plugins.clear();
 }
 
 void PluginFactory::LoadPlugins() {
@@ -96,6 +98,11 @@ void PluginFactory::LoadPlugins() {
         for (boost::filesystem::directory_iterator file(dir); file != end; file++) {
             if (boost::filesystem::is_regular(file->status())){
                 std::string filename(file->path().string());
+
+                std::shared_ptr<Descriptor> descriptor(new Descriptor());
+                descriptor->filename = filename;
+                descriptor->key = boost::filesystem::path(filename).filename().string();
+
 #ifdef WIN32
                 /* if the file ends with ".dll", we'll try to load it*/
                 if (filename.substr(filename.size() - 4) == ".dll") {
@@ -108,8 +115,9 @@ void PluginFactory::LoadPlugins() {
                             /* exists? check the version, and add it! */
                             auto plugin = getPluginCall();
                             if (plugin->SdkVersion() == musik::core::sdk::SdkVersion) {
-                                this->loadedPlugins.push_back(plugin);
-                                this->loadedDlls.push_back(dll);
+                                descriptor->plugin = plugin;
+                                descriptor->nativeHandle = dll;
+                                this->plugins.push_back(descriptor);
                             }
                             else {
                                 FreeLibrary(dll);
@@ -159,8 +167,9 @@ void PluginFactory::LoadPlugins() {
                             auto plugin = getPluginCall();
                             if (plugin->SdkVersion() == musik::core::sdk::SdkVersion) {
                                 musik::debug::info(TAG, "loaded: " + filename);
-                                this->loadedPlugins.push_back(getPluginCall());
-                                this->loadedDlls.push_back(dll);
+                                descriptor->plugin = getPluginCall();
+                                descriptor->nativeHandle = dll;
+                                this->plugins.push_back(descriptor);
                             }
                             else {
                                 dlclose(dll);

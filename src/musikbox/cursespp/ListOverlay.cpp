@@ -42,14 +42,16 @@ using namespace cursespp;
 
 #define VERTICAL_PADDING 2
 #define DEFAULT_WIDTH 26
-#define MAX_HEIGHT 12
 
 ListOverlay::ListOverlay() {
     this->SetFrameVisible(true);
     this->SetFrameColor(CURSESPP_OVERLAY_FRAME);
     this->SetContentColor(CURSESPP_OVERLAY_BACKGROUND);
 
-    this->width = this->height = this->setWidth = 0;
+    this->autoDismiss = true;
+
+    this->width = this->height = 0;
+    this->setWidth = this->setWidthPercent = 0;
 
     this->listWindow.reset(new ListWindow());
     this->listWindow->SetContentColor(CURSESPP_OVERLAY_BACKGROUND);
@@ -92,6 +94,18 @@ ListOverlay& ListOverlay::SetTitle(const std::string& title) {
 
 ListOverlay& ListOverlay::SetWidth(int width) {
     this->setWidth = width;
+    this->setWidthPercent = 0;
+
+    if (this->IsVisible()) {
+        this->Layout();
+    }
+
+    return *this;
+}
+
+ListOverlay& ListOverlay::SetWidthPercent(int percent) {
+    this->setWidthPercent = percent;
+    this->setWidth = 0;
 
     if (this->IsVisible()) {
         this->Layout();
@@ -106,6 +120,11 @@ ListOverlay& ListOverlay::SetAdapter(IScrollAdapterPtr adapter) {
         this->listWindow->SetAdapter(adapter);
     }
 
+    return *this;
+}
+
+ListOverlay& ListOverlay::SetAutoDismiss(bool autoDismiss) {
+    this->autoDismiss = autoDismiss;
     return *this;
 }
 
@@ -129,18 +148,22 @@ bool ListOverlay::KeyPress(const std::string& key) {
         this->Dismiss();
         return true;
     }
-    else if (key == "KEY_ENTER") {
+    else if (key == "KEY_ENTER" || key == " ") {
         if (itemSelectedCallback) {
             itemSelectedCallback(
+                this,
                 this->adapter,
                 listWindow->GetSelectedIndex());
         }
-        this->Dismiss();
+        if (this->autoDismiss) {
+            this->Dismiss();
+        }
         return true;
     }
     else if (key == "KEY_BACKSPACE" || key == "KEY_DC") {
         if (deleteKeyCallback) {
             deleteKeyCallback(
+                this,
                 this->adapter,
                 listWindow->GetSelectedIndex());
 
@@ -159,12 +182,20 @@ void ListOverlay::OnVisibilityChanged(bool visible) {
 }
 
 void ListOverlay::RecalculateSize() {
-    this->width = this->setWidth > 0 ? this->setWidth : DEFAULT_WIDTH;
+    if (this->setWidthPercent > 0) {
+        int cx = Screen::GetWidth();
+        this->width = (int)((this->setWidthPercent / 100.0f) * cx);
+    }
+    else {
+        this->width = this->setWidth > 0 ? this->setWidth : DEFAULT_WIDTH;
+    }
+
     this->height = 4; /* top frame + text + space + bottom frame */
+    const int maxHeight = Screen::GetHeight() - 4;
 
     if (this->adapter) {
         this->height = std::min(
-            (int) MAX_HEIGHT,
+            maxHeight,
             (int) (4 + this->adapter->GetEntryCount()));
     }
 
@@ -193,4 +224,9 @@ void ListOverlay::Redraw() {
         wattroff(c, A_BOLD);
         currentY += 2;
     }
+}
+
+
+void ListOverlay::RefreshAdapter() {
+    this->listWindow->OnAdapterChanged();
 }

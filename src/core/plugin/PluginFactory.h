@@ -36,6 +36,7 @@
 
 #include <core/config.h>
 #include <core/sdk/IPlugin.h>
+#include <core/sdk/IPreferences.h>
 
 #include <vector>
 #include <iostream>
@@ -57,45 +58,53 @@ namespace musik { namespace core {
             static PluginFactory& Instance();
 
             template <typename T>
-            class  DestroyDeleter {
-            public: void operator()(T* t) {
+            struct DestroyDeleter {
+                void operator()(T* t) {
                     t->Destroy();
                 }
             };
 
             template <typename T>
-            class  NullDeleter {
-            public: void operator()(T* t) {
+            struct NullDeleter {
+                void operator()(T* t) {
                 }
             };
 
-            template <class T, class D> std::vector<std::shared_ptr<T> > QueryInterface(const char* functionName) {
+            template <class T, class D> void QueryInterface(
+                const char* functionName,
+                std::function<void(std::shared_ptr<T>, const std::string&)> handler)
+            {
                 std::unique_lock<std::mutex> lock(this->mutex);
 
                 typedef T* STDCALL(PluginInterfaceCall);
 
-                std::vector<std::shared_ptr<T> > plugins;
-                HandleList& allDlls = PluginFactory::Instance().loadedDlls;
+                for (std::shared_ptr<Descriptor> descriptor : this->plugins) {
+                    if (functionName == "GetPlugin" || prefs->GetBool(descriptor->key.c_str(), true)) { /* enabled */
+                        PluginInterfaceCall funcPtr =
+#ifdef WIN32
+                        (PluginInterfaceCall) GetProcAddress((HMODULE)(descriptor->nativeHandle), functionName);
+#else
+                            (PluginInterfaceCall)dlsym(descriptor->nativeHandle, functionName);
+#endif
+                        if (funcPtr) {
+                            T* result = funcPtr();
 
-                typedef HandleList::iterator Iterator;
-                Iterator currentDll = allDlls.begin();
-                while (currentDll != allDlls.end()) {
-                    PluginInterfaceCall funcPtr =
-    #ifdef WIN32
-                        (PluginInterfaceCall) GetProcAddress((HMODULE)(*currentDll), functionName);
-    #else
-                        (PluginInterfaceCall) dlsym(*currentDll, functionName);
-    #endif
-                    if (funcPtr) {
-                        T* result = funcPtr();
-
-                        if (result) {
-                            plugins.push_back(std::shared_ptr<T>(result, D()));
+                            if (result) {
+                                handler(std::shared_ptr<T>(result, D()), descriptor->filename);
+                            }
                         }
                     }
-
-                    currentDll++;
                 }
+            }
+
+            template <class T, class D> std::vector<std::shared_ptr<T> > QueryInterface(const char* functionName) {
+                std::vector<std::shared_ptr<T> > plugins;
+
+                QueryInterface<T, D>(
+                    functionName,
+                    [&plugins](std::shared_ptr<T> plugin, const std::string& fn) {
+                        plugins.push_back(plugin);
+                    });
 
                 return plugins;
             }
@@ -106,39 +115,35 @@ namespace musik { namespace core {
             {
                 std::unique_lock<std::mutex> lock(this->mutex);
 
-                for (size_t i = 0; i < loadedDlls.size(); i++) {
-                    void* currentDll = loadedDlls[i];
-
-                    T funcPtr =
+                for (std::shared_ptr<Descriptor> descriptor : this->plugins) {
+                    if (prefs->GetBool(descriptor->key.c_str(), true)) { /* if enabled by prefs */
+                        T funcPtr =
 #ifdef WIN32
-                        (T) GetProcAddress((HMODULE)(currentDll), functionName);
+                            (T) GetProcAddress((HMODULE)(descriptor->nativeHandle), functionName);
 #else
-                        (T) dlsym(currentDll, functionName);
+                            (T)dlsym(descriptor->nativeHandle, functionName);
 #endif
-                    if (funcPtr) {
-                        handler(loadedPlugins[i], funcPtr);
+                        if (funcPtr) {
+                            handler(descriptor->plugin, funcPtr);
+                        }
                     }
                 }
             }
 
         private:
+            struct Descriptor {
+                musik::core::sdk::IPlugin* plugin;
+                void* nativeHandle;
+                std::string filename;
+                std::string key;
+            };
 
             PluginFactory();
             ~PluginFactory();
-
             void LoadPlugins();
 
-    #ifdef WIN32
-            typedef musik::core::sdk::IPlugin* STDCALL(CallGetPlugin);
-    #else
-            typedef musik::core::sdk::IPlugin* (*CallGetPlugin)();
-    #endif
-
-            typedef std::vector<musik::core::sdk::IPlugin*> PluginList;
-            typedef std::vector<void*> HandleList;
-
-            PluginList loadedPlugins;
-            HandleList loadedDlls;
+            std::vector<std::shared_ptr<Descriptor> > plugins;
             std::mutex mutex;
+            std::shared_ptr<musik::core::sdk::IPreferences> prefs;
     };
 } }

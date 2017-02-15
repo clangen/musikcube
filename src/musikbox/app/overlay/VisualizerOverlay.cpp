@@ -86,7 +86,7 @@ void VisualizerOverlay::Show() {
     dialog->SetAdapter(adapter)
         .SetTitle("visualizers")
         .SetItemSelectedCallback(
-            [](cursespp::IScrollAdapterPtr adapter, size_t index) {
+            [](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
                 vis::SetSelectedVisualizer(vis::GetVisualizer(index));
                 vis::SelectedVisualizer()->Show();
             });

@@ -96,6 +96,7 @@ namespace musik {
 
                 void OnOutputDropdownActivated(cursespp::TextLabel* label);
                 void OnTransportDropdownActivate(cursespp::TextLabel* label);
+                void OnPluginsDropdownActivate(cursespp::TextLabel* label);
 
                 int64 ListItemDecorator(
                     cursespp::ScrollableWindow* w,
@@ -112,6 +113,7 @@ namespace musik {
 
                 std::shared_ptr<cursespp::TextLabel> outputDropdown;
                 std::shared_ptr<cursespp::TextLabel> transportDropdown;
+                std::shared_ptr<cursespp::TextLabel> pluginsDropdown;
 
                 std::shared_ptr<cursespp::Checkbox> removeCheckbox;
                 std::shared_ptr<cursespp::Checkbox> dotfileCheckbox;

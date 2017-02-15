@@ -129,6 +129,9 @@
     <ClCompile Include="cursespp\InputOverlay.cpp">
       <Filter>cursespp</Filter>
     </ClCompile>
+    <ClCompile Include="app\overlay\PluginOverlay.cpp">
+      <Filter>app\overlay</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -302,6 +305,9 @@
     </ClInclude>
     <ClInclude Include="cursespp\InputOverlay.h">
       <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="app\overlay\PluginOverlay.h">
+      <Filter>app\overlay</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
