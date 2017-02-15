@@ -1,0 +1,354 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context="io.casey.musikcube.remote.MainActivity">
+
+    <FrameLayout
+        android:id="@+id/metadata_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/play_controls">
+
+        <ImageView
+            android:id="@+id/album_art"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"/>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_gravity="center">
+
+            <TextView
+                android:id="@+id/connected"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:textColor="@color/theme_green"
+                android:text="connected"/>
+
+            <TextView
+                android:id="@+id/main_not_playing"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:textSize="@dimen/text_size_large"
+                android:textColor="@color/theme_disabled_foreground"
+                android:padding="8dp"
+                android:clickable="true"
+                android:background="@drawable/not_playing_button"
+                android:text="@string/transport_not_playing"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/main_track_metadata_with_art"
+            android:background="@color/main_playback_metadata"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:orientation="vertical"
+            android:paddingLeft="24dp"
+            android:paddingRight="24dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp">
+
+            <TextView
+                style="@style/LightDropShadow"
+                android:id="@+id/with_art_track_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:layout_gravity="center"
+                android:textColor="@color/theme_green"
+                android:text="-"/>
+
+            <TextView
+                style="@style/LightDropShadow"
+                android:id="@+id/with_art_artist_and_album"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:layout_gravity="center"
+                android:textColor="@color/theme_yellow"
+                android:text="-"/>
+
+            <TextView
+                style="@style/LightDropShadow"
+                android:id="@+id/with_art_volume"
+                android:textSize="@dimen/text_size_small"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:layout_gravity="center"
+                android:layout_marginBottom="2dp"
+                android:text=""/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/main_track_metadata_without_art"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="vertical"
+            android:paddingLeft="24dp"
+            android:paddingRight="24dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp">
+
+            <TextView
+                android:id="@+id/track_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:layout_gravity="center"
+                android:textColor="@color/theme_green"
+                android:textSize="@dimen/text_size_xxlarge"
+                android:text="-"/>
+
+            <TextView
+                android:id="@+id/track_album"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:layout_gravity="center"
+                android:textColor="@color/theme_orange"
+                android:textSize="@dimen/text_size_xlarge"
+                android:text="-"/>
+
+            <TextView
+                android:id="@+id/track_artist"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="2dp"
+                android:textColor="@color/theme_yellow"
+                android:textSize="@dimen/text_size_large"
+                android:text="-"/>
+
+            <TextView
+                android:id="@+id/volume"
+                android:textSize="@dimen/text_size_small"
+                android:layout_marginTop="4dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:layout_gravity="center"
+                android:text=""/>
+        </LinearLayout>
+
+    </FrameLayout>
+
+    <LinearLayout
+        android:id="@+id/play_controls"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentBottom="true"
+        android:orientation="vertical">
+
+        <android.support.v4.widget.Space
+            android:layout_width="0dp"
+            android:layout_height="2dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:orientation="horizontal">
+
+            <TextView
+                style="@style/BrowseButton"
+                android:layout_weight="1.0"
+                android:id="@+id/button_artists"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="@string/button_artists"/>
+
+            <android.support.v4.widget.Space
+                android:layout_width="2dp"
+                android:layout_height="0dp" />
+
+            <TextView
+                style="@style/BrowseButton"
+                android:layout_weight="1.0"
+                android:id="@+id/button_albums"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="@string/button_albums"/>
+
+            <android.support.v4.widget.Space
+                android:layout_width="2dp"
+                android:layout_height="0dp" />
+
+            <TextView
+                style="@style/BrowseButton"
+                android:layout_weight="1.0"
+                android:id="@+id/button_tracks"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="@string/button_tracks"/>
+
+            <android.support.v4.widget.Space
+                android:layout_width="2dp"
+                android:layout_height="0dp" />
+
+            <TextView
+                style="@style/BrowseButton"
+                android:layout_weight="1.0"
+                android:id="@+id/button_play_queue"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="@string/button_play_queue"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="2dp"
+            android:orientation="horizontal">
+
+            <TextView
+                style="@style/PlaybackButton"
+                android:layout_weight="1.0"
+                android:id="@+id/button_prev"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="@string/button_prev"/>
+
+            <android.support.v4.widget.Space
+                android:layout_width="2dp"
+                android:layout_height="0dp" />
+
+            <TextView
+                style="@style/PlaybackButton"
+                android:layout_weight="1.0"
+                android:id="@+id/button_play_pause"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="@string/button_play"/>
+
+            <android.support.v4.widget.Space
+                android:layout_width="2dp"
+                android:layout_height="0dp" />
+
+            <TextView
+                style="@style/PlaybackButton"
+                android:layout_weight="1.0"
+                android:id="@+id/button_next"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="@string/button_next"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="2dp"
+            android:orientation="horizontal">
+
+            <io.casey.musikcube.remote.LongPressTextView
+                style="@style/PlaybackButton"
+                android:layout_weight="1.0"
+                android:id="@+id/button_vol_down"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="@string/button_vol_down"/>
+
+            <android.support.v4.widget.Space
+                android:layout_width="2dp"
+                android:layout_height="0dp" />
+
+            <io.casey.musikcube.remote.LongPressTextView
+                style="@style/PlaybackButton"
+                android:layout_weight="1.0"
+                android:id="@+id/button_seek_back"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="@string/button_seek_back"/>
+
+            <android.support.v4.widget.Space
+                android:layout_width="2dp"
+                android:layout_height="0dp" />
+
+            <io.casey.musikcube.remote.LongPressTextView
+                style="@style/PlaybackButton"
+                android:layout_weight="1.0"
+                android:id="@+id/button_seek_forward"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="@string/button_seek_forward"/>
+
+            <android.support.v4.widget.Space
+                android:layout_width="2dp"
+                android:layout_height="0dp" />
+
+            <io.casey.musikcube.remote.LongPressTextView
+                style="@style/PlaybackButton"
+                android:layout_weight="1.0"
+                android:id="@+id/button_vol_up"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="@string/button_vol_up"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:layout_marginTop="2dp"
+            android:orientation="horizontal">
+
+            <CheckBox
+                style="@style/PlaybackCheckbox"
+                android:id="@+id/check_shuffle"
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="@string/button_shuffle"/>
+
+            <android.support.v4.widget.Space
+                android:layout_width="2dp"
+                android:layout_height="0dp" />
+
+            <CheckBox
+                style="@style/PlaybackCheckbox"
+                android:id="@+id/check_mute"
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="@string/button_mute"/>
+
+            <android.support.v4.widget.Space
+                android:layout_width="2dp"
+                android:layout_height="0dp" />
+
+            <CheckBox
+                style="@style/PlaybackCheckbox"
+                android:id="@+id/check_repeat"
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="@string/button_repeat_off"/>
+
+        </LinearLayout>
+    </LinearLayout>
+
+</RelativeLayout>

@@ -1,0 +1,32 @@
+<resources>
+    <string name="app_name">musikdroid</string>
+    <string name="button_pause">pause</string>
+    <string name="button_play">play</string>
+    <string name="button_prev">prev</string>
+    <string name="button_seek_back">&lt; seek</string>
+    <string name="button_next">next</string>
+    <string name="button_seek_forward">seek &gt;</string>
+    <string name="button_change_connection">change connection</string>
+    <string name="button_tracks">songs</string>
+    <string name="button_albums">albums</string>
+    <string name="button_artists">artists</string>
+    <string name="button_play_queue">queue</string>
+    <string name="button_vol_up">vol +</string>
+    <string name="button_vol_down">vol -</string>
+    <string name="button_shuffle">shuffle</string>
+    <string name="button_mute">mute</string>
+    <string name="button_repeat_off">repeat off</string>
+    <string name="button_repeat_list">repeat list</string>
+    <string name="button_repeat_track">repeat song</string>
+    <string name="button_save">save</string>
+    <string name="status_connecting">connecting</string>
+    <string name="status_disconnected">disconnected</string>
+    <string name="status_connected">connected to %1$s</string>
+    <string name="status_volume">volume %1d%%</string>
+    <string name="edit_connection_info">connection info:</string>
+    <string name="edit_connection_hostname">ip address or hostname</string>
+    <string name="edit_connection_port">port</string>
+    <string name="transport_not_playing">not playing</string>
+    <string name="search_hint">search</string>
+    <string name="menu_settings">settings</string>
+</resources>

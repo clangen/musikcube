@@ -1,0 +1,54 @@
+<resources>
+
+    <style name="AppTheme" parent="@style/Theme.AppCompat">
+        <item name="colorPrimary">@color/color_primary</item>
+        <item name="colorPrimaryDark">@color/color_primary_dark</item>
+        <item name="colorAccent">@color/color_accent</item>
+        <item name="android:windowBackground">@color/theme_background</item>
+    </style>
+
+    <style name="BrowseButton">
+        <item name="android:layout_margin">0dp</item>
+        <item name="android:padding">12dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textColor">@color/theme_foreground</item>
+        <item name="android:background">@drawable/category_button</item>
+        <item name="android:clickable">true</item>
+    </style>
+
+    <style name="TransportPlaying">
+        <item name="android:layout_margin">0dp</item>
+        <item name="android:paddingLeft">4dp</item>
+        <item name="android:paddingRight">4dp</item>
+        <item name="android:paddingTop">6dp</item>
+        <item name="android:paddingBottom">6dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textColor">@color/theme_foreground</item>
+        <item name="android:background">@drawable/category_button</item>
+        <item name="android:clickable">true</item>
+    </style>
+
+    <style name="PlaybackButton">
+        <item name="android:layout_margin">0dp</item>
+        <item name="android:padding">12dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textColor">@color/theme_foreground</item>
+        <item name="android:background">@drawable/playback_button</item>
+    </style>
+
+    <style name="PlaybackCheckbox">
+        <item name="android:button">@drawable/playback_button</item>
+        <item name="android:minHeight">36dp</item>
+        <item name="android:background">@drawable/playback_checkbox</item>
+        <item name="android:textColor">@drawable/playback_checkbox_text</item>
+        <item name="android:gravity">center</item>
+    </style>
+
+    <style name="LightDropShadow">
+        <item name="android:shadowColor">#000000</item>
+        <item name="android:shadowDx">0</item>
+        <item name="android:shadowDy">0</item>
+        <item name="android:shadowRadius">3</item>
+    </style>
+
+</resources>

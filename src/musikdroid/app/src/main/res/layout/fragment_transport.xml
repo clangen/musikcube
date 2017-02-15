@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="2dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/button_prev"
+            style="@style/PlaybackButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.0"
+            android:text="@string/button_prev"/>
+
+        <android.support.v4.widget.Space
+            android:layout_width="2dp"
+            android:layout_height="0dp"/>
+
+        <TextView
+            android:id="@+id/button_play_pause"
+            style="@style/PlaybackButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.0"
+            android:text="@string/button_play"/>
+
+        <android.support.v4.widget.Space
+            android:layout_width="2dp"
+            android:layout_height="0dp"/>
+
+        <TextView
+            android:id="@+id/button_next"
+            style="@style/PlaybackButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.0"
+            android:text="@string/button_next"/>
+
+    </LinearLayout>
+
+
+    <android.support.v4.widget.Space
+        android:layout_width="0dp"
+        android:layout_height="2dp"/>
+
+    <TextView
+        style="@style/TransportPlaying"
+        android:id="@+id/track_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textColor="@color/theme_disabled_foreground"
+        android:text="@string/transport_not_playing"/>
+
+</LinearLayout>

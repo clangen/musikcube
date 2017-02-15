@@ -1,0 +1,46 @@
+apply plugin: 'com.android.application'
+apply plugin: 'me.tatarka.retrolambda'
+
+android {
+    compileSdkVersion 25
+    buildToolsVersion "23.0.3"
+
+    defaultConfig {
+        applicationId "io.casey.musikcube.remote"
+        minSdkVersion 16
+        targetSdkVersion 25
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+
+    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+
+    compile 'com.neovisionaries:nv-websocket-client:1.31'
+    compile 'com.squareup.okhttp3:okhttp:3.6.0'
+    compile 'com.github.bumptech.glide:glide:3.7.0'
+
+    compile 'com.android.support:appcompat-v7:25.1.1'
+    compile 'com.android.support:recyclerview-v7:25.1.1'
+    compile 'com.android.support:design:25.1.1'
+
+    testCompile 'junit:junit:4.12'
+}
