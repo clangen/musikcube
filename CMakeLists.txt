@@ -79,6 +79,7 @@ add_subdirectory(src/contrib/oggdecoder)
 add_subdirectory(src/contrib/nomaddecoder)
 add_subdirectory(src/contrib/flacdecoder)
 add_subdirectory(src/contrib/nullout)
+add_subdirectory(src/contrib/websocket_remote)
 
 add_dependencies(taglibreader taglib)
 
@@ -112,6 +113,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
       bin/plugins/libnomaddecoder.so
       bin/plugins/liboggdecoder.so
       bin/plugins/libtaglibreader.so
+      bin/plugins/libwebsocket_remote.so
     DESTINATION share/musikcube/plugins
   )
 else (CMAKE_SYSTEM_NAME MATCHES "Linux")
@@ -125,6 +127,7 @@ else (CMAKE_SYSTEM_NAME MATCHES "Linux")
       bin/plugins/libnomaddecoder.dylib
       bin/plugins/liboggdecoder.dylib
       bin/plugins/libtaglibreader.dylib
+      bin/plugins/libwebsocket_remote.dylib
     DESTINATION share/musikcube/plugins
   )
 endif (CMAKE_SYSTEM_NAME MATCHES "Linux")

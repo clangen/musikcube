@@ -18,9 +18,8 @@ set (BOOST_LINK_LIBS ${Boost_LIBRARIES})
 set (websocket_remote_LINK_LIBS ${BOOST_LINK_LIBS})
 
 include_directories (
-  "${websocket_remote_SOURCE_DIR}"
-  "${websocket_remote_SOURCE_DIR}/3rdparty/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/include"
 )
 
-add_library(websocket_remote SHARED ${plugin_SOURCES})
+add_library(websocket_remote SHARED ${websocket_remote_SOURCES})
 target_link_libraries(websocket_remote ${websocket_remote_LINK_LIBS})
