@@ -1,16 +1,9 @@
 #include <iostream>
 
-#ifdef WIN32
-    #include <core/sdk/IPlaybackRemote.h>
-    #include <core/sdk/IPlugin.h>
-    #include <core/sdk/IPreferences.h>
-    #include <core/sdk/ISimpleDataProvider.h>
-#else
-    #include <musikcube/core/sdk/IPlaybackRemote.h>
-    #include <musikcube/core/sdk/IPlugin.h>
-    #include <musikcube/core/sdk/IPreferences.h>
-    #include <musikcube/core/sdk/ISimpleDataProvider.h>
-#endif
+#include <core/sdk/IPlaybackRemote.h>
+#include <core/sdk/IPlugin.h>
+#include <core/sdk/IPreferences.h>
+#include <core/sdk/ISimpleDataProvider.h>
 
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
@@ -28,9 +21,9 @@
 #include <set>
 
 #ifdef WIN32
-    #define DLL_EXPORT __declspec(dllexport)
+#define DLL_EXPORT __declspec(dllexport)
 #else
-    #define DLL_EXPORT
+#define DLL_EXPORT
 #endif
 
 #define DEFAULT_PORT 9002
@@ -56,6 +49,12 @@ static IPlaybackService* playback = nullptr;
 static IPreferences* preferences = nullptr;
 static ISimpleDataProvider* dataProvider = nullptr;
 static int nextId = 0;
+
+#ifdef __APPLE__
+__thread char threadLocalBuffer[4096];
+#else
+thread_local char threadLocalBuffer[4096];
+#endif
 
 namespace prefs {
     static const std::string port = "port";
@@ -790,9 +789,8 @@ class PlaybackRemote : public IPlaybackRemote {
 
         template <typename MetadataT>
         std::string GetMetadataString(MetadataT* metadata, const std::string& key) {
-            thread_local char buffer[4096];
-            metadata->GetValue(key.c_str(), buffer, sizeof(buffer));
-            return std::string(buffer);
+            metadata->GetValue(key.c_str(), threadLocalBuffer, sizeof(threadLocalBuffer));
+            return std::string(threadLocalBuffer);
         }
 
         template <typename MetadataT>
