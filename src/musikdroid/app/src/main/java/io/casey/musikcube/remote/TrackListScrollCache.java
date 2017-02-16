@@ -52,9 +52,6 @@ public class TrackListScrollCache<TrackType> {
         this.wss = wss;
         this.queryFactory = queryFactory;
         this.mapper = mapper;
-
-        this.recyclerView.addOnScrollListener(scrollListener);
-        this.wss.addClient(this.client);
     }
 
     public void requery() {
@@ -72,9 +69,14 @@ public class TrackListScrollCache<TrackType> {
         });
     }
 
-    public void destroy() {
+    public void pause() {
         this.recyclerView.removeOnScrollListener(scrollListener);
         this.wss.removeClient(this.client);
+    }
+
+    public void resume() {
+        this.recyclerView.addOnScrollListener(scrollListener);
+        this.wss.addClient(this.client);
     }
 
     public void setInitialPosition(int initialIndex) {

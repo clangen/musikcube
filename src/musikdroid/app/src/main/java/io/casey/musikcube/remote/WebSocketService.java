@@ -331,8 +331,11 @@ public class WebSocketService {
             disconnect(autoReconnect);
             handler.removeMessages(MESSAGE_AUTO_RECONNECT);
             setState(State.Connecting);
-            thread = new ConnectThread();
-            thread.start();
+
+            if (this.clients.size() > 0) {
+                thread = new ConnectThread();
+                thread.start();
+            }
         }
     }
 

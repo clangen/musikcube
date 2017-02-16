@@ -48,9 +48,15 @@ public class PlayQueueActivity extends WebSocketActivityBase {
     }
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        this.tracks.destroy();
+    protected void onPause() {
+        super.onPause();
+        this.tracks.pause();
+    }
+
+    @Override
+    protected void onResume() {
+        this.tracks.resume(); /* needs to happen before */
+        super.onResume();
     }
 
     @Override
