@@ -1,3 +1,42 @@
+0.9.0
+
+user-facing:
+
+* added new `musikdroid` android remote control! super userful with a Raspberry
+  Pi. run musikbox in the background and control it from your phone. 
+* added a new `websocket_remote` plugin that allows any client capable of
+  communciating with websockets the ability to control playback and query
+  metadata!
+* added settings UI for enabling/disabling plugins within the app!
+* fixed a crash on shutdown while in track search view
+
+low-level:
+
+* added new sdk interfaces:
+  - `ISimpleDataProvider`: can be used to query tracks, albums, artists, genres
+  - `IMetadataValue` and `IMetadataValueList`: lists of metadata values and ids
+  - `IMetadataMap` and `IMetadataMapList`: maps of values for resource ids
+  - `IPreferences` for reading and writing preferences
+* updated sdk interfaces:
+  - `ITrack`: added `getId()`
+  - `IPlaybackService`: the ability to modify or replace the play queue
+  - `ITrackList`: added const correctness
+  - renamed `IMetadataWriter` to `ITrackWriter`
+* added the ability for plugins to register to receive `IPreferences` and
+  `ISimpleDataProvider` interfaces via `SetPreferences()` and
+  `SetSimpleDataProvider`, respectively. see `websocket_remote` for an example
+* fixed up `PluginFactory` to store and provide more metadata about plugins 
+  when querying them.
+* fixed a deadlock in `PlaybackService` when changing tracks from
+  `IPlaybackRemote` plugins.
+* fixed another WASAPI audio endpoint routing bug
+* fixed some win32 project settings to allow profile guided optimizations (was
+  broken for some plugins)
+* fixed 'deprecated' compiler warnings on macOS
+* seed the random number generator at startup
+
+--------------------------------------------------------------------------------
+
 0.8.0
 
 user-facing:
