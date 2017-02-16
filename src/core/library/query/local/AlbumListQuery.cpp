@@ -139,7 +139,7 @@ bool AlbumListQuery::OnRun(Connection& db) {
     }
 
     if (category) {
-        stmt.BindInt(bindIndex, this->fieldIdValue);
+        stmt.BindInt(bindIndex, (uint64) this->fieldIdValue);
     }
 
     while (stmt.Step() == Row) {

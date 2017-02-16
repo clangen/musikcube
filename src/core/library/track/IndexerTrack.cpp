@@ -209,7 +209,7 @@ static DBID writeToTracksTable(
     stmt.BindText(10, track.GetValue("path_id"));
 
     if (track.GetId() != 0) {
-        stmt.BindInt(0, track.GetId());
+        stmt.BindInt(0, (uint64) track.GetId());
     }
 
     if (stmt.Step() == db::Done) {
