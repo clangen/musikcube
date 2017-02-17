@@ -237,6 +237,10 @@ public class MainActivity extends WebSocketActivityBase {
             }
         });
 
+        disconnectedOverlay.setOnClickListener((view) -> {
+            /* swallow input so user can't click on things while disconnected */
+        });
+
         this.album.setOnClickListener((view) -> navigateToCurrentAlbum());
         this.artist.setOnClickListener((view) -> navigateToCurrentArtist());
     }
