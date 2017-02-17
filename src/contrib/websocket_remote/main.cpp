@@ -18,6 +18,7 @@
 #include <json.hpp>
 
 #include <map>
+#include <unordered_map>
 #include <set>
 
 #ifdef WIN32
@@ -27,6 +28,7 @@
 #endif
 
 #define DEFAULT_PORT 9002
+#define DEFAULT_PASSWORD ""
 
 using namespace musik::core::sdk;
 
@@ -37,8 +39,9 @@ using websocketpp::lib::placeholders::_2;
 using websocketpp::lib::bind;
 using server = websocketpp::server<websocketpp::config::asio>;
 using connection_hdl = websocketpp::connection_hdl;
-using connection_list = std::set<connection_hdl, std::owner_less<connection_hdl>>;
 using message_ptr = server::message_ptr;
+
+using ConnectionList = std::map<connection_hdl, bool, std::owner_less<connection_hdl>>;
 
 typedef boost::shared_mutex Mutex;
 typedef boost::unique_lock<Mutex> WriteLock;
@@ -105,10 +108,14 @@ namespace key {
     static const std::string index = "index";
     static const std::string delta = "delta";
     static const std::string relative = "relative";
+    static const std::string password = "password";
+    static const std::string port = "port";
+    static const std::string authenticated = "authenticated";
 }
 
 namespace value {
     static const std::string invalid = "invalid";
+    static const std::string unauthenticated = "unauthenticated";
 }
 
 namespace type {
@@ -118,6 +125,7 @@ namespace type {
 }
 
 namespace request {
+    static const std::string authenticate = "authenticate";
     static const std::string ping = "ping";
     static const std::string pause_or_resume = "pause_or_resume";
     static const std::string stop = "stop";
@@ -231,7 +239,39 @@ class PlaybackRemote : public IPlaybackRemote {
         }
 
     private:
+        void HandleAuthentication(connection_hdl connection, json& request) {
+            std::string name = request[message::name];
+
+            if (name == request::authenticate) {
+                std::string sent = request[message::options][key::password];
+
+                std::string actual = this->GetPreferenceString(
+                    ::preferences, key::password, DEFAULT_PASSWORD);
+
+                if (sent == actual) {
+                    this->connections[connection] = true; /* mark as authed */
+
+                    this->RespondWithOptions(
+                        connection,
+                        request,
+                        json({ { key::authenticated, true } }));
+
+                    return;
+                }
+            }
+
+            this->wss.close(
+                connection,
+                websocketpp::close::status::policy_violation,
+                value::unauthenticated);
+        }
+
         void HandleRequest(connection_hdl connection, json& request) {
+            if (this->connections[connection] == false) {
+                this->HandleAuthentication(connection, request);
+                return;
+            }
+
             std::string name = request[message::name];
             std::string id = request[message::id];
 
@@ -359,8 +399,8 @@ class PlaybackRemote : public IPlaybackRemote {
             std::string str = msg.dump();
 
             ReadLock rl(::stateMutex);
-            for (connection_hdl connection : this->connections) {
-                wss.send(connection, str.c_str(), websocketpp::frame::opcode::text);
+            for (const auto &keyValue : this->connections) {
+                wss.send(keyValue.first, str.c_str(), websocketpp::frame::opcode::text);
             }
         }
 
@@ -787,6 +827,15 @@ class PlaybackRemote : public IPlaybackRemote {
             }
         }
 
+        std::string GetPreferenceString(
+            IPreferences* prefs,
+            const std::string& key,
+            const std::string& defaultValue)
+        {
+            prefs->GetString(key.c_str(), threadLocalBuffer, sizeof(threadLocalBuffer), defaultValue.c_str());
+            return std::string(threadLocalBuffer);
+        }
+
         template <typename MetadataT>
         std::string GetMetadataString(MetadataT* metadata, const std::string& key) {
             metadata->GetValue(key.c_str(), threadLocalBuffer, sizeof(threadLocalBuffer));
@@ -835,7 +884,7 @@ class PlaybackRemote : public IPlaybackRemote {
 
         void OnOpen(connection_hdl connection) {
             WriteLock wl(::stateMutex);
-            connections.insert(connection);
+            connections[connection] = false;
         }
 
         void OnClose(connection_hdl connection) {
@@ -859,7 +908,7 @@ class PlaybackRemote : public IPlaybackRemote {
             }
         }
 
-        connection_list connections;
+        ConnectionList connections;
         std::shared_ptr<std::thread> thread;
         server wss;
 
@@ -879,6 +928,12 @@ extern "C" DLL_EXPORT IPlaybackRemote* GetPlaybackRemote() {
 extern "C" DLL_EXPORT void SetPreferences(musik::core::sdk::IPreferences* prefs) {
     WriteLock wl(::stateMutex);
     ::preferences = prefs;
+
+    if (prefs) {
+        prefs->GetInt(key::port.c_str(), DEFAULT_PORT);
+        prefs->GetString(key::password.c_str(), nullptr, 0, DEFAULT_PASSWORD);
+    }
+
     remote.CheckRunningStatus();
 }
 

@@ -146,209 +146,222 @@
 
     </FrameLayout>
 
-    <LinearLayout
+    <FrameLayout
         android:id="@+id/play_controls"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_alignParentBottom="true"
-        android:orientation="vertical">
-
-        <android.support.v4.widget.Space
-            android:layout_width="0dp"
-            android:layout_height="2dp" />
+        android:layout_alignParentBottom="true">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:orientation="horizontal">
-
-            <TextView
-                style="@style/BrowseButton"
-                android:layout_weight="1.0"
-                android:id="@+id/button_artists"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="@string/button_artists"/>
+            android:orientation="vertical">
 
             <android.support.v4.widget.Space
-                android:layout_width="2dp"
-                android:layout_height="0dp" />
-
-            <TextView
-                style="@style/BrowseButton"
-                android:layout_weight="1.0"
-                android:id="@+id/button_albums"
                 android:layout_width="0dp"
+                android:layout_height="2dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="@string/button_albums"/>
+                android:layout_gravity="center_horizontal"
+                android:orientation="horizontal">
 
-            <android.support.v4.widget.Space
-                android:layout_width="2dp"
-                android:layout_height="0dp" />
+                <TextView
+                    style="@style/BrowseButton"
+                    android:layout_weight="1.0"
+                    android:id="@+id/button_artists"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="@string/button_artists"/>
 
-            <TextView
-                style="@style/BrowseButton"
-                android:layout_weight="1.0"
-                android:id="@+id/button_tracks"
-                android:layout_width="0dp"
+                <android.support.v4.widget.Space
+                    android:layout_width="2dp"
+                    android:layout_height="0dp" />
+
+                <TextView
+                    style="@style/BrowseButton"
+                    android:layout_weight="1.0"
+                    android:id="@+id/button_albums"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="@string/button_albums"/>
+
+                <android.support.v4.widget.Space
+                    android:layout_width="2dp"
+                    android:layout_height="0dp" />
+
+                <TextView
+                    style="@style/BrowseButton"
+                    android:layout_weight="1.0"
+                    android:id="@+id/button_tracks"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="@string/button_tracks"/>
+
+                <android.support.v4.widget.Space
+                    android:layout_width="2dp"
+                    android:layout_height="0dp" />
+
+                <TextView
+                    style="@style/BrowseButton"
+                    android:layout_weight="1.0"
+                    android:id="@+id/button_play_queue"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="@string/button_play_queue"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="@string/button_tracks"/>
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="2dp"
+                android:orientation="horizontal">
 
-            <android.support.v4.widget.Space
-                android:layout_width="2dp"
-                android:layout_height="0dp" />
+                <TextView
+                    style="@style/PlaybackButton"
+                    android:layout_weight="1.0"
+                    android:id="@+id/button_prev"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:text="@string/button_prev"/>
 
-            <TextView
-                style="@style/BrowseButton"
-                android:layout_weight="1.0"
-                android:id="@+id/button_play_queue"
-                android:layout_width="0dp"
+                <android.support.v4.widget.Space
+                    android:layout_width="2dp"
+                    android:layout_height="0dp" />
+
+                <TextView
+                    style="@style/PlaybackButton"
+                    android:layout_weight="1.0"
+                    android:id="@+id/button_play_pause"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:text="@string/button_play"/>
+
+                <android.support.v4.widget.Space
+                    android:layout_width="2dp"
+                    android:layout_height="0dp" />
+
+                <TextView
+                    style="@style/PlaybackButton"
+                    android:layout_weight="1.0"
+                    android:id="@+id/button_next"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:text="@string/button_next"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="@string/button_play_queue"/>
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="2dp"
+                android:orientation="horizontal">
 
+                <io.casey.musikcube.remote.LongPressTextView
+                    style="@style/PlaybackButton"
+                    android:layout_weight="1.0"
+                    android:id="@+id/button_vol_down"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:text="@string/button_vol_down"/>
+
+                <android.support.v4.widget.Space
+                    android:layout_width="2dp"
+                    android:layout_height="0dp" />
+
+                <io.casey.musikcube.remote.LongPressTextView
+                    style="@style/PlaybackButton"
+                    android:layout_weight="1.0"
+                    android:id="@+id/button_seek_back"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:text="@string/button_seek_back"/>
+
+                <android.support.v4.widget.Space
+                    android:layout_width="2dp"
+                    android:layout_height="0dp" />
+
+                <io.casey.musikcube.remote.LongPressTextView
+                    style="@style/PlaybackButton"
+                    android:layout_weight="1.0"
+                    android:id="@+id/button_seek_forward"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:text="@string/button_seek_forward"/>
+
+                <android.support.v4.widget.Space
+                    android:layout_width="2dp"
+                    android:layout_height="0dp" />
+
+                <io.casey.musikcube.remote.LongPressTextView
+                    style="@style/PlaybackButton"
+                    android:layout_weight="1.0"
+                    android:id="@+id/button_vol_up"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:text="@string/button_vol_up"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_horizontal"
+                android:layout_marginTop="2dp"
+                android:orientation="horizontal">
+
+                <CheckBox
+                    style="@style/PlaybackCheckbox"
+                    android:id="@+id/check_shuffle"
+                    android:layout_weight="1"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="@string/button_shuffle"/>
+
+                <android.support.v4.widget.Space
+                    android:layout_width="2dp"
+                    android:layout_height="0dp" />
+
+                <CheckBox
+                    style="@style/PlaybackCheckbox"
+                    android:id="@+id/check_mute"
+                    android:layout_weight="1"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:text="@string/button_mute"/>
+
+                <android.support.v4.widget.Space
+                    android:layout_width="2dp"
+                    android:layout_height="0dp" />
+
+                <CheckBox
+                    style="@style/PlaybackCheckbox"
+                    android:id="@+id/check_repeat"
+                    android:layout_weight="1"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:text="@string/button_repeat_off"/>
+
+            </LinearLayout>
         </LinearLayout>
 
-        <LinearLayout
+        <FrameLayout
+            android:id="@+id/disconnected_overlay"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="2dp"
-            android:orientation="horizontal">
+            android:layout_height="match_parent"
+            android:background="@color/theme_button_background_transparent"
+            android:visibility="gone"/>
 
-            <TextView
-                style="@style/PlaybackButton"
-                android:layout_weight="1.0"
-                android:id="@+id/button_prev"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:text="@string/button_prev"/>
+    </FrameLayout>
 
-            <android.support.v4.widget.Space
-                android:layout_width="2dp"
-                android:layout_height="0dp" />
-
-            <TextView
-                style="@style/PlaybackButton"
-                android:layout_weight="1.0"
-                android:id="@+id/button_play_pause"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:text="@string/button_play"/>
-
-            <android.support.v4.widget.Space
-                android:layout_width="2dp"
-                android:layout_height="0dp" />
-
-            <TextView
-                style="@style/PlaybackButton"
-                android:layout_weight="1.0"
-                android:id="@+id/button_next"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:text="@string/button_next"/>
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="2dp"
-            android:orientation="horizontal">
-
-            <io.casey.musikcube.remote.LongPressTextView
-                style="@style/PlaybackButton"
-                android:layout_weight="1.0"
-                android:id="@+id/button_vol_down"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:text="@string/button_vol_down"/>
-
-            <android.support.v4.widget.Space
-                android:layout_width="2dp"
-                android:layout_height="0dp" />
-
-            <io.casey.musikcube.remote.LongPressTextView
-                style="@style/PlaybackButton"
-                android:layout_weight="1.0"
-                android:id="@+id/button_seek_back"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:text="@string/button_seek_back"/>
-
-            <android.support.v4.widget.Space
-                android:layout_width="2dp"
-                android:layout_height="0dp" />
-
-            <io.casey.musikcube.remote.LongPressTextView
-                style="@style/PlaybackButton"
-                android:layout_weight="1.0"
-                android:id="@+id/button_seek_forward"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:text="@string/button_seek_forward"/>
-
-            <android.support.v4.widget.Space
-                android:layout_width="2dp"
-                android:layout_height="0dp" />
-
-            <io.casey.musikcube.remote.LongPressTextView
-                style="@style/PlaybackButton"
-                android:layout_weight="1.0"
-                android:id="@+id/button_vol_up"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:text="@string/button_vol_up"/>
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_horizontal"
-            android:layout_marginTop="2dp"
-            android:orientation="horizontal">
-
-            <CheckBox
-                style="@style/PlaybackCheckbox"
-                android:id="@+id/check_shuffle"
-                android:layout_weight="1"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="@string/button_shuffle"/>
-
-            <android.support.v4.widget.Space
-                android:layout_width="2dp"
-                android:layout_height="0dp" />
-
-            <CheckBox
-                style="@style/PlaybackCheckbox"
-                android:id="@+id/check_mute"
-                android:layout_weight="1"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:text="@string/button_mute"/>
-
-            <android.support.v4.widget.Space
-                android:layout_width="2dp"
-                android:layout_height="0dp" />
-
-            <CheckBox
-                style="@style/PlaybackCheckbox"
-                android:id="@+id/check_repeat"
-                android:layout_weight="1"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:text="@string/button_repeat_off"/>
-
-        </LinearLayout>
-    </LinearLayout>
 
 </RelativeLayout>

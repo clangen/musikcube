@@ -108,7 +108,10 @@ public class CategoryBrowseActivity extends WebSocketActivityBase implements Fil
 
         @Override
         public void onMessageReceived(SocketMessage message) {
+        }
 
+        @Override
+        public void onInvalidPassword() {
         }
     };
 

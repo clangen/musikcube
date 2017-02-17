@@ -144,5 +144,9 @@ public class TransportFragment extends Fragment {
                 }
             }
         }
+
+        @Override
+        public void onInvalidPassword() {
+        }
     };
 }

@@ -46,6 +46,7 @@ public class MainActivity extends WebSocketActivityBase {
     private CheckBox shuffleCb, muteCb, repeatCb;
     private ImageView albumArtImageView;
     private View mainTrackMetadataWithAlbumArt, mainTrackMetadataNoAlbumArt;
+    private View disconnectedOverlay;
     private Handler handler = new Handler();
     private ViewPropertyAnimator metadataAnim1, metadataAnim2;
 
@@ -152,6 +153,8 @@ public class MainActivity extends WebSocketActivityBase {
         this.albumArtImageView = (ImageView) findViewById(R.id.album_art);
         this.connected = findViewById(R.id.connected);
 
+        this.disconnectedOverlay = findViewById(R.id.disconnected_overlay);
+
         /* these will get faded in as appropriate */
         this.mainTrackMetadataNoAlbumArt.setAlpha(0.0f);
         this.mainTrackMetadataWithAlbumArt.setAlpha(0.0f);
@@ -206,6 +209,12 @@ public class MainActivity extends WebSocketActivityBase {
                 .request(Messages.Request.SetVolume)
                 .addOption(TransportModel.Key.VOLUME, volume)
                 .build());
+        });
+
+        notPlayingOrDisconnected.setOnClickListener((view) -> {
+            if (wss.getState() != WebSocketService.State.Connected) {
+                wss.reconnect();
+            }
         });
 
         findViewById(R.id.button_artists).setOnClickListener((View view) -> {
@@ -296,6 +305,7 @@ public class MainActivity extends WebSocketActivityBase {
         final boolean stateIsValidForArtwork = !stopped && connected;
 
         this.connected.setVisibility((connected && stopped) ? View.VISIBLE : View.GONE);
+        this.disconnectedOverlay.setVisibility(connected ? View.GONE : View.VISIBLE);
 
         /* setup our state as if we have no album art -- because we don't know if we have any
         yet! the album art load process (if enabled) will ensure the correct metadata block
@@ -537,6 +547,15 @@ public class MainActivity extends WebSocketActivityBase {
                 if (model.update(message)) {
                     rebindUi();
                 }
+            }
+        }
+
+        @Override
+        public void onInvalidPassword() {
+            final String tag = InvalidPasswordDialogFragment.TAG;
+            if (getSupportFragmentManager().findFragmentByTag(tag) == null) {
+                InvalidPasswordDialogFragment
+                    .newInstance().show(getSupportFragmentManager(), tag);
             }
         }
     };

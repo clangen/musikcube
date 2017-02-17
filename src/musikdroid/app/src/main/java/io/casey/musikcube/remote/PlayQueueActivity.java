@@ -122,6 +122,10 @@ public class PlayQueueActivity extends WebSocketActivityBase {
                 updatePlaybackModel(broadcast);
             }
         }
+
+        @Override
+        public void onInvalidPassword() {
+        }
     };
 
     private class ViewHolder extends RecyclerView.ViewHolder {

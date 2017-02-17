@@ -182,5 +182,9 @@ public class TrackListScrollCache<TrackType> {
                 }
             }
         }
+
+        @Override
+        public void onInvalidPassword() {
+        }
     };
 }

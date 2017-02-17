@@ -13,7 +13,7 @@ import android.widget.EditText;
 import java.util.Locale;
 
 public class SettingsActivity extends AppCompatActivity {
-    private EditText addressText, portText;
+    private EditText addressText, portText, passwordText;
     private CheckBox albumArtCheckbox;
     private SharedPreferences prefs;
 
@@ -33,11 +33,13 @@ public class SettingsActivity extends AppCompatActivity {
     private void rebindUi() {
         Views.setTextAndMoveCursorToEnd(this.addressText, prefs.getString("address", "192.168.1.100"));
         Views.setTextAndMoveCursorToEnd(this.portText, String.format(Locale.ENGLISH, "%d", prefs.getInt("port", 9002)));
+        this.passwordText.setText(prefs.getString("password", ""));
     }
 
     private void bindEventListeners() {
         this.addressText = (EditText) this.findViewById(R.id.address);
         this.portText = (EditText) this.findViewById(R.id.port);
+        this.passwordText = (EditText) this.findViewById(R.id.password);
         this.albumArtCheckbox = (CheckBox) findViewById(R.id.album_art_checkbox);
 
         this.albumArtCheckbox.setChecked(this.prefs.getBoolean("album_art_enabled", true));
@@ -45,15 +47,16 @@ public class SettingsActivity extends AppCompatActivity {
         this.findViewById(R.id.button_connect).setOnClickListener((View v) -> {
             final String addr = addressText.getText().toString();
             final String port = portText.getText().toString();
+            final String password = passwordText.getText().toString();
 
             prefs.edit()
                 .putString("address", addr)
                 .putInt("port", (port.length() > 0) ? Integer.valueOf(port) : 0)
+                .putString("password", password)
                 .putBoolean("album_art_enabled", albumArtCheckbox.isChecked())
                 .apply();
 
             WebSocketService.getInstance(this).disconnect();
-            WebSocketService.getInstance(this).reconnect();
 
             finish();
         });

@@ -108,7 +108,10 @@ public class AlbumBrowseActivity extends WebSocketActivityBase implements Filter
 
         @Override
         public void onMessageReceived(SocketMessage message) {
+        }
 
+        @Override
+        public void onInvalidPassword() {
         }
     };
 

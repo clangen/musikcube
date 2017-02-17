@@ -47,6 +47,8 @@ namespace musik { namespace core { namespace sdk {
             virtual void SetInt(const char* key, int value) = 0;
             virtual void SetDouble(const char* key, double value) = 0;
             virtual void SetString(const char* key, const char* value) = 0;
+
+            virtual void Save() = 0;
     };
 
 } } }

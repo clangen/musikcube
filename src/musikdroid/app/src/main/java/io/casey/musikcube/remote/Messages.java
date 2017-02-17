@@ -2,6 +2,7 @@ package io.casey.musikcube.remote;
 
 public class Messages {
     public enum Request {
+        Authenticate("authenticate"),
         Ping("ping"),
         GetPlaybackOverview("get_playback_overview"),
         PauseOrResume("pause_or_resume"),

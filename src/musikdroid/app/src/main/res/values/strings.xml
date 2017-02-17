@@ -19,6 +19,10 @@
     <string name="button_repeat_list">repeat list</string>
     <string name="button_repeat_track">repeat song</string>
     <string name="button_save">save</string>
+    <string name="button_settings">settings</string>
+    <string name="button_close">close</string>
+    <string name="invalid_password_dialog_title">invalid password</string>
+    <string name="invalid_password_dialog_message">the server rejected your password.\n\nchange the password in the settings screen.</string>
     <string name="status_connecting">connecting</string>
     <string name="status_disconnected">disconnected</string>
     <string name="status_connected">connected to %1$s</string>
@@ -26,6 +30,7 @@
     <string name="edit_connection_info">connection info:</string>
     <string name="edit_connection_hostname">ip address or hostname</string>
     <string name="edit_connection_port">port</string>
+    <string name="edit_connection_password">password (default empty)</string>
     <string name="transport_not_playing">not playing</string>
     <string name="search_hint">search</string>
     <string name="menu_settings">settings</string>

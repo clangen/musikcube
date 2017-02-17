@@ -33,6 +33,8 @@ public class WebSocketService {
     private static final int PING_INTERVAL_MILLIS = 3500;
     private static final int AUTO_CONNECT_FAILSAFE_DELAY_MILLIS = 2000;
     private static final int AUTO_DISCONNECT_DELAY_MILLIS = 5000;
+    private static final int FLAG_AUTHENTICATION_FAILED = 0xbeef;
+    private static final int WEBSOCKET_FLAG_POLICY_VIOLATION = 1008;
 
     private static final int MESSAGE_BASE = 0xcafedead;
     private static final int MESSAGE_CONNECT_THREAD_FINISHED = MESSAGE_BASE + 0;
@@ -45,6 +47,7 @@ public class WebSocketService {
     public interface Client {
         void onStateChanged(State newState, State oldState);
         void onMessageReceived(SocketMessage message);
+        void onInvalidPassword();
     }
 
     public interface MessageResultCallback {
@@ -66,7 +69,14 @@ public class WebSocketService {
         public boolean handleMessage(Message message) {
             if (message.what == MESSAGE_CONNECT_THREAD_FINISHED) {
                 if (message.obj == null) {
-                    disconnect(true); /* auto-reconnect */
+                    boolean invalidPassword = (message.arg1 == FLAG_AUTHENTICATION_FAILED);
+                    disconnect(!invalidPassword); /* auto reconnect as long as password was not invalid */
+
+                    if (invalidPassword) {
+                        for (Client client : clients) {
+                            client.onInvalidPassword();
+                        }
+                    }
                 }
                 else {
                     setSocket((WebSocket) message.obj);
@@ -162,6 +172,7 @@ public class WebSocketService {
 
             if (this.clients.size() == 1) {
                 registerReceiverAndScheduleFailsafe();
+                reconnect();
                 handler.removeCallbacks(autoDisconnectRunnable);
             }
 
@@ -327,12 +338,13 @@ public class WebSocketService {
     }
 
     private void connectIfNotConnected() {
-        if (state != State.Connected || !socket.isOpen()) {
+        if (state == State.Disconnected) {
             disconnect(autoReconnect);
             handler.removeMessages(MESSAGE_AUTO_RECONNECT);
-            setState(State.Connecting);
 
             if (this.clients.size() > 0) {
+                handler.removeCallbacks(autoDisconnectRunnable);
+                setState(State.Connecting);
                 thread = new ConnectThread();
                 thread.start();
             }
@@ -346,7 +358,6 @@ public class WebSocketService {
             }
 
             this.socket = socket;
-            this.socket.addListener(webSocketAdapter);
         }
     }
 
@@ -389,7 +400,7 @@ public class WebSocketService {
     }
 
     private Runnable autoReconnectFailsafeRunnable = () -> {
-        if (getState() != WebSocketService.State.Connected) {
+        if (autoReconnect && getState() == State.Disconnected) {
             reconnect();
         }
     };
@@ -401,7 +412,13 @@ public class WebSocketService {
         public void onTextFrame(WebSocket websocket, WebSocketFrame frame) throws Exception {
             final SocketMessage message = SocketMessage.create(frame.getPayloadText());
             if (message != null) {
-                handler.sendMessage(Message.obtain(handler, MESSAGE_MESSAGE_RECEIVED, message));
+                if (message.getName().equals(Messages.Request.Authenticate.toString())) {
+                    handler.sendMessage(Message.obtain(
+                        handler, MESSAGE_CONNECT_THREAD_FINISHED, websocket));
+                }
+                else {
+                    handler.sendMessage(Message.obtain(handler, MESSAGE_MESSAGE_RECEIVED, message));
+                }
             }
         }
 
@@ -410,7 +427,12 @@ public class WebSocketService {
                                    WebSocketFrame serverCloseFrame,
                                    WebSocketFrame clientCloseFrame,
                                    boolean closedByServer) throws Exception {
-            handler.sendMessage(Message.obtain(handler, MESSAGE_CONNECT_THREAD_FINISHED, null));
+            int flags = 0;
+            if (serverCloseFrame.getCloseCode() == WEBSOCKET_FLAG_POLICY_VIOLATION) {
+                flags = FLAG_AUTHENTICATION_FAILED;
+            }
+
+            handler.sendMessage(Message.obtain(handler, MESSAGE_CONNECT_THREAD_FINISHED, flags, 0, null));
         }
     };
 
@@ -429,17 +451,27 @@ public class WebSocketService {
                     prefs.getInt("port", 9002));
 
                 socket = factory.createSocket(host, CONNECTION_TIMEOUT_MILLIS);
+                socket.addListener(webSocketAdapter);
                 socket.connect();
                 socket.setPingInterval(PING_INTERVAL_MILLIS);
+
+                /* authenticate */
+                final String auth = SocketMessage.Builder
+                    .request(Messages.Request.Authenticate)
+                    .addOption("password", prefs.getString("password", ""))
+                    .build()
+                    .toString();
+
+                socket.sendText(auth);
             }
             catch (Exception ex) {
                 socket = null;
             }
 
             synchronized (WebSocketService.this) {
-                if (!isInterrupted()) {
+                if (thread == this && socket == null) {
                     handler.sendMessage(Message.obtain(
-                        handler, MESSAGE_CONNECT_THREAD_FINISHED, socket));
+                        handler, MESSAGE_CONNECT_THREAD_FINISHED, null));
                 }
 
                 if (thread == this) {
@@ -458,9 +490,8 @@ public class WebSocketService {
             final NetworkInfo info = cm.getActiveNetworkInfo();
 
             if (info != null && info.isConnected()) {
-                if (getState() == WebSocketService.State.Disconnected) {
-                    disconnect();
-                    reconnect();
+                if (autoReconnect) {
+                    connectIfNotConnected();
                 }
             }
         }
@@ -469,5 +500,6 @@ public class WebSocketService {
     private static Client INTERNAL_CLIENT = new Client() {
         public void onStateChanged(State newState, State oldState) { }
         public void onMessageReceived(SocketMessage message) { }
+        public void onInvalidPassword() { }
     };
 }

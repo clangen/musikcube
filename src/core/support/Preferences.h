@@ -72,6 +72,8 @@ namespace musik { namespace core {
             virtual void SetDouble(const char* key, double value);
             virtual void SetString(const char* key, const char* value);
 
+            virtual void Save();
+
             /* easier interface for internal use */
             virtual bool GetBool(const std::string& key, bool defaultValue = false);
             virtual int GetInt(const std::string& key, int defaultValue = 0);
@@ -84,7 +86,6 @@ namespace musik { namespace core {
             virtual void SetString(const std::string& key, const char* value);
 
             void GetKeys(std::vector<std::string>& target);
-            void Save();
 
         private:
             Preferences(const std::string& component, Mode mode);

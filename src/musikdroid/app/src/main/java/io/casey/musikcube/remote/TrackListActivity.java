@@ -98,6 +98,10 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
         @Override
         public void onMessageReceived(SocketMessage message) {
         }
+
+        @Override
+        public void onInvalidPassword() {
+        }
     };
 
     private View.OnClickListener onItemClickListener = (View view) -> {
