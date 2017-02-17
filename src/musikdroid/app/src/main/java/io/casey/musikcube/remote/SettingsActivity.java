@@ -26,6 +26,7 @@ public class SettingsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         prefs = this.getSharedPreferences("prefs", MODE_PRIVATE);
         setContentView(R.layout.activity_settings);
+        setTitle(R.string.settings_title);
         bindEventListeners();
         rebindUi();
     }

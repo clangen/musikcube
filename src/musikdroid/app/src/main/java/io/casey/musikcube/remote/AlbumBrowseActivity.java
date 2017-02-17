@@ -17,6 +17,7 @@ import org.json.JSONObject;
 import static io.casey.musikcube.remote.Messages.Key;
 
 public class AlbumBrowseActivity extends WebSocketActivityBase implements Filterable {
+    public static final String EXTRA_TITLE = "extra_title";
     private static final String EXTRA_CATEGORY_NAME = "extra_category_name";
     private static final String EXTRA_CATEGORY_ID = "extra_category_id";
 
@@ -46,6 +47,12 @@ public class AlbumBrowseActivity extends WebSocketActivityBase implements Filter
         this.categoryId = getIntent().getLongExtra(EXTRA_CATEGORY_ID, categoryId);
 
         setContentView(R.layout.recycler_view_activity);
+        setTitle(R.string.albums_title);
+
+        final String title = getIntent().getStringExtra(EXTRA_TITLE);
+        if (Strings.notEmpty(title)) {
+            setTitle(title);
+        }
 
         this.wss = getWebSocketService();
         this.adapter = new Adapter();
@@ -116,10 +123,18 @@ public class AlbumBrowseActivity extends WebSocketActivityBase implements Filter
     };
 
     private View.OnClickListener onItemClickListener = (View view) -> {
-        long id = (Long) view.getTag();
+        JSONObject album = (JSONObject) view.getTag();
+        long id = album.optLong(Key.ID);
+        String title = album.optString(Key.TITLE, "");
 
         final Intent intent = TrackListActivity.getStartIntent(
             AlbumBrowseActivity.this, Messages.Category.ALBUM, id);
+
+        if (Strings.notEmpty(title)) {
+            intent.putExtra(
+                TrackListActivity.EXTRA_TITLE,
+                getString(R.string.songs_from_category, title));
+        }
 
         startActivityForResult(intent, Navigation.RequestCode.ALBUM_TRACKS_ACTIVITY);
     };
@@ -152,7 +167,7 @@ public class AlbumBrowseActivity extends WebSocketActivityBase implements Filter
             subtitle.setText(entry.optString(Key.ALBUM_ARTIST, "-"));
             subtitle.setTextColor(getResources().getColor(subtitleColor));
 
-            itemView.setTag(entryId);
+            itemView.setTag(entry);
         }
     }
 

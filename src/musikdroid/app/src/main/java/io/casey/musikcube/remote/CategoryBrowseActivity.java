@@ -21,12 +21,18 @@ public class CategoryBrowseActivity extends WebSocketActivityBase implements Fil
     private static final String EXTRA_CATEGORY = "extra_category";
 
     private static final Map<String, String> CATEGORY_NAME_TO_ID = new HashMap<>();
+    private static final Map<String, Integer> CATEGORY_NAME_TO_TITLE = new HashMap<>();
 
     static {
         CATEGORY_NAME_TO_ID.put(Messages.Key.ALBUM_ARTIST, Messages.Key.ALBUM_ARTIST_ID);
         CATEGORY_NAME_TO_ID.put(Messages.Key.GENRE, Messages.Key.GENRE_ID);
         CATEGORY_NAME_TO_ID.put(Messages.Key.ARTIST, Messages.Key.ARTIST_ID);
         CATEGORY_NAME_TO_ID.put(Messages.Key.ALBUM, Messages.Key.ALBUM_ID);
+
+        CATEGORY_NAME_TO_TITLE.put(Messages.Key.ALBUM_ARTIST, R.string.artists_title);
+        CATEGORY_NAME_TO_TITLE.put(Messages.Key.GENRE, R.string.genres_title);
+        CATEGORY_NAME_TO_TITLE.put(Messages.Key.ARTIST, R.string.artists_title);
+        CATEGORY_NAME_TO_TITLE.put(Messages.Key.ALBUM, R.string.albums_title);
     }
 
     public static Intent getStartIntent(final Context context, final String category) {
@@ -47,6 +53,10 @@ public class CategoryBrowseActivity extends WebSocketActivityBase implements Fil
         this.adapter = new Adapter();
 
         setContentView(R.layout.recycler_view_activity);
+
+        if (CATEGORY_NAME_TO_TITLE.containsKey(category)) {
+            setTitle(CATEGORY_NAME_TO_TITLE.get(category));
+        }
 
         final RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
 
@@ -116,14 +126,34 @@ public class CategoryBrowseActivity extends WebSocketActivityBase implements Fil
     };
 
     private View.OnClickListener onItemClickListener = (View view) -> {
-        final long categoryId = (Long) view.getTag();
+        final JSONObject entry = (JSONObject) view.getTag();
+        final long categoryId = entry.optLong(Messages.Key.ID);
+        final String value = entry.optString(Messages.Key.VALUE);
+
         final Intent intent = AlbumBrowseActivity.getStartIntent(this, category, categoryId);
+
+        if (Strings.notEmpty(value)) {
+            intent.putExtra(
+                AlbumBrowseActivity.EXTRA_TITLE,
+                getString(R.string.albums_by_title, value));
+        }
+
         startActivityForResult(intent, Navigation.RequestCode.ALBUM_BROWSE_ACTIVITY);
     };
 
     private View.OnLongClickListener onItemLongClickListener = (View view) -> {
-        final long categoryId = (Long) view.getTag();
+        final JSONObject entry = (JSONObject) view.getTag();
+        final long categoryId = entry.optLong(Messages.Key.ID);
+        final String value = entry.optString(Messages.Key.VALUE);
+
         final Intent intent = TrackListActivity.getStartIntent(this, category, categoryId);
+
+        if (Strings.notEmpty(value)) {
+            intent.putExtra(
+                TrackListActivity.EXTRA_TITLE,
+                getString(R.string.songs_from_category, value));
+        }
+
         startActivityForResult(intent, Navigation.RequestCode.CATEGORY_TRACKS_ACTIVITY);
 
         return true;
@@ -155,7 +185,7 @@ public class CategoryBrowseActivity extends WebSocketActivityBase implements Fil
             title.setText(entry.optString(Messages.Key.VALUE, "-"));
             title.setTextColor(getResources().getColor(titleColor));
 
-            itemView.setTag(entryId);
+            itemView.setTag(entry);
         }
     }
 

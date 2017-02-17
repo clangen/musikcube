@@ -1,5 +1,13 @@
 <resources>
     <string name="app_name">musikdroid</string>
+    <string name="settings_title">settings</string>
+    <string name="play_queue_title">play queue</string>
+    <string name="albums_title">albums</string>
+    <string name="albums_by_title">albums from \'%1$s\'</string>
+    <string name="songs_title">songs</string>
+    <string name="songs_from_category">songs from \'%1$s\'</string>
+    <string name="genres_title">genres</string>
+    <string name="artists_title">artists</string>
     <string name="button_pause">pause</string>
     <string name="button_play">play</string>
     <string name="button_prev">prev</string>

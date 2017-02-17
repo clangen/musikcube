@@ -16,6 +16,7 @@ import org.json.JSONObject;
 import static io.casey.musikcube.remote.TrackListScrollCache.QueryFactory;
 
 public class TrackListActivity extends WebSocketActivityBase implements Filterable {
+    public static String EXTRA_TITLE = "extra_title";
     private static String EXTRA_CATEGORY_TYPE = "extra_category_type";
     private static String EXTRA_SELECTED_ID = "extra_selected_id";
 
@@ -39,10 +40,16 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.recycler_view_activity);
-
         categoryType = getIntent().getStringExtra(EXTRA_CATEGORY_TYPE);
         categoryId = getIntent().getLongExtra(EXTRA_SELECTED_ID, 0);
+
+        setContentView(R.layout.recycler_view_activity);
+        setTitle(R.string.songs_title);
+
+        final String title = getIntent().getStringExtra(EXTRA_TITLE);
+        if (Strings.notEmpty(title)) {
+            setTitle(title);
+        }
 
         final QueryFactory queryFactory =
             createCategoryQueryFactory(categoryType, categoryId);

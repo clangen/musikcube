@@ -32,6 +32,7 @@ public class PlayQueueActivity extends WebSocketActivityBase {
         this.wss = getWebSocketService();
 
         setContentView(R.layout.recycler_view_activity);
+        setTitle(R.string.play_queue_title);
 
         this.adapter = new Adapter();
         final RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
