@@ -21,6 +21,7 @@ public class TrackListScrollCache<TrackType> {
     private int scrollState = RecyclerView.SCROLL_STATE_IDLE;
     private int queryOffset = -1, queryLimit = -1;
     private int initialPosition = -1;
+    boolean connected = false;
 
     private static class CacheEntry<TrackType> {
         TrackType value;
@@ -55,21 +56,24 @@ public class TrackListScrollCache<TrackType> {
     }
 
     public void requery() {
-        cancelMessages();
+        if (connected) {
+            cancelMessages();
 
-        final SocketMessage message = queryFactory.getRequeryMessage();
+            final SocketMessage message = queryFactory.getRequeryMessage();
 
-        wss.send(message, this.client, (SocketMessage response) -> {
-            setCount(response.getIntOption(Messages.Key.COUNT, 0));
+            wss.send(message, this.client, (SocketMessage response) -> {
+                setCount(response.getIntOption(Messages.Key.COUNT, 0));
 
-            if (initialPosition != -1) {
-                recyclerView.scrollToPosition(initialPosition);
-                initialPosition = -1;
-            }
-        });
+                if (initialPosition != -1) {
+                    recyclerView.scrollToPosition(initialPosition);
+                    initialPosition = -1;
+                }
+            });
+        }
     }
 
     public void pause() {
+        connected = false;
         this.recyclerView.removeOnScrollListener(scrollListener);
         this.wss.removeClient(this.client);
     }
@@ -77,6 +81,7 @@ public class TrackListScrollCache<TrackType> {
     public void resume() {
         this.recyclerView.addOnScrollListener(scrollListener);
         this.wss.addClient(this.client);
+        connected = true;
     }
 
     public void setInitialPosition(int initialIndex) {
@@ -118,6 +123,10 @@ public class TrackListScrollCache<TrackType> {
     }
 
     private void getPageAround(int index) {
+        if (!connected) {
+            return;
+        }
+
         if (index >= queryOffset && index <= queryOffset + queryLimit) {
             return; /* already in flight */
         }
