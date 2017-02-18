@@ -34,16 +34,14 @@ public abstract class WebSocketActivityBase extends AppCompatActivity {
         if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
             wss.send(SocketMessage.Builder
                 .request(Messages.Request.SetVolume)
-                .addOption(TransportModel.Key.VOLUME, -0.05)
-                .addOption(Messages.Key.RELATIVE, true)
-                .build());
+                .addOption(Messages.Key.RELATIVE, Messages.Value.DOWN)
+                 .build());
             return true;
         }
         else if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
             wss.send(SocketMessage.Builder
                 .request(Messages.Request.SetVolume)
-                .addOption(TransportModel.Key.VOLUME, 0.05)
-                .addOption(Messages.Key.RELATIVE, true)
+                .addOption(Messages.Key.RELATIVE, Messages.Value.UP)
                 .build());
 
             return true;

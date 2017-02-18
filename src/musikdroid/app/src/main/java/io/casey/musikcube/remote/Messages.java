@@ -103,6 +103,12 @@ public class Messages {
         String RELATIVE = "relative";
     }
 
+    public interface Value {
+        String DELTA = "delta";
+        String UP = "up";
+        String DOWN = "down";
+    }
+
     public interface Category {
         String ALBUM = "album";
         String ARTIST = "artist";

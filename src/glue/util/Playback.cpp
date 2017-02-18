@@ -53,11 +53,13 @@ namespace musik {
             }
 
             void VolumeUp(ITransport& transport) {
-                transport.SetVolume(transport.Volume() + 0.05);
+                double delta = round(transport.Volume() * 100.0) >= 10.0 ? 0.05 : 0.01;
+                transport.SetVolume(transport.Volume() + delta);
             }
 
             void VolumeDown(ITransport& transport) {
-                transport.SetVolume(transport.Volume() - 0.05);
+                double delta = round(transport.Volume() * 100.0) > 10.0 ? 0.05 : 0.01;
+                transport.SetVolume(transport.Volume() - delta);
             }
 
             void SeekForward(ITransport& transport) {

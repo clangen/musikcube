@@ -17,9 +17,6 @@
     <Filter Include="src\library">
       <UniqueIdentifier>{90ebbbb9-2451-414e-9b0c-20f40fdadd9f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\library\query">
-      <UniqueIdentifier>{aeae5187-aaff-493a-9d03-4b24dee39b7c}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\io">
       <UniqueIdentifier>{9ddb994d-f85e-41db-932d-87554d2e93e2}</UniqueIdentifier>
     </Filter>
@@ -35,11 +32,14 @@
     <Filter Include="src\runtime">
       <UniqueIdentifier>{e22e7d2d-a548-4344-bb6e-8463bc1a7157}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\library\query\local">
-      <UniqueIdentifier>{73173bbc-5951-460f-814d-25d1b71bf362}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\library\metadata">
       <UniqueIdentifier>{f3766aee-efaf-49ed-b030-67290c5c2f31}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\library\query">
+      <UniqueIdentifier>{aeae5187-aaff-493a-9d03-4b24dee39b7c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\library\query\local">
+      <UniqueIdentifier>{73173bbc-5951-460f-814d-25d1b71bf362}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

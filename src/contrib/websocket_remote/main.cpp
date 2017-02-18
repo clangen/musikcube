@@ -116,6 +116,9 @@ namespace key {
 namespace value {
     static const std::string invalid = "invalid";
     static const std::string unauthenticated = "unauthenticated";
+    static const std::string up = "up";
+    static const std::string down = "down";
+    static const std::string delta = "delta";
 }
 
 namespace type {
@@ -324,15 +327,7 @@ class PlaybackRemote : public IPlaybackRemote {
                     return;
                 }
                 else if (name == request::set_volume) {
-                    if (options.find(key::volume) != options.end()) {
-                        if (options.value(key::relative, false)) {
-                            float delta = options[key::volume];
-                            playback->SetVolume(playback->GetVolume() + delta);
-                        }
-                        else {
-                            playback->SetVolume(options[key::volume]);
-                        }
-                    }
+                    this->RespondWithSetVolume(connection, request);
                     return;
                 }
                 else if (name == request::seek_to) {
@@ -460,6 +455,27 @@ class PlaybackRemote : public IPlaybackRemote {
             };
 
             wss.send(connection, error.dump().c_str(), websocketpp::frame::opcode::text);
+        }
+
+        void RespondWithSetVolume(connection_hdl connection, json& request) {
+            json& options = request[message::options];
+            std::string relative = options.value(key::relative, "");
+
+            if (relative == value::up) {
+                double delta = round(playback->GetVolume() * 100.0) >= 10.0 ? 0.05 : 0.01;
+                playback->SetVolume(playback->GetVolume() + delta);
+            }
+            else if (relative == value::down) {
+                double delta = round(playback->GetVolume() * 100.0) > 10.0 ? 0.05 : 0.01;
+                playback->SetVolume(playback->GetVolume() - delta);
+            }
+            else if (relative == value::delta) {
+                float delta = options[key::volume];
+                playback->SetVolume(playback->GetVolume() + delta);
+            }
+            else {
+                playback->SetVolume(options[key::volume]);
+            }
         }
 
         void RespondWithPlaybackOverview(connection_hdl connection, json& request) {
