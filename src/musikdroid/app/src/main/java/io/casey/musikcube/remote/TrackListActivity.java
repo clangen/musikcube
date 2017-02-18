@@ -49,7 +49,7 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
     private TransportFragment transport;
     private String categoryType;
     private long categoryId;
-    private String filter = "";
+    private String lastFilter = "";
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -107,14 +107,15 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
 
     @Override
     public void setFilter(String filter) {
-        this.filter = filter;
-        tracks.requery();
+        this.lastFilter = filter;
+        this.filterDebouncer.call();
     }
 
     private WebSocketService.Client socketServiceClient = new WebSocketService.Client() {
         @Override
         public void onStateChanged(WebSocketService.State newState, WebSocketService.State oldState) {
             if (newState == WebSocketService.State.Connected) {
+                filterDebouncer.cancel();
                 tracks.requery();
             }
         }
@@ -128,6 +129,15 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
         }
     };
 
+    private final Debouncer<String> filterDebouncer = new Debouncer<String>(350) {
+        @Override
+        protected void onDebounced(String caller) {
+            if (!isPaused()) {
+                tracks.requery();
+            }
+        }
+    };
+
     private View.OnClickListener onItemClickListener = (View view) -> {
         int index = (Integer) view.getTag();
         SocketMessage request;
@@ -138,14 +148,14 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
                 .addOption(Messages.Key.CATEGORY, categoryType)
                 .addOption(Messages.Key.ID, categoryId)
                 .addOption(Messages.Key.INDEX, index)
-                .addOption(Messages.Key.FILTER, filter)
+                .addOption(Messages.Key.FILTER, lastFilter)
                 .build();
         }
         else {
             request = SocketMessage.Builder
                 .request(Messages.Request.PlayAllTracks)
                 .addOption(Messages.Key.INDEX, index)
-                .addOption(Messages.Key.FILTER, filter)
+                .addOption(Messages.Key.FILTER, lastFilter)
                 .build();
         }
 
@@ -232,7 +242,7 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
                         .addOption(Messages.Key.CATEGORY, categoryType)
                         .addOption(Messages.Key.ID, categoryId)
                         .addOption(Messages.Key.COUNT_ONLY, true)
-                        .addOption(Messages.Key.FILTER, filter)
+                        .addOption(Messages.Key.FILTER, lastFilter)
                         .build();
                 }
 
@@ -244,7 +254,7 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
                         .addOption(Messages.Key.ID, categoryId)
                         .addOption(Messages.Key.OFFSET, offset)
                         .addOption(Messages.Key.LIMIT, limit)
-                        .addOption(Messages.Key.FILTER, filter)
+                        .addOption(Messages.Key.FILTER, lastFilter)
                         .build();
                 }
             };
@@ -256,7 +266,7 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
                 public SocketMessage getRequeryMessage() {
                     return SocketMessage.Builder
                         .request(Messages.Request.QueryTracks)
-                        .addOption(Messages.Key.FILTER, filter)
+                        .addOption(Messages.Key.FILTER, lastFilter)
                         .addOption(Messages.Key.COUNT_ONLY, true)
                         .build();
                 }
@@ -267,7 +277,7 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
                         .request(Messages.Request.QueryTracks)
                         .addOption(Messages.Key.OFFSET, offset)
                         .addOption(Messages.Key.LIMIT, limit)
-                        .addOption(Messages.Key.FILTER, filter)
+                        .addOption(Messages.Key.FILTER, lastFilter)
                         .build();
                 }
             };

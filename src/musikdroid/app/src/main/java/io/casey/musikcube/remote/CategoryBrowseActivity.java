@@ -56,7 +56,7 @@ public class CategoryBrowseActivity extends WebSocketActivityBase implements Fil
 
     private String category;
     private Adapter adapter;
-    private String filter;
+    private String lastFilter;
     private TransportFragment transport;
     private int deepLinkType;
 
@@ -102,8 +102,8 @@ public class CategoryBrowseActivity extends WebSocketActivityBase implements Fil
 
     @Override
     public void setFilter(String filter) {
-        this.filter = filter;
-        requery();
+        this.lastFilter = filter;
+        this.filterDebouncer.call();
     }
 
     @Override
@@ -115,7 +115,7 @@ public class CategoryBrowseActivity extends WebSocketActivityBase implements Fil
         final SocketMessage request = SocketMessage.Builder
             .request(Messages.Request.QueryCategory)
             .addOption(Messages.Key.CATEGORY, category)
-            .addOption(Messages.Key.FILTER, filter)
+            .addOption(Messages.Key.FILTER, lastFilter)
             .build();
 
         getWebSocketService().send(request, this.socketClient, (SocketMessage response) -> {
@@ -126,10 +126,20 @@ public class CategoryBrowseActivity extends WebSocketActivityBase implements Fil
         });
     }
 
+    private final Debouncer<String> filterDebouncer = new Debouncer<String>(350) {
+        @Override
+        protected void onDebounced(String caller) {
+            if (!isPaused()) {
+                requery();
+            }
+        }
+    };
+
     private WebSocketService.Client socketClient = new WebSocketService.Client() {
         @Override
         public void onStateChanged(WebSocketService.State newState, WebSocketService.State oldState) {
             if (newState == WebSocketService.State.Connected) {
+                filterDebouncer.cancel();
                 requery();
             }
         }

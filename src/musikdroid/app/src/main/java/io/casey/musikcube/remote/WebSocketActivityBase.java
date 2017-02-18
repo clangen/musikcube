@@ -7,6 +7,7 @@ import android.view.KeyEvent;
 
 public abstract class WebSocketActivityBase extends AppCompatActivity {
     private WebSocketService wss;
+    private boolean paused = true;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -18,12 +19,14 @@ public abstract class WebSocketActivityBase extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         this.wss.removeClient(getWebSocketServiceClient());
+        this.paused = true;
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         this.wss.addClient(getWebSocketServiceClient());
+        this.paused = false;
     }
 
     @Override
@@ -47,6 +50,10 @@ public abstract class WebSocketActivityBase extends AppCompatActivity {
         }
 
         return super.onKeyDown(keyCode, event);
+    }
+
+    protected final boolean isPaused() {
+        return this.paused;
     }
 
     protected final WebSocketService getWebSocketService() {

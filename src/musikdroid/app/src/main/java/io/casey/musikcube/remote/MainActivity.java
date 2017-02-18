@@ -373,6 +373,13 @@ public class MainActivity extends WebSocketActivityBase {
         }
     }
 
+    private void clearUi() {
+        model.reset();
+        albumArtModel = new AlbumArtModel();
+        updateAlbumArt();
+        rebindUi();
+    }
+
     private void setMetadataDisplayMode(DisplayMode mode) {
         if (metadataAnim1 != null) {
             metadataAnim1.cancel();
@@ -547,14 +554,12 @@ public class MainActivity extends WebSocketActivityBase {
             if (newState == WebSocketService.State.Connected) {
                 wss.send(SocketMessage.Builder.request(
                     Messages.Request.GetPlaybackOverview.toString()).build());
+
+                rebindUi();
             }
             else if (newState == WebSocketService.State.Disconnected) {
-                model.reset();
-                albumArtModel = new AlbumArtModel();
-                updateAlbumArt();
+                clearUi();
             }
-
-            rebindUi();
         }
 
         @Override

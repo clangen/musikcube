@@ -61,7 +61,7 @@ public class AlbumBrowseActivity extends WebSocketActivityBase implements Filter
     private TransportFragment transport;
     private String categoryName;
     private long categoryId;
-    private String filter = "";
+    private String lastFilter = "";
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -97,8 +97,8 @@ public class AlbumBrowseActivity extends WebSocketActivityBase implements Filter
 
     @Override
     public void setFilter(String filter) {
-        this.filter = filter;
-        requery();
+        this.lastFilter = filter;
+        filterDebouncer.call(filter);
     }
 
     @Override
@@ -122,17 +122,28 @@ public class AlbumBrowseActivity extends WebSocketActivityBase implements Filter
                 .request(Messages.Request.QueryAlbums)
                 .addOption(Messages.Key.CATEGORY, categoryName)
                 .addOption(Messages.Key.CATEGORY_ID, categoryId)
-                .addOption(Key.FILTER, filter)
+                .addOption(Key.FILTER, lastFilter)
                 .build();
 
         wss.send(message, socketClient, (SocketMessage response) ->
             adapter.setModel(response.getJsonArrayOption(Messages.Key.DATA)));
     }
 
+
+    private final Debouncer<String> filterDebouncer = new Debouncer<String>(350) {
+        @Override
+        protected void onDebounced(String context) {
+            if (!isPaused()) {
+                requery();
+            }
+        }
+    };
+
     private WebSocketService.Client socketClient = new WebSocketService.Client() {
         @Override
         public void onStateChanged(WebSocketService.State newState, WebSocketService.State oldState) {
             if (newState == WebSocketService.State.Connected) {
+                filterDebouncer.call();
                 requery();
             }
         }
