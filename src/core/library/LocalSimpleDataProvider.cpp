@@ -41,12 +41,15 @@
 #include <core/library/query/local/CategoryListQuery.h>
 #include <core/library/query/local/CategoryTrackListQuery.h>
 #include <core/library/query/local/SearchTrackListQuery.h>
+#include <core/library/query/local/GetPlaylistQuery.h>
+#include <core/library/LocalLibraryConstants.h>
 
 #define TAG "LocalSimpleDataProvider"
 
 using namespace musik::core;
 using namespace musik::core::db;
 using namespace musik::core::db::local;
+using namespace musik::core::library;
 using namespace musik::core::sdk;
 
 LocalSimpleDataProvider::LocalSimpleDataProvider(musik::core::ILibraryPtr library)
@@ -88,8 +91,15 @@ ITrackList* LocalSimpleDataProvider::QueryTracksByCategory(
     int offset)
 {
     try {
-        std::shared_ptr<CategoryTrackListQuery> search(
-            new CategoryTrackListQuery(this->library, categoryType, selectedId, filter));
+        std::shared_ptr<TrackListQueryBase> search;
+
+        if (std::string(categoryType) == constants::Playlists::TABLE_NAME) {
+            search.reset(new GetPlaylistQuery(this->library, selectedId));
+        }
+        else {
+            search.reset(new CategoryTrackListQuery(
+                this->library, categoryType, selectedId, filter));
+        }
 
         if (limit >= 0) {
             search->SetLimitAndOffset(limit, offset);

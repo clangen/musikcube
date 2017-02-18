@@ -80,10 +80,11 @@ bool GetPlaylistQuery::OnRun(Connection& db) {
     }
 
     std::string query =
-        "SELECT DISTINCT track_id " \
-        "FROM playlist_tracks " \
+        "SELECT DISTINCT track_id "
+        "FROM playlist_tracks "
         "WHERE playlist_id=? "
-        "ORDER BY sort_order;";
+        "ORDER BY sort_order " +
+        this->GetLimitAndOffset();
 
     Statement trackQuery(query.c_str(), db);
     trackQuery.BindInt(0, this->playlistId);
