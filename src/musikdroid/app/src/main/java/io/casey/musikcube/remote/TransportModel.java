@@ -94,6 +94,7 @@ public class TransportModel {
     private double duration;
     private double currentTime;
     private JSONObject track = new JSONObject();
+    private boolean valid = false;
 
     public TransportModel() {
         reset();
@@ -135,6 +136,8 @@ public class TransportModel {
         duration = message.getDoubleOption(Key.PLAYING_DURATION);
         currentTime = message.getDoubleOption(Key.PLAYING_CURRENT_TIME);
         track = message.getJsonObjectOption(Key.PLAYING_TRACK, new JSONObject());
+
+        valid = true;
         return true;
     }
 
@@ -146,6 +149,11 @@ public class TransportModel {
         queueCount = queuePosition = 0;
         duration = currentTime = 0.0f;
         track = new JSONObject();
+        valid = false;
+    }
+
+    public boolean isValid() {
+        return valid;
     }
 
     public PlaybackState getPlaybackState() {
@@ -154,10 +162,6 @@ public class TransportModel {
 
     public RepeatMode getRepeatMode() {
         return repeatMode;
-    }
-
-    public void setRepeatMode(final RepeatMode repeatMode) {
-        this.repeatMode = repeatMode;
     }
 
     public boolean isShuffled() {

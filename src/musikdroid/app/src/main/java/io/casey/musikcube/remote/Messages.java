@@ -108,5 +108,6 @@ public class Messages {
         String ARTIST = "artist";
         String ALBUM_ARTIST = "album_artist";
         String GENRE = "genre";
+        String PLAYLISTS = "playlists";
     }
 }

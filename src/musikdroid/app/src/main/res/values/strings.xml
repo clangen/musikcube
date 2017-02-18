@@ -8,6 +8,7 @@
     <string name="songs_from_category">songs from \'%1$s\'</string>
     <string name="genres_title">genres</string>
     <string name="artists_title">artists</string>
+    <string name="playlists_title">playlists</string>
     <string name="button_pause">pause</string>
     <string name="button_play">play</string>
     <string name="button_prev">prev</string>
@@ -42,4 +43,7 @@
     <string name="transport_not_playing">not playing</string>
     <string name="search_hint">search</string>
     <string name="menu_settings">settings</string>
+    <string name="menu_genres">genres</string>
+    <string name="menu_playlists">playlists</string>
+    <string name="unknown_value">&lt;unknown&gt;</string>
 </resources>

@@ -33,7 +33,6 @@ import java.util.Map;
 
 public class MainActivity extends WebSocketActivityBase {
     private static Map<TransportModel.RepeatMode, Integer> REPEAT_TO_STRING_ID;
-    private static final int ARTIFICIAL_ARTWORK_DELAY_MILLIS = 0;
 
     private WebSocketService wss = null;
     private TransportModel model = new TransportModel();
@@ -44,15 +43,15 @@ public class MainActivity extends WebSocketActivityBase {
     private TextView notPlayingOrDisconnected;
     private View connected;
     private CheckBox shuffleCb, muteCb, repeatCb;
-    private ImageView albumArtImageView;
-    private View mainTrackMetadataWithAlbumArt, mainTrackMetadataNoAlbumArt;
     private View disconnectedOverlay;
     private Handler handler = new Handler();
-    private ViewPropertyAnimator metadataAnim1, metadataAnim2;
 
     /* ugh, artwork related */
     private enum DisplayMode { Artwork, NoArtwork, Stopped }
+    private View mainTrackMetadataWithAlbumArt, mainTrackMetadataNoAlbumArt;
+    private ViewPropertyAnimator metadataAnim1, metadataAnim2;
     private AlbumArtModel albumArtModel = new AlbumArtModel();
+    private ImageView albumArtImageView;
 
     static {
         REPEAT_TO_STRING_ID = new HashMap<>();
@@ -107,10 +106,21 @@ public class MainActivity extends WebSocketActivityBase {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.action_settings) {
-            startActivity(SettingsActivity.getStartIntent(this));
-            return true;
+        switch (item.getItemId()) {
+            case R.id.action_settings:
+                startActivity(SettingsActivity.getStartIntent(this));
+                return true;
+
+            case R.id.action_genres:
+                startActivity(CategoryBrowseActivity.getStartIntent(this, Messages.Category.GENRE));
+                return true;
+
+            case R.id.action_playlists:
+                startActivity(CategoryBrowseActivity.getStartIntent(
+                    this, Messages.Category.PLAYLISTS, CategoryBrowseActivity.DeepLink.TRACKS));
+                return true;
         }
+
         return super.onOptionsItemSelected(item);
     }
 
@@ -306,7 +316,7 @@ public class MainActivity extends WebSocketActivityBase {
         final boolean stopped = (model.getPlaybackState() == TransportModel.PlaybackState.Stopped);
         notPlayingOrDisconnected.setVisibility(stopped ? View.VISIBLE : View.GONE);
 
-        final boolean stateIsValidForArtwork = !stopped && connected;
+        final boolean stateIsValidForArtwork = !stopped && connected && model.isValid();
 
         this.connected.setVisibility((connected && stopped) ? View.VISIBLE : View.GONE);
         this.disconnectedOverlay.setVisibility(connected ? View.GONE : View.VISIBLE);
@@ -369,17 +379,19 @@ public class MainActivity extends WebSocketActivityBase {
             metadataAnim2.cancel();
         }
 
-        if (mode == DisplayMode.Artwork) {
+        if (mode == DisplayMode.Stopped) {
+            albumArtImageView.setImageDrawable(null);
+            metadataAnim1 = Views.animateAlpha(mainTrackMetadataWithAlbumArt, 0.0f);
+            metadataAnim2 = Views.animateAlpha(mainTrackMetadataNoAlbumArt, 0.0f);
+        }
+        else if (mode == DisplayMode.Artwork) {
             metadataAnim1 = Views.animateAlpha(mainTrackMetadataWithAlbumArt, 1.0f);
             metadataAnim2 = Views.animateAlpha(mainTrackMetadataNoAlbumArt, 0.0f);
         }
         else {
             albumArtImageView.setImageDrawable(null);
-
-            /* oh god why. hack to make volume % disappear. */
-            float noArtAlpha = (mode == DisplayMode.Stopped) ? 0.0f : 1.0f;
-            metadataAnim2 = Views.animateAlpha(mainTrackMetadataNoAlbumArt, noArtAlpha);
             metadataAnim1 = Views.animateAlpha(mainTrackMetadataWithAlbumArt, 0.0f);
+            metadataAnim2 = Views.animateAlpha(mainTrackMetadataNoAlbumArt, 1.0f);
         }
     }
 
@@ -462,16 +474,18 @@ public class MainActivity extends WebSocketActivityBase {
     private void navigateToCurrentArtist() {
         final long artistId = model.getTrackValueLong(TransportModel.Key.ARTIST_ID, -1);
         if (artistId != -1) {
+            final String artistName = model.getTrackValueString(TransportModel.Key.ARTIST, "");
             startActivity(AlbumBrowseActivity.getStartIntent(
-                MainActivity.this, Messages.Category.ARTIST, artistId));
+                MainActivity.this, Messages.Category.ARTIST, artistId, artistName));
         }
     }
 
     private void navigateToCurrentAlbum() {
         final long albumId = model.getTrackValueLong(TransportModel.Key.ALBUM_ID, -1);
         if (albumId != -1) {
+            final String albumName = model.getTrackValueString(TransportModel.Key.ALBUM, "");
             startActivity(TrackListActivity.getStartIntent(
-                MainActivity.this, Messages.Category.ALBUM, albumId));
+                MainActivity.this, Messages.Category.ALBUM, albumId, albumName));
         }
     }
 
@@ -480,13 +494,11 @@ public class MainActivity extends WebSocketActivityBase {
     }
 
     private AlbumArtModel.AlbumArtCallback albumArtRetrieved = (model, url) -> {
-        long delay = Math.max(0, ARTIFICIAL_ARTWORK_DELAY_MILLIS - model.getLoadTimeMillis());
-
-        handler.postDelayed(() -> {
+        handler.post(() -> {
             if (model == albumArtModel) {
                 updateAlbumArt();
             }
-        }, delay);
+        });
     };
 
     private CheckBox.OnCheckedChangeListener muteListener =

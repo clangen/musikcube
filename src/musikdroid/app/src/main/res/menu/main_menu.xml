@@ -1,8 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android"
-      xmlns:app="http://schemas.android.com/apk/res-auto">
+<menu
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_playlists"
+        app:showAsAction="never"
+        android:title="@string/menu_playlists"/>
+
+    <item
+        android:id="@+id/action_genres"
+        app:showAsAction="never"
+        android:title="@string/menu_genres"/>
+
     <item
         android:id="@+id/action_settings"
         app:showAsAction="never"
         android:title="@string/menu_settings"/>
+
 </menu>

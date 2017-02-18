@@ -31,6 +31,30 @@ public class AlbumBrowseActivity extends WebSocketActivityBase implements Filter
             .putExtra(EXTRA_CATEGORY_ID, categoryId);
     }
 
+    public static Intent getStartIntent(final Context context,
+                                        final String categoryName,
+                                        long categoryId,
+                                        final String categoryValue)
+    {
+        final Intent intent = getStartIntent(context, categoryName, categoryId);
+
+        if (Strings.notEmpty(categoryValue)) {
+            intent.putExtra(
+                AlbumBrowseActivity.EXTRA_TITLE,
+                context.getString(R.string.albums_by_title, categoryValue));
+        }
+
+        return intent;
+    }
+
+    public static Intent getStartIntent(final Context context,
+                                        final String categoryName,
+                                        final JSONObject categoryJson)
+    {
+        final String value = categoryJson.optString(Messages.Key.VALUE);
+        final long categoryId = categoryJson.optLong(Messages.Key.ID);
+        return getStartIntent(context, categoryName, categoryId, value);
+    }
 
     private WebSocketService wss;
     private Adapter adapter;
@@ -123,18 +147,12 @@ public class AlbumBrowseActivity extends WebSocketActivityBase implements Filter
     };
 
     private View.OnClickListener onItemClickListener = (View view) -> {
-        JSONObject album = (JSONObject) view.getTag();
-        long id = album.optLong(Key.ID);
-        String title = album.optString(Key.TITLE, "");
+        final JSONObject album = (JSONObject) view.getTag();
+        final long id = album.optLong(Key.ID);
+        final String title = album.optString(Key.TITLE, "");
 
         final Intent intent = TrackListActivity.getStartIntent(
-            AlbumBrowseActivity.this, Messages.Category.ALBUM, id);
-
-        if (Strings.notEmpty(title)) {
-            intent.putExtra(
-                TrackListActivity.EXTRA_TITLE,
-                getString(R.string.songs_from_category, title));
-        }
+            AlbumBrowseActivity.this, Messages.Category.ALBUM, id, title);
 
         startActivityForResult(intent, Navigation.RequestCode.ALBUM_TRACKS_ACTIVITY);
     };

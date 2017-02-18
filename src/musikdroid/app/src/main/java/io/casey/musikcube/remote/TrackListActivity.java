@@ -26,6 +26,21 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
             .putExtra(EXTRA_SELECTED_ID, id);
     }
 
+    public static Intent getStartIntent(final Context context,
+                                        final String type,
+                                        final long id,
+                                        final String categoryValue) {
+        final Intent intent = getStartIntent(context, type, id);
+
+        if (Strings.notEmpty(categoryValue)) {
+            intent.putExtra(
+                TrackListActivity.EXTRA_TITLE,
+                context.getString(R.string.songs_from_category, categoryValue));
+        }
+
+        return intent;
+    }
+
     public static Intent getStartIntent(final Context context) {
         return new Intent(context, TrackListActivity.class);
     }
@@ -67,7 +82,9 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        Views.initSearchMenu(this, menu, this);
+        if (!Messages.Category.PLAYLISTS.equals(categoryType)) {
+            Views.initSearchMenu(this, menu, this);
+        }
         return true;
     }
 
