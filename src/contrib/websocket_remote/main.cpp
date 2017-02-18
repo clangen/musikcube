@@ -27,7 +27,7 @@
 #define DLL_EXPORT
 #endif
 
-#define DEFAULT_PORT 9002
+#define DEFAULT_PORT 7905
 #define DEFAULT_PASSWORD ""
 
 using namespace musik::core::sdk;
@@ -932,6 +932,7 @@ extern "C" DLL_EXPORT void SetPreferences(musik::core::sdk::IPreferences* prefs)
     if (prefs) {
         prefs->GetInt(key::port.c_str(), DEFAULT_PORT);
         prefs->GetString(key::password.c_str(), nullptr, 0, DEFAULT_PASSWORD);
+        prefs->Save();
     }
 
     remote.CheckRunningStatus();

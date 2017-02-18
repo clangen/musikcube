@@ -33,7 +33,7 @@ public class SettingsActivity extends AppCompatActivity {
 
     private void rebindUi() {
         Views.setTextAndMoveCursorToEnd(this.addressText, prefs.getString("address", "192.168.1.100"));
-        Views.setTextAndMoveCursorToEnd(this.portText, String.format(Locale.ENGLISH, "%d", prefs.getInt("port", 9002)));
+        Views.setTextAndMoveCursorToEnd(this.portText, String.format(Locale.ENGLISH, "%d", prefs.getInt("port", 7905)));
         Views.setTextAndMoveCursorToEnd(this.passwordText, prefs.getString("password", ""));
     }
 

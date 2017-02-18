@@ -38,7 +38,7 @@
     <string name="status_volume">volume %1d%%</string>
     <string name="edit_connection_info">connection info:</string>
     <string name="edit_connection_hostname">ip address or hostname</string>
-    <string name="edit_connection_port">port</string>
+    <string name="edit_connection_port">port (default 7905)</string>
     <string name="edit_connection_password">password (default empty)</string>
     <string name="transport_not_playing">not playing</string>
     <string name="search_hint">search</string>

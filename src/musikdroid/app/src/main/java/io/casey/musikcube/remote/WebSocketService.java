@@ -448,7 +448,7 @@ public class WebSocketService {
                     Locale.ENGLISH,
                     "ws://%s:%d",
                     prefs.getString("address", "192.168.1.100"),
-                    prefs.getInt("port", 9002));
+                    prefs.getInt("port", 7905));
 
                 socket = factory.createSocket(host, CONNECTION_TIMEOUT_MILLIS);
                 socket.addListener(webSocketAdapter);
