@@ -8,6 +8,7 @@ user-facing:
   communciating with websockets the ability to control playback and query
   metadata!
 * added settings UI for enabling/disabling plugins within the app!
+* added more granular volume control when adjusting below 10%
 * fixed a crash on shutdown while in track search view
 
 low-level:
