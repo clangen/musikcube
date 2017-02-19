@@ -203,21 +203,17 @@ public class MainActivity extends WebSocketActivityBase {
 
         final LongPressTextView volumeUp = (LongPressTextView) findViewById(R.id.button_vol_up);
         volumeUp.setOnTickListener((View view) -> {
-            double volume = Math.min(1.0f, model.getVolume() + 0.05);
-
             wss.send(SocketMessage.Builder
                 .request(Messages.Request.SetVolume)
-                .addOption(TransportModel.Key.VOLUME, volume)
+                .addOption(Messages.Key.RELATIVE, Messages.Value.UP)
                 .build());
         });
 
         final LongPressTextView volumeDown = (LongPressTextView) findViewById(R.id.button_vol_down);
         volumeDown.setOnTickListener((View view) -> {
-            double volume = Math.max(0.0f, model.getVolume() - 0.05);
-
             wss.send(SocketMessage.Builder
                 .request(Messages.Request.SetVolume)
-                .addOption(TransportModel.Key.VOLUME, volume)
+                .addOption(Messages.Key.RELATIVE, Messages.Value.DOWN)
                 .build());
         });
 
