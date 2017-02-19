@@ -1,11 +1,13 @@
 #cmake -DCMAKE_BUILD_TYPE=Release .
 #cmake -DCMAKE_BUILD_TYPE=Debug .
+#cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=i386|amd64|armhf -DCMAKE_INSTALL_PREFIX=/usr .
 
 cmake_minimum_required(VERSION 3.0)
 
 project(musikbox)
 set (musikbox_VERSION_MAJOR 0)
-set (musikbox_VERSION_MINOR 1)
+set (musikbox_VERSION_MINOR 9)
+set (musikbox_VERSION_PATCH 0)
 
 include(ExternalProject)
 
@@ -148,3 +150,17 @@ install(
     GROUP_EXECUTE GROUP_READ GROUP_WRITE
     WORLD_EXECUTE WORLD_READ
 )
+
+if (GENERATE_DEB MATCHES "1")
+  if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+    set(CPACK_GENERATOR "DEB")
+    set(CPACK_PACKAGE_DESCRIPTION "musikbox, a terminal-based music player and library")
+    set(CPACK_PACKAGE_VERSION_MAJOR "${musikbox_VERSION_MAJOR}")
+    set(CPACK_PACKAGE_VERSION_MINOR "${musikbox_VERSION_MINOR}")
+    set(CPACK_PACKAGE_VERSION_PATCH "${musikbox_VERSION_PATCH}")
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-thread-dev, libboost-system-dev, libogg0, libvorbis0a, libflac8, libfaad2, libncursesw5, libasound2, libpulse0")
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "casey langen")
+    set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE ${DEB_ARCHITECTURE})
+    include(CPack)
+  endif()
+endif()

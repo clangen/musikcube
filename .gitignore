@@ -9,12 +9,15 @@
 **/install_manifest.txt
 **/Release
 **/Debug
+**/*.deb
 .vs
 .vscode
 bin
 obj
 ipch
 build
+CPack*
+_CPack*
 src/3rdparty/bin
 src/3rdparty/obj
 src/core/obj
