@@ -20,7 +20,7 @@ and linux:
 
 ![linux screenshot](https://raw.githubusercontent.com/clangen/clangen-projects-static/master/musikcube/screenshots/linux.png)
 
-as of 0.9.0 you can remote control your musikbox installation using the `musikdroid` android app, which can be downloaded in the `releases` section above. it looks like this:
+you can also remote control musikbox using the `musikdroid` android app, which can be downloaded in the `releases` section above. it looks like this:
 
 ![android screenshot](https://raw.githubusercontent.com/clangen/clangen-projects-static/master/musikcube/screenshots/android.png)
 
