@@ -35,6 +35,7 @@
 #include "pch.hpp"
 #include "Playback.h"
 #include <core/sdk/constants.h>
+#include <cmath>
 
 using namespace musik::core::audio;
 using namespace musik::core::sdk;
