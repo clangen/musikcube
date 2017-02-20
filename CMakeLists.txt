@@ -1,6 +1,6 @@
 #cmake -DCMAKE_BUILD_TYPE=Release .
 #cmake -DCMAKE_BUILD_TYPE=Debug .
-#cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=i386|amd64|armhf -DCMAKE_INSTALL_PREFIX=/usr .
+#cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=i386|amd64|armhf -DDEB_BOOST_VERSION=1.55.0 -DCMAKE_INSTALL_PREFIX=/usr .
 
 cmake_minimum_required(VERSION 3.0)
 
@@ -158,7 +158,7 @@ if (GENERATE_DEB MATCHES "1")
     set(CPACK_PACKAGE_VERSION_MAJOR "${musikbox_VERSION_MAJOR}")
     set(CPACK_PACKAGE_VERSION_MINOR "${musikbox_VERSION_MINOR}")
     set(CPACK_PACKAGE_VERSION_PATCH "${musikbox_VERSION_PATCH}")
-    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-thread-dev, libboost-system-dev, libogg0, libvorbis0a, libflac8, libfaad2, libncursesw5, libasound2, libpulse0")
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-thread${DEB_BOOST_VERSION}, libboost-system${DEB_BOOST_VERSION}, libogg0, libvorbis0a, libflac8, libfaad2, libncursesw5, libasound2, libpulse0")
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "casey langen")
     set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE ${DEB_ARCHITECTURE})
     include(CPack)
