@@ -56,7 +56,7 @@
 #define STRESS_TEST_DB 0
 
 static const std::string TAG = "Indexer";
-static const int MAX_THREADS = 4;
+static const int MAX_THREADS = 2;
 static const size_t NOTIFY_INTERVAL = 300;
 
 using namespace musik::core;
@@ -377,7 +377,7 @@ void Indexer::ThreadLoop() {
     while (!this->Exited()) {
         this->restart = false;
 
-        if(!firstTime || (firstTime && prefs->GetBool(prefs::keys::SyncOnStartup, false))) { /* first time through the loop skips this */
+        if(!firstTime || (firstTime && prefs->GetBool(prefs::keys::SyncOnStartup, true))) { /* first time through the loop skips this */
             this->SynchronizeStart();
 
             this->dbConnection.Open(this->dbFilename.c_str(), 0); /* ensure the db is open */
