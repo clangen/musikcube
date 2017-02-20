@@ -24,6 +24,10 @@ you can also remote control musikbox using the `musikdroid` android app, which c
 
 ![android screenshot](https://raw.githubusercontent.com/clangen/clangen-projects-static/master/musikcube/screenshots/android.png)
 
+# raspberry pi
+
+interested in running musikbox on a raspberry pi, connected to you home stereo? [see here](https://github.com/clangen/musikcube/wiki/raspberry-pi)!
+
 # compiling
 
 ## windows
