@@ -93,7 +93,7 @@ App::App(const std::string& title) {
     curs_set(0);
 
 #ifndef WIN32
-    set_escdelay(50);
+    set_escdelay(20);
 #endif
 
 #ifdef __PDCURSES__
