@@ -212,10 +212,18 @@ void FlacDecoder::Destroy() {
 }
 
 double FlacDecoder::SetPosition(double seconds) {
-    FLAC__uint64 seekToSample = (FLAC__uint64)(this->sampleRate * seconds);
+    FLAC__uint64 seekToSample = (FLAC__uint64)((double) this->sampleRate * seconds);
 
     if (FLAC__stream_decoder_seek_absolute(this->decoder, seekToSample)) {
         return seconds;
+    }
+
+    if (FLAC__stream_decoder_get_state(this->decoder) == FLAC__STREAM_DECODER_SEEK_ERROR) {
+        if (FLAC__stream_decoder_flush(this->decoder)) {
+            if (FLAC__stream_decoder_seek_absolute(this->decoder, seekToSample)) {
+                return seconds;
+            }
+        }
     }
 
     return -1;
