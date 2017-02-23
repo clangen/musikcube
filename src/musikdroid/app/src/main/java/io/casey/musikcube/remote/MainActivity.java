@@ -457,7 +457,9 @@ public class MainActivity extends WebSocketActivityBase {
                                                    boolean isFromMemoryCache,
                                                    boolean isFirstResource)
                     {
-                        preloadNextImage();
+                        if (!isPaused()) {
+                            preloadNextImage();
+                        }
 
                         /* if the loadId doesn't match the current id, then the image was
                         loaded for a different song. throw it away. */

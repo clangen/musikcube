@@ -53,11 +53,11 @@ namespace musik { namespace core { namespace audio {
         public:
             static IStreamPtr Create(
                 int samplesPerChannel = 2048,
-                int bufferCount = 48,
+                double bufferLengthSeconds = 4.5,
                 unsigned int options = 0);
 
         private:
-            Stream(int samplesPerChannel, int bufferCount, unsigned int options);
+            Stream(int samplesPerChannel, double bufferLengthSeconds, unsigned int options);
 
         public:
             virtual ~Stream();
@@ -94,6 +94,7 @@ namespace musik { namespace core { namespace audio {
             int samplesPerChannel;
             int bufferCount;
             bool done;
+            double bufferLengthSeconds;
 
             float* rawBuffer;
 

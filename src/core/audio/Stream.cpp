@@ -53,10 +53,11 @@ static std::string TAG = "Stream";
     target->Copy(current->BufferPointer() + offset, count); \
     SET_OFFSET(target, offset) \
 
-Stream::Stream(int samplesPerChannel, int bufferCount, unsigned int options)
+Stream::Stream(int samplesPerChannel, double bufferLengthSeconds, unsigned int options)
 : options(options)
 , samplesPerChannel(samplesPerChannel)
-, bufferCount(bufferCount)
+, bufferLengthSeconds(bufferLengthSeconds)
+, bufferCount(0)
 , decoderSampleRate(0)
 , decoderChannels(0)
 , decoderSamplePosition(0)
@@ -83,8 +84,8 @@ Stream::~Stream() {
     }
 }
 
-IStreamPtr Stream::Create(int samplesPerChannel, int bufferCount, unsigned int options) {
-    return IStreamPtr(new Stream(samplesPerChannel, bufferCount, options));
+IStreamPtr Stream::Create(int samplesPerChannel, double bufferLengthSeconds, unsigned int options) {
+    return IStreamPtr(new Stream(samplesPerChannel, bufferLengthSeconds, options));
 }
 
 double Stream::SetPosition(double requestedSeconds) {
@@ -153,12 +154,16 @@ bool Stream::GetNextBufferFromDecoder() {
         this->decoderChannels = buffer->Channels();
 
         int samplesPerBuffer = samplesPerChannel * decoderChannels;
+
+        this->bufferCount = (int)(this->bufferLengthSeconds *
+            (double)(this->decoderSampleRate / samplesPerBuffer));
+
         this->rawBuffer = new float[bufferCount * samplesPerBuffer];
         int offset = 0;
         for (int i = 0; i < bufferCount; i++) {
-            this->recycledBuffers.push_back(
-                new Buffer(this->rawBuffer + offset, samplesPerBuffer));
-
+            auto buffer = new Buffer(this->rawBuffer + offset, samplesPerBuffer);
+            buffer->SetSampleRate(this->decoderSampleRate);
+            this->recycledBuffers.push_back(buffer);
             offset += samplesPerBuffer;
         }
     }
@@ -220,8 +225,7 @@ void Stream::RefillInternalBuffers() {
     int count = 0;
 
     if (!this->rawBuffer) { /* not initialized */
-        /* fill it partially so we get playing immediately */
-        count = this->bufferCount / 4;
+        count = -1;
     }
     else {
         /* fill another chunk -- most of the time for file-based
@@ -230,13 +234,20 @@ void Stream::RefillInternalBuffers() {
         count = std::min(recycled - 1, this->bufferCount / 4);
     }
 
-    while (!this->done && count > 0) {
+    while (!this->done && (count > 0 || count == -1)) {
         --count;
 
         /* ask the decoder for the next buffer */
         if (!GetNextBufferFromDecoder()) {
             this->done = true;
             break;
+        }
+
+        /* if we were just initialized, then make sure our buffer
+        is about a quarter filled. this will start playback quickly,
+        and ensure we don't have any buffer underruns */
+        if (count < 0) {
+            count = bufferCount / 4;
         }
 
         Buffer* currentBuffer = this->decoderBuffer;
