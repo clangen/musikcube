@@ -113,7 +113,9 @@ int CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
         this->audioFormat.mBytesPerFrame = (this->audioFormat.mBitsPerChannel / 8) * this->audioFormat.mChannelsPerFrame;
         this->audioFormat.mBytesPerPacket = this->audioFormat.mBytesPerFrame * this->audioFormat.mFramesPerPacket;
 
+        lock.unlock();
         this->Stop();
+        lock.lock();
 
         result = AudioQueueNewOutput(
             &this->audioFormat,
