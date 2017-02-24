@@ -1,3 +1,15 @@
+0.9.1
+
+* added proper support for using and switching between different audio sample
+  formats. 24/192k works across all platforms now.
+* fixed `DirectSoundOut` pause to work properly again
+* added support for statically linking dependencies. for now we can supply
+  macOS binaries that don't require homebrew! let's try to keep it that way.
+* updated some defaults -- rescan metadata on startup by default, and restrict
+  to two processing threads.
+
+--------------------------------------------------------------------------------
+
 0.9.0
 
 user-facing:
