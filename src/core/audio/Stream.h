@@ -53,7 +53,7 @@ namespace musik { namespace core { namespace audio {
         public:
             static IStreamPtr Create(
                 int samplesPerChannel = 2048,
-                double bufferLengthSeconds = 4.5,
+                double bufferLengthSeconds = 5,
                 unsigned int options = 0);
 
         private:
