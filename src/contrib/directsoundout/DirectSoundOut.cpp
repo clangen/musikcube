@@ -184,13 +184,13 @@ void DirectSoundOut::Stop() {
 int DirectSoundOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     Lock lock(this->stateMutex);
 
-    if (this->state == StateStopped) {
-        return OutputFormatError;
+    if (this->state != StatePlaying) {
+        return OutputInvalidState;
     }
 
     if (!this->Configure(buffer)) {
         this->Reset();
-        return OutputInvalidState;
+        return OutputFormatError;
     }
 
     unsigned char *dst1 = nullptr, *dst2 = nullptr;
