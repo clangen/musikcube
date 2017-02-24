@@ -1,6 +1,8 @@
 #cmake -DCMAKE_BUILD_TYPE=Release .
 #cmake -DCMAKE_BUILD_TYPE=Debug .
 #cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=i386|amd64|armhf -DDEB_BOOST_VERSION=1.55.0 -DCMAKE_INSTALL_PREFIX=/usr .
+#cmake -DCMAKE_BUILD_TYPE=Release -DLINK_STATICALLY=true .
+
 
 cmake_minimum_required(VERSION 3.0)
 
@@ -24,6 +26,10 @@ ExternalProject_Add(taglib
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++11 -Wno-unused-result -Wno-deprecated-declarations")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
+
+if (${LINK_STATICALLY} MATCHES "true")
+  set(Boost_USE_STATIC_LIBS ON)
+endif()
 
 set (BOOST_LIBS
   system
@@ -71,7 +77,7 @@ include_directories (
 if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
   link_directories ("/usr/local/lib")
   include_directories("/usr/local/include")
-endif (CMAKE_SYSTEM_NAME MATCHES "Darwin")
+endif ()
 
 add_subdirectory(src/core)
 add_subdirectory(src/glue)
