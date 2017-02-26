@@ -125,19 +125,24 @@ bool TrackList::Delete(size_t index) {
 }
 
 TrackPtr TrackList::Get(size_t index) const {
-    auto id = this->ids.at(index);
-    auto cached = this->GetFromCache(id);
+    try {
+        auto id = this->ids.at(index);
+        auto cached = this->GetFromCache(id);
 
-    if (cached) {
-        return cached;
+        if (cached) {
+            return cached;
+        }
+
+        std::shared_ptr<TrackMetadataQuery> query(
+            new TrackMetadataQuery(id, this->library));
+
+        this->library->Enqueue(query, ILibrary::QuerySynchronous);
+        this->AddToCache(id, query->Result());
+        return query->Result();
     }
-
-    std::shared_ptr<TrackMetadataQuery> query(
-        new TrackMetadataQuery(id, this->library));
-
-    this->library->Enqueue(query, ILibrary::QuerySynchronous);
-    this->AddToCache(id, query->Result());
-    return query->Result();
+    catch (...) {
+        return TrackPtr();
+    }
 }
 
 IRetainedTrack* TrackList::GetRetainedTrack(size_t index) const {

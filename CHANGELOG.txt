@@ -1,5 +1,6 @@
 0.9.1
 
+* added an app icon on win32 and android builds
 * added proper support for using and switching between different audio sample
   formats. 24/192k works across all platforms now.
 * fixed `DirectSoundOut` pause to work properly again
@@ -7,6 +8,7 @@
   macOS binaries that don't require homebrew! let's try to keep it that way.
 * updated some defaults -- rescan metadata on startup by default, and restrict
   to two processing threads.
+* fixed a crash when trying to change tracks in an empty playlist queue
 
 --------------------------------------------------------------------------------
 
