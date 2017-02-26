@@ -6,6 +6,7 @@
 #include <core/sdk/ISimpleDataProvider.h>
 
 #include <websocketpp/config/asio_no_tls.hpp>
+#include <websocketpp/extensions/permessage_deflate/enabled.hpp>
 #include <websocketpp/server.hpp>
 
 #include <websocketpp/server.hpp>
@@ -30,14 +31,51 @@
 #define DEFAULT_PORT 7905
 #define DEFAULT_PASSWORD ""
 
-using namespace musik::core::sdk;
+struct asio_with_deflate : public websocketpp::config::asio {
+    typedef asio_with_deflate type;
+    typedef asio base;
 
+    typedef base::concurrency_type concurrency_type;
+
+    typedef base::request_type request_type;
+    typedef base::response_type response_type;
+
+    typedef base::message_type message_type;
+    typedef base::con_msg_manager_type con_msg_manager_type;
+    typedef base::endpoint_msg_manager_type endpoint_msg_manager_type;
+
+    typedef base::alog_type alog_type;
+    typedef base::elog_type elog_type;
+
+    typedef base::rng_type rng_type;
+
+    struct transport_config : public base::transport_config {
+        typedef type::concurrency_type concurrency_type;
+        typedef type::alog_type alog_type;
+        typedef type::elog_type elog_type;
+        typedef type::request_type request_type;
+        typedef type::response_type response_type;
+        typedef websocketpp::transport::asio::basic_socket::endpoint
+            socket_type;
+    };
+
+    typedef websocketpp::transport::asio::endpoint<transport_config>
+        transport_type;
+
+    struct permessage_deflate_config {};
+
+    typedef websocketpp::extensions::permessage_deflate::enabled
+        <permessage_deflate_config> permessage_deflate_type;
+};
+
+
+using namespace musik::core::sdk;
 using namespace nlohmann;
 
 using websocketpp::lib::placeholders::_1;
 using websocketpp::lib::placeholders::_2;
 using websocketpp::lib::bind;
-using server = websocketpp::server<websocketpp::config::asio>;
+using server = websocketpp::server<asio_with_deflate>;
 using connection_hdl = websocketpp::connection_hdl;
 using message_ptr = server::message_ptr;
 
