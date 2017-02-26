@@ -22,4 +22,4 @@ include_directories (
 )
 
 add_library(websocket_remote SHARED ${websocket_remote_SOURCES})
-target_link_libraries(websocket_remote ${websocket_remote_LINK_LIBS})
+target_link_libraries(websocket_remote ${websocket_remote_LINK_LIBS} Z)
