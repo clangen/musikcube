@@ -38,6 +38,8 @@
 #include <core/sdk/IPlugin.h>
 #include <core/sdk/IPlaybackRemote.h>
 
+#include <cmath>
+
 musik::core::sdk::IPlaybackService* playback;
 
 static HHOOK hook = nullptr;
@@ -66,6 +68,8 @@ LRESULT CALLBACK ShellProc(int code, WPARAM wParam, LPARAM lParam) {
             short alt = GetAsyncKeyState(VK_RMENU) & 0x8000;
             //bool win = GetAsyncKeyState(VK_LWIN) & 0x8000;
 
+            double delta;
+
             if (ctrl && alt) {
                 switch (p->vkCode) {
                     case VK_F1:
@@ -91,13 +95,15 @@ LRESULT CALLBACK ShellProc(int code, WPARAM wParam, LPARAM lParam) {
                     case VK_F5:
                     case 'K':
                     case 'k':
-                        playback->SetVolume(playback->GetVolume() - 0.05);
+                        delta = round(playback->GetVolume() * 100.0) > 10.0 ? 0.05 : 0.01;
+                        playback->SetVolume(playback->GetVolume() - delta);
                         return 1;
 
                     case VK_F6:
                     case 'I':
                     case 'i':
-                        playback->SetVolume(playback->GetVolume() + 0.05);
+                        delta = round(playback->GetVolume() * 100.0) >= 10.0 ? 0.05 : 0.01;
+                        playback->SetVolume(playback->GetVolume() + delta);
                         return 1;
 
                     case VK_F7:
