@@ -64,7 +64,8 @@
 #include <boost/filesystem/detail/utf8_codecvt_facet.hpp>
 
 #ifdef WIN32
-    #include <app/util/Win32Util.h>
+    #include <cursespp/Win32Util.h>
+    #include "resource.h"
     #undef MOUSE_MOVED
 #endif
 
@@ -126,6 +127,10 @@ int main(int argc, char* argv[])
     {
         App app("musikbox"); /* must be before layout creation */
 
+#ifdef WIN32
+        app.SetIcon(IDI_ICON1);
+#endif
+
         auto prefs = Preferences::ForComponent(
             musik::core::prefs::components::Settings);
 
@@ -172,7 +177,7 @@ int main(int argc, char* argv[])
         app.Run(mainLayout);
 
 #ifdef WIN32
-        musik::box::win32::HideMainWindow();
+        win32::HideMainWindow();
 #endif
     }
 

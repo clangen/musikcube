@@ -55,6 +55,10 @@ namespace cursespp {
             void SetMinimumSize(int width, int height);
             bool IsOverlayVisible() { return this->state.overlay != nullptr; }
 
+#ifdef WIN32
+            void SetIcon(int resourceId);
+#endif
+
             void Run(ILayoutPtr layout);
             void ChangeLayout(ILayoutPtr layout);
 
@@ -89,5 +93,9 @@ namespace cursespp {
             ResizeHandler resizeHandler;
             bool disableCustomColors;
             int minWidth, minHeight;
+
+#ifdef WIN32
+            int iconId;
+#endif
     };
 }

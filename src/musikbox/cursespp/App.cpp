@@ -45,7 +45,7 @@
 #include <thread>
 
 #ifdef WIN32
-#include <app/util/Win32Util.h>
+#include "Win32Util.h"
 #endif
 
 #ifndef WIN32
@@ -73,7 +73,9 @@ static void resizedHandler(int signal) {
 App::App(const std::string& title) {
     this->minWidth = this->minHeight = 0;
 
-#ifndef WIN32
+#ifdef WIN32
+    this->iconId = 0;
+#else
     setlocale(LC_ALL, "");
     std::signal(SIGWINCH, resizedHandler);
     std::signal(SIGHUP, hangupHandler);
@@ -121,6 +123,15 @@ void App::SetMinimumSize(int minWidth, int minHeight) {
     this->minWidth = std::max(0, minWidth);
     this->minHeight = std::max(0, minHeight);
 }
+
+#ifdef WIN32
+void App::SetIcon(int resourceId) {
+    this->iconId = resourceId;
+    if (win32::GetMainWindow()) {
+        win32::SetIcon(resourceId);
+    }
+}
+#endif
 
 void App::OnResized() {
     int cx = Screen::GetWidth();

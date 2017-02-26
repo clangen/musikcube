@@ -35,56 +35,15 @@
 #pragma once
 
 #include "stdafx.h"
-#include <Windows.h>
 
 #ifdef WIN32
 
-static std::basic_string<TCHAR> className = "Curses_App";
-static HWND mainWindow = nullptr;
-
-static void findMainWindow() {
-    static TCHAR buffer[256];
-
-    if (mainWindow == nullptr) {
-        DWORD dwProcID = GetCurrentProcessId();
-        HWND hWnd = GetTopWindow(GetDesktopWindow());
-        while (hWnd) {
-            DWORD dwWndProcID = 0;
-            GetWindowThreadProcessId(hWnd, &dwWndProcID);
-            if (dwWndProcID == dwProcID) {
-                GetClassName(hWnd, buffer, sizeof(buffer));
-                if (className == std::string(buffer)) {
-                    mainWindow = hWnd;
-                    return;
-                }
-            }
-            hWnd = GetNextWindow(hWnd, GW_HWNDNEXT);
-        }
-    }
-}
-
-namespace musik {
-    namespace box {
-        namespace win32 {
-            void ShowMainWindow() {
-                findMainWindow();
-                if (mainWindow) {
-                    ShowWindow(mainWindow, SW_SHOWNORMAL);
-                }
-            }
-
-            void HideMainWindow() {
-                findMainWindow();
-                if (mainWindow) {
-                    ShowWindow(mainWindow, SW_HIDE);
-                }
-            }
-
-            HWND GetMainWindow() {
-                findMainWindow();
-                return mainWindow;
-            }
-        }
+namespace cursespp {
+    namespace win32 {
+        void ShowMainWindow();
+        void HideMainWindow();
+        HWND GetMainWindow();
+        void SetIcon(int resourceId);
     }
 }
 

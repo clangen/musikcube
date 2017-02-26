@@ -140,7 +140,6 @@
     <ClCompile Include="app\util\Hotkeys.cpp" />
     <ClCompile Include="app\util\Playback.cpp" />
     <ClCompile Include="app\util\PreferenceKeys.cpp" />
-    <ClCompile Include="app\util\Win32Util.cpp" />
     <ClCompile Include="app\window\CategoryListView.cpp" />
     <ClCompile Include="app\window\EntryWithHeader.cpp" />
     <ClCompile Include="app\window\LogWindow.cpp" />
@@ -165,6 +164,7 @@
     <ClCompile Include="cursespp\Text.cpp" />
     <ClCompile Include="cursespp\TextInput.cpp" />
     <ClCompile Include="cursespp\TextLabel.cpp" />
+    <ClCompile Include="cursespp\Win32Util.cpp" />
     <ClCompile Include="cursespp\Window.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="stdafx.cpp">
@@ -192,7 +192,6 @@
     <ClInclude Include="app\util\Playback.h" />
     <ClInclude Include="app\util\PreferenceKeys.h" />
     <ClInclude Include="app\util\Version.h" />
-    <ClInclude Include="app\util\Win32Util.h" />
     <ClInclude Include="app\window\CategoryListView.h" />
     <ClInclude Include="app\window\EntryWithHeader.h" />
     <ClInclude Include="app\window\LogWindow.h" />
@@ -230,7 +229,9 @@
     <ClInclude Include="cursespp\Text.h" />
     <ClInclude Include="cursespp\TextInput.h" />
     <ClInclude Include="cursespp\TextLabel.h" />
+    <ClInclude Include="cursespp\Win32Util.h" />
     <ClInclude Include="cursespp\Window.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
@@ -245,6 +246,12 @@
     <ProjectReference Include="..\glue\glue.vcxproj">
       <Project>{01869283-4cc3-4da4-a06c-3df6a0de98cc}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="musikbox.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="icon.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

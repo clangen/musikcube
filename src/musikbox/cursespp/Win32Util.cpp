@@ -35,15 +35,71 @@
 #pragma once
 
 #include "stdafx.h"
+#include <Windows.h>
 
 #ifdef WIN32
 
-namespace musik {
-    namespace box {
-        namespace win32 {
-            void ShowMainWindow();
-            void HideMainWindow();
-            HWND GetMainWindow();
+static std::basic_string<TCHAR> className = "Curses_App";
+static HWND mainWindow = nullptr;
+
+static void findMainWindow() {
+    static TCHAR buffer[256];
+
+    if (mainWindow == nullptr) {
+        DWORD dwProcID = GetCurrentProcessId();
+        HWND hWnd = GetTopWindow(GetDesktopWindow());
+        while (hWnd) {
+            DWORD dwWndProcID = 0;
+            GetWindowThreadProcessId(hWnd, &dwWndProcID);
+            if (dwWndProcID == dwProcID) {
+                GetClassName(hWnd, buffer, sizeof(buffer));
+                if (className == std::string(buffer)) {
+                    mainWindow = hWnd;
+                    return;
+                }
+            }
+            hWnd = GetNextWindow(hWnd, GW_HWNDNEXT);
+        }
+    }
+}
+
+static HICON loadIcon(int resourceId, int size) {
+    return (HICON) ::LoadImageA(
+        GetModuleHandle(nullptr),
+        MAKEINTRESOURCEA(resourceId),
+        IMAGE_ICON,
+        size,
+        size,
+        0);
+}
+
+namespace cursespp {
+    namespace win32 {
+        void ShowMainWindow() {
+            findMainWindow();
+            if (mainWindow) {
+                ShowWindow(mainWindow, SW_SHOWNORMAL);
+            }
+        }
+
+        void HideMainWindow() {
+            findMainWindow();
+            if (mainWindow) {
+                ShowWindow(mainWindow, SW_HIDE);
+            }
+        }
+
+        HWND GetMainWindow() {
+            findMainWindow();
+            return mainWindow;
+        }
+
+        void SetIcon(int resourceId) {
+            const HWND hwnd = GetMainWindow();
+            const HICON icon16 = loadIcon(resourceId, 16);
+            const HICON icon32 = loadIcon(resourceId, 48);
+            SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM) icon16);
+            SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM) icon32);
         }
     }
 }

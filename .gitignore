@@ -10,6 +10,7 @@
 **/Release
 **/Debug
 **/*.deb
+**/*.aps
 .vs
 .vscode
 bin
