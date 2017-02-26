@@ -32,7 +32,9 @@ public class PlayQueueActivity extends WebSocketActivityBase {
         this.wss = getWebSocketService();
 
         setContentView(R.layout.recycler_view_activity);
-        setTitle(R.string.play_queue_title);
+
+        Views.setTitle(this, R.string.play_queue_title);
+        Views.enableUpNavigation(this);
 
         this.adapter = new Adapter();
         final RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
@@ -46,6 +48,7 @@ public class PlayQueueActivity extends WebSocketActivityBase {
             getIntent().getIntExtra(EXTRA_PLAYING_INDEX, -1));
 
         Views.addTransportFragment(this);
+        Views.enableUpNavigation(this);
     }
 
     @Override

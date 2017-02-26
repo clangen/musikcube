@@ -17,7 +17,6 @@ import org.json.JSONObject;
 import static io.casey.musikcube.remote.Messages.Key;
 
 public class AlbumBrowseActivity extends WebSocketActivityBase implements Filterable {
-    public static final String EXTRA_TITLE = "extra_title";
     private static final String EXTRA_CATEGORY_NAME = "extra_category_name";
     private static final String EXTRA_CATEGORY_ID = "extra_category_id";
 
@@ -40,7 +39,7 @@ public class AlbumBrowseActivity extends WebSocketActivityBase implements Filter
 
         if (Strings.notEmpty(categoryValue)) {
             intent.putExtra(
-                AlbumBrowseActivity.EXTRA_TITLE,
+                Views.EXTRA_TITLE,
                 context.getString(R.string.albums_by_title, categoryValue));
         }
 
@@ -71,12 +70,9 @@ public class AlbumBrowseActivity extends WebSocketActivityBase implements Filter
         this.categoryId = getIntent().getLongExtra(EXTRA_CATEGORY_ID, categoryId);
 
         setContentView(R.layout.recycler_view_activity);
-        setTitle(R.string.albums_title);
 
-        final String title = getIntent().getStringExtra(EXTRA_TITLE);
-        if (Strings.notEmpty(title)) {
-            setTitle(title);
-        }
+        Views.setTitle(this, R.string.albums_title);
+        Views.enableUpNavigation(this);
 
         this.wss = getWebSocketService();
         this.adapter = new Adapter();

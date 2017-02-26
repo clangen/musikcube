@@ -70,6 +70,8 @@ public class CategoryBrowseActivity extends WebSocketActivityBase implements Fil
 
         setContentView(R.layout.recycler_view_activity);
 
+        Views.enableUpNavigation(this);
+
         if (CATEGORY_NAME_TO_TITLE.containsKey(category)) {
             setTitle(CATEGORY_NAME_TO_TITLE.get(category));
         }
@@ -87,6 +89,7 @@ public class CategoryBrowseActivity extends WebSocketActivityBase implements Fil
         if (!Messages.Category.PLAYLISTS.equals(category)) { /* bleh */
             Views.initSearchMenu(this, menu, this);
         }
+
         return true;
     }
 

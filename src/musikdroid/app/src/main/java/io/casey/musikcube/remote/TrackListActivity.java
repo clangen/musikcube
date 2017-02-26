@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v7.app.ActionBar;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -16,7 +17,6 @@ import org.json.JSONObject;
 import static io.casey.musikcube.remote.TrackListScrollCache.QueryFactory;
 
 public class TrackListActivity extends WebSocketActivityBase implements Filterable {
-    public static String EXTRA_TITLE = "extra_title";
     private static String EXTRA_CATEGORY_TYPE = "extra_category_type";
     private static String EXTRA_SELECTED_ID = "extra_selected_id";
 
@@ -34,7 +34,7 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
 
         if (Strings.notEmpty(categoryValue)) {
             intent.putExtra(
-                TrackListActivity.EXTRA_TITLE,
+                Views.EXTRA_TITLE,
                 context.getString(R.string.songs_from_category, categoryValue));
         }
 
@@ -59,12 +59,9 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
         categoryId = getIntent().getLongExtra(EXTRA_SELECTED_ID, 0);
 
         setContentView(R.layout.recycler_view_activity);
-        setTitle(R.string.songs_title);
 
-        final String title = getIntent().getStringExtra(EXTRA_TITLE);
-        if (Strings.notEmpty(title)) {
-            setTitle(title);
-        }
+        Views.setTitle(this, R.string.songs_title);
+        Views.enableUpNavigation(this);
 
         final QueryFactory queryFactory =
             createCategoryQueryFactory(categoryType, categoryId);

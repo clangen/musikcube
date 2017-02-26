@@ -4,6 +4,7 @@ import android.app.SearchManager;
 import android.app.SearchableInfo;
 import android.content.Context;
 import android.support.v4.view.MenuItemCompat;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
@@ -19,6 +20,8 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 
 public final class Views {
+    public static String EXTRA_TITLE = "extra_title";
+
     public static void setCheckWithoutEvent(final CheckBox cb,
                                             final boolean checked,
                                             final CheckBox.OnCheckedChangeListener listener) {
@@ -118,6 +121,22 @@ public final class Views {
         return animator;
     }
 
+    public static void enableUpNavigation(final AppCompatActivity activity) {
+        final ActionBar ab = activity.getSupportActionBar();
+        if (ab != null) {
+            ab.setDisplayHomeAsUpEnabled(true);
+        }
+    }
+
+    public static void setTitle(final AppCompatActivity activity, int defaultId) {
+        final String title = activity.getIntent().getStringExtra(EXTRA_TITLE);
+        if (Strings.notEmpty(title)) {
+            activity.setTitle(title);
+        }
+        else {
+            activity.setTitle(defaultId);
+        }
+    }
 
     private Views() {
 

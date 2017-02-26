@@ -105,6 +105,14 @@ public class MainActivity extends WebSocketActivityBase {
     }
 
     @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        boolean connected = wss.getState() == WebSocketService.State.Connected;
+        menu.findItem(R.id.action_playlists).setEnabled(connected);
+        menu.findItem(R.id.action_genres).setEnabled(connected);
+        return super.onPrepareOptionsMenu(menu);
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_settings:

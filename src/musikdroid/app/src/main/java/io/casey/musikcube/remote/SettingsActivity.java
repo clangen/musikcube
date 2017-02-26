@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.EditText;
@@ -31,10 +32,21 @@ public class SettingsActivity extends AppCompatActivity {
         rebindUi();
     }
 
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            finish();
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
     private void rebindUi() {
         Views.setTextAndMoveCursorToEnd(this.addressText, prefs.getString("address", "192.168.1.100"));
         Views.setTextAndMoveCursorToEnd(this.portText, String.format(Locale.ENGLISH, "%d", prefs.getInt("port", 7905)));
         Views.setTextAndMoveCursorToEnd(this.passwordText, prefs.getString("password", ""));
+        Views.enableUpNavigation(this);
     }
 
     private void bindEventListeners() {
