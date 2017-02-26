@@ -81,7 +81,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textColor="@color/theme_foreground"
-                android:text="enable album art (uses last.fm)"/>
+                android:text="@string/settings_enable_album_art"/>
+
+            <CheckBox
+                android:id="@+id/message_compression"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/theme_foreground"
+                android:text="@string/settings_enable_message_compression"/>
 
         </LinearLayout>
 

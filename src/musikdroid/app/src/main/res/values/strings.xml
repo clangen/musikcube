@@ -46,4 +46,6 @@
     <string name="menu_genres">genres</string>
     <string name="menu_playlists">playlists</string>
     <string name="unknown_value">&lt;unknown&gt;</string>
+    <string name="settings_enable_album_art">enable album art (uses last.fm)</string>
+    <string name="settings_enable_message_compression">enable message compression</string>
 </resources>

@@ -13,6 +13,7 @@ import android.os.Message;
 
 import com.neovisionaries.ws.client.WebSocket;
 import com.neovisionaries.ws.client.WebSocketAdapter;
+import com.neovisionaries.ws.client.WebSocketExtension;
 import com.neovisionaries.ws.client.WebSocketFactory;
 import com.neovisionaries.ws.client.WebSocketFrame;
 
@@ -23,6 +24,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.zip.Deflater;
 
 import static android.content.Context.CONNECTIVITY_SERVICE;
 
@@ -409,8 +411,8 @@ public class WebSocketService {
 
     private WebSocketAdapter webSocketAdapter = new WebSocketAdapter() {
         @Override
-        public void onTextFrame(WebSocket websocket, WebSocketFrame frame) throws Exception {
-            final SocketMessage message = SocketMessage.create(frame.getPayloadText());
+        public void onTextMessage(WebSocket websocket, String text) throws Exception {
+            final SocketMessage message = SocketMessage.create(text);
             if (message != null) {
                 if (message.getName().equals(Messages.Request.Authenticate.toString())) {
                     handler.sendMessage(Message.obtain(
@@ -452,6 +454,11 @@ public class WebSocketService {
 
                 socket = factory.createSocket(host, CONNECTION_TIMEOUT_MILLIS);
                 socket.addListener(webSocketAdapter);
+
+                if (prefs.getBoolean("message_compression_enabled", true)) {
+                    socket.addExtension(WebSocketExtension.PERMESSAGE_DEFLATE);
+                }
+
                 socket.connect();
                 socket.setPingInterval(PING_INTERVAL_MILLIS);
 

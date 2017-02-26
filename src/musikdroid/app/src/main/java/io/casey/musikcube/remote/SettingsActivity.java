@@ -14,7 +14,7 @@ import java.util.Locale;
 
 public class SettingsActivity extends AppCompatActivity {
     private EditText addressText, portText, passwordText;
-    private CheckBox albumArtCheckbox;
+    private CheckBox albumArtCheckbox, messageCompressionCheckbox;
     private SharedPreferences prefs;
 
     public static Intent getStartIntent(final Context context) {
@@ -42,8 +42,10 @@ public class SettingsActivity extends AppCompatActivity {
         this.portText = (EditText) this.findViewById(R.id.port);
         this.passwordText = (EditText) this.findViewById(R.id.password);
         this.albumArtCheckbox = (CheckBox) findViewById(R.id.album_art_checkbox);
+        this.messageCompressionCheckbox = (CheckBox) findViewById(R.id.message_compression);
 
         this.albumArtCheckbox.setChecked(this.prefs.getBoolean("album_art_enabled", true));
+        this.messageCompressionCheckbox.setChecked(this.prefs.getBoolean("message_compression_enabled", true));
 
         this.findViewById(R.id.button_connect).setOnClickListener((View v) -> {
             final String addr = addressText.getText().toString();
@@ -55,6 +57,7 @@ public class SettingsActivity extends AppCompatActivity {
                 .putInt("port", (port.length() > 0) ? Integer.valueOf(port) : 0)
                 .putString("password", password)
                 .putBoolean("album_art_enabled", albumArtCheckbox.isChecked())
+                .putBoolean("message_compression_enabled", messageCompressionCheckbox.isChecked())
                 .apply();
 
             WebSocketService.getInstance(this).disconnect();
