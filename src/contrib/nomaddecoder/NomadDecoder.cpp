@@ -104,6 +104,7 @@ bool NomadDecoder::GetBuffer(IBuffer *buffer) {
         SAMPLE_FORMAT_32_BIT_FLOAT);
 
     buffer->SetSamples(read > 0 ? read : 0);
+    buffer->SetSampleRate(nomad_info(this->nomadContext)->sample_rate);
 
     return (read > 0) ? true : false;
 }
