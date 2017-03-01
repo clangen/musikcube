@@ -1,3 +1,18 @@
+0.9.2
+
+* added an icon to the windows and android builds (not great, but better than
+  nothing!)
+* fixed a bug in the `nomad` (mp3) plugin where sample rate wasn't being
+  handled appropriately. songs were sometimes playing too fast or slow.
+* added compression support to the `websocket_remote` plugin and the
+  `musikdroid` android app
+* fixed a crash when trying to manipulate an empty play queue in specific
+  contexts
+* fixed the win32 global volume up / volume down hotkeys to be consistent with
+  the main app and `websocket_remote` behavior.
+
+--------------------------------------------------------------------------------
+
 0.9.1
 
 * added an app icon on win32 and android builds
