@@ -931,8 +931,11 @@ class PlaybackRemote : public IPlaybackRemote {
             catch (websocketpp::exception const & e) {
                 std::cerr << e.what() << std::endl;
             }
+            catch (std::exception& e) {
+                std::cerr << "ThreadProc failed: " << e.what() << std::endl;
+            }
             catch (...) {
-                std::cerr << "other exception" << std::endl;
+                std::cerr << "unknown exception" << std::endl;
             }
         }
 
@@ -955,6 +958,10 @@ class PlaybackRemote : public IPlaybackRemote {
                 if (type == type::request) {
                     this->HandleRequest(hdl, data);
                 }
+            }
+            catch (std::exception& e) {
+                std::cerr << "OnMessage failed: " << e.what() << std::endl;
+                this->RespondWithInvalidRequest(hdl, value::invalid, value::invalid);
             }
             catch (...) {
                 std::cerr << "message parse failed: " << msg->get_payload() << "\n";
