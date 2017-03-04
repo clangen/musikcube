@@ -4,6 +4,8 @@
   nothing!)
 * fixed a bug in the `nomad` (mp3) plugin where sample rate wasn't being
   handled appropriately. songs were sometimes playing too fast or slow.
+* fixed a bug in the websockets plugin for certain metadata in locales that
+  use commas instead of periods for decimal points
 * added compression support to the `websocket_remote` plugin and the
   `musikdroid` android app
 * fixed a crash when trying to manipulate an empty play queue in specific
