@@ -41,10 +41,13 @@ namespace musik { namespace core {
 
     std::string GetHomeDirectory();
     std::string GetApplicationDirectory();
-    std::string GetDataDirectory();
+    std::string GetDataDirectory(bool create = true);
     std::string GetPath(const std::string &sFile);
     std::string GetPluginDirectory();
     uint64 Checksum(char *data,unsigned int bytes);
     size_t CopyString(const std::string& src, char* dst, size_t size);
+
+    /* renames ~/.mC2 -> ~/.musikcube */
+    void MigrateOldDataDirectory();
 
 } }

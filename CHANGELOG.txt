@@ -12,6 +12,8 @@
   contexts
 * fixed the win32 global volume up / volume down hotkeys to be consistent with
   the main app and `websocket_remote` behavior.
+* changed data directory from "~/.mC2" to "~/.musikcube". the app will
+  automatically perform this rename on startup.
 
 --------------------------------------------------------------------------------
 

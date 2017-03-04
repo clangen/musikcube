@@ -89,40 +89,73 @@ std::string musik::core::GetApplicationDirectory() {
 std::string musik::core::GetHomeDirectory() {
     std::string directory;
 
-    #ifdef WIN32
-        DWORD bufferSize = GetEnvironmentVariable(L"USERPROFILE", 0, 0);
-        wchar_t *buffer = new wchar_t[bufferSize + 2];
-        GetEnvironmentVariable(L"USERPROFILE", buffer, bufferSize);
-        directory.assign(u16to8(buffer));
-        delete[] buffer;
-    #else
-        directory = std::string(std::getenv("HOME"));
-    #endif
+#ifdef WIN32
+    DWORD bufferSize = GetEnvironmentVariable(L"USERPROFILE", 0, 0);
+    wchar_t *buffer = new wchar_t[bufferSize + 2];
+    GetEnvironmentVariable(L"USERPROFILE", buffer, bufferSize);
+    directory.assign(u16to8(buffer));
+    delete[] buffer;
+#else
+    directory = std::string(std::getenv("HOME"));
+#endif
 
     return directory;
 }
 
-std::string musik::core::GetDataDirectory() {
+static std::string GetDataDirectoryRoot() {
     std::string directory;
 
-    #ifdef WIN32
-        DWORD bufferSize = GetEnvironmentVariable(L"APPDATA", 0, 0);
-        wchar_t *buffer = new wchar_t[bufferSize + 2];
-        GetEnvironmentVariable(L"APPDATA", buffer, bufferSize);
-        directory.assign(u16to8(buffer));
-        directory.append("/mC2/");
-        delete[] buffer;
-    #else
-        directory = std::string(std::getenv("HOME"));
-        directory.append("/.mC2/");
-    #endif
+#ifdef WIN32
+    DWORD bufferSize = GetEnvironmentVariable(L"APPDATA", 0, 0);
+    wchar_t *buffer = new wchar_t[bufferSize + 2];
+    GetEnvironmentVariable(L"APPDATA", buffer, bufferSize);
+    directory.assign(u16to8(buffer));
+    delete[] buffer;
+#else
+    directory = std::string(std::getenv("HOME"));
+#endif
 
-    boost::filesystem::path path(directory);
-    if (!boost::filesystem::exists(path)) {
-        boost::filesystem::create_directories(path);
+    return directory;
+}
+
+std::string musik::core::GetDataDirectory(bool create) {
+    std::string directory =
+
+#ifdef WIN32
+    GetDataDirectoryRoot() + std::string("/musikcube/");
+#else
+    GetDataDirectoryRoot() + std::string("/.musikcube/");
+#endif
+
+    if (create) {
+        boost::filesystem::path path(directory);
+        if (!boost::filesystem::exists(path)) {
+            boost::filesystem::create_directories(path);
+        }
     }
 
     return directory;
+}
+
+void musik::core::MigrateOldDataDirectory() {
+    std::string oldDirectory =
+
+#ifdef WIN32
+        GetDataDirectoryRoot() + std::string("/mC2/");
+#else
+        GetDataDirectoryRoot() + std::string("/.mC2/");
+#endif
+
+    std::string newDirectory = GetDataDirectory(false);
+
+    boost::filesystem::path oldPath(oldDirectory);
+    boost::filesystem::path newPath(newDirectory);
+
+    if (boost::filesystem::exists(oldPath) &&
+        !boost::filesystem::exists(newPath))
+    {
+        boost::filesystem::rename(oldPath, newPath);
+    }
 }
 
 std::string musik::core::GetPath(const std::string &sFile) {
@@ -144,11 +177,11 @@ std::string musik::core::GetPath(const std::string &sFile) {
     else {
         sPath.assign(sFile);
     }
- #else	//TODO: check this POSIX GetPath works
+ #else
     char* szDir;
     sPath.assign(getcwd((char*)szDir, (size_t) length));
+ #endif
 
- #endif //WIN32
     return sPath;
 }
 

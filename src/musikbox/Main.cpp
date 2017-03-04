@@ -57,6 +57,7 @@
 #include <core/plugin/Plugins.h>
 #include <core/support/PreferenceKeys.h>
 #include <core/audio/Visualizer.h>
+#include <core/support/Common.h>
 
 #include <boost/locale.hpp>
 #include <boost/filesystem/path.hpp>
@@ -111,6 +112,8 @@ int main(int argc, char* argv[])
     PDC_set_resize_limits(MIN_HEIGHT, 1000, MIN_WIDTH, 1000);
     resize_term(26, 100); /* must be before app init */
 #endif
+
+    musik::core::MigrateOldDataDirectory();
 
     musik::debug::init();
 
