@@ -162,7 +162,7 @@ public:
         if (ec) {
             con->terminate(ec);
 
-            if (ec == error::operation_canceled) {
+            if (ec.value() == (int) error::operation_canceled) {
                 endpoint_type::m_elog.write(log::elevel::info,
                     "handle_accept error: "+ec.message());
             } else {
@@ -175,7 +175,7 @@ public:
 
         lib::error_code start_ec;
         start_accept(start_ec);
-        if (start_ec == error::async_accept_not_listening) {
+        if (start_ec.value() == (int) error::async_accept_not_listening) {
             endpoint_type::m_elog.write(log::elevel::info,
                 "Stopping acceptance of new connections because the underlying transport is no longer listening.");
         } else if (start_ec) {

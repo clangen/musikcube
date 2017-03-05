@@ -350,7 +350,7 @@ public:
         lib::asio::error_code const & ec)
     {
         if (ec) {
-            if (ec == lib::asio::error::operation_aborted) {
+            if (ec.value() == (int) lib::asio::error::operation_aborted) {
                 callback(make_error_code(transport::error::operation_aborted));
             } else {
                 log_err(log::elevel::info,"asio handle_timer",ec);
@@ -539,7 +539,7 @@ protected:
         lib::error_code ret_ec;
 
         if (ec) {
-            if (ec == transport::error::operation_aborted) {
+            if (ec.value() == (int) transport::error::operation_aborted) {
                 m_alog.write(log::alevel::devel,
                     "asio post init timer cancelled");
                 return;
@@ -572,7 +572,7 @@ protected:
     void handle_post_init(timer_ptr post_timer, init_handler callback,
         lib::error_code const & ec)
     {
-        if (ec == transport::error::operation_aborted ||
+        if (ec.value() == (int) transport::error::operation_aborted ||
             (post_timer && lib::asio::is_neg(post_timer->expires_from_now())))
         {
             m_alog.write(log::alevel::devel,"post_init cancelled");
@@ -650,7 +650,7 @@ protected:
 
     void handle_proxy_timeout(init_handler callback, lib::error_code const & ec)
     {
-        if (ec == transport::error::operation_aborted) {
+        if (ec.value() == (int) transport::error::operation_aborted) {
             m_alog.write(log::alevel::devel,
                 "asio handle_proxy_write timer cancelled");
             return;
@@ -678,7 +678,7 @@ protected:
         // Timer expired or the operation was aborted for some reason.
         // Whatever aborted it will be issuing the callback so we are safe to
         // return
-        if (ec == lib::asio::error::operation_aborted ||
+        if (ec.value() == (int) lib::asio::error::operation_aborted ||
             lib::asio::is_neg(m_proxy_data->timer->expires_from_now()))
         {
             m_elog.write(log::elevel::devel,"write operation aborted");
@@ -750,7 +750,7 @@ protected:
         // Timer expired or the operation was aborted for some reason.
         // Whatever aborted it will be issuing the callback so we are safe to
         // return
-        if (ec == lib::asio::error::operation_aborted ||
+        if (ec.value() == (int) lib::asio::error::operation_aborted ||
             lib::asio::is_neg(m_proxy_data->timer->expires_from_now()))
         {
             m_elog.write(log::elevel::devel,"read operation aborted");
@@ -875,7 +875,7 @@ protected:
 
         // translate asio error codes into more lib::error_codes
         lib::error_code tec;
-        if (ec == lib::asio::error::eof) {
+        if (ec.value() == (int) lib::asio::error::eof) {
             tec = make_error_code(transport::error::eof);
         } else if (ec) {
             // We don't know much more about the error at this point. As our
@@ -883,8 +883,8 @@ protected:
             tec = socket_con_type::translate_ec(ec);
             m_tec = ec;
 
-            if (tec == transport::error::tls_error ||
-                tec == transport::error::pass_through)
+            if (tec.value() == (int) transport::error::tls_error ||
+                tec.value() == (int) transport::error::pass_through)
             {
                 // These are aggregate/catch all errors. Log some human readable
                 // information to the info channel to give library users some
@@ -1073,7 +1073,7 @@ protected:
         lib::error_code ret_ec;
 
         if (ec) {
-            if (ec == transport::error::operation_aborted) {
+            if (ec.value() == (int) transport::error::operation_aborted) {
                 m_alog.write(log::alevel::devel,
                     "asio socket shutdown timer cancelled");
                 return;
@@ -1094,7 +1094,7 @@ protected:
     void handle_async_shutdown(timer_ptr shutdown_timer, shutdown_handler
         callback, lib::asio::error_code const & ec)
     {
-        if (ec == lib::asio::error::operation_aborted ||
+        if (ec.value() == (int) lib::asio::error::operation_aborted ||
             lib::asio::is_neg(shutdown_timer->expires_from_now()))
         {
             m_alog.write(log::alevel::devel,"async_shutdown cancelled");
@@ -1105,7 +1105,7 @@ protected:
 
         lib::error_code tec;
         if (ec) {
-            if (ec == lib::asio::error::not_connected) {
+            if (ec.value() == (int) lib::asio::error::not_connected) {
                 // The socket was already closed when we tried to close it. This
                 // happens periodically (usually if a read or write fails
                 // earlier and if it is a real error will be caught at another
@@ -1116,7 +1116,7 @@ protected:
                 tec = socket_con_type::translate_ec(ec);
                 m_tec = ec;
 
-                if (tec == transport::error::tls_short_read) {
+                if (tec.value() == (int) transport::error::tls_short_read) {
                     // TLS short read at this point is somewhat expected if both
                     // sides try and end the connection at the same time or if
                     // SSLv2 is being used. In general there is nothing that can
@@ -1141,7 +1141,7 @@ protected:
     void cancel_socket_checked() {
         lib::asio::error_code cec = socket_con_type::cancel_socket();
         if (cec) {
-            if (cec == lib::asio::error::operation_not_supported) {
+            if (cec.value() == (int) lib::asio::error::operation_not_supported) {
                 // cancel not supported on this OS, ignore and log at dev level
                 m_alog.write(log::alevel::devel, "socket cancel not supported");
             } else {

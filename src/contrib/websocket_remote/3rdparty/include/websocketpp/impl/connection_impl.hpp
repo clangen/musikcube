@@ -234,7 +234,7 @@ void connection<config>::handle_pong_timeout(std::string payload,
     lib::error_code const & ec)
 {
     if (ec) {
-        if (ec == transport::error::operation_aborted) {
+        if (ec.value() == (int) transport::error::operation_aborted) {
             // ignore, this is expected
             return;
         }
@@ -828,7 +828,7 @@ void connection<config>::handle_read_handshake(lib::error_code const & ec,
     }
 
     if (ecm) {
-        if (ecm == transport::error::eof && m_state == session::state::closed) {
+        if (ecm.value() == (int) transport::error::eof && m_state == session::state::closed) {
             // we expect to get eof if the connection is closed already
             m_alog.write(log::alevel::devel,
                     "got (expected) eof/state error from closed con");
@@ -976,7 +976,7 @@ void connection<config>::handle_read_frame(lib::error_code const & ec,
     if (ecm) {
         log::level echannel = log::elevel::rerror;
         
-        if (ecm == transport::error::eof) {
+        if (ecm.value() == (int) transport::error::eof) {
             if (m_state == session::state::closed) {
                 // we expect to get eof if the connection is closed already
                 // just ignore it
@@ -989,7 +989,7 @@ void connection<config>::handle_read_frame(lib::error_code const & ec,
                 terminate(lib::error_code());
                 return;
             }
-        } else if (ecm == error::invalid_state) {
+        } else if (ecm.value() == (int) error::invalid_state) {
             // In general, invalid state errors in the closed state are the
             // result of handlers that were in the system already when the state
             // changed and should be ignored as they pose no problems and there
@@ -999,7 +999,7 @@ void connection<config>::handle_read_frame(lib::error_code const & ec,
                     "handle_read_frame: got invalid istate in closed state");
                 return;
             }
-        } else if (ecm == transport::error::tls_short_read) {
+        } else if (ecm.value() == (int) transport::error::tls_short_read) {
             if (m_state == session::state::closed) {
                 // We expect to get a TLS short read if we try to read after the
                 // connection is closed. If this happens ignore and exit the
@@ -1008,7 +1008,7 @@ void connection<config>::handle_read_frame(lib::error_code const & ec,
                 return;
             }
             echannel = log::elevel::rerror;
-        } else if (ecm == transport::error::action_after_shutdown) {
+        } else if (ecm.value() == (int) transport::error::action_after_shutdown) {
             echannel = log::elevel::info;
         }
         
@@ -1370,7 +1370,7 @@ void connection<config>::handle_write_http_response(lib::error_code const & ec) 
     }
 
     if (ecm) {
-        if (ecm == transport::error::eof && m_state == session::state::closed) {
+        if (ecm.value() == (int) transport::error::eof && m_state == session::state::closed) {
             // we expect to get eof if the connection is closed already
             m_alog.write(log::alevel::devel,
                     "got (expected) eof/state error from closed con");
@@ -1514,7 +1514,7 @@ void connection<config>::handle_send_http_request(lib::error_code const & ec) {
     }
 
     if (ecm) {
-        if (ecm == transport::error::eof && m_state == session::state::closed) {
+        if (ecm.value() == (int) transport::error::eof && m_state == session::state::closed) {
             // we expect to get eof if the connection is closed already
             m_alog.write(log::alevel::devel,
                     "got (expected) eof/state error from closed con");
@@ -1567,7 +1567,7 @@ void connection<config>::handle_read_http_response(lib::error_code const & ec,
     }
 
     if (ecm) {
-        if (ecm == transport::error::eof && m_state == session::state::closed) {
+        if (ecm.value() == (int) transport::error::eof && m_state == session::state::closed) {
             // we expect to get eof if the connection is closed already
             m_alog.write(log::alevel::devel,
                     "got (expected) eof/state error from closed con");
@@ -1663,7 +1663,7 @@ template <typename config>
 void connection<config>::handle_open_handshake_timeout(
     lib::error_code const & ec)
 {
-    if (ec == transport::error::operation_aborted) {
+    if (ec.value() == (int) transport::error::operation_aborted) {
         m_alog.write(log::alevel::devel,"open handshake timer cancelled");
     } else if (ec) {
         m_alog.write(log::alevel::devel,
@@ -1679,7 +1679,7 @@ template <typename config>
 void connection<config>::handle_close_handshake_timeout(
     lib::error_code const & ec)
 {
-    if (ec == transport::error::operation_aborted) {
+    if (ec.value() == (int) transport::error::operation_aborted) {
         m_alog.write(log::alevel::devel,"asio close handshake timer cancelled");
     } else if (ec) {
         m_alog.write(log::alevel::devel,
@@ -1720,7 +1720,7 @@ void connection<config>::terminate(lib::error_code const & ec) {
         
         // Log fail result here before socket is shut down and we can't get
         // the remote address, etc anymore
-        if (m_ec != error::http_connection_ended) {
+        if (m_ec.value() != (int) error::http_connection_ended) {
             log_fail_result();
         }
     } else if (m_state != session::state::closed) {
@@ -1759,7 +1759,7 @@ void connection<config>::handle_terminate(terminate_status tstat,
 
     // clean shutdown
     if (tstat == failed) {
-        if (m_ec != error::http_connection_ended) {
+        if (m_ec.value() != (int) error::http_connection_ended) {
             if (m_fail_handler) {
                 m_fail_handler(m_connection_hdl);
             }
