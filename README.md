@@ -71,7 +71,7 @@ you'll need [homebrew](http://brew.sh/) to install the required dependencies.
 
 the hotkeys listed below can generally be used at any time; however, if an input field is focused some may not work. you can enter command mode by pressing `ESC`, which will highlight the bottom command bar and accept all hotkeys. command mode may be deactivated by pressing `ESC` again.
 
-you may also change hotkeys by editing `~/.mC2/hotkeys.json` and restarting the app. a hotkey tester is provided in the settings screen.
+you may also change hotkeys by editing `~/.musikcube/hotkeys.json` and restarting the app. a hotkey tester is provided in the settings screen.
 
 - `TAB` select next window
 - `SHIFT+TAB` select previous window
@@ -110,3 +110,44 @@ and a couple hotkeys that are specific to the library view:
 # sdk
 
 musikcube is built around its own SDK interfaces. they're still in the process of being cleaned up and slimmed down. you can see what they look like here: https://github.com/clangen/musikcube/tree/master/src/core/sdk
+
+# dependencies
+
+musikcube would not be possible without the following excellent free, open source, (and non-free in the case of macOS and win32 APIs) projects and libraries:
+
+core:
+* [boost](http://www.boost.org/)
+* [sqlite](https://www.sqlite.org/)
+* [utfcpp](https://github.com/nemtrif/utfcpp)
+* [json.hpp](https://github.com/nlohmann/json)
+* [kissfft](http://kissfft.sourceforge.net/)
+* [sigslot](http://sigslot.sourceforge.net/)
+* [wcwidth.c](http://www.cl.cam.ac.uk/~mgk25/ucs/wcwidth.c)
+
+ui:
+* [ncurses](https://www.gnu.org/software/ncurses/)
+* [pdcurses (win32a variant)](https://www.projectpluto.com/win32a.htm)
+
+decoders:
+* [flac](https://xiph.org/flac/)
+* [ogg/vorbis](http://www.vorbis.com/)
+* [mad](http://www.underbit.com/products/mad/)
+* [nomad](https://github.com/cmus/cmus/tree/master/ip)
+* [faad2](http://www.audiocoding.com/faad2.html)
+
+outputs:
+* [pulseaudio](https://www.freedesktop.org/wiki/Software/PulseAudio/)
+* [alsa](https://www.alsa-project.org)
+* [core audio](https://developer.apple.com/library/content/documentation/MusicAudio/Conceptual/CoreAudioOverview/Introduction/Introduction.html)
+* [wasapi](https://msdn.microsoft.com/en-us/library/windows/desktop/dd371455(v=vs.85).aspx)
+* [directsound](https://msdn.microsoft.com/en-us/library/windows/desktop/ee416960(v=vs.85).aspx)
+* [waveout](https://msdn.microsoft.com/en-us/library/windows/desktop/dd743876(v=vs.85).aspx)
+
+metadata-related:
+* [taglib](http://taglib.org/)
+* [glide](https://github.com/bumptech/glide)
+
+networking:
+* [websocketpp](https://github.com/zaphoyd/websocketpp)
+* [nv-websocket-client](https://github.com/TakahikoKawasaki/nv-websocket-client)
+* [okhttp](http://square.github.io/okhttp/)
