@@ -109,7 +109,7 @@ and a couple hotkeys that are specific to the library view:
 
 # sdk
 
-musikcube is built around its own SDK interfaces. they're still in the process of being cleaned up and slimmed down. you can see what they look like here: https://github.com/clangen/musikcube/tree/master/src/core/sdk
+musikcube is built around its own SDK interfaces. they're still in the process of being refined. you can see what they look like here: https://github.com/clangen/musikcube/tree/master/src/core/sdk
 
 # dependencies
 
