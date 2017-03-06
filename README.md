@@ -113,7 +113,7 @@ musikcube is built around its own SDK interfaces. they're still in the process o
 
 # dependencies
 
-musikcube would not be possible without the following excellent free, open source, (and non-free in the case of macOS and win32 APIs) projects and libraries:
+musikcube would not be possible without the following excellent free, open source, and non-free (in the case of macOS and win32 APIs) projects and libraries:
 
 core:
 * [boost](http://www.boost.org/)
