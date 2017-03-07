@@ -68,6 +68,8 @@ class WasapiOut : public IOutput {
         virtual double Latency();
         virtual void Drain();
 
+        void OnDeviceChanged() { this->deviceChanged = true; }
+
     private:
         enum State {
             StateStopped,
@@ -76,7 +78,6 @@ class WasapiOut : public IOutput {
         };
 
         bool Configure(IBuffer *buffer);
-        bool DefaultDeviceChanged();
         void Reset();
 
         IMMDeviceEnumerator *enumerator;
@@ -93,7 +94,6 @@ class WasapiOut : public IOutput {
         double volume;
         double latency;
         int rate;
-        DWORD lastDeviceCheck;
-        bool enableEndpointRouting;
+        bool deviceChanged;
         std::recursive_mutex stateMutex;
 };

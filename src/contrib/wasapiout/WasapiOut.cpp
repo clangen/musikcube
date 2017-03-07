@@ -42,7 +42,6 @@
 #include <algorithm>
 
 #define MAX_BUFFERS_PER_OUTPUT 16
-#define DEFAULT_DEVICE_CHECK_INTERVAL 2000
 
 /* NOTE! device init and deinit logic was stolen and modified from
 QMMP's WASAPI output plugin! http://qmmp.ylsoftware.com/ */
@@ -58,6 +57,92 @@ extern "C" __declspec(dllexport) void SetPreferences(musik::core::sdk::IPreferen
     ::prefs = prefs;
 }
 
+class NotificationClient : public IMMNotificationClient {
+    public:
+        NotificationClient(WasapiOut* owner)
+        : count(1)
+        , owner(owner)
+        , enumerator(nullptr) {
+        }
+
+        ~NotificationClient() {
+            if (this->enumerator) {
+                this->enumerator->Release();
+                this->enumerator = nullptr;
+            }
+        }
+
+        /* IUnknown methods -- AddRef, Release, and QueryInterface */
+
+        ULONG STDMETHODCALLTYPE AddRef() {
+            return InterlockedIncrement(&this->count);
+        }
+
+        ULONG STDMETHODCALLTYPE Release() {
+            ULONG newCount = InterlockedDecrement(&this->count);
+            if (0 == newCount) {
+                delete this;
+            }
+            return newCount;
+        }
+
+        HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, VOID **ppvInterface) {
+            if (IID_IUnknown == riid) {
+                this->AddRef();
+                *ppvInterface = (IUnknown*)this;
+            }
+            else if (__uuidof(IMMNotificationClient) == riid) {
+                this->AddRef();
+                *ppvInterface = (IMMNotificationClient*)this;
+            }
+            else {
+                *ppvInterface = nullptr;
+                return E_NOINTERFACE;
+            }
+            return S_OK;
+        }
+
+        /* Callback methods for device-event notifications. */
+
+        HRESULT STDMETHODCALLTYPE OnDefaultDeviceChanged(
+            EDataFlow flow, ERole role,
+            LPCWSTR pwstrDeviceId)
+        {
+            if (::prefs && prefs->GetBool("enable_audio_endpoint_routing", true)) {
+                if (flow == eRender && role == eMultimedia) {
+                    if (this->lastDeviceId != std::wstring(pwstrDeviceId)) {
+                        owner->OnDeviceChanged();
+                        this->lastDeviceId = std::wstring(pwstrDeviceId);
+                    }
+                }
+            }
+
+            return S_OK;
+        }
+
+        HRESULT STDMETHODCALLTYPE OnDeviceAdded(LPCWSTR pwstrDeviceId) {
+            return S_OK;
+        }
+
+        HRESULT STDMETHODCALLTYPE OnDeviceRemoved(LPCWSTR pwstrDeviceId) {
+            return S_OK;
+        }
+
+        HRESULT STDMETHODCALLTYPE OnDeviceStateChanged(LPCWSTR pwstrDeviceId, DWORD dwNewState) {
+            return S_OK;
+        }
+
+        HRESULT STDMETHODCALLTYPE OnPropertyValueChanged(LPCWSTR pwstrDeviceId, const PROPERTYKEY key){
+            return S_OK;
+        }
+
+    private:
+        LONG count;
+        IMMDeviceEnumerator *enumerator;
+        WasapiOut* owner;
+        std::wstring lastDeviceId;
+};
+
 WasapiOut::WasapiOut()
 : enumerator(nullptr)
 , device(nullptr)
@@ -70,9 +155,8 @@ WasapiOut::WasapiOut()
 , outputBufferFrames(0)
 , state(StateStopped)
 , latency(0)
-, volume(1.0f)
-, lastDeviceCheck(0)
-, enableEndpointRouting(0) {
+, deviceChanged(false)
+, volume(1.0f) {
     ZeroMemory(&waveFormat, sizeof(WAVEFORMATEXTENSIBLE));
 }
 
@@ -157,27 +241,6 @@ void WasapiOut::Drain() {
     }
 }
 
-/* ideally we'd use a IMMNotificationClient callback, but it seems to
-introduce random crashing when devices are attached /detached from the
-system... but only sometimes. there are similar crashes in firefox,
-VLC, and some other apps, but no known resolution. instead we poll the
-default device every few seconds. */
-bool WasapiOut::DefaultDeviceChanged() {
-    IMMDevice* currentDevice;
-    if (this->enumerator && this->enumerator->GetDefaultAudioEndpoint(eRender, eConsole, &currentDevice) == S_OK) {
-        wchar_t* dev1 = nullptr;
-        wchar_t* dev2 = nullptr;
-        this->device->GetId(&dev1);
-        currentDevice->GetId(&dev2);
-        bool changed = lstrcmpW(dev1, dev2) != 0;
-        CoTaskMemFree(dev1);
-        CoTaskMemFree(dev2);
-        currentDevice->Release();
-        return changed;
-    }
-    return false;
-}
-
 int WasapiOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     Lock lock(this->stateMutex);
 
@@ -185,15 +248,11 @@ int WasapiOut::Play(IBuffer *buffer, IBufferProvider *provider) {
         return OutputInvalidState;
     }
 
-    if (this->enableEndpointRouting) {
-        DWORD now = GetTickCount();
-        if (now - this->lastDeviceCheck > DEFAULT_DEVICE_CHECK_INTERVAL) {
-            lastDeviceCheck = now;
-            if (this->DefaultDeviceChanged()) {
-                this->Reset();
-                return OutputFormatError;
-            }
-        }
+    if (this->deviceChanged) {
+        this->Drain();
+        this->Reset();
+        this->deviceChanged = false;
+        return OutputFormatError;
     }
 
     if (!this->Configure(buffer)) {
@@ -231,10 +290,6 @@ int WasapiOut::Play(IBuffer *buffer, IBufferProvider *provider) {
 }
 
 void WasapiOut::Reset() {
-    if (this->audioClient) {
-        this->audioClient->Stop();
-    }
-
     if (this->simpleAudioVolume) {
         this->simpleAudioVolume->Release();
         this->simpleAudioVolume = nullptr;
@@ -263,10 +318,16 @@ void WasapiOut::Reset() {
 
     if (this->device) {
         this->device->Release();
-        this->device = nullptr;
+        this->device = 0;
     }
 
     if (this->enumerator) {
+        if (this->notificationClient) {
+            this->enumerator->UnregisterEndpointNotificationCallback(this->notificationClient);
+            this->notificationClient->Release();
+            this->notificationClient = nullptr;
+        }
+
         this->enumerator->Release();
         this->enumerator = nullptr;
     }
@@ -295,7 +356,13 @@ bool WasapiOut::Configure(IBuffer *buffer) {
             return false;
         }
 
-        if ((result = this->enumerator->GetDefaultAudioEndpoint(eRender, eConsole, &this->device)) != S_OK) {
+        if ((result = this->enumerator->GetDefaultAudioEndpoint(eRender, eMultimedia, &this->device)) != S_OK) {
+            return false;
+        }
+
+        this->notificationClient = new NotificationClient(this);
+
+        if ((result = this->enumerator->RegisterEndpointNotificationCallback(this->notificationClient)) != S_OK) {
             return false;
         }
 
@@ -308,10 +375,6 @@ bool WasapiOut::Configure(IBuffer *buffer) {
         waveFormat.Format.nSamplesPerSec == buffer->SampleRate())
     {
         return true;
-    }
-
-    if (::prefs) {
-        this->enableEndpointRouting = prefs->GetBool("enable_audio_endpoint_routing", true);
     }
 
     DWORD speakerConfig = 0;
