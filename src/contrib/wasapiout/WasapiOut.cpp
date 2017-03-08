@@ -57,6 +57,10 @@ extern "C" __declspec(dllexport) void SetPreferences(musik::core::sdk::IPreferen
     ::prefs = prefs;
 }
 
+static bool audioRoutingEnabled() {
+    return ::prefs && prefs->GetBool("enable_audio_endpoint_routing", false);
+}
+
 class NotificationClient : public IMMNotificationClient {
     public:
         NotificationClient(WasapiOut* owner)
@@ -108,7 +112,7 @@ class NotificationClient : public IMMNotificationClient {
             EDataFlow flow, ERole role,
             LPCWSTR pwstrDeviceId)
         {
-            if (::prefs && prefs->GetBool("enable_audio_endpoint_routing", true)) {
+            if (audioRoutingEnabled()) {
                 if (flow == eRender && role == eMultimedia) {
                     if (this->lastDeviceId != std::wstring(pwstrDeviceId)) {
                         owner->OnDeviceChanged();
@@ -165,6 +169,18 @@ WasapiOut::~WasapiOut() {
 
 void WasapiOut::Destroy() {
     this->Reset();
+
+    if (this->enumerator) {
+        if (this->notificationClient) {
+            this->enumerator->UnregisterEndpointNotificationCallback(this->notificationClient);
+            this->notificationClient->Release();
+            this->notificationClient = nullptr;
+        }
+
+        this->enumerator->Release();
+        this->enumerator = nullptr;
+    }
+
     delete this;
 }
 
@@ -218,12 +234,7 @@ void WasapiOut::Stop() {
     this->state = StateStopped;
 
     Lock lock(this->stateMutex);
-
-    if (this->audioClient) {
-        this->audioClient->Stop();
-        this->audioClient->Reset();
-        this->audioClient->Start();
-    }
+    this->Reset();
 }
 
 void WasapiOut::Drain() {
@@ -249,7 +260,6 @@ int WasapiOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     }
 
     if (this->deviceChanged) {
-        this->Drain();
         this->Reset();
         this->deviceChanged = false;
         return OutputFormatError;
@@ -292,45 +302,37 @@ int WasapiOut::Play(IBuffer *buffer, IBufferProvider *provider) {
 void WasapiOut::Reset() {
     if (this->simpleAudioVolume) {
         this->simpleAudioVolume->Release();
-        this->simpleAudioVolume = nullptr;
     }
 
     if (this->audioStreamVolume) {
         this->audioStreamVolume->Release();
-        this->audioStreamVolume = nullptr;
     }
 
     if (this->audioClock) {
         this->audioClock->Release();
-        this->audioClock = nullptr;
     }
 
     if (this->renderClient) {
         this->renderClient->Release();
-        this->renderClient = nullptr;
     }
 
     if (this->audioClient) {
+        this->audioClient->Reset();
         this->audioClient->Stop();
         this->audioClient->Release();
-        this->audioClient = nullptr;
     }
 
     if (this->device) {
         this->device->Release();
-        this->device = 0;
     }
 
-    if (this->enumerator) {
-        if (this->notificationClient) {
-            this->enumerator->UnregisterEndpointNotificationCallback(this->notificationClient);
-            this->notificationClient->Release();
-            this->notificationClient = nullptr;
-        }
+    this->simpleAudioVolume = nullptr;
+    this->audioStreamVolume = nullptr;
+    this->audioClock = nullptr;
+    this->renderClient = nullptr;
+    this->audioClient = nullptr;
+    this->device = nullptr;
 
-        this->enumerator->Release();
-        this->enumerator = nullptr;
-    }
 
     ZeroMemory(&waveFormat, sizeof(WAVEFORMATEXTENSIBLE));
 }
@@ -343,31 +345,27 @@ bool WasapiOut::Configure(IBuffer *buffer) {
     HRESULT result;
 
     if (!this->audioClient) {
-        CoInitialize(nullptr);
+        if (!this->enumerator) {
+            CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 
-        result = CoCreateInstance(
-            __uuidof(MMDeviceEnumerator),
-            NULL,
-            CLSCTX_ALL,
-            __uuidof(IMMDeviceEnumerator),
-            (void**) &this->enumerator);
+            result = CoCreateInstance(
+                __uuidof(MMDeviceEnumerator),
+                NULL,
+                CLSCTX_ALL,
+                __uuidof(IMMDeviceEnumerator),
+                (void**) &this->enumerator);
 
-        if (result != S_OK) {
-            return false;
-        }
+            if (result != S_OK) {
+                return false;
+            }
 
-        if ((result = this->enumerator->GetDefaultAudioEndpoint(eRender, eMultimedia, &this->device)) != S_OK) {
-            return false;
-        }
+            if (audioRoutingEnabled()) {
+                this->notificationClient = new NotificationClient(this);
 
-        this->notificationClient = new NotificationClient(this);
-
-        if ((result = this->enumerator->RegisterEndpointNotificationCallback(this->notificationClient)) != S_OK) {
-            return false;
-        }
-
-        if ((result = this->device->Activate(__uuidof(IAudioClient), CLSCTX_ALL, NULL, (void**) &this->audioClient)) != S_OK) {
-            return false;
+                if ((result = this->enumerator->RegisterEndpointNotificationCallback(this->notificationClient)) != S_OK) {
+                    return false;
+                }
+            }
         }
     }
 
@@ -375,6 +373,16 @@ bool WasapiOut::Configure(IBuffer *buffer) {
         waveFormat.Format.nSamplesPerSec == buffer->SampleRate())
     {
         return true;
+    }
+
+    CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+
+    if ((result = this->enumerator->GetDefaultAudioEndpoint(eRender, eMultimedia, &this->device)) != S_OK) {
+        return false;
+    }
+
+    if ((result = this->device->Activate(__uuidof(IAudioClient), CLSCTX_ALL, NULL, (void**) &this->audioClient)) != S_OK) {
+        return false;
     }
 
     DWORD speakerConfig = 0;
