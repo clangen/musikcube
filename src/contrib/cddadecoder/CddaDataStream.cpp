@@ -100,10 +100,10 @@ static int getTrackNumber(const char* uri) {
 bool CddaDataStream::Open(const char *uri, unsigned int options) {
     int trackIndex;
 
-    char driveLetter = 'A' + PathGetDriveNumber(uri);
+    char driveLetter = 'A' + PathGetDriveNumberA(uri);
     std::string drivePath = "\\\\.\\" + std::string(1, driveLetter) + ":";
 
-    this->drive = CreateFile(
+    this->drive = CreateFileA(
         drivePath.c_str(),
         GENERIC_READ,
         FILE_SHARE_READ,

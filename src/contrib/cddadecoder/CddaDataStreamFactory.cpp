@@ -46,7 +46,7 @@ CddaDataStreamFactory::~CddaDataStreamFactory() {
 }
 
 bool CddaDataStreamFactory::CanRead(const char *uri) {
-    std::string extension = PathFindExtension(uri);
+    std::string extension = PathFindExtensionA(uri);
     return (extension == ".cda");
 }
 

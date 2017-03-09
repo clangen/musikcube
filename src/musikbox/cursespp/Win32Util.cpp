@@ -39,7 +39,7 @@
 
 #ifdef WIN32
 
-static std::basic_string<TCHAR> className = "Curses_App";
+static std::basic_string<TCHAR> className = L"Curses_App";
 static HWND mainWindow = nullptr;
 
 static void findMainWindow() {
@@ -53,7 +53,7 @@ static void findMainWindow() {
             GetWindowThreadProcessId(hWnd, &dwWndProcID);
             if (dwWndProcID == dwProcID) {
                 GetClassName(hWnd, buffer, sizeof(buffer));
-                if (className == std::string(buffer)) {
+                if (className == std::basic_string<TCHAR>(buffer)) {
                     mainWindow = hWnd;
                     return;
                 }

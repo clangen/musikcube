@@ -1,3 +1,18 @@
+0.9.3
+
+win32 only release:
+
+* updated `WASAPI` output plugin to disable endpoint routing by default. it
+  causes a crash in some rare cases that i don't seem to be able to work
+  around. i see similar crashes in firefox and some other apps that use this
+  feature.
+* updated `DirectSound` output volume adjustment to be as close to the `WASAPI`
+  `WaveOut` plugins as possible
+* changed compiler optimizations to favor fast code, instead of small code,
+  plus a few other small tweaks to (hopefully) improve performance.
+
+--------------------------------------------------------------------------------
+
 0.9.2
 
 * added an icon to the windows and android builds (not great, but better than

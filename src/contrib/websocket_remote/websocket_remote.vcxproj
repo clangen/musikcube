@@ -106,7 +106,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <Optimization>MaxSpeed</Optimization>
+      <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
@@ -114,7 +114,7 @@
       <PreprocessorDefinitions>WIN32;ZLIB_WINAPI;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <DebugInformationFormat>None</DebugInformationFormat>
-      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
@@ -145,6 +145,101 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="3rdparty\include\websocketpp\base64\base64.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\client.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\close.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\common\asio.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\common\asio_ssl.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\common\chrono.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\common\connection_hdl.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\common\cpp11.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\common\functional.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\common\md5.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\common\memory.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\common\network.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\common\platforms.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\common\random.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\common\regex.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\common\stdint.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\common\system_error.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\common\thread.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\common\time.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\common\type_traits.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\concurrency\basic.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\concurrency\none.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\config\asio.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\config\asio_client.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\config\asio_no_tls.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\config\asio_no_tls_client.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\config\boost_config.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\config\core.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\config\core_client.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\config\debug.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\config\debug_asio.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\config\debug_asio_no_tls.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\config\minimal_client.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\config\minimal_server.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\connection.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\connection_base.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\endpoint.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\endpoint_base.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\error.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\extensions\extension.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\extensions\permessage_deflate\disabled.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\extensions\permessage_deflate\enabled.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\frame.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\http\constants.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\http\impl\parser.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\http\impl\request.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\http\impl\response.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\http\parser.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\http\request.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\http\response.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\impl\connection_impl.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\impl\endpoint_impl.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\impl\utilities_impl.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\logger\basic.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\logger\levels.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\logger\stub.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\logger\syslog.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\message_buffer\alloc.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\message_buffer\message.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\message_buffer\pool.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\processors\base.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\processors\hybi00.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\processors\hybi07.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\processors\hybi08.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\processors\hybi13.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\processors\processor.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\random\none.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\random\random_device.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\roles\client_endpoint.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\roles\server_endpoint.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\server.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\sha1\sha1.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\transport\asio\base.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\transport\asio\connection.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\transport\asio\endpoint.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\transport\asio\security\base.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\transport\asio\security\none.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\transport\asio\security\tls.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\transport\base\connection.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\transport\base\endpoint.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\transport\debug\base.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\transport\debug\connection.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\transport\debug\endpoint.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\transport\iostream\base.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\transport\iostream\connection.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\transport\iostream\endpoint.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\transport\stub\base.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\transport\stub\connection.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\transport\stub\endpoint.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\uri.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\utf8_validator.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\utilities.hpp" />
+    <ClInclude Include="3rdparty\include\websocketpp\version.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
