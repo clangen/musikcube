@@ -55,6 +55,7 @@ namespace cursespp {
             InputOverlay& SetText(const std::string& text);
             InputOverlay& SetInputAcceptedCallback(InputAcceptedCallback cb);
             InputOverlay& SetWidth(int width);
+            InputOverlay& SetInputMode(IInput::InputMode mode);
 
             virtual void Layout();
             virtual bool KeyPress(const std::string& key);
@@ -62,6 +63,7 @@ namespace cursespp {
         protected:
             virtual void OnVisibilityChanged(bool visible);
             virtual void OnInputEnterPressed(TextInput* input);
+            virtual void OnInputKeyPress(TextInput* input, std::string key);
 
         private:
             void Redraw();

@@ -236,7 +236,14 @@ void App::Run(ILayoutPtr layout) {
         because they may muck around with layout, then redraw the window. if
         done in the reverse order, the user may observe more flicker. */
         Window::MessageQueue().Dispatch();
-        Window::WriteToScreen(this->state.input);
+
+        if (Window::WriteToScreen(this->state.input)) {
+            /* if we wrote to the screen that means panels could have shifted
+            around. ensure any visible overlay is still on top. */
+            if (this->state.overlayWindow && !this->state.overlayWindow->IsTop()) {
+                this->state.overlay->BringToTop();
+            }
+        }
     }
 
     overlays.Clear();
@@ -281,6 +288,9 @@ void App::CheckShowOverlay() {
         }
 
         this->state.overlay = top;
+
+        this->state.overlayWindow =
+            top ? dynamic_cast<IWindow*>(top.get()) : nullptr;
 
         ILayoutPtr newTopLayout = this->state.ActiveLayout();
         if (newTopLayout) {

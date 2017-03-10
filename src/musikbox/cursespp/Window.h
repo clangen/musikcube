@@ -105,12 +105,13 @@ namespace cursespp {
 
             virtual bool IsVisible();
             virtual bool IsFocused();
+            virtual bool IsTop();
 
             virtual void OnParentVisibilityChanged(bool visible);
 
             bool HasBadBounds() { return this->badBounds; }
 
-            static void WriteToScreen(IInput* input);
+            static bool WriteToScreen(IInput* input);
             static void InvalidateScreen();
             static void Freeze();
             static void Unfreeze();

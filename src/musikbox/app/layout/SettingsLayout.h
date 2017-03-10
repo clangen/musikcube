@@ -97,6 +97,7 @@ namespace musik {
                 void OnOutputDropdownActivated(cursespp::TextLabel* label);
                 void OnTransportDropdownActivate(cursespp::TextLabel* label);
                 void OnPluginsDropdownActivate(cursespp::TextLabel* label);
+                void OnHotkeyDropdownActivate(cursespp::TextLabel* label);
 
                 int64 ListItemDecorator(
                     cursespp::ScrollableWindow* w,
@@ -114,18 +115,17 @@ namespace musik {
                 std::shared_ptr<cursespp::TextLabel> outputDropdown;
                 std::shared_ptr<cursespp::TextLabel> transportDropdown;
                 std::shared_ptr<cursespp::TextLabel> pluginsDropdown;
+                std::shared_ptr<cursespp::TextLabel> hotkeyDropdown;
 
-                std::shared_ptr<cursespp::Checkbox> removeCheckbox;
                 std::shared_ptr<cursespp::Checkbox> dotfileCheckbox;
+                std::shared_ptr<cursespp::Checkbox> syncOnStartupCheckbox;
+                std::shared_ptr<cursespp::Checkbox> removeCheckbox;
                 std::shared_ptr<cursespp::Checkbox> customColorsCheckbox;
 
                 std::shared_ptr<cursespp::TextLabel> browseLabel;
                 std::shared_ptr<cursespp::TextLabel> addedPathsLabel;
                 std::shared_ptr<cursespp::ListWindow> browseList;
                 std::shared_ptr<cursespp::ListWindow> addedPathsList;
-
-                std::shared_ptr<cursespp::TextLabel> hotkeyLabel;
-                std::shared_ptr<cursespp::TextInput> hotkeyInput;
 
                 std::shared_ptr<cursespp::DialogOverlay> firstRunDialog;
 

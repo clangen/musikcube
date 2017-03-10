@@ -46,8 +46,10 @@ using namespace cursespp;
 using namespace musik::core::runtime;
 
 static int NEXT_ID = 0;
+
 static bool drawPending = false;
 static bool freeze = false;
+static Window* top = nullptr;
 
 static MessageQueue messageQueue;
 
@@ -68,13 +70,16 @@ static inline void DrawCursor(IInput* input) {
     }
 }
 
-void Window::WriteToScreen(IInput* input) {
+bool Window::WriteToScreen(IInput* input) {
     if (drawPending && !freeze) {
         drawPending = false;
         update_panels();
         doupdate();
         DrawCursor(input);
+        return true;
     }
+
+    return false;
 }
 
 void Window::InvalidateScreen() {
@@ -151,7 +156,13 @@ void Window::BringToTop() {
         if (this->contentPanel != this->framePanel) {
             top_panel(this->contentPanel);
         }
+
+        ::top = this;
     }
+}
+
+bool Window::IsTop() {
+    return (::top == this);
 }
 
 void Window::SendToBottom() {

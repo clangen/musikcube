@@ -68,11 +68,19 @@ namespace cursespp {
         private:
             struct WindowState {
                 ILayoutPtr overlay;
+                IWindow* overlayWindow;
                 ILayoutPtr layout;
                 IWindowPtr focused;
                 IViewRoot* viewRoot;
                 IInput* input;
                 IKeyHandler* keyHandler;
+
+                WindowState() {
+                    this->overlayWindow = nullptr;
+                    this->viewRoot = nullptr;
+                    this->input = nullptr;
+                    this->keyHandler = nullptr;
+                }
 
                 inline ILayoutPtr ActiveLayout() {
                     /* if there's a visible overlay, it's always the current

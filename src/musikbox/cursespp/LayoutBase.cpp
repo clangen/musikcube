@@ -164,7 +164,7 @@ void LayoutBase::Invalidate() {
 
 bool LayoutBase::AddWindow(IWindowPtr window) {
     if (!window) {
-        throw std::runtime_error("asdf");
+        throw std::runtime_error("window cannot be null!");
     }
 
     if (find(this->children, window) >= 0) {

@@ -49,6 +49,20 @@ namespace cursespp {
                 this->stack = stack;
             }
 
+            virtual bool IsTop() {
+                if (LayoutBase::IsTop()) {
+                    return true;
+                }
+
+                for (size_t i = 0; i < this->GetWindowCount(); i++) {
+                    if (this->GetWindowAt(i)->IsTop()) {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
         protected:
             OverlayStack* GetOverlayStack() {
                 return this->stack;

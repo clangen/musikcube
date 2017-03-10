@@ -64,6 +64,7 @@ InputOverlay::InputOverlay() {
     this->textInput->SetFocusedFrameColor(CURSESPP_OVERLAY_INPUT_FRAME);
     this->textInput->SetFocusedContentColor(CURSESPP_OVERLAY_BACKGROUND);
     this->textInput->EnterPressed.connect(this, &InputOverlay::OnInputEnterPressed);
+    this->textInput->TextChanged.connect(this, &InputOverlay::OnInputKeyPress);
     this->AddWindow(this->textInput);
 }
 
@@ -114,6 +115,15 @@ InputOverlay& InputOverlay::SetWidth(int width) {
     return *this;
 }
 
+void InputOverlay::OnInputKeyPress(TextInput* input, std::string key) {
+    /* raw input mode will not allow the ESC key to propagate.
+    we can catch it here, and pass it through to the regular key
+    handler to close the dialog */
+    if (input->GetInputMode() == IInput::InputRaw && key == "^[") {
+        this->KeyPress(key);
+    }
+}
+
 bool InputOverlay::KeyPress(const std::string& key) {
     if (key == "^[") { /* esc closes */
         this->Dismiss();
@@ -131,6 +141,10 @@ void InputOverlay::OnInputEnterPressed(TextInput* input) {
 
         this->Dismiss();
     }
+}
+InputOverlay& InputOverlay::SetInputMode(IInput::InputMode mode) {
+    this->textInput->SetInputMode(mode);
+    return *this;
 }
 
 InputOverlay& InputOverlay::SetInputAcceptedCallback(InputAcceptedCallback cb) {
