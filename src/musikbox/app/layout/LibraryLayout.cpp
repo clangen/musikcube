@@ -72,7 +72,7 @@ LibraryLayout::~LibraryLayout() {
 }
 
 void LibraryLayout::OnLayout() {
-    int x = this->GetX(), y = this->GetY();
+    int x = 0, y = 0;
     int cx = this->GetWidth(), cy = this->GetHeight();
 
     int mainHeight = cy - TRANSPORT_HEIGHT;

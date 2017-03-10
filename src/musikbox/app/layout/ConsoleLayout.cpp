@@ -96,17 +96,15 @@ ConsoleLayout::~ConsoleLayout() {
 void ConsoleLayout::OnLayout() {
     const int cx = this->GetWidth();
     const int cy = this->GetHeight();
-    const int x = this->GetX();
-    const int y = this->GetY();
 
     const int leftCx = cx / 2;
     const int rightCx = cx - leftCx;
 
     /* top left */
-    this->output->MoveAndResize(x, y, leftCx, cy - 3);
+    this->output->MoveAndResize(0, 0, leftCx, cy - 3);
 
     /* bottom left */
-    this->commands->MoveAndResize(x, cy - 3, leftCx, 3);
+    this->commands->MoveAndResize(0, cy - 3, leftCx, 3);
 
     /* right */
     this->logs->MoveAndResize(cx / 2, 0, rightCx, cy);

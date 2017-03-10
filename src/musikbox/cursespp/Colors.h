@@ -67,6 +67,8 @@
 #define CURSESPP_OVERLAY_BACKGROUND 22
 #define CURSESPP_OVERLAY_INPUT_FRAME 23
 
+#define CURSESPP_BANNER 24
+
 namespace cursespp {
     class Colors {
         private:

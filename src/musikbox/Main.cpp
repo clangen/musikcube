@@ -149,7 +149,7 @@ int main(int argc, char* argv[])
         Layout consoleLayout(new ConsoleLayout(transport, library));
         Layout settingsLayout(new SettingsLayout(library, transport));
 
-        Main mainLayout(new MainLayout());
+        Main mainLayout(new MainLayout(library));
 
         std::vector<std::string> paths;
         library->Indexer()->GetPaths(paths);

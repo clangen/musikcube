@@ -66,6 +66,7 @@ namespace musik { namespace core {
             virtual void RemovePath(const std::string& paths);
             virtual void GetPaths(std::vector<std::string>& paths);
             virtual void Synchronize(bool restart = false);
+            virtual State GetState() { return this->state; }
 
         private:
             void ThreadLoop();
@@ -101,6 +102,7 @@ namespace musik { namespace core {
 
             bool restart;
             bool exit;
+            State state;
 
             boost::mutex stateMutex;
             boost::condition waitCondition;

@@ -35,24 +35,45 @@
 #include "stdafx.h"
 
 #include <cursespp/Screen.h>
+#include <cursespp/Colors.h>
 
+#include <core/runtime/Message.h>
 #include <app/util/PreferenceKeys.h>
 
 #include "SettingsLayout.h"
 #include "MainLayout.h"
 
+#define MESSAGE_INDEXER_STARTED 1000
+#define MESSAGE_INDEXER_PROGRESS 1001
+#define MESSAGE_INDEXER_FINISHED 1002
+
+#define SYNCING_TEXT_FORMAT "syncing metadata (%d tracks processed)"
+
 using namespace musik;
 using namespace musik::box;
 using namespace musik::core;
+using namespace musik::core::runtime;
 using namespace cursespp;
 
-MainLayout::MainLayout()
+static void updateSyncingText(TextLabel* label, int updates) {
+    label->SetText(boost::str(boost::format(
+        SYNCING_TEXT_FORMAT) % updates), cursespp::text::AlignCenter);
+}
+
+MainLayout::MainLayout(ILibraryPtr library)
 : shortcutsFocused(false)
 , topLevelLayout(nullptr)
+, syncUpdateCount(0)
+, library(library)
 , LayoutBase() {
     this->Initialize();
+
     this->prefs = Preferences::ForComponent("settings");
     this->ResizeToViewport();
+
+    library->Indexer()->Started.connect(this, &MainLayout::OnIndexerStarted);
+    library->Indexer()->Finished.connect(this, &MainLayout::OnIndexerFinished);
+    library->Indexer()->Progress.connect(this, &MainLayout::OnIndexerProgress);
 }
 
 MainLayout::~MainLayout() {
@@ -65,8 +86,20 @@ void MainLayout::ResizeToViewport() {
 void MainLayout::OnLayout() {
     size_t cx = Screen::GetWidth(), cy = Screen::GetHeight();
 
+    int yOffset = 0;
+
+    auto state = this->library->Indexer()->GetState();
+    if (state == IIndexer::StateIndexing) {
+        yOffset = 1;
+        this->syncing->MoveAndResize(0, 0, cx, 1);
+        this->syncing->Show();
+    }
+    else {
+        this->syncing->Hide();
+    }
+
     if (this->layout) {
-        this->layout->MoveAndResize(0, 0, cx, cy - 1);
+        this->layout->MoveAndResize(0, yOffset, cx, cy - 1 - yOffset);
         this->layout->Show();
         this->layout->BringToTop();
 
@@ -81,6 +114,10 @@ void MainLayout::OnLayout() {
 void MainLayout::Initialize() {
     this->shortcuts.reset(new ShortcutsWindow());
     this->AddWindow(this->shortcuts);
+
+    this->syncing.reset(new TextLabel());
+    this->syncing->SetContentColor(CURSESPP_BANNER);
+    this->AddWindow(this->syncing);
 }
 
 cursespp::IWindowPtr MainLayout::GetFocus() {
@@ -200,4 +237,35 @@ bool MainLayout::KeyPress(const std::string& key) {
     }
 
     return this->layout ? this->layout->KeyPress(key) : false;
+}
+
+void MainLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
+    int type = message.Type();
+    if (type == MESSAGE_INDEXER_STARTED) {
+        updateSyncingText(this->syncing.get(), 0);
+        this->syncUpdateCount = 0;
+
+        if (!syncing->IsVisible()) {
+            this->Layout();
+        }
+    }
+    else if (type == MESSAGE_INDEXER_FINISHED) {
+        this->Layout();
+    }
+    else if (type == MESSAGE_INDEXER_PROGRESS) {
+        this->syncUpdateCount += (int)message.UserData1();
+        updateSyncingText(this->syncing.get(), this->syncUpdateCount);
+    }
+}
+
+void MainLayout::OnIndexerStarted() {
+    this->PostMessage(MESSAGE_INDEXER_STARTED);
+}
+
+void MainLayout::OnIndexerProgress(int count) {
+    this->PostMessage(MESSAGE_INDEXER_PROGRESS, count);
+}
+
+void MainLayout::OnIndexerFinished(int count) {
+    this->PostMessage(MESSAGE_INDEXER_FINISHED);
 }

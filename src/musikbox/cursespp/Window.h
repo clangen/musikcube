@@ -152,5 +152,6 @@ namespace cursespp {
             int64 contentColor, frameColor;
             int64 focusedContentColor, focusedFrameColor;
             int width, height, x, y;
+            int lastAbsoluteX, lastAbsoluteY;
     };
 }

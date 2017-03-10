@@ -108,6 +108,8 @@ Window::Window(IWindow *parent) {
     this->width = 0;
     this->x = 0;
     this->y = 0;
+    this->lastAbsoluteX = 0;
+    this->lastAbsoluteY = 0;
     this->contentColor = CURSESPP_DEFAULT_CONTENT_COLOR;
     this->frameColor = CURSESPP_DEFAULT_FRAME_COLOR;
     this->focusedContentColor = CURSESPP_DEFAULT_CONTENT_COLOR;
@@ -214,13 +216,21 @@ void Window::RecreateForUpdatedDimensions() {
 
 void Window::MoveAndResize(int x, int y, int width, int height) {
     bool sizeChanged = this->width != width || this->height != height;
-    bool positionChanged = this->x != x || this->y != y;
+
+    this->x = x;
+    this->y = y;
+    int absX = this->GetAbsoluteX();
+    int absY = this->GetAbsoluteY();
+
+    bool positionChanged =
+        absX != this->lastAbsoluteX ||
+        absY != this->lastAbsoluteY;
 
     if (sizeChanged || positionChanged) {
+        this->lastAbsoluteX = absX;
+        this->lastAbsoluteY = absY;
         this->width = width;
         this->height = height;
-        this->x = x;
-        this->y = y;
         this->RecreateForUpdatedDimensions();
     }
 }
@@ -234,9 +244,14 @@ void Window::SetSize(int width, int height) {
 }
 
 void Window::SetPosition(int x, int y) {
-    if (this->x != x || this->y != y) {
-        this->x = x;
-        this->y = y;
+    this->x = x;
+    this->y = y;
+    int absX = this->GetAbsoluteX();
+    int absY = this->GetAbsoluteY();
+
+    if (absX != this->lastAbsoluteX || absY != this->lastAbsoluteY) {
+        this->lastAbsoluteX = absX;
+        this->lastAbsoluteY = absY;
         this->RecreateForUpdatedDimensions();
     }
 }

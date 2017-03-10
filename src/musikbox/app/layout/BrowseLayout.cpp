@@ -83,8 +83,8 @@ BrowseLayout::BrowseLayout(
 : LayoutBase()
 , playback(playback) {
     this->library = library;
-    this->library->Indexer()->TrackRefreshed.connect(this, &BrowseLayout::OnIndexerProgress);
-    this->library->Indexer()->SynchronizeEnd.connect(this, &BrowseLayout::OnIndexerProgress);
+    this->library->Indexer()->Progress.connect(this, &BrowseLayout::OnIndexerProgress);
+    this->library->Indexer()->Finished.connect(this, &BrowseLayout::OnIndexerProgress);
     this->InitializeWindows();
 }
 
@@ -93,7 +93,7 @@ BrowseLayout::~BrowseLayout() {
 
 void BrowseLayout::OnLayout() {
     size_t cx = this->GetWidth(), cy = this->GetHeight();
-    size_t x = this->GetX(), y = this->GetY();
+    size_t x = 0, y = 0;
 
     size_t categoryWidth = std::min(MAX_CATEGORY_WIDTH, cx / 4);
 
@@ -161,7 +161,7 @@ void BrowseLayout::OnVisibilityChanged(bool visible) {
     }
 }
 
-void BrowseLayout::OnIndexerProgress() {
+void BrowseLayout::OnIndexerProgress(int count) {
     this->categoryList->Requery();
 }
 

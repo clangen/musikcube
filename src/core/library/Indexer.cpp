@@ -57,7 +57,7 @@
 
 static const std::string TAG = "Indexer";
 static const int MAX_THREADS = 2;
-static const size_t NOTIFY_INTERVAL = 300;
+static const size_t TRANSACTION_INTERVAL = 300;
 
 using namespace musik::core;
 using namespace musik::core::sdk;
@@ -85,6 +85,7 @@ Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
 , restart(false)
 , filesSaved(0)
 , exit(false)
+, state(StateIdle)
 , prefs(Preferences::ForComponent(prefs::components::Settings))
 , readSemaphore(prefs->GetInt(prefs::keys::MaxTagReadThreads, MAX_THREADS)) {
     this->dbFilename = dbFilename;
@@ -214,12 +215,14 @@ void Indexer::FinalizeSync() {
     }
 
     /* notify observers */
-    this->TrackRefreshed();
+    this->Progress(this->filesSaved);
 
     /* unload reader DLLs*/
     this->metadataReaders.clear();
 
     this->RunAnalyzers();
+
+    this->state = StateIdle;
 
     IndexerTrack::ResetIdCache();
 }
@@ -297,6 +300,8 @@ void Indexer::ReadMetadataFromFile(
         }
     }
 
+    ++this->filesSaved;
+
 #ifdef MULTI_THREADED_INDEXER
     this->readSemaphore.post();
 #endif
@@ -330,12 +335,12 @@ void Indexer::SyncDirectory(
         std::vector<Thread> threads;
 
         for( ; file != end && !this->Exited() && !this->Restarted(); file++) {
-            if (this->filesSaved > NOTIFY_INTERVAL) {
+            if (this->filesSaved > TRANSACTION_INTERVAL) {
                 if (this->trackTransaction) {
                     this->trackTransaction->CommitAndRestart();
                 }
 
-                this->TrackRefreshed();
+                this->Progress(this->filesSaved);
                 this->filesSaved = 0;
             }
             if (is_directory(file->status())) {
@@ -378,7 +383,8 @@ void Indexer::ThreadLoop() {
         this->restart = false;
 
         if(!firstTime || (firstTime && prefs->GetBool(prefs::keys::SyncOnStartup, true))) { /* first time through the loop skips this */
-            this->SynchronizeStart();
+            this->state = StateIndexing;
+            this->Started();
 
             this->dbConnection.Open(this->dbFilename.c_str(), 0); /* ensure the db is open */
 
@@ -405,7 +411,11 @@ void Indexer::ThreadLoop() {
 
             this->FinalizeSync();
             this->dbConnection.Close(); /* TODO: raii */
-            this->SynchronizeEnd();
+
+            if (!restart) {
+                this->Finished(this->filesSaved);
+            }
+
             musik::debug::info(TAG, "done!");
         } /* end skip */
 

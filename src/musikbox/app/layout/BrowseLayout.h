@@ -74,7 +74,7 @@ namespace musik {
             private:
                 void InitializeWindows();
 
-                void OnIndexerProgress();
+                void OnIndexerProgress(int count);
                 void RequeryTrackList(cursespp::ListWindow *view);
 
                 void OnCategoryViewSelectionChanged(

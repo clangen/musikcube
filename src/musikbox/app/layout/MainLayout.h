@@ -39,6 +39,8 @@
 #include <cursespp/ShortcutsWindow.h>
 #include <cursespp/IViewRoot.h>
 #include <core/support/Preferences.h>
+#include <core/library/ILibrary.h>
+#include <core/runtime/IMessageTarget.h>
 
 #include "ITopLevelLayout.h"
 
@@ -55,7 +57,7 @@ namespace musik {
             public sigslot::has_slots<>
         {
             public:
-                MainLayout();
+                MainLayout(musik::core::ILibraryPtr library);
                 virtual ~MainLayout();
 
                 virtual bool KeyPress(const std::string& key);
@@ -69,7 +71,14 @@ namespace musik {
 
                 void SetMainLayout(std::shared_ptr<cursespp::LayoutBase> layout);
 
+                virtual void ProcessMessage(musik::core::runtime::IMessage &message);
+
             private:
+                void OnIndexerStarted();
+                void OnIndexerProgress(int count);
+                void OnIndexerFinished(int count);
+
+
                 void Initialize();
                 cursespp::IWindowPtr BlurShortcuts();
                 void FocusShortcuts();
@@ -77,9 +86,12 @@ namespace musik {
                 std::shared_ptr<musik::core::Preferences> prefs;
                 std::shared_ptr<cursespp::ShortcutsWindow> shortcuts;
                 std::shared_ptr<cursespp::LayoutBase> layout;
+                std::shared_ptr<cursespp::TextLabel> syncing;
+                musik::core::ILibraryPtr library;
                 cursespp::IWindowPtr lastFocus;
                 ITopLevelLayout* topLevelLayout;
                 bool shortcutsFocused;
+                int syncUpdateCount;
         };
     }
 }

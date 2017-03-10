@@ -41,10 +41,15 @@
 namespace musik { namespace core {
     class IIndexer {
         public:
-            sigslot::signal0<> SynchronizeStart;
-            sigslot::signal0<> SynchronizeEnd;
+            sigslot::signal0<> Started;
+            sigslot::signal1<int> Finished;
             sigslot::signal0<> PathsUpdated;
-            sigslot::signal0<> TrackRefreshed;
+            sigslot::signal1<int> Progress;
+
+            enum State {
+                StateIdle,
+                StateIndexing
+            };
 
             virtual ~IIndexer() { }
 
@@ -52,5 +57,6 @@ namespace musik { namespace core {
             virtual void RemovePath(const std::string& path) = 0;
             virtual void GetPaths(std::vector<std::string>& paths) = 0;
             virtual void Synchronize(bool restart = false) = 0;
+            virtual State GetState() = 0;
     };
 } }

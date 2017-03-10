@@ -76,7 +76,7 @@ TrackSearchLayout::~TrackSearchLayout() {
 
 void TrackSearchLayout::OnLayout() {
     size_t cx = this->GetWidth(), cy = this->GetHeight();
-    int x = this->GetX(), y = this->GetY();
+    int x = 0, y = 0;
 
     size_t inputWidth = cx / 2;
     size_t inputX = x + ((cx - inputWidth) / 2);

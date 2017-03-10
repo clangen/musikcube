@@ -165,9 +165,6 @@ void App::Run(ILayoutPtr layout) {
 
     bool quit = false;
 
-    bool wasVisible = true;
-    bool visible = true;
-
     this->state.input = nullptr;
     this->state.keyHandler = nullptr;
 
@@ -180,6 +177,7 @@ void App::Run(ILayoutPtr layout) {
             /* if the focused window is an input, allow it to draw a cursor */
             WINDOW *c = this->state.focused->GetContent();
             keypad(c, TRUE);
+            wtimeout(c, IDLE_TIMEOUT_MS);
             ch = wgetch(c);
         }
         else {
@@ -231,15 +229,11 @@ void App::Run(ILayoutPtr layout) {
             resizeAt = 0;
         }
 
-        if (visible || (!visible && wasVisible)) {
-            this->CheckShowOverlay();
-            this->EnsureFocusIsValid();
-            Window::WriteToScreen(this->state.input);
-        }
+        this->CheckShowOverlay();
+        this->EnsureFocusIsValid();
 
+        Window::WriteToScreen(this->state.input);
         Window::MessageQueue().Dispatch();
-
-        wasVisible = visible;
     }
 
     overlays.Clear();

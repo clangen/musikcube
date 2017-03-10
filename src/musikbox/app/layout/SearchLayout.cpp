@@ -68,7 +68,7 @@ SearchLayout::~SearchLayout() {
 
 void SearchLayout::OnLayout() {
     size_t cx = this->GetWidth(), cy = this->GetHeight();
-    size_t x = this->GetX(), y = this->GetY();
+    size_t x = 0, y = 0;
 
     size_t inputWidth = cx / 2;
     size_t inputX = x + ((cx - inputWidth) / 2);
