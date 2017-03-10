@@ -232,8 +232,11 @@ void App::Run(ILayoutPtr layout) {
         this->CheckShowOverlay();
         this->EnsureFocusIsValid();
 
-        Window::WriteToScreen(this->state.input);
+        /* note that order is important here! dispatch pending messages first,
+        because they may muck around with layout, then redraw the window. if
+        done in the reverse order, the user may observe more flicker. */
         Window::MessageQueue().Dispatch();
+        Window::WriteToScreen(this->state.input);
     }
 
     overlays.Clear();
