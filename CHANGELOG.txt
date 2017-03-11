@@ -1,3 +1,17 @@
+0.9.4
+
+* added a "syncing metadata" banner that is displayed while the indexer is 
+  scanning metadata
+* added a "sync metadata on startup" option to the settings view
+* moved the hotkey tester to its own dedicated dialog to free up some valuable
+  screen real estate in the settings view
+* fixed `PulseOut` plugin volume adjustment to work better across a wider 
+  range of audio cards. this should also improve crossfade quality
+* fixed a very old bug that was sometimes causing delayed redraws or flickering
+  during layout in complex views
+
+--------------------------------------------------------------------------------
+
 0.9.3
 
 win32 only release:
