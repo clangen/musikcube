@@ -45,7 +45,7 @@ static musik::core::sdk::IPreferences* prefs = nullptr;
 
 extern "C" void SetPreferences(musik::core::sdk::IPreferences* prefs) {
     ::prefs = prefs;
-    prefs->GetBool("force_sw_volume", false);
+    prefs->GetBool("force_linear_volume", false);
     prefs->Save();
 }
 
@@ -57,7 +57,7 @@ PulseOut::PulseOut() {
     this->volumeUpdated = false;
     this->channels = 0;
     this->rate = 0;
-    this->hwVolume = false;
+    this->linearVolume = false;
 }
 
 PulseOut::~PulseOut() {
@@ -117,12 +117,7 @@ void PulseOut::OpenDevice(musik::core::sdk::IBuffer* buffer) {
             this->rate = buffer->SampleRate();
             this->channels = buffer->Channels();
             this->state = StatePlaying;
-            
-            this->hwVolume = pa_blocking_has_hw_volume(this->audioConnection, 0);
-            if (::prefs && ::prefs->GetBool("force_sw_volume", false)) {
-                this->hwVolume = false;
-            }
-            
+            this->linearVolume = ::prefs->GetBool("force_linear_volume", false);
             this->SetVolume(this->volume);
         }
     }
@@ -164,12 +159,10 @@ void PulseOut::SetVolume(double volume) {
     this->volumeUpdated = false;
     if (this->audioConnection) {
         int normalized;
-        if (this->hwVolume) {
-            //std::cerr << "PulseOut: hw volume!\n";
+        if (this->linearVolume) {
             normalized = (int) round((double) PA_VOLUME_NORM * volume);
         }
         else {
-            //std::cerr << "PulseOut: sw volume!\n";
             normalized = (int) pa_sw_volume_from_linear(this->volume);
         }
         this->volumeUpdated = pa_blocking_set_volume(this->audioConnection, normalized, 0) == 0;
