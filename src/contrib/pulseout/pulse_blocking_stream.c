@@ -42,6 +42,8 @@ struct pa_blocking {
     const void *read_data;
     size_t read_index, read_length;
     size_t channels;
+    int sink_id;
+    int hw_volume;
 
     int operation_success;
 };
@@ -165,6 +167,8 @@ pa_blocking* pa_blocking_new(
     p = pa_xnew0(pa_blocking, 1);
     p->direction = dir;
     p->channels = ss->channels;
+    p->sink_id = -1;
+    p->hw_volume = -1;
 
     if (!(p->mainloop = pa_threaded_mainloop_new()))
         goto fail;
@@ -550,4 +554,95 @@ unlock_and_fail:
 
     pa_threaded_mainloop_unlock(p->mainloop);
     return -1;
+}
+
+static void sink_info_cb(pa_context* c, const pa_sink_info* info, int eol, void* userdata) {
+    pa_blocking* p = (pa_blocking*) userdata;
+    
+    if (info) {
+        p->hw_volume = (info->flags & PA_SINK_HW_VOLUME_CTRL) != 0;
+        p->operation_success = 1;
+        pa_threaded_mainloop_signal(p->mainloop, 0);
+    }
+}
+
+static void sink_input_info_cb(pa_context* c, const pa_sink_input_info* info, int eol, void* userdata) {
+    pa_blocking* p = (pa_blocking*) userdata;
+    
+    if (info) {
+        p->sink_id = info->sink;
+        p->operation_success = 1;
+        pa_threaded_mainloop_signal(p->mainloop, 0);
+    }
+}
+
+int pa_blocking_has_hw_volume(pa_blocking *p, int *rerror) {
+    pa_operation *o = NULL;
+    pa_stream *s = NULL;
+    uint32_t idx;
+    int result = -1;
+    int sink = -1;
+
+    assert(p);
+
+    if (p->hw_volume != -1) {
+        return p->hw_volume;
+    }
+
+    CHECK_VALIDITY_RETURN_ANY(rerror, p->direction == PA_STREAM_PLAYBACK, PA_ERR_BADSTATE, -1);
+
+    pa_threaded_mainloop_lock(p->mainloop);
+    CHECK_DEAD_GOTO(p, rerror, unlock_and_fail);
+
+    CHECK_SUCCESS_GOTO(p, rerror, ((idx = pa_stream_get_index (p->stream)) != PA_INVALID_INDEX), unlock_and_fail);
+
+    s = p->stream;
+    assert(s);
+
+    /* determine the sink id */
+    if (p->sink_id == -1) {
+        o = pa_context_get_sink_input_info(p->context, idx, sink_input_info_cb, p);
+
+        CHECK_SUCCESS_GOTO(p, rerror, o, unlock_and_fail);
+        p->operation_success = 0;
+        while (pa_operation_get_state(o) == PA_OPERATION_RUNNING) {
+            pa_threaded_mainloop_wait(p->mainloop);
+            CHECK_DEAD_GOTO(p, rerror, unlock_and_fail);
+        }
+        CHECK_SUCCESS_GOTO(p, rerror, p->operation_success, unlock_and_fail);
+
+        pa_operation_unref(o);
+    }
+
+    //fprintf(stderr, "success getting sink_id=%d\n", p->sink_id);
+
+    if (p->sink_id != -1) {
+        /* once we have the sink id, query it for hw volume info */
+        o = pa_context_get_sink_info_by_index(p->context, p->sink_id, sink_info_cb, p);
+    
+        CHECK_SUCCESS_GOTO(p, rerror, o, unlock_and_fail);
+        p->operation_success = 0;
+        while (pa_operation_get_state(o) == PA_OPERATION_RUNNING) {
+            pa_threaded_mainloop_wait(p->mainloop);
+            CHECK_DEAD_GOTO(p, rerror, unlock_and_fail);
+        }
+        CHECK_SUCCESS_GOTO(p, rerror, p->operation_success, unlock_and_fail);
+
+        pa_operation_unref(o);
+    }
+    
+    //fprintf(stderr, "success getting hw_volume=%d\n", p->hw_volume);
+    
+    pa_threaded_mainloop_unlock(p->mainloop);
+    return p->hw_volume == -1 ? 0 : p->hw_volume;
+
+unlock_and_fail:
+
+    if (o) {
+        pa_operation_cancel(o);
+        pa_operation_unref(o);
+    }
+
+    pa_threaded_mainloop_unlock(p->mainloop);
+    return 0;
 }

@@ -34,12 +34,20 @@
 
 #include "PulseOut.h"
 #include <core/sdk/constants.h>
+#include <core/sdk/IPreferences.h>
 #include <pulse/volume.h>
 #include <math.h>
 
 using namespace musik::core::sdk;
 
 typedef std::unique_lock<std::recursive_mutex> Lock;
+static musik::core::sdk::IPreferences* prefs = nullptr;
+
+extern "C" void SetPreferences(musik::core::sdk::IPreferences* prefs) {
+    ::prefs = prefs;
+    prefs->GetBool("force_sw_volume", false);
+    prefs->Save();
+}
 
 PulseOut::PulseOut() {
     std::cerr << "PulseOut::PulseOut() called" << std::endl;
@@ -49,6 +57,7 @@ PulseOut::PulseOut() {
     this->volumeUpdated = false;
     this->channels = 0;
     this->rate = 0;
+    this->hwVolume = false;
 }
 
 PulseOut::~PulseOut() {
@@ -105,10 +114,16 @@ void PulseOut::OpenDevice(musik::core::sdk::IBuffer* buffer) {
             0);
 
         if (this->audioConnection) {
-            this->SetVolume(this->volume);
             this->rate = buffer->SampleRate();
             this->channels = buffer->Channels();
             this->state = StatePlaying;
+            
+            this->hwVolume = pa_blocking_has_hw_volume(this->audioConnection, 0);
+            if (::prefs && ::prefs->GetBool("force_sw_volume", false)) {
+                this->hwVolume = false;
+            }
+            
+            this->SetVolume(this->volume);
         }
     }
 }
@@ -148,9 +163,17 @@ void PulseOut::SetVolume(double volume) {
     this->volume = volume;
     this->volumeUpdated = false;
     if (this->audioConnection) {
-        int normalized = (int) round((double) PA_VOLUME_NORM * volume);
+        int normalized;
+        if (this->hwVolume) {
+            //std::cerr << "PulseOut: hw volume!\n";
+            normalized = (int) round((double) PA_VOLUME_NORM * volume);
+        }
+        else {
+            //std::cerr << "PulseOut: sw volume!\n";
+            normalized = (int) pa_sw_volume_from_linear(this->volume);
+        }
         this->volumeUpdated = pa_blocking_set_volume(this->audioConnection, normalized, 0) == 0;
-        std::cerr << "PulseOut: volumeUpdated = " << this->volumeUpdated << "\n";
+        //std::cerr << "PulseOut: volumeUpdated = " << this->volumeUpdated << ", value = " << normalized << "\n";
     }
 }
 

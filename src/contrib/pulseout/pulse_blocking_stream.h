@@ -78,5 +78,8 @@ int pa_blocking_flush(pa_blocking *s, int *error);
 /** Set the output volume of the stream. */
 int pa_blocking_set_volume(pa_blocking *p, int volume, int *rerror);
 
+/** returns 1 if the stream has hardware volume, false otherwise */
+int pa_blocking_has_hw_volume(pa_blocking *p, int *rerror);
+
 PA_C_DECL_END
 

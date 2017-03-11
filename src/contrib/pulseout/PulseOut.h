@@ -77,4 +77,5 @@ class PulseOut : public musik::core::sdk::IOutput {
         int channels, rate;
         double volume;
         bool volumeUpdated;
+        bool hwVolume;
 };
