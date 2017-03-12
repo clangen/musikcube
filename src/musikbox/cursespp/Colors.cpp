@@ -33,9 +33,11 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <json.hpp>
 #include "Colors.h"
 
 using namespace cursespp;
+using namespace nlohmann;
 
 /* if the terminal supports custom colors, these are the palette
 indicies we'll use to store them */
@@ -69,6 +71,46 @@ indicies we'll use to store them */
 #define THEME_COLOR_LIST_ITEM_ACTIVE_BACKGROUND 43
 #define THEME_COLOR_LIST_ITEM_ACTIVE_FOREGROUND 44
 
+/* user-readable names for the color identifiers above. these are
+used as key names in the config files */
+#define JSON_KEY_COLOR_BACKGROUND "background"
+#define JSON_KEY_COLOR_FOREGROUND "foreground"
+#define JSON_KEY_COLOR_FOCUSED_BORDER "focused_border"
+#define JSON_KEY_COLOR_TEXT_FOCUSED "text_focused"
+#define JSON_KEY_COLOR_TEXT_ACTIVE "text_active"
+#define JSON_KEY_COLOR_TEXT_DISABLED "text_disabled"
+#define JSON_KEY_COLOR_TEXT_HIDDEN "text_hidden"
+#define JSON_KEY_COLOR_TEXT_WARNING "text_warning"
+#define JSON_KEY_COLOR_TEXT_ERROR "text_error"
+#define JSON_KEY_COLOR_OVERLAY_BACKGROUND "overlay_background"
+#define JSON_KEY_COLOR_OVERLAY_FOREGROUND "overlay_foreground"
+#define JSON_KEY_COLOR_OVERLAY_BORDER "overlay_border"
+#define JSON_KEY_COLOR_OVERLAY_FOCUSED_BORDER "overlay_focused_border"
+#define JSON_KEY_COLOR_SHORTCUTS_BACKGROUND "shortcuts_background"
+#define JSON_KEY_COLOR_SHORTCUTS_FOREGROUND "shortcuts_foreground"
+#define JSON_KEY_COLOR_SHORTCUTS_BACKGROUND_FOCUSED "shortcuts_background_focused"
+#define JSON_KEY_COLOR_SHORTCUTS_FOREGROUND_FOCUSED "shortcuts_foreground_focused"
+#define JSON_KEY_COLOR_BUTTON_BACKGROUND_NORMAL "button_background_normal"
+#define JSON_KEY_COLOR_BUTTON_FOREGROUND_NORMAL "button_foreground_normal"
+#define JSON_KEY_COLOR_BUTTON_BACKGROUND_ACTIVE "button_background_active"
+#define JSON_KEY_COLOR_BUTTON_FOREGROUND_ACTIVE "button_foreground_active"
+#define JSON_KEY_COLOR_BANNER_BACKGROUND "banner_background"
+#define JSON_KEY_COLOR_BANNER_FOREGROUND "banner_foreground"
+#define JSON_KEY_COLOR_LIST_HEADER_BACKGROUND "list_header_background"
+#define JSON_KEY_COLOR_LIST_HEADER_FOREGROUND "list_header_foreground"
+#define JSON_KEY_COLOR_LIST_ITEM_HIGHLIGHTED_BACKGROUND "list_item_highlighted_background"
+#define JSON_KEY_COLOR_LIST_ITEM_HIGHLIGHTED_FOREGROUND "list_item_highlighted_foreground"
+#define JSON_KEY_COLOR_LIST_ITEM_ACTIVE_BACKGROUND "list_item_active_background"
+#define JSON_KEY_COLOR_LIST_ITEM_ACTIVE_FOREGROUND "list_item_active_foreground"
+
+#define JSON_KEY_NAME "name"
+#define JSON_KEY_SCHEMA_VERSION "schemaVersion"
+#define JSON_KEY_COLORS "colors"
+#define JSON_KEY_HEX "hex"
+#define JSON_KEY_PALETTE "palette"
+
+#define JSON_CURRENT_SCHEMA_VERSION 1
+
 /* if we can't set custom colors, but we have the full 256 color
 palette, use ones that most closely match our desired colors */
 #define COLOR_256_GREEN 148
@@ -87,15 +129,7 @@ struct Theme {
         enum Mode { Standard, Palette, Custom };
 
         Color() {
-            Set(-1, -1, -1);
-        }
-
-        void Set(int colorId, int hex, int palette) {
-            this->colorId = colorId;
-            this->r = hex >> 16;
-            this->g = (hex >> 8) & 0x0000ff;
-            this->b = hex & 0x0000ff;
-            this->palette = palette;
+            Set(0, 0, 0, 0, 0);
         }
 
         void Set(int colorId, int r, int g, int b, int palette) {
@@ -104,6 +138,23 @@ struct Theme {
             this->g = g;
             this->b = b;
             this->palette = palette;
+        }
+
+        void Set(const json& obj) {
+            if (!obj.is_null()) {
+                std::string hex = obj.value(JSON_KEY_HEX, "");
+                if (hex.length() == 7 && hex[0] == '#') {
+                    int rgb = strtol(hex.substr(1).c_str(), 0, 16);
+                    this->b = rgb & 0x0000ff;
+                    this->r = rgb >> 16;
+                    this->g = (rgb >> 8) & 0x0000ff;
+                }
+
+                long palette = obj.value(JSON_KEY_PALETTE, -1);
+                if (palette != -1) {
+                    this->palette = palette;
+                }
+            }
         }
 
         int Id(Mode mode, int defaultValue) {
@@ -167,6 +218,92 @@ struct Theme {
         listHighlightedForeground.Set(THEME_COLOR_LIST_ITEM_HIGHLIGHTED_FOREGROUND, 0, 0, 0, COLOR_BLACK);
         listActiveBackground.Set(THEME_COLOR_LIST_ITEM_ACTIVE_BACKGROUND, 66, 66, 56, COLOR_256_MEDIUM_GRAY);
         listActiveForeground.Set(THEME_COLOR_LIST_ITEM_ACTIVE_FOREGROUND, 230, 220, 116, COLOR_256_YELLOW);
+    }
+
+    bool LoadFromFile(const std::string& fn) {
+#ifdef WIN32
+        std::wstring u16fn = u8to16(fn);
+        FILE* file = _wfopen(u16fn.c_str(), L"rb");
+#else
+        FILE* file = fopen(fn, "rb");
+#endif
+        if (!file) {
+            return false;
+        }
+
+        bool success = false;
+        char* buffer = nullptr;
+
+        if (fseek(file, 0L, SEEK_END) == 0) {
+            long fileSize = ftell(file);
+            if (fileSize == -1) {
+                goto close_and_return;
+            }
+
+            if (fseek(file, 0L, SEEK_SET) != 0) {
+                goto close_and_return;
+            }
+
+            buffer = (char*) malloc(sizeof(char) * (fileSize + 1));
+            unsigned readCount = fread(buffer, sizeof(char), fileSize, file);
+
+            if (readCount != fileSize) {
+                goto close_and_return;
+            }
+
+            buffer[readCount] = 0; /* null terminate */
+
+            try {
+                json data = json::parse(buffer);
+
+                /* validate schema version */
+                int schemaVersion = data[JSON_KEY_SCHEMA_VERSION];
+                if (schemaVersion == JSON_CURRENT_SCHEMA_VERSION) {
+                    std::string name = data[JSON_KEY_NAME];
+                    json colors = data[JSON_KEY_COLORS];
+                    static json unset;
+
+                    /* actually read the theme values! */
+                    this->background.Set(colors.value(JSON_KEY_COLOR_BACKGROUND, unset));
+                    this->foreground.Set(colors.value(JSON_KEY_COLOR_FOREGROUND, unset));
+                    this->focusedBorder.Set(colors.value(JSON_KEY_COLOR_FOCUSED_BORDER, unset));
+                    this->textFocused.Set(colors.value(JSON_KEY_COLOR_TEXT_FOCUSED, unset));
+                    this->textActive.Set(colors.value(JSON_KEY_COLOR_TEXT_ACTIVE, unset));
+                    this->textDisabled.Set(colors.value(JSON_KEY_COLOR_TEXT_DISABLED, unset));
+                    this->textHidden.Set(colors.value(JSON_KEY_COLOR_TEXT_HIDDEN, unset));
+                    this->textWarning.Set(colors.value(JSON_KEY_COLOR_TEXT_WARNING, unset));
+                    this->textError.Set(colors.value(JSON_KEY_COLOR_TEXT_ERROR, unset));
+                    this->overlayBackground.Set(colors.value(JSON_KEY_COLOR_OVERLAY_BACKGROUND, unset));
+                    this->overlayForeground.Set(colors.value(JSON_KEY_COLOR_OVERLAY_FOREGROUND, unset));
+                    this->overlayBorder.Set(colors.value(JSON_KEY_COLOR_OVERLAY_BORDER, unset));
+                    this->overlayFocusedBorder.Set(colors.value(JSON_KEY_COLOR_OVERLAY_FOCUSED_BORDER, unset));
+                    this->shortcutsBackground.Set(colors.value(JSON_KEY_COLOR_SHORTCUTS_BACKGROUND, unset));
+                    this->shortcutsForeground.Set(colors.value(JSON_KEY_COLOR_SHORTCUTS_FOREGROUND, unset));
+                    this->focusedShortcutsBackground.Set(colors.value(JSON_KEY_COLOR_SHORTCUTS_BACKGROUND_FOCUSED, unset));
+                    this->focusedShortcutsForeground.Set(colors.value(JSON_KEY_COLOR_SHORTCUTS_FOREGROUND_FOCUSED, unset));
+                    this->buttonBackgroundNormal.Set(colors.value(JSON_KEY_COLOR_BUTTON_BACKGROUND_NORMAL, unset));
+                    this->buttonForegroundNormal.Set(colors.value(JSON_KEY_COLOR_BUTTON_FOREGROUND_NORMAL, unset));
+                    this->buttonBackgroundActive.Set(colors.value(JSON_KEY_COLOR_BUTTON_BACKGROUND_ACTIVE, unset));
+                    this->buttonForegroundActive.Set(colors.value(JSON_KEY_COLOR_BUTTON_FOREGROUND_ACTIVE, unset));
+                    this->bannerBackground.Set(colors.value(JSON_KEY_COLOR_BANNER_BACKGROUND, unset));
+                    this->bannerForeground.Set(colors.value(JSON_KEY_COLOR_BANNER_FOREGROUND, unset));
+                    this->listHeaderBackground.Set(colors.value(JSON_KEY_COLOR_LIST_HEADER_BACKGROUND, unset));
+                    this->listHeaderForeground.Set(colors.value(JSON_KEY_COLOR_LIST_HEADER_FOREGROUND, unset));
+                    this->listHighlightedBackground.Set(colors.value(JSON_KEY_COLOR_LIST_ITEM_HIGHLIGHTED_BACKGROUND, unset));
+                    this->listHighlightedForeground.Set(colors.value(JSON_KEY_COLOR_LIST_ITEM_HIGHLIGHTED_FOREGROUND, unset));
+                    this->listActiveBackground.Set(colors.value(JSON_KEY_COLOR_LIST_ITEM_ACTIVE_BACKGROUND, unset));
+                    this->listActiveForeground.Set(colors.value(JSON_KEY_COLOR_LIST_ITEM_ACTIVE_FOREGROUND, unset));
+                }
+            }
+            catch (...) {
+                goto close_and_return;
+            }
+        }
+
+    close_and_return:
+        fclose(file);
+        free(buffer);
+        return success;
     }
 
     /* initializes all of the color pairs from the specified colors, then applies them
@@ -322,5 +459,6 @@ void Colors::Init(bool disableCustomColors) {
         mode = canChangeColors() ? Color::Custom : Color::Palette;
     }
 
+    //defaultTheme.LoadFromFile("d:\\solarized_dark.json");
     defaultTheme.Apply(mode);
 }
