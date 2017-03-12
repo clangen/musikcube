@@ -172,8 +172,8 @@ struct Theme {
     /* initializes all of the color pairs from the specified colors, then applies them
     to the current session! */
     void Apply(Color::Mode mode) {
-        int backgroundId = background.Id(mode, COLOR_BLACK);
-        int foregroundId = foreground.Id(mode, COLOR_WHITE);
+        int backgroundId = background.Id(mode, -1);
+        int foregroundId = foreground.Id(mode, -1);
 
         /* main */
         init_pair(CURSESPP_DEFAULT_CONTENT_COLOR, foregroundId, backgroundId);
@@ -182,7 +182,7 @@ struct Theme {
 
         /* text */
         init_pair(CURSESPP_TEXT_DEFAULT, foregroundId, backgroundId);
-        init_pair(CURSESPP_TEXT_DISABLED, textDisabled.Id(mode, COLOR_WHITE), backgroundId);
+        init_pair(CURSESPP_TEXT_DISABLED, textDisabled.Id(mode, -1), backgroundId);
         init_pair(CURSESPP_TEXT_FOCUSED, textFocused.Id(mode, COLOR_RED), backgroundId);
         init_pair(CURSESPP_TEXT_ACTIVE, textActive.Id(mode, COLOR_GREEN), backgroundId);
         init_pair(CURSESPP_TEXT_WARNING, textWarning.Id(mode, COLOR_YELLOW), backgroundId);
@@ -190,16 +190,16 @@ struct Theme {
         init_pair(CURSESPP_TEXT_HIDDEN, textHidden.Id(mode, COLOR_BLACK), backgroundId);
 
         /* overlay */
-        int overlayBgId = overlayBackground.Id(mode, COLOR_BLACK);
+        int overlayBgId = overlayBackground.Id(mode, -1);
         init_pair(CURSESPP_OVERLAY_FRAME, overlayBorder.Id(mode, COLOR_BLUE), overlayBgId);
-        init_pair(CURSESPP_OVERLAY_CONTENT, overlayForeground.Id(mode, COLOR_WHITE), overlayBgId);
+        init_pair(CURSESPP_OVERLAY_CONTENT, overlayForeground.Id(mode, -1), overlayBgId);
         init_pair(CURSESPP_OVERLAY_INPUT_FRAME, overlayFocusedBorder.Id(mode, COLOR_RED), overlayBgId);
 
         /* shortcuts */
         init_pair(
             CURSESPP_SHORTCUT_ROW_NORMAL,
             shortcutsForeground.Id(mode, COLOR_YELLOW),
-            shortcutsBackground.Id(mode, COLOR_BLACK));
+            shortcutsBackground.Id(mode, -1));
 
         init_pair(
             CURSESPP_SHORTCUT_ROW_FOCUSED,
@@ -227,7 +227,7 @@ struct Theme {
         init_pair(
             CURSESPP_LIST_ITEM_HEADER,
             listHeaderForeground.Id(mode, COLOR_GREEN),
-            listHeaderBackground.Id(mode, COLOR_BLACK));
+            listHeaderBackground.Id(mode, -1));
 
         init_pair(
             CURSESPP_SELECTED_LIST_ITEM,
