@@ -46,7 +46,7 @@ using namespace cursespp;
 ListOverlay::ListOverlay() {
     this->SetFrameVisible(true);
     this->SetFrameColor(CURSESPP_OVERLAY_FRAME);
-    this->SetContentColor(CURSESPP_OVERLAY_BACKGROUND);
+    this->SetContentColor(CURSESPP_OVERLAY_CONTENT);
 
     this->autoDismiss = true;
 
@@ -54,8 +54,8 @@ ListOverlay::ListOverlay() {
     this->setWidth = this->setWidthPercent = 0;
 
     this->listWindow.reset(new ListWindow());
-    this->listWindow->SetContentColor(CURSESPP_OVERLAY_BACKGROUND);
-    this->listWindow->SetFocusedContentColor(CURSESPP_OVERLAY_BACKGROUND);
+    this->listWindow->SetContentColor(CURSESPP_OVERLAY_CONTENT);
+    this->listWindow->SetFocusedContentColor(CURSESPP_OVERLAY_CONTENT);
     this->listWindow->SetFrameVisible(false);
     this->listWindow->SetFocusOrder(0);
     this->AddWindow(this->listWindow);
