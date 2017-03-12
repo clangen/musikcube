@@ -71,10 +71,10 @@ static int yellow = COLOR_YELLOW;
 static int green = COLOR_GREEN;
 static int black = COLOR_BLACK;
 static int orange = COLOR_YELLOW;
-static int foreground = COLOR_WHITE;
+static int foreground = -1;
 static int background = -1;
 static int selected = -1;
-static int grey = COLOR_WHITE;
+static int grey = -1;
 
 #define SCALE(x) ((x * 1000) / 255)
 
