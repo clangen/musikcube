@@ -78,12 +78,6 @@ using namespace musik::core::db::local;
 using namespace musik::box;
 using namespace cursespp;
 
-#ifdef WIN32
-#define DEFAULT_COLOR_MODE Colors::RGB
-#else
-#define DEFAULT_COLOR_MODE Colors::Palette
-#endif
-
 #define MIN_WIDTH 48
 #define MIN_HEIGHT 12
 
@@ -144,7 +138,7 @@ int main(int argc, char* argv[])
             musik::core::prefs::components::Settings);
 
         /* set color mode (basic, palette, rgb) */
-        Colors::Mode colorMode = DEFAULT_COLOR_MODE;
+        Colors::Mode colorMode = Colors::RGB;
 
         if (prefs->GetBool(musik::box::prefs::keys::DisableCustomColors.c_str(), false)) {
             colorMode = Colors::Basic;
