@@ -70,6 +70,8 @@ indicies we'll use to store them */
 #define THEME_COLOR_LIST_ITEM_HIGHLIGHTED_FOREGROUND 42
 #define THEME_COLOR_LIST_ITEM_ACTIVE_BACKGROUND 43
 #define THEME_COLOR_LIST_ITEM_ACTIVE_FOREGROUND 44
+#define THEME_COLOR_LIST_ITEM_ACTIVE_HIGHLIGHTED_BACKGROUND 45
+#define THEME_COLOR_LIST_ITEM_ACTIVE_HIGHLIGHTED_FOREGROUND 46
 
 /* user-readable names for the color identifiers above. these are
 used as key names in the config files */
@@ -102,6 +104,8 @@ used as key names in the config files */
 #define JSON_KEY_COLOR_LIST_ITEM_HIGHLIGHTED_FOREGROUND "list_item_highlighted_foreground"
 #define JSON_KEY_COLOR_LIST_ITEM_ACTIVE_BACKGROUND "list_item_active_background"
 #define JSON_KEY_COLOR_LIST_ITEM_ACTIVE_FOREGROUND "list_item_active_foreground"
+#define JSON_KEY_COLOR_LIST_ITEM_ACTIVE_HIGHLIGHTED_BACKGROUND "list_item_active_highlighted_background"
+#define JSON_KEY_COLOR_LIST_ITEM_ACTIVE_HIGHLIGHTED_FOREGROUND "list_item_active_highlighted_foreground"
 
 #define JSON_KEY_NAME "name"
 #define JSON_KEY_SCHEMA_VERSION "schemaVersion"
@@ -219,6 +223,8 @@ struct Theme {
         listHighlightedForeground.Set(THEME_COLOR_LIST_ITEM_HIGHLIGHTED_FOREGROUND, 0, 0, 0, COLOR_BLACK);
         listActiveBackground.Set(THEME_COLOR_LIST_ITEM_ACTIVE_BACKGROUND, 66, 66, 56, COLOR_256_MEDIUM_GRAY);
         listActiveForeground.Set(THEME_COLOR_LIST_ITEM_ACTIVE_FOREGROUND, 230, 220, 116, COLOR_256_YELLOW);
+        listActiveHighlightedBackground.Set(THEME_COLOR_LIST_ITEM_ACTIVE_HIGHLIGHTED_BACKGROUND, 230, 220, 116, COLOR_256_YELLOW);
+        listActiveHighlightedForeground.Set(THEME_COLOR_LIST_ITEM_ACTIVE_HIGHLIGHTED_FOREGROUND, 0, 0, 0, COLOR_BLACK);
     }
 
     bool LoadFromFile(const std::string& fn) {
@@ -294,6 +300,8 @@ struct Theme {
                     this->listHighlightedForeground.Set(colors.value(JSON_KEY_COLOR_LIST_ITEM_HIGHLIGHTED_FOREGROUND, unset));
                     this->listActiveBackground.Set(colors.value(JSON_KEY_COLOR_LIST_ITEM_ACTIVE_BACKGROUND, unset));
                     this->listActiveForeground.Set(colors.value(JSON_KEY_COLOR_LIST_ITEM_ACTIVE_FOREGROUND, unset));
+                    this->listActiveHighlightedBackground.Set(colors.value(JSON_KEY_COLOR_LIST_ITEM_ACTIVE_HIGHLIGHTED_BACKGROUND, unset));
+                    this->listActiveHighlightedForeground.Set(colors.value(JSON_KEY_COLOR_LIST_ITEM_ACTIVE_HIGHLIGHTED_FOREGROUND, unset));
                 }
             }
             catch (...) {
@@ -377,10 +385,10 @@ struct Theme {
             listHighlightedForeground.Id(mode, COLOR_BLACK),
             listHighlightedBackground.Id(mode, COLOR_GREEN));
 
-        init_pair( /* note: swap active fg/bg */
+        init_pair(
             CURSESPP_HIGHLIGHTED_SELECTED_LIST_ITEM,
-            listActiveBackground.Id(mode, COLOR_BLACK),
-            listActiveForeground.Id(mode, COLOR_YELLOW));
+            listActiveHighlightedForeground.Id(mode, COLOR_BLACK),
+            listActiveHighlightedBackground.Id(mode, COLOR_YELLOW));
     }
 
     /* main */
@@ -425,6 +433,8 @@ struct Theme {
     Color listHighlightedForeground;
     Color listActiveForeground;
     Color listActiveBackground;
+    Color listActiveHighlightedBackground;
+    Color listActiveHighlightedForeground;
 };
 
 /* some terminals report custom colors are supported, and also

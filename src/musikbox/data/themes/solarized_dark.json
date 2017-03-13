@@ -103,20 +103,28 @@
       "palette": 64
     },
     "list_item_highlighted_background": {
-      "hex": "#859900",
-      "palette": 64
+      "hex": "#93a1a1",
+      "palette": 245
     },
     "list_item_highlighted_foreground": {
       "hex": "#002b36",
       "palette": 234
     },
     "list_item_active_background": {
+      "hex": "#eee8d5",
+      "palette": 254
+    },
+    "list_item_active_foreground": {
       "hex": "#073642",
       "palette": 235
     },
-    "list_item_active_foreground": {
-      "hex": "#268bd2",
-      "palette": 33
+    "list_item_active_highlighted_background": {
+      "hex": "#fdf6e3",
+      "palette": 230
+    },
+    "list_item_active_highlighted_foreground": {
+      "hex": "#073642",
+      "palette": 235
     }
   }
 }
