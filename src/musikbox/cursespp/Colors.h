@@ -73,7 +73,13 @@ namespace cursespp {
             Colors();
 
         public:
-            static void Init(bool disableCustomColors = false);
+            enum Mode {
+                RGB,
+                Palette,
+                Basic
+            };
+
+            static void Init(Mode mode = Mode::Basic);
             static void SetTheme(const std::string& fn);
     };
 }

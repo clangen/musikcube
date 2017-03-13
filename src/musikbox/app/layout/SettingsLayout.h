@@ -117,7 +117,9 @@ namespace musik {
                 std::shared_ptr<cursespp::TextLabel> transportDropdown;
                 std::shared_ptr<cursespp::TextLabel> pluginsDropdown;
                 std::shared_ptr<cursespp::TextLabel> hotkeyDropdown;
+
                 std::shared_ptr<cursespp::TextLabel> themeDropdown;
+                std::shared_ptr<cursespp::Checkbox> paletteCheckbox;
 
                 std::shared_ptr<cursespp::Checkbox> dotfileCheckbox;
                 std::shared_ptr<cursespp::Checkbox> syncOnStartupCheckbox;

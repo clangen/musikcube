@@ -126,8 +126,6 @@ palette, use ones that most closely match our desired colors */
 
 struct Theme {
     struct Color {
-        enum Mode { Standard, Palette, Custom };
-
         Color() {
             Set(0, 0, 0, 0, 0);
         }
@@ -157,11 +155,11 @@ struct Theme {
             }
         }
 
-        int Id(Mode mode, int defaultValue) {
-            if (mode == Standard) {
+        int Id(Colors::Mode mode, int defaultValue) {
+            if (mode == Colors::Basic) {
                 return defaultValue;
             }
-            else if (mode == Palette) {
+            else if (mode == Colors::Palette) {
                 return this->palette;
             }
 
@@ -311,7 +309,7 @@ struct Theme {
 
     /* initializes all of the color pairs from the specified colors, then applies them
     to the current session! */
-    void Apply(Color::Mode mode) {
+    void Apply(Colors::Mode mode) {
         int backgroundId = background.Id(mode, -1);
         int foregroundId = foreground.Id(mode, -1);
 
@@ -451,15 +449,21 @@ Colors::Colors() {
 }
 
 static Theme theme;
-static Theme::Color::Mode colorMode = Theme::Color::Standard;
+static Colors::Mode colorMode = Colors::Basic;
 
-void Colors::Init(bool disableCustomColors) {
+void Colors::Init(Colors::Mode mode) {
     start_color();
     use_default_colors();
 
-    if (!disableCustomColors && COLORS > 8) {
-        colorMode = canChangeColors()
-            ? Theme::Color::Custom : Theme::Color::Palette;
+    colorMode = Colors::Basic;
+
+    if (mode != Colors::Basic && COLORS > 8) {
+        if (mode == Colors::RGB && canChangeColors()) {
+            colorMode = Colors::RGB;
+        }
+        else {
+            colorMode = Colors::Palette;
+        }
     }
 
     theme.Apply(colorMode);

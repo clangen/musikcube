@@ -115,8 +115,8 @@ void App::SetResizeHandler(ResizeHandler handler) {
     this->resizeHandler = handler;
 }
 
-void App::SetCustomColorsDisabled(bool disabled) {
-    this->disableCustomColors = disabled;
+void App::SetColorMode(Colors::Mode mode) {
+    this->colorMode = mode;
 }
 
 void App::SetColorTheme(const std::string& colorTheme) {
@@ -163,7 +163,7 @@ void App::OnResized() {
 }
 
 void App::Run(ILayoutPtr layout) {
-    Colors::Init(this->disableCustomColors);
+    Colors::Init(this->colorMode);
 
     if (this->colorTheme.size()) {
         Colors::SetTheme(this->colorTheme);

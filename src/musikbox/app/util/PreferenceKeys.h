@@ -40,6 +40,7 @@ namespace musik { namespace box { namespace prefs {
 
     namespace keys {
         extern const std::string DisableCustomColors;
+        extern const std::string UsePaletteColors;
         extern const std::string FirstRunSettingsDisplayed;
         extern const std::string ColorTheme;
     }

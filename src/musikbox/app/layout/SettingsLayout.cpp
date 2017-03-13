@@ -66,6 +66,10 @@ using namespace musik::glue::audio;
 using namespace cursespp;
 using namespace std::placeholders;
 
+#ifndef WIN32
+#define ENABLE_256_COLOR_OPTION
+#endif
+
 #define LABEL_HEIGHT 1
 #define INPUT_HEIGHT 3
 #define HOTKEY_INPUT_WIDTH 20
@@ -116,6 +120,13 @@ void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
         this->browseAdapter->SetDotfilesVisible(showDotfiles);
         this->browseList->OnAdapterChanged();
     }
+#ifdef ENABLE_256_COLOR_OPTION
+    else if (cb == paletteCheckbox.get()) {
+        this->libraryPrefs->SetBool(box::prefs::keys::UsePaletteColors, checked);
+        this->libraryPrefs->Save();
+        ColorThemeOverlay::Show256ColorsInfo(checked);
+    }
+#endif
 }
 
 void SettingsLayout::OnOutputDropdownActivated(cursespp::TextLabel* label) {
@@ -188,6 +199,9 @@ void SettingsLayout::OnLayout() {
     this->transportDropdown->MoveAndResize(1, y++, cx - 1, LABEL_HEIGHT);
     this->pluginsDropdown->MoveAndResize(1, y++, cx - 1, LABEL_HEIGHT);
     this->themeDropdown->MoveAndResize(1, y++, cx - 1, LABEL_HEIGHT);
+#ifdef ENABLE_256_COLOR_OPTION
+    this->paletteCheckbox->MoveAndResize(1, y++, cx - 1, LABEL_HEIGHT);
+#endif
     this->hotkeyDropdown->MoveAndResize(1, y++, cx - 1, LABEL_HEIGHT);
     this->dotfileCheckbox->MoveAndResize(1, y++, cx - 1, LABEL_HEIGHT);
     this->syncOnStartupCheckbox->MoveAndResize(1, y++, cx - 1, LABEL_HEIGHT);
@@ -263,6 +277,9 @@ void SettingsLayout::InitializeWindows() {
     this->themeDropdown.reset(new TextLabel());
     this->themeDropdown->SetText(arrow + " color theme: default");
     this->themeDropdown->Activated.connect(this, &SettingsLayout::OnThemeDropdownActivate);
+#ifdef ENABLE_256_COLOR_OPTION
+    CREATE_CHECKBOX(this->paletteCheckbox, "use 256 color palette");
+#endif
 
     this->hotkeyDropdown.reset(new TextLabel());
     this->hotkeyDropdown->SetText(arrow + " hotkey tester");
@@ -272,16 +289,20 @@ void SettingsLayout::InitializeWindows() {
     CREATE_CHECKBOX(this->syncOnStartupCheckbox, "sync metadata on startup");
     CREATE_CHECKBOX(this->removeCheckbox, "remove missing files from library");
 
-    this->browseList->SetFocusOrder(0);
-    this->addedPathsList->SetFocusOrder(1);
-    this->outputDropdown->SetFocusOrder(2);
-    this->transportDropdown->SetFocusOrder(3);
-    this->pluginsDropdown->SetFocusOrder(4);
-    this->themeDropdown->SetFocusOrder(5);
-    this->hotkeyDropdown->SetFocusOrder(6);
-    this->dotfileCheckbox->SetFocusOrder(7);
-    this->syncOnStartupCheckbox->SetFocusOrder(8);
-    this->removeCheckbox->SetFocusOrder(9);
+    int order = 0;
+    this->browseList->SetFocusOrder(order++);
+    this->addedPathsList->SetFocusOrder(order++);
+    this->outputDropdown->SetFocusOrder(order++);
+    this->transportDropdown->SetFocusOrder(order++);
+    this->pluginsDropdown->SetFocusOrder(order++);
+    this->themeDropdown->SetFocusOrder(order++);
+#ifdef ENABLE_256_COLOR_OPTION
+    this->paletteCheckbox->SetFocusOrder(order++);
+#endif
+    this->hotkeyDropdown->SetFocusOrder(order++);
+    this->dotfileCheckbox->SetFocusOrder(order++);
+    this->syncOnStartupCheckbox->SetFocusOrder(order++);
+    this->removeCheckbox->SetFocusOrder(order++);
 
     this->AddWindow(this->browseLabel);
     this->AddWindow(this->addedPathsLabel);
@@ -291,6 +312,9 @@ void SettingsLayout::InitializeWindows() {
     this->AddWindow(this->transportDropdown);
     this->AddWindow(this->pluginsDropdown);
     this->AddWindow(this->themeDropdown);
+#ifdef ENABLE_256_COLOR_OPTION
+    this->AddWindow(this->paletteCheckbox);
+#endif
     this->AddWindow(this->hotkeyDropdown);
     this->AddWindow(this->dotfileCheckbox);
     this->AddWindow(this->syncOnStartupCheckbox);
@@ -364,6 +388,13 @@ void SettingsLayout::LoadPreferences() {
     }
 
     this->themeDropdown->SetText(arrow + " color theme: " + colorTheme);
+
+#ifdef ENABLE_256_COLOR_OPTION
+    this->paletteCheckbox->CheckChanged.disconnect(this);
+    this->paletteCheckbox->SetChecked(
+        this->libraryPrefs->GetBool(box::prefs::keys::UsePaletteColors, true));
+    this->paletteCheckbox->CheckChanged.connect(this, &SettingsLayout::OnCheckboxChanged);
+#endif
 
     /* output plugin */
     std::shared_ptr<IOutput> output = outputs::SelectedOutput();

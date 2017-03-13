@@ -78,6 +78,12 @@ using namespace musik::core::db::local;
 using namespace musik::box;
 using namespace cursespp;
 
+#ifdef WIN32
+#define DEFAULT_COLOR_MODE Colors::RGB
+#else
+#define DEFAULT_COLOR_MODE Colors::Palette
+#endif
+
 #define MIN_WIDTH 48
 #define MIN_HEIGHT 12
 
@@ -137,13 +143,25 @@ int main(int argc, char* argv[])
         auto prefs = Preferences::ForComponent(
             musik::core::prefs::components::Settings);
 
-        app.SetCustomColorsDisabled(prefs->GetBool(
-            musik::box::prefs::keys::DisableCustomColors.c_str(), false));
+        /* set color mode (basic, palette, rgb) */
+        Colors::Mode colorMode = DEFAULT_COLOR_MODE;
 
-        std::string theme = prefs->GetString(musik::box::prefs::keys::ColorTheme);
-        if (theme.size()) {
-            theme = GetApplicationDirectory() + "/themes/" + theme + ".json";
-            app.SetColorTheme(theme);
+        if (prefs->GetBool(musik::box::prefs::keys::DisableCustomColors.c_str(), false)) {
+            colorMode = Colors::Basic;
+        }
+#ifndef WIN32
+        else if (prefs->GetBool(musik::box::prefs::keys::UsePaletteColors.c_str(), true)) {
+            colorMode = Colors::Palette;
+        }
+#endif
+
+        app.SetColorMode(colorMode);
+
+        /* set color theme */
+        std::string colorTheme = prefs->GetString(musik::box::prefs::keys::ColorTheme);
+        if (colorTheme.size()) {
+            colorTheme = GetApplicationDirectory() + "/themes/" + colorTheme + ".json";
+            app.SetColorTheme(colorTheme);
         }
 
         app.SetMinimumSize(MIN_WIDTH, MIN_HEIGHT);

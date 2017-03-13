@@ -39,6 +39,7 @@
 #include "IInput.h"
 #include "IKeyHandler.h"
 #include "OverlayStack.h"
+#include "Colors.h"
 
 namespace cursespp {
     class App {
@@ -51,7 +52,7 @@ namespace cursespp {
 
             void SetKeyHandler(MainKeyHandler handler);
             void SetResizeHandler(ResizeHandler handler);
-            void SetCustomColorsDisabled(bool disable);
+            void SetColorMode(Colors::Mode mode);
             void SetColorTheme(const std::string& fn);
             void SetMinimumSize(int width, int height);
             bool IsOverlayVisible() { return this->state.overlay != nullptr; }
@@ -100,7 +101,7 @@ namespace cursespp {
             WindowState state;
             MainKeyHandler keyHandler;
             ResizeHandler resizeHandler;
-            bool disableCustomColors;
+            Colors::Mode colorMode;
             std::string colorTheme;
             int minWidth, minHeight;
 

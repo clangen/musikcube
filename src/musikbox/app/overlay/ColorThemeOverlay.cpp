@@ -174,3 +174,26 @@ void ColorThemeOverlay::Show(std::function<void()> callback) {
 
     cursespp::App::Overlays().Push(dialog);
 }
+
+void ColorThemeOverlay::Show256ColorsInfo(bool enabled) {
+    if (enabled) {
+        showNeedsRestart();
+    }
+    else {
+        std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
+
+        (*dialog)
+            .SetTitle("musikbox")
+            .SetMessage(
+                "disabling 256 color mode will enable RGB color mode, which will replace colors in the stock "
+                "palette. disabling this option results in higher fidelity themes, but it may cause display "
+                "issues in other applications until the terminal is reset.\n\n"
+                "you will need to restart musikbox for this change to take effect.")
+            .AddButton(
+                "KEY_ENTER",
+                "ENTER",
+                "ok");
+
+        App::Overlays().Push(dialog);
+    }
+}
