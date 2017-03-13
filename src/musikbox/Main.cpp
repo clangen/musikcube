@@ -140,6 +140,12 @@ int main(int argc, char* argv[])
         app.SetCustomColorsDisabled(prefs->GetBool(
             musik::box::prefs::keys::DisableCustomColors.c_str(), false));
 
+        std::string theme = prefs->GetString(musik::box::prefs::keys::ColorTheme);
+        if (theme.size()) {
+            theme = GetApplicationDirectory() + "/themes/" + theme + ".json";
+            app.SetColorTheme(theme);
+        }
+
         app.SetMinimumSize(MIN_WIDTH, MIN_HEIGHT);
 
         using Layout = std::shared_ptr<LayoutBase>;

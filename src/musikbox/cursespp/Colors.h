@@ -74,5 +74,6 @@ namespace cursespp {
 
         public:
             static void Init(bool disableCustomColors = false);
+            static void SetTheme(const std::string& fn);
     };
 }

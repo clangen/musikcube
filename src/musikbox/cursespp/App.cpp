@@ -119,6 +119,10 @@ void App::SetCustomColorsDisabled(bool disabled) {
     this->disableCustomColors = disabled;
 }
 
+void App::SetColorTheme(const std::string& colorTheme) {
+    this->colorTheme = colorTheme;
+}
+
 void App::SetMinimumSize(int minWidth, int minHeight) {
     this->minWidth = std::max(0, minWidth);
     this->minHeight = std::max(0, minHeight);
@@ -160,6 +164,10 @@ void App::OnResized() {
 
 void App::Run(ILayoutPtr layout) {
     Colors::Init(this->disableCustomColors);
+
+    if (this->colorTheme.size()) {
+        Colors::SetTheme(this->colorTheme);
+    }
 
     int64 ch;
 

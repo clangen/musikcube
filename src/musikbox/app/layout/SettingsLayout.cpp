@@ -48,6 +48,7 @@
 
 #include <app/util/Hotkeys.h>
 #include <app/util/PreferenceKeys.h>
+#include <app/overlay/ColorThemeOverlay.h>
 #include <app/overlay/PlaybackOverlays.h>
 #include <app/overlay/PluginOverlay.h>
 
@@ -115,10 +116,6 @@ void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
         this->browseAdapter->SetDotfilesVisible(showDotfiles);
         this->browseList->OnAdapterChanged();
     }
-    else if (cb == customColorsCheckbox.get()) {
-        this->libraryPrefs->SetBool(box::prefs::keys::DisableCustomColors, checked);
-        this->libraryPrefs->Save();
-    }
 }
 
 void SettingsLayout::OnOutputDropdownActivated(cursespp::TextLabel* label) {
@@ -163,6 +160,10 @@ void SettingsLayout::OnHotkeyDropdownActivate(cursespp::TextLabel* label) {
     App::Overlays().Push(overlay);
 }
 
+void SettingsLayout::OnThemeDropdownActivate(cursespp::TextLabel* label) {
+    ColorThemeOverlay::Show([this]() { this->LoadPreferences(); });
+}
+
 void SettingsLayout::OnLayout() {
     int x = this->GetX(), y = this->GetY();
     int cx = this->GetWidth(), cy = this->GetHeight();
@@ -186,11 +187,11 @@ void SettingsLayout::OnLayout() {
     this->outputDropdown->MoveAndResize(1, y++, cx - 1, LABEL_HEIGHT);
     this->transportDropdown->MoveAndResize(1, y++, cx - 1, LABEL_HEIGHT);
     this->pluginsDropdown->MoveAndResize(1, y++, cx - 1, LABEL_HEIGHT);
+    this->themeDropdown->MoveAndResize(1, y++, cx - 1, LABEL_HEIGHT);
     this->hotkeyDropdown->MoveAndResize(1, y++, cx - 1, LABEL_HEIGHT);
     this->dotfileCheckbox->MoveAndResize(1, y++, cx - 1, LABEL_HEIGHT);
     this->syncOnStartupCheckbox->MoveAndResize(1, y++, cx - 1, LABEL_HEIGHT);
     this->removeCheckbox->MoveAndResize(1, y++, cx - 1, LABEL_HEIGHT);
-    this->customColorsCheckbox->MoveAndResize(1, y++, cx - 1, LABEL_HEIGHT);
 }
 
 void SettingsLayout::RefreshAddedPaths() {
@@ -259,6 +260,10 @@ void SettingsLayout::InitializeWindows() {
     this->pluginsDropdown->SetText(arrow + " enable/disable plugins");
     this->pluginsDropdown->Activated.connect(this, &SettingsLayout::OnPluginsDropdownActivate);
 
+    this->themeDropdown.reset(new TextLabel());
+    this->themeDropdown->SetText(arrow + " color theme: default");
+    this->themeDropdown->Activated.connect(this, &SettingsLayout::OnThemeDropdownActivate);
+
     this->hotkeyDropdown.reset(new TextLabel());
     this->hotkeyDropdown->SetText(arrow + " hotkey tester");
     this->hotkeyDropdown->Activated.connect(this, &SettingsLayout::OnHotkeyDropdownActivate);
@@ -266,18 +271,17 @@ void SettingsLayout::InitializeWindows() {
     CREATE_CHECKBOX(this->dotfileCheckbox, "show dotfiles in directory browser");
     CREATE_CHECKBOX(this->syncOnStartupCheckbox, "sync metadata on startup");
     CREATE_CHECKBOX(this->removeCheckbox, "remove missing files from library");
-    CREATE_CHECKBOX(this->customColorsCheckbox, "disable custom colors (requires restart)");
 
     this->browseList->SetFocusOrder(0);
     this->addedPathsList->SetFocusOrder(1);
     this->outputDropdown->SetFocusOrder(2);
     this->transportDropdown->SetFocusOrder(3);
     this->pluginsDropdown->SetFocusOrder(4);
-    this->hotkeyDropdown->SetFocusOrder(5);
-    this->dotfileCheckbox->SetFocusOrder(6);
-    this->syncOnStartupCheckbox->SetFocusOrder(7);
-    this->removeCheckbox->SetFocusOrder(8);
-    this->customColorsCheckbox->SetFocusOrder(9);
+    this->themeDropdown->SetFocusOrder(5);
+    this->hotkeyDropdown->SetFocusOrder(6);
+    this->dotfileCheckbox->SetFocusOrder(7);
+    this->syncOnStartupCheckbox->SetFocusOrder(8);
+    this->removeCheckbox->SetFocusOrder(9);
 
     this->AddWindow(this->browseLabel);
     this->AddWindow(this->addedPathsLabel);
@@ -286,11 +290,11 @@ void SettingsLayout::InitializeWindows() {
     this->AddWindow(this->outputDropdown);
     this->AddWindow(this->transportDropdown);
     this->AddWindow(this->pluginsDropdown);
+    this->AddWindow(this->themeDropdown);
     this->AddWindow(this->hotkeyDropdown);
     this->AddWindow(this->dotfileCheckbox);
     this->AddWindow(this->syncOnStartupCheckbox);
     this->AddWindow(this->removeCheckbox);
-    this->AddWindow(this->customColorsCheckbox);
 }
 
 void SettingsLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
@@ -347,13 +351,27 @@ void SettingsLayout::CheckShowFirstRunDialog() {
 void SettingsLayout::LoadPreferences() {
     this->syncOnStartupCheckbox->SetChecked(this->libraryPrefs->GetBool(core::prefs::keys::SyncOnStartup, true));
     this->removeCheckbox->SetChecked(this->libraryPrefs->GetBool(core::prefs::keys::RemoveMissingFiles, true));
-    this->customColorsCheckbox->SetChecked(this->libraryPrefs->GetBool(box::prefs::keys::DisableCustomColors));
 
+    /* color theme */
+    bool disableCustomColors = this->libraryPrefs->GetBool(box::prefs::keys::DisableCustomColors);
+    std::string colorTheme = this->libraryPrefs->GetString(box::prefs::keys::ColorTheme);
+
+    if (colorTheme == "" && !disableCustomColors) {
+        colorTheme = "default";
+    }
+    else if (disableCustomColors) {
+        colorTheme = "8 colors";
+    }
+
+    this->themeDropdown->SetText(arrow + " color theme: " + colorTheme);
+
+    /* output plugin */
     std::shared_ptr<IOutput> output = outputs::SelectedOutput();
     if (output) {
         this->outputDropdown->SetText(arrow + " output device: " + output->Name());
     }
 
+    /* transport type */
     std::string transportName =
         this->transport.GetType() == MasterTransport::Gapless
             ? "gapless"

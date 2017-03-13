@@ -52,6 +52,7 @@ namespace cursespp {
             void SetKeyHandler(MainKeyHandler handler);
             void SetResizeHandler(ResizeHandler handler);
             void SetCustomColorsDisabled(bool disable);
+            void SetColorTheme(const std::string& fn);
             void SetMinimumSize(int width, int height);
             bool IsOverlayVisible() { return this->state.overlay != nullptr; }
 
@@ -100,6 +101,7 @@ namespace cursespp {
             MainKeyHandler keyHandler;
             ResizeHandler resizeHandler;
             bool disableCustomColors;
+            std::string colorTheme;
             int minWidth, minHeight;
 
 #ifdef WIN32

@@ -1,0 +1,122 @@
+{
+  "name": "solarized dark",
+  "schemaVersion": 1,
+  "colors": {
+    "background": {
+      "hex": "#002b36",
+      "palette": 234
+    },
+    "foreground": {
+      "hex": "#eee8d5",
+      "palette": 254
+    },
+    "focused_border": {
+      "hex": "#dc322f",
+      "palette": 160
+    },
+    "text_focused": {
+      "hex": "#dc322f",
+      "palette": 160
+    },
+    "text_active": {
+      "hex": "#859900",
+      "palette": 64
+    },
+    "text_disabled": {
+      "hex": "#93a1a1",
+      "palette": 245
+    },
+    "text_hidden": {
+      "hex": "#073642",
+      "palette": 235
+    },
+    "text_warning": {
+      "hex": "#b58900",
+      "palette": 136
+    },
+    "text_error": {
+      "hex": "#dc322f",
+      "palette": 160
+    },
+    "overlay_background": {
+      "hex": "#586e75",
+      "palette": 240
+    },
+    "overlay_foreground": {
+      "hex": "#fdf6e3",
+      "palette": 230
+    },
+    "overlay_border": {
+      "hex": "#073642",
+      "palette": 235
+    },
+    "overlay_focused_border": {
+      "hex": "#dc322f",
+      "palette": 160
+    },
+    "shortcuts_background": {
+      "hex": "#586e75",
+      "palette": 240
+    },
+    "shortcuts_foreground": {
+      "hex": "#fdf6e3",
+      "palette": 230
+    },
+    "shortcuts_background_focused": {
+      "hex": "#dc322f",
+      "palette": 160
+    },
+    "shortcuts_foreground_focused": {
+      "hex": "#fdf6e3",
+      "palette": 230
+    },
+    "button_background_normal": {
+      "hex": "#eee8d5",
+      "palette": 254
+    },
+    "button_foreground_normal": {
+      "hex": "#002b36",
+      "palette": 234
+    },
+    "button_background_active": {
+      "hex": "#859900",
+      "palette": 64
+    },
+    "button_foreground_active": {
+      "hex": "#fdf6e3",
+      "palette": 230
+    },
+    "banner_background": {
+      "hex": "#cb4b16",
+      "palette": 166
+    },
+    "banner_foreground": {
+      "hex": "#eee8d5",
+      "palette": 254
+    },
+    "list_header_background": {
+      "hex": "#002b36",
+      "palette": 234
+    },
+    "list_header_foreground": {
+      "hex": "#859900",
+      "palette": 64
+    },
+    "list_item_highlighted_background": {
+      "hex": "#859900",
+      "palette": 64
+    },
+    "list_item_highlighted_foreground": {
+      "hex": "#002b36",
+      "palette": 234
+    },
+    "list_item_active_background": {
+      "hex": "#073642",
+      "palette": 235
+    },
+    "list_item_active_foreground": {
+      "hex": "#268bd2",
+      "palette": 33
+    }
+  }
+}

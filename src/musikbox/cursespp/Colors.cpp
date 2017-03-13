@@ -174,8 +174,11 @@ struct Theme {
         int palette;
     };
 
-    /* initialized with default values. the user can override them, then call Apply() */
     Theme() {
+        this->Reset();
+    }
+
+    void Reset() {
         /* main */
         background.Set(THEME_COLOR_BACKGROUND, 0, 0, 0, COLOR_BLACK);
         foreground.Set(THEME_COLOR_FOREGROUND, 230, 230, 230, COLOR_256_OFFWHITE);
@@ -447,18 +450,23 @@ static bool canChangeColors() {
 Colors::Colors() {
 }
 
-static Theme defaultTheme;
+static Theme theme;
+static Theme::Color::Mode colorMode = Theme::Color::Standard;
 
 void Colors::Init(bool disableCustomColors) {
     start_color();
     use_default_colors();
 
-    using Color = Theme::Color;
-    Color::Mode mode = Color::Standard;
     if (!disableCustomColors && COLORS > 8) {
-        mode = canChangeColors() ? Color::Custom : Color::Palette;
+        colorMode = canChangeColors()
+            ? Theme::Color::Custom : Theme::Color::Palette;
     }
 
-    //defaultTheme.LoadFromFile("d:\\solarized_dark.json");
-    defaultTheme.Apply(mode);
+    theme.Apply(colorMode);
+}
+
+void Colors::SetTheme(const std::string& fn) {
+    theme.Reset();
+    theme.LoadFromFile(fn);
+    theme.Apply(colorMode);
 }

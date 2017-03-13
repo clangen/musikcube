@@ -10,6 +10,7 @@ set (BOX_SRCS
 	./app/layout/SearchLayout.cpp
 	./app/layout/TrackSearchLayout.cpp
 	./app/model/DirectoryAdapter.cpp
+	./app/overlay/ColorThemeOverlay.cpp
 	./app/overlay/PlaybackOverlays.cpp
 	./app/overlay/PlayQueueOverlays.cpp
 	./app/overlay/PluginOverlay.cpp

@@ -84,8 +84,8 @@
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
-      <Command>
-      </Command>
+      <Command>if not exist "$(TargetDir)themes" mkdir "$(TargetDir)themes"
+xcopy "$(ProjectDir)data\themes\*" "$(TargetDir)themes\" /Y /e</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -120,8 +120,8 @@
       <ImageHasSafeExceptionHandlers>true</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
-      <Command>
-      </Command>
+      <Command>if not exist "$(TargetDir)themes" mkdir "$(TargetDir)themes"
+xcopy "$(ProjectDir)data\themes\*" "$(TargetDir)themes\" /Y /e</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -134,6 +134,7 @@
     <ClCompile Include="app\layout\SettingsLayout.cpp" />
     <ClCompile Include="app\layout\TrackSearchLayout.cpp" />
     <ClCompile Include="app\model\DirectoryAdapter.cpp" />
+    <ClCompile Include="app\overlay\ColorThemeOverlay.cpp" />
     <ClCompile Include="app\overlay\PlaybackOverlays.cpp" />
     <ClCompile Include="app\overlay\PlayQueueOverlays.cpp" />
     <ClCompile Include="app\overlay\PluginOverlay.cpp" />
@@ -185,6 +186,7 @@
     <ClInclude Include="app\layout\SettingsLayout.h" />
     <ClInclude Include="app\layout\TrackSearchLayout.h" />
     <ClInclude Include="app\model\DirectoryAdapter.h" />
+    <ClInclude Include="app\overlay\ColorThemeOverlay.h" />
     <ClInclude Include="app\overlay\PlaybackOverlays.h" />
     <ClInclude Include="app\overlay\PlayQueueOverlays.h" />
     <ClInclude Include="app\overlay\PluginOverlay.h" />

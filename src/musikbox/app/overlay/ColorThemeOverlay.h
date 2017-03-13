@@ -34,15 +34,16 @@
 
 #pragma once
 
-#include <string>
+#include <functional>
 
-namespace musik { namespace box { namespace prefs {
+namespace musik {
+    namespace box {
+        class ColorThemeOverlay {
+            public:
+                static void Show(std::function<void()> callback);
 
-    namespace keys {
-        extern const std::string DisableCustomColors;
-        extern const std::string FirstRunSettingsDisplayed;
-        extern const std::string ColorTheme;
+            private:
+                ColorThemeOverlay();
+        };
     }
-
-} } }
-
+}
