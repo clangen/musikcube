@@ -278,7 +278,7 @@ void SettingsLayout::InitializeWindows() {
     this->themeDropdown->SetText(arrow + " color theme: default");
     this->themeDropdown->Activated.connect(this, &SettingsLayout::OnThemeDropdownActivate);
 #ifdef ENABLE_256_COLOR_OPTION
-    CREATE_CHECKBOX(this->paletteCheckbox, "use 256 color palette");
+    CREATE_CHECKBOX(this->paletteCheckbox, "degrade to 256 color palette");
 #endif
 
     this->hotkeyDropdown.reset(new TextLabel());

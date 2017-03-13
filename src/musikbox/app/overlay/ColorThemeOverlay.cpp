@@ -56,20 +56,6 @@ using namespace musik::box;
 using namespace cursespp;
 using namespace boost::filesystem;
 
-static void showMayNeedRestart() {
-    std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
-
-    (*dialog)
-        .SetTitle("musikbox")
-        .SetMessage("depending on your terminal mode, you may need to restart musikbox for this change to take effect.")
-        .AddButton(
-            "KEY_ENTER",
-            "ENTER",
-            "ok");
-
-    App::Overlays().Push(dialog);
-}
-
 static void showNeedsRestart() {
     std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
 
@@ -105,7 +91,7 @@ void ColorThemeOverlay::Show(std::function<void()> callback) {
 
     std::shared_ptr<Adapter> adapter(new Adapter());
     adapter->AddEntry("default");
-    adapter->AddEntry("8 colors");
+    adapter->AddEntry("8 colors (compatibilty mode)");
 
     std::shared_ptr<std::vector<std::string>> themes(new std::vector<std::string>());
 
@@ -138,6 +124,7 @@ void ColorThemeOverlay::Show(std::function<void()> callback) {
     dialog->SetAdapter(adapter)
         .SetTitle("color themes")
         .SetSelectedIndex(selectedIndex)
+        .SetWidth(36)
         .SetItemSelectedCallback(
             [callback, prefs, themes, currentTheme, disableCustomColors]
             (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
@@ -145,7 +132,10 @@ void ColorThemeOverlay::Show(std::function<void()> callback) {
                     prefs->SetString(box::prefs::keys::ColorTheme, "");
                     prefs->SetBool(box::prefs::keys::DisableCustomColors, false);
                     Colors::SetTheme("");
-                    disableCustomColors ? showNeedsRestart() : showMayNeedRestart();
+
+                    if (disableCustomColors) {
+                        showNeedsRestart();
+                    }
                 }
                 else if (index == 1) {
                     prefs->SetString(box::prefs::keys::ColorTheme, "");
@@ -161,7 +151,10 @@ void ColorThemeOverlay::Show(std::function<void()> callback) {
                         prefs->SetString(box::prefs::keys::ColorTheme, selected.c_str());
                         prefs->SetBool(box::prefs::keys::DisableCustomColors, false);
                         Colors::SetTheme(ThemesDirectory() + selected + ".json");
-                        disableCustomColors ? showNeedsRestart() : showMayNeedRestart();
+
+                        if (disableCustomColors) {
+                            showNeedsRestart();
+                        }
                     }
                 }
 
@@ -185,7 +178,7 @@ void ColorThemeOverlay::Show256ColorsInfo(bool enabled) {
         (*dialog)
             .SetTitle("musikbox")
             .SetMessage(
-                "disabling 256 color mode will enable RGB color mode, which will replace colors in the stock "
+                "disabling 256 color degradation will enable RGB color mode, which will replace colors in the stock "
                 "palette. disabling this option results in higher fidelity themes, but it may cause display "
                 "issues in other applications until the terminal is reset.\n\n"
                 "you will need to restart musikbox for this change to take effect.")
