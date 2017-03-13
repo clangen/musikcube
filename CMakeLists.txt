@@ -141,6 +141,16 @@ else (CMAKE_SYSTEM_NAME MATCHES "Linux")
 endif (CMAKE_SYSTEM_NAME MATCHES "Linux")
 
 file(GLOB sdk_headers "src/core/sdk/*.h")
+file(GLOB themes "src/musikbox/data/themes/*.json")
+
+file(COPY ${themes}
+    DESTINATION bin/themes
+)
+
+install(
+    FILES ${themes}
+    DESTINATION share/musikcube/themes
+)
 
 install(
     FILES ${sdk_headers}

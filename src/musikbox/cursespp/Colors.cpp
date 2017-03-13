@@ -228,7 +228,7 @@ struct Theme {
         std::wstring u16fn = u8to16(fn);
         FILE* file = _wfopen(u16fn.c_str(), L"rb");
 #else
-        FILE* file = fopen(fn, "rb");
+        FILE* file = fopen(fn.c_str(), "rb");
 #endif
         if (!file) {
             return false;
