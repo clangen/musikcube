@@ -54,8 +54,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>./include/;./include/sqlite/;./include/expat;./include/md5;./include/jpeg-6b;../../../boost_1_60_0/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE;SQLITE_THREADSAFE;COMPILED_FROM_DSP;XML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>./include/;./include/sqlite/;./win32_include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;PDC_FORCE_UTF8;PDC_WIDE;_DEBUG;_CRT_SECURE_NO_DEPRECATE;SQLITE_THREADSAFE;COMPILED_FROM_DSP;XML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeader>
@@ -74,8 +74,8 @@
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>./include/;./include/sqlite/;./include/expat;./include/md5;./include/jpeg-6b;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_DEPRECATE;SQLITE_THREADSAFE;COMPILED_FROM_DSP;XML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>./include/;./include/sqlite;./win32_include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;PDC_FORCE_UTF8;PDC_WIDE;_CRT_SECURE_NO_DEPRECATE;SQLITE_THREADSAFE;COMPILED_FROM_DSP;XML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -93,6 +93,55 @@
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level1</WarningLevel>
     </ClCompile>
     <ClCompile Include="src\wcwidth.c" />
+    <ClCompile Include="win32_src\pdcurses\addch.c" />
+    <ClCompile Include="win32_src\pdcurses\addchstr.c" />
+    <ClCompile Include="win32_src\pdcurses\addstr.c" />
+    <ClCompile Include="win32_src\pdcurses\attr.c" />
+    <ClCompile Include="win32_src\pdcurses\beep.c" />
+    <ClCompile Include="win32_src\pdcurses\bkgd.c" />
+    <ClCompile Include="win32_src\pdcurses\border.c" />
+    <ClCompile Include="win32_src\pdcurses\clear.c" />
+    <ClCompile Include="win32_src\pdcurses\color.c" />
+    <ClCompile Include="win32_src\pdcurses\debug.c" />
+    <ClCompile Include="win32_src\pdcurses\delch.c" />
+    <ClCompile Include="win32_src\pdcurses\deleteln.c" />
+    <ClCompile Include="win32_src\pdcurses\deprec.c" />
+    <ClCompile Include="win32_src\pdcurses\getch.c" />
+    <ClCompile Include="win32_src\pdcurses\getstr.c" />
+    <ClCompile Include="win32_src\pdcurses\getyx.c" />
+    <ClCompile Include="win32_src\pdcurses\inch.c" />
+    <ClCompile Include="win32_src\pdcurses\inchstr.c" />
+    <ClCompile Include="win32_src\pdcurses\initscr.c" />
+    <ClCompile Include="win32_src\pdcurses\inopts.c" />
+    <ClCompile Include="win32_src\pdcurses\insch.c" />
+    <ClCompile Include="win32_src\pdcurses\insstr.c" />
+    <ClCompile Include="win32_src\pdcurses\instr.c" />
+    <ClCompile Include="win32_src\pdcurses\kernel.c" />
+    <ClCompile Include="win32_src\pdcurses\keyname.c" />
+    <ClCompile Include="win32_src\pdcurses\mouse.c" />
+    <ClCompile Include="win32_src\pdcurses\move.c" />
+    <ClCompile Include="win32_src\pdcurses\outopts.c" />
+    <ClCompile Include="win32_src\pdcurses\overlay.c" />
+    <ClCompile Include="win32_src\pdcurses\pad.c" />
+    <ClCompile Include="win32_src\pdcurses\panel.c" />
+    <ClCompile Include="win32_src\pdcurses\pdcclip.c" />
+    <ClCompile Include="win32_src\pdcurses\pdcdisp.c" />
+    <ClCompile Include="win32_src\pdcurses\pdcgetsc.c" />
+    <ClCompile Include="win32_src\pdcurses\pdckbd.c" />
+    <ClCompile Include="win32_src\pdcurses\pdcscrn.c" />
+    <ClCompile Include="win32_src\pdcurses\pdcsetsc.c" />
+    <ClCompile Include="win32_src\pdcurses\pdcutil.c" />
+    <ClCompile Include="win32_src\pdcurses\printw.c" />
+    <ClCompile Include="win32_src\pdcurses\refresh.c" />
+    <ClCompile Include="win32_src\pdcurses\scanw.c" />
+    <ClCompile Include="win32_src\pdcurses\scroll.c" />
+    <ClCompile Include="win32_src\pdcurses\scr_dump.c" />
+    <ClCompile Include="win32_src\pdcurses\slk.c" />
+    <ClCompile Include="win32_src\pdcurses\termattr.c" />
+    <ClCompile Include="win32_src\pdcurses\terminfo.c" />
+    <ClCompile Include="win32_src\pdcurses\touch.c" />
+    <ClCompile Include="win32_src\pdcurses\util.c" />
+    <ClCompile Include="win32_src\pdcurses\window.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\kiss_fft.h" />

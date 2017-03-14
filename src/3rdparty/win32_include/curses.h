@@ -29,7 +29,6 @@ PDCurses portable platform definitions list:
 
 **man-end****************************************************************/
 
-#define PDC_BUILD 3401
 #define PDCURSES        1      /* PDCurses-only routines */
 #define XOPEN           1      /* X/Open Curses routines */
 #define SYSVcurses      1      /* System V Curses routines */
@@ -102,6 +101,45 @@ typedef chtype cchar_t;
 #endif
 
 typedef chtype attr_t;
+
+/* Version constants,  available as of version 4.0 : */
+
+#define PDC_VER_MAJOR    4
+#define PDC_VER_MINOR    0
+#define PDC_VER_CHANGE   0
+#define PDC_VER_YEAR   2017
+
+#define PDC_BUILD (PDC_VER_MAJOR*1000 + PDC_VER_MINOR *100 + PDC_VER_CHANGE)
+
+/* When using PDCurses as a DLL (Windows) or shared library (BSD or *nix),
+it's possible to switch the DLL or shared library.  One may therefore want
+to inquire of the DLL/shared library the port,  version numbers,  and
+chtype_size used, and make sure they're what one was expecting.  The
+'PDC_version' structure lets you do just that. */
+
+enum PDC_port
+{
+    PDC_PORT_X11 = 0,
+    PDC_PORT_WIN32 = 1,
+    PDC_PORT_WIN32A = 2,
+    PDC_PORT_DOS = 3,
+    PDC_PORT_OS2 = 4,
+    PDC_PORT_SDL1 = 5,
+    PDC_PORT_SDL2 = 6
+};
+
+/* Detailed PDC version information */
+
+typedef struct
+{
+   const enum PDC_port port;
+   const int ver_major;
+   const int ver_minor;
+   const int ver_change;
+   const size_t chtype_size;
+   const bool is_wide;
+   const bool is_forced_utf8;
+} PDC_version_info;
 
 /*----------------------------------------------------------------------
  *
@@ -375,6 +413,7 @@ PDCEX  int          COLOR_PAIRS;
 PDCEX  int          TABSIZE;
 PDCEX  chtype       acs_map[];    /* alternate character set map */
 PDCEX  char         ttytype[];    /* terminal name/description */
+PDCEX const PDC_version_info PDC_version;
 
 /*man-start**************************************************************
 
@@ -1722,7 +1761,9 @@ void    PDC_set_resize_limits( const int new_min_lines,
 #define FUNCTION_KEY_ENLARGE_FONT     2
 #define FUNCTION_KEY_SHRINK_FONT      3
 #define FUNCTION_KEY_CHOOSE_FONT      4
-#define PDC_MAX_FUNCTION_KEYS         5
+#define FUNCTION_KEY_ABORT            5
+#define PDC_MAX_FUNCTION_KEYS         6
+
 int     PDC_set_function_key( const unsigned function,
                               const int new_key);
 

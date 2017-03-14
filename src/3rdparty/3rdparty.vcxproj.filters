@@ -11,6 +11,9 @@
     <Filter Include="src\sigslot">
       <UniqueIdentifier>{57af24a7-d581-4aac-94af-fb79332228ab}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\pdcurses">
+      <UniqueIdentifier>{2a6ed669-412a-4c0a-9874-ef170a0952ee}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\sqlite\sqlite3.c">
@@ -24,6 +27,153 @@
     </ClCompile>
     <ClCompile Include="src\kiss_fftr.c">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\terminfo.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\touch.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\util.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\window.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\addch.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\addchstr.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\addstr.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\attr.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\beep.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\bkgd.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\border.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\clear.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\color.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\debug.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\delch.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\deleteln.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\deprec.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\getch.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\getstr.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\getyx.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\inch.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\inchstr.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\initscr.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\inopts.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\insch.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\insstr.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\instr.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\kernel.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\keyname.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\mouse.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\move.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\outopts.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\overlay.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\pad.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\panel.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\pdcclip.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\pdcdisp.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\pdcgetsc.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\pdckbd.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\pdcscrn.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\pdcsetsc.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\pdcutil.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\printw.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\refresh.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\scanw.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\scr_dump.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\scroll.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\slk.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\termattr.c">
+      <Filter>src\pdcurses</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
