@@ -56,16 +56,19 @@ using namespace musik::box;
 using namespace cursespp;
 using namespace boost::filesystem;
 
-static void showNeedsRestart() {
+using Callback = std::function<void()>;
+
+static void showNeedsRestart(Callback cb = Callback()) {
     std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
 
     (*dialog)
         .SetTitle("musikbox")
         .SetMessage("you will need to restart musikbox for this change to take effect.")
-        .AddButton(
-            "KEY_ENTER",
-            "ENTER",
-            "ok");
+        .AddButton("KEY_ENTER", "ENTER", "ok", [cb](std::string key) {
+            if (cb) {
+                cb();
+            }
+        });
 
     App::Overlays().Push(dialog);
 }
@@ -168,9 +171,18 @@ void ColorThemeOverlay::Show(std::function<void()> callback) {
     cursespp::App::Overlays().Push(dialog);
 }
 
-void ColorThemeOverlay::Show256ColorsInfo(bool enabled) {
+void ColorThemeOverlay::Show256ColorsInfo(bool enabled, std::function<void()> callback) {
+    auto prefs = core::Preferences::
+        ForComponent(core::prefs::components::Settings);
+
     if (enabled) {
+        prefs->SetBool(box::prefs::keys::UsePaletteColors, enabled);
+        prefs->Save();
         showNeedsRestart();
+
+        if (callback) {
+            callback();
+        }
     }
     else {
         std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
@@ -181,12 +193,20 @@ void ColorThemeOverlay::Show256ColorsInfo(bool enabled) {
                 "disabling 256 color degradation will enable RGB color mode, which will replace colors in the stock "
                 "palette. disabling this option results in higher fidelity themes, but it may cause display "
                 "issues in other applications until the terminal is reset.\n\n"
-                "you will need to restart musikbox for this change to take effect.")
+                "are you sure you want to disable 256 color degradation?")
             .AddButton(
-                "KEY_ENTER",
-                "ENTER",
-                "ok");
+                "y", "y", "yes", [prefs, callback](std::string key) {
+                    prefs->SetBool(box::prefs::keys::UsePaletteColors, false);
+                    prefs->Save();
+                    showNeedsRestart(callback);
+                })
+            .AddButton(
+                "n", "n", "no", [callback](std::string key) {
+                    if (callback) {
+                        callback();
+                    }
+                });
 
-        App::Overlays().Push(dialog);
+            App::Overlays().Push(dialog);
     }
 }

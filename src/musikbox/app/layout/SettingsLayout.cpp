@@ -122,9 +122,11 @@ void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
     }
 #ifdef ENABLE_256_COLOR_OPTION
     else if (cb == paletteCheckbox.get()) {
-        this->libraryPrefs->SetBool(box::prefs::keys::UsePaletteColors, checked);
-        this->libraryPrefs->Save();
-        ColorThemeOverlay::Show256ColorsInfo(checked);
+        ColorThemeOverlay::Show256ColorsInfo(
+            checked,
+            [this]() {
+                this->LoadPreferences();
+            });
     }
 #endif
 }

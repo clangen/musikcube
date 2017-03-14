@@ -166,9 +166,11 @@ struct Theme {
             else if (mode == Colors::Palette) {
                 return this->palette;
             }
-
-            init_color(this->colorId, SCALE(this->r), SCALE(this->g), SCALE(this->b));
-            return this->colorId;
+            else if (this->r >= 0 && this->g >= 0 && this->b >= 0) {
+                init_color(this->colorId, SCALE(this->r), SCALE(this->g), SCALE(this->b));
+                return this->colorId;
+            }
+            return -1;
         }
 
         int colorId;
@@ -228,6 +230,10 @@ struct Theme {
     }
 
     bool LoadFromFile(const std::string& fn) {
+        if (!fn.size()) {
+            return false;
+        }
+
 #ifdef WIN32
         std::wstring u16fn = u8to16(fn);
         FILE* file = _wfopen(u16fn.c_str(), L"rb");

@@ -117,6 +117,8 @@ void MainLayout::Initialize() {
 
     this->syncing.reset(new TextLabel());
     this->syncing->SetContentColor(CURSESPP_BANNER);
+    this->syncing->MoveAndResize(0, 0, 1, 1);
+    this->syncing->Hide();
     this->AddWindow(this->syncing);
 }
 

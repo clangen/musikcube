@@ -41,7 +41,7 @@ namespace musik {
         class ColorThemeOverlay {
             public:
                 static void Show(std::function<void()> callback);
-                static void Show256ColorsInfo(bool enabled);
+                static void Show256ColorsInfo(bool enabled, std::function<void()> callback);
 
             private:
                 ColorThemeOverlay();
