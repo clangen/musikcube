@@ -183,7 +183,7 @@ struct Theme {
 
     void Reset() {
         /* main */
-        background.Set(THEME_COLOR_BACKGROUND, 24, 24, 20, COLOR_BLACK);
+        background.Set(THEME_COLOR_BACKGROUND, 24, 24, 20, -1);
         foreground.Set(THEME_COLOR_FOREGROUND, 220, 220, 220, COLOR_256_OFFWHITE);
         focusedBorder.Set(THEME_COLOR_FOCUSED_BORDER, 220, 82, 86, COLOR_256_RED);
 
@@ -218,7 +218,7 @@ struct Theme {
         bannerForeground.Set(THEME_COLOR_BANNER_FOREGROUND, 24, 24, 20, COLOR_BLACK);
 
         /* listview */
-        listHeaderBackground.Set(THEME_COLOR_LIST_HEADER_BACKGROUND, 36, 36, 31, COLOR_BLACK);
+        listHeaderBackground.Set(THEME_COLOR_LIST_HEADER_BACKGROUND, 36, 36, 31, -1);
         listHeaderForeground.Set(THEME_COLOR_LIST_HEADER_FOREGROUND, 166, 226, 46, COLOR_256_GREEN);
         listHighlightedBackground.Set(THEME_COLOR_LIST_ITEM_HIGHLIGHTED_BACKGROUND, 166, 226, 46, COLOR_256_GREEN);
         listHighlightedForeground.Set(THEME_COLOR_LIST_ITEM_HIGHLIGHTED_FOREGROUND, 24, 24, 20, COLOR_BLACK);

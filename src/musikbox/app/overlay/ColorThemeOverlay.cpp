@@ -178,11 +178,7 @@ void ColorThemeOverlay::Show256ColorsInfo(bool enabled, std::function<void()> ca
     if (enabled) {
         prefs->SetBool(box::prefs::keys::UsePaletteColors, enabled);
         prefs->Save();
-        showNeedsRestart();
-
-        if (callback) {
-            callback();
-        }
+        showNeedsRestart(callback);
     }
     else {
         std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
