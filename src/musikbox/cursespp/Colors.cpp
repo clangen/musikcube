@@ -184,21 +184,21 @@ struct Theme {
 
     void Reset() {
         /* main */
-        background.Set(THEME_COLOR_BACKGROUND, 0, 0, 0, COLOR_BLACK);
-        foreground.Set(THEME_COLOR_FOREGROUND, 230, 230, 230, COLOR_256_OFFWHITE);
+        background.Set(THEME_COLOR_BACKGROUND, 24, 24, 20, COLOR_BLACK);
+        foreground.Set(THEME_COLOR_FOREGROUND, 207, 208, 194, COLOR_256_OFFWHITE);
         focusedBorder.Set(THEME_COLOR_FOCUSED_BORDER, 220, 82, 86, COLOR_256_RED);
 
         /* text */
         textFocused.Set(THEME_COLOR_TEXT_FOCUSED, 220, 82, 86, COLOR_256_RED);
         textActive.Set(THEME_COLOR_TEXT_ACTIVE, 166, 226, 46, COLOR_256_GREEN);
         textDisabled.Set(THEME_COLOR_TEXT_DISABLED, 128, 128, 128, COLOR_256_MEDIUM_GRAY);
-        textHidden.Set(THEME_COLOR_TEXT_HIDDEN, 0, 0, 0, COLOR_BLACK);
+        textHidden.Set(THEME_COLOR_TEXT_HIDDEN, 66, 66, 56, COLOR_BLACK);
         textWarning.Set(THEME_COLOR_TEXT_WARNING, 230, 220, 116, COLOR_256_YELLOW);
         textWarning.Set(THEME_COLOR_TEXT_ERROR, 220, 82, 86, COLOR_256_RED);
 
         /* overlay */
         overlayBackground.Set(THEME_COLOR_OVERLAY_BACKGROUND, 66, 66, 56, COLOR_256_MEDIUM_GRAY);
-        overlayForeground.Set(THEME_COLOR_OVERLAY_FOREGROUND, 230, 230, 230, COLOR_256_OFFWHITE);
+        overlayForeground.Set(THEME_COLOR_OVERLAY_FOREGROUND, 207, 208, 194, COLOR_256_OFFWHITE);
         overlayBorder.Set(THEME_COLOR_OVERLAY_BORDER, 102, 217, 238, COLOR_256_BLUE);
         overlayFocusedBorder.Set(THEME_COLOR_OVERLAY_FOCUSED_BORDER, 220, 82, 86, COLOR_256_RED);
 
@@ -206,7 +206,7 @@ struct Theme {
         shortcutsBackground.Set(THEME_COLOR_SHORTCUTS_BACKGROUND, 66, 66, 56, COLOR_256_MEDIUM_GRAY);
         shortcutsForeground.Set(THEME_COLOR_SHORTCUTS_FOREGROUND, 230, 220, 116, COLOR_256_YELLOW);
         focusedShortcutsBackground.Set(THEME_COLOR_SHORTCUTS_BACKGROUND_FOCUSED, 175, 66, 71, COLOR_256_DARK_RED);
-        focusedShortcutsForeground.Set(THEME_COLOR_SHORTCUTS_FOREGROUND_FOCUSED, 230, 230, 230, COLOR_256_OFFWHITE);
+        focusedShortcutsForeground.Set(THEME_COLOR_SHORTCUTS_FOREGROUND_FOCUSED, 207, 208, 194, COLOR_256_OFFWHITE);
 
         /* buttons */
         buttonBackgroundNormal.Set(THEME_COLOR_BUTTON_BACKGROUND_NORMAL, 230, 220, 116, COLOR_256_YELLOW);
@@ -219,7 +219,7 @@ struct Theme {
         bannerForeground.Set(THEME_COLOR_BANNER_FOREGROUND, 0, 0, 0, COLOR_BLACK);
 
         /* listview */
-        listHeaderBackground.Set(THEME_COLOR_LIST_HEADER_BACKGROUND, 0, 0, 0, COLOR_BLACK);
+        listHeaderBackground.Set(THEME_COLOR_LIST_HEADER_BACKGROUND, 36, 36, 31, COLOR_BLACK);
         listHeaderForeground.Set(THEME_COLOR_LIST_HEADER_FOREGROUND, 166, 226, 46, COLOR_256_GREEN);
         listHighlightedBackground.Set(THEME_COLOR_LIST_ITEM_HIGHLIGHTED_BACKGROUND, 166, 226, 46, COLOR_256_GREEN);
         listHighlightedForeground.Set(THEME_COLOR_LIST_ITEM_HIGHLIGHTED_FOREGROUND, 0, 0, 0, COLOR_BLACK);
