@@ -132,7 +132,7 @@ std::string Locale::Translate(const char* key) {
     static nlohmann::json empty;
 
     if (!this->localeData.is_null()) {
-        nlohmann::json& strings = this->localeData.value(KEY_STRINGS, empty);
+        const nlohmann::json& strings = this->localeData.value(KEY_STRINGS, empty);
         auto it = strings.find(key);
         return (it != strings.end()) ? it.value() : key;
     }
