@@ -67,6 +67,7 @@ namespace musik { namespace core { namespace i18n {
             std::string selectedLocale;
             std::string localePath;
             nlohmann::json localeData;
+            nlohmann::json defaultLocaleData;
     };
 
     #define _TSTR(KEY) (musik::core::i18n::Locale::Instance().Translate(KEY))

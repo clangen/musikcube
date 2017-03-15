@@ -35,4 +35,5 @@
 #pragma once
 
 #include <core/config.h>
+#include <core/i18n/Locale.h>
 #include <cursespp/curses_config.h>

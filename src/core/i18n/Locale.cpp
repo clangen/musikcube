@@ -49,6 +49,23 @@ using namespace musik::core::prefs;
 
 using namespace boost::filesystem;
 
+static nlohmann::json loadLocaleData(const std::string& fn) {
+    char* bytes = nullptr;
+    int count = 0;
+
+    if (FileToByteArray(fn, &bytes, count, true)) {
+        try {
+            return nlohmann::json::parse(bytes);
+        }
+        catch (...) {
+        }
+
+        free(bytes);
+    }
+
+    return nlohmann::json();
+}
+
 Locale::Locale() {
     this->prefs = Preferences::ForComponent(components::Settings);
     this->selectedLocale = prefs->GetString(keys::Locale, DEFAULT_LOCALE);
@@ -91,7 +108,9 @@ std::string Locale::GetSelectedLocale() {
 }
 
 bool Locale::SetSelectedLocale(const std::string& locale) {
-    bool success = false;
+    if (this->defaultLocaleData.is_null()) {
+        this->defaultLocaleData = loadLocaleData(localePath + "/" + DEFAULT_LOCALE + ".json");
+    }
 
     auto it = std::find_if(
         this->locales.begin(),
@@ -105,23 +124,11 @@ bool Locale::SetSelectedLocale(const std::string& locale) {
         this->localeData = nlohmann::json({});
 
         std::string localeFn = this->localePath + "/" + locale + ".json";
-
-        char* bytes = nullptr;
-        int count = 0;
-
-        if (FileToByteArray(localeFn, &bytes, count, true)) {
-            try {
-                this->localeData = nlohmann::json::parse(bytes);
-                success = true;
-            }
-            catch (...) {
-            }
-
-            free(bytes);
-        }
+        this->localeData = loadLocaleData(localeFn);
+        return !this->localeData.is_null();
     }
 
-    return success;
+    return false;
 }
 
 std::string Locale::Translate(const std::string& key) {
@@ -131,11 +138,23 @@ std::string Locale::Translate(const std::string& key) {
 std::string Locale::Translate(const char* key) {
     static nlohmann::json empty;
 
+    /* get the string from the current locale */
     if (!this->localeData.is_null()) {
         const nlohmann::json& strings = this->localeData.value(KEY_STRINGS, empty);
+        auto it = strings.find(key);
+
+        if (it != strings.end()) {
+            return it.value();
+        }
+    }
+
+    /* can't be found? fall back to the default locale */
+    if (!this->defaultLocaleData.is_null()) {
+        const nlohmann::json& strings = this->defaultLocaleData.value(KEY_STRINGS, empty);
         auto it = strings.find(key);
         return (it != strings.end()) ? it.value() : key;
     }
 
+    /* otherwise, just return the key! */
     return key;
 }

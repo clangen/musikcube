@@ -47,8 +47,6 @@
 #define MESSAGE_INDEXER_PROGRESS 1001
 #define MESSAGE_INDEXER_FINISHED 1002
 
-#define SYNCING_TEXT_FORMAT "syncing metadata (%d tracks processed)"
-
 using namespace musik;
 using namespace musik::box;
 using namespace musik::core;
@@ -56,8 +54,13 @@ using namespace musik::core::runtime;
 using namespace cursespp;
 
 static void updateSyncingText(TextLabel* label, int updates) {
-    label->SetText(boost::str(boost::format(
-        SYNCING_TEXT_FORMAT) % updates), cursespp::text::AlignCenter);
+    try {
+        label->SetText(boost::str(boost::format(
+            _TSTR("main_syncing_banner")) % updates), cursespp::text::AlignCenter);
+    }
+    catch (...) {
+        /* swallow. incomplete locale. don't crash. */
+    }
 }
 
 MainLayout::MainLayout(ILibraryPtr library)
