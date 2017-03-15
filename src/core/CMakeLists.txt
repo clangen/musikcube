@@ -13,6 +13,7 @@ set(CORE_SOURCES
   ./db/Connection.cpp
   ./db/ScopedTransaction.cpp
   ./db/Statement.cpp
+  ./i18n/Locale.cpp
   ./io/DataStreamFactory.cpp
   ./io/LocalFileStream.cpp
   ./library/Indexer.cpp

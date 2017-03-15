@@ -34,21 +34,43 @@
 
 #pragma once
 
-#include <string>
 #include <core/config.h>
+#include <core/support/Preferences.h>
+#include <unordered_map>
+#include <json.hpp>
 
-namespace musik { namespace core {
+namespace musik { namespace core { namespace i18n {
 
-    std::string GetHomeDirectory();
-    std::string GetApplicationDirectory();
-    std::string GetDataDirectory(bool create = true);
-    std::string GetPath(const std::string &sFile);
-    std::string GetPluginDirectory();
-    uint64 Checksum(char *data,unsigned int bytes);
-    size_t CopyString(const std::string& src, char* dst, size_t size);
-    bool FileToByteArray(const std::string& path, char** target, int& size, bool nullTerminate = false);
+    class Locale {
+        public:
+            ~Locale();
 
-    /* renames ~/.mC2 -> ~/.musikcube */
-    void MigrateOldDataDirectory();
+            static Locale& Instance() {
+                static Locale instance;
+                return instance;
+            }
 
-} }
+            void Initialize(const std::string& localePath);
+
+            std::vector<std::string> GetLocales();
+            std::string GetSelectedLocale();
+            bool SetSelectedLocale(const std::string& locale);
+
+            std::string Translate(const std::string& key);
+            std::string Translate(const char* key);
+
+        private:
+            Locale();
+
+            std::vector<std::string> locales;
+            std::shared_ptr<musik::core::Preferences> prefs;
+            std::string selectedLocale;
+            std::string localePath;
+            nlohmann::json localeData;
+    };
+
+    #define _TSTR(KEY) (musik::core::i18n::Locale::Instance().Translate(KEY))
+    #define _TCP(KEY) (musik::core::i18n::Locale::Instance().Translate(KEY).c_str())
+
+} } }
+

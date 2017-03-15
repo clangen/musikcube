@@ -49,6 +49,8 @@
 #include <app/util/GlobalHotkeys.h>
 #include <app/util/Hotkeys.h>
 #include <app/util/PreferenceKeys.h>
+
+#include <core/i18n/Locale.h>
 #include <core/audio/PlaybackService.h>
 
 #include <glue/audio/MasterTransport.h>
@@ -99,6 +101,9 @@ int main(int argc, char* argv[])
     std::locale locale = std::locale();
     std::locale utf8Locale(locale, new boost::filesystem::detail::utf8_codecvt_facet);
     boost::filesystem::path::imbue(utf8Locale);
+
+    /* ensure we have the correct locale loaded */
+    musik::core::i18n::Locale::Instance().Initialize(musik::core::GetApplicationDirectory() + "/locales/");
 
 #ifndef WIN32
     #if 1 /*DEBUG*/

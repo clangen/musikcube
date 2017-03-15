@@ -203,3 +203,52 @@ size_t musik::core::CopyString(const std::string& src, char* dst, size_t size) {
     }
     return len;
 }
+
+bool musik::core::FileToByteArray(const std::string& path, char** target, int& size, bool nullTerminate) {
+#ifdef WIN32
+    std::wstring u16fn = u8to16(path);
+    FILE* file = _wfopen(u16fn.c_str(), L"rb");
+#else
+    FILE* file = fopen(path.c_str(), "rb");
+#endif
+
+    *target = nullptr;
+    size = 0;
+
+    if (!file) {
+        return false;
+    }
+
+    bool success = false;
+
+    if (fseek(file, 0L, SEEK_END) == 0) {
+        long fileSize = ftell(file);
+        if (fileSize == -1) {
+            goto close_and_return;
+        }
+
+        if (fseek(file, 0L, SEEK_SET) != 0) {
+            goto close_and_return;
+        }
+
+        *target = (char*)malloc(sizeof(char) * (fileSize + (nullTerminate ? 1 : 0)));
+        size = fread(*target, sizeof(char), fileSize, file);
+
+        if (size == fileSize) {
+            if (nullTerminate) {
+                (*target)[size] = 0;
+            }
+
+            success = true;
+        }
+    }
+
+close_and_return:
+    fclose(file);
+
+    if (!success) {
+        free(*target);
+    }
+
+    return success;
+}

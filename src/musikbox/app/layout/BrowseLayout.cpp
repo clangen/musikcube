@@ -38,6 +38,7 @@
 #include <cursespp/Screen.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <core/library/query/local/CategoryTrackListQuery.h>
+#include <core/i18n/Locale.h>
 #include <app/util/Hotkeys.h>
 #include <app/util/Playback.h>
 #include <app/overlay/PlayQueueOverlays.h>
@@ -59,23 +60,16 @@ static int MIN_LIST_TITLE_HEIGHT = 26;
 #define DEFAULT_CATEGORY_NAME FIELD_TO_TITLE[DEFAULT_CATEGORY]
 
 static std::map <std::string, std::string> FIELD_TO_TITLE{
-    std::make_pair(constants::Track::ARTIST, "artists"),
-    std::make_pair(constants::Track::ALBUM, "albums"),
-    std::make_pair(constants::Track::GENRE, "genres"),
-    std::make_pair(constants::Track::ALBUM_ARTIST, "album artists")
+    std::make_pair(constants::Track::ARTIST, "browse_title_artists"),
+    std::make_pair(constants::Track::ALBUM, "browse_title_albums"),
+    std::make_pair(constants::Track::GENRE, "browse_title_genres"),
+    std::make_pair(constants::Track::ALBUM_ARTIST, "browse_title_album_artists")
 };
 
-#define CATEGORY_TITLE(key) \
-    FIELD_TO_TITLE.find(key) == FIELD_TO_TITLE.end() ? "category" : FIELD_TO_TITLE[key]
-
-#define SET_CATEGORY(key) { \
-    std::string title = CATEGORY_TITLE(key); \
-    this->categoryList->SetFieldName(key); \
-    this->categoryTitle->SetText(title, text::AlignCenter); \
+static std::string getTitleForCategory(const std::string& fieldName) {
+    return FIELD_TO_TITLE.find(fieldName) == FIELD_TO_TITLE.end()
+        ? _TSTR("browse_title_category") : _TSTR(FIELD_TO_TITLE[fieldName]);
 }
-
-#define SET_CATEGORY_TITLE(key) \
-    this->categoryTitle->SetText(CATEGORY_TITLE(key), text::AlignCenter);
 
 BrowseLayout::BrowseLayout(
     musik::core::audio::PlaybackService& playback,
@@ -123,12 +117,12 @@ void BrowseLayout::OnLayout() {
 
 void BrowseLayout::InitializeWindows() {
     this->categoryTitle.reset(new TextLabel());
-    this->categoryTitle->SetText(DEFAULT_CATEGORY_NAME, text::AlignCenter);
+    this->categoryTitle->SetText(_TSTR(DEFAULT_CATEGORY_NAME), text::AlignCenter);
     this->categoryTitle->Hide();
     this->categoryList.reset(new CategoryListView(this->playback, this->library, DEFAULT_CATEGORY));
 
     this->tracksTitle.reset(new TextLabel());
-    this->tracksTitle->SetText("tracks", text::AlignCenter);
+    this->tracksTitle->SetText(_TSTR("browse_title_tracks"), text::AlignCenter);
     this->trackList.reset(new TrackListView(this->playback, this->library));
 
     this->AddWindow(this->categoryTitle);
@@ -146,7 +140,9 @@ void BrowseLayout::InitializeWindows() {
 void BrowseLayout::ScrollTo(const std::string& fieldType, DBID fieldId) {
     this->SetFocus(this->trackList);
     this->categoryList->RequeryWithField(fieldType, "", fieldId);
-    SET_CATEGORY_TITLE(fieldType);
+
+    std::string title = getTitleForCategory(fieldType);
+    this->categoryTitle->SetText(title, text::AlignCenter);
 }
 
 IWindowPtr BrowseLayout::GetFocus() {
@@ -191,6 +187,13 @@ void BrowseLayout::OnCategoryViewInvalidated(
     this->RequeryTrackList(view);
 }
 
+void BrowseLayout::SetCategory(const std::string& fieldName) {
+    this->categoryList->SetFieldName(fieldName);
+
+    std::string title = getTitleForCategory(fieldName);
+    this->categoryTitle->SetText(title, text::AlignCenter);
+}
+
 bool BrowseLayout::KeyPress(const std::string& key) {
     if (key == "KEY_ENTER") {
         playback::Play(this->trackList, this->playback, this->GetFocus());
@@ -207,19 +210,19 @@ bool BrowseLayout::KeyPress(const std::string& key) {
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseArtists, key)) {
-        SET_CATEGORY(constants::Track::ARTIST);
+        this->SetCategory(constants::Track::ARTIST);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseAlbums, key)) {
-        SET_CATEGORY(constants::Track::ALBUM);
+        this->SetCategory(constants::Track::ALBUM);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseGenres, key)) {
-        SET_CATEGORY(constants::Track::GENRE);
+        this->SetCategory(constants::Track::GENRE);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseAlbumArtists, key)) {
-        SET_CATEGORY(constants::Track::ALBUM_ARTIST);
+        this->SetCategory(constants::Track::ALBUM_ARTIST);
         return true;
     }
 

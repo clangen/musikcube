@@ -128,6 +128,54 @@ palette, use ones that most closely match our desired colors */
 
 #define SCALE(x) ((x * 1000) / 255)
 
+/* as much as I hate to do this, it was copied directly from
+musik::core::FileToByteArray to keep things properly encapsulated. */
+static bool fileToByteArray(const std::string& path, char** target, int& size) {
+#ifdef WIN32
+    std::wstring u16fn = u8to16(path);
+    FILE* file = _wfopen(u16fn.c_str(), L"rb");
+#else
+    FILE* file = fopen(path.c_str(), "rb");
+#endif
+
+    *target = nullptr;
+    size = 0;
+
+    if (!file) {
+        return false;
+    }
+
+    bool success = false;
+
+    if (fseek(file, 0L, SEEK_END) == 0) {
+        long fileSize = ftell(file);
+        if (fileSize == -1) {
+            goto close_and_return;
+        }
+
+        if (fseek(file, 0L, SEEK_SET) != 0) {
+            goto close_and_return;
+        }
+
+        *target = (char*)malloc(sizeof(char) * (fileSize + 1));
+        size = fread(*target, sizeof(char), fileSize, file);
+
+        if (size == fileSize) {
+            (*target)[size] = 0;
+            success = true;
+        }
+    }
+
+close_and_return:
+    fclose(file);
+
+    if (!success) {
+        free(*target);
+    }
+
+    return success;
+}
+
 struct Theme {
     struct Color {
         Color() {
@@ -233,38 +281,11 @@ struct Theme {
             return false;
         }
 
-#ifdef WIN32
-        std::wstring u16fn = u8to16(fn);
-        FILE* file = _wfopen(u16fn.c_str(), L"rb");
-#else
-        FILE* file = fopen(fn.c_str(), "rb");
-#endif
-        if (!file) {
-            return false;
-        }
-
         bool success = false;
         char* buffer = nullptr;
+        int size = 0;
 
-        if (fseek(file, 0L, SEEK_END) == 0) {
-            long fileSize = ftell(file);
-            if (fileSize == -1) {
-                goto close_and_return;
-            }
-
-            if (fseek(file, 0L, SEEK_SET) != 0) {
-                goto close_and_return;
-            }
-
-            buffer = (char*) malloc(sizeof(char) * (fileSize + 1));
-            unsigned readCount = fread(buffer, sizeof(char), fileSize, file);
-
-            if (readCount != fileSize) {
-                goto close_and_return;
-            }
-
-            buffer[readCount] = 0; /* null terminate */
-
+        if (fileToByteArray(fn, &buffer, size)) {
             try {
                 json data = json::parse(buffer);
 
@@ -307,15 +328,14 @@ struct Theme {
                     this->listActiveForeground.Set(colors.value(JSON_KEY_COLOR_LIST_ITEM_ACTIVE_FOREGROUND, unset));
                     this->listActiveHighlightedBackground.Set(colors.value(JSON_KEY_COLOR_LIST_ITEM_ACTIVE_HIGHLIGHTED_BACKGROUND, unset));
                     this->listActiveHighlightedForeground.Set(colors.value(JSON_KEY_COLOR_LIST_ITEM_ACTIVE_HIGHLIGHTED_FOREGROUND, unset));
+
+                    success = true;
                 }
             }
             catch (...) {
-                goto close_and_return;
             }
         }
 
-    close_and_return:
-        fclose(file);
         free(buffer);
         return success;
     }

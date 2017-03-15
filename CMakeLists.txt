@@ -140,6 +140,7 @@ endif (CMAKE_SYSTEM_NAME MATCHES "Linux")
 
 file(GLOB sdk_headers "src/core/sdk/*.h")
 file(GLOB themes "src/musikbox/data/themes/*.json")
+file(GLOB locales "src/musikbox/data/locales/*.json")
 
 file(COPY ${themes}
     DESTINATION bin/themes
@@ -148,6 +149,15 @@ file(COPY ${themes}
 install(
     FILES ${themes}
     DESTINATION share/musikcube/themes
+)
+
+file(COPY ${locales}
+    DESTINATION bin/locales
+)
+
+install(
+    FILES ${locales}
+    DESTINATION share/musikcube/locales
 )
 
 install(

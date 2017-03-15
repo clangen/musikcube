@@ -85,7 +85,9 @@
     </Link>
     <PostBuildEvent>
       <Command>if not exist "$(TargetDir)themes" mkdir "$(TargetDir)themes"
-xcopy "$(ProjectDir)data\themes\*" "$(TargetDir)themes\" /Y /e</Command>
+xcopy "$(ProjectDir)data\themes\*" "$(TargetDir)themes\" /Y /e
+if not exist "$(TargetDir)locales" mkdir "$(TargetDir)locales"
+xcopy "$(ProjectDir)data\locales\*" "$(TargetDir)locales\" /Y /e</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -121,7 +123,9 @@ xcopy "$(ProjectDir)data\themes\*" "$(TargetDir)themes\" /Y /e</Command>
     </Link>
     <PostBuildEvent>
       <Command>if not exist "$(TargetDir)themes" mkdir "$(TargetDir)themes"
-xcopy "$(ProjectDir)data\themes\*" "$(TargetDir)themes\" /Y /e</Command>
+xcopy "$(ProjectDir)data\themes\*" "$(TargetDir)themes\" /Y /e
+if not exist "$(TargetDir)locales" mkdir "$(TargetDir)locales"
+xcopy "$(ProjectDir)data\locales\*" "$(TargetDir)locales\" /Y /e</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

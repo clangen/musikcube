@@ -41,6 +41,9 @@
     <Filter Include="src\library\query\local">
       <UniqueIdentifier>{73173bbc-5951-460f-814d-25d1b71bf362}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\i18n">
+      <UniqueIdentifier>{a8776591-b7ad-4f6f-a927-c4bfaaa1e8c8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -171,6 +174,9 @@
     </ClCompile>
     <ClCompile Include="library\query\local\AlbumListQuery.cpp">
       <Filter>src\library\query\local</Filter>
+    </ClCompile>
+    <ClCompile Include="i18n\Locale.cpp">
+      <Filter>src\i18n</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -425,6 +431,9 @@
     </ClInclude>
     <ClInclude Include="library\query\local\AlbumListQuery.h">
       <Filter>src\library\query\local</Filter>
+    </ClInclude>
+    <ClInclude Include="i18n\Locale.h">
+      <Filter>src\i18n</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
