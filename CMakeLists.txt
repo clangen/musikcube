@@ -38,10 +38,8 @@ set (BOOST_LIBS
 
 find_package(Boost 1.55.0 REQUIRED ${BOOST_LIBS})
 
-add_definitions (-DHAVE_BOOST
-  -D_FILE_OFFSET_BITS=64)
-set (BOOST_LINK_LIBS
-  ${Boost_LIBRARIES})
+add_definitions (-DHAVE_BOOST -D_FILE_OFFSET_BITS=64 -DSIGSLOT_USE_POSIX_THREADS)
+set (BOOST_LINK_LIBS ${Boost_LIBRARIES})
 
 #message(STATUS "boost libs: " ${BOOST_LINK_LIBS})
 #message(STATUS "boost includes: " ${Boost_INCLUDE_DIRS})
