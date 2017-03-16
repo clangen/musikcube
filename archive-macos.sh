@@ -7,9 +7,9 @@ if [ -z "$VERSION" ]; then
   exit
 fi
 
-rm bin/musikbox
-rm -rf bin/musikbox/plugins
+rm -rf bin/
 
+make clean
 cmake -DCMAKE_BUILD_TYPE=Release -DLINK_STATICALLY=true .
 make -j4
 
@@ -25,6 +25,9 @@ cp bin/musikbox "$OUTPATH"
 cp bin/plugins/*.dylib "$OUTPATH/plugins"
 cp bin/locales/*.json "$OUTPATH/locales"
 cp bin/themes/*.json "$OUTPATH/themes"
+
+strip bin/musikbox
+strip bin/plugins/*.dylib
 
 pushd bin/dist 
 tar cvf musikbox_macos_static_$VERSION.tar $DIRNAME
