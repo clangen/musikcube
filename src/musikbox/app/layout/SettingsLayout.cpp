@@ -49,6 +49,7 @@
 #include <app/util/Hotkeys.h>
 #include <app/util/PreferenceKeys.h>
 #include <app/overlay/ColorThemeOverlay.h>
+#include <app/overlay/LocaleOverlay.h>
 #include <app/overlay/PlaybackOverlays.h>
 #include <app/overlay/PluginOverlay.h>
 
@@ -86,7 +87,7 @@ using namespace std::placeholders;
 
 using EntryPtr = IScrollAdapter::EntryPtr;
 
-static const std::string arrow = "\xe2\x96\xba";
+static const std::string arrow = "\xe2\x96\xba ";
 static bool showDotfiles = false;
 
 SettingsLayout::SettingsLayout(
@@ -131,6 +132,10 @@ void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
 #endif
 }
 
+void SettingsLayout::OnLocaleDropdownActivate(cursespp::TextLabel* label) {
+    LocaleOverlay::Show([this](){ this->LoadPreferences(); });
+}
+
 void SettingsLayout::OnOutputDropdownActivated(cursespp::TextLabel* label) {
     std::string currentName;
     std::shared_ptr<IOutput> currentPlugin = outputs::SelectedOutput();
@@ -169,7 +174,7 @@ void SettingsLayout::OnPluginsDropdownActivate(cursespp::TextLabel* label) {
 
 void SettingsLayout::OnHotkeyDropdownActivate(cursespp::TextLabel* label) {
     std::shared_ptr<InputOverlay> overlay(new InputOverlay());
-    overlay->SetTitle("hotkey tester").SetInputMode(IInput::InputRaw);
+    overlay->SetTitle(_TSTR("settings_hotkey_tester")).SetInputMode(IInput::InputRaw);
     App::Overlays().Push(overlay);
 }
 
@@ -181,6 +186,7 @@ void SettingsLayout::OnLayout() {
     int x = this->GetX(), y = this->GetY();
     int cx = this->GetWidth(), cy = this->GetHeight();
 
+    /* top row (directory setup) */
     int startY = 1;
     int leftX = 0;
     int leftWidth = cx / 3; /* 1/3 width */
@@ -196,18 +202,26 @@ void SettingsLayout::OnLayout() {
     this->browseList->MoveAndResize(leftX, pathListsY, leftWidth, pathsHeight);
     this->addedPathsList->MoveAndResize(rightX, pathListsY, rightWidth, pathsHeight);
 
+    /* bottom row (dropdowns, checkboxes) */
+    int columnCx = (cx - 5) / 2; /* 3 = left + right + middle padding */
+    int column1 = 1;
+    int column2 = columnCx + 3;
+
     y = BOTTOM(this->browseList);
-    this->outputDropdown->MoveAndResize(1, y++, cx - 1, LABEL_HEIGHT);
-    this->transportDropdown->MoveAndResize(1, y++, cx - 1, LABEL_HEIGHT);
-    this->pluginsDropdown->MoveAndResize(1, y++, cx - 1, LABEL_HEIGHT);
-    this->themeDropdown->MoveAndResize(1, y++, cx - 1, LABEL_HEIGHT);
+    this->localeDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
+    this->outputDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
+    this->transportDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
+    this->pluginsDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
+    this->themeDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
+    this->hotkeyDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
+
+    y = BOTTOM(this->browseList);
 #ifdef ENABLE_256_COLOR_OPTION
-    this->paletteCheckbox->MoveAndResize(1, y++, cx - 1, LABEL_HEIGHT);
+    this->paletteCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
 #endif
-    this->hotkeyDropdown->MoveAndResize(1, y++, cx - 1, LABEL_HEIGHT);
-    this->dotfileCheckbox->MoveAndResize(1, y++, cx - 1, LABEL_HEIGHT);
-    this->syncOnStartupCheckbox->MoveAndResize(1, y++, cx - 1, LABEL_HEIGHT);
-    this->removeCheckbox->MoveAndResize(1, y++, cx - 1, LABEL_HEIGHT);
+    this->dotfileCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
+    this->syncOnStartupCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
+    this->removeCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
 }
 
 void SettingsLayout::RefreshAddedPaths() {
@@ -246,10 +260,10 @@ void SettingsLayout::InitializeWindows() {
     this->SetFrameVisible(false);
 
     this->browseLabel.reset(new TextLabel());
-    this->browseLabel->SetText("browse (SPACE to add)", text::AlignCenter);
+    this->browseLabel->SetText(_TSTR("settings_space_to_add"), text::AlignCenter);
 
     this->addedPathsLabel.reset(new TextLabel());
-    this->addedPathsLabel->SetText("indexed paths (BACKSPACE to remove)", text::AlignCenter);
+    this->addedPathsLabel->SetText(_TSTR("settings_backspace_to_remove"), text::AlignCenter);
 
     this->addedPathsList.reset(new cursespp::ListWindow(this->addedPathsAdapter));
     this->browseList.reset(new cursespp::ListWindow(this->browseAdapter));
@@ -266,6 +280,9 @@ void SettingsLayout::InitializeWindows() {
     this->addedPathsAdapter->SetItemDecorator(decorator);
     this->browseAdapter->SetItemDecorator(decorator);
 
+    this->localeDropdown.reset(new TextLabel());
+    this->localeDropdown->Activated.connect(this, &SettingsLayout::OnLocaleDropdownActivate);
+
     this->outputDropdown.reset(new TextLabel());
     this->outputDropdown->Activated.connect(this, &SettingsLayout::OnOutputDropdownActivated);
 
@@ -273,35 +290,36 @@ void SettingsLayout::InitializeWindows() {
     this->transportDropdown->Activated.connect(this, &SettingsLayout::OnTransportDropdownActivate);
 
     this->pluginsDropdown.reset(new TextLabel());
-    this->pluginsDropdown->SetText(arrow + " enable/disable plugins");
+    this->pluginsDropdown->SetText(arrow + _TSTR("settings_enable_disable_plugins"));
     this->pluginsDropdown->Activated.connect(this, &SettingsLayout::OnPluginsDropdownActivate);
 
     this->themeDropdown.reset(new TextLabel());
-    this->themeDropdown->SetText(arrow + " color theme: default");
+    this->themeDropdown->SetText(arrow + _TSTR("settings_color_theme") + _TSTR("settings_default_theme_name"));
     this->themeDropdown->Activated.connect(this, &SettingsLayout::OnThemeDropdownActivate);
 #ifdef ENABLE_256_COLOR_OPTION
-    CREATE_CHECKBOX(this->paletteCheckbox, "degrade to 256 color palette");
+    CREATE_CHECKBOX(this->paletteCheckbox, _TSTR("settings_degrade_256"));
 #endif
 
     this->hotkeyDropdown.reset(new TextLabel());
-    this->hotkeyDropdown->SetText(arrow + " hotkey tester");
+    this->hotkeyDropdown->SetText(arrow + _TSTR("settings_hotkey_tester"));
     this->hotkeyDropdown->Activated.connect(this, &SettingsLayout::OnHotkeyDropdownActivate);
 
-    CREATE_CHECKBOX(this->dotfileCheckbox, "show dotfiles in directory browser");
-    CREATE_CHECKBOX(this->syncOnStartupCheckbox, "sync metadata on startup");
-    CREATE_CHECKBOX(this->removeCheckbox, "remove missing files from library");
+    CREATE_CHECKBOX(this->dotfileCheckbox, _TSTR("settings_show_dotfiles"));
+    CREATE_CHECKBOX(this->syncOnStartupCheckbox, _TSTR("settings_sync_on_startup"));
+    CREATE_CHECKBOX(this->removeCheckbox, _TSTR("settings_remove_missing"));
 
     int order = 0;
     this->browseList->SetFocusOrder(order++);
     this->addedPathsList->SetFocusOrder(order++);
+    this->localeDropdown->SetFocusOrder(order++);
     this->outputDropdown->SetFocusOrder(order++);
     this->transportDropdown->SetFocusOrder(order++);
     this->pluginsDropdown->SetFocusOrder(order++);
     this->themeDropdown->SetFocusOrder(order++);
+    this->hotkeyDropdown->SetFocusOrder(order++);
 #ifdef ENABLE_256_COLOR_OPTION
     this->paletteCheckbox->SetFocusOrder(order++);
 #endif
-    this->hotkeyDropdown->SetFocusOrder(order++);
     this->dotfileCheckbox->SetFocusOrder(order++);
     this->syncOnStartupCheckbox->SetFocusOrder(order++);
     this->removeCheckbox->SetFocusOrder(order++);
@@ -310,6 +328,7 @@ void SettingsLayout::InitializeWindows() {
     this->AddWindow(this->addedPathsLabel);
     this->AddWindow(this->browseList);
     this->AddWindow(this->addedPathsList);
+    this->AddWindow(this->localeDropdown);
     this->AddWindow(this->outputDropdown);
     this->AddWindow(this->transportDropdown);
     this->AddWindow(this->pluginsDropdown);
@@ -325,10 +344,10 @@ void SettingsLayout::InitializeWindows() {
 
 void SettingsLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
     if (shortcuts) {
-        shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateSettings), "settings");
-        shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateLibrary), "library");
-        shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateConsole), "console");
-        shortcuts->AddShortcut("^D", "quit");
+        shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateSettings), _TSTR("shortcuts_settings"));
+        shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateLibrary), _TSTR("shortcuts_library"));
+        shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateConsole), _TSTR("shortcuts_console"));
+        shortcuts->AddShortcut("^D", _TSTR("shortcuts_quit"));
         shortcuts->SetActive(Hotkeys::Get(Hotkeys::NavigateSettings));
     }
 }
@@ -349,21 +368,22 @@ void SettingsLayout::CheckShowFirstRunDialog() {
         if (!this->firstRunDialog) {
             this->firstRunDialog.reset(new DialogOverlay());
 
-            (*this->firstRunDialog)
-                .SetTitle("welcome to musikbox!")
-                .SetMessage(boost::str(boost::format(
-                    "add some directories that contain music files, "
-                    "then press '%s' to show the library view and start listening!\n\n"
-                    "for troubleshooting, press '%s' to enter the console view.\n\n"
-                    "other keyboard shorcuts are displayed in the command bar at the "
-                    "bottom of the screen. toggle command mode by pressing 'ESC'.\n\n"
-                    "select 'ok' to get started.")
+            std::string message = _TSTR("settings_first_run_dialog_body");
+            try {
+                message = boost::str(boost::format(message)
                     % Hotkeys::Get(Hotkeys::NavigateLibrary)
-                    % Hotkeys::Get(Hotkeys::NavigateConsole)))
+                    % Hotkeys::Get(Hotkeys::NavigateConsole));
+            }
+            catch (...) {
+            }
+
+            (*this->firstRunDialog)
+                .SetTitle(_TSTR("settings_first_run_dialog_title"))
+                .SetMessage(message)
                 .AddButton(
                     "KEY_ENTER",
                     "ENTER",
-                    "ok",
+                    _TSTR("button_ok"),
                     [this](std::string key) {
                         this->libraryPrefs->SetBool(box::prefs::keys::FirstRunSettingsDisplayed, true);
                         this->firstRunDialog.reset();
@@ -378,18 +398,21 @@ void SettingsLayout::LoadPreferences() {
     this->syncOnStartupCheckbox->SetChecked(this->libraryPrefs->GetBool(core::prefs::keys::SyncOnStartup, true));
     this->removeCheckbox->SetChecked(this->libraryPrefs->GetBool(core::prefs::keys::RemoveMissingFiles, true));
 
+    /* locale */
+    this->localeDropdown->SetText(arrow + _TSTR("settings_selected_locale") + i18n::Locale::Instance().GetSelectedLocale());
+
     /* color theme */
     bool disableCustomColors = this->libraryPrefs->GetBool(box::prefs::keys::DisableCustomColors);
     std::string colorTheme = this->libraryPrefs->GetString(box::prefs::keys::ColorTheme);
 
     if (colorTheme == "" && !disableCustomColors) {
-        colorTheme = "default";
+        colorTheme = _TSTR("settings_default_theme_name");
     }
     else if (disableCustomColors) {
-        colorTheme = "8 colors";
+        colorTheme = _TSTR("settings_8color_theme_name");
     }
 
-    this->themeDropdown->SetText(arrow + " color theme: " + colorTheme);
+    this->themeDropdown->SetText(arrow + _TSTR("settings_color_theme") + colorTheme);
 
 #ifdef ENABLE_256_COLOR_OPTION
     this->paletteCheckbox->CheckChanged.disconnect(this);
@@ -401,16 +424,16 @@ void SettingsLayout::LoadPreferences() {
     /* output plugin */
     std::shared_ptr<IOutput> output = outputs::SelectedOutput();
     if (output) {
-        this->outputDropdown->SetText(arrow + " output device: " + output->Name());
+        this->outputDropdown->SetText(arrow + _TSTR("settings_output_device") + output->Name());
     }
 
     /* transport type */
     std::string transportName =
         this->transport.GetType() == MasterTransport::Gapless
-            ? "gapless"
-            : "crossfade";
+            ? _TSTR("settings_transport_type_gapless")
+            : _TSTR("settings_transport_type_crossfade");
 
-    this->transportDropdown->SetText(arrow + " playback mode: " + transportName);
+    this->transportDropdown->SetText(arrow + _TSTR("settings_transport_type") + transportName);
 }
 
 void SettingsLayout::AddSelectedDirectory() {

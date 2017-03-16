@@ -163,12 +163,12 @@ void LibraryLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
     this->shortcuts = shortcuts;
 
     if (this->shortcuts) {
-        this->shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateLibraryBrowse), "browse");
-        this->shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateLibraryFilter), "filter");
-        this->shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateLibraryTracks), "tracks");
-        this->shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateLibraryPlayQueue), "play queue");
-        this->shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateSettings), "settings");
-        this->shortcuts->AddShortcut("^D", "quit");
+        this->shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateLibraryBrowse), _TSTR("shortcuts_browse"));
+        this->shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateLibraryFilter), _TSTR("shortcuts_filter"));
+        this->shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateLibraryTracks), _TSTR("shortcuts_tracks"));
+        this->shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateLibraryPlayQueue), _TSTR("shortcuts_play_queue"));
+        this->shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateSettings), _TSTR("shortcuts_settings"));
+        this->shortcuts->AddShortcut("^D", _TSTR("shortcuts_quit"));
         this->UpdateShortcutsWindow();
     }
 }

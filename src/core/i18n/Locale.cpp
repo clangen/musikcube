@@ -99,7 +99,7 @@ void Locale::Initialize(const std::string& localePath) {
 
 std::vector<std::string> Locale::GetLocales() {
     std::vector<std::string> result;
-    std::copy(this->locales.begin(), this->locales.end(), result.begin());
+    std::copy(this->locales.begin(), this->locales.end(), std::back_inserter(result));
     return result;
 }
 
@@ -125,7 +125,11 @@ bool Locale::SetSelectedLocale(const std::string& locale) {
 
         std::string localeFn = this->localePath + "/" + locale + ".json";
         this->localeData = loadLocaleData(localeFn);
-        return !this->localeData.is_null();
+
+        if (!this->localeData.is_null()) {
+            this->LocaleChanged(this->selectedLocale);
+            return true;
+        }
     }
 
     return false;

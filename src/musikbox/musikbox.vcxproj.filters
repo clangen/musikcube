@@ -135,6 +135,9 @@
     <ClCompile Include="app\overlay\ColorThemeOverlay.cpp">
       <Filter>app\overlay</Filter>
     </ClCompile>
+    <ClCompile Include="app\overlay\LocaleOverlay.cpp">
+      <Filter>app\overlay</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -314,6 +317,9 @@
       <Filter>cursespp</Filter>
     </ClInclude>
     <ClInclude Include="app\overlay\ColorThemeOverlay.h">
+      <Filter>app\overlay</Filter>
+    </ClInclude>
+    <ClInclude Include="app\overlay\LocaleOverlay.h">
       <Filter>app\overlay</Filter>
     </ClInclude>
   </ItemGroup>

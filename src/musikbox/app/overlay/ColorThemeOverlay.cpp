@@ -62,9 +62,9 @@ static void showNeedsRestart(Callback cb = Callback()) {
     std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
 
     (*dialog)
-        .SetTitle("musikbox")
-        .SetMessage("you will need to restart musikbox for this change to take effect.")
-        .AddButton("KEY_ENTER", "ENTER", "ok", [cb](std::string key) {
+        .SetTitle(_TSTR("default_overlay_title"))
+        .SetMessage(_TSTR("settings_needs_restart"))
+        .AddButton("KEY_ENTER", "ENTER", _TSTR("button_ok"), [cb](std::string key) {
             if (cb) {
                 cb();
             }
@@ -93,8 +93,8 @@ void ColorThemeOverlay::Show(std::function<void()> callback) {
     int selectedIndex = disableCustomColors ? 1 : 0;
 
     std::shared_ptr<Adapter> adapter(new Adapter());
-    adapter->AddEntry("default");
-    adapter->AddEntry("8 colors (compatibilty mode)");
+    adapter->AddEntry(_TSTR("settings_default_theme_name"));
+    adapter->AddEntry(_TSTR("settings_8color_theme_name"));
 
     std::shared_ptr<std::vector<std::string>> themes(new std::vector<std::string>());
 
@@ -125,7 +125,7 @@ void ColorThemeOverlay::Show(std::function<void()> callback) {
     std::shared_ptr<ListOverlay> dialog(new ListOverlay());
 
     dialog->SetAdapter(adapter)
-        .SetTitle("color themes")
+        .SetTitle(_TSTR("color_theme_list_overlay_title"))
         .SetSelectedIndex(selectedIndex)
         .SetWidth(36)
         .SetItemSelectedCallback(
@@ -184,20 +184,16 @@ void ColorThemeOverlay::Show256ColorsInfo(bool enabled, std::function<void()> ca
         std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
 
         (*dialog)
-            .SetTitle("musikbox")
-            .SetMessage(
-                "disabling 256 color degradation will enable RGB color mode, which will replace colors in the stock "
-                "palette. disabling this option results in higher fidelity themes, but it may cause display "
-                "issues in other applications until the terminal is reset.\n\n"
-                "are you sure you want to disable 256 color degradation?")
+            .SetTitle(_TSTR("default_overlay_title"))
+            .SetMessage(_TSTR("color_theme_256_overlay_message"))
             .AddButton(
-                "y", "y", "yes", [prefs, callback](std::string key) {
+                "y", "y", _TSTR("button_yes"), [prefs, callback](std::string key) {
                     prefs->SetBool(box::prefs::keys::UsePaletteColors, false);
                     prefs->Save();
                     showNeedsRestart(callback);
                 })
             .AddButton(
-                "n", "n", "no", [callback](std::string key) {
+                "n", "n", _TSTR("button_no"), [callback](std::string key) {
                     if (callback) {
                         callback();
                     }

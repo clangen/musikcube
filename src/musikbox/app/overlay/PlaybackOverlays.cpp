@@ -58,12 +58,12 @@ static void showNoOutputPluginsMessage() {
     std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
 
     (*dialog)
-        .SetTitle("musikbox")
-        .SetMessage("no output plugins found!")
+        .SetTitle(_TSTR("default_overlay_title"))
+        .SetMessage(_TSTR("playback_overlay_no_output_plugins_mesage"))
         .AddButton(
             "KEY_ENTER",
             "ENTER",
-            "ok");
+            _TSTR("button_ok"));
 
     App::Overlays().Push(dialog);
 }
@@ -71,13 +71,20 @@ static void showNoOutputPluginsMessage() {
 static void showOutputCannotCrossfadeMessage(const std::string& outputName) {
     std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
 
+    std::string message = _TSTR("playback_overlay_invalid_transport");
+    try {
+        message = boost::str(boost::format(message) % outputName);
+    }
+    catch (...) {
+    }
+
     (*dialog)
-        .SetTitle("musikbox")
-        .SetMessage("the selected output driver (" + outputName + ") doesn't currently support crossfading.")
+        .SetTitle(_TSTR("default_overlay_title"))
+        .SetMessage(message)
         .AddButton(
             "KEY_ENTER",
             "ENTER",
-            "ok");
+            _TSTR("button_ok"));
 
     App::Overlays().Push(dialog);
 }
@@ -117,7 +124,7 @@ void PlaybackOverlays::ShowOutputOverlay(
     std::shared_ptr<ListOverlay> dialog(new ListOverlay());
 
     dialog->SetAdapter(adapter)
-        .SetTitle("output plugins")
+        .SetTitle(_TSTR("playback_overlay_output_plugins_title"))
         .SetSelectedIndex(selectedIndex)
         .SetItemSelectedCallback(
             [callback, transportType](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
@@ -148,8 +155,8 @@ void PlaybackOverlays::ShowTransportOverlay(
     using ListOverlay = cursespp::ListOverlay;
 
     std::shared_ptr<Adapter> adapter(new Adapter());
-    adapter->AddEntry("gapless");
-    adapter->AddEntry("crossfade");
+    adapter->AddEntry(_TSTR("settings_transport_type_gapless"));
+    adapter->AddEntry(_TSTR("settings_transport_type_crossfade"));
     adapter->SetSelectable(true);
 
     size_t selectedIndex = (transportType == MasterTransport::Gapless) ? 0 : 1;
@@ -157,7 +164,7 @@ void PlaybackOverlays::ShowTransportOverlay(
     std::shared_ptr<ListOverlay> dialog(new ListOverlay());
 
     dialog->SetAdapter(adapter)
-        .SetTitle("playback transport")
+        .SetTitle(_TSTR("playback_overlay_transport_title"))
         .SetSelectedIndex(selectedIndex)
         .SetItemSelectedCallback(
             [callback](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {

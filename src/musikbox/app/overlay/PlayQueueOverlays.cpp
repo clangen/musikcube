@@ -63,10 +63,20 @@ using namespace cursespp;
 
 using Adapter = cursespp::SimpleScrollAdapter;
 
+static std::string stringWithFormat(const std::string& key, const std::string& value) {
+    std::string message = _TSTR(key);
+    try {
+        message = boost::str(boost::format(message) % value);
+    }
+    catch (...) {
+    }
+    return message;
+}
+
 static std::shared_ptr<Adapter> createAddToAdapter() {
     std::shared_ptr<Adapter> adapter(new Adapter());
-    adapter->AddEntry("add to end");
-    adapter->AddEntry("add as next");
+    adapter->AddEntry(_TSTR("playqueue_overlay_add_to_end"));
+    adapter->AddEntry(_TSTR("playqueue_overlay_add_as_next"));
     adapter->SetSelectable(true);
     return adapter;
 }
@@ -120,13 +130,15 @@ static void confirmOverwritePlaylist(
     std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
 
     (*dialog)
-        .SetTitle("musikbox")
-        .SetMessage("are you sure you want to overwrite the playlist '" + playlistName + "'?")
-        .AddButton("^[", "ESC", "no")
+        .SetTitle(_TSTR("default_overlay_title"))
+        .SetMessage(stringWithFormat(
+            "playqueue_overlay_confirm_overwrite_message",
+            playlistName))
+        .AddButton("^[", "ESC", _TSTR("button_no"))
         .AddButton(
             "KEY_ENTER",
             "ENTER",
-            "yes",
+            _TSTR("button_yes"),
             [library, playlistId, tracks](const std::string& str) {
                 library->Enqueue(SavePlaylistQuery::Replace(playlistId, tracks));
             });
@@ -140,7 +152,7 @@ static void createNewPlaylist(
 {
     std::shared_ptr<InputOverlay> dialog(new InputOverlay());
 
-    dialog->SetTitle("playlist name")
+    dialog->SetTitle(_TSTR("playqueue_overlay_playlist_name_title"))
         .SetWidth(DEFAULT_OVERLAY_WIDTH)
         .SetText("")
         .SetInputAcceptedCallback(
@@ -160,7 +172,7 @@ static void renamePlaylist(
 {
     std::shared_ptr<InputOverlay> dialog(new InputOverlay());
 
-    dialog->SetTitle("new playlist name")
+    dialog->SetTitle(_TSTR("playqueue_overlay_new_playlist_name_title"))
         .SetWidth(DEFAULT_OVERLAY_WIDTH)
         .SetText(oldName)
         .SetInputAcceptedCallback(
@@ -181,13 +193,15 @@ static void confirmDeletePlaylist(
     std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
 
     (*dialog)
-        .SetTitle("musikbox")
-        .SetMessage("are you sure you want to delete '" + playlistName + "'?")
-        .AddButton("^[", "ESC", "no")
+        .SetTitle(_TSTR("default_overlay_title"))
+        .SetMessage(stringWithFormat(
+            "playqueue_overlay_confirm_delete_message",
+            playlistName))
+        .AddButton("^[", "ESC", _TSTR("button_no"))
         .AddButton(
             "KEY_ENTER",
             "ENTER",
-            "yes",
+            _TSTR("button_yes"),
             [library, playlistId](const std::string& str) {
                 library->Enqueue(std::shared_ptr<DeletePlaylistQuery>(
                     new DeletePlaylistQuery(playlistId)));
@@ -200,9 +214,9 @@ static void showNoPlaylistsDialog() {
     std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
 
     (*dialog)
-        .SetTitle("musikbox")
-        .SetMessage("you haven't saved any playlists!")
-        .AddButton("KEY_ENTER", "ENTER", "ok");
+        .SetTitle(_TSTR("default_overlay_title"))
+        .SetMessage(_TSTR("playqueue_overlay_load_playlists_none_message"))
+        .AddButton("KEY_ENTER", "ENTER", _TSTR("button_ok"));
 
     App::Overlays().Push(dialog);
 }
@@ -227,7 +241,7 @@ void PlayQueueOverlays::ShowAddTrackOverlay(
     std::shared_ptr<ListOverlay> dialog(new ListOverlay());
 
     dialog->SetAdapter(adapter)
-        .SetTitle("add to play queue")
+        .SetTitle(_TSTR("playqueue_overlay_add_to_queue_title"))
         .SetSelectedIndex(0)
         .SetWidth(DEFAULT_OVERLAY_WIDTH)
         .SetItemSelectedCallback(
@@ -261,7 +275,7 @@ void PlayQueueOverlays::ShowAddCategoryOverlay(
     std::shared_ptr<ListOverlay> dialog(new ListOverlay());
 
     dialog->SetAdapter(adapter)
-        .SetTitle("add to play queue")
+        .SetTitle(_TSTR("playqueue_overlay_add_to_queue_title"))
         .SetSelectedIndex(0)
         .SetWidth(DEFAULT_OVERLAY_WIDTH)
         .SetItemSelectedCallback(
@@ -318,7 +332,7 @@ void PlayQueueOverlays::ShowLoadPlaylistOverlay(
     addPlaylistsToAdapter(adapter, result);
 
     showPlaylistListOverlay(
-        "load playlist",
+        _TSTR("playqueue_overlay_load_playlist_title"),
         adapter,
         [library, result, callback]
         (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
@@ -339,7 +353,7 @@ void PlayQueueOverlays::ShowSavePlaylistOverlay(
 
     std::shared_ptr<Adapter> adapter(new Adapter());
     adapter->SetSelectable(true);
-    adapter->AddEntry("new...");
+    adapter->AddEntry(_TSTR("playqueue_overlay_new"));
     addPlaylistsToAdapter(adapter, result);
 
     /* the caller can specify a playlistId that we should try to
@@ -355,7 +369,7 @@ void PlayQueueOverlays::ShowSavePlaylistOverlay(
     }
 
     showPlaylistListOverlay(
-        "save playlist",
+        _TSTR("playqueue_overlay_save_playlist_title"),
         adapter,
         [&playback, library, result]
         (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
@@ -389,7 +403,7 @@ void PlayQueueOverlays::ShowRenamePlaylistOverlay(musik::core::ILibraryPtr libra
     addPlaylistsToAdapter(adapter, result);
 
     showPlaylistListOverlay(
-        "rename playlist",
+        _TSTR("playqueue_overlay_rename_playlist_title"),
         adapter,
         [library, result](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
             if (index != ListWindow::NO_SELECTION) {
@@ -414,7 +428,7 @@ void PlayQueueOverlays::ShowDeletePlaylistOverlay(musik::core::ILibraryPtr libra
     addPlaylistsToAdapter(adapter, result);
 
     showPlaylistListOverlay(
-        "delete playlist",
+        _TSTR("playqueue_overlay_delete_playlist_title"),
         adapter,
         [library, result]
         (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {

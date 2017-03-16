@@ -34,61 +34,74 @@
 
 #include "stdafx.h"
 
-#include "VisualizerOverlay.h"
+#include "LocaleOverlay.h"
 
-#include <core/audio/Visualizer.h>
+#include <core/i18n/Locale.h>
 
 #include <cursespp/App.h>
 #include <cursespp/SimpleScrollAdapter.h>
 #include <cursespp/ListOverlay.h>
 #include <cursespp/DialogOverlay.h>
 
+using namespace musik;
+using namespace musik::core;
 using namespace musik::box;
-using namespace musik::core::audio;
 using namespace cursespp;
 
-static void showNoVisualizersMessage() {
+using Callback = std::function<void()>;
+
+static void showNeedsRestart(Callback cb = Callback()) {
     std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
 
     (*dialog)
         .SetTitle(_TSTR("default_overlay_title"))
-        .SetMessage(_TSTR("visualizer_overlay_no_visualizers_message"))
-        .AddButton(
-            "KEY_ENTER",
-            "ENTER",
-            _TSTR("button_ok"));
+        .SetMessage(_TSTR("settings_needs_restart"))
+        .AddButton("KEY_ENTER", "ENTER", _TSTR("button_ok"), [cb](std::string key) {
+            if (cb) {
+                cb();
+            }
+        });
 
     App::Overlays().Push(dialog);
 }
 
-VisualizerOverlay::VisualizerOverlay() {
+LocaleOverlay::LocaleOverlay() {
 }
 
-void VisualizerOverlay::Show() {
-    if (!vis::VisualizerCount()) {
-        showNoVisualizersMessage();
-        return;
-    }
+static std::vector<std::string> allLocales;
+
+void LocaleOverlay::Show(std::function<void()> callback) {
+    auto locale = i18n::Locale::Instance();
 
     using Adapter = cursespp::SimpleScrollAdapter;
     using ListOverlay = cursespp::ListOverlay;
 
+    std::string currentLocale = locale.GetSelectedLocale();
+    allLocales = locale.GetLocales();
+
     std::shared_ptr<Adapter> adapter(new Adapter());
-
-    for (size_t i = 0; i < vis::VisualizerCount(); i++) {
-        adapter->AddEntry(vis::GetVisualizer(i)->Name());
-    }
-
     adapter->SetSelectable(true);
+
+    int selectedIndex = 0;
+    for (size_t i = 0; i < allLocales.size(); i++) {
+        adapter->AddEntry(allLocales[i]);
+        if (allLocales[i] == currentLocale) {
+            selectedIndex = (int) i;
+        }
+    }
 
     std::shared_ptr<ListOverlay> dialog(new ListOverlay());
 
     dialog->SetAdapter(adapter)
-        .SetTitle(_TSTR("visualizer_overlay_title"))
+        .SetTitle(_TSTR("locale_overlay_select_title"))
+        .SetSelectedIndex(selectedIndex)
         .SetItemSelectedCallback(
-            [](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
-                vis::SetSelectedVisualizer(vis::GetVisualizer(index));
-                vis::SelectedVisualizer()->Show();
+            [callback, currentLocale]
+            (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
+                if (allLocales[index] != currentLocale) {
+                    i18n::Locale::Instance().SetSelectedLocale(allLocales[index]);
+                    showNeedsRestart(callback);
+                }
             });
 
     cursespp::App::Overlays().Push(dialog);

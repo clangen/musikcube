@@ -32,64 +32,18 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#pragma once
 
-#include "VisualizerOverlay.h"
+#include <functional>
 
-#include <core/audio/Visualizer.h>
+namespace musik {
+    namespace box {
+        class LocaleOverlay {
+            public:
+                static void Show(std::function<void()> callback);
 
-#include <cursespp/App.h>
-#include <cursespp/SimpleScrollAdapter.h>
-#include <cursespp/ListOverlay.h>
-#include <cursespp/DialogOverlay.h>
-
-using namespace musik::box;
-using namespace musik::core::audio;
-using namespace cursespp;
-
-static void showNoVisualizersMessage() {
-    std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
-
-    (*dialog)
-        .SetTitle(_TSTR("default_overlay_title"))
-        .SetMessage(_TSTR("visualizer_overlay_no_visualizers_message"))
-        .AddButton(
-            "KEY_ENTER",
-            "ENTER",
-            _TSTR("button_ok"));
-
-    App::Overlays().Push(dialog);
-}
-
-VisualizerOverlay::VisualizerOverlay() {
-}
-
-void VisualizerOverlay::Show() {
-    if (!vis::VisualizerCount()) {
-        showNoVisualizersMessage();
-        return;
+            private:
+                LocaleOverlay();
+        };
     }
-
-    using Adapter = cursespp::SimpleScrollAdapter;
-    using ListOverlay = cursespp::ListOverlay;
-
-    std::shared_ptr<Adapter> adapter(new Adapter());
-
-    for (size_t i = 0; i < vis::VisualizerCount(); i++) {
-        adapter->AddEntry(vis::GetVisualizer(i)->Name());
-    }
-
-    adapter->SetSelectable(true);
-
-    std::shared_ptr<ListOverlay> dialog(new ListOverlay());
-
-    dialog->SetAdapter(adapter)
-        .SetTitle(_TSTR("visualizer_overlay_title"))
-        .SetItemSelectedCallback(
-            [](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
-                vis::SetSelectedVisualizer(vis::GetVisualizer(index));
-                vis::SelectedVisualizer()->Show();
-            });
-
-    cursespp::App::Overlays().Push(dialog);
 }

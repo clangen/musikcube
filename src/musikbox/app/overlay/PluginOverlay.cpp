@@ -137,7 +137,7 @@ void PluginOverlay::Show() {
     std::shared_ptr<ListOverlay> dialog(new ListOverlay());
 
     dialog->SetAdapter(pluginAdapter)
-        .SetTitle("plugins")
+        .SetTitle(_TSTR("plugin_overlay_title"))
         .SetWidthPercent(80)
         .SetAutoDismiss(false)
         .SetItemSelectedCallback(

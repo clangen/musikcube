@@ -82,8 +82,6 @@ using namespace cursespp;
 #define ON(w, a) if (a != CURSESPP_DEFAULT_COLOR) { wattron(w, a); }
 #define OFF(w, a) if (a != CURSESPP_DEFAULT_COLOR) { wattroff(w, a); }
 
-static std::string playingFormat = "playing $title by $artist from $album";
-
 struct Token {
     enum Type { Normal, Placeholder };
 
@@ -133,6 +131,35 @@ void tokenize(const std::string& format, TokenList& tokens) {
     }
 }
 
+/* a cache of localized, pre-formatted strings we use every second. */
+static struct StringCache {
+    std::string PLAYING_FORMAT;
+    std::string STOPPED;
+    std::string EMPTY_SONG;
+    std::string EMPTY_ALBUM;
+    std::string EMPTY_ARTIST;
+    std::string SHUFFLE;
+    std::string MUTED;
+    std::string VOLUME;
+    std::string REPEAT_LIST;
+    std::string REPEAT_TRACK;
+    std::string REPEAT_OFF;
+
+    void Initialize() {
+        PLAYING_FORMAT = _TSTR("transport_playing_format");
+        STOPPED = _TSTR("transport_stopped");
+        EMPTY_SONG = _TSTR("transport_empty_song");
+        EMPTY_ALBUM = _TSTR("transport_empty_album");
+        EMPTY_ARTIST = _TSTR("transport_empty_artist");
+        SHUFFLE = "  " + _TSTR("transport_shuffle");
+        MUTED = _TSTR("transport_muted") + "  ";
+        VOLUME = _TSTR("transport_volume") + " ";
+        REPEAT_LIST = "  " + _TSTR("transport_repeat_list");
+        REPEAT_TRACK = "  " + _TSTR("transport_repeat_track");
+        REPEAT_OFF = "  " + _TSTR("transport_repeat_off");
+    }
+} Strings;
+
 /* a really boring class that contains a cache of currently playing
 information so we don't have to look it up every time we update the
 view (every second) */
@@ -168,15 +195,15 @@ struct musik::box::TransportDisplayCache {
 
             if (this->track) {
                 title = this->track->GetValue(constants::Track::TITLE);
-                title = title.size() ? title : "[song]";
+                title = title.size() ? title : Strings.EMPTY_SONG;
                 titleCols = u8cols(title);
 
                 album = this->track->GetValue(constants::Track::ALBUM);
-                album = album.size() ? album : "[album]";
+                album = album.size() ? album : Strings.EMPTY_ALBUM;
                 albumCols = u8cols(album);
 
                 artist = this->track->GetValue(constants::Track::ARTIST);
-                artist = artist.size() ? artist : "[artist]";
+                artist = artist.size() ? artist : Strings.EMPTY_ARTIST;
                 artistCols = u8cols(artist);
 
                 secondsTotal = (int)transport.GetDuration();
@@ -204,7 +231,7 @@ static size_t writePlayingFormat(
     size_t width)
 {
     TokenList tokens;
-    tokenize(playingFormat, tokens);
+    tokenize(Strings.PLAYING_FORMAT, tokens);
 
     int64 dim = COLOR_PAIR(CURSESPP_TEXT_DISABLED);
     int64 gb = COLOR_PAIR(CURSESPP_TEXT_ACTIVE);
@@ -282,6 +309,7 @@ TransportWindow::TransportWindow(musik::core::audio::PlaybackService& playback)
 , playback(playback)
 , transport(playback.GetTransport())
 , focus(FocusNone) {
+    Strings.Initialize();
     this->SetFrameVisible(false);
     this->playback.TrackChanged.connect(this, &TransportWindow::OnPlaybackServiceTrackChanged);
     this->playback.ModeChanged.connect(this, &TransportWindow::OnPlaybackModeChanged);
@@ -442,14 +470,14 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     /* prepare the "shuffle" label */
 
-    std::string shuffleLabel = "  shuffle";
+    std::string shuffleLabel = Strings.SHUFFLE;
     size_t shuffleLabelLen = displayCache->Columns(shuffleLabel);
 
     /* playing SONG TITLE from ALBUM NAME */
 
     if (stopped) {
         ON(c, disabled);
-        wprintw(c, "playback is stopped");
+        wprintw(c, Strings.STOPPED.c_str());
         displayCache->Reset();
         OFF(c, disabled);
     }
@@ -472,10 +500,10 @@ void TransportWindow::Update(TimeMode timeMode) {
     std::string volume;
 
     if (muted) {
-        volume = "muted  ";
+        volume = Strings.MUTED;
     }
     else {
-        volume = "vol ";
+        volume = Strings.VOLUME;
 
         for (int i = 0; i < 10; i++) {
             volume += (i == thumbOffset) ? "■" : "─";
@@ -490,19 +518,19 @@ void TransportWindow::Update(TimeMode timeMode) {
     /* repeat mode setup */
 
     RepeatMode mode = this->playback.GetRepeatMode();
-    std::string repeatModeLabel = "  repeat ";
+    std::string repeatModeLabel;
     int64 repeatAttrs = CURSESPP_DEFAULT_COLOR;
     switch (mode) {
         case RepeatList:
-            repeatModeLabel += "list";
+            repeatModeLabel += Strings.REPEAT_LIST;
             repeatAttrs = gb;
             break;
         case RepeatTrack:
-            repeatModeLabel += "track";
+            repeatModeLabel += Strings.REPEAT_TRACK;
             repeatAttrs = gb;
             break;
         default:
-            repeatModeLabel += "off";
+            repeatModeLabel += Strings.REPEAT_OFF;
             repeatAttrs = disabled;
             break;
     }

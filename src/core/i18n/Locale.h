@@ -37,12 +37,15 @@
 #include <core/config.h>
 #include <core/support/Preferences.h>
 #include <unordered_map>
+#include <sigslot/sigslot.h>
 #include <json.hpp>
 
 namespace musik { namespace core { namespace i18n {
 
     class Locale {
         public:
+            sigslot::signal1<std::string> LocaleChanged;
+
             ~Locale();
 
             static Locale& Instance() {
