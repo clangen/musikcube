@@ -19,8 +19,12 @@ OUTPATH="bin/dist/$DIRNAME"
 rm -rf "$OUTPATH"
 
 mkdir -p "$OUTPATH/plugins"
+mkdir -p "$OUTPATH/locales"
+mkdir -p "$OUTPATH/themes"
 cp bin/musikbox "$OUTPATH" 
 cp bin/plugins/*.dylib "$OUTPATH/plugins"
+cp bin/locales/*.json "$OUTPATH/locales"
+cp bin/themes/*.json "$OUTPATH/themes"
 
 pushd bin/dist 
 tar cvf musikbox_macos_static_$VERSION.tar $DIRNAME
