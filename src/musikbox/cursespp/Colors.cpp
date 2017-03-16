@@ -179,7 +179,7 @@ close_and_return:
 struct Theme {
     struct Color {
         Color() {
-            Set(0, 0, 0, 0, 0);
+            Set(0, 0, 0, 0, -1);
         }
 
         void Set(int colorId, int r, int g, int b, int palette) {
@@ -193,14 +193,21 @@ struct Theme {
         void Set(const json& obj) {
             if (!obj.is_null()) {
                 std::string hex = obj.value(JSON_KEY_HEX, "");
+                long palette = obj.value(JSON_KEY_PALETTE, -1);
+
                 if (hex.length() == 7 && hex[0] == '#') {
                     int rgb = strtol(hex.substr(1).c_str(), 0, 16);
                     this->b = rgb & 0x0000ff;
                     this->r = rgb >> 16;
                     this->g = (rgb >> 8) & 0x0000ff;
                 }
+                else if (palette > 15 && palette < 256) {
+                    /* we may have already been initialized with a default
+                    color. but if we have a palette color, clear the RGB
+                    values and prefer the value from the theme. */
+                    this->r = this->b = this->g = -1;
+                }
 
-                long palette = obj.value(JSON_KEY_PALETTE, -1);
                 if (palette != -1) {
                     this->palette = palette;
                 }
@@ -214,9 +221,16 @@ struct Theme {
             else if (mode == Colors::Palette) {
                 return this->palette;
             }
-            else if (this->colorId > 15 && this->r >= 0 && this->g >= 0 && this->b >= 0) {
-                init_color(this->colorId, SCALE(this->r), SCALE(this->g), SCALE(this->b));
-                return this->colorId;
+            else {
+                if (this->colorId > 15 && this->r >= 0 && this->g >= 0 && this->b >= 0) {
+                    init_color(this->colorId, SCALE(this->r), SCALE(this->g), SCALE(this->b));
+                    return this->colorId;
+                }
+                else {
+                    /* if RGB mode was requested but no RGB value exists, fall back to the
+                    palette value. */
+                    return this->palette;
+                }
             }
             return -1;
         }
