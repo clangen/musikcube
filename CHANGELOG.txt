@@ -1,3 +1,12 @@
+0.9.5
+
+* added localization support
+* added support for user-defined themes (solarized dark and light included as
+  examples)
+* patched PDCurses/win32a to support the standard *nix 256 color palette
+
+--------------------------------------------------------------------------------
+
 0.9.4
 
 * added a "syncing metadata" banner that is displayed while the indexer is 
