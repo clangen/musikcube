@@ -120,13 +120,16 @@ bool Locale::SetSelectedLocale(const std::string& locale) {
         });
 
     if (it != this->locales.end()) {
-        this->selectedLocale = locale;
-        this->localeData = nlohmann::json({});
-
         std::string localeFn = this->localePath + "/" + locale + ".json";
         this->localeData = loadLocaleData(localeFn);
 
         if (!this->localeData.is_null()) {
+            this->selectedLocale = locale;
+            this->localeData = nlohmann::json({});
+
+            prefs->SetString(keys::Locale, this->selectedLocale.c_str());
+            prefs->Save();
+
             this->LocaleChanged(this->selectedLocale);
             return true;
         }
