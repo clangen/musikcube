@@ -125,7 +125,6 @@ bool Locale::SetSelectedLocale(const std::string& locale) {
 
         if (!this->localeData.is_null()) {
             this->selectedLocale = locale;
-            this->localeData = nlohmann::json({});
 
             prefs->SetString(keys::Locale, this->selectedLocale.c_str());
             prefs->Save();
