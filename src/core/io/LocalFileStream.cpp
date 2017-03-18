@@ -91,7 +91,7 @@ bool LocalFileStream::Open(const char *filename, unsigned int options) {
         this->file = fopen(filename, "rb");
 #endif
 
-        if (this->file != NULL) {
+        if (this->file.load()) {
             debug::info(TAG, "opened successfully");
             return true;
         }
@@ -119,7 +119,7 @@ void LocalFileStream::Destroy() {
 }
 
 PositionType LocalFileStream::Read(void* buffer, PositionType readBytes) {
-    if (!this->file) {
+    if (!this->file.load()) {
         return 0;
     }
 
@@ -127,7 +127,7 @@ PositionType LocalFileStream::Read(void* buffer, PositionType readBytes) {
 }
 
 bool LocalFileStream::SetPosition(PositionType position) {
-    if (!this->file) {
+    if (!this->file.load()) {
         return false;
     }
 
@@ -135,7 +135,7 @@ bool LocalFileStream::SetPosition(PositionType position) {
 }
 
 PositionType LocalFileStream::Position() {
-    if (!this->file) {
+    if (!this->file.load()) {
         return -1;
     }
 
@@ -143,7 +143,7 @@ PositionType LocalFileStream::Position() {
 }
 
 bool LocalFileStream::Eof() {
-    return !this->file || feof(this->file) != 0;
+    return !this->file.load() || feof(this->file) != 0;
 }
 
 long LocalFileStream::Length() {
