@@ -48,7 +48,7 @@ using namespace musik::core::io;
 using namespace musik::core::sdk;
 
 LocalFileStream::LocalFileStream()
-: file(NULL)
+: file(nullptr)
 , filesize(-1) {
 }
 
@@ -104,9 +104,9 @@ bool LocalFileStream::Open(const char *filename, unsigned int options) {
 }
 
 bool LocalFileStream::Close() {
-    if (this->file) {
-        if (fclose(this->file) == 0) {
-            this->file = NULL;
+    auto file = this->file.exchange(nullptr);
+    if (file) {
+        if (fclose(file) == 0) {
             return true;
         }
     }
@@ -119,19 +119,31 @@ void LocalFileStream::Destroy() {
 }
 
 PositionType LocalFileStream::Read(void* buffer, PositionType readBytes) {
+    if (!this->file) {
+        return 0;
+    }
+
     return (PositionType) fread(buffer, 1, readBytes, this->file);
 }
 
 bool LocalFileStream::SetPosition(PositionType position) {
+    if (!this->file) {
+        return false;
+    }
+
     return fseek(this->file, position, SEEK_SET) == 0;
 }
 
 PositionType LocalFileStream::Position() {
+    if (!this->file) {
+        return -1;
+    }
+
     return ftell(this->file);
 }
 
 bool LocalFileStream::Eof() {
-    return feof(this->file) != 0;
+    return !this->file || feof(this->file) != 0;
 }
 
 long LocalFileStream::Length() {

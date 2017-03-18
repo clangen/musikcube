@@ -36,6 +36,7 @@
 
 #include <core/config.h>
 #include <core/sdk/IDataStream.h>
+#include <atomic>
 
 namespace musik { namespace core { namespace io {
 
@@ -61,7 +62,7 @@ namespace musik { namespace core { namespace io {
         private:
             std::string extension;
             std::string uri;
-            FILE *file;
+            std::atomic<FILE*> file;
             long filesize;
     };
 

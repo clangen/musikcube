@@ -136,6 +136,12 @@ bool Stream::OpenStream(std::string uri) {
     return false;
 }
 
+void Stream::Close() {
+    if (this->dataStream) {
+        this->dataStream->Close();
+    }
+}
+
 void Stream::OnBufferProcessedByPlayer(Buffer* buffer) {
     this->recycledBuffers.push_back(buffer);
 }

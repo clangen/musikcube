@@ -81,8 +81,11 @@ NomadDecoder::~NomadDecoder() {
 }
 
 void NomadDecoder::Destroy() {
-    nomad_close(this->nomadContext);
-    this->nomadContext = nullptr;
+    if (this->nomadContext) {
+        nomad_close(this->nomadContext);
+        this->nomadContext = nullptr;
+    }
+
     delete this;
 }
 
@@ -131,6 +134,9 @@ bool NomadDecoder::Open(IDataStream *stream) {
         else {
             this->duration = nomad_info(this->nomadContext)->duration;
         }
+    }
+    else {
+        this->nomadContext = nullptr;
     }
 
     return result ? false : true;

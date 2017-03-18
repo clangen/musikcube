@@ -68,7 +68,8 @@ bool NomadDecoderFactory::CanHandle(const char* type) const {
   if (endsWith(str, ".mp3") ||
       str.find("audio/mpeg3") != std::string::npos ||
       str.find("audio/x-mpeg-3") != std::string::npos ||
-      str.find("audio/mp3") != std::string::npos)
+      str.find("audio/mp3") != std::string::npos ||
+      str.find("audio/mpeg") != std::string::npos)
   {
       return true;
   }
