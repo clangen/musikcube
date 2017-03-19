@@ -1,3 +1,13 @@
+0.10.0
+
+* added GeekShadow's fr_FR locale
+* fixed a bug in locale loading
+* fixed a bug in nomad decoder if file load fails
+* updated `Player` <-> `Stream` interaction so it's possible to interrupt long,
+  blocking reads (e.g. if an http stream loader existed)
+
+--------------------------------------------------------------------------------
+
 0.9.5
 
 * added localization support
