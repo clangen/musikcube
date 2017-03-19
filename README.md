@@ -6,13 +6,13 @@ a cross-platform audio engine and player written in C++.
 
 a curses frontend to musikcube.
 
-musicbox compiles and runs easily on Windows, OSX and Linux.
+musicbox compiles and runs easily on Windows, macOS and Linux.
 
 it looks something like this on windows:
 
 ![windows screenshot](https://raw.githubusercontent.com/clangen/clangen-projects-static/master/musikcube/screenshots/windows.png)
 
-and this on osx:
+and this on macOS:
 
 ![osx screenshot](https://raw.githubusercontent.com/clangen/clangen-projects-static/master/musikcube/screenshots/osx.png)
 
