@@ -61,6 +61,26 @@ int RetainedTrack::Uri(char* dst, int size) {
     return track->Uri(dst, size);
 }
 
+unsigned long long RetainedTrack::GetUint64(const char* key, unsigned long long defaultValue) {
+    return track->GetUint64(key, defaultValue);
+}
+
+long long RetainedTrack::GetInt64(const char* key, long long defaultValue) {
+    return track->GetInt64(key, defaultValue);
+}
+
+unsigned long RetainedTrack::GetUint32(const char* key, unsigned long defaultValue) {
+    return track->GetUint32(key, defaultValue);
+}
+
+long RetainedTrack::GetInt32(const char* key, unsigned int defaultValue) {
+    return track->GetInt32(key, defaultValue);
+}
+
+double RetainedTrack::GetDouble(const char* key, double defaultValue) {
+    return track->GetDouble(key, defaultValue);
+}
+
 unsigned long long RetainedTrack::GetId() {
     return track->GetId();
 }

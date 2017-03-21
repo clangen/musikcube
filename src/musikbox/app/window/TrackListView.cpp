@@ -201,14 +201,12 @@ bool TrackListView::KeyPress(const std::string& key) {
     if (key == "KEY_ENTER") {
         if (headers.HeaderAt(this->GetSelectedIndex())) {
             auto track = this->GetSelectedTrack();
-            unsigned long long fieldId = std::stoull(
-                track->GetValue(constants::Track::ALBUM_ID));
 
             PlayQueueOverlays::ShowAddCategoryOverlay(
                 this->playback,
                 this->library,
                 constants::Track::ALBUM,
-                fieldId);
+                track->GetUint64(constants::Track::ALBUM_ID));
 
             handled = true;
         }

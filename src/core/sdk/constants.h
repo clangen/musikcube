@@ -108,5 +108,5 @@ namespace musik {
                 static const char* AlbumId = "album_id";
             }
 
-            static const int SdkVersion = 3;
+            static const int SdkVersion = 4;
 } } }
