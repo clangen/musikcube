@@ -45,7 +45,7 @@ namespace musik {
                     virtual ~IMessageQueue() { }
                     virtual void Post(IMessagePtr message, int64 delayMs = 0) = 0;
                     virtual int Remove(IMessageTarget *target, int type = -1) = 0;
-                    virtual void Broadcast(IMessagePtr message, int64 delayMs) = 0;
+                    virtual void Broadcast(IMessagePtr message, int64 delayMs = 0) = 0;
                     virtual bool Contains(IMessageTarget *target, int type = -1) = 0;
                     virtual void Debounce(IMessagePtr message, int64 delayMs = 0) = 0;
                     virtual void RegisterForBroadcasts(IMessageTargetPtr target) = 0;

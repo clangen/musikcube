@@ -138,6 +138,8 @@ namespace cursespp {
             virtual void OnVisibilityChanged(bool visible);
             virtual void OnFocusChanged(bool focused);
             virtual void OnRedraw();
+            virtual void OnAddedToParent(IWindow* newParent);
+            virtual void OnRemovedFromParent(IWindow* oldParent);
 
         private:
             IWindow* parent;

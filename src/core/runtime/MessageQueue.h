@@ -49,7 +49,7 @@ namespace musik { namespace core { namespace runtime {
             virtual ~MessageQueue();
 
             virtual void Post(IMessagePtr message, int64 delayMs = 0);
-            virtual void Broadcast(IMessagePtr message, int64 messageMs);
+            virtual void Broadcast(IMessagePtr message, int64 messageMs = 0);
             virtual int Remove(IMessageTarget *target, int type = -1);
             virtual bool Contains(IMessageTarget *target, int type = -1);
             virtual void Debounce(IMessagePtr message, int64 delayMs = 0);

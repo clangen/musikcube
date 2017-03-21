@@ -57,6 +57,11 @@
         "playqueue_overlay_new_playlist_name_title": "new playlist name",
         "playqueue_overlay_confirm_delete_message": "are you sure you want to delete '%s'?",
         "playqueue_overlay_load_playlists_none_message": "you haven't saved any playlists yet!",
+        "playqueue_overlay_album_header": "album actions",
+        "playqueue_overlay_album_jump_to": "jump to album in library",
+        "playqueue_overlay_add_to_end_in_queue": "add to end of play queue",
+        "playqueue_overlay_add_as_next_in_queue": "add as next in play queue",
+
 
         "visualizer_overlay_title": "visualizers",
         "visualizer_overlay_no_visualizers_message": "no visualizers found!",
@@ -85,5 +90,12 @@
         "transport_repeat_off": "repeat off",
 
         "main_syncing_banner": "syncing metadata (%d tracks processed)"
+    },
+
+    "dimensions": {
+        "playqueue_album_header_overlay": 35,
+        "playqueue_playlist_add_to_queue_overlay": 30,
+        "playqueue_playlist_list_overlay": 30,
+        "playqueue_playlist_name_overlay": 30
     }
 }

@@ -39,6 +39,7 @@
 
 #include <core/library/LocalLibraryConstants.h>
 
+#include <app/overlay/PlayQueueOverlays.h>
 #include <app/util/Hotkeys.h>
 #include <glue/util/Playback.h>
 
@@ -146,6 +147,7 @@ void LibraryLayout::ShowTrackSearch() {
 
 void LibraryLayout::InitializeWindows() {
     this->browseLayout.reset(new BrowseLayout(this->playback, this->library));
+
     this->nowPlayingLayout.reset(new NowPlayingLayout(this->playback, this->library));
 
     this->searchLayout.reset(new SearchLayout(this->playback, this->library));
@@ -192,6 +194,14 @@ void LibraryLayout::UpdateShortcutsWindow() {
             this->shortcuts->SetActive(Hotkeys::Get(Hotkeys::NavigateLibraryTracks));
         }
     }
+}
+
+void LibraryLayout::OnAddedToParent(IWindow* parent) {
+    MessageQueue().RegisterForBroadcasts(shared_from_this());
+}
+
+void LibraryLayout::OnRemovedFromParent(IWindow* parent) {
+    MessageQueue().UnregisterForBroadcasts(shared_from_this());
 }
 
 void LibraryLayout::OnSearchResultSelected(
@@ -253,6 +263,14 @@ bool LibraryLayout::SetFocus(cursespp::IWindowPtr window) {
     }
 
     return this->visibleLayout->SetFocus(window);
+}
+
+void LibraryLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
+    if (message.Type() == PlayQueueOverlays::BROADCAST_JUMP_TO_ALBUM) {
+        this->OnSearchResultSelected(nullptr, constants::Track::ALBUM, message.UserData1());
+    }
+
+    LayoutBase::ProcessMessage(message);
 }
 
 bool LibraryLayout::KeyPress(const std::string& key) {

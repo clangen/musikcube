@@ -43,6 +43,8 @@ namespace musik {
     namespace box {
         class PlayQueueOverlays {
             public:
+                static const int BROADCAST_JUMP_TO_ALBUM = 3000;
+
                 using PlaylistSelectedCallback = std::function<void(DBID)>;
 
                 static void ShowAddTrackOverlay(
@@ -54,6 +56,12 @@ namespace musik {
                     musik::core::ILibraryPtr library,
                     const std::string& fieldColumn,
                     DBID fieldId);
+
+                static void ShowAlbumDividerOverlay(
+                    musik::core::runtime::IMessageQueue& messageQueue,
+                    musik::core::audio::PlaybackService& playback,
+                    musik::core::ILibraryPtr library,
+                    musik::core::TrackPtr firstTrack);
 
                 static void ShowLoadPlaylistOverlay(
                     musik::core::audio::PlaybackService& playback,

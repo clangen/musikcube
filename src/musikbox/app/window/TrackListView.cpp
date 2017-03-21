@@ -202,11 +202,14 @@ bool TrackListView::KeyPress(const std::string& key) {
         if (headers.HeaderAt(this->GetSelectedIndex())) {
             auto track = this->GetSelectedTrack();
 
-            PlayQueueOverlays::ShowAddCategoryOverlay(
-                this->playback,
-                this->library,
-                constants::Track::ALBUM,
-                track->GetUint64(constants::Track::ALBUM_ID));
+            PlayQueueOverlays::ShowAlbumDividerOverlay(
+                MessageQueue(), this->playback, this->library, track);
+
+            //PlayQueueOverlays::ShowAddCategoryOverlay(
+            //    this->playback,
+            //    this->library,
+            //    constants::Track::ALBUM,
+            //    track->GetUint64(constants::Track::ALBUM_ID));
 
             handled = true;
         }

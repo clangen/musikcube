@@ -49,8 +49,8 @@ namespace musik { namespace core { namespace runtime {
             static IMessagePtr Create(
                 IMessageTarget* target,
                 int messageType,
-                int64 data1,
-                int64 data2);
+                int64 data1 = 0LL,
+                int64 data2 = 0LL);
 
             virtual ~Message() {
             }
