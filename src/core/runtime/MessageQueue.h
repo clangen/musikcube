@@ -49,9 +49,12 @@ namespace musik { namespace core { namespace runtime {
             virtual ~MessageQueue();
 
             virtual void Post(IMessagePtr message, int64 delayMs = 0);
+            virtual void Broadcast(IMessagePtr message, int64 messageMs);
             virtual int Remove(IMessageTarget *target, int type = -1);
             virtual bool Contains(IMessageTarget *target, int type = -1);
             virtual void Debounce(IMessagePtr message, int64 delayMs = 0);
+            virtual void RegisterForBroadcasts(IMessageTargetPtr target);
+            virtual void UnregisterForBroadcasts(IMessageTargetPtr target);
             virtual void WaitAndDispatch();
             virtual void Dispatch();
 
@@ -69,6 +72,7 @@ namespace musik { namespace core { namespace runtime {
             std::mutex queueMutex;
             std::list<EnqueuedMessage*> queue;
             std::list<EnqueuedMessage*> dispatch;
+            std::set<IMessageTargetPtr> receivers;
             std::condition_variable_any waitForDispatch;
             std::atomic<int64> nextMessageTime;
 
