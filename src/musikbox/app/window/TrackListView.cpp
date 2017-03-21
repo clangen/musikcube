@@ -44,7 +44,7 @@
 #include <glue/util/Duration.h>
 
 #include <app/util/Hotkeys.h>
-#include <app/window/EntryWithHeader.h>
+#include <app/overlay/PlayQueueOverlays.h>
 
 #include <boost/format.hpp>
 
@@ -109,14 +109,14 @@ void TrackListView::Requery(std::shared_ptr<TrackListQueryBase> query) {
 void TrackListView::OnQueryCompleted(IQuery* query) {
     if (this->query && query == this->query.get()) {
         if (this->query->GetStatus() == IQuery::Finished) {
-            this->metadata = this->query->GetResult();
-            this->headers = this->query->GetHeaders();
+            this->tracks = this->query->GetResult();
+            this->headers.Set(this->query->GetHeaders());
 
             /* if the query was functionally the same as the last query, don't
             mess with the selected index */
             if (this->lastQueryHash != this->query->GetQueryHash()) {
-                this->SetSelectedIndex(0);
                 this->ScrollToTop();
+                this->SetSelectedIndex(this->headers.HeaderAt(0) ? 1 : 0);
             }
 
             this->lastQueryHash = this->query->GetQueryHash();
@@ -130,12 +130,12 @@ void TrackListView::OnQueryCompleted(IQuery* query) {
 }
 
 std::shared_ptr<const TrackList> TrackListView::GetTrackList() {
-    return this->metadata;
+    return this->tracks;
 }
 
 void TrackListView::SetTrackList(std::shared_ptr<const TrackList> trackList) {
-    if (this->metadata != trackList) {
-        this->metadata = trackList;
+    if (this->tracks != trackList) {
+        this->tracks = trackList;
         this->SetSelectedIndex(0);
         this->ScrollToTop();
         this->OnAdapterChanged();
@@ -147,24 +147,34 @@ void TrackListView::SetTrackList(std::shared_ptr<const TrackList> trackList) {
 
 void TrackListView::Clear() {
     this->query.reset();
-    this->metadata.reset(new TrackList(this->library));
-    this->headers.reset(new std::set<size_t>());
+    this->tracks.reset(new TrackList(this->library));
+    this->headers.Reset();
     this->OnAdapterChanged();
 }
 
-TrackPtr TrackListView::Get(size_t index) {
-    return this->metadata->Get(index);
+TrackPtr TrackListView::GetSelectedTrack() {
+    auto i = this->GetSelectedTrackIndex();
+    return (i == ListWindow::NO_SELECTION) ? TrackPtr() : this->tracks->Get(i);
+}
+
+size_t TrackListView::GetSelectedTrackIndex() {
+    auto i = this->GetSelectedIndex();
+    if (i != ListWindow::NO_SELECTION) {
+        auto entry = adapter->GetEntry(this, i);
+        return static_cast<TrackListEntry*>(entry.get())->GetIndex();
+    }
+    return ListWindow::NO_SELECTION;
 }
 
 size_t TrackListView::Count() {
-    return this->metadata ? this->metadata->Count() : 0;
+    return this->tracks ? this->tracks->Count() : 0;
 }
 
 void TrackListView::ScrollToPlaying() {
-    if (this->playing && this->metadata) {
+    if (this->playing && this->tracks) {
         DBID id = this->playing->GetId();
-        for (size_t i = 0; i < this->metadata->Count(); i++) {
-            if (this->metadata->GetId(i) == id) {
+        for (size_t i = 0; i < this->tracks->Count(); i++) {
+            if (this->tracks->GetId(i) == id) {
                 this->SetSelectedIndex(i);
 
                 auto pos = this->GetScrollPosition();
@@ -188,12 +198,29 @@ void TrackListView::ProcessMessage(IMessage &message) {
 bool TrackListView::KeyPress(const std::string& key) {
     bool handled = false;
 
-    if (Hotkeys::Is(Hotkeys::NavigateJumpToPlaying, key)) {
+    if (key == "KEY_ENTER") {
+        if (headers.HeaderAt(this->GetSelectedIndex())) {
+            auto track = this->GetSelectedTrack();
+            unsigned long long fieldId = std::stoull(
+                track->GetValue(constants::Track::ALBUM_ID));
+
+            PlayQueueOverlays::ShowAddCategoryOverlay(
+                this->playback,
+                this->library,
+                constants::Track::ALBUM,
+                fieldId);
+
+            handled = true;
+        }
+    }
+    else if (Hotkeys::Is(Hotkeys::NavigateJumpToPlaying, key)) {
         this->ScrollToPlaying();
         handled = true;
     }
 
-    handled = ListWindow::KeyPress(key);
+    if (!handled) {
+        handled = ListWindow::KeyPress(key);
+    }
 
     if (handled) {
         this->lastChanged = now();
@@ -224,8 +251,54 @@ TrackListView::Adapter::Adapter(TrackListView &parent)
 : parent(parent) {
 }
 
+/* * * * TrackListView::HeaderCalculator * * * */
+
+void TrackListView::HeaderCalculator::Set(Headers rawOffsets) {
+    this->rawOffsets = rawOffsets;
+    this->absoluteOffsets.reset();
+    if (rawOffsets) {
+        this->absoluteOffsets.reset(new std::set<size_t>());
+        size_t i = 0;
+        for (auto val : (*this->rawOffsets)) {
+            this->absoluteOffsets->insert(val + i);
+            i++;
+        }
+    }
+}
+
+void TrackListView::HeaderCalculator::Reset() {
+    this->absoluteOffsets.reset();
+    this->rawOffsets.reset();
+}
+
+size_t TrackListView::HeaderCalculator::OffsetTrackIndex(size_t index) {
+    size_t result = index;
+    if (this->absoluteOffsets) {
+        for (auto offset : (*this->absoluteOffsets)) {
+            if (result != 0 && offset <= index) {
+                --result;
+            }
+            else {
+                break;
+            }
+        }
+    }
+    return result;
+}
+
+size_t TrackListView::HeaderCalculator::Count() {
+    return this->absoluteOffsets ? this->absoluteOffsets->size() : 0;
+}
+
+bool TrackListView::HeaderCalculator::HeaderAt(size_t index) {
+    return this->absoluteOffsets &&
+        this->absoluteOffsets->find(index) != this->absoluteOffsets->end();
+}
+
+/* * * * TrackListView::Adapter * * * */
+
 size_t TrackListView::Adapter::GetEntryCount() {
-    return parent.metadata ? parent.metadata->Count() : 0;
+    return parent.tracks ? parent.tracks->Count() + parent.headers.Count() : 0;
 }
 
 #define TRACK_COL_WIDTH 3
@@ -267,8 +340,28 @@ static std::string formatWithoutAlbum(TrackPtr track, size_t width) {
         % trackNum % title % duration % artist);
 }
 
-IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWindow* window, size_t index) {
-    TrackPtr track = parent.metadata->Get(index);
+IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWindow* window, size_t rawIndex) {
+    bool selected = (rawIndex == parent.GetSelectedIndex());
+
+    if (this->parent.headers.HeaderAt(rawIndex)) {
+        /* the next track at the next logical index will have the album
+        tracks we're interesetd in. */
+        auto trackIndex = this->parent.headers.OffsetTrackIndex(rawIndex + 1);
+        TrackPtr track = parent.tracks->Get(trackIndex);
+        std::string album = track->GetValue(constants::Track::ALBUM);
+
+        std::shared_ptr<TrackListEntry> entry(new
+            TrackListEntry(album, trackIndex, RowType::Separator));
+
+        entry->SetAttrs(selected
+            ? COLOR_PAIR(CURSESPP_LIST_ITEM_HIGHLIGHTED_HEADER)
+            : COLOR_PAIR(CURSESPP_LIST_ITEM_HEADER));
+
+        return entry;
+    }
+
+    size_t trackIndex = this->parent.headers.OffsetTrackIndex(rawIndex);
+    TrackPtr track = parent.tracks->Get(trackIndex);
 
     if (!track) {
         return MISSING_ENTRY;
@@ -277,11 +370,9 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
     int64 attrs = CURSESPP_DEFAULT_COLOR;
 
     if (parent.decorator) {
-        attrs = parent.decorator(track, index);
+        attrs = parent.decorator(track, trackIndex);
     }
     else {
-        bool selected = index == parent.GetSelectedIndex();
-
         attrs = selected
             ? COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM)
             : CURSESPP_DEFAULT_COLOR;
@@ -304,15 +395,10 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
         ? parent.formatter(track, this->GetWidth())
         : formatWithoutAlbum(track, this->GetWidth());
 
-    if (this->parent.headers && this->parent.headers->find(index) != this->parent.headers->end()) {
-        std::string album = track->GetValue(constants::Track::ALBUM);
-        std::shared_ptr<EntryWithHeader> entry(new EntryWithHeader(album, text));
-        entry->SetAttrs(COLOR_PAIR(CURSESPP_LIST_ITEM_HEADER), attrs);
-        return entry;
-    }
-    else {
-        std::shared_ptr<SingleLineEntry> entry(new SingleLineEntry(text));
-        entry->SetAttrs(attrs);
-        return entry;
-    }
+    std::shared_ptr<TrackListEntry> entry(
+        new TrackListEntry(text, trackIndex, RowType::Track));
+
+    entry->SetAttrs(attrs);
+
+    return entry;
 }

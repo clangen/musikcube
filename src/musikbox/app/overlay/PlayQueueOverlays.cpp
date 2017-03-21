@@ -226,16 +226,8 @@ PlayQueueOverlays::PlayQueueOverlays() {
 
 void PlayQueueOverlays::ShowAddTrackOverlay(
     PlaybackService& playback,
-    TrackListView& trackList)
+    unsigned long long trackId)
 {
-    size_t selectedIndex = trackList.GetSelectedIndex();
-
-    if (selectedIndex == ListWindow::NO_SELECTION) {
-        return;
-    }
-
-    DBID trackId = trackList.Get(selectedIndex)->GetId();
-
     auto adapter = createAddToAdapter();
 
     std::shared_ptr<ListOverlay> dialog(new ListOverlay());

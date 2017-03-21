@@ -48,9 +48,6 @@
     <ClCompile Include="app\util\GlobalHotkeys.cpp">
       <Filter>app\util</Filter>
     </ClCompile>
-    <ClCompile Include="app\window\EntryWithHeader.cpp">
-      <Filter>app\window</Filter>
-    </ClCompile>
     <ClCompile Include="app\layout\ConsoleLayout.cpp">
       <Filter>app\layout</Filter>
     </ClCompile>
@@ -218,9 +215,6 @@
     </ClInclude>
     <ClInclude Include="cursespp\IOrderable.h">
       <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="app\window\EntryWithHeader.h">
-      <Filter>app\window</Filter>
     </ClInclude>
     <ClInclude Include="app\layout\ConsoleLayout.h">
       <Filter>app\layout</Filter>

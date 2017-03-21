@@ -38,6 +38,7 @@
 #include <cursespp/ScrollAdapterBase.h>
 #include <cursespp/IKeyHandler.h>
 #include <cursespp/ListWindow.h>
+#include <cursespp/SingleLineEntry.h>
 
 #include <core/library/query/local/TrackListQueryBase.h>
 #include <core/audio/PlaybackService.h>
@@ -55,8 +56,10 @@ namespace musik {
             public sigslot::has_slots<>
         {
             public:
+                /* events */
                 sigslot::signal1<musik::core::db::local::TrackListQueryBase*> Requeried;
 
+                /* types */
                 typedef std::function<std::string(
                     musik::core::TrackPtr, size_t)> RowFormatter;
 
@@ -65,8 +68,27 @@ namespace musik {
 
                 typedef std::shared_ptr<std::set<size_t> > Headers;
 
+                enum class RowType : char { Track = 't', Separator = 's' };
+
+                /* our special type of list entry */
+                class TrackListEntry : public cursespp::SingleLineEntry {
+                    public:
+                        TrackListEntry(const std::string& str, int index, RowType type)
+                        : cursespp::SingleLineEntry(str), index(index), type(type) { }
+
+                        virtual ~TrackListEntry() { }
+
+                        RowType GetType() { return type; }
+                        int GetIndex() { return index; }
+
+                    private:
+                        RowType type;
+                        int index;
+                };
+
                 typedef musik::core::db::local::TrackListQueryBase TrackListQueryBase;
 
+                /* ctor, dtor */
                 TrackListView(
                     musik::core::audio::PlaybackService& playback,
                     musik::core::ILibraryPtr library,
@@ -75,14 +97,16 @@ namespace musik {
 
                 virtual ~TrackListView();
 
+                /* IWindow */
                 virtual void ProcessMessage(musik::core::runtime::IMessage &message);
                 virtual bool KeyPress(const std::string& key);
 
+                /* regular methods */
                 std::shared_ptr<const musik::core::TrackList> GetTrackList();
                 void SetTrackList(std::shared_ptr<const musik::core::TrackList> trackList);
-
+                musik::core::TrackPtr GetSelectedTrack();
+                size_t GetSelectedTrackIndex();
                 void Clear();
-                musik::core::TrackPtr Get(size_t index);
                 size_t Count();
 
                 void Requery(std::shared_ptr<TrackListQueryBase> query);
@@ -105,12 +129,26 @@ namespace musik {
                 };
 
             private:
+                /* class to help with header offset calculation */
+                class HeaderCalculator {
+                    public:
+                        void Set(Headers rawOffsets);
+                        void Reset();
+                        size_t OffsetTrackIndex(size_t index);
+                        bool HeaderAt(size_t index);
+                        size_t Count();
+
+                    private:
+                        Headers absoluteOffsets;
+                        Headers rawOffsets;
+                };
+
                 void OnTrackChanged(size_t index, musik::core::TrackPtr track);
                 void ScrollToPlaying();
 
                 std::shared_ptr<TrackListQueryBase> query;
-                std::shared_ptr<const musik::core::TrackList> metadata;
-                Headers headers;
+                std::shared_ptr<const musik::core::TrackList> tracks;
+                HeaderCalculator headers;
                 Adapter* adapter;
                 musik::core::audio::PlaybackService& playback;
                 musik::core::TrackPtr playing;

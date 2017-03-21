@@ -47,7 +47,7 @@ namespace musik {
 
                 static void ShowAddTrackOverlay(
                     musik::core::audio::PlaybackService& playback,
-                    musik::box::TrackListView& trackList);
+                    unsigned long long trackId);
 
                 static void ShowAddCategoryOverlay(
                     musik::core::audio::PlaybackService& playback,

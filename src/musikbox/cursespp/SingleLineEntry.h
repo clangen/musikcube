@@ -48,7 +48,7 @@ namespace cursespp {
             virtual std::string GetLine(size_t line);
 
             void SetAttrs(int64 attrs);
-            
+
         private:
             size_t width;
             std::string value;

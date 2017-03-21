@@ -201,8 +201,11 @@ bool BrowseLayout::KeyPress(const std::string& key) {
     }
     else if (Hotkeys::Is(Hotkeys::ContextMenu, key)) {
         if (this->GetFocus() == this->trackList) {
-            PlayQueueOverlays::ShowAddTrackOverlay(this->playback, *this->trackList);
-            return true;
+            TrackPtr track = this->trackList->GetSelectedTrack();
+            if (track) {
+                PlayQueueOverlays::ShowAddTrackOverlay(this->playback, track->GetId());
+                return true;
+            }
         }
     }
     else if (Hotkeys::Is(Hotkeys::ViewRefresh, key)) {
