@@ -41,6 +41,7 @@
 #include <condition_variable>
 #include <chrono>
 #include <atomic>
+#include <set>
 
 namespace musik { namespace core { namespace runtime {
     class MessageQueue : public IMessageQueue {
