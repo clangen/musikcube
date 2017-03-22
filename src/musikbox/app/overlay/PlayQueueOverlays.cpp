@@ -339,8 +339,9 @@ void PlayQueueOverlays::ShowAlbumDividerOverlay(
                 return;
             }
 
-            auto albumColumn = library::constants::Track::ALBUM_ID;
-            auto albumId = firstTrack->GetUint64(albumColumn);
+            auto albumIdColumn = library::constants::Track::ALBUM_ID;
+            auto albumColumn = library::constants::Track::ALBUM;
+            auto albumId = firstTrack->GetUint64(albumIdColumn);
 
             if (index == 0) {
                 messageQueue.Broadcast(runtime::Message::Create(
