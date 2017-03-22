@@ -106,6 +106,10 @@ void TrackListView::Requery(std::shared_ptr<TrackListQueryBase> query) {
     this->library->Enqueue(this->query);
 }
 
+void TrackListView::SelectFirstTrack() {
+    this->SetSelectedIndex(this->headers.HeaderAt(0) ? 1 : 0);
+}
+
 void TrackListView::OnQueryCompleted(IQuery* query) {
     if (this->query && query == this->query.get()) {
         if (this->query->GetStatus() == IQuery::Finished) {
@@ -116,7 +120,7 @@ void TrackListView::OnQueryCompleted(IQuery* query) {
             mess with the selected index */
             if (this->lastQueryHash != this->query->GetQueryHash()) {
                 this->ScrollToTop();
-                this->SetSelectedIndex(this->headers.HeaderAt(0) ? 1 : 0);
+                this->SelectFirstTrack();
             }
 
             this->lastQueryHash = this->query->GetQueryHash();
@@ -136,13 +140,11 @@ std::shared_ptr<const TrackList> TrackListView::GetTrackList() {
 void TrackListView::SetTrackList(std::shared_ptr<const TrackList> trackList) {
     if (this->tracks != trackList) {
         this->tracks = trackList;
-        this->SetSelectedIndex(0);
         this->ScrollToTop();
-        this->OnAdapterChanged();
+        this->SelectFirstTrack();
     }
-    else {
-        this->OnAdapterChanged();
-    }
+
+    this->OnAdapterChanged();
 }
 
 void TrackListView::Clear() {
@@ -175,15 +177,17 @@ void TrackListView::ScrollToPlaying() {
         DBID id = this->playing->GetId();
         for (size_t i = 0; i < this->tracks->Count(); i++) {
             if (this->tracks->GetId(i) == id) {
-                this->SetSelectedIndex(i);
+                size_t rawIndex = headers.TrackListToAdapterIndex(i);
+                this->SetSelectedIndex(rawIndex);
 
                 auto pos = this->GetScrollPosition();
                 size_t first = pos.firstVisibleEntryIndex;
                 size_t last = first + pos.visibleEntryCount;
-                if (i < first || i >= last) {
-                    this->ScrollTo(i);
+                if (rawIndex < first || rawIndex >= last) {
+                    this->ScrollTo(rawIndex);
                 }
-                break;
+
+                return;
             }
         }
     }
@@ -204,12 +208,6 @@ bool TrackListView::KeyPress(const std::string& key) {
 
             PlayQueueOverlays::ShowAlbumDividerOverlay(
                 MessageQueue(), this->playback, this->library, track);
-
-            //PlayQueueOverlays::ShowAddCategoryOverlay(
-            //    this->playback,
-            //    this->library,
-            //    constants::Track::ALBUM,
-            //    track->GetUint64(constants::Track::ALBUM_ID));
 
             handled = true;
         }
@@ -272,12 +270,20 @@ void TrackListView::HeaderCalculator::Reset() {
     this->rawOffsets.reset();
 }
 
-size_t TrackListView::HeaderCalculator::OffsetTrackIndex(size_t index) {
+size_t TrackListView::HeaderCalculator::AdapterToTrackListIndex(size_t index) {
+    return this->ApplyHeaderOffset(index, -1);
+}
+
+size_t TrackListView::HeaderCalculator::TrackListToAdapterIndex(size_t index) {
+    return this->ApplyHeaderOffset(index, 1);
+}
+
+size_t TrackListView::HeaderCalculator::ApplyHeaderOffset(size_t index, int delta) {
     size_t result = index;
     if (this->absoluteOffsets) {
         for (auto offset : (*this->absoluteOffsets)) {
             if (result != 0 && offset <= index) {
-                --result;
+                result += delta;
             }
             else {
                 break;
@@ -347,7 +353,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
     if (this->parent.headers.HeaderAt(rawIndex)) {
         /* the next track at the next logical index will have the album
         tracks we're interesetd in. */
-        auto trackIndex = this->parent.headers.OffsetTrackIndex(rawIndex + 1);
+        auto trackIndex = this->parent.headers.AdapterToTrackListIndex(rawIndex + 1);
         TrackPtr track = parent.tracks->Get(trackIndex);
         std::string album = track->GetValue(constants::Track::ALBUM);
 
@@ -361,7 +367,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
         return entry;
     }
 
-    size_t trackIndex = this->parent.headers.OffsetTrackIndex(rawIndex);
+    size_t trackIndex = this->parent.headers.AdapterToTrackListIndex(rawIndex);
     TrackPtr track = parent.tracks->Get(trackIndex);
 
     if (!track) {

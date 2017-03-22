@@ -134,17 +134,21 @@ namespace musik {
                     public:
                         void Set(Headers rawOffsets);
                         void Reset();
-                        size_t OffsetTrackIndex(size_t index);
+                        size_t AdapterToTrackListIndex(size_t index);
+                        size_t TrackListToAdapterIndex(size_t index);
                         bool HeaderAt(size_t index);
                         size_t Count();
 
                     private:
+                        size_t ApplyHeaderOffset(size_t index, int delta);
+
                         Headers absoluteOffsets;
                         Headers rawOffsets;
                 };
 
                 void OnTrackChanged(size_t index, musik::core::TrackPtr track);
                 void ScrollToPlaying();
+                void SelectFirstTrack();
 
                 std::shared_ptr<TrackListQueryBase> query;
                 std::shared_ptr<const musik::core::TrackList> tracks;
