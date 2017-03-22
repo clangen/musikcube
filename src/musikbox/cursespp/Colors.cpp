@@ -66,12 +66,14 @@ indicies we'll use to store them */
 #define THEME_COLOR_BANNER_FOREGROUND 38
 #define THEME_COLOR_LIST_HEADER_BACKGROUND 39
 #define THEME_COLOR_LIST_HEADER_FOREGROUND 40
-#define THEME_COLOR_LIST_ITEM_HIGHLIGHTED_BACKGROUND 41
-#define THEME_COLOR_LIST_ITEM_HIGHLIGHTED_FOREGROUND 42
-#define THEME_COLOR_LIST_ITEM_ACTIVE_BACKGROUND 43
-#define THEME_COLOR_LIST_ITEM_ACTIVE_FOREGROUND 44
-#define THEME_COLOR_LIST_ITEM_ACTIVE_HIGHLIGHTED_BACKGROUND 45
-#define THEME_COLOR_LIST_ITEM_ACTIVE_HIGHLIGHTED_FOREGROUND 46
+#define THEME_COLOR_LIST_HEADER_HIGHLIGHTED_BACKGROUND 41
+#define THEME_COLOR_LIST_HEADER_HIGHLIGHTED_FOREGROUND 42
+#define THEME_COLOR_LIST_ITEM_HIGHLIGHTED_BACKGROUND 43
+#define THEME_COLOR_LIST_ITEM_HIGHLIGHTED_FOREGROUND 44
+#define THEME_COLOR_LIST_ITEM_ACTIVE_BACKGROUND 45
+#define THEME_COLOR_LIST_ITEM_ACTIVE_FOREGROUND 46
+#define THEME_COLOR_LIST_ITEM_ACTIVE_HIGHLIGHTED_BACKGROUND 47
+#define THEME_COLOR_LIST_ITEM_ACTIVE_HIGHLIGHTED_FOREGROUND 48
 
 /* user-readable names for the color identifiers above. these are
 used as key names in the config files */
@@ -100,6 +102,8 @@ used as key names in the config files */
 #define JSON_KEY_COLOR_BANNER_FOREGROUND "banner_foreground"
 #define JSON_KEY_COLOR_LIST_HEADER_BACKGROUND "list_header_background"
 #define JSON_KEY_COLOR_LIST_HEADER_FOREGROUND "list_header_foreground"
+#define JSON_KEY_COLOR_LIST_HEADER_HIGHLIGHTED_BACKGROUND "list_header_highlighted_background"
+#define JSON_KEY_COLOR_LIST_HEADER_HIGHLIGHTED_FOREGROUND "list_header_highlighted_foreground"
 #define JSON_KEY_COLOR_LIST_ITEM_HIGHLIGHTED_BACKGROUND "list_item_highlighted_background"
 #define JSON_KEY_COLOR_LIST_ITEM_HIGHLIGHTED_FOREGROUND "list_item_highlighted_foreground"
 #define JSON_KEY_COLOR_LIST_ITEM_ACTIVE_BACKGROUND "list_item_active_background"
@@ -282,6 +286,8 @@ struct Theme {
         /* listview */
         listHeaderBackground.Set(THEME_COLOR_LIST_HEADER_BACKGROUND, 36, 36, 31, -1);
         listHeaderForeground.Set(THEME_COLOR_LIST_HEADER_FOREGROUND, 166, 226, 46, COLOR_256_GREEN);
+        listHeaderHighlightedBackground.Set(THEME_COLOR_LIST_HEADER_HIGHLIGHTED_BACKGROUND, 166, 226, 46, COLOR_256_GREEN);
+        listHeaderHighlightedForeground.Set(THEME_COLOR_LIST_HEADER_HIGHLIGHTED_FOREGROUND, 36, 36, 31, COLOR_BLACK);
         listHighlightedBackground.Set(THEME_COLOR_LIST_ITEM_HIGHLIGHTED_BACKGROUND, 166, 226, 46, COLOR_256_GREEN);
         listHighlightedForeground.Set(THEME_COLOR_LIST_ITEM_HIGHLIGHTED_FOREGROUND, 24, 24, 20, COLOR_BLACK);
         listActiveBackground.Set(THEME_COLOR_LIST_ITEM_ACTIVE_BACKGROUND, 66, 66, 56, COLOR_256_MEDIUM_GRAY);
@@ -336,6 +342,8 @@ struct Theme {
                     this->bannerForeground.Set(colors.value(JSON_KEY_COLOR_BANNER_FOREGROUND, unset));
                     this->listHeaderBackground.Set(colors.value(JSON_KEY_COLOR_LIST_HEADER_BACKGROUND, unset));
                     this->listHeaderForeground.Set(colors.value(JSON_KEY_COLOR_LIST_HEADER_FOREGROUND, unset));
+                    this->listHeaderHighlightedBackground.Set(colors.value(JSON_KEY_COLOR_LIST_HEADER_HIGHLIGHTED_BACKGROUND, unset));
+                    this->listHeaderHighlightedForeground.Set(colors.value(JSON_KEY_COLOR_LIST_HEADER_HIGHLIGHTED_FOREGROUND, unset));
                     this->listHighlightedBackground.Set(colors.value(JSON_KEY_COLOR_LIST_ITEM_HIGHLIGHTED_BACKGROUND, unset));
                     this->listHighlightedForeground.Set(colors.value(JSON_KEY_COLOR_LIST_ITEM_HIGHLIGHTED_FOREGROUND, unset));
                     this->listActiveBackground.Set(colors.value(JSON_KEY_COLOR_LIST_ITEM_ACTIVE_BACKGROUND, unset));
@@ -415,6 +423,11 @@ struct Theme {
             listHeaderBackground.Id(mode, -1));
 
         init_pair(
+            CURSESPP_LIST_ITEM_HIGHLIGHTED_HEADER,
+            listHeaderHighlightedForeground.Id(mode, -1),
+            listHeaderHighlightedBackground.Id(mode, COLOR_GREEN));
+
+        init_pair(
             CURSESPP_SELECTED_LIST_ITEM,
             listActiveForeground.Id(mode, COLOR_YELLOW),
             listActiveBackground.Id(mode, COLOR_BLACK));
@@ -468,6 +481,8 @@ struct Theme {
     /* listview */
     Color listHeaderBackground;
     Color listHeaderForeground;
+    Color listHeaderHighlightedBackground;
+    Color listHeaderHighlightedForeground;
     Color listHighlightedBackground;
     Color listHighlightedForeground;
     Color listActiveForeground;

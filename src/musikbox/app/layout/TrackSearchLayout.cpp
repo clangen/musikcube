@@ -152,7 +152,10 @@ bool TrackSearchLayout::KeyPress(const std::string& key) {
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::ContextMenu, key)) {
-        PlayQueueOverlays::ShowAddTrackOverlay(this->playback, *this->trackList);
+        TrackPtr track = this->trackList->GetSelectedTrack();
+        if (track) {
+            PlayQueueOverlays::ShowAddTrackOverlay(this->playback, track->GetId());
+        }
     }
     else if (key == "KEY_DOWN") {
         if (this->GetFocus() == this->input) {

@@ -203,11 +203,19 @@ void Window::SetParent(IWindow* parent) {
     if (this->parent != parent) {
         IWindowGroup* group = dynamic_cast<IWindowGroup*>(this->parent);
 
+        IWindow* oldParent = this->parent;
         this->parent = parent;
 
         if (this->frame) {
             this->Hide();
             this->Show();
+        }
+
+        if (parent) {
+            this->OnAddedToParent(parent);
+        }
+        else {
+            this->OnRemovedFromParent(oldParent);
         }
     }
 }
@@ -280,6 +288,14 @@ void Window::OnFocusChanged(bool focused) {
 }
 
 void Window::OnRedraw() {
+    /* for subclass use */
+}
+
+void Window::OnAddedToParent(IWindow* newParent) {
+    /* for subclass use */
+}
+
+void Window::OnRemovedFromParent(IWindow* oldParent) {
     /* for subclass use */
 }
 
@@ -450,7 +466,7 @@ void Window::OnParentVisibilityChanged(bool visible) {
             this->Destroy();
         }
 
-        this->OnVisibilityChanged(false);
+        //this->OnVisibilityChanged(false);
     }
     else if (visible && this->isVisible) {
         if (this->framePanel) {
@@ -460,7 +476,7 @@ void Window::OnParentVisibilityChanged(bool visible) {
             this->Recreate();
         }
 
-        this->OnVisibilityChanged(true);
+        //this->OnVisibilityChanged(true);
     }
 }
 

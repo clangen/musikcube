@@ -87,6 +87,31 @@ std::string IndexerTrack::GetValue(const char* metakey) {
     return "";
 }
 
+unsigned long long IndexerTrack::GetUint64(const char* key, unsigned long long defaultValue) {
+    try { return std::stoull(GetValue(key)); } catch (...) { }
+    return defaultValue;
+}
+
+long long IndexerTrack::GetInt64(const char* key, long long defaultValue) {
+    try { return std::stoll(GetValue(key)); } catch (...) { }
+    return defaultValue;
+}
+
+unsigned long IndexerTrack::GetUint32(const char* key, unsigned long defaultValue) {
+    try { return std::stoul(GetValue(key)); } catch (...) { }
+    return defaultValue;
+}
+
+long IndexerTrack::GetInt32(const char* key, unsigned int defaultValue) {
+    try { return std::stol(GetValue(key)); } catch (...) { }
+    return defaultValue;
+}
+
+double IndexerTrack::GetDouble(const char* key, double defaultValue) {
+    try { return std::stod(GetValue(key)); } catch (...) { }
+    return defaultValue;
+}
+
 void IndexerTrack::SetValue(const char* metakey, const char* value) {
     if (metakey && value) {
         this->internalMetadata->metadata.insert(

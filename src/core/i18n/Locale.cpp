@@ -41,13 +41,15 @@
 #include "Locale.h"
 
 #define KEY_STRINGS "strings"
+#define KEY_DIMENSIONS "dimensions"
 #define DEFAULT_LOCALE "en_US"
 
 using namespace musik::core::i18n;
 using namespace musik::core;
 using namespace musik::core::prefs;
-
 using namespace boost::filesystem;
+
+static nlohmann::json empty;
 
 static nlohmann::json loadLocaleData(const std::string& fn) {
     char* bytes = nullptr;
@@ -142,13 +144,10 @@ std::string Locale::Translate(const std::string& key) {
 }
 
 std::string Locale::Translate(const char* key) {
-    static nlohmann::json empty;
-
     /* get the string from the current locale */
     if (!this->localeData.is_null()) {
         const nlohmann::json& strings = this->localeData.value(KEY_STRINGS, empty);
         auto it = strings.find(key);
-
         if (it != strings.end()) {
             return it.value();
         }
@@ -163,4 +162,22 @@ std::string Locale::Translate(const char* key) {
 
     /* otherwise, just return the key! */
     return key;
+}
+
+int Locale::Dimension(const char* key, int defaultValue) {
+    if (!this->localeData.is_null()) { /* current locale */
+        const nlohmann::json& strings = this->localeData.value(KEY_DIMENSIONS, empty);
+        auto it = strings.find(key);
+        if (it != strings.end()) {
+            return it.value();
+        }
+    }
+
+    if (!this->defaultLocaleData.is_null()) { /* fall back to default */
+        const nlohmann::json& strings = this->defaultLocaleData.value(KEY_DIMENSIONS, empty);
+        auto it = strings.find(key);
+        return (it != strings.end()) ? it.value() : key;
+    }
+
+    return defaultValue; /* not found anywhere */
 }

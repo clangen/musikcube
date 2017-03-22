@@ -50,8 +50,14 @@ namespace musik {
                 auto tracks = trackList->GetTrackList();
 
                 if (tracks && tracks->Count()) {
-                    size_t index = (focused.get() == trackList.get())
-                        ? trackList->GetSelectedIndex() : 0;
+                    size_t index = 0;
+                    if (focused.get() == trackList.get()) {
+                        index = trackList->GetSelectedTrackIndex();
+
+                        if (index == cursespp::ListWindow::NO_SELECTION) {
+                            return;
+                        }
+                    }
 
                     playback.Play(*tracks, index);
                 }

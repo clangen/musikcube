@@ -124,6 +124,19 @@ void MessageQueue::Dispatch() {
     }
 }
 
+void MessageQueue::RegisterForBroadcasts(IMessageTargetPtr target) {
+    LockT lock(this->queueMutex);
+    this->receivers.insert(target);
+}
+
+void MessageQueue::UnregisterForBroadcasts(IMessageTargetPtr target) {
+    LockT lock(this->queueMutex);
+    auto it = this->receivers.find(target);
+    if (it != this->receivers.end()) {
+        this->receivers.erase(it);
+    }
+}
+
 int MessageQueue::Remove(IMessageTarget *target, int type) {
     LockT lock(this->queueMutex);
 
@@ -167,6 +180,14 @@ bool MessageQueue::Contains(IMessageTarget *target, int type) {
         ++it;
     }
     return false;
+}
+
+void MessageQueue::Broadcast(IMessagePtr message, int64 delayMs) {
+    if (message->Target()) {
+        throw new std::runtime_error("broadcasts cannot have a target!");
+    }
+
+    this->Post(message, delayMs);
 }
 
 void MessageQueue::Post(IMessagePtr message, int64 delayMs) {
@@ -215,5 +236,23 @@ void MessageQueue::Debounce(IMessagePtr message, int64 delayMs) {
 }
 
 void MessageQueue::Dispatch(IMessagePtr message) {
-    message->Target()->ProcessMessage(*message);
+    if (message->Target()) {
+        message->Target()->ProcessMessage(*message);
+    }
+    else {
+        std::set<IMessageTargetPtr> copy;
+
+        {
+            LockT lock(this->queueMutex);
+
+            std::copy(
+                receivers.begin(),
+                receivers.end(),
+                std::inserter(copy, copy.begin()));
+        }
+
+        for (auto receiver : copy) {
+            receiver->ProcessMessage(*message);
+        }
+    }
 }

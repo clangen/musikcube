@@ -673,7 +673,7 @@ class PlaybackRemote : public IPlaybackRemote {
                         { key::title, album->GetDescription() },
                         { key::id, album->GetId() },
                         { key::thumbnail_id, 0 }, /* note: thumbnails aren't supported at the album level yet */
-                        { key::album_artist_id, this->GetMetadataInt64(album, key::album_artist_id) },
+                        { key::album_artist_id, album->GetInt64(key::album_artist_id.c_str()) },
                         { key::album_artist, this->GetMetadataString(album, key::album_artist) }
                     });
 
@@ -852,14 +852,14 @@ class PlaybackRemote : public IPlaybackRemote {
                 { key::id, track->GetId() },
                 { key::title, this->GetMetadataString(track, key::title) },
                 { key::album, this->GetMetadataString(track, key::album) },
-                { key::album_id, this->GetMetadataInt64(track, key::album_id) },
+                { key::album_id, track->GetInt64(key::album_id.c_str()) },
                 { key::album_artist, this->GetMetadataString(track, key::album_artist) },
-                { key::album_artist_id, this->GetMetadataInt64(track, key::album_artist_id) },
+                { key::album_artist_id, track->GetInt64(key::album_artist_id.c_str()) },
                 { key::artist, this->GetMetadataString(track, key::artist) },
-                { key::artist_id, this->GetMetadataInt64(track, key::artist_id) },
+                { key::artist_id, track->GetInt64(key::artist_id.c_str()) },
                 { key::genre, this->GetMetadataString(track, key::genre) },
-                { key::genre_id, this->GetMetadataInt64(track, key::genre_id) },
-                { key::thumbnail_id, this->GetMetadataInt64(track, key::thumbnail_id) },
+                { key::genre_id, track->GetInt64(key::genre_id.c_str()) },
+                { key::thumbnail_id, track->GetInt64(key::thumbnail_id.c_str()) },
             };
         }
 
@@ -894,16 +894,6 @@ class PlaybackRemote : public IPlaybackRemote {
         std::string GetMetadataString(MetadataT* metadata, const std::string& key) {
             metadata->GetValue(key.c_str(), threadLocalBuffer, sizeof(threadLocalBuffer));
             return std::string(threadLocalBuffer);
-        }
-
-        template <typename MetadataT>
-        unsigned long long GetMetadataInt64(MetadataT* metadata, const std::string& idKey) {
-            try {
-                return std::stoull(this->GetMetadataString(metadata, idKey));
-            }
-            catch (...) {
-                return -1;
-            }
         }
 
         void ThreadProc() {

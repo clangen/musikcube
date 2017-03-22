@@ -68,6 +68,7 @@ namespace musik {
                 virtual cursespp::IWindowPtr FocusPrev();
                 virtual cursespp::IWindowPtr GetFocus();
                 virtual bool SetFocus(cursespp::IWindowPtr window);
+                virtual void ProcessMessage(musik::core::runtime::IMessage &message);
 
                 virtual void SetShortcutsWindow(
                     cursespp::ShortcutsWindow* w);
@@ -76,6 +77,8 @@ namespace musik {
 
             protected:
                 virtual void OnLayout();
+                virtual void OnAddedToParent(IWindow* newParent);
+                virtual void OnRemovedFromParent(IWindow* oldParent);
 
             private:
                 void OnSearchResultSelected(

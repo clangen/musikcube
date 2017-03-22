@@ -45,7 +45,14 @@ namespace musik { namespace core {
 
             virtual unsigned long long GetId();
             virtual void Release();
+
             virtual int GetValue(const char* key, char* dst, int size);
+            virtual unsigned long long GetUint64(const char* key, unsigned long long defaultValue = 0ULL);
+            virtual long long GetInt64(const char* key, long long defaultValue = 0LL);
+            virtual unsigned long GetUint32(const char* key, unsigned long defaultValue = 0);
+            virtual long GetInt32(const char* key, unsigned int defaultValue = 0);
+            virtual double GetDouble(const char* key, double defaultValue = 0.0f);
+
             virtual int Uri(char* dst, int size);
 
         private:

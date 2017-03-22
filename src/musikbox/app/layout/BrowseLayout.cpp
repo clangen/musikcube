@@ -56,6 +56,8 @@ using namespace cursespp;
 static size_t MAX_CATEGORY_WIDTH = 40;
 static int MIN_LIST_TITLE_HEIGHT = 26;
 
+#define MESSAGE_INDEXER_PROGRESS 2033
+
 #define DEFAULT_CATEGORY constants::Track::ARTIST
 #define DEFAULT_CATEGORY_NAME FIELD_TO_TITLE[DEFAULT_CATEGORY]
 
@@ -137,6 +139,14 @@ void BrowseLayout::InitializeWindows() {
         this, &BrowseLayout::OnCategoryViewInvalidated);
 }
 
+void BrowseLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
+    if (message.Type() == MESSAGE_INDEXER_PROGRESS) {
+        this->categoryList->Requery();
+    }
+
+    LayoutBase::ProcessMessage(message);
+}
+
 void BrowseLayout::ScrollTo(const std::string& fieldType, DBID fieldId) {
     this->SetFocus(this->trackList);
     this->categoryList->RequeryWithField(fieldType, "", fieldId);
@@ -153,12 +163,13 @@ void BrowseLayout::OnVisibilityChanged(bool visible) {
     LayoutBase::OnVisibilityChanged(visible);
 
     if (visible) {
+        Window::MessageQueue().RegisterForBroadcasts(shared_from_this());
         this->categoryList->Requery();
     }
 }
 
 void BrowseLayout::OnIndexerProgress(int count) {
-    this->categoryList->Requery();
+    this->PostMessage(MESSAGE_INDEXER_PROGRESS);
 }
 
 void BrowseLayout::RequeryTrackList(ListWindow *view) {
@@ -201,8 +212,11 @@ bool BrowseLayout::KeyPress(const std::string& key) {
     }
     else if (Hotkeys::Is(Hotkeys::ContextMenu, key)) {
         if (this->GetFocus() == this->trackList) {
-            PlayQueueOverlays::ShowAddTrackOverlay(this->playback, *this->trackList);
-            return true;
+            TrackPtr track = this->trackList->GetSelectedTrack();
+            if (track) {
+                PlayQueueOverlays::ShowAddTrackOverlay(this->playback, track->GetId());
+                return true;
+            }
         }
     }
     else if (Hotkeys::Is(Hotkeys::ViewRefresh, key)) {

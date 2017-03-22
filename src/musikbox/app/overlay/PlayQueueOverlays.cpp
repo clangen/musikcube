@@ -44,6 +44,7 @@
 #include <core/library/query/local/GetPlaylistQuery.h>
 #include <core/library/query/local/SavePlaylistQuery.h>
 #include <core/library/query/local/DeletePlaylistQuery.h>
+#include <core/runtime/Message.h>
 
 #include <cursespp/App.h>
 #include <cursespp/SimpleScrollAdapter.h>
@@ -114,7 +115,7 @@ static void showPlaylistListOverlay(
 
     dialog->SetAdapter(adapter)
         .SetTitle(title)
-        .SetWidth(DEFAULT_OVERLAY_WIDTH)
+        .SetWidth(_DIMEN("playqueue_playlist_list_overlay", DEFAULT_OVERLAY_WIDTH))
         .SetSelectedIndex(selectedIndex)
         .SetItemSelectedCallback(callback);
 
@@ -153,7 +154,7 @@ static void createNewPlaylist(
     std::shared_ptr<InputOverlay> dialog(new InputOverlay());
 
     dialog->SetTitle(_TSTR("playqueue_overlay_playlist_name_title"))
-        .SetWidth(DEFAULT_OVERLAY_WIDTH)
+        .SetWidth(_DIMEN("playqueue_playlist_name_overlay", DEFAULT_OVERLAY_WIDTH))
         .SetText("")
         .SetInputAcceptedCallback(
             [tracks, library](const std::string& name) {
@@ -173,7 +174,7 @@ static void renamePlaylist(
     std::shared_ptr<InputOverlay> dialog(new InputOverlay());
 
     dialog->SetTitle(_TSTR("playqueue_overlay_new_playlist_name_title"))
-        .SetWidth(DEFAULT_OVERLAY_WIDTH)
+        .SetWidth(_DIMEN("playqueue_playlist_name_overlay", DEFAULT_OVERLAY_WIDTH))
         .SetText(oldName)
         .SetInputAcceptedCallback(
             [library, playlistId](const std::string& name) {
@@ -221,29 +222,51 @@ static void showNoPlaylistsDialog() {
     App::Overlays().Push(dialog);
 }
 
+static void handleAddCategorySelection(
+    musik::core::audio::PlaybackService& playback,
+    musik::core::ILibraryPtr library,
+    const std::string& fieldColumn,
+    DBID fieldId,
+    size_t type)
+{
+    std::shared_ptr<CategoryTrackListQuery> query(
+        new CategoryTrackListQuery(library, fieldColumn, fieldId));
+
+    library->Enqueue(query, ILibrary::QuerySynchronous);
+
+    if (query->GetStatus() == IQuery::Finished) {
+        auto editor = playback.Edit();
+        auto tracks = query->GetResult();
+        size_t position = playback.GetIndex();
+
+        if (type == 0 || position == ListWindow::NO_SELECTION) { /* end */
+            for (size_t i = 0; i < tracks->Count(); i++) {
+                editor.Add(tracks->GetId(i));
+            }
+        }
+        else { /* after next */
+            for (size_t i = 0; i < tracks->Count(); i++) {
+                editor.Insert(tracks->GetId(i), position + 1 + i);
+            }
+        }
+    }
+}
+
 PlayQueueOverlays::PlayQueueOverlays() {
 }
 
 void PlayQueueOverlays::ShowAddTrackOverlay(
     PlaybackService& playback,
-    TrackListView& trackList)
+    unsigned long long trackId)
 {
-    size_t selectedIndex = trackList.GetSelectedIndex();
-
-    if (selectedIndex == ListWindow::NO_SELECTION) {
-        return;
-    }
-
-    DBID trackId = trackList.Get(selectedIndex)->GetId();
-
     auto adapter = createAddToAdapter();
 
     std::shared_ptr<ListOverlay> dialog(new ListOverlay());
 
     dialog->SetAdapter(adapter)
         .SetTitle(_TSTR("playqueue_overlay_add_to_queue_title"))
+        .SetWidth(_DIMEN("playqueue_playlist_add_to_queue_overlay", DEFAULT_OVERLAY_WIDTH))
         .SetSelectedIndex(0)
-        .SetWidth(DEFAULT_OVERLAY_WIDTH)
         .SetItemSelectedCallback(
             [trackId, &playback](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
                 auto editor = playback.Edit();
@@ -276,8 +299,8 @@ void PlayQueueOverlays::ShowAddCategoryOverlay(
 
     dialog->SetAdapter(adapter)
         .SetTitle(_TSTR("playqueue_overlay_add_to_queue_title"))
+        .SetWidth(_DIMEN("playqueue_playlist_add_to_queue_overlay", DEFAULT_OVERLAY_WIDTH))
         .SetSelectedIndex(0)
-        .SetWidth(DEFAULT_OVERLAY_WIDTH)
         .SetItemSelectedCallback(
             [&playback, library, fieldColumn, fieldId]
             (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
@@ -285,31 +308,49 @@ void PlayQueueOverlays::ShowAddCategoryOverlay(
                     return;
                 }
 
-                std::shared_ptr<CategoryTrackListQuery>
-                    query(new CategoryTrackListQuery(
-                        library,
-                        fieldColumn,
-                        fieldId));
-
-                library->Enqueue(query, ILibrary::QuerySynchronous);
-
-                if (query->GetStatus() == IQuery::Finished) {
-                    auto editor = playback.Edit();
-                    auto tracks = query->GetResult();
-                    size_t position = playback.GetIndex();
-
-                    if (index == 0 || position == ListWindow::NO_SELECTION) { /* end */
-                        for (size_t i = 0; i < tracks->Count(); i++) {
-                            editor.Add(tracks->GetId(i));
-                        }
-                    }
-                    else { /* after next */
-                        for (size_t i = 0; i < tracks->Count(); i++) {
-                            editor.Insert(tracks->GetId(i), position + 1 + i);
-                        }
-                    }
-                }
+                handleAddCategorySelection(playback, library, fieldColumn, fieldId, index);
             });
+
+    cursespp::App::Overlays().Push(dialog);
+}
+
+void PlayQueueOverlays::ShowAlbumDividerOverlay(
+    musik::core::runtime::IMessageQueue& messageQueue,
+    musik::core::audio::PlaybackService& playback,
+    musik::core::ILibraryPtr library,
+    musik::core::TrackPtr firstTrack)
+{
+    std::shared_ptr<Adapter> adapter(new Adapter());
+    adapter->AddEntry(_TSTR("playqueue_overlay_album_jump_to"));
+    adapter->AddEntry(_TSTR("playqueue_overlay_add_to_end_in_queue"));
+    adapter->AddEntry(_TSTR("playqueue_overlay_add_as_next_in_queue"));
+    adapter->SetSelectable(true);
+
+    std::shared_ptr<ListOverlay> dialog(new ListOverlay());
+
+    dialog->SetAdapter(adapter)
+        .SetTitle(_TSTR("playqueue_overlay_album_header"))
+        .SetWidth(_DIMEN("playqueue_album_header_overlay", DEFAULT_OVERLAY_WIDTH))
+        .SetSelectedIndex(0)
+        .SetItemSelectedCallback(
+            [&playback, library, &messageQueue, firstTrack]
+            (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
+            if (index == ListWindow::NO_SELECTION) {
+                return;
+            }
+
+            auto albumIdColumn = library::constants::Track::ALBUM_ID;
+            auto albumColumn = library::constants::Track::ALBUM;
+            auto albumId = firstTrack->GetUint64(albumIdColumn);
+
+            if (index == 0) {
+                messageQueue.Broadcast(runtime::Message::Create(
+                    nullptr, PlayQueueOverlays::BROADCAST_JUMP_TO_ALBUM, albumId));
+            }
+            else {
+                handleAddCategorySelection(playback, library, albumColumn, albumId, index - 1);
+            }
+    });
 
     cursespp::App::Overlays().Push(dialog);
 }

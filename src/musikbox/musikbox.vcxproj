@@ -149,7 +149,6 @@ xcopy "$(ProjectDir)data\locales\*" "$(TargetDir)locales\" /Y /e</Command>
     <ClCompile Include="app\util\Playback.cpp" />
     <ClCompile Include="app\util\PreferenceKeys.cpp" />
     <ClCompile Include="app\window\CategoryListView.cpp" />
-    <ClCompile Include="app\window\EntryWithHeader.cpp" />
     <ClCompile Include="app\window\LogWindow.cpp" />
     <ClCompile Include="app\window\TrackListView.cpp" />
     <ClCompile Include="app\window\TransportWindow.cpp" />
@@ -203,7 +202,6 @@ xcopy "$(ProjectDir)data\locales\*" "$(TargetDir)locales\" /Y /e</Command>
     <ClInclude Include="app\util\PreferenceKeys.h" />
     <ClInclude Include="app\util\Version.h" />
     <ClInclude Include="app\window\CategoryListView.h" />
-    <ClInclude Include="app\window\EntryWithHeader.h" />
     <ClInclude Include="app\window\LogWindow.h" />
     <ClInclude Include="app\window\TrackListView.h" />
     <ClInclude Include="app\window\TransportWindow.h" />

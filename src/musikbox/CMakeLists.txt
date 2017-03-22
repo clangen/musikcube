@@ -21,7 +21,6 @@ set (BOX_SRCS
 	./app/util/PreferenceKeys.cpp
 	./app/util/Playback.cpp
 	./app/window/CategoryListView.cpp
-	./app/window/EntryWithHeader.cpp
 	./app/window/LogWindow.cpp
 	./app/window/TrackListView.cpp
 	./app/window/TransportWindow.cpp

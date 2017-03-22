@@ -65,7 +65,7 @@ namespace musik {
                 virtual void OnVisibilityChanged(bool visible);
                 virtual cursespp::IWindowPtr GetFocus();
                 virtual bool KeyPress(const std::string& key);
-
+                virtual void ProcessMessage(musik::core::runtime::IMessage &message);
                 void ScrollTo(const std::string& fieldType, DBID fieldId);
 
             protected:

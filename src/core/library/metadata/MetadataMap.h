@@ -56,12 +56,19 @@ namespace musik { namespace core {
             /* IMetadataMap */
             virtual void Release();
             virtual unsigned long long GetId();
-            virtual int GetValue(const char* key, char* dst, int size);
             virtual const char* GetDescription();
             virtual const char* GetType();
 
+            virtual int GetValue(const char* key, char* dst, int size);
+            virtual unsigned long long GetUint64(const char* key, unsigned long long defaultValue = 0ULL);
+            virtual long long GetInt64(const char* key, long long defaultValue = 0LL);
+            virtual unsigned long GetUint32(const char* key, unsigned long defaultValue = 0);
+            virtual long GetInt32(const char* key, unsigned int defaultValue = 0);
+            virtual double GetDouble(const char* key, double defaultValue = 0.0f);
+
             /* implementation specific */
             void SetValue(const char* key, const std::string& value);
+            std::string GetValue(const char* key);
             musik::core::sdk::IMetadataMap* GetSdkValue();
 
         private:
