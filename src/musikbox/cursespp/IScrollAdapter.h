@@ -73,7 +73,7 @@ namespace cursespp {
             virtual void SetDisplaySize(size_t width, size_t height) = 0;
             virtual size_t GetEntryCount() = 0;
             virtual EntryPtr GetEntry(ScrollableWindow* window, size_t index) = 0;
-            virtual void DrawPage(ScrollableWindow* window, size_t index, ScrollPosition *result = NULL) = 0;
+            virtual void DrawPage(ScrollableWindow* window, size_t index, ScrollPosition& result) = 0;
     };
 
     typedef std::shared_ptr<IScrollAdapter> IScrollAdapterPtr;

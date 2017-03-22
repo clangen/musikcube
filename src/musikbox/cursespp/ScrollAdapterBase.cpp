@@ -72,20 +72,22 @@ void ScrollAdapterBase::GetVisibleItems(
     to the end. if we don't try to back up a bit until we can fill
     the buffer */
     int totalHeight = (int) this->height;
+    int entryCount = (int) this->GetEntryCount();
 
-    /* forward search first... */
-    int end = (int) GetEntryCount();
-    for (int i = (int) desired; i < end && totalHeight > 0; i++) {
+    /* we assume the general case -- we're some where in the middle of the
+    list. we'll start from the specified first item and work our way down */
+    for (int i = (int) desired; i < entryCount && totalHeight > 0; i++) {
         EntryPtr entry = this->GetEntry(window, i);
         entry->SetWidth(this->width);
         totalHeight -= entry->GetLineCount();
         target.push_back(entry);
     }
 
+    /* however, if the list is short, we can actually draw more items above
+    the specified one. let's work our way backwards! */
     if (totalHeight > 0) {
         target.clear();
 
-        /* oops, let's move backwards from the end */
         totalHeight = this->height;
         int i = GetEntryCount() - 1;
         while (i >= 0 && totalHeight >= 0) {
@@ -108,15 +110,7 @@ void ScrollAdapterBase::GetVisibleItems(
     start = actual;
 }
 
-void ScrollAdapterBase::DrawPage(ScrollableWindow* scrollable, size_t index, ScrollPosition *result) {
-    if (result != NULL) {
-        result->visibleEntryCount = 0;
-        result->firstVisibleEntryIndex = 0;
-        result->lineCount = 0;
-        result->totalEntries = 0;
-        result->logicalIndex = 0;
-    }
-
+void ScrollAdapterBase::DrawPage(ScrollableWindow* scrollable, size_t index, ScrollPosition& result) {
     WINDOW* window = scrollable->GetContent();
 
     werase(window);
@@ -131,7 +125,7 @@ void ScrollAdapterBase::DrawPage(ScrollableWindow* scrollable, size_t index, Scr
 
     /* unfortunately this needs to go here so the GetEntry() method knows
     what the the implied focus is */
-    result->logicalIndex = index;
+    //result.logicalIndex = index;
 
     std::deque<EntryPtr> visible;
     size_t topIndex; /* calculated by GetVisibleItems */
@@ -181,11 +175,9 @@ void ScrollAdapterBase::DrawPage(ScrollableWindow* scrollable, size_t index, Scr
         }
     }
 
-    if (result != NULL) {
-        result->visibleEntryCount = visible.size();
-        result->firstVisibleEntryIndex = topIndex;
-        result->lineCount = drawnLines;
-        result->totalEntries = GetEntryCount();
-        result->logicalIndex = index;
-    }
+    result.visibleEntryCount = visible.size();
+    result.firstVisibleEntryIndex = topIndex;
+    result.lineCount = drawnLines;
+    result.totalEntries = GetEntryCount();
+    //result.logicalIndex = index;
 }

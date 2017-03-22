@@ -56,7 +56,7 @@ namespace cursespp {
             virtual void DrawPage(
                 ScrollableWindow* window,
                 size_t index,
-                ScrollPosition *result = nullptr);
+                ScrollPosition& result);
 
             virtual size_t GetEntryCount() = 0;
             virtual EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index) = 0;
