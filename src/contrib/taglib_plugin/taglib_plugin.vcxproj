@@ -70,6 +70,7 @@
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
@@ -101,6 +102,7 @@
       <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <Optimization>Full</Optimization>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>

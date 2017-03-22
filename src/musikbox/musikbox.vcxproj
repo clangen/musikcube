@@ -71,6 +71,7 @@
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>../3rdparty/win32_lib;../../../boost_1_60_0/lib32-msvc-14.0;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -105,6 +106,7 @@ xcopy "$(ProjectDir)data\locales\*" "$(TargetDir)locales\" /Y /e</Command>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <Optimization>Full</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>../3rdparty/win32_lib;../../../boost_1_60_0/lib32-msvc-14.0;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
