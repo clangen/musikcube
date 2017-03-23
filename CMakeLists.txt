@@ -8,7 +8,7 @@ cmake_minimum_required(VERSION 3.0)
 project(musikbox)
 set (musikbox_VERSION_MAJOR 0)
 set (musikbox_VERSION_MINOR 10)
-set (musikbox_VERSION_PATCH 0)
+set (musikbox_VERSION_PATCH 1)
 set (musikbox_VERSION "${musikbox_VERSION_MAJOR}.${musikbox_VERSION_MINOR}.${musikbox_VERSION_PATCH}")
 
 include(ExternalProject)

@@ -1,3 +1,29 @@
+0.10.1
+
+user-facing:
+
+* added the ability to select album name headers in track lists. doing so will
+  bring up a context menu with the ability to jump to the album or enqueue the
+  album's tracks for playback. this also had a nice side effect of making
+  scrolling more fluid!
+* fixed a really old bug that could cause lists to automatically scroll to weird
+  places if the window or view is resized
+* added localization support for "dimensions". this allows for per-locale sizing
+  of ui components
+* added a "list_header_highlighted_background" and
+  "list_header_highlighted_foreground" color theme variables
+
+low-level:
+
+* added "broadcast" message support to IMessageQueue and implementers. allows
+  for pub/sub like functionality
+* added some new SDK interface methods to ITrack and IMetadataMap for retrieving
+  values other than strings (uint64, int64, uint32, int32, double)
+* fixed some old bugs in Window.cpp that could cause visibility changed
+  notifications to be raised unnecessarily
+
+--------------------------------------------------------------------------------
+
 0.10.0
 
 * added GeekShadow's fr_FR locale
