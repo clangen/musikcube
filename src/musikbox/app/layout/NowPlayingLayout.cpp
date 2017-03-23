@@ -160,12 +160,12 @@ void NowPlayingLayout::OnTrackListRequeried(musik::core::db::local::TrackListQue
             size_t index = playback.GetIndex();
 
             if (index == ListWindow::NO_SELECTION) { /* not playing? */
-                this->trackListView->SetSelectedIndex(0);
                 this->trackListView->ScrollTo(0);
+                this->trackListView->SetSelectedIndex(0);
             }
             else { /* playing... */
-                this->trackListView->SetSelectedIndex(index);
                 this->trackListView->ScrollTo(index == 0 ? index : index - 1);
+                this->trackListView->SetSelectedIndex(index);
             }
         }
         /* user just finished an edit. this is a bit of a hack; we're notified

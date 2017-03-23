@@ -113,20 +113,26 @@ void TrackListView::SelectFirstTrack() {
 void TrackListView::OnQueryCompleted(IQuery* query) {
     if (this->query && query == this->query.get()) {
         if (this->query->GetStatus() == IQuery::Finished) {
+            bool hadTracks = this->tracks && this->tracks->Count() > 0;
+            bool prevQuerySame = this->lastQueryHash != this->query->GetQueryHash();
+
             this->tracks = this->query->GetResult();
             this->headers.Set(this->query->GetHeaders());
+            this->lastQueryHash = this->query->GetQueryHash();
 
-            /* if the query was functionally the same as the last query, don't
-            mess with the selected index */
-            if (this->lastQueryHash != this->query->GetQueryHash()) {
+            /* update our internal state */
+            this->OnAdapterChanged();
+
+            /* if the query was functionally the same as the last query, or we
+            previously had no tracks, let's scroll to the top and select the first
+            track */
+            if (!hadTracks || !prevQuerySame) {
                 this->ScrollToTop();
                 this->SelectFirstTrack();
             }
 
-            this->lastQueryHash = this->query->GetQueryHash();
-
-            this->OnAdapterChanged(); /* internal handling */
-            this->Requeried(this->query.get()); /* for external handlers */
+            /* let external listeners know we updated */
+            this->Requeried(this->query.get());
 
             this->query.reset();
         }

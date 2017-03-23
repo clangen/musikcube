@@ -103,6 +103,10 @@ bool LocalFileStream::Open(const char *filename, unsigned int options) {
     return false;
 }
 
+void LocalFileStream::Interrupt() {
+
+}
+
 bool LocalFileStream::Close() {
     auto file = this->file.exchange(nullptr);
     if (file) {

@@ -176,6 +176,10 @@ bool CddaDataStream::Close() {
     return true;
 }
 
+void CddaDataStream::Interrupt() {
+
+}
+
 void CddaDataStream::Destroy() {
     delete this;
 }

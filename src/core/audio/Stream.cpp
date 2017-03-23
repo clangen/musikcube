@@ -136,9 +136,9 @@ bool Stream::OpenStream(std::string uri) {
     return false;
 }
 
-void Stream::Close() {
+void Stream::Interrupt() {
     if (this->dataStream) {
-        this->dataStream->Close();
+        this->dataStream->Interrupt();
     }
 }
 

@@ -49,6 +49,7 @@ namespace musik { namespace core { namespace io {
 
             virtual bool Open(const char *filename, unsigned int options = 0);
             virtual bool Close();
+            virtual void Interrupt();
             virtual void Destroy();
             virtual PositionType Read(void* buffer, PositionType readBytes);
             virtual bool SetPosition(PositionType position);

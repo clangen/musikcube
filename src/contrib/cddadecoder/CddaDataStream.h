@@ -48,6 +48,7 @@ class CddaDataStream : public IDataStream {
 
         virtual bool Open(const char *filename, unsigned int options = 0);
         virtual bool Close();
+        virtual void Interrupt();
         virtual PositionType Read(void* buffer, PositionType readBytes);
         virtual bool SetPosition(PositionType position);
         virtual PositionType Position();

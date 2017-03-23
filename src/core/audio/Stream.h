@@ -67,7 +67,7 @@ namespace musik { namespace core { namespace audio {
             virtual double SetPosition(double seconds);
             virtual double GetDuration();
             virtual bool OpenStream(std::string uri);
-            virtual void Close();
+            virtual void Interrupt();
 
         private:
             bool GetNextBufferFromDecoder();

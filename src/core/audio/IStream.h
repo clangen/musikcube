@@ -57,7 +57,7 @@ namespace musik { namespace core { namespace audio {
             virtual double SetPosition(double seconds) = 0;
             virtual double GetDuration() = 0;
             virtual bool OpenStream(std::string uri) = 0;
-            virtual void Close() = 0;
+            virtual void Interrupt() = 0;
     };
 
     typedef std::shared_ptr<IStream> IStreamPtr;
