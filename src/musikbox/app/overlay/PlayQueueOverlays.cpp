@@ -46,6 +46,8 @@
 #include <core/library/query/local/DeletePlaylistQuery.h>
 #include <core/runtime/Message.h>
 
+#include <app/util/Messages.h>
+
 #include <cursespp/App.h>
 #include <cursespp/SimpleScrollAdapter.h>
 #include <cursespp/ListOverlay.h>
@@ -345,7 +347,7 @@ void PlayQueueOverlays::ShowAlbumDividerOverlay(
 
             if (index == 0) {
                 messageQueue.Broadcast(runtime::Message::Create(
-                    nullptr, PlayQueueOverlays::BROADCAST_JUMP_TO_ALBUM, albumId));
+                    nullptr, message::JumpToAlbum, albumId));
             }
             else {
                 handleAddCategorySelection(playback, library, albumColumn, albumId, index - 1);

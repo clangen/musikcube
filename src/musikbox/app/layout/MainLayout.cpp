@@ -38,14 +38,12 @@
 #include <cursespp/Colors.h>
 
 #include <core/runtime/Message.h>
+
+#include <app/util/Messages.h>
 #include <app/util/PreferenceKeys.h>
 
 #include "SettingsLayout.h"
 #include "MainLayout.h"
-
-#define MESSAGE_INDEXER_STARTED 1000
-#define MESSAGE_INDEXER_PROGRESS 1001
-#define MESSAGE_INDEXER_FINISHED 1002
 
 using namespace musik;
 using namespace musik::box;
@@ -246,7 +244,7 @@ bool MainLayout::KeyPress(const std::string& key) {
 
 void MainLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
     int type = message.Type();
-    if (type == MESSAGE_INDEXER_STARTED) {
+    if (type == message::IndexerStarted) {
         updateSyncingText(this->syncing.get(), 0);
         this->syncUpdateCount = 0;
 
@@ -254,23 +252,23 @@ void MainLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
             this->Layout();
         }
     }
-    else if (type == MESSAGE_INDEXER_FINISHED) {
+    else if (type == message::IndexerFinished) {
         this->Layout();
     }
-    else if (type == MESSAGE_INDEXER_PROGRESS) {
+    else if (type == message::IndexerProgress) {
         this->syncUpdateCount += (int)message.UserData1();
         updateSyncingText(this->syncing.get(), this->syncUpdateCount);
     }
 }
 
 void MainLayout::OnIndexerStarted() {
-    this->PostMessage(MESSAGE_INDEXER_STARTED);
+    this->PostMessage(message::IndexerStarted);
 }
 
 void MainLayout::OnIndexerProgress(int count) {
-    this->PostMessage(MESSAGE_INDEXER_PROGRESS, count);
+    this->PostMessage(message::IndexerProgress, count);
 }
 
 void MainLayout::OnIndexerFinished(int count) {
-    this->PostMessage(MESSAGE_INDEXER_FINISHED);
+    this->PostMessage(message::IndexerFinished);
 }

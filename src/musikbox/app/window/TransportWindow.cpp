@@ -46,6 +46,8 @@
 #include <core/library/LocalLibraryConstants.h>
 #include <core/runtime/Message.h>
 
+#include <app/util/Messages.h>
+
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
@@ -67,7 +69,6 @@ using namespace musik::glue;
 using namespace std::chrono;
 using namespace cursespp;
 
-#define REFRESH_TRANSPORT_READOUT 1001
 #define REFRESH_INTERVAL_MS 1000
 #define DEFAULT_TIME -1.0f
 #define TIME_SLOP 3.0f
@@ -76,8 +77,7 @@ using namespace cursespp;
 #define MIN_HEIGHT 2
 
 #define DEBOUNCE_REFRESH(mode, delay) \
-    this->RemoveMessage(REFRESH_TRANSPORT_READOUT); \
-    this->PostMessage(REFRESH_TRANSPORT_READOUT, (int64) mode, 0, delay);
+    this->DebounceMessage(message::RefreshTransport, (int64) mode, 0, delay);
 
 #define ON(w, a) if (a != CURSESPP_DEFAULT_COLOR) { wattron(w, a); }
 #define OFF(w, a) if (a != CURSESPP_DEFAULT_COLOR) { wattroff(w, a); }
@@ -405,7 +405,7 @@ void TransportWindow::OnFocusChanged(bool focused) {
 void TransportWindow::ProcessMessage(IMessage &message) {
     int type = message.Type();
 
-    if (type == REFRESH_TRANSPORT_READOUT) {
+    if (type == message::RefreshTransport) {
         this->Update((TimeMode) message.UserData1());
 
         if (transport.GetPlaybackState() != PlaybackStopped) {

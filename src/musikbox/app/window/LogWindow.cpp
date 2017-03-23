@@ -36,6 +36,8 @@
 
 #include "LogWindow.h"
 
+#include <app/util/Messages.h>
+
 #include <cursespp/MultiLineEntry.h>
 #include <cursespp/Colors.h>
 #include <cursespp/Screen.h>
@@ -45,11 +47,7 @@ using namespace cursespp;
 
 typedef IScrollAdapter::IEntry IEntry;
 
-#define REFRESH 1000
-
-#define DEBOUNCE_REFRESH() \
-    this->RemoveMessage(REFRESH); \
-    this->PostMessage(REFRESH, 0, 0, 250);
+#define DEBOUNCE_REFRESH() this->DebounceMessage(message::RefreshLogs, 0, 0, 250)
 
 LogWindow::LogWindow(IWindow *parent)
 : ScrollableWindow(nullptr, parent) {
@@ -73,7 +71,7 @@ void LogWindow::ClearContents() {
 }
 
 void LogWindow::ProcessMessage(musik::core::runtime::IMessage &message) {
-    if (message.Type() == REFRESH) {
+    if (message.Type() == message::RefreshLogs) {
         this->Update();
     }
     else {

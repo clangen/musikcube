@@ -41,6 +41,8 @@
 
 #include <app/overlay/PlayQueueOverlays.h>
 #include <app/util/Hotkeys.h>
+#include <app/util/Messages.h>
+
 #include <glue/util/Playback.h>
 
 #include "LibraryLayout.h"
@@ -266,7 +268,7 @@ bool LibraryLayout::SetFocus(cursespp::IWindowPtr window) {
 }
 
 void LibraryLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
-    if (message.Type() == PlayQueueOverlays::BROADCAST_JUMP_TO_ALBUM) {
+    if (message.Type() == message::JumpToAlbum) {
         this->OnSearchResultSelected(nullptr, constants::Track::ALBUM, message.UserData1());
     }
 

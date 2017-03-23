@@ -38,8 +38,9 @@
 #include <cursespp/Screen.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <core/library/query/local/SearchTrackListQuery.h>
-#include <app/util/Playback.h>
 #include <app/util/Hotkeys.h>
+#include <app/util/Messages.h>
+#include <app/util/Playback.h>
 #include <app/overlay/PlayQueueOverlays.h>
 
 #include "TrackSearchLayout.h"
@@ -54,13 +55,7 @@ using namespace musik::box;
 using namespace cursespp;
 
 #define SEARCH_HEIGHT 3
-
-#define REQUERY_TRACKLIST 1001
 #define REQUERY_INTERVAL_MS 300
-
-#define DEBOUNCE_REQUERY(x) \
-    this->RemoveMessage(REQUERY_TRACKLIST); \
-    this->PostMessage(REQUERY_TRACKLIST, 0, 0, x);
 
 TrackSearchLayout::TrackSearchLayout(
     musik::core::audio::PlaybackService& playback,
@@ -128,14 +123,14 @@ void TrackSearchLayout::Requery() {
 void TrackSearchLayout::ProcessMessage(IMessage &message) {
     int type = message.Type();
 
-    if (type == REQUERY_TRACKLIST) {
+    if (type == message::RequeryTrackList) {
         this->Requery();
     }
 }
 
 void TrackSearchLayout::OnInputChanged(cursespp::TextInput* sender, std::string value) {
     if (this->IsVisible()) {
-        DEBOUNCE_REQUERY(REQUERY_INTERVAL_MS);
+        DebounceMessage(message::RequeryTrackList, 0, 0, REQUERY_INTERVAL_MS);
     }
 }
 

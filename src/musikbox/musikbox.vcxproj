@@ -200,6 +200,7 @@ xcopy "$(ProjectDir)data\locales\*" "$(TargetDir)locales\" /Y /e</Command>
     <ClInclude Include="app\overlay\VisualizerOverlay.h" />
     <ClInclude Include="app\util\GlobalHotkeys.h" />
     <ClInclude Include="app\util\Hotkeys.h" />
+    <ClInclude Include="app\util\Messages.h" />
     <ClInclude Include="app\util\Playback.h" />
     <ClInclude Include="app\util\PreferenceKeys.h" />
     <ClInclude Include="app\util\Version.h" />

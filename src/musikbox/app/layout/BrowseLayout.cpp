@@ -41,6 +41,7 @@
 #include <core/i18n/Locale.h>
 #include <app/util/Hotkeys.h>
 #include <app/util/Playback.h>
+#include <app/util/Messages.h>
 #include <app/overlay/PlayQueueOverlays.h>
 
 #include "BrowseLayout.h"
@@ -55,8 +56,6 @@ using namespace cursespp;
 
 static size_t MAX_CATEGORY_WIDTH = 40;
 static int MIN_LIST_TITLE_HEIGHT = 26;
-
-#define MESSAGE_INDEXER_PROGRESS 2033
 
 #define DEFAULT_CATEGORY constants::Track::ARTIST
 #define DEFAULT_CATEGORY_NAME FIELD_TO_TITLE[DEFAULT_CATEGORY]
@@ -140,7 +139,7 @@ void BrowseLayout::InitializeWindows() {
 }
 
 void BrowseLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
-    if (message.Type() == MESSAGE_INDEXER_PROGRESS) {
+    if (message.Type() == message::IndexerProgress) {
         this->categoryList->Requery();
     }
 
@@ -169,7 +168,7 @@ void BrowseLayout::OnVisibilityChanged(bool visible) {
 }
 
 void BrowseLayout::OnIndexerProgress(int count) {
-    this->PostMessage(MESSAGE_INDEXER_PROGRESS);
+    this->PostMessage(message::IndexerProgress);
 }
 
 void BrowseLayout::RequeryTrackList(ListWindow *view) {

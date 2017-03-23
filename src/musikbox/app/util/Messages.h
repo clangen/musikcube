@@ -34,51 +34,25 @@
 
 #pragma once
 
+#include "stdafx.h"
+
 #include <core/audio/PlaybackService.h>
-#include <core/library/ILibrary.h>
-#include <core/library/query/local/TrackListQueryBase.h>
 #include <app/window/TrackListView.h>
 
 namespace musik {
     namespace box {
-        class PlayQueueOverlays {
-            public:
-                using PlaylistSelectedCallback = std::function<void(DBID)>;
+        namespace message {
+            static const int JumpToAlbum = 1024;
 
-                static void ShowAddTrackOverlay(
-                    musik::core::audio::PlaybackService& playback,
-                    unsigned long long trackId);
+            static const int IndexerStarted = 1025;
+            static const int IndexerProgress = 1026;
+            static const int IndexerFinished = 1027;
 
-                static void ShowAddCategoryOverlay(
-                    musik::core::audio::PlaybackService& playback,
-                    musik::core::ILibraryPtr library,
-                    const std::string& fieldColumn,
-                    DBID fieldId);
+            static const int RequeryTrackList = 1028;
 
-                static void ShowAlbumDividerOverlay(
-                    musik::core::runtime::IMessageQueue& messageQueue,
-                    musik::core::audio::PlaybackService& playback,
-                    musik::core::ILibraryPtr library,
-                    musik::core::TrackPtr firstTrack);
+            static const int RefreshTransport = 1029;
 
-                static void ShowLoadPlaylistOverlay(
-                    musik::core::audio::PlaybackService& playback,
-                    musik::core::ILibraryPtr library,
-                    PlaylistSelectedCallback callback);
-
-                static void ShowSavePlaylistOverlay(
-                    musik::core::audio::PlaybackService& playback,
-                    musik::core::ILibraryPtr library,
-                    DBID selectedPlaylistId = -1);
-
-                static void ShowRenamePlaylistOverlay(
-                    musik::core::ILibraryPtr library);
-
-                static void ShowDeletePlaylistOverlay(
-                    musik::core::ILibraryPtr library);
-
-            private:
-                PlayQueueOverlays();
-        };
+            static const int RefreshLogs = 1030;
+        }
     }
 }
