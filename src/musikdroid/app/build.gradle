@@ -3,7 +3,7 @@ apply plugin: 'me.tatarka.retrolambda'
 
 android {
     compileSdkVersion 25
-    buildToolsVersion "23.0.3"
+    buildToolsVersion '25.0.0'
 
     defaultConfig {
         applicationId "io.casey.musikcube.remote"
@@ -27,12 +27,19 @@ android {
     }
 }
 
+repositories {
+    flatDir { dirs 'libs' }
+}
+
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
+
+
+    compile(name:'android-taskrunner-0.5', ext:'aar')
 
     compile 'com.neovisionaries:nv-websocket-client:1.31'
     compile 'com.squareup.okhttp3:okhttp:3.6.0'

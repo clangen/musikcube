@@ -24,7 +24,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.zip.Deflater;
 
 import static android.content.Context.CONNECTIVITY_SERVICE;
 
