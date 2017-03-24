@@ -43,9 +43,8 @@ namespace musik {
     namespace box {
         namespace playback {
             void Play(
-                std::shared_ptr<musik::box::TrackListView> trackList,
-                musik::core::audio::PlaybackService& playback,
-                cursespp::IWindowPtr focused);
+                musik::box::TrackListView& trackList,
+                musik::core::audio::PlaybackService& playback);
         }
     }
 }

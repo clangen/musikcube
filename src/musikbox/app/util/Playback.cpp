@@ -43,17 +43,16 @@ namespace musik {
     namespace box {
         namespace playback {
             void Play(
-                std::shared_ptr<musik::box::TrackListView> trackList,
-                musik::core::audio::PlaybackService& playback,
-                cursespp::IWindowPtr focused)
+                musik::box::TrackListView& trackList,
+                musik::core::audio::PlaybackService& playback)
             {
-                auto tracks = trackList->GetTrackList();
+                auto tracks = trackList.GetTrackList();
 
                 if (tracks && tracks->Count()) {
                     size_t index = 0;
-                    if (focused.get() == trackList.get()) {
-                        index = trackList->GetSelectedTrackIndex();
 
+                    if (trackList.IsFocused()) {
+                        index = trackList.GetSelectedTrackIndex();
                         if (index == cursespp::ListWindow::NO_SELECTION) {
                             return;
                         }

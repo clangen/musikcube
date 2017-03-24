@@ -206,16 +206,11 @@ void BrowseLayout::SetCategory(const std::string& fieldName) {
 
 bool BrowseLayout::KeyPress(const std::string& key) {
     if (key == "KEY_ENTER") {
-        playback::Play(this->trackList, this->playback, this->GetFocus());
-        return true;
-    }
-    else if (Hotkeys::Is(Hotkeys::ContextMenu, key)) {
-        if (this->GetFocus() == this->trackList) {
-            TrackPtr track = this->trackList->GetSelectedTrack();
-            if (track) {
-                PlayQueueOverlays::ShowAddTrackOverlay(this->playback, track->GetId());
-                return true;
-            }
+        /* if the tracklist is NOT focused (i.e. the focus is on a
+        category window), start playback from the top. */
+        if (this->GetFocus() != this->trackList) {
+            playback.Play(*trackList->GetTrackList(), 0);
+            return true;
         }
     }
     else if (Hotkeys::Is(Hotkeys::ViewRefresh, key)) {

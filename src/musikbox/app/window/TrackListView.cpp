@@ -44,6 +44,7 @@
 #include <glue/util/Duration.h>
 
 #include <app/util/Hotkeys.h>
+#include <app/util/Playback.h>
 #include <app/overlay/PlayQueueOverlays.h>
 
 #include <boost/format.hpp>
@@ -114,7 +115,7 @@ void TrackListView::OnQueryCompleted(IQuery* query) {
     if (this->query && query == this->query.get()) {
         if (this->query->GetStatus() == IQuery::Finished) {
             bool hadTracks = this->tracks && this->tracks->Count() > 0;
-            bool prevQuerySame = this->lastQueryHash != this->query->GetQueryHash();
+            bool prevQuerySame = this->lastQueryHash == this->query->GetQueryHash();
 
             this->tracks = this->query->GetResult();
             this->headers.Set(this->query->GetHeaders());
@@ -217,6 +218,19 @@ bool TrackListView::KeyPress(const std::string& key) {
 
             handled = true;
         }
+        else {
+            playback::Play(*this, this->playback);
+            handled = true;
+        }
+    }
+    else if (Hotkeys::Is(Hotkeys::ContextMenu, key)) {
+        if (!headers.HeaderAt(this->GetSelectedIndex())) {
+            TrackPtr track = this->GetSelectedTrack();
+            if (track) {
+                PlayQueueOverlays::ShowAddTrackOverlay(this->playback, track->GetId());
+                handled = true;
+            }
+        }
     }
     else if (Hotkeys::Is(Hotkeys::NavigateJumpToPlaying, key)) {
         this->ScrollToPlaying();
@@ -242,8 +256,7 @@ void TrackListView::OnTrackChanged(size_t index, musik::core::TrackPtr track) {
     this->playing = track;
     this->OnAdapterChanged();
 
-    if (now() - lastChanged >= AUTO_SCROLL_COOLDOWN)
-    {
+    if (now() - lastChanged >= AUTO_SCROLL_COOLDOWN) {
         this->ScrollToPlaying();
     }
 }

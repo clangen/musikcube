@@ -267,6 +267,10 @@ void Player::UpdateNextMixPointTime() {
 }
 
 void musik::core::audio::playerThreadLoop(Player* player) {
+#ifdef WIN32
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
+#endif
+
     player->stream = Stream::Create();
 
     Buffer* buffer = nullptr;

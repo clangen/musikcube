@@ -136,23 +136,13 @@ void TrackSearchLayout::OnInputChanged(cursespp::TextInput* sender, std::string 
 
 void TrackSearchLayout::OnEnterPressed(cursespp::TextInput* sender) {
     if (this->trackList->GetTrackList()->Count()) {
-        playback::Play(this->trackList, this->playback, this->GetFocus());
+        playback::Play(*(this->trackList.get()), this->playback);
         this->SetFocus(this->trackList);
     }
 }
 
 bool TrackSearchLayout::KeyPress(const std::string& key) {
-    if (key == "KEY_ENTER") {
-        playback::Play(this->trackList, this->playback, this->GetFocus());
-        return true;
-    }
-    else if (Hotkeys::Is(Hotkeys::ContextMenu, key)) {
-        TrackPtr track = this->trackList->GetSelectedTrack();
-        if (track) {
-            PlayQueueOverlays::ShowAddTrackOverlay(this->playback, track->GetId());
-        }
-    }
-    else if (key == "KEY_DOWN") {
+    if (key == "KEY_DOWN") {
         if (this->GetFocus() == this->input) {
             this->FocusNext();
             return true;
