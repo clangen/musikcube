@@ -16,23 +16,24 @@ void PDC_napms(int ms)     /* 'ms' = milli,  _not_ microseconds! */
 {
     /* RR: keep GUI window responsive while PDCurses sleeps */
     MSG msg;
-    DWORD milliseconds_sleep_limit = ms + GetTickCount();
+    int start, end, sleepMs;
     extern bool PDC_bDone;
 
-    PDC_LOG(("PDC_napms() - called: ms=%d\n", ms));
+    start = (int) GetTickCount();
+
+    //PDC_LOG(("PDC_napms() - called: ms=%d\n", ms));
 
     /* Pump all pending messages from WIN32 to the window handler */
-    while( !PDC_bDone && GetTickCount() < milliseconds_sleep_limit )
+    while( !PDC_bDone && PeekMessage(&msg, NULL, 0, 0, PM_REMOVE) )
     {
-        while( PeekMessage(&msg, NULL, 0, 0, PM_REMOVE) )
-        {
-           TranslateMessage(&msg);
-           DispatchMessage(&msg);
-        }
-        Sleep(1);
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
     }
 
-    /* Sleep(ms); */
+    end = (int) GetTickCount();
+    sleepMs = ms - (end - start);
+    sleepMs = (sleepMs < 0) ? 0 : sleepMs;
+    Sleep((DWORD) sleepMs);
 }
 
 const char *PDC_sysname(void)
