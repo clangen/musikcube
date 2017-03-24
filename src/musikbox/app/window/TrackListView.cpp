@@ -294,7 +294,8 @@ size_t TrackListView::HeaderCalculator::AdapterToTrackListIndex(size_t index) {
 }
 
 size_t TrackListView::HeaderCalculator::TrackListToAdapterIndex(size_t index) {
-    return this->ApplyHeaderOffset(index, 1);
+    return (index == 0 && this->rawOffsets && this->rawOffsets->size() > 0)
+        ? 1 : this->ApplyHeaderOffset(index, 1); /* meh... */
 }
 
 size_t TrackListView::HeaderCalculator::ApplyHeaderOffset(size_t index, int delta) {
