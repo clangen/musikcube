@@ -12,6 +12,7 @@ user-facing:
   of ui components
 * added a "list_header_highlighted_background" and
   "list_header_highlighted_foreground" color theme variables
+* tweaked the win32 icon so it looks a bit better on the taskbar
 
 low-level:
 
@@ -21,6 +22,8 @@ low-level:
   values other than strings (uint64, int64, uint32, int32, double)
 * fixed some old bugs in Window.cpp that could cause visibility changed
   notifications to be raised unnecessarily
+* added a custom PDCurses/win32a patch to further reduce CPU load and context
+  switching while draining the message pump
 
 --------------------------------------------------------------------------------
 
