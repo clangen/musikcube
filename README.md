@@ -32,7 +32,7 @@ interested in running musikbox on a raspberry pi, connected to you home stereo? 
 
 ## windows
 
-- grab the [Visual Studio 2015 Community Edition](https://www.visualstudio.com/en-us/downloads/download-visual-studio-vs.aspx) and install the C++ compiler and tools. the 32-bit compiler is currently used. 
+- grab the [Visual Studio 2017 Community Edition](https://www.visualstudio.com/en-us/downloads/download-visual-studio-vs.aspx) and install the 32-bit c++ compiler, plus the "v140" tools package.
 - clone the musikcube sources: `git clone https://github.com/clangen/musikcube.git`
 - install the [32 bit version of boost 1.60](https://sourceforge.net/projects/boost/files/boost-binaries/1.60.0/boost_1_60_0-msvc-14.0-32.exe/download). ensure it shares the same parent directory with musikcube. e.g: `c:\src\musikcube` and `c:\src\boost_1_60_0` -- the project's solution will reference it via relative path.
 - open `musikcube.sln` and build/run. 
