@@ -42,7 +42,14 @@
 namespace musik {
     namespace box {
         namespace message {
-            static const int JumpToAlbum = 1024;
+            static const int JumpToCategory = 1024;
+
+            namespace category { /* User1 */
+                static const int Album = 0;
+                static const int AlbumArtist = 1;
+                static const int Artist = 2;
+                static const int Genre = 3;
+            }
 
             static const int IndexerStarted = 1025;
             static const int IndexerProgress = 1026;

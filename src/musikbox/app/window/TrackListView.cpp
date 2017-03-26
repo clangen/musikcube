@@ -227,7 +227,7 @@ bool TrackListView::KeyPress(const std::string& key) {
         if (!headers.HeaderAt(this->GetSelectedIndex())) {
             TrackPtr track = this->GetSelectedTrack();
             if (track) {
-                PlayQueueOverlays::ShowAddTrackOverlay(this->playback, track->GetId());
+                PlayQueueOverlays::ShowAddTrackOverlay(MessageQueue(), this->playback, track);
                 handled = true;
             }
         }

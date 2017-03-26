@@ -76,14 +76,6 @@ static std::string stringWithFormat(const std::string& key, const std::string& v
     return message;
 }
 
-static std::shared_ptr<Adapter> createAddToAdapter() {
-    std::shared_ptr<Adapter> adapter(new Adapter());
-    adapter->AddEntry(_TSTR("playqueue_overlay_add_to_end"));
-    adapter->AddEntry(_TSTR("playqueue_overlay_add_as_next"));
-    adapter->SetSelectable(true);
-    return adapter;
-}
-
 static std::shared_ptr<CategoryListQuery> queryPlaylists(musik::core::ILibraryPtr library) {
     std::shared_ptr<CategoryListQuery> query(
         new CategoryListQuery(Playlists::TABLE_NAME, ""));
@@ -254,34 +246,70 @@ static void handleAddCategorySelection(
     }
 }
 
+static void handleJumpTo(
+    size_t index,
+    musik::core::runtime::IMessageQueue& messageQueue,
+    musik::core::TrackPtr track)
+{
+    unsigned long long type;
+    unsigned long long id;
+
+    if (index == 0) {
+        type = message::category::Album;
+        id = track->GetUint64(library::constants::Track::ALBUM_ID);
+    }
+    else if (index == 1) {
+        type = message::category::Artist;
+        id = track->GetUint64(library::constants::Track::ARTIST_ID);
+    }
+    else if (index == 2) {
+        type = message::category::Genre;
+        id = track->GetUint64(library::constants::Track::GENRE_ID);
+    }
+
+    messageQueue.Broadcast(runtime::Message::Create(
+        nullptr, message::JumpToCategory, type, id));
+}
+
 PlayQueueOverlays::PlayQueueOverlays() {
 }
 
 void PlayQueueOverlays::ShowAddTrackOverlay(
+    runtime::IMessageQueue& messageQueue,
     PlaybackService& playback,
-    unsigned long long trackId)
+    musik::core::TrackPtr track)
 {
-    auto adapter = createAddToAdapter();
+    std::shared_ptr<Adapter> adapter(new Adapter());
+    adapter->AddEntry(_TSTR("playqueue_overlay_album_jump_to"));
+    adapter->AddEntry(_TSTR("playqueue_overlay_artist_jump_to"));
+    adapter->AddEntry(_TSTR("playqueue_overlay_genre_jump_to"));
+    adapter->AddEntry(_TSTR("playqueue_overlay_add_to_end_in_queue"));
+    adapter->AddEntry(_TSTR("playqueue_overlay_add_as_next_in_queue"));
+    adapter->SetSelectable(true);
 
     std::shared_ptr<ListOverlay> dialog(new ListOverlay());
 
     dialog->SetAdapter(adapter)
-        .SetTitle(_TSTR("playqueue_overlay_add_to_queue_title"))
+        .SetTitle(_TSTR("playqueue_overlay_track_actions_title"))
         .SetWidth(_DIMEN("playqueue_playlist_add_to_queue_overlay", DEFAULT_OVERLAY_WIDTH))
         .SetSelectedIndex(0)
         .SetItemSelectedCallback(
-            [trackId, &playback](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
+            [track, &messageQueue, &playback]
+            (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
                 auto editor = playback.Edit();
-                if (index == 0) { /* end */
-                    editor.Add(trackId);
+                if (index >= 0 && index <= 2) {
+                    handleJumpTo(index, messageQueue, track);
+                }
+                else if (index == 3) { /* end */
+                    editor.Add(track->GetId());
                 }
                 else { /* next */
                     size_t position = playback.GetIndex();
                     if (position == ListWindow::NO_SELECTION) {
-                        editor.Add(trackId);
+                        editor.Add(track->GetId());
                     }
                     else {
-                        editor.Insert(trackId, position + 1);
+                        editor.Insert(track->GetId(), position + 1);
                     }
                 }
             });
@@ -295,7 +323,10 @@ void PlayQueueOverlays::ShowAddCategoryOverlay(
     const std::string& fieldColumn,
     DBID fieldId)
 {
-    auto adapter = createAddToAdapter();
+    std::shared_ptr<Adapter> adapter(new Adapter());
+    adapter->AddEntry(_TSTR("playqueue_overlay_add_to_end"));
+    adapter->AddEntry(_TSTR("playqueue_overlay_add_as_next"));
+    adapter->SetSelectable(true);
 
     std::shared_ptr<ListOverlay> dialog(new ListOverlay());
 
@@ -324,6 +355,8 @@ void PlayQueueOverlays::ShowAlbumDividerOverlay(
 {
     std::shared_ptr<Adapter> adapter(new Adapter());
     adapter->AddEntry(_TSTR("playqueue_overlay_album_jump_to"));
+    adapter->AddEntry(_TSTR("playqueue_overlay_artist_jump_to"));
+    adapter->AddEntry(_TSTR("playqueue_overlay_genre_jump_to"));
     adapter->AddEntry(_TSTR("playqueue_overlay_add_to_end_in_queue"));
     adapter->AddEntry(_TSTR("playqueue_overlay_add_as_next_in_queue"));
     adapter->SetSelectable(true);
@@ -341,16 +374,15 @@ void PlayQueueOverlays::ShowAlbumDividerOverlay(
                 return;
             }
 
-            auto albumIdColumn = library::constants::Track::ALBUM_ID;
-            auto albumColumn = library::constants::Track::ALBUM;
-            auto albumId = firstTrack->GetUint64(albumIdColumn);
-
-            if (index == 0) {
-                messageQueue.Broadcast(runtime::Message::Create(
-                    nullptr, message::JumpToAlbum, albumId));
+            /* items 0, 1, and 2 jump to category */
+            if (index >= 0 && index <= 2) {
+                handleJumpTo(index, messageQueue, firstTrack);
             }
+            /* the other are our standard play queue operations */
             else {
-                handleAddCategorySelection(playback, library, albumColumn, albumId, index - 1);
+                auto albumColumn = library::constants::Track::ALBUM;
+                auto albumId = firstTrack->GetUint64(library::constants::Track::ALBUM_ID);
+                handleAddCategorySelection(playback, library, albumColumn, albumId, index - 3);
             }
     });
 

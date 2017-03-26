@@ -268,8 +268,17 @@ bool LibraryLayout::SetFocus(cursespp::IWindowPtr window) {
 }
 
 void LibraryLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
-    if (message.Type() == message::JumpToAlbum) {
-        this->OnSearchResultSelected(nullptr, constants::Track::ALBUM, message.UserData1());
+    if (message.Type() == message::JumpToCategory) {
+        static std::map<int, const char*> JUMP_TYPE_TO_COLUMN = {
+            { message::category::Album, constants::Track::ALBUM },
+            { message::category::Artist, constants::Track::ARTIST },
+            { message::category::AlbumArtist, constants::Track::ALBUM_ARTIST },
+            { message::category::Genre, constants::Track::GENRE }
+        };
+
+        auto type = JUMP_TYPE_TO_COLUMN[(int) message.UserData1()];
+        auto id = message.UserData2();
+        this->OnSearchResultSelected(nullptr, type, id);
     }
 
     LayoutBase::ProcessMessage(message);

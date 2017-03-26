@@ -46,8 +46,9 @@ namespace musik {
                 using PlaylistSelectedCallback = std::function<void(DBID)>;
 
                 static void ShowAddTrackOverlay(
+                    musik::core::runtime::IMessageQueue& messageQueue,
                     musik::core::audio::PlaybackService& playback,
-                    unsigned long long trackId);
+                    musik::core::TrackPtr track);
 
                 static void ShowAddCategoryOverlay(
                     musik::core::audio::PlaybackService& playback,
