@@ -11,6 +11,8 @@ user-facing:
   places if the window or view is resized
 * added localization support for "dimensions". this allows for per-locale sizing
   of ui components
+* directory browser now remembers which directories were previously selected,
+  making up navigation in the settings view smoother
 * added a "list_header_highlighted_background" and
   "list_header_highlighted_foreground" color theme variables
 * tweaked the win32 icon so it looks a bit better on the taskbar

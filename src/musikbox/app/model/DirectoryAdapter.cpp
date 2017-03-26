@@ -98,12 +98,20 @@ DirectoryAdapter::~DirectoryAdapter() {
 
 }
 
-void DirectoryAdapter::Select(size_t index) {
+size_t DirectoryAdapter::Select(cursespp::ListWindow* window, size_t index) {
     bool hasParent = dir.has_parent_path();
+    size_t selectedIndex = 0;
+
     if (hasParent && index == 0) {
+        if (selectedIndexStack.size()) {
+            selectedIndex = this->selectedIndexStack.top();
+            this->selectedIndexStack.pop();
+        }
+
         this->dir = this->dir.parent_path();
     }
     else {
+        selectedIndexStack.push(window->GetSelectedIndex());
         dir /= this->subdirs[hasParent ? index - 1 : index];
     }
 
@@ -114,12 +122,14 @@ void DirectoryAdapter::Select(size_t index) {
     {
         dir = path();
         buildDriveList(subdirs);
-        return;
+        return selectedIndex;
     }
 
 #endif
 
     buildDirectoryList(dir, subdirs, showDotfiles);
+
+    return selectedIndex;
 }
 
 std::string DirectoryAdapter::GetFullPathAt(size_t index) {

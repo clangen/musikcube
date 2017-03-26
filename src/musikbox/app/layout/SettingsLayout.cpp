@@ -459,9 +459,12 @@ void SettingsLayout::RemoveSelectedDirectory() {
 }
 
 void SettingsLayout::DrillIntoSelectedDirectory() {
-    this->browseAdapter->Select(this->browseList->GetSelectedIndex());
-    this->browseList->SetSelectedIndex(0);
+    size_t selectIndexAt = this->browseAdapter->Select(
+        this->browseList.get(), this->browseList->GetSelectedIndex());
+
     this->browseList->OnAdapterChanged();
+    this->browseList->SetSelectedIndex(selectIndexAt);
+    this->browseList->ScrollTo(selectIndexAt);
 }
 
 bool SettingsLayout::KeyPress(const std::string& key) {

@@ -35,8 +35,10 @@
 #pragma once
 
 #include <cursespp/ScrollAdapterBase.h>
+#include <cursespp/ListWindow.h>
 #include <boost/filesystem.hpp>
 #include <vector>
+#include <stack>
 
 namespace musik {
     namespace box {
@@ -48,7 +50,7 @@ namespace musik {
                 virtual size_t GetEntryCount();
                 virtual EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index);
 
-                void Select(size_t index);
+                size_t Select(cursespp::ListWindow* window, size_t index);
                 std::string GetFullPathAt(size_t index);
 
                 void SetDotfilesVisible(bool visible);
@@ -56,6 +58,7 @@ namespace musik {
             private:
                 boost::filesystem::path dir;
                 std::vector<std::string> subdirs;
+                std::stack<size_t> selectedIndexStack;
                 bool showDotfiles;
         };
     }
