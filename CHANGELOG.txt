@@ -6,6 +6,7 @@ user-facing:
   bring up a context menu with the ability to jump to the album or enqueue the
   album's tracks for playback. this also had a nice side effect of making
   scrolling more fluid!
+* added jumping to album/artist/genre to the selected track context menu
 * fixed a really old bug that could cause lists to automatically scroll to weird
   places if the window or view is resized
 * added localization support for "dimensions". this allows for per-locale sizing

@@ -297,7 +297,7 @@ void PlayQueueOverlays::ShowAddTrackOverlay(
             [track, &messageQueue, &playback]
             (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
                 auto editor = playback.Edit();
-                if (index >= 0 && index <= 2) {
+                if (index <= 2) {
                     handleJumpTo(index, messageQueue, track);
                 }
                 else if (index == 3) { /* end */
@@ -375,7 +375,7 @@ void PlayQueueOverlays::ShowAlbumDividerOverlay(
             }
 
             /* items 0, 1, and 2 jump to category */
-            if (index >= 0 && index <= 2) {
+            if (index <= 2) {
                 handleJumpTo(index, messageQueue, firstTrack);
             }
             /* the other are our standard play queue operations */
