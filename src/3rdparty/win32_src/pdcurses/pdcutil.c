@@ -16,10 +16,10 @@ void PDC_napms(int ms)     /* 'ms' = milli,  _not_ microseconds! */
 {
     /* RR: keep GUI window responsive while PDCurses sleeps */
     MSG msg;
-    int start, end, sleepMs;
+    DWORD start, end, delta;
     extern bool PDC_bDone;
 
-    start = (int) GetTickCount();
+    start = GetTickCount();
 
     //PDC_LOG(("PDC_napms() - called: ms=%d\n", ms));
 
@@ -30,10 +30,10 @@ void PDC_napms(int ms)     /* 'ms' = milli,  _not_ microseconds! */
         DispatchMessage(&msg);
     }
 
-    end = (int) GetTickCount();
-    sleepMs = ms - (end - start);
-    sleepMs = (sleepMs < 0) ? 0 : sleepMs;
-    Sleep((DWORD) sleepMs);
+    end = GetTickCount();
+    delta = end - start;
+    delta = ms > delta ? ms - delta : 0;
+    Sleep(delta);
 }
 
 const char *PDC_sysname(void)
