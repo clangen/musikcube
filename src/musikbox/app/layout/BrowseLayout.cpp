@@ -162,7 +162,6 @@ void BrowseLayout::OnVisibilityChanged(bool visible) {
     LayoutBase::OnVisibilityChanged(visible);
 
     if (visible) {
-        Window::MessageQueue().RegisterForBroadcasts(shared_from_this());
         this->categoryList->Requery();
     }
 }

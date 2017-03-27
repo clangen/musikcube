@@ -1,3 +1,9 @@
+0.10.2
+
+* fixed clang 7.3 compile error (macOS mavericks should work again)
+
+--------------------------------------------------------------------------------
+
 0.10.1
 
 user-facing:
