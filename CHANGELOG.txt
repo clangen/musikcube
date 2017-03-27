@@ -9,8 +9,6 @@ user-facing:
 * added jumping to album/artist/genre to the selected track context menu
 * fixed a really old bug that could cause lists to automatically scroll to weird
   places if the window or view is resized
-* added localization support for "dimensions". this allows for per-locale sizing
-  of ui components
 * directory browser now remembers which directories were previously selected,
   making up navigation in the settings view smoother
 * added a "list_header_highlighted_background" and
@@ -23,6 +21,8 @@ low-level:
   for pub/sub like functionality
 * added some new SDK interface methods to ITrack and IMetadataMap for retrieving
   values other than strings (uint64, int64, uint32, int32, double)
+* added localization support for "dimensions". this allows for per-locale sizing
+  of ui components
 * fixed some old bugs in Window.cpp that could cause visibility changed
   notifications to be raised unnecessarily
 * added a custom PDCurses/win32a patch to further reduce CPU load and context

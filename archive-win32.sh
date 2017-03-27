@@ -8,7 +8,7 @@ if [ -z "$VERSION" ]; then
 fi
 
 VANILLA="bin/dist/musikbox_win32_$VERSION"
-MILKDROP="bin/dist/musikbox_with_milkdrop2_win32_$VERSION"
+MILKDROP="bin/dist/musikbox_win32_with_milkdrop2_$VERSION"
 
 rm -rf "$VANILLA"
 rm -rf "$MILKDROP"
@@ -35,6 +35,6 @@ cp bin/release/themes/*.json "$MILKDROP/themes"
 cp bin/release/locales/*.json "$MILKDROP/locales"
 cp -rfp bin/release/plugins/Milkdrop2 "$MILKDROP/plugins"
 pushd $MILKDROP
-7z a -tzip "musikbox_with_milkdrop2_win32_$VERSION.zip" ./* -mx=9
-mv "musikbox_with_milkdrop2_win32_$VERSION.zip" ..
+7z a -tzip "musikbox_win32_with_milkdrop2_$VERSION.zip" ./* -mx=9
+mv "musikbox_win32_with_milkdrop2_$VERSION.zip" ..
 popd

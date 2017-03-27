@@ -30,6 +30,6 @@ strip bin/musikbox
 strip bin/plugins/*.dylib
 
 pushd bin/dist 
-tar cvf musikbox_macos_static_$VERSION.tar $DIRNAME
-bzip2 musikbox_macos_static_$VERSION.tar
+tar cvf musikbox_macos_$VERSION.tar $DIRNAME
+bzip2 musikbox_macos_$VERSION.tar
 popd
