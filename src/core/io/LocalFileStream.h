@@ -59,6 +59,7 @@ namespace musik { namespace core { namespace io {
             virtual bool Seekable();
             virtual const char* Type();
             virtual const char* Uri();
+            virtual bool CanPrefetch() { return true; }
 
         private:
             std::string extension;

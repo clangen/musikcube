@@ -33,6 +33,7 @@
         "settings_first_run_dialog_body": "add some directories that contain music files, then press '%s' to show the library view and start listening!\n\nfor troubleshooting, press '%s' to enter the console view.\n\nother keyboard shorcuts are displayed in the command bar at the bottom of the screen. toggle command mode by pressing 'ESC'.\n\nselect 'ok' to get started.",
         "settings_needs_restart": "you will need to restart musikbox for this change to take effect.",
         "settings_selected_locale": "locale: ",
+        "settings_seek_not_scrub": "seek playback (don't scrub)",
 
         "locale_overlay_select_title": "select locale",
 

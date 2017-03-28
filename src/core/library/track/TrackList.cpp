@@ -123,13 +123,16 @@ TrackPtr TrackList::Get(size_t index) const {
             new TrackMetadataQuery(target, this->library));
 
         this->library->Enqueue(query, ILibrary::QuerySynchronous);
-        this->AddToCache(id, query->Result());
 
-        return query->Result();
+        if (query->GetStatus() == IQuery::Finished) {
+            this->AddToCache(id, query->Result());
+            return query->Result();
+        }
     }
     catch (...) {
-        return TrackPtr();
     }
+
+    return TrackPtr();
 }
 
 IRetainedTrack* TrackList::GetRetainedTrack(size_t index) const {

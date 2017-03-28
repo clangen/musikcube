@@ -92,13 +92,15 @@ static bool showDotfiles = false;
 
 SettingsLayout::SettingsLayout(
     musik::core::ILibraryPtr library,
+    musik::core::sdk::IPlaybackService& playback,
     musik::glue::audio::MasterTransport& transport)
 : LayoutBase()
 , library(library)
 , indexer(library->Indexer())
 , transport(transport)
+, playback(playback)
 , pathsUpdated(false) {
-    this->libraryPrefs = Preferences::ForComponent(core::prefs::components::Settings);
+    this->prefs = Preferences::ForComponent(core::prefs::components::Settings);
     this->browseAdapter.reset(new DirectoryAdapter());
     this->addedPathsAdapter.reset(new SimpleScrollAdapter());
     this->InitializeWindows();
@@ -109,17 +111,23 @@ SettingsLayout::~SettingsLayout() {
 
 void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
     if (cb == syncOnStartupCheckbox.get()) {
-        this->libraryPrefs->SetBool(core::prefs::keys::SyncOnStartup, checked);
-        this->libraryPrefs->Save();
+        this->prefs->SetBool(core::prefs::keys::SyncOnStartup, checked);
+        this->prefs->Save();
     }
     else if (cb == removeCheckbox.get()) {
-        this->libraryPrefs->SetBool(core::prefs::keys::RemoveMissingFiles, checked);
-        this->libraryPrefs->Save();
+        this->prefs->SetBool(core::prefs::keys::RemoveMissingFiles, checked);
+        this->prefs->Save();
     }
     else if (cb == dotfileCheckbox.get()) {
         showDotfiles = !showDotfiles;
         this->browseAdapter->SetDotfilesVisible(showDotfiles);
         this->browseList->OnAdapterChanged();
+    }
+    else if (cb == seekScrubCheckbox.get()) {
+        TimeChangeMode mode = cb->IsChecked() ? TimeChangeSeek : TimeChangeScrub;
+        this->prefs->SetInt(core::prefs::keys::TimeChangeMode, (int) mode);
+        this->seekScrubCheckbox->SetChecked(this->prefs->GetInt(core::prefs::keys::TimeChangeMode) == (int)TimeChangeSeek);
+        this->playback.SetTimeChangeMode(mode);
     }
 #ifdef ENABLE_256_COLOR_OPTION
     else if (cb == paletteCheckbox.get()) {
@@ -222,6 +230,7 @@ void SettingsLayout::OnLayout() {
     this->dotfileCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
     this->syncOnStartupCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
     this->removeCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
+    this->seekScrubCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
 }
 
 void SettingsLayout::RefreshAddedPaths() {
@@ -307,6 +316,7 @@ void SettingsLayout::InitializeWindows() {
     CREATE_CHECKBOX(this->dotfileCheckbox, _TSTR("settings_show_dotfiles"));
     CREATE_CHECKBOX(this->syncOnStartupCheckbox, _TSTR("settings_sync_on_startup"));
     CREATE_CHECKBOX(this->removeCheckbox, _TSTR("settings_remove_missing"));
+    CREATE_CHECKBOX(this->seekScrubCheckbox, _TSTR("settings_seek_not_scrub"));
 
     int order = 0;
     this->browseList->SetFocusOrder(order++);
@@ -323,6 +333,7 @@ void SettingsLayout::InitializeWindows() {
     this->dotfileCheckbox->SetFocusOrder(order++);
     this->syncOnStartupCheckbox->SetFocusOrder(order++);
     this->removeCheckbox->SetFocusOrder(order++);
+    this->seekScrubCheckbox->SetFocusOrder(order++);
 
     this->AddWindow(this->browseLabel);
     this->AddWindow(this->addedPathsLabel);
@@ -340,6 +351,7 @@ void SettingsLayout::InitializeWindows() {
     this->AddWindow(this->dotfileCheckbox);
     this->AddWindow(this->syncOnStartupCheckbox);
     this->AddWindow(this->removeCheckbox);
+    this->AddWindow(this->seekScrubCheckbox);
 }
 
 void SettingsLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
@@ -370,7 +382,7 @@ void SettingsLayout::OnVisibilityChanged(bool visible) {
 }
 
 void SettingsLayout::CheckShowFirstRunDialog() {
-    if (!this->libraryPrefs->GetBool(box::prefs::keys::FirstRunSettingsDisplayed)) {
+    if (!this->prefs->GetBool(box::prefs::keys::FirstRunSettingsDisplayed)) {
         if (!this->firstRunDialog) {
             this->firstRunDialog.reset(new DialogOverlay());
 
@@ -391,7 +403,7 @@ void SettingsLayout::CheckShowFirstRunDialog() {
                     "ENTER",
                     _TSTR("button_ok"),
                     [this](std::string key) {
-                        this->libraryPrefs->SetBool(box::prefs::keys::FirstRunSettingsDisplayed, true);
+                        this->prefs->SetBool(box::prefs::keys::FirstRunSettingsDisplayed, true);
                         this->firstRunDialog.reset();
                     });
 
@@ -401,15 +413,16 @@ void SettingsLayout::CheckShowFirstRunDialog() {
 }
 
 void SettingsLayout::LoadPreferences() {
-    this->syncOnStartupCheckbox->SetChecked(this->libraryPrefs->GetBool(core::prefs::keys::SyncOnStartup, true));
-    this->removeCheckbox->SetChecked(this->libraryPrefs->GetBool(core::prefs::keys::RemoveMissingFiles, true));
+    this->syncOnStartupCheckbox->SetChecked(this->prefs->GetBool(core::prefs::keys::SyncOnStartup, true));
+    this->removeCheckbox->SetChecked(this->prefs->GetBool(core::prefs::keys::RemoveMissingFiles, true));
+    this->seekScrubCheckbox->SetChecked(this->prefs->GetInt(core::prefs::keys::TimeChangeMode, TimeChangeScrub) == TimeChangeSeek);
 
     /* locale */
     this->localeDropdown->SetText(arrow + _TSTR("settings_selected_locale") + i18n::Locale::Instance().GetSelectedLocale());
 
     /* color theme */
-    bool disableCustomColors = this->libraryPrefs->GetBool(box::prefs::keys::DisableCustomColors);
-    std::string colorTheme = this->libraryPrefs->GetString(box::prefs::keys::ColorTheme);
+    bool disableCustomColors = this->prefs->GetBool(box::prefs::keys::DisableCustomColors);
+    std::string colorTheme = this->prefs->GetString(box::prefs::keys::ColorTheme);
 
     if (colorTheme == "" && !disableCustomColors) {
         colorTheme = _TSTR("settings_default_theme_name");
@@ -423,7 +436,7 @@ void SettingsLayout::LoadPreferences() {
 #ifdef ENABLE_256_COLOR_OPTION
     this->paletteCheckbox->CheckChanged.disconnect(this);
     this->paletteCheckbox->SetChecked(
-        this->libraryPrefs->GetBool(box::prefs::keys::UsePaletteColors, true));
+        this->prefs->GetBool(box::prefs::keys::UsePaletteColors, true));
     this->paletteCheckbox->CheckChanged.connect(this, &SettingsLayout::OnCheckboxChanged);
 #endif
 

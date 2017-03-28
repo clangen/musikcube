@@ -31,6 +31,12 @@
     <ClCompile Include="CddaDataStreamFactory.cpp">
       <Filter>plugin</Filter>
     </ClCompile>
+    <ClCompile Include="CddaIndexerSource.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="CddaDataModel.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -55,6 +61,12 @@
       <Filter>plugin</Filter>
     </ClInclude>
     <ClInclude Include="CddaDataStream.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="CddaIndexerSource.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="CddaDataModel.h">
       <Filter>plugin</Filter>
     </ClInclude>
   </ItemGroup>

@@ -84,11 +84,11 @@ bool GlobalHotkeys::Handle(const std::string& kn) {
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::SeekBack, kn)) {
-        musik::glue::playback::SeekBack(this->transport);
+        musik::glue::playback::SeekBack(this->playback);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::SeekForward, kn)) {
-        musik::glue::playback::SeekForward(this->transport);
+        musik::glue::playback::SeekForward(this->playback);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::ToggleRepeat, kn)) {

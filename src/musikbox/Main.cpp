@@ -174,7 +174,7 @@ int main(int argc, char* argv[])
 
         Layout libraryLayout(new LibraryLayout(playback, library));
         Layout consoleLayout(new ConsoleLayout(transport, library));
-        Layout settingsLayout(new SettingsLayout(library, transport));
+        Layout settingsLayout(new SettingsLayout(library, playback, transport));
 
         Main mainLayout(new MainLayout(library));
 

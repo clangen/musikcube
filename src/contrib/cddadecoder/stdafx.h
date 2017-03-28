@@ -38,5 +38,13 @@
 #define WINVER 0x0502
 #define _WIN32_WINNT 0x0502
 
+#define PLUGIN_NAME "CD Audio IDecoder, IDataStream"
+
+#define FRAMES_PER_SECOND 75
+#define FRAMES_PER_MINUTE (60 * FRAMES_PER_SECOND)
+#define FRAMES_PER_PREGAP (2 * FRAMES_PER_SECOND)
+#define BYTES_PER_SECTOR 2352
+#define MSF2UINT(hgs) ((hgs[1] * FRAMES_PER_MINUTE) + (hgs[2] * FRAMES_PER_SECOND) + (hgs[3]))
+
 #include <shlwapi.h>
 #include <Windows.h>

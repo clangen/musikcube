@@ -36,17 +36,22 @@
 
 #include "CddaDecoderFactory.h"
 #include "CddaDataStreamFactory.h"
+#include "CddaIndexerSource.h"
 
 #include <core/sdk/constants.h>
 #include <core/sdk/IPlugin.h>
 
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
+BOOL APIENTRY DllMain(HMODULE module, DWORD reason, LPVOID reserved) {
+    if (reason == DLL_PROCESS_DETACH) {
+        CddaDataModel::Shutdown();
+    }
+
     return true;
 }
 
 class CddaDecoderPlugin : public musik::core::sdk::IPlugin {
     virtual void Destroy() { delete this; };
-    virtual const char* Name() { return "CD Audio IDecoder, IDataStream"; }
+    virtual const char* Name() { return PLUGIN_NAME; }
     virtual const char* Version() { return "0.4.0"; }
     virtual const char* Author() { return "Björn Olievier, clangen"; }
     virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
@@ -62,4 +67,8 @@ extern "C" __declspec(dllexport) IDecoderFactory* GetDecoderFactory() {
 
 extern "C" __declspec(dllexport) IDataStreamFactory* GetDataStreamFactory() {
     return new CddaDataStreamFactory();
+}
+
+extern "C" __declspec(dllexport) IIndexerSource* GetIndexerSource() {
+    return new CddaIndexerSource();
 }

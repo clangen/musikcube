@@ -63,12 +63,12 @@ namespace musik {
                 transport.SetVolume(transport.Volume() - delta);
             }
 
-            void SeekForward(ITransport& transport) {
-                transport.SetPosition(transport.Position() + 10.0f);
+            void SeekForward(IPlaybackService& playback) {
+                playback.SetPosition(playback.GetPosition() + 10.0f);
             }
 
-            void SeekBack(ITransport& transport) {
-                transport.SetPosition(transport.Position() - 10.0f);
+            void SeekBack(IPlaybackService& playback) {
+                playback.SetPosition(playback.GetPosition() - 10.0f);
             }
         }
     }

@@ -72,8 +72,6 @@ static inline milliseconds now() {
     return duration_cast<milliseconds>(system_clock::now().time_since_epoch());
 }
 
-static IScrollAdapter::EntryPtr MISSING_ENTRY = IScrollAdapter::EntryPtr();
-
 TrackListView::TrackListView(
     PlaybackService& playback,
     ILibraryPtr library,
@@ -89,12 +87,6 @@ TrackListView::TrackListView(
     this->lastChanged = now();
     this->formatter = formatter;
     this->decorator = decorator;
-
-    if (!MISSING_ENTRY) {
-        auto e = std::shared_ptr<SingleLineEntry>(new SingleLineEntry("track missing"));
-        e->SetAttrs(COLOR_PAIR(CURSESPP_TEXT_ERROR));
-        MISSING_ENTRY = e;
-    }
 }
 
 TrackListView::~TrackListView() {
@@ -395,7 +387,12 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
     TrackPtr track = parent.tracks->Get(trackIndex);
 
     if (!track) {
-        return MISSING_ENTRY;
+        auto entry = std::shared_ptr<SingleLineEntry>(new SingleLineEntry("track missing"));
+
+        entry->SetAttrs(COLOR_PAIR(selected
+            ? CURSESPP_HIGHLIGHTED_ERROR_LIST_ITEM : CURSESPP_TEXT_ERROR));
+
+        return entry;
     }
 
     int64 attrs = CURSESPP_DEFAULT_COLOR;

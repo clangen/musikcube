@@ -103,6 +103,8 @@ namespace musik { namespace core { namespace audio {
             virtual void CopyFrom(const musik::core::sdk::ITrackList* source);
             virtual void Play(const musik::core::sdk::ITrackList* source, size_t index);
             virtual musik::core::sdk::ITrackListEditor* EditPlaylist();
+            virtual musik::core::sdk::TimeChangeMode GetTimeChangeMode();
+            virtual void SetTimeChangeMode(musik::core::sdk::TimeChangeMode);
 
             /* app-specific implementation. similar to some SDK methods, but use
             concrete data types with known optimizations */
@@ -167,6 +169,8 @@ namespace musik { namespace core { namespace audio {
             void OnTrackChanged(size_t pos, musik::core::TrackPtr track);
             void OnVolumeChanged();
             void OnTimeChanged(double time);
+            void OnIndexerFinished(int trackCount);
+
             void NotifyRemotesModeChanged();
             void PrepareNextTrack();
             void InitRemotes();
@@ -184,7 +188,11 @@ namespace musik { namespace core { namespace audio {
             musik::core::ILibraryPtr library;
             musik::core::audio::ITransport& transport;
             size_t index, nextIndex;
+
             musik::core::sdk::RepeatMode repeatMode;
+            musik::core::sdk::TimeChangeMode timeChangeMode;
+
+            double seekPosition;
 
             musik::core::runtime::IMessageQueue& messageQueue;
     };

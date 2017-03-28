@@ -99,18 +99,22 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CddaDataModel.cpp" />
     <ClCompile Include="CddaDataStream.cpp" />
     <ClCompile Include="CddaDataStreamFactory.cpp" />
     <ClCompile Include="CddaDecoder.cpp" />
     <ClCompile Include="cddadecoder_plugin.cpp" />
     <ClCompile Include="CddaDecoderFactory.cpp" />
+    <ClCompile Include="CddaIndexerSource.cpp" />
     <ClCompile Include="stdafx.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CddaDataModel.h" />
     <ClInclude Include="CddaDataStream.h" />
     <ClInclude Include="CddaDataStreamFactory.h" />
     <ClInclude Include="CddaDecoder.h" />
     <ClInclude Include="CddaDecoderFactory.h" />
+    <ClInclude Include="CddaIndexerSource.h" />
     <ClInclude Include="devioctl.h" />
     <ClInclude Include="ntddcdrm.h" />
     <ClInclude Include="ntddstor.h" />

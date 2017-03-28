@@ -251,6 +251,13 @@ int Player::State() {
     return this->state;
 }
 
+bool Player::HasCapability(Capability c) {
+    if (this->stream) {
+        return (this->stream->GetCapabilities() & (int) c) != 0;
+    }
+    return false;
+}
+
 void Player::UpdateNextMixPointTime() {
     const double position = this->GetPositionInternal();
 

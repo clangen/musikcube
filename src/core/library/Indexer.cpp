@@ -832,4 +832,3 @@ void Indexer::ScheduleRescan(IIndexerSource* source) {
         this->Schedule(SyncType::Sources, source);
     }
 }
-

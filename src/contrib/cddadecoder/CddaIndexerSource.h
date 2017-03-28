@@ -32,30 +32,40 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include <core/sdk/IIndexerSource.h>
+#include "CddaDataModel.h"
 
-namespace musik { namespace core { namespace sdk {
+#include <functional>
+#include <set>
 
-    typedef long PositionType;
+class CddaIndexerSource :
+    public musik::core::sdk::IIndexerSource,
+    public CddaDataModel::EventListener
+{
+    public:
+        CddaIndexerSource();
+        ~CddaIndexerSource();
 
-    class IDataStream {
-        public:
-            /* v1 */
-            virtual bool Open(const char *uri, unsigned int options = 0) = 0;
-            virtual bool Close() = 0;
-            virtual void Interrupt() = 0;
-            virtual void Destroy() = 0;
-            virtual PositionType Read(void *buffer, PositionType readBytes) = 0;
-            virtual bool SetPosition(PositionType position) = 0;
-            virtual PositionType Position() = 0;
-            virtual bool Seekable() = 0;
-            virtual bool Eof() = 0;
-            virtual long Length() = 0;
-            virtual const char* Type() = 0;
-            virtual const char* Uri() = 0;
+        /* IIndexerSource */
+        virtual void Destroy();
+        virtual void OnBeforeScan();
+        virtual void OnAfterScan();
+        virtual int SourceId();
 
-            /* v5 */
-            virtual bool CanPrefetch() = 0;
-    };
+        virtual void Scan(musik::core::sdk::IIndexerWriter* indexer);
 
-} } }
+        virtual void Scan(
+            musik::core::sdk::IIndexerWriter* indexer,
+            musik::core::sdk::IRetainedTrackWriter* track,
+            const char* externalId);
+
+        /* CddaDataModel::EventListener */
+        virtual void OnAudioDiscInsertedOrRemoved();
+
+    private:
+        void RefreshModel();
+
+        CddaDataModel& model;
+        std::set<std::string> discIds;
+        std::vector<CddaDataModel::AudioDiscPtr> discs;
+};

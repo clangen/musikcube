@@ -72,6 +72,7 @@ using Editor = PlaybackService::Editor;
 #define MESSAGE_SHUFFLED 1006
 #define MESSAGE_NOTIFY_EDITED 1007
 #define MESSAGE_NOTIFY_RESET 1008
+#define MESSAGE_SEEK 1009
 
 class StreamMessage : public Message {
     public:
@@ -110,6 +111,9 @@ static inline void loadPreferences(
     int repeatMode = prefs->GetInt(keys::RepeatMode, RepeatNone);
     repeatMode = (repeatMode > RepeatList || repeatMode < RepeatNone) ? RepeatNone : repeatMode;
     playback.SetRepeatMode((RepeatMode) repeatMode);
+
+    int timeChangeMode = prefs->GetInt(keys::TimeChangeMode, TimeChangeScrub);
+    playback.SetTimeChangeMode((TimeChangeMode) timeChangeMode);
 }
 
 static inline void savePreferences(
@@ -118,6 +122,7 @@ static inline void savePreferences(
 {
     prefs->SetDouble(keys::Volume, playback.GetVolume());
     prefs->SetInt(keys::RepeatMode, playback.GetRepeatMode());
+    prefs->SetInt(keys::TimeChangeMode, playback.GetTimeChangeMode());
 }
 
 PlaybackService::PlaybackService(
@@ -135,7 +140,9 @@ PlaybackService::PlaybackService(
     transport.PlaybackEvent.connect(this, &PlaybackService::OnPlaybackEvent);
     transport.VolumeChanged.connect(this, &PlaybackService::OnVolumeChanged);
     transport.TimeChanged.connect(this, &PlaybackService::OnTimeChanged);
+    library->Indexer()->Finished.connect(this, &PlaybackService::OnIndexerFinished);
     loadPreferences(this->transport, *this, prefs);
+    this->seekPosition = -1.0f;
     this->index = NO_POSITION;
     this->nextIndex = NO_POSITION;
     this->InitRemotes();
@@ -212,6 +219,14 @@ void PlaybackService::SetRepeatMode(RepeatMode mode) {
         POST(this, MESSAGE_PREPARE_NEXT_TRACK, NO_POSITION, 0);
         POST(this, MESSAGE_MODE_CHANGED, 0, 0);
     }
+}
+
+musik::core::sdk::TimeChangeMode PlaybackService::GetTimeChangeMode() {
+    return this->timeChangeMode;
+}
+
+void PlaybackService::SetTimeChangeMode(TimeChangeMode mode) {
+    this->timeChangeMode = mode;
 }
 
 void PlaybackService::ToggleShuffle() {
@@ -345,6 +360,12 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         }
 
         this->QueueEdited();
+    }
+    else if (type == MESSAGE_SEEK) {
+        if (this->seekPosition != -1.0f) {
+            this->transport.SetPosition(this->seekPosition + 0.5f);
+            this->seekPosition = -1.0f;
+        }
     }
 }
 
@@ -578,11 +599,23 @@ void PlaybackService::SetVolume(double vol) {
 }
 
 double PlaybackService::GetPosition() {
+    if (this->timeChangeMode == TimeChangeSeek && this->seekPosition != -1.0f) {
+        return this->seekPosition;
+    }
+
     return transport.Position();
 }
 
 void PlaybackService::SetPosition(double seconds) {
-    transport.SetPosition(seconds);
+    if (this->timeChangeMode == TimeChangeSeek) {
+        seconds = std::max(seconds, (double) 0.0);
+        this->seekPosition = seconds;
+        this->TimeChanged(seconds);
+        messageQueue.Debounce(Message::Create(this, MESSAGE_SEEK), 500);
+    }
+    else { /* TimeChangeScrub */
+        transport.SetPosition(seconds);
+    }
 }
 
 double PlaybackService::GetDuration() {
@@ -696,6 +729,12 @@ void PlaybackService::OnVolumeChanged() {
 
 void PlaybackService::OnTimeChanged(double time) {
     POST(this, MESSAGE_TIME_CHANGED, 0, 0);
+}
+
+void PlaybackService::OnIndexerFinished(int trackCount) {
+    std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
+    this->playlist.ClearCache();
+    this->unshuffled.ClearCache();
 }
 
 /* our Editor interface. we proxy all of the ITrackListEditor methods so we

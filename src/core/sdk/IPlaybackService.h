@@ -77,10 +77,14 @@ namespace musik { namespace core { namespace sdk {
             /* sdk v2 */
             virtual IRetainedTrack* GetPlayingTrack() = 0;
 
-            /* sdk v3*/
+            /* sdk v3 */
             virtual void CopyFrom(const ITrackList* trackList) = 0;
             virtual void Play(const ITrackList* source, size_t index) = 0;
             virtual ITrackListEditor* EditPlaylist() = 0;
+
+            /* sdk v5 */
+            virtual musik::core::sdk::TimeChangeMode GetTimeChangeMode() = 0;
+            virtual void SetTimeChangeMode(musik::core::sdk::TimeChangeMode) = 0;
     };
 
 } } }

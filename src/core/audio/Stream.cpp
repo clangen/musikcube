@@ -36,6 +36,7 @@
 
 #include "Stream.h"
 #include "Streams.h"
+#include <core/sdk/constants.h>
 #include <core/debug.h>
 
 using namespace musik::core::audio;
@@ -62,6 +63,7 @@ Stream::Stream(int samplesPerChannel, double bufferLengthSeconds, unsigned int o
 , decoderChannels(0)
 , decoderSamplePosition(0)
 , done(false)
+, capabilities(0)
 , remainder(nullptr)
 , rawBuffer(nullptr) {
     if ((this->options & NoDSP) == 0) {
@@ -114,6 +116,10 @@ double Stream::GetDuration() {
     return this->decoder ? this->decoder->GetDuration() : -1.0f;
 }
 
+int Stream::GetCapabilities() {
+    return this->capabilities;
+}
+
 bool Stream::OpenStream(std::string uri) {
     musik::debug::info(TAG, "opening " + uri);
 
@@ -129,7 +135,10 @@ bool Stream::OpenStream(std::string uri) {
     this->decoder = streams::GetDecoderForDataStream(this->dataStream);
 
     if (this->decoder) {
-        this->RefillInternalBuffers();
+        if (this->dataStream->CanPrefetch()) {
+            this->capabilities |= (int) musik::core::sdk::Capability::Prebuffer;
+            this->RefillInternalBuffers();
+        }
         return true;
     }
 

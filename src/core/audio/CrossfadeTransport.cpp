@@ -224,7 +224,7 @@ void CrossfadeTransport::SetVolume(double volume) {
         active.SetVolume(volume);
         next.SetVolume(volume);
     }
-    
+
     if (oldVolume != this->volume) {
         this->SetMuted(false);
         this->VolumeChanged();
@@ -237,7 +237,10 @@ void CrossfadeTransport::OnPlayerPrepared(Player* player) {
 
         int durationMs = (int)(player->GetDuration() * 1000.0f);
         double mixpointOffset = 0.0f;
-        bool canFade = (durationMs > CROSSFADE_DURATION_MS * 4);
+
+        bool canFade =
+            player->HasCapability(Capability::Prebuffer) &&
+            (durationMs > CROSSFADE_DURATION_MS * 4);
 
         /* if the track isn't long enough don't set a mixpoint, and
         disable the crossfade functionality */

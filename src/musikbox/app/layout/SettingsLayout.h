@@ -69,6 +69,7 @@ namespace musik {
             public:
                 SettingsLayout(
                     musik::core::ILibraryPtr library,
+                    musik::core::sdk::IPlaybackService& playback,
                     musik::glue::audio::MasterTransport& transport);
 
                 virtual ~SettingsLayout();
@@ -109,10 +110,10 @@ namespace musik {
 
                 musik::core::ILibraryPtr library;
                 musik::core::IIndexer* indexer;
+                musik::core::sdk::IPlaybackService& playback;
                 musik::glue::audio::MasterTransport& transport;
 
-                std::shared_ptr<musik::core::Preferences> libraryPrefs;
-                std::shared_ptr<musik::core::Preferences> playbackPrefs;
+                std::shared_ptr<musik::core::Preferences> prefs;
 
                 std::shared_ptr<cursespp::TextLabel> localeDropdown;
                 std::shared_ptr<cursespp::TextLabel> outputDropdown;
@@ -126,6 +127,7 @@ namespace musik {
                 std::shared_ptr<cursespp::Checkbox> dotfileCheckbox;
                 std::shared_ptr<cursespp::Checkbox> syncOnStartupCheckbox;
                 std::shared_ptr<cursespp::Checkbox> removeCheckbox;
+                std::shared_ptr<cursespp::Checkbox> seekScrubCheckbox;
 
                 std::shared_ptr<cursespp::TextLabel> browseLabel;
                 std::shared_ptr<cursespp::TextLabel> addedPathsLabel;
