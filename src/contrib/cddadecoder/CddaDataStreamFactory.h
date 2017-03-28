@@ -33,15 +33,17 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <core/sdk/IDataStreamFactory.h>
+#include <core/sdk/IMetadataReader.h>
+#include <string>
 
 using namespace musik::core::sdk;
 
 class CddaDataStreamFactory : public IDataStreamFactory {
-public:
-    CddaDataStreamFactory();
-    ~CddaDataStreamFactory();
+    public:
+        CddaDataStreamFactory();
+        ~CddaDataStreamFactory();
 
-    virtual bool CanRead(const char *uri);
-    virtual IDataStream* Open(const char *uri, unsigned int options = 0);
-    virtual void Destroy();
+        virtual bool CanRead(const char *uri);
+        virtual IDataStream* Open(const char *uri, unsigned int options = 0);
+        virtual void Destroy();
 };

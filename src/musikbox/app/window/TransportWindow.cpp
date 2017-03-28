@@ -315,7 +315,7 @@ TransportWindow::TransportWindow(musik::core::audio::PlaybackService& playback)
     this->playback.ModeChanged.connect(this, &TransportWindow::OnPlaybackModeChanged);
     this->playback.Shuffled.connect(this, &TransportWindow::OnPlaybackShuffled);
     this->playback.VolumeChanged.connect(this, &TransportWindow::OnTransportVolumeChanged);
-    this->transport.TimeChanged.connect(this, &TransportWindow::OnTransportTimeChanged);
+    this->playback.TimeChanged.connect(this, &TransportWindow::OnTransportTimeChanged);
     this->paused = false;
     this->lastTime = DEFAULT_TIME;
 }
@@ -361,11 +361,11 @@ bool TransportWindow::KeyPress(const std::string& kn) {
     }
     else if (this->focus == FocusTime) {
         if (inc(kn)) {
-            playback::SeekForward(this->transport);
+            playback::SeekForward(this->playback);
             return true;
         }
         else if (dec(kn)) {
-            playback::SeekBack(this->transport);
+            playback::SeekBack(this->playback);
             return true;
         }
     }
@@ -557,7 +557,7 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     if (timeMode == TimeSmooth) {
         double smoothedTime = this->lastTime += 1.0f; /* 1000 millis */
-        double actualTime = transport.Position();
+        double actualTime = playback.GetPosition();
 
         if (paused || stopped || fabs(smoothedTime - actualTime) > TIME_SLOP) {
             smoothedTime = actualTime;
@@ -569,7 +569,7 @@ void TransportWindow::Update(TimeMode timeMode) {
         secondsCurrent = (int) round(smoothedTime);
     }
     else if (timeMode == TimeSync) {
-        this->lastTime = transport.Position();
+        this->lastTime = playback.GetPosition();
         secondsCurrent = (int) round(this->lastTime);
     }
 

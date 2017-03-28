@@ -186,6 +186,8 @@ namespace musik { namespace core { namespace audio {
             size_t index, nextIndex;
             musik::core::sdk::RepeatMode repeatMode;
 
+            double seekPosition;
+
             musik::core::runtime::IMessageQueue& messageQueue;
     };
 

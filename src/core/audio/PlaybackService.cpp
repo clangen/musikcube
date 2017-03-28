@@ -72,6 +72,7 @@ using Editor = PlaybackService::Editor;
 #define MESSAGE_SHUFFLED 1006
 #define MESSAGE_NOTIFY_EDITED 1007
 #define MESSAGE_NOTIFY_RESET 1008
+#define MESSAGE_SEEK 1009
 
 class StreamMessage : public Message {
     public:
@@ -136,6 +137,7 @@ PlaybackService::PlaybackService(
     transport.VolumeChanged.connect(this, &PlaybackService::OnVolumeChanged);
     transport.TimeChanged.connect(this, &PlaybackService::OnTimeChanged);
     loadPreferences(this->transport, *this, prefs);
+    this->seekPosition = -1.0f;
     this->index = NO_POSITION;
     this->nextIndex = NO_POSITION;
     this->InitRemotes();
@@ -345,6 +347,12 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         }
 
         this->QueueEdited();
+    }
+    else if (type == MESSAGE_SEEK) {
+        if (this->seekPosition != -1.0f) {
+            this->transport.SetPosition(this->seekPosition + 0.5f);
+            this->seekPosition = -1.0f;
+        }
     }
 }
 
@@ -578,11 +586,17 @@ void PlaybackService::SetVolume(double vol) {
 }
 
 double PlaybackService::GetPosition() {
+    if (this->seekPosition != -1.0f) {
+        return this->seekPosition;
+    }
+
     return transport.Position();
 }
 
 void PlaybackService::SetPosition(double seconds) {
-    transport.SetPosition(seconds);
+    this->seekPosition = seconds;
+    this->TimeChanged(seconds);
+    messageQueue.Debounce(Message::Create(this, MESSAGE_SEEK), 500);
 }
 
 double PlaybackService::GetDuration() {

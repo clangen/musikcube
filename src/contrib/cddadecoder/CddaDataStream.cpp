@@ -34,6 +34,7 @@
 
 #include "stdafx.h"
 #include "CddaDataStream.h"
+#include <algorithm>
 #include <string>
 #include <set>
 #include <mutex>
@@ -42,16 +43,21 @@
 #define FRAMES_PER_MINUTE (60 * FRAMES_PER_SECOND)
 #define FRAMES_PER_PREGAP (2 * FRAMES_PER_SECOND)
 
-#define RAW_SECTOR_SIZE 2352
+#define BUFFER_SIZE_SECTOR 240 /* close to 0.5MB buffer */
+#define MAX_SECTORS_PER_READ 20 /* uhh for some reason... spinning disc is slow */
+#define BYTES_PER_SECTOR 2352
+#define BUFFER_SIZE_BYTES (BUFFER_SIZE_SECTOR * BYTES_PER_SECTOR)
+
 #define MSF2UINT(hgs) ((hgs[1] * FRAMES_PER_MINUTE) + (hgs[2] * FRAMES_PER_SECOND) + (hgs[3]))
 
-static CddaDataStream* active = NULL;
-static std::mutex activeMutex;
+static std::mutex driveAccessMutex; /* one track can read at a time */
 
 CddaDataStream::CddaDataStream() {
     this->closed = false;
     this->drive = INVALID_HANDLE_VALUE;
     this->position = this->length = 0;
+    this->lookahead = new char[BUFFER_SIZE_BYTES];
+    this->lookaheadOffset = this->lookaheadTotal = 0;
     memset(&this->toc, 0, sizeof(this->toc));
     this->startSector = this->stopSector = 0;
 }
@@ -140,7 +146,7 @@ bool CddaDataStream::Open(const char *uri, unsigned int options) {
 
     this->startSector = MSF2UINT(this->toc.TrackData[trackIndex - 1].Address) - FRAMES_PER_PREGAP;
     this->stopSector = MSF2UINT(this->toc.TrackData[trackIndex].Address) - FRAMES_PER_PREGAP;
-    this->length = (this->stopSector - this->startSector) * RAW_SECTOR_SIZE;
+    this->length = (this->stopSector - this->startSector) * BYTES_PER_SECTOR;
     this->uri = uri;
 
     return true;
@@ -166,6 +172,10 @@ void CddaDataStream::Destroy() {
 }
 
 PositionType CddaDataStream::Read(void* buffer, PositionType readBytes) {
+    if (this->position >= this->length) {
+        return 0;
+    }
+
     DWORD actualBytesRead = 0;
     this->Read((BYTE*) buffer, readBytes, true, &actualBytesRead);
     return (PositionType) actualBytesRead;
@@ -177,6 +187,7 @@ bool CddaDataStream::SetPosition(PositionType position) {
     }
 
     this->position = position;
+    this->lookaheadOffset = BUFFER_SIZE_BYTES;
 
     while (this->position % (2 * this->channels)) {
         this->position++;
@@ -209,39 +220,71 @@ const char* CddaDataStream::Uri() {
     return uri.c_str();
 }
 
+void CddaDataStream::RefillInternalBuffer() {
+    std::unique_lock<std::mutex> lock(driveAccessMutex);
+
+    LONGLONG pos = this->position;
+    int iterations = BUFFER_SIZE_SECTOR / MAX_SECTORS_PER_READ;
+    DWORD totalBytesRead = 0;
+
+    while (iterations > 0) {
+        UINT sectorOffset = this->startSector + (int)(pos / BYTES_PER_SECTOR);
+
+        RAW_READ_INFO rawReadInfo;
+        rawReadInfo.SectorCount = MAX_SECTORS_PER_READ;
+        rawReadInfo.TrackMode = CDDA;
+        rawReadInfo.DiskOffset.QuadPart = sectorOffset * 2048;
+
+        DWORD bytesActuallyRead = 0;
+        DWORD bufferSizeBytes = BUFFER_SIZE_BYTES;
+
+        DeviceIoControl(
+            this->drive,
+            IOCTL_CDROM_RAW_READ,
+            &rawReadInfo,
+            sizeof(rawReadInfo),
+            &this->lookahead[totalBytesRead],
+            BYTES_PER_SECTOR * MAX_SECTORS_PER_READ,
+            &bytesActuallyRead,
+            0);
+
+        totalBytesRead += bytesActuallyRead;
+        pos += bytesActuallyRead;
+
+        if (totalBytesRead == 0) {
+            break;
+        }
+
+        --iterations;
+    }
+
+    this->lookaheadOffset = 0;
+    this->lookaheadTotal = totalBytesRead;
+}
+
 HRESULT CddaDataStream::Read(PBYTE pbBuffer, DWORD dwBytesToRead, BOOL bAlign, LPDWORD pdwBytesRead) {
     if (this->closed) {
         pdwBytesRead = 0;
         return S_FALSE;
     }
 
-    LONGLONG pos = this->position;
-    size_t len = (size_t) dwBytesToRead;
-
-    UINT sectorOffset = this->startSector + (int)(pos / RAW_SECTOR_SIZE);
-
-    RAW_READ_INFO rawReadInfo;
-    rawReadInfo.SectorCount = 1;
-    rawReadInfo.TrackMode = CDDA;
-    rawReadInfo.DiskOffset.QuadPart = sectorOffset * 2048;
-
-    DWORD bytesActuallyRead = 0;
-
-    DeviceIoControl(
-        this->drive,
-        IOCTL_CDROM_RAW_READ,
-        &rawReadInfo,
-        sizeof(rawReadInfo),
-        pbBuffer,
-        dwBytesToRead,
-        &bytesActuallyRead,
-        0);
-
-    if (pdwBytesRead) {
-        *pdwBytesRead = bytesActuallyRead;
+    size_t avail = this->lookaheadTotal - this->lookaheadOffset;
+    
+    if (avail == 0) {
+        this->RefillInternalBuffer();
+        avail = this->lookaheadTotal;
     }
 
-    this->position += bytesActuallyRead;
+    DWORD readSize = min(avail, (size_t) dwBytesToRead);
+    if (readSize >= 0) {
+        memcpy(pbBuffer, &this->lookahead[this->lookaheadOffset], readSize);
+        this->position += readSize;
+        this->lookaheadOffset += readSize;
+    }
 
+    if (pdwBytesRead) {
+        *pdwBytesRead = readSize;
+    }
+    
     return S_OK;
 }

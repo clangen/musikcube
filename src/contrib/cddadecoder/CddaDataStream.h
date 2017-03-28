@@ -69,5 +69,10 @@ class CddaDataStream : public IDataStream {
         unsigned long channels;
         volatile bool closed;
 
+        char* lookahead;
+        DWORD lookaheadOffset;
+        DWORD lookaheadTotal;
+
         HRESULT Read(PBYTE pbBuffer, DWORD dwBytesToRead, BOOL bAlign, LPDWORD pdwBytesRead);
+        void RefillInternalBuffer();    
 };

@@ -104,6 +104,7 @@
     <ClCompile Include="CddaDecoder.cpp" />
     <ClCompile Include="cddadecoder_plugin.cpp" />
     <ClCompile Include="CddaDecoderFactory.cpp" />
+    <ClCompile Include="CddaIndexerSource.cpp" />
     <ClCompile Include="stdafx.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -111,6 +112,7 @@
     <ClInclude Include="CddaDataStreamFactory.h" />
     <ClInclude Include="CddaDecoder.h" />
     <ClInclude Include="CddaDecoderFactory.h" />
+    <ClInclude Include="CddaIndexerSource.h" />
     <ClInclude Include="devioctl.h" />
     <ClInclude Include="ntddcdrm.h" />
     <ClInclude Include="ntddstor.h" />

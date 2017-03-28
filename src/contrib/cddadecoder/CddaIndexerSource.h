@@ -32,39 +32,18 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include <core/sdk/IIndexerSource.h>
+#include <functional>
 
-#include "CddaDecoderFactory.h"
-#include "CddaDataStreamFactory.h"
-#include "CddaIndexerSource.h"
+class CddaIndexerSource : public musik::core::sdk::IIndexerSource {
+    public:
+        virtual void Destroy();
 
-#include <core/sdk/constants.h>
-#include <core/sdk/IPlugin.h>
-
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
-    return true;
-}
-
-class CddaDecoderPlugin : public musik::core::sdk::IPlugin {
-    virtual void Destroy() { delete this; };
-    virtual const char* Name() { return PLUGIN_NAME; }
-    virtual const char* Version() { return "0.4.0"; }
-    virtual const char* Author() { return "Björn Olievier, clangen"; }
-    virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
+        virtual int SourceId();
+        
+        virtual void Scan(musik::core::sdk::IIndexerSink* indexer);
+        
+        virtual void Scan(
+            musik::core::sdk::IIndexerSink* indexer,
+            musik::core::sdk::IRetainedTrackWriter* track);
 };
-
-extern "C" __declspec(dllexport) musik::core::sdk::IPlugin* GetPlugin() {
-    return new CddaDecoderPlugin();
-}
-
-extern "C" __declspec(dllexport) IDecoderFactory* GetDecoderFactory() {
-    return new CddaDecoderFactory();
-}
-
-extern "C" __declspec(dllexport) IDataStreamFactory* GetDataStreamFactory() {
-    return new CddaDataStreamFactory();
-}
-
-extern "C" __declspec(dllexport) IIndexerSource* GetIndexerSource() {
-    return new CddaIndexerSource();
-}

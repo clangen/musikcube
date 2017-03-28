@@ -33,38 +33,41 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
-
-#include "CddaDecoderFactory.h"
-#include "CddaDataStreamFactory.h"
 #include "CddaIndexerSource.h"
 
-#include <core/sdk/constants.h>
-#include <core/sdk/IPlugin.h>
+using namespace musik::core::sdk;
 
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
-    return true;
+void CddaIndexerSource::Destroy() {
+    delete this;
 }
 
-class CddaDecoderPlugin : public musik::core::sdk::IPlugin {
-    virtual void Destroy() { delete this; };
-    virtual const char* Name() { return PLUGIN_NAME; }
-    virtual const char* Version() { return "0.4.0"; }
-    virtual const char* Author() { return "Björn Olievier, clangen"; }
-    virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
-};
+void CddaIndexerSource::Scan(musik::core::sdk::IIndexerSink* indexer) {
+    indexer->RemoveAll(this);
 
-extern "C" __declspec(dllexport) musik::core::sdk::IPlugin* GetPlugin() {
-    return new CddaDecoderPlugin();
+    char fmt[12];
+
+    for (int i = 0; i < 9; i++) {
+        snprintf(fmt, sizeof(fmt), "%02d", i + 1);
+
+        std::string fn = "f:\\Track" + std::string(fmt) + ".cda";
+        std::string title = "[CD AUDIO] track #" + std::string(fmt);
+
+        auto track = indexer->CreateWriter();
+        track->SetValue("album", "[CD AUDIO] album");
+        track->SetValue("artist", "[CD AUDIO] artist");
+        track->SetValue("album_artist", "[CD AUDIO] album artist");
+        track->SetValue("genre", "[CD AUDIO] genre");
+        track->SetValue("title", title.c_str());
+        track->SetValue("filename", fn.c_str());
+        indexer->Save(this, track);
+        track->Release();
+    }
 }
 
-extern "C" __declspec(dllexport) IDecoderFactory* GetDecoderFactory() {
-    return new CddaDecoderFactory();
+void CddaIndexerSource::Scan(IIndexerSink* indexer, IRetainedTrackWriter* track) {
+
 }
 
-extern "C" __declspec(dllexport) IDataStreamFactory* GetDataStreamFactory() {
-    return new CddaDataStreamFactory();
-}
-
-extern "C" __declspec(dllexport) IIndexerSource* GetIndexerSource() {
-    return new CddaIndexerSource();
+int CddaIndexerSource::SourceId() {
+    return std::hash<std::string>()(PLUGIN_NAME);
 }
