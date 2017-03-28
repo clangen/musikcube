@@ -38,30 +38,15 @@
 #include <set>
 #include <mutex>
 
+#define FRAMES_PER_SECOND 75
+#define FRAMES_PER_MINUTE (60 * FRAMES_PER_SECOND)
+#define FRAMES_PER_PREGAP (2 * FRAMES_PER_SECOND)
+
 #define RAW_SECTOR_SIZE 2352
-#define MSF2UINT(hgs) ((hgs[1]*4500) + (hgs[2]*75) + (hgs[3]))
+#define MSF2UINT(hgs) ((hgs[1] * FRAMES_PER_MINUTE) + (hgs[2] * FRAMES_PER_SECOND) + (hgs[3]))
 
 static CddaDataStream* active = NULL;
 static std::mutex activeMutex;
-
-static void setActive(CddaDataStream* stream) {
-    std::unique_lock<std::mutex> lock(activeMutex);
-
-    if (active != NULL) {
-        active->Close();
-        active = NULL;
-    }
-
-    active = stream;
-}
-
-static void resetIfActive(CddaDataStream* stream) {
-    std::unique_lock<std::mutex> lock(activeMutex);
-
-    if (stream == active) {
-        active = NULL;
-    }
-}
 
 CddaDataStream::CddaDataStream() {
     this->closed = false;
@@ -73,7 +58,6 @@ CddaDataStream::CddaDataStream() {
 
 CddaDataStream::~CddaDataStream() {
     this->Close();
-    resetIfActive(this);
 }
 
 int CddaDataStream::GetChannelCount() {
@@ -107,10 +91,10 @@ bool CddaDataStream::Open(const char *uri, unsigned int options) {
         drivePath.c_str(),
         GENERIC_READ,
         FILE_SHARE_READ,
-        NULL,
+        nullptr,
         OPEN_EXISTING,
-        FILE_ATTRIBUTE_READONLY | FILE_FLAG_SEQUENTIAL_SCAN,
-        (HANDLE) NULL);
+        0,
+        (HANDLE) nullptr);
 
     if (this->drive == INVALID_HANDLE_VALUE) {
         return false;
@@ -134,7 +118,7 @@ bool CddaDataStream::Open(const char *uri, unsigned int options) {
         this->toc.FirstTrack <= trackIndex &&
         trackIndex <= this->toc.LastTrack;
 
-    if (!canReadFromDevice && !trackIndexValid) {
+    if (!canReadFromDevice || !trackIndexValid) {
         this->Close();
         return false;
     }
@@ -154,12 +138,9 @@ bool CddaDataStream::Open(const char *uri, unsigned int options) {
         this->channels = 4;
     }
 
-    this->startSector = MSF2UINT(this->toc.TrackData[trackIndex - 1].Address) - 150;
-    this->stopSector = MSF2UINT(this->toc.TrackData[trackIndex].Address) - 150;
+    this->startSector = MSF2UINT(this->toc.TrackData[trackIndex - 1].Address) - FRAMES_PER_PREGAP;
+    this->stopSector = MSF2UINT(this->toc.TrackData[trackIndex].Address) - FRAMES_PER_PREGAP;
     this->length = (this->stopSector - this->startSector) * RAW_SECTOR_SIZE;
-
-    setActive(this);
-
     this->uri = uri;
 
     return true;
@@ -234,45 +215,33 @@ HRESULT CddaDataStream::Read(PBYTE pbBuffer, DWORD dwBytesToRead, BOOL bAlign, L
         return S_FALSE;
     }
 
-    BYTE buff[RAW_SECTOR_SIZE];
-
-    PBYTE pbBufferOrg = pbBuffer;
     LONGLONG pos = this->position;
     size_t len = (size_t) dwBytesToRead;
 
-    while (pos >= 0 && pos < this->length && len > 0) {
-        RAW_READ_INFO rawreadinfo;
-        rawreadinfo.SectorCount = 1;
-        rawreadinfo.TrackMode = CDDA;
+    UINT sectorOffset = this->startSector + (int)(pos / RAW_SECTOR_SIZE);
 
-        UINT sector = this->startSector + int(pos / RAW_SECTOR_SIZE);
-        __int64 offset = pos % RAW_SECTOR_SIZE;
+    RAW_READ_INFO rawReadInfo;
+    rawReadInfo.SectorCount = 1;
+    rawReadInfo.TrackMode = CDDA;
+    rawReadInfo.DiskOffset.QuadPart = sectorOffset * 2048;
 
-        rawreadinfo.DiskOffset.QuadPart = sector * 2048;
-        DWORD bytesRead = 0;
+    DWORD bytesActuallyRead = 0;
 
-        DeviceIoControl(
-            this->drive,
-            IOCTL_CDROM_RAW_READ,
-            &rawreadinfo,
-            sizeof(rawreadinfo),
-            buff, RAW_SECTOR_SIZE,
-            &bytesRead,
-            0);
-
-        size_t l = (size_t)min(min(len, RAW_SECTOR_SIZE - offset), this->length - pos);
-        memcpy(pbBuffer, &buff[offset], l);
-
-        pbBuffer += l;
-        pos += l;
-        len -= l;
-    }
+    DeviceIoControl(
+        this->drive,
+        IOCTL_CDROM_RAW_READ,
+        &rawReadInfo,
+        sizeof(rawReadInfo),
+        pbBuffer,
+        dwBytesToRead,
+        &bytesActuallyRead,
+        0);
 
     if (pdwBytesRead) {
-        *pdwBytesRead = pbBuffer - pbBufferOrg;
+        *pdwBytesRead = bytesActuallyRead;
     }
 
-    this->position += pbBuffer - pbBufferOrg;
+    this->position += bytesActuallyRead;
 
     return S_OK;
 }

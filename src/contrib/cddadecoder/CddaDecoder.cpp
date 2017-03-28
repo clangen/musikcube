@@ -55,7 +55,6 @@ void CddaDecoder::Destroy() {
 
 bool CddaDecoder::Open(IDataStream* data) {
     this->data = (CddaDataStream *) data;
-    this->duration = (double)(data->Length() / sizeof(int)) / 44100.0f;
     return (data != NULL);
 }
 
@@ -70,6 +69,10 @@ double CddaDecoder::SetPosition(double seconds) {
 }
 
 double CddaDecoder::GetDuration() {
+    if (this->duration == -1.0f) {
+        this->duration = (double)(data->Length() / data->GetChannelCount() / sizeof(short)) / 44100.0f;
+    }
+
     return this->duration;
 }
 
@@ -87,8 +90,7 @@ bool CddaDecoder::GetBuffer(IBuffer *buffer) {
     if (count > 0) {
         short* t = (short*) this->buffer;
 
-        for (int x = 0; x < (count / BYTES_PER_RAW_SAMPLE); x++)
-        {
+        for (int x = 0; x < (count / BYTES_PER_RAW_SAMPLE); x++) {
             target[x] = (float) t[x] / 16384.0f;
         }
 

@@ -42,22 +42,19 @@
 
 using namespace musik::core::sdk;
 
-class CddaDecoder : public IDecoder
-{
-private:
+class CddaDecoder : public IDecoder {
+    public:
+        CddaDecoder();
+        ~CddaDecoder();
 
-public:
-    CddaDecoder();
-    ~CddaDecoder();
+        bool Open(IDataStream* data);
+        void Destroy();
+        double SetPosition(double seconds);
+        double GetDuration();
+        bool GetBuffer(IBuffer *buffer);
 
-    bool Open(IDataStream* data);
-    void Destroy();
-    double SetPosition(double seconds);
-    double GetDuration();
-    bool GetBuffer(IBuffer *buffer);
-
-private:
-    CddaDataStream* data;
-    double duration;
-    BYTE* buffer;
+    private:
+        CddaDataStream* data;
+        double duration;
+        BYTE* buffer;
 };
