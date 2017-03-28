@@ -294,15 +294,18 @@ size_t TrackListView::HeaderCalculator::AdapterToTrackListIndex(size_t index) {
 }
 
 size_t TrackListView::HeaderCalculator::TrackListToAdapterIndex(size_t index) {
-    return (index == 0 && this->rawOffsets && this->rawOffsets->size() > 0)
-        ? 1 : this->ApplyHeaderOffset(index, 1); /* meh... */
+    if (!this->rawOffsets || this->rawOffsets->size() == 0) {
+        return index;
+    }
+
+    return this->ApplyHeaderOffset(index, 1);
 }
 
 size_t TrackListView::HeaderCalculator::ApplyHeaderOffset(size_t index, int delta) {
     size_t result = index;
     if (this->absoluteOffsets) {
         for (auto offset : (*this->absoluteOffsets)) {
-            if (result != 0 && offset <= index) {
+            if (result != 0 && offset <= result) {
                 result += delta;
             }
             else {
