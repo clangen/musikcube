@@ -74,6 +74,7 @@ namespace musik { namespace core { namespace db {
 
             sqlite3_stmt *stmt;
             Connection *connection;
+            int modifiedRows;
     };
 
 } } }

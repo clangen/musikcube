@@ -37,6 +37,8 @@
 
 using namespace musik::core;
 
+/* * * * RetainedTrack * * * */
+
 RetainedTrack::RetainedTrack(TrackPtr track) {
     this->count = 1;
     this->track = track;
@@ -46,11 +48,16 @@ RetainedTrack::~RetainedTrack() {
 }
 
 void RetainedTrack::Release() {
-    if (this->count > 0) {
+    int c = this->count.fetch_sub(1);
+    if (c > 0) {
         this->count = 0;
         this->track.reset();
         delete this;
     }
+}
+
+void RetainedTrack::Retain() {
+    ++this->count;
 }
 
 int RetainedTrack::GetValue(const char* key, char* dst, int size) {
@@ -83,4 +90,39 @@ double RetainedTrack::GetDouble(const char* key, double defaultValue) {
 
 unsigned long long RetainedTrack::GetId() {
     return track->GetId();
+}
+
+/* * * * RetainedTrackWriter * * * */
+
+RetainedTrackWriter::RetainedTrackWriter(TrackPtr track) {
+    this->count = 1;
+    this->track = track;
+}
+
+RetainedTrackWriter::~RetainedTrackWriter() {
+}
+
+void RetainedTrackWriter::Release() {
+    int c = this->count.fetch_sub(1);
+    if (c > 0) {
+        this->count = 0;
+        this->track.reset();
+        delete this;
+    }
+}
+
+void RetainedTrackWriter::Retain() {
+    ++this->count;
+}
+
+void RetainedTrackWriter::SetValue(const char* metakey, const char* value) {
+    this->track->SetValue(metakey, value);
+}
+
+void RetainedTrackWriter::ClearValue(const char* metakey) {
+    this->track->ClearValue(metakey);
+}
+
+void RetainedTrackWriter::SetThumbnail(const char *data, long size) {
+    this->track->SetThumbnail(data, size);
 }

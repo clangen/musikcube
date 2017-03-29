@@ -37,6 +37,7 @@
 #include <core/db/Connection.h>
 #include <core/sdk/IMetadataReader.h>
 #include <core/sdk/IDecoderFactory.h>
+#include <core/sdk/IIndexerSink.h>
 #include <core/library/IIndexer.h>
 #include <core/support/Preferences.h>
 
@@ -51,10 +52,15 @@
 #include <deque>
 #include <vector>
 #include <atomic>
+#include <map>
 
 namespace musik { namespace core {
 
-    class Indexer : public IIndexer, private boost::noncopyable {
+    class Indexer : 
+        public musik::core::IIndexer, 
+        public musik::core::sdk::IIndexerSink,
+        private boost::noncopyable 
+    {
         public:
             Indexer(
                 const std::string& libraryPath,
@@ -62,11 +68,21 @@ namespace musik { namespace core {
 
             virtual ~Indexer();
 
+            /* IIndexer */
             virtual void AddPath(const std::string& paths);
             virtual void RemovePath(const std::string& paths);
             virtual void GetPaths(std::vector<std::string>& paths);
             virtual void Synchronize(bool restart = false);
             virtual State GetState() { return this->state; }
+
+            /* IIndexerSink */
+            virtual musik::core::sdk::IRetainedTrackWriter* CreateWriter();
+            virtual void Rescan(musik::core::sdk::IIndexerSource* source);
+            virtual bool Remove(musik::core::sdk::IIndexerSource* source, const char* uri);
+            virtual int RemoveAll(musik::core::sdk::IIndexerSource* source);
+            virtual bool Save(
+                musik::core::sdk::IIndexerSource* source, 
+                musik::core::sdk::IRetainedTrackWriter* track);
 
         private:
             void ThreadLoop();
@@ -121,10 +137,15 @@ namespace musik { namespace core {
             typedef std::vector<std::shared_ptr<
                 musik::core::sdk::IDecoderFactory> > DecoderList;
 
+            typedef std::vector<std::shared_ptr<
+                musik::core::sdk::IIndexerSource> > IndexerSourceList;
+
             std::deque<AddRemoveContext> addRemoveQueue;
 
             MetadataReaderList metadataReaders;
             DecoderList audioDecoders;
+            IndexerSourceList sources;
+
             std::shared_ptr<musik::core::Preferences> prefs;
             std::shared_ptr<musik::core::db::ScopedTransaction> trackTransaction;
             boost::interprocess::interprocess_semaphore readSemaphore;

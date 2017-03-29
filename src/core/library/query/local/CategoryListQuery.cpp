@@ -53,49 +53,49 @@ using namespace musik::core::db::local;
 static const std::string REGULAR_ALBUM_QUERY =
     "SELECT DISTINCT albums.id, albums.name "
     "FROM albums, tracks "
-    "WHERE albums.id = tracks.album_id "
+    "WHERE albums.id = tracks.album_id AND tracks.visible = 1 "
     "ORDER BY albums.sort_order;";
 
 static const std::string FILTERED_ALBUM_QUERY =
     "SELECT DISTINCT albums.id, albums.name "
     "FROM albums, tracks "
-    "WHERE albums.id = tracks.album_id AND LOWER(albums.name) LIKE ? "
+    "WHERE albums.id = tracks.album_id AND LOWER(albums.name) LIKE ? AND tracks.visible = 1 "
     "ORDER BY albums.sort_order;";
 
 static const std::string REGULAR_ARTIST_QUERY =
     "SELECT DISTINCT artists.id, artists.name "
     "FROM artists, tracks "
-    "WHERE artists.id = tracks.visual_artist_id "
+    "WHERE artists.id = tracks.visual_artist_id AND tracks.visible = 1 "
     "ORDER BY artists.sort_order;";
 
 static const std::string FILTERED_ARTIST_QUERY =
     "SELECT DISTINCT artists.id, artists.name "
     "FROM artists, tracks "
-    "WHERE artists.id = tracks.visual_artist_id AND LOWER(artists.name) LIKE ? "
+    "WHERE artists.id = tracks.visual_artist_id AND LOWER(artists.name) LIKE ? AND tracks.visible = 1 "
     "ORDER BY artists.sort_order;";
 
 static const std::string REGULAR_ALBUM_ARTIST_QUERY =
     "SELECT DISTINCT artists.id, artists.name "
     "FROM artists, tracks "
-    "WHERE artists.id = tracks.album_artist_id "
+    "WHERE artists.id = tracks.album_artist_id AND tracks.visible = 1 "
     "ORDER BY artists.sort_order;";
 
 static const std::string FILTERED_ALBUM_ARTIST_QUERY =
     "SELECT DISTINCT artists.id, artists.name "
     "FROM artists, tracks "
-    "WHERE artists.id = tracks.album_artist_id AND LOWER(artists.name) LIKE ? "
+    "WHERE artists.id = tracks.album_artist_id AND LOWER(artists.name) LIKE ? AND tracks.visible = 1 "
     "ORDER BY artists.sort_order;";
 
 static const std::string REGULAR_GENRE_QUERY =
     "SELECT DISTINCT genres.id, genres.name "
     "FROM genres, tracks "
-    "WHERE genres.id = tracks.visual_genre_id "
+    "WHERE genres.id = tracks.visual_genre_id AND tracks.visible = 1 "
     "ORDER BY genres.sort_order;";
 
 static const std::string FILTERED_GENRE_QUERY =
     "SELECT DISTINCT genres.id, genres.name "
     "FROM genres, tracks "
-    "WHERE genres.id = tracks.visual_genre_id AND LOWER(genres.name) LIKE ? "
+    "WHERE genres.id = tracks.visual_genre_id AND LOWER(genres.name) LIKE ? AND tracks.visible = 1 "
     "ORDER BY genres.sort_order;";
 
 static const std::string REGULAR_PLAYLISTS_QUERY =

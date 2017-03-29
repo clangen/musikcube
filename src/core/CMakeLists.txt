@@ -28,6 +28,7 @@ set(CORE_SOURCES
   ./library/query/local/NowPlayingTrackListQuery.cpp
   ./library/query/local/SavePlaylistQuery.cpp
   ./library/query/local/SearchTrackListQuery.cpp
+  ./library/query/local/TrackMetadataQuery.cpp
   ./library/metadata/MetadataMap.cpp
   ./library/metadata/MetadataMapList.cpp
   ./library/track/IndexerTrack.cpp

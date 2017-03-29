@@ -39,6 +39,7 @@
 #include <core/library/track/LibraryTrack.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <core/library/track/RetainedTrack.h>
+#include <core/library/query/local/TrackMetadataQuery.h>
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>
 
@@ -49,25 +50,8 @@
 using namespace musik::core;
 using namespace musik::core::db;
 using namespace musik::core::library;
-
+using namespace musik::core::db::local;
 using namespace musik::core::sdk;
-
-class TrackMetadataQuery : public LocalQueryBase {
-    public:
-        TrackMetadataQuery(DBID trackId, ILibraryPtr library);
-        virtual ~TrackMetadataQuery() { }
-
-        TrackPtr Result() { return this->result; }
-
-    protected:
-        virtual bool OnRun(Connection& db);
-        virtual std::string Name() { return "TrackMetadataQuery"; }
-
-    private:
-        DBID trackId;
-        ILibraryPtr library;
-        TrackPtr result;
-};
 
 TrackList::TrackList(ILibraryPtr library) {
     this->library = library;
@@ -133,11 +117,14 @@ TrackPtr TrackList::Get(size_t index) const {
             return cached;
         }
 
+        auto target = TrackPtr(new LibraryTrack(id, this->library));
+
         std::shared_ptr<TrackMetadataQuery> query(
-            new TrackMetadataQuery(id, this->library));
+            new TrackMetadataQuery(target, this->library));
 
         this->library->Enqueue(query, ILibrary::QuerySynchronous);
         this->AddToCache(id, query->Result());
+
         return query->Result();
     }
     catch (...) {
@@ -221,45 +208,3 @@ void TrackList::AddToCache(DBID key, TrackPtr value) const {
     }
 }
 
-TrackMetadataQuery::TrackMetadataQuery(DBID trackId, ILibraryPtr library) {
-    this->trackId = trackId;
-    this->library = library;
-}
-
-bool TrackMetadataQuery::OnRun(Connection& db) {
-    static const std::string query =
-        "SELECT DISTINCT t.id, t.track, t.disc, t.bpm, t.duration, t.filesize, t.year, t.title, t.filename, t.thumbnail_id, al.name AS album, alar.name AS album_artist, gn.name AS genre, ar.name AS artist, t.filetime, t.visual_genre_id, t.visual_artist_id, t.album_artist_id, t.album_id "
-        "FROM tracks t, paths p, albums al, artists alar, artists ar, genres gn "
-        "WHERE t.id=? AND t.album_id=al.id AND t.album_artist_id=alar.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id ";
-
-    Statement trackQuery(query.c_str(), db);
-    trackQuery.BindInt(0, this->trackId);
-
-    if (trackQuery.Step() == Row) {
-        DBID id = trackQuery.ColumnInt64(0);
-        TrackPtr track = TrackPtr(new LibraryTrack(id, this->library));
-        track->SetValue(constants::Track::TRACK_NUM, trackQuery.ColumnText(1));
-        track->SetValue(constants::Track::DISC_NUM, trackQuery.ColumnText(2));
-        track->SetValue(constants::Track::BPM, trackQuery.ColumnText(3));
-        track->SetValue(constants::Track::DURATION, trackQuery.ColumnText(4));
-        track->SetValue(constants::Track::FILESIZE, trackQuery.ColumnText(5));
-        track->SetValue(constants::Track::YEAR, trackQuery.ColumnText(6));
-        track->SetValue(constants::Track::TITLE, trackQuery.ColumnText(7));
-        track->SetValue(constants::Track::FILENAME, trackQuery.ColumnText(8));
-        track->SetValue(constants::Track::THUMBNAIL_ID, trackQuery.ColumnText(9));
-        track->SetValue(constants::Track::ALBUM, trackQuery.ColumnText(10));
-        track->SetValue(constants::Track::ALBUM_ARTIST, trackQuery.ColumnText(11));
-        track->SetValue(constants::Track::GENRE, trackQuery.ColumnText(12));
-        track->SetValue(constants::Track::ARTIST, trackQuery.ColumnText(13));
-        track->SetValue(constants::Track::FILETIME, trackQuery.ColumnText(14));
-        track->SetValue(constants::Track::GENRE_ID, trackQuery.ColumnText(15));
-        track->SetValue(constants::Track::ARTIST_ID, trackQuery.ColumnText(16));
-        track->SetValue(constants::Track::ALBUM_ARTIST_ID, trackQuery.ColumnText(17));
-        track->SetValue(constants::Track::ALBUM_ID, trackQuery.ColumnText(18));
-
-        this->result = track;
-        return true;
-    }
-
-    return false;
-}

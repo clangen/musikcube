@@ -32,66 +32,21 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.hpp"
-#include "GetPlaylistQuery.h"
+#pragma once
 
-#include <core/library/track/LibraryTrack.h>
-#include <core/library/LocalLibraryConstants.h>
-#include <core/db/Statement.h>
+#include "IRetainedTrackWriter.h"
 
-using musik::core::db::Statement;
-using musik::core::db::Row;
-using musik::core::TrackPtr;
-using musik::core::LibraryTrack;
-using musik::core::ILibraryPtr;
+namespace musik { namespace core { namespace sdk {
 
-using namespace musik::core::db;
-using namespace musik::core::library::constants;
-using namespace musik::core::db::local;
+    class IIndexerSource;
 
-GetPlaylistQuery::GetPlaylistQuery(ILibraryPtr library, DBID playlistId) {
-    this->library = library;
-    this->playlistId = playlistId;
-    this->result.reset(new musik::core::TrackList(library));
-    this->headers.reset(new std::set<size_t>());
-    this->hash = std::hash<DBID>()(this->playlistId);
-}
+    class IIndexerSink {
+        public:
+            virtual IRetainedTrackWriter* CreateWriter() = 0;
+            virtual bool Save(IIndexerSource* source, IRetainedTrackWriter* track) = 0;
+            virtual bool Remove(IIndexerSource* source, const char* uri) = 0;
+            virtual int RemoveAll(IIndexerSource* source) = 0;
+            virtual void Rescan(IIndexerSource* source) = 0;
+    };
 
-GetPlaylistQuery::~GetPlaylistQuery() {
-
-}
-
-GetPlaylistQuery::Result GetPlaylistQuery::GetResult() {
-    return this->result;
-}
-
-GetPlaylistQuery::Headers GetPlaylistQuery::GetHeaders() {
-    return this->headers;
-}
-
-size_t GetPlaylistQuery::GetQueryHash() {
-    return this->hash;
-}
-
-bool GetPlaylistQuery::OnRun(Connection& db) {
-    if (result) {
-        result.reset(new musik::core::TrackList(this->library));
-        headers.reset(new std::set<size_t>());
-    }
-
-    std::string query =
-        "SELECT DISTINCT track_id "
-        "FROM tracks, playlist_tracks "
-        "WHERE tracks.id=track_id AND tracks.visible=1 AND playlist_id=? "
-        "ORDER BY sort_order " +
-        this->GetLimitAndOffset();
-
-    Statement trackQuery(query.c_str(), db);
-    trackQuery.BindInt(0, this->playlistId);
-
-    while (trackQuery.Step() == Row) {
-        result->Add(trackQuery.ColumnInt64(0));
-    }
-
-    return true;
-}
+} } }

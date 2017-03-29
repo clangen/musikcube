@@ -42,7 +42,8 @@ using namespace musik::core::db;
 
 Statement::Statement(const char* sql, Connection &connection)
 : connection(&connection)
-, stmt(nullptr) {
+, stmt(nullptr)
+, modifiedRows(0) {
     std::unique_lock<std::mutex> lock(connection.mutex);
 
     int err = sqlite3_prepare_v2(
@@ -71,7 +72,13 @@ void Statement::UnbindAll() {
 }
 
 int Statement::Step() {
-    return this->connection->StepStatement(this->stmt);
+    int result = this->connection->StepStatement(this->stmt);
+
+    if (result == SQLITE_OK) {
+        this->modifiedRows = this->connection->LastModifiedRowCount();
+    }
+
+    return result;
 }
 
 void Statement::BindInt(int position,int bindInt) {

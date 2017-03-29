@@ -532,12 +532,25 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
     DBID albumArtistId = this->SaveSingleValueField(dbConnection, "album_artist", "artists");
     DBID thumbnailId = this->SaveThumbnail(dbConnection, libraryDirectory);
 
+    /* ensure we have a correct source id */
+    int sourceId = 0;
+
+    try {
+        std::string source = this->GetValue("source_id");
+        if (source.size()) {
+            sourceId = std::stoi(source.c_str());
+        }
+    }
+    catch (...) {
+        /* shouldn't happen... */
+    }
+
     /* update all of the track foreign keys */
 
     {
         db::Statement stmt(
             "UPDATE tracks " \
-            "SET album_id=?, visual_genre_id=?, visual_artist_id=?, album_artist_id=?, thumbnail_id=? " \
+            "SET album_id=?, visual_genre_id=?, visual_artist_id=?, album_artist_id=?, thumbnail_id=?, source_id=? " \
             "WHERE id=?", dbConnection);
 
         stmt.BindInt(0, albumId);
@@ -545,7 +558,8 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
         stmt.BindInt(2, artistId);
         stmt.BindInt(3, albumArtistId);
         stmt.BindInt(4, thumbnailId);
-        stmt.BindInt(5, this->id);
+        stmt.BindInt(5, sourceId);
+        stmt.BindInt(6, this->id);
         stmt.Step();
     }
 

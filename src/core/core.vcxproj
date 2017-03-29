@@ -113,6 +113,7 @@
     <ClCompile Include="library\query\local\NowPlayingTrackListQuery.cpp" />
     <ClCompile Include="library\query\local\SavePlaylistQuery.cpp" />
     <ClCompile Include="library\query\local\SearchTrackListQuery.cpp" />
+    <ClCompile Include="library\query\local\TrackMetadataQuery.cpp" />
     <ClCompile Include="library\track\IndexerTrack.cpp" />
     <ClCompile Include="library\track\LibraryTrack.cpp" />
     <ClCompile Include="library\track\RetainedTrack.cpp" />
@@ -170,6 +171,7 @@
     <ClInclude Include="library\query\local\SearchTrackListQuery.h" />
     <ClInclude Include="library\query\local\TrackListQueryBase.h" />
     <ClInclude Include="Library\query\local\LocalQueryBase.h" />
+    <ClInclude Include="library\query\local\TrackMetadataQuery.h" />
     <ClInclude Include="library\track\IndexerTrack.h" />
     <ClInclude Include="library\track\LibraryTrack.h" />
     <ClInclude Include="library\track\RetainedTrack.h" />
@@ -192,6 +194,8 @@
     <ClInclude Include="sdk\IDSP.h" />
     <ClInclude Include="sdk\IDataStream.h" />
     <ClInclude Include="sdk\IDataStreamFactory.h" />
+    <ClInclude Include="sdk\IIndexerSink.h" />
+    <ClInclude Include="sdk\IIndexerSource.h" />
     <ClInclude Include="sdk\IMetadataMap.h" />
     <ClInclude Include="sdk\IMetadataMapList.h" />
     <ClInclude Include="sdk\IMetadataReader.h" />
@@ -211,6 +215,7 @@
     <ClInclude Include="audio\Stream.h" />
     <ClInclude Include="sdk\IPreferences.h" />
     <ClInclude Include="sdk\IRetainedTrack.h" />
+    <ClInclude Include="sdk\IRetainedTrackWriter.h" />
     <ClInclude Include="sdk\ISimpleDataProvider.h" />
     <ClInclude Include="sdk\ISpectrumVisualizer.h" />
     <ClInclude Include="sdk\ITrack.h" />

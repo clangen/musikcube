@@ -109,7 +109,7 @@ int Connection::Execute(const char* sql) {
     }
 
     int error = this->StepStatement(stmt);
-    if (error != SQLITE_OK && error != SQLITE_DONE){
+    if (error != SQLITE_OK && error != SQLITE_DONE) {
         sqlite3_finalize(stmt);
         return Error;
     }
@@ -150,8 +150,12 @@ void Connection::Checkpoint() {
     sqlite3_wal_checkpoint(this->connection, nullptr);
 }
 
-int Connection::LastInsertedId(){
+int Connection::LastInsertedId() {
     return (int) sqlite3_last_insert_rowid(this->connection);
+}
+
+int Connection::LastModifiedRowCount() {
+    return (int) sqlite3_changes(this->connection);
 }
 
 void Connection::Initialize(unsigned int cache) {

@@ -43,6 +43,7 @@ namespace musik {
             class IRetainedTrack : public ITrack {
                 public:
                     virtual void Release() = 0;
+                    virtual void Retain() = 0;
             };
 
         }

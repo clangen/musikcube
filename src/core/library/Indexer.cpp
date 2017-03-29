@@ -41,12 +41,15 @@
 #include <core/config.h>
 #include <core/library/track/IndexerTrack.h>
 #include <core/library/track/LibraryTrack.h>
+#include <core/library/track/RetainedTrack.h>
+#include <core/library/LocalLibraryConstants.h>
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>
 #include <core/plugin/PluginFactory.h>
 #include <core/support/Preferences.h>
 #include <core/support/PreferenceKeys.h>
 #include <core/sdk/IAnalyzer.h>
+#include <core/sdk/IIndexerSource.h>
 #include <core/audio/Stream.h>
 
 #include <boost/thread/xtime.hpp>
@@ -62,6 +65,7 @@ static const size_t TRANSACTION_INTERVAL = 300;
 using namespace musik::core;
 using namespace musik::core::sdk;
 using namespace musik::core::audio;
+using namespace musik::core::library;
 
 using Thread = std::unique_ptr<boost::thread>;
 
@@ -140,15 +144,20 @@ void Indexer::RemovePath(const std::string& path) {
 }
 
 void Indexer::SynchronizeInternal(boost::asio::io_service* io) {
-    /* load all of the metadata (tag) reader plugins */
+    /* load plugins required by the indexer (metadata readers, decoder
+    factories, and indexer sources) */
     typedef PluginFactory::DestroyDeleter<IMetadataReader> MetadataDeleter;
     typedef PluginFactory::DestroyDeleter<IDecoderFactory> DecoderDeleter;
+    typedef PluginFactory::DestroyDeleter<IIndexerSource> SourceDeleter;
 
     this->metadataReaders = PluginFactory::Instance()
         .QueryInterface<IMetadataReader, MetadataDeleter>("GetMetadataReader");
 
     this->audioDecoders = PluginFactory::Instance()
         .QueryInterface<IDecoderFactory, DecoderDeleter>("GetDecoderFactory");
+
+    this->sources = PluginFactory::Instance()
+        .QueryInterface<IIndexerSource, SourceDeleter>("GetIndexerSource");
 
     this->ProcessAddRemoveQueue();
 
@@ -179,7 +188,7 @@ void Indexer::SynchronizeInternal(boost::asio::io_service* io) {
     /* add new files  */
     this->filesSaved = 0;
 
-    for(std::size_t i = 0; i < paths.size(); ++i) {
+    for (std::size_t i = 0; i < paths.size(); ++i) {
         this->trackTransaction.reset(new db::ScopedTransaction(this->dbConnection));
         std::string path = paths[i];
         this->SyncDirectory(io, path, path, pathIds[i]);
@@ -189,8 +198,15 @@ void Indexer::SynchronizeInternal(boost::asio::io_service* io) {
         this->trackTransaction->CommitAndRestart();
         this->trackTransaction.reset();
     }
-}
 
+    /* give indexer source plugins a chance to update stuff */
+    for (auto it : this->sources) {
+        this->trackTransaction.reset(new db::ScopedTransaction(this->dbConnection));
+        this->Rescan(it.get());
+        this->trackTransaction->CommitAndRestart();
+        this->trackTransaction.reset();
+    }
+}
 
 void Indexer::FinalizeSync() {
     /* remove undesired entries from db (files themselves will remain) */
@@ -443,7 +459,7 @@ void Indexer::ThreadLoop() {
 void Indexer::SyncDelete() {
     /* remove all tracks that no longer reference a valid path entry */
 
-    this->dbConnection.Execute("DELETE FROM tracks WHERE path_id NOT IN (SELECT id FROM paths)");
+    this->dbConnection.Execute("DELETE FROM tracks WHERE source_id == 0 AND path_id NOT IN (SELECT id FROM paths)");
 
     /* remove files that are no longer on the filesystem. */
 
@@ -452,7 +468,9 @@ void Indexer::SyncDelete() {
 
         db::Statement allTracks(
             "SELECT t.id, t.filename "
-            "FROM tracks t ", this->dbConnection);
+            "FROM tracks t "
+            "WHERE source_id == 0", /* IIndexerSources delete their own tracks */
+            this->dbConnection);
 
         while (allTracks.Step() == db::Row && !this->Exited() && !this->Restarted()) {
             bool remove = false;
@@ -476,15 +494,6 @@ void Indexer::SyncDelete() {
     }
 }
 
-//////////////////////////////////////////
-///\brief
-///Removes information related to removed tracks.
-///
-///This should be called after SyncDelete() to clean up the mess :)
-///
-///\see
-///<SyncDelete>
-//////////////////////////////////////////
 void Indexer::SyncCleanup() {
     /* remove old artists */
     this->dbConnection.Execute("DELETE FROM track_artists WHERE track_id NOT IN (SELECT id FROM tracks)");
@@ -510,10 +519,6 @@ void Indexer::SyncCleanup() {
     this->dbConnection.Execute("VACUUM");
 }
 
-//////////////////////////////////////////
-///\brief
-///Get a vector with all sync paths
-//////////////////////////////////////////
 void Indexer::GetPaths(std::vector<std::string>& paths) {
     db::Connection connection;
     connection.Open(this->dbFilename.c_str());
@@ -723,3 +728,84 @@ void Indexer::Wait(const boost::xtime &time) {
         this->waitCondition.timed_wait(lock, time);
     }
 }
+
+IRetainedTrackWriter* Indexer::CreateWriter() {
+    std::shared_ptr<Track> track(new IndexerTrack(0));
+    return new RetainedTrackWriter(track);
+}
+
+bool Indexer::Save(IIndexerSource* source, IRetainedTrackWriter* track) {
+    if (source->SourceId() == 0) {
+        return false;
+    }
+
+    /* two levels of unpacking with dynamic_casts. don't tell anyone,
+    it'll be our little secret. */
+    RetainedTrackWriter* rtw = dynamic_cast<RetainedTrackWriter*>(track);
+    if (rtw) {
+        IndexerTrack* it = rtw->As<IndexerTrack*>();
+        if (it) {
+            std::string id = std::to_string(source->SourceId());
+            it->SetValue(constants::Track::SOURCE_ID, id.c_str());
+            return it->Save(this->dbConnection, this->libraryPath);
+        }
+    }
+    return false;
+}
+
+bool Indexer::Remove(IIndexerSource* source, const char* uri) {
+    if (source->SourceId() == 0) {
+        return false;
+    }
+
+    db::Statement stmt(
+        "DELETE FROM tracks WHERE source_id=? AND filename LIKE ?",
+        this->dbConnection);
+
+    stmt.BindInt(0, source->SourceId());
+    stmt.BindText(1, uri);
+
+    return (stmt.Step() == db::Okay);
+}
+
+int Indexer::RemoveAll(IIndexerSource* source) {
+    if (source->SourceId() == 0) {
+        return 0;
+    }
+
+    db::Statement stmt(
+        "DELETE FROM tracks WHERE source_id=?",
+        this->dbConnection);
+
+    stmt.BindInt(0, source->SourceId());
+
+    if (stmt.Step() == db::Okay) {
+        return dbConnection.LastModifiedRowCount();
+    }
+
+    return 0;
+}
+
+void Indexer::Rescan(IIndexerSource* source) {
+    if (source->SourceId() == 0) {
+        return;
+    }
+
+    /* first allow the source to update metadata for any tracks that it
+    previously indexed. */
+    db::Statement tracks(
+        "SELECT id, filename FROM tracks WHERE source_id=? ORDER BY id",
+        this->dbConnection);
+
+    tracks.BindInt(0, source->SourceId());
+    while (tracks.Step() == db::Row) {
+        TrackPtr track(new IndexerTrack(tracks.ColumnInt(0)));
+        track->SetValue(constants::Track::FILENAME, tracks.ColumnText(1));
+        source->Scan(this, new RetainedTrackWriter(track));
+    }
+
+    /* now tell it to do a wide-open scan. it can use this opportunity to
+    remove old tracks, or add new ones. */
+    source->Scan(this);
+}
+

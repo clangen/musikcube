@@ -45,10 +45,12 @@ namespace musik { namespace core {
             IndexerTrack(DBID id);
             virtual ~IndexerTrack(void);
 
+            /* IWritableTrack */
             virtual void SetValue(const char* metakey, const char* value);
             virtual void ClearValue(const char* metakey);
             virtual void SetThumbnail(const char *data, long size);
 
+            /* ITrack */
             virtual std::string GetValue(const char* metakey);
             virtual int GetValue(const char* key, char* dst, int size);
             virtual unsigned long long GetUint64(const char* key, unsigned long long defaultValue = 0ULL);

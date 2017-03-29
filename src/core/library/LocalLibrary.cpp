@@ -257,101 +257,116 @@ musik::core::IIndexer* LocalLibrary::Indexer() {
 }
 
 void LocalLibrary::CreateDatabase(db::Connection &db){
-    // Create the tracks-table
-    db.Execute("CREATE TABLE IF NOT EXISTS tracks ("
-        "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-        "track INTEGER DEFAULT 0,"
-        "disc TEXT DEFAULT '1',"
-        "bpm REAL DEFAULT 0,"
-        "duration INTEGER DEFAULT 0,"
-        "filesize INTEGER DEFAULT 0,"
-        "year INTEGER DEFAULT 0,"
-        "visual_genre_id INTEGER DEFAULT 0,"
-        "visual_artist_id INTEGER DEFAULT 0,"
-        "album_artist_id INTEGER DEFAULT 0,"
-        "path_id INTEGER,"
-        "album_id INTEGER DEFAULT 0,"
-        "title TEXT default '',"
-        "filename TEXT default '',"
-        "filetime INTEGER DEFAULT 0,"
-        "thumbnail_id INTEGER DEFAULT 0)");
+    /* tracks */
+    db.Execute(
+        "CREATE TABLE IF NOT EXISTS tracks ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "track INTEGER DEFAULT 0,"
+            "disc TEXT DEFAULT '1',"
+            "bpm REAL DEFAULT 0,"
+            "duration INTEGER DEFAULT 0,"
+            "filesize INTEGER DEFAULT 0,"
+            "year INTEGER DEFAULT 0,"
+            "visual_genre_id INTEGER DEFAULT 0,"
+            "visual_artist_id INTEGER DEFAULT 0,"
+            "album_artist_id INTEGER DEFAULT 0,"
+            "path_id INTEGER,"
+            "album_id INTEGER DEFAULT 0,"
+            "title TEXT default '',"
+            "filename TEXT default '',"
+            "filetime INTEGER DEFAULT 0,"
+            "thumbnail_id INTEGER DEFAULT 0,"
+            "source_id INTEGER DEFAULT 0,"
+            "visible INTEGER DEFAULT 1)");
 
-    // Create the genres-table
-    db.Execute("CREATE TABLE IF NOT EXISTS genres ("
+    /* genres tables */
+    db.Execute(
+        "CREATE TABLE IF NOT EXISTS genres ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "name TEXT default '',"
             "aggregated INTEGER DEFAULT 0,"
             "sort_order INTEGER DEFAULT 0)");
 
-    db.Execute("CREATE TABLE IF NOT EXISTS track_genres ("
+    db.Execute(
+        "CREATE TABLE IF NOT EXISTS track_genres ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "track_id INTEGER DEFAULT 0,"
             "genre_id INTEGER DEFAULT 0)");
 
-    // Create the artists-table
-    db.Execute("CREATE TABLE IF NOT EXISTS artists ("
+    /* artist tables */
+    db.Execute(
+        "CREATE TABLE IF NOT EXISTS artists ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "name TEXT default '',"
             "aggregated INTEGER DEFAULT 0,"
             "sort_order INTEGER DEFAULT 0)");
 
-    db.Execute("CREATE TABLE IF NOT EXISTS track_artists ("
+    db.Execute(
+        "CREATE TABLE IF NOT EXISTS track_artists ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "track_id INTEGER DEFAULT 0,"
             "artist_id INTEGER DEFAULT 0)");
 
-    // Create the meta-tables
-    db.Execute("CREATE TABLE IF NOT EXISTS meta_keys ("
+    /* arbitrary metadata */
+    db.Execute(
+        "CREATE TABLE IF NOT EXISTS meta_keys ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "name TEXT)");
 
-    db.Execute("CREATE TABLE IF NOT EXISTS meta_values ("
+    db.Execute(
+        "CREATE TABLE IF NOT EXISTS meta_values ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "meta_key_id INTEGER DEFAULT 0,"
             "sort_order INTEGER DEFAULT 0,"
             "content TEXT)");
 
-    db.Execute("CREATE TABLE IF NOT EXISTS track_meta ("
+    db.Execute(
+        "CREATE TABLE IF NOT EXISTS track_meta ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "track_id INTEGER DEFAULT 0,"
             "meta_value_id INTEGER DEFAULT 0)");
 
-    // Create the albums-table
-    db.Execute("CREATE TABLE IF NOT EXISTS albums ("
+    /* albums */
+    db.Execute(
+        "CREATE TABLE IF NOT EXISTS albums ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "name TEXT default '',"
             "thumbnail_id INTEGER default 0,"
             "sort_order INTEGER DEFAULT 0)");
 
-    // Create the paths-table
-    db.Execute("CREATE TABLE IF NOT EXISTS paths ("
+    /* paths */
+    db.Execute(
+        "CREATE TABLE IF NOT EXISTS paths ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "path TEXT default ''"
             ")");
 
-    // Create the thumbnails table
-    db.Execute("CREATE TABLE IF NOT EXISTS thumbnails ("
+    /* thumbnails */
+    db.Execute(
+        "CREATE TABLE IF NOT EXISTS thumbnails ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "filename TEXT default '',"
             "filesize INTEGER DEFAULT 0,"
             "checksum INTEGER DEFAULT 0"
             ")");
 
-    // Create the playlists
-    db.Execute("CREATE TABLE IF NOT EXISTS playlists ("
+    /* playlists */
+    db.Execute(
+        "CREATE TABLE IF NOT EXISTS playlists ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "name TEXT default '',"
             "user_id INTEGER default 0"
             ")");
 
-    // Create the playlist_tracks table
-    db.Execute("CREATE TABLE IF NOT EXISTS playlist_tracks ("
+    /* playlist tracks */
+    db.Execute(
+        "CREATE TABLE IF NOT EXISTS playlist_tracks ("
             "track_id INTEGER DEFAULT 0,"
             "playlist_id INTEGER DEFAULT 0,"
             "sort_order INTEGER DEFAULT 0"
             ")");
 
-    // INDEXES
+    /* indexes */
     db.Execute("CREATE UNIQUE INDEX IF NOT EXISTS users_index ON users (login)");
     db.Execute("CREATE UNIQUE INDEX IF NOT EXISTS paths_index ON paths (path)");
     db.Execute("CREATE INDEX IF NOT EXISTS genre_index ON genres (sort_order)");
@@ -369,4 +384,17 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
     db.Execute("CREATE INDEX IF NOT EXISTS metavalues_index1 ON meta_values (meta_key_id)");
 
     db.Execute("CREATE INDEX IF NOT EXISTS playlist_index ON playlist_tracks (playlist_id,sort_order)");
+
+    /* upgrade 1: add "source_id" and "visible" columns to tracks table */
+    int result = db.Execute("ALTER TABLE tracks ADD COLUMN source_id INTEGER DEFAULT 0");
+
+    if (result == db::Okay) {
+        db.Execute("UPDATE tracks SET source_id=0 WHERE source_id is null");
+    }
+
+    result = db.Execute("ALTER TABLE tracks ADD COLUMN visible INTEGER DEFAULT 1");
+
+    if (result == db::Okay) {
+        db.Execute("UPDATE tracks SET visible=1 WHERE visible is null");
+    }
 }
