@@ -38,6 +38,8 @@
 #include "devioctl.h"
 #include <string>
 
+#define ENABLE_LOOKAHEAD_BUFFER 0
+
 using namespace musik::core::sdk;
 
 class CddaDataStream : public IDataStream {
@@ -57,10 +59,13 @@ class CddaDataStream : public IDataStream {
         virtual bool Seekable();
         virtual const char* Type();
         virtual const char* Uri();
+        virtual bool CanPrefetch() { return false; }
 
         int GetChannelCount();
 
     private:
+        HRESULT Read(PBYTE pbBuffer, DWORD dwBytesToRead, BOOL bAlign, LPDWORD pdwBytesRead);
+
         std::string uri;
         LONGLONG position, length;
         HANDLE drive;
@@ -69,10 +74,10 @@ class CddaDataStream : public IDataStream {
         unsigned long channels;
         volatile bool closed;
 
+#if ENABLE_LOOKAHEAD_BUFFER
         char* lookahead;
         DWORD lookaheadOffset;
         DWORD lookaheadTotal;
-
-        HRESULT Read(PBYTE pbBuffer, DWORD dwBytesToRead, BOOL bAlign, LPDWORD pdwBytesRead);
-        void RefillInternalBuffer();    
+        void RefillInternalBuffer();
+#endif
 };
