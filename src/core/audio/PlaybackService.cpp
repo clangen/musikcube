@@ -594,6 +594,7 @@ double PlaybackService::GetPosition() {
 }
 
 void PlaybackService::SetPosition(double seconds) {
+    seconds = std::max(seconds, (double) 0.0);
     this->seekPosition = seconds;
     this->TimeChanged(seconds);
     messageQueue.Debounce(Message::Create(this, MESSAGE_SEEK), 500);

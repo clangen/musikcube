@@ -68,6 +68,7 @@ namespace musik { namespace core { namespace audio {
             virtual double GetDuration();
             virtual bool OpenStream(std::string uri);
             virtual void Interrupt();
+            virtual int GetCapabilities();
 
         private:
             bool GetNextBufferFromDecoder();
@@ -96,6 +97,7 @@ namespace musik { namespace core { namespace audio {
             int bufferCount;
             bool done;
             double bufferLengthSeconds;
+            int capabilities;
 
             float* rawBuffer;
 

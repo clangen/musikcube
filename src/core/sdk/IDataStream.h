@@ -40,6 +40,7 @@ namespace musik { namespace core { namespace sdk {
 
     class IDataStream {
         public:
+            /* v1 */
             virtual bool Open(const char *uri, unsigned int options = 0) = 0;
             virtual bool Close() = 0;
             virtual void Interrupt() = 0;
@@ -52,6 +53,9 @@ namespace musik { namespace core { namespace sdk {
             virtual long Length() = 0;
             virtual const char* Type() = 0;
             virtual const char* Uri() = 0;
+
+            /* v5 */
+            virtual bool CanPrefetch() = 0;
     };
 
 } } }

@@ -36,6 +36,7 @@
 
 #include <core/config.h>
 #include <core/audio/IStream.h>
+#include <core/sdk/constants.h>
 #include <core/sdk/IOutput.h>
 #include <core/sdk/IBufferProvider.h>
 
@@ -84,6 +85,8 @@ namespace musik { namespace core { namespace audio {
             double GetDuration();
 
             void AddMixPoint(int id, double time);
+
+            bool HasCapability(musik::core::sdk::Capability capability);
 
             std::string GetUrl() const { return this->url; }
 

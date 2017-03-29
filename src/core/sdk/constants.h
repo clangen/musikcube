@@ -78,6 +78,10 @@ namespace musik {
                 ChannelSideRight = 256
             };
 
+            enum class Capability : int { 
+                Prebuffer = 0x01 
+            };
+
             namespace category {
                 static const char* Album = "album";
                 static const char* Artist = "artist";
