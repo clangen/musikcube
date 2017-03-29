@@ -56,10 +56,10 @@
 
 namespace musik { namespace core {
 
-    class Indexer : 
-        public musik::core::IIndexer, 
+    class Indexer :
+        public musik::core::IIndexer,
         public musik::core::sdk::IIndexerSink,
-        private boost::noncopyable 
+        private boost::noncopyable
     {
         public:
             Indexer(
@@ -78,11 +78,14 @@ namespace musik { namespace core {
             /* IIndexerSink */
             virtual musik::core::sdk::IRetainedTrackWriter* CreateWriter();
             virtual void Rescan(musik::core::sdk::IIndexerSource* source);
-            virtual bool Remove(musik::core::sdk::IIndexerSource* source, const char* uri);
+            virtual bool RemoveByUri(musik::core::sdk::IIndexerSource* source, const char* uri);
+            virtual bool RemoveByExternalId(musik::core::sdk::IIndexerSource* source, const char* id);
             virtual int RemoveAll(musik::core::sdk::IIndexerSource* source);
+
             virtual bool Save(
-                musik::core::sdk::IIndexerSource* source, 
-                musik::core::sdk::IRetainedTrackWriter* track);
+                musik::core::sdk::IIndexerSource* source,
+                musik::core::sdk::IRetainedTrackWriter* track,
+                const char* externalId = "");
 
         private:
             void ThreadLoop();

@@ -56,6 +56,7 @@ namespace musik { namespace core { namespace library { namespace constants {
         static const char* ALBUM_ID = "album_id";
         static const char* PATH_ID = "path_id";
         static const char* SOURCE_ID = "source_id";
+        static const char* EXTERNAL_ID = "external_id";
 
         /* used in Track instances where foreign key IDs have been
         replaced with actual values... */

@@ -81,7 +81,7 @@ int Statement::Step() {
     return result;
 }
 
-void Statement::BindInt(int position,int bindInt) {
+void Statement::BindInt(int position, int bindInt) {
     sqlite3_bind_int(this->stmt, position + 1, bindInt);
 }
 
@@ -98,7 +98,7 @@ void Statement::BindText(int position, const char* bindText) {
         SQLITE_STATIC);
 }
 
-void Statement::BindText(int position ,const std::string &bindText) {
+void Statement::BindText(int position, const std::string &bindText) {
     sqlite3_bind_text(
         this->stmt, position + 1,
         bindText.c_str(),
@@ -106,7 +106,7 @@ void Statement::BindText(int position ,const std::string &bindText) {
         SQLITE_TRANSIENT);
 }
 
-void Statement::BindTextW(int position,const wchar_t* bindText){
+void Statement::BindTextW(int position, const wchar_t* bindText) {
     sqlite3_bind_text16(
         this->stmt,
         position + 1,
@@ -115,13 +115,17 @@ void Statement::BindTextW(int position,const wchar_t* bindText){
         SQLITE_STATIC);
 }
 
-void Statement::BindTextW(int position,const std::wstring &bindText){
+void Statement::BindTextW(int position, const std::wstring &bindText) {
     sqlite3_bind_text16(
         this->stmt,
         position + 1,
         bindText.c_str(),
         -1,
         SQLITE_TRANSIENT);
+}
+
+void Statement::BindNull(int position) {
+    sqlite3_bind_null(this->stmt, position + 1);
 }
 
 int Statement::ColumnInt(int column) {

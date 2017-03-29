@@ -734,7 +734,7 @@ IRetainedTrackWriter* Indexer::CreateWriter() {
     return new RetainedTrackWriter(track);
 }
 
-bool Indexer::Save(IIndexerSource* source, IRetainedTrackWriter* track) {
+bool Indexer::Save(IIndexerSource* source, IRetainedTrackWriter* track, const char* externalId) {
     if (source->SourceId() == 0) {
         return false;
     }
@@ -745,25 +745,45 @@ bool Indexer::Save(IIndexerSource* source, IRetainedTrackWriter* track) {
     if (rtw) {
         IndexerTrack* it = rtw->As<IndexerTrack*>();
         if (it) {
+            if (externalId && strlen(externalId)) {
+                it->SetValue(constants::Track::EXTERNAL_ID, externalId);
+            }
+
             std::string id = std::to_string(source->SourceId());
             it->SetValue(constants::Track::SOURCE_ID, id.c_str());
+
             return it->Save(this->dbConnection, this->libraryPath);
         }
     }
     return false;
 }
 
-bool Indexer::Remove(IIndexerSource* source, const char* uri) {
+bool Indexer::RemoveByUri(IIndexerSource* source, const char* uri) {
     if (source->SourceId() == 0) {
         return false;
     }
 
     db::Statement stmt(
-        "DELETE FROM tracks WHERE source_id=? AND filename LIKE ?",
+        "DELETE FROM tracks WHERE source_id=? AND filename=?",
         this->dbConnection);
 
     stmt.BindInt(0, source->SourceId());
     stmt.BindText(1, uri);
+
+    return (stmt.Step() == db::Okay);
+}
+
+bool Indexer::RemoveByExternalId(IIndexerSource* source, const char* id) {
+    if (source->SourceId() == 0) {
+        return false;
+    }
+
+    db::Statement stmt(
+        "DELETE FROM tracks WHERE source_id=? AND external_id=?",
+        this->dbConnection);
+
+    stmt.BindInt(0, source->SourceId());
+    stmt.BindText(1, id);
 
     return (stmt.Step() == db::Okay);
 }
@@ -794,14 +814,14 @@ void Indexer::Rescan(IIndexerSource* source) {
     /* first allow the source to update metadata for any tracks that it
     previously indexed. */
     db::Statement tracks(
-        "SELECT id, filename FROM tracks WHERE source_id=? ORDER BY id",
+        "SELECT id, filename, external_id FROM tracks WHERE source_id=? ORDER BY id",
         this->dbConnection);
 
     tracks.BindInt(0, source->SourceId());
     while (tracks.Step() == db::Row) {
         TrackPtr track(new IndexerTrack(tracks.ColumnInt(0)));
         track->SetValue(constants::Track::FILENAME, tracks.ColumnText(1));
-        source->Scan(this, new RetainedTrackWriter(track));
+        source->Scan(this, new RetainedTrackWriter(track), tracks.ColumnText(2));
     }
 
     /* now tell it to do a wide-open scan. it can use this opportunity to

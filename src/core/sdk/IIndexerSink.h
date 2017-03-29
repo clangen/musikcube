@@ -43,9 +43,16 @@ namespace musik { namespace core { namespace sdk {
     class IIndexerSink {
         public:
             virtual IRetainedTrackWriter* CreateWriter() = 0;
-            virtual bool Save(IIndexerSource* source, IRetainedTrackWriter* track) = 0;
-            virtual bool Remove(IIndexerSource* source, const char* uri) = 0;
+
+            virtual bool Save(
+                IIndexerSource* source,
+                IRetainedTrackWriter* track,
+                const char* externalId = "") = 0;
+
+            virtual bool RemoveByUri(IIndexerSource* source, const char* uri) = 0;
+            virtual bool RemoveByExternalId(IIndexerSource* source, const char* id) = 0;
             virtual int RemoveAll(IIndexerSource* source) = 0;
+
             virtual void Rescan(IIndexerSource* source) = 0;
     };
 

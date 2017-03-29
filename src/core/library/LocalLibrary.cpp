@@ -272,12 +272,14 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
             "album_artist_id INTEGER DEFAULT 0,"
             "path_id INTEGER,"
             "album_id INTEGER DEFAULT 0,"
-            "title TEXT default '',"
-            "filename TEXT default '',"
+            "title TEXT DEFAULT '',"
+            "filename TEXT DEFAULT '',"
             "filetime INTEGER DEFAULT 0,"
             "thumbnail_id INTEGER DEFAULT 0,"
             "source_id INTEGER DEFAULT 0,"
-            "visible INTEGER DEFAULT 1)");
+            "visible INTEGER DEFAULT 1,"
+            "external_id TEXT DEFAULT null"
+            ")");
 
     /* genres tables */
     db.Execute(
@@ -385,7 +387,7 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
 
     db.Execute("CREATE INDEX IF NOT EXISTS playlist_index ON playlist_tracks (playlist_id,sort_order)");
 
-    /* upgrade 1: add "source_id" and "visible" columns to tracks table */
+    /* upgrade 1: add "source_id", "visible", and "external_id" columns to tracks table */
     int result = db.Execute("ALTER TABLE tracks ADD COLUMN source_id INTEGER DEFAULT 0");
 
     if (result == db::Okay) {
@@ -397,4 +399,7 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
     if (result == db::Okay) {
         db.Execute("UPDATE tracks SET visible=1 WHERE visible is null");
     }
+
+    result = db.Execute("ALTER TABLE tracks ADD COLUMN external_id TEXT DEFAULT null");
+    db.Execute("CREATE INDEX IF NOT EXISTS tracks_external_id_index ON tracks (external_id)");
 }

@@ -42,8 +42,14 @@ namespace musik { namespace core { namespace sdk {
     class IIndexerSource {
         public:
             virtual void Destroy() = 0;
+
             virtual void Scan(IIndexerSink* indexer) = 0;
-            virtual void Scan(IIndexerSink* indexer, IRetainedTrackWriter* track) = 0;
+
+            virtual void Scan(
+                IIndexerSink* indexer,
+                IRetainedTrackWriter* track,
+                const char* externalId) = 0;
+
             virtual int SourceId() = 0;
     };
 
