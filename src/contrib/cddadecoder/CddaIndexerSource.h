@@ -33,17 +33,31 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <core/sdk/IIndexerSource.h>
+#include "CddaDataModel.h"
+
 #include <functional>
+#include <set>
 
 class CddaIndexerSource : public musik::core::sdk::IIndexerSource {
     public:
         virtual void Destroy();
 
+        virtual void OnBeforeScan();
+
+        virtual void OnAfterScan();
+
         virtual int SourceId();
-        
+
         virtual void Scan(musik::core::sdk::IIndexerSink* indexer);
-        
+
         virtual void Scan(
             musik::core::sdk::IIndexerSink* indexer,
-            musik::core::sdk::IRetainedTrackWriter* track);
+            musik::core::sdk::IRetainedTrackWriter* track,
+            const char* externalId);
+
+    private:
+        void RefreshModel();
+
+        std::set<std::string> discIds;
+        std::vector<CddaDataModel::AudioDiscPtr> discs;
 };

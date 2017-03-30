@@ -39,21 +39,17 @@
 #include <set>
 #include <mutex>
 
-#define FRAMES_PER_SECOND 75
-#define FRAMES_PER_MINUTE (60 * FRAMES_PER_SECOND)
-#define FRAMES_PER_PREGAP (2 * FRAMES_PER_SECOND)
+#if ENABLE_LOOKAHEAD_BUFFER
+    /* as it turns out having a small lookahead buffer is better than a
+    large one. if the buffer is too large, the device seems to start to
+    power down, then takes a while to power back up. we just want a little
+    but of wiggle room, but to generally keep the device reading small
+    chunks of data constantly. */
+    #define MAX_SECTORS_IN_LOOKAHEAD 20
+    #define MAX_SECTORS_PER_READ 10
+    #define BUFFER_SIZE_BYTES (MAX_SECTORS_IN_LOOKAHEAD * BYTES_PER_SECTOR)
+#endif
 
-/* as it turns out having a small lookahead buffer is better than a 
-large one. if the buffer is too large, the device seems to start to
-power down, then takes a while to power back up. we just want a little
-but of wiggle room, but to generally keep the device reading small 
-chunks of data constantly. */
-#define MAX_SECTORS_IN_LOOKAHEAD 20
-#define MAX_SECTORS_PER_READ 10
-#define BYTES_PER_SECTOR 2352
-#define BUFFER_SIZE_BYTES (MAX_SECTORS_IN_LOOKAHEAD * BYTES_PER_SECTOR)
-
-#define MSF2UINT(hgs) ((hgs[1] * FRAMES_PER_MINUTE) + (hgs[2] * FRAMES_PER_SECOND) + (hgs[3]))
 
 static std::mutex driveAccessMutex; /* one track can read at a time */
 
@@ -138,20 +134,13 @@ bool CddaDataStream::Open(const char *uri, unsigned int options) {
     }
 
     /* MMC-3 Draft Revision 10g: Table 222 – Q Sub-channel control field */
-    this->toc.TrackData[trackIndex - 1].Control &= 5;
-    if (!(
-        this->toc.TrackData[trackIndex - 1].Control == 0 ||
-        this->toc.TrackData[trackIndex - 1].Control == 1))
-    {
+    if (this->toc.TrackData[trackIndex - 1].Control & 4) {
+        /* nope, got a data track. */
         this->Close();
         return(false);
     }
 
     this->channels = 2;
-    if (this->toc.TrackData[trackIndex - 1].Control & 8) {
-        this->channels = 4;
-    }
-
     this->startSector = MSF2UINT(this->toc.TrackData[trackIndex - 1].Address) - FRAMES_PER_PREGAP;
     this->stopSector = MSF2UINT(this->toc.TrackData[trackIndex].Address) - FRAMES_PER_PREGAP;
     this->length = (this->stopSector - this->startSector) * BYTES_PER_SECTOR;
@@ -283,7 +272,7 @@ HRESULT CddaDataStream::Read(PBYTE pbBuffer, DWORD dwBytesToRead, BOOL bAlign, L
 
 #if ENABLE_LOOKAHEAD_BUFFER
     size_t avail = this->lookaheadTotal - this->lookaheadOffset;
-    
+
     if (avail == 0) {
         this->RefillInternalBuffer();
         avail = this->lookaheadTotal;
@@ -321,6 +310,6 @@ HRESULT CddaDataStream::Read(PBYTE pbBuffer, DWORD dwBytesToRead, BOOL bAlign, L
     if (pdwBytesRead) {
         *pdwBytesRead = readSize;
     }
-    
+
     return S_OK;
 }

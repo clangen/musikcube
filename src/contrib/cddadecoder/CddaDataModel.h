@@ -32,19 +32,60 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include <vector>
+#include <memory>
+#include "ntddcdrm.h"
+#include "devioctl.h"
 
-#define WIN32_LEAN_AND_MEAN
-#define WINVER 0x0502
-#define _WIN32_WINNT 0x0502
+class CddaDataModel {
+    public:
+        struct DiscTrack {
+            public:
+                DiscTrack(TRACK_DATA& data, char driveLetter, int number, double duration);
 
-#define PLUGIN_NAME "CD Audio IDecoder, IDataStream"
+                int GetCddbSum();
 
-#define FRAMES_PER_SECOND 75
-#define FRAMES_PER_MINUTE (60 * FRAMES_PER_SECOND)
-#define FRAMES_PER_PREGAP (2 * FRAMES_PER_SECOND)
-#define BYTES_PER_SECTOR 2352
-#define MSF2UINT(hgs) ((hgs[1] * FRAMES_PER_MINUTE) + (hgs[2] * FRAMES_PER_SECOND) + (hgs[3]))
+                int GetNumber() { return this->number; }
+                int GetMinutes() { return this->minutes; }
+                int GetSeconds() { return this->seconds; }
+                int GetFrames() { return this->frames; }
+                double GetDuration() { return duration; }
 
-#include <shlwapi.h>
-#include <Windows.h>
+                std::string GetFilePath();
+
+            private:
+                double duration;
+                char driveLetter;
+                int number;
+                int minutes;
+                int seconds;
+                int frames;
+        };
+
+        using DiscTrackPtr = std::shared_ptr<DiscTrack>;
+
+        class AudioDisc {
+            public:
+                AudioDisc(char driveLetter);
+
+                std::string GetCddbId();
+
+                void SetLeadout(DiscTrackPtr leadout);
+                void AddTrack(DiscTrackPtr track);
+                int GetTrackCount();
+                DiscTrackPtr GetTrackAt(int index);
+                char GetDriveLetter() { return this->driveLetter; }
+
+            private:
+                std::vector<DiscTrackPtr> tracks;
+                DiscTrackPtr leadout;
+                char driveLetter;
+        };
+
+        using AudioDiscPtr = std::shared_ptr<AudioDisc>;
+
+        CddaDataModel();
+        ~CddaDataModel();
+
+        std::vector<AudioDiscPtr> GetAudioDiscs();
+};

@@ -33,39 +33,103 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
+
 #include "CddaIndexerSource.h"
 
+#include <string>
+#include <sstream>
+#include <set>
+
 using namespace musik::core::sdk;
+
+static CddaDataModel model;
+using DiscList = std::vector<CddaDataModel::AudioDiscPtr>;
+using DiscIdList = std::set<std::string>;
+
+static std::vector<std::string> tokenize(const std::string& str, char delim = '/') {
+    std::vector<std::string> result;
+    std::istringstream iss(str);
+    std::string token;
+
+    while (std::getline(iss, token, delim)) {
+        result.push_back(token);
+    }
+
+    return result;
+}
+
+static std::string createExternalId(const char driveLetter, const std::string& cddbId, int track) {
+    return "audiocd/" + std::string(1, driveLetter) + "/" + cddbId + "/" + std::to_string(track);
+}
+
+static bool exists(DiscIdList& discs, const std::string& externalId) {
+    std::vector<std::string> tokens = tokenize(externalId);
+
+    if (tokens.size() < 3) {
+        return false;
+    }
+
+    return discs.find(tokens.at(1)) != discs.end();
+}
 
 void CddaIndexerSource::Destroy() {
     delete this;
 }
 
-void CddaIndexerSource::Scan(musik::core::sdk::IIndexerSink* indexer) {
-    indexer->RemoveAll(this);
-
-    char fmt[12];
-
-    for (int i = 0; i < 9; i++) {
-        snprintf(fmt, sizeof(fmt), "%02d", i + 1);
-
-        std::string fn = "f:\\Track" + std::string(fmt) + ".cda";
-        std::string title = "[CD AUDIO] track #" + std::string(fmt);
-
-        auto track = indexer->CreateWriter();
-        track->SetValue("album", "[CD AUDIO] album");
-        track->SetValue("artist", "[CD AUDIO] artist");
-        track->SetValue("album_artist", "[CD AUDIO] album artist");
-        track->SetValue("genre", "[CD AUDIO] genre");
-        track->SetValue("title", title.c_str());
-        track->SetValue("filename", fn.c_str());
-        indexer->Save(this, track);
-        track->Release();
+void CddaIndexerSource::RefreshModel() {
+    this->discs = model.GetAudioDiscs();
+    discIds.clear();
+    for (auto disc : discs) {
+        discIds.insert(disc->GetCddbId());
     }
 }
 
-void CddaIndexerSource::Scan(IIndexerSink* indexer, IRetainedTrackWriter* track) {
+void CddaIndexerSource::OnBeforeScan() {
+    this->RefreshModel();
+}
 
+void CddaIndexerSource::OnAfterScan() {
+    /* nothing to do... */
+}
+
+void CddaIndexerSource::Scan(musik::core::sdk::IIndexerSink* indexer) {
+    for (auto disc : this->discs) {
+        char driveLetter = disc->GetDriveLetter();
+        std::string cddbId = disc->GetCddbId();
+
+        for (int i = 0; i < disc->GetTrackCount(); i++) {
+            auto discTrack = disc->GetTrackAt(i);
+
+            std::string title = "[CD AUDIO] track #" + std::to_string(i + 1);
+            std::string externalId = createExternalId(driveLetter, cddbId, i);
+
+            auto track = indexer->CreateWriter();
+
+            track->SetValue("album", "[CD AUDIO] album");
+            track->SetValue("artist", "[CD AUDIO] artist");
+            track->SetValue("album_artist", "[CD AUDIO] album artist");
+            track->SetValue("genre", "[CD AUDIO] genre");
+            track->SetValue("title", title.c_str());
+            track->SetValue("filename", discTrack->GetFilePath().c_str());
+            track->SetValue("duration", std::to_string((int) round(discTrack->GetDuration())).c_str());
+
+            indexer->Save(this, track, externalId.c_str());
+
+            track->Release();
+        }
+    }
+
+    discIds.clear();
+}
+
+void CddaIndexerSource::Scan(
+    IIndexerSink* indexer,
+    IRetainedTrackWriter* track,
+    const char* externalId)
+{
+    if (!exists(this->discIds, externalId)) {
+        indexer->RemoveByExternalId(this, externalId);
+    }
 }
 
 int CddaIndexerSource::SourceId() {
