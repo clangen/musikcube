@@ -65,11 +65,11 @@ static std::string createExternalId(const char driveLetter, const std::string& c
 static bool exists(DiscIdList& discs, const std::string& externalId) {
     std::vector<std::string> tokens = tokenize(externalId);
 
-    if (tokens.size() < 3) {
+    if (tokens.size() < 4) { /* see format above */
         return false;
     }
 
-    return discs.find(tokens.at(1)) != discs.end();
+    return discs.find(tokens.at(2)) != discs.end();
 }
 
 void CddaIndexerSource::Destroy() {

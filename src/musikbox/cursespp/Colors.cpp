@@ -441,6 +441,11 @@ struct Theme {
             CURSESPP_HIGHLIGHTED_SELECTED_LIST_ITEM,
             listActiveHighlightedForeground.Id(mode, COLOR_BLACK),
             listActiveHighlightedBackground.Id(mode, COLOR_YELLOW));
+
+        init_pair(
+            CURSESPP_HIGHLIGHTED_ERROR_LIST_ITEM,
+            textError.Id(mode, COLOR_RED),
+            listHighlightedBackground.Id(mode, COLOR_GREEN));
     }
 
     /* main */

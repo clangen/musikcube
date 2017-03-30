@@ -136,6 +136,7 @@ PlaybackService::PlaybackService(
     transport.PlaybackEvent.connect(this, &PlaybackService::OnPlaybackEvent);
     transport.VolumeChanged.connect(this, &PlaybackService::OnVolumeChanged);
     transport.TimeChanged.connect(this, &PlaybackService::OnTimeChanged);
+    library->Indexer()->Finished.connect(this, &PlaybackService::OnIndexerFinished);
     loadPreferences(this->transport, *this, prefs);
     this->seekPosition = -1.0f;
     this->index = NO_POSITION;
@@ -711,6 +712,12 @@ void PlaybackService::OnVolumeChanged() {
 
 void PlaybackService::OnTimeChanged(double time) {
     POST(this, MESSAGE_TIME_CHANGED, 0, 0);
+}
+
+void PlaybackService::OnIndexerFinished(int trackCount) {
+    std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
+    this->playlist.ClearCache();
+    this->unshuffled.ClearCache();
 }
 
 /* our Editor interface. we proxy all of the ITrackListEditor methods so we
