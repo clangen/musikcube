@@ -112,6 +112,7 @@ void CddaIndexerSource::Scan(musik::core::sdk::IIndexerSink* indexer) {
             track->SetValue("title", title.c_str());
             track->SetValue("filename", discTrack->GetFilePath().c_str());
             track->SetValue("duration", std::to_string((int) round(discTrack->GetDuration())).c_str());
+            track->SetValue("track", std::to_string(i + 1).c_str());
 
             indexer->Save(this, track, externalId.c_str());
 
