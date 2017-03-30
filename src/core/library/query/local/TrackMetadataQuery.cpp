@@ -60,7 +60,7 @@ TrackMetadataQuery::TrackMetadataQuery(TrackPtr target, ILibraryPtr library, Typ
 bool TrackMetadataQuery::OnRun(Connection& db) {
     if (this->type == Type::AllMetadata) {
         Statement trackQuery(ALL_METADATA_QUERY.c_str(), db);
-        trackQuery.BindInt(0, this->result->GetId());
+        trackQuery.BindInt(0, (uint64) this->result->GetId());
 
         if (trackQuery.Step() == Row) {
             result->SetValue(constants::Track::TRACK_NUM, trackQuery.ColumnText(0));
@@ -86,7 +86,7 @@ bool TrackMetadataQuery::OnRun(Connection& db) {
     }
     else {
         Statement trackQuery(URI_ONLY_QUERY.c_str(), db);
-        trackQuery.BindInt(0, this->result->GetId());
+        trackQuery.BindInt(0, (uint64) this->result->GetId());
 
         if (trackQuery.Step() == Row) {
             result->SetValue(constants::Track::FILENAME, trackQuery.ColumnText(0));
