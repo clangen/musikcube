@@ -305,7 +305,7 @@ size_t TrackListView::HeaderCalculator::ApplyHeaderOffset(size_t index, int delt
     size_t result = index;
     if (this->absoluteOffsets) {
         for (auto offset : (*this->absoluteOffsets)) {
-            if (result != 0 && offset <= result) {
+            if (result != 0 && offset <= index) {
                 result += delta;
             }
             else {
@@ -378,6 +378,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
         tracks we're interesetd in. */
         auto trackIndex = this->parent.headers.AdapterToTrackListIndex(rawIndex + 1);
         TrackPtr track = parent.tracks->Get(trackIndex);
+
         std::string album = track->GetValue(constants::Track::ALBUM);
 
         std::shared_ptr<TrackListEntry> entry(new
