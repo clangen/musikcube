@@ -811,6 +811,8 @@ void Indexer::Rescan(IIndexerSource* source) {
         return;
     }
 
+    source->OnBeforeScan();
+
     /* first allow the source to update metadata for any tracks that it
     previously indexed. */
     db::Statement tracks(
@@ -827,5 +829,7 @@ void Indexer::Rescan(IIndexerSource* source) {
     /* now tell it to do a wide-open scan. it can use this opportunity to
     remove old tracks, or add new ones. */
     source->Scan(this);
+
+    source->OnAfterScan();
 }
 

@@ -43,6 +43,10 @@ namespace musik { namespace core { namespace sdk {
         public:
             virtual void Destroy() = 0;
 
+            virtual void OnBeforeScan() = 0;
+
+            virtual void OnAfterScan() = 0;
+
             virtual void Scan(IIndexerSink* indexer) = 0;
 
             virtual void Scan(
