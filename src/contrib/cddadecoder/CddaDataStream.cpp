@@ -50,7 +50,6 @@
     #define BUFFER_SIZE_BYTES (MAX_SECTORS_IN_LOOKAHEAD * BYTES_PER_SECTOR)
 #endif
 
-
 static std::mutex driveAccessMutex; /* one track can read at a time */
 
 CddaDataStream::CddaDataStream() {

@@ -42,9 +42,16 @@
 
 using namespace musik::core::sdk;
 
-static CddaDataModel model;
 using DiscList = std::vector<CddaDataModel::AudioDiscPtr>;
 using DiscIdList = std::set<std::string>;
+
+static std::mutex globalSinkMutex;
+static musik::core::sdk::IIndexerSink* globalSink;
+
+extern "C" __declspec(dllexport) void SetIndexerSink(musik::core::sdk::IIndexerSink* sink) {
+    std::unique_lock<std::mutex> lock(globalSinkMutex);
+    ::globalSink = sink;
+}
 
 static std::vector<std::string> tokenize(const std::string& str, char delim = '/') {
     std::vector<std::string> result;
@@ -72,6 +79,15 @@ static bool exists(DiscIdList& discs, const std::string& externalId) {
     return discs.find(tokens.at(2)) != discs.end();
 }
 
+CddaIndexerSource::CddaIndexerSource()
+: model(CddaDataModel::Instance()) {
+    model.AddEventListener(this);
+}
+
+CddaIndexerSource::~CddaIndexerSource() {
+    model.RemoveEventListener(this);
+}
+
 void CddaIndexerSource::Destroy() {
     delete this;
 }
@@ -81,6 +97,13 @@ void CddaIndexerSource::RefreshModel() {
     discIds.clear();
     for (auto disc : discs) {
         discIds.insert(disc->GetCddbId());
+    }
+}
+
+void CddaIndexerSource::OnAudioDiscInsertedOrRemoved() {
+    std::unique_lock<std::mutex> lock(globalSinkMutex);
+    if (::globalSink) {
+        ::globalSink->Rescan(this);
     }
 }
 

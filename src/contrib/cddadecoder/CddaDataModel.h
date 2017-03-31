@@ -34,11 +34,19 @@
 
 #include <vector>
 #include <memory>
+#include <thread>
+#include <mutex>
+#include <set>
 #include "ntddcdrm.h"
 #include "devioctl.h"
 
 class CddaDataModel {
     public:
+        class EventListener {
+            public:
+                virtual void OnAudioDiscInsertedOrRemoved() = 0;
+        };
+
         struct DiscTrack {
             public:
                 DiscTrack(TRACK_DATA& data, char driveLetter, int number, double duration);
@@ -84,8 +92,42 @@ class CddaDataModel {
 
         using AudioDiscPtr = std::shared_ptr<AudioDisc>;
 
+        static CddaDataModel& Instance() {
+            static CddaDataModel model;
+            model.StartWindowThread();
+            return model;
+        }
+
+        static void Shutdown() {
+            Instance().StopWindowThread();
+        }
+
+        CddaDataModel& operator=(const CddaDataModel&) = delete;
+        CddaDataModel(const CddaDataModel&) = delete;
+
+        std::vector<AudioDiscPtr> GetAudioDiscs();
+        AudioDiscPtr GetAudioDisc(char driveLetter);
+
+        void AddEventListener(EventListener* listener);
+        void RemoveEventListener(EventListener* listener);
+
+    private:
+        using Thread = std::shared_ptr<std::thread>;
+        using Mutex = std::recursive_mutex;
+        using Lock = std::unique_lock<Mutex>;
+
         CddaDataModel();
         ~CddaDataModel();
 
-        std::vector<AudioDiscPtr> GetAudioDiscs();
+        void StartWindowThread();
+        void StopWindowThread();
+        void WindowThreadProc();
+        void OnAudioDiscInsertedOrRemoved();
+
+        static LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+        Mutex windowMutex, eventListMutex;
+        Thread windowThread;
+        HWND messageWindow;
+        std::set<EventListener*> listeners;
 };
