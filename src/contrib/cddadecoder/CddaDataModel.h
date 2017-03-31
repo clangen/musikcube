@@ -93,13 +93,11 @@ class CddaDataModel {
         using AudioDiscPtr = std::shared_ptr<AudioDisc>;
 
         static CddaDataModel& Instance() {
-            static CddaDataModel model;
-            model.StartWindowThread();
-            return model;
+            return Instance(true);
         }
 
         static void Shutdown() {
-            Instance().StopWindowThread();
+            Instance(false).StopWindowThread();
         }
 
         CddaDataModel& operator=(const CddaDataModel&) = delete;
@@ -112,6 +110,14 @@ class CddaDataModel {
         void RemoveEventListener(EventListener* listener);
 
     private:
+        static CddaDataModel& Instance(bool start) {
+            static CddaDataModel model;
+            if (start) {
+                model.StartWindowThread();
+            }
+            return model;
+        }
+
         using Thread = std::shared_ptr<std::thread>;
         using Mutex = std::recursive_mutex;
         using Lock = std::unique_lock<Mutex>;

@@ -36,6 +36,8 @@
 
 #include "CddaIndexerSource.h"
 
+#include <core/sdk/IIndexerNotifier.h>
+
 #include <string>
 #include <sstream>
 #include <set>
@@ -46,11 +48,11 @@ using DiscList = std::vector<CddaDataModel::AudioDiscPtr>;
 using DiscIdList = std::set<std::string>;
 
 static std::mutex globalSinkMutex;
-static musik::core::sdk::IIndexerSink* globalSink;
+static musik::core::sdk::IIndexerNotifier* notifier;
 
-extern "C" __declspec(dllexport) void SetIndexerSink(musik::core::sdk::IIndexerSink* sink) {
+extern "C" __declspec(dllexport) void SetIndexerNotifier(musik::core::sdk::IIndexerNotifier* notifier) {
     std::unique_lock<std::mutex> lock(globalSinkMutex);
-    ::globalSink = sink;
+    ::notifier = notifier;
 }
 
 static std::vector<std::string> tokenize(const std::string& str, char delim = '/') {
@@ -79,6 +81,12 @@ static bool exists(DiscIdList& discs, const std::string& externalId) {
     return discs.find(tokens.at(2)) != discs.end();
 }
 
+static std::string labelForDrive(const char driveLetter) {
+    char buffer[32];
+    snprintf(buffer, sizeof(buffer), "[audio cd %c:\\]", tolower(driveLetter));
+    return std::string(buffer);
+}
+
 CddaIndexerSource::CddaIndexerSource()
 : model(CddaDataModel::Instance()) {
     model.AddEventListener(this);
@@ -102,8 +110,8 @@ void CddaIndexerSource::RefreshModel() {
 
 void CddaIndexerSource::OnAudioDiscInsertedOrRemoved() {
     std::unique_lock<std::mutex> lock(globalSinkMutex);
-    if (::globalSink) {
-        ::globalSink->Rescan(this);
+    if (::notifier) {
+        ::notifier->ScheduleRescan(this);
     }
 }
 
@@ -115,7 +123,7 @@ void CddaIndexerSource::OnAfterScan() {
     /* nothing to do... */
 }
 
-void CddaIndexerSource::Scan(musik::core::sdk::IIndexerSink* indexer) {
+void CddaIndexerSource::Scan(musik::core::sdk::IIndexerWriter* indexer) {
     for (auto disc : this->discs) {
         char driveLetter = disc->GetDriveLetter();
         std::string cddbId = disc->GetCddbId();
@@ -123,15 +131,16 @@ void CddaIndexerSource::Scan(musik::core::sdk::IIndexerSink* indexer) {
         for (int i = 0; i < disc->GetTrackCount(); i++) {
             auto discTrack = disc->GetTrackAt(i);
 
-            std::string title = "[CD AUDIO] track #" + std::to_string(i + 1);
             std::string externalId = createExternalId(driveLetter, cddbId, i);
+            std::string label = labelForDrive(driveLetter);
+            std::string title = "track #" + std::to_string(i + 1);
 
             auto track = indexer->CreateWriter();
 
-            track->SetValue("album", "[CD AUDIO] album");
-            track->SetValue("artist", "[CD AUDIO] artist");
-            track->SetValue("album_artist", "[CD AUDIO] album artist");
-            track->SetValue("genre", "[CD AUDIO] genre");
+            track->SetValue("album", label.c_str());
+            track->SetValue("artist", label.c_str());
+            track->SetValue("album_artist", label.c_str());
+            track->SetValue("genre", label.c_str());
             track->SetValue("title", title.c_str());
             track->SetValue("filename", discTrack->GetFilePath().c_str());
             track->SetValue("duration", std::to_string((int) round(discTrack->GetDuration())).c_str());
@@ -147,7 +156,7 @@ void CddaIndexerSource::Scan(musik::core::sdk::IIndexerSink* indexer) {
 }
 
 void CddaIndexerSource::Scan(
-    IIndexerSink* indexer,
+    IIndexerWriter* indexer,
     IRetainedTrackWriter* track,
     const char* externalId)
 {
