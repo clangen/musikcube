@@ -112,27 +112,62 @@ std::string MetadataMap::GetValue(const char* key) {
 }
 
 unsigned long long MetadataMap::GetUint64(const char* key, unsigned long long defaultValue) {
-    try { return std::stoull(GetValue(key)); } catch (...) { }
+    try {
+        std::string value = GetValue(key);
+        if (value.size()) {
+            return std::stoull(GetValue(key));
+        }
+    }
+    catch (...) {
+    }
     return defaultValue;
 }
 
 long long MetadataMap::GetInt64(const char* key, long long defaultValue) {
-    try { return std::stoll(GetValue(key)); } catch (...) { }
+    try {
+        std::string value = GetValue(key);
+        if (value.size()) {
+            return std::stoll(GetValue(key));
+        }
+    }
+    catch (...) {
+    }
     return defaultValue;
 }
 
 unsigned long MetadataMap::GetUint32(const char* key, unsigned long defaultValue) {
-    try { return std::stoul(GetValue(key)); } catch (...) { }
+    try {
+        std::string value = GetValue(key);
+        if (value.size()) {
+            return std::stoul(GetValue(key));
+        }
+    }
+    catch (...) {
+    }
     return defaultValue;
 }
 
 long MetadataMap::GetInt32(const char* key, unsigned int defaultValue) {
-    try { return std::stol(GetValue(key)); } catch (...) { }
+    try {
+        std::string value = GetValue(key);
+        if (value.size()) {
+            return std::stol(GetValue(key));
+        }
+    }
+    catch (...) {
+    }
     return defaultValue;
 }
 
 double MetadataMap::GetDouble(const char* key, double defaultValue) {
-    try { return std::stod(GetValue(key)); } catch (...) { }
+    try {
+        std::string value = GetValue(key);
+        if (value.size()) {
+            return std::stod(GetValue(key));
+        }
+    }
+    catch (...) {
+    }
     return defaultValue;
 }
 

@@ -57,7 +57,7 @@
 #include <boost/thread/xtime.hpp>
 #include <boost/bind.hpp>
 
-#define MULTI_THREADED_INDEXER 1
+#define MULTI_THREADED_INDEXER 0
 #define STRESS_TEST_DB 0
 
 static const std::string TAG = "Indexer";
@@ -87,12 +87,12 @@ static std::string normalizePath(const std::string& path) {
 }
 
 Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
-    : thread(nullptr)
-    , filesSaved(0)
-    , exit(false)
-    , state(StateIdle)
-    , prefs(Preferences::ForComponent(prefs::components::Settings))
-    , readSemaphore(prefs->GetInt(prefs::keys::MaxTagReadThreads, MAX_THREADS)) {
+: thread(nullptr)
+, filesSaved(0)
+, exit(false)
+, state(StateIdle)
+, prefs(Preferences::ForComponent(prefs::components::Settings))
+, readSemaphore(prefs->GetInt(prefs::keys::MaxTagReadThreads, MAX_THREADS)) {
     this->dbFilename = dbFilename;
     this->libraryPath = libraryPath;
     this->thread = new boost::thread(boost::bind(&Indexer::ThreadLoop, this));
@@ -197,6 +197,26 @@ void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* i
     auto type = context.type;
     auto sourceId = context.sourceId;
 
+    /* process ALL IIndexerSource plugins, if applicable */
+
+    if (type == SyncType::All || (type == SyncType::Sources && sourceId == 0)) {
+        for (auto it : this->sources) {
+            this->SyncSource(it.get());
+            this->trackTransaction->CommitAndRestart();
+        }
+    }
+
+    /* otherwise, we may have just been asked to index a single one... */
+
+    else if (type == SyncType::Sources && sourceId != 0) {
+        for (auto it : this->sources) {
+            if (it->SourceId() == sourceId) {
+                this->SyncSource(it.get());
+                this->trackTransaction->CommitAndRestart();
+            }
+        }
+    }
+
     /* process local files */
     if (type == SyncType::All || type == SyncType::Local) {
         std::vector<std::string> paths;
@@ -223,40 +243,12 @@ void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* i
         /* read metadata from the files  */
 
         for (std::size_t i = 0; i < paths.size(); ++i) {
-            this->trackTransaction.reset(new db::ScopedTransaction(this->dbConnection));
             this->SyncDirectory(io, paths[i], paths[i], pathIds[i]);
         }
 
         /* close any pending transaction */
 
-        if (this->trackTransaction) {
-            this->trackTransaction->CommitAndRestart();
-            this->trackTransaction.reset();
-        }
-    }
-
-    /* process ALL IIndexerSource plugins, if applicable */
-
-    if (type == SyncType::All || (type == SyncType::Sources && sourceId == 0)) {
-        for (auto it : this->sources) {
-            this->trackTransaction.reset(new db::ScopedTransaction(this->dbConnection));
-            this->SyncSource(it.get());
-            this->trackTransaction->CommitAndRestart();
-            this->trackTransaction.reset();
-        }
-    }
-
-    /* otherwise, we may have just been asked to index a single one... */
-
-    else if (type == SyncType::Sources && sourceId != 0) {
-        for (auto it : this->sources) {
-            if (it->SourceId() == sourceId) {
-                this->trackTransaction.reset(new db::ScopedTransaction(this->dbConnection));
-                this->SyncSource(it.get());
-                this->trackTransaction->CommitAndRestart();
-                this->trackTransaction.reset();
-            }
-        }
+        this->trackTransaction->CommitAndRestart();
     }
 }
 
@@ -289,9 +281,7 @@ void Indexer::FinalizeSync(const SyncContext& context) {
     /* notify observers */
     this->Progress(this->filesSaved);
 
-    /* unload reader DLLs*/
-    this->metadataReaders.clear();
-
+    /* run analyzers. */
     this->RunAnalyzers();
 
     this->state = StateIdle;
@@ -407,10 +397,7 @@ void Indexer::SyncDirectory(
 
         for( ; file != end && !this->Exited(); file++) {
             if (this->filesSaved > TRANSACTION_INTERVAL) {
-                if (this->trackTransaction) {
-                    this->trackTransaction->CommitAndRestart();
-                }
-
+                this->trackTransaction->CommitAndRestart();
                 this->Progress(this->filesSaved);
                 this->filesSaved = 0;
             }
@@ -468,6 +455,7 @@ void Indexer::ThreadLoop() {
         this->Started();
 
         this->dbConnection.Open(this->dbFilename.c_str(), 0);
+        this->trackTransaction.reset(new db::ScopedTransaction(this->dbConnection));
 
 #if MULTI_THREADED_INDEXER
         boost::asio::io_service io;
@@ -491,6 +479,10 @@ void Indexer::ThreadLoop() {
 #endif
 
         this->FinalizeSync(context);
+
+        this->trackTransaction.reset();
+
+        this->dbConnection.Close();
 
         if (!this->Exited()) {
             this->Finished(this->filesSaved);
@@ -559,7 +551,6 @@ void Indexer::SyncCleanup() {
     this->dbConnection.Execute("DELETE FROM playlist_tracks WHERE track_id NOT IN (SELECT id FROM tracks)");
 
     /* optimize and shrink */
-    this->dbConnection.Execute("ANALYZE");
     this->dbConnection.Execute("VACUUM");
 }
 
@@ -597,27 +588,11 @@ static int optimize(
 }
 
 void Indexer::SyncOptimize() {
-    DBID count = 0, id = 0;
-
-    {
-        db::ScopedTransaction transaction(this->dbConnection);
-        optimize(this->dbConnection, "genre", "genres");
-    }
-
-    {
-        db::ScopedTransaction transaction(this->dbConnection);
-        optimize(this->dbConnection, "artist", "artists");
-    }
-
-    {
-        db::ScopedTransaction transaction(this->dbConnection);
-        optimize(this->dbConnection, "album", "albums");
-    }
-
-    {
-        db::ScopedTransaction transaction(this->dbConnection);
-        optimize(this->dbConnection, "content", "meta_values");
-    }
+    db::ScopedTransaction transaction(this->dbConnection);
+    optimize(this->dbConnection, "genre", "genres");
+    optimize(this->dbConnection, "artist", "artists");
+    optimize(this->dbConnection, "album", "albums");
+    optimize(this->dbConnection, "content", "meta_values");
 }
 
 void Indexer::ProcessAddRemoveQueue() {

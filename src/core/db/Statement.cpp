@@ -46,12 +46,8 @@ Statement::Statement(const char* sql, Connection &connection)
 , modifiedRows(0) {
     std::unique_lock<std::mutex> lock(connection.mutex);
 
-    int err = sqlite3_prepare_v2(
+    sqlite3_prepare_v2(
         this->connection->connection, sql, -1, &this->stmt, nullptr);
-
-    if (err!=SQLITE_OK) {
-        return;
-    }
 }
 
 Statement::Statement(Connection &connection)
@@ -60,11 +56,11 @@ Statement::Statement(Connection &connection)
 }
 
 Statement::~Statement() {
-    int err = sqlite3_finalize(this->stmt);
+    sqlite3_finalize(this->stmt);
 }
 
 void Statement::Reset() {
-    int err = sqlite3_reset(this->stmt);
+    sqlite3_reset(this->stmt);
 }
 
 void Statement::UnbindAll() {

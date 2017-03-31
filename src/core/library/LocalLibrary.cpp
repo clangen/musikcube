@@ -82,14 +82,7 @@ LocalLibrary::LocalLibrary(std::string name,int id)
 , messageQueue(nullptr) {
     this->identifier = boost::lexical_cast<std::string>(id);
 
-    auto prefs = Preferences::ForComponent("library");
-
-    this->db.Open(
-        this->GetDatabaseFilename().c_str(),
-        0,
-        prefs->GetInt("DatabaseCache",
-        4096));
-
+    this->db.Open(this->GetDatabaseFilename().c_str());
     LocalLibrary::CreateDatabase(this->db);
 
     this->indexer = new core::Indexer(

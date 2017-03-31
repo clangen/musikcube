@@ -78,7 +78,7 @@ void ScopedTransaction::End() {
         }
         else {
             this->connection->Execute("COMMIT TRANSACTION");
-            this->connection->Checkpoint();
+            //this->connection->Checkpoint();
         }
     }
 

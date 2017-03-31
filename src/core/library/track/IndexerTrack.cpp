@@ -88,27 +88,58 @@ std::string IndexerTrack::GetValue(const char* metakey) {
 }
 
 unsigned long long IndexerTrack::GetUint64(const char* key, unsigned long long defaultValue) {
-    try { return std::stoull(GetValue(key)); } catch (...) { }
+    try {
+        std::string value = GetValue(key);
+        if (value.size()) {
+            return std::stoull(GetValue(key));
+        }
+    } catch (...) {
+    }
     return defaultValue;
 }
 
 long long IndexerTrack::GetInt64(const char* key, long long defaultValue) {
-    try { return std::stoll(GetValue(key)); } catch (...) { }
+    try {
+        std::string value = GetValue(key);
+        if (value.size()) {
+            return std::stoll(GetValue(key));
+        }
+    } catch (...) {
+    }
     return defaultValue;
 }
 
 unsigned long IndexerTrack::GetUint32(const char* key, unsigned long defaultValue) {
-    try { return std::stoul(GetValue(key)); } catch (...) { }
+    try {
+        std::string value = GetValue(key);
+        if (value.size()) {
+            return std::stoul(GetValue(key));
+        }
+    } catch (...) {
+    }
     return defaultValue;
 }
 
 long IndexerTrack::GetInt32(const char* key, unsigned int defaultValue) {
-    try { return std::stol(GetValue(key)); } catch (...) { }
+    try {
+        std::string value = GetValue(key);
+        if (value.size()) {
+            return std::stol(GetValue(key));
+        }
+    }
+    catch (...) {
+    }
     return defaultValue;
 }
 
 double IndexerTrack::GetDouble(const char* key, double defaultValue) {
-    try { return std::stod(GetValue(key)); } catch (...) { }
+    try {
+        std::string value = GetValue(key);
+        if (value.size()) {
+            return std::stod(GetValue(key));
+        }
+    } catch (...) {
+    }
     return defaultValue;
 }
 
@@ -242,13 +273,13 @@ static DBID writeToTracksTable(
     stmt.BindText(1, track.GetValue("track"));
     stmt.BindText(2, track.GetValue("disc"));
     stmt.BindText(3, track.GetValue("bpm"));
-    stmt.BindText(4, track.GetValue("duration"));
-    stmt.BindText(5, track.GetValue("filesize"));
+    stmt.BindInt(4, track.GetInt32("duration"));
+    stmt.BindInt(5, track.GetInt32("filesize"));
     stmt.BindText(6, track.GetValue("year"));
     stmt.BindText(7, track.GetValue("title"));
     stmt.BindText(8, track.GetValue("filename"));
-    stmt.BindText(9, track.GetValue("filetime"));
-    stmt.BindText(10, track.GetValue("path_id"));
+    stmt.BindInt(9, track.GetInt32("filetime"));
+    stmt.BindInt(10, track.GetInt32("path_id"));
 
     if (track.GetId() != 0) {
         stmt.BindInt(0, (uint64) track.GetId());
@@ -289,7 +320,11 @@ static void removeKnownFields(Track::MetadataMap& metadata) {
     metadata.erase("extension");
     metadata.erase("genre");
     metadata.erase("artist");
+    metadata.erase("album_artist");
     metadata.erase("album");
+    metadata.erase("source_id");
+    metadata.erase("external_id");
+    metadata.erase("visible");
 }
 
 DBID IndexerTrack::SaveThumbnail(db::Connection& connection, const std::string& libraryDirectory) {
