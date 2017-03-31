@@ -43,8 +43,7 @@
 
 #include <glue/util/Playback.h>
 
-using musik::core::ILibraryPtr;
-using musik::core::audio::ITransport;
+using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::sdk;
 using namespace musik::box;
@@ -105,7 +104,7 @@ bool GlobalHotkeys::Handle(const std::string& kn) {
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::RescanMetadata, kn)) {
-        library->Indexer()->Synchronize(true);
+        library->Indexer()->Schedule(IIndexer::SyncType::All);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::ToggleVisualizer, kn)) {

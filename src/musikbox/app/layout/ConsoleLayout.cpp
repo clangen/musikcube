@@ -243,7 +243,7 @@ bool ConsoleLayout::ProcessCommand(const std::string& cmd) {
         this->WriteOutput("");
     }
     else if (name == "rescan" || name == "scan" || name == "index") {
-        library->Indexer()->Synchronize();
+        library->Indexer()->Schedule(IIndexer::SyncType::All);
     }
     else if (name == "h" || name == "help") {
         this->Help();

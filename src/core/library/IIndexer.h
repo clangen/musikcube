@@ -51,12 +51,17 @@ namespace musik { namespace core {
                 StateIndexing
             };
 
-            virtual ~IIndexer() { }
+            enum class SyncType{
+                All,
+                Local,
+                Sources,
+            };
 
+            virtual ~IIndexer() { }
             virtual void AddPath(const std::string& path) = 0;
             virtual void RemovePath(const std::string& path) = 0;
             virtual void GetPaths(std::vector<std::string>& paths) = 0;
-            virtual void Synchronize(bool restart = false) = 0;
+            virtual void Schedule(SyncType type) = 0;
             virtual State GetState() = 0;
     };
 } }
