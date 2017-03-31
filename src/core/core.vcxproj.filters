@@ -178,6 +178,9 @@
     <ClCompile Include="i18n\Locale.cpp">
       <Filter>src\i18n</Filter>
     </ClCompile>
+    <ClCompile Include="library\query\local\TrackMetadataQuery.cpp">
+      <Filter>src\library\query\local</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -434,6 +437,21 @@
     </ClInclude>
     <ClInclude Include="i18n\Locale.h">
       <Filter>src\i18n</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IIndexerSource.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IRetainedTrackWriter.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\local\TrackMetadataQuery.h">
+      <Filter>src\library\query\local</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IIndexerWriter.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IIndexerNotifier.h">
+      <Filter>src\sdk</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

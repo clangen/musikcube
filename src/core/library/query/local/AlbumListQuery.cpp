@@ -69,6 +69,9 @@ static const std::string COLUMNS =
 static const std::string TABLES =
     "albums, tracks, artists ";
 
+static const std::string VISIBLE_PREDICATE =
+    " tracks.visible == 1 AND ";
+
 static const std::string FILTER_PREDICATE =
     " (LOWER(album) like ? OR LOWER(album_artist) like ?) AND ";
 
@@ -117,6 +120,7 @@ bool AlbumListQuery::OnRun(Connection& db) {
     bool category = fieldIdName.size() && fieldIdValue != -1;
 
     std::string query = "SELECT DISTINCT " + COLUMNS + " FROM " + TABLES + " WHERE ";
+    query += VISIBLE_PREDICATE;
     query += filtered ? FILTER_PREDICATE : "";
 
     if (category) {

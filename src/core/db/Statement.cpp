@@ -42,15 +42,12 @@ using namespace musik::core::db;
 
 Statement::Statement(const char* sql, Connection &connection)
 : connection(&connection)
-, stmt(nullptr) {
+, stmt(nullptr)
+, modifiedRows(0) {
     std::unique_lock<std::mutex> lock(connection.mutex);
 
-    int err = sqlite3_prepare_v2(
+    sqlite3_prepare_v2(
         this->connection->connection, sql, -1, &this->stmt, nullptr);
-
-    if (err!=SQLITE_OK) {
-        return;
-    }
 }
 
 Statement::Statement(Connection &connection)
@@ -59,11 +56,11 @@ Statement::Statement(Connection &connection)
 }
 
 Statement::~Statement() {
-    int err = sqlite3_finalize(this->stmt);
+    sqlite3_finalize(this->stmt);
 }
 
 void Statement::Reset() {
-    int err = sqlite3_reset(this->stmt);
+    sqlite3_reset(this->stmt);
 }
 
 void Statement::UnbindAll() {
@@ -71,10 +68,16 @@ void Statement::UnbindAll() {
 }
 
 int Statement::Step() {
-    return this->connection->StepStatement(this->stmt);
+    int result = this->connection->StepStatement(this->stmt);
+
+    if (result == SQLITE_OK) {
+        this->modifiedRows = this->connection->LastModifiedRowCount();
+    }
+
+    return result;
 }
 
-void Statement::BindInt(int position,int bindInt) {
+void Statement::BindInt(int position, int bindInt) {
     sqlite3_bind_int(this->stmt, position + 1, bindInt);
 }
 
@@ -91,7 +94,7 @@ void Statement::BindText(int position, const char* bindText) {
         SQLITE_STATIC);
 }
 
-void Statement::BindText(int position ,const std::string &bindText) {
+void Statement::BindText(int position, const std::string &bindText) {
     sqlite3_bind_text(
         this->stmt, position + 1,
         bindText.c_str(),
@@ -99,7 +102,7 @@ void Statement::BindText(int position ,const std::string &bindText) {
         SQLITE_TRANSIENT);
 }
 
-void Statement::BindTextW(int position,const wchar_t* bindText){
+void Statement::BindTextW(int position, const wchar_t* bindText) {
     sqlite3_bind_text16(
         this->stmt,
         position + 1,
@@ -108,13 +111,17 @@ void Statement::BindTextW(int position,const wchar_t* bindText){
         SQLITE_STATIC);
 }
 
-void Statement::BindTextW(int position,const std::wstring &bindText){
+void Statement::BindTextW(int position, const std::wstring &bindText) {
     sqlite3_bind_text16(
         this->stmt,
         position + 1,
         bindText.c_str(),
         -1,
         SQLITE_TRANSIENT);
+}
+
+void Statement::BindNull(int position) {
+    sqlite3_bind_null(this->stmt, position + 1);
 }
 
 int Statement::ColumnInt(int column) {

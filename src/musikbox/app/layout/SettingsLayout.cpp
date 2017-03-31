@@ -96,9 +96,9 @@ SettingsLayout::SettingsLayout(
 : LayoutBase()
 , library(library)
 , indexer(library->Indexer())
-, transport(transport) {
+, transport(transport)
+, pathsUpdated(false) {
     this->libraryPrefs = Preferences::ForComponent(core::prefs::components::Settings);
-    this->indexer->PathsUpdated.connect(this, &SettingsLayout::RefreshAddedPaths);
     this->browseAdapter.reset(new DirectoryAdapter());
     this->addedPathsAdapter.reset(new SimpleScrollAdapter());
     this->InitializeWindows();
@@ -361,6 +361,12 @@ void SettingsLayout::OnVisibilityChanged(bool visible) {
         this->LoadPreferences();
         this->CheckShowFirstRunDialog();
     }
+    else {
+        if (this->pathsUpdated) {
+            this->library->Indexer()->Schedule(IIndexer::SyncType::Local);
+            this->pathsUpdated = false;
+        }
+    }
 }
 
 void SettingsLayout::CheckShowFirstRunDialog() {
@@ -444,6 +450,8 @@ void SettingsLayout::AddSelectedDirectory() {
 
         if (path.size()) {
             this->indexer->AddPath(path);
+            this->RefreshAddedPaths();
+            this->pathsUpdated = true;
         }
     }
 }
@@ -455,6 +463,8 @@ void SettingsLayout::RemoveSelectedDirectory() {
     size_t index = this->addedPathsList->GetSelectedIndex();
     if (index != ListWindow::NO_SELECTION) {
         this->indexer->RemovePath(paths.at(index));
+        this->RefreshAddedPaths();
+        this->pathsUpdated = true;
     }
 }
 

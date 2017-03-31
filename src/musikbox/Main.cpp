@@ -125,6 +125,9 @@ int main(int argc, char* argv[])
     ILibraryPtr library = LibraryFactory::Libraries().at(0);
     library->SetMessageQueue(Window::MessageQueue());
 
+    auto prefs = Preferences::ForComponent(
+        musik::core::prefs::components::Settings);
+
     MasterTransport transport;
     PlaybackService playback(Window::MessageQueue(), library, transport);
 
@@ -138,9 +141,10 @@ int main(int argc, char* argv[])
 #ifdef WIN32
         app.SetIcon(IDI_ICON1);
 #endif
-
-        auto prefs = Preferences::ForComponent(
-            musik::core::prefs::components::Settings);
+        /* fire up the indexer if configured to run on startup */
+        if (prefs->GetBool(musik::core::prefs::keys::SyncOnStartup, true)) {
+            library->Indexer()->Schedule(IIndexer::SyncType::Sources);
+        }
 
         /* set color mode (basic, palette, rgb) */
         Colors::Mode colorMode = Colors::RGB;

@@ -38,16 +38,20 @@
 
 #include <core/support/Preferences.h>
 #include <core/library/LocalSimpleDataProvider.h>
+#include <core/sdk/IIndexerNotifier.h>
 
 using namespace musik::core;
 using namespace musik::core::db::local;
+using namespace musik::core::sdk;
 
-typedef void(*SetSimpleDataProvider)(musik::core::sdk::ISimpleDataProvider*);
+typedef void(*SetSimpleDataProvider)(ISimpleDataProvider*);
 LocalSimpleDataProvider* dataProvider = nullptr;
+
+typedef void(*SetIndexerNotifier)(IIndexerNotifier*);
 
 namespace musik { namespace core { namespace plugin {
 
-    void InstallDependencies(musik::core::ILibraryPtr library) {
+    void InstallDependencies(ILibraryPtr library) {
         /* preferences */
         Preferences::LoadPluginPreferences();
 
@@ -60,11 +64,23 @@ namespace musik { namespace core { namespace plugin {
             [](musik::core::sdk::IPlugin* plugin, SetSimpleDataProvider func) {
                 func(dataProvider);
             });
+
+        /* indexer */
+        IIndexerNotifier* indexerNotifier =
+            dynamic_cast<IIndexerNotifier*>(library->Indexer());
+
+        PluginFactory::Instance().QueryFunction<SetIndexerNotifier>(
+            "SetIndexerNotifier",
+            [indexerNotifier](musik::core::sdk::IPlugin* plugin, SetIndexerNotifier func) {
+                func(indexerNotifier);
+            });
     }
 
     void UninstallDependencies() {
+        /* preferences */
         Preferences::SavePluginPreferences();
 
+        /* data providers */
         PluginFactory::Instance().QueryFunction<SetSimpleDataProvider>(
             "SetSimpleDataProvider",
             [](musik::core::sdk::IPlugin* plugin, SetSimpleDataProvider func) {
@@ -73,6 +89,13 @@ namespace musik { namespace core { namespace plugin {
 
         delete dataProvider;
         dataProvider = nullptr;
+
+        /* indexer */
+        PluginFactory::Instance().QueryFunction<SetIndexerNotifier>(
+            "SetIndexerNotifier",
+                [](musik::core::sdk::IPlugin* plugin, SetIndexerNotifier func) {
+                func(nullptr);
+            });
     }
 
 } } }

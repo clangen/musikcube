@@ -37,6 +37,8 @@
 #include <core/db/Connection.h>
 #include <core/sdk/IMetadataReader.h>
 #include <core/sdk/IDecoderFactory.h>
+#include <core/sdk/IIndexerWriter.h>
+#include <core/sdk/IIndexerNotifier.h>
 #include <core/library/IIndexer.h>
 #include <core/support/Preferences.h>
 
@@ -51,10 +53,16 @@
 #include <deque>
 #include <vector>
 #include <atomic>
+#include <map>
 
 namespace musik { namespace core {
 
-    class Indexer : public IIndexer, private boost::noncopyable {
+    class Indexer :
+        public musik::core::IIndexer,
+        public musik::core::sdk::IIndexerWriter,
+        public musik::core::sdk::IIndexerNotifier,
+        private boost::noncopyable
+    {
         public:
             Indexer(
                 const std::string& libraryPath,
@@ -62,28 +70,62 @@ namespace musik { namespace core {
 
             virtual ~Indexer();
 
+            /* IIndexer */
             virtual void AddPath(const std::string& paths);
             virtual void RemovePath(const std::string& paths);
             virtual void GetPaths(std::vector<std::string>& paths);
-            virtual void Synchronize(bool restart = false);
+            virtual void Schedule(SyncType type);
             virtual State GetState() { return this->state; }
 
+            /* IIndexerWriter */
+            virtual musik::core::sdk::IRetainedTrackWriter* CreateWriter();
+            virtual bool RemoveByUri(musik::core::sdk::IIndexerSource* source, const char* uri);
+            virtual bool RemoveByExternalId(musik::core::sdk::IIndexerSource* source, const char* id);
+            virtual int RemoveAll(musik::core::sdk::IIndexerSource* source);
+
+            virtual bool Save(
+                musik::core::sdk::IIndexerSource* source,
+                musik::core::sdk::IRetainedTrackWriter* track,
+                const char* externalId = "");
+
+            /* IIndexerNotifier */
+            virtual void ScheduleRescan(musik::core::sdk::IIndexerSource* source);
+
         private:
+            struct AddRemoveContext {
+                bool add;
+                std::string path;
+            };
+
+            struct SyncContext {
+                SyncType type;
+                int sourceId;
+            };
+
+            typedef std::vector<std::shared_ptr<
+                musik::core::sdk::IMetadataReader> > MetadataReaderList;
+
+            typedef std::vector<std::shared_ptr<
+                musik::core::sdk::IDecoderFactory> > DecoderList;
+
+            typedef std::vector<std::shared_ptr<
+                musik::core::sdk::IIndexerSource> > IndexerSourceList;
+
             void ThreadLoop();
 
             bool Exited();
-            void Wait();
-            void Wait(const boost::xtime &oTime);
 
-            bool Restarted();
+            void Synchronize(const SyncContext& context, boost::asio::io_service* io);
 
-            void FinalizeSync();
+            void FinalizeSync(const SyncContext& context);
             void SyncDelete();
             void SyncCleanup();
+            void SyncSource(musik::core::sdk::IIndexerSource* source);
             void ProcessAddRemoveQueue();
             void SyncOptimize();
             void RunAnalyzers();
-            void SynchronizeInternal(boost::asio::io_service* io);
+
+            void Schedule(SyncType type, musik::core::sdk::IIndexerSource *source);
 
             void SyncDirectory(
                 boost::asio::io_service* io,
@@ -96,37 +138,22 @@ namespace musik { namespace core {
                 const std::string& pathId);
 
             db::Connection dbConnection;
-
             std::string libraryPath;
             std::string dbFilename;
-
-            bool restart;
             bool exit;
             State state;
-
             boost::mutex stateMutex;
             boost::condition waitCondition;
-
             boost::thread *thread;
             std::atomic<size_t> filesSaved;
-
-            struct AddRemoveContext {
-                bool add;
-                std::string path;
-            };
-
-            typedef std::vector<std::shared_ptr<
-                musik::core::sdk::IMetadataReader> > MetadataReaderList;
-
-            typedef std::vector<std::shared_ptr<
-                musik::core::sdk::IDecoderFactory> > DecoderList;
-
             std::deque<AddRemoveContext> addRemoveQueue;
-
+            std::deque<SyncContext> syncQueue;
             MetadataReaderList metadataReaders;
             DecoderList audioDecoders;
+            IndexerSourceList sources;
             std::shared_ptr<musik::core::Preferences> prefs;
             std::shared_ptr<musik::core::db::ScopedTransaction> trackTransaction;
+            std::vector<std::string> paths;
             boost::interprocess::interprocess_semaphore readSemaphore;
     };
 

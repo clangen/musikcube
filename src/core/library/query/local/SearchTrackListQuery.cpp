@@ -99,6 +99,7 @@ bool SearchTrackListQuery::OnRun(Connection& db) {
             "SELECT DISTINCT t.id, al.name "
             "FROM tracks t, albums al, artists ar, genres gn "
             "WHERE "
+                " t.visible=1 AND "
                 "(t.title LIKE ? OR al.name LIKE ? OR ar.name LIKE ? OR gn.name LIKE ?) "
                 " AND t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id "
             "ORDER BY al.name, disc, track, ar.name ";
@@ -107,7 +108,7 @@ bool SearchTrackListQuery::OnRun(Connection& db) {
         query =
             "SELECT DISTINCT t.id, al.name "
             "FROM tracks t, albums al, artists ar, genres gn "
-            "WHERE t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id "
+            "WHERE t.visible=1 AND t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id "
             "ORDER BY al.name, disc, track, ar.name ";
     }
 

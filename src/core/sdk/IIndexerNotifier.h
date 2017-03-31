@@ -34,49 +34,13 @@
 
 #pragma once
 
-#include <core/sdk/IMetadataMap.h>
-#include <string>
-#include <unordered_map>
-#include <memory>
+#include "IIndexerSource.h"
 
-namespace musik { namespace core {
+namespace musik { namespace core { namespace sdk {
 
-    class MetadataMap :
-        public musik::core::sdk::IMetadataMap,
-        public std::enable_shared_from_this<MetadataMap>
-    {
+    class IIndexerNotifier {
         public:
-            MetadataMap(
-                unsigned long long id,
-                const std::string& description,
-                const std::string& type);
-
-            virtual ~MetadataMap();
-
-            /* IMetadataMap */
-            virtual void Release();
-            virtual unsigned long long GetId();
-            virtual const char* GetDescription();
-            virtual const char* GetType();
-
-            virtual int GetValue(const char* key, char* dst, int size);
-            virtual unsigned long long GetUint64(const char* key, unsigned long long defaultValue = 0ULL);
-            virtual long long GetInt64(const char* key, long long defaultValue = 0LL);
-            virtual unsigned int GetUint32(const char* key, unsigned long defaultValue = 0);
-            virtual int GetInt32(const char* key, unsigned int defaultValue = 0);
-            virtual double GetDouble(const char* key, double defaultValue = 0.0f);
-
-            /* implementation specific */
-            void SetValue(const char* key, const std::string& value);
-            std::string GetValue(const char* key);
-            musik::core::sdk::IMetadataMap* GetSdkValue();
-
-        private:
-            unsigned long long id;
-            std::string type, description;
-            std::unordered_map<std::string, std::string> metadata;
+            virtual void ScheduleRescan(IIndexerSource* source) = 0;
     };
 
-    using MetadataMapPtr = std::shared_ptr<MetadataMap>;
-
-} }
+} } }

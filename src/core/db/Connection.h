@@ -66,6 +66,7 @@ namespace musik { namespace core { namespace db {
             int Execute(const char* sql);
             int Execute(const wchar_t* sql);
             int LastInsertedId();
+            int LastModifiedRowCount();
 
             void Interrupt();
             void Checkpoint();

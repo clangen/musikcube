@@ -136,6 +136,8 @@ namespace musik {
 
                 std::shared_ptr<cursespp::SimpleScrollAdapter> addedPathsAdapter;
                 std::shared_ptr<DirectoryAdapter> browseAdapter;
+
+                bool pathsUpdated = false;
         };
     }
 }

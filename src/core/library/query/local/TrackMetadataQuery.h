@@ -32,51 +32,39 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "LocalQueryBase.h"
 
-#include <core/sdk/IMetadataMap.h>
-#include <string>
-#include <unordered_map>
-#include <memory>
+#include <core/library/ILibrary.h>
+#include <core/library/track/Track.h>
 
-namespace musik { namespace core {
+namespace musik { namespace core { namespace db { namespace local {
 
-    class MetadataMap :
-        public musik::core::sdk::IMetadataMap,
-        public std::enable_shared_from_this<MetadataMap>
-    {
-        public:
-            MetadataMap(
-                unsigned long long id,
-                const std::string& description,
-                const std::string& type);
+class TrackMetadataQuery : public LocalQueryBase {
+    public:
+        enum class Type : int {
+            AllMetadata,
+            UriOnly
+        };
 
-            virtual ~MetadataMap();
+        TrackMetadataQuery(
+            musik::core::TrackPtr target, 
+            musik::core::ILibraryPtr library,
+            Type type = Type::AllMetadata);
 
-            /* IMetadataMap */
-            virtual void Release();
-            virtual unsigned long long GetId();
-            virtual const char* GetDescription();
-            virtual const char* GetType();
+        virtual ~TrackMetadataQuery() { }
 
-            virtual int GetValue(const char* key, char* dst, int size);
-            virtual unsigned long long GetUint64(const char* key, unsigned long long defaultValue = 0ULL);
-            virtual long long GetInt64(const char* key, long long defaultValue = 0LL);
-            virtual unsigned int GetUint32(const char* key, unsigned long defaultValue = 0);
-            virtual int GetInt32(const char* key, unsigned int defaultValue = 0);
-            virtual double GetDouble(const char* key, double defaultValue = 0.0f);
+        TrackPtr Result() { 
+            return this->result;
+        }
 
-            /* implementation specific */
-            void SetValue(const char* key, const std::string& value);
-            std::string GetValue(const char* key);
-            musik::core::sdk::IMetadataMap* GetSdkValue();
+    protected:
+        virtual bool OnRun(musik::core::db::Connection& db);
+        virtual std::string Name() { return "TrackMetadataQuery"; }
 
-        private:
-            unsigned long long id;
-            std::string type, description;
-            std::unordered_map<std::string, std::string> metadata;
-    };
+    private:
+        ILibraryPtr library;
+        TrackPtr result;
+        Type type;
+};
 
-    using MetadataMapPtr = std::shared_ptr<MetadataMap>;
-
-} }
+} } } }

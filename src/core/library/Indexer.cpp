@@ -41,18 +41,23 @@
 #include <core/config.h>
 #include <core/library/track/IndexerTrack.h>
 #include <core/library/track/LibraryTrack.h>
+#include <core/library/track/RetainedTrack.h>
+#include <core/library/LocalLibraryConstants.h>
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>
 #include <core/plugin/PluginFactory.h>
 #include <core/support/Preferences.h>
 #include <core/support/PreferenceKeys.h>
 #include <core/sdk/IAnalyzer.h>
+#include <core/sdk/IIndexerSource.h>
 #include <core/audio/Stream.h>
+
+#include <algorithm>
 
 #include <boost/thread/xtime.hpp>
 #include <boost/bind.hpp>
 
-#define MULTI_THREADED_INDEXER 1
+#define MULTI_THREADED_INDEXER 0
 #define STRESS_TEST_DB 0
 
 static const std::string TAG = "Indexer";
@@ -62,6 +67,7 @@ static const size_t TRANSACTION_INTERVAL = 300;
 using namespace musik::core;
 using namespace musik::core::sdk;
 using namespace musik::core::audio;
+using namespace musik::core::library;
 
 using Thread = std::unique_ptr<boost::thread>;
 
@@ -82,7 +88,6 @@ static std::string normalizePath(const std::string& path) {
 
 Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
 : thread(nullptr)
-, restart(false)
 , filesSaved(0)
 , exit(false)
 , state(StateIdle)
@@ -91,6 +96,13 @@ Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
     this->dbFilename = dbFilename;
     this->libraryPath = libraryPath;
     this->thread = new boost::thread(boost::bind(&Indexer::ThreadLoop, this));
+
+    db::Connection connection;
+    connection.Open(this->dbFilename.c_str());
+    db::Statement stmt("SELECT path FROM paths ORDER BY id", connection);
+    while (stmt.Step() == db::Row) {
+        this->paths.push_back(stmt.ColumnText(0));
+    }
 }
 
 Indexer::~Indexer() {
@@ -107,9 +119,25 @@ Indexer::~Indexer() {
     }
 }
 
-void Indexer::Synchronize(bool restart) {
+void Indexer::Schedule(SyncType type) {
+    this->Schedule(type, nullptr);
+}
+
+void Indexer::Schedule(SyncType type, IIndexerSource* source) {
     boost::mutex::scoped_lock lock(this->stateMutex);
-    this->restart = restart;
+
+    int sourceId = source ? source->SourceId() : 0;
+    for (SyncContext& context : this->syncQueue) {
+        if (context.type == type && context.sourceId == sourceId) {
+            return;
+        }
+    }
+
+    SyncContext context;
+    context.type = type;
+    context.sourceId = sourceId;
+    syncQueue.push_back(context);
+
     this->waitCondition.notify_all();
 }
 
@@ -120,10 +148,13 @@ void Indexer::AddPath(const std::string& path) {
 
     {
         boost::mutex::scoped_lock lock(this->stateMutex);
+
+        if (std::find(this->paths.begin(), this->paths.end(), path) == this->paths.end()) {
+            this->paths.push_back(path);
+        }
+
         this->addRemoveQueue.push_back(context);
     }
-
-    this->Synchronize(true);
 }
 
 void Indexer::RemovePath(const std::string& path) {
@@ -133,16 +164,22 @@ void Indexer::RemovePath(const std::string& path) {
 
     {
         boost::mutex::scoped_lock lock(this->stateMutex);
+
+        auto it = std::find(this->paths.begin(), this->paths.end(), path);
+        if (it != this->paths.end()) {
+            this->paths.erase(it);
+        }
+
         this->addRemoveQueue.push_back(context);
     }
-
-    this->Synchronize(true);
 }
 
-void Indexer::SynchronizeInternal(boost::asio::io_service* io) {
-    /* load all of the metadata (tag) reader plugins */
+void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* io) {
+    /* load plugins required by the indexer (metadata readers, decoder
+    factories, and indexer sources) */
     typedef PluginFactory::DestroyDeleter<IMetadataReader> MetadataDeleter;
     typedef PluginFactory::DestroyDeleter<IDecoderFactory> DecoderDeleter;
+    typedef PluginFactory::DestroyDeleter<IIndexerSource> SourceDeleter;
 
     this->metadataReaders = PluginFactory::Instance()
         .QueryInterface<IMetadataReader, MetadataDeleter>("GetMetadataReader");
@@ -150,14 +187,42 @@ void Indexer::SynchronizeInternal(boost::asio::io_service* io) {
     this->audioDecoders = PluginFactory::Instance()
         .QueryInterface<IDecoderFactory, DecoderDeleter>("GetDecoderFactory");
 
+    this->sources = PluginFactory::Instance()
+        .QueryInterface<IIndexerSource, SourceDeleter>("GetIndexerSource");
+
     this->ProcessAddRemoveQueue();
 
-    /* get sync paths and ids from the db */
+    this->filesSaved = 0;
 
-    std::vector<std::string> paths;
-    std::vector<DBID> pathIds;
+    auto type = context.type;
+    auto sourceId = context.sourceId;
 
-    {
+    /* process ALL IIndexerSource plugins, if applicable */
+
+    if (type == SyncType::All || (type == SyncType::Sources && sourceId == 0)) {
+        for (auto it : this->sources) {
+            this->SyncSource(it.get());
+            this->trackTransaction->CommitAndRestart();
+        }
+    }
+
+    /* otherwise, we may have just been asked to index a single one... */
+
+    else if (type == SyncType::Sources && sourceId != 0) {
+        for (auto it : this->sources) {
+            if (it->SourceId() == sourceId) {
+                this->SyncSource(it.get());
+                this->trackTransaction->CommitAndRestart();
+            }
+        }
+    }
+
+    /* process local files */
+    if (type == SyncType::All || type == SyncType::Local) {
+        std::vector<std::string> paths;
+        std::vector<DBID> pathIds;
+
+        /* resolve all the path and path ids (required for local files */
         db::Statement stmt("SELECT id, path FROM paths", this->dbConnection);
 
         while (stmt.Step() == db::Row) {
@@ -174,52 +239,49 @@ void Indexer::SynchronizeInternal(boost::asio::io_service* io) {
             catch(...) {
             }
         }
-    }
 
-    /* add new files  */
-    this->filesSaved = 0;
+        /* read metadata from the files  */
 
-    for(std::size_t i = 0; i < paths.size(); ++i) {
-        this->trackTransaction.reset(new db::ScopedTransaction(this->dbConnection));
-        std::string path = paths[i];
-        this->SyncDirectory(io, path, path, pathIds[i]);
-    }
+        for (std::size_t i = 0; i < paths.size(); ++i) {
+            this->SyncDirectory(io, paths[i], paths[i], pathIds[i]);
+        }
 
-    if (this->trackTransaction) {
+        /* close any pending transaction */
+
         this->trackTransaction->CommitAndRestart();
-        this->trackTransaction.reset();
     }
 }
 
-
-void Indexer::FinalizeSync() {
+void Indexer::FinalizeSync(const SyncContext& context) {
     /* remove undesired entries from db (files themselves will remain) */
     musik::debug::info(TAG, "cleanup 1/2");
 
-    if (!this->Restarted() && !this->Exited()) {
-        this->SyncDelete();
+    auto type = context.type;
+
+    if (type != SyncType::Sources) {
+        if (!this->Exited()) {
+            this->SyncDelete();
+        }
     }
 
     /* cleanup -- remove stale artists, albums, genres, etc */
     musik::debug::info(TAG, "cleanup 2/2");
 
-    if (!this->Restarted() && !this->Exited()) {
+    if (!this->Exited()) {
         this->SyncCleanup();
     }
 
     /* optimize and sort */
     musik::debug::info(TAG, "optimizing");
 
-    if (!this->Restarted() && !this->Exited()) {
+    if (!this->Exited()) {
         this->SyncOptimize();
     }
 
     /* notify observers */
     this->Progress(this->filesSaved);
 
-    /* unload reader DLLs*/
-    this->metadataReaders.clear();
-
+    /* run analyzers. */
     this->RunAnalyzers();
 
     this->state = StateIdle;
@@ -276,7 +338,6 @@ void Indexer::ReadMetadataFromFile(
         if (saveToDb) {
             track.SetValue("path_id", pathId.c_str());
             track.Save(this->dbConnection, this->libraryPath);
-            this->filesSaved++;
 
 #if STRESS_TEST_DB != 0
             #define INC(track, key, x) \
@@ -302,7 +363,7 @@ void Indexer::ReadMetadataFromFile(
 
     ++this->filesSaved;
 
-#ifdef MULTI_THREADED_INDEXER
+#if MULTI_THREADED_INDEXER
     this->readSemaphore.post();
 #endif
 }
@@ -313,7 +374,7 @@ void Indexer::SyncDirectory(
     const std::string &currentPath,
     DBID pathId)
 {
-    if (this->Exited() || this->Restarted()) {
+    if (this->Exited()) {
         return;
     }
 
@@ -334,12 +395,9 @@ void Indexer::SyncDirectory(
         std::string pathIdStr = boost::lexical_cast<std::string>(pathId);
         std::vector<Thread> threads;
 
-        for( ; file != end && !this->Exited() && !this->Restarted(); file++) {
+        for( ; file != end && !this->Exited(); file++) {
             if (this->filesSaved > TRANSACTION_INTERVAL) {
-                if (this->trackTransaction) {
-                    this->trackTransaction->CommitAndRestart();
-                }
-
+                this->trackTransaction->CommitAndRestart();
                 this->Progress(this->filesSaved);
                 this->filesSaved = 0;
             }
@@ -370,6 +428,35 @@ void Indexer::SyncDirectory(
     #undef WAIT_FOR_ACTIVE
 }
 
+void Indexer::SyncSource(IIndexerSource* source) {
+    if (source->SourceId() == 0) {
+        return;
+    }
+
+    source->OnBeforeScan();
+
+    /* first allow the source to update metadata for any tracks that it
+    previously indexed. */
+    {
+        db::Statement tracks(
+            "SELECT id, filename, external_id FROM tracks WHERE source_id=? ORDER BY id",
+            this->dbConnection);
+
+        tracks.BindInt(0, source->SourceId());
+        while (tracks.Step() == db::Row) {
+            TrackPtr track(new IndexerTrack(tracks.ColumnInt(0)));
+            track->SetValue(constants::Track::FILENAME, tracks.ColumnText(1));
+            source->Scan(this, new RetainedTrackWriter(track), tracks.ColumnText(2));
+        }
+    }
+
+    /* now tell it to do a wide-open scan. it can use this opportunity to
+    remove old tracks, or add new ones. */
+    source->Scan(this);
+
+    source->OnAfterScan();
+}
+
 void Indexer::ThreadLoop() {
     boost::filesystem::path thumbPath(this->libraryPath + "thumbs/");
 
@@ -377,74 +464,67 @@ void Indexer::ThreadLoop() {
         boost::filesystem::create_directories(thumbPath);
     }
 
-    bool firstTime = true; /* through the loop */
-
-    while (!this->Exited()) {
-        this->restart = false;
-
-        if(!firstTime || (firstTime && prefs->GetBool(prefs::keys::SyncOnStartup, true))) { /* first time through the loop skips this */
-            this->state = StateIndexing;
-            this->Started();
-
-            this->dbConnection.Open(this->dbFilename.c_str(), 0); /* ensure the db is open */
-
-#ifdef MULTI_THREADED_INDEXER
-            boost::asio::io_service io;
-            boost::thread_group threadPool;
-            boost::asio::io_service::work work(io);
-
-            /* initialize the thread pool -- we'll use this to index tracks in parallel. */
-            int threadCount = prefs->GetInt(prefs::keys::MaxTagReadThreads, MAX_THREADS);
-            for (int i = 0; i < threadCount; i++) {
-                threadPool.create_thread(boost::bind(&boost::asio::io_service::run, &io));
+    while (true) {
+        /* wait for some work. */
+        {
+            boost::mutex::scoped_lock lock(this->stateMutex);
+            while (!this->exit && this->syncQueue.size() == 0) {
+                this->waitCondition.wait(lock);
             }
+        }
 
-            this->SynchronizeInternal(&io);
+        if (this->exit) {
+            return;
+        }
 
-            /* done with sync, remove all the threads in the pool to free resources. they'll
-            be re-created later if we index again. */
-            io.stop();
-            threadPool.join_all();
+        SyncContext context = this->syncQueue.front();
+        this->syncQueue.pop_front();
+
+        this->state = StateIndexing;
+        this->Started();
+
+        this->dbConnection.Open(this->dbFilename.c_str(), 0);
+        this->trackTransaction.reset(new db::ScopedTransaction(this->dbConnection));
+
+#if MULTI_THREADED_INDEXER
+        boost::asio::io_service io;
+        boost::thread_group threadPool;
+        boost::asio::io_service::work work(io);
+
+        /* initialize the thread pool -- we'll use this to index tracks in parallel. */
+        int threadCount = prefs->GetInt(prefs::keys::MaxTagReadThreads, MAX_THREADS);
+        for (int i = 0; i < threadCount; i++) {
+            threadPool.create_thread(boost::bind(&boost::asio::io_service::run, &io));
+        }
+
+        this->Synchronize(context, &io);
+
+        /* done with sync, remove all the threads in the pool to free resources. they'll
+        be re-created later if we index again. */
+        io.stop();
+        threadPool.join_all();
 #else
-            this->SynchronizeInternal(nullptr);
+        this->Synchronize(context, nullptr);
 #endif
 
-            this->FinalizeSync();
-            this->dbConnection.Close(); /* TODO: raii */
+        this->FinalizeSync(context);
 
-            if (!restart) {
-                this->Finished(this->filesSaved);
-            }
+        this->trackTransaction.reset();
 
-            musik::debug::info(TAG, "done!");
-        } /* end skip */
+        this->dbConnection.Close();
 
-        firstTime = false;
-
-        /* sleep before we try again; disabled by default */
-        int waitTime = prefs->GetInt(prefs::keys::AutoSyncIntervalMillis, 0);
-
-        if (waitTime > 0) {
-            boost::xtime waitTimeout;
-            boost::xtime_get(&waitTimeout, boost::TIME_UTC_);
-            waitTimeout.sec += waitTime;
-
-            if (!this->Restarted()) {
-                this->Wait(waitTimeout);
-            }
+        if (!this->Exited()) {
+            this->Finished(this->filesSaved);
         }
-        else {
-            if (!this->Restarted()) {
-                this->Wait(); /* zzz */
-            }
-        }
+
+        musik::debug::info(TAG, "done!");
     }
 }
 
 void Indexer::SyncDelete() {
     /* remove all tracks that no longer reference a valid path entry */
 
-    this->dbConnection.Execute("DELETE FROM tracks WHERE path_id NOT IN (SELECT id FROM paths)");
+    this->dbConnection.Execute("DELETE FROM tracks WHERE source_id == 0 AND path_id NOT IN (SELECT id FROM paths)");
 
     /* remove files that are no longer on the filesystem. */
 
@@ -453,9 +533,11 @@ void Indexer::SyncDelete() {
 
         db::Statement allTracks(
             "SELECT t.id, t.filename "
-            "FROM tracks t ", this->dbConnection);
+            "FROM tracks t "
+            "WHERE source_id == 0", /* IIndexerSources delete their own tracks */
+            this->dbConnection);
 
-        while (allTracks.Step() == db::Row && !this->Exited() && !this->Restarted()) {
+        while (allTracks.Step() == db::Row && !this->Exited()) {
             bool remove = false;
             std::string fn = allTracks.ColumnText(1);
 
@@ -477,15 +559,6 @@ void Indexer::SyncDelete() {
     }
 }
 
-//////////////////////////////////////////
-///\brief
-///Removes information related to removed tracks.
-///
-///This should be called after SyncDelete() to clean up the mess :)
-///
-///\see
-///<SyncDelete>
-//////////////////////////////////////////
 void Indexer::SyncCleanup() {
     /* remove old artists */
     this->dbConnection.Execute("DELETE FROM track_artists WHERE track_id NOT IN (SELECT id FROM tracks)");
@@ -507,22 +580,12 @@ void Indexer::SyncCleanup() {
     this->dbConnection.Execute("DELETE FROM playlist_tracks WHERE track_id NOT IN (SELECT id FROM tracks)");
 
     /* optimize and shrink */
-    this->dbConnection.Execute("ANALYZE");
     this->dbConnection.Execute("VACUUM");
 }
 
-//////////////////////////////////////////
-///\brief
-///Get a vector with all sync paths
-//////////////////////////////////////////
 void Indexer::GetPaths(std::vector<std::string>& paths) {
-    db::Connection connection;
-    connection.Open(this->dbFilename.c_str());
-    db::Statement stmt("SELECT path FROM paths ORDER BY id", connection);
-
-    while (stmt.Step() == db::Row) {
-        paths.push_back(stmt.ColumnText(0));
-    }
+    boost::mutex::scoped_lock lock(this->stateMutex);
+    std::copy(this->paths.begin(), this->paths.end(), std::back_inserter(paths));
 }
 
 static int optimize(
@@ -554,27 +617,11 @@ static int optimize(
 }
 
 void Indexer::SyncOptimize() {
-    DBID count = 0, id = 0;
-
-    {
-        db::ScopedTransaction transaction(this->dbConnection);
-        optimize(this->dbConnection, "genre", "genres");
-    }
-
-    {
-        db::ScopedTransaction transaction(this->dbConnection);
-        optimize(this->dbConnection, "artist", "artists");
-    }
-
-    {
-        db::ScopedTransaction transaction(this->dbConnection);
-        optimize(this->dbConnection, "album", "albums");
-    }
-
-    {
-        db::ScopedTransaction transaction(this->dbConnection);
-        optimize(this->dbConnection, "content", "meta_values");
-    }
+    db::ScopedTransaction transaction(this->dbConnection);
+    optimize(this->dbConnection, "genre", "genres");
+    optimize(this->dbConnection, "artist", "artists");
+    optimize(this->dbConnection, "album", "albums");
+    optimize(this->dbConnection, "content", "meta_values");
 }
 
 void Indexer::ProcessAddRemoveQueue() {
@@ -601,8 +648,6 @@ void Indexer::ProcessAddRemoveQueue() {
 
         this->addRemoveQueue.pop_front();
     }
-
-    this->PathsUpdated();
 }
 
 void Indexer::RunAnalyzers() {
@@ -692,7 +737,7 @@ void Indexer::RunAnalyzers() {
             }
         }
 
-        if (this->Exited() || this->Restarted()){
+        if (this->Exited()){
             return;
         }
 
@@ -700,27 +745,91 @@ void Indexer::RunAnalyzers() {
     }
 }
 
-
-bool Indexer::Restarted() {
-    boost::mutex::scoped_lock lock(this->stateMutex);
-    return this->restart;
-}
-
 bool Indexer::Exited() {
     boost::mutex::scoped_lock lock(this->stateMutex);
     return this->exit;
 }
 
-void Indexer::Wait() {
-    boost::mutex::scoped_lock lock(this->stateMutex);
-    if (!this->exit) {
-        this->waitCondition.wait(lock);
+IRetainedTrackWriter* Indexer::CreateWriter() {
+    std::shared_ptr<Track> track(new IndexerTrack(0));
+    return new RetainedTrackWriter(track);
+}
+
+bool Indexer::Save(IIndexerSource* source, IRetainedTrackWriter* track, const char* externalId) {
+    if (source->SourceId() == 0) {
+        return false;
+    }
+
+    /* two levels of unpacking with dynamic_casts. don't tell anyone,
+    it'll be our little secret. */
+    RetainedTrackWriter* rtw = dynamic_cast<RetainedTrackWriter*>(track);
+    if (rtw) {
+        IndexerTrack* it = rtw->As<IndexerTrack*>();
+        if (it) {
+            if (externalId && strlen(externalId)) {
+                it->SetValue(constants::Track::EXTERNAL_ID, externalId);
+            }
+
+            std::string id = std::to_string(source->SourceId());
+            it->SetValue(constants::Track::SOURCE_ID, id.c_str());
+
+            return it->Save(this->dbConnection, this->libraryPath);
+        }
+    }
+    return false;
+}
+
+bool Indexer::RemoveByUri(IIndexerSource* source, const char* uri) {
+    if (source->SourceId() == 0) {
+        return false;
+    }
+
+    db::Statement stmt(
+        "DELETE FROM tracks WHERE source_id=? AND filename=?",
+        this->dbConnection);
+
+    stmt.BindInt(0, source->SourceId());
+    stmt.BindText(1, uri);
+
+    return (stmt.Step() == db::Okay);
+}
+
+bool Indexer::RemoveByExternalId(IIndexerSource* source, const char* id) {
+    if (source->SourceId() == 0) {
+        return false;
+    }
+
+    db::Statement stmt(
+        "DELETE FROM tracks WHERE source_id=? AND external_id=?",
+        this->dbConnection);
+
+    stmt.BindInt(0, source->SourceId());
+    stmt.BindText(1, id);
+
+    return (stmt.Step() == db::Okay);
+}
+
+int Indexer::RemoveAll(IIndexerSource* source) {
+    if (source->SourceId() == 0) {
+        return 0;
+    }
+
+    db::Statement stmt(
+        "DELETE FROM tracks WHERE source_id=?",
+        this->dbConnection);
+
+    stmt.BindInt(0, source->SourceId());
+
+    if (stmt.Step() == db::Okay) {
+        return dbConnection.LastModifiedRowCount();
+    }
+
+    return 0;
+}
+
+void Indexer::ScheduleRescan(IIndexerSource* source) {
+    if (source->SourceId() != 0) {
+        this->Schedule(SyncType::Sources, source);
     }
 }
 
-void Indexer::Wait(const boost::xtime &time) {
-    boost::mutex::scoped_lock lock(this->stateMutex);
-    if (!this->exit) {
-        this->waitCondition.timed_wait(lock, time);
-    }
-}

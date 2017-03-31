@@ -54,19 +54,23 @@ Connection::~Connection() {
 }
 
 int Connection::Open(const char *database, unsigned int options, unsigned int cache) {
-    int error;
+    if (!this->connection) {
+        int error;
 
 #ifdef UTF_WIDECHAR
-    error = sqlite3_open16(database, &this->connection);
+        error = sqlite3_open16(database, &this->connection);
 #else
-    error = sqlite3_open(database, &this->connection);
+        error = sqlite3_open(database, &this->connection);
 #endif
 
-    if (error == SQLITE_OK) {
-        this->Initialize(cache);
+        if (error == SQLITE_OK) {
+            this->Initialize(cache);
+        }
+
+        return error;
     }
 
-    return error;
+    return SQLITE_OK;
 }
 
 int Connection::Open(const std::string &database, unsigned int options, unsigned int cache) {
@@ -109,7 +113,7 @@ int Connection::Execute(const char* sql) {
     }
 
     int error = this->StepStatement(stmt);
-    if (error != SQLITE_OK && error != SQLITE_DONE){
+    if (error != SQLITE_OK && error != SQLITE_DONE) {
         sqlite3_finalize(stmt);
         return Error;
     }
@@ -150,14 +154,19 @@ void Connection::Checkpoint() {
     sqlite3_wal_checkpoint(this->connection, nullptr);
 }
 
-int Connection::LastInsertedId(){
+int Connection::LastInsertedId() {
     return (int) sqlite3_last_insert_rowid(this->connection);
+}
+
+int Connection::LastModifiedRowCount() {
+    return (int) sqlite3_changes(this->connection);
 }
 
 void Connection::Initialize(unsigned int cache) {
     sqlite3_busy_timeout(this->connection, 10000);
 
-    sqlite3_exec(this->connection, "PRAGMA synchronous=OFF", nullptr, nullptr, nullptr);    // Not a critical DB. Sync set to OFF
+    sqlite3_exec(this->connection, "PRAGMA optimize", nullptr, nullptr, nullptr);           // Optimize the database when applicable
+    sqlite3_exec(this->connection, "PRAGMA synchronous=NORMAL", nullptr, nullptr, nullptr); // NORMAL useful for auto-checkpointing with WAL
     sqlite3_exec(this->connection, "PRAGMA page_size=4096", nullptr, nullptr, nullptr);	    // According to windows standard page size
     sqlite3_exec(this->connection, "PRAGMA auto_vacuum=0", nullptr, nullptr, nullptr);	    // No autovaccum.
     sqlite3_exec(this->connection, "PRAGMA journal_mode=WAL", nullptr, nullptr, nullptr);   // Allow reading while writing (write-ahead-logging)

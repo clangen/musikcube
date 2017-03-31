@@ -59,6 +59,7 @@ namespace musik { namespace core { namespace db {
             void BindText(int position, const std::string &bindText);
             void BindTextW(int position, const wchar_t* bindText);
             void BindTextW(int position, const std::wstring &bindText);
+            void BindNull(int position);
 
             int ColumnInt(int column);
             uint64 ColumnInt64(int column);
@@ -74,6 +75,7 @@ namespace musik { namespace core { namespace db {
 
             sqlite3_stmt *stmt;
             Connection *connection;
+            int modifiedRows;
     };
 
 } } }

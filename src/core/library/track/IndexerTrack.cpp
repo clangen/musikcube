@@ -88,27 +88,58 @@ std::string IndexerTrack::GetValue(const char* metakey) {
 }
 
 unsigned long long IndexerTrack::GetUint64(const char* key, unsigned long long defaultValue) {
-    try { return std::stoull(GetValue(key)); } catch (...) { }
+    try {
+        std::string value = GetValue(key);
+        if (value.size()) {
+            return std::stoull(GetValue(key));
+        }
+    } catch (...) {
+    }
     return defaultValue;
 }
 
 long long IndexerTrack::GetInt64(const char* key, long long defaultValue) {
-    try { return std::stoll(GetValue(key)); } catch (...) { }
+    try {
+        std::string value = GetValue(key);
+        if (value.size()) {
+            return std::stoll(GetValue(key));
+        }
+    } catch (...) {
+    }
     return defaultValue;
 }
 
-unsigned long IndexerTrack::GetUint32(const char* key, unsigned long defaultValue) {
-    try { return std::stoul(GetValue(key)); } catch (...) { }
+unsigned int IndexerTrack::GetUint32(const char* key, unsigned long defaultValue) {
+    try {
+        std::string value = GetValue(key);
+        if (value.size()) {
+            return std::stoul(GetValue(key));
+        }
+    } catch (...) {
+    }
     return defaultValue;
 }
 
-long IndexerTrack::GetInt32(const char* key, unsigned int defaultValue) {
-    try { return std::stol(GetValue(key)); } catch (...) { }
+int IndexerTrack::GetInt32(const char* key, unsigned int defaultValue) {
+    try {
+        std::string value = GetValue(key);
+        if (value.size()) {
+            return std::stol(GetValue(key));
+        }
+    }
+    catch (...) {
+    }
     return defaultValue;
 }
 
 double IndexerTrack::GetDouble(const char* key, double defaultValue) {
-    try { return std::stod(GetValue(key)); } catch (...) { }
+    try {
+        std::string value = GetValue(key);
+        if (value.size()) {
+            return std::stod(GetValue(key));
+        }
+    } catch (...) {
+    }
     return defaultValue;
 }
 
@@ -120,12 +151,12 @@ void IndexerTrack::SetValue(const char* metakey, const char* value) {
 }
 
 void IndexerTrack::ClearValue(const char* metakey) {
-    if (this->internalMetadata) {
-        this->internalMetadata->metadata.erase(metakey);
-    }
+if (this->internalMetadata) {
+    this->internalMetadata->metadata.erase(metakey);
+}
 }
 
-void IndexerTrack::SetThumbnail(const char *data,long size) {
+void IndexerTrack::SetThumbnail(const char *data, long size) {
     if (this->internalMetadata->thumbnailData) {
         delete this->internalMetadata->thumbnailData;
     }
@@ -179,12 +210,12 @@ bool IndexerTrack::NeedsToBeIndexed(
         this->SetValue("filename", file.string().c_str());
 
         size_t lastDot = file.leaf().string().find_last_of(".");
-        if (lastDot != std::string::npos){
+        if (lastDot != std::string::npos) {
             this->SetValue("extension", file.leaf().string().substr(lastDot + 1).c_str());
         }
 
-        DBID fileSize = (DBID) boost::filesystem::file_size(file);
-        DBTIME fileTime = (DBTIME) boost::filesystem::last_write_time(file);
+        DBID fileSize = (DBID)boost::filesystem::file_size(file);
+        DBTIME fileTime = (DBTIME)boost::filesystem::last_write_time(file);
 
         this->SetValue("filesize", boost::lexical_cast<std::string>(fileSize).c_str());
         this->SetValue("filetime", boost::lexical_cast<std::string>(fileTime).c_str());
@@ -208,7 +239,7 @@ bool IndexerTrack::NeedsToBeIndexed(
             }
         }
     }
-    catch(...) {
+    catch (...) {
     }
 
     return true;
@@ -218,6 +249,23 @@ static DBID writeToTracksTable(
     db::Connection &dbConnection,
     IndexerTrack& track)
 {
+    /* if there's no ID specified, but we have an external ID, let's
+    see if we can find the corresponding ID. this can happen when
+    IInputSource plugins are reading/writing track data. */
+    if (track.GetId() == 0) {
+        std::string externalId = track.GetValue("external_id");
+        int sourceId = track.GetInt32("source_id", 0);
+
+        if (externalId.size() && sourceId != 0) {
+            db::Statement stmt("SELECT id FROM tracks WHERE source_id=? AND external_id=?", dbConnection);
+            stmt.BindInt(0, sourceId);
+            stmt.BindText(1, externalId);
+            if (stmt.Step() == db::Row) {
+                track.SetId(stmt.ColumnInt64(0));
+            }
+        }
+    }
+
     db::Statement stmt("INSERT OR REPLACE INTO tracks " \
         "(id, track, disc, bpm, duration, filesize, year, title, filename, filetime, path_id) " \
         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", dbConnection);
@@ -225,13 +273,13 @@ static DBID writeToTracksTable(
     stmt.BindText(1, track.GetValue("track"));
     stmt.BindText(2, track.GetValue("disc"));
     stmt.BindText(3, track.GetValue("bpm"));
-    stmt.BindText(4, track.GetValue("duration"));
-    stmt.BindText(5, track.GetValue("filesize"));
+    stmt.BindInt(4, track.GetInt32("duration"));
+    stmt.BindInt(5, track.GetInt32("filesize"));
     stmt.BindText(6, track.GetValue("year"));
     stmt.BindText(7, track.GetValue("title"));
     stmt.BindText(8, track.GetValue("filename"));
-    stmt.BindText(9, track.GetValue("filetime"));
-    stmt.BindText(10, track.GetValue("path_id"));
+    stmt.BindInt(9, track.GetInt32("filetime"));
+    stmt.BindInt(10, track.GetInt32("path_id"));
 
     if (track.GetId() != 0) {
         stmt.BindInt(0, (uint64) track.GetId());
@@ -272,7 +320,11 @@ static void removeKnownFields(Track::MetadataMap& metadata) {
     metadata.erase("extension");
     metadata.erase("genre");
     metadata.erase("artist");
+    metadata.erase("album_artist");
     metadata.erase("album");
+    metadata.erase("source_id");
+    metadata.erase("external_id");
+    metadata.erase("visible");
 }
 
 DBID IndexerTrack::SaveThumbnail(db::Connection& connection, const std::string& libraryDirectory) {
@@ -532,12 +584,26 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
     DBID albumArtistId = this->SaveSingleValueField(dbConnection, "album_artist", "artists");
     DBID thumbnailId = this->SaveThumbnail(dbConnection, libraryDirectory);
 
+    /* ensure we have a correct source id */
+    std::string externalId = this->GetValue("external_id");
+    int sourceId = 0;
+
+    try {
+        std::string source = this->GetValue("source_id");
+        if (source.size()) {
+            sourceId = std::stoi(source.c_str());
+        }
+    }
+    catch (...) {
+        /* shouldn't happen... */
+    }
+
     /* update all of the track foreign keys */
 
     {
         db::Statement stmt(
             "UPDATE tracks " \
-            "SET album_id=?, visual_genre_id=?, visual_artist_id=?, album_artist_id=?, thumbnail_id=? " \
+            "SET album_id=?, visual_genre_id=?, visual_artist_id=?, album_artist_id=?, thumbnail_id=?, source_id=?, external_id=? " \
             "WHERE id=?", dbConnection);
 
         stmt.BindInt(0, albumId);
@@ -545,7 +611,16 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
         stmt.BindInt(2, artistId);
         stmt.BindInt(3, albumArtistId);
         stmt.BindInt(4, thumbnailId);
-        stmt.BindInt(5, this->id);
+        stmt.BindInt(5, sourceId);
+
+        if (externalId.size()) {
+            stmt.BindText(6, externalId);
+        }
+        else {
+            stmt.BindNull(6);
+        }
+
+        stmt.BindInt(7, this->id);
         stmt.Step();
     }
 

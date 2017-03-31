@@ -121,7 +121,7 @@ bool CategoryTrackListQuery::OnRun(Connection& db) {
     std::string query =
         "SELECT DISTINCT t.id, al.name "
         "FROM tracks t, albums al, artists ar, genres gn "
-        "WHERE t.%s=? AND t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id ";
+        "WHERE t.visible=1 AND t.%s=? AND t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id ";
 
     if (this->filter.size()) {
         query += " AND (t.title LIKE ? OR al.name LIKE ? OR ar.name LIKE ? OR gn.name LIKE ?) ";
