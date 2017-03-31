@@ -238,12 +238,16 @@ void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* i
     }
 }
 
-void Indexer::FinalizeSync() {
+void Indexer::FinalizeSync(const SyncContext& context) {
     /* remove undesired entries from db (files themselves will remain) */
     musik::debug::info(TAG, "cleanup 1/2");
 
-    if (!this->Exited()) {
-        this->SyncDelete();
+    auto type = context.type;
+
+    if (type != SyncType::Sources) {
+        if (!this->Exited()) {
+            this->SyncDelete();
+        }
     }
 
     /* cleanup -- remove stale artists, albums, genres, etc */
@@ -467,7 +471,7 @@ void Indexer::ThreadLoop() {
         this->Synchronize(context, nullptr);
 #endif
 
-        this->FinalizeSync();
+        this->FinalizeSync(context);
         this->dbConnection.Close(); /* TODO: raii */
 
         if (!this->Exited()) {

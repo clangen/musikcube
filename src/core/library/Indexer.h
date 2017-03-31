@@ -114,7 +114,7 @@ namespace musik { namespace core {
 
             void Synchronize(const SyncContext& context, boost::asio::io_service* io);
 
-            void FinalizeSync();
+            void FinalizeSync(const SyncContext& context);
             void SyncDelete();
             void SyncCleanup();
             void SyncSource(musik::core::sdk::IIndexerSource* source);
