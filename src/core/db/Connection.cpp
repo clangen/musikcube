@@ -54,19 +54,23 @@ Connection::~Connection() {
 }
 
 int Connection::Open(const char *database, unsigned int options, unsigned int cache) {
-    int error;
+    if (!this->connection) {
+        int error;
 
 #ifdef UTF_WIDECHAR
-    error = sqlite3_open16(database, &this->connection);
+        error = sqlite3_open16(database, &this->connection);
 #else
-    error = sqlite3_open(database, &this->connection);
+        error = sqlite3_open(database, &this->connection);
 #endif
 
-    if (error == SQLITE_OK) {
-        this->Initialize(cache);
+        if (error == SQLITE_OK) {
+            this->Initialize(cache);
+        }
+
+        return error;
     }
 
-    return error;
+    return SQLITE_OK;
 }
 
 int Connection::Open(const std::string &database, unsigned int options, unsigned int cache) {

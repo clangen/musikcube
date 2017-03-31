@@ -43,7 +43,6 @@ namespace musik { namespace core {
         public:
             sigslot::signal0<> Started;
             sigslot::signal1<int> Finished;
-            sigslot::signal0<> PathsUpdated;
             sigslot::signal1<int> Progress;
 
             enum State {

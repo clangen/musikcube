@@ -150,6 +150,7 @@ namespace musik { namespace core {
             IndexerSourceList sources;
             std::shared_ptr<musik::core::Preferences> prefs;
             std::shared_ptr<musik::core::db::ScopedTransaction> trackTransaction;
+            std::vector<std::string> paths;
             boost::interprocess::interprocess_semaphore readSemaphore;
     };
 

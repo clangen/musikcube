@@ -208,8 +208,11 @@ bool BrowseLayout::KeyPress(const std::string& key) {
         /* if the tracklist is NOT focused (i.e. the focus is on a
         category window), start playback from the top. */
         if (this->GetFocus() != this->trackList) {
-            playback.Play(*trackList->GetTrackList(), 0);
-            return true;
+            auto tracks = trackList->GetTrackList();
+            if (tracks) {
+                playback.Play(*tracks.get(), 0);
+                return true;
+            }
         }
     }
     else if (Hotkeys::Is(Hotkeys::ViewRefresh, key)) {

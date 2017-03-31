@@ -52,6 +52,8 @@
 #include <core/sdk/IIndexerSource.h>
 #include <core/audio/Stream.h>
 
+#include <algorithm>
+
 #include <boost/thread/xtime.hpp>
 #include <boost/bind.hpp>
 
@@ -85,15 +87,22 @@ static std::string normalizePath(const std::string& path) {
 }
 
 Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
-: thread(nullptr)
-, filesSaved(0)
-, exit(false)
-, state(StateIdle)
-, prefs(Preferences::ForComponent(prefs::components::Settings))
-, readSemaphore(prefs->GetInt(prefs::keys::MaxTagReadThreads, MAX_THREADS)) {
+    : thread(nullptr)
+    , filesSaved(0)
+    , exit(false)
+    , state(StateIdle)
+    , prefs(Preferences::ForComponent(prefs::components::Settings))
+    , readSemaphore(prefs->GetInt(prefs::keys::MaxTagReadThreads, MAX_THREADS)) {
     this->dbFilename = dbFilename;
     this->libraryPath = libraryPath;
     this->thread = new boost::thread(boost::bind(&Indexer::ThreadLoop, this));
+
+    db::Connection connection;
+    connection.Open(this->dbFilename.c_str());
+    db::Statement stmt("SELECT path FROM paths ORDER BY id", connection);
+    while (stmt.Step() == db::Row) {
+        this->paths.push_back(stmt.ColumnText(0));
+    }
 }
 
 Indexer::~Indexer() {
@@ -139,10 +148,13 @@ void Indexer::AddPath(const std::string& path) {
 
     {
         boost::mutex::scoped_lock lock(this->stateMutex);
+
+        if (std::find(this->paths.begin(), this->paths.end(), path) == this->paths.end()) {
+            this->paths.push_back(path);
+        }
+
         this->addRemoveQueue.push_back(context);
     }
-
-    this->Schedule(SyncType::Local);
 }
 
 void Indexer::RemovePath(const std::string& path) {
@@ -152,10 +164,14 @@ void Indexer::RemovePath(const std::string& path) {
 
     {
         boost::mutex::scoped_lock lock(this->stateMutex);
+
+        auto it = std::find(this->paths.begin(), this->paths.end(), path);
+        if (it != this->paths.end()) {
+            this->paths.erase(it);
+        }
+
         this->addRemoveQueue.push_back(context);
     }
-
-    this->Schedule(SyncType::Local);
 }
 
 void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* io) {
@@ -478,7 +494,6 @@ void Indexer::ThreadLoop() {
 #endif
 
         this->FinalizeSync(context);
-        this->dbConnection.Close(); /* TODO: raii */
 
         if (!this->Exited()) {
             this->Finished(this->filesSaved);
@@ -552,13 +567,8 @@ void Indexer::SyncCleanup() {
 }
 
 void Indexer::GetPaths(std::vector<std::string>& paths) {
-    db::Connection connection;
-    connection.Open(this->dbFilename.c_str());
-    db::Statement stmt("SELECT path FROM paths ORDER BY id", connection);
-
-    while (stmt.Step() == db::Row) {
-        paths.push_back(stmt.ColumnText(0));
-    }
+    boost::mutex::scoped_lock lock(this->stateMutex);
+    std::copy(this->paths.begin(), this->paths.end(), std::back_inserter(paths));
 }
 
 static int optimize(
@@ -637,8 +647,6 @@ void Indexer::ProcessAddRemoveQueue() {
 
         this->addRemoveQueue.pop_front();
     }
-
-    this->PathsUpdated();
 }
 
 void Indexer::RunAnalyzers() {
