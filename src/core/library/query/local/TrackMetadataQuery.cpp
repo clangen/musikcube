@@ -43,7 +43,7 @@ using namespace musik::core::library;
 
 static const std::string ALL_METADATA_QUERY =
     "SELECT DISTINCT t.track, t.disc, t.bpm, t.duration, t.filesize, t.year, t.title, t.filename, t.thumbnail_id, al.name AS album, alar.name AS album_artist, gn.name AS genre, ar.name AS artist, t.filetime, t.visual_genre_id, t.visual_artist_id, t.album_artist_id, t.album_id "
-    "FROM tracks t, paths p, albums al, artists alar, artists ar, genres gn "
+    "FROM tracks t, albums al, artists alar, artists ar, genres gn "
     "WHERE t.id=? AND t.album_id=al.id AND t.album_artist_id=alar.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id ";
 
 static const std::string URI_ONLY_QUERY =
