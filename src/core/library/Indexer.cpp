@@ -137,8 +137,11 @@ void Indexer::AddPath(const std::string& path) {
     context.add = true;
     context.path = normalizeDir(path);
 
-    boost::mutex::scoped_lock lock(this->stateMutex);
-    this->addRemoveQueue.push_back(context);
+    {
+        boost::mutex::scoped_lock lock(this->stateMutex);
+        this->addRemoveQueue.push_back(context);
+    }
+
     this->Schedule(SyncType::Local);
 }
 
@@ -147,8 +150,11 @@ void Indexer::RemovePath(const std::string& path) {
     context.add = false;
     context.path = normalizeDir(path);
 
-    boost::mutex::scoped_lock lock(this->stateMutex);
-    this->addRemoveQueue.push_back(context);
+    {
+        boost::mutex::scoped_lock lock(this->stateMutex);
+        this->addRemoveQueue.push_back(context);
+    }
+
     this->Schedule(SyncType::Local);
 }
 
