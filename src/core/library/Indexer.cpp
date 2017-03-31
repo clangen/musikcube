@@ -373,7 +373,7 @@ void Indexer::ReadMetadataFromFile(
 
     ++this->filesSaved;
 
-#ifdef MULTI_THREADED_INDEXER
+#if MULTI_THREADED_INDEXER
     this->readSemaphore.post();
 #endif
 }
@@ -448,9 +448,6 @@ void Indexer::ThreadLoop() {
         boost::filesystem::create_directories(thumbPath);
     }
 
-    /* TODO */
-    // if(!firstTime || (firstTime && ) { /* first time through the loop skips this */
-
     while (true) {
         /* wait for some work. */
         {
@@ -472,7 +469,7 @@ void Indexer::ThreadLoop() {
 
         this->dbConnection.Open(this->dbFilename.c_str(), 0);
 
-#ifdef MULTI_THREADED_INDEXER
+#if MULTI_THREADED_INDEXER
         boost::asio::io_service io;
         boost::thread_group threadPool;
         boost::asio::io_service::work work(io);
