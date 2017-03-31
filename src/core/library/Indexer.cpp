@@ -276,7 +276,6 @@ void Indexer::ReadMetadataFromFile(
         if (saveToDb) {
             track.SetValue("path_id", pathId.c_str());
             track.Save(this->dbConnection, this->libraryPath);
-            this->filesSaved++;
 
 #if STRESS_TEST_DB != 0
             #define INC(track, key, x) \
