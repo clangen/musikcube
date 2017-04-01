@@ -35,6 +35,7 @@
 #include "pch.hpp"
 #include "SearchTrackListQuery.h"
 
+#include <core/i18n/Locale.h>
 #include <core/library/track/LibraryTrack.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <core/db/Statement.h>
@@ -126,6 +127,10 @@ bool SearchTrackListQuery::OnRun(Connection& db) {
     while (trackQuery.Step() == Row) {
         DBID id = trackQuery.ColumnInt64(0);
         std::string album = trackQuery.ColumnText(1);
+
+        if (!album.size()) {
+            album = _TSTR("tracklist_unknown_album");
+        }
 
         if (album != lastAlbum) {
             headers->insert(index);

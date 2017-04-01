@@ -282,22 +282,18 @@ void TrackListView::HeaderCalculator::Reset() {
 }
 
 size_t TrackListView::HeaderCalculator::AdapterToTrackListIndex(size_t index) {
-    return this->ApplyHeaderOffset(index, -1);
+    return this->ApplyHeaderOffset(index, this->absoluteOffsets, -1);
 }
 
 size_t TrackListView::HeaderCalculator::TrackListToAdapterIndex(size_t index) {
-    if (!this->rawOffsets || this->rawOffsets->size() == 0) {
-        return index;
-    }
-
-    return this->ApplyHeaderOffset(index, 1);
+    return this->ApplyHeaderOffset(index, this->rawOffsets, 1);
 }
 
-size_t TrackListView::HeaderCalculator::ApplyHeaderOffset(size_t index, int delta) {
+size_t TrackListView::HeaderCalculator::ApplyHeaderOffset(size_t index, Headers offsets, int delta) {
     size_t result = index;
-    if (this->absoluteOffsets) {
-        for (auto offset : (*this->absoluteOffsets)) {
-            if (result != 0 && offset <= index) {
+    if (offsets) {
+        for (auto offset : (*offsets)) {
+            if (offset <= index) {
                 result += delta;
             }
             else {
@@ -372,6 +368,10 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
         TrackPtr track = parent.tracks->Get(trackIndex);
 
         std::string album = track->GetValue(constants::Track::ALBUM);
+
+        if (!album.size()) {
+            album = _TSTR("tracklist_unknown_album");
+        }
 
         std::shared_ptr<TrackListEntry> entry(new
             TrackListEntry(album, trackIndex, RowType::Separator));

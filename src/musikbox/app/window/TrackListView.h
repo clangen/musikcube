@@ -140,7 +140,7 @@ namespace musik {
                         size_t Count();
 
                     private:
-                        size_t ApplyHeaderOffset(size_t index, int delta);
+                        size_t ApplyHeaderOffset(size_t index, Headers offsets, int delta);
 
                         Headers absoluteOffsets;
                         Headers rawOffsets;

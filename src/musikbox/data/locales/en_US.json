@@ -93,6 +93,8 @@
         "transport_repeat_track": "repeat track",
         "transport_repeat_off": "repeat off",
 
+        "tracklist_unknown_album": "[unknown album]",
+
         "main_syncing_banner": "syncing metadata (%d tracks processed)"
     },
 
