@@ -49,7 +49,7 @@ namespace musik { namespace core { namespace sdk {
 
             virtual void Scan(IIndexerWriter* indexer) = 0;
 
-            virtual void Scan(
+            virtual void ScanTrack(
                 IIndexerWriter* indexer,
                 IRetainedTrackWriter* track,
                 const char* externalId) = 0;

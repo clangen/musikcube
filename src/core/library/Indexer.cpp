@@ -446,7 +446,7 @@ void Indexer::SyncSource(IIndexerSource* source) {
         while (tracks.Step() == db::Row) {
             TrackPtr track(new IndexerTrack(tracks.ColumnInt(0)));
             track->SetValue(constants::Track::FILENAME, tracks.ColumnText(1));
-            source->Scan(this, new RetainedTrackWriter(track), tracks.ColumnText(2));
+            source->ScanTrack(this, new RetainedTrackWriter(track), tracks.ColumnText(2));
         }
     }
 

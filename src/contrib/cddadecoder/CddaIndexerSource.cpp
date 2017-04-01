@@ -155,7 +155,7 @@ void CddaIndexerSource::Scan(musik::core::sdk::IIndexerWriter* indexer) {
     discIds.clear();
 }
 
-void CddaIndexerSource::Scan(
+void CddaIndexerSource::ScanTrack(
     IIndexerWriter* indexer,
     IRetainedTrackWriter* track,
     const char* externalId)

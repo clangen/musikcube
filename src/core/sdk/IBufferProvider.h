@@ -40,10 +40,6 @@ namespace musik { namespace core { namespace sdk {
 
     class IBufferProvider {
         public:
-            virtual ~IBufferProvider() { }
-
-            /* the output calls this interface to let the provider know
-            it's done with the Buffer, so it can be recycled or released */
             virtual void OnBufferProcessed(IBuffer *buffer) = 0;
     };
 
