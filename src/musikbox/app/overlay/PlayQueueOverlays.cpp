@@ -364,7 +364,7 @@ void PlayQueueOverlays::ShowAlbumDividerOverlay(
     std::shared_ptr<ListOverlay> dialog(new ListOverlay());
 
     dialog->SetAdapter(adapter)
-        .SetTitle(_TSTR("playqueue_overlay_album_header"))
+        .SetTitle(_TSTR("playqueue_overlay_album_header_actions_title"))
         .SetWidth(_DIMEN("playqueue_album_header_overlay", DEFAULT_OVERLAY_WIDTH))
         .SetSelectedIndex(0)
         .SetItemSelectedCallback(
