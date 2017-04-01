@@ -109,7 +109,7 @@ long long IndexerTrack::GetInt64(const char* key, long long defaultValue) {
     return defaultValue;
 }
 
-unsigned long IndexerTrack::GetUint32(const char* key, unsigned long defaultValue) {
+unsigned int IndexerTrack::GetUint32(const char* key, unsigned long defaultValue) {
     try {
         std::string value = GetValue(key);
         if (value.size()) {
@@ -120,7 +120,7 @@ unsigned long IndexerTrack::GetUint32(const char* key, unsigned long defaultValu
     return defaultValue;
 }
 
-long IndexerTrack::GetInt32(const char* key, unsigned int defaultValue) {
+int IndexerTrack::GetInt32(const char* key, unsigned int defaultValue) {
     try {
         std::string value = GetValue(key);
         if (value.size()) {

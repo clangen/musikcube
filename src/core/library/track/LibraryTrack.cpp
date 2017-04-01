@@ -95,7 +95,7 @@ long long LibraryTrack::GetInt64(const char* key, long long defaultValue) {
     return defaultValue;
 }
 
-unsigned long LibraryTrack::GetUint32(const char* key, unsigned long defaultValue) {
+unsigned int LibraryTrack::GetUint32(const char* key, unsigned long defaultValue) {
     try {
         std::string value = GetValue(key);
         if (value.size()) {
@@ -107,7 +107,7 @@ unsigned long LibraryTrack::GetUint32(const char* key, unsigned long defaultValu
     return defaultValue;
 }
 
-long LibraryTrack::GetInt32(const char* key, unsigned int defaultValue) {
+int LibraryTrack::GetInt32(const char* key, unsigned int defaultValue) {
     try {
         std::string value = GetValue(key);
         if (value.size()) {

@@ -76,11 +76,11 @@ long long RetainedTrack::GetInt64(const char* key, long long defaultValue) {
     return track->GetInt64(key, defaultValue);
 }
 
-unsigned long RetainedTrack::GetUint32(const char* key, unsigned long defaultValue) {
+unsigned int RetainedTrack::GetUint32(const char* key, unsigned long defaultValue) {
     return track->GetUint32(key, defaultValue);
 }
 
-long RetainedTrack::GetInt32(const char* key, unsigned int defaultValue) {
+int RetainedTrack::GetInt32(const char* key, unsigned int defaultValue) {
     return track->GetInt32(key, defaultValue);
 }
 

@@ -59,8 +59,8 @@ namespace {
             virtual int GetValue(const char* key, char* dst, int size) { return this->wrapped->GetValue(key, dst, size); }
             virtual unsigned long long GetUint64(const char* key, unsigned long long defaultValue) { return this->wrapped->GetUint64(key, defaultValue); }
             virtual long long GetInt64(const char* key, long long defaultValue) { return this->wrapped->GetInt64(key, defaultValue); }
-            virtual unsigned long GetUint32(const char* key, unsigned long defaultValue) { return this->wrapped->GetUint32(key, defaultValue); }
-            virtual long GetInt32(const char* key, unsigned int defaultValue) { return this->wrapped->GetInt32(key, defaultValue); }
+            virtual unsigned int GetUint32(const char* key, unsigned long defaultValue) { return this->wrapped->GetUint32(key, defaultValue); }
+            virtual int GetInt32(const char* key, unsigned int defaultValue) { return this->wrapped->GetInt32(key, defaultValue); }
             virtual double GetDouble(const char* key, double defaultValue) { return this->wrapped->GetDouble(key, defaultValue); }
             virtual const char* GetDescription() { return this->wrapped->GetDescription(); }
             virtual const char* GetType() { return this->wrapped->GetType(); }
@@ -135,7 +135,7 @@ long long MetadataMap::GetInt64(const char* key, long long defaultValue) {
     return defaultValue;
 }
 
-unsigned long MetadataMap::GetUint32(const char* key, unsigned long defaultValue) {
+unsigned int MetadataMap::GetUint32(const char* key, unsigned long defaultValue) {
     try {
         std::string value = GetValue(key);
         if (value.size()) {
@@ -147,7 +147,7 @@ unsigned long MetadataMap::GetUint32(const char* key, unsigned long defaultValue
     return defaultValue;
 }
 
-long MetadataMap::GetInt32(const char* key, unsigned int defaultValue) {
+int MetadataMap::GetInt32(const char* key, unsigned int defaultValue) {
     try {
         std::string value = GetValue(key);
         if (value.size()) {
