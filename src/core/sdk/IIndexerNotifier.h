@@ -34,27 +34,13 @@
 
 #pragma once
 
-#include "IIndexerWriter.h"
-#include "ITrackWriter.h"
+#include "IIndexerSource.h"
 
 namespace musik { namespace core { namespace sdk {
 
-    class IIndexerSource {
+    class IIndexerNotifier {
         public:
-            virtual void Destroy() = 0;
-
-            virtual void OnBeforeScan() = 0;
-
-            virtual void OnAfterScan() = 0;
-
-            virtual void Scan(IIndexerWriter* indexer) = 0;
-
-            virtual void Scan(
-                IIndexerWriter* indexer,
-                IRetainedTrackWriter* track,
-                const char* externalId) = 0;
-
-            virtual int SourceId() = 0;
+            virtual void ScheduleRescan(IIndexerSource* source) = 0;
     };
 
 } } }

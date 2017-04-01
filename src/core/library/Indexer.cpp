@@ -428,6 +428,35 @@ void Indexer::SyncDirectory(
     #undef WAIT_FOR_ACTIVE
 }
 
+void Indexer::SyncSource(IIndexerSource* source) {
+    if (source->SourceId() == 0) {
+        return;
+    }
+
+    source->OnBeforeScan();
+
+    /* first allow the source to update metadata for any tracks that it
+    previously indexed. */
+    {
+        db::Statement tracks(
+            "SELECT id, filename, external_id FROM tracks WHERE source_id=? ORDER BY id",
+            this->dbConnection);
+
+        tracks.BindInt(0, source->SourceId());
+        while (tracks.Step() == db::Row) {
+            TrackPtr track(new IndexerTrack(tracks.ColumnInt(0)));
+            track->SetValue(constants::Track::FILENAME, tracks.ColumnText(1));
+            source->Scan(this, new RetainedTrackWriter(track), tracks.ColumnText(2));
+        }
+    }
+
+    /* now tell it to do a wide-open scan. it can use this opportunity to
+    remove old tracks, or add new ones. */
+    source->Scan(this);
+
+    source->OnAfterScan();
+}
+
 void Indexer::ThreadLoop() {
     boost::filesystem::path thumbPath(this->libraryPath + "thumbs/");
 
@@ -798,36 +827,9 @@ int Indexer::RemoveAll(IIndexerSource* source) {
     return 0;
 }
 
-void Indexer::Rescan(IIndexerSource* source) {
+void Indexer::ScheduleRescan(IIndexerSource* source) {
     if (source->SourceId() != 0) {
         this->Schedule(SyncType::Sources, source);
     }
-}
-
-void Indexer::SyncSource(IIndexerSource* source) {
-    if (source->SourceId() == 0) {
-        return;
-    }
-
-    source->OnBeforeScan();
-
-    /* first allow the source to update metadata for any tracks that it
-    previously indexed. */
-    db::Statement tracks(
-        "SELECT id, filename, external_id FROM tracks WHERE source_id=? ORDER BY id",
-        this->dbConnection);
-
-    tracks.BindInt(0, source->SourceId());
-    while (tracks.Step() == db::Row) {
-        TrackPtr track(new IndexerTrack(tracks.ColumnInt(0)));
-        track->SetValue(constants::Track::FILENAME, tracks.ColumnText(1));
-        source->Scan(this, new RetainedTrackWriter(track), tracks.ColumnText(2));
-    }
-
-    /* now tell it to do a wide-open scan. it can use this opportunity to
-    remove old tracks, or add new ones. */
-    source->Scan(this);
-
-    source->OnAfterScan();
 }
 

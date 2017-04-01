@@ -37,7 +37,8 @@
 #include <core/db/Connection.h>
 #include <core/sdk/IMetadataReader.h>
 #include <core/sdk/IDecoderFactory.h>
-#include <core/sdk/IIndexerSink.h>
+#include <core/sdk/IIndexerWriter.h>
+#include <core/sdk/IIndexerNotifier.h>
 #include <core/library/IIndexer.h>
 #include <core/support/Preferences.h>
 
@@ -58,7 +59,8 @@ namespace musik { namespace core {
 
     class Indexer :
         public musik::core::IIndexer,
-        public musik::core::sdk::IIndexerSink,
+        public musik::core::sdk::IIndexerWriter,
+        public musik::core::sdk::IIndexerNotifier,
         private boost::noncopyable
     {
         public:
@@ -75,9 +77,8 @@ namespace musik { namespace core {
             virtual void Schedule(SyncType type);
             virtual State GetState() { return this->state; }
 
-            /* IIndexerSink */
+            /* IIndexerWriter */
             virtual musik::core::sdk::IRetainedTrackWriter* CreateWriter();
-            virtual void Rescan(musik::core::sdk::IIndexerSource* source);
             virtual bool RemoveByUri(musik::core::sdk::IIndexerSource* source, const char* uri);
             virtual bool RemoveByExternalId(musik::core::sdk::IIndexerSource* source, const char* id);
             virtual int RemoveAll(musik::core::sdk::IIndexerSource* source);
@@ -87,8 +88,10 @@ namespace musik { namespace core {
                 musik::core::sdk::IRetainedTrackWriter* track,
                 const char* externalId = "");
 
-        private:
+            /* IIndexerNotifier */
+            virtual void ScheduleRescan(musik::core::sdk::IIndexerSource* source);
 
+        private:
             struct AddRemoveContext {
                 bool add;
                 std::string path;

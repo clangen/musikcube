@@ -194,8 +194,9 @@
     <ClInclude Include="sdk\IDSP.h" />
     <ClInclude Include="sdk\IDataStream.h" />
     <ClInclude Include="sdk\IDataStreamFactory.h" />
-    <ClInclude Include="sdk\IIndexerSink.h" />
+    <ClInclude Include="sdk\IIndexerNotifier.h" />
     <ClInclude Include="sdk\IIndexerSource.h" />
+    <ClInclude Include="sdk\IIndexerWriter.h" />
     <ClInclude Include="sdk\IMetadataMap.h" />
     <ClInclude Include="sdk\IMetadataMapList.h" />
     <ClInclude Include="sdk\IMetadataReader.h" />

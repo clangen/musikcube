@@ -438,9 +438,6 @@
     <ClInclude Include="i18n\Locale.h">
       <Filter>src\i18n</Filter>
     </ClInclude>
-    <ClInclude Include="sdk\IIndexerSink.h">
-      <Filter>src\sdk</Filter>
-    </ClInclude>
     <ClInclude Include="sdk\IIndexerSource.h">
       <Filter>src\sdk</Filter>
     </ClInclude>
@@ -449,6 +446,12 @@
     </ClInclude>
     <ClInclude Include="library\query\local\TrackMetadataQuery.h">
       <Filter>src\library\query\local</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IIndexerWriter.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IIndexerNotifier.h">
+      <Filter>src\sdk</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

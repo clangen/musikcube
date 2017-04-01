@@ -38,7 +38,7 @@
 
 #include <core/support/Preferences.h>
 #include <core/library/LocalSimpleDataProvider.h>
-#include <core/sdk/IIndexerSink.h>
+#include <core/sdk/IIndexerWriter.h>
 
 using namespace musik::core;
 using namespace musik::core::db::local;
@@ -47,7 +47,7 @@ using namespace musik::core::sdk;
 typedef void(*SetSimpleDataProvider)(ISimpleDataProvider*);
 LocalSimpleDataProvider* dataProvider = nullptr;
 
-typedef void(*SetIndexerSink)(IIndexerSink*);
+typedef void(*SetIndexerWriter)(IIndexerWriter*);
 
 namespace musik { namespace core { namespace plugin {
 
@@ -66,13 +66,13 @@ namespace musik { namespace core { namespace plugin {
             });
 
         /* indexer */
-        IIndexerSink* indexerSink =
-            dynamic_cast<IIndexerSink*>(library->Indexer());
+        IIndexerWriter* indexerWriter =
+            dynamic_cast<IIndexerWriter*>(library->Indexer());
 
-        PluginFactory::Instance().QueryFunction<SetIndexerSink>(
-            "SetIndexerSink",
-            [indexerSink](musik::core::sdk::IPlugin* plugin, SetIndexerSink func) {
-                func(indexerSink);
+        PluginFactory::Instance().QueryFunction<SetIndexerWriter>(
+            "SetIndexerWriter",
+            [indexerWriter](musik::core::sdk::IPlugin* plugin, SetIndexerWriter func) {
+                func(indexerWriter);
             });
     }
 
@@ -91,9 +91,9 @@ namespace musik { namespace core { namespace plugin {
         dataProvider = nullptr;
 
         /* indexer */
-        PluginFactory::Instance().QueryFunction<SetIndexerSink>(
+        PluginFactory::Instance().QueryFunction<SetIndexerWriter>(
             "SetIndexerSink",
-                [](musik::core::sdk::IPlugin* plugin, SetIndexerSink func) {
+                [](musik::core::sdk::IPlugin* plugin, SetIndexerWriter func) {
                 func(nullptr);
             });
     }
