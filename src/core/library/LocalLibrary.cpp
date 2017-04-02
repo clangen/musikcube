@@ -395,4 +395,19 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
 
     result = db.Execute("ALTER TABLE tracks ADD COLUMN external_id TEXT DEFAULT null");
     db.Execute("CREATE INDEX IF NOT EXISTS tracks_external_id_index ON tracks (external_id)");
+
+    /* create our simplified, de-normalized track table view */
+    db.Execute("DROP VIEW IF EXISTS tracks_view");
+
+    db.Execute(
+        "CREATE VIEW tracks_view AS "
+        "SELECT DISTINCT "
+            " t.id, t.track, t.disc, t.bpm, t.duration, t.filesize, t.year, t.title, t.filename, "
+            " t.thumbnail_id, al.name AS album, alar.name AS album_artist, gn.name AS genre, "
+            " ar.name AS artist, t.filetime, t.visual_genre_id, t.visual_artist_id, t.album_artist_id, t.album_id "
+        "FROM "
+            " tracks t, albums al, artists alar, artists ar, genres gn "
+        "WHERE "
+            " t.album_id=al.id AND t.album_artist_id=alar.id AND "
+            " t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id ");
 }

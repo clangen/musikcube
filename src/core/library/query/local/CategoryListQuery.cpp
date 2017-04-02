@@ -109,23 +109,21 @@ static const std::string FILTERED_PLAYLISTS_QUERY =
     "WHERE LOWER(name) LIKE ? "
     "ORDER BY name;";
 
-static std::mutex QUERY_MAP_MUTEX;
-static std::map<std::string, std::string> FIELD_TO_QUERY_MAP;
-static std::map<std::string, std::string> FILTERED_FIELD_TO_QUERY_MAP;
+static std::map<std::string, std::string> FIELD_TO_QUERY_MAP = {
+    { Track::ALBUM, REGULAR_ALBUM_QUERY },
+    { Track::ARTIST, REGULAR_ARTIST_QUERY },
+    { Track::ALBUM_ARTIST, REGULAR_ALBUM_ARTIST_QUERY },
+    { Track::GENRE,  REGULAR_GENRE_QUERY },
+    { Playlists::TABLE_NAME, REGULAR_PLAYLISTS_QUERY }
+};
 
-static void initFieldToQueryMap() {
-    FIELD_TO_QUERY_MAP[Track::ALBUM] = REGULAR_ALBUM_QUERY;
-    FIELD_TO_QUERY_MAP[Track::ARTIST] = REGULAR_ARTIST_QUERY;
-    FIELD_TO_QUERY_MAP[Track::ALBUM_ARTIST] = REGULAR_ALBUM_ARTIST_QUERY;
-    FIELD_TO_QUERY_MAP[Track::GENRE] = REGULAR_GENRE_QUERY;
-    FIELD_TO_QUERY_MAP[Playlists::TABLE_NAME] = REGULAR_PLAYLISTS_QUERY;
-
-    FILTERED_FIELD_TO_QUERY_MAP[Track::ALBUM] = FILTERED_ALBUM_QUERY;
-    FILTERED_FIELD_TO_QUERY_MAP[Track::ARTIST] = FILTERED_ARTIST_QUERY;
-    FILTERED_FIELD_TO_QUERY_MAP[Track::ALBUM_ARTIST] = FILTERED_ALBUM_ARTIST_QUERY;
-    FILTERED_FIELD_TO_QUERY_MAP[Track::GENRE] = FILTERED_GENRE_QUERY;
-    FILTERED_FIELD_TO_QUERY_MAP[Playlists::TABLE_NAME] = REGULAR_PLAYLISTS_QUERY;
-}
+static std::map<std::string, std::string> FILTERED_FIELD_TO_QUERY_MAP = {
+    { Track::ALBUM, FILTERED_ALBUM_QUERY },
+    { Track::ARTIST, FILTERED_ARTIST_QUERY },
+    { Track::ALBUM_ARTIST, FILTERED_ALBUM_ARTIST_QUERY },
+    { Track::GENRE, FILTERED_GENRE_QUERY },
+    { Playlists::TABLE_NAME, REGULAR_PLAYLISTS_QUERY }
+};
 
 /* data structure that we can return to plugins who need metadata info */
 class MetadataList : public musik::core::sdk::IMetadataValueList {
@@ -155,14 +153,6 @@ CategoryListQuery::CategoryListQuery(
 : trackField(trackField)
 , filter(filter) {
     RESET_RESULT(result);
-
-    {
-        std::unique_lock<std::mutex> lock(QUERY_MAP_MUTEX);
-
-        if (!FIELD_TO_QUERY_MAP.size()) {
-            initFieldToQueryMap();
-        }
-    }
 
     if (FIELD_TO_QUERY_MAP.find(trackField) == FIELD_TO_QUERY_MAP.end()) {
         throw "invalid field for CategoryListView specified";
