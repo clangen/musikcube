@@ -68,7 +68,8 @@ NowPlayingLayout::NowPlayingLayout(
 : LayoutBase()
 , playback(playback)
 , library(library)
-, lastPlaylistQueryId(-1) {
+, lastPlaylistQueryId(-1)
+, reselectIndex(-1) {
     this->InitializeWindows();
 
     this->playback.QueueEdited.connect(this, &NowPlayingLayout::RequeryTrackList);
@@ -164,7 +165,11 @@ void NowPlayingLayout::OnTrackListRequeried(musik::core::db::local::TrackListQue
                 this->trackListView->SetSelectedIndex(0);
             }
             else { /* playing... */
-                this->trackListView->ScrollTo(index == 0 ? index : index - 1);
+                size_t scrollToIndex = index == 0 ? index : index - 1;
+                if (!this->trackListView->IsEntryVisible(scrollToIndex)) {
+                    this->trackListView->ScrollTo(scrollToIndex);
+                }
+
                 this->trackListView->SetSelectedIndex(index);
             }
         }
@@ -176,13 +181,11 @@ void NowPlayingLayout::OnTrackListRequeried(musik::core::db::local::TrackListQue
             scrolled into view */
             this->reselectIndex = std::min((int) this->trackListView->Count() - 1, this->reselectIndex);
             this->trackListView->SetSelectedIndex((size_t)this->reselectIndex);
-            auto pos = this->trackListView->GetScrollPosition();
-            int first = (int)pos.firstVisibleEntryIndex;
-            int last = (int)first + pos.visibleEntryCount;
-            int index = (int)this->reselectIndex;
-            if (index < first || index >= last) {
+
+            if (!this->trackListView->IsEntryVisible((size_t) this->reselectIndex)) {
                 this->trackListView->ScrollTo((size_t)this->reselectIndex);
             }
+
             this->reselectIndex = -1;
         }
 

@@ -200,6 +200,13 @@ void ListWindow::OnSelectionChanged(size_t newIndex, size_t oldIndex) {
     /* for subclass use */
 }
 
+bool ListWindow::IsEntryVisible(size_t index) {
+    auto pos = this->GetScrollPosition();
+    size_t first = pos.firstVisibleEntryIndex;
+    size_t last = first + pos.visibleEntryCount;
+    return (index >= first && index < last);
+}
+
 void ListWindow::SetSelectedIndex(size_t index) {
     if (this->selectedIndex != index) {
         if (index > this->GetScrollAdapter().GetEntryCount() &&

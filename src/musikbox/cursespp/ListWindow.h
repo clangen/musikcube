@@ -67,6 +67,7 @@ namespace cursespp {
 
             virtual size_t GetSelectedIndex();
             virtual void SetSelectedIndex(size_t index);
+            virtual bool IsEntryVisible(size_t index);
 
             virtual void OnAdapterChanged();
 

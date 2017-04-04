@@ -179,10 +179,7 @@ void TrackListView::ScrollToPlaying() {
                 size_t rawIndex = headers.TrackListToAdapterIndex(i);
                 this->SetSelectedIndex(rawIndex);
 
-                auto pos = this->GetScrollPosition();
-                size_t first = pos.firstVisibleEntryIndex;
-                size_t last = first + pos.visibleEntryCount;
-                if (rawIndex < first || rawIndex >= last) {
+                if (!this->IsEntryVisible(rawIndex)) {
                     this->ScrollTo(rawIndex);
                 }
 
