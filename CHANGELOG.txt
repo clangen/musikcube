@@ -1,3 +1,46 @@
+0.11.0
+
+user-facing:
+
+* added a new cd playback plugin based on new infrastructure. audio cds will
+  be detected and added to the library as [audio cd] and can be played like
+  any other tracks. (note: win32 only for now)
+* added the ability to toggle between seek and scrub playback modes
+* fixed a couple localized strings
+* fixed a bug that could cause the currently selected item in the play queue
+  to jump around or be incorrect.
+
+low-level:
+
+* added IIndexerSource interface: plugins will be able to implement this
+  interface to add tracks to the library that will be indexed and
+  maintained like all other tracks
+* added IIndexerWriter interface: IIndexerSource plugins will use this
+  interface to add/remove/update track info with the main app
+* added IIndexerNotifier: interface used to notify the app that it needs
+  to be re-indexed.
+* added "source_id" , "external_id", and "visible" column to the tracks
+  table, with appropriate indexes.
+* fixed a really old indexer bug where the reported number of file scanned
+  was not accurate. Strange this wasn't noticed before.
+* added "SetIndexerNotifier" injection method
+* fixed a bug in TrackMetadataQuery -- it was unnecessarily relying upon
+  the paths table, which was causing query errors when the table was
+  empty.
+* use a cache for local file paths instead of requiring an async round
+  trip when adding/removing
+* remove use of manual "ANALYZE", it was causing strange performance
+  degradation issues. Instead, move to a set of PRAGMAs that instructs
+  sqlite to run these optimizations when necessary.
+* updated ::GetInt32 and ::GetUint32 return types to be explicit as to play
+  more nicely with clang -- may as well, we're updating the SDK version
+  anyway.
+* added a simple capabilities model to the playback infrastructure. This
+  is used to detect whether or not streams can be prefetched. For example,
+  CDDA cannot because of seek times while playing tracks.
+
+--------------------------------------------------------------------------------
+
 0.10.2
 
 * fixed clang 7.3 compile error (macOS mavericks should work again)
