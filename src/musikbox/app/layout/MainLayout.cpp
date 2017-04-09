@@ -94,6 +94,10 @@ void MainLayout::OnLayout() {
         yOffset = 1;
         this->syncing->MoveAndResize(0, 0, cx, 1);
         this->syncing->Show();
+
+        if (this->syncUpdateCount == 0) {
+            updateSyncingText(this->syncing.get(), 0);
+        }
     }
     else {
         this->syncing->Hide();
@@ -245,12 +249,8 @@ bool MainLayout::KeyPress(const std::string& key) {
 void MainLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
     int type = message.Type();
     if (type == message::IndexerStarted) {
-        updateSyncingText(this->syncing.get(), 0);
         this->syncUpdateCount = 0;
-
-        if (!syncing->IsVisible()) {
-            this->Layout();
-        }
+        this->Layout();
     }
     else if (type == message::IndexerFinished) {
         this->Layout();
@@ -258,6 +258,10 @@ void MainLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
     else if (type == message::IndexerProgress) {
         this->syncUpdateCount += (int)message.UserData1();
         updateSyncingText(this->syncing.get(), this->syncUpdateCount);
+
+        if (!syncing->IsVisible()) {
+            this->Layout();
+        }
     }
 }
 

@@ -143,7 +143,7 @@ int main(int argc, char* argv[])
 #endif
         /* fire up the indexer if configured to run on startup */
         if (prefs->GetBool(musik::core::prefs::keys::SyncOnStartup, true)) {
-            library->Indexer()->Schedule(IIndexer::SyncType::Sources);
+            library->Indexer()->Schedule(IIndexer::SyncType::All);
         }
 
         /* set color mode (basic, palette, rgb) */
