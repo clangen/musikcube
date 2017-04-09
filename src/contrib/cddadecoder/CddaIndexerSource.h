@@ -52,12 +52,14 @@ class CddaIndexerSource :
         virtual void OnAfterScan();
         virtual int SourceId();
 
-        virtual void Scan(musik::core::sdk::IIndexerWriter* indexer);
+        virtual musik::core::sdk::ScanResult Scan(musik::core::sdk::IIndexerWriter* indexer);
 
         virtual void ScanTrack(
             musik::core::sdk::IIndexerWriter* indexer,
             musik::core::sdk::IRetainedTrackWriter* track,
             const char* externalId);
+
+        virtual void Interrupt();
 
         /* CddaDataModel::EventListener */
         virtual void OnAudioDiscInsertedOrRemoved();

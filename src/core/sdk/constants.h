@@ -87,6 +87,11 @@ namespace musik {
                 Prebuffer = 0x01
             };
 
+            enum ScanResult {
+                ScanCommit,
+                ScanRollback
+            };
+
             namespace category {
                 static const char* Album = "album";
                 static const char* Artist = "artist";

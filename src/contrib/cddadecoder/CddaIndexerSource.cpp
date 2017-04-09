@@ -123,7 +123,7 @@ void CddaIndexerSource::OnAfterScan() {
     /* nothing to do... */
 }
 
-void CddaIndexerSource::Scan(musik::core::sdk::IIndexerWriter* indexer) {
+ScanResult CddaIndexerSource::Scan(IIndexerWriter* indexer) {
     for (auto disc : this->discs) {
         char driveLetter = disc->GetDriveLetter();
         std::string cddbId = disc->GetCddbId();
@@ -152,7 +152,11 @@ void CddaIndexerSource::Scan(musik::core::sdk::IIndexerWriter* indexer) {
         }
     }
 
-    discIds.clear();
+    return ScanCommit;
+}
+
+void CddaIndexerSource::Interrupt() {
+
 }
 
 void CddaIndexerSource::ScanTrack(

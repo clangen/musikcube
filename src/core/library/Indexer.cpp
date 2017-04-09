@@ -110,6 +110,10 @@ Indexer::~Indexer() {
         {
             boost::mutex::scoped_lock lock(this->stateMutex);
             this->exit = true;
+
+            if (this->currentSource) {
+                this->currentSource->Interrupt();
+            }
         }
 
         this->waitCondition.notify_all();
@@ -201,20 +205,40 @@ void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* i
 
     if (type == SyncType::All || (type == SyncType::Sources && sourceId == 0)) {
         for (auto it : this->sources) {
-            this->SyncSource(it.get());
+            if (this->Exited()) {
+                break;
+            }
+
+            this->currentSource = it;
+            if (this->SyncSource(it.get()) == ScanRollback) {
+                this->trackTransaction->Cancel();
+            }
             this->trackTransaction->CommitAndRestart();
+
+            break;
         }
+
+        this->currentSource.reset();
     }
 
     /* otherwise, we may have just been asked to index a single one... */
 
     else if (type == SyncType::Sources && sourceId != 0) {
         for (auto it : this->sources) {
+            if (this->Exited()) {
+                break;
+            }
+
             if (it->SourceId() == sourceId) {
-                this->SyncSource(it.get());
+                this->currentSource = it;
+                if (this->SyncSource(it.get()) == ScanRollback) {
+                    this->trackTransaction->Cancel();
+                }
                 this->trackTransaction->CommitAndRestart();
             }
         }
+
+        this->currentSource.reset();
     }
 
     /* process local files */
@@ -428,9 +452,9 @@ void Indexer::SyncDirectory(
     #undef WAIT_FOR_ACTIVE
 }
 
-void Indexer::SyncSource(IIndexerSource* source) {
+ScanResult Indexer::SyncSource(IIndexerSource* source) {
     if (source->SourceId() == 0) {
-        return;
+        return ScanRollback;
     }
 
     source->OnBeforeScan();
@@ -452,9 +476,11 @@ void Indexer::SyncSource(IIndexerSource* source) {
 
     /* now tell it to do a wide-open scan. it can use this opportunity to
     remove old tracks, or add new ones. */
-    source->Scan(this);
+    auto result = source->Scan(this);
 
     source->OnAfterScan();
+
+    return result;
 }
 
 void Indexer::ThreadLoop() {

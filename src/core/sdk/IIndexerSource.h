@@ -34,6 +34,7 @@
 
 #pragma once
 
+#include "constants.h"
 #include "IIndexerWriter.h"
 #include "ITrackWriter.h"
 
@@ -47,12 +48,14 @@ namespace musik { namespace core { namespace sdk {
 
             virtual void OnAfterScan() = 0;
 
-            virtual void Scan(IIndexerWriter* indexer) = 0;
+            virtual ScanResult Scan(IIndexerWriter* indexer) = 0;
 
             virtual void ScanTrack(
                 IIndexerWriter* indexer,
                 IRetainedTrackWriter* track,
                 const char* externalId) = 0;
+
+            virtual void Interrupt() = 0;
 
             virtual int SourceId() = 0;
     };

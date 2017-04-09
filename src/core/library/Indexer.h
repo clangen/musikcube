@@ -120,7 +120,7 @@ namespace musik { namespace core {
             void FinalizeSync(const SyncContext& context);
             void SyncDelete();
             void SyncCleanup();
-            void SyncSource(musik::core::sdk::IIndexerSource* source);
+            musik::core::sdk::ScanResult SyncSource(musik::core::sdk::IIndexerSource* source);
             void ProcessAddRemoveQueue();
             void SyncOptimize();
             void RunAnalyzers();
@@ -154,6 +154,7 @@ namespace musik { namespace core {
             std::shared_ptr<musik::core::Preferences> prefs;
             std::shared_ptr<musik::core::db::ScopedTransaction> trackTransaction;
             std::vector<std::string> paths;
+            std::shared_ptr<musik::core::sdk::IIndexerSource> currentSource;
             boost::interprocess::interprocess_semaphore readSemaphore;
     };
 
