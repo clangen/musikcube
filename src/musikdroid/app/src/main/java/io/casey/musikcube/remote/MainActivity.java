@@ -260,8 +260,8 @@ public class MainActivity extends WebSocketActivityBase {
     }
 
     private void rebindAlbumArtistWithArtTextView() {
-        final String artist = model.getTrackValueString(TransportModel.Key.ARTIST, "");
-        final String album = model.getTrackValueString(TransportModel.Key.ALBUM, "");
+        final String artist = model.getTrackValueString(TransportModel.Key.ARTIST, getString(R.string.unknown_artist));
+        final String album = model.getTrackValueString(TransportModel.Key.ALBUM, getString(R.string.unknown_album));
 
         final ForegroundColorSpan albumColor =
             new ForegroundColorSpan(getResources().getColor(R.color.theme_orange));
@@ -342,13 +342,13 @@ public class MainActivity extends WebSocketActivityBase {
         final String title = model.getTrackValueString(TransportModel.Key.TITLE, "");
         final String volume = getString(R.string.status_volume, Math.round(model.getVolume() * 100));
 
-        this.title.setText(title);
-        this.artist.setText(artist);
-        this.album.setText(album);
+        this.title.setText(Strings.empty(title) ? getString(R.string.unknown_title) : title);
+        this.artist.setText(Strings.empty(artist) ? getString(R.string.unknown_artist) : artist);
+        this.album.setText(Strings.empty(album) ? getString(R.string.unknown_album) : album);
         this.volume.setText(volume);
 
         this.rebindAlbumArtistWithArtTextView();
-        this.titleWithArt.setText(title);
+        this.titleWithArt.setText(Strings.empty(title) ? getString(R.string.unknown_title) : title);
         this.volumeWithArt.setText(volume);
 
         final TransportModel.RepeatMode repeatMode = model.getRepeatMode();
@@ -362,7 +362,7 @@ public class MainActivity extends WebSocketActivityBase {
         boolean albumArtEnabledInSettings = this.prefs.getBoolean("album_art_enabled", true);
 
         if (stateIsValidForArtwork) {
-            if (!albumArtEnabledInSettings) {
+            if (!albumArtEnabledInSettings || Strings.empty(artist) || Strings.empty(album)) {
                 this.albumArtModel = new AlbumArtModel();
                 setMetadataDisplayMode(DisplayMode.NoArtwork);
             }
@@ -509,7 +509,12 @@ public class MainActivity extends WebSocketActivityBase {
     private AlbumArtModel.AlbumArtCallback albumArtRetrieved = (model, url) -> {
         handler.post(() -> {
             if (model == albumArtModel) {
-                updateAlbumArt();
+                if (Strings.empty(model.getUrl())) {
+                    setMetadataDisplayMode(DisplayMode.NoArtwork);
+                }
+                else {
+                    updateAlbumArt();
+                }
             }
         });
     };

@@ -48,4 +48,7 @@
     <string name="unknown_value">&lt;unknown&gt;</string>
     <string name="settings_enable_album_art">enable album art (uses last.fm)</string>
     <string name="settings_enable_message_compression">enable message compression</string>
+    <string name="unknown_artist">[unknown artist]</string>
+    <string name="unknown_album">[unknown album]</string>
+    <string name="unknown_title">[unknown title]</string>
 </resources>
